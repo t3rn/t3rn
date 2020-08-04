@@ -9,7 +9,7 @@
 /// For more guidance on Substrate FRAME, see the example pallet
 /// https://github.com/paritytech/substrate/blob/master/frame/example/src/lib.rs
 
-use frame_support::{decl_module, decl_storage, decl_event, decl_error, dispatch};
+use frame_support::{decl_module, decl_storage, decl_event, decl_error, dispatch, debug};
 use frame_system::{self as system, ensure_signed};
 
 #[cfg(test)]
@@ -71,6 +71,38 @@ decl_module! {
 		// Initializing events
 		// this is needed only if you are using events in your pallet
 		fn deposit_event() = default;
+
+
+		// As of now empty functions - call, rent_projection, get_storage, but connected to frontend
+		#[weight = 10_000]
+		pub fn call(origin, something: u32) -> dispatch::DispatchResult {
+			// Ensure that the caller is a regular keypair account
+    		let caller = ensure_signed(origin)?;
+			// Print a test message.
+			debug::info!("DEBUG call by: {:?} val = {}", caller, something);
+
+			Ok(())
+		}
+
+		#[weight = 10_000]
+		pub fn rent_projection(origin, something: u32) -> dispatch::DispatchResult {
+			// Ensure that the caller is a regular keypair account
+    		let caller = ensure_signed(origin)?;
+			// Print a test message.
+			debug::info!("DEBUG rent_projection by: {:?} val = {}", caller, something);
+
+			Ok(())
+		}
+
+		#[weight = 10_000]
+		pub fn get_storage(origin, something: u32) -> dispatch::DispatchResult {
+			// Ensure that the caller is a regular keypair account
+    		let caller = ensure_signed(origin)?;
+			// Print a test message.
+    		 debug::info!("DEBUG get_storage by: {:?} val = {}", caller, something);
+			Ok(())
+		}
+
 
 		/// Just a dummy entry point.
 		/// function that can be called by the external world as an extrinsics call

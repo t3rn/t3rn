@@ -23,6 +23,9 @@ parameter_types! {
 	pub const MaximumBlockLength: u32 = 2 * 1024;
 	pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
 }
+
+pub struct ExtBuilder;
+
 impl system::Trait for Test {
 	type BaseCallFilter = ();
 	type Origin = Origin;
@@ -59,3 +62,18 @@ pub type EscrowGateway = Module<Test>;
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	system::GenesisConfig::default().build_storage::<Test>().unwrap().into()
 }
+
+// impl ExtBuilder {
+// 	pub fn build() -> runtime_io::TestExternalities {
+// 		let mut storage = system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
+// 		runtime_io::TestExternalities::from(storage)
+// 	}
+// }
+
+// #[test]
+// fn last_value_updates() {
+// 	ExtBuilder::build().execute_with(|| {
+// 		HelloSubstrate::set_value(Origin::signed(1), 10u64);
+// 		// some assert statements
+// 	})
+// }
