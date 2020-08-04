@@ -57,15 +57,43 @@ function Main (props) {
         <Form.Field style={{ textAlign: 'center' }}>
           <TxButton
             accountPair={accountPair}
-            label='Store Something'
+            label='Store Something via call'
             type='SIGNED-TX'
             setStatus={setStatus}
             attrs={{
               palletRpc: 'escrowGateway',
-              callable: 'doSomething',
+              callable: 'call',
               inputParams: [formValue],
               paramFields: [true]
             }}
+          />
+        </Form.Field>
+        <Form.Field style={{ textAlign: 'center' }}>
+          <TxButton
+              accountPair={accountPair}
+              label='Store Something via getStorage'
+              type='SIGNED-TX'
+              setStatus={setStatus}
+              attrs={{
+                palletRpc: 'escrowGateway',
+                callable: 'getStorage',
+                inputParams: [formValue],
+                paramFields: [true]
+              }}
+          />
+        </Form.Field>
+        <Form.Field style={{ textAlign: 'center' }}>
+          <TxButton
+              accountPair={accountPair}
+              label='Store Something via rentProjection'
+              type='SIGNED-TX'
+              setStatus={setStatus}
+              attrs={{
+                palletRpc: 'escrowGateway',
+                callable: 'rentProjection',
+                inputParams: [formValue],
+                paramFields: [true]
+              }}
           />
         </Form.Field>
         <div style={{ overflowWrap: 'break-word' }}>{status}</div>
@@ -76,6 +104,9 @@ function Main (props) {
 
 export default function EscrowGateway (props) {
   const { api } = useSubstrate();
+
+  console.log(JSON.stringify(api, null, 2));
+
   return (api.query.escrowGateway && api.query.escrowGateway.something
     ? <Main {...props} /> : null);
 }

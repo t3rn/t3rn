@@ -46,6 +46,7 @@ decl_event!(
 		/// Event `Something` is declared with a parameter of the type `u32` and `AccountId`
 		/// To emit this event, we call the deposit function, from our runtime functions
 		SomethingStored(u32, AccountId),
+		SomethingCalled(u32, AccountId),
 	}
 );
 
@@ -73,7 +74,7 @@ decl_module! {
 		fn deposit_event() = default;
 
 
-		// As of now empty functions - call, rent_projection, get_storage, but connected to frontend
+		/// As of now empty functions - call, rent_projection, get_storage, but connected to frontend
 		#[weight = 10_000]
 		pub fn call(origin, something: u32) -> dispatch::DispatchResult {
 			// Ensure that the caller is a regular keypair account
@@ -81,9 +82,14 @@ decl_module! {
 			// Print a test message.
 			debug::info!("DEBUG call by: {:?} val = {}", caller, something);
 
+			Something::put(something);
+			// Here we are raising the SomethingCalled event
+			Self::deposit_event(RawEvent::SomethingCalled(something, caller));
+
 			Ok(())
 		}
 
+		/// Just a dummy get_storage entry point.
 		#[weight = 10_000]
 		pub fn rent_projection(origin, something: u32) -> dispatch::DispatchResult {
 			// Ensure that the caller is a regular keypair account
@@ -91,15 +97,25 @@ decl_module! {
 			// Print a test message.
 			debug::info!("DEBUG rent_projection by: {:?} val = {}", caller, something);
 
+			Something::put(something);
+			// Here we are raising the Something event
+			Self::deposit_event(RawEvent::SomethingStored(something, caller));
+
 			Ok(())
 		}
 
+		/// Just a dummy get_storage entry point.
 		#[weight = 10_000]
 		pub fn get_storage(origin, something: u32) -> dispatch::DispatchResult {
 			// Ensure that the caller is a regular keypair account
     		let caller = ensure_signed(origin)?;
 			// Print a test message.
     		 debug::info!("DEBUG get_storage by: {:?} val = {}", caller, something);
+
+			Something::put(something);
+			// Here we are raising the Something event
+			Self::deposit_event(RawEvent::SomethingStored(something, caller));
+
 			Ok(())
 		}
 

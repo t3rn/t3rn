@@ -300,12 +300,6 @@ impl sudo::Trait for Runtime {
 	type Call = Call;
 }
 
-/// Used for the module template in `./template.rs`
-impl template::Trait for Runtime {
-	type Event = Event;
-}
-
-/// Used for the module template in `./template.rs`
 impl escrow_gateway::Trait for Runtime {
 	type Event = Event;
 }
