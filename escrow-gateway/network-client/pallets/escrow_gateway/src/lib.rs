@@ -11,12 +11,15 @@
 
 use frame_support::{decl_module, decl_storage, decl_event, decl_error, dispatch, debug};
 use frame_system::{self as system, ensure_signed};
+use escrow_gateway_primitives::{Phase};
 
 #[cfg(test)]
 mod mock;
 
 #[cfg(test)]
 mod tests;
+
+type AccountId = u64;
 
 /// The pallet's configuration trait.
 pub trait Trait: system::Trait {
@@ -73,18 +76,27 @@ decl_module! {
 		// this is needed only if you are using events in your pallet
 		fn deposit_event() = default;
 
-
-		/// As of now empty functions - call, rent_projection, get_storage, but connected to frontend
+		/// As of now call gets through the general dispatchable call and only receives the current phase.
 		#[weight = 10_000]
-		pub fn call(origin, something: u32) -> dispatch::DispatchResult {
+		pub fn call(origin, phase: Phase) -> dispatch::DispatchResult {
 			// Ensure that the caller is a regular keypair account
     		let caller = ensure_signed(origin)?;
 			// Print a test message.
-			debug::info!("DEBUG call by: {:?} val = {}", caller, something);
-
-			Something::put(something);
-			// Here we are raising the SomethingCalled event
-			Self::deposit_event(RawEvent::SomethingCalled(something, caller));
+			debug::info!("DEBUG call by: {:?} phase = {:?}", caller, phase);
+			match phase {
+				Phase::Execute => {
+					debug::info!("DEBUG Execute");
+					Something::put(0);
+				},
+				Phase::Commit => {
+					debug::info!("DEBUG Commit");
+					Something::put(1);
+				},
+				Phase::Revert => {
+					debug::info!("DEBUG Revert");
+					Something::put(2);
+				}
+			}
 
 			Ok(())
 		}
