@@ -5,5 +5,6 @@ panic = 'unwind'
 members = [
     'node',
     'pallets/escrow_gateway',
+    'contracts-pallet-rc4',
     'runtime',
 ]

@@ -100,6 +100,9 @@ function TxButton ({
       ? api.tx[palletRpc][callable](...transformed)
       : api.tx[palletRpc][callable]();
 
+
+    console.log("SENDING THIS JSON: ", txExecute.sign(fromAcct).toString());
+
     const unsub = await txExecute.signAndSend(fromAcct, txResHandler)
       .catch(txErrHandler);
     setUnsub(() => unsub);

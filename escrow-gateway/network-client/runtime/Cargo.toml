@@ -44,20 +44,20 @@ package = 'pallet-balances'
 tag = 'v2.0.0-rc4'
 version = '2.0.0-rc4'
 
-[dependencies.contracts]
-git = 'https://github.com/paritytech/substrate.git'
-default-features = false
-package = 'pallet-contracts'
-tag = 'v2.0.0-rc4'
-version = '2.0.0-rc4'
-
-[dependencies.contracts-rpc-runtime-api]
-git = 'https://github.com/paritytech/substrate.git'
-default-features = false
-package = 'pallet-contracts-rpc-runtime-api'
-version = '0.8.0-rc4'
-tag = 'v2.0.0-rc4'
-
+#[dependencies.contracts]
+#git = 'https://github.com/paritytech/substrate.git'
+#default-features = false
+#package = 'pallet-contracts'
+#tag = 'v2.0.0-rc4'
+#version = '2.0.0-rc4'
+#
+#[dependencies.contracts-rpc-runtime-api]
+#git = 'https://github.com/paritytech/substrate.git'
+#default-features = false
+#package = 'pallet-contracts-rpc-runtime-api'
+#version = '0.8.0-rc4'
+#tag = 'v2.0.0-rc4'
+#
 [dependencies.contracts-primitives]
 git = 'https://github.com/paritytech/substrate.git'
 default-features = false
@@ -188,6 +188,20 @@ package = 'frame-system'
 tag = 'v2.0.0-rc4'
 version = '2.0.0-rc4'
 
+[dependencies.contracts]
+default-features = false
+package = 'gateway-cp-rc4'
+path = '../contracts-pallet-rc4'
+
+[dependencies.contracts-rpc-runtime-api]
+default-features = false
+package = 'pallet-gateway-cp-rc4-rpc-runtime-api'
+path = '../contracts-pallet-rc4/rpc/runtime-api'
+
+#[dependencies.contracts-primitives]
+#default-features = false
+#package = 'pallet-gateway-cp-rc4-primitives'
+#path = '../../pallets/contracts-pallet-rc4/common'
 
 [dependencies.escrow_gateway]
 default-features = false
