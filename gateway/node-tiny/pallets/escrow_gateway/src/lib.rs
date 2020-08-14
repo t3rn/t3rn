@@ -3,14 +3,14 @@ use sp_std::vec::Vec;
 use codec::{Decode, Encode};
 use frame_support::{debug, decl_error, decl_event, decl_module, ensure, decl_storage, dispatch};
 use frame_system::{self as system, ensure_signed, ensure_none};
-
-use sp_std::vec::Vec;
 use sp_runtime::{
     traits::{Hash},
 };
 use contracts::{BalanceOf, Gas};
 
-use codec::{Decode, Encode};
+#[macro_use]
+mod escrow;
+use crate::escrow::{ContractsEscrowEngine, EscrowExecuteResult};
 
 pub type CodeHash<T> = <T as frame_system::Trait>::Hash;
 
@@ -160,30 +160,37 @@ decl_module! {
 
         /// Just a dummy get_storage entry point.
         #[weight = 10_000]
-        pub fn rent_projection(origin, something: u32) -> dispatch::DispatchResult {
+        pub fn rent_projection(origin, address: T::AccountId) -> dispatch::DispatchResult {
             // Ensure that the caller is a regular keypair account
             let caller = ensure_signed(origin)?;
             // Print a test message.
-            debug::info!("DEBUG rent_projection by: {:?} val = {}", caller, something);
+            debug::info!("DEBUG rent_projection by: {:?} for = {:?}", caller, address);
+            // For now refer to the contracts rent_projection.
+            // In the future rent projection should estimate on % of storage for that address used by escrow account
+            <contracts::Module<T>>::rent_projection(address.clone());
 
-            Something::put(something);
-            // Here we are raising the Something event
-            Self::deposit_event(RawEvent::SomethingStored(something, caller));
+            // Raise an event for debug purposes
+            Self::deposit_event(RawEvent::RentProjectionCalled(address, caller));
 
             Ok(())
         }
 
         /// Just a dummy get_storage entry point.
         #[weight = 10_000]
-        pub fn get_storage(origin, something: u32) -> dispatch::DispatchResult {
-            // Ensure that the caller is a regular keypair account
-            let caller = ensure_signed(origin)?;
+        pub fn get_storage(
+            origin,
+            address: T::AccountId,
+		    key: [u8; 32],
+        ) -> dispatch::DispatchResult {
             // Print a test message.
-            debug::info!("DEBUG get_storage by: {:?} val = {}", caller, something);
 
-            Something::put(something);
-            // Here we are raising the Something event
-            Self::deposit_event(RawEvent::SomethingStored(something, caller));
+            // Read the contract's storage
+            let val = Some(<contracts::Module<T>>::get_storage(address, key));
+
+            debug::info!("DEBUG get_storage by key: {:?} val = {:?} ", key, val);
+
+            // Raise an event for debug purposes
+            Self::deposit_event(RawEvent::GetStorageResult(key.to_vec()));
 
             Ok(())
         }
