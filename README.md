@@ -3,7 +3,7 @@
 t3rn is a protocol for interoperable code execution between multiple blockchains, which makes it safe and simple.
 t3rn consists out of framework & tools to write interoperable code (both as contracts and runtime logic), the execution platform of that code and reusable packages registry - blocks of interoperable logic maintained by decentralised network.
 
-![t3rn protocol](./assets/components.png)
+![t3rn protocol](./specification/assets/components.png)
 
 t3rn facilitates building interoperable solutions in Rust, providing an easy way of writing new Interoperable Contracts or Modules for Runtime, by re-using binaries which are shared and collaboratively added by all of the participants of the decentralised network. The protocol works well with Parachains regardless of whether they support smart contracts or not.
 
@@ -42,7 +42,7 @@ On the other side of the packages, there is always an end-user - someone who use
 
 Gateway is responsible for executing the logic and metadata provided in incoming from the Gateway Circuit message in a context of connecting Parachain.
  
- ![t3rn general architecure](./assets/architecture.png)
+ ![t3rn general architecure](./specification/assets/architecture.png)
 
 
 # Offering
@@ -196,14 +196,14 @@ t3rn can be easily integrated into exising and new Parachains. There is a dedica
 
 Gateway Cicuit shares the context of the overall Interoperable Transaction and passes it over to the Gateways. The context contains all of the necessary data base on the Parachains can decide whether to not proceed with the execution. 
 Gateway Circuit has an access to all of the ongoing Interoperable Transactions and before the execution is started the circuit checks if there is no two transactions changing the same account at the same time. 
-![Gateway Circuit Context](./assets/circuit_context.png)
+![Gateway Circuit Context](./specification/assets/circuit_context.png)
 
 Circuit has several phases, in each phase all Gateways all prompted for the corresponding actions:
 - `Execution` - Execute the Packages on all of the Gateways (either by attaching the binaries or by invoking the execution on a source Parachain). Execution phase finishes after receiving the return message from each Gateway, which includes the execution results and proofs of execution and inclusion on a given Parachain. Circuit verifies those proofs. During that verification Circuit constructs the  `deffered` changes trie, which is stored in the execution context of the entire interoperable transaction and on which Packages can rely on to determine whether the execution of should or should not happen. There is an example, which shows how the execution on one chain checks whether the deposits have been placed in other currencies on their Parachains.  
 - `Revert` - Optional and the last phase, triggered when the execution fails on one of the Gateways or cannot be proved by Circuit during Execution phase. During that phase on each Gateway the changes added to escrow accounts are removed and changes to the accounts pointed in contracts will never be commited.
 - `Commit` - Optional and the last phase, triggered after the Execution phase is succesfully concluded on all of the Gateway and proved by Circuit. During commit changes on each Parachain are commited to the permanent accounts pointed in contracts. After the commit phase changes can no longer be reverted. 
 
-![Gateway Circuit Context](./assets/circuit_phases.png)
+![Gateway Circuit Context](./specification/assets/circuit_phases.png)
 
 
 ```rust
@@ -267,7 +267,7 @@ Provides ways of registering new blockchains, standards, gateways and packages t
 
 Registry is responsible for generating the new contracts for each blockchain (using [instantiate](https://substrate.dev/rustdocs/master/pallet_contracts/enum.Call.html#variant.instantiate)) on t3rn network. Each blockchain has then its own wrapper around all of the available modules, which are accessible from other t3rn packages. That blockchain-specific data is versioned and can be updated as the support for new modules is added.
 
-![Gateway Circuit Context](./assets/srml.png)
+![Gateway Circuit Context](./specification/assets/srml.png)
 
 ##### New Blockchains
 During the registration one needs to specify with which t3rn components does the blockchain support. 
@@ -284,40 +284,8 @@ There can be several ways of registering new blockchains. It can be done either 
 ```
 
 ## [Gateway](gateway_standalone.md)
-#### _Gateway executing packages in the context of a single parachain with multiple phases is the result of the initial development phase of t3rn interoperable protocol, therefore described in a separate document._
+#### Gateway executing packages in the context of a single parachain with multiple phases is the result of the initial development phase of t3rn interoperable protocol, therefore described in a separate document._
 
 ## Development Roadmap 
-#### Milestone 1: [Initial Development Phase - Standalone Gateway & Packages Compilation](initial_development_phase.md)
-
-#### Milestone 2: Gateway Circuit & Registry — 1 Month 
-##### Registry
-- Implement the registry that stores Packages, Standards, Blockchains and Gateways. 
-- Provide the Registry API module to post and get the entities to and from the registry.
-- Register two example blockchians in the registry. 
-##### Circuit
-- Implement Gateway Circuit that sends and receives the messages to and from a gateway.  
-- Implement the Circuit execution that processes the transaction on all affected gateways.
-    - Validate the proofs received from a gateway and store them in the execution context. 
-- Implement the execution phases into the circuit. 
-- Implement the customizable execution order into the phases.
-- Implement the accounts and balances for t3rn packages executioners.
-- Provide Circuit API that receives the singed interoperable transactions and stores them as packages in the registry.
-
-#### Milestone 3: Consensus & Network — 1 Month 
-- Implement consensus and validation system over the Gateway Circuit interoperable execution and proofs.
-- Introduce network validators that form the consensus and host the interoperable execution provided by Gateway Circuit.
-- Introduce the fee model for interoperable execution.
-- Release a test network of t3rn hosting the platform for interoperable execution.
-
-#### Milestone 4: Additional Packages — 1 Month 
-- Implement the swap package, allowing placing and the swap orders for a limited and market price.
-- Implement the SEA package, that consumes the service registered on a different parachain using the swap package. 
-- Demonstrate the SEA package usage by deploying the SEA & swap packages into the testnet network and creating a simple GUI.
-
-## Future Steps 
-- Implement Gateway with XCMP API. 
-- (Opt) Implement Gateway with Bridge API. 
-- Release t3rn as a cryptocurrency and integrate with a 3rd party decentralised exchange. 
-- Implement the transfer auto package that seamlessly exchanges the cryptocurrencies between parachains affected in the interoperable execution.
-- Implement gov module that governs t3rn Registry.
-
+#### Phases 1: [Initial Development Phase - Standalone Gateway & Packages Compilation](./roadmap/initial_development_phase.md)
+#### Following Phases 2-4: [Following Development Phases - Gateway Circuit, Registry, Trustfree Execution, Additional Packages](./roadmap/following_development_phases.md)

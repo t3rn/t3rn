@@ -1,0 +1,10 @@
+{
+  "name": "test-integration",
+  "version": "0.1.0-rc5",
+  "dependencies": {
+    
+  },
+  "scripts": {
+    "test-integration:node-tiny": "./run-node-tiny.sh"
+  }
+}

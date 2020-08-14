@@ -127,11 +127,11 @@ decl_module! {
                     let code_hash_res = <contracts::Module<T>>::put_code(origin.clone(), code.clone());
 
                     debug::info!("DEBUG multistepcall -- contracts::put_code {:?}", code_hash_res);
-                    println!("DEBUG multistepcall -- contracts::put_code {:?}", code_hash_res);
+                    // println!("DEBUG multistepcall -- contracts::put_code {:?}", code_hash_res);
                     code_hash_res.map_err(|_e| <Error<T>>::PutCodeFailure)?;
 
                     let code_hash = T::Hashing::hash(&code);
-                    println!("DEBUG multistepcall -- contracts::put_code code_hash {:?}", code_hash);
+                    // println!("DEBUG multistepcall -- contracts::put_code code_hash {:?}", code_hash);
 
                     // instantiate works - charging accounts in unit tests doesn't
                     // Step 2: contracts::instantiate
