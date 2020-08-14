@@ -20,19 +20,11 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-/// The pallet's configuration trait.
 pub trait Trait: contracts::Trait + system::Trait {
-    // Add other types and constants required to configure this pallet.
-
-    /// The overarching event type.
     type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 }
 
-// This pallet's storage items.
 decl_storage! {
-    // It is important to update your storage name so that your pallet's
-    // storage items are isolated from other pallets.
-    // ---------------------------------vvvvvvvvvvvvvv
     trait Store for Module<T: Trait> as EscrowGateway {
         // Just a dummy storage item.
         // Here we are declaring a StorageValue, `Something` as a Option<u32>
@@ -41,7 +33,6 @@ decl_storage! {
     }
 }
 
-// The pallet's events
 decl_event!(
     pub enum Event<T>
     where
@@ -101,28 +92,26 @@ decl_module! {
 		    input_data: Vec<u8>
         ) -> dispatch::DispatchResult {
             let origin_account = origin.clone();
-
+            // ToDo: Configure Sudo module.
             // Check whether the origin comes from the escrow_account owner.
             // Note: Should be similar as sudo-contracts https://github.com/shawntabrizi/sudo-contract/blob/v1.0/src/lib.rs#L34
             let _sender = ensure_signed(origin_account)?;
-            // ToDo: Configure Sudo module.
             // ensure!(sender == <sudo::Module<T>>::key(), "Sender must be the Escrow Account owner");
-            // dest - destination address of a call is not needed as it will be created on the fly if put_code + instantiate succeed
+            // let escrow_engine = ContractsEscrowEngine::new(&<contracts::Module<T>>::current_schedule());
+            let escrow_engine = ContractsEscrowEngine::new();
 
-             match phase {
+            match phase {
                 0 => {
                     debug::info!("DEBUG Execute");
                     // Step 1: contracts::put_code
                     let code_hash_res = <contracts::Module<T>>::put_code(origin.clone(), code.clone());
 
-                    debug::info!("DEBUG multistepcall -- contracts::put_code {:?}", code_hash_res);
-                    // println!("DEBUG multistepcall -- contracts::put_code {:?}", code_hash_res);
+                    debug::info!("DEBUG multistep_call -- contracts::put_code {:?}", code_hash_res);
                     code_hash_res.map_err(|_e| <Error<T>>::PutCodeFailure)?;
 
                     let code_hash = T::Hashing::hash(&code);
-                    // println!("DEBUG multistepcall -- contracts::put_code code_hash {:?}", code_hash);
 
-                    // instantiate works - charging accounts in unit tests doesn't
+                    // ToDo: Instantiate works - but charging accounts in unit tests doesn't (due to GenesisConfig not present in Balance err)
                     // Step 2: contracts::instantiate
                     // ToDo: Smart way of calculating endowment that would be enough for initialization + one call.
                     // let temp_endowment = BalanceOf::<T>::from(1_000_000 as u32);
@@ -131,27 +120,38 @@ decl_module! {
                     // println!("DEBUG multistepcall -- contracts::instantiate init_res {:?}", init_res);
                     // init_res.map_err(|_e| <Error<T>>::InitializationFailure)?;
 
+                    escrow_engine.feed_escrow_from_contract();
+
                     // // Step 2.5: contracts::contract_address_for
                     // let dest = <contracts::Module<T>>::contract_address_for(code_hash, origin, input_data);
                     //
                     // // Step 3: contracts::bare_call
                     // let call_res = <contracts::Module<T>>::bare_call(origin, dest, value, gas_limit, input_data);
                     // let (exec_result, gas_used) = call_res.ok_or(<Error<T>>::CallFailure)?;
-                    //
+                    let exec_res = escrow_engine.execute().unwrap();
+
                     // // Step 4: Cleanup; contracts::ExecutionContext::terminate
                     // let terminate_res = <contracts::Module<T>>::ExecutionContext::terminate(origin, <contracts::Module<T>>:GasMeter);
+
+                    debug::info!("DEBUG multistep_call -- escrow_engine.execute  {:?}", exec_res);
+                    Self::deposit_event(RawEvent::MultistepExecutionResult(exec_res));
                 },
                 1 => {
-                    debug::info!("DEBUG Commit");
-                    Something::put(1);
+                    let debug_res = escrow_engine.feed_contract_from_escrow();
+                    debug::info!("DEBUG multistep_call -- Commit {}", debug_res);
+                    Self::deposit_event(RawEvent::MultistepCommitResult(debug_res));
+                    Something::put(debug_res);
                 },
                 2 => {
-                    debug::info!("DEBUG Revert");
-                    Something::put(2);
+                    let debug_res = escrow_engine.revert();
+                    debug::info!("DEBUG multistep_call -- Revert {}", debug_res);
+                    Self::deposit_event(RawEvent::MultistepRevertResult(debug_res));
+                    Something::put(debug_res);
                 },
                 _ => {
-                    debug::info!("DEBUG Unknown Phase {}", phase);
-                    Something::put(2);
+                    debug::info!("DEBUG multistep_call -- Unknown Phase {}", phase);
+                    Something::put(phase as u32);
+                    Self::deposit_event(RawEvent::MultistepUnknownPhase(phase));
                 }
             }
 
