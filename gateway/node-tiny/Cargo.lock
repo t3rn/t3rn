@@ -3034,10 +3034,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "node-template"
+name = "node-tiny"
 version = "2.0.0-rc5"
 dependencies = [
- "node-template-runtime",
+ "node-tiny-runtime",
  "sc-basic-authorship",
  "sc-cli",
  "sc-client-api",
@@ -3059,7 +3059,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "node-template-runtime"
+name = "node-tiny-runtime"
 version = "2.0.0-rc5"
 dependencies = [
  "escrow-gateway",
@@ -3068,6 +3068,8 @@ dependencies = [
  "frame-system",
  "pallet-aura",
  "pallet-balances",
+ "pallet-contracts",
+ "pallet-contracts-primitives",
  "pallet-grandpa",
  "pallet-randomness-collective-flip",
  "pallet-sudo",

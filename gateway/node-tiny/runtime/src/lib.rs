@@ -38,6 +38,8 @@ pub use frame_support::{
 	},
 };
 
+pub use contracts::Schedule as ContractsSchedule;
+
 /// Import the template pallet.
 pub use escrow_gateway;
 
@@ -257,8 +259,37 @@ impl sudo::Trait for Runtime {
 	type Call = Call;
 }
 
-/// Configure the pallet template in pallets/template.
-impl template::Trait for Runtime {
+pub const MILLICENTS: Balance = 1_000_000_000;
+pub const CENTS: Balance = 1_000 * MILLICENTS;
+pub const DOLLARS: Balance = 100 * CENTS;
+
+parameter_types! {
+    pub const TombstoneDeposit: Balance = 16 * MILLICENTS;
+    pub const RentByteFee: Balance = 4 * MILLICENTS;
+    pub const RentDepositOffset: Balance = 1000 * MILLICENTS;
+    pub const SurchargeReward: Balance = 150 * MILLICENTS;
+}
+
+impl contracts::Trait for Runtime {
+	type Time = Timestamp;
+	type Randomness = RandomnessCollectiveFlip;
+	type Currency = Balances;
+	type Event = Event;
+	type DetermineContractAddress = contracts::SimpleAddressDeterminer<Runtime>;
+	type TrieIdGenerator = contracts::TrieIdFromParentCounter<Runtime>;
+	type RentPayment = ();
+	type SignedClaimHandicap = contracts::DefaultSignedClaimHandicap;
+	type TombstoneDeposit = TombstoneDeposit;
+	type StorageSizeOffset = contracts::DefaultStorageSizeOffset;
+	type RentByteFee = RentByteFee;
+	type RentDepositOffset = RentDepositOffset;
+	type SurchargeReward = SurchargeReward;
+	type MaxDepth = contracts::DefaultMaxDepth;
+	type MaxValueSize = contracts::DefaultMaxValueSize;
+	type WeightPrice = transaction_payment::Module<Self>;
+}
+
+impl escrow_gateway::Trait for Runtime {
 	type Event = Event;
 }
 
@@ -278,6 +309,7 @@ construct_runtime!(
 		TransactionPayment: transaction_payment::{Module, Storage},
 		Sudo: sudo::{Module, Call, Config<T>, Storage, Event<T>},
 		// Include the custom logic from the template pallet in the runtime.
+	  	Contracts: contracts::{Module, Call, Config, Storage, Event<T>},
 		EscrowGateway: escrow_gateway::{Module, Call, Storage, Event<T>},
 	}
 );
