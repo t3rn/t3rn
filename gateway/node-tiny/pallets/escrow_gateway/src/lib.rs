@@ -14,14 +14,6 @@ use codec::{Decode, Encode};
 
 pub type CodeHash<T> = <T as frame_system::Trait>::Hash;
 
-#[derive(Debug, PartialEq, Encode, Decode, Clone)]
-#[codec(compact)]
-pub enum Phase {
-    Execute,
-    Commit,
-    Revert,
-}
-
 #[cfg(test)]
 mod mock;
 
@@ -56,20 +48,24 @@ decl_event!(
         AccountId = <T as system::Trait>::AccountId,
     {
         /// Just a dummy event.
-        /// Event `Something` is declared with a parameter of the type `u32` and `AccountId`
-        /// To emit this event, we call the deposit function, from our runtime functions
         SomethingStored(u32, AccountId),
-        SomethingCalled(u32, AccountId),
+
+        MultistepExecutionResult(EscrowExecuteResult),
+
+        MultistepCommitResult(u32),
+
+        MultistepRevertResult(u32),
+
+        MultistepUnknownPhase(u8),
+
+        RentProjectionCalled(AccountId, AccountId),
+
+        GetStorageResult(Vec<u8>),
     }
 );
 
-// The pallet's errors
 decl_error! {
     pub enum Error for Module<T: Trait> {
-        /// Value was None
-        NoneValue,
-        /// Value reached maximum and cannot be incremented further
-        StorageOverflow,
 
         PutCodeFailure,
 
