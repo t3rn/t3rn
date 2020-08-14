@@ -1,13 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-
-/// A FRAME pallet template with necessary imports
-
-/// Feel free to remove or edit this file as needed.
-/// If you change the name of this file, make sure to update its references in runtime/src/lib.rs
-/// If you remove this file, you can remove those references
-
-/// For more guidance on Substrate FRAME, see the example pallet
-/// https://github.com/paritytech/substrate/blob/master/frame/example/src/lib.rs
+use sp_std::vec::Vec;
+use codec::{Decode, Encode};
 use frame_support::{debug, decl_error, decl_event, decl_module, ensure, decl_storage, dispatch};
 use frame_system::{self as system, ensure_signed, ensure_none};
 
@@ -215,23 +208,6 @@ decl_module! {
             // Here we are raising the Something event
             Self::deposit_event(RawEvent::SomethingStored(something, who));
             Ok(())
-        }
-
-        /// Another dummy entry point.
-        /// takes no parameters, attempts to increment storage value, and possibly throws an error
-        #[weight = 10_000]
-        pub fn cause_error(origin) -> dispatch::DispatchResult {
-            // Check it was signed and get the signer. See also: ensure_root and ensure_none
-            let _who = ensure_signed(origin)?;
-
-            match Something::get() {
-                None => Err(Error::<T>::NoneValue)?,
-                Some(old) => {
-                    let new = old.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
-                    Something::put(new);
-                    Ok(())
-                },
-            }
         }
     }
 }
