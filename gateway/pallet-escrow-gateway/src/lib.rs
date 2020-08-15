@@ -160,7 +160,10 @@ decl_module! {
 
         /// Just a dummy get_storage entry point.
         #[weight = 10_000]
-        pub fn rent_projection(origin, address: T::AccountId) -> dispatch::DispatchResult {
+        pub fn rent_projection(
+            origin,
+            address: T::AccountId
+        ) -> dispatch::DispatchResult {
             // Ensure that the caller is a regular keypair account
             let caller = ensure_signed(origin)?;
             // Print a test message.
@@ -194,7 +197,6 @@ decl_module! {
 
             Ok(())
         }
-
 
         /// Just a dummy entry point.
         /// function that can be called by the external world as an extrinsics call
