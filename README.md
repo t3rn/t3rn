@@ -289,3 +289,21 @@ There can be several ways of registering new blockchains. It can be done either 
 ## Development Roadmap 
 #### Phases 1: [Initial Development Phase - Standalone Gateway & Packages Compilation](./roadmap/initial_development_phase.md)
 #### Following Phases 2-4: [Following Development Phases - Gateway Circuit, Registry, Trustfree Execution, Additional Packages](./roadmap/following_development_phases.md)
+
+
+## License
+
+Copyright 2020 Maciej Baj.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+---
