@@ -293,6 +293,7 @@ There can be several ways of registering new blockchains. It can be done either 
 
 ## License
 
+---
 Copyright 2020 Maciej Baj.
 
 Licensed under the Apache License, Version 2.0 (the "License");
