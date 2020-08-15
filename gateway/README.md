@@ -12,6 +12,21 @@ The standalone version of the gateway brings additional phases over the regular 
 - Inside `get_storage`: `get_storage`.
 `EscrowGateway` is intended to work within the [Gateway Circuit](https://github.com/t3rn/t3rn#gateway-circuit) which oversees, synchronises and secures the interoperable execution between Parachains involved and communicates with Gateway API.
 
+
+#### Use
+In this repository, `escrow_pallet` is installed twofold: 
+- as `tiny-node`, where the Escrow Gateway is one very few connected pallets. This is extended after [substrate-node-template](https://github.com/substrate-developer-hub/substrate-node-template)
+- as `full-node`, where the Escrow Gateway is connected alongside with all the other pallets. Full node comes as a git submodule of [substrate](https://github.com/paritytech/substrate.git)
+
+
+Run either of them with `bash run-node-tiny.sh` or `bash run-node-full.sh`. 
+
+The node runs on a default for Substrate `ws-port = 9944` & `http-port = 9933`. 
+
+##### Front-end
+You can verify the Escrow Gateway running demo frontend app from [front-end](./front-end) directory, or using the `Extrinsics` tool of [@polkadot/apps](https://github.com/polkadot-js/apps) GUI which is hosted on https://polkadot.js.org/apps/#/extrinsics. Remember to select a "local node" from the left-menu dropdown.
+
+
 #### Installation
 
 Gateway comes with the `EscrowGateway` pallet, which can be integrated into existing and new parachains and their runtimes:
@@ -86,8 +101,8 @@ pub use contracts::Schedule as ContractsSchedule;
 ###### Add pallets to "construct_runtime!"
 Add both `EscrowGateway` and `Contracts` in your `construct_runtime!` macro:
 ```rust
-EscrowGateway: pallet_escrow_gateway::{Module, Call, Config, Storage, Event<T>},
 Contracts: contracts::{Module, Call, Config, Storage, Event<T>},
+EscrowGateway: escrow_gateway::{Module, Call, Storage, Event<T>},
 ```
 In case you missed this step, you will probably see a similar error message:
 ```bash
@@ -191,16 +206,15 @@ Make sure, you're in `pallet-escrow-engine` directory.
 ##### Integration Tests
 `EscrowGateway` comes with the integration tests. 
 
-Integration tests run different integration scenarios against running Substrate node (either `tiny-node` or `full-node`) connecting with its RPC API. Nodes need to have `EscrowGateway` integrated in it. 
+Integration tests run different integration scenarios against running Substrate node (either `tiny-node` or `full-node`) connecting with its Call API dedicated for extrinsics. 
 
-To execute integration tests, got to `integration-test` directory and type:
+For example to run the integration tests against the tiny node:
+1. Build & run a `tiny-node` with `bash run-node-tiny.sh`.
+1. Execute integration tests against `ws:9944` default port: `cd test-integration && npm test`.
 
-`npm run tests-integration:tiny-node` or `npm run tests-integration:full-node`.
-
-
-###### Execute multi-step transaction 
-Tops up randomly generated account - and keeps its credentials. For the time being of each scenario it will become an Escrow Account. That Escrow Account sends the signed transaction against the `multistep_call` API containing valid example code (`returns_from_start_fn.wasm`) and checks the correct results of that execution. 
-
+So far, only the following scenario has been implemented:
+###### - [Execute multi-step transaction](./test-integration/multistep_call.spec.js)
+Uses Alices account as the one that already has some positive balance on it allowing to put_code and instantiate contract. Alice's account from the perspective on the Gateway becomes an Escrow Account. That Escrow Account sends the signed transaction against the `multistep_call` API containing valid example code (`returns_from_start_fn.wasm`) and checks the correct results of that execution by retreving the data about the events - there should be one from the contracts pallet (code is stored_ and one from escrow gateway pallet - mutlistep_call result. 
 
 ### Please refer to the [Gateway specification](../specification/gateway_standalone.md) to find details on the future offer, intended shape and [Development Roadmap](../roadmap/initial_development_phase.md). 
 

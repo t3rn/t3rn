@@ -157,8 +157,9 @@ version = '2.0.0-rc5'
 [dependencies.escrow-gateway]
 default-features = false
 package = 'escrow-gateway'
-path = '../pallets/escrow_gateway'
-version = '2.0.0-rc5'
+git = 'https://github.com/t3rn/t3rn.git'
+branch = 'gateway_milestone_1'
+version = "2.0.0-rc5"
 
 [dependencies.timestamp]
 default-features = false
