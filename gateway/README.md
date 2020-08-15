@@ -209,19 +209,30 @@ pub fn get_storage(
 ###### Description
 Looks for a corresponig to the key value in the storage of contracts's address. As of now, depends and calls solely `contracts::get_storage`. This behaviour will probably remain with no changes.
 
-#### Testing
+### Testing Guide
 _As of now only the behaviour of `execute` phase is checked._
 
-##### Unit Tests
+#### Unit Tests
 `EscrowGateway` comes with unit tests. Module instantiation is complex as the gateway introduces a depencency on the contracts and takes place in `src/mock.rs`.  
 Unit tests consist mainly of the tests of `multistep_call`, passing the valid (`returns_from_start_fn.wasm`) and invalid (`empty`) code  for execution. The unit tests are in `src/test.rs`. 
 
-To execute the unit test and see the debug `println!` messages, type: 
-`cargo test -- --nocapture`.
+To execute the unit test, type: 
+```shell script
+cargo test -- --nocapture
+```
 
 Make sure, you're in `pallet-escrow-engine` directory.
 
-##### Integration Tests
+_While running tests, you may want to change the `debug::info!` to `println!` messages, like for `multistep_call` message:_
+
+```rust
+/// Change debug::info! to println! for test debugging.
+// debug::info!("DEBUG multistep_call -- escrow_engine.execute  {:?}", exec_res);
+println!("DEBUG multistep_call -- escrow_engine.execute  {:?}", exec_res);
+```
+
+
+#### Integration Tests
 `EscrowGateway` comes with the integration tests. 
 
 Integration tests run different integration scenarios against running Substrate node (either `tiny-node` or `full-node`) connecting with its Call API dedicated for extrinsics. 
