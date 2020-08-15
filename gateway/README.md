@@ -178,8 +178,6 @@ fn multistep_call (
     gas_limit: Gas,         // Gas limit for processing the overall tx (instantiate + call).
 ) -> dispatch::DispatchResult
 ```
-###### Example
-// ToDo;
 ###### Description
 Executes provided package within the multi-phase context. Invokes several methods of Contracts Pallet underneath: `put-code`, `instantiate` and `bare_call` in order to execute the package on the fly.
 Depending on the `phase` invokes different behaviour: 
@@ -188,8 +186,28 @@ Depending on the `phase` invokes different behaviour:
 - Commit:  Code results are moved from escrow account to target accounts.
 
 ##### rent_projection
+###### Parameters
+```
+pub fn rent_projection(
+    origin: Origin,         // Origin source of a call.
+    address: T::AccountId   // Contract's address.
+) -> dispatch::DispatchResult {
+```
+###### Description
+Projects the time remaining for contract (accessible by its address) to exist. As of now, depends and calls solely `contracts::rent_projection`.
+Target behaviour should estimate the proportional cost of the storage taken by the contract with corresponding address to the overall escrow account size.
 
 ##### get_storage
+###### Parameters
+```
+pub fn get_storage(
+    origin: Origin,         // Origin source of a call.
+    address: T::AccountId   // Contract's address.
+    key: [u8; 32]           // Key in 32-byte long hex value.
+) -> dispatch::DispatchResult {
+```
+###### Description
+Looks for a corresponig to the key value in the storage of contracts's address. As of now, depends and calls solely `contracts::get_storage`. This behaviour will probably remain with no changes.
 
 #### Testing
 _As of now only the behaviour of `execute` phase is checked._
