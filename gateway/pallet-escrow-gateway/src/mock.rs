@@ -12,7 +12,6 @@ use sp_runtime::{
     Perbill,
 };
 
-
 use contracts::{*, GenesisConfig};
 
 use std::cell::RefCell;
@@ -28,7 +27,7 @@ mod escrow_gateway {
 impl_outer_event! {
 	pub enum MetaEvent for Test {
 		system<T>,
-		balances<T>,
+		pallet_balances<T>,
 		contracts<T>,
 		escrow_gateway<T>,
 	}
@@ -101,7 +100,7 @@ impl Get<u64> for ExistentialDeposit {
     fn get() -> u64 { EXISTENTIAL_DEPOSIT.with(|v| *v.borrow()) }
 }
 
-impl balances::Trait for Test {
+impl pallet_balances::Trait for Test {
     type Balance = u64;
     type Event = MetaEvent;
     type DustRemoval = ();
@@ -126,7 +125,7 @@ impl Convert<Weight, BalanceOf<Self>> for Test {
 }
 
 type Timestamp = pallet_timestamp::Module<Test>;
-type Balances = balances::Module<Test>;
+pub type Balances = pallet_balances::Module<Test>;
 type System = system::Module<Test>;
 
 impl contracts::Trait for Test {
@@ -170,7 +169,7 @@ impl system::Trait for Test {
     type MaximumBlockLength = MaximumBlockLength;
     type Version = ();
     type ModuleToIndex = ();
-    type AccountData = balances::AccountData<u64>;
+    type AccountData = pallet_balances::AccountData<u64>;
     type OnNewAccount = ();
     type OnKilledAccount = ();
     type SystemWeightInfo = ();
@@ -213,11 +212,9 @@ impl ExtBuilder {
     pub fn build(self) -> sp_io::TestExternalities {
         self.set_associated_consts();
         let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
-        // ToDo: balances::GenesisConfig::<Test> {
-        //     |                   ^^^^^^^^^^^^^ not found in `balances`
-        // balances::GenesisConfig::<Test> {
-        //     balances: vec![],
-        // }.assimilate_storage(&mut t).unwrap();
+        pallet_balances::GenesisConfig::<Test> {
+            balances: vec![],
+        }.assimilate_storage(&mut t).unwrap();
         GenesisConfig {
             current_schedule: Schedule {
                 // enable_prinltn: true,
