@@ -114,16 +114,17 @@ decl_module! {
                     // ToDo: Instantiate works - but charging accounts in unit tests doesn't (due to GenesisConfig not present in Balance err)
                     // Step 2: contracts::instantiate
                     // ToDo: Smart way of calculating endowment that would be enough for initialization + one call.
-                    // let temp_endowment = BalanceOf::<T>::from(1_000_000 as u32);
-                    //
-                    // let init_res = <contracts::Module<T>>::instantiate(origin, temp_endowment, gas_limit, code_hash, input_data);
-                    // println!("DEBUG multistepcall -- contracts::instantiate init_res {:?}", init_res);
-                    // init_res.map_err(|_e| <Error<T>>::InitializationFailure)?;
+                    let temp_endowment = BalanceOf::<T>::from(187_500_000 as u32);
+
+                    let init_res = <contracts::Module<T>>::instantiate(origin, temp_endowment, gas_limit, code_hash, input_data);
+                    println!("DEBUG multistepcall -- contracts::instantiate init_res {:?}", init_res);
+                    init_res.map_err(|_e| <Error<T>>::InitializationFailure)?;
 
                     escrow_engine.feed_escrow_from_contract();
 
                     // // Step 2.5: contracts::contract_address_for
                     // let dest = <contracts::Module<T>>::contract_address_for(code_hash, origin, input_data);
+                    // let dest = <Runtime as contracts::Trait>::DetermineContractAddress::contract_address_for(code_hash, origin, input_data);
                     //
                     // // Step 3: contracts::bare_call
                     // let call_res = <contracts::Module<T>>::bare_call(origin, dest, value, gas_limit, input_data);

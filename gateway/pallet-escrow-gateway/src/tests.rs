@@ -29,12 +29,17 @@ const EXECUTE_PHASE: u8 = 0;
 const REVERT_PHASE: u8  = 1;
 const COMMIT_PHASE: u8  = 2;
 
+
+const ALICE: u64 = 1;
+const BOB: u64 = 2;
+const CHARLIE: u64 = 3;
+
 fn default_multistep_call_args () -> (u8, Vec<u8>, Vec<u8>, BalanceOf<Test>, Gas) {
     let phase = 0 as u8;
     let code: Vec<u8> = Vec::new();
     let input_data: Vec<u8> = Vec::new();
     let value = BalanceOf::<Test>::from(500_000 as u64);
-    let gas_limit: Gas = 187_500_000; // Actual gas costs of "return_from_start_fn" instantiation
+    let gas_limit: Gas = 201_000_000; // Actual gas costs of "return_from_start_fn" instantiation cost.
     return (phase, code, input_data, value, gas_limit);
 }
 
@@ -44,11 +49,30 @@ fn during_execution_phase_when_given_empty_wasm_code_multistep_call_gives_put_co
 
     new_test_ext().execute_with(|| {
         assert_noop!(
-            EscrowGateway::multistep_call(Origin::signed(1), phase, code, value, gas_limit, input_data),
+            EscrowGateway::multistep_call(Origin::signed(ALICE), phase, code, value, gas_limit, input_data),
             Error::<Test>::PutCodeFailure
         );
     });
 }
+
+#[test]
+#[ignore] // Fix correct expected error in test
+fn during_execution_phase_when_given_correct_wasm_code_but_too_little_gas_limit_multistep_call_gives_initiate_error() {
+    let (phase, _, input_data, value, mut gas_limit) = default_multistep_call_args();
+    let correct_wasm_path = Path::new("src/fixtures/return_from_start_fn.wasm");
+    let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
+    // Make the gas limit too little
+    gas_limit = gas_limit - 1;
+
+    new_test_ext_builder(50).execute_with(|| {
+        let _ = Balances::deposit_creating(&ALICE, 10_000_000_000);
+        assert_noop!(
+            EscrowGateway::multistep_call(Origin::signed(ALICE), phase, correct_wasm_code, value, gas_limit, input_data),
+            Error::<Test>::InitializationFailure
+        );
+    });
+}
+
 
 #[test]
 fn during_execution_phase_when_given_correct_wasm_code_multistep_call_succeeds() {
@@ -56,9 +80,12 @@ fn during_execution_phase_when_given_correct_wasm_code_multistep_call_succeeds()
     let correct_wasm_path = Path::new("src/fixtures/return_from_start_fn.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
 
-    new_test_ext_builder(1_000_000_000).execute_with(|| {
+    new_test_ext_builder(50).execute_with(|| {
+
+        let _ = Balances::deposit_creating(&ALICE, 10_000_000_000);
+
         assert_ok!(
-            EscrowGateway::multistep_call(Origin::signed(1), phase, correct_wasm_code, value, gas_limit, input_data)
+            EscrowGateway::multistep_call(Origin::signed(ALICE), phase, correct_wasm_code, value, gas_limit, input_data)
         );
     });
 }
