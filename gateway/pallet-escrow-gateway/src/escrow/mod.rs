@@ -23,8 +23,8 @@ impl ContractsEscrowEngine {
     }
 
     // Executes the wasm code and copies all of the changes made to the temporary account created for the contract.
-    pub fn execute(&self) -> Result<EscrowExecuteResult, Error> {
-        Ok(EscrowExecuteResult { result: vec![0 as u8, 1 as u8, 2 as u8, 3 as u8]})
+    pub fn execute(&self, input: Vec<u8>) -> Result<EscrowExecuteResult, Error> {
+        Ok(EscrowExecuteResult { result: input})
     }
 
     pub fn revert(&self) -> u32 {

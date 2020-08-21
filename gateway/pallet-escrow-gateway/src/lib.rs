@@ -138,20 +138,20 @@ decl_module! {
 
                     escrow_engine.feed_escrow_from_contract();
 
-                    // // Step 2.5: contracts::contract_address_for
-                    // let dest = <contracts::Module<T>>::contract_address_for(code_hash, origin, input_data);
-                    // let dest = <Runtime as contracts::Trait>::DetermineContractAddress::contract_address_for(code_hash, origin, input_data);
-                    //
-                    // // Step 3: contracts::bare_call
-                    // let call_res = <contracts::Module<T>>::bare_call(origin, dest, value, gas_limit, input_data);
-                    // let (exec_result, gas_used) = call_res.ok_or(<Error<T>>::CallFailure)?;
-                    let exec_res = escrow_engine.execute().unwrap();
+                    // Step 3: contracts::bare_call
+                    let bare_call_res = <contracts::Module<T>>::bare_call(_sender, dest, value, gas_limit, input_data.clone());
+                    let (exec_result, bare_call_gas_used) = (bare_call_res.0.unwrap(), bare_call_res.1);
+
+                    ensure!(exec_result.is_success() == true, "Contract::bare_call failed to succeed");
+                    println!("DEBUG multistepcall -- contracts::bare_call result = {:?}, flags = {:?}, gas used = {:?}", exec_result.data, exec_result.flags, bare_call_gas_used);
+
+                    let escrow_exec_result = escrow_engine.execute(exec_result.data).unwrap();
 
                     // // Step 4: Cleanup; contracts::ExecutionContext::terminate
                     // let terminate_res = <contracts::Module<T>>::ExecutionContext::terminate(origin, <contracts::Module<T>>:GasMeter);
 
-                    debug::info!("DEBUG multistep_call -- escrow_engine.execute  {:?}", exec_res);
-                    Self::deposit_event(RawEvent::MultistepExecutionResult(exec_res));
+                    debug::info!("DEBUG multistep_call -- escrow_engine.execute  {:?}", escrow_exec_result);
+                    Self::deposit_event(RawEvent::MultistepExecutionResult(escrow_exec_result));
                 },
                 1 => {
                     let debug_res = escrow_engine.feed_contract_from_escrow();
