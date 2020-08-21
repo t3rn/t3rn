@@ -2,11 +2,13 @@
 use sp_std::vec::Vec;
 use codec::{Decode, Encode};
 use frame_support::{debug, decl_error, decl_event, decl_module, ensure, decl_storage, dispatch};
-use frame_system::{self as system, ensure_signed, ensure_none};
+
+use frame_system::{self as system, ensure_signed, ensure_none, Phase};
 use sp_runtime::{
     traits::{Hash},
 };
-use contracts::{BalanceOf, Gas};
+
+use contracts::{BalanceOf, Gas, ContractAddressFor};
 
 #[macro_use]
 mod escrow;
@@ -116,9 +118,23 @@ decl_module! {
                     // ToDo: Smart way of calculating endowment that would be enough for initialization + one call.
                     let temp_endowment = BalanceOf::<T>::from(187_500_000 as u32);
 
-                    let init_res = <contracts::Module<T>>::instantiate(origin, temp_endowment, gas_limit, code_hash, input_data);
+                    let init_res = <contracts::Module<T>>::instantiate(origin, temp_endowment, gas_limit, code_hash, input_data.clone());
                     println!("DEBUG multistepcall -- contracts::instantiate init_res {:?}", init_res);
+
                     init_res.map_err(|_e| <Error<T>>::InitializationFailure)?;
+                    // Last event should be now RawEvent::Instantiate from contracts/exec/instantiate
+                    // FixMe: This is fragile and relies heavily on the current implementantation of contracts pallet.
+                    let events = system::Module::<T>::events();
+                    let contract_instantiated_event = events.last().clone().unwrap();
+                    ensure!(contract_instantiated_event.phase == Phase::Initialization, "Contract wasn't instantiated in the system for the current multistep_call");
+                    // Step 2.5: contracts::contract_address_for for establishing the temporary contracts' address
+                    let dest = T::DetermineContractAddress::contract_address_for(
+                            &code_hash,
+                            &input_data.clone(),
+                            &_sender
+                    );
+
+                    println!("DEBUG multistepcall -- contracts::instantiate new destination address = {}, event = {:?}", dest, contract_instantiated_event.event);
 
                     escrow_engine.feed_escrow_from_contract();
 
