@@ -2,6 +2,7 @@
 
 use crate::{mock::*, Error};
 use frame_support::{assert_noop, assert_ok, weights::Weight,
+                    assert_err_ignore_postinfo, assert_err,
                     traits::{Currency, Get, ReservableCurrency},
 };
 use escrow_gateway_primitives::{Phase};
@@ -56,7 +57,6 @@ fn during_execution_phase_when_given_empty_wasm_code_multistep_call_gives_put_co
 }
 
 #[test]
-#[ignore] // Fix correct expected error in test
 fn during_execution_phase_when_given_correct_wasm_code_but_too_little_gas_limit_multistep_call_gives_initiate_error() {
     let (phase, _, input_data, value, mut gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new("src/fixtures/return_from_start_fn.wasm");
@@ -66,7 +66,7 @@ fn during_execution_phase_when_given_correct_wasm_code_but_too_little_gas_limit_
 
     new_test_ext_builder(50).execute_with(|| {
         let _ = Balances::deposit_creating(&ALICE, 10_000_000_000);
-        assert_noop!(
+        assert_err!(
             EscrowGateway::multistep_call(Origin::signed(ALICE), phase, correct_wasm_code, value, gas_limit, input_data),
             Error::<Test>::InitializationFailure
         );
