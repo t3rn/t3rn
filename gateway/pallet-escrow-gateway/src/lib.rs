@@ -73,12 +73,11 @@ decl_error! {
 // The pallet's dispatchable functions.
 decl_module! {
     /// The module declaration.
-    pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+    pub struct Module<T: Trait> for enum Call where origin: <T as frame_system::Trait>::Origin {
         // Initializing errors
         // this includes information about your errors in the node's metadata.
         // it is needed only if you are using errors in your pallet
         type Error = Error<T>;
-
         // Initializing events
         // this is needed only if you are using events in your pallet
         fn deposit_event() = default;
@@ -104,11 +103,11 @@ decl_module! {
 
             match phase {
                 0 => {
-                    debug::info!("DEBUG Execute");
+                    println!("DEBUG Execute");
                     // Step 1: contracts::put_code
                     let code_hash_res = <contracts::Module<T>>::put_code(origin.clone(), code.clone());
 
-                    debug::info!("DEBUG multistep_call -- contracts::put_code {:?}", code_hash_res);
+                    println!("DEBUG multistep_call -- contracts::put_code {:?}", code_hash_res);
                     code_hash_res.map_err(|_e| <Error<T>>::PutCodeFailure)?;
 
                     let code_hash = T::Hashing::hash(&code);
@@ -139,16 +138,16 @@ decl_module! {
                     escrow_engine.feed_escrow_from_contract();
 
                     // Step 3: contracts::bare_call
-                    let bare_call_res = <contracts::Module<T>>::bare_call(_sender, dest, value, gas_limit, input_data.clone());
-                    let (exec_result, bare_call_gas_used) = (bare_call_res.0.unwrap(), bare_call_res.1);
+                    let (exec_result, bare_call_gas_used) = <contracts::Module<T>>::bare_call(_sender, dest, value, gas_limit, input_data.clone());
+                    let exec_result_retval = exec_result.map_err(|_e| <Error<T>>::CallFailure)?;
 
-                    ensure!(exec_result.is_success() == true, "Contract::bare_call failed to succeed");
-                    println!("DEBUG multistepcall -- contracts::bare_call result = {:?}, flags = {:?}, gas used = {:?}", exec_result.data, exec_result.flags, bare_call_gas_used);
+                    println!("DEBUG multistepcall -- contracts::bare_call result = {:?}, flags = {:?}, gas used = {:?}", exec_result_retval.data, exec_result_retval.flags, bare_call_gas_used);
 
-                    let escrow_exec_result = escrow_engine.execute(exec_result.data).unwrap();
+                    let escrow_exec_result = escrow_engine.execute(exec_result_retval.data).unwrap();
+                    let mut gas_meter = GasMeter::<T>::new(gas_limit);
 
                     // // Step 4: Cleanup; contracts::ExecutionContext::terminate
-                    // let terminate_res = <contracts::Module<T>>::ExecutionContext::terminate(origin, <contracts::Module<T>>:GasMeter);
+                    // let terminate_res = ExecutionContext::terminate(origin, gas_meter);
 
                     debug::info!("DEBUG multistep_call -- escrow_engine.execute  {:?}", escrow_exec_result);
                     Self::deposit_event(RawEvent::MultistepExecutionResult(escrow_exec_result));
@@ -179,7 +178,7 @@ decl_module! {
         #[weight = 10_000]
         pub fn rent_projection(
             origin,
-            address: T::AccountId
+            address: <T as frame_system::Trait>::AccountId
         ) -> dispatch::DispatchResult {
             // Ensure that the caller is a regular keypair account
             let caller = ensure_signed(origin)?;
@@ -199,7 +198,7 @@ decl_module! {
         #[weight = 10_000]
         pub fn get_storage(
             origin,
-            address: T::AccountId,
+            address: <T as frame_system::Trait>::AccountId,
 		    key: [u8; 32],
         ) -> dispatch::DispatchResult {
             // Print a test message.

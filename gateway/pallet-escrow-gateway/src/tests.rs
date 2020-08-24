@@ -30,7 +30,6 @@ const EXECUTE_PHASE: u8 = 0;
 const REVERT_PHASE: u8  = 1;
 const COMMIT_PHASE: u8  = 2;
 
-
 const ALICE: u64 = 1;
 const BOB: u64 = 2;
 const CHARLIE: u64 = 3;
@@ -72,7 +71,6 @@ fn during_execution_phase_when_given_correct_wasm_code_but_too_little_gas_limit_
         );
     });
 }
-
 
 #[test]
 fn during_execution_phase_when_given_correct_wasm_code_multistep_call_succeeds() {
