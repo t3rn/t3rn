@@ -41,18 +41,10 @@ tag = 'v2.0.0-rc6'
 version = '2.0.0-rc6'
 
 [dependencies.contracts]
-git = 'https://github.com/paritytech/substrate.git'
+path = '../pallet-contracts-copy'
 default-features = false
 package = 'pallet-contracts'
-tag = 'v2.0.0-rc5'
-version = '2.0.0-rc5'
-
-[dependencies.contracts-primitives]
-git = 'https://github.com/paritytech/substrate.git'
-default-features = false
-package = 'pallet-contracts-primitives'
-tag = 'v2.0.0-rc5'
-version = '2.0.0-rc5'
+version = '2.0.0-rc6'
 
 [dependencies.sp-std]
 default-features = false

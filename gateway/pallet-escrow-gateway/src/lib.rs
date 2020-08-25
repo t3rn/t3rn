@@ -8,7 +8,14 @@ use sp_runtime::{
     traits::{Hash},
 };
 
-use contracts::{BalanceOf, Gas, ContractAddressFor};
+use contracts::{BalanceOf, Gas, ContractAddressFor, GasMeter, TrieIdGenerator};
+
+// The hard copy that exposed hidden by default features of contracts
+use contracts::{
+    wasm::{WasmVm, WasmLoader, prepare::prepare_contract},
+    exec::{ExecutionContext, Vm},
+    Config
+};
 
 #[macro_use]
 mod escrow;
@@ -70,6 +77,30 @@ decl_error! {
     }
 }
 
+// fn execute<E: Ext>(
+//     wat: &str,
+//     schedule: Schedule,
+//     input_data: Vec<u8>,
+//     ext: E,
+//     gas_meter: &mut GasMeter<E::T>,
+// ) -> ExecResult {
+//     let wasm = wat::parse_str(wat).unwrap();
+//     // let schedule = crate::Schedule::default();
+//     let prefab_module =
+//         prepare_contract::<super::runtime::Env>(&wasm, &schedule).unwrap();
+//
+//     let exec = WasmExecutable {
+//         // Use a "call" convention.
+//         entrypoint_name: "call",
+//         prefab_module,
+//     };
+//
+//     let cfg = Default::default();
+//     let vm = WasmVm::new(&cfg);
+//
+//     vm.execute(&exec, ext, input_data, gas_meter)
+// }
+
 // The pallet's dispatchable functions.
 decl_module! {
     /// The module declaration.
@@ -127,10 +158,10 @@ decl_module! {
                     let contract_instantiated_event = events.last().clone().unwrap();
                     ensure!(contract_instantiated_event.phase == Phase::Initialization, "Contract wasn't instantiated in the system for the current multistep_call");
                     // Step 2.5: contracts::contract_address_for for establishing the temporary contracts' address
-                    let dest = T::DetermineContractAddress::contract_address_for(
+                    let mut dest = T::DetermineContractAddress::contract_address_for(
                             &code_hash,
                             &input_data.clone(),
-                            &_sender
+                            &_sender.clone()
                     );
 
                     println!("DEBUG multistepcall -- contracts::instantiate new destination address = {}, event = {:?}", dest, contract_instantiated_event.event);
@@ -138,16 +169,26 @@ decl_module! {
                     escrow_engine.feed_escrow_from_contract();
 
                     // Step 3: contracts::bare_call
-                    let (exec_result, bare_call_gas_used) = <contracts::Module<T>>::bare_call(_sender, dest, value, gas_limit, input_data.clone());
+                    let (exec_result, bare_call_gas_used) = <contracts::Module<T>>::bare_call(_sender.clone(), dest.clone(), value, gas_limit, input_data.clone());
                     let exec_result_retval = exec_result.map_err(|_e| <Error<T>>::CallFailure)?;
 
                     println!("DEBUG multistepcall -- contracts::bare_call result = {:?}, flags = {:?}, gas used = {:?}", exec_result_retval.data, exec_result_retval.flags, bare_call_gas_used);
 
-                    let escrow_exec_result = escrow_engine.execute(exec_result_retval.data).unwrap();
-                    let mut gas_meter = GasMeter::<T>::new(gas_limit);
+                    let escrow_exec_result = escrow_engine.execute(exec_result_retval.data.clone()).unwrap();
 
-                    // // Step 4: Cleanup; contracts::ExecutionContext::terminate
-                    // let terminate_res = ExecutionContext::terminate(origin, gas_meter);
+                    // Step 4: Cleanup; contracts::ExecutionContext::terminate
+                    let mut gas_meter = GasMeter::<T>::new(gas_limit * 10);
+                    let cfg = Config::<T>::preload();
+                    let vm = WasmVm::new(&cfg.schedule);
+                    let loader = WasmLoader::new(&cfg.schedule);
+                    let mut ctx = ExecutionContext::top_level(_sender.clone(), &cfg, &vm, &loader);
+                    let trie_id = T::TrieIdGenerator::trie_id(&dest.clone());
+                    ctx.with_nested_context(dest.clone(), trie_id.clone(), |nested| {
+                        use contracts::exec::Ext;
+			            let mut call_ctx = nested.new_call_context(_sender.clone(), value);
+			            let t = call_ctx.terminate(&dest.clone(), &mut gas_meter);
+			            Ok(exec_result_retval)
+                    });
 
                     debug::info!("DEBUG multistep_call -- escrow_engine.execute  {:?}", escrow_exec_result);
                     Self::deposit_event(RawEvent::MultistepExecutionResult(escrow_exec_result));
