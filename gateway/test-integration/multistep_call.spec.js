@@ -17,16 +17,29 @@ beforeAll(() => {
 	jest.setTimeout(20000);
 });
 
+// Set "tiny" as a default node. That is used to either set or unset types: { Address: "AccountId", LookupSource: "AccountId" }.
+// If set improperly, it would result in the error:
+// "Verification Error: Execution: Could not convert parameter `tx` between node and runtime: No such variant in enum MultiSignature"
+function pickTypesBasedOnNodeType () {
+	const NODE = process.env.NODE || 'tiny';
+	const types = {
+		EscrowExecuteResult: { result: Bytes }
+	};
+	if (NODE === 'tiny') {
+		types['Address'] = 'AccountId';
+		types['LookupSource'] = 'AccountId';
+	}
+	return types;
+}
+
+const types = pickTypesBasedOnNodeType();
+
 beforeEach(
 	async function (done) {
 		api = await ApiPromise.create({ provider: new WsProvider(WSURL),
 			// That's really important for the API not to crash while sending and receiving the transactions.
 			// See all of the problems highlighted in https://polkadot.js.org/api/start/FAQ.html
-			types: {
-				Address: "AccountId",
-				LookupSource: "AccountId",
-				EscrowExecuteResult: { result: Bytes }
-			}, jsonrpc });
+			types, jsonrpc });
 		return done();
 	}
 );

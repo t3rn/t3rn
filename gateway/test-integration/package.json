@@ -17,6 +17,7 @@
     "jest": "^24.9.0"
   },
   "scripts": {
-    "test": "jest"
+    "test:full": "NODE=full jest",
+    "test:tiny": "NODE=tiny jest"
   }
 }

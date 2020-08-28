@@ -239,7 +239,7 @@ Integration tests run different integration scenarios against running Substrate 
 
 For example to run the integration tests against the tiny node:
 1. Build & run a `tiny-node` with `bash run-node-tiny.sh`.
-1. Execute integration tests against `ws:9944` default port: `cd test-integration && npm test`.
+1. Execute integration tests against `ws:9944` default port: `cd test-integration && npm test:tiny` or `cd test-integration && npm test:full`.
 
 So far, only the following scenario has been implemented:
 ###### - [Execute multi-step transaction](./test-integration/multistep_call.spec.js)
