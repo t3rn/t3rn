@@ -16,10 +16,15 @@ The standalone version of the gateway brings additional phases over the regular 
 #### Use
 In this repository, `escrow_pallet` is installed twofold: 
 - as `tiny-node`, where the Escrow Gateway is one very few connected pallets. This is extended after [substrate-node-template](https://github.com/substrate-developer-hub/substrate-node-template)
-- as `full-node`, where the Escrow Gateway is connected alongside with all the other pallets. Full node comes as a git submodule of [substrate](https://github.com/paritytech/substrate.git)
+- as `full-node`, where the Escrow Gateway is connected alongside with all the other pallets. Full node comes as a git submodule of [substrate](https://github.com/paritytech/substrate.git). 
 
+To use a full node you will have to initialize the repository as a git submodule first:
+```
+git submodule init 
+git submodule update
+```
 
-Run either of them with `bash run-node-tiny.sh` or `bash run-node-full.sh`. 
+Run either a tiny or full node with `bash run-node-tiny.sh` or `bash run-node-full.sh`. 
 
 The node runs on a default for Substrate `ws-port = 9944` & `http-port = 9933`. 
 
