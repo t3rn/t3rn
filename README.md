@@ -283,7 +283,7 @@ There can be several ways of registering new blockchains. It can be done either 
     #[t3rn::register::chain::new('FlipperChain', t3rn::gateway::xcmp, t3rn::modules::support::{Flipper}, version = "0.0.0")]
 ```
 
-## [Gateway](https://github.com/t3rn/t3rn/blob/development/gateway/README.md)
+## [Gateway](/specification/gateway_standalone.md)
 #### Gateway executing packages in the context of a single parachain with multiple phases is the result of the initial development phase of t3rn interoperable protocol, therefore described in a separate document._
 
 ## Development Roadmap 
