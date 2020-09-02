@@ -4,6 +4,7 @@ t3rn comes with the standalone Gateway pallet for multi-steps transaction proces
 
 The standalone version of the gateway brings additional phases over the regular runtime execution - commit and revert, due to which effects of the execution can be reverted and never committed to the target accounts. This is possible, as after the execution phase the changes are made only to the child storage of dedicated on that parachain Escrow Account, which acts as a regular account from the perspective of a parachain, therefore all of the changes to its storage are secured by the consensus effective in that parachain and can be relied on by already integrated services. 
 
+
 ### Standalone Gateway vs Interoperable Circuit
 Creating the standalone Gateway constitutes the first phase of work on the interoperable t3rn protocol. As a result of that phase, Gateway comes as the pallet which can be included in parachains as an additional utility that brings multiple phases and reversibility into execution. Within the standalone Gateway, developers can create the reversible logic within the context of a single parachain.
 The appropriate tools for the compilation of contracts and modules that work on the multiple phases environment operated by the Gateway are also the result of the first development phase.  
@@ -380,21 +381,7 @@ During the `Commit` phase Engine is responsible for moving the changes stashed w
 During the ` Revert` phase Engine invalidates the changes of previous phases by setting `EscrowRevertRecord` to the Escrow Account storage. The changes were never added to the state of target accounts, so no action needed there. 
 
 
-![Gateway Engine](./assets/gateway_engine.png)
-
-#### API
-Provides the abstract of API of the gateway connecting a given parachain with the t3rn network operated by Gateway Circuit or any other trusted service holding the authorisation keys.
-
-In the initial development phase Gateway API consists out of RPC endpoints:
-`multistep_call` - execute a package within the multi-phase context,
-`rent_projection` - estimate cost of the package execution.
-
-In the later development phases Gateway API can include the following implementations:
-- XCMP Gateway: implements the message exchange using XCMP and Spree protocol.
-- Parity Bridge Gateway: simulates the message exchange between two blockchains that communication over [Parity Bridge](https://github.com/paritytech/parity-bridge).
-- Simulated Gateway: simulates the message exchange, which is helpful during development
-
-Eventually, the Gateway API will most likely look like XCMP, nevertheless, it's important to keep the API abstracted from a specific implementation to open up the possibility for the blockchains from outside of the Polkadot network to conform their own protocols/bridges and implement the secure message exchange.
+![Gateway Engine](../specification/assets/gateway_engine.png)
 
 ## Development Roadmap 
-#### [Initial Development Phase - Standalone Gateway & Packages Compilation](initial_development_phase.md)
+#### [Initial Development Phase - Standalone Gateway & Packages Compilation](../roadmap/initial_development_phase.md)
