@@ -1,6 +1,6 @@
 [package]
 name = "escrow-gateway-primitives"
-version = "2.0.0-rc5"
+version = "2.0.0-rc6"
 authors = ["Maciej Baj <maciej@maciejbaj.com>"]
 edition = "2018"
 license = "Apache-2.0"
