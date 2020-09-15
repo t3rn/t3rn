@@ -265,43 +265,24 @@ decl_module! {
 				_ => Err(Error::<T>::InitializationFailure)?
 			};
 
-                    // Step 4: Cleanup; contracts::ExecutionContext::terminate
-                    let mut gas_meter = GasMeter::<T>::new(gas_limit * 10);
-                    let cfg = Config::<T>::preload();
-                    let vm = WasmVm::new(&cfg.schedule);
-                    let loader = WasmLoader::new(&cfg.schedule);
-                    let mut ctx = ExecutionContext::top_level(_sender.clone(), &cfg, &vm, &loader);
-                    let trie_id = T::TrieIdGenerator::trie_id(&dest.clone());
-                    ctx.with_nested_context(dest.clone(), trie_id.clone(), |nested| {
-                        use contracts::exec::Ext;
-			            let mut call_ctx = nested.new_call_context(_sender.clone(), value);
-			            let t = call_ctx.terminate(&dest.clone(), &mut gas_meter);
-			            Ok(exec_result_retval)
-                    });
+            <DeferredTransfers<T>>::insert(&requester, &dest.clone(), transfers);
+            println!("DEBUG multistepcall -- DeferredTransfers get {:?}", <DeferredTransfers<T>>::get(&requester, &dest.clone()));
 
-                    debug::info!("DEBUG multistep_call -- escrow_engine.execute  {:?}", escrow_exec_result);
-                    Self::deposit_event(RawEvent::MultistepExecutionResult(escrow_exec_result));
-                },
-                1 => {
-                    let debug_res = escrow_engine.feed_contract_from_escrow();
-                    debug::info!("DEBUG multistep_call -- Commit {}", debug_res);
-                    Self::deposit_event(RawEvent::MultistepCommitResult(debug_res));
-                    Something::put(debug_res);
-                },
-                2 => {
-                    let debug_res = escrow_engine.revert();
-                    debug::info!("DEBUG multistep_call -- Revert {}", debug_res);
-                    Self::deposit_event(RawEvent::MultistepRevertResult(debug_res));
-                    Something::put(debug_res);
-                },
-                _ => {
-                    debug::info!("DEBUG multistep_call -- Unknown Phase {}", phase);
-                    Something::put(phase as u32);
-                    Self::deposit_event(RawEvent::MultistepUnknownPhase(phase));
-                }
-            }
+            // Present the storage proof by getting the newly created storage contract info.
+            let contract_info = <ContractInfoOf<T>>::get(dest.clone()).unwrap().get_alive().unwrap();
+            let cti = contract_info.child_trie_info();
+            println!("DEBUG multistepcall -- contract_info {:?} cti {:?}", contract_info, cti);
+            // Present the execution proof by hashing the results.
+            let exec_res_hash = T::Hashing::hash(&exec_res_val.data);
+            println!("DEBUG multistepcall -- exec proof orig {:?} hash {:?}", exec_res_val.data, exec_res_hash);
 
-            Ok(())
+            // Present the deffered transfers by getting the underlying storage key for transfers.
+            // ToDo: As of now that doesn't work as the Escrow Contract needs to be registered as a contract itself first.
+            // let escrow_contract_info = <ContractInfoOf::<T>>::get(&escrow_account).unwrap().get_alive().unwrap();
+            // let ecti = escrow_contract_info.child_trie_info();
+            println!("DEBUG multistepcall -- DeferredTransfers get {:?}", <DeferredTransfers<T>>::get(&requester, &dest.clone()));
+		    // child::get_raw(&crate::child_trie_info(&contract_info.trie_id), &blake2_256(&requester))
+           Ok(())
         }
 
         /// Just a dummy get_storage entry point.
