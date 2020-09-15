@@ -33,13 +33,20 @@ const COMMIT_PHASE: u8  = 2;
 const ALICE: u64 = 1;
 const BOB: u64 = 2;
 const CHARLIE: u64 = 3;
+const DAVE: u64 = 4;
 
+/**
+ BASE GAS COSTS:
+  - INSTANTIATE = 175 * 500_000
+  - CALL = 135 * 500_000
+  - total = 310 * 500_000 = 155_000_000
+**/
 fn default_multistep_call_args () -> (u8, Vec<u8>, Vec<u8>, BalanceOf<Test>, Gas) {
     let phase = 0 as u8;
     let code: Vec<u8> = Vec::new();
     let input_data: Vec<u8> = Vec::new();
     let value = BalanceOf::<Test>::from(500_000 as u64);
-    let gas_limit: Gas = 201_000_000; // Actual gas costs of "return_from_start_fn" instantiation cost.
+    let gas_limit: Gas = 155_000_000 + 187_500_000 + 107_500_000 + 210_000 ; // Actual gas costs of "return_from_start_fn" instantiation cost
     return (phase, code, input_data, value, gas_limit);
 }
 
@@ -48,8 +55,11 @@ fn during_execution_phase_when_given_empty_wasm_code_multistep_call_gives_put_co
     let (phase, code, input_data, value, gas_limit) = default_multistep_call_args();
 
     new_test_ext().execute_with(|| {
+        let _ = Balances::deposit_creating(&CHARLIE, 10_000_000_000);
+
+        let err_rec = EscrowGateway::multistep_call(Origin::signed(ALICE), CHARLIE, DAVE, phase, code, value, gas_limit, input_data);
         assert_noop!(
-            EscrowGateway::multistep_call(Origin::signed(ALICE), phase, code, value, gas_limit, input_data),
+            err_rec,
             Error::<Test>::PutCodeFailure
         );
     });
@@ -61,12 +71,12 @@ fn during_execution_phase_when_given_correct_wasm_code_but_too_little_gas_limit_
     let correct_wasm_path = Path::new("src/fixtures/return_from_start_fn.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     // Make the gas limit too little
-    gas_limit = gas_limit - 1;
+    gas_limit = 1000;
 
     new_test_ext_builder(50).execute_with(|| {
-        let _ = Balances::deposit_creating(&ALICE, 10_000_000_000);
+        let _ = Balances::deposit_creating(&CHARLIE, 10_000_000_000);
         assert_err!(
-            EscrowGateway::multistep_call(Origin::signed(ALICE), phase, correct_wasm_code, value, gas_limit, input_data),
+            EscrowGateway::multistep_call(Origin::signed(ALICE), CHARLIE, DAVE, phase, correct_wasm_code, value, gas_limit, input_data),
             Error::<Test>::InitializationFailure
         );
     });
@@ -80,11 +90,50 @@ fn during_execution_phase_when_given_correct_wasm_code_multistep_call_succeeds()
 
     new_test_ext_builder(50).execute_with(|| {
 
-        let _ = Balances::deposit_creating(&ALICE, 10_000_000_000);
+        let _ = Balances::deposit_creating(&CHARLIE, 10_000_000_000);
 
         assert_ok!(
-            EscrowGateway::multistep_call(Origin::signed(ALICE), phase, correct_wasm_code, value, gas_limit, input_data)
+            EscrowGateway::multistep_call(Origin::signed(ALICE), CHARLIE, DAVE, phase, correct_wasm_code, value, gas_limit, input_data)
         );
+    });
+}
+
+#[test]
+fn during_execution_phase_when_given_correct_wasm_code_multistep_call_vm_succeeds() {
+    let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
+    let correct_wasm_path = Path::new("src/fixtures/return_from_start_fn.wasm");
+    let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
+
+    new_test_ext_builder(50).execute_with(|| {
+        let _ = Balances::deposit_creating(&CHARLIE, 10_000_000_000);
+
+        assert_ok!(
+            EscrowGateway::multistep_call(Origin::signed(ALICE), CHARLIE, DAVE, phase, correct_wasm_code, value, gas_limit, input_data)
+        );
+    });
+}
+
+#[test]
+fn transfer_returns_code_against() {
+
+    let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
+    let correct_wasm_path = Path::new("src/fixtures/transfer_return_code.wasm");
+    let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
+
+    new_test_ext_builder(50).execute_with(|| {
+        let _ = Balances::deposit_creating(&CHARLIE, 1_000_000_000);
+        let sufficient_gas_limit = (155_000_000 + 187_500_000 + 107_500_000) as u64; // base + endowment + exec cost
+        assert_ok!(
+            EscrowGateway::multistep_call(Origin::signed(ALICE), CHARLIE, DAVE, phase, correct_wasm_code, value, sufficient_gas_limit, input_data)
+        );
+
+        // assert_eq!( Balances::total_balance(&ALICE), 201_500_000); // This should be the pre-charged 389_000_000 diminished by the execution fee charges
+        //
+        // assert_eq!( Balances::total_balance(&BOB), 187_500_000);
+        //
+        // assert_eq!( Balances::total_balance(&CHARLIE), 11_000_000);
+        //
+        // assert_eq!( Balances::total_balance(&DAVE), 11_000_000);
     });
 }
 
