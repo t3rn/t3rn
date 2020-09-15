@@ -41,8 +41,10 @@ tag = 'v2.0.0-rc6'
 version = '2.0.0-rc6'
 
 [dependencies.contracts]
-path = '../pallet-contracts-copy'
 default-features = false
+git = 'https://github.com/MaciejBaj/pallet-contracts.git'
+branch = 'escrow-contracts'
+#path = '../pallet-contracts-copy'
 package = 'pallet-contracts'
 version = '2.0.0-rc6'
 
@@ -99,6 +101,5 @@ std = [
     'frame-support/std',
     'frame-system/std',
     'contracts/std',
-    'contracts-primitives/std',
     'escrow-gateway-primitives/std',
 ]
