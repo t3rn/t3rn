@@ -2,20 +2,20 @@
 
 use codec::{Decode, Encode};
 use contracts::{
-    escrow_exec::{escrow_transfer, just_transfer, EscrowCallContext, TransferEntry},
-    exec::{
+    BalanceOf,
+    Config,
+    ContractAddressFor,
+    ContractInfo,
+    ContractInfoOf, escrow_exec::{escrow_transfer, EscrowCallContext, just_transfer, TransferEntry}, exec::{
         CallContext, ErrorOrigin, ExecError, ExecFeeToken, ExecResult, ExecReturnValue,
         ExecutionContext, Loader, MomentOf, ReturnFlags, TransactorKind, TransferCause,
         TransferFeeKind, Vm,
-    },
-    rent,
-    wasm::{
+    }, Gas, GasMeter, NegativeImbalanceOf, rent,
+    TrieIdGenerator, wasm::{
+        PrefabWasmModule,
         prepare::prepare_contract,
-        runtime::{Env, ReturnCode},
-        PrefabWasmModule, WasmExecutable, WasmLoader, WasmVm,
+        runtime::{Env, ReturnCode}, WasmExecutable, WasmLoader, WasmVm,
     },
-    BalanceOf, Config, ContractAddressFor, ContractInfo, ContractInfoOf, Gas, GasMeter,
-    NegativeImbalanceOf, TrieIdGenerator,
 };
 use frame_support::{
     debug, decl_error, decl_event, decl_module, decl_storage, dispatch, ensure,
@@ -25,8 +25,8 @@ use frame_support::{
 use frame_system::{self as system, ensure_none, ensure_signed, Phase};
 use node_runtime::AccountId;
 use sp_runtime::{
-    traits::{Hash, Saturating},
     DispatchError,
+    traits::{Hash, Saturating},
 };
 use sp_std::convert::TryInto;
 use sp_std::vec::Vec;
@@ -60,6 +60,21 @@ pub fn cleanup_failed_execution<T: Trait>(
     transfers.clear();
 }
 
+pub fn commit_deferred_transfers<T: Trait>(
+    escrow_account: T::AccountId,
+    transfers: &mut Vec<TransferEntry>,
+) {
+    // Give the money back to the requester from the transfers that succeeded.
+    for mut transfer in transfers.iter() {
+        just_transfer::<T>(
+            &escrow_account,
+            &T::AccountId::decode(&mut &transfer.to[..]).unwrap(),
+            BalanceOf::<T>::from(transfer.value),
+        );
+    }
+}
+
+
 #[derive(Debug, PartialEq, Eq, Encode, Decode, Default)]
 #[codec(compact)]
 pub struct ExecutionProofs {
@@ -71,6 +86,7 @@ pub struct ExecutionProofs {
 #[derive(Debug, PartialEq, Eq, Encode, Decode, Default)]
 pub struct ExecutionStamp {
     timestamp: u64,
+    phase: u8,
     proofs: Option<ExecutionProofs>,
     failure: Option<u8>, // Error Code
 }
@@ -260,6 +276,9 @@ decl_error! {
 
         TerminateFailure,
 
+        CommitAnauthorizedAsExecutionFailed,
+
+        CommitOnlyPossibleAfterExecutionPhase,
     }
 }
 
@@ -285,6 +304,7 @@ pub enum ErrCodes {
 pub fn stamp_failed_execution<T: Trait>(cause_code: u8, requester: &T::AccountId, code_hash: &T::Hash) {
     <ExecutionStamps<T>>::insert(requester, code_hash, ExecutionStamp {
         timestamp: TryInto::<u64>::try_into(T::Time::now()).ok().unwrap(),
+        phase: 0,
         proofs: None,
         failure: Option::from(cause_code),
     });
@@ -314,71 +334,109 @@ decl_module! {
             #[compact] gas_limit: Gas,
             input_data: Vec<u8>
         ) -> dispatch::DispatchResult {
-            // ToDo: Endowment should be calculated here automatically based on config, applicable fees and expected lifetime of temporary execution contracts
-            let endowment = BalanceOf::<T>::from(100_000_000 as u32);
-
             let escrow_account = ensure_signed(origin.clone())?;
-            // ensure!(sender == <sudo::Module<T>>::key(), "Sender must be the Escrow Account owner");
 
-            // Charge Escrow Account from requester first before executuion.
-            // Gas charge needs to be worked out. For now assume the multiplier with gas and token = 1.
-            let total_precharge =  BalanceOf::<T>::from(gas_limit as u32) + endowment;
-            let cfg = Config::<T>::preload();
-            ensure!(
-                T::Currency::free_balance(&requester).saturating_sub(total_precharge) >=
-                    cfg.existential_deposit.saturating_add(cfg.tombstone_deposit),
-                Error::<T>::RequesterNotEnoughBalance,
-            );
-            just_transfer::<T>(&requester, &escrow_account, total_precharge).map_err(|_| {
-                stamp_failed_execution::<T>(ErrCodes::BalanceTransferFailed as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
-                Error::<T>::BalanceTransferFailed
-            })?;
-            println!("DEBUG multistep_call -- just_transfer total balance of CONTRACT -- vs REQUESTER {:?} vs ESCROW {:?}", T::Currency::free_balance(&requester), T::Currency::free_balance(&escrow_account));
+            match phase {
+                0 => {
+                    // ToDo: Endowment should be calculated here automatically based on config, applicable fees and expected lifetime of temporary execution contracts
+                    let endowment = BalanceOf::<T>::from(100_000_000 as u32);
 
-            // Step 1: contracts::put_code
-            instantiate_temp_execution_contract::<T>(origin, code.clone(), &input_data.clone(), endowment.clone(), gas_limit).map_err(|e| {
-                stamp_failed_execution::<T>(ErrCodes::InitializationFailure as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
-                e
-            })?;
-            let mut gas_meter = GasMeter::<T>::new(gas_limit);
-            let dest = T::DetermineContractAddress::contract_address_for(&T::Hashing::hash(&code.clone()), &input_data.clone(), &escrow_account.clone());
-            let mut transfers = Vec::<TransferEntry>::new();
-            println!("DEBUG multistep_call -- instantiate total balance of CONTRACT {:?} vs REQUESTER {:?} vs ESCROW {:?}", T::Currency::free_balance(&dest), T::Currency::free_balance(&requester), T::Currency::free_balance(&escrow_account));
+                    // ensure!(sender == <sudo::Module<T>>::key(), "Sender must be the Escrow Account owner");
 
-            // ToDo: Sort out charges for temporary and permanent contracts and cover with tests.
-            // charge_as_contract_call::<T>(dest.clone());
+                    // Charge Escrow Account from requester first before executuion.
+                    // Gas charge needs to be worked out. For now assume the multiplier with gas and token = 1.
+                    let total_precharge =  BalanceOf::<T>::from(gas_limit as u32) + endowment;
+                    let cfg = Config::<T>::preload();
+                    ensure!(
+                        T::Currency::free_balance(&requester).saturating_sub(total_precharge) >=
+                            cfg.existential_deposit.saturating_add(cfg.tombstone_deposit),
+                        Error::<T>::RequesterNotEnoughBalance,
+                    );
+                    just_transfer::<T>(&requester, &escrow_account, total_precharge).map_err(|_| {
+                        stamp_failed_execution::<T>(ErrCodes::BalanceTransferFailed as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
+                        Error::<T>::BalanceTransferFailed
+                    })?;
+                    println!("DEBUG multistep_call -- just_transfer total balance of CONTRACT -- vs REQUESTER {:?} vs ESCROW {:?}", T::Currency::free_balance(&requester), T::Currency::free_balance(&escrow_account));
 
-            // Proceed with execution
-            println!("DEBUG multistep_call -- vm.execute PRE total balance of CONTRACT {:?} vs REQUESTER {:?} vs ESCROW {:?} vs GAS_SPENT ", T::Currency::free_balance(&dest.clone()), T::Currency::free_balance(&requester), T::Currency::free_balance(&escrow_account.clone()));
-            let exec_res = execute_escrow_contract_call(escrow_account.clone(), dest.clone(), target_dest.clone(), requester.clone(), code.clone(), value, input_data, cfg, &mut transfers, gas_meter);
-            println!("DEBUG multistep_call -- vm.execute POST total balance of CONTRACT {:?} vs REQUESTER {:?} vs ESCROW {:?} vs DAVE {:?} ", T::Currency::free_balance(&dest.clone()), T::Currency::free_balance(&requester), T::Currency::free_balance(&escrow_account.clone()), T::Currency::free_balance(&target_dest));
-            let exec_res_val = match exec_res {
-                Ok(exec_res_val) => exec_res_val,
-                _ => {
-                    stamp_failed_execution::<T>(ErrCodes::ExecutionFailure as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
-                    Err(Error::<T>::ExecutionFailure)?
+                    // Step 1: contracts::put_code
+                    instantiate_temp_execution_contract::<T>(origin, code.clone(), &input_data.clone(), endowment.clone(), gas_limit).map_err(|e| {
+                        stamp_failed_execution::<T>(ErrCodes::InitializationFailure as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
+                        e
+                    })?;
+                    let mut gas_meter = GasMeter::<T>::new(gas_limit);
+                    let dest = T::DetermineContractAddress::contract_address_for(&T::Hashing::hash(&code.clone()), &input_data.clone(), &escrow_account.clone());
+                    let mut transfers = Vec::<TransferEntry>::new();
+                    println!("DEBUG multistep_call -- instantiate total balance of CONTRACT {:?} vs REQUESTER {:?} vs ESCROW {:?}", T::Currency::free_balance(&dest), T::Currency::free_balance(&requester), T::Currency::free_balance(&escrow_account));
+
+                    // ToDo: Sort out charges for temporary and permanent contracts and cover with tests.
+                    // charge_as_contract_call::<T>(dest.clone());
+
+                    // Proceed with execution
+                    println!("DEBUG multistep_call -- vm.execute PRE total balance of CONTRACT {:?} vs REQUESTER {:?} vs ESCROW {:?} vs GAS_SPENT ", T::Currency::free_balance(&dest.clone()), T::Currency::free_balance(&requester), T::Currency::free_balance(&escrow_account.clone()));
+                    let exec_res = execute_escrow_contract_call(escrow_account.clone(), dest.clone(), target_dest.clone(), requester.clone(), code.clone(), value, input_data, cfg, &mut transfers, gas_meter);
+                    println!("DEBUG multistep_call -- vm.execute POST total balance of CONTRACT {:?} vs REQUESTER {:?} vs ESCROW {:?} vs DAVE {:?} ", T::Currency::free_balance(&dest.clone()), T::Currency::free_balance(&requester), T::Currency::free_balance(&escrow_account.clone()), T::Currency::free_balance(&target_dest));
+                    let exec_res_val = match exec_res {
+                        Ok(exec_res_val) => exec_res_val,
+                        _ => {
+                            stamp_failed_execution::<T>(ErrCodes::ExecutionFailure as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
+                            Err(Error::<T>::ExecutionFailure)?
+                        }
+                    };
+
+                    <DeferredTransfers<T>>::insert(&requester, &dest.clone(), transfers);
+
+                    let execution_proofs = ExecutionProofs {
+                        // Present the execution proof by hashing the results.
+                        result: T::Hashing::hash(&exec_res_val.data).encode(),
+                        storage: child::root(&<ContractInfoOf<T>>::get(dest.clone()).unwrap().get_alive().unwrap().child_trie_info()),
+                        deferred_transfers: <DeferredTransfers<T>>::get(&requester, &dest.clone()),
+                    };
+                    println!("DEBUG multistepcall -- Execution Proofs : result {:?} orig {:?}", execution_proofs.result, exec_res_val.data);
+                    println!("DEBUG multistepcall -- Execution storage : storage {:?}", execution_proofs.storage);
+                    println!("DEBUG multistepcall -- Execution Proofs : deferred_transfers {:?}", execution_proofs.deferred_transfers);
+                    println!("DEBUG multistep_call -- FINAL total balance of CONTRACT {:?} vs REQUESTER {:?} vs ESCROW {:?}", T::Currency::free_balance(&dest), T::Currency::free_balance(&requester), T::Currency::free_balance(&escrow_account));
+
+                    <ExecutionStamps<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), ExecutionStamp {
+                        timestamp: TryInto::<u64>::try_into(T::Time::now()).ok().unwrap(),
+                        phase: 0,
+                        proofs: Some(execution_proofs),
+                        failure: None,
+                    });
                 }
-            };
+                // Commit
+                1 => {
+                    let last_execution_stamp = <ExecutionStamps<T>>::get(&requester, &T::Hashing::hash(&code.clone()));
 
-            <DeferredTransfers<T>>::insert(&requester, &dest.clone(), transfers);
+                    match last_execution_stamp.failure {
+                        None => {
+                            if last_execution_stamp.phase != 0 {
+                                 Err(Error::<T>::CommitOnlyPossibleAfterExecutionPhase)?
+                            }
+                            let mut proofs = last_execution_stamp.proofs.unwrap();
+                            // Release transfers
+                            commit_deferred_transfers::<T>(escrow_account.clone(), &mut proofs.deferred_transfers);
+                            // ToDo: Release result
 
-            let execution_proofs = ExecutionProofs {
-                // Present the execution proof by hashing the results.
-                result: T::Hashing::hash(&exec_res_val.data).encode(),
-                storage: child::root(&<ContractInfoOf<T>>::get(dest.clone()).unwrap().get_alive().unwrap().child_trie_info()),
-                deferred_transfers: <DeferredTransfers<T>>::get(&requester, &dest.clone()),
-            };
-            println!("DEBUG multistepcall -- Execution Proofs : result {:?} orig {:?}", execution_proofs.result, exec_res_val.data);
-            println!("DEBUG multistepcall -- Execution storage : storage {:?}", execution_proofs.storage);
-            println!("DEBUG multistepcall -- Execution Proofs : deferred_transfers {:?}", execution_proofs.deferred_transfers);
-            println!("DEBUG multistep_call -- FINAL total balance of CONTRACT {:?} vs REQUESTER {:?} vs ESCROW {:?}", T::Currency::free_balance(&dest), T::Currency::free_balance(&requester), T::Currency::free_balance(&escrow_account));
-
-            <ExecutionStamps<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), ExecutionStamp {
-                timestamp: TryInto::<u64>::try_into(T::Time::now()).ok().unwrap(),
-                proofs: Some(execution_proofs),
-                failure: None,
-            });
-           Ok(())
+                            // ToDo: Apply storage changes to target account
+                            Self::deposit_event(RawEvent::MultistepCommitResult(44));
+                        }
+                        Some(cause) => {
+                           Err(Error::<T>::CommitAnauthorizedAsExecutionFailed)?
+                        }
+                    }
+                },
+                // Revert
+                2 => {
+                    Self::deposit_event(RawEvent::MultistepRevertResult(44));
+                    Something::put(55);
+                },
+                _ => {
+                    debug::info!("DEBUG multistep_call -- Unknown Phase {}", phase);
+                    Something::put(phase as u32);
+                    Self::deposit_event(RawEvent::MultistepUnknownPhase(phase));
+                }
+            }
+            Ok(())
         }
 
         /// Just a dummy get_storage entry point.
