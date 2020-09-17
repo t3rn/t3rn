@@ -71,7 +71,7 @@ pub struct ExecutionProofs {
 #[derive(Debug, PartialEq, Eq, Encode, Decode, Default)]
 pub struct ExecutionStamp {
     timestamp: u64,
-    proofs: ExecutionProofs,
+    proofs: Option<ExecutionProofs>,
     failure: Option<u8>, // Error Code
 }
 
@@ -264,6 +264,7 @@ decl_error! {
 }
 
 // ToDo: Encode errors properly before storing making the below enum obsolete.
+#[derive(Clone)]
 #[repr(u8)]
 pub enum ErrCodes {
     RequesterNotEnoughBalance = 0,
@@ -279,6 +280,14 @@ pub enum ErrCodes {
     CallFailure = 5,
 
     TerminateFailure = 6,
+}
+
+pub fn stamp_failed_execution<T: Trait>(cause_code: u8, requester: &T::AccountId, code_hash: &T::Hash) {
+    <ExecutionStamps<T>>::insert(requester, code_hash, ExecutionStamp {
+        timestamp: TryInto::<u64>::try_into(T::Time::now()).ok().unwrap(),
+        proofs: None,
+        failure: Option::from(cause_code),
+    });
 }
 
 // The pallet's dispatchable functions.
@@ -320,11 +329,17 @@ decl_module! {
                     cfg.existential_deposit.saturating_add(cfg.tombstone_deposit),
                 Error::<T>::RequesterNotEnoughBalance,
             );
-            just_transfer::<T>(&requester, &escrow_account, total_precharge).map_err(|_| Error::<T>::BalanceTransferFailed)?;
+            just_transfer::<T>(&requester, &escrow_account, total_precharge).map_err(|_| {
+                stamp_failed_execution::<T>(ErrCodes::BalanceTransferFailed as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
+                Error::<T>::BalanceTransferFailed
+            })?;
             println!("DEBUG multistep_call -- just_transfer total balance of CONTRACT -- vs REQUESTER {:?} vs ESCROW {:?}", T::Currency::free_balance(&requester), T::Currency::free_balance(&escrow_account));
 
             // Step 1: contracts::put_code
-            instantiate_temp_execution_contract::<T>(origin, code.clone(), &input_data.clone(), endowment.clone(), gas_limit).map_err(|e| e)?;
+            instantiate_temp_execution_contract::<T>(origin, code.clone(), &input_data.clone(), endowment.clone(), gas_limit).map_err(|e| {
+                stamp_failed_execution::<T>(ErrCodes::InitializationFailure as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
+                e
+            })?;
             let mut gas_meter = GasMeter::<T>::new(gas_limit);
             let dest = T::DetermineContractAddress::contract_address_for(&T::Hashing::hash(&code.clone()), &input_data.clone(), &escrow_account.clone());
             let mut transfers = Vec::<TransferEntry>::new();
@@ -339,7 +354,10 @@ decl_module! {
             println!("DEBUG multistep_call -- vm.execute POST total balance of CONTRACT {:?} vs REQUESTER {:?} vs ESCROW {:?} vs DAVE {:?} ", T::Currency::free_balance(&dest.clone()), T::Currency::free_balance(&requester), T::Currency::free_balance(&escrow_account.clone()), T::Currency::free_balance(&target_dest));
             let exec_res_val = match exec_res {
                 Ok(exec_res_val) => exec_res_val,
-                _ => Err(Error::<T>::ExecutionFailure)?
+                _ => {
+                    stamp_failed_execution::<T>(ErrCodes::ExecutionFailure as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
+                    Err(Error::<T>::ExecutionFailure)?
+                }
             };
 
             <DeferredTransfers<T>>::insert(&requester, &dest.clone(), transfers);
@@ -357,7 +375,7 @@ decl_module! {
 
             <ExecutionStamps<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), ExecutionStamp {
                 timestamp: TryInto::<u64>::try_into(T::Time::now()).ok().unwrap(),
-                proofs: execution_proofs,
+                proofs: Some(execution_proofs),
                 failure: None,
             });
            Ok(())
