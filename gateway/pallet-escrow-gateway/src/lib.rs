@@ -231,19 +231,18 @@ decl_module! {
 		    #[compact] gas_limit: Gas,
 		    input_data: Vec<u8>
         ) -> dispatch::DispatchResult {
-            // let endowment = BalanceOf::<T>::from(187_500_000 as u32);
-            let endowment = BalanceOf::<T>::from(187_500_000 as u32);
+            // ToDo: Endowment should be calculated here automatically based on config, applicable fees and expected lifetime of temporary execution contracts
+            let endowment = BalanceOf::<T>::from(100_000_000 as u32);
 
             let escrow_account = ensure_signed(origin.clone())?;
             // ensure!(sender == <sudo::Module<T>>::key(), "Sender must be the Escrow Account owner");
 
-            let cfg = Config::<T>::preload();
-
             // Charge Escrow Account from requester first before executuion.
             // Gas charge needs to be worked out. For now assume the multiplier with gas and token = 1.
-            let total_precharge =  BalanceOf::<T>::from(gas_limit as u32)  + value + endowment;
+            let total_precharge =  BalanceOf::<T>::from(gas_limit as u32) + endowment;
+            let cfg = Config::<T>::preload();
             ensure!(
-                T::Currency::total_balance(&requester).saturating_sub(total_precharge) >=
+                T::Currency::free_balance(&requester).saturating_sub(total_precharge) >=
                     cfg.existential_deposit.saturating_add(cfg.tombstone_deposit),
                 Error::<T>::RequesterNotEnoughBalance,
             );
@@ -251,7 +250,7 @@ decl_module! {
             println!("DEBUG multistep_call -- just_transfer total balance of CONTRACT -- vs REQUESTER {:?} vs ESCROW {:?}", T::Currency::free_balance(&requester), T::Currency::free_balance(&escrow_account));
 
             // Step 1: contracts::put_code
-            instantiate_temp_execution_contract::<T>(origin, code.clone(), &input_data.clone(), endowment.clone(), gas_limit);
+            instantiate_temp_execution_contract::<T>(origin, code.clone(), &input_data.clone(), endowment.clone(), gas_limit).map_err(|e| e)?;
             let mut gas_meter = GasMeter::<T>::new(gas_limit);
             let dest = T::DetermineContractAddress::contract_address_for(&T::Hashing::hash(&code.clone()), &input_data.clone(), &escrow_account.clone());
             let mut transfers = Vec::<TransferEntry>::new();
@@ -270,7 +269,6 @@ decl_module! {
 			};
 
             <DeferredTransfers<T>>::insert(&requester, &dest.clone(), transfers);
-            println!("DEBUG multistepcall -- DeferredTransfers get {:?}", <DeferredTransfers<T>>::get(&requester, &dest.clone()));
 
             let execution_proofs = ExecutionProofs::<T> {
                 // Present the execution proof by hashing the results.
