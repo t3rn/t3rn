@@ -1,29 +1,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+
 use codec::{Decode, Encode};
-use frame_support::{
-    debug, decl_error, decl_event, decl_module, decl_storage, dispatch, ensure,
-    storage::{child, child::ChildInfo},
-    traits::{Currency, ExistenceRequirement, Time},
-};
-use sp_std::vec::Vec;
-
-use frame_system::{self as system, ensure_none, ensure_signed, Phase};
-use sp_runtime::{
-    traits::{Hash, Saturating},
-    DispatchError,
-};
-
-use contracts::{
-    BalanceOf, ContractAddressFor, ContractInfo, ContractInfoOf, Gas, GasMeter,
-    NegativeImbalanceOf, TrieIdGenerator,
-};
-
-// The hard copy that exposed hidden by default features of contracts
 use contracts::{
     escrow_exec::{escrow_transfer, just_transfer, EscrowCallContext, TransferEntry},
     exec::{
         CallContext, ErrorOrigin, ExecError, ExecFeeToken, ExecResult, ExecReturnValue,
-        ExecutionContext, Loader, ReturnFlags, TransactorKind, TransferCause, TransferFeeKind, Vm,
+        ExecutionContext, Loader, MomentOf, ReturnFlags, TransactorKind, TransferCause,
+        TransferFeeKind, Vm,
     },
     rent,
     wasm::{
@@ -31,13 +14,27 @@ use contracts::{
         runtime::{Env, ReturnCode},
         PrefabWasmModule, WasmExecutable, WasmLoader, WasmVm,
     },
-    Config,
+    BalanceOf, Config, ContractAddressFor, ContractInfo, ContractInfoOf, Gas, GasMeter,
+    NegativeImbalanceOf, TrieIdGenerator,
 };
+use frame_support::{
+    debug, decl_error, decl_event, decl_module, decl_storage, dispatch, ensure,
+    storage::{child, child::ChildInfo},
+    traits::{Currency, ExistenceRequirement, Time},
+};
+use frame_system::{self as system, ensure_none, ensure_signed, Phase};
+use node_runtime::AccountId;
+use sp_runtime::{
+    traits::{Hash, Saturating},
+    DispatchError,
+};
+use sp_std::convert::TryInto;
+use sp_std::vec::Vec;
+
+use crate::escrow::{ContractsEscrowEngine, EscrowExecuteResult};
 
 #[macro_use]
 mod escrow;
-use crate::escrow::{ContractsEscrowEngine, EscrowExecuteResult};
-use node_runtime::AccountId;
 
 pub type CodeHash<T> = <T as frame_system::Trait>::Hash;
 
@@ -63,12 +60,19 @@ pub fn cleanup_failed_execution<T: Trait>(
     transfers.clear();
 }
 
-#[derive(Debug, PartialEq, Encode, Decode)]
+#[derive(Debug, PartialEq, Eq, Encode, Decode, Default)]
 #[codec(compact)]
-pub struct ExecutionProofs<T: Trait> {
-    result: T::Hash,
+pub struct ExecutionProofs {
+    result: Vec<u8>,
     storage: Vec<u8>,
     deferred_transfers: Vec<TransferEntry>,
+}
+
+#[derive(Debug, PartialEq, Eq, Encode, Decode, Default)]
+pub struct ExecutionStamp {
+    timestamp: u64,
+    proofs: ExecutionProofs,
+    failure: Option<u8>, // Error Code
 }
 
 pub fn instantiate_temp_execution_contract<'a, T: Trait>(
@@ -205,12 +209,15 @@ decl_storage! {
         // `get(fn something)` is the default getter which returns either the stored `u32` or `None` if nothing stored
         Something get(fn something): Option<u32>;
 
-        // Store deffered transctions after each execution phase:
         // For each requester address
         //      For each transaction_tx (temporarily dest address)
         //          Store deferred transfers - Vec<TransferEntry>
         DeferredTransfers get(fn deferred_transfers):
             double_map hasher(blake2_128_concat) T::AccountId, hasher(blake2_128_concat) T::AccountId => Vec<TransferEntry>;
+
+        // ( Requester , CodeHash ) -> [ ExecutionStamp ]
+        ExecutionStamps get(fn execution_stamps):
+            double_map hasher(blake2_128_concat) T::AccountId, hasher(blake2_128_concat) T::Hash => ExecutionStamp;
     }
 }
 
@@ -254,6 +261,24 @@ decl_error! {
         TerminateFailure,
 
     }
+}
+
+// ToDo: Encode errors properly before storing making the below enum obsolete.
+#[repr(u8)]
+pub enum ErrCodes {
+    RequesterNotEnoughBalance = 0,
+
+    BalanceTransferFailed = 1,
+
+    PutCodeFailure = 2,
+
+    InitializationFailure = 3,
+
+    ExecutionFailure = 4,
+
+    CallFailure = 5,
+
+    TerminateFailure = 6,
 }
 
 // The pallet's dispatchable functions.
@@ -319,20 +344,22 @@ decl_module! {
 
             <DeferredTransfers<T>>::insert(&requester, &dest.clone(), transfers);
 
-            let execution_proofs = ExecutionProofs::<T> {
+            let execution_proofs = ExecutionProofs {
                 // Present the execution proof by hashing the results.
-                result: T::Hashing::hash(&exec_res_val.data),
+                result: T::Hashing::hash(&exec_res_val.data).encode(),
                 storage: child::root(&<ContractInfoOf<T>>::get(dest.clone()).unwrap().get_alive().unwrap().child_trie_info()),
-                // storage: Vec::new(),
                 deferred_transfers: <DeferredTransfers<T>>::get(&requester, &dest.clone()),
             };
-
-            println!("TIME = {:?}", T::Time::now());
             println!("DEBUG multistepcall -- Execution Proofs : result {:?} orig {:?}", execution_proofs.result, exec_res_val.data);
             println!("DEBUG multistepcall -- Execution storage : storage {:?}", execution_proofs.storage);
             println!("DEBUG multistepcall -- Execution Proofs : deferred_transfers {:?}", execution_proofs.deferred_transfers);
             println!("DEBUG multistep_call -- FINAL total balance of CONTRACT {:?} vs REQUESTER {:?} vs ESCROW {:?}", T::Currency::free_balance(&dest), T::Currency::free_balance(&requester), T::Currency::free_balance(&escrow_account));
 
+            <ExecutionStamps<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), ExecutionStamp {
+                timestamp: TryInto::<u64>::try_into(T::Time::now()).ok().unwrap(),
+                proofs: execution_proofs,
+                failure: None,
+            });
            Ok(())
         }
 
