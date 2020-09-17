@@ -1,4 +1,4 @@
-use codec::{Encode, Decode};
+use codec::{Decode, Encode};
 
 #[derive(Debug, PartialEq, Encode, Decode, Clone)]
 #[codec(compact)]
@@ -6,5 +6,5 @@ use codec::{Encode, Decode};
 pub enum Phase {
     Execute = 0,
     Commit = 1,
-    Revert= 2,
+    Revert = 2,
 }

@@ -1,18 +1,20 @@
 // Creating mock runtime here
 
 use crate::{Module, Trait};
-use frame_support::{impl_outer_origin, impl_outer_dispatch, parameter_types, weights::Weight, impl_outer_event,
-                    traits::{Currency, Get, ReservableCurrency},
+use frame_support::{
+    impl_outer_dispatch, impl_outer_event, impl_outer_origin, parameter_types,
+    traits::{Currency, Get, ReservableCurrency},
+    weights::Weight,
 };
 use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
     testing::Header,
-    traits::{BlakeTwo256, IdentityLookup, Convert},
+    traits::{BlakeTwo256, Convert, IdentityLookup},
     Perbill,
 };
 
-use contracts::{*, GenesisConfig};
+use contracts::{GenesisConfig, *};
 
 use std::cell::RefCell;
 
@@ -25,12 +27,12 @@ mod escrow_gateway {
 }
 
 impl_outer_event! {
-	pub enum MetaEvent for Test {
-		system<T>,
-		pallet_balances<T>,
-		contracts<T>,
-		escrow_gateway<T>,
-	}
+    pub enum MetaEvent for Test {
+        system<T>,
+        pallet_balances<T>,
+        contracts<T>,
+        escrow_gateway<T>,
+    }
 }
 
 impl_outer_origin! {
@@ -50,14 +52,14 @@ parameter_types! {
 }
 
 parameter_types! {
-	pub const SignedClaimHandicap: u64 = 2;
-	pub const TombstoneDeposit: u64 = 16;
-	pub const StorageSizeOffset: u32 = 8;
-	pub const RentByteFee: u64 = 4;
-	pub const RentDepositOffset: u64 = 10_000;
-	pub const SurchargeReward: u64 = 150;
-	pub const MaxDepth: u32 = 100;
-	pub const MaxValueSize: u32 = 16_384;
+    pub const SignedClaimHandicap: u64 = 2;
+    pub const TombstoneDeposit: u64 = 16;
+    pub const StorageSizeOffset: u32 = 8;
+    pub const RentByteFee: u64 = 4;
+    pub const RentDepositOffset: u64 = 10_000;
+    pub const SurchargeReward: u64 = 150;
+    pub const MaxDepth: u32 = 100;
+    pub const MaxValueSize: u32 = 16_384;
 }
 
 pub struct DummyContractAddressFor;
@@ -85,19 +87,20 @@ impl TrieIdGenerator<u64> for DummyTrieIdGenerator {
 }
 
 parameter_types! {
-	pub const MinimumPeriod: u64 = 1;
+    pub const MinimumPeriod: u64 = 1;
 }
-
 
 /** Balances -- start **/
 
 thread_local! {
-	static EXISTENTIAL_DEPOSIT: RefCell<u64> = RefCell::new(0);
+    static EXISTENTIAL_DEPOSIT: RefCell<u64> = RefCell::new(0);
 }
 
 pub struct ExistentialDeposit;
 impl Get<u64> for ExistentialDeposit {
-    fn get() -> u64 { EXISTENTIAL_DEPOSIT.with(|v| *v.borrow()) }
+    fn get() -> u64 {
+        EXISTENTIAL_DEPOSIT.with(|v| *v.borrow())
+    }
 }
 
 impl pallet_balances::Trait for Test {
@@ -211,16 +214,20 @@ impl ExtBuilder {
     }
     pub fn build(self) -> sp_io::TestExternalities {
         self.set_associated_consts();
-        let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
-        pallet_balances::GenesisConfig::<Test> {
-            balances: vec![],
-        }.assimilate_storage(&mut t).unwrap();
+        let mut t = frame_system::GenesisConfig::default()
+            .build_storage::<Test>()
+            .unwrap();
+        pallet_balances::GenesisConfig::<Test> { balances: vec![] }
+            .assimilate_storage(&mut t)
+            .unwrap();
         GenesisConfig {
             current_schedule: Schedule {
                 // enable_prinltn: true,
                 ..Default::default()
             },
-        }.assimilate_storage(&mut t).unwrap();
+        }
+        .assimilate_storage(&mut t)
+        .unwrap();
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));
         ext
@@ -228,9 +235,7 @@ impl ExtBuilder {
 }
 
 pub fn new_test_ext_builder(deposit: u64) -> sp_io::TestExternalities {
-    ExtBuilder::default()
-        .existential_deposit(deposit)
-        .build()
+    ExtBuilder::default().existential_deposit(deposit).build()
 }
 
 

@@ -1,21 +1,22 @@
 // Tests to be written here
 
 // Loading .wasm files deps
-use std::{fs, io::Read, path::PathBuf};
 use std::path::Path;
+use std::{fs, io::Read, path::PathBuf};
 
 use anyhow::{Context, Result};
-use contracts::{BalanceOf, escrow_exec::TransferEntry, Gas};
+use contracts::{escrow_exec::TransferEntry, BalanceOf, Gas};
 use escrow_gateway_primitives::Phase;
-use frame_support::{assert_err, assert_err_ignore_postinfo, assert_noop,
-                    assert_ok, traits::{Currency, Get, ReservableCurrency},
-                    weights::Weight,
+use frame_support::{
+    assert_err, assert_err_ignore_postinfo, assert_noop, assert_ok,
+    traits::{Currency, Get, ReservableCurrency},
+    weights::Weight,
 };
 use sp_core::H256;
-use sp_runtime::{traits::Hash};
+use sp_runtime::traits::Hash;
 use sp_std::vec::Vec;
 
-use crate::{Error, mock::*};
+use crate::{mock::*, Error};
 
 /***
     Multistep Call - puts_code, instantiates, calls and terminates wasm contract codes on the fly.
@@ -57,16 +58,23 @@ fn during_execution_phase_when_given_empty_wasm_code_multistep_call_gives_put_co
     new_test_ext().execute_with(|| {
         let _ = Balances::deposit_creating(&REQUESTER, 10_000_000_000);
 
-        let err_rec = EscrowGateway::multistep_call(Origin::signed(ESCROW_ACCOUNT), REQUESTER, TARGET_DEST, phase, code, value, gas_limit, input_data);
-        assert_noop!(
-            err_rec,
-            Error::<Test>::PutCodeFailure
+        let err_rec = EscrowGateway::multistep_call(
+            Origin::signed(ESCROW_ACCOUNT),
+            REQUESTER,
+            TARGET_DEST,
+            phase,
+            code,
+            value,
+            gas_limit,
+            input_data,
         );
+        assert_noop!(err_rec, Error::<Test>::PutCodeFailure);
     });
 }
 
 #[test]
-fn during_execution_phase_when_given_correct_wasm_code_but_too_little_gas_limit_multistep_call_gives_initiate_error() {
+fn during_execution_phase_when_given_correct_wasm_code_but_too_little_gas_limit_multistep_call_gives_initiate_error()
+ {
     let (phase, _, input_data, value, mut gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new("src/fixtures/return_from_start_fn.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
@@ -76,7 +84,16 @@ fn during_execution_phase_when_given_correct_wasm_code_but_too_little_gas_limit_
     new_test_ext_builder(50).execute_with(|| {
         let _ = Balances::deposit_creating(&REQUESTER, 10_000_000_000);
         assert_err!(
-            EscrowGateway::multistep_call(Origin::signed(ESCROW_ACCOUNT), REQUESTER, TARGET_DEST, phase, correct_wasm_code, value, gas_limit, input_data),
+            EscrowGateway::multistep_call(
+                Origin::signed(ESCROW_ACCOUNT),
+                REQUESTER,
+                TARGET_DEST,
+                phase,
+                correct_wasm_code,
+                value,
+                gas_limit,
+                input_data
+            ),
             Error::<Test>::InitializationFailure
         );
     });
@@ -91,9 +108,16 @@ fn during_execution_phase_when_given_correct_wasm_code_multistep_call_succeeds()
     new_test_ext_builder(50).execute_with(|| {
         let _ = Balances::deposit_creating(&REQUESTER, 10_000_000_000);
 
-        assert_ok!(
-            EscrowGateway::multistep_call(Origin::signed(ESCROW_ACCOUNT), REQUESTER, TARGET_DEST, phase, correct_wasm_code, value, gas_limit, input_data)
-        );
+        assert_ok!(EscrowGateway::multistep_call(
+            Origin::signed(ESCROW_ACCOUNT),
+            REQUESTER,
+            TARGET_DEST,
+            phase,
+            correct_wasm_code,
+            value,
+            gas_limit,
+            input_data
+        ));
     });
 }
 
@@ -106,9 +130,16 @@ fn during_execution_phase_when_given_correct_wasm_code_multistep_call_vm_succeed
     new_test_ext_builder(50).execute_with(|| {
         let _ = Balances::deposit_creating(&REQUESTER, 10_000_000_000);
 
-        assert_ok!(
-            EscrowGateway::multistep_call(Origin::signed(ESCROW_ACCOUNT), REQUESTER, TARGET_DEST, phase, correct_wasm_code, value, gas_limit, input_data)
-        );
+        assert_ok!(EscrowGateway::multistep_call(
+            Origin::signed(ESCROW_ACCOUNT),
+            REQUESTER,
+            TARGET_DEST,
+            phase,
+            correct_wasm_code,
+            value,
+            gas_limit,
+            input_data
+        ));
     });
 }
 
@@ -127,10 +158,24 @@ fn transfer_during_execution_phase_succeeds_and_consumes_costs_correctly_and_def
     let inner_contract_transfer_value = 100;
 
     new_test_ext_builder(50).execute_with(|| {
-        let _ = Balances::deposit_creating(&REQUESTER, sufficient_gas_limit + endowment + subsistence_threshold + (value) + inner_contract_transfer_value);
-        assert_ok!(
-            EscrowGateway::multistep_call(Origin::signed(ESCROW_ACCOUNT), REQUESTER, TARGET_DEST, phase, correct_wasm_code, value, sufficient_gas_limit, input_data)
+        let _ = Balances::deposit_creating(
+            &REQUESTER,
+            sufficient_gas_limit
+                + endowment
+                + subsistence_threshold
+                + (value)
+                + inner_contract_transfer_value,
         );
+        assert_ok!(EscrowGateway::multistep_call(
+            Origin::signed(ESCROW_ACCOUNT),
+            REQUESTER,
+            TARGET_DEST,
+            phase,
+            correct_wasm_code,
+            value,
+            sufficient_gas_limit,
+            input_data
+        ));
 
         // Escrow Account is now pre-charged by requester to cover:
         // 187_500_000 gas_fees + 500_000 requested balance transfer to &target_dest + 100 requested by contract value transfer to &0
@@ -146,19 +191,20 @@ fn transfer_during_execution_phase_succeeds_and_consumes_costs_correctly_and_def
         assert_eq!(Balances::total_balance(&TARGET_DEST), 0);
 
         // There should be an entry with deferred transfer to the target dest though as well as the requested by contract value transfer of 100 to &0
-        assert_eq!(EscrowGateway::deferred_transfers(&REQUESTER, &TEMP_EXEC_CONTRACT),
-           [
-               TransferEntry {
-                   to: [4, 0, 0, 0, 0, 0, 0, 0].to_vec(),
-                   value: 500000,
-                   data: [].to_vec(),
-               },
-               TransferEntry {
-                   to: [0, 0, 0, 0, 0, 0, 0, 0].to_vec(),
-                   value: 100,
-                   data: [].to_vec(),
-               }
-           ]
+        assert_eq!(
+            EscrowGateway::deferred_transfers(&REQUESTER, &TEMP_EXEC_CONTRACT),
+            [
+                TransferEntry {
+                    to: [4, 0, 0, 0, 0, 0, 0, 0].to_vec(),
+                    value: 500000,
+                    data: [].to_vec(),
+                },
+                TransferEntry {
+                    to: [0, 0, 0, 0, 0, 0, 0, 0].to_vec(),
+                    value: 100,
+                    data: [].to_vec(),
+                }
+            ]
         );
     });
 }
@@ -168,8 +214,7 @@ fn transfer_during_execution_phase_succeeds_and_consumes_costs_correctly_and_def
 /// Defaults to the target contract wasm in the current project, inferred via the crate metadata.
 fn load_contract_code(path: &Path) -> Result<Vec<u8>> {
     let mut data = Vec::new();
-    let mut file = fs::File::open(path)
-        .context(format!("Failed to open {}", path.display()))?;
+    let mut file = fs::File::open(path).context(format!("Failed to open {}", path.display()))?;
     file.read_to_end(&mut data)?;
 
     Ok(data)
@@ -179,11 +224,9 @@ fn load_contract_code(path: &Path) -> Result<Vec<u8>> {
 /// with it's hash.
 ///
 /// The fixture files are located under the `fixtures/` directory.
-fn compile_module<T>(
-    fixture_name: &str,
-) -> wat::Result<(Vec<u8>, <T::Hashing as Hash>::Output)>
-    where
-        T: frame_system::Trait,
+fn compile_module<T>(fixture_name: &str) -> wat::Result<(Vec<u8>, <T::Hashing as Hash>::Output)>
+where
+    T: frame_system::Trait,
 {
     let fixture_path = ["fixtures/", fixture_name, ".wat"].concat();
     let wasm_binary = wat::parse_file(fixture_path)?;

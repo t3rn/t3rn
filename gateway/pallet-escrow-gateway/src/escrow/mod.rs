@@ -1,14 +1,12 @@
-use sp_std::vec::Vec;
-use contracts::{Schedule};
 use crate::{CodeHash, Trait};
-use sp_runtime::{
-    traits::{Block},
-};
+use codec::{Decode, Encode};
+use contracts::Schedule;
+use sp_runtime::traits::Block;
 use sp_std::prelude::*;
-use codec::{Encode, Decode};
+use sp_std::vec::Vec;
 
 #[derive(Clone, Encode, Decode)]
-pub struct ContractsEscrowEngine { }
+pub struct ContractsEscrowEngine {}
 
 pub type Error = ();
 
@@ -19,12 +17,12 @@ pub struct EscrowExecuteResult {
 
 impl ContractsEscrowEngine {
     pub fn new() -> Self {
-        ContractsEscrowEngine { }
+        ContractsEscrowEngine {}
     }
 
     // Executes the wasm code and copies all of the changes made to the temporary account created for the contract.
     pub fn execute(&self, input: Vec<u8>) -> Result<EscrowExecuteResult, Error> {
-        Ok(EscrowExecuteResult { result: input})
+        Ok(EscrowExecuteResult { result: input })
     }
 
     pub fn revert(&self) -> u32 {
