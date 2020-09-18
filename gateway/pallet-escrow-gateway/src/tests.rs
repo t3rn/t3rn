@@ -35,6 +35,7 @@ const ESCROW_ACCOUNT: u64 = 1;
 const TEMP_EXEC_CONTRACT: u64 = 2;
 const REQUESTER: u64 = 3;
 const TARGET_DEST: u64 = 4;
+const OTHER_ACCOUNT : u64 = 5;
 
 /**
  BASE GAS COSTS:
@@ -52,10 +53,31 @@ fn default_multistep_call_args() -> (u8, Vec<u8>, Vec<u8>, BalanceOf<Test>, Gas)
 }
 
 #[test]
+fn should_only_allow_to_be_called_by_escrow_account_being_sudo() {
+    let (phase, code, input_data, value, gas_limit) = default_multistep_call_args();
+
+    new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
+        let _ = Balances::deposit_creating(&REQUESTER, 10_000_000_000);
+
+        let err_rec = EscrowGateway::multistep_call(
+            Origin::signed(OTHER_ACCOUNT),
+            REQUESTER,
+            TARGET_DEST,
+            phase,
+            code,
+            value,
+            gas_limit,
+            input_data,
+        );
+        assert_noop!(err_rec, Error::<Test>::UnauthorizedCallAttempt);
+    });
+}
+
+#[test]
 fn during_execution_phase_when_given_empty_wasm_code_multistep_call_gives_put_code_error() {
     let (phase, code, input_data, value, gas_limit) = default_multistep_call_args();
 
-    new_test_ext().execute_with(|| {
+    new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
         let _ = Balances::deposit_creating(&REQUESTER, 10_000_000_000);
 
         let err_rec = EscrowGateway::multistep_call(
@@ -81,7 +103,7 @@ fn during_execution_phase_when_given_correct_wasm_code_but_too_little_gas_limit_
     // Make the gas limit too little
     gas_limit = 1000;
 
-    new_test_ext_builder(50).execute_with(|| {
+    new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
         let _ = Balances::deposit_creating(&REQUESTER, 10_000_000_000);
         assert_err!(
             EscrowGateway::multistep_call(
@@ -105,7 +127,7 @@ fn during_execution_phase_when_given_correct_wasm_code_multistep_call_succeeds()
     let correct_wasm_path = Path::new("src/fixtures/return_from_start_fn.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
 
-    new_test_ext_builder(50).execute_with(|| {
+    new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
         let _ = Balances::deposit_creating(&REQUESTER, 10_000_000_000);
 
         assert_ok!(EscrowGateway::multistep_call(
@@ -127,7 +149,7 @@ fn during_execution_phase_when_given_correct_wasm_code_multistep_call_vm_succeed
     let correct_wasm_path = Path::new("src/fixtures/return_from_start_fn.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
 
-    new_test_ext_builder(50).execute_with(|| {
+    new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
         let _ = Balances::deposit_creating(&REQUESTER, 10_000_000_000);
 
         assert_ok!(EscrowGateway::multistep_call(
@@ -157,7 +179,7 @@ fn transfer_during_execution_phase_succeeds_and_consumes_costs_correctly_and_def
     let subsistence_threshold = 66;
     let inner_contract_transfer_value = 100;
 
-    new_test_ext_builder(50).execute_with(|| {
+    new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
         let _ = Balances::deposit_creating(
             &REQUESTER,
             sufficient_gas_limit

@@ -16,6 +16,8 @@ use sp_runtime::{
 
 use contracts::{GenesisConfig, *};
 
+use sudo;
+
 use std::cell::RefCell;
 
 mod escrow_gateway {
@@ -31,6 +33,7 @@ impl_outer_event! {
         system<T>,
         pallet_balances<T>,
         contracts<T>,
+        sudo<T>,
         escrow_gateway<T>,
     }
 }
@@ -38,6 +41,13 @@ impl_outer_event! {
 impl_outer_origin! {
     pub enum Origin for Test {}
 }
+
+impl_outer_dispatch! {
+	pub enum Call for Test where origin: Origin {
+		sudo::Sudo,
+	}
+}
+
 
 // For testing the pallet, we construct most of a mock runtime. This means
 // first constructing a configuration type (`Test`) which `impl`s each of the
@@ -156,7 +166,7 @@ impl system::Trait for Test {
     type Index = u64;
     type BlockNumber = u64;
     type Hash = H256;
-    type Call = ();
+    type Call = Call;
     type Hashing = BlakeTwo256;
     type AccountId = u64;
     type Lookup = IdentityLookup<Self::AccountId>;
@@ -178,11 +188,18 @@ impl system::Trait for Test {
     type SystemWeightInfo = ();
 }
 
+impl sudo::Trait for Test {
+    type Event = MetaEvent;
+    type Call = Call;
+}
+
 impl Trait for Test {
     type Event = MetaEvent;
 }
 
 pub type Contracts = contracts::Module<Test>;
+pub type Sudo = sudo::Module<Test>;
+
 pub type EscrowGateway = Module<Test>;
 
 // This function basically just builds a genesis storage key/value store according to
@@ -212,12 +229,15 @@ impl ExtBuilder {
     pub fn set_associated_consts(&self) {
         EXISTENTIAL_DEPOSIT.with(|v| *v.borrow_mut() = self.existential_deposit);
     }
-    pub fn build(self) -> sp_io::TestExternalities {
+    pub fn build(self, escrow_account: u64) -> sp_io::TestExternalities {
         self.set_associated_consts();
         let mut t = frame_system::GenesisConfig::default()
             .build_storage::<Test>()
             .unwrap();
         pallet_balances::GenesisConfig::<Test> { balances: vec![] }
+            .assimilate_storage(&mut t)
+            .unwrap();
+        sudo::GenesisConfig::<Test> { key: escrow_account }
             .assimilate_storage(&mut t)
             .unwrap();
         GenesisConfig {
@@ -226,16 +246,16 @@ impl ExtBuilder {
                 ..Default::default()
             },
         }
-        .assimilate_storage(&mut t)
-        .unwrap();
+            .assimilate_storage(&mut t)
+            .unwrap();
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));
         ext
     }
 }
 
-pub fn new_test_ext_builder(deposit: u64) -> sp_io::TestExternalities {
-    ExtBuilder::default().existential_deposit(deposit).build()
+pub fn new_test_ext_builder(deposit: u64, escrow_account: u64) -> sp_io::TestExternalities {
+    ExtBuilder::default().existential_deposit(deposit).build(escrow_account)
 }
 
 

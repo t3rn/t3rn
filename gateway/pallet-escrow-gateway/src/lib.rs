@@ -22,7 +22,7 @@ use frame_support::{
     storage::{child, child::ChildInfo},
     traits::{Currency, ExistenceRequirement, Time},
 };
-use frame_system::{self as system, ensure_none, ensure_signed, Phase};
+use frame_system::{self as system, ensure_none, ensure_signed, ensure_root, Phase};
 use node_runtime::AccountId;
 use sp_runtime::{
     DispatchError,
@@ -30,6 +30,7 @@ use sp_runtime::{
 };
 use sp_std::convert::TryInto;
 use sp_std::vec::Vec;
+use sudo;
 
 use crate::escrow::{ContractsEscrowEngine, EscrowExecuteResult};
 
@@ -214,7 +215,7 @@ pub fn charge_as_contract_call<'a, T: Trait>(dest: T::AccountId) {
     println!("escrow_call_ctx -- charge_as_contract_call contract info");
 }
 
-pub trait Trait: contracts::Trait + system::Trait {
+pub trait Trait: contracts::Trait + system::Trait + sudo::Trait {
     type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 }
 
@@ -276,6 +277,8 @@ decl_error! {
 
         TerminateFailure,
 
+        UnauthorizedCallAttempt,
+
         CommitAnauthorizedAsExecutionFailed,
 
         CommitOnlyPossibleAfterExecutionPhase,
@@ -335,13 +338,12 @@ decl_module! {
             input_data: Vec<u8>
         ) -> dispatch::DispatchResult {
             let escrow_account = ensure_signed(origin.clone())?;
+            ensure!(escrow_account == <sudo::Module<T>>::key(), Error::<T>::UnauthorizedCallAttempt);
 
             match phase {
                 0 => {
                     // ToDo: Endowment should be calculated here automatically based on config, applicable fees and expected lifetime of temporary execution contracts
                     let endowment = BalanceOf::<T>::from(100_000_000 as u32);
-
-                    // ensure!(sender == <sudo::Module<T>>::key(), "Sender must be the Escrow Account owner");
 
                     // Charge Escrow Account from requester first before executuion.
                     // Gas charge needs to be worked out. For now assume the multiplier with gas and token = 1.
