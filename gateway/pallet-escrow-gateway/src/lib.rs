@@ -279,9 +279,7 @@ decl_error! {
 
         UnauthorizedCallAttempt,
 
-        CommitAnauthorizedAsExecutionFailed,
-
-        CommitOnlyPossibleAfterExecutionPhase,
+        CommitOnlyPossibleAfterSuccessfulExecutionPhase,
     }
 }
 
@@ -408,24 +406,16 @@ decl_module! {
                 // Commit
                 1 => {
                     let last_execution_stamp = <ExecutionStamps<T>>::get(&requester, &T::Hashing::hash(&code.clone()));
-
-                    match last_execution_stamp.failure {
-                        None => {
-                            if last_execution_stamp.phase != 0 {
-                                 Err(Error::<T>::CommitOnlyPossibleAfterExecutionPhase)?
-                            }
-                            let mut proofs = last_execution_stamp.proofs.unwrap();
-                            // Release transfers
-                            commit_deferred_transfers::<T>(escrow_account.clone(), &mut proofs.deferred_transfers);
-                            // ToDo: Release result
-
-                            // ToDo: Apply storage changes to target account
-                            Self::deposit_event(RawEvent::MultistepCommitResult(44));
-                        }
-                        Some(cause) => {
-                           Err(Error::<T>::CommitAnauthorizedAsExecutionFailed)?
-                        }
+                    if ExecutionStamp::default() == last_execution_stamp || last_execution_stamp.phase != 0 || last_execution_stamp.failure != None {
+                        Err(Error::<T>::CommitOnlyPossibleAfterSuccessfulExecutionPhase)?
                     }
+                    let mut proofs = last_execution_stamp.proofs.unwrap();
+                    // Release transfers
+                    commit_deferred_transfers::<T>(escrow_account.clone(), &mut proofs.deferred_transfers);
+                    // ToDo: Release result
+
+                    // ToDo: Apply storage changes to target account
+                    Self::deposit_event(RawEvent::MultistepCommitResult(44));
                 },
                 // Revert
                 2 => {

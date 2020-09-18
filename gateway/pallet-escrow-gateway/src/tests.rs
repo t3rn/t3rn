@@ -28,9 +28,10 @@ use crate::{mock::*, Error};
 ***/
 
 const EXECUTE_PHASE: u8 = 0;
-const REVERT_PHASE: u8 = 1;
-const COMMIT_PHASE: u8 = 2;
+const COMMIT_PHASE: u8 = 1;
+const REVERT_PHASE: u8 = 2;
 
+const ZERO_ACCOUNT: u64 = 0;
 const ESCROW_ACCOUNT: u64 = 1;
 const TEMP_EXEC_CONTRACT: u64 = 2;
 const REQUESTER: u64 = 3;
@@ -228,6 +229,91 @@ fn transfer_during_execution_phase_succeeds_and_consumes_costs_correctly_and_def
                 }
             ]
         );
+    });
+}
+
+#[test]
+fn commit_phase_cannot_be_triggered_without_preceeding_execution() {
+    let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
+    let correct_wasm_path = Path::new("src/fixtures/transfer_return_code.wasm");
+    let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
+    /// Set fees
+    let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
+    let endowment = 100_000_000;
+    let subsistence_threshold = 66;
+    let inner_contract_transfer_value = 100;
+
+    new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
+        let _ = Balances::deposit_creating(
+            &REQUESTER,
+            sufficient_gas_limit
+                + endowment
+                + subsistence_threshold
+                + (value)
+                + inner_contract_transfer_value,
+        );
+
+        assert_noop!(EscrowGateway::multistep_call(
+            Origin::signed(ESCROW_ACCOUNT),
+            REQUESTER,
+            TARGET_DEST,
+            COMMIT_PHASE,
+            correct_wasm_code.clone(),
+            value,
+            sufficient_gas_limit,
+            input_data.clone()
+        ),  Error::<Test>::CommitOnlyPossibleAfterSuccessfulExecutionPhase);
+    });
+}
+
+#[test]
+fn during_commit_phase_transfers_move_from_deferred_to_target_destinations() {
+    let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
+    let correct_wasm_path = Path::new("src/fixtures/transfer_return_code.wasm");
+    let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
+    /// Set fees
+    let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
+    let endowment = 100_000_000;
+    let subsistence_threshold = 66;
+    let inner_contract_transfer_value = 100;
+
+    new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
+        let _ = Balances::deposit_creating(
+            &REQUESTER,
+            sufficient_gas_limit
+                + endowment
+                + subsistence_threshold
+                + (value)
+                + inner_contract_transfer_value,
+        );
+        assert_ok!(EscrowGateway::multistep_call(
+            Origin::signed(ESCROW_ACCOUNT),
+            REQUESTER,
+            TARGET_DEST,
+            EXECUTE_PHASE,
+            correct_wasm_code.clone(),
+            value,
+            sufficient_gas_limit,
+            input_data.clone()
+        ));
+
+        // There should be an entry with deferred transfer to the target dest though as well as the requested by contract value transfer of 100 to &0
+        assert_eq!(Balances::total_balance(&TARGET_DEST), 0);
+        assert_eq!(Balances::total_balance(&ZERO_ACCOUNT), 0);
+
+        assert_ok!(EscrowGateway::multistep_call(
+            Origin::signed(ESCROW_ACCOUNT),
+            REQUESTER,
+            TARGET_DEST,
+            COMMIT_PHASE,
+            correct_wasm_code.clone(),
+            value,
+            sufficient_gas_limit,
+            input_data.clone()
+        ));
+
+        assert_eq!(Balances::total_balance(&TARGET_DEST), 500_000);
+        assert_eq!(Balances::total_balance(&ZERO_ACCOUNT), 100);
     });
 }
 
