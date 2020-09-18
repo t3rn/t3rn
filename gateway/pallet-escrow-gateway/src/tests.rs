@@ -16,7 +16,7 @@ use sp_core::H256;
 use sp_runtime::traits::Hash;
 use sp_std::vec::Vec;
 
-use crate::{mock::*, Error};
+use crate::{mock::*, Error, ExecutionStamp, ExecutionProofs};
 
 /***
     Multistep Call - puts_code, instantiates, calls and terminates wasm contract codes on the fly.
@@ -314,6 +314,74 @@ fn during_commit_phase_transfers_move_from_deferred_to_target_destinations() {
 
         assert_eq!(Balances::total_balance(&TARGET_DEST), 500_000);
         assert_eq!(Balances::total_balance(&ZERO_ACCOUNT), 100);
+    });
+}
+
+#[test]
+fn successful_commit_phase_changes_phase_of_execution_stamp() {
+    let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
+    let correct_wasm_path = Path::new("src/fixtures/transfer_return_code.wasm");
+    let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
+    /// Set fees
+    let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
+    let endowment = 100_000_000;
+    let subsistence_threshold = 66;
+    let inner_contract_transfer_value = 100;
+
+    new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
+        let _ = Balances::deposit_creating(
+            &REQUESTER,
+            sufficient_gas_limit
+                + endowment
+                + subsistence_threshold
+                + (value)
+                + inner_contract_transfer_value,
+        );
+        assert_ok!(EscrowGateway::multistep_call(
+            Origin::signed(ESCROW_ACCOUNT),
+            REQUESTER,
+            TARGET_DEST,
+            EXECUTE_PHASE,
+            correct_wasm_code.clone(),
+            value,
+            sufficient_gas_limit,
+            input_data.clone()
+        ));
+
+        assert_ok!(EscrowGateway::multistep_call(
+            Origin::signed(ESCROW_ACCOUNT),
+            REQUESTER,
+            TARGET_DEST,
+            COMMIT_PHASE,
+            correct_wasm_code.clone(),
+            value,
+            sufficient_gas_limit,
+            input_data.clone()
+        ));
+        assert_eq!(
+            EscrowGateway::execution_stamps(&REQUESTER, &<Test as frame_system::Trait>::Hashing::hash(&correct_wasm_code.clone())),
+            ExecutionStamp {
+                timestamp: 0,
+                phase: COMMIT_PHASE,
+                proofs: Some(ExecutionProofs {
+                    result:  vec![17, 218, 109, 31, 118, 29, 223, 155, 219, 76, 157, 110, 83, 3, 235, 212, 31, 97, 133, 141, 10, 86, 71, 161, 167, 191, 224, 137, 191, 146, 27, 233],
+                    storage: vec![3, 23, 10, 46, 117, 151, 183, 183, 227, 216, 76, 5, 57, 29, 19, 154, 98, 177, 87, 231, 135, 134, 216, 192, 130, 242, 157, 207, 76, 17, 19, 20],
+                    deferred_transfers: vec![
+                        TransferEntry {
+                            to: [4, 0, 0, 0, 0, 0, 0, 0].to_vec(),
+                            value: 500000,
+                            data: [].to_vec(),
+                        },
+                        TransferEntry {
+                            to: [0, 0, 0, 0, 0, 0, 0, 0].to_vec(),
+                            value: 100,
+                            data: [].to_vec(),
+                        }
+                    ],
+                }),
+                failure: None, // Error Code
+            }
+        );
     });
 }
 

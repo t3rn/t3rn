@@ -76,7 +76,7 @@ pub fn commit_deferred_transfers<T: Trait>(
 }
 
 
-#[derive(Debug, PartialEq, Eq, Encode, Decode, Default)]
+#[derive(Debug, PartialEq, Eq, Encode, Decode, Default, Clone)]
 #[codec(compact)]
 pub struct ExecutionProofs {
     result: Vec<u8>,
@@ -84,7 +84,7 @@ pub struct ExecutionProofs {
     deferred_transfers: Vec<TransferEntry>,
 }
 
-#[derive(Debug, PartialEq, Eq, Encode, Decode, Default)]
+#[derive(Debug, PartialEq, Eq, Encode, Decode, Default, Clone)]
 pub struct ExecutionStamp {
     timestamp: u64,
     phase: u8,
@@ -412,9 +412,14 @@ decl_module! {
                     let mut proofs = last_execution_stamp.proofs.unwrap();
                     // Release transfers
                     commit_deferred_transfers::<T>(escrow_account.clone(), &mut proofs.deferred_transfers);
-                    // ToDo: Release result
+                    // ToDo: Release results -- delegates storing results to circuit?
 
-                    // ToDo: Apply storage changes to target account
+                    // ToDo: Apply storage changes to target account.
+
+                    <ExecutionStamps<T>>::mutate(&requester, &T::Hashing::hash(&code.clone()), |stamp| {
+                        stamp.phase = 1;
+                    });
+
                     Self::deposit_event(RawEvent::MultistepCommitResult(44));
                 },
                 // Revert
