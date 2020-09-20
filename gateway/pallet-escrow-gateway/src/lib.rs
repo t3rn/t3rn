@@ -142,12 +142,10 @@ pub fn execute_attached_code<'a, T: Trait>(
     cfg: &Config<T>,
     transfers: &mut Vec<TransferEntry>,
 ) -> ExecResult  {
-
     // Step 1: Temporarily instantiate the contract for the purpose following execution, so it's possible to set_storage etc.
-    instantiate_temp_execution_contract::<T>(origin, code.clone(), &input_data.clone(), endowment.clone(), gas_meter.gas_left()).map_err(|e| {
-        stamp_failed_execution::<T>(ErrCodes::InitializationFailure as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
-        e
-    })?;
+    instantiate_temp_execution_contract::<T>(origin, code.clone(), &input_data.clone(), endowment.clone(), gas_meter.gas_left())
+        .map_err(|e| ExecError::from(e))?;
+
     // Step 2. Prepare attached code to be fed for execution.
     let temp_contract_address = T::DetermineContractAddress::contract_address_for(&T::Hashing::hash(&code.clone()), &input_data.clone(), &escrow_account.clone());
     // That only works for code that is received by the call and will be executed and cleaned up after.
@@ -455,9 +453,9 @@ decl_module! {
                             );
                             let result_data = match exec_res {
                                 Ok(exec_res_val) => exec_res_val.data,
-                                Err(_) => {
+                                Err(err) => {
                                     stamp_failed_execution::<T>(ErrCodes::ExecutionFailure as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
-                                    Err(Error::<T>::ExecutionFailure)?
+                                    Err(err.error)?
                                 }
                             };
                             // execute_escrow_call_recursively();
@@ -481,9 +479,9 @@ decl_module! {
                             );
                             let result_data = match exec_res {
                                 Ok(exec_res_val) => exec_res_val.data,
-                                Err(_) => {
+                                Err(err) => {
                                     stamp_failed_execution::<T>(ErrCodes::ExecutionFailure as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
-                                    Err(Error::<T>::ExecutionFailure)?
+                                    Err(err.error)?
                                 }
                             };
                             // execute_escrow_call_recursively();
@@ -503,9 +501,9 @@ decl_module! {
                             );
                             let result_data = match exec_res {
                                 Ok(exec_res_val) => exec_res_val.data,
-                                Err(_) => {
+                                Err(err) => {
                                     stamp_failed_execution::<T>(ErrCodes::ExecutionFailure as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
-                                    Err(Error::<T>::ExecutionFailure)?
+                                    Err(err.error)?
                                 }
                             };
                             (result_data, child::root(&<ContractInfoOf<T>>::get(target_dest.clone()).unwrap().get_alive().unwrap().child_trie_info()))
