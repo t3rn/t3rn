@@ -158,7 +158,7 @@ pub fn execute_attached_code<'a, T: Trait>(
     // Step 3: Execute attached code as it's any regular contract on that parachain.
     let vm = WasmVm::new(&cfg.schedule);
     let loader = WasmLoader::new(&cfg.schedule);
-    let mut ctx = ExecutionContext::escrow_top_level(escrow_account.clone(), &cfg, &vm, &loader);
+    let mut ctx = ExecutionContext::top_level(escrow_account.clone(), &cfg, &vm, &loader);
 
     match ctx.escrow_call(
             &escrow_account.clone(),
@@ -199,7 +199,7 @@ pub fn execute_escrow_call_recursively<'a, T: Trait>(
 ) -> ExecResult  {
     let vm = WasmVm::new(&cfg.schedule);
     let loader = WasmLoader::new(&cfg.schedule);
-    let mut ctx = ExecutionContext::escrow_top_level(escrow_account.clone(), &cfg, &vm, &loader);
+    let mut ctx = ExecutionContext::top_level(escrow_account.clone(), &cfg, &vm, &loader);
 
     let executable = WasmExecutable {
         entrypoint_name: "call",
