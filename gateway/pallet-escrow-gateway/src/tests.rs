@@ -215,7 +215,7 @@ fn transfer_during_execution_phase_succeeds_and_consumes_costs_correctly_and_def
 
         // There should be an entry with deferred transfer to the target dest though as well as the requested by contract value transfer of 100 to &0
         assert_eq!(
-            EscrowGateway::deferred_transfers(&REQUESTER, &TEMP_EXEC_CONTRACT),
+            EscrowGateway::deferred_transfers(&REQUESTER, &TARGET_DEST),
             [
                 TransferEntry {
                     to: [4, 0, 0, 0, 0, 0, 0, 0].to_vec(),
