@@ -2,33 +2,37 @@
 
 use codec::{Decode, Encode};
 use contracts::{
-    BalanceOf,
-    CodeHash,
-    Config,
-    ContractAddressFor,
-    ContractInfo,
-    ContractInfoOf, escrow_exec::{escrow_transfer, EscrowCallContext, just_transfer, TransferEntry}, exec::{
+    escrow_exec::{
+        escrow_transfer, just_transfer, DeferredStorageWrite, EscrowCallContext, TransferEntry,
+    },
+    exec::{
         CallContext, ErrorOrigin, ExecError, ExecFeeToken, ExecResult, ExecReturnValue,
         ExecutionContext, Loader, MomentOf, ReturnFlags, TransactorKind, TransferCause,
         TransferFeeKind, Vm,
-    }, Gas, GasMeter, NegativeImbalanceOf, rent,
-    TrieIdGenerator, wasm::{
-        code_cache::load as load_code, // ToDo: Solve the types err while calling loader.load_main directly
-        PrefabWasmModule,
-        prepare::prepare_contract,
-        runtime::{Env, ReturnCode}, WasmExecutable, WasmLoader, WasmVm,
     },
+    rent,
+    wasm::{
+        code_cache::load as load_code, // ToDo: Solve the types err while calling loader.load_main directly
+        prepare::prepare_contract,
+        runtime::{Env, ReturnCode},
+        PrefabWasmModule,
+        WasmExecutable,
+        WasmLoader,
+        WasmVm,
+    },
+    BalanceOf, CodeHash, Config, ContractAddressFor, ContractInfo, ContractInfoOf, Gas, GasMeter,
+    NegativeImbalanceOf, TrieIdGenerator,
 };
 use frame_support::{
     debug, decl_error, decl_event, decl_module, decl_storage, dispatch, ensure,
     storage::{child, child::ChildInfo},
     traits::{Currency, ExistenceRequirement, Time},
 };
-use frame_system::{self as system, ensure_none, ensure_signed, ensure_root, Phase};
+use frame_system::{self as system, ensure_none, ensure_root, ensure_signed, Phase};
 use node_runtime::AccountId;
 use sp_runtime::{
-    DispatchError,
     traits::{Hash, Saturating},
+    DispatchError,
 };
 use sp_std::convert::TryInto;
 use sp_std::vec::Vec;
@@ -141,13 +145,24 @@ pub fn execute_attached_code<'a, T: Trait>(
     mut gas_meter: &mut GasMeter<T>,
     cfg: &Config<T>,
     transfers: &mut Vec<TransferEntry>,
-) -> ExecResult  {
+    deferred_storage_writes: &mut Vec<DeferredStorageWrite>,
+) -> ExecResult {
     // Step 1: Temporarily instantiate the contract for the purpose following execution, so it's possible to set_storage etc.
-    instantiate_temp_execution_contract::<T>(origin, code.clone(), &input_data.clone(), endowment.clone(), gas_meter.gas_left())
-        .map_err(|e| ExecError::from(e))?;
+    instantiate_temp_execution_contract::<T>(
+        origin,
+        code.clone(),
+        &input_data.clone(),
+        endowment.clone(),
+        gas_meter.gas_left(),
+    )
+    .map_err(|e| ExecError::from(e))?;
 
     // Step 2. Prepare attached code to be fed for execution.
-    let temp_contract_address = T::DetermineContractAddress::contract_address_for(&T::Hashing::hash(&code.clone()), &input_data.clone(), &escrow_account.clone());
+    let temp_contract_address = T::DetermineContractAddress::contract_address_for(
+        &T::Hashing::hash(&code.clone()),
+        &input_data.clone(),
+        &escrow_account.clone(),
+    );
     // That only works for code that is received by the call and will be executed and cleaned up after.
     let prefab_module = prepare_contract::<Env>(&code, &cfg.schedule).unwrap();
     let executable = WasmExecutable {
@@ -161,15 +176,17 @@ pub fn execute_attached_code<'a, T: Trait>(
     let mut ctx = ExecutionContext::top_level(escrow_account.clone(), &cfg, &vm, &loader);
 
     match ctx.escrow_call(
-            &escrow_account.clone(),
-            &requester.clone(),
-            &temp_contract_address.clone(),
-            &target_dest.clone(),
-            value,
-            &mut gas_meter,
-            input_data.clone(),
-            transfers,
-            &executable) {
+        &escrow_account.clone(),
+        &requester.clone(),
+        &temp_contract_address.clone(),
+        &target_dest.clone(),
+        value,
+        &mut gas_meter,
+        input_data.clone(),
+        transfers,
+        deferred_storage_writes,
+        &executable,
+    ) {
         Ok(exec_ret_val) => Ok(exec_ret_val),
         Err(exec_err) => {
             use contracts::exec::Ext;
@@ -195,15 +212,16 @@ pub fn execute_escrow_call_recursively<'a, T: Trait>(
     mut gas_meter: &mut GasMeter<T>,
     cfg: &Config<T>,
     transfers: &mut Vec<TransferEntry>,
+    deferred_storage_writes: &mut Vec<DeferredStorageWrite>,
     code_hash: &CodeHash<T>,
-) -> ExecResult  {
+) -> ExecResult {
     let vm = WasmVm::new(&cfg.schedule);
     let loader = WasmLoader::new(&cfg.schedule);
     let mut ctx = ExecutionContext::top_level(escrow_account.clone(), &cfg, &vm, &loader);
 
     let executable = WasmExecutable {
         entrypoint_name: "call",
-        prefab_module:  load_code::<T>(code_hash, &cfg.schedule)?,
+        prefab_module: load_code::<T>(code_hash, &cfg.schedule)?,
     };
 
     match ctx.escrow_call(
@@ -215,7 +233,9 @@ pub fn execute_escrow_call_recursively<'a, T: Trait>(
         &mut gas_meter,
         input_data.clone(),
         transfers,
-        &executable) {
+        deferred_storage_writes,
+        &executable,
+    ) {
         Ok(exec_ret_val) => Ok(exec_ret_val),
         Err(exec_err) => {
             use contracts::exec::Ext;
@@ -246,6 +266,9 @@ decl_storage! {
         // ( Requester , CodeHash ) -> [ ExecutionStamp ]
         ExecutionStamps get(fn execution_stamps):
             double_map hasher(blake2_128_concat) T::AccountId, hasher(blake2_128_concat) T::Hash => ExecutionStamp;
+
+        DeferredStorageWrites get(fn deferred_storage_writes):
+            double_map hasher(blake2_128_concat) T::AccountId, hasher(blake2_128_concat) T::Hash => Vec<DeferredStorageWrite>;
     }
 }
 
@@ -324,17 +347,35 @@ pub fn get_storage_root_for_code<T: Trait>(
     input_data: Vec<u8>,
     escrow_account: &T::AccountId,
 ) -> Vec<u8> {
-    let temp_contract_address = T::DetermineContractAddress::contract_address_for(&T::Hashing::hash(&code.clone()), &input_data.clone(), &escrow_account.clone());
-    child::root(&<ContractInfoOf<T>>::get(temp_contract_address.clone()).unwrap().get_alive().unwrap().child_trie_info())
+    let temp_contract_address = T::DetermineContractAddress::contract_address_for(
+        &T::Hashing::hash(&code.clone()),
+        &input_data.clone(),
+        &escrow_account.clone(),
+    );
+    child::root(
+        &<ContractInfoOf<T>>::get(temp_contract_address.clone())
+            .unwrap()
+            .get_alive()
+            .unwrap()
+            .child_trie_info(),
+    )
 }
 
-pub fn stamp_failed_execution<T: Trait>(cause_code: u8, requester: &T::AccountId, code_hash: &T::Hash) {
-    <ExecutionStamps<T>>::insert(requester, code_hash, ExecutionStamp {
-        timestamp: TryInto::<u64>::try_into(T::Time::now()).ok().unwrap(),
-        phase: 0,
-        proofs: None,
-        failure: Option::from(cause_code),
-    });
+pub fn stamp_failed_execution<T: Trait>(
+    cause_code: u8,
+    requester: &T::AccountId,
+    code_hash: &T::Hash,
+) {
+    <ExecutionStamps<T>>::insert(
+        requester,
+        code_hash,
+        ExecutionStamp {
+            timestamp: TryInto::<u64>::try_into(T::Time::now()).ok().unwrap(),
+            phase: 0,
+            proofs: None,
+            failure: Option::from(cause_code),
+        },
+    );
 }
 
 // The pallet's dispatchable functions.
@@ -415,6 +456,7 @@ decl_module! {
 
                     let mut gas_meter = GasMeter::<T>::new(gas_limit);
                     let mut transfers = Vec::<TransferEntry>::new();
+                    let mut deferred_storage_writes = Vec::<DeferredStorageWrite>::new();
 
                     // Make a distinction on the purpose of the call. Refer to the multistep_call docs.
 
@@ -450,6 +492,7 @@ decl_module! {
                                 &mut gas_meter,
                                 &cfg,
                                 &mut transfers,
+                                &mut deferred_storage_writes,
                             );
                             let result_data = match exec_res {
                                 Ok(exec_res_val) => exec_res_val.data,
@@ -476,6 +519,7 @@ decl_module! {
                                 &mut gas_meter,
                                 &cfg,
                                 &mut transfers,
+                                &mut deferred_storage_writes,
                             );
                             let result_data = match exec_res {
                                 Ok(exec_res_val) => exec_res_val.data,
@@ -497,6 +541,7 @@ decl_module! {
                                 &mut gas_meter,
                                 &cfg,
                                 &mut transfers,
+                                &mut deferred_storage_writes,
                                 &contract.code_hash,
                             );
                             let result_data = match exec_res {
@@ -524,7 +569,7 @@ decl_module! {
                     println!("DEBUG multistepcall -- Execution Proofs : result {:?} orig {:?}", execution_proofs.result, call_result_data);
                     println!("DEBUG multistepcall -- Execution storage : storage {:?}", execution_proofs.storage);
                     println!("DEBUG multistepcall -- Execution Proofs : deferred_transfers {:?}", execution_proofs.deferred_transfers);
-
+                    <DeferredStorageWrites<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), deferred_storage_writes);
                     <ExecutionStamps<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), ExecutionStamp {
                         timestamp: TryInto::<u64>::try_into(T::Time::now()).ok().unwrap(),
                         phase: 0,
