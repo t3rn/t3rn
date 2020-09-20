@@ -75,23 +75,33 @@ fn should_only_allow_to_be_called_by_escrow_account_being_sudo() {
 }
 
 #[test]
-fn during_execution_phase_when_given_empty_wasm_code_multistep_call_gives_put_code_error() {
-    let (phase, code, input_data, value, gas_limit) = default_multistep_call_args();
+fn during_execution_phase_when_given_empty_wasm_code_multistep_call_only_deferrs_transfer() {
+    let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
 
     new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
         let _ = Balances::deposit_creating(&REQUESTER, 10_000_000_000);
 
-        let err_rec = EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::multistep_call(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
             phase,
-            code,
+            Vec::new(),
             value,
             gas_limit,
             input_data,
+        ));
+
+        assert_eq!(
+            EscrowGateway::deferred_transfers(&REQUESTER, &TARGET_DEST),
+            [
+                TransferEntry {
+                    to: [4, 0, 0, 0, 0, 0, 0, 0].to_vec(),
+                    value: 500000,
+                    data: [].to_vec(),
+                },
+            ]
         );
-        assert_noop!(err_rec, Error::<Test>::PutCodeFailure);
     });
 }
 
