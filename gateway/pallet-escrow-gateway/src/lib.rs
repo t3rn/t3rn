@@ -10,6 +10,7 @@ use contracts::{
         ExecutionContext, Loader, MomentOf, ReturnFlags, TransactorKind, TransferCause,
         TransferFeeKind, Vm,
     },
+    storage::{write_contract_storage},
     rent,
     wasm::{
         code_cache::load as load_code, // ToDo: Solve the types err while calling loader.load_main directly
@@ -601,6 +602,26 @@ decl_module! {
                     // ToDo: Release results -- delegates storing results to circuit?
 
                     // ToDo: Apply storage changes to target account.
+                    let deferred_storage_writes: Vec<DeferredStorageWrite> = <DeferredStorageWrites<T>>::get(&requester, &T::Hashing::hash(&code.clone()));
+
+                    for storage_write in deferred_storage_writes.clone().into_iter() {
+                        // Check if dest changed the child root hash
+                        let dest = &T::AccountId::decode(&mut &storage_write.dest[..]).unwrap();
+                        let current_dest_storage_root = child::root(&<ContractInfoOf<T>>::get(dest.clone()).unwrap().get_alive().unwrap().child_trie_info());
+                        let corresponding_call_stamp = last_execution_stamp.call_stamps.clone().into_iter().find(|call_stamp| call_stamp.dest == storage_write.dest).unwrap();
+                        if current_dest_storage_root != corresponding_call_stamp.storage {
+                            println!("NOT GOOD");
+                        }
+                    }
+
+                    for storage_write in deferred_storage_writes.into_iter() {
+                        write_contract_storage::<T>(
+                            &T::AccountId::decode(&mut &storage_write.dest[..]).unwrap(),
+                            &storage_write.trie_id,
+                            &storage_write.key,
+                            storage_write.value,
+                        );
+                    }
 
                     <ExecutionStamps<T>>::mutate(&requester, &T::Hashing::hash(&code.clone()), |stamp| {
                         stamp.phase = 1;
