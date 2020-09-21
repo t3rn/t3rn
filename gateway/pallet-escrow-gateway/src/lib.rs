@@ -3,7 +3,7 @@
 use codec::{Decode, Encode};
 use contracts::{
     escrow_exec::{
-        escrow_transfer, just_transfer, DeferredStorageWrite, EscrowCallContext, TransferEntry,
+        escrow_transfer, just_transfer, CallStamp, DeferredStorageWrite, EscrowCallContext, TransferEntry,
     },
     exec::{
         CallContext, ErrorOrigin, ExecError, ExecFeeToken, ExecResult, ExecReturnValue,
@@ -94,6 +94,7 @@ pub struct ExecutionStamp {
     timestamp: u64,
     phase: u8,
     proofs: Option<ExecutionProofs>,
+    call_stamps: Vec<CallStamp>,
     failure: Option<u8>, // Error Code
 }
 
@@ -146,6 +147,7 @@ pub fn execute_attached_code<'a, T: Trait>(
     cfg: &Config<T>,
     transfers: &mut Vec<TransferEntry>,
     deferred_storage_writes: &mut Vec<DeferredStorageWrite>,
+    call_stamps: &mut Vec<CallStamp>,
 ) -> ExecResult {
     // Step 1: Temporarily instantiate the contract for the purpose following execution, so it's possible to set_storage etc.
     instantiate_temp_execution_contract::<T>(
@@ -185,6 +187,7 @@ pub fn execute_attached_code<'a, T: Trait>(
         input_data.clone(),
         transfers,
         deferred_storage_writes,
+        call_stamps,
         &executable,
     ) {
         Ok(exec_ret_val) => Ok(exec_ret_val),
@@ -213,6 +216,7 @@ pub fn execute_escrow_call_recursively<'a, T: Trait>(
     cfg: &Config<T>,
     transfers: &mut Vec<TransferEntry>,
     deferred_storage_writes: &mut Vec<DeferredStorageWrite>,
+    call_stamps: &mut Vec<CallStamp>,
     code_hash: &CodeHash<T>,
 ) -> ExecResult {
     let vm = WasmVm::new(&cfg.schedule);
@@ -234,6 +238,7 @@ pub fn execute_escrow_call_recursively<'a, T: Trait>(
         input_data.clone(),
         transfers,
         deferred_storage_writes,
+        call_stamps,
         &executable,
     ) {
         Ok(exec_ret_val) => Ok(exec_ret_val),
@@ -370,6 +375,7 @@ pub fn stamp_failed_execution<T: Trait>(
         requester,
         code_hash,
         ExecutionStamp {
+            call_stamps:  vec![],
             timestamp: TryInto::<u64>::try_into(T::Time::now()).ok().unwrap(),
             phase: 0,
             proofs: None,
@@ -457,6 +463,7 @@ decl_module! {
                     let mut gas_meter = GasMeter::<T>::new(gas_limit);
                     let mut transfers = Vec::<TransferEntry>::new();
                     let mut deferred_storage_writes = Vec::<DeferredStorageWrite>::new();
+                    let mut call_stamps = Vec::<CallStamp>::new();
 
                     // Make a distinction on the purpose of the call. Refer to the multistep_call docs.
 
@@ -493,6 +500,7 @@ decl_module! {
                                 &cfg,
                                 &mut transfers,
                                 &mut deferred_storage_writes,
+                                &mut call_stamps,
                             );
                             let result_data = match exec_res {
                                 Ok(exec_res_val) => exec_res_val.data,
@@ -520,6 +528,7 @@ decl_module! {
                                 &cfg,
                                 &mut transfers,
                                 &mut deferred_storage_writes,
+                                &mut call_stamps,
                             );
                             let result_data = match exec_res {
                                 Ok(exec_res_val) => exec_res_val.data,
@@ -542,6 +551,7 @@ decl_module! {
                                 &cfg,
                                 &mut transfers,
                                 &mut deferred_storage_writes,
+                                &mut call_stamps,
                                 &contract.code_hash,
                             );
                             let result_data = match exec_res {
@@ -570,7 +580,9 @@ decl_module! {
                     println!("DEBUG multistepcall -- Execution storage : storage {:?}", execution_proofs.storage);
                     println!("DEBUG multistepcall -- Execution Proofs : deferred_transfers {:?}", execution_proofs.deferred_transfers);
                     <DeferredStorageWrites<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), deferred_storage_writes);
+
                     <ExecutionStamps<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), ExecutionStamp {
+                        call_stamps,
                         timestamp: TryInto::<u64>::try_into(T::Time::now()).ok().unwrap(),
                         phase: 0,
                         proofs: Some(execution_proofs),

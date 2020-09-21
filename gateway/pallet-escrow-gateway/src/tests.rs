@@ -16,7 +16,7 @@ use sp_core::H256;
 use sp_runtime::traits::Hash;
 use sp_std::vec::Vec;
 
-use crate::{mock::*, Error, ExecutionStamp, ExecutionProofs};
+use crate::{mock::*, CallStamp, Error, ExecutionProofs, ExecutionStamp};
 
 /***
     Multistep Call - puts_code, instantiates, calls and terminates wasm contract codes on the fly.
@@ -36,7 +36,7 @@ const ESCROW_ACCOUNT: u64 = 1;
 const TEMP_EXEC_CONTRACT: u64 = 2;
 const REQUESTER: u64 = 3;
 const TARGET_DEST: u64 = 4;
-const OTHER_ACCOUNT : u64 = 5;
+const OTHER_ACCOUNT: u64 = 5;
 
 /**
  BASE GAS COSTS:
@@ -94,13 +94,11 @@ fn during_execution_phase_when_given_empty_wasm_code_multistep_call_only_deferrs
 
         assert_eq!(
             EscrowGateway::deferred_transfers(&REQUESTER, &TARGET_DEST),
-            [
-                TransferEntry {
-                    to: [4, 0, 0, 0, 0, 0, 0, 0].to_vec(),
-                    value: 500000,
-                    data: [].to_vec(),
-                },
-            ]
+            [TransferEntry {
+                to: [4, 0, 0, 0, 0, 0, 0, 0].to_vec(),
+                value: 500000,
+                data: [].to_vec(),
+            },]
         );
     });
 }
@@ -263,16 +261,19 @@ fn commit_phase_cannot_be_triggered_without_preceeding_execution() {
                 + inner_contract_transfer_value,
         );
 
-        assert_noop!(EscrowGateway::multistep_call(
-            Origin::signed(ESCROW_ACCOUNT),
-            REQUESTER,
-            TARGET_DEST,
-            COMMIT_PHASE,
-            correct_wasm_code.clone(),
-            value,
-            sufficient_gas_limit,
-            input_data.clone()
-        ),  Error::<Test>::CommitOnlyPossibleAfterSuccessfulExecutionPhase);
+        assert_noop!(
+            EscrowGateway::multistep_call(
+                Origin::signed(ESCROW_ACCOUNT),
+                REQUESTER,
+                TARGET_DEST,
+                COMMIT_PHASE,
+                correct_wasm_code.clone(),
+                value,
+                sufficient_gas_limit,
+                input_data.clone()
+            ),
+            Error::<Test>::CommitOnlyPossibleAfterSuccessfulExecutionPhase
+        );
     });
 }
 
@@ -369,13 +370,28 @@ fn successful_commit_phase_changes_phase_of_execution_stamp() {
             input_data.clone()
         ));
         assert_eq!(
-            EscrowGateway::execution_stamps(&REQUESTER, &<Test as frame_system::Trait>::Hashing::hash(&correct_wasm_code.clone())),
+            EscrowGateway::execution_stamps(
+                &REQUESTER,
+                &<Test as frame_system::Trait>::Hashing::hash(&correct_wasm_code.clone())
+            ),
             ExecutionStamp {
                 timestamp: 0,
                 phase: COMMIT_PHASE,
+                call_stamps: vec![CallStamp {
+                    storage: vec![
+                        3, 23, 10, 46, 117, 151, 183, 183, 227, 216, 76, 5, 57, 29, 19, 154, 98,
+                        177, 87, 231, 135, 134, 216, 192, 130, 242, 157, 207, 76, 17, 19, 20
+                    ]
+                }],
                 proofs: Some(ExecutionProofs {
-                    result:  vec![17, 218, 109, 31, 118, 29, 223, 155, 219, 76, 157, 110, 83, 3, 235, 212, 31, 97, 133, 141, 10, 86, 71, 161, 167, 191, 224, 137, 191, 146, 27, 233],
-                    storage: vec![3, 23, 10, 46, 117, 151, 183, 183, 227, 216, 76, 5, 57, 29, 19, 154, 98, 177, 87, 231, 135, 134, 216, 192, 130, 242, 157, 207, 76, 17, 19, 20],
+                    result: vec![
+                        17, 218, 109, 31, 118, 29, 223, 155, 219, 76, 157, 110, 83, 3, 235, 212,
+                        31, 97, 133, 141, 10, 86, 71, 161, 167, 191, 224, 137, 191, 146, 27, 233
+                    ],
+                    storage: vec![
+                        3, 23, 10, 46, 117, 151, 183, 183, 227, 216, 76, 5, 57, 29, 19, 154, 98,
+                        177, 87, 231, 135, 134, 216, 192, 130, 242, 157, 207, 76, 17, 19, 20
+                    ],
                     deferred_transfers: vec![
                         TransferEntry {
                             to: [4, 0, 0, 0, 0, 0, 0, 0].to_vec(),
