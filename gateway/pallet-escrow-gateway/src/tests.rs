@@ -4,22 +4,22 @@
 use std::path::Path;
 use std::{fs, io::Read, path::PathBuf};
 
+use crate::sp_api_hidden_includes_decl_storage::hidden_include::StorageMap;
+use crate::{mock::*, CallStamp, Error, ExecutionProofs, ExecutionStamp};
 use anyhow::{Context, Result};
 use codec::Encode;
-use contracts::{escrow_exec::TransferEntry, BalanceOf, Gas, ContractInfoOf};
 use contracts::storage::{read_contract_storage, write_contract_storage};
+use contracts::{escrow_exec::TransferEntry, BalanceOf, ContractInfoOf, Gas};
 use escrow_gateway_primitives::Phase;
 use frame_support::{
     assert_err, assert_err_ignore_postinfo, assert_noop, assert_ok,
+    storage::{child, child::ChildInfo},
     traits::{Currency, Get, ReservableCurrency},
     weights::Weight,
-    storage::{child, child::ChildInfo},
 };
 use sp_core::H256;
 use sp_runtime::traits::Hash;
 use sp_std::vec::Vec;
-use crate::sp_api_hidden_includes_decl_storage::hidden_include::StorageMap;
-use crate::{mock::*, CallStamp, Error, ExecutionProofs, ExecutionStamp};
 
 /***
     Multistep Call - puts_code, instantiates, calls and terminates wasm contract codes on the fly.
@@ -332,6 +332,61 @@ fn during_commit_phase_transfers_move_from_deferred_to_target_destinations() {
 }
 
 #[test]
+fn successful_revert_phase_removes_deferred_transfers_and_refunds_from_escrow_to_requester() {
+    let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
+    let correct_wasm_path = Path::new("src/fixtures/transfer_return_code.wasm");
+    let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
+    /// Set fees
+    let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
+    let endowment = 100_000_000;
+    let subsistence_threshold = 66;
+    let inner_contract_transfer_value = 100;
+
+    new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
+        let _ = Balances::deposit_creating(
+            &REQUESTER,
+            sufficient_gas_limit
+                + endowment
+                + subsistence_threshold
+                + (value)
+                + inner_contract_transfer_value,
+        );
+        assert_ok!(EscrowGateway::multistep_call(
+            Origin::signed(ESCROW_ACCOUNT),
+            REQUESTER,
+            TARGET_DEST,
+            EXECUTE_PHASE,
+            correct_wasm_code.clone(),
+            value,
+            sufficient_gas_limit,
+            input_data.clone()
+        ));
+
+        // There should be an entry with deferred transfer to the target dest though as well as the requested by contract value transfer of 100 to &0
+        assert_eq!(Balances::total_balance(&TARGET_DEST), 0);
+        assert_eq!(Balances::total_balance(&ZERO_ACCOUNT), 0);
+        assert_eq!(Balances::total_balance(&REQUESTER), 500166);
+        assert_eq!(Balances::total_balance(&ESCROW_ACCOUNT), 187500000);
+
+        assert_ok!(EscrowGateway::multistep_call(
+            Origin::signed(ESCROW_ACCOUNT),
+            REQUESTER,
+            TARGET_DEST,
+            REVERT_PHASE,
+            correct_wasm_code.clone(),
+            value,
+            sufficient_gas_limit,
+            input_data.clone()
+        ));
+
+        assert_eq!(Balances::total_balance(&TARGET_DEST), 0);
+        assert_eq!(Balances::total_balance(&ZERO_ACCOUNT), 0);
+        assert_eq!(Balances::total_balance(&REQUESTER), 1000266);
+        assert_eq!(Balances::total_balance(&ESCROW_ACCOUNT), 186999900);
+    });
+}
+
+#[test]
 fn successful_commit_phase_changes_phase_of_execution_stamp() {
     let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new("src/fixtures/transfer_return_code.wasm");
@@ -431,8 +486,8 @@ fn successful_commit_phase_applies_deferred_storage_writes() {
     let subsistence_threshold = 66;
     let inner_contract_transfer_value = 100;
     let EMPTY_STORAGE_AT_DEST_ROOT: Vec<u8> = vec![
-        3, 23, 10, 46, 117, 151, 183, 183, 227, 216, 76, 5, 57, 29, 19, 154, 98,
-        177, 87, 231, 135, 134, 216, 192, 130, 242, 157, 207, 76, 17, 19, 20
+        3, 23, 10, 46, 117, 151, 183, 183, 227, 216, 76, 5, 57, 29, 19, 154, 98, 177, 87, 231, 135,
+        134, 216, 192, 130, 242, 157, 207, 76, 17, 19, 20,
     ];
 
     new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
@@ -497,13 +552,16 @@ fn successful_commit_phase_applies_deferred_storage_writes() {
         );
 
         // After the execution phase only the destination contract now should not changed as the storage changes are expected to be reverted after escrow execution.
-        assert_eq!(child::root(
-            &<ContractInfoOf<Test>>::get(TEMP_EXEC_CONTRACT.clone())
-                .unwrap()
-                .get_alive()
-                .unwrap()
-                .child_trie_info(),
-        ), EMPTY_STORAGE_AT_DEST_ROOT);
+        assert_eq!(
+            child::root(
+                &<ContractInfoOf<Test>>::get(TEMP_EXEC_CONTRACT.clone())
+                    .unwrap()
+                    .get_alive()
+                    .unwrap()
+                    .child_trie_info(),
+            ),
+            EMPTY_STORAGE_AT_DEST_ROOT
+        );
 
         assert_ok!(EscrowGateway::multistep_call(
             Origin::signed(ESCROW_ACCOUNT),
@@ -517,24 +575,32 @@ fn successful_commit_phase_applies_deferred_storage_writes() {
         ));
 
         // Storage of destination contract now should finally be changed to the state recorded on post_storage call stamp.
-        assert_ne!(child::root(
-            &<ContractInfoOf<Test>>::get(TEMP_EXEC_CONTRACT.clone())
-                .unwrap()
-                .get_alive()
-                .unwrap()
-                .child_trie_info(),
-        ), EMPTY_STORAGE_AT_DEST_ROOT);
+        assert_ne!(
+            child::root(
+                &<ContractInfoOf<Test>>::get(TEMP_EXEC_CONTRACT.clone())
+                    .unwrap()
+                    .get_alive()
+                    .unwrap()
+                    .child_trie_info(),
+            ),
+            EMPTY_STORAGE_AT_DEST_ROOT
+        );
 
-        assert_eq!(child::root(
-            &<ContractInfoOf<Test>>::get(TEMP_EXEC_CONTRACT.clone())
-                .unwrap()
-                .get_alive()
-                .unwrap()
-                .child_trie_info(),
-        ), EscrowGateway::execution_stamps(
-            &REQUESTER,
-            &<Test as frame_system::Trait>::Hashing::hash(&correct_wasm_code.clone())
-        ).call_stamps[0].post_storage);
+        assert_eq!(
+            child::root(
+                &<ContractInfoOf<Test>>::get(TEMP_EXEC_CONTRACT.clone())
+                    .unwrap()
+                    .get_alive()
+                    .unwrap()
+                    .child_trie_info(),
+            ),
+            EscrowGateway::execution_stamps(
+                &REQUESTER,
+                &<Test as frame_system::Trait>::Hashing::hash(&correct_wasm_code.clone())
+            )
+            .call_stamps[0]
+                .post_storage
+        );
 
         // ExecutionStamp should now have the phase updated to COMMIT.
         assert_eq!(

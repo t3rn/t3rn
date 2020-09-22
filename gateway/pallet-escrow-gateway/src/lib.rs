@@ -327,6 +327,8 @@ decl_error! {
 
         CommitOnlyPossibleAfterSuccessfulExecutionPhase,
 
+        CannotRevertMultipleTimes,
+
         DestinationContractStorageChangedSinceExecution,
     }
 }
@@ -576,6 +578,7 @@ decl_module! {
                         proofs: Some(execution_proofs),
                         failure: None,
                     });
+                    // ToDo: Return difference between gas spend and actual costs.
                 }
                 // Commit
                 1 => {
@@ -613,13 +616,16 @@ decl_module! {
                     <ExecutionStamps<T>>::mutate(&requester, &T::Hashing::hash(&code.clone()), |stamp| {
                         stamp.phase = 1;
                     });
-
                     Self::deposit_event(RawEvent::MultistepCommitResult(44));
                 },
                 // Revert
                 2 => {
-                    Self::deposit_event(RawEvent::MultistepRevertResult(44));
-                    Something::put(55);
+                   Self::revert(
+                        origin,
+                        escrow_account,
+                        requester,
+                        code,
+                   );
                 },
                 _ => {
                     debug::info!("DEBUG multistep_call -- Unknown Phase {}", phase);
@@ -628,6 +634,26 @@ decl_module! {
                 }
             }
             Ok(())
+        }
+
+        #[weight = 10_000]
+        fn revert(
+            origin,
+            escrow_account: <T as frame_system::Trait>::AccountId,
+            requester: <T as frame_system::Trait>::AccountId,
+            code: Vec<u8>,
+        ) {
+            let last_execution_stamp = <ExecutionStamps<T>>::get(&requester, &T::Hashing::hash(&code.clone()));
+            if ExecutionStamp::default() == last_execution_stamp || last_execution_stamp.phase == 2 {
+                Err(Error::<T>::CannotRevertMultipleTimes)?
+            }
+            let mut proofs = last_execution_stamp.proofs.unwrap();
+            // Refund transfers
+            cleanup_failed_execution::<T>(escrow_account.clone(), requester.clone(), &mut proofs.deferred_transfers);
+
+            <ExecutionStamps<T>>::mutate(&requester, &T::Hashing::hash(&code.clone()), |stamp| {
+                stamp.phase = 2;
+            });
         }
 
         /// Just a dummy get_storage entry point.
