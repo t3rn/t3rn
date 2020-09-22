@@ -32,6 +32,7 @@ use frame_support::{
 };
 use frame_system::{self as system, ensure_none, ensure_root, ensure_signed, Phase};
 use node_runtime::AccountId;
+use reduce::Reduce;
 use sp_runtime::{
     traits::{Hash, Saturating},
     DispatchError,
@@ -86,8 +87,8 @@ pub fn commit_deferred_transfers<T: Trait>(
 #[derive(Debug, PartialEq, Eq, Encode, Decode, Default, Clone)]
 #[codec(compact)]
 pub struct ExecutionProofs {
-    result: Vec<u8>,
-    storage: Vec<u8>,
+    result: Option<Vec<u8>>,
+    storage: Option<Vec<u8>>,
     deferred_transfers: Vec<TransferEntry>,
 }
 
@@ -246,7 +247,7 @@ pub fn execute_escrow_call_recursively<'a, T: Trait>(
             use contracts::exec::Ext;
             // Revert the execution effects on the spot.
             cleanup_failed_execution::<T>(escrow_account.clone(), requester.clone(), transfers);
-            return Err(exec_err);
+            Err(exec_err)?
         }
     }
 }
@@ -466,8 +467,7 @@ decl_module! {
                     let mut call_stamps = Vec::<CallStamp>::new();
 
                     // Make a distinction on the purpose of the call. Refer to the multistep_call docs.
-
-                    let (call_result_data, call_storage_state): (Vec<u8>, Vec<u8>) = match (!code.is_empty(), <ContractInfoOf<T>>::get(&target_dest.clone())) {
+                    let result_proof: Option<Vec<u8>> = match (!code.is_empty(), <ContractInfoOf<T>>::get(&target_dest.clone())) {
                         // Only A.1) - no code, not a contract - just deferred transfer.
                         (false, None) => {
                             if value > BalanceOf::<T>::from(0) {
@@ -483,100 +483,86 @@ decl_module! {
                             } else {
                                 Err(Error::<T>::NothingToDo)?
                             }
-                            (vec![], vec![])
+                            None
                         },
-                        // B) + C) - both code attached & contract at dest. Execute both; code first.
-                        (true, Some(ContractInfo::Alive(contract))) => {
-                            let exec_res = execute_attached_code(
-                                origin.clone(),
-                                &escrow_account.clone(),
-                                &requester.clone(),
-                                &target_dest.clone(),
-                                value.clone(),
-                                code.clone(),
-                                input_data.clone(),
-                                endowment.clone(),
-                                &mut gas_meter,
-                                &cfg,
-                                &mut transfers,
-                                &mut deferred_storage_writes,
-                                &mut call_stamps,
-                            );
-                            let result_data = match exec_res {
-                                Ok(exec_res_val) => exec_res_val.data,
-                                Err(err) => {
-                                    stamp_failed_execution::<T>(ErrCodes::ExecutionFailure as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
-                                    Err(err.error)?
+                        // B) + C) OR only B) or only C)
+                        // Check for both code attached & contract at dest. Execute both if possible; attached code first.
+                        (true, None) | (true, Some(_)) | (false, Some(_)) => {
+
+                            let mut result_attached_contract = vec![];
+                            let mut result_called_contract = vec![];
+
+                            if !code.is_empty() {
+                                // B) - execute attached code first
+                                result_attached_contract = match execute_attached_code(
+                                    origin.clone(),
+                                    &escrow_account.clone(),
+                                    &requester.clone(),
+                                    &target_dest.clone(),
+                                    value.clone(),
+                                    code.clone(),
+                                    input_data.clone(),
+                                    endowment.clone(),
+                                    &mut gas_meter,
+                                    &cfg,
+                                    &mut transfers,
+                                    &mut deferred_storage_writes,
+                                    &mut call_stamps,
+                                ) {
+                                    Ok(exec_res_val) => exec_res_val.data,
+                                    Err(err) => {
+                                        stamp_failed_execution::<T>(ErrCodes::ExecutionFailure as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
+                                        Err(err.error)?
+                                    }
                                 }
-                            };
-                            // execute_escrow_call_recursively();
-                            (result_data, get_storage_root_for_code::<T>(code.clone(), input_data.clone(), &escrow_account.clone()))
-                            // ToDo: Merge it here with following call.
-                        },
-                        // B) - code attached & no contract at dest. Transfer is included in the code exec.
-                        (true, None) => {
-                            let exec_res = execute_attached_code(
-                                origin.clone(),
-                                &escrow_account.clone(),
-                                &requester.clone(),
-                                &target_dest.clone(),
-                                value.clone(),
-                                code.clone(),
-                                input_data.clone(),
-                                endowment.clone(),
-                                &mut gas_meter,
-                                &cfg,
-                                &mut transfers,
-                                &mut deferred_storage_writes,
-                                &mut call_stamps,
-                            );
-                            let result_data = match exec_res {
-                                Ok(exec_res_val) => exec_res_val.data,
-                                Err(err) => {
-                                    stamp_failed_execution::<T>(ErrCodes::ExecutionFailure as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
-                                    Err(err.error)?
+                            }
+                            // Check again whether it's a contract at dest and ensure it's alive.
+                            if let Some(ContractInfo::Alive(info)) = <ContractInfoOf<T>>::get(&target_dest.clone()) {
+                                 // C) - execute contract call at target destination.
+                                 result_called_contract = match execute_escrow_call_recursively(
+                                    &escrow_account.clone(),
+                                    &requester.clone(),
+                                    &target_dest.clone(),
+                                    value.clone(),
+                                    input_data.clone(),
+                                    &mut gas_meter,
+                                    &cfg,
+                                    &mut transfers,
+                                    &mut deferred_storage_writes,
+                                    &mut call_stamps,
+                                    &info.code_hash,
+                                ) {
+                                    Ok(exec_res_val) => exec_res_val.data,
+                                    Err(err) => {
+                                        stamp_failed_execution::<T>(ErrCodes::ExecutionFailure as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
+                                        Err(err.error)?
+                                    }
                                 }
-                            };
-                            // execute_escrow_call_recursively();
-                            (result_data, get_storage_root_for_code::<T>(code.clone(), input_data.clone(), &escrow_account.clone()))
+                            }
+                            // Give priority here to the result of contract at target destination if exist.
+                            // The results can be chained -> output from attached code can be redirected into input of the contract call.
+                            if (!result_called_contract.is_empty()) {
+                                Some(T::Hashing::hash(&result_called_contract).encode())
+                            } else {
+                                Some(T::Hashing::hash(&result_attached_contract).encode())
+                            }
                         },
-                        (false, Some(ContractInfo::Alive(contract))) => {
-                            let exec_res = execute_escrow_call_recursively(
-                                &escrow_account.clone(),
-                                &requester.clone(),
-                                &target_dest.clone(),
-                                value.clone(),
-                                input_data.clone(),
-                                &mut gas_meter,
-                                &cfg,
-                                &mut transfers,
-                                &mut deferred_storage_writes,
-                                &mut call_stamps,
-                                &contract.code_hash,
-                            );
-                            let result_data = match exec_res {
-                                Ok(exec_res_val) => exec_res_val.data,
-                                Err(err) => {
-                                    stamp_failed_execution::<T>(ErrCodes::ExecutionFailure as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
-                                    Err(err.error)?
-                                }
-                            };
-                            (result_data, child::root(&<ContractInfoOf<T>>::get(target_dest.clone()).unwrap().get_alive().unwrap().child_trie_info()))
-                        },
-                        (_, Some(ContractInfo::Tombstone(_))) => {
-                            Err(Error::<T>::NothingToDo)?
-                        }
                     };
 
                     <DeferredTransfers<T>>::insert(&requester, &target_dest.clone(), transfers);
 
+                    let storage_proof = match call_stamps.clone().into_iter().map(|a| a.post_storage).reduce(|a, b| [a, b].concat()) {
+                        None => None,
+                        Some(merged_post_storage) => Some(T::Hashing::hash(&merged_post_storage).encode()),
+                    };
+
                     let execution_proofs = ExecutionProofs {
                         // Present the execution proof by hashing the results.
-                        result: T::Hashing::hash(&call_result_data).encode(),
-                        storage: call_storage_state,
+                        result: result_proof,
+                        storage: storage_proof,
                         deferred_transfers: <DeferredTransfers<T>>::get(&requester, &target_dest.clone()),
                     };
-                    println!("DEBUG multistepcall -- Execution Proofs : result {:?} orig {:?}", execution_proofs.result, call_result_data);
+                    println!("DEBUG multistepcall -- Execution Proofs : result {:?} ", execution_proofs.result);
                     println!("DEBUG multistepcall -- Execution storage : storage {:?}", execution_proofs.storage);
                     println!("DEBUG multistepcall -- Execution Proofs : deferred_transfers {:?}", execution_proofs.deferred_transfers);
                     <DeferredStorageWrites<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), deferred_storage_writes);
@@ -608,7 +594,7 @@ decl_module! {
                         let dest = &T::AccountId::decode(&mut &storage_write.dest[..]).unwrap();
                         let current_dest_storage_root = child::root(&<ContractInfoOf<T>>::get(dest.clone()).unwrap().get_alive().unwrap().child_trie_info());
                         let corresponding_call_stamp = last_execution_stamp.call_stamps.clone().into_iter().find(|call_stamp| call_stamp.dest == storage_write.dest).unwrap();
-                        if current_dest_storage_root != corresponding_call_stamp.storage {
+                        if current_dest_storage_root != corresponding_call_stamp.pre_storage {
                             println!("NOT GOOD");
                         }
                     }
