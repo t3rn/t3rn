@@ -3,15 +3,16 @@
 use codec::{Decode, Encode};
 use contracts::{
     escrow_exec::{
-        escrow_transfer, just_transfer, CallStamp, DeferredStorageWrite, EscrowCallContext, TransferEntry,
+        escrow_transfer, just_transfer, CallStamp, DeferredStorageWrite, EscrowCallContext,
+        TransferEntry,
     },
     exec::{
         CallContext, ErrorOrigin, ExecError, ExecFeeToken, ExecResult, ExecReturnValue,
         ExecutionContext, Loader, MomentOf, ReturnFlags, TransactorKind, TransferCause,
         TransferFeeKind, Vm,
     },
-    storage::{write_contract_storage},
     rent,
+    storage::write_contract_storage,
     wasm::{
         code_cache::load as load_code, // ToDo: Solve the types err while calling loader.load_main directly
         prepare::prepare_contract,
@@ -197,12 +198,10 @@ pub fn execute_attached_code<'a, T: Trait>(
             // Revert the execution effects on the spot.
             cleanup_failed_execution::<T>(escrow_account.clone(), requester.clone(), transfers);
             let mut call_context = ctx.new_call_context(escrow_account.clone(), value);
-            // stamp_failed_execution::<T>(ErrCodes::ExecutionFailure as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
-            // Err(Error::<T>::ExecutionFailure)?
             call_context
                 .terminate(&temp_contract_address.clone(), &mut gas_meter)
                 .map_err(|_e| <Error<T>>::TerminateFailure)?;
-            return Err(exec_err);
+            Err(exec_err)?
         }
     }
 }
@@ -376,7 +375,7 @@ pub fn stamp_failed_execution<T: Trait>(
         requester,
         code_hash,
         ExecutionStamp {
-            call_stamps:  vec![],
+            call_stamps: vec![],
             timestamp: TryInto::<u64>::try_into(T::Time::now()).ok().unwrap(),
             phase: 0,
             proofs: None,
