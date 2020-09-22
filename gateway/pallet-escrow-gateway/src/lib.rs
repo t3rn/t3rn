@@ -326,6 +326,8 @@ decl_error! {
         UnauthorizedCallAttempt,
 
         CommitOnlyPossibleAfterSuccessfulExecutionPhase,
+
+        DestinationContractStorageChangedSinceExecution,
     }
 }
 
@@ -595,7 +597,7 @@ decl_module! {
                         let current_dest_storage_root = child::root(&<ContractInfoOf<T>>::get(dest.clone()).unwrap().get_alive().unwrap().child_trie_info());
                         let corresponding_call_stamp = last_execution_stamp.call_stamps.clone().into_iter().find(|call_stamp| call_stamp.dest == storage_write.dest).unwrap();
                         if current_dest_storage_root != corresponding_call_stamp.pre_storage {
-                            println!("NOT GOOD");
+                            Err(Error::<T>::DestinationContractStorageChangedSinceExecution)?
                         }
                     }
 

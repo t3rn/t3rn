@@ -6,17 +6,19 @@ use std::{fs, io::Read, path::PathBuf};
 
 use anyhow::{Context, Result};
 use codec::Encode;
-use contracts::{escrow_exec::TransferEntry, BalanceOf, Gas};
+use contracts::{escrow_exec::TransferEntry, BalanceOf, Gas, ContractInfoOf};
+use contracts::storage::{read_contract_storage, write_contract_storage};
 use escrow_gateway_primitives::Phase;
 use frame_support::{
     assert_err, assert_err_ignore_postinfo, assert_noop, assert_ok,
     traits::{Currency, Get, ReservableCurrency},
     weights::Weight,
+    storage::{child, child::ChildInfo},
 };
 use sp_core::H256;
 use sp_runtime::traits::Hash;
 use sp_std::vec::Vec;
-
+use crate::sp_api_hidden_includes_decl_storage::hidden_include::StorageMap;
 use crate::{mock::*, CallStamp, Error, ExecutionProofs, ExecutionStamp};
 
 /***
@@ -428,6 +430,10 @@ fn successful_commit_phase_applies_deferred_storage_writes() {
     let endowment = 100_000_000;
     let subsistence_threshold = 66;
     let inner_contract_transfer_value = 100;
+    let EMPTY_STORAGE_AT_DEST_ROOT: Vec<u8> = vec![
+        3, 23, 10, 46, 117, 151, 183, 183, 227, 216, 76, 5, 57, 29, 19, 154, 98,
+        177, 87, 231, 135, 134, 216, 192, 130, 242, 157, 207, 76, 17, 19, 20
+    ];
 
     new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
         let _ = Balances::deposit_creating(
@@ -448,7 +454,6 @@ fn successful_commit_phase_applies_deferred_storage_writes() {
             sufficient_gas_limit,
             Encode::encode(&17),
         ));
-
 
         assert_eq!(
             EscrowGateway::execution_stamps(
@@ -490,16 +495,88 @@ fn successful_commit_phase_applies_deferred_storage_writes() {
                 failure: None
             }
         );
-        // assert_ok!(EscrowGateway::multistep_call(
-        //     Origin::signed(ESCROW_ACCOUNT),
-        //     REQUESTER,
-        //     TARGET_DEST,
-        //     COMMIT_PHASE,
-        //     correct_wasm_code.clone(),
-        //     value,
-        //     sufficient_gas_limit,
-        //     input_data.clone()
-        // ));
+
+        // After the execution phase only the destination contract now should not changed as the storage changes are expected to be reverted after escrow execution.
+        assert_eq!(child::root(
+            &<ContractInfoOf<Test>>::get(TEMP_EXEC_CONTRACT.clone())
+                .unwrap()
+                .get_alive()
+                .unwrap()
+                .child_trie_info(),
+        ), EMPTY_STORAGE_AT_DEST_ROOT);
+
+        assert_ok!(EscrowGateway::multistep_call(
+            Origin::signed(ESCROW_ACCOUNT),
+            REQUESTER,
+            TARGET_DEST,
+            COMMIT_PHASE,
+            correct_wasm_code.clone(),
+            value,
+            sufficient_gas_limit,
+            Encode::encode(&17),
+        ));
+
+        // Storage of destination contract now should finally be changed to the state recorded on post_storage call stamp.
+        assert_ne!(child::root(
+            &<ContractInfoOf<Test>>::get(TEMP_EXEC_CONTRACT.clone())
+                .unwrap()
+                .get_alive()
+                .unwrap()
+                .child_trie_info(),
+        ), EMPTY_STORAGE_AT_DEST_ROOT);
+
+        assert_eq!(child::root(
+            &<ContractInfoOf<Test>>::get(TEMP_EXEC_CONTRACT.clone())
+                .unwrap()
+                .get_alive()
+                .unwrap()
+                .child_trie_info(),
+        ), EscrowGateway::execution_stamps(
+            &REQUESTER,
+            &<Test as frame_system::Trait>::Hashing::hash(&correct_wasm_code.clone())
+        ).call_stamps[0].post_storage);
+
+        // ExecutionStamp should now have the phase updated to COMMIT.
+        assert_eq!(
+            EscrowGateway::execution_stamps(
+                &REQUESTER,
+                &<Test as frame_system::Trait>::Hashing::hash(&correct_wasm_code.clone())
+            ),
+            ExecutionStamp {
+                timestamp: 0,
+                phase: COMMIT_PHASE,
+                proofs: Some(ExecutionProofs {
+                    result: Some(vec![
+                        14, 87, 81, 192, 38, 229, 67, 178, 232, 171, 46, 176, 96, 153, 218, 161,
+                        209, 229, 223, 71, 119, 143, 119, 135, 250, 171, 69, 205, 241, 47, 227,
+                        168
+                    ]),
+                    storage: Some(vec![
+                        225, 105, 234, 201, 35, 192, 174, 73, 89, 201, 124, 236, 194, 183, 248,
+                        252, 93, 242, 222, 216, 124, 186, 81, 105, 223, 249, 163, 32, 84, 85, 114,
+                        217
+                    ]),
+                    deferred_transfers: vec![TransferEntry {
+                        to: vec![4, 0, 0, 0, 0, 0, 0, 0],
+                        value: 500000,
+                        data: vec![]
+                    }]
+                }),
+                call_stamps: vec![CallStamp {
+                    // That's good - set storage contract touches the storage therefore pre and post state are different.
+                    pre_storage: vec![
+                        3, 23, 10, 46, 117, 151, 183, 183, 227, 216, 76, 5, 57, 29, 19, 154, 98,
+                        177, 87, 231, 135, 134, 216, 192, 130, 242, 157, 207, 76, 17, 19, 20
+                    ],
+                    post_storage: vec![
+                        70, 154, 173, 211, 104, 40, 179, 230, 168, 8, 155, 88, 138, 35, 147, 247,
+                        218, 122, 13, 85, 84, 230, 21, 127, 1, 8, 128, 129, 211, 108, 6, 215
+                    ],
+                    dest: vec![2, 0, 0, 0, 0, 0, 0, 0]
+                }],
+                failure: None
+            }
+        );
     });
 }
 
