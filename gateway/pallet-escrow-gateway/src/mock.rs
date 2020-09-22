@@ -43,11 +43,10 @@ impl_outer_origin! {
 }
 
 impl_outer_dispatch! {
-	pub enum Call for Test where origin: Origin {
-		sudo::Sudo,
-	}
+    pub enum Call for Test where origin: Origin {
+        sudo::Sudo,
+    }
 }
-
 
 // For testing the pallet, we construct most of a mock runtime. This means
 // first constructing a configuration type (`Test`) which `impl`s each of the
@@ -237,17 +236,19 @@ impl ExtBuilder {
         pallet_balances::GenesisConfig::<Test> { balances: vec![] }
             .assimilate_storage(&mut t)
             .unwrap();
-        sudo::GenesisConfig::<Test> { key: escrow_account }
-            .assimilate_storage(&mut t)
-            .unwrap();
+        sudo::GenesisConfig::<Test> {
+            key: escrow_account,
+        }
+        .assimilate_storage(&mut t)
+        .unwrap();
         GenesisConfig {
             current_schedule: Schedule {
                 // enable_prinltn: true,
                 ..Default::default()
             },
         }
-            .assimilate_storage(&mut t)
-            .unwrap();
+        .assimilate_storage(&mut t)
+        .unwrap();
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));
         ext
@@ -255,7 +256,9 @@ impl ExtBuilder {
 }
 
 pub fn new_test_ext_builder(deposit: u64, escrow_account: u64) -> sp_io::TestExternalities {
-    ExtBuilder::default().existential_deposit(deposit).build(escrow_account)
+    ExtBuilder::default()
+        .existential_deposit(deposit)
+        .build(escrow_account)
 }
 
 
