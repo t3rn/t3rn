@@ -3,8 +3,8 @@
 use codec::{Decode, Encode};
 use contracts::{
     escrow_exec::{
-        escrow_transfer, just_transfer, CallStamp, DeferredStorageWrite, EscrowCallContext,
-        TransferEntry,
+        commit_deferred_transfers, escrow_transfer, just_transfer, CallStamp, DeferredStorageWrite,
+        EscrowCallContext, TransferEntry,
     },
     exec::{
         CallContext, ErrorOrigin, ExecError, ExecFeeToken, ExecResult, ExecReturnValue,
@@ -68,20 +68,6 @@ pub fn cleanup_failed_execution<T: Trait>(
         );
     }
     transfers.clear();
-}
-
-pub fn commit_deferred_transfers<T: Trait>(
-    escrow_account: T::AccountId,
-    transfers: &mut Vec<TransferEntry>,
-) {
-    // Give the money back to the requester from the transfers that succeeded.
-    for mut transfer in transfers.iter() {
-        just_transfer::<T>(
-            &escrow_account,
-            &T::AccountId::decode(&mut &transfer.to[..]).unwrap(),
-            BalanceOf::<T>::from(transfer.value),
-        );
-    }
 }
 
 #[derive(Debug, PartialEq, Eq, Encode, Decode, Default, Clone)]
