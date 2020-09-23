@@ -281,7 +281,7 @@ fn commit_phase_cannot_be_triggered_without_preceeding_execution() {
 }
 
 #[test]
-fn during_commit_phase_transfers_move_from_deferred_to_target_destinations() {
+fn successful_commit_phase_transfers_move_from_deferred_to_target_destinations() {
     let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new("src/fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
@@ -314,6 +314,11 @@ fn during_commit_phase_transfers_move_from_deferred_to_target_destinations() {
         // There should be an entry with deferred transfer to the target dest though as well as the requested by contract value transfer of 100 to &0
         assert_eq!(Balances::total_balance(&TARGET_DEST), 0);
         assert_eq!(Balances::total_balance(&ZERO_ACCOUNT), 0);
+        assert_eq!(Balances::total_balance(&REQUESTER), subsistence_threshold); // 66
+        assert_eq!(
+            Balances::total_balance(&ESCROW_ACCOUNT),
+            sufficient_gas_limit + inner_contract_transfer_value + value
+        ); // 188000100
 
         assert_ok!(EscrowGateway::multistep_call(
             Origin::signed(ESCROW_ACCOUNT),
@@ -328,6 +333,11 @@ fn during_commit_phase_transfers_move_from_deferred_to_target_destinations() {
 
         assert_eq!(Balances::total_balance(&TARGET_DEST), 500_000);
         assert_eq!(Balances::total_balance(&ZERO_ACCOUNT), 100);
+        assert_eq!(Balances::total_balance(&REQUESTER), subsistence_threshold); // 500166
+        assert_eq!(
+            Balances::total_balance(&ESCROW_ACCOUNT),
+            sufficient_gas_limit
+        ); // 186999900
     });
 }
 
@@ -365,8 +375,11 @@ fn successful_revert_phase_removes_deferred_transfers_and_refunds_from_escrow_to
         // There should be an entry with deferred transfer to the target dest though as well as the requested by contract value transfer of 100 to &0
         assert_eq!(Balances::total_balance(&TARGET_DEST), 0);
         assert_eq!(Balances::total_balance(&ZERO_ACCOUNT), 0);
-        assert_eq!(Balances::total_balance(&REQUESTER), 500166);
-        assert_eq!(Balances::total_balance(&ESCROW_ACCOUNT), 187500000);
+        assert_eq!(Balances::total_balance(&REQUESTER), subsistence_threshold); // 66
+        assert_eq!(
+            Balances::total_balance(&ESCROW_ACCOUNT),
+            sufficient_gas_limit + inner_contract_transfer_value + value
+        ); // 188000100
 
         assert_ok!(EscrowGateway::multistep_call(
             Origin::signed(ESCROW_ACCOUNT),
@@ -381,8 +394,14 @@ fn successful_revert_phase_removes_deferred_transfers_and_refunds_from_escrow_to
 
         assert_eq!(Balances::total_balance(&TARGET_DEST), 0);
         assert_eq!(Balances::total_balance(&ZERO_ACCOUNT), 0);
-        assert_eq!(Balances::total_balance(&REQUESTER), 1000266);
-        assert_eq!(Balances::total_balance(&ESCROW_ACCOUNT), 186999900);
+        assert_eq!(
+            Balances::total_balance(&REQUESTER),
+            subsistence_threshold + value + inner_contract_transfer_value
+        ); // 500166
+        assert_eq!(
+            Balances::total_balance(&ESCROW_ACCOUNT),
+            sufficient_gas_limit
+        ); // 186999900
     });
 }
 
