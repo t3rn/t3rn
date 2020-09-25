@@ -16,6 +16,8 @@ use sp_runtime::{
 
 use contracts::{GenesisConfig, *};
 
+use escrow_gateway_primitives;
+
 use sudo;
 
 use std::cell::RefCell;
@@ -190,6 +192,10 @@ impl system::Trait for Test {
 impl sudo::Trait for Test {
     type Event = MetaEvent;
     type Call = Call;
+}
+
+impl escrow_gateway_primitives::Trait for Test {
+    type Currency = Balances;
 }
 
 impl Trait for Test {

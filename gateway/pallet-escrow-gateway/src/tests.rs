@@ -8,9 +8,11 @@ use crate::sp_api_hidden_includes_decl_storage::hidden_include::StorageMap;
 use crate::{mock::*, CallStamp, Error, ExecutionProofs, ExecutionStamp};
 use anyhow::{Context, Result};
 use codec::Encode;
-use contracts::storage::{read_contract_storage, write_contract_storage};
-use contracts::{escrow_exec::TransferEntry, BalanceOf, ContractInfoOf, Gas};
-use escrow_gateway_primitives::Phase;
+use contracts::{
+    storage::{read_contract_storage, write_contract_storage},
+    BalanceOf, ContractInfoOf, Gas,
+};
+use escrow_gateway_primitives::{transfers::TransferEntry, Phase};
 use frame_support::{
     assert_err, assert_err_ignore_postinfo, assert_noop, assert_ok,
     storage::{child, child::ChildInfo},

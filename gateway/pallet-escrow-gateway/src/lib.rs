@@ -2,10 +2,7 @@
 
 use codec::{Decode, Encode};
 use contracts::{
-    escrow_exec::{
-        commit_deferred_transfers, escrow_transfer, just_transfer, CallStamp, DeferredStorageWrite,
-        EscrowCallContext, TransferEntry,
-    },
+    escrow_exec::{CallStamp, DeferredStorageWrite, EscrowCallContext},
     exec::{
         CallContext, ErrorOrigin, ExecError, ExecFeeToken, ExecResult, ExecReturnValue,
         ExecutionContext, Loader, MomentOf, ReturnFlags, TransactorKind, TransferCause,
@@ -22,8 +19,8 @@ use contracts::{
         WasmLoader,
         WasmVm,
     },
-    BalanceOf, CodeHash, Config, ContractAddressFor, ContractInfo, ContractInfoOf, Gas, GasMeter,
-    NegativeImbalanceOf, TrieIdGenerator,
+    BalanceOf as ContractsBalanceOf, CodeHash, Config, ContractAddressFor, ContractInfo,
+    ContractInfoOf, Gas, GasMeter, NegativeImbalanceOf, TrieIdGenerator,
 };
 use frame_support::{
     debug, decl_error, decl_event, decl_module, decl_storage, dispatch, ensure,
@@ -43,10 +40,12 @@ use sudo;
 
 use crate::escrow::{ContractsEscrowEngine, EscrowExecuteResult};
 
+use escrow_gateway_primitives::transfers::{
+    commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
+};
+
 #[macro_use]
 mod escrow;
-
-// pub type CodeHash<T> = <T as frame_system::Trait>::Hash;
 
 #[cfg(test)]
 mod mock;
@@ -91,7 +90,7 @@ pub fn instantiate_temp_execution_contract<'a, T: Trait>(
     origin: T::Origin,
     code: Vec<u8>,
     input_data: &Vec<u8>,
-    endowment: BalanceOf<T>,
+    endowment: ContractsBalanceOf<T>,
     gas_limit: Gas,
 ) -> dispatch::DispatchResult {
     let code_hash_res = <contracts::Module<T>>::put_code(origin.clone(), code.clone());
@@ -122,7 +121,6 @@ pub fn instantiate_temp_execution_contract<'a, T: Trait>(
     );
     Ok(())
 }
-
 pub fn execute_attached_code<'a, T: Trait>(
     origin: T::Origin,
     escrow_account: &T::AccountId,
@@ -131,7 +129,7 @@ pub fn execute_attached_code<'a, T: Trait>(
     value: BalanceOf<T>,
     code: Vec<u8>,
     input_data: Vec<u8>,
-    endowment: BalanceOf<T>,
+    endowment: ContractsBalanceOf<T>,
     mut gas_meter: &mut GasMeter<T>,
     cfg: &Config<T>,
     transfers: &mut Vec<TransferEntry>,
@@ -166,12 +164,15 @@ pub fn execute_attached_code<'a, T: Trait>(
     let loader = WasmLoader::new(&cfg.schedule);
     let mut ctx = ExecutionContext::top_level(escrow_account.clone(), &cfg, &vm, &loader);
 
+    let value_contracts_compatible =
+        ContractsBalanceOf::<T>::from(TryInto::<u32>::try_into(value).ok().unwrap());
+
     match ctx.escrow_call(
         &escrow_account.clone(),
         &requester.clone(),
         &temp_contract_address.clone(),
         &target_dest.clone(),
-        value,
+        value_contracts_compatible,
         &mut gas_meter,
         input_data.clone(),
         transfers,
@@ -184,7 +185,8 @@ pub fn execute_attached_code<'a, T: Trait>(
             use contracts::exec::Ext;
             // Revert the execution effects on the spot.
             cleanup_failed_execution::<T>(escrow_account.clone(), requester.clone(), transfers);
-            let mut call_context = ctx.new_call_context(escrow_account.clone(), value);
+            let mut call_context =
+                ctx.new_call_context(escrow_account.clone(), value_contracts_compatible);
             call_context
                 .terminate(&temp_contract_address.clone(), &mut gas_meter)
                 .map_err(|_e| <Error<T>>::TerminateFailure)?;
@@ -220,7 +222,7 @@ pub fn execute_escrow_call_recursively<'a, T: Trait>(
         &requester.clone(),
         &target_dest.clone(),
         &target_dest.clone(),
-        value,
+        ContractsBalanceOf::<T>::from(TryInto::<u32>::try_into(value).ok().unwrap()),
         &mut gas_meter,
         input_data.clone(),
         transfers,
@@ -238,7 +240,9 @@ pub fn execute_escrow_call_recursively<'a, T: Trait>(
     }
 }
 
-pub trait Trait: contracts::Trait + system::Trait + sudo::Trait {
+pub trait Trait:
+    contracts::Trait + system::Trait + sudo::Trait + escrow_gateway_primitives::Trait
+{
     type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 }
 
@@ -433,23 +437,25 @@ decl_module! {
 
             match phase {
                 0 => {
+                    const ENDOWMENT: u32 = 100_000_000;
                     // ToDo: Endowment should be calculated here automatically based on config, applicable fees and expected lifetime of temporary execution contracts
-                    let endowment = BalanceOf::<T>::from(100_000_000 as u32);
+                    let endowment = ContractsBalanceOf::<T>::from(ENDOWMENT as u32);
 
                     // Charge Escrow Account from requester first before executuion.
                     // Gas charge needs to be worked out. For now assume the multiplier with gas and token = 1.
-                    let total_precharge = BalanceOf::<T>::from(gas_limit as u32) + endowment;
+                    let total_precharge = BalanceOf::<T>::from(gas_limit as u32 + ENDOWMENT);
                     let cfg = Config::<T>::preload();
                     ensure!(
-                        T::Currency::free_balance(&requester).saturating_sub(total_precharge) >=
-                            cfg.existential_deposit.saturating_add(cfg.tombstone_deposit),
+                        <T as escrow_gateway_primitives::Trait>::Currency::free_balance(&requester).saturating_sub(total_precharge) >=
+                            // cfg.existential_deposit.saturating_add(cfg.tombstone_deposit),
+                            <T as escrow_gateway_primitives::Trait>::Currency::minimum_balance(),
                         Error::<T>::RequesterNotEnoughBalance,
                     );
                     just_transfer::<T>(&requester, &escrow_account, total_precharge).map_err(|_| {
                         stamp_failed_execution::<T>(ErrCodes::BalanceTransferFailed as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
                         Error::<T>::BalanceTransferFailed
                     })?;
-                    println!("DEBUG multistep_call -- just_transfer total balance of CONTRACT -- vs REQUESTER {:?} vs ESCROW {:?}", T::Currency::free_balance(&requester), T::Currency::free_balance(&escrow_account));
+                    println!("DEBUG multistep_call -- just_transfer total balance of CONTRACT -- vs REQUESTER {:?} vs ESCROW {:?}", <T as escrow_gateway_primitives::Trait>::Currency::free_balance(&requester), <T as escrow_gateway_primitives::Trait>::Currency::free_balance(&escrow_account));
 
                     let mut gas_meter = GasMeter::<T>::new(gas_limit);
                     let mut transfers = Vec::<TransferEntry>::new();
@@ -461,14 +467,12 @@ decl_module! {
                         // Only A.1) - no code, not a contract - just deferred transfer.
                         (false, None) => {
                             if value > BalanceOf::<T>::from(0) {
-                                escrow_transfer(
+                                escrow_transfer::<T>(
                                     &escrow_account.clone(),
                                     &requester.clone(),
                                     &target_dest.clone(),
                                     value.clone(),
-                                    &mut gas_meter,
                                     &mut transfers,
-                                    &cfg,
                                 );
                             } else {
                                 Err(Error::<T>::NothingToDo)?
