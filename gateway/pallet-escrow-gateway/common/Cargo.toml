@@ -15,8 +15,46 @@ targets = ["x86_64-unknown-linux-gnu"]
 # This crate should not rely on any of the frame primitives.
 codec = { package = "parity-scale-codec", version = "1.3.4", default-features = false, features = ["derive"] }
 
+[dependencies.frame-support]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc6'
+version = '2.0.0-rc6'
+
+[dependencies.system]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc6'
+version = '2.0.0-rc6'
+package = 'frame-system'
+
+[dependencies.sp-std]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc6'
+version = '2.0.0-rc6'
+
+[dependencies.sudo]
+package = 'pallet-sudo'
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc6'
+version = '2.0.0-rc6'
+
+[dependencies.node-runtime]
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc6'
+version = '2.0.0-rc6'
+
+[dependencies.balances]
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc6'
+version = '2.0.0-rc6'
+package = 'pallet-balances'
+
 [features]
 default = ["std"]
 std = [
+	'frame-support/std',
+	'system/std',
 	"codec/std",
 ]
