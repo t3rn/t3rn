@@ -196,9 +196,8 @@ impl sudo::Trait for Test {
 
 impl escrow_gateway_primitives::Trait for Test {
     type Currency = Balances;
-    // type Time = Timestamp;
+    type Time = Timestamp;
 }
-
 
 impl Trait for Test {
     type Event = MetaEvent;
@@ -247,16 +246,16 @@ impl ExtBuilder {
         sudo::GenesisConfig::<Test> {
             key: escrow_account,
         }
-            .assimilate_storage(&mut t)
-            .unwrap();
+        .assimilate_storage(&mut t)
+        .unwrap();
         GenesisConfig {
             current_schedule: Schedule {
                 // enable_prinltn: true,
                 ..Default::default()
             },
         }
-            .assimilate_storage(&mut t)
-            .unwrap();
+        .assimilate_storage(&mut t)
+        .unwrap();
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));
         ext
@@ -268,4 +267,3 @@ pub fn new_test_ext_builder(deposit: u64, escrow_account: u64) -> sp_io::TestExt
         .existential_deposit(deposit)
         .build(escrow_account)
 }
-

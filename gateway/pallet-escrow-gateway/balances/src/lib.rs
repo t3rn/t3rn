@@ -1,8 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
+
 use contracts::{
-    escrow_exec::{CallStamp, DeferredStorageWrite, EscrowCallContext},
     exec::{
         CallContext, ErrorOrigin, ExecError, ExecFeeToken, ExecResult, ExecReturnValue,
         ExecutionContext, Loader, MomentOf, ReturnFlags, TransactorKind, TransferCause,
@@ -14,6 +14,10 @@ use contracts::{
         code_cache::load as load_code, // ToDo: Solve the types err while calling loader.load_main directly
         prepare::prepare_contract,
         runtime::{Env, ReturnCode},
+        runtime_escrow::{
+            get_child_storage_for_current_execution, raw_escrow_call, CallStamp,
+            DeferredStorageWrite,
+        },
         PrefabWasmModule,
         WasmExecutable,
         WasmLoader,
@@ -24,7 +28,7 @@ use contracts::{
 };
 use frame_support::{
     debug, decl_error, decl_event, decl_module, decl_storage, dispatch, ensure,
-    storage::{child, child::ChildInfo},
+    storage::{child, child::kill_storage, child::ChildInfo},
     traits::{Currency, ExistenceRequirement, Time},
 };
 use frame_system::{self as system, ensure_none, ensure_root, ensure_signed, Phase};
@@ -42,11 +46,10 @@ use gateway_escrow_engine::{
     transfers::{
         commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
     },
+    EscrowTrait,
 };
 
-use escrow_gateway_primitives::{
-    proofs::{EscrowExecuteResult}
-};
+use escrow_gateway_primitives::proofs::EscrowExecuteResult;
 
 #[cfg(test)]
 mod mock;
@@ -87,29 +90,19 @@ pub struct ExecutionStamp {
     failure: Option<u8>, // Error Code
 }
 
-
-pub fn execute_attached_code<'a, T: Trait + contracts::Trait>(
-    origin: T::Origin,
+pub fn execute_code_in_escrow_sandbox<'a, T: Trait>(
     escrow_account: &T::AccountId,
     requester: &T::AccountId,
     target_dest: &T::AccountId,
     value: BalanceOf<T>,
     code: Vec<u8>,
     input_data: Vec<u8>,
-    endowment: ContractsBalanceOf<T>,
-    mut gas_meter: &mut GasMeter<T>,
+    gas_limit: Gas,
     cfg: &Config<T>,
     transfers: &mut Vec<TransferEntry>,
     deferred_storage_writes: &mut Vec<DeferredStorageWrite>,
     call_stamps: &mut Vec<CallStamp>,
 ) -> ExecResult {
-
-    // Step 2. Prepare attached code to be fed for execution.
-    let temp_contract_address = T::DetermineContractAddress::contract_address_for(
-        &T::Hashing::hash(&code.clone()),
-        &input_data.clone(),
-        &escrow_account.clone(),
-    );
     // That only works for code that is received by the call and will be executed and cleaned up after.
     let prefab_module = prepare_contract::<Env>(&code, &cfg.schedule).unwrap();
     let executable = WasmExecutable {
@@ -117,26 +110,18 @@ pub fn execute_attached_code<'a, T: Trait + contracts::Trait>(
         prefab_module,
     };
 
-    // Step 3: Execute attached code as it's any regular contract on that parachain.
-    let vm = WasmVm::new(&cfg.schedule);
-    let loader = WasmLoader::new(&cfg.schedule);
-    let mut ctx = ExecutionContext::top_level(escrow_account.clone(), &cfg, &vm, &loader);
-
-    let value_contracts_compatible =
-        ContractsBalanceOf::<T>::from(TryInto::<u32>::try_into(value).ok().unwrap());
-
-    match ctx.escrow_call(
+    match raw_escrow_call::<T>(
         &escrow_account.clone(),
         &requester.clone(),
-        &temp_contract_address.clone(),
         &target_dest.clone(),
-        value_contracts_compatible,
-        &mut gas_meter,
+        value,
+        gas_limit,
         input_data.clone(),
         transfers,
         deferred_storage_writes,
         call_stamps,
         &executable,
+        T::Hashing::hash(&code.clone()),
     ) {
         Ok(exec_ret_val) => Ok(exec_ret_val),
         Err(exec_err) => {
@@ -148,36 +133,12 @@ pub fn execute_attached_code<'a, T: Trait + contracts::Trait>(
     }
 }
 
-pub trait Trait: escrow_gateway_primitives::Trait + contracts::Trait
-{
+pub trait Trait: EscrowTrait + contracts::Trait {
     type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 }
-// ToDo: Uncomment and satisfy contracts::Trait here.
-// When "for dyn Module" errors with: error[E0404]: expected trait, found struct `Module`
-// When "for dyn Trait"  errors with: error[E0038]: the trait `Trait` cannot be made into an object
-// Ideally I would like to satisfy contract::Trait or implement the required types here in lib.rs
-// instead of elevating this requirement to Runtime, or in mock.rs:145L
-// impl contracts::Trait for Module<dyn Trait> {
-//     type Time = ();
-//     type Randomness = ();
-//     type Currency = ();
-//     type Event = ();
-//     type DetermineContractAddress = ();
-//     type TrieIdGenerator = ();
-//     type RentPayment = ();
-//     type SignedClaimHandicap = ();
-//     type TombstoneDeposit = ();
-//     type StorageSizeOffset = ();
-//     type RentByteFee = ();
-//     type RentDepositOffset = ();
-//     type SurchargeReward = ();
-//     type MaxDepth = ();
-//     type MaxValueSize = ();
-//     type WeightPrice = ();
-// }
 
 decl_storage! {
-    trait Store for Module<T: Trait> as EscrowGateway {
+    trait Store for Module<T: Trait> as ChildStorage {
         // Just a dummy storage item.
         // Here we are declaring a StorageValue, `Something` as a Option<u32>
         // `get(fn something)` is the default getter which returns either the stored `u32` or `None` if nothing stored
@@ -304,7 +265,9 @@ pub fn stamp_failed_execution<T: Trait>(
         code_hash,
         ExecutionStamp {
             call_stamps: vec![],
-            timestamp: TryInto::<u64>::try_into(T::Time::now()).ok().unwrap(),
+            timestamp: TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now())
+                .ok()
+                .unwrap(),
             phase: 0,
             proofs: None,
             failure: Option::from(cause_code),
@@ -370,17 +333,12 @@ decl_module! {
 
             match phase {
                 0 => {
-                    const ENDOWMENT: u32 = 100_000_000;
-                    // ToDo: Endowment should be calculated here automatically based on config, applicable fees and expected lifetime of temporary execution contracts
-                    let endowment = ContractsBalanceOf::<T>::from(ENDOWMENT as u32);
-
-                    // Charge Escrow Account from requester first before executuion.
+                    // Charge Escrow Account from requester first before execution.
                     // Gas charge needs to be worked out. For now assume the multiplier with gas and token = 1.
-                    let total_precharge = BalanceOf::<T>::from(gas_limit as u32 + ENDOWMENT);
+                    let total_precharge = BalanceOf::<T>::from(gas_limit as u32);
                     let cfg = Config::<T>::preload();
                     ensure!(
                         <T as escrow_gateway_primitives::Trait>::Currency::free_balance(&requester).saturating_sub(total_precharge) >=
-                            // cfg.existential_deposit.saturating_add(cfg.tombstone_deposit),
                             <T as escrow_gateway_primitives::Trait>::Currency::minimum_balance(),
                         Error::<T>::RequesterNotEnoughBalance,
                     );
@@ -388,6 +346,7 @@ decl_module! {
                         stamp_failed_execution::<T>(ErrCodes::BalanceTransferFailed as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
                         Error::<T>::BalanceTransferFailed
                     })?;
+
                     println!("DEBUG multistep_call -- just_transfer total balance of CONTRACT -- vs REQUESTER {:?} vs ESCROW {:?}", <T as escrow_gateway_primitives::Trait>::Currency::free_balance(&requester), <T as escrow_gateway_primitives::Trait>::Currency::free_balance(&escrow_account));
 
                     let mut gas_meter = GasMeter::<T>::new(gas_limit);
@@ -397,9 +356,9 @@ decl_module! {
                     let mut call_stamps = Vec::<CallStamp>::new();
 
                     // Make a distinction on the purpose of the call. Refer to the multistep_call docs.
-                    let result_proof: Option<Vec<u8>> = match (!code.is_empty(), <ContractInfoOf<T>>::get(&target_dest.clone())) {
-                        // Only A.1) - no code, not a contract - just deferred transfer.
-                        (false, None) => {
+                    let result_proof: Option<Vec<u8>> = match !code.is_empty() {
+                        // Only A.1) - no code, there is no contracts on the balance-only parachains.
+                        false => {
                             if value > BalanceOf::<T>::from(0) {
                                 escrow_transfer::<T>(
                                     &escrow_account.clone(),
@@ -413,36 +372,27 @@ decl_module! {
                             }
                             None
                         },
-                        // B) + C) OR only B) or only C)
-                        // Check for both code attached & contract at dest. Execute both if possible; attached code first.
-                        (true, None) | (true, Some(_)) | (false, Some(_)) => {
-
-                            let mut result_attached_contract = vec![];
-
-                            if !code.is_empty() {
-                                // B) - execute attached code first
-                                result_attached_contract = match execute_attached_code(
-                                    origin.clone(),
-                                    &escrow_account.clone(),
-                                    &requester.clone(),
-                                    &target_dest.clone(),
-                                    value.clone(),
-                                    code.clone(),
-                                    input_data.clone(),
-                                    endowment.clone(),
-                                    &mut gas_meter,
-                                    &cfg,
-                                    &mut transfers,
-                                    &mut deferred_storage_writes,
-                                    &mut call_stamps,
-                                ) {
-                                    Ok(exec_res_val) => exec_res_val.data,
-                                    Err(err) => {
-                                        stamp_failed_execution::<T>(ErrCodes::ExecutionFailure as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
-                                        Err(err.error)?
-                                    }
+                        // B) - Execute attached code.
+                        true => {
+                            let mut result_attached_contract = match execute_code_in_escrow_sandbox(
+                                &escrow_account.clone(),
+                                &requester.clone(),
+                                &target_dest.clone(),
+                                value.clone(),
+                                code.clone(),
+                                input_data.clone(),
+                                gas_limit,
+                                &cfg,
+                                &mut transfers,
+                                &mut deferred_storage_writes,
+                                &mut call_stamps,
+                            ) {
+                                Ok(exec_res_val) => exec_res_val.data,
+                                Err(err) => {
+                                    stamp_failed_execution::<T>(ErrCodes::ExecutionFailure as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
+                                    Err(err.error)?
                                 }
-                            }
+                            };
                             /** ToDo:
                                 As the result is stored, it's accessible from outside of that chain, which for some case
                                 can violate the business logic behind the contracts. This should be fixed by either keeping
@@ -474,7 +424,7 @@ decl_module! {
 
                     <ExecutionStamps<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), ExecutionStamp {
                         call_stamps,
-                        timestamp: TryInto::<u64>::try_into(T::Time::now()).ok().unwrap(),
+                        timestamp: TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now()).ok().unwrap(),
                         phase: 0,
                         proofs: Some(execution_proofs),
                         failure: None,
@@ -526,9 +476,12 @@ decl_module! {
                 2 => {
                    Self::revert(
                         origin,
-                        escrow_account,
+                        escrow_account.clone(),
                         requester,
-                        code,
+                        code.clone(),
+                   );
+                   kill_storage(
+                        &get_child_storage_for_current_execution::<T>(&escrow_account, T::Hashing::hash(&code.clone()))
                    );
                 },
                 _ => {
