@@ -14,8 +14,6 @@ use sp_std::vec::Vec;
 use sudo;
 use system::{ensure_none, ensure_root, ensure_signed};
 
-pub mod transfers;
-
 #[derive(Debug, PartialEq, Encode, Decode, Clone)]
 #[codec(compact)]
 #[repr(u8)]
