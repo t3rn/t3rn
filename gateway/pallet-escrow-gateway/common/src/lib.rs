@@ -68,4 +68,5 @@ pub enum ErrCodes {
 
 pub trait Trait: system::Trait + sudo::Trait {
     type Currency: Currency<Self::AccountId>;
+    type Time: Time;
 }
