@@ -12,16 +12,14 @@ use contracts::{
     storage::{read_contract_storage, write_contract_storage},
     BalanceOf as ContractsBalanceOf, ContractInfoOf, Gas,
 };
-use gateway_escrow_engine::{
-    transfers::{
-        commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
-    }
-};
 use frame_support::{
     assert_err, assert_err_ignore_postinfo, assert_noop, assert_ok,
     storage::{child, child::ChildInfo},
     traits::{Currency, Get, ReservableCurrency},
     weights::Weight,
+};
+use gateway_escrow_engine::transfers::{
+    commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
 };
 use sp_core::H256;
 use sp_runtime::traits::Hash;
@@ -348,7 +346,8 @@ fn successful_commit_phase_transfers_move_from_deferred_to_target_destinations()
 }
 
 #[test]
-fn successful_revert_phase_removes_deferred_transfers_and_refunds_from_escrow_to_requester() {
+fn successful_revert_phase_removes_deferred_results_and_transfers_and_refunds_from_escrow_to_requester()
+ {
     let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new("fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
@@ -378,6 +377,14 @@ fn successful_revert_phase_removes_deferred_transfers_and_refunds_from_escrow_to
             input_data.clone()
         ));
 
+        assert_eq!(
+            EscrowGateway::deferred_results(
+                &REQUESTER,
+                &<Test as frame_system::Trait>::Hashing::hash(&correct_wasm_code.clone())
+            ),
+            vec![0, 0, 0, 0],
+        );
+
         // There should be an entry with deferred transfer to the target dest though as well as the requested by contract value transfer of 100 to &0
         assert_eq!(Balances::total_balance(&TARGET_DEST), 0);
         assert_eq!(Balances::total_balance(&ZERO_ACCOUNT), 0);
@@ -397,6 +404,14 @@ fn successful_revert_phase_removes_deferred_transfers_and_refunds_from_escrow_to
             sufficient_gas_limit,
             input_data.clone()
         ));
+
+        assert_eq!(
+            EscrowGateway::deferred_results(
+                &REQUESTER,
+                &<Test as frame_system::Trait>::Hashing::hash(&correct_wasm_code.clone())
+            ),
+            vec![],
+        );
 
         assert_eq!(Balances::total_balance(&TARGET_DEST), 0);
         assert_eq!(Balances::total_balance(&ZERO_ACCOUNT), 0);

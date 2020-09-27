@@ -38,16 +38,11 @@ use sp_std::convert::TryInto;
 use sp_std::vec::Vec;
 use sudo;
 
-use gateway_escrow_engine::{
-    transfers::{
-        commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
-    }
+use gateway_escrow_engine::transfers::{
+    commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
 };
 
-use escrow_gateway_primitives::{
-    Trait as EscrowTrait,
-    proofs::{EscrowExecuteResult}
-};
+use escrow_gateway_primitives::{proofs::EscrowExecuteResult, Trait as EscrowTrait};
 
 #[cfg(test)]
 mod mock;
@@ -242,8 +237,7 @@ pub fn execute_escrow_call_recursively<'a, T: Trait>(
     }
 }
 
-pub trait Trait: EscrowTrait + contracts::Trait
-{
+pub trait Trait: EscrowTrait + contracts::Trait {
     type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 }
 
@@ -264,6 +258,9 @@ decl_storage! {
         ExecutionStamps get(fn execution_stamps):
             double_map hasher(blake2_128_concat) T::AccountId, hasher(blake2_128_concat) T::Hash => ExecutionStamp;
 
+        DeferredResults get(fn deferred_results):
+            double_map hasher(blake2_128_concat) T::AccountId, hasher(blake2_128_concat) T::Hash => Vec<u8>;
+
         DeferredStorageWrites get(fn deferred_storage_writes):
             double_map hasher(blake2_128_concat) T::AccountId, hasher(blake2_128_concat) T::Hash => Vec<DeferredStorageWrite>;
     }
@@ -279,7 +276,7 @@ decl_event!(
 
         MultistepExecutionResult(EscrowExecuteResult),
 
-        MultistepCommitResult(u32),
+        MultistepCommitResult(Vec<u8>),
 
         MultistepRevertResult(u32),
 
@@ -372,7 +369,9 @@ pub fn stamp_failed_execution<T: Trait>(
         code_hash,
         ExecutionStamp {
             call_stamps: vec![],
-            timestamp: TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now()).ok().unwrap(),
+            timestamp: TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now())
+                .ok()
+                .unwrap(),
             phase: 0,
             proofs: None,
             failure: Option::from(cause_code),
@@ -448,7 +447,6 @@ decl_module! {
                     let cfg = Config::<T>::preload();
                     ensure!(
                         <T as escrow_gateway_primitives::Trait>::Currency::free_balance(&requester).saturating_sub(total_precharge) >=
-                            // cfg.existential_deposit.saturating_add(cfg.tombstone_deposit),
                             <T as escrow_gateway_primitives::Trait>::Currency::minimum_balance(),
                         Error::<T>::RequesterNotEnoughBalance,
                     );
@@ -456,6 +454,7 @@ decl_module! {
                         stamp_failed_execution::<T>(ErrCodes::BalanceTransferFailed as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
                         Error::<T>::BalanceTransferFailed
                     })?;
+
                     println!("DEBUG multistep_call -- just_transfer total balance of CONTRACT -- vs REQUESTER {:?} vs ESCROW {:?}", <T as escrow_gateway_primitives::Trait>::Currency::free_balance(&requester), <T as escrow_gateway_primitives::Trait>::Currency::free_balance(&escrow_account));
 
                     let mut gas_meter = GasMeter::<T>::new(gas_limit);
@@ -534,11 +533,19 @@ decl_module! {
                                     }
                                 }
                             }
+                            /** ToDo:
+                                As the result is stored, it's accessible from outside of that chain, which for some case
+                                can violate the business logic behind the contracts. This should be fixed by either keeping
+                                the results in memory or elevating responsibility the results management to Gateway Circuit (preferable).
+                            **/
+                            // Store the result in order to reveal during Commit phase or delete during Revert.
                             // Give priority here to the result of contract at target destination if exist.
                             // The results can be chained -> output from attached code can be redirected into input of the contract call.
                             if (!result_called_contract.is_empty()) {
+                                <DeferredResults<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), result_called_contract.clone());
                                 Some(T::Hashing::hash(&result_called_contract).encode())
                             } else {
+                                <DeferredResults<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), result_attached_contract.clone());
                                 Some(T::Hashing::hash(&result_attached_contract).encode())
                             }
                         },
@@ -607,7 +614,10 @@ decl_module! {
                     <ExecutionStamps<T>>::mutate(&requester, &T::Hashing::hash(&code.clone()), |stamp| {
                         stamp.phase = 1;
                     });
-                    Self::deposit_event(RawEvent::MultistepCommitResult(44));
+
+                    Self::deposit_event(RawEvent::MultistepCommitResult(
+                        <DeferredResults<T>>::get(&requester, &T::Hashing::hash(&code.clone()))
+                    ));
                 },
                 // Revert
                 2 => {
@@ -645,6 +655,9 @@ decl_module! {
             <ExecutionStamps<T>>::mutate(&requester, &T::Hashing::hash(&code.clone()), |stamp| {
                 stamp.phase = 2;
             });
+
+            // Remove the call result from storage.
+            <DeferredResults<T>>::take(&requester, &T::Hashing::hash(&code.clone()));
         }
 
         /// Just a dummy get_storage entry point.
