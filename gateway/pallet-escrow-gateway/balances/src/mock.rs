@@ -199,13 +199,8 @@ impl escrow_gateway_primitives::Trait for Test {
     type Time = Timestamp;
 }
 
-parameter_types! {
-    pub const WhenStateChangedForceTry: bool = true;
-}
-
 impl Trait for Test {
     type Event = MetaEvent;
-    type WhenStateChangedForceTry = WhenStateChangedForceTry;
 }
 
 pub type Contracts = contracts::Module<Test>;
@@ -272,13 +267,3 @@ pub fn new_test_ext_builder(deposit: u64, escrow_account: u64) -> sp_io::TestExt
         .existential_deposit(deposit)
         .build(escrow_account)
 }
-
-
-//
-// #[test]
-// fn last_value_updates() {
-// 	ExtBuilder::build().execute_with(|| {
-// 		HelloSubstrate::set_value(Origin::signed(1), 10u64);
-// 		// some assert statements
-// 	})
-// }

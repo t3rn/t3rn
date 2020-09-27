@@ -4,7 +4,7 @@ description = 'Gateway for multi-phase contracts execution secured by escrow acc
 edition = '2018'
 homepage = 'https://github.com/t3rn/t3rn'
 license = 'Apache 2.0'
-name = 'escrow-gateway'
+name = 'escrow-gateway-balances'
 repository = 'https://github.com/t3rn/t3rn.git'
 version = '2.0.0-rc6'
 
@@ -23,15 +23,15 @@ version = "1.0.101"
 [dependencies.reduce]
 version = "0.1"
 
-[dependencies.escrow-gateway-primitives]
+[dependencies.gateway-escrow-engine]
 default-features = false
-path = 'common'
+path = '../escrow-engine'
 tag = 'v2.0.0-rc6'
 version = '2.0.0-rc6'
 
-[dependencies.gateway-escrow-engine]
+[dependencies.escrow-gateway-primitives]
 default-features = false
-path = 'escrow-engine'
+path = '../common'
 tag = 'v2.0.0-rc6'
 version = '2.0.0-rc6'
 
@@ -62,7 +62,7 @@ version = '2.0.0-rc6'
 default-features = false
 #git = 'https://github.com/MaciejBaj/pallet-contracts.git'
 branch = 'escrow-contracts'
-path = '../pallet-contracts-copy'
+path = '../../pallet-contracts-copy'
 package = 'pallet-contracts'
 version = '2.0.0-rc6'
 

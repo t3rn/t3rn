@@ -1,5 +1,5 @@
 [package]
-name = "escrow-gateway-primitives"
+name = "gateway-escrow-engine"
 version = "2.0.0-rc6"
 authors = ["Maciej Baj <maciej@maciejbaj.com>"]
 edition = "2018"
@@ -12,7 +12,14 @@ description = "A crate that hosts a common definitions that are relevant for the
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
+# This crate should not rely on any of the frame primitives.
 codec = { package = "parity-scale-codec", version = "1.3.4", default-features = false, features = ["derive"] }
+
+[dependencies.escrow-gateway-primitives]
+default-features = false
+path = '../common'
+tag = 'v2.0.0-rc6'
+version = '2.0.0-rc6'
 
 [dependencies.frame-support]
 default-features = false
@@ -50,10 +57,17 @@ tag = 'v2.0.0-rc6'
 version = '2.0.0-rc6'
 package = 'pallet-balances'
 
+[dependencies.sp-sandbox]
+version = "0.8.0-rc6"
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc6'
+
 [features]
 default = ["std"]
 std = [
 	'frame-support/std',
 	'system/std',
 	"codec/std",
+	'escrow-gateway-primitives/std',
 ]

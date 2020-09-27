@@ -1,8 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
+
 use contracts::{
-    escrow_exec::{CallStamp, DeferredStorageWrite, EscrowCallContext},
     exec::{
         CallContext, ErrorOrigin, ExecError, ExecFeeToken, ExecResult, ExecReturnValue,
         ExecutionContext, Loader, MomentOf, ReturnFlags, TransactorKind, TransferCause,
@@ -14,18 +14,22 @@ use contracts::{
         code_cache::load as load_code, // ToDo: Solve the types err while calling loader.load_main directly
         prepare::prepare_contract,
         runtime::{Env, ReturnCode},
+        runtime_escrow::{
+            get_child_storage_for_current_execution, raw_escrow_call, CallStamp,
+            DeferredStorageWrite,
+        },
         PrefabWasmModule,
         WasmExecutable,
         WasmLoader,
         WasmVm,
     },
     BalanceOf as ContractsBalanceOf, CodeHash, Config, ContractAddressFor, ContractInfo,
-    ContractInfoOf, Gas, GasMeter, NegativeImbalanceOf, TrieIdGenerator,
+    ContractInfoOf, Gas, GasMeter, NegativeImbalanceOf, Schedule, TrieIdGenerator,
 };
 use frame_support::{
     debug, decl_error, decl_event, decl_module, decl_storage, dispatch, ensure,
-    storage::{child, child::ChildInfo},
-    traits::{Currency, ExistenceRequirement, Get, Time},
+    storage::{child, child::kill_storage, child::ChildInfo},
+    traits::{Currency, ExistenceRequirement, Time},
 };
 use frame_system::{self as system, ensure_none, ensure_root, ensure_signed, Phase};
 use node_runtime::AccountId;
@@ -38,11 +42,13 @@ use sp_std::convert::TryInto;
 use sp_std::vec::Vec;
 use sudo;
 
-use gateway_escrow_engine::transfers::{
-    commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
+use gateway_escrow_engine::{
+    proofs::EscrowExecuteResult,
+    transfers::{
+        commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
+    },
+    EscrowTrait,
 };
-
-use escrow_gateway_primitives::{proofs::EscrowExecuteResult, Trait as EscrowTrait};
 
 #[cfg(test)]
 mod mock;
@@ -83,153 +89,40 @@ pub struct ExecutionStamp {
     failure: Option<u8>, // Error Code
 }
 
-pub fn instantiate_temp_execution_contract<'a, T: Trait>(
-    origin: T::Origin,
-    code: Vec<u8>,
-    input_data: &Vec<u8>,
-    endowment: ContractsBalanceOf<T>,
-    gas_limit: Gas,
-) -> dispatch::DispatchResult {
-    let code_hash_res = <contracts::Module<T>>::put_code(origin.clone(), code.clone());
-    println!(
-        "DEBUG multistep_call -- contracts::put_code {:?}",
-        code_hash_res
-    );
-    code_hash_res.map_err(|_e| <Error<T>>::PutCodeFailure)?;
-    let code_hash = T::Hashing::hash(&code.clone());
-    // ToDo: Instantiate works - but charging accounts in unit tests doesn't (due to GenesisConfig not present in Balance err)
-    // Step 2: contracts::instantiate
-    // ToDo: Smart way of calculating endowment that would be enough for initialization + one call.
-    let init_res = <contracts::Module<T>>::instantiate(
-        origin.clone(),
-        endowment,
-        gas_limit,
-        code_hash,
-        input_data.clone(),
-    );
-    init_res.map_err(|_e| <Error<T>>::InitializationFailure)?;
-    // If not instantiate just transfer endowment directly.
-    // if endowment > BalanceOf::<T>::from(0 as u32) {
-    //     just_transfer::<T>(&escrow_account, &dest, endowment);
-    // }
-    println!(
-        "DEBUG multistepcall -- contracts::instantiate_temp_execution_contract init_res {:?}",
-        init_res
-    );
-    Ok(())
-}
-pub fn execute_attached_code<'a, T: Trait>(
-    origin: T::Origin,
+pub fn execute_code_in_escrow_sandbox<'a, T: Trait>(
     escrow_account: &T::AccountId,
     requester: &T::AccountId,
     target_dest: &T::AccountId,
     value: BalanceOf<T>,
     code: Vec<u8>,
     input_data: Vec<u8>,
-    endowment: ContractsBalanceOf<T>,
-    mut gas_meter: &mut GasMeter<T>,
-    cfg: &Config<T>,
+    gas_limit: Gas,
     transfers: &mut Vec<TransferEntry>,
     deferred_storage_writes: &mut Vec<DeferredStorageWrite>,
     call_stamps: &mut Vec<CallStamp>,
 ) -> ExecResult {
-    // Step 1: Temporarily instantiate the contract for the purpose following execution, so it's possible to set_storage etc.
-    instantiate_temp_execution_contract::<T>(
-        origin,
-        code.clone(),
-        &input_data.clone(),
-        endowment.clone(),
-        gas_meter.gas_left(),
-    )
-    .map_err(|e| ExecError::from(e))?;
-
-    // Step 2. Prepare attached code to be fed for execution.
-    let temp_contract_address = T::DetermineContractAddress::contract_address_for(
-        &T::Hashing::hash(&code.clone()),
-        &input_data.clone(),
-        &escrow_account.clone(),
-    );
     // That only works for code that is received by the call and will be executed and cleaned up after.
-    let prefab_module = prepare_contract::<Env>(&code, &cfg.schedule).unwrap();
+    let prefab_module = prepare_contract::<Env>(&code, &Default::default()).unwrap();
     let executable = WasmExecutable {
         entrypoint_name: "call",
         prefab_module,
     };
 
-    // Step 3: Execute attached code as it's any regular contract on that parachain.
-    let vm = WasmVm::new(&cfg.schedule);
-    let loader = WasmLoader::new(&cfg.schedule);
-    let mut ctx = ExecutionContext::top_level(escrow_account.clone(), &cfg, &vm, &loader);
-
-    let value_contracts_compatible =
-        ContractsBalanceOf::<T>::from(TryInto::<u32>::try_into(value).ok().unwrap());
-
-    match ctx.escrow_call(
+    match raw_escrow_call::<T>(
         &escrow_account.clone(),
         &requester.clone(),
-        &temp_contract_address.clone(),
         &target_dest.clone(),
-        value_contracts_compatible,
-        &mut gas_meter,
+        value,
+        gas_limit,
         input_data.clone(),
         transfers,
         deferred_storage_writes,
         call_stamps,
         &executable,
+        T::Hashing::hash(&code.clone()),
     ) {
         Ok(exec_ret_val) => Ok(exec_ret_val),
         Err(exec_err) => {
-            use contracts::exec::Ext;
-            // Revert the execution effects on the spot.
-            cleanup_failed_execution::<T>(escrow_account.clone(), requester.clone(), transfers);
-            let mut call_context =
-                ctx.new_call_context(escrow_account.clone(), value_contracts_compatible);
-            call_context
-                .terminate(&temp_contract_address.clone(), &mut gas_meter)
-                .map_err(|_e| <Error<T>>::TerminateFailure)?;
-            Err(exec_err)?
-        }
-    }
-}
-
-pub fn execute_escrow_call_recursively<'a, T: Trait>(
-    escrow_account: &T::AccountId,
-    requester: &T::AccountId,
-    target_dest: &T::AccountId,
-    value: BalanceOf<T>,
-    input_data: Vec<u8>,
-    mut gas_meter: &mut GasMeter<T>,
-    cfg: &Config<T>,
-    transfers: &mut Vec<TransferEntry>,
-    deferred_storage_writes: &mut Vec<DeferredStorageWrite>,
-    call_stamps: &mut Vec<CallStamp>,
-    code_hash: &CodeHash<T>,
-) -> ExecResult {
-    let vm = WasmVm::new(&cfg.schedule);
-    let loader = WasmLoader::new(&cfg.schedule);
-    let mut ctx = ExecutionContext::top_level(escrow_account.clone(), &cfg, &vm, &loader);
-
-    let executable = WasmExecutable {
-        entrypoint_name: "call",
-        prefab_module: load_code::<T>(code_hash, &cfg.schedule)?,
-    };
-
-    match ctx.escrow_call(
-        &escrow_account.clone(),
-        &requester.clone(),
-        &target_dest.clone(),
-        &target_dest.clone(),
-        ContractsBalanceOf::<T>::from(TryInto::<u32>::try_into(value).ok().unwrap()),
-        &mut gas_meter,
-        input_data.clone(),
-        transfers,
-        deferred_storage_writes,
-        call_stamps,
-        &executable,
-    ) {
-        Ok(exec_ret_val) => Ok(exec_ret_val),
-        Err(exec_err) => {
-            use contracts::exec::Ext;
             // Revert the execution effects on the spot.
             cleanup_failed_execution::<T>(escrow_account.clone(), requester.clone(), transfers);
             Err(exec_err)?
@@ -237,13 +130,12 @@ pub fn execute_escrow_call_recursively<'a, T: Trait>(
     }
 }
 
-pub trait Trait: EscrowTrait + contracts::Trait {
+pub trait Trait: EscrowTrait {
     type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
-    type WhenStateChangedForceTry: Get<bool>;
 }
 
 decl_storage! {
-    trait Store for Module<T: Trait> as EscrowGateway {
+    trait Store for Module<T: Trait> as ChildStorage {
         // Just a dummy storage item.
         // Here we are declaring a StorageValue, `Something` as a Option<u32>
         // `get(fn something)` is the default getter which returns either the stored `u32` or `None` if nothing stored
@@ -341,25 +233,6 @@ pub enum ErrCodes {
     TerminateFailure = 6,
 }
 
-pub fn get_storage_root_for_code<T: Trait>(
-    code: Vec<u8>,
-    input_data: Vec<u8>,
-    escrow_account: &T::AccountId,
-) -> Vec<u8> {
-    let temp_contract_address = T::DetermineContractAddress::contract_address_for(
-        &T::Hashing::hash(&code.clone()),
-        &input_data.clone(),
-        &escrow_account.clone(),
-    );
-    child::root(
-        &<ContractInfoOf<T>>::get(temp_contract_address.clone())
-            .unwrap()
-            .get_alive()
-            .unwrap()
-            .child_trie_info(),
-    )
-}
-
 pub fn stamp_failed_execution<T: Trait>(
     cause_code: u8,
     requester: &T::AccountId,
@@ -438,14 +311,9 @@ decl_module! {
 
             match phase {
                 0 => {
-                    const ENDOWMENT: u32 = 100_000_000;
-                    // ToDo: Endowment should be calculated here automatically based on config, applicable fees and expected lifetime of temporary execution contracts
-                    let endowment = ContractsBalanceOf::<T>::from(ENDOWMENT as u32);
-
-                    // Charge Escrow Account from requester first before executuion.
+                    // Charge Escrow Account from requester first before execution.
                     // Gas charge needs to be worked out. For now assume the multiplier with gas and token = 1.
-                    let total_precharge = BalanceOf::<T>::from(gas_limit as u32 + ENDOWMENT);
-                    let cfg = Config::<T>::preload();
+                    let total_precharge = BalanceOf::<T>::from(gas_limit as u32);
                     ensure!(
                         <T as escrow_gateway_primitives::Trait>::Currency::free_balance(&requester).saturating_sub(total_precharge) >=
                             <T as escrow_gateway_primitives::Trait>::Currency::minimum_balance(),
@@ -458,15 +326,15 @@ decl_module! {
 
                     println!("DEBUG multistep_call -- just_transfer total balance of CONTRACT -- vs REQUESTER {:?} vs ESCROW {:?}", <T as escrow_gateway_primitives::Trait>::Currency::free_balance(&requester), <T as escrow_gateway_primitives::Trait>::Currency::free_balance(&escrow_account));
 
-                    let mut gas_meter = GasMeter::<T>::new(gas_limit);
                     let mut transfers = Vec::<TransferEntry>::new();
                     let mut deferred_storage_writes = Vec::<DeferredStorageWrite>::new();
+                    let mut deferred_result = Vec::<DeferredStorageWrite>::new();
                     let mut call_stamps = Vec::<CallStamp>::new();
 
                     // Make a distinction on the purpose of the call. Refer to the multistep_call docs.
-                    let result_proof: Option<Vec<u8>> = match (!code.is_empty(), <ContractInfoOf<T>>::get(&target_dest.clone())) {
-                        // Only A.1) - no code, not a contract - just deferred transfer.
-                        (false, None) => {
+                    let result_proof: Option<Vec<u8>> = match !code.is_empty() {
+                        // Only A.1) - no code, there is no contracts on the balance-only parachains.
+                        false => {
                             if value > BalanceOf::<T>::from(0) {
                                 escrow_transfer::<T>(
                                     &escrow_account.clone(),
@@ -480,75 +348,34 @@ decl_module! {
                             }
                             None
                         },
-                        // B) + C) OR only B) or only C)
-                        // Check for both code attached & contract at dest. Execute both if possible; attached code first.
-                        (true, None) | (true, Some(_)) | (false, Some(_)) => {
-
-                            let mut result_attached_contract = vec![];
-                            let mut result_called_contract = vec![];
-
-                            if !code.is_empty() {
-                                // B) - execute attached code first
-                                result_attached_contract = match execute_attached_code(
-                                    origin.clone(),
-                                    &escrow_account.clone(),
-                                    &requester.clone(),
-                                    &target_dest.clone(),
-                                    value.clone(),
-                                    code.clone(),
-                                    input_data.clone(),
-                                    endowment.clone(),
-                                    &mut gas_meter,
-                                    &cfg,
-                                    &mut transfers,
-                                    &mut deferred_storage_writes,
-                                    &mut call_stamps,
-                                ) {
-                                    Ok(exec_res_val) => exec_res_val.data,
-                                    Err(err) => {
-                                        stamp_failed_execution::<T>(ErrCodes::ExecutionFailure as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
-                                        Err(err.error)?
-                                    }
+                        // B) - Execute attached code.
+                        true => {
+                            let mut result_attached_contract = match execute_code_in_escrow_sandbox::<T>(
+                                &escrow_account.clone(),
+                                &requester.clone(),
+                                &target_dest.clone(),
+                                value.clone(),
+                                code.clone(),
+                                input_data.clone(),
+                                gas_limit,
+                                &mut transfers,
+                                &mut deferred_storage_writes,
+                                &mut call_stamps,
+                            ) {
+                                Ok(exec_res_val) => exec_res_val.data,
+                                Err(err) => {
+                                    stamp_failed_execution::<T>(ErrCodes::ExecutionFailure as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
+                                    Err(err.error)?
                                 }
-                            }
-                            // Check again whether it's a contract at dest and ensure it's alive.
-                            if let Some(ContractInfo::Alive(info)) = <ContractInfoOf<T>>::get(&target_dest.clone()) {
-                                 // C) - execute contract call at target destination.
-                                 result_called_contract = match execute_escrow_call_recursively(
-                                    &escrow_account.clone(),
-                                    &requester.clone(),
-                                    &target_dest.clone(),
-                                    value.clone(),
-                                    input_data.clone(),
-                                    &mut gas_meter,
-                                    &cfg,
-                                    &mut transfers,
-                                    &mut deferred_storage_writes,
-                                    &mut call_stamps,
-                                    &info.code_hash,
-                                ) {
-                                    Ok(exec_res_val) => exec_res_val.data,
-                                    Err(err) => {
-                                        stamp_failed_execution::<T>(ErrCodes::ExecutionFailure as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
-                                        Err(err.error)?
-                                    }
-                                }
-                            }
+                            };
                             /** ToDo:
                                 As the result is stored, it's accessible from outside of that chain, which for some case
                                 can violate the business logic behind the contracts. This should be fixed by either keeping
                                 the results in memory or elevating responsibility the results management to Gateway Circuit (preferable).
                             **/
                             // Store the result in order to reveal during Commit phase or delete during Revert.
-                            // Give priority here to the result of contract at target destination if exist.
-                            // The results can be chained -> output from attached code can be redirected into input of the contract call.
-                            if (!result_called_contract.is_empty()) {
-                                <DeferredResults<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), result_called_contract.clone());
-                                Some(T::Hashing::hash(&result_called_contract).encode())
-                            } else {
-                                <DeferredResults<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), result_attached_contract.clone());
-                                Some(T::Hashing::hash(&result_attached_contract).encode())
-                            }
+                            <DeferredResults<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), result_attached_contract.clone());
+                            Some(T::Hashing::hash(&result_attached_contract).encode())
                         },
                     };
 
@@ -590,28 +417,6 @@ decl_module! {
                     commit_deferred_transfers::<T>(escrow_account.clone(), &mut proofs.deferred_transfers);
                     // ToDo: Release results -- delegates storing results to circuit?
 
-                    // ToDo: Apply storage changes to target account.
-                    let deferred_storage_writes: Vec<DeferredStorageWrite> = <DeferredStorageWrites<T>>::get(&requester, &T::Hashing::hash(&code.clone()));
-
-                    for storage_write in deferred_storage_writes.clone().into_iter() {
-                        // Check if dest changed the child root hash
-                        let dest = &T::AccountId::decode(&mut &storage_write.dest[..]).unwrap();
-                        let current_dest_storage_root = child::root(&<ContractInfoOf<T>>::get(dest.clone()).unwrap().get_alive().unwrap().child_trie_info());
-                        let corresponding_call_stamp = last_execution_stamp.call_stamps.clone().into_iter().find(|call_stamp| call_stamp.dest == storage_write.dest).unwrap();
-                        if current_dest_storage_root != corresponding_call_stamp.pre_storage && <T as Trait>::WhenStateChangedForceTry::get() == false {
-                            Err(Error::<T>::DestinationContractStorageChangedSinceExecution)?
-                        }
-                    }
-
-                    for storage_write in deferred_storage_writes.into_iter() {
-                        write_contract_storage::<T>(
-                            &T::AccountId::decode(&mut &storage_write.dest[..]).unwrap(),
-                            &storage_write.trie_id,
-                            &storage_write.key,
-                            storage_write.value,
-                        );
-                    }
-
                     <ExecutionStamps<T>>::mutate(&requester, &T::Hashing::hash(&code.clone()), |stamp| {
                         stamp.phase = 1;
                     });
@@ -624,9 +429,12 @@ decl_module! {
                 2 => {
                    Self::revert(
                         origin,
-                        escrow_account,
+                        escrow_account.clone(),
                         requester,
-                        code,
+                        code.clone(),
+                   );
+                   kill_storage(
+                        &get_child_storage_for_current_execution::<T>(&escrow_account, T::Hashing::hash(&code.clone()))
                    );
                 },
                 _ => {
@@ -673,7 +481,6 @@ decl_module! {
             debug::info!("DEBUG rent_projection by: {:?} for = {:?}", caller, address);
             // For now refer to the contracts rent_projection.
             // In the future rent projection should estimate on % of storage for that address used by escrow account
-            <contracts::Module<T>>::rent_projection(address.clone());
 
             // Raise an event for debug purposes
             Self::deposit_event(RawEvent::RentProjectionCalled(address, caller));
@@ -689,15 +496,7 @@ decl_module! {
             key: [u8; 32],
         ) -> dispatch::DispatchResult {
             // Print a test message.
-
-            // Read the contract's storage
-            let val = Some(<contracts::Module<T>>::get_storage(address, key));
-
-            debug::info!("DEBUG get_storage by key: {:?} val = {:?} ", key, val);
-
-            // Raise an event for debug purposes
             Self::deposit_event(RawEvent::GetStorageResult(key.to_vec()));
-
             Ok(())
         }
 
