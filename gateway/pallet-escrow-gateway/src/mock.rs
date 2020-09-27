@@ -199,9 +199,13 @@ impl escrow_gateway_primitives::Trait for Test {
     type Time = Timestamp;
 }
 
+parameter_types! {
+    pub const WhenStateChangedForceTry: bool = true;
+}
 
 impl Trait for Test {
     type Event = MetaEvent;
+    type WhenStateChangedForceTry = WhenStateChangedForceTry;
 }
 
 pub type Contracts = contracts::Module<Test>;

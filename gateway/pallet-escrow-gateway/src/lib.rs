@@ -25,7 +25,7 @@ use contracts::{
 use frame_support::{
     debug, decl_error, decl_event, decl_module, decl_storage, dispatch, ensure,
     storage::{child, child::ChildInfo},
-    traits::{Currency, ExistenceRequirement, Time},
+    traits::{Currency, ExistenceRequirement, Get, Time},
 };
 use frame_system::{self as system, ensure_none, ensure_root, ensure_signed, Phase};
 use node_runtime::AccountId;
@@ -239,6 +239,7 @@ pub fn execute_escrow_call_recursively<'a, T: Trait>(
 
 pub trait Trait: EscrowTrait + contracts::Trait {
     type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+    type WhenStateChangedForceTry: Get<bool>;
 }
 
 decl_storage! {
@@ -597,7 +598,7 @@ decl_module! {
                         let dest = &T::AccountId::decode(&mut &storage_write.dest[..]).unwrap();
                         let current_dest_storage_root = child::root(&<ContractInfoOf<T>>::get(dest.clone()).unwrap().get_alive().unwrap().child_trie_info());
                         let corresponding_call_stamp = last_execution_stamp.call_stamps.clone().into_iter().find(|call_stamp| call_stamp.dest == storage_write.dest).unwrap();
-                        if current_dest_storage_root != corresponding_call_stamp.pre_storage {
+                        if current_dest_storage_root != corresponding_call_stamp.pre_storage && <T as Trait>::WhenStateChangedForceTry::get() == false {
                             Err(Error::<T>::DestinationContractStorageChangedSinceExecution)?
                         }
                     }
