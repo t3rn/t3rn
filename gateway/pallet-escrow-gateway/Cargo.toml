@@ -25,15 +25,15 @@ version = "0.1"
 
 [dependencies.escrow-gateway-primitives]
 default-features = false
-path = 'common'
-tag = 'v2.0.0-rc6'
+git = 'https://github.com/t3rn/gateway-pallet.git'
 version = '2.0.0-rc6'
+branch = 'master'
 
 [dependencies.gateway-escrow-engine]
 default-features = false
-path = 'escrow-engine'
-tag = 'v2.0.0-rc6'
+git = 'https://github.com/t3rn/gateway-pallet.git'
 version = '2.0.0-rc6'
+branch = 'master'
 
 [dependencies.frame-support]
 default-features = false
@@ -60,8 +60,8 @@ version = '2.0.0-rc6'
 
 [dependencies.contracts]
 default-features = false
-#git = 'https://github.com/MaciejBaj/pallet-contracts.git'
 branch = 'escrow-contracts'
+#git = 'https://github.com/MaciejBaj/pallet-contracts.git'
 path = '../pallet-contracts-copy'
 package = 'pallet-contracts'
 version = '2.0.0-rc6'

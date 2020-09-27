@@ -38,11 +38,13 @@ use sp_std::convert::TryInto;
 use sp_std::vec::Vec;
 use sudo;
 
-use gateway_escrow_engine::transfers::{
-    commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
+use gateway_escrow_engine::{
+    proofs::EscrowExecuteResult,
+    EscrowTrait,
+    transfers::{
+        commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
+    }
 };
-
-use escrow_gateway_primitives::{proofs::EscrowExecuteResult, Trait as EscrowTrait};
 
 #[cfg(test)]
 mod mock;
