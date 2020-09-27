@@ -193,6 +193,9 @@ decl_storage! {
         ExecutionStamps get(fn execution_stamps):
             double_map hasher(blake2_128_concat) T::AccountId, hasher(blake2_128_concat) T::Hash => ExecutionStamp;
 
+        DeferredResults get(fn deferred_results):
+            double_map hasher(blake2_128_concat) T::AccountId, hasher(blake2_128_concat) T::Hash => Vec<u8>;
+
         DeferredStorageWrites get(fn deferred_storage_writes):
             double_map hasher(blake2_128_concat) T::AccountId, hasher(blake2_128_concat) T::Hash => Vec<DeferredStorageWrite>;
     }
@@ -208,7 +211,7 @@ decl_event!(
 
         MultistepExecutionResult(EscrowExecuteResult),
 
-        MultistepCommitResult(u32),
+        MultistepCommitResult(Vec<u8>),
 
         MultistepRevertResult(u32),
 
@@ -390,6 +393,7 @@ decl_module! {
                     let mut gas_meter = GasMeter::<T>::new(gas_limit);
                     let mut transfers = Vec::<TransferEntry>::new();
                     let mut deferred_storage_writes = Vec::<DeferredStorageWrite>::new();
+                    let mut deferred_result = Vec::<DeferredStorageWrite>::new();
                     let mut call_stamps = Vec::<CallStamp>::new();
 
                     // Make a distinction on the purpose of the call. Refer to the multistep_call docs.
@@ -439,6 +443,13 @@ decl_module! {
                                     }
                                 }
                             }
+                            /** ToDo:
+                                As the result is stored, it's accessible from outside of that chain, which for some case
+                                can violate the business logic behind the contracts. This should be fixed by either keeping
+                                the results in memory or elevating responsibility the results management to Gateway Circuit (preferable).
+                            **/
+                            // Store the result in order to reveal during Commit phase or delete during Revert.
+                            <DeferredResults<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), result_attached_contract.clone());
                             Some(T::Hashing::hash(&result_attached_contract).encode())
                         },
                     };
@@ -506,7 +517,10 @@ decl_module! {
                     <ExecutionStamps<T>>::mutate(&requester, &T::Hashing::hash(&code.clone()), |stamp| {
                         stamp.phase = 1;
                     });
-                    Self::deposit_event(RawEvent::MultistepCommitResult(44));
+
+                    Self::deposit_event(RawEvent::MultistepCommitResult(
+                        <DeferredResults<T>>::get(&requester, &T::Hashing::hash(&code.clone()))
+                    ));
                 },
                 // Revert
                 2 => {
@@ -544,6 +558,9 @@ decl_module! {
             <ExecutionStamps<T>>::mutate(&requester, &T::Hashing::hash(&code.clone()), |stamp| {
                 stamp.phase = 2;
             });
+
+            // Remove the call result from storage.
+            <DeferredResults<T>>::take(&requester, &T::Hashing::hash(&code.clone()));
         }
 
         /// Just a dummy get_storage entry point.

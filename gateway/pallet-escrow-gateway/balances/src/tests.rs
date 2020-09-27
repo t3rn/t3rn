@@ -10,10 +10,13 @@ use anyhow::{Context, Result};
 use codec::Encode;
 use contracts::{
     storage::{read_contract_storage, write_contract_storage},
-    BalanceOf, ContractInfoOf, Gas,
+    BalanceOf as ContractsBalanceOf, ContractInfoOf, Gas,
 };
-use escrow_gateway_primitives::{Phase};
-use gateway_escrow_engine::{transfers::TransferEntry};
+use gateway_escrow_engine::{
+    transfers::{
+        commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
+    }
+};
 use frame_support::{
     assert_err, assert_err_ignore_postinfo, assert_noop, assert_ok,
     storage::{child, child::ChildInfo},
@@ -113,7 +116,7 @@ fn during_execution_phase_when_given_empty_wasm_code_multistep_call_only_deferrs
 fn during_execution_phase_when_given_correct_wasm_code_but_too_little_gas_limit_multistep_call_gives_initiate_error()
 {
     let (phase, _, input_data, value, mut gas_limit) = default_multistep_call_args();
-    let correct_wasm_path = Path::new("../fixtures/return_from_start_fn.wasm");
+    let correct_wasm_path = Path::new("fixtures/return_from_start_fn.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     // Make the gas limit too little
     gas_limit = 1000;
@@ -139,7 +142,7 @@ fn during_execution_phase_when_given_correct_wasm_code_but_too_little_gas_limit_
 #[test]
 fn during_execution_phase_when_given_correct_wasm_code_multistep_call_succeeds() {
     let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
-    let correct_wasm_path = Path::new("../fixtures/return_from_start_fn.wasm");
+    let correct_wasm_path = Path::new("fixtures/return_from_start_fn.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
 
     new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
@@ -161,7 +164,7 @@ fn during_execution_phase_when_given_correct_wasm_code_multistep_call_succeeds()
 #[test]
 fn during_execution_phase_when_given_correct_wasm_code_multistep_call_vm_succeeds() {
     let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
-    let correct_wasm_path = Path::new("../fixtures/return_from_start_fn.wasm");
+    let correct_wasm_path = Path::new("fixtures/return_from_start_fn.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
 
     new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
@@ -186,7 +189,7 @@ fn during_execution_phase_when_given_correct_wasm_code_multistep_call_vm_succeed
 #[test]
 fn transfer_during_execution_phase_succeeds_and_consumes_costs_correctly_and_deferrs_transfers() {
     let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
-    let correct_wasm_path = Path::new("../fixtures/transfer_return_code.wasm");
+    let correct_wasm_path = Path::new("fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     /// Set fees
     let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
@@ -249,7 +252,7 @@ fn transfer_during_execution_phase_succeeds_and_consumes_costs_correctly_and_def
 #[test]
 fn commit_phase_cannot_be_triggered_without_preceeding_execution() {
     let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
-    let correct_wasm_path = Path::new("../fixtures/transfer_return_code.wasm");
+    let correct_wasm_path = Path::new("fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     /// Set fees
     let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
@@ -286,7 +289,7 @@ fn commit_phase_cannot_be_triggered_without_preceeding_execution() {
 #[test]
 fn successful_commit_phase_transfers_move_from_deferred_to_target_destinations() {
     let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
-    let correct_wasm_path = Path::new("../fixtures/transfer_return_code.wasm");
+    let correct_wasm_path = Path::new("fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     /// Set fees
     let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
@@ -345,9 +348,9 @@ fn successful_commit_phase_transfers_move_from_deferred_to_target_destinations()
 }
 
 #[test]
-fn successful_revert_phase_removes_deferred_transfers_and_refunds_from_escrow_to_requester() {
+fn successful_revert_phase_removes_deferred_results_and_transfers_and_refunds_from_escrow_to_requester() {
     let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
-    let correct_wasm_path = Path::new("../fixtures/transfer_return_code.wasm");
+    let correct_wasm_path = Path::new("fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     /// Set fees
     let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
@@ -374,6 +377,14 @@ fn successful_revert_phase_removes_deferred_transfers_and_refunds_from_escrow_to
             sufficient_gas_limit,
             input_data.clone()
         ));
+        // Expect return success execution code - 0.
+        assert_eq!(
+            EscrowGateway::deferred_results(
+                &REQUESTER,
+                &<Test as frame_system::Trait>::Hashing::hash(&correct_wasm_code.clone())
+            ),
+            vec![0, 0, 0, 0],
+        );
 
         // There should be an entry with deferred transfer to the target dest though as well as the requested by contract value transfer of 100 to &0
         assert_eq!(Balances::total_balance(&TARGET_DEST), 0);
@@ -395,6 +406,14 @@ fn successful_revert_phase_removes_deferred_transfers_and_refunds_from_escrow_to
             input_data.clone()
         ));
 
+        assert_eq!(
+            EscrowGateway::deferred_results(
+                &REQUESTER,
+                &<Test as frame_system::Trait>::Hashing::hash(&correct_wasm_code.clone())
+            ),
+            vec![],
+        );
+
         assert_eq!(Balances::total_balance(&TARGET_DEST), 0);
         assert_eq!(Balances::total_balance(&ZERO_ACCOUNT), 0);
         assert_eq!(
@@ -411,7 +430,7 @@ fn successful_revert_phase_removes_deferred_transfers_and_refunds_from_escrow_to
 #[test]
 fn successful_commit_phase_changes_phase_of_execution_stamp() {
     let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
-    let correct_wasm_path = Path::new("../fixtures/transfer_return_code.wasm");
+    let correct_wasm_path = Path::new("fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     /// Set fees
     let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
@@ -500,7 +519,7 @@ fn successful_commit_phase_changes_phase_of_execution_stamp() {
 #[test]
 fn successful_commit_phase_applies_deferred_storage_writes() {
     let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
-    let correct_wasm_path = Path::new("../fixtures/storage_size.wasm");
+    let correct_wasm_path = Path::new("fixtures/storage_size.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     /// Set fees
     let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
@@ -687,7 +706,7 @@ fn compile_module<T>(fixture_name: &str) -> wat::Result<(Vec<u8>, <T::Hashing as
     where
         T: frame_system::Trait,
 {
-    let fixture_path = ["../fixtures/", fixture_name, ".wat"].concat();
+    let fixture_path = ["fixtures/", fixture_name, ".wat"].concat();
     let wasm_binary = wat::parse_file(fixture_path)?;
     let code_hash = T::Hashing::hash(&wasm_binary);
     Ok((wasm_binary, code_hash))
