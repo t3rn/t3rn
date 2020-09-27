@@ -38,14 +38,16 @@ use sp_std::convert::TryInto;
 use sp_std::vec::Vec;
 use sudo;
 
-use crate::escrow::{ContractsEscrowEngine, EscrowExecuteResult};
-
-use escrow_gateway_primitives::transfers::{
-    commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
+use gateway_escrow_engine::{
+    transfers::{
+        commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
+    }
 };
 
-#[macro_use]
-mod escrow;
+use escrow_gateway_primitives::{
+    Trait as EscrowTrait,
+    proofs::{EscrowExecuteResult}
+};
 
 #[cfg(test)]
 mod mock;
@@ -240,8 +242,7 @@ pub fn execute_escrow_call_recursively<'a, T: Trait>(
     }
 }
 
-pub trait Trait:
-    contracts::Trait + system::Trait + sudo::Trait + escrow_gateway_primitives::Trait
+pub trait Trait: EscrowTrait + contracts::Trait
 {
     type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 }
@@ -371,7 +372,7 @@ pub fn stamp_failed_execution<T: Trait>(
         code_hash,
         ExecutionStamp {
             call_stamps: vec![],
-            timestamp: TryInto::<u64>::try_into(T::Time::now()).ok().unwrap(),
+            timestamp: TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now()).ok().unwrap(),
             phase: 0,
             proofs: None,
             failure: Option::from(cause_code),
@@ -563,7 +564,7 @@ decl_module! {
 
                     <ExecutionStamps<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), ExecutionStamp {
                         call_stamps,
-                        timestamp: TryInto::<u64>::try_into(T::Time::now()).ok().unwrap(),
+                        timestamp: TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now()).ok().unwrap(),
                         phase: 0,
                         proofs: Some(execution_proofs),
                         failure: None,

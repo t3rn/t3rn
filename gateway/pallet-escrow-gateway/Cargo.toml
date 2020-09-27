@@ -29,6 +29,12 @@ path = 'common'
 tag = 'v2.0.0-rc6'
 version = '2.0.0-rc6'
 
+[dependencies.gateway-escrow-engine]
+default-features = false
+path = 'escrow-engine'
+tag = 'v2.0.0-rc6'
+version = '2.0.0-rc6'
+
 [dependencies.frame-support]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
@@ -54,9 +60,9 @@ version = '2.0.0-rc6'
 
 [dependencies.contracts]
 default-features = false
-git = 'https://github.com/MaciejBaj/pallet-contracts.git'
+#git = 'https://github.com/MaciejBaj/pallet-contracts.git'
 branch = 'escrow-contracts'
-#path = '../pallet-contracts-copy'
+path = '../pallet-contracts-copy'
 package = 'pallet-contracts'
 version = '2.0.0-rc6'
 

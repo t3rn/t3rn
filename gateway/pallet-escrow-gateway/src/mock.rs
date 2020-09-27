@@ -196,7 +196,9 @@ impl sudo::Trait for Test {
 
 impl escrow_gateway_primitives::Trait for Test {
     type Currency = Balances;
+    type Time = Timestamp;
 }
+
 
 impl Trait for Test {
     type Event = MetaEvent;

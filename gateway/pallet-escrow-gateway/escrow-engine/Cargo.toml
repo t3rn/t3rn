@@ -1,0 +1,91 @@
+[package]
+name = "gateway-escrow-engine"
+version = "2.0.0-rc6"
+authors = ["Maciej Baj <maciej@maciejbaj.com>"]
+edition = "2018"
+license = "Apache-2.0"
+homepage = "https://t3rn.io"
+repository = "https://github.com/t3rn/t3rn/"
+description = "A crate that hosts a common definitions that are relevant for the escrow-gateway."
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+# This crate should not rely on any of the frame primitives.
+codec = { package = "parity-scale-codec", version = "1.3.4", default-features = false, features = ["derive"] }
+
+[dependencies.escrow-gateway-primitives]
+default-features = false
+path = '../common'
+tag = 'v2.0.0-rc6'
+version = '2.0.0-rc6'
+
+[dependencies.frame-support]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc6'
+version = '2.0.0-rc6'
+
+[dependencies.system]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc6'
+version = '2.0.0-rc6'
+package = 'frame-system'
+
+[dependencies.sp-std]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc6'
+version = '2.0.0-rc6'
+
+[dependencies.sudo]
+package = 'pallet-sudo'
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc6'
+version = '2.0.0-rc6'
+
+[dependencies.node-runtime]
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc6'
+version = '2.0.0-rc6'
+
+[dependencies.balances]
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc6'
+version = '2.0.0-rc6'
+package = 'pallet-balances'
+
+#[dependencies.contracts]
+#git = 'https://github.com/paritytech/substrate.git'
+#tag = 'v2.0.0-rc6'
+#version = '2.0.0-rc6'
+#package = 'pallet-contracts'
+
+[dependencies.sp-sandbox]
+version = "0.8.0-rc6"
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0-rc6'
+
+#[dependencies.bitflags]
+#version = '1.0'
+#
+#[dependencies.contracts]
+#default-features = false
+#git = 'https://github.com/MaciejBaj/pallet-contracts.git'
+##branch = 'master'
+#path = '../../pallet-contracts-copy'
+#package = 'pallet-contracts'
+##version = '2.0.0-rc6'
+
+[features]
+default = ["std"]
+std = [
+	'frame-support/std',
+	'system/std',
+	"codec/std",
+	'escrow-gateway-primitives/std',
+#	'contracts/std',
+]

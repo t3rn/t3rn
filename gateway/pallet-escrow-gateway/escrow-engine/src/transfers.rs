@@ -1,4 +1,4 @@
-use crate::Trait;
+use escrow_gateway_primitives::Trait;
 use codec::{Decode, Encode};
 use frame_support::sp_runtime::traits::Saturating;
 use frame_support::{
