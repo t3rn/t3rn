@@ -8,7 +8,6 @@ use frame_support::{
 };
 
 use balances;
-use node_runtime::AccountId;
 use sp_std::convert::TryInto;
 use sp_std::vec::Vec;
 use sudo;
@@ -38,8 +37,6 @@ decl_event!(
         MultistepRevertResult(u32),
 
         MultistepUnknownPhase(u8),
-
-        RentProjectionCalled(AccountId, AccountId),
 
         GetStorageResult(Vec<u8>),
     }
