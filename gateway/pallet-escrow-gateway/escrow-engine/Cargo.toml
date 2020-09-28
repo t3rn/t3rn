@@ -40,33 +40,12 @@ git = 'https://github.com/paritytech/substrate.git'
 tag = 'v2.0.0-rc6'
 version = '2.0.0-rc6'
 
-[dependencies.sudo]
-package = 'pallet-sudo'
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc6'
-version = '2.0.0-rc6'
-
-[dependencies.node-runtime]
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc6'
-version = '2.0.0-rc6'
-
-[dependencies.balances]
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc6'
-version = '2.0.0-rc6'
-package = 'pallet-balances'
-
-[dependencies.sp-sandbox]
-version = "0.8.0-rc6"
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc6'
 
 [features]
 default = ["std"]
 std = [
 	'frame-support/std',
+	'sp-std/std',
 	'system/std',
 	"codec/std",
 	'escrow-gateway-primitives/std',
