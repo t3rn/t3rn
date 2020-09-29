@@ -16,7 +16,7 @@ use sp_runtime::{
 
 use contracts::{GenesisConfig, *};
 
-use escrow_gateway_primitives;
+use gateway_escrow_engine::{EscrowTrait};
 
 use sudo;
 
@@ -194,7 +194,7 @@ impl sudo::Trait for Test {
     type Call = Call;
 }
 
-impl escrow_gateway_primitives::Trait for Test {
+impl EscrowTrait for Test {
     type Currency = Balances;
     type Time = Timestamp;
 }

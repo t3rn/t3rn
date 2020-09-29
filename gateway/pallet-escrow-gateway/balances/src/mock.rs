@@ -16,7 +16,7 @@ use sp_runtime::{
 
 use contracts::{GenesisConfig, *};
 
-use escrow_gateway_primitives;
+use gateway_escrow_engine::{EscrowTrait};
 
 use sudo;
 
@@ -194,7 +194,7 @@ impl sudo::Trait for Test {
     type Call = Call;
 }
 
-impl escrow_gateway_primitives::Trait for Test {
+impl EscrowTrait for Test {
     type Currency = Balances;
     type Time = Timestamp;
 }
@@ -246,16 +246,16 @@ impl ExtBuilder {
         sudo::GenesisConfig::<Test> {
             key: escrow_account,
         }
-        .assimilate_storage(&mut t)
-        .unwrap();
+            .assimilate_storage(&mut t)
+            .unwrap();
         GenesisConfig {
             current_schedule: Schedule {
                 // enable_prinltn: true,
                 ..Default::default()
             },
         }
-        .assimilate_storage(&mut t)
-        .unwrap();
+            .assimilate_storage(&mut t)
+            .unwrap();
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));
         ext

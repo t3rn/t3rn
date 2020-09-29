@@ -23,12 +23,6 @@ version = "1.0.101"
 [dependencies.reduce]
 version = "0.1"
 
-[dependencies.escrow-gateway-primitives]
-default-features = false
-git = 'https://github.com/t3rn/gateway-pallet.git'
-version = '2.0.0-rc6'
-branch = 'master'
-
 [dependencies.gateway-escrow-engine]
 default-features = false
 git = 'https://github.com/t3rn/gateway-pallet.git'
@@ -62,7 +56,6 @@ version = '2.0.0-rc6'
 default-features = false
 git = 'https://github.com/MaciejBaj/pallet-contracts.git'
 branch = 'escrow-contracts'
-#path = '../../pallet-contracts-copy'
 package = 'pallet-contracts'
 version = '2.0.0-rc6'
 
@@ -86,11 +79,6 @@ version = '2.0.0-rc6'
 
 [dependencies.sp-runtime]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc6'
-version = '2.0.0-rc6'
-
-[dependencies.node-runtime]
 git = 'https://github.com/paritytech/substrate.git'
 tag = 'v2.0.0-rc6'
 version = '2.0.0-rc6'
@@ -120,5 +108,5 @@ std = [
     'frame-support/std',
     'frame-system/std',
     'contracts/std',
-    'escrow-gateway-primitives/std',
+    'gateway-escrow-engine/std',
 ]

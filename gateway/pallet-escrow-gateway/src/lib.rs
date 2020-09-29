@@ -28,7 +28,6 @@ use frame_support::{
     traits::{Currency, ExistenceRequirement, Get, Time},
 };
 use frame_system::{self as system, ensure_none, ensure_root, ensure_signed, Phase};
-use node_runtime::AccountId;
 use reduce::Reduce;
 use sp_runtime::{
     traits::{Hash, Saturating},
@@ -449,8 +448,8 @@ decl_module! {
                     let total_precharge = BalanceOf::<T>::from(gas_limit as u32 + ENDOWMENT);
                     let cfg = Config::<T>::preload();
                     ensure!(
-                        <T as escrow_gateway_primitives::Trait>::Currency::free_balance(&requester).saturating_sub(total_precharge) >=
-                            <T as escrow_gateway_primitives::Trait>::Currency::minimum_balance(),
+                        <T as EscrowTrait>::Currency::free_balance(&requester).saturating_sub(total_precharge) >=
+                            <T as EscrowTrait>::Currency::minimum_balance(),
                         Error::<T>::RequesterNotEnoughBalance,
                     );
                     just_transfer::<T>(&requester, &escrow_account, total_precharge).map_err(|_| {
@@ -458,7 +457,7 @@ decl_module! {
                         Error::<T>::BalanceTransferFailed
                     })?;
 
-                    println!("DEBUG multistep_call -- just_transfer total balance of CONTRACT -- vs REQUESTER {:?} vs ESCROW {:?}", <T as escrow_gateway_primitives::Trait>::Currency::free_balance(&requester), <T as escrow_gateway_primitives::Trait>::Currency::free_balance(&escrow_account));
+                    println!("DEBUG multistep_call -- just_transfer total balance of CONTRACT -- vs REQUESTER {:?} vs ESCROW {:?}", <T as EscrowTrait>::Currency::free_balance(&requester), <T as EscrowTrait>::Currency::free_balance(&escrow_account));
 
                     let mut gas_meter = GasMeter::<T>::new(gas_limit);
                     let mut transfers = Vec::<TransferEntry>::new();
