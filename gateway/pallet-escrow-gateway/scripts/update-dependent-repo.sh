@@ -24,4 +24,6 @@ git add .
 git status
 git commit -S -m "$COMMIT_MSG"
 
+git push
+
 rm -rf $DEP_REPO_PATH

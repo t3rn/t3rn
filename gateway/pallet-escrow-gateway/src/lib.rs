@@ -34,6 +34,7 @@ use sp_runtime::{
     DispatchError,
 };
 use sp_std::convert::TryInto;
+use sp_std::vec;
 use sp_std::vec::Vec;
 use sudo;
 
