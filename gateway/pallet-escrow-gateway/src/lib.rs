@@ -92,7 +92,7 @@ pub fn instantiate_temp_execution_contract<'a, T: Trait>(
     gas_limit: Gas,
 ) -> dispatch::DispatchResult {
     let code_hash_res = <contracts::Module<T>>::put_code(origin.clone(), code.clone());
-    println!(
+    debug::info!(
         "DEBUG multistep_call -- contracts::put_code {:?}",
         code_hash_res
     );
@@ -113,7 +113,7 @@ pub fn instantiate_temp_execution_contract<'a, T: Trait>(
     // if endowment > BalanceOf::<T>::from(0 as u32) {
     //     just_transfer::<T>(&escrow_account, &dest, endowment);
     // }
-    println!(
+    debug::info!(
         "DEBUG multistepcall -- contracts::instantiate_temp_execution_contract init_res {:?}",
         init_res
     );
@@ -457,7 +457,7 @@ decl_module! {
                         Error::<T>::BalanceTransferFailed
                     })?;
 
-                    println!("DEBUG multistep_call -- just_transfer total balance of CONTRACT -- vs REQUESTER {:?} vs ESCROW {:?}", <T as EscrowTrait>::Currency::free_balance(&requester), <T as EscrowTrait>::Currency::free_balance(&escrow_account));
+                    debug::info!("DEBUG multistep_call -- just_transfer total balance of CONTRACT -- vs REQUESTER {:?} vs ESCROW {:?}", <T as EscrowTrait>::Currency::free_balance(&requester), <T as EscrowTrait>::Currency::free_balance(&escrow_account));
 
                     let mut gas_meter = GasMeter::<T>::new(gas_limit);
                     let mut transfers = Vec::<TransferEntry>::new();
@@ -566,9 +566,9 @@ decl_module! {
                         storage: storage_proof,
                         deferred_transfers: <DeferredTransfers<T>>::get(&requester, &target_dest.clone()),
                     };
-                    println!("DEBUG multistepcall -- Execution Proofs : result {:?} ", execution_proofs.result);
-                    println!("DEBUG multistepcall -- Execution storage : storage {:?}", execution_proofs.storage);
-                    println!("DEBUG multistepcall -- Execution Proofs : deferred_transfers {:?}", execution_proofs.deferred_transfers);
+                    debug::info!("DEBUG multistepcall -- Execution Proofs : result {:?} ", execution_proofs.result);
+                    debug::info!("DEBUG multistepcall -- Execution storage : storage {:?}", execution_proofs.storage);
+                    debug::info!("DEBUG multistepcall -- Execution Proofs : deferred_transfers {:?}", execution_proofs.deferred_transfers);
                     <DeferredStorageWrites<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), deferred_storage_writes);
 
                     <ExecutionStamps<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), ExecutionStamp {
@@ -671,7 +671,6 @@ decl_module! {
             // Ensure that the caller is a regular keypair account
             let caller = ensure_signed(origin)?;
             // Print a test message.
-            debug::info!("DEBUG rent_projection by: {:?} for = {:?}", caller, address);
             // For now refer to the contracts rent_projection.
             // In the future rent projection should estimate on % of storage for that address used by escrow account
             <contracts::Module<T>>::rent_projection(address.clone());

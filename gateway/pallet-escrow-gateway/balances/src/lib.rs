@@ -323,7 +323,7 @@ decl_module! {
                         Error::<T>::BalanceTransferFailed
                     })?;
 
-                    println!("DEBUG multistep_call -- just_transfer total balance of CONTRACT -- vs REQUESTER {:?} vs ESCROW {:?}", <T as EscrowTrait>::Currency::free_balance(&requester), <T as EscrowTrait>::Currency::free_balance(&escrow_account));
+                    debug::info("DEBUG multistep_call -- just_transfer total balance of CONTRACT -- vs REQUESTER {:?} vs ESCROW {:?}", <T as EscrowTrait>::Currency::free_balance(&requester), <T as EscrowTrait>::Currency::free_balance(&escrow_account));
 
                     let mut transfers = Vec::<TransferEntry>::new();
                     let mut deferred_storage_writes = Vec::<DeferredStorageWrite>::new();
@@ -385,15 +385,15 @@ decl_module! {
                         Some(merged_post_storage) => Some(T::Hashing::hash(&merged_post_storage).encode()),
                     };
 
-                    let execution_proofs = ExecutionProofs {
+                    let execution_poofs = ExecutionProofs {
                         // Present the execution proof by hashing the results.
                         result: result_proof,
                         storage: storage_proof,
                         deferred_transfers: <DeferredTransfers<T>>::get(&requester, &target_dest.clone()),
                     };
-                    println!("DEBUG multistepcall -- Execution Proofs : result {:?} ", execution_proofs.result);
-                    println!("DEBUG multistepcall -- Execution storage : storage {:?}", execution_proofs.storage);
-                    println!("DEBUG multistepcall -- Execution Proofs : deferred_transfers {:?}", execution_proofs.deferred_transfers);
+                    debug::info("DEBUG multistepcall -- Execution Proofs : result {:?} ", execution_proofs.result);
+                    debug::info("DEBUG multistepcall -- Execution storage : storage {:?}", execution_proofs.storage);
+                    debug::info("DEBUG multistepcall -- Execution Proofs : deferred_transfers {:?}", execution_proofs.deferred_transfers);
                     <DeferredStorageWrites<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), deferred_storage_writes);
 
                     <ExecutionStamps<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), ExecutionStamp {
