@@ -40,11 +40,11 @@ use sudo;
 
 use gateway_escrow_engine::{
     proofs::EscrowExecuteResult,
-    EscrowTrait,
     transfers::{
         commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
     }
 };
+pub use gateway_escrow_engine::EscrowTrait;
 
 #[cfg(test)]
 mod mock;

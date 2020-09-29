@@ -47,8 +47,8 @@ use gateway_escrow_engine::{
     transfers::{
         commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
     },
-    EscrowTrait,
 };
+pub use gateway_escrow_engine::EscrowTrait;
 
 #[cfg(test)]
 mod mock;
