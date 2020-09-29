@@ -1,8 +1,8 @@
-use escrow_gateway_primitives::Trait;
+use crate::EscrowTrait;
 use codec::{Decode, Encode};
-use frame_support::sp_runtime::traits::Saturating;
 use frame_support::{
     dispatch::{DispatchError, DispatchResult},
+    sp_runtime::traits::Saturating,
     traits::{Currency, ExistenceRequirement, Time},
 };
 use sp_std::{convert::TryInto, prelude::*, vec::Vec};
@@ -17,17 +17,17 @@ pub struct TransferEntry {
 }
 
 pub type BalanceOf<T> =
-    <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::Balance;
+    <<T as EscrowTrait>::Currency as Currency<<T as system::Trait>::AccountId>>::Balance;
 
-pub fn just_transfer<'a, T: Trait>(
+pub fn just_transfer<'a, T: EscrowTrait>(
     transactor: &T::AccountId,
     dest: &T::AccountId,
     value: BalanceOf<T>,
 ) -> DispatchResult {
-    <T as Trait>::Currency::transfer(transactor, dest, value, ExistenceRequirement::KeepAlive)
+    <T as EscrowTrait>::Currency::transfer(transactor, dest, value, ExistenceRequirement::KeepAlive)
 }
 
-pub fn commit_deferred_transfers<T: Trait>(
+pub fn commit_deferred_transfers<T: EscrowTrait>(
     escrow_account: T::AccountId,
     transfers: &mut Vec<TransferEntry>,
 ) {
@@ -41,27 +41,17 @@ pub fn commit_deferred_transfers<T: Trait>(
     }
 }
 
-pub fn escrow_transfer<'a, T: Trait>(
+pub fn escrow_transfer<'a, T: EscrowTrait>(
     escrow_account: &T::AccountId,
     requester: &T::AccountId,
     target_to: &T::AccountId,
     value: BalanceOf<T>,
     mut transfers: &mut Vec<TransferEntry>,
 ) -> Result<(), DispatchError> {
-    println!(
-        "DEBUG escrow_exec -- escrow_transfer REQ {:?} ES_ACC {:?} VAL {:?}",
-        requester, escrow_account, value
-    );
     // Verify that requester has enough money to make the transfers from within the contract.
-    if <T as Trait>::Currency::total_balance(&requester.clone()).saturating_sub(value)
-        < <T as Trait>::Currency::minimum_balance()
+    if <T as EscrowTrait>::Currency::total_balance(&requester.clone())
+        < <T as EscrowTrait>::Currency::minimum_balance() + value
     {
-        println!(
-            "DEBUG escrow_exec -- REQUESTER {:?} VAL {:?} ST {:?} ",
-            <T as Trait>::Currency::free_balance(&requester.clone()),
-            value,
-            <T as Trait>::Currency::minimum_balance(),
-        );
         return Err(DispatchError::Other(
             "Escrow Transfer failed as the requester doesn't have enough balance.",
         ));
