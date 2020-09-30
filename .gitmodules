@@ -1,4 +1,4 @@
 [submodule "gateway/node-full/substrate"]
 	path = gateway/node-full/substrate
 	url = https://github.com/MaciejBaj/substrate
-	branch = t3rn-gateway-engine
+	branch = t3rn-milestone-2
