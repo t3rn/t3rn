@@ -142,6 +142,7 @@ describe('Escrow Gateway', function () {
 							relevant_event_messages = relevant_event_messages.filter(msg => !msg.includes('treasury.Deposit'));
 							expect(relevant_event_messages).toEqual(
 								expect.arrayContaining([
+									// These 2 don't appear on full-node, they're only on tiny-node.
 									// 'system.NewAccount ["5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy"]',
 									// `balances.Endowed ["5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",${value}]`,
 									`balances.Transfer ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",${value}]`,

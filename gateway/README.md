@@ -139,7 +139,7 @@ impl pallet_sudo::Trait for Runtime {
 	type Call = Call;
 }
 
-pub const MILLICENTS: Balance = 1_000_000_000;
+pub const MILLICENTS: Balance = 1;
 pub const CENTS: Balance = 1_000 * MILLICENTS;
 pub const DOLLARS: Balance = 100 * CENTS;
 
@@ -296,6 +296,8 @@ As of now, `escrow_gateway` doesn't implement [Custom RPC](https://substrate.dev
 ```rust
 fn multistep_call (
     origin: Origin,         // Origin source of a call; should be the escrow account owner.
+    requester: T::AccountId,   // Account requesting the execution.
+    target_dest: T::AccountId, // Target that the call is addressed to (can be an account or a contract)
     phase: u8,              // Current execution phase (execute = 0, revert = 1, commit = 2).
     code: Vec<u8>,          // Code of the package/contract as hex encode .wasm.
     input_data: Vec<u8>,    // Input data for a call to the instantiated code.
@@ -370,9 +372,10 @@ For example to run the integration tests against the tiny node:
 1. Build & run a `tiny-node` with `bash run-node-tiny.sh`.
 1. Execute integration tests against `ws:9944` default port: `cd test-integration && npm test:tiny` or `cd test-integration && npm test:full`.
 
-So far, only the following scenario has been implemented:
-###### - [Execute multi-step transaction](./test-integration/multistep_call.spec.js)
-Uses Alices account as the one that already has some positive balance on it allowing to put_code and instantiate contract. Alice's account from the perspective on the Gateway becomes an Escrow Account. That Escrow Account sends the signed transaction against the `multistep_call` API containing valid example code (`returns_from_start_fn.wasm`) and checks the correct results of that execution by retreving the data about the events - there should be one from the contracts pallet (code is stored_ and one from escrow gateway pallet - mutlistep_call result. 
+###### [Execute multi-step transaction](./test-integration/multistep_call.spec.js)
+Uses Alice's account as the one that already has some positive balance on it allowing to put_code and instantiate contract. Also, by default Alice is registered as escrow account - sudo user with authorisation for calls. 
+
+That Escrow Account sends the signed transaction against the `multistep_call` API containing valid example code and checks the correct results of that execution by retrieving the events out of substrate node - there should be one from the contracts pallet (code is stored_ and one from escrow gateway pallet - mutlistep_call result. 
 
 ### Please refer to the [Gateway specification](../specification/gateway_standalone.md) to find details on the future offer, intended shape and [Development Roadmap](../roadmap/initial_development_phase.md). 
 
