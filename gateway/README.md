@@ -338,15 +338,19 @@ Looks for a corresponig to the key value in the storage of contracts's address. 
 _As of now only the behaviour of `execute` phase is checked._
 
 #### Unit Tests
-`EscrowGateway` comes with unit tests. Module instantiation is complex as the gateway introduces a depencency on the contracts and takes place in `src/mock.rs`.  
-Unit tests consist mainly of the tests of `multistep_call`, passing the valid (`returns_from_start_fn.wasm`) and invalid (`empty`) code  for execution. The unit tests are in `src/test.rs`. 
+Both `EscrowGateway` and `EscrowGatewayBalanes` come with unit tests. Module instantiation is complex as the gateway introduces a dependency on the contracts and takes place in `src/mock.rs`.  
+
+Unit tests cover scenarios checking interaction between execution phases and running the test on couple of WASM contracts:
+- `returns_from_start_fn.wasm` - checking the correct output and proofs
+- `transfer_return_code.wasm` - checking the correct output and transfers from within a contract.
+- `storage_size.wasm` - checking setting of the input and deferred storage writes to a contract.
+
+Make sure, you're in `pallet-escrow-engine` directory to run tests for `EscrowGateway` or `pallet-escrow-engine` directory to run tests for `EscrowGatewayBalanes`.
 
 To execute the unit test, type: 
 ```shell script
 cargo test -- --nocapture
 ```
-
-Make sure, you're in `pallet-escrow-engine` directory.
 
 _While running tests, you may want to change the `debug::info!` to `println!` messages, like for `multistep_call` message:_
 
@@ -358,7 +362,7 @@ println!("DEBUG multistep_call -- escrow_engine.execute  {:?}", exec_res);
 
 
 #### Integration Tests
-`EscrowGateway` comes with the integration tests. 
+Both `EscrowGateway` and `EscrowGatewayBalances` come with the integration tests. 
 
 Integration tests run different integration scenarios against running Substrate node (either `tiny-node` or `full-node`) connecting with its Call API dedicated for extrinsics. 
 
