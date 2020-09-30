@@ -257,7 +257,7 @@ impl pallet_sudo::Trait for Runtime {
 	type Call = Call;
 }
 
-pub const MILLICENTS: Balance = 1_000_000_000;
+pub const MILLICENTS: Balance = 1;
 pub const CENTS: Balance = 1_000 * MILLICENTS;
 pub const DOLLARS: Balance = 100 * CENTS;
 
