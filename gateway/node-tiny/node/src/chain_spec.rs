@@ -1,5 +1,5 @@
 use sp_core::{Pair, Public, sr25519};
-use node_template_runtime::{
+use node_tiny_runtime::{
 	AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig,
 	SudoConfig, SystemConfig, WASM_BINARY, Signature
 };
@@ -7,7 +7,7 @@ use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{Verify, IdentifyAccount};
 use sc_service::ChainType;
-use node_template_runtime::{ContractsConfig, ContractsSchedule};
+use node_tiny_runtime::{ContractsConfig, ContractsSchedule};
 
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";

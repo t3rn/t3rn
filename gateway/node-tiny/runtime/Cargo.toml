@@ -1,10 +1,9 @@
 [package]
-authors = ['Substrate DevHub <https://github.com/substrate-developer-hub>']
+authors = ['Maciej Baj <https://github.com/MaciejBaj>']
 edition = '2018'
-homepage = 'https://substrate.dev'
-license = 'Unlicense'
-name = 'node-template-runtime'
-repository = 'https://github.com/substrate-developer-hub/substrate-node-template/'
+license = 'Apache 2.0'
+name = 'node-tiny-runtime'
+repository = 'https://github.com/t3rn/t3rn/tree/development/gateway/node-tiny'
 version = '2.0.0-rc6'
 
 [package.metadata.docs.rs]
