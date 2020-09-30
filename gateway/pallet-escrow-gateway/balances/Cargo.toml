@@ -106,6 +106,7 @@ std = [
     'codec/std',
     'frame-support/std',
     'frame-system/std',
+    'pallet-balances/std',
     'contracts/std',
     'gateway-escrow-engine/std',
 ]
