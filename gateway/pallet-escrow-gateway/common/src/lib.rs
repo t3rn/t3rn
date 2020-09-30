@@ -2,16 +2,9 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-    debug, decl_error, decl_event, decl_module, decl_storage, dispatch, ensure,
     storage::{child, child::ChildInfo},
     traits::{Currency, ExistenceRequirement, Time},
 };
-
-use balances;
-use sp_std::convert::TryInto;
-use sp_std::vec::Vec;
-use sudo;
-use system::{ensure_none, ensure_root, ensure_signed};
 
 #[derive(Debug, PartialEq, Encode, Decode, Clone)]
 #[codec(compact)]
@@ -21,26 +14,6 @@ pub enum Phase {
     Commit = 1,
     Revert = 2,
 }
-
-decl_event!(
-    pub enum Event<T>
-    where
-        AccountId = <T as system::Trait>::AccountId,
-    {
-        /// Just a dummy event.
-        SomethingStored(u32, AccountId),
-
-        MultistepExecutionResult(Vec<u8>),
-
-        MultistepCommitResult(u32),
-
-        MultistepRevertResult(u32),
-
-        MultistepUnknownPhase(u8),
-
-        GetStorageResult(Vec<u8>),
-    }
-);
 
 // ToDo: Encode errors properly before storing making the below enum obsolete.
 #[derive(Clone)]

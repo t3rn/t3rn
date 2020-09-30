@@ -27,12 +27,6 @@ tag = 'v2.0.0-rc6'
 version = '2.0.0-rc6'
 package = 'frame-system'
 
-[dependencies.sp-std]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc6'
-version = '2.0.0-rc6'
-
 [dependencies.sudo]
 default-features = false
 package = 'pallet-sudo'
@@ -40,20 +34,9 @@ git = 'https://github.com/paritytech/substrate.git'
 tag = 'v2.0.0-rc6'
 version = '2.0.0-rc6'
 
-[dependencies.balances]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc6'
-version = '2.0.0-rc6'
-package = 'pallet-balances'
-
 [features]
 default = ["std"]
 std = [
 	'codec/std',
-	'sudo/std',
-	'balances/std',
-	'sp-std/std',
 	'frame-support/std',
-	'system/std',
 ]
