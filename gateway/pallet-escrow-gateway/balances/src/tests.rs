@@ -148,6 +148,29 @@ fn commit_phase_cannot_be_triggered_without_preceeding_execution() {
     });
 }
 
+#[test]
+fn should_succeed_for_return_from_fn() {
+    let (phase, _, input_data, value, mut gas_limit) = default_multistep_call_args();
+    let correct_wasm_path = Path::new("../fixtures/return_from_start_fn.wasm");
+    let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
+    // Make the gas limit too little
+    gas_limit = 1000;
+
+    new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
+        let _ = Balances::deposit_creating(&REQUESTER, 10_000_000_000);
+        assert_ok!(EscrowGateway::multistep_call(
+            Origin::signed(ESCROW_ACCOUNT),
+            REQUESTER,
+            TARGET_DEST,
+            phase,
+            correct_wasm_code,
+            value,
+            gas_limit,
+            input_data
+        ));
+    });
+}
+
 // Balance Specific
 
 #[test]
