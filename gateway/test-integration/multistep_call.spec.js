@@ -97,7 +97,7 @@ describe('Escrow Gateway', function () {
 							});
 							console.warn('Events:');
 							console.log(relevant_event_messages);
-							// Ignore messsages about treasury deposits that appear on full-node but not on tiny-node. 
+							// Ignore messsages about treasury deposits that appear on full-node but not on tiny-node.
 							relevant_event_messages = relevant_event_messages.filter(msg => !msg.includes('treasury.Deposit'));
 							// Check all of the generated events for that call.
 							expect(relevant_event_messages).toStrictEqual(
@@ -180,12 +180,13 @@ describe('Escrow Gateway Balances', function () {
 			value = 500000;
 			targetDest = DAVE;
 		});
-		describe('when attaching a .WASM code that sends funds = 100 to zero-address with no inputData and sufficient gas limit', function () {
+		describe('when attaching a .WASM code that returns = [1, 2, 3, 4] with no inputData and sufficient gas limit', function () {
 			beforeEach(function () {
 				gasLimit = GAS_REQUIRED;
 				inputData = [];
 				code = `0x${fs
-					.readFileSync(path.join(__dirname, 'fixtures/transfer_return_code.wasm'))
+					// .readFileSync(path.join(__dirname, 'fixtures/transfer_return_code.wasm'))
+					.readFileSync(path.join(__dirname, 'fixtures/return_from_start_fn.wasm'))
 					.toString("hex")}`;
 			});
 
@@ -215,6 +216,7 @@ describe('Escrow Gateway Balances', function () {
 							console.log(relevant_event_messages);
 							// Ignore messsages about treasury deposits that appear on full-node but not on tiny-node.
 							relevant_event_messages = relevant_event_messages.filter(msg => !msg.includes('treasury.Deposit'));
+							// Check all of the generated events for that call.
 							expect(relevant_event_messages).toStrictEqual(
 								[
 									'system.ExtrinsicSuccess [{"weight":270000000,"class":"Normal","paysFee":"Yes"}]',
@@ -229,7 +231,7 @@ describe('Escrow Gateway Balances', function () {
 					});
 				});
 
-				it('should be successful after calling with following COMMIT phase: move funds from escrow to target dest + reveal the contract output = [0, 0, 0, 0] ', async function (done) {
+				it('should be successful after calling with following COMMIT phase: move funds from escrow to target dest + reveal the contract output = [1, 2, 3, 4] ', async function (done) {
 					const tx = api.tx.escrowGatewayBalances.multistepCall(
 						requester,
 						targetDest,
@@ -250,12 +252,16 @@ describe('Escrow Gateway Balances', function () {
 							// Check all of the generated events for that call.
 							// Ignore messsages about treasury deposits that appear on full-node but not on tiny-node.
 							relevant_event_messages = relevant_event_messages.filter(msg => !msg.includes('treasury.Deposit'));
-							expect(relevant_event_messages).toStrictEqual(
-								[
+							expect(relevant_event_messages).toEqual(
+								expect.arrayContaining([
+									// These 2 don't appear on full-node, they're only on tiny-node.
+									// 'system.NewAccount ["5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy"]',
+									// `balances.Endowed ["5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",${value}]`,
 									'balances.Transfer ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",500000]',
-									'escrowGatewayBalances.MultistepCommitResult ["0x00000000"]',
+									'escrowGatewayBalances.MultistepCommitResult ["0x01020304"]',
 									'system.ExtrinsicSuccess [{"weight":270000000,"class":"Normal","paysFee":"Yes"}]'
-								]
+
+								])
 							);
 						} else if (status.isFinalized) {
 							console.log('Finalized block hash', status.asFinalized.toHex());
