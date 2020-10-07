@@ -6,8 +6,8 @@ cd gateway || exit
 
 echo -e "\033[0;34mBuilding escrow pallets..."
 cd pallet-escrow-gateway/escrow-engine && cargo build && cd ../..
-cd pallet-escrow-gateway/balances && cargo build && cd ../..
-cd pallet-escrow-gateway && cargo build && cd ..
+cd pallet-escrow-gateway/balances && cargo update && cargo build && cd ../..
+cd pallet-escrow-gateway && cargo update && cargo build && cd ..
 
 echo -e "\033[0;32mTesting escrow pallets..."
 cd pallet-escrow-gateway/balances && cargo test && cd ../..
