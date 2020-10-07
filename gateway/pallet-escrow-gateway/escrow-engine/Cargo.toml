@@ -46,15 +46,10 @@ default-features = false
 features = ['codec']
 version = "0.7.0"
 
-[dev-dependencies.substrate-test-runtime]
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc6'
-version = '2.0.0-rc6'
-
-[dev-dependencies.sp-core]
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc6'
-version = '2.0.0-rc6'
+#[dev-dependencies.substrate-test-runtime]
+#git = 'https://github.com/paritytech/substrate.git'
+#tag = 'v2.0.0-rc6'
+#version = '2.0.0-rc6'
 
 [features]
 default = ["std"]
