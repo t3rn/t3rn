@@ -16,7 +16,7 @@ use sp_runtime::{
 
 use contracts::{GenesisConfig, *};
 
-use gateway_escrow_engine::{EscrowTrait};
+use gateway_escrow_engine::EscrowTrait;
 
 use sudo;
 
@@ -102,7 +102,6 @@ parameter_types! {
 }
 
 /** Balances -- start **/
-
 thread_local! {
     static EXISTENTIAL_DEPOSIT: RefCell<u64> = RefCell::new(0);
 }

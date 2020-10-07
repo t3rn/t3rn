@@ -102,7 +102,7 @@ fn during_execution_phase_when_given_empty_wasm_code_multistep_call_only_deferrs
         assert_eq!(
             EscrowGateway::deferred_transfers(&REQUESTER, &TARGET_DEST),
             [TransferEntry {
-                to: [4, 0, 0, 0, 0, 0, 0, 0].to_vec(),
+                to: H256::from_low_u64_be(TARGET_DEST),
                 value: 500000,
                 data: [].to_vec(),
             },]
@@ -233,12 +233,12 @@ fn transfer_during_execution_phase_succeeds_and_consumes_costs_correctly_and_def
             EscrowGateway::deferred_transfers(&REQUESTER, &TARGET_DEST),
             [
                 TransferEntry {
-                    to: [4, 0, 0, 0, 0, 0, 0, 0].to_vec(),
+                    to: H256::from_low_u64_be(TARGET_DEST),
                     value: 500000,
                     data: [].to_vec(),
                 },
                 TransferEntry {
-                    to: [0, 0, 0, 0, 0, 0, 0, 0].to_vec(),
+                    to: H256::from_low_u64_be(ZERO_ACCOUNT),
                     value: 100,
                     data: [].to_vec(),
                 }
@@ -486,12 +486,12 @@ fn successful_commit_phase_changes_phase_of_execution_stamp() {
                     ]),
                     deferred_transfers: vec![
                         TransferEntry {
-                            to: vec![4, 0, 0, 0, 0, 0, 0, 0],
+                            to: H256::from_low_u64_be(TARGET_DEST),
                             value: 500000,
                             data: vec![]
                         },
                         TransferEntry {
-                            to: vec![0, 0, 0, 0, 0, 0, 0, 0],
+                            to: H256::from_low_u64_be(ZERO_ACCOUNT),
                             value: 100,
                             data: vec![]
                         }
@@ -570,7 +570,7 @@ fn successful_commit_phase_applies_deferred_storage_writes() {
                         217
                     ]),
                     deferred_transfers: vec![TransferEntry {
-                        to: vec![4, 0, 0, 0, 0, 0, 0, 0],
+                        to: H256::from_low_u64_be(TARGET_DEST),
                         value: 500000,
                         data: vec![]
                     }]
@@ -663,7 +663,7 @@ fn successful_commit_phase_applies_deferred_storage_writes() {
                         217
                     ]),
                     deferred_transfers: vec![TransferEntry {
-                        to: vec![4, 0, 0, 0, 0, 0, 0, 0],
+                        to: H256::from_low_u64_be(TARGET_DEST),
                         value: 500000,
                         data: vec![]
                     }]

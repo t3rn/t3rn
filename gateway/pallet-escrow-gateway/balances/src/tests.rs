@@ -103,7 +103,7 @@ fn during_execution_phase_when_given_empty_wasm_code_multistep_call_only_deferrs
         assert_eq!(
             EscrowGateway::deferred_transfers(&REQUESTER, &TARGET_DEST),
             [TransferEntry {
-                to: [4, 0, 0, 0, 0, 0, 0, 0].to_vec(),
+                to: H256::from_low_u64_be(TARGET_DEST),
                 value: 500000,
                 data: [].to_vec(),
             },]
@@ -266,12 +266,12 @@ fn successful_execution_phase_generates_call_stamps_and_proofs() {
                     ]),
                     deferred_transfers: vec![
                         TransferEntry {
-                            to: vec![4, 0, 0, 0, 0, 0, 0, 0],
+                            to: H256::from_low_u64_be(TARGET_DEST),
                             value: 500000,
                             data: vec![]
                         },
                         TransferEntry {
-                            to: vec![0, 0, 0, 0, 0, 0, 0, 0],
+                            to: H256::from_low_u64_be(ZERO_ACCOUNT),
                             value: 100,
                             data: vec![]
                         }
@@ -298,12 +298,12 @@ fn successful_execution_phase_generates_call_stamps_and_proofs() {
             EscrowGateway::deferred_transfers(&REQUESTER, &TARGET_DEST),
             [
                 TransferEntry {
-                    to: [4, 0, 0, 0, 0, 0, 0, 0].to_vec(),
+                    to: H256::from_low_u64_be(TARGET_DEST),
                     value: 500000,
                     data: [].to_vec(),
                 },
                 TransferEntry {
-                    to: [0, 0, 0, 0, 0, 0, 0, 0].to_vec(),
+                    to: H256::from_low_u64_be(ZERO_ACCOUNT),
                     value: 100,
                     data: [].to_vec(),
                 }
@@ -361,12 +361,12 @@ fn transfer_during_execution_phase_succeeds_and_consumes_costs_correctly_and_def
             EscrowGateway::deferred_transfers(&REQUESTER, &TARGET_DEST),
             [
                 TransferEntry {
-                    to: [4, 0, 0, 0, 0, 0, 0, 0].to_vec(),
+                    to: H256::from_low_u64_be(TARGET_DEST),
                     value: 500000,
                     data: [].to_vec(),
                 },
                 TransferEntry {
-                    to: [0, 0, 0, 0, 0, 0, 0, 0].to_vec(),
+                    to: H256::from_low_u64_be(ZERO_ACCOUNT),
                     value: 100,
                     data: [].to_vec(),
                 }
@@ -410,6 +410,22 @@ fn successful_commit_phase_transfers_move_from_deferred_to_target_destinations()
             Balances::total_balance(&ESCROW_ACCOUNT),
             sufficient_gas_limit + inner_contract_transfer_value + value
         ); // 188000100
+
+        // assert_eq!(
+        //     EscrowGateway::deferred_transfers(&REQUESTER, &TARGET_DEST),
+        //     [
+        //         TransferEntry {
+        //             to: H256::from_low_u64_be(TARGET_DEST),
+        //             value: 500000,
+        //             data: [].to_vec(),
+        //         },
+        //         TransferEntry {
+        //             to: H256::from_low_u64_be(ZERO_ACCOUNT),
+        //             value: 100,
+        //             data: [].to_vec(),
+        //         }
+        //     ]
+        // );
 
         assert_ok!(EscrowGateway::multistep_call(
             Origin::signed(ESCROW_ACCOUNT),
@@ -465,6 +481,22 @@ fn successful_revert_phase_removes_deferred_transfers_and_refunds_from_escrow_to
                 &<Test as frame_system::Trait>::Hashing::hash(&correct_wasm_code.clone())
             ),
             vec![0, 0, 0, 0],
+        );
+
+        assert_eq!(
+            EscrowGateway::deferred_transfers(&REQUESTER, &TARGET_DEST),
+            [
+                TransferEntry {
+                    to: H256::from_low_u64_be(TARGET_DEST),
+                    value: 500000,
+                    data: [].to_vec(),
+                },
+                TransferEntry {
+                    to: H256::from_low_u64_be(ZERO_ACCOUNT),
+                    value: 100,
+                    data: [].to_vec(),
+                }
+            ]
         );
 
         // There should be an entry with deferred transfer to the target dest though as well as the requested by contract value transfer of 100 to &0
@@ -632,7 +664,7 @@ fn successful_commit_phase_applies_storage_writes_on_the_dedicated_for_that_code
                         172, 155, 45, 135, 194, 90, 7, 160, 253, 207, 71, 120, 217, 217, 169, 27
                     ]),
                     deferred_transfers: vec![TransferEntry {
-                        to: vec![4, 0, 0, 0, 0, 0, 0, 0],
+                        to: H256::from_low_u64_be(TARGET_DEST),
                         value: 500000,
                         data: vec![]
                     }]

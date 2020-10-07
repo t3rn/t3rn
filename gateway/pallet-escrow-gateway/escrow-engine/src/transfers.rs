@@ -2,16 +2,18 @@ use crate::EscrowTrait;
 use codec::{Decode, Encode};
 use frame_support::{
     dispatch::{DispatchError, DispatchResult},
+    ensure,
     sp_runtime::traits::Saturating,
     traits::{Currency, ExistenceRequirement, Time},
 };
+use primitive_types::H256;
 use sp_std::{convert::TryInto, prelude::*, vec::Vec};
 use system;
 
 #[derive(Debug, PartialEq, Eq, Encode, Decode, Clone)]
 #[codec(compact)]
 pub struct TransferEntry {
-    pub to: Vec<u8>,
+    pub to: H256,
     pub value: u32,
     pub data: Vec<u8>,
 }
@@ -31,11 +33,11 @@ pub fn commit_deferred_transfers<T: EscrowTrait>(
     escrow_account: T::AccountId,
     transfers: &mut Vec<TransferEntry>,
 ) {
-    // Give the money back to the requester from the transfers that succeeded.
+    // Give the money back to the requester from the transfers that succeeded.s
     for mut transfer in transfers.iter() {
         just_transfer::<T>(
             &escrow_account,
-            &T::AccountId::decode(&mut &transfer.to[..]).unwrap(),
+            &h256_to_account(transfer.to),
             BalanceOf::<T>::from(transfer.value),
         );
     }
@@ -60,7 +62,7 @@ pub fn escrow_transfer<'a, T: EscrowTrait>(
     return match just_transfer::<T>(requester, escrow_account, value) {
         Ok(_) => {
             transfers.push(TransferEntry {
-                to: T::AccountId::encode(target_to),
+                to: account_encode_to_h256(target_to.encode().as_slice()),
                 value: TryInto::<u32>::try_into(value).ok().unwrap(),
                 data: Vec::new(),
             });
@@ -68,4 +70,113 @@ pub fn escrow_transfer<'a, T: EscrowTrait>(
         }
         Err(err) => Err(err),
     };
+}
+
+pub fn account_encode_to_h256(account_bytes: &[u8]) -> H256 {
+    match account_bytes.len() {
+        // Normal case, expect 32-bytes long account id (public key) for regular runtime.
+        32 => H256::from_slice(account_bytes),
+        // Shorter (8-bytes) account id (represented as u64) for tests.
+        8 => {
+            // H256::from_low_u64_be doesn't work for runtime as it has no std.
+            H256::from_slice(
+                &[
+                    vec![0 as u8; 24],
+                    u64::from_le_bytes(account_bytes.try_into().unwrap())
+                        .to_be_bytes()
+                        .to_vec(),
+                ]
+                .concat()[..],
+            )
+
+            // H256::from_low_u64_be(u64::from_le_bytes(account_bytes.try_into().unwrap()))
+        }
+        _ => {
+            assert!(
+                false,
+                "Surprised by AccountId bytes length different than 32 or 8 bytes while serializing. Not supported."
+            );
+            H256::default()
+        }
+    }
+}
+
+pub fn h256_to_account<D: Decode + Encode>(account_h256: H256) -> D {
+    let decoded_account = D::decode(&mut &account_h256[..]).unwrap();
+
+    match decoded_account.encode().len() {
+        32 => decoded_account,
+        8 => {
+            let mut last_8b = account_h256.as_bytes()[24..].to_vec();
+            last_8b.reverse();
+            D::decode(&mut &last_8b[..]).unwrap()
+        }
+        _ => {
+            assert!(
+                false,
+                "Surprised by AccountId bytes length different than 32 or 8 bytes while deserializing. Not supported."
+            );
+            D::decode(&mut &H256::default()[..]).unwrap()
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sp_core::crypto::Ss58Codec;
+    use sp_std::vec;
+    use substrate_test_runtime::{AccountId, Block, Extrinsic, Hashing, Transfer, H256};
+    use system;
+
+    struct Test;
+
+    type AccountId8 = u64;
+    #[test]
+    fn transfer_entry_serializes_correctly_for_8b_and_32b_accounts() {
+        let test_account_32b = AccountId::from_string(
+            "0x0000000000000000000000000000000000000000000000000000000000000001",
+        )
+        .unwrap();
+
+        let test_account_8b: AccountId8 = 1;
+
+        let transfer_entry_from_32b = TransferEntry {
+            to: account_encode_to_h256(test_account_32b.encode().as_slice()),
+            value: 0,
+            data: vec![],
+        };
+
+        let transfer_entry_from_8b = TransferEntry {
+            to: account_encode_to_h256(test_account_8b.encode().as_slice()),
+            value: 0,
+            data: vec![],
+        };
+
+        let expected_transfer_entry = TransferEntry {
+            to: H256::from_low_u64_be(1),
+            value: 0,
+            data: vec![],
+        };
+
+        assert_eq!(transfer_entry_from_32b, expected_transfer_entry);
+        assert_eq!(transfer_entry_from_8b, expected_transfer_entry);
+    }
+
+    #[test]
+    fn transfer_entry_deserializes_correctly_for_8b_and_32b_accounts() {
+        // AccountID of 8 bytes is used by tests (u64)
+        let test_account_32b = AccountId::from_string(
+            "0x0000000000000000000000000000000000000000000000000000000000000001",
+        )
+        .unwrap();
+
+        let test_account_8b: AccountId8 = 1;
+
+        let decoded_account_32: AccountId = h256_to_account(H256::from_low_u64_be(1));
+        let decoded_account_8: AccountId8 = h256_to_account(H256::from_low_u64_be(1));
+
+        assert_eq!(decoded_account_32, test_account_32b);
+        assert_eq!(decoded_account_8, test_account_8b);
+    }
 }
