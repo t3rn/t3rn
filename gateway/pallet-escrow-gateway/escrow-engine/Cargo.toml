@@ -39,6 +39,8 @@ features = ['codec']
 version = "0.7.0"
 
 [dev-dependencies.substrate-test-runtime]
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'v2.0.0'
 version = '2.0.0'
 
 [features]
