@@ -6,7 +6,7 @@ homepage = 'https://github.com/t3rn/t3rn'
 license = 'Apache 2.0'
 name = 'escrow-gateway'
 repository = 'https://github.com/t3rn/t3rn.git'
-version = '2.0.0-rc6'
+version = '2.0.0'
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
@@ -22,77 +22,56 @@ version = "0.1"
 
 [dependencies.gateway-escrow-engine]
 default-features = false
-git = 'https://github.com/t3rn/gateway-pallet.git'
-version = '2.0.0-rc6'
 branch = 'master'
+git = 'https://github.com/t3rn/gateway-pallet.git'
+version = '2.0.0'
 
 [dependencies.frame-support]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc6'
-version = '2.0.0-rc6'
+version = '2.0.0'
 
 [dependencies.frame-system]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc6'
-version = '2.0.0-rc6'
+version = '2.0.0'
 
 [dependencies.sudo]
 default-features = false
 package = 'pallet-sudo'
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc6'
-version = '2.0.0-rc6'
+version = '2.0.0'
 
 [dependencies.pallet-balances]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc6'
-version = '2.0.0-rc6'
+version = '2.0.0'
 
 [dependencies.contracts]
 default-features = false
 git = 'https://github.com/MaciejBaj/pallet-contracts.git'
 branch = 'escrow-contracts'
 package = 'pallet-contracts'
-version = '2.0.0-rc6'
+version = '2.0.0'
 
 [dependencies.sp-std]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc6'
-version = '2.0.0-rc6'
+version = '2.0.0'
 
 [dev-dependencies.sp-core]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc6'
-version = '2.0.0-rc6'
+version = '2.0.0'
 
 [dev-dependencies.sp-io]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc6'
-version = '2.0.0-rc6'
+version = '2.0.0'
 
 [dependencies.sp-runtime]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc6'
-version = '2.0.0-rc6'
-
+version = '2.0.0'
 
 [dev-dependencies.pallet-timestamp]
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc6'
-version = '2.0.0-rc6'
+version = '2.0.0'
 
 [dev-dependencies.pallet-randomness-collective-flip]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc6'
-version = '2.0.0-rc6'
+version = '2.0.0'
 
 [dev-dependencies.anyhow]
 version = '*'

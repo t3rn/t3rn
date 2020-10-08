@@ -81,15 +81,13 @@ pub fn account_encode_to_h256(account_bytes: &[u8]) -> H256 {
             // H256::from_low_u64_be doesn't work for runtime as it has no std.
             H256::from_slice(
                 &[
-                    vec![0 as u8; 24],
+                    [0 as u8; 24].to_vec(),
                     u64::from_le_bytes(account_bytes.try_into().unwrap())
                         .to_be_bytes()
                         .to_vec(),
                 ]
                 .concat()[..],
             )
-
-            // H256::from_low_u64_be(u64::from_le_bytes(account_bytes.try_into().unwrap()))
         }
         _ => {
             assert!(
@@ -120,56 +118,56 @@ pub fn h256_to_account<D: Decode + Encode>(account_h256: H256) -> D {
         }
     }
 }
-//
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use sp_std::vec;
-//     use substrate_test_runtime::{AccountId, Block, Extrinsic, Hashing, Transfer, H256};
-//     use system;
-//
-//     struct Test;
-//
-//     type AccountId8 = u64;
-//     #[test]
-//     fn transfer_entry_serializes_correctly_for_8b_and_32b_accounts() {
-//         let test_account_32b = AccountId::from_h256(H256::from_low_u64_be(1));
-//
-//         let test_account_8b: AccountId8 = 1;
-//
-//         let transfer_entry_from_32b = TransferEntry {
-//             to: account_encode_to_h256(test_account_32b.encode().as_slice()),
-//             value: 0,
-//             data: vec![],
-//         };
-//
-//         let transfer_entry_from_8b = TransferEntry {
-//             to: account_encode_to_h256(test_account_8b.encode().as_slice()),
-//             value: 0,
-//             data: vec![],
-//         };
-//
-//         let expected_transfer_entry = TransferEntry {
-//             to: H256::from_low_u64_be(1),
-//             value: 0,
-//             data: vec![],
-//         };
-//
-//         assert_eq!(transfer_entry_from_32b, expected_transfer_entry);
-//         assert_eq!(transfer_entry_from_8b, expected_transfer_entry);
-//     }
-//
-//     #[test]
-//     fn transfer_entry_deserializes_correctly_for_8b_and_32b_accounts() {
-//         // AccountID of 8 bytes is used by tests (u64)
-//         let test_account_32b = AccountId::from_h256(H256::from_low_u64_be(1));
-//
-//         let test_account_8b: AccountId8 = 1;
-//
-//         let decoded_account_32: AccountId = h256_to_account(H256::from_low_u64_be(1));
-//         let decoded_account_8: AccountId8 = h256_to_account(H256::from_low_u64_be(1));
-//
-//         assert_eq!(decoded_account_32, test_account_32b);
-//         assert_eq!(decoded_account_8, test_account_8b);
-//     }
-// }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sp_std::vec;
+    use substrate_test_runtime::{AccountId, Block, Extrinsic, Hashing, Transfer, H256};
+    use system;
+
+    struct Test;
+
+    type AccountId8 = u64;
+    #[test]
+    fn transfer_entry_serializes_correctly_for_8b_and_32b_accounts() {
+        let test_account_32b = AccountId::from_h256(H256::from_low_u64_be(1));
+
+        let test_account_8b: AccountId8 = 1;
+
+        let transfer_entry_from_32b = TransferEntry {
+            to: account_encode_to_h256(test_account_32b.encode().as_slice()),
+            value: 0,
+            data: vec![],
+        };
+
+        let transfer_entry_from_8b = TransferEntry {
+            to: account_encode_to_h256(test_account_8b.encode().as_slice()),
+            value: 0,
+            data: vec![],
+        };
+
+        let expected_transfer_entry = TransferEntry {
+            to: H256::from_low_u64_be(1),
+            value: 0,
+            data: vec![],
+        };
+
+        assert_eq!(transfer_entry_from_32b, expected_transfer_entry);
+        assert_eq!(transfer_entry_from_8b, expected_transfer_entry);
+    }
+
+    #[test]
+    fn transfer_entry_deserializes_correctly_for_8b_and_32b_accounts() {
+        // AccountID of 8 bytes is used by tests (u64)
+        let test_account_32b = AccountId::from_h256(H256::from_low_u64_be(1));
+
+        let test_account_8b: AccountId8 = 1;
+
+        let decoded_account_32: AccountId = h256_to_account(H256::from_low_u64_be(1));
+        let decoded_account_8: AccountId8 = h256_to_account(H256::from_low_u64_be(1));
+
+        assert_eq!(decoded_account_32, test_account_32b);
+        assert_eq!(decoded_account_8, test_account_8b);
+    }
+}
