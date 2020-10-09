@@ -410,7 +410,7 @@ fn successful_revert_phase_removes_deferred_results_and_transfers_and_refunds_fr
                 &REQUESTER,
                 &<Test as frame_system::Trait>::Hashing::hash(&correct_wasm_code.clone())
             ),
-            vec![],
+            Vec::<u8>::new(),
         );
 
         assert_eq!(Balances::total_balance(&TARGET_DEST), 0);

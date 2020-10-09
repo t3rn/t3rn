@@ -524,7 +524,7 @@ fn successful_revert_phase_removes_deferred_transfers_and_refunds_from_escrow_to
                 &REQUESTER,
                 &<Test as frame_system::Trait>::Hashing::hash(&correct_wasm_code.clone())
             ),
-            vec![],
+            Vec::<u8>::new(),
         );
 
         assert_eq!(Balances::total_balance(&TARGET_DEST), 0);
@@ -605,7 +605,7 @@ fn successful_revert_phase_removes_associated_storage_for_that_call() {
                 &REQUESTER,
                 &<Test as frame_system::Trait>::Hashing::hash(&correct_wasm_code.clone())
             ),
-            vec![],
+            Vec::<u8>::new(),
         );
     });
 }

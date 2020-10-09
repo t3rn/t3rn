@@ -114,6 +114,7 @@ impl Get<u64> for ExistentialDeposit {
 }
 
 impl pallet_balances::Trait for Test {
+    type MaxLocks = ();
     type Balance = u64;
     type Event = MetaEvent;
     type DustRemoval = ();
@@ -137,9 +138,10 @@ impl Convert<Weight, BalanceOf<Self>> for Test {
     }
 }
 
-type Timestamp = pallet_timestamp::Module<Test>;
 pub type Balances = pallet_balances::Module<Test>;
+type Randomness = pallet_randomness_collective_flip::Module<Test>;
 type System = system::Module<Test>;
+type Timestamp = pallet_timestamp::Module<Test>;
 
 impl contracts::Trait for Test {
     type Time = Timestamp;
@@ -157,7 +159,7 @@ impl contracts::Trait for Test {
     type MaxDepth = MaxDepth;
     type MaxValueSize = MaxValueSize;
     type WeightPrice = ();
-    type Randomness = ();
+    type Randomness = Randomness;
 }
 
 impl system::Trait for Test {
@@ -181,11 +183,11 @@ impl system::Trait for Test {
     type AvailableBlockRatio = AvailableBlockRatio;
     type MaximumBlockLength = MaximumBlockLength;
     type Version = ();
-    type ModuleToIndex = ();
     type AccountData = pallet_balances::AccountData<u64>;
     type OnNewAccount = ();
     type OnKilledAccount = ();
     type SystemWeightInfo = ();
+    type PalletInfo = ();
 }
 
 impl sudo::Trait for Test {
