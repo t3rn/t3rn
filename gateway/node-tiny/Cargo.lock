@@ -195,9 +195,9 @@ dependencies = [
 
 [[package]]
 name = "async-channel"
-version = "1.5.0"
+version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "55576d57ea9e255e709ea13169645a9427987a6504791cf19b59908d5c922b3d"
+checksum = "59740d83946db6a5af71ae25ddf9562c2b176b2ca42cf99a455f09f4a220d6b9"
 dependencies = [
  "concurrent-queue",
  "event-listener",
@@ -353,9 +353,9 @@ checksum = "cdb031dd78e28731d87d56cc8ffef4a8f36ca26c38fe2de700543e627f8a464a"
 
 [[package]]
 name = "backtrace"
-version = "0.3.51"
+version = "0.3.52"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec1931848a574faa8f7c71a12ea00453ff5effbb5f51afe7f77d7a48cace6ac1"
+checksum = "f813291114c186a042350e787af10c26534601062603d888be110f59f85ef8fa"
 dependencies = [
  "addr2line",
  "cfg-if",
@@ -635,9 +635,9 @@ checksum = "631ae5198c9be5e753e5cc215e1bd73c2b466a3565173db433f52bb9d3e66dba"
 
 [[package]]
 name = "cc"
-version = "1.0.60"
+version = "1.0.61"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ef611cc68ff783f18535d77ddd080185275713d852c4f5cbb6122c462a7a825c"
+checksum = "ed67cbde08356238e75fc4656be4749481eeffb09e19f320a25237d5221c985d"
 dependencies = [
  "jobserver",
 ]
@@ -1198,7 +1198,7 @@ dependencies = [
 [[package]]
 name = "escrow-gateway"
 version = "2.0.0"
-source = "git+https://github.com/t3rn/gateway-pallet.git?branch=master#a3f9be90ce1aae79dd56d781aa46e403ef7605e8"
+source = "git+https://github.com/t3rn/gateway-pallet.git?branch=master#c8f01aca7aa08dbae37d72d6fba19cf097947e65"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -1215,7 +1215,7 @@ dependencies = [
 [[package]]
 name = "escrow-gateway-balances"
 version = "2.0.0"
-source = "git+https://github.com/t3rn/gateway-pallet.git?branch=master#a3f9be90ce1aae79dd56d781aa46e403ef7605e8"
+source = "git+https://github.com/t3rn/gateway-pallet.git?branch=master#c8f01aca7aa08dbae37d72d6fba19cf097947e65"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -1770,7 +1770,7 @@ dependencies = [
 [[package]]
 name = "gateway-escrow-engine"
 version = "2.0.0"
-source = "git+https://github.com/t3rn/gateway-pallet.git?branch=master#a3f9be90ce1aae79dd56d781aa46e403ef7605e8"
+source = "git+https://github.com/t3rn/gateway-pallet.git?branch=master#c8f01aca7aa08dbae37d72d6fba19cf097947e65"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -3677,7 +3677,7 @@ dependencies = [
 [[package]]
 name = "pallet-contracts"
 version = "2.0.0"
-source = "git+https://github.com/MaciejBaj/pallet-contracts.git?branch=escrow-contracts#2a5ada8c5846d54838480096ab28e78457f4cacd"
+source = "git+https://github.com/MaciejBaj/pallet-contracts.git?branch=escrow-contracts#af5cf0070a5cf26509fb40055d30d79f7e53134a"
 dependencies = [
  "bitflags",
  "frame-support",
@@ -3699,7 +3699,7 @@ dependencies = [
 [[package]]
 name = "pallet-contracts-primitives"
 version = "2.0.0"
-source = "git+https://github.com/MaciejBaj/pallet-contracts.git?branch=escrow-contracts#2a5ada8c5846d54838480096ab28e78457f4cacd"
+source = "git+https://github.com/MaciejBaj/pallet-contracts.git?branch=escrow-contracts#af5cf0070a5cf26509fb40055d30d79f7e53134a"
 dependencies = [
  "parity-scale-codec",
  "sp-runtime",
@@ -7447,7 +7447,7 @@ version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3bfd5b7557925ce778ff9b9ef90e3ade34c524b5ff10e239c69a42d546d2af56"
 dependencies = [
- "rand 0.3.23",
+ "rand 0.7.3",
 ]
 
 [[package]]
@@ -7915,9 +7915,9 @@ dependencies = [
 
 [[package]]
 name = "wast"
-version = "25.0.1"
+version = "25.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94c7c4b9eeb5c233b89385147dd3ea5bb89988a3a8d256f116cf1db40e5ff43e"
+checksum = "000df4e05cdb4cbc1d0bb1e7e5ea86adb3f1295850c9effb9a47b1086a346895"
 dependencies = [
  "leb128",
 ]
