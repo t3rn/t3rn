@@ -68,7 +68,6 @@ describe('Escrow Gateway', function () {
 				gasLimit = GAS_REQUIRED;
 				inputData = [];
 				code = `0x${fs
-					// .readFileSync(path.join(__dirname, 'fixtures/transfer_return_code.wasm'))
 					.readFileSync(path.join(__dirname, 'fixtures/return_from_start_fn.wasm'))
 					.toString("hex")}`;
 			});
@@ -185,7 +184,6 @@ describe('Escrow Gateway Balances', function () {
 				gasLimit = GAS_REQUIRED;
 				inputData = [];
 				code = `0x${fs
-					// .readFileSync(path.join(__dirname, 'fixtures/transfer_return_code.wasm'))
 					.readFileSync(path.join(__dirname, 'fixtures/return_from_start_fn.wasm'))
 					.toString("hex")}`;
 			});
