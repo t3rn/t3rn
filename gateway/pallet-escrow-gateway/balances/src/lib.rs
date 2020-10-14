@@ -3,39 +3,28 @@
 use codec::{Decode, Encode};
 
 use contracts::{
-    exec::{
-        CallContext, ErrorOrigin, ExecError, ExecFeeToken, ExecResult, ExecReturnValue,
-        ExecutionContext, Loader, MomentOf, ReturnFlags, TransactorKind, TransferCause,
-        TransferFeeKind, Vm,
-    },
-    rent,
-    storage::write_contract_storage,
+    exec::ExecResult,
     wasm::{
-        code_cache::load as load_code, // ToDo: Solve the types err while calling loader.load_main directly
         prepare::prepare_contract,
-        runtime::{Env, ReturnCode},
+        runtime::Env,
         runtime_escrow::{
             get_child_storage_for_current_execution, raw_escrow_call, CallStamp,
             DeferredStorageWrite,
         },
-        PrefabWasmModule,
         WasmExecutable,
-        WasmLoader,
-        WasmVm,
     },
-    BalanceOf as ContractsBalanceOf, CodeHash, Config, ContractAddressFor, ContractInfo,
-    ContractInfoOf, Gas, GasMeter, NegativeImbalanceOf, Schedule, TrieIdGenerator,
+    Gas,
 };
 use frame_support::{
     debug, decl_error, decl_event, decl_module, decl_storage, dispatch, ensure,
-    storage::{child, child::kill_storage, child::ChildInfo},
-    traits::{Currency, ExistenceRequirement, Time},
+    storage::child::kill_storage,
+    traits::{Currency, Time},
 };
-use frame_system::{self as system, ensure_none, ensure_root, ensure_signed, Phase};
+use frame_system::{self as system, ensure_signed};
 use reduce::Reduce;
 use sp_runtime::{
     traits::{Hash, Saturating},
-    DispatchError,
+    DispatchResult,
 };
 use sp_std::convert::TryInto;
 use sp_std::vec;
@@ -60,16 +49,18 @@ pub fn cleanup_failed_execution<T: Trait>(
     escrow_account: T::AccountId,
     requester: T::AccountId,
     transfers: &mut Vec<TransferEntry>,
-) {
+) -> DispatchResult {
     // Give the money back to the requester from the transfers that succeeded.
     for transfer in transfers.iter() {
         just_transfer::<T>(
             &escrow_account,
             &requester,
             BalanceOf::<T>::from(transfer.value),
-        );
+        )
+        .map_err(|e| e)?;
     }
     transfers.clear();
+    Ok(())
 }
 
 #[derive(Debug, PartialEq, Eq, Encode, Decode, Default, Clone)]
@@ -124,7 +115,8 @@ pub fn execute_code_in_escrow_sandbox<'a, T: Trait>(
         Ok(exec_ret_val) => Ok(exec_ret_val),
         Err(exec_err) => {
             // Revert the execution effects on the spot.
-            cleanup_failed_execution::<T>(escrow_account.clone(), requester.clone(), transfers);
+            cleanup_failed_execution::<T>(escrow_account.clone(), requester.clone(), transfers)
+                .map_err(|_e| <Error<T>>::CleanupFailedAfterUnsuccessfulExecution)?;
             Err(exec_err)?
         }
     }
@@ -194,6 +186,8 @@ decl_error! {
 
         ExecutionFailure,
 
+        CleanupFailedAfterUnsuccessfulExecution,
+
         NothingToDo,
 
         CallFailure,
@@ -208,7 +202,11 @@ decl_error! {
 
         CommitOnlyPossibleAfterSuccessfulExecutionPhase,
 
+        CommitPhaseFailedToDeliverTransfers,
+
         CannotRevertMultipleTimes,
+
+        CleanupFailedDuringRevert,
 
         DestinationContractStorageChangedSinceExecution,
     }
@@ -265,36 +263,29 @@ decl_module! {
         // this is needed only if you are using events in your pallet
         fn deposit_event() = default;
 
-        /// Multistep(phase) call that can execute code in a secure manner using escrow account,
-        /// which holds off the effects to target destinations until the "Commit" phase.
+        /// **Multi-Step Call**
+        /// Executes attached code following the protocol rules that distincts 3 execution phases - EXECUTE, COMMIT, REVERT.
+        ///
+        /// Execution is secured by the escrow account (must be pre-registered for that parachain),
+        /// which holds off the effects to target destinations until the "Commit" phase. The escrow account acts as "sudo" in sudo module.
         ///
         /// Execution results in threefold effects:
-        ///     - deferred transfers - those are promised to be sent out using escrow account funds in the Commit phase or be returned to the requester in Revert phase
-        ///     - storage - changes to the storage of target destination contracts. That's the most complex effect to implement as it relies relies on already registered contracts on that parachains and their behaviour.
-        ///     - results - results returned by execution of contract on that parachain. Execution phase sends back the result's hash to allow forming consensus over its correctness. The commit phase returns actual result.
+        /// * deferred transfers - those are promised to be sent out using escrow account funds in the Commit phase or be returned to the requester in Revert phase
+        /// * storage - changes to the storage of target destination contracts. That's the most complex effect to implement as it relies relies on already registered contracts on that parachains and their behaviour.
+        /// * results - results returned by execution of contract on that parachain. Execution phase sends back the result's hash to allow forming consensus over its correctness. The commit phase returns actual result.
         ///
         /// Based on those effects, multistep_call can be used in different manners:
-        ///     - A) For deferring balance transfers:
-        ///         - A.1) A single balance transfer to the target_dest can be deferred by calling with empty code and a value
-        ///         - A.2) Multiple balance transfers to multiple target destinations by attaching the corresponding contract
-        ///         - A.1+2) A single balance transfer can be executed on top of multiple transfers from within the corresponding contract
-        ///     - B) For attaching and executing "code" within the context of that parachain (and possibly accessing the readonly data of the contracts) and revealing the results only after the Commit phase.
-        ///     - C) For deferring effects of a call (or recursive calls) to an existing contract(s).
-        ///             After successful execution phase no changes are made yet to the target destination contract,
-        ///             but the execution is simulated by recording all of the changes to contract,
-        ///             retrieving results but as the contract's execution is done but rolling back the changes to a state before the call.
-        ///             The hash of contract storage and input data upon which the execution was successful are stored
-        ///             in order to be validated against during the final Commit phase at the following call.
-        ///             - If the contracts storage hasn't changed since the Execution phase,
-        ///             the call applies the changes to the storage of target contracts and returns the results.
-        ///             - If the contracts storage has changed since the Execution phase and there are some deferred storage changes,
-        ///                 the call relies on the call_requirements configuration.
-        ///                 - fail_when_state_changed = signal failure and go to Revert phase instead
-        ///                 - force_try_when_state_changed = try apply the changes to storage of target contract despite their changed state. It can be safe for some contracts (e.g append only changes), whereas deadly dangerous for others (e.g. updates). This may be removed in the near future.
-        ///                 - re_execute_when_state_changed = repeat the Execution phase and proceed to either Commit or Revert phase immidiately after.
-        ///     - D) For attaching, instantiating and executing new contracts on that parachain. In that case the newly instantiated contract will be charged with endowment after the Commit phase.
-        ///          If the originally temporary contract for execution should stay registered on that parachain set "call_requirements.permanent_exec_contract" flag.
-        ///
+        /// * A) For deferring balance transfers:
+        ///     * A.1) A single balance transfer to the target_dest can be deferred by calling with empty code and a value
+        ///     * A.2) Multiple balance transfers to multiple target destinations by attaching the corresponding contract
+        ///     * A.1+2) A single balance transfer can be executed on top of multiple transfers from within the corresponding contract
+        /// * B) For attaching and executing "code" within the context of that parachain (and possibly accessing the readonly data of the contracts) and revealing the results only after the Commit phase.
+        /// ---
+        /// **NOTE:**
+        /// As the result is stored, it's accessible from outside of that chain, which for some case
+        /// can violate the business logic behind the contracts. This should be fixed by either keeping
+        /// the results in memory or elevating responsibility the results management to Gateway Circuit (preferable).
+        /// ---
        #[weight = *gas_limit]
         pub fn multistep_call(
             origin,
@@ -328,7 +319,6 @@ decl_module! {
 
                     let mut transfers = Vec::<TransferEntry>::new();
                     let mut deferred_storage_writes = Vec::<DeferredStorageWrite>::new();
-                    let mut deferred_result = Vec::<DeferredStorageWrite>::new();
                     let mut call_stamps = Vec::<CallStamp>::new();
 
                     // Make a distinction on the purpose of the call. Refer to the multistep_call docs.
@@ -342,7 +332,7 @@ decl_module! {
                                     &target_dest.clone(),
                                     value.clone(),
                                     &mut transfers,
-                                );
+                                ).map_err(|e| e)?
                             } else {
                                 Err(Error::<T>::NothingToDo)?
                             }
@@ -350,7 +340,7 @@ decl_module! {
                         },
                         // B) - Execute attached code.
                         true => {
-                            let mut result_attached_contract = match execute_code_in_escrow_sandbox::<T>(
+                            let result_attached_contract = match execute_code_in_escrow_sandbox::<T>(
                                 &escrow_account.clone(),
                                 &requester.clone(),
                                 &target_dest.clone(),
@@ -368,11 +358,6 @@ decl_module! {
                                     Err(err.error)?
                                 }
                             };
-                            /** ToDo:
-                                As the result is stored, it's accessible from outside of that chain, which for some case
-                                can violate the business logic behind the contracts. This should be fixed by either keeping
-                                the results in memory or elevating responsibility the results management to Gateway Circuit (preferable).
-                            **/
                             // Store the result in order to reveal during Commit phase or delete during Revert.
                             <DeferredResults<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), result_attached_contract.clone());
                             Some(T::Hashing::hash(&result_attached_contract).encode())
@@ -414,7 +399,8 @@ decl_module! {
                     }
                     let mut proofs = last_execution_stamp.proofs.unwrap();
                     // Release transfers
-                    commit_deferred_transfers::<T>(escrow_account.clone(), &mut proofs.deferred_transfers);
+                    commit_deferred_transfers::<T>(escrow_account.clone(), &mut proofs.deferred_transfers)
+                        .map_err(|_e| <Error<T>>::CommitPhaseFailedToDeliverTransfers)?;
                     // ToDo: Release results -- delegates storing results to circuit?
 
                     <ExecutionStamps<T>>::mutate(&requester, &T::Hashing::hash(&code.clone()), |stamp| {
@@ -432,7 +418,7 @@ decl_module! {
                         escrow_account.clone(),
                         requester,
                         code.clone(),
-                   );
+                   ).map_err(|e| e)?;
                    kill_storage(
                         &get_child_storage_for_current_execution::<T>(&escrow_account, T::Hashing::hash(&code.clone()))
                    );
@@ -459,7 +445,8 @@ decl_module! {
             }
             let mut proofs = last_execution_stamp.proofs.unwrap();
             // Refund transfers
-            cleanup_failed_execution::<T>(escrow_account.clone(), requester.clone(), &mut proofs.deferred_transfers);
+            cleanup_failed_execution::<T>(escrow_account.clone(), requester.clone(), &mut proofs.deferred_transfers)
+                .map_err(|_e| <Error<T>>::CleanupFailedDuringRevert)?;
 
             <ExecutionStamps<T>>::mutate(&requester, &T::Hashing::hash(&code.clone()), |stamp| {
                 stamp.phase = 2;
