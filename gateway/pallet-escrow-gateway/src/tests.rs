@@ -2,15 +2,14 @@
 
 // Loading .wasm files deps
 use std::path::Path;
-use std::{fs, io::Read, path::PathBuf};
+use std::{fs, io::Read};
 
 use crate::sp_api_hidden_includes_decl_storage::hidden_include::StorageMap;
 use crate::{mock::*, CallStamp, Error, ExecutionProofs, ExecutionStamp};
 use anyhow::{Context, Result};
 use codec::Encode;
 use contracts::{
-    storage::{read_contract_storage, write_contract_storage},
-    BalanceOf as ContractsBalanceOf, ContractInfoOf, Gas,
+    ContractInfoOf, Gas,
 };
 use frame_support::{
     assert_err, assert_err_ignore_postinfo, assert_noop, assert_ok,
@@ -19,7 +18,7 @@ use frame_support::{
     weights::Weight,
 };
 use gateway_escrow_engine::transfers::{
-    commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
+    BalanceOf, TransferEntry,
 };
 use sp_core::H256;
 use sp_runtime::traits::Hash;
@@ -186,7 +185,7 @@ fn during_execution_phase_when_given_correct_wasm_code_multistep_call_vm_succeed
 **/
 #[test]
 fn transfer_during_execution_phase_succeeds_and_consumes_costs_correctly_and_deferrs_transfers() {
-    let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
+    let (phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new("fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     /// Set fees
@@ -249,7 +248,7 @@ fn transfer_during_execution_phase_succeeds_and_consumes_costs_correctly_and_def
 
 #[test]
 fn commit_phase_cannot_be_triggered_without_preceeding_execution() {
-    let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
+    let (_phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new("fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     /// Set fees
@@ -286,7 +285,7 @@ fn commit_phase_cannot_be_triggered_without_preceeding_execution() {
 
 #[test]
 fn successful_commit_phase_transfers_move_from_deferred_to_target_destinations() {
-    let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
+    let (_phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new("fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     /// Set fees
@@ -348,7 +347,7 @@ fn successful_commit_phase_transfers_move_from_deferred_to_target_destinations()
 #[test]
 fn successful_revert_phase_removes_deferred_results_and_transfers_and_refunds_from_escrow_to_requester()
  {
-    let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
+    let (_phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new("fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     /// Set fees
@@ -428,7 +427,7 @@ fn successful_revert_phase_removes_deferred_results_and_transfers_and_refunds_fr
 
 #[test]
 fn successful_commit_phase_changes_phase_of_execution_stamp() {
-    let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
+    let (_phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new("fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     /// Set fees
@@ -517,7 +516,7 @@ fn successful_commit_phase_changes_phase_of_execution_stamp() {
 
 #[test]
 fn successful_commit_phase_applies_deferred_storage_writes() {
-    let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
+    let (_phase, _, _input_data, value, _gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new("fixtures/storage_size.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     /// Set fees

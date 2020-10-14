@@ -2,42 +2,26 @@
 
 use codec::{Decode, Encode};
 use contracts::{
-    escrow_exec::{CallStamp, DeferredStorageWrite, EscrowCallContext},
-    exec::{
-        CallContext, ErrorOrigin, ExecError, ExecFeeToken, ExecResult, ExecReturnValue,
-        ExecutionContext, Loader, MomentOf, ReturnFlags, TransactorKind, TransferCause,
-        TransferFeeKind, Vm,
-    },
-    rent,
+    escrow_exec::{CallStamp, DeferredStorageWrite},
+    exec::{ExecError, ExecResult, ExecutionContext},
     storage::write_contract_storage,
     wasm::{
         code_cache::load as load_code, // ToDo: Solve the types err while calling loader.load_main directly
         prepare::prepare_contract,
-        runtime::{Env, ReturnCode},
-        PrefabWasmModule,
+        runtime::Env,
         WasmExecutable,
         WasmLoader,
         WasmVm,
     },
     BalanceOf as ContractsBalanceOf, CodeHash, Config, ContractAddressFor, ContractInfo,
-    ContractInfoOf, Gas, GasMeter, NegativeImbalanceOf, TrieIdGenerator,
+    ContractInfoOf, Gas, GasMeter,
 };
 use frame_support::{
     debug, decl_error, decl_event, decl_module, decl_storage, dispatch, ensure,
-    storage::{child, child::ChildInfo},
-    traits::{Currency, ExistenceRequirement, Get, Time},
+    storage::child,
+    traits::{Currency, Get, Time},
 };
-use frame_system::{self as system, ensure_none, ensure_root, ensure_signed, Phase};
-use reduce::Reduce;
-use sp_runtime::{
-    traits::{Hash, Saturating},
-    DispatchError,
-};
-use sp_std::convert::TryInto;
-use sp_std::vec;
-use sp_std::vec::Vec;
-use sudo;
-
+use frame_system::{self as system, ensure_signed};
 pub use gateway_escrow_engine::EscrowTrait;
 use gateway_escrow_engine::{
     proofs::EscrowExecuteResult,
@@ -45,6 +29,12 @@ use gateway_escrow_engine::{
         commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
     },
 };
+use reduce::Reduce;
+use sp_runtime::traits::{Hash, Saturating};
+use sp_std::convert::TryInto;
+use sp_std::vec;
+use sp_std::vec::Vec;
+use sudo;
 
 #[cfg(test)]
 mod mock;
@@ -231,7 +221,6 @@ pub fn execute_escrow_call_recursively<'a, T: Trait>(
     ) {
         Ok(exec_ret_val) => Ok(exec_ret_val),
         Err(exec_err) => {
-            use contracts::exec::Ext;
             // Revert the execution effects on the spot.
             cleanup_failed_execution::<T>(escrow_account.clone(), requester.clone(), transfers);
             Err(exec_err)?
@@ -394,36 +383,44 @@ decl_module! {
         // this is needed only if you are using events in your pallet
         fn deposit_event() = default;
 
-        /// Multistep(phase) call that can execute code in a secure manner using escrow account,
-        /// which holds off the effects to target destinations until the "Commit" phase.
+        /// **Multi-Step Call**
+        /// Executes attached code following the protocol rules that distincts 3 execution phases - EXECUTE, COMMIT, REVERT.
+        ///
+        /// Execution is secured by the escrow account (must be pre-registered for that parachain),
+        /// which holds off the effects to target destinations until the "Commit" phase. The escrow account acts as "sudo" in sudo module.
         ///
         /// Execution results in threefold effects:
-        ///     - deferred transfers - those are promised to be sent out using escrow account funds in the Commit phase or be returned to the requester in Revert phase
-        ///     - storage - changes to the storage of target destination contracts. That's the most complex effect to implement as it relies relies on already registered contracts on that parachains and their behaviour.
-        ///     - results - results returned by execution of contract on that parachain. Execution phase sends back the result's hash to allow forming consensus over its correctness. The commit phase returns actual result.
+        /// * deferred transfers - those are promised to be sent out using escrow account funds in the Commit phase or be returned to the requester in Revert phase
+        /// * storage - changes to the storage of target destination contracts. That's the most complex effect to implement as it relies relies on already registered contracts on that parachains and their behaviour.
+        /// * results - results returned by execution of contract on that parachain. Execution phase sends back the result's hash to allow forming consensus over its correctness. The commit phase returns actual result.
         ///
         /// Based on those effects, multistep_call can be used in different manners:
-        ///     - A) For deferring balance transfers:
-        ///         - A.1) A single balance transfer to the target_dest can be deferred by calling with empty code and a value
-        ///         - A.2) Multiple balance transfers to multiple target destinations by attaching the corresponding contract
-        ///         - A.1+2) A single balance transfer can be executed on top of multiple transfers from within the corresponding contract
-        ///     - B) For attaching and executing "code" within the context of that parachain (and possibly accessing the readonly data of the contracts) and revealing the results only after the Commit phase.
-        ///     - C) For deferring effects of a call (or recursive calls) to an existing contract(s).
+        /// * A) For deferring balance transfers:
+        ///     * A.1) A single balance transfer to the target_dest can be deferred by calling with empty code and a value
+        ///     * A.2) Multiple balance transfers to multiple target destinations by attaching the corresponding contract
+        ///     * A.1+2) A single balance transfer can be executed on top of multiple transfers from within the corresponding contract
+        /// * B) For attaching and executing "code" within the context of that parachain (and possibly accessing the readonly data of the contracts) and revealing the results only after the Commit phase.
+        /// * C) For deferring effects of a call (or recursive calls) to an existing contract(s).
         ///             After successful execution phase no changes are made yet to the target destination contract,
         ///             but the execution is simulated by recording all of the changes to contract,
         ///             retrieving results but as the contract's execution is done but rolling back the changes to a state before the call.
         ///             The hash of contract storage and input data upon which the execution was successful are stored
         ///             in order to be validated against during the final Commit phase at the following call.
-        ///             - If the contracts storage hasn't changed since the Execution phase,
+        ///     * If the contracts storage hasn't changed since the Execution phase,
         ///             the call applies the changes to the storage of target contracts and returns the results.
-        ///             - If the contracts storage has changed since the Execution phase and there are some deferred storage changes,
+        ///     * If the contracts storage has changed since the Execution phase and there are some deferred storage changes,
         ///                 the call relies on the call_requirements configuration.
-        ///                 - fail_when_state_changed = signal failure and go to Revert phase instead
-        ///                 - force_try_when_state_changed = try apply the changes to storage of target contract despite their changed state. It can be safe for some contracts (e.g append only changes), whereas deadly dangerous for others (e.g. updates). This may be removed in the near future.
-        ///                 - re_execute_when_state_changed = repeat the Execution phase and proceed to either Commit or Revert phase immidiately after.
-        ///     - D) For attaching, instantiating and executing new contracts on that parachain. In that case the newly instantiated contract will be charged with endowment after the Commit phase.
+        ///         * fail_when_state_changed = signal failure and go to Revert phase instead
+        ///         * force_try_when_state_changed = try apply the changes to storage of target contract despite their changed state. It can be safe for some contracts (e.g append only changes), whereas deadly dangerous for others (e.g. updates). This may be removed in the near future.
+        ///         * re_execute_when_state_changed = repeat the Execution phase and proceed to either Commit or Revert phase immidiately after.
+        /// * D) For attaching, instantiating and executing new contracts on that parachain. In that case the newly instantiated contract will be charged with endowment after the Commit phase.
         ///          If the originally temporary contract for execution should stay registered on that parachain set "call_requirements.permanent_exec_contract" flag.
-        ///
+        /// ---
+        /// **NOTE:**
+        /// As the result is stored, it's accessible from outside of that chain, which for some case
+        /// can violate the business logic behind the contracts. This should be fixed by either keeping
+        /// the results in memory or elevating responsibility the results management to Gateway Circuit (preferable).
+        /// ---
        #[weight = *gas_limit]
         pub fn multistep_call(
             origin,
@@ -536,15 +533,10 @@ decl_module! {
                                     }
                                 }
                             }
-                            /** ToDo:
-                                As the result is stored, it's accessible from outside of that chain, which for some case
-                                can violate the business logic behind the contracts. This should be fixed by either keeping
-                                the results in memory or elevating responsibility the results management to Gateway Circuit (preferable).
-                            **/
                             // Store the result in order to reveal during Commit phase or delete during Revert.
                             // Give priority here to the result of contract at target destination if exist.
                             // The results can be chained -> output from attached code can be redirected into input of the contract call.
-                            if (!result_called_contract.is_empty()) {
+                            if !result_called_contract.is_empty() {
                                 <DeferredResults<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), result_called_contract.clone());
                                 Some(T::Hashing::hash(&result_called_contract).encode())
                             } else {
@@ -611,7 +603,7 @@ decl_module! {
                             &storage_write.trie_id,
                             &storage_write.key,
                             storage_write.value,
-                        );
+                        ).map_err(|_e| <Error<T>>::DestinationContractStorageChangedSinceExecution)?;
                     }
 
                     <ExecutionStamps<T>>::mutate(&requester, &T::Hashing::hash(&code.clone()), |stamp| {
@@ -663,26 +655,8 @@ decl_module! {
             <DeferredResults<T>>::take(&requester, &T::Hashing::hash(&code.clone()));
         }
 
-        /// Just a dummy get_storage entry point.
-        #[weight = 10_000]
-        pub fn rent_projection(
-            origin,
-            address: <T as frame_system::Trait>::AccountId
-        ) -> dispatch::DispatchResult {
-            // Ensure that the caller is a regular keypair account
-            let caller = ensure_signed(origin)?;
-            // Print a test message.
-            // For now refer to the contracts rent_projection.
-            // In the future rent projection should estimate on % of storage for that address used by escrow account
-            <contracts::Module<T>>::rent_projection(address.clone());
-
-            // Raise an event for debug purposes
-            Self::deposit_event(RawEvent::RentProjectionCalled(address, caller));
-
-            Ok(())
-        }
-
-        /// Just a dummy get_storage entry point.
+        /// ** Get Storage **
+        /// Accesses the storage of underlying contract (appointed by address).
         #[weight = 10_000]
         pub fn get_storage(
             origin,
