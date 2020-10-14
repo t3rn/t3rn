@@ -31,6 +31,7 @@ use gateway_escrow_engine::{
 };
 use reduce::Reduce;
 use sp_runtime::traits::{Hash, Saturating};
+use sp_runtime::DispatchResult;
 use sp_std::convert::TryInto;
 use sp_std::vec;
 use sp_std::vec::Vec;
@@ -46,16 +47,18 @@ pub fn cleanup_failed_execution<T: Trait>(
     escrow_account: T::AccountId,
     requester: T::AccountId,
     transfers: &mut Vec<TransferEntry>,
-) {
+) -> DispatchResult {
     // Give the money back to the requester from the transfers that succeeded.
     for transfer in transfers.iter() {
         just_transfer::<T>(
             &escrow_account,
             &requester,
             BalanceOf::<T>::from(transfer.value),
-        );
+        )
+        .map_err(|e| e)?;
     }
     transfers.clear();
+    Ok(())
 }
 
 #[derive(Debug, PartialEq, Eq, Encode, Decode, Default, Clone)]
@@ -173,7 +176,8 @@ pub fn execute_attached_code<'a, T: Trait>(
         Err(exec_err) => {
             use contracts::exec::Ext;
             // Revert the execution effects on the spot.
-            cleanup_failed_execution::<T>(escrow_account.clone(), requester.clone(), transfers);
+            cleanup_failed_execution::<T>(escrow_account.clone(), requester.clone(), transfers)
+                .map_err(|_e| <Error<T>>::CleanupFailedAfterUnsuccessfulExecution)?;
             let mut call_context =
                 ctx.new_call_context(escrow_account.clone(), value_contracts_compatible);
             call_context
@@ -222,7 +226,8 @@ pub fn execute_escrow_call_recursively<'a, T: Trait>(
         Ok(exec_ret_val) => Ok(exec_ret_val),
         Err(exec_err) => {
             // Revert the execution effects on the spot.
-            cleanup_failed_execution::<T>(escrow_account.clone(), requester.clone(), transfers);
+            cleanup_failed_execution::<T>(escrow_account.clone(), requester.clone(), transfers)
+                .map_err(|_e| <Error<T>>::CleanupFailedAfterUnsuccessfulExecution)?;
             Err(exec_err)?
         }
     }
@@ -302,6 +307,10 @@ decl_error! {
         CallFailureCodeNotFound,
 
         TerminateFailure,
+
+        CleanupFailedAfterUnsuccessfulExecution,
+
+        CleanupFailedDuringRevert,
 
         UnauthorizedCallAttempt,
 
@@ -464,7 +473,7 @@ decl_module! {
 
                     // Make a distinction on the purpose of the call. Refer to the multistep_call docs.
                     let result_proof: Option<Vec<u8>> = match (!code.is_empty(), <ContractInfoOf<T>>::get(&target_dest.clone())) {
-                        // Only A.1) - no code, not a contract - just deferred transfer.
+                        // Only A.1) - no code, not a contract - just deferrsed transfer.
                         (false, None) => {
                             if value > BalanceOf::<T>::from(0) {
                                 escrow_transfer::<T>(
@@ -473,7 +482,7 @@ decl_module! {
                                     &target_dest.clone(),
                                     value.clone(),
                                     &mut transfers,
-                                );
+                                ).map_err(|e| e)?;
                             } else {
                                 Err(Error::<T>::NothingToDo)?
                             }
@@ -621,7 +630,7 @@ decl_module! {
                         escrow_account,
                         requester,
                         code,
-                   );
+                   ).map_err(|e| e)?
                 },
                 _ => {
                     debug::info!("DEBUG multistep_call -- Unknown Phase {}", phase);
@@ -645,7 +654,8 @@ decl_module! {
             }
             let mut proofs = last_execution_stamp.proofs.unwrap();
             // Refund transfers
-            cleanup_failed_execution::<T>(escrow_account.clone(), requester.clone(), &mut proofs.deferred_transfers);
+            cleanup_failed_execution::<T>(escrow_account.clone(), requester.clone(), &mut proofs.deferred_transfers)
+                .map_err(|_e| <Error<T>>::CleanupFailedDuringRevert)?;
 
             <ExecutionStamps<T>>::mutate(&requester, &T::Hashing::hash(&code.clone()), |stamp| {
                 stamp.phase = 2;
