@@ -308,6 +308,8 @@ decl_error! {
 
         TerminateFailure,
 
+        CommitPhaseFailedToDeliverTransfers,
+
         CleanupFailedAfterUnsuccessfulExecution,
 
         CleanupFailedDuringRevert,
@@ -590,7 +592,8 @@ decl_module! {
                     }
                     let mut proofs = last_execution_stamp.proofs.unwrap();
                     // Release transfers
-                    commit_deferred_transfers::<T>(escrow_account.clone(), &mut proofs.deferred_transfers);
+                    commit_deferred_transfers::<T>(escrow_account.clone(), &mut proofs.deferred_transfers)
+                        .map_err(|_e| <Error<T>>::CommitPhaseFailedToDeliverTransfers)?;
                     // ToDo: Release results -- delegates storing results to circuit?
 
                     // ToDo: Apply storage changes to target account.

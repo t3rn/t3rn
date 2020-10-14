@@ -3,7 +3,7 @@
 use crate::{Module, Trait};
 use frame_support::{
     impl_outer_dispatch, impl_outer_event, impl_outer_origin, parameter_types,
-    traits::{Currency, Get, ReservableCurrency},
+    traits::Get,
     weights::Weight,
 };
 use frame_system as system;
@@ -101,7 +101,6 @@ parameter_types! {
     pub const MinimumPeriod: u64 = 1;
 }
 
-/** Balances -- start **/
 thread_local! {
     static EXISTENTIAL_DEPOSIT: RefCell<u64> = RefCell::new(0);
 }
@@ -209,19 +208,9 @@ impl Trait for Test {
     type WhenStateChangedForceTry = WhenStateChangedForceTry;
 }
 
-pub type Contracts = contracts::Module<Test>;
 pub type Sudo = sudo::Module<Test>;
 
 pub type EscrowGateway = Module<Test>;
-
-// This function basically just builds a genesis storage key/value store according to
-// our desired mockup.
-pub fn new_test_ext() -> sp_io::TestExternalities {
-    system::GenesisConfig::default()
-        .build_storage::<Test>()
-        .unwrap()
-        .into()
-}
 
 pub struct ExtBuilder {
     existential_deposit: u64,

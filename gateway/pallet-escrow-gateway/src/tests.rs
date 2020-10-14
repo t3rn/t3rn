@@ -12,10 +12,9 @@ use contracts::{
     ContractInfoOf, Gas,
 };
 use frame_support::{
-    assert_err, assert_err_ignore_postinfo, assert_noop, assert_ok,
-    storage::{child, child::ChildInfo},
-    traits::{Currency, Get, ReservableCurrency},
-    weights::Weight,
+    assert_err, assert_noop, assert_ok,
+    storage::child,
+    traits::Currency,
 };
 use gateway_escrow_engine::transfers::{
     BalanceOf, TransferEntry,
@@ -112,11 +111,11 @@ fn during_execution_phase_when_given_empty_wasm_code_multistep_call_only_deferrs
 #[test]
 fn during_execution_phase_when_given_correct_wasm_code_but_too_little_gas_limit_multistep_call_gives_initiate_error()
  {
-    let (phase, _, input_data, value, mut gas_limit) = default_multistep_call_args();
+    let (phase, _, input_data, value, _) = default_multistep_call_args();
     let correct_wasm_path = Path::new("fixtures/return_from_start_fn.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     // Make the gas limit too little
-    gas_limit = 1000;
+    let gas_limit = 1000;
 
     new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
         let _ = Balances::deposit_creating(&REQUESTER, 10_000_000_000);
@@ -188,7 +187,7 @@ fn transfer_during_execution_phase_succeeds_and_consumes_costs_correctly_and_def
     let (phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new("fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
-    /// Set fees
+   // Set fees
     let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
     let endowment = 100_000_000;
     let subsistence_threshold = 66;
@@ -251,7 +250,7 @@ fn commit_phase_cannot_be_triggered_without_preceeding_execution() {
     let (_phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new("fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
-    /// Set fees
+   // Set fees
     let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
     let endowment = 100_000_000;
     let subsistence_threshold = 66;
@@ -288,7 +287,7 @@ fn successful_commit_phase_transfers_move_from_deferred_to_target_destinations()
     let (_phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new("fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
-    /// Set fees
+   // Set fees
     let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
     let endowment = 100_000_000;
     let subsistence_threshold = 66;
@@ -350,7 +349,7 @@ fn successful_revert_phase_removes_deferred_results_and_transfers_and_refunds_fr
     let (_phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new("fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
-    /// Set fees
+   // Set fees
     let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
     let endowment = 100_000_000;
     let subsistence_threshold = 66;
@@ -430,7 +429,7 @@ fn successful_commit_phase_changes_phase_of_execution_stamp() {
     let (_phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new("fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
-    /// Set fees
+   // Set fees
     let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
     let endowment = 100_000_000;
     let subsistence_threshold = 66;
@@ -519,12 +518,12 @@ fn successful_commit_phase_applies_deferred_storage_writes() {
     let (_phase, _, _input_data, value, _gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new("fixtures/storage_size.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
-    /// Set fees
+   // Set fees
     let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
     let endowment = 100_000_000;
     let subsistence_threshold = 66;
     let inner_contract_transfer_value = 100;
-    let EMPTY_STORAGE_AT_DEST_ROOT: Vec<u8> = vec![
+    let empty_storage_at_dest_root: Vec<u8> = vec![
         3, 23, 10, 46, 117, 151, 183, 183, 227, 216, 76, 5, 57, 29, 19, 154, 98, 177, 87, 231, 135,
         134, 216, 192, 130, 242, 157, 207, 76, 17, 19, 20,
     ];
@@ -599,7 +598,7 @@ fn successful_commit_phase_applies_deferred_storage_writes() {
                     .unwrap()
                     .child_trie_info(),
             ),
-            EMPTY_STORAGE_AT_DEST_ROOT
+            empty_storage_at_dest_root
         );
 
         assert_ok!(EscrowGateway::multistep_call(
@@ -622,7 +621,7 @@ fn successful_commit_phase_applies_deferred_storage_writes() {
                     .unwrap()
                     .child_trie_info(),
             ),
-            EMPTY_STORAGE_AT_DEST_ROOT
+            empty_storage_at_dest_root
         );
 
         assert_eq!(
@@ -694,18 +693,4 @@ fn load_contract_code(path: &Path) -> Result<Vec<u8>> {
     file.read_to_end(&mut data)?;
 
     Ok(data)
-}
-
-/// Load a given wasm module represented by a .wat file and returns a wasm binary contents along
-/// with it's hash.
-///
-/// The fixture files are located under the `fixtures/` directory.
-fn compile_module<T>(fixture_name: &str) -> wat::Result<(Vec<u8>, <T::Hashing as Hash>::Output)>
-where
-    T: frame_system::Trait,
-{
-    let fixture_path = ["fixtures/", fixture_name, ".wat"].concat();
-    let wasm_binary = wat::parse_file(fixture_path)?;
-    let code_hash = T::Hashing::hash(&wasm_binary);
-    Ok((wasm_binary, code_hash))
 }
