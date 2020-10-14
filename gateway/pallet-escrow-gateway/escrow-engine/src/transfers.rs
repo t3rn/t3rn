@@ -2,9 +2,7 @@ use crate::EscrowTrait;
 use codec::{Decode, Encode};
 use frame_support::{
     dispatch::{DispatchError, DispatchResult},
-    ensure,
-    sp_runtime::traits::Saturating,
-    traits::{Currency, ExistenceRequirement, Time},
+    traits::{Currency, ExistenceRequirement},
 };
 use primitive_types::H256;
 use sp_std::{convert::TryInto, prelude::*, vec::Vec};
@@ -32,15 +30,17 @@ pub fn just_transfer<'a, T: EscrowTrait>(
 pub fn commit_deferred_transfers<T: EscrowTrait>(
     escrow_account: T::AccountId,
     transfers: &mut Vec<TransferEntry>,
-) {
+) -> DispatchResult {
     // Give the money back to the requester from the transfers that succeeded.s
-    for mut transfer in transfers.iter() {
+    for transfer in transfers.iter() {
         just_transfer::<T>(
             &escrow_account,
             &h256_to_account(transfer.to),
             BalanceOf::<T>::from(transfer.value),
-        );
+        )
+        .map_err(|e| e)?;
     }
+    Ok(())
 }
 
 pub fn escrow_transfer<'a, T: EscrowTrait>(
@@ -48,7 +48,7 @@ pub fn escrow_transfer<'a, T: EscrowTrait>(
     requester: &T::AccountId,
     target_to: &T::AccountId,
     value: BalanceOf<T>,
-    mut transfers: &mut Vec<TransferEntry>,
+    transfers: &mut Vec<TransferEntry>,
 ) -> Result<(), DispatchError> {
     // Verify that requester has enough money to make the transfers from within the contract.
     if <T as EscrowTrait>::Currency::total_balance(&requester.clone())
@@ -123,10 +123,7 @@ pub fn h256_to_account<D: Decode + Encode>(account_h256: H256) -> D {
 mod tests {
     use super::*;
     use sp_std::vec;
-    use substrate_test_runtime::{AccountId, Block, Extrinsic, Hashing, Transfer, H256};
-    use system;
-
-    struct Test;
+    use substrate_test_runtime::{AccountId, H256};
 
     type AccountId8 = u64;
     #[test]
