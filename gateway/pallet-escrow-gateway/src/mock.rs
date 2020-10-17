@@ -1,19 +1,24 @@
 // Creating mock runtime here
 
 use crate::{Module, Trait};
-use frame_support::{impl_outer_origin, impl_outer_dispatch, parameter_types, weights::Weight, impl_outer_event,
-                    traits::{Currency, Get, ReservableCurrency},
+use frame_support::{
+    impl_outer_dispatch, impl_outer_event, impl_outer_origin, parameter_types,
+    traits::Get,
+    weights::Weight,
 };
 use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
     testing::Header,
-    traits::{BlakeTwo256, IdentityLookup, Convert},
+    traits::{BlakeTwo256, Convert, IdentityLookup},
     Perbill,
 };
 
+use contracts::{GenesisConfig, *};
 
-use contracts::{*, GenesisConfig};
+use gateway_escrow_engine::EscrowTrait;
+
+use sudo;
 
 use std::cell::RefCell;
 
@@ -26,16 +31,23 @@ mod escrow_gateway {
 }
 
 impl_outer_event! {
-	pub enum MetaEvent for Test {
-		system<T>,
-		balances<T>,
-		contracts<T>,
-		escrow_gateway<T>,
-	}
+    pub enum MetaEvent for Test {
+        system<T>,
+        pallet_balances<T>,
+        contracts<T>,
+        sudo<T>,
+        escrow_gateway<T>,
+    }
 }
 
 impl_outer_origin! {
     pub enum Origin for Test {}
+}
+
+impl_outer_dispatch! {
+    pub enum Call for Test where origin: Origin {
+        sudo::Sudo,
+    }
 }
 
 // For testing the pallet, we construct most of a mock runtime. This means
@@ -51,14 +63,14 @@ parameter_types! {
 }
 
 parameter_types! {
-	pub const SignedClaimHandicap: u64 = 2;
-	pub const TombstoneDeposit: u64 = 16;
-	pub const StorageSizeOffset: u32 = 8;
-	pub const RentByteFee: u64 = 4;
-	pub const RentDepositOffset: u64 = 10_000;
-	pub const SurchargeReward: u64 = 150;
-	pub const MaxDepth: u32 = 100;
-	pub const MaxValueSize: u32 = 16_384;
+    pub const SignedClaimHandicap: u64 = 2;
+    pub const TombstoneDeposit: u64 = 16;
+    pub const StorageSizeOffset: u32 = 8;
+    pub const RentByteFee: u64 = 4;
+    pub const RentDepositOffset: u64 = 10_000;
+    pub const SurchargeReward: u64 = 150;
+    pub const MaxDepth: u32 = 100;
+    pub const MaxValueSize: u32 = 16_384;
 }
 
 pub struct DummyContractAddressFor;
@@ -86,22 +98,22 @@ impl TrieIdGenerator<u64> for DummyTrieIdGenerator {
 }
 
 parameter_types! {
-	pub const MinimumPeriod: u64 = 1;
+    pub const MinimumPeriod: u64 = 1;
 }
 
-
-/** Balances -- start **/
-
 thread_local! {
-	static EXISTENTIAL_DEPOSIT: RefCell<u64> = RefCell::new(0);
+    static EXISTENTIAL_DEPOSIT: RefCell<u64> = RefCell::new(0);
 }
 
 pub struct ExistentialDeposit;
 impl Get<u64> for ExistentialDeposit {
-    fn get() -> u64 { EXISTENTIAL_DEPOSIT.with(|v| *v.borrow()) }
+    fn get() -> u64 {
+        EXISTENTIAL_DEPOSIT.with(|v| *v.borrow())
+    }
 }
 
-impl balances::Trait for Test {
+impl pallet_balances::Trait for Test {
+    type MaxLocks = ();
     type Balance = u64;
     type Event = MetaEvent;
     type DustRemoval = ();
@@ -125,9 +137,10 @@ impl Convert<Weight, BalanceOf<Self>> for Test {
     }
 }
 
-type Timestamp = pallet_timestamp::Module<Test>;
-type Balances = balances::Module<Test>;
+pub type Balances = pallet_balances::Module<Test>;
+type Randomness = pallet_randomness_collective_flip::Module<Test>;
 type System = system::Module<Test>;
+type Timestamp = pallet_timestamp::Module<Test>;
 
 impl contracts::Trait for Test {
     type Time = Timestamp;
@@ -145,7 +158,7 @@ impl contracts::Trait for Test {
     type MaxDepth = MaxDepth;
     type MaxValueSize = MaxValueSize;
     type WeightPrice = ();
-    type Randomness = ();
+    type Randomness = Randomness;
 }
 
 impl system::Trait for Test {
@@ -154,7 +167,7 @@ impl system::Trait for Test {
     type Index = u64;
     type BlockNumber = u64;
     type Hash = H256;
-    type Call = ();
+    type Call = Call;
     type Hashing = BlakeTwo256;
     type AccountId = u64;
     type Lookup = IdentityLookup<Self::AccountId>;
@@ -169,28 +182,35 @@ impl system::Trait for Test {
     type AvailableBlockRatio = AvailableBlockRatio;
     type MaximumBlockLength = MaximumBlockLength;
     type Version = ();
-    type ModuleToIndex = ();
-    type AccountData = balances::AccountData<u64>;
+    type AccountData = pallet_balances::AccountData<u64>;
     type OnNewAccount = ();
     type OnKilledAccount = ();
     type SystemWeightInfo = ();
+    type PalletInfo = ();
+}
+
+impl sudo::Trait for Test {
+    type Event = MetaEvent;
+    type Call = Call;
+}
+
+impl EscrowTrait for Test {
+    type Currency = Balances;
+    type Time = Timestamp;
+}
+
+parameter_types! {
+    pub const WhenStateChangedForceTry: bool = false;
 }
 
 impl Trait for Test {
     type Event = MetaEvent;
+    type WhenStateChangedForceTry = WhenStateChangedForceTry;
 }
 
-pub type Contracts = contracts::Module<Test>;
+pub type Sudo = sudo::Module<Test>;
+
 pub type EscrowGateway = Module<Test>;
-
-// This function basically just builds a genesis storage key/value store according to
-// our desired mockup.
-pub fn new_test_ext() -> sp_io::TestExternalities {
-    system::GenesisConfig::default()
-        .build_storage::<Test>()
-        .unwrap()
-        .into()
-}
 
 pub struct ExtBuilder {
     existential_deposit: u64,
@@ -210,30 +230,37 @@ impl ExtBuilder {
     pub fn set_associated_consts(&self) {
         EXISTENTIAL_DEPOSIT.with(|v| *v.borrow_mut() = self.existential_deposit);
     }
-    pub fn build(self) -> sp_io::TestExternalities {
+    pub fn build(self, escrow_account: u64) -> sp_io::TestExternalities {
         self.set_associated_consts();
-        let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
-        // ToDo: balances::GenesisConfig::<Test> {
-        //     |                   ^^^^^^^^^^^^^ not found in `balances`
-        // balances::GenesisConfig::<Test> {
-        //     balances: vec![],
-        // }.assimilate_storage(&mut t).unwrap();
+        let mut t = frame_system::GenesisConfig::default()
+            .build_storage::<Test>()
+            .unwrap();
+        pallet_balances::GenesisConfig::<Test> { balances: vec![] }
+            .assimilate_storage(&mut t)
+            .unwrap();
+        sudo::GenesisConfig::<Test> {
+            key: escrow_account,
+        }
+        .assimilate_storage(&mut t)
+        .unwrap();
         GenesisConfig {
             current_schedule: Schedule {
                 // enable_prinltn: true,
                 ..Default::default()
             },
-        }.assimilate_storage(&mut t).unwrap();
+        }
+        .assimilate_storage(&mut t)
+        .unwrap();
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));
         ext
     }
 }
 
-pub fn new_test_ext_builder(deposit: u64) -> sp_io::TestExternalities {
+pub fn new_test_ext_builder(deposit: u64, escrow_account: u64) -> sp_io::TestExternalities {
     ExtBuilder::default()
         .existential_deposit(deposit)
-        .build()
+        .build(escrow_account)
 }
 
 

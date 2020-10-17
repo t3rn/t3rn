@@ -23,9 +23,10 @@ t3rn can be easily integrated into existing and new Parachains. There is a dedic
 
 #### Note on the standards available in parachains that do not support the Contracts pallet
 
-Depending on whether a parachain supports the Contracts pallet or only the Balances pallet, a different version of Gateway pallet needs to be integrated. This is due to the different fee system strategy and the confidentiality concerns connected with potential unauthorized data access and updates by packages executed via gateway that may be a threat to the original purpose parachain. 
+Depending on whether a parachain supports the Contracts pallet or only the Balances pallet two kinds of pallet are available:
+- [`escrow-gateway`](https://github.com/t3rn/t3rn/tree/development/gateway/pallet-escrow-gateway) for the Parachains implementing contracts. This is an "extended" pallet goes with full spectrum of functionalities, inluding calling registered on Parachains contracts in an escrow way - reversibje. All of the combinations on calling the function and achieving different behaviours is explained in details in the [`multistep_call` docs](https://github.com/t3rn/t3rn/blob/development/gateway/pallet-escrow-gateway/src/lib.rs#L400).
 
-Albeit, it is possible to implement, as part of the gateway, the equivalent of the external execution context for the standard functions as the one listed in `Standards` subsection, that would implement exactly the same set of functions for parachains supporting only Balances pallet. 
+- [`escrow-gateway-balances`](https://github.com/t3rn/t3rn/blob/development/gateway/pallet-escrow-gateway/balances) for Parachains without the contracts, this implementation allows to execute in the sandboxed runtime a WASM code that is attached to the call. The next milestones will also bring additional fee system strategy that may differ from chain to chain. Different standard functions can be authorised to be call in the context of a parachain to address the concerns connected with potential unauthorized data access and updates by packages executed via gateway that may be a threat to the original purpose parachain. 
 
 Standards for Runtime Execution can be implemented in a similar vain as the standards for parachains supporting Contracts pallet are implemented - with the support of multi-step execution. During registration of a parachain, a registrant could specify the list of standards that the parachain support, that do not present a threat to its functionality. All of the standards from that set could then afterwards be used to design the packages executed via Gateway on that parachain. 
 
@@ -55,27 +56,42 @@ struct multistep_call_tx {
 Packages and their examples are described more in details in the section "Package, Module, Contract" of t3rn protocol. It's worth noting, that within the first phase - Standalone Gateway there is no need for registering packages anywhere, just executing them within a context of that specific parachain via the gateway. The transaction contains all necessary executables in the form of the input arguments and the WASM Binaries, so in case of parachains there is no need for instantiating these binaries as packages.  
 
 #### 2. Execute and validate first phase
-On parachain that supports the Standalone Gateway, execute the `multistep_call` provided by the Gateway API, passing that transaction including necessary data.
+On parachain that supports the Standalone Gateway, execute the [`multistep_call`](https://github.com/t3rn/t3rn/blob/development/gateway/pallet-escrow-gateway/src/lib.rs#L428) provided by the Gateway API, passing that transaction including necessary data.
 `Execution` is the first phase of every multistep transaction. Gateway Engine executes the provided package in a given context:
-- step: one of three phases of multi-step transaction: `Execute`, `Commit`, `Revert`.
-- input: optional data which can be passed to the package call as arguments.
+- phase: one of three phases of multi-step transaction: `Execute`, `Commit`, `Revert`.
+- input_data: optional data which can be passed to the package call as arguments.
 - target_accounts: accounts specified by developers in packages that the changes will be effective to in case the mutli-step transaction succeeds, until the during the `Execute` and `Revert` phases the code will be executed against the copies of those accounts and the results stored in an escrow account.
-- package: WASM Binaries, the executables of the package. 3rd party services can execute that logic too and check whether the effects result in the same state of the target accounts. 
-```rust
-enum Step {
-    Execute,
-    Commit,
-    Revert
+- package: code of WASM Binaries, the executables of the package. 3rd party services can execute that logic too and check whether the effects result in the same state of the target accounts. 
+- value: value transferred in a secure way. In the execution phase all of the requested amount to transfer are taken out of the requester account and added to the escrow account balance.
+
+During the `Execution` phase the business logic specified by the package will be executed against specified in the package target accounts. 
+
+Gateway executes the instructed call in escrowed envirionment and cleans up all of the possible effects - reverting the storage changes of all affected contracts - it's possible to chain the contract call in a recursive way. It's also possible to execute the attached code and call an existing contract afterwards, merging the effects together. Each call leaves a trackable and provable "stamp" of execution.
+```rust 
+pub struct CallStamp {
+    pub pre_storage: Vec<u8>,
+    pub post_storage: Vec<u8>,
+    pub dest: Vec<u8>,
 }
 
-struct StepInput {
-    step: Step,
-    input_args: Option<Bytes>,
-    target_accounts: Vec<AccountId>,
-    package: Bytes,
+pub struct DeferredStorageWrite {
+    pub dest: Vec<u8>,
+    pub trie_id: Vec<u8>,
+    pub key: [u8; 32],
+    pub value: Option<Vec<u8>>,
+}
+
+pub struct ExecutionStamp {
+    timestamp: u64,
+    phase: u8,
+    proofs: Option<ExecutionProofs>,
+    call_stamps: Vec<CallStamp>,
+    failure: Option<u8>, // Error Code
 }
 ```
-During the `Execution` phase the business logic specified by the package will be executed against specified in the package target accounts. The main goal of the Gateway is to execute the business logic as close to the target execution as possible but to provide a way to make the operations reversible. This is accomplished by running the package on copies of target accounts first. The copies of accounts are saved in the state of Escrow Account, together with the merkle path in the state tree of a block preceding the execution. After the execution accounts data alongside with the binaries hash and paid fees are also stored under the same key.
+
+
+The main goal of the Gateway is to execute the business logic as close to the target execution as possible but to provide a way to make the operations reversible. This is accomplished by running the package on copies of target accounts first. The copies of accounts are saved in the state of Escrow Account, together with the merkle path in the state tree of a block preceding the execution. After the execution accounts data alongside with the binaries hash and paid fees are also stored under the same key.
 
 ```rust
 struct EscrowExecutionRecord {
