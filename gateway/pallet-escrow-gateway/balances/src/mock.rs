@@ -1,9 +1,8 @@
 // Creating mock runtime here
 
-use crate::{Module, Trait};
+use crate::{DispatchRuntimeCall, Module, Trait};
 use frame_support::{
-    impl_outer_dispatch, impl_outer_event, impl_outer_origin, parameter_types,
-    traits::Get,
+    impl_outer_dispatch, impl_outer_event, impl_outer_origin, parameter_types, traits::Get,
     weights::Weight,
 };
 use frame_system as system;
@@ -73,10 +72,20 @@ parameter_types! {
     pub const MaxValueSize: u32 = 16_384;
 }
 
+type Flipper = flipper::Module<Test>;
+
 pub struct DummyContractAddressFor;
 impl ContractAddressFor<H256, u64> for DummyContractAddressFor {
     fn contract_address_for(_code_hash: &H256, _data: &[u8], origin: &u64) -> u64 {
         *origin + 1
+    }
+}
+
+pub struct ExampleDispatchRuntimeCall;
+impl DispatchRuntimeCall for ExampleDispatchRuntimeCall {
+    fn dispatch_runtime_call(module_name: &str, fn_name: &str, input: &[u8]) -> Vec<u8> {
+        Flipper::flip(Origin::signed(1 as u64));
+        vec![]
     }
 }
 
@@ -136,6 +145,20 @@ impl Convert<Weight, BalanceOf<Self>> for Test {
         w
     }
 }
+
+impl flipper::Trait for Test {
+    type Event = MetaEvent;
+}
+
+// impl_outer_origin!{
+//     pub enum OuterOrigin for Flipper where system = system {}
+// }
+//
+// impl_outer_dispatch! {
+//     pub enum OuterCall for Flipper where origin: OuterOrigin {
+//         self::Test,
+//     }
+// }
 
 pub type Balances = pallet_balances::Module<Test>;
 type Randomness = pallet_randomness_collective_flip::Module<Test>;
@@ -200,6 +223,7 @@ impl EscrowTrait for Test {
 }
 
 impl Trait for Test {
+    type DispatchRuntimeCall = ExampleDispatchRuntimeCall;
     type Event = MetaEvent;
 }
 

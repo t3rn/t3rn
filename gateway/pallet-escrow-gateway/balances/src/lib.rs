@@ -22,6 +22,7 @@ use frame_support::{
 };
 use frame_system::{self as system, ensure_signed};
 use reduce::Reduce;
+use sp_io;
 use sp_runtime::{
     traits::{Hash, Saturating},
     DispatchResult,
@@ -29,6 +30,8 @@ use sp_runtime::{
 use sp_std::convert::TryInto;
 use sp_std::vec;
 use sp_std::vec::Vec;
+use sp_wasm_interface::HostFunctions;
+
 use sudo;
 
 pub use gateway_escrow_engine::EscrowTrait;
@@ -98,6 +101,10 @@ pub fn execute_code_in_escrow_sandbox<'a, T: Trait>(
         entrypoint_name: "call",
         prefab_module,
     };
+    println!(
+        "DispatchRuntimeCall res = {:?} ",
+        T::DispatchRuntimeCall::dispatch_runtime_call("flipper", "flip", &input_data)
+    );
 
     match raw_escrow_call::<T>(
         &escrow_account.clone(),
@@ -122,8 +129,14 @@ pub fn execute_code_in_escrow_sandbox<'a, T: Trait>(
     }
 }
 
+/// A that let's you dispatch calls requested during execution of WASM Binaries.
+pub trait DispatchRuntimeCall {
+    fn dispatch_runtime_call(module_name: &str, fn_name: &str, input: &[u8]) -> Vec<u8>;
+}
+
 pub trait Trait: EscrowTrait {
     type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+    type DispatchRuntimeCall: DispatchRuntimeCall;
 }
 
 decl_storage! {
@@ -250,7 +263,7 @@ pub fn stamp_failed_execution<T: Trait>(
         },
     );
 }
-
+use flipper;
 // The pallet's dispatchable functions.
 decl_module! {
     /// The module declaration.
@@ -299,6 +312,43 @@ decl_module! {
         ) -> dispatch::DispatchResult {
             let escrow_account = ensure_signed(origin.clone())?;
             ensure!(escrow_account == <sudo::Module<T>>::key(), Error::<T>::UnauthorizedCallAttempt);
+
+
+        let mut host_functions = sp_io::SubstrateHostFunctions::host_functions();
+
+            let host_func = host_functions.iter().map(|a| a.name());
+
+
+        // Call::<T >::$dispatch($($arg),*), $origin.into()
+        // Call::<T as flipper::Trait>::flip();
+        // Call::<flipper::Trait>::flip();
+        // let call: Call::<T>::remark(vec![0; 32]);
+        // let call: Call::<flipper::Module<T>>::flip();
+
+        // Call::flip();
+
+        // <>::flip();
+
+        // TraitImpl
+
+        // println!("NAME FUNC {:?}", host_func);
+
+
+        // println!("host_functions = {:?}", host_functions);
+        // // Add the custom host functions provided by the user.
+        // host_functions.extend(D::ExtendHostFunctions::host_functions());
+        // let wasm_executor = WasmExecutor::new(
+        // 	fallback_method,
+        // 	default_heap_pages,
+        // 	host_functions,
+        // 	max_runtime_instances,
+        // );
+        //
+        // NativeExecutor {
+        // 	_dummy: Default::default(),
+        // 	native_version: D::native_version(),
+        // 	wasm: wasm_executor,
+        // }
 
             match phase {
                 0 => {
