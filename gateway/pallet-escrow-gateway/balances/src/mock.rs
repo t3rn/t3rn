@@ -1,6 +1,6 @@
 // Creating mock runtime here
 
-use crate::{DispatchRuntimeCall, Module, Trait};
+use crate::{Module, Trait};
 use frame_support::{
     impl_outer_dispatch, impl_outer_event, impl_outer_origin, parameter_types, traits::Get,
     weights::Weight,
@@ -10,12 +10,12 @@ use sp_core::H256;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, Convert, IdentityLookup},
-    Perbill,
+    DispatchError, DispatchResult, Perbill,
 };
 
 use contracts::{GenesisConfig, *};
 
-use gateway_escrow_engine::EscrowTrait;
+use gateway_escrow_engine::{DispatchRuntimeCall, EscrowTrait, ExtendedWasm};
 
 use sudo;
 
@@ -83,9 +83,13 @@ impl ContractAddressFor<H256, u64> for DummyContractAddressFor {
 
 pub struct ExampleDispatchRuntimeCall;
 impl DispatchRuntimeCall for ExampleDispatchRuntimeCall {
-    fn dispatch_runtime_call(module_name: &str, fn_name: &str, input: &[u8]) -> Vec<u8> {
-        Flipper::flip(Origin::signed(1 as u64));
-        vec![]
+    fn dispatch_runtime_call(module_name: &str, fn_name: &str, _input: &[u8]) -> DispatchResult {
+        match (module_name, fn_name) {
+            ("Flipper", "flip") => Flipper::flip(Origin::signed(1 as u64)),
+            (_, _) => Err(DispatchError::Other(
+                "Call to unrecognized runtime function",
+            )),
+        }
     }
 }
 
@@ -150,16 +154,6 @@ impl flipper::Trait for Test {
     type Event = MetaEvent;
 }
 
-// impl_outer_origin!{
-//     pub enum OuterOrigin for Flipper where system = system {}
-// }
-//
-// impl_outer_dispatch! {
-//     pub enum OuterCall for Flipper where origin: OuterOrigin {
-//         self::Test,
-//     }
-// }
-
 pub type Balances = pallet_balances::Module<Test>;
 type Randomness = pallet_randomness_collective_flip::Module<Test>;
 type System = system::Module<Test>;
@@ -222,8 +216,11 @@ impl EscrowTrait for Test {
     type Time = Timestamp;
 }
 
-impl Trait for Test {
+impl ExtendedWasm for Test {
     type DispatchRuntimeCall = ExampleDispatchRuntimeCall;
+}
+
+impl Trait for Test {
     type Event = MetaEvent;
 }
 

@@ -1,6 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 use codec::{Decode, Encode};
-use frame_support::traits::{Currency, Time};
+use frame_support::{
+    dispatch::DispatchResult,
+    traits::{Currency, Time},
+};
 
 pub mod proofs;
 pub mod transfers;
@@ -36,4 +39,13 @@ pub enum ErrCodes {
 pub trait EscrowTrait: system::Trait + sudo::Trait {
     type Currency: Currency<Self::AccountId>;
     type Time: Time;
+}
+
+/// Dispatch calls to runtime requested during execution of WASM Binaries.
+pub trait DispatchRuntimeCall {
+    fn dispatch_runtime_call(module_name: &str, fn_name: &str, input: &[u8]) -> DispatchResult;
+}
+
+pub trait ExtendedWasm: EscrowTrait {
+    type DispatchRuntimeCall: DispatchRuntimeCall;
 }

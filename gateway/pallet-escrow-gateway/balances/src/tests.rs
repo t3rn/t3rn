@@ -4,34 +4,23 @@
 use std::path::Path;
 use std::{fs, io::Read};
 
-
 use crate::{mock::*, CallStamp, Error, ExecutionProofs, ExecutionStamp};
 use anyhow::{Context, Result};
 use codec::Encode;
-use contracts::{
-    wasm::runtime_escrow::get_child_storage_for_current_execution,
-    Gas,
-};
-use frame_support::{
-    assert_noop, assert_ok,
-    storage::child,
-    traits::Currency,
-};
-use gateway_escrow_engine::transfers::{
-    BalanceOf, TransferEntry,
-};
+use contracts::{wasm::runtime_escrow::get_child_storage_for_current_execution, Gas};
+use frame_support::{assert_noop, assert_ok, storage::child, traits::Currency};
+use gateway_escrow_engine::transfers::{BalanceOf, TransferEntry};
 use sp_core::H256;
 use sp_runtime::traits::Hash;
 use sp_std::vec::Vec;
 
-/***
-    Multistep Call - puts_code, instantiates, calls and terminates wasm contract codes on the fly.
-    Such a wasm code is called package.
-    Consists of 3 execution phases:
-        - Execute: Code results are stored on escrow account under corresponding to the call storage key.
-        - Revert:  Code results are removed out of escrow account.
-        - Commit:  Code results are moved from escrow account to target accounts.
-***/
+///
+/// Multistep Call - puts_code, instantiates, calls and terminates wasm contract codes on the fly.
+/// Such a wasm code is called package.
+/// Consists of 3 execution phases:
+/// * Execute: Code results are stored on escrow account under corresponding to the call storage key.
+/// * Revert:  Code results are removed out of escrow account.
+/// * Commit:  Code results are moved from escrow account to target accounts.
 
 const EXECUTE_PHASE: u8 = 0;
 const COMMIT_PHASE: u8 = 1;
@@ -696,6 +685,41 @@ fn successful_commit_phase_applies_storage_writes_on_the_dedicated_for_that_code
             .call_stamps[0]
                 .post_storage
         );
+    });
+}
+
+//// Check calling custom host functions out of Flipper module.
+#[test]
+fn successfully_executes_flip_fn_from_host_runtime_module() {
+    let (_phase, _, _input_data, value, _gas_limit) = default_multistep_call_args();
+    let correct_wasm_path = Path::new("../fixtures/call_flipper_runtime.wasm");
+    let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
+    // Set fees
+    let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
+    let _endowment = 100_000_000;
+    let subsistence_threshold = 66;
+    let inner_contract_transfer_value = 100;
+
+    let empty_storage_at_dest_root: Vec<u8> = vec![
+        3, 23, 10, 46, 117, 151, 183, 183, 227, 216, 76, 5, 57, 29, 19, 154, 98, 177, 87, 231, 135,
+        134, 216, 192, 130, 242, 157, 207, 76, 17, 19, 20,
+    ];
+
+    new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
+        let _ = Balances::deposit_creating(
+            &REQUESTER,
+            sufficient_gas_limit + subsistence_threshold + (value) + inner_contract_transfer_value,
+        );
+        assert_ok!(EscrowGateway::multistep_call(
+            Origin::signed(ESCROW_ACCOUNT),
+            REQUESTER,
+            TARGET_DEST,
+            EXECUTE_PHASE,
+            correct_wasm_code.clone(),
+            value,
+            sufficient_gas_limit,
+            Encode::encode(&17)
+        ));
     });
 }
 
