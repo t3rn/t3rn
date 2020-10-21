@@ -2,8 +2,7 @@
 
 use crate::{Module, Trait};
 use frame_support::{
-    impl_outer_dispatch, impl_outer_event, impl_outer_origin, parameter_types,
-    traits::Get,
+    impl_outer_dispatch, impl_outer_event, impl_outer_origin, parameter_types, traits::Get,
     weights::Weight,
 };
 use frame_system as system;
@@ -262,13 +261,3 @@ pub fn new_test_ext_builder(deposit: u64, escrow_account: u64) -> sp_io::TestExt
         .existential_deposit(deposit)
         .build(escrow_account)
 }
-
-
-//
-// #[test]
-// fn last_value_updates() {
-// 	ExtBuilder::build().execute_with(|| {
-// 		HelloSubstrate::set_value(Origin::signed(1), 10u64);
-// 		// some assert statements
-// 	})
-// }
