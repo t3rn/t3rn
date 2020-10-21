@@ -22,8 +22,9 @@ version = "0.1"
 
 [dependencies.gateway-escrow-engine]
 default-features = false
-git = 'https://github.com/t3rn/gateway-pallet.git'
-branch = 'master'
+path = '../escrow-engine'
+#git = 'https://github.com/t3rn/gateway-pallet.git'
+#branch = 'master'
 version = '2.0.0'
 
 [dependencies.frame-support]
@@ -45,8 +46,9 @@ version = '2.0.0'
 
 [dependencies.contracts]
 default-features = false
-git = 'https://github.com/MaciejBaj/pallet-contracts.git'
-branch = 'escrow-contracts'
+path = '../../pallet-contracts-copy'
+#git = 'https://github.com/MaciejBaj/pallet-contracts.git'
+#branch = 'escrow-contracts'
 package = 'pallet-contracts'
 version = '2.0.0'
 
@@ -58,7 +60,11 @@ version = '2.0.0'
 default-features = false
 version = '2.0.0'
 
-[dev-dependencies.sp-io]
+[dependencies.sp-io]
+default-features = false
+version = '2.0.0'
+
+[dependencies.sp-wasm-interface]
 default-features = false
 version = '2.0.0'
 
@@ -78,7 +84,7 @@ version = '*'
 
 [dev-dependencies]
 wat = { version = "1.0", default-features = false }
-
+flipper = {version = '2.0.0', path = "fixtures/flipper", default-features = false}
 [features]
 default = ['std']
 std = [

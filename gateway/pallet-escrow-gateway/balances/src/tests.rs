@@ -691,7 +691,7 @@ fn successful_commit_phase_applies_storage_writes_on_the_dedicated_for_that_code
 //// Check calling custom host functions out of Flipper module.
 #[test]
 fn successfully_executes_flip_fn_from_host_runtime_module() {
-    let (_phase, _, _input_data, value, _gas_limit) = default_multistep_call_args();
+    let (_phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new("../fixtures/call_flipper_runtime.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     // Set fees
@@ -699,11 +699,6 @@ fn successfully_executes_flip_fn_from_host_runtime_module() {
     let _endowment = 100_000_000;
     let subsistence_threshold = 66;
     let inner_contract_transfer_value = 100;
-
-    let empty_storage_at_dest_root: Vec<u8> = vec![
-        3, 23, 10, 46, 117, 151, 183, 183, 227, 216, 76, 5, 57, 29, 19, 154, 98, 177, 87, 231, 135,
-        134, 216, 192, 130, 242, 157, 207, 76, 17, 19, 20,
-    ];
 
     new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
         let _ = Balances::deposit_creating(
@@ -718,7 +713,7 @@ fn successfully_executes_flip_fn_from_host_runtime_module() {
             correct_wasm_code.clone(),
             value,
             sufficient_gas_limit,
-            Encode::encode(&17)
+            input_data,
         ));
     });
 }

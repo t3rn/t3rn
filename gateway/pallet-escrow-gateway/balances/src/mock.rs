@@ -82,10 +82,19 @@ impl ContractAddressFor<H256, u64> for DummyContractAddressFor {
 }
 
 pub struct ExampleDispatchRuntimeCall;
-impl DispatchRuntimeCall for ExampleDispatchRuntimeCall {
-    fn dispatch_runtime_call(module_name: &str, fn_name: &str, _input: &[u8]) -> DispatchResult {
+impl DispatchRuntimeCall<Test> for ExampleDispatchRuntimeCall {
+    fn dispatch_runtime_call(
+        module_name: &str,
+        fn_name: &str,
+        _input: &[u8],
+        escrow_account: <Test as system::Trait>::AccountId,
+        _requested: <Test as system::Trait>::AccountId,
+        _callee: <Test as system::Trait>::AccountId,
+        _value: BalanceOf<Test>,
+        _gas: u64,
+    ) -> DispatchResult {
         match (module_name, fn_name) {
-            ("Flipper", "flip") => Flipper::flip(Origin::signed(1 as u64)),
+            ("Flipper", "flip") => Flipper::flip(Origin::signed(escrow_account)),
             (_, _) => Err(DispatchError::Other(
                 "Call to unrecognized runtime function",
             )),

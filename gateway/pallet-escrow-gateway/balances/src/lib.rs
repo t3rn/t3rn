@@ -22,7 +22,6 @@ use frame_support::{
 };
 use frame_system::{self as system, ensure_signed};
 use reduce::Reduce;
-use sp_io;
 use sp_runtime::{
     traits::{Hash, Saturating},
     DispatchResult,
@@ -30,7 +29,6 @@ use sp_runtime::{
 use sp_std::convert::TryInto;
 use sp_std::vec;
 use sp_std::vec::Vec;
-use sp_wasm_interface::HostFunctions;
 
 use sudo;
 
@@ -39,7 +37,7 @@ use gateway_escrow_engine::{
     transfers::{
         commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
     },
-    DispatchRuntimeCall, EscrowTrait, ExtendedWasm,
+    EscrowTrait, ExtendedWasm,
 };
 
 #[cfg(test)]

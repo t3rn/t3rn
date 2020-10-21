@@ -3,11 +3,11 @@
 	(import "seal0" "seal_call" (func $seal_call (param i32 i32 i64 i32 i32 i32 i32 i32 i32) (result i32)))
 	(import "env" "memory" (memory 1 1))
 
-    ;; [132, 164) bytes for a module name
-    (data (i32.const 0) "Flipper")
+    ;; [32, 64) bytes for a module name
+    (data (i32.const 32) "Flipper")
 
-    ;; [164, 196) bytes for a function name
-    (data (i32.const 32) "flip")
+    ;; [64, 96) bytes for a function name
+    (data (i32.const 64) "flip")
 
 	(func (export "deploy"))
 
@@ -18,7 +18,7 @@
             (i64.const 0)	;; How much gas to devote for the execution. 0 = all.
             (i32.const 0)	;; Pointer to the buffer with value to transfer
             (i32.const 8)	;; Length of the buffer with value to transfer
-            (i32.const 0)	;; Pointer to input data buffer address
+            (i32.const 92)	;; Pointer to input data buffer address
             (i32.const 0)	;; Length of input data buffer
             (i32.const 4294967295) ;; Pointer to output data buffer address
             (i32.const 0) ;;Length of output data buffer

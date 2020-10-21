@@ -1,4 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+use crate::transfers::BalanceOf;
 use codec::{Decode, Encode};
 use frame_support::{
     dispatch::DispatchResult,
@@ -42,10 +43,19 @@ pub trait EscrowTrait: system::Trait + sudo::Trait {
 }
 
 /// Dispatch calls to runtime requested during execution of WASM Binaries.
-pub trait DispatchRuntimeCall {
-    fn dispatch_runtime_call(module_name: &str, fn_name: &str, input: &[u8]) -> DispatchResult;
+pub trait DispatchRuntimeCall<T: EscrowTrait> {
+    fn dispatch_runtime_call(
+        module_name: &str,
+        fn_name: &str,
+        input: &[u8],
+        escrow_account: <T as system::Trait>::AccountId,
+        requested: <T as system::Trait>::AccountId,
+        callee: <T as system::Trait>::AccountId,
+        value: BalanceOf<T>,
+        gas: u64,
+    ) -> DispatchResult;
 }
 
 pub trait ExtendedWasm: EscrowTrait {
-    type DispatchRuntimeCall: DispatchRuntimeCall;
+    type DispatchRuntimeCall: DispatchRuntimeCall<Self>;
 }
