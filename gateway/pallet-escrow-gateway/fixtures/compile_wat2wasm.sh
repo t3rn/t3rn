@@ -17,3 +17,7 @@ wasm-prune --exports call,deploy $PROJNAME.wasm $PROJNAME-pruned.wasm
 PROJNAME=storage_size
 wat2wasm -o $PROJNAME.wasm $PROJNAME.wat
 wasm-prune --exports call,deploy $PROJNAME.wasm $PROJNAME-pruned.wasm
+
+PROJNAME=call_flipper_runtime
+wat2wasm -o $PROJNAME.wasm $PROJNAME.wat
+wasm-prune --exports call,deploy $PROJNAME.wasm $PROJNAME-pruned.wasm

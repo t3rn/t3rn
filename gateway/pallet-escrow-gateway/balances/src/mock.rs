@@ -2,8 +2,7 @@
 
 use crate::{Module, Trait};
 use frame_support::{
-    impl_outer_dispatch, impl_outer_event, impl_outer_origin, parameter_types,
-    traits::Get,
+    impl_outer_dispatch, impl_outer_event, impl_outer_origin, parameter_types, traits::Get,
     weights::Weight,
 };
 use frame_system as system;
@@ -11,12 +10,12 @@ use sp_core::H256;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, Convert, IdentityLookup},
-    Perbill,
+    DispatchError, DispatchResult, Perbill,
 };
 
 use contracts::{GenesisConfig, *};
 
-use gateway_escrow_engine::EscrowTrait;
+use gateway_escrow_engine::{DispatchRuntimeCall, EscrowTrait, ExtendedWasm};
 
 use sudo;
 
@@ -73,10 +72,33 @@ parameter_types! {
     pub const MaxValueSize: u32 = 16_384;
 }
 
+type Flipper = flipper::Module<Test>;
+
 pub struct DummyContractAddressFor;
 impl ContractAddressFor<H256, u64> for DummyContractAddressFor {
     fn contract_address_for(_code_hash: &H256, _data: &[u8], origin: &u64) -> u64 {
         *origin + 1
+    }
+}
+
+pub struct ExampleDispatchRuntimeCall;
+impl DispatchRuntimeCall<Test> for ExampleDispatchRuntimeCall {
+    fn dispatch_runtime_call(
+        module_name: &str,
+        fn_name: &str,
+        _input: &[u8],
+        escrow_account: <Test as system::Trait>::AccountId,
+        _requested: <Test as system::Trait>::AccountId,
+        _callee: <Test as system::Trait>::AccountId,
+        _value: BalanceOf<Test>,
+        _gas: u64,
+    ) -> DispatchResult {
+        match (module_name, fn_name) {
+            ("Flipper", "flip") => Flipper::flip(Origin::signed(escrow_account)),
+            (_, _) => Err(DispatchError::Other(
+                "Call to unrecognized runtime function",
+            )),
+        }
     }
 }
 
@@ -135,6 +157,10 @@ impl Convert<Weight, BalanceOf<Self>> for Test {
     fn convert(w: Weight) -> BalanceOf<Self> {
         w
     }
+}
+
+impl flipper::Trait for Test {
+    type Event = MetaEvent;
 }
 
 pub type Balances = pallet_balances::Module<Test>;
@@ -197,6 +223,10 @@ impl sudo::Trait for Test {
 impl EscrowTrait for Test {
     type Currency = Balances;
     type Time = Timestamp;
+}
+
+impl ExtendedWasm for Test {
+    type DispatchRuntimeCall = ExampleDispatchRuntimeCall;
 }
 
 impl Trait for Test {

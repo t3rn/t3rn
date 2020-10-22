@@ -8,17 +8,9 @@ use crate::sp_api_hidden_includes_decl_storage::hidden_include::StorageMap;
 use crate::{mock::*, CallStamp, Error, ExecutionProofs, ExecutionStamp};
 use anyhow::{Context, Result};
 use codec::Encode;
-use contracts::{
-    ContractInfoOf, Gas,
-};
-use frame_support::{
-    assert_err, assert_noop, assert_ok,
-    storage::child,
-    traits::Currency,
-};
-use gateway_escrow_engine::transfers::{
-    BalanceOf, TransferEntry,
-};
+use contracts::{ContractInfoOf, Gas};
+use frame_support::{assert_err, assert_noop, assert_ok, storage::child, traits::Currency};
+use gateway_escrow_engine::transfers::{BalanceOf, TransferEntry};
 use sp_core::H256;
 use sp_runtime::traits::Hash;
 use sp_std::vec::Vec;
@@ -187,7 +179,7 @@ fn transfer_during_execution_phase_succeeds_and_consumes_costs_correctly_and_def
     let (phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new("fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
-   // Set fees
+    // Set fees
     let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
     let endowment = 100_000_000;
     let subsistence_threshold = 66;
@@ -250,7 +242,7 @@ fn commit_phase_cannot_be_triggered_without_preceeding_execution() {
     let (_phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new("fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
-   // Set fees
+    // Set fees
     let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
     let endowment = 100_000_000;
     let subsistence_threshold = 66;
@@ -287,7 +279,7 @@ fn successful_commit_phase_transfers_move_from_deferred_to_target_destinations()
     let (_phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new("fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
-   // Set fees
+    // Set fees
     let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
     let endowment = 100_000_000;
     let subsistence_threshold = 66;
@@ -349,7 +341,7 @@ fn successful_revert_phase_removes_deferred_results_and_transfers_and_refunds_fr
     let (_phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new("fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
-   // Set fees
+    // Set fees
     let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
     let endowment = 100_000_000;
     let subsistence_threshold = 66;
@@ -429,7 +421,7 @@ fn successful_commit_phase_changes_phase_of_execution_stamp() {
     let (_phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new("fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
-   // Set fees
+    // Set fees
     let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
     let endowment = 100_000_000;
     let subsistence_threshold = 66;
@@ -518,7 +510,7 @@ fn successful_commit_phase_applies_deferred_storage_writes() {
     let (_phase, _, _input_data, value, _gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new("fixtures/storage_size.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
-   // Set fees
+    // Set fees
     let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
     let endowment = 100_000_000;
     let subsistence_threshold = 66;

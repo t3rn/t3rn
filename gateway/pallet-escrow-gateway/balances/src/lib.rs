@@ -29,14 +29,15 @@ use sp_runtime::{
 use sp_std::convert::TryInto;
 use sp_std::vec;
 use sp_std::vec::Vec;
+
 use sudo;
 
-pub use gateway_escrow_engine::EscrowTrait;
 use gateway_escrow_engine::{
     proofs::EscrowExecuteResult,
     transfers::{
         commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
     },
+    EscrowTrait, ExtendedWasm,
 };
 
 #[cfg(test)]
@@ -93,7 +94,8 @@ pub fn execute_code_in_escrow_sandbox<'a, T: Trait>(
     call_stamps: &mut Vec<CallStamp>,
 ) -> ExecResult {
     // That only works for code that is received by the call and will be executed and cleaned up after.
-    let prefab_module = prepare_contract::<Env>(&code, &Default::default()).unwrap();
+    let prefab_module = prepare_contract::<Env>(&code, &Default::default()).map_err(|e| e)?;
+
     let executable = WasmExecutable {
         entrypoint_name: "call",
         prefab_module,
@@ -122,7 +124,7 @@ pub fn execute_code_in_escrow_sandbox<'a, T: Trait>(
     }
 }
 
-pub trait Trait: EscrowTrait {
+pub trait Trait: EscrowTrait + ExtendedWasm {
     type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 }
 
@@ -250,7 +252,6 @@ pub fn stamp_failed_execution<T: Trait>(
         },
     );
 }
-
 // The pallet's dispatchable functions.
 decl_module! {
     /// The module declaration.

@@ -46,7 +46,7 @@ version = '2.0.0'
 [dependencies.contracts]
 default-features = false
 git = 'https://github.com/MaciejBaj/pallet-contracts.git'
-branch = 'escrow-contracts'
+branch = 'escrow-contracts-m3'
 package = 'pallet-contracts'
 version = '2.0.0'
 
