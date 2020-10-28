@@ -2,19 +2,6 @@
 
 use codec::{Decode, Encode};
 
-use contracts::{
-    exec::ExecResult,
-    wasm::{
-        prepare::prepare_contract,
-        runtime::Env,
-        runtime_escrow::{
-            get_child_storage_for_current_execution, raw_escrow_call, CallStamp,
-            DeferredStorageWrite,
-        },
-        WasmExecutable,
-    },
-    Gas,
-};
 use frame_support::{
     debug, decl_error, decl_event, decl_module, decl_storage, dispatch, ensure,
     storage::child::kill_storage,
@@ -29,6 +16,16 @@ use sp_runtime::{
 use sp_std::convert::TryInto;
 use sp_std::vec;
 use sp_std::vec::Vec;
+use versatile_wasm::{
+    ext::DefaultRuntimeEnv,
+    gas::Gas,
+    prepare::prepare_contract,
+    runtime::{
+        get_child_storage_for_current_execution, raw_escrow_call, CallStamp, DeferredStorageWrite,
+        Env,
+    },
+    ExecResult, WasmExecutable,
+};
 
 use sudo;
 
@@ -94,14 +91,14 @@ pub fn execute_code_in_escrow_sandbox<'a, T: Trait>(
     call_stamps: &mut Vec<CallStamp>,
 ) -> ExecResult {
     // That only works for code that is received by the call and will be executed and cleaned up after.
-    let prefab_module = prepare_contract::<Env>(&code, &Default::default()).map_err(|e| e)?;
+    let prefab_module = prepare_contract::<Env>(&code).map_err(|e| e)?;
 
     let executable = WasmExecutable {
         entrypoint_name: "call",
         prefab_module,
     };
 
-    match raw_escrow_call::<T>(
+    match raw_escrow_call::<T, DefaultRuntimeEnv<T>>(
         &escrow_account.clone(),
         &requester.clone(),
         &target_dest.clone(),
@@ -255,7 +252,7 @@ pub fn stamp_failed_execution<T: Trait>(
 // The pallet's dispatchable functions.
 decl_module! {
     /// The module declaration.
-    pub struct Module<T: Trait> for enum Call where origin: <T as frame_system::Trait>::Origin {
+    pub struct Module<T: Trait> for enum Call where origin: <T as system::Trait>::Origin {
         // Initializing errors
         // this includes information about your errors in the node's metadata.
         // it is needed only if you are using errors in your pallet
@@ -290,8 +287,8 @@ decl_module! {
        #[weight = *gas_limit]
         pub fn multistep_call(
             origin,
-            requester: <T as frame_system::Trait>::AccountId,
-            target_dest: <T as frame_system::Trait>::AccountId,
+            requester: <T as system::Trait>::AccountId,
+            target_dest: <T as system::Trait>::AccountId,
             #[compact] phase: u8,
             code: Vec<u8>,
             #[compact] value: BalanceOf<T>,
@@ -436,8 +433,8 @@ decl_module! {
         #[weight = 10_000]
         fn revert(
             origin,
-            escrow_account: <T as frame_system::Trait>::AccountId,
-            requester: <T as frame_system::Trait>::AccountId,
+            escrow_account: <T as system::Trait>::AccountId,
+            requester: <T as system::Trait>::AccountId,
             code: Vec<u8>,
         ) {
             let last_execution_stamp = <ExecutionStamps<T>>::get(&requester, &T::Hashing::hash(&code.clone()));
@@ -461,7 +458,7 @@ decl_module! {
         #[weight = 10_000]
         pub fn rent_projection(
             origin,
-            address: <T as frame_system::Trait>::AccountId
+            address: <T as system::Trait>::AccountId
         ) -> dispatch::DispatchResult {
             // Ensure that the caller is a regular keypair account
             let caller = ensure_signed(origin)?;
@@ -480,7 +477,7 @@ decl_module! {
         #[weight = 10_000]
         pub fn get_storage(
             origin,
-            address: <T as frame_system::Trait>::AccountId,
+            address: <T as system::Trait>::AccountId,
             key: [u8; 32],
         ) -> dispatch::DispatchResult {
             // Print a test message.

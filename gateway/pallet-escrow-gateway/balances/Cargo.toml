@@ -22,8 +22,7 @@ version = "0.1"
 
 [dependencies.gateway-escrow-engine]
 default-features = false
-git = 'https://github.com/t3rn/gateway-pallet.git'
-branch = 'master'
+path = '../escrow-engine'
 version = '2.0.0'
 
 [dependencies.frame-support]
@@ -43,12 +42,10 @@ version = '2.0.0'
 default-features = false
 version = '2.0.0'
 
-[dependencies.contracts]
+[dependencies.versatile-wasm]
 default-features = false
-git = 'https://github.com/MaciejBaj/pallet-contracts.git'
-branch = 'escrow-contracts-m3'
-package = 'pallet-contracts'
-version = '2.0.0'
+path = '../escrow-engine/versatile-wasm'
+version = '0.1.0'
 
 [dependencies.sp-std]
 default-features = false
@@ -90,6 +87,6 @@ std = [
     'frame-support/std',
     'frame-system/std',
     'pallet-balances/std',
-    'contracts/std',
+    'versatile-wasm/std',
     'gateway-escrow-engine/std',
 ]
