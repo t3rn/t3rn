@@ -3,10 +3,7 @@ use crate::*;
 use frame_support::dispatch::DispatchError;
 use frame_support::traits::Randomness;
 use frame_support::weights::Weight;
-use frame_support::{
-    storage::child,
-    storage::child::{get_raw, ChildInfo},
-};
+use frame_support::{storage::child, storage::child::ChildInfo, storage::unhashed};
 use gateway_escrow_engine::{
     transfers::{escrow_transfer, BalanceOf, TransferEntry},
     DispatchRuntimeCall, EscrowTrait, ExtendedWasm,
@@ -32,18 +29,29 @@ where
     type T = T;
 
     fn get_storage(&self, key: &StorageKey) -> Option<Vec<u8>> {
-        self.get_raw_storage(self.storage_trie_id.clone(), key)
-    }
-
-    fn get_raw_storage(&self, child: ChildInfo, key: &StorageKey) -> Option<Vec<u8>> {
-        get_raw(&child, key)
+        self.get_child_storage(self.storage_trie_id.clone(), key)
     }
 
     fn set_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>) {
-        self.set_raw_storage(self.storage_trie_id.clone(), key, value)
+        self.set_child_storage(self.storage_trie_id.clone(), key, value)
     }
 
-    fn set_raw_storage(&mut self, child: ChildInfo, key: StorageKey, value: Option<Vec<u8>>) {
+    fn get_raw_storage(&self, key: &StorageKey) -> Option<Vec<u8>> {
+        unhashed::get_raw(key)
+    }
+
+    fn set_raw_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>) {
+        match value {
+            Some(new_value) => unhashed::put_raw(&key, &new_value[..]),
+            None => unhashed::kill(&key),
+        }
+    }
+
+    fn get_child_storage(&self, child: ChildInfo, key: &StorageKey) -> Option<Vec<u8>> {
+        child::get_raw(&child, key)
+    }
+
+    fn set_child_storage(&mut self, child: ChildInfo, key: StorageKey, value: Option<Vec<u8>>) {
         match value {
             Some(new_value) => child::put_raw(&child, &key, &new_value[..]),
             None => child::kill(&child, &key),
@@ -103,27 +111,41 @@ where
 
 pub trait ExtStandards {
     type T: EscrowTrait + SystemTrait + ExtendedWasm;
-
+    /// <h2>Storage</h2>
+    ///
     /// Returns the storage entry of the executing account by the given `key`.
     ///
     /// Returns `None` if the `key` wasn't previously set by `set_storage` or
     /// was deleted.
     fn get_storage(&self, key: &StorageKey) -> Option<Vec<u8>>;
 
+    /// Sets the storage entry by the given key to the specified value. If `value` is `None` then
+    ///
+    /// the storage entry is deleted.
+    fn set_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>);
+
+    /// Returns the raw storage entry of the executing account by the given `key`.
+    /// By default implemented to access unhashed storage - commonly used by parachains storage.
+    /// Returns `None` if the `key` wasn't previously set by `set_storage` or
+    /// was deleted.
+    fn get_raw_storage(&self, key: &StorageKey) -> Option<Vec<u8>>;
+
+    /// Sets the storage entry by the given key to the specified value. If `value` is `None` then
+    /// By default implemented to access unhashed storage - commonly used by parachains storage.
+    /// the storage entry is deleted.
+    fn set_raw_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>);
+
     /// Returns the storage entry of the executing account by the given `key` and given `child` root.
     ///
     /// Returns `None` if the `key` wasn't previously set by `set_storage` or
     /// was deleted.
-    fn get_raw_storage(&self, child: ChildInfo, key: &StorageKey) -> Option<Vec<u8>>;
-
-    /// Sets the storage entry by the given key to the specified value. If `value` is `None` then
-    /// the storage entry is deleted.
-    fn set_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>);
+    fn get_child_storage(&self, child: ChildInfo, key: &StorageKey) -> Option<Vec<u8>>;
 
     /// Sets the storage entry by the given key at given child root to the specified value. If `value` is `None` then
     /// the storage entry is deleted.
-    fn set_raw_storage(&mut self, child: ChildInfo, key: StorageKey, value: Option<Vec<u8>>);
+    fn set_child_storage(&mut self, child: ChildInfo, key: StorageKey, value: Option<Vec<u8>>);
 
+    /// <h2>Standards</h2>
     /// Transfer some amount of funds into the specified account.
     fn transfer(
         &mut self,

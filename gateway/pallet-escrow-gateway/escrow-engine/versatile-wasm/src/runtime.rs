@@ -20,6 +20,7 @@ use frame_support::{
     storage::child,
     storage::child::ChildInfo,
     traits::{Currency, Time},
+    Twox128,
 };
 use gateway_escrow_engine::{
     transfers::{escrow_transfer, BalanceOf as EscrowBalanceOf, TransferEntry},
@@ -100,6 +101,17 @@ pub struct CallStamp {
     pub pre_storage: Vec<u8>,
     pub post_storage: Vec<u8>,
     pub dest: Vec<u8>,
+}
+
+pub fn storage_value_final_key(
+    module_prefix: &'static [u8],
+    storage_prefix: &'static [u8],
+) -> StorageKey {
+    use frame_support::StorageHasher;
+    let mut final_key: StorageKey = [0u8; 32];
+    final_key[0..16].copy_from_slice(&Twox128::hash(module_prefix));
+    final_key[16..32].copy_from_slice(&Twox128::hash(storage_prefix));
+    final_key
 }
 
 pub fn get_child_storage_for_current_execution<T: EscrowTrait>(
@@ -248,19 +260,6 @@ define_env!(Env, <E: ExtStandards>,
             Ok(ReturnCode::KeyNotFound)
         }
     },
-    seal_get_raw_storage (ctx, child_root_ptr: u32, child_root_len: u32, key_ptr: u32, out_ptr: u32, out_len_ptr: u32) -> ReturnCode => {
-        let mut key: StorageKey = [0; 32];
-        read_sandbox_memory_into_buf(ctx, key_ptr, &mut key)?;
-        let child_root: ChildInfo = ChildInfo::new_default_from_vec(
-            read_sandbox_memory(ctx, child_root_ptr, child_root_len)?
-        );
-        if let Some(value) = ctx.ext.get_raw_storage(child_root, &key) {
-            write_sandbox_output(ctx, out_ptr, out_len_ptr, &value, false)?;
-            Ok(ReturnCode::Success)
-        } else {
-            Ok(ReturnCode::KeyNotFound)
-        }
-    },
     seal_set_storage (ctx, key_ptr: u32, value_ptr: u32, value_len: u32) => {
         if value_len > ctx.max_value_size {
             // Bail out if value length exceeds the set maximum value size.
@@ -274,7 +273,43 @@ define_env!(Env, <E: ExtStandards>,
 
         Ok(())
     },
-    seal_set_raw_storage (ctx, child_root_ptr: u32, child_root_len: u32, key_ptr: u32, value_ptr: u32, value_len: u32) => {
+    seal_get_raw_storage (ctx, key_ptr: u32, out_ptr: u32, out_len_ptr: u32) -> ReturnCode => {
+        let mut key: StorageKey = [0; 32];
+        read_sandbox_memory_into_buf(ctx, key_ptr, &mut key)?;
+        if let Some(value) = ctx.ext.get_raw_storage(&key) {
+            write_sandbox_output(ctx, out_ptr, out_len_ptr, &value, false)?;
+            Ok(ReturnCode::Success)
+        } else {
+            Ok(ReturnCode::KeyNotFound)
+        }
+    },
+    seal_set_raw_storage (ctx, key_ptr: u32, value_ptr: u32, value_len: u32) => {
+        if value_len > ctx.max_value_size {
+            // Bail out if value length exceeds the set maximum value size.
+            return Err(sp_sandbox::HostError);
+        }
+        let mut key: StorageKey = [0; 32];
+        read_sandbox_memory_into_buf(ctx, key_ptr, &mut key)?;
+        let value = Some(read_sandbox_memory(ctx, value_ptr, value_len)?);
+
+        ctx.ext.set_raw_storage(key, value);
+
+        Ok(())
+    },
+    seal_get_child_storage (ctx, child_root_ptr: u32, child_root_len: u32, key_ptr: u32, out_ptr: u32, out_len_ptr: u32) -> ReturnCode => {
+        let mut key: StorageKey = [0; 32];
+        read_sandbox_memory_into_buf(ctx, key_ptr, &mut key)?;
+        let child_root: ChildInfo = ChildInfo::new_default_from_vec(
+            read_sandbox_memory(ctx, child_root_ptr, child_root_len)?
+        );
+        if let Some(value) = ctx.ext.get_child_storage(child_root, &key) {
+            write_sandbox_output(ctx, out_ptr, out_len_ptr, &value, false)?;
+            Ok(ReturnCode::Success)
+        } else {
+            Ok(ReturnCode::KeyNotFound)
+        }
+    },
+    seal_set_child_storage (ctx, child_root_ptr: u32, child_root_len: u32, key_ptr: u32, value_ptr: u32, value_len: u32) => {
         if value_len > ctx.max_value_size {
             // Bail out if value length exceeds the set maximum value size.
             return Err(sp_sandbox::HostError);
@@ -288,7 +323,7 @@ define_env!(Env, <E: ExtStandards>,
 
         let value = Some(read_sandbox_memory(ctx, value_ptr, value_len)?);
 
-        ctx.ext.set_raw_storage(child_root, key, value);
+        ctx.ext.set_child_storage(child_root, key, value);
 
         Ok(())
     },
