@@ -248,6 +248,19 @@ define_env!(Env, <E: ExtStandards>,
             Ok(ReturnCode::KeyNotFound)
         }
     },
+    seal_get_raw_storage (ctx, child_root_ptr: u32, child_root_len: u32, key_ptr: u32, out_ptr: u32, out_len_ptr: u32) -> ReturnCode => {
+        let mut key: StorageKey = [0; 32];
+        read_sandbox_memory_into_buf(ctx, key_ptr, &mut key)?;
+        let child_root: ChildInfo = ChildInfo::new_default_from_vec(
+            read_sandbox_memory(ctx, child_root_ptr, child_root_len)?
+        );
+        if let Some(value) = ctx.ext.get_raw_storage(child_root, &key) {
+            write_sandbox_output(ctx, out_ptr, out_len_ptr, &value, false)?;
+            Ok(ReturnCode::Success)
+        } else {
+            Ok(ReturnCode::KeyNotFound)
+        }
+    },
     seal_set_storage (ctx, key_ptr: u32, value_ptr: u32, value_len: u32) => {
         if value_len > ctx.max_value_size {
             // Bail out if value length exceeds the set maximum value size.
@@ -258,6 +271,24 @@ define_env!(Env, <E: ExtStandards>,
         let value = Some(read_sandbox_memory(ctx, value_ptr, value_len)?);
 
         ctx.ext.set_storage(key, value);
+
+        Ok(())
+    },
+    seal_set_raw_storage (ctx, child_root_ptr: u32, child_root_len: u32, key_ptr: u32, value_ptr: u32, value_len: u32) => {
+        if value_len > ctx.max_value_size {
+            // Bail out if value length exceeds the set maximum value size.
+            return Err(sp_sandbox::HostError);
+        }
+        let mut key: StorageKey = [0; 32];
+        read_sandbox_memory_into_buf(ctx, key_ptr, &mut key)?;
+
+        let child_root: ChildInfo = ChildInfo::new_default_from_vec(
+            read_sandbox_memory(ctx, child_root_ptr, child_root_len)?
+        );
+
+        let value = Some(read_sandbox_memory(ctx, value_ptr, value_len)?);
+
+        ctx.ext.set_raw_storage(child_root, key, value);
 
         Ok(())
     },
@@ -392,6 +423,7 @@ pub fn raw_escrow_call<T: EscrowTrait + ExtendedWasm + SystemTrait, E: ExtStanda
         block_number: <system::Module<T>>::block_number(),
         escrow_account,
         escrow_account_trie_id: escrow_account_trie_id.clone(),
+        storage_trie_id: escrow_account_trie_id.clone(),
         timestamp: T::Time::now(),
     };
 

@@ -20,6 +20,7 @@ pub struct DefaultRuntimeEnv<'a, T: EscrowTrait + SystemTrait + ExtendedWasm> {
     pub block_number: <T as SystemTrait>::BlockNumber,
     pub timestamp: <<T as EscrowTrait>::Time as Time>::Moment,
     pub escrow_account_trie_id: ChildInfo,
+    pub storage_trie_id: ChildInfo,
     pub input_data: Option<Vec<u8>>,
     pub inner_exec_transfers: &'a mut Vec<TransferEntry>,
 }
@@ -31,13 +32,21 @@ where
     type T = T;
 
     fn get_storage(&self, key: &StorageKey) -> Option<Vec<u8>> {
-        get_raw(&self.escrow_account_trie_id, key)
+        self.get_raw_storage(self.storage_trie_id.clone(), key)
+    }
+
+    fn get_raw_storage(&self, child: ChildInfo, key: &StorageKey) -> Option<Vec<u8>> {
+        get_raw(&child, key)
     }
 
     fn set_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>) {
+        self.set_raw_storage(self.storage_trie_id.clone(), key, value)
+    }
+
+    fn set_raw_storage(&mut self, child: ChildInfo, key: StorageKey, value: Option<Vec<u8>>) {
         match value {
-            Some(new_value) => child::put_raw(&self.escrow_account_trie_id, &key, &new_value[..]),
-            None => child::kill(&self.escrow_account_trie_id, &key),
+            Some(new_value) => child::put_raw(&child, &key, &new_value[..]),
+            None => child::kill(&child, &key),
         }
     }
 
@@ -78,11 +87,6 @@ where
     }
 
     fn deposit_event(&mut self, topics: Vec<TopicOf<Self::T>>, data: Vec<u8>) {
-        // deposit_event::<Self::T>(
-        //     topics,
-        //     RawEvent::VersatileVMExecution(self.ctx.self_account.clone(), data),
-        // );
-
         <system::Module<T>>::deposit_event_indexed(
             &*topics,
             <Self::T as ExtendedWasm>::Event::from(
@@ -94,25 +98,8 @@ where
             )
             .into(),
         )
-
-        // <system::Module<Self::T>>::deposit_event_indexed(
-        //     &*topics,
-        //     gateway_escrow_engine::RawEvent::VersatileVMExecution(
-        //         self.escrow_account.clone(),
-        //         self.requester.clone(),
-        //         data,
-        //     )
-        //     .into(),
-        // )
     }
 }
-
-// fn deposit_event<T: Trait>(topics: Vec<T::Hash>, event: Event<T>) {
-//     <frame_system::Module<T>>::deposit_event_indexed(
-//         &*topics,
-//         <T as Trait>::Event::from(event).into(),
-//     )
-// }
 
 pub trait ExtStandards {
     type T: EscrowTrait + SystemTrait + ExtendedWasm;
@@ -123,9 +110,19 @@ pub trait ExtStandards {
     /// was deleted.
     fn get_storage(&self, key: &StorageKey) -> Option<Vec<u8>>;
 
+    /// Returns the storage entry of the executing account by the given `key` and given `child` root.
+    ///
+    /// Returns `None` if the `key` wasn't previously set by `set_storage` or
+    /// was deleted.
+    fn get_raw_storage(&self, child: ChildInfo, key: &StorageKey) -> Option<Vec<u8>>;
+
     /// Sets the storage entry by the given key to the specified value. If `value` is `None` then
     /// the storage entry is deleted.
     fn set_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>);
+
+    /// Sets the storage entry by the given key at given child root to the specified value. If `value` is `None` then
+    /// the storage entry is deleted.
+    fn set_raw_storage(&mut self, child: ChildInfo, key: StorageKey, value: Option<Vec<u8>>);
 
     /// Transfer some amount of funds into the specified account.
     fn transfer(
