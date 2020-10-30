@@ -13,10 +13,7 @@ use sp_runtime::{
     DispatchError, DispatchResult, Perbill,
 };
 
-use contracts::{GenesisConfig, *};
-
-use gateway_escrow_engine::{DispatchRuntimeCall, EscrowTrait, ExtendedWasm};
-
+use gateway_escrow_engine::{transfers::BalanceOf, DispatchRuntimeCall, EscrowTrait, ExtendedWasm};
 use sudo;
 
 use std::cell::RefCell;
@@ -33,7 +30,7 @@ impl_outer_event! {
     pub enum MetaEvent for Test {
         system<T>,
         pallet_balances<T>,
-        contracts<T>,
+        gateway_escrow_engine<T>,
         sudo<T>,
         escrow_gateway<T>,
     }
@@ -74,48 +71,24 @@ parameter_types! {
 
 type Flipper = flipper::Module<Test>;
 
-pub struct DummyContractAddressFor;
-impl ContractAddressFor<H256, u64> for DummyContractAddressFor {
-    fn contract_address_for(_code_hash: &H256, _data: &[u8], origin: &u64) -> u64 {
-        *origin + 1
-    }
-}
-
 pub struct ExampleDispatchRuntimeCall;
 impl DispatchRuntimeCall<Test> for ExampleDispatchRuntimeCall {
     fn dispatch_runtime_call(
         module_name: &str,
         fn_name: &str,
         _input: &[u8],
-        escrow_account: <Test as system::Trait>::AccountId,
-        _requested: <Test as system::Trait>::AccountId,
-        _callee: <Test as system::Trait>::AccountId,
+        escrow_account: &<Test as system::Trait>::AccountId,
+        _requested: &<Test as system::Trait>::AccountId,
+        _callee: &<Test as system::Trait>::AccountId,
         _value: BalanceOf<Test>,
         _gas: u64,
     ) -> DispatchResult {
         match (module_name, fn_name) {
-            ("Flipper", "flip") => Flipper::flip(Origin::signed(escrow_account)),
+            ("Flipper", "flip") => Flipper::flip(Origin::signed(*escrow_account)),
             (_, _) => Err(DispatchError::Other(
                 "Call to unrecognized runtime function",
             )),
         }
-    }
-}
-
-pub struct DummyTrieIdGenerator;
-impl TrieIdGenerator<u64> for DummyTrieIdGenerator {
-    fn trie_id(account_id: &u64) -> TrieId {
-        // let new_seed = AccountCounter::mutate(|v| {
-        //     *v = v.wrapping_add(1);
-        //     *v
-        // });
-        // let account_counter = 0 as u64;
-
-        let new_seed = 2 as u64;
-        let mut res = vec![];
-        res.extend_from_slice(&new_seed.to_le_bytes());
-        res.extend_from_slice(&account_id.to_le_bytes());
-        res
     }
 }
 
@@ -168,25 +141,6 @@ type Randomness = pallet_randomness_collective_flip::Module<Test>;
 type System = system::Module<Test>;
 type Timestamp = pallet_timestamp::Module<Test>;
 
-impl contracts::Trait for Test {
-    type Time = Timestamp;
-    type Currency = Balances;
-    type DetermineContractAddress = DummyContractAddressFor;
-    type Event = MetaEvent;
-    type TrieIdGenerator = DummyTrieIdGenerator;
-    type RentPayment = ();
-    type SignedClaimHandicap = SignedClaimHandicap;
-    type TombstoneDeposit = TombstoneDeposit;
-    type StorageSizeOffset = StorageSizeOffset;
-    type RentByteFee = RentByteFee;
-    type RentDepositOffset = RentDepositOffset;
-    type SurchargeReward = SurchargeReward;
-    type MaxDepth = MaxDepth;
-    type MaxValueSize = MaxValueSize;
-    type WeightPrice = ();
-    type Randomness = Randomness;
-}
-
 impl system::Trait for Test {
     type BaseCallFilter = ();
     type Origin = Origin;
@@ -227,6 +181,8 @@ impl EscrowTrait for Test {
 
 impl ExtendedWasm for Test {
     type DispatchRuntimeCall = ExampleDispatchRuntimeCall;
+    type Event = MetaEvent;
+    type Randomness = Randomness;
 }
 
 impl Trait for Test {
@@ -265,14 +221,6 @@ impl ExtBuilder {
             .unwrap();
         sudo::GenesisConfig::<Test> {
             key: escrow_account,
-        }
-        .assimilate_storage(&mut t)
-        .unwrap();
-        GenesisConfig {
-            current_schedule: Schedule {
-                // enable_prinltn: true,
-                ..Default::default()
-            },
         }
         .assimilate_storage(&mut t)
         .unwrap();

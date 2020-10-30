@@ -7,12 +7,12 @@ use std::{fs, io::Read};
 use crate::{mock::*, CallStamp, Error, ExecutionProofs, ExecutionStamp};
 use anyhow::{Context, Result};
 use codec::Encode;
-use contracts::{wasm::runtime_escrow::get_child_storage_for_current_execution, Gas};
 use frame_support::{assert_noop, assert_ok, storage::child, traits::Currency};
 use gateway_escrow_engine::transfers::{BalanceOf, TransferEntry};
 use sp_core::H256;
 use sp_runtime::traits::Hash;
 use sp_std::vec::Vec;
+use versatile_wasm::{gas::Gas, runtime::get_child_storage_for_current_execution};
 
 ///
 /// Multistep Call - puts_code, instantiates, calls and terminates wasm contract codes on the fly.
