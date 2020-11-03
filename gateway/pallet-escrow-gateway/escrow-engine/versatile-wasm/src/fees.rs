@@ -4,30 +4,7 @@ use crate::gas::{Gas, GasMeter, GasMeterResult, Token};
 use crate::VersatileWasm as Trait;
 use crate::*;
 use contracts::Schedule;
-use frame_support::dispatch::{DispatchError, DispatchResult};
-use sp_std::prelude::*;
-
-/// The data passed through when a contract uses `seal_return`.
-pub struct ReturnData {
-    /// The flags as passed through by the contract. They are still unchecked and
-    /// will later be parsed into a `ReturnFlags` bitflags struct.
-    pub flags: u32,
-    /// The output buffer passed by the contract as return data.
-    pub data: Vec<u8>,
-}
-
-pub enum TrapReason {
-    /// The supervisor trapped the contract because of an error condition occurred during
-    /// execution in privileged code.
-    SupervisorError(DispatchError),
-    /// Signals that trap was generated in response to call `seal_return` host function.
-    Return(ReturnData),
-    /// Signals that a trap was generated in response to a successful call to the
-    /// `seal_terminate` host function.
-    Termination,
-    /// Signals that a trap was generated because of a successful restoration.
-    Restoration,
-}
+use frame_support::dispatch::DispatchError;
 
 #[cfg_attr(test, derive(Debug, PartialEq, Eq))]
 #[derive(Copy, Clone)]

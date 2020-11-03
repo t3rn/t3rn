@@ -45,6 +45,10 @@ version = '2.0.0'
 default-features = false
 version = '2.0.0'
 
+[dependencies.sp-io]
+default-features = false
+version = '2.0.0'
+
 [dependencies.sp-std]
 default-features = false
 version = '2.0.0'
