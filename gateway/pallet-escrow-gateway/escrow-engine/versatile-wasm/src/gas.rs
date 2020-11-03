@@ -14,14 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Substrate. If not, see <http://www.gnu.org/licenses/>.
 
+use crate::fees::RuntimeToken;
 use crate::ExecError;
+use crate::VersatileWasm as Trait;
 use frame_support::dispatch::{
-    DispatchErrorWithPostInfo, DispatchResultWithPostInfo, PostDispatchInfo,
+    DispatchErrorWithPostInfo, DispatchResultWithPostInfo, GetDispatchInfo, PostDispatchInfo,
 };
-use gateway_escrow_engine::EscrowTrait as Trait;
+use frame_support::weights::WeightToFeePolynomial;
 use sp_runtime::traits::Zero;
 use sp_std::marker::PhantomData;
-
 #[cfg(test)]
 use std::{any::Any, fmt::Debug};
 
@@ -103,6 +104,15 @@ impl<T: Trait> GasMeter<T> {
         }
     }
 
+    pub fn charge_runtime_dispatch(&mut self, call: Box<<T as Trait>::Call>) {
+        let weight: u64 = call.get_dispatch_info().weight;
+        let fee = <T as transaction_payment::Trait>::WeightToFee::calc(&weight);
+        self.charge(
+            &Default::default(),
+            RuntimeToken::Explicit(std::convert::TryInto::<u32>::try_into(fee).ok().unwrap()),
+        );
+        println!("actual_fee {:?}", fee);
+    }
     /// Account for used gas.
     ///
     /// Amount is calculated by the given `token`.

@@ -24,7 +24,7 @@ use frame_support::{
 };
 use gateway_escrow_engine::{
     transfers::{escrow_transfer, BalanceOf as EscrowBalanceOf, TransferEntry},
-    EscrowTrait, ExtendedWasm,
+    EscrowTrait,
 };
 use sp_runtime::traits::{Hash, Zero};
 use sp_sandbox;
@@ -33,6 +33,7 @@ use system::Trait as SystemTrait;
 
 use crate::env_def::FunctionImplProvider;
 use crate::ext::{DefaultRuntimeEnv, ExtStandards};
+// use crate::fees::{charge_gas, RuntimeToken};
 use crate::gas::{Gas, GasMeter};
 use crate::*;
 
@@ -164,6 +165,7 @@ define_env!(Env, <E: ExtStandards>,
         Ok(())
     },
     seal_input (ctx, buf_ptr: u32, buf_len_ptr: u32) => {
+        println!("seal_input {:?}", ctx.input_data);
         if let Some(input) = ctx.input_data.take() {
             write_sandbox_output(ctx, buf_ptr, buf_len_ptr, &input, false)
         } else {
@@ -209,7 +211,7 @@ define_env!(Env, <E: ExtStandards>,
         ).unwrap();
 
         // Everything >64 reserved bytes constitutes actual input.
-        let input = read_sandbox_memory(ctx, input_data_ptr + 64, input_data_len)?;
+        let input = read_sandbox_memory(ctx, input_data_ptr, input_data_len)?;
         let callee: <E::T as SystemTrait>::AccountId = read_sandbox_memory_as(ctx, callee_ptr, callee_len)?;
         let value: EscrowBalanceOf::<E::T> = read_sandbox_memory_as(ctx, value_ptr, value_len)?;
         let mut adhoc_gas_meter = GasMeter::<E::T>::new(gas);
@@ -349,6 +351,18 @@ define_env!(Env, <E: ExtStandards>,
     },
 );
 
+// pub fn extend_standards<Ext, F, M>(func: F)
+// where
+//     F: Fn(M),
+//     Ext: ExtStandards,
+// {
+//     !define_env!(Env, <E: Ext>, func,)
+// }
+
+pub trait ExtendEnv {
+    fn define_extended_env();
+}
+
 pub fn to_execution_result<E: ExtStandards>(
     exec_state: Runtime<E>,
     sandbox_result: Result<sp_sandbox::ReturnValue, sp_sandbox::Error>,
@@ -400,7 +414,7 @@ pub fn to_execution_result<E: ExtStandards>(
     }
 }
 
-pub fn raw_escrow_call<T: EscrowTrait + ExtendedWasm + SystemTrait, E: ExtStandards<T = T>>(
+pub fn raw_escrow_call<T: EscrowTrait + VersatileWasm + SystemTrait, E: ExtStandards<T = T>>(
     escrow_account: &T::AccountId,
     requester: &T::AccountId,
     transfer_dest: &T::AccountId,
