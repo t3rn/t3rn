@@ -142,7 +142,7 @@ decl_module! {
         // ahead of time. Instead we have the caller pass in the expected storage value and we
         // ensure it is correct.
         #[weight = Linear(200)]
-        fn double(_origin, initial_value: u32) -> DispatchResult {
+        pub fn double(_origin, initial_value: u32) -> DispatchResult {
 
             // Ensure the value passed by the caller actually matches storage If this condition
             // were not true, the caller would be able to avoid paying appropriate fees.
@@ -161,7 +161,7 @@ decl_module! {
         // demonstrate that weights should grow by the same order as the compute required by the
         // transaction.
         #[weight = Quadratic(200, 30, 100)]
-        fn complex_calculations(_origin, x: u32, y: u32) -> DispatchResult {
+        pub fn complex_calculations(_origin, x: u32, y: u32) -> DispatchResult {
             // This first part performs a relatively cheap (hence 30)
             // in-memory calculations.
             let mut part1 = 0;

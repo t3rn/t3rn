@@ -21,3 +21,11 @@ wasm-prune --exports call,deploy $PROJNAME.wasm $PROJNAME-pruned.wasm
 PROJNAME=call_flipper_runtime
 wat2wasm -o $PROJNAME.wasm $PROJNAME.wat
 wasm-prune --exports call,deploy $PROJNAME.wasm $PROJNAME-pruned.wasm
+
+PROJNAME=storage_runtime_calls
+wat2wasm -o $PROJNAME.wasm $PROJNAME.wat
+wasm-prune --exports call,deploy $PROJNAME.wasm $PROJNAME-pruned.wasm
+
+PROJNAME=storage_runtime_demo
+wat2wasm -o $PROJNAME.wasm $PROJNAME.wat
+wasm-prune --exports call,deploy $PROJNAME.wasm $PROJNAME-pruned.wasm

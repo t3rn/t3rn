@@ -106,6 +106,34 @@ impl DispatchRuntimeCall<Test> for ExampleDispatchRuntimeCall {
                 // Alternatively use the call - call.dispatch((Origin::signed(*escrow_account))).map_err(|e| e.error)?;
                 Weights::store_value(Origin::signed(*escrow_account), decoded_input)
             }
+            ("Weights", "double") => {
+                let decoded_input: u32 = match Decode::decode(&mut _input.clone()) {
+                    Ok(dec) => dec,
+                    Err(_) => {
+                        return Err(DispatchError::Other(
+                            "Can't decode input for Weights::store_value. Expected u32.",
+                        ));
+                    }
+                };
+                gas_meter.charge_runtime_dispatch(Box::new(Call::Weights(WeightsCall::double(
+                    decoded_input,
+                ))))?;
+                Weights::double(Origin::signed(*escrow_account), decoded_input)
+            }
+            ("Weights", "complex_calculations") => {
+                let (decoded_x, decoded_y): (u32, u32) = match Decode::decode(&mut _input.clone()) {
+                    Ok(dec) => dec,
+                    Err(_) => {
+                        return Err(DispatchError::Other(
+                            "Can't decode input for Weights::store_value. Expected u32.",
+                        ));
+                    }
+                };
+                gas_meter.charge_runtime_dispatch(Box::new(Call::Weights(
+                    WeightsCall::complex_calculations(decoded_x, decoded_y),
+                )))?;
+                Weights::complex_calculations(Origin::signed(*escrow_account), decoded_x, decoded_y)
+            }
             (_, _) => Err(DispatchError::Other(
                 "Call to unrecognized runtime function",
             )),

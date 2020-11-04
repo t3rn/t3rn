@@ -80,7 +80,7 @@ impl<'a, E: ExtStandards + 'a> Runtime<'a, E> {
             escrow_account_trie_id: escrow_account_trie_id.clone(),
             memory,
             max_value_size: u32::MAX,
-            max_event_topics: 16,
+            max_event_topics: prepare::MAX_SUBJECT_LEN,
             trap_reason: None,
         }
     }
@@ -193,23 +193,23 @@ define_env!(Env, <E: ExtStandards>,
         output_ptr: u32,
         output_len_ptr: u32
     ) -> ReturnCode => {
-        // [32, 64> bytes of input reserved for a module name.
+        // [0, 32> bytes of input reserved for a module name.
         let module_name = String::from_utf8(
-            read_sandbox_memory(ctx, 32, 32)?
+            read_sandbox_memory(ctx, input_data_ptr, 32)?
             .into_iter()
             .filter(|i| *i > 0 as u8)
             .collect()
         ).unwrap();
-        // [64, 96> bytes of input reserved for a module name. 64 bytes reserved in total.
+        // [32, 64> bytes of input reserved for a module name. 64 bytes reserved in total in input.
         let fn_name = String::from_utf8(
-            read_sandbox_memory(ctx, 64, 32)?
+            read_sandbox_memory(ctx, input_data_ptr + 32, 32)?
             .into_iter()
             .filter(|i| *i > 0 as u8)
             .collect()
         ).unwrap();
 
         // Everything >64 reserved bytes constitutes actual input.
-        let input = read_sandbox_memory(ctx, input_data_ptr, input_data_len)?;
+        let input = read_sandbox_memory(ctx, input_data_ptr + 64, input_data_len)?;
         let callee: <E::T as SystemTrait>::AccountId = read_sandbox_memory_as(ctx, callee_ptr, callee_len)?;
         let value: EscrowBalanceOf::<E::T> = read_sandbox_memory_as(ctx, value_ptr, value_len)?;
         match ctx.ext.call(
@@ -224,8 +224,8 @@ define_env!(Env, <E: ExtStandards>,
                 write_sandbox_output(ctx, output_ptr, output_len_ptr, &[], true)?;
                 Ok(ReturnCode::Success)
             },
-            Err(_err) => {
-                // todo: Store error.
+            Err(err) => {
+                ctx.trap_reason = Some(TrapReason::SupervisorError(err.into()));
                 Err(sp_sandbox::HostError)
             }
         }

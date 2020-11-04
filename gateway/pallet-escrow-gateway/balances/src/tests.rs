@@ -746,6 +746,35 @@ fn successfully_interacts_with_storage_runtime_module_and_is_billed_correctly() 
     });
 }
 
+#[test]
+fn successfully_executes_runtime_storage_demo_is_billed_correctly() {
+    let (_phase, _, _input_data, value, _gas_limit) = default_multistep_call_args();
+    let correct_wasm_path = Path::new("../fixtures/storage_runtime_demo.wasm");
+    let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
+    // Set fees
+    let sufficient_gas_limit = (170_000_000 + 17_500_000) * 2 as u64; // base (exact init costs) + exec_cost = 187_500_000
+    let _endowment = 100_000_000;
+    let subsistence_threshold = 66;
+    let inner_contract_transfer_value = 100;
+
+    new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
+        let _ = Balances::deposit_creating(
+            &REQUESTER,
+            sufficient_gas_limit + subsistence_threshold + (value) + inner_contract_transfer_value,
+        );
+        assert_ok!(EscrowGateway::multistep_call(
+            Origin::signed(ESCROW_ACCOUNT),
+            REQUESTER,
+            TARGET_DEST,
+            EXECUTE_PHASE,
+            correct_wasm_code.clone(),
+            value,
+            sufficient_gas_limit,
+            Encode::encode(&17),
+        ));
+    });
+}
+
 /// Load the wasm blob from the specified path.
 ///
 /// Defaults to the target contract wasm in the current project, inferred via the crate metadata.

@@ -18,7 +18,7 @@
             (i64.const 0)	;; How much gas to devote for the execution. 0 = all.
             (i32.const 0)	;; Pointer to the buffer with value to transfer
             (i32.const 8)	;; Length of the buffer with value to transfer
-            (i32.const 92)	;; Pointer to input data buffer address
+            (i32.const 32)	;; Pointer to input data buffer address
             (i32.const 0)	;; Length of input data buffer
             (i32.const 4294967295) ;; Pointer to output data buffer address
             (i32.const 0) ;;Length of output data buffer
