@@ -34,8 +34,7 @@ use system::Trait as SystemTrait;
 
 use crate::env_def::FunctionImplProvider;
 use crate::ext::{DefaultRuntimeEnv, ExtStandards};
-// use crate::fees::{charge_gas, RuntimeToken};
-use crate::fees::RuntimeToken;
+use crate::fees::{charge_gas, RuntimeToken};
 use crate::gas::{Gas, GasMeter};
 use crate::*;
 
@@ -43,8 +42,6 @@ pub struct Runtime<'a, E: ExtStandards + 'a> {
     pub ext: &'a mut E,
     pub input_data: Option<Vec<u8>>,
     pub value: EscrowBalanceOf<E::T>,
-    pub gas_used: Gas,
-    pub gas_limit: Gas,
     pub gas_meter: &'a mut GasMeter<E::T>,
     pub requester_available_balance: u64,
     pub requester_encoded: Vec<u8>,
@@ -60,7 +57,6 @@ pub struct Runtime<'a, E: ExtStandards + 'a> {
 impl<'a, E: ExtStandards + 'a> Runtime<'a, E> {
     pub fn new(
         ext: &'a mut E,
-        gas_limit: Gas,
         gas_meter: &'a mut GasMeter<E::T>,
         memory: sp_sandbox::Memory,
         requester: &AccountIdOf<E::T>,
@@ -73,8 +69,6 @@ impl<'a, E: ExtStandards + 'a> Runtime<'a, E> {
             ext,
             input_data,
             value,
-            gas_used: 0,
-            gas_limit,
             gas_meter,
             requester_available_balance: TryInto::<u64>::try_into(
                 <E::T as EscrowTrait>::Currency::free_balance(&requester),
@@ -158,19 +152,18 @@ define_env!(Env, <E: ExtStandards>,
 
         let event_data = read_sandbox_memory(ctx, data_ptr, data_len)?;
 
-        // charge_gas(
-        //     ctx.gas_meter,
-        //     ctx.schedule,
-        //     &mut ctx.trap_reason,
-        //     RuntimeToken::DepositEvent(topics.len() as u32, data_len)
-        // )?;
+        charge_gas(
+            ctx.gas_meter,
+            &Default::default(),
+            &mut ctx.trap_reason,
+            RuntimeToken::DepositEvent(topics.len() as u32, data_len)
+        )?;
 
         ctx.ext.deposit_event(topics, event_data);
 
         Ok(())
     },
     seal_input (ctx, buf_ptr: u32, buf_len_ptr: u32) => {
-        println!("seal_input {:?}", ctx.input_data);
         if let Some(input) = ctx.input_data.take() {
             write_sandbox_output(ctx, buf_ptr, buf_len_ptr, &input, false)
         } else {
@@ -583,7 +576,7 @@ pub fn raw_escrow_call<T: EscrowTrait + VersatileWasm + SystemTrait, E: ExtStand
     requester: &T::AccountId,
     transfer_dest: &T::AccountId,
     value: EscrowBalanceOf<T>,
-    gas_limit: Gas,
+    gas_meter: &mut GasMeter<T>,
     input_data: Vec<u8>,
     mut transfers: &mut Vec<TransferEntry>,
     _deferred_storage_writes: &mut Vec<DeferredStorageWrite>,
@@ -640,11 +633,9 @@ pub fn raw_escrow_call<T: EscrowTrait + VersatileWasm + SystemTrait, E: ExtStand
         timestamp: T::Time::now(),
     };
 
-    let mut gas_meter = GasMeter::new(gas_limit);
     let mut state = Runtime::new(
         &mut ext,
-        gas_limit,
-        &mut gas_meter,
+        gas_meter,
         memory,
         requester,
         escrow_account,
@@ -668,12 +659,7 @@ pub fn raw_escrow_call<T: EscrowTrait + VersatileWasm + SystemTrait, E: ExtStand
             });
             Ok(result)
         }
-        Err(_err) => Err(ExecError {
-            error: DispatchError::Other(
-                "Failed instantiating code with sandbox instance for provided WASM code.",
-            ),
-            origin: ErrorOrigin::Caller,
-        })?,
+        Err(err) => Err(err)?,
     }
 }
 
@@ -682,6 +668,12 @@ fn read_sandbox_memory<E: ExtStandards>(
     ptr: u32,
     len: u32,
 ) -> Result<Vec<u8>, sp_sandbox::HostError> {
+    charge_gas(
+        ctx.gas_meter,
+        &Default::default(),
+        &mut ctx.trap_reason,
+        RuntimeToken::ReadMemory(len),
+    )?;
     let mut buf = vec![0u8; len as usize];
     ctx.memory
         .get(ptr, buf.as_mut_slice())
@@ -703,6 +695,12 @@ fn read_sandbox_memory_into_buf<E: ExtStandards>(
     ptr: u32,
     buf: &mut [u8],
 ) -> Result<(), sp_sandbox::HostError> {
+    charge_gas(
+        ctx.gas_meter,
+        &Default::default(),
+        &mut ctx.trap_reason,
+        RuntimeToken::ReadMemory(buf.len() as u32),
+    )?;
     ctx.memory.get(ptr, buf).map_err(|_| sp_sandbox::HostError)
 }
 
@@ -716,8 +714,14 @@ fn write_sandbox_output<E: ExtStandards>(
     if allow_skip && out_ptr == u32::max_value() {
         return Ok(());
     }
-
     let buf_len = buf.len() as u32;
+    charge_gas(
+        ctx.gas_meter,
+        &Default::default(),
+        &mut ctx.trap_reason,
+        RuntimeToken::WriteMemory(buf_len.saturating_add(4)),
+    )?;
+
     let len: u32 = read_sandbox_memory_as(ctx, out_len_ptr, 4)?;
 
     if len < buf_len {
@@ -735,7 +739,7 @@ fn write_sandbox_memory<E: ExtStandards>(
     ptr: u32,
     buf: &[u8],
 ) -> Result<(), sp_sandbox::HostError> {
-    crate::fees::charge_gas(
+    charge_gas(
         ctx.gas_meter,
         &Default::default(),
         &mut ctx.trap_reason,

@@ -7,13 +7,13 @@ use std::{fs, io::Read};
 use crate::{mock::*, CallStamp, Error, ExecutionProofs, ExecutionStamp};
 use anyhow::{Context, Result};
 use codec::Encode;
+use frame_support::dispatch::DispatchError;
 use frame_support::{assert_noop, assert_ok, storage::child, traits::Currency};
 use gateway_escrow_engine::transfers::{BalanceOf, TransferEntry};
 use sp_core::H256;
 use sp_runtime::traits::Hash;
 use sp_std::vec::Vec;
 use versatile_wasm::{gas::Gas, runtime::get_child_storage_for_current_execution};
-
 ///
 /// Multistep Call - puts_code, instantiates, calls and terminates wasm contract codes on the fly.
 /// Such a wasm code is called package.
@@ -137,11 +137,9 @@ fn commit_phase_cannot_be_triggered_without_preceeding_execution() {
 
 #[test]
 fn should_succeed_for_return_from_fn() {
-    let (phase, _, input_data, value, _) = default_multistep_call_args();
+    let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new("../fixtures/return_from_start_fn.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
-    // Make the gas limit too little
-    let gas_limit = 1000;
 
     new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
         let _ = Balances::deposit_creating(&REQUESTER, 10_000_000_000);
@@ -161,7 +159,7 @@ fn should_succeed_for_return_from_fn() {
 // Balance Specific
 
 #[test]
-fn successful_execution_phase_for_to_little_gas_as_it_depends_on_local_fee_strategy() {
+fn fails_for_insufficient_gas_limit() {
     let (phase, _, input_data, value, _) = default_multistep_call_args();
     let correct_wasm_path = Path::new("../fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
@@ -170,7 +168,7 @@ fn successful_execution_phase_for_to_little_gas_as_it_depends_on_local_fee_strat
 
     new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
         let _ = Balances::deposit_creating(&REQUESTER, 10_000_000_000);
-        assert_ok!(EscrowGateway::multistep_call(
+        let err = EscrowGateway::multistep_call(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
@@ -178,8 +176,9 @@ fn successful_execution_phase_for_to_little_gas_as_it_depends_on_local_fee_strat
             correct_wasm_code,
             value,
             gas_limit,
-            input_data
-        ));
+            input_data,
+        );
+        assert_noop!(err, DispatchError::Other("Out of gas"));
     });
 }
 
@@ -714,6 +713,35 @@ fn successfully_executes_flip_fn_from_host_runtime_module() {
             value,
             sufficient_gas_limit,
             input_data,
+        ));
+    });
+}
+
+#[test]
+fn successfully_interacts_with_storage_runtime_module_and_is_billed_correctly() {
+    let (_phase, _, _input_data, value, _gas_limit) = default_multistep_call_args();
+    let correct_wasm_path = Path::new("../fixtures/storage_runtime_calls.wasm");
+    let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
+    // Set fees
+    let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
+    let _endowment = 100_000_000;
+    let subsistence_threshold = 66;
+    let inner_contract_transfer_value = 100;
+
+    new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
+        let _ = Balances::deposit_creating(
+            &REQUESTER,
+            sufficient_gas_limit + subsistence_threshold + (value) + inner_contract_transfer_value,
+        );
+        assert_ok!(EscrowGateway::multistep_call(
+            Origin::signed(ESCROW_ACCOUNT),
+            REQUESTER,
+            TARGET_DEST,
+            EXECUTE_PHASE,
+            correct_wasm_code.clone(),
+            value,
+            sufficient_gas_limit,
+            Encode::encode(&17),
         ));
     });
 }

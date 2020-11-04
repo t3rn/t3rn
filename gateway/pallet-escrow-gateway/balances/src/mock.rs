@@ -1,20 +1,22 @@
 // Creating mock runtime here
 
 use crate::{Module, Trait};
+use codec::Decode;
 use frame_support::{
     impl_outer_dispatch, impl_outer_event, impl_outer_origin, parameter_types, traits::Get,
     weights::Weight,
 };
+
 use frame_system as system;
+use gateway_escrow_engine::{transfers::BalanceOf, EscrowTrait};
 use sp_core::H256;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, Convert, IdentityLookup},
     DispatchError, DispatchResult, Perbill,
 };
-
-use gateway_escrow_engine::{transfers::BalanceOf, DispatchRuntimeCall, EscrowTrait, ExtendedWasm};
 use sudo;
+use versatile_wasm::{DispatchRuntimeCall, VersatileWasm};
 
 use std::cell::RefCell;
 
@@ -30,7 +32,7 @@ impl_outer_event! {
     pub enum MetaEvent for Test {
         system<T>,
         pallet_balances<T>,
-        gateway_escrow_engine<T>,
+        versatile_wasm<T>,
         sudo<T>,
         escrow_gateway<T>,
     }
@@ -43,8 +45,11 @@ impl_outer_origin! {
 impl_outer_dispatch! {
     pub enum Call for Test where origin: Origin {
         sudo::Sudo,
+        weights::Weights,
     }
 }
+
+pub type WeightsCall = weights::Call<Test>;
 
 // For testing the pallet, we construct most of a mock runtime. This means
 // first constructing a configuration type (`Test`) which `impl`s each of the
@@ -70,6 +75,7 @@ parameter_types! {
 }
 
 type Flipper = flipper::Module<Test>;
+type Weights = weights::Module<Test>;
 
 pub struct ExampleDispatchRuntimeCall;
 impl DispatchRuntimeCall<Test> for ExampleDispatchRuntimeCall {
@@ -81,10 +87,25 @@ impl DispatchRuntimeCall<Test> for ExampleDispatchRuntimeCall {
         _requested: &<Test as system::Trait>::AccountId,
         _callee: &<Test as system::Trait>::AccountId,
         _value: BalanceOf<Test>,
-        _gas: u64,
+        gas_meter: &mut versatile_wasm::gas::GasMeter<Test>,
     ) -> DispatchResult {
         match (module_name, fn_name) {
             ("Flipper", "flip") => Flipper::flip(Origin::signed(*escrow_account)),
+            ("Weights", "store_value") => {
+                let decoded_input: u32 = match Decode::decode(&mut _input.clone()) {
+                    Ok(dec) => dec,
+                    Err(_) => {
+                        return Err(DispatchError::Other(
+                            "Can't decode input for Weights::store_value. Expected u32.",
+                        ));
+                    }
+                };
+                gas_meter.charge_runtime_dispatch(Box::new(Call::Weights(
+                    WeightsCall::store_value(decoded_input),
+                )))?;
+                // Alternatively use the call - call.dispatch((Origin::signed(*escrow_account))).map_err(|e| e.error)?;
+                Weights::store_value(Origin::signed(*escrow_account), decoded_input)
+            }
             (_, _) => Err(DispatchError::Other(
                 "Call to unrecognized runtime function",
             )),
@@ -117,6 +138,18 @@ impl pallet_balances::Trait for Test {
     type WeightInfo = ();
 }
 
+parameter_types! {
+    pub const TransactionByteFee: u64 = 1;
+}
+use frame_support::weights::IdentityFee;
+impl pallet_transaction_payment::Trait for Test {
+    type Currency = pallet_balances::Module<Test>;
+    type OnTransactionPayment = ();
+    type TransactionByteFee = TransactionByteFee;
+    type WeightToFee = IdentityFee<u64>;
+    type FeeMultiplierUpdate = ();
+}
+
 /** Balances -- end **/
 
 impl pallet_timestamp::Trait for Test {
@@ -131,6 +164,8 @@ impl Convert<Weight, BalanceOf<Self>> for Test {
         w
     }
 }
+
+impl weights::Trait for Test {}
 
 impl flipper::Trait for Test {
     type Event = MetaEvent;
@@ -179,9 +214,10 @@ impl EscrowTrait for Test {
     type Time = Timestamp;
 }
 
-impl ExtendedWasm for Test {
+impl VersatileWasm for Test {
     type DispatchRuntimeCall = ExampleDispatchRuntimeCall;
     type Event = MetaEvent;
+    type Call = Call;
     type Randomness = Randomness;
 }
 

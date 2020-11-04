@@ -42,6 +42,10 @@ version = '2.0.0'
 default-features = false
 version = '2.0.0'
 
+[dependencies.pallet-transaction-payment]
+default-features = false
+version = '2.0.0'
+
 [dependencies.versatile-wasm]
 default-features = false
 path = '../escrow-engine/versatile-wasm'
@@ -80,6 +84,8 @@ version = '*'
 [dev-dependencies]
 wat = { version = "1.0", default-features = false }
 flipper = {version = '2.0.0', path = "fixtures/flipper", default-features = false}
+weights = {version = '2.0.0', path = "fixtures/weights", default-features = false}
+
 [features]
 default = ['std']
 std = [
