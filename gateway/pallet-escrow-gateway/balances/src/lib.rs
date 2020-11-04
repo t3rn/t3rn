@@ -179,6 +179,10 @@ decl_error! {
 
         BalanceTransferFailed,
 
+        FeesOverflow,
+
+        FeesRefundFailed,
+
         PutCodeFailure,
 
         InitializationFailure,
@@ -219,15 +223,17 @@ pub enum ErrCodes {
 
     BalanceTransferFailed = 1,
 
-    PutCodeFailure = 2,
+    FeesRefundFailed = 2,
 
-    InitializationFailure = 3,
+    PutCodeFailure = 3,
 
-    ExecutionFailure = 4,
+    InitializationFailure = 4,
 
-    CallFailure = 5,
+    ExecutionFailure = 5,
 
-    TerminateFailure = 6,
+    CallFailure = 6,
+
+    TerminateFailure = 7,
 }
 
 pub fn stamp_failed_execution<T: Trait>(
@@ -302,13 +308,13 @@ decl_module! {
                 0 => {
                     // Charge Escrow Account from requester first before execution.
                     // Gas charge needs to be worked out. For now assume the multiplier with gas and token = 1.
-                    let total_precharge = BalanceOf::<T>::from(gas_limit as u32);
+                    let mut gas_meter = GasMeter::new(gas_limit);
+                    let total_precharge = gas_meter.limit_as_fees().map_err(|_| { Error::<T>::FeesOverflow })?;
                     ensure!(
                         <T as EscrowTrait>::Currency::free_balance(&requester).saturating_sub(total_precharge) >=
                             <T as EscrowTrait>::Currency::minimum_balance(),
                         Error::<T>::RequesterNotEnoughBalance,
                     );
-                    let mut gas_meter = GasMeter::new(gas_limit);
 
                     just_transfer::<T>(&requester, &escrow_account, total_precharge).map_err(|_| {
                         stamp_failed_execution::<T>(ErrCodes::BalanceTransferFailed as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
@@ -363,6 +369,15 @@ decl_module! {
                             Some(T::Hashing::hash(&result_attached_contract).encode())
                         },
                     };
+                    // Refund difference between gas spend and actual costs to the requester.
+                    // ToDo#1: This should also include additional cost of commit phase,
+                    //  which can already be predicted here based on the deferred writes and transfers
+                    // ToDo#2: On top of the regular fees account additional X% as the service fee.
+                    let refund_fees = gas_meter.left_as_fees().map_err(|_| { Error::<T>::FeesOverflow })?;
+                    just_transfer::<T>(&escrow_account, &escrow_account, refund_fees).map_err(|_| {
+                        stamp_failed_execution::<T>(ErrCodes::BalanceTransferFailed as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
+                        Error::<T>::BalanceTransferFailed
+                    })?;
 
                     <DeferredTransfers<T>>::insert(&requester, &target_dest.clone(), transfers);
 
@@ -389,7 +404,6 @@ decl_module! {
                         proofs: Some(execution_proofs),
                         failure: None,
                     });
-                    // ToDo: Return difference between gas spend and actual costs.
                 }
                 // Commit
                 1 => {
