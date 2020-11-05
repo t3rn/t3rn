@@ -374,7 +374,7 @@ decl_module! {
                     //  which can already be predicted here based on the deferred writes and transfers
                     // ToDo#2: On top of the regular fees account additional X% as the service fee.
                     let refund_fees = gas_meter.left_as_fees().map_err(|_| { Error::<T>::FeesOverflow })?;
-                    just_transfer::<T>(&escrow_account, &escrow_account, refund_fees).map_err(|_| {
+                    just_transfer::<T>(&escrow_account, &requester, refund_fees).map_err(|_| {
                         stamp_failed_execution::<T>(ErrCodes::BalanceTransferFailed as u8, &requester.clone(), &T::Hashing::hash(&code.clone()));
                         Error::<T>::BalanceTransferFailed
                     })?;
@@ -395,6 +395,7 @@ decl_module! {
                     debug::info!("DEBUG multistepcall -- Execution Proofs : result {:?} ", execution_proofs.result);
                     debug::info!("DEBUG multistepcall -- Execution storage : storage {:?}", execution_proofs.storage);
                     debug::info!("DEBUG multistepcall -- Execution Proofs : deferred_transfers {:?}", execution_proofs.deferred_transfers);
+                    println!("DEBUG multistepcall -- Execution Proofs : gas_spent {:?} vs left {:?}", gas_meter.gas_spent(), gas_meter.gas_left());
                     <DeferredStorageWrites<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), deferred_storage_writes);
 
                     <ExecutionStamps<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), ExecutionStamp {

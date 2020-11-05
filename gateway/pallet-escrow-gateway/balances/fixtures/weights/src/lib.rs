@@ -1,4 +1,4 @@
-// #![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(not(feature = "std"), no_std)]
 
 //! Transaction Weight Examples
 
@@ -115,7 +115,6 @@ decl_module! {
         #[weight = 10_000]
         pub fn store_value(_origin, entry: u32) -> DispatchResult {
             StoredValue::put(entry);
-            println!("STORED {:?}", entry);
             Ok(())
         }
 
@@ -177,7 +176,7 @@ decl_module! {
             }
 
             // One final storage write (hence 100)
-            StoredValue::put(part1);
+            StoredValue::put(StoredValue::get() + part1);
 
             Ok(())
         }

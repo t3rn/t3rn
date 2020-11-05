@@ -74,8 +74,8 @@ parameter_types! {
     pub const MaxValueSize: u32 = 16_384;
 }
 
-type Flipper = flipper::Module<Test>;
-type Weights = weights::Module<Test>;
+pub type Flipper = flipper::Module<Test>;
+pub type Weights = weights::Module<Test>;
 
 pub struct ExampleDispatchRuntimeCall;
 impl DispatchRuntimeCall<Test> for ExampleDispatchRuntimeCall {

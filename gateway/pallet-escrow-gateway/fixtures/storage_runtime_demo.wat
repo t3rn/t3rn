@@ -3,6 +3,7 @@
 	(import "seal0" "seal_call" (func $seal_call (param i32 i32 i64 i32 i32 i32 i32 i32 i32) (result i32)))
     (import "seal0" "seal_input" (func $seal_input (param i32 i32)))
     (import "seal0" "seal_deposit_event" (func $seal_deposit_event (param i32 i32 i32 i32)))
+    (import "seal0" "seal_get_raw_storage_by_prefix" (func $seal_get_raw_storage_by_prefix (param i32 i32 i32 i32) (result i32)))
 	(import "env" "memory" (memory 1 1))
 
     ;; [32, 64) bytes for a module name
@@ -31,14 +32,21 @@
     (data (i32.const 208) "complex_calculations")
 
     ;; [240, 248) buffer where input is copied (x: u32 , y: u32 values for complex calculation parameters)
-    (data (i32.const 240) "\06") ;; x: u32
-    (data (i32.const 244) "\07") ;; y: u32
+    (data (i32.const 240) "\09") ;; x: u32
+    (data (i32.const 244) "\08") ;; y: u32
 
     ;; [244, 248) size of the input buffer
     (data (i32.const 248) "\08")
 
+    (data (i32.const 256) "SimpleMap")
 
-    ;; Set topics for deposit_event after calls are made
+    (data (i32.const 288) "StoredValue")
+    ;; [320, 324) buffer for get_storage StoredValue output
+    ;; [324, 328) size of the output buffer for get_storage StoredValue (u32)
+    (data (i32.const 324) "\04")
+
+
+    ;; Set topics for deposit_event after cals are made
     (data (i32.const 512) "\04\83\116\111\114\97\103\101\32\45\32\115\101\116\95\118\97\108\117\101") ;; Storage - set_value as utf8 bytes
 
     (data (i32.const 576) "\04\83\116\111\114\97\103\101\32\45\32\100\111\117\98\108\101") ;; Storage - double" as utf8 bytes
@@ -70,12 +78,19 @@
             (i32.const 4294967295) ;; Pointer to output data buffer address
             (i32.const 0) ;;Length of output data buffer
         )
+        ;; Get current value of StoredValue after "store_value" call and feed into deposit_event
+        (call $seal_get_raw_storage_by_prefix
+            (i32.const 256)
+            (i32.const 280)
+            (i32.const 320)
+            (i32.const 324)
+        )
 
         (call $seal_deposit_event
             (i32.const 512) ;; The topics buffer
             (i32.const 64) ;; The topics buffer's length
-            (i32.const 0) ;; The data buffer
-            (i32.const 0) ;; The data buffer's length
+            (i32.const 320) ;; The data buffer
+            (i32.const 4) ;;  Length of data buffer
         )
 
         ;; Copy out the input given by a user to to input for the next "double" call
@@ -96,11 +111,19 @@
             (i32.const 0) ;;Length of output data buffer
         )
 
+        ;; Get current value of StoredValue after "double" call and feed into 2nd deposit_event
+        (call $seal_get_raw_storage_by_prefix
+            (i32.const 256)
+            (i32.const 280)
+            (i32.const 320)
+            (i32.const 324)
+        )
+
         (call $seal_deposit_event
             (i32.const 576) ;; The topics buffer
             (i32.const 64) ;; The topics buffer's length
-            (i32.const 0) ;; The data buffer
-            (i32.const 0) ;; The data buffer's length
+            (i32.const 320) ;; The data buffer
+            (i32.const 4) ;;  Length of data buffer
         )
 
         (call $seal_call
@@ -115,11 +138,19 @@
             (i32.const 0) ;;Length of output data buffer
         )
 
+        ;; Get current value of StoredValue after "complex_calulations" call and feed into 3rd deposit_event
+        (call $seal_get_raw_storage_by_prefix
+            (i32.const 256)
+            (i32.const 280)
+            (i32.const 320)
+            (i32.const 324)
+        )
+
         (call $seal_deposit_event
             (i32.const 640) ;; The topics buffer
             (i32.const 64) ;; The topics buffer's length
-            (i32.const 0) ;; The data buffer
-            (i32.const 0) ;; The data buffer's length
+            (i32.const 320) ;; The data buffer
+            (i32.const 4) ;;  Length of data buffer
         )
 
         (call $seal_return

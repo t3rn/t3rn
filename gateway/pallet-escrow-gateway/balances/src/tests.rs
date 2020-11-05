@@ -1,9 +1,6 @@
 // Tests to be written here
 
 // Loading .wasm files deps
-use std::path::Path;
-use std::{fs, io::Read};
-
 use crate::{mock::*, CallStamp, Error, ExecutionProofs, ExecutionStamp};
 use anyhow::{Context, Result};
 use codec::Encode;
@@ -13,6 +10,8 @@ use gateway_escrow_engine::transfers::{BalanceOf, TransferEntry};
 use sp_core::H256;
 use sp_runtime::traits::Hash;
 use sp_std::vec::Vec;
+use std::path::Path;
+use std::{fs, io::Read};
 use versatile_wasm::{gas::Gas, runtime::get_child_storage_for_current_execution};
 ///
 /// Multistep Call - puts_code, instantiates, calls and terminates wasm contract codes on the fly.
@@ -307,7 +306,7 @@ fn transfer_during_execution_phase_succeeds_and_consumes_costs_correctly_and_def
     let correct_wasm_path = Path::new("../fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     // Set fees
-    let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
+    let sufficient_gas_limit = 10_000_000 as u64; // exact gas costs
     let _endowment = 100_000_000;
     let subsistence_threshold = 66;
     let inner_contract_transfer_value = 100;
@@ -330,8 +329,8 @@ fn transfer_during_execution_phase_succeeds_and_consumes_costs_correctly_and_def
         ));
 
         // Escrow Account is now pre-charged by requester to cover:
-        // 187_500_000 gas_fees + 500_000 requested balance transfer to &target_dest + 100 requested by contract value transfer to &0
-        assert_eq!(Balances::total_balance(&ESCROW_ACCOUNT), 188_000_100);
+        // 10_000_000 gas_fees + 500_000 requested balance transfer to &target_dest + 100 requested by contract value transfer to &0
+        assert_eq!(Balances::total_balance(&ESCROW_ACCOUNT), 10_500_100);
 
         // Requester is only left with subsistence threshold
         assert_eq!(Balances::total_balance(&REQUESTER), subsistence_threshold);
@@ -367,12 +366,12 @@ fn successful_commit_phase_transfers_move_from_deferred_to_target_destinations()
     let correct_wasm_path = Path::new("../fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     // Set fees
-    let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
+    let sufficient_gas_limit = 10_000_000 as u64; // exact gas limit
     let _endowment = 100_000_000;
     let subsistence_threshold = 66;
     let inner_contract_transfer_value = 100;
 
-    new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
+    new_test_ext_builder(subsistence_threshold, ESCROW_ACCOUNT).execute_with(|| {
         let _ = Balances::deposit_creating(
             &REQUESTER,
             sufficient_gas_limit + subsistence_threshold + (value) + inner_contract_transfer_value,
@@ -395,23 +394,7 @@ fn successful_commit_phase_transfers_move_from_deferred_to_target_destinations()
         assert_eq!(
             Balances::total_balance(&ESCROW_ACCOUNT),
             sufficient_gas_limit + inner_contract_transfer_value + value
-        ); // 188000100
-
-        // assert_eq!(
-        //     EscrowGateway::deferred_transfers(&REQUESTER, &TARGET_DEST),
-        //     [
-        //         TransferEntry {
-        //             to: H256::from_low_u64_be(TARGET_DEST),
-        //             value: 500000,
-        //             data: [].to_vec(),
-        //         },
-        //         TransferEntry {
-        //             to: H256::from_low_u64_be(ZERO_ACCOUNT),
-        //             value: 100,
-        //             data: [].to_vec(),
-        //         }
-        //     ]
-        // );
+        ); // 10000100
 
         assert_ok!(EscrowGateway::multistep_call(
             Origin::signed(ESCROW_ACCOUNT),
@@ -430,7 +413,7 @@ fn successful_commit_phase_transfers_move_from_deferred_to_target_destinations()
         assert_eq!(
             Balances::total_balance(&ESCROW_ACCOUNT),
             sufficient_gas_limit
-        ); // 186999900
+        ); // 10000000
     });
 }
 
@@ -440,12 +423,12 @@ fn successful_revert_phase_removes_deferred_transfers_and_refunds_from_escrow_to
     let correct_wasm_path = Path::new("../fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     // Set fees
-    let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
+    let sufficient_gas_limit = 10_000_000 as u64; // exact gas costs
     let _endowment = 100_000_000;
     let subsistence_threshold = 66;
     let inner_contract_transfer_value = 100;
 
-    new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
+    new_test_ext_builder(subsistence_threshold, ESCROW_ACCOUNT).execute_with(|| {
         let _ = Balances::deposit_creating(
             &REQUESTER,
             sufficient_gas_limit + subsistence_threshold + (value) + inner_contract_transfer_value,
@@ -743,24 +726,54 @@ fn successfully_interacts_with_storage_runtime_module_and_is_billed_correctly() 
             sufficient_gas_limit,
             Encode::encode(&17),
         ));
+        // Contract stores input value (17)
+        assert_eq!(Weights::stored_value(), 17);
     });
 }
 
 #[test]
 fn successfully_executes_runtime_storage_demo_is_billed_correctly() {
-    let (_phase, _, _input_data, value, _gas_limit) = default_multistep_call_args();
+    let (_phase, _, _input_data, _value, _gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new("../fixtures/storage_runtime_demo.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
-    // Set fees
-    let sufficient_gas_limit = (170_000_000 + 17_500_000) * 2 as u64; // base (exact init costs) + exec_cost = 187_500_000
+    let exact_gas_cost = 359_029_940 as u64;
     let _endowment = 100_000_000;
-    let subsistence_threshold = 66;
-    let inner_contract_transfer_value = 100;
+    let subsistence_threshold = 1;
 
-    new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
+    new_test_ext_builder(subsistence_threshold, ESCROW_ACCOUNT).execute_with(|| {
+        let _ = Balances::deposit_creating(&REQUESTER, exact_gas_cost + subsistence_threshold);
+        assert_ok!(EscrowGateway::multistep_call(
+            Origin::signed(ESCROW_ACCOUNT),
+            REQUESTER,
+            TARGET_DEST,
+            EXECUTE_PHASE,
+            correct_wasm_code.clone(),
+            0 as u64,
+            exact_gas_cost,
+            Encode::encode(&17),
+        ));
+        // Demo contract stores input value (17), then calls double (34)
+        // then complex_calculations with y = 8 and x = 9 (X : (8 * 2) + Y : (9 ^ 2 + 34) = 18 + 115 = 131
+        assert_eq!(Weights::stored_value(), 131);
+
+        assert_eq!(Balances::total_balance(&REQUESTER), subsistence_threshold);
+    });
+}
+
+#[test]
+fn successfully_executes_runtime_storage_demo_and_refunds_gas_excess() {
+    let (_phase, _, _input_data, _value, _gas_limit) = default_multistep_call_args();
+    let correct_wasm_path = Path::new("../fixtures/storage_runtime_demo.wasm");
+    let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
+    let exact_gas_cost = 359_029_940 as u64;
+    let gas_excess = 100 as u64;
+    let _endowment = 100_000_000;
+    let subsistence_threshold = 1;
+
+    new_test_ext_builder(subsistence_threshold, ESCROW_ACCOUNT).execute_with(|| {
         let _ = Balances::deposit_creating(
             &REQUESTER,
-            sufficient_gas_limit + subsistence_threshold + (value) + inner_contract_transfer_value,
+            exact_gas_cost + gas_excess + subsistence_threshold,
         );
         assert_ok!(EscrowGateway::multistep_call(
             Origin::signed(ESCROW_ACCOUNT),
@@ -768,10 +781,15 @@ fn successfully_executes_runtime_storage_demo_is_billed_correctly() {
             TARGET_DEST,
             EXECUTE_PHASE,
             correct_wasm_code.clone(),
-            value,
-            sufficient_gas_limit,
+            0 as u64,
+            exact_gas_cost + gas_excess,
             Encode::encode(&17),
         ));
+
+        assert_eq!(
+            Balances::total_balance(&REQUESTER),
+            gas_excess + subsistence_threshold
+        );
     });
 }
 
