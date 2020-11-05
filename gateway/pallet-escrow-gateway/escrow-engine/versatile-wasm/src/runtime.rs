@@ -51,7 +51,6 @@ pub struct Runtime<'a, E: ExtStandards + 'a> {
     pub max_value_size: u32,
     pub max_event_topics: u32,
     pub trap_reason: Option<TrapReason>,
-    // pub transfers: &'a mut Vec<TransferEntry>,
 }
 
 impl<'a, E: ExtStandards + 'a> Runtime<'a, E> {
@@ -103,10 +102,7 @@ pub struct CallStamp {
     pub dest: Vec<u8>,
 }
 
-pub fn storage_value_final_key(
-    module_prefix: &'static [u8],
-    storage_prefix: &'static [u8],
-) -> StorageKey {
+pub fn storage_value_final_key(module_prefix: &[u8], storage_prefix: &[u8]) -> StorageKey {
     use frame_support::StorageHasher;
     let mut final_key: StorageKey = [0u8; 32];
     final_key[0..16].copy_from_slice(&Twox128::hash(module_prefix));
@@ -245,6 +241,30 @@ define_env!(Env, <E: ExtStandards>,
                 // todo: Store error.
                 Err(sp_sandbox::HostError)
             }
+        }
+    },
+    seal_get_raw_storage_by_prefix(ctx, module_prefix_ptr: u32, storage_prefix_ptr: u32, out_ptr: u32, out_len_ptr: u32) -> ReturnCode => {
+        let module_prefix = String::from_utf8(
+            read_sandbox_memory(ctx, module_prefix_ptr, 32)?
+            .into_iter()
+            .filter(|i| *i > 0 as u8)
+            .collect()
+        ).unwrap();
+
+        let storage_prefix = String::from_utf8(
+            read_sandbox_memory(ctx, storage_prefix_ptr, 32)?
+            .into_iter()
+            .filter(|i| *i > 0 as u8)
+            .collect()
+        ).unwrap();
+
+        let key: StorageKey = storage_value_final_key(module_prefix.as_bytes(), storage_prefix.as_bytes());
+
+        if let Some(value) = ctx.ext.get_raw_storage(&key) {
+            write_sandbox_output(ctx, out_ptr, out_len_ptr, &value, false)?;
+            Ok(ReturnCode::Success)
+        } else {
+            Ok(ReturnCode::KeyNotFound)
         }
     },
     seal_get_storage (ctx, key_ptr: u32, out_ptr: u32, out_len_ptr: u32) -> ReturnCode => {
@@ -482,10 +502,6 @@ define_env!(Env, <E: ExtStandards>,
         compute_hash_on_intermediate_buffer(ctx, blake2_128, input_ptr, input_len, output_ptr)
     },
 );
-
-pub trait ExtendEnv {
-    fn define_extended_env();
-}
 
 pub fn to_execution_result<E: ExtStandards>(
     exec_state: Runtime<E>,
