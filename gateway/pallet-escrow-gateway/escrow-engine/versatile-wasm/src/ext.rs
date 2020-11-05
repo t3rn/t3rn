@@ -6,12 +6,23 @@ use frame_support::weights::Weight;
 use frame_support::{storage::child, storage::child::ChildInfo, storage::unhashed};
 use gateway_escrow_engine::{
     transfers::{escrow_transfer, BalanceOf, TransferEntry},
-    DispatchRuntimeCall, EscrowTrait, ExtendedWasm,
+    EscrowTrait,
 };
 use sp_std::vec::Vec;
 use system::Trait as SystemTrait;
 
-pub struct DefaultRuntimeEnv<'a, T: EscrowTrait + SystemTrait + ExtendedWasm> {
+pub struct DefaultRuntimeEnv2<T: EscrowTrait + SystemTrait + VersatileWasm> {
+    pub escrow_account: T::AccountId,
+    pub requester: T::AccountId,
+    pub block_number: <T as SystemTrait>::BlockNumber,
+    pub timestamp: <<T as EscrowTrait>::Time as Time>::Moment,
+    pub escrow_account_trie_id: ChildInfo,
+    pub storage_trie_id: ChildInfo,
+    pub input_data: Option<Vec<u8>>,
+    pub inner_exec_transfers: Vec<TransferEntry>,
+}
+
+pub struct DefaultRuntimeEnv<'a, T: EscrowTrait + SystemTrait + VersatileWasm> {
     pub escrow_account: &'a T::AccountId,
     pub requester: &'a T::AccountId,
     pub block_number: <T as SystemTrait>::BlockNumber,
@@ -22,9 +33,83 @@ pub struct DefaultRuntimeEnv<'a, T: EscrowTrait + SystemTrait + ExtendedWasm> {
     pub inner_exec_transfers: &'a mut Vec<TransferEntry>,
 }
 
+pub trait ExtendedEnv: ExtStandards {
+    fn define_extended_env();
+}
+
+pub struct ExtendedRuntimeEnv<'a, T: EscrowTrait + SystemTrait + VersatileWasm> {
+    pub standard_env: DefaultRuntimeEnv<'a, T>,
+}
+
+impl<'a, T: EscrowTrait + SystemTrait> ExtendedEnv for ExtendedRuntimeEnv<'a, T>
+where
+    T: EscrowTrait + SystemTrait + VersatileWasm,
+{
+    fn define_extended_env() {
+        unimplemented!()
+    }
+}
+
+impl<'a, T: EscrowTrait + SystemTrait> ExtStandards for ExtendedRuntimeEnv<'a, T>
+where
+    T: EscrowTrait + SystemTrait + VersatileWasm,
+{
+    type T = T;
+
+    fn get_storage(&self, key: &StorageKey) -> Option<Vec<u8>> {
+        self.standard_env.get_storage(key)
+    }
+
+    fn set_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>) {
+        self.standard_env.set_storage(key, value)
+    }
+
+    fn get_raw_storage(&self, key: &StorageKey) -> Option<Vec<u8>> {
+        self.standard_env.get_raw_storage(key)
+    }
+
+    fn set_raw_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>) {
+        self.standard_env.set_storage(key, value)
+    }
+
+    fn get_child_storage(&self, child: ChildInfo, key: &StorageKey) -> Option<Vec<u8>> {
+        self.standard_env.get_child_storage(child, key)
+    }
+
+    fn set_child_storage(&mut self, child: ChildInfo, key: StorageKey, value: Option<Vec<u8>>) {
+        self.standard_env.set_child_storage(child, key, value)
+    }
+
+    fn transfer(
+        &mut self,
+        to: &T::AccountId,
+        value: BalanceOf<T>,
+        gas_meter: &mut GasMeter<T>,
+    ) -> Result<(), DispatchError> {
+        self.standard_env.transfer(to, value, gas_meter)
+    }
+
+    fn call(
+        &mut self,
+        module_name: &str,
+        fn_name: &str,
+        to: &T::AccountId,
+        value: BalanceOf<T>,
+        gas_meter: &mut GasMeter<T>,
+        input_data: Vec<u8>,
+    ) -> Result<(), DispatchError> {
+        self.standard_env
+            .call(module_name, fn_name, to, value, gas_meter, input_data)
+    }
+
+    fn deposit_event(&mut self, topics: Vec<TopicOf<Self::T>>, data: Vec<u8>) {
+        self.standard_env.deposit_event(topics, data)
+    }
+}
+
 impl<'a, T: EscrowTrait + SystemTrait> ExtStandards for DefaultRuntimeEnv<'a, T>
 where
-    T: EscrowTrait + SystemTrait + ExtendedWasm,
+    T: EscrowTrait + SystemTrait + VersatileWasm,
 {
     type T = T;
 
@@ -90,27 +175,111 @@ where
             self.requester,
             to,
             value,
-            gas_meter.gas_spent(),
+            gas_meter,
         )
     }
 
     fn deposit_event(&mut self, topics: Vec<TopicOf<Self::T>>, data: Vec<u8>) {
         <system::Module<T>>::deposit_event_indexed(
             &*topics,
-            <Self::T as ExtendedWasm>::Event::from(
-                gateway_escrow_engine::RawEvent::VersatileVMExecution(
-                    self.escrow_account.clone(),
-                    self.requester.clone(),
-                    data,
-                ),
-            )
+            <Self::T as VersatileWasm>::Event::from(crate::RawEvent::VersatileVMExecution(
+                self.escrow_account.clone(),
+                self.requester.clone(),
+                data,
+            ))
+            .into(),
+        )
+    }
+}
+
+impl<'a, T: EscrowTrait + SystemTrait> ExtStandards for DefaultRuntimeEnv2<T>
+where
+    T: EscrowTrait + SystemTrait + VersatileWasm,
+{
+    type T = T;
+
+    fn get_storage(&self, key: &StorageKey) -> Option<Vec<u8>> {
+        self.get_child_storage(self.storage_trie_id.clone(), key)
+    }
+
+    fn set_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>) {
+        self.set_child_storage(self.storage_trie_id.clone(), key, value)
+    }
+
+    fn get_raw_storage(&self, key: &StorageKey) -> Option<Vec<u8>> {
+        unhashed::get_raw(key)
+    }
+
+    fn set_raw_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>) {
+        match value {
+            Some(new_value) => unhashed::put_raw(&key, &new_value[..]),
+            None => unhashed::kill(&key),
+        }
+    }
+
+    fn get_child_storage(&self, child: ChildInfo, key: &StorageKey) -> Option<Vec<u8>> {
+        child::get_raw(&child, key)
+    }
+
+    fn set_child_storage(&mut self, child: ChildInfo, key: StorageKey, value: Option<Vec<u8>>) {
+        match value {
+            Some(new_value) => child::put_raw(&child, &key, &new_value[..]),
+            None => child::kill(&child, &key),
+        }
+    }
+
+    fn transfer(
+        &mut self,
+        to: &T::AccountId,
+        value: BalanceOf<T>,
+        _gas_meter: &mut GasMeter<T>,
+    ) -> Result<(), DispatchError> {
+        escrow_transfer::<T>(
+            &self.escrow_account.clone(),
+            &self.requester.clone(),
+            to,
+            value,
+            &mut vec![],
+            // self.inner_exec_transfers,
+        )
+    }
+
+    fn call(
+        &mut self,
+        module_name: &str,
+        fn_name: &str,
+        to: &T::AccountId,
+        value: BalanceOf<T>,
+        gas_meter: &mut GasMeter<T>,
+        input_data: Vec<u8>,
+    ) -> Result<(), DispatchError> {
+        T::DispatchRuntimeCall::dispatch_runtime_call(
+            module_name,
+            fn_name,
+            &input_data[..],
+            &self.escrow_account,
+            &self.requester,
+            to,
+            value,
+            gas_meter,
+        )
+    }
+
+    fn deposit_event(&mut self, topics: Vec<TopicOf<Self::T>>, data: Vec<u8>) {
+        <system::Module<T>>::deposit_event_indexed(
+            &*topics,
+            <Self::T as VersatileWasm>::Event::from(crate::RawEvent::VersatileVMExecution(
+                self.escrow_account.clone(),
+                self.requester.clone(),
+                data,
+            ))
             .into(),
         )
     }
 }
 
 pub trait ExtStandards {
-    type T: EscrowTrait + SystemTrait + ExtendedWasm;
+    type T: EscrowTrait + SystemTrait + VersatileWasm;
     /// <h2>Storage</h2>
     ///
     /// Returns the storage entry of the executing account by the given `key`.
@@ -189,7 +358,7 @@ pub trait ExtStandards {
 
     /// Returns a random number for the current block with the given subject.
     fn random(&self, subject: &[u8]) -> SeedOf<Self::T> {
-        <Self::T as ExtendedWasm>::Randomness::random(subject)
+        <Self::T as VersatileWasm>::Randomness::random(subject)
     }
 
     /// <h2>Config</h2>

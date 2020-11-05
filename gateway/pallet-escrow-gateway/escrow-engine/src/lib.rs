@@ -1,12 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-use crate::transfers::BalanceOf;
 use codec::{Decode, Encode};
-use frame_support::{
-    decl_event,
-    dispatch::DispatchResult,
-    traits::{Currency, Randomness, Time},
-};
-use sp_std::vec::Vec;
+use frame_support::traits::{Currency, Time};
 
 pub mod proofs;
 pub mod transfers;
@@ -42,35 +36,4 @@ pub enum ErrCodes {
 pub trait EscrowTrait: system::Trait + sudo::Trait {
     type Currency: Currency<Self::AccountId>;
     type Time: Time;
-}
-
-/// Dispatch calls to runtime requested during execution of WASM Binaries.
-pub trait DispatchRuntimeCall<T: EscrowTrait> {
-    fn dispatch_runtime_call(
-        module_name: &str,
-        fn_name: &str,
-        input: &[u8],
-        escrow_account: &<T as system::Trait>::AccountId,
-        requested: &<T as system::Trait>::AccountId,
-        callee: &<T as system::Trait>::AccountId,
-        value: BalanceOf<T>,
-        gas: u64,
-    ) -> DispatchResult;
-}
-
-decl_event! {
-    pub enum Event<T>
-    where
-        <T as system::Trait>::AccountId,
-    {
-        /// An event deposited upon execution of a contract from the account.
-        /// \[escrow_account, requester_account, data\]
-        VersatileVMExecution(AccountId, AccountId, Vec<u8>),
-    }
-}
-
-pub trait ExtendedWasm: EscrowTrait {
-    type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
-    type Randomness: Randomness<Self::Hash>;
-    type DispatchRuntimeCall: DispatchRuntimeCall<Self>;
 }

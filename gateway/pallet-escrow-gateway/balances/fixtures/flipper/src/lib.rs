@@ -1,4 +1,4 @@
-// #![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(not(feature = "std"), no_std)]
 use frame_support::{decl_module, decl_storage, dispatch::DispatchResult};
 use frame_system::{self as system, ensure_signed, Event};
 
@@ -7,7 +7,7 @@ pub trait Trait: system::Trait {
 }
 
 decl_storage! {
-    trait Store for Module<T: Trait> as Token {
+    trait Store for Module<T: Trait> as FlipperStorage {
         pub Value get(fn get_value): bool = false;
     }
 }

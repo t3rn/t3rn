@@ -24,8 +24,9 @@ use frame_support::{
 };
 use gateway_escrow_engine::{
     transfers::{escrow_transfer, BalanceOf as EscrowBalanceOf, TransferEntry},
-    EscrowTrait, ExtendedWasm,
+    EscrowTrait,
 };
+use sp_io::hashing::{blake2_128, blake2_256, keccak_256, sha2_256};
 use sp_runtime::traits::{Hash, Zero};
 use sp_sandbox;
 use sp_std::{convert::TryInto, prelude::*};
@@ -33,6 +34,7 @@ use system::Trait as SystemTrait;
 
 use crate::env_def::FunctionImplProvider;
 use crate::ext::{DefaultRuntimeEnv, ExtStandards};
+use crate::fees::{charge_gas, RuntimeToken};
 use crate::gas::{Gas, GasMeter};
 use crate::*;
 
@@ -40,8 +42,7 @@ pub struct Runtime<'a, E: ExtStandards + 'a> {
     pub ext: &'a mut E,
     pub input_data: Option<Vec<u8>>,
     pub value: EscrowBalanceOf<E::T>,
-    pub gas_used: Gas,
-    pub gas_limit: Gas,
+    pub gas_meter: &'a mut GasMeter<E::T>,
     pub requester_available_balance: u64,
     pub requester_encoded: Vec<u8>,
     pub escrow_account_encoded: Vec<u8>,
@@ -50,13 +51,12 @@ pub struct Runtime<'a, E: ExtStandards + 'a> {
     pub max_value_size: u32,
     pub max_event_topics: u32,
     pub trap_reason: Option<TrapReason>,
-    // pub transfers: &'a mut Vec<TransferEntry>,
 }
 
 impl<'a, E: ExtStandards + 'a> Runtime<'a, E> {
     pub fn new(
         ext: &'a mut E,
-        gas_limit: Gas,
+        gas_meter: &'a mut GasMeter<E::T>,
         memory: sp_sandbox::Memory,
         requester: &AccountIdOf<E::T>,
         escrow_account: &AccountIdOf<E::T>,
@@ -68,8 +68,7 @@ impl<'a, E: ExtStandards + 'a> Runtime<'a, E> {
             ext,
             input_data,
             value,
-            gas_used: 0,
-            gas_limit,
+            gas_meter,
             requester_available_balance: TryInto::<u64>::try_into(
                 <E::T as EscrowTrait>::Currency::free_balance(&requester),
             )
@@ -80,7 +79,7 @@ impl<'a, E: ExtStandards + 'a> Runtime<'a, E> {
             escrow_account_trie_id: escrow_account_trie_id.clone(),
             memory,
             max_value_size: u32::MAX,
-            max_event_topics: 16,
+            max_event_topics: prepare::MAX_SUBJECT_LEN,
             trap_reason: None,
         }
     }
@@ -103,10 +102,7 @@ pub struct CallStamp {
     pub dest: Vec<u8>,
 }
 
-pub fn storage_value_final_key(
-    module_prefix: &'static [u8],
-    storage_prefix: &'static [u8],
-) -> StorageKey {
+pub fn storage_value_final_key(module_prefix: &[u8], storage_prefix: &[u8]) -> StorageKey {
     use frame_support::StorageHasher;
     let mut final_key: StorageKey = [0u8; 32];
     final_key[0..16].copy_from_slice(&Twox128::hash(module_prefix));
@@ -152,12 +148,12 @@ define_env!(Env, <E: ExtStandards>,
 
         let event_data = read_sandbox_memory(ctx, data_ptr, data_len)?;
 
-        // charge_gas(
-        //     ctx.gas_meter,
-        //     ctx.schedule,
-        //     &mut ctx.trap_reason,
-        //     RuntimeToken::DepositEvent(topics.len() as u32, data_len)
-        // )?;
+        charge_gas(
+            ctx.gas_meter,
+            &Default::default(),
+            &mut ctx.trap_reason,
+            RuntimeToken::DepositEvent(topics.len() as u32, data_len)
+        )?;
 
         ctx.ext.deposit_event(topics, event_data);
 
@@ -185,7 +181,7 @@ define_env!(Env, <E: ExtStandards>,
         ctx,
         callee_ptr: u32,
         callee_len: u32,
-        gas: u64,
+        _gas: u64,
         value_ptr: u32,
         value_len: u32,
         input_data_ptr: u32,
@@ -193,16 +189,16 @@ define_env!(Env, <E: ExtStandards>,
         output_ptr: u32,
         output_len_ptr: u32
     ) -> ReturnCode => {
-        // [32, 64> bytes of input reserved for a module name.
+        // [0, 32> bytes of input reserved for a module name.
         let module_name = String::from_utf8(
-            read_sandbox_memory(ctx, 32, 32)?
+            read_sandbox_memory(ctx, input_data_ptr, 32)?
             .into_iter()
             .filter(|i| *i > 0 as u8)
             .collect()
         ).unwrap();
-        // [64, 96> bytes of input reserved for a module name. 64 bytes reserved in total.
+        // [32, 64> bytes of input reserved for a module name. 64 bytes reserved in total in input.
         let fn_name = String::from_utf8(
-            read_sandbox_memory(ctx, 64, 32)?
+            read_sandbox_memory(ctx, input_data_ptr + 32, 32)?
             .into_iter()
             .filter(|i| *i > 0 as u8)
             .collect()
@@ -212,17 +208,33 @@ define_env!(Env, <E: ExtStandards>,
         let input = read_sandbox_memory(ctx, input_data_ptr + 64, input_data_len)?;
         let callee: <E::T as SystemTrait>::AccountId = read_sandbox_memory_as(ctx, callee_ptr, callee_len)?;
         let value: EscrowBalanceOf::<E::T> = read_sandbox_memory_as(ctx, value_ptr, value_len)?;
-        let mut adhoc_gas_meter = GasMeter::<E::T>::new(gas);
         match ctx.ext.call(
             &module_name,
             &fn_name,
             &callee,
             value,
-            &mut adhoc_gas_meter,
+            ctx.gas_meter,
             input,
         ) {
             Ok(_) => {
                 write_sandbox_output(ctx, output_ptr, output_len_ptr, &[], true)?;
+                Ok(ReturnCode::Success)
+            },
+            Err(err) => {
+                ctx.trap_reason = Some(TrapReason::SupervisorError(err.into()));
+                Err(sp_sandbox::HostError)
+            }
+        }
+    },
+    seal_transfer (ctx, account_ptr: u32, account_len: u32, value_ptr: u32, value_len: u32) -> ReturnCode => {
+        let callee: <E::T as SystemTrait>::AccountId = read_sandbox_memory_as(ctx, account_ptr, account_len)?;
+        let value: EscrowBalanceOf::<E::T> = read_sandbox_memory_as(ctx, value_ptr, value_len)?;
+        match ctx.ext.transfer(
+            &callee,
+            value,
+            ctx.gas_meter,
+        ) {
+            Ok(_) => {
                 Ok(ReturnCode::Success)
             },
             Err(_err) => {
@@ -231,23 +243,28 @@ define_env!(Env, <E: ExtStandards>,
             }
         }
     },
-    seal_transfer (ctx, account_ptr: u32, account_len: u32, value_ptr: u32, value_len: u32) -> ReturnCode => {
-        let callee: <E::T as SystemTrait>::AccountId = read_sandbox_memory_as(ctx, account_ptr, account_len)?;
-        let value: EscrowBalanceOf::<E::T> = read_sandbox_memory_as(ctx, value_ptr, value_len)?;
-        let mut adhoc_gas_meter = GasMeter::<E::T>::new(ctx.gas_limit);
+    seal_get_raw_storage_by_prefix(ctx, module_prefix_ptr: u32, storage_prefix_ptr: u32, out_ptr: u32, out_len_ptr: u32) -> ReturnCode => {
+        let module_prefix = String::from_utf8(
+            read_sandbox_memory(ctx, module_prefix_ptr, 32)?
+            .into_iter()
+            .filter(|i| *i > 0 as u8)
+            .collect()
+        ).unwrap();
 
-        match ctx.ext.transfer(
-            &callee,
-            value,
-            &mut adhoc_gas_meter,
-        ) {
-            Ok(_) => {
-                Ok(ReturnCode::Success)
-            },
-            Err(_err) => {
-                // todo: Store error.
-                Err(sp_sandbox::HostError)
-            }
+        let storage_prefix = String::from_utf8(
+            read_sandbox_memory(ctx, storage_prefix_ptr, 32)?
+            .into_iter()
+            .filter(|i| *i > 0 as u8)
+            .collect()
+        ).unwrap();
+
+        let key: StorageKey = storage_value_final_key(module_prefix.as_bytes(), storage_prefix.as_bytes());
+
+        if let Some(value) = ctx.ext.get_raw_storage(&key) {
+            write_sandbox_output(ctx, out_ptr, out_len_ptr, &value, false)?;
+            Ok(ReturnCode::Success)
+        } else {
+            Ok(ReturnCode::KeyNotFound)
         }
     },
     seal_get_storage (ctx, key_ptr: u32, out_ptr: u32, out_len_ptr: u32) -> ReturnCode => {
@@ -347,6 +364,143 @@ define_env!(Env, <E: ExtStandards>,
             ctx, out_ptr, out_len_ptr, &ctx.value.encode(), false
         )
     },
+    seal_random(ctx, subject_ptr: u32, subject_len: u32, out_ptr: u32, out_len_ptr: u32) => {
+        // The length of a subject can't exceed `max_subject_len`.
+        if subject_len > crate::prepare::MAX_SUBJECT_LEN {
+            return Err(sp_sandbox::HostError);
+        }
+        let subject_buf = read_sandbox_memory(ctx, subject_ptr, subject_len)?;
+        write_sandbox_output(
+            ctx, out_ptr, out_len_ptr, &ctx.ext.random(&subject_buf).encode(), false
+        )
+    },
+
+    // Load the latest block timestamp into the supplied buffer
+    //
+    // The value is stored to linear memory at the address pointed to by `out_ptr`.
+    // `out_len_ptr` must point to a u32 value that describes the available space at
+    // `out_ptr`. This call overwrites it with the size of the value. If the available
+    // space at `out_ptr` is less than the size of the value a trap is triggered.
+    seal_now(ctx, out_ptr: u32, out_len_ptr: u32) => {
+        write_sandbox_output(ctx, out_ptr, out_len_ptr, &ctx.ext.now().encode(), false)
+    },
+
+    // Prints utf8 encoded string from the data buffer.
+    // Only available on `--dev` chains.
+    // This function may be removed at any time, superseded by a more general contract debugging feature.
+    seal_println(ctx, str_ptr: u32, str_len: u32) => {
+        let data = read_sandbox_memory(ctx, str_ptr, str_len)?;
+        if let Ok(utf8) = core::str::from_utf8(&data) {
+            sp_runtime::print(utf8);
+        }
+        Ok(())
+    },
+
+    // Stores the current block number of the current contract into the supplied buffer.
+    //
+    // The value is stored to linear memory at the address pointed to by `out_ptr`.
+    // `out_len_ptr` must point to a u32 value that describes the available space at
+    // `out_ptr`. This call overwrites it with the size of the value. If the available
+    // space at `out_ptr` is less than the size of the value a trap is triggered.
+    seal_block_number(ctx, out_ptr: u32, out_len_ptr: u32) => {
+        write_sandbox_output(ctx, out_ptr, out_len_ptr, &ctx.ext.block_number().encode(), false)
+    },
+
+    // Computes the SHA2 256-bit hash on the given input buffer.
+    //
+    // Returns the result directly into the given output buffer.
+    //
+    // # Note
+    //
+    // - The `input` and `output` buffer may overlap.
+    // - The output buffer is expected to hold at least 32 bytes (256 bits).
+    // - It is the callers responsibility to provide an output buffer that
+    //   is large enough to hold the expected amount of bytes returned by the
+    //   chosen hash function.
+    //
+    // # Parameters
+    //
+    // - `input_ptr`: the pointer into the linear memory where the input
+    //                data is placed.
+    // - `input_len`: the length of the input data in bytes.
+    // - `output_ptr`: the pointer into the linear memory where the output
+    //                 data is placed. The function will write the result
+    //                 directly into this buffer.
+    seal_hash_sha2_256(ctx, input_ptr: u32, input_len: u32, output_ptr: u32) => {
+        compute_hash_on_intermediate_buffer(ctx, sha2_256, input_ptr, input_len, output_ptr)
+    },
+
+    // Computes the KECCAK 256-bit hash on the given input buffer.
+    //
+    // Returns the result directly into the given output buffer.
+    //
+    // # Note
+    //
+    // - The `input` and `output` buffer may overlap.
+    // - The output buffer is expected to hold at least 32 bytes (256 bits).
+    // - It is the callers responsibility to provide an output buffer that
+    //   is large enough to hold the expected amount of bytes returned by the
+    //   chosen hash function.
+    //
+    // # Parameters
+    //
+    // - `input_ptr`: the pointer into the linear memory where the input
+    //                data is placed.
+    // - `input_len`: the length of the input data in bytes.
+    // - `output_ptr`: the pointer into the linear memory where the output
+    //                 data is placed. The function will write the result
+    //                 directly into this buffer.
+    seal_hash_keccak_256(ctx, input_ptr: u32, input_len: u32, output_ptr: u32) => {
+        compute_hash_on_intermediate_buffer(ctx, keccak_256, input_ptr, input_len, output_ptr)
+    },
+
+    // Computes the BLAKE2 256-bit hash on the given input buffer.
+    //
+    // Returns the result directly into the given output buffer.
+    //
+    // # Note
+    //
+    // - The `input` and `output` buffer may overlap.
+    // - The output buffer is expected to hold at least 32 bytes (256 bits).
+    // - It is the callers responsibility to provide an output buffer that
+    //   is large enough to hold the expected amount of bytes returned by the
+    //   chosen hash function.
+    //
+    // # Parameters
+    //
+    // - `input_ptr`: the pointer into the linear memory where the input
+    //                data is placed.
+    // - `input_len`: the length of the input data in bytes.
+    // - `output_ptr`: the pointer into the linear memory where the output
+    //                 data is placed. The function will write the result
+    //                 directly into this buffer.
+    seal_hash_blake2_256(ctx, input_ptr: u32, input_len: u32, output_ptr: u32) => {
+        compute_hash_on_intermediate_buffer(ctx, blake2_256, input_ptr, input_len, output_ptr)
+    },
+
+    // Computes the BLAKE2 128-bit hash on the given input buffer.
+    //
+    // Returns the result directly into the given output buffer.
+    //
+    // # Note
+    //
+    // - The `input` and `output` buffer may overlap.
+    // - The output buffer is expected to hold at least 16 bytes (128 bits).
+    // - It is the callers responsibility to provide an output buffer that
+    //   is large enough to hold the expected amount of bytes returned by the
+    //   chosen hash function.
+    //
+    // # Parameters
+    //
+    // - `input_ptr`: the pointer into the linear memory where the input
+    //                data is placed.
+    // - `input_len`: the length of the input data in bytes.
+    // - `output_ptr`: the pointer into the linear memory where the output
+    //                 data is placed. The function will write the result
+    //                 directly into this buffer.
+    seal_hash_blake2_128(ctx, input_ptr: u32, input_len: u32, output_ptr: u32) => {
+        compute_hash_on_intermediate_buffer(ctx, blake2_128, input_ptr, input_len, output_ptr)
+    },
 );
 
 pub fn to_execution_result<E: ExtStandards>(
@@ -400,12 +554,45 @@ pub fn to_execution_result<E: ExtStandards>(
     }
 }
 
-pub fn raw_escrow_call<T: EscrowTrait + ExtendedWasm + SystemTrait, E: ExtStandards<T = T>>(
+/// Computes the given hash function on the supplied input.
+///
+/// Reads from the sandboxed input buffer into an intermediate buffer.
+/// Returns the result directly to the output buffer of the sandboxed memory.
+///
+/// It is the callers responsibility to provide an output buffer that
+/// is large enough to hold the expected amount of bytes returned by the
+/// chosen hash function.
+///
+/// # Note
+///
+/// The `input` and `output` buffers may overlap.
+fn compute_hash_on_intermediate_buffer<E, F, R>(
+    ctx: &mut Runtime<E>,
+    hash_fn: F,
+    input_ptr: u32,
+    input_len: u32,
+    output_ptr: u32,
+) -> Result<(), sp_sandbox::HostError>
+where
+    E: ExtStandards,
+    F: FnOnce(&[u8]) -> R,
+    R: AsRef<[u8]>,
+{
+    // Copy input into supervisor memory.
+    let input = read_sandbox_memory(ctx, input_ptr, input_len)?;
+    // Compute the hash on the input buffer using the given hash function.
+    let hash = hash_fn(&input);
+    // Write the resulting hash back into the sandboxed output buffer.
+    write_sandbox_memory(ctx, output_ptr, hash.as_ref())?;
+    Ok(())
+}
+
+pub fn raw_escrow_call<T: EscrowTrait + VersatileWasm + SystemTrait, E: ExtStandards<T = T>>(
     escrow_account: &T::AccountId,
     requester: &T::AccountId,
     transfer_dest: &T::AccountId,
     value: EscrowBalanceOf<T>,
-    gas_limit: Gas,
+    gas_meter: &mut GasMeter<T>,
     input_data: Vec<u8>,
     mut transfers: &mut Vec<TransferEntry>,
     _deferred_storage_writes: &mut Vec<DeferredStorageWrite>,
@@ -464,7 +651,7 @@ pub fn raw_escrow_call<T: EscrowTrait + ExtendedWasm + SystemTrait, E: ExtStanda
 
     let mut state = Runtime::new(
         &mut ext,
-        gas_limit,
+        gas_meter,
         memory,
         requester,
         escrow_account,
@@ -488,12 +675,7 @@ pub fn raw_escrow_call<T: EscrowTrait + ExtendedWasm + SystemTrait, E: ExtStanda
             });
             Ok(result)
         }
-        Err(_err) => Err(ExecError {
-            error: DispatchError::Other(
-                "Failed instantiating code with sandbox instance for provided WASM code.",
-            ),
-            origin: ErrorOrigin::Caller,
-        })?,
+        Err(err) => Err(err)?,
     }
 }
 
@@ -502,6 +684,12 @@ fn read_sandbox_memory<E: ExtStandards>(
     ptr: u32,
     len: u32,
 ) -> Result<Vec<u8>, sp_sandbox::HostError> {
+    charge_gas(
+        ctx.gas_meter,
+        &Default::default(),
+        &mut ctx.trap_reason,
+        RuntimeToken::ReadMemory(len),
+    )?;
     let mut buf = vec![0u8; len as usize];
     ctx.memory
         .get(ptr, buf.as_mut_slice())
@@ -523,6 +711,12 @@ fn read_sandbox_memory_into_buf<E: ExtStandards>(
     ptr: u32,
     buf: &mut [u8],
 ) -> Result<(), sp_sandbox::HostError> {
+    charge_gas(
+        ctx.gas_meter,
+        &Default::default(),
+        &mut ctx.trap_reason,
+        RuntimeToken::ReadMemory(buf.len() as u32),
+    )?;
     ctx.memory.get(ptr, buf).map_err(|_| sp_sandbox::HostError)
 }
 
@@ -536,8 +730,14 @@ fn write_sandbox_output<E: ExtStandards>(
     if allow_skip && out_ptr == u32::max_value() {
         return Ok(());
     }
-
     let buf_len = buf.len() as u32;
+    charge_gas(
+        ctx.gas_meter,
+        &Default::default(),
+        &mut ctx.trap_reason,
+        RuntimeToken::WriteMemory(buf_len.saturating_add(4)),
+    )?;
+
     let len: u32 = read_sandbox_memory_as(ctx, out_len_ptr, 4)?;
 
     if len < buf_len {
@@ -546,6 +746,23 @@ fn write_sandbox_output<E: ExtStandards>(
 
     ctx.memory.set(out_ptr, buf)?;
     ctx.memory.set(out_len_ptr, &buf_len.encode())?;
+
+    Ok(())
+}
+
+fn write_sandbox_memory<E: ExtStandards>(
+    ctx: &mut Runtime<E>,
+    ptr: u32,
+    buf: &[u8],
+) -> Result<(), sp_sandbox::HostError> {
+    charge_gas(
+        ctx.gas_meter,
+        &Default::default(),
+        &mut ctx.trap_reason,
+        RuntimeToken::WriteMemory(buf.len() as u32),
+    )?;
+
+    ctx.memory.set(ptr, buf)?;
 
     Ok(())
 }

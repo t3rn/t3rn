@@ -3,16 +3,20 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-    dispatch::DispatchError,
-    traits::{Currency, Time},
+    decl_event,
+    dispatch::{DispatchError, DispatchResult},
+    traits::{Currency, Randomness, Time, UnfilteredDispatchable},
+    weights::GetDispatchInfo,
+    Parameter,
 };
-use gateway_escrow_engine::EscrowTrait;
+use gateway_escrow_engine::{transfers::BalanceOf, EscrowTrait};
 use parity_wasm::elements::ValueType;
 use sp_sandbox;
 use sp_std::prelude::*;
 #[macro_use]
 pub mod env_def;
 pub mod ext;
+pub mod fees;
 pub mod gas;
 pub mod prepare;
 pub mod runtime;
@@ -25,6 +29,38 @@ pub type AccountIdOf<T> = <T as SystemTrait>::AccountId;
 pub type SeedOf<T> = <T as SystemTrait>::Hash;
 pub type TopicOf<T> = <T as SystemTrait>::Hash;
 pub type BlockNumberOf<T> = <T as SystemTrait>::BlockNumber;
+
+/// Dispatch calls to runtime requested during execution of WASM Binaries.
+pub trait DispatchRuntimeCall<T: VersatileWasm> {
+    fn dispatch_runtime_call(
+        module_name: &str,
+        fn_name: &str,
+        input: &[u8],
+        escrow_account: &<T as system::Trait>::AccountId,
+        requested: &<T as system::Trait>::AccountId,
+        callee: &<T as system::Trait>::AccountId,
+        value: BalanceOf<T>,
+        gas: &mut crate::gas::GasMeter<T>,
+    ) -> DispatchResult;
+}
+
+decl_event! {
+    pub enum Event<T>
+    where
+        <T as system::Trait>::AccountId,
+    {
+        /// An event deposited upon execution of a contract from the account.
+        /// \[escrow_account, requester_account, data\]
+        VersatileVMExecution(AccountId, AccountId, Vec<u8>),
+    }
+}
+
+pub trait VersatileWasm: EscrowTrait + transaction_payment::Trait {
+    type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+    type Call: Parameter + UnfilteredDispatchable<Origin = Self::Origin> + GetDispatchInfo;
+    type Randomness: Randomness<Self::Hash>;
+    type DispatchRuntimeCall: DispatchRuntimeCall<Self>;
+}
 
 /// A prepared wasm module ready for execution.
 #[derive(Clone, Encode, Decode)]
