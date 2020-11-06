@@ -26,7 +26,7 @@ use sp_version::RuntimeVersion;
 
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
-    construct_runtime, parameter_types,
+    construct_runtime, impl_outer_event, parameter_types,
     traits::{KeyOwnerProofSystem, Randomness},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -41,8 +41,10 @@ pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
 pub use contracts::Schedule as ContractsSchedule;
-pub use escrow_gateway;
-pub use escrow_gateway_balances;
+pub use contracts_gateway;
+pub use gateway_escrow_engine;
+pub use runtime_gateway;
+pub use versatile_wasm;
 
 /// Import the template pallet.
 pub use pallet_template;
@@ -297,7 +299,7 @@ impl contracts::Trait for Runtime {
     type WeightPrice = pallet_transaction_payment::Module<Self>;
 }
 
-impl escrow_gateway::EscrowTrait for Runtime {
+impl gateway_escrow_engine::EscrowTrait for Runtime {
     type Currency = Balances;
     type Time = Timestamp;
 }
@@ -306,12 +308,19 @@ parameter_types! {
     pub const WhenStateChangedForceTry: bool = false;
 }
 
-impl escrow_gateway::Trait for Runtime {
+impl contracts_gateway::Trait for Runtime {
     type Event = Event;
     type WhenStateChangedForceTry = WhenStateChangedForceTry;
 }
 
-impl escrow_gateway_balances::Trait for Runtime {
+impl versatile_wasm::VersatileWasm for Runtime {
+    type DispatchRuntimeCall = versatile_wasm::DisabledDispatchRuntimeCall;
+    type Event = Event;
+    type Call = Call;
+    type Randomness = RandomnessCollectiveFlip;
+}
+
+impl runtime_gateway::Trait for Runtime {
     type Event = Event;
 }
 
@@ -332,8 +341,10 @@ construct_runtime!(
         Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
         // Include the custom logic from the template pallet in the runtime.
         Contracts: contracts::{Module, Call, Config, Storage, Event<T>},
-        EscrowGateway: escrow_gateway::{Module, Call, Storage, Event<T>},
-        EscrowGatewayBalances: escrow_gateway_balances::{Module, Call, Storage, Event<T>},
+        ContractsGateway: contracts_gateway::{Module, Call, Storage, Event<T>},
+        RuntimeGateway: runtime_gateway::{Module, Call, Storage, Event<T>},
+        VersatileWasm: versatile_wasm::{Module, Call, Event<T>},
+
     }
 );
 
