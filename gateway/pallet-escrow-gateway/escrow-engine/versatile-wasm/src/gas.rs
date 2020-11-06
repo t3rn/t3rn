@@ -24,6 +24,7 @@ use frame_support::dispatch::{
 use frame_support::weights::WeightToFeePolynomial;
 use sp_runtime::traits::Zero;
 use sp_runtime::{DispatchError, DispatchResult};
+use sp_std::boxed::Box;
 use sp_std::marker::PhantomData;
 #[cfg(test)]
 use std::{any::Any, fmt::Debug};
@@ -109,14 +110,14 @@ impl<T: Trait> GasMeter<T> {
     pub fn limit_as_fees(&mut self) -> Result<BalanceOf<T>, &'static str> {
         let fee = <T as transaction_payment::Trait>::WeightToFee::calc(&self.gas_limit);
         Ok(BalanceOf::<T>::from(
-            std::convert::TryInto::<u32>::try_into(fee).map_err(|_e| "Fee Overflow")?,
+            sp_std::convert::TryInto::<u32>::try_into(fee).map_err(|_e| "Fee Overflow")?,
         ))
     }
 
     pub fn left_as_fees(&mut self) -> Result<BalanceOf<T>, &'static str> {
         let fee = <T as transaction_payment::Trait>::WeightToFee::calc(&self.gas_left);
         Ok(BalanceOf::<T>::from(
-            std::convert::TryInto::<u32>::try_into(fee).map_err(|_e| "Fee Overflow")?,
+            sp_std::convert::TryInto::<u32>::try_into(fee).map_err(|_e| "Fee Overflow")?,
         ))
     }
 
@@ -125,7 +126,7 @@ impl<T: Trait> GasMeter<T> {
         let fee = <T as transaction_payment::Trait>::WeightToFee::calc(&weight);
         match self.charge(
             &Default::default(),
-            RuntimeToken::Explicit(std::convert::TryInto::<u32>::try_into(fee).ok().unwrap()),
+            RuntimeToken::Explicit(sp_std::convert::TryInto::<u32>::try_into(fee).ok().unwrap()),
         ) {
             GasMeterResult::Proceed => Ok(()),
             GasMeterResult::OutOfGas => Err(DispatchError::Other("Out of gas")),

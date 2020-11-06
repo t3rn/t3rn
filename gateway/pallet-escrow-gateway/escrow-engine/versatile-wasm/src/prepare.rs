@@ -321,10 +321,6 @@ impl ContractModule {
             if import.field().as_bytes() == b"gas"
                 || !C::can_satisfy(import.field().as_bytes(), func_ty)
             {
-                println!(
-                    "module imports a non-existent function {:?}",
-                    import.field()
-                );
                 return Err("module imports a non-existent function");
             }
         }

@@ -78,5 +78,6 @@ std = [
 	'system/std',
 	'sudo/std',
 	'sp-std/std',
+	'sp-io/std',
 	'sp-sandbox/std'
 ]

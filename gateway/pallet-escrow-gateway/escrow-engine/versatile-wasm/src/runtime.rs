@@ -189,28 +189,19 @@ define_env!(Env, <E: ExtStandards>,
         output_ptr: u32,
         output_len_ptr: u32
     ) -> ReturnCode => {
+
         // [0, 32> bytes of input reserved for a module name.
-        let module_name = String::from_utf8(
-            read_sandbox_memory(ctx, input_data_ptr, 32)?
-            .into_iter()
-            .filter(|i| *i > 0 as u8)
-            .collect()
-        ).unwrap();
+        let module_name = try_read_mem_as_utf8(ctx, input_data_ptr, 32)?;
         // [32, 64> bytes of input reserved for a module name. 64 bytes reserved in total in input.
-        let fn_name = String::from_utf8(
-            read_sandbox_memory(ctx, input_data_ptr + 32, 32)?
-            .into_iter()
-            .filter(|i| *i > 0 as u8)
-            .collect()
-        ).unwrap();
+        let fn_name = try_read_mem_as_utf8(ctx, input_data_ptr + 32, 32)?;
 
         // Everything >64 reserved bytes constitutes actual input.
         let input = read_sandbox_memory(ctx, input_data_ptr + 64, input_data_len)?;
         let callee: <E::T as SystemTrait>::AccountId = read_sandbox_memory_as(ctx, callee_ptr, callee_len)?;
         let value: EscrowBalanceOf::<E::T> = read_sandbox_memory_as(ctx, value_ptr, value_len)?;
         match ctx.ext.call(
-            &module_name,
-            &fn_name,
+            module_name,
+            fn_name,
             &callee,
             value,
             ctx.gas_meter,
@@ -244,19 +235,8 @@ define_env!(Env, <E: ExtStandards>,
         }
     },
     seal_get_raw_storage_by_prefix(ctx, module_prefix_ptr: u32, storage_prefix_ptr: u32, out_ptr: u32, out_len_ptr: u32) -> ReturnCode => {
-        let module_prefix = String::from_utf8(
-            read_sandbox_memory(ctx, module_prefix_ptr, 32)?
-            .into_iter()
-            .filter(|i| *i > 0 as u8)
-            .collect()
-        ).unwrap();
-
-        let storage_prefix = String::from_utf8(
-            read_sandbox_memory(ctx, storage_prefix_ptr, 32)?
-            .into_iter()
-            .filter(|i| *i > 0 as u8)
-            .collect()
-        ).unwrap();
+        let module_prefix = try_read_mem_as_utf8(ctx, module_prefix_ptr, 32)?;
+        let storage_prefix = try_read_mem_as_utf8(ctx, storage_prefix_ptr, 32)?;
 
         let key: StorageKey = storage_value_final_key(module_prefix.as_bytes(), storage_prefix.as_bytes());
 
@@ -718,6 +698,24 @@ fn read_sandbox_memory_into_buf<E: ExtStandards>(
         RuntimeToken::ReadMemory(buf.len() as u32),
     )?;
     ctx.memory.get(ptr, buf).map_err(|_| sp_sandbox::HostError)
+}
+
+pub fn try_read_mem_as_utf8<E: ExtStandards>(
+    ctx: &mut Runtime<E>,
+    bytes_ptr: u32,
+    bytes_len: u32,
+) -> Result<&'static str, sp_sandbox::HostError> {
+    let bytes = read_sandbox_memory(ctx, bytes_ptr, bytes_len)?
+        .into_iter()
+        .filter(|i| *i > 0 as u8)
+        .collect::<Vec<u8>>();
+
+    core::str::from_utf8(Box::leak(bytes.into_boxed_slice())).map_err(|_utf8_err| {
+        ctx.trap_reason = Some(TrapReason::SupervisorError(DispatchError::Other(
+            "Can't read given memory slice as utf8",
+        )));
+        sp_sandbox::HostError
+    })
 }
 
 fn write_sandbox_output<E: ExtStandards>(

@@ -395,7 +395,7 @@ decl_module! {
                     debug::info!("DEBUG multistepcall -- Execution Proofs : result {:?} ", execution_proofs.result);
                     debug::info!("DEBUG multistepcall -- Execution storage : storage {:?}", execution_proofs.storage);
                     debug::info!("DEBUG multistepcall -- Execution Proofs : deferred_transfers {:?}", execution_proofs.deferred_transfers);
-                    println!("DEBUG multistepcall -- Execution Proofs : gas_spent {:?} vs left {:?}", gas_meter.gas_spent(), gas_meter.gas_left());
+                    debug::info!("DEBUG multistepcall -- Execution Proofs : gas_spent {:?} vs left {:?}", gas_meter.gas_spent(), gas_meter.gas_left());
                     <DeferredStorageWrites<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), deferred_storage_writes);
 
                     <ExecutionStamps<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), ExecutionStamp {

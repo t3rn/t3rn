@@ -1,5 +1,3 @@
-#![cfg_attr(not(feature = "std"), no_std)]
-
 use crate::gas::{Gas, GasMeter, GasMeterResult, Token};
 use crate::VersatileWasm as Trait;
 use crate::*;

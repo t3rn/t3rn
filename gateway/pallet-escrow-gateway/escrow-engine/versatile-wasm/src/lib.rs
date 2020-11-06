@@ -1,6 +1,8 @@
 //! This module provides a means for executing contracts
 //! represented in wasm.
 
+#![cfg_attr(not(feature = "std"), no_std)]
+
 use codec::{Decode, Encode};
 use frame_support::{
     decl_event,
