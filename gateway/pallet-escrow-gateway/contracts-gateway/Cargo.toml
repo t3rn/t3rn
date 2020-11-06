@@ -4,9 +4,9 @@ description = 'Gateway for multi-phase contracts execution secured by escrow acc
 edition = '2018'
 homepage = 'https://github.com/t3rn/t3rn'
 license = 'Apache 2.0'
-name = 'escrow-gateway'
+name = 'pallet-contracts-gateway'
 repository = 'https://github.com/t3rn/t3rn.git'
-version = '2.0.0'
+version = '0.3.0'
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
@@ -22,9 +22,11 @@ version = "0.1"
 
 [dependencies.gateway-escrow-engine]
 default-features = false
-branch = 'master'
-git = 'https://github.com/t3rn/gateway-pallet.git'
-version = '2.0.0'
+path = "../escrow-engine"
+version = '0.3.0'
+#branch = 'master'
+#git = 'https://github.com/t3rn/gateway-pallet.git'
+#version = '2.0.0'
 
 [dependencies.frame-support]
 default-features = false
@@ -43,12 +45,12 @@ version = '2.0.0'
 default-features = false
 version = '2.0.0'
 
-[dependencies.contracts]
+[dependencies.escrow-contracts-wrapper]
 default-features = false
-git = 'https://github.com/MaciejBaj/pallet-contracts.git'
-branch = 'escrow-contracts-m3'
-package = 'pallet-contracts'
-version = '2.0.0'
+#git = 'https://github.com/MaciejBaj/pallet-contracts.git'
+#branch = 'escrow-contracts-m3'
+path = "../escrow-engine/escrow-contracts-wrapper"
+version = '0.3.0'
 
 [dependencies.sp-std]
 default-features = false
@@ -69,6 +71,11 @@ version = '2.0.0'
 [dev-dependencies.pallet-timestamp]
 version = '2.0.0'
 
+[dev-dependencies.contracts]
+package = "pallet-contracts"
+default-features = false
+version = '2.0.0'
+
 [dev-dependencies.pallet-randomness-collective-flip]
 default-features = false
 version = '2.0.0'
@@ -86,6 +93,6 @@ std = [
     'frame-support/std',
     'pallet-balances/std',
     'frame-system/std',
-    'contracts/std',
+    'escrow-contracts-wrapper/std',
     'gateway-escrow-engine/std',
 ]
