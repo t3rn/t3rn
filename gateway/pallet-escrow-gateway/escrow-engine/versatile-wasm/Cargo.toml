@@ -1,6 +1,6 @@
 [package]
 name = "versatile-wasm"
-version = "0.1.0"
+version = "0.3.0"
 authors = ["Maciej Baj <maciej@maciejbaj.com>"]
 edition = "2018"
 license = "Apache-2.0"
@@ -20,7 +20,7 @@ pwasm-utils = { version = "0.14.0", default-features = false }
 wasmi-validation = { version = "0.3.0", default-features = false }
 transaction-payment = { package = "pallet-transaction-payment", version = "2.0.0", default-features = false }
 wat = { version = "1.0", optional = true, default-features = false }
-gateway-escrow-engine = { package = "gateway-escrow-engine", version = '2.0.0', path = '..', default-features = false}
+gateway-escrow-engine = { package = "gateway-escrow-engine", version = '0.3.0', path = '..', default-features = false}
 
 [dependencies.frame-support]
 default-features = false
