@@ -14,7 +14,7 @@ cd pallet-escrow-gateway/contracts-gateway && cargo build || (cargo update && ca
 echo -e "\033[0;32mTesting escrow pallets..."
 cd pallet-escrow-gateway/escrow-engine && cargo test; cd ../..
 cd pallet-escrow-gateway/runtime-gateway && cargo test; cd ../..
-cd pallet-escrow-gateway/contracts-gatewa && cargo test; cd ../..
+cd pallet-escrow-gateway/contracts-gateway && cargo test; cd ../..
 
 echo -e "\033[0;34mBuilding runtimes with escrow pallets..."
 echo -e "\033[0;34mBuilding node-tiny..."
