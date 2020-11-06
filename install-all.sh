@@ -6,13 +6,15 @@ cd gateway || exit
 
 echo -e "\033[0;34mBuilding escrow pallets..."
 cd pallet-escrow-gateway/escrow-engine && cargo build && cd ../..
-cd pallet-escrow-gateway/balances && cargo build || (cargo update && cargo build) || exit && cd ../..
-cd pallet-escrow-gateway && cargo build || (cargo update && cargo build) || exit && cd ..
+cd pallet-escrow-gateway/escrow-engine/versatile-wasm && cargo build && cd ../../..
+cd pallet-escrow-gateway/escrow-engine/escrow-contracts-wrapper && cargo build && cd ../../..
+cd pallet-escrow-gateway/runtime-gateway && cargo build || (cargo update && cargo build) || exit && cd ../..
+cd pallet-escrow-gateway/contracts-gateway && cargo build || (cargo update && cargo build) || exit && cd ../..
 
 echo -e "\033[0;32mTesting escrow pallets..."
 cd pallet-escrow-gateway/escrow-engine && cargo test; cd ../..
-cd pallet-escrow-gateway/balances && cargo test; cd ../..
-cd pallet-escrow-gateway && cargo test; cd ../
+cd pallet-escrow-gateway/runtime-gateway && cargo test; cd ../..
+cd pallet-escrow-gateway/contracts-gatewa && cargo test; cd ../..
 
 echo -e "\033[0;34mBuilding runtimes with escrow pallets..."
 echo -e "\033[0;34mBuilding node-tiny..."
