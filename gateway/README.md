@@ -97,16 +97,16 @@ _While running tests, you may want to change the `debug::info!` to `println!` me
 ```rust
 /// Change debug::info! to println! for test debugging.
 // debug::info!("DEBUG multistep_call -- escrow_engine.execute  {:?}", exec_res);
-println!("DEBUG multistep_call -- escrow_engine.execute  {:?}", exec_res);
+println!("DEBUG multistep_call -- escrow_engine.execute {:?}", exec_res);
 ```
 
 #### Integration Tests
-Both `EscrowGateway` and `EscrowGatewayBalances` come with the integration tests. 
+Both `RuntimeGateway` and `ContractsGateway` come with the integration tests. 
 
-Integration tests run different integration scenarios against running Substrate node (either `tiny-node` or `full-node`) connecting with its Call API dedicated for extrinsics. 
+Integration tests run different integration scenarios against running Substrate node (either `demo-runtime` or `full-node`) connecting with its Call API dedicated for extrinsics. 
 
-For example to run the integration tests against the tiny node:
-1. Build & run a `tiny-node` with `bash run-demo-runtime.sh`.
+To run the integration tests against the tiny node:
+1. Build & run a `demo-runtime` with `bash run-node-tiny.sh`.
 1. Execute integration tests against `ws:9944` default port: `cd test-integration && npm test:tiny` or `cd test-integration && npm test:full`.
 
 ###### [Execute multi-step transaction](./test-integration/multistep_call.spec.js)
