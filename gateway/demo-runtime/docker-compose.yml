@@ -2,16 +2,16 @@ version: "3.2"
 
 services:
   dev:
-    container_name: node-template
-    image: paritytech/ci-linux:staging-1.47.0
-    working_dir: /var/www/node-template
+    container_name: gateway-demo-runtime
+    image: paritytech/ci-linux:bd19f070-20200916
+    working_dir: /var/www/demo-runtime
     ports:
       - "9944:9944"
     environment:
-      - CARGO_HOME=/var/www/node-template/.cargo
+      - CARGO_HOME=/var/www/demo-runtime/.cargo
     volumes:
-      - .:/var/www/node-template
+      - .:/var/www/demo-runtime
       - type: bind
         source: ./.local
         target: /root/.local
-    command: bash -c "cargo build --release && ./target/release/node-template --dev --ws-external"
+    command: bash -c "cargo build --verbose --release && ./target/release/node-template --dev --ws-external"
