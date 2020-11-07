@@ -5,7 +5,7 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-    decl_event,
+    decl_event, decl_module,
     dispatch::{DispatchError, DispatchResult},
     traits::{Currency, Randomness, Time, UnfilteredDispatchable},
     weights::GetDispatchInfo,
@@ -31,6 +31,23 @@ pub type AccountIdOf<T> = <T as SystemTrait>::AccountId;
 pub type SeedOf<T> = <T as SystemTrait>::Hash;
 pub type TopicOf<T> = <T as SystemTrait>::Hash;
 pub type BlockNumberOf<T> = <T as SystemTrait>::BlockNumber;
+
+pub struct DisabledDispatchRuntimeCall {}
+
+impl<T: VersatileWasm> DispatchRuntimeCall<T> for DisabledDispatchRuntimeCall {
+    fn dispatch_runtime_call(
+        _module_name: &str,
+        _fn_name: &str,
+        _input: &[u8],
+        _escrow_account: &<T as system::Trait>::AccountId,
+        _requested: &<T as system::Trait>::AccountId,
+        _callee: &<T as system::Trait>::AccountId,
+        _value: BalanceOf<T>,
+        _gas: &mut crate::gas::GasMeter<T>,
+    ) -> DispatchResult {
+        unimplemented!()
+    }
+}
 
 /// Dispatch calls to runtime requested during execution of WASM Binaries.
 pub trait DispatchRuntimeCall<T: VersatileWasm> {
@@ -64,6 +81,12 @@ pub trait VersatileWasm: EscrowTrait + transaction_payment::Trait {
     type DispatchRuntimeCall: DispatchRuntimeCall<Self>;
 }
 
+decl_module! {
+    pub struct Module<T: VersatileWasm> for enum Call where origin: <T as system::Trait>::Origin, system=system {
+        fn deposit_event() = default;
+    }
+}
+
 /// A prepared wasm module ready for execution.
 #[derive(Clone, Encode, Decode)]
 pub struct PrefabWasmModule {
@@ -90,6 +113,7 @@ pub struct WasmExecutable {
 }
 
 use bitflags::bitflags;
+
 pub type StorageKey = [u8; 32];
 
 /// Error returned by contract exection.

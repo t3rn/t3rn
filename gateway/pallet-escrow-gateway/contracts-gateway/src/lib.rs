@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use contracts::{
+use escrow_contracts_wrapper::{
     escrow_exec::{CallStamp, DeferredStorageWrite},
     exec::{ExecError, ExecResult, ExecutionContext},
     storage::write_contract_storage,
@@ -85,17 +85,18 @@ pub fn instantiate_temp_execution_contract<'a, T: Trait>(
     endowment: ContractsBalanceOf<T>,
     gas_limit: Gas,
 ) -> dispatch::DispatchResult {
-    let code_hash_res = <contracts::Module<T>>::put_code(origin.clone(), code.clone());
+    let code_hash_res =
+        <escrow_contracts_wrapper::Module<T>>::put_code(origin.clone(), code.clone());
     debug::info!(
-        "DEBUG multistep_call -- contracts::put_code {:?}",
+        "DEBUG multistep_call -- escrow_contracts_wrapper::put_code {:?}",
         code_hash_res
     );
     code_hash_res.map_err(|_e| <Error<T>>::PutCodeFailure)?;
     let code_hash = T::Hashing::hash(&code.clone());
     // ToDo: Instantiate works - but charging accounts in unit tests doesn't (due to GenesisConfig not present in Balance err)
-    // Step 2: contracts::instantiate
+    // Step 2: escrow_contracts_wrapper::instantiate
     // ToDo: Smart way of calculating endowment that would be enough for initialization + one call.
-    let init_res = <contracts::Module<T>>::instantiate(
+    let init_res = <escrow_contracts_wrapper::Module<T>>::instantiate(
         origin.clone(),
         endowment,
         gas_limit,
@@ -108,7 +109,7 @@ pub fn instantiate_temp_execution_contract<'a, T: Trait>(
     //     just_transfer::<T>(&escrow_account, &dest, endowment);
     // }
     debug::info!(
-        "DEBUG multistepcall -- contracts::instantiate_temp_execution_contract init_res {:?}",
+        "DEBUG multistepcall -- escrow_contracts_wrapper::instantiate_temp_execution_contract init_res {:?}",
         init_res
     );
     Ok(())
@@ -174,7 +175,7 @@ pub fn execute_attached_code<'a, T: Trait>(
     ) {
         Ok(exec_ret_val) => Ok(exec_ret_val),
         Err(exec_err) => {
-            use contracts::exec::Ext;
+            use escrow_contracts_wrapper::exec::Ext;
             // Revert the execution effects on the spot.
             cleanup_failed_execution::<T>(escrow_account.clone(), requester.clone(), transfers)
                 .map_err(|_e| <Error<T>>::CleanupFailedAfterUnsuccessfulExecution)?;
@@ -233,7 +234,7 @@ pub fn execute_escrow_call_recursively<'a, T: Trait>(
     }
 }
 
-pub trait Trait: EscrowTrait + contracts::Trait {
+pub trait Trait: EscrowTrait + escrow_contracts_wrapper::Trait {
     type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
     type WhenStateChangedForceTry: Get<bool>;
 }
@@ -679,7 +680,7 @@ decl_module! {
             // Print a test message.
 
             // Read the contract's storage
-            let val = Some(<contracts::Module<T>>::get_storage(address, key));
+            let val = Some(<escrow_contracts_wrapper::Module<T>>::get_storage(address, key));
 
             debug::info!("DEBUG get_storage by key: {:?} val = {:?} ", key, val);
 

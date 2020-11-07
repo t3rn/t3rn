@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const {ApiPromise, WsProvider} = require("@polkadot/api");
-const {Bytes} = require("@polkadot/types");
+const {Bytes, u32, u64, u8} = require("@polkadot/types");
 
 const testKeyring = require("@polkadot/keyring/testing").default;
 const keyring = testKeyring({type: "sr25519"});
@@ -23,7 +23,26 @@ beforeAll(() => {
 function pickTypesBasedOnNodeType() {
 	const NODE = process.env.NODE || 'tiny';
 	const types = {
-		EscrowExecuteResult: {result: Bytes}
+		EscrowExecuteResult: {result: Bytes},
+		DeferredStorageWrite: {
+		    dest: Bytes,
+			trie_id: Bytes,
+			key: Bytes,
+			value: Bytes,
+		},
+		TransferEntry: {
+			to: Bytes,
+			value: u32,
+			data: Bytes,
+			gas_left: u64,
+		},
+		ExecutionStamp: {
+			timestamp: u64,
+			phase: u8,
+			proofs: Bytes,
+			call_stamps: Bytes,
+			failure: Bytes,
+		}
 	};
 	if (NODE === 'tiny') {
 		types['Address'] = 'AccountId';
@@ -79,7 +98,7 @@ describe('Escrow Gateway', function () {
 				});
 
 				it('should be successful & return a bunch of events from runtime', async function (done) {
-					const tx = api.tx.escrowGateway.multistepCall(
+					const tx = api.tx.contractsGateway.multistepCall(
 						requester,
 						targetDest,
 						phase,
@@ -119,7 +138,7 @@ describe('Escrow Gateway', function () {
 				});
 
 				it('should be successful after calling with following COMMIT phase: move funds from escrow to target dest + reveal the contract output = [1, 2, 3, 4] ', async function (done) {
-					const tx = api.tx.escrowGateway.multistepCall(
+					const tx = api.tx.contractsGateway.multistepCall(
 						requester,
 						targetDest,
 						PHASES.COMMIT,
@@ -145,7 +164,7 @@ describe('Escrow Gateway', function () {
 									// 'system.NewAccount ["5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy"]',
 									// `balances.Endowed ["5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",${value}]`,
 									`balances.Transfer ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",${value}]`,
-									'escrowGateway.MultistepCommitResult ["0x01020304"]',
+									'contractsGateway.MultistepCommitResult ["0x01020304"]',
 									'system.ExtrinsicSuccess [{"weight":270000000,"class":"Normal","paysFee":"Yes"}]'
 								])
 							);
@@ -195,7 +214,7 @@ describe('Escrow Gateway Balances', function () {
 				});
 
 				it('should be successful & return a bunch of events from runtime', async function (done) {
-					const tx = api.tx.escrowGatewayBalances.multistepCall(
+					const tx = api.tx.runtimeGateway.multistepCall(
 						requester,
 						targetDest,
 						phase,
@@ -217,6 +236,7 @@ describe('Escrow Gateway Balances', function () {
 							// Check all of the generated events for that call.
 							expect(relevant_event_messages).toStrictEqual(
 								[
+									'versatileWasm.VersatileVMExecution ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","0x01020304"]',
 									'system.ExtrinsicSuccess [{"weight":270000000,"class":"Normal","paysFee":"Yes"}]',
 								]
 							);
@@ -230,7 +250,7 @@ describe('Escrow Gateway Balances', function () {
 				});
 
 				it('should be successful after calling with following COMMIT phase: move funds from escrow to target dest + reveal the contract output = [1, 2, 3, 4] ', async function (done) {
-					const tx = api.tx.escrowGatewayBalances.multistepCall(
+					const tx = api.tx.runtimeGateway.multistepCall(
 						requester,
 						targetDest,
 						PHASES.COMMIT,
@@ -256,7 +276,7 @@ describe('Escrow Gateway Balances', function () {
 									// 'system.NewAccount ["5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy"]',
 									// `balances.Endowed ["5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",${value}]`,
 									'balances.Transfer ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",500000]',
-									'escrowGatewayBalances.MultistepCommitResult ["0x01020304"]',
+									'runtimeGateway.MultistepCommitResult ["0x01020304"]',
 									'system.ExtrinsicSuccess [{"weight":270000000,"class":"Normal","paysFee":"Yes"}]'
 
 								])

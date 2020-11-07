@@ -100,7 +100,7 @@ fn during_execution_phase_when_given_empty_wasm_code_multistep_call_only_deferrs
 #[test]
 fn commit_phase_cannot_be_triggered_without_preceeding_execution() {
     let (_phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
-    let correct_wasm_path = Path::new("../fixtures/transfer_return_code.wasm");
+    let correct_wasm_path = Path::new("../contracts-gateway/fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     // Set fees
     let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
@@ -137,7 +137,7 @@ fn commit_phase_cannot_be_triggered_without_preceeding_execution() {
 #[test]
 fn should_succeed_for_return_from_fn() {
     let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
-    let correct_wasm_path = Path::new("../fixtures/return_from_start_fn.wasm");
+    let correct_wasm_path = Path::new("../contracts-gateway/fixtures/return_from_start_fn.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
 
     new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
@@ -160,7 +160,7 @@ fn should_succeed_for_return_from_fn() {
 #[test]
 fn fails_for_insufficient_gas_limit() {
     let (phase, _, input_data, value, _) = default_multistep_call_args();
-    let correct_wasm_path = Path::new("../fixtures/transfer_return_code.wasm");
+    let correct_wasm_path = Path::new("../contracts-gateway/fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     // Make the gas limit too little
     let gas_limit = 1000;
@@ -184,7 +184,7 @@ fn fails_for_insufficient_gas_limit() {
 #[test]
 fn successful_execution_phase_when_given_correct_wasm_code_stores_correct_result() {
     let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
-    let correct_wasm_path = Path::new("../fixtures/transfer_return_code.wasm");
+    let correct_wasm_path = Path::new("../contracts-gateway/fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
 
     new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
@@ -215,7 +215,7 @@ fn successful_execution_phase_when_given_correct_wasm_code_stores_correct_result
 #[test]
 fn successful_execution_phase_generates_call_stamps_and_proofs() {
     let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
-    let correct_wasm_path = Path::new("../fixtures/transfer_return_code.wasm");
+    let correct_wasm_path = Path::new("../contracts-gateway/fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
 
     new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
@@ -303,7 +303,7 @@ fn successful_execution_phase_generates_call_stamps_and_proofs() {
 #[test]
 fn transfer_during_execution_phase_succeeds_and_consumes_costs_correctly_and_deferrs_transfers() {
     let (phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
-    let correct_wasm_path = Path::new("../fixtures/transfer_return_code.wasm");
+    let correct_wasm_path = Path::new("../contracts-gateway/fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     // Set fees
     let sufficient_gas_limit = 10_000_000 as u64; // exact gas costs
@@ -363,7 +363,7 @@ fn transfer_during_execution_phase_succeeds_and_consumes_costs_correctly_and_def
 #[test]
 fn successful_commit_phase_transfers_move_from_deferred_to_target_destinations() {
     let (_phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
-    let correct_wasm_path = Path::new("../fixtures/transfer_return_code.wasm");
+    let correct_wasm_path = Path::new("../contracts-gateway/fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     // Set fees
     let sufficient_gas_limit = 10_000_000 as u64; // exact gas limit
@@ -420,7 +420,7 @@ fn successful_commit_phase_transfers_move_from_deferred_to_target_destinations()
 #[test]
 fn successful_revert_phase_removes_deferred_transfers_and_refunds_from_escrow_to_requester() {
     let (_phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
-    let correct_wasm_path = Path::new("../fixtures/transfer_return_code.wasm");
+    let correct_wasm_path = Path::new("../contracts-gateway/fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     // Set fees
     let sufficient_gas_limit = 10_000_000 as u64; // exact gas costs
@@ -512,7 +512,7 @@ fn successful_revert_phase_removes_deferred_transfers_and_refunds_from_escrow_to
 #[test]
 fn successful_revert_phase_removes_associated_storage_for_that_call() {
     let (_phase, _, _input_data, value, _gas_limit) = default_multistep_call_args();
-    let correct_wasm_path = Path::new("../fixtures/storage_size.wasm");
+    let correct_wasm_path = Path::new("../contracts-gateway/fixtures/storage_size.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     // Set fees
     let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
@@ -582,7 +582,7 @@ fn successful_revert_phase_removes_associated_storage_for_that_call() {
 #[test]
 fn successful_commit_phase_applies_storage_writes_on_the_dedicated_for_that_code_storage_tree() {
     let (_phase, _, _input_data, value, _gas_limit) = default_multistep_call_args();
-    let correct_wasm_path = Path::new("../fixtures/storage_size.wasm");
+    let correct_wasm_path = Path::new("../contracts-gateway/fixtures/storage_size.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     // Set fees
     let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
@@ -674,7 +674,7 @@ fn successful_commit_phase_applies_storage_writes_on_the_dedicated_for_that_code
 #[test]
 fn successfully_executes_flip_fn_from_host_runtime_module() {
     let (_phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
-    let correct_wasm_path = Path::new("../fixtures/call_flipper_runtime.wasm");
+    let correct_wasm_path = Path::new("../contracts-gateway/fixtures/call_flipper_runtime.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     // Set fees
     let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
@@ -703,7 +703,7 @@ fn successfully_executes_flip_fn_from_host_runtime_module() {
 #[test]
 fn successfully_interacts_with_storage_runtime_module_and_is_billed_correctly() {
     let (_phase, _, _input_data, value, _gas_limit) = default_multistep_call_args();
-    let correct_wasm_path = Path::new("../fixtures/storage_runtime_calls.wasm");
+    let correct_wasm_path = Path::new("../contracts-gateway/fixtures/storage_runtime_calls.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     // Set fees
     let sufficient_gas_limit = (170_000_000 + 17_500_000) as u64; // base (exact init costs) + exec_cost = 187_500_000
@@ -734,7 +734,7 @@ fn successfully_interacts_with_storage_runtime_module_and_is_billed_correctly() 
 #[test]
 fn successfully_executes_runtime_storage_demo_is_billed_correctly() {
     let (_phase, _, _input_data, _value, _gas_limit) = default_multistep_call_args();
-    let correct_wasm_path = Path::new("../fixtures/storage_runtime_demo.wasm");
+    let correct_wasm_path = Path::new("../contracts-gateway/fixtures/storage_runtime_demo.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     let exact_gas_cost = 359_029_940 as u64;
     let _endowment = 100_000_000;
@@ -763,7 +763,7 @@ fn successfully_executes_runtime_storage_demo_is_billed_correctly() {
 #[test]
 fn successfully_executes_runtime_storage_demo_and_refunds_gas_excess() {
     let (_phase, _, _input_data, _value, _gas_limit) = default_multistep_call_args();
-    let correct_wasm_path = Path::new("../fixtures/storage_runtime_demo.wasm");
+    let correct_wasm_path = Path::new("../contracts-gateway/fixtures/storage_runtime_demo.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     let exact_gas_cost = 359_029_940 as u64;
     let gas_excess = 100 as u64;
