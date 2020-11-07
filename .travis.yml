@@ -35,5 +35,5 @@ script:
   - cd pallet-escrow-gateway/runtime-gateway && cargo test; cd ../..
   - cd pallet-escrow-gateway/contracts-gateway && cargo test; cd ../..
   - echo -e "\033[0;34mBuilding runtimes with escrow pallets..."
-  - echo -e "\033[0;34mBuilding node-tiny..."
-  - cd node-tiny && cargo build || (cargo update && cargo build) || exit $? && cd ..
+  - echo -e "\033[0;34mBuilding demo-runtime..."
+  - cd demo-runtime && cargo build || (cargo update && cargo build) || exit $? && cd ..

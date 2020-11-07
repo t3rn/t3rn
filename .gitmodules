@@ -2,3 +2,8 @@
 	path = gateway/node-full/substrate
 	url = https://github.com/MaciejBaj/substrate
 	branch = t3rn-milestone-2
+
+[submodule "gateway/runtime-demo"]
+	path = gateway/runtime-demo
+	url = https://github.com/substrate-developer-hub/substrate-node-template
+	version = v2.0.0

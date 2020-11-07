@@ -177,7 +177,7 @@ define_env!(Env, <E: ExtStandards>,
         // to the user of this crate.
         Err(sp_sandbox::HostError)
     },
-    seal_call (
+    seal_call(
         ctx,
         callee_ptr: u32,
         callee_len: u32,
@@ -194,11 +194,25 @@ define_env!(Env, <E: ExtStandards>,
         let module_name = try_read_mem_as_utf8(ctx, input_data_ptr, 32)?;
         // [32, 64> bytes of input reserved for a module name. 64 bytes reserved in total in input.
         let fn_name = try_read_mem_as_utf8(ctx, input_data_ptr + 32, 32)?;
-
         // Everything >64 reserved bytes constitutes actual input.
-        let input = read_sandbox_memory(ctx, input_data_ptr + 64, input_data_len)?;
-        let callee: <E::T as SystemTrait>::AccountId = read_sandbox_memory_as(ctx, callee_ptr, callee_len)?;
-        let value: EscrowBalanceOf::<E::T> = read_sandbox_memory_as(ctx, value_ptr, value_len)?;
+        let input = read_sandbox_memory(ctx, input_data_ptr + 64, input_data_len).map_err(|_| {
+            ctx.trap_reason = Some(TrapReason::SupervisorError(DispatchError::Other(
+                "Trapped on call to runtime - can't read the input",
+            )));
+            sp_sandbox::HostError
+        })?;
+        let callee: <E::T as SystemTrait>::AccountId = read_sandbox_memory_as(ctx, callee_ptr, callee_len).map_err(|_| {
+            ctx.trap_reason = Some(TrapReason::SupervisorError(DispatchError::Other(
+                "Trapped on call to runtime - can't read the callee",
+            )));
+            sp_sandbox::HostError
+        })?;
+        let value: EscrowBalanceOf::<E::T> = read_sandbox_memory_as(ctx, value_ptr, value_len).map_err(|_| {
+            ctx.trap_reason = Some(TrapReason::SupervisorError(DispatchError::Other(
+                "Trapped on call to runtime - can't read the value",
+            )));
+            sp_sandbox::HostError
+        })?;
         match ctx.ext.call(
             module_name,
             fn_name,

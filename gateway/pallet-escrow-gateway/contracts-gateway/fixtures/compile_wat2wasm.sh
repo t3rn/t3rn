@@ -26,6 +26,14 @@ PROJNAME=storage_runtime_calls
 wat2wasm -o $PROJNAME.wasm $PROJNAME.wat
 wasm-prune --exports call,deploy $PROJNAME.wasm $PROJNAME-pruned.wasm
 
+PROJNAME=32b-account-and-u128-balance/storage_runtime_calls
+wat2wasm -o $PROJNAME.wasm $PROJNAME.wat
+wasm-prune --exports call,deploy $PROJNAME.wasm $PROJNAME-pruned.wasm
+
 PROJNAME=storage_runtime_demo
+wat2wasm -o $PROJNAME.wasm $PROJNAME.wat
+wasm-prune --exports call,deploy $PROJNAME.wasm $PROJNAME-pruned.wasm
+
+PROJNAME=32b-account-and-u128-balance/storage_runtime_demo
 wat2wasm -o $PROJNAME.wasm $PROJNAME.wat
 wasm-prune --exports call,deploy $PROJNAME.wasm $PROJNAME-pruned.wasm

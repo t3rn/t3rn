@@ -1084,6 +1084,41 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "993a608597367c6377b258c25d7120740f00ed23a2252b729b1932dd7866f908"
 
 [[package]]
+name = "demo-runtime"
+version = "2.0.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-benchmarking-cli",
+ "jsonrpc-core",
+ "node-demo-runtime",
+ "pallet-transaction-payment-rpc",
+ "sc-basic-authorship",
+ "sc-cli",
+ "sc-client-api",
+ "sc-consensus",
+ "sc-consensus-aura",
+ "sc-executor",
+ "sc-finality-grandpa",
+ "sc-rpc",
+ "sc-rpc-api",
+ "sc-service",
+ "sc-transaction-pool",
+ "sp-api",
+ "sp-block-builder",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-finality-grandpa",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-transaction-pool",
+ "structopt",
+ "substrate-build-script-utils",
+ "substrate-frame-rpc-system",
+]
+
+[[package]]
 name = "derive_more"
 version = "0.99.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3485,42 +3520,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "node-tiny"
-version = "2.0.0"
-dependencies = [
- "frame-benchmarking",
- "frame-benchmarking-cli",
- "jsonrpc-core",
- "node-tiny-runtime",
- "pallet-transaction-payment-rpc",
- "sc-basic-authorship",
- "sc-cli",
- "sc-client-api",
- "sc-consensus",
- "sc-consensus-aura",
- "sc-executor",
- "sc-finality-grandpa",
- "sc-rpc",
- "sc-rpc-api",
- "sc-service",
- "sc-transaction-pool",
- "sp-api",
- "sp-block-builder",
- "sp-blockchain",
- "sp-consensus",
- "sp-consensus-aura",
- "sp-core",
- "sp-finality-grandpa",
- "sp-inherents",
- "sp-runtime",
- "sp-transaction-pool",
- "structopt",
- "substrate-build-script-utils",
- "substrate-frame-rpc-system",
-]
-
-[[package]]
-name = "node-tiny-runtime"
+name = "node-demo-runtime"
 version = "2.0.0"
 dependencies = [
  "frame-benchmarking",
@@ -3558,6 +3558,7 @@ dependencies = [
  "sp-version",
  "substrate-wasm-builder-runner",
  "versatile-wasm",
+ "weights",
 ]
 
 [[package]]
@@ -7572,7 +7573,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04f8ab788026715fa63b31960869617cba39117e520eb415b0139543e325ab59"
 dependencies = [
  "cfg-if 0.1.10",
- "rand 0.7.3",
+ "rand 0.3.23",
  "static_assertions",
 ]
 
@@ -8117,6 +8118,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8eff4b7516a57307f9349c64bf34caa34b940b66fed4b2fb3136cb7386e5739"
 dependencies = [
  "webpki",
+]
+
+[[package]]
+name = "weights"
+version = "2.0.0"
+source = "git+https://github.com/t3rn/gateway-pallet.git?branch=master#2d77c2ad8c6f84237f66a660fdeab0f8939ef756"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "sp-runtime",
 ]
 
 [[package]]

@@ -4,12 +4,12 @@ build = 'build.rs'
 description = 'A FRAME-based Substrate "tiny" node, with the only extra being t3rn escrow gateway.'
 edition = '2018'
 license = 'Apache 2.0'
-name = 'node-tiny'
-repository = 'https://github.com/t3rn/t3rn/tree/development/gateway/node-tiny'
+name = 'demo-runtime'
+repository = 'https://github.com/t3rn/t3rn/tree/development/gateway/demo-runtime'
 version = '2.0.0'
 
 [[bin]]
-name = 'node-tiny'
+name = 'demo-runtime'
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
@@ -22,7 +22,7 @@ jsonrpc-core = '15.0.0'
 structopt = '0.3.8'
 
 # local dependencies
-node-tiny-runtime = { path = '../runtime', version = '2.0.0' }
+node-demo-runtime = { path = '../runtime', version = '2.0.0' }
 
 # Substrate dependencies
 frame-benchmarking = '2.0.0'
@@ -53,4 +53,4 @@ substrate-frame-rpc-system = '2.0.0'
 
 [features]
 default = []
-runtime-benchmarks = ['node-tiny-runtime/runtime-benchmarks']
+runtime-benchmarks = ['node-demo-runtime/runtime-benchmarks']

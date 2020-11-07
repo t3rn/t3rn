@@ -1,0 +1,17 @@
+version: "3.2"
+
+services:
+  dev:
+    container_name: gateway-demo-runtime
+    image: paritytech/ci-linux:bd19f070-20200916
+    working_dir: /var/www/demo-runtime
+    ports:
+      - "9944:9944"
+    environment:
+      - CARGO_HOME=/var/www/demo-runtime/.cargo
+    volumes:
+      - .:/var/www/demo-runtime
+      - type: bind
+        source: ./.local
+        target: /root/.local
+    command: bash -c "cargo build --verbose --release && ./target/release/node-template --dev --ws-external"
