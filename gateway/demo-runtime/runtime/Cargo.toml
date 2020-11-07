@@ -2,8 +2,8 @@
 authors = ['Maciej Baj <https://github.com/MaciejBaj>']
 edition = '2018'
 license = 'Apache 2.0'
-name = 'node-tiny-runtime'
-repository = 'https://github.com/t3rn/t3rn/tree/development/gateway/node-tiny'
+name = 'node-demo-runtime'
+repository = 'https://github.com/t3rn/t3rn/tree/development/gateway/demo-runtime'
 version = '2.0.0'
 
 [package.metadata.docs.rs]
@@ -53,10 +53,16 @@ sp-std = { default-features = false, version = '2.0.0' }
 sp-transaction-pool = { default-features = false, version = '2.0.0' }
 sp-version = { default-features = false, version = '2.0.0' }
 contracts = { package = "pallet-contracts", default-features = false, version = '2.0.0' }
-contracts-gateway = { package = "pallet-contracts-gateway", default-features = false, version = '0.3.0', git = 'https://github.com/t3rn/gateway-pallet.git', branch = 'master' }
-runtime-gateway = { package = "pallet-runtime-gateway", default-features = false, version = '0.3.0', git = 'https://github.com/t3rn/gateway-pallet.git', branch = 'master'  }
+#contracts-gateway = { package = "pallet-contracts-gateway", default-features = false, version = '0.3.0', git = 'https://github.com/t3rn/gateway-pallet.git', branch = 'master' }
+#runtime-gateway = { package = "pallet-runtime-gateway", default-features = false, version = '0.3.0', git = 'https://github.com/t3rn/gateway-pallet.git', branch = 'master'  }
+#versatile-wasm = { default-features = false, version = '0.3.0', git = 'https://github.com/t3rn/gateway-pallet.git', branch = 'master'  }
+#gateway-escrow-engine = { default-features = false, version = '0.3.0', git = 'https://github.com/t3rn/gateway-pallet.git', branch = 'master'  }
+#weights = { package = "weights", default-features = false, version = '2.0.0', git = 'https://github.com/t3rn/gateway-pallet.git', branch = 'master'  }
+contracts-gateway = { package = "pallet-contracts-gateway", default-features = false, version = '0.3.0',  git = 'https://github.com/t3rn/gateway-pallet.git', branch = 'master' }
+runtime-gateway = { package = "pallet-runtime-gateway", default-features = false, version = '0.3.0', git = 'https://github.com/t3rn/gateway-pallet.git', branch = 'master' }
 versatile-wasm = { default-features = false, version = '0.3.0', git = 'https://github.com/t3rn/gateway-pallet.git', branch = 'master'  }
-gateway-escrow-engine = { default-features = false, version = '0.3.0', git = 'https://github.com/t3rn/gateway-pallet.git', branch = 'master'  }
+gateway-escrow-engine = { default-features = false, version = '0.3.0', git = 'https://github.com/t3rn/gateway-pallet.git', branch = 'master' }
+weights = { package = "weights", default-features = false, version = '2.0.0', git = 'https://github.com/t3rn/gateway-pallet.git', branch = 'master' }
 
 [features]
 default = ['std']
@@ -83,6 +89,7 @@ std = [
     'runtime-gateway/std',
     'versatile-wasm/std',
     'gateway-escrow-engine/std',
+    'weights/std',
     'pallet-aura/std',
     'pallet-balances/std',
     'pallet-grandpa/std',

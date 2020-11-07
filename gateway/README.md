@@ -71,7 +71,7 @@ git submodule init
 git submodule update
 ```
 
-Run either a tiny or full node with `bash run-node-tiny.sh` or `bash run-node-full.sh`. 
+Run either a tiny or full node with `bash run-demo-runtime.sh` or `bash run-node-full.sh`. 
 
 The node runs on a default for Substrate `ws-port = 9944` & `http-port = 9933`. 
 
@@ -83,7 +83,7 @@ You can verify the Escrow Gateway running demo frontend app from [front-end](./f
 
 Gateway comes with the `EscrowGateway` pallet, which can be integrated into existing and new parachains and their runtimes:
 
-##### Runtime `[Cargo.toml](https://github.com/t3rn/t3rn/blob/development/gateway/node-tiny/runtime/Cargo.toml)`
+##### Runtime `[Cargo.toml](https://github.com/t3rn/t3rn/blob/development/gateway/demo-runtime/runtime/Cargo.toml)`
 
 _Currently `v2.0.0-rc6` version of substrate is supported_.
 
@@ -125,7 +125,7 @@ version = "2.0.0-rc6"
 ```
 
 
-##### Runtime [`lib.rs`](https://github.com/t3rn/t3rn/blob/development/gateway/node-tiny/runtime/src/lib.rs)
+##### Runtime [`lib.rs`](https://github.com/t3rn/t3rn/blob/development/gateway/demo-runtime/runtime/src/lib.rs)
 
 ###### Implement Traits
 - __Parachains with Contracts__
@@ -232,7 +232,7 @@ EscrowGateway: escrow_gateway::{Module, Call, Storage, Event<T>},
 In case you missed this step, you will probably see a similar error message:
 ```bash
  error[E0277]: the trait bound `Event: core::convert::From<pallet_contracts::RawEvent<u128, sp_runtime::AccountId32, sp_core::H256>>` is not satisfied
-     --> /Users/macio/projects/substrate.dev/t3rn/gateway/node-tiny/runtime/src/lib.rs:275:15
+     --> /Users/macio/projects/substrate.dev/t3rn/gateway/demo-runtime/runtime/src/lib.rs:275:15
       |
   275 |     type Event = Event;
       |                  ^^^^^ the trait `core::convert::From<pallet_contracts::RawEvent<u128, sp_runtime::AccountId32, sp_core::H256>>` is not implemented for `Event`
@@ -362,14 +362,13 @@ _While running tests, you may want to change the `debug::info!` to `println!` me
 println!("DEBUG multistep_call -- escrow_engine.execute  {:?}", exec_res);
 ```
 
-
 #### Integration Tests
 Both `EscrowGateway` and `EscrowGatewayBalances` come with the integration tests. 
 
 Integration tests run different integration scenarios against running Substrate node (either `tiny-node` or `full-node`) connecting with its Call API dedicated for extrinsics. 
 
 For example to run the integration tests against the tiny node:
-1. Build & run a `tiny-node` with `bash run-node-tiny.sh`.
+1. Build & run a `tiny-node` with `bash run-demo-runtime.sh`.
 1. Execute integration tests against `ws:9944` default port: `cd test-integration && npm test:tiny` or `cd test-integration && npm test:full`.
 
 ###### [Execute multi-step transaction](./test-integration/multistep_call.spec.js)

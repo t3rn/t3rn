@@ -6,6 +6,8 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+use codec::Decode;
+use gateway_escrow_engine::transfers::BalanceOf;
 use pallet_grandpa::fg_primitives;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
 use sp_api::impl_runtime_apis;
@@ -17,16 +19,15 @@ use sp_runtime::traits::{
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, MultiSignature,
+    ApplyExtrinsicResult, DispatchError, DispatchResult, MultiSignature,
 };
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
-
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
-    construct_runtime, impl_outer_event, parameter_types,
+    construct_runtime, debug, impl_outer_event, parameter_types,
     traits::{KeyOwnerProofSystem, Randomness},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
@@ -313,8 +314,85 @@ impl contracts_gateway::Trait for Runtime {
     type WhenStateChangedForceTry = WhenStateChangedForceTry;
 }
 
+impl weights::Trait for Runtime {}
+pub type WeightsCall = weights::Call<Runtime>;
+
+pub struct DemoStorageDispatchRuntimeCall;
+
+impl versatile_wasm::DispatchRuntimeCall<Runtime> for DemoStorageDispatchRuntimeCall {
+    fn dispatch_runtime_call(
+        module_name: &str,
+        fn_name: &str,
+        _input: &[u8],
+        escrow_account: &<Runtime as frame_system::Trait>::AccountId,
+        _requested: &<Runtime as frame_system::Trait>::AccountId,
+        _callee: &<Runtime as frame_system::Trait>::AccountId,
+        _value: BalanceOf<Runtime>,
+        gas_meter: &mut versatile_wasm::gas::GasMeter<Runtime>,
+    ) -> DispatchResult {
+        debug::info!(
+            "DEBUG versatile_wasm::DispatchRuntimeCall module_name {:?} vs fn_name {:?}",
+            module_name,
+            fn_name
+        );
+
+        match (module_name, fn_name) {
+            ("Weights", "store_value") => {
+                let decoded_input: u32 = match Decode::decode(&mut _input.clone()) {
+                    Ok(dec) => dec,
+                    Err(_) => {
+                        return Err(DispatchError::Other(
+                            "Can't decode input for Weights::store_value. Expected u32.",
+                        ));
+                    }
+                };
+                gas_meter.charge_runtime_dispatch(Box::new(Call::Weights(
+                    WeightsCall::store_value(decoded_input),
+                )))?;
+                // Alternatively use the call - call.dispatch((Origin::signed(*escrow_account))).map_err(|e| e.error)?;
+                Weights::store_value(Origin::signed(escrow_account.clone()), decoded_input)
+            }
+            ("Weights", "double") => {
+                let decoded_input: u32 = match Decode::decode(&mut _input.clone()) {
+                    Ok(dec) => dec,
+                    Err(_) => {
+                        return Err(DispatchError::Other(
+                            "Can't decode input for Weights::store_value. Expected u32.",
+                        ));
+                    }
+                };
+                gas_meter.charge_runtime_dispatch(Box::new(Call::Weights(WeightsCall::double(
+                    decoded_input,
+                ))))?;
+                Weights::double(Origin::signed(escrow_account.clone()), decoded_input)
+            }
+            ("Weights", "complex_calculations") => {
+                let (decoded_x, decoded_y): (u32, u32) = match Decode::decode(&mut _input.clone()) {
+                    Ok(dec) => dec,
+                    Err(_) => {
+                        return Err(DispatchError::Other(
+                            "Can't decode input for Weights::store_value. Expected u32.",
+                        ));
+                    }
+                };
+                gas_meter.charge_runtime_dispatch(Box::new(Call::Weights(
+                    WeightsCall::complex_calculations(decoded_x, decoded_y),
+                )))?;
+                Weights::complex_calculations(
+                    Origin::signed(escrow_account.clone()),
+                    decoded_x,
+                    decoded_y,
+                )
+            }
+            (_, _) => Err(DispatchError::Other(
+                "Call to unrecognized runtime function",
+            )),
+        }
+    }
+}
+
 impl versatile_wasm::VersatileWasm for Runtime {
-    type DispatchRuntimeCall = versatile_wasm::DisabledDispatchRuntimeCall;
+    type DispatchRuntimeCall = DemoStorageDispatchRuntimeCall;
     type Event = Event;
     type Call = Call;
     type Randomness = RandomnessCollectiveFlip;
@@ -344,7 +422,7 @@ construct_runtime!(
         ContractsGateway: contracts_gateway::{Module, Call, Storage, Event<T>},
         RuntimeGateway: runtime_gateway::{Module, Call, Storage, Event<T>},
         VersatileWasm: versatile_wasm::{Module, Call, Event<T>},
-
+        Weights: weights::{Module, Call},
     }
 );
 
