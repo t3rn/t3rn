@@ -195,7 +195,7 @@ describe('Escrow Gateway Balances', function () {
 		beforeEach(function () {
 			origin = keyring.getPair(ALICE);
 			requester = ALICE;
-			value = 500000;
+			value = 0;
 			targetDest = DAVE;
 		});
 		describe('when attaching a .WASM code that returns = [1, 2, 3, 4] with no inputData and sufficient gas limit', function () {
@@ -280,6 +280,64 @@ describe('Escrow Gateway Balances', function () {
 									'system.ExtrinsicSuccess [{"weight":270000000,"class":"Normal","paysFee":"Yes"}]'
 
 								])
+							);
+						} else if (status.isFinalized) {
+							console.log('Finalized block hash', status.asFinalized.toHex());
+							return done();
+						} else if (status.isDropped || status.isInvalid) {
+							return done('Transaction failed processing multistep_call', status);
+						}
+					});
+				});
+			});
+		});
+
+		describe('when attaching a .WASM code that demonstrates the demo storage with calls to runtime with input = 16', function () {
+			beforeEach(function () {
+				gasLimit = 718059880;
+				// 16 encoded as u32 on 4 bytes
+				inputData = [16, 0, 0, 0];
+				code = `0x${fs
+					.readFileSync(path.join(__dirname, 'fixtures/32b-account-and-u128-balance/storage_runtime_demo.wasm'))
+					.toString("hex")}`;
+			});
+			describe('when called with topped up ALICE account during EXECUTION phase', function () {
+				beforeEach(function () {
+					origin = keyring.getPair(ALICE);
+					phase = PHASES.EXECUTION;
+				});
+
+				it('should be successful & return a bunch of events from runtime', async function (done) {
+					const tx = api.tx.runtimeGateway.multistepCall(
+						requester,
+						targetDest,
+						phase,
+						code,
+						value,
+						gasLimit,
+						inputData,
+					);
+					tx.signAndSend(origin, {}, ({events = [], status}) => {
+						console.info('Transaction status:', status.type);
+						if (status.isInBlock) {
+							let relevant_event_messages = events.map(({event: {data, method, section}}) => {
+								return `${section}.${method} ${data.toString()}`;
+							});
+							console.warn('Events:');
+							console.log(relevant_event_messages);
+							// Ignore messsages about treasury deposits that appear on full-node but not on tiny-node.
+							relevant_event_messages = relevant_event_messages.filter(msg => !msg.includes('treasury.Deposit'));
+							// Check all of the generated events for that call.
+							expect(relevant_event_messages).toStrictEqual(
+								[
+									// First call to runtime - store_value stores 16 (0x10)
+									'versatileWasm.VersatileVMExecution ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","0x10000000"]',
+									// First call to runtime - double doubles it - 32 (0x20)
+									'versatileWasm.VersatileVMExecution ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","0x20000000"]',
+									// First call to runtime - complex_calculations converts it to - 129 (0x81)
+									'versatileWasm.VersatileVMExecution ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","0x81000000"]',
+									'system.ExtrinsicSuccess [{"weight":718059880,"class":"Normal","paysFee":"Yes"}]',
+								]
 							);
 						} else if (status.isFinalized) {
 							console.log('Finalized block hash', status.asFinalized.toHex());
