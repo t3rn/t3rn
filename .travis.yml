@@ -24,11 +24,12 @@ before_script:
 script:
   - cd gateway || exit $?
   - echo -e "\033[0;34mBuilding escrow pallets..."
-  - cd pallet-escrow-gateway/escrow-engine && cargo build || (cargo update && cargo build) || exit $? && cd ../..
-  - cd pallet-escrow-gateway/escrow-engine/versatile-wasm && cargo build || (cargo update && cargo build) || exit $? && cd ../../..
-  - cd pallet-escrow-gateway/escrow-engine/escrow-contracts-wrapper && cargo build || (cargo update && cargo build) || exit $? && cd ../../..
-  - cd pallet-escrow-gateway/runtime-gateway && cargo build || (cargo update && cargo build) || exit $? && cd ../..
-  - cd pallet-escrow-gateway/contracts-gateway && cargo build || (cargo update && cargo build) || exit $? && cd ../..
+#  Comment out builds on travis bc of timeout.
+#  - cd pallet-escrow-gateway/escrow-engine && cargo build || (cargo update && cargo build) || exit $? && cd ../..
+#  - cd pallet-escrow-gateway/escrow-engine/versatile-wasm && cargo build || (cargo update && cargo build) || exit $? && cd ../../..
+#  - cd pallet-escrow-gateway/escrow-engine/escrow-contracts-wrapper && cargo build || (cargo update && cargo build) || exit $? && cd ../../..
+#  - cd pallet-escrow-gateway/runtime-gateway && cargo build || (cargo update && cargo build) || exit $? && cd ../..
+#  - cd pallet-escrow-gateway/contracts-gateway && cargo build || (cargo update && cargo build) || exit $? && cd ../..
   - echo -e "\033[0;32mTesting gateway pallets..."
   - cd pallet-escrow-gateway/escrow-engine && cargo test; cd ../..
   - cd pallet-escrow-gateway/runtime-gateway && cargo test; cd ../..
