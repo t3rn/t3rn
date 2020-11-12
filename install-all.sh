@@ -22,12 +22,11 @@ cd demo-runtime && cargo build || (cargo update && cargo build) || exit && cd ..
 
 echo -e "\033[0;34mInstalling integration tests (JS)..."
 cd test-integration && npm install || exit && cd ..
-echo -e "\033[0;32mSo far so good. I will now run integration tests for both demo-runtime & node-full by spinning up the nodes for 1 minute, executing test, exiting the node"
-chmod +x run-node-full.sh
-chmod +x run-demo-runtime.sh
+echo -e "\033[0;32mSo far so good. I will now run integration tests for demo-runtime by spinning up the nodes for 1 minute, executing test, exiting the node"
+chmod +x run-node-tiny.sh
 npm install -g ttab
 
-ttab -w -a iTerm exec ./run-demo-runtime.sh
+ttab -w -a iTerm exec ./run-node-tiny.sh
 sleep 5
 cd test-integration && npm run test:tiny && cd ..
 sleep 60
