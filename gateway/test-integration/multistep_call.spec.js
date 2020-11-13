@@ -65,7 +65,7 @@ beforeEach(
 	}
 );
 
-describe('Escrow Gateway', function () {
+describe('Contracts Gateway', function () {
 	let origin;
 	let phase;
 	let requester;
@@ -181,7 +181,7 @@ describe('Escrow Gateway', function () {
 	});
 });
 
-describe('Escrow Gateway Balances', function () {
+describe('Runtime Gateway', function () {
 	let origin;
 	let phase;
 	let requester;
@@ -195,7 +195,7 @@ describe('Escrow Gateway Balances', function () {
 		beforeEach(function () {
 			origin = keyring.getPair(ALICE);
 			requester = ALICE;
-			value = 0;
+			value = 500_000;
 			targetDest = DAVE;
 		});
 		describe('when attaching a .WASM code that returns = [1, 2, 3, 4] with no inputData and sufficient gas limit', function () {
@@ -272,7 +272,7 @@ describe('Escrow Gateway Balances', function () {
 							relevant_event_messages = relevant_event_messages.filter(msg => !msg.includes('treasury.Deposit'));
 							expect(relevant_event_messages).toEqual(
 								expect.arrayContaining([
-									// These 2 don't appear on full-node, they're only on tiny-node.
+									// Next 2 don't appear on full-node, they're only on tiny-node.
 									// 'system.NewAccount ["5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy"]',
 									// `balances.Endowed ["5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",${value}]`,
 									'balances.Transfer ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",500000]',
