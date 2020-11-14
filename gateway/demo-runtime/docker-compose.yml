@@ -1,0 +1,17 @@
+version: "3.2"
+
+services:
+  dev:
+    container_name: node-demo-runtime
+    image: t3rn/demo-runtime:nightly-2020-10-01
+    working_dir: /var/www/node-demo-runtime
+    ports:
+      - "9944:9944"
+    environment:
+      - CARGO_HOME=/var/www/node-demo-runtime/.cargo
+    volumes:
+      - .:/var/www/node-demo-runtime
+      - type: bind
+        source: ./.local
+        target: /root/.local
+    command: bash -c "cargo +nightly-2020-10-01 build --verbose --release && ./target/release/demo-runtime --dev --ws-external"

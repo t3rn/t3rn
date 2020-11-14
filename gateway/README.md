@@ -40,250 +40,34 @@ Similarly to attached code execution of contract call results in twofold effects
 - `revert` phase discards `deferred_storage_writes` and removes the `deferred_result`.
 - `commit` phase moves the `deferred_storage_writes` to all affected by execution contracts. Note, that between the execution and commit phase state of a contract might have changed. Default behaviour instructs the execution to abort the commit phase and invoke the revert phase instead when that happens. This can be changed by setting the config constant `WhenStateChangedForceTry = true`.
 
-
 Having said that, there is two Gateway pallets:
 
-##### `EscrowGateway` for parachains with Contracts
+##### `ContractsGateway` for parachains with Contracts
 
-`EscrowGateway` pallet integrates with [`Contracts`](https://github.com/paritytech/substrate/tree/master/frame/contracts) pallet, and is modelled to provide the same developer experience as using the contracts pallet.
+`ContractsGateway` pallet integrates with [`Contracts`](https://github.com/paritytech/substrate/tree/master/frame/contracts) pallet, and is modelled to provide the same developer experience as using the contracts pallet.
 - `multistep_call`: executes attached code as a regular contract on that Parachan and/or calls existing contract (also recursively) on that Parachain. Implements `contracts::put_code`, `contracts::instantiate`, `contracts::bare_call`, `contracts::terminate`. After execution phase still no changes are added to the affected existent contracts.
 - `rent_projection`: implements `contracts::rent_projection`.
 - `get_storage`: implements `contracts::get_storage`.
 
-##### `EscrowGatewayBalances` for parachains without Contracts
+##### `RuntimeGateway` for parachains without Contracts
 
-`EscrowGateway` pallet adds a possibility for parachains that do not implement [`Contracts`](https://github.com/paritytech/substrate/tree/master/frame/contracts) pallet, to provide a way of executing attached code in the context of that parachain and secure the results reveal and storage writes by escrow account.
-- `multistep_call`: executes attached code as it would be a regular contract on that Parachan. Only functions from the supported standards can be included in attached contracts. Implements its own version of [runtime sandboxed execution](https://github.com/MaciejBaj/pallet-contracts/blob/escrow-contracts/src/wasm/runtime_escrow.rs) of WASM code.
+`RuntimeGateway` pallet adds a possibility for parachains that do not implement [`Contracts`](https://github.com/paritytech/substrate/tree/master/frame/contracts) pallet, to provide a way of executing attached code in the context of that parachain and secure the results reveal and storage writes by escrow account.
+- `multistep_call`: executes attached code as it would be a regular contract on that Parachan. This Only functions from the supported standards can be included in attached contracts. Implements its own version of [runtime sandboxed execution](https://github.com/MaciejBaj/pallet-contracts/blob/escrow-contracts/src/wasm/runtime_escrow.rs) of WASM code.
 - `rent_projection`: not implemented yet.
 - `get_storage`: not implemented yet.
 
-Escrow Gateway is intended to work within the [Gateway Circuit](https://github.com/t3rn/t3rn#gateway-circuit) which oversees, synchronises and secures the interoperable execution between Parachains involved and communicates with Gateway API.
+Both Contract and Execution Gateways is intended to work within the [Gateway Circuit](https://github.com/t3rn/t3rn#gateway-circuit) which oversees, synchronises and secures the interoperable execution between Parachains involved and communicates with Gateway API.
 
 
 #### Use
-In this repository, both `escrow-gateway` & `escrow-pallet-balances` are installed twofold: 
-- as `tiny-node`, where the Escrow Gateway is one very few connected pallets. This is extended after [substrate-node-template](https://github.com/substrate-developer-hub/substrate-node-template)
-- as `full-node`, where the Escrow Gateway is connected alongside with all the other pallets. Full node comes as a git submodule of [substrate](https://github.com/paritytech/substrate.git). 
-
-To use a full node you will have to initialize the repository as a git submodule first:
-```
-git submodule init 
-git submodule update
-```
-
-Run either a tiny or full node with `bash run-node-tiny.sh` or `bash run-node-full.sh`. 
-
-The node runs on a default for Substrate `ws-port = 9944` & `http-port = 9933`. 
+In this repository, both `escrow-gateway` & `escrow-pallet-balances` are installed as part of the demonstration node - `demo-runtime`, where the Escrow Gateway is one very few connected pallets. This is extended after [substrate-node-template](https://github.com/substrate-developer-hub/substrate-node-template). To start demonstration node run `bash run-node-full.sh`. The node runs on a default for Substrate `ws-port = 9944` & `http-port = 9933`. 
 
 ##### Front-end
 You can verify the Escrow Gateway running demo frontend app from [front-end](./front-end) directory, or using the `Extrinsics` tool of [@polkadot/apps](https://github.com/polkadot-js/apps) GUI which is hosted on https://polkadot.js.org/apps/#/extrinsics. Remember to select a "local node" from the left-menu dropdown.
 
-
 #### Installation
 
-Gateway comes with the `EscrowGateway` pallet, which can be integrated into existing and new parachains and their runtimes:
-
-##### Runtime `[Cargo.toml](https://github.com/t3rn/t3rn/blob/development/gateway/node-tiny/runtime/Cargo.toml)`
-
-_Currently `v2.0.0-rc6` version of substrate is supported_.
-
-Installation of both `EscrowGateway` and `EscrowGatewayBalances` requires satisfying dependencies on other pallets.
-
-Add `EscrowGateway` pallet by specifying the dependency in `Cargo.toml` file of your parachain's node runtime _(see a [commit]() that does it for `substrate-node-template`)_
-```rust,nofmt
-[dependencies.pallet-sudo]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc6'
-version = '2.0.0-rc6'
-
-[dependencies.contracts]
-default-features = false
-git = 'https://github.com/MaciejBaj/pallet-contracts.git'
-branch = 'escrow-contracts'
-package = 'pallet-contracts'
-version = '2.0.0-rc6'
-
-[dependencies.escrow-gateway]
-default-features = false
-git = 'https://github.com/t3rn/gateway-pallet.git'
-version = "2.0.0-rc6"
-```
-
-For `EscrowGatewayBalances` no `contracts` required: 
-```rust,nofmt
-[dependencies.pallet-sudo]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'v2.0.0-rc6'
-version = '2.0.0-rc6'
-
-[dependencies.escrow-gateway]
-default-features = false
-git = 'https://github.com/t3rn/gateway-pallet.git'
-version = "2.0.0-rc6"
-```
-
-
-##### Runtime [`lib.rs`](https://github.com/t3rn/t3rn/blob/development/gateway/node-tiny/runtime/src/lib.rs)
-
-###### Implement Traits
-- __Parachains with Contracts__
-
-Implement `Trait` for `contracts`, `sudo` and `escrow_gateway` (that comes with two traits: `EscrowTrait` for common escrow features - transfers and the actual `Trait` for contract-like behaviours:
-
-```rust
-// substrate-node-template implements sudo already.
-impl pallet_sudo::Trait for Runtime {
-	type Event = Event;
-	type Call = Call;
-}
-
-pub const MILLICENTS: Balance = 1;
-pub const CENTS: Balance = 1_000 * MILLICENTS;
-pub const DOLLARS: Balance = 100 * CENTS;
-
-parameter_types! {
-    pub const TombstoneDeposit: Balance = 16 * MILLICENTS;
-    pub const RentByteFee: Balance = 4 * MILLICENTS;
-    pub const RentDepositOffset: Balance = 1000 * MILLICENTS;
-    pub const SurchargeReward: Balance = 150 * MILLICENTS;
-}
-
-impl contracts::Trait for Runtime {
-	type Time = Timestamp;
-	type Randomness = RandomnessCollectiveFlip;
-	type Currency = Balances;
-	type Event = Event;
-	type DetermineContractAddress = contracts::SimpleAddressDeterminer<Runtime>;
-	type TrieIdGenerator = contracts::TrieIdFromParentCounter<Runtime>;
-	type RentPayment = ();
-	type SignedClaimHandicap = contracts::DefaultSignedClaimHandicap;
-	type TombstoneDeposit = TombstoneDeposit;
-	type StorageSizeOffset = contracts::DefaultStorageSizeOffset;
-	type RentByteFee = RentByteFee;
-	type RentDepositOffset = RentDepositOffset;
-	type SurchargeReward = SurchargeReward;
-	type MaxDepth = contracts::DefaultMaxDepth;
-	type MaxValueSize = contracts::DefaultMaxValueSize;
-	type WeightPrice = pallet_transaction_payment::Module<Self>;
-}
-
-pub use contracts::Schedule as ContractsSchedule;
-
-impl escrow_gateway::EscrowTrait for Runtime {
-	type Currency = Balances;
-	type Time = Timestamp;
-}
-
-parameter_types! {
-    pub const WhenStateChangedForceTry: bool = false;
-}
-
-impl escrow_gateway::Trait for Runtime {
-	type Event = Event;
-	type WhenStateChangedForceTry = WhenStateChangedForceTry;
-}
-
-impl escrow_gateway_balances::Trait for Runtime {
-	type Event = Event;
-}
-```
-
-- __Parachains without Contracts__
-
-Implement `Trait` for `sudo` and `escrow_gateway_balances` (that comes with two traits: `EscrowTrait` for common escrow features - transfers and the actual `Trait` that provides sandboxed runtime execution of WASM code:
-
-```rust
-// substrate-node-template implements sudo already.
-impl pallet_sudo::Trait for Runtime {
-	type Event = Event;
-	type Call = Call;
-}
-
-impl escrow_gateway::EscrowTrait for Runtime {
-	type Currency = Balances;
-	type Time = Timestamp;
-}
-
-impl escrow_gateway_balances::Trait for Runtime {
-	type Event = Event;
-}
-```
-
-You will see a similar error in case you missed an implementation of the contracts Trait:
-```bash
-  39  | pub trait Trait: contracts::Trait + system::Trait {
-      |                  ---------------- required by this bound in `escrow_gateway::Trait`
-```
-
-###### Expose Contracts Schedule
-Expose `Schedule` from `contracts` pallet so it can be consumed by other modules (like `node/src/chain_spec.rs`) without introducing a dependency to `contracts`.
-```rust
-pub use contracts::Schedule as ContractsSchedule;
-```
-
-###### Add pallets to "construct_runtime!"
-Add both `EscrowGateway` and `Contracts` in your `construct_runtime!` macro:
-```rust
-Contracts: contracts::{Module, Call, Config, Storage, Event<T>},
-EscrowGateway: escrow_gateway::{Module, Call, Storage, Event<T>},
-```
-In case you missed this step, you will probably see a similar error message:
-```bash
- error[E0277]: the trait bound `Event: core::convert::From<pallet_contracts::RawEvent<u128, sp_runtime::AccountId32, sp_core::H256>>` is not satisfied
-     --> /Users/macio/projects/substrate.dev/t3rn/gateway/node-tiny/runtime/src/lib.rs:275:15
-      |
-  275 |     type Event = Event;
-      |                  ^^^^^ the trait `core::convert::From<pallet_contracts::RawEvent<u128, sp_runtime::AccountId32, sp_core::H256>>` is not implemented for `Event`
-      | 
-     ::: /Users/macio/.cargo/git/checkouts/substrate-7e08433d4c370a21/e00d78c/frame/contracts/src/lib.rs:322:17
-      |
-  322 |     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
-      |                 ----------------- required by this bound in `pallet_contracts::Trait`
-      |
-```
-
-###### Add contracts pallet to Genesis Configuration
-
-Genesis configurations are controlled in [`src/chain_spec.rs`](). We need to modify this file to include the ContractsConfig type and the contract price units at the top:
-```rust
-use node_template_runtime::{ContractsConfig, ContractsSchedule};
-```
-
-Then inside the testnet_genesis function we need to add the contract configuration to the returned GenesisConfig object as followed:
-
-```rust
-fn testnet_genesis(initial_authorities: Vec<(AuraId, GrandpaId)>,
-    root_key: AccountId,
-    endowed_accounts: Vec<AccountId>,
-    _enable_println: bool) -> GenesisConfig {
-
-    GenesisConfig {
-        /* --snip-- */
-
-        /*** Add This Block ***/
-        contracts: Some(ContractsConfig {
-            current_schedule: ContractsSchedule {
-                    enable_println,
-                    ..Default::default()
-            },
-        }),
-        /*** End Added Block ***/
-    }
-}
-```
-In case you missed this step, you will probably see a similar error message:
-```bash
-error[E0063]: missing field `contracts` in initializer of `node_template_runtime::GenesisConfig`
-   --> node/src/chain_spec.rs:136:2
-    |
-136 |     GenesisConfig {
-    |     ^^^^^^^^^^^^^ missing `contracts`
-
-```
-
-_Please refer to https://substrate.dev/docs/en/tutorials/add-a-pallet-to-your-runtime in case you want to learn more details on adding any pallet to your runtime. Luckily, it's explained on the contracts pallet example :)_
+Please follow independent installation manuals for [`contracts-gateway`](./pallet-escrow-gateway/contracts-gateway) and [`runtime-gateway`](./pallet-escrow-gateway/runtime-gateway) depending on needs. Both of the pallets are installed as part of the [`demo-runtime`](./demo-runtime).
 
 #### API
 The `escrow-gateway-api` pallet is intended to provide the way for a parachain to connect with the t3rn network operated by Gateway Circuit (scheduled to be implemented in [following development phases](../roadmap/following_development_phases.md)) or any other trusted service holding the 
@@ -291,63 +75,17 @@ authorisation keys.
 
 As of now, `escrow_gateway` doesn't implement [Custom RPC](https://substrate.dev/recipes/3-entrees/custom-rpc.html). This might change in the next milestones. 
 
-##### multistep_call
-###### Parameters
-```rust
-fn multistep_call (
-    origin: Origin,         // Origin source of a call; should be the escrow account owner.
-    requester: T::AccountId,   // Account requesting the execution.
-    target_dest: T::AccountId, // Target that the call is addressed to (can be an account or a contract)
-    phase: u8,              // Current execution phase (execute = 0, revert = 1, commit = 2).
-    code: Vec<u8>,          // Code of the package/contract as hex encode .wasm.
-    input_data: Vec<u8>,    // Input data for a call to the instantiated code.
-    value: BalanceOf<T>,    // Transferred value accompanying the call.
-    gas_limit: Gas,         // Gas limit for processing the overall tx (instantiate + call).
-) -> dispatch::DispatchResult
-```
-###### Description
-Executes provided package within the multi-phase context. Invokes several methods of Contracts Pallet underneath: `put-code`, `instantiate` and `bare_call` in order to execute the package on the fly.
-Depending on the `phase` invokes different behaviour: 
-- Execute: Code results are stored on escrow account under corresponding to the call storage key.
-- Revert:  Code results are removed out of escrow account.
-- Commit:  Code results are moved from escrow account to target accounts.
-
-##### rent_projection
-###### Parameters
-```
-pub fn rent_projection(
-    origin: Origin,         // Origin source of a call.
-    address: T::AccountId   // Contract's address.
-) -> dispatch::DispatchResult {
-```
-###### Description
-Projects the time remaining for contract (accessible by its address) to exist. As of now, depends and calls solely `contracts::rent_projection`.
-Target behaviour should estimate the proportional cost of the storage taken by the contract with corresponding address to the overall escrow account size.
-
-##### get_storage
-###### Parameters
-```
-pub fn get_storage(
-    origin: Origin,         // Origin source of a call.
-    address: T::AccountId   // Contract's address.
-    key: [u8; 32]           // Key in 32-byte long hex value.
-) -> dispatch::DispatchResult {
-```
-###### Description
-Looks for a corresponig to the key value in the storage of contracts's address. As of now, depends and calls solely `contracts::get_storage`. This behaviour will probably remain with no changes.
-
 ### Testing Guide
-_As of now only the behaviour of `execute` phase is checked._
 
 #### Unit Tests
-Both `EscrowGateway` and `EscrowGatewayBalanes` come with unit tests. Module instantiation is complex as the gateway introduces a dependency on the contracts and takes place in `src/mock.rs`.  
+
+Both `contracts-gateway` and `runtime-gateway` come with unit tests. Module instantiation is complex as the gateway introduces a dependency on the contracts and takes place in `src/mock.rs`.  
 
 Unit tests cover scenarios checking interaction between execution phases and running the test on couple of WASM contracts:
 - `returns_from_start_fn.wasm` - checking the correct output and proofs
 - `transfer_return_code.wasm` - checking the correct output and transfers from within a contract.
 - `storage_size.wasm` - checking setting of the input and deferred storage writes to a contract.
-
-Make sure, you're in `pallet-escrow-engine` directory to run tests for `EscrowGateway` or `pallet-escrow-engine` directory to run tests for `EscrowGatewayBalanes`.
+- `storage_runtime_demo.wasm` - (only `runtime-gateway`) dispatching calls to runtime as well as `deposit_event` on a demonstrative pallet that stores values and allows for multiple transformations on it - [weights](./pallet-escrow-gateway/contracts-gateway/fixtures/storage_runtime_demo.wat).
 
 To execute the unit test, type: 
 ```shell script
@@ -359,17 +97,16 @@ _While running tests, you may want to change the `debug::info!` to `println!` me
 ```rust
 /// Change debug::info! to println! for test debugging.
 // debug::info!("DEBUG multistep_call -- escrow_engine.execute  {:?}", exec_res);
-println!("DEBUG multistep_call -- escrow_engine.execute  {:?}", exec_res);
+println!("DEBUG multistep_call -- escrow_engine.execute {:?}", exec_res);
 ```
 
-
 #### Integration Tests
-Both `EscrowGateway` and `EscrowGatewayBalances` come with the integration tests. 
+Both `RuntimeGateway` and `ContractsGateway` come with the integration tests. 
 
-Integration tests run different integration scenarios against running Substrate node (either `tiny-node` or `full-node`) connecting with its Call API dedicated for extrinsics. 
+Integration tests run different integration scenarios against running Substrate node (either `demo-runtime` or `full-node`) connecting with its Call API dedicated for extrinsics. 
 
-For example to run the integration tests against the tiny node:
-1. Build & run a `tiny-node` with `bash run-node-tiny.sh`.
+To run the integration tests against the tiny node:
+1. Build & run a `demo-runtime` with `bash run-node-tiny.sh`.
 1. Execute integration tests against `ws:9944` default port: `cd test-integration && npm test:tiny` or `cd test-integration && npm test:full`.
 
 ###### [Execute multi-step transaction](./test-integration/multistep_call.spec.js)

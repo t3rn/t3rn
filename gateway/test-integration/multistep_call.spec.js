@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const {ApiPromise, WsProvider} = require("@polkadot/api");
-const {Bytes} = require("@polkadot/types");
+const {Bytes, u32, u64, u8} = require("@polkadot/types");
 
 const testKeyring = require("@polkadot/keyring/testing").default;
 const keyring = testKeyring({type: "sr25519"});
@@ -23,7 +23,26 @@ beforeAll(() => {
 function pickTypesBasedOnNodeType() {
 	const NODE = process.env.NODE || 'tiny';
 	const types = {
-		EscrowExecuteResult: {result: Bytes}
+		EscrowExecuteResult: {result: Bytes},
+		DeferredStorageWrite: {
+		    dest: Bytes,
+			trie_id: Bytes,
+			key: Bytes,
+			value: Bytes,
+		},
+		TransferEntry: {
+			to: Bytes,
+			value: u32,
+			data: Bytes,
+			gas_left: u64,
+		},
+		ExecutionStamp: {
+			timestamp: u64,
+			phase: u8,
+			proofs: Bytes,
+			call_stamps: Bytes,
+			failure: Bytes,
+		}
 	};
 	if (NODE === 'tiny') {
 		types['Address'] = 'AccountId';
@@ -46,7 +65,7 @@ beforeEach(
 	}
 );
 
-describe('Escrow Gateway', function () {
+describe('Contracts Gateway', function () {
 	let origin;
 	let phase;
 	let requester;
@@ -79,7 +98,7 @@ describe('Escrow Gateway', function () {
 				});
 
 				it('should be successful & return a bunch of events from runtime', async function (done) {
-					const tx = api.tx.escrowGateway.multistepCall(
+					const tx = api.tx.contractsGateway.multistepCall(
 						requester,
 						targetDest,
 						phase,
@@ -119,7 +138,7 @@ describe('Escrow Gateway', function () {
 				});
 
 				it('should be successful after calling with following COMMIT phase: move funds from escrow to target dest + reveal the contract output = [1, 2, 3, 4] ', async function (done) {
-					const tx = api.tx.escrowGateway.multistepCall(
+					const tx = api.tx.contractsGateway.multistepCall(
 						requester,
 						targetDest,
 						PHASES.COMMIT,
@@ -145,7 +164,7 @@ describe('Escrow Gateway', function () {
 									// 'system.NewAccount ["5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy"]',
 									// `balances.Endowed ["5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",${value}]`,
 									`balances.Transfer ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",${value}]`,
-									'escrowGateway.MultistepCommitResult ["0x01020304"]',
+									'contractsGateway.MultistepCommitResult ["0x01020304"]',
 									'system.ExtrinsicSuccess [{"weight":270000000,"class":"Normal","paysFee":"Yes"}]'
 								])
 							);
@@ -162,7 +181,7 @@ describe('Escrow Gateway', function () {
 	});
 });
 
-describe('Escrow Gateway Balances', function () {
+describe('Runtime Gateway', function () {
 	let origin;
 	let phase;
 	let requester;
@@ -176,7 +195,7 @@ describe('Escrow Gateway Balances', function () {
 		beforeEach(function () {
 			origin = keyring.getPair(ALICE);
 			requester = ALICE;
-			value = 500000;
+			value = 500_000;
 			targetDest = DAVE;
 		});
 		describe('when attaching a .WASM code that returns = [1, 2, 3, 4] with no inputData and sufficient gas limit', function () {
@@ -195,7 +214,7 @@ describe('Escrow Gateway Balances', function () {
 				});
 
 				it('should be successful & return a bunch of events from runtime', async function (done) {
-					const tx = api.tx.escrowGatewayBalances.multistepCall(
+					const tx = api.tx.runtimeGateway.multistepCall(
 						requester,
 						targetDest,
 						phase,
@@ -217,6 +236,7 @@ describe('Escrow Gateway Balances', function () {
 							// Check all of the generated events for that call.
 							expect(relevant_event_messages).toStrictEqual(
 								[
+									'versatileWasm.VersatileVMExecution ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","0x01020304"]',
 									'system.ExtrinsicSuccess [{"weight":270000000,"class":"Normal","paysFee":"Yes"}]',
 								]
 							);
@@ -230,7 +250,7 @@ describe('Escrow Gateway Balances', function () {
 				});
 
 				it('should be successful after calling with following COMMIT phase: move funds from escrow to target dest + reveal the contract output = [1, 2, 3, 4] ', async function (done) {
-					const tx = api.tx.escrowGatewayBalances.multistepCall(
+					const tx = api.tx.runtimeGateway.multistepCall(
 						requester,
 						targetDest,
 						PHASES.COMMIT,
@@ -252,14 +272,72 @@ describe('Escrow Gateway Balances', function () {
 							relevant_event_messages = relevant_event_messages.filter(msg => !msg.includes('treasury.Deposit'));
 							expect(relevant_event_messages).toEqual(
 								expect.arrayContaining([
-									// These 2 don't appear on full-node, they're only on tiny-node.
+									// Next 2 don't appear on full-node, they're only on tiny-node.
 									// 'system.NewAccount ["5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy"]',
 									// `balances.Endowed ["5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",${value}]`,
 									'balances.Transfer ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",500000]',
-									'escrowGatewayBalances.MultistepCommitResult ["0x01020304"]',
+									'runtimeGateway.MultistepCommitResult ["0x01020304"]',
 									'system.ExtrinsicSuccess [{"weight":270000000,"class":"Normal","paysFee":"Yes"}]'
 
 								])
+							);
+						} else if (status.isFinalized) {
+							console.log('Finalized block hash', status.asFinalized.toHex());
+							return done();
+						} else if (status.isDropped || status.isInvalid) {
+							return done('Transaction failed processing multistep_call', status);
+						}
+					});
+				});
+			});
+		});
+
+		describe('when attaching a .WASM code that demonstrates the demo storage with calls to runtime with input = 16', function () {
+			beforeEach(function () {
+				gasLimit = 718059880;
+				// 16 encoded as u32 on 4 bytes
+				inputData = [16, 0, 0, 0];
+				code = `0x${fs
+					.readFileSync(path.join(__dirname, 'fixtures/32b-account-and-u128-balance/storage_runtime_demo.wasm'))
+					.toString("hex")}`;
+			});
+			describe('when called with topped up ALICE account during EXECUTION phase', function () {
+				beforeEach(function () {
+					origin = keyring.getPair(ALICE);
+					phase = PHASES.EXECUTION;
+				});
+
+				it('should be successful & return a bunch of events from runtime', async function (done) {
+					const tx = api.tx.runtimeGateway.multistepCall(
+						requester,
+						targetDest,
+						phase,
+						code,
+						value,
+						gasLimit,
+						inputData,
+					);
+					tx.signAndSend(origin, {}, ({events = [], status}) => {
+						console.info('Transaction status:', status.type);
+						if (status.isInBlock) {
+							let relevant_event_messages = events.map(({event: {data, method, section}}) => {
+								return `${section}.${method} ${data.toString()}`;
+							});
+							console.warn('Events:');
+							console.log(relevant_event_messages);
+							// Ignore messsages about treasury deposits that appear on full-node but not on tiny-node.
+							relevant_event_messages = relevant_event_messages.filter(msg => !msg.includes('treasury.Deposit'));
+							// Check all of the generated events for that call.
+							expect(relevant_event_messages).toStrictEqual(
+								[
+									// First call to runtime - store_value stores 16 (0x10)
+									'versatileWasm.VersatileVMExecution ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","0x10000000"]',
+									// First call to runtime - double doubles it - 32 (0x20)
+									'versatileWasm.VersatileVMExecution ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","0x20000000"]',
+									// First call to runtime - complex_calculations converts it to - 129 (0x81)
+									'versatileWasm.VersatileVMExecution ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","0x81000000"]',
+									'system.ExtrinsicSuccess [{"weight":718059880,"class":"Normal","paysFee":"Yes"}]',
+								]
 							);
 						} else if (status.isFinalized) {
 							console.log('Finalized block hash', status.asFinalized.toHex());

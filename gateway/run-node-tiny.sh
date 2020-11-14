@@ -1,12 +1,12 @@
 #!/bin/bash
 
-cd node-tiny || exit
+cd demo-runtime || exit
 
-echo "[run-node-tiny.sh] Building node-tiny with 'cargo build'..."
+echo "[run-demo-runtime.sh] Building demo-runtime with 'cargo build'..."
 cargo build || exit
 
-echo "[run-node-tiny.sh] Cleaning the node-tiny dev database with './target/debug/node-tiny purge-chain --dev'..."
-yes | ./target/debug/node-tiny purge-chain --dev
+echo "[run-demo-runtime.sh] Cleaning the demo-runtime dev database with './target/debug/demo-runtime purge-chain --dev'..."
+yes | ./target/debug/demo-runtime purge-chain --dev
 
-echo "[run-node-tiny.sh] Running node-tiny with './target/debug/node-tiny --dev -lruntime=debug'..."
-./target/debug/node-tiny --dev -lruntime=debug
+echo "[run-demo-runtime.sh] Running demo-runtime with './target/debug/demo-runtime --dev -lruntime=debug'..."
+./target/debug/demo-runtime --dev -lruntime=debug

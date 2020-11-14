@@ -8,7 +8,7 @@ use primitive_types::H256;
 use sp_std::{convert::TryInto, prelude::*, vec::Vec};
 use system;
 
-#[derive(Debug, PartialEq, Eq, Encode, Decode, Clone)]
+#[derive(Debug, Default, PartialEq, Eq, Encode, Decode, Clone)]
 #[codec(compact)]
 pub struct TransferEntry {
     pub to: H256,
