@@ -22,12 +22,18 @@ cd demo-runtime && cargo build || (cargo update && cargo build) || exit && cd ..
 
 echo -e "\033[0;34mInstalling integration tests (JS)..."
 cd test-integration && npm install || exit && cd ..
-echo -e "\033[0;32mSo far so good. I will now run integration tests for demo-runtime by spinning up the nodes for 1 minute, executing test, exiting the node"
+echo -e "\033[0;32mSo far so good. I will now run integration tests for demo-runtime by spinning up the nodes for 1.5 minutes, executing test, exiting the node"
 chmod +x run-node-tiny.sh
 npm install -g ttab
 
-ttab -w -a iTerm exec ./run-node-tiny.sh
+if [ "$(uname)" == "Darwin" ]; then
+    TERM_NAME=iTerm
+else
+    TERM_NAME=gnome-terminal
+fi
+
+ttab -w -a $TERM_NAME exec ./run-node-tiny.sh
 sleep 5
 cd test-integration && npm run test:tiny && cd ..
-sleep 60
+sleep 90
 pkill -f demo-runtime
