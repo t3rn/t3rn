@@ -272,6 +272,9 @@ decl_event!(
         /// Just a dummy event.
         SomethingStored(u32, AccountId),
 
+        /// [execution_stamp]
+        MultistepExecutePhaseSuccess(Vec<u8>),
+
         MultistepExecutionResult(EscrowExecuteResult),
 
         MultistepCommitResult(Vec<u8>),
@@ -576,13 +579,17 @@ decl_module! {
                     debug::info!("DEBUG multistepcall -- Execution Proofs : deferred_transfers {:?}", execution_proofs.deferred_transfers);
                     <DeferredStorageWrites<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), deferred_storage_writes);
 
-                    <ExecutionStamps<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), ExecutionStamp {
+                    let exec_stamp = ExecutionStamp {
                         call_stamps,
                         timestamp: TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now()).ok().unwrap(),
                         phase: 0,
                         proofs: Some(execution_proofs),
                         failure: None,
-                    });
+                    };
+                    <ExecutionStamps<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), exec_stamp.clone());
+                    Self::deposit_event(RawEvent::MultistepExecutePhaseSuccess(
+                       exec_stamp.encode()
+                    ));
                     // ToDo: Return difference between gas spend and actual costs.
                 }
                 // Commit

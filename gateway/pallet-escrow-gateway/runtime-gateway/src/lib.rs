@@ -30,7 +30,6 @@ use versatile_wasm::{
 use sudo;
 
 use gateway_escrow_engine::{
-    proofs::EscrowExecuteResult,
     transfers::{
         commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
     },
@@ -158,7 +157,8 @@ decl_event!(
         /// Just a dummy event.
         SomethingStored(u32, AccountId),
 
-        MultistepExecutionResult(EscrowExecuteResult),
+        /// [execution_stamp]
+        MultistepExecutePhaseSuccess(Vec<u8>),
 
         MultistepCommitResult(Vec<u8>),
 
@@ -397,14 +397,17 @@ decl_module! {
                     debug::info!("DEBUG multistepcall -- Execution Proofs : deferred_transfers {:?}", execution_proofs.deferred_transfers);
                     debug::info!("DEBUG multistepcall -- Execution Proofs : gas_spent {:?} vs left {:?}", gas_meter.gas_spent(), gas_meter.gas_left());
                     <DeferredStorageWrites<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), deferred_storage_writes);
-
-                    <ExecutionStamps<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), ExecutionStamp {
+                    let exec_stamp = ExecutionStamp {
                         call_stamps,
                         timestamp: TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now()).ok().unwrap(),
                         phase: 0,
                         proofs: Some(execution_proofs),
                         failure: None,
-                    });
+                    };
+                    <ExecutionStamps<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), exec_stamp.clone());
+                    Self::deposit_event(RawEvent::MultistepExecutePhaseSuccess(
+                       exec_stamp.encode()
+                    ));
                 }
                 // Commit
                 1 => {
