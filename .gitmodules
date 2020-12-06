@@ -1,3 +1,6 @@
 [submodule "sdk/subxt"]
 	path = sdk/subxt
 	url = https://github.com/MaciejBaj/substrate-subxt
+[submodule "sdk/compiler"]
+	path = sdk/compiler
+	url = https://github.com/MaciejBaj/cargo-contract
