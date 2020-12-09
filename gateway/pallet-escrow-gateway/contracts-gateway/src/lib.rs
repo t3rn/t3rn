@@ -24,7 +24,6 @@ use frame_support::{
 use frame_system::{self as system, ensure_signed};
 pub use gateway_escrow_engine::EscrowTrait;
 use gateway_escrow_engine::{
-    proofs::EscrowExecuteResult,
     transfers::{
         commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
     },
@@ -62,7 +61,6 @@ pub fn cleanup_failed_execution<T: Trait>(
 }
 
 #[derive(Debug, PartialEq, Eq, Encode, Decode, Default, Clone)]
-#[codec(compact)]
 pub struct ExecutionProofs {
     result: Option<Vec<u8>>,
     storage: Option<Vec<u8>>,
@@ -273,13 +271,13 @@ decl_event!(
         SomethingStored(u32, AccountId),
 
         /// [execution_stamp]
-        MultistepExecutePhaseSuccess(Vec<u8>),
+        ContractsGatewayExecutionSuccess(Vec<u8>),
 
-        MultistepExecutionResult(EscrowExecuteResult),
+        /// [execution_stamp]
+        ContractsGatewayCommitSuccess(Vec<u8>),
 
-        MultistepCommitResult(Vec<u8>),
-
-        MultistepRevertResult(u32),
+        /// [execution_stamp]
+        ContractsGatewayRevertSuccess(Vec<u8>),
 
         MultistepUnknownPhase(u8),
 
@@ -441,7 +439,7 @@ decl_module! {
             origin,
             requester: <T as frame_system::Trait>::AccountId,
             target_dest: <T as frame_system::Trait>::AccountId,
-            #[compact] phase: u8,
+            phase: u8,
             code: Vec<u8>,
             #[compact] value: BalanceOf<T>,
             #[compact] gas_limit: Gas,
@@ -588,7 +586,7 @@ decl_module! {
                         failure: None,
                     };
                     <ExecutionStamps<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), exec_stamp.clone());
-                    Self::deposit_event(RawEvent::MultistepExecutePhaseSuccess(
+                    Self::deposit_event(RawEvent::ContractsGatewayExecutionSuccess(
                        exec_stamp.encode()
                     ));
                     // ToDo: Return difference between gas spend and actual costs.
@@ -627,12 +625,12 @@ decl_module! {
                         ).map_err(|_e| <Error<T>>::DestinationContractStorageChangedSinceExecution)?;
                     }
 
-                    <ExecutionStamps<T>>::mutate(&requester, &T::Hashing::hash(&code.clone()), |stamp| {
+                    <ExecutionStamps<T>>::mutate(&requester.clone(), &T::Hashing::hash(&code.clone()), |stamp| {
                         stamp.phase = 1;
                     });
 
-                    Self::deposit_event(RawEvent::MultistepCommitResult(
-                        <DeferredResults<T>>::get(&requester, &T::Hashing::hash(&code.clone()))
+                    Self::deposit_event(RawEvent::ContractsGatewayCommitSuccess(
+                         <ExecutionStamps<T>>::get(&requester, &T::Hashing::hash(&code.clone())).encode()
                     ));
                 },
                 // Revert
@@ -640,9 +638,12 @@ decl_module! {
                    Self::revert(
                         origin,
                         escrow_account,
-                        requester,
-                        code,
-                   ).map_err(|e| e)?
+                        requester.clone(),
+                        code.clone(),
+                   ).map_err(|e| e)?;
+                   Self::deposit_event(RawEvent::ContractsGatewayRevertSuccess(
+                        <ExecutionStamps<T>>::get(&requester, &T::Hashing::hash(&code.clone())).encode()
+                   ));
                 },
                 _ => {
                     debug::info!("DEBUG gateway_contract_exec -- Unknown Phase {}", phase);

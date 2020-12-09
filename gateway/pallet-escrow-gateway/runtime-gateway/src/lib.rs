@@ -61,7 +61,6 @@ pub fn cleanup_failed_execution<T: Trait>(
 }
 
 #[derive(Debug, PartialEq, Eq, Encode, Decode, Default, Clone)]
-#[codec(compact)]
 pub struct ExecutionProofs {
     result: Option<Vec<u8>>,
     storage: Option<Vec<u8>>,
@@ -158,7 +157,13 @@ decl_event!(
         SomethingStored(u32, AccountId),
 
         /// [execution_stamp]
-        MultistepExecutePhaseSuccess(Vec<u8>),
+        RuntimeGatewayVersatileExecutionSuccess(Vec<u8>),
+
+        /// [execution_stamp]
+        RuntimeGatewayVersatileCommitSuccess(Vec<u8>),
+
+        /// [execution_stamp]
+        RuntimeGatewayVersatileRevertSuccess(Vec<u8>),
 
         MultistepCommitResult(Vec<u8>),
 
@@ -295,7 +300,7 @@ decl_module! {
             origin,
             requester: <T as system::Trait>::AccountId,
             target_dest: <T as system::Trait>::AccountId,
-            #[compact] phase: u8,
+            phase: u8,
             code: Vec<u8>,
             #[compact] value: BalanceOf<T>,
             #[compact] gas_limit: Gas,
@@ -331,7 +336,9 @@ decl_module! {
                     let result_proof: Option<Vec<u8>> = match !code.is_empty() {
                         // Only A.1) - no code, there is no contracts on the balance-only parachains.
                         false => {
+                            debug::info!("DEBUG multistep_call -- before check escrow_transfer to target dest -- value {:?}", value.clone());
                             if value > BalanceOf::<T>::from(0) {
+                                debug::info!("DEBUG multistep_call -- before escrow_transfer to target dest {:?}", &target_dest.clone());
                                 escrow_transfer::<T>(
                                     &escrow_account.clone(),
                                     &requester.clone(),
@@ -405,7 +412,7 @@ decl_module! {
                         failure: None,
                     };
                     <ExecutionStamps<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), exec_stamp.clone());
-                    Self::deposit_event(RawEvent::MultistepExecutePhaseSuccess(
+                    Self::deposit_event(RawEvent::RuntimeGatewayVersatileExecutionSuccess(
                        exec_stamp.encode()
                     ));
                 }
@@ -425,8 +432,8 @@ decl_module! {
                         stamp.phase = 1;
                     });
 
-                    Self::deposit_event(RawEvent::MultistepCommitResult(
-                        <DeferredResults<T>>::get(&requester, &T::Hashing::hash(&code.clone()))
+                    Self::deposit_event(RawEvent::RuntimeGatewayVersatileCommitSuccess(
+                        <ExecutionStamps<T>>::get(&requester, &T::Hashing::hash(&code.clone())).encode()
                     ));
                 },
                 // Revert
@@ -434,12 +441,15 @@ decl_module! {
                    Self::revert(
                         origin,
                         escrow_account.clone(),
-                        requester,
+                        requester.clone(),
                         code.clone(),
                    ).map_err(|e| e)?;
                    kill_storage(
                         &get_child_storage_for_current_execution::<T>(&escrow_account, T::Hashing::hash(&code.clone()))
                    );
+                   Self::deposit_event(RawEvent::RuntimeGatewayVersatileRevertSuccess(
+                        <ExecutionStamps<T>>::get(&requester, &T::Hashing::hash(&code.clone())).encode()
+                   ));
                 },
                 _ => {
                     debug::info!("DEBUG multistep_call -- Unknown Phase {}", phase);
