@@ -23,11 +23,12 @@ cd ../gateway || exit
 # Pre-install in the same terminal, can take time if build isn't ready.
 cd demo-runtime || exit
 cargo build || exit
+cd ../
 
 # Run demo-node in a separate terminal; should be fast as the build is ready.
 ttab -w -a $TERM_NAME exec ./run-node-tiny.sh
 cd ../sdk || exit
-sleep 5
+sleep 8
 
 echo -e "\033[0;34mBuilding demo contract components using composable-build..."
 cd ./examples/haphazard_demo_storage || exit
