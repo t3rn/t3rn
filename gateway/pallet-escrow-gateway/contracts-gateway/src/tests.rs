@@ -41,7 +41,7 @@ const OTHER_ACCOUNT: u64 = 5;
   - CALL = 135 * 500_000
   - total = 310 * 500_000 = 155_000_000
 **/
-fn default_multistep_call_args() -> (u8, Vec<u8>, Vec<u8>, BalanceOf<Test>, Gas) {
+fn default_gateway_contract_exec_args() -> (u8, Vec<u8>, Vec<u8>, BalanceOf<Test>, Gas) {
     let phase = 0 as u8;
     let code: Vec<u8> = Vec::new();
     let input_data: Vec<u8> = Vec::new();
@@ -52,12 +52,12 @@ fn default_multistep_call_args() -> (u8, Vec<u8>, Vec<u8>, BalanceOf<Test>, Gas)
 
 #[test]
 fn should_only_allow_to_be_called_by_escrow_account_being_sudo() {
-    let (phase, code, input_data, value, gas_limit) = default_multistep_call_args();
+    let (phase, code, input_data, value, gas_limit) = default_gateway_contract_exec_args();
 
     new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
         let _ = Balances::deposit_creating(&REQUESTER, 10_000_000_000);
 
-        let err_rec = EscrowGateway::multistep_call(
+        let err_rec = EscrowGateway::gateway_contract_exec(
             Origin::signed(OTHER_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
@@ -72,13 +72,13 @@ fn should_only_allow_to_be_called_by_escrow_account_being_sudo() {
 }
 
 #[test]
-fn during_execution_phase_when_given_empty_wasm_code_multistep_call_only_deferrs_transfer() {
-    let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
+fn during_execution_phase_when_given_empty_wasm_code_gateway_contract_exec_only_deferrs_transfer() {
+    let (phase, _, input_data, value, gas_limit) = default_gateway_contract_exec_args();
 
     new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
         let _ = Balances::deposit_creating(&REQUESTER, 10_000_000_000);
 
-        assert_ok!(EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::gateway_contract_exec(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
@@ -101,9 +101,9 @@ fn during_execution_phase_when_given_empty_wasm_code_multistep_call_only_deferrs
 }
 
 #[test]
-fn during_execution_phase_when_given_correct_wasm_code_but_too_little_gas_limit_multistep_call_gives_initiate_error()
+fn during_execution_phase_when_given_correct_wasm_code_but_too_little_gas_limit_gateway_contract_exec_gives_initiate_error()
  {
-    let (phase, _, input_data, value, _) = default_multistep_call_args();
+    let (phase, _, input_data, value, _) = default_gateway_contract_exec_args();
     let correct_wasm_path = Path::new("fixtures/return_from_start_fn.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     // Make the gas limit too little
@@ -112,7 +112,7 @@ fn during_execution_phase_when_given_correct_wasm_code_but_too_little_gas_limit_
     new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
         let _ = Balances::deposit_creating(&REQUESTER, 10_000_000_000);
         assert_err!(
-            EscrowGateway::multistep_call(
+            EscrowGateway::gateway_contract_exec(
                 Origin::signed(ESCROW_ACCOUNT),
                 REQUESTER,
                 TARGET_DEST,
@@ -128,15 +128,15 @@ fn during_execution_phase_when_given_correct_wasm_code_but_too_little_gas_limit_
 }
 
 #[test]
-fn during_execution_phase_when_given_correct_wasm_code_multistep_call_succeeds() {
-    let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
+fn during_execution_phase_when_given_correct_wasm_code_gateway_contract_exec_succeeds() {
+    let (phase, _, input_data, value, gas_limit) = default_gateway_contract_exec_args();
     let correct_wasm_path = Path::new("fixtures/return_from_start_fn.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
 
     new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
         let _ = Balances::deposit_creating(&REQUESTER, 10_000_000_000);
 
-        assert_ok!(EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::gateway_contract_exec(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
@@ -150,15 +150,15 @@ fn during_execution_phase_when_given_correct_wasm_code_multistep_call_succeeds()
 }
 
 #[test]
-fn during_execution_phase_when_given_correct_wasm_code_multistep_call_vm_succeeds() {
-    let (phase, _, input_data, value, gas_limit) = default_multistep_call_args();
+fn during_execution_phase_when_given_correct_wasm_code_gateway_contract_exec_vm_succeeds() {
+    let (phase, _, input_data, value, gas_limit) = default_gateway_contract_exec_args();
     let correct_wasm_path = Path::new("fixtures/return_from_start_fn.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
 
     new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
         let _ = Balances::deposit_creating(&REQUESTER, 10_000_000_000);
 
-        assert_ok!(EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::gateway_contract_exec(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
@@ -176,7 +176,7 @@ fn during_execution_phase_when_given_correct_wasm_code_multistep_call_vm_succeed
 **/
 #[test]
 fn transfer_during_execution_phase_succeeds_and_consumes_costs_correctly_and_deferrs_transfers() {
-    let (phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
+    let (phase, _, input_data, value, _gas_limit) = default_gateway_contract_exec_args();
     let correct_wasm_path = Path::new("fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     // Set fees
@@ -194,7 +194,7 @@ fn transfer_during_execution_phase_succeeds_and_consumes_costs_correctly_and_def
                 + (value)
                 + inner_contract_transfer_value,
         );
-        assert_ok!(EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::gateway_contract_exec(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
@@ -239,7 +239,7 @@ fn transfer_during_execution_phase_succeeds_and_consumes_costs_correctly_and_def
 
 #[test]
 fn commit_phase_cannot_be_triggered_without_preceeding_execution() {
-    let (_phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
+    let (_phase, _, input_data, value, _gas_limit) = default_gateway_contract_exec_args();
     let correct_wasm_path = Path::new("fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     // Set fees
@@ -259,7 +259,7 @@ fn commit_phase_cannot_be_triggered_without_preceeding_execution() {
         );
 
         assert_noop!(
-            EscrowGateway::multistep_call(
+            EscrowGateway::gateway_contract_exec(
                 Origin::signed(ESCROW_ACCOUNT),
                 REQUESTER,
                 TARGET_DEST,
@@ -276,7 +276,7 @@ fn commit_phase_cannot_be_triggered_without_preceeding_execution() {
 
 #[test]
 fn successful_commit_phase_transfers_move_from_deferred_to_target_destinations() {
-    let (_phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
+    let (_phase, _, input_data, value, _gas_limit) = default_gateway_contract_exec_args();
     let correct_wasm_path = Path::new("fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     // Set fees
@@ -294,7 +294,7 @@ fn successful_commit_phase_transfers_move_from_deferred_to_target_destinations()
                 + (value)
                 + inner_contract_transfer_value,
         );
-        assert_ok!(EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::gateway_contract_exec(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
@@ -314,7 +314,7 @@ fn successful_commit_phase_transfers_move_from_deferred_to_target_destinations()
             sufficient_gas_limit + inner_contract_transfer_value + value
         ); // 188000100
 
-        assert_ok!(EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::gateway_contract_exec(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
@@ -338,7 +338,7 @@ fn successful_commit_phase_transfers_move_from_deferred_to_target_destinations()
 #[test]
 fn successful_revert_phase_removes_deferred_results_and_transfers_and_refunds_from_escrow_to_requester()
  {
-    let (_phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
+    let (_phase, _, input_data, value, _gas_limit) = default_gateway_contract_exec_args();
     let correct_wasm_path = Path::new("fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     // Set fees
@@ -356,7 +356,7 @@ fn successful_revert_phase_removes_deferred_results_and_transfers_and_refunds_fr
                 + (value)
                 + inner_contract_transfer_value,
         );
-        assert_ok!(EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::gateway_contract_exec(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
@@ -384,7 +384,7 @@ fn successful_revert_phase_removes_deferred_results_and_transfers_and_refunds_fr
             sufficient_gas_limit + inner_contract_transfer_value + value
         ); // 188000100
 
-        assert_ok!(EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::gateway_contract_exec(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
@@ -418,7 +418,7 @@ fn successful_revert_phase_removes_deferred_results_and_transfers_and_refunds_fr
 
 #[test]
 fn successful_commit_phase_changes_phase_of_execution_stamp() {
-    let (_phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
+    let (_phase, _, input_data, value, _gas_limit) = default_gateway_contract_exec_args();
     let correct_wasm_path = Path::new("fixtures/transfer_return_code.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     // Set fees
@@ -436,7 +436,7 @@ fn successful_commit_phase_changes_phase_of_execution_stamp() {
                 + (value)
                 + inner_contract_transfer_value,
         );
-        assert_ok!(EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::gateway_contract_exec(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
@@ -447,7 +447,7 @@ fn successful_commit_phase_changes_phase_of_execution_stamp() {
             input_data.clone()
         ));
 
-        assert_ok!(EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::gateway_contract_exec(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
@@ -507,7 +507,7 @@ fn successful_commit_phase_changes_phase_of_execution_stamp() {
 
 #[test]
 fn successful_commit_phase_applies_deferred_storage_writes() {
-    let (_phase, _, _input_data, value, _gas_limit) = default_multistep_call_args();
+    let (_phase, _, _input_data, value, _gas_limit) = default_gateway_contract_exec_args();
     let correct_wasm_path = Path::new("fixtures/storage_size.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
     // Set fees
@@ -529,7 +529,7 @@ fn successful_commit_phase_applies_deferred_storage_writes() {
                 + (value)
                 + inner_contract_transfer_value,
         );
-        assert_ok!(EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::gateway_contract_exec(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
@@ -593,7 +593,7 @@ fn successful_commit_phase_applies_deferred_storage_writes() {
             empty_storage_at_dest_root
         );
 
-        assert_ok!(EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::gateway_contract_exec(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,

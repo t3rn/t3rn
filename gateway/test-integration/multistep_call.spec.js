@@ -98,7 +98,7 @@ describe('Contracts Gateway', function () {
 				});
 
 				it('should be successful & return a bunch of events from runtime', async function (done) {
-					const tx = api.tx.contractsGateway.multistepCall(
+					const tx = api.tx.contractsGateway.gatewayContractExec(
 						requester,
 						targetDest,
 						phase,
@@ -138,7 +138,7 @@ describe('Contracts Gateway', function () {
 				});
 
 				it('should be successful after calling with following COMMIT phase: move funds from escrow to target dest + reveal the contract output = [1, 2, 3, 4] ', async function (done) {
-					const tx = api.tx.contractsGateway.multistepCall(
+					const tx = api.tx.contractsGateway.gatewayContractExec(
 						requester,
 						targetDest,
 						PHASES.COMMIT,

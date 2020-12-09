@@ -24,7 +24,6 @@ use frame_support::{
 use frame_system::{self as system, ensure_signed};
 pub use gateway_escrow_engine::EscrowTrait;
 use gateway_escrow_engine::{
-    proofs::EscrowExecuteResult,
     transfers::{
         commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
     },
@@ -62,7 +61,6 @@ pub fn cleanup_failed_execution<T: Trait>(
 }
 
 #[derive(Debug, PartialEq, Eq, Encode, Decode, Default, Clone)]
-#[codec(compact)]
 pub struct ExecutionProofs {
     result: Option<Vec<u8>>,
     storage: Option<Vec<u8>>,
@@ -88,7 +86,7 @@ pub fn instantiate_temp_execution_contract<'a, T: Trait>(
     let code_hash_res =
         <escrow_contracts_wrapper::Module<T>>::put_code(origin.clone(), code.clone());
     debug::info!(
-        "DEBUG multistep_call -- escrow_contracts_wrapper::put_code {:?}",
+        "DEBUG gateway_contract_exec -- escrow_contracts_wrapper::put_code {:?}",
         code_hash_res
     );
     code_hash_res.map_err(|_e| <Error<T>>::PutCodeFailure)?;
@@ -273,13 +271,13 @@ decl_event!(
         SomethingStored(u32, AccountId),
 
         /// [execution_stamp]
-        MultistepExecutePhaseSuccess(Vec<u8>),
+        ContractsGatewayExecutionSuccess(Vec<u8>),
 
-        MultistepExecutionResult(EscrowExecuteResult),
+        /// [execution_stamp]
+        ContractsGatewayCommitSuccess(Vec<u8>),
 
-        MultistepCommitResult(Vec<u8>),
-
-        MultistepRevertResult(u32),
+        /// [execution_stamp]
+        ContractsGatewayRevertSuccess(Vec<u8>),
 
         MultistepUnknownPhase(u8),
 
@@ -409,7 +407,7 @@ decl_module! {
         /// * storage - changes to the storage of target destination contracts. That's the most complex effect to implement as it relies relies on already registered contracts on that parachains and their behaviour.
         /// * results - results returned by execution of contract on that parachain. Execution phase sends back the result's hash to allow forming consensus over its correctness. The commit phase returns actual result.
         ///
-        /// Based on those effects, multistep_call can be used in different manners:
+        /// Based on those effects, gateway_contract_exec can be used in different manners:
         /// * A) For deferring balance transfers:
         ///     * A.1) A single balance transfer to the target_dest can be deferred by calling with empty code and a value
         ///     * A.2) Multiple balance transfers to multiple target destinations by attaching the corresponding contract
@@ -437,11 +435,11 @@ decl_module! {
         /// the results in memory or elevating responsibility the results management to Gateway Circuit (preferable).
         /// ---
        #[weight = *gas_limit]
-        pub fn multistep_call(
+        pub fn gateway_contract_exec(
             origin,
             requester: <T as frame_system::Trait>::AccountId,
             target_dest: <T as frame_system::Trait>::AccountId,
-            #[compact] phase: u8,
+            phase: u8,
             code: Vec<u8>,
             #[compact] value: BalanceOf<T>,
             #[compact] gas_limit: Gas,
@@ -449,6 +447,7 @@ decl_module! {
         ) -> dispatch::DispatchResult {
             let escrow_account = ensure_signed(origin.clone())?;
             ensure!(escrow_account == <sudo::Module<T>>::key(), Error::<T>::UnauthorizedCallAttempt);
+            debug::info!("DEBUG gateway_contract_exec -- contracts args -- {:?}, {:?}, {:?} ,{:?}, {:?}, {:?}, {:?}", requester, target_dest, phase, code, value, gas_limit, input_data);
 
             match phase {
                 0 => {
@@ -470,14 +469,14 @@ decl_module! {
                         Error::<T>::BalanceTransferFailed
                     })?;
 
-                    debug::info!("DEBUG multistep_call -- just_transfer total balance of CONTRACT -- vs REQUESTER {:?} vs ESCROW {:?}", <T as EscrowTrait>::Currency::free_balance(&requester), <T as EscrowTrait>::Currency::free_balance(&escrow_account));
+                    debug::info!("DEBUG gateway_contract_exec -- just_transfer total balance of CONTRACT -- vs REQUESTER {:?} vs ESCROW {:?}", <T as EscrowTrait>::Currency::free_balance(&requester), <T as EscrowTrait>::Currency::free_balance(&escrow_account));
 
                     let mut gas_meter = GasMeter::<T>::new(gas_limit);
                     let mut transfers = Vec::<TransferEntry>::new();
                     let mut deferred_storage_writes = Vec::<DeferredStorageWrite>::new();
                     let mut call_stamps = Vec::<CallStamp>::new();
 
-                    // Make a distinction on the purpose of the call. Refer to the multistep_call docs.
+                    // Make a distinction on the purpose of the call. Refer to the gateway_contract_exec docs.
                     let result_proof: Option<Vec<u8>> = match (!code.is_empty(), <ContractInfoOf<T>>::get(&target_dest.clone())) {
                         // Only A.1) - no code, not a contract - just deferrsed transfer.
                         (false, None) => {
@@ -587,7 +586,7 @@ decl_module! {
                         failure: None,
                     };
                     <ExecutionStamps<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), exec_stamp.clone());
-                    Self::deposit_event(RawEvent::MultistepExecutePhaseSuccess(
+                    Self::deposit_event(RawEvent::ContractsGatewayExecutionSuccess(
                        exec_stamp.encode()
                     ));
                     // ToDo: Return difference between gas spend and actual costs.
@@ -626,12 +625,12 @@ decl_module! {
                         ).map_err(|_e| <Error<T>>::DestinationContractStorageChangedSinceExecution)?;
                     }
 
-                    <ExecutionStamps<T>>::mutate(&requester, &T::Hashing::hash(&code.clone()), |stamp| {
+                    <ExecutionStamps<T>>::mutate(&requester.clone(), &T::Hashing::hash(&code.clone()), |stamp| {
                         stamp.phase = 1;
                     });
 
-                    Self::deposit_event(RawEvent::MultistepCommitResult(
-                        <DeferredResults<T>>::get(&requester, &T::Hashing::hash(&code.clone()))
+                    Self::deposit_event(RawEvent::ContractsGatewayCommitSuccess(
+                         <ExecutionStamps<T>>::get(&requester, &T::Hashing::hash(&code.clone())).encode()
                     ));
                 },
                 // Revert
@@ -639,12 +638,15 @@ decl_module! {
                    Self::revert(
                         origin,
                         escrow_account,
-                        requester,
-                        code,
-                   ).map_err(|e| e)?
+                        requester.clone(),
+                        code.clone(),
+                   ).map_err(|e| e)?;
+                   Self::deposit_event(RawEvent::ContractsGatewayRevertSuccess(
+                        <ExecutionStamps<T>>::get(&requester, &T::Hashing::hash(&code.clone())).encode()
+                   ));
                 },
                 _ => {
-                    debug::info!("DEBUG multistep_call -- Unknown Phase {}", phase);
+                    debug::info!("DEBUG gateway_contract_exec -- Unknown Phase {}", phase);
                     Something::put(phase as u32);
                     Self::deposit_event(RawEvent::MultistepUnknownPhase(phase));
                 }
