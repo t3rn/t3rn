@@ -56,20 +56,25 @@ if [[ $DEPLOY_OUTPUT =~ $REGEX_CODE_HASH ]]; then
              #  2. Flip via regular contract call.
              #  3. If flip.value = true, execute "COMMIT" phase for runtime demo via Runtime Gateway
              #  4. If flip.value = false, execute "REVERT" phase for runtime demo via Runtime Gateway
-            echo -e "\033[0;36mExecuting demo contract via runtime gateway..."
+             echo -e "\033[0;36mExecuting demo contract via runtime gateway..."
              EXEC_DEMO_OUTPUT=$($T3RN_COMPILER_BIN contract call-runtime-gateway --phase 0 --data 16000000 --suri //Alice --target //Bob --requester //Bob ./target/runtime_demo_storage/runtime_demo_storage.wasm)
              echo -e "\033[0;36mSuccessfully executed EXEC phase of demo contract via runtime gateway: "
              echo "$EXEC_DEMO_OUTPUT"
              CALL_FLIP_OUTPUT=$($T3RN_COMPILER_BIN contract call-contract --data c096a5f3 --suri //Alice --target "$CONTRACT_ACCOUNT")
              if [[ $CALL_FLIP_OUTPUT =~ $REGEX_FLIP_RESULT ]]; then
-                echo -e "\033[0;32mCoin flip resulted with TRUE! Commit demo storage execution via runtime gateway."
-                COMMIT_DEMO_OUTPUT=$($T3RN_COMPILER_BIN contract call-runtime-gateway --phase 1 --data 16000000 --suri //Alice --target //Bob --requester //Bob ./target/runtime_demo_storage/runtime_demo_storage.wasm)
-                echo -e "\033[0;32mSuccessful COMMIT phase of demo contract via runtime gateway"
-             fi
-             if [[ $CALL_FLIP_OUTPUT =~ $REGEX_FLIP_NEGATIVE ]]; then
-                echo -e "\033[0;33mCoin flip resulted with FALSE. Revert demo storage execution via runtime gateway."
-                REVERT_DEMO_OUTPUT=$($T3RN_COMPILER_BIN contract call-runtime-gateway --phase 2 --data 16000000 --suri //Alice --target //Bob --requester //Bob ./target/runtime_demo_storage/runtime_demo_storage.wasm)
-                echo -e "\033[0;33mSuccessful REVERT phase of demo contract via runtime gateway"
+               echo -e "\033[0;32mCoin flip result successfully recognized: ${BASH_REMATCH[1]}"
+               if [[ "${BASH_REMATCH[1]}" = '[0, 0]' ]]; then
+                  echo -e "\033[0;32mCoin flip resulted with FALSE! Commit demo storage execution via runtime gateway."
+                  COMMIT_DEMO_OUTPUT=$($T3RN_COMPILER_BIN contract call-runtime-gateway --phase 1 --data 16000000 --suri //Alice --target //Bob --requester //Bob ./target/runtime_demo_storage/runtime_demo_storage.wasm)
+                  echo -e "\033[0;32mSuccessful COMMIT phase of demo contract via runtime gateway"
+               fi
+               if [[ "${BASH_REMATCH[1]}" = '[1, 0]' ]]; then
+                  echo -e "\033[0;33mCoin flip resulted with TRUE. Revert demo storage execution via runtime gateway."
+                  REVERT_DEMO_OUTPUT=$($T3RN_COMPILER_BIN contract call-runtime-gateway --phase 2 --data 16000000 --suri //Alice --target //Bob --requester //Bob ./target/runtime_demo_storage/runtime_demo_storage.wasm)
+                  echo -e "\033[0;33mSuccessful REVERT phase of demo contract via runtime gateway"
+               fi
+             else
+                echo -e "\033[0;31mError: Can't recognize flip result: $CALL_FLIP_OUTPUT"
              fi
           fi
         fi
