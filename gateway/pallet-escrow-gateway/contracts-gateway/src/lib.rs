@@ -22,12 +22,10 @@ use frame_support::{
     traits::{Currency, Get, Time},
 };
 use frame_system::{self as system, ensure_signed};
-pub use gateway_escrow_engine::EscrowTrait;
-use gateway_escrow_engine::{
-    transfers::{
-        commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
-    },
+use gateway_escrow_engine::transfers::{
+    commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
 };
+pub use gateway_escrow_engine::EscrowTrait;
 use reduce::Reduce;
 use sp_runtime::traits::{Hash, Saturating};
 use sp_runtime::DispatchResult;
@@ -62,18 +60,18 @@ pub fn cleanup_failed_execution<T: Trait>(
 
 #[derive(Debug, PartialEq, Eq, Encode, Decode, Default, Clone)]
 pub struct ExecutionProofs {
-    result: Option<Vec<u8>>,
-    storage: Option<Vec<u8>>,
-    deferred_transfers: Vec<TransferEntry>,
+    pub result: Option<Vec<u8>>,
+    pub storage: Option<Vec<u8>>,
+    pub deferred_transfers: Vec<TransferEntry>,
 }
 
 #[derive(Debug, PartialEq, Eq, Encode, Decode, Default, Clone)]
 pub struct ExecutionStamp {
-    timestamp: u64,
-    phase: u8,
-    proofs: Option<ExecutionProofs>,
-    call_stamps: Vec<CallStamp>,
-    failure: Option<u8>, // Error Code
+    pub timestamp: u64,
+    pub phase: u8,
+    pub proofs: Option<ExecutionProofs>,
+    pub call_stamps: Vec<CallStamp>,
+    pub failure: Option<u8>, // Error Code
 }
 
 pub fn instantiate_temp_execution_contract<'a, T: Trait>(
@@ -270,14 +268,14 @@ decl_event!(
         /// Just a dummy event.
         SomethingStored(u32, AccountId),
 
-        /// [execution_stamp]
-        ContractsGatewayExecutionSuccess(Vec<u8>),
+        /// \[timestamp, phase, result, deferred_transfers\]
+        ContractsGatewayExecutionSuccess(u64, u8, Vec<u8>, Vec<TransferEntry>),
 
-        /// [execution_stamp]
-        ContractsGatewayCommitSuccess(Vec<u8>),
+        /// \[timestamp, phase, result, deferred_transfers\]
+        ContractsGatewayCommitSuccess(u64, u8, Vec<u8>, Vec<TransferEntry>),
 
-        /// [execution_stamp]
-        ContractsGatewayRevertSuccess(Vec<u8>),
+        /// \[timestamp, phase, result, deferred_transfers\]
+        ContractsGatewayRevertSuccess(u64, u8, Vec<u8>, Vec<TransferEntry>),
 
         MultistepUnknownPhase(u8),
 
@@ -546,6 +544,8 @@ decl_module! {
                                         Err(err.error)?
                                     }
                                 }
+                                // println!("IS ALIVE CONTRACT AT TARGET DEST! CALL RES {:?}", result_called_contract.clone());
+                                // ()
                             }
                             // Store the result in order to reveal during Commit phase or delete during Revert.
                             // Give priority here to the result of contract at target destination if exist.
@@ -582,12 +582,14 @@ decl_module! {
                         call_stamps,
                         timestamp: TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now()).ok().unwrap(),
                         phase: 0,
-                        proofs: Some(execution_proofs),
+                        proofs: Some(execution_proofs.clone()),
                         failure: None,
                     };
                     <ExecutionStamps<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), exec_stamp.clone());
+
+                    let exec_stamp = <ExecutionStamps<T>>::get(&requester, &T::Hashing::hash(&code.clone()));
                     Self::deposit_event(RawEvent::ContractsGatewayExecutionSuccess(
-                       exec_stamp.encode()
+                        exec_stamp.timestamp, 0b00000000u8, T::Hashing::hash(&<DeferredResults<T>>::get(&requester, &T::Hashing::hash(&code.clone()))).encode(), execution_proofs.deferred_transfers
                     ));
                     // ToDo: Return difference between gas spend and actual costs.
                 }
@@ -629,8 +631,9 @@ decl_module! {
                         stamp.phase = 1;
                     });
 
+                    let exec_stamp = <ExecutionStamps<T>>::get(&requester, &T::Hashing::hash(&code.clone()));
                     Self::deposit_event(RawEvent::ContractsGatewayCommitSuccess(
-                         <ExecutionStamps<T>>::get(&requester, &T::Hashing::hash(&code.clone())).encode()
+                        exec_stamp.timestamp, 0b00000001u8, <DeferredResults<T>>::get(&requester, &T::Hashing::hash(&code.clone())).encode(), vec![],
                     ));
                 },
                 // Revert
@@ -641,8 +644,9 @@ decl_module! {
                         requester.clone(),
                         code.clone(),
                    ).map_err(|e| e)?;
+                   let exec_stamp = <ExecutionStamps<T>>::get(&requester, &T::Hashing::hash(&code.clone()));
                    Self::deposit_event(RawEvent::ContractsGatewayRevertSuccess(
-                        <ExecutionStamps<T>>::get(&requester, &T::Hashing::hash(&code.clone())).encode()
+                       exec_stamp.timestamp, 0b00000010u8, vec![], vec![],
                    ));
                 },
                 _ => {
