@@ -22,13 +22,10 @@ use frame_support::{
     traits::{Currency, Get, Time},
 };
 use frame_system::{self as system, ensure_signed};
-pub use gateway_escrow_engine::EscrowTrait;
-use gateway_escrow_engine::{
-    proofs::EscrowExecuteResult,
-    transfers::{
-        commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
-    },
+use gateway_escrow_engine::transfers::{
+    commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
 };
+pub use gateway_escrow_engine::EscrowTrait;
 use reduce::Reduce;
 use sp_runtime::traits::{Hash, Saturating};
 use sp_runtime::DispatchResult;
@@ -62,20 +59,19 @@ pub fn cleanup_failed_execution<T: Trait>(
 }
 
 #[derive(Debug, PartialEq, Eq, Encode, Decode, Default, Clone)]
-#[codec(compact)]
 pub struct ExecutionProofs {
-    result: Option<Vec<u8>>,
-    storage: Option<Vec<u8>>,
-    deferred_transfers: Vec<TransferEntry>,
+    pub result: Option<Vec<u8>>,
+    pub storage: Option<Vec<u8>>,
+    pub deferred_transfers: Vec<TransferEntry>,
 }
 
 #[derive(Debug, PartialEq, Eq, Encode, Decode, Default, Clone)]
 pub struct ExecutionStamp {
-    timestamp: u64,
-    phase: u8,
-    proofs: Option<ExecutionProofs>,
-    call_stamps: Vec<CallStamp>,
-    failure: Option<u8>, // Error Code
+    pub timestamp: u64,
+    pub phase: u8,
+    pub proofs: Option<ExecutionProofs>,
+    pub call_stamps: Vec<CallStamp>,
+    pub failure: Option<u8>, // Error Code
 }
 
 pub fn instantiate_temp_execution_contract<'a, T: Trait>(
@@ -88,7 +84,7 @@ pub fn instantiate_temp_execution_contract<'a, T: Trait>(
     let code_hash_res =
         <escrow_contracts_wrapper::Module<T>>::put_code(origin.clone(), code.clone());
     debug::info!(
-        "DEBUG multistep_call -- escrow_contracts_wrapper::put_code {:?}",
+        "DEBUG gateway_contract_exec -- escrow_contracts_wrapper::put_code {:?}",
         code_hash_res
     );
     code_hash_res.map_err(|_e| <Error<T>>::PutCodeFailure)?;
@@ -272,11 +268,14 @@ decl_event!(
         /// Just a dummy event.
         SomethingStored(u32, AccountId),
 
-        MultistepExecutionResult(EscrowExecuteResult),
+        /// \[timestamp, phase, result, deferred_transfers\]
+        ContractsGatewayExecutionSuccess(u64, u8, Vec<u8>, Vec<TransferEntry>),
 
-        MultistepCommitResult(Vec<u8>),
+        /// \[timestamp, phase, result, deferred_transfers\]
+        ContractsGatewayCommitSuccess(u64, u8, Vec<u8>, Vec<TransferEntry>),
 
-        MultistepRevertResult(u32),
+        /// \[timestamp, phase, result, deferred_transfers\]
+        ContractsGatewayRevertSuccess(u64, u8, Vec<u8>, Vec<TransferEntry>),
 
         MultistepUnknownPhase(u8),
 
@@ -406,7 +405,7 @@ decl_module! {
         /// * storage - changes to the storage of target destination contracts. That's the most complex effect to implement as it relies relies on already registered contracts on that parachains and their behaviour.
         /// * results - results returned by execution of contract on that parachain. Execution phase sends back the result's hash to allow forming consensus over its correctness. The commit phase returns actual result.
         ///
-        /// Based on those effects, multistep_call can be used in different manners:
+        /// Based on those effects, gateway_contract_exec can be used in different manners:
         /// * A) For deferring balance transfers:
         ///     * A.1) A single balance transfer to the target_dest can be deferred by calling with empty code and a value
         ///     * A.2) Multiple balance transfers to multiple target destinations by attaching the corresponding contract
@@ -434,11 +433,11 @@ decl_module! {
         /// the results in memory or elevating responsibility the results management to Gateway Circuit (preferable).
         /// ---
        #[weight = *gas_limit]
-        pub fn multistep_call(
+        pub fn gateway_contract_exec(
             origin,
             requester: <T as frame_system::Trait>::AccountId,
             target_dest: <T as frame_system::Trait>::AccountId,
-            #[compact] phase: u8,
+            phase: u8,
             code: Vec<u8>,
             #[compact] value: BalanceOf<T>,
             #[compact] gas_limit: Gas,
@@ -446,6 +445,7 @@ decl_module! {
         ) -> dispatch::DispatchResult {
             let escrow_account = ensure_signed(origin.clone())?;
             ensure!(escrow_account == <sudo::Module<T>>::key(), Error::<T>::UnauthorizedCallAttempt);
+            debug::info!("DEBUG gateway_contract_exec -- contracts args -- {:?}, {:?}, {:?} ,{:?}, {:?}, {:?}, {:?}", requester, target_dest, phase, code, value, gas_limit, input_data);
 
             match phase {
                 0 => {
@@ -467,14 +467,14 @@ decl_module! {
                         Error::<T>::BalanceTransferFailed
                     })?;
 
-                    debug::info!("DEBUG multistep_call -- just_transfer total balance of CONTRACT -- vs REQUESTER {:?} vs ESCROW {:?}", <T as EscrowTrait>::Currency::free_balance(&requester), <T as EscrowTrait>::Currency::free_balance(&escrow_account));
+                    debug::info!("DEBUG gateway_contract_exec -- just_transfer total balance of CONTRACT -- vs REQUESTER {:?} vs ESCROW {:?}", <T as EscrowTrait>::Currency::free_balance(&requester), <T as EscrowTrait>::Currency::free_balance(&escrow_account));
 
                     let mut gas_meter = GasMeter::<T>::new(gas_limit);
                     let mut transfers = Vec::<TransferEntry>::new();
                     let mut deferred_storage_writes = Vec::<DeferredStorageWrite>::new();
                     let mut call_stamps = Vec::<CallStamp>::new();
 
-                    // Make a distinction on the purpose of the call. Refer to the multistep_call docs.
+                    // Make a distinction on the purpose of the call. Refer to the gateway_contract_exec docs.
                     let result_proof: Option<Vec<u8>> = match (!code.is_empty(), <ContractInfoOf<T>>::get(&target_dest.clone())) {
                         // Only A.1) - no code, not a contract - just deferrsed transfer.
                         (false, None) => {
@@ -544,6 +544,8 @@ decl_module! {
                                         Err(err.error)?
                                     }
                                 }
+                                // println!("IS ALIVE CONTRACT AT TARGET DEST! CALL RES {:?}", result_called_contract.clone());
+                                // ()
                             }
                             // Store the result in order to reveal during Commit phase or delete during Revert.
                             // Give priority here to the result of contract at target destination if exist.
@@ -576,13 +578,19 @@ decl_module! {
                     debug::info!("DEBUG multistepcall -- Execution Proofs : deferred_transfers {:?}", execution_proofs.deferred_transfers);
                     <DeferredStorageWrites<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), deferred_storage_writes);
 
-                    <ExecutionStamps<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), ExecutionStamp {
+                    let exec_stamp = ExecutionStamp {
                         call_stamps,
                         timestamp: TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now()).ok().unwrap(),
                         phase: 0,
-                        proofs: Some(execution_proofs),
+                        proofs: Some(execution_proofs.clone()),
                         failure: None,
-                    });
+                    };
+                    <ExecutionStamps<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), exec_stamp.clone());
+
+                    let exec_stamp = <ExecutionStamps<T>>::get(&requester, &T::Hashing::hash(&code.clone()));
+                    Self::deposit_event(RawEvent::ContractsGatewayExecutionSuccess(
+                        exec_stamp.timestamp, 0b00000000u8, T::Hashing::hash(&<DeferredResults<T>>::get(&requester, &T::Hashing::hash(&code.clone()))).encode(), execution_proofs.deferred_transfers
+                    ));
                     // ToDo: Return difference between gas spend and actual costs.
                 }
                 // Commit
@@ -619,12 +627,13 @@ decl_module! {
                         ).map_err(|_e| <Error<T>>::DestinationContractStorageChangedSinceExecution)?;
                     }
 
-                    <ExecutionStamps<T>>::mutate(&requester, &T::Hashing::hash(&code.clone()), |stamp| {
+                    <ExecutionStamps<T>>::mutate(&requester.clone(), &T::Hashing::hash(&code.clone()), |stamp| {
                         stamp.phase = 1;
                     });
 
-                    Self::deposit_event(RawEvent::MultistepCommitResult(
-                        <DeferredResults<T>>::get(&requester, &T::Hashing::hash(&code.clone()))
+                    let exec_stamp = <ExecutionStamps<T>>::get(&requester, &T::Hashing::hash(&code.clone()));
+                    Self::deposit_event(RawEvent::ContractsGatewayCommitSuccess(
+                        exec_stamp.timestamp, 0b00000001u8, <DeferredResults<T>>::get(&requester, &T::Hashing::hash(&code.clone())).encode(), vec![],
                     ));
                 },
                 // Revert
@@ -632,12 +641,16 @@ decl_module! {
                    Self::revert(
                         origin,
                         escrow_account,
-                        requester,
-                        code,
-                   ).map_err(|e| e)?
+                        requester.clone(),
+                        code.clone(),
+                   ).map_err(|e| e)?;
+                   let exec_stamp = <ExecutionStamps<T>>::get(&requester, &T::Hashing::hash(&code.clone()));
+                   Self::deposit_event(RawEvent::ContractsGatewayRevertSuccess(
+                       exec_stamp.timestamp, 0b00000010u8, vec![], vec![],
+                   ));
                 },
                 _ => {
-                    debug::info!("DEBUG multistep_call -- Unknown Phase {}", phase);
+                    debug::info!("DEBUG gateway_contract_exec -- Unknown Phase {}", phase);
                     Something::put(phase as u32);
                     Self::deposit_event(RawEvent::MultistepUnknownPhase(phase));
                 }

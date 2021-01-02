@@ -98,7 +98,7 @@ describe('Contracts Gateway', function () {
 				});
 
 				it('should be successful & return a bunch of events from runtime', async function (done) {
-					const tx = api.tx.contractsGateway.multistepCall(
+					const tx = api.tx.contractsGateway.gatewayContractExec(
 						requester,
 						targetDest,
 						phase,
@@ -125,6 +125,8 @@ describe('Contracts Gateway', function () {
 									'balances.Transfer ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","5FQ3q1Mjoq7RFGZPiEDNwf62XHjYdCD7SXnKs48CACmgvsKo",100000000]',
 									'contracts.ContractExecution ["5FQ3q1Mjoq7RFGZPiEDNwf62XHjYdCD7SXnKs48CACmgvsKo","0x01020304"]',
 									'contracts.Instantiated ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","5FQ3q1Mjoq7RFGZPiEDNwf62XHjYdCD7SXnKs48CACmgvsKo"]',
+									// Use stringContaining partial match for after-execution event, as the exact encoded ExecutionStamp will vary bc of different timestamps.
+									expect.stringContaining('contractsGateway.ContractsGatewayExecutionSuccess'),
 									'system.ExtrinsicSuccess [{"weight":270000000,"class":"Normal","paysFee":"Yes"}]',
 								]
 							);
@@ -138,7 +140,7 @@ describe('Contracts Gateway', function () {
 				});
 
 				it('should be successful after calling with following COMMIT phase: move funds from escrow to target dest + reveal the contract output = [1, 2, 3, 4] ', async function (done) {
-					const tx = api.tx.contractsGateway.multistepCall(
+					const tx = api.tx.contractsGateway.gatewayContractExec(
 						requester,
 						targetDest,
 						PHASES.COMMIT,
@@ -164,7 +166,8 @@ describe('Contracts Gateway', function () {
 									// 'system.NewAccount ["5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy"]',
 									// `balances.Endowed ["5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",${value}]`,
 									`balances.Transfer ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",${value}]`,
-									'contractsGateway.MultistepCommitResult ["0x01020304"]',
+									// Use stringContaining partial match for after-commit event, as the exact encoded ExecutionStamp will vary bc of different timestamps.
+									expect.stringContaining('contractsGateway.ContractsGatewayCommitSuccess'),
 									'system.ExtrinsicSuccess [{"weight":270000000,"class":"Normal","paysFee":"Yes"}]'
 								])
 							);
@@ -237,6 +240,8 @@ describe('Runtime Gateway', function () {
 							expect(relevant_event_messages).toStrictEqual(
 								[
 									'versatileWasm.VersatileVMExecution ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","0x01020304"]',
+									// Use stringContaining partial match for after-execution event, as the exact encoded ExecutionStamp will vary bc of different timestamps.
+									expect.stringContaining('runtimeGateway.RuntimeGatewayVersatileExecutionSuccess'),
 									'system.ExtrinsicSuccess [{"weight":270000000,"class":"Normal","paysFee":"Yes"}]',
 								]
 							);
@@ -276,7 +281,8 @@ describe('Runtime Gateway', function () {
 									// 'system.NewAccount ["5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy"]',
 									// `balances.Endowed ["5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",${value}]`,
 									'balances.Transfer ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",500000]',
-									'runtimeGateway.MultistepCommitResult ["0x01020304"]',
+									// Use stringContaining partial match for after-commit event, as the exact encoded ExecutionStamp will vary bc of different timestamps.
+									expect.stringContaining('runtimeGateway.RuntimeGatewayVersatileCommitSuccess'),
 									'system.ExtrinsicSuccess [{"weight":270000000,"class":"Normal","paysFee":"Yes"}]'
 
 								])
@@ -336,6 +342,8 @@ describe('Runtime Gateway', function () {
 									'versatileWasm.VersatileVMExecution ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","0x20000000"]',
 									// First call to runtime - complex_calculations converts it to - 129 (0x81)
 									'versatileWasm.VersatileVMExecution ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY","0x81000000"]',
+									// Use stringContaining partial match for after-execution event, as the exact encoded ExecutionStamp will vary bc of different timestamps.
+									expect.stringContaining('runtimeGateway.RuntimeGatewayVersatileExecutionSuccess'),
 									'system.ExtrinsicSuccess [{"weight":718059880,"class":"Normal","paysFee":"Yes"}]',
 								]
 							);

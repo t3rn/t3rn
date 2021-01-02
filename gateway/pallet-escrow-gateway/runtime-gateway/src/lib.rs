@@ -30,7 +30,6 @@ use versatile_wasm::{
 use sudo;
 
 use gateway_escrow_engine::{
-    proofs::EscrowExecuteResult,
     transfers::{
         commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
     },
@@ -62,20 +61,19 @@ pub fn cleanup_failed_execution<T: Trait>(
 }
 
 #[derive(Debug, PartialEq, Eq, Encode, Decode, Default, Clone)]
-#[codec(compact)]
 pub struct ExecutionProofs {
-    result: Option<Vec<u8>>,
-    storage: Option<Vec<u8>>,
-    deferred_transfers: Vec<TransferEntry>,
+    pub result: Option<Vec<u8>>,
+    pub storage: Option<Vec<u8>>,
+    pub deferred_transfers: Vec<TransferEntry>,
 }
 
 #[derive(Debug, PartialEq, Eq, Encode, Decode, Default, Clone)]
 pub struct ExecutionStamp {
-    timestamp: u64,
-    phase: u8,
-    proofs: Option<ExecutionProofs>,
-    call_stamps: Vec<CallStamp>,
-    failure: Option<u8>, // Error Code
+    pub timestamp: u64,
+    pub phase: u8,
+    pub proofs: Option<ExecutionProofs>,
+    pub call_stamps: Vec<CallStamp>,
+    pub failure: Option<u8>, // Error Code
 }
 
 pub fn execute_code_in_escrow_sandbox<'a, T: Trait>(
@@ -158,7 +156,14 @@ decl_event!(
         /// Just a dummy event.
         SomethingStored(u32, AccountId),
 
-        MultistepExecutionResult(EscrowExecuteResult),
+        /// \[timestamp, phase, result, deferred_transfers\]
+        RuntimeGatewayVersatileExecutionSuccess(u64, u8, Vec<u8>, Vec<TransferEntry>),
+
+        /// \[timestamp, phase, result, deferred_transfers\]
+        RuntimeGatewayVersatileCommitSuccess(u64, u8, Vec<u8>, Vec<TransferEntry>),
+
+        /// \[timestamp, phase, result, deferred_transfers\]
+        RuntimeGatewayVersatileRevertSuccess(u64, u8, Vec<u8>, Vec<TransferEntry>),
 
         MultistepCommitResult(Vec<u8>),
 
@@ -295,7 +300,7 @@ decl_module! {
             origin,
             requester: <T as system::Trait>::AccountId,
             target_dest: <T as system::Trait>::AccountId,
-            #[compact] phase: u8,
+            phase: u8,
             code: Vec<u8>,
             #[compact] value: BalanceOf<T>,
             #[compact] gas_limit: Gas,
@@ -331,7 +336,9 @@ decl_module! {
                     let result_proof: Option<Vec<u8>> = match !code.is_empty() {
                         // Only A.1) - no code, there is no contracts on the balance-only parachains.
                         false => {
+                            debug::info!("DEBUG multistep_call -- before check escrow_transfer to target dest -- value {:?}", value.clone());
                             if value > BalanceOf::<T>::from(0) {
+                                debug::info!("DEBUG multistep_call -- before escrow_transfer to target dest {:?}", &target_dest.clone());
                                 escrow_transfer::<T>(
                                     &escrow_account.clone(),
                                     &requester.clone(),
@@ -388,7 +395,7 @@ decl_module! {
 
                     let execution_proofs = ExecutionProofs {
                         // Present the execution proof by hashing the results.
-                        result: result_proof,
+                        result: result_proof.clone(),
                         storage: storage_proof,
                         deferred_transfers: <DeferredTransfers<T>>::get(&requester, &target_dest.clone()),
                     };
@@ -397,14 +404,17 @@ decl_module! {
                     debug::info!("DEBUG multistepcall -- Execution Proofs : deferred_transfers {:?}", execution_proofs.deferred_transfers);
                     debug::info!("DEBUG multistepcall -- Execution Proofs : gas_spent {:?} vs left {:?}", gas_meter.gas_spent(), gas_meter.gas_left());
                     <DeferredStorageWrites<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), deferred_storage_writes);
-
-                    <ExecutionStamps<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), ExecutionStamp {
+                    let exec_stamp = ExecutionStamp {
                         call_stamps,
                         timestamp: TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now()).ok().unwrap(),
                         phase: 0,
-                        proofs: Some(execution_proofs),
+                        proofs: Some(execution_proofs.clone()),
                         failure: None,
-                    });
+                    };
+                    <ExecutionStamps<T>>::insert(&requester, &T::Hashing::hash(&code.clone()), exec_stamp.clone());
+                    Self::deposit_event(RawEvent::RuntimeGatewayVersatileExecutionSuccess(
+                        exec_stamp.timestamp, 0b00000000u8, T::Hashing::hash(&<DeferredResults<T>>::get(&requester, &T::Hashing::hash(&code.clone()))).encode(), execution_proofs.deferred_transfers
+                    ));
                 }
                 // Commit
                 1 => {
@@ -421,9 +431,9 @@ decl_module! {
                     <ExecutionStamps<T>>::mutate(&requester, &T::Hashing::hash(&code.clone()), |stamp| {
                         stamp.phase = 1;
                     });
-
-                    Self::deposit_event(RawEvent::MultistepCommitResult(
-                        <DeferredResults<T>>::get(&requester, &T::Hashing::hash(&code.clone()))
+                    let exec_stamp = <ExecutionStamps<T>>::get(&requester, &T::Hashing::hash(&code.clone()));
+                    Self::deposit_event(RawEvent::RuntimeGatewayVersatileCommitSuccess(
+                        exec_stamp.timestamp, 0b00000001u8, <DeferredResults<T>>::get(&requester, &T::Hashing::hash(&code.clone())).encode(), vec![],
                     ));
                 },
                 // Revert
@@ -431,12 +441,16 @@ decl_module! {
                    Self::revert(
                         origin,
                         escrow_account.clone(),
-                        requester,
+                        requester.clone(),
                         code.clone(),
                    ).map_err(|e| e)?;
                    kill_storage(
                         &get_child_storage_for_current_execution::<T>(&escrow_account, T::Hashing::hash(&code.clone()))
                    );
+                   let exec_stamp = <ExecutionStamps<T>>::get(&requester, &T::Hashing::hash(&code.clone()));
+                   Self::deposit_event(RawEvent::RuntimeGatewayVersatileRevertSuccess(
+                       exec_stamp.timestamp, 0b00000010u8, vec![], vec![],
+                   ));
                 },
                 _ => {
                     debug::info!("DEBUG multistep_call -- Unknown Phase {}", phase);

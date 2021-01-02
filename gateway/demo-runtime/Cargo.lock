@@ -1091,6 +1091,8 @@ dependencies = [
  "frame-benchmarking-cli",
  "jsonrpc-core",
  "node-demo-runtime",
+ "pallet-contracts",
+ "pallet-contracts-rpc",
  "pallet-transaction-payment-rpc",
  "sc-basic-authorship",
  "sc-cli",
@@ -1286,7 +1288,6 @@ dependencies = [
 [[package]]
 name = "escrow-contracts-wrapper"
 version = "0.3.0"
-source = "git+https://github.com/t3rn/gateway-pallet.git?branch=master#2d77c2ad8c6f84237f66a660fdeab0f8939ef756"
 dependencies = [
  "bitflags",
  "frame-support",
@@ -1857,7 +1858,6 @@ dependencies = [
 [[package]]
 name = "gateway-escrow-engine"
 version = "0.3.0"
-source = "git+https://github.com/t3rn/gateway-pallet.git?branch=master#2d77c2ad8c6f84237f66a660fdeab0f8939ef756"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -3535,6 +3535,8 @@ dependencies = [
  "pallet-balances",
  "pallet-contracts",
  "pallet-contracts-gateway",
+ "pallet-contracts-primitives",
+ "pallet-contracts-rpc-runtime-api",
  "pallet-grandpa",
  "pallet-randomness-collective-flip",
  "pallet-runtime-gateway",
@@ -3790,7 +3792,6 @@ dependencies = [
 [[package]]
 name = "pallet-contracts-gateway"
 version = "0.3.0"
-source = "git+https://github.com/t3rn/gateway-pallet.git?branch=master#2d77c2ad8c6f84237f66a660fdeab0f8939ef756"
 dependencies = [
  "escrow-contracts-wrapper",
  "frame-support",
@@ -3811,6 +3812,39 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e088e1deefd6ae4ceb104666e9c76d699cb975dad8114b4bc7182b07a4745ed9"
 dependencies = [
  "parity-scale-codec",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-contracts-rpc"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5d3fa6317927f11d47c78263fd6363cbd7dda913fa9eb11c182fe2d13b5c6e8a"
+dependencies = [
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "pallet-contracts-primitives",
+ "pallet-contracts-rpc-runtime-api",
+ "parity-scale-codec",
+ "serde",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-contracts-rpc-runtime-api"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a7694e78c94d8fbf93386b199f41f378292f5379494b3af3a5f7c820bfc4392"
+dependencies = [
+ "pallet-contracts-primitives",
+ "parity-scale-codec",
+ "sp-api",
  "sp-runtime",
  "sp-std",
 ]
@@ -3872,7 +3906,6 @@ dependencies = [
 [[package]]
 name = "pallet-runtime-gateway"
 version = "0.3.0"
-source = "git+https://github.com/t3rn/gateway-pallet.git?branch=master#2d77c2ad8c6f84237f66a660fdeab0f8939ef756"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -7573,7 +7606,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04f8ab788026715fa63b31960869617cba39117e520eb415b0139543e325ab59"
 dependencies = [
  "cfg-if 0.1.10",
- "rand 0.3.23",
+ "rand 0.7.3",
  "static_assertions",
 ]
 
@@ -7722,7 +7755,6 @@ checksum = "f1bddf1187be692e79c5ffeab891132dfb0f236ed36a43c7ed39f1165ee20191"
 [[package]]
 name = "versatile-wasm"
 version = "0.3.0"
-source = "git+https://github.com/t3rn/gateway-pallet.git?branch=master#2d77c2ad8c6f84237f66a660fdeab0f8939ef756"
 dependencies = [
  "bitflags",
  "frame-support",
@@ -8123,7 +8155,6 @@ dependencies = [
 [[package]]
 name = "weights"
 version = "2.0.0"
-source = "git+https://github.com/t3rn/gateway-pallet.git?branch=master#2d77c2ad8c6f84237f66a660fdeab0f8939ef756"
 dependencies = [
  "frame-support",
  "frame-system",
