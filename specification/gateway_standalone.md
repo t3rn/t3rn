@@ -240,7 +240,6 @@ The following example showcases both of the mentioned examples - uses deposits a
         )).then(|_| {
             HouseChain::build_house(buyer=self.env().caller());
         });
-       
     }
     #[tern::module(private=true, source=tern::HouseChain, version = "0.1.0")]
     fn build_house (&self, buyer: AccountId) {
