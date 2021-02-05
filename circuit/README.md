@@ -17,11 +17,6 @@ Installing the main Circuit's directory runs the actual blockchain as a Substrat
  cargo build
  ```
 
-Installing the main Circuit's directory runs the actual blockchain as a Substrate-based Node.
- ```
- cargo build
- ```
-
 You can then run the circuit with a locally stored data for development purposes with 
 ```
  cargo build --dev -lruntime=debug
@@ -34,7 +29,7 @@ RPC methods for interaction with Circuit.
 The `modules` which are used to build the blockchain's logic, runtime pallets are available at [./src/runtime](./src/runtime). For relying messages - block headers and related to execution events from connected Gateways we intend to use [Parity Bridges](https://github.com/paritytech/parity-bridges-common). Integration is currently WIP.
 
 #### [Primitives](./src/primitives)
-A crate that hosts a common definitions that are relevant for the Circuit.
+A crate that hosts common definitions that are relevant for the Circuit.
 
 ## Circuit's Relevant Roadmap Phases
 #### Phase 2: Live Circuit Prototype
