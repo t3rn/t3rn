@@ -1,5 +1,5 @@
 <p align="center">
-    <img height="150" src="./specification/assets/logo-t3rn.png?raw=true"/>
+    <img height="150" src="./specification/assets/t3rn_Logo_Black.png?raw=true"/>
 </p>
 <h1 align="center">
 Composable smart contract hosting with interoperable, multi-chain execution.
