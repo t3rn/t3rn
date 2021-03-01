@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity Bridges Common.  If not, see <http://www.gnu.org/licenses/>.
 
-use bp_millau::derive_account_from_rialto_id;
-use millau_runtime::{
+use bp_circuit::derive_account_from_rialto_id;
+use circuit_runtime::{
 	AccountId, AuraConfig, BalancesConfig, BridgeRialtoConfig, GenesisConfig, GrandpaConfig, SessionConfig,
 	SessionKeys, Signature, SudoConfig, SystemConfig, WASM_BINARY,
 };
@@ -122,7 +122,7 @@ impl Alternative {
 							get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 							get_account_id_from_seed::<sr25519::Public>("George//stash"),
 							get_account_id_from_seed::<sr25519::Public>("Harry//stash"),
-							pallet_message_lane::Module::<millau_runtime::Runtime, pallet_message_lane::DefaultInstance>::relayer_fund_account_id(),
+							pallet_message_lane::Module::<circuit_runtime::Runtime, pallet_message_lane::DefaultInstance>::relayer_fund_account_id(),
 							derive_account_from_rialto_id(bp_runtime::SourceAccount::Account(
 								get_account_id_from_seed::<sr25519::Public>("Dave"),
 							)),

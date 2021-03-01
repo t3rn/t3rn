@@ -17,13 +17,13 @@
 use crate::cli::{Cli, Subcommand};
 use crate::service;
 use crate::service::new_partial;
-use millau_runtime::Block;
+use circuit_runtime::Block;
 use sc_cli::{ChainSpec, Role, RuntimeVersion, SubstrateCli};
 use sc_service::PartialComponents;
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
-		"Millau Bridge Node".into()
+		"Circuit Node".into()
 	}
 
 	fn impl_version() -> String {
@@ -31,7 +31,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn description() -> String {
-		"Millau Bridge Node".into()
+		"t3rn Circuit Node".into()
 	}
 
 	fn author() -> String {
@@ -43,15 +43,15 @@ impl SubstrateCli for Cli {
 	}
 
 	fn copyright_start_year() -> i32 {
-		2019
+		2020
 	}
 
 	fn executable_name() -> String {
-		"millau-bridge-node".into()
+		"circuit-node".into()
 	}
 
 	fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		&millau_runtime::VERSION
+		&circuit_runtime::VERSION
 	}
 
 	fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
