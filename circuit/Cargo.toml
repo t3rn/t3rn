@@ -15,43 +15,42 @@ structopt = "0.3.21"
 
 # Bridge dependencies
 
-bp-message-lane = { git = "https://github.com/paritytech/parity-bridges-common.git", branch = "master" }
-bp-millau={ git = "https://github.com/paritytech/parity-bridges-common.git", branch = "master" }
-bp-runtime = { git = "https://github.com/paritytech/parity-bridges-common.git", branch = "master" }
-millau-runtime = { git = "https://github.com/paritytech/parity-bridges-common.git", branch = "master" }
-pallet-message-lane = { git = "https://github.com/paritytech/parity-bridges-common.git", branch = "master" }
-pallet-message-lane-rpc = { git = "https://github.com/paritytech/parity-bridges-common.git", branch = "master" }
+bp-messages = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" }
+bp-circuit= { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" }
+bp-runtime = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" }
+circuit-runtime = { path = "./src/runtime" }
+pallet-bridge-messages = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" }
+pallet-bridge-messages-rpc = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" }
 
 # Substrate Dependencies
 
-frame-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sc-basic-authorship = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sc-cli = { git = "https://github.com/paritytech/substrate.git", branch = "master", features = ["wasmtime"] }
-sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sc-consensus = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sc-consensus-aura = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sc-executor = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sc-finality-grandpa = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sc-finality-grandpa-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sc-keystore = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sc-service = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sc-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sc-transaction-pool = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sc-telemetry = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-consensus = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-consensus-aura = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-inherents = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-finality-grandpa = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-substrate-frame-rpc-system = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "master" }
+frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
+node-inspect = { git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master", features = ["wasmtime"] }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-executor = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-finality-grandpa-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-keystore = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-frame-rpc-system = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [build-dependencies]
-build-script-utils = { package = "substrate-build-script-utils", version = "2.0" }
-frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-vergen = "3.1.0"
+substrate-build-script-utils = "3.0.0"
+frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [features]
 default = []

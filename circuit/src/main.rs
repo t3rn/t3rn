@@ -26,5 +26,5 @@ mod command;
 
 /// Run the Millau Node
 fn main() -> sc_cli::Result<()> {
-	command::run()
+    command::run()
 }
