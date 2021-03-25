@@ -33,7 +33,6 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub mod rialto_messages;
 
 use crate::rialto_messages::{ToRialtoMessagePayload, WithRialtoMessageBridge};
-
 use bridge_runtime_common::messages::{source::estimate_message_dispatch_and_delivery_fee, MessageBridge};
 use codec::Decode;
 use pallet_grandpa::{fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
@@ -63,8 +62,8 @@ pub use frame_support::{
 pub use frame_system::Call as SystemCall;
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_bridge_messages::Call as MessagesCall;
-pub use pallet_finality_verifier::Call as FinalityBridgeRialtoCall;
-pub use pallet_finality_verifier::Call as FinalityBridgeWestendCall;
+pub use pallet_bridge_grandpa::Call as FinalityBridgeRialtoCall;
+pub use pallet_bridge_grandpa::Call as FinalityBridgeWestendCall;
 pub use pallet_substrate_bridge::Call as BridgeRialtoCall;
 pub use pallet_sudo::Call as SudoCall;
 pub use pallet_timestamp::Call as TimestampCall;
@@ -207,7 +206,7 @@ impl frame_system::Config for Runtime {
 impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 }
-impl pallet_bridge_call_dispatch::Config for Runtime {
+impl pallet_bridge_dispatch::Config for Runtime {
 	type Event = Event;
 	type MessageId = (bp_messages::LaneId, bp_messages::MessageNonce);
 	type Call = Call;
@@ -314,13 +313,19 @@ parameter_types! {
 }
 
 pub type RialtoFinalityVerifierInstance = ();
-impl pallet_finality_verifier::Config for Runtime {
+impl pallet_bridge_grandpa::Config for Runtime {
 	type BridgedChain = bp_rialto::Rialto;
 	type MaxRequests = MaxRequests;
 }
 
-pub type WestendFinalityVerifierInstance = pallet_finality_verifier::Instance1;
-impl pallet_finality_verifier::Config<WestendFinalityVerifierInstance> for Runtime {
+pub type PolkadotLikeFinalityVerifierInstance = ();
+impl pallet_multi_finality_verifier::Config for Runtime {
+	type BridgedChain = bp_polkadot_core::PolkadotLike;
+	type MaxRequests = MaxRequests;
+}
+
+pub type WestendFinalityVerifierInstance = pallet_bridge_grandpa::Instance1;
+impl pallet_bridge_grandpa::Config<WestendFinalityVerifierInstance> for Runtime {
 	type BridgedChain = bp_westend::Westend;
 	type MaxRequests = MaxRequests;
 }
@@ -378,9 +383,10 @@ construct_runtime!(
 	{
 		BridgeRialto: pallet_substrate_bridge::{Module, Call, Storage, Config<T>},
 		BridgeRialtoMessages: pallet_bridge_messages::{Module, Call, Storage, Event<T>},
-		BridgeCallDispatch: pallet_bridge_call_dispatch::{Module, Event<T>},
-		BridgeRialtoFinalityVerifier: pallet_finality_verifier::{Module, Call},
-		BridgeWestendFinalityVerifier: pallet_finality_verifier::<Instance1>::{Module, Call},
+		BridgeCallDispatch: pallet_bridge_dispatch::{Module, Event<T>},
+		BridgeRialtoFinalityVerifier: pallet_bridge_grandpa::{Module, Call},
+		BridgeWestendFinalityVerifier: pallet_bridge_grandpa::<Instance1>::{Module, Call},
+		BridgePolkadotLikeMultiFinalityVerifier: pallet_multi_finality_verifier::{Module, Call},
 		System: frame_system::{Module, Call, Config, Storage, Event<T>},
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
 		Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},
@@ -666,7 +672,7 @@ pub fn rialto_account_ownership_digest<Call, AccountId, SpecVersion>(
 		AccountId: codec::Encode,
 		SpecVersion: codec::Encode,
 {
-	pallet_bridge_call_dispatch::account_ownership_digest(
+	pallet_bridge_dispatch::account_ownership_digest(
 		rialto_call,
 		circuit_account_id,
 		rialto_spec_version,

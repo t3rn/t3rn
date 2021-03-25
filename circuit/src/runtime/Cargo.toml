@@ -30,13 +30,14 @@ serde = { version = "1.0.124", optional = true, features = ["derive"] }
 bp-header-chain = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
 bp-messages = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
 bp-millau = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
+bp-polkadot-core = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
 bp-circuit = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
 bp-rialto = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
 bp-runtime = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
 bp-westend = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
 bridge-runtime-common = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
-pallet-bridge-call-dispatch = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
-pallet-finality-verifier = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
+pallet-bridge-dispatch = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development", default-features = false }
+pallet-bridge-grandpa = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development", default-features = false }
 pallet-multi-finality-verifier = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
 pallet-bridge-messages = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
 pallet-shift-session-manager = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
@@ -91,8 +92,8 @@ std = [
 	"frame-system-rpc-runtime-api/std",
 	"pallet-aura/std",
 	"pallet-balances/std",
-	"pallet-bridge-call-dispatch/std",
-	"pallet-finality-verifier/std",
+	"pallet-bridge-dispatch/std",
+	"pallet-bridge-grandpa/std",
 	"pallet-multi-finality-verifier/std",
 	"pallet-grandpa/std",
 	"pallet-bridge-messages/std",
