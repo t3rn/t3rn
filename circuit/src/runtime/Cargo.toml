@@ -12,36 +12,55 @@ codec = { package = "parity-scale-codec", version = "2.0.0", default-features = 
 hex-literal = "0.3"
 serde = { version = "1.0.124", optional = true, features = ["derive"] }
 
-#bp-header-chain = { path = "../../bridges-common-finality/primitives/header-chain", default-features = false }
-#bp-messages = { path = "../../bridges-common-finality/primitives/messages", default-features = false }
-#bp-millau = { path = "../../bridges-common-finality/primitives/chains/millau", default-features = false }
-#bp-circuit = { path = "../../bridges-common-finality/primitives/chains/circuit", default-features = false }
-#bp-rialto = { path = "../../bridges-common-finality/primitives/chains/rialto", default-features = false }
-#bp-runtime = { path = "../../bridges-common-finality/primitives/runtime", default-features = false }
-#bp-westend = { path = "../../bridges-common-finality/primitives/chains/westend", default-features = false }
-#bridge-runtime-common = { path = "../../bridges-common-finality/bin/runtime-common", default-features = false }
-#pallet-bridge-call-dispatch = { path = "../../bridges-common-finality/modules/call-dispatch", default-features = false }
-#pallet-finality-verifier = { path = "../../bridges-common-finality/modules/finality-verifier", default-features = false }
-##pallet-multi-finality-verifier = { path = "../../bridges-common-finality/modules/multi-finality-verifier", default-features = false }
-#pallet-bridge-messages = { path = "../../bridges-common-finality/modules/messages", default-features = false }
-#pallet-shift-session-manager = { path = "../../bridges-common-finality/modules/shift-session-manager", default-features = false }
-#pallet-substrate-bridge = { path = "../../bridges-common-finality/modules/substrate", default-features = false }
+#bp-header-chain = { path = "../../primitives/header-chain", default-features = false }
+#bp-messages = { path = "../../primitives/messages", default-features = false }
+#bp-millau = { path = "../../primitives/chain-millau", default-features = false }
+#bp-circuit = { path = "../../primitives/chain-circuit", default-features = false }
+#bp-rialto = { path = "../../primitives/chain-rialto", default-features = false }
+#bp-gateway = { path = "../../primitives/chain-gateway", default-features = false }
+#bp-runtime = { path = "../../primitives/runtime", default-features = false }
+#bp-westend = { path = "../../primitives/chain-westend", default-features = false }
+#bp-polkadot-core = { path = "../../primitives/polkadot-core", default-features = false }
+#bridge-runtime-common = { path = "../runtime-common", default-features = false }
+#pallet-bridge-dispatch = { path = "../../modules/dispatch", default-features = false }
+#pallet-bridge-grandpa = { path = "../../modules/grandpa", default-features = false }
+#pallet-multi-finality-verifier = { path = "../../modules/multi-finality-verifier", default-features = false }
+#pallet-bridge-messages = { path = "../../modules/messages", default-features = false }
+#pallet-shift-session-manager = { path = "../../modules/shift-session-manager", default-features = false }
+#pallet-substrate-bridge = { path = "../../modules/substrate", default-features = false }
 
-bp-header-chain = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
-bp-messages = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
-bp-millau = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
-bp-polkadot-core = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
-bp-circuit = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
-bp-rialto = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
-bp-runtime = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
-bp-westend = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
-bridge-runtime-common = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
+bp-header-chain = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development", default-features = false }
+bp-messages = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development", default-features = false }
+bp-millau = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development", default-features = false }
+bp-circuit = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development", default-features = false }
+bp-rialto = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development", default-features = false }
+bp-gateway = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development", default-features = false }
+bp-runtime = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development", default-features = false }
+bp-westend = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development", default-features = false }
+bp-polkadot-core = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development", default-features = false }
+bridge-runtime-common = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development", default-features = false }
 pallet-bridge-dispatch = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development", default-features = false }
 pallet-bridge-grandpa = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development", default-features = false }
-pallet-multi-finality-verifier = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
-pallet-bridge-messages = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
-pallet-shift-session-manager = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
-pallet-substrate-bridge = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
+pallet-multi-finality-verifier = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development", default-features = false }
+pallet-bridge-messages = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development", default-features = false }
+pallet-shift-session-manager = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development", default-features = false }
+pallet-substrate-bridge = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development", default-features = false }
+
+#bp-header-chain = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
+#bp-messages = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
+#bp-millau = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
+#bp-polkadot-core = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
+#bp-circuit = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
+#bp-rialto = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
+#bp-runtime = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
+#bp-westend = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
+#bridge-runtime-common = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
+#pallet-bridge-dispatch = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development", default-features = false }
+#pallet-bridge-grandpa = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development", default-features = false }
+#pallet-multi-finality-verifier = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
+#pallet-bridge-messages = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
+#pallet-shift-session-manager = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
+#pallet-substrate-bridge = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" , default-features = false }
 
 # Substrate Dependencies
 
@@ -81,7 +100,10 @@ std = [
 	"bp-header-chain/std",
 	"bp-messages/std",
 	"bp-millau/std",
+	"bp-circuit/std",
 	"bp-rialto/std",
+	"bp-gateway/std",
+	"bp-polkadot-core/std",
 	"bp-runtime/std",
 	"bp-westend/std",
 	"bridge-runtime-common/std",

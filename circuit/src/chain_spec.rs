@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity Bridges Common.  If not, see <http://www.gnu.org/licenses/>.
 
-use bp_circuit::derive_account_from_rialto_id;
+use bp_circuit::derive_account_from_gateway_id;
 use circuit_runtime::{
-    AccountId, AuraConfig, BalancesConfig, BridgeRialtoConfig, GenesisConfig, GrandpaConfig,
+    AccountId, AuraConfig, BalancesConfig, BridgeGatewayConfig, GenesisConfig, GrandpaConfig,
     SessionConfig, SessionKeys, Signature, SudoConfig, SystemConfig, WASM_BINARY,
 };
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -126,7 +126,7 @@ impl Alternative {
                                 circuit_runtime::Runtime,
                                 pallet_bridge_messages::DefaultInstance,
                             >::relayer_fund_account_id(),
-                            derive_account_from_rialto_id(bp_runtime::SourceAccount::Account(
+                            derive_account_from_gateway_id(bp_runtime::SourceAccount::Account(
                                 get_account_id_from_seed::<sr25519::Public>("Dave"),
                             )),
                         ],
@@ -171,7 +171,7 @@ fn testnet_genesis(
         pallet_grandpa: Some(GrandpaConfig {
             authorities: Vec::new(),
         }),
-        pallet_substrate_bridge: Some(BridgeRialtoConfig {
+        pallet_substrate_bridge: Some(BridgeGatewayConfig {
             // We'll initialize the pallet with a dispatchable instead.
             init_data: None,
             owner: Some(root_key.clone()),

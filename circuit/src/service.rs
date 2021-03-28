@@ -221,7 +221,7 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
             ) -> Option<StorageKey> {
                 match *instance {
                     RIALTO_BRIDGE_INSTANCE => {
-                        Some(circuit_runtime::rialto_messages::message_key(lane, nonce))
+                        Some(circuit_runtime::gateway_messages::message_key(lane, nonce))
                     }
                     _ => None,
                 }
@@ -234,7 +234,7 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
             ) -> Option<StorageKey> {
                 match *instance {
                     RIALTO_BRIDGE_INSTANCE => Some(
-                        circuit_runtime::rialto_messages::outbound_lane_data_key(lane),
+                        circuit_runtime::gateway_messages::outbound_lane_data_key(lane),
                     ),
                     _ => None,
                 }
@@ -247,7 +247,7 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
             ) -> Option<StorageKey> {
                 match *instance {
                     RIALTO_BRIDGE_INSTANCE => Some(
-                        circuit_runtime::rialto_messages::inbound_lane_data_key(lane),
+                        circuit_runtime::gateway_messages::inbound_lane_data_key(lane),
                     ),
                     _ => None,
                 }

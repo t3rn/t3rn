@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity Bridges Common.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Everything required to serve Circuit <-> Rialto messages.
+//! Everything required to serve Circuit <-> Gateway messages.
 
 use crate::Runtime;
 
@@ -36,25 +36,25 @@ use sp_runtime::{FixedPointNumber, FixedU128};
 use sp_std::{convert::TryFrom, ops::RangeInclusive};
 
 parameter_types! {
-	/// Rialto to Circuit conversion rate. Initially we treat both tokens as equal.
-	storage RialtoToCircuitConversionRate: FixedU128 = FixedU128::one();
+	/// Gateway to Circuit conversion rate. Initially we treat both tokens as equal.
+	storage GatewayToCircuitConversionRate: FixedU128 = FixedU128::one();
 }
 
-/// Storage key of the Circuit -> Rialto message in the runtime storage.
+/// Storage key of the Circuit -> Gateway message in the runtime storage.
 pub fn message_key(lane: &LaneId, nonce: MessageNonce) -> StorageKey {
 	pallet_bridge_messages::storage_keys::message_key::<Runtime, <Circuit as ChainWithMessages>::MessagesInstance>(
 		lane, nonce,
 	)
 }
 
-/// Storage key of the Circuit -> Rialto message lane state in the runtime storage.
+/// Storage key of the Circuit -> Gateway message lane state in the runtime storage.
 pub fn outbound_lane_data_key(lane: &LaneId) -> StorageKey {
 	pallet_bridge_messages::storage_keys::outbound_lane_data_key::<<Circuit as ChainWithMessages>::MessagesInstance>(
 		lane,
 	)
 }
 
-/// Storage key of the Rialto -> Circuit message lane state in the runtime storage.
+/// Storage key of the Gateway -> Circuit message lane state in the runtime storage.
 pub fn inbound_lane_data_key(lane: &LaneId) -> StorageKey {
 	pallet_bridge_messages::storage_keys::inbound_lane_data_key::<
 		Runtime,
@@ -62,45 +62,45 @@ pub fn inbound_lane_data_key(lane: &LaneId) -> StorageKey {
 	>(lane)
 }
 
-/// Message payload for Circuit -> Rialto messages.
-pub type ToRialtoMessagePayload = messages::source::FromThisChainMessagePayload<WithRialtoMessageBridge>;
+/// Message payload for Circuit -> Gateway messages.
+pub type ToGatewayMessagePayload = messages::source::FromThisChainMessagePayload<WithGatewayMessageBridge>;
 
-/// Message verifier for Circuit -> Rialto messages.
-pub type ToRialtoMessageVerifier = messages::source::FromThisChainMessageVerifier<WithRialtoMessageBridge>;
+/// Message verifier for Circuit -> Gateway messages.
+pub type ToGatewayMessageVerifier = messages::source::FromThisChainMessageVerifier<WithGatewayMessageBridge>;
 
-/// Message payload for Rialto -> Circuit messages.
-pub type FromRialtoMessagePayload = messages::target::FromBridgedChainMessagePayload<WithRialtoMessageBridge>;
+/// Message payload for Gateway -> Circuit messages.
+pub type FromGatewayMessagePayload = messages::target::FromBridgedChainMessagePayload<WithGatewayMessageBridge>;
 
-/// Encoded Circuit Call as it comes from Rialto.
-pub type FromRialtoEncodedCall = messages::target::FromBridgedChainEncodedMessageCall<WithRialtoMessageBridge>;
+/// Encoded Circuit Call as it comes from Gateway.
+pub type FromGatewayEncodedCall = messages::target::FromBridgedChainEncodedMessageCall<WithGatewayMessageBridge>;
 
-/// Messages proof for Rialto -> Circuit messages.
-type FromRialtoMessagesProof = messages::target::FromBridgedChainMessagesProof<bp_rialto::Hash>;
+/// Messages proof for Gateway -> Circuit messages.
+type FromGatewayMessagesProof = messages::target::FromBridgedChainMessagesProof<bp_gateway::Hash>;
 
-/// Messages delivery proof for Circuit -> Rialto messages.
-type ToRialtoMessagesDeliveryProof = messages::source::FromBridgedChainMessagesDeliveryProof<bp_rialto::Hash>;
+/// Messages delivery proof for Circuit -> Gateway messages.
+type ToGatewayMessagesDeliveryProof = messages::source::FromBridgedChainMessagesDeliveryProof<bp_gateway::Hash>;
 
-/// Call-dispatch based message dispatch for Rialto -> Circuit messages.
-pub type FromRialtoMessageDispatch = messages::target::FromBridgedChainMessageDispatch<
-	WithRialtoMessageBridge,
+/// Call-dispatch based message dispatch for Gateway -> Circuit messages.
+pub type FromGatewayMessageDispatch = messages::target::FromBridgedChainMessageDispatch<
+	WithGatewayMessageBridge,
 	crate::Runtime,
 	pallet_bridge_dispatch::DefaultInstance,
 >;
 
-/// Circuit <-> Rialto message bridge.
+/// Circuit <-> Gateway message bridge.
 #[derive(RuntimeDebug, Clone, Copy)]
-pub struct WithRialtoMessageBridge;
+pub struct WithGatewayMessageBridge;
 
-impl MessageBridge for WithRialtoMessageBridge {
+impl MessageBridge for WithGatewayMessageBridge {
 	const INSTANCE: InstanceId = RIALTO_BRIDGE_INSTANCE;
 
 	const RELAYER_FEE_PERCENT: u32 = 10;
 
 	type ThisChain = Circuit;
-	type BridgedChain = Rialto;
+	type BridgedChain = Gateway;
 
-	fn bridged_balance_to_this_balance(bridged_balance: bp_rialto::Balance) -> bp_circuit::Balance {
-		bp_circuit::Balance::try_from(RialtoToCircuitConversionRate::get().saturating_mul_int(bridged_balance))
+	fn bridged_balance_to_this_balance(bridged_balance: bp_gateway::Balance) -> bp_circuit::Balance {
+		bp_circuit::Balance::try_from(GatewayToCircuitConversionRate::get().saturating_mul_int(bridged_balance))
 			.unwrap_or(bp_circuit::Balance::MAX)
 	}
 }
@@ -139,7 +139,7 @@ impl messages::ThisChainWithMessages for Circuit {
 		MessageTransaction {
 			dispatch_weight: bp_circuit::MAX_SINGLE_MESSAGE_DELIVERY_CONFIRMATION_TX_WEIGHT,
 			size: inbound_data_size
-				.saturating_add(bp_rialto::EXTRA_STORAGE_PROOF_SIZE)
+				.saturating_add(bp_gateway::EXTRA_STORAGE_PROOF_SIZE)
 				.saturating_add(bp_circuit::TX_EXTRA_BYTES),
 		}
 	}
@@ -147,7 +147,9 @@ impl messages::ThisChainWithMessages for Circuit {
 	fn transaction_payment(transaction: MessageTransaction<Weight>) -> bp_circuit::Balance {
 		// in our testnets, both per-byte fee and weight-to-fee are 1:1
 		messages::transaction_payment(
-			bp_circuit::BlockWeights::get().get(DispatchClass::Normal).base_extrinsic,
+			bp_circuit::BlockWeights::get()
+				.get(DispatchClass::Normal)
+				.base_extrinsic,
 			1,
 			FixedU128::zero(),
 			|weight| weight as _,
@@ -156,31 +158,32 @@ impl messages::ThisChainWithMessages for Circuit {
 	}
 }
 
-/// Rialto chain from message lane point of view.
+/// Gateway chain from message lane point of view.
 #[derive(RuntimeDebug, Clone, Copy)]
-pub struct Rialto;
+pub struct Gateway;
 
-impl messages::ChainWithMessages for Rialto {
-	type Hash = bp_rialto::Hash;
-	type AccountId = bp_rialto::AccountId;
-	type Signer = bp_rialto::AccountSigner;
-	type Signature = bp_rialto::Signature;
+impl messages::ChainWithMessages for Gateway {
+	type Hash = bp_gateway::Hash;
+	type AccountId = bp_gateway::AccountId;
+	type Signer = bp_gateway::AccountSigner;
+	type Signature = bp_gateway::Signature;
 	type Weight = Weight;
-	type Balance = bp_rialto::Balance;
+	type Balance = bp_gateway::Balance;
 
 	type MessagesInstance = pallet_bridge_messages::DefaultInstance;
 }
 
-impl messages::BridgedChainWithMessages for Rialto {
+impl messages::BridgedChainWithMessages for Gateway {
 	fn maximal_extrinsic_size() -> u32 {
-		bp_rialto::max_extrinsic_size()
+		bp_gateway::max_extrinsic_size()
 	}
 
 	fn message_weight_limits(_message_payload: &[u8]) -> RangeInclusive<Weight> {
 		// we don't want to relay too large messages + keep reserve for future upgrades
-		let upper_limit = messages::target::maximal_incoming_message_dispatch_weight(bp_rialto::max_extrinsic_weight());
+		let upper_limit =
+			messages::target::maximal_incoming_message_dispatch_weight(bp_gateway::max_extrinsic_weight());
 
-		// we're charging for payload bytes in `WithRialtoMessageBridge::transaction_payment` function
+		// we're charging for payload bytes in `WithGatewayMessageBridge::transaction_payment` function
 		//
 		// this bridge may be used to deliver all kind of messages, so we're not making any assumptions about
 		// minimal dispatch weight here
@@ -198,19 +201,21 @@ impl messages::BridgedChainWithMessages for Rialto {
 
 		MessageTransaction {
 			dispatch_weight: extra_bytes_in_payload
-				.saturating_mul(bp_rialto::ADDITIONAL_MESSAGE_BYTE_DELIVERY_WEIGHT)
-				.saturating_add(bp_rialto::DEFAULT_MESSAGE_DELIVERY_TX_WEIGHT)
+				.saturating_mul(bp_gateway::ADDITIONAL_MESSAGE_BYTE_DELIVERY_WEIGHT)
+				.saturating_add(bp_gateway::DEFAULT_MESSAGE_DELIVERY_TX_WEIGHT)
 				.saturating_add(message_dispatch_weight),
 			size: message_payload_len
 				.saturating_add(bp_circuit::EXTRA_STORAGE_PROOF_SIZE)
-				.saturating_add(bp_rialto::TX_EXTRA_BYTES),
+				.saturating_add(bp_gateway::TX_EXTRA_BYTES),
 		}
 	}
 
-	fn transaction_payment(transaction: MessageTransaction<Weight>) -> bp_rialto::Balance {
+	fn transaction_payment(transaction: MessageTransaction<Weight>) -> bp_gateway::Balance {
 		// in our testnets, both per-byte fee and weight-to-fee are 1:1
 		messages::transaction_payment(
-			bp_rialto::BlockWeights::get().get(DispatchClass::Normal).base_extrinsic,
+			bp_gateway::BlockWeights::get()
+				.get(DispatchClass::Normal)
+				.base_extrinsic,
 			1,
 			FixedU128::zero(),
 			|weight| weight as _,
@@ -219,54 +224,54 @@ impl messages::BridgedChainWithMessages for Rialto {
 	}
 }
 
-impl TargetHeaderChain<ToRialtoMessagePayload, bp_rialto::AccountId> for Rialto {
+impl TargetHeaderChain<ToGatewayMessagePayload, bp_gateway::AccountId> for Gateway {
 	type Error = &'static str;
 	// The proof is:
 	// - hash of the header this proof has been created with;
 	// - the storage proof or one or several keys;
 	// - id of the lane we prove state of.
-	type MessagesDeliveryProof = ToRialtoMessagesDeliveryProof;
+	type MessagesDeliveryProof = ToGatewayMessagesDeliveryProof;
 
-	fn verify_message(payload: &ToRialtoMessagePayload) -> Result<(), Self::Error> {
-		messages::source::verify_chain_message::<WithRialtoMessageBridge>(payload)
+	fn verify_message(payload: &ToGatewayMessagePayload) -> Result<(), Self::Error> {
+		messages::source::verify_chain_message::<WithGatewayMessageBridge>(payload)
 	}
 
 	fn verify_messages_delivery_proof(
 		proof: Self::MessagesDeliveryProof,
 	) -> Result<(LaneId, InboundLaneData<bp_circuit::AccountId>), Self::Error> {
-		messages::source::verify_messages_delivery_proof::<WithRialtoMessageBridge, Runtime>(proof)
+		messages::source::verify_messages_delivery_proof::<WithGatewayMessageBridge, Runtime>(proof)
 	}
 }
 
-impl SourceHeaderChain<bp_rialto::Balance> for Rialto {
+impl SourceHeaderChain<bp_gateway::Balance> for Gateway {
 	type Error = &'static str;
 	// The proof is:
 	// - hash of the header this proof has been created with;
 	// - the storage proof or one or several keys;
 	// - id of the lane we prove messages for;
 	// - inclusive range of messages nonces that are proved.
-	type MessagesProof = FromRialtoMessagesProof;
+	type MessagesProof = FromGatewayMessagesProof;
 
 	fn verify_messages_proof(
 		proof: Self::MessagesProof,
 		messages_count: u32,
-	) -> Result<ProvedMessages<Message<bp_rialto::Balance>>, Self::Error> {
-		messages::target::verify_messages_proof::<WithRialtoMessageBridge, Runtime>(proof, messages_count)
+	) -> Result<ProvedMessages<Message<bp_gateway::Balance>>, Self::Error> {
+		messages::target::verify_messages_proof::<WithGatewayMessageBridge, Runtime>(proof, messages_count)
 	}
 }
 
-/// Circuit -> Rialto message lane pallet parameters.
+/// Circuit -> Gateway message lane pallet parameters.
 #[derive(RuntimeDebug, Clone, Encode, Decode, PartialEq, Eq)]
-pub enum CircuitToRialtoMessagesParameter {
-	/// The conversion formula we use is: `CircuitTokens = RialtoTokens * conversion_rate`.
-	RialtoToCircuitConversionRate(FixedU128),
+pub enum CircuitToGatewayMessagesParameter {
+	/// The conversion formula we use is: `CircuitTokens = GatewayTokens * conversion_rate`.
+	GatewayToCircuitConversionRate(FixedU128),
 }
 
-impl MessagesParameter for CircuitToRialtoMessagesParameter {
+impl MessagesParameter for CircuitToGatewayMessagesParameter {
 	fn save(&self) {
 		match *self {
-			CircuitToRialtoMessagesParameter::RialtoToCircuitConversionRate(ref conversion_rate) => {
-				RialtoToCircuitConversionRate::set(conversion_rate)
+			CircuitToGatewayMessagesParameter::GatewayToCircuitConversionRate(ref conversion_rate) => {
+				GatewayToCircuitConversionRate::set(conversion_rate)
 			}
 		}
 	}

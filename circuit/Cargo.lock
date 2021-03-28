@@ -578,7 +578,7 @@ dependencies = [
 [[package]]
 name = "bp-circuit"
 version = "0.1.0"
-source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#be068b43c6da499bb55f639bd26891b07c8a9006"
+source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#7fab1ee6adc43f62dee1cec3e83280b85badaa6e"
 dependencies = [
  "bp-messages",
  "bp-runtime",
@@ -599,9 +599,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "bp-gateway"
+version = "0.1.0"
+source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#7fab1ee6adc43f62dee1cec3e83280b85badaa6e"
+dependencies = [
+ "bp-messages",
+ "bp-runtime",
+ "frame-support",
+ "frame-system",
+ "sp-api",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "bp-header-chain"
 version = "0.1.0"
-source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#be068b43c6da499bb55f639bd26891b07c8a9006"
+source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#7fab1ee6adc43f62dee1cec3e83280b85badaa6e"
 dependencies = [
  "finality-grandpa",
  "frame-support",
@@ -616,7 +631,7 @@ dependencies = [
 [[package]]
 name = "bp-message-dispatch"
 version = "0.1.0"
-source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#be068b43c6da499bb55f639bd26891b07c8a9006"
+source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#7fab1ee6adc43f62dee1cec3e83280b85badaa6e"
 dependencies = [
  "bp-runtime",
  "parity-scale-codec",
@@ -625,7 +640,7 @@ dependencies = [
 [[package]]
 name = "bp-messages"
 version = "0.1.0"
-source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#be068b43c6da499bb55f639bd26891b07c8a9006"
+source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#7fab1ee6adc43f62dee1cec3e83280b85badaa6e"
 dependencies = [
  "bp-runtime",
  "frame-support",
@@ -637,7 +652,7 @@ dependencies = [
 [[package]]
 name = "bp-millau"
 version = "0.1.0"
-source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#be068b43c6da499bb55f639bd26891b07c8a9006"
+source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#7fab1ee6adc43f62dee1cec3e83280b85badaa6e"
 dependencies = [
  "bp-messages",
  "bp-runtime",
@@ -660,22 +675,24 @@ dependencies = [
 [[package]]
 name = "bp-polkadot-core"
 version = "0.1.0"
-source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#be068b43c6da499bb55f639bd26891b07c8a9006"
+source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#7fab1ee6adc43f62dee1cec3e83280b85badaa6e"
 dependencies = [
  "bp-messages",
  "bp-runtime",
  "frame-support",
  "frame-system",
+ "parity-scale-codec",
  "sp-api",
  "sp-core",
  "sp-runtime",
  "sp-std",
+ "sp-version",
 ]
 
 [[package]]
 name = "bp-rialto"
 version = "0.1.0"
-source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#be068b43c6da499bb55f639bd26891b07c8a9006"
+source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#7fab1ee6adc43f62dee1cec3e83280b85badaa6e"
 dependencies = [
  "bp-messages",
  "bp-runtime",
@@ -690,7 +707,7 @@ dependencies = [
 [[package]]
 name = "bp-runtime"
 version = "0.1.0"
-source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#be068b43c6da499bb55f639bd26891b07c8a9006"
+source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#7fab1ee6adc43f62dee1cec3e83280b85badaa6e"
 dependencies = [
  "frame-support",
  "hash-db",
@@ -707,7 +724,7 @@ dependencies = [
 [[package]]
 name = "bp-westend"
 version = "0.1.0"
-source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#be068b43c6da499bb55f639bd26891b07c8a9006"
+source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#7fab1ee6adc43f62dee1cec3e83280b85badaa6e"
 dependencies = [
  "bp-messages",
  "bp-polkadot-core",
@@ -719,7 +736,7 @@ dependencies = [
 [[package]]
 name = "bridge-runtime-common"
 version = "0.1.0"
-source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#be068b43c6da499bb55f639bd26891b07c8a9006"
+source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#7fab1ee6adc43f62dee1cec3e83280b85badaa6e"
 dependencies = [
  "bp-message-dispatch",
  "bp-messages",
@@ -934,6 +951,7 @@ name = "circuit-runtime"
 version = "0.1.0"
 dependencies = [
  "bp-circuit",
+ "bp-gateway",
  "bp-header-chain",
  "bp-messages",
  "bp-millau",
@@ -3901,7 +3919,7 @@ dependencies = [
 [[package]]
 name = "pallet-bridge-dispatch"
 version = "0.1.0"
-source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#be068b43c6da499bb55f639bd26891b07c8a9006"
+source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#7fab1ee6adc43f62dee1cec3e83280b85badaa6e"
 dependencies = [
  "bp-message-dispatch",
  "bp-runtime",
@@ -3917,7 +3935,7 @@ dependencies = [
 [[package]]
 name = "pallet-bridge-grandpa"
 version = "0.1.0"
-source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#be068b43c6da499bb55f639bd26891b07c8a9006"
+source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#7fab1ee6adc43f62dee1cec3e83280b85badaa6e"
 dependencies = [
  "bp-header-chain",
  "bp-runtime",
@@ -3936,7 +3954,7 @@ dependencies = [
 [[package]]
 name = "pallet-bridge-messages"
 version = "0.1.0"
-source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#be068b43c6da499bb55f639bd26891b07c8a9006"
+source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#7fab1ee6adc43f62dee1cec3e83280b85badaa6e"
 dependencies = [
  "bp-messages",
  "bp-rialto",
@@ -3955,7 +3973,7 @@ dependencies = [
 [[package]]
 name = "pallet-bridge-messages-rpc"
 version = "0.1.0"
-source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#be068b43c6da499bb55f639bd26891b07c8a9006"
+source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#7fab1ee6adc43f62dee1cec3e83280b85badaa6e"
 dependencies = [
  "bp-messages",
  "bp-runtime",
@@ -3998,7 +4016,7 @@ dependencies = [
 [[package]]
 name = "pallet-multi-finality-verifier"
 version = "0.1.0"
-source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#be068b43c6da499bb55f639bd26891b07c8a9006"
+source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#7fab1ee6adc43f62dee1cec3e83280b85badaa6e"
 dependencies = [
  "bp-header-chain",
  "bp-runtime",
@@ -4050,7 +4068,7 @@ dependencies = [
 [[package]]
 name = "pallet-shift-session-manager"
 version = "0.1.0"
-source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#be068b43c6da499bb55f639bd26891b07c8a9006"
+source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#7fab1ee6adc43f62dee1cec3e83280b85badaa6e"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -4063,7 +4081,7 @@ dependencies = [
 [[package]]
 name = "pallet-substrate-bridge"
 version = "0.1.0"
-source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#be068b43c6da499bb55f639bd26891b07c8a9006"
+source = "git+https://github.com/MaciejBaj/parity-bridges-common?branch=development#7fab1ee6adc43f62dee1cec3e83280b85badaa6e"
 dependencies = [
  "bp-header-chain",
  "bp-runtime",
