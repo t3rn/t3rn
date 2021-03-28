@@ -63,6 +63,7 @@ pub use frame_system::Call as SystemCall;
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_bridge_grandpa::Call as BridgeGrandpaGatewayCall;
 pub use pallet_bridge_grandpa::Call as BridgeGrandpaWestendCall;
+pub use pallet_multi_finality_verifier::Call as BridgePolkadotLikeMultiFinalityVerifierCall;
 pub use pallet_bridge_messages::Call as MessagesCall;
 pub use pallet_substrate_bridge::Call as BridgeGatewayCall;
 pub use pallet_sudo::Call as SudoCall;
@@ -318,8 +319,8 @@ impl pallet_bridge_grandpa::Config for Runtime {
 	type MaxRequests = MaxRequests;
 }
 
-pub type PolkadotLikeGrandpaInstance = ();
-impl pallet_multi_finality_verifier::Config for Runtime {
+pub type PolkadotLikeGrandpaInstance = pallet_bridge_grandpa::Instance1;
+impl pallet_multi_finality_verifier::Config<PolkadotLikeGrandpaInstance> for Runtime {
 	type BridgedChain = bp_polkadot_core::PolkadotLike;
 	type MaxRequests = MaxRequests;
 }
@@ -386,7 +387,7 @@ construct_runtime!(
 		BridgeCallDispatch: pallet_bridge_dispatch::{Module, Event<T>},
 		BridgeGatewayGrandpa: pallet_bridge_grandpa::{Module, Call},
 		BridgeWestendGrandpa: pallet_bridge_grandpa::<Instance1>::{Module, Call},
-		BridgePolkadotLikeMultiFinalityVerifier: pallet_multi_finality_verifier::{Module, Call},
+		BridgePolkadotLikeMultiFinalityVerifier: pallet_multi_finality_verifier::<Instance1>::{Module, Call},
 		System: frame_system::{Module, Call, Config, Storage, Event<T>},
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
 		Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},
@@ -562,36 +563,16 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl bp_gateway::GatewayHeaderApi<Block> for Runtime {
-		fn best_blocks() -> Vec<(bp_gateway::BlockNumber, bp_gateway::Hash)> {
-			BridgeGateway::best_headers()
-		}
-
-		fn finalized_block() -> (bp_gateway::BlockNumber, bp_gateway::Hash) {
-			let header = BridgeGateway::best_finalized();
-			(header.number, header.hash())
-		}
-
-		fn incomplete_headers() -> Vec<(bp_gateway::BlockNumber, bp_gateway::Hash)> {
-			BridgeGateway::require_justifications()
-		}
-
-		fn is_known_block(hash: bp_gateway::Hash) -> bool {
-			BridgeGateway::is_known_header(hash)
-		}
-
-		fn is_finalized_block(hash: bp_gateway::Hash) -> bool {
-			BridgeGateway::is_finalized_header(hash)
-		}
-	}
 
 	impl bp_gateway::GatewayFinalityApi<Block> for Runtime {
 		fn best_finalized() -> (bp_gateway::BlockNumber, bp_gateway::Hash) {
+			// ToDo: Add argument and change call to pallet_multi_finality_verifier (gateway_id)
 			let header = BridgeGatewayGrandpa::best_finalized();
 			(header.number, header.hash())
 		}
 
 		fn is_known_header(hash: bp_gateway::Hash) -> bool {
+			// ToDo: Add argument and change call to pallet_multi_finality_verifier (gateway_id)
 			BridgeGatewayGrandpa::is_known_header(hash)
 		}
 	}
