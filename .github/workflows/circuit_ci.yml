@@ -1,0 +1,44 @@
+name: Circuit CI
+
+on:
+  push:
+  pull_request:
+    branches:
+      - development
+    paths:
+      - circuit/**/*.rs
+      - circuit/**/*.toml
+      - circuit/**/*.lock
+      - .github/workflows/circuit_ci.yml
+
+env:
+  RUST_BACKTRACE: 1
+
+jobs:
+  build_test:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2.3.4
+
+      - name: 🦀 install stable
+        uses: hecrj/setup-rust-action@v1.3.4
+
+      - name: 🌘 install nightly and its wasm target
+        run: |
+          rustup toolchain install nightly-2021-04-05 --profile minimal
+          rustup target add wasm32-unknown-unknown --toolchain nightly-2021-04-05
+
+      - name: 🌌 circuit
+        run: cd ./circuit
+
+      - name: 🏭 build
+        run: cargo build
+
+      - name: 🙈 monkey test
+        run: ./target/debug/circuit --version
+
+      - name: 📼 build unit tests
+        run: cargo test --locked --workspace --no-run
+
+      - name: 🎥 run unit tests
+        run: cargo test --locked --workspace
