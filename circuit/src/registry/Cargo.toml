@@ -40,4 +40,5 @@ std = [
     'frame-system/std',
     'sp-runtime/std',   
     'sp-std/std',
+    't3rn-primitives/std',
 ]
