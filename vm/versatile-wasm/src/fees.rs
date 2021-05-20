@@ -1,7 +1,7 @@
 use crate::gas::{Gas, GasMeter, GasMeterResult, Token};
 use crate::VersatileWasm as Trait;
 use crate::*;
-use contracts::Schedule;
+use crate::simple_schedule_v2::Schedule;
 use frame_support::dispatch::DispatchError;
 
 #[cfg_attr(test, derive(Debug, PartialEq, Eq))]

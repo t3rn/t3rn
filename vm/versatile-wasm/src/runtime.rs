@@ -13,6 +13,7 @@
 
 // You should have received a copy of the GNU General Public License
 // along with Substrate. If not, see <http://www.gnu.org/licenses/>.
+#![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
 use frame_support::{
@@ -22,7 +23,7 @@ use frame_support::{
     traits::{Currency, Time},
     Twox128,
 };
-use gateway_escrow_engine::{
+use t3rn_primitives::{
     transfers::{escrow_transfer, BalanceOf as EscrowBalanceOf, TransferEntry},
     EscrowTrait,
 };
@@ -30,7 +31,7 @@ use sp_io::hashing::{blake2_128, blake2_256, keccak_256, sha2_256};
 use sp_runtime::traits::{Hash, Zero};
 use sp_sandbox;
 use sp_std::{convert::TryInto, prelude::*};
-use system::Trait as SystemTrait;
+use system::Config as SystemTrait;
 
 use crate::env_def::FunctionImplProvider;
 use crate::ext::{DefaultRuntimeEnv, ExtStandards};
@@ -41,6 +42,8 @@ use crate::*;
 pub struct Runtime<'a, E: ExtStandards + 'a> {
     pub ext: &'a mut E,
     pub input_data: Option<Vec<u8>>,
+    pub trace_log: bool,
+    pub stack_trace: &'a mut StackTrace,
     pub value: EscrowBalanceOf<E::T>,
     pub gas_meter: &'a mut GasMeter<E::T>,
     pub requester_available_balance: u64,
@@ -51,22 +54,28 @@ pub struct Runtime<'a, E: ExtStandards + 'a> {
     pub max_value_size: u32,
     pub max_event_topics: u32,
     pub trap_reason: Option<TrapReason>,
+    pub gateway_id: &'a mut [u8; 4],
 }
 
 impl<'a, E: ExtStandards + 'a> Runtime<'a, E> {
     pub fn new(
         ext: &'a mut E,
         gas_meter: &'a mut GasMeter<E::T>,
+        trace_log: bool,
+        stack_trace: &'a mut StackTrace,
         memory: sp_sandbox::Memory,
         requester: &AccountIdOf<E::T>,
         escrow_account: &AccountIdOf<E::T>,
         escrow_account_trie_id: ChildInfo,
         input_data: Option<Vec<u8>>,
         value: EscrowBalanceOf<E::T>,
+        gateway_id: &'a mut [u8; 4],
     ) -> Self {
         Runtime {
             ext,
             input_data,
+            trace_log,
+            stack_trace,
             value,
             gas_meter,
             requester_available_balance: TryInto::<u64>::try_into(
@@ -81,24 +90,26 @@ impl<'a, E: ExtStandards + 'a> Runtime<'a, E> {
             max_value_size: u32::MAX,
             max_event_topics: prepare::MAX_SUBJECT_LEN,
             trap_reason: None,
+            gateway_id: gateway_id
         }
     }
 }
 
 #[derive(Debug, PartialEq, Eq, Encode, Decode, Clone)]
-#[codec(compact)]
+// #[codec(compact)]
 pub struct DeferredStorageWrite {
-    pub dest: Vec<u8>,
     pub trie_id: Vec<u8>,
     pub key: [u8; 32],
     pub value: Option<Vec<u8>>,
 }
 
 #[derive(Debug, PartialEq, Eq, Encode, Decode, Default, Clone)]
-#[codec(compact)]
+// #[codec(compact)]
 pub struct CallStamp {
     pub pre_storage: Vec<u8>,
+
     pub post_storage: Vec<u8>,
+
     pub dest: Vec<u8>,
 }
 
@@ -120,6 +131,24 @@ pub fn get_child_storage_for_current_execution<T: EscrowTrait>(
     buf.extend_from_slice(&code.encode()[..]);
     child::ChildInfo::new_default(T::Hashing::hash(&buf[..]).as_ref())
 }
+
+// fn return_ok_and_maybe_leave_trace(
+//     ctx: &mut Runtime<E>,
+//
+// ) -> Result<sp_sandbox::ReturnValue, sp_sandbox::HostError> {
+//
+// }
+
+// #[macro_export]
+// macro_rules! return_ok_and_maybe_leave_trace {
+//
+// }
+//
+// #[macro_export]
+// macro_rules! return_err_and_maybe_leave_trace {
+//
+// }
+
 
 define_env!(Env, <E: ExtStandards>,
     gas (_ctx, amount: u32) => {
@@ -189,7 +218,6 @@ define_env!(Env, <E: ExtStandards>,
         output_ptr: u32,
         output_len_ptr: u32
     ) -> ReturnCode => {
-
         // [0, 32> bytes of input reserved for a module name.
         let module_name = try_read_mem_as_utf8(ctx, input_data_ptr, 32)?;
         // [32, 64> bytes of input reserved for a module name. 64 bytes reserved in total in input.
@@ -581,6 +609,108 @@ where
     Ok(())
 }
 
+pub fn run_code_on_versatile_wm<T: EscrowTrait + VersatileWasm + SystemTrait, E: ExtStandards<T = T>>(
+    escrow_account: &T::AccountId,
+    requester: &T::AccountId,
+    _transfer_dest: &T::AccountId,
+    value: EscrowBalanceOf<T>,
+    gas_meter: &mut GasMeter<T>,
+    input_data: Vec<u8>,
+    _transfers: &mut Vec<TransferEntry>,
+    _deferred_storage_writes: &mut Vec<DeferredStorageWrite>,
+    call_stamps: &mut Vec<CallStamp>,
+    code: Vec<u8>,
+    composable_contract_storage_root: T::Hash,
+    trace_log: bool,
+    mut ext: E,
+) -> ExecResultTrace {
+
+    // That only works for code that is received by the call and will be executed and cleaned up after.
+    let prefab_module = crate::prepare::prepare_contract::<Env>(&code).map_err(|e| e)?;
+
+    let exec = WasmExecutable {
+        entrypoint_name: "call",
+        prefab_module,
+    };
+
+    let escrow_account_trie_id =
+        get_child_storage_for_current_execution::<T>(escrow_account, composable_contract_storage_root);
+
+    let pre_storage = child::root(&escrow_account_trie_id.clone());
+
+    let memory =
+        sp_sandbox::Memory::new(exec.prefab_module.initial, Some(exec.prefab_module.maximum))
+            .unwrap_or_else(|_| {
+                // unlike `.expect`, explicit panic preserves the source location.
+                // Needed as we can't use `RUST_BACKTRACE` in here.
+                panic!(
+                    "exec.prefab_module.initial can't be greater than exec.prefab_module.maximum;
+						thus Memory::new must not fail;
+						qed"
+                )
+            });
+
+    let mut env_builder = sp_sandbox::EnvironmentDefinitionBuilder::new();
+    let mut current_gateway_id = [0, 0, 0, 0];
+    env_builder.add_memory(
+        crate::prepare::IMPORT_MODULE_MEMORY,
+        "memory",
+        memory.clone(),
+    );
+
+    Env::impls(&mut |name, func_ptr| {
+        env_builder.add_host_func(self::prepare::IMPORT_MODULE_FN, name, func_ptr);
+    });
+
+    // let mut ext = DefaultRuntimeEnv::<T> {
+    //     input_data: Some(input_data.clone()),
+    //     inner_exec_transfers: &mut transfers,
+    //     requester,
+    //     block_number: <system::Pallet<T>>::block_number(),
+    //     escrow_account,
+    //     escrow_account_trie_id: escrow_account_trie_id.clone(),
+    //     storage_trie_id: escrow_account_trie_id.clone(),
+    //     timestamp: T::Time::now(),
+    // };
+
+    let mut stack_trace = vec![];
+
+    // let mut ext_borrowed = ext.borrow_mut();
+
+    let mut state = Runtime::new(
+        &mut ext,
+        gas_meter,
+        trace_log,
+        &mut stack_trace,
+        memory,
+        requester,
+        escrow_account,
+        escrow_account_trie_id.clone(),
+        Some(input_data.clone()),
+        value,
+        &mut current_gateway_id,
+    );
+
+    let sandbox_result =
+        sp_sandbox::Instance::new(&exec.prefab_module.code, &env_builder, &mut state)
+            .and_then(|mut instance| instance.invoke(exec.entrypoint_name, &[], &mut state));
+
+    let stack_trace_snap = state.stack_trace.to_vec();
+    let result = to_execution_result(state, sandbox_result);
+
+    match result {
+        Ok(result) => {
+            call_stamps.push(CallStamp {
+                pre_storage,
+                post_storage: child::root(&escrow_account_trie_id.clone()),
+                dest: T::AccountId::encode(&escrow_account.clone()),
+            });
+            Ok((result, stack_trace_snap))
+        }
+        Err(err) => Err(err)?,
+    }
+}
+
 pub fn raw_escrow_call<T: EscrowTrait + VersatileWasm + SystemTrait, E: ExtStandards<T = T>>(
     escrow_account: &T::AccountId,
     requester: &T::AccountId,
@@ -622,6 +752,7 @@ pub fn raw_escrow_call<T: EscrowTrait + VersatileWasm + SystemTrait, E: ExtStand
             });
 
     let mut env_builder = sp_sandbox::EnvironmentDefinitionBuilder::new();
+    let mut current_gateway_id = [0, 0, 0, 0];
     env_builder.add_memory(
         crate::prepare::IMPORT_MODULE_MEMORY,
         "memory",
@@ -636,22 +767,28 @@ pub fn raw_escrow_call<T: EscrowTrait + VersatileWasm + SystemTrait, E: ExtStand
         input_data: Some(input_data.clone()),
         inner_exec_transfers: &mut transfers,
         requester,
-        block_number: <system::Module<T>>::block_number(),
+        block_number: <system::Pallet<T>>::block_number(),
         escrow_account,
         escrow_account_trie_id: escrow_account_trie_id.clone(),
         storage_trie_id: escrow_account_trie_id.clone(),
         timestamp: T::Time::now(),
     };
 
+    let trace_log = false;
+    let mut stack_trace = vec![];
+
     let mut state = Runtime::new(
         &mut ext,
         gas_meter,
+        trace_log,
+        &mut stack_trace,
         memory,
         requester,
         escrow_account,
         escrow_account_trie_id.clone(),
         Some(input_data.clone()),
         value,
+        &mut current_gateway_id,
     );
 
     let sandbox_result =

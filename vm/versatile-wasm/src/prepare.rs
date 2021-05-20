@@ -21,7 +21,8 @@
 use crate::env_def::ImportSatisfyCheck;
 use crate::PrefabWasmModule;
 
-use parity_wasm::elements::{self, External, Internal, MemoryType, Type, ValueType};
+use parity_wasm::elements;
+use parity_wasm::elements::{External, Internal, MemoryType, Type, ValueType};
 use pwasm_utils;
 use pwasm_utils::rules;
 use sp_runtime::traits::SaturatedConversion;
@@ -46,6 +47,7 @@ pub const MAX_SUBJECT_LEN: u32 = 128;
 pub const MAX_STACK_HEIGHT: u32 = 64 * 1024;
 pub const MAX_CODE_SIZE: u32 = 512 * 1024;
 pub const ENABLE_PRINTLN: bool = false;
+
 
 struct ContractModule {
     /// A deserialized module. The module is valid (this is Guaranteed by `new` method).
