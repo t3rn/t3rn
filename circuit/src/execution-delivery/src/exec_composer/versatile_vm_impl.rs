@@ -281,7 +281,6 @@ impl<'a, T: EscrowTrait + SystemTrait, OM> CircuitVersatileWasmEnv<'a, T, OM>
         inner_exec_transfers: &'a mut Vec<TransferEntry>,
         constructed_outbound_messages: &'a mut Vec<CircuitOutboundMessage>,
         gateway_inbound_protocol: Box<dyn GatewayInboundProtocol>,
-        // gateway_inbound_protocol: SubstrateGatewayProtocol,
         gateway_pointer: GatewayPointer,
         output_mode: OM,
     ) -> Self {

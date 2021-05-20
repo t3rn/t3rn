@@ -276,14 +276,13 @@ pub mod pallet {
 
     /// This pallet's configuration trait
     #[pallet::config]
-    pub trait Config:
-    CreateSignedTransaction<Call<Self>>
-    + frame_system::Config
-    + pallet_bridge_messages::Config
-    + pallet_balances::Config
-    + VersatileWasm
-    + pallet_contracts_registry::Config
-    + pallet_xdns::Config {
+    pub trait Config: CreateSignedTransaction<Call<Self>>
+        + frame_system::Config
+        + pallet_bridge_messages::Config
+        + pallet_balances::Config
+        + VersatileWasm
+        + pallet_contracts_registry::Config
+        + pallet_xdns::Config {
         /// The identifier type for an offchain worker.
         type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
 
@@ -407,8 +406,6 @@ pub mod pallet {
             ensure_none(origin)?;
             Ok(().into())
         }
-
-
     }
 
     /// Events for the pallet.
@@ -494,8 +491,6 @@ impl<T: Config> Pallet<T> {
             println!("caps {:?}", caps);
             if let Some(name) = caps.name("compose_name") {
                 if let Some(selected_compose) = components.clone().into_iter().find(|comp| {
-                    // println!("IF FIND compose_name {:?} vs {:?} vs {:?} vs {:?}", comp.name.clone(), comp.name.clone().encode(), name.clone().as_bytes(), name.clone().as_bytes().encode());
-                    // println!("IF FIND UTF8 REGEX = {:?} vs {:?}  {:?}  {:?}  {:?}", comp.name, core::str::from_utf8(&comp.name.clone()), core::str::from_utf8(&comp.name.clone().encode()), core::str::from_utf8(name.clone().as_bytes()), core::str::from_utf8(&name.clone().as_bytes().encode()));
                     println!("comp.name {:?}== name.as_bytes().encode() {:?}", comp.name.encode(), name.as_bytes().encode());
                     comp.name.encode() == name.as_bytes().encode()
                 }) {
@@ -564,9 +559,7 @@ impl<T: Config> Pallet<T> {
             (current_block_no, block_zero),
             Default::default(),
         );
-
-        // ExecComposer::dry_run_single_contract::<T>(contract, escrow_account, requester, step.dest, value, step.input, step.gateway_id);
-
+        // ToDo: ExecComposer::dry_run_single_contract::<T>(contract, escrow_account, requester, step.dest, value, step.input, step.gateway_id);
         Ok(new_xtx)
     }
 
