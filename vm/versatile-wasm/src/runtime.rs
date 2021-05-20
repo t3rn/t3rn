@@ -104,7 +104,6 @@ pub struct DeferredStorageWrite {
 }
 
 #[derive(Debug, PartialEq, Eq, Encode, Decode, Default, Clone)]
-// #[codec(compact)]
 pub struct CallStamp {
     pub pre_storage: Vec<u8>,
 
@@ -131,24 +130,6 @@ pub fn get_child_storage_for_current_execution<T: EscrowTrait>(
     buf.extend_from_slice(&code.encode()[..]);
     child::ChildInfo::new_default(T::Hashing::hash(&buf[..]).as_ref())
 }
-
-// fn return_ok_and_maybe_leave_trace(
-//     ctx: &mut Runtime<E>,
-//
-// ) -> Result<sp_sandbox::ReturnValue, sp_sandbox::HostError> {
-//
-// }
-
-// #[macro_export]
-// macro_rules! return_ok_and_maybe_leave_trace {
-//
-// }
-//
-// #[macro_export]
-// macro_rules! return_err_and_maybe_leave_trace {
-//
-// }
-
 
 define_env!(Env, <E: ExtStandards>,
     gas (_ctx, amount: u32) => {
@@ -662,20 +643,8 @@ pub fn run_code_on_versatile_wm<T: EscrowTrait + VersatileWasm + SystemTrait, E:
         env_builder.add_host_func(self::prepare::IMPORT_MODULE_FN, name, func_ptr);
     });
 
-    // let mut ext = DefaultRuntimeEnv::<T> {
-    //     input_data: Some(input_data.clone()),
-    //     inner_exec_transfers: &mut transfers,
-    //     requester,
-    //     block_number: <system::Pallet<T>>::block_number(),
-    //     escrow_account,
-    //     escrow_account_trie_id: escrow_account_trie_id.clone(),
-    //     storage_trie_id: escrow_account_trie_id.clone(),
-    //     timestamp: T::Time::now(),
-    // };
-
+    
     let mut stack_trace = vec![];
-
-    // let mut ext_borrowed = ext.borrow_mut();
 
     let mut state = Runtime::new(
         &mut ext,
