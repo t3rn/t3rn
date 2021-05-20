@@ -13,6 +13,8 @@ readme = "README.md"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
+hex-literal = { version = '0.3.1'}
+anyhow = { version = '1.0'}
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
 t3rn-primitives = { version = "0.1.0", default-features = false, path = "../primitives" }
 serde = { version = "1.0.124", optional = true }
@@ -25,25 +27,70 @@ frame-system = { default-features = false, git = "https://github.com/paritytech/
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master"  }
+sp-sandbox = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master"  }
 sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-version = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-application-crypto = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+substrate-api-client = { default-features = false, git = "https://github.com/MaciejBaj/substrate-api-client.git" }
+pallet-bridge-messages = { default-features = false, path = "../../bridges-fresh/modules/messages" }
+pallet-transaction-payment = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+pallet-randomness-collective-flip = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+pallet-multi-finality-verifier = { path = "../../bridges-fresh/modules/multi-finality-verifier", default-features = false }
+bp-runtime = { default-features = false, path = "../../bridges-fresh/primitives/runtime" }
+bp-messages = { default-features = false, path = "../../bridges-fresh/primitives/messages" }
+bp-circuit = { default-features = false, path = "../../bridges-fresh/primitives/chain-circuit" }
+bp-polkadot-core = { default-features = false, path = "../../bridges-fresh/primitives/polkadot-core" }
+pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-sudo = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-xdns = { default-features = false, path = "../xdns" }
+pallet-contracts-registry = { default-features = false, path = "../contracts-registry" }
+versatile-wasm = { default-features = false , path = "../../../vm/versatile-wasm" }
+
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [dev-dependencies]
 serde_json = "1.0.41"
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
+
+[[example]]
+name = "print_metadata"
+path = "src/examples/print_metadata.rs"
 
 [features]
 default = ["std"]
 std = [
     "codec/std",
     "frame-support/std",
-    "frame-system/std",
+    "frame-support/std",
+    "pallet-balances/std",
+    "pallet-sudo/std",
+    "pallet-timestamp/std",
+    "pallet-bridge-messages/std",
+    "pallet-transaction-payment/std",
+    "pallet-randomness-collective-flip/std",
+    "pallet-contracts-registry/std",
+    "pallet-xdns/std",
     "serde",
     "sp-keystore",
+    "sp-sandbox/std",
     "lite-json/std",
     "sp-core/std",
     "sp-io/std",
+    "sp-application-crypto/std",
+    "sp-version/std",
     "sp-runtime/std",
     "sp-std/std",
     "t3rn-primitives/std",
+    "bp-circuit/std",
+    "bp-messages/std",
+    "pallet-multi-finality-verifier/std",
+    "bp-polkadot-core/std",
+    "substrate-api-client/std",
+    "versatile-wasm/std",
     "log/std",
 ]
+# need to add this for the app_crypto macro
+full_crypto = []
+
 try-runtime = ["frame-support/try-runtime"]

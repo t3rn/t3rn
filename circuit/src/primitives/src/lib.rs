@@ -19,15 +19,42 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
+use frame_support::traits::{Currency, Time};
+
 use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
 
+pub mod transfers;
+
+pub type InstanceId = [u8; 4];
+
+
+
+#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
+pub enum GatewayType {
+    ProgrammableInternal,
+    ProgrammableExternal,
+    TxOnly,
+}
+
+#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
+pub enum GatewayVendor {
+    Substrate,
+}
+
+#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
+pub struct GatewayPointer {
+    pub id: InstanceId,
+    pub vendor: GatewayVendor,
+    pub gateway_type: GatewayType,
+}
+
 /// A struct that encodes RPC parameters required for a call to a smart-contract.
-#[derive(Encode, Decode)]
+#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, Clone, Default)]
 pub struct Compose<Account, Balance> {
     pub name: Vec<u8>,
     pub code_txt: Vec<u8>,
-    pub gateway_id: Account,
+    pub gateway_id: [u8; 4],
     pub exec_type: Vec<u8>,
     pub dest: Account,
     pub value: Balance,
@@ -38,7 +65,7 @@ pub struct Compose<Account, Balance> {
 pub type FetchContractsResult = Result<Option<Vec<u8>>, ContractAccessError>;
 
 /// A result of execution of a contract.
-#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug)]
+#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, Clone)]
 pub enum ComposableExecResult {
     /// The contract returned successfully.
     ///
@@ -59,10 +86,29 @@ pub enum ComposableExecResult {
 }
 
 /// The possible errors that can happen querying the storage of a contract.
-#[derive(Eq, PartialEq, codec::Encode, codec::Decode, sp_runtime::RuntimeDebug)]
+#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, Clone)]
 pub enum ContractAccessError {
     /// The given address doesn't point to a contract.
     DoesntExist,
     /// The specified contract is a tombstone and thus cannot have any storage.
     IsTombstone,
+}
+
+#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, Clone, Default)]
+pub struct ExecPhase<Account, Balance> {
+    pub steps: Vec<ExecStep<Account, Balance>>,
+}
+
+#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, Clone, Default)]
+pub struct ExecStep<Account, Balance> {
+    pub compose: Compose<Account, Balance>,
+}
+#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, Clone, Default)]
+pub struct InterExecSchedule<Account, Balance> {
+    pub phases: Vec<ExecPhase<Account, Balance>>,
+}
+
+pub trait EscrowTrait: frame_system::Config + pallet_sudo::Config {
+    type Currency: Currency<Self::AccountId>;
+    type Time: Time;
 }
