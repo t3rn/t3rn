@@ -1,10 +1,8 @@
 <!-- markdown-link-check-disable -->
-# On-chain contracts registry
+# x-chain DNS Pallet
 
+Collects info about activity of connected chains.  
 
-### On-chain contract repository to remunerate open-source developers 
-
-
-Use the smart contracts stored in our registry or get paid when developers use your code.
+Originally designed to provide the info about active Gateways to Circuit while composing execution.
 
 License: Apache 2.0
