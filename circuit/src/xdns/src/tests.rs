@@ -51,7 +51,6 @@ frame_support::construct_runtime!(
 	}
 );
 
-
 parameter_types! {
     pub const MinimumPeriod: u64 = 1;
     pub const TransactionByteFee: u64 = 1;

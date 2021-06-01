@@ -24,7 +24,7 @@ use frame_support::weights::Weight;
 use sp_core::{Public, sr25519::Signature, H256};
 
 use sp_runtime::{
-    testing::{Header as SubstrateHeader, TestXt},
+    testing::{Header as SubstrateHeader, TestXt, UintAuthorityId},
     traits::{BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify, Convert},
     FixedU128,
     DispatchResult, DispatchError
@@ -46,7 +46,7 @@ type Block = frame_system::mocking::MockBlock<Test>;
 use t3rn_primitives::transfers::BalanceOf;
 
 use versatile_wasm::{VersatileWasm, DispatchRuntimeCall};
-
+use pallet_session::Historical as pallet_session_historical;
 use std::collections::BTreeMap;
 
 // For testing the module, we construct a mock runtime.
@@ -57,6 +57,7 @@ frame_support::construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
         Balances: pallet_balances::{Pallet, Call, Event<T>},
+		ImOnline: pallet_im_online::{Pallet, Call, Storage, Event<T>, ValidateUnsigned, Config<T>} = 11,
         Sudo: pallet_sudo::{Pallet, Call, Event<T>},
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         ExecDelivery: example_offchain_worker::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
@@ -66,6 +67,10 @@ frame_support::construct_runtime!(
         Randomness: pallet_randomness_collective_flip::{Pallet, Call, Storage},
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Storage, Event<T>},
         XDNS: pallet_xdns::{Pallet, Call, Storage, Event<T>},
+		// Staking: pallet_staking::{Pallet, Call, Config<T>, Storage, Event<T>},
+		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
+		Offences: pallet_offences::{Pallet, Call, Storage, Event},
+		Historical: pallet_session_historical::{Pallet},
     }
 );
 
@@ -496,27 +501,32 @@ impl frame_system::offchain::SigningTypes for Test {
     type Signature = Signature;
 }
 
-impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test
-where
-    Call: From<LocalCall>,
-{
-    type OverarchingCall = Call;
+// impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test
+// where
+//     Call: From<LocalCall>,
+// {
+//     type OverarchingCall = Call;
+//     type Extrinsic = Extrinsic;
+// }
+
+impl<T> frame_system::offchain::SendTransactionTypes<T> for Test where Call: From<T> {
     type Extrinsic = Extrinsic;
+    type OverarchingCall = Call;
 }
 
-impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Test
-where
-    Call: From<LocalCall>,
-{
-    fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
-        call: Call,
-        _public: <Signature as Verify>::Signer,
-        _account: AccountId,
-        nonce: u64,
-    ) -> Option<(Call, <Extrinsic as ExtrinsicT>::SignaturePayload)> {
-        Some((call, (nonce, ())))
-    }
-}
+// impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Test
+// where
+//     Call: From<LocalCall>,
+// {
+//     fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
+//         call: Call,
+//         _public: <Signature as Verify>::Signer,
+//         _account: AccountId,
+//         nonce: u64,
+//     ) -> Option<(Call, <Extrinsic as ExtrinsicT>::SignaturePayload)> {
+//         Some((call, (nonce, ())))
+//     }
+// }
 
 parameter_types! {
     pub const GracePeriod: u64 = 5;
@@ -541,13 +551,24 @@ impl Convert<Balance, u128> for CircuitToGateway {
 
 impl Config for Test {
     type Event = Event;
-    type AuthorityId = crypto::TestAuthId;
+    // type AuthorityId = crypto::TestAuthId;
     type Call = Call;
-    type GracePeriod = GracePeriod;
-    type UnsignedInterval = UnsignedInterval;
-    type UnsignedPriority = UnsignedPriority;
+    // type GracePeriod = GracePeriod;
+    // type UnsignedInterval = UnsignedInterval;
+    // type UnsignedPriority = UnsignedPriority;
     type AccountId32Converter = AccountId32Converter;
     type ToStandardizedGatewayBalance = CircuitToGateway;
+}
+
+impl pallet_im_online::Config for Test {
+    type AuthorityId = UintAuthorityId;
+    // type AuthorityId = crypto::TestAuthId;
+    type Event = Event;
+    type ValidatorSet = ();
+    type NextSessionRotation = ();
+    type ReportUnresponsiveness = Offences;
+    type UnsignedPriority = UnsignedPriority;
+    type WeightInfo = ();
 }
 
 

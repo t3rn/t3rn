@@ -51,7 +51,7 @@ pub type XdnsRecordId<T> = <T as frame_system::Config>::Hash;
 
 /// A preliminary representation of a xdns_record in the onchain registry.
 #[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
-pub struct XdnsRecord <AccountId> {
+pub struct XdnsRecord <AccountId, Hash> {
 
 	/// SCALE-encoded url string on where given Consensus System can be accessed
 	url: Vec<u8>,
@@ -63,7 +63,7 @@ pub struct XdnsRecord <AccountId> {
 	runtime_version: sp_version::RuntimeVersion,
 
 	/// Genesis hash (first block's id)
-	genesis_hash: substrate_api_client::Hash,
+	genesis_hash: Hash,
 
 	/// ID of gateway. Short and readeable
 	gateway_id: t3rn_primitives::InstanceId,
@@ -80,12 +80,13 @@ pub struct XdnsRecord <AccountId> {
 
 impl<
 	AccountId: Encode,
-> XdnsRecord <AccountId> {
+	Hash: Encode,
+> XdnsRecord <AccountId, Hash> {
 	pub fn new(
 		url: Vec<u8>,
 		metadata: Vec<u8>,
 		runtime_version: sp_version::RuntimeVersion,
-		genesis_hash: substrate_api_client::Hash,
+		genesis_hash: Hash,
 		gateway_id: [u8; 4],
 		gateway_vendor: t3rn_primitives::GatewayVendor,
 		gateway_type: t3rn_primitives::GatewayType,
@@ -173,7 +174,7 @@ pub mod pallet {
 		pub fn add_new_xdns_record(
 			origin: OriginFor<T>,
 			requester: T::AccountId,
-			xdns_record: XdnsRecord<T::AccountId>
+			xdns_record: XdnsRecord<T::AccountId, <T as frame_system::Config>::Hash>
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 
@@ -258,7 +259,7 @@ pub mod pallet {
 		_,
 		Blake2_128Concat,
 		XdnsRecordId<T>,
-		XdnsRecord<<T as frame_system::Config>::AccountId>,
+		XdnsRecord<<T as frame_system::Config>::AccountId, <T as frame_system::Config>::Hash>,
 		OptionQuery,
 	>;
 

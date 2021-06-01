@@ -1,92 +1,72 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 
+use sp_std::vec::*; use sp_std::vec;
 
 use codec::{Compact, Encode};
-use substrate_api_client::{
-    compose_call, compose_extrinsic, compose_extrinsic_offline, Api, GenericAddress, Metadata, UncheckedExtrinsicV4, XtStatus, Hash,
-    extrinsic::xt_primitives::*
-};
 
-
+use crate::message_assembly::chain_generic_metadata::Metadata;
 
 use sp_version::RuntimeVersion;
 
-// :( shoild be using self::sp_runtime
-use substrate_api_client::sp_runtime;
-
-use substrate_api_client::sp_core::Pair;
-
 use super::gateway_inbound_assembly::{GatewayInboundAssembly, SingedBytes};
-// use crate::message_assembly::gateway_inbound_assembly::GatewayInboundAssembly;
 
+#[macro_use]
+use crate::compose_extrinsic_offline;
+use crate::compose_call;
 
-pub struct SubstrateGatewayAssembly<Pair: substrate_api_client::sp_core::Pair> {
+pub struct SubstrateGatewayAssembly<Pair, Hash> {
     metadata: Metadata,
     runtime_version: RuntimeVersion,
     genesis_hash: Hash,
     submitter_pair: Pair,
-    submitter_pair_multisig: substrate_api_client::sp_core::sr25519::Pair,
 }
 
 // ToDo: Use the same sp_core library as rest of crate instead of accessing on from ext sub_api_client :(
-impl <Pair: substrate_api_client::sp_core::Pair> SubstrateGatewayAssembly<Pair> {
+impl <Pair, Hash> SubstrateGatewayAssembly<Pair, Hash> {
     pub fn new (
         metadata: Metadata,
         runtime_version: RuntimeVersion,
         genesis_hash: Hash,
         submitter_pair: Pair,
-        submitter_pair_multisig: substrate_api_client::sp_core::sr25519::Pair,
     ) -> Self {
-        SubstrateGatewayAssembly { metadata, runtime_version, genesis_hash, submitter_pair, submitter_pair_multisig }
+        SubstrateGatewayAssembly { metadata, runtime_version, genesis_hash, submitter_pair }
     }
 }
 
-impl <Pair: substrate_api_client::sp_core::Pair> GatewayInboundAssembly for SubstrateGatewayAssembly<Pair> {
+impl <Pair, Hash> GatewayInboundAssembly for SubstrateGatewayAssembly<Pair, Hash> {
 
-    fn assemble_signed_call(&self, module_name: &str, fn_name: &str, data: Vec<u8>, to: [u8; 32], value: u128, gas: u64) -> SingedBytes {
+    fn assemble_signed_call(&self, module_name: &'static str, fn_name: &'static str, data: Vec<u8>, to: [u8; 32], value: u128, gas: u64) -> SingedBytes {
 
         let call = self.assemble_call(module_name, fn_name, data, to, value, gas);
 
         self.assemble_signed_tx_offline(call, 0)
     }
 
-    ///
-    /// who will like to assemble the call?
+    /// Who will like to assemble the call?
     /// dev writes composable smart contract ->
     /// -> @ink / solidity / wasm code could now be either
     ///     - a) pre-executed on versatile VM and decomposed into assemble_call from VM (calls + transfers)
     ///     - b) constructed directly as a code analysis
     ///     - c) code without pre-execution would be submitted to gateways using only the call to contracts (escrow exec)
     ///     for a) b) and c) i can expect in this point to have arguments already split
-    fn assemble_call(&self, module_name: &str, fn_name: &str, _data: Vec<u8>, to: [u8; 32], value: u128, gas: u64) -> Vec<u8> {
-        /**
-            module_name,
-            fn_name,
-            &input_data[..],
-
-            core::str::from_utf8(Box::leak(bytes.into_boxed_slice())).map_err(|_utf8_err|
-        **/
-        // let (pallet_name, method_name, ) = decode_raw_input_to_call_params();
-        // .to_account_id()
-
+    fn assemble_call(&self, module_name: &'static str, fn_name: &'static str, _data: Vec<u8>, to: [u8; 32], value: u128, gas: u64) -> Vec<u8> {
         let call = compose_call!(
-            self.metadata.clone(),
+            self.metadata,
             module_name,
             fn_name,
-            GenericAddress::Id(to.into()),
+            // GenericAddress::Id(to.into()),
+            to,
             Compact(value),
             Compact(gas)
         );
-        // call = ([1, 2], MultiAddress::Id(0101010101010101010101010101010101010101010101010101010101010101 (5C62Ck4U...)), 3, 2)
-        println!("call = {:?}", call);
+        // e.g. call = ([1, 2], MultiAddress::Id(0101010101010101010101010101010101010101010101010101010101010101 (5C62Ck4U...)), 3, 2)
         call.encode()
-        // call
     }
 
-    fn assemble_signed_tx_offline(&self, call_bytes: Vec<u8>, nonce: u32) -> SingedBytes {
-        let xt: UncheckedExtrinsicV4<Vec<u8>> = compose_extrinsic_offline!(
-            &self.submitter_pair_multisig,
+    fn assemble_signed_tx_offline(&self, call_bytes: Vec<u8>, _nonce: u32) -> SingedBytes {
+        let xt: Vec<u8> = compose_extrinsic_offline!(
+            &self.submitter_pair,
             call_bytes.clone(),
             nonce,
             sp_runtime::generic::Era::Immortal,
@@ -95,8 +75,6 @@ impl <Pair: substrate_api_client::sp_core::Pair> GatewayInboundAssembly for Subs
             self.runtime_version.spec_version,
             self.runtime_version.transaction_version
         );
-
-        println!("xt assembled: = {:?}", xt);
 
         SingedBytes {
             signature: xt.encode(),
@@ -109,20 +87,11 @@ impl <Pair: substrate_api_client::sp_core::Pair> GatewayInboundAssembly for Subs
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    
 
-    
-
-    
-    use substrate_api_client::sp_core::Pair;
-    // use sp_core::Pair;
-    use substrate_api_client::{Metadata, node_metadata::{ModuleMetadata, ModuleWithEvents, ModuleWithCalls}};
-    
-    
-    use codec::alloc::collections::HashMap;
+    use std::collections::{HashMap};
     use sp_version::RuntimeVersion;
 
-    pub fn create_test_genesis_hash() -> substrate_api_client::Hash {
+    pub fn create_test_genesis_hash() -> Hash {
         [9 as u8; 32].into()
     }
 
@@ -190,9 +159,9 @@ pub mod tests {
     #[test]
     fn sap_prints_polkadot_metadata() {
 
-        let pair = substrate_api_client::sp_core::sr25519::Pair::from_string("//Alice", None).unwrap();
+        let pair = sp_core::sr25519::Pair::from_string("//Alice", None).unwrap();
 
-        let sag = SubstrateGatewayAssembly::<substrate_api_client::sp_core::sr25519::Pair>::new(
+        let sag = SubstrateGatewayAssembly::<sp_core::sr25519::Pair>::new(
             create_test_metadata_struct(),
             create_test_runtime_version(),
             create_test_genesis_hash(),

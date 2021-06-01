@@ -1,57 +1,13 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Compact, Encode, Decode, alloc::collections::HashMap};
+use codec::{Encode, Decode};
 
 use crate::pallet::Config as Config;
 
 use bp_messages::LaneId;
 
-
-
-
-
-
-// #[cfg(feature = "std")]
-// #[derive(Clone)]
-// pub struct Api<P>
-//     where
-//         P: Pair,
-//         MultiSignature: From<P::Signature>,
-// {
-//     pub url: String,
-//     pub signer: Option<P>,
-//     pub genesis_hash: Hash,
-//     pub metadata: Metadata,
-//     pub runtime_version: RuntimeVersion,
-// }
-//
-// #[cfg(feature = "std")]
-// impl<P> Api<P>
-//     where
-//         P: Pair,
-//         MultiSignature: From<P::Signature>,
-// {
-//
-// }
-
-// #[derive(Debug, PartialEq, Eq)]
-// pub struct CircuitValidatorSigningParams<Pair> {
-//     // signer: String,
-//     // signer_password: String,
-//     secret: Pair,
-// }
-//
-// impl CircuitValidatorSigningParams<Pair> {
-//     pub fn new<Pair: sp_core::crypto::Pair>(seed: &str) -> &Self {
-//         let pair = Pair::from_string(&format!("//{}", seed), None)
-//             .expect("static values are valid; qed");
-//
-//         &CircuitValidatorSigningParams::<Pair> {
-//             secret: pair
-//         }
-//     }
-// }
-
+use sp_std::vec::*;
+use sp_std::vec;
 
 /// CircuitOutbound covers the path of message assembly and adds it to the queue dispatchable by
 pub enum CircuitOutbound<T: Config> {
@@ -59,14 +15,13 @@ pub enum CircuitOutbound<T: Config> {
         escrow_account: T::AccountId,
         target_account: T::AccountId,
         message: Vec<u8>,
-        gateway_id: bp_runtime::InstanceId,
-        // secret_signing: CircuitValidatorSigningParams<sp_core::sr25519::Pair>,
+        gateway_id: bp_runtime::ChainId,
     },
     TxOnlyExternal {
         escrow_account: T::AccountId,
         target_account: T::AccountId,
         message: Vec<u8>,
-        gateway_id: bp_runtime::InstanceId,
+        gateway_id: bp_runtime::ChainId,
     },
 }
 
@@ -154,82 +109,12 @@ pub enum CircuitOutboundMessage {
     }
 }
 
-pub trait CircuitOutboundProtocol {
-
-}
-
+pub trait CircuitOutboundProtocol { }
 
 impl<T: Config> CircuitOutbound<T>  {
 
-    // fn sign_message(&self, message: T::OutboundPayload, submitter: T::AccountId, gateway_inbound: &GatewayAssembly) -> Vec<u8> {
-    //     let signed_message = match self {
-    //         // CircuitOutbound::ProgrammableInternal { message, .. } => {
-    //         //     // In case of Internal Programmable Gateway rely fully on pallet-bridge-messages
-    //         //     // Some entity needs to sign transaction here in the way recognizable by send_message + call_dispatch implementations
-    //         //     // gateway_runtime::MessagesCall::send_message(
-    //         //     //     lane, message, fee,
-    //         //     // )
-    //         //
-    //         //     let number: T::BlockNumber = Zero::zero();
-    //         //     // let parent_hash = <system::Pallet<T>>::block_hash(block_number - 1u32.into());
-    //         //     let genesis_hash = <frame_system::Pallet<T>>::block_hash(Zero::zero());
-    //         //
-    //         //     Circuit::sign_transaction(
-    //         //         genesis_hash,
-    //         //         &source_sign,
-    //         //         transaction_nonce,
-    //         //         send_message_call,
-    //         //     );
-    //         //     vec![]
-    //         // },
-    //         CircuitOutbound::Programmable { escrow_account, target_account, message, gateway_id, secret_signing } => {
-    //             // Sign message as dispatchable xtrinsics with account that is alive & has positive balance on foreign chain.
-    //
-    //             /// Nonce of validator on foreign chain needs to be known here.
-    //             /// For that validators can keep update data about their validators account on-chain
-    //             /// and that data could be accessed here directly from storage of that module.
-    //             let nonce = 0;
-    //
-    //             gateway_inbound.sign_call_offline(*message, secret_signing.secret, 0)
-    //         },
-    //         CircuitOutbound::TxOnlyExternal { escrow_account, target_account, message, gateway_id } => {
-    //             // Sign message as a federated POA validators as PoC I & II and move to Fast Multiparty Threshold ECDSA in PoC III.
-    //
-    //             vec![]
-    //         },
-    //     };
-    //     signed_message
-    // }
     fn send_message(&self, message: T::OutboundPayload, submitter: T::AccountId) -> Vec<u8> {
 
-        // Q: What's the best way to recognize the transmission medium for relayers now:
-        // A1) have several dedicated lanes per each transmission medium:
-        // bridge <-> bridge messages
-        // ?dispatch calls
-        // ?xcmp messages
-        // ?rpc messages?
-
-        // Additional format with multiple variants
-            // XCM variant - XCM
-                // GENERIC
-            // Generic Dispatch
-            // Custom Interaction
-        // Blockchain vs
-
-        // ACCESS LAYER
-            // RPC
-            // Runtime API - read-only - what's the validator set - network general data without
-                // RPC state_call
-                // Proof against next runtime
-            // Runtime - directly via storage runtime
-            // Dispatch is a subset of XCM
-            //
-        /**
-            origin,
-			lane_id: LaneId,
-			payload: T::OutboundPayload,
-			delivery_and_dispatch_fee: T::OutboundMessageFee,
-        **/
         let origin = frame_system::RawOrigin::Signed(submitter).into();
         let lane_id: LaneId = [0, 0, 0, 1];
         let delivery_and_dispatch_fee: T::OutboundMessageFee = 0.into();
@@ -240,8 +125,6 @@ impl<T: Config> CircuitOutbound<T>  {
             message,
             delivery_and_dispatch_fee,
         );
-
         vec![]
-
     }
 }

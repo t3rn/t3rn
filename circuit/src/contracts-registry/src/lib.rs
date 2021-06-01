@@ -54,15 +54,15 @@ pub type RegistryContractId<T> = <T as frame_system::Config>::Hash;
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
 pub struct RegistryContract<AccountId> {
 	/// Original code text
-	code_txt: Vec<u8>,
+	pub code_txt: Vec<u8>,
 	/// Bytecode
-	bytes: Vec<u8>,
+	pub bytes: Vec<u8>,
 	/// Original code author
-	author: AccountId,
+	pub author: AccountId,
 	/// Optional renumeration fee for the author
-	author_fees_per_single_use: Option<u128>,
+	pub author_fees_per_single_use: Option<u128>,
 	/// Optional ABI
-	abi: Option<Vec<u8>>,
+	pub abi: Option<Vec<u8>>,
 }
 
 impl<
@@ -222,6 +222,7 @@ pub mod pallet {
 
     /// The pre-validated composable contracts on-chain registry.
 	#[pallet::storage]
+	#[pallet::getter(fn contracts_registry)]
 	pub type ContractsRegistry<T> = StorageMap<
 		_,
 		Blake2_128Concat,
