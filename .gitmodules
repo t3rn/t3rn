@@ -4,3 +4,6 @@
 [submodule "sdk/compiler"]
 	path = sdk/compiler
 	url = https://github.com/MaciejBaj/cargo-contract
+[submodule "circuit/bridges"]
+	path = circuit/bridges
+	url = https://github.com/MaciejBaj/parity-bridges-common
