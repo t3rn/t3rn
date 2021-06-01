@@ -14,16 +14,20 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 hex-literal = { version = '0.3.1'}
-anyhow = { version = '1.0'}
+
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
+
 t3rn-primitives = { version = "0.1.0", default-features = false, path = "../primitives" }
+versatile-wasm = { default-features = false , path = "../../../vm/versatile-wasm" }
 serde = { version = "1.0.124", optional = true }
 lite-json = { version = "0.1", default-features = false }
 log = { version = "0.4.14", default-features = false }
-regex = { version = "1" }
-sp-keystore = { version = "0.9.0", git = "https://github.com/paritytech/substrate.git", branch = "master" , optional = true }
+
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master"  }
+frame-metadata = { version = "13.0.0", git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false }
+
+sp-keystore = { default-features = false, version = "0.9.0", git = "https://github.com/paritytech/substrate.git", branch = "master" , optional = true }
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master"  }
@@ -31,23 +35,27 @@ sp-sandbox = { default-features = false, git = "https://github.com/paritytech/su
 sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-version = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-application-crypto = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
-substrate-api-client = { default-features = false, git = "https://github.com/MaciejBaj/substrate-api-client.git" }
-pallet-bridge-messages = { default-features = false, path = "../../bridges-fresh/modules/messages" }
+
+pallet-bridge-messages = { default-features = false, path = "../../bridges/modules/messages" }
 pallet-transaction-payment = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 pallet-randomness-collective-flip = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
-pallet-multi-finality-verifier = { path = "../../bridges-fresh/modules/multi-finality-verifier", default-features = false }
-bp-runtime = { default-features = false, path = "../../bridges-fresh/primitives/runtime" }
-bp-messages = { default-features = false, path = "../../bridges-fresh/primitives/messages" }
-bp-circuit = { default-features = false, path = "../../bridges-fresh/primitives/chain-circuit" }
-bp-polkadot-core = { default-features = false, path = "../../bridges-fresh/primitives/polkadot-core" }
+pallet-multi-finality-verifier = { default-features = false, path = "../../bridges/modules/multi-finality-verifier" }
 pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-im-online = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-sudo = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+
 pallet-xdns = { default-features = false, path = "../xdns" }
 pallet-contracts-registry = { default-features = false, path = "../contracts-registry" }
-versatile-wasm = { default-features = false , path = "../../../vm/versatile-wasm" }
 
-sp-keyring = { git = "https://github.com/paritytech/substrate", branch = "master" }
+bp-runtime = { default-features = false, path = "../../bridges/primitives/runtime" }
+bp-messages = { default-features = false, path = "../../bridges/primitives/messages" }
+bp-circuit = { default-features = false, path = "../../bridges/primitives/chain-circuit" }
+bp-polkadot-core = { default-features = false, path = "../../bridges/primitives/polkadot-core" }
+
+pallet-offences = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-session = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-staking = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [dev-dependencies]
 serde_json = "1.0.41"
@@ -61,34 +69,43 @@ path = "src/examples/print_metadata.rs"
 default = ["std"]
 std = [
     "codec/std",
+    "serde",
+    "log/std",
+    "lite-json/std",
+    "versatile-wasm/std",
+    "t3rn-primitives/std",
     "frame-support/std",
-    "frame-support/std",
+    "frame-system/std",
+    "frame-metadata/std",
     "pallet-balances/std",
     "pallet-sudo/std",
     "pallet-timestamp/std",
+    "pallet-im-online/std",
     "pallet-bridge-messages/std",
     "pallet-transaction-payment/std",
     "pallet-randomness-collective-flip/std",
     "pallet-contracts-registry/std",
     "pallet-xdns/std",
-    "serde",
-    "sp-keystore",
-    "sp-sandbox/std",
-    "lite-json/std",
+    "pallet-multi-finality-verifier/std",
+    "sp-keystore/std",
     "sp-core/std",
     "sp-io/std",
-    "sp-application-crypto/std",
-    "sp-version/std",
     "sp-runtime/std",
+    "sp-sandbox/std",
     "sp-std/std",
-    "t3rn-primitives/std",
+    "sp-version/std",
+    "sp-application-crypto/std",
     "bp-circuit/std",
     "bp-messages/std",
-    "pallet-multi-finality-verifier/std",
     "bp-polkadot-core/std",
-    "substrate-api-client/std",
-    "versatile-wasm/std",
-    "log/std",
+    "bp-runtime/std",
+
+    "pallet-staking/std",
+    "pallet-session/std",
+    "pallet-offences/std",
+#    "sp-keyring/std",
+#    "substrate-api-client/std",
+#    "sp-application-crypto/std",
 ]
 # need to add this for the app_crypto macro
 full_crypto = []

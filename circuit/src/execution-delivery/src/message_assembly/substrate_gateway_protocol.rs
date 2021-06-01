@@ -1,15 +1,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::{Compact, Encode, Decode};
+use sp_std::vec::*; use sp_std::vec;
 
-
-use codec::{Compact, Encode, Decode, alloc::collections::HashMap};
-use substrate_api_client::{
-    compose_call, compose_extrinsic, compose_extrinsic_offline, Api, GenericAddress, Metadata, UncheckedExtrinsicV4, XtStatus, Hash,
-    extrinsic::xt_primitives::*
-};
+use crate::message_assembly::chain_generic_metadata::Metadata;
 
 use sp_version::RuntimeVersion;
-
 
 use t3rn_primitives::transfers::TransferEntry;
 use t3rn_primitives::{GatewayVendor, GatewayType, GatewayPointer};
@@ -18,33 +14,27 @@ use super::substrate_gateway_assembly::{SubstrateGatewayAssembly};
 use super::gateway_inbound_protocol::{GatewayInboundProtocol};
 use super::circuit_outbound::{CircuitOutboundMessage, CircuitInboundResult, InboundStepProofTypes, MessageTransmissionMedium};
 
-pub struct SubstrateGatewayProtocol<Pair: substrate_api_client::sp_core::Pair> {
-    pub assembly: SubstrateGatewayAssembly<Pair>,
+pub struct SubstrateGatewayProtocol<Pair, Hash> {
+    pub assembly: SubstrateGatewayAssembly<Pair, Hash>,
 }
-
-// :( should be using self::sp_runtime
-// ToDo: Use the same sp_core library as rest of crate instead of accessing on from ext sub_api_client :(
-impl <Pair: substrate_api_client::sp_core::Pair> SubstrateGatewayProtocol<Pair> {
+impl <Pair, Hash> SubstrateGatewayProtocol<Pair, Hash> {
     pub fn new(
         metadata: Metadata,
         runtime_version: RuntimeVersion,
         genesis_hash: Hash,
         submitter_pair: Pair,
-        submitter_pair_multisig: substrate_api_client::sp_core::sr25519::Pair,
     ) -> Self {
         SubstrateGatewayProtocol {
-            assembly: SubstrateGatewayAssembly::<Pair>::new(
-                metadata, runtime_version, genesis_hash, submitter_pair, submitter_pair_multisig
+            assembly: SubstrateGatewayAssembly::<Pair, Hash>::new(
+                metadata, runtime_version, genesis_hash, submitter_pair
             )
         }
     }
 }
 
-impl <Pair: substrate_api_client::sp_core::Pair> GatewayInboundProtocol for SubstrateGatewayProtocol<Pair> {
+impl <Pair, Hash> GatewayInboundProtocol for SubstrateGatewayProtocol<Pair, Hash> {
 
     fn get_storage(&self, key: &[u8; 32], _gateway_type: GatewayType) -> CircuitOutboundMessage {
-        println!("SubstrateGatewayProtocol get storage {:?}", key);
-
         CircuitOutboundMessage::Read {
             arguments: vec![key.to_vec()],
             inbound_results: CircuitInboundResult {
@@ -214,48 +204,19 @@ impl <Pair: substrate_api_client::sp_core::Pair> GatewayInboundProtocol for Subs
 #[cfg(test)]
 mod tests {
     use super::*;
-    
 
     use crate::message_assembly::substrate_gateway_assembly::tests::{create_test_metadata_struct, create_test_genesis_hash, create_test_runtime_version};
-
-    
-
-    
-    use substrate_api_client::sp_core::Pair;
-    
-    
-    
-    
-    
 
     #[test]
     fn sap_creates_substrate_gateway_protocol() {
 
-        let pair = substrate_api_client::sp_core::sr25519::Pair::from_string("//Alice", None).unwrap();
+        let pair = sp_core::sr25519::Pair::from_string("//Alice", None).unwrap();
 
-        let sgp = SubstrateGatewayProtocol::<substrate_api_client::sp_core::sr25519::Pair>::new(
+        let sgp = SubstrateGatewayProtocol::<sp_core::sr25519::Pair>::new(
             create_test_metadata_struct(), create_test_runtime_version(), create_test_genesis_hash(), pair.clone(), pair
         );
 
-        sgp.get_storage(b"kikikikikikikikikikikikikikikiki", GatewayType::ProgrammableExternal);
+        sgp.get_storage(b"testtesttesttesttesttesttesttest", GatewayType::ProgrammableExternal);
 
-
-        //
-        // println!("sag = {:?}", sag);
-        // let test_a_pk = [1 as u8; 32];
-        // let test_b_pk = [0 as u8; 32];
-        // let test_call_bytes = sag.assemble_call(
-        //     "ModuleName", "FnName", vec![0, 1, 2], [1 as u8; 32], 3, 2
-        // );
-        //
-        // let secret_uri = "//Alice";
-        //
-        // let pair = substrate_api_client::sp_core::sr25519::Pair::from_string(secret_uri, None).unwrap();
-        //
-        // let test_tx_signed = sag.assemble_signed_tx_offline(
-        //     test_call_bytes,
-        //     &pair.into(),
-        //     0
-        // );
     }
 }

@@ -1,9 +1,11 @@
-use codec::Decode;
+#![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::Decode;
+use sp_std::vec::*; use sp_std::vec;
+use sp_std::boxed::Box;
 
 use pallet_contracts_registry::RegistryContract;
 
-use substrate_api_client::sp_core::Pair;
 use t3rn_primitives::transfers::TransferEntry;
 use t3rn_primitives::transfers::BalanceOf;
 
@@ -29,12 +31,13 @@ impl ExecComposer {
     pub fn pre_run_single_contract<T: crate::Config>(
         contract: RegistryContract<T::AccountId>,
         escrow_account: T::AccountId,
+        submitter: T::AuthorityId,
         _requester: T::AccountId,
         target_dest: T::AccountId,
         value: BalanceOf<T>,
         input: Vec<u8>,
-        gateway_id: bp_runtime::InstanceId,
-    ) -> anyhow::Result<Vec<CircuitOutboundMessage>, &'static str> {
+        gateway_id: bp_runtime::ChainId,
+    ) -> Result<Vec<CircuitOutboundMessage>, &'static str> {
 
         let output_mode = PessimisticOutputMode::new();
         let requester = T::AccountId::default();  // In dry run don't use a requester to check whether the code is correct
@@ -43,19 +46,20 @@ impl ExecComposer {
             (vec![], contract.code_txt, gateway_id, vec![], target_dest, value, contract.bytes, input);
         let compose = Compose { name, code_txt, gateway_id, exec_type, dest, value, bytes, input_data };
 
-        Self::run_single_contract::<T, PessimisticOutputMode>(compose, escrow_account, requester, output_mode)
+        Self::run_single_contract::<T, PessimisticOutputMode>(compose, escrow_account, submitter, requester, output_mode)
     }
 
     pub fn post_run_single_contract<T: crate::Config>(
         contract: RegistryContract<T::AccountId>,
         escrow_account: T::AccountId,
+        submitter: T::AuthorityId,
         requester: T::AccountId,
         target_dest: T::AccountId,
         value: BalanceOf<T>,
         input: Vec<u8>,
-        gateway_id: bp_runtime::InstanceId,
+        gateway_id: bp_runtime::ChainId,
         _confirmed_outputs: Vec<u8>,
-    ) -> anyhow::Result<Vec<CircuitOutboundMessage>, &'static str> {
+    ) -> Result<Vec<CircuitOutboundMessage>, &'static str> {
 
         let output_mode = StuffedOutputMode::new();
 
@@ -63,29 +67,31 @@ impl ExecComposer {
             (vec![], contract.code_txt, gateway_id, vec![], target_dest, value, contract.bytes, input);
         let compose = Compose { name, code_txt, gateway_id, exec_type, dest, value, bytes, input_data };
 
-        Self::run_single_contract::<T, StuffedOutputMode>(compose, escrow_account, requester, output_mode)
+        Self::run_single_contract::<T, StuffedOutputMode>(compose, escrow_account, submitter, requester, output_mode)
     }
 
     pub fn dry_run_single_contract<T: crate::Config>(
         compose: Compose<T::AccountId, BalanceOf<T>>,
         escrow_account: T::AccountId,
-    ) -> anyhow::Result<Vec<CircuitOutboundMessage>, &'static str> {
+        submitter: T::AuthorityId,
+    ) -> Result<Vec<CircuitOutboundMessage>, &'static str> {
 
         let output_mode = OptimisticOutputMode::new();
         let requester = T::AccountId::default();  // In dry run don't use a requester to check whether the code is correct
 
-        Self::run_single_contract::<T, OptimisticOutputMode>(compose, escrow_account, requester, output_mode)
+        Self::run_single_contract::<T, OptimisticOutputMode>(compose, escrow_account, submitter, requester, output_mode)
     }
 
     pub fn run_single_contract<T: crate::Config, OM: WasmEnvOutputMode>(
         compose: Compose<T::AccountId, BalanceOf<T>>,
         escrow_account: T::AccountId,
+        submitter: T::AuthorityId,
         requester: T::AccountId,
         output_mode: OM,
-    ) -> anyhow::Result<Vec<CircuitOutboundMessage>, &'static str> {
+    ) -> Result<Vec<CircuitOutboundMessage>, &'static str> {
 
         let gateway_pointer = Self::retrieve_gateway_pointer(compose.gateway_id)?;
-        let gateway_protocol = Self::retrieve_gateway_protocol(gateway_pointer.clone())?;
+        let gateway_protocol = Self::retrieve_gateway_protocol::<T>(submitter, gateway_pointer.clone())?;
 
         let (block_number, timestamp, contract_trie_id, input_data, code, value, gas_limit, target_account) = (
             <frame_system::Pallet<T>>::block_number(),
@@ -145,25 +151,9 @@ impl ExecComposer {
     }
 
     fn retrieve_gateway_pointer(
-        gateway_id: bp_runtime::InstanceId,
-    ) -> anyhow::Result<GatewayPointer, &'static str> {
+        gateway_id: bp_runtime::ChainId,
+    ) -> Result<GatewayPointer, &'static str> {
 
-        // let (gateway_vendor (Substrate, Eth), gateway_type (EXT, INT, TX-ONLY) = xdns::Pallet<T>::best_available(gateway_id);
-        //
-        // let gateway_pointer = exec_composer::xdns_decoder::decode(encoded_gateway_params)
-        //
-        // let encoded_gateway_params = xdns::Pallet<T>::best_available(gateway_id);
-        // the logic here should be dynamically decoding the requested type without match (based on maybe another sandboxed VM wasm eval?
-        // - implement a mini-vm for that purpose
-
-
-        /// Parachain validation
-        ///
-        /// Sandbox - contract specific methods
-        /// On parachain - new blcok - eval in runtime
-        /// Relay chain runs parchain new in wasm enironment of parachain
-        /// POV block - Block + Subtree of state which are necessary to validate the blocks's validity
-        ///
         Ok(
             GatewayPointer {
                 id: gateway_id,
@@ -173,29 +163,23 @@ impl ExecComposer {
         )
     }
 
-    fn retrieve_gateway_protocol(
+    fn retrieve_gateway_protocol<T: crate::Config>(
+        submitter_id: T::AuthorityId,
         _gateway_pointer: GatewayPointer,
-    ) -> anyhow::Result<Box<dyn GatewayInboundProtocol>, &'static str> {
+    ) -> Result<Box<dyn GatewayInboundProtocol>, &'static str> {
+
         // ToDo: Communicate with pallet_xdns in order to retrieve latest data about
-        /// let (metadata, runtime_version, genesis_hash) = pallet_xdns::Pallet<T>::get_gateway_protocol_meta(gateway_pointer.id)
-        Ok(Box::new(SubstrateGatewayProtocol::<substrate_api_client::sp_core::sr25519::Pair>::new(
+        // let (metadata, runtime_version, genesis_hash) = pallet_xdns::Pallet<T>::get_gateway_protocol_meta(gateway_pointer.id)
+        Ok(Box::new(SubstrateGatewayProtocol::<T::AuthorityId, bp_polkadot_core::Hash>::new(
             Default::default(),
             Default::default(),
             Default::default(),
-            substrate_api_client::sp_core::sr25519::Pair::from_string("//Alice", None).unwrap(),
-            substrate_api_client::sp_core::sr25519::Pair::from_string("//Alice", None).unwrap(),
+            submitter_id,
         )))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    
-    
-    
-    
-    
-    
-
 
 }

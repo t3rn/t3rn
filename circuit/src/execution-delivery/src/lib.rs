@@ -48,21 +48,19 @@ use frame_support::traits::Get;
 use frame_support::Blake2_128Concat;
 
 
-use frame_system::offchain::{AppCrypto, CreateSignedTransaction, SignedPayload, SigningTypes};
+use frame_system::offchain::{SignedPayload, SigningTypes};
 
 use sp_core::crypto::KeyTypeId;
 use sp_runtime::{
     traits::{Hash, Saturating, Zero, Convert},
-    transaction_validity::{InvalidTransaction, TransactionValidity, ValidTransaction},
     RuntimeDebug,
 };
 
-use sp_std::vec::Vec;
+use sp_std::vec::*; use sp_std::vec;
 use t3rn_primitives::*;
 use t3rn_primitives::transfers::BalanceOf;
 pub use crate::message_assembly::circuit_outbound::{CircuitOutboundMessage};
 use hex_literal::hex;
-use regex::bytes::Regex;
 
 
 use versatile_wasm::{VersatileWasm};
@@ -176,7 +174,7 @@ pub struct StepEntry <AccountId, BlockNumber, Hash> {
     proof: Option<Hash>,
     updated_at: BlockNumber,
     relayer: Option<AccountId>,
-    gateway_id: bp_runtime::InstanceId,
+    gateway_id: bp_runtime::ChainId,
 }
 
 /// Schedule consist of phases
@@ -277,16 +275,14 @@ pub mod pallet {
     /// This pallet's configuration trait
     #[pallet::config]
     pub trait Config:
-    CreateSignedTransaction<Call<Self>>
-    + frame_system::Config
+    frame_system::Config
     + pallet_bridge_messages::Config
     + pallet_balances::Config
     + VersatileWasm
     + pallet_contracts_registry::Config
-    + pallet_xdns::Config {
-        /// The identifier type for an offchain worker.
-        type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
-
+    + pallet_im_online::Config
+    + pallet_xdns::Config
+    {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
@@ -296,29 +292,6 @@ pub mod pallet {
         type AccountId32Converter: Convert<Self::AccountId, [u8; 32]>;
 
         type ToStandardizedGatewayBalance: Convert<BalanceOf<Self>, u128>;
-
-        // Configuration parameters
-
-        /// A grace period after we send transaction.
-        ///
-        /// To avoid sending too many transactions, we only attempt to send one
-        /// every `GRACE_PERIOD` blocks. We use Local Storage to coordinate
-        /// sending between distinct runs of this offchain worker.
-        #[pallet::constant]
-        type GracePeriod: Get<Self::BlockNumber>;
-
-        /// Number of blocks of cooldown after unsigned transaction is included.
-        ///
-        /// This ensures that we only accept unsigned transactions once, every `UnsignedInterval` blocks.
-        #[pallet::constant]
-        type UnsignedInterval: Get<Self::BlockNumber>;
-
-        /// A configuration for base priority of unsigned transactions.
-        ///
-        /// This is exposed so that it can be tuned for particular runtime, when
-        /// multiple pallets send unsigned transactions.
-        #[pallet::constant]
-        type UnsignedPriority: Get<TransactionPriority>;
     }
 
     #[pallet::pallet]
@@ -362,8 +335,6 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             // Retrieve sender of the transaction.
             let requester = ensure_signed(origin)?;
-
-            println!("components.len() == {:?} || io_schedule.len() == {:?}", components.len(), io_schedule.len());
             assert!(
                 !(components.len() == 0 || io_schedule.len() == 0),
 		        "empty parameters submitted for execution order",
@@ -387,27 +358,14 @@ pub mod pallet {
         }
 
         #[pallet::weight(0)]
-        pub fn dummy_check_payload_origin(
-            origin: OriginFor<T>,
-            _price_payload: Payload<T::Public, T::BlockNumber>,
-            _signature: T::Signature,
-        ) -> DispatchResultWithPostInfo {
-            // This ensures that the function can only be called via unsigned transaction.
-            ensure_none(origin)?;
-            Ok(().into())
-        }
-
-        #[pallet::weight(0)]
         pub fn submit_step_confirmation(
             origin: OriginFor<T>,
-            _price_payload: Payload<T::Public, T::BlockNumber>,
-            _signature: T::Signature,
+            _signature: Vec<u8>,
         ) -> DispatchResultWithPostInfo {
             // This ensures that the function can only be called via unsigned transaction.
             ensure_none(origin)?;
             Ok(().into())
         }
-
 
     }
 
@@ -423,39 +381,10 @@ pub mod pallet {
         StoredNewStep(T::AccountId, XtxId<T>, Vec<CircuitOutboundMessage>),
     }
 
-    #[pallet::validate_unsigned]
-    impl<T: Config> ValidateUnsigned for Pallet<T> {
-        type Call = Call<T>;
-
-        /// Validate unsigned call to this module.
-        ///
-        /// By default unsigned transactions are disallowed, but implementing the validator
-        /// here we make sure that some particular calls (the ones produced by offchain worker)
-        /// are being whitelisted and marked as valid.
-        fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
-            // Firstly let's check that we call the right function.
-            if let Call::dummy_check_payload_origin(ref payload, ref signature) = call {
-                let signature_valid =
-                    SignedPayload::<T>::verify::<T::AuthorityId>(payload, signature.clone());
-                if !signature_valid {
-                    return InvalidTransaction::BadProof.into();
-                }
-                // Set a blank task initially
-                ValidTransaction::with_tag_prefix("BlankTaskOffchainWorker")
-                    // The transaction is only valid for next 5 blocks. After that it's
-                    // going to be revalidated by the pool.
-                    .longevity(5)
-                    // It's fine to propagate that transaction to other peers, which means it can be
-                    // created even by nodes that don't produce blocks.
-                    // Note that sometimes it's better to keep it for yourself (if you are the block
-                    // producer), since for instance in some schemes others may copy your solution and
-                    // claim a reward.
-                    .propagate(true)
-                    .build()
-            } else {
-                InvalidTransaction::Call.into()
-            }
-        }
+    #[pallet::error]
+    pub enum Error<T> {
+        /// Non existent public key.
+        InvalidKey,
     }
 }
 
@@ -480,55 +409,49 @@ impl<T: Config> Pallet<T> {
     }
 
     pub fn decompose_io_schedule(
-        components: Vec<Compose<T::AccountId, u64>>,
-        io_schedule: Vec<u8>,
+        _components: Vec<Compose<T::AccountId, u64>>,
+        _io_schedule: Vec<u8>,
     ) -> Result<InterExecSchedule<T::AccountId, u64>, &'static str> {
-        let mut inter_schedule = InterExecSchedule::default();
 
-        for caps in Regex::new(
-            r"(?P<compose_name>[\w]+)|(?P<next_phase>[>]+)|(?P<parallel_step>[|]+)|(?P<end>[;]+)",
-        )
-            .unwrap()
-            .captures_iter(&io_schedule[..])
-        {
-            println!("caps {:?}", caps);
-            if let Some(name) = caps.name("compose_name") {
-                if let Some(selected_compose) = components.clone().into_iter().find(|comp| {
-                    // println!("IF FIND compose_name {:?} vs {:?} vs {:?} vs {:?}", comp.name.clone(), comp.name.clone().encode(), name.clone().as_bytes(), name.clone().as_bytes().encode());
-                    // println!("IF FIND UTF8 REGEX = {:?} vs {:?}  {:?}  {:?}  {:?}", comp.name, core::str::from_utf8(&comp.name.clone()), core::str::from_utf8(&comp.name.clone().encode()), core::str::from_utf8(name.clone().as_bytes()), core::str::from_utf8(&name.clone().as_bytes().encode()));
-                    println!("comp.name {:?}== name.as_bytes().encode() {:?}", comp.name.encode(), name.as_bytes().encode());
-                    comp.name.encode() == name.as_bytes().encode()
-                }) {
-                    let new_step = ExecStep {
-                        compose: selected_compose.clone(),
-                    };
-                    if let Some(last_phase) = inter_schedule.phases.last_mut() {
-                        println!("ADD NEW STEP! {:?} {:?}", new_step.clone(), core::str::from_utf8(&new_step.compose.name.clone()));
-                        last_phase.steps.push(new_step);
-                    } else {
-                        println!("NEW EXEC PHASE! inter_schedule.phases.push(ExecPhase");
-                        inter_schedule.phases.push(ExecPhase {
-                            steps: vec![new_step]
-                        });
-                    }
-                } else {
-                    println!("ERR UnknownIOScheduleCompose {:?} {:?} ", name, core::str::from_utf8(name.clone().as_bytes()));
-                    return Err("Error::<T>::UnknownIOScheduleCompose");
-                }
-            }
-            if let Some(name) = caps.name("next_phase") {
-                inter_schedule.phases.push(ExecPhase::default());
-                println!("caps next_phase {:?}", name);
-            }
-            if let Some(name) = caps.name("parallel_step") {
-                println!("caps parallel_step {:?}", name);
-            }
-            if let Some(name) = caps.name("end") {
-                println!("caps EOF {:?}", name);
-                return Ok(inter_schedule)
-            }
-        };
-        Err("Error::<T>::IOScheduleNoEndingSemicolon")
+        let inter_schedule = InterExecSchedule::default();
+
+        Ok(inter_schedule)
+        // ToDo: Rewrite in no-std compatible way without external Regex lib
+        // use regex::bytes::Regex;
+        // for caps in Regex::new(
+        //     r"(?P<compose_name>[\w]+)|(?P<next_phase>[>]+)|(?P<parallel_step>[|]+)|(?P<end>[;]+)",
+        // )
+        //     .unwrap()
+        //     .captures_iter(&io_schedule[..])
+        // {
+        //     if let Some(name) = caps.name("compose_name") {
+        //         if let Some(selected_compose) = components.clone().into_iter().find(|comp| {
+        //             comp.name.encode() == name.as_bytes().encode()
+        //         }) {
+        //             let new_step = ExecStep {
+        //                 compose: selected_compose.clone(),
+        //             };
+        //             if let Some(last_phase) = inter_schedule.phases.last_mut() {
+        //                 last_phase.steps.push(new_step);
+        //             } else {
+        //                 inter_schedule.phases.push(ExecPhase {
+        //                     steps: vec![new_step]
+        //                 });
+        //             }
+        //         } else {
+        //             return Err("Error::<T>::UnknownIOScheduleCompose");
+        //         }
+        //     }
+        //     if let Some(name) = caps.name("next_phase") {
+        //         inter_schedule.phases.push(ExecPhase::default());
+        //     }
+        //     if let Some(name) = caps.name("parallel_step") {
+        //     }
+        //     if let Some(name) = caps.name("end") {
+        //         return Ok(inter_schedule)
+        //     }
+        // };
+        // Err("Error::<T>::IOScheduleNoEndingSemicolon")
     }
 
 
@@ -572,7 +495,7 @@ impl<T: Config> Pallet<T> {
 
     pub fn process_phase(
         x_tx_id: XtxId<T>,
-        components: Vec<Compose<T::AccountId, u64>>,
+        _components: Vec<Compose<T::AccountId, u64>>,
         escrow_account: T::AccountId,
         _schedule: InterExecSchedule<T::AccountId, u64>,
     ) -> Result<Vec<CircuitOutboundMessage>, &'static str> {
@@ -582,8 +505,6 @@ impl<T: Config> Pallet<T> {
         if current_xtx.current_step > current_xtx.steps_no {
             Self::complete_xtx(current_xtx.clone())
         } else {
-            println!("current_xtx.current_step {:?}= components = {:?}", current_xtx.current_step, components);
-
             let steps_in_current_round = current_xtx.schedule.phases
                 .get(current_xtx.current_round as usize).expect("Each round in schedule should be aligned with current_round in storage");
 
@@ -613,16 +534,25 @@ impl<T: Config> Pallet<T> {
         requester: T::AccountId,
     ) -> Result<Vec<CircuitOutboundMessage>, &'static str> {
 
+        use sp_runtime::RuntimeAppPublic;
         let contract = pallet_contracts_registry::Pallet::<T>::contracts_registry(step.compose_id.clone()).expect(
         // let contract = ContractsRegistry::<T>::get(step.compose_id.clone()).expect(
             "contract id in steps should be matching contracts registry"
         );
 
+
         let value = BalanceOf::<T>::from(
             sp_std::convert::TryInto::<u32>::try_into(step.value).map_err(|_e| "Can't cast value in dry_run_single_contract")?,
         );
 
-        ExecComposer::pre_run_single_contract::<T>(contract, escrow_account, requester, step.dest, value, step.input, step.gateway_id).into()
+
+        let local_keys = <T as pallet_im_online::Config>::AuthorityId::all();
+
+        // ToDo: Select validators to submit by his public key, like:
+        // let submitter = local_keys.binary_search(&escrow_account.into()).ok().map(|location| local_keys[location].clone()).ok_or("Can't match")?;
+        let submitter = local_keys[0].clone();
+
+        ExecComposer::pre_run_single_contract::<T>(contract, escrow_account, submitter, requester, step.dest, value, step.input, step.gateway_id).into()
     }
 
     /// Submit round (parallel steps) for execution.
@@ -659,8 +589,6 @@ impl<T: Config> Pallet<T> {
 
         // Process next step for execution
 
-
         Ok(())
     }
-
 }

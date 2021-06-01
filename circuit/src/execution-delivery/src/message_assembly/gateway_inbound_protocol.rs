@@ -1,7 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-
-
+use sp_std::vec::*; 
 use t3rn_primitives::transfers::TransferEntry;
 use t3rn_primitives::{GatewayVendor, GatewayType, GatewayPointer};
 

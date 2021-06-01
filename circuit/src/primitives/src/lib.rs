@@ -28,8 +28,6 @@ pub mod transfers;
 
 pub type InstanceId = [u8; 4];
 
-
-
 #[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
 pub enum GatewayType {
     ProgrammableInternal,
