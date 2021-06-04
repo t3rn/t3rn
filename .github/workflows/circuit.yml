@@ -24,9 +24,6 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           submodules: recursive
 
-      - name: ↪️Workaround for missing bridges submodule
-        run: git submodule add https://github.com/MaciejBaj/parity-bridges-common circuit/bridges
-
       - name: Cache LLVM and Clang
         id: cache-llvm
         uses: actions/cache@v2
