@@ -24,21 +24,21 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           submodules: recursive
 
-#      - name: 🕒 Cache LLVM and Clang
-#        id: cache-llvm
-#        uses: actions/cache@v2
-#        with:
-#          path: |
-#            ./llvm
-#          key: llvm
-#
-#      - name: 🔨 Install LLVM and Clang
-#        uses: KyleMayes/install-llvm-action@v1
-#        with:
-#          version: "11.0"
-#          ubuntu-version: "20.04"
-#          directory: ${{ runner.temp }}/llvm
-#          cached: ${{ steps.cache-llvm.outputs.cache-hit }}
+      - name: 🕒 Cache LLVM and Clang
+        id: cache-llvm
+        uses: actions/cache@v2
+        with:
+          path: |
+            ./llvm
+          key: llvm
+
+      - name: 🔨 Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@v1
+        with:
+          version: "11.0"
+          ubuntu-version: "20.04"
+          directory: ${{ runner.temp }}/llvm
+          cached: ${{ steps.cache-llvm.outputs.cache-hit }}
 
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
@@ -56,18 +56,15 @@ jobs:
         run: |
           sed -i -e 's/\\t//' $HOME/.cargo/registry/src/github.com-1ecc6299db9ec823/parity-db-0.2.3/Cargo.toml
 
-#      - name: 🏭 Build circuit
-#        run: |
-#          cd ./circuit
-#          cargo build --locked
+      - name: 🏭 Build circuit
+        run: |
+          cd ./circuit
+          cargo build --locked
 
-#      - name: 🙈 monkey test
-#        run: ./target/debug/circuit --version
-#
-#      - name: 📼 build unit tests
+#      - name: 📼 Build unit tests
 #        run: cargo test --locked --workspace --no-run
-##
-#      - name: 🎥 run unit tests
+#
+#      - name: 🎥 Run unit tests
 #        run: cargo test --locked --workspace
 #
 #      - name: 🚮 Purge circuit database
