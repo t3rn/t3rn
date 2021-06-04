@@ -1,0 +1,81 @@
+name: Circuit CI
+
+on:
+  pull_request:
+#    branches:
+#      - poc-1
+    paths:
+      - circuit/**/*.rs
+      - circuit/**/Cargo.toml
+      - circuit/**/Cargo.lock
+      - .github/workflows/circuit.yml
+
+env:
+  RUST_BACKTRACE: 1
+
+jobs:
+  build_test:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: ☁️Checkout git repo
+        uses: actions/checkout@master
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          submodules: recursive
+
+      - name: ↪️Workaround for missing bridges submodule
+        run: git submodule add https://github.com/MaciejBaj/parity-bridges-common circuit/bridges
+
+      - name: Cache LLVM and Clang
+        id: cache-llvm
+        uses: actions/cache@v2
+        with:
+          path: |
+            ./llvm
+          key: llvm
+
+      - name: 🔨 Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@v1
+        with:
+          version: "11.0"
+          ubuntu-version: "20.04"
+          directory: ${{ runner.temp }}/llvm
+          cached: ${{ steps.cache-llvm.outputs.cache-hit }}
+
+      - name: ⚙️Get nightly rust toolchain with wasm target
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          target: wasm32-unknown-unknown
+          override: true
+
+      - name: 🌌 Fetch circuit dependencies and continue even if it fails
+        run: |
+          cd ./circuit
+          cargo fetch --locked || true
+
+      - name: ↪️Workaround for broken Cargo.toml in parity-db-0.23 - ⚠️SHOULD REMOVE ASAP ⚠️
+        run: |
+          sed -i -e 's/\\t//' /root/.cargo/registry/src/github.com-1ecc6299db9ec823/parity-db-0.2.3/Cargo.toml && cat /root/.cargo/registry/src/github.com-1ecc6299db9ec823/parity-db-0.2.3/Cargo.toml
+
+      - name: 🏭 Build circuit
+        run: |
+          cd ./circuit
+          cargo build --locked
+
+#      - name: 🙈 monkey test
+#        run: ./target/debug/circuit --version
+#
+#      - name: 📼 build unit tests
+#        run: cargo test --locked --workspace --no-run
+##
+#      - name: 🎥 run unit tests
+#        run: cargo test --locked --workspace
+#
+#      - name: 🚮 Purge circuit database
+#        run: yes | ./target/debug/circuit purge-chain --dev
+#
+#      -name: ⚡ Start circuit
+#        run: |
+#          echo "[run-circuit.sh] Running circuit with './target/debug/circuit --dev -lruntime=debug'..."
+#          ./target/debug/circuit --dev -lruntime=debug
