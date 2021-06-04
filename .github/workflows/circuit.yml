@@ -1,6 +1,7 @@
 name: Circuit CI
 
 on:
+  push:
   pull_request:
 #    branches:
 #      - poc-1
