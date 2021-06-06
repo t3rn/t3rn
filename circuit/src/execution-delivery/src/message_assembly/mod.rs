@@ -12,3 +12,4 @@ pub mod chain_generic_metadata;
 
 #[macro_use]
 pub mod signer;
+pub mod abi;

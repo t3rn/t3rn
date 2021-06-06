@@ -16,15 +16,9 @@ use sp_runtime::traits::Convert;
 use frame_system::Config as SystemTrait;
 use versatile_wasm::*;
 use versatile_wasm::{
-    ext::{DefaultRuntimeEnv, ExtStandards},
-    gas::{Gas, GasMeter},
-    prepare::prepare_contract,
-    runtime::{
-        get_child_storage_for_current_execution, raw_escrow_call, CallStamp, DeferredStorageWrite,
-        run_code_on_versatile_wm,
-        Env,
-    },
-    ExecResult, VersatileWasm, WasmExecutable, ExecResultTrace
+    ext::ExtStandards,
+    gas::GasMeter,
+    VersatileWasm
 };
 
 use crate::Config as CircuitTrait;
@@ -280,7 +274,6 @@ impl<'a, T: EscrowTrait + SystemTrait, OM> CircuitVersatileWasmEnv<'a, T, OM>
         inner_exec_transfers: &'a mut Vec<TransferEntry>,
         constructed_outbound_messages: &'a mut Vec<CircuitOutboundMessage>,
         gateway_inbound_protocol: Box<dyn GatewayInboundProtocol>,
-        // gateway_inbound_protocol: SubstrateGatewayProtocol,
         gateway_pointer: GatewayPointer,
         output_mode: OM,
     ) -> Self {

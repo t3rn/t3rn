@@ -113,18 +113,19 @@ pub trait CircuitOutboundProtocol { }
 
 impl<T: Config> CircuitOutbound<T>  {
 
-    fn send_message(&self, message: T::OutboundPayload, submitter: T::AccountId) -> Vec<u8> {
+    pub fn send_message(&self, message: T::OutboundPayload, submitter: T::AccountId) -> Vec<u8> {
 
         let origin = frame_system::RawOrigin::Signed(submitter).into();
         let lane_id: LaneId = [0, 0, 0, 1];
         let delivery_and_dispatch_fee: T::OutboundMessageFee = 0.into();
 
-        <pallet_bridge_messages::Module<T>>::send_message(
+        let _res = <pallet_bridge_messages::Module<T>>::send_message(
             origin,
             lane_id,
             message,
             delivery_and_dispatch_fee,
         );
+
         vec![]
     }
 }

@@ -131,7 +131,7 @@ impl ExecComposer {
         let mut call_stamps = Vec::<CallStamp>::new();
 
         // ToDo: Implement as env_optimistic_dry::run()
-        run_code_on_versatile_wm::<T, CircuitVersatileWasmEnv<T, OM>>(
+        let _res = run_code_on_versatile_wm::<T, CircuitVersatileWasmEnv<T, OM>>(
             env_optimistic_dry.escrow_account,
             &env_optimistic_dry.requester,
             &target_account, // dest

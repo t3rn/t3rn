@@ -53,17 +53,22 @@ bp-messages = { default-features = false, path = "../../bridges/primitives/messa
 bp-circuit = { default-features = false, path = "../../bridges/primitives/chain-circuit" }
 bp-polkadot-core = { default-features = false, path = "../../bridges/primitives/polkadot-core" }
 
+# for tests only
+frame-election-provider-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-offences = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-session = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-staking = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-authorship = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+pallet-babe = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-staking-reward-curve = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-staking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-consensus-vrf = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-consensus-babe = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 
 [dev-dependencies]
 serde_json = "1.0.41"
 sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
-[[example]]
-name = "print_metadata"
-path = "src/examples/print_metadata.rs"
 
 [features]
 default = ["std"]
@@ -99,13 +104,16 @@ std = [
     "bp-messages/std",
     "bp-polkadot-core/std",
     "bp-runtime/std",
-
+    # for tests only
+    "pallet-babe/std",
     "pallet-staking/std",
+    "sp-staking/std",
+    "sp-consensus-vrf/std",
+    "pallet-authorship/std",
+    "sp-consensus-babe/std",
     "pallet-session/std",
     "pallet-offences/std",
-#    "sp-keyring/std",
-#    "substrate-api-client/std",
-#    "sp-application-crypto/std",
+    "frame-election-provider-support/std",
 ]
 # need to add this for the app_crypto macro
 full_crypto = []

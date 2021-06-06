@@ -11,15 +11,15 @@ use sp_version::RuntimeVersion;
 
 use super::gateway_inbound_assembly::{GatewayInboundAssembly, SingedBytes};
 
-#[macro_use]
+// #[macro_use]
 use crate::compose_extrinsic_offline;
 use crate::compose_call;
 
 pub struct SubstrateGatewayAssembly<Pair, Hash> {
-    metadata: Metadata,
-    runtime_version: RuntimeVersion,
-    genesis_hash: Hash,
-    submitter_pair: Pair,
+    pub metadata: Metadata,
+    pub runtime_version: RuntimeVersion,
+    pub genesis_hash: Hash,
+    pub submitter_pair: Pair,
 }
 
 // ToDo: Use the same sp_core library as rest of crate instead of accessing on from ext sub_api_client :(
@@ -86,99 +86,99 @@ impl <Pair, Hash> GatewayInboundAssembly for SubstrateGatewayAssembly<Pair, Hash
 
 #[cfg(test)]
 pub mod tests {
-    use super::*;
-
-    use std::collections::{HashMap};
-    use sp_version::RuntimeVersion;
-
-    pub fn create_test_genesis_hash() -> Hash {
-        [9 as u8; 32].into()
-    }
-
-    pub fn create_test_runtime_version() -> sp_version::RuntimeVersion {
-        RuntimeVersion {
-            spec_name: "circuit-runtime".into(),
-            impl_name: "circuit-runtime".into(),
-            authoring_version: 1,
-            impl_version: 1,
-            apis: sp_version::create_apis_vec![[]],
-            transaction_version: 4,
-            spec_version: 13,
-        }
-    }
-
-    pub fn create_test_metadata_struct() -> Metadata {
-        let mut modules = HashMap::new();
-        let mut modules_with_calls = HashMap::new();
-        let mut modules_with_events = HashMap::new();
-
-        let module_name: String = "ModuleName".to_string();
-        let fn_name: String = "FnName".to_string();
-        let module_index = 1;
-        let call_fn_index = 2;
-        let storage_map = HashMap::new();
-        let mut call_map = HashMap::new();
-        let event_map = HashMap::new();
-
-        call_map.insert(fn_name, call_fn_index as u8);
-
-        modules.insert(
-            module_name.clone(),
-            ModuleMetadata {
-                index: module_index,
-                name: module_name.clone(),
-                storage: storage_map,
-            },
-        );
-
-        modules_with_calls.insert(
-            module_name.clone(),
-            ModuleWithCalls {
-                index: module_index,
-                name: module_name.clone(),
-                calls: call_map,
-            },
-        );
-
-        modules_with_events.insert(
-            module_name.clone(),
-            ModuleWithEvents {
-                index: module_index,
-                name: module_name.clone(),
-                events: event_map,
-            },
-        );
-
-        Metadata {
-            modules,
-            modules_with_calls,
-            modules_with_events,
-        }
-    }
-
-    #[test]
-    fn sap_prints_polkadot_metadata() {
-
-        let pair = sp_core::sr25519::Pair::from_string("//Alice", None).unwrap();
-
-        let sag = SubstrateGatewayAssembly::<sp_core::sr25519::Pair>::new(
-            create_test_metadata_struct(),
-            create_test_runtime_version(),
-            create_test_genesis_hash(),
-            pair.clone(),
-            pair,
-        );
-
-        let _test_a_pk = [1 as u8; 32];
-        let _test_b_pk = [0 as u8; 32];
-
-        let test_call_bytes = sag.assemble_call(
-            "ModuleName", "FnName", vec![0, 1, 2], [1 as u8; 32], 3, 2
-        );
-
-        let _test_tx_signed = sag.assemble_signed_tx_offline(
-            test_call_bytes,
-            0
-        );
-    }
+    // use super::*;
+    //
+    // use std::collections::{HashMap};
+    // use sp_version::RuntimeVersion;
+    //
+    // pub fn create_test_genesis_hash() -> Hash {
+    //     [9 as u8; 32].into()
+    // }
+    //
+    // pub fn create_test_runtime_version() -> sp_version::RuntimeVersion {
+    //     RuntimeVersion {
+    //         spec_name: "circuit-runtime".into(),
+    //         impl_name: "circuit-runtime".into(),
+    //         authoring_version: 1,
+    //         impl_version: 1,
+    //         apis: sp_version::create_apis_vec![[]],
+    //         transaction_version: 4,
+    //         spec_version: 13,
+    //     }
+    // }
+    //
+    // pub fn create_test_metadata_struct() -> Metadata {
+    //     let mut modules = HashMap::new();
+    //     let mut modules_with_calls = HashMap::new();
+    //     let mut modules_with_events = HashMap::new();
+    //
+    //     let module_name: String = "ModuleName".to_string();
+    //     let fn_name: String = "FnName".to_string();
+    //     let module_index = 1;
+    //     let call_fn_index = 2;
+    //     let storage_map = HashMap::new();
+    //     let mut call_map = HashMap::new();
+    //     let event_map = HashMap::new();
+    //
+    //     call_map.insert(fn_name, call_fn_index as u8);
+    //
+    //     modules.insert(
+    //         module_name.clone(),
+    //         ModuleMetadata {
+    //             index: module_index,
+    //             name: module_name.clone(),
+    //             storage: storage_map,
+    //         },
+    //     );
+    //
+    //     modules_with_calls.insert(
+    //         module_name.clone(),
+    //         ModuleWithCalls {
+    //             index: module_index,
+    //             name: module_name.clone(),
+    //             calls: call_map,
+    //         },
+    //     );
+    //
+    //     modules_with_events.insert(
+    //         module_name.clone(),
+    //         ModuleWithEvents {
+    //             index: module_index,
+    //             name: module_name.clone(),
+    //             events: event_map,
+    //         },
+    //     );
+    //
+    //     Metadata {
+    //         modules,
+    //         modules_with_calls,
+    //         modules_with_events,
+    //     }
+    // }
+    //
+    // #[test]
+    // fn sap_prints_polkadot_metadata() {
+    //
+    //     let pair = sp_core::sr25519::Pair::from_string("//Alice", None).unwrap();
+    //
+    //     let sag = SubstrateGatewayAssembly::<sp_core::sr25519::Pair>::new(
+    //         create_test_metadata_struct(),
+    //         create_test_runtime_version(),
+    //         create_test_genesis_hash(),
+    //         pair.clone(),
+    //         pair,
+    //     );
+    //
+    //     let _test_a_pk = [1 as u8; 32];
+    //     let _test_b_pk = [0 as u8; 32];
+    //
+    //     let test_call_bytes = sag.assemble_call(
+    //         "ModuleName", "FnName", vec![0, 1, 2], [1 as u8; 32], 3, 2
+    //     );
+    //
+    //     let _test_tx_signed = sag.assemble_signed_tx_offline(
+    //         test_call_bytes,
+    //         0
+    //     );
+    // }
 }

@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Compact, Encode, Decode};
+use codec::Encode;
 use sp_std::vec::*; use sp_std::vec;
 
 use crate::message_assembly::chain_generic_metadata::Metadata;
@@ -8,7 +8,7 @@ use crate::message_assembly::chain_generic_metadata::Metadata;
 use sp_version::RuntimeVersion;
 
 use t3rn_primitives::transfers::TransferEntry;
-use t3rn_primitives::{GatewayVendor, GatewayType, GatewayPointer};
+use t3rn_primitives::GatewayType;
 
 use super::substrate_gateway_assembly::{SubstrateGatewayAssembly};
 use super::gateway_inbound_protocol::{GatewayInboundProtocol};
@@ -203,20 +203,5 @@ impl <Pair, Hash> GatewayInboundProtocol for SubstrateGatewayProtocol<Pair, Hash
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
-    use crate::message_assembly::substrate_gateway_assembly::tests::{create_test_metadata_struct, create_test_genesis_hash, create_test_runtime_version};
-
-    #[test]
-    fn sap_creates_substrate_gateway_protocol() {
-
-        let pair = sp_core::sr25519::Pair::from_string("//Alice", None).unwrap();
-
-        let sgp = SubstrateGatewayProtocol::<sp_core::sr25519::Pair>::new(
-            create_test_metadata_struct(), create_test_runtime_version(), create_test_genesis_hash(), pair.clone(), pair
-        );
-
-        sgp.get_storage(b"testtesttesttesttesttesttesttest", GatewayType::ProgrammableExternal);
-
-    }
 }
