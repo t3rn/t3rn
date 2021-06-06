@@ -1,6 +1,6 @@
 // This file is part of Substrate.
 
-// Copyright (C) 2020-2021 Parity Technologies (UK) Ltd.
+// Copyright (C) 2019-2021 Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,22 +15,44 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::*;
+//! Test utilities
+use crate::{self as pallet_execution_delivery, Config};
 
-use crate as example_offchain_worker;
+use codec::{Encode, Decode};
 
-use frame_support::{assert_ok, assert_err, parameter_types};
-use frame_support::weights::Weight;
-use sp_core::{Public, sr25519::Signature, H256};
+use pallet_babe::ExternalTrigger;
+use pallet_babe::EquivocationHandler;
 
 use sp_runtime::{
-    testing::{Header as SubstrateHeader, TestXt, UintAuthorityId},
-    traits::{BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify, Convert},
-    FixedU128,
-    DispatchResult, DispatchError
+    Perbill, impl_opaque_keys,
+    curve::PiecewiseLinear,
+    testing::{Header, TestXt},
+    traits::{IdentityLookup, OpaqueKeys},
 };
-
+use sp_runtime::{
+    testing::{UintAuthorityId},
+    traits::{IdentifyAccount, Verify, Convert},
+    FixedU128,
+    DispatchResult, DispatchError,
+};
 use bp_runtime::Size;
+
+use frame_support::{
+    parameter_types,
+    traits::{KeyOwnerProofSystem},
+};
+use frame_support::{assert_err};
+
+use sp_io;
+use sp_consensus_babe::{AuthorityId};
+use sp_staking::SessionIndex;
+use pallet_staking::EraIndex;
+use frame_election_provider_support::onchain;
+use pallet_session::historical as pallet_session_historical;
+
+use frame_support::weights::Weight;
+use sp_core::{H256, crypto::KeyTypeId, sr25519::Signature};
+
 use bp_messages::{
     source_chain::{
         LaneMessageVerifier, MessageDeliveryAndDispatchPayment, RelayersRewards, Sender, TargetHeaderChain,
@@ -40,39 +62,125 @@ use bp_messages::{
     Parameter as MessagesParameter,
 };
 
+use t3rn_primitives::transfers::BalanceOf;
+use t3rn_primitives::EscrowTrait;
+use std::collections::BTreeMap;
+use versatile_wasm::{VersatileWasm, DispatchRuntimeCall};
+
+
+// type AccountId = u64;
+type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
+
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
-use t3rn_primitives::transfers::BalanceOf;
-
-use versatile_wasm::{VersatileWasm, DispatchRuntimeCall};
-use pallet_session::Historical as pallet_session_historical;
-use std::collections::BTreeMap;
-
-// For testing the module, we construct a mock runtime.
 frame_support::construct_runtime!(
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
-        Balances: pallet_balances::{Pallet, Call, Event<T>},
-		ImOnline: pallet_im_online::{Pallet, Call, Storage, Event<T>, ValidateUnsigned, Config<T>} = 11,
-        Sudo: pallet_sudo::{Pallet, Call, Event<T>},
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        ExecDelivery: example_offchain_worker::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
+	pub enum Test where
+		Block = Block,
+		NodeBlock = Block,
+		UncheckedExtrinsic = UncheckedExtrinsic,
+	{
+        ExecDelivery: pallet_execution_delivery::{Pallet, Call, Storage, Event<T>},
+		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent},
+		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+		Historical: pallet_session_historical::{Pallet},
+		Offences: pallet_offences::{Pallet, Call, Storage, Event},
         Messages: pallet_bridge_messages::{Pallet, Call, Event<T>},
-        Timestamp: pallet_timestamp::{Pallet},
+
+		Babe: pallet_babe::{Pallet, Call, Storage, Config},
+        TransactionPayment: pallet_transaction_payment::{Pallet, Call},
+		Staking: pallet_staking::{Pallet, Call, Storage, Config<T>, Event<T>},
+		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
+        ImOnline: pallet_im_online::{Pallet, Call, Storage, Config<T>, Event<T>},
+        // ImOnline: pallet_im_online::{Pallet, Call, Storage, Event<T>, ValidateUnsigned, Config<T>} = 11,
+        Sudo: pallet_sudo::{Pallet, Call, Event<T>},
         VersatileWasmVM: versatile_wasm::{Pallet, Call, Event<T>},
         Randomness: pallet_randomness_collective_flip::{Pallet, Call, Storage},
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Storage, Event<T>},
         XDNS: pallet_xdns::{Pallet, Call, Storage, Event<T>},
-		// Staking: pallet_staking::{Pallet, Call, Config<T>, Storage, Event<T>},
-		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
-		Offences: pallet_offences::{Pallet, Call, Storage, Event},
-		Historical: pallet_session_historical::{Pallet},
-    }
+	}
 );
+
+parameter_types! {
+	pub const BlockHashCount: u64 = 250;
+	pub const DisabledValidatorsThreshold: Perbill = Perbill::from_percent(16);
+	pub BlockWeights: frame_system::limits::BlockWeights =
+		frame_system::limits::BlockWeights::simple_max(1024);
+}
+
+impl frame_system::Config for Test {
+    type BaseCallFilter = ();
+    type BlockWeights = ();
+    type BlockLength = ();
+    type DbWeight = ();
+    type Origin = Origin;
+    type Index = u64;
+    type BlockNumber = u64;
+    type Call = Call;
+    type Hash = H256;
+    type Version = ();
+    type Hashing = sp_runtime::traits::BlakeTwo256;
+    // type AccountId = DummyValidatorId;
+    type AccountId = AccountId;
+    type Lookup = IdentityLookup<Self::AccountId>;
+    type Header = Header;
+    type Event = Event;
+    type BlockHashCount = BlockHashCount;
+    type PalletInfo = PalletInfo;
+    type AccountData = pallet_balances::AccountData<u128>;
+    type OnNewAccount = ();
+    type OnKilledAccount = ();
+    type SystemWeightInfo = ();
+    type SS58Prefix = ();
+    type OnSetCode = ();
+}
+
+impl<C> frame_system::offchain::SendTransactionTypes<C> for Test
+    where
+        Call: From<C>,
+{
+    type OverarchingCall = Call;
+    type Extrinsic = TestXt<Call, ()>;
+}
+
+impl_opaque_keys! {
+	pub struct MockSessionKeys {
+		pub babe_authority: pallet_babe::Pallet<Test>,
+	}
+}
+
+impl pallet_sudo::Config for Test {
+    type Event = Event;
+    type Call = Call;
+}
+
+parameter_types! {
+    pub const MinimumPeriod: u64 = 1;
+    pub const TransactionByteFee: u64 = 1;
+}
+
+use frame_support::weights::IdentityFee;
+impl pallet_transaction_payment::Config for Test {
+    // type OnChargeTransaction = ();
+    type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
+    type TransactionByteFee = TransactionByteFee;
+    type WeightToFee = IdentityFee<Balance>;
+    type FeeMultiplierUpdate = ();
+}
+
+impl EscrowTrait for Test {
+    type Currency = Balances;
+    type Time = Timestamp;
+}
+
+impl VersatileWasm for Test {
+    type DispatchRuntimeCall = ExampleDispatchRuntimeCall;
+    type Event = Event;
+    type Call = Call;
+    type Randomness = Randomness;
+}
 
 
 impl pallet_contracts_registry::Config for Test {
@@ -85,11 +193,11 @@ impl pallet_xdns::Config for Test {
     type WeightInfo = ();
 }
 
-pub type Balance = u64;
+pub type Balance = u128;
 
-parameter_types! {
-	pub const ExistentialDeposit: u64 = 1;
-}
+// parameter_types! {
+// 	pub const ExistentialDeposit: u64 = 1;
+// }
 
 pub struct ExampleDispatchRuntimeCall;
 
@@ -124,87 +232,165 @@ impl DispatchRuntimeCall<Test> for ExampleDispatchRuntimeCall {
     }
 }
 
+
+impl pallet_session::Config for Test {
+    type Event = Event;
+    type ValidatorId = <Self as frame_system::Config>::AccountId;
+    type ValidatorIdOf = pallet_staking::StashOf<Self>;
+    type ShouldEndSession = Babe;
+    type NextSessionRotation = Babe;
+    type SessionManager = pallet_session::historical::NoteHistoricalRoot<Self, Staking>;
+    type SessionHandler = <MockSessionKeys as OpaqueKeys>::KeyTypeIdProviders;
+    type Keys = MockSessionKeys;
+    type DisabledValidatorsThreshold = DisabledValidatorsThreshold;
+    type WeightInfo = ();
+}
+
+impl pallet_session::historical::Config for Test {
+    type FullIdentification = pallet_staking::Exposure<AccountId, Balance>;
+    type FullIdentificationOf = pallet_staking::ExposureOf<Test>;
+}
+
+parameter_types! {
+	pub const UncleGenerations: u64 = 0;
+}
+
+impl pallet_authorship::Config for Test {
+    type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Babe>;
+    type UncleGenerations = UncleGenerations;
+    type FilterUncle = ();
+    type EventHandler = ();
+}
+
 impl pallet_timestamp::Config for Test {
     type Moment = u64;
-    type OnTimestampSet = ();
+    type OnTimestampSet = Babe;
     type MinimumPeriod = MinimumPeriod;
     type WeightInfo = ();
 }
 
-impl pallet_sudo::Config for Test {
-    type Event = Event;
-    type Call = Call;
+parameter_types! {
+	pub const ExistentialDeposit: u128 = 1;
 }
 
 impl pallet_balances::Config for Test {
     type MaxLocks = ();
-    type Balance = Balance;
+    type Balance = u128;
     type DustRemoval = ();
     type Event = Event;
     type ExistentialDeposit = ExistentialDeposit;
-    type AccountStore = frame_system::Pallet<Test>;
+    type AccountStore = System;
     type WeightInfo = ();
 }
 
-parameter_types! {
-    pub const MinimumPeriod: u64 = 1;
-    pub const TransactionByteFee: u64 = 1;
+pallet_staking_reward_curve::build! {
+	const REWARD_CURVE: PiecewiseLinear<'static> = curve!(
+		min_inflation: 0_025_000u64,
+		max_inflation: 0_100_000,
+		ideal_stake: 0_500_000,
+		falloff: 0_050_000,
+		max_piece_count: 40,
+		test_precision: 0_005_000,
+	);
 }
-use frame_support::weights::IdentityFee;
-impl pallet_transaction_payment::Config for Test {
-    // type OnChargeTransaction = ();
-    type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
-    type TransactionByteFee = TransactionByteFee;
-    type WeightToFee = IdentityFee<u64>;
-    type FeeMultiplierUpdate = ();
-}
-
-impl EscrowTrait for Test {
-    type Currency = Balances;
-    type Time = Timestamp;
-}
-
-impl VersatileWasm for Test {
-    type DispatchRuntimeCall = ExampleDispatchRuntimeCall;
-    type Event = Event;
-    type Call = Call;
-    type Randomness = Randomness;
-}
-
 
 parameter_types! {
-    pub const BlockHashCount: u64 = 250;
-    pub BlockWeights: frame_system::limits::BlockWeights =
-        frame_system::limits::BlockWeights::simple_max(1024);
+	pub const SessionsPerEra: SessionIndex = 3;
+	pub const BondingDuration: EraIndex = 3;
+	pub const SlashDeferDuration: EraIndex = 0;
+	pub const AttestationPeriod: u64 = 100;
+	pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
+	pub const MaxNominatorRewardedPerValidator: u32 = 64;
+	pub const ElectionLookahead: u64 = 0;
+	pub const StakingUnsignedPriority: u64 = u64::max_value() / 2;
 }
 
-// type AccountId = sp_core::sr25519::Public;
-
-impl frame_system::Config for Test {
-    type Origin = Origin;
-    type Index = u64;
-    type Call = Call;
-    type BlockNumber = u64;
-    type Hash = H256;
-    type Hashing = BlakeTwo256;
-    type AccountId = sp_core::sr25519::Public;
-    type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = SubstrateHeader;
-    type Event = Event;
-    type BlockHashCount = BlockHashCount;
-    type Version = ();
-    type PalletInfo = PalletInfo;
-    type AccountData = pallet_balances::AccountData<Balance>;
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type BaseCallFilter = ();
-    type SystemWeightInfo = ();
+impl onchain::Config for Test {
+    type AccountId = <Self as frame_system::Config>::AccountId;
+    type BlockNumber = <Self as frame_system::Config>::BlockNumber;
     type BlockWeights = ();
-    type BlockLength = ();
-    type DbWeight = ();
-    type SS58Prefix = ();
-    type OnSetCode = ();
+    type Accuracy = Perbill;
+    type DataProvider = Staking;
 }
+
+impl pallet_staking::Config for Test {
+    const MAX_NOMINATIONS: u32 = 16;
+    type RewardRemainder = ();
+    type CurrencyToVote = frame_support::traits::SaturatingCurrencyToVote;
+    type Event = Event;
+    type Currency = Balances;
+    type Slash = ();
+    type Reward = ();
+    type SessionsPerEra = SessionsPerEra;
+    type BondingDuration = BondingDuration;
+    type SlashDeferDuration = SlashDeferDuration;
+    type SlashCancelOrigin = frame_system::EnsureRoot<Self::AccountId>;
+    type SessionInterface = Self;
+    type UnixTime = pallet_timestamp::Pallet<Test>;
+    type EraPayout = pallet_staking::ConvertCurve<RewardCurve>;
+    type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
+    type NextNewSession = Session;
+    type ElectionProvider = onchain::OnChainSequentialPhragmen<Self>;
+    type WeightInfo = ();
+}
+
+impl pallet_offences::Config for Test {
+    type Event = Event;
+    type IdentificationTuple = pallet_session::historical::IdentificationTuple<Self>;
+    type OnOffenceHandler = Staking;
+}
+
+parameter_types! {
+    pub const GracePeriod: u64 = 5;
+    pub const UnsignedInterval: u64 = 128;
+    pub const UnsignedPriority: u64 = 1 << 20;
+}
+
+
+pub struct AccountId32Converter;
+impl Convert<AccountId, [u8; 32]> for AccountId32Converter {
+    fn convert(account_id: AccountId) -> [u8; 32] {
+        account_id.into()
+    }
+}
+
+pub struct CircuitToGateway;
+impl Convert<Balance, u128> for CircuitToGateway {
+    fn convert(val: Balance) -> u128 {
+        val.into()
+    }
+}
+
+impl Config for Test {
+    type Event = Event;
+    // type AuthorityId = crypto::TestAuthId;
+    type Call = Call;
+    // type GracePeriod = GracePeriod;
+    // type UnsignedInterval = UnsignedInterval;
+    // type UnsignedPriority = UnsignedPriority;
+    type AccountId32Converter = AccountId32Converter;
+    type ToStandardizedGatewayBalance = CircuitToGateway;
+}
+
+impl pallet_im_online::Config for Test {
+    type AuthorityId = UintAuthorityId;
+    // type AuthorityId = crypto::TestAuthId;
+    type Event = Event;
+    type ValidatorSet = Historical;
+    type NextSessionRotation = ();
+    type ReportUnresponsiveness = Offences;
+    type UnsignedPriority = UnsignedPriority;
+    type WeightInfo = ();
+}
+
+// start of bridge messages
+parameter_types! {
+	pub const MaxMessagesToPruneAtOnce: u64 = 10;
+	pub const MaxUnrewardedRelayerEntriesAtInboundLane: u64 = 16;
+	pub const MaxUnconfirmedMessagesAtInboundLane: u64 = 32;
+	pub storage TokenConversionRate: FixedU128 = 1.into();
+}
+
 
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq)]
 pub enum TestMessagesParameter {
@@ -219,12 +405,6 @@ impl MessagesParameter for TestMessagesParameter {
     }
 }
 
-parameter_types! {
-	pub const MaxMessagesToPruneAtOnce: u64 = 10;
-	pub const MaxUnrewardedRelayerEntriesAtInboundLane: u64 = 16;
-	pub const MaxUnconfirmedMessagesAtInboundLane: u64 = 32;
-	pub storage TokenConversionRate: FixedU128 = 1.into();
-}
 
 #[derive(Decode, Encode, Clone, Debug, PartialEq, Eq)]
 pub struct TestPayload(pub u64, pub Weight);
@@ -245,26 +425,11 @@ impl sp_runtime::traits::Convert<H256, AccountId> for AccountIdConverter {
     }
 }
 
-// /// Account that has balance to use in tests.
-// pub const ENDOWED_ACCOUNT: AccountId = 0xDEAD;
-//
-// /// Account id of test relayer.
-// pub const TEST_RELAYER_A: AccountId = 100;
-//
-// /// Account id of additional test relayer - B.
-// pub const TEST_RELAYER_B: AccountId = 101;
-//
-// /// Account id of additional test relayer - C.
-// pub const TEST_RELAYER_C: AccountId = 102;
-
 /// Error that is returned by all test implementations.
 pub const TEST_ERROR: &str = "Test error";
 
 /// Lane that we're using in tests.
-pub const TEST_LANE_ID: LaneId = [0, 0, 0, 1];
-
-/// Regular message payload.
-pub const REGULAR_PAYLOAD: TestPayload = TestPayload(0, 50);
+pub const _TEST_LANE_ID: LaneId = [0, 0, 0, 1];
 
 /// Payload that is rejected by `TestTargetHeaderChain`.
 pub const PAYLOAD_REJECTED_BY_TARGET_CHAIN: TestPayload = TestPayload(1, 50);
@@ -448,18 +613,18 @@ impl MessageDispatch<TestMessageFee> for TestMessageDispatch {
 }
 
 /// Return test lane message with given nonce and payload.
-pub fn message(nonce: MessageNonce, payload: TestPayload) -> Message<TestMessageFee> {
+pub fn _message(nonce: MessageNonce, payload: TestPayload) -> Message<TestMessageFee> {
     Message {
         key: MessageKey {
-            lane_id: TEST_LANE_ID,
+            lane_id: _TEST_LANE_ID,
             nonce,
         },
-        data: message_data(payload),
+        data: _message_data(payload),
     }
 }
 
 /// Return message data with valid fee for given payload.
-pub fn message_data(payload: TestPayload) -> MessageData<TestMessageFee> {
+pub fn _message_data(payload: TestPayload) -> MessageData<TestMessageFee> {
     MessageData {
         payload: payload.encode(),
         fee: 1,
@@ -493,81 +658,31 @@ impl pallet_bridge_messages::Config<DefaultMessagesInstance> for Test {
     type MessageDispatch = TestMessageDispatch;
 }
 
-type Extrinsic = TestXt<Call, ()>;
-type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
-
-impl frame_system::offchain::SigningTypes for Test {
-    type Public = <Signature as Verify>::Signer;
-    type Signature = Signature;
-}
-
-// impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test
-// where
-//     Call: From<LocalCall>,
-// {
-//     type OverarchingCall = Call;
-//     type Extrinsic = Extrinsic;
-// }
-
-impl<T> frame_system::offchain::SendTransactionTypes<T> for Test where Call: From<T> {
-    type Extrinsic = Extrinsic;
-    type OverarchingCall = Call;
-}
-
-// impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Test
-// where
-//     Call: From<LocalCall>,
-// {
-//     fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
-//         call: Call,
-//         _public: <Signature as Verify>::Signer,
-//         _account: AccountId,
-//         nonce: u64,
-//     ) -> Option<(Call, <Extrinsic as ExtrinsicT>::SignaturePayload)> {
-//         Some((call, (nonce, ())))
-//     }
-// }
-
 parameter_types! {
-    pub const GracePeriod: u64 = 5;
-    pub const UnsignedInterval: u64 = 128;
-    pub const UnsignedPriority: u64 = 1 << 20;
+	pub const EpochDuration: u64 = 3;
+	pub const ExpectedBlockTime: u64 = 1;
+	pub const ReportLongevity: u64 =
+		BondingDuration::get() as u64 * SessionsPerEra::get() as u64 * EpochDuration::get();
 }
 
+impl pallet_babe::Config for Test {
+    type EpochDuration = EpochDuration;
+    type ExpectedBlockTime = ExpectedBlockTime;
+    type EpochChangeTrigger = ExternalTrigger;
 
-pub struct AccountId32Converter;
-impl Convert<AccountId, [u8; 32]> for AccountId32Converter {
-    fn convert(account_id: AccountId) -> [u8; 32] {
-        account_id.into()
-    }
-}
+    type KeyOwnerProofSystem = Historical;
 
-pub struct CircuitToGateway;
-impl Convert<Balance, u128> for CircuitToGateway {
-    fn convert(val: Balance) -> u128 {
-        val.into()
-    }
-}
+    type KeyOwnerProof =
+    <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, AuthorityId)>>::Proof;
 
-impl Config for Test {
-    type Event = Event;
-    // type AuthorityId = crypto::TestAuthId;
-    type Call = Call;
-    // type GracePeriod = GracePeriod;
-    // type UnsignedInterval = UnsignedInterval;
-    // type UnsignedPriority = UnsignedPriority;
-    type AccountId32Converter = AccountId32Converter;
-    type ToStandardizedGatewayBalance = CircuitToGateway;
-}
+    type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
+        KeyTypeId,
+        AuthorityId,
+    )>>::IdentificationTuple;
 
-impl pallet_im_online::Config for Test {
-    type AuthorityId = UintAuthorityId;
-    // type AuthorityId = crypto::TestAuthId;
-    type Event = Event;
-    type ValidatorSet = ();
-    type NextSessionRotation = ();
-    type ReportUnresponsiveness = Offences;
-    type UnsignedPriority = UnsignedPriority;
+    type HandleEquivocation =
+        EquivocationHandler<Self::KeyOwnerIdentification, Offences, ReportLongevity>;
+
     type WeightInfo = ();
 }
 
@@ -582,164 +697,4 @@ fn it_submits_empty_composable_exec_request() {
         ),
         "empty parameters submitted for execution order");
     });
-}
-
-#[test]
-fn it_submits_correct_io_schedule_to_composable_exec_request() {
-    sp_io::TestExternalities::default().execute_with(|| {
-        // That's IO schedule.
-        // We can have several parallel steps (e.g. separated with comma) and several sequential phases (e.g. separated with |)
-        // ToDo: Find best way to format and process the IO schedule of cross-chain execution.
-        // In the future each component will be following XCM MultiLocation format https://github.com/paritytech/polkadot/blob/master/xcm/src/v0/junction.rs
-        let io_bytes: Vec<u8> = b"component1, component2 | component3;".to_vec();
-
-        assert_eq!(
-            "component1, component2 | component3;",
-            std::str::from_utf8(&io_bytes[..]).unwrap()
-        );
-        assert_ok!(ExecDelivery::submit_composable_exec_order(
-            Origin::signed(Default::default()),
-            io_bytes,
-            vec![
-                Default::default(),
-                Default::default(),
-                Default::default(),
-            ],
-        ));
-    });
-}
-
-#[test]
-fn decodes_external_substrate_dispatches() {
-    sp_io::TestExternalities::default().execute_with(|| {
-        // That's IO schedule.
-        // We can have several parallel steps (e.g. separated with comma) and several sequential phases (e.g. separated with |)
-        // ToDo: Find best way to format and process the IO schedule of cross-chain execution.
-        // In the future each component will be following XCM MultiLocation format https://github.com/paritytech/polkadot/blob/master/xcm/src/v0/junction.rs
-        let io_bytes: Vec<u8> = b"component1 | component2;".to_vec();
-
-        assert_ok!(ExecDelivery::submit_composable_exec_order(
-            Origin::signed(Default::default()),
-            io_bytes,
-            vec![
-                Compose {
-                    name: b"component1".to_vec(),
-                    code_txt: r#"
-                        promise_auto(
-                            call(System, remark)
-                            call("TransferMultiAsset", (asset, escrow_dest)
-                        )
-                        promise_dispatch([
-                            call("System", "remark", [1]),
-                            call( "TransferMultiAsset", (asset, escrow_dest) ),
-                        ]);
-                        promise_rpc([
-                            call("System", "remark", [1]),
-                            call( "TransferMultiAsset", (asset, escrow_dest) ),
-                        ])
-                        promise_xcmp([
-                            call("System", "remark", [1]),
-                            call( "TransferMultiAsset", (asset, escrow_dest) ),
-                        ])
-                        calls.xcmp.send_message(xcmp( call( "TransferMultiAsset", (asset, escrow_dest) ) )
-                        promise_vm_exec([
-                            call("System", "remark", [1]),
-                            call( "TransferMultiAsset", (asset, escrow_dest) ),
-                        ])
-                    "#.as_bytes().to_vec(),
-                    gateway_id: [0 as u8; 4],
-                    exec_type: b"xt_prog".to_vec(),
-                    dest: sp_core::sr25519::Public::from_slice(&[1 as u8; 32]),
-                    value: 0,
-                    bytes: vec![],
-                    input_data: vec![],
-                },
-                Compose {
-                    name: b"component2".to_vec(),
-                    code_txt: r#"
-
-                    "#.as_bytes().to_vec(),
-                    gateway_id: [0 as u8; 4],
-                    exec_type: b"xt_prog".to_vec(),
-                    dest: sp_core::sr25519::Public::from_slice(&[1 as u8; 32]),
-                    value: 0,
-                    bytes: vec![],
-                    input_data: vec![],
-                },
-            ]
-        ));
-    });
-}
-
-#[test]
-fn decodes_external_substrate_dispatches_with_imports() {
-    sp_io::TestExternalities::default().execute_with(|| {
-        // That's IO schedule.
-        // We can have several parallel steps (e.g. separated with comma) and several sequential phases (e.g. separated with |)
-        // ToDo: Find best way to format and process the IO schedule of cross-chain execution.
-        // In the future each component will be following XCM MultiLocation format https://github.com/paritytech/polkadot/blob/master/xcm/src/v0/junction.rs
-        let io_bytes: Vec<u8> = b"component1;".to_vec();
-
-        assert_ok!(ExecDelivery::submit_composable_exec_order(
-            Origin::signed(Default::default()),
-            io_bytes,
-            vec![
-                Compose {
-                    name: b"component1".to_vec(),
-                    code_txt: r#"
-
-                    t3rn::xdns::chain::{Acala};
-
-                    acala = t3rn_sdk::prog_gateway::ext(Acala::id);
-
-
-                    #[cfg(paid=”10% fees”, name=bob_btc_uni_swap)]
-                    Circuit::BTC::tx_only::on_escrowed_transfer(&self, | user, x_btc, pair| {
-                        let price = cmc100::ext::call_static::get_price(‘BTC’ + pair);
-                        let bob = self.owner;
-                            let btc = price * btc_swap;
-                        let eth = acala::ext::escrow_swap(‘BTC/ETH’, btc, bob);
-                        let amount= eth::ext::uniswap::swap(‘ETH + ‘pair’, eth, bob);
-                        eth::ext::transfer_dirty(bob, user, amount, pair)
-                        Ok()
-                    });
-
-                        promise_auto(
-                            call(System, remark)
-                            call("TransferMultiAsset", (asset, escrow_dest)
-                        )
-                        promise_dispatch([
-                            call("System", "remark", [1]),
-                            call( "TransferMultiAsset", (asset, escrow_dest) ),
-                        ]);
-                        promise_rpc([
-                            call("System", "remark", [1]),
-                            call( "TransferMultiAsset", (asset, escrow_dest) ),
-                        ])
-                        promise_xcmp([
-                            call("System", "remark", [1]),
-                            call( "TransferMultiAsset", (asset, escrow_dest) ),
-                        ])
-                        calls.xcmp.send_message(xcmp( call( "TransferMultiAsset", (asset, escrow_dest) ) )
-                        promise_vm_exec([
-                            call("System", "remark", [1]),
-                            call( "TransferMultiAsset", (asset, escrow_dest) ),
-                        ])
-                    "#.as_bytes().to_vec(),
-                    gateway_id: [0 as u8; 4],
-                    exec_type: b"exec_escrow".to_vec(),
-                    dest: sp_core::sr25519::Public::from_slice(&[1 as u8; 32]),
-                    value: 0,
-                    bytes: vec![],
-                    input_data: vec![],
-                }
-            ]
-        ));
-    });
-}
-
-
-#[test]
-fn can_say_hello_from_pallet_implementation() {
-    assert_eq!("hello", ExecDelivery::say_hello());
 }

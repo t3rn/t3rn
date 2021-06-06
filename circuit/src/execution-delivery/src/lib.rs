@@ -43,16 +43,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use frame_support::traits::Get;
-
-use frame_support::Blake2_128Concat;
-
-
+use frame_support::{Blake2_128Concat, ensure};
 use frame_system::offchain::{SignedPayload, SigningTypes};
 
 use sp_core::crypto::KeyTypeId;
 use sp_runtime::{
-    traits::{Hash, Saturating, Zero, Convert},
+    traits::{Hash, Zero, Convert},
     RuntimeDebug,
 };
 
@@ -61,7 +57,6 @@ use t3rn_primitives::*;
 use t3rn_primitives::transfers::BalanceOf;
 pub use crate::message_assembly::circuit_outbound::{CircuitOutboundMessage};
 use hex_literal::hex;
-
 
 use versatile_wasm::{VersatileWasm};
 
@@ -335,7 +330,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             // Retrieve sender of the transaction.
             let requester = ensure_signed(origin)?;
-            assert!(
+            ensure!(
                 !(components.len() == 0 || io_schedule.len() == 0),
 		        "empty parameters submitted for execution order",
             );
@@ -359,11 +354,52 @@ pub mod pallet {
 
         #[pallet::weight(0)]
         pub fn submit_step_confirmation(
-            origin: OriginFor<T>,
+            _origin: OriginFor<T>,
+            // finality_target: T::GatewayHeader,
+            _finality_target: Vec<u8>,
+            _justification: Vec<u8>,
+            // finality_target: BridgedHeader<T, I>,
+            // justification: GrandpaJustification<BridgedHeader<T, I>>,
             _signature: Vec<u8>,
         ) -> DispatchResultWithPostInfo {
-            // This ensures that the function can only be called via unsigned transaction.
-            ensure_none(origin)?;
+
+            //
+            // ensure_operational::<T, I>()?;
+            // let _ = ensure_signed(origin)?;
+            //
+            // ensure!(
+			// 	Self::request_count() < T::MaxRequests::get(),
+			// 	<Error<T, I>>::TooManyRequests
+			// );
+            //
+            // let (hash, number) = (finality_target.hash(), finality_target.number());
+            // log::trace!(target: "runtime::bridge-grandpa", "Going to try and finalize header {:?}", finality_target);
+            //
+            // let best_finalized = match <ImportedHeaders<T, I>>::get(<BestFinalized<T, I>>::get()) {
+            //     Some(best_finalized) => best_finalized,
+            //     None => {
+            //         log::error!(
+            //             target: "runtime::bridge-grandpa",
+            //             "Cannot finalize header {:?} because pallet is not yet initialized",
+            //             finality_target,
+            //         );
+            //         fail!(<Error<T, I>>::NotInitialized);
+            //     }
+            // };
+            //
+            // // We do a quick check here to ensure that our header chain is making progress and isn't
+            // // "travelling back in time" (which could be indicative of something bad, e.g a hard-fork).
+            // ensure!(best_finalized.number() < number, <Error<T, I>>::OldHeader);
+            //
+            // let authority_set = <CurrentAuthoritySet<T, I>>::get();
+            // let set_id = authority_set.set_id;
+            // verify_justification::<T, I>(&justification, hash, *number, authority_set)?;
+            //
+            // let _enacted = try_enact_authority_change::<T, I>(&finality_target, set_id)?;
+            // <RequestCount<T, I>>::mutate(|count| *count += 1);
+            // insert_header::<T, I>(finality_target, hash);
+            // log::info!(target: "runtime::bridge-grandpa", "Succesfully imported finalized header with hash {:?}!", hash);
+
             Ok(().into())
         }
 

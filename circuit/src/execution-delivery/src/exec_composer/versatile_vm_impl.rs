@@ -16,15 +16,9 @@ use sp_runtime::traits::Convert;
 use frame_system::Config as SystemTrait;
 use versatile_wasm::*;
 use versatile_wasm::{
-    ext::{DefaultRuntimeEnv, ExtStandards},
-    gas::{Gas, GasMeter},
-    prepare::prepare_contract,
-    runtime::{
-        get_child_storage_for_current_execution, raw_escrow_call, CallStamp, DeferredStorageWrite,
-        run_code_on_versatile_wm,
-        Env,
-    },
-    ExecResult, VersatileWasm, WasmExecutable, ExecResultTrace
+    ext::ExtStandards,
+    gas::GasMeter,
+    VersatileWasm
 };
 
 use crate::Config as CircuitTrait;

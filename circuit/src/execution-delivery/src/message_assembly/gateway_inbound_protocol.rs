@@ -2,7 +2,7 @@
 
 use sp_std::vec::*; 
 use t3rn_primitives::transfers::TransferEntry;
-use t3rn_primitives::{GatewayVendor, GatewayType, GatewayPointer};
+use t3rn_primitives::{GatewayType};
 
 use super::circuit_outbound::{CircuitOutboundMessage};
 
