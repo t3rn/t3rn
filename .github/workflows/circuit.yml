@@ -46,11 +46,6 @@ jobs:
           target: wasm32-unknown-unknown
           override: true
 
-      - name: 🌌 Fetch circuit dependencies and continue even if it fails
-        run: |
-          cd ./circuit
-          cargo fetch --locked || true
-
       - name: 🏭 Build circuit
         run: |
           cd ./circuit
