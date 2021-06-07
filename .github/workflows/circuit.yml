@@ -51,10 +51,6 @@ jobs:
           cd ./circuit
           cargo fetch --locked || true
 
-      - name: ↪️Workaround for broken Cargo.toml in parity-db-0.23 - ⚠️SHOULD REMOVE ASAP ⚠️
-        run: |
-          sed -i -e 's/\\t//' $HOME/.cargo/registry/src/github.com-1ecc6299db9ec823/parity-db-0.2.3/Cargo.toml
-
       - name: 🏭 Build circuit
         run: |
           cd ./circuit
