@@ -11,7 +11,7 @@ use t3rn_primitives::transfers::BalanceOf;
 
 use frame_support::traits::Time;
 
-use t3rn_primitives::{Compose};
+use t3rn_primitives::{Compose, EscrowTrait};
 use t3rn_primitives::{GatewayPointer, GatewayType, GatewayVendor};
 
 use versatile_wasm::runtime::{DeferredStorageWrite, CallStamp};
@@ -95,7 +95,7 @@ impl ExecComposer {
 
         let (block_number, timestamp, contract_trie_id, input_data, code, value, gas_limit, target_account) = (
             <frame_system::Pallet<T>>::block_number(),
-            T::Time::now(),
+            <T as EscrowTrait>::Time::now(),
             // get_child_storage_for_current_execution::<T>(&escrow_account, T::Hash::decode(&mut &sp_io::storage::root()[..]).expect("storage root should be there")),
             T::Hash::decode(&mut &sp_io::storage::root()[..]).expect("storage root should be there"),
             compose.input_data,

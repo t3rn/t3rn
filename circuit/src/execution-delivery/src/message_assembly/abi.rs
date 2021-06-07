@@ -1,6 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use sp_std::boxed::Box;
+use sp_std::vec::Vec;
 
 #[derive(PartialEq, Clone, Eq, Hash, Debug)]
 pub enum Type {
