@@ -52,10 +52,14 @@ jobs:
           cargo build --locked
 
       - name: 📼 Build unit tests
-        run: cargo test --locked --workspace --no-run
+        run: |
+          cd ./circuit
+          cargo test --locked --workspace --no-run
 
       - name: 🎥 Run unit tests
-        run: cargo test --locked --workspace
+        run: |
+          cd ./circuit
+          cargo test --locked --workspace
 
 #      - name: 🚮 Purge circuit database
 #        run: yes | ./target/debug/circuit purge-chain --dev
