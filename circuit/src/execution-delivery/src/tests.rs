@@ -94,12 +94,12 @@ frame_support::construct_runtime!(
 		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         ImOnline: pallet_im_online::{Pallet, Call, Storage, Config<T>, Event<T>},
-        // ImOnline: pallet_im_online::{Pallet, Call, Storage, Event<T>, ValidateUnsigned, Config<T>} = 11,
         Sudo: pallet_sudo::{Pallet, Call, Event<T>},
         VersatileWasmVM: versatile_wasm::{Pallet, Call, Event<T>},
         Randomness: pallet_randomness_collective_flip::{Pallet, Call, Storage},
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Storage, Event<T>},
         XDNS: pallet_xdns::{Pallet, Call, Storage, Event<T>},
+        Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -382,6 +382,52 @@ impl pallet_im_online::Config for Test {
     type UnsignedPriority = UnsignedPriority;
     type WeightInfo = ();
 }
+
+parameter_types! {
+	pub const SignedClaimHandicap: u64 = 2;
+	pub const TombstoneDeposit: u128 = 16;
+	pub const DepositPerContract: u128 = 8 * DepositPerStorageByte::get();
+	pub const DepositPerStorageByte: u128 = 10_000;
+	pub const DepositPerStorageItem: u128 = 10_000;
+	pub RentFraction: Perbill = Perbill::from_rational(4u32, 10_000u32);
+	pub const SurchargeReward: u128 = 500_000;
+	pub const MaxValueSize: u32 = 16_384;
+	pub const DeletionQueueDepth: u32 = 1024;
+	pub const DeletionWeightLimit: Weight = 500_000_000_000;
+	pub const MaxCodeSize: u32 = 2 * 1024;
+	pub MySchedule: pallet_contracts::Schedule<Test> = <pallet_contracts::Schedule<Test>>::default();
+}
+
+impl Convert<Weight, BalanceOf<Self>> for Test {
+    fn convert(w: Weight) -> BalanceOf<Self> {
+        w.into()
+    }
+}
+
+// start of contracts VMs
+impl pallet_contracts::Config for Test {
+    type Time = Timestamp;
+    type Randomness = Randomness;
+    type Currency = Balances;
+    type Event = Event;
+    type RentPayment = ();
+    type SignedClaimHandicap = SignedClaimHandicap;
+    type TombstoneDeposit = TombstoneDeposit;
+    type DepositPerContract = DepositPerContract;
+    type DepositPerStorageByte = DepositPerStorageByte;
+    type DepositPerStorageItem = DepositPerStorageItem;
+    type RentFraction = RentFraction;
+    type SurchargeReward = SurchargeReward;
+    type CallStack = [pallet_contracts::Frame<Self>; 31];
+    type WeightPrice = Self;
+    type WeightInfo = ();
+    type ChainExtension = ();
+    type DeletionQueueDepth = DeletionQueueDepth;
+    type DeletionWeightLimit = DeletionWeightLimit;
+    type Schedule = MySchedule;
+}
+
+
 
 // start of bridge messages
 parameter_types! {
