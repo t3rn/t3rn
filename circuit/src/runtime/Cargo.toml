@@ -14,10 +14,7 @@ serde = { version = "1.0.124", optional = true, features = ["derive"] }
 
 # Bridge dependencies
 
-bp-header-chain = { path = "../../bridges/primitives/header-chain", default-features = false }
 bp-messages = { path = "../../bridges/primitives/messages", default-features = false }
-bp-millau = { path = "../../bridges/primitives/chain-millau", default-features = false }
-bp-rialto = { path = "../../bridges/primitives/chain-rialto", default-features = false }
 bp-runtime = { path = "../../bridges/primitives/runtime", default-features = false }
 bp-gateway = { path = "../../bridges/primitives/chain-gateway", default-features = false }
 bp-circuit = { path = "../../bridges/primitives/chain-circuit", default-features = false }
@@ -35,6 +32,12 @@ pallet-contracts-registry = {  path = "../contracts-registry", default-features 
 pallet-circuit-execution-delivery = {  path = "../execution-delivery", default-features = false }
 pallet-xdns = { path = "../xdns", default-features = false }
 versatile-wasm = { path = "../../../vm/versatile-wasm", default-features = false }
+t3rn-primitives = { version = "0.1.0", default-features = false, path = "../primitives" }
+
+# Smart contracts VMs
+pallet-evm = { path = "../../frontier/frame/evm", default-features = false  }
+pallet-evm-precompile-simple = { path = "../../frontier/frame/evm/precompile/simple", default-features = false }
+pallet-contracts = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Substrate Dependencies
 frame-executive = { git = "https://github.com/paritytech/substrate", branch = "master" , default-features = false }
@@ -70,10 +73,7 @@ substrate-wasm-builder = "3.0.0"
 [features]
 default = ["std"]
 std = [
-	"bp-header-chain/std",
 	"bp-messages/std",
-	"bp-millau/std",
-	"bp-rialto/std",
 	"bp-runtime/std",
 	"bp-westend/std",
 	"bp-gateway/std",
@@ -86,8 +86,13 @@ std = [
 	"frame-system-rpc-runtime-api/std",
 	"frame-system/std",
 	"pallet-aura/std",
+	"t3rn-primitives/std",
 	"pallet-xdns/std",
 	"versatile-wasm/std",
+	# native contracts VMs
+	"pallet-contracts/std",
+	"pallet-evm/std",
+	"pallet-evm-precompile-simple/std",
 	"pallet-contracts-registry/std",
 	"pallet-circuit-execution-delivery/std",
 	"pallet-balances/std",
