@@ -7,3 +7,6 @@
 [submodule "circuit/bridges"]
 	path = circuit/bridges
 	url = https://github.com/MaciejBaj/parity-bridges-common
+[submodule "circuit/frontier"]
+	path = circuit/frontier
+	url = https://github.com/MaciejBaj/frontier

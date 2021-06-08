@@ -278,6 +278,7 @@ pub mod pallet {
     + pallet_im_online::Config
     + pallet_xdns::Config
     + pallet_contracts::Config
+    + pallet_evm::Config
     {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
