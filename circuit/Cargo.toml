@@ -22,6 +22,10 @@ bp-runtime = { path = "bridges/primitives/runtime" }
 circuit-runtime = { path = "./src/runtime" }
 pallet-bridge-messages = { path = "./bridges/modules/messages" }
 
+#VM dependencies
+
+pallet-evm = { path = "./frontier/frame/evm" }
+
 # Substrate Dependencies
 
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "master" }
