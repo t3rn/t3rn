@@ -40,17 +40,20 @@ use pallet_grandpa::{fg_primitives, AuthorityId as GrandpaId, AuthorityList as G
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata, U256, H160};
 use sp_runtime::traits::{Block as BlockT, IdentityLookup, NumberFor, OpaqueKeys};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, MultiSignature, MultiSigner,
+	traits::{Convert},
 };
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
+
+use t3rn_primitives::transfers::BalanceOf;
 
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
@@ -334,6 +337,99 @@ impl pallet_bridge_grandpa::Config for Runtime {
 	type WeightInfo =();
 }
 
+// start of contracts VMs
+parameter_types! {
+	pub const SignedClaimHandicap: u64 = 2;
+	pub const TombstoneDeposit: u128 = 16;
+	pub const DepositPerContract: u128 = 8 * DepositPerStorageByte::get();
+	pub const DepositPerStorageByte: u128 = 10_000;
+	pub const DepositPerStorageItem: u128 = 10_000;
+	pub RentFraction: Perbill = Perbill::from_rational(4u32, 10_000u32);
+	pub const SurchargeReward: u128 = 500_000;
+	pub const MaxValueSize: u32 = 16_384;
+	pub const DeletionQueueDepth: u32 = 1024;
+	pub const DeletionWeightLimit: Weight = 500_000_000_000;
+	pub const MaxCodeSize: u32 = 2 * 1024;
+	pub MySchedule: pallet_contracts::Schedule<Runtime> = <pallet_contracts::Schedule<Runtime>>::default();
+}
+
+impl Convert<Weight, BalanceOf<Self>> for Runtime {
+	fn convert(w: Weight) -> BalanceOf<Self> {
+		w.into()
+	}
+}
+
+impl pallet_contracts::Config for Runtime {
+	type Time = Timestamp;
+	type Randomness = Randomness;
+	type Currency = Balances;
+	type Event = Event;
+	type RentPayment = ();
+	type SignedClaimHandicap = SignedClaimHandicap;
+	type TombstoneDeposit = TombstoneDeposit;
+	type DepositPerContract = DepositPerContract;
+	type DepositPerStorageByte = DepositPerStorageByte;
+	type DepositPerStorageItem = DepositPerStorageItem;
+	type RentFraction = RentFraction;
+	type SurchargeReward = SurchargeReward;
+	type CallStack = [pallet_contracts::Frame<Self>; 31];
+	type WeightPrice = Self;
+	type WeightInfo = ();
+	type ChainExtension = ();
+	type DeletionQueueDepth = DeletionQueueDepth;
+	type DeletionWeightLimit = DeletionWeightLimit;
+	type Schedule = MySchedule;
+}
+
+// EVM
+
+parameter_types! {
+	pub const ChainId: u64 = 33;
+	pub const BlockGasLimit: U256 = U256::MAX;
+}
+
+pub struct FixedGasPrice;
+impl pallet_evm::FeeCalculator for FixedGasPrice {
+	fn min_gas_price() -> U256 {
+		1.into()
+	}
+}
+pub struct HashedAddressMapping;
+
+impl pallet_evm::AddressMapping<AccountId> for HashedAddressMapping {
+	fn into_account_id(address: H160) -> AccountId {
+		let mut data = [0u8; 32];
+		data[0..20].copy_from_slice(&address[..]);
+		AccountId::from(Into::<[u8; 32]>::into(data))
+	}
+}
+
+impl t3rn_primitives::EscrowTrait for Runtime {
+	type Currency = Balances;
+	type Time = Timestamp;
+}
+
+impl pallet_evm::Config for Runtime {
+	type FeeCalculator = FixedGasPrice;
+	type GasWeightMapping = ();
+	type CallOrigin = pallet_evm::EnsureAddressTruncated;
+	type WithdrawOrigin = pallet_evm::EnsureAddressTruncated;
+	type AddressMapping = HashedAddressMapping;
+	type Currency = Balances;
+	type Event = Event;
+	type Runner = pallet_evm::runner::stack::Runner<Self>;
+	type Precompiles = (
+		pallet_evm_precompile_simple::ECRecover,
+		pallet_evm_precompile_simple::Sha256,
+		pallet_evm_precompile_simple::Ripemd160,
+		pallet_evm_precompile_simple::Identity,
+	);
+	type ChainId = ChainId;
+	type BlockGasLimit = BlockGasLimit;
+	type OnChargeTransaction = ();
+}
+
+
 impl pallet_shift_session_manager::Config for Runtime {}
 
 parameter_types! {
@@ -393,7 +489,6 @@ construct_runtime!(
 		BridgeGatewayGrandpa: pallet_bridge_grandpa::{Pallet, Call, Storage},
 		BridgePolkadotLikeMultiFinalityVerifier: pallet_multi_finality_verifier::<Instance1>::{Pallet, Call, Storage},
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Call, Storage},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		Aura: pallet_aura::{Pallet, Config<T>},
 		Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event},
@@ -402,6 +497,10 @@ construct_runtime!(
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
 		ShiftSessionManager: pallet_shift_session_manager::{Pallet},
+
+        Randomness: pallet_randomness_collective_flip::{Pallet, Call, Storage},
+		Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
+        EVM: pallet_evm::{Pallet, Config, Storage, Event<T>},
 	}
 );
 

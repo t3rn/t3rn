@@ -53,10 +53,9 @@ bp-messages = { default-features = false, path = "../../bridges/primitives/messa
 bp-circuit = { default-features = false, path = "../../bridges/primitives/chain-circuit" }
 bp-polkadot-core = { default-features = false, path = "../../bridges/primitives/polkadot-core" }
 
-# install smart contracts VMs
-pallet-evm = { git = "https://github.com/paritytech/frontier", default-features = false, branch = "master" }
-pallet-ethereum = { default-features = false, git = "https://github.com/paritytech/frontier", branch = "master" }
-fp-rpc = { default-features = false, git = "https://github.com/paritytech/frontier", branch = "master" }
+# Smart contracts VMs
+pallet-evm = { path = "../../frontier/frame/evm", default-features = false  }
+pallet-evm-precompile-simple = { path = "../../frontier/frame/evm/precompile/simple", default-features = false }
 pallet-contracts = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # for tests only
@@ -112,9 +111,8 @@ std = [
     "bp-runtime/std",
     # native contracts VMs
     "pallet-contracts/std",
-    "pallet-ethereum/std",
     "pallet-evm/std",
-    "fp-rpc/std",
+    "pallet-evm-precompile-simple/std",
     # for tests only
     "pallet-babe/std",
     "pallet-staking/std",

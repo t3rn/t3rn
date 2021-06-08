@@ -31,7 +31,7 @@ use sp_runtime::{
 };
 use sp_runtime::{
     testing::{UintAuthorityId},
-    traits::{IdentifyAccount, Verify, Convert},
+    traits::{Convert},
     FixedU128,
     DispatchResult, DispatchError,
 };
@@ -51,7 +51,7 @@ use frame_election_provider_support::onchain;
 use pallet_session::historical as pallet_session_historical;
 
 use frame_support::weights::Weight;
-use sp_core::{H256, crypto::KeyTypeId, sr25519::Signature};
+use sp_core::{H256, H160, U256, crypto::KeyTypeId};
 
 use bp_messages::{
     source_chain::{
@@ -67,9 +67,12 @@ use t3rn_primitives::EscrowTrait;
 use std::collections::BTreeMap;
 use versatile_wasm::{VersatileWasm, DispatchRuntimeCall};
 
+use pallet_evm::{
+    AddressMapping,
+    FeeCalculator,
+};
 
-// type AccountId = u64;
-type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
+type AccountId = sp_runtime::AccountId32;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -100,6 +103,7 @@ frame_support::construct_runtime!(
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Storage, Event<T>},
         XDNS: pallet_xdns::{Pallet, Call, Storage, Event<T>},
         Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
+        EVM: pallet_evm::{Pallet, Config, Storage, Event<T>},
 	}
 );
 
@@ -181,7 +185,6 @@ impl VersatileWasm for Test {
     type Call = Call;
     type Randomness = Randomness;
 }
-
 
 impl pallet_contracts_registry::Config for Test {
     type Event = Event;
@@ -271,6 +274,7 @@ impl pallet_timestamp::Config for Test {
 
 parameter_types! {
 	pub const ExistentialDeposit: u128 = 1;
+    pub const MaxReserves: u32 = 50;
 }
 
 impl pallet_balances::Config for Test {
@@ -281,7 +285,10 @@ impl pallet_balances::Config for Test {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
+    type MaxReserves = MaxReserves;
+    type ReserveIdentifier = [u8; 8];
 }
+
 
 pallet_staking_reward_curve::build! {
 	const REWARD_CURVE: PiecewiseLinear<'static> = curve!(
@@ -382,6 +389,7 @@ impl pallet_im_online::Config for Test {
     type UnsignedPriority = UnsignedPriority;
     type WeightInfo = ();
 }
+// start of contracts VMs
 
 parameter_types! {
 	pub const SignedClaimHandicap: u64 = 2;
@@ -404,7 +412,6 @@ impl Convert<Weight, BalanceOf<Self>> for Test {
     }
 }
 
-// start of contracts VMs
 impl pallet_contracts::Config for Test {
     type Time = Timestamp;
     type Randomness = Randomness;
@@ -427,7 +434,48 @@ impl pallet_contracts::Config for Test {
     type Schedule = MySchedule;
 }
 
+// EVM
 
+parameter_types! {
+	pub const ChainId: u64 = 33;
+	pub const BlockGasLimit: U256 = U256::MAX;
+}
+
+pub struct FixedGasPrice;
+impl FeeCalculator for FixedGasPrice {
+    fn min_gas_price() -> U256 {
+        1.into()
+    }
+}
+pub struct HashedAddressMapping;
+
+impl AddressMapping<AccountId> for HashedAddressMapping {
+    fn into_account_id(address: H160) -> AccountId {
+        let mut data = [0u8; 32];
+        data[0..20].copy_from_slice(&address[..]);
+        AccountId::from(Into::<[u8; 32]>::into(data))
+    }
+}
+
+impl pallet_evm::Config for Test {
+    type FeeCalculator = FixedGasPrice;
+    type GasWeightMapping = ();
+    type CallOrigin = pallet_evm::EnsureAddressTruncated;
+    type WithdrawOrigin = pallet_evm::EnsureAddressTruncated;
+    type AddressMapping = HashedAddressMapping;
+    type Currency = Balances;
+    type Event = Event;
+    type Runner = pallet_evm::runner::stack::Runner<Self>;
+    type Precompiles = (
+        pallet_evm_precompile_simple::ECRecover,
+        pallet_evm_precompile_simple::Sha256,
+        pallet_evm_precompile_simple::Ripemd160,
+        pallet_evm_precompile_simple::Identity,
+    );
+    type ChainId = ChainId;
+    type BlockGasLimit = BlockGasLimit;
+    type OnChargeTransaction = ();
+}
 
 // start of bridge messages
 parameter_types! {
@@ -467,7 +515,7 @@ pub struct AccountIdConverter;
 
 impl sp_runtime::traits::Convert<H256, AccountId> for AccountIdConverter {
     fn convert(hash: H256) -> AccountId {
-        sp_core::sr25519::Public::decode(&mut &hash.as_bytes()[..]).unwrap_or_default()
+        AccountId::decode(&mut &hash.as_bytes()[..]).unwrap_or_default()
     }
 }
 
