@@ -40,10 +40,10 @@ pallet-bridge-messages = { default-features = false, path = "../../bridges/modul
 pallet-transaction-payment = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 pallet-randomness-collective-flip = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 pallet-multi-finality-verifier = { default-features = false, path = "../../bridges/modules/multi-finality-verifier" }
-pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-im-online = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-sudo = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+pallet-im-online = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+pallet-sudo = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 
 pallet-xdns = { default-features = false, path = "../xdns" }
 pallet-contracts-registry = { default-features = false, path = "../contracts-registry" }
@@ -56,23 +56,23 @@ bp-polkadot-core = { default-features = false, path = "../../bridges/primitives/
 # Smart contracts VMs
 pallet-evm = { path = "../../frontier/frame/evm", default-features = false  }
 pallet-evm-precompile-simple = { path = "../../frontier/frame/evm/precompile/simple", default-features = false }
-pallet-contracts = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-contracts = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 
 # for tests only
-frame-election-provider-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-offences = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-session = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-staking = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+frame-election-provider-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+pallet-offences = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+pallet-session = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+pallet-staking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 pallet-authorship = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
-pallet-babe = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-staking-reward-curve = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-babe = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+pallet-staking-reward-curve = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-staking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-consensus-vrf = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-consensus-babe = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 
 [dev-dependencies]
 serde_json = "1.0.41"
-sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-service = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
 
 
 [features]
