@@ -49,10 +49,10 @@ jobs:
       - name: 🕒 Cache Rust binaries and packages
         uses: Swatinem/rust-cache@v1
 
-      - name: 🏭 Build circuit
-        run: |
-          cd ./circuit
-          cargo build --locked
+#      - name: 🏭 Build circuit
+#        run: |
+#          cd ./circuit
+#          cargo build --locked
 
       - name: 📼 Run execution delivery unit tests
         run: |
