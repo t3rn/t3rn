@@ -46,20 +46,23 @@ jobs:
           target: wasm32-unknown-unknown
           override: true
 
+      - name: 🕒 Cache Rust binaries and packages
+        uses: Swatinem/rust-cache@v1
+
       - name: 🏭 Build circuit
         run: |
           cd ./circuit
           cargo build --locked
 
-      - name: 📼 Build unit tests
+      - name: 📼 Run execution delivery unit tests
         run: |
-          cd ./circuit
-          cargo test --locked --workspace --no-run
+          cd ./circuit/src/execution-delivery
+          cargo test --locked
 
-      - name: 🎥 Run unit tests
-        run: |
-          cd ./circuit
-          cargo test --locked --workspace
+#      - name: 🎥 Run unit tests
+#        run: |
+#          cd ./circuit
+#          cargo test --locked --workspace
 
 #      - name: 🚮 Purge circuit database
 #        run: yes | ./target/debug/circuit purge-chain --dev
