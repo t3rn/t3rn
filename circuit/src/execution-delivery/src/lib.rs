@@ -423,6 +423,7 @@ pub mod pallet {
     pub enum Error<T> {
         /// Non existent public key.
         InvalidKey,
+        IOScheduleNoEndingSemicolon
     }
 }
 
@@ -450,9 +451,78 @@ impl<T: Config> Pallet<T> {
         _components: Vec<Compose<T::AccountId, u64>>,
         _io_schedule: Vec<u8>,
     ) -> Result<InterExecSchedule<T::AccountId, u64>, &'static str> {
+        // set constants
+        const WHITESPACE_MATRIX: [u8; 4] = [b' ', b'\t', b'\r', b'\n'];
+        const PHASE_SEPARATOR: u8 = b'|';
+        const STEP_SEPARATOR: u8 = b',';
+        const SCHEDULE_END: u8 = b';';
 
-        let inter_schedule = InterExecSchedule::default();
+        let is_whitespace = |x: &mut u8| WHITESPACE_MATRIX.contains(x);
 
+        // trim all whitespace with equivalent of unsafe drain_usage function
+        let trim_whitespace = |input_string: Vec<u8>| {
+            let mut result = input_string.clone();
+
+            let mut i = 0;
+            while i < input_string.len() {
+                if is_whitespace(&mut result[i]) {
+                    result.remove(i);
+                } else {
+                    i += 1;
+                }
+            }
+            result
+        };
+
+        let mut cloned = trim_whitespace(_io_schedule);
+
+        // converts a vector exec_step to an ExecStep
+        let to_exec_step = |name: &Vec<u8>| {
+            let compose = _components.clone().into_iter().find(|comp| {
+                comp.name.encode() == name.encode()
+            }).ok_or("Could not find execution step!").unwrap();
+            ExecStep {
+                compose
+            }
+        };
+
+
+        // make sure the schedule ends correctly and remove ending character or panic
+        let ends_correctly = cloned.last()
+            .ok_or("IO Schedule is empty!").unwrap().eq(&SCHEDULE_END);
+        ensure!(ends_correctly, Error::<T>::IOScheduleNoEndingSemicolon);
+        cloned.remove(cloned.len() - 1);
+
+        // closure that splits a phase into steps
+        let split_into_parallel: fn(Vec<u8>) -> Vec<Vec<u8>> = |phase: Vec<u8>| phase
+            .split(|x| x.eq(&STEP_SEPARATOR))
+            .filter(|x| !x.is_empty())
+            .map(|x| x.to_vec())
+            .collect();
+
+        // split into sequential phases
+        let phases_with_steps: Vec<Vec<Vec<u8>>> = cloned
+            .split(|x| x.eq(&PHASE_SEPARATOR))
+            .filter(|x| !x.is_empty())
+            .map(|x| split_into_parallel(x.to_vec()))
+            .collect();
+
+        log::info!("{:?}", phases_with_steps);
+        let phases = phases_with_steps.iter()
+            .map(|phase| {
+                let steps = phase.iter().map(|step| to_exec_step(step)).collect();
+                ExecPhase {
+                    steps
+                }
+            })
+            .collect();
+
+        // wrap everything into an InterExecSchedule
+        let inter_schedule = InterExecSchedule {
+         phases
+        };
+
+        // let inter_schedule = InterExecSchedule::default();
         Ok(inter_schedule)
         // ToDo: Rewrite in no-std compatible way without external Regex lib
         // use regex::bytes::Regex;

@@ -43,7 +43,6 @@ use frame_support::{
 };
 use frame_support::{assert_err};
 
-use sp_io;
 use sp_consensus_babe::{AuthorityId};
 use sp_staking::SessionIndex;
 use pallet_staking::EraIndex;
@@ -63,7 +62,7 @@ use bp_messages::{
 };
 
 use t3rn_primitives::transfers::BalanceOf;
-use t3rn_primitives::EscrowTrait;
+use t3rn_primitives::{EscrowTrait, InterExecSchedule, ExecPhase, ExecStep};
 use std::collections::BTreeMap;
 use versatile_wasm::{VersatileWasm, DispatchRuntimeCall};
 
@@ -71,6 +70,8 @@ use pallet_evm::{
     AddressMapping,
     FeeCalculator,
 };
+
+use pallet_execution_delivery::{Compose};
 
 type AccountId = sp_runtime::AccountId32;
 
@@ -791,4 +792,108 @@ fn it_submits_empty_composable_exec_request() {
         ),
         "empty parameters submitted for execution order");
     });
+}
+
+#[test]
+fn it_should_correctly_parse_a_minimal_valid_io_schedule() {
+    let io_schedule = b"component1;".to_vec();
+    let actual = ExecDelivery::decompose_io_schedule(
+        vec![
+            Compose {
+            name: b"component1".to_vec(),
+            code_txt: r#""#.as_bytes().to_vec(),
+            gateway_id: [0 as u8; 4],
+            exec_type: b"exec_escrow".to_vec(),
+            dest: AccountId::new([1 as u8; 32]),
+            value: 0,
+            bytes: vec![],
+            input_data: vec![],
+        }
+        ],
+        io_schedule
+    );
+    let expected = InterExecSchedule {
+        phases: vec![
+            ExecPhase {
+                steps: vec![
+                    ExecStep {
+                        compose: Compose {
+                            name: b"component1".to_vec(),
+                            code_txt: r#""#.as_bytes().to_vec(),
+                            gateway_id: [0 as u8; 4],
+                            exec_type: b"exec_escrow".to_vec(),
+                            dest: AccountId::new([1 as u8; 32]),
+                            value: 0,
+                            bytes: vec![],
+                            input_data: vec![],
+                        }
+                    }
+                ]
+            }
+        ]
+    };
+    assert_eq!(actual.unwrap(), expected)
+}
+
+#[test]
+fn it_should_correctly_parse_a_valid_io_schedule_with_2_phases() {
+    let io_schedule = b"component1 | component2;".to_vec();
+    let actual = ExecDelivery::decompose_io_schedule(
+        vec![
+            Compose {
+                name: b"component1".to_vec(),
+                code_txt: r#""#.as_bytes().to_vec(),
+                gateway_id: [0 as u8; 4],
+                exec_type: b"exec_escrow".to_vec(),
+                dest: AccountId::new([1 as u8; 32]),
+                value: 0,
+                bytes: vec![],
+                input_data: vec![],
+            },
+            Compose {
+                name: b"component2".to_vec(),
+                code_txt: r#""#.as_bytes().to_vec(),
+                gateway_id: [0 as u8; 4],
+                exec_type: b"exec_escrow".to_vec(),
+                dest: AccountId::new([1 as u8; 32]),
+                value: 0,
+                bytes: vec![],
+                input_data: vec![],
+            }
+        ],
+        io_schedule
+    );
+    let expected = InterExecSchedule {
+        phases: vec![
+            ExecPhase {
+                steps: vec![
+                    ExecStep {
+                        compose: Compose {
+                            name: b"component1".to_vec(),
+                            code_txt: r#""#.as_bytes().to_vec(),
+                            gateway_id: [0 as u8; 4],
+                            exec_type: b"exec_escrow".to_vec(),
+                            dest: AccountId::new([1 as u8; 32]),
+                            value: 0,
+                            bytes: vec![],
+                            input_data: vec![],
+                        }
+                    },
+                    ExecStep {
+                        compose: Compose {
+                            name: b"component2".to_vec(),
+                            code_txt: r#""#.as_bytes().to_vec(),
+                            gateway_id: [0 as u8; 4],
+                            exec_type: b"exec_escrow".to_vec(),
+                            dest: AccountId::new([1 as u8; 32]),
+                            value: 0,
+                            bytes: vec![],
+                            input_data: vec![],
+                        }
+                    }
+                ]
+            }
+        ]
+    };
+    assert_eq!(actual.unwrap(), expected)
 }
