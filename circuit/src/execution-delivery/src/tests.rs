@@ -167,6 +167,8 @@ parameter_types! {
 }
 
 use frame_support::weights::IdentityFee;
+// use t3rn_primitives::ComposableExecResult::Error;
+
 impl pallet_transaction_payment::Config for Test {
     // type OnChargeTransaction = ();
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
@@ -796,22 +798,6 @@ fn it_submits_empty_composable_exec_request() {
 
 #[test]
 fn it_should_correctly_parse_a_minimal_valid_io_schedule() {
-    let io_schedule = b"component1;".to_vec();
-    let actual = ExecDelivery::decompose_io_schedule(
-        vec![
-            Compose {
-            name: b"component1".to_vec(),
-            code_txt: r#""#.as_bytes().to_vec(),
-            gateway_id: [0 as u8; 4],
-            exec_type: b"exec_escrow".to_vec(),
-            dest: AccountId::new([1 as u8; 32]),
-            value: 0,
-            bytes: vec![],
-            input_data: vec![],
-        }
-        ],
-        io_schedule
-    );
     let expected = InterExecSchedule {
         phases: vec![
             ExecPhase {
@@ -832,37 +818,98 @@ fn it_should_correctly_parse_a_minimal_valid_io_schedule() {
             }
         ]
     };
-    assert_eq!(actual.unwrap(), expected)
+
+    let io_schedule = b"component1;".to_vec();
+    let components = vec![
+        Compose {
+            name: b"component1".to_vec(),
+            code_txt: r#""#.as_bytes().to_vec(),
+            gateway_id: [0 as u8; 4],
+            exec_type: b"exec_escrow".to_vec(),
+            dest: AccountId::new([1 as u8; 32]),
+            value: 0,
+            bytes: vec![],
+            input_data: vec![],
+        }
+    ];
+
+    assert_eq!(ExecDelivery::decompose_io_schedule(
+        components,
+        io_schedule
+    ).unwrap(), expected)
 }
 
 #[test]
 fn it_should_correctly_parse_a_valid_io_schedule_with_2_phases() {
-    let io_schedule = b"component1 | component2;".to_vec();
-    let actual = ExecDelivery::decompose_io_schedule(
-        vec![
-            Compose {
-                name: b"component1".to_vec(),
-                code_txt: r#""#.as_bytes().to_vec(),
-                gateway_id: [0 as u8; 4],
-                exec_type: b"exec_escrow".to_vec(),
-                dest: AccountId::new([1 as u8; 32]),
-                value: 0,
-                bytes: vec![],
-                input_data: vec![],
+    let expected = InterExecSchedule {
+        phases: vec![
+            ExecPhase {
+                steps: vec![
+                    ExecStep {
+                        compose: Compose {
+                            name: b"component1".to_vec(),
+                            code_txt: r#""#.as_bytes().to_vec(),
+                            gateway_id: [0 as u8; 4],
+                            exec_type: b"exec_escrow".to_vec(),
+                            dest: AccountId::new([1 as u8; 32]),
+                            value: 0,
+                            bytes: vec![],
+                            input_data: vec![],
+                        }
+                    }
+                ]
             },
-            Compose {
-                name: b"component2".to_vec(),
-                code_txt: r#""#.as_bytes().to_vec(),
-                gateway_id: [0 as u8; 4],
-                exec_type: b"exec_escrow".to_vec(),
-                dest: AccountId::new([1 as u8; 32]),
-                value: 0,
-                bytes: vec![],
-                input_data: vec![],
+            ExecPhase {
+                steps: vec![
+                    ExecStep {
+                        compose: Compose {
+                            name: b"component2".to_vec(),
+                            code_txt: r#""#.as_bytes().to_vec(),
+                            gateway_id: [0 as u8; 4],
+                            exec_type: b"exec_escrow".to_vec(),
+                            dest: AccountId::new([1 as u8; 32]),
+                            value: 0,
+                            bytes: vec![],
+                            input_data: vec![],
+                        }
+                    }
+                ]
             }
-        ],
+        ]
+    };
+
+    let io_schedule = b"component1 | component2;".to_vec();
+    let components = vec![
+        Compose {
+            name: b"component1".to_vec(),
+            code_txt: r#""#.as_bytes().to_vec(),
+            gateway_id: [0 as u8; 4],
+            exec_type: b"exec_escrow".to_vec(),
+            dest: AccountId::new([1 as u8; 32]),
+            value: 0,
+            bytes: vec![],
+            input_data: vec![],
+        },
+        Compose {
+            name: b"component2".to_vec(),
+            code_txt: r#""#.as_bytes().to_vec(),
+            gateway_id: [0 as u8; 4],
+            exec_type: b"exec_escrow".to_vec(),
+            dest: AccountId::new([1 as u8; 32]),
+            value: 0,
+            bytes: vec![],
+            input_data: vec![],
+        }
+    ];
+
+    assert_eq!(ExecDelivery::decompose_io_schedule(
+        components,
         io_schedule
-    );
+    ).unwrap(), expected)
+}
+
+#[test]
+fn it_should_correctly_parse_a_valid_io_schedule_with_1_phase_and_2_steps() {
     let expected = InterExecSchedule {
         phases: vec![
             ExecPhase {
@@ -895,5 +942,218 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_2_phases() {
             }
         ]
     };
-    assert_eq!(actual.unwrap(), expected)
+
+    let io_schedule = b"component1 , component2;".to_vec();
+    let components =  vec![
+        Compose {
+            name: b"component1".to_vec(),
+            code_txt: r#""#.as_bytes().to_vec(),
+            gateway_id: [0 as u8; 4],
+            exec_type: b"exec_escrow".to_vec(),
+            dest: AccountId::new([1 as u8; 32]),
+            value: 0,
+            bytes: vec![],
+            input_data: vec![],
+        },
+        Compose {
+            name: b"component2".to_vec(),
+            code_txt: r#""#.as_bytes().to_vec(),
+            gateway_id: [0 as u8; 4],
+            exec_type: b"exec_escrow".to_vec(),
+            dest: AccountId::new([1 as u8; 32]),
+            value: 0,
+            bytes: vec![],
+            input_data: vec![],
+        }
+    ];
+
+    assert_eq!(ExecDelivery::decompose_io_schedule(
+        components,
+        io_schedule
+    ).unwrap(), expected)
+}
+
+#[test]
+fn it_should_correctly_parse_a_valid_io_schedule_with_complex_structure() {
+    let expected = InterExecSchedule {
+        phases: vec![
+            ExecPhase {
+                steps: vec![
+                    ExecStep {
+                        compose: Compose {
+                            name: b"component1".to_vec(),
+                            code_txt: r#""#.as_bytes().to_vec(),
+                            gateway_id: [0 as u8; 4],
+                            exec_type: b"exec_escrow".to_vec(),
+                            dest: AccountId::new([1 as u8; 32]),
+                            value: 0,
+                            bytes: vec![],
+                            input_data: vec![],
+                        }
+                    },
+                    ExecStep {
+                        compose: Compose {
+                            name: b"component2".to_vec(),
+                            code_txt: r#""#.as_bytes().to_vec(),
+                            gateway_id: [0 as u8; 4],
+                            exec_type: b"exec_escrow".to_vec(),
+                            dest: AccountId::new([1 as u8; 32]),
+                            value: 0,
+                            bytes: vec![],
+                            input_data: vec![],
+                        }
+                    }
+                ]
+            },
+            ExecPhase {
+                steps: vec![
+                    ExecStep {
+                        compose: Compose {
+                            name: b"component2".to_vec(),
+                            code_txt: r#""#.as_bytes().to_vec(),
+                            gateway_id: [0 as u8; 4],
+                            exec_type: b"exec_escrow".to_vec(),
+                            dest: AccountId::new([1 as u8; 32]),
+                            value: 0,
+                            bytes: vec![],
+                            input_data: vec![],
+                        }
+                    }
+                ]
+            },
+            ExecPhase {
+                steps: vec![
+                    ExecStep {
+                        compose: Compose {
+                            name: b"component1".to_vec(),
+                            code_txt: r#""#.as_bytes().to_vec(),
+                            gateway_id: [0 as u8; 4],
+                            exec_type: b"exec_escrow".to_vec(),
+                            dest: AccountId::new([1 as u8; 32]),
+                            value: 0,
+                            bytes: vec![],
+                            input_data: vec![],
+                        }
+                    },
+                ]
+            },
+            ExecPhase {
+                steps: vec![
+                    ExecStep {
+                        compose: Compose {
+                            name: b"component2".to_vec(),
+                            code_txt: r#""#.as_bytes().to_vec(),
+                            gateway_id: [0 as u8; 4],
+                            exec_type: b"exec_escrow".to_vec(),
+                            dest: AccountId::new([1 as u8; 32]),
+                            value: 0,
+                            bytes: vec![],
+                            input_data: vec![],
+                        }
+                    },
+                    ExecStep {
+                        compose: Compose {
+                            name: b"component2".to_vec(),
+                            code_txt: r#""#.as_bytes().to_vec(),
+                            gateway_id: [0 as u8; 4],
+                            exec_type: b"exec_escrow".to_vec(),
+                            dest: AccountId::new([1 as u8; 32]),
+                            value: 0,
+                            bytes: vec![],
+                            input_data: vec![],
+                        }
+                    },
+                    ExecStep {
+                        compose: Compose {
+                            name: b"component1".to_vec(),
+                            code_txt: r#""#.as_bytes().to_vec(),
+                            gateway_id: [0 as u8; 4],
+                            exec_type: b"exec_escrow".to_vec(),
+                            dest: AccountId::new([1 as u8; 32]),
+                            value: 0,
+                            bytes: vec![],
+                            input_data: vec![],
+                        }
+                    }
+                ]
+            }
+        ]
+    };
+
+    let io_schedule = b"     component1 , component2 | component2 |     component1| component2, component2, component1;   ".to_vec();
+    let components =  vec![
+        Compose {
+            name: b"component1".to_vec(),
+            code_txt: r#""#.as_bytes().to_vec(),
+            gateway_id: [0 as u8; 4],
+            exec_type: b"exec_escrow".to_vec(),
+            dest: AccountId::new([1 as u8; 32]),
+            value: 0,
+            bytes: vec![],
+            input_data: vec![],
+        },
+        Compose {
+            name: b"component2".to_vec(),
+            code_txt: r#""#.as_bytes().to_vec(),
+            gateway_id: [0 as u8; 4],
+            exec_type: b"exec_escrow".to_vec(),
+            dest: AccountId::new([1 as u8; 32]),
+            value: 0,
+            bytes: vec![],
+            input_data: vec![],
+        }
+    ];
+
+    assert_eq!(ExecDelivery::decompose_io_schedule(
+        components,
+        io_schedule
+    ).unwrap(), expected)
+}
+
+#[test]
+fn it_should_throw_when_io_schedule_does_not_end_correctly() {
+    let expected = "IOScheduleNoEndingSemicolon";
+
+    let io_schedule = b"component1".to_vec();
+    let components =  vec![
+        Compose {
+            name: b"component1".to_vec(),
+            code_txt: r#""#.as_bytes().to_vec(),
+            gateway_id: [0 as u8; 4],
+            exec_type: b"exec_escrow".to_vec(),
+            dest: AccountId::new([1 as u8; 32]),
+            value: 0,
+            bytes: vec![],
+            input_data: vec![],
+        }
+    ];
+
+    assert_err!(ExecDelivery::decompose_io_schedule(
+        components,
+        io_schedule
+    ), expected);
+}
+
+#[test]
+fn it_should_throw_when_io_schedule_references_a_missing_component() {
+    let expected = "UnknownIOScheduleCompose";
+
+    let io_schedule = b"component1 | component2;".to_vec();
+    let components =  vec![
+        Compose {
+            name: b"component1".to_vec(),
+            code_txt: r#""#.as_bytes().to_vec(),
+            gateway_id: [0 as u8; 4],
+            exec_type: b"exec_escrow".to_vec(),
+            dest: AccountId::new([1 as u8; 32]),
+            value: 0,
+            bytes: vec![],
+            input_data: vec![],
+        }
+    ];
+
+    assert_err!(ExecDelivery::decompose_io_schedule(
+        components,
+        io_schedule
+    ), expected);
 }
