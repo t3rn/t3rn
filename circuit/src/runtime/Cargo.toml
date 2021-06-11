@@ -14,18 +14,18 @@ serde = { version = "1.0.124", optional = true, features = ["derive"] }
 
 # Bridge dependencies
 
-bp-messages = { path = "../../bridges/primitives/messages", default-features = false }
-bp-runtime = { path = "../../bridges/primitives/runtime", default-features = false }
-bp-gateway = { path = "../../bridges/primitives/chain-gateway", default-features = false }
-bp-circuit = { path = "../../bridges/primitives/chain-circuit", default-features = false }
-bp-polkadot-core = { path = "../../bridges/primitives/polkadot-core", default-features = false }
-bp-westend = { path = "../../bridges/primitives/chain-westend", default-features = false }
-bridge-runtime-common = { path = "../../bridges/bin/runtime-common", default-features = false }
-pallet-bridge-dispatch = { path = "../../bridges/modules/dispatch", default-features = false }
-pallet-bridge-grandpa = { path = "../../bridges/modules/grandpa", default-features = false }
-pallet-multi-finality-verifier = { path = "../../bridges/modules/multi-finality-verifier", default-features = false }
-pallet-bridge-messages = { path = "../../bridges/modules/messages", default-features = false }
-pallet-shift-session-manager = { path = "../../bridges/modules/shift-session-manager", default-features = false }
+bp-messages = { path = "../../../vendor/bridges/primitives/messages", default-features = false }
+bp-runtime = { path = "../../../vendor/bridges/primitives/runtime", default-features = false }
+bp-gateway = { path = "../../../vendor/bridges/primitives/chain-gateway", default-features = false }
+bp-circuit = { path = "../../../vendor/bridges/primitives/chain-circuit", default-features = false }
+bp-polkadot-core = { path = "../../../vendor/bridges/primitives/polkadot-core", default-features = false }
+bp-westend = { path = "../../../vendor/bridges/primitives/chain-westend", default-features = false }
+bridge-runtime-common = { path = "../../../vendor/bridges/bin/runtime-common", default-features = false }
+pallet-bridge-dispatch = { path = "../../../vendor/bridges/modules/dispatch", default-features = false }
+pallet-bridge-grandpa = { path = "../../../vendor/bridges/modules/grandpa", default-features = false }
+pallet-multi-finality-verifier = { path = "../../../vendor/bridges/modules/multi-finality-verifier", default-features = false }
+pallet-bridge-messages = { path = "../../../vendor/bridges/modules/messages", default-features = false }
+pallet-shift-session-manager = { path = "../../../vendor/bridges/modules/shift-session-manager", default-features = false }
 
 # Circuit dependencies
 pallet-contracts-registry = {  path = "../contracts-registry", default-features = false }
@@ -35,8 +35,8 @@ versatile-wasm = { path = "../../../vm/versatile-wasm", default-features = false
 t3rn-primitives = { version = "0.1.0", default-features = false, path = "../primitives" }
 
 # Smart contracts VMs
-pallet-evm = { path = "../../frontier/frame/evm", default-features = false  }
-pallet-evm-precompile-simple = { path = "../../frontier/frame/evm/precompile/simple", default-features = false }
+pallet-evm = { path = "../../../vendor/frontier/frame/evm", default-features = false  }
+pallet-evm-precompile-simple = { path = "../../../vendor/frontier/frame/evm/precompile/simple", default-features = false }
 pallet-contracts = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Substrate Dependencies

@@ -2,8 +2,10 @@ name: Circuit CI
 
 on:
   pull_request:
-#    branches:
-#      - poc-1
+    # TODO: replace this with main branch at some point
+    # CI now runs on all PRs targeted to `poc-1`
+    branches:
+      - poc-1
     paths:
       - circuit/**/*.rs
       - circuit/**/Cargo.toml
@@ -54,15 +56,10 @@ jobs:
           cd ./circuit
           cargo build --locked
 
-      - name: 📼 Run execution delivery unit tests
+      - name: 📼 Run unit tests
         run: |
-          cd ./circuit/src/execution-delivery
-          cargo test --locked
-
-#      - name: 🎥 Run unit tests
-#        run: |
-#          cd ./circuit
-#          cargo test --locked --workspace
+          cd ./circuit
+          cargo test --locked --workspace
 
 #      - name: 🚮 Purge circuit database
 #        run: yes | ./target/debug/circuit purge-chain --dev

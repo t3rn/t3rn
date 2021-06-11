@@ -16,15 +16,15 @@ serde_json = "1.0.59"
 
 # Bridge dependencies
 
-bp-messages = { path = "./bridges/primitives/messages" }
-bp-circuit = { path = "bridges/primitives/chain-circuit" }
-bp-runtime = { path = "bridges/primitives/runtime" }
+bp-messages = { path = "../vendor/bridges/primitives/messages" }
+bp-circuit = { path = "../vendor/bridges/primitives/chain-circuit" }
+bp-runtime = { path = "../vendor/bridges/primitives/runtime" }
 circuit-runtime = { path = "./src/runtime" }
-pallet-bridge-messages = { path = "./bridges/modules/messages" }
+pallet-bridge-messages = { path = "../vendor/bridges/modules/messages" }
 
 #VM dependencies
 
-pallet-evm = { path = "./frontier/frame/evm" }
+pallet-evm = { path = "../vendor/frontier/frame/evm" }
 
 # Substrate Dependencies
 
@@ -65,4 +65,17 @@ default = []
 # I've left the feature flag here to test our CI configuration
 runtime-benchmarks = [
     # "millau-runtime/runtime-benchmarks",
+]
+
+[workspace]
+members = [
+    "src/contracts-registry",
+    "src/execution-delivery",
+    "src/runtime",
+    "src/primitives",
+    "src/xdns"
+]
+exclude = [
+    "src/rpc",
+    "src/rpc/runtime-api",
 ]
