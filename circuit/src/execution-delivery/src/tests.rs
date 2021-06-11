@@ -18,60 +18,55 @@
 //! Test utilities
 use crate::{self as pallet_execution_delivery, Config};
 
-use codec::{Encode, Decode};
+use codec::{Decode, Encode};
 
-use pallet_babe::ExternalTrigger;
 use pallet_babe::EquivocationHandler;
+use pallet_babe::ExternalTrigger;
 
+use bp_runtime::Size;
 use sp_runtime::{
-    Perbill, impl_opaque_keys,
     curve::PiecewiseLinear,
+    impl_opaque_keys,
     testing::{Header, TestXt},
     traits::{IdentityLookup, OpaqueKeys},
+    Perbill,
 };
 use sp_runtime::{
-    testing::{UintAuthorityId},
-    traits::{Convert},
-    FixedU128,
-    DispatchResult, DispatchError,
+    testing::UintAuthorityId, traits::Convert, DispatchError, DispatchResult, FixedU128,
 };
-use bp_runtime::Size;
 
-use frame_support::{
-    parameter_types,
-    traits::{KeyOwnerProofSystem},
-};
-use frame_support::{assert_err};
+use frame_support::assert_err;
+use frame_support::{parameter_types, traits::KeyOwnerProofSystem};
 
-use sp_consensus_babe::{AuthorityId};
-use sp_staking::SessionIndex;
-use pallet_staking::EraIndex;
 use frame_election_provider_support::onchain;
 use pallet_session::historical as pallet_session_historical;
+use pallet_staking::EraIndex;
+use sp_consensus_babe::AuthorityId;
+use sp_staking::SessionIndex;
 
 use frame_support::weights::Weight;
-use sp_core::{H256, H160, U256, crypto::KeyTypeId};
+use sp_core::{crypto::KeyTypeId, H160, H256, U256};
 
 use bp_messages::{
     source_chain::{
-        LaneMessageVerifier, MessageDeliveryAndDispatchPayment, RelayersRewards, Sender, TargetHeaderChain,
+        LaneMessageVerifier, MessageDeliveryAndDispatchPayment, RelayersRewards, Sender,
+        TargetHeaderChain,
     },
-    target_chain::{DispatchMessage, MessageDispatch, ProvedLaneMessages, ProvedMessages, SourceHeaderChain},
+    target_chain::{
+        DispatchMessage, MessageDispatch, ProvedLaneMessages, ProvedMessages, SourceHeaderChain,
+    },
     InboundLaneData, LaneId, Message, MessageData, MessageKey, MessageNonce, OutboundLaneData,
     Parameter as MessagesParameter,
 };
 
-use t3rn_primitives::transfers::BalanceOf;
-use t3rn_primitives::{EscrowTrait, InterExecSchedule, ExecPhase, ExecStep};
 use std::collections::BTreeMap;
-use versatile_wasm::{VersatileWasm, DispatchRuntimeCall};
+use t3rn_primitives::transfers::BalanceOf;
+use t3rn_primitives::{EscrowTrait, ExecPhase, ExecStep, InterExecSchedule};
+use versatile_wasm::{DispatchRuntimeCall, VersatileWasm};
 
-use pallet_evm::{
-    AddressMapping,
-    FeeCalculator,
-};
+use pallet_evm::{AddressMapping, FeeCalculator};
 
-use pallet_execution_delivery::{Compose};
+use pallet_execution_delivery::Compose;
 
 type AccountId = sp_runtime::AccountId32;
 
@@ -79,24 +74,24 @@ type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 frame_support::construct_runtime!(
-	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
-	{
+    pub enum Test where
+        Block = Block,
+        NodeBlock = Block,
+        UncheckedExtrinsic = UncheckedExtrinsic,
+    {
         ExecDelivery: pallet_execution_delivery::{Pallet, Call, Storage, Event<T>},
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent},
-		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		Historical: pallet_session_historical::{Pallet},
-		Offences: pallet_offences::{Pallet, Call, Storage, Event},
+        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+        Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent},
+        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+        Historical: pallet_session_historical::{Pallet},
+        Offences: pallet_offences::{Pallet, Call, Storage, Event},
         Messages: pallet_bridge_messages::{Pallet, Call, Event<T>},
 
-		Babe: pallet_babe::{Pallet, Call, Storage, Config},
+        Babe: pallet_babe::{Pallet, Call, Storage, Config},
         TransactionPayment: pallet_transaction_payment::{Pallet, Call},
-		Staking: pallet_staking::{Pallet, Call, Storage, Config<T>, Event<T>},
-		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
-		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
+        Staking: pallet_staking::{Pallet, Call, Storage, Config<T>, Event<T>},
+        Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
+        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         ImOnline: pallet_im_online::{Pallet, Call, Storage, Config<T>, Event<T>},
         Sudo: pallet_sudo::{Pallet, Call, Event<T>},
         VersatileWasmVM: versatile_wasm::{Pallet, Call, Event<T>},
@@ -105,14 +100,14 @@ frame_support::construct_runtime!(
         XDNS: pallet_xdns::{Pallet, Call, Storage, Event<T>},
         Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
         EVM: pallet_evm::{Pallet, Config, Storage, Event<T>},
-	}
+    }
 );
 
 parameter_types! {
-	pub const BlockHashCount: u64 = 250;
-	pub const DisabledValidatorsThreshold: Perbill = Perbill::from_percent(16);
-	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(1024);
+    pub const BlockHashCount: u64 = 250;
+    pub const DisabledValidatorsThreshold: Perbill = Perbill::from_percent(16);
+    pub BlockWeights: frame_system::limits::BlockWeights =
+        frame_system::limits::BlockWeights::simple_max(1024);
 }
 
 impl frame_system::Config for Test {
@@ -143,17 +138,17 @@ impl frame_system::Config for Test {
 }
 
 impl<C> frame_system::offchain::SendTransactionTypes<C> for Test
-    where
-        Call: From<C>,
+where
+    Call: From<C>,
 {
     type OverarchingCall = Call;
     type Extrinsic = TestXt<Call, ()>;
 }
 
 impl_opaque_keys! {
-	pub struct MockSessionKeys {
-		pub babe_authority: pallet_babe::Pallet<Test>,
-	}
+    pub struct MockSessionKeys {
+        pub babe_authority: pallet_babe::Pallet<Test>,
+    }
 }
 
 impl pallet_sudo::Config for Test {
@@ -220,7 +215,8 @@ impl DispatchRuntimeCall<Test> for ExampleDispatchRuntimeCall {
     ) -> DispatchResult {
         match (module_name, fn_name) {
             ("Weights", "complex_calculations") => {
-                let (_decoded_x, _decoded_y): (u32, u32) = match Decode::decode(&mut _input.clone()) {
+                let (_decoded_x, _decoded_y): (u32, u32) = match Decode::decode(&mut _input.clone())
+                {
                     Ok(dec) => dec,
                     Err(_) => {
                         return Err(DispatchError::Other(
@@ -237,7 +233,6 @@ impl DispatchRuntimeCall<Test> for ExampleDispatchRuntimeCall {
         }
     }
 }
-
 
 impl pallet_session::Config for Test {
     type Event = Event;
@@ -258,7 +253,7 @@ impl pallet_session::historical::Config for Test {
 }
 
 parameter_types! {
-	pub const UncleGenerations: u64 = 0;
+    pub const UncleGenerations: u64 = 0;
 }
 
 impl pallet_authorship::Config for Test {
@@ -276,7 +271,7 @@ impl pallet_timestamp::Config for Test {
 }
 
 parameter_types! {
-	pub const ExistentialDeposit: u128 = 1;
+    pub const ExistentialDeposit: u128 = 1;
     pub const MaxReserves: u32 = 50;
 }
 
@@ -292,27 +287,26 @@ impl pallet_balances::Config for Test {
     type ReserveIdentifier = [u8; 8];
 }
 
-
 pallet_staking_reward_curve::build! {
-	const REWARD_CURVE: PiecewiseLinear<'static> = curve!(
-		min_inflation: 0_025_000u64,
-		max_inflation: 0_100_000,
-		ideal_stake: 0_500_000,
-		falloff: 0_050_000,
-		max_piece_count: 40,
-		test_precision: 0_005_000,
-	);
+    const REWARD_CURVE: PiecewiseLinear<'static> = curve!(
+        min_inflation: 0_025_000u64,
+        max_inflation: 0_100_000,
+        ideal_stake: 0_500_000,
+        falloff: 0_050_000,
+        max_piece_count: 40,
+        test_precision: 0_005_000,
+    );
 }
 
 parameter_types! {
-	pub const SessionsPerEra: SessionIndex = 3;
-	pub const BondingDuration: EraIndex = 3;
-	pub const SlashDeferDuration: EraIndex = 0;
-	pub const AttestationPeriod: u64 = 100;
-	pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
-	pub const MaxNominatorRewardedPerValidator: u32 = 64;
-	pub const ElectionLookahead: u64 = 0;
-	pub const StakingUnsignedPriority: u64 = u64::max_value() / 2;
+    pub const SessionsPerEra: SessionIndex = 3;
+    pub const BondingDuration: EraIndex = 3;
+    pub const SlashDeferDuration: EraIndex = 0;
+    pub const AttestationPeriod: u64 = 100;
+    pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
+    pub const MaxNominatorRewardedPerValidator: u32 = 64;
+    pub const ElectionLookahead: u64 = 0;
+    pub const StakingUnsignedPriority: u64 = u64::max_value() / 2;
 }
 
 impl onchain::Config for Test {
@@ -356,7 +350,6 @@ parameter_types! {
     pub const UnsignedPriority: u64 = 1 << 20;
 }
 
-
 pub struct AccountId32Converter;
 impl Convert<AccountId, [u8; 32]> for AccountId32Converter {
     fn convert(account_id: AccountId) -> [u8; 32] {
@@ -395,18 +388,18 @@ impl pallet_im_online::Config for Test {
 // start of contracts VMs
 
 parameter_types! {
-	pub const SignedClaimHandicap: u64 = 2;
-	pub const TombstoneDeposit: u128 = 16;
-	pub const DepositPerContract: u128 = 8 * DepositPerStorageByte::get();
-	pub const DepositPerStorageByte: u128 = 10_000;
-	pub const DepositPerStorageItem: u128 = 10_000;
-	pub RentFraction: Perbill = Perbill::from_rational(4u32, 10_000u32);
-	pub const SurchargeReward: u128 = 500_000;
-	pub const MaxValueSize: u32 = 16_384;
-	pub const DeletionQueueDepth: u32 = 1024;
-	pub const DeletionWeightLimit: Weight = 500_000_000_000;
-	pub const MaxCodeSize: u32 = 2 * 1024;
-	pub MySchedule: pallet_contracts::Schedule<Test> = <pallet_contracts::Schedule<Test>>::default();
+    pub const SignedClaimHandicap: u64 = 2;
+    pub const TombstoneDeposit: u128 = 16;
+    pub const DepositPerContract: u128 = 8 * DepositPerStorageByte::get();
+    pub const DepositPerStorageByte: u128 = 10_000;
+    pub const DepositPerStorageItem: u128 = 10_000;
+    pub RentFraction: Perbill = Perbill::from_rational(4u32, 10_000u32);
+    pub const SurchargeReward: u128 = 500_000;
+    pub const MaxValueSize: u32 = 16_384;
+    pub const DeletionQueueDepth: u32 = 1024;
+    pub const DeletionWeightLimit: Weight = 500_000_000_000;
+    pub const MaxCodeSize: u32 = 2 * 1024;
+    pub MySchedule: pallet_contracts::Schedule<Test> = <pallet_contracts::Schedule<Test>>::default();
 }
 
 impl Convert<Weight, BalanceOf<Self>> for Test {
@@ -440,8 +433,8 @@ impl pallet_contracts::Config for Test {
 // EVM
 
 parameter_types! {
-	pub const ChainId: u64 = 33;
-	pub const BlockGasLimit: U256 = U256::MAX;
+    pub const ChainId: u64 = 33;
+    pub const BlockGasLimit: U256 = U256::MAX;
 }
 
 pub struct FixedGasPrice;
@@ -482,12 +475,11 @@ impl pallet_evm::Config for Test {
 
 // start of bridge messages
 parameter_types! {
-	pub const MaxMessagesToPruneAtOnce: u64 = 10;
-	pub const MaxUnrewardedRelayerEntriesAtInboundLane: u64 = 16;
-	pub const MaxUnconfirmedMessagesAtInboundLane: u64 = 32;
-	pub storage TokenConversionRate: FixedU128 = 1.into();
+    pub const MaxMessagesToPruneAtOnce: u64 = 10;
+    pub const MaxUnrewardedRelayerEntriesAtInboundLane: u64 = 16;
+    pub const MaxUnconfirmedMessagesAtInboundLane: u64 = 32;
+    pub storage TokenConversionRate: FixedU128 = 1.into();
 }
-
 
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq)]
 pub enum TestMessagesParameter {
@@ -497,11 +489,12 @@ pub enum TestMessagesParameter {
 impl MessagesParameter for TestMessagesParameter {
     fn save(&self) {
         match *self {
-            TestMessagesParameter::TokenConversionRate(conversion_rate) => TokenConversionRate::set(&conversion_rate),
+            TestMessagesParameter::TokenConversionRate(conversion_rate) => {
+                TokenConversionRate::set(&conversion_rate)
+            }
         }
     }
 }
-
 
 #[derive(Decode, Encode, Clone, Debug, PartialEq, Eq)]
 pub struct TestPayload(pub u64, pub Weight);
@@ -550,8 +543,10 @@ impl From<Result<Vec<Message<TestMessageFee>>, ()>> for TestMessagesProof {
     fn from(result: Result<Vec<Message<TestMessageFee>>, ()>) -> Self {
         Self {
             result: result.map(|messages| {
-                let mut messages_by_lane: BTreeMap<LaneId, ProvedLaneMessages<Message<TestMessageFee>>> =
-                    BTreeMap::new();
+                let mut messages_by_lane: BTreeMap<
+                    LaneId,
+                    ProvedLaneMessages<Message<TestMessageFee>>,
+                > = BTreeMap::new();
                 for message in messages {
                     messages_by_lane
                         .entry(message.key.lane_id)
@@ -633,7 +628,8 @@ impl TestMessageDeliveryAndDispatchPayment {
 
     /// Returns true if given fee has been paid by given submitter.
     pub fn is_fee_paid(submitter: AccountId, fee: TestMessageFee) -> bool {
-        frame_support::storage::unhashed::get(b":message-fee:") == Some((Sender::Signed(submitter), fee))
+        frame_support::storage::unhashed::get(b":message-fee:")
+            == Some((Sender::Signed(submitter), fee))
     }
 
     /// Returns true if given relayer has been rewarded with given balance. The reward-paid flag is
@@ -644,7 +640,9 @@ impl TestMessageDeliveryAndDispatchPayment {
     }
 }
 
-impl MessageDeliveryAndDispatchPayment<AccountId, TestMessageFee> for TestMessageDeliveryAndDispatchPayment {
+impl MessageDeliveryAndDispatchPayment<AccountId, TestMessageFee>
+    for TestMessageDeliveryAndDispatchPayment
+{
     type Error = &'static str;
 
     fn pay_delivery_and_dispatch_fee(
@@ -756,10 +754,10 @@ impl pallet_bridge_messages::Config<DefaultMessagesInstance> for Test {
 }
 
 parameter_types! {
-	pub const EpochDuration: u64 = 3;
-	pub const ExpectedBlockTime: u64 = 1;
-	pub const ReportLongevity: u64 =
-		BondingDuration::get() as u64 * SessionsPerEra::get() as u64 * EpochDuration::get();
+    pub const EpochDuration: u64 = 3;
+    pub const ExpectedBlockTime: u64 = 1;
+    pub const ReportLongevity: u64 =
+        BondingDuration::get() as u64 * SessionsPerEra::get() as u64 * EpochDuration::get();
 }
 
 impl pallet_babe::Config for Test {
@@ -770,7 +768,7 @@ impl pallet_babe::Config for Test {
     type KeyOwnerProofSystem = Historical;
 
     type KeyOwnerProof =
-    <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, AuthorityId)>>::Proof;
+        <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, AuthorityId)>>::Proof;
 
     type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
         KeyTypeId,
@@ -783,60 +781,55 @@ impl pallet_babe::Config for Test {
     type WeightInfo = ();
 }
 
-
 #[test]
 fn it_submits_empty_composable_exec_request() {
     sp_io::TestExternalities::default().execute_with(|| {
-        assert_err!(ExecDelivery::submit_composable_exec_order(
-            Origin::signed(Default::default()),
-            vec![],
-            vec![]
-        ),
-        "empty parameters submitted for execution order");
+        assert_err!(
+            ExecDelivery::submit_composable_exec_order(
+                Origin::signed(Default::default()),
+                vec![],
+                vec![]
+            ),
+            "empty parameters submitted for execution order"
+        );
     });
 }
 
 #[test]
 fn it_should_correctly_parse_a_minimal_valid_io_schedule() {
     let expected = InterExecSchedule {
-        phases: vec![
-            ExecPhase {
-                steps: vec![
-                    ExecStep {
-                        compose: Compose {
-                            name: b"component1".to_vec(),
-                            code_txt: r#""#.as_bytes().to_vec(),
-                            gateway_id: [0 as u8; 4],
-                            exec_type: b"exec_escrow".to_vec(),
-                            dest: AccountId::new([1 as u8; 32]),
-                            value: 0,
-                            bytes: vec![],
-                            input_data: vec![],
-                        }
-                    }
-                ]
-            }
-        ]
+        phases: vec![ExecPhase {
+            steps: vec![ExecStep {
+                compose: Compose {
+                    name: b"component1".to_vec(),
+                    code_txt: r#""#.as_bytes().to_vec(),
+                    gateway_id: [0 as u8; 4],
+                    exec_type: b"exec_escrow".to_vec(),
+                    dest: AccountId::new([1 as u8; 32]),
+                    value: 0,
+                    bytes: vec![],
+                    input_data: vec![],
+                },
+            }],
+        }],
     };
 
     let io_schedule = b"component1;".to_vec();
-    let components = vec![
-        Compose {
-            name: b"component1".to_vec(),
-            code_txt: r#""#.as_bytes().to_vec(),
-            gateway_id: [0 as u8; 4],
-            exec_type: b"exec_escrow".to_vec(),
-            dest: AccountId::new([1 as u8; 32]),
-            value: 0,
-            bytes: vec![],
-            input_data: vec![],
-        }
-    ];
+    let components = vec![Compose {
+        name: b"component1".to_vec(),
+        code_txt: r#""#.as_bytes().to_vec(),
+        gateway_id: [0 as u8; 4],
+        exec_type: b"exec_escrow".to_vec(),
+        dest: AccountId::new([1 as u8; 32]),
+        value: 0,
+        bytes: vec![],
+        input_data: vec![],
+    }];
 
-    assert_eq!(ExecDelivery::decompose_io_schedule(
-        components,
-        io_schedule
-    ).unwrap(), expected)
+    assert_eq!(
+        ExecDelivery::decompose_io_schedule(components, io_schedule).unwrap(),
+        expected
+    )
 }
 
 #[test]
@@ -844,38 +837,34 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_2_phases() {
     let expected = InterExecSchedule {
         phases: vec![
             ExecPhase {
-                steps: vec![
-                    ExecStep {
-                        compose: Compose {
-                            name: b"component1".to_vec(),
-                            code_txt: r#""#.as_bytes().to_vec(),
-                            gateway_id: [0 as u8; 4],
-                            exec_type: b"exec_escrow".to_vec(),
-                            dest: AccountId::new([1 as u8; 32]),
-                            value: 0,
-                            bytes: vec![],
-                            input_data: vec![],
-                        }
-                    }
-                ]
+                steps: vec![ExecStep {
+                    compose: Compose {
+                        name: b"component1".to_vec(),
+                        code_txt: r#""#.as_bytes().to_vec(),
+                        gateway_id: [0 as u8; 4],
+                        exec_type: b"exec_escrow".to_vec(),
+                        dest: AccountId::new([1 as u8; 32]),
+                        value: 0,
+                        bytes: vec![],
+                        input_data: vec![],
+                    },
+                }],
             },
             ExecPhase {
-                steps: vec![
-                    ExecStep {
-                        compose: Compose {
-                            name: b"component2".to_vec(),
-                            code_txt: r#""#.as_bytes().to_vec(),
-                            gateway_id: [0 as u8; 4],
-                            exec_type: b"exec_escrow".to_vec(),
-                            dest: AccountId::new([1 as u8; 32]),
-                            value: 0,
-                            bytes: vec![],
-                            input_data: vec![],
-                        }
-                    }
-                ]
-            }
-        ]
+                steps: vec![ExecStep {
+                    compose: Compose {
+                        name: b"component2".to_vec(),
+                        code_txt: r#""#.as_bytes().to_vec(),
+                        gateway_id: [0 as u8; 4],
+                        exec_type: b"exec_escrow".to_vec(),
+                        dest: AccountId::new([1 as u8; 32]),
+                        value: 0,
+                        bytes: vec![],
+                        input_data: vec![],
+                    },
+                }],
+            },
+        ],
     };
 
     let io_schedule = b"component1 | component2;".to_vec();
@@ -899,52 +888,50 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_2_phases() {
             value: 0,
             bytes: vec![],
             input_data: vec![],
-        }
+        },
     ];
 
-    assert_eq!(ExecDelivery::decompose_io_schedule(
-        components,
-        io_schedule
-    ).unwrap(), expected)
+    assert_eq!(
+        ExecDelivery::decompose_io_schedule(components, io_schedule).unwrap(),
+        expected
+    )
 }
 
 #[test]
 fn it_should_correctly_parse_a_valid_io_schedule_with_1_phase_and_2_steps() {
     let expected = InterExecSchedule {
-        phases: vec![
-            ExecPhase {
-                steps: vec![
-                    ExecStep {
-                        compose: Compose {
-                            name: b"component1".to_vec(),
-                            code_txt: r#""#.as_bytes().to_vec(),
-                            gateway_id: [0 as u8; 4],
-                            exec_type: b"exec_escrow".to_vec(),
-                            dest: AccountId::new([1 as u8; 32]),
-                            value: 0,
-                            bytes: vec![],
-                            input_data: vec![],
-                        }
+        phases: vec![ExecPhase {
+            steps: vec![
+                ExecStep {
+                    compose: Compose {
+                        name: b"component1".to_vec(),
+                        code_txt: r#""#.as_bytes().to_vec(),
+                        gateway_id: [0 as u8; 4],
+                        exec_type: b"exec_escrow".to_vec(),
+                        dest: AccountId::new([1 as u8; 32]),
+                        value: 0,
+                        bytes: vec![],
+                        input_data: vec![],
                     },
-                    ExecStep {
-                        compose: Compose {
-                            name: b"component2".to_vec(),
-                            code_txt: r#""#.as_bytes().to_vec(),
-                            gateway_id: [0 as u8; 4],
-                            exec_type: b"exec_escrow".to_vec(),
-                            dest: AccountId::new([1 as u8; 32]),
-                            value: 0,
-                            bytes: vec![],
-                            input_data: vec![],
-                        }
-                    }
-                ]
-            }
-        ]
+                },
+                ExecStep {
+                    compose: Compose {
+                        name: b"component2".to_vec(),
+                        code_txt: r#""#.as_bytes().to_vec(),
+                        gateway_id: [0 as u8; 4],
+                        exec_type: b"exec_escrow".to_vec(),
+                        dest: AccountId::new([1 as u8; 32]),
+                        value: 0,
+                        bytes: vec![],
+                        input_data: vec![],
+                    },
+                },
+            ],
+        }],
     };
 
     let io_schedule = b"component1 , component2;".to_vec();
-    let components =  vec![
+    let components = vec![
         Compose {
             name: b"component1".to_vec(),
             code_txt: r#""#.as_bytes().to_vec(),
@@ -964,13 +951,13 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_1_phase_and_2_steps() {
             value: 0,
             bytes: vec![],
             input_data: vec![],
-        }
+        },
     ];
 
-    assert_eq!(ExecDelivery::decompose_io_schedule(
-        components,
-        io_schedule
-    ).unwrap(), expected)
+    assert_eq!(
+        ExecDelivery::decompose_io_schedule(components, io_schedule).unwrap(),
+        expected
+    )
 }
 
 #[test]
@@ -989,7 +976,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_complex_structure() {
                             value: 0,
                             bytes: vec![],
                             input_data: vec![],
-                        }
+                        },
                     },
                     ExecStep {
                         compose: Compose {
@@ -1001,9 +988,37 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_complex_structure() {
                             value: 0,
                             bytes: vec![],
                             input_data: vec![],
-                        }
-                    }
-                ]
+                        },
+                    },
+                ],
+            },
+            ExecPhase {
+                steps: vec![ExecStep {
+                    compose: Compose {
+                        name: b"component2".to_vec(),
+                        code_txt: r#""#.as_bytes().to_vec(),
+                        gateway_id: [0 as u8; 4],
+                        exec_type: b"exec_escrow".to_vec(),
+                        dest: AccountId::new([1 as u8; 32]),
+                        value: 0,
+                        bytes: vec![],
+                        input_data: vec![],
+                    },
+                }],
+            },
+            ExecPhase {
+                steps: vec![ExecStep {
+                    compose: Compose {
+                        name: b"component1".to_vec(),
+                        code_txt: r#""#.as_bytes().to_vec(),
+                        gateway_id: [0 as u8; 4],
+                        exec_type: b"exec_escrow".to_vec(),
+                        dest: AccountId::new([1 as u8; 32]),
+                        value: 0,
+                        bytes: vec![],
+                        input_data: vec![],
+                    },
+                }],
             },
             ExecPhase {
                 steps: vec![
@@ -1017,12 +1032,20 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_complex_structure() {
                             value: 0,
                             bytes: vec![],
                             input_data: vec![],
-                        }
-                    }
-                ]
-            },
-            ExecPhase {
-                steps: vec![
+                        },
+                    },
+                    ExecStep {
+                        compose: Compose {
+                            name: b"component2".to_vec(),
+                            code_txt: r#""#.as_bytes().to_vec(),
+                            gateway_id: [0 as u8; 4],
+                            exec_type: b"exec_escrow".to_vec(),
+                            dest: AccountId::new([1 as u8; 32]),
+                            value: 0,
+                            bytes: vec![],
+                            input_data: vec![],
+                        },
+                    },
                     ExecStep {
                         compose: Compose {
                             name: b"component1".to_vec(),
@@ -1033,55 +1056,15 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_complex_structure() {
                             value: 0,
                             bytes: vec![],
                             input_data: vec![],
-                        }
+                        },
                     },
-                ]
+                ],
             },
-            ExecPhase {
-                steps: vec![
-                    ExecStep {
-                        compose: Compose {
-                            name: b"component2".to_vec(),
-                            code_txt: r#""#.as_bytes().to_vec(),
-                            gateway_id: [0 as u8; 4],
-                            exec_type: b"exec_escrow".to_vec(),
-                            dest: AccountId::new([1 as u8; 32]),
-                            value: 0,
-                            bytes: vec![],
-                            input_data: vec![],
-                        }
-                    },
-                    ExecStep {
-                        compose: Compose {
-                            name: b"component2".to_vec(),
-                            code_txt: r#""#.as_bytes().to_vec(),
-                            gateway_id: [0 as u8; 4],
-                            exec_type: b"exec_escrow".to_vec(),
-                            dest: AccountId::new([1 as u8; 32]),
-                            value: 0,
-                            bytes: vec![],
-                            input_data: vec![],
-                        }
-                    },
-                    ExecStep {
-                        compose: Compose {
-                            name: b"component1".to_vec(),
-                            code_txt: r#""#.as_bytes().to_vec(),
-                            gateway_id: [0 as u8; 4],
-                            exec_type: b"exec_escrow".to_vec(),
-                            dest: AccountId::new([1 as u8; 32]),
-                            value: 0,
-                            bytes: vec![],
-                            input_data: vec![],
-                        }
-                    }
-                ]
-            }
-        ]
+        ],
     };
 
     let io_schedule = b"     component1 , component2 | component2 |     component1| component2, component2, component1;   ".to_vec();
-    let components =  vec![
+    let components = vec![
         Compose {
             name: b"component1".to_vec(),
             code_txt: r#""#.as_bytes().to_vec(),
@@ -1101,13 +1084,13 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_complex_structure() {
             value: 0,
             bytes: vec![],
             input_data: vec![],
-        }
+        },
     ];
 
-    assert_eq!(ExecDelivery::decompose_io_schedule(
-        components,
-        io_schedule
-    ).unwrap(), expected)
+    assert_eq!(
+        ExecDelivery::decompose_io_schedule(components, io_schedule).unwrap(),
+        expected
+    )
 }
 
 #[test]
@@ -1115,45 +1098,63 @@ fn it_should_throw_when_io_schedule_does_not_end_correctly() {
     let expected = "IOScheduleNoEndingSemicolon";
 
     let io_schedule = b"component1".to_vec();
-    let components =  vec![
-        Compose {
-            name: b"component1".to_vec(),
-            code_txt: r#""#.as_bytes().to_vec(),
-            gateway_id: [0 as u8; 4],
-            exec_type: b"exec_escrow".to_vec(),
-            dest: AccountId::new([1 as u8; 32]),
-            value: 0,
-            bytes: vec![],
-            input_data: vec![],
-        }
-    ];
+    let components = vec![Compose {
+        name: b"component1".to_vec(),
+        code_txt: r#""#.as_bytes().to_vec(),
+        gateway_id: [0 as u8; 4],
+        exec_type: b"exec_escrow".to_vec(),
+        dest: AccountId::new([1 as u8; 32]),
+        value: 0,
+        bytes: vec![],
+        input_data: vec![],
+    }];
 
-    assert_err!(ExecDelivery::decompose_io_schedule(
-        components,
-        io_schedule
-    ), expected);
+    assert_err!(
+        ExecDelivery::decompose_io_schedule(components, io_schedule),
+        expected
+    );
 }
 
 #[test]
 fn it_should_throw_when_io_schedule_references_a_missing_component() {
-    let expected = "UnknownIOScheduleCompose";
+    let expected = "IOScheduleUnknownCompose";
 
     let io_schedule = b"component1 | component2;".to_vec();
-    let components =  vec![
-        Compose {
-            name: b"component1".to_vec(),
-            code_txt: r#""#.as_bytes().to_vec(),
-            gateway_id: [0 as u8; 4],
-            exec_type: b"exec_escrow".to_vec(),
-            dest: AccountId::new([1 as u8; 32]),
-            value: 0,
-            bytes: vec![],
-            input_data: vec![],
-        }
-    ];
+    let components = vec![Compose {
+        name: b"component1".to_vec(),
+        code_txt: r#""#.as_bytes().to_vec(),
+        gateway_id: [0 as u8; 4],
+        exec_type: b"exec_escrow".to_vec(),
+        dest: AccountId::new([1 as u8; 32]),
+        value: 0,
+        bytes: vec![],
+        input_data: vec![],
+    }];
 
-    assert_err!(ExecDelivery::decompose_io_schedule(
-        components,
-        io_schedule
-    ), expected);
+    assert_err!(
+        ExecDelivery::decompose_io_schedule(components, io_schedule),
+        expected
+    );
+}
+
+#[test]
+fn it_should_throw_with_empty_io_schedule() {
+    let expected = "IOScheduleEmpty";
+
+    let io_schedule = b"".to_vec();
+    let components = vec![Compose {
+        name: b"component1".to_vec(),
+        code_txt: r#""#.as_bytes().to_vec(),
+        gateway_id: [0 as u8; 4],
+        exec_type: b"exec_escrow".to_vec(),
+        dest: AccountId::new([1 as u8; 32]),
+        value: 0,
+        bytes: vec![],
+        input_data: vec![],
+    }];
+
+    assert_err!(
+        ExecDelivery::decompose_io_schedule(components, io_schedule),
+        expected
+    );
 }

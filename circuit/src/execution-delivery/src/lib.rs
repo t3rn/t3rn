@@ -433,7 +433,8 @@ pub mod pallet {
         /// Non existent public key.
         InvalidKey,
         IOScheduleNoEndingSemicolon,
-        UnknownIOScheduleCompose,
+        IOScheduleEmpty,
+        IOScheduleUnknownCompose,
     }
 }
 
@@ -487,64 +488,61 @@ impl<T: Config> Pallet<T> {
 
         // converts an exec_step vector string to an ExecStep
         // throws error if a component is not found
-        let to_exec_step: fn(Vec<u8>) -> Result<ExecStep<T::AccountId, u64>, crate::Error<T>> =
-            |name: Vec<u8>| {
-                let compose = _components
-                    .clone()
-                    .into_iter()
-                    .find(|comp| comp.name.encode() == name.encode());
-                match compose {
-                    Some(value) => Ok(ExecStep { compose: value }),
-                    None => Err(Error::<T>::UnknownIOScheduleCompose),
-                }
-            };
+        let to_exec_step = |name: Vec<u8>| {
+            let compose = _components
+                .clone()
+                .into_iter()
+                .find(|comp| comp.name.encode() == name.encode());
+            match compose {
+                Some(value) => Ok(ExecStep { compose: value }),
+                None => Err(Error::<T>::IOScheduleUnknownCompose),
+            }
+        };
 
         // splits a phase vector into ExecSteps
-        fn split_into_steps(phase: Vec<u8>) -> Vec<ExecStep<T::AccountId, u64>> {
+        let split_into_steps = |phase: Vec<u8>| {
             phase
                 .split(|char| char.eq(&STEP_SEPARATOR))
                 .filter(|step| !step.is_empty())
                 .map(|step| to_exec_step(step.to_vec()))
-                .map(|exec_step| exec_step.unwrap())
                 .collect()
-        }
+        };
 
-        // splits an io_schedule into phases
-        fn split_into_phases(io_schedule: Vec<u8>) -> Vec<ExecPhase<T::AccountId, u64>> {
+        // splits an io_schedule into phases and then into steps
+        let split_into_phases = |io_schedule: Vec<u8>| {
             io_schedule
                 .split(|character| character.eq(&PHASE_SEPARATOR))
                 .filter(|phase| !phase.is_empty())
-                .map(|phase| split_into_steps(phase.to_vec()))
-                .map(|phase| ExecPhase { steps: phase })
+                .map(|phase| {
+                    let steps: Result<Vec<ExecStep<T::AccountId, u64>>, crate::Error<T>> =
+                        split_into_steps(phase.to_vec());
+                    ensure!(steps.is_ok(), Error::<T>::IOScheduleUnknownCompose);
+                    Ok(ExecPhase {
+                        steps: steps.unwrap(),
+                    })
+                })
                 .collect()
-        }
+        };
 
         let mut cloned = trim_whitespace(_io_schedule);
 
+        // make sure schedule is not empty
+        // probably irrelevant since there is already a check for that
+        let last_char = cloned.last();
+        ensure!(last_char.is_some(), Error::<T>::IOScheduleEmpty);
         // make sure the schedule ends correctly and remove ending character or panic
-        let ends_correctly = cloned
-            .last()
-            .ok_or("IO Schedule is empty!")
-            .unwrap()
-            .eq(&SCHEDULE_END);
+        let ends_correctly = last_char.eq(&Some(&SCHEDULE_END));
         ensure!(ends_correctly, Error::<T>::IOScheduleNoEndingSemicolon);
         cloned.remove(cloned.len() - 1);
 
-        // split into sequential phases
-        let phases_with_steps = split_into_phases(cloned);
+        // make sure schedule can be split into phases
+        let phases: Result<Vec<ExecPhase<T::AccountId, u64>>, crate::Error<T>> =
+            split_into_phases(cloned);
+        ensure!(phases.is_ok(), Error::<T>::IOScheduleUnknownCompose);
 
-        let phases = phases_with_steps
-            .iter()
-            .map(|phase| {
-                let steps = phase
-                    .iter()
-                    .map(|step| to_exec_step(step).unwrap())
-                    .collect();
-                ExecPhase { steps }
-            })
-            .collect();
-
-        Ok(InterExecSchedule { phases })
+        Ok(InterExecSchedule {
+            phases: phases.unwrap(),
+        })
     }
 
     /// Dry run submitted cross-chain transaction
