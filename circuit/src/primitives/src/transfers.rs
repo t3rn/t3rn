@@ -4,12 +4,12 @@ use crate::EscrowTrait;
 use codec::{Decode, Encode};
 use frame_support::{
     dispatch::{DispatchError, DispatchResult},
-    traits::{Currency, ExistenceRequirement}
+    traits::{Currency, ExistenceRequirement},
 };
 use sp_core::H256;
 
-use sp_std::{convert::TryInto, prelude::*, vec::Vec};
 use frame_system as system;
+use sp_std::{convert::TryInto, prelude::*, vec::Vec};
 
 #[derive(Debug, Default, PartialEq, Eq, Encode, Decode, Clone)]
 // #[codec(compact)] ToDo: Check if events can still be encoded/decoded from ext clients

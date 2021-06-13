@@ -19,7 +19,6 @@
 //!
 //! Most likely you should use `define_env` macro.
 
-
 #[macro_export]
 macro_rules! convert_args {
 	() => (vec![]);
@@ -101,8 +100,6 @@ where
 {
     f
 }
-
-
 
 #[macro_export]
 macro_rules! unmarshall_then_body_then_marshall {
@@ -238,9 +235,7 @@ mod tests {
         }
 
         // let ctx = &mut 0;
-        let ctx = &mut DummyRuntimeCtx {
-            some_uint: 0,
-        };
+        let ctx = &mut DummyRuntimeCtx { some_uint: 0 };
 
         assert_eq!(
             test_value(ctx, &[Value::I32(15), Value::I32(3)]).unwrap(),
@@ -268,9 +263,7 @@ mod tests {
         }
 
         // let ctx = &mut 0;
-        let ctx = &mut DummyRuntimeCtx {
-            some_uint: 0,
-        };
+        let ctx = &mut DummyRuntimeCtx { some_uint: 0 };
         let result = test_unit(ctx, &[Value::I32(2), Value::I32(3)]).unwrap();
         assert_eq!(result, ReturnValue::Unit);
         assert_eq!(ctx.some_uint, 5);
@@ -312,9 +305,7 @@ mod tests {
 
         // let ctx: &mut u32 = &mut 0;
 
-        let ctx = &mut DummyRuntimeCtx {
-            some_uint: 0,
-        };
+        let ctx = &mut DummyRuntimeCtx { some_uint: 0 };
 
         let r = unmarshall_then_body!(
             {

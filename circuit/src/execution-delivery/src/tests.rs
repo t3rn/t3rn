@@ -42,6 +42,7 @@ use frame_election_provider_support::onchain;
 use pallet_session::historical as pallet_session_historical;
 use pallet_staking::EraIndex;
 use sp_consensus_babe::AuthorityId;
+use sp_io;
 use sp_staking::SessionIndex;
 
 use frame_support::weights::Weight;
@@ -162,8 +163,6 @@ parameter_types! {
 }
 
 use frame_support::weights::IdentityFee;
-// use t3rn_primitives::ComposableExecResult::Error;
-
 impl pallet_transaction_payment::Config for Test {
     // type OnChargeTransaction = ();
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
