@@ -30,7 +30,7 @@ jobs:
         with:
           toolchain: nightly
           profile: minimal
-          components: rustfmt, clippy
+          components: rustfmt
           override: true
 
       - name: 📜 Format code
@@ -77,6 +77,7 @@ jobs:
         with:
           toolchain: nightly
           target: wasm32-unknown-unknown
+          components: clippy
           override: true
 
       - name: 🕒 Cache Rust binaries and packages
