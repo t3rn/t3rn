@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-
-use sp_std::vec::*; use sp_std::vec;
+use sp_std::vec;
+use sp_std::vec::*;
 
 use codec::{Compact, Encode};
 
@@ -12,8 +12,8 @@ use sp_version::RuntimeVersion;
 use super::gateway_inbound_assembly::{GatewayInboundAssembly, SingedBytes};
 
 // #[macro_use]
-use crate::compose_extrinsic_offline;
 use crate::compose_call;
+use crate::compose_extrinsic_offline;
 
 pub struct SubstrateGatewayAssembly<Pair, Hash> {
     pub metadata: Metadata,
@@ -23,21 +23,32 @@ pub struct SubstrateGatewayAssembly<Pair, Hash> {
 }
 
 // ToDo: Use the same sp_core library as rest of crate instead of accessing on from ext sub_api_client :(
-impl <Pair, Hash> SubstrateGatewayAssembly<Pair, Hash> {
-    pub fn new (
+impl<Pair, Hash> SubstrateGatewayAssembly<Pair, Hash> {
+    pub fn new(
         metadata: Metadata,
         runtime_version: RuntimeVersion,
         genesis_hash: Hash,
         submitter_pair: Pair,
     ) -> Self {
-        SubstrateGatewayAssembly { metadata, runtime_version, genesis_hash, submitter_pair }
+        SubstrateGatewayAssembly {
+            metadata,
+            runtime_version,
+            genesis_hash,
+            submitter_pair,
+        }
     }
 }
 
-impl <Pair, Hash> GatewayInboundAssembly for SubstrateGatewayAssembly<Pair, Hash> {
-
-    fn assemble_signed_call(&self, module_name: &'static str, fn_name: &'static str, data: Vec<u8>, to: [u8; 32], value: u128, gas: u64) -> SingedBytes {
-
+impl<Pair, Hash> GatewayInboundAssembly for SubstrateGatewayAssembly<Pair, Hash> {
+    fn assemble_signed_call(
+        &self,
+        module_name: &'static str,
+        fn_name: &'static str,
+        data: Vec<u8>,
+        to: [u8; 32],
+        value: u128,
+        gas: u64,
+    ) -> SingedBytes {
         let call = self.assemble_call(module_name, fn_name, data, to, value, gas);
 
         self.assemble_signed_tx_offline(call, 0)
@@ -50,7 +61,15 @@ impl <Pair, Hash> GatewayInboundAssembly for SubstrateGatewayAssembly<Pair, Hash
     ///     - b) constructed directly as a code analysis
     ///     - c) code without pre-execution would be submitted to gateways using only the call to contracts (escrow exec)
     ///     for a) b) and c) i can expect in this point to have arguments already split
-    fn assemble_call(&self, module_name: &'static str, fn_name: &'static str, _data: Vec<u8>, to: [u8; 32], value: u128, gas: u64) -> Vec<u8> {
+    fn assemble_call(
+        &self,
+        module_name: &'static str,
+        fn_name: &'static str,
+        _data: Vec<u8>,
+        to: [u8; 32],
+        value: u128,
+        gas: u64,
+    ) -> Vec<u8> {
         let call = compose_call!(
             self.metadata,
             module_name,

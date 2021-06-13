@@ -1,10 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-
-
 pub mod app {
     use sp_application_crypto::{app_crypto, sr25519};
-    pub const CIRCUIT_CRYPTO_ID: sp_application_crypto::KeyTypeId = sp_application_crypto::KeyTypeId(*b"circ");
+    pub const CIRCUIT_CRYPTO_ID: sp_application_crypto::KeyTypeId =
+        sp_application_crypto::KeyTypeId(*b"circ");
     app_crypto!(sr25519, CIRCUIT_CRYPTO_ID);
 }
 /// Generates the extrinsic's call field for a given module and call passed as &str
