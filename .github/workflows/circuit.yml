@@ -96,7 +96,7 @@ jobs:
           command: clippy
           args: |
             -p circuit
-            -p circuit-rpc
+            -p circuit-runtime
             -p pallet-circuit-execution-delivery
             -p pallet-contracts-registry
             -p pallet-xdns
