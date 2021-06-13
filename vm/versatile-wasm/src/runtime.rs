@@ -23,15 +23,15 @@ use frame_support::{
     traits::{Currency, Time},
     Twox128,
 };
-use t3rn_primitives::{
-    transfers::{escrow_transfer, BalanceOf as EscrowBalanceOf, TransferEntry},
-    EscrowTrait,
-};
 use sp_io::hashing::{blake2_128, blake2_256, keccak_256, sha2_256};
 use sp_runtime::traits::{Hash, Zero};
 use sp_sandbox;
 use sp_std::{convert::TryInto, prelude::*};
 use system::Config as SystemTrait;
+use t3rn_primitives::{
+    transfers::{escrow_transfer, BalanceOf as EscrowBalanceOf, TransferEntry},
+    EscrowTrait,
+};
 
 use crate::env_def::FunctionImplProvider;
 use crate::ext::{DefaultRuntimeEnv, ExtStandards};
@@ -90,7 +90,7 @@ impl<'a, E: ExtStandards + 'a> Runtime<'a, E> {
             max_value_size: u32::MAX,
             max_event_topics: prepare::MAX_SUBJECT_LEN,
             trap_reason: None,
-            gateway_id: gateway_id
+            gateway_id: gateway_id,
         }
     }
 }
@@ -148,7 +148,6 @@ pub fn get_child_storage_for_current_execution<T: EscrowTrait>(
 // macro_rules! return_err_and_maybe_leave_trace {
 //
 // }
-
 
 define_env!(Env, <E: ExtStandards>,
     gas (_ctx, amount: u32) => {
@@ -609,7 +608,10 @@ where
     Ok(())
 }
 
-pub fn run_code_on_versatile_wm<T: EscrowTrait + VersatileWasm + SystemTrait, E: ExtStandards<T = T>>(
+pub fn run_code_on_versatile_wm<
+    T: EscrowTrait + VersatileWasm + SystemTrait,
+    E: ExtStandards<T = T>,
+>(
     escrow_account: &T::AccountId,
     requester: &T::AccountId,
     _transfer_dest: &T::AccountId,
@@ -624,7 +626,6 @@ pub fn run_code_on_versatile_wm<T: EscrowTrait + VersatileWasm + SystemTrait, E:
     trace_log: bool,
     mut ext: E,
 ) -> ExecResultTrace {
-
     // That only works for code that is received by the call and will be executed and cleaned up after.
     let prefab_module = crate::prepare::prepare_contract::<Env>(&code).map_err(|e| e)?;
 
@@ -633,8 +634,10 @@ pub fn run_code_on_versatile_wm<T: EscrowTrait + VersatileWasm + SystemTrait, E:
         prefab_module,
     };
 
-    let escrow_account_trie_id =
-        get_child_storage_for_current_execution::<T>(escrow_account, composable_contract_storage_root);
+    let escrow_account_trie_id = get_child_storage_for_current_execution::<T>(
+        escrow_account,
+        composable_contract_storage_root,
+    );
 
     let pre_storage = child::root(&escrow_account_trie_id.clone());
 
