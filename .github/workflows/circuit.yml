@@ -33,23 +33,6 @@ jobs:
           components: rustfmt, clippy
           override: true
 
-#      - name: 🕒 Cache Rust binaries and packages
-#        uses: actions/cache@v2
-#        id: cache-rust
-#        with:
-#          path: |
-#            ~/.cargo/registry
-#            ~/.cargo/git
-#            target
-#          key: ${{ runner.os }}-cargo-${{ hashFiles('circuit/Cargo.lock') }}
-
-#      - name: 🧐 Check circuit
-#        uses: actions-rs/cargo@v1
-#        continue-on-error: false
-#        with:
-#          command: check
-#          args: --locked --manifest-path circuit/Cargo.toml
-
       - name: 📜 Format code
         uses: actions-rs/cargo@v1
         with:
@@ -113,8 +96,6 @@ jobs:
           args: |
             -p circuit
             -p circuit-rpc
-#            -p circuit-rpc-runtime-api
-#            -p circuit-runtime
             -p pallet-circuit-execution-delivery
             -p pallet-contracts-registry
             -p pallet-xdns
