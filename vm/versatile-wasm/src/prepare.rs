@@ -48,7 +48,6 @@ pub const MAX_STACK_HEIGHT: u32 = 64 * 1024;
 pub const MAX_CODE_SIZE: u32 = 512 * 1024;
 pub const ENABLE_PRINTLN: bool = false;
 
-
 struct ContractModule {
     /// A deserialized module. The module is valid (this is Guaranteed by `new` method).
     module: elements::Module,

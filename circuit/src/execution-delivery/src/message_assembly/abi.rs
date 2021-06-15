@@ -28,6 +28,4 @@ pub enum Type {
 }
 
 #[cfg(test)]
-mod tests {
-
-}
+mod tests {}

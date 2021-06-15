@@ -9,14 +9,12 @@ use frame_support::{
     dispatch::{DispatchError, DispatchResult},
     traits::{Currency, Randomness, Time, UnfilteredDispatchable},
     weights::GetDispatchInfo,
-    Parameter,
-    RuntimeDebug,
+    Parameter, RuntimeDebug,
 };
-use t3rn_primitives::{transfers::BalanceOf, EscrowTrait};
 use parity_wasm::elements::ValueType;
 use sp_sandbox;
 use sp_std::prelude::*;
-
+use t3rn_primitives::{transfers::BalanceOf, EscrowTrait};
 
 #[macro_use]
 pub mod env_def;

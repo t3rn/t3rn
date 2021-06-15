@@ -4,12 +4,12 @@ use frame_support::dispatch::DispatchError;
 use frame_support::traits::Randomness;
 use frame_support::weights::Weight;
 use frame_support::{storage::child, storage::child::ChildInfo, storage::unhashed};
+use sp_std::vec::Vec;
+use system::Config as SystemTrait;
 use t3rn_primitives::{
     transfers::{escrow_transfer, BalanceOf, TransferEntry},
     EscrowTrait,
 };
-use sp_std::vec::Vec;
-use system::Config as SystemTrait;
 
 pub struct DefaultRuntimeEnv2<T: EscrowTrait + SystemTrait + VersatileWasm> {
     pub escrow_account: T::AccountId,

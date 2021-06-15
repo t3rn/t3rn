@@ -1,13 +1,13 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Encode, Decode};
+use codec::{Decode, Encode};
 
-use crate::pallet::Config as Config;
+use crate::pallet::Config;
 
 use bp_messages::LaneId;
 
-use sp_std::vec::*;
 use sp_std::vec;
+use sp_std::vec::*;
 
 /// CircuitOutbound covers the path of message assembly and adds it to the queue dispatchable by
 pub enum CircuitOutbound<T: Config> {
@@ -106,15 +106,13 @@ pub enum CircuitOutboundMessage {
         inbound_results: CircuitInboundResult,
         /// Expected results
         transmission_medium: MessageTransmissionMedium,
-    }
+    },
 }
 
-pub trait CircuitOutboundProtocol { }
+pub trait CircuitOutboundProtocol {}
 
-impl<T: Config> CircuitOutbound<T>  {
-
+impl<T: Config> CircuitOutbound<T> {
     pub fn send_message(&self, message: T::OutboundPayload, submitter: T::AccountId) -> Vec<u8> {
-
         let origin = frame_system::RawOrigin::Signed(submitter).into();
         let lane_id: LaneId = [0, 0, 0, 1];
         let delivery_and_dispatch_fee: T::OutboundMessageFee = 0.into();

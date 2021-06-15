@@ -28,5 +28,5 @@ pub type Result = sc_cli::Result<()>;
 
 /// Run node.
 pub fn run() -> Result {
-	command::run()
+    command::run()
 }
