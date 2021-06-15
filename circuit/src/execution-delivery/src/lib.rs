@@ -432,6 +432,9 @@ pub mod pallet {
     pub enum Error<T> {
         /// Non existent public key.
         InvalidKey,
+        IOScheduleNoEndingSemicolon,
+        IOScheduleEmpty,
+        IOScheduleUnknownCompose,
     }
 }
 
@@ -459,45 +462,87 @@ impl<T: Config> Pallet<T> {
         _components: Vec<Compose<T::AccountId, u64>>,
         _io_schedule: Vec<u8>,
     ) -> Result<InterExecSchedule<T::AccountId, u64>, &'static str> {
-        let inter_schedule = InterExecSchedule::default();
+        // set constants
+        const WHITESPACE_MATRIX: [u8; 4] = [b' ', b'\t', b'\r', b'\n'];
+        const PHASE_SEPARATOR: u8 = b'|';
+        const STEP_SEPARATOR: u8 = b',';
+        const SCHEDULE_END: u8 = b';';
 
-        Ok(inter_schedule)
-        // ToDo: Rewrite in no-std compatible way without external Regex lib
-        // use regex::bytes::Regex;
-        // for caps in Regex::new(
-        //     r"(?P<compose_name>[\w]+)|(?P<next_phase>[>]+)|(?P<parallel_step>[|]+)|(?P<end>[;]+)",
-        // )
-        //     .unwrap()
-        //     .captures_iter(&io_schedule[..])
-        // {
-        //     if let Some(name) = caps.name("compose_name") {
-        //         if let Some(selected_compose) = components.clone().into_iter().find(|comp| {
-        //             comp.name.encode() == name.as_bytes().encode()
-        //         }) {
-        //             let new_step = ExecStep {
-        //                 compose: selected_compose.clone(),
-        //             };
-        //             if let Some(last_phase) = inter_schedule.phases.last_mut() {
-        //                 last_phase.steps.push(new_step);
-        //             } else {
-        //                 inter_schedule.phases.push(ExecPhase {
-        //                     steps: vec![new_step]
-        //                 });
-        //             }
-        //         } else {
-        //             return Err("Error::<T>::UnknownIOScheduleCompose");
-        //         }
-        //     }
-        //     if let Some(name) = caps.name("next_phase") {
-        //         inter_schedule.phases.push(ExecPhase::default());
-        //     }
-        //     if let Some(name) = caps.name("parallel_step") {
-        //     }
-        //     if let Some(name) = caps.name("end") {
-        //         return Ok(inter_schedule)
-        //     }
-        // };
-        // Err("Error::<T>::IOScheduleNoEndingSemicolon")
+        // trims all whitespace chars from io_schedule vector
+        fn trim_whitespace(input_string: Vec<u8>) -> Vec<u8> {
+            let mut result = input_string.clone();
+
+            // checks if character is whitespace
+            let is_whitespace = |x: &u8| WHITESPACE_MATRIX.contains(x);
+
+            let mut i = 0;
+            while i < result.len() {
+                if is_whitespace(&result[i]) {
+                    result.remove(i);
+                } else {
+                    i += 1;
+                }
+            }
+            result
+        }
+
+        // converts an exec_step vector string to an ExecStep
+        // throws error if a component is not found
+        let to_exec_step = |name: Vec<u8>| {
+            let compose = _components
+                .clone()
+                .into_iter()
+                .find(|comp| comp.name.encode() == name.encode());
+            match compose {
+                Some(value) => Ok(ExecStep { compose: value }),
+                None => Err(Error::<T>::IOScheduleUnknownCompose),
+            }
+        };
+
+        // splits a phase vector into ExecSteps
+        let split_into_steps = |phase: Vec<u8>| {
+            phase
+                .split(|char| char.eq(&STEP_SEPARATOR))
+                .filter(|step| !step.is_empty())
+                .map(|step| to_exec_step(step.to_vec()))
+                .collect()
+        };
+
+        // splits an io_schedule into phases and then into steps
+        let split_into_phases = |io_schedule: Vec<u8>| {
+            io_schedule
+                .split(|character| character.eq(&PHASE_SEPARATOR))
+                .filter(|phase| !phase.is_empty())
+                .map(|phase| {
+                    let steps: Result<Vec<ExecStep<T::AccountId, u64>>, crate::Error<T>> =
+                        split_into_steps(phase.to_vec());
+                    ensure!(steps.is_ok(), Error::<T>::IOScheduleUnknownCompose);
+                    Ok(ExecPhase {
+                        steps: steps.unwrap(),
+                    })
+                })
+                .collect()
+        };
+
+        let mut cloned = trim_whitespace(_io_schedule);
+
+        // make sure schedule is not empty
+        // probably irrelevant since there is already a check for that
+        let last_char = cloned.last();
+        ensure!(last_char.is_some(), Error::<T>::IOScheduleEmpty);
+        // make sure the schedule ends correctly and remove ending character or panic
+        let ends_correctly = last_char.eq(&Some(&SCHEDULE_END));
+        ensure!(ends_correctly, Error::<T>::IOScheduleNoEndingSemicolon);
+        cloned.remove(cloned.len() - 1);
+
+        // make sure schedule can be split into phases
+        let phases: Result<Vec<ExecPhase<T::AccountId, u64>>, crate::Error<T>> =
+            split_into_phases(cloned);
+        ensure!(phases.is_ok(), Error::<T>::IOScheduleUnknownCompose);
+
+        Ok(InterExecSchedule {
+            phases: phases.unwrap(),
+        })
     }
 
     /// Dry run submitted cross-chain transaction
