@@ -1,13 +1,14 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Encode, Decode};
+use codec::{Decode, Encode};
 
-use crate::pallet::Config as Config;
+use crate::pallet::Config;
 
 use bp_messages::LaneId;
+use serde::{Deserialize, Serialize};
 
-use sp_std::vec::*;
 use sp_std::vec;
+use sp_std::vec::*;
 
 /// CircuitOutbound covers the path of message assembly and adds it to the queue dispatchable by
 pub enum CircuitOutbound<T: Config> {
@@ -28,21 +29,21 @@ pub enum CircuitOutbound<T: Config> {
 type Bytes = Vec<u8>;
 
 /// Inclusion proofs of different tries
-#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]
-pub enum InboundStepProofTypes {
+#[derive(Serialize, Deserialize, Encode, Decode, Clone, Debug, PartialEq, Eq)]
+pub enum ProofTriePointer {
     /// Proof is a merkle path in the state trie
     State,
     /// Proof is a merkle path in the transaction trie (extrisics in Substrate)
     Transaction,
-    /// Proof is a merkle path in the logs trie (in Substrate logs are entries in state trie)
-    Logs,
+    /// Proof is a merkle path in the receipts trie (in Substrate logs are entries in state trie, this doesn't apply)
+    Receipts,
 }
 
 /// Inbound Steps that specifie expected data deposited by relayers back to the Circuit after each step
 #[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]
 pub struct CircuitInboundResult {
     pub result_format: Bytes,
-    pub proof_type: InboundStepProofTypes,
+    pub proof_type: ProofTriePointer,
 }
 
 /// Outbound Step that specifies expected transmission medium for relayers connecting with that gateway.
@@ -106,15 +107,13 @@ pub enum CircuitOutboundMessage {
         inbound_results: CircuitInboundResult,
         /// Expected results
         transmission_medium: MessageTransmissionMedium,
-    }
+    },
 }
 
-pub trait CircuitOutboundProtocol { }
+pub trait CircuitOutboundProtocol {}
 
-impl<T: Config> CircuitOutbound<T>  {
-
+impl<T: Config> CircuitOutbound<T> {
     pub fn send_message(&self, message: T::OutboundPayload, submitter: T::AccountId) -> Vec<u8> {
-
         let origin = frame_system::RawOrigin::Signed(submitter).into();
         let lane_id: LaneId = [0, 0, 0, 1];
         let delivery_and_dispatch_fee: T::OutboundMessageFee = 0.into();

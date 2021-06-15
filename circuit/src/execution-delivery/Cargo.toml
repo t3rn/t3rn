@@ -57,6 +57,7 @@ bp-polkadot-core = { default-features = false, path = "../../bridges/primitives/
 pallet-evm = { path = "../../frontier/frame/evm", default-features = false  }
 pallet-evm-precompile-simple = { path = "../../frontier/frame/evm/precompile/simple", default-features = false }
 pallet-contracts = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+ethabi-decode = { git = "https://github.com/Snowfork/ethabi-decode.git", branch = "master", default-features = false }
 
 # for tests only
 frame-election-provider-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -112,6 +113,7 @@ std = [
     # native contracts VMs
     "pallet-contracts/std",
     "pallet-evm/std",
+    "ethabi-decode/std",
     "pallet-evm-precompile-simple/std",
     # for tests only
     "pallet-babe/std",
