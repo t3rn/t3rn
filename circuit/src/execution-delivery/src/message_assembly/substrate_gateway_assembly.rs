@@ -1,34 +1,36 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_std::vec;
 use sp_std::vec::*;
 
 use codec::{Compact, Encode};
 
 use crate::message_assembly::chain_generic_metadata::Metadata;
 
+use sp_runtime::AccountId32 as AccountId;
 use sp_version::RuntimeVersion;
 
-use super::gateway_inbound_assembly::{GatewayInboundAssembly, SingedBytes};
+use super::gateway_inbound_assembly::GatewayInboundAssembly;
+use t3rn_primitives::*;
 
 // #[macro_use]
 use crate::compose_call;
 use crate::compose_extrinsic_offline;
+use pallet_im_online::sr25519::AuthorityId;
 
-pub struct SubstrateGatewayAssembly<Pair, Hash> {
+pub struct SubstrateGatewayAssembly<Hash> {
     pub metadata: Metadata,
     pub runtime_version: RuntimeVersion,
     pub genesis_hash: Hash,
-    pub submitter_pair: Pair,
+    pub submitter_pair: AuthorityId,
 }
 
 // ToDo: Use the same sp_core library as rest of crate instead of accessing on from ext sub_api_client :(
-impl<Pair, Hash> SubstrateGatewayAssembly<Pair, Hash> {
+impl<Hash> SubstrateGatewayAssembly<Hash> {
     pub fn new(
         metadata: Metadata,
         runtime_version: RuntimeVersion,
         genesis_hash: Hash,
-        submitter_pair: Pair,
+        submitter_pair: AuthorityId,
     ) -> Self {
         SubstrateGatewayAssembly {
             metadata,
@@ -39,7 +41,7 @@ impl<Pair, Hash> SubstrateGatewayAssembly<Pair, Hash> {
     }
 }
 
-impl<Pair, Hash> GatewayInboundAssembly for SubstrateGatewayAssembly<Pair, Hash> {
+impl<Hash> GatewayInboundAssembly for SubstrateGatewayAssembly<Hash> {
     fn assemble_signed_call(
         &self,
         module_name: &'static str,
@@ -48,7 +50,7 @@ impl<Pair, Hash> GatewayInboundAssembly for SubstrateGatewayAssembly<Pair, Hash>
         to: [u8; 32],
         value: u128,
         gas: u64,
-    ) -> SingedBytes {
+    ) -> UncheckedExtrinsicV4<Vec<u8>> {
         let call = self.assemble_call(module_name, fn_name, data, to, value, gas);
 
         self.assemble_signed_tx_offline(call, 0)
@@ -83,8 +85,12 @@ impl<Pair, Hash> GatewayInboundAssembly for SubstrateGatewayAssembly<Pair, Hash>
         call.encode()
     }
 
-    fn assemble_signed_tx_offline(&self, call_bytes: Vec<u8>, _nonce: u32) -> SingedBytes {
-        let xt: Vec<u8> = compose_extrinsic_offline!(
+    fn assemble_signed_tx_offline(
+        &self,
+        call_bytes: Vec<u8>,
+        nonce: u32,
+    ) -> UncheckedExtrinsicV4<Vec<u8>> {
+        let signed_xt = compose_extrinsic_offline!(
             &self.submitter_pair,
             call_bytes.clone(),
             nonce,
@@ -94,12 +100,7 @@ impl<Pair, Hash> GatewayInboundAssembly for SubstrateGatewayAssembly<Pair, Hash>
             self.runtime_version.spec_version,
             self.runtime_version.transaction_version
         );
-
-        SingedBytes {
-            signature: xt.encode(),
-            extra: None,
-            payload: call_bytes,
-        }
+        signed_xt
     }
 }
 

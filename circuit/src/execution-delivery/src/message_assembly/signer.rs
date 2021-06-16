@@ -28,7 +28,8 @@ macro_rules! compose_call {
 /// Generates an Unchecked extrinsic for a given call
 /// # Arguments
 ///
-/// * 'signer' - AccountKey that is used to sign the extrinsic.
+/// * 'signer' - AccountKey that is used to sign the extrinsic. Currently using AuthorityId from
+///              pallet-im-online
 /// * 'call' - call as returned by the compose_call! macro or via substrate's call enums.
 /// * 'nonce' - signer's account nonce: u32
 /// * 'era' - Era for extrinsic to be valid
@@ -44,6 +45,34 @@ macro_rules! compose_extrinsic_offline {
     $genesis_or_current_hash: expr,
     $runtime_spec_version: expr,
     $transaction_version: expr) => {{
-        vec![]
+        use t3rn_primitives::*;
+
+        let extra = GenericExtra::new($era, $nonce);
+
+        let raw_payload = SignedPayload::from_raw(
+            $call.clone(),
+            extra.clone(),
+            (
+                $runtime_spec_version,
+                $transaction_version,
+                $genesis_hash,
+                $genesis_or_current_hash,
+                (),
+                (),
+                (),
+            ),
+        );
+
+        let signature = raw_payload.using_encoded(|payload| $signer.sign(payload));
+
+        let mut arr = Default::default();
+        arr.clone_from_slice($signer.public().as_ref());
+
+        UncheckedExtrinsicV4::new_signed(
+            $call,
+            GenericAddress::from(AccountId::from(arr)),
+            signature.into(),
+            extra,
+        )
     }};
 }

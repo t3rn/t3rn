@@ -16,19 +16,20 @@ use super::circuit_outbound::{
 };
 use super::gateway_inbound_protocol::GatewayInboundProtocol;
 use super::substrate_gateway_assembly::SubstrateGatewayAssembly;
+use pallet_im_online::sr25519::AuthorityId;
 
-pub struct SubstrateGatewayProtocol<Pair, Hash> {
-    pub assembly: SubstrateGatewayAssembly<Pair, Hash>,
+pub struct SubstrateGatewayProtocol<Hash> {
+    pub assembly: SubstrateGatewayAssembly<Hash>,
 }
-impl<Pair, Hash> SubstrateGatewayProtocol<Pair, Hash> {
+impl<Hash> SubstrateGatewayProtocol<Hash> {
     pub fn new(
         metadata: Metadata,
         runtime_version: RuntimeVersion,
         genesis_hash: Hash,
-        submitter_pair: Pair,
+        submitter_pair: AuthorityId,
     ) -> Self {
         SubstrateGatewayProtocol {
-            assembly: SubstrateGatewayAssembly::<Pair, Hash>::new(
+            assembly: SubstrateGatewayAssembly::<Hash>::new(
                 metadata,
                 runtime_version,
                 genesis_hash,
@@ -38,7 +39,7 @@ impl<Pair, Hash> SubstrateGatewayProtocol<Pair, Hash> {
     }
 }
 
-impl<Pair, Hash> GatewayInboundProtocol for SubstrateGatewayProtocol<Pair, Hash> {
+impl<Hash> GatewayInboundProtocol for SubstrateGatewayProtocol<Hash> {
     fn get_storage(&self, key: &[u8; 32], _gateway_type: GatewayType) -> CircuitOutboundMessage {
         CircuitOutboundMessage::Read {
             arguments: vec![key.to_vec()],
