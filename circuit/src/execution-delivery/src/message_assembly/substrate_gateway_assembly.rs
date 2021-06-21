@@ -1,36 +1,34 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use sp_std::vec;
 use sp_std::vec::*;
 
 use codec::{Compact, Encode};
 
 use crate::message_assembly::chain_generic_metadata::Metadata;
 
-use sp_runtime::AccountId32 as AccountId;
 use sp_version::RuntimeVersion;
 
-use super::gateway_inbound_assembly::GatewayInboundAssembly;
-use t3rn_primitives::*;
+use super::gateway_inbound_assembly::{GatewayInboundAssembly, SingedBytes};
 
 // #[macro_use]
 use crate::compose_call;
 use crate::compose_extrinsic_offline;
-use pallet_im_online::sr25519::AuthorityId;
 
-pub struct SubstrateGatewayAssembly<Hash> {
+pub struct SubstrateGatewayAssembly<Pair, Hash> {
     pub metadata: Metadata,
     pub runtime_version: RuntimeVersion,
     pub genesis_hash: Hash,
-    pub submitter_pair: AuthorityId,
+    pub submitter_pair: Pair,
 }
 
 // ToDo: Use the same sp_core library as rest of crate instead of accessing on from ext sub_api_client :(
-impl<Hash> SubstrateGatewayAssembly<Hash> {
+impl<Pair, Hash> SubstrateGatewayAssembly<Pair, Hash> {
     pub fn new(
         metadata: Metadata,
         runtime_version: RuntimeVersion,
         genesis_hash: Hash,
-        submitter_pair: AuthorityId,
+        submitter_pair: Pair,
     ) -> Self {
         SubstrateGatewayAssembly {
             metadata,
@@ -41,7 +39,7 @@ impl<Hash> SubstrateGatewayAssembly<Hash> {
     }
 }
 
-impl<Hash> GatewayInboundAssembly for SubstrateGatewayAssembly<Hash> {
+impl<Pair, Hash> GatewayInboundAssembly for SubstrateGatewayAssembly<Pair, Hash> {
     fn assemble_signed_call(
         &self,
         module_name: &'static str,
@@ -50,7 +48,7 @@ impl<Hash> GatewayInboundAssembly for SubstrateGatewayAssembly<Hash> {
         to: [u8; 32],
         value: u128,
         gas: u64,
-    ) -> UncheckedExtrinsicV4<Vec<u8>> {
+    ) -> SingedBytes {
         let call = self.assemble_call(module_name, fn_name, data, to, value, gas);
 
         self.assemble_signed_tx_offline(call, 0)

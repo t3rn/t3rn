@@ -60,14 +60,13 @@ use bp_messages::{
     Parameter as MessagesParameter,
 };
 
+use pallet_execution_delivery::Compose;
 use std::collections::BTreeMap;
 use t3rn_primitives::transfers::BalanceOf;
 use t3rn_primitives::{EscrowTrait, ExecPhase, ExecStep, InterExecSchedule};
 use versatile_wasm::{DispatchRuntimeCall, VersatileWasm};
 
 use pallet_evm::{AddressMapping, FeeCalculator};
-
-use pallet_execution_delivery::Compose;
 
 type AccountId = sp_runtime::AccountId32;
 

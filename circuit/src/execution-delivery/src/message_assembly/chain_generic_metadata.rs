@@ -36,7 +36,7 @@ impl Metadata {
     pub fn lookup_module_and_call_indices(
         &self,
         lookup_module_name: &'static str,
-        _lookup_call_name: &'static str,
+        lookup_call_name: &'static str,
     ) -> Result<(u8, u8), &'static str> {
         let _module_index: i32 = -1;
         let _call_index: i32 = -1;
@@ -61,7 +61,7 @@ impl Metadata {
             .clone()
             .find(|call| {
                 call_counter += 1;
-                call.name.clone() == DecodeDifferent::Encode(lookup_module_name)
+                call.name.clone() == DecodeDifferent::Encode(lookup_call_name)
             })
             .ok_or(MetadataError::CallNotFound(
                 "Call with a given name doesn't exist on that module as per the current metadata",

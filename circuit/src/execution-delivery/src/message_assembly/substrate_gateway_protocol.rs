@@ -11,25 +11,24 @@ use sp_version::RuntimeVersion;
 use t3rn_primitives::transfers::TransferEntry;
 use t3rn_primitives::GatewayType;
 
-use super::circuit_outbound::{
-    CircuitInboundResult, CircuitOutboundMessage, InboundStepProofTypes, MessageTransmissionMedium,
-};
+use super::circuit_outbound::{CircuitOutboundMessage, GatewayExpectedOutput, MessagePayload};
+
 use super::gateway_inbound_protocol::GatewayInboundProtocol;
 use super::substrate_gateway_assembly::SubstrateGatewayAssembly;
-use pallet_im_online::sr25519::AuthorityId;
 
-pub struct SubstrateGatewayProtocol<Hash> {
-    pub assembly: SubstrateGatewayAssembly<Hash>,
+pub struct SubstrateGatewayProtocol<Pair, Hash> {
+    pub assembly: SubstrateGatewayAssembly<Pair, Hash>,
 }
-impl<Hash> SubstrateGatewayProtocol<Hash> {
+
+impl<Pair, Hash> SubstrateGatewayProtocol<Pair, Hash> {
     pub fn new(
         metadata: Metadata,
         runtime_version: RuntimeVersion,
         genesis_hash: Hash,
-        submitter_pair: AuthorityId,
+        submitter_pair: Pair,
     ) -> Self {
         SubstrateGatewayProtocol {
-            assembly: SubstrateGatewayAssembly::<Hash>::new(
+            assembly: SubstrateGatewayAssembly::<Pair, Hash>::new(
                 metadata,
                 runtime_version,
                 genesis_hash,
@@ -37,101 +36,190 @@ impl<Hash> SubstrateGatewayProtocol<Hash> {
             ),
         }
     }
+
+    pub fn produce_signed_payload(
+        &self,
+        namespace: Vec<u8>,
+        name: Vec<u8>,
+        _arguments: Vec<Vec<u8>>,
+    ) -> MessagePayload {
+        // let call_bytes = compose_call!(name_str, name_str, arguments).to_vec();
+        // let tx = compose_call!(namespace, name);
+
+        MessagePayload::Signed {
+            // ToDo: get public key from AuthorityId instead
+            signer: vec![],
+            module_name: namespace,
+            method_name: name,
+            call_bytes: vec![],
+            signature: vec![],
+            extra: vec![],
+        }
+    }
 }
 
-impl<Hash> GatewayInboundProtocol for SubstrateGatewayProtocol<Hash> {
-    fn get_storage(&self, key: &[u8; 32], _gateway_type: GatewayType) -> CircuitOutboundMessage {
+impl<Pair, Hash> GatewayInboundProtocol for SubstrateGatewayProtocol<Pair, Hash> {
+    // Get storage key directly to foreign storage system
+    // For substrate that follows the following key formats:
+    // key[0..16].copy_from_slice(&Twox128::hash(module_prefix));
+    // key[16..32].copy_from_slice(&Twox128::hash(storage_prefix));
+    fn get_storage(&self, key: [u8; 32], _gateway_type: GatewayType) -> CircuitOutboundMessage {
+        // events
+        // storage
+        let expected_storage = GatewayExpectedOutput::Storage {
+            key: vec![key],
+            value: vec![None],
+        };
+        let arguments = vec![key.to_vec()];
+
         CircuitOutboundMessage::Read {
-            arguments: vec![key.to_vec()],
-            inbound_results: CircuitInboundResult {
-                result_format: b"Option<Vec<u8>>".to_vec(),
-                proof_type: InboundStepProofTypes::State,
-            },
-            transmission_medium: MessageTransmissionMedium::Rpc {
+            arguments,
+            expected_output: vec![expected_storage],
+            payload: MessagePayload::Rpc {
                 module_name: b"state".to_vec(),
                 method_name: b"getStorage".to_vec(),
             },
         }
     }
 
+    // Set storage key directly to foreign storage system
+    // For substrate that follows the following key formats:
+    // key[0..16].copy_from_slice(&Twox128::hash(module_prefix));
+    // key[16..32].copy_from_slice(&Twox128::hash(storage_prefix));
     fn set_storage(
         &self,
-        _key: &[u8; 32],
-        _value: Option<Vec<u8>>,
+        key: [u8; 32], //sp_core::storage
+        value: Option<Vec<u8>>,
         _gateway_type: GatewayType,
     ) -> CircuitOutboundMessage {
-        unimplemented!()
+        // storage
+        let expected_storage = GatewayExpectedOutput::Storage {
+            key: vec![key],
+            value: vec![value],
+        };
+
+        let arguments = vec![key.to_vec()];
+
+        CircuitOutboundMessage::Write {
+            arguments: arguments.clone(),
+            expected_output: vec![expected_storage],
+            payload: self.produce_signed_payload(
+                b"state".to_vec(),
+                b"setStorage".to_vec(),
+                arguments,
+            ),
+        }
     }
 
+    /// Call pallet's method in a read-only manner (static)
     fn call_static(
         &self,
         _module_name: &str,
         _fn_name: &str,
-        _data: Vec<u8>,
-        _to: [u8; 32],
-        _value: u128,
-        _gas: u64,
-        _gateway_type: GatewayType,
+        data: Vec<u8>,
+        to: [u8; 32],
+        value: u128,
+        gas: u64,
+        gateway_type: GatewayType,
     ) -> CircuitOutboundMessage {
-        unimplemented!()
+        match gateway_type {
+            GatewayType::ProgrammableInternal => {
+                let arguments = vec![to.encode(), value.encode(), gas.encode(), data];
+                CircuitOutboundMessage::Write {
+                    arguments: arguments.clone(),
+                    expected_output: vec![GatewayExpectedOutput::Events {
+                        signatures: vec![
+                            // dest, value, gas_limit, data
+                            b"CallStatic(address,value,uint64,dynamic_bytes)".to_vec(),
+                        ],
+                    }],
+                    payload: self.produce_signed_payload(
+                        b"gatewayEscrowed".to_vec(),
+                        b"callStatic".to_vec(),
+                        arguments,
+                    ),
+                }
+            }
+            // Don't think there is a way of enforcing calls to be static on via external dispatch?
+            GatewayType::ProgrammableExternal | GatewayType::TxOnly => {
+                unimplemented!();
+            }
+        }
     }
 
     fn call(
         &self,
-        _module_name: Vec<u8>,
-        _fn_name: Vec<u8>,
-        _data: Vec<u8>,
-        escrow_account: [u8; 32],
-        requester: [u8; 32],
-        to: [u8; 32],
-        value: u128,
-        _gas: u64,
-        _gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage {
-        // Dummy RPC to state call now
-        CircuitOutboundMessage::Write {
-            sender: escrow_account.to_vec(),
-            arguments: vec![
-                escrow_account.to_vec(),
-                Encode::encode(&value),
-                to.to_vec(),
-                requester.to_vec(),
-            ],
-            inbound_results: CircuitInboundResult {
-                result_format: b"None".to_vec(),
-                proof_type: InboundStepProofTypes::State,
-            },
-            transmission_medium: MessageTransmissionMedium::Rpc {
-                module_name: b"state".to_vec(),
-                method_name: b"call".to_vec(),
-            },
-        }
-    }
-
-    fn call_dirty(
-        &self,
-        _module_name: &str,
-        _fn_name: &str,
-        _data: Vec<u8>,
+        module_name: Vec<u8>,
+        fn_name: Vec<u8>,
+        data: Vec<u8>,
+        _escrow_account: [u8; 32],
+        _requester: [u8; 32],
         _to: [u8; 32],
         _value: u128,
         _gas: u64,
         _gateway_type: GatewayType,
     ) -> CircuitOutboundMessage {
-        unimplemented!()
+        // For state::call first argument is PalletName_MethodName
+        const UNDERSCORE_BYTE: &[u8] = b"_";
+        let method_enc = [module_name.as_slice(), fn_name.as_slice()].join(UNDERSCORE_BYTE);
+
+        let expected_output = vec![
+            GatewayExpectedOutput::Events {
+                signatures: vec![
+                    // dest, value, gas_limit, data
+                    b"Call(address,value,uint64,dynamic_bytes)".to_vec(),
+                ],
+            },
+            GatewayExpectedOutput::Output {
+                output: b"dynamic_bytes".to_vec(),
+            },
+        ];
+
+        // ToDo: Sign message payload passed through state call
+        CircuitOutboundMessage::Write {
+            arguments: vec![method_enc.encode(), data],
+            expected_output,
+            payload: MessagePayload::Rpc {
+                module_name: b"State".to_vec(),
+                method_name: b"Call".to_vec(),
+            },
+        }
     }
 
     fn call_escrow(
         &self,
         _module_name: &str,
         _fn_name: &str,
-        _data: Vec<u8>,
-        _to: [u8; 32],
-        _value: u128,
-        _gas: u64,
-        _gateway_type: GatewayType,
+        data: Vec<u8>,
+        to: [u8; 32],
+        value: u128,
+        gas: u64,
+        gateway_type: GatewayType,
     ) -> CircuitOutboundMessage {
-        unimplemented!()
+        match gateway_type {
+            GatewayType::ProgrammableInternal => {
+                let expected_output = vec![GatewayExpectedOutput::Events {
+                    signatures: vec![
+                        // dest, value, gas_limit, data
+                        b"CallEscrowed(address,value,uint64,dynamic_bytes)".to_vec(),
+                    ],
+                }];
+                let arguments = vec![to.encode(), value.encode(), gas.encode(), data];
+                CircuitOutboundMessage::Write {
+                    arguments: arguments.clone(),
+                    expected_output,
+                    payload: self.produce_signed_payload(
+                        b"gatewayEscrowed".to_vec(),
+                        b"callEscrowed".to_vec(),
+                        arguments,
+                    ),
+                }
+            }
+            // Don't think there is a way of enforcing calls to be static on via external dispatch?
+            GatewayType::ProgrammableExternal | GatewayType::TxOnly => {
+                unimplemented!();
+            }
+        }
     }
 
     fn custom_call_static(
@@ -175,95 +263,102 @@ impl<Hash> GatewayInboundProtocol for SubstrateGatewayProtocol<Hash> {
 
     fn transfer(
         &self,
-        escrow_account: [u8; 32],
-        requester: [u8; 32],
         to: [u8; 32],
         value: u128,
-        _transfers: &mut Vec<TransferEntry>,
         _gateway_type: GatewayType,
     ) -> CircuitOutboundMessage {
-        /*
-        let msg = match gateway_type {
-
-            GatewayType::ProgrammableInternal => {
-                // &self, module_name: &str, fn_name: &str, data: Vec<u8>, to: [u8; 32], value: u128, gas: u64
-
-
-
-                let call_bytes = Self::GatewayAssembly.assemble_call(
-                    "EscrowGateway", "escrow_transfer", vec![
-                        escrow_account.to_vec()
-                        // extend(requester.to_vec())
-                    ], to.clone(), value, gas
-                );
-
-                let signed_tx = Self::GatewayAssembly.assemble_signed_tx_offline(
-                    call_bytes,
-                    &pair.into(),
-                    0
-                );
-
-                CircuitOutboundMessage::Escrowed {
-                    sender: escrow_account,
-                    target: to,
-                    arguments: vec![key.to_vec()],
-                    inbound_results: CircuitInboundResult {
-                        result_format: b"None".to_vec(),
-                        proof_type: InboundStepProofTypes::Transaction,
-                    },
-                    transmission_medium: MessageTransmissionMedium::TransactionDispatch {
-                        call_bytes,
-                        signature: signed_tx.signature,
-                        extra: signed_tx.extra
-                    }
-                }
-            },
-            GatewayType::ProgrammableExternal => {
-
-            },
-            GatewayType::TxOnly => {
-
-            },
-        };
-        */
-        // Dummy for now
-        CircuitOutboundMessage::Write {
-            sender: escrow_account.to_vec(),
-            arguments: vec![
-                escrow_account.to_vec(),
-                Encode::encode(&value),
-                to.to_vec(),
-                requester.to_vec(),
+        let expected_output = vec![GatewayExpectedOutput::Events {
+            signatures: vec![
+                // from, to, value
+                b"Transfer(address,address,value)".to_vec(),
             ],
-            inbound_results: CircuitInboundResult {
-                result_format: b"None".to_vec(),
-                proof_type: InboundStepProofTypes::State,
-            },
-            transmission_medium: MessageTransmissionMedium::Rpc {
-                module_name: b"author".to_vec(),
-                method_name: b"submitAndWatchExtrinsic".to_vec(),
-            },
-        }
-    }
+        }];
 
-    fn transfer_dirty(
-        &self,
-        _to: [u8; 32],
-        _value: u128,
-        _gas: u64,
-        _gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage {
-        unimplemented!()
+        let arguments = vec![to.encode(), value.encode(), vec![]];
+
+        CircuitOutboundMessage::Write {
+            arguments: arguments.clone(),
+            expected_output,
+            payload: self.produce_signed_payload(
+                b"Balances".to_vec(),
+                b"Transfer".to_vec(),
+                arguments,
+            ),
+        }
     }
 
     fn transfer_escrow(
         &self,
-        _to: [u8; 32],
-        _value: u128,
-        _gas: u64,
-        _gateway_type: GatewayType,
+        escrow_account: [u8; 32],
+        _requester: [u8; 32],
+        to: [u8; 32],
+        value: u128,
+        _transfers: &mut Vec<TransferEntry>,
+        gateway_type: GatewayType,
     ) -> CircuitOutboundMessage {
-        unimplemented!()
+        match gateway_type {
+            GatewayType::ProgrammableInternal => {
+                let expected_output = vec![GatewayExpectedOutput::Events {
+                    signatures: vec![
+                        // from, to, value
+                        b"EscrowedTransfer(address,address,value)".to_vec(),
+                    ],
+                }];
+
+                let arguments = vec![to.encode(), value.encode(), vec![]];
+
+                CircuitOutboundMessage::Write {
+                    arguments: arguments.clone(),
+                    expected_output,
+                    payload: self.produce_signed_payload(
+                        b"Gateway".to_vec(),
+                        b"EscrowTransfer".to_vec(),
+                        arguments,
+                    ),
+                }
+            }
+            GatewayType::ProgrammableExternal | GatewayType::TxOnly => {
+                let expected_output = vec![GatewayExpectedOutput::Events {
+                    signatures: vec![
+                        // from, to, value
+                        b"Transfer(address,address,value)".to_vec(),
+                        b"Transfer(address,address,value)".to_vec(),
+                    ],
+                }];
+
+                let arguments = vec![to.encode(), value.encode(), vec![]];
+
+                let transfers = vec![
+                    self.produce_signed_payload(
+                        b"Balances".to_vec(),
+                        b"Transfer".to_vec(),
+                        vec![
+                            // ToDo: change to dummy vector to self.assembly.submitter_pair.public()
+                            vec![],
+                            escrow_account.encode(),
+                            value.encode(),
+                        ],
+                    )
+                    .encode(),
+                    self.produce_signed_payload(
+                        b"Balances".to_vec(),
+                        b"Transfer".to_vec(),
+                        vec![escrow_account.encode(), to.encode(), value.encode()],
+                    )
+                    .encode(),
+                ];
+
+                CircuitOutboundMessage::Write {
+                    arguments: arguments.clone(),
+                    expected_output,
+                    payload: self.produce_signed_payload(
+                        b"Utility".to_vec(),
+                        b"BatchAll".to_vec(),
+                        transfers,
+                    ),
+                }
+            }
+        }
     }
 
     fn swap_dirty(

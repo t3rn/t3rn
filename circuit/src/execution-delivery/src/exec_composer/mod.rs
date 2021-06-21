@@ -24,7 +24,6 @@ use crate::message_assembly::circuit_outbound::CircuitOutboundMessage;
 pub mod versatile_vm_impl;
 
 use crate::exec_composer::versatile_vm_impl::*;
-use pallet_im_online::sr25519::AuthorityId;
 
 pub struct ExecComposer {}
 
@@ -227,14 +226,15 @@ impl ExecComposer {
     ) -> Result<Box<dyn GatewayInboundProtocol>, &'static str> {
         // ToDo: Communicate with pallet_xdns in order to retrieve latest data about
         // let (metadata, runtime_version, genesis_hash) = pallet_xdns::Pallet<T>::get_gateway_protocol_meta(gateway_pointer.id)
-        Ok(Box::new(
-            SubstrateGatewayProtocol::<bp_polkadot_core::Hash>::new(
-                Default::default(),
-                Default::default(),
-                Default::default(),
-                submitter_id,
-            ),
-        ))
+        Ok(Box::new(SubstrateGatewayProtocol::<
+            T::AuthorityId,
+            bp_polkadot_core::Hash,
+        >::new(
+            Default::default(),
+            Default::default(),
+            Default::default(),
+            submitter_id,
+        )))
     }
 }
 

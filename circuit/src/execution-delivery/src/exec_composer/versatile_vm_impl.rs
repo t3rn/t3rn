@@ -147,7 +147,7 @@ where
         // 3. return result using output_mode
         let outbound_message = self
             .gateway_inbound_protocol
-            .get_storage(key, self.gateway_pointer.gateway_type.clone());
+            .get_storage(*key, self.gateway_pointer.gateway_type.clone());
 
         self.constructed_outbound_messages
             .push(outbound_message.clone());
@@ -158,7 +158,7 @@ where
 
     fn set_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>) {
         let outbound_message = self.gateway_inbound_protocol.set_storage(
-            &key,
+            key,
             value,
             self.gateway_pointer.gateway_type.clone(),
         );
@@ -196,10 +196,9 @@ where
         &mut self,
         to: &T::AccountId,
         value: BalanceOf<T>,
-
         _gas_meter: &mut GasMeter<T>,
     ) -> Result<(), DispatchError> {
-        let outbound_message = self.gateway_inbound_protocol.transfer(
+        let outbound_message = self.gateway_inbound_protocol.transfer_escrow(
             <T as CircuitTrait>::AccountId32Converter::convert(self.escrow_account.clone()),
             <T as CircuitTrait>::AccountId32Converter::convert(self.requester.clone()),
             <T as CircuitTrait>::AccountId32Converter::convert(to.clone()),
