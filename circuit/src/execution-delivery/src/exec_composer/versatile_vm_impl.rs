@@ -1,33 +1,29 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::dispatch::DispatchError;
-use frame_support::traits::{Time};
+use frame_support::traits::Time;
 
 use frame_support::{storage::child, storage::child::ChildInfo, storage::unhashed};
 use t3rn_primitives::{
     transfers::{BalanceOf, TransferEntry},
-    EscrowTrait, GatewayPointer
+    EscrowTrait, GatewayPointer,
 };
 
-use sp_std::vec::*; 
-use sp_std::boxed::Box;
 use sp_runtime::traits::Convert;
+use sp_std::boxed::Box;
+use sp_std::vec::*;
 
 use frame_system::Config as SystemTrait;
 use versatile_wasm::*;
-use versatile_wasm::{
-    ext::ExtStandards,
-    gas::GasMeter,
-    VersatileWasm
-};
+use versatile_wasm::{ext::ExtStandards, gas::GasMeter, VersatileWasm};
 
 use crate::Config as CircuitTrait;
 
-pub use crate::message_assembly::circuit_outbound::{CircuitOutboundMessage};
-pub use crate::message_assembly::gateway_inbound_protocol::{GatewayInboundProtocol};
-pub use crate::message_assembly::gateway_inbound_assembly::{GatewayInboundAssembly};
-pub use crate::message_assembly::substrate_gateway_assembly::{SubstrateGatewayAssembly};
-pub use crate::message_assembly::substrate_gateway_protocol::{SubstrateGatewayProtocol};
+pub use crate::message_assembly::circuit_outbound::CircuitOutboundMessage;
+pub use crate::message_assembly::gateway_inbound_assembly::GatewayInboundAssembly;
+pub use crate::message_assembly::gateway_inbound_protocol::GatewayInboundProtocol;
+pub use crate::message_assembly::substrate_gateway_assembly::SubstrateGatewayAssembly;
+pub use crate::message_assembly::substrate_gateway_protocol::SubstrateGatewayProtocol;
 
 pub struct CircuitVersatileWasmEnv<
     'a,
@@ -48,13 +44,11 @@ pub struct CircuitVersatileWasmEnv<
     pub output_mode: OM,
 }
 
-
-
-pub struct StuffedOutputMode { }
+pub struct StuffedOutputMode {}
 
 impl StuffedOutputMode {
     pub fn new() -> Self {
-        StuffedOutputMode { }
+        StuffedOutputMode {}
     }
 }
 
@@ -64,7 +58,6 @@ impl WasmEnvOutputMode for StuffedOutputMode {
         _latest_messsage: CircuitOutboundMessage,
         _previous_ctx_messages: &mut Vec<CircuitOutboundMessage>,
     ) -> Option<Vec<u8>> {
-
         unimplemented!()
     }
     fn return_dispatch_output(
@@ -75,11 +68,11 @@ impl WasmEnvOutputMode for StuffedOutputMode {
         unimplemented!()
     }
 }
-pub struct PessimisticOutputMode { }
+pub struct PessimisticOutputMode {}
 
 impl PessimisticOutputMode {
     pub fn new() -> Self {
-        PessimisticOutputMode { }
+        PessimisticOutputMode {}
     }
 }
 
@@ -89,7 +82,6 @@ impl WasmEnvOutputMode for PessimisticOutputMode {
         _latest_messsage: CircuitOutboundMessage,
         _previous_ctx_messages: &mut Vec<CircuitOutboundMessage>,
     ) -> Option<Vec<u8>> {
-
         unimplemented!()
     }
     fn return_dispatch_output(
@@ -101,11 +93,11 @@ impl WasmEnvOutputMode for PessimisticOutputMode {
     }
 }
 
-pub struct OptimisticOutputMode { }
+pub struct OptimisticOutputMode {}
 
 impl OptimisticOutputMode {
     pub fn new() -> Self {
-        OptimisticOutputMode { }
+        OptimisticOutputMode {}
     }
 }
 
@@ -115,7 +107,6 @@ impl WasmEnvOutputMode for OptimisticOutputMode {
         _latest_messsage: CircuitOutboundMessage,
         _previous_ctx_messages: &mut Vec<CircuitOutboundMessage>,
     ) -> Option<Vec<u8>> {
-
         unimplemented!()
     }
     fn return_dispatch_output(
@@ -142,10 +133,10 @@ pub trait WasmEnvOutputMode {
 }
 
 impl<'a, T: EscrowTrait + SystemTrait, OM> ExtStandards for CircuitVersatileWasmEnv<'a, T, OM>
-    where
-        T: EscrowTrait + SystemTrait + VersatileWasm + CircuitTrait,
-        // GII: GatewayInboundImplementer<GA>,
-        OM: WasmEnvOutputMode,
+where
+    T: EscrowTrait + SystemTrait + VersatileWasm + CircuitTrait,
+    // GII: GatewayInboundImplementer<GA>,
+    OM: WasmEnvOutputMode,
 {
     type T = T;
 
@@ -154,23 +145,29 @@ impl<'a, T: EscrowTrait + SystemTrait, OM> ExtStandards for CircuitVersatileWasm
         // 1. access gateway_inbound_protocol
         // 2. store outbound message in constructed_outbound_messages stack
         // 3. return result using output_mode
-        let outbound_message = self.gateway_inbound_protocol.get_storage(key, self.gateway_pointer.gateway_type.clone());
+        let outbound_message = self
+            .gateway_inbound_protocol
+            .get_storage(*key, self.gateway_pointer.gateway_type.clone());
 
-        self.constructed_outbound_messages.push(
-            outbound_message.clone()
-        );
+        self.constructed_outbound_messages
+            .push(outbound_message.clone());
 
-        self.output_mode.return_output(outbound_message, self.constructed_outbound_messages)
+        self.output_mode
+            .return_output(outbound_message, self.constructed_outbound_messages)
     }
 
     fn set_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>) {
-        let outbound_message = self.gateway_inbound_protocol.set_storage(&key, value, self.gateway_pointer.gateway_type.clone());
-
-        self.constructed_outbound_messages.push(
-            outbound_message.clone()
+        let outbound_message = self.gateway_inbound_protocol.set_storage(
+            key,
+            value,
+            self.gateway_pointer.gateway_type.clone(),
         );
 
-        self.output_mode.return_output(outbound_message, self.constructed_outbound_messages);
+        self.constructed_outbound_messages
+            .push(outbound_message.clone());
+
+        self.output_mode
+            .return_output(outbound_message, self.constructed_outbound_messages);
     }
 
     fn get_raw_storage(&self, key: &StorageKey) -> Option<Vec<u8>> {
@@ -199,23 +196,22 @@ impl<'a, T: EscrowTrait + SystemTrait, OM> ExtStandards for CircuitVersatileWasm
         &mut self,
         to: &T::AccountId,
         value: BalanceOf<T>,
-
         _gas_meter: &mut GasMeter<T>,
     ) -> Result<(), DispatchError> {
-        let outbound_message = self.gateway_inbound_protocol.transfer(
+        let outbound_message = self.gateway_inbound_protocol.transfer_escrow(
             <T as CircuitTrait>::AccountId32Converter::convert(self.escrow_account.clone()),
             <T as CircuitTrait>::AccountId32Converter::convert(self.requester.clone()),
             <T as CircuitTrait>::AccountId32Converter::convert(to.clone()),
             <T as CircuitTrait>::ToStandardizedGatewayBalance::convert(value).into(),
             self.inner_exec_transfers,
-            self.gateway_pointer.gateway_type.clone()
+            self.gateway_pointer.gateway_type.clone(),
         );
 
-        self.constructed_outbound_messages.push(
-            outbound_message.clone()
-        );
+        self.constructed_outbound_messages
+            .push(outbound_message.clone());
 
-        self.output_mode.return_dispatch_output(outbound_message, self.constructed_outbound_messages)
+        self.output_mode
+            .return_dispatch_output(outbound_message, self.constructed_outbound_messages)
     }
 
     fn call(
@@ -236,35 +232,37 @@ impl<'a, T: EscrowTrait + SystemTrait, OM> ExtStandards for CircuitVersatileWasm
             <T as CircuitTrait>::AccountId32Converter::convert(to.clone()),
             <T as CircuitTrait>::ToStandardizedGatewayBalance::convert(value).into(),
             gas_meter.gas_left(),
-            self.gateway_pointer.gateway_type.clone()
+            self.gateway_pointer.gateway_type.clone(),
         );
 
-        self.constructed_outbound_messages.push(
-            outbound_message.clone()
-        );
+        self.constructed_outbound_messages
+            .push(outbound_message.clone());
 
-        self.output_mode.return_dispatch_output(outbound_message, self.constructed_outbound_messages)
+        self.output_mode
+            .return_dispatch_output(outbound_message, self.constructed_outbound_messages)
     }
 
     fn deposit_event(&mut self, topics: Vec<TopicOf<Self::T>>, data: Vec<u8>) {
         <frame_system::Pallet<T>>::deposit_event_indexed(
             &*topics,
-            <Self::T as VersatileWasm>::Event::from(versatile_wasm::RawEvent::VersatileVMExecution(
-                self.escrow_account.clone(),
-                self.requester.clone(),
-                data,
-            ))
-                .into(),
+            <Self::T as VersatileWasm>::Event::from(
+                versatile_wasm::RawEvent::VersatileVMExecution(
+                    self.escrow_account.clone(),
+                    self.requester.clone(),
+                    data,
+                ),
+            )
+            .into(),
         )
     }
 }
 
 impl<'a, T: EscrowTrait + SystemTrait, OM> CircuitVersatileWasmEnv<'a, T, OM>
-    where
-        T: EscrowTrait + SystemTrait + VersatileWasm + CircuitTrait,
-        OM: WasmEnvOutputMode,
+where
+    T: EscrowTrait + SystemTrait + VersatileWasm + CircuitTrait,
+    OM: WasmEnvOutputMode,
 {
-    pub fn new (
+    pub fn new(
         escrow_account: &'a T::AccountId,
         requester: &'a T::AccountId,
         block_number: <T as SystemTrait>::BlockNumber,

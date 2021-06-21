@@ -46,9 +46,49 @@ pub struct CircuitInboundResult {
     pub proof_type: ProofTriePointer,
 }
 
+/// Inbound Steps that specifie expected data deposited by relayers back to the Circuit after each step
+#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]
+pub enum GatewayExpectedOutput {
+    /// Effect would be the modified storage key
+    Storage {
+        key: Vec<[u8; 32]>,
+        // key: Vec<sp_core::storage::StorageKey>,
+        // value: Vec<Option<sp_core::storage::StorageData>>,
+        value: Vec<Option<Bytes>>,
+    },
+
+    /// Expect events as a result of that call - will be described with signature
+    /// and check against the corresponding types upon receiving
+    Events { signatures: Vec<Bytes> },
+
+    /// Yet another event or Storage output
+    Extrinsic {
+        /// Optionally expect dispatch of extrinsic only at the certain block height
+        block_height: Option<u64>,
+    },
+
+    /// Yet another event or Storage output. If expecting output u can define its type format.
+    Output { output: Bytes },
+}
+
+pub struct GatewayOutboundProofs {}
+
 /// Outbound Step that specifies expected transmission medium for relayers connecting with that gateway.
 #[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]
-pub enum MessageTransmissionMedium {
+pub enum MessagePayload {
+    Signed {
+        signer: Bytes,
+        /// Encoded utf-8 string of module name that implements requested entrypoint
+        module_name: Bytes,
+        /// Encoded utf-8 string of method name that implements requested entrypoint
+        method_name: Bytes,
+        /// Encoded call bytes
+        call_bytes: Bytes,
+        /// Encoded tx signature
+        signature: Bytes,
+        /// Encoded extras to that transctions, like versions and gas price /tips for miners. Check GenericExtra for more info.
+        extra: Bytes,
+    },
     /// Request compatible with JSON-RPC API of receiving node
     Rpc {
         /// Encoded utf-8 string of module name that implements requested entrypoint
@@ -80,20 +120,18 @@ pub enum CircuitOutboundMessage {
         /// Array of next arguments: encoded bytes of arguments that that JSON-RPC API expects
         arguments: Vec<Bytes>,
         /// Expected results that will be decoded and checked against the format
-        inbound_results: CircuitInboundResult,
+        expected_output: Vec<GatewayExpectedOutput>,
         /// Expected results
-        transmission_medium: MessageTransmissionMedium,
+        payload: MessagePayload,
     },
     /// Transaction (in substrate extrinics), signed offline and including dispatch call(s)
     Write {
-        /// Encoded sender's public key
-        sender: Bytes,
         /// Array of next arguments: encoded bytes of arguments that that JSON-RPC API expects
         arguments: Vec<Bytes>,
         /// Expected results
-        inbound_results: CircuitInboundResult,
+        expected_output: Vec<GatewayExpectedOutput>,
         /// Expected results
-        transmission_medium: MessageTransmissionMedium,
+        payload: MessagePayload,
     },
     /// Custom transmission medium (like Substrate's XCMP)
     Escrowed {
@@ -104,9 +142,9 @@ pub enum CircuitOutboundMessage {
         /// Array of next arguments: encoded bytes of arguments that that JSON-RPC API expects
         arguments: Vec<Bytes>,
         /// Expected results
-        inbound_results: CircuitInboundResult,
+        expected_output: Vec<GatewayExpectedOutput>,
         /// Expected results
-        transmission_medium: MessageTransmissionMedium,
+        payload: MessagePayload,
     },
 }
 

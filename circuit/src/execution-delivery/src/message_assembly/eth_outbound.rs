@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use t3rn_primitives::{transfers::TransferEntry, GatewayPointer, GatewayType};
+use t3rn_primitives::GatewayPointer;
 
 use codec::{Decode, Encode};
 use serde::{Deserialize, Serialize};
@@ -12,9 +12,9 @@ use ethabi_decode::{encode as eth_abi_encode, Event as EthAbiEvent};
 use sp_runtime::RuntimeString;
 
 use crate::message_assembly::abi::GatewayGenesis;
-use crate::message_assembly::abi::{Bytes, Type};
+use crate::message_assembly::abi::{create_signature, Bytes, Type};
 use crate::message_assembly::circuit_inbound::Proof;
-use ethabi_decode::{Event, Param, ParamKind, Token};
+use ethabi_decode::{Param, ParamKind};
 
 use crate::message_assembly::gateway_outbound_protocol::{
     AsGatewayOutboundEvent, GatewayOutboundEvent, GatewayOutboundEventId,
@@ -68,10 +68,10 @@ impl AsGatewayOutboundEvent for EthLog {
         proof: Option<Proof>,
         args_abi: Vec<Type>,
     ) -> Result<GatewayOutboundEvent, &'static str> {
-        /// translate address into namespace
+        // translate address into namespace
         let namespace = RuntimeString::Owned(self.address.to_string());
 
-        /// decode first topic's first argument to discover event name
+        // decode first topic's first argument to discover event name
         let name = RuntimeString::Owned(self.topics[0].to_string());
 
         let expected_arg_types_eth = from_eth_abi(args_abi.clone())?;
@@ -93,8 +93,7 @@ impl AsGatewayOutboundEvent for EthLog {
 
         Ok(GatewayOutboundEvent {
             id,
-            // signature: create_signature(args_abi, &gateway_pointer),
-            signature: None,
+            signature: Some(create_signature(name.encode(), args_abi.clone())?),
             namespace,
             name,
             data: self.data.clone(),
@@ -115,7 +114,7 @@ pub fn from_eth_abi(from_gateway_abi_type: Vec<Type>) -> Result<Vec<Param>, &'st
                 kind: ParamKind::Bool,
                 indexed: false,
             },
-            Type::Contract(_) | Type::Address(_) => Param {
+            Type::Contract | Type::Address(_) => Param {
                 kind: ParamKind::Address,
                 indexed: false,
             },

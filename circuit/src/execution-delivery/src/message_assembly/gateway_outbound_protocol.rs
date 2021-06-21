@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use t3rn_primitives::{transfers::TransferEntry, GatewayPointer, GatewayType};
+use t3rn_primitives::GatewayPointer;
 
 use codec::{Decode, Encode};
 use serde::{Deserialize, Serialize};
@@ -48,7 +48,7 @@ pub struct GatewayOutboundEvent {
 
     /// Signature -> Ethereum-like event description (first topic)
     /// e.g.
-    pub signature: Option<RuntimeString>,
+    pub signature: Option<Vec<u8>>,
 
     /// module -> namespace or address for eth
     pub namespace: RuntimeString,
@@ -82,7 +82,7 @@ impl GatewayOutboundEvent {
         namespace: RuntimeString,
         data: Bytes,
         proof: Option<Proof>,
-        signature: Option<RuntimeString>,
+        signature: Option<Vec<u8>>,
         args_abi: Vec<Type>,
         args_encoded: Vec<Bytes>,
         gateway_pointer: GatewayPointer,

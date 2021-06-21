@@ -6,12 +6,9 @@ use sp_core::U256;
 use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
 
-// #[cfg(feature = "std")]
-// use std::fmt::Debug;
-
 use crate::message_assembly::abi::Bytes;
 use crate::message_assembly::circuit_outbound::ProofTriePointer;
-use crate::Config;
+use crate::message_assembly::gateway_outbound_protocol::GatewayOutboundEvent;
 
 #[derive(Serialize, Deserialize, Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
 pub enum ProofType {
@@ -50,5 +47,5 @@ pub struct StepConfirmation {
     pub proof_trie_pointer: ProofTriePointer,
     pub pointer_to_value_in_proof: Option<Bytes>,
     pub block_pointer: Bytes,
-    pub output: RawOutput,
+    pub outbound_event: GatewayOutboundEvent,
 }

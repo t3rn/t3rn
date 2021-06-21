@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use t3rn_primitives::{transfers::TransferEntry, GatewayPointer, GatewayType};
+use t3rn_primitives::GatewayPointer;
 
 use codec::{Decode, Encode};
 use serde::{Deserialize, Serialize};
