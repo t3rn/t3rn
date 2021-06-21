@@ -4,6 +4,7 @@ use codec::{Decode, Encode};
 use sp_std::boxed::Box;
 use sp_std::vec::Vec;
 
+use frame_support::ensure;
 use serde::{Deserialize, Serialize};
 use sp_runtime::RuntimeString;
 
@@ -29,7 +30,7 @@ pub enum Type {
     Enum(u8),
     Struct(u8),
     Mapping(Box<Type>, Box<Type>),
-    Contract(u8),
+    Contract,
     Ref(Box<Type>),
     StorageRef(Box<Type>),
     /// There is no way to declare value in Solidity (should there be?)
@@ -76,7 +77,7 @@ impl Type {
         match self {
             Type::Enum(_) => Ok(1),
             Type::Bool => Ok(1),
-            Type::Contract(_) | Type::Address(_) => Ok(gen.address_length as usize),
+            Type::Contract | Type::Address(_) => Ok(gen.address_length as usize),
             Type::Bytes(n) => Ok(*n as usize),
             Type::Uint(n) | Type::Int(n) => Ok((n / 8).into()),
             Type::Struct(n) => {
@@ -91,6 +92,57 @@ impl Type {
                 Ok(struct_size.into())
             }
             Type::String | Type::DynamicBytes => Ok(4),
+            _ => unimplemented!(),
+        }
+    }
+
+    pub fn to_string_bytes(&self) -> &[u8] {
+        match self {
+            Type::Enum(_) => b"enum",
+            Type::Bool => b"bool",
+            Type::Contract => b"contract",
+            Type::Address(_) => b"address",
+            Type::Bytes(_) => b"bytes",
+            Type::Uint(n) => match n {
+                32 => b"uint32",
+                64 => b"uint32",
+                128 => b"uint32",
+                _ => unimplemented!(),
+            },
+            Type::Int(n) => match n {
+                32 => b"int32",
+                64 => b"int32",
+                128 => b"int32",
+                _ => unimplemented!(),
+            },
+            Type::String => b"string",
+            Type::DynamicBytes => b"dynamic_bytes",
+            Type::DynamicAddress => b"dynamic_address",
+            _ => unimplemented!(),
+        }
+    }
+
+    pub fn to_string(&self) -> RuntimeString {
+        match self {
+            Type::Enum(_) => RuntimeString::from("enum"),
+            Type::Bool => RuntimeString::from("bool"),
+            Type::Contract => RuntimeString::from("contract"),
+            Type::Address(_) => RuntimeString::from("address"),
+            Type::Bytes(_) => RuntimeString::from("bytes"),
+            Type::Uint(n) => match n {
+                32 => RuntimeString::from("uint32"),
+                64 => RuntimeString::from("uint64"),
+                128 => RuntimeString::from("uint128"),
+                _ => unimplemented!(),
+            },
+            Type::Int(n) => match n {
+                32 => RuntimeString::from("int32"),
+                64 => RuntimeString::from("int64"),
+                128 => RuntimeString::from("int128"),
+                _ => unimplemented!(),
+            },
+            Type::String => RuntimeString::from("string"),
+            Type::DynamicBytes => RuntimeString::from("dynamic_bytes"),
             _ => unimplemented!(),
         }
     }
@@ -168,12 +220,75 @@ impl Type {
     }
 }
 
-pub fn create_signature() {
-    unimplemented!()
+pub fn from_bytes_string(bytes_string: &[u8]) -> Type {
+    match bytes_string {
+        b"bool" => Type::Bool,
+        b"contract" => Type::Contract,
+        b"address" => Type::Address(20),
+        b"dynamic_address" => Type::DynamicAddress,
+        b"bytes" => Type::DynamicBytes,
+        b"dynamic_bytes" => Type::DynamicBytes,
+        b"uint32" => Type::Uint(32),
+        b"uint64" => Type::Uint(64),
+        b"uint128" => Type::Uint(128),
+        b"int32" => Type::Uint(32),
+        b"int64" => Type::Uint(64),
+        b"int128" => Type::Uint(128),
+        b"string" => Type::String,
+        _ => unimplemented!(),
+    }
 }
 
-pub fn from_signature_to_abi() {
-    unimplemented!()
+pub fn create_signature(
+    name_encoded: Vec<u8>,
+    args_abi: Vec<Type>,
+) -> Result<Vec<u8>, &'static str> {
+    const BEGIN_ARGS_CHAR: u8 = b'(';
+    const END_ARGS_CHAR: u8 = b')';
+    const COMMA_SEPARATOR: u8 = b',';
+
+    let name_bytes: &[u8] = name_encoded.as_slice();
+
+    let middle_args = args_abi
+        .iter()
+        .map(|t| t.to_string_bytes())
+        .collect::<Vec<&[u8]>>()
+        .as_slice()
+        .join(&COMMA_SEPARATOR);
+
+    let r = [
+        name_bytes,
+        &[BEGIN_ARGS_CHAR],
+        middle_args.as_slice(),
+        &[END_ARGS_CHAR],
+    ]
+    .concat();
+
+    Ok(r)
+}
+
+pub fn from_signature_to_abi(signature: Vec<u8>) -> Result<(Vec<u8>, Vec<Type>), &'static str> {
+    const BEGIN_ARGS_CHAR: u8 = b'(';
+    const END_ARGS_CHAR: u8 = b')';
+    const COMMA_SEPARATOR: u8 = b',';
+
+    let mut signature_iter = signature
+        .as_slice()
+        .split(|x| x.eq(&BEGIN_ARGS_CHAR) || x.eq(&COMMA_SEPARATOR) || x.eq(&END_ARGS_CHAR))
+        .filter(|&x| !x.is_empty());
+
+    let maybe_name = signature_iter.next().unwrap_or(&[]);
+
+    ensure!(
+        !maybe_name.is_empty(),
+        "Can't find a name while reading event's ABI"
+    );
+
+    let types = signature_iter
+        .map(|arg_candidate| from_bytes_string(arg_candidate))
+        .collect::<Vec<Type>>();
+
+    Ok((maybe_name.to_vec(), types))
 }
 
 pub fn decode_buf2val<D: Decode>(buf: Vec<u8>) -> Result<D, &'static str> {
@@ -181,4 +296,31 @@ pub fn decode_buf2val<D: Decode>(buf: Vec<u8>) -> Result<D, &'static str> {
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use super::*;
+    use std::string::String;
+
+    #[test]
+    fn successfully_creates_signature() {
+        let test_types_vec: Vec<Type> = vec![Type::Bytes(64), Type::Address(20), Type::Uint(64)];
+        let test_name = b"testName".to_vec();
+        let signature_bytes = create_signature(test_name, test_types_vec).unwrap();
+        let signature_string = String::from_utf8(signature_bytes).unwrap();
+
+        assert_eq!(signature_string, "testName(bytes,address,uint32)");
+    }
+
+    #[test]
+    fn successfully_interprets_signature_into_abi_types() {
+        let test_signature_bytes = b"testName(bytes,address,uint32)".to_vec();
+
+        let res = from_signature_to_abi(test_signature_bytes).unwrap();
+        assert_eq!(
+            (
+                b"testName".to_vec(),
+                vec![Type::DynamicBytes, Type::Address(20), Type::Uint(32),],
+            ),
+            res
+        );
+    }
+}
