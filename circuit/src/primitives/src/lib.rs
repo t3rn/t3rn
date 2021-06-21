@@ -23,24 +23,25 @@ use frame_support::traits::{Currency, Time};
 
 use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
+use serde::{Deserialize, Serialize};
 
 pub mod transfers;
 
 pub type InstanceId = [u8; 4];
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
+#[derive(Clone, Serialize, Deserialize,  Eq, PartialEq, Encode, Decode, RuntimeDebug)]
 pub enum GatewayType {
     ProgrammableInternal,
     ProgrammableExternal,
     TxOnly,
 }
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
+#[derive(Clone, Serialize, Deserialize,  Eq, PartialEq, Encode, Decode, RuntimeDebug)]
 pub enum GatewayVendor {
     Substrate,
 }
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
+#[derive(Clone, Serialize, Deserialize, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
 pub struct GatewayPointer {
     pub id: InstanceId,
     pub vendor: GatewayVendor,
@@ -48,7 +49,7 @@ pub struct GatewayPointer {
 }
 
 /// A struct that encodes RPC parameters required for a call to a smart-contract.
-#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, Clone, Default)]
+#[derive(Eq, PartialEq, Encode, Decode, Serialize, Deserialize, RuntimeDebug, Clone, Default)]
 pub struct Compose<Account, Balance> {
     pub name: Vec<u8>,
     pub code_txt: Vec<u8>,
@@ -63,7 +64,7 @@ pub struct Compose<Account, Balance> {
 pub type FetchContractsResult = Result<Option<Vec<u8>>, ContractAccessError>;
 
 /// A result of execution of a contract.
-#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, Clone)]
+#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug,  Serialize, Deserialize, Clone)]
 pub enum ComposableExecResult {
     /// The contract returned successfully.
     ///
@@ -84,7 +85,7 @@ pub enum ComposableExecResult {
 }
 
 /// The possible errors that can happen querying the storage of a contract.
-#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, Clone)]
+#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug,  Serialize, Deserialize, Clone)]
 pub enum ContractAccessError {
     /// The given address doesn't point to a contract.
     DoesntExist,
@@ -92,16 +93,16 @@ pub enum ContractAccessError {
     IsTombstone,
 }
 
-#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, Clone, Default)]
+#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, Clone, Default,  Serialize, Deserialize)]
 pub struct ExecPhase<Account, Balance> {
     pub steps: Vec<ExecStep<Account, Balance>>,
 }
 
-#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, Clone, Default)]
+#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, Clone, Default,  Serialize, Deserialize)]
 pub struct ExecStep<Account, Balance> {
     pub compose: Compose<Account, Balance>,
 }
-#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, Clone, Default)]
+#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, Clone, Default,  Serialize, Deserialize)]
 pub struct InterExecSchedule<Account, Balance> {
     pub phases: Vec<ExecPhase<Account, Balance>>,
 }
