@@ -65,9 +65,6 @@ impl<Pair, Hash> GatewayInboundProtocol for SubstrateGatewayProtocol<Pair, Hash>
     // key[16..32].copy_from_slice(&Twox128::hash(storage_prefix));
     fn get_storage(&self, key: [u8; 32], _gateway_type: GatewayType) -> CircuitOutboundMessage {
         // events
-        let expected_events = GatewayExpectedOutput::Events {
-            signatures: vec![b"Transfer(address,address,value)".to_vec()],
-        };
         // storage
         let expected_storage = GatewayExpectedOutput::Storage {
             key: vec![key],
@@ -77,7 +74,7 @@ impl<Pair, Hash> GatewayInboundProtocol for SubstrateGatewayProtocol<Pair, Hash>
 
         CircuitOutboundMessage::Read {
             arguments,
-            expected_output: vec![expected_events, expected_storage],
+            expected_output: vec![expected_storage],
             payload: MessagePayload::Rpc {
                 module_name: b"state".to_vec(),
                 method_name: b"getStorage".to_vec(),
@@ -108,7 +105,7 @@ impl<Pair, Hash> GatewayInboundProtocol for SubstrateGatewayProtocol<Pair, Hash>
             expected_output: vec![expected_storage],
             payload: self.produce_signed_payload(
                 b"state".to_vec(),
-                b"getStorage".to_vec(),
+                b"setStorage".to_vec(),
                 arguments,
             ),
         }
