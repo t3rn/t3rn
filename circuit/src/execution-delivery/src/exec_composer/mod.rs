@@ -221,7 +221,7 @@ impl ExecComposer {
     }
 
     fn retrieve_gateway_protocol<T: crate::Config>(
-        submitter_id: AuthorityId,
+        submitter_id: T::AuthorityId,
         _gateway_pointer: GatewayPointer,
     ) -> Result<Box<dyn GatewayInboundProtocol>, &'static str> {
         // ToDo: Communicate with pallet_xdns in order to retrieve latest data about

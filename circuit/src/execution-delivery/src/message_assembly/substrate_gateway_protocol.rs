@@ -15,12 +15,19 @@ use super::circuit_outbound::{CircuitOutboundMessage, GatewayExpectedOutput, Mes
 
 use super::gateway_inbound_protocol::GatewayInboundProtocol;
 use super::substrate_gateway_assembly::SubstrateGatewayAssembly;
+use sp_runtime::RuntimeAppPublic;
 
-pub struct SubstrateGatewayProtocol<Pair, Hash> {
+pub struct SubstrateGatewayProtocol<Pair, Hash>
+where
+    Pair: RuntimeAppPublic,
+{
     pub assembly: SubstrateGatewayAssembly<Pair, Hash>,
 }
 
-impl<Pair, Hash> SubstrateGatewayProtocol<Pair, Hash> {
+impl<Pair, Hash> SubstrateGatewayProtocol<Pair, Hash>
+where
+    Pair: RuntimeAppPublic,
+{
     pub fn new(
         metadata: Metadata,
         runtime_version: RuntimeVersion,
@@ -58,7 +65,10 @@ impl<Pair, Hash> SubstrateGatewayProtocol<Pair, Hash> {
     }
 }
 
-impl<Pair, Hash> GatewayInboundProtocol for SubstrateGatewayProtocol<Pair, Hash> {
+impl<Pair, Hash> GatewayInboundProtocol for SubstrateGatewayProtocol<Pair, Hash>
+where
+    Pair: RuntimeAppPublic,
+{
     // Get storage key directly to foreign storage system
     // For substrate that follows the following key formats:
     // key[0..16].copy_from_slice(&Twox128::hash(module_prefix));

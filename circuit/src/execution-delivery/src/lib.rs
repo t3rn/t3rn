@@ -102,7 +102,7 @@ pub mod crypto {
 
 pub use pallet::*;
 
-pub fn select_validator_for_x_tx_dummy<T: Config>(
+pub fn select_validator_for_x_tx_dummy<T: crate::Config>(
     _io_schedule: Vec<u8>,
 ) -> Result<T::AccountId, &'static str> {
     // This is the well-known Substrate account of Alice (5GrwvaEF...)
@@ -645,7 +645,7 @@ impl<T: Config> Pallet<T> {
                 .map_err(|_e| "Can't cast value in dry_run_single_contract")?,
         );
 
-        let local_keys = <T as pallet_im_online::Config>::AuthorityId::all();
+        let local_keys = T::AuthorityId::all();
 
         // ToDo: Select validators to submit by his public key, like:
         // let submitter = local_keys.binary_search(&escrow_account.into()).ok().map(|location| local_keys[location].clone()).ok_or("Can't match")?;

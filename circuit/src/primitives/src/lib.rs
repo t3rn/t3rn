@@ -18,16 +18,25 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
+use hex;
+#[cfg(feature = "std")]
+use std::fmt;
+
+use codec::{Compact, Decode, Encode, Error, Input};
 use frame_support::traits::{Currency, Time};
+use sp_core::{blake2_256, H256};
 
 use serde::{Deserialize, Serialize};
-use sp_runtime::RuntimeDebug;
+use sp_runtime::{
+    generic::Era, AccountId32 as AccountId, MultiAddress, MultiSignature, RuntimeDebug,
+};
 use sp_std::prelude::*;
 
 pub mod transfers;
 
 pub type InstanceId = [u8; 4];
+
+pub type GenericAddress = sp_runtime::MultiAddress<AccountId, ()>;
 
 #[derive(Clone, Serialize, Deserialize, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
 pub enum GatewayType {
@@ -137,16 +146,20 @@ impl Default for GenericExtra {
 
 /// AdditionalSigned fields of the respective SignedExtra fields.
 /// Order is the same as declared in the extra.
-pub type AdditionalSigned = (u32, u32, H256, H256, (), (), ());
+pub type AdditionalSigned<Hash> = (u32, u32, Hash, Hash, (), (), ());
 
 #[derive(Encode, Clone)]
-pub struct SignedPayload<Call>((Call, GenericExtra, AdditionalSigned));
+pub struct SignedPayload<Call, Hash>((Call, GenericExtra, AdditionalSigned<Hash>));
 
-impl<Call> SignedPayload<Call>
+impl<Call, Hash> SignedPayload<Call, Hash>
 where
     Call: Encode,
 {
-    pub fn from_raw(call: Call, extra: GenericExtra, additional_signed: AdditionalSigned) -> Self {
+    pub fn from_raw(
+        call: Call,
+        extra: GenericExtra,
+        additional_signed: AdditionalSigned<Hash>,
+    ) -> Self {
         Self((call, extra, additional_signed))
     }
 
