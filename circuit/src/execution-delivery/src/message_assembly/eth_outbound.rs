@@ -11,8 +11,8 @@ use ethabi_decode::{encode as eth_abi_encode, Event as EthAbiEvent};
 
 use sp_runtime::RuntimeString;
 
-use crate::message_assembly::abi::GatewayGenesis;
-use crate::message_assembly::abi::{create_signature, Bytes, Type};
+use t3rn_primitives::abi::GatewayABIConfig;
+use t3rn_primitives::abi::{create_signature, Bytes, Type};
 use crate::message_assembly::circuit_inbound::Proof;
 use ethabi_decode::{Param, ParamKind};
 
@@ -63,7 +63,7 @@ impl AsGatewayOutboundEvent for EthLog {
     fn parse_data_to_gateway_outbound_event(
         &self,
         gateway_pointer: GatewayPointer,
-        _gateway_genesis: GatewayGenesis,
+        _gateway_genesis: GatewayABIConfig,
         id: GatewayOutboundEventId,
         proof: Option<Proof>,
         args_abi: Vec<Type>,

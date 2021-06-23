@@ -13,7 +13,6 @@ pub mod eth_outbound;
 pub mod gateway_outbound_protocol;
 pub mod substrate_outbound;
 
-pub mod abi;
 pub mod chain_generic_metadata;
 
 #[macro_use]

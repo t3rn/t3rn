@@ -43,6 +43,8 @@ impl<Pair, Hash> SubstrateGatewayProtocol<Pair, Hash> {
         name: Vec<u8>,
         _arguments: Vec<Vec<u8>>,
     ) -> MessagePayload {
+
+
         // let call_bytes = compose_call!(name_str, name_str, arguments).to_vec();
         // let tx = compose_call!(namespace, name);
 

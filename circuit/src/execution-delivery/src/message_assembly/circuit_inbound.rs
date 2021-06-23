@@ -6,7 +6,7 @@ use sp_core::U256;
 use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
 
-use crate::message_assembly::abi::Bytes;
+use t3rn_primitives::abi::Bytes;
 use crate::message_assembly::circuit_outbound::ProofTriePointer;
 use crate::message_assembly::gateway_outbound_protocol::GatewayOutboundEvent;
 

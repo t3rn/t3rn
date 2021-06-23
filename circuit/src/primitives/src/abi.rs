@@ -39,33 +39,60 @@ pub enum Type {
     Slice,
 }
 
-/// When resolving a Solidity file, this holds all the resolved items
-#[derive(Serialize, Deserialize, PartialEq, Clone, Encode, Decode, Eq, Debug)]
-pub struct GatewayGenesis {
+#[derive(Serialize, Deserialize, PartialEq, Clone, Encode, Decode, Eq, Hash, Debug)]
+pub enum HasherAlgo {
+    Blake2,
+    Keccak256,
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Clone, Encode, Decode, Eq, Hash, Debug)]
+pub enum CryptoAlgo {
+    Ed25519,
+    Sr25519,
+    Ecdsa,
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Clone, Encode, Decode, Eq, Hash, Debug)]
+/// Describe ABI configuration for a gateway so that it's possible to cast types
+/// of inbound and outbound messages to that gateway
+pub struct GatewayABIConfig {
+    /// block number type in bytes
+    pub block_number_type_size: u16,
+    /// hash size in bytes
+    pub hash_size: u16,
+    /// hashing algorithm
+    pub hasher: HasherAlgo,
+    /// cryptography algorithm
+    pub crypto: CryptoAlgo,
     /// address length in bytes
     pub address_length: u32,
     /// value length in bytes
-    pub value_length: u32,
+    pub value_type_size: u32,
     /// value length in bytes
     pub decimals: u32,
-    /// value length in bytes
+    /// value length in bytes. ToDo: move as part of metadata.
     pub structs: Vec<StructDecl>,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Clone, Encode, Decode, Eq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Clone, Encode, Decode, Eq, Hash, Debug)]
 pub struct Parameter {
-    // The name can empty (e.g. in an event field or unnamed parameter/return)
-    pub name: Option<RuntimeString>,
+    /// The name can empty (e.g. in an event field or unnamed parameter/return); encoded vector
+    pub name: Option<Vec<u8>>,
+    /// ABI type
     pub ty: Type,
+    /// number in order
     pub no: u32,
-    pub indexed: bool,
+    /// is indexed - follows the ethereum logs pattern where longer exceeding 32 bytes values are indexed
+    pub indexed: Option<bool>,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Clone, Encode, Decode, Eq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Clone, Encode, Decode, Eq, Hash, Debug)]
 pub struct StructDecl {
-    pub name: RuntimeString,
+    /// encoded name of the struct
+    pub name: Type,
+    /// list of fields, each of them will have corresponding no.
     pub fields: Vec<Parameter>,
-    // List of offsets of the fields, last entry is the offset for the struct overall size
+    /// List of offsets of the fields, last entry is the offset for the struct overall size
     pub offsets: Vec<u16>,
 }
 
@@ -73,7 +100,7 @@ impl Type {
     /// Calculate how much memory we expect this type to use when allocated on the
     /// stack or on the heap. Depending on the llvm implementation there might be
     /// padding between elements which is not accounted for.
-    pub fn size_of(&self, gen: &GatewayGenesis) -> Result<usize, &'static str> {
+    pub fn size_of(&self, gen: &GatewayABIConfig) -> Result<usize, &'static str> {
         match self {
             Type::Enum(_) => Ok(1),
             Type::Bool => Ok(1),
@@ -151,7 +178,7 @@ impl Type {
     pub fn eval(
         &self,
         encoded_val: Vec<u8>,
-        _gen: &GatewayGenesis,
+        _gen: &GatewayABIConfig,
     ) -> Result<Box<dyn sp_std::any::Any>, &'static str> {
         match self {
             Type::Address(size) => match size {

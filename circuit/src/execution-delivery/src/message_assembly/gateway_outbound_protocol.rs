@@ -9,8 +9,7 @@ use sp_std::vec::*;
 
 use sp_runtime::RuntimeString;
 
-use crate::message_assembly::abi::GatewayGenesis;
-use crate::message_assembly::abi::{Bytes, Type};
+use t3rn_primitives::abi::{Bytes, GatewayABIConfig, Type};
 use crate::message_assembly::circuit_inbound::Proof;
 
 #[cfg(feature = "no_std")]
@@ -26,7 +25,7 @@ pub trait AsGatewayOutboundEvent {
     fn parse_data_to_gateway_outbound_event(
         &self,
         gateway_pointer: GatewayPointer,
-        gateway_genesis: GatewayGenesis,
+        gateway_genesis: GatewayABIConfig,
         id: GatewayOutboundEventId,
         proof: Option<Proof>,
         args_abi: Vec<Type>,
