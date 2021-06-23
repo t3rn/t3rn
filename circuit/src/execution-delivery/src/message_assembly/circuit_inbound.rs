@@ -6,9 +6,9 @@ use sp_core::U256;
 use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
 
-use t3rn_primitives::abi::Bytes;
 use crate::message_assembly::circuit_outbound::ProofTriePointer;
 use crate::message_assembly::gateway_outbound_protocol::GatewayOutboundEvent;
+use t3rn_primitives::abi::Bytes;
 
 #[derive(Serialize, Deserialize, Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
 pub enum ProofType {

@@ -1,6 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_std::vec;
 use sp_std::vec::*;
 
 use codec::{Compact, Encode};
@@ -9,21 +8,30 @@ use crate::message_assembly::chain_generic_metadata::Metadata;
 
 use sp_version::RuntimeVersion;
 
-use super::gateway_inbound_assembly::{GatewayInboundAssembly, SingedBytes};
+use super::gateway_inbound_assembly::GatewayInboundAssembly;
 
 // #[macro_use]
 use crate::compose_call;
-use crate::compose_extrinsic_offline;
 
-pub struct SubstrateGatewayAssembly<Pair, Hash> {
+use sp_runtime::RuntimeAppPublic;
+use t3rn_primitives::{GenericExtra, SignedPayload, UncheckedExtrinsicV4};
+
+pub struct SubstrateGatewayAssembly<Pair, Hash>
+where
+    Pair: RuntimeAppPublic,
+    Hash: Clone,
+{
     pub metadata: Metadata,
     pub runtime_version: RuntimeVersion,
     pub genesis_hash: Hash,
     pub submitter_pair: Pair,
 }
 
-// ToDo: Use the same sp_core library as rest of crate instead of accessing on from ext sub_api_client :(
-impl<Pair, Hash> SubstrateGatewayAssembly<Pair, Hash> {
+impl<Pair, Hash> SubstrateGatewayAssembly<Pair, Hash>
+where
+    Pair: RuntimeAppPublic,
+    Hash: Clone,
+{
     pub fn new(
         metadata: Metadata,
         runtime_version: RuntimeVersion,
@@ -39,7 +47,11 @@ impl<Pair, Hash> SubstrateGatewayAssembly<Pair, Hash> {
     }
 }
 
-impl<Pair, Hash> GatewayInboundAssembly for SubstrateGatewayAssembly<Pair, Hash> {
+impl<Pair, Hash> GatewayInboundAssembly for SubstrateGatewayAssembly<Pair, Hash>
+where
+    Pair: RuntimeAppPublic,
+    Hash: Clone,
+{
     fn assemble_signed_call(
         &self,
         module_name: &'static str,
@@ -48,9 +60,8 @@ impl<Pair, Hash> GatewayInboundAssembly for SubstrateGatewayAssembly<Pair, Hash>
         to: [u8; 32],
         value: u128,
         gas: u64,
-    ) -> SingedBytes {
+    ) -> UncheckedExtrinsicV4<Vec<u8>> {
         let call = self.assemble_call(module_name, fn_name, data, to, value, gas);
-
         self.assemble_signed_tx_offline(call, 0)
     }
 
@@ -83,22 +94,52 @@ impl<Pair, Hash> GatewayInboundAssembly for SubstrateGatewayAssembly<Pair, Hash>
         call.encode()
     }
 
-    fn assemble_signed_tx_offline(&self, call_bytes: Vec<u8>, _nonce: u32) -> SingedBytes {
-        let xt: Vec<u8> = compose_extrinsic_offline!(
-            &self.submitter_pair,
+    fn assemble_signed_tx_offline(
+        &self,
+        call_bytes: Vec<u8>,
+        nonce: u32,
+    ) -> UncheckedExtrinsicV4<Vec<u8>> {
+        let signed_tx = &self
+            .submitter_pair
+            .sign(&call_bytes)
+            .expect("Signature should be there");
+
+        // Using the GenericExtra type from substrate-api-client
+        // It does not implement
+        let extra = GenericExtra::new(sp_runtime::generic::Era::Immortal, nonce.clone());
+
+        let raw_payload = SignedPayload::from_raw(
             call_bytes.clone(),
-            nonce,
-            sp_runtime::generic::Era::Immortal,
-            self.genesis_hash.clone(),
-            self.genesis_hash.clone(),
-            self.runtime_version.spec_version,
-            self.runtime_version.transaction_version
+            extra.clone(),
+            (
+                nonce,
+                self.runtime_version.transaction_version,
+                &self.genesis_hash, //dropped the clone here and below due to missing trait, not sure if correct
+                &self.genesis_hash,
+                (),
+                (),
+                (),
+            ),
         );
 
-        SingedBytes {
-            signature: xt.encode(),
-            extra: None,
-            payload: call_bytes,
+        // this one is failing cause &[u8] is not Sized
+        let signature =
+            raw_payload.using_encoded(|payload| self.submitter_pair.sign(&payload.encode()));
+
+        //     let mut arr = Default::default();
+        //     arr.clone_from_slice($signer.public().as_ref());
+        //
+        // UncheckedExtrinsicV4::new_signed(
+        //     call_bytes,
+        //     GenericAddress::from(AccountId::from(arr)),
+        //     signature,
+        //     extra,
+        // )
+
+        // dummy return
+        UncheckedExtrinsicV4 {
+            function: call_bytes,
+            signature: None,
         }
     }
 }

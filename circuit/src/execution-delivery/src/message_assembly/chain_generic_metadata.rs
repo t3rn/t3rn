@@ -109,7 +109,6 @@ fn convert<B: 'static, O: 'static>(dd: DecodeDifferent<B, O>) -> Result<O, &'sta
 //     pub structs: Vec<StructDecl>,
 // }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -117,26 +116,17 @@ mod tests {
 
     struct TestGatewayProtocol {}
 
-    impl SubstrateOutboundProtocol for TestGatewayProtocol {
+    impl SubstrateOutboundProtocol for TestGatewayProtocol {}
 
-    }
-
-    impl SubstrateOutboundProtocol for TestGatewayProtocol {
-
-    }
+    impl SubstrateOutboundProtocol for TestGatewayProtocol {}
 
     #[test]
     fn successfully_creates_example_eth_like_chain_description() {
-
-
-        let test_gateway_protocol = GatewayProtocol::new(
-            TestChainConfig
-        );
+        let test_gateway_protocol = GatewayProtocol::new(TestChainConfig);
 
         test_gateway_protocol.get_genesis_config_abi();
 
         /// impl get_protocol_info -> GenesisInfo { types info + structs info }
-
         //     pub gateway_inbound_protocol: Box<dyn GatewayInboundProtocol>,
         // let outbound_message = self.gateway_inbound_protocol.transfer_escrow(
         //     <T as CircuitTrait>::AccountId32Converter::convert(self.escrow_account.clone()),
@@ -146,8 +136,6 @@ mod tests {
         //     self.inner_exec_transfers,
         //     self.gateway_pointer.gateway_type.clone(),
         // );
-
-
 
         // -> code | instantiate_gateway (pointer) ->
         //          { metadata, runtime_version, genesis_hash, submitter_pair } // messaging_params
@@ -174,8 +162,5 @@ mod tests {
         //
         //
         // }
-
     }
-
 }
-

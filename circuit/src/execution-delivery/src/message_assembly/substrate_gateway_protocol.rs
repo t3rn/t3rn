@@ -15,12 +15,21 @@ use super::circuit_outbound::{CircuitOutboundMessage, GatewayExpectedOutput, Mes
 
 use super::gateway_inbound_protocol::GatewayInboundProtocol;
 use super::substrate_gateway_assembly::SubstrateGatewayAssembly;
+use sp_runtime::RuntimeAppPublic;
 
-pub struct SubstrateGatewayProtocol<Pair, Hash> {
+pub struct SubstrateGatewayProtocol<Pair, Hash>
+where
+    Pair: RuntimeAppPublic,
+    Hash: Clone,
+{
     pub assembly: SubstrateGatewayAssembly<Pair, Hash>,
 }
 
-impl<Pair, Hash> SubstrateGatewayProtocol<Pair, Hash> {
+impl<Pair, Hash> SubstrateGatewayProtocol<Pair, Hash>
+where
+    Pair: RuntimeAppPublic,
+    Hash: Clone,
+{
     pub fn new(
         metadata: Metadata,
         runtime_version: RuntimeVersion,
@@ -43,8 +52,6 @@ impl<Pair, Hash> SubstrateGatewayProtocol<Pair, Hash> {
         name: Vec<u8>,
         _arguments: Vec<Vec<u8>>,
     ) -> MessagePayload {
-
-
         // let call_bytes = compose_call!(name_str, name_str, arguments).to_vec();
         // let tx = compose_call!(namespace, name);
 
@@ -60,7 +67,11 @@ impl<Pair, Hash> SubstrateGatewayProtocol<Pair, Hash> {
     }
 }
 
-impl<Pair, Hash> GatewayInboundProtocol for SubstrateGatewayProtocol<Pair, Hash> {
+impl<Pair, Hash> GatewayInboundProtocol for SubstrateGatewayProtocol<Pair, Hash>
+where
+    Pair: RuntimeAppPublic,
+    Hash: Clone,
+{
     // Get storage key directly to foreign storage system
     // For substrate that follows the following key formats:
     // key[0..16].copy_from_slice(&Twox128::hash(module_prefix));

@@ -11,10 +11,10 @@ use ethabi_decode::{encode as eth_abi_encode, Event as EthAbiEvent};
 
 use sp_runtime::RuntimeString;
 
-use t3rn_primitives::abi::GatewayABIConfig;
-use t3rn_primitives::abi::{create_signature, Bytes, Type};
 use crate::message_assembly::circuit_inbound::Proof;
 use ethabi_decode::{Param, ParamKind};
+use t3rn_primitives::abi::GatewayABIConfig;
+use t3rn_primitives::abi::{create_signature, Bytes, Type};
 
 use crate::message_assembly::gateway_outbound_protocol::{
     AsGatewayOutboundEvent, GatewayOutboundEvent, GatewayOutboundEventId,

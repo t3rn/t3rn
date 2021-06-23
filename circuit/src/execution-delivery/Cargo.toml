@@ -36,27 +36,27 @@ sp-std = { default-features = false, git = "https://github.com/paritytech/substr
 sp-version = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-application-crypto = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 
-pallet-bridge-messages = { default-features = false, path = "../../bridges/modules/messages" }
+pallet-bridge-messages = { default-features = false, path = "../../../vendor/bridges/modules/messages" }
 pallet-transaction-payment = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 pallet-randomness-collective-flip = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
-pallet-multi-finality-verifier = { default-features = false, path = "../../bridges/modules/multi-finality-verifier" }
-pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-im-online = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-sudo = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-multi-finality-verifier = { default-features = false, path = "../../../vendor/bridges/modules/multi-finality-verifier" }
+pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+pallet-im-online = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+pallet-sudo = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 
 pallet-xdns = { default-features = false, path = "../xdns" }
 pallet-contracts-registry = { default-features = false, path = "../contracts-registry" }
 
-bp-runtime = { default-features = false, path = "../../bridges/primitives/runtime" }
-bp-messages = { default-features = false, path = "../../bridges/primitives/messages" }
-bp-circuit = { default-features = false, path = "../../bridges/primitives/chain-circuit" }
-bp-polkadot-core = { default-features = false, path = "../../bridges/primitives/polkadot-core" }
+bp-runtime = { default-features = false, path = "../../../vendor/bridges/primitives/runtime" }
+bp-messages = { default-features = false, path = "../../../vendor/bridges/primitives/messages" }
+bp-circuit = { default-features = false, path = "../../../vendor/bridges/primitives/chain-circuit" }
+bp-polkadot-core = { default-features = false, path = "../../../vendor/bridges/primitives/polkadot-core" }
 
 # Smart contracts VMs
-pallet-evm = { path = "../../frontier/frame/evm", default-features = false  }
-pallet-evm-precompile-simple = { path = "../../frontier/frame/evm/precompile/simple", default-features = false }
-pallet-contracts = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-evm = { path = "../../../vendor/frontier/frame/evm", default-features = false  }
+pallet-evm-precompile-simple = { path = "../../../vendor/frontier/frame/evm/precompile/simple", default-features = false }
+pallet-contracts = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 ethabi-decode = { git = "https://github.com/Snowfork/ethabi-decode.git", branch = "master", default-features = false }
 
 # for tests only

@@ -9,9 +9,9 @@ use sp_std::vec::*;
 
 use sp_runtime::RuntimeString;
 
+use crate::message_assembly::circuit_inbound::Proof;
 use t3rn_primitives::abi::GatewayABIConfig;
 use t3rn_primitives::abi::{Bytes, Type};
-use crate::message_assembly::circuit_inbound::Proof;
 
 use crate::message_assembly::gateway_outbound_protocol::{
     AsGatewayOutboundEvent, GatewayOutboundEvent, GatewayOutboundEventId,

@@ -9,8 +9,8 @@ use sp_std::vec::*;
 
 use sp_runtime::RuntimeString;
 
-use t3rn_primitives::abi::{Bytes, GatewayABIConfig, Type};
 use crate::message_assembly::circuit_inbound::Proof;
+use t3rn_primitives::abi::{Bytes, GatewayABIConfig, Type};
 
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
