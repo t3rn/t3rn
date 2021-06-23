@@ -22,7 +22,12 @@ use codec::{Decode, Encode};
 use frame_support::traits::{Currency, Time};
 
 use serde::{Deserialize, Serialize};
-use sp_runtime::RuntimeDebug;
+#[cfg(feature = "no_std")]
+use sp_runtime::RuntimeDebug as Debug;
+
+#[cfg(feature = "std")]
+use std::fmt::Debug;
+
 use sp_std::prelude::*;
 
 pub mod abi;
@@ -30,27 +35,50 @@ pub mod transfers;
 
 pub type InstanceId = [u8; 4];
 
-#[derive(Clone, Serialize, Deserialize, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
+#[derive(Clone, Serialize, Deserialize, Eq, PartialEq, Encode, Decode, Debug)]
 pub enum GatewayType {
     ProgrammableInternal,
     ProgrammableExternal,
     TxOnly,
 }
 
-#[derive(Clone, Serialize, Deserialize, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
+#[derive(Clone, Serialize, Deserialize, Eq, PartialEq, Encode, Decode, Debug)]
 pub enum GatewayVendor {
     Substrate,
 }
 
-#[derive(Clone, Serialize, Deserialize, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
+#[derive(Clone, Serialize, Deserialize, Eq, PartialEq, Encode, Decode, Debug)]
+/// Structure used at gateway registration as a starting point for multi-finality-verifier
+pub struct GenericPrimitivesHeader {
+    pub parent_hash: Option<sp_core::hash::H256>,
+    pub number: u64,
+    pub state_root: Option<sp_core::hash::H256>,
+    pub extrinsics_root: Option<sp_core::hash::H256>,
+    pub digest: Option<sp_runtime::generic::Digest<sp_core::hash::H256>>,
+}
+
+#[derive(Clone, Serialize, Deserialize, Eq, PartialEq, Encode, Decode, Debug)]
 pub struct GatewayPointer {
     pub id: InstanceId,
     pub vendor: GatewayVendor,
     pub gateway_type: GatewayType,
 }
 
+#[derive(Clone, Serialize, Deserialize, Eq, PartialEq, Encode, Decode, Debug)]
+pub struct GatewayGenesisConfig {
+    /// SCALE-encoded modules following the format of selected frame_metadata::RuntimeMetadataVXX
+    pub modules_encoded: Option<Vec<u8>>,
+    /// SCALE-encoded signed extension - see more at frame_metadata::ExtrinsicMetadata
+    pub signed_extension: Option<Vec<u8>>,
+    /// Runtime version
+    pub runtime_version: sp_version::RuntimeVersion,
+    /// Genesis hash - block id of the genesis block use to distinct the network and sign messages
+    /// Length depending on parameter passed in abi::GatewayABIConfig
+    pub genesis_hash: Vec<u8>,
+}
+
 /// A struct that encodes RPC parameters required for a call to a smart-contract.
-#[derive(Eq, PartialEq, Encode, Decode, Serialize, Deserialize, RuntimeDebug, Clone, Default)]
+#[derive(Eq, PartialEq, Encode, Decode, Serialize, Deserialize, Debug, Clone, Default)]
 pub struct Compose<Account, Balance> {
     pub name: Vec<u8>,
     pub code_txt: Vec<u8>,
@@ -65,7 +93,7 @@ pub struct Compose<Account, Balance> {
 pub type FetchContractsResult = Result<Option<Vec<u8>>, ContractAccessError>;
 
 /// A result of execution of a contract.
-#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, Serialize, Deserialize, Clone)]
+#[derive(Eq, PartialEq, Encode, Decode, Debug, Serialize, Deserialize, Clone)]
 pub enum ComposableExecResult {
     /// The contract returned successfully.
     ///
@@ -86,7 +114,7 @@ pub enum ComposableExecResult {
 }
 
 /// The possible errors that can happen querying the storage of a contract.
-#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, Serialize, Deserialize, Clone)]
+#[derive(Eq, PartialEq, Encode, Decode, Debug, Serialize, Deserialize, Clone)]
 pub enum ContractAccessError {
     /// The given address doesn't point to a contract.
     DoesntExist,
@@ -94,16 +122,16 @@ pub enum ContractAccessError {
     IsTombstone,
 }
 
-#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, Clone, Default, Serialize, Deserialize)]
+#[derive(Eq, PartialEq, Encode, Decode, Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ExecPhase<Account, Balance> {
     pub steps: Vec<ExecStep<Account, Balance>>,
 }
 
-#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, Clone, Default, Serialize, Deserialize)]
+#[derive(Eq, PartialEq, Encode, Decode, Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ExecStep<Account, Balance> {
     pub compose: Compose<Account, Balance>,
 }
-#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, Clone, Default, Serialize, Deserialize)]
+#[derive(Eq, PartialEq, Encode, Decode, Debug, Clone, Default, Serialize, Deserialize)]
 pub struct InterExecSchedule<Account, Balance> {
     pub phases: Vec<ExecPhase<Account, Balance>>,
 }

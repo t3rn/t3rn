@@ -57,6 +57,7 @@ pub use crate::message_assembly::circuit_outbound::CircuitOutboundMessage;
 use hex_literal::hex;
 use sp_std::vec;
 use sp_std::vec::*;
+use t3rn_primitives::abi::{Type, GatewayABIConfig};
 use t3rn_primitives::transfers::BalanceOf;
 use t3rn_primitives::*;
 
@@ -362,6 +363,33 @@ pub mod pallet {
                 x_tx_id,
                 circuit_outbound_messages,
             ));
+
+            Ok(().into())
+        }
+
+        #[pallet::weight(0)]
+        pub fn register_gateway(
+            origin: OriginFor<T>,
+            url: Vec<u8>,
+            gateway_id: bp_runtime::ChainId,
+            gateway_abi: GatewayABIConfig,
+            gateway_vendor: t3rn_primitives::GatewayVendor,
+            gateway_type: t3rn_primitives::GatewayType,
+            gateway_genesis: GatewayGenesisConfig,
+            _first_header: GenericFirstHeader,
+            _authorities: Option<Vec<T::AccountId>>,
+        ) -> DispatchResultWithPostInfo {
+
+            // Retrieve sender of the transaction.
+            pallet_xdns::Pallet::<T>::add_new_xdns_record(
+                origin,
+                url,
+                gateway_id,
+                gateway_abi,
+                gateway_vendor,
+                gateway_type,
+                gateway_genesis,
+            )?;
 
             Ok(().into())
         }

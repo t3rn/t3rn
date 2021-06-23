@@ -37,6 +37,8 @@ pub enum Type {
     Value,
     /// DynamicBytes and String are lowered to a vector.
     Slice,
+    Hasher(HasherAlgo, u16),
+    Crypto(CryptoAlgo),
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Clone, Encode, Decode, Eq, Hash, Debug)]
@@ -119,6 +121,7 @@ impl Type {
                 Ok(struct_size.into())
             }
             Type::String | Type::DynamicBytes => Ok(4),
+            Type::Hasher(_hasher_alg, _hash_size) => Ok(gen.hash_size as usize),
             _ => unimplemented!(),
         }
     }
@@ -145,6 +148,22 @@ impl Type {
             Type::String => b"string",
             Type::DynamicBytes => b"dynamic_bytes",
             Type::DynamicAddress => b"dynamic_address",
+            Type::Hasher(hasher_alg, hash_size) => match hasher_alg {
+                HasherAlgo::Blake2 => match hash_size {
+                    128 => b"blake2_128",
+                    256 => b"blake2_256",
+                    _ => unimplemented!(),
+                },
+                HasherAlgo::Keccak256 => match hash_size {
+                    256 => b"blake2_256",
+                    _ => unimplemented!(),
+                },
+            },
+            Type::Crypto(crypto_alg) => match crypto_alg {
+                CryptoAlgo::Ed25519 => b"ed25519",
+                CryptoAlgo::Sr25519 => b"sr25519",
+                CryptoAlgo::Ecdsa => b"ecdsa",
+            },
             _ => unimplemented!(),
         }
     }
@@ -170,6 +189,22 @@ impl Type {
             },
             Type::String => RuntimeString::from("string"),
             Type::DynamicBytes => RuntimeString::from("dynamic_bytes"),
+            Type::Hasher(hasher_alg, hash_size) => match hasher_alg {
+                HasherAlgo::Blake2 => match hash_size {
+                    128 => RuntimeString::from("blake2_128"),
+                    256 => RuntimeString::from("blake2_256"),
+                    _ => unimplemented!(),
+                },
+                HasherAlgo::Keccak256 => match hash_size {
+                    256 => RuntimeString::from("blake2_256"),
+                    _ => unimplemented!(),
+                },
+            },
+            Type::Crypto(crypto_alg) => match crypto_alg {
+                CryptoAlgo::Ed25519 => RuntimeString::from("ed25519"),
+                CryptoAlgo::Sr25519 => RuntimeString::from("sr25519"),
+                CryptoAlgo::Ecdsa => RuntimeString::from("ecdsa"),
+            },
             _ => unimplemented!(),
         }
     }
@@ -242,8 +277,34 @@ impl Type {
                 let res: RuntimeString = decode_buf2val(encoded_val)?;
                 Ok(Box::new(res))
             }
+            Type::Hasher(hasher_alg, hash_size) => match hasher_alg {
+                HasherAlgo::Blake2 => match hash_size {
+                    256 => Ok(Box::new(sp_runtime::traits::BlakeTwo256)),
+                    _ => unimplemented!(),
+                },
+                HasherAlgo::Keccak256 => match hash_size {
+                    256 => Ok(Box::new(sp_runtime::traits::Keccak256)),
+                    _ => unimplemented!(),
+                },
+            },
             _ => unimplemented!(),
         }
+    }
+}
+
+pub fn eval_trait_dynamically(t: Type) -> Result<Box<dyn sp_std::any::Any>, &'static str> {
+    match t {
+        Type::Hasher(hasher_alg, hash_size) => match hasher_alg {
+            HasherAlgo::Blake2 => match hash_size {
+                256 => Ok(Box::new(sp_runtime::traits::BlakeTwo256)),
+                _ => unimplemented!(),
+            },
+            HasherAlgo::Keccak256 => match hash_size {
+                256 => Ok(Box::new(sp_runtime::traits::Keccak256)),
+                _ => unimplemented!(),
+            },
+        },
+        _ => unimplemented!(),
     }
 }
 
@@ -262,6 +323,12 @@ pub fn from_bytes_string(bytes_string: &[u8]) -> Type {
         b"int64" => Type::Uint(64),
         b"int128" => Type::Uint(128),
         b"string" => Type::String,
+        b"blake2_256" => Type::Hasher(HasherAlgo::Blake2, 256),
+        b"blake2_128" => Type::Hasher(HasherAlgo::Blake2, 128),
+        b"keccak256" => Type::Hasher(HasherAlgo::Keccak256, 128),
+        b"sr25519" => Type::Crypto(CryptoAlgo::Sr25519),
+        b"ed25519" => Type::Crypto(CryptoAlgo::Ed25519),
+        b"ecdsa" => Type::Crypto(CryptoAlgo::Ecdsa),
         _ => unimplemented!(),
     }
 }
