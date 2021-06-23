@@ -1,6 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_std::vec;
 use sp_std::vec::*;
 
 use codec::{Compact, Encode};
@@ -14,13 +13,13 @@ use super::gateway_inbound_assembly::GatewayInboundAssembly;
 // #[macro_use]
 use crate::compose_call;
 
-use sp_core::H256;
 use sp_runtime::RuntimeAppPublic;
 use t3rn_primitives::{GenericExtra, SignedPayload, UncheckedExtrinsicV4};
 
 pub struct SubstrateGatewayAssembly<Pair, Hash>
 where
     Pair: RuntimeAppPublic,
+    Hash: Clone,
 {
     pub metadata: Metadata,
     pub runtime_version: RuntimeVersion,
@@ -105,18 +104,9 @@ where
             .sign(&call_bytes)
             .expect("Signature should be there");
 
+        // Using the GenericExtra type from substrate-api-client
+        // It does not implement
         let extra = GenericExtra::new(sp_runtime::generic::Era::Immortal, nonce);
-
-        // let signed_xt = compose_extrinsic_offline!(
-        //     &self.submitter_pair,
-        //     call_bytes.clone(),
-        //     nonce,
-        //     sp_runtime::generic::Era::Immortal,
-        //     self.genesis_hash.clone(),
-        //     self.genesis_hash.clone(),
-        //     self.runtime_version.spec_version,
-        //     self.runtime_version.transaction_version
-        // );
 
         let raw_payload = SignedPayload::from_raw(
             call_bytes.clone(),
@@ -124,30 +114,31 @@ where
             (
                 nonce,
                 self.runtime_version.transaction_version,
-                (&self.genesis_hash as H256).clone(),
-                (&self.genesis_hash as H256).clone(),
+                &self.genesis_hash, //dropped the clone here and below due to missing trait, not sure if correct
+                &self.genesis_hash,
                 (),
                 (),
                 (),
             ),
         );
-        //
-        //     let signature = raw_payload.using_encoded(|payload| $signer.sign(payload));
-        //
+
+        // this one is failing cause &[u8] is not Sized
+        let signature = raw_payload.using_encoded(|payload| self.submitter_pair.sign(payload));
+
         //     let mut arr = Default::default();
         //     arr.clone_from_slice($signer.public().as_ref());
         //
-        //     UncheckedExtrinsicV4::new_signed(
-        //         $call,
-        //         GenericAddress::from(AccountId::from(arr)),
-        //         signature.into(),
-        //         extra,
-        //     )
+        // UncheckedExtrinsicV4::new_signed(
+        //     call_bytes,
+        //     GenericAddress::from(AccountId::from(arr)),
+        //     signature,
+        //     extra,
+        // )
 
-        // signed_xt;
+        // dummy return
         UncheckedExtrinsicV4 {
-            signature: signed_tx,
-            function: call_bytes.clone(),
+            function: call_bytes,
+            signature: None,
         }
     }
 }

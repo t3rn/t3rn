@@ -6,7 +6,7 @@ use codec::{Decode, Encode};
 use t3rn_primitives::UncheckedExtrinsicV4;
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq)]
-pub struct SingedBytes {
+pub struct SignedBytes {
     pub signature: Vec<u8>,
     pub extra: Option<Vec<u8>>,
     pub payload: Vec<u8>,

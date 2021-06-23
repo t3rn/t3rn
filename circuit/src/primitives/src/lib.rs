@@ -18,18 +18,15 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use hex;
 #[cfg(feature = "std")]
 use std::fmt;
 
 use codec::{Compact, Decode, Encode, Error, Input};
 use frame_support::traits::{Currency, Time};
-use sp_core::{blake2_256, H256};
+use sp_core::blake2_256;
 
 use serde::{Deserialize, Serialize};
-use sp_runtime::{
-    generic::Era, AccountId32 as AccountId, MultiAddress, MultiSignature, RuntimeDebug,
-};
+use sp_runtime::{generic::Era, AccountId32 as AccountId, MultiSignature, RuntimeDebug};
 use sp_std::prelude::*;
 
 pub mod transfers;
@@ -167,7 +164,8 @@ where
     ///
     /// Payloads longer than 256 bytes are going to be `blake2_256`-hashed.
     pub fn using_encoded<R, F: FnOnce(&[u8]) -> R>(&self, f: F) -> R {
-        self.0.using_encoded(|payload| {
+        // Added the .0.0 below to call the function on the call_bytes vector
+        self.0 .0.using_encoded(|payload| {
             if payload.len() > 256 {
                 f(&blake2_256(payload)[..])
             } else {

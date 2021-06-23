@@ -20,6 +20,7 @@ use sp_runtime::RuntimeAppPublic;
 pub struct SubstrateGatewayProtocol<Pair, Hash>
 where
     Pair: RuntimeAppPublic,
+    Hash: Clone,
 {
     pub assembly: SubstrateGatewayAssembly<Pair, Hash>,
 }
@@ -27,6 +28,7 @@ where
 impl<Pair, Hash> SubstrateGatewayProtocol<Pair, Hash>
 where
     Pair: RuntimeAppPublic,
+    Hash: Clone,
 {
     pub fn new(
         metadata: Metadata,
@@ -68,6 +70,7 @@ where
 impl<Pair, Hash> GatewayInboundProtocol for SubstrateGatewayProtocol<Pair, Hash>
 where
     Pair: RuntimeAppPublic,
+    Hash: Clone,
 {
     // Get storage key directly to foreign storage system
     // For substrate that follows the following key formats:
