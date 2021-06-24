@@ -52,6 +52,7 @@ pallet-xdns = { default-features = false, path = "../xdns" }
 pallet-contracts-registry = { default-features = false, path = "../contracts-registry" }
 
 bp-runtime = { default-features = false, path = "../../../vendor/bridges/primitives/runtime" }
+bp-header-chain = { default-features = false, path = "../../../vendor/bridges/primitives/header-chain" }
 bp-messages = { default-features = false, path = "../../../vendor/bridges/primitives/messages" }
 bp-circuit = { default-features = false, path = "../../../vendor/bridges/primitives/chain-circuit" }
 bp-polkadot-core = { default-features = false, path = "../../../vendor/bridges/primitives/polkadot-core" }
@@ -71,6 +72,7 @@ pallet-authorship = { default-features = false, git = "https://github.com/parity
 pallet-babe = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-staking-reward-curve = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-staking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-finality-grandpa = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-consensus-vrf = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-consensus-babe = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 
@@ -114,6 +116,7 @@ std = [
     "sp-application-crypto/std",
     "bp-circuit/std",
     "bp-messages/std",
+    "bp-header-chain/std",
     "bp-polkadot-core/std",
     "bp-runtime/std",
     # native contracts VMs
@@ -125,6 +128,7 @@ std = [
     "pallet-babe/std",
     "pallet-staking/std",
     "sp-staking/std",
+    "sp-finality-grandpa/std",
     "sp-consensus-vrf/std",
     "pallet-authorship/std",
     "sp-consensus-babe/std",

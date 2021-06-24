@@ -62,7 +62,7 @@ use sp_application_crypto::Public;
 use sp_std::vec;
 use sp_std::vec::*;
 
-use t3rn_primitives::abi::GatewayABIConfig;
+use t3rn_primitives::abi::{GatewayABIConfig, HasherAlgo};
 use t3rn_primitives::transfers::BalanceOf;
 use t3rn_primitives::*;
 
@@ -80,8 +80,47 @@ pub type CurrentHash<T> =
     <<T as pallet_multi_finality_verifier::Config>::BridgedChain as bp_runtime::Chain>::Hash;
 pub type CurrentHasher<T> =
     <<T as pallet_multi_finality_verifier::Config>::BridgedChain as bp_runtime::Chain>::Hasher;
-pub type CurrentHeader<T> =
-    <<T as pallet_multi_finality_verifier::Config>::BridgedChain as bp_runtime::Chain>::Header;
+pub type CurrentHeader<T, I> =
+    <<T as pallet_multi_finality_verifier::Config<I>>::BridgedChain as bp_runtime::Chain>::Header;
+
+use frame_support::dispatch::DispatchResultWithPostInfo;
+
+type DefaultPolkadotLikeGateway = ();
+type PolkadotLikeValU64Gateway = pallet_multi_finality_verifier::Instance1;
+type EthLikeKeccak256ValU64Gateway = pallet_multi_finality_verifier::Instance2;
+type EthLikeKeccak256ValU32Gateway = pallet_multi_finality_verifier::Instance3;
+
+pub fn call_initialize_single_bridge_instance<
+    T: pallet_multi_finality_verifier::Config<I>,
+    I: 'static,
+>(
+    origin: T::Origin,
+    first_header: GenericPrimitivesHeader,
+    authorities: Option<Vec<T::AccountId>>,
+    gateway_id: bp_runtime::ChainId,
+) -> DispatchResultWithPostInfo {
+    let header: CurrentHeader<T, I> = Decode::decode(&mut &first_header.encode()[..])
+        .map_err(|_| "Decoding error: received GenericPrimitivesHeader -> CurrentHeader<T>")?;
+
+    let init_data = bp_header_chain::InitializationData {
+        header,
+        authority_list: authorities
+            .unwrap_or(vec![])
+            .iter()
+            .map(|id| {
+                (
+                    sp_finality_grandpa::AuthorityId::from_slice(&id.encode()),
+                    1,
+                )
+            })
+            .collect::<Vec<_>>(),
+        set_id: 1,
+        is_halted: false,
+    };
+
+    pallet_multi_finality_verifier::Pallet::<T, I>::initialize_single(origin, init_data, gateway_id)
+}
+
 /// Defines application identifier for crypto keys of this module.
 ///
 /// Every module that deals with signatures needs to declare its unique identifier for
@@ -290,7 +329,10 @@ pub mod pallet {
         + pallet_xdns::Config
         + pallet_contracts::Config
         + pallet_evm::Config
-        + pallet_multi_finality_verifier::Config
+        + pallet_multi_finality_verifier::Config<DefaultPolkadotLikeGateway>
+        + pallet_multi_finality_verifier::Config<PolkadotLikeValU64Gateway>
+        + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU64Gateway>
+        + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU32Gateway>
     {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -397,38 +439,45 @@ pub mod pallet {
                 origin.clone(),
                 url,
                 gateway_id,
-                gateway_abi,
+                gateway_abi.clone(),
                 gateway_vendor,
                 gateway_type,
                 gateway_genesis,
             )?;
 
-            let header: CurrentHeader<T> = Decode::decode(&mut &first_header.encode()[..])
-                .map_err(
-                    |_| "Decoding error: received GenericPrimitivesHeader -> CurrentHeader<T>",
-                )?;
+            let res =
+                match (gateway_abi.hasher, gateway_abi.block_number_type_size) {
+                    (HasherAlgo::Blake2, 32) => call_initialize_single_bridge_instance::<
+                        T,
+                        DefaultPolkadotLikeGateway,
+                    >(
+                        origin, first_header, authorities, gateway_id
+                    )?,
+                    (HasherAlgo::Blake2, 64) => call_initialize_single_bridge_instance::<
+                        T,
+                        PolkadotLikeValU64Gateway,
+                    >(
+                        origin, first_header, authorities, gateway_id
+                    )?,
+                    (HasherAlgo::Keccak256, 32) => call_initialize_single_bridge_instance::<
+                        T,
+                        EthLikeKeccak256ValU32Gateway,
+                    >(
+                        origin, first_header, authorities, gateway_id
+                    )?,
+                    (HasherAlgo::Keccak256, 64) => call_initialize_single_bridge_instance::<
+                        T,
+                        EthLikeKeccak256ValU64Gateway,
+                    >(
+                        origin, first_header, authorities, gateway_id
+                    )?,
+                    (_, _) => call_initialize_single_bridge_instance::<
+                        T,
+                        DefaultPolkadotLikeGateway,
+                    >(origin, first_header, authorities, gateway_id)?,
+                };
 
-            let init_data = bp_header_chain::InitializationData {
-                header,
-                authority_list: authorities
-                    .unwrap_or(vec![])
-                    .iter()
-                    .map(|id| {
-                        (
-                            sp_finality_grandpa::AuthorityId::from_slice(&id.encode()),
-                            1,
-                        )
-                    })
-                    .collect::<Vec<_>>(),
-                set_id: 1,
-                is_halted: false,
-            };
-
-            pallet_multi_finality_verifier::Pallet::<T>::initialize_single(
-                origin, init_data, gateway_id,
-            )?;
-
-            Ok(().into())
+            Ok(res.into())
         }
 
         #[pallet::weight(0)]
