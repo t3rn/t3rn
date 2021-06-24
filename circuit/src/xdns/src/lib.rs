@@ -46,22 +46,22 @@ pub type XdnsRecordId<T> = <T as frame_system::Config>::Hash;
 #[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
 pub struct XdnsRecord<AccountId> {
     /// SCALE-encoded url string on where given Consensus System can be accessed
-    url: Vec<u8>,
+    pub url: Vec<u8>,
 
-    gateway_abi: GatewayABIConfig,
+    pub gateway_abi: GatewayABIConfig,
 
-    gateway_genesis: GatewayGenesisConfig,
+    pub gateway_genesis: GatewayGenesisConfig,
 
     /// Gateway Vendor
-    gateway_vendor: t3rn_primitives::GatewayVendor,
+    pub gateway_vendor: t3rn_primitives::GatewayVendor,
 
     /// Gateway Type
-    gateway_type: t3rn_primitives::GatewayType,
+    pub gateway_type: t3rn_primitives::GatewayType,
 
     /// Gateway Id
-    gateway_id: bp_runtime::ChainId,
+    pub gateway_id: bp_runtime::ChainId,
 
-    registrant: Option<AccountId>,
+    pub registrant: Option<AccountId>,
 }
 
 impl<AccountId: Encode> XdnsRecord<AccountId> {
@@ -273,6 +273,7 @@ pub mod pallet {
 
     /// The pre-validated composable xdns_records on-chain registry.
     #[pallet::storage]
+    #[pallet::getter(fn xdns_registry)]
     pub type XDNSRegistry<T> = StorageMap<
         _,
         Blake2_128Concat,
@@ -312,4 +313,6 @@ impl<T: Config> Pallet<T> {
 
         Ok(())
     }
+
+
 }

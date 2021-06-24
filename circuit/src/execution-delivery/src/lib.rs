@@ -54,6 +54,9 @@ use sp_runtime::{
 
 pub use crate::message_assembly::circuit_inbound::StepConfirmation;
 pub use crate::message_assembly::circuit_outbound::CircuitOutboundMessage;
+use crate::message_assembly::circuit_outbound::ProofTriePointer;
+use crate::message_assembly::merklize::*;
+
 use hex_literal::hex;
 use sp_std::vec;
 use sp_std::vec::*;
@@ -70,6 +73,11 @@ pub mod exec_composer;
 pub mod message_assembly;
 
 use crate::exec_composer::ExecComposer;
+
+pub type CurrentHash<T> =
+    <<T as pallet_multi_finality_verifier::Config>::BridgedChain as bp_runtime::Chain>::Hash;
+pub type CurrentHasher<T> =
+    <<T as pallet_multi_finality_verifier::Config>::BridgedChain as bp_runtime::Chain>::Hasher;
 
 /// Defines application identifier for crypto keys of this module.
 ///
@@ -172,6 +180,7 @@ pub struct StepEntry<AccountId, BlockNumber, Hash> {
     updated_at: BlockNumber,
     relayer: Option<AccountId>,
     gateway_id: bp_runtime::ChainId,
+    gateway_entry_id: Hash,
 }
 
 /// Schedule consist of phases
@@ -278,6 +287,7 @@ pub mod pallet {
         + pallet_xdns::Config
         + pallet_contracts::Config
         + pallet_evm::Config
+        + pallet_multi_finality_verifier::Config
     {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -390,6 +400,7 @@ pub mod pallet {
                 gateway_genesis,
             )?;
 
+            // ToDo: Register into separate multi-verifier-instance
             Ok(().into())
         }
 
@@ -406,11 +417,55 @@ pub mod pallet {
                 ActiveXtxMap::<T>::get(xtx_id.clone())
                     .expect("submitted to confirm step id does not match with any Xtx");
 
-            let _current_step = xtx.schedule.phases[xtx.current_round as usize].clone()
+            let current_step = xtx.schedule.phases[xtx.current_round as usize].clone()
                 [step_confirmation.step_index as usize]
                 .clone();
 
-            Ok(().into())
+            // ToDo: parse events to discover their content and verify execution
+
+            // Check inclusion relying on data in palet-multi-verifier
+            let gateway_id = current_step.gateway_id;
+            let gateway_xdns_record =
+                pallet_xdns::Pallet::<T>::xdns_registry(current_step.gateway_entry_id)
+                    .ok_or(Error::<T>::StepConfirmationGatewayNotRecognised)?;
+
+            let gateway_block_hash: CurrentHash<T> =
+                Decode::decode(&mut &step_confirmation.proof.block_hash[..])
+                    .map_err(|_| "Decoding error: step_confirmation.proof.block_hash")?;
+
+            let (extrinsics_root, state_root) =
+                pallet_multi_finality_verifier::Pallet::<T>::get_imported_roots(
+                    gateway_id,
+                    gateway_block_hash,
+                )
+                .ok_or(Error::<T>::StepConfirmationBlockUnrecognised)?;
+
+            let expected_root = match step_confirmation.proof.proof_trie_pointer {
+                ProofTriePointer::State => state_root,
+                ProofTriePointer::Transaction => extrinsics_root,
+                ProofTriePointer::Receipts => state_root,
+            };
+
+            let expected_root_h256: sp_core::H256 =
+                Decode::decode(&mut &expected_root.encode()[..])
+                    .map_err(|_| "Decoding error: expected_root -> sp_core::H256")?;
+
+            if let Err(computed_root) = check_merkle_proof(
+                expected_root_h256,
+                step_confirmation.proof.proof_data.into_iter(),
+                gateway_xdns_record.gateway_abi.hasher,
+            ) {
+                log::trace!(
+                    target: "circuit-runtime",
+                    "Step confirmation check failed: inclusion root mismatch. Expected: {}, computed: {}",
+                    expected_root,
+                    computed_root,
+                );
+
+                Err(Error::<T>::StepConfirmationInvalidInclusionProof.into())
+            } else {
+                Ok(().into())
+            }
         }
     }
 
@@ -433,6 +488,9 @@ pub mod pallet {
         IOScheduleNoEndingSemicolon,
         IOScheduleEmpty,
         IOScheduleUnknownCompose,
+        StepConfirmationBlockUnrecognised,
+        StepConfirmationGatewayNotRecognised,
+        StepConfirmationInvalidInclusionProof,
     }
 }
 

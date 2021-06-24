@@ -22,6 +22,9 @@ versatile-wasm = { default-features = false , path = "../../../vm/versatile-wasm
 serde = { version = "1.0.124", optional = true }
 lite-json = { version = "0.1", default-features = false }
 log = { version = "0.4.14", default-features = false }
+hash-db = { version = "0.15.2", default-features = false }
+triehash = { version = "0.8.2", default-features = false }
+plain_hasher = { version = "0.2.2", default-features = false }
 
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master"  }
@@ -83,6 +86,9 @@ std = [
     "serde",
     "log/std",
     "lite-json/std",
+    "hash-db/std",
+    "triehash/std",
+    "plain_hasher/std",
     "versatile-wasm/std",
     "t3rn-primitives/std",
     "frame-support/std",

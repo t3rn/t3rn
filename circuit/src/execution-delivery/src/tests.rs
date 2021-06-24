@@ -86,6 +86,7 @@ frame_support::construct_runtime!(
         Historical: pallet_session_historical::{Pallet},
         Offences: pallet_offences::{Pallet, Call, Storage, Event},
         Messages: pallet_bridge_messages::{Pallet, Call, Event<T>},
+        MultiFinalityVerifier: pallet_multi_finality_verifier::{Pallet},
 
         Babe: pallet_babe::{Pallet, Call, Storage, Config},
         TransactionPayment: pallet_transaction_payment::{Pallet, Call},
@@ -749,6 +750,29 @@ impl pallet_bridge_messages::Config<DefaultMessagesInstance> for Test {
 
     type SourceHeaderChain = TestSourceHeaderChain;
     type MessageDispatch = TestMessageDispatch;
+}
+
+#[derive(Debug)]
+pub struct TestBridgedChain;
+impl bp_runtime::Chain for TestBridgedChain {
+    type BlockNumber = <Test as frame_system::Config>::BlockNumber;
+    type Hash = <Test as frame_system::Config>::Hash;
+    type Hasher = <Test as frame_system::Config>::Hashing;
+    type Header = <Test as frame_system::Config>::Header;
+}
+
+parameter_types! {
+    pub const MaxRequests: u32 = 2;
+    pub const HeadersToKeep: u32 = 5;
+    pub const SessionLength: u64 = 5;
+    pub const NumValidators: u32 = 5;
+}
+
+impl pallet_multi_finality_verifier::Config for Test {
+    type BridgedChain = TestBridgedChain;
+    type MaxRequests = MaxRequests;
+    type HeadersToKeep = HeadersToKeep;
+    type WeightInfo = ();
 }
 
 parameter_types! {

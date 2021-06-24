@@ -99,13 +99,11 @@ where
         call_bytes: Vec<u8>,
         nonce: u32,
     ) -> UncheckedExtrinsicV4<Vec<u8>> {
-        let signed_tx = &self
+        let _signed_tx = &self
             .submitter_pair
             .sign(&call_bytes)
             .expect("Signature should be there");
 
-        // Using the GenericExtra type from substrate-api-client
-        // It does not implement
         let extra = GenericExtra::new(sp_runtime::generic::Era::Immortal, nonce.clone());
 
         let raw_payload = SignedPayload::from_raw(
@@ -123,7 +121,7 @@ where
         );
 
         // this one is failing cause &[u8] is not Sized
-        let signature =
+        let _signature =
             raw_payload.using_encoded(|payload| self.submitter_pair.sign(&payload.encode()));
 
         //     let mut arr = Default::default();

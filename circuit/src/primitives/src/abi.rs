@@ -16,6 +16,7 @@ use std::fmt::Debug;
 
 pub type Bytes = sp_core::Bytes;
 
+/// ToDo: Introduce Compact Encoding for u8 + u16 + u32
 #[derive(Serialize, Deserialize, PartialEq, Clone, Encode, Decode, Eq, Hash, Debug)]
 pub enum Type {
     Address(u16),
@@ -278,14 +279,19 @@ impl Type {
                 Ok(Box::new(res))
             }
             Type::Hasher(hasher_alg, hash_size) => match hasher_alg {
-                HasherAlgo::Blake2 => match hash_size {
-                    256 => Ok(Box::new(sp_runtime::traits::BlakeTwo256)),
-                    _ => unimplemented!(),
-                },
-                HasherAlgo::Keccak256 => match hash_size {
-                    256 => Ok(Box::new(sp_runtime::traits::Keccak256)),
-                    _ => unimplemented!(),
-                },
+                HasherAlgo::Blake2 => {
+                    match hash_size {
+                        128 => Ok(Box::new(sp_io::hashing::blake2_128)),
+                        256 => Ok(Box::new(sp_io::hashing::blake2_256)),
+                        _ => unimplemented!(),
+                    }
+                }
+                HasherAlgo::Keccak256 => {
+                    match hash_size {
+                        256 => Ok(Box::new(sp_io::hashing::keccak_256)),
+                        _ => unimplemented!(),
+                    }
+                }
             },
             _ => unimplemented!(),
         }

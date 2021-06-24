@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use sp_core::U256;
 use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
+use sp_std::vec::Vec;
 
 use crate::message_assembly::circuit_outbound::ProofTriePointer;
 use crate::message_assembly::gateway_outbound_protocol::GatewayOutboundEvent;
@@ -29,7 +30,7 @@ pub struct Proof {
     /// Selector of trie root in that block
     pub proof_trie_pointer: ProofTriePointer,
     /// Proof as bytes
-    pub proof: Bytes,
+    pub proof_data: Vec<Vec<u8>>,
     /// Value Index in Proof
     pub in_proof_index: Option<U256>,
     /// Value Index in Block
@@ -42,10 +43,6 @@ pub struct Proof {
 pub struct StepConfirmation {
     pub step_index: u8,
     pub value: Bytes,
-    pub proof: Bytes,
-    pub proof_type: ProofType,
-    pub proof_trie_pointer: ProofTriePointer,
-    pub pointer_to_value_in_proof: Option<Bytes>,
-    pub block_pointer: Bytes,
+    pub proof: Proof,
     pub outbound_event: GatewayOutboundEvent,
 }
