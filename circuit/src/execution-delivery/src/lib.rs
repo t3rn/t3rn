@@ -58,8 +58,10 @@ use crate::message_assembly::circuit_outbound::ProofTriePointer;
 use crate::message_assembly::merklize::*;
 
 use hex_literal::hex;
+use sp_application_crypto::Public;
 use sp_std::vec;
 use sp_std::vec::*;
+
 use t3rn_primitives::abi::GatewayABIConfig;
 use t3rn_primitives::transfers::BalanceOf;
 use t3rn_primitives::*;
@@ -78,7 +80,8 @@ pub type CurrentHash<T> =
     <<T as pallet_multi_finality_verifier::Config>::BridgedChain as bp_runtime::Chain>::Hash;
 pub type CurrentHasher<T> =
     <<T as pallet_multi_finality_verifier::Config>::BridgedChain as bp_runtime::Chain>::Hasher;
-
+pub type CurrentHeader<T> =
+    <<T as pallet_multi_finality_verifier::Config>::BridgedChain as bp_runtime::Chain>::Header;
 /// Defines application identifier for crypto keys of this module.
 ///
 /// Every module that deals with signatures needs to declare its unique identifier for
@@ -386,12 +389,12 @@ pub mod pallet {
             gateway_vendor: t3rn_primitives::GatewayVendor,
             gateway_type: t3rn_primitives::GatewayType,
             gateway_genesis: GatewayGenesisConfig,
-            _first_header: GenericPrimitivesHeader,
-            _authorities: Option<Vec<T::AccountId>>,
+            first_header: GenericPrimitivesHeader,
+            authorities: Option<Vec<T::AccountId>>,
         ) -> DispatchResultWithPostInfo {
             // Retrieve sender of the transaction.
             pallet_xdns::Pallet::<T>::add_new_xdns_record(
-                origin,
+                origin.clone(),
                 url,
                 gateway_id,
                 gateway_abi,
@@ -400,7 +403,31 @@ pub mod pallet {
                 gateway_genesis,
             )?;
 
-            // ToDo: Register into separate multi-verifier-instance
+            let header: CurrentHeader<T> = Decode::decode(&mut &first_header.encode()[..])
+                .map_err(
+                    |_| "Decoding error: received GenericPrimitivesHeader -> CurrentHeader<T>",
+                )?;
+
+            let init_data = bp_header_chain::InitializationData {
+                header,
+                authority_list: authorities
+                    .unwrap_or(vec![])
+                    .iter()
+                    .map(|id| {
+                        (
+                            sp_finality_grandpa::AuthorityId::from_slice(&id.encode()),
+                            1,
+                        )
+                    })
+                    .collect::<Vec<_>>(),
+                set_id: 1,
+                is_halted: false,
+            };
+
+            pallet_multi_finality_verifier::Pallet::<T>::initialize_single(
+                origin, init_data, gateway_id,
+            )?;
+
             Ok(().into())
         }
 
