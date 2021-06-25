@@ -12,15 +12,19 @@ repository = "https://github.com/t3rn/t3rn/"
 [dependencies]
 jsonrpc-core = "15.1.0"
 structopt = "0.3.21"
+serde_json = "1.0.59"
 
 # Bridge dependencies
 
-bp-messages = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" }
-bp-circuit= { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" }
-bp-runtime = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" }
+bp-messages = { path = "../vendor/bridges/primitives/messages" }
+bp-circuit = { path = "../vendor/bridges/primitives/chain-circuit" }
+bp-runtime = { path = "../vendor/bridges/primitives/runtime" }
 circuit-runtime = { path = "./src/runtime" }
-pallet-bridge-messages = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" }
-pallet-bridge-messages-rpc = { git = "https://github.com/MaciejBaj/parity-bridges-common", branch = "development" }
+pallet-bridge-messages = { path = "../vendor/bridges/modules/messages" }
+
+#VM dependencies
+
+pallet-evm = { path = "../vendor/frontier/frame/evm" }
 
 # Substrate Dependencies
 
@@ -39,6 +43,8 @@ sc-finality-grandpa-rpc = { git = "https://github.com/paritytech/substrate", bra
 sc-keystore = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -60,3 +66,15 @@ default = []
 runtime-benchmarks = [
     # "millau-runtime/runtime-benchmarks",
 ]
+
+[workspace]
+members = [
+    "src/contracts-registry",
+    "src/execution-delivery",
+    "src/rpc",
+    "src/rpc/runtime-api",
+    "src/runtime",
+    "src/primitives",
+    "src/xdns"
+]
+exclude = []

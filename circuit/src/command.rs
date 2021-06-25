@@ -1,4 +1,4 @@
-// Copyright 2019-2020 Parity Technologies (UK) Ltd.
+// Copyright 2019-2021 Parity Technologies (UK) Ltd.
 // This file is part of Parity Bridges Common.
 
 // Parity Bridges Common is free software: you can redistribute it and/or modify
@@ -23,7 +23,7 @@ use sc_service::PartialComponents;
 
 impl SubstrateCli for Cli {
     fn impl_name() -> String {
-        "Millau Bridge Node".into()
+        "Circuit Bridge Node".into()
     }
 
     fn impl_version() -> String {
@@ -31,7 +31,7 @@ impl SubstrateCli for Cli {
     }
 
     fn description() -> String {
-        "Millau Bridge Node".into()
+        "Circuit Bridge Node".into()
     }
 
     fn author() -> String {
@@ -47,7 +47,7 @@ impl SubstrateCli for Cli {
     }
 
     fn executable_name() -> String {
-        "millau-bridge-node".into()
+        "circuit-bridge-node".into()
     }
 
     fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {

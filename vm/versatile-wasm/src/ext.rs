@@ -4,12 +4,12 @@ use frame_support::dispatch::DispatchError;
 use frame_support::traits::Randomness;
 use frame_support::weights::Weight;
 use frame_support::{storage::child, storage::child::ChildInfo, storage::unhashed};
-use gateway_escrow_engine::{
+use sp_std::vec::Vec;
+use system::Config as SystemTrait;
+use t3rn_primitives::{
     transfers::{escrow_transfer, BalanceOf, TransferEntry},
     EscrowTrait,
 };
-use sp_std::vec::Vec;
-use system::Trait as SystemTrait;
 
 pub struct DefaultRuntimeEnv2<T: EscrowTrait + SystemTrait + VersatileWasm> {
     pub escrow_account: T::AccountId,
@@ -56,7 +56,7 @@ where
 {
     type T = T;
 
-    fn get_storage(&self, key: &StorageKey) -> Option<Vec<u8>> {
+    fn get_storage(&mut self, key: &StorageKey) -> Option<Vec<u8>> {
         self.standard_env.get_storage(key)
     }
 
@@ -113,7 +113,7 @@ where
 {
     type T = T;
 
-    fn get_storage(&self, key: &StorageKey) -> Option<Vec<u8>> {
+    fn get_storage(&mut self, key: &StorageKey) -> Option<Vec<u8>> {
         self.get_child_storage(self.storage_trie_id.clone(), key)
     }
 
@@ -180,7 +180,7 @@ where
     }
 
     fn deposit_event(&mut self, topics: Vec<TopicOf<Self::T>>, data: Vec<u8>) {
-        <system::Module<T>>::deposit_event_indexed(
+        <system::Pallet<T>>::deposit_event_indexed(
             &*topics,
             <Self::T as VersatileWasm>::Event::from(crate::RawEvent::VersatileVMExecution(
                 self.escrow_account.clone(),
@@ -200,7 +200,7 @@ pub trait ExtStandards {
     ///
     /// Returns `None` if the `key` wasn't previously set by `set_storage` or
     /// was deleted.
-    fn get_storage(&self, key: &StorageKey) -> Option<Vec<u8>>;
+    fn get_storage(&mut self, key: &StorageKey) -> Option<Vec<u8>>;
 
     /// Sets the storage entry by the given key to the specified value. If `value` is `None` then
     ///
@@ -262,7 +262,7 @@ pub trait ExtStandards {
 
     /// Returns the current block number.
     fn block_number(&self) -> BlockNumberOf<Self::T> {
-        system::Module::<Self::T>::block_number()
+        system::Pallet::<Self::T>::block_number()
     }
 
     /// Returns the price for the specified amount of weight.
@@ -271,7 +271,7 @@ pub trait ExtStandards {
     }
 
     /// Returns a random number for the current block with the given subject.
-    fn random(&self, subject: &[u8]) -> SeedOf<Self::T> {
+    fn random(&self, subject: &[u8]) -> (SeedOf<Self::T>, BlockNumberOf<Self::T>) {
         <Self::T as VersatileWasm>::Randomness::random(subject)
     }
 

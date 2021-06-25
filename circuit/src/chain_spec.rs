@@ -1,4 +1,4 @@
-// Copyright 2019-2020 Parity Technologies (UK) Ltd.
+// Copyright 2019-2021 Parity Technologies (UK) Ltd.
 // This file is part of Parity Bridges Common.
 
 // Parity Bridges Common is free software: you can redistribute it and/or modify
@@ -16,13 +16,14 @@
 
 use bp_circuit::derive_account_from_gateway_id;
 use circuit_runtime::{
-    AccountId, AuraConfig, BalancesConfig, BridgeGatewayConfig, GenesisConfig, GrandpaConfig,
-    SessionConfig, SessionKeys, Signature, SudoConfig, SystemConfig, WASM_BINARY,
+    AccountId, AuraConfig, BalancesConfig, EVMConfig, GenesisConfig, GrandpaConfig, SessionConfig,
+    SessionKeys, Signature, SudoConfig, SystemConfig, WASM_BINARY,
 };
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
+use std::{collections::BTreeMap, str::FromStr};
 
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
@@ -67,6 +68,18 @@ pub fn get_authority_keys_from_seed(s: &str) -> (AccountId, AuraId, GrandpaId) {
 impl Alternative {
     /// Get an actual chain config from one of the alternatives.
     pub(crate) fn load(self) -> ChainSpec {
+        let properties = Some(
+            serde_json::json!({
+                "tokenDecimals": 9,
+                "tokenSymbol": "MLAU",
+                "bridgeIds": {
+                    "Gateway": bp_runtime::GATEWAY_CHAIN_ID,
+                }
+            })
+            .as_object()
+            .expect("Map given; qed")
+            .clone(),
+        );
         match self {
             Alternative::Development => ChainSpec::from_genesis(
                 "Development",
@@ -81,6 +94,9 @@ impl Alternative {
                             get_account_id_from_seed::<sr25519::Public>("Bob"),
                             get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
                             get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+                            derive_account_from_gateway_id(bp_runtime::SourceAccount::Account(
+                                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                            )),
                         ],
                         true,
                     )
@@ -88,7 +104,7 @@ impl Alternative {
                 vec![],
                 None,
                 None,
-                None,
+                properties,
                 None,
             ),
             Alternative::LocalTestnet => ChainSpec::from_genesis(
@@ -122,12 +138,18 @@ impl Alternative {
                             get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
                             get_account_id_from_seed::<sr25519::Public>("George//stash"),
                             get_account_id_from_seed::<sr25519::Public>("Harry//stash"),
-                            pallet_bridge_messages::Module::<
+                            pallet_bridge_messages::Pallet::<
                                 circuit_runtime::Runtime,
                                 pallet_bridge_messages::DefaultInstance,
                             >::relayer_fund_account_id(),
                             derive_account_from_gateway_id(bp_runtime::SourceAccount::Account(
-                                get_account_id_from_seed::<sr25519::Public>("Dave"),
+                                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                            )),
+                            derive_account_from_gateway_id(bp_runtime::SourceAccount::Account(
+                                get_account_id_from_seed::<sr25519::Public>("Charlie"),
+                            )),
+                            derive_account_from_gateway_id(bp_runtime::SourceAccount::Account(
+                                get_account_id_from_seed::<sr25519::Public>("Eve"),
                             )),
                         ],
                         true,
@@ -136,7 +158,7 @@ impl Alternative {
                 vec![],
                 None,
                 None,
-                None,
+                properties,
                 None,
             ),
         }
@@ -154,30 +176,27 @@ fn testnet_genesis(
     _enable_println: bool,
 ) -> GenesisConfig {
     GenesisConfig {
-        frame_system: Some(SystemConfig {
-            code: WASM_BINARY.to_vec(),
+        frame_system: SystemConfig {
+            code: WASM_BINARY
+                .expect("Circuit development WASM not available")
+                .to_vec(),
             changes_trie_config: Default::default(),
-        }),
-        pallet_balances: Some(BalancesConfig {
+        },
+        pallet_balances: BalancesConfig {
             balances: endowed_accounts
                 .iter()
                 .cloned()
                 .map(|k| (k, 1 << 50))
                 .collect(),
-        }),
-        pallet_aura: Some(AuraConfig {
+        },
+        pallet_aura: AuraConfig {
             authorities: Vec::new(),
-        }),
-        pallet_grandpa: Some(GrandpaConfig {
+        },
+        pallet_grandpa: GrandpaConfig {
             authorities: Vec::new(),
-        }),
-        pallet_substrate_bridge: Some(BridgeGatewayConfig {
-            // We'll initialize the pallet with a dispatchable instead.
-            init_data: None,
-            owner: Some(root_key.clone()),
-        }),
-        pallet_sudo: Some(SudoConfig { key: root_key }),
-        pallet_session: Some(SessionConfig {
+        },
+        pallet_sudo: SudoConfig { key: root_key },
+        pallet_session: SessionConfig {
             keys: initial_authorities
                 .iter()
                 .map(|x| {
@@ -188,7 +207,24 @@ fn testnet_genesis(
                     )
                 })
                 .collect::<Vec<_>>(),
-        }),
+        },
+        pallet_evm: EVMConfig {
+            accounts: {
+                let mut map = BTreeMap::new();
+                map.insert(
+                    sp_core::H160::from_str("6be02d1d3665660d22ff9624b7be0551ee1ac91b")
+                        .expect("internal H160 is valid; qed"),
+                    pallet_evm::GenesisAccount {
+                        balance: sp_core::U256::from_str("0xffffffffffffffffffffffffffffffff")
+                            .expect("internal U256 is valid; qed"),
+                        code: Default::default(),
+                        nonce: Default::default(),
+                        storage: Default::default(),
+                    },
+                );
+                map
+            },
+        },
     }
 }
 
@@ -196,9 +232,9 @@ fn testnet_genesis(
 fn derived_dave_account_is_as_expected() {
     let dave = get_account_id_from_seed::<sr25519::Public>("Dave");
     let derived: AccountId =
-        derive_account_from_rialto_id(bp_runtime::SourceAccount::Account(dave));
+        derive_account_from_gateway_id(bp_runtime::SourceAccount::Account(dave));
     assert_eq!(
         derived.to_string(),
-        "5DNW6UVnb7TN6wX5KwXtDYR3Eccecbdzuw89HqjyNfkzce6J".to_string()
+        "5C9NFeDzVveQeCvyUDA7fJv47NygtdL69i6JjmBAGf1KEDv5".to_string()
     );
 }

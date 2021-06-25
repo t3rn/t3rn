@@ -21,7 +21,8 @@
 use crate::env_def::ImportSatisfyCheck;
 use crate::PrefabWasmModule;
 
-use parity_wasm::elements::{self, External, Internal, MemoryType, Type, ValueType};
+use parity_wasm::elements;
+use parity_wasm::elements::{External, Internal, MemoryType, Type, ValueType};
 use pwasm_utils;
 use pwasm_utils::rules;
 use sp_runtime::traits::SaturatedConversion;

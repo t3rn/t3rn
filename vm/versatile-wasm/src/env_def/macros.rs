@@ -131,6 +131,14 @@ macro_rules! define_func {
 			#[allow(unused)]
 			let mut args = args.iter();
 
+            if $ctx.trace_log {
+                let stack_trace_entry = $crate::StackTraceEntry {
+                    host_fn_name: stringify!($name),
+                    arguments_list: stringify!(args),
+                };
+                $ctx.stack_trace.push(stack_trace_entry);
+            }
+
 			unmarshall_then_body_then_marshall!(
 				args,
 				$ctx,
@@ -193,19 +201,23 @@ macro_rules! define_env {
 
 #[cfg(test)]
 mod tests {
-    use crate::exec::Ext;
+    use crate::ext::ExtStandards;
     use crate::gas::Gas;
-    use crate::runtime::tests::MockExt;
-    use crate::runtime::Runtime;
+    // use crate::runtime::tests::MockExt;
+    // use crate::runtime::Runtime;
     use parity_wasm::elements::FunctionType;
     use parity_wasm::elements::ValueType;
     use sp_runtime::traits::Zero;
     use sp_sandbox::{ReturnValue, Value};
 
+    pub struct DummyRuntimeCtx {
+        some_uint: u32,
+    }
+
     #[test]
     fn macro_unmarshall_then_body_then_marshall_value_or_trap() {
         fn test_value(
-            _ctx: &mut u32,
+            _ctx: &mut DummyRuntimeCtx,
             args: &[sp_sandbox::Value],
         ) -> Result<ReturnValue, sp_sandbox::HostError> {
             let mut args = args.iter();
@@ -222,7 +234,9 @@ mod tests {
             )
         }
 
-        let ctx = &mut 0;
+        // let ctx = &mut 0;
+        let ctx = &mut DummyRuntimeCtx { some_uint: 0 };
+
         assert_eq!(
             test_value(ctx, &[Value::I32(15), Value::I32(3)]).unwrap(),
             ReturnValue::Value(Value::I32(5)),
@@ -233,7 +247,8 @@ mod tests {
     #[test]
     fn macro_unmarshall_then_body_then_marshall_unit() {
         fn test_unit(
-            ctx: &mut u32,
+            // ctx: &mut u32,
+            ctx: &mut DummyRuntimeCtx,
             args: &[sp_sandbox::Value],
         ) -> Result<ReturnValue, sp_sandbox::HostError> {
             let mut args = args.iter();
@@ -241,33 +256,34 @@ mod tests {
                 args,
                 ctx,
                 (a: u32, b: u32) => {
-                    *ctx = a + b;
+                    ctx.some_uint = a + b;
                     Ok(())
                 }
             )
         }
 
-        let ctx = &mut 0;
+        // let ctx = &mut 0;
+        let ctx = &mut DummyRuntimeCtx { some_uint: 0 };
         let result = test_unit(ctx, &[Value::I32(2), Value::I32(3)]).unwrap();
         assert_eq!(result, ReturnValue::Unit);
-        assert_eq!(*ctx, 5);
+        assert_eq!(ctx.some_uint, 5);
     }
 
-    #[test]
-    fn macro_define_func() {
-        define_func!( <E: Ext> seal_gas (_ctx, amount: u32) => {
-            let amount = Gas::from(amount);
-            if !amount.is_zero() {
-                Ok(())
-            } else {
-                Err(sp_sandbox::HostError)
-            }
-        });
-        let _f: fn(
-            &mut Runtime<MockExt>,
-            &[sp_sandbox::Value],
-        ) -> Result<sp_sandbox::ReturnValue, sp_sandbox::HostError> = seal_gas::<MockExt>;
-    }
+    // #[test]
+    // fn macro_define_func() {
+    //     define_func!( <E: ExtStandards> seal_gas (_ctx, amount: u32) => {
+    //         let amount = Gas::from(amount);
+    //         if !amount.is_zero() {
+    //             Ok(())
+    //         } else {
+    //             Err(sp_sandbox::HostError)
+    //         }
+    //     });
+    //     let _f: fn(
+    //         &mut Runtime<MockExt>,
+    //         &[sp_sandbox::Value],
+    //     ) -> Result<sp_sandbox::ReturnValue, sp_sandbox::HostError> = seal_gas::<MockExt>;
+    // }
 
     #[test]
     fn macro_gen_signature() {
@@ -287,11 +303,13 @@ mod tests {
         let args = vec![Value::I32(5), Value::I32(3)];
         let mut args = args.iter();
 
-        let ctx: &mut u32 = &mut 0;
+        // let ctx: &mut u32 = &mut 0;
+
+        let ctx = &mut DummyRuntimeCtx { some_uint: 0 };
 
         let r = unmarshall_then_body!(
             {
-                *ctx = a + b;
+                ctx.some_uint = a + b;
                 a * b
             },
             ctx,
@@ -300,7 +318,7 @@ mod tests {
             b: u32
         );
 
-        assert_eq!(*ctx, 8);
+        assert_eq!(ctx.some_uint, 8);
         assert_eq!(r, 15);
     }
 
@@ -308,7 +326,7 @@ mod tests {
     fn macro_define_env() {
         use crate::env_def::ImportSatisfyCheck;
 
-        define_env!(Env, <E: Ext>,
+        define_env!(Env, <E: ExtStandards>,
             seal_gas( _ctx, amount: u32 ) => {
                 let amount = Gas::from(amount);
                 if !amount.is_zero() {

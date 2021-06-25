@@ -9,12 +9,13 @@ use frame_support::{
     dispatch::{DispatchError, DispatchResult},
     traits::{Currency, Randomness, Time, UnfilteredDispatchable},
     weights::GetDispatchInfo,
-    Parameter,
+    Parameter, RuntimeDebug,
 };
-use gateway_escrow_engine::{transfers::BalanceOf, EscrowTrait};
 use parity_wasm::elements::ValueType;
 use sp_sandbox;
 use sp_std::prelude::*;
+use t3rn_primitives::{transfers::BalanceOf, EscrowTrait};
+
 #[macro_use]
 pub mod env_def;
 pub mod ext;
@@ -22,9 +23,10 @@ pub mod fees;
 pub mod gas;
 pub mod prepare;
 pub mod runtime;
+pub mod simple_schedule_v2;
 
 use self::env_def::ConvertibleToWasm;
-use system::Trait as SystemTrait;
+use system::Config as SystemTrait;
 
 pub type MomentOf<T> = <<T as EscrowTrait>::Time as Time>::Moment;
 pub type AccountIdOf<T> = <T as SystemTrait>::AccountId;
@@ -39,9 +41,9 @@ impl<T: VersatileWasm> DispatchRuntimeCall<T> for DisabledDispatchRuntimeCall {
         _module_name: &str,
         _fn_name: &str,
         _input: &[u8],
-        _escrow_account: &<T as system::Trait>::AccountId,
-        _requested: &<T as system::Trait>::AccountId,
-        _callee: &<T as system::Trait>::AccountId,
+        _escrow_account: &<T as system::Config>::AccountId,
+        _requested: &<T as system::Config>::AccountId,
+        _callee: &<T as system::Config>::AccountId,
         _value: BalanceOf<T>,
         _gas: &mut crate::gas::GasMeter<T>,
     ) -> DispatchResult {
@@ -55,9 +57,9 @@ pub trait DispatchRuntimeCall<T: VersatileWasm> {
         module_name: &str,
         fn_name: &str,
         input: &[u8],
-        escrow_account: &<T as system::Trait>::AccountId,
-        requested: &<T as system::Trait>::AccountId,
-        callee: &<T as system::Trait>::AccountId,
+        escrow_account: &<T as system::Config>::AccountId,
+        requested: &<T as system::Config>::AccountId,
+        callee: &<T as system::Config>::AccountId,
         value: BalanceOf<T>,
         gas: &mut crate::gas::GasMeter<T>,
     ) -> DispatchResult;
@@ -66,7 +68,7 @@ pub trait DispatchRuntimeCall<T: VersatileWasm> {
 decl_event! {
     pub enum Event<T>
     where
-        <T as system::Trait>::AccountId,
+        <T as system::Config>::AccountId,
     {
         /// An event deposited upon execution of a contract from the account.
         /// \[escrow_account, requester_account, data\]
@@ -74,15 +76,15 @@ decl_event! {
     }
 }
 
-pub trait VersatileWasm: EscrowTrait + transaction_payment::Trait {
-    type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+pub trait VersatileWasm: EscrowTrait + transaction_payment::Config {
+    type Event: From<Event<Self>> + Into<<Self as system::Config>::Event>;
     type Call: Parameter + UnfilteredDispatchable<Origin = Self::Origin> + GetDispatchInfo;
-    type Randomness: Randomness<Self::Hash>;
+    type Randomness: Randomness<Self::Hash, Self::BlockNumber>;
     type DispatchRuntimeCall: DispatchRuntimeCall<Self>;
 }
 
 decl_module! {
-    pub struct Module<T: VersatileWasm> for enum Call where origin: <T as system::Trait>::Origin, system=system {
+    pub struct Module<T: VersatileWasm> for enum Call where origin: <T as system::Config>::Origin, system=system {
         fn deposit_event() = default;
     }
 }
@@ -167,6 +169,16 @@ impl ExecReturnValue {
 }
 
 pub type ExecResult = Result<ExecReturnValue, ExecError>;
+
+pub type StackTrace = Vec<StackTraceEntry>;
+
+#[derive(RuntimeDebug, PartialEq, Eq, Clone)]
+pub struct StackTraceEntry {
+    pub host_fn_name: &'static str,
+    pub arguments_list: &'static str,
+}
+
+pub type ExecResultTrace = Result<(ExecReturnValue, StackTrace), ExecError>;
 
 pub enum TrapReason {
     /// The supervisor trapped the contract because of an error condition occurred during
