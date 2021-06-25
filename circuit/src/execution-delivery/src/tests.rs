@@ -47,6 +47,7 @@ use sp_staking::SessionIndex;
 
 use frame_support::weights::Weight;
 use sp_core::{crypto::KeyTypeId, H160, H256, U256};
+use sp_runtime::traits::{BlakeTwo256, Keccak256};
 
 use bp_messages::{
     source_chain::{
@@ -122,7 +123,7 @@ impl frame_system::Config for Test {
     type Call = Call;
     type Hash = H256;
     type Version = ();
-    type Hashing = sp_runtime::traits::BlakeTwo256;
+    type Hashing = BlakeTwo256;
     // type AccountId = DummyValidatorId;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
@@ -752,13 +753,45 @@ impl pallet_bridge_messages::Config<DefaultMessagesInstance> for Test {
     type MessageDispatch = TestMessageDispatch;
 }
 
+type Blake2ValU64BridgeInstance = ();
+type Blake2ValU32BridgeInstance = pallet_multi_finality_verifier::Instance1;
+type Keccak256ValU64BridgeInstance = pallet_multi_finality_verifier::Instance2;
+type Keccak256ValU32BridgeInstance = pallet_multi_finality_verifier::Instance3;
+
 #[derive(Debug)]
-pub struct TestBridgedChain;
-impl bp_runtime::Chain for TestBridgedChain {
+pub struct Blake2ValU64Chain;
+impl bp_runtime::Chain for Blake2ValU64Chain {
     type BlockNumber = <Test as frame_system::Config>::BlockNumber;
     type Hash = <Test as frame_system::Config>::Hash;
     type Hasher = <Test as frame_system::Config>::Hashing;
     type Header = <Test as frame_system::Config>::Header;
+}
+
+#[derive(Debug)]
+pub struct Blake2ValU32Chain;
+impl bp_runtime::Chain for Blake2ValU32Chain {
+    type BlockNumber = u32;
+    type Hash = H256;
+    type Hasher = BlakeTwo256;
+    type Header = sp_runtime::generic::Header<u32, BlakeTwo256>;
+}
+
+#[derive(Debug)]
+pub struct Keccak256ValU64Chain;
+impl bp_runtime::Chain for Keccak256ValU64Chain {
+    type BlockNumber = u64;
+    type Hash = H256;
+    type Hasher = Keccak256;
+    type Header = sp_runtime::generic::Header<u64, Keccak256>;
+}
+
+#[derive(Debug)]
+pub struct Keccak256ValU32Chain;
+impl bp_runtime::Chain for Keccak256ValU32Chain {
+    type BlockNumber = u32;
+    type Hash = H256;
+    type Hasher = Keccak256;
+    type Header = sp_runtime::generic::Header<u32, Keccak256>;
 }
 
 parameter_types! {
@@ -768,8 +801,29 @@ parameter_types! {
     pub const NumValidators: u32 = 5;
 }
 
-impl pallet_multi_finality_verifier::Config for Test {
-    type BridgedChain = TestBridgedChain;
+impl pallet_multi_finality_verifier::Config<Blake2ValU64BridgeInstance> for Test {
+    type BridgedChain = Blake2ValU64Chain;
+    type MaxRequests = MaxRequests;
+    type HeadersToKeep = HeadersToKeep;
+    type WeightInfo = ();
+}
+
+impl pallet_multi_finality_verifier::Config<Blake2ValU32BridgeInstance> for Test {
+    type BridgedChain = Blake2ValU32Chain;
+    type MaxRequests = MaxRequests;
+    type HeadersToKeep = HeadersToKeep;
+    type WeightInfo = ();
+}
+
+impl pallet_multi_finality_verifier::Config<Keccak256ValU64BridgeInstance> for Test {
+    type BridgedChain = Keccak256ValU64Chain;
+    type MaxRequests = MaxRequests;
+    type HeadersToKeep = HeadersToKeep;
+    type WeightInfo = ();
+}
+
+impl pallet_multi_finality_verifier::Config<Keccak256ValU32BridgeInstance> for Test {
+    type BridgedChain = Keccak256ValU32Chain;
     type MaxRequests = MaxRequests;
     type HeadersToKeep = HeadersToKeep;
     type WeightInfo = ();

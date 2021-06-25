@@ -844,22 +844,4 @@ impl<T: Config> Pallet<T> {
         // Decide on the next execution phase and enact on it
         Ok(vec![])
     }
-
-    /// Proof each single step of execution.
-    /// After all steps in the round has been confirmed, this would also call for process_phase.
-    pub fn confirm_step(
-        _x_tx_id: [u8; 32],
-        _step_no: u32,
-        _io_schedule: Vec<u8>,
-        _state_proof: Vec<u8>,
-        _extrinsics_proof: Vec<u8>,
-        _block_hash: Vec<u8>,
-        _finality_proof: Vec<u8>,
-    ) -> Result<(), &'static str> {
-        // Validate step
-
-        // Process next step for execution
-
-        Ok(())
-    }
 }
