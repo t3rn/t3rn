@@ -16,15 +16,19 @@ use sp_sandbox;
 use sp_std::prelude::*;
 use t3rn_primitives::{transfers::BalanceOf, EscrowTrait};
 
+pub use crate::pallet::*;
+
 #[macro_use]
 pub mod env_def;
 pub mod ext;
+pub mod fake_storage;
 pub mod fees;
 pub mod gas;
 pub mod prepare;
 pub mod runtime;
-// pub mod call_stack;
 pub mod simple_schedule_v2;
+
+pub use crate::simple_schedule_v2::Schedule;
 
 use self::env_def::ConvertibleToWasm;
 use system::Config as SystemTrait;
@@ -34,6 +38,9 @@ pub type AccountIdOf<T> = <T as SystemTrait>::AccountId;
 pub type SeedOf<T> = <T as SystemTrait>::Hash;
 pub type TopicOf<T> = <T as SystemTrait>::Hash;
 pub type BlockNumberOf<T> = <T as SystemTrait>::BlockNumber;
+
+pub type CodeHash<T> = <T as SystemTrait>::Hash;
+pub type TrieId = Vec<u8>;
 
 pub struct DisabledDispatchRuntimeCall {}
 
@@ -83,10 +90,24 @@ pub mod pallet {
         type Call: Parameter + UnfilteredDispatchable<Origin = Self::Origin> + GetDispatchInfo;
         type Randomness: Randomness<Self::Hash, Self::BlockNumber>;
         type DispatchRuntimeCall: DispatchRuntimeCall<Self>;
+        /// Cost schedule and limits.
+        #[pallet::constant]
+        type Schedule: Get<Schedule>;
+        /// The type of the call stack determines the maximum nesting depth of contract calls.
+        ///
+        /// The allowed depth is `CallStack::size() + 1`.
+        /// Therefore a size of `0` means that a contract cannot use call or instantiate.
+        /// In other words only the origin called "root contract" is allowed to execute then.
+        type CallStack: smallvec::Array<Item = Frame<Self>>;
     }
 
     #[pallet::pallet]
     pub struct Pallet<T>(PhantomData<T>);
+
+    #[pallet::error]
+    pub enum Error<T> {
+        StorageExhausted,
+    }
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> where T::AccountId: AsRef<[u8]> {}
