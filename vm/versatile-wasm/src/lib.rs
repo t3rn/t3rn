@@ -7,9 +7,10 @@ use codec::{Decode, Encode};
 use frame_support::{
     dispatch::{DispatchError, DispatchResult},
     traits::{Currency, Randomness, Time, UnfilteredDispatchable},
-    weights::GetDispatchInfo,
+    weights::{GetDispatchInfo, Weight},
     RuntimeDebug,
 };
+use sp_runtime::traits::Convert;
 
 use parity_wasm::elements::ValueType;
 use sp_sandbox;
