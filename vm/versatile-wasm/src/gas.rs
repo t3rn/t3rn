@@ -17,7 +17,8 @@
 use crate::fees::RuntimeToken;
 use crate::BalanceOf;
 use crate::ExecError;
-use crate::VersatileWasm as Trait;
+use crate::VersatileWasm as Config;
+use crate::{Error, Weight};
 use frame_support::dispatch::{
     DispatchErrorWithPostInfo, DispatchResultWithPostInfo, GetDispatchInfo, PostDispatchInfo,
 };
@@ -64,7 +65,7 @@ impl<T: Any + Debug + PartialEq + Eq> TestAuxiliaries for T {}
 /// Implementing type is expected to be super lightweight hence `Copy` (`Clone` is added
 /// for consistency). If inlined there should be no observable difference compared
 /// to a hand-written code.
-pub trait Token<T: Trait>: Copy + Clone + TestAuxiliaries {
+pub trait Token<T: Config>: Copy + Clone + TestAuxiliaries {
     /// Metadata type, which the token can require for calculating the amount
     /// of gas to charge. Can be a some configuration type or
     /// just the `()`.
@@ -88,7 +89,7 @@ pub struct ErasedToken {
     pub token: Box<dyn Any>,
 }
 
-pub struct GasMeter<T: Trait> {
+pub struct GasMeter<T: Config> {
     gas_limit: Gas,
     /// Amount of gas left from initial gas limit. Can reach zero.
     gas_left: Gas,
@@ -96,7 +97,20 @@ pub struct GasMeter<T: Trait> {
     #[cfg(test)]
     tokens: Vec<ErasedToken>,
 }
-impl<T: Trait> GasMeter<T> {
+
+impl<T: Config> Default for GasMeter<T> {
+    fn default() -> Self {
+        Self {
+            gas_limit: Default::default(),
+            gas_left: Default::default(),
+            _phantom: Default::default(),
+            #[cfg(test)]
+            tokens: Default::default(),
+        }
+    }
+}
+
+impl<T: Config> GasMeter<T> {
     pub fn new(gas_limit: Gas) -> Self {
         GasMeter {
             gas_limit,
@@ -121,7 +135,7 @@ impl<T: Trait> GasMeter<T> {
         ))
     }
 
-    pub fn charge_runtime_dispatch(&mut self, call: Box<<T as Trait>::Call>) -> DispatchResult {
+    pub fn charge_runtime_dispatch(&mut self, call: Box<<T as Config>::Call>) -> DispatchResult {
         let weight: u64 = call.get_dispatch_info().weight;
         let fee = <T as transaction_payment::Config>::WeightToFee::calc(&weight);
         match self.charge(
@@ -132,6 +146,31 @@ impl<T: Trait> GasMeter<T> {
             GasMeterResult::OutOfGas => Err(DispatchError::Other("Out of gas")),
         }
     }
+
+    /// Create a new gas meter by removing gas from the current meter.
+    ///
+    /// # Note
+    ///
+    /// Passing `0` as amount is interpreted as "all remaining gas".
+    pub fn nested(&mut self, amount: Weight) -> Result<Self, DispatchError> {
+        let amount = if amount == 0 { self.gas_left } else { amount };
+
+        // NOTE that it is ok to allocate all available gas since it still ensured
+        // by `charge` that it doesn't reach zero.
+        if self.gas_left < amount {
+            Err(<Error<T>>::OutOfGas.into())
+        } else {
+            self.gas_left = self.gas_left - amount;
+            Ok(GasMeter::new(amount))
+        }
+    }
+
+
+    /// Absorb the remaining gas of a nested meter after we are done using it.
+    pub fn absorb_nested(&mut self, nested: Self) {
+        self.gas_left += nested.gas_left;
+    }
+
     /// Account for used gas.
     ///
     /// Amount is calculated by the given `token`.

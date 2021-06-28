@@ -19,16 +19,15 @@
 
 use crate::{CodeHash, Config, Error, StorageKey, TrieId};
 
-use t3rn_primitives::{transfers::BalanceOf, EscrowTrait};
+use t3rn_primitives::transfers::BalanceOf;
 
 use codec::{Codec, Decode, Encode};
 use frame_support::{
     dispatch::{DispatchError, DispatchResult},
-    storage::child::{self, ChildInfo, KillStorageResult},
-    traits::Get,
+    storage::child::{self, ChildInfo},
     weights::Weight,
 };
-use sp_core::crypto::UncheckedFrom;
+
 use sp_io::hashing::blake2_256;
 use sp_runtime::{
     traits::{Bounded, Hash, MaybeSerializeDeserialize, Member, Saturating, Zero},
@@ -261,14 +260,14 @@ where
     ///
     /// You must make sure that the contract is also removed or converted into a tombstone
     /// when queuing the trie for deletion.
-    pub fn queue_trie_for_deletion(contract: &AliveContractInfo<T>) -> DispatchResult {
+    pub fn queue_trie_for_deletion(_contract: &AliveContractInfo<T>) -> DispatchResult {
         unimplemented!()
     }
 
     /// Calculates the weight that is necessary to remove one key from the trie and how many
     /// of those keys can be deleted from the deletion queue given the supplied queue length
     /// and weight limit.
-    pub fn deletion_budget(queue_len: usize, weight_limit: Weight) -> (u64, u32) {
+    pub fn deletion_budget(_queue_len: usize, _weight_limit: Weight) -> (u64, u32) {
         unimplemented!("contracts are not supposed to be stored using VVM")
     }
 
@@ -276,7 +275,7 @@ where
     ///
     /// It returns the amount of weight used for that task or `None` when no weight was used
     /// apart from the base weight.
-    pub fn process_deletion_queue_batch(weight_limit: Weight) -> Weight {
+    pub fn process_deletion_queue_batch(_weight_limit: Weight) -> Weight {
         unimplemented!()
     }
 
@@ -295,8 +294,9 @@ where
 
     /// Returns the code hash of the contract specified by `account` ID.
     #[cfg(test)]
-    pub fn code_hash(account: &T::AccountId) -> Option<CodeHash<T>> {
+    pub fn code_hash(_account: &T::AccountId) -> Option<CodeHash<T>> {
         unimplemented!()
+        // <ContractInfoOf<T>>::get(account).and_then(|i| i.as_alive().map(|i| i.code_hash))
     }
 
     /// Fill up the queue in order to exercise the limits during testing.

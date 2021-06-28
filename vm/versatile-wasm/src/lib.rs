@@ -21,6 +21,7 @@ pub use crate::pallet::*;
 
 #[macro_use]
 pub mod env_def;
+pub mod call_stack;
 pub mod ext;
 pub mod fake_storage;
 pub mod fees;
@@ -29,6 +30,7 @@ pub mod prepare;
 pub mod runtime;
 pub mod simple_schedule_v2;
 
+pub use crate::call_stack::Frame;
 pub use crate::simple_schedule_v2::Schedule;
 
 use self::env_def::ConvertibleToWasm;
@@ -100,6 +102,8 @@ pub mod pallet {
         /// Therefore a size of `0` means that a contract cannot use call or instantiate.
         /// In other words only the origin called "root contract" is allowed to execute then.
         type CallStack: smallvec::Array<Item = Frame<Self>>;
+
+        type WeightPrice: Convert<Weight, BalanceOf<Self>>;
     }
 
     #[pallet::pallet]
@@ -108,6 +112,13 @@ pub mod pallet {
     #[pallet::error]
     pub enum Error<T> {
         StorageExhausted,
+        TransferFailed,
+        BelowSubsistenceThreshold,
+        TerminatedInConstructor,
+        MaxCallDepthReached,
+        TempInstantiated,
+        OutOfGas,
+        NotCallable,
     }
 
     #[pallet::hooks]
@@ -119,7 +130,23 @@ pub mod pallet {
         /// An event deposited upon execution of a contract from the account.
         /// \[escrow_account, requester_account, data\]
         VersatileVMExecution(T::AccountId, T::AccountId, Vec<u8>),
+        /// A custom event emitted by the contract.
+        /// \[contract, data\]
+        ///
+        /// # Params
+        ///
+        /// - `contract`: The contract that emitted the event.
+        /// - `data`: Data supplied by the contract. Metadata generated during contract
+        ///           compilation is needed to decode it.
+        ContractEmitted(T::AccountId, Vec<u8>),
+
+        /// Contract deployed by address at the specified address. \[deployer, contract\]
+        TempInstantiated(T::AccountId, T::AccountId),
     }
+
+    /// The subtrie counter.
+    #[pallet::storage]
+    pub(crate) type AccountCounter<T: Config> = StorageValue<_, u64, ValueQuery>;
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {}
