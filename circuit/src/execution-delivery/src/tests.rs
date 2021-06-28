@@ -85,19 +85,19 @@ frame_support::construct_runtime!(
         Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         Historical: pallet_session_historical::{Pallet},
-        Offences: pallet_offences::{Pallet, Call, Storage, Event},
+        Offences: pallet_offences::{Pallet, Storage, Event},
         Messages: pallet_bridge_messages::{Pallet, Call, Event<T>},
         MultiFinalityVerifier: pallet_multi_finality_verifier::{Pallet},
 
         Babe: pallet_babe::{Pallet, Call, Storage, Config},
-        TransactionPayment: pallet_transaction_payment::{Pallet, Call},
+        TransactionPayment: pallet_transaction_payment::{Pallet},
         Staking: pallet_staking::{Pallet, Call, Storage, Config<T>, Event<T>},
         Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         ImOnline: pallet_im_online::{Pallet, Call, Storage, Config<T>, Event<T>},
         Sudo: pallet_sudo::{Pallet, Call, Event<T>},
         VersatileWasmVM: versatile_wasm::{Pallet, Call, Event<T>},
-        Randomness: pallet_randomness_collective_flip::{Pallet, Call, Storage},
+        Randomness: pallet_randomness_collective_flip::{Pallet, Storage},
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Storage, Event<T>},
         XDNS: pallet_xdns::{Pallet, Call, Storage, Event<T>},
         Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
@@ -111,6 +111,8 @@ parameter_types! {
     pub BlockWeights: frame_system::limits::BlockWeights =
         frame_system::limits::BlockWeights::simple_max(1024);
 }
+
+impl pallet_randomness_collective_flip::Config for Test {}
 
 impl frame_system::Config for Test {
     type BaseCallFilter = ();
@@ -165,7 +167,6 @@ parameter_types! {
 
 use frame_support::weights::IdentityFee;
 impl pallet_transaction_payment::Config for Test {
-    // type OnChargeTransaction = ();
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
     type TransactionByteFee = TransactionByteFee;
     type WeightToFee = IdentityFee<Balance>;
@@ -182,6 +183,9 @@ impl VersatileWasm for Test {
     type Event = Event;
     type Call = Call;
     type Randomness = Randomness;
+    type CallStack = [versatile_wasm::call_stack::Frame<Self>; 31];
+    type WeightPrice = Self;
+    type Schedule = MyVVMSchedule;
 }
 
 impl pallet_contracts_registry::Config for Test {
@@ -254,6 +258,8 @@ impl pallet_session::historical::Config for Test {
 
 parameter_types! {
     pub const UncleGenerations: u64 = 0;
+    pub MyVVMSchedule: versatile_wasm::Schedule = <versatile_wasm::simple_schedule_v2::Schedule>::default();
+
 }
 
 impl pallet_authorship::Config for Test {
@@ -334,8 +340,9 @@ impl pallet_staking::Config for Test {
     type EraPayout = pallet_staking::ConvertCurve<RewardCurve>;
     type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
     type NextNewSession = Session;
-    type ElectionProvider = onchain::OnChainSequentialPhragmen<Self>;
     type WeightInfo = ();
+    type ElectionProvider = onchain::OnChainSequentialPhragmen<Self>;
+    type GenesisElectionProvider = Self::ElectionProvider;
 }
 
 impl pallet_offences::Config for Test {
@@ -471,6 +478,7 @@ impl pallet_evm::Config for Test {
     type ChainId = ChainId;
     type BlockGasLimit = BlockGasLimit;
     type OnChargeTransaction = ();
+    type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping;
 }
 
 // start of bridge messages
