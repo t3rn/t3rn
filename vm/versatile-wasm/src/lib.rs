@@ -5,12 +5,12 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-    decl_event, decl_module,
     dispatch::{DispatchError, DispatchResult},
     traits::{Currency, Randomness, Time, UnfilteredDispatchable},
     weights::GetDispatchInfo,
-    Parameter, RuntimeDebug,
+    RuntimeDebug,
 };
+
 use parity_wasm::elements::ValueType;
 use sp_sandbox;
 use sp_std::prelude::*;
@@ -23,6 +23,7 @@ pub mod fees;
 pub mod gas;
 pub mod prepare;
 pub mod runtime;
+// pub mod call_stack;
 pub mod simple_schedule_v2;
 
 use self::env_def::ConvertibleToWasm;
@@ -65,28 +66,41 @@ pub trait DispatchRuntimeCall<T: VersatileWasm> {
     ) -> DispatchResult;
 }
 
-decl_event! {
-    pub enum Event<T>
-    where
-        <T as system::Config>::AccountId,
-    {
+pub use crate::pallet::Config as VersatileWasm;
+
+#[frame_support::pallet]
+pub mod pallet {
+    use super::*;
+    use frame_support::pallet_prelude::*;
+    use system::pallet_prelude::*;
+
+    #[pallet::config]
+    pub trait Config: system::Config + EscrowTrait + transaction_payment::Config {
+        type Event: From<Event<Self>>
+            + IsType<<Self as system::Config>::Event>
+            + Into<<Self as system::Config>::Event>;
+
+        type Call: Parameter + UnfilteredDispatchable<Origin = Self::Origin> + GetDispatchInfo;
+        type Randomness: Randomness<Self::Hash, Self::BlockNumber>;
+        type DispatchRuntimeCall: DispatchRuntimeCall<Self>;
+    }
+
+    #[pallet::pallet]
+    pub struct Pallet<T>(PhantomData<T>);
+
+    #[pallet::hooks]
+    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> where T::AccountId: AsRef<[u8]> {}
+
+    #[pallet::event]
+    #[pallet::metadata(T::AccountId = "AccountId")]
+    pub enum Event<T: Config> {
         /// An event deposited upon execution of a contract from the account.
         /// \[escrow_account, requester_account, data\]
-        VersatileVMExecution(AccountId, AccountId, Vec<u8>),
+        VersatileVMExecution(T::AccountId, T::AccountId, Vec<u8>),
     }
-}
 
-pub trait VersatileWasm: EscrowTrait + transaction_payment::Config {
-    type Event: From<Event<Self>> + Into<<Self as system::Config>::Event>;
-    type Call: Parameter + UnfilteredDispatchable<Origin = Self::Origin> + GetDispatchInfo;
-    type Randomness: Randomness<Self::Hash, Self::BlockNumber>;
-    type DispatchRuntimeCall: DispatchRuntimeCall<Self>;
-}
-
-decl_module! {
-    pub struct Module<T: VersatileWasm> for enum Call where origin: <T as system::Config>::Origin, system=system {
-        fn deposit_event() = default;
-    }
+    #[pallet::call]
+    impl<T: Config> Pallet<T> {}
 }
 
 /// A prepared wasm module ready for execution.
