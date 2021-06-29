@@ -6,6 +6,8 @@ use codec::{Decode, Encode};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
+use sp_runtime::RuntimeString;
+
 use sp_std::vec;
 use sp_std::vec::*;
 
@@ -30,9 +32,9 @@ pub type SubstrateEventEntry<E, T> = frame_system::EventRecord<E, T>;
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 struct SubstrateRawEvent {
     /// The name of the module from whence the Event originated
-    pub module: Bytes,
+    pub module: RuntimeString,
     /// The name of the Event
-    pub variant: Bytes,
+    pub variant: RuntimeString,
     /// The raw Event data
     pub data: Bytes,
 }
@@ -79,13 +81,14 @@ impl AsGatewayOutboundEvent for SubstrateRawEvent {
             })
             .collect::<Result<Vec<Bytes>, &'static str>>()?;
 
+
         Ok(GatewayOutboundEvent {
             id,
             /// translate address into namespace
             signature: None,
-            namespace: self.module.clone(),
+            namespace: self.module.clone().encode(),
             /// translate variant into name
-            name: self.variant.clone(),
+            name: self.variant.clone().encode(),
             data: self.data.clone(),
             proof,
             args_abi,
@@ -119,8 +122,8 @@ mod tests {
 
         assert_eq!(
             SubstrateRawEvent {
-                module: b"Balances".to_vec(),
-                variant: b"Transfer".to_vec(),
+                module: create_runtime_str!("Balances"),
+                variant: create_runtime_str!("Transfer"),
                 data: Bytes(vec![
                     255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
                     255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255

@@ -879,23 +879,6 @@ fn it_submits_empty_composable_exec_request() {
     });
 }
 
-fn sap_prints_polkadot_metadata() {
-    let sag = SubstrateGatewayAssembly::<AuthorityId, H256>::new(
-        create_test_metadata_struct(),
-        create_test_runtime_version(),
-        create_test_genesis_hash(),
-        create_submitter(),
-    );
-
-    let _test_a_pk = [1_u8; 32];
-    let _test_b_pk = [0_u8; 32];
-
-    let test_call_bytes =
-        sag.assemble_call("ModuleName", "FnName", vec![0, 1, 2], [1_u8; 32], 3, 2);
-
-    let _test_tx_signed = sag.assemble_signed_tx_offline(test_call_bytes, 0);
-}
-
 #[test]
 fn it_should_correctly_parse_a_minimal_valid_io_schedule() {
     let expected = InterExecSchedule {

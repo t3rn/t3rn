@@ -51,10 +51,10 @@ pub struct GatewayOutboundEvent {
     pub signature: Option<Vec<u8>>,
 
     /// module -> namespace or address for eth
-    pub namespace: Bytes,
+    pub namespace: Vec<u8>,
 
     /// variant -> name aka event name
-    pub name: Bytes,
+    pub name: Vec<u8>,
 
     /// That's raw data attached to event - not the whole incoming blob
     /// which acn be found under proof.value
@@ -78,8 +78,8 @@ pub struct GatewayOutboundEvent {
 impl GatewayOutboundEvent {
     pub fn new(
         id: GatewayOutboundEventId,
-        name: Bytes,
-        namespace: Bytes,
+        name: Vec<u8>,
+        namespace: Vec<u8>,
         data: Bytes,
         proof: Option<Proof>,
         signature: Option<Vec<u8>>,

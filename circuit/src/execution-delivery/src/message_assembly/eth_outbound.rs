@@ -73,8 +73,8 @@ impl AsGatewayOutboundEvent for EthLog {
     ) -> Result<GatewayOutboundEvent, &'static str> {
         let expected_arg_types_eth = from_eth_abi(args_abi.clone())?;
 
-        let name: Bytes = self.topics[0].encode().into();
-        let namespace: Bytes = self.address.encode().into();
+        let name = self.topics[0].encode();
+        let namespace = self.address.encode();
 
         let signature: &str =
             sp_std::str::from_utf8(&name[..]).map_err(|_| "`Can't decode argument to &str")?;
@@ -173,10 +173,12 @@ mod tests {
         assert_eq!(
             EthLog {
                 address: H160::from_str("ede84640d1a1d3e06902048e67aa7db8d52c2ce1").unwrap(),
-                topics: vec![H256::from_str(
-                    "0000000000000000000000000000000000000000000000000000000000000000"
-                )
-                .unwrap()],
+                topics: vec![
+                    H256::from_str(
+                        "0000000000000000000000000000000000000000000000000000000000000000"
+                    )
+                    .unwrap()
+                ],
                 data: Bytes(vec![
                     255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
                     255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
@@ -202,10 +204,12 @@ mod tests {
         assert_eq!(
             EthLog {
                 address: H160::from_str("ede84640d1a1d3e06902048e67aa7db8d52c2ce1").unwrap(),
-                topics: vec![H256::from_str(
-                    "0000000000000000000000000000000000000000000000000000000000000000"
-                )
-                .unwrap()],
+                topics: vec![
+                    H256::from_str(
+                        "0000000000000000000000000000000000000000000000000000000000000000"
+                    )
+                    .unwrap()
+                ],
                 data: Bytes(vec![
                     255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
                     255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
