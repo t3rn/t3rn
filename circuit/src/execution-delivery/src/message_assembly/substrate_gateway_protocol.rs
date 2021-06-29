@@ -302,10 +302,10 @@ where
 
     fn transfer_escrow(
         &self,
-        escrow_account: [u8; 32],
-        _requester: [u8; 32],
-        to: [u8; 32],
-        value: u128,
+        escrow_account: Vec<u8>,
+        _requester: Vec<u8>,
+        to: Vec<u8>,
+        value: Vec<u8>,
         _transfers: &mut Vec<TransferEntry>,
         gateway_type: GatewayType,
     ) -> CircuitOutboundMessage {
@@ -318,7 +318,7 @@ where
                     ],
                 }];
 
-                let arguments = vec![to.encode(), value.encode(), vec![]];
+                let arguments = vec![to, value, vec![]];
 
                 CircuitOutboundMessage::Write {
                     arguments: arguments.clone(),
@@ -348,15 +348,15 @@ where
                         vec![
                             // ToDo: change to dummy vector to self.assembly.submitter_pair.public()
                             vec![],
-                            escrow_account.encode(),
-                            value.encode(),
+                            escrow_account.clone(),
+                            value.clone(),
                         ],
                     )
                     .encode(),
                     self.produce_signed_payload(
                         b"Balances".to_vec(),
                         b"Transfer".to_vec(),
-                        vec![escrow_account.encode(), to.encode(), value.encode()],
+                        vec![escrow_account, to, value],
                     )
                     .encode(),
                 ];

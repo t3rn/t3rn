@@ -1,5 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::Encode;
 use frame_support::dispatch::DispatchError;
 use frame_support::traits::Time;
 
@@ -39,7 +40,6 @@ pub struct CircuitVersatileWasmEnv<
     pub inner_exec_transfers: &'a mut Vec<TransferEntry>,
     pub constructed_outbound_messages: &'a mut Vec<CircuitOutboundMessage>,
     pub gateway_inbound_protocol: Box<dyn GatewayInboundProtocol>,
-    // pub gateway_inbound_protocol: SubstrateGatewayProtocol<Pair>,
     pub gateway_pointer: GatewayPointer,
     pub output_mode: OM,
 }
@@ -199,10 +199,10 @@ where
         _gas_meter: &mut GasMeter<T>,
     ) -> Result<(), DispatchError> {
         let outbound_message = self.gateway_inbound_protocol.transfer_escrow(
-            <T as CircuitTrait>::AccountId32Converter::convert(self.escrow_account.clone()),
-            <T as CircuitTrait>::AccountId32Converter::convert(self.requester.clone()),
-            <T as CircuitTrait>::AccountId32Converter::convert(to.clone()),
-            <T as CircuitTrait>::ToStandardizedGatewayBalance::convert(value).into(),
+            self.escrow_account.encode(),
+            self.requester.encode(),
+            to.clone().encode(),
+            <T as CircuitTrait>::ToStandardizedGatewayBalance::convert(value).encode(),
             self.inner_exec_transfers,
             self.gateway_pointer.gateway_type.clone(),
         );
@@ -246,7 +246,7 @@ where
         <frame_system::Pallet<T>>::deposit_event_indexed(
             &*topics,
             <Self::T as VersatileWasm>::Event::from(
-                versatile_wasm::RawEvent::VersatileVMExecution(
+                versatile_wasm::pallet::Event::VersatileVMExecution(
                     self.escrow_account.clone(),
                     self.requester.clone(),
                     data,

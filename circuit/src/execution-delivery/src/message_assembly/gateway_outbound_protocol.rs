@@ -3,11 +3,11 @@
 use t3rn_primitives::GatewayPointer;
 
 use codec::{Decode, Encode};
+#[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
+use sp_std::vec;
 use sp_std::vec::*;
-
-use sp_runtime::RuntimeString;
 
 use crate::message_assembly::circuit_inbound::Proof;
 use t3rn_primitives::abi::{Bytes, GatewayABIConfig, Type};
@@ -40,20 +40,21 @@ pub type GatewayOutboundEventId = u64;
 ///     submitted while registering gateway for that foreign consensus system
 /// - versatile-vm to go over args_abi + args_encoded and validate execution's validity
 /// - pallet-multi-finality-verifier to utilise the proof and check inclusion into foreign chain.
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct GatewayOutboundEvent {
     /// Id to find that event easier
     pub id: GatewayOutboundEventId,
 
-    /// Signature -> Ethereum-like event description (first topic)
-    /// e.g.
+    /// Signature -> Ethereum-like event description (first topic), utf-8-encoded bytes
+    /// e.g. "Transfer(address,address,value)"
     pub signature: Option<Vec<u8>>,
 
     /// module -> namespace or address for eth
-    pub namespace: RuntimeString,
+    pub namespace: Bytes,
 
     /// variant -> name aka event name
-    pub name: RuntimeString,
+    pub name: Bytes,
 
     /// That's raw data attached to event - not the whole incoming blob
     /// which acn be found under proof.value
@@ -77,8 +78,8 @@ pub struct GatewayOutboundEvent {
 impl GatewayOutboundEvent {
     pub fn new(
         id: GatewayOutboundEventId,
-        name: RuntimeString,
-        namespace: RuntimeString,
+        name: Bytes,
+        namespace: Bytes,
         data: Bytes,
         proof: Option<Proof>,
         signature: Option<Vec<u8>>,

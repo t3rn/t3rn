@@ -3,11 +3,11 @@
 use t3rn_primitives::GatewayPointer;
 
 use codec::{Decode, Encode};
+#[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
+use sp_std::vec;
 use sp_std::vec::*;
-
-use sp_runtime::RuntimeString;
 
 use crate::message_assembly::circuit_inbound::Proof;
 use t3rn_primitives::abi::GatewayABIConfig;
@@ -26,12 +26,13 @@ pub type SubstrateEventEntry<E, T> = frame_system::EventRecord<E, T>;
 
 // whereas on Substrate there is an  event:
 /// But placing it in a context of other events is missing
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 struct SubstrateRawEvent {
     /// The name of the module from whence the Event originated
-    pub module: RuntimeString,
+    pub module: Bytes,
     /// The name of the Event
-    pub variant: RuntimeString,
+    pub variant: Bytes,
     /// The raw Event data
     pub data: Bytes,
 }
@@ -118,8 +119,8 @@ mod tests {
 
         assert_eq!(
             SubstrateRawEvent {
-                module: create_runtime_str!("Balances"),
-                variant: create_runtime_str!("Transfer"),
+                module: b"Balances".to_vec(),
+                variant: b"Transfer".to_vec(),
                 data: Bytes(vec![
                     255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
                     255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255

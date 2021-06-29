@@ -290,6 +290,8 @@ impl pallet_transaction_payment::Config for Runtime {
     type FeeMultiplierUpdate = ();
 }
 
+impl pallet_randomness_collective_flip::Config for Runtime {}
+
 impl pallet_sudo::Config for Runtime {
     type Event = Event;
     type Call = Call;
@@ -437,6 +439,7 @@ impl pallet_evm::Config for Runtime {
     type ChainId = ChainId;
     type BlockGasLimit = BlockGasLimit;
     type OnChargeTransaction = ();
+    type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping;
 }
 
 impl pallet_shift_session_manager::Config for Runtime {}
@@ -508,7 +511,7 @@ construct_runtime!(
         Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
         ShiftSessionManager: pallet_shift_session_manager::{Pallet},
 
-        Randomness: pallet_randomness_collective_flip::{Pallet, Call, Storage},
+        Randomness: pallet_randomness_collective_flip::{Pallet, Storage},
         Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
         EVM: pallet_evm::{Pallet, Config, Storage, Event<T>},
     }
