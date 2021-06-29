@@ -68,7 +68,7 @@ jobs:
       - name: 🔨 Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v1
         with:
-          version: "11.0"
+          version: "12.0"
           ubuntu-version: "20.04"
           directory: ${{ runner.temp }}/llvm
           cached: ${{ steps.cache-llvm.outputs.cache-hit }}
