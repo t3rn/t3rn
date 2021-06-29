@@ -81,7 +81,6 @@ impl AsGatewayOutboundEvent for SubstrateRawEvent {
             })
             .collect::<Result<Vec<Bytes>, &'static str>>()?;
 
-
         Ok(GatewayOutboundEvent {
             id,
             /// translate address into namespace
