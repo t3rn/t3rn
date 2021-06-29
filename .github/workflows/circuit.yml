@@ -3,9 +3,10 @@ name: Circuit CI
 on:
   pull_request:
     # TODO: replace this with main branch at some point
-    # CI now runs on all PRs targeted to `poc-1`
+    # CI now runs on all PRs targeted to `poc-1` and `development`
     branches:
       - poc-1
+      - development
     paths:
       - circuit/**/*.rs
       - circuit/**/Cargo.toml
