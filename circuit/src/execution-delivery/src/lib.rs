@@ -3,7 +3,7 @@
 // Copyright (C) 2020-2021 Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
-// Licensed under the Apache License, Version 2.0 (the "License");
+// Licensed under the Apache License, Version 2.0 (the "License")
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -119,6 +119,9 @@ pub fn select_validator_for_x_tx_dummy<T: Config>(
 
 pub type XtxId<T> = <T as frame_system::Config>::Hash;
 
+pub type AuthorityId = crate::message_assembly::signer::app::Public;
+pub type AuthorityPair = crate::message_assembly::signer::app::Pair;
+
 /// A composable cross-chain (X) transaction that has already been verified to be valid and submittable
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
 pub struct Xtx<AccountId, BlockNumber, Hash> {
@@ -181,7 +184,6 @@ pub struct StepEntry<AccountId, BlockNumber, Hash> {
 ///     vector of phases, where
 ///         phase: vector of rounds, where
 ///             round: vector of steps
-
 pub type RoundEntry<AccountId, BlockNumber, Hash> = Vec<StepEntry<AccountId, BlockNumber, Hash>>;
 
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
@@ -274,7 +276,6 @@ pub mod pallet {
         + pallet_balances::Config
         + VersatileWasm
         + pallet_contracts_registry::Config
-        + pallet_im_online::Config
         + pallet_xdns::Config
         + pallet_contracts::Config
         + pallet_evm::Config
@@ -643,7 +644,7 @@ impl<T: Config> Pallet<T> {
                 .map_err(|_e| "Can't cast value in dry_run_single_contract")?,
         );
 
-        let local_keys = T::AuthorityId::all();
+        let local_keys = AuthorityId::all();
 
         // ToDo: Select validators to submit by his public key, like:
         // let submitter = local_keys.binary_search(&escrow_account.into()).ok().map(|location| local_keys[location].clone()).ok_or("Can't match")?;

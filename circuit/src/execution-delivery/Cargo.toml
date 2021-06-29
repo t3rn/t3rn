@@ -14,6 +14,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 hex-literal = { version = '0.3.1'}
+hex = { version = "0.4.3", default-features = false }
 
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
 
@@ -125,6 +126,7 @@ std = [
     "pallet-session/std",
     "pallet-offences/std",
     "frame-election-provider-support/std",
+    "hex/std"
 ]
 # need to add this for the app_crypto macro
 full_crypto = []

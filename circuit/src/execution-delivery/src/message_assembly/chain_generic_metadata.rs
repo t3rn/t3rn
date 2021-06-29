@@ -33,6 +33,10 @@ pub enum MetadataError {
 }
 
 impl Metadata {
+    pub fn new(runtime_metadata: RuntimeMetadataV13) -> Self {
+        Self { runtime_metadata }
+    }
+
     pub fn lookup_module_and_call_indices(
         &self,
         lookup_module_name: &'static str,
@@ -50,7 +54,6 @@ impl Metadata {
             .unwrap();
 
         let module_index: u8 = module_found.index;
-
         let calls = match module_found.calls {
             Some(module_calls) => convert(module_calls)?.into_iter(),
             None => vec![].into_iter(),
@@ -111,56 +114,61 @@ fn convert<B: 'static, O: 'static>(dd: DecodeDifferent<B, O>) -> Result<O, &'sta
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use std::string::String;
+    // use crate::message_assembly::chain_generic_metadata::Metadata;
+    // use frame_metadata::{
+    //     DecodeDifferent, DecodeDifferentArray, ExtrinsicMetadata, ModuleMetadata,
+    //     RuntimeMetadataV13,
+    // };
 
-    struct TestGatewayProtocol {}
-
-    impl SubstrateOutboundProtocol for TestGatewayProtocol {}
-
-    impl SubstrateOutboundProtocol for TestGatewayProtocol {}
-
-    #[test]
-    fn successfully_creates_example_eth_like_chain_description() {
-        let test_gateway_protocol = GatewayProtocol::new(TestChainConfig);
-
-        test_gateway_protocol.get_genesis_config_abi();
-
-        /// impl get_protocol_info -> GenesisInfo { types info + structs info }
-        //     pub gateway_inbound_protocol: Box<dyn GatewayInboundProtocol>,
-        // let outbound_message = self.gateway_inbound_protocol.transfer_escrow(
-        //     <T as CircuitTrait>::AccountId32Converter::convert(self.escrow_account.clone()),
-        //     <T as CircuitTrait>::AccountId32Converter::convert(self.requester.clone()),
-        //     <T as CircuitTrait>::AccountId32Converter::convert(to.clone()),
-        //     <T as CircuitTrait>::ToStandardizedGatewayBalance::convert(value).into(),
-        //     self.inner_exec_transfers,
-        //     self.gateway_pointer.gateway_type.clone(),
-        // );
-
-        // -> code | instantiate_gateway (pointer) ->
-        //          { metadata, runtime_version, genesis_hash, submitter_pair } // messaging_params
-        //          Opt GenesisConfig {  } // messaging_params
-        //          let my_specific_gateway = GatewayImpl::new()
-        //          let sgp = SubstrateGatewayProtocol::new(my_specific_gateway)
-        //
-
-        // impl trait dry_run
-        gateway_protocol.dry_message_dispatch();
-
-        gateway_protocol.dry_verify_message_sender();
-
-        //impt trait outbound_messages
-
-        // gateway_protocol.confirm_inclusion(
-        //     block_hash,
-        //     value,
-        //     proof,
-        //     trie_pointer
-        // ) {
-        //
-        //     // access pallet-multi-verifier::get_block_by_hash()
-        //
-        //
-        // }
-    }
+    // use super::*;
+    // use std::string::String;
+    // use crate::message_assembly::substrate_gateway_protocol::SubstrateGatewayProtocol;
+    //
+    // struct TestGatewayProtocol {}
+    //
+    // impl SubstrateOutboundProtocol for TestGatewayProtocol {}
+    //
+    // #[test]
+    // fn successfully_creates_example_eth_like_chain_description() {
+    //     let test_gateway_protocol = SubstrateGatewayProtocol::new(TestChainConfig);
+    //
+    //     test_gateway_protocol.get_genesis_config_abi();
+    //
+    //     /// impl get_protocol_info -> GenesisInfo { types info + structs info }
+    //     //     pub gateway_inbound_protocol: Box<dyn GatewayInboundProtocol>,
+    //     // let outbound_message = self.gateway_inbound_protocol.transfer_escrow(
+    //     //     <T as CircuitTrait>::AccountId32Converter::convert(self.escrow_account.clone()),
+    //     //     <T as CircuitTrait>::AccountId32Converter::convert(self.requester.clone()),
+    //     //     <T as CircuitTrait>::AccountId32Converter::convert(to.clone()),
+    //     //     <T as CircuitTrait>::ToStandardizedGatewayBalance::convert(value).into(),
+    //     //     self.inner_exec_transfers,
+    //     //     self.gateway_pointer.gateway_type.clone(),
+    //     // );
+    //
+    //     // -> code | instantiate_gateway (pointer) ->
+    //     //          { metadata, runtime_version, genesis_hash, submitter_pair } // messaging_params
+    //     //          Opt GenesisConfig {  } // messaging_params
+    //     //          let my_specific_gateway = GatewayImpl::new()
+    //     //          let sgp = SubstrateGatewayProtocol::new(my_specific_gateway)
+    //     //
+    //
+    //     // impl trait dry_run
+    //     gateway_protocol.dry_message_dispatch();
+    //
+    //     gateway_protocol.dry_verify_message_sender();
+    //
+    //     //impt trait outbound_messages
+    //
+    //     // gateway_protocol.confirm_inclusion(
+    //     //     block_hash,
+    //     //     value,
+    //     //     proof,
+    //     //     trie_pointer
+    //     // ) {
+    //     //
+    //     //     // access pallet-multi-verifier::get_block_by_hash()
+    //     //
+    //     //
+    //     // }
+    // }
 }

@@ -1,25 +1,23 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::Encode;
+use sp_runtime::app_crypto::RuntimeAppPublic;
 use sp_std::vec;
 use sp_std::vec::*;
-
-use crate::message_assembly::chain_generic_metadata::Metadata;
-
 use sp_version::RuntimeVersion;
 
 use t3rn_primitives::transfers::TransferEntry;
 use t3rn_primitives::GatewayType;
 
-use super::circuit_outbound::{CircuitOutboundMessage, GatewayExpectedOutput, MessagePayload};
+use crate::message_assembly::chain_generic_metadata::Metadata;
 
+use super::circuit_outbound::{CircuitOutboundMessage, GatewayExpectedOutput, MessagePayload};
 use super::gateway_inbound_protocol::GatewayInboundProtocol;
 use super::substrate_gateway_assembly::SubstrateGatewayAssembly;
-use sp_runtime::RuntimeAppPublic;
 
 pub struct SubstrateGatewayProtocol<Pair, Hash>
 where
-    Pair: RuntimeAppPublic,
+    Pair: RuntimeAppPublic + Clone,
     Hash: Clone,
 {
     pub assembly: SubstrateGatewayAssembly<Pair, Hash>,
@@ -27,7 +25,7 @@ where
 
 impl<Pair, Hash> SubstrateGatewayProtocol<Pair, Hash>
 where
-    Pair: RuntimeAppPublic,
+    Pair: RuntimeAppPublic + Clone,
     Hash: Clone,
 {
     pub fn new(
@@ -69,7 +67,7 @@ where
 
 impl<Pair, Hash> GatewayInboundProtocol for SubstrateGatewayProtocol<Pair, Hash>
 where
-    Pair: RuntimeAppPublic,
+    Pair: RuntimeAppPublic + Clone,
     Hash: Clone,
 {
     // Get storage key directly to foreign storage system

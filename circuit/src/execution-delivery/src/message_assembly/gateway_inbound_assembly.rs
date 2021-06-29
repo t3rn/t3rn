@@ -2,8 +2,8 @@
 
 use sp_std::vec::*;
 
+use crate::message_assembly::signer::app::UncheckedExtrinsicV4;
 use codec::{Decode, Encode};
-use t3rn_primitives::UncheckedExtrinsicV4;
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq)]
 pub struct SignedBytes {
