@@ -3,6 +3,7 @@
 use t3rn_primitives::GatewayPointer;
 
 use codec::{Decode, Encode};
+#[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_core::{H160, H256, U256};
 use sp_std::vec::*;
@@ -26,7 +27,8 @@ use sp_runtime::RuntimeDebug as Debug;
 use std::fmt::Debug;
 
 // That's the EthLogEntry localised to the block that comes via RPC
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct EthLogEntry {
     pub log: EthLog,
     /// Block Hash
@@ -47,7 +49,8 @@ pub struct EthLogEntry {
     pub removed: bool,
 }
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 /// Log on eth being a subject to RLP and blockchain state
 /// More at https://github.com/ethereum/go-ethereum/blob/a2ea537a6fb4c69543ed8045337516eb61c7afe8/core/types/log.go#L65
 pub struct EthLog {
@@ -68,16 +71,16 @@ impl AsGatewayOutboundEvent for EthLog {
         proof: Option<Proof>,
         args_abi: Vec<Type>,
     ) -> Result<GatewayOutboundEvent, &'static str> {
-        // translate address into namespace
-        let namespace = RuntimeString::Owned(self.address.to_string());
-
-        // decode first topic's first argument to discover event name
-        let name = RuntimeString::Owned(self.topics[0].to_string());
-
         let expected_arg_types_eth = from_eth_abi(args_abi.clone())?;
 
+        let name = self.topics[0].encode();
+        let namespace = self.address.encode();
+
+        let signature: &str =
+            sp_std::str::from_utf8(&name[..]).map_err(|_| "`Can't decode argument to &str")?;
+
         let event = EthAbiEvent {
-            signature: &self.topics[0].to_string(),
+            signature,
             inputs: expected_arg_types_eth.as_slice(),
             anonymous: false,
         };
@@ -170,12 +173,10 @@ mod tests {
         assert_eq!(
             EthLog {
                 address: H160::from_str("ede84640d1a1d3e06902048e67aa7db8d52c2ce1").unwrap(),
-                topics: vec![
-                    H256::from_str(
-                        "0000000000000000000000000000000000000000000000000000000000000000"
-                    )
-                    .unwrap()
-                ],
+                topics: vec![H256::from_str(
+                    "0000000000000000000000000000000000000000000000000000000000000000"
+                )
+                .unwrap()],
                 data: Bytes(vec![
                     255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
                     255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
@@ -201,12 +202,10 @@ mod tests {
         assert_eq!(
             EthLog {
                 address: H160::from_str("ede84640d1a1d3e06902048e67aa7db8d52c2ce1").unwrap(),
-                topics: vec![
-                    H256::from_str(
-                        "0000000000000000000000000000000000000000000000000000000000000000"
-                    )
-                    .unwrap()
-                ],
+                topics: vec![H256::from_str(
+                    "0000000000000000000000000000000000000000000000000000000000000000"
+                )
+                .unwrap()],
                 data: Bytes(vec![
                     255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
                     255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255

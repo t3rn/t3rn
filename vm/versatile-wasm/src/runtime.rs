@@ -29,6 +29,7 @@ use sp_sandbox;
 use sp_std::{convert::TryInto, prelude::*};
 use system::Config as SystemTrait;
 use t3rn_primitives::{
+    abi::GatewayABIConfig,
     transfers::{escrow_transfer, BalanceOf as EscrowBalanceOf, TransferEntry},
     EscrowTrait,
 };
@@ -55,6 +56,7 @@ pub struct Runtime<'a, E: ExtStandards + 'a> {
     pub max_event_topics: u32,
     pub trap_reason: Option<TrapReason>,
     pub gateway_id: &'a mut [u8; 4],
+    pub gateway_abi_config: GatewayABIConfig,
 }
 
 impl<'a, E: ExtStandards + 'a> Runtime<'a, E> {
@@ -70,6 +72,7 @@ impl<'a, E: ExtStandards + 'a> Runtime<'a, E> {
         input_data: Option<Vec<u8>>,
         value: EscrowBalanceOf<E::T>,
         gateway_id: &'a mut [u8; 4],
+        gateway_abi_config: GatewayABIConfig,
     ) -> Self {
         Runtime {
             ext,
@@ -90,7 +93,8 @@ impl<'a, E: ExtStandards + 'a> Runtime<'a, E> {
             max_value_size: u32::MAX,
             max_event_topics: prepare::MAX_SUBJECT_LEN,
             trap_reason: None,
-            gateway_id: gateway_id,
+            gateway_id,
+            gateway_abi_config,
         }
     }
 }
@@ -217,6 +221,10 @@ define_env!(Env, <E: ExtStandards>,
         output_ptr: u32,
         output_len_ptr: u32
     ) -> ReturnCode => {
+        if value_len != ctx.gateway_abi_config.value_type_size || callee_len != ctx.gateway_abi_config.address_length {
+            return Err(sp_sandbox::HostError);
+        }
+
         // [0, 32> bytes of input reserved for a module name.
         let module_name = try_read_mem_as_utf8(ctx, input_data_ptr, 32)?;
         // [32, 64> bytes of input reserved for a module name. 64 bytes reserved in total in input.
@@ -259,6 +267,11 @@ define_env!(Env, <E: ExtStandards>,
         }
     },
     seal_transfer (ctx, account_ptr: u32, account_len: u32, value_ptr: u32, value_len: u32) -> ReturnCode => {
+
+        if value_len != ctx.gateway_abi_config.value_type_size || account_len != ctx.gateway_abi_config.address_length {
+            return Err(sp_sandbox::HostError);
+        }
+
         let callee: <E::T as SystemTrait>::AccountId = read_sandbox_memory_as(ctx, account_ptr, account_len)?;
         let value: EscrowBalanceOf::<E::T> = read_sandbox_memory_as(ctx, value_ptr, value_len)?;
         match ctx.ext.transfer(
@@ -624,6 +637,7 @@ pub fn run_code_on_versatile_wm<
     code: Vec<u8>,
     composable_contract_storage_root: T::Hash,
     trace_log: bool,
+    gateway_abi_config: GatewayABIConfig,
     mut ext: E,
 ) -> ExecResultTrace {
     // That only works for code that is received by the call and will be executed and cleaned up after.
@@ -692,6 +706,7 @@ pub fn run_code_on_versatile_wm<
         Some(input_data.clone()),
         value,
         &mut current_gateway_id,
+        gateway_abi_config,
     );
 
     let sandbox_result =
@@ -779,6 +794,7 @@ pub fn raw_escrow_call<T: EscrowTrait + VersatileWasm + SystemTrait, E: ExtStand
 
     let trace_log = false;
     let mut stack_trace = vec![];
+    let gateway_abi_config: GatewayABIConfig = Default::default();
 
     let mut state = Runtime::new(
         &mut ext,
@@ -792,6 +808,7 @@ pub fn raw_escrow_call<T: EscrowTrait + VersatileWasm + SystemTrait, E: ExtStand
         Some(input_data.clone()),
         value,
         &mut current_gateway_id,
+        gateway_abi_config,
     );
 
     let sandbox_result =

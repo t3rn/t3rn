@@ -5,25 +5,33 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-    decl_event, decl_module,
     dispatch::{DispatchError, DispatchResult},
     traits::{Currency, Randomness, Time, UnfilteredDispatchable},
-    weights::GetDispatchInfo,
-    Parameter, RuntimeDebug,
+    weights::{GetDispatchInfo, Weight},
+    RuntimeDebug,
 };
+use sp_runtime::traits::Convert;
+
 use parity_wasm::elements::ValueType;
 use sp_sandbox;
 use sp_std::prelude::*;
 use t3rn_primitives::{transfers::BalanceOf, EscrowTrait};
 
+pub use crate::pallet::*;
+
 #[macro_use]
 pub mod env_def;
+pub mod call_stack;
 pub mod ext;
+pub mod fake_storage;
 pub mod fees;
 pub mod gas;
 pub mod prepare;
 pub mod runtime;
 pub mod simple_schedule_v2;
+
+pub use crate::call_stack::Frame;
+pub use crate::simple_schedule_v2::Schedule;
 
 use self::env_def::ConvertibleToWasm;
 use system::Config as SystemTrait;
@@ -33,6 +41,9 @@ pub type AccountIdOf<T> = <T as SystemTrait>::AccountId;
 pub type SeedOf<T> = <T as SystemTrait>::Hash;
 pub type TopicOf<T> = <T as SystemTrait>::Hash;
 pub type BlockNumberOf<T> = <T as SystemTrait>::BlockNumber;
+
+pub type CodeHash<T> = <T as SystemTrait>::Hash;
+pub type TrieId = Vec<u8>;
 
 pub struct DisabledDispatchRuntimeCall {}
 
@@ -65,28 +76,80 @@ pub trait DispatchRuntimeCall<T: VersatileWasm> {
     ) -> DispatchResult;
 }
 
-decl_event! {
-    pub enum Event<T>
-    where
-        <T as system::Config>::AccountId,
-    {
+pub use crate::pallet::Config as VersatileWasm;
+
+#[frame_support::pallet]
+pub mod pallet {
+    use super::*;
+    use frame_support::pallet_prelude::*;
+    use system::pallet_prelude::*;
+
+    #[pallet::config]
+    pub trait Config: system::Config + EscrowTrait + transaction_payment::Config {
+        type Event: From<Event<Self>>
+            + IsType<<Self as system::Config>::Event>
+            + Into<<Self as system::Config>::Event>;
+
+        type Call: Parameter + UnfilteredDispatchable<Origin = Self::Origin> + GetDispatchInfo;
+        type Randomness: Randomness<Self::Hash, Self::BlockNumber>;
+        type DispatchRuntimeCall: DispatchRuntimeCall<Self>;
+        /// Cost schedule and limits.
+        #[pallet::constant]
+        type Schedule: Get<Schedule>;
+        /// The type of the call stack determines the maximum nesting depth of contract calls.
+        ///
+        /// The allowed depth is `CallStack::size() + 1`.
+        /// Therefore a size of `0` means that a contract cannot use call or instantiate.
+        /// In other words only the origin called "root contract" is allowed to execute then.
+        type CallStack: smallvec::Array<Item = Frame<Self>>;
+
+        type WeightPrice: Convert<Weight, BalanceOf<Self>>;
+    }
+
+    #[pallet::pallet]
+    pub struct Pallet<T>(PhantomData<T>);
+
+    #[pallet::error]
+    pub enum Error<T> {
+        StorageExhausted,
+        TransferFailed,
+        BelowSubsistenceThreshold,
+        TerminatedInConstructor,
+        MaxCallDepthReached,
+        TempInstantiated,
+        OutOfGas,
+        NotCallable,
+    }
+
+    #[pallet::hooks]
+    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> where T::AccountId: AsRef<[u8]> {}
+
+    #[pallet::event]
+    #[pallet::metadata(T::AccountId = "AccountId")]
+    pub enum Event<T: Config> {
         /// An event deposited upon execution of a contract from the account.
         /// \[escrow_account, requester_account, data\]
-        VersatileVMExecution(AccountId, AccountId, Vec<u8>),
-    }
-}
+        VersatileVMExecution(T::AccountId, T::AccountId, Vec<u8>),
+        /// A custom event emitted by the contract.
+        /// \[contract, data\]
+        ///
+        /// # Params
+        ///
+        /// - `contract`: The contract that emitted the event.
+        /// - `data`: Data supplied by the contract. Metadata generated during contract
+        ///           compilation is needed to decode it.
+        ContractEmitted(T::AccountId, Vec<u8>),
 
-pub trait VersatileWasm: EscrowTrait + transaction_payment::Config {
-    type Event: From<Event<Self>> + Into<<Self as system::Config>::Event>;
-    type Call: Parameter + UnfilteredDispatchable<Origin = Self::Origin> + GetDispatchInfo;
-    type Randomness: Randomness<Self::Hash, Self::BlockNumber>;
-    type DispatchRuntimeCall: DispatchRuntimeCall<Self>;
-}
-
-decl_module! {
-    pub struct Module<T: VersatileWasm> for enum Call where origin: <T as system::Config>::Origin, system=system {
-        fn deposit_event() = default;
+        /// Contract deployed by address at the specified address. \[deployer, contract\]
+        TempInstantiated(T::AccountId, T::AccountId),
     }
+
+    /// The subtrie counter.
+    #[pallet::storage]
+    pub(crate) type AccountCounter<T: Config> = StorageValue<_, u64, ValueQuery>;
+
+    #[pallet::call]
+    impl<T: Config> Pallet<T> {}
 }
 
 /// A prepared wasm module ready for execution.

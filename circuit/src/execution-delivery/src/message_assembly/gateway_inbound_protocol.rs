@@ -130,10 +130,10 @@ pub trait GatewayInboundProtocol {
     /// finality_proof - Proof that the block is finalized
     fn transfer_escrow(
         &self,
-        escrow_account: [u8; 32],
-        requester: [u8; 32],
-        to: [u8; 32],
-        value: u128,
+        escrow_account: Vec<u8>,
+        requester: Vec<u8>,
+        to: Vec<u8>,
+        value: Vec<u8>,
         transfers: &mut Vec<TransferEntry>,
         gateway_type: GatewayType,
     ) -> CircuitOutboundMessage;

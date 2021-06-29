@@ -3,9 +3,10 @@ name: Circuit CI
 on:
   pull_request:
     # TODO: replace this with main branch at some point
-    # CI now runs on all PRs targeted to `poc-1`
+    # CI now runs on all PRs targeted to `poc-1` and `development`
     branches:
       - poc-1
+      - development
     paths:
       - circuit/**/*.rs
       - circuit/**/Cargo.toml
@@ -67,7 +68,7 @@ jobs:
       - name: 🔨 Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v1
         with:
-          version: "11.0"
+          version: "12.0"
           ubuntu-version: "20.04"
           directory: ${{ runner.temp }}/llvm
           cached: ${{ steps.cache-llvm.outputs.cache-hit }}

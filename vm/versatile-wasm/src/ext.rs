@@ -182,7 +182,7 @@ where
     fn deposit_event(&mut self, topics: Vec<TopicOf<Self::T>>, data: Vec<u8>) {
         <system::Pallet<T>>::deposit_event_indexed(
             &*topics,
-            <Self::T as VersatileWasm>::Event::from(crate::RawEvent::VersatileVMExecution(
+            <Self::T as VersatileWasm>::Event::from(crate::pallet::Event::VersatileVMExecution(
                 self.escrow_account.clone(),
                 self.requester.clone(),
                 data,

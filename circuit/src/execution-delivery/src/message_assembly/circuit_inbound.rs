@@ -1,6 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
+
+#[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_core::U256;
 use sp_runtime::RuntimeDebug;
@@ -11,13 +13,15 @@ use crate::message_assembly::circuit_outbound::ProofTriePointer;
 use crate::message_assembly::gateway_outbound_protocol::GatewayOutboundEvent;
 use t3rn_primitives::abi::Bytes;
 
-#[derive(Serialize, Deserialize, Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum ProofType {
     FullValue,
     MerklePath,
 }
 
-#[derive(Serialize, Deserialize, Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct Proof {
     /// Original value to prove
     pub value: Bytes,

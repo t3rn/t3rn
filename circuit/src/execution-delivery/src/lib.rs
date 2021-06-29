@@ -598,6 +598,7 @@ pub mod pallet {
         IOScheduleNoEndingSemicolon,
         IOScheduleEmpty,
         IOScheduleUnknownCompose,
+        ProcessStepGatewayNotRecognised,
         StepConfirmationBlockUnrecognised,
         StepConfirmationGatewayNotRecognised,
         StepConfirmationInvalidInclusionProof,
@@ -818,6 +819,9 @@ impl<T: Config> Pallet<T> {
         // let submitter = local_keys.binary_search(&escrow_account.into()).ok().map(|location| local_keys[location].clone()).ok_or("Can't match")?;
         let submitter = local_keys[0].clone();
 
+        let gateway_xdns_record = pallet_xdns::Pallet::<T>::xdns_registry(step.gateway_entry_id)
+            .ok_or(Error::<T>::ProcessStepGatewayNotRecognised)?;
+
         ExecComposer::pre_run_single_contract::<T>(
             contract,
             escrow_account,
@@ -827,6 +831,7 @@ impl<T: Config> Pallet<T> {
             value,
             step.input,
             step.gateway_id,
+            gateway_xdns_record.gateway_abi,
         )
         .into()
     }
