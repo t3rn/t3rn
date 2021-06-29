@@ -131,7 +131,6 @@ impl ExecComposer {
         let output_mode = OptimisticOutputMode::new();
         let requester = T::AccountId::default(); // In dry run don't use a requester to check whether the code is correct
 
-
         Self::run_single_contract::<T, OptimisticOutputMode>(
             compose,
             escrow_account,
