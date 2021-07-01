@@ -138,7 +138,6 @@ pub mod tests {
     use crate::KEY_TYPE;
 
     use super::*;
-    use frame_support::assert_err;
     use sp_runtime::generic::Era;
 
     fn create_submitter() -> Public {
