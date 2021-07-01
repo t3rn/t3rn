@@ -8,9 +8,10 @@ pub mod app {
 
     use codec::{Compact, Decode, Encode, Error, Input};
     use sp_application_crypto::{app_crypto, sr25519};
-    use sp_core::blake2_256;
+    use sp_io::hashing::blake2_256;
     use sp_runtime::generic::Era;
     use sp_runtime::{AccountId32, MultiAddress, MultiSignature};
+    use sp_std::vec::Vec;
 
     pub const CIRCUIT_CRYPTO_ID: sp_application_crypto::KeyTypeId =
         sp_application_crypto::KeyTypeId(*b"circ");
@@ -207,7 +208,7 @@ pub mod app {
 
     impl From<Signature> for MultiSig {
         fn from(sig: Signature) -> Self {
-            MultiSignature::Sr25519(sig.into())
+            MultiSig::Sr25519(sig.into())
         }
     }
 }
@@ -285,10 +286,11 @@ macro_rules! compose_extrinsic_offline {
 
 #[cfg(test)]
 mod tests {
+    use codec::{Decode, Encode};
+
     use crate::message_assembly::signer::app::{
         GenericAddress, GenericExtra, MultiSig, UncheckedExtrinsicV4,
     };
-    use codec::{Decode, Encode};
 
     #[test]
     fn encode_decode_roundtrip_works() {

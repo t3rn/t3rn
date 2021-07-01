@@ -20,10 +20,6 @@
 
 use codec::{Decode, Encode};
 use frame_support::traits::{Currency, Time};
-use sp_io::hashing::blake2_256;
-
-use sp_runtime::generic::Era;
-use sp_runtime::MultiSignature;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};

@@ -190,7 +190,6 @@ pub fn select_validator_for_x_tx_dummy<T: Config>(
 pub type XtxId<T> = <T as frame_system::Config>::Hash;
 
 pub type AuthorityId = crate::message_assembly::signer::app::Public;
-pub type AuthorityPair = crate::message_assembly::signer::app::Pair;
 
 /// A composable cross-chain (X) transaction that has already been verified to be valid and submittable
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]

@@ -7,7 +7,7 @@ use sp_version::RuntimeVersion;
 
 use crate::message_assembly::chain_generic_metadata::Metadata;
 use crate::message_assembly::signer::app::{
-    GenericAddress, GenericExtra, MultiSig, SignedPayload, UncheckedExtrinsicV4,
+    GenericAddress, GenericExtra, MultiSig, Public, Signature, SignedPayload, UncheckedExtrinsicV4,
 };
 use crate::{compose_call, AuthorityId};
 
@@ -48,9 +48,7 @@ impl<Authority, Hash> GatewayInboundAssembly for SubstrateGatewayAssembly<Author
 where
     Authority: RuntimeAppPublic + Clone,
     Hash: Clone,
-    crate::message_assembly::signer::app::Public: std::convert::From<Authority>,
-    sp_runtime::MultiSignature:
-        std::convert::From<<Authority as sp_runtime::RuntimeAppPublic>::Signature>,
+    Public: From<Authority>,
 {
     fn assemble_signed_call(
         &self,
@@ -115,10 +113,10 @@ where
             ),
         );
 
-        let signed = GenericAddress::from(AuthorityId::from(self.submitter.clone()));
+        let signed = GenericAddress::from(AuthorityId::from(self.submitter.clone().into()));
 
-        let signature = raw_payload
-            .using_encoded(|payload| self.submitter.sign(&payload))
+        let signature: Signature = raw_payload
+            .using_encoded(|payload| AuthorityId::from(self.submitter.clone()).sign(&payload))
             .expect("Signature should be valid");
 
         UncheckedExtrinsicV4::new_signed(call_bytes, signed, MultiSig::from(signature), extra)
