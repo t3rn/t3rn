@@ -1,12 +1,13 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use sp_std::boxed::Box;
-use sp_std::vec::Vec;
-
 use frame_support::ensure;
+#[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::RuntimeString;
+use sp_std::boxed::Box;
+use sp_std::vec;
+use sp_std::vec::Vec;
 
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
@@ -16,7 +17,9 @@ use std::fmt::Debug;
 
 pub type Bytes = sp_core::Bytes;
 
-#[derive(Serialize, Deserialize, PartialEq, Clone, Encode, Decode, Eq, Hash, Debug)]
+/// ToDo: Introduce Compact Encoding for u8 + u16 + u32
+#[derive(PartialEq, Clone, Encode, Decode, Eq, Hash, Debug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum Type {
     Address(u16),
     DynamicAddress,
@@ -41,20 +44,23 @@ pub enum Type {
     Crypto(CryptoAlgo),
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Clone, Encode, Decode, Eq, Hash, Debug)]
+#[derive(PartialEq, Clone, Encode, Decode, Eq, Hash, Debug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum HasherAlgo {
     Blake2,
     Keccak256,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Clone, Encode, Decode, Eq, Hash, Debug)]
+#[derive(PartialEq, Clone, Encode, Decode, Eq, Hash, Debug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum CryptoAlgo {
     Ed25519,
     Sr25519,
     Ecdsa,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Clone, Encode, Decode, Eq, Hash, Debug)]
+#[derive(PartialEq, Clone, Encode, Decode, Eq, Hash, Debug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 /// Describe ABI configuration for a gateway so that it's possible to cast types
 /// of inbound and outbound messages to that gateway
 pub struct GatewayABIConfig {
@@ -76,7 +82,23 @@ pub struct GatewayABIConfig {
     pub structs: Vec<StructDecl>,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Clone, Encode, Decode, Eq, Hash, Debug)]
+impl Default for GatewayABIConfig {
+    fn default() -> GatewayABIConfig {
+        GatewayABIConfig {
+            block_number_type_size: 32,
+            hash_size: 32,
+            hasher: HasherAlgo::Blake2,
+            crypto: CryptoAlgo::Sr25519,
+            address_length: 32,
+            value_type_size: 64,
+            decimals: 8,
+            structs: vec![],
+        }
+    }
+}
+
+#[derive(PartialEq, Clone, Encode, Decode, Eq, Hash, Debug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct Parameter {
     /// The name can empty (e.g. in an event field or unnamed parameter/return); encoded vector
     pub name: Option<Vec<u8>>,
@@ -88,7 +110,8 @@ pub struct Parameter {
     pub indexed: Option<bool>,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Clone, Encode, Decode, Eq, Hash, Debug)]
+#[derive(PartialEq, Clone, Encode, Decode, Eq, Hash, Debug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct StructDecl {
     /// encoded name of the struct
     pub name: Type,
@@ -279,11 +302,12 @@ impl Type {
             }
             Type::Hasher(hasher_alg, hash_size) => match hasher_alg {
                 HasherAlgo::Blake2 => match hash_size {
-                    256 => Ok(Box::new(sp_runtime::traits::BlakeTwo256)),
+                    128 => Ok(Box::new(sp_io::hashing::blake2_128)),
+                    256 => Ok(Box::new(sp_io::hashing::blake2_256)),
                     _ => unimplemented!(),
                 },
                 HasherAlgo::Keccak256 => match hash_size {
-                    256 => Ok(Box::new(sp_runtime::traits::Keccak256)),
+                    256 => Ok(Box::new(sp_io::hashing::keccak_256)),
                     _ => unimplemented!(),
                 },
             },

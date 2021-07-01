@@ -7,6 +7,7 @@ use sp_std::vec::*;
 
 use pallet_contracts_registry::RegistryContract;
 
+use t3rn_primitives::abi::GatewayABIConfig;
 use t3rn_primitives::transfers::BalanceOf;
 use t3rn_primitives::transfers::TransferEntry;
 
@@ -38,6 +39,7 @@ impl ExecComposer {
         value: BalanceOf<T>,
         input: Vec<u8>,
         gateway_id: bp_runtime::ChainId,
+        gateway_abi_config: GatewayABIConfig,
     ) -> Result<Vec<CircuitOutboundMessage>, &'static str> {
         let output_mode = PessimisticOutputMode::new();
         let requester = T::AccountId::default(); // In dry run don't use a requester to check whether the code is correct
@@ -68,6 +70,8 @@ impl ExecComposer {
             escrow_account,
             submitter,
             requester,
+            gateway_id,
+            gateway_abi_config,
             output_mode,
         )
     }
@@ -81,6 +85,7 @@ impl ExecComposer {
         value: BalanceOf<T>,
         input: Vec<u8>,
         gateway_id: bp_runtime::ChainId,
+        gateway_abi_config: GatewayABIConfig,
         _confirmed_outputs: Vec<u8>,
     ) -> Result<Vec<CircuitOutboundMessage>, &'static str> {
         let output_mode = StuffedOutputMode::new();
@@ -111,6 +116,8 @@ impl ExecComposer {
             escrow_account,
             submitter,
             requester,
+            gateway_id,
+            gateway_abi_config,
             output_mode,
         )
     }
@@ -119,6 +126,8 @@ impl ExecComposer {
         compose: Compose<T::AccountId, BalanceOf<T>>,
         escrow_account: T::AccountId,
         submitter: AuthorityId,
+        gateway_id: bp_runtime::ChainId,
+        gateway_abi_config: GatewayABIConfig,
     ) -> Result<Vec<CircuitOutboundMessage>, &'static str> {
         let output_mode = OptimisticOutputMode::new();
         let requester = T::AccountId::default(); // In dry run don't use a requester to check whether the code is correct
@@ -128,6 +137,8 @@ impl ExecComposer {
             escrow_account,
             submitter,
             requester,
+            gateway_id,
+            gateway_abi_config,
             output_mode,
         )
     }
@@ -137,9 +148,11 @@ impl ExecComposer {
         escrow_account: T::AccountId,
         submitter: AuthorityId,
         requester: T::AccountId,
+        gateway_id: bp_runtime::ChainId,
+        gateway_abi_config: GatewayABIConfig,
         output_mode: OM,
     ) -> Result<Vec<CircuitOutboundMessage>, &'static str> {
-        let gateway_pointer = Self::retrieve_gateway_pointer(compose.gateway_id)?;
+        let gateway_pointer = Self::retrieve_gateway_pointer(gateway_id)?;
         let gateway_protocol =
             Self::retrieve_gateway_protocol::<T>(submitter, gateway_pointer.clone())?;
 
@@ -172,7 +185,7 @@ impl ExecComposer {
         let mut constructed_outbound_messages = Vec::<CircuitOutboundMessage>::new();
 
         // Utilise Rust specialisation
-        let env_optimistic_dry = CircuitVersatileWasmEnv::<T, OM>::new(
+        let env_circuit_run = CircuitVersatileWasmEnv::<T, OM>::new(
             &escrow_account,
             &requester,
             block_number,
@@ -191,21 +204,22 @@ impl ExecComposer {
         let mut deferred_storage_writes = Vec::<DeferredStorageWrite>::new();
         let mut call_stamps = Vec::<CallStamp>::new();
 
-        // ToDo: Implement as env_optimistic_dry::run()
+        // ToDo: Implement as env_circuit_run::run()
         let _res = run_code_on_versatile_wm::<T, CircuitVersatileWasmEnv<T, OM>>(
-            env_optimistic_dry.escrow_account,
-            &env_optimistic_dry.requester,
+            env_circuit_run.escrow_account,
+            &env_circuit_run.requester,
             &target_account, // dest
             value,
             gas_meter,
-            env_optimistic_dry.input_data.clone().unwrap(),
-            &mut env_optimistic_dry.inner_exec_transfers.clone(),
+            env_circuit_run.input_data.clone().unwrap(),
+            &mut env_circuit_run.inner_exec_transfers.clone(),
             &mut deferred_storage_writes,
             &mut call_stamps,
             code,
-            env_optimistic_dry.storage_trie_id,
+            env_circuit_run.storage_trie_id,
             trace_stack,
-            env_optimistic_dry,
+            gateway_abi_config,
+            env_circuit_run,
         );
 
         Ok(constructed_outbound_messages.to_vec())

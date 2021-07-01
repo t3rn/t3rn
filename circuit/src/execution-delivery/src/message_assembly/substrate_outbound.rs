@@ -3,11 +3,13 @@
 use t3rn_primitives::GatewayPointer;
 
 use codec::{Decode, Encode};
+#[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
-use sp_std::vec::*;
-
 use sp_runtime::RuntimeString;
+
+use sp_std::vec;
+use sp_std::vec::*;
 
 use crate::message_assembly::circuit_inbound::Proof;
 use t3rn_primitives::abi::GatewayABIConfig;
@@ -26,7 +28,8 @@ pub type SubstrateEventEntry<E, T> = frame_system::EventRecord<E, T>;
 
 // whereas on Substrate there is an  event:
 /// But placing it in a context of other events is missing
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 struct SubstrateRawEvent {
     /// The name of the module from whence the Event originated
     pub module: RuntimeString,
@@ -82,9 +85,9 @@ impl AsGatewayOutboundEvent for SubstrateRawEvent {
             id,
             /// translate address into namespace
             signature: None,
-            namespace: self.module.clone(),
+            namespace: self.module.clone().encode(),
             /// translate variant into name
-            name: self.variant.clone(),
+            name: self.variant.clone().encode(),
             data: self.data.clone(),
             proof,
             args_abi,

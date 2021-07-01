@@ -111,7 +111,7 @@ pub fn new_partial(
         config.transaction_pool.clone(),
         config.role.is_authority().into(),
         config.prometheus_registry(),
-        task_manager.spawn_handle(),
+        task_manager.spawn_essential_handle(),
         client.clone(),
     );
 
@@ -188,7 +188,7 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
                 return Err(ServiceError::Other(format!(
                     "Error hooking up remote keystore for {}: {}",
                     url, e
-                )))
+                )));
             }
         };
     }
@@ -309,9 +309,9 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
                     let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
                     let slot = sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
-					*timestamp,
-					raw_slot_duration,
-				);
+                    *timestamp,
+                    raw_slot_duration,
+                );
 
                     Ok((timestamp, slot))
                 },
@@ -322,6 +322,7 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
                 sync_oracle: network.clone(),
                 justification_sync_link: network.clone(),
                 block_proposal_slot_portion: SlotProportion::new(2f32 / 3f32),
+                max_block_proposal_slot_portion: None,
                 telemetry: telemetry.as_ref().map(|x| x.handle()),
             },
         )?;
@@ -415,7 +416,7 @@ pub fn new_light(mut config: Configuration) -> Result<TaskManager, ServiceError>
     let transaction_pool = Arc::new(sc_transaction_pool::BasicPool::new_light(
         config.transaction_pool.clone(),
         config.prometheus_registry(),
-        task_manager.spawn_handle(),
+        task_manager.spawn_essential_handle(),
         client.clone(),
         on_demand.clone(),
     ));

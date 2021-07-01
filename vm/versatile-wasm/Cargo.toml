@@ -22,6 +22,8 @@ wasmi-validation = { version = "0.3.0", default-features = false }
 wat = { version = "1.0.37", optional = true, default-features = false }
 t3rn-primitives = { default-features = false, path = "../../circuit/src/primitives" }
 serde = { version = "1", optional = true, features = ["derive"] }
+smallvec = { version = "1", default-features = false, features = ["const_generics"] }
+log = { version = "0.4", default-features = false }
 
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master"  }
@@ -50,6 +52,7 @@ std = [
 	'parity-wasm/std',
 	'pwasm-utils/std',
 	"wasmi-validation/std",
+	"log/std",
 	'transaction-payment/std',
 	'sudo/std',
 	't3rn-primitives/std'

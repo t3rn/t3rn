@@ -47,6 +47,7 @@ use sp_staking::SessionIndex;
 
 use frame_support::weights::Weight;
 use sp_core::{crypto::KeyTypeId, H160, H256, U256};
+use sp_runtime::traits::{BlakeTwo256, Keccak256};
 
 use bp_messages::{
     source_chain::{
@@ -84,18 +85,19 @@ frame_support::construct_runtime!(
         Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         Historical: pallet_session_historical::{Pallet},
-        Offences: pallet_offences::{Pallet, Call, Storage, Event},
+        Offences: pallet_offences::{Pallet, Storage, Event},
         Messages: pallet_bridge_messages::{Pallet, Call, Event<T>},
+        MultiFinalityVerifier: pallet_multi_finality_verifier::{Pallet},
 
         Babe: pallet_babe::{Pallet, Call, Storage, Config},
-        TransactionPayment: pallet_transaction_payment::{Pallet, Call},
+        TransactionPayment: pallet_transaction_payment::{Pallet},
         Staking: pallet_staking::{Pallet, Call, Storage, Config<T>, Event<T>},
         Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         ImOnline: pallet_im_online::{Pallet, Call, Storage, Config<T>, Event<T>},
         Sudo: pallet_sudo::{Pallet, Call, Event<T>},
         VersatileWasmVM: versatile_wasm::{Pallet, Call, Event<T>},
-        Randomness: pallet_randomness_collective_flip::{Pallet, Call, Storage},
+        Randomness: pallet_randomness_collective_flip::{Pallet, Storage},
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Storage, Event<T>},
         XDNS: pallet_xdns::{Pallet, Call, Storage, Event<T>},
         Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
@@ -110,6 +112,8 @@ parameter_types! {
         frame_system::limits::BlockWeights::simple_max(1024);
 }
 
+impl pallet_randomness_collective_flip::Config for Test {}
+
 impl frame_system::Config for Test {
     type BaseCallFilter = ();
     type BlockWeights = ();
@@ -121,7 +125,7 @@ impl frame_system::Config for Test {
     type Call = Call;
     type Hash = H256;
     type Version = ();
-    type Hashing = sp_runtime::traits::BlakeTwo256;
+    type Hashing = BlakeTwo256;
     // type AccountId = DummyValidatorId;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
@@ -163,7 +167,6 @@ parameter_types! {
 
 use frame_support::weights::IdentityFee;
 impl pallet_transaction_payment::Config for Test {
-    // type OnChargeTransaction = ();
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
     type TransactionByteFee = TransactionByteFee;
     type WeightToFee = IdentityFee<Balance>;
@@ -180,6 +183,9 @@ impl VersatileWasm for Test {
     type Event = Event;
     type Call = Call;
     type Randomness = Randomness;
+    type CallStack = [versatile_wasm::call_stack::Frame<Self>; 31];
+    type WeightPrice = Self;
+    type Schedule = MyVVMSchedule;
 }
 
 impl pallet_contracts_registry::Config for Test {
@@ -252,6 +258,8 @@ impl pallet_session::historical::Config for Test {
 
 parameter_types! {
     pub const UncleGenerations: u64 = 0;
+    pub MyVVMSchedule: versatile_wasm::Schedule = <versatile_wasm::simple_schedule_v2::Schedule>::default();
+
 }
 
 impl pallet_authorship::Config for Test {
@@ -332,8 +340,9 @@ impl pallet_staking::Config for Test {
     type EraPayout = pallet_staking::ConvertCurve<RewardCurve>;
     type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
     type NextNewSession = Session;
-    type ElectionProvider = onchain::OnChainSequentialPhragmen<Self>;
     type WeightInfo = ();
+    type ElectionProvider = onchain::OnChainSequentialPhragmen<Self>;
+    type GenesisElectionProvider = Self::ElectionProvider;
 }
 
 impl pallet_offences::Config for Test {
@@ -469,6 +478,7 @@ impl pallet_evm::Config for Test {
     type ChainId = ChainId;
     type BlockGasLimit = BlockGasLimit;
     type OnChargeTransaction = ();
+    type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping;
 }
 
 // start of bridge messages
@@ -749,6 +759,82 @@ impl pallet_bridge_messages::Config<DefaultMessagesInstance> for Test {
 
     type SourceHeaderChain = TestSourceHeaderChain;
     type MessageDispatch = TestMessageDispatch;
+}
+
+type Blake2ValU64BridgeInstance = ();
+type Blake2ValU32BridgeInstance = pallet_multi_finality_verifier::Instance1;
+type Keccak256ValU64BridgeInstance = pallet_multi_finality_verifier::Instance2;
+type Keccak256ValU32BridgeInstance = pallet_multi_finality_verifier::Instance3;
+
+#[derive(Debug)]
+pub struct Blake2ValU64Chain;
+impl bp_runtime::Chain for Blake2ValU64Chain {
+    type BlockNumber = <Test as frame_system::Config>::BlockNumber;
+    type Hash = <Test as frame_system::Config>::Hash;
+    type Hasher = <Test as frame_system::Config>::Hashing;
+    type Header = <Test as frame_system::Config>::Header;
+}
+
+#[derive(Debug)]
+pub struct Blake2ValU32Chain;
+impl bp_runtime::Chain for Blake2ValU32Chain {
+    type BlockNumber = u32;
+    type Hash = H256;
+    type Hasher = BlakeTwo256;
+    type Header = sp_runtime::generic::Header<u32, BlakeTwo256>;
+}
+
+#[derive(Debug)]
+pub struct Keccak256ValU64Chain;
+impl bp_runtime::Chain for Keccak256ValU64Chain {
+    type BlockNumber = u64;
+    type Hash = H256;
+    type Hasher = Keccak256;
+    type Header = sp_runtime::generic::Header<u64, Keccak256>;
+}
+
+#[derive(Debug)]
+pub struct Keccak256ValU32Chain;
+impl bp_runtime::Chain for Keccak256ValU32Chain {
+    type BlockNumber = u32;
+    type Hash = H256;
+    type Hasher = Keccak256;
+    type Header = sp_runtime::generic::Header<u32, Keccak256>;
+}
+
+parameter_types! {
+    pub const MaxRequests: u32 = 2;
+    pub const HeadersToKeep: u32 = 5;
+    pub const SessionLength: u64 = 5;
+    pub const NumValidators: u32 = 5;
+}
+
+impl pallet_multi_finality_verifier::Config<Blake2ValU64BridgeInstance> for Test {
+    type BridgedChain = Blake2ValU64Chain;
+    type MaxRequests = MaxRequests;
+    type HeadersToKeep = HeadersToKeep;
+    type WeightInfo = ();
+}
+
+impl pallet_multi_finality_verifier::Config<Blake2ValU32BridgeInstance> for Test {
+    type BridgedChain = Blake2ValU32Chain;
+    type MaxRequests = MaxRequests;
+    type HeadersToKeep = HeadersToKeep;
+    type WeightInfo = ();
+}
+
+impl pallet_multi_finality_verifier::Config<Keccak256ValU64BridgeInstance> for Test {
+    type BridgedChain = Keccak256ValU64Chain;
+    type MaxRequests = MaxRequests;
+    type HeadersToKeep = HeadersToKeep;
+    type WeightInfo = ();
+}
+
+impl pallet_multi_finality_verifier::Config<Keccak256ValU32BridgeInstance> for Test {
+    type BridgedChain = Keccak256ValU32Chain;
+    type MaxRequests = MaxRequests;
+    type HeadersToKeep = HeadersToKeep;
+    type WeightInfo = ();
 }
 
 parameter_types! {

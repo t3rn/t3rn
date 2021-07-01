@@ -5,6 +5,7 @@ use codec::{Decode, Encode};
 use crate::pallet::Config;
 
 use bp_messages::LaneId;
+#[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
 use sp_std::vec;
@@ -29,7 +30,8 @@ pub enum CircuitOutbound<T: Config> {
 type Bytes = Vec<u8>;
 
 /// Inclusion proofs of different tries
-#[derive(Serialize, Deserialize, Encode, Decode, Clone, Debug, PartialEq, Eq)]
+#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum ProofTriePointer {
     /// Proof is a merkle path in the state trie
     State,
@@ -41,6 +43,7 @@ pub enum ProofTriePointer {
 
 /// Inbound Steps that specifie expected data deposited by relayers back to the Circuit after each step
 #[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct CircuitInboundResult {
     pub result_format: Bytes,
     pub proof_type: ProofTriePointer,
@@ -48,6 +51,7 @@ pub struct CircuitInboundResult {
 
 /// Inbound Steps that specifie expected data deposited by relayers back to the Circuit after each step
 #[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum GatewayExpectedOutput {
     /// Effect would be the modified storage key
     Storage {
@@ -71,10 +75,9 @@ pub enum GatewayExpectedOutput {
     Output { output: Bytes },
 }
 
-pub struct GatewayOutboundProofs {}
-
 /// Outbound Step that specifies expected transmission medium for relayers connecting with that gateway.
 #[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum MessagePayload {
     Signed {
         signer: Bytes,
@@ -114,6 +117,7 @@ pub enum MessagePayload {
 
 /// Outbound Step that specifies expected transmission medium for relayers connecting with that gateway.
 #[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum CircuitOutboundMessage {
     /// Request compatible with JSON-RPC API of receiving node
     Read {

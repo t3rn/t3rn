@@ -20,6 +20,12 @@
 
 use codec::{Decode, Encode};
 use frame_support::traits::{Currency, Time};
+use sp_io::hashing::blake2_256;
+
+use sp_runtime::generic::Era;
+use sp_runtime::MultiSignature;
+
+#[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "no_std")]
@@ -31,19 +37,22 @@ pub mod transfers;
 
 pub type InstanceId = [u8; 4];
 
-#[derive(Clone, Serialize, Deserialize, Eq, PartialEq, Encode, Decode, Debug)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum GatewayType {
     ProgrammableInternal,
     ProgrammableExternal,
     TxOnly,
 }
 
-#[derive(Clone, Serialize, Deserialize, Eq, PartialEq, Encode, Decode, Debug)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum GatewayVendor {
     Substrate,
 }
 
-#[derive(Clone, Serialize, Deserialize, Eq, PartialEq, Encode, Decode, Debug)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 /// Structure used at gateway registration as a starting point for multi-finality-verifier
 pub struct GenericPrimitivesHeader {
     pub parent_hash: Option<sp_core::hash::H256>,
@@ -53,14 +62,16 @@ pub struct GenericPrimitivesHeader {
     pub digest: Option<sp_runtime::generic::Digest<sp_core::hash::H256>>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Eq, PartialEq, Encode, Decode, Debug)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct GatewayPointer {
     pub id: InstanceId,
     pub vendor: GatewayVendor,
     pub gateway_type: GatewayType,
 }
 
-#[derive(Clone, Serialize, Deserialize, Eq, PartialEq, Encode, Decode, Debug)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct GatewayGenesisConfig {
     /// SCALE-encoded modules following the format of selected frame_metadata::RuntimeMetadataVXX
     pub modules_encoded: Option<Vec<u8>>,
@@ -74,7 +85,8 @@ pub struct GatewayGenesisConfig {
 }
 
 /// A struct that encodes RPC parameters required for a call to a smart-contract.
-#[derive(Eq, PartialEq, Encode, Decode, Serialize, Deserialize, Debug, Clone, Default)]
+#[derive(Eq, PartialEq, Encode, Decode, Debug, Clone, Default)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct Compose<Account, Balance> {
     pub name: Vec<u8>,
     pub code_txt: Vec<u8>,
@@ -89,7 +101,8 @@ pub struct Compose<Account, Balance> {
 pub type FetchContractsResult = Result<Option<Vec<u8>>, ContractAccessError>;
 
 /// A result of execution of a contract.
-#[derive(Eq, PartialEq, Encode, Decode, Debug, Serialize, Deserialize, Clone)]
+#[derive(Eq, PartialEq, Encode, Decode, Debug, Clone)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum ComposableExecResult {
     /// The contract returned successfully.
     ///
@@ -110,7 +123,8 @@ pub enum ComposableExecResult {
 }
 
 /// The possible errors that can happen querying the storage of a contract.
-#[derive(Eq, PartialEq, Encode, Decode, Debug, Serialize, Deserialize, Clone)]
+#[derive(Eq, PartialEq, Encode, Decode, Debug, Clone)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum ContractAccessError {
     /// The given address doesn't point to a contract.
     DoesntExist,
@@ -118,17 +132,22 @@ pub enum ContractAccessError {
     IsTombstone,
 }
 
-#[derive(Eq, PartialEq, Encode, Decode, Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Eq, PartialEq, Encode, Decode, Debug, Clone, Default)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct ExecPhase<Account, Balance> {
     pub steps: Vec<ExecStep<Account, Balance>>,
 }
 
-#[derive(Eq, PartialEq, Encode, Decode, Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Eq, PartialEq, Encode, Decode, Debug, Clone, Default)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct ExecStep<Account, Balance> {
     pub compose: Compose<Account, Balance>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Eq, PartialEq, Encode, Decode, Debug)]
+pub type GenericAddress = sp_runtime::MultiAddress<sp_runtime::AccountId32, ()>;
+
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct InterExecSchedule<Account, Balance> {
     pub phases: Vec<ExecPhase<Account, Balance>>,
 }

@@ -176,27 +176,27 @@ fn testnet_genesis(
     _enable_println: bool,
 ) -> GenesisConfig {
     GenesisConfig {
-        frame_system: SystemConfig {
+        system: SystemConfig {
             code: WASM_BINARY
                 .expect("Circuit development WASM not available")
                 .to_vec(),
             changes_trie_config: Default::default(),
         },
-        pallet_balances: BalancesConfig {
+        balances: BalancesConfig {
             balances: endowed_accounts
                 .iter()
                 .cloned()
                 .map(|k| (k, 1 << 50))
                 .collect(),
         },
-        pallet_aura: AuraConfig {
+        aura: AuraConfig {
             authorities: Vec::new(),
         },
-        pallet_grandpa: GrandpaConfig {
+        grandpa: GrandpaConfig {
             authorities: Vec::new(),
         },
-        pallet_sudo: SudoConfig { key: root_key },
-        pallet_session: SessionConfig {
+        sudo: SudoConfig { key: root_key },
+        session: SessionConfig {
             keys: initial_authorities
                 .iter()
                 .map(|x| {
@@ -208,7 +208,7 @@ fn testnet_genesis(
                 })
                 .collect::<Vec<_>>(),
         },
-        pallet_evm: EVMConfig {
+        evm: EVMConfig {
             accounts: {
                 let mut map = BTreeMap::new();
                 map.insert(

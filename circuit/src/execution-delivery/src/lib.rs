@@ -54,10 +54,15 @@ use sp_runtime::{
 
 pub use crate::message_assembly::circuit_inbound::StepConfirmation;
 pub use crate::message_assembly::circuit_outbound::CircuitOutboundMessage;
+use crate::message_assembly::circuit_outbound::ProofTriePointer;
+use crate::message_assembly::merklize::*;
+
 use hex_literal::hex;
+use sp_application_crypto::Public;
 use sp_std::vec;
 use sp_std::vec::*;
-use t3rn_primitives::abi::GatewayABIConfig;
+
+use t3rn_primitives::abi::{GatewayABIConfig, HasherAlgo as HA};
 use t3rn_primitives::transfers::BalanceOf;
 use t3rn_primitives::*;
 
@@ -70,6 +75,71 @@ pub mod exec_composer;
 pub mod message_assembly;
 
 use crate::exec_composer::ExecComposer;
+
+pub type CurrentHash<T, I> =
+    <<T as pallet_multi_finality_verifier::Config<I>>::BridgedChain as bp_runtime::Chain>::Hash;
+pub type CurrentHasher<T, I> =
+    <<T as pallet_multi_finality_verifier::Config<I>>::BridgedChain as bp_runtime::Chain>::Hasher;
+pub type CurrentHeader<T, I> =
+    <<T as pallet_multi_finality_verifier::Config<I>>::BridgedChain as bp_runtime::Chain>::Header;
+
+use frame_support::dispatch::DispatchResultWithPostInfo;
+
+type DefaultPolkadotLikeGateway = ();
+type PolkadotLikeValU64Gateway = pallet_multi_finality_verifier::Instance1;
+type EthLikeKeccak256ValU64Gateway = pallet_multi_finality_verifier::Instance2;
+type EthLikeKeccak256ValU32Gateway = pallet_multi_finality_verifier::Instance3;
+
+pub fn init_bridge_instance<T: pallet_multi_finality_verifier::Config<I>, I: 'static>(
+    origin: T::Origin,
+    first_header: GenericPrimitivesHeader,
+    authorities: Option<Vec<T::AccountId>>,
+    gateway_id: bp_runtime::ChainId,
+) -> DispatchResultWithPostInfo {
+    let header: CurrentHeader<T, I> = Decode::decode(&mut &first_header.encode()[..])
+        .map_err(|_| "Decoding error: received GenericPrimitivesHeader -> CurrentHeader<T>")?;
+
+    let init_data = bp_header_chain::InitializationData {
+        header,
+        authority_list: authorities
+            .unwrap_or(vec![])
+            .iter()
+            .map(|id| {
+                (
+                    sp_finality_grandpa::AuthorityId::from_slice(&id.encode()),
+                    1,
+                )
+            })
+            .collect::<Vec<_>>(),
+        set_id: 1,
+        is_halted: false,
+    };
+
+    pallet_multi_finality_verifier::Pallet::<T, I>::initialize_single(origin, init_data, gateway_id)
+}
+
+pub fn get_roots_from_bridge<T: pallet_multi_finality_verifier::Config<I>, I: 'static>(
+    block_hash: Bytes,
+    gateway_id: bp_runtime::ChainId,
+) -> Result<(sp_core::H256, sp_core::H256), Error<T>> {
+    let gateway_block_hash: CurrentHash<T, I> = Decode::decode(&mut &block_hash[..])
+        .map_err(|_| Error::<T>::StepConfirmationDecodingError)?;
+
+    let (extrinsics_root, storage_root): (CurrentHash<T, I>, CurrentHash<T, I>) =
+        pallet_multi_finality_verifier::Pallet::<T, I>::get_imported_roots(
+            gateway_id,
+            gateway_block_hash,
+        )
+        .ok_or(Error::<T>::StepConfirmationBlockUnrecognised)?;
+
+    let extrinsics_root_h256: sp_core::H256 = Decode::decode(&mut &extrinsics_root.encode()[..])
+        .map_err(|_| Error::<T>::StepConfirmationDecodingError)?;
+
+    let storage_root_h256: sp_core::H256 = Decode::decode(&mut &storage_root.encode()[..])
+        .map_err(|_| Error::<T>::StepConfirmationDecodingError)?;
+
+    Ok((extrinsics_root_h256, storage_root_h256))
+}
 
 /// Defines application identifier for crypto keys of this module.
 ///
@@ -175,6 +245,7 @@ pub struct StepEntry<AccountId, BlockNumber, Hash> {
     updated_at: BlockNumber,
     relayer: Option<AccountId>,
     gateway_id: bp_runtime::ChainId,
+    gateway_entry_id: Hash,
 }
 
 /// Schedule consist of phases
@@ -279,6 +350,10 @@ pub mod pallet {
         + pallet_xdns::Config
         + pallet_contracts::Config
         + pallet_evm::Config
+        + pallet_multi_finality_verifier::Config<DefaultPolkadotLikeGateway>
+        + pallet_multi_finality_verifier::Config<PolkadotLikeValU64Gateway>
+        + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU64Gateway>
+        + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU32Gateway>
     {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -377,21 +452,54 @@ pub mod pallet {
             gateway_vendor: t3rn_primitives::GatewayVendor,
             gateway_type: t3rn_primitives::GatewayType,
             gateway_genesis: GatewayGenesisConfig,
-            _first_header: GenericPrimitivesHeader,
-            _authorities: Option<Vec<T::AccountId>>,
+            first_header: GenericPrimitivesHeader,
+            authorities: Option<Vec<T::AccountId>>,
         ) -> DispatchResultWithPostInfo {
             // Retrieve sender of the transaction.
             pallet_xdns::Pallet::<T>::add_new_xdns_record(
-                origin,
+                origin.clone(),
                 url,
                 gateway_id,
-                gateway_abi,
+                gateway_abi.clone(),
                 gateway_vendor,
                 gateway_type,
                 gateway_genesis,
             )?;
 
-            Ok(().into())
+            let res = match (gateway_abi.hasher, gateway_abi.block_number_type_size) {
+                (HA::Blake2, 32) => init_bridge_instance::<T, DefaultPolkadotLikeGateway>(
+                    origin,
+                    first_header,
+                    authorities,
+                    gateway_id,
+                )?,
+                (HA::Blake2, 64) => init_bridge_instance::<T, PolkadotLikeValU64Gateway>(
+                    origin,
+                    first_header,
+                    authorities,
+                    gateway_id,
+                )?,
+                (HA::Keccak256, 32) => init_bridge_instance::<T, EthLikeKeccak256ValU32Gateway>(
+                    origin,
+                    first_header,
+                    authorities,
+                    gateway_id,
+                )?,
+                (HA::Keccak256, 64) => init_bridge_instance::<T, EthLikeKeccak256ValU64Gateway>(
+                    origin,
+                    first_header,
+                    authorities,
+                    gateway_id,
+                )?,
+                (_, _) => init_bridge_instance::<T, DefaultPolkadotLikeGateway>(
+                    origin,
+                    first_header,
+                    authorities,
+                    gateway_id,
+                )?,
+            };
+
+            Ok(res.into())
         }
 
         #[pallet::weight(0)]
@@ -407,11 +515,68 @@ pub mod pallet {
                 ActiveXtxMap::<T>::get(xtx_id.clone())
                     .expect("submitted to confirm step id does not match with any Xtx");
 
-            let _current_step = xtx.schedule.phases[xtx.current_round as usize].clone()
-                [step_confirmation.step_index as usize]
+            let current_step = xtx.schedule.phases[xtx.current_round as usize].clone()
+                [step_confirmation.clone().step_index as usize]
                 .clone();
 
-            Ok(().into())
+            // ToDo: parse events to discover their content and verify execution
+
+            // Check inclusion relying on data in palet-multi-verifier
+            let gateway_id = current_step.gateway_id;
+            let gateway_xdns_record =
+                pallet_xdns::Pallet::<T>::xdns_registry(current_step.gateway_entry_id)
+                    .ok_or(Error::<T>::StepConfirmationGatewayNotRecognised)?;
+
+            let declared_block_hash = step_confirmation.proof.block_hash;
+
+            let (extrinsics_root_h256, storage_root_h256) = match (
+                gateway_xdns_record.gateway_abi.hasher.clone(),
+                gateway_xdns_record.gateway_abi.block_number_type_size,
+            ) {
+                (HA::Blake2, 32) => get_roots_from_bridge::<T, DefaultPolkadotLikeGateway>(
+                    declared_block_hash,
+                    gateway_id,
+                )?,
+                (HA::Blake2, 64) => get_roots_from_bridge::<T, PolkadotLikeValU64Gateway>(
+                    declared_block_hash,
+                    gateway_id,
+                )?,
+                (HA::Keccak256, 32) => get_roots_from_bridge::<T, EthLikeKeccak256ValU32Gateway>(
+                    declared_block_hash,
+                    gateway_id,
+                )?,
+                (HA::Keccak256, 64) => get_roots_from_bridge::<T, EthLikeKeccak256ValU64Gateway>(
+                    declared_block_hash,
+                    gateway_id,
+                )?,
+                (_, _) => get_roots_from_bridge::<T, DefaultPolkadotLikeGateway>(
+                    declared_block_hash,
+                    gateway_id,
+                )?,
+            };
+
+            let expected_root = match step_confirmation.proof.proof_trie_pointer {
+                ProofTriePointer::State => storage_root_h256,
+                ProofTriePointer::Transaction => extrinsics_root_h256,
+                ProofTriePointer::Receipts => storage_root_h256,
+            };
+
+            if let Err(computed_root) = check_merkle_proof(
+                expected_root,
+                step_confirmation.proof.proof_data.into_iter(),
+                gateway_xdns_record.gateway_abi.hasher,
+            ) {
+                log::trace!(
+                    target: "circuit-runtime",
+                    "Step confirmation check failed: inclusion root mismatch. Expected: {}, computed: {}",
+                    expected_root,
+                    computed_root,
+                );
+
+                Err(Error::<T>::StepConfirmationInvalidInclusionProof.into())
+            } else {
+                Ok(().into())
+            }
         }
     }
 
@@ -434,6 +599,11 @@ pub mod pallet {
         IOScheduleNoEndingSemicolon,
         IOScheduleEmpty,
         IOScheduleUnknownCompose,
+        ProcessStepGatewayNotRecognised,
+        StepConfirmationBlockUnrecognised,
+        StepConfirmationGatewayNotRecognised,
+        StepConfirmationInvalidInclusionProof,
+        StepConfirmationDecodingError,
     }
 }
 
@@ -650,6 +820,9 @@ impl<T: Config> Pallet<T> {
         // let submitter = local_keys.binary_search(&escrow_account.into()).ok().map(|location| local_keys[location].clone()).ok_or("Can't match")?;
         let submitter = local_keys[0].clone();
 
+        let gateway_xdns_record = pallet_xdns::Pallet::<T>::xdns_registry(step.gateway_entry_id)
+            .ok_or(Error::<T>::ProcessStepGatewayNotRecognised)?;
+
         ExecComposer::pre_run_single_contract::<T>(
             contract,
             escrow_account,
@@ -659,6 +832,7 @@ impl<T: Config> Pallet<T> {
             value,
             step.input,
             step.gateway_id,
+            gateway_xdns_record.gateway_abi,
         )
         .into()
     }
@@ -675,23 +849,5 @@ impl<T: Config> Pallet<T> {
     ) -> Result<Vec<CircuitOutboundMessage>, &'static str> {
         // Decide on the next execution phase and enact on it
         Ok(vec![])
-    }
-
-    /// Proof each single step of execution.
-    /// After all steps in the round has been confirmed, this would also call for process_phase.
-    pub fn confirm_step(
-        _x_tx_id: [u8; 32],
-        _step_no: u32,
-        _io_schedule: Vec<u8>,
-        _state_proof: Vec<u8>,
-        _extrinsics_proof: Vec<u8>,
-        _block_hash: Vec<u8>,
-        _finality_proof: Vec<u8>,
-    ) -> Result<(), &'static str> {
-        // Validate step
-
-        // Process next step for execution
-
-        Ok(())
     }
 }

@@ -23,6 +23,9 @@ versatile-wasm = { default-features = false , path = "../../../vm/versatile-wasm
 serde = { version = "1.0.124", optional = true }
 lite-json = { version = "0.1", default-features = false }
 log = { version = "0.4.14", default-features = false }
+hash-db = { version = "0.15.2", default-features = false }
+triehash = { version = "0.8.2", default-features = false }
+plain_hasher = { version = "0.2.2", default-features = false }
 
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master"  }
@@ -50,12 +53,14 @@ pallet-xdns = { default-features = false, path = "../xdns" }
 pallet-contracts-registry = { default-features = false, path = "../contracts-registry" }
 
 bp-runtime = { default-features = false, path = "../../../vendor/bridges/primitives/runtime" }
+bp-header-chain = { default-features = false, path = "../../../vendor/bridges/primitives/header-chain" }
 bp-messages = { default-features = false, path = "../../../vendor/bridges/primitives/messages" }
 bp-circuit = { default-features = false, path = "../../../vendor/bridges/primitives/chain-circuit" }
 bp-polkadot-core = { default-features = false, path = "../../../vendor/bridges/primitives/polkadot-core" }
 
 # Smart contracts VMs
 pallet-evm = { path = "../../../vendor/frontier/frame/evm", default-features = false  }
+pallet-ethereum = { path = "../../../vendor/frontier/frame/ethereum", default-features = false  }
 pallet-evm-precompile-simple = { path = "../../../vendor/frontier/frame/evm/precompile/simple", default-features = false }
 pallet-contracts = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 ethabi-decode = { git = "https://github.com/Snowfork/ethabi-decode.git", branch = "master", default-features = false }
@@ -69,6 +74,7 @@ pallet-authorship = { default-features = false, git = "https://github.com/parity
 pallet-babe = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-staking-reward-curve = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-staking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-finality-grandpa = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-consensus-vrf = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-consensus-babe = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 
@@ -84,6 +90,9 @@ std = [
     "serde",
     "log/std",
     "lite-json/std",
+    "hash-db/std",
+    "triehash/std",
+    "plain_hasher/std",
     "versatile-wasm/std",
     "t3rn-primitives/std",
     "frame-support/std",
@@ -109,17 +118,20 @@ std = [
     "sp-application-crypto/std",
     "bp-circuit/std",
     "bp-messages/std",
+    "bp-header-chain/std",
     "bp-polkadot-core/std",
     "bp-runtime/std",
     # native contracts VMs
     "pallet-contracts/std",
     "pallet-evm/std",
+    "pallet-ethereum/std",
     "ethabi-decode/std",
     "pallet-evm-precompile-simple/std",
     # for tests only
     "pallet-babe/std",
     "pallet-staking/std",
     "sp-staking/std",
+    "sp-finality-grandpa/std",
     "sp-consensus-vrf/std",
     "pallet-authorship/std",
     "sp-consensus-babe/std",
