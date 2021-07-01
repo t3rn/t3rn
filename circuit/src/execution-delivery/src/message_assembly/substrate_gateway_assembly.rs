@@ -76,7 +76,7 @@ where
         &self,
         module_name: &'static str,
         fn_name: &'static str,
-        _data: Vec<u8>,
+        data: Vec<u8>,
         to: [u8; 32],
         value: u128,
         gas: u64,
@@ -85,7 +85,7 @@ where
             self.metadata,
             module_name,
             fn_name,
-            // GenericAddress::Id(to.into()),
+            data,
             to,
             Compact(value),
             Compact(gas)
@@ -118,7 +118,7 @@ where
         let signed = GenericAddress::from(AuthorityId::from(self.submitter.clone()));
 
         let signature = raw_payload
-            .using_encoded(|payload| self.submitter.sign(&payload.encode()))
+            .using_encoded(|payload| self.submitter.sign(&payload))
             .expect("Signature should be valid");
 
         UncheckedExtrinsicV4::new_signed(call_bytes, signed, MultiSig::from(signature), extra)
@@ -127,19 +127,21 @@ where
 
 #[cfg(test)]
 pub mod tests {
-    use std::collections::HashMap;
-
+    use codec::Compact;
     use frame_metadata::{
         DecodeDifferent, ExtrinsicMetadata, FunctionMetadata, ModuleMetadata, RuntimeMetadataV13,
     };
-    use frame_support::assert_err;
     use sp_core::H256;
     use sp_io::TestExternalities;
+    use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStore};
     use sp_version::{ApisVec, RuntimeVersion};
 
-    use super::*;
     use crate::message_assembly::signer::app::Public;
-    use frame_support::sp_runtime::Storage;
+    use crate::KEY_TYPE;
+
+    use super::*;
+    use frame_support::assert_err;
+    use sp_runtime::generic::Era;
 
     fn create_submitter() -> Public {
         AuthorityId::default()
@@ -165,22 +167,27 @@ pub mod tests {
         let module_name = "ModuleName";
         let fn_name = "FnName";
         let module_index = 1;
-        let call_fn_index = 2;
 
-        let mut call_map = HashMap::new();
-        call_map.insert(fn_name, call_fn_index as u8);
-
-        let function_metadata = FunctionMetadata {
-            name: DecodeDifferent::Encode(fn_name),
-            arguments: DecodeDifferent::Decoded(vec![]),
-            documentation: DecodeDifferent::Decoded(vec![]),
+        let fn_metadata_generator = |index: usize| -> FunctionMetadata {
+            let mut name: String = fn_name.to_string();
+            name.push_str(index.to_string().as_str());
+            FunctionMetadata {
+                name: DecodeDifferent::Encode(Box::leak(name.into_boxed_str())),
+                arguments: DecodeDifferent::Decoded(vec![]),
+                documentation: DecodeDifferent::Decoded(vec![]),
+            }
         };
+
+        let functions = vec![1, 2, 3]
+            .into_iter()
+            .map(fn_metadata_generator)
+            .collect();
 
         let module_metadata = ModuleMetadata {
             index: module_index,
             name: DecodeDifferent::Encode(module_name),
             storage: None,
-            calls: Some(DecodeDifferent::Decoded(vec![function_metadata])),
+            calls: Some(DecodeDifferent::Decoded(functions)),
             event: None,
             constants: DecodeDifferent::Decoded(vec![]),
             errors: DecodeDifferent::Decoded(vec![]),
@@ -197,30 +204,112 @@ pub mod tests {
     }
 
     #[test]
-    fn sap_panics_when_module_is_missing_from_metadata() {
-        let sag = SubstrateGatewayAssembly::<AuthorityId, H256>::new(
+    #[should_panic(expected = "Module with a given name doesn't exist as per the current metadata")]
+    fn sga_assemble_call_panics_when_module_is_missing_from_metadata() {
+        let sga = SubstrateGatewayAssembly::<AuthorityId, H256>::new(
             create_test_metadata_struct(),
             create_test_runtime_version(),
             create_test_genesis_hash(),
             create_submitter(),
         );
+
+        sga.assemble_call(
+            "MissingModuleName",
+            "FnName",
+            vec![0, 1, 2],
+            [1_u8; 32],
+            3,
+            2,
+        );
     }
 
     #[test]
-    fn sap_prints_polkadot_metadata() {
-        let externalities = TestExternalities::new_empty();
-        TestExternalities::new_empty().execute_with(|| {
-            let sag = SubstrateGatewayAssembly::<AuthorityId, H256>::new(
+    #[should_panic(
+        expected = "Call with a given name doesn't exist on that module as per the current metadata"
+    )]
+    fn sga_assemble_call_panics_when_function_is_missing_from_metadata() {
+        let sga = SubstrateGatewayAssembly::<AuthorityId, H256>::new(
+            create_test_metadata_struct(),
+            create_test_runtime_version(),
+            create_test_genesis_hash(),
+            create_submitter(),
+        );
+
+        sga.assemble_call(
+            "ModuleName",
+            "MissingFnName",
+            vec![0, 1, 2],
+            [1_u8; 32],
+            3,
+            2,
+        );
+    }
+
+    #[test]
+    fn sga_creates_encoded_call_correctly() {
+        let keystore = KeyStore::new();
+
+        let mut ext = TestExternalities::new_empty();
+        ext.register_extension(KeystoreExt(keystore.into()));
+
+        ext.execute_with(|| {
+            let sga = SubstrateGatewayAssembly::<AuthorityId, H256>::new(
                 create_test_metadata_struct(),
                 create_test_runtime_version(),
                 create_test_genesis_hash(),
                 create_submitter(),
             );
 
-            let test_call_bytes =
-                sag.assemble_call("ModuleName", "FnName", vec![0, 1, 2], [1_u8; 32], 3, 2);
+            let actual_call_bytes =
+                sga.assemble_call("ModuleName", "FnName2", vec![3, 3, 3], [1_u8; 32], 3, 2);
 
-            let test_tx_signed = sag.assemble_signed_tx_offline(test_call_bytes, 0);
+            let expected_call_bytes = (
+                (1_u8, 1_u8),
+                vec![3_u8, 3_u8, 3_u8],
+                [1_u8; 32],
+                Compact(3_u16),
+                Compact(2_u16),
+            )
+                .encode();
+
+            assert_eq!(actual_call_bytes, expected_call_bytes)
+        });
+    }
+
+    #[test]
+    fn sga_signs_encoded_call_correctly() {
+        let keystore = KeyStore::new();
+
+        let submitter_pub_key = SyncCryptoStore::sr25519_generate_new(&keystore, KEY_TYPE, None)
+            .expect("Generates key");
+
+        let mut ext = TestExternalities::new_empty();
+        ext.register_extension(KeystoreExt(keystore.into()));
+
+        ext.execute_with(|| {
+            let sga = SubstrateGatewayAssembly::<AuthorityId, H256>::new(
+                create_test_metadata_struct(),
+                create_test_runtime_version(),
+                create_test_genesis_hash(),
+                AuthorityId::from(submitter_pub_key),
+            );
+
+            let test_call_bytes =
+                sga.assemble_call("ModuleName", "FnName3", vec![0, 1, 2], [1_u8; 32], 3, 2);
+
+            let actual_call_bytes = test_call_bytes.clone();
+
+            let actual_tx_signed = sga.assemble_signed_tx_offline(test_call_bytes, 0);
+
+            let signature = actual_tx_signed.signature.unwrap();
+
+            assert_eq!(actual_tx_signed.function, actual_call_bytes);
+            assert_eq!(
+                signature.clone().0,
+                GenericAddress::from(AuthorityId::from(submitter_pub_key))
+            );
+            //TODO: add verification for signature
+            assert_eq!(signature.clone().2, GenericExtra::new(Era::Immortal, 0));
         });
     }
 }

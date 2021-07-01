@@ -78,7 +78,7 @@ use crate::exec_composer::ExecComposer;
 /// When offchain worker is signing transactions it's going to request keys of type
 /// `KeyTypeId` from the keystore and use the ones it finds to sign the transaction.
 /// The keys can be inserted manually via RPC (see `author_insertKey`).
-pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"btc!");
+pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"circ");
 
 /// Based on the above `KeyTypeId` we need to generate a pallet-specific crypto type wrappers.
 /// We can use from supported crypto kinds (`sr25519`, `ed25519` and `ecdsa`) and augment

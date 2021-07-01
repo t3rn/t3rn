@@ -37,6 +37,7 @@ impl Metadata {
         Self { runtime_metadata }
     }
 
+    /// Returns a tuple containing the module index and call index
     pub fn lookup_module_and_call_indices(
         &self,
         lookup_module_name: &'static str,

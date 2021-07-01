@@ -207,7 +207,7 @@ pub mod app {
 
     impl From<Signature> for MultiSig {
         fn from(sig: Signature) -> Self {
-            sig.into()
+            MultiSignature::Sr25519(sig.into())
         }
     }
 }
