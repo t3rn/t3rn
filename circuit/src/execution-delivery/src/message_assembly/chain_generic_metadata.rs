@@ -65,13 +65,13 @@ impl Metadata {
         };
 
         let mut call_counter = 0;
-        let _call_found = calls.clone().find(|call| {
+        let call_found = calls.clone().find(|call| {
             call_counter += 1;
             call.name.clone() == DecodeDifferent::Encode(lookup_call_name)
         });
 
         ensure!(
-            _call_found.is_some(),
+            call_found.is_some(),
             "Call with a given name doesn't exist on that module as per the current metadata",
         );
 
