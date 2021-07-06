@@ -235,6 +235,7 @@ impl ExecComposer {
         })
     }
 
+    /// Given a Gateway Pointer and an Authority, it returns the respective Gateway Protocol
     fn retrieve_gateway_protocol<T: crate::Config>(
         submitter_id: AuthorityId,
         _gateway_pointer: GatewayPointer,

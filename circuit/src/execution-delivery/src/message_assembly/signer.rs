@@ -10,7 +10,7 @@ pub mod app {
     use sp_application_crypto::{app_crypto, sr25519};
     use sp_io::hashing::blake2_256;
     use sp_runtime::generic::Era;
-    use sp_runtime::{AccountId32, MultiAddress, MultiSignature};
+    use sp_runtime::{AccountId32, MultiAddress, MultiSignature, RuntimeDebug};
     use sp_std::vec::Vec;
 
     pub const CIRCUIT_CRYPTO_ID: sp_application_crypto::KeyTypeId =
@@ -46,12 +46,13 @@ pub mod app {
     /// Order is the same as declared in the extra.
     pub type AdditionalSigned<Hash> = (u32, u32, Hash, Hash, (), (), ());
 
-    #[derive(Encode, Clone)]
+    #[derive(Encode, Clone, RuntimeDebug)]
     pub struct SignedPayload<Call, Hash>((Call, GenericExtra, AdditionalSigned<Hash>));
 
     impl<Call, Hash> SignedPayload<Call, Hash>
     where
         Call: Encode,
+        Hash: sp_std::fmt::Debug,
     {
         pub fn from_raw(
             call: Call,
@@ -80,7 +81,7 @@ pub mod app {
     /// The SingedExtra used does not need to implement SingedExtension here.
     #[derive(Clone, PartialEq)]
     pub struct UncheckedExtrinsicV4<Call> {
-        pub signature: Option<(GenericAddress, MultiSig, GenericExtra)>,
+        pub signature: Option<(GenericAddress, MultiSignature, GenericExtra)>,
         pub function: Call,
     }
 
@@ -91,7 +92,7 @@ pub mod app {
         pub fn new_signed(
             function: Call,
             signed: GenericAddress,
-            signature: MultiSig,
+            signature: MultiSignature,
             extra: GenericExtra,
         ) -> Self {
             UncheckedExtrinsicV4 {
@@ -199,16 +200,14 @@ pub mod app {
     }
 
     impl From<Public> for GenericAddress {
-        fn from(p: Public) -> Self {
-            MultiAddress::<AccountId32, ()>::Address32(p.0 .0)
+        fn from(public: Public) -> Self {
+            MultiAddress::<AccountId32, ()>::Address32(public.0 .0)
         }
     }
 
-    pub type MultiSig = MultiSignature;
-
-    impl From<Signature> for MultiSig {
+    impl From<Signature> for MultiSignature {
         fn from(sig: Signature) -> Self {
-            MultiSig::Sr25519(sig.into())
+            MultiSignature::Sr25519(sig.into())
         }
     }
 }
@@ -225,7 +224,13 @@ pub mod app {
 macro_rules! compose_call {
 ($node_metadata: expr, $module: expr, $call_name: expr $(, $args: expr) *) => {
         {
-            let (module_index, call_index) = $node_metadata.lookup_module_and_call_indices($module, $call_name).unwrap();
+            use frame_support::ensure;
+
+            let _lookup_result = $node_metadata.lookup_module_and_call_indices($module, $call_name);
+
+            ensure!(_lookup_result.is_ok(), "Could not assemble call");
+
+            let (module_index, call_index) = _lookup_result.unwrap();
 
             ([module_index as u8, call_index as u8] $(, ($args)) *)
         }
@@ -287,17 +292,16 @@ macro_rules! compose_extrinsic_offline {
 #[cfg(test)]
 mod tests {
     use codec::{Decode, Encode};
+    use sp_runtime::MultiSignature;
 
-    use crate::message_assembly::signer::app::{
-        GenericAddress, GenericExtra, MultiSig, UncheckedExtrinsicV4,
-    };
+    use super::app::{GenericAddress, GenericExtra, UncheckedExtrinsicV4};
 
     #[test]
     fn encode_decode_roundtrip_works() {
         let xt = UncheckedExtrinsicV4::new_signed(
             vec![1, 1, 1],
             GenericAddress::default(),
-            MultiSig::default(),
+            MultiSignature::default(),
             GenericExtra::default(),
         );
 

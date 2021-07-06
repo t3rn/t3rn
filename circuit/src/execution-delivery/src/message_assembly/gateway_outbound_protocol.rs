@@ -57,7 +57,7 @@ pub struct GatewayOutboundEvent {
     pub name: Vec<u8>,
 
     /// That's raw data attached to event - not the whole incoming blob
-    /// which acn be found under proof.value
+    /// which can be found under proof.value
     pub data: Bytes,
 
     /// Inclusion proof to be checked against the block it's pointing to
