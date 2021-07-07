@@ -1,47 +1,45 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::Encode;
+use sp_runtime::RuntimeAppPublic;
 use sp_std::vec;
 use sp_std::vec::*;
-
-use crate::message_assembly::chain_generic_metadata::Metadata;
-
 use sp_version::RuntimeVersion;
 
 use t3rn_primitives::transfers::TransferEntry;
 use t3rn_primitives::GatewayType;
 
-use super::circuit_outbound::{CircuitOutboundMessage, GatewayExpectedOutput, MessagePayload};
+use crate::message_assembly::chain_generic_metadata::Metadata;
 
+use super::circuit_outbound::{CircuitOutboundMessage, GatewayExpectedOutput, MessagePayload};
 use super::gateway_inbound_protocol::GatewayInboundProtocol;
 use super::substrate_gateway_assembly::SubstrateGatewayAssembly;
-use sp_runtime::RuntimeAppPublic;
 
-pub struct SubstrateGatewayProtocol<Pair, Hash>
+pub struct SubstrateGatewayProtocol<Authority, Hash>
 where
-    Pair: RuntimeAppPublic,
-    Hash: Clone,
+    Authority: RuntimeAppPublic + Clone,
+    Hash: Clone + Encode + sp_std::fmt::Debug,
 {
-    pub assembly: SubstrateGatewayAssembly<Pair, Hash>,
+    pub assembly: SubstrateGatewayAssembly<Authority, Hash>,
 }
 
-impl<Pair, Hash> SubstrateGatewayProtocol<Pair, Hash>
+impl<Authority, Hash> SubstrateGatewayProtocol<Authority, Hash>
 where
-    Pair: RuntimeAppPublic,
-    Hash: Clone,
+    Authority: RuntimeAppPublic + Clone,
+    Hash: Clone + Encode + sp_std::fmt::Debug,
 {
     pub fn new(
         metadata: Metadata,
         runtime_version: RuntimeVersion,
         genesis_hash: Hash,
-        submitter_pair: Pair,
+        submitter: Authority,
     ) -> Self {
         SubstrateGatewayProtocol {
-            assembly: SubstrateGatewayAssembly::<Pair, Hash>::new(
+            assembly: SubstrateGatewayAssembly::<Authority, Hash>::new(
                 metadata,
                 runtime_version,
                 genesis_hash,
-                submitter_pair,
+                submitter,
             ),
         }
     }
@@ -67,10 +65,10 @@ where
     }
 }
 
-impl<Pair, Hash> GatewayInboundProtocol for SubstrateGatewayProtocol<Pair, Hash>
+impl<Authority, Hash> GatewayInboundProtocol for SubstrateGatewayProtocol<Authority, Hash>
 where
-    Pair: RuntimeAppPublic,
-    Hash: Clone,
+    Authority: RuntimeAppPublic + Clone,
+    Hash: Clone + Encode + sp_std::fmt::Debug,
 {
     // Get storage key directly to foreign storage system
     // For substrate that follows the following key formats:

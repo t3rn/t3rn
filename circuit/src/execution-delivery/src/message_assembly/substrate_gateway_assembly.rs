@@ -1,56 +1,55 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_std::vec::*;
-
 use codec::{Compact, Encode};
+use frame_support::ensure;
+use sp_application_crypto::Public;
+use sp_runtime::{MultiSignature, RuntimeAppPublic};
+use sp_std::vec::*;
+use sp_version::RuntimeVersion;
 
 use crate::message_assembly::chain_generic_metadata::Metadata;
-
-use sp_version::RuntimeVersion;
+use crate::message_assembly::signer::app::{
+    GenericAddress, GenericExtra, Signature, SignedPayload, UncheckedExtrinsicV4,
+};
+use crate::{compose_call, AuthorityId};
 
 use super::gateway_inbound_assembly::GatewayInboundAssembly;
 
-// #[macro_use]
-use crate::compose_call;
-
-use sp_runtime::RuntimeAppPublic;
-use t3rn_primitives::{GenericExtra, SignedPayload, UncheckedExtrinsicV4};
-
-pub struct SubstrateGatewayAssembly<Pair, Hash>
+pub struct SubstrateGatewayAssembly<Authority, Hash>
 where
-    Pair: RuntimeAppPublic,
-    Hash: Clone,
+    Authority: RuntimeAppPublic + Clone,
+    Hash: Clone + Encode + sp_std::fmt::Debug,
 {
     pub metadata: Metadata,
     pub runtime_version: RuntimeVersion,
     pub genesis_hash: Hash,
-    pub submitter_pair: Pair,
+    pub submitter: Authority,
 }
 
-impl<Pair, Hash> SubstrateGatewayAssembly<Pair, Hash>
+impl<Authority, Hash> SubstrateGatewayAssembly<Authority, Hash>
 where
-    Pair: RuntimeAppPublic,
-    Hash: Clone,
+    Authority: RuntimeAppPublic + Clone,
+    Hash: Clone + Encode + sp_std::fmt::Debug,
 {
     pub fn new(
         metadata: Metadata,
         runtime_version: RuntimeVersion,
         genesis_hash: Hash,
-        submitter_pair: Pair,
+        submitter_pair: Authority,
     ) -> Self {
         SubstrateGatewayAssembly {
             metadata,
             runtime_version,
             genesis_hash,
-            submitter_pair,
+            submitter: submitter_pair,
         }
     }
 }
 
-impl<Pair, Hash> GatewayInboundAssembly for SubstrateGatewayAssembly<Pair, Hash>
+impl<Authority, Hash> GatewayInboundAssembly for SubstrateGatewayAssembly<Authority, Hash>
 where
-    Pair: RuntimeAppPublic,
-    Hash: Clone,
+    Authority: RuntimeAppPublic + Clone,
+    Hash: Clone + Encode + sp_std::fmt::Debug,
 {
     fn assemble_signed_call(
         &self,
@@ -60,9 +59,12 @@ where
         to: [u8; 32],
         value: u128,
         gas: u64,
-    ) -> UncheckedExtrinsicV4<Vec<u8>> {
+    ) -> Result<UncheckedExtrinsicV4<sp_application_crypto::Vec<u8>>, &'static str> {
         let call = self.assemble_call(module_name, fn_name, data, to, value, gas);
-        self.assemble_signed_tx_offline(call, 0)
+
+        ensure!(call.is_ok(), "Could not assemble call");
+
+        self.assemble_signed_tx_offline(call.unwrap(), 0)
     }
 
     /// Who will like to assemble the call?
@@ -76,35 +78,30 @@ where
         &self,
         module_name: &'static str,
         fn_name: &'static str,
-        _data: Vec<u8>,
+        data: Vec<u8>,
         to: [u8; 32],
         value: u128,
         gas: u64,
-    ) -> Vec<u8> {
+    ) -> Result<Vec<u8>, &'static str> {
         let call = compose_call!(
             self.metadata,
             module_name,
             fn_name,
-            // GenericAddress::Id(to.into()),
+            data,
             to,
             Compact(value),
             Compact(gas)
         );
         // e.g. call = ([1, 2], MultiAddress::Id(0101010101010101010101010101010101010101010101010101010101010101 (5C62Ck4U...)), 3, 2)
-        call.encode()
+        Ok(call.encode())
     }
 
     fn assemble_signed_tx_offline(
         &self,
         call_bytes: Vec<u8>,
         nonce: u32,
-    ) -> UncheckedExtrinsicV4<Vec<u8>> {
-        let _signed_tx = &self
-            .submitter_pair
-            .sign(&call_bytes)
-            .expect("Signature should be there");
-
-        let extra = GenericExtra::new(sp_runtime::generic::Era::Immortal, nonce.clone());
+    ) -> Result<UncheckedExtrinsicV4<sp_application_crypto::Vec<u8>>, &'static str> {
+        let extra = GenericExtra::new(sp_runtime::generic::Era::Immortal, nonce);
 
         let raw_payload = SignedPayload::from_raw(
             call_bytes.clone(),
@@ -112,7 +109,7 @@ where
             (
                 nonce,
                 self.runtime_version.transaction_version,
-                &self.genesis_hash, //dropped the clone here and below due to missing trait, not sure if correct
+                &self.genesis_hash,
                 &self.genesis_hash,
                 (),
                 (),
@@ -120,123 +117,225 @@ where
             ),
         );
 
-        // this one is failing cause &[u8] is not Sized
-        let _signature =
-            raw_payload.using_encoded(|payload| self.submitter_pair.sign(&payload.encode()));
+        // raw_payload.using_encoded(|encoded| println!("{:?}", encoded));
 
-        //     let mut arr = Default::default();
-        //     arr.clone_from_slice($signer.public().as_ref());
-        //
-        // UncheckedExtrinsicV4::new_signed(
-        //     call_bytes,
-        //     GenericAddress::from(AccountId::from(arr)),
-        //     signature,
-        //     extra,
-        // )
+        let authority = AuthorityId::from_slice(self.submitter.clone().to_raw_vec().as_slice());
 
-        // dummy return
-        UncheckedExtrinsicV4 {
-            function: call_bytes,
-            signature: None,
-        }
+        let signed = GenericAddress::from(authority.clone());
+
+        let signature: Signature = raw_payload
+            .using_encoded(|payload| authority.sign(&payload))
+            .expect("Signature should be valid");
+
+        Ok(UncheckedExtrinsicV4::new_signed(
+            call_bytes,
+            signed,
+            MultiSignature::from(signature),
+            extra,
+        ))
     }
 }
 
 #[cfg(test)]
 pub mod tests {
-    // use super::*;
-    //
-    // use std::collections::{HashMap};
-    // use sp_version::RuntimeVersion;
-    //
-    // pub fn create_test_genesis_hash() -> Hash {
-    //     [9 as u8; 32].into()
-    // }
-    //
-    // pub fn create_test_runtime_version() -> sp_version::RuntimeVersion {
-    //     RuntimeVersion {
-    //         spec_name: "circuit-runtime".into(),
-    //         impl_name: "circuit-runtime".into(),
-    //         authoring_version: 1,
-    //         impl_version: 1,
-    //         apis: sp_version::create_apis_vec![[]],
-    //         transaction_version: 4,
-    //         spec_version: 13,
-    //     }
-    // }
-    //
-    // pub fn create_test_metadata_struct() -> Metadata {
-    //     let mut modules = HashMap::new();
-    //     let mut modules_with_calls = HashMap::new();
-    //     let mut modules_with_events = HashMap::new();
-    //
-    //     let module_name: String = "ModuleName".to_string();
-    //     let fn_name: String = "FnName".to_string();
-    //     let module_index = 1;
-    //     let call_fn_index = 2;
-    //     let storage_map = HashMap::new();
-    //     let mut call_map = HashMap::new();
-    //     let event_map = HashMap::new();
-    //
-    //     call_map.insert(fn_name, call_fn_index as u8);
-    //
-    //     modules.insert(
-    //         module_name.clone(),
-    //         ModuleMetadata {
-    //             index: module_index,
-    //             name: module_name.clone(),
-    //             storage: storage_map,
-    //         },
-    //     );
-    //
-    //     modules_with_calls.insert(
-    //         module_name.clone(),
-    //         ModuleWithCalls {
-    //             index: module_index,
-    //             name: module_name.clone(),
-    //             calls: call_map,
-    //         },
-    //     );
-    //
-    //     modules_with_events.insert(
-    //         module_name.clone(),
-    //         ModuleWithEvents {
-    //             index: module_index,
-    //             name: module_name.clone(),
-    //             events: event_map,
-    //         },
-    //     );
-    //
-    //     Metadata {
-    //         modules,
-    //         modules_with_calls,
-    //         modules_with_events,
-    //     }
-    // }
-    //
-    // #[test]
-    // fn sap_prints_polkadot_metadata() {
-    //
-    //     let pair = sp_core::sr25519::Pair::from_string("//Alice", None).unwrap();
-    //
-    //     let sag = SubstrateGatewayAssembly::<sp_core::sr25519::Pair>::new(
-    //         create_test_metadata_struct(),
-    //         create_test_runtime_version(),
-    //         create_test_genesis_hash(),
-    //         pair.clone(),
-    //         pair,
-    //     );
-    //
-    //     let _test_a_pk = [1 as u8; 32];
-    //     let _test_b_pk = [0 as u8; 32];
-    //
-    //     let test_call_bytes = sag.assemble_call(
-    //         "ModuleName", "FnName", vec![0, 1, 2], [1 as u8; 32], 3, 2
-    //     );
-    //
-    //     let _test_tx_signed = sag.assemble_signed_tx_offline(
-    //         test_call_bytes,
-    //         0
-    //     );
-    // }
+    use codec::Compact;
+    use frame_metadata::{
+        DecodeDifferent, ExtrinsicMetadata, FunctionMetadata, ModuleMetadata, RuntimeMetadataV13,
+    };
+    use frame_support::assert_err;
+    use sp_core::H256;
+    use sp_io::TestExternalities;
+    use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStore};
+    use sp_runtime::generic::Era;
+    use sp_runtime::traits::Verify;
+    use sp_version::{ApisVec, RuntimeVersion};
+
+    use crate::message_assembly::signer::app::Public;
+    use crate::KEY_TYPE;
+
+    use super::*;
+
+    fn create_submitter() -> Public {
+        AuthorityId::default()
+    }
+
+    pub fn create_test_genesis_hash() -> H256 {
+        [9_u8; 32].into()
+    }
+
+    pub fn create_test_runtime_version() -> RuntimeVersion {
+        RuntimeVersion {
+            spec_name: "circuit-runtime".into(),
+            impl_name: "circuit-runtime".into(),
+            authoring_version: 1,
+            impl_version: 1,
+            apis: ApisVec::Owned(vec![([0_u8; 8], 0_u32)]),
+            transaction_version: 4,
+            spec_version: 13,
+        }
+    }
+
+    pub fn create_test_metadata_struct() -> Metadata {
+        let module_name = "ModuleName";
+        let fn_name = "FnName";
+        let module_index = 1;
+
+        let fn_metadata_generator = |index: usize| -> FunctionMetadata {
+            let mut name: String = fn_name.to_string();
+            name.push_str(index.to_string().as_str());
+            FunctionMetadata {
+                name: DecodeDifferent::Encode(Box::leak(name.into_boxed_str())),
+                arguments: DecodeDifferent::Decoded(vec![]),
+                documentation: DecodeDifferent::Decoded(vec![]),
+            }
+        };
+
+        let functions = vec![1, 2, 3]
+            .into_iter()
+            .map(fn_metadata_generator)
+            .collect();
+
+        let module_metadata = ModuleMetadata {
+            index: module_index,
+            name: DecodeDifferent::Encode(module_name),
+            storage: None,
+            calls: Some(DecodeDifferent::Decoded(functions)),
+            event: None,
+            constants: DecodeDifferent::Decoded(vec![]),
+            errors: DecodeDifferent::Decoded(vec![]),
+        };
+
+        let runtime_metadata = RuntimeMetadataV13 {
+            extrinsic: ExtrinsicMetadata {
+                version: 1,
+                signed_extensions: vec![DecodeDifferent::Decoded(String::from("test"))],
+            },
+            modules: DecodeDifferent::Decoded(vec![module_metadata]),
+        };
+        Metadata::new(runtime_metadata)
+    }
+
+    #[test]
+    fn sga_assemble_call_returns_error_when_module_is_missing_from_metadata() {
+        let sga = SubstrateGatewayAssembly::<AuthorityId, H256>::new(
+            create_test_metadata_struct(),
+            create_test_runtime_version(),
+            create_test_genesis_hash(),
+            create_submitter(),
+        );
+
+        assert_err!(
+            sga.assemble_call(
+                "MissingModuleName",
+                "FnName",
+                vec![0, 1, 2],
+                [1_u8; 32],
+                3,
+                2,
+            ),
+            "Could not assemble call"
+        );
+    }
+
+    #[test]
+    fn sga_assemble_call_returns_error_when_function_is_missing_from_metadata() {
+        let sga = SubstrateGatewayAssembly::<AuthorityId, H256>::new(
+            create_test_metadata_struct(),
+            create_test_runtime_version(),
+            create_test_genesis_hash(),
+            create_submitter(),
+        );
+
+        assert_err!(
+            sga.assemble_call(
+                "ModuleName",
+                "MissingFnName",
+                vec![0, 1, 2],
+                [1_u8; 32],
+                3,
+                2,
+            ),
+            "Could not assemble call"
+        );
+    }
+
+    #[test]
+    fn sga_creates_encoded_call_correctly() {
+        let keystore = KeyStore::new();
+
+        let mut ext = TestExternalities::new_empty();
+        ext.register_extension(KeystoreExt(keystore.into()));
+
+        ext.execute_with(|| {
+            let sga = SubstrateGatewayAssembly::<AuthorityId, H256>::new(
+                create_test_metadata_struct(),
+                create_test_runtime_version(),
+                create_test_genesis_hash(),
+                create_submitter(),
+            );
+
+            let actual_call_bytes =
+                sga.assemble_call("ModuleName", "FnName2", vec![3, 3, 3], [1_u8; 32], 3, 2);
+
+            let expected_call_bytes = (
+                (1_u8, 1_u8),
+                vec![3_u8, 3_u8, 3_u8],
+                [1_u8; 32],
+                Compact(3_u16),
+                Compact(2_u16),
+            )
+                .encode();
+
+            assert_eq!(actual_call_bytes.unwrap(), expected_call_bytes)
+        });
+    }
+
+    #[test]
+    fn sga_signs_encoded_call_correctly() {
+        let keystore = KeyStore::new();
+
+        let submitter_pub_key = SyncCryptoStore::sr25519_generate_new(&keystore, KEY_TYPE, None)
+            .expect("Should generate key submitter key");
+
+        let mut ext = TestExternalities::new_empty();
+        ext.register_extension(KeystoreExt(keystore.into()));
+
+        ext.execute_with(|| {
+            let sga = SubstrateGatewayAssembly::<AuthorityId, H256>::new(
+                create_test_metadata_struct(),
+                create_test_runtime_version(),
+                create_test_genesis_hash(),
+                AuthorityId::from(submitter_pub_key),
+            );
+
+            let test_call_bytes = sga
+                .assemble_call("ModuleName", "FnName3", vec![0, 1, 2], [1_u8; 32], 3, 2)
+                .unwrap();
+
+            let actual_call_bytes = test_call_bytes.clone();
+
+            let actual_tx_signed = sga.assemble_signed_tx_offline(test_call_bytes, 0).unwrap();
+
+            let signature = actual_tx_signed.signature.unwrap();
+
+            let expected_message: Vec<u8> = vec![
+                160, 1, 2, 12, 0, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 12, 8, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 9, 9,
+                9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+                9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+                9, 9, 9, 9, 9, 9,
+            ];
+
+            assert_eq!(actual_tx_signed.function, actual_call_bytes);
+            assert_eq!(
+                signature.clone().0,
+                GenericAddress::from(AuthorityId::from(submitter_pub_key))
+            );
+            assert!(signature
+                .clone()
+                .1
+                .verify(expected_message.as_slice(), &submitter_pub_key.into()));
+            assert_eq!(signature.clone().2, GenericExtra::new(Era::Immortal, 0));
+        });
+    }
 }

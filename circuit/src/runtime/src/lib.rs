@@ -784,7 +784,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use bridge_runtime_common::messages;
 
     #[test]

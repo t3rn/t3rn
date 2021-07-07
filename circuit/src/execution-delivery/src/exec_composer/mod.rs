@@ -25,6 +25,7 @@ use crate::message_assembly::circuit_outbound::CircuitOutboundMessage;
 pub mod versatile_vm_impl;
 
 use crate::exec_composer::versatile_vm_impl::*;
+use crate::AuthorityId;
 
 pub struct ExecComposer {}
 
@@ -32,7 +33,7 @@ impl ExecComposer {
     pub fn pre_run_single_contract<T: crate::Config>(
         contract: RegistryContract<T::AccountId>,
         escrow_account: T::AccountId,
-        submitter: T::AuthorityId,
+        submitter: AuthorityId,
         _requester: T::AccountId,
         target_dest: T::AccountId,
         value: BalanceOf<T>,
@@ -78,7 +79,7 @@ impl ExecComposer {
     pub fn post_run_single_contract<T: crate::Config>(
         contract: RegistryContract<T::AccountId>,
         escrow_account: T::AccountId,
-        submitter: T::AuthorityId,
+        submitter: AuthorityId,
         requester: T::AccountId,
         target_dest: T::AccountId,
         value: BalanceOf<T>,
@@ -124,7 +125,7 @@ impl ExecComposer {
     pub fn dry_run_single_contract<T: crate::Config>(
         compose: Compose<T::AccountId, BalanceOf<T>>,
         escrow_account: T::AccountId,
-        submitter: T::AuthorityId,
+        submitter: AuthorityId,
         gateway_id: bp_runtime::ChainId,
         gateway_abi_config: GatewayABIConfig,
     ) -> Result<Vec<CircuitOutboundMessage>, &'static str> {
@@ -145,7 +146,7 @@ impl ExecComposer {
     pub fn run_single_contract<T: crate::Config, OM: WasmEnvOutputMode>(
         compose: Compose<T::AccountId, BalanceOf<T>>,
         escrow_account: T::AccountId,
-        submitter: T::AuthorityId,
+        submitter: AuthorityId,
         requester: T::AccountId,
         gateway_id: bp_runtime::ChainId,
         gateway_abi_config: GatewayABIConfig,
@@ -234,14 +235,15 @@ impl ExecComposer {
         })
     }
 
+    /// Given a Gateway Pointer and an Authority, it returns the respective Gateway Protocol
     fn retrieve_gateway_protocol<T: crate::Config>(
-        submitter_id: T::AuthorityId,
+        submitter_id: AuthorityId,
         _gateway_pointer: GatewayPointer,
     ) -> Result<Box<dyn GatewayInboundProtocol>, &'static str> {
         // ToDo: Communicate with pallet_xdns in order to retrieve latest data about
         // let (metadata, runtime_version, genesis_hash) = pallet_xdns::Pallet<T>::get_gateway_protocol_meta(gateway_pointer.id)
         Ok(Box::new(SubstrateGatewayProtocol::<
-            T::AuthorityId,
+            AuthorityId,
             bp_polkadot_core::Hash,
         >::new(
             Default::default(),
