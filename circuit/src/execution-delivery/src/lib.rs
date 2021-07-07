@@ -67,7 +67,6 @@ pub use crate::message_assembly::circuit_inbound::StepConfirmation;
 pub use crate::message_assembly::circuit_outbound::CircuitOutboundMessage;
 use crate::message_assembly::circuit_outbound::ProofTriePointer;
 use crate::message_assembly::merklize::*;
-use crate::message_assembly::signer::app::Public as AppPublic;
 
 #[cfg(test)]
 mod tests;

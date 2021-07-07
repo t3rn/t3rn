@@ -18,7 +18,7 @@ use super::substrate_gateway_assembly::SubstrateGatewayAssembly;
 pub struct SubstrateGatewayProtocol<Authority, Hash>
 where
     Authority: RuntimeAppPublic + Clone,
-    Hash: Clone + sp_std::fmt::Debug,
+    Hash: Clone + Encode + sp_std::fmt::Debug,
 {
     pub assembly: SubstrateGatewayAssembly<Authority, Hash>,
 }
@@ -26,7 +26,7 @@ where
 impl<Authority, Hash> SubstrateGatewayProtocol<Authority, Hash>
 where
     Authority: RuntimeAppPublic + Clone,
-    Hash: Clone + sp_std::fmt::Debug,
+    Hash: Clone + Encode + sp_std::fmt::Debug,
 {
     pub fn new(
         metadata: Metadata,
@@ -68,7 +68,7 @@ where
 impl<Authority, Hash> GatewayInboundProtocol for SubstrateGatewayProtocol<Authority, Hash>
 where
     Authority: RuntimeAppPublic + Clone,
-    Hash: Clone + sp_std::fmt::Debug,
+    Hash: Clone + Encode + sp_std::fmt::Debug,
 {
     // Get storage key directly to foreign storage system
     // For substrate that follows the following key formats:

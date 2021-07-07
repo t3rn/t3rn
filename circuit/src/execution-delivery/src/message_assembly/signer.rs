@@ -52,7 +52,7 @@ pub mod app {
     impl<Call, Hash> SignedPayload<Call, Hash>
     where
         Call: Encode,
-        Hash: sp_std::fmt::Debug,
+        Hash: Encode + sp_std::fmt::Debug,
     {
         pub fn from_raw(
             call: Call,
@@ -66,8 +66,7 @@ pub mod app {
         ///
         /// Payloads longer than 256 bytes are going to be `blake2_256`-hashed.
         pub fn using_encoded<R, F: FnOnce(&[u8]) -> R>(&self, f: F) -> R {
-            // Added the .0.0 below to call the function on the call_bytes vector
-            self.0 .0.using_encoded(|payload| {
+            self.0.using_encoded(|payload| {
                 if payload.len() > 256 {
                     f(&blake2_256(payload)[..])
                 } else {

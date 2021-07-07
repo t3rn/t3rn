@@ -18,7 +18,7 @@ use super::gateway_inbound_assembly::GatewayInboundAssembly;
 pub struct SubstrateGatewayAssembly<Authority, Hash>
 where
     Authority: RuntimeAppPublic + Clone,
-    Hash: Clone + sp_std::fmt::Debug,
+    Hash: Clone + Encode + sp_std::fmt::Debug,
 {
     pub metadata: Metadata,
     pub runtime_version: RuntimeVersion,
@@ -29,7 +29,7 @@ where
 impl<Authority, Hash> SubstrateGatewayAssembly<Authority, Hash>
 where
     Authority: RuntimeAppPublic + Clone,
-    Hash: Clone + sp_std::fmt::Debug,
+    Hash: Clone + Encode + sp_std::fmt::Debug,
 {
     pub fn new(
         metadata: Metadata,
@@ -49,7 +49,7 @@ where
 impl<Authority, Hash> GatewayInboundAssembly for SubstrateGatewayAssembly<Authority, Hash>
 where
     Authority: RuntimeAppPublic + Clone,
-    Hash: Clone + sp_std::fmt::Debug,
+    Hash: Clone + Encode + sp_std::fmt::Debug,
 {
     fn assemble_signed_call(
         &self,
@@ -320,7 +320,10 @@ pub mod tests {
 
             let expected_message: Vec<u8> = vec![
                 160, 1, 2, 12, 0, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 12, 8,
+                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 12, 8, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 9, 9,
+                9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+                9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+                9, 9, 9, 9, 9, 9,
             ];
 
             assert_eq!(actual_tx_signed.function, actual_call_bytes);
