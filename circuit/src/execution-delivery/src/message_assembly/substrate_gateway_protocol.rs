@@ -172,7 +172,7 @@ where
     ) -> CircuitOutboundMessage {
         // For state::call first argument is PalletName_MethodName
         const UNDERSCORE_BYTE: &[u8] = b"_";
-        let method_enc = [module_name.as_slice(), fn_name.as_slice()].join(UNDERSCORE_BYTE);
+        let method_enc = [module_name, fn_name].join(UNDERSCORE_BYTE);
 
         let expected_output = vec![
             GatewayExpectedOutput::Events {
@@ -316,7 +316,7 @@ where
                     ],
                 }];
 
-                let arguments = vec![to, value, vec![]];
+                let arguments = vec![to.encode(), value.encode(), vec![]];
 
                 CircuitOutboundMessage::Write {
                     arguments: arguments.clone(),
@@ -332,8 +332,8 @@ where
                 let expected_output = vec![GatewayExpectedOutput::Events {
                     signatures: vec![
                         // from, to, value
-                        b"Transfer(address,address,value)".to_vec(),
-                        b"Transfer(address,address,value)".to_vec(),
+                        b"EscrowedTransfer(address,address,value)".to_vec(),
+                        b"EscrowedTransfer(address,address,value)".to_vec(),
                     ],
                 }];
 
@@ -397,4 +397,424 @@ where
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use codec::Encode;
+    use sp_core::H256;
+    use sp_version::{ApisVec, RuntimeVersion};
+
+    use t3rn_primitives::GatewayType;
+
+    use crate::crypto::Public;
+
+    use super::{
+        CircuitOutboundMessage, GatewayExpectedOutput, GatewayInboundProtocol, MessagePayload,
+        Metadata, SubstrateGatewayProtocol,
+    };
+    use t3rn_primitives::transfers::TransferEntry;
+
+    fn create_test_runtime_version() -> RuntimeVersion {
+        RuntimeVersion {
+            spec_name: "circuit-runtime".into(),
+            impl_name: "circuit-runtime".into(),
+            authoring_version: 1,
+            impl_version: 1,
+            apis: ApisVec::Owned(vec![([0_u8; 8], 0_u32)]),
+            transaction_version: 4,
+            spec_version: 13,
+        }
+    }
+
+    fn create_submitter() -> Public {
+        Public::default()
+    }
+
+    fn create_test_genesis_hash() -> H256 {
+        [0_u8; 32].into()
+    }
+
+    fn create_test_gateway_protocol() -> SubstrateGatewayProtocol<Public, H256> {
+        SubstrateGatewayProtocol::new(
+            Metadata::default(),
+            create_test_runtime_version(),
+            create_test_genesis_hash(),
+            create_submitter(),
+        )
+    }
+
+    #[test]
+    fn get_storage_should_create_outbound_messages_correctly() {
+        let test_protocol = create_test_gateway_protocol();
+        let test_key = [1_u8; 32];
+
+        let expected_message = CircuitOutboundMessage::Read {
+            arguments: vec![test_key.to_vec()],
+            expected_output: vec![GatewayExpectedOutput::Storage {
+                key: vec![test_key],
+                value: vec![None],
+            }],
+            payload: MessagePayload::Rpc {
+                module_name: b"state".to_vec(),
+                method_name: b"getStorage".to_vec(),
+            },
+        };
+        // TODO: update these tests as soon implementation takes the gateway type into account
+        assert_eq!(
+            test_protocol.get_storage(test_key, GatewayType::ProgrammableInternal),
+            expected_message
+        );
+        assert_eq!(
+            test_protocol.get_storage(test_key, GatewayType::ProgrammableExternal),
+            expected_message
+        );
+        assert_eq!(
+            test_protocol.get_storage(test_key, GatewayType::TxOnly),
+            expected_message
+        );
+    }
+
+    #[test]
+    fn set_storage_should_create_outbound_messages_correctly() {
+        let test_protocol = create_test_gateway_protocol();
+        let test_key = [1_u8; 32];
+        let test_value = Some(vec![1_u8]);
+
+        let expected_message = CircuitOutboundMessage::Write {
+            arguments: vec![test_key.to_vec()],
+            expected_output: vec![GatewayExpectedOutput::Storage {
+                key: vec![test_key],
+                value: vec![test_value.clone()],
+            }],
+            payload: MessagePayload::Signed {
+                module_name: b"state".to_vec(),
+                method_name: b"setStorage".to_vec(),
+                signer: vec![],
+                call_bytes: vec![],
+                signature: vec![],
+                extra: vec![],
+            },
+        };
+        // TODO: update these tests as soon implementation takes the gateway type into account
+        assert_eq!(
+            test_protocol.set_storage(
+                test_key,
+                test_value.clone(),
+                GatewayType::ProgrammableInternal
+            ),
+            expected_message
+        );
+        assert_eq!(
+            test_protocol.set_storage(
+                test_key,
+                test_value.clone(),
+                GatewayType::ProgrammableExternal
+            ),
+            expected_message
+        );
+        assert_eq!(
+            test_protocol.set_storage(test_key, test_value.clone(), GatewayType::TxOnly),
+            expected_message
+        );
+    }
+
+    #[test]
+    fn call_should_create_outbound_messages_correctly() {
+        let test_protocol = create_test_gateway_protocol();
+        let from = [1_u8; 32];
+        let to = [2_u8; 32];
+        let escrow = [3_u8; 32];
+        let value = 1_u128;
+        let gas = 1_u64;
+        let data = vec![1_u8];
+
+        let expected_message = CircuitOutboundMessage::Write {
+            arguments: vec![
+                vec!["ModuleName".encode(), "FnName".encode()]
+                    .join(b"_".as_ref())
+                    .encode(),
+                data.clone(),
+            ],
+            expected_output: vec![
+                GatewayExpectedOutput::Events {
+                    signatures: vec![b"Call(address,value,uint64,dynamic_bytes)".to_vec()],
+                },
+                GatewayExpectedOutput::Output {
+                    output: b"dynamic_bytes".to_vec(),
+                },
+            ],
+            payload: MessagePayload::Rpc {
+                module_name: b"State".to_vec(),
+                method_name: b"Call".to_vec(),
+            },
+        };
+        assert_eq!(
+            test_protocol.call(
+                "ModuleName".encode(),
+                "FnName".encode(),
+                data,
+                escrow,
+                from,
+                to,
+                value,
+                gas,
+                GatewayType::ProgrammableInternal
+            ),
+            expected_message
+        )
+    }
+
+    #[test]
+    fn call_escrow_should_create_outbound_messages_correctly() {
+        let test_protocol = create_test_gateway_protocol();
+        let to = [1_u8; 32];
+        let value = 1_u128;
+        let gas = 1_u64;
+        let data = vec![1_u8];
+
+        let expected_message = CircuitOutboundMessage::Write {
+            arguments: vec![to.encode(), value.encode(), gas.encode(), data.clone()],
+            expected_output: vec![GatewayExpectedOutput::Events {
+                signatures: vec![b"CallEscrowed(address,value,uint64,dynamic_bytes)".to_vec()],
+            }],
+            payload: MessagePayload::Signed {
+                module_name: b"gatewayEscrowed".to_vec(),
+                method_name: b"callEscrowed".to_vec(),
+                signer: vec![],
+                call_bytes: vec![],
+                signature: vec![],
+                extra: vec![],
+            },
+        };
+        assert_eq!(
+            test_protocol.call_escrow(
+                "ModuleName",
+                "FnName",
+                data,
+                to,
+                value,
+                gas,
+                GatewayType::ProgrammableInternal
+            ),
+            expected_message
+        )
+    }
+
+    #[test]
+    #[should_panic(expected = "not implemented")]
+    fn call_escrow_should_panic_for_external_gateways() {
+        let test_protocol = create_test_gateway_protocol();
+        test_protocol.call_escrow(
+            "ModuleName",
+            "FnName",
+            vec![1_u8],
+            [1_u8; 32],
+            1_u128,
+            1_u64,
+            GatewayType::ProgrammableExternal,
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "not implemented")]
+    fn call_escrow_should_panic_for_txonly_gateways() {
+        let test_protocol = create_test_gateway_protocol();
+        test_protocol.call_escrow(
+            "ModuleName",
+            "FnName",
+            vec![1_u8],
+            [1_u8; 32],
+            1_u128,
+            1_u64,
+            GatewayType::TxOnly,
+        );
+    }
+
+    #[test]
+    fn call_static_should_create_outbound_messages_correctly_for_internal_gateways() {
+        let test_protocol = create_test_gateway_protocol();
+        let to = [1_u8; 32];
+        let value = 1_u128;
+        let gas = 1_u64;
+        let data = vec![1_u8];
+
+        let expected_message = CircuitOutboundMessage::Write {
+            arguments: vec![to.encode(), value.encode(), gas.encode(), data.clone()],
+            expected_output: vec![GatewayExpectedOutput::Events {
+                signatures: vec![b"CallStatic(address,value,uint64,dynamic_bytes)".to_vec()],
+            }],
+            payload: MessagePayload::Signed {
+                module_name: b"gatewayEscrowed".to_vec(),
+                method_name: b"callStatic".to_vec(),
+                signer: vec![],
+                call_bytes: vec![],
+                signature: vec![],
+                extra: vec![],
+            },
+        };
+        assert_eq!(
+            test_protocol.call_static(
+                "ModuleName",
+                "FnName",
+                data,
+                to,
+                value,
+                gas,
+                GatewayType::ProgrammableInternal
+            ),
+            expected_message
+        )
+    }
+
+    #[test]
+    #[should_panic(expected = "not implemented")]
+    fn call_static_should_panic_for_external_gateways() {
+        let test_protocol = create_test_gateway_protocol();
+        test_protocol.call_static(
+            "ModuleName",
+            "FnName",
+            vec![1_u8],
+            [1_u8; 32],
+            1_u128,
+            1_u64,
+            GatewayType::ProgrammableExternal,
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "not implemented")]
+    fn call_static_should_panic_for_txonly_gateways() {
+        let test_protocol = create_test_gateway_protocol();
+        test_protocol.call_static(
+            "ModuleName",
+            "FnName",
+            vec![1_u8],
+            [1_u8; 32],
+            1_u128,
+            1_u64,
+            GatewayType::TxOnly,
+        );
+    }
+
+    #[test]
+    fn transfer_should_create_outbound_messages_correctly() {
+        let test_protocol = create_test_gateway_protocol();
+        let to = [1_u8; 32];
+        let value = 1_u128;
+
+        let expected_message = CircuitOutboundMessage::Write {
+            arguments: vec![to.encode(), value.encode(), vec![]],
+            expected_output: vec![GatewayExpectedOutput::Events {
+                signatures: vec![b"Transfer(address,address,value)".to_vec()],
+            }],
+            payload: MessagePayload::Signed {
+                signer: vec![],
+                module_name: b"Balances".to_vec(),
+                method_name: b"Transfer".to_vec(),
+                call_bytes: vec![],
+                signature: vec![],
+                extra: vec![],
+            },
+        };
+        // TODO: update these tests as soon implementation takes the gateway type into account
+        assert_eq!(
+            test_protocol.transfer(to, value, GatewayType::ProgrammableInternal),
+            expected_message
+        );
+        assert_eq!(
+            test_protocol.transfer(to, value, GatewayType::ProgrammableExternal),
+            expected_message
+        );
+        assert_eq!(
+            test_protocol.transfer(to, value, GatewayType::TxOnly),
+            expected_message
+        );
+    }
+
+    #[test]
+    fn transfer_escrow_should_create_outbound_messages_correctly_for_internal_gateways() {
+        let test_protocol = create_test_gateway_protocol();
+        let from = vec![1_u8];
+        let to = vec![2_u8];
+        let escrow = vec![3_u8];
+        let _transfers = 1_u128;
+        let value = vec![1_u8];
+        let mut _transfers = vec![TransferEntry::default()];
+
+        let expected_message = CircuitOutboundMessage::Write {
+            arguments: vec![to.encode(), value.encode(), vec![]],
+            expected_output: vec![GatewayExpectedOutput::Events {
+                signatures: vec![b"EscrowedTransfer(address,address,value)".to_vec()],
+            }],
+            payload: MessagePayload::Signed {
+                module_name: b"Gateway".to_vec(),
+                method_name: b"EscrowTransfer".to_vec(),
+                signer: vec![],
+                call_bytes: vec![],
+                signature: vec![],
+                extra: vec![],
+            },
+        };
+        assert_eq!(
+            test_protocol.transfer_escrow(
+                escrow.to_vec(),
+                from.to_vec(),
+                to.to_vec(),
+                value,
+                &mut _transfers,
+                GatewayType::ProgrammableInternal
+            ),
+            expected_message
+        )
+    }
+
+    #[test]
+    fn transfer_escrow_should_create_outbound_messages_correctly_for_external_and_txonly_gateways()
+    {
+        let test_protocol = create_test_gateway_protocol();
+        let from = vec![1_u8];
+        let to = vec![2_u8];
+        let escrow = vec![3_u8];
+        let _transfers = 1_u128;
+        let value = vec![1_u8];
+        let mut _transfers = vec![TransferEntry::default()];
+
+        let expected_message = CircuitOutboundMessage::Write {
+            arguments: vec![to.encode(), value.encode(), vec![]],
+            expected_output: vec![GatewayExpectedOutput::Events {
+                signatures: vec![
+                    b"EscrowedTransfer(address,address,value)".to_vec(),
+                    b"EscrowedTransfer(address,address,value)".to_vec(),
+                ],
+            }],
+            payload: MessagePayload::Signed {
+                module_name: b"Utility".to_vec(),
+                method_name: b"BatchAll".to_vec(),
+                signer: vec![],
+                call_bytes: vec![],
+                signature: vec![],
+                extra: vec![],
+            },
+        };
+        assert_eq!(
+            test_protocol.transfer_escrow(
+                escrow.to_vec(),
+                from.to_vec(),
+                to.to_vec(),
+                value.clone(),
+                &mut _transfers,
+                GatewayType::ProgrammableExternal
+            ),
+            expected_message
+        );
+        assert_eq!(
+            test_protocol.transfer_escrow(
+                escrow.to_vec(),
+                from.to_vec(),
+                to.to_vec(),
+                value.clone(),
+                &mut _transfers,
+                GatewayType::TxOnly
+            ),
+            expected_message
+        );
+    }
+}
