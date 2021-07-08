@@ -1,27 +1,33 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-use frame_support::{decl_module, decl_storage, dispatch::DispatchResult};
-use frame_system::{self as system, ensure_signed, Event};
 
-pub trait Trait: system::Trait {
-    type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
-}
+#[frame_support::pallet]
+mod pallet {
+    use super::*;
+    use frame_support::pallet_prelude::*;
+    use frame_system::pallet_prelude::*;
 
-decl_storage! {
-    trait Store for Module<T: Trait> as FlipperStorage {
-        pub Value get(fn get_value): bool = false;
-    }
-}
+    use codec::{Encode, Decode};
 
-decl_module! {
-    pub struct Module<T: Trait> for enum Call where origin: T::Origin {
-        fn deposit_event() = default;
+    #[pallet::config]
+    pub trait Config: frame_system::Config {}
 
-        /// Flip!
-        #[weight = 10_000]
-        pub fn flip(origin) -> DispatchResult {
+    #[pallet::pallet]
+    pub struct Pallet<T>(core::marker::PhantomData<T>);
+
+    #[pallet::storage]
+    #[pallet::getter(fn get_value)]
+    pub type Value<T: Config> = StorageValue<_, bool, ValueQuery>;
+
+    #[pallet::hooks]
+    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
+
+    #[pallet::call]
+    impl<T: Config> Pallet<T> {
+        #[pallet::weight(10_000)]
+        pub fn flip(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             ensure_signed(origin)?;
-            Value::put(!Value::get());
-            Ok(())
+            Value::<T>::put(!Value::<T>::get());
+            Ok(().into())
         }
     }
 }
