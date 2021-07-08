@@ -9,7 +9,9 @@ use sp_version::RuntimeVersion;
 use t3rn_primitives::transfers::TransferEntry;
 use t3rn_primitives::GatewayType;
 
+use crate::compose_call;
 use crate::message_assembly::chain_generic_metadata::Metadata;
+use frame_support::ensure;
 
 use super::circuit_outbound::{CircuitOutboundMessage, GatewayExpectedOutput, MessagePayload};
 use super::gateway_inbound_protocol::GatewayInboundProtocol;
@@ -46,22 +48,22 @@ where
 
     pub fn produce_signed_payload(
         &self,
-        namespace: Vec<u8>,
-        name: Vec<u8>,
-        _arguments: Vec<Vec<u8>>,
-    ) -> MessagePayload {
-        // let call_bytes = compose_call!(name_str, name_str, arguments).to_vec();
-        // let tx = compose_call!(namespace, name);
+        namespace: &str,
+        name: &str,
+        arguments: Vec<Vec<u8>>,
+    ) -> Result<MessagePayload, &'static str> {
+        let signer = self.assembly.submitter.to_raw_vec();
 
-        MessagePayload::Signed {
-            // ToDo: get public key from AuthorityId instead
-            signer: vec![],
-            module_name: namespace,
-            method_name: name,
-            call_bytes: vec![],
+        let call_bytes = compose_call!(self.assembly.metadata, namespace, name, arguments).encode();
+
+        Ok(MessagePayload::Signed {
+            signer,
+            module_name: namespace.encode(),
+            method_name: name.encode(),
+            call_bytes,
             signature: vec![],
             extra: vec![],
-        }
+        })
     }
 }
 
@@ -74,7 +76,11 @@ where
     // For substrate that follows the following key formats:
     // key[0..16].copy_from_slice(&Twox128::hash(module_prefix));
     // key[16..32].copy_from_slice(&Twox128::hash(storage_prefix));
-    fn get_storage(&self, key: [u8; 32], _gateway_type: GatewayType) -> CircuitOutboundMessage {
+    fn get_storage(
+        &self,
+        key: [u8; 32],
+        _gateway_type: GatewayType,
+    ) -> Result<CircuitOutboundMessage, &'static str> {
         // events
         // storage
         let expected_storage = GatewayExpectedOutput::Storage {
@@ -83,14 +89,14 @@ where
         };
         let arguments = vec![key.to_vec()];
 
-        CircuitOutboundMessage::Read {
+        Ok(CircuitOutboundMessage::Read {
             arguments,
             expected_output: vec![expected_storage],
             payload: MessagePayload::Rpc {
                 module_name: b"state".to_vec(),
                 method_name: b"getStorage".to_vec(),
             },
-        }
+        })
     }
 
     // Set storage key directly to foreign storage system
@@ -102,7 +108,7 @@ where
         key: [u8; 32], //sp_core::storage
         value: Option<Vec<u8>>,
         _gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage {
+    ) -> Result<CircuitOutboundMessage, &'static str> {
         // storage
         let expected_storage = GatewayExpectedOutput::Storage {
             key: vec![key],
@@ -111,15 +117,11 @@ where
 
         let arguments = vec![key.to_vec()];
 
-        CircuitOutboundMessage::Write {
+        Ok(CircuitOutboundMessage::Write {
             arguments: arguments.clone(),
             expected_output: vec![expected_storage],
-            payload: self.produce_signed_payload(
-                b"state".to_vec(),
-                b"setStorage".to_vec(),
-                arguments,
-            ),
-        }
+            payload: self.produce_signed_payload("state", "setStorage", arguments)?,
+        })
     }
 
     /// Call pallet's method in a read-only manner (static)
@@ -132,7 +134,7 @@ where
         value: u128,
         gas: u64,
         gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage {
+    ) -> Result<CircuitOutboundMessage, &'static str> {
         match gateway_type {
             GatewayType::ProgrammableInternal => {
                 let arguments = vec![to.encode(), value.encode(), gas.encode(), data];
@@ -145,8 +147,8 @@ where
                         ],
                     }],
                     payload: self.produce_signed_payload(
-                        b"gatewayEscrowed".to_vec(),
-                        b"callStatic".to_vec(),
+                        "gatewayEscrowed",
+                        "callStatic",
                         arguments,
                     ),
                 }
@@ -169,7 +171,7 @@ where
         _value: u128,
         _gas: u64,
         _gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage {
+    ) -> Result<CircuitOutboundMessage, &'static str> {
         // For state::call first argument is PalletName_MethodName
         const UNDERSCORE_BYTE: &[u8] = b"_";
         let method_enc = [module_name, fn_name].join(UNDERSCORE_BYTE);
@@ -206,7 +208,7 @@ where
         value: u128,
         gas: u64,
         gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage {
+    ) -> Result<CircuitOutboundMessage, &'static str> {
         match gateway_type {
             GatewayType::ProgrammableInternal => {
                 let expected_output = vec![GatewayExpectedOutput::Events {
@@ -220,8 +222,8 @@ where
                     arguments: arguments.clone(),
                     expected_output,
                     payload: self.produce_signed_payload(
-                        b"gatewayEscrowed".to_vec(),
-                        b"callEscrowed".to_vec(),
+                        "gatewayEscrowed",
+                        "callEscrowed",
                         arguments,
                     ),
                 }
@@ -255,7 +257,7 @@ where
         _value: u128,
         _gas: u64,
         _gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage {
+    ) -> Result<CircuitOutboundMessage, &'static str> {
         unimplemented!()
     }
 
@@ -277,7 +279,7 @@ where
         to: [u8; 32],
         value: u128,
         _gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage {
+    ) -> Result<CircuitOutboundMessage, &'static str> {
         let expected_output = vec![GatewayExpectedOutput::Events {
             signatures: vec![
                 // from, to, value
@@ -290,11 +292,7 @@ where
         CircuitOutboundMessage::Write {
             arguments: arguments.clone(),
             expected_output,
-            payload: self.produce_signed_payload(
-                b"Balances".to_vec(),
-                b"Transfer".to_vec(),
-                arguments,
-            ),
+            payload: self.produce_signed_payload("Balances", "Transfer", arguments),
         }
     }
 
@@ -306,7 +304,7 @@ where
         value: Vec<u8>,
         _transfers: &mut Vec<TransferEntry>,
         gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage {
+    ) -> Result<CircuitOutboundMessage, &'static str> {
         match gateway_type {
             GatewayType::ProgrammableInternal => {
                 let expected_output = vec![GatewayExpectedOutput::Events {
@@ -321,11 +319,7 @@ where
                 CircuitOutboundMessage::Write {
                     arguments: arguments.clone(),
                     expected_output,
-                    payload: self.produce_signed_payload(
-                        b"Gateway".to_vec(),
-                        b"EscrowTransfer".to_vec(),
-                        arguments,
-                    ),
+                    payload: self.produce_signed_payload("Gateway", "EscrowTransfer", arguments),
                 }
             }
             GatewayType::ProgrammableExternal | GatewayType::TxOnly => {
@@ -341,8 +335,8 @@ where
 
                 let transfers = vec![
                     self.produce_signed_payload(
-                        b"Balances".to_vec(),
-                        b"Transfer".to_vec(),
+                        "Balances",
+                        "Transfer",
                         vec![
                             // ToDo: change to dummy vector to self.assembly.submitter_pair.public()
                             vec![],
@@ -352,8 +346,8 @@ where
                     )
                     .encode(),
                     self.produce_signed_payload(
-                        b"Balances".to_vec(),
-                        b"Transfer".to_vec(),
+                        "Balances",
+                        "Transfer",
                         vec![escrow_account, to, value],
                     )
                     .encode(),
@@ -362,11 +356,7 @@ where
                 CircuitOutboundMessage::Write {
                     arguments: arguments.clone(),
                     expected_output,
-                    payload: self.produce_signed_payload(
-                        b"Utility".to_vec(),
-                        b"BatchAll".to_vec(),
-                        transfers,
-                    ),
+                    payload: self.produce_signed_payload("Utility", "BatchAll", transfers),
                 }
             }
         }
@@ -391,7 +381,7 @@ where
         _y_value: u128,
         _gas: u64,
         _gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage {
+    ) -> Result<CircuitOutboundMessage, &'static str> {
         unimplemented!()
     }
 }

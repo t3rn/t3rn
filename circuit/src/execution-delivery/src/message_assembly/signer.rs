@@ -225,11 +225,11 @@ macro_rules! compose_call {
         {
             use frame_support::ensure;
 
-            let _lookup_result = $node_metadata.lookup_module_and_call_indices($module, $call_name);
+            let lookup_result = $node_metadata.lookup_module_and_call_indices($module, $call_name);
 
-            ensure!(_lookup_result.is_ok(), "Could not assemble call");
+            ensure!(lookup_result.is_ok(), "Could not assemble call");
 
-            let (module_index, call_index) = _lookup_result.unwrap();
+            let (module_index, call_index) = lookup_result.unwrap();
 
             ([module_index as u8, call_index as u8] $(, ($args)) *)
         }
