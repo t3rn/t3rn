@@ -40,6 +40,9 @@ use sp_std::prelude::*;
 
 pub mod abi;
 pub mod transfers;
+pub mod gateway_inbound_protocol;
+
+pub use gateway_inbound_protocol::GatewayInboundProtocol;
 
 pub type InstanceId = [u8; 4];
 
@@ -161,6 +164,138 @@ pub struct InterExecSchedule<Account, Balance> {
 pub trait EscrowTrait: frame_system::Config + pallet_sudo::Config {
     type Currency: Currency<Self::AccountId>;
     type Time: Time;
+}
+
+type Bytes = Vec<u8>;
+
+/// Outbound Step that specifies expected transmission medium for relayers connecting with that gateway.
+#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub enum CircuitOutboundMessage {
+    /// Request compatible with JSON-RPC API of receiving node
+    Read {
+        /// Method name on the VM
+        name: Bytes,
+        /// Array of next arguments: encoded bytes of arguments that that JSON-RPC API expects
+        arguments: Vec<Bytes>,
+        /// Expected results that will be decoded and checked against the format
+        expected_output: Vec<GatewayExpectedOutput>,
+        /// Expected results
+        payload: MessagePayload,
+    },
+    /// Transaction (in substrate extrinics), signed offline and including dispatch call(s)
+    Write {
+        /// Method name on the VM
+        name: Bytes,
+        /// Array of next arguments: encoded bytes of arguments that that JSON-RPC API expects
+        arguments: Vec<Bytes>,
+        /// Expected results
+        expected_output: Vec<GatewayExpectedOutput>,
+        /// Expected results
+        payload: MessagePayload,
+    },
+    /// Custom transmission medium (like Substrate's XCMP)
+    Escrowed {
+        /// Method name on the VM
+        name: Bytes,
+        /// Encoded sender's public key
+        sender: Bytes,
+        /// Encoded target's public key
+        target: Bytes,
+        /// Array of next arguments: encoded bytes of arguments that that JSON-RPC API expects
+        arguments: Vec<Bytes>,
+        /// Expected results
+        expected_output: Vec<GatewayExpectedOutput>,
+        /// Expected results
+        payload: MessagePayload,
+    },
+}
+
+
+/// Inclusion proofs of different tries
+#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub enum ProofTriePointer {
+    /// Proof is a merkle path in the state trie
+    State,
+    /// Proof is a merkle path in the transaction trie (extrisics in Substrate)
+    Transaction,
+    /// Proof is a merkle path in the receipts trie (in Substrate logs are entries in state trie, this doesn't apply)
+    Receipts,
+}
+
+/// Inbound Steps that specifie expected data deposited by relayers back to the Circuit after each step
+#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct CircuitInboundResult {
+    pub result_format: Bytes,
+    pub proof_type: ProofTriePointer,
+}
+
+/// Inbound Steps that specifie expected data deposited by relayers back to the Circuit after each step
+#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub enum GatewayExpectedOutput {
+    /// Effect would be the modified storage key
+    Storage {
+        key: Vec<[u8; 32]>,
+        // key: Vec<sp_core::storage::StorageKey>,
+        // value: Vec<Option<sp_core::storage::StorageData>>,
+        value: Vec<Option<Bytes>>,
+    },
+
+    /// Expect events as a result of that call - will be described with signature
+    /// and check against the corresponding types upon receiving
+    Events { signatures: Vec<Bytes> },
+
+    /// Yet another event or Storage output
+    Extrinsic {
+        /// Optionally expect dispatch of extrinsic only at the certain block height
+        block_height: Option<u64>,
+    },
+
+    /// Yet another event or Storage output. If expecting output u can define its type format.
+    Output { output: Bytes },
+}
+
+/// Outbound Step that specifies expected transmission medium for relayers connecting with that gateway.
+#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub enum MessagePayload {
+    Signed {
+        signer: Bytes,
+        /// Encoded utf-8 string of module name that implements requested entrypoint
+        module_name: Bytes,
+        /// Encoded utf-8 string of method name that implements requested entrypoint
+        method_name: Bytes,
+        /// Encoded call bytes
+        call_bytes: Bytes,
+        /// Encoded tx signature
+        signature: Bytes,
+        /// Encoded extras to that transctions, like versions and gas price /tips for miners. Check GenericExtra for more info.
+        extra: Bytes,
+    },
+    /// Request compatible with JSON-RPC API of receiving node
+    Rpc {
+        /// Encoded utf-8 string of module name that implements requested entrypoint
+        module_name: Bytes,
+        /// Encoded utf-8 string of method name that implements requested entrypoint
+        method_name: Bytes,
+    },
+    /// Transaction (in substrate extrinics), signed offline and including dispatch call(s)
+    TransactionDispatch {
+        /// Encoded call bytes
+        call_bytes: Bytes,
+        /// Encoded tx signature
+        signature: Bytes,
+        /// Encoded extras to that transctions, like versions and gas price /tips for miners. Check GenericExtra for more info.
+        extra: Bytes,
+    },
+    /// Custom transmission medium (like Substrate's XCMP)
+    Custom {
+        /// Custom message bytes, that would have to be decoded by the receiving end.
+        payload: Bytes,
+    },
 }
 
 /// Message signing types
