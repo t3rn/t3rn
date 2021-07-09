@@ -6,13 +6,16 @@ use anyhow::{Context, Result};
 use codec::Encode;
 use frame_support::dispatch::DispatchError;
 use frame_support::{assert_noop, assert_ok, storage::child, traits::Currency};
-use gateway_escrow_engine::transfers::{BalanceOf, TransferEntry};
 use sp_core::H256;
 use sp_runtime::traits::Hash;
 use sp_std::vec::Vec;
 use std::path::Path;
 use std::{fs, io::Read};
+use t3rn_primitives::transfers::{BalanceOf, TransferEntry};
 use versatile_wasm::{gas::Gas, runtime::get_child_storage_for_current_execution};
+
+use sp_runtime::AccountId32;
+
 ///
 /// Multistep Call - puts_code, instantiates, calls and terminates wasm contract codes on the fly.
 /// Such a wasm code is called package.
@@ -25,12 +28,12 @@ const EXECUTE_PHASE: u8 = 0;
 const COMMIT_PHASE: u8 = 1;
 const REVERT_PHASE: u8 = 2;
 
-const ZERO_ACCOUNT: u64 = 0;
-const ESCROW_ACCOUNT: u64 = 1;
-const TEMP_EXEC_CONTRACT: u64 = 2;
-const REQUESTER: u64 = 3;
-const TARGET_DEST: u64 = 4;
-const OTHER_ACCOUNT: u64 = 5;
+const ZERO_ACCOUNT: AccountId32 = AccountId32::new([0u8; 32]);
+const ESCROW_ACCOUNT: AccountId32 = AccountId32::new([1u8; 32]);
+const TEMP_EXEC_CONTRACT: AccountId32 = AccountId32::new([2u8; 32]);
+const REQUESTER: AccountId32 = AccountId32::new([3u8; 32]);
+const TARGET_DEST: AccountId32 = AccountId32::new([4u8; 32]);
+const OTHER_ACCOUNT: AccountId32 = AccountId32::new([5u8; 32]);
 
 /**
  BASE GAS COSTS:
@@ -89,7 +92,7 @@ fn during_execution_phase_when_given_empty_wasm_code_multistep_call_only_deferrs
         assert_eq!(
             EscrowGateway::deferred_transfers(&REQUESTER, &TARGET_DEST),
             [TransferEntry {
-                to: H256::from_low_u64_be(TARGET_DEST),
+                to: H256::from_slice(&TARGET_DEST.encode()[..]),
                 value: 500000,
                 data: [].to_vec(),
             },]
@@ -205,7 +208,7 @@ fn successful_execution_phase_when_given_correct_wasm_code_stores_correct_result
         assert_eq!(
             EscrowGateway::deferred_results(
                 &REQUESTER,
-                &<Test as frame_system::Trait>::Hashing::hash(&correct_wasm_code.clone())
+                &<Test as frame_system::Config>::Hashing::hash(&correct_wasm_code.clone())
             ),
             vec![0, 0, 0, 0],
         );
@@ -235,7 +238,7 @@ fn successful_execution_phase_generates_call_stamps_and_proofs() {
         assert_eq!(
             EscrowGateway::execution_stamps(
                 &REQUESTER,
-                &<Test as frame_system::Trait>::Hashing::hash(&correct_wasm_code.clone())
+                &<Test as frame_system::Config>::Hashing::hash(&correct_wasm_code.clone())
             ),
             ExecutionStamp {
                 timestamp: 0,
@@ -251,12 +254,12 @@ fn successful_execution_phase_generates_call_stamps_and_proofs() {
                     ]),
                     deferred_transfers: vec![
                         TransferEntry {
-                            to: H256::from_low_u64_be(TARGET_DEST),
+                            to: H256::from_slice(&TARGET_DEST.encode()[..]),
                             value: 500000,
                             data: vec![]
                         },
                         TransferEntry {
-                            to: H256::from_low_u64_be(ZERO_ACCOUNT),
+                            to: H256::from_slice(&ZERO_ACCOUNT.encode()[..]),
                             value: 100,
                             data: vec![]
                         }
@@ -283,12 +286,12 @@ fn successful_execution_phase_generates_call_stamps_and_proofs() {
             EscrowGateway::deferred_transfers(&REQUESTER, &TARGET_DEST),
             [
                 TransferEntry {
-                    to: H256::from_low_u64_be(TARGET_DEST),
+                    to: H256::from_slice(&TARGET_DEST.encode()[..]),
                     value: 500000,
                     data: [].to_vec(),
                 },
                 TransferEntry {
-                    to: H256::from_low_u64_be(ZERO_ACCOUNT),
+                    to: H256::from_slice(&ZERO_ACCOUNT.encode()[..]),
                     value: 100,
                     data: [].to_vec(),
                 }
@@ -346,12 +349,12 @@ fn transfer_during_execution_phase_succeeds_and_consumes_costs_correctly_and_def
             EscrowGateway::deferred_transfers(&REQUESTER, &TARGET_DEST),
             [
                 TransferEntry {
-                    to: H256::from_low_u64_be(TARGET_DEST),
+                    to: H256::from_slice(&TARGET_DEST.encode()[..]),
                     value: 500000,
                     data: [].to_vec(),
                 },
                 TransferEntry {
-                    to: H256::from_low_u64_be(ZERO_ACCOUNT),
+                    to: H256::from_slice(&ZERO_ACCOUNT.encode()[..]),
                     value: 100,
                     data: [].to_vec(),
                 }
@@ -447,7 +450,7 @@ fn successful_revert_phase_removes_deferred_transfers_and_refunds_from_escrow_to
         assert_eq!(
             EscrowGateway::deferred_results(
                 &REQUESTER,
-                &<Test as frame_system::Trait>::Hashing::hash(&correct_wasm_code.clone())
+                &<Test as frame_system::Config>::Hashing::hash(&correct_wasm_code.clone())
             ),
             vec![0, 0, 0, 0],
         );
@@ -456,12 +459,12 @@ fn successful_revert_phase_removes_deferred_transfers_and_refunds_from_escrow_to
             EscrowGateway::deferred_transfers(&REQUESTER, &TARGET_DEST),
             [
                 TransferEntry {
-                    to: H256::from_low_u64_be(TARGET_DEST),
+                    to: H256::from_slice(&TARGET_DEST.encode()[..]),
                     value: 500000,
                     data: [].to_vec(),
                 },
                 TransferEntry {
-                    to: H256::from_low_u64_be(ZERO_ACCOUNT),
+                    to: H256::from_slice(&ZERO_ACCOUNT.encode()[..]),
                     value: 100,
                     data: [].to_vec(),
                 }
@@ -491,7 +494,7 @@ fn successful_revert_phase_removes_deferred_transfers_and_refunds_from_escrow_to
         assert_eq!(
             EscrowGateway::deferred_results(
                 &REQUESTER,
-                &<Test as frame_system::Trait>::Hashing::hash(&correct_wasm_code.clone())
+                &<Test as frame_system::Config>::Hashing::hash(&correct_wasm_code.clone())
             ),
             Vec::<u8>::new(),
         );
@@ -545,7 +548,7 @@ fn successful_revert_phase_removes_associated_storage_for_that_call() {
         assert_ne!(
             child::root(&get_child_storage_for_current_execution::<Test>(
                 &ESCROW_ACCOUNT,
-                <Test as frame_system::Trait>::Hashing::hash(&correct_wasm_code.clone())
+                <Test as frame_system::Config>::Hashing::hash(&correct_wasm_code.clone())
             )),
             empty_storage_at_dest_root,
         );
@@ -564,7 +567,7 @@ fn successful_revert_phase_removes_associated_storage_for_that_call() {
         assert_eq!(
             child::root(&get_child_storage_for_current_execution::<Test>(
                 &ESCROW_ACCOUNT,
-                <Test as frame_system::Trait>::Hashing::hash(&correct_wasm_code.clone())
+                <Test as frame_system::Config>::Hashing::hash(&correct_wasm_code.clone())
             )),
             empty_storage_at_dest_root,
         );
@@ -572,7 +575,7 @@ fn successful_revert_phase_removes_associated_storage_for_that_call() {
         assert_eq!(
             EscrowGateway::deferred_results(
                 &REQUESTER,
-                &<Test as frame_system::Trait>::Hashing::hash(&correct_wasm_code.clone())
+                &<Test as frame_system::Config>::Hashing::hash(&correct_wasm_code.clone())
             ),
             Vec::<u8>::new(),
         );
@@ -617,7 +620,7 @@ fn successful_commit_phase_applies_storage_writes_on_the_dedicated_for_that_code
         assert_eq!(
             EscrowGateway::execution_stamps(
                 &REQUESTER,
-                &<Test as frame_system::Trait>::Hashing::hash(&correct_wasm_code.clone())
+                &<Test as frame_system::Config>::Hashing::hash(&correct_wasm_code.clone())
             ),
             ExecutionStamp {
                 timestamp: 0,
@@ -633,7 +636,7 @@ fn successful_commit_phase_applies_storage_writes_on_the_dedicated_for_that_code
                         172, 155, 45, 135, 194, 90, 7, 160, 253, 207, 71, 120, 217, 217, 169, 27
                     ]),
                     deferred_transfers: vec![TransferEntry {
-                        to: H256::from_low_u64_be(TARGET_DEST),
+                        to: H256::from_slice(&TARGET_DEST.encode()[..]),
                         value: 500000,
                         data: vec![]
                     }]
@@ -658,11 +661,11 @@ fn successful_commit_phase_applies_storage_writes_on_the_dedicated_for_that_code
         assert_eq!(
             child::root(&get_child_storage_for_current_execution::<Test>(
                 &ESCROW_ACCOUNT,
-                <Test as frame_system::Trait>::Hashing::hash(&correct_wasm_code.clone())
+                <Test as frame_system::Config>::Hashing::hash(&correct_wasm_code.clone())
             )),
             EscrowGateway::execution_stamps(
                 &REQUESTER,
-                &<Test as frame_system::Trait>::Hashing::hash(&correct_wasm_code.clone())
+                &<Test as frame_system::Config>::Hashing::hash(&correct_wasm_code.clone())
             )
             .call_stamps[0]
                 .post_storage

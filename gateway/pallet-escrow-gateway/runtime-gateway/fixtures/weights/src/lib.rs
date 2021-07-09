@@ -1,14 +1,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 //! Transaction Weight Examples
+pub use pallet::*;
 
 #[frame_support::pallet]
 mod pallet {
-    use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
-
-    use codec::{Encode, Decode};
 
     #[pallet::config]
     pub trait Config: frame_system::Config {}
@@ -17,7 +15,7 @@ mod pallet {
     pub struct Pallet<T>(core::marker::PhantomData<T>);
 
     #[pallet::storage]
-    #[pallet::getter(fn get_value)]
+    #[pallet::getter(fn stored_value)]
     pub type StoredValue<T: Config> = StorageValue<_, u32, ValueQuery>;
 
     #[pallet::hooks]

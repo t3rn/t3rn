@@ -1,12 +1,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+pub use pallet::*;
+
 #[frame_support::pallet]
 mod pallet {
-    use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
-
-    use codec::{Encode, Decode};
 
     #[pallet::config]
     pub trait Config: frame_system::Config {}
