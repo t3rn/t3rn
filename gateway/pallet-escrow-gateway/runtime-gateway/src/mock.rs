@@ -16,13 +16,18 @@ use t3rn_primitives::{transfers::BalanceOf, EscrowTrait};
 
 use sp_runtime::AccountId32;
 
+use frame_support::dispatch::DispatchErrorWithPostInfo;
 use frame_support::pallet_prelude::*;
+use frame_support::weights::PostDispatchInfo;
+
 use versatile_wasm::{DispatchRuntimeCall, VersatileWasm};
 
 use crate as pallet_runtime_gateway;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
+
+pub type WeightsCall = weights::Call<Test>;
 
 frame_support::construct_runtime!(
     pub enum Test where
@@ -66,65 +71,78 @@ pub struct ExampleDispatchRuntimeCall;
 
 impl DispatchRuntimeCall<Test> for ExampleDispatchRuntimeCall {
     fn dispatch_runtime_call(
-        _module_name: &str,
-        _fn_name: &str,
-        _input: &[u8],
-        _escrow_account: &<Test as frame_system::Config>::AccountId,
+        module_name: &str,
+        fn_name: &str,
+        input: &[u8],
+        escrow_account: &<Test as frame_system::Config>::AccountId,
         _requested: &<Test as frame_system::Config>::AccountId,
         _callee: &<Test as frame_system::Config>::AccountId,
         _value: BalanceOf<Test>,
-        _gas_meter: &mut versatile_wasm::gas::GasMeter<Test>,
+        gas_meter: &mut versatile_wasm::gas::GasMeter<Test>,
     ) -> DispatchResult {
-        Ok(())
-        // match (module_name, fn_name) {
-        //     ("Flipper", "flip") => Flipper::flip(Origin::signed(*escrow_account)),
-        //     ("Weights", "store_value") => {
-        //         let decoded_input: u32 = match Decode::decode(&mut _input.clone()) {
-        //             Ok(dec) => dec,
-        //             Err(_) => {
-        //                 return Err(DispatchError::Other(
-        //                     "Can't decode input for Weights::store_value. Expected u32.",
-        //                 ));
-        //             }
-        //         };
-        //         gas_meter.charge_runtime_dispatch(Box::new(Call::Weights(
-        //             WeightsCall::store_value(decoded_input),
-        //         )))?;
-        //         // Alternatively use the call - call.dispatch((Origin::signed(*escrow_account))).map_err(|e| e.error)?;
-        //         Weights::store_value(Origin::signed(*escrow_account), decoded_input)
-        //     }
-        //     ("Weights", "double") => {
-        //         let decoded_input: u32 = match Decode::decode(&mut _input.clone()) {
-        //             Ok(dec) => dec,
-        //             Err(_) => {
-        //                 return Err(DispatchError::Other(
-        //                     "Can't decode input for Weights::store_value. Expected u32.",
-        //                 ));
-        //             }
-        //         };
-        //         gas_meter.charge_runtime_dispatch(Box::new(Call::Weights(WeightsCall::double(
-        //             decoded_input,
-        //         ))))?;
-        //         Weights::double(Origin::signed(*escrow_account), decoded_input)
-        //     }
-        //     ("Weights", "complex_calculations") => {
-        //         let (decoded_x, decoded_y): (u32, u32) = match Decode::decode(&mut _input.clone()) {
-        //             Ok(dec) => dec,
-        //             Err(_) => {
-        //                 return Err(DispatchError::Other(
-        //                     "Can't decode input for Weights::store_value. Expected u32.",
-        //                 ));
-        //             }
-        //         };
-        //         gas_meter.charge_runtime_dispatch(Box::new(Call::Weights(
-        //             WeightsCall::complex_calculations(decoded_x, decoded_y),
-        //         )))?;
-        //         Weights::complex_calculations(Origin::signed(*escrow_account), decoded_x, decoded_y)
-        //     }
-        //     (_, _) => Err(DispatchError::Other(
-        //         "Call to unrecognized runtime function",
-        //     )),
-        // }
+        let res = match (module_name, fn_name) {
+            ("Flipper", "flip") => Flipper::flip(Origin::signed(escrow_account.clone())),
+            ("Weights", "store_value") => {
+                let decoded_input: u32 = match Decode::decode(&mut input.clone()) {
+                    Ok(dec) => dec,
+                    Err(_) => {
+                        return Err(DispatchError::Other(
+                            "Can't decode input for Weights::store_value. Expected u32.",
+                        ));
+                    }
+                };
+                gas_meter.charge_runtime_dispatch(Box::new(Call::Weights(
+                    WeightsCall::store_value(decoded_input),
+                )))?;
+                // Alternatively use the call - call.dispatch((Origin::signed(*escrow_account))).map_err(|e| e.error)?;
+                Weights::store_value(Origin::signed(escrow_account.clone()), decoded_input)
+            }
+            ("Weights", "double") => {
+                let decoded_input: u32 = match Decode::decode(&mut input.clone()) {
+                    Ok(dec) => dec,
+                    Err(_) => {
+                        return Err(DispatchError::Other(
+                            "Can't decode input for Weights::store_value. Expected u32.",
+                        ));
+                    }
+                };
+                gas_meter.charge_runtime_dispatch(Box::new(Call::Weights(WeightsCall::double(
+                    decoded_input,
+                ))))?;
+                Weights::double(Origin::signed(escrow_account.clone()), decoded_input)
+            }
+            ("Weights", "complex_calculations") => {
+                let (decoded_x, decoded_y): (u32, u32) = match Decode::decode(&mut input.clone()) {
+                    Ok(dec) => dec,
+                    Err(_) => {
+                        return Err(DispatchError::Other(
+                            "Can't decode input for Weights::store_value. Expected u32.",
+                        ));
+                    }
+                };
+                gas_meter.charge_runtime_dispatch(Box::new(Call::Weights(
+                    WeightsCall::complex_calculations(decoded_x, decoded_y),
+                )))?;
+                Weights::complex_calculations(
+                    Origin::signed(escrow_account.clone()),
+                    decoded_x,
+                    decoded_y,
+                )
+            }
+            (_, _) => Err(DispatchErrorWithPostInfo {
+                post_info: PostDispatchInfo {
+                    actual_weight: Some(0),
+                    pays_fee: Default::default(),
+                },
+                error: "Call to unrecognized runtime function".into(),
+            }),
+        };
+
+        match res {
+            Ok(_res_with_post_info) => Ok(()),
+            Err(err_with_post_info) => Err(err_with_post_info.error.into()),
+        }
+        // Ok(())
     }
 }
 
@@ -277,36 +295,6 @@ impl ExtBuilder {
         ext
     }
 }
-
-// pub struct ExtBuilder {
-//     existential_deposit: u64,
-// }
-// impl Default for ExtBuilder {
-//     fn default() -> Self {
-//         Self {
-//             existential_deposit: 1,
-//         }
-//     }
-// }
-// impl ExtBuilder {
-//     pub fn existential_deposit(mut self, existential_deposit: u64) -> Self {
-//         self.existential_deposit = existential_deposit;
-//         self
-//     }
-//     pub fn set_associated_consts(&self) {
-//         EXISTENTIAL_DEPOSIT.with(|v| *v.borrow_mut() = self.existential_deposit);
-//     }
-//     pub fn build(self) -> sp_io::TestExternalities {
-//         self.set_associated_consts();
-//         let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
-//         pallet_balances::GenesisConfig::<Test> {
-//             balances: vec![],
-//         }.assimilate_storage(&mut t).unwrap();
-//         let mut ext = sp_io::TestExternalities::new(t);
-//         ext.execute_with(|| System::set_block_number(1));
-//         ext
-//     }
-// }
 
 pub fn new_test_ext_builder(deposit: u64, escrow_account: AccountId32) -> sp_io::TestExternalities {
     ExtBuilder::default()
