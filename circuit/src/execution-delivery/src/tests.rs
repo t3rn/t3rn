@@ -289,8 +289,9 @@ impl pallet_balances::Config for Test {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
-    type MaxReserves = MaxReserves;
-    type ReserveIdentifier = [u8; 8];
+    //ToDo: Uncomment when upgrading to v4.0.0 substrate
+    // type MaxReserves = MaxReserves;
+    // type ReserveIdentifier = [u8; 8];
 }
 
 pallet_staking_reward_curve::build! {
