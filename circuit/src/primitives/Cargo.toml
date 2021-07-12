@@ -25,9 +25,6 @@ frame-support = { default-features = false, git = "https://github.com/paritytech
 pallet-sudo = { default-features = false, git = "https://github.com/paritytech/substrate.git", tag = 'monthly-2021-06' }
 bp-header-chain = { default-features = false, path = "../../../vendor/bridges/primitives/header-chain" }
 
-[dev-dependencies]
-substrate-test-runtime = { git = 'https://github.com/paritytech/substrate.git', tag = 'monthly-2021-06' }
-
 [features]
 default = ["std"]
 std = [
