@@ -49,6 +49,9 @@ sp-version = {default-features = false, version = '3.0.0', git = 'https://github
 pallet-runtime-gateway = {default-features = false, path = "../../pallet-escrow-gateway/runtime-gateway"}
 versatile-wasm = {default-features = false, path = "../../../vm/versatile-wasm"}
 t3rn-primitives = {default-features = false, path = "../../../circuit/src/primitives"}
+pallet-bridge-messages = {default-features = false, path = "../../../vendor/bridges/modules/messages" }
+bp-messages = {default-features = false, path = "../../../vendor/bridges/primitives/messages" }
+bp-runtime = {default-features = false, path = "../../../vendor/bridges/primitives/runtime" }
 
 [features]
 default = ['std']
@@ -73,12 +76,15 @@ std = [
     'pallet-grandpa/std',
     'pallet-randomness-collective-flip/std',
     'pallet-sudo/std',
+    'pallet-bridge-messages/std',
     'pallet-timestamp/std',
     'pallet-transaction-payment-rpc-runtime-api/std',
     'pallet-transaction-payment/std',
     'pallet-runtime-gateway/std',
     'versatile-wasm/std',
     't3rn-primitives/std',
+    'bp-messages/std',
+    'bp-runtime/std',
     'sp-api/std',
     'sp-block-builder/std',
     'sp-consensus-aura/std',
