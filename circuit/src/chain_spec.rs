@@ -176,27 +176,27 @@ fn testnet_genesis(
     _enable_println: bool,
 ) -> GenesisConfig {
     GenesisConfig {
-        system: SystemConfig {
+        frame_system: SystemConfig {
             code: WASM_BINARY
                 .expect("Circuit development WASM not available")
                 .to_vec(),
             changes_trie_config: Default::default(),
         },
-        balances: BalancesConfig {
+        pallet_balances: BalancesConfig {
             balances: endowed_accounts
                 .iter()
                 .cloned()
                 .map(|k| (k, 1 << 50))
                 .collect(),
         },
-        aura: AuraConfig {
+        pallet_aura: AuraConfig {
             authorities: Vec::new(),
         },
-        grandpa: GrandpaConfig {
+        pallet_grandpa: GrandpaConfig {
             authorities: Vec::new(),
         },
-        sudo: SudoConfig { key: root_key },
-        session: SessionConfig {
+        pallet_sudo: SudoConfig { key: root_key },
+        pallet_session: SessionConfig {
             keys: initial_authorities
                 .iter()
                 .map(|x| {
@@ -208,7 +208,7 @@ fn testnet_genesis(
                 })
                 .collect::<Vec<_>>(),
         },
-        evm: EVMConfig {
+        pallet_evm: EVMConfig {
             accounts: {
                 let mut map = BTreeMap::new();
                 map.insert(
@@ -225,6 +225,56 @@ fn testnet_genesis(
                 map
             },
         },
+        //ToDo: Uncomment when upgrading to v4.0.0 substrate
+        // system: SystemConfig {
+        //     code: WASM_BINARY
+        //         .expect("Circuit development WASM not available")
+        //         .to_vec(),
+        //     changes_trie_config: Default::default(),
+        // },
+        // balances: BalancesConfig {
+        //     balances: endowed_accounts
+        //         .iter()
+        //         .cloned()
+        //         .map(|k| (k, 1 << 50))
+        //         .collect(),
+        // },
+        // aura: AuraConfig {
+        //     authorities: Vec::new(),
+        // },
+        // grandpa: GrandpaConfig {
+        //     authorities: Vec::new(),
+        // },
+        // sudo: SudoConfig { key: root_key },
+        // session: SessionConfig {
+        //     keys: initial_authorities
+        //         .iter()
+        //         .map(|x| {
+        //             (
+        //                 x.0.clone(),
+        //                 x.0.clone(),
+        //                 session_keys(x.1.clone(), x.2.clone()),
+        //             )
+        //         })
+        //         .collect::<Vec<_>>(),
+        // },
+        // evm: EVMConfig {
+        //     accounts: {
+        //         let mut map = BTreeMap::new();
+        //         map.insert(
+        //             sp_core::H160::from_str("6be02d1d3665660d22ff9624b7be0551ee1ac91b")
+        //                 .expect("internal H160 is valid; qed"),
+        //             pallet_evm::GenesisAccount {
+        //                 balance: sp_core::U256::from_str("0xffffffffffffffffffffffffffffffff")
+        //                     .expect("internal U256 is valid; qed"),
+        //                 code: Default::default(),
+        //                 nonce: Default::default(),
+        //                 storage: Default::default(),
+        //             },
+        //         );
+        //         map
+        //     },
+        // },
     }
 }
 

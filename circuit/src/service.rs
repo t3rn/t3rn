@@ -111,7 +111,9 @@ pub fn new_partial(
         config.transaction_pool.clone(),
         config.role.is_authority().into(),
         config.prometheus_registry(),
-        task_manager.spawn_essential_handle(),
+        task_manager.spawn_handle(),
+        // ToDo: Uncomment when upgrading to v4.0.0 substrate
+        // task_manager.spawn_essential_handle(),
         client.clone(),
     );
 
@@ -298,7 +300,9 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
         let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
         let raw_slot_duration = slot_duration.slot_duration();
 
-        let aura = sc_consensus_aura::start_aura::<AuraPair, _, _, _, _, _, _, _, _, _, _, _>(
+        //ToDo: Uncomment when upgrading to v4.0.0 substrate
+        // let aura = sc_consensus_aura::start_aura::<AuraPair, _, _, _, _, _, _, _, _, _, _, _>(
+        let aura = sc_consensus_aura::start_aura::<AuraPair, _, _, _, _, _, _, _, _, _, _>(
             StartAuraParams {
                 slot_duration,
                 client,
@@ -320,12 +324,39 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
                 keystore: keystore_container.sync_keystore(),
                 can_author_with,
                 sync_oracle: network.clone(),
-                justification_sync_link: network.clone(),
+                // justification_sync_link: network.clone(),
                 block_proposal_slot_portion: SlotProportion::new(2f32 / 3f32),
-                max_block_proposal_slot_portion: None,
+                // max_block_proposal_slot_portion: None,
                 telemetry: telemetry.as_ref().map(|x| x.handle()),
             },
         )?;
+
+        // let aura = sc_consensus_aura::start_aura::<AuraPair, _, _, _, _, _, _, _, _, _, _>(
+        //     StartAuraParams {
+        //         slot_duration,
+        //         client: client.clone(),
+        //         select_chain,
+        //         block_import,
+        //         proposer_factory,
+        //         create_inherent_data_providers: move |_, ()| async move {
+        //             let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+        //
+        //             let slot =
+        //                 sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+        //                     *timestamp,
+        //                     raw_slot_duration,
+        //                 );
+        //
+        //             Ok((timestamp, slot))
+        //         },
+        //         force_authoring,
+        //         backoff_authoring_blocks,
+        //         keystore: keystore_container.sync_keystore(),
+        //         can_author_with,
+        //         sync_oracle: network.clone(),
+        //         block_proposal_slot_portion: SlotProportion::new(2f32 / 3f32),
+        //         telemetry: telemetry.as_ref().map(|x| x.handle()),
+        //     },
 
         // the AURA authoring task is considered essential, i.e. if it
         // fails we take down the service with it.
@@ -416,7 +447,9 @@ pub fn new_light(mut config: Configuration) -> Result<TaskManager, ServiceError>
     let transaction_pool = Arc::new(sc_transaction_pool::BasicPool::new_light(
         config.transaction_pool.clone(),
         config.prometheus_registry(),
-        task_manager.spawn_essential_handle(),
+        task_manager.spawn_handle(),
+        //ToDo: Uncomment when upgrading to v4.0.0 substrate
+        // task_manager.spawn_essential_handle(),
         client.clone(),
         on_demand.clone(),
     ));
@@ -492,6 +525,7 @@ pub fn new_light(mut config: Configuration) -> Result<TaskManager, ServiceError>
             sc_finality_grandpa::run_grandpa_observer(config, grandpa_link, network.clone())?,
         );
     }
+
 
     sc_service::spawn_tasks(sc_service::SpawnTasksParams {
         remote_blockchain: Some(backend.remote_blockchain()),
