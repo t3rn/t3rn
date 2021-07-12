@@ -526,7 +526,6 @@ pub fn new_light(mut config: Configuration) -> Result<TaskManager, ServiceError>
         );
     }
 
-
     sc_service::spawn_tasks(sc_service::SpawnTasksParams {
         remote_blockchain: Some(backend.remote_blockchain()),
         transaction_pool,
