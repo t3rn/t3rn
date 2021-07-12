@@ -13,8 +13,8 @@ targets = ['x86_64-unknown-linux-gnu']
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
-frame-support = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
-frame-system = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = "master" }
+frame-support = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate",tag = 'monthly-2021-06' }
+frame-system = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate",tag = 'monthly-2021-06' }
 
 [features]
 default = ['std']

@@ -33,6 +33,10 @@ sp-runtime = { default-features = false, git = "https://github.com/paritytech/su
 
 sp-io = { default-features = false, git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' }
 
+pallet-bridge-messages = {default-features = false, path = "../../../vendor/bridges/modules/messages" }
+bp-messages = {default-features = false, path = "../../../vendor/bridges/primitives/messages" }
+bp-runtime = {default-features = false, path = "../../../vendor/bridges/primitives/runtime" }
+
 [dev-dependencies]
 wat = { version = "1.0", default-features = false }
 flipper = {version = '3.0.0', path = "fixtures/flipper", default-features = false}
@@ -49,6 +53,9 @@ std = [
     'pallet-timestamp/std',
     'pallet-transaction-payment/std',
     'pallet-randomness-collective-flip/std',
+    'pallet-bridge-messages/std',
+    'bp-messages/std',
+    'bp-runtime/std',
     'versatile-wasm/std',
     't3rn-primitives/std',
     'sp-std/std',
