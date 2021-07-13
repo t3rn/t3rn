@@ -37,12 +37,12 @@ frame_support::construct_runtime!(
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        // Messages: pallet_bridge_messages::{Pallet, Call, Event<T>},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         Sudo: pallet_sudo::{Pallet, Call, Event<T>},
         VersatileWasmVM: versatile_wasm::{Pallet, Call, Event<T>},
-        Randomness: pallet_randomness_collective_flip::{Pallet, Storage},
         EscrowGateway: pallet_runtime_gateway::{Pallet, Call, Storage, Event<T>},
+        Randomness: pallet_randomness_collective_flip::{Pallet, Storage},
+        Messages: pallet_bridge_messages::{Pallet, Call, Event<T>},
 
         Flipper: flipper::{Pallet, Call},
         Weights: weights::{Pallet, Call},
@@ -161,18 +161,20 @@ impl Get<u64> for ExistentialDeposit {
     }
 }
 
-impl pallet_randomness_collective_flip::Config for Test {}
+//ToDo: Uncomment when upgrading to v4.0.0 substrate
+// impl pallet_randomness_collective_flip::Config for Test {}
 
 impl pallet_balances::Config for Test {
     type MaxLocks = ();
-    type MaxReserves = ();
-    type ReserveIdentifier = [u8; 8];
     type Balance = u64;
     type Event = Event;
     type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
+    //ToDo: Uncomment when upgrading to v4.0.0 substrate
+    // type MaxReserves = ();
+    // type ReserveIdentifier = [u8; 8];
 }
 
 parameter_types! {
@@ -186,6 +188,303 @@ impl pallet_transaction_payment::Config for Test {
     type WeightToFee = IdentityFee<u64>;
     type FeeMultiplierUpdate = ();
 }
+
+/** Bridge Messages - start **/
+use bp_messages::{
+    source_chain::{
+        LaneMessageVerifier, MessageDeliveryAndDispatchPayment, RelayersRewards, Sender,
+        TargetHeaderChain,
+    },
+    target_chain::{
+        DispatchMessage, MessageDispatch, ProvedLaneMessages, ProvedMessages, SourceHeaderChain,
+    },
+    InboundLaneData, LaneId, Message, MessageData, MessageKey, MessageNonce, OutboundLaneData,
+    Parameter as MessagesParameter,
+};
+use sp_std::collections::btree_map::BTreeMap;
+
+pub type AccountId = sp_runtime::AccountId32;
+use bp_runtime::Size;
+use sp_runtime::FixedU128;
+// start of bridge messages impl parameters
+parameter_types! {
+    pub const MaxMessagesToPruneAtOnce: u64 = 10;
+    pub const MaxUnrewardedRelayerEntriesAtInboundLane: u64 = 16;
+    pub const MaxUnconfirmedMessagesAtInboundLane: u64 = 32;
+    pub storage TokenConversionRate: FixedU128 = 1.into();
+}
+
+#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq)]
+pub enum TestMessagesParameter {
+    TokenConversionRate(FixedU128),
+}
+
+impl MessagesParameter for TestMessagesParameter {
+    fn save(&self) {
+        match *self {
+            TestMessagesParameter::TokenConversionRate(conversion_rate) => {
+                TokenConversionRate::set(&conversion_rate)
+            }
+        }
+    }
+}
+
+#[derive(Decode, Encode, Clone, Debug, PartialEq, Eq)]
+pub struct TestPayload(pub u64, pub Weight);
+impl Size for TestPayload {
+    fn size_hint(&self) -> u32 {
+        16
+    }
+}
+
+pub type TestMessageFee = u64;
+pub type TestRelayer = AccountId;
+
+pub struct AccountIdConverter;
+
+impl sp_runtime::traits::Convert<H256, AccountId> for AccountIdConverter {
+    fn convert(hash: H256) -> AccountId {
+        AccountId::decode(&mut &hash.as_bytes()[..]).unwrap_or_default()
+    }
+}
+
+/// Error that is returned by all test implementations.
+pub const TEST_ERROR: &str = "Test error";
+
+/// Lane that we're using in tests.
+pub const _TEST_LANE_ID: LaneId = [0, 0, 0, 1];
+
+/// Payload that is rejected by `TestTargetHeaderChain`.
+pub const PAYLOAD_REJECTED_BY_TARGET_CHAIN: TestPayload = TestPayload(1, 50);
+
+/// Vec of proved messages, grouped by lane.
+pub type MessagesByLaneVec = Vec<(LaneId, ProvedLaneMessages<Message<TestMessageFee>>)>;
+
+/// Test messages proof.
+#[derive(Debug, Encode, Decode, Clone, PartialEq, Eq)]
+pub struct TestMessagesProof {
+    pub result: Result<MessagesByLaneVec, ()>,
+}
+
+impl Size for TestMessagesProof {
+    fn size_hint(&self) -> u32 {
+        0
+    }
+}
+
+impl From<Result<Vec<Message<TestMessageFee>>, ()>> for TestMessagesProof {
+    fn from(result: Result<Vec<Message<TestMessageFee>>, ()>) -> Self {
+        Self {
+            result: result.map(|messages| {
+                let mut messages_by_lane: BTreeMap<
+                    LaneId,
+                    ProvedLaneMessages<Message<TestMessageFee>>,
+                > = BTreeMap::new();
+                for message in messages {
+                    messages_by_lane
+                        .entry(message.key.lane_id)
+                        .or_default()
+                        .messages
+                        .push(message);
+                }
+                messages_by_lane.into_iter().collect()
+            }),
+        }
+    }
+}
+
+/// Messages delivery proof used in tests.
+#[derive(Debug, Encode, Decode, Eq, Clone, PartialEq)]
+pub struct TestMessagesDeliveryProof(pub Result<(LaneId, InboundLaneData<TestRelayer>), ()>);
+
+impl Size for TestMessagesDeliveryProof {
+    fn size_hint(&self) -> u32 {
+        0
+    }
+}
+
+/// Target header chain that is used in tests.
+#[derive(Debug, Default)]
+pub struct TestTargetHeaderChain;
+
+impl TargetHeaderChain<TestPayload, TestRelayer> for TestTargetHeaderChain {
+    type Error = &'static str;
+
+    type MessagesDeliveryProof = TestMessagesDeliveryProof;
+
+    fn verify_message(payload: &TestPayload) -> Result<(), Self::Error> {
+        if *payload == PAYLOAD_REJECTED_BY_TARGET_CHAIN {
+            Err(TEST_ERROR)
+        } else {
+            Ok(())
+        }
+    }
+
+    fn verify_messages_delivery_proof(
+        proof: Self::MessagesDeliveryProof,
+    ) -> Result<(LaneId, InboundLaneData<TestRelayer>), Self::Error> {
+        proof.0.map_err(|_| TEST_ERROR)
+    }
+}
+
+/// Lane message verifier that is used in tests.
+#[derive(Debug, Default)]
+pub struct TestLaneMessageVerifier;
+
+impl LaneMessageVerifier<AccountId, TestPayload, TestMessageFee> for TestLaneMessageVerifier {
+    type Error = &'static str;
+
+    fn verify_message(
+        _submitter: &Sender<AccountId>,
+        delivery_and_dispatch_fee: &TestMessageFee,
+        _lane: &LaneId,
+        _lane_outbound_data: &OutboundLaneData,
+        _payload: &TestPayload,
+    ) -> Result<(), Self::Error> {
+        if *delivery_and_dispatch_fee != 0 {
+            Ok(())
+        } else {
+            Err(TEST_ERROR)
+        }
+    }
+}
+
+/// Message fee payment system that is used in tests.
+#[derive(Debug, Default)]
+pub struct TestMessageDeliveryAndDispatchPayment;
+
+impl TestMessageDeliveryAndDispatchPayment {
+    /// Reject all payments.
+    pub fn reject_payments() {
+        frame_support::storage::unhashed::put(b":reject-message-fee:", &true);
+    }
+
+    /// Returns true if given fee has been paid by given submitter.
+    pub fn is_fee_paid(submitter: AccountId, fee: TestMessageFee) -> bool {
+        frame_support::storage::unhashed::get(b":message-fee:")
+            == Some((Sender::Signed(submitter), fee))
+    }
+
+    /// Returns true if given relayer has been rewarded with given balance. The reward-paid flag is
+    /// cleared after the call.
+    pub fn is_reward_paid(relayer: AccountId, fee: TestMessageFee) -> bool {
+        let key = (b":relayer-reward:", relayer, fee).encode();
+        frame_support::storage::unhashed::take::<bool>(&key).is_some()
+    }
+}
+
+impl MessageDeliveryAndDispatchPayment<AccountId, TestMessageFee>
+    for TestMessageDeliveryAndDispatchPayment
+{
+    type Error = &'static str;
+
+    fn pay_delivery_and_dispatch_fee(
+        submitter: &Sender<AccountId>,
+        fee: &TestMessageFee,
+        _relayer_fund_account: &AccountId,
+    ) -> Result<(), Self::Error> {
+        if frame_support::storage::unhashed::get(b":reject-message-fee:") == Some(true) {
+            return Err(TEST_ERROR);
+        }
+
+        frame_support::storage::unhashed::put(b":message-fee:", &(submitter, fee));
+        Ok(())
+    }
+
+    fn pay_relayers_rewards(
+        _confirmation_relayer: &AccountId,
+        relayers_rewards: RelayersRewards<AccountId, TestMessageFee>,
+        _relayer_fund_account: &AccountId,
+    ) {
+        for (relayer, reward) in relayers_rewards {
+            let key = (b":relayer-reward:", relayer, reward.reward).encode();
+            frame_support::storage::unhashed::put(&key, &true);
+        }
+    }
+}
+
+/// Source header chain that is used in tests.
+#[derive(Debug)]
+pub struct TestSourceHeaderChain;
+
+impl SourceHeaderChain<TestMessageFee> for TestSourceHeaderChain {
+    type Error = &'static str;
+
+    type MessagesProof = TestMessagesProof;
+
+    fn verify_messages_proof(
+        proof: Self::MessagesProof,
+        _messages_count: u32,
+    ) -> Result<ProvedMessages<Message<TestMessageFee>>, Self::Error> {
+        proof
+            .result
+            .map(|proof| proof.into_iter().collect())
+            .map_err(|_| TEST_ERROR)
+    }
+}
+
+/// Source header chain that is used in tests.
+#[derive(Debug)]
+pub struct TestMessageDispatch;
+
+impl MessageDispatch<TestMessageFee> for TestMessageDispatch {
+    type DispatchPayload = TestPayload;
+
+    fn dispatch_weight(message: &DispatchMessage<TestPayload, TestMessageFee>) -> Weight {
+        match message.data.payload.as_ref() {
+            Ok(payload) => payload.1,
+            Err(_) => 0,
+        }
+    }
+
+    fn dispatch(_message: DispatchMessage<TestPayload, TestMessageFee>) {}
+}
+
+/// Return test lane message with given nonce and payload.
+pub fn _message(nonce: MessageNonce, payload: TestPayload) -> Message<TestMessageFee> {
+    Message {
+        key: MessageKey {
+            lane_id: _TEST_LANE_ID,
+            nonce,
+        },
+        data: _message_data(payload),
+    }
+}
+
+/// Return message data with valid fee for given payload.
+pub fn _message_data(payload: TestPayload) -> MessageData<TestMessageFee> {
+    MessageData {
+        payload: payload.encode(),
+        fee: 1,
+    }
+}
+
+impl pallet_bridge_messages::Config for Test {
+    type Event = Event;
+    type WeightInfo = ();
+    type Parameter = TestMessagesParameter;
+    type MaxMessagesToPruneAtOnce = MaxMessagesToPruneAtOnce;
+    type MaxUnrewardedRelayerEntriesAtInboundLane = MaxUnrewardedRelayerEntriesAtInboundLane;
+    type MaxUnconfirmedMessagesAtInboundLane = MaxUnconfirmedMessagesAtInboundLane;
+
+    type OutboundPayload = TestPayload;
+    type OutboundMessageFee = TestMessageFee;
+
+    type InboundPayload = TestPayload;
+    type InboundMessageFee = TestMessageFee;
+    type InboundRelayer = TestRelayer;
+
+    type AccountIdConverter = AccountIdConverter;
+
+    type TargetHeaderChain = TestTargetHeaderChain;
+    type LaneMessageVerifier = TestLaneMessageVerifier;
+    type MessageDeliveryAndDispatchPayment = TestMessageDeliveryAndDispatchPayment;
+
+    type SourceHeaderChain = TestSourceHeaderChain;
+    type MessageDispatch = TestMessageDispatch;
+}
+
+/** Bridge Messages - end **/
 
 /** Balances -- end **/
 impl pallet_timestamp::Config for Test {
