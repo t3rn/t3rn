@@ -304,7 +304,7 @@ define_env!(Env, <E: ExtStandards>,
     seal_get_storage (ctx, key_ptr: u32, out_ptr: u32, out_len_ptr: u32) -> ReturnCode => {
         let mut key: StorageKey = [0; 32];
         read_sandbox_memory_into_buf(ctx, key_ptr, &mut key)?;
-        if let Some(value) = ctx.ext.get_storage(&key) {
+        if let Some(value) = ctx.ext.get_storage(&key).map_err(|_| sp_sandbox::HostError)? {
             write_sandbox_output(ctx, out_ptr, out_len_ptr, &value, false)?;
             Ok(ReturnCode::Success)
         } else {
@@ -320,7 +320,7 @@ define_env!(Env, <E: ExtStandards>,
         read_sandbox_memory_into_buf(ctx, key_ptr, &mut key)?;
         let value = Some(read_sandbox_memory(ctx, value_ptr, value_len)?);
 
-        ctx.ext.set_storage(key, value);
+        ctx.ext.set_storage(key, value).map_err(|_| sp_sandbox::HostError)?;
 
         Ok(())
     },
@@ -343,7 +343,7 @@ define_env!(Env, <E: ExtStandards>,
         read_sandbox_memory_into_buf(ctx, key_ptr, &mut key)?;
         let value = Some(read_sandbox_memory(ctx, value_ptr, value_len)?);
 
-        ctx.ext.set_raw_storage(key, value);
+        ctx.ext.set_raw_storage(key, value).map_err(|_| sp_sandbox::HostError)?;
 
         Ok(())
     },
