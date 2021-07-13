@@ -67,7 +67,6 @@ pub use crate::message_assembly::circuit_inbound::StepConfirmation;
 pub use crate::message_assembly::circuit_outbound::CircuitOutboundMessage;
 use crate::message_assembly::circuit_outbound::ProofTriePointer;
 use crate::message_assembly::merklize::*;
-use crate::message_assembly::signer::app::Public as AppPublic;
 
 #[cfg(test)]
 mod tests;
@@ -795,6 +794,19 @@ impl<T: Config> Pallet<T> {
         Ok(current_round_messages)
     }
 
+    pub fn select_authority(
+        escrow_account: T::AccountId,
+    ) -> Result<AuthorityId, &'static str> {
+        let local_keys = AuthorityId::all();
+
+        let auth = AuthorityId::from_slice(escrow_account.encode().as_slice());
+        
+        let submitter = local_keys.binary_search(&auth).ok()
+            .map(|location| local_keys[location].clone()).ok_or("Can't match")?;
+
+        Ok(submitter)
+    }
+
     pub fn process_step(
         step: StepEntry<T::AccountId, T::BlockNumber, T::Hash>,
         escrow_account: T::AccountId,
@@ -812,11 +824,11 @@ impl<T: Config> Pallet<T> {
                 .map_err(|_e| "Can't cast value in dry_run_single_contract")?,
         );
 
-        let local_keys = AuthorityId::all();
+        let submitter = match Self::select_authority(escrow_account.clone()) {
+            Ok(submitter) => submitter,
+            Err(e) => return Err(e),
+        };
 
-        // ToDo: Select validators to submit by his public key, like:
-        // let submitter = local_keys.binary_search(&escrow_account.into()).ok().map(|location| local_keys[location].clone()).ok_or("Can't match")?;
-        let submitter = local_keys[0].clone();
 
         let gateway_xdns_record = pallet_xdns::Pallet::<T>::xdns_registry(step.gateway_entry_id)
             .ok_or(Error::<T>::ProcessStepGatewayNotRecognised)?;
