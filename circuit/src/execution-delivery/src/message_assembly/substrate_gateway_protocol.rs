@@ -1,6 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::Encode;
+use frame_support::ensure;
+use sp_runtime::generic::Era;
 use sp_runtime::RuntimeAppPublic;
 use sp_std::vec;
 use sp_std::vec::*;
@@ -9,7 +11,10 @@ use sp_version::RuntimeVersion;
 use t3rn_primitives::transfers::TransferEntry;
 use t3rn_primitives::GatewayType;
 
+use crate::compose_call;
 use crate::message_assembly::chain_generic_metadata::Metadata;
+use crate::message_assembly::gateway_inbound_assembly::GatewayInboundAssembly;
+use crate::message_assembly::signer::app::GenericExtra;
 
 use super::circuit_outbound::{CircuitOutboundMessage, GatewayExpectedOutput, MessagePayload};
 use super::gateway_inbound_protocol::GatewayInboundProtocol;
@@ -46,22 +51,26 @@ where
 
     pub fn produce_signed_payload(
         &self,
-        namespace: Vec<u8>,
-        name: Vec<u8>,
-        _arguments: Vec<Vec<u8>>,
-    ) -> MessagePayload {
-        // let call_bytes = compose_call!(name_str, name_str, arguments).to_vec();
-        // let tx = compose_call!(namespace, name);
+        namespace: &'static str,
+        name: &'static str,
+        arguments: Vec<Vec<u8>>,
+    ) -> Result<MessagePayload, &'static str> {
+        let call_bytes = compose_call!(self.assembly.metadata, namespace, name, arguments).encode();
 
-        MessagePayload::Signed {
-            // ToDo: get public key from AuthorityId instead
-            signer: vec![],
-            module_name: namespace,
-            method_name: name,
-            call_bytes: vec![],
-            signature: vec![],
-            extra: vec![],
-        }
+        // TODO: use a proper nonce
+        let extrinsic = self
+            .assembly
+            .assemble_signed_tx_offline(call_bytes.clone(), 0)?;
+        let signature = extrinsic.signature.unwrap().1;
+
+        Ok(MessagePayload::Signed {
+            signer: self.assembly.submitter.to_raw_vec(),
+            module_name: namespace.encode(),
+            method_name: name.encode(),
+            call_bytes: call_bytes.clone(),
+            signature: signature.encode(),
+            extra: GenericExtra::new(Era::Immortal, 0).encode(),
+        })
     }
 }
 
@@ -74,7 +83,11 @@ where
     // For substrate that follows the following key formats:
     // key[0..16].copy_from_slice(&Twox128::hash(module_prefix));
     // key[16..32].copy_from_slice(&Twox128::hash(storage_prefix));
-    fn get_storage(&self, key: [u8; 32], _gateway_type: GatewayType) -> CircuitOutboundMessage {
+    fn get_storage(
+        &self,
+        key: [u8; 32],
+        _gateway_type: GatewayType,
+    ) -> Result<CircuitOutboundMessage, &'static str> {
         // events
         // storage
         let expected_storage = GatewayExpectedOutput::Storage {
@@ -83,14 +96,14 @@ where
         };
         let arguments = vec![key.to_vec()];
 
-        CircuitOutboundMessage::Read {
+        Ok(CircuitOutboundMessage::Read {
             arguments,
             expected_output: vec![expected_storage],
             payload: MessagePayload::Rpc {
                 module_name: b"state".to_vec(),
                 method_name: b"getStorage".to_vec(),
             },
-        }
+        })
     }
 
     // Set storage key directly to foreign storage system
@@ -102,7 +115,7 @@ where
         key: [u8; 32], //sp_core::storage
         value: Option<Vec<u8>>,
         _gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage {
+    ) -> Result<CircuitOutboundMessage, &'static str> {
         // storage
         let expected_storage = GatewayExpectedOutput::Storage {
             key: vec![key],
@@ -111,15 +124,11 @@ where
 
         let arguments = vec![key.to_vec()];
 
-        CircuitOutboundMessage::Write {
+        Ok(CircuitOutboundMessage::Write {
             arguments: arguments.clone(),
             expected_output: vec![expected_storage],
-            payload: self.produce_signed_payload(
-                b"state".to_vec(),
-                b"setStorage".to_vec(),
-                arguments,
-            ),
-        }
+            payload: self.produce_signed_payload("state", "setStorage", arguments)?,
+        })
     }
 
     /// Call pallet's method in a read-only manner (static)
@@ -132,11 +141,11 @@ where
         value: u128,
         gas: u64,
         gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage {
+    ) -> Result<CircuitOutboundMessage, &'static str> {
         match gateway_type {
             GatewayType::ProgrammableInternal => {
                 let arguments = vec![to.encode(), value.encode(), gas.encode(), data];
-                CircuitOutboundMessage::Write {
+                Ok(CircuitOutboundMessage::Write {
                     arguments: arguments.clone(),
                     expected_output: vec![GatewayExpectedOutput::Events {
                         signatures: vec![
@@ -145,11 +154,11 @@ where
                         ],
                     }],
                     payload: self.produce_signed_payload(
-                        b"gatewayEscrowed".to_vec(),
-                        b"callStatic".to_vec(),
+                        "gatewayEscrowed",
+                        "callStatic",
                         arguments,
-                    ),
-                }
+                    )?,
+                })
             }
             // Don't think there is a way of enforcing calls to be static on via external dispatch?
             GatewayType::ProgrammableExternal | GatewayType::TxOnly => {
@@ -169,10 +178,10 @@ where
         _value: u128,
         _gas: u64,
         _gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage {
+    ) -> Result<CircuitOutboundMessage, &'static str> {
         // For state::call first argument is PalletName_MethodName
         const UNDERSCORE_BYTE: &[u8] = b"_";
-        let method_enc = [module_name.as_slice(), fn_name.as_slice()].join(UNDERSCORE_BYTE);
+        let method_enc = [module_name, fn_name].join(UNDERSCORE_BYTE);
 
         let expected_output = vec![
             GatewayExpectedOutput::Events {
@@ -187,14 +196,14 @@ where
         ];
 
         // ToDo: Sign message payload passed through state call
-        CircuitOutboundMessage::Write {
+        Ok(CircuitOutboundMessage::Write {
             arguments: vec![method_enc.encode(), data],
             expected_output,
             payload: MessagePayload::Rpc {
                 module_name: b"State".to_vec(),
                 method_name: b"Call".to_vec(),
             },
-        }
+        })
     }
 
     fn call_escrow(
@@ -206,7 +215,7 @@ where
         value: u128,
         gas: u64,
         gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage {
+    ) -> Result<CircuitOutboundMessage, &'static str> {
         match gateway_type {
             GatewayType::ProgrammableInternal => {
                 let expected_output = vec![GatewayExpectedOutput::Events {
@@ -216,15 +225,15 @@ where
                     ],
                 }];
                 let arguments = vec![to.encode(), value.encode(), gas.encode(), data];
-                CircuitOutboundMessage::Write {
+                Ok(CircuitOutboundMessage::Write {
                     arguments: arguments.clone(),
                     expected_output,
                     payload: self.produce_signed_payload(
-                        b"gatewayEscrowed".to_vec(),
-                        b"callEscrowed".to_vec(),
+                        "gatewayEscrowed",
+                        "callEscrowed",
                         arguments,
-                    ),
-                }
+                    )?,
+                })
             }
             // Don't think there is a way of enforcing calls to be static on via external dispatch?
             GatewayType::ProgrammableExternal | GatewayType::TxOnly => {
@@ -242,7 +251,7 @@ where
         _value: u128,
         _gas: u64,
         _gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage {
+    ) -> Result<CircuitOutboundMessage, &'static str> {
         unimplemented!()
     }
 
@@ -255,7 +264,7 @@ where
         _value: u128,
         _gas: u64,
         _gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage {
+    ) -> Result<CircuitOutboundMessage, &'static str> {
         unimplemented!()
     }
 
@@ -268,7 +277,7 @@ where
         _value: u128,
         _gas: u64,
         _gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage {
+    ) -> Result<CircuitOutboundMessage, &'static str> {
         unimplemented!()
     }
 
@@ -277,7 +286,7 @@ where
         to: [u8; 32],
         value: u128,
         _gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage {
+    ) -> Result<CircuitOutboundMessage, &'static str> {
         let expected_output = vec![GatewayExpectedOutput::Events {
             signatures: vec![
                 // from, to, value
@@ -287,15 +296,11 @@ where
 
         let arguments = vec![to.encode(), value.encode(), vec![]];
 
-        CircuitOutboundMessage::Write {
+        Ok(CircuitOutboundMessage::Write {
             arguments: arguments.clone(),
             expected_output,
-            payload: self.produce_signed_payload(
-                b"Balances".to_vec(),
-                b"Transfer".to_vec(),
-                arguments,
-            ),
-        }
+            payload: self.produce_signed_payload("Balances", "Transfer", arguments)?,
+        })
     }
 
     fn transfer_escrow(
@@ -306,7 +311,7 @@ where
         value: Vec<u8>,
         _transfers: &mut Vec<TransferEntry>,
         gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage {
+    ) -> Result<CircuitOutboundMessage, &'static str> {
         match gateway_type {
             GatewayType::ProgrammableInternal => {
                 let expected_output = vec![GatewayExpectedOutput::Events {
@@ -316,24 +321,20 @@ where
                     ],
                 }];
 
-                let arguments = vec![to, value, vec![]];
+                let arguments = vec![to.encode(), value.encode(), vec![]];
 
-                CircuitOutboundMessage::Write {
+                Ok(CircuitOutboundMessage::Write {
                     arguments: arguments.clone(),
                     expected_output,
-                    payload: self.produce_signed_payload(
-                        b"Gateway".to_vec(),
-                        b"EscrowTransfer".to_vec(),
-                        arguments,
-                    ),
-                }
+                    payload: self.produce_signed_payload("Gateway", "EscrowTransfer", arguments)?,
+                })
             }
             GatewayType::ProgrammableExternal | GatewayType::TxOnly => {
                 let expected_output = vec![GatewayExpectedOutput::Events {
                     signatures: vec![
                         // from, to, value
-                        b"Transfer(address,address,value)".to_vec(),
-                        b"Transfer(address,address,value)".to_vec(),
+                        b"EscrowedTransfer(address,address,value)".to_vec(),
+                        b"EscrowedTransfer(address,address,value)".to_vec(),
                     ],
                 }];
 
@@ -341,33 +342,28 @@ where
 
                 let transfers = vec![
                     self.produce_signed_payload(
-                        b"Balances".to_vec(),
-                        b"Transfer".to_vec(),
+                        "Balances",
+                        "Transfer",
                         vec![
-                            // ToDo: change to dummy vector to self.assembly.submitter_pair.public()
-                            vec![],
+                            self.assembly.submitter.to_raw_vec(),
                             escrow_account.clone(),
                             value.clone(),
                         ],
-                    )
+                    )?
                     .encode(),
                     self.produce_signed_payload(
-                        b"Balances".to_vec(),
-                        b"Transfer".to_vec(),
+                        "Balances",
+                        "Transfer",
                         vec![escrow_account, to, value],
-                    )
+                    )?
                     .encode(),
                 ];
 
-                CircuitOutboundMessage::Write {
+                Ok(CircuitOutboundMessage::Write {
                     arguments: arguments.clone(),
                     expected_output,
-                    payload: self.produce_signed_payload(
-                        b"Utility".to_vec(),
-                        b"BatchAll".to_vec(),
-                        transfers,
-                    ),
-                }
+                    payload: self.produce_signed_payload("Utility", "BatchAll", transfers)?,
+                })
             }
         }
     }
@@ -378,7 +374,7 @@ where
         _value: u128,
         _gas: u64,
         _gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage {
+    ) -> Result<CircuitOutboundMessage, &'static str> {
         unimplemented!()
     }
 
@@ -391,10 +387,661 @@ where
         _y_value: u128,
         _gas: u64,
         _gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage {
+    ) -> Result<CircuitOutboundMessage, &'static str> {
         unimplemented!()
     }
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use codec::Encode;
+    use frame_metadata::{
+        DecodeDifferent, ExtrinsicMetadata, FunctionMetadata, ModuleMetadata, RuntimeMetadataV13,
+    };
+    use sp_application_crypto::RuntimePublic;
+    use sp_core::sr25519::Signature;
+    use sp_core::H256;
+    use sp_io::TestExternalities;
+    use sp_keystore::testing::KeyStore;
+    use sp_keystore::{KeystoreExt, SyncCryptoStore};
+    use sp_version::{ApisVec, RuntimeVersion};
+
+    use t3rn_primitives::transfers::TransferEntry;
+    use t3rn_primitives::GatewayType;
+
+    use crate::crypto::Public;
+    use crate::KEY_TYPE;
+
+    use super::{
+        CircuitOutboundMessage, GatewayExpectedOutput, GatewayInboundProtocol, MessagePayload,
+        Metadata, SubstrateGatewayProtocol,
+    };
+
+    fn create_test_metadata(
+        modules_with_functions: Vec<(&'static str, Vec<&'static str>)>,
+    ) -> Metadata {
+        let mut module_index = 1;
+        let mut modules: Vec<ModuleMetadata> = vec![];
+
+        let fn_metadata_generator = |name: &'static str| -> FunctionMetadata {
+            FunctionMetadata {
+                name: DecodeDifferent::Encode(name),
+                arguments: DecodeDifferent::Decoded(vec![]),
+                documentation: DecodeDifferent::Decoded(vec![]),
+            }
+        };
+
+        let module_metadata_generator = |mod_name: &'static str,
+                                         mod_index: u8,
+                                         functions: Vec<FunctionMetadata>|
+         -> ModuleMetadata {
+            ModuleMetadata {
+                index: mod_index,
+                name: DecodeDifferent::Encode(mod_name),
+                storage: None,
+                calls: Some(DecodeDifferent::Decoded(functions)),
+                event: None,
+                constants: DecodeDifferent::Decoded(vec![]),
+                errors: DecodeDifferent::Decoded(vec![]),
+            }
+        };
+
+        for module in modules_with_functions {
+            let (module_name, fn_names) = module;
+            let functions = fn_names.into_iter().map(fn_metadata_generator).collect();
+            modules.push(module_metadata_generator(
+                module_name,
+                module_index,
+                functions,
+            ));
+            module_index = module_index + 1;
+        }
+
+        let runtime_metadata = RuntimeMetadataV13 {
+            extrinsic: ExtrinsicMetadata {
+                version: 1,
+                signed_extensions: vec![DecodeDifferent::Decoded(String::from("test"))],
+            },
+            modules: DecodeDifferent::Decoded(modules),
+        };
+        Metadata::new(runtime_metadata)
+    }
+
+    fn create_test_runtime_version() -> RuntimeVersion {
+        RuntimeVersion {
+            spec_name: "circuit-runtime".into(),
+            impl_name: "circuit-runtime".into(),
+            authoring_version: 1,
+            impl_version: 1,
+            apis: ApisVec::Owned(vec![([0_u8; 8], 0_u32)]),
+            transaction_version: 4,
+            spec_version: 13,
+        }
+    }
+
+    fn create_submitter() -> Public {
+        Public::default()
+    }
+
+    fn create_test_genesis_hash() -> H256 {
+        [0_u8; 32].into()
+    }
+
+    fn create_default_test_gateway_protocol() -> SubstrateGatewayProtocol<Public, H256> {
+        SubstrateGatewayProtocol::new(
+            Metadata::default(),
+            create_test_runtime_version(),
+            create_test_genesis_hash(),
+            create_submitter(),
+        )
+    }
+
+    fn create_test_gateway_protocol(
+        modules_with_functions: Vec<(&'static str, Vec<&'static str>)>,
+        submitter: Public,
+    ) -> SubstrateGatewayProtocol<Public, H256> {
+        SubstrateGatewayProtocol::new(
+            create_test_metadata(modules_with_functions),
+            create_test_runtime_version(),
+            create_test_genesis_hash(),
+            submitter,
+        )
+    }
+
+    fn assert_signed_payload(
+        actual: CircuitOutboundMessage,
+        submitter: sp_core::sr25519::Public,
+        exp_arguments: Vec<Vec<u8>>,
+        exp_output: Vec<GatewayExpectedOutput>,
+        exp_call_bytes: Vec<u8>,
+        expected_payload: Vec<u8>,
+        expected_module: &str,
+        expected_fn: &str,
+    ) {
+        match actual {
+            CircuitOutboundMessage::Write {
+                arguments,
+                expected_output,
+                payload,
+            } => {
+                assert_eq!(arguments, exp_arguments);
+                assert_eq!(expected_output, exp_output);
+                match payload {
+                    MessagePayload::Signed {
+                        signer,
+                        module_name,
+                        method_name,
+                        call_bytes,
+                        signature,
+                        extra,
+                    } => {
+                        assert_eq!(signer, submitter.encode());
+                        assert_eq!(module_name, expected_module.encode());
+                        assert_eq!(method_name, expected_fn.encode());
+                        assert_eq!(call_bytes, exp_call_bytes);
+
+                        let expected_message = expected_payload;
+                        assert!(submitter.verify(
+                            &expected_message,
+                            &Signature::from_slice(&signature.as_slice()[1..65]).into()
+                        ));
+                        assert_eq!(extra, vec![0, 0, 0]);
+                    }
+                    _ => assert!(false),
+                }
+            }
+            _ => assert!(false),
+        }
+    }
+
+    #[test]
+    fn get_storage_should_create_outbound_messages_correctly() {
+        let test_protocol = create_default_test_gateway_protocol();
+        let test_key = [1_u8; 32];
+
+        let expected_message = CircuitOutboundMessage::Read {
+            arguments: vec![test_key.to_vec()],
+            expected_output: vec![GatewayExpectedOutput::Storage {
+                key: vec![test_key],
+                value: vec![None],
+            }],
+            payload: MessagePayload::Rpc {
+                module_name: b"state".to_vec(),
+                method_name: b"getStorage".to_vec(),
+            },
+        };
+        // TODO: update these tests as soon implementation takes the gateway type into account
+        assert_eq!(
+            test_protocol
+                .get_storage(test_key, GatewayType::ProgrammableInternal)
+                .unwrap(),
+            expected_message
+        );
+        assert_eq!(
+            test_protocol
+                .get_storage(test_key, GatewayType::ProgrammableExternal)
+                .unwrap(),
+            expected_message
+        );
+        assert_eq!(
+            test_protocol
+                .get_storage(test_key, GatewayType::TxOnly)
+                .unwrap(),
+            expected_message
+        );
+    }
+
+    #[test]
+    fn set_storage_should_create_outbound_messages_correctly() {
+        let keystore = KeyStore::new();
+
+        let submitter = SyncCryptoStore::sr25519_generate_new(&keystore, KEY_TYPE, None)
+            .expect("Should generate submitter key");
+
+        let mut ext = TestExternalities::new_empty();
+        ext.register_extension(KeystoreExt(keystore.into()));
+        ext.execute_with(|| {
+            let test_protocol =
+                create_test_gateway_protocol(vec![("state", vec!["setStorage"])], submitter.into());
+            let test_key = [1_u8; 32];
+            let test_value = Some(vec![1_u8]);
+
+            // TODO: update these tests as soon implementation takes the gateway type into account
+            for gateway_type in vec![
+                GatewayType::ProgrammableInternal,
+                GatewayType::ProgrammableExternal,
+                GatewayType::TxOnly,
+            ] {
+                let actual = test_protocol
+                    .set_storage(test_key, test_value.clone(), gateway_type)
+                    .unwrap();
+
+                assert_signed_payload(
+                    actual,
+                    submitter,
+                    vec![test_key.to_vec()],
+                    vec![GatewayExpectedOutput::Storage {
+                        key: vec![test_key],
+                        value: vec![test_value.clone()],
+                    }],
+                    vec![
+                        1, 0, 4, 128, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                    ],
+                    vec![
+                        144, 1, 0, 4, 128, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    ],
+                    "state",
+                    "setStorage",
+                );
+            }
+        });
+    }
+
+    #[test]
+    fn call_should_create_outbound_messages_correctly() {
+        let test_protocol = create_default_test_gateway_protocol();
+        let from = [1_u8; 32];
+        let to = [2_u8; 32];
+        let escrow = [3_u8; 32];
+        let value = 1_u128;
+        let gas = 1_u64;
+        let data = vec![1_u8];
+
+        let expected_message = CircuitOutboundMessage::Write {
+            arguments: vec![
+                vec!["ModuleName".encode(), "FnName".encode()]
+                    .join(b"_".as_ref())
+                    .encode(),
+                data.clone(),
+            ],
+            expected_output: vec![
+                GatewayExpectedOutput::Events {
+                    signatures: vec![b"Call(address,value,uint64,dynamic_bytes)".to_vec()],
+                },
+                GatewayExpectedOutput::Output {
+                    output: b"dynamic_bytes".to_vec(),
+                },
+            ],
+            payload: MessagePayload::Rpc {
+                module_name: b"State".to_vec(),
+                method_name: b"Call".to_vec(),
+            },
+        };
+        assert_eq!(
+            test_protocol
+                .call(
+                    "ModuleName".encode(),
+                    "FnName".encode(),
+                    data,
+                    escrow,
+                    from,
+                    to,
+                    value,
+                    gas,
+                    GatewayType::ProgrammableInternal
+                )
+                .unwrap(),
+            expected_message
+        )
+    }
+
+    #[test]
+    fn call_escrow_should_create_outbound_messages_correctly() {
+        let keystore = KeyStore::new();
+        let to = [2_u8; 32];
+        let value = 2_u128;
+        let gas = 2_u64;
+        let data = vec![2_u8];
+
+        let submitter = SyncCryptoStore::sr25519_generate_new(&keystore, KEY_TYPE, None)
+            .expect("Should generate submitter key");
+
+        let mut ext = TestExternalities::new_empty();
+        ext.register_extension(KeystoreExt(keystore.into()));
+        ext.execute_with(|| {
+            let test_protocol = create_test_gateway_protocol(
+                vec![("gatewayEscrowed", vec!["callEscrowed"])],
+                submitter.into(),
+            );
+
+            let actual = test_protocol
+                .call_escrow(
+                    "ModuleName",
+                    "FnName",
+                    data.clone(),
+                    to,
+                    value,
+                    gas,
+                    GatewayType::ProgrammableInternal,
+                )
+                .unwrap();
+
+            assert_signed_payload(
+                actual,
+                submitter,
+                vec![to.encode(), value.encode(), gas.encode(), data.clone()],
+                vec![GatewayExpectedOutput::Events {
+                    signatures: vec![b"CallEscrowed(address,value,uint64,dynamic_bytes)".to_vec()],
+                }],
+                vec![
+                    1, 0, 16, 128, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 64, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 32, 2, 0, 0, 0, 0, 0, 0, 0, 4, 2,
+                ],
+                vec![
+                    1, 1, 1, 0, 16, 128, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 64, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 32, 2, 0, 0, 0, 0, 0, 0, 0, 4, 2, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                ],
+                "gatewayEscrowed",
+                "callEscrowed",
+            );
+        });
+    }
+
+    #[test]
+    #[should_panic(expected = "not implemented")]
+    fn call_escrow_should_panic_for_external_gateways() {
+        let test_protocol = create_default_test_gateway_protocol();
+        test_protocol
+            .call_escrow(
+                "ModuleName",
+                "FnName",
+                vec![1_u8],
+                [1_u8; 32],
+                1_u128,
+                1_u64,
+                GatewayType::ProgrammableExternal,
+            )
+            .unwrap();
+    }
+
+    #[test]
+    #[should_panic(expected = "not implemented")]
+    fn call_escrow_should_panic_for_txonly_gateways() {
+        let test_protocol = create_default_test_gateway_protocol();
+        test_protocol
+            .call_escrow(
+                "ModuleName",
+                "FnName",
+                vec![1_u8],
+                [1_u8; 32],
+                1_u128,
+                1_u64,
+                GatewayType::TxOnly,
+            )
+            .unwrap();
+    }
+
+    #[test]
+    fn call_static_should_create_outbound_messages_correctly_for_internal_gateways() {
+        let keystore = KeyStore::new();
+        let to = [3_u8; 32];
+        let value = 3_u128;
+        let gas = 3_u64;
+        let data = vec![3_u8];
+
+        let submitter = SyncCryptoStore::sr25519_generate_new(&keystore, KEY_TYPE, None)
+            .expect("Should generate submitter key");
+
+        let mut ext = TestExternalities::new_empty();
+        ext.register_extension(KeystoreExt(keystore.into()));
+        ext.execute_with(|| {
+            let test_protocol = create_test_gateway_protocol(
+                vec![("gatewayEscrowed", vec!["callStatic"])],
+                submitter.into(),
+            );
+
+            let actual = test_protocol
+                .call_static(
+                    "ModuleName",
+                    "FnName",
+                    data.clone(),
+                    to,
+                    value,
+                    gas,
+                    GatewayType::ProgrammableInternal,
+                )
+                .unwrap();
+
+            assert_signed_payload(
+                actual,
+                submitter,
+                vec![to.encode(), value.encode(), gas.encode(), data.clone()],
+                vec![GatewayExpectedOutput::Events {
+                    signatures: vec![b"CallStatic(address,value,uint64,dynamic_bytes)".to_vec()],
+                }],
+                vec![
+                    1, 0, 16, 128, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+                    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 64, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 32, 3, 0, 0, 0, 0, 0, 0, 0, 4, 3,
+                ],
+                vec![
+                    1, 1, 1, 0, 16, 128, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+                    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 64, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 32, 3, 0, 0, 0, 0, 0, 0, 0, 4, 3, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                ],
+                "gatewayEscrowed",
+                "callStatic",
+            );
+        });
+    }
+
+    #[test]
+    #[should_panic(expected = "not implemented")]
+    fn call_static_should_panic_for_external_gateways() {
+        let test_protocol = create_default_test_gateway_protocol();
+        test_protocol
+            .call_static(
+                "ModuleName",
+                "FnName",
+                vec![1_u8],
+                [1_u8; 32],
+                1_u128,
+                1_u64,
+                GatewayType::ProgrammableExternal,
+            )
+            .unwrap();
+    }
+
+    #[test]
+    #[should_panic(expected = "not implemented")]
+    fn call_static_should_panic_for_txonly_gateways() {
+        let test_protocol = create_default_test_gateway_protocol();
+        test_protocol
+            .call_static(
+                "ModuleName",
+                "FnName",
+                vec![1_u8],
+                [1_u8; 32],
+                1_u128,
+                1_u64,
+                GatewayType::TxOnly,
+            )
+            .unwrap();
+    }
+
+    #[test]
+    fn transfer_should_create_outbound_messages_correctly() {
+        let keystore = KeyStore::new();
+        let to = [4_u8; 32];
+        let value = 4_u128;
+
+        let submitter = SyncCryptoStore::sr25519_generate_new(&keystore, KEY_TYPE, None)
+            .expect("Should generate submitter key");
+
+        let mut ext = TestExternalities::new_empty();
+        ext.register_extension(KeystoreExt(keystore.into()));
+        ext.execute_with(|| {
+            let test_protocol = create_test_gateway_protocol(
+                vec![("Balances", vec!["Transfer"])],
+                submitter.into(),
+            );
+
+            let actual = test_protocol
+                .transfer(to, value, GatewayType::ProgrammableInternal)
+                .unwrap();
+
+            assert_signed_payload(
+                actual,
+                submitter,
+                vec![to.encode(), value.encode(), vec![]],
+                vec![GatewayExpectedOutput::Events {
+                    signatures: vec![b"Transfer(address,address,value)".to_vec()],
+                }],
+                vec![
+                    1, 0, 12, 128, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+                    4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 64, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0,
+                ],
+                vec![
+                    216, 1, 0, 12, 128, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+                    4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 64, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0,
+                ],
+                "Balances",
+                "Transfer",
+            );
+        });
+    }
+
+    #[test]
+    fn transfer_escrow_should_create_outbound_messages_correctly_for_internal_gateways() {
+        let keystore = KeyStore::new();
+        let from = vec![5_u8];
+        let to = vec![6_u8];
+        let escrow = vec![7_u8];
+        let _transfers = 1_u128;
+        let value = vec![1_u8];
+        let mut _transfers = vec![TransferEntry::default()];
+
+        let submitter = SyncCryptoStore::sr25519_generate_new(&keystore, KEY_TYPE, None)
+            .expect("Should generate submitter key");
+
+        let mut ext = TestExternalities::new_empty();
+        ext.register_extension(KeystoreExt(keystore.into()));
+        ext.execute_with(|| {
+            let test_protocol = create_test_gateway_protocol(
+                vec![("Gateway", vec!["EscrowTransfer"])],
+                submitter.into(),
+            );
+
+            let actual = test_protocol
+                .transfer_escrow(
+                    escrow.to_vec(),
+                    from.to_vec(),
+                    to.to_vec(),
+                    value.clone(),
+                    &mut _transfers,
+                    GatewayType::ProgrammableInternal,
+                )
+                .unwrap();
+
+            assert_signed_payload(
+                actual,
+                submitter,
+                vec![to.encode(), value.encode(), vec![]],
+                vec![GatewayExpectedOutput::Events {
+                    signatures: vec![b"EscrowedTransfer(address,address,value)".to_vec()],
+                }],
+                vec![1, 0, 12, 8, 4, 6, 8, 4, 1, 0],
+                vec![
+                    40, 1, 0, 12, 8, 4, 6, 8, 4, 1, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0,
+                ],
+                "Gateway",
+                "EscrowTransfer",
+            );
+        });
+    }
+
+    #[test]
+    fn transfer_escrow_should_create_outbound_messages_correctly_for_external_and_txonly_gateways()
+    {
+        let keystore = KeyStore::new();
+        let from = vec![5_u8];
+        let to = vec![6_u8];
+        let escrow = vec![7_u8];
+        let _transfers = 1_u128;
+        let value = vec![1_u8];
+        let mut _transfers = vec![TransferEntry::default()];
+
+        let submitter = SyncCryptoStore::sr25519_generate_new(&keystore, KEY_TYPE, None)
+            .expect("Should generate submitter key");
+
+        let mut ext = TestExternalities::new_empty();
+        ext.register_extension(KeystoreExt(keystore.into()));
+        ext.execute_with(|| {
+            let test_protocol = create_test_gateway_protocol(
+                vec![
+                    ("Balances", vec!["Transfer"]),
+                    ("Utility", vec!["BatchAll"]),
+                ],
+                submitter.into(),
+            );
+
+            let actual = test_protocol
+                .transfer_escrow(
+                    escrow.to_vec(),
+                    from.to_vec(),
+                    to.to_vec(),
+                    value.clone(),
+                    &mut _transfers,
+                    GatewayType::ProgrammableExternal,
+                )
+                .unwrap();
+
+            match actual {
+                CircuitOutboundMessage::Write {
+                    arguments,
+                    expected_output,
+                    payload,
+                } => {
+                    assert_eq!(arguments, vec![to.encode(), value.encode(), vec![]]);
+                    assert_eq!(
+                        expected_output,
+                        vec![GatewayExpectedOutput::Events {
+                            signatures: vec![
+                                b"EscrowedTransfer(address,address,value)".to_vec(),
+                                b"EscrowedTransfer(address,address,value)".to_vec(),
+                            ],
+                        }]
+                    );
+                    match payload {
+                        MessagePayload::Signed {
+                            signer,
+                            module_name,
+                            method_name,
+                            call_bytes: _,
+                            signature: _,
+                            extra,
+                        } => {
+                            assert_eq!(signer, submitter.encode());
+                            assert_eq!(module_name, "Utility".encode());
+                            assert_eq!(method_name, "BatchAll".encode());
+                            assert_eq!(extra, vec![0, 0, 0]);
+                        }
+                        _ => assert!(false),
+                    }
+                }
+                _ => assert!(false),
+            };
+        });
+    }
+}
