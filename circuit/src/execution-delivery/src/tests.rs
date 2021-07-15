@@ -45,6 +45,11 @@ use sp_consensus_babe::AuthorityId;
 use sp_io;
 use sp_staking::SessionIndex;
 
+use sp_core::{crypto::Pair, sr25519};
+use sp_io::TestExternalities;
+use sp_keystore::testing::KeyStore;
+use sp_keystore::{KeystoreExt, SyncCryptoStore};
+
 use frame_support::weights::Weight;
 use sp_core::{crypto::KeyTypeId, H160, H256, U256};
 use sp_runtime::traits::{BlakeTwo256, Keccak256};
@@ -73,6 +78,8 @@ type AccountId = sp_runtime::AccountId32;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
+
+pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"circ");
 
 frame_support::construct_runtime!(
     pub enum Test where
@@ -1244,4 +1251,59 @@ fn it_should_throw_with_empty_io_schedule() {
         ExecDelivery::decompose_io_schedule(components, io_schedule),
         expected
     );
+}
+
+#[test]
+fn test_authority_selection() {
+    let keystore = KeyStore::new();
+
+    // Insert Alice
+    let suri_alice = "//Alice";
+    let key_pair_alice = sr25519::Pair::from_string(suri_alice, None).expect("Generates key pair");
+    SyncCryptoStore::insert_unknown(
+        &keystore,
+        KEY_TYPE,
+        suri_alice,
+        key_pair_alice.public().as_ref(),
+    )
+    .expect("Inserts unknown key");
+
+    // Insert Bob
+    let suri_bob = "//Bob";
+    let key_pair_bob = sr25519::Pair::from_string(suri_bob, None).expect("Generates key pair");
+    SyncCryptoStore::insert_unknown(
+        &keystore,
+        KEY_TYPE,
+        suri_bob,
+        key_pair_bob.public().as_ref(),
+    )
+    .expect("Inserts unknown key");
+
+    // Insert Charlie
+    let suri_charlie = "//Charlie";
+    let key_pair_charlie =
+        sr25519::Pair::from_string(suri_charlie, None).expect("Generates key pair");
+    SyncCryptoStore::insert_unknown(
+        &keystore,
+        KEY_TYPE,
+        suri_charlie,
+        key_pair_charlie.public().as_ref(),
+    )
+    .expect("Inserts unknown key");
+
+    // Alice's account
+    // let escrow: AccountId = hex_literal::hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"].into();
+
+    // Bob's account
+    let escrow: AccountId =
+        hex_literal::hex!["8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48"]
+            .into();
+    let mut ext = TestExternalities::new_empty();
+    ext.register_extension(KeystoreExt(keystore.into()));
+    ext.execute_with(|| {
+        let submitter = ExecDelivery::select_authority(escrow.clone());
+
+        // println!("{:#?}", submitter);
+        assert_eq!(submitter.is_ok(), true);
+    });
 }
