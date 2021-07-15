@@ -112,7 +112,8 @@ parameter_types! {
         frame_system::limits::BlockWeights::simple_max(1024);
 }
 
-impl pallet_randomness_collective_flip::Config for Test {}
+//ToDo: Uncomment when upgrading to v4.0.0 substrate
+// impl pallet_randomness_collective_flip::Config for Test {}
 
 impl frame_system::Config for Test {
     type BaseCallFilter = ();
@@ -289,8 +290,9 @@ impl pallet_balances::Config for Test {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
-    type MaxReserves = MaxReserves;
-    type ReserveIdentifier = [u8; 8];
+    //ToDo: Uncomment when upgrading to v4.0.0 substrate
+    // type MaxReserves = MaxReserves;
+    // type ReserveIdentifier = [u8; 8];
 }
 
 pallet_staking_reward_curve::build! {
@@ -342,7 +344,8 @@ impl pallet_staking::Config for Test {
     type NextNewSession = Session;
     type WeightInfo = ();
     type ElectionProvider = onchain::OnChainSequentialPhragmen<Self>;
-    type GenesisElectionProvider = Self::ElectionProvider;
+    //ToDo: Uncomment when upgrading to v4.0.0 substrate
+    // type GenesisElectionProvider = Self::ElectionProvider;
 }
 
 impl pallet_offences::Config for Test {
