@@ -6,8 +6,9 @@ use frame_support::traits::Time;
 
 use frame_support::{storage::child, storage::child::ChildInfo, storage::unhashed};
 use t3rn_primitives::{
+    abi::GatewayABIConfig,
     transfers::{BalanceOf, TransferEntry},
-    CircuitOutboundMessage, EscrowTrait, GatewayInboundProtocol, GatewayPointer,
+    EscrowTrait, GatewayPointer, *,
 };
 
 use sp_runtime::traits::Convert;
@@ -26,7 +27,7 @@ pub use crate::message_assembly::gateway_inbound_assembly::GatewayInboundAssembl
 pub use crate::message_assembly::substrate_gateway_assembly::SubstrateGatewayAssembly;
 pub use crate::message_assembly::substrate_gateway_protocol::SubstrateGatewayProtocol;
 
-pub struct CircuitVersatileWasmEnv<
+pub struct CircuitVolatileWasmEnv<
     'a,
     T: EscrowTrait + SystemTrait + VersatileWasm + CircuitTrait,
     OM,
@@ -41,6 +42,7 @@ pub struct CircuitVersatileWasmEnv<
     pub constructed_outbound_messages: &'a mut Vec<CircuitOutboundMessage>,
     pub gateway_inbound_protocol: Box<dyn GatewayInboundProtocol>,
     pub gateway_pointer: GatewayPointer,
+    pub gateway_abi: GatewayABIConfig,
     pub output_mode: OM,
 }
 
@@ -146,7 +148,7 @@ pub trait WasmEnvOutputMode {
     fn get_run_mode() -> RunMode;
 }
 
-impl<'a, T: EscrowTrait + SystemTrait, OM> ExtStandards for CircuitVersatileWasmEnv<'a, T, OM>
+impl<'a, T: EscrowTrait + SystemTrait, OM> ExtStandards for CircuitVolatileWasmEnv<'a, T, OM>
 where
     T: EscrowTrait + SystemTrait + VersatileWasm + CircuitTrait,
     // GII: GatewayInboundImplementer<GA>,
@@ -260,7 +262,7 @@ where
         <frame_system::Pallet<T>>::deposit_event_indexed(
             &*topics,
             <Self::T as VersatileWasm>::Event::from(
-                versatile_wasm::pallet::Event::VersatileVMExecution(
+                versatile_wasm::pallet::Event::VolatileVMEmitted(
                     self.escrow_account.clone(),
                     self.requester.clone(),
                     data,
@@ -271,7 +273,7 @@ where
     }
 }
 
-impl<'a, T: EscrowTrait + SystemTrait, OM> CircuitVersatileWasmEnv<'a, T, OM>
+impl<'a, T: EscrowTrait + SystemTrait, OM> CircuitVolatileWasmEnv<'a, T, OM>
 where
     T: EscrowTrait + SystemTrait + VersatileWasm + CircuitTrait,
     OM: WasmEnvOutputMode,
@@ -289,7 +291,7 @@ where
         gateway_pointer: GatewayPointer,
         output_mode: OM,
     ) -> Self {
-        CircuitVersatileWasmEnv {
+        CircuitVolatileWasmEnv {
             escrow_account,
             requester,
             block_number,

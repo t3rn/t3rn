@@ -259,7 +259,6 @@ impl pallet_session::historical::Config for Test {
 parameter_types! {
     pub const UncleGenerations: u64 = 0;
     pub MyVVMSchedule: versatile_wasm::Schedule = <versatile_wasm::simple_schedule_v2::Schedule>::default();
-
 }
 
 impl pallet_authorship::Config for Test {

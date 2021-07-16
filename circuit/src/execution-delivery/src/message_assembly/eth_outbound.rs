@@ -79,6 +79,20 @@ impl AsGatewayOutboundEvent for EthLog {
         let signature: &str =
             sp_std::str::from_utf8(&name[..]).map_err(|_| "`Can't decode argument to &str")?;
 
+        // signature: &'static str;
+        // RefCell
+        // Mem Transmute -> zdecydowanie poszukaj
+        /**
+                extern "C" fn dispatch_wrapper(func_ref: *const u8, payload_ptr: *mut u8, payload_len: u32) -> u64 {
+                let payload_len = payload_len as usize;
+                let output = unsafe {
+                    let payload = Vec::from_raw_parts(payload_ptr, payload_len, payload_len);
+                    let ptr: fn(Vec<u8>) -> Vec<u8> = mem::transmute(func_ref);
+                    (ptr)(payload)
+                };
+                sp_runtime_interface::pack_ptr_and_len(output.as_ptr() as usize as _, output.len() as _)
+            }
+        **/
         let event = EthAbiEvent {
             signature,
             inputs: expected_arg_types_eth.as_slice(),

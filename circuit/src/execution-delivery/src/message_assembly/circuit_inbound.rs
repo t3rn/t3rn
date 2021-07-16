@@ -9,9 +9,9 @@ use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
 use sp_std::vec::Vec;
 
-use crate::message_assembly::circuit_outbound::ProofTriePointer;
 use crate::message_assembly::gateway_outbound_protocol::GatewayOutboundEvent;
 use t3rn_primitives::abi::Bytes;
+use t3rn_primitives::ProofTriePointer;
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]

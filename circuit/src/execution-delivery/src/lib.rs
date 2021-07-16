@@ -46,15 +46,14 @@ use codec::{Decode, Encode};
 use frame_support::{ensure, Blake2_128Concat};
 use frame_system::offchain::{SignedPayload, SigningTypes};
 
-use sp_core::crypto::KeyTypeId;
+use sp_core::crypto::{KeyTypeId, UncheckedFrom};
+
 use sp_runtime::{
     traits::{Convert, Hash, Zero},
     RuntimeDebug,
 };
 
 pub use crate::message_assembly::circuit_inbound::StepConfirmation;
-pub use crate::message_assembly::circuit_outbound::CircuitOutboundMessage;
-use crate::message_assembly::circuit_outbound::ProofTriePointer;
 use crate::message_assembly::merklize::*;
 
 use hex_literal::hex;
@@ -67,6 +66,7 @@ use t3rn_primitives::transfers::BalanceOf;
 use t3rn_primitives::*;
 
 use versatile_wasm::VersatileWasm;
+use volatile_vm::VolatileVM;
 
 #[cfg(test)]
 mod tests;
@@ -344,6 +344,7 @@ pub mod pallet {
         + pallet_bridge_messages::Config
         + pallet_balances::Config
         + VersatileWasm
+        + VolatileVM
         + pallet_contracts_registry::Config
         + pallet_im_online::Config
         + pallet_xdns::Config
@@ -574,6 +575,7 @@ pub mod pallet {
 
                 Err(Error::<T>::StepConfirmationInvalidInclusionProof.into())
             } else {
+                // xdns::update_cost
                 Ok(().into())
             }
         }

@@ -9,13 +9,13 @@ use crate::message_assembly::chain_generic_metadata::Metadata;
 use sp_version::RuntimeVersion;
 
 use t3rn_primitives::transfers::TransferEntry;
+use t3rn_primitives::CircuitOutboundMessage;
 use t3rn_primitives::GatewayType;
+use t3rn_primitives::{GatewayExpectedOutput, MessagePayload};
 
-use super::circuit_outbound::{CircuitOutboundMessage, GatewayExpectedOutput, MessagePayload};
-
-use super::gateway_inbound_protocol::GatewayInboundProtocol;
 use super::substrate_gateway_assembly::SubstrateGatewayAssembly;
 use sp_runtime::RuntimeAppPublic;
+use t3rn_primitives::GatewayInboundProtocol;
 
 pub struct SubstrateGatewayProtocol<Pair, Hash>
 where
@@ -76,7 +76,7 @@ where
     // For substrate that follows the following key formats:
     // key[0..16].copy_from_slice(&Twox128::hash(module_prefix));
     // key[16..32].copy_from_slice(&Twox128::hash(storage_prefix));
-    fn get_storage(&self, key: [u8; 32], _gateway_type: GatewayType) -> CircuitOutboundMessage {
+    fn get_storage(&self, key: Vec<u8>, _gateway_type: GatewayType) -> CircuitOutboundMessage {
         // events
         // storage
         let expected_storage = GatewayExpectedOutput::Storage {
@@ -86,6 +86,7 @@ where
         let arguments = vec![key.to_vec()];
 
         CircuitOutboundMessage::Read {
+            name: b"get_storage".to_vec(),
             arguments,
             expected_output: vec![expected_storage],
             payload: MessagePayload::Rpc {
@@ -101,7 +102,7 @@ where
     // key[16..32].copy_from_slice(&Twox128::hash(storage_prefix));
     fn set_storage(
         &self,
-        key: [u8; 32], //sp_core::storage
+        key: Vec<u8>, //sp_core::storage
         value: Option<Vec<u8>>,
         _gateway_type: GatewayType,
     ) -> CircuitOutboundMessage {
@@ -114,6 +115,7 @@ where
         let arguments = vec![key.to_vec()];
 
         CircuitOutboundMessage::Write {
+            name: b"set_storage".to_vec(),
             arguments: arguments.clone(),
             expected_output: vec![expected_storage],
             payload: self.produce_signed_payload(
@@ -130,15 +132,17 @@ where
         _module_name: &str,
         _fn_name: &str,
         data: Vec<u8>,
-        to: [u8; 32],
-        value: u128,
-        gas: u64,
+        to: Vec<u8>,
+        value: Vec<u8>,
+        gas: Vec<u8>,
         gateway_type: GatewayType,
+        return_value: Option<Vec<u8>>,
     ) -> CircuitOutboundMessage {
         match gateway_type {
             GatewayType::ProgrammableInternal => {
                 let arguments = vec![to.encode(), value.encode(), gas.encode(), data];
                 CircuitOutboundMessage::Write {
+                    name: b"call_static".to_vec(),
                     arguments: arguments.clone(),
                     expected_output: vec![GatewayExpectedOutput::Events {
                         signatures: vec![
@@ -165,15 +169,17 @@ where
         module_name: Vec<u8>,
         fn_name: Vec<u8>,
         data: Vec<u8>,
-        _escrow_account: [u8; 32],
-        _requester: [u8; 32],
-        _to: [u8; 32],
-        _value: u128,
-        _gas: u64,
+        _escrow_account: Vec<u8>,
+        _requester: Vec<u8>,
+        _to: Vec<u8>,
+        _value: Vec<u8>,
+        _gas: Vec<u8>,
         _gateway_type: GatewayType,
+        return_value: Option<Vec<u8>>,
     ) -> CircuitOutboundMessage {
         // For state::call first argument is PalletName_MethodName
         const UNDERSCORE_BYTE: &[u8] = b"_";
+
         let method_enc = [module_name.as_slice(), fn_name.as_slice()].join(UNDERSCORE_BYTE);
 
         let expected_output = vec![
@@ -189,7 +195,10 @@ where
         ];
 
         // ToDo: Sign message payload passed through state call
+
+        // CircuitOutboundMesssage -> Parse & Analayze to extract arguments for State Call -> Call local runtimeRPC state call
         CircuitOutboundMessage::Write {
+            name: b"call".to_vec(),
             arguments: vec![method_enc.encode(), data],
             expected_output,
             payload: MessagePayload::Rpc {
@@ -204,10 +213,11 @@ where
         _module_name: &str,
         _fn_name: &str,
         data: Vec<u8>,
-        to: [u8; 32],
-        value: u128,
-        gas: u64,
+        to: Vec<u8>,
+        value: Vec<u8>,
+        gas: Vec<u8>,
         gateway_type: GatewayType,
+        return_value: Option<Vec<u8>>,
     ) -> CircuitOutboundMessage {
         match gateway_type {
             GatewayType::ProgrammableInternal => {
@@ -219,6 +229,7 @@ where
                 }];
                 let arguments = vec![to.encode(), value.encode(), gas.encode(), data];
                 CircuitOutboundMessage::Write {
+                    name: b"call_escrow".to_vec(),
                     arguments: arguments.clone(),
                     expected_output,
                     payload: self.produce_signed_payload(
@@ -240,10 +251,11 @@ where
         _module_name: &str,
         _fn_name: &str,
         _data: Vec<u8>,
-        _to: [u8; 32],
-        _value: u128,
-        _gas: u64,
+        _to: Vec<u8>,
+        _value: Vec<u8>,
+        _gas: Vec<u8>,
         _gateway_type: GatewayType,
+        return_value: Option<Vec<u8>>,
     ) -> CircuitOutboundMessage {
         unimplemented!()
     }
@@ -253,10 +265,11 @@ where
         _module_name: &str,
         _fn_name: &str,
         _data: Vec<u8>,
-        _to: [u8; 32],
-        _value: u128,
-        _gas: u64,
+        _to: Vec<u8>,
+        _value: Vec<u8>,
+        _gas: Vec<u8>,
         _gateway_type: GatewayType,
+        return_value: Option<Vec<u8>>,
     ) -> CircuitOutboundMessage {
         unimplemented!()
     }
@@ -266,18 +279,19 @@ where
         _module_name: &str,
         _fn_name: &str,
         _data: Vec<u8>,
-        _to: [u8; 32],
-        _value: u128,
-        _gas: u64,
+        _to: Vec<u8>,
+        _value: Vec<u8>,
+        _gas: Vec<u8>,
         _gateway_type: GatewayType,
+        return_value: Option<Vec<u8>>,
     ) -> CircuitOutboundMessage {
         unimplemented!()
     }
 
     fn transfer(
         &self,
-        to: [u8; 32],
-        value: u128,
+        to: Vec<u8>,
+        value: Vec<u8>,
         _gateway_type: GatewayType,
     ) -> CircuitOutboundMessage {
         let expected_output = vec![GatewayExpectedOutput::Events {
@@ -287,9 +301,10 @@ where
             ],
         }];
 
-        let arguments = vec![to.encode(), value.encode(), vec![]];
+        let arguments = vec![to, value, vec![]];
 
         CircuitOutboundMessage::Write {
+            name: b"transfer".to_vec(),
             arguments: arguments.clone(),
             expected_output,
             payload: self.produce_signed_payload(
@@ -321,6 +336,7 @@ where
                 let arguments = vec![to, value, vec![]];
 
                 CircuitOutboundMessage::Write {
+                    name: b"transfer_escrow".to_vec(),
                     arguments: arguments.clone(),
                     expected_output,
                     payload: self.produce_signed_payload(
@@ -362,6 +378,7 @@ where
                 ];
 
                 CircuitOutboundMessage::Write {
+                    name: b"transfer_escrow".to_vec(),
                     arguments: arguments.clone(),
                     expected_output,
                     payload: self.produce_signed_payload(
@@ -376,9 +393,9 @@ where
 
     fn swap_dirty(
         &self,
-        _to: [u8; 32],
-        _value: u128,
-        _gas: u64,
+        _to: Vec<u8>,
+        _value: Vec<u8>,
+        _gas: Vec<u8>,
         _gateway_type: GatewayType,
     ) -> CircuitOutboundMessage {
         unimplemented!()
@@ -386,12 +403,12 @@ where
 
     fn swap_escrow(
         &self,
-        _from: [u8; 32],
-        _x_token: [u8; 32],
-        _y_token: [u8; 32],
+        _from: Vec<u8>,
+        _x_token: Vec<u8>,
+        _y_token: Vec<u8>,
         _x_value: u128,
-        _y_value: u128,
-        _gas: u64,
+        _y_value: Vec<u8>,
+        _gas: Vec<u8>,
         _gateway_type: GatewayType,
     ) -> CircuitOutboundMessage {
         unimplemented!()
