@@ -221,10 +221,9 @@ define_env!(Env, <E: ExtStandards>,
         output_ptr: u32,
         output_len_ptr: u32
     ) -> ReturnCode => {
-        if value_len != ctx.gateway_abi_config.value_type_size || callee_len != ctx.gateway_abi_config.address_length {
+        if value_len != ctx.gateway_abi_config.value_type_size as u32 || callee_len != ctx.gateway_abi_config.address_length as u32 {
             return Err(sp_sandbox::HostError);
         }
-
         // [0, 32> bytes of input reserved for a module name.
         let module_name = try_read_mem_as_utf8(ctx, input_data_ptr, 32)?;
         // [32, 64> bytes of input reserved for a module name. 64 bytes reserved in total in input.
@@ -268,7 +267,7 @@ define_env!(Env, <E: ExtStandards>,
     },
     seal_transfer (ctx, account_ptr: u32, account_len: u32, value_ptr: u32, value_len: u32) -> ReturnCode => {
 
-        if value_len != ctx.gateway_abi_config.value_type_size || account_len != ctx.gateway_abi_config.address_length {
+        if value_len != ctx.gateway_abi_config.value_type_size as u32 || account_len != ctx.gateway_abi_config.address_length as u32 {
             return Err(sp_sandbox::HostError);
         }
 
