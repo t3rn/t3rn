@@ -1308,12 +1308,13 @@ fn test_authority_selection() {
 }
 
 #[test]
-fn error_if_keystore_is_empty(){
+fn error_if_keystore_is_empty() {
     let keystore = KeyStore::new();
-    
+
     // Alice's escrow account
-    let escrow: AccountId = hex_literal::hex!["8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48"]
-    .into();
+    let escrow: AccountId =
+        hex_literal::hex!["8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48"]
+            .into();
 
     let mut ext = TestExternalities::new_empty();
     ext.register_extension(KeystoreExt(keystore.into()));
@@ -1325,7 +1326,7 @@ fn error_if_keystore_is_empty(){
 }
 
 #[test]
-fn error_if_incorrect_escrow_is_submitted(){
+fn error_if_incorrect_escrow_is_submitted() {
     let keystore = KeyStore::new();
 
     // Insert Alice's keys
@@ -1363,9 +1364,11 @@ fn error_if_incorrect_escrow_is_submitted(){
     .expect("Inserts unknown key");
 
     // Alice's original account => d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d
-    // Alice's tempered account => a51593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d 
+    // Alice's tempered account => a51593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d
     // The first 3 bytes are changed, thus making the account invalid
-    let escrow: AccountId = hex_literal::hex!["a51593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"].into();
+    let escrow: AccountId =
+        hex_literal::hex!["a51593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"]
+            .into();
 
     let mut ext = TestExternalities::new_empty();
     ext.register_extension(KeystoreExt(keystore.into()));
