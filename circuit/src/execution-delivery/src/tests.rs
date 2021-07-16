@@ -1257,36 +1257,36 @@ fn it_should_throw_with_empty_io_schedule() {
 fn test_authority_selection() {
     let keystore = KeyStore::new();
 
-    // Insert Alice
-    let suri_alice = "//Alice";
-    let key_pair_alice = sr25519::Pair::from_string(suri_alice, None).expect("Generates key pair");
+    // Insert Alice's keys
+    const SURI_ALICE: &str = "//Alice";
+    let key_pair_alice = sr25519::Pair::from_string(SURI_ALICE, None).expect("Generates key pair");
     SyncCryptoStore::insert_unknown(
         &keystore,
         KEY_TYPE,
-        suri_alice,
+        SURI_ALICE,
         key_pair_alice.public().as_ref(),
     )
     .expect("Inserts unknown key");
 
-    // Insert Bob
-    let suri_bob = "//Bob";
-    let key_pair_bob = sr25519::Pair::from_string(suri_bob, None).expect("Generates key pair");
+    // Insert Bob's keys
+    const SURI_BOB: &str = "//Bob";
+    let key_pair_bob = sr25519::Pair::from_string(SURI_BOB, None).expect("Generates key pair");
     SyncCryptoStore::insert_unknown(
         &keystore,
         KEY_TYPE,
-        suri_bob,
+        SURI_BOB,
         key_pair_bob.public().as_ref(),
     )
     .expect("Inserts unknown key");
 
-    // Insert Charlie
-    let suri_charlie = "//Charlie";
+    // Insert Charlie's keys
+    const SURI_CHARLIE: &str = "//Charlie";
     let key_pair_charlie =
-        sr25519::Pair::from_string(suri_charlie, None).expect("Generates key pair");
+        sr25519::Pair::from_string(SURI_CHARLIE, None).expect("Generates key pair");
     SyncCryptoStore::insert_unknown(
         &keystore,
         KEY_TYPE,
-        suri_charlie,
+        SURI_CHARLIE,
         key_pair_charlie.public().as_ref(),
     )
     .expect("Inserts unknown key");
@@ -1303,7 +1303,6 @@ fn test_authority_selection() {
     ext.execute_with(|| {
         let submitter = ExecDelivery::select_authority(escrow.clone());
 
-        // println!("{:#?}", submitter);
         assert_eq!(submitter.is_ok(), true);
     });
 }

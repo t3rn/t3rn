@@ -803,7 +803,7 @@ impl<T: Config> Pallet<T> {
             .binary_search(&auth)
             .ok()
             .map(|location| local_keys[location].clone())
-            .ok_or("Can't match")?;
+            .ok_or("Can't match authority for given account")?;
 
         Ok(submitter)
     }
@@ -825,10 +825,7 @@ impl<T: Config> Pallet<T> {
                 .map_err(|_e| "Can't cast value in dry_run_single_contract")?,
         );
 
-        let submitter = match Self::select_authority(escrow_account.clone()) {
-            Ok(submitter) => submitter,
-            Err(e) => return Err(e),
-        };
+        let submitter = Self::select_authority(escrow_account.clone())?;
 
         let gateway_xdns_record = pallet_xdns::Pallet::<T>::xdns_registry(step.gateway_entry_id)
             .ok_or(Error::<T>::ProcessStepGatewayNotRecognised)?;
