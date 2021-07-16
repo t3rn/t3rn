@@ -23,7 +23,6 @@ use serde::{Deserialize, Serialize};
 
 use frame_support::traits::Get;
 
-use sp_sandbox;
 use sp_std::prelude::*;
 use t3rn_primitives::{transfers::BalanceOf, EscrowTrait};
 
@@ -31,9 +30,6 @@ pub use crate::pallet::*;
 
 use crate::{
     storage::{AliveContractInfo, ContractInfo, DeletedContract},
-    // gas::GasMeter,
-    // exec::{Stack as ExecStack, Executable},
-    // rent::Rent,
     wasm::PrefabWasmModule,
     weights::WeightInfo,
 };
@@ -43,19 +39,14 @@ pub mod chain_extension;
 pub mod exec;
 pub mod ext;
 pub mod fake_storage;
-pub mod fees;
 pub mod gas;
 pub mod schedule;
-pub mod simple_gas;
-pub mod simple_schedule_v2;
 pub mod storage;
 pub mod weights;
 
 pub use crate::exec::Frame;
 pub use crate::schedule::Schedule;
-pub use crate::simple_schedule_v2::Schedule as SimpleSchedule;
 
-// use self::env_def::ConvertibleToWasm;
 use system::Config as SystemTrait;
 
 pub type MomentOf<T> = <<T as EscrowTrait>::Time as Time>::Moment;
