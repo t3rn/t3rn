@@ -10,7 +10,11 @@ pub trait GatewayInboundProtocol {
     /// Get storage on foreign chain under given key. Returns (gets it delivered by relayers):
     /// storage_value of storage
     /// storage_proof - Merkle Path and block reference securing against data collusion
-    fn get_storage(&self, key: [u8; 32], gateway_type: GatewayType) -> CircuitOutboundMessage;
+    fn get_storage(
+        &self,
+        key: [u8; 32],
+        gateway_type: GatewayType,
+    ) -> Result<CircuitOutboundMessage, &'static str>;
 
     /// Set storage on foreign chain of given key pointing to new value. Returns (gets it delivered by relayers):
     /// new_storage_value of storage
@@ -21,7 +25,7 @@ pub trait GatewayInboundProtocol {
         key: [u8; 32],
         value: Option<Vec<u8>>,
         gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage;
+    ) -> Result<CircuitOutboundMessage, &'static str>;
 
     /// Call smart contract behind that gateway in a static way - enforcing read-pnly operations. Returns (gets it delivered by relayers):
     /// stamp - Event generated on that chain
@@ -35,7 +39,7 @@ pub trait GatewayInboundProtocol {
         value: u128,
         gas: u64,
         gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage;
+    ) -> Result<CircuitOutboundMessage, &'static str>;
 
     /// Call smart contract behind that gateway in a dirty way - without possibility to revert that action. Returns (gets it delivered by relayers):
     /// stamp - Event generated on that chain
@@ -52,7 +56,7 @@ pub trait GatewayInboundProtocol {
         value: u128,
         gas: u64,
         gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage;
+    ) -> Result<CircuitOutboundMessage, &'static str>;
 
     /// Call smart contract behind that gateway in a reversible (escrowed) way. Returns (gets it delivered by relayers):
     /// stamp - Event generated on that chain
@@ -67,7 +71,7 @@ pub trait GatewayInboundProtocol {
         value: u128,
         gas: u64,
         gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage;
+    ) -> Result<CircuitOutboundMessage, &'static str>;
 
     /// Call custom dispatchable call behind that gateway in a static way - enforcing read-pnly operations. Returns (gets it delivered by relayers):
     /// stamp - Event generated on that chain
@@ -81,7 +85,7 @@ pub trait GatewayInboundProtocol {
         value: u128,
         gas: u64,
         gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage;
+    ) -> Result<CircuitOutboundMessage, &'static str>;
 
     /// Call custom dispatchable call behind that gateway in a dirty way - without possibility to revert that action. Returns (gets it delivered by relayers):
     /// stamp - Event generated on that chain
@@ -96,7 +100,7 @@ pub trait GatewayInboundProtocol {
         value: u128,
         gas: u64,
         gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage;
+    ) -> Result<CircuitOutboundMessage, &'static str>;
 
     /// Call custom dispatchable call behind that gateway in a reversible (escrowed) way - enforcing read-pnly operations. Returns (gets it delivered by relayers):
     /// stamp - Event generated on that chain
@@ -111,7 +115,7 @@ pub trait GatewayInboundProtocol {
         value: u128,
         gas: u64,
         gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage;
+    ) -> Result<CircuitOutboundMessage, &'static str>;
 
     /// Transfer balance on a chain behind that gateway in a reversible (escrowed) way. Returns (gets it delivered by relayers):
     /// stamp - Event generated on that chain
@@ -122,7 +126,7 @@ pub trait GatewayInboundProtocol {
         to: [u8; 32],
         value: u128,
         gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage;
+    ) -> Result<CircuitOutboundMessage, &'static str>;
 
     /// Transfer balance on a chain behind that gateway in a dirty way - without possibility to revert that action. Returns (gets it delivered by relayers):
     /// stamp - Event generated on that chain
@@ -136,7 +140,7 @@ pub trait GatewayInboundProtocol {
         value: Vec<u8>,
         transfers: &mut Vec<TransferEntry>,
         gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage;
+    ) -> Result<CircuitOutboundMessage, &'static str>;
 
     /// Swap X tokens to Y different tokens on a chain behind that gateway in a dirty way - without possibility to revert that action. Returns (gets it delivered by relayers):
     /// stamp - Event generated on that chain
@@ -148,7 +152,7 @@ pub trait GatewayInboundProtocol {
         value: u128,
         gas: u64,
         gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage;
+    ) -> Result<CircuitOutboundMessage, &'static str>;
 
     /// Swap X tokens to Y different tokens on a chain behind that gateway in a reversible (escrowed) way. Returns (gets it delivered by relayers):
     /// stamp - Event generated on that chain
@@ -163,5 +167,5 @@ pub trait GatewayInboundProtocol {
         y_value: u128,
         gas: u64,
         gateway_type: GatewayType,
-    ) -> CircuitOutboundMessage;
+    ) -> Result<CircuitOutboundMessage, &'static str>;
 }

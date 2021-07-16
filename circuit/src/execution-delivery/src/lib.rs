@@ -165,8 +165,8 @@ pub mod crypto {
         for TestAuthId
     {
         type RuntimeAppPublic = Public;
-        type GenericSignature = sp_core::sr25519::Signature;
         type GenericPublic = sp_core::sr25519::Public;
+        type GenericSignature = sp_core::sr25519::Signature;
     }
 }
 

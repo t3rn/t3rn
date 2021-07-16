@@ -25,6 +25,7 @@ pub use crate::message_assembly::gateway_inbound_assembly::GatewayInboundAssembl
 pub use crate::message_assembly::gateway_inbound_protocol::GatewayInboundProtocol;
 pub use crate::message_assembly::substrate_gateway_assembly::SubstrateGatewayAssembly;
 pub use crate::message_assembly::substrate_gateway_protocol::SubstrateGatewayProtocol;
+use sp_runtime::DispatchResult;
 
 pub struct CircuitVersatileWasmEnv<
     'a,
@@ -140,45 +141,49 @@ where
 {
     type T = T;
 
-    fn get_storage(&mut self, key: &StorageKey) -> Option<Vec<u8>> {
+    fn get_storage(&mut self, key: &StorageKey) -> Result<Option<Vec<u8>>, DispatchError> {
         // Could use a macro to:
         // 1. access gateway_inbound_protocol
         // 2. store outbound message in constructed_outbound_messages stack
         // 3. return result using output_mode
         let outbound_message = self
             .gateway_inbound_protocol
-            .get_storage(*key, self.gateway_pointer.gateway_type.clone());
+            .get_storage(*key, self.gateway_pointer.gateway_type.clone())?;
 
         self.constructed_outbound_messages
             .push(outbound_message.clone());
 
-        self.output_mode
+        Ok(self
+            .output_mode
             .return_output(outbound_message, self.constructed_outbound_messages)
+            .into())
     }
 
-    fn set_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>) {
+    fn set_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>) -> DispatchResult {
         let outbound_message = self.gateway_inbound_protocol.set_storage(
             key,
             value,
             self.gateway_pointer.gateway_type.clone(),
-        );
+        )?;
 
         self.constructed_outbound_messages
             .push(outbound_message.clone());
 
         self.output_mode
             .return_output(outbound_message, self.constructed_outbound_messages);
+        Ok(())
     }
 
     fn get_raw_storage(&self, key: &StorageKey) -> Option<Vec<u8>> {
         unhashed::get_raw(key)
     }
 
-    fn set_raw_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>) {
-        match value {
+    fn set_raw_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>) -> DispatchResult {
+        Ok(match value {
             Some(new_value) => unhashed::put_raw(&key, &new_value[..]),
             None => unhashed::kill(&key),
         }
+        .into())
     }
 
     fn get_child_storage(&self, child: ChildInfo, key: &StorageKey) -> Option<Vec<u8>> {
@@ -205,7 +210,7 @@ where
             <T as CircuitTrait>::ToStandardizedGatewayBalance::convert(value).encode(),
             self.inner_exec_transfers,
             self.gateway_pointer.gateway_type.clone(),
-        );
+        )?;
 
         self.constructed_outbound_messages
             .push(outbound_message.clone());
@@ -233,7 +238,7 @@ where
             <T as CircuitTrait>::ToStandardizedGatewayBalance::convert(value).into(),
             gas_meter.gas_left(),
             self.gateway_pointer.gateway_type.clone(),
-        );
+        )?;
 
         self.constructed_outbound_messages
             .push(outbound_message.clone());
