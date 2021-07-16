@@ -29,7 +29,7 @@ jobs:
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2021-07-05
+          toolchain: nightly
           profile: minimal
           components: rustfmt
           override: true
@@ -76,7 +76,7 @@ jobs:
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2021-07-05
+          toolchain: nightly
           target: wasm32-unknown-unknown
           components: clippy
           override: true
@@ -132,7 +132,7 @@ jobs:
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2021-07-05
+          toolchain: nightly
           target: wasm32-unknown-unknown
           override: true
 
@@ -181,7 +181,7 @@ jobs:
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2021-07-05
+          toolchain: nightly
           target: wasm32-unknown-unknown
           override: true
 
