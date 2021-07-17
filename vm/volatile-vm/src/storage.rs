@@ -34,7 +34,7 @@ use sp_std::{fmt::Debug, marker::PhantomData};
 
 use frame_support::{
     dispatch::{DispatchError, DispatchResult},
-    storage::child::{self, ChildInfo, KillStorageResult},
+    storage::child::{self, ChildInfo, KillChildStorageResult},
     traits::Get,
     weights::Weight,
 };
@@ -337,14 +337,14 @@ where
                 let removed = queue.swap_remove(0);
                 match outcome {
                     // This should not happen as our budget was large enough to remove all keys.
-                    KillStorageResult::SomeRemaining(_) => {
+                    KillChildStorageResult::SomeRemaining(_) => {
                         log::error!(
                             target: "runtime::contracts",
                             "After deletion keys are remaining in this child trie: {:?}",
                             removed.trie_id,
                         );
                     }
-                    KillStorageResult::AllRemoved(_) => (),
+                    KillChildStorageResult::AllRemoved(_) => (),
                 }
             }
             remaining_key_budget =

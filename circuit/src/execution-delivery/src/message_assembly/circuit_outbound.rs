@@ -1,13 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
-
 use crate::pallet::Config;
 
 use bp_messages::LaneId;
 #[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
-
 use sp_std::vec;
 use sp_std::vec::*;
 

@@ -221,9 +221,6 @@ define_env!(Env, <E: ExtStandards>,
         output_ptr: u32,
         output_len_ptr: u32
     ) -> ReturnCode => {
-        if value_len != ctx.gateway_abi_config.value_type_size as u32 || callee_len != ctx.gateway_abi_config.address_length as u32 {
-            return Err(sp_sandbox::HostError);
-        }
         // [0, 32> bytes of input reserved for a module name.
         let module_name = try_read_mem_as_utf8(ctx, input_data_ptr, 32)?;
         // [32, 64> bytes of input reserved for a module name. 64 bytes reserved in total in input.
@@ -267,10 +264,6 @@ define_env!(Env, <E: ExtStandards>,
     },
     seal_transfer (ctx, account_ptr: u32, account_len: u32, value_ptr: u32, value_len: u32) -> ReturnCode => {
 
-        if value_len != ctx.gateway_abi_config.value_type_size as u32 || account_len != ctx.gateway_abi_config.address_length as u32 {
-            return Err(sp_sandbox::HostError);
-        }
-
         let callee: <E::T as SystemTrait>::AccountId = read_sandbox_memory_as(ctx, account_ptr, account_len)?;
         let value: EscrowBalanceOf::<E::T> = read_sandbox_memory_as(ctx, value_ptr, value_len)?;
         match ctx.ext.transfer(
@@ -303,7 +296,7 @@ define_env!(Env, <E: ExtStandards>,
     seal_get_storage (ctx, key_ptr: u32, out_ptr: u32, out_len_ptr: u32) -> ReturnCode => {
         let mut key: StorageKey = [0; 32];
         read_sandbox_memory_into_buf(ctx, key_ptr, &mut key)?;
-        if let Some(value) = ctx.ext.get_storage(&key) {
+        if let Some(value) = ctx.ext.get_storage(&key).map_err(|_| sp_sandbox::HostError)? {
             write_sandbox_output(ctx, out_ptr, out_len_ptr, &value, false)?;
             Ok(ReturnCode::Success)
         } else {
@@ -319,7 +312,7 @@ define_env!(Env, <E: ExtStandards>,
         read_sandbox_memory_into_buf(ctx, key_ptr, &mut key)?;
         let value = Some(read_sandbox_memory(ctx, value_ptr, value_len)?);
 
-        ctx.ext.set_storage(key, value);
+        ctx.ext.set_storage(key, value).map_err(|_| sp_sandbox::HostError)?;
 
         Ok(())
     },
@@ -342,7 +335,7 @@ define_env!(Env, <E: ExtStandards>,
         read_sandbox_memory_into_buf(ctx, key_ptr, &mut key)?;
         let value = Some(read_sandbox_memory(ctx, value_ptr, value_len)?);
 
-        ctx.ext.set_raw_storage(key, value);
+        ctx.ext.set_raw_storage(key, value).map_err(|_| sp_sandbox::HostError)?;
 
         Ok(())
     },

@@ -3,7 +3,7 @@
 // Copyright (C) 2020-2021 Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
-// Licensed under the Apache License, Version 2.0 (the "License");
+// Licensed under the Apache License, Version 2.0 (the "License")
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -43,30 +43,30 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use frame_support::{ensure, Blake2_128Concat};
+use frame_support::dispatch::DispatchResultWithPostInfo;
+use frame_support::ensure;
 use frame_system::offchain::{SignedPayload, SigningTypes};
-
-use sp_core::crypto::{KeyTypeId, UncheckedFrom};
-
+use hex_literal::hex;
+use sp_application_crypto::Public;
+use sp_core::crypto::KeyTypeId;
 use sp_runtime::{
     traits::{Convert, Hash, Zero},
-    RuntimeDebug,
+    RuntimeAppPublic, RuntimeDebug,
 };
 
+use crate::exec_composer::ExecComposer;
 pub use crate::message_assembly::circuit_inbound::StepConfirmation;
 use crate::message_assembly::merklize::*;
 
-use hex_literal::hex;
-use sp_application_crypto::Public;
 use sp_std::vec;
 use sp_std::vec::*;
+use versatile_wasm::VersatileWasm;
+use volatile_vm::VolatileVM;
 
+pub use pallet::*;
 use t3rn_primitives::abi::{GatewayABIConfig, HasherAlgo as HA};
 use t3rn_primitives::transfers::BalanceOf;
 use t3rn_primitives::*;
-
-use versatile_wasm::VersatileWasm;
-use volatile_vm::VolatileVM;
 
 #[cfg(test)]
 mod tests;
@@ -74,16 +74,12 @@ mod tests;
 pub mod exec_composer;
 pub mod message_assembly;
 
-use crate::exec_composer::ExecComposer;
-
 pub type CurrentHash<T, I> =
     <<T as pallet_multi_finality_verifier::Config<I>>::BridgedChain as bp_runtime::Chain>::Hash;
 pub type CurrentHasher<T, I> =
     <<T as pallet_multi_finality_verifier::Config<I>>::BridgedChain as bp_runtime::Chain>::Hasher;
 pub type CurrentHeader<T, I> =
     <<T as pallet_multi_finality_verifier::Config<I>>::BridgedChain as bp_runtime::Chain>::Header;
-
-use frame_support::dispatch::DispatchResultWithPostInfo;
 
 type DefaultPolkadotLikeGateway = ();
 type PolkadotLikeValU64Gateway = pallet_multi_finality_verifier::Instance1;
@@ -148,18 +144,20 @@ pub fn get_roots_from_bridge<T: pallet_multi_finality_verifier::Config<I>, I: 's
 /// When offchain worker is signing transactions it's going to request keys of type
 /// `KeyTypeId` from the keystore and use the ones it finds to sign the transaction.
 /// The keys can be inserted manually via RPC (see `author_insertKey`).
-pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"btc!");
+pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"circ");
 
 /// Based on the above `KeyTypeId` we need to generate a pallet-specific crypto type wrappers.
 /// We can use from supported crypto kinds (`sr25519`, `ed25519` and `ecdsa`) and augment
 /// the types with this pallet-specific identifier.
 pub mod crypto {
-    use super::KEY_TYPE;
     use sp_core::sr25519::Signature as Sr25519Signature;
     use sp_runtime::{
         app_crypto::{app_crypto, sr25519},
         traits::Verify,
     };
+
+    use super::KEY_TYPE;
+
     app_crypto!(sr25519, KEY_TYPE);
 
     pub struct TestAuthId;
@@ -167,12 +165,10 @@ pub mod crypto {
         for TestAuthId
     {
         type RuntimeAppPublic = Public;
-        type GenericSignature = sp_core::sr25519::Signature;
         type GenericPublic = sp_core::sr25519::Public;
+        type GenericSignature = sp_core::sr25519::Signature;
     }
 }
-
-pub use pallet::*;
 
 pub fn select_validator_for_x_tx_dummy<T: Config>(
     _io_schedule: Vec<u8>,
@@ -188,6 +184,8 @@ pub fn select_validator_for_x_tx_dummy<T: Config>(
 }
 
 pub type XtxId<T> = <T as frame_system::Config>::Hash;
+
+pub type AuthorityId = crate::message_assembly::signer::app::Public;
 
 /// A composable cross-chain (X) transaction that has already been verified to be valid and submittable
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
@@ -252,7 +250,6 @@ pub struct StepEntry<AccountId, BlockNumber, Hash> {
 ///     vector of phases, where
 ///         phase: vector of rounds, where
 ///             round: vector of steps
-
 pub type RoundEntry<AccountId, BlockNumber, Hash> = Vec<StepEntry<AccountId, BlockNumber, Hash>>;
 
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
@@ -317,9 +314,10 @@ impl<AccountId: Encode, BlockNumber: Ord + Copy + Zero + Encode, Hash: Ord + Cop
 
 #[frame_support::pallet]
 pub mod pallet {
-    use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
+
+    use super::*;
 
     /// Current Circuit's context of active transactions
     ///
@@ -346,7 +344,6 @@ pub mod pallet {
         + VersatileWasm
         + VolatileVM
         + pallet_contracts_registry::Config
-        + pallet_im_online::Config
         + pallet_xdns::Config
         + pallet_contracts::Config
         + pallet_evm::Config
@@ -575,7 +572,6 @@ pub mod pallet {
 
                 Err(Error::<T>::StepConfirmationInvalidInclusionProof.into())
             } else {
-                // xdns::update_cost
                 Ok(().into())
             }
         }
@@ -628,6 +624,8 @@ impl<T: Config> Pallet<T> {
         "hello"
     }
 
+    /// Receives a list of available components and an io schedule in text format
+    /// and parses it to create an execution schedule
     pub fn decompose_io_schedule(
         _components: Vec<Compose<T::AccountId, u64>>,
         _io_schedule: Vec<u8>,
@@ -797,12 +795,25 @@ impl<T: Config> Pallet<T> {
         Ok(current_round_messages)
     }
 
+    pub fn select_authority(escrow_account: T::AccountId) -> Result<AuthorityId, &'static str> {
+        let local_keys = AuthorityId::all();
+
+        let auth = AuthorityId::from_slice(escrow_account.encode().as_slice());
+
+        let submitter = local_keys
+            .binary_search(&auth)
+            .ok()
+            .map(|location| local_keys[location].clone())
+            .ok_or("Can't match authority for given account")?;
+
+        Ok(submitter)
+    }
+
     pub fn process_step(
         step: StepEntry<T::AccountId, T::BlockNumber, T::Hash>,
         escrow_account: T::AccountId,
         requester: T::AccountId,
     ) -> Result<Vec<CircuitOutboundMessage>, &'static str> {
-        use sp_runtime::RuntimeAppPublic;
         let contract =
             pallet_contracts_registry::Pallet::<T>::contracts_registry(step.compose_id.clone())
                 .expect(
@@ -815,11 +826,7 @@ impl<T: Config> Pallet<T> {
                 .map_err(|_e| "Can't cast value in dry_run_single_contract")?,
         );
 
-        let local_keys = T::AuthorityId::all();
-
-        // ToDo: Select validators to submit by his public key, like:
-        // let submitter = local_keys.binary_search(&escrow_account.into()).ok().map(|location| local_keys[location].clone()).ok_or("Can't match")?;
-        let submitter = local_keys[0].clone();
+        let submitter = Self::select_authority(escrow_account.clone())?;
 
         let gateway_xdns_record = pallet_xdns::Pallet::<T>::xdns_registry(step.gateway_entry_id)
             .ok_or(Error::<T>::ProcessStepGatewayNotRecognised)?;

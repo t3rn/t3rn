@@ -53,6 +53,19 @@ Once a transaction is applied on a blockchians it's non-reversible, which consti
 Designing interoperable solutions is complex and requires developers and users to operate on multiple blockchains, possibly creating multiple different accounts, acquiring multiple currencies, providing a way for different blockchains to communicate. t3rn brings that complexity down and offers services and packages that facilitate interoperable execution securely.
 
 
+### Repository setup
+Follow the steps below if you're interested building and running the Circuit on your local machine:
+
+```bash
+git clone https://github.com/t3rn/t3rn
+git checkout origin/development
+git submodule init
+git submodule update
+cd circuit
+cargo build --release
+bash run-circuit.sh
+```
+
 ## Development Roadmap 
 #### Phase 1: [Standalone Gateways & Contracts Compilation SDK](./roadmap/initial_development_phase.md)
 #### Phase 2: Live Circuit Prototype

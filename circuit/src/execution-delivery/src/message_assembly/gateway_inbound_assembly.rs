@@ -2,15 +2,7 @@
 
 use sp_std::vec::*;
 
-use codec::{Decode, Encode};
-use t3rn_primitives::UncheckedExtrinsicV4;
-
-#[derive(Clone, Encode, Decode, PartialEq, Eq)]
-pub struct SignedBytes {
-    pub signature: Vec<u8>,
-    pub extra: Option<Vec<u8>>,
-    pub payload: Vec<u8>,
-}
+use crate::message_assembly::signer::app::UncheckedExtrinsicV4;
 
 pub trait GatewayInboundAssembly {
     fn assemble_signed_call(
@@ -21,7 +13,7 @@ pub trait GatewayInboundAssembly {
         to: [u8; 32],
         value: u128,
         gas: u64,
-    ) -> UncheckedExtrinsicV4<Vec<u8>>;
+    ) -> Result<UncheckedExtrinsicV4<Vec<u8>>, &'static str>;
     fn assemble_call(
         &self,
         module_name: &'static str,
@@ -30,10 +22,10 @@ pub trait GatewayInboundAssembly {
         to: [u8; 32],
         value: u128,
         gas: u64,
-    ) -> Vec<u8>;
+    ) -> Result<Vec<u8>, &'static str>;
     fn assemble_signed_tx_offline(
         &self,
         call_bytes: Vec<u8>,
         nonce: u32,
-    ) -> UncheckedExtrinsicV4<Vec<u8>>;
+    ) -> Result<UncheckedExtrinsicV4<Vec<u8>>, &'static str>;
 }

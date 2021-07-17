@@ -452,7 +452,7 @@ pub trait ExposedExt<'a, T: Config, E> {
         value: BalanceOf<T>,
     ) -> Result<CircuitOutboundMessage, &'static str>;
 
-    fn get_storage(&mut self, key: StorageKey) -> CircuitOutboundMessage;
+    fn get_storage(&mut self, key: StorageKey) -> Result<CircuitOutboundMessage, &'static str>;
 
     fn set_storage(
         &mut self,
@@ -499,7 +499,7 @@ impl<'a, T: Config, E> ExposedExt<'a, T, E> for StackExtension<'a, T, E> {
         }
     }
 
-    fn get_storage(&mut self, key: StorageKey) -> CircuitOutboundMessage {
+    fn get_storage(&mut self, key: StorageKey) -> Result<CircuitOutboundMessage, &'static str> {
         self.gateway_inbound_protocol
             .get_storage(key.encode(), self.gateway_pointer.gateway_type.clone())
     }
@@ -509,11 +509,11 @@ impl<'a, T: Config, E> ExposedExt<'a, T, E> for StackExtension<'a, T, E> {
         key: StorageKey,
         value: Option<Vec<u8>>,
     ) -> Result<CircuitOutboundMessage, &'static str> {
-        Ok(self.gateway_inbound_protocol.set_storage(
+        self.gateway_inbound_protocol.set_storage(
             key.encode(),
             value,
             self.gateway_pointer.gateway_type.clone(),
-        ))
+        )
     }
 
     fn call(
@@ -588,7 +588,7 @@ impl<'a, T: Config, E> ExposedExt<'a, T, E> for StackExtension<'a, T, E> {
             maybe_succ_res,
         );
 
-        Ok(outbound_message)
+        outbound_message
     }
 
     fn transfer(
@@ -618,7 +618,7 @@ impl<'a, T: Config, E> ExposedExt<'a, T, E> for StackExtension<'a, T, E> {
             self.gateway_pointer.gateway_type.clone(),
         );
 
-        Ok(outbound_message)
+        outbound_message
     }
 
     fn get_escrow_account(&self) -> T::AccountId {
@@ -1464,7 +1464,11 @@ where
     }
 
     fn get_storage(&mut self, key: &StorageKey) -> Option<Vec<u8>> {
-        let new_msg = self.extension.get_storage(*key);
+        let new_msg = match self.extension.get_storage(*key) {
+            Ok(msg) => msg,
+            Err(_err_str) => return Default::default(),
+        };
+
         self.extension.add_message(new_msg);
 
         Storage::<T>::read(&self.top_frame_mut().contract_info().trie_id, key)

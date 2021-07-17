@@ -24,6 +24,7 @@ pub mod versatile_vm_impl;
 pub mod volatile_vm_impl;
 
 use crate::exec_composer::versatile_vm_impl::*;
+use crate::AuthorityId;
 
 use volatile_vm::wasm::RunMode;
 
@@ -33,7 +34,7 @@ impl ExecComposer {
     pub fn pre_run_single_contract<T: crate::Config>(
         contract: RegistryContract<T::AccountId>,
         escrow_account: T::AccountId,
-        submitter: T::AuthorityId,
+        submitter: AuthorityId,
         _requester: T::AccountId,
         target_dest: T::AccountId,
         value: BalanceOf<T>,
@@ -79,17 +80,17 @@ impl ExecComposer {
 
     pub fn post_run_single_contract<T: crate::Config>(
         contract: RegistryContract<T::AccountId>,
-        escrow_account: T::AccountId,
-        submitter: T::AuthorityId,
-        requester: T::AccountId,
+        _escrow_account: T::AccountId,
+        _submitter: AuthorityId,
+        _requester: T::AccountId,
         target_dest: T::AccountId,
         value: BalanceOf<T>,
         input: Vec<u8>,
         gateway_id: bp_runtime::ChainId,
-        gateway_abi_config: GatewayABIConfig,
+        _gateway_abi_config: GatewayABIConfig,
         _confirmed_outputs: Vec<u8>,
     ) -> Result<Vec<CircuitOutboundMessage>, &'static str> {
-        let output_mode = StuffedOutputMode::new();
+        let _output_mode = StuffedOutputMode::new();
 
         let (name, code_txt, gateway_id, exec_type, dest, value, bytes, input_data) = (
             vec![],
@@ -101,7 +102,7 @@ impl ExecComposer {
             contract.bytes,
             input,
         );
-        let compose = Compose {
+        let _compose = Compose {
             name,
             code_txt,
             gateway_id,
@@ -120,7 +121,7 @@ impl ExecComposer {
     pub fn dry_run_single_contract<T: crate::Config>(
         compose: Compose<T::AccountId, BalanceOf<T>>,
         escrow_account: T::AccountId,
-        submitter: T::AuthorityId,
+        submitter: AuthorityId,
         gateway_id: bp_runtime::ChainId,
         gateway_abi_config: GatewayABIConfig,
     ) -> Result<Vec<CircuitOutboundMessage>, &'static str> {
@@ -140,26 +141,26 @@ impl ExecComposer {
 
     pub fn run_single_contract<T: crate::Config, OM: WasmEnvOutputMode>(
         compose: Compose<T::AccountId, BalanceOf<T>>,
-        escrow_account: T::AccountId,
-        submitter: T::AuthorityId,
+        _escrow_account: T::AccountId,
+        submitter: AuthorityId,
         requester: T::AccountId,
         gateway_id: bp_runtime::ChainId,
-        gateway_abi_config: GatewayABIConfig,
-        output_mode: OM,
+        _gateway_abi_config: GatewayABIConfig,
+        _output_mode: OM,
     ) -> Result<Vec<CircuitOutboundMessage>, &'static str> {
         let gateway_pointer = Self::retrieve_gateway_pointer(gateway_id)?;
-        let gateway_protocol =
+        let _gateway_protocol =
             Self::retrieve_gateway_protocol::<T>(submitter, gateway_pointer.clone())?;
 
         let (
-            block_number,
-            timestamp,
-            contract_trie_id,
-            input_data,
+            _block_number,
+            _timestamp,
+            _contract_trie_id,
+            _input_data,
             code,
-            value,
+            _value,
             gas_limit,
-            target_account,
+            _target_account,
         ) = (
             <frame_system::Pallet<T>>::block_number(),
             <T as EscrowTrait>::Time::now(),
@@ -176,19 +177,19 @@ impl ExecComposer {
             compose.dest,
         );
 
-        let mut deferred_transfers = Vec::<TransferEntry>::new();
-        let mut constructed_outbound_messages = Vec::<CircuitOutboundMessage>::new();
+        let _deferred_transfers = Vec::<TransferEntry>::new();
+        let constructed_outbound_messages = Vec::<CircuitOutboundMessage>::new();
 
-        let trace_stack = true;
+        let _trace_stack = true;
         use frame_support::traits::Get;
-        use volatile_vm::exec::{FrameArgs, Stack};
+        use volatile_vm::exec::Stack;
         use volatile_vm::gas::GasMeter as VVMGasMeter;
         use volatile_vm::wasm::PrefabWasmModule;
         use volatile_vm::VolatileVM;
 
-        let mut gas_meter = &mut VVMGasMeter::<T>::new(gas_limit);
-        let mut deferred_storage_writes = Vec::<DeferredStorageWrite>::new();
-        let mut call_stamps = Vec::<CallStamp>::new();
+        let _gas_meter = &mut VVMGasMeter::<T>::new(gas_limit);
+        let _deferred_storage_writes = Vec::<DeferredStorageWrite>::new();
+        let _call_stamps = Vec::<CallStamp>::new();
 
         let schedule = <T as VolatileVM>::Schedule::get();
 
@@ -196,35 +197,37 @@ impl ExecComposer {
         // use versatile_wasm::PrefabWasmModule;
 
         // ToDo: Change to submitter
-        let origin = requester.clone();
-        let dest = requester.clone();
+        let _origin = requester.clone();
+        let _dest = requester.clone();
         // let mut _stack = Stack::<T>::new(
         //     origin, dest, &mut gas_meter, &schedule, value, data, None,
         // );
 
         // ToDo: Frame value equal to requested args
-        let value = <T as EscrowTrait>::Currency::minimum_balance();
-        let debug_message = None;
-        let trie_seed = Stack::<T, PrefabWasmModule<T>>::initial_trie_seed();
+        let _value = <T as EscrowTrait>::Currency::minimum_balance();
+        // let debug_message = None;
+        let _trie_seed = Stack::<T, PrefabWasmModule<T>>::initial_trie_seed();
 
-        // Utilise Rust specialisation
-        let env_circuit_run = CircuitVersatileWasmEnv::<T, OM>::new(
-            &escrow_account,
-            &requester.clone(),
-            block_number,
-            timestamp,
-            contract_trie_id,
-            Some(input_data),
-            &mut deferred_transfers,
-            &mut constructed_outbound_messages,
-            gateway_protocol,
-            gateway_pointer,
-            output_mode,
-        );
+        // // Utilise Rust specialisation
+        // ToDo: Initialize VolatileEnv instead
+        // let env_circuit_run = CircuitVersatileWasmEnv::<T, OM>::new(
+        //     &escrow_account,
+        //     &requester.clone(),
+        //     block_number,
+        //     timestamp,
+        //     contract_trie_id,
+        //     Some(input_data),
+        //     &mut deferred_transfers,
+        //     &mut constructed_outbound_messages,
+        //     gateway_protocol,
+        //     gateway_pointer,
+        //     output_mode,
+        // );
 
         /// Here could also access and pre-load code to lazy storage of VVM
         let executable =
-            PrefabWasmModule::<T>::from_code(code, &schedule, OM::get_run_mode()).unwrap();
+            PrefabWasmModule::<T>::from_code(code, &schedule, OM::get_run_mode(), Some(gateway_id))
+                .unwrap();
 
         /// For now finish dry run here - if the code passing static analysis in the previous step,
         /// add it to the candidates queue if new.
@@ -233,18 +236,19 @@ impl ExecComposer {
             return Ok(vec![]);
         }
 
-        let (mut stack, executable) = Stack::<T, PrefabWasmModule<T>>::new(
-            FrameArgs::Call {
-                dest: requester.clone(),
-                cached_info: None,
-            },
-            origin,
-            gas_meter,
-            &schedule,
-            value,
-            debug_message,
-        )
-        .map_err(|e| "Can't create VVM call stack")?;
+        // let (mut stack, executable) = Stack::<T, PrefabWasmModule<T>>::new(
+        //     FrameArgs::Call {
+        //         dest: requester.clone(),
+        //         cached_info: None,
+        //     },
+        //     origin,
+        //     gas_meter,
+        //     &schedule,
+        //     value,
+        //     debug_message,
+        //     // stack_extension - move ext implementation to impl_volatile_vm
+        // )
+        // .map_err(|e| "Can't create VVM call stack")?;
 
         // let account_id = stack.top_frame().account_id.clone();
         // stack
@@ -283,14 +287,15 @@ impl ExecComposer {
         })
     }
 
+    /// Given a Gateway Pointer and an Authority, it returns the respective Gateway Protocol
     fn retrieve_gateway_protocol<T: crate::Config>(
-        submitter_id: T::AuthorityId,
+        submitter_id: AuthorityId,
         _gateway_pointer: GatewayPointer,
     ) -> Result<Box<dyn GatewayInboundProtocol>, &'static str> {
         // ToDo: Communicate with pallet_xdns in order to retrieve latest data about
         // let (metadata, runtime_version, genesis_hash) = pallet_xdns::Pallet<T>::get_gateway_protocol_meta(gateway_pointer.id)
         Ok(Box::new(SubstrateGatewayProtocol::<
-            T::AuthorityId,
+            AuthorityId,
             bp_polkadot_core::Hash,
         >::new(
             Default::default(),

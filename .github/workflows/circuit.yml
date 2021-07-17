@@ -88,7 +88,7 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            target
+            circuit/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('circuit/Cargo.lock') }}
 
       - name: 📑 Lint code
@@ -124,7 +124,7 @@ jobs:
       - name: 🔨 Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v1
         with:
-          version: "11.0"
+          version: "12.0"
           ubuntu-version: "20.04"
           directory: ${{ runner.temp }}/llvm
           cached: ${{ steps.cache-llvm.outputs.cache-hit }}
@@ -143,7 +143,7 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            target
+            circuit/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('circuit/Cargo.lock') }}
 
       - name: 🏭 Check circuit
@@ -173,7 +173,7 @@ jobs:
       - name: 🔨 Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v1
         with:
-          version: "11.0"
+          version: "12.0"
           ubuntu-version: "20.04"
           directory: ${{ runner.temp }}/llvm
           cached: ${{ steps.cache-llvm.outputs.cache-hit }}
@@ -192,7 +192,7 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            target
+            circuit/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('circuit/Cargo.lock') }}
 
       - name: 📼 Run unit tests
@@ -203,6 +203,6 @@ jobs:
           args: |
             --workspace
             --exclude circuit-rpc
-            --exclude circuit-rpc-runtime-api 
+            --exclude circuit-rpc-runtime-api
             --locked
             --manifest-path circuit/Cargo.toml

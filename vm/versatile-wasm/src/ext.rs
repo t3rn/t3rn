@@ -56,11 +56,11 @@ where
 {
     type T = T;
 
-    fn get_storage(&mut self, key: &StorageKey) -> Option<Vec<u8>> {
-        self.standard_env.get_storage(key)
+    fn get_storage(&mut self, key: &StorageKey) -> Result<Option<Vec<u8>>, DispatchError> {
+        self.standard_env.get_storage(key).into()
     }
 
-    fn set_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>) {
+    fn set_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>) -> DispatchResult {
         self.standard_env.set_storage(key, value)
     }
 
@@ -68,7 +68,7 @@ where
         self.standard_env.get_raw_storage(key)
     }
 
-    fn set_raw_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>) {
+    fn set_raw_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>) -> DispatchResult {
         self.standard_env.set_storage(key, value)
     }
 
@@ -113,23 +113,28 @@ where
 {
     type T = T;
 
-    fn get_storage(&mut self, key: &StorageKey) -> Option<Vec<u8>> {
-        self.get_child_storage(self.storage_trie_id.clone(), key)
+    fn get_storage(&mut self, key: &StorageKey) -> Result<Option<Vec<u8>>, DispatchError> {
+        Ok(self
+            .get_child_storage(self.storage_trie_id.clone(), key)
+            .into())
     }
 
-    fn set_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>) {
-        self.set_child_storage(self.storage_trie_id.clone(), key, value)
+    fn set_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>) -> DispatchResult {
+        Ok(self
+            .set_child_storage(self.storage_trie_id.clone(), key, value)
+            .into())
     }
 
     fn get_raw_storage(&self, key: &StorageKey) -> Option<Vec<u8>> {
         unhashed::get_raw(key)
     }
 
-    fn set_raw_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>) {
-        match value {
+    fn set_raw_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>) -> DispatchResult {
+        Ok(match value {
             Some(new_value) => unhashed::put_raw(&key, &new_value[..]),
             None => unhashed::kill(&key),
         }
+        .into())
     }
 
     fn get_child_storage(&self, child: ChildInfo, key: &StorageKey) -> Option<Vec<u8>> {
@@ -200,12 +205,12 @@ pub trait ExtStandards {
     ///
     /// Returns `None` if the `key` wasn't previously set by `set_storage` or
     /// was deleted.
-    fn get_storage(&mut self, key: &StorageKey) -> Option<Vec<u8>>;
+    fn get_storage(&mut self, key: &StorageKey) -> Result<Option<Vec<u8>>, DispatchError>;
 
     /// Sets the storage entry by the given key to the specified value. If `value` is `None` then
     ///
     /// the storage entry is deleted.
-    fn set_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>);
+    fn set_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>) -> DispatchResult;
 
     /// Returns the raw storage entry of the executing account by the given `key`.
     /// By default implemented to access unhashed storage - commonly used by parachains storage.
@@ -216,7 +221,7 @@ pub trait ExtStandards {
     /// Sets the storage entry by the given key to the specified value. If `value` is `None` then
     /// By default implemented to access unhashed storage - commonly used by parachains storage.
     /// the storage entry is deleted.
-    fn set_raw_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>);
+    fn set_raw_storage(&mut self, key: StorageKey, value: Option<Vec<u8>>) -> DispatchResult;
 
     /// Returns the storage entry of the executing account by the given `key` and given `child` root.
     ///
