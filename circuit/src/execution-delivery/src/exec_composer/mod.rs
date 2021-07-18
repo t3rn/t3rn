@@ -20,10 +20,9 @@ use t3rn_primitives::{GatewayInboundProtocol, GatewayPointer, GatewayType, Gatew
 
 use versatile_wasm::runtime::{CallStamp, DeferredStorageWrite};
 
-pub mod versatile_vm_impl;
 pub mod volatile_vm_impl;
 
-use crate::exec_composer::versatile_vm_impl::*;
+use crate::exec_composer::volatile_vm_impl::*;
 use crate::AuthorityId;
 
 use volatile_vm::wasm::RunMode;
