@@ -23,8 +23,6 @@ pub enum CircuitOutbound<T: Config> {
     },
 }
 
-type Bytes = Vec<u8>;
-
 pub trait CircuitOutboundProtocol {}
 
 impl<T: Config> CircuitOutbound<T> {

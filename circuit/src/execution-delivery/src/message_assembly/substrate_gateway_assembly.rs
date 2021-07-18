@@ -59,7 +59,7 @@ where
         to: [u8; 32],
         value: u128,
         gas: u64,
-    ) -> Result<UncheckedExtrinsicV4<sp_application_crypto::Vec<u8>>, &'static str> {
+    ) -> Result<UncheckedExtrinsicV4<sp_std::vec::Vec<u8>>, &'static str> {
         let call = self.assemble_call(module_name, fn_name, data, to, value, gas);
 
         ensure!(call.is_ok(), "Could not assemble call");
@@ -100,7 +100,7 @@ where
         &self,
         call_bytes: Vec<u8>,
         nonce: u32,
-    ) -> Result<UncheckedExtrinsicV4<sp_application_crypto::Vec<u8>>, &'static str> {
+    ) -> Result<UncheckedExtrinsicV4<sp_std::vec::Vec<u8>>, &'static str> {
         let extra = GenericExtra::new(sp_runtime::generic::Era::Immortal, nonce);
 
         let raw_payload = SignedPayload::from_raw(

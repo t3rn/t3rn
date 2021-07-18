@@ -60,7 +60,6 @@ use crate::message_assembly::merklize::*;
 
 use sp_std::vec;
 use sp_std::vec::*;
-use versatile_wasm::VersatileWasm;
 use volatile_vm::VolatileVM;
 
 pub use pallet::*;
@@ -341,7 +340,6 @@ pub mod pallet {
         frame_system::Config
         + pallet_bridge_messages::Config
         + pallet_balances::Config
-        + VersatileWasm
         + VolatileVM
         + pallet_contracts_registry::Config
         + pallet_xdns::Config

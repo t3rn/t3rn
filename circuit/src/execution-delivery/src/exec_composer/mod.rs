@@ -224,13 +224,13 @@ impl ExecComposer {
         //     output_mode,
         // );
 
-        /// Here could also access and pre-load code to lazy storage of VVM
+        // Here could also access and pre-load code to lazy storage of VVM
         let executable =
             PrefabWasmModule::<T>::from_code(code, &schedule, OM::get_run_mode(), Some(gateway_id))
                 .unwrap();
 
-        /// For now finish dry run here - if the code passing static analysis in the previous step,
-        /// add it to the candidates queue if new.
+        // For now finish dry run here - if the code passing static analysis in the previous step,
+        // add it to the candidates queue if new.
         if OM::get_run_mode() == RunMode::Dry {
             <volatile_vm::Pallet<T>>::add_contract_code_lazy(executable.code_hash, executable);
             return Ok(vec![]);
