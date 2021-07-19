@@ -406,17 +406,13 @@ pub struct Stack<'a, T: Config, E> {
     /// All the bytes added to this field should be valid UTF-8. The buffer has no defined
     /// structure and is intended to be shown to users as-is for debugging purposes.
     pub debug_message: Option<&'a mut Vec<u8>>,
+    //// Stack extension that can be implemented elsewhere.
+    pub extension: &'a mut StackExtension<'a, T>,
     /// No executable is held by the struct but influences its behaviour.
     _phantom: PhantomData<E>,
-
-    // pub extension: StackExtension<'a, T>,
-    pub extension: Box<dyn ExposedExt<'a, T, E>>,
-    // pub output_mode: OM,
 }
 
-pub struct StackExtension<'a, T: Config, E> {
-    pub orig_stack: &'a mut Stack<'a, T, E>,
-
+pub struct StackExtension<'a, T: Config> {
     pub escrow_account: T::AccountId,
 
     pub requester: T::AccountId,
@@ -435,10 +431,9 @@ pub struct StackExtension<'a, T: Config, E> {
     pub gateway_abi: GatewayABIConfig,
 }
 
-pub trait ExposedExt<'a, T: Config, E> {
+pub trait ExposedExt<'a, T: Config> {
     fn call(
         &self,
-        orig_stack: &Stack<'a, T, E>,
         gas_limit: Weight,
         to: T::AccountId,
         value: BalanceOf<T>,
@@ -476,49 +471,9 @@ pub trait ExposedExt<'a, T: Config, E> {
     fn get_target_id(&self) -> ChainId;
 }
 
-impl<'a, T: Config, E> ExposedExt<'a, T, E> for StackExtension<'a, T, E> {
-    fn add_message(&mut self, message: CircuitOutboundMessage) {
-        self.constructed_outbound_messages.push(message);
-    }
-
-    fn maybe_round_breakpoint(
-        &mut self,
-        // previous_(before_target)_gateway - know what the previous message adresat (gateway) was to know if possible to batch external messages together now
-        maybe_prev_target_id: Option<ChainId>,
-        // target_gateway - know to which gateway is the message (call) addressed to
-        maybe_new_target_id: Option<ChainId>,
-    ) {
-        match (maybe_prev_target_id, maybe_new_target_id) {
-            (Some(prev_target_id), Some(new_target_id)) => {
-                if prev_target_id != new_target_id {
-                    let current_message_no = self.constructed_outbound_messages.len();
-                    self.round_breakpoints.push(current_message_no as u32);
-                }
-            }
-            (_, _) => {}
-        }
-    }
-
-    fn get_storage(&mut self, key: StorageKey) -> Result<CircuitOutboundMessage, &'static str> {
-        self.gateway_inbound_protocol
-            .get_storage(key.encode(), self.gateway_pointer.gateway_type.clone())
-    }
-
-    fn set_storage(
-        &mut self,
-        key: StorageKey,
-        value: Option<Vec<u8>>,
-    ) -> Result<CircuitOutboundMessage, &'static str> {
-        self.gateway_inbound_protocol.set_storage(
-            key.encode(),
-            value,
-            self.gateway_pointer.gateway_type.clone(),
-        )
-    }
-
+impl<'a, T: Config> ExposedExt<'a, T> for StackExtension<'a, T> {
     fn call(
         &self,
-        _orig_stack: &Stack<'a, T, E>,
         gas_limit: Weight,
         to: T::AccountId,
         value: BalanceOf<T>,
@@ -621,6 +576,45 @@ impl<'a, T: Config, E> ExposedExt<'a, T, E> for StackExtension<'a, T, E> {
         outbound_message
     }
 
+    fn get_storage(&mut self, key: StorageKey) -> Result<CircuitOutboundMessage, &'static str> {
+        self.gateway_inbound_protocol
+            .get_storage(key.encode(), self.gateway_pointer.gateway_type.clone())
+    }
+
+    fn set_storage(
+        &mut self,
+        key: StorageKey,
+        value: Option<Vec<u8>>,
+    ) -> Result<CircuitOutboundMessage, &'static str> {
+        self.gateway_inbound_protocol.set_storage(
+            key.encode(),
+            value,
+            self.gateway_pointer.gateway_type.clone(),
+        )
+    }
+
+    fn add_message(&mut self, message: CircuitOutboundMessage) {
+        self.constructed_outbound_messages.push(message);
+    }
+
+    fn maybe_round_breakpoint(
+        &mut self,
+        // previous_(before_target)_gateway - know what the previous message adresat (gateway) was to know if possible to batch external messages together now
+        maybe_prev_target_id: Option<ChainId>,
+        // target_gateway - know to which gateway is the message (call) addressed to
+        maybe_new_target_id: Option<ChainId>,
+    ) {
+        match (maybe_prev_target_id, maybe_new_target_id) {
+            (Some(prev_target_id), Some(new_target_id)) => {
+                if prev_target_id != new_target_id {
+                    let current_message_no = self.constructed_outbound_messages.len();
+                    self.round_breakpoints.push(current_message_no as u32);
+                }
+            }
+            (_, _) => {}
+        }
+    }
+
     fn get_escrow_account(&self) -> T::AccountId {
         self.escrow_account.clone()
     }
@@ -647,23 +641,23 @@ type ChainId = [u8; 4];
 /// of specifying [`Config::CallStack`].
 pub struct Frame<T: Config> {
     /// The account id of the executing contract.
-    account_id: T::AccountId,
+    pub account_id: T::AccountId,
     /// The cached in-storage data of the contract.
-    contract_info: CachedContract<T>,
+    pub contract_info: CachedContract<T>,
     /// The amount of balance transferred by the caller as part of the call.
-    value_transferred: BalanceOf<T>,
+    pub value_transferred: BalanceOf<T>,
     /// Snapshotted rent information that can be copied to the contract if requested.
     // ToDo: Rent Unsupported
     // rent_params: RentParams<T>,
     /// Determines whether this is a call or instantiate frame.
-    entry_point: ExportedFunction,
+    pub entry_point: ExportedFunction,
     /// The gas meter capped to the supplied gas limit.
-    nested_meter: GasMeter<T>,
+    pub nested_meter: GasMeter<T>,
     /// If `false` the contract enabled its defense against reentrance attacks.
-    allows_reentry: bool,
+    pub allows_reentry: bool,
     /// Know the target chain af this frame in order to be able to break execution if different
     /// If None - treat execution as one of the internal contracts pre-loaded from contracts repository
-    target_id: Option<ChainId>,
+    pub target_id: Option<ChainId>,
 }
 
 /// Parameter passed in when creating a new `Frame`.
@@ -689,7 +683,7 @@ pub enum FrameArgs<'a, T: Config, E> {
 }
 
 /// Describes the different states of a contract as contained in a `Frame`.
-enum CachedContract<T: Config> {
+pub enum CachedContract<T: Config> {
     /// The cached contract is up to date with the in-storage value.
     Cached(AliveContractInfo<T>),
     /// A recursive call into the same contract did write to the contract info.
@@ -798,7 +792,7 @@ where
         value: BalanceOf<T>,
         input_data: Vec<u8>,
         debug_message: Option<&'a mut Vec<u8>>,
-        extension: Box<dyn ExposedExt<'a, T, E>>,
+        extension: &'a mut StackExtension<'a, T>,
     ) -> Result<ExecReturnValue, ExecError> {
         let (mut stack, executable) = Self::new(
             FrameArgs::Call {
@@ -834,7 +828,7 @@ where
         input_data: Vec<u8>,
         salt: &[u8],
         debug_message: Option<&'a mut Vec<u8>>,
-        extension: Box<dyn ExposedExt<'a, T, E>>,
+        extension: &'a mut StackExtension<'a, T>,
     ) -> Result<(T::AccountId, ExecReturnValue), ExecError> {
         let (mut stack, executable) = Self::new(
             FrameArgs::Instantiate {
@@ -864,7 +858,7 @@ where
         schedule: &'a Schedule<T>,
         value: BalanceOf<T>,
         debug_message: Option<&'a mut Vec<u8>>,
-        stack_extension: Box<dyn ExposedExt<'a, T, E>>,
+        stack_extension: &'a mut StackExtension<'a, T>,
     ) -> Result<(Self, E), ExecError> {
         let (first_frame, executable) = Self::new_frame(args, value, gas_meter, 0, &schedule)?;
         let stack = Self {
@@ -1007,7 +1001,11 @@ where
     /// Run the current (top) frame.
     ///
     /// This can be either a call or an instantiate.
-    fn run(&mut self, executable: E, input_data: Vec<u8>) -> Result<ExecReturnValue, ExecError> {
+    pub fn run(
+        &mut self,
+        executable: E,
+        input_data: Vec<u8>,
+    ) -> Result<ExecReturnValue, ExecError> {
         let entry_point = self.top_frame().entry_point;
         let do_transaction = || {
             // Inspect is target is known at contracts registry and can be executed locally
@@ -1163,7 +1161,7 @@ where
     /// is specified as `true`. Otherwise, any transfer that would bring the sender below the
     /// subsistence threshold (for contracts) or the existential deposit (for plain accounts)
     /// results in an error.
-    fn transfer(
+    pub fn transfer(
         sender_is_contract: bool,
         allow_death: bool,
         from: &T::AccountId,
@@ -1221,33 +1219,33 @@ where
     }
 
     /// Reference to the current (top) frame.
-    fn top_frame(&self) -> &Frame<T> {
+    pub fn top_frame(&self) -> &Frame<T> {
         self.frames.last().unwrap_or(&self.first_frame)
     }
 
     /// Mutable reference to the current (top) frame.
-    fn top_frame_mut(&mut self) -> &mut Frame<T> {
+    pub fn top_frame_mut(&mut self) -> &mut Frame<T> {
         self.frames.last_mut().unwrap_or(&mut self.first_frame)
     }
 
     /// Iterator over all frames.
     ///
     /// The iterator starts with the top frame and ends with the root frame.
-    fn frames(&self) -> impl Iterator<Item = &Frame<T>> {
+    pub fn frames(&self) -> impl Iterator<Item = &Frame<T>> {
         sp_std::iter::once(&self.first_frame)
             .chain(&self.frames)
             .rev()
     }
 
     /// Same as `frames` but with a mutable reference as iterator item.
-    fn frames_mut(&mut self) -> impl Iterator<Item = &mut Frame<T>> {
+    pub fn frames_mut(&mut self) -> impl Iterator<Item = &mut Frame<T>> {
         sp_std::iter::once(&mut self.first_frame)
             .chain(&mut self.frames)
             .rev()
     }
 
     /// Returns whether the current contract is on the stack multiple times.
-    fn is_recursive(&self) -> bool {
+    pub fn is_recursive(&self) -> bool {
         let account_id = &self.top_frame().account_id;
         self.frames().skip(1).any(|f| &f.account_id == account_id)
     }
@@ -1339,7 +1337,7 @@ where
         };
 
         let new_msg = self.extension.call(
-            &self,
+            // &self,
             gas_limit,
             to,
             value,
