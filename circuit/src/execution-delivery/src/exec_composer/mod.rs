@@ -18,13 +18,15 @@ use frame_support::traits::Time;
 use t3rn_primitives::{Compose, EscrowTrait};
 use t3rn_primitives::{GatewayInboundProtocol, GatewayPointer, GatewayType, GatewayVendor};
 
-use versatile_wasm::runtime::{CallStamp, DeferredStorageWrite};
+use volatile_vm::exec::StackExtension;
+use volatile_vm::{CallStamp, DeferredStorageWrite, ExecReturnValue};
 
 pub mod volatile_vm_impl;
 
 use crate::exec_composer::volatile_vm_impl::*;
 use crate::AuthorityId;
 
+use volatile_vm::exec::FrameArgs;
 use volatile_vm::wasm::RunMode;
 
 pub struct ExecComposer {}
@@ -140,22 +142,22 @@ impl ExecComposer {
 
     pub fn run_single_contract<T: crate::Config, OM: WasmEnvOutputMode>(
         compose: Compose<T::AccountId, BalanceOf<T>>,
-        _escrow_account: T::AccountId,
+        escrow_account: T::AccountId,
         submitter: AuthorityId,
         requester: T::AccountId,
         gateway_id: bp_runtime::ChainId,
-        _gateway_abi_config: GatewayABIConfig,
+        gateway_abi: GatewayABIConfig,
         _output_mode: OM,
     ) -> Result<Vec<CircuitOutboundMessage>, &'static str> {
         let gateway_pointer = Self::retrieve_gateway_pointer(gateway_id)?;
-        let _gateway_protocol =
+        let gateway_inbound_protocol =
             Self::retrieve_gateway_protocol::<T>(submitter, gateway_pointer.clone())?;
 
         let (
             _block_number,
             _timestamp,
-            _contract_trie_id,
-            _input_data,
+            storage_trie_id,
+            input_data,
             code,
             _value,
             gas_limit,
@@ -163,7 +165,7 @@ impl ExecComposer {
         ) = (
             <frame_system::Pallet<T>>::block_number(),
             <T as EscrowTrait>::Time::now(),
-            // get_child_storage_for_current_execution::<T>(&escrow_account, T::Hash::decode(&mut &sp_io::storage::root()[..]).expect("storage root should be there")),
+            // Replaces get_child_storage_for_current_execution::<T>(&escrow_account, T::Hash::decode(&mut &sp_io::storage::root()[..]).expect("storage root should be there")),
             T::Hash::decode(&mut &sp_io::storage::root()[..])
                 .expect("storage root should be there"),
             compose.input_data,
@@ -176,8 +178,13 @@ impl ExecComposer {
             compose.dest,
         );
 
-        let _deferred_transfers = Vec::<TransferEntry>::new();
-        let constructed_outbound_messages = Vec::<CircuitOutboundMessage>::new();
+        let maybe_input_data = match input_data.len() {
+            0 => None,
+            _ => Some(input_data.clone()),
+        };
+
+        let inner_exec_transfers = &mut Vec::<TransferEntry>::new();
+        let constructed_outbound_messages = &mut Vec::<CircuitOutboundMessage>::new();
 
         let _trace_stack = true;
         use frame_support::traits::Get;
@@ -186,42 +193,19 @@ impl ExecComposer {
         use volatile_vm::wasm::PrefabWasmModule;
         use volatile_vm::VolatileVM;
 
-        let _gas_meter = &mut VVMGasMeter::<T>::new(gas_limit);
-        let _deferred_storage_writes = Vec::<DeferredStorageWrite>::new();
-        let _call_stamps = Vec::<CallStamp>::new();
+        let gas_meter = &mut VVMGasMeter::<T>::new(gas_limit);
+        let _deferred_storage_writes = &mut Vec::<DeferredStorageWrite>::new();
+        let _call_stamps = &mut Vec::<CallStamp>::new();
 
         let schedule = <T as VolatileVM>::Schedule::get();
 
         // Create stack for multiple level of sub-calls
-        // use versatile_wasm::PrefabWasmModule;
 
         // ToDo: Change to submitter
-        let _origin = requester.clone();
-        let _dest = requester.clone();
-        // let mut _stack = Stack::<T>::new(
-        //     origin, dest, &mut gas_meter, &schedule, value, data, None,
-        // );
-
+        let origin = requester.clone();
         // ToDo: Frame value equal to requested args
-        let _value = <T as EscrowTrait>::Currency::minimum_balance();
-        // let debug_message = None;
-        let _trie_seed = Stack::<T, PrefabWasmModule<T>>::initial_trie_seed();
-
-        // // Utilise Rust specialisation
-        // ToDo: Initialize VolatileEnv instead
-        // let env_circuit_run = CircuitVersatileWasmEnv::<T, OM>::new(
-        //     &escrow_account,
-        //     &requester.clone(),
-        //     block_number,
-        //     timestamp,
-        //     contract_trie_id,
-        //     Some(input_data),
-        //     &mut deferred_transfers,
-        //     &mut constructed_outbound_messages,
-        //     gateway_protocol,
-        //     gateway_pointer,
-        //     output_mode,
-        // );
+        let value = <T as EscrowTrait>::Currency::minimum_balance();
+        let debug_message = None;
 
         // Here could also access and pre-load code to lazy storage of VVM
         let executable =
@@ -235,43 +219,35 @@ impl ExecComposer {
             return Ok(vec![]);
         }
 
-        // let (mut stack, executable) = Stack::<T, PrefabWasmModule<T>>::new(
-        //     FrameArgs::Call {
-        //         dest: requester.clone(),
-        //         cached_info: None,
-        //     },
-        //     origin,
-        //     gas_meter,
-        //     &schedule,
-        //     value,
-        //     debug_message,
-        //     // stack_extension - move ext implementation to impl_volatile_vm
-        // )
-        // .map_err(|e| "Can't create VVM call stack")?;
+        let stack_extension = &mut StackExtension {
+            escrow_account,
+            requester: requester.clone(),
+            storage_trie_id,
+            input_data: maybe_input_data,
+            inner_exec_transfers,
+            constructed_outbound_messages,
+            round_breakpoints: vec![],
+            gateway_inbound_protocol,
+            gateway_pointer,
+            gateway_abi,
+        };
 
-        // let account_id = stack.top_frame().account_id.clone();
-        // stack
-        //     .run(executable, input_data)
-        //     .map(|(ret, _code_len)| (account_id, ret))
-        //     .map_err(|(err, _code_len)| err)
+        let (mut stack, executable) = Stack::<T, PrefabWasmModule<T>>::new(
+            FrameArgs::Call {
+                dest: requester.clone(),
+                cached_info: None,
+            },
+            origin,
+            gas_meter,
+            &schedule,
+            value,
+            debug_message,
+            stack_extension,
+        )
+        .map_err(|_e| "Can't create VVM call stack")?;
 
-        // ToDo: Implement as env_circuit_run::run()
-        // let _res = run_code_on_versatile_wm::<T, CircuitVersatileWasmEnv<T, OM>>(
-        //     env_circuit_run.escrow_account,
-        //     &env_circuit_run.requester,
-        //     &target_account, // dest
-        //     value,
-        //     gas_meter,
-        //     env_circuit_run.input_data.clone().unwrap(),
-        //     &mut env_circuit_run.inner_exec_transfers.clone(),
-        //     &mut deferred_storage_writes,
-        //     &mut call_stamps,
-        //     code,
-        //     env_circuit_run.storage_trie_id,
-        //     trace_stack,
-        //     gateway_abi_config,
-        //     env_circuit_run,
-        // );
+        let _ret_out: ExecReturnValue =
+            stack.run(executable, input_data).map_err(|err| err.error)?;
 
         Ok(constructed_outbound_messages.to_vec())
     }
