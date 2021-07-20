@@ -210,7 +210,7 @@ impl ExecComposer {
         // Here could also access and pre-load code to lazy storage of VVM
         let executable =
             PrefabWasmModule::<T>::from_code(code, &schedule, OM::get_run_mode(), Some(gateway_id))
-                .unwrap();
+                .map_err(|_e| "Can't decode WASM code")?;
 
         // For now finish dry run here - if the code passing static analysis in the previous step,
         // add it to the candidates queue if new.
@@ -282,4 +282,173 @@ impl ExecComposer {
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use super::*;
+    use crate::tests::Test;
+    use crate::*;
+
+    use sp_core::{crypto::Pair, sr25519};
+
+    use frame_support::assert_ok;
+
+    use sp_io::TestExternalities;
+    use sp_keystore::testing::KeyStore;
+    use sp_keystore::{KeystoreExt, SyncCryptoStore};
+    use sp_runtime::AccountId32;
+    use std::str::FromStr;
+
+    fn make_compose_out_of_raw_wat_code<T: Config>(
+        wat: &str,
+        input_data: Vec<u8>,
+        dest: T::AccountId,
+        value: T::Balance,
+        gateway_id: [u8; 4],
+    ) -> Compose<T::AccountId, T::Balance> {
+        let wasm = wat::parse_str(wat.clone()).unwrap();
+        Compose {
+            name: b"component1".to_vec(),
+            code_txt: wat.encode(),
+            gateway_id,
+            exec_type: b"exec_escrow".to_vec(),
+            dest,
+            value,
+            bytes: wasm,
+            input_data,
+        }
+    }
+
+    fn setup_test_escrow_as_tx_signer(ext: &mut TestExternalities) -> AccountId32 {
+        let keystore = KeyStore::new();
+        // Insert Alice's keys
+        const SURI_ALICE: &str = "//Alice";
+
+        let key_pair_alice =
+            sr25519::Pair::from_string(SURI_ALICE, None).expect("Generates key pair");
+        SyncCryptoStore::insert_unknown(
+            &keystore,
+            KEY_TYPE,
+            SURI_ALICE,
+            key_pair_alice.public().as_ref(),
+        )
+        .expect("Inserts unknown key");
+
+        ext.register_extension(KeystoreExt(keystore.into()));
+        // Alice's account
+        hex_literal::hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"].into()
+    }
+
+    const CODE_CALL: &str = r#"
+(module
+	;; seal_call(
+	;;    callee_ptr: u32,
+	;;    callee_len: u32,
+	;;    gas: u64,
+	;;    value_ptr: u32,
+	;;    value_len: u32,
+	;;    input_data_ptr: u32,
+	;;    input_data_len: u32,
+	;;    output_ptr: u32,
+	;;    output_len_ptr: u32
+	;;) -> u32
+	(import "seal0" "seal_call" (func $seal_call (param i32 i32 i64 i32 i32 i32 i32 i32 i32) (result i32)))
+	(import "env" "memory" (memory 1 1))
+	(func (export "call")
+		(drop
+			(call $seal_call
+				(i32.const 4)  ;; Pointer to "callee" address.
+				(i32.const 32)  ;; Length of "callee" address.
+				(i64.const 0)  ;; How much gas to devote for the execution. 0 = all.
+				(i32.const 36) ;; Pointer to the buffer with value to transfer
+				(i32.const 8)  ;; Length of the buffer with value to transfer.
+				(i32.const 44) ;; Pointer to input data buffer address
+				(i32.const 4)  ;; Length of input data buffer
+				(i32.const 4294967295) ;; u32 max value is the sentinel value: do not copy output
+				(i32.const 0) ;; Length is ignored in this case
+			)
+		)
+	)
+	(func (export "deploy"))
+
+	;; Destination AccountId (ALICE)
+	(data (i32.const 4)
+		"\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01"
+		"\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01"
+	)
+
+	;; Amount of value to transfer.
+	;; Represented by u64 (8 bytes long) in little endian.
+	(data (i32.const 36) "\06\00\00\00\00\00\00\00")
+
+	(data (i32.const 44) "\01\02\03\04")
+)
+"#;
+
+    #[test]
+    fn exec_composer_dry_run_succeeds_for_valid_call_contract() {
+        // Bob - dest
+        let dest =
+            AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+        let value = BalanceOf::<Test>::from(0u32);
+        let gateway_id = [0 as u8; 4];
+        let compose = make_compose_out_of_raw_wat_code::<Test>(
+            CODE_CALL,
+            vec![],
+            dest,
+            value,
+            gateway_id.clone(),
+        );
+
+        let mut ext = TestExternalities::new_empty();
+        let escrow_account = setup_test_escrow_as_tx_signer(&mut ext);
+        let gateway_abi_config: GatewayABIConfig = Default::default();
+
+        ext.execute_with(|| {
+            let submitter = crate::Pallet::<Test>::select_authority(escrow_account.clone())
+                .unwrap_or_else(|_| panic!("failed to select_authority"));
+            assert_ok!(ExecComposer::dry_run_single_contract::<Test>(
+                compose,
+                escrow_account,
+                submitter,
+                gateway_id,
+                gateway_abi_config,
+            ));
+        });
+    }
+
+    #[test]
+    fn exec_composer_dry_run_fails_for_invalid_call_contract() {
+        // Bob - dest
+        let dest =
+            AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+        let value = BalanceOf::<Test>::from(0u32);
+        let gateway_id = [0 as u8; 4];
+
+        let compose = Compose {
+            name: b"component1".to_vec(),
+            code_txt: " invalid code str ".encode(),
+            gateway_id,
+            exec_type: b"exec_escrow".to_vec(),
+            dest,
+            value,
+            bytes: " invalid code str ".encode(),
+            input_data: vec![],
+        };
+
+        let mut ext = TestExternalities::new_empty();
+        let escrow_account = setup_test_escrow_as_tx_signer(&mut ext);
+        let gateway_abi_config: GatewayABIConfig = Default::default();
+
+        ext.execute_with(|| {
+            let submitter = crate::Pallet::<Test>::select_authority(escrow_account.clone())
+                .unwrap_or_else(|_| panic!("failed to select_authority"));
+            let res = ExecComposer::dry_run_single_contract::<Test>(
+                compose,
+                escrow_account,
+                submitter,
+                gateway_id,
+                gateway_abi_config,
+            );
+            assert_eq!(res, Err("Can't decode WASM code"))
+        });
+    }
+}

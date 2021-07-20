@@ -82,7 +82,11 @@ sp-consensus-babe = { default-features = false, git = "https://github.com/parity
 [dev-dependencies]
 serde_json = "1.0.41"
 sc-service = { git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' }
-
+assert_matches = "1"
+hex-literal = "0.3"
+paste = "1"
+pretty_assertions = "0.7"
+wat = "1"
 
 [features]
 default = ["std"]
