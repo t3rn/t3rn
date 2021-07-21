@@ -3,7 +3,6 @@
 use crate::pallet::Config;
 
 use bp_messages::LaneId;
-#[cfg(feature = "std")]
 use sp_std::vec;
 use sp_std::vec::*;
 

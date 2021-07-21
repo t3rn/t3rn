@@ -21,7 +21,6 @@
 use codec::{Decode, Encode};
 use frame_support::traits::{Currency, Time};
 
-
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "no_std")]
@@ -33,8 +32,8 @@ use std::fmt::Debug;
 use sp_std::prelude::*;
 
 pub mod abi;
-pub mod transfers;
 pub mod gateway_inbound_protocol;
+pub mod transfers;
 
 pub use gateway_inbound_protocol::GatewayInboundProtocol;
 
@@ -204,7 +203,6 @@ pub enum CircuitOutboundMessage {
         payload: MessagePayload,
     },
 }
-
 
 /// Inclusion proofs of different tries
 #[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]

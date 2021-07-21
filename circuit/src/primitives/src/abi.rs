@@ -344,7 +344,7 @@ pub fn eval_to_encoded(t: Type, raw_val: Vec<u8>) -> Result<Vec<u8>, &'static st
             }
             _ => Err("Unknown Uint size"),
         },
-        _ => {Ok(vec![])}
+        _ => Ok(vec![]),
     }
 }
 
