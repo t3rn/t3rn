@@ -5,20 +5,23 @@ use sp_std::boxed::Box;
 use sp_std::vec;
 use sp_std::vec::*;
 
-use pallet_contracts_registry::RegistryContract;
+use pallet_contracts_registry::{RegistryContract, RegistryContractId};
 
 use t3rn_primitives::abi::GatewayABIConfig;
 use t3rn_primitives::transfers::BalanceOf;
 use t3rn_primitives::transfers::TransferEntry;
 use t3rn_primitives::CircuitOutboundMessage;
 
-use frame_support::traits::Currency;
-use frame_support::traits::Time;
+use frame_support::traits::{Currency, Get, Time};
 
 use t3rn_primitives::{Compose, EscrowTrait};
 use t3rn_primitives::{GatewayInboundProtocol, GatewayPointer, GatewayType, GatewayVendor};
 
+use volatile_vm::exec::Stack;
 use volatile_vm::exec::StackExtension;
+use volatile_vm::gas::GasMeter as VVMGasMeter;
+use volatile_vm::wasm::PrefabWasmModule;
+use volatile_vm::VolatileVM;
 use volatile_vm::{CallStamp, DeferredStorageWrite, ExecReturnValue};
 
 pub mod volatile_vm_impl;
@@ -187,11 +190,6 @@ impl ExecComposer {
         let constructed_outbound_messages = &mut Vec::<CircuitOutboundMessage>::new();
 
         let _trace_stack = true;
-        use frame_support::traits::Get;
-        use volatile_vm::exec::Stack;
-        use volatile_vm::gas::GasMeter as VVMGasMeter;
-        use volatile_vm::wasm::PrefabWasmModule;
-        use volatile_vm::VolatileVM;
 
         let gas_meter = &mut VVMGasMeter::<T>::new(gas_limit);
         let _deferred_storage_writes = &mut Vec::<DeferredStorageWrite>::new();
@@ -250,6 +248,36 @@ impl ExecComposer {
             stack.run(executable, input_data).map_err(|err| err.error)?;
 
         Ok(constructed_outbound_messages.to_vec())
+    }
+
+    pub fn preload_bunch_of_contracts<T: crate::Config>(
+        contracts: Vec<RegistryContract<T::AccountId>>,
+        contracts_ids: Vec<RegistryContractId<T>>,
+        gateway_id: bp_runtime::ChainId,
+    ) -> Result<(), &'static str> {
+        assert!(contracts.len() == contracts_ids.len());
+        let schedule = <T as VolatileVM>::Schedule::get();
+        // Perform syntax check and convert raw code into executables
+        let executables_map = contracts
+            .iter()
+            .map(|contract| {
+                PrefabWasmModule::<T>::from_code(
+                    contract.bytes.clone(),
+                    &schedule,
+                    RunMode::Dry,
+                    Some(gateway_id),
+                )
+                .map_err(|_e| "Can't decode WASM code")
+            })
+            .collect::<Result<Vec<PrefabWasmModule<T>>, &'static str>>()?;
+
+        for i in 0..contracts.len() {
+            let curr_code_id = contracts_ids[i].clone();
+            let curr_executable = executables_map[i].clone();
+            volatile_vm::Pallet::<T>::add_contract_code_lazy(curr_code_id, curr_executable)
+        }
+
+        Ok(())
     }
 
     fn retrieve_gateway_pointer(
