@@ -71,8 +71,6 @@ use crate::message_assembly::merklize::*;
 #[cfg(test)]
 mod tests;
 
-mod benchmarks;
-
 pub mod exec_composer;
 pub mod message_assembly;
 
