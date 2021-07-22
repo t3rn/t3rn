@@ -71,6 +71,8 @@ use crate::message_assembly::merklize::*;
 #[cfg(test)]
 mod tests;
 
+mod benchmarks;
+
 pub mod exec_composer;
 pub mod message_assembly;
 
@@ -795,7 +797,9 @@ impl<T: Config> Pallet<T> {
     }
 
     pub fn select_authority(escrow_account: T::AccountId) -> Result<AuthorityId, &'static str> {
-        let local_keys = AuthorityId::all();
+        let mut local_keys = AuthorityId::all();
+
+        local_keys.sort();
 
         let auth = AuthorityId::from_slice(escrow_account.encode().as_slice());
 
