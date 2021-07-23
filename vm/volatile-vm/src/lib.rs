@@ -57,6 +57,7 @@ pub type BlockNumberOf<T> = <T as SystemTrait>::BlockNumber;
 
 pub type CodeHash<T> = <T as SystemTrait>::Hash;
 pub type TrieId = Vec<u8>;
+pub type TargetId = [u8; 4];
 
 pub struct DisabledDispatchRuntimeCall {}
 
@@ -374,6 +375,12 @@ pub mod pallet {
     #[pallet::storage]
     pub(crate) type AccountCounter<T: Config> = StorageValue<_, u64, ValueQuery>;
 
+    /// Declared by purchaser gateway foreign targets associated with target addresses (to)
+    /// None for targets at Circuit.
+    #[pallet::storage]
+    pub(crate) type DeclaredTargets<T: Config> =
+        StorageMap<_, Twox64Concat, T::AccountId, TargetId>;
+
     /// The code associated with a given account.
     ///
     /// TWOX-NOTE: SAFE since `AccountId` is a secure hash.
@@ -483,21 +490,19 @@ impl<T: Config> Pallet<T> {
         // ()
     }
 
-    pub fn add_contract_code_lazy(code_hash: CodeHash<T>, contract_module: PrefabWasmModule<T>) {
-        <DryRunCodeCandidates<T>>::insert(code_hash, contract_module);
-        // pub fn take_non_fungible(&mut self, id: &AssetId) -> Assets {
-        //     let mut taken = Assets::new();
-        //     let non_fungible = mem::replace(&mut self.non_fungible, Default::default());
-        //     non_fungible.into_iter().for_each(|(c, instance)| {
-        //         if &c == id {
-        //             taken.non_fungible.insert((c, instance));
-        //         } else {
-        //             self.non_fungible.insert((c, instance));
-        //         }
-        //     });
-        //     taken
-        // }
-        // <CodeStorage<T>>::insert(prefab_module.code_hash, prefab_module);
+    pub fn add_contract_code_lazy(
+        code_hash: CodeHash<T>,
+        contract_module: PrefabWasmModule<T>,
+        contract_info: AliveContractInfo<T>,
+        account_id: T::AccountId,
+    ) {
+        if !<DryRunCodeCandidates<T>>::contains_key(code_hash) {
+            <DryRunCodeCandidates<T>>::insert(code_hash, contract_module);
+        }
+        // ToDo: Change to double map of account_id + code_hash
+        if !<ContractInfoOf<T>>::contains_key(account_id.clone()) {
+            <ContractInfoOf<T>>::insert(account_id, ContractInfo::Alive(contract_info));
+        }
     }
 
     pub fn remove_contract_code_lazy(code_hash: CodeHash<T>) {

@@ -81,11 +81,9 @@ pub fn store<T: Config>(mut prefab_module: PrefabWasmModule<T>) {
 pub fn store_decremented<T: Config>(mut prefab_module: PrefabWasmModule<T>) {
     prefab_module.refcount = prefab_module.refcount.saturating_sub(1);
     if prefab_module.refcount > 0 {
-        VolatileVM::<T>::add_contract_code_lazy(prefab_module.code_hash.clone(), prefab_module);
-    // <CodeStorage<T>>::insert(prefab_module.code_hash, prefab_module);
+        <DryRunCodeCandidates<T>>::insert(prefab_module.code_hash, prefab_module);
     } else {
         VolatileVM::<T>::remove_contract_code_lazy(prefab_module.code_hash.clone());
-        // <CodeStorage<T>>::remove(prefab_module.code_hash);
         finish_removal::<T>(prefab_module.code_hash);
     }
 }
@@ -164,7 +162,6 @@ pub fn load<T: Config>(
 
     let mut prefab_module =
 		// <CodeStorage<T>>::get(code_hash)
-		// VolatileVM::<T>::get_contract_code_lazy(code_hash).map_err(Into::into)?;
 		VolatileVM::<T>::get_contract_code_lazy(code_hash)?;
 
     prefab_module.code_hash = code_hash;

@@ -16,11 +16,12 @@
 // limitations under the License.
 
 use crate::{
-    gas::GasMeter, schedule::Schedule, storage::Storage, AccountCounter, AliveContractInfo,
-    BalanceOf, CodeHash, Config, ContractInfo, ContractInfoOf, Error, ErrorOrigin, Event,
-    ExecError, ExecReturnValue, Pallet as VolatileVM, ReturnFlags,
+    gas::GasMeter, wasm::RunMode, schedule::Schedule, storage::Storage, AccountCounter, AliveContractInfo,
+    BalanceOf, Bytes, CodeHash, Config, ContractInfo, ContractInfoOf, DeclaredTargets, Error,
+    ErrorOrigin, Event, ExecError, ExecReturnValue, Pallet as VolatileVM, ReturnFlags,
 };
 use codec::Encode;
+use sp_runtime::traits::Hash;
 use t3rn_primitives::{
     abi::{eval_to_encoded, GatewayABIConfig, Type},
     transfers::TransferEntry,
@@ -131,6 +132,39 @@ pub trait Ext: sealing::Sealed {
         value: BalanceOf<Self::T>,
         input_data: Vec<u8>,
         allows_reentry: bool,
+    ) -> Result<ExecReturnValue, ExecError>;
+
+    /// RegularCall (possibly transferring some amount of funds) into the specified account.
+    ///
+    /// Returns the original code size of the called contract.
+    ///
+    /// # Return Value
+    ///
+    /// Result<(ExecReturnValue, CodeSize), (ExecError, CodeSize)>
+    fn regular_call(
+        &mut self,
+        gas_limit: Weight,
+        to: AccountIdOf<Self::T>,
+        value: BalanceOf<Self::T>,
+        input_data: Vec<u8>,
+        allows_reentry: bool,
+    ) -> Result<ExecReturnValue, ExecError>;
+
+    /// CallProduceMessagesInstead (possibly transferring some amount of funds) into the specified account.
+    ///
+    /// Returns the original code size of the called contract.
+    ///
+    /// # Return Value
+    ///
+    /// Result<(ExecReturnValue, CodeSize), (ExecError, CodeSize)>
+    fn call_produce_messages_instead(
+        &mut self,
+        gas_limit: Weight,
+        to: AccountIdOf<Self::T>,
+        value: BalanceOf<Self::T>,
+        input_data: Vec<u8>,
+        allows_reentry: bool,
+        target_id: ChainId,
     ) -> Result<ExecReturnValue, ExecError>;
 
     /// Instantiate a contract from the given code.
@@ -412,12 +446,15 @@ pub struct Stack<'a, T: Config, E> {
     _phantom: PhantomData<E>,
 }
 
+pub struct ContractActionDesc<Hash, TargetId> {
+    pub action_id: Hash,
+    pub target_id: Option<TargetId>,
+}
+
 pub struct StackExtension<'a, T: Config> {
     pub escrow_account: T::AccountId,
-
-    pub requester: T::AccountId,
     /// Requester is now origin
-    // pub requester: T::AccountId,
+    pub requester: T::AccountId,
     pub storage_trie_id: T::Hash,
     /// The first input data submitted by origin / requeter
     pub input_data: Option<Vec<u8>>,
@@ -427,8 +464,11 @@ pub struct StackExtension<'a, T: Config> {
     pub constructed_outbound_messages: &'a mut Vec<CircuitOutboundMessage>,
     pub round_breakpoints: Vec<u32>,
     pub gateway_inbound_protocol: Box<dyn GatewayInboundProtocol>,
+    pub target_id: Option<ChainId>,
     pub gateway_pointer: GatewayPointer,
     pub gateway_abi: GatewayABIConfig,
+    pub preloaded_action_descriptions: Vec<ContractActionDesc<T::Hash, ChainId>>,
+    pub run_mode: RunMode,
 }
 
 pub trait ExposedExt<'a, T: Config> {
@@ -894,6 +934,7 @@ where
                 let contract = if let Some(contract) = cached_info {
                     contract
                 } else {
+                    // ToDo: Get contract here from pre-loaded pool.
                     <ContractInfoOf<T>>::get(&dest)
                         .ok_or(<Error<T>>::ContractNotFound.into())
                         .and_then(|contract| {
@@ -942,9 +983,6 @@ where
         };
 
         let frame = Frame {
-            // rent_params: RentParams::new(
-            // 	&account_id, &value_transferred, &contract_info, &executable,
-            // ),
             value_transferred,
             contract_info: CachedContract::Cached(contract_info),
             account_id,
@@ -1281,7 +1319,7 @@ where
 {
     type T = T;
 
-    fn call(
+    fn regular_call(
         &mut self,
         gas_limit: Weight,
         to: T::AccountId,
@@ -1325,41 +1363,118 @@ where
         // We need to make sure to reset `allows_reentry` even on failure.
         let result = try_call();
 
-        let (maybe_already_result, maybe_foreign_target) = match result {
-            Ok(ExecReturnValue {
-                flags: ReturnFlags::FOREIGN_TARGET,
-                data: _,
-            }) => {
-                let gateway_id = self.extension.get_target_id();
-                (None, Some(gateway_id))
-            }
-            _ => (Some(&result), None),
-        };
+        // Protection is on a per call basis.
+        self.top_frame_mut().allows_reentry = true;
+        result
+    }
+
+    fn call_produce_messages_instead(
+        &mut self,
+        gas_limit: Weight,
+        to: T::AccountId,
+        value: BalanceOf<T>,
+        input_data: Vec<u8>,
+        _allows_reentry: bool,
+        target_id: ChainId,
+    ) -> Result<ExecReturnValue, ExecError> {
+        let maybe_already_result = None;
 
         let new_msg = self.extension.call(
-            // &self,
             gas_limit,
             to,
             value,
-            input_data,
+            input_data.clone(),
             maybe_already_result,
         )?;
 
         self.extension.add_message(new_msg);
 
         let prev_target = if self.frames.len() == 0 {
-            None
+            self.first_frame.target_id
         } else {
             self.frames.last().unwrap().target_id
         };
 
         self.extension
-            .maybe_round_breakpoint(prev_target, maybe_foreign_target);
+            .maybe_round_breakpoint(prev_target, Some(target_id));
 
-        // Protection is on a per call basis.
-        self.top_frame_mut().allows_reentry = true;
+        Ok(ExecReturnValue {
+            flags: ReturnFlags::FOREIGN_TARGET,
+            data: Bytes(input_data.clone()),
+        })
+    }
 
-        result
+    fn call(
+        &mut self,
+        gas_limit: Weight,
+        to: T::AccountId,
+        value: BalanceOf<T>,
+        input_data: Vec<u8>,
+        allows_reentry: bool,
+    ) -> Result<ExecReturnValue, ExecError> {
+        fn calculate_action_id<T: system::Config>(
+            action_name: Vec<u8>,
+            unique_bytes: Vec<u8>,
+        ) -> T::Hash {
+            let mut action_bytes = action_name.clone();
+            action_bytes.extend(unique_bytes);
+            T::Hashing::hash(Encode::encode(&mut action_bytes).as_ref())
+        }
+
+        fn peek_target_from_declared<T: Config>(account_id: T::AccountId) -> Option<ChainId> {
+            <DeclaredTargets<T>>::get(&account_id)
+        }
+
+        let mut unique_action_bytes = to.clone().encode();
+        unique_action_bytes.extend(value.encode());
+        unique_action_bytes.extend(input_data.clone());
+        let action_id = calculate_action_id::<T>(b"call".to_vec(), unique_action_bytes);
+
+        match self.extension.run_mode {
+            RunMode::Dry => {
+                let target_id = peek_target_from_declared::<T>(to);
+                self.extension
+                    .preloaded_action_descriptions
+                    .push(ContractActionDesc {
+                        action_id,
+                        target_id,
+                    });
+
+                Ok(ExecReturnValue {
+                    flags: ReturnFlags::FOREIGN_TARGET,
+                    data: Bytes(input_data.clone()),
+                })
+            }
+            RunMode::Pre => {
+                let action_desc: &ContractActionDesc<T::Hash, ChainId> = self
+                    .extension
+                    .preloaded_action_descriptions
+                    .iter()
+                    .find(|a| a.action_id == action_id)
+                    .ok_or(ExecError {
+                        error: Error::<T>::ContractTrapped.into(),
+                        origin: ErrorOrigin::Caller,
+                    })?;
+
+                // let target_id = self.frames.last().unwrap().target_id;
+                // match self.extension.target_id {
+
+                match action_desc.target_id {
+                    Some(foreign_gateway_id) => self.call_produce_messages_instead(
+                        gas_limit,
+                        to,
+                        value,
+                        input_data.clone(),
+                        allows_reentry,
+                        foreign_gateway_id,
+                    ),
+                    None => self.regular_call(gas_limit, to, value, input_data, allows_reentry),
+                }
+            }
+            RunMode::Post => {
+                unimplemented!();
+            }
+        }
     }
 
     fn instantiate(
@@ -1370,7 +1485,6 @@ where
         input_data: Vec<u8>,
         salt: &[u8],
     ) -> Result<(AccountIdOf<T>, ExecReturnValue), ExecError> {
-        // ToDo
         let executable = E::from_storage(code_hash, &self.schedule, self.gas_meter())?;
         let trie_seed = self.next_trie_seed();
         let executable = self.push_frame(
