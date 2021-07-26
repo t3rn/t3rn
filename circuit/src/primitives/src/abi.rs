@@ -97,6 +97,15 @@ impl Default for GatewayABIConfig {
     }
 }
 
+
+#[derive(PartialEq, Clone, Encode, Decode, Eq, Hash, Debug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct ContractActionDesc<Hash, TargetId, AccountId> {
+    pub action_id: Hash,
+    pub target_id: Option<TargetId>,
+    pub to: Option<AccountId>,
+}
+
 #[derive(PartialEq, Clone, Encode, Decode, Eq, Hash, Debug)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct Parameter {

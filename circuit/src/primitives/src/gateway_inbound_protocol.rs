@@ -2,7 +2,7 @@
 
 use crate::transfers::TransferEntry;
 use crate::*;
-use sp_std::vec::*;
+use sp_std::vec::Vec;
 
 pub trait GatewayInboundProtocol {
     /// Get storage on foreign chain under given key. Returns (gets it delivered by relayers):

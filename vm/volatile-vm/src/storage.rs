@@ -84,7 +84,7 @@ impl<T: Config> ContractInfo<T> {
 
 /// Information for managing an account and its sub trie abstraction.
 /// This is the required info to cache for an account.
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default)]
 pub struct RawAliveContractInfo<CodeHash, Balance, BlockNumber> {
     /// Unique ID for the subtree encoded as a bytes vector.
     pub trie_id: TrieId,

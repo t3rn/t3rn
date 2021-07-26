@@ -16,14 +16,15 @@
 // limitations under the License.
 
 use crate::{
-    gas::GasMeter, wasm::RunMode, schedule::Schedule, storage::Storage, AccountCounter, AliveContractInfo,
-    BalanceOf, Bytes, CodeHash, Config, ContractInfo, ContractInfoOf, DeclaredTargets, Error,
-    ErrorOrigin, Event, ExecError, ExecReturnValue, Pallet as VolatileVM, ReturnFlags,
+    gas::GasMeter, schedule::Schedule, storage::Storage, wasm::RunMode, AccountCounter,
+    AliveContractInfo, BalanceOf, Bytes, CodeHash, Config, ContractInfo, ContractInfoOf,
+    DeclaredTargets, Error, ErrorOrigin, Event, ExecError, ExecReturnValue, Pallet as VolatileVM,
+    ReturnFlags,
 };
 use codec::Encode;
 use sp_runtime::traits::Hash;
 use t3rn_primitives::{
-    abi::{eval_to_encoded, GatewayABIConfig, Type},
+    abi::{eval_to_encoded, ContractActionDesc, GatewayABIConfig, Type},
     transfers::TransferEntry,
     CircuitOutboundMessage, GatewayInboundProtocol, GatewayPointer,
 };
@@ -446,11 +447,6 @@ pub struct Stack<'a, T: Config, E> {
     _phantom: PhantomData<E>,
 }
 
-pub struct ContractActionDesc<Hash, TargetId> {
-    pub action_id: Hash,
-    pub target_id: Option<TargetId>,
-}
-
 pub struct StackExtension<'a, T: Config> {
     pub escrow_account: T::AccountId,
     /// Requester is now origin
@@ -462,12 +458,12 @@ pub struct StackExtension<'a, T: Config> {
     pub inner_exec_transfers: &'a mut Vec<TransferEntry>,
     /// Collection messages to be relayed from Circuit onto Gateways
     pub constructed_outbound_messages: &'a mut Vec<CircuitOutboundMessage>,
-    pub round_breakpoints: Vec<u32>,
+    pub round_breakpoints: &'a mut Vec<u32>,
     pub gateway_inbound_protocol: Box<dyn GatewayInboundProtocol>,
     pub target_id: Option<ChainId>,
     pub gateway_pointer: GatewayPointer,
     pub gateway_abi: GatewayABIConfig,
-    pub preloaded_action_descriptions: Vec<ContractActionDesc<T::Hash, ChainId>>,
+    pub preloaded_action_descriptions: Vec<ContractActionDesc<T::Hash, ChainId, T::AccountId>>,
     pub run_mode: RunMode,
 }
 
@@ -637,6 +633,11 @@ impl<'a, T: Config> ExposedExt<'a, T> for StackExtension<'a, T> {
         self.constructed_outbound_messages.push(message);
     }
 
+    /// When to break execution:
+    /// - Next target is different (and not on-chain, None)
+    /// When NOT to break execution:
+    /// - Next or previous targets are None - we can still evaluate on-chain.
+    /// - Next target is the same as a previous one - multiple sub-calls within one smart contract on foreign target
     fn maybe_round_breakpoint(
         &mut self,
         // previous_(before_target)_gateway - know what the previous message adresat (gateway) was to know if possible to batch external messages together now
@@ -1432,12 +1433,13 @@ where
 
         match self.extension.run_mode {
             RunMode::Dry => {
-                let target_id = peek_target_from_declared::<T>(to);
+                let target_id = peek_target_from_declared::<T>(to.clone());
                 self.extension
                     .preloaded_action_descriptions
                     .push(ContractActionDesc {
                         action_id,
                         target_id,
+                        to: Some(to),
                     });
 
                 Ok(ExecReturnValue {
@@ -1446,7 +1448,7 @@ where
                 })
             }
             RunMode::Pre => {
-                let action_desc: &ContractActionDesc<T::Hash, ChainId> = self
+                let action_desc: &ContractActionDesc<T::Hash, ChainId, T::AccountId> = self
                     .extension
                     .preloaded_action_descriptions
                     .iter()
