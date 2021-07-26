@@ -618,11 +618,6 @@ impl<T: SigningTypes> SignedPayload<T> for Payload<T::Public, T::BlockNumber> {
 }
 
 impl<T: Config> Pallet<T> {
-    #[allow(dead_code)]
-    pub fn say_hello() -> &'static str {
-        "hello"
-    }
-
     /// Receives a list of available components and an io schedule in text format
     /// and parses it to create an execution schedule
     pub fn decompose_io_schedule(

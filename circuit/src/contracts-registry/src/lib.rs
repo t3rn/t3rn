@@ -75,7 +75,7 @@ impl<AccountId: Encode> RegistryContract<AccountId> {
     pub fn generate_id<T: Config>(&self) -> RegistryContractId<T> {
         let mut protocol_part_of_contract = self.code_txt.clone();
         protocol_part_of_contract.extend(self.bytes.clone());
-        T::Hashing::hash(Encode::encode(&mut protocol_part_of_contract).as_ref())
+        T::Hashing::hash(Encode::encode(&protocol_part_of_contract).as_ref())
     }
 }
 
