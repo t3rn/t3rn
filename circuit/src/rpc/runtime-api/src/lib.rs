@@ -18,7 +18,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::Codec;
+use sp_api::codec::Codec;
 use sp_std::vec::Vec;
 use t3rn_primitives::{ComposableExecResult, Compose, FetchContractsResult};
 
@@ -45,6 +45,5 @@ sp_api::decl_runtime_apis! {
             author: AccountId,
             name: Box<str>,
         ) -> FetchContractsResult;
-
     }
 }
