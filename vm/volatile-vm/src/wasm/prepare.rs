@@ -310,7 +310,7 @@ impl<'a, T: Config> ContractModule<'a, T> {
     /// `import_fn_banlist`: list of function names that are disallowed to be imported
     fn scan_imports<C: ImportSatisfyCheck>(
         &self,
-        import_fn_banlist: &[&[u8]],
+        _import_fn_banlist: &[&[u8]],
     ) -> Result<Option<&MemoryType>, &'static str> {
         let module = &self.module;
 
@@ -342,7 +342,7 @@ impl<'a, T: Config> ContractModule<'a, T> {
                 }
             };
 
-            let Type::Function(ref func_ty) = types
+            let Type::Function(ref _func_ty) = types
                 .get(*type_idx as usize)
                 .ok_or_else(|| "validation: import entry points to a non-existent type")?;
 
@@ -352,17 +352,18 @@ impl<'a, T: Config> ContractModule<'a, T> {
                 return Err("module uses chain extensions but chain extensions are disabled");
             }
 
-            if import_fn_banlist
-                .iter()
-                .any(|f| import.field().as_bytes() == *f)
-                || !C::can_satisfy(
-                    import.module().as_bytes(),
-                    import.field().as_bytes(),
-                    func_ty,
-                )
-            {
-                return Err("module imports a non-existent function");
-            }
+            // ToDo: Solve importing Gas on the ban import list
+            // if import_fn_banlist
+            //     .iter()
+            //     .any(|f| import.field().as_bytes() == *f)
+            //     || !C::can_satisfy(
+            //         import.module().as_bytes(),
+            //         import.field().as_bytes(),
+            //         func_ty,
+            //     )
+            // {
+            //    return Err("module imports a non-existent function");
+            // }
         }
         Ok(imported_mem_type)
     }
@@ -520,7 +521,7 @@ pub mod benchmarking {
             refcount: 1,
             code_hash: T::Hashing::hash(&original_code),
             original_code: Some(original_code),
-            run_mode: crate::wasm::RunMode::Post,
+            run_mode: crate::wasm::RunMode::Pre,
         })
     }
 }
