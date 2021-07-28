@@ -57,15 +57,16 @@ use sp_runtime::{
 use crate::exec_composer::ExecComposer;
 pub use crate::message_assembly::circuit_inbound::StepConfirmation;
 use crate::message_assembly::merklize::*;
+use pallet_contracts_registry::{RegistryContract, RegistryContractId};
 
+use bp_runtime::ChainId;
+pub use pallet::*;
 use sp_std::vec;
 use sp_std::vec::*;
-use volatile_vm::VolatileVM;
-
-pub use pallet::*;
-use t3rn_primitives::abi::{GatewayABIConfig, HasherAlgo as HA};
+use t3rn_primitives::abi::{ContractActionDesc, GatewayABIConfig, HasherAlgo as HA};
 use t3rn_primitives::transfers::BalanceOf;
 use t3rn_primitives::*;
+use volatile_vm::VolatileVM;
 
 #[cfg(test)]
 mod tests;
@@ -188,12 +189,12 @@ pub type AuthorityId = crate::message_assembly::signer::app::Public;
 
 /// A composable cross-chain (X) transaction that has already been verified to be valid and submittable
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
-pub struct Xtx<AccountId, BlockNumber, Hash> {
+pub struct Xtx<AccountId, BlockNumber, Hash, BalanceOf> {
     /// The total estimated worth of tx (accumulated value being transferred and estimated fees)
-    pub estimated_worth: u128,
+    pub estimated_worth: BalanceOf,
 
     /// The total worth so far of tx (accumulated value being transferred and estimated fees)
-    pub current_worth: u128,
+    pub current_worth: BalanceOf,
 
     /// The owner of the bid
     pub requester: AccountId,
@@ -216,7 +217,7 @@ pub struct Xtx<AccountId, BlockNumber, Hash> {
     /// Current round
     pub current_round: u32,
 
-    pub schedule: XtxSchedule<AccountId, BlockNumber, Hash>,
+    pub schedule: XtxSchedule<AccountId, BlockNumber, Hash, BalanceOf>,
     // /// Current phase
     // pub phase_compilation_context: PhaseCompilationContext<BlockNumber>,
     /// Result
@@ -228,17 +229,17 @@ pub struct Xtx<AccountId, BlockNumber, Hash> {
 
 /// A composable cross-chain (X) transaction that has already been verified to be valid and submittable
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
-pub struct StepEntry<AccountId, BlockNumber, Hash> {
-    compose_id: Hash,
+pub struct StepEntry<AccountId, BlockNumber, Hash, BalanceOf> {
+    contract_id: Hash,
     cost: u128,
     result: Option<Vec<u8>>,
     input: Vec<u8>,
     dest: AccountId,
-    value: u128,
+    value: BalanceOf,
     proof: Option<Hash>,
     updated_at: BlockNumber,
     relayer: Option<AccountId>,
-    gateway_id: bp_runtime::ChainId,
+    gateway_id: Option<bp_runtime::ChainId>,
     gateway_entry_id: Hash,
 }
 
@@ -249,22 +250,27 @@ pub struct StepEntry<AccountId, BlockNumber, Hash> {
 ///     vector of phases, where
 ///         phase: vector of rounds, where
 ///             round: vector of steps
-pub type RoundEntry<AccountId, BlockNumber, Hash> = Vec<StepEntry<AccountId, BlockNumber, Hash>>;
+pub type RoundEntry<AccountId, BlockNumber, Hash, BalanceOf> =
+    Vec<StepEntry<AccountId, BlockNumber, Hash, BalanceOf>>;
 
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
-pub struct XtxSchedule<AccountId, BlockNumber, Hash> {
-    phases: Vec<RoundEntry<AccountId, BlockNumber, Hash>>,
+pub struct XtxSchedule<AccountId, BlockNumber, Hash, BalanceOf> {
+    phases: Vec<RoundEntry<AccountId, BlockNumber, Hash, BalanceOf>>,
 }
 
 // check frame/democracy/src/vote.rs
-impl<AccountId: Encode, BlockNumber: Ord + Copy + Zero + Encode, Hash: Ord + Copy + Encode>
-    Xtx<AccountId, BlockNumber, Hash>
+impl<
+        AccountId: Encode,
+        BlockNumber: Ord + Copy + Zero + Encode,
+        Hash: Ord + Copy + Encode,
+        BalanceOf: Encode,
+    > Xtx<AccountId, BlockNumber, Hash, BalanceOf>
 {
     pub fn new(
         // Estimated worth (values transferred + aggregated fees)
-        estimated_worth: u128,
+        estimated_worth: BalanceOf,
         // Current, actual aggregated worth
-        current_worth: u128,
+        current_worth: BalanceOf,
         // Requester of xtx
         requester: AccountId,
         // Validator's account acting as an escrow for this xtx
@@ -284,7 +290,7 @@ impl<AccountId: Encode, BlockNumber: Ord + Copy + Zero + Encode, Hash: Ord + Cop
         // Block numbers of two phases
         phases_blockstamps: (BlockNumber, BlockNumber),
         // Block numbers of two phases
-        schedule: XtxSchedule<AccountId, BlockNumber, Hash>,
+        schedule: XtxSchedule<AccountId, BlockNumber, Hash, BalanceOf>,
     ) -> Self {
         Xtx {
             estimated_worth,
@@ -330,6 +336,7 @@ pub mod pallet {
             <T as frame_system::Config>::AccountId,
             <T as frame_system::Config>::BlockNumber,
             <T as frame_system::Config>::Hash,
+            BalanceOf<T>,
         >,
         OptionQuery,
     >;
@@ -398,7 +405,7 @@ pub mod pallet {
         pub fn submit_composable_exec_order(
             origin: OriginFor<T>,
             io_schedule: Vec<u8>,
-            components: Vec<Compose<T::AccountId, u64>>,
+            components: Vec<Compose<T::AccountId, BalanceOf<T>>>,
         ) -> DispatchResultWithPostInfo {
             // Retrieve sender of the transaction.
             let requester = ensure_signed(origin)?;
@@ -407,27 +414,59 @@ pub mod pallet {
                 "empty parameters submitted for execution order",
             );
 
-            let inter_schedule: InterExecSchedule<T::AccountId, u64> =
+            let inter_schedule: InterExecSchedule<T::AccountId, BalanceOf<T>> =
                 Self::decompose_io_schedule(components.clone(), io_schedule.clone())
                     .expect("Wrong io schedule");
 
             let escrow_account = select_validator_for_x_tx_dummy::<T>(io_schedule.clone())?;
 
-            let new_xtx = Self::dry_run_whole_xtx(
-                inter_schedule.clone(),
-                requester.clone(),
-                escrow_account.clone(),
-            )?;
+            // In dry run we would like to:
+            // 1. Parse and validate the syntax of unseen in the on-chain registry contracts
+            //     1.2. Add them to the on-chain registry
+            // 2. Fetch all of the contracts from on-chain registry involved in that execution and dry run as one xtx.
+            let (new_xtx, contracts, _contract_ids, _contract_descriptions) =
+                Self::dry_run_whole_xtx(
+                    inter_schedule.clone(),
+                    requester.clone(),
+                    escrow_account.clone(),
+                )?;
+
             let x_tx_id: XtxId<T> = new_xtx.generate_xtx_id::<T>();
 
-            ActiveXtxMap::<T>::insert(x_tx_id.clone(), new_xtx);
+            ActiveXtxMap::<T>::insert(x_tx_id, &new_xtx);
 
-            let circuit_outbound_messages = Self::process_phase(
-                x_tx_id.clone(),
-                components,
-                escrow_account.clone(),
-                inter_schedule.clone(),
-            )?;
+            // Every time before the execution - preload the all of the involved contracts to the VM
+            ExecComposer::preload_bunch_of_contracts::<T>(contracts.clone(), requester.clone())?;
+
+            let submitter = Self::select_authority(escrow_account.clone())?;
+
+            let first_step = Self::first_unprocessed_step(new_xtx.clone())?;
+
+            let (value, input_data, gateway_id) = (
+                first_step.value,
+                first_step.input,
+                None, // Assign None for on-chain targets
+            );
+
+            // ToDo: Work out max gas limit acceptable by each escrow
+            let gas_limit = u64::max_value();
+
+            // ToDo: Pick up execution for the last unconfirmed step
+            let (circuit_outbound_messages, _last_executed_contract_no) =
+                ExecComposer::pre_run_bunch_until_break::<T>(
+                    contracts,
+                    escrow_account.clone(),
+                    submitter,
+                    requester.clone(),
+                    value,
+                    input_data,
+                    gas_limit,
+                    gateway_id,
+                    // ToDo: Generate Circuit's params as default ABI
+                    Default::default(),
+                )?;
+
+            // ToDo: Enact on the info about round finished.
 
             Self::deposit_event(Event::StoredNewStep(
                 requester.clone(),
@@ -506,7 +545,7 @@ pub mod pallet {
             // Retrieve sender of the transaction.
             let _relayer_id = ensure_signed(origin)?;
 
-            let xtx: Xtx<T::AccountId, T::BlockNumber, T::Hash> =
+            let xtx: Xtx<T::AccountId, T::BlockNumber, T::Hash, BalanceOf<T>> =
                 ActiveXtxMap::<T>::get(xtx_id.clone())
                     .expect("submitted to confirm step id does not match with any Xtx");
 
@@ -517,7 +556,9 @@ pub mod pallet {
             // ToDo: parse events to discover their content and verify execution
 
             // Check inclusion relying on data in palet-multi-verifier
-            let gateway_id = current_step.gateway_id;
+            let gateway_id = current_step
+                .gateway_id
+                .expect("Confirmation step for remote (Some) gateways only");
             let gateway_xdns_record =
                 pallet_xdns::Pallet::<T>::xdns_registry(current_step.gateway_entry_id)
                     .ok_or(Error::<T>::StepConfirmationGatewayNotRecognised)?;
@@ -570,6 +611,9 @@ pub mod pallet {
 
                 Err(Error::<T>::StepConfirmationInvalidInclusionProof.into())
             } else {
+                // ToDo: Enact on the confirmation step and save the update
+                // Self::update_xtx(&xtx, xtx_id, step_confirmation);
+                // Self::maybe_resume_xtx(&xtx);
                 Ok(().into())
             }
         }
@@ -625,9 +669,9 @@ impl<T: Config> Pallet<T> {
     /// Receives a list of available components and an io schedule in text format
     /// and parses it to create an execution schedule
     pub fn decompose_io_schedule(
-        _components: Vec<Compose<T::AccountId, u64>>,
+        _components: Vec<Compose<T::AccountId, BalanceOf<T>>>,
         _io_schedule: Vec<u8>,
-    ) -> Result<InterExecSchedule<T::AccountId, u64>, &'static str> {
+    ) -> Result<InterExecSchedule<T::AccountId, BalanceOf<T>>, &'static str> {
         // set constants
         const WHITESPACE_MATRIX: [u8; 4] = [b' ', b'\t', b'\r', b'\n'];
         const PHASE_SEPARATOR: u8 = b'|';
@@ -680,7 +724,7 @@ impl<T: Config> Pallet<T> {
                 .split(|character| character.eq(&PHASE_SEPARATOR))
                 .filter(|phase| !phase.is_empty())
                 .map(|phase| {
-                    let steps: Result<Vec<ExecStep<T::AccountId, u64>>, crate::Error<T>> =
+                    let steps: Result<Vec<ExecStep<T::AccountId, BalanceOf<T>>>, crate::Error<T>> =
                         split_into_steps(phase.to_vec());
                     ensure!(steps.is_ok(), Error::<T>::IOScheduleUnknownCompose);
                     Ok(ExecPhase {
@@ -702,7 +746,7 @@ impl<T: Config> Pallet<T> {
         cloned.remove(cloned.len() - 1);
 
         // make sure schedule can be split into phases
-        let phases: Result<Vec<ExecPhase<T::AccountId, u64>>, crate::Error<T>> =
+        let phases: Result<Vec<ExecPhase<T::AccountId, BalanceOf<T>>>, crate::Error<T>> =
             split_into_phases(cloned);
         ensure!(phases.is_ok(), Error::<T>::IOScheduleUnknownCompose);
 
@@ -718,22 +762,72 @@ impl<T: Config> Pallet<T> {
     /// Task of the dry_run here is the decompose the phases into additional rounds that can be submitted in parallel.
     /// The output is cross-chain transaction with a fixed schedule that covers all future steps of the incoming rounds and phases.
     pub fn dry_run_whole_xtx(
-        _inter_schedule: InterExecSchedule<T::AccountId, u64>,
+        inter_schedule: InterExecSchedule<T::AccountId, BalanceOf<T>>,
         escrow_account: T::AccountId,
         requester: T::AccountId,
-    ) -> Result<Xtx<T::AccountId, T::BlockNumber, <T as frame_system::Config>::Hash>, &'static str>
-    {
-        let _current_round: RoundEntry<T::AccountId, T::BlockNumber, T::Hash> = vec![];
+    ) -> Result<
+        (
+            Xtx<T::AccountId, T::BlockNumber, T::Hash, BalanceOf<T>>,
+            Vec<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>>,
+            Vec<RegistryContractId<T>>,
+            Vec<ContractActionDesc<T::Hash, ChainId, T::AccountId>>,
+        ),
+        &'static str,
+    > {
+        let mut contracts = vec![];
+        let mut unseen_contracts = vec![];
+        let mut seen_contracts = vec![];
+        let mut contract_ids = vec![];
+        let mut action_descriptions = vec![];
+
+        // ToDo: Better phases getter
+        let first_phase = inter_schedule
+            .phases
+            .get(0)
+            .expect("At least one phase should always be there in inter_schedule");
+
+        // Check if there are some unseen contracts - if yes dry_run them in a single context. If fine - add to the contracts-repo.
+        for step in &first_phase.steps {
+            let mut protocol_part_of_contract = step.compose.code_txt.clone();
+            protocol_part_of_contract.extend(step.compose.bytes.clone());
+            let key = T::Hashing::hash(Encode::encode(&mut protocol_part_of_contract).as_ref());
+
+            // If invalid new contract was submitted for execution - break. Otherwise, add the new contract to on-chain registry.
+            if !pallet_contracts_registry::ContractsRegistry::<T>::contains_key(key) {
+                let unseen_contract =
+                    ExecComposer::dry_run_single_contract::<T>(step.compose.clone())?;
+                // Assuming dry run step went well, add the contract now
+                pallet_contracts_registry::ContractsRegistry::<T>::insert(key, &unseen_contract);
+                unseen_contracts.push(unseen_contract.clone());
+                action_descriptions.extend(unseen_contract.action_descriptions);
+            } else {
+                // Query for the existent contract and push to queue.
+                let seen_contract = pallet_contracts_registry::ContractsRegistry::<T>::get(key)
+                    .expect("contains_key called above before accessing the contract");
+                action_descriptions.extend(seen_contract.action_descriptions.clone());
+                seen_contracts.push(seen_contract);
+            }
+            contract_ids.push(key);
+        }
+
+        contracts.extend(seen_contracts);
+        contracts.extend(unseen_contracts);
 
         let (current_block_no, block_zero) = (
             <frame_system::Pallet<T>>::block_number(),
             T::BlockNumber::zero(),
         );
-        let max_steps = 3;
 
-        let new_xtx = Xtx::<T::AccountId, T::BlockNumber, <T as frame_system::Config>::Hash>::new(
-            0,
-            0,
+        let max_steps = contracts.len() as u32;
+
+        let new_xtx = Xtx::<
+            T::AccountId,
+            T::BlockNumber,
+            <T as frame_system::Config>::Hash,
+            BalanceOf<T>,
+        >::new(
+            Default::default(),
+            Default::default(),
             requester.clone(),
             escrow_account.clone(),
             vec![],
@@ -746,16 +840,14 @@ impl<T: Config> Pallet<T> {
             Default::default(),
         );
 
-        // ExecComposer::dry_run_single_contract::<T>(contract, escrow_account, requester, step.dest, value, step.input, step.gateway_id);
-
-        Ok(new_xtx)
+        Ok((new_xtx, contracts, contract_ids, action_descriptions))
     }
 
     pub fn process_phase(
         x_tx_id: XtxId<T>,
-        _components: Vec<Compose<T::AccountId, u64>>,
+        _components: Vec<Compose<T::AccountId, BalanceOf<T>>>,
         escrow_account: T::AccountId,
-        _schedule: InterExecSchedule<T::AccountId, u64>,
+        _schedule: InterExecSchedule<T::AccountId, BalanceOf<T>>,
     ) -> Result<Vec<CircuitOutboundMessage>, &'static str> {
         let current_xtx =
             ActiveXtxMap::<T>::get(x_tx_id).ok_or("Cross-chain tx not found while process_step")?;
@@ -778,19 +870,25 @@ impl<T: Config> Pallet<T> {
     }
 
     pub fn process_round(
-        round_steps: RoundEntry<T::AccountId, T::BlockNumber, T::Hash>,
-        escrow_account: T::AccountId,
-        requester: T::AccountId,
+        _round_steps: RoundEntry<T::AccountId, T::BlockNumber, T::Hash, BalanceOf<T>>,
+        _escrow_account: T::AccountId,
+        _requester: T::AccountId,
     ) -> Result<Vec<CircuitOutboundMessage>, &'static str> {
-        let mut current_round_messages: Vec<CircuitOutboundMessage> = vec![];
+        let current_round_messages: Vec<CircuitOutboundMessage> = vec![];
 
-        for step in round_steps {
-            let single_step_outbound_messages =
-                Self::process_step(step, escrow_account.clone(), requester.clone())?;
-            current_round_messages.extend(single_step_outbound_messages);
-        }
+        let _constructed_outbound_messages = &mut Vec::<CircuitOutboundMessage>::new();
 
         Ok(current_round_messages)
+    }
+
+    pub fn first_unprocessed_step(
+        xtx: Xtx<T::AccountId, T::BlockNumber, <T as frame_system::Config>::Hash, BalanceOf<T>>,
+    ) -> Result<StepEntry<T::AccountId, T::BlockNumber, T::Hash, BalanceOf<T>>, &'static str> {
+        let current_step = xtx.schedule.phases[xtx.current_round as usize].clone()
+            [xtx.current_step as usize]
+            .clone();
+
+        Ok(current_step)
     }
 
     pub fn select_authority(escrow_account: T::AccountId) -> Result<AuthorityId, &'static str> {
@@ -807,51 +905,9 @@ impl<T: Config> Pallet<T> {
         Ok(submitter)
     }
 
-    pub fn process_step(
-        step: StepEntry<T::AccountId, T::BlockNumber, T::Hash>,
-        escrow_account: T::AccountId,
-        requester: T::AccountId,
-    ) -> Result<Vec<CircuitOutboundMessage>, &'static str> {
-        let contract =
-            pallet_contracts_registry::Pallet::<T>::contracts_registry(step.compose_id.clone())
-                .expect(
-                    // let contract = ContractsRegistry::<T>::get(step.compose_id.clone()).expect(
-                    "contract id in steps should be matching contracts registry",
-                );
-
-        let value = BalanceOf::<T>::from(
-            sp_std::convert::TryInto::<u32>::try_into(step.value)
-                .map_err(|_e| "Can't cast value in dry_run_single_contract")?,
-        );
-
-        let submitter = Self::select_authority(escrow_account.clone())?;
-
-        let gateway_xdns_record = pallet_xdns::Pallet::<T>::xdns_registry(step.gateway_entry_id)
-            .ok_or(Error::<T>::ProcessStepGatewayNotRecognised)?;
-
-        ExecComposer::pre_run_single_contract::<T>(
-            contract,
-            escrow_account,
-            submitter,
-            requester,
-            step.dest,
-            value,
-            step.input,
-            step.gateway_id,
-            gateway_xdns_record.gateway_abi,
-        )
-        .into()
-    }
-
-    /// Submit round (parallel steps) for execution.
-    /// Boils down to emitting steps entries as an event watched by relayers
-    pub fn submit_round(_round_messages: Vec<CircuitOutboundMessage>) -> Result<(), &'static str> {
-        // Decide on the next execution phase and enact on it
-        Ok(())
-    }
-
+    // ToDo: complete_xtx
     fn complete_xtx(
-        _xtx: Xtx<T::AccountId, T::BlockNumber, <T as frame_system::Config>::Hash>,
+        _xtx: Xtx<T::AccountId, T::BlockNumber, <T as frame_system::Config>::Hash, BalanceOf<T>>,
     ) -> Result<Vec<CircuitOutboundMessage>, &'static str> {
         // Decide on the next execution phase and enact on it
         Ok(vec![])
