@@ -64,7 +64,7 @@ pub fn store<T: Config>(mut prefab_module: PrefabWasmModule<T>) {
                 }
                 None => {
                     *existing = Some(prefab_module);
-                    Err(Error::<T>::CodeNotFound)
+                    Err(Error::<T>::CodeNotFoundLazyUpdate)
                 }
             },
         ),
@@ -104,7 +104,7 @@ pub fn increment_refcount<T: Config>(
                 increment_64(&mut module.refcount);
                 return Ok(());
             }
-            Err(Error::<T>::CodeNotFound.into())
+            Err(Error::<T>::CodeNotFoundOther.into())
         }),
     )
     .map_err(Into::into)
