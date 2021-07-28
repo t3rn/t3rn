@@ -28,3 +28,4 @@ circuit-rpc-runtime-api = { version = "0.1.0", path = "./runtime-api" }
 
 [dev-dependencies]
 serde_json = "1.0.41"
+substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate.git", tag = "monthly-2021-06" }
