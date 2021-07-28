@@ -14,7 +14,7 @@
 
 use std::sync::Arc;
 
-use codec::Codec;
+use sp_api::codec::Codec;
 use jsonrpc_core::{Error, ErrorCode, Result};
 use jsonrpc_derive::rpc;
 use serde::{Deserialize, Serialize};
@@ -84,7 +84,7 @@ pub struct InterExecRequest<AccountId, Balance> {
 pub struct ComposeRPC<Account, Balance> {
     name: Box<str>,
     code_txt: Box<str>,
-    gateway_id: Account,
+    gateway_id: t3rn_primitives::InstanceId, // TODO: replace with ChainId
     exec_type: Box<str>,
     dest: Account,
     value: Balance,
@@ -350,7 +350,7 @@ mod tests {
 			"components": [{
                 "name": "component1",
                 "codeTxt": "let a = \"hello\"",
-                "gatewayId": "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL",
+                "gatewayId": [99, 105, 114, 99],
                 "execType": "exec-volatile",
                 "dest": "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL",
                 "value": 0,
