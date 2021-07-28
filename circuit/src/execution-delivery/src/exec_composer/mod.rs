@@ -162,7 +162,7 @@ impl ExecComposer {
             OM::get_run_mode(),
             gateway_id,
         )
-            .map_err(|_e| "Can't decode WASM code")?;
+        .map_err(|_e| "Can't decode WASM code")?;
 
         // if target is None if in the contracts-repository
         let target_id = gateway_id;
@@ -196,7 +196,7 @@ impl ExecComposer {
             debug_message,
             stack_extension,
         )
-            .map_err(|_e| "Can't create VVM call stack")?;
+        .map_err(|_e| "Can't create VVM call stack")?;
 
         let _ret_out: ExecReturnValue =
             stack.run(executable, input_data).map_err(|err| err.error)?;
@@ -275,7 +275,7 @@ impl ExecComposer {
                     RunMode::Dry,
                     gateway_id,
                 )
-                    .map_err(|_e| "Can't decode WASM code")
+                .map_err(|_e| "Can't decode WASM code")
             })
             .collect::<Result<Vec<PrefabWasmModule<T>>, &'static str>>()?;
 
@@ -382,7 +382,7 @@ mod tests {
             SURI_ALICE,
             key_pair_alice.public().as_ref(),
         )
-            .expect("Inserts unknown key");
+        .expect("Inserts unknown key");
 
         ext.register_extension(KeystoreExt(keystore.into()));
         // Alice's account
