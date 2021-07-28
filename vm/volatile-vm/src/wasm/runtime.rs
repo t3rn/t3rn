@@ -711,13 +711,6 @@ where
             flags.contains(CallFlags::ALLOW_REENTRY),
         );
 
-        if let Ok(output) = &call_outcome {
-            println!("wasm runtime ext.call - call outcome OK - {:?}", output);
-        }
-        if let Err(err) = &call_outcome {
-            println!("wasm runtime ext.call - call outcome ERR - {:?}", err.error);
-        }
-
         // `TAIL_CALL` only matters on an `OK` result. Otherwise the call stack comes to
         // a halt anyways without anymore code being executed.
         if flags.contains(CallFlags::TAIL_CALL) {

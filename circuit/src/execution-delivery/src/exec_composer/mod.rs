@@ -155,10 +155,6 @@ impl ExecComposer {
         // ToDo: Frame value equal to requested args
         let debug_message = None;
 
-        println!(
-            "Assign following to executable: {:?}",
-            contract.bytes.clone()
-        );
         // Here could also access and pre-load code to lazy storage of VVM
         let _executable = PrefabWasmModule::<T>::from_code(
             contract.bytes.clone(),
