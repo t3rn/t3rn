@@ -311,7 +311,6 @@ impl pallet_multi_finality_verifier::Config<PolkadotLikeGrandpaInstance> for Run
     type MaxRequests = MaxRequests;
     type WeightInfo = pallet_multi_finality_verifier::weights::GatewayWeight<Runtime>;
     type HeadersToKeep = HeadersToKeep;
-    type TimeProvider = pallet_timestamp::Pallet<Runtime>;
 }
 
 impl pallet_session::Config for Runtime {
@@ -522,7 +521,7 @@ construct_runtime!(
         Randomness: pallet_randomness_collective_flip::{Pallet, Storage},
         Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
         EVM: pallet_evm::{Pallet, Config, Storage, Event<T>},
-        XDNS: pallet_xdns::{Pallet, Call, Config, Storage, Event<T>},
+        XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>},
     }
 );
 

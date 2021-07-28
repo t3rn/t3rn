@@ -4856,6 +4856,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-trie",
+ "t3rn-primitives",
 ]
 
 [[package]]

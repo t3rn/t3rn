@@ -143,10 +143,12 @@ pub mod pallet {
     // Import various types used to declare pallet in scope.
     use super::*;
     use frame_support::pallet_prelude::*;
-    use frame_system::pallet_prelude::*;
-    use t3rn_primitives::ChainId;
+	use frame_support::traits::Time;
+	use frame_system::pallet_prelude::*;
+	use t3rn_primitives::{ChainId, EscrowTrait};
+	use sp_std::convert::TryInto;
 
-    #[pallet::config]
+	#[pallet::config]
     pub trait Config:
         pallet_balances::Config + frame_system::Config + t3rn_primitives::EscrowTrait
     {
@@ -219,13 +221,14 @@ pub mod pallet {
 
             xdns_record.assign_registrant(registrant.clone());
 
-            // TODO fix this value
-            xdns_record.set_last_finalized(0);
+			let now = TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now()).map_err(|_| "Unable to compute current timestamp")?;
+
+            xdns_record.set_last_finalized(now);
 
             let xdns_record_id = xdns_record.generate_id::<T>();
 
             if <XDNSRegistry<T>>::contains_key(&xdns_record_id) {
-                Err(Error::<T>::XdnsRecordAlreadyExists)?
+                Err(Error::<T>::XdnsRecordAlreadyExists.into())
             } else {
                 <XDNSRegistry<T>>::insert(&xdns_record_id, xdns_record);
                 Self::deposit_event(Event::<T>::XdnsRecordStored(registrant, xdns_record_id));
@@ -342,13 +345,13 @@ pub mod pallet {
         ) -> Result<XdnsRecord<T::AccountId>, &'static str> {
             // ensure_signed(origin)?;
 
-            // we sort each available gateway pointer based on its GatewayType
+            // Sort each available gateway pointer based on its GatewayType
             let gateway_pointers = t3rn_primitives::retrieve_gateway_pointers(gateway_id);
             ensure!(gateway_pointers.is_ok(), "No available gateway pointers");
             let mut sorted_gateway_pointers = gateway_pointers.unwrap();
             sorted_gateway_pointers.sort_by(|a, b| a.gateway_type.cmp(&b.gateway_type));
 
-            // we then fetch each XdnsRecord and re-sort based on its last_finalized descending
+            // Fetch each XdnsRecord and re-sort based on its last_finalized descending
             let mut sorted_gateways: Vec<XdnsRecord<T::AccountId>> = sorted_gateway_pointers
                 .into_iter()
                 .map(|gateway_pointer| {
@@ -362,7 +365,7 @@ pub mod pallet {
             sorted_gateways
                 .sort_by(|xdns_a, xdns_b| xdns_b.last_finalized.cmp(&xdns_a.last_finalized));
 
-            // then we return the first result
+            // Return the first result
             if sorted_gateways.is_empty() {
                 return Err("Xdns record not found");
             }
