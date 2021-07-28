@@ -11,10 +11,11 @@ use t3rn_primitives::abi::GatewayABIConfig;
 use t3rn_primitives::transfers::BalanceOf;
 use t3rn_primitives::transfers::TransferEntry;
 
+use frame_support::ensure;
 use frame_support::traits::Time;
 
+use t3rn_primitives::GatewayPointer;
 use t3rn_primitives::{Compose, EscrowTrait};
-use t3rn_primitives::{GatewayPointer, GatewayType, GatewayVendor};
 
 use versatile_wasm::gas::GasMeter;
 use versatile_wasm::runtime::run_code_on_versatile_wm;
@@ -26,6 +27,7 @@ pub mod versatile_vm_impl;
 
 use crate::exec_composer::versatile_vm_impl::*;
 use crate::AuthorityId;
+use sp_application_crypto::sp_core::Hasher;
 
 pub struct ExecComposer {}
 
@@ -38,7 +40,7 @@ impl ExecComposer {
         target_dest: T::AccountId,
         value: BalanceOf<T>,
         input: Vec<u8>,
-        gateway_id: bp_runtime::ChainId,
+        gateway_id: t3rn_primitives::ChainId,
         gateway_abi_config: GatewayABIConfig,
     ) -> Result<Vec<CircuitOutboundMessage>, &'static str> {
         let output_mode = PessimisticOutputMode::new();
@@ -84,7 +86,7 @@ impl ExecComposer {
         target_dest: T::AccountId,
         value: BalanceOf<T>,
         input: Vec<u8>,
-        gateway_id: bp_runtime::ChainId,
+        gateway_id: t3rn_primitives::ChainId,
         gateway_abi_config: GatewayABIConfig,
         _confirmed_outputs: Vec<u8>,
     ) -> Result<Vec<CircuitOutboundMessage>, &'static str> {
@@ -148,13 +150,16 @@ impl ExecComposer {
         escrow_account: T::AccountId,
         submitter: AuthorityId,
         requester: T::AccountId,
-        gateway_id: bp_runtime::ChainId,
+        gateway_id: t3rn_primitives::ChainId,
         gateway_abi_config: GatewayABIConfig,
         output_mode: OM,
     ) -> Result<Vec<CircuitOutboundMessage>, &'static str> {
-        let gateway_pointer = Self::retrieve_gateway_pointer(gateway_id)?;
+        // TODO: this is hardcoded to the first returned value until a proper implementation
+        let gateway_pointers = t3rn_primitives::retrieve_gateway_pointers(gateway_id)?;
+        let best_gateway_pointer = gateway_pointers.first();
+        ensure!(best_gateway_pointer.is_some(), "Gateway pointer missing.");
         let gateway_protocol =
-            Self::retrieve_gateway_protocol::<T>(submitter, gateway_pointer.clone())?;
+            Self::retrieve_gateway_protocol::<T>(submitter, best_gateway_pointer.unwrap())?;
 
         let (
             block_number,
@@ -177,7 +182,7 @@ impl ExecComposer {
                 sp_std::convert::TryInto::<u32>::try_into(compose.value)
                     .map_err(|_e| "Can't cast value in dry_run_single_contract")?,
             ),
-            u64::max_value(),
+            u64::MAX,
             compose.dest,
         );
 
@@ -195,7 +200,7 @@ impl ExecComposer {
             &mut deferred_transfers,
             &mut constructed_outbound_messages,
             gateway_protocol,
-            gateway_pointer,
+            best_gateway_pointer.unwrap().clone(),
             output_mode,
         );
 
@@ -225,32 +230,24 @@ impl ExecComposer {
         Ok(constructed_outbound_messages.to_vec())
     }
 
-    fn retrieve_gateway_pointer(
-        gateway_id: bp_runtime::ChainId,
-    ) -> Result<GatewayPointer, &'static str> {
-        Ok(GatewayPointer {
-            id: gateway_id,
-            gateway_type: GatewayType::ProgrammableExternal,
-            vendor: GatewayVendor::Substrate,
-        })
-    }
-
     /// Given a Gateway Pointer and an Authority, it returns the respective Gateway Protocol
     fn retrieve_gateway_protocol<T: crate::Config>(
         submitter_id: AuthorityId,
-        _gateway_pointer: GatewayPointer,
+        gateway_pointer: &GatewayPointer,
     ) -> Result<Box<dyn GatewayInboundProtocol>, &'static str> {
-        // ToDo: Communicate with pallet_xdns in order to retrieve latest data about
-        // let (metadata, runtime_version, genesis_hash) = pallet_xdns::Pallet<T>::get_gateway_protocol_meta(gateway_pointer.id)
-        Ok(Box::new(SubstrateGatewayProtocol::<
-            AuthorityId,
-            bp_polkadot_core::Hash,
-        >::new(
-            Default::default(),
-            Default::default(),
-            Default::default(),
-            submitter_id,
-        )))
+        let mut best_gateway = pallet_xdns::Pallet::<T>::best_available(gateway_pointer.id)?;
+
+        let genesis_hash = T::Hashing::hash(&mut best_gateway.gateway_genesis.genesis_hash);
+        let runtime_version = best_gateway.gateway_genesis.runtime_version;
+
+        Ok(Box::new(
+            SubstrateGatewayProtocol::<AuthorityId, T::Hash>::new(
+                Default::default(),
+                runtime_version,
+                genesis_hash,
+                submitter_id,
+            ),
+        ))
     }
 }
 

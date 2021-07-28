@@ -23,7 +23,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use frame_support::dispatch::DispatchResult;
 use frame_system::ensure_signed;
 use sp_runtime::{traits::Hash, RuntimeDebug};
 use sp_std::prelude::*;
@@ -40,7 +39,11 @@ mod weights;
 
 pub use weights::*;
 
+/// A hash based on encoding the complete XdnsRecord
 pub type XdnsRecordId<T> = <T as frame_system::Config>::Hash;
+
+/// A hash based on encoding the Gateway ID
+pub type XdnsGatewayId<T> = <T as frame_system::Config>::Hash;
 
 /// A preliminary representation of a xdns_record in the onchain registry.
 #[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
@@ -62,6 +65,8 @@ pub struct XdnsRecord<AccountId> {
     pub gateway_id: bp_runtime::ChainId,
 
     pub registrant: Option<AccountId>,
+
+    pub last_finalized: Option<u64>,
 }
 
 impl<AccountId: Encode> XdnsRecord<AccountId> {
@@ -76,6 +81,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
         gateway_vendor: t3rn_primitives::GatewayVendor,
         gateway_type: t3rn_primitives::GatewayType,
         registrant: Option<AccountId>,
+        last_finalized: Option<u64>,
     ) -> Self {
         let gateway_genesis = GatewayGenesisConfig {
             modules_encoded,
@@ -92,6 +98,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
             gateway_type,
             gateway_id,
             registrant,
+            last_finalized,
         }
     }
 
@@ -111,6 +118,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
             gateway_type,
             gateway_genesis,
             registrant: None,
+            last_finalized: None,
         }
     }
 
@@ -118,8 +126,13 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
         self.registrant = Some(registrant)
     }
 
+    /// Function that generates an XdnsRecordId hash based on the gateway id
     pub fn generate_id<T: Config>(&self) -> XdnsRecordId<T> {
-        T::Hashing::hash(Encode::encode(self).as_ref())
+        T::Hashing::hash(Encode::encode(&self.gateway_id).as_ref())
+    }
+
+    pub fn set_last_finalized(&mut self, last_finalized: u64) {
+        self.last_finalized = Some(last_finalized)
     }
 }
 
@@ -130,7 +143,10 @@ pub mod pallet {
     // Import various types used to declare pallet in scope.
     use super::*;
     use frame_support::pallet_prelude::*;
+    use frame_support::traits::Time;
     use frame_system::pallet_prelude::*;
+    use sp_std::convert::TryInto;
+    use t3rn_primitives::{ChainId, EscrowTrait};
 
     #[pallet::config]
     pub trait Config:
@@ -205,10 +221,15 @@ pub mod pallet {
 
             xdns_record.assign_registrant(registrant.clone());
 
+            let now = TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now())
+                .map_err(|_| "Unable to compute current timestamp")?;
+
+            xdns_record.set_last_finalized(now);
+
             let xdns_record_id = xdns_record.generate_id::<T>();
 
             if <XDNSRegistry<T>>::contains_key(&xdns_record_id) {
-                Err(Error::<T>::XdnsRecordAlreadyExists)?
+                Err(Error::<T>::XdnsRecordAlreadyExists.into())
             } else {
                 <XDNSRegistry<T>>::insert(&xdns_record_id, xdns_record);
                 Self::deposit_event(Event::<T>::XdnsRecordStored(registrant, xdns_record_id));
@@ -216,17 +237,28 @@ pub mod pallet {
             }
         }
 
-        /// Removes a xdns_record from the onchain registry. Root only access.
+        /// Updates the last_ xdns_record from the onchain registry. Root only access.
         #[pallet::weight(500_000_000 + T::DbWeight::get().reads_writes(1,1))]
         pub fn update_ttl(
             origin: OriginFor<T>,
-            xdns_record_id: XdnsRecordId<T>,
+            gateway_id: ChainId,
+            last_finalized: u64,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
-            if !<XDNSRegistry<T>>::contains_key(&xdns_record_id) {
-                Err(Error::<T>::UnknownXdnsRecord)?
+            let xdns_record_id = T::Hashing::hash(Encode::encode(&gateway_id).as_ref());
+
+            if !XDNSRegistry::<T>::contains_key(xdns_record_id) {
+                Err(Error::<T>::XdnsRecordNotFound.into())
             } else {
+                XDNSRegistry::<T>::mutate(xdns_record_id, |xdns_record| match xdns_record {
+                    None => Err(Error::<T>::XdnsRecordNotFound),
+                    Some(record) => {
+                        record.set_last_finalized(last_finalized);
+                        Ok(())
+                    }
+                })?;
+
                 Self::deposit_event(Event::<T>::XdnsRecordUpdated(xdns_record_id));
                 Ok(().into())
             }
@@ -269,6 +301,8 @@ pub mod pallet {
         XdnsRecordAlreadyExists,
         /// Access of unknown xdns_record
         UnknownXdnsRecord,
+        /// Xdns Record not found
+        XdnsRecordNotFound,
     }
 
     /// The pre-validated composable xdns_records on-chain registry.
@@ -303,14 +337,41 @@ pub mod pallet {
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {}
     }
-}
 
-impl<T: Config> Pallet<T> {
-    // Add public immutables and private mutables.
-    #[allow(dead_code)]
-    fn placeholder(origin: T::Origin) -> DispatchResult {
-        let _sender = ensure_signed(origin)?;
+    impl<T: Config> Pallet<T> {
+        /// Locates the best available gateway based on the time they were last finalized.
+        /// Priority goes Internal > External > TxOnly
+        pub fn best_available(
+            gateway_id: ChainId,
+        ) -> Result<XdnsRecord<T::AccountId>, &'static str> {
+            // ensure_signed(origin)?;
 
-        Ok(())
+            // Sort each available gateway pointer based on its GatewayType
+            let gateway_pointers = t3rn_primitives::retrieve_gateway_pointers(gateway_id);
+            ensure!(gateway_pointers.is_ok(), "No available gateway pointers");
+            let mut sorted_gateway_pointers = gateway_pointers.unwrap();
+            sorted_gateway_pointers.sort_by(|a, b| a.gateway_type.cmp(&b.gateway_type));
+
+            // Fetch each XdnsRecord and re-sort based on its last_finalized descending
+            let mut sorted_gateways: Vec<XdnsRecord<T::AccountId>> = sorted_gateway_pointers
+                .into_iter()
+                .map(|gateway_pointer| {
+                    <XDNSRegistry<T>>::get(T::Hashing::hash(
+                        Encode::encode(&gateway_pointer.id).as_ref(),
+                    ))
+                })
+                .filter(|xdns_record| xdns_record.is_some())
+                .map(|xdns_record| xdns_record.unwrap())
+                .collect();
+            sorted_gateways
+                .sort_by(|xdns_a, xdns_b| xdns_b.last_finalized.cmp(&xdns_a.last_finalized));
+
+            // Return the first result
+            if sorted_gateways.is_empty() {
+                return Err("Xdns record not found");
+            }
+
+            Ok(sorted_gateways[0].clone())
+        }
     }
 }

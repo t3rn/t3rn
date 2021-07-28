@@ -17,7 +17,7 @@
 use bp_circuit::derive_account_from_gateway_id;
 use circuit_runtime::{
     AccountId, AuraConfig, BalancesConfig, EVMConfig, GenesisConfig, GrandpaConfig, SessionConfig,
-    SessionKeys, Signature, SudoConfig, SystemConfig, WASM_BINARY,
+    SessionKeys, Signature, SudoConfig, SystemConfig, XDNSConfig, WASM_BINARY,
 };
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{sr25519, Pair, Public};
@@ -225,6 +225,9 @@ fn testnet_genesis(
                 map
             },
         },
+		pallet_xdns: XDNSConfig {
+			known_xdns_records: Vec::new(),
+		}
         //ToDo: Uncomment when upgrading to v4.0.0 substrate
         // system: SystemConfig {
         //     code: WASM_BINARY
