@@ -70,7 +70,7 @@ pub enum ReturnCode {
     NotCallable = 8,
     /// The call to `seal_debug_message` had no effect because debug message
     /// recording was disabled.
-    #[cfg(feature = "unstable-interface")]
+    // #[cfg(feature = "unstable-interface")]
     LoggingDisabled = 9,
 }
 
@@ -176,7 +176,7 @@ pub enum RuntimeCosts {
     /// Weight of calling `seal_deposit_event` with the given number of topics and event size.
     DepositEvent { num_topic: u32, len: u32 },
     /// Weight of calling `seal_debug_message`.
-    #[cfg(feature = "unstable-interface")]
+    // #[cfg(feature = "unstable-interface")]
     DebugMessage,
     /// Weight of calling `seal_set_rent_allowance`.
     SetRentAllowance,
@@ -247,7 +247,7 @@ impl RuntimeCosts {
                 .deposit_event
                 .saturating_add(s.deposit_event_per_topic.saturating_mul(num_topic.into()))
                 .saturating_add(s.deposit_event_per_byte.saturating_mul(len.into())),
-            #[cfg(feature = "unstable-interface")]
+            // #[cfg(feature = "unstable-interface")]
             DebugMessage => s.debug_message,
             SetRentAllowance => s.set_rent_allowance,
             SetStorage(len) => s
@@ -314,7 +314,7 @@ where
 
 bitflags! {
     /// Flags used to change the behaviour of `seal_call`.
-    struct CallFlags: u32 {
+    pub struct CallFlags: u32 {
         /// Forward the input of current function to the callee.
         ///
         /// Supplied input pointers are ignored when set.
@@ -350,6 +350,12 @@ bitflags! {
         /// the callee (or any of its callees) is denied. This includes the first callee:
         /// You cannot call into yourself with this flag set.
         const ALLOW_REENTRY = 0b0000_1000;
+        /// Allow the callee to reenter into the current contract.
+        ///
+        /// Without this flag any reentrancy into the current contract that originates from
+        /// the callee (or any of its callees) is denied. This includes the first callee:
+        /// You cannot call into yourself with this flag set.
+        const MODULE_DISPATCH = 0b0001_0000;
     }
 }
 
@@ -693,14 +699,24 @@ where
         if value > 0u32.into() {
             self.charge_gas(RuntimeCosts::CallSurchargeTransfer)?;
         }
+
+        // ToDo: Analyze module dispatch params here.
         let ext = &mut self.ext;
         let call_outcome = ext.call(
             gas,
             callee,
             value,
             input_data,
+            flags,
             flags.contains(CallFlags::ALLOW_REENTRY),
         );
+
+        if let Ok(output) = &call_outcome {
+            println!("wasm runtime ext.call - call outcome OK - {:?}", output);
+        }
+        if let Err(err) = &call_outcome {
+            println!("wasm runtime ext.call - call outcome ERR - {:?}", err.error);
+        }
 
         // `TAIL_CALL` only matters on an `OK` result. Otherwise the call stack comes to
         // a halt anyways without anymore code being executed.
@@ -1815,10 +1831,11 @@ define_env!(Env, <E: Ext>,
     //
     // This function is unstable and subject to change (or removal) in the future. Do not
     // deploy a contract using it to a production chain.
-    [__unstable__] seal_rent_params(ctx, out_ptr: u32, out_len_ptr: u32) => {
-        Ok(ctx.write_sandbox_output(
-            out_ptr, out_len_ptr, &ctx.ext.rent_params().encode(), false, already_charged
-        )?)
+    [__unstable__] seal_rent_params(ctx, _out_ptr: u32, _out_len_ptr: u32) => {
+        unimplemented!();
+        // Ok(ctx.write_sandbox_output(
+        //     out_ptr, out_len_ptr, &ctx.ext.rent_params().encode(), false, already_charged
+        // )?)
     },
 
     // Stores the rent status into the supplied buffer.
@@ -1838,10 +1855,11 @@ define_env!(Env, <E: Ext>,
     //
     // This function is unstable and subject to change (or removal) in the future. Do not
     // deploy a contract using it to a production chain.
-    [__unstable__] seal_rent_status(ctx, at_refcount: u32, out_ptr: u32, out_len_ptr: u32) => {
-        let rent_status = ctx.ext.rent_status(at_refcount).encode();
-        Ok(ctx.write_sandbox_output(
-            out_ptr, out_len_ptr, &rent_status, false, already_charged
-        )?)
+    [__unstable__] seal_rent_status(ctx, _at_refcount: u32, _out_ptr: u32, _out_len_ptr: u32) => {
+        unimplemented!();
+        // let rent_status = ctx.ext.rent_status(at_refcount).encode();
+        // Ok(ctx.write_sandbox_output(
+        //     out_ptr, out_len_ptr, &rent_status, false, already_charged
+        // )?)
     },
 );

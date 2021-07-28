@@ -175,7 +175,7 @@ macro_rules! register_func {
 		__unstable__ $name:ident ( $ctx:ident $( , $names:ident : $params:ty )* )
 		$( -> $returns:ty )* => $body:tt $($rest:tt)*
 	) => {
-		#[cfg(feature = "unstable-interface")]
+		// #[cfg(feature = "unstable-interface")]
 		register_body!(
 			$reg_cb, $trait;
 			__unstable__ $name
@@ -220,7 +220,7 @@ macro_rules! define_env {
 				func_type: &pwasm_utils::parity_wasm::elements::FunctionType,
 			) -> bool
 			{
-				#[cfg(not(feature = "unstable-interface"))]
+				// #[cfg(not(feature = "unstable-interface"))]
 				if module == b"__unstable__" {
 					return false;
 				}
