@@ -386,8 +386,7 @@ pub mod pallet {
     /// Declared by purchaser gateway foreign targets associated with target addresses (to)
     /// None for targets at Circuit.
     #[pallet::storage]
-    pub type DeclaredTargets<T: Config> =
-        StorageMap<_, Twox64Concat, T::AccountId, TargetId>;
+    pub type DeclaredTargets<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, TargetId>;
 
     /// The code associated with a given account.
     ///

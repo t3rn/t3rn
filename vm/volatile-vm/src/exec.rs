@@ -16,10 +16,10 @@
 // limitations under the License.
 
 use crate::{
-    gas::GasMeter, schedule::Schedule, storage::Storage, wasm::RunMode, AccountCounter,
-    AliveContractInfo, BalanceOf, Bytes, CodeHash, Config, ContractInfo, ContractInfoOf,
-    DeclaredTargets, Error, ErrorOrigin, Event, ExecError, ExecReturnValue, Pallet as VolatileVM,
-    ReturnFlags,
+    gas::GasMeter, schedule::Schedule, storage::Storage, wasm::runtime::CallFlags, wasm::RunMode,
+    AccountCounter, AliveContractInfo, BalanceOf, Bytes, CodeHash, Config, ContractInfo,
+    ContractInfoOf, DeclaredTargets, Error, ErrorOrigin, Event, ExecError, ExecReturnValue,
+    Pallet as VolatileVM, ReturnFlags,
 };
 use codec::Encode;
 use sp_runtime::traits::Hash;
@@ -32,7 +32,7 @@ use t3rn_primitives::{
 use frame_support::{
     dispatch::{DispatchError, DispatchResult},
     ensure,
-    storage::{with_transaction, TransactionOutcome},
+    storage::{child::ChildInfo, with_transaction, TransactionOutcome},
     traits::{Currency, ExistenceRequirement, Get, Randomness, Time},
     weights::Weight,
     DefaultNoBound,
@@ -132,6 +132,7 @@ pub trait Ext: sealing::Sealed {
         to: AccountIdOf<Self::T>,
         value: BalanceOf<Self::T>,
         input_data: Vec<u8>,
+        flags: CallFlags,
         allows_reentry: bool,
     ) -> Result<ExecReturnValue, ExecError>;
 
@@ -164,7 +165,7 @@ pub trait Ext: sealing::Sealed {
         to: AccountIdOf<Self::T>,
         value: BalanceOf<Self::T>,
         input_data: Vec<u8>,
-        allows_reentry: bool,
+        flags: CallFlags,
         target_id: ChainId,
     ) -> Result<ExecReturnValue, ExecError>;
 
@@ -451,7 +452,7 @@ pub struct StackExtension<'a, T: Config> {
     pub escrow_account: T::AccountId,
     /// Requester is now origin
     pub requester: T::AccountId,
-    pub storage_trie_id: T::Hash,
+    pub storage_trie_id: ChildInfo,
     /// The first input data submitted by origin / requeter
     pub input_data: Option<Vec<u8>>,
     /// Collection deferred transfers - part of gateway output
@@ -463,12 +464,22 @@ pub struct StackExtension<'a, T: Config> {
     pub target_id: Option<ChainId>,
     pub gateway_pointer: GatewayPointer,
     pub gateway_abi: GatewayABIConfig,
-    pub preloaded_action_descriptions: Vec<ContractActionDesc<T::Hash, ChainId, T::AccountId>>,
+    pub preloaded_action_descriptions:
+        &'a mut Vec<ContractActionDesc<T::Hash, ChainId, T::AccountId>>,
     pub run_mode: RunMode,
 }
 
 pub trait ExposedExt<'a, T: Config> {
     fn call(
+        &self,
+        gas_limit: Weight,
+        to: T::AccountId,
+        value: BalanceOf<T>,
+        input_data: Vec<u8>,
+        output_data: Option<&Result<ExecReturnValue, ExecError>>,
+    ) -> Result<CircuitOutboundMessage, &'static str>;
+
+    fn call_module(
         &self,
         gas_limit: Weight,
         to: T::AccountId,
@@ -507,8 +518,59 @@ pub trait ExposedExt<'a, T: Config> {
     fn get_target_id(&self) -> ChainId;
 }
 
+impl<'a, T: Config> StackExtension<'a, T> {
+    pub fn produce_call_message(
+        &self,
+        gas_limit: Weight,
+        to: T::AccountId,
+        value: BalanceOf<T>,
+        input_data: Vec<u8>,
+        module_name: Vec<u8>,
+        method_name: Vec<u8>,
+        output_data: Option<&Result<ExecReturnValue, ExecError>>,
+    ) -> Result<CircuitOutboundMessage, &'static str> {
+        // -> todo: translate public key to native address of given size
+        let escrow_account_there = eval_to_encoded(
+            Type::Address(self.gateway_abi.address_length),
+            self.escrow_account.encode(),
+        )?;
+        let requester_account_there = eval_to_encoded(
+            Type::Address(self.gateway_abi.address_length),
+            self.requester.encode(),
+        )?;
+        let dest_account_there =
+            eval_to_encoded(Type::Address(self.gateway_abi.address_length), to.encode())?;
+        let value_there =
+            eval_to_encoded(Type::Uint(self.gateway_abi.value_type_size), value.encode())?;
+        let maybe_succ_res = if let Some(some_ret) = output_data {
+            if let Ok(ok_val) = some_ret {
+                Some(ok_val.encode())
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        let outbound_message = self.gateway_inbound_protocol.call(
+            module_name,
+            method_name,
+            input_data,
+            escrow_account_there,
+            requester_account_there,
+            dest_account_there,
+            value_there,
+            gas_limit.encode(),
+            self.gateway_pointer.gateway_type.clone(),
+            maybe_succ_res,
+        );
+
+        outbound_message
+    }
+}
+
 impl<'a, T: Config> ExposedExt<'a, T> for StackExtension<'a, T> {
-    fn call(
+    fn call_module(
         &self,
         gas_limit: Weight,
         to: T::AccountId,
@@ -540,46 +602,40 @@ impl<'a, T: Config> ExposedExt<'a, T> for StackExtension<'a, T> {
             Ok((md_name, fn_name, input))
         }
 
-        // -> todo: translate public key to native address of given size
-        let escrow_account_there = eval_to_encoded(
-            Type::Address(self.gateway_abi.address_length),
-            self.escrow_account.encode(),
-        )?;
-        let requester_account_there = eval_to_encoded(
-            Type::Address(self.gateway_abi.address_length),
-            self.requester.encode(),
-        )?;
-        let dest_account_there =
-            eval_to_encoded(Type::Address(self.gateway_abi.address_length), to.encode())?;
-        let value_there =
-            eval_to_encoded(Type::Uint(self.gateway_abi.value_type_size), value.encode())?;
+        let (module_name, method_name, trimmed_input) = take_method_names_from_input(input_data)?;
 
-        let (md_name, fn_name, trimmed_input) = take_method_names_from_input(input_data)?;
+        Self::produce_call_message(
+            &self,
+            gas_limit,
+            to,
+            value,
+            trimmed_input,
+            module_name.encode(),
+            method_name.encode(),
+            output_data,
+        )
+    }
 
-        let maybe_succ_res = if let Some(some_ret) = output_data {
-            if let Ok(ok_val) = some_ret {
-                Some(ok_val.encode())
-            } else {
-                None
-            }
-        } else {
-            None
-        };
+    fn call(
+        &self,
+        gas_limit: Weight,
+        to: T::AccountId,
+        value: BalanceOf<T>,
+        input_data: Vec<u8>,
+        output_data: Option<&Result<ExecReturnValue, ExecError>>,
+    ) -> Result<CircuitOutboundMessage, &'static str> {
+        let (module_name, method_name) = (vec![], vec![]);
 
-        let outbound_message = self.gateway_inbound_protocol.call(
-            md_name.encode(),
-            fn_name.encode(),
-            trimmed_input.to_vec(),
-            escrow_account_there,
-            requester_account_there,
-            dest_account_there,
-            value_there,
-            gas_limit.encode(),
-            self.gateway_pointer.gateway_type.clone(),
-            maybe_succ_res,
-        );
-
-        outbound_message
+        Self::produce_call_message(
+            &self,
+            gas_limit,
+            to,
+            value,
+            input_data,
+            module_name,
+            method_name,
+            output_data,
+        )
     }
 
     fn transfer(
@@ -1375,18 +1431,29 @@ where
         to: T::AccountId,
         value: BalanceOf<T>,
         input_data: Vec<u8>,
-        _allows_reentry: bool,
+        flags: CallFlags,
         target_id: ChainId,
     ) -> Result<ExecReturnValue, ExecError> {
         let maybe_already_result = None;
-
-        let new_msg = self.extension.call(
-            gas_limit,
-            to,
-            value,
-            input_data.clone(),
-            maybe_already_result,
-        )?;
+        // Scan for Module Dispatch flag - that would follow enforced data input format,
+        // where first 64 bytes are reserved for encoded module + function names
+        let new_msg = if flags.contains(CallFlags::MODULE_DISPATCH) {
+            self.extension.call_module(
+                gas_limit,
+                to,
+                value,
+                input_data.clone(),
+                maybe_already_result,
+            )?
+        } else {
+            self.extension.call(
+                gas_limit,
+                to,
+                value,
+                input_data.clone(),
+                maybe_already_result,
+            )?
+        };
 
         self.extension.add_message(new_msg);
 
@@ -1411,6 +1478,7 @@ where
         to: T::AccountId,
         value: BalanceOf<T>,
         input_data: Vec<u8>,
+        flags: CallFlags,
         allows_reentry: bool,
     ) -> Result<ExecReturnValue, ExecError> {
         fn calculate_action_id<T: system::Config>(
@@ -1422,7 +1490,12 @@ where
             T::Hashing::hash(Encode::encode(&mut action_bytes).as_ref())
         }
 
-        fn peek_target_from_declared<T: Config>(account_id: T::AccountId) -> Option<ChainId> {
+        // Lookup target for potentially remote account_id.
+        // ToDo: In case a conflict on a target use action_id to resolve it
+        fn peek_target_from_declared<T: Config>(
+            account_id: T::AccountId,
+            _action_id: T::Hash,
+        ) -> Option<ChainId> {
             <DeclaredTargets<T>>::get(&account_id)
         }
 
@@ -1433,7 +1506,7 @@ where
 
         match self.extension.run_mode {
             RunMode::Dry => {
-                let target_id = peek_target_from_declared::<T>(to.clone());
+                let target_id = peek_target_from_declared::<T>(to.clone(), action_id.clone());
                 self.extension
                     .preloaded_action_descriptions
                     .push(ContractActionDesc {
@@ -1454,7 +1527,7 @@ where
                     .iter()
                     .find(|a| a.action_id == action_id)
                     .ok_or(ExecError {
-                        error: Error::<T>::ContractTrapped.into(),
+                        error: Error::<T>::TargetActionDescNotFound.into(),
                         origin: ErrorOrigin::Caller,
                     })?;
 
@@ -1467,7 +1540,7 @@ where
                         to,
                         value,
                         input_data.clone(),
-                        allows_reentry,
+                        flags,
                         foreign_gateway_id,
                     ),
                     None => self.regular_call(gas_limit, to, value, input_data, allows_reentry),
@@ -1890,7 +1963,7 @@ mod tests {
                     .map
                     .get(&code_hash)
                     .cloned()
-                    .ok_or(Error::<Test>::CodeNotFound.into())
+                    .ok_or(Error::<Test>::CodeNotFoundOther.into())
             })
         }
 
