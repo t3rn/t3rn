@@ -4761,6 +4761,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "t3rn-primitives",
+ "volatile-vm",
 ]
 
 [[package]]

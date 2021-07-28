@@ -59,7 +59,7 @@ pub struct RegistryContract<Hash, AccountId, BalanceOf, BlockNumber> {
     /// Action descriptions (calls for now)
     pub action_descriptions: Vec<ContractActionDesc<Hash, ChainId, AccountId>>,
     /// Contracts Info after Contracts Pallet
-    pub info: RawAliveContractInfo<Hash, BlockNumber, BlockNumber>,
+    pub info: RawAliveContractInfo<Hash, BalanceOf, BlockNumber>,
 }
 
 impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode>
@@ -72,7 +72,7 @@ impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode>
         author_fees_per_single_use: Option<BalanceOf>,
         abi: Option<Vec<u8>>,
         action_descriptions: Vec<ContractActionDesc<Hash, ChainId, AccountId>>,
-        info: RawAliveContractInfo<Hash, BlockNumber, BlockNumber>,
+        info: RawAliveContractInfo<Hash, BalanceOf, BlockNumber>,
     ) -> Self {
         RegistryContract {
             code_txt,
@@ -97,7 +97,7 @@ impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode>
         author: AccountId,
         author_fees_per_single_use: Option<BalanceOf>,
         abi: Option<Vec<u8>>,
-        info: RawAliveContractInfo<Hash, BlockNumber, BlockNumber>,
+        info: RawAliveContractInfo<Hash, BalanceOf, BlockNumber>,
     ) -> RegistryContract<Hash, AccountId, BalanceOf, BlockNumber> {
         RegistryContract::new(
             compose.code_txt,
