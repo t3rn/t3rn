@@ -29,7 +29,7 @@ use t3rn_primitives::{transfers::BalanceOf, EscrowTrait};
 pub use crate::pallet::*;
 
 use crate::{
-    storage::{AliveContractInfo, ContractInfo, DeletedContract},
+    storage::{AliveContractInfo, ContractInfo, DeletedContract, RawAliveContractInfo},
     wasm::PrefabWasmModule,
     weights::WeightInfo,
 };
@@ -241,12 +241,20 @@ pub mod pallet {
         CodeTooLarge,
         /// No code could be found at the supplied code hash.
         CodeNotFound,
+        /// No code could be found at the supplied code hash.
+        CodeNotFoundLazyUpdate,
+        /// No code could be found at the supplied code hash.
+        CodeNotFoundLazyGet,
+        /// No code could be found at the supplied code hash.
+        CodeNotFoundOther,
         /// A buffer outside of sandbox memory was passed to a contract API function.
         OutOfBounds,
         /// Input passed to a contract API function failed to decode as expected type.
         DecodingFailed,
         /// Contract trapped during execution.
         ContractTrapped,
+        /// Contract trapped during execution.
+        TargetActionDescNotFound,
         /// The size defined in `T::MaxValueSize` was exceeded.
         ValueTooLarge,
         /// Termination of a contract is not allowed while the contract is already
@@ -378,7 +386,7 @@ pub mod pallet {
     /// Declared by purchaser gateway foreign targets associated with target addresses (to)
     /// None for targets at Circuit.
     #[pallet::storage]
-    pub(crate) type DeclaredTargets<T: Config> =
+    pub type DeclaredTargets<T: Config> =
         StorageMap<_, Twox64Concat, T::AccountId, TargetId>;
 
     /// The code associated with a given account.
@@ -429,71 +437,22 @@ impl<T: Config> Pallet<T> {
     pub fn get_contract_code_lazy(
         code_hash: CodeHash<T>,
     ) -> Result<PrefabWasmModule<T>, pallet::Error<T>> {
-        // ) -> Result<PrefabWasmModule<T>, Error<T>> {
-        // ) -> Result<PrefabWasmModule<T>, &'static str> {
-
-        // if !T::ContractsLazyLoaded.any(|f| &f.account_id == id && !f.allows_reentry) {
-        //
-        // }
-
-        // if T::ContractsLazyLoaded::contains_key(code_hash) {
-        //     return T::LoadedContractsCache::get(code_hash);
-        // }
-
-        <DryRunCodeCandidates<T>>::get(code_hash).ok_or_else(|| Error::<T>::CodeNotFound)
-
-        // pub fn take_non_fungible(&mut self, id: &AssetId) -> Assets {
-        //     let mut taken = Assets::new();
-        //     let non_fungible = mem::replace(&mut self.non_fungible, Default::default());
-        //     non_fungible.into_iter().for_each(|(c, instance)| {
-        //         if &c == id {
-        //             taken.non_fungible.insert((c, instance));
-        //         } else {
-        //             self.non_fungible.insert((c, instance));
-        //         }
-        //     });
-        //     taken
-        // }
-
-        // Ok()
+        <DryRunCodeCandidates<T>>::get(code_hash).ok_or_else(|| Error::<T>::CodeNotFoundLazyGet)
     }
 
     pub fn update_contract_metadata_lazy(
         code_hash: CodeHash<T>,
-        // mutate_fn: FnOnce(Option<PrefabWasmModule<T>>)
         mutate_fn: Box<
             dyn FnOnce(&mut Option<PrefabWasmModule<T>>) -> Result<(), pallet::Error<T>>,
         >,
     ) -> Result<(), pallet::Error<T>> {
-        // <DryRunCodeCandidates<T>>::mutate(code_hash, mutate_fn)
-
-        // /// Mutate the item, only if an `Ok` value is returned. Deletes the item if mutated to a `None`.
-        // fn try_mutate_exists<KeyArg: EncodeLike<K>, R, E, F: FnOnce(&mut Option<V>) -> Result<R, E>>(
-        //     key: KeyArg,
-        //     f: F,
-        // ) -> Result<R, E>;
-
         <DryRunCodeCandidates<T>>::try_mutate_exists(code_hash, mutate_fn)
-
-        // pub fn take_non_fungible(&mut self, id: &AssetId) -> Assets {
-        //     let mut taken = Assets::new();
-        //     let non_fungible = mem::replace(&mut self.non_fungible, Default::default());
-        //     non_fungible.into_iter().for_each(|(c, instance)| {
-        //         if &c == id {
-        //             taken.non_fungible.insert((c, instance));
-        //         } else {
-        //             self.non_fungible.insert((c, instance));
-        //         }
-        //     });
-        //     taken
-        // }
-        // ()
     }
 
     pub fn add_contract_code_lazy(
         code_hash: CodeHash<T>,
         contract_module: PrefabWasmModule<T>,
-        contract_info: AliveContractInfo<T>,
+        contract_info: RawAliveContractInfo<T::Hash, BalanceOf<T>, T::BlockNumber>,
         account_id: T::AccountId,
     ) {
         if !<DryRunCodeCandidates<T>>::contains_key(code_hash) {
@@ -506,7 +465,6 @@ impl<T: Config> Pallet<T> {
     }
 
     pub fn remove_contract_code_lazy(code_hash: CodeHash<T>) {
-        // <CodeStorage<T>>::remove(prefab_module.code_hash);
         <DryRunCodeCandidates<T>>::remove(code_hash);
     }
 
