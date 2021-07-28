@@ -911,7 +911,6 @@ fn it_should_correctly_parse_a_minimal_valid_io_schedule() {
                 compose: Compose {
                     name: b"component1".to_vec(),
                     code_txt: r#""#.as_bytes().to_vec(),
-                    gateway_id: [0 as u8; 4],
                     exec_type: b"exec_escrow".to_vec(),
                     dest: AccountId::new([1 as u8; 32]),
                     value: 0,
@@ -926,7 +925,6 @@ fn it_should_correctly_parse_a_minimal_valid_io_schedule() {
     let components = vec![Compose {
         name: b"component1".to_vec(),
         code_txt: r#""#.as_bytes().to_vec(),
-        gateway_id: [0 as u8; 4],
         exec_type: b"exec_escrow".to_vec(),
         dest: AccountId::new([1 as u8; 32]),
         value: 0,
@@ -949,7 +947,6 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_2_phases() {
                     compose: Compose {
                         name: b"component1".to_vec(),
                         code_txt: r#""#.as_bytes().to_vec(),
-                        gateway_id: [0 as u8; 4],
                         exec_type: b"exec_escrow".to_vec(),
                         dest: AccountId::new([1 as u8; 32]),
                         value: 0,
@@ -963,7 +960,6 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_2_phases() {
                     compose: Compose {
                         name: b"component2".to_vec(),
                         code_txt: r#""#.as_bytes().to_vec(),
-                        gateway_id: [0 as u8; 4],
                         exec_type: b"exec_escrow".to_vec(),
                         dest: AccountId::new([1 as u8; 32]),
                         value: 0,
@@ -980,7 +976,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_2_phases() {
         Compose {
             name: b"component1".to_vec(),
             code_txt: r#""#.as_bytes().to_vec(),
-            gateway_id: [0 as u8; 4],
+
             exec_type: b"exec_escrow".to_vec(),
             dest: AccountId::new([1 as u8; 32]),
             value: 0,
@@ -990,7 +986,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_2_phases() {
         Compose {
             name: b"component2".to_vec(),
             code_txt: r#""#.as_bytes().to_vec(),
-            gateway_id: [0 as u8; 4],
+
             exec_type: b"exec_escrow".to_vec(),
             dest: AccountId::new([1 as u8; 32]),
             value: 0,
@@ -1014,7 +1010,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_1_phase_and_2_steps() {
                     compose: Compose {
                         name: b"component1".to_vec(),
                         code_txt: r#""#.as_bytes().to_vec(),
-                        gateway_id: [0 as u8; 4],
+
                         exec_type: b"exec_escrow".to_vec(),
                         dest: AccountId::new([1 as u8; 32]),
                         value: 0,
@@ -1026,7 +1022,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_1_phase_and_2_steps() {
                     compose: Compose {
                         name: b"component2".to_vec(),
                         code_txt: r#""#.as_bytes().to_vec(),
-                        gateway_id: [0 as u8; 4],
+
                         exec_type: b"exec_escrow".to_vec(),
                         dest: AccountId::new([1 as u8; 32]),
                         value: 0,
@@ -1043,7 +1039,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_1_phase_and_2_steps() {
         Compose {
             name: b"component1".to_vec(),
             code_txt: r#""#.as_bytes().to_vec(),
-            gateway_id: [0 as u8; 4],
+
             exec_type: b"exec_escrow".to_vec(),
             dest: AccountId::new([1 as u8; 32]),
             value: 0,
@@ -1053,7 +1049,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_1_phase_and_2_steps() {
         Compose {
             name: b"component2".to_vec(),
             code_txt: r#""#.as_bytes().to_vec(),
-            gateway_id: [0 as u8; 4],
+
             exec_type: b"exec_escrow".to_vec(),
             dest: AccountId::new([1 as u8; 32]),
             value: 0,
@@ -1078,7 +1074,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_complex_structure() {
                         compose: Compose {
                             name: b"component1".to_vec(),
                             code_txt: r#""#.as_bytes().to_vec(),
-                            gateway_id: [0 as u8; 4],
+
                             exec_type: b"exec_escrow".to_vec(),
                             dest: AccountId::new([1 as u8; 32]),
                             value: 0,
@@ -1090,7 +1086,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_complex_structure() {
                         compose: Compose {
                             name: b"component2".to_vec(),
                             code_txt: r#""#.as_bytes().to_vec(),
-                            gateway_id: [0 as u8; 4],
+
                             exec_type: b"exec_escrow".to_vec(),
                             dest: AccountId::new([1 as u8; 32]),
                             value: 0,
@@ -1105,7 +1101,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_complex_structure() {
                     compose: Compose {
                         name: b"component2".to_vec(),
                         code_txt: r#""#.as_bytes().to_vec(),
-                        gateway_id: [0 as u8; 4],
+
                         exec_type: b"exec_escrow".to_vec(),
                         dest: AccountId::new([1 as u8; 32]),
                         value: 0,
@@ -1119,7 +1115,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_complex_structure() {
                     compose: Compose {
                         name: b"component1".to_vec(),
                         code_txt: r#""#.as_bytes().to_vec(),
-                        gateway_id: [0 as u8; 4],
+
                         exec_type: b"exec_escrow".to_vec(),
                         dest: AccountId::new([1 as u8; 32]),
                         value: 0,
@@ -1134,7 +1130,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_complex_structure() {
                         compose: Compose {
                             name: b"component2".to_vec(),
                             code_txt: r#""#.as_bytes().to_vec(),
-                            gateway_id: [0 as u8; 4],
+
                             exec_type: b"exec_escrow".to_vec(),
                             dest: AccountId::new([1 as u8; 32]),
                             value: 0,
@@ -1146,7 +1142,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_complex_structure() {
                         compose: Compose {
                             name: b"component2".to_vec(),
                             code_txt: r#""#.as_bytes().to_vec(),
-                            gateway_id: [0 as u8; 4],
+
                             exec_type: b"exec_escrow".to_vec(),
                             dest: AccountId::new([1 as u8; 32]),
                             value: 0,
@@ -1158,7 +1154,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_complex_structure() {
                         compose: Compose {
                             name: b"component1".to_vec(),
                             code_txt: r#""#.as_bytes().to_vec(),
-                            gateway_id: [0 as u8; 4],
+
                             exec_type: b"exec_escrow".to_vec(),
                             dest: AccountId::new([1 as u8; 32]),
                             value: 0,
@@ -1176,7 +1172,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_complex_structure() {
         Compose {
             name: b"component1".to_vec(),
             code_txt: r#""#.as_bytes().to_vec(),
-            gateway_id: [0 as u8; 4],
+
             exec_type: b"exec_escrow".to_vec(),
             dest: AccountId::new([1 as u8; 32]),
             value: 0,
@@ -1186,7 +1182,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_complex_structure() {
         Compose {
             name: b"component2".to_vec(),
             code_txt: r#""#.as_bytes().to_vec(),
-            gateway_id: [0 as u8; 4],
+
             exec_type: b"exec_escrow".to_vec(),
             dest: AccountId::new([1 as u8; 32]),
             value: 0,
@@ -1209,7 +1205,7 @@ fn it_should_throw_when_io_schedule_does_not_end_correctly() {
     let components = vec![Compose {
         name: b"component1".to_vec(),
         code_txt: r#""#.as_bytes().to_vec(),
-        gateway_id: [0 as u8; 4],
+
         exec_type: b"exec_escrow".to_vec(),
         dest: AccountId::new([1 as u8; 32]),
         value: 0,
@@ -1231,7 +1227,7 @@ fn it_should_throw_when_io_schedule_references_a_missing_component() {
     let components = vec![Compose {
         name: b"component1".to_vec(),
         code_txt: r#""#.as_bytes().to_vec(),
-        gateway_id: [0 as u8; 4],
+
         exec_type: b"exec_escrow".to_vec(),
         dest: AccountId::new([1 as u8; 32]),
         value: 0,
@@ -1253,7 +1249,7 @@ fn it_should_throw_with_empty_io_schedule() {
     let components = vec![Compose {
         name: b"component1".to_vec(),
         code_txt: r#""#.as_bytes().to_vec(),
-        gateway_id: [0 as u8; 4],
+
         exec_type: b"exec_escrow".to_vec(),
         dest: AccountId::new([1 as u8; 32]),
         value: 0,

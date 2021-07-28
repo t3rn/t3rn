@@ -92,7 +92,6 @@ pub struct GatewayGenesisConfig {
 pub struct Compose<Account, Balance> {
     pub name: Vec<u8>,
     pub code_txt: Vec<u8>,
-    pub gateway_id: [u8; 4],
     pub exec_type: Vec<u8>,
     pub dest: Account,
     pub value: Balance,
