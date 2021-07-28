@@ -22,7 +22,7 @@
 mod env_def;
 mod code_cache;
 mod prepare;
-mod runtime;
+pub mod runtime;
 
 use crate::{
     exec::{Executable, ExportedFunction, Ext},
