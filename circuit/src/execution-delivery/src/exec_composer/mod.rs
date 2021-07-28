@@ -132,7 +132,7 @@ impl ExecComposer {
     ) -> Result<(Vec<CircuitOutboundMessage>, Vec<u32>), &'static str> {
         let gateway_pointer = Self::retrieve_gateway_pointer(gateway_id)?;
         let gateway_inbound_protocol =
-            Self::retrieve_gateway_protocol::<T>(submitter, gateway_pointer.clone())?;
+            Self::retrieve_gateway_protocol::<T>(submitter, &gateway_pointer)?;
 
         let maybe_input_data = match input_data.len() {
             0 => None,
@@ -166,7 +166,7 @@ impl ExecComposer {
             OM::get_run_mode(),
             gateway_id,
         )
-        .map_err(|_e| "Can't decode WASM code")?;
+            .map_err(|_e| "Can't decode WASM code")?;
 
         // if target is None if in the contracts-repository
         let target_id = gateway_id;
@@ -200,7 +200,7 @@ impl ExecComposer {
             debug_message,
             stack_extension,
         )
-        .map_err(|_e| "Can't create VVM call stack")?;
+            .map_err(|_e| "Can't create VVM call stack")?;
 
         let _ret_out: ExecReturnValue =
             stack.run(executable, input_data).map_err(|err| err.error)?;
@@ -279,7 +279,7 @@ impl ExecComposer {
                     RunMode::Dry,
                     gateway_id,
                 )
-                .map_err(|_e| "Can't decode WASM code")
+                    .map_err(|_e| "Can't decode WASM code")
             })
             .collect::<Result<Vec<PrefabWasmModule<T>>, &'static str>>()?;
 
@@ -317,21 +317,23 @@ impl ExecComposer {
     }
 
     /// Given a Gateway Pointer and an Authority, it returns the respective Gateway Protocol
-    fn retrieve_gateway_protocol<T: Config>(
+    fn retrieve_gateway_protocol<T: crate::Config>(
         submitter_id: AuthorityId,
-        _gateway_pointer: GatewayPointer,
+        gateway_pointer: &GatewayPointer,
     ) -> Result<Box<dyn GatewayInboundProtocol>, &'static str> {
-        // ToDo: Communicate with pallet_xdns in order to retrieve latest data about
-        // let (metadata, runtime_version, genesis_hash) = pallet_xdns::Pallet<T>::get_gateway_protocol_meta(gateway_pointer.id)
-        Ok(Box::new(SubstrateGatewayProtocol::<
-            AuthorityId,
-            bp_polkadot_core::Hash,
-        >::new(
-            Default::default(),
-            Default::default(),
-            Default::default(),
-            submitter_id,
-        )))
+        let mut best_gateway = pallet_xdns::Pallet::<T>::best_available(gateway_pointer.id)?;
+
+        let genesis_hash = T::Hashing::hash(&mut best_gateway.gateway_genesis.genesis_hash);
+        let runtime_version = best_gateway.gateway_genesis.runtime_version;
+
+        Ok(Box::new(
+            SubstrateGatewayProtocol::<AuthorityId, T::Hash>::new(
+                Default::default(),
+                runtime_version,
+                genesis_hash,
+                submitter_id,
+            ),
+        ))
     }
 }
 
@@ -384,7 +386,7 @@ mod tests {
             SURI_ALICE,
             key_pair_alice.public().as_ref(),
         )
-        .expect("Inserts unknown key");
+            .expect("Inserts unknown key");
 
         ext.register_extension(KeystoreExt(keystore.into()));
         // Alice's account

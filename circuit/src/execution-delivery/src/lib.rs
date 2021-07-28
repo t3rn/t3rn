@@ -661,11 +661,6 @@ impl<T: SigningTypes> SignedPayload<T> for Payload<T::Public, T::BlockNumber> {
 }
 
 impl<T: Config> Pallet<T> {
-    #[allow(dead_code)]
-    pub fn say_hello() -> &'static str {
-        "hello"
-    }
-
     /// Receives a list of available components and an io schedule in text format
     /// and parses it to create an execution schedule
     pub fn decompose_io_schedule(
@@ -892,7 +887,9 @@ impl<T: Config> Pallet<T> {
     }
 
     pub fn select_authority(escrow_account: T::AccountId) -> Result<AuthorityId, &'static str> {
-        let local_keys = AuthorityId::all();
+        let mut local_keys = AuthorityId::all();
+
+        local_keys.sort();
 
         let auth = AuthorityId::from_slice(escrow_account.encode().as_slice());
 

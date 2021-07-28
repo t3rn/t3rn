@@ -37,9 +37,9 @@ pub mod transfers;
 
 pub use gateway_inbound_protocol::GatewayInboundProtocol;
 
-pub type InstanceId = [u8; 4];
+pub type ChainId = [u8; 4];
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
+#[derive(Clone, Eq, PartialEq, PartialOrd, Ord, Encode, Decode, Debug)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum GatewayType {
     ProgrammableInternal,
@@ -67,7 +67,7 @@ pub struct GenericPrimitivesHeader {
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct GatewayPointer {
-    pub id: InstanceId,
+    pub id: ChainId,
     pub vendor: GatewayVendor,
     pub gateway_type: GatewayType,
 }
@@ -287,4 +287,15 @@ pub enum MessagePayload {
         /// Custom message bytes, that would have to be decoded by the receiving end.
         payload: Bytes,
     },
+}
+
+/// Retrieves all available gateways for a given ChainId.
+/// Currently returns a vector with a single hardcoded result.
+/// Eventually this will return all known gateways on pallet-xdns.
+pub fn retrieve_gateway_pointers(gateway_id: ChainId) -> Result<Vec<GatewayPointer>, &'static str> {
+    Ok(vec![GatewayPointer {
+        id: gateway_id,
+        gateway_type: GatewayType::ProgrammableExternal,
+        vendor: GatewayVendor::Substrate,
+    }])
 }

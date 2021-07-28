@@ -493,11 +493,16 @@ impl pallet_bridge_messages::Config<WithGatewayMessagesInstance> for Runtime {
     type MessageDispatch = crate::gateway_messages::FromGatewayMessageDispatch;
 }
 
+impl pallet_xdns::Config for Runtime {
+    type Event = Event;
+    type WeightInfo = ();
+}
+
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
         NodeBlock = opaque::Block,
-        UncheckedExtrinsic = UncheckedExtrinsic
+        UncheckedExtrinsic = UncheckedExtrinsic,
     {
         BridgeGatewayMessages: pallet_bridge_messages::{Pallet, Call, Storage, Event<T>},
         BridgeDispatch: pallet_bridge_dispatch::{Pallet, Event<T>},
@@ -516,6 +521,7 @@ construct_runtime!(
         Randomness: pallet_randomness_collective_flip::{Pallet, Storage},
         Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
         EVM: pallet_evm::{Pallet, Config, Storage, Event<T>},
+        XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>},
     }
 );
 

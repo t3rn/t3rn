@@ -38,5 +38,5 @@ std = [
 	"bp-header-chain/std",
 	"pallet-sudo/std",
 	"frame-system/std",
-	"frame-support/std"
+	"frame-support/std",
 ]
