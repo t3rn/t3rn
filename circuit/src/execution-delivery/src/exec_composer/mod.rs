@@ -35,6 +35,18 @@ use volatile_vm::wasm::RunMode;
 
 type ChainId = [u8; 4];
 
+use sp_runtime::create_runtime_str;
+use sp_version::RuntimeVersion;
+
+pub const TEST_RUNTIME_VERSION: RuntimeVersion = RuntimeVersion {
+    spec_name: create_runtime_str!("test-runtime"),
+    impl_name: create_runtime_str!("test-runtime"),
+    authoring_version: 1,
+    spec_version: 1,
+    impl_version: 1,
+    apis: sp_version::create_apis_vec!([]),
+    transaction_version: 1,
+};
 pub struct ExecComposer {}
 
 impl ExecComposer {
@@ -369,6 +381,29 @@ mod tests {
         }
     }
 
+    fn insert_default_xdns_record() {
+        use pallet_xdns::XdnsRecord;
+        pallet_xdns::XDNSRegistry::<Test>::insert(
+            // Below is blake2_hash of [0, 0, 0, 0]
+            H256::from_slice(&hex!(
+                "11da6d1f761ddf9bdb4c9d6e5303ebd41f61858d0a5647a1a7bfe089bf921be9"
+            )),
+            XdnsRecord::<AccountId32>::new(
+                Default::default(),
+                [0, 0, 0, 0],
+                Default::default(),
+                GatewayVendor::Substrate,
+                GatewayType::ProgrammableExternal,
+                GatewayGenesisConfig {
+                    modules_encoded: None,
+                    signed_extension: None,
+                    runtime_version: TEST_RUNTIME_VERSION,
+                    genesis_hash: Default::default(),
+                },
+            ),
+        );
+    }
+
     fn setup_test_escrow_as_tx_signer(ext: &mut TestExternalities) -> AccountId32 {
         let keystore = KeyStore::new();
         // Insert Alice's keys
@@ -457,6 +492,8 @@ mod tests {
             let _submitter = crate::Pallet::<Test>::select_authority(escrow_account.clone())
                 .unwrap_or_else(|_| panic!("failed to select_authority"));
 
+            insert_default_xdns_record();
+
             volatile_vm::DeclaredTargets::<Test>::insert(
                 account_at_foreign_target,
                 example_foreign_target.clone(),
@@ -493,6 +530,8 @@ mod tests {
         let _gateway_abi_config: GatewayABIConfig = Default::default();
 
         ext.execute_with(|| {
+            insert_default_xdns_record();
+
             let _submitter = crate::Pallet::<Test>::select_authority(escrow_account.clone())
                 .unwrap_or_else(|_| panic!("failed to select_authority"));
 
@@ -537,6 +576,7 @@ mod tests {
         let _gateway_abi_config: GatewayABIConfig = Default::default();
 
         ext.execute_with(|| {
+            insert_default_xdns_record();
             let _submitter = crate::Pallet::<Test>::select_authority(escrow_account.clone())
                 .unwrap_or_else(|_| panic!("failed to select_authority"));
             let res = ExecComposer::dry_run_single_contract::<Test>(compose);
@@ -568,6 +608,8 @@ mod tests {
         ext.execute_with(|| {
             let submitter = crate::Pallet::<Test>::select_authority(escrow_account.clone())
                 .unwrap_or_else(|_| panic!("failed to select_authority"));
+
+            insert_default_xdns_record();
 
             volatile_vm::DeclaredTargets::<Test>::insert(
                 account_at_foreign_target,
@@ -693,6 +735,9 @@ mod tests {
         ext.execute_with(|| {
             let submitter = crate::Pallet::<Test>::select_authority(escrow_account.clone())
                 .unwrap_or_else(|_| panic!("failed to select_authority"));
+
+            // Set the default XDNS record for default [0, 0, 0, 0] gateway
+            insert_default_xdns_record();
 
             volatile_vm::DeclaredTargets::<Test>::insert(
                 account_at_foreign_target,
