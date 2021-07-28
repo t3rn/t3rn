@@ -143,12 +143,12 @@ pub mod pallet {
     // Import various types used to declare pallet in scope.
     use super::*;
     use frame_support::pallet_prelude::*;
-	use frame_support::traits::Time;
-	use frame_system::pallet_prelude::*;
-	use t3rn_primitives::{ChainId, EscrowTrait};
-	use sp_std::convert::TryInto;
+    use frame_support::traits::Time;
+    use frame_system::pallet_prelude::*;
+    use sp_std::convert::TryInto;
+    use t3rn_primitives::{ChainId, EscrowTrait};
 
-	#[pallet::config]
+    #[pallet::config]
     pub trait Config:
         pallet_balances::Config + frame_system::Config + t3rn_primitives::EscrowTrait
     {
@@ -221,7 +221,8 @@ pub mod pallet {
 
             xdns_record.assign_registrant(registrant.clone());
 
-			let now = TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now()).map_err(|_| "Unable to compute current timestamp")?;
+            let now = TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now())
+                .map_err(|_| "Unable to compute current timestamp")?;
 
             xdns_record.set_last_finalized(now);
 
