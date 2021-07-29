@@ -14,10 +14,10 @@
 
 use std::sync::Arc;
 
-use sp_api::codec::Codec;
 use jsonrpc_core::{Error, ErrorCode, Result};
 use jsonrpc_derive::rpc;
 use serde::{Deserialize, Serialize};
+use sp_api::codec::Codec;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::Bytes;
@@ -31,7 +31,7 @@ use std::convert::TryInto;
 
 pub use self::gen_client::Client as ContractsClient;
 pub use circuit_rpc_runtime_api::{self as runtime_api, CircuitApi as CircuitRuntimeApi};
-use t3rn_primitives::{ComposableExecResult, Compose, ContractAccessError};
+use t3rn_primitives::{ChainId, ComposableExecResult, Compose, ContractAccessError};
 
 const RUNTIME_ERROR: i64 = 1;
 const CONTRACT_DOESNT_EXIST: i64 = 2;
@@ -84,7 +84,7 @@ pub struct InterExecRequest<AccountId, Balance> {
 pub struct ComposeRPC<Account, Balance> {
     name: Box<str>,
     code_txt: Box<str>,
-    gateway_id: t3rn_primitives::InstanceId, // TODO: replace with ChainId
+    gateway_id: ChainId,
     exec_type: Box<str>,
     dest: Account,
     value: Balance,
