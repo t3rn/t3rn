@@ -39,7 +39,14 @@ jobs:
         with:
           command: fmt
           args: |
-            --all
+            -p circuit
+            -p circuit-rpc
+            -p circuit-rpc-runtime-api
+            -p circuit-runtime
+            -p pallet-circuit-execution-delivery
+            -p pallet-contracts-registry
+            -p pallet-xdns
+            -p t3rn-primitives
             --manifest-path circuit/Cargo.toml -- --check
 
   lint:
