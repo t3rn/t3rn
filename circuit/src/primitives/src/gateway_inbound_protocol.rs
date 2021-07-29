@@ -1,10 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_std::vec::*;
-use t3rn_primitives::transfers::TransferEntry;
-use t3rn_primitives::GatewayType;
-
-use super::circuit_outbound::CircuitOutboundMessage;
+use crate::transfers::TransferEntry;
+use crate::*;
+use sp_std::vec::Vec;
 
 pub trait GatewayInboundProtocol {
     /// Get storage on foreign chain under given key. Returns (gets it delivered by relayers):
@@ -12,7 +10,7 @@ pub trait GatewayInboundProtocol {
     /// storage_proof - Merkle Path and block reference securing against data collusion
     fn get_storage(
         &self,
-        key: [u8; 32],
+        key: Vec<u8>,
         gateway_type: GatewayType,
     ) -> Result<CircuitOutboundMessage, &'static str>;
 
@@ -22,7 +20,7 @@ pub trait GatewayInboundProtocol {
     /// finality_proof - Proof that the block is finalized
     fn set_storage(
         &self,
-        key: [u8; 32],
+        key: Vec<u8>,
         value: Option<Vec<u8>>,
         gateway_type: GatewayType,
     ) -> Result<CircuitOutboundMessage, &'static str>;
@@ -35,10 +33,11 @@ pub trait GatewayInboundProtocol {
         module_name: &str,
         fn_name: &str,
         data: Vec<u8>,
-        to: [u8; 32],
-        value: u128,
-        gas: u64,
+        to: Vec<u8>,
+        value: Vec<u8>,
+        gas: Vec<u8>,
         gateway_type: GatewayType,
+        return_value: Option<Vec<u8>>,
     ) -> Result<CircuitOutboundMessage, &'static str>;
 
     /// Call smart contract behind that gateway in a dirty way - without possibility to revert that action. Returns (gets it delivered by relayers):
@@ -50,12 +49,13 @@ pub trait GatewayInboundProtocol {
         module_name: Vec<u8>,
         fn_name: Vec<u8>,
         data: Vec<u8>,
-        escrow_account: [u8; 32],
-        requester: [u8; 32],
-        to: [u8; 32],
-        value: u128,
-        gas: u64,
+        escrow_account: Vec<u8>,
+        requester: Vec<u8>,
+        to: Vec<u8>,
+        value: Vec<u8>,
+        gas: Vec<u8>,
         gateway_type: GatewayType,
+        return_value: Option<Vec<u8>>,
     ) -> Result<CircuitOutboundMessage, &'static str>;
 
     /// Call smart contract behind that gateway in a reversible (escrowed) way. Returns (gets it delivered by relayers):
@@ -67,9 +67,9 @@ pub trait GatewayInboundProtocol {
         module_name: &str,
         fn_name: &str,
         data: Vec<u8>,
-        to: [u8; 32],
-        value: u128,
-        gas: u64,
+        to: Vec<u8>,
+        value: Vec<u8>,
+        gas: Vec<u8>,
         gateway_type: GatewayType,
     ) -> Result<CircuitOutboundMessage, &'static str>;
 
@@ -81,10 +81,11 @@ pub trait GatewayInboundProtocol {
         module_name: &str,
         fn_name: &str,
         data: Vec<u8>,
-        to: [u8; 32],
-        value: u128,
-        gas: u64,
+        to: Vec<u8>,
+        value: Vec<u8>,
+        gas: Vec<u8>,
         gateway_type: GatewayType,
+        return_value: Option<Vec<u8>>,
     ) -> Result<CircuitOutboundMessage, &'static str>;
 
     /// Call custom dispatchable call behind that gateway in a dirty way - without possibility to revert that action. Returns (gets it delivered by relayers):
@@ -96,10 +97,11 @@ pub trait GatewayInboundProtocol {
         module_name: &str,
         fn_name: &str,
         data: Vec<u8>,
-        to: [u8; 32],
-        value: u128,
-        gas: u64,
+        to: Vec<u8>,
+        value: Vec<u8>,
+        gas: Vec<u8>,
         gateway_type: GatewayType,
+        return_value: Option<Vec<u8>>,
     ) -> Result<CircuitOutboundMessage, &'static str>;
 
     /// Call custom dispatchable call behind that gateway in a reversible (escrowed) way - enforcing read-pnly operations. Returns (gets it delivered by relayers):
@@ -111,10 +113,11 @@ pub trait GatewayInboundProtocol {
         module_name: &str,
         fn_name: &str,
         data: Vec<u8>,
-        to: [u8; 32],
-        value: u128,
-        gas: u64,
+        to: Vec<u8>,
+        value: Vec<u8>,
+        gas: Vec<u8>,
         gateway_type: GatewayType,
+        return_value: Option<Vec<u8>>,
     ) -> Result<CircuitOutboundMessage, &'static str>;
 
     /// Transfer balance on a chain behind that gateway in a reversible (escrowed) way. Returns (gets it delivered by relayers):
@@ -123,8 +126,8 @@ pub trait GatewayInboundProtocol {
     /// finality_proof - Proof that the block is finalized
     fn transfer(
         &self,
-        to: [u8; 32],
-        value: u128,
+        to: Vec<u8>,
+        value: Vec<u8>,
         gateway_type: GatewayType,
     ) -> Result<CircuitOutboundMessage, &'static str>;
 
@@ -148,9 +151,9 @@ pub trait GatewayInboundProtocol {
     /// finality_proof - Proof that the block is finalized
     fn swap_dirty(
         &self,
-        to: [u8; 32],
-        value: u128,
-        gas: u64,
+        to: Vec<u8>,
+        value: Vec<u8>,
+        gas: Vec<u8>,
         gateway_type: GatewayType,
     ) -> Result<CircuitOutboundMessage, &'static str>;
 
@@ -160,12 +163,12 @@ pub trait GatewayInboundProtocol {
     /// finality_proof - Proof that the block is finalized
     fn swap_escrow(
         &self,
-        from: [u8; 32],
-        x_token: [u8; 32],
-        y_token: [u8; 32],
-        x_value: u128,
-        y_value: u128,
-        gas: u64,
+        from: Vec<u8>,
+        x_token: Vec<u8>,
+        y_token: Vec<u8>,
+        x_value: Vec<u8>,
+        y_value: Vec<u8>,
+        gas: Vec<u8>,
         gateway_type: GatewayType,
     ) -> Result<CircuitOutboundMessage, &'static str>;
 }

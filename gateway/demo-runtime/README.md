@@ -1,175 +1,173 @@
-# Substrate Node Template
+# Demo Runtime Node
 
-[![Try on playground](https://img.shields.io/badge/Playground-Node_Template-brightgreen?logo=Parity%20Substrate)](https://playground.substrate.dev/?deploy=node-template)
+This is a FRAME-based Substrate Demo Runtime Node that is built after [`substrate-template-node`](https://github.com/substrate-developer-hub/substrate-node-template). Please follow the docs at the [template](https://github.com/substrate-developer-hub/substrate-node-template) to learn on the pre-requisites, installation & development.
 
-A fresh FRAME-based [Substrate](https://www.substrate.io/) node, ready for hacking :rocket:
+It's purpose is to demonstrate the setup of t3rn gateway pallets with both [`contracts-gateway`](../pallet-escrow-gateway/contracts-gateway) and [`runtime-gateway`](../pallet-escrow-gateway/runtime-gateway). In the non-demo circumstances developers would rather choose to integrate with only one of the pallet, depending on the parachain's purpose.
 
-## Getting Started
+## What's extra inside?
 
-Follow the steps below to get started with the Node Template, or get it up and running right from your browser
-in just a few clicks using [Playground](https://playground.substrate.dev/) :hammer_and_wrench:
-
-### Using Nix
-
-Install [nix](https://nixos.org/) and optionally [direnv](https://github.com/direnv/direnv) and [lorri](https://github.com/target/lorri) for a fully plug
-and play experience for setting up the development environment. To get all the correct dependencies activate direnv `direnv allow` and lorri `lorri shell`.
-
-### Rust Setup
-
-First, complete the [basic Rust setup instructions](./docs/rust-setup.md).
-
-### Run
-
-Use Rust's native `cargo` command to build and launch the template node:
-
-```sh
-cargo run --release -- --dev --tmp
+Extra pallets installed in `Cargo.toml`'s runtime:
+```rust
+// Following 2 installed normally for parachains with contracts
+contracts = { package = "pallet-contracts", default-features = false, version = '2.0.0' }
+contracts-gateway = { package = "pallet-contracts-gateway", default-features = false, version = '0.3.0',  git = 'https://github.com/t3rn/gateway-pallet.git', branch = 'master' }
+// Following 2 installed normally for parachains without contracts that still want to support execution of attached contracts via `runtime-gateway`
+runtime-gateway = { package = "pallet-runtime-gateway", default-features = false, version = '0.3.0', git = 'https://github.com/t3rn/gateway-pallet.git', branch = 'master' }
+versatile-wasm = { default-features = false, version = '0.3.0', git = 'https://github.com/t3rn/gateway-pallet.git', branch = 'master'  }
+// Only to demonstrate dispatches to runtime 
+weights = { default-features = false, version = '2.0.0', git = 'https://github.com/t3rn/gateway-pallet.git', branch = 'master' }
 ```
 
+Additional modules instantiated via `construct_runtime!` macro:
+```rust
+// Parachains with contracts pallet
+Contracts: contracts::{Module, Call, Config, Storage, Event<T>},
+ContractsGateway: contracts_gateway::{Module, Call, Storage, Event<T>},
+// Parachains without contracts pallet
+RuntimeGateway: runtime_gateway::{Module, Call, Storage, Event<T>},
+VersatileWasm: versatile_wasm::{Module, Call, Event<T>},
+// That's a Weights pallet which is here only to demonstrate dispatches to runtime via VersatileWasm
+Weights: weights::{Module, Call},
+```
+
+The `contracts-gateway` traits are implemented by runtime:
+```rust
+impl gateway_escrow_engine::EscrowTrait for Runtime {
+    type Currency = Balances;
+    type Time = Timestamp;
+}
+
+parameter_types! {
+    pub const WhenStateChangedForceTry: bool = false;
+}
+
+impl contracts_gateway::Trait for Runtime {
+    type Event = Event;
+    type WhenStateChangedForceTry = WhenStateChangedForceTry;
+}
+```
+
+The demonstration of the dispatches runtime calls is also taking place in `runtime/src/lib.rs`. Here, to addition to all of the standard operations supported by `versatile-wasm`, three functions from the `Weights` pallet can be reached by executed contracts: `store_value`, `double`, `complex_calucations`.
+
+```rust
+impl weights::Trait for Runtime {}
+pub type WeightsCall = weights::Call<Runtime>;
+
+pub struct DemoStorageDispatchRuntimeCall;
+
+impl versatile_wasm::DispatchRuntimeCall<Runtime> for DemoStorageDispatchRuntimeCall {
+    fn dispatch_runtime_call(
+        module_name: &str,
+        fn_name: &str,
+        _input: &[u8],
+        escrow_account: &<Runtime as frame_system::Trait>::AccountId,
+        _requested: &<Runtime as frame_system::Trait>::AccountId,
+        _callee: &<Runtime as frame_system::Trait>::AccountId,
+        _value: BalanceOf<Runtime>,
+        gas_meter: &mut versatile_wasm::gas::GasMeter<Runtime>,
+    ) -> DispatchResult {
+        match (module_name, fn_name) {
+            ("Weights", "store_value") => {
+                let decoded_input: u32 = match Decode::decode(&mut _input.clone()) {
+                    Ok(dec) => dec,
+                    Err(_) => {
+                        return Err(DispatchError::Other(
+                            "Can't decode input for Weights::store_value. Expected u32.",
+                        ));
+                    }
+                };
+                gas_meter.charge_runtime_dispatch(Box::new(Call::Weights(
+                    WeightsCall::store_value(decoded_input),
+                )))?;
+                // Alternatively use the call - call.dispatch((Origin::signed(*escrow_account))).map_err(|e| e.error)?;
+                Weights::store_value(Origin::signed(escrow_account.clone()), decoded_input)
+            }
+            ("Weights", "double") => {
+                let decoded_input: u32 = match Decode::decode(&mut _input.clone()) {
+                    Ok(dec) => dec,
+                    Err(_) => {
+                        return Err(DispatchError::Other(
+                            "Can't decode input for Weights::store_value. Expected u32.",
+                        ));
+                    }
+                };
+                gas_meter.charge_runtime_dispatch(Box::new(Call::Weights(WeightsCall::double(
+                    decoded_input,
+                ))))?;
+                Weights::double(Origin::signed(escrow_account.clone()), decoded_input)
+            }
+            ("Weights", "complex_calculations") => {
+                let (decoded_x, decoded_y): (u32, u32) = match Decode::decode(&mut _input.clone()) {
+                    Ok(dec) => dec,
+                    Err(_) => {
+                        return Err(DispatchError::Other(
+                            "Can't decode input for Weights::store_value. Expected u32.",
+                        ));
+                    }
+                };
+                gas_meter.charge_runtime_dispatch(Box::new(Call::Weights(
+                    WeightsCall::complex_calculations(decoded_x, decoded_y),
+                )))?;
+                Weights::complex_calculations(
+                    Origin::signed(escrow_account.clone()),
+                    decoded_x,
+                    decoded_y,
+                )
+            }
+            (_, _) => Err(DispatchError::Other(
+                "Call to unrecognized runtime function",
+            )),
+        }
+    }
+}
+
+impl versatile_wasm::VersatileWasm for Runtime {
+    type DispatchRuntimeCall = DemoStorageDispatchRuntimeCall;
+    type Event = Event;
+    type Call = Call;
+    type Randomness = RandomnessCollectiveFlip;
+}
+
+impl runtime_gateway::Trait for Runtime {
+    type Event = Event;
+}
+```        
 ### Build
 
-The `cargo run` command will perform an initial build. Use the following command to build the node
-without launching it:
+Once the development environment is set up, build the node template. This command will build the
+[Wasm](https://substrate.dev/docs/en/knowledgebase/advanced/executor#wasm-execution) and
+[native](https://substrate.dev/docs/en/knowledgebase/advanced/executor#native-execution) code:
 
-```sh
+```bash
 cargo build --release
-```
-
-### Embedded Docs
-
-Once the project has been built, the following command can be used to explore all parameters and
-subcommands:
-
-```sh
-./target/release/node-template -h
 ```
 
 ## Run
 
-The provided `cargo run` command will launch a temporary node and its state will be discarded after
-you terminate the process. After the project has been built, there are other ways to launch the
-node.
+### Single Node Development Chain
 
-### Single-Node Development Chain
-
-This command will start the single-node development chain with persistent state:
-
-```bash
-./target/release/node-template --dev
-```
-
-Purge the development chain's state:
+Purge any existing dev chain state:
 
 ```bash
 ./target/release/node-template purge-chain --dev
 ```
 
-Start the development chain with detailed logging:
+Start a dev chain:
+
+```bash
+./target/release/node-template --dev
+```
+
+Or, start a dev chain with detailed logging:
 
 ```bash
 RUST_LOG=debug RUST_BACKTRACE=1 ./target/release/node-template -lruntime=debug --dev
 ```
 
-### Connect with Polkadot-JS Apps Front-end
-
-Once the node template is running locally, you can connect it with **Polkadot-JS Apps** front-end
-to interact with your chain. [Click here](https://polkadot.js.org/apps/#/explorer?rpc=ws://localhost:9944) connecting the Apps to your local node template.
-
 ### Multi-Node Local Testnet
 
 If you want to see the multi-node consensus algorithm in action, refer to
 [our Start a Private Network tutorial](https://substrate.dev/docs/en/tutorials/start-a-private-network/).
-
-## Template Structure
-
-A Substrate project such as this consists of a number of components that are spread across a few
-directories.
-
-### Node
-
-A blockchain node is an application that allows users to participate in a blockchain network.
-Substrate-based blockchain nodes expose a number of capabilities:
-
--   Networking: Substrate nodes use the [`libp2p`](https://libp2p.io/) networking stack to allow the
-    nodes in the network to communicate with one another.
--   Consensus: Blockchains must have a way to come to
-    [consensus](https://substrate.dev/docs/en/knowledgebase/advanced/consensus) on the state of the
-    network. Substrate makes it possible to supply custom consensus engines and also ships with
-    several consensus mechanisms that have been built on top of
-    [Web3 Foundation research](https://research.web3.foundation/en/latest/polkadot/NPoS/index.html).
--   RPC Server: A remote procedure call (RPC) server is used to interact with Substrate nodes.
-
-There are several files in the `node` directory - take special note of the following:
-
--   [`chain_spec.rs`](./node/src/chain_spec.rs): A
-    [chain specification](https://substrate.dev/docs/en/knowledgebase/integrate/chain-spec) is a
-    source code file that defines a Substrate chain's initial (genesis) state. Chain specifications
-    are useful for development and testing, and critical when architecting the launch of a
-    production chain. Take note of the `development_config` and `testnet_genesis` functions, which
-    are used to define the genesis state for the local development chain configuration. These
-    functions identify some
-    [well-known accounts](https://substrate.dev/docs/en/knowledgebase/integrate/subkey#well-known-keys)
-    and use them to configure the blockchain's initial state.
--   [`service.rs`](./node/src/service.rs): This file defines the node implementation. Take note of
-    the libraries that this file imports and the names of the functions it invokes. In particular,
-    there are references to consensus-related topics, such as the
-    [longest chain rule](https://substrate.dev/docs/en/knowledgebase/advanced/consensus#longest-chain-rule),
-    the [Aura](https://substrate.dev/docs/en/knowledgebase/advanced/consensus#aura) block authoring
-    mechanism and the
-    [GRANDPA](https://substrate.dev/docs/en/knowledgebase/advanced/consensus#grandpa) finality
-    gadget.
-
-After the node has been [built](#build), refer to the embedded documentation to learn more about the
-capabilities and configuration parameters that it exposes:
-
-```shell
-./target/release/node-template --help
-```
-
-### Runtime
-
-In Substrate, the terms
-"[runtime](https://substrate.dev/docs/en/knowledgebase/getting-started/glossary#runtime)" and
-"[state transition function](https://substrate.dev/docs/en/knowledgebase/getting-started/glossary#stf-state-transition-function)"
-are analogous - they refer to the core logic of the blockchain that is responsible for validating
-blocks and executing the state changes they define. The Substrate project in this repository uses
-the [FRAME](https://substrate.dev/docs/en/knowledgebase/runtime/frame) framework to construct a
-blockchain runtime. FRAME allows runtime developers to declare domain-specific logic in modules
-called "pallets". At the heart of FRAME is a helpful
-[macro language](https://substrate.dev/docs/en/knowledgebase/runtime/macros) that makes it easy to
-create pallets and flexibly compose them to create blockchains that can address
-[a variety of needs](https://www.substrate.io/substrate-users/).
-
-Review the [FRAME runtime implementation](./runtime/src/lib.rs) included in this template and note
-the following:
-
--   This file configures several pallets to include in the runtime. Each pallet configuration is
-    defined by a code block that begins with `impl $PALLET_NAME::Config for Runtime`.
--   The pallets are composed into a single runtime by way of the
-    [`construct_runtime!`](https://crates.parity.io/frame_support/macro.construct_runtime.html)
-    macro, which is part of the core
-    [FRAME Support](https://substrate.dev/docs/en/knowledgebase/runtime/frame#support-library)
-    library.
-
-### Pallets
-
-The runtime in this project is constructed using many FRAME pallets that ship with the
-[core Substrate repository](https://github.com/paritytech/substrate/tree/master/frame) and a
-template pallet that is [defined in the `pallets`](./pallets/template/src/lib.rs) directory.
-
-A FRAME pallet is compromised of a number of blockchain primitives:
-
--   Storage: FRAME defines a rich set of powerful
-    [storage abstractions](https://substrate.dev/docs/en/knowledgebase/runtime/storage) that makes
-    it easy to use Substrate's efficient key-value database to manage the evolving state of a
-    blockchain.
--   Dispatchables: FRAME pallets define special types of functions that can be invoked (dispatched)
-    from outside of the runtime in order to update its state.
--   Events: Substrate uses [events](https://substrate.dev/docs/en/knowledgebase/runtime/events) to
-    notify users of important changes in the runtime.
--   Errors: When a dispatchable fails, it returns an error.
--   Config: The `Config` configuration interface is used to define the types and parameters upon
-    which a FRAME pallet depends.
 
 ### Run in Docker
 

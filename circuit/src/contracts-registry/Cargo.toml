@@ -25,6 +25,7 @@ sp-io = { version = "3.0.0", default-features = false, git = "https://github.com
 frame-benchmarking = { version = "3.1.0", default-features = false, git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06', optional = true }
 log = { version = "0.4.14", default-features = false }
 t3rn-primitives = { version = "0.1.0", default-features = false, path = "../primitives" }
+volatile-vm = { path = "../../../vm/volatile-vm", default-features = false }
 
 [dev-dependencies]
 sp-core = { version = "3.0.0", git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06', default-features = false }
@@ -43,7 +44,8 @@ std = [
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",
-	"t3rn-primitives/std"
+	"t3rn-primitives/std",
+	"volatile-vm/std",
 ]
 runtime-benchmarks = ["frame-benchmarking"]
 try-runtime = ["frame-support/try-runtime"]

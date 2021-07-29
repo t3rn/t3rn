@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
-# This script is meant to be run on Unix/Linux based systems
+
 set -e
 
-echo "*** Start Substrate node template ***"
+echo "*** Start Gateway runtime demo as from a docker image ***"
 
 cd $(dirname ${BASH_SOURCE[0]})/..
 
-mkdir -p ./.local
 
+# Until the bug mentioned in https://github.com/paritytech/substrate/issues/7466 is resolved,
+# build your own image with rust nightly-2020-10-01 version.
+docker build . -t t3rn/demo-runtime:nightly-2020-10-01
 docker-compose down --remove-orphans
 docker-compose run --rm --service-ports dev $@

@@ -76,7 +76,7 @@ impl AsGatewayOutboundEvent for SubstrateRawEvent {
                     .copy_from_slice(&data_as_vec[current_offset.clone()..new_offset.clone()]);
                 current_offset = new_offset;
                 // To make sure we read argument right decode the type
-                t.eval(argn_bytes.to_vec(), &gateway_genesis)?;
+                t.eval(argn_bytes.to_vec())?;
                 Ok(Bytes::from(argn_bytes))
             })
             .collect::<Result<Vec<Bytes>, &'static str>>()?;

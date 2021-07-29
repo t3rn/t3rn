@@ -73,11 +73,11 @@ pub struct GatewayABIConfig {
     /// cryptography algorithm
     pub crypto: CryptoAlgo,
     /// address length in bytes
-    pub address_length: u32,
+    pub address_length: u16,
     /// value length in bytes
-    pub value_type_size: u32,
+    pub value_type_size: u16,
     /// value length in bytes
-    pub decimals: u32,
+    pub decimals: u16,
     /// value length in bytes. ToDo: move as part of metadata.
     pub structs: Vec<StructDecl>,
 }
@@ -95,6 +95,14 @@ impl Default for GatewayABIConfig {
             structs: vec![],
         }
     }
+}
+
+#[derive(PartialEq, Clone, Encode, Decode, Eq, Hash, Debug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct ContractActionDesc<Hash, TargetId, AccountId> {
+    pub action_id: Hash,
+    pub target_id: Option<TargetId>,
+    pub to: Option<AccountId>,
 }
 
 #[derive(PartialEq, Clone, Encode, Decode, Eq, Hash, Debug)]
@@ -236,7 +244,7 @@ impl Type {
     pub fn eval(
         &self,
         encoded_val: Vec<u8>,
-        _gen: &GatewayABIConfig,
+        // _gen: &GatewayABIConfig,
     ) -> Result<Box<dyn sp_std::any::Any>, &'static str> {
         match self {
             Type::Address(size) => match size {
@@ -313,6 +321,38 @@ impl Type {
             },
             _ => unimplemented!(),
         }
+    }
+}
+
+pub fn eval_to_encoded(t: Type, raw_val: Vec<u8>) -> Result<Vec<u8>, &'static str> {
+    match t {
+        Type::Address(size) => match size {
+            20 => {
+                let res: [u8; 20] = decode_buf2val(raw_val)?;
+                Ok(res.to_vec())
+            }
+            32 => {
+                let res: [u8; 32] = decode_buf2val(raw_val)?;
+                Ok(res.to_vec())
+            }
+            _ => Err("Unknown Address size"),
+        },
+        Type::Uint(size) => match size {
+            32 => {
+                let res: u32 = decode_buf2val(raw_val)?;
+                Ok(res.encode())
+            }
+            64 => {
+                let res: u64 = decode_buf2val(raw_val)?;
+                Ok(res.encode())
+            }
+            128 => {
+                let res: u128 = decode_buf2val(raw_val)?;
+                Ok(res.encode())
+            }
+            _ => Err("Unknown Uint size"),
+        },
+        _ => Ok(vec![]),
     }
 }
 

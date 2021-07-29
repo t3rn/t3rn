@@ -70,7 +70,7 @@ use pallet_execution_delivery::Compose;
 use std::collections::BTreeMap;
 use t3rn_primitives::transfers::BalanceOf;
 use t3rn_primitives::{EscrowTrait, ExecPhase, ExecStep, InterExecSchedule};
-use versatile_wasm::{DispatchRuntimeCall, VersatileWasm};
+use volatile_vm::DispatchRuntimeCall;
 
 use pallet_evm::{AddressMapping, FeeCalculator};
 
@@ -103,7 +103,7 @@ frame_support::construct_runtime!(
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         ImOnline: pallet_im_online::{Pallet, Call, Storage, Config<T>, Event<T>},
         Sudo: pallet_sudo::{Pallet, Call, Event<T>},
-        VersatileWasmVM: versatile_wasm::{Pallet, Call, Event<T>},
+        VolatileVM: volatile_vm::{Pallet, Call, Event<T>, Storage},
         Randomness: pallet_randomness_collective_flip::{Pallet, Storage},
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Storage, Event<T>},
         XDNS: pallet_xdns::{Pallet, Call, Storage, Event<T>},
@@ -186,14 +186,30 @@ impl EscrowTrait for Test {
     type Time = Timestamp;
 }
 
-impl VersatileWasm for Test {
-    type DispatchRuntimeCall = ExampleDispatchRuntimeCall;
+parameter_types! {
+    pub MyScheduleVVM: volatile_vm::Schedule<Test> = <volatile_vm::Schedule<Test>>::default();
+}
+
+impl volatile_vm::VolatileVM for Test {
+    type Randomness = Randomness;
     type Event = Event;
     type Call = Call;
-    type Randomness = Randomness;
-    type CallStack = [versatile_wasm::call_stack::Frame<Self>; 31];
+    type DispatchRuntimeCall = ExampleDispatchRuntimeCall;
+    type SignedClaimHandicap = SignedClaimHandicap;
+    type TombstoneDeposit = TombstoneDeposit;
+    type DepositPerContract = DepositPerContract;
+    type DepositPerStorageByte = DepositPerStorageByte;
+    type DepositPerStorageItem = DepositPerStorageItem;
+    type RentFraction = RentFraction;
+    type SurchargeReward = SurchargeReward;
+    type CallStack = [volatile_vm::exec::Frame<Self>; 31];
+    type ContractsLazyLoaded = [volatile_vm::wasm::PrefabWasmModule<Self>; 31];
     type WeightPrice = Self;
-    type Schedule = MyVVMSchedule;
+    type WeightInfo = ();
+    type ChainExtension = ();
+    type DeletionQueueDepth = DeletionQueueDepth;
+    type DeletionWeightLimit = DeletionWeightLimit;
+    type Schedule = MyScheduleVVM;
 }
 
 impl pallet_contracts_registry::Config for Test {
@@ -223,7 +239,7 @@ impl DispatchRuntimeCall<Test> for ExampleDispatchRuntimeCall {
         _requested: &<Test as frame_system::Config>::AccountId,
         _callee: &<Test as frame_system::Config>::AccountId,
         _value: BalanceOf<Test>,
-        _gas_meter: &mut versatile_wasm::gas::GasMeter<Test>,
+        _gas_meter: &mut volatile_vm::gas::GasMeter<Test>,
     ) -> DispatchResult {
         match (module_name, fn_name) {
             ("Weights", "complex_calculations") => {
@@ -266,8 +282,6 @@ impl pallet_session::historical::Config for Test {
 
 parameter_types! {
     pub const UncleGenerations: u64 = 0;
-    pub MyVVMSchedule: versatile_wasm::Schedule = <versatile_wasm::simple_schedule_v2::Schedule>::default();
-
 }
 
 impl pallet_authorship::Config for Test {
@@ -897,7 +911,6 @@ fn it_should_correctly_parse_a_minimal_valid_io_schedule() {
                 compose: Compose {
                     name: b"component1".to_vec(),
                     code_txt: r#""#.as_bytes().to_vec(),
-                    gateway_id: [0 as u8; 4],
                     exec_type: b"exec_escrow".to_vec(),
                     dest: AccountId::new([1 as u8; 32]),
                     value: 0,
@@ -912,7 +925,6 @@ fn it_should_correctly_parse_a_minimal_valid_io_schedule() {
     let components = vec![Compose {
         name: b"component1".to_vec(),
         code_txt: r#""#.as_bytes().to_vec(),
-        gateway_id: [0 as u8; 4],
         exec_type: b"exec_escrow".to_vec(),
         dest: AccountId::new([1 as u8; 32]),
         value: 0,
@@ -935,7 +947,6 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_2_phases() {
                     compose: Compose {
                         name: b"component1".to_vec(),
                         code_txt: r#""#.as_bytes().to_vec(),
-                        gateway_id: [0 as u8; 4],
                         exec_type: b"exec_escrow".to_vec(),
                         dest: AccountId::new([1 as u8; 32]),
                         value: 0,
@@ -949,7 +960,6 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_2_phases() {
                     compose: Compose {
                         name: b"component2".to_vec(),
                         code_txt: r#""#.as_bytes().to_vec(),
-                        gateway_id: [0 as u8; 4],
                         exec_type: b"exec_escrow".to_vec(),
                         dest: AccountId::new([1 as u8; 32]),
                         value: 0,
@@ -966,7 +976,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_2_phases() {
         Compose {
             name: b"component1".to_vec(),
             code_txt: r#""#.as_bytes().to_vec(),
-            gateway_id: [0 as u8; 4],
+
             exec_type: b"exec_escrow".to_vec(),
             dest: AccountId::new([1 as u8; 32]),
             value: 0,
@@ -976,7 +986,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_2_phases() {
         Compose {
             name: b"component2".to_vec(),
             code_txt: r#""#.as_bytes().to_vec(),
-            gateway_id: [0 as u8; 4],
+
             exec_type: b"exec_escrow".to_vec(),
             dest: AccountId::new([1 as u8; 32]),
             value: 0,
@@ -1000,7 +1010,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_1_phase_and_2_steps() {
                     compose: Compose {
                         name: b"component1".to_vec(),
                         code_txt: r#""#.as_bytes().to_vec(),
-                        gateway_id: [0 as u8; 4],
+
                         exec_type: b"exec_escrow".to_vec(),
                         dest: AccountId::new([1 as u8; 32]),
                         value: 0,
@@ -1012,7 +1022,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_1_phase_and_2_steps() {
                     compose: Compose {
                         name: b"component2".to_vec(),
                         code_txt: r#""#.as_bytes().to_vec(),
-                        gateway_id: [0 as u8; 4],
+
                         exec_type: b"exec_escrow".to_vec(),
                         dest: AccountId::new([1 as u8; 32]),
                         value: 0,
@@ -1029,7 +1039,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_1_phase_and_2_steps() {
         Compose {
             name: b"component1".to_vec(),
             code_txt: r#""#.as_bytes().to_vec(),
-            gateway_id: [0 as u8; 4],
+
             exec_type: b"exec_escrow".to_vec(),
             dest: AccountId::new([1 as u8; 32]),
             value: 0,
@@ -1039,7 +1049,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_1_phase_and_2_steps() {
         Compose {
             name: b"component2".to_vec(),
             code_txt: r#""#.as_bytes().to_vec(),
-            gateway_id: [0 as u8; 4],
+
             exec_type: b"exec_escrow".to_vec(),
             dest: AccountId::new([1 as u8; 32]),
             value: 0,
@@ -1064,7 +1074,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_complex_structure() {
                         compose: Compose {
                             name: b"component1".to_vec(),
                             code_txt: r#""#.as_bytes().to_vec(),
-                            gateway_id: [0 as u8; 4],
+
                             exec_type: b"exec_escrow".to_vec(),
                             dest: AccountId::new([1 as u8; 32]),
                             value: 0,
@@ -1076,7 +1086,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_complex_structure() {
                         compose: Compose {
                             name: b"component2".to_vec(),
                             code_txt: r#""#.as_bytes().to_vec(),
-                            gateway_id: [0 as u8; 4],
+
                             exec_type: b"exec_escrow".to_vec(),
                             dest: AccountId::new([1 as u8; 32]),
                             value: 0,
@@ -1091,7 +1101,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_complex_structure() {
                     compose: Compose {
                         name: b"component2".to_vec(),
                         code_txt: r#""#.as_bytes().to_vec(),
-                        gateway_id: [0 as u8; 4],
+
                         exec_type: b"exec_escrow".to_vec(),
                         dest: AccountId::new([1 as u8; 32]),
                         value: 0,
@@ -1105,7 +1115,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_complex_structure() {
                     compose: Compose {
                         name: b"component1".to_vec(),
                         code_txt: r#""#.as_bytes().to_vec(),
-                        gateway_id: [0 as u8; 4],
+
                         exec_type: b"exec_escrow".to_vec(),
                         dest: AccountId::new([1 as u8; 32]),
                         value: 0,
@@ -1120,7 +1130,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_complex_structure() {
                         compose: Compose {
                             name: b"component2".to_vec(),
                             code_txt: r#""#.as_bytes().to_vec(),
-                            gateway_id: [0 as u8; 4],
+
                             exec_type: b"exec_escrow".to_vec(),
                             dest: AccountId::new([1 as u8; 32]),
                             value: 0,
@@ -1132,7 +1142,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_complex_structure() {
                         compose: Compose {
                             name: b"component2".to_vec(),
                             code_txt: r#""#.as_bytes().to_vec(),
-                            gateway_id: [0 as u8; 4],
+
                             exec_type: b"exec_escrow".to_vec(),
                             dest: AccountId::new([1 as u8; 32]),
                             value: 0,
@@ -1144,7 +1154,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_complex_structure() {
                         compose: Compose {
                             name: b"component1".to_vec(),
                             code_txt: r#""#.as_bytes().to_vec(),
-                            gateway_id: [0 as u8; 4],
+
                             exec_type: b"exec_escrow".to_vec(),
                             dest: AccountId::new([1 as u8; 32]),
                             value: 0,
@@ -1162,7 +1172,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_complex_structure() {
         Compose {
             name: b"component1".to_vec(),
             code_txt: r#""#.as_bytes().to_vec(),
-            gateway_id: [0 as u8; 4],
+
             exec_type: b"exec_escrow".to_vec(),
             dest: AccountId::new([1 as u8; 32]),
             value: 0,
@@ -1172,7 +1182,7 @@ fn it_should_correctly_parse_a_valid_io_schedule_with_complex_structure() {
         Compose {
             name: b"component2".to_vec(),
             code_txt: r#""#.as_bytes().to_vec(),
-            gateway_id: [0 as u8; 4],
+
             exec_type: b"exec_escrow".to_vec(),
             dest: AccountId::new([1 as u8; 32]),
             value: 0,
@@ -1195,7 +1205,7 @@ fn it_should_throw_when_io_schedule_does_not_end_correctly() {
     let components = vec![Compose {
         name: b"component1".to_vec(),
         code_txt: r#""#.as_bytes().to_vec(),
-        gateway_id: [0 as u8; 4],
+
         exec_type: b"exec_escrow".to_vec(),
         dest: AccountId::new([1 as u8; 32]),
         value: 0,
@@ -1217,7 +1227,7 @@ fn it_should_throw_when_io_schedule_references_a_missing_component() {
     let components = vec![Compose {
         name: b"component1".to_vec(),
         code_txt: r#""#.as_bytes().to_vec(),
-        gateway_id: [0 as u8; 4],
+
         exec_type: b"exec_escrow".to_vec(),
         dest: AccountId::new([1 as u8; 32]),
         value: 0,
@@ -1239,7 +1249,7 @@ fn it_should_throw_with_empty_io_schedule() {
     let components = vec![Compose {
         name: b"component1".to_vec(),
         code_txt: r#""#.as_bytes().to_vec(),
-        gateway_id: [0 as u8; 4],
+
         exec_type: b"exec_escrow".to_vec(),
         dest: AccountId::new([1 as u8; 32]),
         value: 0,
