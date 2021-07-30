@@ -27,7 +27,7 @@ use frame_support::dispatch::DispatchResult;
 use frame_system::ensure_signed;
 use sp_runtime::{traits::Hash, RuntimeDebug};
 use sp_std::prelude::*;
-use t3rn_primitives::{abi::ContractActionDesc, transfers::BalanceOf, Compose};
+use t3rn_primitives::{abi::ContractActionDesc, transfers::BalanceOf, ChainId, Compose};
 use volatile_vm::storage::RawAliveContractInfo;
 
 // Re-export pallet items so that they can be accessed from the crate namespace.
@@ -41,7 +41,6 @@ mod weights;
 pub use weights::*;
 
 pub type RegistryContractId<T> = <T as frame_system::Config>::Hash;
-pub type ChainId = [u8; 4];
 
 /// A preliminary representation of a contract in the onchain registry.
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
@@ -277,5 +276,18 @@ impl<T: Config> Pallet<T> {
         let _sender = ensure_signed(origin)?;
 
         Ok(())
+    }
+
+    #[allow(dead_code)]
+    pub fn fetch_contract_by_author(
+        // origin: T::Origin,
+        author: T::AccountId,
+    ) -> Result<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>, &'static str>
+    {
+        // let _sender = ensure_signed(origin).map_err(|_| "unsigned origin");
+        let contract =
+            pallet::ContractsRegistry::<T>::iter_values().find(|element| element.author == author);
+
+        Ok(contract.unwrap())
     }
 }
