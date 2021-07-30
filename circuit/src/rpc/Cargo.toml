@@ -25,6 +25,7 @@ sp-api = { git = "https://github.com/paritytech/substrate.git", tag = 'monthly-2
 pallet-contracts-primitives = { git = "https://github.com/paritytech/substrate.git", tag = 'monthly-2021-06' }
 t3rn-primitives = { version = "0.1.0", path = "../primitives" }
 circuit-rpc-runtime-api = { version = "0.1.0", path = "./runtime-api" }
+pallet-contracts-registry = { path = "../contracts-registry" }
 
 [dev-dependencies]
 serde_json = "1.0.41"

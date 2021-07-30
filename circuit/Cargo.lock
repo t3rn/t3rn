@@ -1044,6 +1044,7 @@ dependencies = [
  "jsonrpc-core-client 14.2.0",
  "jsonrpc-derive 14.2.2",
  "pallet-contracts-primitives",
+ "pallet-contracts-registry",
  "parity-scale-codec 1.3.7",
  "serde",
  "serde_json",
@@ -4900,14 +4901,12 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
- "pallet-xdns",
  "parity-scale-codec 2.1.3",
  "serde",
  "sp-finality-grandpa",
  "sp-runtime",
  "sp-std",
  "sp-trie",
- "t3rn-primitives",
 ]
 
 [[package]]
