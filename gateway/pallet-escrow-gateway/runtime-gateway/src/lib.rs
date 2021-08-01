@@ -306,6 +306,22 @@ pub mod pallet {
 
         XEmitEvent(Vec<u8>),
 
+        XGatewayCustom(
+            T::AccountId,
+            T::AccountId,
+            BalanceOf<T>,
+            Option<T::AccountId>,
+            Option<Vec<u8>>,
+        ),
+
+        XGatewaySwap(
+            T::AccountId,
+            T::AccountId,
+            BalanceOf<T>,
+            BalanceOf<T>,
+            Option<T::AccountId>,
+        ),
+
         MultistepUnknownPhase(u8),
 
         RentProjectionCalled(T::AccountId, T::AccountId),
@@ -747,22 +763,49 @@ pub mod pallet {
             _origin: OriginFor<T>,
             event_encoded: Vec<u8>,
         ) -> DispatchResultWithPostInfo {
-            // Print a test message.
             Self::deposit_event(Event::XEmitEvent(event_encoded));
             Ok(().into())
         }
 
         #[pallet::weight(100_000_000 + T::DbWeight::get().reads_writes(1,0))]
-        pub fn generic(_origin: OriginFor<T>, key: [u8; 32]) -> DispatchResultWithPostInfo {
-            // Print a test message.
-            Self::deposit_event(Event::GetStorageResult(key.to_vec()));
+        pub fn custom(
+            _origin: OriginFor<T>,
+            from: T::AccountId,
+            to: T::AccountId,
+            value: BalanceOf<T>,
+            maybe_escrow_account: Option<T::AccountId>,
+            custom_bytes: Option<Vec<u8>>,
+            _maybe_call_flags: Option<CallFlags>,
+        ) -> DispatchResultWithPostInfo {
+            // ToDo: Unimplemented!
+            Self::deposit_event(Event::XGatewayCustom(
+                from,
+                to,
+                value,
+                maybe_escrow_account,
+                custom_bytes,
+            ));
             Ok(().into())
         }
 
         #[pallet::weight(100_000_000 + T::DbWeight::get().reads_writes(1,0))]
-        pub fn swap(_origin: OriginFor<T>, key: [u8; 32]) -> DispatchResultWithPostInfo {
-            // Print a test message.
-            Self::deposit_event(Event::GetStorageResult(key.to_vec()));
+        pub fn swap(
+            _origin: OriginFor<T>,
+            from: T::AccountId,
+            to: T::AccountId,
+            value_src: BalanceOf<T>,
+            value_dest: BalanceOf<T>,
+            maybe_escrow_account: Option<T::AccountId>,
+            _maybe_transfer_flags: Option<TransferFlags>,
+        ) -> DispatchResultWithPostInfo {
+            // ToDo: Unimplemented!
+            Self::deposit_event(Event::XGatewaySwap(
+                from,
+                to,
+                value_src,
+                value_dest,
+                maybe_escrow_account,
+            ));
             Ok(().into())
         }
 
