@@ -5,6 +5,8 @@ use codec::{Decode, Encode};
 use bitflags::bitflags;
 use frame_support::{
     ensure,
+    storage::child,
+    storage::child::ChildInfo,
     traits::{Currency, Time},
 };
 use frame_system::ensure_signed;
@@ -46,14 +48,37 @@ bitflags! {
     /// Flags used by a contract to customize transfers.
     #[derive(Encode, Decode)]
     pub struct TransferFlags: u8 {
-        /// Include block header.
         const DIRTY = 0b00000001;
-        /// Include block body.
         const ESCROWED_EXECUTE = 0b00000010;
-        /// Include block receipt.
         const ESCROWED_COMMIT = 0b00000100;
-        /// Include block message queue.
         const ESCROWED_REVERT = 0b00001000;
+    }
+}
+
+// Bits of storage flags associated with types on-gateway of transfer.
+bitflags! {
+
+    /// Flags used by a contract to customize transfers.
+    #[derive(Encode, Decode)]
+    pub struct StorageFlags: u8 {
+        const CHILD = 0b00000001;
+        const GLOBAL = 0b00000010;
+        const ESCROWED_EXECUTE = 0b00000100;
+        const ESCROWED_COMMIT = 0b00001000;
+        const ESCROWED_REVERT = 0b00010000;
+    }
+}
+
+// Bits of storage flags associated with types on-gateway of transfer.
+bitflags! {
+
+    /// Flags used by a contract to customize calls.
+    #[derive(Encode, Decode)]
+    pub struct CallFlags: u8 {
+        const TRANSFER_ONLY = 0b00000001;
+        const ESCROWED_EXECUTE = 0b00000100;
+        const ESCROWED_COMMIT = 0b00001000;
+        const ESCROWED_REVERT = 0b00010000;
     }
 }
 
@@ -285,6 +310,10 @@ pub mod pallet {
 
         RentProjectionCalled(T::AccountId, T::AccountId),
 
+        XGetStorage(Vec<u8>, Vec<u8>),
+
+        XSetStorage(Vec<u8>, Vec<u8>),
+
         GetStorageResult(Vec<u8>),
     }
 
@@ -298,6 +327,8 @@ pub mod pallet {
         XBalanceTransferFailed,
 
         UnknownXCallFlag,
+
+        UnknownXStorageFlag,
 
         FeesOverflow,
 
@@ -623,16 +654,52 @@ pub mod pallet {
         }
 
         #[pallet::weight(100_000_000 + T::DbWeight::get().reads_writes(1,0))]
-        pub fn get_storage(_origin: OriginFor<T>, key: [u8; 32]) -> DispatchResultWithPostInfo {
-            // let value_at_block = self.client.storage(&id, key).map_err(client_err)?;
-            Self::deposit_event(Event::GetStorageResult(key.to_vec()));
+        pub fn get_storage(
+            _origin: OriginFor<T>,
+            key: [u8; 32],
+            child_key: Option<Vec<u8>>,
+            storage_flags: Option<StorageFlags>,
+        ) -> DispatchResultWithPostInfo {
+            let val = match storage_flags {
+                None | Some(StorageFlags::GLOBAL) => sp_io::storage::get(&key),
+                Some(StorageFlags::CHILD) => {
+                    let child = child_key
+                        .expect("Expect child key provided alongside with CHILD storage flag");
+                    child::get_raw(&ChildInfo::new_default(&child), &key)
+                }
+                _ => Err(Error::<T>::UnknownXStorageFlag)?,
+            };
+
+            Self::deposit_event(Event::XGetStorage(key.to_vec(), val.encode()));
             Ok(().into())
         }
 
         #[pallet::weight(100_000_000 + T::DbWeight::get().reads_writes(1,0))]
-        pub fn set_storage(_origin: OriginFor<T>, key: [u8; 32]) -> DispatchResultWithPostInfo {
-            // Print a test message.
-            Self::deposit_event(Event::GetStorageResult(key.to_vec()));
+        pub fn set_storage(
+            _origin: OriginFor<T>,
+            key: [u8; 32],
+            val: Option<Vec<u8>>,
+            child_key: Option<Vec<u8>>,
+            storage_flags: Option<StorageFlags>,
+        ) -> DispatchResultWithPostInfo {
+            let res_val = match storage_flags {
+                None | Some(StorageFlags::GLOBAL) => match val {
+                    Some(new_value) => sp_io::storage::set(&key, &new_value[..]),
+                    _ => sp_io::storage::clear(&key),
+                },
+                Some(StorageFlags::CHILD) => {
+                    let child = child_key
+                        .expect("Expect child key provided alongside with CHILD storage flag");
+                    let child_info = &ChildInfo::new_default(&child);
+
+                    match val {
+                        Some(new_value) => child::put_raw(&child_info, &key, &new_value[..]),
+                        _ => child::kill(&child_info, &key),
+                    }
+                }
+                _ => Err(Error::<T>::UnknownXStorageFlag)?,
+            };
+            Self::deposit_event(Event::XSetStorage(key.to_vec(), res_val.encode()));
             Ok(().into())
         }
 
@@ -644,7 +711,6 @@ pub mod pallet {
             value: BalanceOf<T>,
             maybe_escrow_account: Option<T::AccountId>,
             maybe_transfer_flags: Option<TransferFlags>,
-            // + maybe xtx_id in order to refer to phase and escrow's validity
         ) -> DispatchResultWithPostInfo {
             match maybe_transfer_flags {
                 None | Some(TransferFlags::DIRTY) => just_transfer::<T>(&from, &to, value)
