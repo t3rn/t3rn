@@ -2,6 +2,7 @@
 
 use codec::{Decode, Encode};
 
+use bitflags::bitflags;
 use frame_support::{
     ensure,
     traits::{Currency, Time},
@@ -38,6 +39,23 @@ mod mock;
 mod tests;
 
 pub use pallet::*;
+
+// Bits of transfer flags associated with types on-gateway of transfer.
+bitflags! {
+
+    /// Flags used by a contract to customize transfers.
+    #[derive(Encode, Decode)]
+    pub struct TransferFlags: u8 {
+        /// Include block header.
+        const DIRTY = 0b00000001;
+        /// Include block body.
+        const ESCROWED_EXECUTE = 0b00000010;
+        /// Include block receipt.
+        const ESCROWED_COMMIT = 0b00000100;
+        /// Include block message queue.
+        const ESCROWED_REVERT = 0b00001000;
+    }
+}
 
 pub fn cleanup_failed_execution<T: Config>(
     escrow_account: T::AccountId,
@@ -234,7 +252,7 @@ pub mod pallet {
     >;
 
     #[pallet::event]
-    #[pallet::metadata(T::AccountId = "AccountId")]
+    #[pallet::metadata(T::AccountId = "AccountId", BalanceOf<T> = "Balance")]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// Just a dummy event.
@@ -249,9 +267,19 @@ pub mod pallet {
         /// \[timestamp, phase, result, deferred_transfers\]
         RuntimeGatewayVersatileRevertSuccess(u64, u8, Vec<u8>, Vec<TransferEntry>),
 
+        /// \[from, to, value, escrow_account\]
+        XTransfer(
+            T::AccountId,
+            T::AccountId,
+            BalanceOf<T>,
+            Option<T::AccountId>,
+        ),
+
         MultistepCommitResult(Vec<u8>),
 
         MultistepRevertResult(u32),
+
+        XEmitEvent(Vec<u8>),
 
         MultistepUnknownPhase(u8),
 
@@ -266,6 +294,10 @@ pub mod pallet {
         RequesterNotEnoughBalance,
 
         BalanceTransferFailed,
+
+        XBalanceTransferFailed,
+
+        UnknownXCallFlag,
 
         FeesOverflow,
 
@@ -590,9 +622,79 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// Just a dummy get_storage entry point.
         #[pallet::weight(100_000_000 + T::DbWeight::get().reads_writes(1,0))]
         pub fn get_storage(_origin: OriginFor<T>, key: [u8; 32]) -> DispatchResultWithPostInfo {
+            // let value_at_block = self.client.storage(&id, key).map_err(client_err)?;
+            Self::deposit_event(Event::GetStorageResult(key.to_vec()));
+            Ok(().into())
+        }
+
+        #[pallet::weight(100_000_000 + T::DbWeight::get().reads_writes(1,0))]
+        pub fn set_storage(_origin: OriginFor<T>, key: [u8; 32]) -> DispatchResultWithPostInfo {
+            // Print a test message.
+            Self::deposit_event(Event::GetStorageResult(key.to_vec()));
+            Ok(().into())
+        }
+
+        #[pallet::weight(100_000_000 + T::DbWeight::get().reads_writes(1,0))]
+        pub fn transfer(
+            _origin: OriginFor<T>,
+            from: T::AccountId,
+            to: T::AccountId,
+            value: BalanceOf<T>,
+            maybe_escrow_account: Option<T::AccountId>,
+            maybe_transfer_flags: Option<TransferFlags>,
+            // + maybe xtx_id in order to refer to phase and escrow's validity
+        ) -> DispatchResultWithPostInfo {
+            match maybe_transfer_flags {
+                None | Some(TransferFlags::DIRTY) => just_transfer::<T>(&from, &to, value)
+                    .map_err(|_| Error::<T>::XBalanceTransferFailed)?,
+                Some(TransferFlags::ESCROWED_EXECUTE) => {
+                    let escrow = maybe_escrow_account
+                        .clone()
+                        .expect("transfer_escrow requires valid escrow account");
+                    let mut transfers = Vec::<TransferEntry>::new();
+                    escrow_transfer::<T>(&escrow, &from, &to, value, &mut transfers)
+                        .map_err(|_| Error::<T>::XBalanceTransferFailed)?
+                }
+                Some(TransferFlags::ESCROWED_COMMIT) => {
+                    let escrow = maybe_escrow_account
+                        .clone()
+                        .expect("escrow transfer commit requires valid escrow account");
+                    just_transfer::<T>(&escrow, &to, value)?;
+                }
+                Some(TransferFlags::ESCROWED_REVERT) => {
+                    let escrow = maybe_escrow_account
+                        .clone()
+                        .expect("escrow transfer revert requires valid escrow account");
+                    just_transfer::<T>(&escrow, &from, value)?;
+                }
+                _ => Err(Error::<T>::UnknownXCallFlag)?,
+            }
+
+            Self::deposit_event(Event::XTransfer(from, to, value, maybe_escrow_account));
+            Ok(().into())
+        }
+
+        #[pallet::weight(100_000_000 + T::DbWeight::get().reads_writes(1,0))]
+        pub fn emit_event(
+            _origin: OriginFor<T>,
+            event_encoded: Vec<u8>,
+        ) -> DispatchResultWithPostInfo {
+            // Print a test message.
+            Self::deposit_event(Event::XEmitEvent(event_encoded));
+            Ok(().into())
+        }
+
+        #[pallet::weight(100_000_000 + T::DbWeight::get().reads_writes(1,0))]
+        pub fn generic(_origin: OriginFor<T>, key: [u8; 32]) -> DispatchResultWithPostInfo {
+            // Print a test message.
+            Self::deposit_event(Event::GetStorageResult(key.to_vec()));
+            Ok(().into())
+        }
+
+        #[pallet::weight(100_000_000 + T::DbWeight::get().reads_writes(1,0))]
+        pub fn swap(_origin: OriginFor<T>, key: [u8; 32]) -> DispatchResultWithPostInfo {
             // Print a test message.
             Self::deposit_event(Event::GetStorageResult(key.to_vec()));
             Ok(().into())
