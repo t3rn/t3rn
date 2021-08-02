@@ -26,7 +26,7 @@ use versatile_wasm::{
         get_child_storage_for_current_execution, raw_escrow_call, CallStamp, DeferredStorageWrite,
         Env,
     },
-    ExecResult, WasmExecutable,
+    DispatchRuntimeCall, ExecResult, WasmExecutable,
 };
 
 use t3rn_primitives::{
@@ -79,6 +79,7 @@ bitflags! {
         const ESCROWED_EXECUTE = 0b00000100;
         const ESCROWED_COMMIT = 0b00001000;
         const ESCROWED_REVERT = 0b00010000;
+        const MODULE_DISPATCH = 0b00100000;
     }
 }
 
@@ -410,17 +411,19 @@ pub mod pallet {
         /// the results in memory or elevating responsibility the results management to Gateway Circuit (preferable).
         /// ---
         #[pallet::weight(500_000_000 + T::DbWeight::get().reads_writes(3,4))]
-        pub fn multistep_call(
+        pub fn call(
             origin: OriginFor<T>,
             requester: T::AccountId,
             target_dest: T::AccountId,
-            phase: u8,
             code: Vec<u8>,
             // #[compact] value: BalanceOf<T>,
             // #[compact] gas_limit: Gas,
             value: BalanceOf<T>,
             gas_limit: Gas,
             input_data: Vec<u8>,
+            call_flags: Option<CallFlags>,
+            module_name: Option<Vec<u8>>,
+            method_name: Option<Vec<u8>>,
         ) -> DispatchResultWithPostInfo {
             let escrow_account = ensure_signed(origin.clone())?;
 
@@ -429,8 +432,8 @@ pub mod pallet {
                 Error::<T>::UnauthorizedCallAttempt
             );
 
-            match phase {
-                0 => {
+            match call_flags {
+                None | Some(CallFlags::ESCROWED_EXECUTE) => {
                     // Charge Escrow Account from requester first before execution.
                     // Gas charge needs to be worked out. For now assume the multiplier with gas and token = 1.
                     let mut gas_meter = GasMeter::new(gas_limit);
@@ -553,23 +556,6 @@ pub mod pallet {
                             &target_dest.clone(),
                         ),
                     };
-                    log::debug!(
-                        "DEBUG multistepcall -- Execution Proofs : result {:?} ",
-                        execution_proofs.result
-                    );
-                    log::debug!(
-                        "DEBUG multistepcall -- Execution storage : storage {:?}",
-                        execution_proofs.storage
-                    );
-                    log::debug!(
-                        "DEBUG multistepcall -- Execution Proofs : deferred_transfers {:?}",
-                        execution_proofs.deferred_transfers
-                    );
-                    log::debug!(
-                        "DEBUG multistepcall -- Execution Proofs : gas_spent {:?} vs left {:?}",
-                        gas_meter.gas_spent(),
-                        gas_meter.gas_left()
-                    );
                     <DeferredStorageWrites<T>>::insert(
                         &requester,
                         &T::Hashing::hash(&code.clone()),
@@ -601,7 +587,7 @@ pub mod pallet {
                     ));
                 }
                 // Commit
-                1 => {
+                Some(CallFlags::ESCROWED_COMMIT) => {
                     let last_execution_stamp =
                         <ExecutionStamps<T>>::get(&requester, &T::Hashing::hash(&code.clone()));
                     if ExecutionStamp::default() == last_execution_stamp
@@ -637,7 +623,7 @@ pub mod pallet {
                     ));
                 }
                 // Revert
-                2 => {
+                Some(CallFlags::ESCROWED_REVERT) => {
                     Self::revert(
                         origin,
                         escrow_account.clone(),
@@ -661,10 +647,31 @@ pub mod pallet {
                         vec![],
                     ));
                 }
-                _ => {
-                    log::debug!("DEBUG multistep_call -- Unknown Phase {}", phase);
-                    Self::deposit_event(Event::MultistepUnknownPhase(phase));
+                Some(CallFlags::MODULE_DISPATCH) => {
+                    let module_name_unpacked = module_name
+                        .expect("Expect non-empty module name when passing MODULE_DISPATCH flag");
+
+                    let module_name_str = sp_std::str::from_utf8(&module_name_unpacked[..])
+                        .map_err(|_| "Can't decode module_name to &'static str")?;
+
+                    let method_name_unpacked = method_name
+                        .expect("Expect non-empty method name when passing MODULE_DISPATCH flag");
+
+                    let method_name_str = sp_std::str::from_utf8(&method_name_unpacked[..])
+                        .map_err(|_| "Can't decode module_name to &'static str")?;
+
+                    <T as VersatileWasm>::DispatchRuntimeCall::dispatch_runtime_call(
+                        module_name_str,
+                        method_name_str,
+                        &input_data,
+                        &escrow_account,
+                        &target_dest,
+                        &requester,
+                        value,
+                        &mut versatile_wasm::gas::GasMeter::new(gas_limit),
+                    )?
                 }
+                Some(_) => Err(Error::<T>::UnknownXCallFlag)?,
             }
             Ok(().into())
         }
