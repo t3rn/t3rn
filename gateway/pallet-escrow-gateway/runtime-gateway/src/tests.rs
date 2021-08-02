@@ -1,7 +1,7 @@
 // Tests to be written here
 
 // Loading .wasm files deps
-use crate::{mock::*, CallStamp, Error, ExecutionProofs, ExecutionStamp};
+use crate::{mock::*, CallFlags, CallStamp, Error, ExecutionProofs, ExecutionStamp};
 use anyhow::{Context, Result};
 use codec::Encode;
 use frame_support::dispatch::DispatchError;
@@ -24,10 +24,6 @@ use sp_runtime::AccountId32;
 /// * Revert:  Code results are removed out of escrow account.
 /// * Commit:  Code results are moved from escrow account to target accounts.
 
-const EXECUTE_PHASE: u8 = 0;
-const COMMIT_PHASE: u8 = 1;
-const REVERT_PHASE: u8 = 2;
-
 const ZERO_ACCOUNT: AccountId32 = AccountId32::new([0u8; 32]);
 const ESCROW_ACCOUNT: AccountId32 = AccountId32::new([1u8; 32]);
 const TEMP_EXEC_CONTRACT: AccountId32 = AccountId32::new([2u8; 32]);
@@ -41,8 +37,9 @@ const OTHER_ACCOUNT: AccountId32 = AccountId32::new([5u8; 32]);
   - CALL = 135 * 500_000
   - total = 310 * 500_000 = 155_000_000
 **/
-fn default_multistep_call_args() -> (u8, Vec<u8>, Vec<u8>, BalanceOf<Test>, Gas) {
-    let phase = 0 as u8;
+fn default_multistep_call_args() -> (Option<CallFlags>, Vec<u8>, Vec<u8>, BalanceOf<Test>, Gas) {
+    // let phase = 0 as u8;
+    let phase = Some(CallFlags::ESCROWED_EXECUTE);
     let code: Vec<u8> = Vec::new();
     let input_data: Vec<u8> = Vec::new();
     let value = BalanceOf::<Test>::from(500_000 as u64);
@@ -57,15 +54,17 @@ fn should_only_allow_to_be_called_by_escrow_account_being_sudo() {
     new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
         let _ = Balances::deposit_creating(&REQUESTER, 10_000_000_000);
 
-        let err_rec = EscrowGateway::multistep_call(
+        let err_rec = EscrowGateway::call(
             Origin::signed(OTHER_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
-            phase,
             code,
             value,
             gas_limit,
             input_data,
+            phase,
+            None,
+            None,
         );
         assert_noop!(err_rec, Error::<Test>::UnauthorizedCallAttempt);
     });
@@ -78,15 +77,17 @@ fn during_execution_phase_when_given_empty_wasm_code_multistep_call_only_deferrs
     new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
         let _ = Balances::deposit_creating(&REQUESTER, 10_000_000_000);
 
-        assert_ok!(EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::call(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
-            phase,
             Vec::new(),
             value,
             gas_limit,
             input_data,
+            phase,
+            None,
+            None,
         ));
 
         assert_eq!(
@@ -124,15 +125,17 @@ fn commit_phase_cannot_be_triggered_without_preceeding_execution() {
         );
 
         assert_noop!(
-            EscrowGateway::multistep_call(
+            EscrowGateway::call(
                 Origin::signed(ESCROW_ACCOUNT),
                 REQUESTER,
                 TARGET_DEST,
-                COMMIT_PHASE,
                 correct_wasm_code.clone(),
                 value,
                 sufficient_gas_limit,
-                input_data.clone()
+                input_data.clone(),
+                Some(CallFlags::ESCROWED_COMMIT),
+                None,
+                None,
             ),
             Error::<Test>::CommitOnlyPossibleAfterSuccessfulExecutionPhase
         );
@@ -149,15 +152,17 @@ fn should_succeed_for_return_from_fn() {
 
     new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
         let _ = Balances::deposit_creating(&REQUESTER, 10_000_000_000);
-        assert_ok!(EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::call(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
-            phase,
             correct_wasm_code,
             value,
             gas_limit,
-            input_data
+            input_data,
+            phase,
+            None,
+            None,
         ));
     });
 }
@@ -176,15 +181,17 @@ fn fails_for_insufficient_gas_limit() {
 
     new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
         let _ = Balances::deposit_creating(&REQUESTER, 10_000_000_000);
-        let err = EscrowGateway::multistep_call(
+        let err = EscrowGateway::call(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
-            phase,
             correct_wasm_code,
             value,
             gas_limit,
             input_data,
+            phase,
+            None,
+            None,
         );
         assert_noop!(err, DispatchError::Other("Out of gas"));
     });
@@ -201,15 +208,17 @@ fn successful_execution_phase_when_given_correct_wasm_code_stores_correct_result
     new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
         let _ = Balances::deposit_creating(&REQUESTER, 10_000_000_000);
 
-        assert_ok!(EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::call(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
-            phase,
             correct_wasm_code.clone(),
             value,
             gas_limit,
-            input_data
+            input_data,
+            phase,
+            None,
+            None,
         ));
 
         // Expect return success execution code - 0.
@@ -234,15 +243,17 @@ fn successful_execution_phase_generates_call_stamps_and_proofs() {
     new_test_ext_builder(50, ESCROW_ACCOUNT).execute_with(|| {
         let _ = Balances::deposit_creating(&REQUESTER, 10_000_000_000);
 
-        assert_ok!(EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::call(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
-            phase,
             correct_wasm_code.clone(),
             value,
             gas_limit,
-            input_data
+            input_data,
+            phase,
+            None,
+            None,
         ));
 
         assert_eq!(
@@ -335,15 +346,17 @@ fn transfer_during_execution_phase_succeeds_and_consumes_costs_correctly_and_def
             // Note, no endowment needed.
             sufficient_gas_limit + subsistence_threshold + (value) + inner_contract_transfer_value,
         );
-        assert_ok!(EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::call(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
-            phase,
             correct_wasm_code,
             value,
             sufficient_gas_limit,
-            input_data
+            input_data,
+            phase,
+            None,
+            None,
         ));
 
         // Escrow Account is now pre-charged by requester to cover:
@@ -396,15 +409,17 @@ fn successful_commit_phase_transfers_move_from_deferred_to_target_destinations()
             &REQUESTER,
             sufficient_gas_limit + subsistence_threshold + (value) + inner_contract_transfer_value,
         );
-        assert_ok!(EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::call(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
-            EXECUTE_PHASE,
             correct_wasm_code.clone(),
             value,
             sufficient_gas_limit,
-            input_data.clone()
+            input_data.clone(),
+            Some(CallFlags::ESCROWED_EXECUTE),
+            None,
+            None,
         ));
 
         // There should be an entry with deferred transfer to the target dest though as well as the requested by contract value transfer of 100 to &0
@@ -416,15 +431,17 @@ fn successful_commit_phase_transfers_move_from_deferred_to_target_destinations()
             sufficient_gas_limit + inner_contract_transfer_value + value
         ); // 10000100
 
-        assert_ok!(EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::call(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
-            COMMIT_PHASE,
             correct_wasm_code.clone(),
             value,
             sufficient_gas_limit,
-            input_data.clone()
+            input_data.clone(),
+            Some(CallFlags::ESCROWED_COMMIT),
+            None,
+            None,
         ));
 
         assert_eq!(Balances::total_balance(&TARGET_DEST), 500_000);
@@ -439,7 +456,7 @@ fn successful_commit_phase_transfers_move_from_deferred_to_target_destinations()
 
 #[test]
 fn successful_revert_phase_removes_deferred_transfers_and_refunds_from_escrow_to_requester() {
-    let (_phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
+    let (phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new(
         "../contracts-gateway/fixtures/32b-account-and-u64-balance/transfer_return_code.wasm",
     );
@@ -455,15 +472,17 @@ fn successful_revert_phase_removes_deferred_transfers_and_refunds_from_escrow_to
             &REQUESTER,
             sufficient_gas_limit + subsistence_threshold + (value) + inner_contract_transfer_value,
         );
-        assert_ok!(EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::call(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
-            EXECUTE_PHASE,
             correct_wasm_code.clone(),
             value,
             sufficient_gas_limit,
-            input_data.clone()
+            input_data.clone(),
+            phase,
+            None,
+            None,
         ));
         // Expect return success execution code - 0.
         assert_eq!(
@@ -499,15 +518,17 @@ fn successful_revert_phase_removes_deferred_transfers_and_refunds_from_escrow_to
             sufficient_gas_limit + inner_contract_transfer_value + value
         ); // 188000100
 
-        assert_ok!(EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::call(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
-            REVERT_PHASE,
             correct_wasm_code.clone(),
             value,
             sufficient_gas_limit,
-            input_data.clone()
+            input_data.clone(),
+            Some(CallFlags::ESCROWED_REVERT),
+            None,
+            None,
         ));
 
         assert_eq!(
@@ -533,7 +554,7 @@ fn successful_revert_phase_removes_deferred_transfers_and_refunds_from_escrow_to
 
 #[test]
 fn successful_revert_phase_removes_associated_storage_for_that_call() {
-    let (_phase, _, _input_data, value, _gas_limit) = default_multistep_call_args();
+    let (phase, _, _input_data, value, _gas_limit) = default_multistep_call_args();
     let correct_wasm_path =
         Path::new("../contracts-gateway/fixtures/32b-account-and-u64-balance/storage_size.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
@@ -553,15 +574,17 @@ fn successful_revert_phase_removes_associated_storage_for_that_call() {
             &REQUESTER,
             sufficient_gas_limit + subsistence_threshold + (value) + inner_contract_transfer_value,
         );
-        assert_ok!(EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::call(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
-            EXECUTE_PHASE,
             correct_wasm_code.clone(),
             value,
             sufficient_gas_limit,
-            Encode::encode(&17)
+            Encode::encode(&17),
+            phase,
+            None,
+            None,
         ));
 
         // After the execution phase changes should already be there for this particular entry for that code hash in the storage root.
@@ -573,15 +596,17 @@ fn successful_revert_phase_removes_associated_storage_for_that_call() {
             empty_storage_at_dest_root,
         );
 
-        assert_ok!(EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::call(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
-            REVERT_PHASE,
             correct_wasm_code.clone(),
             value,
             sufficient_gas_limit,
-            Encode::encode(&17)
+            Encode::encode(&17),
+            Some(CallFlags::ESCROWED_REVERT),
+            None,
+            None,
         ));
 
         assert_eq!(
@@ -604,7 +629,7 @@ fn successful_revert_phase_removes_associated_storage_for_that_call() {
 
 #[test]
 fn successful_commit_phase_applies_storage_writes_on_the_dedicated_for_that_code_storage_tree() {
-    let (_phase, _, _input_data, value, _gas_limit) = default_multistep_call_args();
+    let (phase, _, _input_data, value, _gas_limit) = default_multistep_call_args();
     let correct_wasm_path =
         Path::new("../contracts-gateway/fixtures/32b-account-and-u64-balance/storage_size.wasm");
     let correct_wasm_code = load_contract_code(&correct_wasm_path).unwrap();
@@ -627,15 +652,17 @@ fn successful_commit_phase_applies_storage_writes_on_the_dedicated_for_that_code
                 + (value)
                 + inner_contract_transfer_value,
         );
-        assert_ok!(EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::call(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
-            EXECUTE_PHASE,
             correct_wasm_code.clone(),
             value,
             sufficient_gas_limit,
             Encode::encode(&17),
+            phase,
+            None,
+            None,
         ));
 
         assert_eq!(
@@ -700,7 +727,7 @@ fn successful_commit_phase_applies_storage_writes_on_the_dedicated_for_that_code
 //// Check calling custom host functions out of Flipper module.
 #[test]
 fn successfully_executes_flip_fn_from_host_runtime_module() {
-    let (_phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
+    let (phase, _, input_data, value, _gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new(
         "../contracts-gateway/fixtures/32b-account-and-u64-balance/call_flipper_runtime.wasm",
     );
@@ -717,22 +744,24 @@ fn successfully_executes_flip_fn_from_host_runtime_module() {
             &REQUESTER,
             sufficient_gas_limit + subsistence_threshold + (value) + inner_contract_transfer_value,
         );
-        assert_ok!(EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::call(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
-            EXECUTE_PHASE,
             correct_wasm_code.clone(),
             value,
             sufficient_gas_limit,
             input_data,
+            phase,
+            None,
+            None,
         ));
     });
 }
 
 #[test]
 fn successfully_interacts_with_storage_runtime_module_and_is_billed_correctly() {
-    let (_phase, _, _input_data, value, _gas_limit) = default_multistep_call_args();
+    let (phase, _, _input_data, value, _gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new(
         "../contracts-gateway/fixtures/32b-account-and-u64-balance/storage_runtime_calls.wasm",
     );
@@ -748,15 +777,17 @@ fn successfully_interacts_with_storage_runtime_module_and_is_billed_correctly() 
             &REQUESTER,
             sufficient_gas_limit + subsistence_threshold + (value) + inner_contract_transfer_value,
         );
-        assert_ok!(EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::call(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
-            EXECUTE_PHASE,
             correct_wasm_code.clone(),
             value,
             sufficient_gas_limit,
             Encode::encode(&17),
+            phase,
+            None,
+            None,
         ));
         // Contract stores input value (17)
         assert_eq!(Weights::stored_value(), 17);
@@ -765,7 +796,7 @@ fn successfully_interacts_with_storage_runtime_module_and_is_billed_correctly() 
 
 #[test]
 fn successfully_executes_runtime_storage_demo_is_billed_correctly() {
-    let (_phase, _, _input_data, _value, _gas_limit) = default_multistep_call_args();
+    let (phase, _, _input_data, _value, _gas_limit) = default_multistep_call_args();
     let correct_wasm_path = Path::new(
         "../contracts-gateway/fixtures/32b-account-and-u64-balance/storage_runtime_demo.wasm",
     );
@@ -776,15 +807,17 @@ fn successfully_executes_runtime_storage_demo_is_billed_correctly() {
 
     new_test_ext_builder(subsistence_threshold, ESCROW_ACCOUNT).execute_with(|| {
         let _ = Balances::deposit_creating(&REQUESTER, (exact_gas_cost) + subsistence_threshold);
-        assert_ok!(EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::call(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
-            EXECUTE_PHASE,
             correct_wasm_code.clone(),
             0 as u64,
             exact_gas_cost,
             Encode::encode(&17),
+            phase,
+            None,
+            None,
         ));
         // Demo contract stores input value (17), then calls double (34)
         // then complex_calculations with y = 8 and x = 9 (X : (8 * 2) + Y : (9 ^ 2 + 34) = 18 + 115 = 131
@@ -811,15 +844,17 @@ fn successfully_executes_runtime_storage_demo_and_refunds_gas_excess() {
             &REQUESTER,
             exact_gas_cost + gas_excess + subsistence_threshold,
         );
-        assert_ok!(EscrowGateway::multistep_call(
+        assert_ok!(EscrowGateway::call(
             Origin::signed(ESCROW_ACCOUNT),
             REQUESTER,
             TARGET_DEST,
-            EXECUTE_PHASE,
             correct_wasm_code.clone(),
             0 as u64,
             exact_gas_cost + gas_excess,
             Encode::encode(&17),
+            Some(CallFlags::ESCROWED_EXECUTE),
+            None,
+            None,
         ));
 
         assert_eq!(
