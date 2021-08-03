@@ -19,8 +19,6 @@
 
 use std::{sync::Arc};
 
-
-
 use sp_keystore::testing::KeyStore;
 
 use substrate_test_runtime_client::{
@@ -29,15 +27,15 @@ use substrate_test_runtime_client::{
 };
 use sc_transaction_pool::{BasicPool, FullChainApi};
 
+use sc_rpc_api::{DenyUnsafe, system::SystemInfo};
+use sc_rpc::author::{Author, AuthorApi};
+use sc_rpc::system::{System, SystemApi};
 
-use sc_rpc_api::DenyUnsafe;
-use sc_rpc::author::Author;
+use sp_utils::mpsc::tracing_unbounded;
 
 use jsonrpc_pubsub::{manager::SubscriptionManager};
 
-use substrate_frame_rpc_system::{FullSystem, SystemApi};
-
-fn uxt(sender: AccountKeyring, nonce: u64) -> Extrinsic {
+fn _uxt(sender: AccountKeyring, nonce: u64) -> Extrinsic {
 	let tx = Transfer {
 		amount: Default::default(),
 		nonce,
@@ -90,6 +88,21 @@ impl TestSetup {
 			DenyUnsafe::No,
 		)
 	}
+
+	fn system(&self) -> System<Block> {
+		let (tx, _rx) = tracing_unbounded("rpc_circuit_tests");
+		System::new(
+			SystemInfo {
+				impl_name: "testclient".into(),
+				impl_version: "0.1.0".into(),
+				chain_name: "testchain".into(),
+				properties: Default::default(),
+				chain_type: Default::default(),
+			},
+			tx,
+			DenyUnsafe::No,
+		)
+	}
 }
 
 #[test]
@@ -98,12 +111,12 @@ fn rpc_prints_system_version() {
 
 	let mut io = jsonrpc_core::MetaIoHandler::<sc_rpc::Metadata>::default();
 
-	io.extend_with(SystemApi::to_delegate(FullSystem::new(p.client.clone(), p.pool.clone(), DenyUnsafe::No)));
+	io.extend_with(AuthorApi::to_delegate(p.author()));
+	io.extend_with(SystemApi::to_delegate(p.system()));
 
-	let request = r#"{"jsonrpc":"2.0","method":"system_chain","params":[],"id":1}"#;
-	let response = "{\"jsonrpc\":\"2.0\",\"result\":{\
-            \"version\":{\"0.9.8-3a10ee63c-x86_64-linux-gnu\"\
-    },\"id\":1}";
+	let request = r#"{"jsonrpc":"2.0","method":"system_version","params":[],"id":1}"#;
+
+	let response = r#"{"jsonrpc":"2.0","result":"0.1.0","id":1}"#;
 
 	let meta = sc_rpc::Metadata::default();
 	assert_eq!(io.handle_request_sync(request, meta), Some(response.into()));
