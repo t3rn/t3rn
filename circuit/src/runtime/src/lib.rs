@@ -59,7 +59,7 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use t3rn_primitives::transfers::BalanceOf;
+use t3rn_primitives::{transfers::BalanceOf, ComposableExecResult, Compose, FetchContractsResult};
 
 use volatile_vm::DispatchRuntimeCall;
 
@@ -932,6 +932,22 @@ impl_runtime_apis! {
         fn unrewarded_relayers_state(lane: bp_messages::LaneId) -> bp_messages::UnrewardedRelayersState {
             BridgeGatewayMessages::inbound_unrewarded_relayers_state(lane)
         }
+    }
+
+    impl circuit_rpc_runtime_api::CircuitApi<Block, AccountId, Balance, BlockNumber> for Runtime
+    where AccountId: Codec {
+        fn composable_exec(
+            origin: AccountId,
+            components: Vec<Compose<AccountId, Balance>>,
+            io: Vec<u8>,
+            gas_limit: u64,
+            input_data: Vec<u8>,
+            ) -> Result<ComposableExecResult, DispatchError> { todo!() }
+
+        fn fetch_contracts(
+            author: AccountId,
+            name: StdBox<str>,
+        ) -> Result<FetchContractsResult, DispatchError> { todo!() }
     }
 }
 

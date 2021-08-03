@@ -33,6 +33,7 @@ pallet-circuit-execution-delivery = {  path = "../execution-delivery", default-f
 pallet-xdns = { path = "../xdns", default-features = false }
 volatile-vm = { path = "../../../vm/volatile-vm", default-features = false }
 t3rn-primitives = { version = "0.1.0", default-features = false, path = "../primitives" }
+circuit-rpc-runtime-api = { path = "../rpc/runtime-api", default-features = false }
 
 # Smart contracts VMs
 pallet-evm = { path = "../../../vendor/frontier/frame/evm", default-features = false  }

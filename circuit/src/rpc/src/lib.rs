@@ -295,7 +295,7 @@ where
 
         Ok(RpcFetchContractsResult::Success {
             flags: 0,
-            data: result.encode().into(),
+            data: result.into(),
             gas_consumed: 0,
         })
     }
