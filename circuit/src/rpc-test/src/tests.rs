@@ -30,6 +30,7 @@ use sc_transaction_pool::{BasicPool, FullChainApi};
 use sc_rpc_api::{DenyUnsafe, system::SystemInfo};
 use sc_rpc::author::{Author, AuthorApi};
 use sc_rpc::system::{System, SystemApi};
+use sc_rpc::state::{new_full, State, StateApi};
 
 use sp_utils::mpsc::tracing_unbounded;
 
@@ -89,6 +90,16 @@ impl TestSetup {
 		)
 	}
 
+	fn state(&self) -> State<Block, Client<Backend>> {
+		let (state, _) = new_full(
+			self.client.clone(),
+			SubscriptionManager::new(Arc::new(crate::testing::TaskExecutor)),
+			DenyUnsafe::No,
+			None,
+		);
+		state
+	}
+
 	fn system(&self) -> System<Block> {
 		let (tx, _rx) = tracing_unbounded("rpc_circuit_tests");
 		System::new(
@@ -113,6 +124,7 @@ fn rpc_prints_system_version() {
 
 	io.extend_with(AuthorApi::to_delegate(p.author()));
 	io.extend_with(SystemApi::to_delegate(p.system()));
+	io.extend_with(StateApi::to_delegate(p.state()));
 
 	let request = r#"{"jsonrpc":"2.0","method":"system_version","params":[],"id":1}"#;
 
