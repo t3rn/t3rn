@@ -34,10 +34,13 @@ use volatile_vm::storage::RawAliveContractInfo;
 pub use pallet::*;
 
 #[cfg(test)]
+mod mock;
+#[cfg(test)]
 mod tests;
 
 mod weights;
 
+use t3rn_primitives::contract::ContractMetadata;
 pub use weights::*;
 
 pub type RegistryContractId<T> = <T as frame_system::Config>::Hash;
@@ -59,6 +62,8 @@ pub struct RegistryContract<Hash, AccountId, BalanceOf, BlockNumber> {
     pub action_descriptions: Vec<ContractActionDesc<Hash, ChainId, AccountId>>,
     /// Contracts Info after Contracts Pallet
     pub info: RawAliveContractInfo<Hash, BalanceOf, BlockNumber>,
+    /// Contract metadata to be used in queries
+    pub meta: ContractMetadata,
 }
 
 impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode>
@@ -72,6 +77,7 @@ impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode>
         abi: Option<Vec<u8>>,
         action_descriptions: Vec<ContractActionDesc<Hash, ChainId, AccountId>>,
         info: RawAliveContractInfo<Hash, BalanceOf, BlockNumber>,
+        meta: ContractMetadata,
     ) -> Self {
         RegistryContract {
             code_txt,
@@ -81,6 +87,7 @@ impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode>
             abi,
             action_descriptions,
             info,
+            meta,
         }
     }
 
@@ -97,6 +104,7 @@ impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode>
         author_fees_per_single_use: Option<BalanceOf>,
         abi: Option<Vec<u8>>,
         info: RawAliveContractInfo<Hash, BalanceOf, BlockNumber>,
+        meta: ContractMetadata,
     ) -> RegistryContract<Hash, AccountId, BalanceOf, BlockNumber> {
         RegistryContract::new(
             compose.code_txt,
@@ -106,6 +114,7 @@ impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode>
             abi,
             action_descriptions,
             info,
+            meta,
         )
     }
 }
@@ -278,15 +287,55 @@ impl<T: Config> Pallet<T> {
         Ok(())
     }
 
-    #[allow(dead_code)]
-    pub fn fetch_contract_by_author(
-        // origin: T::Origin,
-        author: T::AccountId,
-    ) -> Result<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>, &'static str>
+    /// Internal function that queries the RegistryContract storage for a contract by its ID
+    fn fetch_contract_by_id(
+        contract_id: RegistryContractId<T>,
+    ) -> Result<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>, Error<T>>
     {
-        // let _sender = ensure_signed(origin).map_err(|_| "unsigned origin");
-        let contract =
-            pallet::ContractsRegistry::<T>::iter_values().find(|element| element.author == author);
+        if !pallet::ContractsRegistry::<T>::contains_key(contract_id) {
+            return Err(pallet::Error::<T>::UnknownContract);
+        }
+
+        Ok(pallet::ContractsRegistry::<T>::get(contract_id).unwrap())
+    }
+
+    #[allow(dead_code)]
+    pub fn fetch_contracts(
+        origin: T::Origin,
+        contract_id: Option<RegistryContractId<T>>,
+        (author, metadata): (Option<T::AccountId>, Option<Vec<u8>>),
+    ) -> Result<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>, Error<T>>
+    {
+        let _sender = ensure_signed(origin).map_err(|_| "unsigned origin");
+
+        // if contract id is provided, search by it and return
+        if contract_id.is_some() {
+            return pallet::Pallet::<T>::fetch_contract_by_id(contract_id.unwrap());
+        }
+
+        // helper function to find a number of byte slice inside a larger slice
+        fn find_subsequence(haystack: Vec<u8>, needle: &[u8]) -> Option<usize> {
+            haystack
+                .windows(needle.len())
+                .position(|window| window == needle)
+        }
+
+        // otherwise try to search by author or metadata
+        let contract = pallet::ContractsRegistry::<T>::iter_values().find(
+            |contract: &RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>| {
+                match (author.clone(), metadata.clone()) {
+                    (Some(author), Some(text)) => {
+                        contract.author == author
+                            && find_subsequence(contract.meta.encode(), text.as_slice()).is_some()
+                    }
+                    (Some(author), None) => contract.author == author,
+                    (None, Some(text)) => {
+                        find_subsequence(contract.meta.encode(), text.as_slice()).is_some()
+                    }
+                    (None, None) => false,
+                }
+            },
+        );
 
         Ok(contract.unwrap())
     }

@@ -112,6 +112,7 @@ impl ExecComposer {
                 last_write: Default::default(),
                 _reserved: Default::default(),
             },
+            Default::default(),
         );
 
         Self::preload_bunch_of_contracts::<T>(vec![temp_contract.clone()], Default::default())?;

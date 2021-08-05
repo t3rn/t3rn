@@ -49,6 +49,7 @@ use sp_runtime::traits::{
     BlakeTwo256, Block as BlockT, IdentityLookup, Keccak256, NumberFor, OpaqueKeys,
 };
 use sp_runtime::{
+    codec::Codec,
     create_runtime_str, generic, impl_opaque_keys,
     traits::Convert,
     transaction_validity::{TransactionSource, TransactionValidity},
@@ -935,7 +936,7 @@ impl_runtime_apis! {
     }
 
     impl circuit_rpc_runtime_api::CircuitApi<Block, AccountId, Balance, BlockNumber> for Runtime
-    where AccountId: Codec {
+    {
         fn composable_exec(
             origin: AccountId,
             components: Vec<Compose<AccountId, Balance>>,
@@ -945,9 +946,10 @@ impl_runtime_apis! {
             ) -> Result<ComposableExecResult, DispatchError> { todo!() }
 
         fn fetch_contracts(
-            author: AccountId,
-            name: StdBox<str>,
-        ) -> Result<FetchContractsResult, DispatchError> { todo!() }
+            name: Option<Vec<u8>>,
+            author: Option<AccountId>,
+            metadata: Option<Vec<u8>>
+        ) -> FetchContractsResult { todo!() }
     }
 }
 

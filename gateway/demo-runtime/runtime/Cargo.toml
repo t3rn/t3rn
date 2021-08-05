@@ -27,18 +27,18 @@ serde = { features = ['derive'], optional = true, version = '1.0.101' }
 pallet-template = { path = '../pallets/template', default-features = false, version = '2.0.0' }
 
 # Substrate dependencies
-frame-benchmarking = { default-features = false, optional = true, version = '2.0.0' }
-frame-executive = { default-features = false, version = '2.0.0' }
-frame-support = { default-features = false, version = '2.0.0' }
-frame-system = { default-features = false, version = '2.0.0' }
-frame-system-benchmarking = { default-features = false, optional = true, version = '2.0.0' }
-frame-system-rpc-runtime-api = { default-features = false, version = '2.0.0' }
-pallet-aura = { default-features = false, version = '2.0.0' }
-pallet-balances = { default-features = false, version = '2.0.0' }
-pallet-grandpa = { default-features = false, version = '2.0.0' }
-pallet-randomness-collective-flip = { default-features = false, version = '2.0.0' }
-pallet-sudo = { default-features = false, version = '2.0.0' }
-pallet-timestamp = { default-features = false, version = '2.0.0' }
+frame-benchmarking = { default-features = false, optional = true, git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' }
+frame-executive = { default-features = false, git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' }
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' }
+frame-system = { default-features = false, git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' }
+frame-system-benchmarking = { default-features = false, optional = true, git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' }
+frame-system-rpc-runtime-api = { default-features = false, git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' }
+pallet-aura = { default-features = false, git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' }
+pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' }
+pallet-grandpa = { default-features = false, git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' }
+pallet-randomness-collective-flip = { default-features = false, git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' }
+pallet-sudo = { default-features = false, git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' }
+pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' }
 pallet-transaction-payment = { default-features = false, version = '2.0.0' }
 pallet-transaction-payment-rpc-runtime-api = { default-features = false, version = '2.0.0' }
 sp-api = { default-features = false, version = '2.0.0' }
@@ -56,10 +56,10 @@ pallet-contracts-primitives = { version = '2.0.0', default_features = false }
 pallet-contracts-rpc-runtime-api = { version = '0.8.0', default-features = false }
 contracts = { package = "pallet-contracts", default-features = false, version = '2.0.0' }
 contracts-gateway = { package = "pallet-contracts-gateway", default-features = false, version = '0.3.0', path = "../../pallet-escrow-gateway/contracts-gateway" }
-runtime-gateway = { package = "pallet-runtime-gateway", default-features = false, version = '0.3.0', path = "../../pallet-escrow-gateway/runtime-gateway" }
-versatile-wasm = { default-features = false, version = '0.3.0', path = "../../pallet-escrow-gateway/escrow-engine/versatile-wasm" }
+runtime-gateway = { package = "pallet-runtime-gateway", default-features = false, path = "../../pallet-escrow-gateway/runtime-gateway" }
+versatile-wasm = { default-features = false, version = '0.4.0', path = "../../../vm/versatile-wasm" }
 gateway-escrow-engine = { default-features = false, version = '0.3.0', path = "../../pallet-escrow-gateway/escrow-engine" }
-weights = { package = "weights", default-features = false, version = '2.0.0', path = "../../pallet-escrow-gateway/runtime-gateway/fixtures/weights"  }
+weights = { package = "weights", default-features = false, version = '3.0.0', path = "../../pallet-escrow-gateway/runtime-gateway/fixtures/weights"  }
 #contracts-gateway = { package = "pallet-contracts-gateway", default-features = false, version = '0.3.0',  git = 'https://github.com/t3rn/gateway-pallet.git', branch = 'master' }
 #runtime-gateway = { package = "pallet-runtime-gateway", default-features = false, version = '0.3.0', git = 'https://github.com/t3rn/gateway-pallet.git', branch = 'master' }
 #versatile-wasm = { default-features = false, version = '0.3.0', git = 'https://github.com/t3rn/gateway-pallet.git', branch = 'master'  }

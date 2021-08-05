@@ -1080,6 +1080,7 @@ dependencies = [
  "bp-runtime",
  "bp-westend",
  "bridge-runtime-common",
+ "circuit-rpc-runtime-api",
  "frame-executive",
  "frame-support",
  "frame-system",
@@ -4901,12 +4902,14 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
+ "pallet-xdns",
  "parity-scale-codec 2.1.3",
  "serde",
  "sp-finality-grandpa",
  "sp-runtime",
  "sp-std",
  "sp-trie",
+ "t3rn-primitives",
 ]
 
 [[package]]

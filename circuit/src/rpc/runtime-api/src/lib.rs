@@ -23,7 +23,7 @@ use sp_runtime::{
     traits::{MaybeDisplay, MaybeFromStr},
     DispatchError,
 };
-use sp_std::{boxed::Box, vec::Vec};
+use sp_std::vec::Vec;
 use t3rn_primitives::{ComposableExecResult, Compose, FetchContractsResult};
 
 sp_api::decl_runtime_apis! {
@@ -44,10 +44,11 @@ sp_api::decl_runtime_apis! {
             input_data: Vec<u8>,
         ) -> Result<ComposableExecResult, DispatchError>;
 
-        /// Returns the contracts searchable by name or author
+        /// Returns the contracts searchable by name, author or metadata
         fn fetch_contracts(
-            author: AccountId,
-            name: Box<str>,
-        ) -> Result<FetchContractsResult, DispatchError>;
+            name: Option<Vec<u8>>,
+            author: Option<AccountId>,
+            metadata: Option<Vec<u8>>
+        ) -> FetchContractsResult;
     }
 }

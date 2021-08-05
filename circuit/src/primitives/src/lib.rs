@@ -34,6 +34,7 @@ use sp_std::prelude::*;
 pub mod abi;
 pub mod gateway_inbound_protocol;
 pub mod transfers;
+pub mod contract;
 
 pub use gateway_inbound_protocol::GatewayInboundProtocol;
 
