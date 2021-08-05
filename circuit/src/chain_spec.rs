@@ -17,7 +17,7 @@
 use bp_circuit::derive_account_from_gateway_id;
 use circuit_runtime::{
     AccountId, AuraConfig, BalancesConfig, EVMConfig, GenesisConfig, GrandpaConfig, SessionConfig,
-    SessionKeys, Signature, SudoConfig, SystemConfig, XDNSConfig, WASM_BINARY,
+    SessionKeys, Signature, SudoConfig, SystemConfig, XDNSConfig, ContractsRegistryConfig, MultiFinalityVerifierConfig, WASM_BINARY,
 };
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{sr25519, Pair, Public};
@@ -227,7 +227,14 @@ fn testnet_genesis(
         },
 		pallet_xdns: XDNSConfig {
 			known_xdns_records: Vec::new(),
-		}
+		},
+        pallet_contracts_registry: ContractsRegistryConfig {
+            known_contracts: Vec::new(),
+        },
+        pallet_multi_finality_verifier: MultiFinalityVerifierConfig {
+            owner: None,
+            init_data: None,
+        },
         //ToDo: Uncomment when upgrading to v4.0.0 substrate
         // system: SystemConfig {
         //     code: WASM_BINARY
