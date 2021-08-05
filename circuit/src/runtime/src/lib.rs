@@ -44,13 +44,15 @@ use pallet_grandpa::{
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, U256, H256};
-use sp_runtime::traits::{Block as BlockT, IdentityLookup, NumberFor, OpaqueKeys, BlakeTwo256, Keccak256,};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
+use sp_runtime::traits::{
+    BlakeTwo256, Block as BlockT, IdentityLookup, Keccak256, NumberFor, OpaqueKeys,
+};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::Convert,
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, MultiSignature, MultiSigner, DispatchResult, DispatchError,
+    ApplyExtrinsicResult, DispatchError, DispatchResult, MultiSignature, MultiSigner,
 };
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -59,7 +61,7 @@ use sp_version::RuntimeVersion;
 
 use t3rn_primitives::transfers::BalanceOf;
 
-use volatile_vm::{DispatchRuntimeCall,};
+use volatile_vm::DispatchRuntimeCall;
 
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
@@ -545,9 +547,7 @@ parameter_types! {
     //pub MyVVMSchedule: versatile_wasm::Schedule = <versatile_wasm::simple_schedule_v2::Schedule>::default();
 }
 
-parameter_types! {
-    
-}
+parameter_types! {}
 
 impl volatile_vm::VolatileVM for Runtime {
     type Randomness = Randomness;
@@ -591,7 +591,6 @@ impl pallet_circuit_execution_delivery::Config for Runtime {
     type AccountId32Converter = AccountId32Converter;
     type ToStandardizedGatewayBalance = CircuitToGateway;
 }
-
 
 type Blake2ValU64BridgeInstance = ();
 // type Blake2ValU32BridgeInstance = pallet_multi_finality_verifier::Instance1;
