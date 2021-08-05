@@ -16,120 +16,162 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-
-use std::{sync::Arc};
+use std::sync::Arc;
 
 use sp_keystore::testing::KeyStore;
 
-use substrate_test_runtime_client::{
-	self, AccountKeyring, runtime::{Extrinsic, Transfer, Block},
-	DefaultTestClientBuilderExt, TestClientBuilderExt, Backend, Client,
-};
 use sc_transaction_pool::{BasicPool, FullChainApi};
+use substrate_test_runtime_client::{
+    self,
+    runtime::{Block, Extrinsic, Transfer},
+    AccountKeyring, Backend, Client, DefaultTestClientBuilderExt, TestClientBuilderExt,
+};
 
-use sc_rpc_api::{DenyUnsafe, system::SystemInfo};
+use hex_literal::hex;
 use sc_rpc::author::{Author, AuthorApi};
-use sc_rpc::system::{System, SystemApi};
 use sc_rpc::state::{new_full, State, StateApi};
+use sc_rpc::system::{System, SystemApi};
+use sc_rpc_api::{system::SystemInfo, DenyUnsafe};
 
 use sp_utils::mpsc::tracing_unbounded;
 
-use jsonrpc_pubsub::{manager::SubscriptionManager};
+use jsonrpc_pubsub::manager::SubscriptionManager;
+use t3rn_primitives::*;
 
 fn _uxt(sender: AccountKeyring, nonce: u64) -> Extrinsic {
-	let tx = Transfer {
-		amount: Default::default(),
-		nonce,
-		from: sender.into(),
-		to: Default::default(),
-	};
-	tx.into_signed_tx()
+    let tx = Transfer {
+        amount: Default::default(),
+        nonce,
+        from: sender.into(),
+        to: Default::default(),
+    };
+    tx.into_signed_tx()
 }
 
-type FullTransactionPool = BasicPool<
-	FullChainApi<Client<Backend>, Block>,
-	Block,
->;
+type FullTransactionPool = BasicPool<FullChainApi<Client<Backend>, Block>, Block>;
 
 struct TestSetup {
-	pub client: Arc<Client<Backend>>,
-	pub keystore: Arc<KeyStore>,
-	pub pool: Arc<FullTransactionPool>,
+    pub client: Arc<Client<Backend>>,
+    pub keystore: Arc<KeyStore>,
+    pub pool: Arc<FullTransactionPool>,
 }
 
 impl Default for TestSetup {
-	fn default() -> Self {
-		let keystore = Arc::new(KeyStore::new());
-		let client_builder = substrate_test_runtime_client::TestClientBuilder::new();
-		let client = Arc::new(client_builder.set_keystore(keystore.clone()).build());
+    fn default() -> Self {
+        let keystore = Arc::new(KeyStore::new());
+        let client_builder = substrate_test_runtime_client::TestClientBuilder::new();
+        let client = Arc::new(client_builder.set_keystore(keystore.clone()).build());
 
-		let spawner = sp_core::testing::TaskExecutor::new();
-		let pool = BasicPool::new_full(
-			Default::default(),
-			true.into(),
-			None,
-			spawner,
-			client.clone(),
-		);
-		TestSetup {
-			client,
-			keystore,
-			pool,
-		}
-	}
+        let spawner = sp_core::testing::TaskExecutor::new();
+        let pool = BasicPool::new_full(
+            Default::default(),
+            true.into(),
+            None,
+            spawner,
+            client.clone(),
+        );
+        TestSetup {
+            client,
+            keystore,
+            pool,
+        }
+    }
 }
 
 impl TestSetup {
-	fn author(&self) -> Author<FullTransactionPool, Client<Backend>> {
-		Author::new(
-			self.client.clone(),
-			self.pool.clone(),
-			SubscriptionManager::new(Arc::new(crate::testing::TaskExecutor)),
-			self.keystore.clone(),
-			DenyUnsafe::No,
-		)
-	}
+    fn author(&self) -> Author<FullTransactionPool, Client<Backend>> {
+        Author::new(
+            self.client.clone(),
+            self.pool.clone(),
+            SubscriptionManager::new(Arc::new(crate::testing::TaskExecutor)),
+            self.keystore.clone(),
+            DenyUnsafe::No,
+        )
+    }
 
-	fn state(&self) -> State<Block, Client<Backend>> {
-		let (state, _) = new_full(
-			self.client.clone(),
-			SubscriptionManager::new(Arc::new(crate::testing::TaskExecutor)),
-			DenyUnsafe::No,
-			None,
-		);
-		state
-	}
+    fn state(&self) -> State<Block, Client<Backend>> {
+        let (state, _) = new_full(
+            self.client.clone(),
+            SubscriptionManager::new(Arc::new(crate::testing::TaskExecutor)),
+            DenyUnsafe::No,
+            None,
+        );
+        state
+    }
 
-	fn system(&self) -> System<Block> {
-		let (tx, _rx) = tracing_unbounded("rpc_circuit_tests");
-		System::new(
-			SystemInfo {
-				impl_name: "testclient".into(),
-				impl_version: "0.1.0".into(),
-				chain_name: "testchain".into(),
-				properties: Default::default(),
-				chain_type: Default::default(),
-			},
-			tx,
-			DenyUnsafe::No,
-		)
-	}
+    fn system(&self) -> System<Block> {
+        let (tx, _rx) = tracing_unbounded("rpc_circuit_tests");
+        System::new(
+            SystemInfo {
+                impl_name: "testclient".into(),
+                impl_version: "0.1.0".into(),
+                chain_name: "testchain".into(),
+                properties: Default::default(),
+                chain_type: Default::default(),
+            },
+            tx,
+            DenyUnsafe::No,
+        )
+    }
 }
 
 #[test]
 fn rpc_prints_system_version() {
-	let p = TestSetup::default();
+    let p = TestSetup::default();
 
-	let mut io = jsonrpc_core::MetaIoHandler::<sc_rpc::Metadata>::default();
+    let mut io = jsonrpc_core::MetaIoHandler::<sc_rpc::Metadata>::default();
 
-	io.extend_with(AuthorApi::to_delegate(p.author()));
-	io.extend_with(SystemApi::to_delegate(p.system()));
-	io.extend_with(StateApi::to_delegate(p.state()));
+    io.extend_with(AuthorApi::to_delegate(p.author()));
+    io.extend_with(SystemApi::to_delegate(p.system()));
+    io.extend_with(StateApi::to_delegate(p.state()));
 
-	let request = r#"{"jsonrpc":"2.0","method":"system_version","params":[],"id":1}"#;
+    let request = r#"{"jsonrpc":"2.0","method":"system_version","params":[],"id":1}"#;
 
-	let response = r#"{"jsonrpc":"2.0","result":"0.1.0","id":1}"#;
+    let response = r#"{"jsonrpc":"2.0","result":"0.1.0","id":1}"#;
 
-	let meta = sc_rpc::Metadata::default();
-	assert_eq!(io.handle_request_sync(request, meta), Some(response.into()));
+    let meta = sc_rpc::Metadata::default();
+    assert_eq!(io.handle_request_sync(request, meta), Some(response.into()));
+}
+
+#[test]
+fn delivers_get_storage_outbound_message_from_circuit_to_external_gateway() {
+    let p = TestSetup::default();
+
+    let mut io = jsonrpc_core::MetaIoHandler::<sc_rpc::Metadata>::default();
+
+    io.extend_with(AuthorApi::to_delegate(p.author()));
+    io.extend_with(SystemApi::to_delegate(p.system()));
+    io.extend_with(StateApi::to_delegate(p.state()));
+
+    let key: Vec<u8> =
+        hex!("39245109cef3758c2eed2ccba8d9b370a917850af3824bc8348d505df2c298fa").to_vec();
+
+    let expected_storage = GatewayExpectedOutput::Storage {
+        key: vec![key.clone()],
+        value: vec![None],
+    };
+
+    let arguments = vec![key];
+
+    let get_storage_outbound_message: CircuitOutboundMessage = CircuitOutboundMessage::Read {
+        name: b"get_storage".to_vec(),
+        arguments,
+        expected_output: vec![expected_storage],
+        payload: MessagePayload::Rpc {
+            module_name: b"state".to_vec(),
+            method_name: b"getStorage".to_vec(),
+        },
+    };
+
+    let request = r#"{"jsonrpc":"2.0","method":"state_getStorage","params":["39245109cef3758c2eed2ccba8d9b370a917850af3824bc8348d505df2c298fa],"id":1}"#;
+
+    let response = r#"{"jsonrpc":"2.0","result":"None","id":1}"#;
+
+    let meta = sc_rpc::Metadata::default();
+    assert_eq!(io.handle_request_sync(request, meta), Some(response.into()));
+}
+
+#[test]
+fn delivers_set_storage_outbound_message_from_circuit_to_internal_gateway() {
+    unimplemented!();
 }
