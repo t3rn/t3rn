@@ -511,8 +511,8 @@ pub struct ExampleDispatchRuntimeCall;
 
 impl DispatchRuntimeCall<Runtime> for ExampleDispatchRuntimeCall {
     fn dispatch_runtime_call(
-        module_name: &str,
-        fn_name: &str,
+        _module_name: &str,
+        _fn_name: &str,
         _input: &[u8],
         _escrow_account: &<Runtime as frame_system::Config>::AccountId,
         _requested: &<Runtime as frame_system::Config>::AccountId,
@@ -520,31 +520,32 @@ impl DispatchRuntimeCall<Runtime> for ExampleDispatchRuntimeCall {
         _value: BalanceOf<Runtime>,
         _gas_meter: &mut volatile_vm::gas::GasMeter<Runtime>,
     ) -> DispatchResult {
-        match (module_name, fn_name) {
-            ("Weights", "complex_calculations") => {
-                let (_decoded_x, _decoded_y): (u32, u32) = match Decode::decode(&mut _input.clone())
-                {
-                    Ok(dec) => dec,
-                    Err(_) => {
-                        return Err(DispatchError::Other(
-                            "Can't decode input for Weights::store_value. Expected u32.",
-                        ));
-                    }
-                };
+        // match (module_name, fn_name) {
+        //     ("Weights", "complex_calculations") => {
+        //         let (_decoded_x, _decoded_y): (u32, u32) = match Decode::decode(&mut _input.clone())
+        //         {
+        //             Ok(dec) => dec,
+        //             Err(_) => {
+        //                 return Err(DispatchError::Other(
+        //                     "Can't decode input for Weights::store_value. Expected u32.",
+        //                 ));
+        //             }
+        //         };
 
-                Ok(())
-            }
-            (_, _) => Err(DispatchError::Other(
-                "Call to unrecognized runtime function",
-            )),
-        }
+        //         Ok(())
+        //     }
+        //     (_, _) => Err(DispatchError::Other(
+        //         "Call to unrecognized runtime function",
+        //     )),
+        // }
+
+        Ok(())
     }
 }
 
 parameter_types! {
     pub const UncleGenerations: u64 = 0;
     pub MyScheduleVVM: volatile_vm::Schedule<Runtime> = <volatile_vm::Schedule<Runtime>>::default();
-    //pub MyVVMSchedule: versatile_wasm::Schedule = <versatile_wasm::simple_schedule_v2::Schedule>::default();
 }
 
 parameter_types! {}
@@ -593,7 +594,7 @@ impl pallet_circuit_execution_delivery::Config for Runtime {
 }
 
 type Blake2ValU64BridgeInstance = ();
-// type Blake2ValU32BridgeInstance = pallet_multi_finality_verifier::Instance1;
+type Blake2ValU32BridgeInstance = pallet_multi_finality_verifier::Instance1;
 type Keccak256ValU64BridgeInstance = pallet_multi_finality_verifier::Instance2;
 type Keccak256ValU32BridgeInstance = pallet_multi_finality_verifier::Instance3;
 
@@ -640,12 +641,12 @@ impl pallet_multi_finality_verifier::Config<Blake2ValU64BridgeInstance> for Runt
     type WeightInfo = ();
 }
 
-// impl pallet_multi_finality_verifier::Config<Blake2ValU32BridgeInstance> for Runtime {
-//     type BridgedChain = Blake2ValU32Chain;
-//     type MaxRequests = MaxRequests;
-//     type HeadersToKeep = HeadersToKeep;
-//     type WeightInfo = ();
-// }
+impl pallet_multi_finality_verifier::Config<Blake2ValU32BridgeInstance> for Runtime {
+    type BridgedChain = Blake2ValU32Chain;
+    type MaxRequests = MaxRequests;
+    type HeadersToKeep = HeadersToKeep;
+    type WeightInfo = ();
+}
 
 impl pallet_multi_finality_verifier::Config<Keccak256ValU64BridgeInstance> for Runtime {
     type BridgedChain = Keccak256ValU64Chain;
@@ -659,14 +660,6 @@ impl pallet_multi_finality_verifier::Config<Keccak256ValU32BridgeInstance> for R
     type MaxRequests = MaxRequests;
     type HeadersToKeep = HeadersToKeep;
     type WeightInfo = ();
-}
-
-pub type PolkadotLikeGrandpaInstance = pallet_bridge_grandpa::Instance1;
-impl pallet_multi_finality_verifier::Config<PolkadotLikeGrandpaInstance> for Runtime {
-    type BridgedChain = bp_polkadot_core::PolkadotLike;
-    type MaxRequests = MaxRequests;
-    type WeightInfo = pallet_multi_finality_verifier::weights::GatewayWeight<Runtime>;
-    type HeadersToKeep = HeadersToKeep;
 }
 
 construct_runtime!(
