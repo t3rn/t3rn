@@ -143,8 +143,9 @@ fn delivers_get_storage_outbound_message_from_circuit_to_external_gateway() {
     io.extend_with(SystemApi::to_delegate(p.system()));
     io.extend_with(StateApi::to_delegate(p.state()));
 
-    let key: Vec<u8> =
-        hex!("39245109cef3758c2eed2ccba8d9b370a917850af3824bc8348d505df2c298fa").to_vec();
+    const NON_EMPTY_STORAGE_KEY: &str = "0x0befda6e1ca4ef40219d588a727f1271";
+
+    let key: Vec<u8> = hex!("0befda6e1ca4ef40219d588a727f1271").to_vec();
 
     let expected_storage = GatewayExpectedOutput::Storage {
         key: vec![key.clone()],
@@ -163,9 +164,12 @@ fn delivers_get_storage_outbound_message_from_circuit_to_external_gateway() {
         },
     };
 
-    let request = r#"{"jsonrpc":"2.0","method":"state_getStorage","params":["39245109cef3758c2eed2ccba8d9b370a917850af3824bc8348d505df2c298fa],"id":1}"#;
+    let request = format!(
+        r#"{{"jsonrpc":"2.0","method":"state_getStorage","params":["{}"],"id":1}}"#,
+        NON_EMPTY_STORAGE_KEY
+    );
 
-    let response = r#"{"jsonrpc":"2.0","result":"None","id":1}"#;
+    let response = r#"{"jsonrpc":"2.0","result":"0x561643ebeb1b5092e1e99e6eb982d88ad896dad65b055204c6493b88af372f5f","id":1}"#;
 
     let meta = sc_rpc::Metadata::default();
     assert_eq!(io.handle_request_sync(request, meta), Some(response.into()));
