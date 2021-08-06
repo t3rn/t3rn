@@ -44,13 +44,15 @@ use pallet_grandpa::{
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, U256};
-use sp_runtime::traits::{Block as BlockT, IdentityLookup, NumberFor, OpaqueKeys};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
+use sp_runtime::traits::{
+    BlakeTwo256, Block as BlockT, IdentityLookup, Keccak256, NumberFor, OpaqueKeys,
+};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::Convert,
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, MultiSignature, MultiSigner,
+    ApplyExtrinsicResult, DispatchError, DispatchResult, MultiSignature, MultiSigner,
 };
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -58,6 +60,8 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use t3rn_primitives::transfers::BalanceOf;
+
+use volatile_vm::DispatchRuntimeCall;
 
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
@@ -305,13 +309,13 @@ parameter_types! {
     pub const Offset: BlockNumber = 0;
 }
 
-pub type PolkadotLikeGrandpaInstance = pallet_bridge_grandpa::Instance1;
-impl pallet_multi_finality_verifier::Config<PolkadotLikeGrandpaInstance> for Runtime {
-    type BridgedChain = bp_polkadot_core::PolkadotLike;
-    type MaxRequests = MaxRequests;
-    type WeightInfo = pallet_multi_finality_verifier::weights::GatewayWeight<Runtime>;
-    type HeadersToKeep = HeadersToKeep;
-}
+// pub type PolkadotLikeGrandpaInstance = pallet_bridge_grandpa::Instance1;
+// impl pallet_multi_finality_verifier::Config<PolkadotLikeGrandpaInstance> for Runtime {
+//     type BridgedChain = bp_polkadot_core::PolkadotLike;
+//     type MaxRequests = MaxRequests;
+//     type WeightInfo = pallet_multi_finality_verifier::weights::GatewayWeight<Runtime>;
+//     type HeadersToKeep = HeadersToKeep;
+// }
 
 impl pallet_session::Config for Runtime {
     type Event = Event;
@@ -498,6 +502,166 @@ impl pallet_xdns::Config for Runtime {
     type WeightInfo = ();
 }
 
+impl pallet_contracts_registry::Config for Runtime {
+    type Event = Event;
+    type WeightInfo = ();
+}
+
+pub struct ExampleDispatchRuntimeCall;
+
+impl DispatchRuntimeCall<Runtime> for ExampleDispatchRuntimeCall {
+    fn dispatch_runtime_call(
+        _module_name: &str,
+        _fn_name: &str,
+        _input: &[u8],
+        _escrow_account: &<Runtime as frame_system::Config>::AccountId,
+        _requested: &<Runtime as frame_system::Config>::AccountId,
+        _callee: &<Runtime as frame_system::Config>::AccountId,
+        _value: BalanceOf<Runtime>,
+        _gas_meter: &mut volatile_vm::gas::GasMeter<Runtime>,
+    ) -> DispatchResult {
+        // match (module_name, fn_name) {
+        //     ("Weights", "complex_calculations") => {
+        //         let (_decoded_x, _decoded_y): (u32, u32) = match Decode::decode(&mut _input.clone())
+        //         {
+        //             Ok(dec) => dec,
+        //             Err(_) => {
+        //                 return Err(DispatchError::Other(
+        //                     "Can't decode input for Weights::store_value. Expected u32.",
+        //                 ));
+        //             }
+        //         };
+
+        //         Ok(())
+        //     }
+        //     (_, _) => Err(DispatchError::Other(
+        //         "Call to unrecognized runtime function",
+        //     )),
+        // }
+
+        Ok(())
+    }
+}
+
+parameter_types! {
+    pub const UncleGenerations: u64 = 0;
+    pub MyScheduleVVM: volatile_vm::Schedule<Runtime> = <volatile_vm::Schedule<Runtime>>::default();
+}
+
+parameter_types! {}
+
+impl volatile_vm::VolatileVM for Runtime {
+    type Randomness = Randomness;
+    type Event = Event;
+    type Call = Call;
+    type DispatchRuntimeCall = ExampleDispatchRuntimeCall;
+    type SignedClaimHandicap = SignedClaimHandicap;
+    type TombstoneDeposit = TombstoneDeposit;
+    type DepositPerContract = DepositPerContract;
+    type DepositPerStorageByte = DepositPerStorageByte;
+    type DepositPerStorageItem = DepositPerStorageItem;
+    type RentFraction = RentFraction;
+    type SurchargeReward = SurchargeReward;
+    type CallStack = [volatile_vm::exec::Frame<Self>; 31];
+    type ContractsLazyLoaded = [volatile_vm::wasm::PrefabWasmModule<Self>; 31];
+    type WeightPrice = Self;
+    type WeightInfo = ();
+    type ChainExtension = ();
+    type DeletionQueueDepth = DeletionQueueDepth;
+    type DeletionWeightLimit = DeletionWeightLimit;
+    type Schedule = MyScheduleVVM;
+}
+
+pub struct AccountId32Converter;
+impl Convert<AccountId, [u8; 32]> for AccountId32Converter {
+    fn convert(account_id: AccountId) -> [u8; 32] {
+        account_id.into()
+    }
+}
+
+pub struct CircuitToGateway;
+impl Convert<Balance, u128> for CircuitToGateway {
+    fn convert(val: Balance) -> u128 {
+        val.into()
+    }
+}
+
+impl pallet_circuit_execution_delivery::Config for Runtime {
+    type Event = Event;
+    type Call = Call;
+    type AccountId32Converter = AccountId32Converter;
+    type ToStandardizedGatewayBalance = CircuitToGateway;
+}
+
+type Blake2ValU64BridgeInstance = ();
+type Blake2ValU32BridgeInstance = pallet_multi_finality_verifier::Instance1;
+type Keccak256ValU64BridgeInstance = pallet_multi_finality_verifier::Instance2;
+type Keccak256ValU32BridgeInstance = pallet_multi_finality_verifier::Instance3;
+
+#[derive(Debug)]
+pub struct Blake2ValU64Chain;
+impl bp_runtime::Chain for Blake2ValU64Chain {
+    type BlockNumber = <Runtime as frame_system::Config>::BlockNumber;
+    type Hash = <Runtime as frame_system::Config>::Hash;
+    type Hasher = <Runtime as frame_system::Config>::Hashing;
+    type Header = <Runtime as frame_system::Config>::Header;
+}
+
+#[derive(Debug)]
+pub struct Blake2ValU32Chain;
+impl bp_runtime::Chain for Blake2ValU32Chain {
+    type BlockNumber = u32;
+    type Hash = H256;
+    type Hasher = BlakeTwo256;
+    type Header = sp_runtime::generic::Header<u32, BlakeTwo256>;
+}
+
+#[derive(Debug)]
+pub struct Keccak256ValU64Chain;
+impl bp_runtime::Chain for Keccak256ValU64Chain {
+    type BlockNumber = u64;
+    type Hash = H256;
+    type Hasher = Keccak256;
+    type Header = sp_runtime::generic::Header<u64, Keccak256>;
+}
+
+#[derive(Debug)]
+pub struct Keccak256ValU32Chain;
+impl bp_runtime::Chain for Keccak256ValU32Chain {
+    type BlockNumber = u32;
+    type Hash = H256;
+    type Hasher = Keccak256;
+    type Header = sp_runtime::generic::Header<u32, Keccak256>;
+}
+
+impl pallet_multi_finality_verifier::Config<Blake2ValU64BridgeInstance> for Runtime {
+    type BridgedChain = Blake2ValU64Chain;
+    type MaxRequests = MaxRequests;
+    type HeadersToKeep = HeadersToKeep;
+    type WeightInfo = ();
+}
+
+impl pallet_multi_finality_verifier::Config<Blake2ValU32BridgeInstance> for Runtime {
+    type BridgedChain = Blake2ValU32Chain;
+    type MaxRequests = MaxRequests;
+    type HeadersToKeep = HeadersToKeep;
+    type WeightInfo = ();
+}
+
+impl pallet_multi_finality_verifier::Config<Keccak256ValU64BridgeInstance> for Runtime {
+    type BridgedChain = Keccak256ValU64Chain;
+    type MaxRequests = MaxRequests;
+    type HeadersToKeep = HeadersToKeep;
+    type WeightInfo = ();
+}
+
+impl pallet_multi_finality_verifier::Config<Keccak256ValU32BridgeInstance> for Runtime {
+    type BridgedChain = Keccak256ValU32Chain;
+    type MaxRequests = MaxRequests;
+    type HeadersToKeep = HeadersToKeep;
+    type WeightInfo = ();
+}
+
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -522,6 +686,10 @@ construct_runtime!(
         Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
         EVM: pallet_evm::{Pallet, Config, Storage, Event<T>},
         XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>},
+        ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>},
+        VolatileVM: volatile_vm::{Pallet, Call, Event<T>, Storage},
+        MultiFinalityVerifier: pallet_multi_finality_verifier::{Pallet, Call, Config<T>},
+        ExecDelivery: pallet_circuit_execution_delivery::{Pallet, Call, Storage, Event<T>},
     }
 );
 

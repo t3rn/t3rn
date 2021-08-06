@@ -31,7 +31,7 @@ pallet-shift-session-manager = { path = "../../../vendor/bridges/modules/shift-s
 pallet-contracts-registry = {  path = "../contracts-registry", default-features = false }
 pallet-circuit-execution-delivery = {  path = "../execution-delivery", default-features = false }
 pallet-xdns = { path = "../xdns", default-features = false }
-versatile-wasm = { path = "../../../vm/versatile-wasm", default-features = false }
+volatile-vm = { path = "../../../vm/volatile-vm", default-features = false }
 t3rn-primitives = { version = "0.1.0", default-features = false, path = "../primitives" }
 
 # Smart contracts VMs
@@ -89,7 +89,7 @@ std = [
 	"pallet-aura/std",
 	"t3rn-primitives/std",
 	"pallet-xdns/std",
-	"versatile-wasm/std",
+	"volatile-vm/std",
 	# native contracts VMs
 	"pallet-contracts/std",
 	"pallet-evm/std",

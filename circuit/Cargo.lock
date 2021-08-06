@@ -1098,7 +1098,7 @@ dependencies = [
  "sp-version",
  "substrate-wasm-builder",
  "t3rn-primitives",
- "versatile-wasm",
+ "volatile-vm",
 ]
 
 [[package]]
