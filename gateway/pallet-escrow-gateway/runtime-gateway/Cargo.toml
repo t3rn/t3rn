@@ -34,6 +34,8 @@ sp-runtime = { default-features = false, git = "https://github.com/paritytech/su
 
 sp-io = { default-features = false, git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' }
 
+pallet-runtime-gateway-rpc-runtime-api = { default-features = false, path = "./runtime-api" }
+
 pallet-bridge-messages = {default-features = false, path = "../../../vendor/bridges/modules/messages" }
 bp-messages = {default-features = false, path = "../../../vendor/bridges/primitives/messages" }
 bp-runtime = {default-features = false, path = "../../../vendor/bridges/primitives/runtime" }
@@ -54,6 +56,7 @@ std = [
     'pallet-timestamp/std',
     'pallet-transaction-payment/std',
     'pallet-randomness-collective-flip/std',
+    'pallet-runtime-gateway-rpc-runtime-api/std',
     'pallet-bridge-messages/std',
     'bp-messages/std',
     'bp-runtime/std',
