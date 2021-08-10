@@ -1,8 +1,7 @@
-use node_demo_runtime::{
+use node_template_runtime::{
     AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig, Signature, SudoConfig,
     SystemConfig, WASM_BINARY,
 };
-use node_demo_runtime::{ContractsConfig, ContractsSchedule};
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{sr25519, Pair, Public};
@@ -38,7 +37,7 @@ pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId) {
 }
 
 pub fn development_config() -> Result<ChainSpec, String> {
-    let wasm_binary = WASM_BINARY.ok_or("Development wasm binary not available".to_string())?;
+    let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
 
     Ok(ChainSpec::from_genesis(
         // Name
@@ -77,7 +76,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
 }
 
 pub fn local_testnet_config() -> Result<ChainSpec, String> {
-    let wasm_binary = WASM_BINARY.ok_or("Development wasm binary not available".to_string())?;
+    let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
 
     Ok(ChainSpec::from_genesis(
         // Name
@@ -132,40 +131,34 @@ fn testnet_genesis(
     initial_authorities: Vec<(AuraId, GrandpaId)>,
     root_key: AccountId,
     endowed_accounts: Vec<AccountId>,
-    enable_println: bool,
+    _enable_println: bool,
 ) -> GenesisConfig {
     GenesisConfig {
-        contracts: Some(ContractsConfig {
-            current_schedule: ContractsSchedule {
-                enable_println,
-                ..Default::default()
-            },
-        }),
-        frame_system: Some(SystemConfig {
+        frame_system: SystemConfig {
             // Add Wasm runtime to storage.
             code: wasm_binary.to_vec(),
             changes_trie_config: Default::default(),
-        }),
-        pallet_balances: Some(BalancesConfig {
+        },
+        pallet_balances: BalancesConfig {
             // Configure endowed accounts with initial balance of 1 << 60.
             balances: endowed_accounts
                 .iter()
                 .cloned()
                 .map(|k| (k, 1 << 60))
                 .collect(),
-        }),
-        pallet_aura: Some(AuraConfig {
+        },
+        pallet_aura: AuraConfig {
             authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
-        }),
-        pallet_grandpa: Some(GrandpaConfig {
+        },
+        pallet_grandpa: GrandpaConfig {
             authorities: initial_authorities
                 .iter()
                 .map(|x| (x.1.clone(), 1))
                 .collect(),
-        }),
-        pallet_sudo: Some(SudoConfig {
+        },
+        pallet_sudo: SudoConfig {
             // Assign network admin rights.
             key: root_key,
-        }),
+        },
     }
 }
