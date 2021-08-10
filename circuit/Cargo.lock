@@ -1080,6 +1080,7 @@ dependencies = [
  "bp-runtime",
  "bp-westend",
  "bridge-runtime-common",
+ "circuit-rpc-runtime-api",
  "frame-executive",
  "frame-support",
  "frame-system",
@@ -1123,7 +1124,7 @@ dependencies = [
  "sp-version",
  "substrate-wasm-builder 3.0.0",
  "t3rn-primitives",
- "versatile-wasm",
+ "volatile-vm",
 ]
 
 [[package]]

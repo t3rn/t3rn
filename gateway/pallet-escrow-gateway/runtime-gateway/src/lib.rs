@@ -2,8 +2,11 @@
 
 use codec::{Decode, Encode};
 
+use bitflags::bitflags;
 use frame_support::{
     ensure,
+    storage::child,
+    storage::child::ChildInfo,
     traits::{Currency, Time},
 };
 use frame_system::ensure_signed;
@@ -23,7 +26,7 @@ use versatile_wasm::{
         get_child_storage_for_current_execution, raw_escrow_call, CallStamp, DeferredStorageWrite,
         Env,
     },
-    ExecResult, WasmExecutable,
+    DispatchRuntimeCall, ExecResult, WasmExecutable,
 };
 
 use t3rn_primitives::{
@@ -38,6 +41,47 @@ mod mock;
 mod tests;
 
 pub use pallet::*;
+
+// Bits of transfer flags associated with types on-gateway of transfer.
+bitflags! {
+
+    /// Flags used by a contract to customize transfers.
+    #[derive(Encode, Decode)]
+    pub struct TransferFlags: u8 {
+        const DIRTY = 0b00000001;
+        const ESCROWED_EXECUTE = 0b00000010;
+        const ESCROWED_COMMIT = 0b00000100;
+        const ESCROWED_REVERT = 0b00001000;
+    }
+}
+
+// Bits of storage flags associated with types on-gateway of transfer.
+bitflags! {
+
+    /// Flags used by a contract to customize transfers.
+    #[derive(Encode, Decode)]
+    pub struct StorageFlags: u8 {
+        const CHILD = 0b00000001;
+        const GLOBAL = 0b00000010;
+        const ESCROWED_EXECUTE = 0b00000100;
+        const ESCROWED_COMMIT = 0b00001000;
+        const ESCROWED_REVERT = 0b00010000;
+    }
+}
+
+// Bits of storage flags associated with types on-gateway of transfer.
+bitflags! {
+
+    /// Flags used by a contract to customize calls.
+    #[derive(Encode, Decode)]
+    pub struct CallFlags: u8 {
+        const TRANSFER_ONLY = 0b00000001;
+        const ESCROWED_EXECUTE = 0b00000100;
+        const ESCROWED_COMMIT = 0b00001000;
+        const ESCROWED_REVERT = 0b00010000;
+        const MODULE_DISPATCH = 0b00100000;
+    }
+}
 
 pub fn cleanup_failed_execution<T: Config>(
     escrow_account: T::AccountId,
@@ -234,7 +278,7 @@ pub mod pallet {
     >;
 
     #[pallet::event]
-    #[pallet::metadata(T::AccountId = "AccountId")]
+    #[pallet::metadata(T::AccountId = "AccountId", BalanceOf<T> = "Balance")]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// Just a dummy event.
@@ -249,13 +293,43 @@ pub mod pallet {
         /// \[timestamp, phase, result, deferred_transfers\]
         RuntimeGatewayVersatileRevertSuccess(u64, u8, Vec<u8>, Vec<TransferEntry>),
 
+        /// \[from, to, value, escrow_account\]
+        XTransfer(
+            T::AccountId,
+            T::AccountId,
+            BalanceOf<T>,
+            Option<T::AccountId>,
+        ),
+
         MultistepCommitResult(Vec<u8>),
 
         MultistepRevertResult(u32),
 
+        XEmitEvent(Vec<u8>),
+
+        XGatewayCustom(
+            T::AccountId,
+            T::AccountId,
+            BalanceOf<T>,
+            Option<T::AccountId>,
+            Option<Vec<u8>>,
+        ),
+
+        XGatewaySwap(
+            T::AccountId,
+            T::AccountId,
+            BalanceOf<T>,
+            BalanceOf<T>,
+            Option<T::AccountId>,
+        ),
+
         MultistepUnknownPhase(u8),
 
         RentProjectionCalled(T::AccountId, T::AccountId),
+
+        XGetStorage(Vec<u8>, Vec<u8>),
+
+        XSetStorage(Vec<u8>, Vec<u8>),
 
         GetStorageResult(Vec<u8>),
     }
@@ -266,6 +340,12 @@ pub mod pallet {
         RequesterNotEnoughBalance,
 
         BalanceTransferFailed,
+
+        XBalanceTransferFailed,
+
+        UnknownXCallFlag,
+
+        UnknownXStorageFlag,
 
         FeesOverflow,
 
@@ -331,17 +411,19 @@ pub mod pallet {
         /// the results in memory or elevating responsibility the results management to Gateway Circuit (preferable).
         /// ---
         #[pallet::weight(500_000_000 + T::DbWeight::get().reads_writes(3,4))]
-        pub fn multistep_call(
+        pub fn call(
             origin: OriginFor<T>,
             requester: T::AccountId,
             target_dest: T::AccountId,
-            phase: u8,
             code: Vec<u8>,
             // #[compact] value: BalanceOf<T>,
             // #[compact] gas_limit: Gas,
             value: BalanceOf<T>,
             gas_limit: Gas,
             input_data: Vec<u8>,
+            call_flags: Option<CallFlags>,
+            module_name: Option<Vec<u8>>,
+            method_name: Option<Vec<u8>>,
         ) -> DispatchResultWithPostInfo {
             let escrow_account = ensure_signed(origin.clone())?;
 
@@ -350,8 +432,8 @@ pub mod pallet {
                 Error::<T>::UnauthorizedCallAttempt
             );
 
-            match phase {
-                0 => {
+            match call_flags {
+                None | Some(CallFlags::ESCROWED_EXECUTE) => {
                     // Charge Escrow Account from requester first before execution.
                     // Gas charge needs to be worked out. For now assume the multiplier with gas and token = 1.
                     let mut gas_meter = GasMeter::new(gas_limit);
@@ -474,23 +556,6 @@ pub mod pallet {
                             &target_dest.clone(),
                         ),
                     };
-                    log::debug!(
-                        "DEBUG multistepcall -- Execution Proofs : result {:?} ",
-                        execution_proofs.result
-                    );
-                    log::debug!(
-                        "DEBUG multistepcall -- Execution storage : storage {:?}",
-                        execution_proofs.storage
-                    );
-                    log::debug!(
-                        "DEBUG multistepcall -- Execution Proofs : deferred_transfers {:?}",
-                        execution_proofs.deferred_transfers
-                    );
-                    log::debug!(
-                        "DEBUG multistepcall -- Execution Proofs : gas_spent {:?} vs left {:?}",
-                        gas_meter.gas_spent(),
-                        gas_meter.gas_left()
-                    );
                     <DeferredStorageWrites<T>>::insert(
                         &requester,
                         &T::Hashing::hash(&code.clone()),
@@ -522,7 +587,7 @@ pub mod pallet {
                     ));
                 }
                 // Commit
-                1 => {
+                Some(CallFlags::ESCROWED_COMMIT) => {
                     let last_execution_stamp =
                         <ExecutionStamps<T>>::get(&requester, &T::Hashing::hash(&code.clone()));
                     if ExecutionStamp::default() == last_execution_stamp
@@ -558,7 +623,7 @@ pub mod pallet {
                     ));
                 }
                 // Revert
-                2 => {
+                Some(CallFlags::ESCROWED_REVERT) => {
                     Self::revert(
                         origin,
                         escrow_account.clone(),
@@ -582,19 +647,172 @@ pub mod pallet {
                         vec![],
                     ));
                 }
-                _ => {
-                    log::debug!("DEBUG multistep_call -- Unknown Phase {}", phase);
-                    Self::deposit_event(Event::MultistepUnknownPhase(phase));
+                Some(CallFlags::MODULE_DISPATCH) => {
+                    let module_name_unpacked = module_name
+                        .expect("Expect non-empty module name when passing MODULE_DISPATCH flag");
+
+                    let module_name_str = sp_std::str::from_utf8(&module_name_unpacked[..])
+                        .map_err(|_| "Can't decode module_name to &'static str")?;
+
+                    let method_name_unpacked = method_name
+                        .expect("Expect non-empty method name when passing MODULE_DISPATCH flag");
+
+                    let method_name_str = sp_std::str::from_utf8(&method_name_unpacked[..])
+                        .map_err(|_| "Can't decode module_name to &'static str")?;
+
+                    <T as VersatileWasm>::DispatchRuntimeCall::dispatch_runtime_call(
+                        module_name_str,
+                        method_name_str,
+                        &input_data,
+                        &escrow_account,
+                        &target_dest,
+                        &requester,
+                        value,
+                        &mut versatile_wasm::gas::GasMeter::new(gas_limit),
+                    )?
                 }
+                Some(_) => Err(Error::<T>::UnknownXCallFlag)?,
             }
             Ok(().into())
         }
 
-        /// Just a dummy get_storage entry point.
         #[pallet::weight(100_000_000 + T::DbWeight::get().reads_writes(1,0))]
-        pub fn get_storage(_origin: OriginFor<T>, key: [u8; 32]) -> DispatchResultWithPostInfo {
-            // Print a test message.
-            Self::deposit_event(Event::GetStorageResult(key.to_vec()));
+        pub fn get_storage(
+            _origin: OriginFor<T>,
+            key: [u8; 32],
+            child_key: Option<Vec<u8>>,
+            storage_flags: Option<StorageFlags>,
+        ) -> DispatchResultWithPostInfo {
+            let val = match storage_flags {
+                None | Some(StorageFlags::GLOBAL) => sp_io::storage::get(&key),
+                Some(StorageFlags::CHILD) => {
+                    let child = child_key
+                        .expect("Expect child key provided alongside with CHILD storage flag");
+                    child::get_raw(&ChildInfo::new_default(&child), &key)
+                }
+                _ => Err(Error::<T>::UnknownXStorageFlag)?,
+            };
+
+            Self::deposit_event(Event::XGetStorage(key.to_vec(), val.encode()));
+            Ok(().into())
+        }
+
+        #[pallet::weight(100_000_000 + T::DbWeight::get().reads_writes(1,0))]
+        pub fn set_storage(
+            _origin: OriginFor<T>,
+            key: [u8; 32],
+            val: Option<Vec<u8>>,
+            child_key: Option<Vec<u8>>,
+            storage_flags: Option<StorageFlags>,
+        ) -> DispatchResultWithPostInfo {
+            let res_val = match storage_flags {
+                None | Some(StorageFlags::GLOBAL) => match val {
+                    Some(new_value) => sp_io::storage::set(&key, &new_value[..]),
+                    _ => sp_io::storage::clear(&key),
+                },
+                Some(StorageFlags::CHILD) => {
+                    let child = child_key
+                        .expect("Expect child key provided alongside with CHILD storage flag");
+                    let child_info = &ChildInfo::new_default(&child);
+
+                    match val {
+                        Some(new_value) => child::put_raw(&child_info, &key, &new_value[..]),
+                        _ => child::kill(&child_info, &key),
+                    }
+                }
+                _ => Err(Error::<T>::UnknownXStorageFlag)?,
+            };
+            Self::deposit_event(Event::XSetStorage(key.to_vec(), res_val.encode()));
+            Ok(().into())
+        }
+
+        #[pallet::weight(100_000_000 + T::DbWeight::get().reads_writes(1,0))]
+        pub fn transfer(
+            _origin: OriginFor<T>,
+            from: T::AccountId,
+            to: T::AccountId,
+            value: BalanceOf<T>,
+            maybe_escrow_account: Option<T::AccountId>,
+            maybe_transfer_flags: Option<TransferFlags>,
+        ) -> DispatchResultWithPostInfo {
+            match maybe_transfer_flags {
+                None | Some(TransferFlags::DIRTY) => just_transfer::<T>(&from, &to, value)
+                    .map_err(|_| Error::<T>::XBalanceTransferFailed)?,
+                Some(TransferFlags::ESCROWED_EXECUTE) => {
+                    let escrow = maybe_escrow_account
+                        .clone()
+                        .expect("transfer_escrow requires valid escrow account");
+                    let mut transfers = Vec::<TransferEntry>::new();
+                    escrow_transfer::<T>(&escrow, &from, &to, value, &mut transfers)
+                        .map_err(|_| Error::<T>::XBalanceTransferFailed)?
+                }
+                Some(TransferFlags::ESCROWED_COMMIT) => {
+                    let escrow = maybe_escrow_account
+                        .clone()
+                        .expect("escrow transfer commit requires valid escrow account");
+                    just_transfer::<T>(&escrow, &to, value)?;
+                }
+                Some(TransferFlags::ESCROWED_REVERT) => {
+                    let escrow = maybe_escrow_account
+                        .clone()
+                        .expect("escrow transfer revert requires valid escrow account");
+                    just_transfer::<T>(&escrow, &from, value)?;
+                }
+                _ => Err(Error::<T>::UnknownXCallFlag)?,
+            }
+
+            Self::deposit_event(Event::XTransfer(from, to, value, maybe_escrow_account));
+            Ok(().into())
+        }
+
+        #[pallet::weight(100_000_000 + T::DbWeight::get().reads_writes(1,0))]
+        pub fn emit_event(
+            _origin: OriginFor<T>,
+            event_encoded: Vec<u8>,
+        ) -> DispatchResultWithPostInfo {
+            Self::deposit_event(Event::XEmitEvent(event_encoded));
+            Ok(().into())
+        }
+
+        #[pallet::weight(100_000_000 + T::DbWeight::get().reads_writes(1,0))]
+        pub fn custom(
+            _origin: OriginFor<T>,
+            from: T::AccountId,
+            to: T::AccountId,
+            value: BalanceOf<T>,
+            maybe_escrow_account: Option<T::AccountId>,
+            custom_bytes: Option<Vec<u8>>,
+            _maybe_call_flags: Option<CallFlags>,
+        ) -> DispatchResultWithPostInfo {
+            // ToDo: Unimplemented!
+            Self::deposit_event(Event::XGatewayCustom(
+                from,
+                to,
+                value,
+                maybe_escrow_account,
+                custom_bytes,
+            ));
+            Ok(().into())
+        }
+
+        #[pallet::weight(100_000_000 + T::DbWeight::get().reads_writes(1,0))]
+        pub fn swap(
+            _origin: OriginFor<T>,
+            from: T::AccountId,
+            to: T::AccountId,
+            value_src: BalanceOf<T>,
+            value_dest: BalanceOf<T>,
+            maybe_escrow_account: Option<T::AccountId>,
+            _maybe_transfer_flags: Option<TransferFlags>,
+        ) -> DispatchResultWithPostInfo {
+            // ToDo: Unimplemented!
+            Self::deposit_event(Event::XGatewaySwap(
+                from,
+                to,
+                value_src,
+                value_dest,
+                maybe_escrow_account,
+            ));
             Ok(().into())
         }
 
