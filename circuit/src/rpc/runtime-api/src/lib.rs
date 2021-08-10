@@ -17,7 +17,6 @@
 //! adding Contracts access methods.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-
 use sp_runtime::{
     codec::Codec,
     traits::{MaybeDisplay, MaybeFromStr},
