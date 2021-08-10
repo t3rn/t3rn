@@ -4062,9 +4062,13 @@ name = "pallet-runtime-gateway"
 version = "0.5.0"
 dependencies = [
  "anyhow",
+ "bitflags",
+ "bp-messages",
+ "bp-runtime",
  "frame-support",
  "frame-system",
  "pallet-balances",
+ "pallet-bridge-messages",
  "pallet-randomness-collective-flip",
  "pallet-sudo",
  "pallet-timestamp",
