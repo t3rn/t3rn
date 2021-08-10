@@ -35,7 +35,7 @@ use sp_runtime::{
     testing::UintAuthorityId, traits::Convert, DispatchError, DispatchResult, FixedU128,
 };
 
-use frame_support::assert_err;
+use frame_support::{assert_err, assert_ok};
 use frame_support::{parameter_types, traits::KeyOwnerProofSystem};
 
 use frame_election_provider_support::onchain;
@@ -71,6 +71,11 @@ use std::collections::BTreeMap;
 use t3rn_primitives::transfers::BalanceOf;
 use t3rn_primitives::{EscrowTrait, ExecPhase, ExecStep, InterExecSchedule};
 use volatile_vm::DispatchRuntimeCall;
+
+use t3rn_primitives::abi::{CryptoAlgo, GatewayABIConfig, HasherAlgo, Parameter, StructDecl, Type};
+use t3rn_primitives::{
+    GatewayGenesisConfig, GatewayPointer, GatewayType, GatewayVendor, GenericPrimitivesHeader,
+};
 
 use pallet_evm::{AddressMapping, FeeCalculator};
 
@@ -1388,3 +1393,61 @@ fn error_if_incorrect_escrow_is_submitted() {
         assert!(submitter.is_err());
     });
 }
+
+#[test]
+fn test_submit_composable_exec_order() {
+    let io_schedule = b"component1;".to_vec();
+
+    let components = vec![Compose {
+        name: b"component1".to_vec(),
+        code_txt: r#""#.as_bytes().to_vec(),
+
+        exec_type: b"exec_escrow".to_vec(),
+        dest: AccountId::new([1 as u8; 32]),
+        value: 0,
+        bytes: vec![],
+        input_data: vec![],
+    }];
+
+    sp_io::TestExternalities::default().execute_with(|| {
+        assert_ok!(ExecDelivery::submit_composable_exec_order(
+            Origin::signed(Default::default()),
+            io_schedule,
+            components
+        ));
+    });
+}
+
+// #[test]
+// fn test_register_gateway(){
+//     let url = "ws://localhost:9944";
+//     let gateway_id = [0; 4];
+//     let gateway_abi: GatewayABIConfig = Default::default();
+//     let gateway_vendor = GatewayVendor::Substrate;
+//     let gateway_type = GatewayType::ProgrammableInternal;
+
+//     let gateway_pointer = GatewayPointer{
+//         id: [0; 4],
+//         vendor: GatewayVendor::Substrate,
+//         gateway_type: GatewayType::ProgrammableInternal,
+//     };
+
+//     let mut best_gateway = pallet_xdns::Pallet::best_available(gateway_pointer.id);
+//     let genesis_hash = T::Hashing::hash(&mut best_gateway.gateway_genesis.genesis_hash);
+//     let runtime_version = best_gateway.gateway_genesis.runtime_version;
+
+//     let gateway_genesis = GatewayGenesisConfig{
+//         modules_encoded: None,
+//         signed_extension: None,
+//         runtime_version: runtime_version,
+//         genesis_hash: genesis_hash,
+//     };
+//     let first_header = GenericPrimitivesHeader{
+//         parent_hash: None,
+//         number: 0,
+//         state_root: None,
+//         extrinsics_root: None,
+//         digest: None,
+//     };
+
+// }
