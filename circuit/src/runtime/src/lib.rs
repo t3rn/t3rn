@@ -37,7 +37,7 @@ use crate::gateway_messages::{ToGatewayMessagePayload, WithGatewayMessageBridge}
 use bridge_runtime_common::messages::{
     source::estimate_message_dispatch_and_delivery_fee, MessageBridge,
 };
-use codec::Decode;
+use codec::{Decode, Encode};
 use pallet_grandpa::{
     fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
@@ -59,7 +59,9 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use t3rn_primitives::{transfers::BalanceOf, ComposableExecResult, Compose, FetchContractsResult};
+use t3rn_primitives::{
+    transfers::BalanceOf, ComposableExecResult, Compose, ContractAccessError, FetchContractsResult,
+};
 
 use volatile_vm::DispatchRuntimeCall;
 
@@ -936,18 +938,26 @@ impl_runtime_apis! {
     impl circuit_rpc_runtime_api::CircuitApi<Block, AccountId, Balance, BlockNumber> for Runtime
     {
         fn composable_exec(
-            _origin: AccountId,
-            _components: Vec<Compose<AccountId, Balance>>,
-            _io: Vec<u8>,
-            _gas_limit: u64,
-            _input_data: Vec<u8>,
+            origin: AccountId,
+            components: Vec<Compose<AccountId, Balance>>,
+            io: Vec<u8>,
+            gas_limit: u64,
+            input_data: Vec<u8>,
             ) -> Result<ComposableExecResult, DispatchError> { todo!() }
 
         fn fetch_contracts(
-            _name: Option<Vec<u8>>,
-            _author: Option<AccountId>,
-            _metadata: Option<Vec<u8>>
-        ) -> FetchContractsResult { todo!() }
+            origin: AccountId,
+            contract_id: Option<pallet_contracts_registry::RegistryContractId<Runtime>>,
+            author: Option<AccountId>,
+            metadata: Option<Vec<u8>>,
+        ) -> FetchContractsResult {
+        let contract = ContractsRegistry::fetch_contracts(origin, contract_id, (author, metadata));
+        if contract.is_err() {
+            Err(ContractAccessError::DoesntExist)
+        } else {
+            Ok(contract.unwrap().encode())
+        }
+    }
     }
 }
 

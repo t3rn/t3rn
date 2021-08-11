@@ -299,7 +299,6 @@ impl<T: Config> Pallet<T> {
         Ok(pallet::ContractsRegistry::<T>::get(contract_id).unwrap())
     }
 
-    #[allow(dead_code)]
     pub fn fetch_contracts(
         origin: T::Origin,
         contract_id: Option<RegistryContractId<T>>,

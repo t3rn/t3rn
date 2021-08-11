@@ -23,14 +23,15 @@ use sp_runtime::{
     DispatchError,
 };
 use sp_std::vec::Vec;
-use t3rn_primitives::{ComposableExecResult, Compose, FetchContractsResult};
+use t3rn_primitives::{ComposableExecResult, Compose, FetchContractsResult, RegistryContractId};
 
 sp_api::decl_runtime_apis! {
     /// The API to interact with contracts without using executive.
-    pub trait CircuitApi<AccountId, Balance, BlockNumber> where
+    pub trait CircuitApi<AccountId, Balance, BlockNumber, Hash> where
         AccountId: Codec + MaybeDisplay + MaybeFromStr,
         Balance: Codec + MaybeDisplay + MaybeFromStr,
         BlockNumber: Codec + MaybeDisplay + MaybeFromStr,
+        Hash: Codec + MaybeDisplay + MaybeFromStr + frame_system::pallet::Config
     {
         /// Perform a composable execution from a specified account to a appointed gateways.
         ///
@@ -45,9 +46,10 @@ sp_api::decl_runtime_apis! {
 
         /// Returns the contracts searchable by name, author or metadata
         fn fetch_contracts(
-            name: Option<Vec<u8>>,
+            origin: AccountId,
+            contract_id: Option<RegistryContractId<Hash>>,
             author: Option<AccountId>,
-            metadata: Option<Vec<u8>>
+            metadata: Option<Vec<u8>>,
         ) -> FetchContractsResult;
     }
 }
