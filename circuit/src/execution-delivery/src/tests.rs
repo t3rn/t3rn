@@ -35,6 +35,9 @@ use sp_runtime::{
     testing::UintAuthorityId, traits::Convert, DispatchError, DispatchResult, FixedU128,
 };
 
+// extern crate wabt;
+// use wabt::wat2wasm;
+
 use frame_support::{assert_err, assert_ok};
 use frame_support::{parameter_types, traits::KeyOwnerProofSystem};
 
@@ -894,6 +897,13 @@ impl pallet_babe::Config for Test {
     type WeightInfo = ();
 }
 
+pub fn new_test_ext() -> sp_io::TestExternalities {
+    let t = frame_system::GenesisConfig::default()
+        .build_storage::<Test>()
+        .unwrap();
+    t.into()
+}
+
 #[test]
 fn it_submits_empty_composable_exec_request() {
     sp_io::TestExternalities::default().execute_with(|| {
@@ -1398,17 +1408,27 @@ fn error_if_incorrect_escrow_is_submitted() {
 fn test_submit_composable_exec_order() {
     let io_schedule = b"component1;".to_vec();
 
+    const CONTRACT: &str = r#"
+            (module
+                (func (export "call"))
+                (func (export "deploy"))
+            )
+            "#;
+    
     let components = vec![Compose {
         name: b"component1".to_vec(),
-        code_txt: r#""#.as_bytes().to_vec(),
-
+        code_txt: CONTRACT.as_bytes().to_vec(),
         exec_type: b"exec_escrow".to_vec(),
         dest: AccountId::new([1 as u8; 32]),
         value: 0,
-        bytes: vec![],
+        bytes: vec![
+            0, 97, 115, 109, 1, 0, 0, 0, 1, 4, 1, 96, 0, 0, 3, 3, 2, 0, 0, 7, 17, 2, 4, 99, 97,
+            108, 108, 0, 0, 6, 100, 101, 112, 108, 111, 121, 0, 1, 10, 7, 2, 2, 0, 11, 2, 0, 11,
+        ],
         input_data: vec![],
     }];
 
+    //println!("{:?}", wabt::wat2wasm(CONTRACT).expect("invalid wabt"));
     sp_io::TestExternalities::default().execute_with(|| {
         assert_ok!(ExecDelivery::submit_composable_exec_order(
             Origin::signed(Default::default()),
