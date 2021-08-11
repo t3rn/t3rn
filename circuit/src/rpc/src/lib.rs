@@ -158,225 +158,225 @@ impl From<ComposableExecResult> for RpcComposableExecResult {
 }
 
 /// Circuit RPC methods.
-#[rpc]
-pub trait CircuitApi<BlockHash, BlockNumber, AccountId, Balance> {
-    /// Executes all attached or appointed by ID composable contracts on appointed gateways.
-    ///
-    /// IO flow between components on different chains can be described using Input-Output schedule.
-    ///
-    /// Circuit queues the request and awaits for an execution agent to volounteer to facilitate the execution
-    /// across connected chains via gateways - acts as an escrow account and is accountable
-    /// with her stake for proven misbehaviour.
-    #[rpc(name = "composable_exec")]
-    fn composable_exec(
-        &self,
-        call_request: InterExecRequest<AccountId, Balance>,
-        at: Option<BlockHash>,
-    ) -> Result<RpcComposableExecResult>;
-
-    /// Returns the contracts searchable by name or author
-    #[rpc(name = "circuit_fetchContracts")]
-    fn fetch_contracts(
-        &self,
-        author: AccountId,
-        name: Box<str>,
-        at: Option<BlockHash>,
-    ) -> Result<RpcFetchContractsResult>;
-}
-
-/// An implementation of contract specific RPC methods.
-pub struct Circuit<C, B> {
-    client: Arc<C>,
-    _marker: std::marker::PhantomData<B>,
-}
-
-impl<C, B> Circuit<C, B> {
-    /// Create new `Contracts` with the given reference to the client.
-    pub fn new(client: Arc<C>) -> Self {
-        Circuit {
-            client,
-            _marker: Default::default(),
-        }
-    }
-}
-impl<C, Block, AccountId, Balance>
-    CircuitApi<
-        <Block as BlockT>::Hash,
-        <<Block as BlockT>::Header as HeaderT>::Number,
-        AccountId,
-        Balance,
-    > for Circuit<C, Block>
-where
-    Block: BlockT,
-    C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
-    C::Api: CircuitRuntimeApi<
-        Block,
-        AccountId,
-        Balance,
-        <<Block as BlockT>::Header as HeaderT>::Number,
-    >,
-    AccountId: Codec,
-    Balance: Codec,
-{
-    fn composable_exec(
-        &self,
-        inter_exec_request: InterExecRequest<AccountId, Balance>,
-        at: Option<<Block as BlockT>::Hash>,
-    ) -> Result<RpcComposableExecResult> {
-        let api = self.client.runtime_api();
-        let at = BlockId::hash(at.unwrap_or_else(||
-			// If the block hash is not supplied assume the best block.
-			self.client.info().best_hash));
-
-        let InterExecRequest {
-            origin,
-            components,
-            io,
-            gas_limit,
-            input_data,
-        } = inter_exec_request;
-
-        // Make sure that gas_limit fits into 64 bits.
-        let gas_limit: u64 = gas_limit.try_into().map_err(|_| Error {
-            code: ErrorCode::InvalidParams,
-            message: format!("{:?} doesn't fit in 64 bit unsigned value", gas_limit),
-            data: None,
-        })?;
-
-        let max_gas_limit = 5 * GAS_PER_SECOND;
-        if gas_limit > max_gas_limit {
-            return Err(Error {
-                code: ErrorCode::InvalidParams,
-                message: format!(
-                    "Requested gas limit is greater than maximum allowed: {} > {}",
-                    gas_limit, max_gas_limit
-                ),
-                data: None,
-            });
-        }
-
-        let mut components_runtime: Vec<Compose<AccountId, Balance>> = vec![];
-
-        for component_rpc in components.into_iter() {
-            components_runtime.push(Compose {
-                name: component_rpc.name.into_boxed_bytes().to_vec(),
-                code_txt: component_rpc.code_txt.into_boxed_bytes().to_vec(),
-                exec_type: component_rpc.exec_type.into_boxed_bytes().to_vec(),
-                dest: component_rpc.dest,
-                value: component_rpc.value,
-                bytes: component_rpc.bytes.to_vec(),
-                input_data: component_rpc.input_data.to_vec(),
-            });
-        }
-
-        let exec_result = api
-            .composable_exec(
-                &at,
-                origin,
-                components_runtime,
-                io.into_boxed_bytes().to_vec(),
-                gas_limit,
-                input_data.to_vec(),
-            )
-            .map_err(|e| runtime_error_into_rpc_err(e))?;
-
-        Ok(exec_result.into())
-    }
-
-    fn fetch_contracts(
-        &self,
-        _author: AccountId,
-        _name: Box<str>,
-        _at: Option<<Block as BlockT>::Hash>,
-    ) -> Result<RpcFetchContractsResult> {
-        let x = pallet_contracts_registry::pallet::Pallet::contracts_registry;
-        let result = pallet_contracts_registry::Pallet::fetch_contract_by_author(_author)
-            .map_err(|err| runtime_error_into_rpc_err(err))?;
-
-        Ok(RpcFetchContractsResult::Success {
-            flags: 0,
-            data: result.into(),
-            gas_consumed: 0,
-        })
-    }
-}
-
-/// Converts a runtime trap into an RPC error.
-fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> Error {
-    Error {
-        code: ErrorCode::ServerError(RUNTIME_ERROR),
-        message: "Runtime trapped".into(),
-        data: Some(format!("{:?}", err).into()),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use core::primitive::str;
-    use sp_core::U256;
-
-    #[test]
-    fn composable_execution_request_should_serialize_deserialize_properly() {
-        type Req = InterExecRequest<String, u128>;
-        let req: Req = serde_json::from_str(
-            r#"
-		{
-			"origin": "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL",
-			"components": [],
-			"io": "component1, component2 | component3;",
-			"gasLimit": 1000000000000,
-			"inputData": "0x8c97db39"
-		}
-		"#,
-        )
-        .unwrap();
-        assert_eq!(req.gas_limit.into_u256(), U256::from(0xe8d4a51000u64));
-        // Deserialize io schedule from string to vec<u8>
-        let io_vec: Vec<u8> = req.io.into_boxed_bytes().to_vec();
-        assert_eq!(
-            io_vec,
-            vec![
-                99, 111, 109, 112, 111, 110, 101, 110, 116, 49, 44, 32, 99, 111, 109, 112, 111,
-                110, 101, 110, 116, 50, 32, 124, 32, 99, 111, 109, 112, 111, 110, 101, 110, 116,
-                51, 59
-            ]
-        );
-        // Serialize io schedule from Vec<u8> to string again with core::str
-        let io_vec_back_to_str: &str = core::str::from_utf8(io_vec.as_slice()).unwrap();
-        assert_eq!(io_vec_back_to_str, "component1, component2 | component3;");
-    }
-
-    #[test]
-    fn compose_of_request_should_serialize_deserialize_properly() {
-        type Req = InterExecRequest<String, u128>;
-        let req: Req = serde_json::from_str(
-            r#"
-		{
-			"origin": "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL",
-			"components": [{
-                "name": "component1",
-                "codeTxt": "let a = \"hello\"",
-                "gatewayId": [99, 105, 114, 99],
-                "execType": "exec-volatile",
-                "dest": "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL",
-                "value": 0,
-                "bytes": "0x8c97db398c97db398c97db398c97db39",
-                "inputData": "0x00"
-			}],
-			"io": "component1, component2 | component3;",
-			"gasLimit": 1000000000000,
-			"inputData": "0x8c97db39"
-		}
-		"#,
-        )
-        .unwrap();
-        // Deserializes string fields correctly
-        let name_str: &str = &req.components[0].name;
-        assert_eq!(name_str, "component1");
-        let code_str: &str = &req.components[0].code_txt;
-        assert_eq!(code_str, "let a = \"hello\"");
-        let exec_type_str: &str = &req.components[0].exec_type;
-        assert_eq!(exec_type_str, "exec-volatile");
-    }
-}
+// #[rpc]
+// pub trait CircuitApi<BlockHash, BlockNumber, AccountId, Balance> {
+//     /// Executes all attached or appointed by ID composable contracts on appointed gateways.
+//     ///
+//     /// IO flow between components on different chains can be described using Input-Output schedule.
+//     ///
+//     /// Circuit queues the request and awaits for an execution agent to volounteer to facilitate the execution
+//     /// across connected chains via gateways - acts as an escrow account and is accountable
+//     /// with her stake for proven misbehaviour.
+//     #[rpc(name = "composable_exec")]
+//     fn composable_exec(
+//         &self,
+//         call_request: InterExecRequest<AccountId, Balance>,
+//         at: Option<BlockHash>,
+//     ) -> Result<RpcComposableExecResult>;
+//
+//     /// Returns the contracts searchable by name or author
+//     #[rpc(name = "circuit_fetchContracts")]
+//     fn fetch_contracts(
+//         &self,
+//         author: AccountId,
+//         name: Box<str>,
+//         at: Option<BlockHash>,
+//     ) -> Result<RpcFetchContractsResult>;
+// }
+//
+// /// An implementation of contract specific RPC methods.
+// pub struct Circuit<C, B> {
+//     client: Arc<C>,
+//     _marker: std::marker::PhantomData<B>,
+// }
+//
+// impl<C, B> Circuit<C, B> {
+//     /// Create new `Contracts` with the given reference to the client.
+//     pub fn new(client: Arc<C>) -> Self {
+//         Circuit {
+//             client,
+//             _marker: Default::default(),
+//         }
+//     }
+// }
+// impl<C, Block, AccountId, Balance>
+//     CircuitApi<
+//         <Block as BlockT>::Hash,
+//         <<Block as BlockT>::Header as HeaderT>::Number,
+//         AccountId,
+//         Balance,
+//     > for Circuit<C, Block>
+// where
+//     Block: BlockT,
+//     C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
+//     C::Api: CircuitRuntimeApi<
+//         Block,
+//         AccountId,
+//         Balance,
+//         <<Block as BlockT>::Header as HeaderT>::Number,
+//     >,
+//     AccountId: Codec,
+//     Balance: Codec,
+// {
+//     fn composable_exec(
+//         &self,
+//         inter_exec_request: InterExecRequest<AccountId, Balance>,
+//         at: Option<<Block as BlockT>::Hash>,
+//     ) -> Result<RpcComposableExecResult> {
+//         let api = self.client.runtime_api();
+//         let at = BlockId::hash(at.unwrap_or_else(||
+// 			// If the block hash is not supplied assume the best block.
+// 			self.client.info().best_hash));
+//
+//         let InterExecRequest {
+//             origin,
+//             components,
+//             io,
+//             gas_limit,
+//             input_data,
+//         } = inter_exec_request;
+//
+//         // Make sure that gas_limit fits into 64 bits.
+//         let gas_limit: u64 = gas_limit.try_into().map_err(|_| Error {
+//             code: ErrorCode::InvalidParams,
+//             message: format!("{:?} doesn't fit in 64 bit unsigned value", gas_limit),
+//             data: None,
+//         })?;
+//
+//         let max_gas_limit = 5 * GAS_PER_SECOND;
+//         if gas_limit > max_gas_limit {
+//             return Err(Error {
+//                 code: ErrorCode::InvalidParams,
+//                 message: format!(
+//                     "Requested gas limit is greater than maximum allowed: {} > {}",
+//                     gas_limit, max_gas_limit
+//                 ),
+//                 data: None,
+//             });
+//         }
+//
+//         let mut components_runtime: Vec<Compose<AccountId, Balance>> = vec![];
+//
+//         for component_rpc in components.into_iter() {
+//             components_runtime.push(Compose {
+//                 name: component_rpc.name.into_boxed_bytes().to_vec(),
+//                 code_txt: component_rpc.code_txt.into_boxed_bytes().to_vec(),
+//                 exec_type: component_rpc.exec_type.into_boxed_bytes().to_vec(),
+//                 dest: component_rpc.dest,
+//                 value: component_rpc.value,
+//                 bytes: component_rpc.bytes.to_vec(),
+//                 input_data: component_rpc.input_data.to_vec(),
+//             });
+//         }
+//
+//         let exec_result = api
+//             .composable_exec(
+//                 &at,
+//                 origin,
+//                 components_runtime,
+//                 io.into_boxed_bytes().to_vec(),
+//                 gas_limit,
+//                 input_data.to_vec(),
+//             )
+//             .map_err(|e| runtime_error_into_rpc_err(e))?;
+//
+//         Ok(exec_result.into())
+//     }
+//
+//     fn fetch_contracts(
+//         &self,
+//         _author: AccountId,
+//         _name: Box<str>,
+//         _at: Option<<Block as BlockT>::Hash>,
+//     ) -> Result<RpcFetchContractsResult> {
+//         let x = pallet_contracts_registry::pallet::Pallet::contracts_registry;
+//         let result = pallet_contracts_registry::Pallet::fetch_contract_by_author(_author)
+//             .map_err(|err| runtime_error_into_rpc_err(err))?;
+//
+//         Ok(RpcFetchContractsResult::Success {
+//             flags: 0,
+//             data: result.into(),
+//             gas_consumed: 0,
+//         })
+//     }
+// }
+//
+// /// Converts a runtime trap into an RPC error.
+// fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> Error {
+//     Error {
+//         code: ErrorCode::ServerError(RUNTIME_ERROR),
+//         message: "Runtime trapped".into(),
+//         data: Some(format!("{:?}", err).into()),
+//     }
+// }
+//
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+//     use core::primitive::str;
+//     use sp_core::U256;
+//
+//     #[test]
+//     fn composable_execution_request_should_serialize_deserialize_properly() {
+//         type Req = InterExecRequest<String, u128>;
+//         let req: Req = serde_json::from_str(
+//             r#"
+// 		{
+// 			"origin": "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL",
+// 			"components": [],
+// 			"io": "component1, component2 | component3;",
+// 			"gasLimit": 1000000000000,
+// 			"inputData": "0x8c97db39"
+// 		}
+// 		"#,
+//         )
+//         .unwrap();
+//         assert_eq!(req.gas_limit.into_u256(), U256::from(0xe8d4a51000u64));
+//         // Deserialize io schedule from string to vec<u8>
+//         let io_vec: Vec<u8> = req.io.into_boxed_bytes().to_vec();
+//         assert_eq!(
+//             io_vec,
+//             vec![
+//                 99, 111, 109, 112, 111, 110, 101, 110, 116, 49, 44, 32, 99, 111, 109, 112, 111,
+//                 110, 101, 110, 116, 50, 32, 124, 32, 99, 111, 109, 112, 111, 110, 101, 110, 116,
+//                 51, 59
+//             ]
+//         );
+//         // Serialize io schedule from Vec<u8> to string again with core::str
+//         let io_vec_back_to_str: &str = core::str::from_utf8(io_vec.as_slice()).unwrap();
+//         assert_eq!(io_vec_back_to_str, "component1, component2 | component3;");
+//     }
+//
+//     #[test]
+//     fn compose_of_request_should_serialize_deserialize_properly() {
+//         type Req = InterExecRequest<String, u128>;
+//         let req: Req = serde_json::from_str(
+//             r#"
+// 		{
+// 			"origin": "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL",
+// 			"components": [{
+//                 "name": "component1",
+//                 "codeTxt": "let a = \"hello\"",
+//                 "gatewayId": [99, 105, 114, 99],
+//                 "execType": "exec-volatile",
+//                 "dest": "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL",
+//                 "value": 0,
+//                 "bytes": "0x8c97db398c97db398c97db398c97db39",
+//                 "inputData": "0x00"
+// 			}],
+// 			"io": "component1, component2 | component3;",
+// 			"gasLimit": 1000000000000,
+// 			"inputData": "0x8c97db39"
+// 		}
+// 		"#,
+//         )
+//         .unwrap();
+//         // Deserializes string fields correctly
+//         let name_str: &str = &req.components[0].name;
+//         assert_eq!(name_str, "component1");
+//         let code_str: &str = &req.components[0].code_txt;
+//         assert_eq!(code_str, "let a = \"hello\"");
+//         let exec_type_str: &str = &req.components[0].exec_type;
+//         assert_eq!(exec_type_str, "exec-volatile");
+//     }
+// }

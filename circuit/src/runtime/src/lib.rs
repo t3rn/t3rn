@@ -266,7 +266,7 @@ parameter_types! {
     // For weight estimation, we assume that the most locks on an individual account will be 50.
     // This number may need to be adjusted in the future if this assumption no longer holds true.
     pub const MaxLocks: u32 = 50;
-    pub const _MaxReserves: u32 = 50;
+    pub const MaxReserves: u32 = 50;
 }
 
 impl pallet_balances::Config for Runtime {
@@ -280,9 +280,8 @@ impl pallet_balances::Config for Runtime {
     // TODO: update me (https://github.com/paritytech/parity-bridges-common/issues/78)
     type WeightInfo = ();
     type MaxLocks = MaxLocks;
-    //ToDo: Uncomment when upgrading to v4.0.0 substrate
-    // type MaxReserves = MaxReserves;
-    // type ReserveIdentifier = [u8; 8];
+    type MaxReserves = MaxReserves;
+    type ReserveIdentifier = [u8; 8];
 }
 
 parameter_types! {
@@ -297,8 +296,7 @@ impl pallet_transaction_payment::Config for Runtime {
     type FeeMultiplierUpdate = ();
 }
 
-//ToDo: Uncomment when upgrading to v4.0.0 substrate
-// impl pallet_randomness_collective_flip::Config for Runtime {}
+impl pallet_randomness_collective_flip::Config for Runtime {}
 
 impl pallet_sudo::Config for Runtime {
     type Event = Event;
@@ -782,8 +780,9 @@ impl_runtime_apis! {
         fn validate_transaction(
             source: TransactionSource,
             tx: <Block as BlockT>::Extrinsic,
+            hash: <Block as BlockT>::Hash
         ) -> TransactionValidity {
-            Executive::validate_transaction(source, tx)
+            Executive::validate_transaction(source, tx, hash)
         }
     }
 
@@ -935,22 +934,22 @@ impl_runtime_apis! {
         }
     }
 
-    impl circuit_rpc_runtime_api::CircuitApi<Block, AccountId, Balance, BlockNumber> for Runtime
-    {
-        fn composable_exec(
-            origin: AccountId,
-            components: Vec<Compose<AccountId, Balance>>,
-            io: Vec<u8>,
-            gas_limit: u64,
-            input_data: Vec<u8>,
-            ) -> Result<ComposableExecResult, DispatchError> { todo!() }
-
-        fn fetch_contracts(
-            name: Option<Vec<u8>>,
-            author: Option<AccountId>,
-            metadata: Option<Vec<u8>>
-        ) -> FetchContractsResult { todo!() }
-    }
+    // impl circuit_rpc_runtime_api::CircuitApi<Block, AccountId, Balance, BlockNumber> for Runtime
+    // {
+    //     fn composable_exec(
+    //         origin: AccountId,
+    //         components: Vec<Compose<AccountId, Balance>>,
+    //         io: Vec<u8>,
+    //         gas_limit: u64,
+    //         input_data: Vec<u8>,
+    //         ) -> Result<ComposableExecResult, DispatchError> { todo!() }
+    //
+    //     fn fetch_contracts(
+    //         name: Option<Vec<u8>>,
+    //         author: Option<AccountId>,
+    //         metadata: Option<Vec<u8>>
+    //     ) -> FetchContractsResult { todo!() }
+    // }
 }
 
 /// Gateway account ownership digest from Circuit.

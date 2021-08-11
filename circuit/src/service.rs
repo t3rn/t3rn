@@ -111,9 +111,7 @@ pub fn new_partial(
         config.transaction_pool.clone(),
         config.role.is_authority().into(),
         config.prometheus_registry(),
-        task_manager.spawn_handle(),
-        // ToDo: Uncomment when upgrading to v4.0.0 substrate
-        // task_manager.spawn_essential_handle(),
+        task_manager.spawn_essential_handle(),
         client.clone(),
     );
 
@@ -301,8 +299,7 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
         let raw_slot_duration = slot_duration.slot_duration();
 
         //ToDo: Uncomment when upgrading to v4.0.0 substrate
-        // let aura = sc_consensus_aura::start_aura::<AuraPair, _, _, _, _, _, _, _, _, _, _, _>(
-        let aura = sc_consensus_aura::start_aura::<AuraPair, _, _, _, _, _, _, _, _, _, _>(
+        let aura = sc_consensus_aura::start_aura::<AuraPair, _, _, _, _, _, _, _, _, _, _, _>(
             StartAuraParams {
                 slot_duration,
                 client,
@@ -326,8 +323,9 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
                 sync_oracle: network.clone(),
                 // justification_sync_link: network.clone(),
                 block_proposal_slot_portion: SlotProportion::new(2f32 / 3f32),
-                // max_block_proposal_slot_portion: None,
+                max_block_proposal_slot_portion: None,
                 telemetry: telemetry.as_ref().map(|x| x.handle()),
+                justification_sync_link: (),
             },
         )?;
 
@@ -447,9 +445,7 @@ pub fn new_light(mut config: Configuration) -> Result<TaskManager, ServiceError>
     let transaction_pool = Arc::new(sc_transaction_pool::BasicPool::new_light(
         config.transaction_pool.clone(),
         config.prometheus_registry(),
-        task_manager.spawn_handle(),
-        //ToDo: Uncomment when upgrading to v4.0.0 substrate
-        // task_manager.spawn_essential_handle(),
+        task_manager.spawn_essential_handle(),
         client.clone(),
         on_demand.clone(),
     ));

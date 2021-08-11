@@ -18,8 +18,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::Codec;
 use sp_runtime::{
-    codec::Codec,
     traits::{MaybeDisplay, MaybeFromStr},
     DispatchError,
 };

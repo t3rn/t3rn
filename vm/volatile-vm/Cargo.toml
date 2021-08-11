@@ -24,16 +24,16 @@ serde = { version = "1", optional = true, features = ["derive"] }
 smallvec = { version = "1", default-features = false, features = ["const_generics"] }
 log = { version = "0.4", default-features = false }
 
-frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", tag = 'monthly-2021-06' }
-sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", tag = 'monthly-2021-06'  }
-sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", tag = 'monthly-2021-06' }
-sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", tag = 'monthly-2021-06' }
-sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", tag = 'monthly-2021-06' }
-sp-sandbox = { default-features = false, git = "https://github.com/paritytech/substrate.git", tag = 'monthly-2021-06' }
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8'  }
+sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
+sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
+sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
+sp-sandbox = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 
-system = { default-features = false, package = 'frame-system', git = "https://github.com/paritytech/substrate.git", tag = 'monthly-2021-06'  }
-sudo = { default-features = false, package = 'pallet-sudo', git = "https://github.com/paritytech/substrate.git", tag = 'monthly-2021-06'  }
-transaction-payment = { package = "pallet-transaction-payment", git = "https://github.com/paritytech/substrate.git", tag = 'monthly-2021-06', default-features = false }
+system = { default-features = false, package = 'frame-system', git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8'  }
+sudo = { default-features = false, package = 'pallet-sudo', git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8'  }
+transaction-payment = { package = "pallet-transaction-payment", git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8', default-features = false }
 
 [features]
 default = ["std"]
