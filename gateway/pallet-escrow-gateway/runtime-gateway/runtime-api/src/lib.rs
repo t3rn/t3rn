@@ -52,14 +52,6 @@ sp_api::decl_runtime_apis! {
             input_data: Vec<u8>,
         ) -> ContractExecResult;
 
-        fn call_module(
-            origin: AccountId,
-            dest: AccountId,
-            value: Balance,
-            gas_limit: u64,
-            input_data: Vec<u8>,
-        ) -> ContractExecResult;
-
         fn get_storage(
             address: AccountId,
             key: [u8; 32],
@@ -130,10 +122,10 @@ pub type ContractExecResult = ContractResult<Result<ExecReturnValue, DispatchErr
 pub type GetStorageResult = Result<Option<Vec<u8>>, AccessError>;
 
 /// Result type of a `set_storage` call.
-pub type SetStorageResult = Result<Option<Vec<u8>>, AccessError>;
+pub type SetStorageResult = Result<(), AccessError>;
 
 /// Result type of a `transfer` call.
-pub type TransferResult = Result<Option<Vec<u8>>, AccessError>;
+pub type TransferResult = Result<(), AccessError>;
 
 /// Result type of a `transfer` call.
 pub type EmitEventResult = Result<Option<Vec<u8>>, AccessError>;
@@ -148,6 +140,12 @@ pub enum AccessError {
     DoesntExist,
     /// The specified contract is a tombstone and thus cannot have any storage.
     IsTombstone,
+    /// Unknown custom access flag
+    UnknownFlag,
+    /// Failed out of other reason
+    Failed,
+    /// Not enough balance to access/exec
+    NotEnoughBalance,
 }
 
 bitflags! {
