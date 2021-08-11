@@ -110,6 +110,7 @@ std = [
 	"pallet-sudo/std",
 	"pallet-timestamp/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
+	"circuit-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
 	"serde",
 	"sp-api/std",
