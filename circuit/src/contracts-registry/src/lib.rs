@@ -16,11 +16,14 @@
 // limitations under the License.
 
 //! <!-- markdown-link-check-disable -->
-//! # X-DNS Pallet
+//! # Contracts Registry Pallet
 //! </pre></p></details>
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
+
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 
 use codec::{Decode, Encode};
 use frame_support::dispatch::DispatchResult;
@@ -44,6 +47,18 @@ use t3rn_primitives::contract::ContractMetadata;
 pub use weights::*;
 
 pub type RegistryContractId<T> = <T as frame_system::Config>::Hash;
+
+/// The possible errors that can happen querying the storage of a contract.
+#[derive(Eq, PartialEq, Encode, Decode, Debug, Clone)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub enum ContractAccessError {
+    /// The given address doesn't point to a contract.
+    DoesntExist,
+    /// The specified contract is a tombstone and thus cannot have any storage.
+    IsTombstone,
+}
+
+pub type FetchContractsResult = Result<Vec<u8>, ContractAccessError>;
 
 /// A preliminary representation of a contract in the onchain registry.
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]

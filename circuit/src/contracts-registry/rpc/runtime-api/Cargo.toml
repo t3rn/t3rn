@@ -1,0 +1,16 @@
+[package]
+name = "pallet-contracts-registry-rpc-runtime-api"
+version = "0.1.0"
+authors = ["t3rn"]
+edition = "2018"
+license = "Apache-2.0"
+homepage = "https://t3rn.io"
+repository = "https://github.com/t3rn/t3rn/"
+description = "Runtime API definition for the contracts registry pallet."
+readme = "README.md"
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+pallet-contracts-registry = { version = "0.4.0", default-features = false, path = "../../../contracts-registry" }

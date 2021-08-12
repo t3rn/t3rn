@@ -14,16 +14,17 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
+frame-benchmarking = { version = "3.1.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8', optional = true }
 frame-support = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 frame-system = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+log = { version = "0.4.14", default-features = false }
 pallet-balances = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 pallet-timestamp = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 pallet-sudo = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+serde = { version = "1.0.124", optional = true, features = ["derive"] }
+sp-io = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 sp-runtime = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 sp-std = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-sp-io = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-frame-benchmarking = { version = "3.1.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8', optional = true }
-log = { version = "0.4.14", default-features = false }
 t3rn-primitives = { version = "0.1.0", default-features = false, path = "../primitives" }
 volatile-vm = { path = "../../../vm/volatile-vm", default-features = false }
 
@@ -33,19 +34,20 @@ sp-core = { version = "3.0.0", git = "https://github.com/paritytech/substrate", 
 [features]
 default = ["std"]
 std = [
-	"codec/std",
-	"frame-benchmarking/std",
-	"frame-support/std",
-	"frame-system/std",
-	"log/std",
-	"pallet-balances/std",
-	"pallet-sudo/std",
-	"pallet-timestamp/std",
-	"sp-io/std",
-	"sp-runtime/std",
-	"sp-std/std",
-	"t3rn-primitives/std",
-	"volatile-vm/std",
+    "codec/std",
+    "frame-benchmarking/std",
+    "frame-support/std",
+    "frame-system/std",
+    "log/std",
+    "pallet-balances/std",
+    "pallet-sudo/std",
+    "pallet-timestamp/std",
+    "serde/std",
+    "sp-io/std",
+    "sp-runtime/std",
+    "sp-std/std",
+    "t3rn-primitives/std",
+    "volatile-vm/std",
 ]
 runtime-benchmarks = ["frame-benchmarking"]
 try-runtime = ["frame-support/try-runtime"]
