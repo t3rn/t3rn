@@ -161,8 +161,7 @@ impl Get<u64> for ExistentialDeposit {
     }
 }
 
-//ToDo: Uncomment when upgrading to v4.0.0 substrate
-// impl pallet_randomness_collective_flip::Config for Test {}
+impl pallet_randomness_collective_flip::Config for Test {}
 
 impl pallet_balances::Config for Test {
     type MaxLocks = ();
@@ -172,9 +171,8 @@ impl pallet_balances::Config for Test {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
-    //ToDo: Uncomment when upgrading to v4.0.0 substrate
-    // type MaxReserves = ();
-    // type ReserveIdentifier = [u8; 8];
+    type MaxReserves = ();
+    type ReserveIdentifier = [u8; 8];
 }
 
 parameter_types! {

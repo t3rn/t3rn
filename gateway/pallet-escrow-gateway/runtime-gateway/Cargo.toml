@@ -16,23 +16,23 @@ bitflags = "1.2.0"
 reduce = "0.1.4"
 anyhow = "*"
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
-frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' }
-frame-system = { default-features = false, git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' }
-pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' }
-pallet-sudo = { default-features = false, git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' }
-pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' }
-pallet-transaction-payment = { default-features = false, git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' }
-pallet-randomness-collective-flip = { default-features = false, git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' }
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+frame-system = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+pallet-sudo = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+pallet-transaction-payment = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+pallet-randomness-collective-flip = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 
-versatile-wasm = { version = "0.4.0", default-features = false, path = "../../../vm/versatile-wasm" }
+versatile-wasm = { default-features = false, path = "../../../vm/versatile-wasm" }
 t3rn-primitives = { version = "0.1.0", default-features = false, path = "../../../circuit/src/primitives" }
 
-sp-std = { default-features = false, git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' }
-sp-core = { default-features = false, git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' }
-sp-wasm-interface = { default-features = false, git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' }
-sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' }
+sp-std = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+sp-core = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+sp-wasm-interface = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 
-sp-io = { default-features = false, git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' }
+sp-io = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 
 pallet-bridge-messages = {default-features = false, path = "../../../vendor/bridges/modules/messages" }
 bp-messages = {default-features = false, path = "../../../vendor/bridges/primitives/messages" }

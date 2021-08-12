@@ -177,27 +177,29 @@ fn testnet_genesis(
     _enable_println: bool,
 ) -> GenesisConfig {
     GenesisConfig {
-        frame_system: SystemConfig {
+        system: SystemConfig {
             code: WASM_BINARY
                 .expect("Circuit development WASM not available")
                 .to_vec(),
             changes_trie_config: Default::default(),
         },
-        pallet_balances: BalancesConfig {
+        balances: BalancesConfig {
             balances: endowed_accounts
                 .iter()
                 .cloned()
                 .map(|k| (k, 1 << 50))
                 .collect(),
         },
-        pallet_aura: AuraConfig {
+        aura: AuraConfig {
             authorities: Vec::new(),
         },
-        pallet_grandpa: GrandpaConfig {
+        grandpa: GrandpaConfig {
             authorities: Vec::new(),
         },
-        pallet_sudo: SudoConfig { key: root_key },
-        pallet_session: SessionConfig {
+        sudo: SudoConfig {
+            key: root_key.clone(),
+        },
+        session: SessionConfig {
             keys: initial_authorities
                 .iter()
                 .map(|x| {
@@ -209,7 +211,7 @@ fn testnet_genesis(
                 })
                 .collect::<Vec<_>>(),
         },
-        pallet_evm: EVMConfig {
+        evm: EVMConfig {
             accounts: {
                 let mut map = BTreeMap::new();
                 map.insert(
@@ -226,66 +228,16 @@ fn testnet_genesis(
                 map
             },
         },
-        pallet_xdns: XDNSConfig {
+        xdns: XDNSConfig {
             known_xdns_records: Vec::new(),
         },
-        pallet_contracts_registry: ContractsRegistryConfig {
+        contracts_registry: ContractsRegistryConfig {
             known_contracts: Vec::new(),
         },
-        pallet_multi_finality_verifier: MultiFinalityVerifierConfig {
+        multi_finality_verifier: MultiFinalityVerifierConfig {
             owner: None,
             init_data: None,
         },
-        //ToDo: Uncomment when upgrading to v4.0.0 substrate
-        // system: SystemConfig {
-        //     code: WASM_BINARY
-        //         .expect("Circuit development WASM not available")
-        //         .to_vec(),
-        //     changes_trie_config: Default::default(),
-        // },
-        // balances: BalancesConfig {
-        //     balances: endowed_accounts
-        //         .iter()
-        //         .cloned()
-        //         .map(|k| (k, 1 << 50))
-        //         .collect(),
-        // },
-        // aura: AuraConfig {
-        //     authorities: Vec::new(),
-        // },
-        // grandpa: GrandpaConfig {
-        //     authorities: Vec::new(),
-        // },
-        // sudo: SudoConfig { key: root_key },
-        // session: SessionConfig {
-        //     keys: initial_authorities
-        //         .iter()
-        //         .map(|x| {
-        //             (
-        //                 x.0.clone(),
-        //                 x.0.clone(),
-        //                 session_keys(x.1.clone(), x.2.clone()),
-        //             )
-        //         })
-        //         .collect::<Vec<_>>(),
-        // },
-        // evm: EVMConfig {
-        //     accounts: {
-        //         let mut map = BTreeMap::new();
-        //         map.insert(
-        //             sp_core::H160::from_str("6be02d1d3665660d22ff9624b7be0551ee1ac91b")
-        //                 .expect("internal H160 is valid; qed"),
-        //             pallet_evm::GenesisAccount {
-        //                 balance: sp_core::U256::from_str("0xffffffffffffffffffffffffffffffff")
-        //                     .expect("internal U256 is valid; qed"),
-        //                 code: Default::default(),
-        //                 nonce: Default::default(),
-        //                 storage: Default::default(),
-        //             },
-        //         );
-        //         map
-        //     },
-        // },
     }
 }
 
