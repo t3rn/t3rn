@@ -261,7 +261,6 @@ where
             components_runtime.push(Compose {
                 name: component_rpc.name.into_boxed_bytes().to_vec(),
                 code_txt: component_rpc.code_txt.into_boxed_bytes().to_vec(),
-                gateway_id: component_rpc.gateway_id,
                 exec_type: component_rpc.exec_type.into_boxed_bytes().to_vec(),
                 dest: component_rpc.dest,
                 value: component_rpc.value,
