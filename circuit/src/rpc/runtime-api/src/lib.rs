@@ -43,7 +43,7 @@ sp_api::decl_runtime_apis! {
         /// Returns the contracts searchable by name or author
         fn fetch_contracts(
             author: AccountId,
-            name: Box<str>,
+            name: Vec<u8>,
         ) -> FetchContractsResult;
 
     }

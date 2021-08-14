@@ -31,42 +31,43 @@ pallet-shift-session-manager = { path = "../../../vendor/bridges/modules/shift-s
 pallet-contracts-registry = {  path = "../contracts-registry", default-features = false }
 pallet-circuit-execution-delivery = {  path = "../execution-delivery", default-features = false }
 pallet-xdns = { path = "../xdns", default-features = false }
-versatile-wasm = { path = "../../../vm/versatile-wasm", default-features = false }
+volatile-vm = { path = "../../../vm/volatile-vm", default-features = false }
 t3rn-primitives = { version = "0.1.0", default-features = false, path = "../primitives" }
+circuit-rpc-runtime-api = { path = "../rpc/runtime-api", default-features = false }
 
 # Smart contracts VMs
 pallet-evm = { path = "../../../vendor/frontier/frame/evm", default-features = false  }
 pallet-ethereum = { path = "../../../vendor/frontier/frame/ethereum", default-features = false  }
 pallet-evm-precompile-simple = { path = "../../../vendor/frontier/frame/evm/precompile/simple", default-features = false }
-pallet-contracts = { default-features = false, git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' }
+pallet-contracts = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 
 # Substrate Dependencies
-frame-executive = { git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' , default-features = false }
-frame-support = { git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' , default-features = false }
-frame-system = { git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' , default-features = false }
-frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' , default-features = false }
-pallet-aura = { git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' , default-features = false }
-pallet-balances = { git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' , default-features = false }
-pallet-grandpa = { git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' , default-features = false }
-pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' , default-features = false }
-pallet-session = { git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' , default-features = false }
-pallet-sudo = { git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' , default-features = false }
-pallet-timestamp = { git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' , default-features = false }
-pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' , default-features = false }
-pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' , default-features = false }
-sp-api = { git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' , default-features = false }
-sp-block-builder = { git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' , default-features = false }
-sp-consensus-aura = { git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' , default-features = false }
-sp-core = { git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' , default-features = false }
-sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' , default-features = false }
-sp-inherents = { git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' , default-features = false }
-sp-offchain = { git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' , default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' , default-features = false }
-sp-session = { git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' , default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' , default-features = false }
-sp-transaction-pool = { git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' , default-features = false }
-sp-trie = { git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' , default-features = false }
-sp-version = { git = "https://github.com/paritytech/substrate", tag = 'monthly-2021-06' , default-features = false }
+frame-executive = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+frame-support = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+pallet-aura = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+pallet-grandpa = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+pallet-session = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+sp-offchain = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+sp-session = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+sp-trie = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+sp-version = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
 
 [build-dependencies]
 substrate-wasm-builder = "3.0.0"
@@ -89,7 +90,7 @@ std = [
 	"pallet-aura/std",
 	"t3rn-primitives/std",
 	"pallet-xdns/std",
-	"versatile-wasm/std",
+	"volatile-vm/std",
 	# native contracts VMs
 	"pallet-contracts/std",
 	"pallet-evm/std",
@@ -109,6 +110,7 @@ std = [
 	"pallet-sudo/std",
 	"pallet-timestamp/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
+	"circuit-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
 	"serde",
 	"sp-api/std",
