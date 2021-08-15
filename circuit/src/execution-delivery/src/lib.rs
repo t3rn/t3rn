@@ -146,29 +146,6 @@ pub fn get_roots_from_bridge<T: pallet_multi_finality_verifier::Config<I>, I: 's
 /// The keys can be inserted manually via RPC (see `author_insertKey`).
 pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"circ");
 
-/// Based on the above `KeyTypeId` we need to generate a pallet-specific crypto type wrappers.
-/// We can use from supported crypto kinds (`sr25519`, `ed25519` and `ecdsa`) and augment
-/// the types with this pallet-specific identifier.
-pub mod crypto {
-    use sp_core::sr25519::Signature as Sr25519Signature;
-    use sp_runtime::{
-        app_crypto::{app_crypto, sr25519},
-        traits::Verify,
-    };
-
-    use super::KEY_TYPE;
-
-    app_crypto!(sr25519, KEY_TYPE);
-
-    pub struct TestAuthId;
-    impl frame_system::offchain::AppCrypto<<Sr25519Signature as Verify>::Signer, Sr25519Signature>
-        for TestAuthId
-    {
-        type RuntimeAppPublic = Public;
-        type GenericPublic = sp_core::sr25519::Public;
-        type GenericSignature = sp_core::sr25519::Signature;
-    }
-}
 
 pub fn select_validator_for_x_tx_dummy<T: Config>(
     _io_schedule: Vec<u8>,
@@ -186,6 +163,7 @@ pub fn select_validator_for_x_tx_dummy<T: Config>(
 pub type XtxId<T> = <T as frame_system::Config>::Hash;
 
 pub type AuthorityId = crate::message_assembly::signer::app::Public;
+pub type AuthorityPair = crate::message_assembly::signer::app::Pair;
 
 /// A composable cross-chain (X) transaction that has already been verified to be valid and submittable
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
