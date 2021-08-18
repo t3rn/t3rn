@@ -298,7 +298,6 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
         let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
         let raw_slot_duration = slot_duration.slot_duration();
 
-        //ToDo: Uncomment when upgrading to v4.0.0 substrate
         let aura = sc_consensus_aura::start_aura::<AuraPair, _, _, _, _, _, _, _, _, _, _, _>(
             StartAuraParams {
                 slot_duration,
