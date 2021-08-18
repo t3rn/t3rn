@@ -28,7 +28,7 @@ use serde::{Deserialize, Serialize};
 use codec::{Decode, Encode};
 use frame_support::dispatch::DispatchResult;
 use frame_system::ensure_signed;
-use sp_runtime::{traits::Hash, RuntimeDebug};
+use sp_runtime::{traits::Hash as Hashing, RuntimeDebug};
 use sp_std::prelude::*;
 use t3rn_primitives::{abi::ContractActionDesc, transfers::BalanceOf, ChainId, Compose};
 use volatile_vm::storage::RawAliveContractInfo;
@@ -43,7 +43,7 @@ mod tests;
 
 mod weights;
 
-use t3rn_primitives::contract::ContractMetadata;
+use t3rn_primitives::contract_metadata::ContractMetadata;
 pub use weights::*;
 
 pub type RegistryContractId<T> = <T as frame_system::Config>::Hash;
@@ -69,14 +69,14 @@ pub struct RegistryContract<Hash, AccountId, BalanceOf, BlockNumber> {
     pub bytes: Vec<u8>,
     /// Original code author
     pub author: AccountId,
-    /// Optional renumeration fee for the author
+    /// Optional remuneration fee for the author
     pub author_fees_per_single_use: Option<BalanceOf>,
     /// Optional ABI
     pub abi: Option<Vec<u8>>,
     /// Action descriptions (calls for now)
     pub action_descriptions: Vec<ContractActionDesc<Hash, ChainId, AccountId>>,
     /// Contracts Info after Contracts Pallet
-    pub info: RawAliveContractInfo<Hash, BalanceOf, BlockNumber>,
+    pub info: Option<RawAliveContractInfo<Hash, BalanceOf, BlockNumber>>,
     /// Contract metadata to be used in queries
     pub meta: ContractMetadata,
 }
@@ -91,7 +91,7 @@ impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode>
         author_fees_per_single_use: Option<BalanceOf>,
         abi: Option<Vec<u8>>,
         action_descriptions: Vec<ContractActionDesc<Hash, ChainId, AccountId>>,
-        info: RawAliveContractInfo<Hash, BalanceOf, BlockNumber>,
+        info: Option<RawAliveContractInfo<Hash, BalanceOf, BlockNumber>>,
         meta: ContractMetadata,
     ) -> Self {
         RegistryContract {
@@ -118,7 +118,7 @@ impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode>
         author: AccountId,
         author_fees_per_single_use: Option<BalanceOf>,
         abi: Option<Vec<u8>>,
-        info: RawAliveContractInfo<Hash, BalanceOf, BlockNumber>,
+        info: Option<RawAliveContractInfo<Hash, BalanceOf, BlockNumber>>,
         meta: ContractMetadata,
     ) -> RegistryContract<Hash, AccountId, BalanceOf, BlockNumber> {
         RegistryContract::new(
@@ -247,6 +247,7 @@ pub mod pallet {
 
     // Errors inform users that something went wrong.
     #[pallet::error]
+    #[derive(Eq, PartialEq)]
     pub enum Error<T> {
         /// Stored contract has already been added before
         ContractAlreadyExists,
@@ -315,17 +316,18 @@ impl<T: Config> Pallet<T> {
     }
 
     pub fn fetch_contracts(
-        origin: T::Origin,
-        contract_id: Option<RegistryContractId<T>>,
-        (author, metadata): (Option<T::AccountId>, Option<Vec<u8>>),
-    ) -> Result<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>, Error<T>>
+        // origin: T::Origin,
+        // contract_id: Option<RegistryContractId<T>>,
+        author: Option<T::AccountId>,
+        metadata: Option<Vec<u8>>,
+    ) -> Result<Vec<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>>, Error<T>>
     {
-        let _sender = ensure_signed(origin).map_err(|_| "unsigned origin");
+        // let _sender = ensure_signed(origin).map_err(|_| "unsigned origin");
 
         // if contract id is provided, search by it and return
-        if contract_id.is_some() {
-            return pallet::Pallet::<T>::fetch_contract_by_id(contract_id.unwrap());
-        }
+        // if contract_id.is_some() {
+        //     return pallet::Pallet::<T>::fetch_contract_by_id(contract_id.unwrap());
+        // }
 
         // helper function to find a number of byte slice inside a larger slice
         fn find_subsequence(haystack: Vec<u8>, needle: &[u8]) -> Option<usize> {
@@ -334,23 +336,35 @@ impl<T: Config> Pallet<T> {
                 .position(|window| window == needle)
         }
 
-        // otherwise try to search by author or metadata
-        let contract = pallet::ContractsRegistry::<T>::iter_values().find(
-            |contract: &RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>| {
-                match (author.clone(), metadata.clone()) {
-                    (Some(author), Some(text)) => {
-                        contract.author == author
-                            && find_subsequence(contract.meta.encode(), text.as_slice()).is_some()
-                    }
-                    (Some(author), None) => contract.author == author,
-                    (None, Some(text)) => {
-                        find_subsequence(contract.meta.encode(), text.as_slice()).is_some()
-                    }
-                    (None, None) => false,
-                }
-            },
-        );
+        // otherwise try to find contracts by author or metadata
+        let contracts: Vec<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>> =
+            pallet::ContractsRegistry::<T>::iter_values()
+                .filter(
+                    |contract: &RegistryContract<
+                        T::Hash,
+                        T::AccountId,
+                        BalanceOf<T>,
+                        T::BlockNumber,
+                    >| {
+                        match (author.clone(), metadata.clone()) {
+                            (Some(author), Some(text)) => {
+                                contract.author == author
+                                    && find_subsequence(contract.meta.encode(), text.as_slice())
+                                        .is_some()
+                            }
+                            (Some(author), None) => contract.author == author,
+                            (None, Some(text)) => {
+                                find_subsequence(contract.meta.encode(), text.as_slice()).is_some()
+                            }
+                            (None, None) => false,
+                        }
+                    },
+                )
+                .collect();
 
-        Ok(contract.unwrap())
+        if contracts.len() == 0 {
+            return Err(pallet::Error::<T>::UnknownContract);
+        }
+        Ok(contracts)
     }
 }

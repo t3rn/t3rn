@@ -20,7 +20,10 @@
 #![cfg(test)]
 
 use crate as pallet_contracts_registry;
-use frame_support::{construct_runtime, parameter_types, weights::Weight};
+use crate::RegistryContract;
+use frame_support::{
+    construct_runtime, pallet_prelude::GenesisBuild, parameter_types, weights::Weight,
+};
 use sp_core::H256;
 use sp_runtime::{
     testing::Header,
@@ -83,7 +86,7 @@ impl frame_system::Config for Test {
 }
 
 parameter_types! {
-    // pub const MaxReserves: u32 = 50;
+    pub const MaxReserves: u32 = 50;
     pub const ExistentialDeposit: u64 = 1;
 }
 
@@ -95,8 +98,8 @@ impl pallet_balances::Config for Test {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
-    // type MaxReserves = MaxReserves;
-    // type ReserveIdentifier = [u8; 8];
+    type MaxReserves = MaxReserves;
+    type ReserveIdentifier = [u8; 8];
 }
 
 parameter_types! {
@@ -126,14 +129,44 @@ impl pallet_contracts_registry::Config for Test {
     type WeightInfo = ();
 }
 
-pub(crate) struct ExtBuilder {}
+pub(crate) struct ExtBuilder {
+    known_contracts: Vec<RegistryContract<H256, AccountId, Balance, BlockNumber>>,
+}
 
 impl Default for ExtBuilder {
     fn default() -> ExtBuilder {
-        ExtBuilder {}
+        ExtBuilder {
+            known_contracts: vec![],
+        }
     }
 }
 
-// impl ExtBuilder {
-//     pub(crate) fn build(self) -> sp_io::TestExternalities {}
-// }
+impl ExtBuilder {
+    pub(crate) fn with_contracts(
+        mut self,
+        contracts: Vec<RegistryContract<H256, AccountId, Balance, BlockNumber>>,
+    ) -> ExtBuilder {
+        self.known_contracts = contracts;
+        self
+    }
+
+    pub(crate) fn build(self) -> sp_io::TestExternalities {
+        let mut t = frame_system::GenesisConfig::default()
+            .build_storage::<Test>()
+            .expect("Frame system builds valid default genesis config");
+
+        pallet_balances::GenesisConfig::<Test> { balances: vec![] }
+            .assimilate_storage(&mut t)
+            .expect("Pallet balances storage can be assimilated");
+
+        pallet_contracts_registry::GenesisConfig::<Test> {
+            known_contracts: vec![],
+        }
+        .assimilate_storage(&mut t)
+        .expect("Pallet contracts registry can be assimilated");
+
+        let mut ext = sp_io::TestExternalities::new(t);
+        ext.execute_with(|| System::set_block_number(1));
+        ext
+    }
+}

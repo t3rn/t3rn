@@ -40,13 +40,5 @@ sp_api::decl_runtime_apis! {
             gas_limit: u64,
             input_data: Vec<u8>,
         ) -> Result<ComposableExecResult, DispatchError>;
-
-        /// Returns the contracts searchable by name, author or metadata
-        fn fetch_contracts(
-            origin: AccountId,
-            contract_id: Option<RegistryContractId<Hash>>,
-            author: Option<AccountId>,
-            metadata: Option<Vec<u8>>,
-        ) -> FetchContractsResult;
     }
 }

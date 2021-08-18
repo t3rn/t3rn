@@ -12,9 +12,9 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.0.0" }
-jsonrpc-core = "14.2.0"
-jsonrpc-core-client = "14.2.0"
-jsonrpc-derive = "14.2.1"
+jsonrpc-core = "18.0.0"
+jsonrpc-core-client = "18.0.0"
+jsonrpc-derive = "18.0.0"
 sp-blockchain = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 sp-core = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 sp-rpc = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
@@ -25,7 +25,8 @@ sp-api = { git = "https://github.com/paritytech/substrate.git", branch = 'polkad
 pallet-contracts-primitives = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 t3rn-primitives = { version = "0.1.0", path = "../primitives" }
 circuit-rpc-runtime-api = { version = "0.1.0", path = "./runtime-api" }
-pallet-contracts-registry = { path = "../contracts-registry" }
+#pallet-contracts-registry = { path = "../contracts-registry" }
+pallet-contracts-registry-rpc = { path = "../contracts-registry/rpc" }
 
 [dev-dependencies]
 serde_json = "1.0.41"

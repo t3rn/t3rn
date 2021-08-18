@@ -161,3 +161,29 @@ impl Default for ContractMetadata {
         }
     }
 }
+
+impl ContractMetadata {
+    pub fn new(
+        metadata_version: Vec<u8>,
+        name: Vec<u8>,
+        version: Vec<u8>,
+        authors: Vec<Vec<u8>>,
+        description: Option<Vec<u8>>,
+        documentation: Option<Vec<u8>>,
+        repository: Option<Vec<u8>>,
+        homepage: Option<Vec<u8>>,
+        license: Option<Vec<u8>>,
+    ) -> ContractMetadata {
+        ContractMetadata {
+            metadata_version,
+            name,
+            version,
+            authors,
+            description,
+            documentation,
+            repository,
+            homepage,
+            license,
+        }
+    }
+}

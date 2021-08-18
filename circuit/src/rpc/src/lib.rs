@@ -16,6 +16,7 @@ use std::sync::Arc;
 
 use jsonrpc_core::{Error, ErrorCode, Result};
 use jsonrpc_derive::rpc;
+use pallet_contracts_registry_rpc::ContractsRegistryApi;
 use serde::{Deserialize, Serialize};
 use sp_api::codec::Codec;
 use sp_api::ProvideRuntimeApi;
@@ -29,8 +30,8 @@ use sp_runtime::{
 use sp_std::{prelude::*, str};
 use std::convert::TryInto;
 
-pub use self::gen_client::Client as ContractsClient;
 pub use circuit_rpc_runtime_api::{self as runtime_api, CircuitApi as CircuitRuntimeApi};
+use pallet_contracts_registry::ContractsRegistry;
 use t3rn_primitives::{ChainId, ComposableExecResult, Compose, ContractAccessError};
 
 const RUNTIME_ERROR: i64 = 1;
@@ -197,6 +198,7 @@ where
         Balance,
         <<Block as BlockT>::Header as HeaderT>::Number,
     >,
+    C::Api: pallet_contracts_registry_rpc::ContractsRegistryRuntimeApi<Block, AccountId>,
     AccountId: Codec,
     Balance: Codec,
 {
@@ -290,6 +292,16 @@ fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> Error {
         message: "Runtime trapped".into(),
         data: Some(format!("{:?}", err).into()),
     }
+}
+
+pub fn create_full<C, Block>() -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
+where
+    Block: BlockT,
+    C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
+{
+    let mut io = jsonrpc_core::IoHandler::default();
+
+    io.extend_with(ContractsRegistry)
 }
 
 #[cfg(test)]

@@ -32,7 +32,7 @@ use std::fmt::Debug;
 use sp_std::prelude::*;
 
 pub mod abi;
-pub mod contract;
+pub mod contract_metadata;
 pub mod gateway_inbound_protocol;
 pub mod transfers;
 
