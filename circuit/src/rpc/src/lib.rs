@@ -16,7 +16,7 @@ use std::sync::Arc;
 
 use jsonrpc_core::{Error, ErrorCode, Result};
 use jsonrpc_derive::rpc;
-use pallet_contracts_registry_rpc::ContractsRegistryApi;
+use pallet_contracts_registry_rpc::{ContractsRegistry, ContractsRegistryApi};
 use serde::{Deserialize, Serialize};
 use sp_api::codec::Codec;
 use sp_api::ProvideRuntimeApi;
@@ -48,7 +48,13 @@ const CONTRACT_IS_A_TOMBSTONE: i64 = 3;
 /// https://github.com/paritytech/substrate/pull/5446
 const GAS_PER_SECOND: u64 = 1_000_000_000_000;
 
-/// A private newtype for converting `ContractAccessError` into an RPC error.
+/// Full client dependencies.
+pub struct FullDeps<C> {
+    /// The client instance to use.
+    pub client: Arc<C>,
+}
+
+/// A private new type for converting `ContractAccessError` into an RPC error.
 struct RPCContractAccessError(ContractAccessError);
 impl From<RPCContractAccessError> for Error {
     fn from(e: RPCContractAccessError) -> Error {
@@ -273,7 +279,6 @@ where
         _name: Box<str>,
         _at: Option<<Block as BlockT>::Hash>,
     ) -> Result<RpcFetchContractsResult> {
-        let x = pallet_contracts_registry::pallet::Pallet::contracts_registry;
         let result = pallet_contracts_registry::Pallet::fetch_contract_by_author(_author)
             .map_err(|err| runtime_error_into_rpc_err(err))?;
 
@@ -294,14 +299,18 @@ fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> Error {
     }
 }
 
-pub fn create_full<C, Block>() -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
+pub fn create_full<C, Block>(deps: FullDeps<C>) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
 where
     Block: BlockT,
     C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
 {
     let mut io = jsonrpc_core::IoHandler::default();
+    let FullDeps { client } = deps;
 
-    io.extend_with(ContractsRegistry)
+    io.extend_with(ContractsRegistryApi::to_delegate(ContractsRegistry::new(
+        client.clone(),
+    )));
+    io
 }
 
 #[cfg(test)]

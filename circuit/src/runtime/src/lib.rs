@@ -935,7 +935,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl circuit_rpc_runtime_api::CircuitApi<Block, AccountId, Balance, BlockNumber> for Runtime
+    impl circuit_rpc_runtime_api::CircuitApi<Block, AccountId, Balance, BlockNumber, Hash> for Runtime
     {
         fn composable_exec(
             origin: AccountId,
@@ -944,20 +944,6 @@ impl_runtime_apis! {
             gas_limit: u64,
             input_data: Vec<u8>,
             ) -> Result<ComposableExecResult, DispatchError> { todo!() }
-
-        fn fetch_contracts(
-            origin: AccountId,
-            contract_id: Option<pallet_contracts_registry::RegistryContractId<Runtime>>,
-            author: Option<AccountId>,
-            metadata: Option<Vec<u8>>,
-        ) -> FetchContractsResult {
-        let contract = ContractsRegistry::fetch_contracts(origin, contract_id, (author, metadata));
-        if contract.is_err() {
-            Err(ContractAccessError::DoesntExist)
-        } else {
-            Ok(contract.unwrap().encode())
-        }
-    }
     }
 }
 

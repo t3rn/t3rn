@@ -304,6 +304,7 @@ impl<T: Config> Pallet<T> {
     }
 
     /// Internal function that queries the RegistryContract storage for a contract by its ID
+    #[allow(dead_code)]
     fn fetch_contract_by_id(
         contract_id: RegistryContractId<T>,
     ) -> Result<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>, Error<T>>

@@ -1060,6 +1060,7 @@ dependencies = [
 name = "circuit-rpc-runtime-api"
 version = "0.1.0"
 dependencies = [
+ "frame-system",
  "pallet-contracts-registry-rpc-runtime-api",
  "parity-scale-codec",
  "sp-api",
@@ -4758,6 +4759,7 @@ dependencies = [
  "jsonrpc-derive 18.0.0",
  "pallet-contracts-registry-rpc-runtime-api",
  "parity-scale-codec",
+ "serde",
  "sp-api",
  "sp-blockchain",
  "sp-core",

@@ -5,6 +5,7 @@ mod types;
 use std::sync::Arc;
 
 pub use self::gen_client::Client as ContractsRegistryClient;
+use crate::types::RpcFetchContractsResult;
 use jsonrpc_core::{Error as RpcError, ErrorCode, Result};
 use jsonrpc_derive::rpc;
 pub use pallet_contracts_registry_rpc_runtime_api::ContractsRegistryApi as ContractsRegistryRuntimeApi;
@@ -24,7 +25,7 @@ pub trait ContractsRegistryApi<BlockHash, AccountId> {
         &self,
         author: Option<AccountId>,
         data: Option<Bytes>,
-    ) -> Result<FetchContractsResult>;
+    ) -> Result<RpcFetchContractsResult>;
 
     /// Returns a single contract searchable by id
     #[rpc(name = "contractsRegistry_fetchContractById")]

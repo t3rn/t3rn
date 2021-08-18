@@ -18,9 +18,13 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_runtime::{codec::Codec, traits::MaybeDisplay, DispatchError};
+use sp_runtime::{
+    codec::Codec,
+    traits::{MaybeDisplay, MaybeFromStr},
+    DispatchError,
+};
 use sp_std::vec::Vec;
-use t3rn_primitives::{ComposableExecResult, Compose, FetchContractsResult, RegistryContractId};
+use t3rn_primitives::{ComposableExecResult, Compose};
 
 sp_api::decl_runtime_apis! {
     /// The API to interact with contracts without using executive.
@@ -28,7 +32,7 @@ sp_api::decl_runtime_apis! {
         AccountId: Codec + MaybeDisplay + MaybeFromStr,
         Balance: Codec + MaybeDisplay + MaybeFromStr,
         BlockNumber: Codec + MaybeDisplay + MaybeFromStr,
-        Hash: Codec + MaybeDisplay + MaybeFromStr + frame_system::pallet::Config
+        Hash: Codec + MaybeDisplay + MaybeFromStr + sp_std::hash::Hash
     {
         /// Perform a composable execution from a specified account to a appointed gateways.
         ///
