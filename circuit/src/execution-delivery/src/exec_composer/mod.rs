@@ -361,7 +361,6 @@ mod tests {
     use sp_keystore::{KeystoreExt, SyncCryptoStore};
     use sp_runtime::AccountId32;
     use std::str::FromStr;
-    use t3rn_primitives::MessagePayload;
 
     fn make_compose_out_of_raw_wat_code<T: Config>(
         wat: &str,
@@ -638,8 +637,10 @@ mod tests {
             assert_eq!(
                 res,
                 Ok((
-                    vec![CircuitOutboundMessage::Write {
+                    vec![CircuitOutboundMessage {
                         name: b"call".to_vec(),
+                        module_name: b"state".to_vec(),
+                        method_name: b"call".to_vec(),
                         arguments: vec![vec![4, 95], vec![1, 2, 3, 4]],
                         expected_output: vec![
                             GatewayExpectedOutput::Events {
@@ -651,10 +652,9 @@ mod tests {
                                 output: b"dynamic_bytes".to_vec()
                             }
                         ],
-                        payload: MessagePayload::Rpc {
-                            module_name: b"State".to_vec(),
-                            method_name: b"Call".to_vec(),
-                        }
+                        extra_payload: None,
+                        sender: None,
+                        target: None,
                     }],
                     // Break round after 1 message
                     1u16
