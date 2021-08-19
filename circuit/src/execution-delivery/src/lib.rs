@@ -146,7 +146,6 @@ pub fn get_roots_from_bridge<T: pallet_multi_finality_verifier::Config<I>, I: 's
 /// The keys can be inserted manually via RPC (see `author_insertKey`).
 pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"circ");
 
-
 pub fn select_validator_for_x_tx_dummy<T: Config>(
     _io_schedule: Vec<u8>,
 ) -> Result<T::AccountId, &'static str> {
@@ -163,7 +162,6 @@ pub fn select_validator_for_x_tx_dummy<T: Config>(
 pub type XtxId<T> = <T as frame_system::Config>::Hash;
 
 pub type AuthorityId = crate::message_assembly::signer::app::Public;
-pub type AuthorityPair = crate::message_assembly::signer::app::Pair;
 
 /// A composable cross-chain (X) transaction that has already been verified to be valid and submittable
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]

@@ -4,7 +4,10 @@ use frame_metadata::{
 use sp_core::H256;
 use sp_version::{ApisVec, RuntimeVersion};
 
-use crate::crypto::Public;
+use sp_std::vec;
+use sp_std::vec::Vec;
+
+use crate::AuthorityId;
 
 use crate::message_assembly::chain_generic_metadata::*;
 use crate::message_assembly::substrate_gateway_protocol::*;
@@ -52,7 +55,7 @@ pub fn create_test_metadata(
     let runtime_metadata = RuntimeMetadataV13 {
         extrinsic: ExtrinsicMetadata {
             version: 1,
-            signed_extensions: vec![DecodeDifferent::Decoded(String::from("test"))],
+            signed_extensions: vec![DecodeDifferent::Encode("test")],
         },
         modules: DecodeDifferent::Decoded(modules),
     };
@@ -71,15 +74,15 @@ pub fn create_test_runtime_version() -> RuntimeVersion {
     }
 }
 
-pub fn create_submitter() -> Public {
-    Public::default()
+pub fn create_submitter() -> AuthorityId {
+    AuthorityId::default()
 }
 
 pub fn create_test_genesis_hash() -> H256 {
     [0_u8; 32].into()
 }
 
-pub fn create_default_test_gateway_protocol() -> SubstrateGatewayProtocol<Public, H256> {
+pub fn create_default_test_gateway_protocol() -> SubstrateGatewayProtocol<AuthorityId, H256> {
     SubstrateGatewayProtocol::new(
         Metadata::default(),
         create_test_runtime_version(),
@@ -89,9 +92,8 @@ pub fn create_default_test_gateway_protocol() -> SubstrateGatewayProtocol<Public
 }
 
 pub fn create_test_stuffed_gateway_protocol(
-    submitter: Public,
-) -> SubstrateGatewayProtocol<Public, H256> {
-
+    submitter: AuthorityId,
+) -> SubstrateGatewayProtocol<AuthorityId, H256> {
     let modules_with_functions: Vec<(&'static str, Vec<&'static str>)> = vec![
         ("balances", vec!["transfer"]),
         ("state", vec!["call"]),
@@ -116,12 +118,10 @@ pub fn create_test_stuffed_gateway_protocol(
     )
 }
 
-
-
 pub fn create_test_gateway_protocol(
     modules_with_functions: Vec<(&'static str, Vec<&'static str>)>,
-    submitter: Public,
-) -> SubstrateGatewayProtocol<Public, H256> {
+    submitter: AuthorityId,
+) -> SubstrateGatewayProtocol<AuthorityId, H256> {
     SubstrateGatewayProtocol::new(
         create_test_metadata(modules_with_functions),
         create_test_runtime_version(),
