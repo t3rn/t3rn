@@ -161,46 +161,68 @@ pub trait EscrowTrait: frame_system::Config + pallet_sudo::Config {
 type Bytes = Vec<u8>;
 
 /// Outbound Step that specifies expected transmission medium for relayers connecting with that gateway.
+/// Request message format that derivative of could be compatible with JSON-RPC API
+/// with either signed or unsigned payload or custom transmission medium like XCMP protocol
 #[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub enum CircuitOutboundMessage {
-    /// Request compatible with JSON-RPC API of receiving node
-    Read {
-        /// Method name on the VM
-        name: Bytes,
-        /// Array of next arguments: encoded bytes of arguments that that JSON-RPC API expects
-        arguments: Vec<Bytes>,
-        /// Expected results that will be decoded and checked against the format
-        expected_output: Vec<GatewayExpectedOutput>,
-        /// Expected results
-        payload: MessagePayload,
-    },
-    /// Transaction (in substrate extrinics), signed offline and including dispatch call(s)
-    Write {
-        /// Method name on the VM
-        name: Bytes,
-        /// Array of next arguments: encoded bytes of arguments that that JSON-RPC API expects
-        arguments: Vec<Bytes>,
-        /// Expected results
-        expected_output: Vec<GatewayExpectedOutput>,
-        /// Expected results
-        payload: MessagePayload,
-    },
-    /// Custom transmission medium (like Substrate's XCMP)
-    Escrowed {
-        /// Method name on the VM
-        name: Bytes,
-        /// Encoded sender's public key
-        sender: Bytes,
-        /// Encoded target's public key
-        target: Bytes,
-        /// Array of next arguments: encoded bytes of arguments that that JSON-RPC API expects
-        arguments: Vec<Bytes>,
-        /// Expected results
-        expected_output: Vec<GatewayExpectedOutput>,
-        /// Expected results
-        payload: MessagePayload,
-    },
+pub struct CircuitOutboundMessage {
+    /// Message name/identifier
+    pub name: Bytes,
+    /// Module/pallet name
+    pub module_name: Bytes,
+    /// Method name
+    pub method_name: Bytes,
+    /// Encoded sender's public key
+    pub sender: Option<Bytes>,
+    /// Encoded target's public key
+    pub target: Option<Bytes>,
+    /// Array of next arguments: encoded bytes of arguments that that JSON-RPC API expects
+    pub arguments: Vec<Bytes>,
+    /// Expected results
+    pub expected_output: Vec<GatewayExpectedOutput>,
+    /// Extra payload in case the message is signed or uses custom delivery protocols like XCMP
+    pub extra_payload: Option<ExtraMessagePayload>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct RpcPayloadUnsigned<'a> {
+    pub method_name: &'a str,
+    pub params: Vec<Bytes>
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct RpcPayloadSigned<'a> {
+    pub method_name: &'a str,
+    pub signed_extrinsic: Bytes,
+}
+
+impl CircuitOutboundMessage {
+
+    pub fn to_jsonrpc_unsigned(&self) -> Result<RpcPayloadUnsigned, &'static str> {
+        let method_name: &str =
+            sp_std::str::from_utf8(&self.name[..]).map_err(|_| "`Can't decode method name to &str")?;
+
+        Ok(
+            RpcPayloadUnsigned {
+                method_name,
+                params: self.arguments.clone()
+            }
+        )
+    }
+
+    pub fn to_jsonrpc_signed(&self) -> Result<RpcPayloadUnsigned, &'static str> {
+        let method_name: &str =
+            sp_std::str::from_utf8(&self.name[..]).map_err(|_| "`Can't decode method name to &str")?;
+
+        Ok(
+            RpcPayloadUnsigned {
+                method_name,
+                params: self.arguments.clone()
+            }
+        )
+    }
 }
 
 /// Inclusion proofs of different tries
@@ -250,43 +272,26 @@ pub enum GatewayExpectedOutput {
 }
 
 /// Outbound Step that specifies expected transmission medium for relayers connecting with that gateway.
+/// Extra payload in case the message is signed ro has other custom parameters required by linking protocol.
 #[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub enum MessagePayload {
-    Signed {
-        signer: Bytes,
-        /// Encoded utf-8 string of module name that implements requested entrypoint
-        module_name: Bytes,
-        /// Encoded utf-8 string of method name that implements requested entrypoint
-        method_name: Bytes,
-        /// Encoded call bytes
-        call_bytes: Bytes,
-        /// Encoded tx signature
-        signature: Bytes,
-        /// Encoded extras to that transctions, like versions and gas price /tips for miners. Check GenericExtra for more info.
-        extra: Bytes,
-    },
-    /// Request compatible with JSON-RPC API of receiving node
-    Rpc {
-        /// Encoded utf-8 string of module name that implements requested entrypoint
-        module_name: Bytes,
-        /// Encoded utf-8 string of method name that implements requested entrypoint
-        method_name: Bytes,
-    },
-    /// Transaction (in substrate extrinics), signed offline and including dispatch call(s)
-    TransactionDispatch {
-        /// Encoded call bytes
-        call_bytes: Bytes,
-        /// Encoded tx signature
-        signature: Bytes,
-        /// Encoded extras to that transctions, like versions and gas price /tips for miners. Check GenericExtra for more info.
-        extra: Bytes,
-    },
-    /// Custom transmission medium (like Substrate's XCMP)
-    Custom {
-        /// Custom message bytes, that would have to be decoded by the receiving end.
-        payload: Bytes,
-    },
+pub struct ExtraMessagePayload {
+    pub signer: Bytes,
+    /// Encoded utf-8 string of module name that implements requested entrypoint
+    pub module_name: Bytes,
+    /// Encoded utf-8 string of method name that implements requested entrypoint
+    pub method_name: Bytes,
+    /// Encoded call bytes
+    pub call_bytes: Bytes,
+    /// Encoded tx signature
+    pub signature: Bytes,
+    /// Encoded extras to that transctions, like versions and gas price /tips for miners. Check GenericExtra for more info.
+    pub extra: Bytes,
+    /// Encoded and signed transaction ready to send
+    pub tx_signed: Bytes,
+    /// Custom message bytes, that would have to be decoded by the receiving end.
+    /// Could be utilized by custom transmission medium (like Substrate's XCMP)
+    pub custom_payload: Option<Bytes>
 }
 
 /// Retrieves all available gateways for a given ChainId.
