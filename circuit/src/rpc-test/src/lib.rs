@@ -20,6 +20,3 @@
 
 #[cfg(test)]
 mod tests;
-
-#[cfg(test)]
-pub mod testing;

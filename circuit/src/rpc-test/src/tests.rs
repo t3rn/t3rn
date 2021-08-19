@@ -18,7 +18,9 @@
 
 use std::sync::Arc;
 
-use sp_keystore::testing::KeyStore;
+use sp_core::crypto::KeyTypeId;
+
+use sp_application_crypto::AppPair;
 
 use sc_transaction_pool::{BasicPool, FullChainApi};
 use substrate_test_runtime_client::{
@@ -26,6 +28,10 @@ use substrate_test_runtime_client::{
     runtime::{Block, Extrinsic, Transfer},
     AccountKeyring, Backend, Client, DefaultTestClientBuilderExt, TestClientBuilderExt,
 };
+
+use sp_keystore::{KeystoreExt, SyncCryptoStore, SyncCryptoStorePtr};
+
+use sp_io::TestExternalities;
 
 use hex_literal::hex;
 use sc_rpc::author::{Author, AuthorApi};
@@ -38,7 +44,51 @@ use sp_utils::mpsc::tracing_unbounded;
 use jsonrpc_pubsub::manager::SubscriptionManager;
 use t3rn_primitives::*;
 
-fn _uxt(sender: AccountKeyring, nonce: u64) -> Extrinsic {
+use pallet_circuit_execution_delivery::message_assembly::test_utils::create_test_stuffed_gateway_protocol;
+
+use futures::{compat::Future01CompatExt, executor, FutureExt};
+use jsonrpc_core::futures::future as future01;
+
+use sc_keystore::LocalKeystore;
+use sp_keyring::Sr25519Keyring;
+
+// Executor shared by all tests.
+//
+// This shared executor is used to prevent `Too many open files` errors
+// on systems with a lot of cores.
+lazy_static::lazy_static! {
+    static ref EXECUTOR: executor::ThreadPool = executor::ThreadPool::new()
+        .expect("Failed to create thread pool executor for tests");
+}
+
+type Boxed01Future01 = Box<dyn future01::Future<Item = (), Error = ()> + Send + 'static>;
+
+/// Executor for use in testing
+pub struct TaskExecutor;
+impl future01::Executor<Boxed01Future01> for TaskExecutor {
+    fn execute(
+        &self,
+        future: Boxed01Future01,
+    ) -> std::result::Result<(), future01::ExecuteError<Boxed01Future01>> {
+        EXECUTOR.spawn_ok(future.compat().map(drop));
+        Ok(())
+    }
+}
+
+/// creates keystore backed by a temp file
+fn create_temp_keystore<P: AppPair>(
+    authority: Sr25519Keyring,
+) -> (SyncCryptoStorePtr, tempfile::TempDir) {
+    let keystore_path = tempfile::tempdir().expect("Creates keystore path");
+    let keystore =
+        Arc::new(LocalKeystore::open(keystore_path.path(), None).expect("Creates keystore"));
+    SyncCryptoStore::sr25519_generate_new(&*keystore, KEY_TYPE, Some(&authority.to_seed()))
+        .expect("Creates authority key");
+
+    (keystore, keystore_path)
+}
+
+fn uxt(sender: AccountKeyring, nonce: u64) -> Extrinsic {
     let tx = Transfer {
         amount: Default::default(),
         nonce,
@@ -50,15 +100,20 @@ fn _uxt(sender: AccountKeyring, nonce: u64) -> Extrinsic {
 
 type FullTransactionPool = BasicPool<FullChainApi<Client<Backend>, Block>, Block>;
 
+pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"circ");
+
 struct TestSetup {
     pub client: Arc<Client<Backend>>,
-    pub keystore: Arc<KeyStore>,
+    pub keystore: SyncCryptoStorePtr,
     pub pool: Arc<FullTransactionPool>,
 }
 
 impl Default for TestSetup {
     fn default() -> Self {
-        let keystore = Arc::new(KeyStore::new());
+        let keystore = create_temp_keystore::<
+            pallet_circuit_execution_delivery::message_assembly::signer::app::Pair,
+        >(Sr25519Keyring::Alice)
+        .0;
         let client_builder = substrate_test_runtime_client::TestClientBuilder::new();
         let client = Arc::new(client_builder.set_keystore(keystore.clone()).build());
 
@@ -70,6 +125,7 @@ impl Default for TestSetup {
             spawner,
             client.clone(),
         );
+
         TestSetup {
             client,
             keystore,
@@ -83,7 +139,7 @@ impl TestSetup {
         Author::new(
             self.client.clone(),
             self.pool.clone(),
-            SubscriptionManager::new(Arc::new(crate::testing::TaskExecutor)),
+            SubscriptionManager::new(Arc::new(TaskExecutor)),
             self.keystore.clone(),
             DenyUnsafe::No,
         )
@@ -92,7 +148,7 @@ impl TestSetup {
     fn state(&self) -> State<Block, Client<Backend>> {
         let (state, _) = new_full(
             self.client.clone(),
-            SubscriptionManager::new(Arc::new(crate::testing::TaskExecutor)),
+            SubscriptionManager::new(Arc::new(TaskExecutor)),
             DenyUnsafe::No,
             None,
         );
@@ -134,7 +190,8 @@ fn rpc_prints_system_version() {
 }
 
 #[test]
-fn delivers_get_storage_outbound_message_from_circuit_to_external_gateway() {
+fn successfully_dispatches_unsigned_get_storage_outbound_message_from_circuit_to_external_gateway()
+{
     let p = TestSetup::default();
 
     let mut io = jsonrpc_core::MetaIoHandler::<sc_rpc::Metadata>::default();
@@ -154,28 +211,71 @@ fn delivers_get_storage_outbound_message_from_circuit_to_external_gateway() {
 
     let arguments = vec![key];
 
-    let get_storage_outbound_message: CircuitOutboundMessage = CircuitOutboundMessage::Read {
+    let get_storage_outbound_message: CircuitOutboundMessage = CircuitOutboundMessage {
         name: b"get_storage".to_vec(),
+        module_name: b"state".to_vec(),
+        method_name: b"getStorage".to_vec(),
         arguments,
         expected_output: vec![expected_storage],
-        payload: MessagePayload::Rpc {
-            module_name: b"state".to_vec(),
-            method_name: b"getStorage".to_vec(),
-        },
+        extra_payload: None,
+        sender: None,
+        target: None,
     };
 
+    let request_message: RpcPayloadUnsigned = get_storage_outbound_message.to_jsonrpc_unsigned();
+
     let request = format!(
-        r#"{{"jsonrpc":"2.0","method":"state_getStorage","params":["{}"],"id":1}}"#,
-        NON_EMPTY_STORAGE_KEY
+        r#"{{"jsonrpc":"2.0","method":"{}","params":["{}"],"id":1}}"#,
+        request_message.method_name,
+        hex::encode(request_message.params.0)
     );
 
-    let response = r#"{"jsonrpc":"2.0","result":"0x561643ebeb1b5092e1e99e6eb982d88ad896dad65b055204c6493b88af372f5f","id":1}"#;
+    let response = r#"{"jsonrpc":"2.0","result":"0x03fd9651c5ffb80b68eb4faddc697b50016128f8e3799ff81ae42d78d38ba9e4","id":1}"#;
 
     let meta = sc_rpc::Metadata::default();
-    assert_eq!(io.handle_request_sync(request, meta), Some(response.into()));
+    assert_eq!(
+        io.handle_request_sync(&request, meta),
+        Some(response.into())
+    );
 }
 
 #[test]
-fn delivers_set_storage_outbound_message_from_circuit_to_internal_gateway() {
-    unimplemented!();
+fn successfully_dispatches_signed_transfer_outbound_message_from_circuit_to_external_gateway() {
+    let p = TestSetup::default();
+
+    let mut io = jsonrpc_core::MetaIoHandler::<sc_rpc::Metadata>::default();
+
+    io.extend_with(AuthorApi::to_delegate(p.author()));
+    io.extend_with(SystemApi::to_delegate(p.system()));
+    io.extend_with(StateApi::to_delegate(p.state()));
+
+    let test_protocol = create_test_stuffed_gateway_protocol(Sr25519Keyring::Alice.public().into());
+
+    let mut ext = TestExternalities::new_empty();
+    ext.register_extension(KeystoreExt(p.keystore));
+    ext.execute_with(|| {
+        let transfer_message = test_protocol
+            .transfer(
+                Default::default(),
+                Default::default(),
+                GatewayType::ProgrammableExternal,
+            )
+            .unwrap();
+
+        let transfer = uxt(Sr25519Keyring::Alice, 0);
+
+        use sp_core::Encode;
+        let request = format!(
+            r#"{{"jsonrpc":"2.0","method":"author_submitExtrinsic","params":["0x{}"],"id":1}}"#,
+            hex::encode(transfer.encode())
+        );
+
+        let response = r#"{"jsonrpc":"2.0","result":null,"id":1}"#;
+
+        let meta = sc_rpc::Metadata::default();
+        assert_eq!(
+            io.handle_request_sync(&request, meta),
+            Some(response.into())
+        );
+    });
 }
