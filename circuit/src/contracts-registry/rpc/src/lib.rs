@@ -78,12 +78,12 @@ impl From<Error> for RpcError {
     }
 }
 
-impl<C, Block, AccountId> ContractsRegistryApi<<Block as BlockT>::Hash, AccountId>
+impl<C, Block, AccountId> ContractsRegistryApi<Block::Hash, AccountId>
     for ContractsRegistry<C, Block>
 where
     Block: BlockT,
     C: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
-    C::Api: ContractsRegistryRuntimeApi<AccountId, Block::Hash>,
+    C::Api: ContractsRegistryRuntimeApi<Block, AccountId, Block::Hash>,
 {
     fn fetch_contracts(
         &self,

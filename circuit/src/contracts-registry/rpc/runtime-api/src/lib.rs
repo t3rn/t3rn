@@ -8,7 +8,7 @@ sp_api::decl_runtime_apis! {
     /// The API to interact with contracts without using executive.
     pub trait ContractsRegistryApi<AccountId, Hash> where
         AccountId: Codec + MaybeDisplay,
-        Hash: Codec + MaybeDisplay + frame_system::Config,
+        Hash: Codec + MaybeDisplay + frame_system::pallet::Config,
     {
         /// Returns the contracts searchable by name, author or metadata
         fn fetch_contracts(
