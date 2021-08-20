@@ -2,7 +2,8 @@
 
 use codec::Codec;
 use pallet_contracts_registry::{FetchContractsResult, RegistryContractId};
-use sp_runtime::{sp_std::vec::Vec, traits::MaybeDisplay};
+use sp_core::Bytes;
+use sp_runtime::traits::MaybeDisplay;
 
 sp_api::decl_runtime_apis! {
     /// The API to interact with contracts without using executive.
@@ -13,7 +14,7 @@ sp_api::decl_runtime_apis! {
         /// Returns the contracts searchable by name, author or metadata
         fn fetch_contracts(
             author: Option<AccountId>,
-            metadata: Option<Vec<u8>>,
+            metadata: Option<Bytes>,
         ) -> FetchContractsResult;
 
         /// Returns a single contract by ID.

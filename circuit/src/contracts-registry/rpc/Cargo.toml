@@ -18,8 +18,9 @@ jsonrpc-core = "18.0.0"
 jsonrpc-core-client = "18.0.0"
 jsonrpc-derive = "18.0.0"
 
-serde = { version = "1.0.101", features = ["derive"] }
+serde = { version = "1.0.117", features = ["derive"] }
 
+frame-system = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 sp-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 sp-blockchain = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 sp-core = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }

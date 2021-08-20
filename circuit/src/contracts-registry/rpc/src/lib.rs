@@ -1,21 +1,19 @@
 //! RPC interface for the contracts registry pallet.
 
+use std::sync::Arc;
+
 mod types;
 
-use std::sync::Arc;
-use codec::Codec;
 pub use self::gen_client::Client as ContractsRegistryClient;
 use crate::types::RpcFetchContractsResult;
-use jsonrpc_core::{Error as RpcError, ErrorCode, Result};
+use codec::Codec;
+use jsonrpc_core::Result;
 use jsonrpc_derive::rpc;
 pub use pallet_contracts_registry_rpc_runtime_api::ContractsRegistryApi as ContractsRegistryRuntimeApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::Bytes;
-use sp_runtime::{
-    generic::BlockId,
-    traits::{Block as BlockT, Hash as HashT, MaybeDisplay},
-};
+use sp_runtime::traits::{Block as BlockT, Hash as HashT, MaybeDisplay};
 
 #[rpc]
 pub trait ContractsRegistryApi<AccountId, Hash> {
@@ -47,46 +45,14 @@ impl<C, P> ContractsRegistry<C, P> {
     }
 }
 
-/// Possible errors coming from this RPC. Same as the ones in the pallet.
-#[derive(Debug)]
-pub enum Error {
-    /// The given address doesn't point to a contract.
-    DoesntExist,
-    /// The specified contract is a tombstone and thus cannot have any storage.
-    IsTombstone,
-}
-
-impl From<Error> for i64 {
-    fn from(e: Error) -> i64 {
-        match e {
-            Error::DoesntExist => 1,
-            Error::IsTombstone => 2,
-        }
-    }
-}
-
-impl From<Error> for RpcError {
-    fn from(e: Error) -> Self {
-        Self {
-            code: ErrorCode::ServerError(e.into()),
-            message: match e {
-                Error::DoesntExist => "Requested contract does not exist".into(),
-                Error::IsTombstone => "Requested contract is inactive".into(),
-            },
-            data: Some(format!("{:?}", e).into()),
-        }
-    }
-}
-
 impl<C, Block, AccountId, Hash> ContractsRegistryApi<AccountId, Hash>
     for ContractsRegistry<C, Block>
 where
+    AccountId: Codec + MaybeDisplay,
     Block: BlockT,
     C: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
     C::Api: ContractsRegistryRuntimeApi<Block, AccountId, Hash>,
-    Hash: HashT,
-    AccountId: Codec,
-    Hash: Codec,
+    Hash: HashT + Codec,
 {
     fn fetch_contracts(
         &self,
@@ -95,12 +61,33 @@ where
     ) -> Result<RpcFetchContractsResult> {
         let api = self.client.runtime_api();
 
-        api.fetch_contracts(author, metadata).map_err(|e| e.into())
+        let result = api
+            .fetch_contracts(&api, author, metadata)
+            .map_err(|e| e.into());
+
+        if result.is_err() {
+            return Err(RpcFetchContractsResult::Error(()).into());
+        }
+        // TODO: update flags and gas consumed
+        Ok(RpcFetchContractsResult::Success {
+            data: result.unwrap(),
+            flags: 0,
+            gas_consumed: 0,
+        })
     }
 
     fn fetch_contract_by_id(&self, contract_id: Option<Hash>) -> Result<RpcFetchContractsResult> {
         let api = self.client.runtime_api();
 
-        api.fetch_contract_by_id(contract_id).map_err(|e| e.into())
+        let result = api.fetch_contract_by_id(contract_id).map_err(|e| e.into());
+        if result.is_err() {
+            return Err(RpcFetchContractsResult::Error(()).into());
+        }
+        // TODO: update flags and gas consumed
+        Ok(RpcFetchContractsResult::Success {
+            data: result.unwrap().encode(),
+            flags: 0,
+            gas_consumed: 0,
+        })
     }
 }
