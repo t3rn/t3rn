@@ -18,7 +18,7 @@ use sp_runtime::{
 };
 
 #[rpc]
-pub trait ContractsRegistryApi<BlockHash, AccountId> {
+pub trait ContractsRegistryApi<AccountId> {
     /// Returns the contracts searchable by name, author or metadata
     #[rpc(name = "contractsRegistry_fetchContracts")]
     fn fetch_contracts(
@@ -78,12 +78,12 @@ impl From<Error> for RpcError {
     }
 }
 
-impl<C, Block, AccountId> ContractsRegistryApi<Block::Hash, AccountId>
+impl<C, Block, AccountId> ContractsRegistryApi<AccountId>
     for ContractsRegistry<C, Block>
 where
     Block: BlockT,
     C: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
-    C::Api: ContractsRegistryRuntimeApi<Block, AccountId, Block::Hash>,
+    C::Api: ContractsRegistryRuntimeApi<Block, AccountId>,
 {
     fn fetch_contracts(
         &self,
