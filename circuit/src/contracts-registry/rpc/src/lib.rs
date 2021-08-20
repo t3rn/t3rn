@@ -61,16 +61,14 @@ where
     ) -> Result<RpcFetchContractsResult> {
         let api = self.client.runtime_api();
 
-        let result = api
-            .fetch_contracts(&api, author, metadata)
-            .map_err(|e| e.into());
+        let result = api.fetch_contracts(author, metadata).map_err(|e| e.into());
 
         if result.is_err() {
-            return Err(RpcFetchContractsResult::Error(()).into());
+            return Err(result.unwrap_err().into());
         }
         // TODO: update flags and gas consumed
         Ok(RpcFetchContractsResult::Success {
-            data: result.unwrap(),
+            data: result.unwrap().encode(),
             flags: 0,
             gas_consumed: 0,
         })
@@ -81,7 +79,7 @@ where
 
         let result = api.fetch_contract_by_id(contract_id).map_err(|e| e.into());
         if result.is_err() {
-            return Err(RpcFetchContractsResult::Error(()).into());
+            return Err(result.unwrap_err().into());
         }
         // TODO: update flags and gas consumed
         Ok(RpcFetchContractsResult::Success {
