@@ -8,15 +8,14 @@ use frame_system::RawOrigin;
 type AccountId = sp_runtime::AccountId32;
 use frame_support::assert_ok;
 //use std::str::FromStr;
-use t3rn_primitives::transfers::BalanceOf;
-use t3rn_primitives::{ExecPhase, ExecStep, InterExecSchedule, Compose};
 use sp_runtime::create_runtime_str;
 use sp_version::RuntimeVersion;
+use t3rn_primitives::transfers::BalanceOf;
+use t3rn_primitives::{Compose, ExecPhase, ExecStep, InterExecSchedule};
 // use sp_keystore::testing::KeyStore;
 // use sp_keystore::{KeystoreExt, SyncCryptoStore};
 // use sp_core::{crypto::Pair, sr25519};
 // pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"circ");
-
 
 pub const TEST_RUNTIME_VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("test-runtime"),
@@ -80,7 +79,7 @@ benchmarks! {
         let url = b"ws://localhost:9944".to_vec();
         let gateway_id = [0; 4];
         let gateway_abi: GatewayABIConfig = Default::default();
-        
+
         //     fn default() -> GatewayABIConfig {
         //         GatewayABIConfig {
         //             block_number_type_size: 32,
@@ -93,7 +92,7 @@ benchmarks! {
         //             structs: vec![],
         //         }
         //     }
-        
+
         let gateway_vendor = GatewayVendor::Substrate;
         let gateway_type = GatewayType::ProgrammableInternal;
 
@@ -130,51 +129,51 @@ benchmarks! {
         assert_eq!(1,1);
     }
 
-    submit_composable_exec_order {
-        let caller: T::AccountId = account("caller", 0, 0);
-        let io_schedule = b"component1;".to_vec();
+    // submit_composable_exec_order {
+    //     let caller: T::AccountId = account("caller", 0, 0);
+    //     let io_schedule = b"component1;".to_vec();
 
-        const CONTRACT: &str = r#"
-                (module
-                    (func (export "call"))
-                    (func (export "deploy"))
-                )
-                "#;
+    //     const CONTRACT: &str = r#"
+    //             (module
+    //                 (func (export "call"))
+    //                 (func (export "deploy"))
+    //             )
+    //             "#;
 
-        let components = vec![Compose {
-            name: b"component1".to_vec(),
-            code_txt: CONTRACT.encode(),
-            exec_type: b"exec_escrow".to_vec(),
-            dest: AccountId::new([1 as u8; 32]),
-            value: BalanceOf::from(0u32),
-            bytes: vec![
-                0, 97, 115, 109, 1, 0, 0, 0, 1, 4, 1, 96, 0, 0, 3, 3, 2, 0, 0, 7, 17, 2, 4, 99, 97,
-                108, 108, 0, 0, 6, 100, 101, 112, 108, 111, 121, 0, 1, 10, 7, 2, 2, 0, 11, 2, 0, 11,
-            ],
-            input_data: vec![],
-        }];
+    //     let components = vec![Compose {
+    //         name: b"component1".to_vec(),
+    //         code_txt: CONTRACT.encode(),
+    //         exec_type: b"exec_escrow".to_vec(),
+    //         dest: AccountId::new([1 as u8; 32]),
+    //         value: BalanceOf::from(0u32),
+    //         bytes: vec![
+    //             0, 97, 115, 109, 1, 0, 0, 0, 1, 4, 1, 96, 0, 0, 3, 3, 2, 0, 0, 7, 17, 2, 4, 99, 97,
+    //             108, 108, 0, 0, 6, 100, 101, 112, 108, 111, 121, 0, 1, 10, 7, 2, 2, 0, 11, 2, 0, 11,
+    //         ],
+    //         input_data: vec![],
+    //     }];
 
-        let keystore = KeyStore::new();
+    //     let keystore = KeyStore::new();
 
-        // Insert Alice's keys
-        const SURI_ALICE: &str = "//Alice";
-        let key_pair_alice = sr25519::Pair::from_string(SURI_ALICE, None).expect("Generates key pair");
-        SyncCryptoStore::insert_unknown(
-            &keystore,
-            KEY_TYPE,
-            SURI_ALICE,
-            key_pair_alice.public().as_ref(),
-        )
-        .expect("Inserts unknown key");
+    //     // Insert Alice's keys
+    //     const SURI_ALICE: &str = "//Alice";
+    //     let key_pair_alice = sr25519::Pair::from_string(SURI_ALICE, None).expect("Generates key pair");
+    //     SyncCryptoStore::insert_unknown(
+    //         &keystore,
+    //         KEY_TYPE,
+    //         SURI_ALICE,
+    //         key_pair_alice.public().as_ref(),
+    //     )
+    //     .expect("Inserts unknown key");
 
-    }: _(RawOrigin::Signed(caller.clone()), io_schedule.clone(), components.clone())
-    verify {
-        assert_ok!(Pallet::<T>::submit_composable_exec_order(
-            RawOrigin::Signed(caller),
-            io_schedule,
-            components
-        ));
-    }
+    // }: _(RawOrigin::Signed(caller.clone()), io_schedule.clone(), components.clone())
+    // verify {
+    //     assert_ok!(Pallet::<T>::submit_composable_exec_order(
+    //         RawOrigin::Signed(caller),
+    //         io_schedule,
+    //         components
+    //     ));
+    // }
 
 }
 
@@ -205,12 +204,12 @@ mod tests {
         })
     }
 
-    #[test]
-    fn benchmark_submit_composable_exec_order() {
-        new_test_ext().execute_with(|| {
-            assert_ok!(test_benchmark_submit_composable_exec_order::<Test>());
-        })
-    }
+    // #[test]
+    // fn benchmark_submit_composable_exec_order() {
+    //     new_test_ext().execute_with(|| {
+    //         assert_ok!(test_benchmark_submit_composable_exec_order::<Test>());
+    //     })
+    // }
 }
 
 impl_benchmark_test_suite!(
