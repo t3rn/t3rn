@@ -279,3 +279,54 @@ fn successfully_dispatches_signed_transfer_outbound_message_from_circuit_to_exte
         );
     });
 }
+
+// FixMe: Fails when submmited against DEV node, since for now multisig is unsupported
+#[test]
+fn successfully_dispatches_signed_transfer_outbound_message_with_protocol_from_circuit_to_external_gateway(
+) {
+    let p = TestSetup::default();
+
+    let mut io = jsonrpc_core::MetaIoHandler::<sc_rpc::Metadata>::default();
+
+    io.extend_with(AuthorApi::to_delegate(p.author()));
+    io.extend_with(SystemApi::to_delegate(p.system()));
+    io.extend_with(StateApi::to_delegate(p.state()));
+
+    let test_protocol = create_test_stuffed_gateway_protocol(Sr25519Keyring::Alice.public().into());
+
+    let mut ext = TestExternalities::new_empty();
+    ext.register_extension(KeystoreExt(p.keystore));
+    ext.execute_with(|| {
+
+        let transfer_outbound_message = test_protocol
+            .transfer(
+                Default::default(),
+                Default::default(),
+                GatewayType::ProgrammableExternal,
+            )
+            .unwrap();
+
+        // FixMe: Create the signed params, where params is the encoded UncheckedExtrisicV4
+        let request_message: RpcPayloadSignned = transfer_outbound_message.to_jsonrpc_signed();
+
+        let request = format!(
+            r#"{{"jsonrpc":"2.0","method":"{}","params":["{}"],"id":1}}"#,
+            request_message.method_name,
+            hex::encode(request_message.params.0)
+        );
+
+        let response = r#"{"jsonrpc":"2.0","result":"0x03fd9651c5ffb80b68eb4faddc697b50016128f8e3799ff81ae42d78d38ba9e4","id":1}"#;
+
+        let meta = sc_rpc::Metadata::default();
+        assert_eq!(
+            io.handle_request_sync(&request, meta),
+            Some(response.into())
+        );
+
+        let meta = sc_rpc::Metadata::default();
+        assert_eq!(
+            io.handle_request_sync(&request, meta),
+            Some(response.into())
+        );
+    });
+}
