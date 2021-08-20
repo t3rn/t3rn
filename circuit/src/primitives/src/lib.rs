@@ -188,7 +188,7 @@ pub struct CircuitOutboundMessage {
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct RpcPayloadUnsigned<'a> {
     pub method_name: &'a str,
-    pub params: Vec<Bytes>
+    pub params: Vec<Bytes>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -199,29 +199,30 @@ pub struct RpcPayloadSigned<'a> {
 }
 
 impl CircuitOutboundMessage {
-
     pub fn to_jsonrpc_unsigned(&self) -> Result<RpcPayloadUnsigned, &'static str> {
-        let method_name: &str =
-            sp_std::str::from_utf8(&self.name[..]).map_err(|_| "`Can't decode method name to &str")?;
+        let method_name: &str = sp_std::str::from_utf8(&self.name[..])
+            .map_err(|_| "`Can't decode method name to &str")?;
 
-        Ok(
-            RpcPayloadUnsigned {
-                method_name,
-                params: self.arguments.clone()
-            }
-        )
+        Ok(RpcPayloadUnsigned {
+            method_name,
+            params: self.arguments.clone(),
+        })
     }
 
-    pub fn to_jsonrpc_signed(&self) -> Result<RpcPayloadUnsigned, &'static str> {
-        let method_name: &str =
-            sp_std::str::from_utf8(&self.name[..]).map_err(|_| "`Can't decode method name to &str")?;
+    pub fn to_jsonrpc_signed(&self) -> Result<RpcPayloadSigned, &'static str> {
+        let method_name: &str = sp_std::str::from_utf8(&self.name[..])
+            .map_err(|_| "`Can't decode method name to &str")?;
 
-        Ok(
-            RpcPayloadUnsigned {
-                method_name,
-                params: self.arguments.clone()
-            }
-        )
+        let signed_ext = self
+            .extra_payload
+            .as_ref()
+            .map(|payload| payload.tx_signed.clone())
+            .ok_or("no signed extrinsic provided")?;
+
+        Ok(RpcPayloadSigned {
+            method_name,
+            signed_extrinsic: signed_ext,
+        })
     }
 }
 
@@ -291,7 +292,7 @@ pub struct ExtraMessagePayload {
     pub tx_signed: Bytes,
     /// Custom message bytes, that would have to be decoded by the receiving end.
     /// Could be utilized by custom transmission medium (like Substrate's XCMP)
-    pub custom_payload: Option<Bytes>
+    pub custom_payload: Option<Bytes>,
 }
 
 /// Retrieves all available gateways for a given ChainId.

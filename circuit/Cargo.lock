@@ -1044,6 +1044,61 @@ dependencies = [
 ]
 
 [[package]]
+name = "circuit-rpc-tests"
+version = "3.0.0"
+dependencies = [
+ "assert_matches",
+ "bp-runtime",
+ "frame-system",
+ "futures 0.1.31",
+ "futures 0.3.15",
+ "hash-db",
+ "hex",
+ "hex-literal",
+ "jsonrpc-core 15.1.0",
+ "jsonrpc-pubsub 15.1.0",
+ "lazy_static",
+ "log",
+ "pallet-circuit-execution-delivery",
+ "parity-scale-codec",
+ "parking_lot 0.11.1",
+ "sc-block-builder",
+ "sc-chain-spec",
+ "sc-cli",
+ "sc-client-api",
+ "sc-executor",
+ "sc-keystore",
+ "sc-network",
+ "sc-rpc",
+ "sc-rpc-api",
+ "sc-tracing",
+ "sc-transaction-pool",
+ "serde_json",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-blockchain",
+ "sp-core",
+ "sp-io",
+ "sp-keyring",
+ "sp-keystore",
+ "sp-offchain",
+ "sp-rpc",
+ "sp-runtime",
+ "sp-session",
+ "sp-state-machine",
+ "sp-tracing",
+ "sp-transaction-pool",
+ "sp-utils",
+ "sp-version",
+ "substrate-frame-rpc-system",
+ "substrate-test-runtime",
+ "substrate-test-runtime-client",
+ "t3rn-primitives",
+ "tempfile",
+ "tokio 0.1.22",
+]
+
+[[package]]
 name = "circuit-runtime"
 version = "0.4.0"
 dependencies = [
