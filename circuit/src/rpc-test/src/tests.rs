@@ -223,7 +223,7 @@ fn successfully_dispatches_unsigned_get_storage_outbound_message_from_circuit_to
     let request_message: RpcPayloadUnsigned = get_storage_outbound_message.to_jsonrpc_unsigned().unwrap();
 
     let request = format!(
-        r#"{{"jsonrpc":"2.0","method":"{}","params":["{}"],"id":1}}"#,
+        r#"{{"jsonrpc":"2.0","method":"{}","params":["0x{}"],"id":1}}"#,
         request_message.method_name,
         hex::encode(request_message.params.get(0).unwrap())
     );
@@ -308,8 +308,7 @@ fn successfully_dispatches_signed_transfer_outbound_message_with_protocol_from_c
         let request_message: RpcPayloadSigned = transfer_outbound_message.to_jsonrpc_signed().unwrap();
 
         let request = format!(
-            r#"{{"jsonrpc":"2.0","method":"{}","params":["{}"],"id":1}}"#,
-            request_message.method_name,
+            r#"{{"jsonrpc":"2.0","method":"author_submitExtrinsic","params":["0x{}"],"id":1}}"#,
             hex::encode(request_message.signed_extrinsic)
         );
 
