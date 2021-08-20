@@ -7,8 +7,8 @@ use sp_runtime::{sp_std::vec::Vec, traits::MaybeDisplay};
 sp_api::decl_runtime_apis! {
     /// The API to interact with contracts without using executive.
     pub trait ContractsRegistryApi<AccountId, Hash> where
-        AccountId: Codec + MaybeDisplay,
-        Hash: Codec + MaybeDisplay + frame_system::pallet::Config,
+        AccountId: Codec,
+        Hash: Codec,
     {
         /// Returns the contracts searchable by name, author or metadata
         fn fetch_contracts(
@@ -18,7 +18,7 @@ sp_api::decl_runtime_apis! {
 
         /// Returns a single contract by ID.
         fn fetch_contract_by_id(
-            contract_id: Option<RegistryContractId<Hash>>,
+            contract_id: Option<Hash>,
         ) -> FetchContractsResult;
     }
 }

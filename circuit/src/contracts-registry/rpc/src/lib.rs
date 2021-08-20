@@ -3,7 +3,7 @@
 mod types;
 
 use std::sync::Arc;
-
+use codec::Codec;
 pub use self::gen_client::Client as ContractsRegistryClient;
 use crate::types::RpcFetchContractsResult;
 use jsonrpc_core::{Error as RpcError, ErrorCode, Result};
@@ -14,11 +14,11 @@ use sp_blockchain::HeaderBackend;
 use sp_core::Bytes;
 use sp_runtime::{
     generic::BlockId,
-    traits::{Block as BlockT, MaybeDisplay},
+    traits::{Block as BlockT, Hash as HashT, MaybeDisplay},
 };
 
 #[rpc]
-pub trait ContractsRegistryApi<AccountId> {
+pub trait ContractsRegistryApi<AccountId, Hash> {
     /// Returns the contracts searchable by name, author or metadata
     #[rpc(name = "contractsRegistry_fetchContracts")]
     fn fetch_contracts(
@@ -29,7 +29,7 @@ pub trait ContractsRegistryApi<AccountId> {
 
     /// Returns a single contract searchable by id
     #[rpc(name = "contractsRegistry_fetchContractById")]
-    fn fetch_contract_by_id(&self, contract_id: Option<Bytes>) -> Result<RpcFetchContractsResult>;
+    fn fetch_contract_by_id(&self, contract_id: Option<Hash>) -> Result<RpcFetchContractsResult>;
 }
 
 /// A struct that implements the [ContractsRegistryApi].
@@ -78,12 +78,15 @@ impl From<Error> for RpcError {
     }
 }
 
-impl<C, Block, AccountId> ContractsRegistryApi<AccountId>
+impl<C, Block, AccountId, Hash> ContractsRegistryApi<AccountId, Hash>
     for ContractsRegistry<C, Block>
 where
     Block: BlockT,
     C: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
-    C::Api: ContractsRegistryRuntimeApi<Block, AccountId>,
+    C::Api: ContractsRegistryRuntimeApi<Block, AccountId, Hash>,
+    Hash: HashT,
+    AccountId: Codec,
+    Hash: Codec,
 {
     fn fetch_contracts(
         &self,
@@ -95,7 +98,7 @@ where
         api.fetch_contracts(author, metadata).map_err(|e| e.into())
     }
 
-    fn fetch_contract_by_id(&self, contract_id: Option<Bytes>) -> Result<RpcFetchContractsResult> {
+    fn fetch_contract_by_id(&self, contract_id: Option<Hash>) -> Result<RpcFetchContractsResult> {
         let api = self.client.runtime_api();
 
         api.fetch_contract_by_id(contract_id).map_err(|e| e.into())
