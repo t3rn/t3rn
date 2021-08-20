@@ -17,6 +17,7 @@
 
 //! Test utilities
 use crate::{self as pallet_execution_delivery, Config};
+use sp_runtime::traits::Hash;
 
 use codec::{Decode, Encode};
 
@@ -35,7 +36,10 @@ use sp_runtime::{
     testing::UintAuthorityId, traits::Convert, DispatchError, DispatchResult, FixedU128,
 };
 
-use frame_support::assert_err;
+use hex_literal::hex;
+use sp_runtime::AccountId32;
+
+use frame_support::{assert_err, assert_ok};
 use frame_support::{parameter_types, traits::KeyOwnerProofSystem};
 
 use frame_election_provider_support::onchain;
@@ -68,8 +72,13 @@ use bp_messages::{
 
 use pallet_execution_delivery::Compose;
 use std::collections::BTreeMap;
+use t3rn_primitives::abi::{CryptoAlgo, GatewayABIConfig, HasherAlgo, Parameter, StructDecl, Type};
 use t3rn_primitives::transfers::BalanceOf;
 use t3rn_primitives::{EscrowTrait, ExecPhase, ExecStep, InterExecSchedule};
+use t3rn_primitives::{
+    GatewayGenesisConfig, GatewayPointer, GatewayType, GatewayVendor, GenericPrimitivesHeader,
+};
+
 use volatile_vm::DispatchRuntimeCall;
 
 use pallet_evm::{AddressMapping, FeeCalculator};
@@ -80,6 +89,19 @@ type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"circ");
+
+use sp_runtime::create_runtime_str;
+use sp_version::RuntimeVersion;
+
+pub const TEST_RUNTIME_VERSION: RuntimeVersion = RuntimeVersion {
+    spec_name: create_runtime_str!("test-runtime"),
+    impl_name: create_runtime_str!("test-runtime"),
+    authoring_version: 1,
+    spec_version: 1,
+    impl_version: 1,
+    apis: sp_version::create_apis_vec!([]),
+    transaction_version: 1,
+};
 
 frame_support::construct_runtime!(
     pub enum Test where
@@ -889,6 +911,36 @@ impl pallet_babe::Config for Test {
     type WeightInfo = ();
 }
 
+pub fn new_test_ext() -> sp_io::TestExternalities {
+    let t = frame_system::GenesisConfig::default()
+        .build_storage::<Test>()
+        .unwrap();
+    t.into()
+}
+
+fn insert_default_xdns_record() {
+    use pallet_xdns::XdnsRecord;
+    pallet_xdns::XDNSRegistry::<Test>::insert(
+        // Below is blake2_hash of [0, 0, 0, 0]
+        H256::from_slice(&hex!(
+            "11da6d1f761ddf9bdb4c9d6e5303ebd41f61858d0a5647a1a7bfe089bf921be9"
+        )),
+        XdnsRecord::<AccountId32>::new(
+            Default::default(),
+            [0, 0, 0, 0],
+            Default::default(),
+            GatewayVendor::Substrate,
+            GatewayType::ProgrammableExternal,
+            GatewayGenesisConfig {
+                modules_encoded: None,
+                signed_extension: None,
+                runtime_version: TEST_RUNTIME_VERSION,
+                genesis_hash: Default::default(),
+            },
+        ),
+    );
+}
+
 #[test]
 fn it_submits_empty_composable_exec_request() {
     sp_io::TestExternalities::default().execute_with(|| {
@@ -1388,3 +1440,128 @@ fn error_if_incorrect_escrow_is_submitted() {
         assert!(submitter.is_err());
     });
 }
+
+#[test]
+fn test_submit_composable_exec_order() {
+    let io_schedule = b"component1;".to_vec();
+
+    const CONTRACT: &str = r#"
+            (module
+                (func (export "call"))
+                (func (export "deploy"))
+            )
+            "#;
+
+    let components = vec![Compose {
+        name: b"component1".to_vec(),
+        code_txt: CONTRACT.encode(),
+        exec_type: b"exec_escrow".to_vec(),
+        dest: AccountId::new([1 as u8; 32]),
+        value: BalanceOf::<Test>::from(0u32),
+        bytes: vec![
+            0, 97, 115, 109, 1, 0, 0, 0, 1, 4, 1, 96, 0, 0, 3, 3, 2, 0, 0, 7, 17, 2, 4, 99, 97,
+            108, 108, 0, 0, 6, 100, 101, 112, 108, 111, 121, 0, 1, 10, 7, 2, 2, 0, 11, 2, 0, 11,
+        ],
+        input_data: vec![],
+    }];
+
+    let keystore = KeyStore::new();
+
+    // Insert Alice's keys
+    const SURI_ALICE: &str = "//Alice";
+    let key_pair_alice = sr25519::Pair::from_string(SURI_ALICE, None).expect("Generates key pair");
+    SyncCryptoStore::insert_unknown(
+        &keystore,
+        KEY_TYPE,
+        SURI_ALICE,
+        key_pair_alice.public().as_ref(),
+    )
+    .expect("Inserts unknown key");
+
+    //println!("{:?}", wabt::wat2wasm(CONTRACT).expect("invalid wabt"));
+
+    let mut ext = TestExternalities::new_empty();
+    ext.register_extension(KeystoreExt(keystore.into()));
+    ext.execute_with(|| {
+        insert_default_xdns_record();
+
+        assert_ok!(ExecDelivery::submit_composable_exec_order(
+            Origin::signed(Default::default()),
+            io_schedule,
+            components
+        ));
+    });
+}
+
+#[test]
+fn test_register_gateway() {
+    let origin = Origin::signed(Default::default());
+    let url = b"ws://localhost:9944".to_vec();
+    let gateway_id = [0; 4];
+    let gateway_abi: GatewayABIConfig = Default::default();
+
+    //     fn default() -> GatewayABIConfig {
+    //         GatewayABIConfig {
+    //             block_number_type_size: 32,
+    //             hash_size: 32,
+    //             hasher: HasherAlgo::Blake2,
+    //             crypto: CryptoAlgo::Sr25519,
+    //             address_length: 32,
+    //             value_type_size: 64,
+    //             decimals: 8,
+    //             structs: vec![],
+    //         }
+    //     }
+    // DefaultPolkadotLikeGateway
+
+    let gateway_vendor = GatewayVendor::Substrate;
+    let gateway_type = GatewayType::ProgrammableInternal;
+
+    let _gateway_pointer = GatewayPointer {
+        id: [0; 4],
+        vendor: GatewayVendor::Substrate,
+        gateway_type: GatewayType::ProgrammableInternal,
+    };
+
+    let gateway_genesis = GatewayGenesisConfig {
+        modules_encoded: None,
+        signed_extension: None,
+        runtime_version: TEST_RUNTIME_VERSION,
+        genesis_hash: Default::default(),
+    };
+
+    let first_header = GenericPrimitivesHeader {
+        parent_hash: None,
+        number: 1,
+        state_root: None,
+        extrinsics_root: None,
+        digest: None,
+        // parent_hash: Default::default(),
+        // number: 0,
+        // state_root: Default::default(), //Some(H256::from_slice(&hex!("b2fc47904df5e355c6ab476d89fbc0733aeddbe302f0b94ba4eea9283f7e89e7"))),
+        // extrinsics_root: Default::default(), //Some(H256::from_slice(&hex!("03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c111314"))),
+        // digest: Default::default(),
+    };
+
+    let authorities = Some(vec![]);
+
+    let mut ext = TestExternalities::new_empty();
+    ext.execute_with(|| {
+        assert_ok!(ExecDelivery::register_gateway(
+            origin,
+            url,
+            gateway_id,
+            gateway_abi,
+            gateway_vendor,
+            gateway_type,
+            gateway_genesis,
+            first_header,
+            authorities
+        ));
+    });
+}
+
+// #[test]
+// fn test_submit_step_confirmation() {
+
+// }
