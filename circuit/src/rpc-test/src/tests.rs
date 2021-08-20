@@ -200,8 +200,6 @@ fn successfully_dispatches_unsigned_get_storage_outbound_message_from_circuit_to
     io.extend_with(SystemApi::to_delegate(p.system()));
     io.extend_with(StateApi::to_delegate(p.state()));
 
-    const NON_EMPTY_STORAGE_KEY: &str = "0x0befda6e1ca4ef40219d588a727f1271";
-
     let key: Vec<u8> = hex!("0befda6e1ca4ef40219d588a727f1271").to_vec();
 
     let expected_storage = GatewayExpectedOutput::Storage {
@@ -222,12 +220,12 @@ fn successfully_dispatches_unsigned_get_storage_outbound_message_from_circuit_to
         target: None,
     };
 
-    let request_message: RpcPayloadUnsigned = get_storage_outbound_message.to_jsonrpc_unsigned();
+    let request_message: RpcPayloadUnsigned = get_storage_outbound_message.to_jsonrpc_unsigned().unwrap();
 
     let request = format!(
         r#"{{"jsonrpc":"2.0","method":"{}","params":["{}"],"id":1}}"#,
         request_message.method_name,
-        hex::encode(request_message.params.0)
+        hex::encode(request_message.params.get(0).unwrap())
     );
 
     let response = r#"{"jsonrpc":"2.0","result":"0x03fd9651c5ffb80b68eb4faddc697b50016128f8e3799ff81ae42d78d38ba9e4","id":1}"#;
@@ -254,7 +252,7 @@ fn successfully_dispatches_signed_transfer_outbound_message_from_circuit_to_exte
     let mut ext = TestExternalities::new_empty();
     ext.register_extension(KeystoreExt(p.keystore));
     ext.execute_with(|| {
-        let transfer_message = test_protocol
+        let _transfer_message = test_protocol
             .transfer(
                 Default::default(),
                 Default::default(),
@@ -307,12 +305,12 @@ fn successfully_dispatches_signed_transfer_outbound_message_with_protocol_from_c
             .unwrap();
 
         // FixMe: Create the signed params, where params is the encoded UncheckedExtrisicV4
-        let request_message: RpcPayloadSignned = transfer_outbound_message.to_jsonrpc_signed();
+        let request_message: RpcPayloadSigned = transfer_outbound_message.to_jsonrpc_signed().unwrap();
 
         let request = format!(
             r#"{{"jsonrpc":"2.0","method":"{}","params":["{}"],"id":1}}"#,
             request_message.method_name,
-            hex::encode(request_message.params.0)
+            hex::encode(request_message.signed_extrinsic)
         );
 
         let response = r#"{"jsonrpc":"2.0","result":"0x03fd9651c5ffb80b68eb4faddc697b50016128f8e3799ff81ae42d78d38ba9e4","id":1}"#;
