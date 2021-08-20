@@ -72,7 +72,7 @@ impl Alternative {
         let properties = Some(
             serde_json::json!({
                 "tokenDecimals": 9,
-                "tokenSymbol": "MLAU",
+                "tokenSymbol": "TRN",
                 "bridgeIds": {
                     "Gateway": bp_runtime::GATEWAY_CHAIN_ID,
                 }
