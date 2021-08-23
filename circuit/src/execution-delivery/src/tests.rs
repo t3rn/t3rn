@@ -1441,29 +1441,16 @@ fn error_if_incorrect_escrow_is_submitted() {
     });
 }
 
+use crate::exec_composer::tests::{CODE_CALL, make_compose_out_of_raw_wat_code};
+
 #[test]
 fn test_submit_composable_exec_order() {
+    let dest = AccountId::new([1 as u8; 32]);
+    let value = BalanceOf::<Test>::from(0u32);
+    let input_data = vec![];
     let io_schedule = b"component1;".to_vec();
 
-    const CONTRACT: &str = r#"
-            (module
-                (func (export "call"))
-                (func (export "deploy"))
-            )
-            "#;
-
-    let components = vec![Compose {
-        name: b"component1".to_vec(),
-        code_txt: CONTRACT.encode(),
-        exec_type: b"exec_escrow".to_vec(),
-        dest: AccountId::new([1 as u8; 32]),
-        value: BalanceOf::<Test>::from(0u32),
-        bytes: vec![
-            0, 97, 115, 109, 1, 0, 0, 0, 1, 4, 1, 96, 0, 0, 3, 3, 2, 0, 0, 7, 17, 2, 4, 99, 97,
-            108, 108, 0, 0, 6, 100, 101, 112, 108, 111, 121, 0, 1, 10, 7, 2, 2, 0, 11, 2, 0, 11,
-        ],
-        input_data: vec![],
-    }];
+    let compose = make_compose_out_of_raw_wat_code::<Test>(CODE_CALL, input_data, dest, value);
 
     let keystore = KeyStore::new();
 
@@ -1478,17 +1465,14 @@ fn test_submit_composable_exec_order() {
     )
     .expect("Inserts unknown key");
 
-    //println!("{:?}", wabt::wat2wasm(CONTRACT).expect("invalid wabt"));
-
     let mut ext = TestExternalities::new_empty();
     ext.register_extension(KeystoreExt(keystore.into()));
     ext.execute_with(|| {
         insert_default_xdns_record();
-
         assert_ok!(ExecDelivery::submit_composable_exec_order(
             Origin::signed(Default::default()),
             io_schedule,
-            components
+            vec![compose],
         ));
     });
 }
