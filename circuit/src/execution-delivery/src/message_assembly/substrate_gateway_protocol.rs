@@ -52,7 +52,7 @@ where
         &self,
         namespace: &'static str,
         name: &'static str,
-        arguments: Vec<Vec<u8>>,
+        arguments: Vec<u8>,
     ) -> Result<ExtraMessagePayload, &'static str> {
         let extrinsic = self
             .assembly
@@ -73,6 +73,13 @@ where
             extra: GenericExtra::new(Era::Immortal, 0).encode(),
             tx_signed: extrinsic.encode(),
             custom_payload: None,
+        })
+    }
+
+    fn collect_args(args: Vec<Vec<u8>>) -> Vec<u8> {
+        args.iter().fold(vec![], |mut a, b| {
+            a.extend(b);
+            a
         })
     }
 }
@@ -135,7 +142,11 @@ where
             method_name: b"setStorage".to_vec(),
             arguments: arguments.clone(),
             expected_output: vec![expected_storage],
-            extra_payload: Some(self.produce_signed_payload("state", "setStorage", arguments)?),
+            extra_payload: Some(self.produce_signed_payload(
+                "state",
+                "setStorage",
+                Self::collect_args(arguments),
+            )?),
             sender: None,
             target: None,
         })
@@ -170,7 +181,7 @@ where
                     extra_payload: Some(self.produce_signed_payload(
                         "gatewayEscrowed",
                         "callStatic",
-                        arguments,
+                        Self::collect_args(arguments),
                     )?),
                     sender: None,
                     target: None,
@@ -253,7 +264,7 @@ where
                     extra_payload: Some(self.produce_signed_payload(
                         "gatewayEscrowed",
                         "callEscrowed",
-                        arguments,
+                        Self::collect_args(arguments),
                     )?),
                     sender: None,
                     target: None,
@@ -310,8 +321,8 @@ where
 
     fn transfer(
         &self,
-        to: Vec<u8>,
-        value: Vec<u8>,
+        to: GenericAddress,
+        value: u128,
         _gateway_type: GatewayType,
     ) -> Result<CircuitOutboundMessage, &'static str> {
         let expected_output = vec![GatewayExpectedOutput::Events {
@@ -321,7 +332,7 @@ where
             ],
         }];
 
-        let arguments = vec![to, value];
+        let arguments = vec![to.encode(), value.encode()];
 
         Ok(CircuitOutboundMessage {
             name: b"transfer".to_vec(),
@@ -329,7 +340,11 @@ where
             method_name: b"transfer".to_vec(),
             arguments: arguments.clone(),
             expected_output,
-            extra_payload: Some(self.produce_signed_payload("balances", "transfer", arguments)?),
+            extra_payload: Some(self.produce_signed_payload(
+                "balances",
+                "transfer",
+                Self::collect_args(arguments),
+            )?),
             sender: None,
             target: None,
         })
@@ -360,9 +375,11 @@ where
                     method_name: b"transfer".to_vec(),
                     arguments: arguments.clone(),
                     expected_output,
-                    extra_payload: Some(
-                        self.produce_signed_payload("gateway", "transfer", arguments)?,
-                    ),
+                    extra_payload: Some(self.produce_signed_payload(
+                        "gateway",
+                        "transfer",
+                        Self::collect_args(arguments),
+                    )?),
                     sender: None,
                     target: None,
                 })
@@ -380,17 +397,17 @@ where
                     self.produce_signed_payload(
                         "balances",
                         "transfer",
-                        vec![
+                        Self::collect_args(vec![
                             self.assembly.submitter.to_raw_vec(),
                             escrow_account.clone(),
                             value.clone(),
-                        ],
+                        ]),
                     )?
                     .encode(),
                     self.produce_signed_payload(
                         "balances",
                         "transfer",
-                        vec![escrow_account, to, value],
+                        Self::collect_args(vec![escrow_account, to, value]),
                     )?
                     .encode(),
                 ];
@@ -401,9 +418,11 @@ where
                     method_name: b"batchAll".to_vec(),
                     arguments: arguments.clone(),
                     expected_output,
-                    extra_payload: Some(
-                        self.produce_signed_payload("utility", "batchAll", transfers)?,
-                    ),
+                    extra_payload: Some(self.produce_signed_payload(
+                        "utility",
+                        "batchAll",
+                        Self::collect_args(transfers),
+                    )?),
                     sender: None,
                     target: None,
                 })

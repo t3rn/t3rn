@@ -259,7 +259,7 @@ fn successfully_dispatches_signed_transfer_outbound_message_from_circuit_to_exte
     ext.execute_with(|| {
         let transfer_message = test_protocol
             .transfer(
-                Sr25519Keyring::Alice.to_raw_public_vec(),
+                GenericAddress::Address32(Sr25519Keyring::Alice.to_raw_public()),
                 Default::default(),
                 GatewayType::ProgrammableExternal,
             )

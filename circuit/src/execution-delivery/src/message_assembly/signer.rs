@@ -80,7 +80,7 @@ pub mod app {
     pub struct Call {
         pub module_index: u8,
         pub function_index: u8,
-        pub args: Vec<Vec<u8>>,
+        pub args: Vec<u8>,
     }
 
     /// Mirrors the currently used Extrinsic format (V3) from substrate. Has less traits and methods though.

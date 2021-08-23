@@ -55,7 +55,7 @@ where
         &self,
         module_name: &'static str,
         fn_name: &'static str,
-        args: Vec<Vec<u8>>,
+        args: Vec<u8>,
     ) -> Result<UncheckedExtrinsicV4<Call>, &'static str> {
         let call = self.assemble_call(module_name, fn_name, args)?;
 
@@ -73,7 +73,7 @@ where
         &self,
         module_name: &'static str,
         fn_name: &'static str,
-        args: Vec<Vec<u8>>,
+        args: Vec<u8>,
     ) -> Result<Call, &'static str> {
         let (module_index, function_index) = self
             .metadata
