@@ -346,7 +346,7 @@ impl ExecComposer {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
     use crate::tests::Test;
     use crate::*;
@@ -363,7 +363,7 @@ mod tests {
     use std::str::FromStr;
     use t3rn_primitives::MessagePayload;
 
-    fn make_compose_out_of_raw_wat_code<T: Config>(
+    pub fn make_compose_out_of_raw_wat_code<T: Config>(
         wat: &str,
         input_data: Vec<u8>,
         dest: T::AccountId,
@@ -424,7 +424,7 @@ mod tests {
         hex_literal::hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"].into()
     }
 
-    const CODE_CALL: &str = r#"
+    pub const CODE_CALL: &str = r#"
 (module
 	;; seal_call(
 	;;    callee_ptr: u32,
