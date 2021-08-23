@@ -9,7 +9,7 @@ use sp_version::RuntimeVersion;
 
 use crate::message_assembly::chain_generic_metadata::Metadata;
 use crate::message_assembly::signer::app::{
-    GenericAddress, GenericExtra, Signature, SignedPayload, UncheckedExtrinsicV4,
+    Call, GenericAddress, GenericExtra, Signature, SignedPayload, UncheckedExtrinsicV4,
 };
 use crate::{compose_call, AuthorityId};
 
@@ -55,16 +55,11 @@ where
         &self,
         module_name: &'static str,
         fn_name: &'static str,
-        data: Vec<u8>,
-        to: [u8; 32],
-        value: u128,
-        gas: u64,
-    ) -> Result<UncheckedExtrinsicV4<sp_std::vec::Vec<u8>>, &'static str> {
-        let call = self.assemble_call(module_name, fn_name, data, to, value, gas);
+        args: Vec<Vec<u8>>,
+    ) -> Result<UncheckedExtrinsicV4<Call>, &'static str> {
+        let call = self.assemble_call(module_name, fn_name, args)?;
 
-        ensure!(call.is_ok(), "Could not assemble call");
-
-        self.assemble_signed_tx_offline(call.unwrap(), 0)
+        self.assemble_signed_tx_offline(call, 0)
     }
 
     /// Who will like to assemble the call?
@@ -78,29 +73,24 @@ where
         &self,
         module_name: &'static str,
         fn_name: &'static str,
-        data: Vec<u8>,
-        to: [u8; 32],
-        value: u128,
-        gas: u64,
-    ) -> Result<Vec<u8>, &'static str> {
-        let call = compose_call!(
-            self.metadata,
-            module_name,
-            fn_name,
-            data,
-            to,
-            Compact(value),
-            Compact(gas)
-        );
+        args: Vec<Vec<u8>>,
+    ) -> Result<Call, &'static str> {
+        let (module_index, function_index) = self
+            .metadata
+            .lookup_module_and_call_indices(module_name, fn_name)?;
         // e.g. call = ([1, 2], MultiAddress::Id(0101010101010101010101010101010101010101010101010101010101010101 (5C62Ck4U...)), 3, 2)
-        Ok(call.encode())
+        Ok(Call {
+            module_index,
+            function_index,
+            args,
+        })
     }
 
     fn assemble_signed_tx_offline(
         &self,
-        call_bytes: Vec<u8>,
+        call_bytes: Call,
         nonce: u32,
-    ) -> Result<UncheckedExtrinsicV4<sp_std::vec::Vec<u8>>, &'static str> {
+    ) -> Result<UncheckedExtrinsicV4<Call>, &'static str> {
         let extra = GenericExtra::new(sp_runtime::generic::Era::Immortal, nonce);
 
         let raw_payload = SignedPayload::from_raw(
@@ -274,8 +264,11 @@ pub mod tests {
                 create_submitter(),
             );
 
-            let actual_call_bytes =
-                sga.assemble_call("ModuleName", "FnName2", vec![3, 3, 3], [1_u8; 32], 3, 2);
+            let actual_call_bytes = sga.assemble_call(
+                "ModuleName",
+                "FnName2",
+                vec![vec![3, 3, 3], [1_u8; 32], 3, 2],
+            );
 
             let expected_call_bytes = (
                 (1_u8, 1_u8),
@@ -309,7 +302,11 @@ pub mod tests {
             );
 
             let test_call_bytes = sga
-                .assemble_call("ModuleName", "FnName3", vec![0, 1, 2], [1_u8; 32], 3, 2)
+                .assemble_call(
+                    "ModuleName",
+                    "FnName3",
+                    vec![vec![0, 1, 2], [1_u8; 32], 3, 2],
+                )
                 .unwrap();
 
             let actual_call_bytes = test_call_bytes.clone();

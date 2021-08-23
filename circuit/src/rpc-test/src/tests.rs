@@ -49,6 +49,7 @@ use pallet_circuit_execution_delivery::message_assembly::test_utils::create_test
 use futures::{compat::Future01CompatExt, executor, FutureExt};
 use jsonrpc_core::futures::future as future01;
 
+use codec::Encode;
 use sc_keystore::LocalKeystore;
 use sp_keyring::Sr25519Keyring;
 
@@ -212,7 +213,7 @@ fn successfully_dispatches_unsigned_get_storage_outbound_message_from_circuit_to
     let arguments = vec![key];
 
     let get_storage_outbound_message: CircuitOutboundMessage = CircuitOutboundMessage {
-        name: b"get_storage".to_vec(),
+        name: b"state_getStorage".to_vec(),
         module_name: b"state".to_vec(),
         method_name: b"getStorage".to_vec(),
         arguments,
@@ -222,15 +223,17 @@ fn successfully_dispatches_unsigned_get_storage_outbound_message_from_circuit_to
         target: None,
     };
 
-    let request_message: RpcPayloadUnsigned = get_storage_outbound_message.to_jsonrpc_unsigned();
+    let request_message: RpcPayloadUnsigned = get_storage_outbound_message
+        .to_jsonrpc_unsigned()
+        .expect("must not fail");
 
     let request = format!(
-        r#"{{"jsonrpc":"2.0","method":"{}","params":["{}"],"id":1}}"#,
+        r#"{{"jsonrpc":"2.0","method":"{}","params":["0x{}"],"id":1}}"#,
         request_message.method_name,
-        hex::encode(request_message.params.0)
+        hex::encode(request_message.params.encode())
     );
 
-    let response = r#"{"jsonrpc":"2.0","result":"0x03fd9651c5ffb80b68eb4faddc697b50016128f8e3799ff81ae42d78d38ba9e4","id":1}"#;
+    let response = r#"{"jsonrpc":"2.0","result":"null","id":1}"#;
 
     let meta = sc_rpc::Metadata::default();
     assert_eq!(
@@ -256,19 +259,27 @@ fn successfully_dispatches_signed_transfer_outbound_message_from_circuit_to_exte
     ext.execute_with(|| {
         let transfer_message = test_protocol
             .transfer(
-                Default::default(),
+                Sr25519Keyring::Alice.to_raw_public_vec(),
                 Default::default(),
                 GatewayType::ProgrammableExternal,
             )
-            .unwrap();
+            .expect("shouldn't fail");
 
         let transfer = uxt(Sr25519Keyring::Alice, 0);
+        let signed = transfer_message
+            .to_jsonrpc_signed()
+            .expect("should have a signed payload");
 
         use sp_core::Encode;
+        println!("0x{}", hex::encode(signed.signed_extrinsic.clone()));
+        println!("0x{}", hex::encode(transfer.encode()));
+
         let request = format!(
             r#"{{"jsonrpc":"2.0","method":"author_submitExtrinsic","params":["0x{}"],"id":1}}"#,
-            hex::encode(transfer.encode())
+            hex::encode(signed.signed_extrinsic)
         );
+
+        println!("{}", request);
 
         let response = r#"{"jsonrpc":"2.0","result":null,"id":1}"#;
 

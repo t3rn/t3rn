@@ -54,12 +54,10 @@ where
         name: &'static str,
         arguments: Vec<Vec<u8>>,
     ) -> Result<ExtraMessagePayload, &'static str> {
-        let call_bytes = compose_call!(self.assembly.metadata, namespace, name, arguments).encode();
-
-        // TODO: use a proper nonce
         let extrinsic = self
             .assembly
-            .assemble_signed_tx_offline(call_bytes.clone(), 0)?;
+            .assemble_signed_call(namespace, name, arguments)?;
+
         let signature = extrinsic
             .signature
             .clone()
@@ -70,7 +68,7 @@ where
             signer: self.assembly.submitter.to_raw_vec(),
             module_name: namespace.encode(),
             method_name: name.encode(),
-            call_bytes: call_bytes.clone(),
+            call_bytes: extrinsic.function.encode(),
             signature: signature.encode(),
             extra: GenericExtra::new(Era::Immortal, 0).encode(),
             tx_signed: extrinsic.encode(),
@@ -323,7 +321,7 @@ where
             ],
         }];
 
-        let arguments = vec![to, value, vec![]];
+        let arguments = vec![to, value];
 
         Ok(CircuitOutboundMessage {
             name: b"transfer".to_vec(),

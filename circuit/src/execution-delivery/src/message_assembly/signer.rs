@@ -76,6 +76,13 @@ pub mod app {
         }
     }
 
+    #[derive(Encode, Clone, RuntimeDebug)]
+    pub struct Call {
+        pub module_index: u8,
+        pub function_index: u8,
+        pub args: Vec<Vec<u8>>,
+    }
+
     /// Mirrors the currently used Extrinsic format (V3) from substrate. Has less traits and methods though.
     /// The SingedExtra used does not need to implement SingedExtension here.
     #[derive(Clone, PartialEq)]
@@ -234,58 +241,6 @@ macro_rules! compose_call {
             ([module_index as u8, call_index as u8] $(, ($args)) *)
         }
     };
-}
-
-/// Generates an Unchecked extrinsic for a given call
-/// # Arguments
-///
-/// * 'signer' - AccountKey that is used to sign the extrinsic.
-/// * 'call' - call as returned by the compose_call! macro or via substrate's call enums.
-/// * 'nonce' - signer's account nonce: u32
-/// * 'era' - Era for extrinsic to be valid
-/// * 'genesis_hash' - sp-runtime::Hash256/[u8; 32].
-/// * 'runtime_spec_version' - RuntimeVersion.spec_version/u32
-#[macro_export]
-macro_rules! compose_extrinsic_offline {
-    ($signer: expr,
-    $call: expr,
-    $nonce: expr,
-    $era: expr,
-    $genesis_hash: expr,
-    $genesis_or_current_hash: expr,
-    $runtime_spec_version: expr,
-    $transaction_version: expr) => {{
-        //     use t3rn_primitives::*;
-        //
-        //     let extra = GenericExtra::new($era, $nonce);
-        //
-        //     let raw_payload = SignedPayload::from_raw(
-        //         $call.clone(),
-        //         extra.clone(),
-        //         (
-        //             $runtime_spec_version,
-        //             $transaction_version,
-        //             $genesis_hash,
-        //             $genesis_or_current_hash,
-        //             (),
-        //             (),
-        //             (),
-        //         ),
-        //     );
-        //
-        //     let signature = raw_payload.using_encoded(|payload| $signer.sign(payload));
-        //
-        //     let mut arr = Default::default();
-        //     arr.clone_from_slice($signer.public().as_ref());
-        //
-        //     UncheckedExtrinsicV4::new_signed(
-        //         $call,
-        //         GenericAddress::from(AccountId::from(arr)),
-        //         signature.into(),
-        //         extra,
-        //     )
-        vec![]
-    }};
 }
 
 #[cfg(test)]
