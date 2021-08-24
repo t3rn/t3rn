@@ -99,19 +99,6 @@ pub enum ContractAccessError {
     IsTombstone,
 }
 
-impl From<ContractAccessError> for jsonrpc_core::Error {
-    fn from(e: ContractAccessError) -> Self {
-        Self {
-            code: jsonrpc_core::ErrorCode::ServerError(e.clone().into()),
-            message: match e {
-                ContractAccessError::DoesntExist => "Requested contract does not exist".into(),
-                ContractAccessError::IsTombstone => "Requested contract is inactive".into(),
-            },
-            data: Some(format!("{:?}", e).into()),
-        }
-    }
-}
-
 impl From<ContractAccessError> for i64 {
     fn from(e: ContractAccessError) -> i64 {
         match e {
