@@ -1097,6 +1097,7 @@ dependencies = [
  "pallet-circuit-execution-delivery",
  "pallet-contracts",
  "pallet-contracts-registry",
+ "pallet-contracts-registry-rpc-runtime-api",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-simple",
@@ -4722,7 +4723,6 @@ dependencies = [
 name = "pallet-contracts-registry-rpc-runtime-api"
 version = "0.1.0"
 dependencies = [
- "frame-system",
  "pallet-contracts-registry",
  "parity-scale-codec",
  "sp-api",

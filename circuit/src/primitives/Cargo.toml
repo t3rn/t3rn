@@ -15,11 +15,11 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 # This crate should not rely on any of the frame primitives.
 serde = { version = "1.0.124", features = ["derive"], default-features = false }
-codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"]  }
-sp-std =  { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8', default-features = false }
-sp-version =  { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8', default-features = false }
-sp-core =  { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8', default-features = false }
-sp-io =  { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8', default-features = false }
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
+sp-std = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8', default-features = false }
+sp-version = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8', default-features = false }
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8', default-features = false }
+sp-io = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8', default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8', default-features = false }
 frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
@@ -29,15 +29,15 @@ bp-header-chain = { default-features = false, path = "../../../vendor/bridges/pr
 [features]
 default = ["std"]
 std = [
-	"serde/std",
-	"codec/std",
-	"sp-runtime/std",
-	"sp-std/std",
-	"sp-core/std",
-	"sp-version/std",
-	"sp-io/std",
 	"bp-header-chain/std",
-	"pallet-sudo/std",
+	"codec/std",
 	"frame-system/std",
 	"frame-support/std",
+	"pallet-sudo/std",
+	"serde/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	"sp-version/std",
 ]
