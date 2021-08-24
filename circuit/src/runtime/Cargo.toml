@@ -30,6 +30,7 @@ pallet-shift-session-manager = { path = "../../../vendor/bridges/modules/shift-s
 
 # Circuit dependencies
 pallet-contracts-registry = {  path = "../contracts-registry", default-features = false }
+pallet-contracts-registry-rpc-runtime-api = {  path = "../contracts-registry/rpc/runtime-api", default-features = false }
 pallet-circuit-execution-delivery = {  path = "../execution-delivery", default-features = false }
 pallet-xdns = { path = "../xdns", default-features = false }
 volatile-vm = { path = "../../../vm/volatile-vm", default-features = false }
