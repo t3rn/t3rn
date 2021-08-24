@@ -18,7 +18,8 @@
 //! Unit tests for pallet contracts-registry.
 
 use crate::mock::{ContractsRegistry, ExtBuilder, Test};
-use crate::{Error, RegistryContract};
+use crate::pallet::Error;
+use crate::types::{ContractAccessError, RegistryContract};
 use frame_support::{assert_err, assert_ok};
 use sp_core::H256;
 use t3rn_primitives::contract_metadata::ContractMetadata;

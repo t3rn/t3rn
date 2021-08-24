@@ -7,6 +7,7 @@ homepage = "https://t3rn.io"
 license = "Apache 2.0"
 repository = "https://github.com/t3rn/t3rn/"
 description = "A crate that hosts a common definitions that are relevant for the all t3rn pallets."
+resolver = "2"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]

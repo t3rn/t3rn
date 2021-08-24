@@ -12,21 +12,23 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.0.0" }
-jsonrpc-core = "18.0.0"
-jsonrpc-core-client = "18.0.0"
-jsonrpc-derive = "18.0.0"
+jsonrpc-core = "15.0.0"
+jsonrpc-core-client = "15.0.0"
+jsonrpc-derive = "15.0.0"
 sp-blockchain = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 sp-core = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
+sc-rpc = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 sp-rpc = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 sp-std = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
-serde = { version = "1.0.101", features = ["derive"] }
+serde = { version = "1.0.124", features = ["derive"] }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 sp-api = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 pallet-contracts-primitives = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 t3rn-primitives = { version = "0.1.0", path = "../primitives" }
 circuit-rpc-runtime-api = { version = "0.1.0", path = "./runtime-api" }
-#pallet-contracts-registry = { path = "../contracts-registry" }
+pallet-contracts-registry = { path = "../contracts-registry" }
 pallet-contracts-registry-rpc = { path = "../contracts-registry/rpc" }
+pallet-contracts-registry-rpc-runtime-api = { path = "../contracts-registry/rpc/runtime-api" }
 
 [dev-dependencies]
 serde_json = "1.0.41"

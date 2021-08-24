@@ -16,7 +16,10 @@ use std::sync::Arc;
 
 use jsonrpc_core::{Error, ErrorCode, Result};
 use jsonrpc_derive::rpc;
-use pallet_contracts_registry_rpc::{ContractsRegistry, ContractsRegistryApi};
+use pallet_contracts_registry_rpc::{
+    ContractsRegistry as ContractsRegistryClient, ContractsRegistryApi,
+};
+use pallet_contracts_registry_rpc_runtime_api::ContractsRegistryRuntimeApi;
 use serde::{Deserialize, Serialize};
 use sp_api::codec::Codec;
 use sp_api::ProvideRuntimeApi;
@@ -35,8 +38,6 @@ use pallet_contracts_registry::ContractsRegistry;
 use t3rn_primitives::{ChainId, ComposableExecResult, Compose, ContractAccessError};
 
 const RUNTIME_ERROR: i64 = 1;
-const CONTRACT_DOESNT_EXIST: i64 = 2;
-const CONTRACT_IS_A_TOMBSTONE: i64 = 3;
 
 /// A rough estimate of how much gas a decent hardware consumes per second,
 /// using native execution.
@@ -54,25 +55,6 @@ pub struct FullDeps<C> {
     pub client: Arc<C>,
 }
 
-/// A private new type for converting `ContractAccessError` into an RPC error.
-struct RPCContractAccessError(ContractAccessError);
-impl From<RPCContractAccessError> for Error {
-    fn from(e: RPCContractAccessError) -> Error {
-        use t3rn_primitives::ContractAccessError::*;
-        match e.0 {
-            DoesntExist => Error {
-                code: ErrorCode::ServerError(CONTRACT_DOESNT_EXIST),
-                message: "The specified contract doesn't exist.".into(),
-                data: None,
-            },
-            IsTombstone => Error {
-                code: ErrorCode::ServerError(CONTRACT_IS_A_TOMBSTONE),
-                message: "The contract is a tombstone and doesn't have any storage.".into(),
-                data: None,
-            },
-        }
-    }
-}
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[serde(deny_unknown_fields)]
@@ -162,15 +144,6 @@ pub trait CircuitApi<BlockHash, BlockNumber, AccountId, Balance> {
         call_request: InterExecRequest<AccountId, Balance>,
         at: Option<BlockHash>,
     ) -> Result<RpcComposableExecResult>;
-
-    /// Returns the contracts searchable by name or author
-    #[rpc(name = "circuit_fetchContracts")]
-    fn fetch_contracts(
-        &self,
-        author: AccountId,
-        name: Box<str>,
-        at: Option<BlockHash>,
-    ) -> Result<RpcFetchContractsResult>;
 }
 
 /// An implementation of contract specific RPC methods.
@@ -204,7 +177,8 @@ where
         Balance,
         <<Block as BlockT>::Header as HeaderT>::Number,
     >,
-    C::Api: pallet_contracts_registry_rpc::ContractsRegistryRuntimeApi<Block, AccountId>,
+    C::Api:
+        pallet_contracts_registry_rpc::ContractsRegistryRuntimeApi<Block, AccountId, Block::Hash>,
     AccountId: Codec,
     Balance: Codec,
 {
@@ -272,22 +246,6 @@ where
 
         Ok(exec_result.into())
     }
-
-    fn fetch_contracts(
-        &self,
-        _author: AccountId,
-        _name: Box<str>,
-        _at: Option<<Block as BlockT>::Hash>,
-    ) -> Result<RpcFetchContractsResult> {
-        let result = pallet_contracts_registry::Pallet::fetch_contract_by_author(_author)
-            .map_err(|err| runtime_error_into_rpc_err(err))?;
-
-        Ok(RpcFetchContractsResult::Success {
-            flags: 0,
-            data: result.into(),
-            gas_consumed: 0,
-        })
-    }
 }
 
 /// Converts a runtime trap into an RPC error.
@@ -303,13 +261,18 @@ pub fn create_full<C, Block>(deps: FullDeps<C>) -> jsonrpc_core::IoHandler<sc_rp
 where
     Block: BlockT,
     C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
+    // C::Api: ContractsRegistryRuntimeApi<
+    //     Block,
+    //     t3rn_primitives::GenericAddress,
+    //     <Block as BlockT>::Hash,
+    // >,
 {
     let mut io = jsonrpc_core::IoHandler::default();
     let FullDeps { client } = deps;
 
-    io.extend_with(ContractsRegistryApi::to_delegate(ContractsRegistry::new(
-        client.clone(),
-    )));
+    // io.extend_with(ContractsRegistryApi::to_delegate(
+    //     ContractsRegistryClient::new(client.clone()),
+    // ));
     io
 }
 

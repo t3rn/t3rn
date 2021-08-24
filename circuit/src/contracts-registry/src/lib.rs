@@ -22,16 +22,11 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
-
-use codec::{Decode, Encode};
+use codec::Encode;
 use frame_support::dispatch::DispatchResult;
 use frame_system::ensure_signed;
-use sp_runtime::{traits::Hash as Hashing, RuntimeDebug};
 use sp_std::prelude::*;
-use t3rn_primitives::{abi::ContractActionDesc, transfers::BalanceOf, ChainId, Compose};
-use volatile_vm::storage::RawAliveContractInfo;
+use t3rn_primitives::transfers::BalanceOf;
 
 // Re-export pallet items so that they can be accessed from the crate namespace.
 pub use pallet::*;
@@ -41,98 +36,11 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+mod types;
 mod weights;
 
-use t3rn_primitives::contract_metadata::ContractMetadata;
+pub use types::*;
 pub use weights::*;
-
-pub type RegistryContractId<T> = <T as frame_system::Config>::Hash;
-
-/// The possible errors that can happen querying the storage of a contract.
-#[derive(Eq, PartialEq, Encode, Decode, Debug, Clone)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub enum ContractAccessError {
-    /// The given address doesn't point to a contract.
-    DoesntExist,
-    /// The specified contract is a tombstone and thus cannot have any storage.
-    IsTombstone,
-}
-
-pub type FetchContractsResult = Result<Vec<u8>, ContractAccessError>;
-
-/// A preliminary representation of a contract in the onchain registry.
-#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
-pub struct RegistryContract<Hash, AccountId, BalanceOf, BlockNumber> {
-    /// Original code text
-    pub code_txt: Vec<u8>,
-    /// Bytecode
-    pub bytes: Vec<u8>,
-    /// Original code author
-    pub author: AccountId,
-    /// Optional remuneration fee for the author
-    pub author_fees_per_single_use: Option<BalanceOf>,
-    /// Optional ABI
-    pub abi: Option<Vec<u8>>,
-    /// Action descriptions (calls for now)
-    pub action_descriptions: Vec<ContractActionDesc<Hash, ChainId, AccountId>>,
-    /// Contracts Info after Contracts Pallet
-    pub info: Option<RawAliveContractInfo<Hash, BalanceOf, BlockNumber>>,
-    /// Contract metadata to be used in queries
-    pub meta: ContractMetadata,
-}
-
-impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode>
-    RegistryContract<Hash, AccountId, BalanceOf, BlockNumber>
-{
-    pub fn new(
-        code_txt: Vec<u8>,
-        bytes: Vec<u8>,
-        author: AccountId,
-        author_fees_per_single_use: Option<BalanceOf>,
-        abi: Option<Vec<u8>>,
-        action_descriptions: Vec<ContractActionDesc<Hash, ChainId, AccountId>>,
-        info: Option<RawAliveContractInfo<Hash, BalanceOf, BlockNumber>>,
-        meta: ContractMetadata,
-    ) -> Self {
-        RegistryContract {
-            code_txt,
-            bytes,
-            author,
-            author_fees_per_single_use,
-            abi,
-            action_descriptions,
-            info,
-            meta,
-        }
-    }
-
-    pub fn generate_id<T: Config>(&self) -> RegistryContractId<T> {
-        let mut protocol_part_of_contract = self.code_txt.clone();
-        protocol_part_of_contract.extend(self.bytes.clone());
-        T::Hashing::hash(Encode::encode(&protocol_part_of_contract).as_ref())
-    }
-
-    pub fn from_compose(
-        compose: Compose<AccountId, BalanceOf>,
-        action_descriptions: Vec<ContractActionDesc<Hash, ChainId, AccountId>>,
-        author: AccountId,
-        author_fees_per_single_use: Option<BalanceOf>,
-        abi: Option<Vec<u8>>,
-        info: Option<RawAliveContractInfo<Hash, BalanceOf, BlockNumber>>,
-        meta: ContractMetadata,
-    ) -> RegistryContract<Hash, AccountId, BalanceOf, BlockNumber> {
-        RegistryContract::new(
-            compose.code_txt,
-            compose.bytes,
-            author,
-            author_fees_per_single_use,
-            abi,
-            action_descriptions,
-            info,
-            meta,
-        )
-    }
-}
 
 // Definition of the pallet logic, to be aggregated at runtime definition through
 // `construct_runtime`.

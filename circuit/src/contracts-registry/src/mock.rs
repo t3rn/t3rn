@@ -20,7 +20,7 @@
 #![cfg(test)]
 
 use crate as pallet_contracts_registry;
-use crate::RegistryContract;
+use crate::types::RegistryContract;
 use frame_support::{
     construct_runtime, pallet_prelude::GenesisBuild, parameter_types, weights::Weight,
 };

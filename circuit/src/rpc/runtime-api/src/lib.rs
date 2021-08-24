@@ -18,21 +18,16 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_runtime::{
-    codec::Codec,
-    traits::{MaybeDisplay, MaybeFromStr},
-    DispatchError,
-};
+use sp_runtime::{codec::Codec, traits::MaybeDisplay, DispatchError};
 use sp_std::vec::Vec;
 use t3rn_primitives::{ComposableExecResult, Compose};
 
 sp_api::decl_runtime_apis! {
     /// The API to interact with contracts without using executive.
-    pub trait CircuitApi<AccountId, Balance, BlockNumber, Hash> where
-        AccountId: Codec + MaybeDisplay + MaybeFromStr,
-        Balance: Codec + MaybeDisplay + MaybeFromStr,
-        BlockNumber: Codec + MaybeDisplay + MaybeFromStr,
-        Hash: Codec + MaybeDisplay + MaybeFromStr + sp_std::hash::Hash
+    pub trait CircuitApi<AccountId, Balance, BlockNumber> where
+        AccountId: Codec,
+        Balance: Codec,
+        BlockNumber: Codec,
     {
         /// Perform a composable execution from a specified account to a appointed gateways.
         ///
@@ -43,6 +38,6 @@ sp_api::decl_runtime_apis! {
             io: Vec<u8>,
             gas_limit: u64,
             input_data: Vec<u8>,
-        ) -> Result<ComposableExecResult, DispatchError>;
+        ) -> ComposableExecResult;
     }
 }

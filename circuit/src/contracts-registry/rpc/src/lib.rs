@@ -2,18 +2,22 @@
 
 use std::sync::Arc;
 
-mod types;
-
 pub use self::gen_client::Client as ContractsRegistryClient;
-use crate::types::RpcFetchContractsResult;
 use codec::Codec;
-use jsonrpc_core::Result;
+use jsonrpc_core::{Error, ErrorCode, Result};
+use jsonrpc_core_client::RpcError;
 use jsonrpc_derive::rpc;
-pub use pallet_contracts_registry_rpc_runtime_api::ContractsRegistryApi as ContractsRegistryRuntimeApi;
-use sp_api::ProvideRuntimeApi;
+use pallet_contracts_registry::FetchContractsResult;
+pub use pallet_contracts_registry_rpc_runtime_api::ContractsRegistryRuntimeApi;
+use sp_api::{ApiError, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_core::Bytes;
+use sp_runtime::generic::BlockId;
 use sp_runtime::traits::{Block as BlockT, Hash as HashT, MaybeDisplay};
+
+const RUNTIME_ERROR: i64 = 1;
+const CONTRACT_DOESNT_EXIST: i64 = 2;
+const CONTRACT_IS_A_TOMBSTONE: i64 = 3;
 
 #[rpc]
 pub trait ContractsRegistryApi<AccountId, Hash> {
@@ -23,20 +27,16 @@ pub trait ContractsRegistryApi<AccountId, Hash> {
         &self,
         author: Option<AccountId>,
         data: Option<Bytes>,
-    ) -> Result<RpcFetchContractsResult>;
-
-    /// Returns a single contract searchable by id
-    #[rpc(name = "contractsRegistry_fetchContractById")]
-    fn fetch_contract_by_id(&self, contract_id: Option<Hash>) -> Result<RpcFetchContractsResult>;
+    ) -> Result<FetchContractsResult>;
 }
 
 /// A struct that implements the [ContractsRegistryApi].
-pub struct ContractsRegistry<C, P> {
+pub struct ContractsRegistry<C, B> {
     client: Arc<C>,
-    _marker: std::marker::PhantomData<P>,
+    _marker: std::marker::PhantomData<B>,
 }
 
-impl<C, P> ContractsRegistry<C, P> {
+impl<C, B> ContractsRegistry<C, B> {
     pub fn new(client: Arc<C>) -> Self {
         Self {
             client,
@@ -58,34 +58,22 @@ where
         &self,
         author: Option<AccountId>,
         metadata: Option<Bytes>,
-    ) -> Result<RpcFetchContractsResult> {
+    ) -> Result<FetchContractsResult> {
         let api = self.client.runtime_api();
+        let at = BlockId::hash(self.client.info().best_hash);
 
-        let result = api.fetch_contracts(author, metadata).map_err(|e| e.into());
+        let result = api
+            .fetch_contracts(&at, author, metadata)
+            .map_err(|e| runtime_error_into_rpc_err(e))?;
 
-        if result.is_err() {
-            return Err(result.unwrap_err().into());
-        }
-        // TODO: update flags and gas consumed
-        Ok(RpcFetchContractsResult::Success {
-            data: result.unwrap().encode(),
-            flags: 0,
-            gas_consumed: 0,
-        })
+        Ok(result)
     }
+}
 
-    fn fetch_contract_by_id(&self, contract_id: Option<Hash>) -> Result<RpcFetchContractsResult> {
-        let api = self.client.runtime_api();
-
-        let result = api.fetch_contract_by_id(contract_id).map_err(|e| e.into());
-        if result.is_err() {
-            return Err(result.unwrap_err().into());
-        }
-        // TODO: update flags and gas consumed
-        Ok(RpcFetchContractsResult::Success {
-            data: result.unwrap().encode(),
-            flags: 0,
-            gas_consumed: 0,
-        })
+fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> Error {
+    Error {
+        code: ErrorCode::ServerError(RUNTIME_ERROR),
+        message: "Runtime error".into(),
+        data: Some(format!("{:?}", err).into()),
     }
 }

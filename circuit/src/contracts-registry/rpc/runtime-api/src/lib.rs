@@ -1,13 +1,18 @@
+//! Runtime API definition required by Contracts Registry RPC extensions.
+//!
+//! This API should be imported and implemented by the runtime,
+//! of a node that wants to use the custom RPC extension
+//! adding Contracts Registry access methods.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::Codec;
-use pallet_contracts_registry::{FetchContractsResult, RegistryContractId};
+use pallet_contracts_registry::FetchContractsResult;
 use sp_core::Bytes;
-use sp_runtime::traits::MaybeDisplay;
 
 sp_api::decl_runtime_apis! {
     /// The API to interact with contracts without using executive.
-    pub trait ContractsRegistryApi<AccountId, Hash> where
+    pub trait ContractsRegistryRuntimeApi<AccountId, Hash> where
         AccountId: Codec,
         Hash: Codec,
     {
@@ -15,11 +20,6 @@ sp_api::decl_runtime_apis! {
         fn fetch_contracts(
             author: Option<AccountId>,
             metadata: Option<Bytes>,
-        ) -> FetchContractsResult;
-
-        /// Returns a single contract by ID.
-        fn fetch_contract_by_id(
-            contract_id: Option<Hash>,
         ) -> FetchContractsResult;
     }
 }
