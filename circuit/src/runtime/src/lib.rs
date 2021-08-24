@@ -37,7 +37,7 @@ use crate::gateway_messages::{ToGatewayMessagePayload, WithGatewayMessageBridge}
 use bridge_runtime_common::messages::{
     source::estimate_message_dispatch_and_delivery_fee, MessageBridge,
 };
-use codec::{Decode, Encode};
+use codec::Decode;
 use pallet_grandpa::{
     fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
@@ -52,16 +52,14 @@ use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::Convert,
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, DispatchError, DispatchResult, MultiSignature, MultiSigner,
+    ApplyExtrinsicResult, DispatchResult, MultiSignature, MultiSigner,
 };
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use t3rn_primitives::{
-    transfers::BalanceOf, ComposableExecResult, Compose, ContractAccessError, FetchContractsResult,
-};
+use t3rn_primitives::{transfers::BalanceOf, ComposableExecResult, Compose};
 
 use volatile_vm::DispatchRuntimeCall;
 
@@ -935,15 +933,15 @@ impl_runtime_apis! {
         }
     }
 
-    impl circuit_rpc_runtime_api::CircuitApi<Block, AccountId, Balance, BlockNumber, Hash> for Runtime
+    impl circuit_rpc_runtime_api::CircuitApi<Block, AccountId, Balance, BlockNumber> for Runtime
     {
         fn composable_exec(
-            origin: AccountId,
-            components: Vec<Compose<AccountId, Balance>>,
-            io: Vec<u8>,
-            gas_limit: u64,
-            input_data: Vec<u8>,
-            ) -> Result<ComposableExecResult, DispatchError> { todo!() }
+            _origin: AccountId,
+            _components: Vec<Compose<AccountId, Balance>>,
+            _io: Vec<u8>,
+            _gas_limit: u64,
+            _input_data: Vec<u8>,
+        ) -> ComposableExecResult { todo!() }
     }
 }
 
