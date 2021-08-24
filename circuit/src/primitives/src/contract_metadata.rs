@@ -13,9 +13,11 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with cargo-contract.  If not, see <http://www.gnu.org/licenses/>.
+#![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use serde::Serialize;
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 use sp_runtime::RuntimeDebug;
 use sp_std::{vec, vec::Vec};
 // #[cfg(feature = "std")]
@@ -117,7 +119,8 @@ pub struct SourceCompiler {
 // }
 //
 /// Compilers used to compile a smart contract.
-#[derive(RuntimeDebug, Serialize)]
+#[derive(RuntimeDebug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum Compiler {
     RustC,
     Solang,
