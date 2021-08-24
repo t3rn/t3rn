@@ -33,6 +33,8 @@ use t3rn_primitives::GatewayGenesisConfig;
 pub use pallet::*;
 
 #[cfg(test)]
+mod mock;
+#[cfg(test)]
 mod tests;
 
 mod weights;
