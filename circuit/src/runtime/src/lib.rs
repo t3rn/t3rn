@@ -46,13 +46,13 @@ use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
 use sp_runtime::traits::{
-    BlakeTwo256, Block as BlockT, IdentityLookup, Keccak256, NumberFor, OpaqueKeys,
+    AccountIdLookup, BlakeTwo256, Block as BlockT, Keccak256, NumberFor, OpaqueKeys,
 };
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::Convert,
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, DispatchError, DispatchResult, MultiSignature, MultiSigner,
+    ApplyExtrinsicResult, DispatchResult, MultiSignature, MultiSigner,
 };
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -79,6 +79,7 @@ pub use pallet_multi_finality_verifier::Call as BridgePolkadotLikeMultiFinalityV
 pub use pallet_sudo::Call as SudoCall;
 pub use pallet_timestamp::Call as TimestampCall;
 
+use frame_support::weights::constants::RocksDbWeight;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
@@ -137,6 +138,7 @@ impl_opaque_keys! {
 }
 
 /// This runtime version.
+#[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("Circuit-runtime"),
     impl_name: create_runtime_str!("Circuit-runtime"),
@@ -159,22 +161,20 @@ pub fn native_version() -> NativeVersion {
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 250;
     pub const Version: RuntimeVersion = VERSION;
-    pub const DbWeight: RuntimeDbWeight = RuntimeDbWeight {
-        read: 60_000_000, // ~0.06 ms = ~60 µs
-        write: 200_000_000, // ~0.2 ms = 200 µs
-    };
     pub const SS58Prefix: u8 = 60;
 }
 
 impl frame_system::Config for Runtime {
     /// The basic call filter to use in dispatchable.
     type BaseCallFilter = ();
-    /// The identifier used to distinguish between accounts.
-    type AccountId = AccountId;
+    /// Block and extrinsics weights: base values and limits.
+    type BlockWeights = bp_circuit::BlockWeights;
+    /// The maximum length of a block (in bytes).
+    type BlockLength = bp_circuit::BlockLength;
+    /// The ubiquitous origin type.
+    type Origin = Origin;
     /// The aggregated dispatch type that is available for extrinsics.
     type Call = Call;
-    /// The lookup mechanism to get account ID from whatever is passed in dispatchers.
-    type Lookup = IdentityLookup<AccountId>;
     /// The index type for storing how many extrinsics an account has signed.
     type Index = Index;
     /// The index type for blocks.
@@ -183,33 +183,31 @@ impl frame_system::Config for Runtime {
     type Hash = Hash;
     /// The hashing algorithm used.
     type Hashing = Hashing;
+    /// The identifier used to distinguish between accounts.
+    type AccountId = AccountId;
+    /// The lookup mechanism to get account ID from whatever is passed in dispatchers.
+    type Lookup = AccountIdLookup<AccountId, ()>;
     /// The header type.
     type Header = generic::Header<BlockNumber, Hashing>;
     /// The ubiquitous event type.
     type Event = Event;
-    /// The ubiquitous origin type.
-    type Origin = Origin;
     /// Maximum number of block number to block hash mappings to keep (oldest pruned first).
     type BlockHashCount = BlockHashCount;
+    /// The weight of database operations that the runtime can invoke.
+    type DbWeight = RocksDbWeight;
     /// Version of the runtime.
     type Version = Version;
     /// Provides information about the pallet setup in the runtime.
     type PalletInfo = PalletInfo;
+    /// The data to be stored in an account.
+    type AccountData = pallet_balances::AccountData<Balance>;
     /// What to do if a new account is created.
     type OnNewAccount = ();
     /// What to do if an account is fully reaped from the system.
     type OnKilledAccount = ();
-    /// The data to be stored in an account.
-    type AccountData = pallet_balances::AccountData<Balance>;
     // TODO: update me (https://github.com/paritytech/parity-bridges-common/issues/78)
     /// Weight information for the extrinsics of this pallet.
     type SystemWeightInfo = ();
-    /// Block and extrinsics weights: base values and limits.
-    type BlockWeights = bp_circuit::BlockWeights;
-    /// The maximum length of a block (in bytes).
-    type BlockLength = bp_circuit::BlockLength;
-    /// The weight of database operations that the runtime can invoke.
-    type DbWeight = DbWeight;
     /// The designated SS58 prefix of this chain.
     type SS58Prefix = SS58Prefix;
     /// The set code logic, just the default since we're not a parachain.
@@ -692,7 +690,7 @@ construct_runtime!(
 );
 
 /// The address format for describing accounts.
-pub type Address = AccountId;
+pub type Address = sp_runtime::MultiAddress<AccountId, ()>;
 /// Block header type as expected by this runtime.
 pub type Header = generic::Header<BlockNumber, Hashing>;
 /// Block type as expected by this runtime.
@@ -711,8 +709,7 @@ pub type SignedExtra = (
     frame_system::CheckWeight<Runtime>,
     pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 );
-/// The payload being signed in transactions.
-pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;
+
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
 /// Extrinsic type that has already been checked.
@@ -724,6 +721,7 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPallets,
+    (),
 >;
 
 impl_runtime_apis! {
