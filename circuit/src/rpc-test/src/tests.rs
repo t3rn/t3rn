@@ -49,7 +49,7 @@ use pallet_circuit_execution_delivery::message_assembly::test_utils::create_test
 use futures::{compat::Future01CompatExt, executor, FutureExt};
 use jsonrpc_core::futures::future as future01;
 
-use codec::Encode;
+use codec::{Compact, Encode};
 use sc_keystore::LocalKeystore;
 use sp_keyring::Sr25519Keyring;
 
@@ -259,8 +259,8 @@ fn successfully_dispatches_signed_transfer_outbound_message_from_circuit_to_exte
     ext.execute_with(|| {
         let transfer_message = test_protocol
             .transfer(
-                GenericAddress::Address32(Sr25519Keyring::Alice.to_raw_public()),
-                Default::default(),
+                GenericAddress::Id(Sr25519Keyring::Bob.to_account_id()),
+                Compact::from(100000000000000u128),
                 GatewayType::ProgrammableExternal,
             )
             .expect("shouldn't fail");

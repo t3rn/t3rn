@@ -2,6 +2,7 @@
 
 use crate::transfers::TransferEntry;
 use crate::*;
+use codec::Compact;
 use sp_std::vec::Vec;
 
 pub trait GatewayInboundProtocol {
@@ -127,7 +128,7 @@ pub trait GatewayInboundProtocol {
     fn transfer(
         &self,
         to: GenericAddress,
-        value: u128,
+        value: Compact<u128>,
         gateway_type: GatewayType,
     ) -> Result<CircuitOutboundMessage, &'static str>;
 

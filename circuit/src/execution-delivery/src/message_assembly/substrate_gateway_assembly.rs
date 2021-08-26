@@ -9,7 +9,7 @@ use sp_version::RuntimeVersion;
 
 use crate::message_assembly::chain_generic_metadata::Metadata;
 use crate::message_assembly::signer::app::{
-    Call, GenericAddress, GenericExtra, Signature, SignedPayload, UncheckedExtrinsicV4,
+    Args, Call, GenericAddress, GenericExtra, Signature, SignedPayload, UncheckedExtrinsicV4,
 };
 use crate::{compose_call, AuthorityId};
 
@@ -82,7 +82,7 @@ where
         Ok(Call {
             module_index,
             function_index,
-            args,
+            args: Args::new(args),
         })
     }
 
@@ -96,18 +96,11 @@ where
         let raw_payload = SignedPayload::from_raw(
             call_bytes.clone(),
             extra.clone(),
-            (
-                nonce,
-                self.runtime_version.transaction_version,
-                &self.genesis_hash,
-                &self.genesis_hash,
-                (),
-                (),
-                (),
-            ),
+            self.runtime_version.spec_version,
+            self.runtime_version.transaction_version,
+            self.genesis_hash.clone(),
+            self.genesis_hash.clone(),
         );
-
-        // raw_payload.using_encoded(|encoded| println!("{:?}", encoded));
 
         let authority = AuthorityId::from_slice(self.submitter.clone().to_raw_vec().as_slice());
 

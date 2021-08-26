@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::Encode;
+use codec::{Compact, Encode};
 use frame_support::ensure;
 use sp_runtime::generic::Era;
 use sp_runtime::RuntimeAppPublic;
@@ -62,7 +62,7 @@ where
             .signature
             .clone()
             .expect("Signature of extrinsic should be valid if assemble_signed_tx was successfull")
-            .1;
+            .signature;
 
         Ok(ExtraMessagePayload {
             signer: self.assembly.submitter.to_raw_vec(),
@@ -322,7 +322,7 @@ where
     fn transfer(
         &self,
         to: GenericAddress,
-        value: u128,
+        value: Compact<u128>,
         _gateway_type: GatewayType,
     ) -> Result<CircuitOutboundMessage, &'static str> {
         let expected_output = vec![GatewayExpectedOutput::Events {
@@ -456,7 +456,7 @@ where
 
 #[cfg(test)]
 pub mod tests {
-    use codec::Encode;
+    use codec::{Compact, Encode};
 
     use sp_application_crypto::RuntimePublic;
     use sp_core::sr25519::Signature;
@@ -861,7 +861,7 @@ pub mod tests {
     fn transfer_should_create_outbound_messages_correctly() {
         let keystore = KeyStore::new();
         let to = [4_u8; 32].to_vec();
-        let value = 4_u128.encode();
+        let value = Compact::from(4_u128);
 
         let submitter = SyncCryptoStore::sr25519_generate_new(&keystore, KEY_TYPE, None)
             .expect("Should generate submitter key");
