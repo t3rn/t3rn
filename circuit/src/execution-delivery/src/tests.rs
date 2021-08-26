@@ -873,8 +873,6 @@ impl pallet_babe::Config for Test {
     type ExpectedBlockTime = ExpectedBlockTime;
     type EpochChangeTrigger = ExternalTrigger;
 
-    type KeyOwnerProofSystem = Historical;
-
     type KeyOwnerProof =
         <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, AuthorityId)>>::Proof;
 
@@ -882,6 +880,8 @@ impl pallet_babe::Config for Test {
         KeyTypeId,
         AuthorityId,
     )>>::IdentificationTuple;
+
+    type KeyOwnerProofSystem = Historical;
 
     type HandleEquivocation =
         EquivocationHandler<Self::KeyOwnerIdentification, Offences, ReportLongevity>;

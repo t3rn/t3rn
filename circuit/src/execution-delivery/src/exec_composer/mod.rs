@@ -101,7 +101,7 @@ impl ExecComposer {
             Default::default(),
             None,
             None,
-            RawAliveContractInfo {
+            Some(RawAliveContractInfo {
                 trie_id: Default::default(),
                 storage_size: Default::default(),
                 pair_count: Default::default(),
@@ -111,7 +111,8 @@ impl ExecComposer {
                 deduct_block: Default::default(),
                 last_write: Default::default(),
                 _reserved: Default::default(),
-            },
+            }),
+            Default::default(),
         );
 
         Self::preload_bunch_of_contracts::<T>(vec![temp_contract.clone()], Default::default())?;
@@ -183,7 +184,7 @@ impl ExecComposer {
         let stack_extension = &mut StackExtension {
             escrow_account,
             requester: requester.clone(),
-            storage_trie_id: contract.info.child_trie_info(),
+            storage_trie_id: contract.info.clone().unwrap().child_trie_info(),
             input_data: maybe_input_data,
             inner_exec_transfers,
             constructed_outbound_messages,
@@ -297,7 +298,7 @@ impl ExecComposer {
             volatile_vm::Pallet::<T>::add_contract_code_lazy(
                 curr_executable.code_hash,
                 curr_executable,
-                contract_info,
+                contract_info.unwrap(),
                 account_id.clone(),
             )
         }

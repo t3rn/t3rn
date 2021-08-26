@@ -32,6 +32,7 @@ use std::fmt::Debug;
 use sp_std::prelude::*;
 
 pub mod abi;
+pub mod contract_metadata;
 pub mod gateway_inbound_protocol;
 pub mod transfers;
 
@@ -99,7 +100,9 @@ pub struct Compose<Account, Balance> {
     pub input_data: Vec<u8>,
 }
 /// A result type of a get storage call.
-pub type FetchContractsResult = Result<Option<Vec<u8>>, ContractAccessError>;
+pub type FetchContractsResult = Result<Vec<u8>, ContractAccessError>;
+
+pub type RegistryContractId<T> = <T as frame_system::Config>::Hash;
 
 /// A result of execution of a contract.
 #[derive(Eq, PartialEq, Encode, Decode, Debug, Clone)]

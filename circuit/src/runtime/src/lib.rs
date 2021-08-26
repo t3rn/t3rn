@@ -59,7 +59,7 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use t3rn_primitives::transfers::BalanceOf;
+use t3rn_primitives::{transfers::BalanceOf, ComposableExecResult, Compose};
 
 use volatile_vm::DispatchRuntimeCall;
 
@@ -217,6 +217,7 @@ impl frame_system::Config for Runtime {
 impl pallet_aura::Config for Runtime {
     type AuthorityId = AuraId;
 }
+
 impl pallet_bridge_dispatch::Config for Runtime {
     type Event = Event;
     type MessageId = (bp_messages::LaneId, bp_messages::MessageNonce);
@@ -928,6 +929,17 @@ impl_runtime_apis! {
         fn unrewarded_relayers_state(lane: bp_messages::LaneId) -> bp_messages::UnrewardedRelayersState {
             BridgeGatewayMessages::inbound_unrewarded_relayers_state(lane)
         }
+    }
+
+    impl circuit_rpc_runtime_api::CircuitApi<Block, AccountId, Balance, BlockNumber> for Runtime
+    {
+        fn composable_exec(
+            _origin: AccountId,
+            _components: Vec<Compose<AccountId, Balance>>,
+            _io: Vec<u8>,
+            _gas_limit: u64,
+            _input_data: Vec<u8>,
+        ) -> ComposableExecResult { todo!() }
     }
 }
 
