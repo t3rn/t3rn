@@ -15,15 +15,16 @@
 // along with cargo-contract.  If not, see <http://www.gnu.org/licenses/>.
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use crate::Bytes;
 use codec::{Decode, Encode};
 #[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
+use core::fmt::{Display, Formatter, Result as DisplayResult, Write};
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize, Serializer};
 use sp_runtime::RuntimeDebug;
 use sp_std::{vec, vec::Vec};
-// #[cfg(feature = "std")]
-// use core::fmt::{Display, Formatter, Result as DisplayResult, Write};
 
-// const METADATA_VERSION: &str = "0.1.0";
+const METADATA_VERSION: &str = "0.1.0";
 
 #[derive(RuntimeDebug)]
 pub struct Source {
@@ -47,7 +48,7 @@ impl Source {
 #[derive(RuntimeDebug)]
 pub struct SourceLanguage {
     language: Language,
-    version: Vec<u8>,
+    version: Bytes,
 }
 
 impl SourceLanguage {
@@ -57,20 +58,22 @@ impl SourceLanguage {
     }
 }
 
-// impl Serialize for SourceLanguage {
-//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-//         where
-//             S: Serializer,
-//     {
-//         serializer.serialize_str(&self.to_string())
-//     }
-// }
-//
-// impl Display for SourceLanguage {
-//     fn fmt(&self, f: &mut Formatter<'_>) -> DisplayResult {
-//         write!(f, "{} {}", self.language, self.version)
-//     }
-// }
+#[cfg(feature = "std")]
+impl Serialize for SourceLanguage {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+#[cfg(feature = "std")]
+impl Display for SourceLanguage {
+    fn fmt(&self, f: &mut Formatter<'_>) -> DisplayResult {
+        write!(f, "{} {:?}", self.language, self.version)
+    }
+}
 
 /// The language in which the smart contract is written.
 #[derive(RuntimeDebug)]
@@ -79,45 +82,48 @@ pub enum Language {
     Solidity,
     AssemblyScript,
 }
-//
-// impl Display for Language {
-//     fn fmt(&self, f: &mut Formatter<'_>) -> DisplayResult {
-//         match self {
-//             Self::Ink => write!(f, "ink!"),
-//             Self::Solidity => write!(f, "Solidity"),
-//             Self::AssemblyScript => write!(f, "AssemblyScript"),
-//         }
-//     }
-// }
-//
+
+#[cfg(feature = "std")]
+impl Display for Language {
+    fn fmt(&self, f: &mut Formatter<'_>) -> DisplayResult {
+        match self {
+            Self::Ink => write!(f, "ink!"),
+            Self::Solidity => write!(f, "Solidity"),
+            Self::AssemblyScript => write!(f, "AssemblyScript"),
+        }
+    }
+}
+
 /// A compiler used to compile a smart contract.
 #[derive(RuntimeDebug)]
 pub struct SourceCompiler {
     compiler: Compiler,
     version: Vec<u8>,
 }
-//
-// impl Display for SourceCompiler {
-//     fn fmt(&self, f: &mut Formatter<'_>) -> DisplayResult {
-//         write!(f, "{} {}", self.compiler, self.version)
-//     }
-// }
-//
-// impl Serialize for SourceCompiler {
-//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-//         where
-//             S: Serializer,
-//     {
-//         serializer.serialize_str(&self.to_string())
-//     }
-// }
-//
-// impl SourceCompiler {
-//     pub fn new(compiler: Compiler, version: Vec<u8>) -> Self {
-//         SourceCompiler { compiler, version }
-//     }
-// }
-//
+
+#[cfg(feature = "std")]
+impl Display for SourceCompiler {
+    fn fmt(&self, f: &mut Formatter<'_>) -> DisplayResult {
+        write!(f, "{} {:?}", self.compiler, self.version)
+    }
+}
+
+#[cfg(feature = "std")]
+impl Serialize for SourceCompiler {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+impl SourceCompiler {
+    pub fn new(compiler: Compiler, version: Vec<u8>) -> Self {
+        SourceCompiler { compiler, version }
+    }
+}
+
 /// Compilers used to compile a smart contract.
 #[derive(RuntimeDebug)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -125,16 +131,17 @@ pub enum Compiler {
     RustC,
     Solang,
 }
-//
-// impl Display for Compiler {
-//     fn fmt(&self, f: &mut Formatter<'_>) -> DisplayResult {
-//         match self {
-//             Self::RustC => write!(f, "rustc"),
-//             Self::Solang => write!(f, "solang"),
-//         }
-//     }
-// }
-//
+
+#[cfg(feature = "std")]
+impl Display for Compiler {
+    fn fmt(&self, f: &mut Formatter<'_>) -> DisplayResult {
+        match self {
+            Self::RustC => write!(f, "rustc"),
+            Self::Solang => write!(f, "solang"),
+        }
+    }
+}
+
 /// Metadata about a smart contract.
 #[derive(Clone, Debug, Eq, PartialEq, Encode, Decode)]
 pub struct ContractMetadata {

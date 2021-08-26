@@ -261,6 +261,7 @@ pub fn create_full<C, Block>(deps: FullDeps<C>) -> jsonrpc_core::IoHandler<sc_rp
 where
     Block: BlockT,
     C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
+    // TODO: Enable ContractsRegistry runtime API as soon as we add MultiAddress support
     // C::Api: ContractsRegistryRuntimeApi<
     //     Block,
     //     t3rn_primitives::GenericAddress,
@@ -269,7 +270,7 @@ where
 {
     let mut io = jsonrpc_core::IoHandler::default();
     let FullDeps { client } = deps;
-
+    // TODO: to be enabled as soon as we add MultiAddress support
     // io.extend_with(ContractsRegistryApi::to_delegate(
     //     ContractsRegistryClient::new(client.clone()),
     // ));

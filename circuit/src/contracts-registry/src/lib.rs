@@ -225,19 +225,10 @@ impl<T: Config> Pallet<T> {
     }
 
     pub fn fetch_contracts(
-        // origin: T::Origin,
-        // contract_id: Option<RegistryContractId<T>>,
         author: Option<T::AccountId>,
         metadata: Option<Vec<u8>>,
     ) -> Result<Vec<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>>, Error<T>>
     {
-        // let _sender = ensure_signed(origin).map_err(|_| "unsigned origin");
-
-        // if contract id is provided, search by it and return
-        // if contract_id.is_some() {
-        //     return pallet::Pallet::<T>::fetch_contract_by_id(contract_id.unwrap());
-        // }
-
         // helper function to find a number of byte slice inside a larger slice
         fn find_subsequence(haystack: Vec<u8>, needle: &[u8]) -> Option<usize> {
             haystack
@@ -245,7 +236,7 @@ impl<T: Config> Pallet<T> {
                 .position(|window| window == needle)
         }
 
-        // otherwise try to find contracts by author or metadata
+        // try to find contracts by author or metadata
         let contracts: Vec<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>> =
             pallet::ContractsRegistry::<T>::iter_values()
                 .filter(
