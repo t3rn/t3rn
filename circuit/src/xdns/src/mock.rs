@@ -28,8 +28,10 @@ use sp_runtime::{
 };
 // Reexport crate as its pallet name for construct_runtime.
 use crate as pallet_xdns;
+use frame_support::pallet_prelude::GenesisBuild;
 use t3rn_primitives::EscrowTrait;
 
+type AccountId = u64;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
@@ -123,4 +125,46 @@ impl pallet_balances::Config for Test {
 impl Config for Test {
     type Event = Event;
     type WeightInfo = ();
+}
+
+pub(crate) struct ExtBuilder {
+    known_xdns_records: Vec<XdnsRecord<AccountId>>,
+}
+
+impl Default for ExtBuilder {
+    fn default() -> ExtBuilder {
+        ExtBuilder {
+            known_xdns_records: vec![],
+        }
+    }
+}
+
+impl ExtBuilder {
+    pub(crate) fn with_xdns_records(
+        mut self,
+        xdns_records: Vec<XdnsRecord<AccountId>>,
+    ) -> ExtBuilder {
+        self.known_xdns_records = xdns_records;
+        self
+    }
+
+    pub(crate) fn build(self) -> sp_io::TestExternalities {
+        let mut t = frame_system::GenesisConfig::default()
+            .build_storage::<Test>()
+            .expect("Frame system builds valid default genesis config");
+
+        pallet_balances::GenesisConfig::<Test> { balances: vec![] }
+            .assimilate_storage(&mut t)
+            .expect("Pallet balances storage can be assimilated");
+
+        pallet_xdns::GenesisConfig::<Test> {
+            known_xdns_records: vec![],
+        }
+        .assimilate_storage(&mut t)
+        .expect("Pallet contracts registry can be assimilated");
+
+        let mut ext = sp_io::TestExternalities::new(t);
+        ext.execute_with(|| System::set_block_number(1));
+        ext
+    }
 }

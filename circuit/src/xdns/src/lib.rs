@@ -24,13 +24,15 @@
 
 use codec::{Decode, Encode};
 use frame_system::ensure_signed;
+use serde::{Deserialize, Serialize};
 use sp_runtime::{traits::Hash, RuntimeDebug};
 use sp_std::prelude::*;
+use sp_std::{vec, vec::Vec};
 use t3rn_primitives::abi::GatewayABIConfig;
-use t3rn_primitives::GatewayGenesisConfig;
+use t3rn_primitives::{ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor};
 
 // Re-export pallet items so that they can be accessed from the crate namespace.
-pub use pallet::*;
+pub use crate::pallet::*;
 
 #[cfg(test)]
 mod mock;
@@ -49,6 +51,7 @@ pub type XdnsGatewayId<T> = <T as frame_system::Config>::Hash;
 
 /// A preliminary representation of a xdns_record in the onchain registry.
 #[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct XdnsRecord<AccountId> {
     /// SCALE-encoded url string on where given Consensus System can be accessed
     pub url: Vec<u8>,
@@ -58,13 +61,13 @@ pub struct XdnsRecord<AccountId> {
     pub gateway_genesis: GatewayGenesisConfig,
 
     /// Gateway Vendor
-    pub gateway_vendor: t3rn_primitives::GatewayVendor,
+    pub gateway_vendor: GatewayVendor,
 
     /// Gateway Type
-    pub gateway_type: t3rn_primitives::GatewayType,
+    pub gateway_type: GatewayType,
 
     /// Gateway Id
-    pub gateway_id: bp_runtime::ChainId,
+    pub gateway_id: ChainId,
 
     pub registrant: Option<AccountId>,
 
@@ -79,9 +82,9 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
         signed_extension: Option<Vec<u8>>,
         runtime_version: sp_version::RuntimeVersion,
         genesis_hash: Vec<u8>,
-        gateway_id: bp_runtime::ChainId,
-        gateway_vendor: t3rn_primitives::GatewayVendor,
-        gateway_type: t3rn_primitives::GatewayType,
+        gateway_id: ChainId,
+        gateway_vendor: GatewayVendor,
+        gateway_type: GatewayType,
         registrant: Option<AccountId>,
         last_finalized: Option<u64>,
     ) -> Self {
@@ -106,10 +109,10 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
 
     pub fn new(
         url: Vec<u8>,
-        gateway_id: bp_runtime::ChainId,
+        gateway_id: ChainId,
         gateway_abi: GatewayABIConfig,
-        gateway_vendor: t3rn_primitives::GatewayVendor,
-        gateway_type: t3rn_primitives::GatewayType,
+        gateway_vendor: GatewayVendor,
+        gateway_type: GatewayType,
         gateway_genesis: GatewayGenesisConfig,
     ) -> Self {
         XdnsRecord {
@@ -144,16 +147,15 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
 pub mod pallet {
     // Import various types used to declare pallet in scope.
     use super::*;
+    use bp_runtime::{CIRCUIT_CHAIN_ID, GATEWAY_CHAIN_ID};
     use frame_support::pallet_prelude::*;
     use frame_support::traits::Time;
     use frame_system::pallet_prelude::*;
     use sp_std::convert::TryInto;
-    use t3rn_primitives::{ChainId, EscrowTrait};
-
+    use t3rn_primitives::abi::{CryptoAlgo, HasherAlgo};
+    use t3rn_primitives::{ChainId, EscrowTrait, GatewayType, GatewayVendor};
     #[pallet::config]
-    pub trait Config:
-        pallet_balances::Config + frame_system::Config + t3rn_primitives::EscrowTrait
-    {
+    pub trait Config: pallet_balances::Config + frame_system::Config + EscrowTrait {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
@@ -204,10 +206,10 @@ pub mod pallet {
         pub fn add_new_xdns_record(
             origin: OriginFor<T>,
             url: Vec<u8>,
-            gateway_id: bp_runtime::ChainId,
+            gateway_id: ChainId,
             gateway_abi: GatewayABIConfig,
-            gateway_vendor: t3rn_primitives::GatewayVendor,
-            gateway_type: t3rn_primitives::GatewayType,
+            gateway_vendor: GatewayVendor,
+            gateway_type: GatewayType,
             gateway_genesis: GatewayGenesisConfig,
         ) -> DispatchResultWithPostInfo {
             let registrant = ensure_signed(origin)?;
@@ -310,21 +312,16 @@ pub mod pallet {
     /// The pre-validated composable xdns_records on-chain registry.
     #[pallet::storage]
     #[pallet::getter(fn xdns_registry)]
-    pub type XDNSRegistry<T> = StorageMap<
-        _,
-        Blake2_128Concat,
-        XdnsRecordId<T>,
-        XdnsRecord<<T as frame_system::Config>::AccountId>,
-        OptionQuery,
-    >;
+    pub type XDNSRegistry<T: Config> =
+        StorageMap<_, Blake2_128Concat, XdnsRecordId<T>, XdnsRecord<T::AccountId>, OptionQuery>;
 
     // The genesis config type.
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        pub known_xdns_records: Vec<(T::AccountId, T::Balance)>,
+        pub known_xdns_records: Vec<XdnsRecord<T::AccountId>>,
     }
 
-    // The default value for the genesis config type.
+    /// The default value for the genesis config type.
     #[cfg(feature = "std")]
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
@@ -334,10 +331,61 @@ pub mod pallet {
         }
     }
 
-    // The build of genesis for the pallet.
+    /// The build of genesis for the pallet.
+    /// Populates storage with the known XDNS Records
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
-        fn build(&self) {}
+        fn build(&self) {
+            let circuit_dev: XdnsRecord<T::AccountId> = <XdnsRecord<T::AccountId>>::new(
+                b"wss://dev.net.t3rn.io".to_vec(),
+                CIRCUIT_CHAIN_ID,
+                GatewayABIConfig {
+                    block_number_type_size: 0,
+                    hash_size: 0,
+                    hasher: HasherAlgo::Blake2,
+                    crypto: CryptoAlgo::Ed25519,
+                    address_length: 0,
+                    value_type_size: 0,
+                    decimals: 0,
+                    structs: vec![],
+                },
+                GatewayVendor::Substrate,
+                GatewayType::ProgrammableInternal,
+                GatewayGenesisConfig {
+                    modules_encoded: None,
+                    signed_extension: None,
+                    runtime_version: Default::default(),
+                    genesis_hash: vec![],
+                },
+            );
+            println!("{:?}", circuit_dev.generate_id::<T>());
+            let demo_gateway: XdnsRecord<T::AccountId> = <XdnsRecord<T::AccountId>>::new(
+                b"wss://dev.net.t3rn.io/gateway".to_vec(),
+                GATEWAY_CHAIN_ID,
+                GatewayABIConfig {
+                    block_number_type_size: 0,
+                    hash_size: 0,
+                    hasher: HasherAlgo::Blake2,
+                    crypto: CryptoAlgo::Ed25519,
+                    address_length: 0,
+                    value_type_size: 0,
+                    decimals: 0,
+                    structs: vec![],
+                },
+                GatewayVendor::Substrate,
+                GatewayType::ProgrammableInternal,
+                GatewayGenesisConfig {
+                    modules_encoded: None,
+                    signed_extension: None,
+                    runtime_version: Default::default(),
+                    genesis_hash: vec![],
+                },
+            );
+
+            for xdns_record in [circuit_dev, demo_gateway] {
+                <XDNSRegistry<T>>::insert(xdns_record.generate_id::<T>(), xdns_record);
+            }
+        }
     }
 
     impl<T: Config> Pallet<T> {
