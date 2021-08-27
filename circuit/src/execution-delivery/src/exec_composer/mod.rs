@@ -404,6 +404,17 @@ pub mod tests {
         );
     }
 
+    pub fn insert_dummy_foreign_target(example_foreign_target: [u8; 4]) {
+        let account_at_foreign_target = AccountId32::from(hex!(
+            "0101010101010101010101010101010101010101010101010101010101010101"
+        ));
+
+        volatile_vm::DeclaredTargets::<Test>::insert(
+            account_at_foreign_target,
+            example_foreign_target,
+        );
+    }
+
     fn setup_test_escrow_as_tx_signer(ext: &mut TestExternalities) -> AccountId32 {
         let keystore = KeyStore::new();
         // Insert Alice's keys
@@ -483,7 +494,7 @@ pub mod tests {
         let escrow_account = setup_test_escrow_as_tx_signer(&mut ext);
         let _gateway_abi_config: GatewayABIConfig = Default::default();
 
-        let account_at_foreign_target = AccountId32::from(hex!(
+        let _account_at_foreign_target = AccountId32::from(hex!(
             "0101010101010101010101010101010101010101010101010101010101010101"
         ));
         let example_foreign_target = [1u8, 2u8, 3u8, 4u8];
@@ -494,10 +505,7 @@ pub mod tests {
 
             insert_default_xdns_record();
 
-            volatile_vm::DeclaredTargets::<Test>::insert(
-                account_at_foreign_target,
-                example_foreign_target.clone(),
-            );
+            insert_dummy_foreign_target(example_foreign_target.clone());
 
             let res = ExecComposer::dry_run_single_contract::<Test>(compose);
             assert_ok!(res.clone());
@@ -600,21 +608,12 @@ pub mod tests {
         let escrow_account = setup_test_escrow_as_tx_signer(&mut ext);
         let _gateway_abi_config: GatewayABIConfig = Default::default();
 
-        let account_at_foreign_target = AccountId32::from(hex!(
-            "0101010101010101010101010101010101010101010101010101010101010101"
-        ));
-        let example_foreign_target = [1u8, 2u8, 3u8, 4u8];
-
         ext.execute_with(|| {
             let submitter = crate::Pallet::<Test>::select_authority(escrow_account.clone())
                 .unwrap_or_else(|_| panic!("failed to select_authority"));
 
             insert_default_xdns_record();
-
-            volatile_vm::DeclaredTargets::<Test>::insert(
-                account_at_foreign_target,
-                example_foreign_target,
-            );
+            insert_dummy_foreign_target([1u8, 2u8, 3u8, 4u8]);
 
             let _output_mode = PessimisticOutputMode::new();
 
@@ -727,22 +726,13 @@ pub mod tests {
         let escrow_account = setup_test_escrow_as_tx_signer(&mut ext);
         let _gateway_abi_config: GatewayABIConfig = Default::default();
 
-        let account_at_foreign_target = AccountId32::from(hex!(
-            "0101010101010101010101010101010101010101010101010101010101010101"
-        ));
-        let example_foreign_target = [1u8, 2u8, 3u8, 4u8];
-
         ext.execute_with(|| {
             let submitter = crate::Pallet::<Test>::select_authority(escrow_account.clone())
                 .unwrap_or_else(|_| panic!("failed to select_authority"));
 
             // Set the default XDNS record for default [0, 0, 0, 0] gateway
             insert_default_xdns_record();
-
-            volatile_vm::DeclaredTargets::<Test>::insert(
-                account_at_foreign_target,
-                example_foreign_target,
-            );
+            insert_dummy_foreign_target([1u8, 2u8, 3u8, 4u8]);
 
             let _output_mode = PessimisticOutputMode::new();
 

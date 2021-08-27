@@ -17,7 +17,6 @@
 
 //! Test utilities
 use crate::{self as pallet_execution_delivery, Config};
-use sp_runtime::traits::Hash;
 
 use codec::{Decode, Encode};
 
@@ -72,7 +71,7 @@ use bp_messages::{
 
 use pallet_execution_delivery::Compose;
 use std::collections::BTreeMap;
-use t3rn_primitives::abi::{CryptoAlgo, GatewayABIConfig, HasherAlgo, Parameter, StructDecl, Type};
+use t3rn_primitives::abi::GatewayABIConfig;
 use t3rn_primitives::transfers::BalanceOf;
 use t3rn_primitives::{EscrowTrait, ExecPhase, ExecStep, InterExecSchedule};
 use t3rn_primitives::{
@@ -1441,8 +1440,7 @@ fn error_if_incorrect_escrow_is_submitted() {
     });
 }
 
-use crate::exec_composer::tests::{CODE_CALL, make_compose_out_of_raw_wat_code};
-
+use crate::exec_composer::tests::{make_compose_out_of_raw_wat_code, CODE_CALL};
 #[test]
 fn test_submit_composable_exec_order() {
     let dest = AccountId::new([1 as u8; 32]);
@@ -1522,8 +1520,8 @@ fn test_register_gateway() {
         digest: None,
         // parent_hash: Default::default(),
         // number: 0,
-        // state_root: Default::default(), //Some(H256::from_slice(&hex!("b2fc47904df5e355c6ab476d89fbc0733aeddbe302f0b94ba4eea9283f7e89e7"))),
-        // extrinsics_root: Default::default(), //Some(H256::from_slice(&hex!("03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c111314"))),
+        // state_root: Default::default(), // Some(H256::from_slice(&hex!("b2fc47904df5e355c6ab476d89fbc0733aeddbe302f0b94ba4eea9283f7e89e7"))),
+        // extrinsics_root: Default::default(), // Some(H256::from_slice(&hex!("03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c111314"))),
         // digest: Default::default(),
     };
 
