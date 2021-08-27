@@ -117,6 +117,20 @@ where
             extra,
         ))
     }
+
+    fn assemble_signed_batch_call(
+        &self,
+        calls: Vec<Call>,
+        nonce: u32,
+    ) -> Result<UncheckedExtrinsicV4<Call>, &'static str> {
+        // TODO: use compose call with Utility.batch instead of hard coded index
+        let call = Call {
+            module_index: 21,
+            function_index: 0,
+            args: Args::new(calls.encode()),
+        };
+        self.assemble_signed_tx_offline(call, nonce)
+    }
 }
 
 #[cfg(test)]
@@ -143,7 +157,11 @@ pub mod tests {
     }
 
     pub fn create_test_genesis_hash() -> H256 {
-        [9_u8; 32].into()
+        [
+            221, 128, 124, 142, 125, 253, 143, 71, 228, 18, 125, 155, 96, 26, 215, 135, 26, 23,
+            181, 82, 173, 18, 254, 62, 220, 69, 220, 133, 187, 229, 24, 113,
+        ]
+        .into()
     }
 
     pub fn create_test_runtime_version() -> RuntimeVersion {
@@ -153,8 +171,8 @@ pub mod tests {
             authoring_version: 1,
             impl_version: 1,
             apis: ApisVec::Owned(vec![([0_u8; 8], 0_u32)]),
-            transaction_version: 4,
-            spec_version: 13,
+            transaction_version: 1,
+            spec_version: 1,
         }
     }
 
@@ -304,5 +322,37 @@ pub mod tests {
             }));
             assert_eq!(signature.clone().era, Era::Immortal);
         });
+    }
+
+    #[test]
+    fn sga_batch_call() {
+        let keystore = KeyStore::new();
+
+        let alice = SyncCryptoStore::sr25519_generate_new(&keystore, KEY_TYPE, Some("//Alice"))
+            .expect("Should generate alice key");
+
+        let mut ext = TestExternalities::new_empty();
+        ext.register_extension(KeystoreExt(keystore.into()));
+        ext.execute_with(|| {
+            let sga = SubstrateGatewayAssembly::<AuthorityId, H256>::new(
+                create_test_metadata_struct(),
+                create_test_runtime_version(),
+                create_test_genesis_hash(),
+                AuthorityId::from(alice),
+            );
+
+            // inner call is a system.remark from alice
+            let inner_call = Call {
+                module_index: 4,
+                function_index: 1,
+                args: Args::new(hex::decode("00").expect("must decode").encode()),
+            };
+
+            let signed_call = sga
+                .assemble_signed_batch_call(vec![inner_call], 1)
+                .expect("must be successful");
+
+            println!("0x{}", hex::encode(signed_call.encode()))
+        })
     }
 }

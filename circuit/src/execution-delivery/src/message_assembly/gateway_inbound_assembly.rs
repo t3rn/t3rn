@@ -23,4 +23,9 @@ pub trait GatewayInboundAssembly {
         call: Call,
         nonce: u32,
     ) -> Result<UncheckedExtrinsicV4<Call>, &'static str>;
+    fn assemble_signed_batch_call(
+        &self,
+        calls: Vec<Call>,
+        nonce: u32,
+    ) -> Result<UncheckedExtrinsicV4<Call>, &'static str>;
 }
