@@ -241,7 +241,7 @@ pub mod pallet {
             }
         }
 
-        /// Updates the last_ xdns_record from the onchain registry. Root only access.
+        /// Updates the last_finalized field for an xdns_record from the onchain registry. Root only access.
         #[pallet::weight(500_000_000 + T::DbWeight::get().reads_writes(1,1))]
         pub fn update_ttl(
             origin: OriginFor<T>,
@@ -358,7 +358,6 @@ pub mod pallet {
                     genesis_hash: vec![],
                 },
             );
-            println!("{:?}", circuit_dev.generate_id::<T>());
             let demo_gateway: XdnsRecord<T::AccountId> = <XdnsRecord<T::AccountId>>::new(
                 b"wss://dev.net.t3rn.io/gateway".to_vec(),
                 GATEWAY_CHAIN_ID,
@@ -390,12 +389,10 @@ pub mod pallet {
 
     impl<T: Config> Pallet<T> {
         /// Locates the best available gateway based on the time they were last finalized.
-        /// Priority goes Internal > External > TxOnly
+        /// Priority goes Internal > External > TxOnly, followed by the largest last_finalized value
         pub fn best_available(
             gateway_id: ChainId,
         ) -> Result<XdnsRecord<T::AccountId>, &'static str> {
-            // ensure_signed(origin)?;
-
             // Sort each available gateway pointer based on its GatewayType
             let gateway_pointers = t3rn_primitives::retrieve_gateway_pointers(gateway_id);
             ensure!(gateway_pointers.is_ok(), "No available gateway pointers");

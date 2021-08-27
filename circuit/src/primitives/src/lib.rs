@@ -294,7 +294,7 @@ pub enum MessagePayload {
 
 /// Retrieves all available gateways for a given ChainId.
 /// Currently returns a vector with a single hardcoded result.
-/// Eventually this will return all known gateways on pallet-xdns.
+/// Eventually this will search all known gateways on pallet-xdns.
 pub fn retrieve_gateway_pointers(gateway_id: ChainId) -> Result<Vec<GatewayPointer>, &'static str> {
     Ok(vec![GatewayPointer {
         id: gateway_id,

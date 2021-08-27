@@ -19,17 +19,21 @@
 
 use crate::*;
 use frame_support::parameter_types;
-use sp_core::H256;
+use sp_core::{sr25519, Pair, H256};
 // The testing primitives are very useful for avoiding having to work with signatures
 // or public keys. `u64` is used as the `AccountId` and no `Signature`s are required.
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
+    KeyTypeId,
 };
 // Reexport crate as its pallet name for construct_runtime.
 use crate as pallet_xdns;
 use frame_support::pallet_prelude::GenesisBuild;
 use t3rn_primitives::EscrowTrait;
+
+use sp_keystore::testing::KeyStore;
+use sp_keystore::{KeystoreExt, SyncCryptoStore};
 
 type AccountId = u64;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -166,5 +170,30 @@ impl ExtBuilder {
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));
         ext
+    }
+}
+
+pub trait WithAuthorities {
+    fn with_authorities(self, authorities_suri: Vec<&str>) -> sp_io::TestExternalities;
+}
+
+impl WithAuthorities for sp_io::TestExternalities {
+    fn with_authorities(mut self, authorities_suri: Vec<&str>) -> sp_io::TestExternalities {
+        let keystore = KeyStore::new();
+
+        // Insert authorities' keys
+        for suri in authorities_suri {
+            let keypair = sr25519::Pair::from_string(suri, None).expect("Generates key pair");
+            SyncCryptoStore::insert_unknown(
+                &keystore,
+                KeyTypeId(*b"circ"),
+                suri,
+                keypair.public().as_ref(),
+            )
+            .expect("Inserts unknown key");
+        }
+
+        self.register_extension(KeystoreExt(keystore.into()));
+        self
     }
 }
