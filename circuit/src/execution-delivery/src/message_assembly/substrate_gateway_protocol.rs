@@ -475,6 +475,7 @@ pub mod tests {
     use super::{
         CircuitOutboundMessage, ExtraMessagePayload, GatewayExpectedOutput, GatewayInboundProtocol,
     };
+    use crate::message_assembly::signer::app::GenericAddress;
 
     pub fn assert_signed_payload(
         actual: CircuitOutboundMessage,
@@ -860,7 +861,7 @@ pub mod tests {
     #[test]
     fn transfer_should_create_outbound_messages_correctly() {
         let keystore = KeyStore::new();
-        let to = [4_u8; 32].to_vec();
+        let to = [4_u8; 32];
         let value = Compact::from(4_u128);
 
         let submitter = SyncCryptoStore::sr25519_generate_new(&keystore, KEY_TYPE, None)
@@ -875,13 +876,17 @@ pub mod tests {
             );
 
             let actual = test_protocol
-                .transfer(to.clone(), value.clone(), GatewayType::ProgrammableInternal)
+                .transfer(
+                    GenericAddress::Id(to.into()),
+                    value.clone(),
+                    GatewayType::ProgrammableInternal,
+                )
                 .unwrap();
 
             assert_signed_payload(
                 actual,
                 submitter,
-                vec![to, value, vec![]],
+                vec![to.to_vec(), value.encode(), vec![]],
                 vec![GatewayExpectedOutput::Events {
                     signatures: vec![b"Transfer(address,address,value)".to_vec()],
                 }],

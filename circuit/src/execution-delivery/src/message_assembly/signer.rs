@@ -110,7 +110,7 @@ pub mod app {
         }
     }
 
-    #[derive(Clone, RuntimeDebug)]
+    #[derive(Clone, PartialEq, RuntimeDebug)]
     pub struct Args(Vec<u8>);
 
     impl Args {
@@ -119,7 +119,7 @@ pub mod app {
         }
     }
 
-    #[derive(Encode, Clone, RuntimeDebug)]
+    #[derive(Encode, PartialEq, Clone, RuntimeDebug)]
     pub struct Call {
         pub module_index: u8,
         pub function_index: u8,
@@ -134,11 +134,11 @@ pub mod app {
 
     #[derive(Encode, Decode, PartialEq, Clone, RuntimeDebug)]
     pub struct ExtrinsicSignatureV4 {
-        signer: GenericAddress,
+        pub signer: GenericAddress,
         pub signature: MultiSignature,
-        era: Era,
-        nonce: Compact<u32>,
-        tip: Compact<u128>,
+        pub era: Era,
+        pub nonce: Compact<u32>,
+        pub tip: Compact<u128>,
     }
 
     /// Mirrors the currently used Extrinsic format (V3) from substrate. Has less traits and methods though.

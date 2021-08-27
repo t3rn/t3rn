@@ -88,13 +88,13 @@ where
 
     fn assemble_signed_tx_offline(
         &self,
-        call_bytes: Call,
+        call: Call,
         nonce: u32,
     ) -> Result<UncheckedExtrinsicV4<Call>, &'static str> {
         let extra = GenericExtra::new(sp_runtime::generic::Era::Immortal, nonce);
 
         let raw_payload = SignedPayload::from_raw(
-            call_bytes.clone(),
+            call.clone(),
             extra.clone(),
             self.runtime_version.spec_version,
             self.runtime_version.transaction_version,
@@ -111,7 +111,7 @@ where
             .expect("Signature should be valid");
 
         Ok(UncheckedExtrinsicV4::new_signed(
-            call_bytes,
+            call,
             signed,
             MultiSignature::from(signature),
             extra,
@@ -208,15 +208,8 @@ pub mod tests {
         );
 
         assert_err!(
-            sga.assemble_call(
-                "MissingModuleName",
-                "FnName",
-                vec![0, 1, 2],
-                [1_u8; 32],
-                3,
-                2,
-            ),
-            "Could not assemble call"
+            sga.assemble_call("MissingModuleName", "FnName", vec![0, 1, 2],),
+            "Module with a given name doesn't exist as per the current metadata"
         );
     }
 
@@ -230,15 +223,8 @@ pub mod tests {
         );
 
         assert_err!(
-            sga.assemble_call(
-                "ModuleName",
-                "MissingFnName",
-                vec![0, 1, 2],
-                [1_u8; 32],
-                3,
-                2,
-            ),
-            "Could not assemble call"
+            sga.assemble_call("ModuleName", "MissingFnName", vec![0, 1, 2],),
+            "Call with a given name doesn't exist on that module as per the current metadata"
         );
     }
 
@@ -257,22 +243,15 @@ pub mod tests {
                 create_submitter(),
             );
 
-            let actual_call_bytes = sga.assemble_call(
-                "ModuleName",
-                "FnName2",
-                vec![vec![3, 3, 3], [1_u8; 32], 3, 2],
-            );
+            let actual_call = sga.assemble_call("ModuleName", "FnName2", vec![3, 3, 3]);
 
-            let expected_call_bytes = (
-                (1_u8, 1_u8),
-                vec![3_u8, 3_u8, 3_u8],
-                [1_u8; 32],
-                Compact(3_u16),
-                Compact(2_u16),
-            )
-                .encode();
+            let expected_call = Call {
+                module_index: 1_u8,
+                function_index: 1_u8,
+                args: Args::new(vec![3_u8, 3_u8, 3_u8]),
+            };
 
-            assert_eq!(actual_call_bytes.unwrap(), expected_call_bytes)
+            assert_eq!(actual_call.unwrap(), expected_call)
         });
     }
 
@@ -294,38 +273,36 @@ pub mod tests {
                 AuthorityId::from(submitter_pub_key),
             );
 
-            let test_call_bytes = sga
-                .assemble_call(
-                    "ModuleName",
-                    "FnName3",
-                    vec![vec![0, 1, 2], [1_u8; 32], 3, 2],
-                )
+            let test_call = sga
+                .assemble_call("ModuleName", "FnName3", vec![0, 1, 2])
                 .unwrap();
 
-            let actual_call_bytes = test_call_bytes.clone();
+            let actual_call = test_call.clone();
 
-            let actual_tx_signed = sga.assemble_signed_tx_offline(test_call_bytes, 0).unwrap();
+            let actual_tx_signed = sga.assemble_signed_tx_offline(test_call, 0).unwrap();
 
             let signature = actual_tx_signed.signature.unwrap();
 
-            let expected_message: Vec<u8> = vec![
-                160, 1, 2, 12, 0, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 12, 8, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 9, 9,
-                9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                9, 9, 9, 9, 9, 9,
-            ];
+            let raw_payload = SignedPayload::from_raw(
+                actual_call.clone(),
+                GenericExtra::new(Era::Immortal, 0),
+                sga.runtime_version.spec_version,
+                sga.runtime_version.transaction_version,
+                sga.genesis_hash.clone(),
+                sga.genesis_hash.clone(),
+            );
 
-            assert_eq!(actual_tx_signed.function, actual_call_bytes);
+            assert_eq!(actual_tx_signed.function, actual_call);
             assert_eq!(
-                signature.clone().0,
+                signature.clone().signer,
                 GenericAddress::from(AuthorityId::from(submitter_pub_key))
             );
-            assert!(signature
-                .clone()
-                .1
-                .verify(expected_message.as_slice(), &submitter_pub_key.into()));
-            assert_eq!(signature.clone().2, GenericExtra::new(Era::Immortal, 0));
+            assert!(raw_payload.using_encoded(|payload| {
+                signature
+                    .signature
+                    .verify(payload, &submitter_pub_key.0.into())
+            }));
+            assert_eq!(signature.clone().era, Era::Immortal);
         });
     }
 }
