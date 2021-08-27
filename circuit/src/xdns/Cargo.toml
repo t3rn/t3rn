@@ -52,7 +52,7 @@ std = [
 	"pallet-balances/std",
 	"pallet-sudo/std",
 	"pallet-timestamp/std",
-	"serde",
+	"serde/std",
 	"sp-io/std",
 	"sp-version/std",
 	"sp-runtime/std",

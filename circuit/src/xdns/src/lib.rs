@@ -24,6 +24,8 @@
 
 use codec::{Decode, Encode};
 use frame_system::ensure_signed;
+
+#[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::{traits::Hash, RuntimeDebug};
 use sp_std::prelude::*;

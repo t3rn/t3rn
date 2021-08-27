@@ -180,11 +180,3 @@ fn should_error_when_trying_to_update_ttl_as_non_root() {
         );
     });
 }
-
-#[test]
-#[ignore]
-fn should_return_the_best_available_xdns_record() {
-    ExtBuilder::default().build().execute_with(|| {
-        assert_ok!(XDNS::best_available(*b"gate"), XdnsRecord {});
-    });
-}
