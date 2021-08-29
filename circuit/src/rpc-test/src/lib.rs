@@ -16,7 +16,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-//! Substrate block-author/full-node API.
+#[cfg(test)]
+mod mock_rpc_setup;
 
 #[cfg(test)]
-mod tests;
+mod extrinsic_gateway_mock;
+
+#[cfg(test)]
+mod extrinsic_gateway_remote;
+
+#[cfg(test)]
+mod intrinsic_gateway_remote;
