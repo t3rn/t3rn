@@ -18,6 +18,8 @@
 use jsonrpc_runtime_client::{create_rpc_client, get_first_header, ConnectionParams};
 
 fn main() {
+    env_logger::init();
+
     let sub_params = ConnectionParams {
         host: "localhost".into(),
         port: 9944,

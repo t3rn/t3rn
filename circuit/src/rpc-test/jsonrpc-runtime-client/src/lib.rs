@@ -2,7 +2,9 @@
 //! Create implements wrapper over RPC client re-used from Parity's Bridge Relayer.
 //! Underlying websocket vendor is https://docs.rs/jsonrpsee
 
-pub use relay_substrate_client::{Client as SubstrateClient, ConnectionParams, rpc::Substrate as SubstrateRPC};
+pub use relay_substrate_client::{
+    rpc::Substrate as SubstrateRPC, Client as SubstrateClient, ConnectionParams,
+};
 
 /// Implement Chain with Polkadot-like types for relay-client
 pub mod polkadot_like_chain;
