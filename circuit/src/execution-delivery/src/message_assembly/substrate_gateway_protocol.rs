@@ -223,17 +223,23 @@ where
             },
         ];
 
+        let arguments = vec![method_enc.encode(), data];
         // ToDo: Sign message payload passed through state call
         Ok(CircuitOutboundMessage {
             name: b"call".to_vec(),
             module_name: b"state".to_vec(),
             method_name: b"call".to_vec(),
-            arguments: vec![method_enc.encode(), data],
+            arguments: arguments.clone(),
             expected_output,
-            extra_payload: None,
+            extra_payload: Some(self.produce_signed_payload(
+                "state",
+                "call",
+                Self::collect_args(arguments),
+            )?),
             sender: None,
             target: None,
         })
+
     }
 
     fn call_escrow(
