@@ -202,7 +202,5 @@ jobs:
           command: test
           args: |
             --workspace
-            --exclude circuit-rpc
-            --exclude circuit-rpc-runtime-api
             --locked
             --manifest-path circuit/Cargo.toml

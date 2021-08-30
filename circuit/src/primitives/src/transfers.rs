@@ -84,7 +84,7 @@ pub fn account_encode_to_h256(account_bytes: &[u8]) -> H256 {
             // H256::from_low_u64_be doesn't work for runtime as it has no std.
             H256::from_slice(
                 &[
-                    [0 as u8; 24].to_vec(),
+                    [0_u8; 24].to_vec(),
                     u64::from_le_bytes(account_bytes.try_into().unwrap())
                         .to_be_bytes()
                         .to_vec(),
@@ -93,11 +93,10 @@ pub fn account_encode_to_h256(account_bytes: &[u8]) -> H256 {
             )
         }
         _ => {
-            assert!(
-                false,
+            panic!(
                 "Surprised by AccountId bytes length different than 32 or 8 bytes while serializing. Not supported."
             );
-            H256::default()
+            // H256::default()
         }
     }
 }
@@ -113,11 +112,10 @@ pub fn h256_to_account<D: Decode + Encode>(account_h256: H256) -> D {
             D::decode(&mut &last_8b[..]).unwrap()
         }
         _ => {
-            assert!(
-                false,
+            panic!(
                 "Surprised by AccountId bytes length different than 32 or 8 bytes while deserializing. Not supported."
             );
-            D::decode(&mut &H256::default()[..]).unwrap()
+            // D::decode(&mut &H256::default()[..]).unwrap()
         }
     }
 }
