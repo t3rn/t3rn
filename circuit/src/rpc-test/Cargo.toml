@@ -34,6 +34,8 @@ hex-literal = "0.3.1"
 hex = "0.4.0"
 
 log = "0.4.8"
+env_logger = "0.8.2"
+
 sp-version = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.8" }
 serde_json = "1.0.41"
 sp-session = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.8" }
