@@ -16,100 +16,31 @@
 // limitations under the License.
 
 //! <!-- markdown-link-check-disable -->
-//! # X-DNS Pallet
+//! # Contracts Registry Pallet
 //! </pre></p></details>
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
+use codec::Encode;
 use frame_support::dispatch::DispatchResult;
 use frame_system::ensure_signed;
-use sp_runtime::{traits::Hash, RuntimeDebug};
 use sp_std::prelude::*;
-use t3rn_primitives::{abi::ContractActionDesc, transfers::BalanceOf, Compose};
-use volatile_vm::storage::RawAliveContractInfo;
+use t3rn_primitives::transfers::BalanceOf;
 
 // Re-export pallet items so that they can be accessed from the crate namespace.
 pub use pallet::*;
 
 #[cfg(test)]
+mod mock;
+#[cfg(test)]
 mod tests;
 
+mod types;
 mod weights;
 
+pub use types::*;
 pub use weights::*;
-
-pub type RegistryContractId<T> = <T as frame_system::Config>::Hash;
-pub type ChainId = [u8; 4];
-
-/// A preliminary representation of a contract in the onchain registry.
-#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
-pub struct RegistryContract<Hash, AccountId, BalanceOf, BlockNumber> {
-    /// Original code text
-    pub code_txt: Vec<u8>,
-    /// Bytecode
-    pub bytes: Vec<u8>,
-    /// Original code author
-    pub author: AccountId,
-    /// Optional renumeration fee for the author
-    pub author_fees_per_single_use: Option<BalanceOf>,
-    /// Optional ABI
-    pub abi: Option<Vec<u8>>,
-    /// Action descriptions (calls for now)
-    pub action_descriptions: Vec<ContractActionDesc<Hash, ChainId, AccountId>>,
-    /// Contracts Info after Contracts Pallet
-    pub info: RawAliveContractInfo<Hash, BalanceOf, BlockNumber>,
-}
-
-impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode>
-    RegistryContract<Hash, AccountId, BalanceOf, BlockNumber>
-{
-    pub fn new(
-        code_txt: Vec<u8>,
-        bytes: Vec<u8>,
-        author: AccountId,
-        author_fees_per_single_use: Option<BalanceOf>,
-        abi: Option<Vec<u8>>,
-        action_descriptions: Vec<ContractActionDesc<Hash, ChainId, AccountId>>,
-        info: RawAliveContractInfo<Hash, BalanceOf, BlockNumber>,
-    ) -> Self {
-        RegistryContract {
-            code_txt,
-            bytes,
-            author,
-            author_fees_per_single_use,
-            abi,
-            action_descriptions,
-            info,
-        }
-    }
-
-    pub fn generate_id<T: Config>(&self) -> RegistryContractId<T> {
-        let mut protocol_part_of_contract = self.code_txt.clone();
-        protocol_part_of_contract.extend(self.bytes.clone());
-        T::Hashing::hash(Encode::encode(&protocol_part_of_contract).as_ref())
-    }
-
-    pub fn from_compose(
-        compose: Compose<AccountId, BalanceOf>,
-        action_descriptions: Vec<ContractActionDesc<Hash, ChainId, AccountId>>,
-        author: AccountId,
-        author_fees_per_single_use: Option<BalanceOf>,
-        abi: Option<Vec<u8>>,
-        info: RawAliveContractInfo<Hash, BalanceOf, BlockNumber>,
-    ) -> RegistryContract<Hash, AccountId, BalanceOf, BlockNumber> {
-        RegistryContract::new(
-            compose.code_txt,
-            compose.bytes,
-            author,
-            author_fees_per_single_use,
-            abi,
-            action_descriptions,
-            info,
-        )
-    }
-}
 
 // Definition of the pallet logic, to be aggregated at runtime definition through
 // `construct_runtime`.
@@ -224,6 +155,7 @@ pub mod pallet {
 
     // Errors inform users that something went wrong.
     #[pallet::error]
+    #[derive(Eq, PartialEq)]
     pub enum Error<T> {
         /// Stored contract has already been added before
         ContractAlreadyExists,
@@ -277,5 +209,62 @@ impl<T: Config> Pallet<T> {
         let _sender = ensure_signed(origin)?;
 
         Ok(())
+    }
+
+    /// Internal function that queries the RegistryContract storage for a contract by its ID
+    #[allow(dead_code)]
+    fn fetch_contract_by_id(
+        contract_id: RegistryContractId<T>,
+    ) -> Result<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>, Error<T>>
+    {
+        if !pallet::ContractsRegistry::<T>::contains_key(contract_id) {
+            return Err(pallet::Error::<T>::UnknownContract);
+        }
+
+        Ok(pallet::ContractsRegistry::<T>::get(contract_id).unwrap())
+    }
+
+    pub fn fetch_contracts(
+        author: Option<T::AccountId>,
+        metadata: Option<Vec<u8>>,
+    ) -> Result<Vec<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>>, Error<T>>
+    {
+        // helper function to find a number of byte slice inside a larger slice
+        fn find_subsequence(haystack: Vec<u8>, needle: &[u8]) -> Option<usize> {
+            haystack
+                .windows(needle.len())
+                .position(|window| window == needle)
+        }
+
+        // try to find contracts by author or metadata
+        let contracts: Vec<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>> =
+            pallet::ContractsRegistry::<T>::iter_values()
+                .filter(
+                    |contract: &RegistryContract<
+                        T::Hash,
+                        T::AccountId,
+                        BalanceOf<T>,
+                        T::BlockNumber,
+                    >| {
+                        match (author.clone(), metadata.clone()) {
+                            (Some(author), Some(text)) => {
+                                contract.author == author
+                                    && find_subsequence(contract.meta.encode(), text.as_slice())
+                                        .is_some()
+                            }
+                            (Some(author), None) => contract.author == author,
+                            (None, Some(text)) => {
+                                find_subsequence(contract.meta.encode(), text.as_slice()).is_some()
+                            }
+                            (None, None) => false,
+                        }
+                    },
+                )
+                .collect();
+
+        if contracts.len() == 0 {
+            return Err(pallet::Error::<T>::UnknownContract);
+        }
+        Ok(contracts)
     }
 }

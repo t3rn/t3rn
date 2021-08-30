@@ -18,9 +18,9 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::Codec;
+use sp_runtime::{codec::Codec, traits::MaybeDisplay, DispatchError};
 use sp_std::vec::Vec;
-use t3rn_primitives::{ComposableExecResult, Compose, FetchContractsResult};
+use t3rn_primitives::{ComposableExecResult, Compose};
 
 sp_api::decl_runtime_apis! {
     /// The API to interact with contracts without using executive.
@@ -39,12 +39,5 @@ sp_api::decl_runtime_apis! {
             gas_limit: u64,
             input_data: Vec<u8>,
         ) -> ComposableExecResult;
-
-        /// Returns the contracts searchable by name or author
-        fn fetch_contracts(
-            author: AccountId,
-            name: Vec<u8>,
-        ) -> FetchContractsResult;
-
     }
 }

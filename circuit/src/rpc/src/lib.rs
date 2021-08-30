@@ -14,10 +14,14 @@
 
 use std::sync::Arc;
 
-use codec::Codec;
 use jsonrpc_core::{Error, ErrorCode, Result};
 use jsonrpc_derive::rpc;
+use pallet_contracts_registry_rpc::{
+    ContractsRegistry as ContractsRegistryClient, ContractsRegistryApi,
+};
+use pallet_contracts_registry_rpc_runtime_api::ContractsRegistryRuntimeApi;
 use serde::{Deserialize, Serialize};
+use sp_api::codec::Codec;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::Bytes;
@@ -29,13 +33,11 @@ use sp_runtime::{
 use sp_std::{prelude::*, str};
 use std::convert::TryInto;
 
-pub use self::gen_client::Client as ContractsClient;
 pub use circuit_rpc_runtime_api::{self as runtime_api, CircuitApi as CircuitRuntimeApi};
-use t3rn_primitives::{ComposableExecResult, Compose, ContractAccessError};
+use pallet_contracts_registry::ContractsRegistry;
+use t3rn_primitives::{ChainId, ComposableExecResult, Compose, ContractAccessError};
 
 const RUNTIME_ERROR: i64 = 1;
-const CONTRACT_DOESNT_EXIST: i64 = 2;
-const CONTRACT_IS_A_TOMBSTONE: i64 = 3;
 
 /// A rough estimate of how much gas a decent hardware consumes per second,
 /// using native execution.
@@ -47,25 +49,12 @@ const CONTRACT_IS_A_TOMBSTONE: i64 = 3;
 /// https://github.com/paritytech/substrate/pull/5446
 const GAS_PER_SECOND: u64 = 1_000_000_000_000;
 
-/// A private newtype for converting `ContractAccessError` into an RPC error.
-struct RPCContractAccessError(ContractAccessError);
-impl From<RPCContractAccessError> for Error {
-    fn from(e: RPCContractAccessError) -> Error {
-        use t3rn_primitives::ContractAccessError::*;
-        match e.0 {
-            DoesntExist => Error {
-                code: ErrorCode::ServerError(CONTRACT_DOESNT_EXIST),
-                message: "The specified contract doesn't exist.".into(),
-                data: None,
-            },
-            IsTombstone => Error {
-                code: ErrorCode::ServerError(CONTRACT_IS_A_TOMBSTONE),
-                message: "The contract is a tombstone and doesn't have any storage.".into(),
-                data: None,
-            },
-        }
-    }
+/// Full client dependencies.
+pub struct FullDeps<C> {
+    /// The client instance to use.
+    pub client: Arc<C>,
 }
+
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[serde(deny_unknown_fields)]
@@ -84,7 +73,7 @@ pub struct InterExecRequest<AccountId, Balance> {
 pub struct ComposeRPC<Account, Balance> {
     name: Box<str>,
     code_txt: Box<str>,
-    gateway_id: Account,
+    gateway_id: ChainId,
     exec_type: Box<str>,
     dest: Account,
     value: Balance,
@@ -109,24 +98,6 @@ pub struct CallRequest<AccountId, Balance> {
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub enum RpcComposableExecResult {
-    /// Successful execution
-    Success {
-        /// The return flags
-        flags: u32,
-        /// Output data
-        data: Bytes,
-        /// How much gas was consumed by the call.
-        gas_consumed: u64,
-    },
-    /// Error execution
-    Error(()),
-}
-
-/// An RPC serializable result of contracts fetch.
-#[derive(Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-#[serde(rename_all = "camelCase")]
-pub enum RpcFetchContractsResult {
     /// Successful execution
     Success {
         /// The return flags
@@ -173,15 +144,6 @@ pub trait CircuitApi<BlockHash, BlockNumber, AccountId, Balance> {
         call_request: InterExecRequest<AccountId, Balance>,
         at: Option<BlockHash>,
     ) -> Result<RpcComposableExecResult>;
-
-    /// Returns the contracts searchable by name or author
-    #[rpc(name = "circuit_fetchContracts")]
-    fn fetch_contracts(
-        &self,
-        author: AccountId,
-        name: Box<str>,
-        at: Option<BlockHash>,
-    ) -> Result<RpcFetchContractsResult>;
 }
 
 /// An implementation of contract specific RPC methods.
@@ -215,6 +177,8 @@ where
         Balance,
         <<Block as BlockT>::Header as HeaderT>::Number,
     >,
+    C::Api:
+        pallet_contracts_registry_rpc::ContractsRegistryRuntimeApi<Block, AccountId, Block::Hash>,
     AccountId: Codec,
     Balance: Codec,
 {
@@ -282,15 +246,6 @@ where
 
         Ok(exec_result.into())
     }
-
-    fn fetch_contracts(
-        &self,
-        _author: AccountId,
-        _name: Box<str>,
-        _at: Option<<Block as BlockT>::Hash>,
-    ) -> Result<RpcFetchContractsResult> {
-        Ok(RpcFetchContractsResult::Error(()))
-    }
 }
 
 /// Converts a runtime trap into an RPC error.
@@ -300,6 +255,26 @@ fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> Error {
         message: "Runtime trapped".into(),
         data: Some(format!("{:?}", err).into()),
     }
+}
+
+pub fn create_full<C, Block>(deps: FullDeps<C>) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
+where
+    Block: BlockT,
+    C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
+    // TODO: Enable ContractsRegistry runtime API as soon as we add MultiAddress support
+    // C::Api: ContractsRegistryRuntimeApi<
+    //     Block,
+    //     t3rn_primitives::GenericAddress,
+    //     <Block as BlockT>::Hash,
+    // >,
+{
+    let mut io = jsonrpc_core::IoHandler::default();
+    let FullDeps { client } = deps;
+    // TODO: to be enabled as soon as we add MultiAddress support
+    // io.extend_with(ContractsRegistryApi::to_delegate(
+    //     ContractsRegistryClient::new(client.clone()),
+    // ));
+    io
 }
 
 #[cfg(test)]
@@ -349,7 +324,7 @@ mod tests {
 			"components": [{
                 "name": "component1",
                 "codeTxt": "let a = \"hello\"",
-                "gatewayId": "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL",
+                "gatewayId": [99, 105, 114, 99],
                 "execType": "exec-volatile",
                 "dest": "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL",
                 "value": 0,
