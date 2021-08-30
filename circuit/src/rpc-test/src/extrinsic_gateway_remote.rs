@@ -16,12 +16,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use substrate_test_runtime_client::{self, DefaultTestClientBuilderExt};
-
 use crate::mock_rpc_setup::TestSetup;
 
 use sp_keystore::KeystoreExt;
-
+use sp_core::Bytes;
 use sp_io::TestExternalities;
 
 use t3rn_primitives::*;
@@ -36,10 +34,16 @@ use sp_keyring::Sr25519Keyring;
 #[test]
 fn successfully_dispatches_signed_transfer_outbound_message_with_protocol_from_circuit_to_remote_target(
 ) {
+
     let localhost_params: ConnectionParams = ConnectionParams {
         host: "localhost".to_string(),
         port: 9944,
         secure: false,
+    };
+    let devnet_params: ConnectionParams = ConnectionParams {
+        host: "dev.net.t3rn.io".to_string(),
+        port: 443,
+        secure: true,
     };
     // Re-use mocked test setup since signing must happen in test externalities env
     let p = TestSetup::default();
@@ -64,12 +68,14 @@ fn successfully_dispatches_signed_transfer_outbound_message_with_protocol_from_c
         // Start a remote WS request block
         async_std::task::block_on(async move {
             let client = create_rpc_client(&localhost_params).await.unwrap();
-            // Full list of custom requests implemented into SubstrateClient
-            // vendor/bridges/relays/client-substrate/src/rpc.rs
-            let param_hex_str = format!(r#"0x{}"#, hex::encode(request_message.signed_extrinsic));
 
-            // ToDo: Fix error `Err(RestartNeeded("Custom error: Unparsable response"))'
-            let result: Result<sp_core::Bytes, jsonrpsee_types::Error>  = client
+            let param_hex_str = format!(
+                r#"0x{}"#,
+                hex::encode(request_message.signed_extrinsic.clone())
+            );
+
+            // Send requests either via client.request(...) or already wrapped into output types submit_unsigned_extrinsic
+            let result_req: Result<Bytes, jsonrpsee_types::Error> = client
                 .client
                 .request(
                     "author_submitExtrinsic",
@@ -77,7 +83,18 @@ fn successfully_dispatches_signed_transfer_outbound_message_with_protocol_from_c
                 )
                 .await;
 
-            println!("client.author_submit_extrinsic result = {:?}", result);
+            // Full list of custom requests implemented into SubstrateClient
+            // vendor/bridges/relays/client-substrate/src/rpc.rs
+            let result_wrap = client
+                .submit_unsigned_extrinsic(Bytes(request_message.signed_extrinsic))
+                .await;
+
+            println!("client.author_submit_extrinsic result = {:?}", result_req);
+            println!(
+                "client.submit_unsigned_extrinsic result = {:?}",
+                result_wrap
+            );
+            // ToDo: Fix error `Err(RestartNeeded("Custom error: Unparsable response"))'
             assert_eq!(true, false);
         });
     });
