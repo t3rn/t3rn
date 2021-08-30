@@ -71,6 +71,9 @@ use volatile_vm::VolatileVM;
 #[cfg(test)]
 mod tests;
 
+#[cfg(test)]
+mod mock;
+
 pub mod exec_composer;
 pub mod message_assembly;
 

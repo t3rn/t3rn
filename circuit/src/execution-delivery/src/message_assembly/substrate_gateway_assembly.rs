@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Compact, Encode};
-use frame_support::ensure;
+use codec::{Encode};
+
 use sp_application_crypto::Public;
 use sp_runtime::{MultiSignature, RuntimeAppPublic};
 use sp_std::vec::*;
@@ -11,7 +11,7 @@ use crate::message_assembly::chain_generic_metadata::Metadata;
 use crate::message_assembly::signer::app::{
     Args, Call, GenericAddress, GenericExtra, Signature, SignedPayload, UncheckedExtrinsicV4,
 };
-use crate::{compose_call, AuthorityId};
+use crate::{AuthorityId};
 
 use super::gateway_inbound_assembly::GatewayInboundAssembly;
 
@@ -135,7 +135,7 @@ where
 
 #[cfg(test)]
 pub mod tests {
-    use codec::Compact;
+    
     use frame_metadata::{
         DecodeDifferent, ExtrinsicMetadata, FunctionMetadata, ModuleMetadata, RuntimeMetadataV13,
     };

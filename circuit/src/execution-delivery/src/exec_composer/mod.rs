@@ -348,7 +348,7 @@ impl ExecComposer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::Test;
+    use crate::mock::Test;
     use crate::*;
     use hex_literal::hex;
 

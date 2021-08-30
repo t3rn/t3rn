@@ -3,7 +3,7 @@
 use sp_std::vec::*;
 
 use crate::message_assembly::signer::app::{Call, UncheckedExtrinsicV4};
-use codec::Encode;
+
 
 pub trait GatewayInboundAssembly {
     fn assemble_signed_call(
