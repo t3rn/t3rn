@@ -104,7 +104,7 @@ pub struct TestSetup {
 
 impl Default for TestSetup {
     fn default() -> Self {
-        env_logger::init();
+        let _ = env_logger::builder().is_test(true).try_init();
 
         let keystore = create_temp_keystore::<
             pallet_circuit_execution_delivery::message_assembly::signer::app::Pair,
