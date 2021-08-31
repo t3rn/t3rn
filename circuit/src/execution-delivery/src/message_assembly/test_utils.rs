@@ -1,3 +1,4 @@
+
 use frame_metadata::{
     DecodeDifferent, ExtrinsicMetadata, FunctionMetadata, ModuleMetadata, RuntimeMetadataV13,
 };
@@ -11,11 +12,13 @@ use crate::AuthorityId;
 
 use crate::message_assembly::chain_generic_metadata::*;
 use crate::message_assembly::substrate_gateway_protocol::*;
+#[cfg(feature = "std")]
+use relay_substrate_client::{Chain, ChainBase, Client};
 
 pub fn create_test_metadata(
     modules_with_functions: Vec<(&'static str, Vec<&'static str>)>,
 ) -> Metadata {
-    let mut module_index = 1;
+    let mut module_index = 0;
     let mut modules: Vec<ModuleMetadata> = vec![];
 
     let fn_metadata_generator = |name: &'static str| -> FunctionMetadata {
@@ -69,8 +72,8 @@ pub fn create_test_runtime_version() -> RuntimeVersion {
         authoring_version: 1,
         impl_version: 1,
         apis: ApisVec::Owned(vec![([0_u8; 8], 0_u32)]),
-        transaction_version: 4,
-        spec_version: 13,
+        transaction_version: 1,
+        spec_version: 1,
     }
 }
 
@@ -79,7 +82,11 @@ pub fn create_submitter() -> AuthorityId {
 }
 
 pub fn create_test_genesis_hash() -> H256 {
-    [0_u8; 32].into()
+    [
+        228, 91, 54, 23, 242, 175, 145, 3, 62, 53, 1, 176, 110, 242, 112, 238, 216, 163, 225, 49,
+        11, 192, 245, 48, 220, 24, 125, 95, 95, 230, 28, 240,
+    ]
+    .into()
 }
 
 pub fn create_default_test_gateway_protocol() -> SubstrateGatewayProtocol<AuthorityId, H256> {
@@ -95,7 +102,6 @@ pub fn create_test_stuffed_gateway_protocol(
     submitter: AuthorityId,
 ) -> SubstrateGatewayProtocol<AuthorityId, H256> {
     let modules_with_functions: Vec<(&'static str, Vec<&'static str>)> = vec![
-        ("balances", vec!["transfer"]),
         ("state", vec!["call"]),
         ("state", vec!["getStorage"]),
         ("state", vec!["setStorage"]),
@@ -104,6 +110,7 @@ pub fn create_test_stuffed_gateway_protocol(
         ("system", vec!["remark"]),
         ("gateway", vec!["call"]),
         ("gateway", vec!["transfer"]),
+        ("balances", vec!["transfer"]),
         ("gateway", vec!["getStorage"]),
         ("gateway", vec!["setStorage"]),
         ("gateway", vec!["emitEvent"]),
@@ -114,6 +121,40 @@ pub fn create_test_stuffed_gateway_protocol(
         create_test_metadata(modules_with_functions),
         create_test_runtime_version(),
         create_test_genesis_hash(),
+        submitter,
+    )
+}
+
+#[cfg(feature = "std")]
+pub async fn create_gateway_protocol_from_client<Chain: Chain>(
+    client: Client<Chain>,
+    submitter: AuthorityId,
+) -> SubstrateGatewayProtocol<AuthorityId, <Chain as ChainBase>::Hash> {
+    // TODO: we need to fetch the metadata from client. but the runtime rpc is not initiated
+    // for rpc in relay_substrate_client. once that is in, we can replace that with this
+    let modules_with_functions: Vec<(&'static str, Vec<&'static str>)> = vec![
+        ("state", vec!["call"]),
+        ("state", vec!["getStorage"]),
+        ("state", vec!["setStorage"]),
+        ("author", vec!["submitExtrinsic"]),
+        ("utility", vec!["batchAll"]),
+        ("system", vec!["remark"]),
+        ("gateway", vec!["call"]),
+        ("gateway", vec!["transfer"]),
+        ("balances", vec!["transfer"]),
+        ("gateway", vec!["getStorage"]),
+        ("gateway", vec!["setStorage"]),
+        ("gateway", vec!["emitEvent"]),
+        ("gateway", vec!["custom"]),
+    ];
+
+    SubstrateGatewayProtocol::new(
+        create_test_metadata(modules_with_functions),
+        client
+            .runtime_version()
+            .await
+            .expect("must return runtime version"),
+        client.genesis_hash,
         submitter,
     )
 }

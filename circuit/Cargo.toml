@@ -79,6 +79,7 @@ members = [
     "src/rpc/runtime-api",
     "src/runtime",
     "src/primitives",
-    "src/xdns"
+    "src/xdns",
+    "src/rpc-test"
 ]
 exclude = []

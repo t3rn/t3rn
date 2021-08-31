@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::Encode;
-use frame_support::ensure;
+use codec::{Compact, Encode};
+
 use sp_runtime::generic::Era;
 use sp_runtime::RuntimeAppPublic;
 use sp_std::vec;
@@ -11,7 +11,6 @@ use sp_version::RuntimeVersion;
 use t3rn_primitives::transfers::TransferEntry;
 use t3rn_primitives::*;
 
-use crate::compose_call;
 use crate::message_assembly::chain_generic_metadata::Metadata;
 use crate::message_assembly::gateway_inbound_assembly::GatewayInboundAssembly;
 use crate::message_assembly::signer::app::GenericExtra;
@@ -52,29 +51,34 @@ where
         &self,
         namespace: &'static str,
         name: &'static str,
-        arguments: Vec<Vec<u8>>,
+        arguments: Vec<u8>,
     ) -> Result<ExtraMessagePayload, &'static str> {
-        let call_bytes = compose_call!(self.assembly.metadata, namespace, name, arguments).encode();
-
-        // TODO: use a proper nonce
         let extrinsic = self
             .assembly
-            .assemble_signed_tx_offline(call_bytes.clone(), 0)?;
+            .assemble_signed_call(namespace, name, arguments)?;
+
         let signature = extrinsic
             .signature
             .clone()
             .expect("Signature of extrinsic should be valid if assemble_signed_tx was successfull")
-            .1;
+            .signature;
 
         Ok(ExtraMessagePayload {
             signer: self.assembly.submitter.to_raw_vec(),
             module_name: namespace.encode(),
             method_name: name.encode(),
-            call_bytes: call_bytes.clone(),
+            call_bytes: extrinsic.function.encode(),
             signature: signature.encode(),
             extra: GenericExtra::new(Era::Immortal, 0).encode(),
             tx_signed: extrinsic.encode(),
             custom_payload: None,
+        })
+    }
+
+    fn collect_args(args: Vec<Vec<u8>>) -> Vec<u8> {
+        args.iter().fold(vec![], |mut a, b| {
+            a.extend(b);
+            a
         })
     }
 }
@@ -137,7 +141,11 @@ where
             method_name: b"setStorage".to_vec(),
             arguments: arguments.clone(),
             expected_output: vec![expected_storage],
-            extra_payload: Some(self.produce_signed_payload("state", "setStorage", arguments)?),
+            extra_payload: Some(self.produce_signed_payload(
+                "state",
+                "setStorage",
+                Self::collect_args(arguments),
+            )?),
             sender: None,
             target: None,
         })
@@ -172,7 +180,7 @@ where
                     extra_payload: Some(self.produce_signed_payload(
                         "gatewayEscrowed",
                         "callStatic",
-                        arguments,
+                        Self::collect_args(arguments),
                     )?),
                     sender: None,
                     target: None,
@@ -214,14 +222,19 @@ where
             },
         ];
 
+        let arguments = vec![method_enc.encode(), data];
         // ToDo: Sign message payload passed through state call
         Ok(CircuitOutboundMessage {
             name: b"call".to_vec(),
             module_name: b"state".to_vec(),
             method_name: b"call".to_vec(),
-            arguments: vec![method_enc.encode(), data],
+            arguments: arguments.clone(),
             expected_output,
-            extra_payload: None,
+            extra_payload: Some(self.produce_signed_payload(
+                "state",
+                "call",
+                Self::collect_args(arguments),
+            )?),
             sender: None,
             target: None,
         })
@@ -255,7 +268,7 @@ where
                     extra_payload: Some(self.produce_signed_payload(
                         "gatewayEscrowed",
                         "callEscrowed",
-                        arguments,
+                        Self::collect_args(arguments),
                     )?),
                     sender: None,
                     target: None,
@@ -312,8 +325,8 @@ where
 
     fn transfer(
         &self,
-        to: Vec<u8>,
-        value: Vec<u8>,
+        to: GenericAddress,
+        value: Compact<u128>,
         _gateway_type: GatewayType,
     ) -> Result<CircuitOutboundMessage, &'static str> {
         let expected_output = vec![GatewayExpectedOutput::Events {
@@ -323,7 +336,7 @@ where
             ],
         }];
 
-        let arguments = vec![to, value, vec![]];
+        let arguments = vec![to.encode(), value.encode()];
 
         Ok(CircuitOutboundMessage {
             name: b"transfer".to_vec(),
@@ -331,7 +344,11 @@ where
             method_name: b"transfer".to_vec(),
             arguments: arguments.clone(),
             expected_output,
-            extra_payload: Some(self.produce_signed_payload("balances", "transfer", arguments)?),
+            extra_payload: Some(self.produce_signed_payload(
+                "balances",
+                "transfer",
+                Self::collect_args(arguments),
+            )?),
             sender: None,
             target: None,
         })
@@ -362,9 +379,11 @@ where
                     method_name: b"transfer".to_vec(),
                     arguments: arguments.clone(),
                     expected_output,
-                    extra_payload: Some(
-                        self.produce_signed_payload("gateway", "transfer", arguments)?,
-                    ),
+                    extra_payload: Some(self.produce_signed_payload(
+                        "gateway",
+                        "transfer",
+                        Self::collect_args(arguments),
+                    )?),
                     sender: None,
                     target: None,
                 })
@@ -382,17 +401,17 @@ where
                     self.produce_signed_payload(
                         "balances",
                         "transfer",
-                        vec![
+                        Self::collect_args(vec![
                             self.assembly.submitter.to_raw_vec(),
                             escrow_account.clone(),
                             value.clone(),
-                        ],
+                        ]),
                     )?
                     .encode(),
                     self.produce_signed_payload(
                         "balances",
                         "transfer",
-                        vec![escrow_account, to, value],
+                        Self::collect_args(vec![escrow_account, to, value]),
                     )?
                     .encode(),
                 ];
@@ -403,9 +422,11 @@ where
                     method_name: b"batchAll".to_vec(),
                     arguments: arguments.clone(),
                     expected_output,
-                    extra_payload: Some(
-                        self.produce_signed_payload("utility", "batchAll", transfers)?,
-                    ),
+                    extra_payload: Some(self.produce_signed_payload(
+                        "utility",
+                        "batchAll",
+                        Self::collect_args(transfers),
+                    )?),
                     sender: None,
                     target: None,
                 })
@@ -439,7 +460,7 @@ where
 
 #[cfg(test)]
 pub mod tests {
-    use codec::Encode;
+    use codec::{Compact, Encode};
 
     use sp_application_crypto::RuntimePublic;
     use sp_core::sr25519::Signature;
@@ -458,6 +479,7 @@ pub mod tests {
     use super::{
         CircuitOutboundMessage, ExtraMessagePayload, GatewayExpectedOutput, GatewayInboundProtocol,
     };
+    use crate::message_assembly::signer::app::GenericAddress;
 
     pub fn assert_signed_payload(
         actual: CircuitOutboundMessage,
@@ -843,8 +865,8 @@ pub mod tests {
     #[test]
     fn transfer_should_create_outbound_messages_correctly() {
         let keystore = KeyStore::new();
-        let to = [4_u8; 32].to_vec();
-        let value = 4_u128.encode();
+        let to = [4_u8; 32];
+        let value = Compact::from(4_u128);
 
         let submitter = SyncCryptoStore::sr25519_generate_new(&keystore, KEY_TYPE, None)
             .expect("Should generate submitter key");
@@ -858,13 +880,17 @@ pub mod tests {
             );
 
             let actual = test_protocol
-                .transfer(to.clone(), value.clone(), GatewayType::ProgrammableInternal)
+                .transfer(
+                    GenericAddress::Id(to.into()),
+                    value.clone(),
+                    GatewayType::ProgrammableInternal,
+                )
                 .unwrap();
 
             assert_signed_payload(
                 actual,
                 submitter,
-                vec![to, value, vec![]],
+                vec![to.to_vec(), value.encode(), vec![]],
                 vec![GatewayExpectedOutput::Events {
                     signatures: vec![b"Transfer(address,address,value)".to_vec()],
                 }],

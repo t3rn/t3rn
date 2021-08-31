@@ -216,14 +216,15 @@ impl CircuitOutboundMessage {
         let method_name: &str = sp_std::str::from_utf8(&self.name[..])
             .map_err(|_| "`Can't decode method name to &str")?;
 
-        let extra_payload = self
+        let signed_ext = self
             .extra_payload
-            .clone()
-            .expect("Expect extra_payload on OutboundMessage when calling 'to_jsonrpc_signed'");
+            .as_ref()
+            .map(|payload| payload.tx_signed.clone())
+            .ok_or("no signed extrinsic provided")?;
 
         Ok(RpcPayloadSigned {
             method_name,
-            signed_extrinsic: extra_payload.tx_signed.clone(),
+            signed_extrinsic: signed_ext,
         })
     }
 }
