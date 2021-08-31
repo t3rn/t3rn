@@ -19,23 +19,23 @@ use codec::{Compact, Encode};
 
 use crate::mock_rpc_setup::TestSetup;
 
-use sp_keystore::KeystoreExt;
 use sp_core::Bytes;
 use sp_io::TestExternalities;
+use sp_keystore::KeystoreExt;
 
 use t3rn_primitives::*;
 
-use pallet_circuit_execution_delivery::message_assembly::test_utils::create_test_stuffed_gateway_protocol;
+use pallet_circuit_execution_delivery::message_assembly::test_utils::{
+    create_gateway_protocol_from_client, create_test_stuffed_gateway_protocol,
+};
 
 use jsonrpc_runtime_client::{create_rpc_client, ConnectionParams};
 use jsonrpsee_types::{traits::Client, JsonValue};
 use sp_keyring::Sr25519Keyring;
 
-// FixMe: Fails when submmited against DEV node, since for now multisig is unsupported
 #[test]
 fn successfully_dispatches_signed_transfer_outbound_message_with_protocol_from_circuit_to_remote_target(
 ) {
-
     let localhost_params: ConnectionParams = ConnectionParams {
         host: "localhost".to_string(),
         port: 9944,
@@ -46,65 +46,50 @@ fn successfully_dispatches_signed_transfer_outbound_message_with_protocol_from_c
         port: 443,
         secure: true,
     };
-    // Re-use mocked test setup since signing must happen in test externalities env
-    let p = TestSetup::default();
-    let mut ext = TestExternalities::new_empty();
-    ext.register_extension(KeystoreExt(p.keystore));
 
-    let test_protocol = create_test_stuffed_gateway_protocol(Sr25519Keyring::Alice.public().into());
+    async_std::task::block_on(async move {
+        let client = create_rpc_client(&localhost_params).await.unwrap();
 
-    ext.execute_with(|| {
-        let transfer_outbound_message = test_protocol
-            .transfer(
-                GenericAddress::Id(Sr25519Keyring::Bob.to_account_id()),
-                Compact::from(100000000000000u128),
-                GatewayType::ProgrammableExternal,
-            )
-            .unwrap();
+        // Re-use mocked test setup since signing must happen in test externalities env
+        let p = TestSetup::default();
+        let mut ext = TestExternalities::new_empty();
+        ext.register_extension(KeystoreExt(p.keystore));
 
-        // FixMe: Create the signed params, where params is the encoded UncheckedExtrisicV4
-        let request_message: RpcPayloadSigned =
-            transfer_outbound_message.to_jsonrpc_signed().unwrap();
+        let signer = Sr25519Keyring::Alice;
+        let test_protocol =
+            create_gateway_protocol_from_client(client.clone(), signer.public().into()).await;
 
-        // Start a remote WS request block
-        async_std::task::block_on(async move {
-            let client = create_rpc_client(&localhost_params).await.unwrap();
-
-            let param_hex_str = format!(
-                r#"0x{}"#,
-                hex::encode(request_message.signed_extrinsic.clone())
-            );
-
-            // Send requests either via client.request(...) or already wrapped into output types submit_unsigned_extrinsic
-            let result_req: Result<Bytes, jsonrpsee_types::Error> = client
-                .client
-                .request(
-                    "author_submitExtrinsic",
-                    vec![JsonValue::String(param_hex_str)].into(),
+        let signed_ext = ext.execute_with(|| {
+            let transfer_outbound_message = test_protocol
+                .transfer(
+                    GenericAddress::Id(Sr25519Keyring::Bob.to_account_id()),
+                    Compact::from(100000000000000u128),
+                    GatewayType::ProgrammableExternal,
                 )
-                .await;
+                .unwrap();
 
-            // Full list of custom requests implemented into SubstrateClient
-            // vendor/bridges/relays/client-substrate/src/rpc.rs
-            let result_wrap = client
-                .submit_unsigned_extrinsic(Bytes(request_message.signed_extrinsic))
-                .await;
-
-            println!("client.author_submit_extrinsic result = {:?}", result_req);
-            println!(
-                "client.submit_unsigned_extrinsic result = {:?}",
-                result_wrap
-            );
-            // ToDo: Fix error `Err(RestartNeeded("Custom error: Unparsable response"))'
-            assert_eq!(true, false);
+            // FixMe: Create the signed params, where params is the encoded UncheckedExtrisicV4
+            transfer_outbound_message
+                .to_jsonrpc_signed()
+                .unwrap()
+                .signed_extrinsic
         });
+
+        let ext_hash = client
+            .submit_signed_extrinsic(signer.to_account_id(), |nonce| signed_ext.into())
+            .await;
+
+        assert!(ext_hash.is_ok(), "result should be true");
+        println!(
+            "client.author_submit_extrinsic result = {:?}",
+            ext_hash.unwrap()
+        );
     });
 }
 
 #[test]
 fn successfully_dispatches_signed_call_outbound_message_with_protocol_from_circuit_to_remote_target(
 ) {
-
     let localhost_params: ConnectionParams = ConnectionParams {
         host: "localhost".to_string(),
         port: 9944,
@@ -123,25 +108,25 @@ fn successfully_dispatches_signed_call_outbound_message_with_protocol_from_circu
     let test_protocol = create_test_stuffed_gateway_protocol(Sr25519Keyring::Alice.public().into());
 
     let (
-      module_name,
-      fn_name,
-      data,
-      escrow_account,
-      requester,
-      to,
-      value,
-      gas,
-      gateway_type,
-      return_value,
+        module_name,
+        fn_name,
+        data,
+        escrow_account,
+        requester,
+        to,
+        value,
+        gas,
+        gateway_type,
+        return_value,
     ) = (
         b"state".to_vec(),
         b"getStorage".to_vec(),
-        vec![], // input
-        GenericAddress::Id(Sr25519Keyring::Alice.to_account_id()).encode(), // escrow
-        GenericAddress::Id(Sr25519Keyring::Bob.to_account_id()).encode(), // requester
+        vec![],                                                               // input
+        GenericAddress::Id(Sr25519Keyring::Alice.to_account_id()).encode(),   // escrow
+        GenericAddress::Id(Sr25519Keyring::Bob.to_account_id()).encode(),     // requester
         GenericAddress::Id(Sr25519Keyring::Charlie.to_account_id()).encode(), // to/dest
-        Compact::from(100000000000000u128).encode(), // value
-        Compact::from(200000000000000u128).encode(), // gas
+        Compact::from(100000000000000u128).encode(),                          // value
+        Compact::from(200000000000000u128).encode(),                          // gas
         GatewayType::ProgrammableExternal,
         None, // optional return value which already might have been known
     );
@@ -162,8 +147,7 @@ fn successfully_dispatches_signed_call_outbound_message_with_protocol_from_circu
             .unwrap();
 
         // FixMe: Create the signed params, where params is the encoded UncheckedExtrisicV4
-        let request_message: RpcPayloadSigned =
-            call_outbound_message.to_jsonrpc_signed().unwrap();
+        let request_message: RpcPayloadSigned = call_outbound_message.to_jsonrpc_signed().unwrap();
 
         // Start a remote WS request block
         async_std::task::block_on(async move {
@@ -182,7 +166,8 @@ fn successfully_dispatches_signed_call_outbound_message_with_protocol_from_circu
                     vec![
                         JsonValue::String("BabeApi_current_epoch".to_string()),
                         JsonValue::String(param_hex_str),
-                    ].into(),
+                    ]
+                    .into(),
                 )
                 .await;
 
@@ -192,4 +177,3 @@ fn successfully_dispatches_signed_call_outbound_message_with_protocol_from_circu
         });
     });
 }
-

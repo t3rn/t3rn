@@ -78,6 +78,7 @@ sp-staking = { default-features = false, git = "https://github.com/paritytech/su
 sp-finality-grandpa = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 sp-consensus-vrf = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 sp-consensus-babe = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
+relay-substrate-client = { version = "0.1.0", path = "../../../vendor/bridges/relays/client-substrate" }
 
 [dev-dependencies]
 serde_json = "1.0.41"

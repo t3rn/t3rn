@@ -11,6 +11,7 @@ use crate::AuthorityId;
 
 use crate::message_assembly::chain_generic_metadata::*;
 use crate::message_assembly::substrate_gateway_protocol::*;
+use relay_substrate_client::ChainBase;
 
 pub fn create_test_metadata(
     modules_with_functions: Vec<(&'static str, Vec<&'static str>)>,
@@ -118,6 +119,39 @@ pub fn create_test_stuffed_gateway_protocol(
         create_test_metadata(modules_with_functions),
         create_test_runtime_version(),
         create_test_genesis_hash(),
+        submitter,
+    )
+}
+
+pub async fn create_gateway_protocol_from_client<Chain: relay_substrate_client::Chain>(
+    client: relay_substrate_client::Client<Chain>,
+    submitter: AuthorityId,
+) -> SubstrateGatewayProtocol<AuthorityId, <Chain as ChainBase>::Hash> {
+    // TODO: we need to fetch the metadata from client. but the runtime rpc is not initiated
+    // for rpc in relay_substrate_client. once that is in, we can replace that with this
+    let modules_with_functions: Vec<(&'static str, Vec<&'static str>)> = vec![
+        ("state", vec!["call"]),
+        ("state", vec!["getStorage"]),
+        ("state", vec!["setStorage"]),
+        ("author", vec!["submitExtrinsic"]),
+        ("utility", vec!["batchAll"]),
+        ("system", vec!["remark"]),
+        ("gateway", vec!["call"]),
+        ("gateway", vec!["transfer"]),
+        ("balances", vec!["transfer"]),
+        ("gateway", vec!["getStorage"]),
+        ("gateway", vec!["setStorage"]),
+        ("gateway", vec!["emitEvent"]),
+        ("gateway", vec!["custom"]),
+    ];
+
+    SubstrateGatewayProtocol::new(
+        create_test_metadata(modules_with_functions),
+        client
+            .runtime_version()
+            .await
+            .expect("must return runtime version"),
+        client.genesis_hash,
         submitter,
     )
 }

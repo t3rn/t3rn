@@ -11,7 +11,6 @@ use sp_version::RuntimeVersion;
 use t3rn_primitives::transfers::TransferEntry;
 use t3rn_primitives::*;
 
-
 use crate::message_assembly::chain_generic_metadata::Metadata;
 use crate::message_assembly::gateway_inbound_assembly::GatewayInboundAssembly;
 use crate::message_assembly::signer::app::GenericExtra;
@@ -239,7 +238,6 @@ where
             sender: None,
             target: None,
         })
-
     }
 
     fn call_escrow(

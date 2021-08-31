@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Encode};
+use codec::Encode;
 
 use sp_application_crypto::Public;
 use sp_runtime::{MultiSignature, RuntimeAppPublic};
@@ -11,7 +11,7 @@ use crate::message_assembly::chain_generic_metadata::Metadata;
 use crate::message_assembly::signer::app::{
     Args, Call, GenericAddress, GenericExtra, Signature, SignedPayload, UncheckedExtrinsicV4,
 };
-use crate::{AuthorityId};
+use crate::AuthorityId;
 
 use super::gateway_inbound_assembly::GatewayInboundAssembly;
 
@@ -135,7 +135,7 @@ where
 
 #[cfg(test)]
 pub mod tests {
-    
+
     use frame_metadata::{
         DecodeDifferent, ExtrinsicMetadata, FunctionMetadata, ModuleMetadata, RuntimeMetadataV13,
     };
@@ -349,7 +349,7 @@ pub mod tests {
             };
 
             let signed_call = sga
-                .assemble_signed_batch_call(vec![inner_call], 1)
+                .assemble_signed_batch_call(vec![inner_call], 0)
                 .expect("must be successful");
 
             println!("0x{}", hex::encode(signed_call.encode()))
