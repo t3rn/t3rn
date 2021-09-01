@@ -1,4 +1,3 @@
-
 use frame_metadata::{
     DecodeDifferent, ExtrinsicMetadata, FunctionMetadata, ModuleMetadata, RuntimeMetadataV13,
 };
@@ -12,7 +11,7 @@ use crate::AuthorityId;
 
 use crate::message_assembly::chain_generic_metadata::*;
 use crate::message_assembly::substrate_gateway_protocol::*;
-#[cfg(feature = "std")]
+
 use relay_substrate_client::{Chain, ChainBase, Client};
 
 pub fn create_test_metadata(
@@ -89,9 +88,32 @@ pub fn create_test_genesis_hash() -> H256 {
     .into()
 }
 
+pub fn get_dummy_modules_with_functions() -> Vec<(&'static str, Vec<&'static str>)> {
+    vec![
+        ("state", vec!["call"]),
+        ("state", vec!["getStorage"]),
+        ("state", vec!["setStorage"]),
+        ("ModuleName", vec!["FnName"]),
+        ("ModuleName", vec!["FnName1"]),
+        ("ModuleName", vec!["FnName2"]),
+        ("ModuleName", vec!["FnName3"]),
+        ("author", vec!["submitExtrinsic"]),
+        ("utility", vec!["batchAll"]),
+        ("system", vec!["remark"]),
+        ("gateway", vec!["call"]),
+        ("balances", vec!["transfer"]),
+        ("gateway", vec!["getStorage"]),
+        ("gateway", vec!["transfer"]),
+        ("gateway", vec!["emitEvent"]),
+        ("gateway", vec!["custom"]),
+        ("gatewayEscrowed", vec!["callStatic"]),
+        ("gatewayEscrowed", vec!["callEscrowed"]),
+    ]
+}
+
 pub fn create_default_test_gateway_protocol() -> SubstrateGatewayProtocol<AuthorityId, H256> {
     SubstrateGatewayProtocol::new(
-        Metadata::default(),
+        create_test_metadata(get_dummy_modules_with_functions()),
         create_test_runtime_version(),
         create_test_genesis_hash(),
         create_submitter(),
@@ -101,55 +123,22 @@ pub fn create_default_test_gateway_protocol() -> SubstrateGatewayProtocol<Author
 pub fn create_test_stuffed_gateway_protocol(
     submitter: AuthorityId,
 ) -> SubstrateGatewayProtocol<AuthorityId, H256> {
-    let modules_with_functions: Vec<(&'static str, Vec<&'static str>)> = vec![
-        ("state", vec!["call"]),
-        ("state", vec!["getStorage"]),
-        ("state", vec!["setStorage"]),
-        ("author", vec!["submitExtrinsic"]),
-        ("utility", vec!["batchAll"]),
-        ("system", vec!["remark"]),
-        ("gateway", vec!["call"]),
-        ("gateway", vec!["transfer"]),
-        ("balances", vec!["transfer"]),
-        ("gateway", vec!["getStorage"]),
-        ("gateway", vec!["setStorage"]),
-        ("gateway", vec!["emitEvent"]),
-        ("gateway", vec!["custom"]),
-    ];
-
     SubstrateGatewayProtocol::new(
-        create_test_metadata(modules_with_functions),
+        create_test_metadata(get_dummy_modules_with_functions()),
         create_test_runtime_version(),
         create_test_genesis_hash(),
         submitter,
     )
 }
 
-#[cfg(feature = "std")]
-pub async fn create_gateway_protocol_from_client<Chain: Chain>(
+pub async fn create_gateway_protocol_from_client<Chain: relay_substrate_client::Chain>(
     client: Client<Chain>,
     submitter: AuthorityId,
 ) -> SubstrateGatewayProtocol<AuthorityId, <Chain as ChainBase>::Hash> {
     // TODO: we need to fetch the metadata from client. but the runtime rpc is not initiated
     // for rpc in relay_substrate_client. once that is in, we can replace that with this
-    let modules_with_functions: Vec<(&'static str, Vec<&'static str>)> = vec![
-        ("state", vec!["call"]),
-        ("state", vec!["getStorage"]),
-        ("state", vec!["setStorage"]),
-        ("author", vec!["submitExtrinsic"]),
-        ("utility", vec!["batchAll"]),
-        ("system", vec!["remark"]),
-        ("gateway", vec!["call"]),
-        ("gateway", vec!["transfer"]),
-        ("balances", vec!["transfer"]),
-        ("gateway", vec!["getStorage"]),
-        ("gateway", vec!["setStorage"]),
-        ("gateway", vec!["emitEvent"]),
-        ("gateway", vec!["custom"]),
-    ];
-
     SubstrateGatewayProtocol::new(
-        create_test_metadata(modules_with_functions),
+        create_test_metadata(get_dummy_modules_with_functions()),
         client
             .runtime_version()
             .await
