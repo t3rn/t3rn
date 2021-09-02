@@ -4,7 +4,6 @@ use sp_std::vec::*;
 
 use crate::message_assembly::signer::app::{Call, UncheckedExtrinsicV4};
 
-
 pub trait GatewayInboundAssembly {
     fn assemble_signed_call(
         &self,
