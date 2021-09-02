@@ -12,7 +12,8 @@ use crate::AuthorityId;
 use crate::message_assembly::chain_generic_metadata::*;
 use crate::message_assembly::substrate_gateway_protocol::*;
 
-use relay_substrate_client::{Chain, ChainBase, Client};
+#[cfg(any(feature = "std", test))]
+use relay_substrate_client::{Chain as RelayChain, ChainBase, Client};
 
 pub fn create_test_metadata(
     modules_with_functions: Vec<(&'static str, Vec<&'static str>)>,
@@ -131,7 +132,8 @@ pub fn create_test_stuffed_gateway_protocol(
     )
 }
 
-pub async fn create_gateway_protocol_from_client<Chain: relay_substrate_client::Chain>(
+#[cfg(any(feature = "std", test))]
+pub async fn create_gateway_protocol_from_client<Chain: RelayChain>(
     client: Client<Chain>,
     submitter: AuthorityId,
 ) -> SubstrateGatewayProtocol<AuthorityId, <Chain as ChainBase>::Hash> {

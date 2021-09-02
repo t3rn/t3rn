@@ -94,6 +94,7 @@ default = ["std"]
 std = [
     "codec/std",
     "serde",
+    "relay-substrate-client",
     "log/std",
     "lite-json/std",
     "hash-db/std",

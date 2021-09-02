@@ -28,7 +28,7 @@ use sc_rpc::system::SystemApi;
 
 use t3rn_primitives::*;
 
-use pallet_circuit_execution_delivery::message_assembly::test_utils::create_test_stuffed_gateway_protocol;
+use pallet_circuit_execution_delivery::message_test_utils::create_test_stuffed_gateway_protocol;
 
 use sp_keyring::Sr25519Keyring;
 

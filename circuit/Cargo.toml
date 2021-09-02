@@ -76,6 +76,7 @@ members = [
     "src/execution-delivery",
     "src/rpc",
     "src/rpc-test",
+    "src/rpc-test/jsonrpc-runtime-client",
     "src/rpc/runtime-api",
     "src/runtime",
     "src/primitives",

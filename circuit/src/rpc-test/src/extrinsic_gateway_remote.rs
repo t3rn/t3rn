@@ -25,7 +25,7 @@ use sp_keystore::KeystoreExt;
 
 use t3rn_primitives::*;
 
-use pallet_circuit_execution_delivery::message_assembly::test_utils::{
+use pallet_circuit_execution_delivery::message_test_utils::{
     create_gateway_protocol_from_client, create_test_stuffed_gateway_protocol,
 };
 

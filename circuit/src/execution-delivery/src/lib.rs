@@ -69,13 +69,15 @@ use t3rn_primitives::*;
 use volatile_vm::VolatileVM;
 
 #[cfg(test)]
-mod tests;
+pub mod tests;
 
 #[cfg(test)]
-mod mock;
+pub mod mock;
 
 pub mod exec_composer;
 pub mod message_assembly;
+
+pub use crate::message_assembly::test_utils as message_test_utils;
 
 pub type CurrentHash<T, I> =
     <<T as pallet_multi_finality_verifier::Config<I>>::BridgedChain as bp_runtime::Chain>::Hash;
