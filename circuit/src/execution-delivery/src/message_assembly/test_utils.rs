@@ -99,10 +99,10 @@ pub fn get_dummy_modules_with_functions() -> Vec<(&'static str, Vec<&'static str
         ("ModuleName", vec!["FnName2"]),
         ("ModuleName", vec!["FnName3"]),
         ("author", vec!["submitExtrinsic"]),
+        ("balances", vec!["transfer"]),
         ("utility", vec!["batchAll"]),
         ("system", vec!["remark"]),
         ("gateway", vec!["call"]),
-        ("balances", vec!["transfer"]),
         ("gateway", vec!["getStorage"]),
         ("gateway", vec!["transfer"]),
         ("gateway", vec!["emitEvent"]),
@@ -133,8 +133,8 @@ pub fn create_test_stuffed_gateway_protocol(
 }
 
 #[cfg(any(feature = "std", test))]
-pub async fn create_gateway_protocol_from_client<Chain: RelayChain>(
-    client: Client<Chain>,
+pub async fn create_gateway_protocol_from_client<Chain: relay_substrate_client::Chain>(
+    client: &Client<Chain>,
     submitter: AuthorityId,
 ) -> SubstrateGatewayProtocol<AuthorityId, <Chain as ChainBase>::Hash> {
     // TODO: we need to fetch the metadata from client. but the runtime rpc is not initiated

@@ -38,16 +38,17 @@ use sp_keyring::Sr25519Keyring;
 fn successfully_dispatches_signed_transfer_outbound_message_with_protocol_from_circuit_to_remote_target(
 ) {
     async_std::task::block_on(async move {
-        let client = REMOTE_CLIENT.lock().unwrap().unwrap();
-
         // Re-use mocked test setup since signing must happen in test externalities env
         let p = TestSetup::default();
+        let opt_client = REMOTE_CLIENT.lock().unwrap();
+        let client = opt_client.as_ref().unwrap();
+
         let mut ext = TestExternalities::new_empty();
         ext.register_extension(KeystoreExt(p.keystore));
 
         let signer = Sr25519Keyring::Alice;
         let test_protocol =
-            create_gateway_protocol_from_client(client.clone(), signer.public().into()).await;
+            create_gateway_protocol_from_client(client, signer.public().into()).await;
 
         let signed_ext = ext.execute_with(|| {
             let transfer_outbound_message = test_protocol
