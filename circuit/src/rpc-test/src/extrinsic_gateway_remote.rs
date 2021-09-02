@@ -17,7 +17,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 use codec::{Compact, Encode};
 
-use crate::mock_rpc_setup::TestSetup;
+use crate::mock_rpc_setup::{TestSetup, REMOTE_CLIENT};
 
 use sp_core::Bytes;
 use sp_io::TestExternalities;
@@ -37,19 +37,8 @@ use sp_keyring::Sr25519Keyring;
 #[ignore] // ToDo: Won't run at CI for additional localhost target
 fn successfully_dispatches_signed_transfer_outbound_message_with_protocol_from_circuit_to_remote_target(
 ) {
-    let localhost_params: ConnectionParams = ConnectionParams {
-        host: "localhost".to_string(),
-        port: 9944,
-        secure: false,
-    };
-    let _devnet_params: ConnectionParams = ConnectionParams {
-        host: "dev.net.t3rn.io".to_string(),
-        port: 443,
-        secure: true,
-    };
-
     async_std::task::block_on(async move {
-        let client = create_rpc_client(&localhost_params).await.unwrap();
+        let client = REMOTE_CLIENT.lock().unwrap().unwrap();
 
         // Re-use mocked test setup since signing must happen in test externalities env
         let p = TestSetup::default();

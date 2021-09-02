@@ -13,7 +13,6 @@ readme = "README.md"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dev-dependencies]
-
 async-std = { version = "1.6.5", features = ["attributes", "tokio1"] }
 async-trait = "0.1.40"
 jsonrpc-runtime-client = { version = "0.1.0", path = "./jsonrpc-runtime-client" }
