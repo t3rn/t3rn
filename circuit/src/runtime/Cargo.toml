@@ -10,7 +10,7 @@ resolver = "2"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
-hex-literal = "0.3"
+hex-literal = { version = "0.3", optional = true}
 serde = { version = "1.0.124", optional = true, features = ["derive"] }
 
 # Bridge dependencies
@@ -70,6 +70,10 @@ sp-std = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
 sp-trie = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
 sp-version = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+
+# Benchmarking
+frame-benchmarking = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8', optional = true}
+frame-system-benchmarking = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8', optional = true}
 
 [build-dependencies]
 substrate-wasm-builder = "3.0.0"
@@ -131,4 +135,15 @@ std = [
 ]
 # TODO: https://github.com/paritytech/parity-bridges-common/issues/390
 # I've left the feature flag here to test our CI configuration
-runtime-benchmarks = []
+runtime-benchmarks = [
+    'frame-benchmarking',
+    'frame-support/runtime-benchmarks',
+    'frame-system-benchmarking',
+    'frame-system/runtime-benchmarks',
+    'hex-literal',
+    'pallet-balances/runtime-benchmarks',
+    # 'pallet-circuit-execution-delivery/runtime-benchmarks',
+    'pallet-timestamp/runtime-benchmarks',
+    'sp-runtime/runtime-benchmarks',
+	'pallet-contracts-registry/runtime-benchmarks',
+]
