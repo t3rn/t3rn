@@ -34,6 +34,7 @@ use jsonrpsee_types::{traits::Client, JsonValue};
 use sp_keyring::Sr25519Keyring;
 
 #[test]
+#[ignore] // ToDo: Won't run at CI for additional localhost target
 fn successfully_dispatches_signed_transfer_outbound_message_with_protocol_from_circuit_to_remote_target(
 ) {
     let localhost_params: ConnectionParams = ConnectionParams {
