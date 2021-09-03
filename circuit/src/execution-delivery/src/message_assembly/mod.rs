@@ -14,6 +14,7 @@ pub mod substrate_outbound;
 
 pub mod chain_generic_metadata;
 
+#[cfg(test)]
 pub mod test_utils;
 
 #[macro_use]
