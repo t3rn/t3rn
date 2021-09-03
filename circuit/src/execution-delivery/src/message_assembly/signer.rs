@@ -7,7 +7,7 @@ pub mod app {
     use std::fmt::Debug;
 
     use codec::{Compact, Decode, Encode, Error, Input, Output};
-    
+
     use sp_application_crypto::{app_crypto, sr25519};
     use sp_io::hashing::blake2_256;
     use sp_runtime::generic::Era;
