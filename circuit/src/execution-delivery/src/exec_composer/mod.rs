@@ -704,7 +704,7 @@ mod tests {
             let res = ExecComposer::pre_run_bunch_until_break::<Test>(
                 vec![example_contract],
                 escrow_account,
-                submitter,
+                submitter.clone(),
                 requester,
                 value,
                 input_data,
@@ -715,59 +715,32 @@ mod tests {
 
             assert_ok!(res.clone());
 
-            assert_eq!(
-                res,
-                Ok((
-                    vec![CircuitOutboundMessage {
-                        name: b"call".to_vec(),
-                        module_name: b"state".to_vec(),
-                        method_name: b"call".to_vec(),
-                        arguments: vec![vec![4, 95], vec![1, 2, 3, 4]],
-                        expected_output: vec![
-                            GatewayExpectedOutput::Events {
-                                signatures: vec![
-                                    b"Call(address,value,uint64,dynamic_bytes)".to_vec()
-                                ]
-                            },
-                            GatewayExpectedOutput::Output {
-                                output: b"dynamic_bytes".to_vec()
-                            }
-                        ],
-                        sender: None,
-                        target: None,
-                        extra_payload: Some(ExtraMessagePayload {
-                            signer: vec![
-                                212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159,
-                                214, 130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165,
-                                109, 162, 125
-                            ],
-                            module_name: vec![20, 115, 116, 97, 116, 101],
-                            method_name: vec![16, 99, 97, 108, 108],
-                            call_bytes: vec![0, 0, 4, 95, 1, 2, 3, 4],
-                            signature: vec![
-                                1, 124, 196, 103, 221, 30, 249, 38, 78, 84, 48, 241, 154, 210, 61,
-                                111, 185, 84, 131, 111, 213, 25, 220, 95, 142, 70, 176, 154, 192,
-                                229, 234, 16, 99, 69, 135, 229, 38, 43, 147, 8, 80, 131, 19, 130,
-                                70, 111, 188, 0, 164, 161, 45, 36, 73, 77, 190, 159, 103, 215, 25,
-                                137, 36, 160, 12, 134, 129
-                            ],
-                            tx_signed: vec![
-                                185, 1, 132, 0, 212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26,
-                                189, 4, 169, 159, 214, 130, 44, 133, 88, 133, 76, 205, 227, 154,
-                                86, 132, 231, 165, 109, 162, 125, 1, 124, 196, 103, 221, 30, 249,
-                                38, 78, 84, 48, 241, 154, 210, 61, 111, 185, 84, 131, 111, 213, 25,
-                                220, 95, 142, 70, 176, 154, 192, 229, 234, 16, 99, 69, 135, 229,
-                                38, 43, 147, 8, 80, 131, 19, 130, 70, 111, 188, 0, 164, 161, 45,
-                                36, 73, 77, 190, 159, 103, 215, 25, 137, 36, 160, 12, 134, 129, 0,
-                                0, 0, 0, 0, 4, 95, 1, 2, 3, 4
-                            ],
-                            extra: vec![0, 0, 0],
-                            custom_payload: None
-                        }),
-                    }],
-                    // Break round after 1 message
-                    1u16
-                )),
+            let succ_response = res.unwrap();
+            let test_messages_at_this_round = succ_response.0;
+            let first_message = test_messages_at_this_round[0].clone();
+
+            crate::message_assembly::substrate_gateway_protocol::tests::assert_signed_payload(
+                first_message,
+                submitter.into(),
+                vec![vec![4, 95], vec![1, 2, 3, 4]], // arguments
+                vec![
+                    GatewayExpectedOutput::Events {
+                        signatures: vec![b"Call(address,value,uint64,dynamic_bytes)".to_vec()],
+                    },
+                    GatewayExpectedOutput::Output {
+                        output: b"dynamic_bytes".to_vec(),
+                    },
+                ],
+                vec![0, 0, 4, 95, 1, 2, 3, 4],
+                vec![
+                    0, 0, 4, 95, 1, 2, 3, 4, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 14, 87, 81, 192, 38,
+                    229, 67, 178, 232, 171, 46, 176, 96, 153, 218, 161, 209, 229, 223, 71, 119,
+                    143, 119, 135, 250, 171, 69, 205, 241, 47, 227, 168, 14, 87, 81, 192, 38, 229,
+                    67, 178, 232, 171, 46, 176, 96, 153, 218, 161, 209, 229, 223, 71, 119, 143,
+                    119, 135, 250, 171, 69, 205, 241, 47, 227, 168,
+                ],
+                "state",
+                "call",
             );
         });
     }
