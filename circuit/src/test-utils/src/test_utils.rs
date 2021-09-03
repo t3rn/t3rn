@@ -1,5 +1,6 @@
 use frame_metadata::{
-    DecodeDifferent, ExtrinsicMetadata, FunctionMetadata, ModuleMetadata, RuntimeMetadataV13,
+    DecodeDifferent, ExtrinsicMetadata, FunctionMetadata, ModuleMetadata, RuntimeMetadata,
+    RuntimeMetadataPrefixed, RuntimeMetadataV13,
 };
 use sp_core::H256;
 use sp_version::{ApisVec, RuntimeVersion};
@@ -12,6 +13,8 @@ use pallet_circuit_execution_delivery::AuthorityId;
 use pallet_circuit_execution_delivery::message_assembly::chain_generic_metadata::*;
 use pallet_circuit_execution_delivery::message_assembly::substrate_gateway_protocol::*;
 
+use codec::Decode;
+use jsonrpsee_types::traits::Client as WsClient;
 use relay_substrate_client::{Chain, ChainBase, Client};
 
 pub fn create_test_metadata(
@@ -62,6 +65,22 @@ pub fn create_test_metadata(
         modules: DecodeDifferent::Decoded(modules),
     };
     Metadata::new(runtime_metadata)
+}
+
+pub async fn create_metadata_from_client<C: Chain>(client: &Client<C>) -> Metadata {
+    let bytes: sp_core::Bytes = client
+        .client
+        .request(
+            "state_getMetadata",
+            jsonrpsee_types::v2::params::JsonRpcParams::NoParams,
+        )
+        .await
+        .unwrap();
+    let meta: RuntimeMetadataPrefixed = Decode::decode(&mut &bytes[..]).unwrap();
+    match meta.1 {
+        RuntimeMetadata::V13(md13) => Metadata::new(md13),
+        _ => Default::default(),
+    }
 }
 
 pub fn create_test_runtime_version() -> RuntimeVersion {
@@ -138,7 +157,7 @@ pub async fn create_gateway_protocol_from_client<Chain: relay_substrate_client::
     // TODO: we need to fetch the metadata from client. but the runtime rpc is not initiated
     // for rpc in relay_substrate_client. once that is in, we can replace that with this
     SubstrateGatewayProtocol::new(
-        create_test_metadata(get_dummy_modules_with_functions()),
+        create_metadata_from_client(client).await,
         client
             .runtime_version()
             .await

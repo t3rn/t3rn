@@ -340,12 +340,12 @@ where
 
         Ok(CircuitOutboundMessage {
             name: b"transfer".to_vec(),
-            module_name: b"balances".to_vec(),
+            module_name: b"Balances".to_vec(),
             method_name: b"transfer".to_vec(),
             arguments: arguments.clone(),
             expected_output,
             extra_payload: Some(self.produce_signed_payload(
-                "balances",
+                "Balances",
                 "transfer",
                 Self::collect_args(arguments),
             )?),

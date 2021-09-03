@@ -1240,7 +1240,9 @@ name = "circuit-test-utils"
 version = "0.1.0"
 dependencies = [
  "frame-metadata",
+ "jsonrpsee-types",
  "pallet-circuit-execution-delivery",
+ "parity-scale-codec",
  "relay-substrate-client",
  "sp-core",
  "sp-std",
