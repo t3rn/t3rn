@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Compact, Encode};
-use frame_support::ensure;
+use codec::Encode;
+
 use sp_application_crypto::Public;
 use sp_runtime::{MultiSignature, RuntimeAppPublic};
 use sp_std::vec::*;
@@ -9,9 +9,9 @@ use sp_version::RuntimeVersion;
 
 use crate::message_assembly::chain_generic_metadata::Metadata;
 use crate::message_assembly::signer::app::{
-    GenericAddress, GenericExtra, Signature, SignedPayload, UncheckedExtrinsicV4,
+    Args, Call, GenericAddress, GenericExtra, Signature, SignedPayload, UncheckedExtrinsicV4,
 };
-use crate::{compose_call, AuthorityId};
+use crate::AuthorityId;
 
 use super::gateway_inbound_assembly::GatewayInboundAssembly;
 
@@ -55,16 +55,11 @@ where
         &self,
         module_name: &'static str,
         fn_name: &'static str,
-        data: Vec<u8>,
-        to: [u8; 32],
-        value: u128,
-        gas: u64,
-    ) -> Result<UncheckedExtrinsicV4<sp_std::vec::Vec<u8>>, &'static str> {
-        let call = self.assemble_call(module_name, fn_name, data, to, value, gas);
+        args: Vec<u8>,
+    ) -> Result<UncheckedExtrinsicV4<Call>, &'static str> {
+        let call = self.assemble_call(module_name, fn_name, args)?;
 
-        ensure!(call.is_ok(), "Could not assemble call");
-
-        self.assemble_signed_tx_offline(call.unwrap(), 0)
+        self.assemble_signed_tx_offline(call, 0)
     }
 
     /// Who will like to assemble the call?
@@ -78,46 +73,34 @@ where
         &self,
         module_name: &'static str,
         fn_name: &'static str,
-        data: Vec<u8>,
-        to: [u8; 32],
-        value: u128,
-        gas: u64,
-    ) -> Result<Vec<u8>, &'static str> {
-        let call = compose_call!(
-            self.metadata,
-            module_name,
-            fn_name,
-            data,
-            to,
-            Compact(value),
-            Compact(gas)
-        );
+        args: Vec<u8>,
+    ) -> Result<Call, &'static str> {
+        let (module_index, function_index) = self
+            .metadata
+            .lookup_module_and_call_indices(module_name, fn_name)?;
         // e.g. call = ([1, 2], MultiAddress::Id(0101010101010101010101010101010101010101010101010101010101010101 (5C62Ck4U...)), 3, 2)
-        Ok(call.encode())
+        Ok(Call {
+            module_index,
+            function_index,
+            args: Args::new(args),
+        })
     }
 
     fn assemble_signed_tx_offline(
         &self,
-        call_bytes: Vec<u8>,
+        call: Call,
         nonce: u32,
-    ) -> Result<UncheckedExtrinsicV4<sp_std::vec::Vec<u8>>, &'static str> {
+    ) -> Result<UncheckedExtrinsicV4<Call>, &'static str> {
         let extra = GenericExtra::new(sp_runtime::generic::Era::Immortal, nonce);
 
         let raw_payload = SignedPayload::from_raw(
-            call_bytes.clone(),
+            call.clone(),
             extra.clone(),
-            (
-                nonce,
-                self.runtime_version.transaction_version,
-                &self.genesis_hash,
-                &self.genesis_hash,
-                (),
-                (),
-                (),
-            ),
+            self.runtime_version.spec_version,
+            self.runtime_version.transaction_version,
+            self.genesis_hash.clone(),
+            self.genesis_hash.clone(),
         );
-
-        // raw_payload.using_encoded(|encoded| println!("{:?}", encoded));
 
         let authority = AuthorityId::from_slice(self.submitter.clone().to_raw_vec().as_slice());
 
@@ -128,17 +111,31 @@ where
             .expect("Signature should be valid");
 
         Ok(UncheckedExtrinsicV4::new_signed(
-            call_bytes,
+            call,
             signed,
             MultiSignature::from(signature),
             extra,
         ))
     }
+
+    fn assemble_signed_batch_call(
+        &self,
+        calls: Vec<Call>,
+        nonce: u32,
+    ) -> Result<UncheckedExtrinsicV4<Call>, &'static str> {
+        // TODO: use compose call with Utility.batch instead of hard coded index
+        let call = Call {
+            module_index: 21,
+            function_index: 0,
+            args: Args::new(calls.encode()),
+        };
+        self.assemble_signed_tx_offline(call, nonce)
+    }
 }
 
 #[cfg(test)]
 pub mod tests {
-    use codec::Compact;
+
     use frame_metadata::{
         DecodeDifferent, ExtrinsicMetadata, FunctionMetadata, ModuleMetadata, RuntimeMetadataV13,
     };
@@ -160,7 +157,11 @@ pub mod tests {
     }
 
     pub fn create_test_genesis_hash() -> H256 {
-        [9_u8; 32].into()
+        [
+            221, 128, 124, 142, 125, 253, 143, 71, 228, 18, 125, 155, 96, 26, 215, 135, 26, 23,
+            181, 82, 173, 18, 254, 62, 220, 69, 220, 133, 187, 229, 24, 113,
+        ]
+        .into()
     }
 
     pub fn create_test_runtime_version() -> RuntimeVersion {
@@ -170,8 +171,8 @@ pub mod tests {
             authoring_version: 1,
             impl_version: 1,
             apis: ApisVec::Owned(vec![([0_u8; 8], 0_u32)]),
-            transaction_version: 4,
-            spec_version: 13,
+            transaction_version: 1,
+            spec_version: 1,
         }
     }
 
@@ -225,15 +226,8 @@ pub mod tests {
         );
 
         assert_err!(
-            sga.assemble_call(
-                "MissingModuleName",
-                "FnName",
-                vec![0, 1, 2],
-                [1_u8; 32],
-                3,
-                2,
-            ),
-            "Could not assemble call"
+            sga.assemble_call("MissingModuleName", "FnName", vec![0, 1, 2],),
+            "Module with a given name doesn't exist as per the current metadata"
         );
     }
 
@@ -247,15 +241,8 @@ pub mod tests {
         );
 
         assert_err!(
-            sga.assemble_call(
-                "ModuleName",
-                "MissingFnName",
-                vec![0, 1, 2],
-                [1_u8; 32],
-                3,
-                2,
-            ),
-            "Could not assemble call"
+            sga.assemble_call("ModuleName", "MissingFnName", vec![0, 1, 2],),
+            "Call with a given name doesn't exist on that module as per the current metadata"
         );
     }
 
@@ -274,19 +261,15 @@ pub mod tests {
                 create_submitter(),
             );
 
-            let actual_call_bytes =
-                sga.assemble_call("ModuleName", "FnName2", vec![3, 3, 3], [1_u8; 32], 3, 2);
+            let actual_call = sga.assemble_call("ModuleName", "FnName2", vec![3, 3, 3]);
 
-            let expected_call_bytes = (
-                (1_u8, 1_u8),
-                vec![3_u8, 3_u8, 3_u8],
-                [1_u8; 32],
-                Compact(3_u16),
-                Compact(2_u16),
-            )
-                .encode();
+            let expected_call = Call {
+                module_index: 1_u8,
+                function_index: 1_u8,
+                args: Args::new(vec![3_u8, 3_u8, 3_u8]),
+            };
 
-            assert_eq!(actual_call_bytes.unwrap(), expected_call_bytes)
+            assert_eq!(actual_call.unwrap(), expected_call)
         });
     }
 
@@ -308,34 +291,68 @@ pub mod tests {
                 AuthorityId::from(submitter_pub_key),
             );
 
-            let test_call_bytes = sga
-                .assemble_call("ModuleName", "FnName3", vec![0, 1, 2], [1_u8; 32], 3, 2)
+            let test_call = sga
+                .assemble_call("ModuleName", "FnName3", vec![0, 1, 2])
                 .unwrap();
 
-            let actual_call_bytes = test_call_bytes.clone();
+            let actual_call = test_call.clone();
 
-            let actual_tx_signed = sga.assemble_signed_tx_offline(test_call_bytes, 0).unwrap();
+            let actual_tx_signed = sga.assemble_signed_tx_offline(test_call, 0).unwrap();
 
             let signature = actual_tx_signed.signature.unwrap();
 
-            let expected_message: Vec<u8> = vec![
-                160, 1, 2, 12, 0, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 12, 8, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 9, 9,
-                9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                9, 9, 9, 9, 9, 9,
-            ];
+            let raw_payload = SignedPayload::from_raw(
+                actual_call.clone(),
+                GenericExtra::new(Era::Immortal, 0),
+                sga.runtime_version.spec_version,
+                sga.runtime_version.transaction_version,
+                sga.genesis_hash.clone(),
+                sga.genesis_hash.clone(),
+            );
 
-            assert_eq!(actual_tx_signed.function, actual_call_bytes);
+            assert_eq!(actual_tx_signed.function, actual_call);
             assert_eq!(
-                signature.clone().0,
+                signature.clone().signer,
                 GenericAddress::from(AuthorityId::from(submitter_pub_key))
             );
-            assert!(signature
-                .clone()
-                .1
-                .verify(expected_message.as_slice(), &submitter_pub_key.into()));
-            assert_eq!(signature.clone().2, GenericExtra::new(Era::Immortal, 0));
+            assert!(raw_payload.using_encoded(|payload| {
+                signature
+                    .signature
+                    .verify(payload, &submitter_pub_key.0.into())
+            }));
+            assert_eq!(signature.clone().era, Era::Immortal);
         });
+    }
+
+    #[test]
+    fn sga_batch_call() {
+        let keystore = KeyStore::new();
+
+        let alice = SyncCryptoStore::sr25519_generate_new(&keystore, KEY_TYPE, Some("//Alice"))
+            .expect("Should generate alice key");
+
+        let mut ext = TestExternalities::new_empty();
+        ext.register_extension(KeystoreExt(keystore.into()));
+        ext.execute_with(|| {
+            let sga = SubstrateGatewayAssembly::<AuthorityId, H256>::new(
+                create_test_metadata_struct(),
+                create_test_runtime_version(),
+                create_test_genesis_hash(),
+                AuthorityId::from(alice),
+            );
+
+            // inner call is a system.remark from alice
+            let inner_call = Call {
+                module_index: 4,
+                function_index: 1,
+                args: Args::new(hex::decode("00").expect("must decode").encode()),
+            };
+
+            let signed_call = sga
+                .assemble_signed_batch_call(vec![inner_call], 0)
+                .expect("must be successful");
+
+            println!("0x{}", hex::encode(signed_call.encode()))
+        })
     }
 }

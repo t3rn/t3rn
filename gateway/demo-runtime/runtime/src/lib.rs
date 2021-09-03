@@ -621,12 +621,6 @@ impl pallet_bridge_messages::Config for Runtime {
 
 impl pallet_randomness_collective_flip::Config for Runtime {}
 
-impl pallet_utility::Config for Runtime {
-    type Event = Event;
-    type Call = Call;
-    type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
-}
-
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -646,7 +640,6 @@ construct_runtime!(
         RuntimeGateway: pallet_runtime_gateway::{Pallet, Call, Storage, Event<T>},
         VersatileWasmVM: versatile_wasm::{Pallet, Call, Event<T>},
         Messages: pallet_bridge_messages::{Pallet, Call, Event<T>},
-        Utility: pallet_utility::{Pallet, Call, Event},
     }
 );
 

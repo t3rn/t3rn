@@ -15,6 +15,8 @@ use sp_runtime::{
     traits::{Hash, Saturating},
     DispatchResult,
 };
+
+use pallet_runtime_gateway_rpc_runtime_api::*;
 use sp_std::convert::TryInto;
 use sp_std::vec;
 use sp_std::vec::Vec;
@@ -30,7 +32,9 @@ use versatile_wasm::{
 };
 
 use t3rn_primitives::{
-    transfers::{just_transfer, BalanceOf, TransferEntry},
+    transfers::{
+        commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
+    },
     EscrowTrait,
 };
 
@@ -210,12 +214,6 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
     use versatile_wasm::VersatileWasm;
 
-    use t3rn_primitives::{
-        transfers::{
-            commit_deferred_transfers, escrow_transfer, just_transfer, BalanceOf, TransferEntry,
-        },
-        EscrowTrait,
-    };
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
     pub trait Config:
@@ -683,15 +681,8 @@ pub mod pallet {
             child_key: Option<Vec<u8>>,
             storage_flags: Option<StorageFlags>,
         ) -> DispatchResultWithPostInfo {
-            let val = match storage_flags {
-                None | Some(StorageFlags::GLOBAL) => sp_io::storage::get(&key),
-                Some(StorageFlags::CHILD) => {
-                    let child = child_key
-                        .expect("Expect child key provided alongside with CHILD storage flag");
-                    child::get_raw(&ChildInfo::new_default(&child), &key)
-                }
-                _ => Err(Error::<T>::UnknownXStorageFlag)?,
-            };
+            let val = Self::bare_get_storage(key, child_key, storage_flags)
+                .map_err(|_e| Error::<T>::UnknownXStorageFlag)?;
 
             Self::deposit_event(Event::XGetStorage(key.to_vec(), val.encode()));
             Ok(().into())
@@ -705,24 +696,9 @@ pub mod pallet {
             child_key: Option<Vec<u8>>,
             storage_flags: Option<StorageFlags>,
         ) -> DispatchResultWithPostInfo {
-            let res_val = match storage_flags {
-                None | Some(StorageFlags::GLOBAL) => match val {
-                    Some(new_value) => sp_io::storage::set(&key, &new_value[..]),
-                    _ => sp_io::storage::clear(&key),
-                },
-                Some(StorageFlags::CHILD) => {
-                    let child = child_key
-                        .expect("Expect child key provided alongside with CHILD storage flag");
-                    let child_info = &ChildInfo::new_default(&child);
-
-                    match val {
-                        Some(new_value) => child::put_raw(&child_info, &key, &new_value[..]),
-                        _ => child::kill(&child_info, &key),
-                    }
-                }
-                _ => Err(Error::<T>::UnknownXStorageFlag)?,
-            };
-            Self::deposit_event(Event::XSetStorage(key.to_vec(), res_val.encode()));
+            let val = Self::bare_set_storage(key, val, child_key, storage_flags)
+                .map_err(|_e| Error::<T>::UnknownXStorageFlag)?;
+            Self::deposit_event(Event::XSetStorage(key.to_vec(), val.encode()));
             Ok(().into())
         }
 
@@ -735,31 +711,16 @@ pub mod pallet {
             maybe_escrow_account: Option<T::AccountId>,
             maybe_transfer_flags: Option<TransferFlags>,
         ) -> DispatchResultWithPostInfo {
-            match maybe_transfer_flags {
-                None | Some(TransferFlags::DIRTY) => just_transfer::<T>(&from, &to, value)
-                    .map_err(|_| Error::<T>::XBalanceTransferFailed)?,
-                Some(TransferFlags::ESCROWED_EXECUTE) => {
-                    let escrow = maybe_escrow_account
-                        .clone()
-                        .expect("transfer_escrow requires valid escrow account");
-                    let mut transfers = Vec::<TransferEntry>::new();
-                    escrow_transfer::<T>(&escrow, &from, &to, value, &mut transfers)
-                        .map_err(|_| Error::<T>::XBalanceTransferFailed)?
-                }
-                Some(TransferFlags::ESCROWED_COMMIT) => {
-                    let escrow = maybe_escrow_account
-                        .clone()
-                        .expect("escrow transfer commit requires valid escrow account");
-                    just_transfer::<T>(&escrow, &to, value)?;
-                }
-                Some(TransferFlags::ESCROWED_REVERT) => {
-                    let escrow = maybe_escrow_account
-                        .clone()
-                        .expect("escrow transfer revert requires valid escrow account");
-                    just_transfer::<T>(&escrow, &from, value)?;
-                }
-                _ => Err(Error::<T>::UnknownXCallFlag)?,
-            }
+            Self::bare_transfer(
+                from.clone(),
+                to.clone(),
+                value.clone(),
+                maybe_escrow_account.clone(),
+                maybe_transfer_flags,
+            )
+            .map_err(|e| match e {
+                _ => Error::<T>::XBalanceTransferFailed,
+            })?;
 
             Self::deposit_event(Event::XTransfer(from, to, value, maybe_escrow_account));
             Ok(().into())
@@ -847,5 +808,90 @@ pub mod pallet {
 
             Ok(().into())
         }
+    }
+}
+
+impl<T: Config> Pallet<T> {
+    /// Query storage of a specified contract under a specified key.
+    pub fn bare_get_storage(
+        key: [u8; 32],
+        child_key: Option<Vec<u8>>,
+        storage_flags: Option<StorageFlags>,
+    ) -> GetStorageResult {
+        let maybe_value = match storage_flags {
+            None | Some(StorageFlags::GLOBAL) => sp_io::storage::get(&key),
+            Some(StorageFlags::CHILD) => {
+                let child =
+                    child_key.expect("Expect child key provided alongside with CHILD storage flag");
+                child::get_raw(&ChildInfo::new_default(&child), &key)
+            }
+            // _ => Err(Error::<T>::UnknownXStorageFlag)?,
+            _ => Err(AccessError::UnknownFlag)?,
+        };
+        Ok(maybe_value)
+    }
+
+    pub fn bare_set_storage(
+        key: [u8; 32],
+        val: Option<Vec<u8>>,
+        child_key: Option<Vec<u8>>,
+        storage_flags: Option<StorageFlags>,
+    ) -> SetStorageResult {
+        match storage_flags {
+            None | Some(StorageFlags::GLOBAL) => match val {
+                Some(new_value) => sp_io::storage::set(&key, &new_value[..]),
+                _ => sp_io::storage::clear(&key),
+            },
+            Some(StorageFlags::CHILD) => {
+                let child =
+                    child_key.expect("Expect child key provided alongside with CHILD storage flag");
+                let child_info = &ChildInfo::new_default(&child);
+
+                match val {
+                    Some(new_value) => child::put_raw(&child_info, &key, &new_value[..]),
+                    _ => child::kill(&child_info, &key),
+                }
+            }
+            _ => Err(AccessError::UnknownFlag)?,
+        };
+
+        Ok(())
+    }
+
+    pub fn bare_transfer(
+        from: T::AccountId,
+        to: T::AccountId,
+        value: BalanceOf<T>,
+        maybe_escrow_account: Option<T::AccountId>,
+        maybe_transfer_flags: Option<TransferFlags>,
+    ) -> TransferResult {
+        match maybe_transfer_flags {
+            None | Some(TransferFlags::DIRTY) => {
+                just_transfer::<T>(&from, &to, value).map_err(|_| AccessError::Failed)?
+            }
+            Some(TransferFlags::ESCROWED_EXECUTE) => {
+                let escrow = maybe_escrow_account
+                    .clone()
+                    .expect("transfer_escrow requires valid escrow account");
+                let mut transfers = Vec::<TransferEntry>::new();
+                escrow_transfer::<T>(&escrow, &from, &to, value, &mut transfers)
+                    .map_err(|_| AccessError::Failed)?
+            }
+            Some(TransferFlags::ESCROWED_COMMIT) => {
+                let escrow = maybe_escrow_account
+                    .clone()
+                    .expect("escrow transfer commit requires valid escrow account");
+                just_transfer::<T>(&escrow, &to, value).map_err(|_| AccessError::Failed)?;
+            }
+            Some(TransferFlags::ESCROWED_REVERT) => {
+                let escrow = maybe_escrow_account
+                    .clone()
+                    .expect("escrow transfer revert requires valid escrow account");
+                just_transfer::<T>(&escrow, &from, value).map_err(|_| AccessError::Failed)?;
+            }
+            _ => Err(AccessError::UnknownFlag)?,
+        }
+
+        Ok(())
     }
 }

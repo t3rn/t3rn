@@ -14,6 +14,8 @@ pub mod substrate_outbound;
 
 pub mod chain_generic_metadata;
 
+pub mod test_utils;
+
 #[macro_use]
 pub mod signer;
 pub mod merklize;
