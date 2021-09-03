@@ -1,5 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::Encode;
 use sp_std::boxed::Box;
 use sp_std::vec;
 use sp_std::vec::*;
@@ -221,7 +222,7 @@ impl ExecComposer {
         ))
     }
 
-    /// Returns - all messages created at this round which are immiditately available to relay to foreign consensus systems.
+    /// Returns - all messages created at this round which are immediately available to relay to foreign consensus systems.
     pub fn pre_run_bunch_until_break<T: Config>(
         contracts: Vec<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>>,
         escrow_account: T::AccountId,
@@ -306,8 +307,8 @@ impl ExecComposer {
         Ok(())
     }
 
-    fn retrieve_gateway_pointer(
-        gateway_id: Option<bp_runtime::ChainId>,
+    fn retrieve_gateway_pointer<T: Config>(
+        gateway_id: Option<t3rn_primitives::ChainId>,
     ) -> Result<GatewayPointer, &'static str> {
         match gateway_id {
             None => Ok(GatewayPointer {
@@ -316,12 +317,16 @@ impl ExecComposer {
                 gateway_type: GatewayType::ProgrammableExternal,
                 vendor: GatewayVendor::Substrate,
             }),
-            // ToDo: Lookup in pallet-xdns here to match target with vendor
-            Some(gateway_id) => Ok(GatewayPointer {
-                id: gateway_id,
-                gateway_type: GatewayType::ProgrammableExternal,
-                vendor: GatewayVendor::Substrate,
-            }),
+            Some(gateway_id) => {
+                let xdns_record_id = T::Hashing::hash(Encode::encode(&gateway_id).as_ref());
+
+                let xdns_record = pallet_xdns::Pallet::<T>::xdns_records(xdns_record_id)?;
+                Ok(GatewayPointer {
+                    id: xdns_record.gateway_id,
+                    gateway_type: xdns_record.gateway_type,
+                    vendor: xdns_record.gateway_vendor,
+                })
+            }
         }
     }
 
