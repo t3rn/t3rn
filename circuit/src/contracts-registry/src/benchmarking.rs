@@ -215,13 +215,6 @@ mod tests {
     }
 
     #[test]
-    fn benchmark_sort_vector() {
-        new_test_ext().execute_with(|| {
-            assert_ok!(test_benchmark_sort_vector::<Test>());
-        })
-    }
-
-    #[test]
     fn benchmark_register_contract() {
         new_test_ext().execute_with(|| {
             assert_ok!(test_benchmark_add_new_contract::<Test>());

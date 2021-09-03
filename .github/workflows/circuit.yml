@@ -197,5 +197,6 @@ jobs:
           command: test
           args: |
             --workspace
+            --features runtime-benchmarks
             --locked
             --manifest-path circuit/Cargo.toml
