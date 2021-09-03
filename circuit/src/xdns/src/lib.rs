@@ -43,6 +43,7 @@ mod tests;
 
 mod weights;
 
+use frame_metadata::{ExtrinsicMetadata, RuntimeMetadataV13};
 pub use weights::*;
 
 /// A hash based on encoding the complete XdnsRecord
@@ -83,6 +84,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
         modules_encoded: Option<Vec<u8>>,
         signed_extension: Option<Vec<u8>>,
         runtime_version: sp_version::RuntimeVersion,
+        extrinsics_version: u8,
         genesis_hash: Vec<u8>,
         gateway_id: ChainId,
         gateway_vendor: GatewayVendor,
@@ -94,6 +96,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
             modules_encoded,
             signed_extension,
             runtime_version,
+            extrinsics_version,
             genesis_hash,
         };
 
@@ -140,6 +143,31 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
 
     pub fn set_last_finalized(&mut self, last_finalized: u64) {
         self.last_finalized = Some(last_finalized)
+    }
+}
+
+impl<AccountId> From<XdnsRecord<AccountId>> for RuntimeMetadataV13 {
+    fn from(xdns_record: XdnsRecord<AccountId>) -> Self {
+        Self {
+            modules: Decode::decode(
+                &mut xdns_record
+                    .gateway_genesis
+                    .modules_encoded
+                    .clone()
+                    .unwrap_or_default(),
+            )
+            .unwrap_or_default(),
+            extrinsic: ExtrinsicMetadata {
+                version: xdns_record.gateway_genesis.extrinsics_version,
+                signed_extensions: Decode::decode(
+                    &mut xdns_record
+                        .gateway_genesis
+                        .signed_extension
+                        .unwrap_or_default(),
+                )
+                .unwrap_or_default(),
+            },
+        }
     }
 }
 
@@ -357,6 +385,7 @@ pub mod pallet {
                     modules_encoded: None,
                     signed_extension: None,
                     runtime_version: Default::default(),
+                    extrinsics_version: 0,
                     genesis_hash: vec![],
                 },
             );

@@ -82,6 +82,8 @@ pub struct GatewayGenesisConfig {
     pub signed_extension: Option<Vec<u8>>,
     /// Runtime version
     pub runtime_version: sp_version::RuntimeVersion,
+    /// Extrinsics version
+    pub extrinsics_version: u8,
     /// Genesis hash - block id of the genesis block use to distinct the network and sign messages
     /// Length depending on parameter passed in abi::GatewayABIConfig
     pub genesis_hash: Vec<u8>,
