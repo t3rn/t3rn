@@ -20,7 +20,7 @@ codec = { package = "parity-scale-codec", version = "2.0.0", default-features = 
 
 t3rn-primitives = { version = "0.1.0", default-features = false, path = "../primitives" }
 versatile-wasm = { default-features = false , path = "../../../vm/versatile-wasm" }
-serde = { version = "1.0.124", optional = true }
+serde = { version = "1.0.124", features = ["derive"], optional = true }
 lite-json = { version = "0.1", default-features = false }
 log = { version = "0.4.14", default-features = false }
 hash-db = { version = "0.15.2", default-features = false }
@@ -78,6 +78,7 @@ sp-staking = { default-features = false, git = "https://github.com/paritytech/su
 sp-finality-grandpa = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 sp-consensus-vrf = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 sp-consensus-babe = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
+relay-substrate-client = { version = "0.1.0", path = "../../../vendor/bridges/relays/client-substrate", optional = true }
 
 # Benchmarking
 frame-benchmarking = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8', optional = true}
@@ -99,6 +100,7 @@ runtime-benchmarks = ["frame-benchmarking"]
 std = [
     "codec/std",
     "serde",
+    "relay-substrate-client",
     "log/std",
     "lite-json/std",
     "hash-db/std",

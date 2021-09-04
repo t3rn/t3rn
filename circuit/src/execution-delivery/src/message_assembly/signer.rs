@@ -6,7 +6,8 @@ pub mod app {
     #[cfg(feature = "std")]
     use std::fmt::Debug;
 
-    use codec::{Compact, Decode, Encode, Error, Input};
+    use codec::{Compact, Decode, Encode, Error, Input, Output};
+
     use sp_application_crypto::{app_crypto, sr25519};
     use sp_io::hashing::blake2_256;
     use sp_runtime::generic::Era;
@@ -42,45 +43,109 @@ pub mod app {
         }
     }
 
-    /// AdditionalSigned fields of the respective SignedExtra fields.
-    /// Order is the same as declared in the extra.
-    pub type AdditionalSigned<Hash> = (u32, u32, Hash, Hash, (), (), ());
+    #[derive(Clone, RuntimeDebug)]
+    pub struct SignedPayload<Call, Hash>(
+        Call,
+        Era,
+        Compact<u32>,
+        Compact<u128>,
+        u32,
+        u32,
+        Hash,
+        Hash,
+    );
 
-    #[derive(Encode, Clone, RuntimeDebug)]
-    pub struct SignedPayload<Call, Hash>((Call, GenericExtra, AdditionalSigned<Hash>));
+    impl<Call, Hash> Encode for SignedPayload<Call, Hash>
+    where
+        Call: Encode,
+        Hash: Encode,
+    {
+        fn encode_to<T: Output + ?Sized>(&self, dest: &mut T) {
+            dest.write(self.0.encode().as_slice());
+            dest.write(self.1.encode().as_slice());
+            dest.write(self.2.encode().as_slice());
+            dest.write(self.3.encode().as_slice());
+            dest.write(self.4.encode().as_slice());
+            dest.write(self.5.encode().as_slice());
+            dest.write(self.6.encode().as_slice());
+            dest.write(self.7.encode().as_slice());
+        }
+    }
 
     impl<Call, Hash> SignedPayload<Call, Hash>
     where
-        Call: Encode,
-        Hash: Encode + sp_std::fmt::Debug,
+        Self: Encode,
+        Hash: sp_std::fmt::Debug,
     {
         pub fn from_raw(
             call: Call,
             extra: GenericExtra,
-            additional_signed: AdditionalSigned<Hash>,
+            spec_version: u32,
+            transaction_version: u32,
+            genesis_hash: Hash,
+            block_hash: Hash,
         ) -> Self {
-            Self((call, extra, additional_signed))
+            Self(
+                call,
+                extra.0,
+                extra.1,
+                extra.2,
+                spec_version,
+                transaction_version,
+                genesis_hash,
+                block_hash,
+            )
         }
 
         /// Get an encoded version of this payload.
         ///
         /// Payloads longer than 256 bytes are going to be `blake2_256`-hashed.
         pub fn using_encoded<R, F: FnOnce(&[u8]) -> R>(&self, f: F) -> R {
-            self.0.using_encoded(|payload| {
-                if payload.len() > 256 {
-                    f(&blake2_256(payload)[..])
-                } else {
-                    f(payload)
-                }
-            })
+            let payload = self.encode();
+            if payload.len() > 256 {
+                f(&blake2_256(payload.as_slice())[..])
+            } else {
+                f(payload.as_slice())
+            }
         }
+    }
+
+    #[derive(Clone, PartialEq, RuntimeDebug)]
+    pub struct Args(Vec<u8>);
+
+    impl Args {
+        pub fn new(data: Vec<u8>) -> Self {
+            Args(data)
+        }
+    }
+
+    #[derive(Encode, PartialEq, Clone, RuntimeDebug)]
+    pub struct Call {
+        pub module_index: u8,
+        pub function_index: u8,
+        pub args: Args,
+    }
+
+    impl Encode for Args {
+        fn encode_to<T: Output + ?Sized>(&self, dest: &mut T) {
+            dest.write(self.0.as_slice())
+        }
+    }
+
+    #[derive(Encode, Decode, PartialEq, Clone, RuntimeDebug)]
+    pub struct ExtrinsicSignatureV4 {
+        pub signer: GenericAddress,
+        pub signature: MultiSignature,
+        pub era: Era,
+        pub nonce: Compact<u32>,
+        pub tip: Compact<u128>,
     }
 
     /// Mirrors the currently used Extrinsic format (V3) from substrate. Has less traits and methods though.
     /// The SingedExtra used does not need to implement SingedExtension here.
     #[derive(Clone, PartialEq)]
     pub struct UncheckedExtrinsicV4<Call> {
-        pub signature: Option<(GenericAddress, MultiSignature, GenericExtra)>,
+        pub signature: Option<ExtrinsicSignatureV4>,
         pub function: Call,
     }
 
@@ -90,12 +155,18 @@ pub mod app {
     {
         pub fn new_signed(
             function: Call,
-            signed: GenericAddress,
+            signer: GenericAddress,
             signature: MultiSignature,
             extra: GenericExtra,
         ) -> Self {
             UncheckedExtrinsicV4 {
-                signature: Some((signed, signature, extra)),
+                signature: Some(ExtrinsicSignatureV4 {
+                    signer,
+                    signature,
+                    era: extra.0,
+                    nonce: extra.1,
+                    tip: extra.2,
+                }),
                 function,
             }
         }
@@ -114,12 +185,7 @@ pub mod app {
         Call: fmt::Debug,
     {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            write!(
-                f,
-                "UncheckedExtrinsic({:?}, {:?})",
-                self.signature.as_ref().map(|x| (&x.0, &x.2)),
-                self.function
-            )
+            write!(f, "UncheckedExtrinsic({:?})", self.function)
         }
     }
 
@@ -200,7 +266,7 @@ pub mod app {
 
     impl From<Public> for GenericAddress {
         fn from(public: Public) -> Self {
-            MultiAddress::<AccountId32, ()>::Address32(public.0 .0)
+            MultiAddress::<AccountId32, ()>::Id(public.0 .0.into())
         }
     }
 
@@ -234,58 +300,6 @@ macro_rules! compose_call {
             ([module_index as u8, call_index as u8] $(, ($args)) *)
         }
     };
-}
-
-/// Generates an Unchecked extrinsic for a given call
-/// # Arguments
-///
-/// * 'signer' - AccountKey that is used to sign the extrinsic.
-/// * 'call' - call as returned by the compose_call! macro or via substrate's call enums.
-/// * 'nonce' - signer's account nonce: u32
-/// * 'era' - Era for extrinsic to be valid
-/// * 'genesis_hash' - sp-runtime::Hash256/[u8; 32].
-/// * 'runtime_spec_version' - RuntimeVersion.spec_version/u32
-#[macro_export]
-macro_rules! compose_extrinsic_offline {
-    ($signer: expr,
-    $call: expr,
-    $nonce: expr,
-    $era: expr,
-    $genesis_hash: expr,
-    $genesis_or_current_hash: expr,
-    $runtime_spec_version: expr,
-    $transaction_version: expr) => {{
-        //     use t3rn_primitives::*;
-        //
-        //     let extra = GenericExtra::new($era, $nonce);
-        //
-        //     let raw_payload = SignedPayload::from_raw(
-        //         $call.clone(),
-        //         extra.clone(),
-        //         (
-        //             $runtime_spec_version,
-        //             $transaction_version,
-        //             $genesis_hash,
-        //             $genesis_or_current_hash,
-        //             (),
-        //             (),
-        //             (),
-        //         ),
-        //     );
-        //
-        //     let signature = raw_payload.using_encoded(|payload| $signer.sign(payload));
-        //
-        //     let mut arr = Default::default();
-        //     arr.clone_from_slice($signer.public().as_ref());
-        //
-        //     UncheckedExtrinsicV4::new_signed(
-        //         $call,
-        //         GenericAddress::from(AccountId::from(arr)),
-        //         signature.into(),
-        //         extra,
-        //     )
-        vec![]
-    }};
 }
 
 #[cfg(test)]

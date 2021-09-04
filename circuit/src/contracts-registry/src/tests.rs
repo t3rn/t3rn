@@ -15,112 +15,324 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Tests for pallet-example.
+//! Unit tests for pallet contracts-registry.
 
-use crate::*;
-use frame_support::parameter_types;
+use crate::mock::{ContractsRegistry, ExtBuilder, Test};
+use crate::pallet::Error;
+use crate::types::{ContractAccessError, RegistryContract};
+use frame_support::{assert_err, assert_ok};
 use sp_core::H256;
-// The testing primitives are very useful for avoiding having to work with signatures
-// or public keys. `u64` is used as the `AccountId` and no `Signature`s are required.
-use sp_runtime::{
-    testing::Header,
-    traits::{BlakeTwo256, IdentityLookup},
-};
-// Reexport crate as its pallet name for construct_runtime.
-use crate as pallet_example;
-use t3rn_primitives::EscrowTrait;
+use t3rn_primitives::contract_metadata::ContractMetadata;
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
-
-// For testing the pallet, we construct a mock runtime.
-frame_support::construct_runtime!(
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        Example: pallet_example::{Pallet, Call, Storage, Config<T>, Event<T>},
-        Timestamp: pallet_timestamp::{Pallet},
-        Sudo: pallet_sudo::{Pallet, Call, Event<T>},
-    }
-);
-
-parameter_types! {
-    pub const MinimumPeriod: u64 = 1;
-    pub const TransactionByteFee: u64 = 1;
+#[test]
+fn fetch_contract_by_id_should_return_single_contract() {
+    let test_contract = RegistryContract {
+        code_txt: vec![],
+        bytes: vec![],
+        author: 1_u64,
+        author_fees_per_single_use: None,
+        abi: None,
+        action_descriptions: vec![],
+        info: None,
+        meta: Default::default(),
+    };
+    ExtBuilder::default()
+        .with_contracts(vec![test_contract.clone()])
+        .build()
+        .execute_with(|| {
+            crate::ContractsRegistry::<Test>::insert(
+                test_contract.generate_id::<Test>(),
+                test_contract.clone(),
+            );
+            let actual =
+                ContractsRegistry::fetch_contract_by_id(test_contract.generate_id::<Test>());
+            assert_ok!(actual, test_contract);
+        })
 }
 
-impl pallet_timestamp::Config for Test {
-    type Moment = u64;
-    type OnTimestampSet = ();
-    type MinimumPeriod = MinimumPeriod;
-    type WeightInfo = ();
+#[test]
+fn fetch_contract_by_id_should_error_if_contract_doesnt_exist() {
+    ExtBuilder::default().build().execute_with(|| {
+        let actual = ContractsRegistry::fetch_contract_by_id(H256([1; 32]));
+        assert_err!(actual, Error::UnknownContract);
+    })
 }
 
-impl EscrowTrait for Test {
-    type Currency = Balances;
-    type Time = Timestamp;
+#[test]
+fn fetch_contracts_by_metadata_should_return_all_matching_contracts() {
+    let test_contract_name = RegistryContract {
+        code_txt: b"some_code".to_vec(),
+        bytes: vec![],
+        author: 1_u64,
+        author_fees_per_single_use: None,
+        abi: None,
+        action_descriptions: vec![],
+        info: None,
+        meta: ContractMetadata::new(
+            vec![],
+            b"some contract".to_vec(),
+            vec![],
+            vec![],
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
+    };
+    let test_contract_desc = RegistryContract {
+        code_txt: b"some_code_2".to_vec(),
+        bytes: vec![],
+        author: 1_u64,
+        author_fees_per_single_use: None,
+        abi: None,
+        action_descriptions: vec![],
+        info: None,
+        meta: ContractMetadata::new(
+            vec![],
+            vec![],
+            vec![],
+            vec![],
+            Some(b"contract description".to_vec()),
+            None,
+            None,
+            None,
+            None,
+        ),
+    };
+    let test_contract_wrong = RegistryContract {
+        code_txt: b"some_code_3".to_vec(),
+        bytes: vec![],
+        author: 1_u64,
+        author_fees_per_single_use: None,
+        abi: None,
+        action_descriptions: vec![],
+        info: None,
+        meta: ContractMetadata::new(
+            vec![],
+            vec![],
+            vec![],
+            vec![],
+            Some(b"other description".to_vec()),
+            None,
+            None,
+            None,
+            None,
+        ),
+    };
+    ExtBuilder::default().build().execute_with(|| {
+        crate::ContractsRegistry::<Test>::insert(
+            test_contract_name.generate_id::<Test>(),
+            test_contract_name.clone(),
+        );
+        crate::ContractsRegistry::<Test>::insert(
+            test_contract_desc.generate_id::<Test>(),
+            test_contract_desc.clone(),
+        );
+        crate::ContractsRegistry::<Test>::insert(
+            test_contract_wrong.generate_id::<Test>(),
+            test_contract_wrong.clone(),
+        );
+        let actual = ContractsRegistry::fetch_contracts(None, Some(b"contract".to_vec()));
+        assert_ok!(
+            actual,
+            vec![test_contract_name.clone(), test_contract_desc.clone()]
+        );
+    })
 }
 
-parameter_types! {
-    pub const BlockHashCount: u64 = 250;
-    pub BlockWeights: frame_system::limits::BlockWeights =
-        frame_system::limits::BlockWeights::simple_max(1024);
-}
-impl frame_system::Config for Test {
-    type BaseCallFilter = ();
-    type BlockWeights = ();
-    type BlockLength = ();
-    type DbWeight = ();
-    type Origin = Origin;
-    type Index = u64;
-    type BlockNumber = u64;
-    type Hash = H256;
-    type Call = Call;
-    type Hashing = BlakeTwo256;
-    type AccountId = u64;
-    type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
-    type Event = Event;
-    type BlockHashCount = BlockHashCount;
-    type Version = ();
-    type PalletInfo = PalletInfo;
-    type AccountData = pallet_balances::AccountData<u64>;
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type SystemWeightInfo = ();
-    type SS58Prefix = ();
-    type OnSetCode = ();
-}
-parameter_types! {
-    pub const ExistentialDeposit: u64 = 1;
-}
-
-impl pallet_sudo::Config for Test {
-    type Event = Event;
-    type Call = Call;
-}
-
-parameter_types! {
-    pub const MaxReserves: u32 = 50;
-}
-
-impl pallet_balances::Config for Test {
-    type MaxLocks = ();
-    type Balance = u64;
-    type DustRemoval = ();
-    type Event = Event;
-    type ExistentialDeposit = ExistentialDeposit;
-    type AccountStore = System;
-    type WeightInfo = ();
-    type MaxReserves = MaxReserves;
-    type ReserveIdentifier = [u8; 8];
+#[test]
+fn fetch_contracts_by_author_should_return_all_matching_contracts() {
+    let test_contract_author1 = RegistryContract {
+        code_txt: b"some_code".to_vec(),
+        bytes: vec![],
+        author: 1_u64,
+        author_fees_per_single_use: None,
+        abi: None,
+        action_descriptions: vec![],
+        info: None,
+        meta: ContractMetadata::new(vec![], vec![], vec![], vec![], None, None, None, None, None),
+    };
+    let test_contract_author2 = RegistryContract {
+        code_txt: b"some_code_2".to_vec(),
+        bytes: vec![],
+        author: 1_u64,
+        author_fees_per_single_use: None,
+        abi: None,
+        action_descriptions: vec![],
+        info: None,
+        meta: ContractMetadata::new(vec![], vec![], vec![], vec![], None, None, None, None, None),
+    };
+    let test_contract_author3 = RegistryContract {
+        code_txt: b"some_code_3".to_vec(),
+        bytes: vec![],
+        author: 2_u64,
+        author_fees_per_single_use: None,
+        abi: None,
+        action_descriptions: vec![],
+        info: None,
+        meta: ContractMetadata::new(vec![], vec![], vec![], vec![], None, None, None, None, None),
+    };
+    ExtBuilder::default().build().execute_with(|| {
+        crate::ContractsRegistry::<Test>::insert(
+            test_contract_author1.generate_id::<Test>(),
+            test_contract_author1.clone(),
+        );
+        crate::ContractsRegistry::<Test>::insert(
+            test_contract_author2.generate_id::<Test>(),
+            test_contract_author2.clone(),
+        );
+        crate::ContractsRegistry::<Test>::insert(
+            test_contract_author3.generate_id::<Test>(),
+            test_contract_author3.clone(),
+        );
+        let actual = ContractsRegistry::fetch_contracts(Some(1), None);
+        assert_ok!(
+            actual,
+            vec![test_contract_author1.clone(), test_contract_author2.clone()]
+        );
+    })
 }
 
-impl Config for Test {
-    type Event = Event;
-    type WeightInfo = ();
+#[test]
+fn fetch_contracts_by_author_and_metadata_should_return_all_matching_contracts() {
+    let test_contract_author1 = RegistryContract {
+        code_txt: b"some_code".to_vec(),
+        bytes: vec![],
+        author: 1_u64,
+        author_fees_per_single_use: None,
+        abi: None,
+        action_descriptions: vec![],
+        info: None,
+        meta: ContractMetadata::new(
+            vec![],
+            b"contract 1".to_vec(),
+            vec![],
+            vec![],
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
+    };
+    let test_contract_author2 = RegistryContract {
+        code_txt: b"some_code_2".to_vec(),
+        bytes: vec![],
+        author: 1_u64,
+        author_fees_per_single_use: None,
+        abi: None,
+        action_descriptions: vec![],
+        info: None,
+        meta: ContractMetadata::new(
+            vec![],
+            vec![],
+            vec![],
+            vec![],
+            Some(b"contract 2".to_vec()),
+            None,
+            None,
+            None,
+            None,
+        ),
+    };
+    let test_contract_author3 = RegistryContract {
+        code_txt: b"some_code_3".to_vec(),
+        bytes: vec![],
+        author: 2_u64,
+        author_fees_per_single_use: None,
+        abi: None,
+        action_descriptions: vec![],
+        info: None,
+        meta: ContractMetadata::new(vec![], vec![], vec![], vec![], None, None, None, None, None),
+    };
+    ExtBuilder::default().build().execute_with(|| {
+        crate::ContractsRegistry::<Test>::insert(
+            test_contract_author1.generate_id::<Test>(),
+            test_contract_author1.clone(),
+        );
+        crate::ContractsRegistry::<Test>::insert(
+            test_contract_author2.generate_id::<Test>(),
+            test_contract_author2.clone(),
+        );
+        crate::ContractsRegistry::<Test>::insert(
+            test_contract_author3.generate_id::<Test>(),
+            test_contract_author3.clone(),
+        );
+        let actual = ContractsRegistry::fetch_contracts(Some(1), Some(b"contract".to_vec()));
+        assert_ok!(
+            actual,
+            vec![test_contract_author1.clone(), test_contract_author2.clone()]
+        );
+    })
+}
+
+#[test]
+fn fetch_contracts_with_no_parameters_should_error() {
+    let test_contract_author1 = RegistryContract {
+        code_txt: b"some_code".to_vec(),
+        bytes: vec![],
+        author: 1_u64,
+        author_fees_per_single_use: None,
+        abi: None,
+        action_descriptions: vec![],
+        info: None,
+        meta: ContractMetadata::new(
+            vec![],
+            b"contract 1".to_vec(),
+            vec![],
+            vec![],
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
+    };
+    let test_contract_author2 = RegistryContract {
+        code_txt: b"some_code_2".to_vec(),
+        bytes: vec![],
+        author: 1_u64,
+        author_fees_per_single_use: None,
+        abi: None,
+        action_descriptions: vec![],
+        info: None,
+        meta: ContractMetadata::new(
+            vec![],
+            vec![],
+            vec![],
+            vec![],
+            Some(b"contract 2".to_vec()),
+            None,
+            None,
+            None,
+            None,
+        ),
+    };
+    let test_contract_author3 = RegistryContract {
+        code_txt: b"some_code_3".to_vec(),
+        bytes: vec![],
+        author: 2_u64,
+        author_fees_per_single_use: None,
+        abi: None,
+        action_descriptions: vec![],
+        info: None,
+        meta: ContractMetadata::new(vec![], vec![], vec![], vec![], None, None, None, None, None),
+    };
+    ExtBuilder::default().build().execute_with(|| {
+        crate::ContractsRegistry::<Test>::insert(
+            test_contract_author1.generate_id::<Test>(),
+            test_contract_author1.clone(),
+        );
+        crate::ContractsRegistry::<Test>::insert(
+            test_contract_author2.generate_id::<Test>(),
+            test_contract_author2.clone(),
+        );
+        crate::ContractsRegistry::<Test>::insert(
+            test_contract_author3.generate_id::<Test>(),
+            test_contract_author3.clone(),
+        );
+        let actual = ContractsRegistry::fetch_contracts(None, None);
+        assert_err!(actual, Error::UnknownContract);
+    })
 }

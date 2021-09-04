@@ -8,6 +8,7 @@ build = "build.rs"
 homepage = "https://t3rn.io"
 license = "Apache 2.0"
 repository = "https://github.com/t3rn/t3rn/"
+resolver = "2"
 
 [dependencies]
 jsonrpc-core = "15.1.0"
@@ -71,11 +72,16 @@ runtime-benchmarks = [
 [workspace]
 members = [
     "src/contracts-registry",
+    "src/contracts-registry/rpc",
+    "src/contracts-registry/rpc/runtime-api",
     "src/execution-delivery",
     "src/rpc",
+    "src/rpc-test",
+    "src/rpc-test/jsonrpc-runtime-client",
     "src/rpc/runtime-api",
     "src/runtime",
     "src/primitives",
-    "src/xdns"
+    "src/xdns",
+    "src/rpc-test"
 ]
 exclude = []

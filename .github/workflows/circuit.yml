@@ -2,11 +2,6 @@ name: Circuit CI
 
 on:
   pull_request:
-    # TODO: replace this with main branch at some point
-    # CI now runs on all PRs targeted to `poc-1` and `development`
-    branches:
-      - poc-1
-      - development
     paths:
       - circuit/**/*.rs
       - circuit/**/Cargo.toml
@@ -29,7 +24,7 @@ jobs:
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
+          toolchain: nightly-2021-08-01
           profile: minimal
           components: rustfmt
           override: true
@@ -76,7 +71,7 @@ jobs:
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
+          toolchain: nightly-2021-08-01
           target: wasm32-unknown-unknown
           components: clippy
           override: true
@@ -132,7 +127,7 @@ jobs:
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
+          toolchain: nightly-2021-08-01
           target: wasm32-unknown-unknown
           override: true
 
@@ -181,7 +176,7 @@ jobs:
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
+          toolchain: nightly-2021-08-01
           target: wasm32-unknown-unknown
           override: true
 
@@ -202,7 +197,5 @@ jobs:
           command: test
           args: |
             --workspace
-            --exclude circuit-rpc
-            --exclude circuit-rpc-runtime-api
             --locked
             --manifest-path circuit/Cargo.toml

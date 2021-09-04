@@ -37,7 +37,7 @@ All the newly created code for interoperable programming is automatically shared
 
 Smart contracts can be written in familiar languages like !ink, Solidity, WebAssembly. Existent smart contracts can be uploaded as they are, no rewriting required. 
 
-[Learn more about writing comosable contracts in our SDK.](./sdk)
+[Learn more about writing composable contracts in our SDK.](./sdk)
 
 ## Motivation
 
