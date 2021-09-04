@@ -67,7 +67,10 @@ use volatile_vm::DispatchRuntimeCall;
 pub use frame_support::{
     construct_runtime, parameter_types,
     traits::{Currency, ExistenceRequirement, Imbalance, KeyOwnerProofSystem},
-    weights::{constants::WEIGHT_PER_SECOND, DispatchClass, IdentityFee, RuntimeDbWeight, Weight},
+    weights::{
+        constants::RocksDbWeight, constants::WEIGHT_PER_SECOND, DispatchClass, IdentityFee,
+        RuntimeDbWeight, Weight,
+    },
     StorageValue,
 };
 

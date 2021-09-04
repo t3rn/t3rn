@@ -18,7 +18,7 @@
 //! Test utilities
 use crate::{self as pallet_execution_delivery};
 
-use frame_support::assert_err;
+use frame_support::{assert_err, assert_ok};
 
 use sp_io;
 
@@ -29,8 +29,14 @@ use sp_keystore::{KeystoreExt, SyncCryptoStore};
 
 use pallet_execution_delivery::Compose;
 
-use t3rn_primitives::{ExecPhase, ExecStep, InterExecSchedule};
+use t3rn_primitives::{
+    abi::{ContractActionDesc, GatewayABIConfig},
+    transfers::BalanceOf,
+    *,
+};
 
+use crate::exec_composer::tests::insert_default_xdns_record;
+use crate::exec_composer::*;
 use crate::mock::*;
 
 use crate::mock::AccountId;
@@ -536,6 +542,7 @@ fn error_if_incorrect_escrow_is_submitted() {
 }
 
 use crate::exec_composer::tests::{make_compose_out_of_raw_wat_code, CODE_CALL};
+
 #[test]
 fn test_submit_composable_exec_order() {
     let dest = AccountId::new([1 as u8; 32]);

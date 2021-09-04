@@ -461,7 +461,7 @@ pub mod tests {
         }
     }
 
-    fn insert_default_xdns_record() {
+    pub fn insert_default_xdns_record() {
         use pallet_xdns::XdnsRecord;
         pallet_xdns::XDNSRegistry::<Test>::insert(
             // Below is blake2_hash of [0, 0, 0, 0]
@@ -495,7 +495,7 @@ pub mod tests {
         );
     }
 
-    fn setup_test_escrow_as_tx_signer(ext: &mut TestExternalities) -> AccountId32 {
+    pub fn setup_test_escrow_as_tx_signer(ext: &mut TestExternalities) -> AccountId32 {
         let keystore = KeyStore::new();
         // Insert Alice's keys
         const SURI_ALICE: &str = "//Alice";
