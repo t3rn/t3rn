@@ -576,10 +576,13 @@ fn test_submit_composable_exec_order() {
 
 use bp_test_utils::test_header;
 
-use crate::{CurrentHeader, DefaultPolkadotLikeGateway};
+use crate::{
+    CurrentHeader, DefaultPolkadotLikeGateway, EthLikeKeccak256ValU32Gateway,
+    EthLikeKeccak256ValU64Gateway, PolkadotLikeValU64Gateway,
+};
 
 #[test]
-fn test_register_gateway() {
+fn test_register_gateway_with_default_polka_like_header() {
     let origin = Origin::root(); // only sudo access to register new gateways for now
     let url = b"ws://localhost:9944".to_vec();
     let gateway_id = [0; 4];
@@ -602,6 +605,135 @@ fn test_register_gateway() {
     };
 
     let first_header: CurrentHeader<Test, DefaultPolkadotLikeGateway> = test_header(0);
+
+    let authorities = Some(vec![]);
+
+    let mut ext = TestExternalities::new_empty();
+    ext.execute_with(|| {
+        assert_ok!(ExecDelivery::register_gateway(
+            origin,
+            url,
+            gateway_id,
+            gateway_abi,
+            gateway_vendor,
+            gateway_type,
+            gateway_genesis,
+            first_header.encode(),
+            authorities
+        ));
+    });
+}
+
+#[test]
+fn test_register_gateway_with_u64_substrate_header() {
+    let origin = Origin::root(); // only sudo access to register new gateways for now
+    let url = b"ws://localhost:9944".to_vec();
+    let gateway_id = [0; 4];
+    let gateway_abi: GatewayABIConfig = Default::default();
+
+    let gateway_vendor = GatewayVendor::Substrate;
+    let gateway_type = GatewayType::ProgrammableInternal;
+
+    let _gateway_pointer = GatewayPointer {
+        id: [0; 4],
+        vendor: GatewayVendor::Substrate,
+        gateway_type: GatewayType::ProgrammableInternal,
+    };
+
+    let gateway_genesis = GatewayGenesisConfig {
+        modules_encoded: None,
+        signed_extension: None,
+        runtime_version: TEST_RUNTIME_VERSION,
+        genesis_hash: Default::default(),
+    };
+
+    let first_header: CurrentHeader<Test, PolkadotLikeValU64Gateway> = test_header(0);
+
+    let authorities = Some(vec![]);
+
+    let mut ext = TestExternalities::new_empty();
+    ext.execute_with(|| {
+        assert_ok!(ExecDelivery::register_gateway(
+            origin,
+            url,
+            gateway_id,
+            gateway_abi,
+            gateway_vendor,
+            gateway_type,
+            gateway_genesis,
+            first_header.encode(),
+            authorities
+        ));
+    });
+}
+
+#[test]
+fn test_register_gateway_with_default_eth_like_header() {
+    let origin = Origin::root(); // only sudo access to register new gateways for now
+    let url = b"ws://localhost:9944".to_vec();
+    let gateway_id = [0; 4];
+    let gateway_abi: GatewayABIConfig = Default::default();
+
+    let gateway_vendor = GatewayVendor::Substrate;
+    let gateway_type = GatewayType::ProgrammableInternal;
+
+    let _gateway_pointer = GatewayPointer {
+        id: [0; 4],
+        vendor: GatewayVendor::Substrate,
+        gateway_type: GatewayType::ProgrammableInternal,
+    };
+
+    let gateway_genesis = GatewayGenesisConfig {
+        modules_encoded: None,
+        signed_extension: None,
+        runtime_version: TEST_RUNTIME_VERSION,
+        genesis_hash: Default::default(),
+    };
+
+    let first_header: CurrentHeader<Test, EthLikeKeccak256ValU32Gateway> = test_header(0);
+
+    let authorities = Some(vec![]);
+
+    let mut ext = TestExternalities::new_empty();
+    ext.execute_with(|| {
+        assert_ok!(ExecDelivery::register_gateway(
+            origin,
+            url,
+            gateway_id,
+            gateway_abi,
+            gateway_vendor,
+            gateway_type,
+            gateway_genesis,
+            first_header.encode(),
+            authorities
+        ));
+    });
+}
+
+#[test]
+fn test_register_gateway_with_u64_eth_like_header() {
+    let origin = Origin::root(); // only sudo access to register new gateways for now
+    let url = b"ws://localhost:9944".to_vec();
+    let gateway_id = [0; 4];
+    let gateway_abi: GatewayABIConfig = Default::default();
+
+    let gateway_vendor = GatewayVendor::Substrate;
+    let gateway_type = GatewayType::ProgrammableInternal;
+
+    let _gateway_pointer = GatewayPointer {
+        id: [0; 4],
+        vendor: GatewayVendor::Substrate,
+        gateway_type: GatewayType::ProgrammableInternal,
+    };
+
+    let gateway_genesis = GatewayGenesisConfig {
+        modules_encoded: None,
+        signed_extension: None,
+        runtime_version: TEST_RUNTIME_VERSION,
+        genesis_hash: Default::default(),
+    };
+
+    let first_header: CurrentHeader<Test, EthLikeKeccak256ValU64Gateway> = test_header(0);
 
     let authorities = Some(vec![]);
 
