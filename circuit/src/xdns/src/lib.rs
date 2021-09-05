@@ -23,7 +23,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use frame_system::ensure_signed;
+use frame_system::{ensure_root, ensure_signed};
 use sp_runtime::{traits::Hash, RuntimeDebug};
 use sp_std::prelude::*;
 use t3rn_primitives::abi::GatewayABIConfig;
@@ -208,7 +208,7 @@ pub mod pallet {
             gateway_type: t3rn_primitives::GatewayType,
             gateway_genesis: GatewayGenesisConfig,
         ) -> DispatchResultWithPostInfo {
-            let registrant = ensure_signed(origin)?;
+            ensure_root(origin)?;
 
             let mut xdns_record = XdnsRecord::<T::AccountId>::new(
                 url,
@@ -219,7 +219,9 @@ pub mod pallet {
                 gateway_genesis,
             );
 
-            xdns_record.assign_registrant(registrant.clone());
+            // ToDo: Uncomment when switching into a model with open registration. Sudo access for now.
+            // xdns_record.assign_registrant(registrant.clone());
+            let registrant = Default::default();
 
             let now = TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now())
                 .map_err(|_| "Unable to compute current timestamp")?;

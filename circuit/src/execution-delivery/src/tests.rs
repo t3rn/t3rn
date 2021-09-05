@@ -30,11 +30,7 @@ use sp_keystore::{KeystoreExt, SyncCryptoStore};
 
 use pallet_execution_delivery::Compose;
 
-use t3rn_primitives::{
-    abi::{GatewayABIConfig},
-    transfers::BalanceOf,
-    *,
-};
+use t3rn_primitives::{abi::GatewayABIConfig, transfers::BalanceOf, *};
 
 use crate::exec_composer::tests::insert_default_xdns_record;
 use crate::exec_composer::*;
@@ -584,7 +580,7 @@ use crate::{CurrentHeader, DefaultPolkadotLikeGateway};
 
 #[test]
 fn test_register_gateway() {
-    let origin = Origin::signed(Default::default());
+    let origin = Origin::root(); // only sudo access to register new gateways for now
     let url = b"ws://localhost:9944".to_vec();
     let gateway_id = [0; 4];
     let gateway_abi: GatewayABIConfig = Default::default();
