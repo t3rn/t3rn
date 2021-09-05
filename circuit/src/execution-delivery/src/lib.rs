@@ -96,11 +96,11 @@ type EthLikeKeccak256ValU32Gateway = pallet_multi_finality_verifier::Instance3;
 
 pub fn init_bridge_instance<T: pallet_multi_finality_verifier::Config<I>, I: 'static>(
     origin: T::Origin,
-    first_header: GenericPrimitivesHeader,
+    first_header: Vec<u8>,
     authorities: Option<Vec<T::AccountId>>,
     gateway_id: bp_runtime::ChainId,
 ) -> DispatchResultWithPostInfo {
-    let header: CurrentHeader<T, I> = Decode::decode(&mut &first_header.encode()[..])
+    let header: CurrentHeader<T, I> = Decode::decode(&mut &first_header[..])
         .map_err(|_| "Decoding error: received GenericPrimitivesHeader -> CurrentHeader<T>")?;
 
     let init_data = bp_header_chain::InitializationData {
@@ -529,7 +529,7 @@ pub mod pallet {
             gateway_vendor: t3rn_primitives::GatewayVendor,
             gateway_type: t3rn_primitives::GatewayType,
             gateway_genesis: GatewayGenesisConfig,
-            first_header: GenericPrimitivesHeader,
+            first_header: Vec<u8>,
             authorities: Option<Vec<T::AccountId>>,
         ) -> DispatchResultWithPostInfo {
             // Retrieve sender of the transaction.

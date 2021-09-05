@@ -18,6 +18,7 @@
 //! Test utilities
 use crate::{self as pallet_execution_delivery};
 
+use codec::Encode;
 use frame_support::{assert_err, assert_ok};
 
 use sp_io;
@@ -30,7 +31,7 @@ use sp_keystore::{KeystoreExt, SyncCryptoStore};
 use pallet_execution_delivery::Compose;
 
 use t3rn_primitives::{
-    abi::{ContractActionDesc, GatewayABIConfig},
+    abi::{GatewayABIConfig},
     transfers::BalanceOf,
     *,
 };
@@ -577,26 +578,16 @@ fn test_submit_composable_exec_order() {
     });
 }
 
+use bp_test_utils::test_header;
+
+use crate::{CurrentHeader, DefaultPolkadotLikeGateway};
+
 #[test]
 fn test_register_gateway() {
     let origin = Origin::signed(Default::default());
     let url = b"ws://localhost:9944".to_vec();
     let gateway_id = [0; 4];
     let gateway_abi: GatewayABIConfig = Default::default();
-
-    //     fn default() -> GatewayABIConfig {
-    //         GatewayABIConfig {
-    //             block_number_type_size: 32,
-    //             hash_size: 32,
-    //             hasher: HasherAlgo::Blake2,
-    //             crypto: CryptoAlgo::Sr25519,
-    //             address_length: 32,
-    //             value_type_size: 64,
-    //             decimals: 8,
-    //             structs: vec![],
-    //         }
-    //     }
-    // DefaultPolkadotLikeGateway
 
     let gateway_vendor = GatewayVendor::Substrate;
     let gateway_type = GatewayType::ProgrammableInternal;
@@ -614,18 +605,7 @@ fn test_register_gateway() {
         genesis_hash: Default::default(),
     };
 
-    let first_header = GenericPrimitivesHeader {
-        parent_hash: None,
-        number: 1,
-        state_root: None,
-        extrinsics_root: None,
-        digest: None,
-        // parent_hash: Default::default(),
-        // number: 0,
-        // state_root: Default::default(), // Some(H256::from_slice(&hex!("b2fc47904df5e355c6ab476d89fbc0733aeddbe302f0b94ba4eea9283f7e89e7"))),
-        // extrinsics_root: Default::default(), // Some(H256::from_slice(&hex!("03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c111314"))),
-        // digest: Default::default(),
-    };
+    let first_header: CurrentHeader<Test, DefaultPolkadotLikeGateway> = test_header(0);
 
     let authorities = Some(vec![]);
 
@@ -639,7 +619,7 @@ fn test_register_gateway() {
             gateway_vendor,
             gateway_type,
             gateway_genesis,
-            first_header,
+            first_header.encode(),
             authorities
         ));
     });

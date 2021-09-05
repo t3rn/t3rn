@@ -79,7 +79,7 @@ sp-finality-grandpa = { default-features = false, git = "https://github.com/pari
 sp-consensus-vrf = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 sp-consensus-babe = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 relay-substrate-client = { version = "0.1.0", path = "../../../vendor/bridges/relays/client-substrate", optional = true }
-
+bp-test-utils = { version = "0.1.0", default-features = false,  path = "../../../vendor/bridges/primitives/test-utils" }
 # Benchmarking
 frame-benchmarking = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8', optional = true}
 
@@ -153,7 +153,8 @@ std = [
     "pallet-session/std",
     "pallet-offences/std",
     "frame-election-provider-support/std",
-    "hex/std"
+    "hex/std",
+    "bp-test-utils/std",
 ]
 # need to add this for the app_crypto macro
 full_crypto = []
