@@ -124,7 +124,7 @@ fn successfully_dispatches_signed_transfer_outbound_message_from_circuit_to_exte
             .transfer(
                 GenericAddress::Id(Sr25519Keyring::Bob.to_account_id()),
                 Compact::from(100000000000000u128),
-                GatewayType::ProgrammableExternal,
+                GatewayType::ProgrammableExternal(0),
             )
             .expect("shouldn't fail");
 

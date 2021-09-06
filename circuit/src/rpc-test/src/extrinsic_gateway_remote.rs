@@ -34,7 +34,6 @@ use jsonrpsee_types::{traits::Client, JsonValue};
 use sp_keyring::Sr25519Keyring;
 
 #[test]
-#[ignore] // ToDo: Won't run at CI for additional localhost target
 fn successfully_dispatches_signed_transfer_outbound_message_with_protocol_from_circuit_to_remote_target(
 ) {
     async_std::task::block_on(async move {
@@ -50,28 +49,29 @@ fn successfully_dispatches_signed_transfer_outbound_message_with_protocol_from_c
         let test_protocol =
             create_gateway_protocol_from_client(client, signer.public().into()).await;
 
-        let signed_ext = ext.execute_with(|| {
-            let transfer_outbound_message = test_protocol
-                .transfer(
-                    GenericAddress::Id(Sr25519Keyring::Bob.to_account_id()),
-                    Compact::from(100000000000000u128),
-                    GatewayType::ProgrammableExternal,
-                )
-                .unwrap();
-
-            transfer_outbound_message
-                .to_jsonrpc_signed()
-                .unwrap()
-                .signed_extrinsic
-        });
-
         let ext_hash = client
-            .submit_signed_extrinsic(signer.to_account_id(), |_nonce| signed_ext.into())
+            .submit_signed_extrinsic(signer.to_account_id(), |nonce| {
+                let signed_ext = ext.execute_with(|| {
+                    let transfer_outbound_message = test_protocol
+                        .transfer(
+                            GenericAddress::Id(Sr25519Keyring::Bob.to_account_id()),
+                            Compact::from(100000000000000u128),
+                            GatewayType::ProgrammableExternal(nonce),
+                        )
+                        .unwrap();
+
+                    transfer_outbound_message
+                        .to_jsonrpc_signed()
+                        .unwrap()
+                        .signed_extrinsic
+                });
+
+                signed_ext.into()
+            })
             .await;
 
-        assert!(ext_hash.is_ok(), "result should be true");
-
         println!("client.author_submit_extrinsic result = {:?}", ext_hash);
+        assert!(ext_hash.is_ok(), "result should be true");
     });
 }
 
@@ -116,7 +116,7 @@ fn successfully_dispatches_signed_call_outbound_message_with_protocol_from_circu
         GenericAddress::Id(Sr25519Keyring::Charlie.to_account_id()).encode(), // to/dest
         Compact::from(100000000000000u128).encode(),                          // value
         Compact::from(200000000000000u128).encode(),                          // gas
-        GatewayType::ProgrammableExternal,
+        GatewayType::ProgrammableExternal(0),
         None, // optional return value which already might have been known
     );
     ext.execute_with(|| {

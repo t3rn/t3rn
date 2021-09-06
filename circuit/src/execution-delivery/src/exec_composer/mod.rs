@@ -313,13 +313,13 @@ impl ExecComposer {
             None => Ok(GatewayPointer {
                 // ToDo: Setup default for Circuit equivalent to None
                 id: Default::default(),
-                gateway_type: GatewayType::ProgrammableExternal,
+                gateway_type: GatewayType::ProgrammableExternal(0),
                 vendor: GatewayVendor::Substrate,
             }),
             // ToDo: Lookup in pallet-xdns here to match target with vendor
             Some(gateway_id) => Ok(GatewayPointer {
                 id: gateway_id,
-                gateway_type: GatewayType::ProgrammableExternal,
+                gateway_type: GatewayType::ProgrammableExternal(0),
                 vendor: GatewayVendor::Substrate,
             }),
         }
@@ -473,7 +473,7 @@ mod tests {
                 [0, 0, 0, 0],
                 Default::default(),
                 GatewayVendor::Substrate,
-                GatewayType::ProgrammableExternal,
+                GatewayType::ProgrammableExternal(0),
                 GatewayGenesisConfig {
                     modules_encoded: None,
                     signed_extension: None,

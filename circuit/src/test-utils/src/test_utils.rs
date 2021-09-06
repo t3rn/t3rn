@@ -154,8 +154,6 @@ pub async fn create_gateway_protocol_from_client<Chain: relay_substrate_client::
     client: &Client<Chain>,
     submitter: AuthorityId,
 ) -> SubstrateGatewayProtocol<AuthorityId, <Chain as ChainBase>::Hash> {
-    // TODO: we need to fetch the metadata from client. but the runtime rpc is not initiated
-    // for rpc in relay_substrate_client. once that is in, we can replace that with this
     SubstrateGatewayProtocol::new(
         create_metadata_from_client(client).await,
         client
