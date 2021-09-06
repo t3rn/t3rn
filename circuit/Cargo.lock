@@ -1007,6 +1007,7 @@ dependencies = [
  "pallet-bridge-messages",
  "pallet-evm",
  "pallet-transaction-payment-rpc",
+ "pallet-xdns",
  "sc-basic-authorship",
  "sc-cli",
  "sc-client-api",
@@ -1031,6 +1032,7 @@ dependencies = [
  "structopt",
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
+ "t3rn-primitives",
 ]
 
 [[package]]

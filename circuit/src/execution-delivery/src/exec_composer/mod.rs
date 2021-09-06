@@ -144,7 +144,7 @@ impl ExecComposer {
         gateway_id: Option<bp_runtime::ChainId>,
         gateway_abi: GatewayABIConfig,
     ) -> Result<(Vec<CircuitOutboundMessage>, Vec<u32>), &'static str> {
-        let gateway_pointer = Self::retrieve_gateway_pointer(gateway_id)?;
+        let gateway_pointer = Self::retrieve_gateway_pointer::<T>(gateway_id)?;
         let gateway_inbound_protocol =
             Self::retrieve_gateway_protocol::<T>(submitter, &gateway_pointer)?;
 
@@ -320,7 +320,7 @@ impl ExecComposer {
             Some(gateway_id) => {
                 let xdns_record_id = T::Hashing::hash(Encode::encode(&gateway_id).as_ref());
 
-                let xdns_record = pallet_xdns::Pallet::<T>::xdns_records(xdns_record_id)?;
+                let xdns_record = pallet_xdns::Pallet::<T>::xdns_registry(xdns_record_id).unwrap();
                 Ok(GatewayPointer {
                     id: xdns_record.gateway_id,
                     gateway_type: xdns_record.gateway_type,

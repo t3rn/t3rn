@@ -146,44 +146,21 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
     }
 }
 
-impl<AccountId> From<XdnsRecord<AccountId>> for RuntimeMetadataV13 {
-    fn from(xdns_record: XdnsRecord<AccountId>) -> Self {
-        Self {
-            modules: Decode::decode(
-                &mut xdns_record
-                    .gateway_genesis
-                    .modules_encoded
-                    .clone()
-                    .unwrap_or_default(),
-            )
-            .unwrap_or_default(),
-            extrinsic: ExtrinsicMetadata {
-                version: xdns_record.gateway_genesis.extrinsics_version,
-                signed_extensions: Decode::decode(
-                    &mut xdns_record
-                        .gateway_genesis
-                        .signed_extension
-                        .unwrap_or_default(),
-                )
-                .unwrap_or_default(),
-            },
-        }
-    }
-}
-
 // Definition of the pallet logic, to be aggregated at runtime definition through
 // `construct_runtime`.
 #[frame_support::pallet]
 pub mod pallet {
     // Import various types used to declare pallet in scope.
     use super::*;
-    use bp_runtime::{CIRCUIT_CHAIN_ID, GATEWAY_CHAIN_ID};
+    use bp_runtime::{CIRCUIT_CHAIN_ID, GATEWAY_CHAIN_ID, KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID};
     use frame_support::pallet_prelude::*;
     use frame_support::traits::Time;
     use frame_system::pallet_prelude::*;
     use sp_std::convert::TryInto;
+    use sp_version::RuntimeVersion;
     use t3rn_primitives::abi::{CryptoAlgo, HasherAlgo};
     use t3rn_primitives::{ChainId, EscrowTrait, GatewayType, GatewayVendor};
+
     #[pallet::config]
     pub trait Config: pallet_balances::Config + frame_system::Config + EscrowTrait {
         /// The overarching event type.
@@ -366,53 +343,7 @@ pub mod pallet {
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
-            let circuit_dev: XdnsRecord<T::AccountId> = <XdnsRecord<T::AccountId>>::new(
-                b"wss://dev.net.t3rn.io".to_vec(),
-                CIRCUIT_CHAIN_ID,
-                GatewayABIConfig {
-                    block_number_type_size: 0,
-                    hash_size: 0,
-                    hasher: HasherAlgo::Blake2,
-                    crypto: CryptoAlgo::Ed25519,
-                    address_length: 0,
-                    value_type_size: 0,
-                    decimals: 0,
-                    structs: vec![],
-                },
-                GatewayVendor::Substrate,
-                GatewayType::ProgrammableInternal,
-                GatewayGenesisConfig {
-                    modules_encoded: None,
-                    signed_extension: None,
-                    runtime_version: Default::default(),
-                    extrinsics_version: 0,
-                    genesis_hash: vec![],
-                },
-            );
-            let demo_gateway: XdnsRecord<T::AccountId> = <XdnsRecord<T::AccountId>>::new(
-                b"wss://dev.net.t3rn.io/gateway".to_vec(),
-                GATEWAY_CHAIN_ID,
-                GatewayABIConfig {
-                    block_number_type_size: 0,
-                    hash_size: 0,
-                    hasher: HasherAlgo::Blake2,
-                    crypto: CryptoAlgo::Ed25519,
-                    address_length: 0,
-                    value_type_size: 0,
-                    decimals: 0,
-                    structs: vec![],
-                },
-                GatewayVendor::Substrate,
-                GatewayType::ProgrammableInternal,
-                GatewayGenesisConfig {
-                    modules_encoded: None,
-                    signed_extension: None,
-                    runtime_version: Default::default(),
-                    genesis_hash: vec![],
-                },
-            );
-
-            for xdns_record in [circuit_dev, demo_gateway] {
+            for xdns_record in self.known_xdns_records.clone() {
                 <XDNSRegistry<T>>::insert(xdns_record.generate_id::<T>(), xdns_record);
             }
         }
