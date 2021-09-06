@@ -447,8 +447,8 @@ mod tests {
         wat: &str,
         input_data: Vec<u8>,
         dest: T::AccountId,
-        value: T::Balance,
-    ) -> Compose<T::AccountId, T::Balance> {
+        value: BalanceOf<T>,
+    ) -> Compose<T::AccountId, BalanceOf<T>> {
         let wasm = wat::parse_str(wat.clone()).unwrap();
         Compose {
             name: b"component1".to_vec(),
@@ -511,7 +511,7 @@ mod tests {
         value: BalanceOf<T>,
     ) -> RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>
     {
-        let compose = make_compose_out_of_raw_wat_code::<Test>(wat, input_data, dest, value);
+        let compose = make_compose_out_of_raw_wat_code::<T>(wat, input_data, dest, value);
 
         RegistryContract::from_compose(
             compose,
@@ -523,7 +523,7 @@ mod tests {
                 trie_id: Default::default(),
                 storage_size: Default::default(),
                 pair_count: Default::default(),
-                code_hash: T::Hashing::hash(&compose.bytes),
+                code_hash: <T as frame_system::Config>::Hashing::hash(&compose.bytes),
                 rent_allowance: Default::default(),
                 rent_paid: Default::default(),
                 deduct_block: Default::default(),
