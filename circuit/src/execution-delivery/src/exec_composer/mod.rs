@@ -504,6 +504,35 @@ mod tests {
         hex_literal::hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"].into()
     }
 
+    fn make_registry_contract_out_of_wat<T: Config>(
+        wat: &str,
+        input_data: Vec<u8>,
+        dest: T::AccountId,
+        value: BalanceOf<T>,
+    ) -> RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>
+    {
+        let compose = make_compose_out_of_raw_wat_code::<Test>(wat, input_data, dest, value);
+
+        RegistryContract::from_compose(
+            compose,
+            vec![],
+            Default::default(),
+            None,
+            None,
+            Some(RawAliveContractInfo {
+                trie_id: Default::default(),
+                storage_size: Default::default(),
+                pair_count: Default::default(),
+                code_hash: T::Hashing::hash(&compose.bytes),
+                rent_allowance: Default::default(),
+                rent_paid: Default::default(),
+                deduct_block: Default::default(),
+                last_write: Default::default(),
+                _reserved: Default::default(),
+            }),
+            Default::default(),
+        )
+    }
     const CODE_CALL: &str = r#"
 (module
 	;; seal_call(
@@ -847,6 +876,29 @@ mod tests {
                 res,
                 Err("Input < 64 doesn't allow to extract function and method names")
             )
+        });
+    }
+
+    #[test]
+    fn preload_bunch_of_contracts_one_contract_pass() {
+        let mut ext = TestExternalities::new_empty();
+        let escrow_account = setup_test_escrow_as_tx_signer(&mut ext);
+        let requester = AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+        let value = BalanceOf::<Test>::from(0u32);
+        ext.execute_with(|| {
+            insert_default_xdns_record();
+
+            let _submitter = crate::Pallet::<Test>::select_authority(escrow_account.clone())
+                .unwrap_or_else(|_| panic!("failed to select_authority"));
+            let temp_contract_one = make_registry_contract_out_of_wat::<Test>(
+                CODE_CALL, 
+                vec![], 
+                requester.clone(), 
+                value,
+            );
+            let res = ExecComposer::preload_bunch_of_contracts::<Test>(vec![temp_contract_one.clone()], Default::default());
+
+            assert_ok!(res);
         });
     }
 }
