@@ -17,7 +17,7 @@ use codec::Decode;
 use jsonrpsee_types::traits::Client as WsClient;
 use relay_substrate_client::{Chain, ChainBase, Client};
 
-pub fn create_test_metadata(
+fn create_test_metadata(
     modules_with_functions: Vec<(&'static str, Vec<&'static str>)>,
 ) -> Metadata {
     let mut module_index = 0;
@@ -83,7 +83,7 @@ pub async fn create_metadata_from_client<C: Chain>(client: &Client<C>) -> Metada
     }
 }
 
-pub fn create_test_runtime_version() -> RuntimeVersion {
+fn create_test_runtime_version() -> RuntimeVersion {
     RuntimeVersion {
         spec_name: "circuit-runtime".into(),
         impl_name: "circuit-runtime".into(),
@@ -95,11 +95,11 @@ pub fn create_test_runtime_version() -> RuntimeVersion {
     }
 }
 
-pub fn create_submitter() -> AuthorityId {
+fn create_submitter() -> AuthorityId {
     AuthorityId::default()
 }
 
-pub fn create_test_genesis_hash() -> H256 {
+fn create_test_genesis_hash() -> H256 {
     [
         228, 91, 54, 23, 242, 175, 145, 3, 62, 53, 1, 176, 110, 242, 112, 238, 216, 163, 225, 49,
         11, 192, 245, 48, 220, 24, 125, 95, 95, 230, 28, 240,
@@ -107,7 +107,7 @@ pub fn create_test_genesis_hash() -> H256 {
     .into()
 }
 
-pub fn get_dummy_modules_with_functions() -> Vec<(&'static str, Vec<&'static str>)> {
+fn get_dummy_modules_with_functions() -> Vec<(&'static str, Vec<&'static str>)> {
     vec![
         ("state", vec!["call"]),
         ("state", vec!["getStorage"]),
@@ -128,15 +128,6 @@ pub fn get_dummy_modules_with_functions() -> Vec<(&'static str, Vec<&'static str
         ("gatewayEscrowed", vec!["callStatic"]),
         ("gatewayEscrowed", vec!["callEscrowed"]),
     ]
-}
-
-pub fn create_default_test_gateway_protocol() -> SubstrateGatewayProtocol<AuthorityId, H256> {
-    SubstrateGatewayProtocol::new(
-        create_test_metadata(get_dummy_modules_with_functions()),
-        create_test_runtime_version(),
-        create_test_genesis_hash(),
-        create_submitter(),
-    )
 }
 
 pub fn create_test_stuffed_gateway_protocol(
@@ -161,18 +152,6 @@ pub async fn create_gateway_protocol_from_client<Chain: relay_substrate_client::
             .await
             .expect("must return runtime version"),
         client.genesis_hash,
-        submitter,
-    )
-}
-
-pub fn create_test_gateway_protocol(
-    modules_with_functions: Vec<(&'static str, Vec<&'static str>)>,
-    submitter: AuthorityId,
-) -> SubstrateGatewayProtocol<AuthorityId, H256> {
-    SubstrateGatewayProtocol::new(
-        create_test_metadata(modules_with_functions),
-        create_test_runtime_version(),
-        create_test_genesis_hash(),
         submitter,
     )
 }
