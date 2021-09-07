@@ -202,15 +202,8 @@ jobs:
           name: ${{ github.sha }}-artifacts
           path: circuit/target/release/
 
-      - name: Run circuit dev node
-        run: circuit/target/release/circuit --alice --log=main,debug --tmp &
-
       - name: 📼 Run unit tests
-        uses: actions-rs/cargo@v1
         continue-on-error: false
-        with:
-          command: test
-          args: |
-            --workspace
-            --locked
-            --manifest-path circuit/Cargo.toml
+        run: |
+          circuit/target/release/circuit --alice --log=main,debug --tmp &
+          cargo test --workspace --locked --manifest-path circuit/Cargo.toml
