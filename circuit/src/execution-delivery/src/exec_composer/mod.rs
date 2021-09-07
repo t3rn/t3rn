@@ -444,15 +444,18 @@ mod tests {
     use std::str::FromStr;
 
     fn make_compose_out_of_raw_wat_code<T: Config>(
-        wat: &str,
+        wat_string: &str,
         input_data: Vec<u8>,
         dest: T::AccountId,
         value: BalanceOf<T>,
     ) -> Compose<T::AccountId, BalanceOf<T>> {
-        let wasm = wat::parse_str(wat.clone()).unwrap();
+        let wasm = match wat::parse_str(wat_string.clone()) {
+            Ok(wasm) => wasm,
+            Err(_err) => " invalid code str ".encode()
+        };
         Compose {
             name: b"component1".to_vec(),
-            code_txt: wat.encode(),
+            code_txt: wat_string.encode(),
             exec_type: b"exec_escrow".to_vec(),
             dest,
             value,
@@ -523,7 +526,7 @@ mod tests {
                 trie_id: Default::default(),
                 storage_size: Default::default(),
                 pair_count: Default::default(),
-                code_hash: <T as frame_system::Config>::Hashing::hash(&compose.bytes),
+                code_hash: Default::default(),// TODO : Make it work with Hashing
                 rent_allowance: Default::default(),
                 rent_paid: Default::default(),
                 deduct_block: Default::default(),
@@ -774,6 +777,8 @@ mod tests {
         });
     }
 
+    const INVALID_CODE : &str = r#" invalid code"#;
+
     const WROONG_CODE_MODULE_DISPATCH_NO_FUNC: &str = r#"
 (module
 	(import "__unstable__" "seal_call" (func $seal_call (param i32 i32 i64 i32 i32 i32 i32 i32) (result i32)))
@@ -880,7 +885,7 @@ mod tests {
     }
 
     #[test]
-    fn preload_bunch_of_contracts_one_contract_pass() {
+    fn preload_bunch_of_contracts_one_contract_passes() {
         let mut ext = TestExternalities::new_empty();
         let escrow_account = setup_test_escrow_as_tx_signer(&mut ext);
         let requester = AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
@@ -896,9 +901,90 @@ mod tests {
                 requester.clone(), 
                 value,
             );
-            let res = ExecComposer::preload_bunch_of_contracts::<Test>(vec![temp_contract_one.clone()], Default::default());
+            let res = ExecComposer::preload_bunch_of_contracts::<Test>(vec![temp_contract_one], Default::default());
 
             assert_ok!(res);
         });
     }
+
+    #[test]
+    fn preload_bunch_of_contracts_multiple_contract_passes() {
+        let mut ext = TestExternalities::new_empty();
+        let escrow_account = setup_test_escrow_as_tx_signer(&mut ext);
+        let requester = AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+        let value = BalanceOf::<Test>::from(0u32);
+        ext.execute_with(|| {
+            insert_default_xdns_record();
+
+            let _submitter = crate::Pallet::<Test>::select_authority(escrow_account.clone())
+                .unwrap_or_else(|_| panic!("failed to select_authority"));
+            let temp_contract_one = make_registry_contract_out_of_wat::<Test>(
+                CODE_CALL, 
+                vec![], 
+                requester.clone(), 
+                value,
+            );
+            let temp_contract_two = make_registry_contract_out_of_wat::<Test>(
+                CODE_CALL, 
+                vec![], 
+                requester.clone(), 
+                value,
+            );
+            let res = ExecComposer::preload_bunch_of_contracts::<Test>(vec![temp_contract_one, temp_contract_two], Default::default());
+
+            assert_ok!(res);
+        });
+    }
+
+    #[test]
+    fn preload_bunch_of_contracts_one_contract_fails() {
+        let mut ext = TestExternalities::new_empty();
+        let escrow_account = setup_test_escrow_as_tx_signer(&mut ext);
+        let requester = AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+        let value = BalanceOf::<Test>::from(0u32);
+        ext.execute_with(|| {
+            insert_default_xdns_record();
+
+            let _submitter = crate::Pallet::<Test>::select_authority(escrow_account.clone())
+                .unwrap_or_else(|_| panic!("failed to select_authority"));
+            let temp_contract_one = make_registry_contract_out_of_wat::<Test>(
+                INVALID_CODE, 
+                vec![], 
+                requester.clone(), 
+                value,
+            );
+            let res = ExecComposer::preload_bunch_of_contracts::<Test>(vec![temp_contract_one], Default::default());
+
+            assert_eq!(res, Err("Can't decode WASM code"));
+        });
+    }
+
+    #[test]
+    fn preload_bunch_of_contracts_multiple_contract_fails() {
+        let mut ext = TestExternalities::new_empty();
+        let escrow_account = setup_test_escrow_as_tx_signer(&mut ext);
+        let requester = AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+        let value = BalanceOf::<Test>::from(0u32);
+        ext.execute_with(|| {
+            insert_default_xdns_record();
+
+            let _submitter = crate::Pallet::<Test>::select_authority(escrow_account.clone())
+                .unwrap_or_else(|_| panic!("failed to select_authority"));
+            let temp_contract_one = make_registry_contract_out_of_wat::<Test>(
+                CODE_CALL, 
+                vec![], 
+                requester.clone(), 
+                value,
+            );
+            let temp_contract_two = make_registry_contract_out_of_wat::<Test>(
+                INVALID_CODE, 
+                vec![], 
+                requester.clone(), 
+                value,
+            );
+            let res = ExecComposer::preload_bunch_of_contracts::<Test>(vec![temp_contract_one, temp_contract_two], Default::default());
+
+            assert_eq!(res, Err("Can't decode WASM code"));
+        });
+    }    
 }
