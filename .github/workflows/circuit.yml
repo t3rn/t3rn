@@ -203,7 +203,7 @@ jobs:
           path: circuit/target/release/
 
       - name: Run circuit dev node
-        run: circuit/target/release/circuit --alice --log=main,debug --tmp > /dev/null 2>&1 &
+        run: circuit/target/release/circuit --alice --log=main,debug --tmp &
 
       - name: 📼 Run unit tests
         uses: actions-rs/cargo@v1
