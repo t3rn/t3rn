@@ -205,5 +205,6 @@ jobs:
       - name: 📼 Run unit tests
         continue-on-error: false
         run: |
+          sudo chmod +x circuit/target/release/circuit
           circuit/target/release/circuit --alice --log=main,debug --tmp &
           cargo test --workspace --locked --manifest-path circuit/Cargo.toml
