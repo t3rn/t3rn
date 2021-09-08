@@ -18,13 +18,11 @@
 use crate::Bytes;
 use codec::{Decode, Encode};
 #[cfg(feature = "std")]
-use core::fmt::{Display, Formatter, Result as DisplayResult, Write};
+use core::fmt::{Display, Formatter, Result as DisplayResult};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize, Serializer};
 use sp_runtime::RuntimeDebug;
 use sp_std::{vec, vec::Vec};
-
-const METADATA_VERSION: &str = "0.1.0";
 
 #[derive(RuntimeDebug)]
 pub struct Source {

@@ -55,6 +55,7 @@ pallet-randomness-collective-flip = { git = "https://github.com/paritytech/subst
 pallet-session = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
+pallet-utility = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
@@ -132,6 +133,7 @@ std = [
 	"sp-transaction-pool/std",
 	"sp-trie/std",
 	"sp-version/std",
+	'pallet-utility/std'
 ]
 # TODO: https://github.com/paritytech/parity-bridges-common/issues/390
 # I've left the feature flag here to test our CI configuration

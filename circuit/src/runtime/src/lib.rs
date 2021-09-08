@@ -659,6 +659,12 @@ impl pallet_multi_finality_verifier::Config<Keccak256ValU32BridgeInstance> for R
     type WeightInfo = ();
 }
 
+impl pallet_utility::Config for Runtime {
+    type Event = Event;
+    type Call = Call;
+    type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
+}
+
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -687,6 +693,7 @@ construct_runtime!(
         VolatileVM: volatile_vm::{Pallet, Call, Event<T>, Storage},
         MultiFinalityVerifier: pallet_multi_finality_verifier::{Pallet, Call, Config<T>},
         ExecDelivery: pallet_circuit_execution_delivery::{Pallet, Call, Storage, Event<T>},
+        Utility: pallet_utility::{Pallet, Call, Event},
     }
 );
 

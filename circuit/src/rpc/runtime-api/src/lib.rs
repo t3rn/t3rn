@@ -18,7 +18,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_runtime::{codec::Codec, traits::MaybeDisplay, DispatchError};
+use sp_runtime::codec::Codec;
 use sp_std::vec::Vec;
 use t3rn_primitives::{ComposableExecResult, Compose};
 
