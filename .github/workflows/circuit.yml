@@ -207,4 +207,4 @@ jobs:
         run: |
           sudo chmod +x circuit/target/release/circuit
           circuit/target/release/circuit --alice --log=main,debug --tmp > /dev/null 2>&1 &
-          cargo test --workspace --locked --manifest-path circuit/Cargo.toml
+          cargo test --workspace --locked --features runtime-benchmarks --manifest-path circuit/Cargo.toml

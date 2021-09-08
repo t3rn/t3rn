@@ -36,11 +36,15 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
 mod types;
-mod weights;
+
+pub mod weights;
+use weights::WeightInfo;
 
 pub use types::*;
-pub use weights::*;
 
 // Definition of the pallet logic, to be aggregated at runtime definition through
 // `construct_runtime`.
@@ -48,6 +52,7 @@ pub use weights::*;
 pub mod pallet {
     // Import various types used to declare pallet in scope.
     use super::*;
+    use crate::WeightInfo;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
 
@@ -59,7 +64,7 @@ pub mod pallet {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
         /// Type representing the weight of this pallet
-        type WeightInfo: WeightInfo;
+        type WeightInfo: weights::WeightInfo;
     }
 
     // Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
@@ -101,7 +106,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Inserts a contract into the on-chain registry. Root only access.
-        #[pallet::weight(500_000_000 + T::DbWeight::get().reads_writes(1,1))]
+        #[pallet::weight(<T as Config>::WeightInfo::add_new_contract())]
         pub fn add_new_contract(
             origin: OriginFor<T>,
             requester: T::AccountId,
@@ -126,7 +131,7 @@ pub mod pallet {
         }
 
         /// Removes a contract from the onchain registry. Root only access.
-        #[pallet::weight(500_000_000 + T::DbWeight::get().reads_writes(1,1))]
+        #[pallet::weight(<T as Config>::WeightInfo::purge())]
         pub fn purge(
             origin: OriginFor<T>,
             requester: T::AccountId,
@@ -224,6 +229,7 @@ impl<T: Config> Pallet<T> {
         Ok(pallet::ContractsRegistry::<T>::get(contract_id).unwrap())
     }
 
+    //#[pallet::weight(<T as Config>::WeightInfo::fetch_contracts())]
     pub fn fetch_contracts(
         author: Option<T::AccountId>,
         metadata: Option<Vec<u8>>,
