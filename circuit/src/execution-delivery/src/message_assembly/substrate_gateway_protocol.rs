@@ -924,18 +924,18 @@ pub mod tests {
                     signatures: vec![b"Transfer(address,address,value)".to_vec()],
                 }],
                 vec![
-                    11, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+                    8, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
                     4, 4, 4, 4, 4, 4, 4, 4, 4, 16,
                 ],
                 vec![
-                    11, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+                    8, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
                     4, 4, 4, 4, 4, 4, 4, 4, 4, 16, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 228, 91, 54,
                     23, 242, 175, 145, 3, 62, 53, 1, 176, 110, 242, 112, 238, 216, 163, 225, 49,
                     11, 192, 245, 48, 220, 24, 125, 95, 95, 230, 28, 240, 228, 91, 54, 23, 242,
                     175, 145, 3, 62, 53, 1, 176, 110, 242, 112, 238, 216, 163, 225, 49, 11, 192,
                     245, 48, 220, 24, 125, 95, 95, 230, 28, 240,
                 ],
-                "balances",
+                "Balances",
                 "transfer",
             );
         });
@@ -1010,8 +1010,8 @@ pub mod tests {
         ext.execute_with(|| {
             let test_protocol = create_test_gateway_protocol(
                 vec![
-                    ("balances", vec!["transfer"]),
-                    ("utility", vec!["batchAll"]),
+                    ("Balances", vec!["transfer"]),
+                    ("Utility", vec!["batchAll"]),
                 ],
                 submitter.into(),
             );
@@ -1061,7 +1061,7 @@ pub mod tests {
                             custom_payload: _,
                         }) => {
                             assert_eq!(signer, submitter.encode());
-                            assert_eq!(module_name, "utility".encode());
+                            assert_eq!(module_name, "Utility".encode());
                             assert_eq!(method_name, "batchAll".encode());
                             assert_eq!(extra, vec![0, 0, 0]);
                         }
