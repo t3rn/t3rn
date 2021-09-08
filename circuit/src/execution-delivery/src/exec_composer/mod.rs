@@ -536,6 +536,7 @@ mod tests {
             Default::default(),
         )
     }
+
     const CODE_CALL: &str = r#"
 (module
 	;; seal_call(
@@ -885,7 +886,7 @@ mod tests {
     }
 
     #[test]
-    fn preload_bunch_of_contracts_one_contract_passes() {
+    fn preload_bunch_of_contracts_one_contract_succeeds() {
         let mut ext = TestExternalities::new_empty();
         let escrow_account = setup_test_escrow_as_tx_signer(&mut ext);
         let requester = AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
@@ -908,7 +909,7 @@ mod tests {
     }
 
     #[test]
-    fn preload_bunch_of_contracts_multiple_contract_passes() {
+    fn preload_bunch_of_contracts_multiple_contract_succeeds() {
         let mut ext = TestExternalities::new_empty();
         let escrow_account = setup_test_escrow_as_tx_signer(&mut ext);
         let requester = AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
@@ -986,5 +987,136 @@ mod tests {
 
             assert_eq!(res, Err("Can't decode WASM code"));
         });
-    }    
+    }
+
+    #[test]
+    fn run_single_contract_fails_stack_error()
+    {
+        let mut ext = TestExternalities::new_empty();
+        let requester = AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+        let value = BalanceOf::<Test>::from(0u32);
+        ext.execute_with(|| {
+            insert_default_xdns_record();
+            
+            let mut temp_contract_one = make_registry_contract_out_of_wat::<Test>(
+                CODE_CALL, 
+                vec![], 
+                requester.clone(), 
+                value,
+            );
+
+            let res = ExecComposer::run_single_contract::<Test, OptimisticOutputMode>(
+                &mut temp_contract_one,
+                Default::default(),
+                Weight::MAX,
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(),// requester
+                Default::default(),
+                Default::default(),
+            );
+
+            assert_eq!(res, Err("Can't create VVM call stack"));
+        });
+    }
+
+    #[test]
+    fn run_single_contract_fails_xdns_error()
+    {
+        let mut ext = TestExternalities::new_empty();
+        let requester = AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+        let value = BalanceOf::<Test>::from(0u32);
+        ext.execute_with(|| {
+            // This comment line is intentional
+            // Not inserting xdns record to replicate this failure
+            // insert_default_xdns_record();
+            
+            let mut temp_contract_one = make_registry_contract_out_of_wat::<Test>(
+                CODE_CALL, 
+                vec![], 
+                requester.clone(), 
+                value,
+            );
+
+            let res = ExecComposer::run_single_contract::<Test, OptimisticOutputMode>(
+                &mut temp_contract_one,
+                Default::default(),
+                Weight::MAX,
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(),
+            );
+            
+            assert_eq!(res, Err("Xdns record not found"));
+        });
+    }
+
+    #[test]
+    fn run_single_contract_fails_wasm_parse_error()
+    {
+        let mut ext = TestExternalities::new_empty();
+        let requester = AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+        let value = BalanceOf::<Test>::from(0u32);
+        ext.execute_with(|| {
+            insert_default_xdns_record();
+            
+            let mut temp_contract_one = make_registry_contract_out_of_wat::<Test>(
+                INVALID_CODE, 
+                vec![], 
+                requester.clone(), 
+                value,
+            );
+
+            let res = ExecComposer::run_single_contract::<Test, OptimisticOutputMode>(
+                &mut temp_contract_one,
+                Default::default(),
+                Weight::MAX,
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(),
+            );
+            
+            assert_eq!(res, Err("Can't decode WASM code"));
+        });
+    }
+
+    #[test]
+    #[ignore = "Please implement proper assertions when retrieve_gateway_protocol is properly implemented"]
+    fn run_single_contract_fails_retrieve_gateway_protocol_error()
+    {
+        let mut ext = TestExternalities::new_empty();
+        let requester = AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+        let value = BalanceOf::<Test>::from(0u32);
+        ext.execute_with(|| {
+            insert_default_xdns_record();
+            
+            let mut temp_contract_one = make_registry_contract_out_of_wat::<Test>(
+                CODE_CALL, 
+                vec![], 
+                requester.clone(), 
+                value,
+            );
+
+            let res = ExecComposer::run_single_contract::<Test, OptimisticOutputMode>(
+                &mut temp_contract_one,
+                Default::default(),
+                Weight::MAX,
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(),
+            );
+            
+            assert_eq!(res, res);
+        });
+    }
 }
