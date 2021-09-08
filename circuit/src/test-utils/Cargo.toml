@@ -1,0 +1,14 @@
+[package]
+name = "circuit-test-utils"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+frame-metadata = { version = "13.0.0", git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8', default-features = false }
+sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
+sp-version = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
+sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
+pallet-circuit-execution-delivery = { version = "0.1.0", path = "../execution-delivery" }
+relay-substrate-client = { version = "0.1.0", path = "../../../vendor/bridges/relays/client-substrate"}
+jsonrpsee-types = "0.2.0"
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }

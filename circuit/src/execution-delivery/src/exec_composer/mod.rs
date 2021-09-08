@@ -314,7 +314,7 @@ impl ExecComposer {
             None => Ok(GatewayPointer {
                 // ToDo: Setup default for Circuit equivalent to None
                 id: Default::default(),
-                gateway_type: GatewayType::ProgrammableExternal,
+                gateway_type: GatewayType::ProgrammableExternal(0),
                 vendor: GatewayVendor::Substrate,
             }),
             Some(gateway_id) => {
@@ -335,6 +335,85 @@ impl ExecComposer {
         submitter_id: AuthorityId,
         gateway_pointer: &GatewayPointer,
     ) -> Result<Box<dyn GatewayInboundProtocol>, &'static str> {
+        // Very dummy - replace asap with https://github.com/t3rn/t3rn/pull/87
+        use crate::message_assembly::chain_generic_metadata::Metadata;
+        use frame_metadata::{
+            DecodeDifferent, ExtrinsicMetadata, FunctionMetadata, ModuleMetadata,
+            RuntimeMetadataV13,
+        };
+        pub fn get_dummy_modules_with_functions() -> Vec<(&'static str, Vec<&'static str>)> {
+            vec![
+                ("state", vec!["call"]),
+                ("state", vec!["getStorage"]),
+                ("state", vec!["setStorage"]),
+                ("ModuleName", vec!["FnName"]),
+                ("ModuleName", vec!["FnName1"]),
+                ("ModuleName", vec!["FnName2"]),
+                ("ModuleName", vec!["FnName3"]),
+                ("author", vec!["submitExtrinsic"]),
+                ("utility", vec!["batchAll"]),
+                ("system", vec!["remark"]),
+                ("gateway", vec!["call"]),
+                ("balances", vec!["transfer"]),
+                ("gateway", vec!["getStorage"]),
+                ("gateway", vec!["transfer"]),
+                ("gateway", vec!["emitEvent"]),
+                ("gateway", vec!["custom"]),
+                ("gatewayEscrowed", vec!["callStatic"]),
+                ("gatewayEscrowed", vec!["callEscrowed"]),
+            ]
+        }
+        // Very dummy - replace asap with https://github.com/t3rn/t3rn/pull/87
+        fn create_test_metadata(
+            modules_with_functions: Vec<(&'static str, Vec<&'static str>)>,
+        ) -> Metadata {
+            let mut module_index = 0;
+            let mut modules: Vec<ModuleMetadata> = vec![];
+
+            let fn_metadata_generator = |name: &'static str| -> FunctionMetadata {
+                FunctionMetadata {
+                    name: DecodeDifferent::Encode(name),
+                    arguments: DecodeDifferent::Decoded(vec![]),
+                    documentation: DecodeDifferent::Decoded(vec![]),
+                }
+            };
+
+            let module_metadata_generator = |mod_name: &'static str,
+                                             mod_index: u8,
+                                             functions: Vec<FunctionMetadata>|
+             -> ModuleMetadata {
+                ModuleMetadata {
+                    index: mod_index,
+                    name: DecodeDifferent::Encode(mod_name),
+                    storage: None,
+                    calls: Some(DecodeDifferent::Decoded(functions)),
+                    event: None,
+                    constants: DecodeDifferent::Decoded(vec![]),
+                    errors: DecodeDifferent::Decoded(vec![]),
+                }
+            };
+
+            for module in modules_with_functions {
+                let (module_name, fn_names) = module;
+                let functions = fn_names.into_iter().map(fn_metadata_generator).collect();
+                modules.push(module_metadata_generator(
+                    module_name,
+                    module_index,
+                    functions,
+                ));
+                module_index = module_index + 1;
+            }
+
+            let runtime_metadata = RuntimeMetadataV13 {
+                extrinsic: ExtrinsicMetadata {
+                    version: 1,
+                    signed_extensions: vec![DecodeDifferent::Encode("test")],
+                },
+                modules: DecodeDifferent::Decoded(modules),
+            };
+            Metadata::new(runtime_metadata)
+        }
+
         let mut best_gateway = pallet_xdns::Pallet::<T>::best_available(gateway_pointer.id)?;
 
         let genesis_hash = T::Hashing::hash(&mut best_gateway.gateway_genesis.genesis_hash);
@@ -342,7 +421,8 @@ impl ExecComposer {
 
         Ok(Box::new(
             SubstrateGatewayProtocol::<AuthorityId, T::Hash>::new(
-                Default::default(),
+                // FixMe: Very dummy - replace asap with https://github.com/t3rn/t3rn/pull/87
+                create_test_metadata(get_dummy_modules_with_functions()),
                 runtime_version,
                 genesis_hash,
                 submitter_id,
@@ -354,7 +434,7 @@ impl ExecComposer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::Test;
+    use crate::mock::Test;
     use crate::*;
     use hex_literal::hex;
 
@@ -367,7 +447,6 @@ mod tests {
     use sp_keystore::{KeystoreExt, SyncCryptoStore};
     use sp_runtime::AccountId32;
     use std::str::FromStr;
-    use t3rn_primitives::MessagePayload;
 
     fn make_compose_out_of_raw_wat_code<T: Config>(
         wat: &str,
@@ -399,7 +478,7 @@ mod tests {
                 [0, 0, 0, 0],
                 Default::default(),
                 GatewayVendor::Substrate,
-                GatewayType::ProgrammableExternal,
+                GatewayType::ProgrammableExternal(0),
                 GatewayGenesisConfig {
                     modules_encoded: None,
                     signed_extension: None,
@@ -630,7 +709,7 @@ mod tests {
             let res = ExecComposer::pre_run_bunch_until_break::<Test>(
                 vec![example_contract],
                 escrow_account,
-                submitter,
+                submitter.clone(),
                 requester,
                 value,
                 input_data,
@@ -641,30 +720,32 @@ mod tests {
 
             assert_ok!(res.clone());
 
-            assert_eq!(
-                res,
-                Ok((
-                    vec![CircuitOutboundMessage::Write {
-                        name: b"call".to_vec(),
-                        arguments: vec![vec![4, 95], vec![1, 2, 3, 4]],
-                        expected_output: vec![
-                            GatewayExpectedOutput::Events {
-                                signatures: vec![
-                                    b"Call(address,value,uint64,dynamic_bytes)".to_vec()
-                                ]
-                            },
-                            GatewayExpectedOutput::Output {
-                                output: b"dynamic_bytes".to_vec()
-                            }
-                        ],
-                        payload: MessagePayload::Rpc {
-                            module_name: b"State".to_vec(),
-                            method_name: b"Call".to_vec(),
-                        }
-                    }],
-                    // Break round after 1 message
-                    1u16
-                )),
+            let succ_response = res.unwrap();
+            let test_messages_at_this_round = succ_response.0;
+            let first_message = test_messages_at_this_round[0].clone();
+
+            crate::message_assembly::substrate_gateway_protocol::tests::assert_signed_payload(
+                first_message,
+                submitter.into(),
+                vec![vec![4, 95], vec![1, 2, 3, 4]], // arguments
+                vec![
+                    GatewayExpectedOutput::Events {
+                        signatures: vec![b"Call(address,value,uint64,dynamic_bytes)".to_vec()],
+                    },
+                    GatewayExpectedOutput::Output {
+                        output: b"dynamic_bytes".to_vec(),
+                    },
+                ],
+                vec![0, 0, 4, 95, 1, 2, 3, 4],
+                vec![
+                    0, 0, 4, 95, 1, 2, 3, 4, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 14, 87, 81, 192, 38,
+                    229, 67, 178, 232, 171, 46, 176, 96, 153, 218, 161, 209, 229, 223, 71, 119,
+                    143, 119, 135, 250, 171, 69, 205, 241, 47, 227, 168, 14, 87, 81, 192, 38, 229,
+                    67, 178, 232, 171, 46, 176, 96, 153, 218, 161, 209, 229, 223, 71, 119, 143,
+                    119, 135, 250, 171, 69, 205, 241, 47, 227, 168,
+                ],
+                "state",
+                "call",
             );
         });
     }
