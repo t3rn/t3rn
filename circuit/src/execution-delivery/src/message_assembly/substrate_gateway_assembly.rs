@@ -56,10 +56,11 @@ where
         module_name: &'static str,
         fn_name: &'static str,
         args: Vec<u8>,
+        nonce: u32,
     ) -> Result<UncheckedExtrinsicV4<Call>, &'static str> {
         let call = self.assemble_call(module_name, fn_name, args)?;
 
-        self.assemble_signed_tx_offline(call, 0)
+        self.assemble_signed_tx_offline(call, nonce)
     }
 
     /// Who will like to assemble the call?

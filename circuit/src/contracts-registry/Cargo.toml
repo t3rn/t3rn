@@ -24,7 +24,7 @@ serde = { version = "1.0.124", optional = true, features = ["derive"] }
 sp-runtime = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 sp-std = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 sp-io = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-frame-benchmarking = { version = "3.1.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8', optional = true }
+frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8', optional = true }
 log = { version = "0.4.14", default-features = false }
 t3rn-primitives = { version = "0.1.0", default-features = false, path = "../primitives" }
 volatile-vm = { path = "../../../vm/volatile-vm", default-features = false }

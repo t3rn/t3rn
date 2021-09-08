@@ -67,10 +67,7 @@ use volatile_vm::DispatchRuntimeCall;
 pub use frame_support::{
     construct_runtime, parameter_types,
     traits::{Currency, ExistenceRequirement, Imbalance, KeyOwnerProofSystem},
-    weights::{
-        constants::RocksDbWeight, constants::WEIGHT_PER_SECOND, DispatchClass, IdentityFee,
-        RuntimeDbWeight, Weight,
-    },
+    weights::{constants::WEIGHT_PER_SECOND, DispatchClass, IdentityFee, RuntimeDbWeight, Weight},
     StorageValue,
 };
 
@@ -82,6 +79,7 @@ pub use pallet_multi_finality_verifier::Call as BridgePolkadotLikeMultiFinalityV
 pub use pallet_sudo::Call as SudoCall;
 pub use pallet_timestamp::Call as TimestampCall;
 
+use frame_support::weights::constants::RocksDbWeight;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
@@ -140,6 +138,7 @@ impl_opaque_keys! {
 }
 
 /// This runtime version.
+#[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("Circuit-runtime"),
     impl_name: create_runtime_str!("Circuit-runtime"),
@@ -502,7 +501,7 @@ impl pallet_xdns::Config for Runtime {
 
 impl pallet_contracts_registry::Config for Runtime {
     type Event = Event;
-    type WeightInfo = ();
+    type WeightInfo = pallet_contracts_registry::weights::SubstrateWeight<Runtime>;
 }
 
 pub struct ExampleDispatchRuntimeCall;
@@ -959,9 +958,7 @@ impl_runtime_apis! {
             sp_runtime::RuntimeString,
         > {
             use frame_benchmarking::{Benchmarking, BenchmarkBatch, add_benchmark, TrackedStorageKey};
-            //use frame_support::traits::StorageInfoTrait;
 
-            use frame_system_benchmarking::Pallet as SystemBench;
             impl frame_system_benchmarking::Config for Runtime {}
 
             let whitelist: Vec<TrackedStorageKey> = vec![
@@ -977,16 +974,11 @@ impl_runtime_apis! {
                 hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7").to_vec().into(),
             ];
 
-            //let storage_info = AllPalletsWithSystem::storage_info();
-
             let mut batches = Vec::<BenchmarkBatch>::new();
             let params = (&config, &whitelist);
 
-            // add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
-            // add_benchmark!(params, batches, pallet_balances, Balances);
-            // add_benchmark!(params, batches, pallet_timestamp, Timestamp);
-            add_benchmark!(params, batches, pallet_circuit_execution_delivery, ExecDelivery);
-
+            // add_benchmark!(params, batches, pallet_circuit_execution_delivery, ExecDelivery);
+            add_benchmark!(params, batches, pallet_contracts_registry, ContractsRegistry);
             if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
             Ok(batches)
         }
