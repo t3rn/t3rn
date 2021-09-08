@@ -10,6 +10,7 @@ pub trait GatewayInboundAssembly {
         module_name: &'static str,
         fn_name: &'static str,
         args: Vec<u8>,
+        nonce: u32,
     ) -> Result<UncheckedExtrinsicV4<Call>, &'static str>;
     fn assemble_call(
         &self,

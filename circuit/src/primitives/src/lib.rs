@@ -43,9 +43,19 @@ pub type ChainId = [u8; 4];
 #[derive(Clone, Eq, PartialEq, PartialOrd, Ord, Encode, Decode, Debug)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum GatewayType {
-    ProgrammableInternal,
-    ProgrammableExternal,
-    TxOnly,
+    ProgrammableInternal(u32),
+    ProgrammableExternal(u32),
+    TxOnly(u32),
+}
+
+impl GatewayType {
+    pub fn fetch_nonce(self) -> u32 {
+        match self {
+            Self::ProgrammableInternal(nonce) => nonce,
+            Self::ProgrammableExternal(nonce) => nonce,
+            Self::TxOnly(nonce) => nonce,
+        }
+    }
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
@@ -304,7 +314,7 @@ pub struct ExtraMessagePayload {
 pub fn retrieve_gateway_pointers(gateway_id: ChainId) -> Result<Vec<GatewayPointer>, &'static str> {
     Ok(vec![GatewayPointer {
         id: gateway_id,
-        gateway_type: GatewayType::ProgrammableExternal,
+        gateway_type: GatewayType::ProgrammableExternal(0),
         vendor: GatewayVendor::Substrate,
     }])
 }

@@ -99,7 +99,7 @@ jobs:
             -p t3rn-primitives
             --manifest-path circuit/Cargo.toml
 
-  check:
+  build:
     runs-on: ubuntu-20.04
     needs: [format, lint]
     steps:
@@ -141,22 +141,28 @@ jobs:
             circuit/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('circuit/Cargo.lock') }}
 
-      - name: 🏭 Check circuit
+      - name: 🏭 Build circuit
         uses: actions-rs/cargo@v1
         continue-on-error: false
         with:
-          command: check
-          args: --locked --manifest-path circuit/Cargo.toml
+          command: build
+          args: --locked --manifest-path circuit/Cargo.toml --release
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.sha }}-artifacts
+          path: circuit/target/release/circuit
+          if-no-files-found: error
 
   test:
     runs-on: ubuntu-20.04
-    needs: [format, lint]
+    needs: [format, lint, build]
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@master
         with:
           submodules: recursive
-
       - name: 🕒 Cache LLVM and Clang
         id: cache-llvm
         uses: actions/cache@v2
@@ -190,12 +196,15 @@ jobs:
             circuit/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('circuit/Cargo.lock') }}
 
-      - name: 📼 Run unit tests
-        uses: actions-rs/cargo@v1
-        continue-on-error: false
+      - name: Download circuit
+        uses: actions/download-artifact@v2
         with:
-          command: test
-          args: |
-            --workspace
-            --locked
-            --manifest-path circuit/Cargo.toml
+          name: ${{ github.sha }}-artifacts
+          path: circuit/target/release/
+
+      - name: 📼 Run unit tests
+        continue-on-error: false
+        run: |
+          sudo chmod +x circuit/target/release/circuit
+          circuit/target/release/circuit --alice --log=main,debug --tmp > /dev/null 2>&1 &
+          cargo test --workspace --locked --manifest-path circuit/Cargo.toml

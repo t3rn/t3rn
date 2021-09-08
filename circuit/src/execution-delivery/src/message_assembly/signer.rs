@@ -1,18 +1,16 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub mod app {
-    #[cfg(feature = "std")]
-    use std::fmt;
-    #[cfg(feature = "std")]
-    use std::fmt::Debug;
-
     use codec::{Compact, Decode, Encode, Error, Input, Output};
-
     use sp_application_crypto::{app_crypto, sr25519};
     use sp_io::hashing::blake2_256;
     use sp_runtime::generic::Era;
     use sp_runtime::{AccountId32, MultiAddress, MultiSignature, RuntimeDebug};
     use sp_std::vec::Vec;
+    #[cfg(feature = "std")]
+    use std::fmt;
+    #[cfg(feature = "std")]
+    use std::fmt::Debug;
 
     pub const CIRCUIT_CRYPTO_ID: sp_application_crypto::KeyTypeId =
         sp_application_crypto::KeyTypeId(*b"circ");

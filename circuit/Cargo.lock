@@ -1119,6 +1119,7 @@ dependencies = [
  "async-std",
  "async-trait",
  "bp-runtime",
+ "circuit-test-utils",
  "env_logger 0.8.4",
  "frame-system",
  "futures 0.1.31",
@@ -1232,6 +1233,20 @@ dependencies = [
  "substrate-wasm-builder 3.0.0",
  "t3rn-primitives",
  "volatile-vm",
+]
+
+[[package]]
+name = "circuit-test-utils"
+version = "0.1.0"
+dependencies = [
+ "frame-metadata",
+ "jsonrpsee-types",
+ "pallet-circuit-execution-delivery",
+ "parity-scale-codec",
+ "relay-substrate-client",
+ "sp-core",
+ "sp-std",
+ "sp-version",
 ]
 
 [[package]]
