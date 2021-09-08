@@ -263,6 +263,7 @@ benchmarks! {
                 test_contract_author_1.clone(),
                 test_contract_author_2.clone()
             ])
+        );
     }
 }
 
