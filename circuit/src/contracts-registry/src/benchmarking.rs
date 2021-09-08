@@ -56,27 +56,37 @@ const CODE_CALL: &str = r#"
 
 benchmarks! {
     add_new_contract {
-        let test_contract: RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber> = RegistryContract {
-            code_txt: CODE_CALL.as_bytes().to_vec(),
-            // hadrcoded bytes
-            bytes: vec![0, 97, 115, 109, 1, 0, 0, 0, 1, 17, 2, 96, 9, 127, 127, 126, 127, 127, 127, 127, 127, 127, 1, 127, 96, 0, 0, 2, 34, 2, 5, 115, 101, 97, 108, 48, 9, 115, 101, 97, 108, 95, 99, 97, 108, 108, 0, 0, 3, 101, 110, 118, 6, 109, 101, 109, 111, 114, 121, 2, 1, 1, 1, 3, 3, 2, 1, 1, 7, 17, 2, 4, 99, 97, 108, 108, 0, 1, 6, 100, 101, 112, 108, 111, 121, 0, 2, 10, 28, 2, 23, 0, 65, 4, 65, 32, 66, 0, 65, 36, 65, 8, 65, 44, 65, 4, 65, 127, 65, 0, 16, 0, 26, 11, 2, 0, 11, 11, 60, 3, 0, 65, 4, 11, 32, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 65, 36, 11, 8, 6, 0, 0, 0, 0, 0, 0, 0, 0, 65, 44, 11, 4, 1, 2, 3, 4], //wasm,
-            author: account("TEST", 1_u32, USER_SEED),
-            author_fees_per_single_use: None,
-            abi: None,
-            action_descriptions: vec![],
-            info: None,
-            meta: ContractMetadata::new(
-                vec![],
-                b"contract 1".to_vec(),
-                vec![],
-                vec![],
-                None,
-                None,
-                None,
-                None,
-                None,
-            ),
-        };
+        let test_contract: RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber> =
+            RegistryContract {
+                code_txt: CODE_CALL.as_bytes().to_vec(),
+                // hadrcoded bytes
+                bytes: vec![
+                    0, 97, 115, 109, 1, 0, 0, 0, 1, 17, 2, 96, 9, 127, 127, 126, 127, 127, 127, 127,
+                    127, 127, 1, 127, 96, 0, 0, 2, 34, 2, 5, 115, 101, 97, 108, 48, 9, 115, 101, 97,
+                    108, 95, 99, 97, 108, 108, 0, 0, 3, 101, 110, 118, 6, 109, 101, 109, 111, 114, 121,
+                    2, 1, 1, 1, 3, 3, 2, 1, 1, 7, 17, 2, 4, 99, 97, 108, 108, 0, 1, 6, 100, 101, 112,
+                    108, 111, 121, 0, 2, 10, 28, 2, 23, 0, 65, 4, 65, 32, 66, 0, 65, 36, 65, 8, 65, 44,
+                    65, 4, 65, 127, 65, 0, 16, 0, 26, 11, 2, 0, 11, 11, 60, 3, 0, 65, 4, 11, 32, 1, 1,
+                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                    1, 1, 0, 65, 36, 11, 8, 6, 0, 0, 0, 0, 0, 0, 0, 0, 65, 44, 11, 4, 1, 2, 3, 4,
+                ],
+                author: account("TEST", 1_u32, USER_SEED),
+                author_fees_per_single_use: None,
+                abi: None,
+                action_descriptions: vec![],
+                info: None,
+                meta: ContractMetadata::new(
+                    vec![],
+                    b"contract 1".to_vec(),
+                    vec![],
+                    vec![],
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                ),
+            };
         let contract_id = test_contract.generate_id::<T>();
         let requester: T::AccountId = account("TEST", 1_u32, USER_SEED);
     }: _(RawOrigin::Root, requester.clone(), test_contract.clone())
@@ -87,49 +97,51 @@ benchmarks! {
     purge {
         let requester_1: T::AccountId = account("TEST", 1_u32, USER_SEED);
 
-        let test_contract_1: RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber> = RegistryContract {
-            code_txt: b"some_code".to_vec(),
-            bytes: vec![],
-            author: account("TEST", 1_u32, USER_SEED),
-            author_fees_per_single_use: None,
-            abi: None,
-            action_descriptions: vec![],
-            info: None,
-            meta: ContractMetadata::new(
-                vec![],
-                b"contract 1".to_vec(),
-                vec![],
-                vec![],
-                None,
-                None,
-                None,
-                None,
-                None,
-            ),
-        };
+        let test_contract_1: RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber> =
+            RegistryContract {
+                code_txt: b"some_code".to_vec(),
+                bytes: vec![],
+                author: account("TEST", 1_u32, USER_SEED),
+                author_fees_per_single_use: None,
+                abi: None,
+                action_descriptions: vec![],
+                info: None,
+                meta: ContractMetadata::new(
+                    vec![],
+                    b"contract 1".to_vec(),
+                    vec![],
+                    vec![],
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                ),
+            };
 
         let requester_2: T::AccountId = account("TEST", 2_u32, USER_SEED);
 
-        let test_contract_2: RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber> = RegistryContract {
-            code_txt: b"some_code_2".to_vec(),
-            bytes: vec![],
-            author: account("TEST", 2_u32, USER_SEED),
-            author_fees_per_single_use: None,
-            abi: None,
-            action_descriptions: vec![],
-            info: None,
-            meta: ContractMetadata::new(
-                vec![],
-                b"contract 2".to_vec(),
-                vec![],
-                vec![],
-                None,
-                None,
-                None,
-                None,
-                None,
-            ),
-        };
+        let test_contract_2: RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber> =
+            RegistryContract {
+                code_txt: b"some_code_2".to_vec(),
+                bytes: vec![],
+                author: account("TEST", 2_u32, USER_SEED),
+                author_fees_per_single_use: None,
+                abi: None,
+                action_descriptions: vec![],
+                info: None,
+                meta: ContractMetadata::new(
+                    vec![],
+                    b"contract 2".to_vec(),
+                    vec![],
+                    vec![],
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                ),
+            };
 
         let contract_id_1 = test_contract_1.generate_id::<T>();
         crate::ContractsRegistry::<T>::insert(
@@ -144,11 +156,20 @@ benchmarks! {
         );
     }: _(RawOrigin::Root, requester_1.clone(), contract_id_1.clone())
     verify {
-        assert_ok!(ContractsRegistry::<T>::purge(RawOrigin::Root.into(), requester_2, contract_id_2));
+        assert_ok!(ContractsRegistry::<T>::purge(
+            RawOrigin::Root.into(),
+            requester_2,
+            contract_id_2
+        ));
     }
 
     fetch_contracts {
-        let test_contract_author_1: RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber> = RegistryContract {
+        let test_contract_author_1: RegistryContract<
+            T::Hash,
+            T::AccountId,
+            BalanceOf<T>,
+            T::BlockNumber,
+        > = RegistryContract {
             code_txt: b"some_code_1".to_vec(),
             bytes: vec![],
             author: account("TEST", 1_u32, USER_SEED),
@@ -156,9 +177,24 @@ benchmarks! {
             abi: None,
             action_descriptions: vec![],
             info: None,
-            meta: ContractMetadata::new(vec![], vec![], vec![], vec![], Some(b"contract 1".to_vec()), None, None, None, None),
+            meta: ContractMetadata::new(
+                vec![],
+                vec![],
+                vec![],
+                vec![],
+                Some(b"contract 1".to_vec()),
+                None,
+                None,
+                None,
+                None,
+            ),
         };
-        let test_contract_author_2: RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber> = RegistryContract {
+        let test_contract_author_2: RegistryContract<
+            T::Hash,
+            T::AccountId,
+            BalanceOf<T>,
+            T::BlockNumber,
+        > = RegistryContract {
             code_txt: b"some_code_2".to_vec(),
             bytes: vec![],
             author: account("TEST", 1_u32, USER_SEED),
@@ -166,9 +202,24 @@ benchmarks! {
             abi: None,
             action_descriptions: vec![],
             info: None,
-            meta: ContractMetadata::new(vec![], vec![], vec![], vec![], Some(b"contract 2".to_vec()), None, None, None, None),
+            meta: ContractMetadata::new(
+                vec![],
+                vec![],
+                vec![],
+                vec![],
+                Some(b"contract 2".to_vec()),
+                None,
+                None,
+                None,
+                None,
+            ),
         };
-        let test_contract_author_3: RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber> = RegistryContract {
+        let test_contract_author_3: RegistryContract<
+            T::Hash,
+            T::AccountId,
+            BalanceOf<T>,
+            T::BlockNumber,
+        > = RegistryContract {
             code_txt: b"some_code_3".to_vec(),
             bytes: vec![],
             author: account("TEST", 2_u32, USER_SEED),
@@ -176,27 +227,43 @@ benchmarks! {
             abi: None,
             action_descriptions: vec![],
             info: None,
-            meta: ContractMetadata::new(vec![], vec![], vec![], vec![], None, None, None, None, None),
+            meta: ContractMetadata::new(
+                vec![],
+                vec![],
+                vec![],
+                vec![],
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
         };
 
-            crate::ContractsRegistry::<T>::insert(
-                test_contract_author_1.generate_id::<T>(),
-                test_contract_author_1.clone(),
-            );
-            crate::ContractsRegistry::<T>::insert(
-                test_contract_author_2.generate_id::<T>(),
-                test_contract_author_2.clone(),
-            );
-            crate::ContractsRegistry::<T>::insert(
-                test_contract_author_3.generate_id::<T>(),
-                test_contract_author_3.clone(),
-            );
+        crate::ContractsRegistry::<T>::insert(
+            test_contract_author_1.generate_id::<T>(),
+            test_contract_author_1.clone(),
+        );
+        crate::ContractsRegistry::<T>::insert(
+            test_contract_author_2.generate_id::<T>(),
+            test_contract_author_2.clone(),
+        );
+        crate::ContractsRegistry::<T>::insert(
+            test_contract_author_3.generate_id::<T>(),
+            test_contract_author_3.clone(),
+        );
 
         let author_1: T::AccountId = account("TEST", 1_u32, USER_SEED);
 
     }: {ContractsRegistry::<T>::fetch_contracts(Some(author_1.clone()), Some(b"contract".to_vec()))}
     verify {
-        assert_eq!(ContractsRegistry::<T>::fetch_contracts(Some(author_1), Some(b"contract".to_vec())), Ok(vec![test_contract_author_1.clone(), test_contract_author_2.clone()]));
+        assert_eq!(
+            ContractsRegistry::<T>::fetch_contracts(Some(author_1), Some(b"contract".to_vec())),
+            Ok(vec![
+                test_contract_author_1.clone(),
+                test_contract_author_2.clone()
+            ])
+        );
     }
 }
 
