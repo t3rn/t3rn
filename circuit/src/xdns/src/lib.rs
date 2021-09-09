@@ -29,7 +29,7 @@ use frame_system::ensure_signed;
 use serde::{Deserialize, Serialize};
 use sp_runtime::{traits::Hash, RuntimeDebug};
 use sp_std::prelude::*;
-use sp_std::{vec, vec::Vec};
+use sp_std::vec::Vec;
 use t3rn_primitives::abi::GatewayABIConfig;
 use t3rn_primitives::{ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor};
 
@@ -43,7 +43,6 @@ mod tests;
 
 mod weights;
 
-use frame_metadata::{ExtrinsicMetadata, RuntimeMetadataV13};
 pub use weights::*;
 
 /// A hash based on encoding the complete XdnsRecord
@@ -152,13 +151,10 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
 pub mod pallet {
     // Import various types used to declare pallet in scope.
     use super::*;
-    use bp_runtime::{CIRCUIT_CHAIN_ID, GATEWAY_CHAIN_ID, KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID};
     use frame_support::pallet_prelude::*;
     use frame_support::traits::Time;
     use frame_system::pallet_prelude::*;
     use sp_std::convert::TryInto;
-    use sp_version::RuntimeVersion;
-    use t3rn_primitives::abi::{CryptoAlgo, HasherAlgo};
     use t3rn_primitives::{ChainId, EscrowTrait, GatewayType, GatewayVendor};
 
     #[pallet::config]

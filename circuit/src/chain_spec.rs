@@ -25,9 +25,9 @@ use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
 use circuit_runtime::{
-    AccountId, AuraConfig, BalancesConfig, ChainId, ContractsRegistryConfig, EVMConfig,
-    GenesisConfig, GrandpaConfig, MultiFinalityVerifierConfig, SessionConfig, SessionKeys,
-    Signature, SudoConfig, SystemConfig, XDNSConfig, WASM_BINARY,
+    AccountId, AuraConfig, BalancesConfig, ContractsRegistryConfig, EVMConfig, GenesisConfig,
+    GrandpaConfig, MultiFinalityVerifierConfig, SessionConfig, SessionKeys, Signature, SudoConfig,
+    SystemConfig, XDNSConfig, WASM_BINARY,
 };
 use jsonrpc_runtime_client::{create_rpc_client, get_metadata, ConnectionParams};
 use pallet_xdns::XdnsRecord;
@@ -221,7 +221,7 @@ impl Alternative {
                                 get_account_id_from_seed::<sr25519::Public>("Eve"),
                             )),
                         ],
-                        vec![],
+                        seed_xdns_registry().unwrap_or_default(),
                         true,
                     )
                 },
@@ -323,7 +323,7 @@ fn derived_dave_account_is_as_expected() {
 }
 
 #[test]
-fn fetch_xdns() {
+fn fetch_xdns_should_return_results() {
     let actual = seed_xdns_registry().unwrap();
     assert_eq!(actual.len(), 2);
 }

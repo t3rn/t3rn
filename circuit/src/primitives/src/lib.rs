@@ -99,6 +99,18 @@ pub struct GatewayGenesisConfig {
     pub genesis_hash: Vec<u8>,
 }
 
+impl Default for GatewayGenesisConfig {
+    fn default() -> Self {
+        Self {
+            extrinsics_version: 0,
+            runtime_version: Default::default(),
+            genesis_hash: vec![],
+            modules_encoded: None,
+            signed_extension: None,
+        }
+    }
+}
+
 /// A struct that encodes RPC parameters required for a call to a smart-contract.
 #[derive(Eq, PartialEq, Encode, Decode, Debug, Clone, Default)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]

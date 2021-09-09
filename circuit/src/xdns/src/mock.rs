@@ -144,11 +144,45 @@ impl Default for ExtBuilder {
 }
 
 impl ExtBuilder {
-    pub(crate) fn with_xdns_records(
-        mut self,
-        xdns_records: Vec<XdnsRecord<AccountId>>,
-    ) -> ExtBuilder {
-        self.known_xdns_records = xdns_records;
+    pub(crate) fn with_default_xdns_records(mut self) -> ExtBuilder {
+        let circuit_xdns_record = <XdnsRecord<AccountId>>::new(
+            vec![],
+            *b"circ",
+            Default::default(),
+            GatewayVendor::Substrate,
+            GatewayType::ProgrammableExternal(0),
+            Default::default(),
+        );
+        let gateway_xdns_record = <XdnsRecord<AccountId>>::new(
+            vec![],
+            *b"gate",
+            Default::default(),
+            GatewayVendor::Substrate,
+            GatewayType::ProgrammableExternal(0),
+            Default::default(),
+        );
+        let polkadot_xdns_record = <XdnsRecord<AccountId>>::new(
+            vec![],
+            *b"pdot",
+            Default::default(),
+            GatewayVendor::Substrate,
+            GatewayType::ProgrammableExternal(0),
+            Default::default(),
+        );
+        let kusama_xdns_record = <XdnsRecord<AccountId>>::new(
+            vec![],
+            *b"ksma",
+            Default::default(),
+            GatewayVendor::Substrate,
+            GatewayType::ProgrammableExternal(0),
+            Default::default(),
+        );
+        self.known_xdns_records = vec![
+            circuit_xdns_record,
+            gateway_xdns_record,
+            polkadot_xdns_record,
+            kusama_xdns_record,
+        ];
         self
     }
 
@@ -162,7 +196,7 @@ impl ExtBuilder {
             .expect("Pallet balances storage can be assimilated");
 
         pallet_xdns::GenesisConfig::<Test> {
-            known_xdns_records: vec![],
+            known_xdns_records: self.known_xdns_records,
         }
         .assimilate_storage(&mut t)
         .expect("Pallet contracts registry can be assimilated");
