@@ -484,6 +484,7 @@ mod tests {
                     signed_extension: None,
                     runtime_version: TEST_RUNTIME_VERSION,
                     genesis_hash: Default::default(),
+                    extrinsics_version: 0,
                 },
             ),
         );

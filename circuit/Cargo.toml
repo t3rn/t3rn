@@ -56,6 +56,8 @@ sp-inherents = { git = "https://github.com/paritytech/substrate", branch = 'polk
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 substrate-frame-rpc-system = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 t3rn-primitives = { path = "src/primitives" }
+jsonrpc-runtime-client = { path = "src/rpc-test/jsonrpc-runtime-client" }
+async-std = "1.10.0"
 
 [build-dependencies]
 substrate-build-script-utils = "3.0.0"

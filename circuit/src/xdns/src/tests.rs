@@ -54,12 +54,13 @@ fn should_add_a_new_xdns_record_if_it_doesnt_exist() {
                 structs: vec![],
             },
             GatewayVendor::Substrate,
-            GatewayType::TxOnly,
+            GatewayType::TxOnly(0),
             GatewayGenesisConfig {
                 modules_encoded: None,
                 signed_extension: None,
                 runtime_version: Default::default(),
                 genesis_hash: vec![],
+                extrinsics_version: 0,
             },
         ));
         assert_eq!(XDNSRegistry::<Test>::iter().count(), 3);
@@ -89,10 +90,11 @@ fn should_not_add_a_new_xdns_record_if_it_already_exists() {
                     structs: vec![],
                 },
                 GatewayVendor::Substrate,
-                GatewayType::TxOnly,
+                GatewayType::TxOnly(0),
                 GatewayGenesisConfig {
                     modules_encoded: None,
                     signed_extension: None,
+                    extrinsics_version: 0,
                     runtime_version: Default::default(),
                     genesis_hash: vec![],
                 },

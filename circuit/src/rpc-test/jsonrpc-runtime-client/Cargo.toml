@@ -13,6 +13,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 futures = "0.1.29"
 hyper = "~0.12.35"
 jsonrpc-core-client = { version = "15.1.0", features = ["http"] }
+jsonrpsee-types = "0.2.0"
 log = "0.4.8"
 env_logger = "0.8.2"
 
@@ -20,6 +21,7 @@ node-primitives = { version = "2.0.0", git = "https://github.com/paritytech/subs
 sp-tracing = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.8" }
 sc-rpc = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.8"}
 sp-core = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.8"}
+frame-metadata = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.8"}
 
 async-std = { version = "1.6.5", features = ["attributes", "tokio1"] }
 async-trait = "0.1.40"

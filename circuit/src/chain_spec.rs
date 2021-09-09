@@ -14,22 +14,23 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity Bridges Common.  If not, see <http://www.gnu.org/licenses/>.
 
+use std::{collections::BTreeMap, str::FromStr};
+
+use async_std::task;
 use bp_circuit::derive_account_from_gateway_id;
 use bp_runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID};
-use circuit_runtime::{
-    AccountId, AuraConfig, BalancesConfig, ContractsRegistryConfig, EVMConfig, GenesisConfig,
-    GrandpaConfig, MultiFinalityVerifierConfig, SessionConfig, SessionKeys, Signature, SudoConfig,
-    SystemConfig, XDNSConfig, WASM_BINARY,
-};
-use frame_benchmarking::frame_support::metadata::RuntimeMetadataV13;
-use pallet_xdns::XdnsRecord;
-use sc_cli::RuntimeVersion;
-use serde_json::Value;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{sr25519, Pair, Public};
+use sp_core::{sr25519, Encode, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use std::{collections::BTreeMap, fs::File, io::BufReader, str::FromStr};
+
+use circuit_runtime::{
+    AccountId, AuraConfig, BalancesConfig, ChainId, ContractsRegistryConfig, EVMConfig,
+    GenesisConfig, GrandpaConfig, MultiFinalityVerifierConfig, SessionConfig, SessionKeys,
+    Signature, SudoConfig, SystemConfig, XDNSConfig, WASM_BINARY,
+};
+use jsonrpc_runtime_client::{create_rpc_client, get_metadata, ConnectionParams};
+use pallet_xdns::XdnsRecord;
 use t3rn_primitives::{GatewayGenesisConfig, GatewayType, GatewayVendor};
 
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
@@ -72,43 +73,63 @@ pub fn get_authority_keys_from_seed(s: &str) -> (AccountId, AuraId, GrandpaId) {
     )
 }
 
-/// Helper function to generate Polkadot and Kusama XdnsRecords from file
-fn fetch_xdns_records_from_file() -> Result<Vec<XdnsRecord<AccountId>>, std::io::Error> {
-    // Open the file in read-only mode with buffer.
-    let polkadot_metadata_file = File::open("../network_metadata/polkadot_metadata.json")?;
-    let polkadot_runtime_version_file =
-        File::open("../network_metadata/polkadot_runtime_version.json")?;
-    let kusama_metadata_file = File::open("../network_metadata/kusama_metadata.json")?;
-    let kusama_runtime_version_file =
-        File::open("../network_metadata/kusama_runtime_version.json")?;
+/// Helper function that fetches metadata from live networks and generates an XdnsRecord
+fn fetch_xdns_record_from_rpc(
+    params: &ConnectionParams,
+    chain_id: t3rn_primitives::ChainId,
+) -> Result<XdnsRecord<AccountId>, std::io::Error> {
+    task::block_on(async move {
+        let client = create_rpc_client(params).await.unwrap();
 
-    let reader = BufReader::new(polkadot_metadata_file);
-    let polkadot_metadata: Value = serde_json::from_reader(reader)?;
-    let reader = BufReader::new(polkadot_runtime_version_file);
-    let polkadot_runtime_version: RuntimeVersion = serde_json::from_reader(reader)?;
-    Value::to
-    let polkadot_xdns: XdnsRecord<AccountId> = <XdnsRecord<AccountId>>::new(
-        b"https://rpc.polkadot.io".to_vec(),
-        POLKADOT_CHAIN_ID,
-        Default::default(),
-        GatewayVendor::Substrate,
-        GatewayType::ProgrammableExternal,
-        GatewayGenesisConfig {
-            modules_encoded: Some(polkadot_metadata["modules"]),
-            extrinsics_version: polkadot_metadata["extrinsic"]["version"].as_u64().into(),
-            signed_extension: Some(polkadot_metadata["extrinsic"]["signed_extensions"].encode_as()),
-            runtime_version: polkadot_runtime_version,
-            genesis_hash: b"91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3"
-                .to_vec(),
-        },
-    );
-    //
-    // let kusama_xdns: XdnsRecord<AccountId>  = XdnsRecord {
-    //
-    // }
+        let runtime_version = client.clone().runtime_version().await.unwrap();
+        let metadata = get_metadata(&client.clone()).await.unwrap();
 
-    // vec![polkadot_xdns, kusama_xdns]
-    Ok(vec![polkadot_xdns])
+        let mut modules_vec = vec![];
+        let mut extension_vec = vec![];
+        metadata.modules.encode_to(&mut modules_vec);
+        metadata
+            .extrinsic
+            .signed_extensions
+            .encode_to(&mut extension_vec);
+
+        Ok(<XdnsRecord<AccountId>>::new(
+            format!("wss://{}", params.host).as_bytes().to_vec(),
+            chain_id,
+            Default::default(),
+            GatewayVendor::Substrate,
+            GatewayType::ProgrammableExternal(0),
+            GatewayGenesisConfig {
+                modules_encoded: Some(modules_vec),
+                extrinsics_version: metadata.extrinsic.version.into(),
+                signed_extension: Some(extension_vec),
+                runtime_version,
+                genesis_hash: client.genesis_hash.0.to_vec(),
+            },
+        ))
+    })
+}
+
+/// Helper function to generate Polkadot and Kusama XdnsRecords from RPC
+fn seed_xdns_registry() -> Result<Vec<XdnsRecord<AccountId>>, std::io::Error> {
+    let polkadot_connection_params: ConnectionParams = ConnectionParams {
+        host: String::from("rpc.polkadot.io"),
+        port: 443,
+        secure: true,
+    };
+
+    let kusama_connection_params: ConnectionParams = ConnectionParams {
+        host: String::from("kusama-rpc.polkadot.io"),
+        port: 443,
+        secure: true,
+    };
+
+    let polkadot_xdns =
+        fetch_xdns_record_from_rpc(&polkadot_connection_params, POLKADOT_CHAIN_ID).unwrap();
+
+    let kusama_xdns =
+        fetch_xdns_record_from_rpc(&kusama_connection_params, KUSAMA_CHAIN_ID).unwrap();
+
+    Ok(vec![polkadot_xdns, kusama_xdns])
 }
 
 impl Alternative {
@@ -145,7 +166,7 @@ impl Alternative {
                                 get_account_id_from_seed::<sr25519::Public>("Alice"),
                             )),
                         ],
-                        fetch_xdns_records_from_file().unwrap_or_default(),
+                        seed_xdns_registry().unwrap_or_default(),
                         true,
                     )
                 },
@@ -299,4 +320,10 @@ fn derived_dave_account_is_as_expected() {
         derived.to_string(),
         "5C9NFeDzVveQeCvyUDA7fJv47NygtdL69i6JjmBAGf1KEDv5".to_string()
     );
+}
+
+#[test]
+fn fetch_xdns() {
+    let actual = seed_xdns_registry().unwrap();
+    assert_eq!(actual.len(), 2);
 }
