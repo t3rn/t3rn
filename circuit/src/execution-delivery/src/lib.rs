@@ -72,10 +72,10 @@ use volatile_vm::VolatileVM;
 pub mod tests;
 
 #[cfg(test)]
-pub mod mock;
-
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
+#[cfg(test)]
+pub mod mock;
 
 pub mod exec_composer;
 pub mod message_assembly;

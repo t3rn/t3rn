@@ -2,20 +2,14 @@
 
 use super::*;
 
-use crate::{Call, Config, Pallet};
+use crate::{Call, Config, DefaultPolkadotLikeGateway, Pallet as ExecDelivery};
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_system::RawOrigin;
 type AccountId = sp_runtime::AccountId32;
 use frame_support::assert_ok;
-//use std::str::FromStr;
 use sp_runtime::create_runtime_str;
 use sp_version::RuntimeVersion;
-use t3rn_primitives::transfers::BalanceOf;
-use t3rn_primitives::{Compose, ExecPhase, ExecStep, InterExecSchedule};
-// use sp_keystore::testing::KeyStore;
-// use sp_keystore::{KeystoreExt, SyncCryptoStore};
-// use sp_core::{crypto::Pair, sr25519};
-// pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"circ");
+use t3rn_primitives::{transfers::BalanceOf, Compose, ExecPhase, ExecStep, InterExecSchedule};
 
 pub const TEST_RUNTIME_VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("test-runtime"),
@@ -46,8 +40,8 @@ benchmarks! {
                         name: b"component1".to_vec(),
                         code_txt: r#""#.as_bytes().to_vec(),
                         exec_type: b"exec_escrow".to_vec(),
-                        dest: AccountId::new([1 as u8; 32]),//T::AccountId::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap(),//AccountId::new([1 as u8; 32]),
-                        value: BalanceOf::from(10u32),
+                        dest: T::AccountId::decode(&mut &hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d")[..]).expect("should not fail for dummy data"), //AccountId::new([1 as u8; 32]),
+                        value: BalanceOf::<T>::from(10u32),
                         bytes: vec![],
                         input_data: vec![],
                     },
@@ -60,13 +54,13 @@ benchmarks! {
             name: b"component1".to_vec(),
             code_txt: r#""#.as_bytes().to_vec(),
             exec_type: b"exec_escrow".to_vec(),
-            dest: AccountId::new([1 as u8; 32]),//T::AccountId::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap(),//AccountId::new([1 as u8; 32]),
-            value: BalanceOf::from(10u32),
+            dest: T::AccountId::decode(&mut &hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d")[..]).expect("should not fail for dummy data"), //AccountId::new([1 as u8; 32]),
+            value: BalanceOf::<T>::from(10u32),
             bytes: vec![],
             input_data: vec![],
         }];
     }: {
-        Pallet::<T>::decompose_io_schedule(components, io_schedule).unwrap();
+        Pallet::<T>::decompose_io_schedule(components.clone(), io_schedule.clone()).unwrap();
     } verify {
         assert_eq!(
             Pallet::<T>::decompose_io_schedule(components, io_schedule).unwrap(),
@@ -94,12 +88,12 @@ benchmarks! {
         //     }
 
         let gateway_vendor = GatewayVendor::Substrate;
-        let gateway_type = GatewayType::ProgrammableInternal;
+        let gateway_type = GatewayType::ProgrammableInternal(0);
 
         let _gateway_pointer = GatewayPointer {
             id: [0; 4],
             vendor: GatewayVendor::Substrate,
-            gateway_type: GatewayType::ProgrammableInternal,
+            gateway_type: GatewayType::ProgrammableInternal(0),
         };
 
         let gateway_genesis = GatewayGenesisConfig {
@@ -109,22 +103,11 @@ benchmarks! {
             genesis_hash: Default::default(),
         };
 
-        let first_header = GenericPrimitivesHeader {
-            parent_hash: None,
-            number: 1,
-            state_root: None,
-            extrinsics_root: None,
-            digest: None,
-            // parent_hash: Default::default(),
-            // number: 0,
-            // state_root: Default::default(), //Some(H256::from_slice(&hex!("b2fc47904df5e355c6ab476d89fbc0733aeddbe302f0b94ba4eea9283f7e89e7"))),
-            // extrinsics_root: Default::default(), //Some(H256::from_slice(&hex!("03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c111314"))),
-            // digest: Default::default(),
-        };
+        let first_header: CurrentHeader<T, DefaultPolkadotLikeGateway> = bp_test_utils::test_header(Default::default());
 
         let authorities = Some(vec![]);
 
-    }: _(RawOrigin::Signed(caller), url, gateway_id, gateway_abi, gateway_vendor, gateway_type, gateway_genesis, first_header, authorities)
+    }: _(RawOrigin::Signed(caller), url, gateway_id, gateway_abi, gateway_vendor, gateway_type, gateway_genesis, first_header.encode(), authorities)
     verify {
         assert_eq!(1,1);
     }
@@ -180,7 +163,8 @@ benchmarks! {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::{new_test_ext, Test};
+    use crate::mock::Test;
+    use crate::tests::new_test_ext;
     use frame_support::assert_ok;
 
     #[test]
@@ -193,7 +177,7 @@ mod tests {
     #[test]
     fn benchmark_decompose_io_schedule() {
         new_test_ext().execute_with(|| {
-            assert_ok(test_benchmark_decompose_io_schedule::<Test>());
+            assert_ok!(test_benchmark_decompose_io_schedule::<Test>());
         })
     }
 
@@ -215,5 +199,5 @@ mod tests {
 impl_benchmark_test_suite!(
     ExecDelivery,
     crate::tests::new_test_ext(),
-    crate::tests::Test
+    crate::mock::Test
 );

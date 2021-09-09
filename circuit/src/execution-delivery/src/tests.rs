@@ -38,6 +38,13 @@ use crate::mock::*;
 
 use crate::mock::AccountId;
 
+pub fn new_test_ext() -> TestExternalities {
+    let t = frame_system::GenesisConfig::default()
+        .build_storage::<Test>()
+        .unwrap();
+    TestExternalities::new(t)
+}
+
 #[test]
 fn it_submits_empty_composable_exec_request() {
     sp_io::TestExternalities::default().execute_with(|| {
@@ -589,12 +596,12 @@ fn test_register_gateway_with_default_polka_like_header() {
     let gateway_abi: GatewayABIConfig = Default::default();
 
     let gateway_vendor = GatewayVendor::Substrate;
-    let gateway_type = GatewayType::ProgrammableInternal;
+    let gateway_type = GatewayType::ProgrammableInternal(0);
 
     let _gateway_pointer = GatewayPointer {
         id: [0; 4],
         vendor: GatewayVendor::Substrate,
-        gateway_type: GatewayType::ProgrammableInternal,
+        gateway_type: GatewayType::ProgrammableInternal(0),
     };
 
     let gateway_genesis = GatewayGenesisConfig {
@@ -632,12 +639,12 @@ fn test_register_gateway_with_u64_substrate_header() {
     let gateway_abi: GatewayABIConfig = Default::default();
 
     let gateway_vendor = GatewayVendor::Substrate;
-    let gateway_type = GatewayType::ProgrammableInternal;
+    let gateway_type = GatewayType::ProgrammableInternal(0);
 
     let _gateway_pointer = GatewayPointer {
         id: [0; 4],
         vendor: GatewayVendor::Substrate,
-        gateway_type: GatewayType::ProgrammableInternal,
+        gateway_type: GatewayType::ProgrammableInternal(0),
     };
 
     let gateway_genesis = GatewayGenesisConfig {
@@ -675,12 +682,12 @@ fn test_register_gateway_with_default_eth_like_header() {
     let gateway_abi: GatewayABIConfig = Default::default();
 
     let gateway_vendor = GatewayVendor::Substrate;
-    let gateway_type = GatewayType::ProgrammableInternal;
+    let gateway_type = GatewayType::ProgrammableInternal(0);
 
     let _gateway_pointer = GatewayPointer {
         id: [0; 4],
         vendor: GatewayVendor::Substrate,
-        gateway_type: GatewayType::ProgrammableInternal,
+        gateway_type: GatewayType::ProgrammableInternal(0),
     };
 
     let gateway_genesis = GatewayGenesisConfig {
@@ -718,12 +725,12 @@ fn test_register_gateway_with_u64_eth_like_header() {
     let gateway_abi: GatewayABIConfig = Default::default();
 
     let gateway_vendor = GatewayVendor::Substrate;
-    let gateway_type = GatewayType::ProgrammableInternal;
+    let gateway_type = GatewayType::ProgrammableInternal(0);
 
     let _gateway_pointer = GatewayPointer {
         id: [0; 4],
         vendor: GatewayVendor::Substrate,
-        gateway_type: GatewayType::ProgrammableInternal,
+        gateway_type: GatewayType::ProgrammableInternal(0),
     };
 
     let gateway_genesis = GatewayGenesisConfig {
