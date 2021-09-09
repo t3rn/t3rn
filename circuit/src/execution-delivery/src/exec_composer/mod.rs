@@ -428,19 +428,27 @@ impl ExecComposer {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::exec_composer::{
+        ExecComposer, PessimisticOutputMode, OptimisticOutputMode, RawAliveContractInfo, TEST_RUNTIME_VERSION,
+    };
     use crate::mock::Test;
-    use crate::*;
+    use crate::{
+        BalanceOf, Compose, Config, ContractActionDesc, GatewayABIConfig, GatewayGenesisConfig,
+        RegistryContract, KEY_TYPE,
+    };
+    use codec::Encode;
     use hex_literal::hex;
+    use t3rn_primitives::{GatewayExpectedOutput, GatewayType, GatewayVendor};
 
-    use sp_core::{crypto::Pair, sr25519};
-
-    use frame_support::assert_ok;
+    use sp_core::{crypto::Pair, sr25519, Hasher};
+    use frame_support::{assert_ok, weights::Weight};
     use sp_core::H256;
     use sp_io::TestExternalities;
     use sp_keystore::testing::KeyStore;
     use sp_keystore::{KeystoreExt, SyncCryptoStore};
     use sp_runtime::AccountId32;
+    use volatile_vm::VolatileVM;
+    use volatile_vm::wasm::{RunMode, PrefabWasmModule};
     use std::str::FromStr;
 
     fn make_compose_out_of_raw_wat_code<T: Config>(
@@ -517,7 +525,7 @@ mod tests {
         let compose = make_compose_out_of_raw_wat_code::<T>(wat, input_data, dest, value);
 
         RegistryContract::from_compose(
-            compose,
+            compose.clone(),
             vec![],
             Default::default(),
             None,
@@ -526,7 +534,7 @@ mod tests {
                 trie_id: Default::default(),
                 storage_size: Default::default(),
                 pair_count: Default::default(),
-                code_hash: Default::default(),// TODO : Make it work with Hashing
+                code_hash: T::Hashing::hash(&compose.bytes),
                 rent_allowance: Default::default(),
                 rent_paid: Default::default(),
                 deduct_block: Default::default(),
@@ -902,9 +910,21 @@ mod tests {
                 requester.clone(), 
                 value,
             );
+            let schedule = <Test as VolatileVM>::Schedule::get();
+            let executable = match PrefabWasmModule::<Test>::from_code(
+                temp_contract_one.bytes.clone(),
+                &schedule,
+                RunMode::Dry,
+                None,
+            ) {
+                Ok(ex) => ex,
+                Err(_) => todo!(),
+            };
             let res = ExecComposer::preload_bunch_of_contracts::<Test>(vec![temp_contract_one], Default::default());
 
             assert_ok!(res);
+            // If we are able to unwrap, it means the contract was inserted.
+            let _fetched_contract = volatile_vm::Pallet::<Test>::get_contract_code_lazy(executable.code_hash).unwrap();
         });
     }
 
@@ -1117,6 +1137,41 @@ mod tests {
             );
             
             assert_eq!(res, res);
+        });
+    }
+
+    #[test]
+    fn run_single_contract_succeeds()
+    {        
+        let mut ext = TestExternalities::new_empty();
+        let requester = AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+        let value = BalanceOf::<Test>::from(0u32);
+        ext.execute_with(|| {
+            insert_default_xdns_record();
+            
+            let mut temp_contract_one = make_registry_contract_out_of_wat::<Test>(
+                CODE_CALL, 
+                vec![], 
+                requester.clone(), 
+                value,
+            );
+            
+            let response = ExecComposer::preload_bunch_of_contracts::<Test>(vec![temp_contract_one.clone()], Default::default());
+            assert_ok!(response);
+
+            let res = ExecComposer::run_single_contract::<Test, OptimisticOutputMode>(
+                &mut temp_contract_one,
+                Default::default(),
+                Weight::MAX,
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(),// requester
+                Default::default(),
+                Default::default(),
+            );
+
+            assert_ok!(res);
         });
     }
 }
