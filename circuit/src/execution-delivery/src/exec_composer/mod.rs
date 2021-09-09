@@ -429,7 +429,8 @@ impl ExecComposer {
 #[cfg(test)]
 mod tests {
     use crate::exec_composer::{
-        ExecComposer, PessimisticOutputMode, OptimisticOutputMode, RawAliveContractInfo, TEST_RUNTIME_VERSION,
+        ExecComposer, OptimisticOutputMode, PessimisticOutputMode, RawAliveContractInfo,
+        TEST_RUNTIME_VERSION,
     };
     use crate::mock::Test;
     use crate::{
@@ -440,16 +441,16 @@ mod tests {
     use hex_literal::hex;
     use t3rn_primitives::{GatewayExpectedOutput, GatewayType, GatewayVendor};
 
-    use sp_core::{crypto::Pair, sr25519, Hasher};
     use frame_support::{assert_ok, weights::Weight};
     use sp_core::H256;
+    use sp_core::{crypto::Pair, sr25519, Hasher};
     use sp_io::TestExternalities;
     use sp_keystore::testing::KeyStore;
     use sp_keystore::{KeystoreExt, SyncCryptoStore};
     use sp_runtime::AccountId32;
-    use volatile_vm::VolatileVM;
-    use volatile_vm::wasm::{RunMode, PrefabWasmModule};
     use std::str::FromStr;
+    use volatile_vm::wasm::{PrefabWasmModule, RunMode};
+    use volatile_vm::VolatileVM;
 
     fn make_compose_out_of_raw_wat_code<T: Config>(
         wat_string: &str,
@@ -459,7 +460,7 @@ mod tests {
     ) -> Compose<T::AccountId, BalanceOf<T>> {
         let wasm = match wat::parse_str(wat_string.clone()) {
             Ok(wasm) => wasm,
-            Err(_err) => " invalid code str ".encode()
+            Err(_err) => " invalid code str ".encode(),
         };
         Compose {
             name: b"component1".to_vec(),
@@ -520,8 +521,7 @@ mod tests {
         input_data: Vec<u8>,
         dest: T::AccountId,
         value: BalanceOf<T>,
-    ) -> RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>
-    {
+    ) -> RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber> {
         let compose = make_compose_out_of_raw_wat_code::<T>(wat, input_data, dest, value);
 
         RegistryContract::from_compose(
@@ -545,7 +545,7 @@ mod tests {
         )
     }
 
-    const INVALID_CODE : &str = r#" invalid code"#;
+    const INVALID_CODE: &str = r#" invalid code"#;
 
     const CODE_CALL: &str = r#"
 (module
@@ -593,7 +593,7 @@ mod tests {
 )
 "#;
 
-const WROONG_CODE_MODULE_DISPATCH_NO_FUNC: &str = r#"
+    const WROONG_CODE_MODULE_DISPATCH_NO_FUNC: &str = r#"
 (module
 	(import "__unstable__" "seal_call" (func $seal_call (param i32 i32 i64 i32 i32 i32 i32 i32) (result i32)))
 	(import "seal0" "seal_input" (func $seal_input (param i32 i32)))
@@ -894,19 +894,15 @@ const WROONG_CODE_MODULE_DISPATCH_NO_FUNC: &str = r#"
     }
 
     #[test]
-    fn pre_run_bunch_until_break_multiple_contracts_succeeds()
-    {
+    fn pre_run_bunch_until_break_multiple_contracts_succeeds() {
         let mut ext = TestExternalities::new_empty();
-        let requester = AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+        let requester =
+            AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
         let value = BalanceOf::<Test>::from(0u32);
         let escrow_account = setup_test_escrow_as_tx_signer(&mut ext);
 
-        let compose_one = make_compose_out_of_raw_wat_code::<Test>(
-            CODE_CALL,
-            vec![],
-            requester.clone(),
-            value,
-        );
+        let compose_one =
+            make_compose_out_of_raw_wat_code::<Test>(CODE_CALL, vec![], requester.clone(), value);
 
         let compose_two = make_compose_out_of_raw_wat_code::<Test>(
             WROONG_CODE_MODULE_DISPATCH_NO_FUNC,
@@ -924,7 +920,7 @@ const WROONG_CODE_MODULE_DISPATCH_NO_FUNC: &str = r#"
             let contract_two = ExecComposer::dry_run_single_contract::<Test>(compose_two).unwrap();
 
             let res = ExecComposer::pre_run_bunch_until_break::<Test>(
-                vec![contract_one,contract_two],
+                vec![contract_one, contract_two],
                 escrow_account,
                 submitter,
                 requester,
@@ -946,54 +942,52 @@ const WROONG_CODE_MODULE_DISPATCH_NO_FUNC: &str = r#"
     #[test]
     fn preload_bunch_of_contracts_one_contract_succeeds() {
         let mut ext = TestExternalities::new_empty();
-        let requester = AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+        let requester =
+            AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
         let value = BalanceOf::<Test>::from(0u32);
-        let temp_contract_one = make_registry_contract_out_of_wat::<Test>(
-            CODE_CALL, 
-            vec![], 
-            requester.clone(), 
-            value,
-        );
-        
+        let temp_contract_one =
+            make_registry_contract_out_of_wat::<Test>(CODE_CALL, vec![], requester.clone(), value);
+
         let schedule = <Test as VolatileVM>::Schedule::get();
         let executable = PrefabWasmModule::<Test>::from_code(
             temp_contract_one.bytes.clone(),
             &schedule,
             RunMode::Dry,
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
         ext.execute_with(|| {
-            insert_default_xdns_record();            
-            let res = ExecComposer::preload_bunch_of_contracts::<Test>(vec![temp_contract_one], Default::default());
+            insert_default_xdns_record();
+            let res = ExecComposer::preload_bunch_of_contracts::<Test>(
+                vec![temp_contract_one],
+                Default::default(),
+            );
 
             assert_ok!(res);
             // If we are able to unwrap, it means the contract was inserted.
-            let _fetched_contract = volatile_vm::Pallet::<Test>::get_contract_code_lazy(executable.code_hash).unwrap();
+            let _fetched_contract =
+                volatile_vm::Pallet::<Test>::get_contract_code_lazy(executable.code_hash).unwrap();
         });
     }
 
     #[test]
     fn preload_bunch_of_contracts_multiple_contract_succeeds() {
         let mut ext = TestExternalities::new_empty();
-        let requester = AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+        let requester =
+            AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
         let value = BalanceOf::<Test>::from(0u32);
-        let temp_contract_one = make_registry_contract_out_of_wat::<Test>(
-            CODE_CALL, 
-            vec![], 
-            requester.clone(), 
-            value,
-        );
-        let temp_contract_two = make_registry_contract_out_of_wat::<Test>(
-            CODE_CALL, 
-            vec![], 
-            requester.clone(), 
-            value,
-        );
+        let temp_contract_one =
+            make_registry_contract_out_of_wat::<Test>(CODE_CALL, vec![], requester.clone(), value);
+        let temp_contract_two =
+            make_registry_contract_out_of_wat::<Test>(CODE_CALL, vec![], requester.clone(), value);
         ext.execute_with(|| {
             insert_default_xdns_record();
 
-            let res = ExecComposer::preload_bunch_of_contracts::<Test>(vec![temp_contract_one, temp_contract_two], Default::default());
+            let res = ExecComposer::preload_bunch_of_contracts::<Test>(
+                vec![temp_contract_one, temp_contract_two],
+                Default::default(),
+            );
 
             assert_ok!(res);
         });
@@ -1002,19 +996,23 @@ const WROONG_CODE_MODULE_DISPATCH_NO_FUNC: &str = r#"
     #[test]
     fn preload_bunch_of_contracts_one_contract_fails() {
         let mut ext = TestExternalities::new_empty();
-        let requester = AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+        let requester =
+            AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
         let value = BalanceOf::<Test>::from(0u32);
         let temp_contract_one = make_registry_contract_out_of_wat::<Test>(
-            INVALID_CODE, 
-            vec![], 
-            requester.clone(), 
+            INVALID_CODE,
+            vec![],
+            requester.clone(),
             value,
         );
 
         ext.execute_with(|| {
             insert_default_xdns_record();
-            
-            let res = ExecComposer::preload_bunch_of_contracts::<Test>(vec![temp_contract_one], Default::default());
+
+            let res = ExecComposer::preload_bunch_of_contracts::<Test>(
+                vec![temp_contract_one],
+                Default::default(),
+            );
 
             assert_eq!(res, Err("Can't decode WASM code"));
         });
@@ -1023,41 +1021,37 @@ const WROONG_CODE_MODULE_DISPATCH_NO_FUNC: &str = r#"
     #[test]
     fn preload_bunch_of_contracts_multiple_contract_fails() {
         let mut ext = TestExternalities::new_empty();
-        let requester = AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+        let requester =
+            AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
         let value = BalanceOf::<Test>::from(0u32);
-        let temp_contract_one = make_registry_contract_out_of_wat::<Test>(
-            CODE_CALL, 
-            vec![], 
-            requester.clone(), 
-            value,
-        );
+        let temp_contract_one =
+            make_registry_contract_out_of_wat::<Test>(CODE_CALL, vec![], requester.clone(), value);
         let temp_contract_two = make_registry_contract_out_of_wat::<Test>(
-            INVALID_CODE, 
-            vec![], 
-            requester.clone(), 
+            INVALID_CODE,
+            vec![],
+            requester.clone(),
             value,
         );
 
         ext.execute_with(|| {
-            insert_default_xdns_record();            
-            let res = ExecComposer::preload_bunch_of_contracts::<Test>(vec![temp_contract_one, temp_contract_two], Default::default());
+            insert_default_xdns_record();
+            let res = ExecComposer::preload_bunch_of_contracts::<Test>(
+                vec![temp_contract_one, temp_contract_two],
+                Default::default(),
+            );
 
             assert_eq!(res, Err("Can't decode WASM code"));
         });
     }
 
     #[test]
-    fn run_single_contract_fails_stack_error()
-    {
+    fn run_single_contract_fails_stack_error() {
         let mut ext = TestExternalities::new_empty();
-        let requester = AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
-        let value = BalanceOf::<Test>::from(0u32);        
-        let mut temp_contract_one = make_registry_contract_out_of_wat::<Test>(
-            CODE_CALL, 
-            vec![], 
-            requester.clone(), 
-            value,
-        );
+        let requester =
+            AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+        let value = BalanceOf::<Test>::from(0u32);
+        let mut temp_contract_one =
+            make_registry_contract_out_of_wat::<Test>(CODE_CALL, vec![], requester.clone(), value);
 
         ext.execute_with(|| {
             insert_default_xdns_record();
@@ -1068,7 +1062,7 @@ const WROONG_CODE_MODULE_DISPATCH_NO_FUNC: &str = r#"
                 Default::default(),
                 Default::default(),
                 Default::default(),
-                Default::default(),// requester
+                Default::default(), // requester
                 Default::default(),
                 Default::default(),
             );
@@ -1078,17 +1072,13 @@ const WROONG_CODE_MODULE_DISPATCH_NO_FUNC: &str = r#"
     }
 
     #[test]
-    fn run_single_contract_fails_xdns_error()
-    {
+    fn run_single_contract_fails_xdns_error() {
         let mut ext = TestExternalities::new_empty();
-        let requester = AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
-        let value = BalanceOf::<Test>::from(0u32);        
-        let mut temp_contract_one = make_registry_contract_out_of_wat::<Test>(
-            CODE_CALL, 
-            vec![], 
-            requester.clone(), 
-            value,
-        );
+        let requester =
+            AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+        let value = BalanceOf::<Test>::from(0u32);
+        let mut temp_contract_one =
+            make_registry_contract_out_of_wat::<Test>(CODE_CALL, vec![], requester.clone(), value);
 
         ext.execute_with(|| {
             // This comment line is intentional
@@ -1106,21 +1096,21 @@ const WROONG_CODE_MODULE_DISPATCH_NO_FUNC: &str = r#"
                 Default::default(),
                 Default::default(),
             );
-            
+
             assert_eq!(res, Err("Xdns record not found"));
         });
     }
 
     #[test]
-    fn run_single_contract_fails_wasm_parse_error()
-    {
+    fn run_single_contract_fails_wasm_parse_error() {
         let mut ext = TestExternalities::new_empty();
-        let requester = AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+        let requester =
+            AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
         let value = BalanceOf::<Test>::from(0u32);
         let mut temp_contract_one = make_registry_contract_out_of_wat::<Test>(
-            INVALID_CODE, 
-            vec![], 
-            requester.clone(), 
+            INVALID_CODE,
+            vec![],
+            requester.clone(),
             value,
         );
         ext.execute_with(|| {
@@ -1143,17 +1133,13 @@ const WROONG_CODE_MODULE_DISPATCH_NO_FUNC: &str = r#"
 
     #[test]
     #[ignore = "Please implement proper assertions when retrieve_gateway_protocol is properly implemented"]
-    fn run_single_contract_fails_retrieve_gateway_protocol_error()
-    {
+    fn run_single_contract_fails_retrieve_gateway_protocol_error() {
         let mut ext = TestExternalities::new_empty();
-        let requester = AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+        let requester =
+            AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
         let value = BalanceOf::<Test>::from(0u32);
-        let mut temp_contract_one = make_registry_contract_out_of_wat::<Test>(
-            CODE_CALL, 
-            vec![], 
-            requester.clone(), 
-            value,
-        );
+        let mut temp_contract_one =
+            make_registry_contract_out_of_wat::<Test>(CODE_CALL, vec![], requester.clone(), value);
 
         ext.execute_with(|| {
             insert_default_xdns_record();
@@ -1169,27 +1155,26 @@ const WROONG_CODE_MODULE_DISPATCH_NO_FUNC: &str = r#"
                 Default::default(),
                 Default::default(),
             );
-            
+
             assert_eq!(res, res);
         });
     }
 
     #[test]
-    fn run_single_contract_succeeds()
-    {
+    fn run_single_contract_succeeds() {
         let mut ext = TestExternalities::new_empty();
-        let requester = AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+        let requester =
+            AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
         let value = BalanceOf::<Test>::from(0u32);
-        let mut temp_contract_one = make_registry_contract_out_of_wat::<Test>(
-            CODE_CALL, 
-            vec![], 
-            requester.clone(), 
-            value,
-        );
+        let mut temp_contract_one =
+            make_registry_contract_out_of_wat::<Test>(CODE_CALL, vec![], requester.clone(), value);
 
         ext.execute_with(|| {
             insert_default_xdns_record();
-            let preload_response = ExecComposer::preload_bunch_of_contracts::<Test>(vec![temp_contract_one.clone()], Default::default());
+            let preload_response = ExecComposer::preload_bunch_of_contracts::<Test>(
+                vec![temp_contract_one.clone()],
+                Default::default(),
+            );
             assert_ok!(preload_response);
 
             let res = ExecComposer::run_single_contract::<Test, OptimisticOutputMode>(
@@ -1199,7 +1184,7 @@ const WROONG_CODE_MODULE_DISPATCH_NO_FUNC: &str = r#"
                 Default::default(),
                 Default::default(),
                 Default::default(),
-                Default::default(),// requester
+                Default::default(), // requester
                 Default::default(),
                 Default::default(),
             );
