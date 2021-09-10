@@ -306,7 +306,7 @@ impl ExecComposer {
         Ok(())
     }
 
-    fn retrieve_gateway_pointer(
+    pub fn retrieve_gateway_pointer(
         gateway_id: Option<bp_runtime::ChainId>,
     ) -> Result<GatewayPointer, &'static str> {
         match gateway_id {
@@ -326,7 +326,7 @@ impl ExecComposer {
     }
 
     /// Given a Gateway Pointer and an Authority, it returns the respective Gateway Protocol
-    fn retrieve_gateway_protocol<T: crate::Config>(
+    pub fn retrieve_gateway_protocol<T: crate::Config>(
         submitter_id: AuthorityId,
         gateway_pointer: &GatewayPointer,
     ) -> Result<Box<dyn GatewayInboundProtocol>, &'static str> {
@@ -439,7 +439,7 @@ mod tests {
     };
     use codec::Encode;
     use hex_literal::hex;
-    use t3rn_primitives::{GatewayExpectedOutput, GatewayType, GatewayVendor};
+    use t3rn_primitives::{GatewayExpectedOutput, GatewayType, GatewayPointer, GatewayVendor};
 
     use frame_support::{assert_err, assert_ok, weights::Weight};
     use sp_core::H256;
@@ -1192,5 +1192,35 @@ mod tests {
             );
             assert_ok!(res.clone());
         });
+    }
+
+    #[test]
+    fn retrieve_gateway_pointer_success_with_some() {
+        let gateway_id = [0 as u8; 4];
+
+        let gateway_pointer = ExecComposer::retrieve_gateway_pointer(Some(gateway_id));
+
+        let expected = Ok(GatewayPointer {
+            id: gateway_id,
+            gateway_type: GatewayType::ProgrammableExternal,
+            vendor: GatewayVendor::Substrate,
+        });
+
+        assert_eq!(gateway_pointer, expected);
+    }
+
+    #[test]
+    fn retrieve_gateway_pointer_success_with_none() {
+        let gateway_id = None;
+
+        let gateway_pointer = ExecComposer::retrieve_gateway_pointer(gateway_id);
+
+        let expected = Ok(GatewayPointer {
+            id: Default::default(),
+            gateway_type: GatewayType::ProgrammableExternal,
+            vendor: GatewayVendor::Substrate,
+        });
+
+        assert_eq!(gateway_pointer, expected);
     }
 }

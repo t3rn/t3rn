@@ -17,11 +17,12 @@
 
 //! Unit tests for pallet contracts-registry.
 
-use crate::mock::{ContractsRegistry, ExtBuilder, Test};
+use crate::mock::{ContractsRegistry, ExtBuilder, Origin, Test};
 use crate::pallet::Error;
 use crate::types::{ContractAccessError, RegistryContract};
 use frame_support::{assert_err, assert_ok};
 use sp_core::H256;
+use sp_runtime::DispatchError;
 use t3rn_primitives::contract_metadata::ContractMetadata;
 
 #[test]
@@ -335,4 +336,239 @@ fn fetch_contracts_with_no_parameters_should_error() {
         let actual = ContractsRegistry::fetch_contracts(None, None);
         assert_err!(actual, Error::UnknownContract);
     })
+}
+
+#[test]
+fn add_new_contract_success() {
+    let origin = Origin::root();
+    let test_contract = RegistryContract {
+        code_txt: b"some_code".to_vec(),
+        bytes: vec![],
+        author: 1_u64,
+        author_fees_per_single_use: None,
+        abi: None,
+        action_descriptions: vec![],
+        info: None,
+        meta: ContractMetadata::new(
+            vec![],
+            b"contract 1".to_vec(),
+            vec![],
+            vec![],
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
+    };
+
+    let requester = 1_u64;
+
+    ExtBuilder::default()
+        .with_contracts(vec![test_contract.clone()])
+        .build()
+        .execute_with(|| {
+            assert_ok!(ContractsRegistry::add_new_contract(
+                origin,
+                requester,
+                test_contract.clone()
+            ));
+        })
+}
+
+#[test]
+fn add_new_contract_fails_if_origin_not_root() {
+    let origin = Origin::signed(1);
+    let test_contract = RegistryContract {
+        code_txt: b"some_code".to_vec(),
+        bytes: vec![],
+        author: 1_u64,
+        author_fees_per_single_use: None,
+        abi: None,
+        action_descriptions: vec![],
+        info: None,
+        meta: ContractMetadata::new(
+            vec![],
+            b"contract 1".to_vec(),
+            vec![],
+            vec![],
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
+    };
+
+    let requester = 1_u64;
+
+    ExtBuilder::default()
+        .with_contracts(vec![test_contract.clone()])
+        .build()
+        .execute_with(|| {
+            assert_err!(
+                ContractsRegistry::add_new_contract(origin, requester, test_contract.clone()),
+                DispatchError::BadOrigin
+            );
+        })
+}
+
+#[test]
+fn add_new_contract_fails_if_contract_already_exists() {
+    let origin = Origin::root();
+    let test_contract = RegistryContract {
+        code_txt: b"some_code".to_vec(),
+        bytes: vec![],
+        author: 1_u64,
+        author_fees_per_single_use: None,
+        abi: None,
+        action_descriptions: vec![],
+        info: None,
+        meta: ContractMetadata::new(
+            vec![],
+            b"contract 1".to_vec(),
+            vec![],
+            vec![],
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
+    };
+
+    let requester = 1_u64;
+
+    ExtBuilder::default().build().execute_with(|| {
+        crate::ContractsRegistry::<Test>::insert(
+            test_contract.generate_id::<Test>(),
+            test_contract.clone(),
+        );
+        assert_err!(
+            ContractsRegistry::add_new_contract(origin, requester, test_contract.clone()),
+            Error::<Test>::ContractAlreadyExists
+        )
+    })
+}
+
+#[test]
+fn purge_success() {
+    let origin = Origin::root();
+    let requester = 1_u64;
+
+    let test_contract = RegistryContract {
+        code_txt: b"some_code".to_vec(),
+        bytes: vec![],
+        author: 1_u64,
+        author_fees_per_single_use: None,
+        abi: None,
+        action_descriptions: vec![],
+        info: None,
+        meta: ContractMetadata::new(
+            vec![],
+            b"contract 1".to_vec(),
+            vec![],
+            vec![],
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
+    };
+
+    let contract_id = test_contract.generate_id::<Test>();
+
+    ExtBuilder::default()
+        .with_contracts(vec![test_contract.clone()])
+        .build()
+        .execute_with(|| {
+            crate::ContractsRegistry::<Test>::insert(
+                test_contract.generate_id::<Test>(),
+                test_contract.clone(),
+            );
+            assert_ok!(ContractsRegistry::purge(origin, requester, contract_id));
+        })
+}
+
+#[test]
+fn purge_fails_if_contract_does_not_exist() {
+    let origin = Origin::root();
+    let requester = 1_u64;
+
+    let test_contract = RegistryContract {
+        code_txt: b"some_code".to_vec(),
+        bytes: vec![],
+        author: 1_u64,
+        author_fees_per_single_use: None,
+        abi: None,
+        action_descriptions: vec![],
+        info: None,
+        meta: ContractMetadata::new(
+            vec![],
+            b"contract 1".to_vec(),
+            vec![],
+            vec![],
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
+    };
+
+    let contract_id = test_contract.generate_id::<Test>();
+
+    ExtBuilder::default()
+        .with_contracts(vec![test_contract.clone()])
+        .build()
+        .execute_with(|| {
+            assert_err!(
+                ContractsRegistry::purge(origin, requester, contract_id),
+                Error::<Test>::UnknownContract
+            );
+        })
+}
+
+#[test]
+fn purge_fails_if_origin_not_root() {
+    let origin = Origin::signed(1);
+    let requester = 1_u64;
+
+    let test_contract = RegistryContract {
+        code_txt: b"some_code".to_vec(),
+        bytes: vec![],
+        author: 1_u64,
+        author_fees_per_single_use: None,
+        abi: None,
+        action_descriptions: vec![],
+        info: None,
+        meta: ContractMetadata::new(
+            vec![],
+            b"contract 1".to_vec(),
+            vec![],
+            vec![],
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
+    };
+
+    let contract_id = test_contract.generate_id::<Test>();
+
+    ExtBuilder::default()
+        .with_contracts(vec![test_contract.clone()])
+        .build()
+        .execute_with(|| {
+            crate::ContractsRegistry::<Test>::insert(
+                test_contract.generate_id::<Test>(),
+                test_contract.clone(),
+            );
+            assert_err!(
+                ContractsRegistry::purge(origin, requester, contract_id),
+                DispatchError::BadOrigin
+            );
+        })
 }
