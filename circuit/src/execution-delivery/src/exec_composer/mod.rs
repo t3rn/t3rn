@@ -428,20 +428,29 @@ impl ExecComposer {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::exec_composer::{
+        ExecComposer, OptimisticOutputMode, PessimisticOutputMode, RawAliveContractInfo,
+        TEST_RUNTIME_VERSION,
+    };
     use crate::mock::Test;
-    use crate::*;
+    use crate::{
+        BalanceOf, Compose, Config, ContractActionDesc, GatewayABIConfig, GatewayGenesisConfig,
+        RegistryContract, KEY_TYPE,
+    };
+    use codec::Encode;
     use hex_literal::hex;
+    use t3rn_primitives::{GatewayExpectedOutput, GatewayType, GatewayPointer, GatewayVendor};
 
-    use sp_core::{crypto::Pair, sr25519};
-
-    use frame_support::assert_ok;
+    use frame_support::{assert_ok, weights::Weight};
     use sp_core::H256;
+    use sp_core::{crypto::Pair, sr25519, Hasher};
     use sp_io::TestExternalities;
     use sp_keystore::testing::KeyStore;
     use sp_keystore::{KeystoreExt, SyncCryptoStore};
     use sp_runtime::AccountId32;
     use std::str::FromStr;
+    use volatile_vm::wasm::{PrefabWasmModule, RunMode};
+    use volatile_vm::VolatileVM;
 
     fn make_compose_out_of_raw_wat_code<T: Config>(
         wat_string: &str,
@@ -516,7 +525,7 @@ mod tests {
         let compose = make_compose_out_of_raw_wat_code::<T>(wat, input_data, dest, value);
 
         RegistryContract::from_compose(
-            compose,
+            compose.clone(),
             vec![],
             Default::default(),
             None,
@@ -525,7 +534,7 @@ mod tests {
                 trie_id: Default::default(),
                 storage_size: Default::default(),
                 pair_count: Default::default(),
-                code_hash: Default::default(), // TODO : Make it work with Hashing
+                code_hash: T::Hashing::hash(&compose.bytes),
                 rent_allowance: Default::default(),
                 rent_paid: Default::default(),
                 deduct_block: Default::default(),
@@ -535,6 +544,9 @@ mod tests {
             Default::default(),
         )
     }
+
+    const INVALID_CODE: &str = r#" invalid code"#;
+
     const CODE_CALL: &str = r#"
 (module
 	;; seal_call(
@@ -577,6 +589,50 @@ mod tests {
 	;; Represented by u64 (8 bytes long) in little endian.
 	(data (i32.const 36) "\06\00\00\00\00\00\00\00")
 
+	(data (i32.const 44) "\01\02\03\04")
+)
+"#;
+
+    const WROONG_CODE_MODULE_DISPATCH_NO_FUNC: &str = r#"
+(module
+	(import "__unstable__" "seal_call" (func $seal_call (param i32 i32 i64 i32 i32 i32 i32 i32) (result i32)))
+	(import "seal0" "seal_input" (func $seal_input (param i32 i32)))
+	(import "seal0" "seal_return" (func $seal_return (param i32 i32 i32)))
+	(import "env" "memory" (memory 1 1))
+	(func (export "call")
+		(drop
+			(call $seal_call
+				(i32.const 16) ;; Set MODULE_DISPATCH bit
+				(i32.const 4)  ;; Pointer to "callee" address.
+				(i64.const 0)  ;; How much gas to devote for the execution. 0 = all.
+				(i32.const 36) ;; Pointer to the buffer with value to transfer
+				(i32.const 44) ;; Pointer to input data buffer address
+				(i32.const 4)  ;; Length of input data buffer
+				(i32.const 4294967295) ;; u32 max value is the sentinel value: do not copy output
+				(i32.const 0) ;; Length is ignored in this case
+			)
+		)
+
+		;; works because the input was cloned
+		(call $seal_input (i32.const 0) (i32.const 44))
+
+		;; return the input to caller for inspection
+		(call $seal_return (i32.const 0) (i32.const 0) (i32.load (i32.const 44)))
+	)
+
+	(func (export "deploy"))
+
+	;; Destination AccountId (ALICE)
+	(data (i32.const 4)
+		"\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01"
+		"\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01"
+	)
+
+	;; Amount of value to transfer.
+	;; Represented by u64 (8 bytes long) in little endian.
+	(data (i32.const 36) "\2A\00\00\00\00\00\00\00")
+
+	;; The input is ignored because we forward our own input
 	(data (i32.const 44) "\01\02\03\04")
 )
 "#;
@@ -776,52 +832,6 @@ mod tests {
         });
     }
 
-    const INVALID_CODE: &str = r#" invalid code"#;
-
-    const WROONG_CODE_MODULE_DISPATCH_NO_FUNC: &str = r#"
-(module
-	(import "__unstable__" "seal_call" (func $seal_call (param i32 i32 i64 i32 i32 i32 i32 i32) (result i32)))
-	(import "seal0" "seal_input" (func $seal_input (param i32 i32)))
-	(import "seal0" "seal_return" (func $seal_return (param i32 i32 i32)))
-	(import "env" "memory" (memory 1 1))
-	(func (export "call")
-		(drop
-			(call $seal_call
-				(i32.const 16) ;; Set MODULE_DISPATCH bit
-				(i32.const 4)  ;; Pointer to "callee" address.
-				(i64.const 0)  ;; How much gas to devote for the execution. 0 = all.
-				(i32.const 36) ;; Pointer to the buffer with value to transfer
-				(i32.const 44) ;; Pointer to input data buffer address
-				(i32.const 4)  ;; Length of input data buffer
-				(i32.const 4294967295) ;; u32 max value is the sentinel value: do not copy output
-				(i32.const 0) ;; Length is ignored in this case
-			)
-		)
-
-		;; works because the input was cloned
-		(call $seal_input (i32.const 0) (i32.const 44))
-
-		;; return the input to caller for inspection
-		(call $seal_return (i32.const 0) (i32.const 0) (i32.load (i32.const 44)))
-	)
-
-	(func (export "deploy"))
-
-	;; Destination AccountId (ALICE)
-	(data (i32.const 4)
-		"\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01"
-		"\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01"
-	)
-
-	;; Amount of value to transfer.
-	;; Represented by u64 (8 bytes long) in little endian.
-	(data (i32.const 36) "\2A\00\00\00\00\00\00\00")
-
-	;; The input is ignored because we forward our own input
-	(data (i32.const 44) "\01\02\03\04")
-)
-"#;
-
     #[test]
     fn pre_run_recognizes_call_module_from_flags_and_fails_for_empty_names() {
         // Bob - requester
@@ -884,56 +894,96 @@ mod tests {
     }
 
     #[test]
-    fn preload_bunch_of_contracts_one_contract_passes() {
+    fn pre_run_bunch_until_break_multiple_contracts_succeeds() {
         let mut ext = TestExternalities::new_empty();
-        let escrow_account = setup_test_escrow_as_tx_signer(&mut ext);
         let requester =
             AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
         let value = BalanceOf::<Test>::from(0u32);
+        let escrow_account = setup_test_escrow_as_tx_signer(&mut ext);
+
+        let compose_one =
+            make_compose_out_of_raw_wat_code::<Test>(CODE_CALL, vec![], requester.clone(), value);
+
+        let compose_two = make_compose_out_of_raw_wat_code::<Test>(
+            WROONG_CODE_MODULE_DISPATCH_NO_FUNC,
+            vec![],
+            requester.clone(),
+            value,
+        );
+
         ext.execute_with(|| {
+            let submitter = crate::Pallet::<Test>::select_authority(escrow_account.clone())
+                .unwrap_or_else(|_| panic!("failed to select_authority"));
             insert_default_xdns_record();
 
-            let _submitter = crate::Pallet::<Test>::select_authority(escrow_account.clone())
-                .unwrap_or_else(|_| panic!("failed to select_authority"));
-            let temp_contract_one = make_registry_contract_out_of_wat::<Test>(
-                CODE_CALL,
-                vec![],
-                requester.clone(),
+            let contract_one = ExecComposer::dry_run_single_contract::<Test>(compose_one).unwrap();
+            let contract_two = ExecComposer::dry_run_single_contract::<Test>(compose_two).unwrap();
+
+            let res = ExecComposer::pre_run_bunch_until_break::<Test>(
+                vec![contract_one, contract_two],
+                escrow_account,
+                submitter,
+                requester,
                 value,
+                vec![],
+                Weight::MAX,
+                None,
+                Default::default(),
             );
+
+            assert_ok!(res.clone());
+
+            let unwrapped_result = res.unwrap();
+            assert_eq!(unwrapped_result.1, 2u16);
+            assert_eq!(unwrapped_result.0.len(), 0);
+        });
+    }
+
+    #[test]
+    fn preload_bunch_of_contracts_one_contract_succeeds() {
+        let mut ext = TestExternalities::new_empty();
+        let requester =
+            AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+        let value = BalanceOf::<Test>::from(0u32);
+        let temp_contract_one =
+            make_registry_contract_out_of_wat::<Test>(CODE_CALL, vec![], requester.clone(), value);
+
+        let schedule = <Test as VolatileVM>::Schedule::get();
+        let executable = PrefabWasmModule::<Test>::from_code(
+            temp_contract_one.bytes.clone(),
+            &schedule,
+            RunMode::Dry,
+            None,
+        )
+        .unwrap();
+
+        ext.execute_with(|| {
+            insert_default_xdns_record();
             let res = ExecComposer::preload_bunch_of_contracts::<Test>(
                 vec![temp_contract_one],
                 Default::default(),
             );
 
             assert_ok!(res);
+            // If we are able to unwrap, it means the contract was inserted.
+            let _fetched_contract =
+                volatile_vm::Pallet::<Test>::get_contract_code_lazy(executable.code_hash).unwrap();
         });
     }
 
     #[test]
-    fn preload_bunch_of_contracts_multiple_contract_passes() {
+    fn preload_bunch_of_contracts_multiple_contract_succeeds() {
         let mut ext = TestExternalities::new_empty();
-        let escrow_account = setup_test_escrow_as_tx_signer(&mut ext);
         let requester =
             AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
         let value = BalanceOf::<Test>::from(0u32);
+        let temp_contract_one =
+            make_registry_contract_out_of_wat::<Test>(CODE_CALL, vec![], requester.clone(), value);
+        let temp_contract_two =
+            make_registry_contract_out_of_wat::<Test>(CODE_CALL, vec![], requester.clone(), value);
         ext.execute_with(|| {
             insert_default_xdns_record();
 
-            let _submitter = crate::Pallet::<Test>::select_authority(escrow_account.clone())
-                .unwrap_or_else(|_| panic!("failed to select_authority"));
-            let temp_contract_one = make_registry_contract_out_of_wat::<Test>(
-                CODE_CALL,
-                vec![],
-                requester.clone(),
-                value,
-            );
-            let temp_contract_two = make_registry_contract_out_of_wat::<Test>(
-                CODE_CALL,
-                vec![],
-                requester.clone(),
-                value,
-            );
             let res = ExecComposer::preload_bunch_of_contracts::<Test>(
                 vec![temp_contract_one, temp_contract_two],
                 Default::default(),
@@ -946,21 +996,19 @@ mod tests {
     #[test]
     fn preload_bunch_of_contracts_one_contract_fails() {
         let mut ext = TestExternalities::new_empty();
-        let escrow_account = setup_test_escrow_as_tx_signer(&mut ext);
         let requester =
             AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
         let value = BalanceOf::<Test>::from(0u32);
+        let temp_contract_one = make_registry_contract_out_of_wat::<Test>(
+            INVALID_CODE,
+            vec![],
+            requester.clone(),
+            value,
+        );
+
         ext.execute_with(|| {
             insert_default_xdns_record();
 
-            let _submitter = crate::Pallet::<Test>::select_authority(escrow_account.clone())
-                .unwrap_or_else(|_| panic!("failed to select_authority"));
-            let temp_contract_one = make_registry_contract_out_of_wat::<Test>(
-                INVALID_CODE,
-                vec![],
-                requester.clone(),
-                value,
-            );
             let res = ExecComposer::preload_bunch_of_contracts::<Test>(
                 vec![temp_contract_one],
                 Default::default(),
@@ -973,33 +1021,174 @@ mod tests {
     #[test]
     fn preload_bunch_of_contracts_multiple_contract_fails() {
         let mut ext = TestExternalities::new_empty();
-        let escrow_account = setup_test_escrow_as_tx_signer(&mut ext);
         let requester =
             AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
         let value = BalanceOf::<Test>::from(0u32);
+        let temp_contract_one =
+            make_registry_contract_out_of_wat::<Test>(CODE_CALL, vec![], requester.clone(), value);
+        let temp_contract_two = make_registry_contract_out_of_wat::<Test>(
+            INVALID_CODE,
+            vec![],
+            requester.clone(),
+            value,
+        );
+
         ext.execute_with(|| {
             insert_default_xdns_record();
-
-            let _submitter = crate::Pallet::<Test>::select_authority(escrow_account.clone())
-                .unwrap_or_else(|_| panic!("failed to select_authority"));
-            let temp_contract_one = make_registry_contract_out_of_wat::<Test>(
-                CODE_CALL,
-                vec![],
-                requester.clone(),
-                value,
-            );
-            let temp_contract_two = make_registry_contract_out_of_wat::<Test>(
-                INVALID_CODE,
-                vec![],
-                requester.clone(),
-                value,
-            );
             let res = ExecComposer::preload_bunch_of_contracts::<Test>(
                 vec![temp_contract_one, temp_contract_two],
                 Default::default(),
             );
 
             assert_eq!(res, Err("Can't decode WASM code"));
+        });
+    }
+
+    #[test]
+    fn run_single_contract_fails_stack_error() {
+        let mut ext = TestExternalities::new_empty();
+        let requester =
+            AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+        let value = BalanceOf::<Test>::from(0u32);
+        let mut temp_contract_one =
+            make_registry_contract_out_of_wat::<Test>(CODE_CALL, vec![], requester.clone(), value);
+
+        ext.execute_with(|| {
+            insert_default_xdns_record();
+            let res = ExecComposer::run_single_contract::<Test, OptimisticOutputMode>(
+                &mut temp_contract_one,
+                Default::default(),
+                Weight::MAX,
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(), // requester
+                Default::default(),
+                Default::default(),
+            );
+
+            assert_eq!(res, Err("Can't create VVM call stack"));
+        });
+    }
+
+    #[test]
+    fn run_single_contract_fails_xdns_error() {
+        let mut ext = TestExternalities::new_empty();
+        let requester =
+            AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+        let value = BalanceOf::<Test>::from(0u32);
+        let mut temp_contract_one =
+            make_registry_contract_out_of_wat::<Test>(CODE_CALL, vec![], requester.clone(), value);
+
+        ext.execute_with(|| {
+            // This comment line is intentional
+            // Not inserting xdns record to replicate this failure
+            // insert_default_xdns_record();
+
+            let res = ExecComposer::run_single_contract::<Test, OptimisticOutputMode>(
+                &mut temp_contract_one,
+                Default::default(),
+                Weight::MAX,
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(),
+            );
+
+            assert_eq!(res, Err("Xdns record not found"));
+        });
+    }
+
+    #[test]
+    fn run_single_contract_fails_wasm_parse_error() {
+        let mut ext = TestExternalities::new_empty();
+        let requester =
+            AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+        let value = BalanceOf::<Test>::from(0u32);
+        let mut temp_contract_one = make_registry_contract_out_of_wat::<Test>(
+            INVALID_CODE,
+            vec![],
+            requester.clone(),
+            value,
+        );
+        ext.execute_with(|| {
+            insert_default_xdns_record();
+            let res = ExecComposer::run_single_contract::<Test, OptimisticOutputMode>(
+                &mut temp_contract_one,
+                Default::default(),
+                Weight::MAX,
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(),
+            );
+
+            assert_eq!(res, Err("Can't decode WASM code"));
+        });
+    }
+
+    #[test]
+    #[ignore = "Please implement proper assertions when retrieve_gateway_protocol is properly implemented"]
+    fn run_single_contract_fails_retrieve_gateway_protocol_error() {
+        let mut ext = TestExternalities::new_empty();
+        let requester =
+            AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+        let value = BalanceOf::<Test>::from(0u32);
+        let mut temp_contract_one =
+            make_registry_contract_out_of_wat::<Test>(CODE_CALL, vec![], requester.clone(), value);
+
+        ext.execute_with(|| {
+            insert_default_xdns_record();
+
+            let res = ExecComposer::run_single_contract::<Test, OptimisticOutputMode>(
+                &mut temp_contract_one,
+                Default::default(),
+                Weight::MAX,
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(),
+            );
+
+            assert_eq!(res, res);
+        });
+    }
+
+    #[test]
+    fn run_single_contract_succeeds() {
+        let mut ext = TestExternalities::new_empty();
+        let requester =
+            AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+        let value = BalanceOf::<Test>::from(0u32);
+        let mut temp_contract_one =
+            make_registry_contract_out_of_wat::<Test>(CODE_CALL, vec![], requester.clone(), value);
+
+        ext.execute_with(|| {
+            insert_default_xdns_record();
+            let preload_response = ExecComposer::preload_bunch_of_contracts::<Test>(
+                vec![temp_contract_one.clone()],
+                Default::default(),
+            );
+            assert_ok!(preload_response);
+
+            let res = ExecComposer::run_single_contract::<Test, OptimisticOutputMode>(
+                &mut temp_contract_one,
+                Default::default(),
+                Weight::MAX,
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(), // requester
+                Default::default(),
+                Default::default(),
+            );
+            assert_ok!(res.clone());
         });
     }
 
