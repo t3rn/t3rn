@@ -71,11 +71,13 @@ use volatile_vm::VolatileVM;
 #[cfg(test)]
 pub mod tests;
 
-#[cfg(test)]
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 #[cfg(test)]
 pub mod mock;
+
+pub mod weights;
+use weights::WeightInfo;
 
 pub mod exec_composer;
 pub mod message_assembly;
@@ -366,7 +368,7 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
 
     use super::*;
-
+    use crate::WeightInfo;
     /// Current Circuit's context of active transactions
     ///
     /// The currently active composable transactions, indexed according to the order of creation.
@@ -409,6 +411,8 @@ pub mod pallet {
         type AccountId32Converter: Convert<Self::AccountId, [u8; 32]>;
 
         type ToStandardizedGatewayBalance: Convert<BalanceOf<Self>, u128>;
+
+        type WeightInfo: weights::WeightInfo;
     }
 
     #[pallet::pallet]
@@ -520,7 +524,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(0)]
+        #[pallet::weight(<T as Config>::WeightInfo::register_gateway_default_polka())]
         pub fn register_gateway(
             origin: OriginFor<T>,
             url: Vec<u8>,

@@ -381,6 +381,7 @@ impl Config for Test {
     // type UnsignedPriority = UnsignedPriority;
     type AccountId32Converter = AccountId32Converter;
     type ToStandardizedGatewayBalance = CircuitToGateway;
+    type WeightInfo = ();
 }
 
 impl pallet_im_online::Config for Test {
