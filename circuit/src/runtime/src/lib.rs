@@ -588,6 +588,7 @@ impl pallet_circuit_execution_delivery::Config for Runtime {
     type Call = Call;
     type AccountId32Converter = AccountId32Converter;
     type ToStandardizedGatewayBalance = CircuitToGateway;
+    type WeightInfo = pallet_circuit_execution_delivery::weights::SubstrateWeight<Runtime>;
 }
 
 type Blake2ValU64BridgeInstance = ();
@@ -977,7 +978,7 @@ impl_runtime_apis! {
             let mut batches = Vec::<BenchmarkBatch>::new();
             let params = (&config, &whitelist);
 
-            // add_benchmark!(params, batches, pallet_circuit_execution_delivery, ExecDelivery);
+            add_benchmark!(params, batches, pallet_circuit_execution_delivery, ExecDelivery);
             add_benchmark!(params, batches, pallet_contracts_registry, ContractsRegistry);
             if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
             Ok(batches)

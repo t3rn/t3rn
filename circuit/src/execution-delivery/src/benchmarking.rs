@@ -1,15 +1,29 @@
 //! Benchmarking setup for pallet-circuit-execution-delivery
 
 use super::*;
+use bp_test_utils::test_header;
 
-use crate::{Call, Config, DefaultPolkadotLikeGateway, Pallet as ExecDelivery};
-use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelisted_caller};
-use frame_system::RawOrigin;
-type AccountId = sp_runtime::AccountId32;
+use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
 use frame_support::assert_ok;
-use sp_runtime::create_runtime_str;
+use frame_system::RawOrigin;
+
+use t3rn_primitives::abi::GatewayABIConfig;
+use t3rn_primitives::Compose;
+
+use sp_core::H256;
+use sp_runtime::{create_runtime_str, AccountId32};
 use sp_version::RuntimeVersion;
-use t3rn_primitives::{transfers::BalanceOf, Compose, ExecPhase, ExecStep, InterExecSchedule};
+
+use sp_core::{crypto::Pair, sr25519};
+use sp_keystore::testing::KeyStore;
+use sp_keystore::{KeystoreExt, SyncCryptoStore};
+
+use crate::{
+    CurrentHeader, DefaultPolkadotLikeGateway, EthLikeKeccak256ValU32Gateway,
+    EthLikeKeccak256ValU64Gateway, PolkadotLikeValU64Gateway,
+};
+
+use crate::exec_composer::tests::insert_default_xdns_record;
 
 pub const TEST_RUNTIME_VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("test-runtime"),
@@ -21,71 +35,54 @@ pub const TEST_RUNTIME_VERSION: RuntimeVersion = RuntimeVersion {
     transaction_version: 1,
 };
 
-benchmarks! {
-    sort_vector {
-        let x in 0 .. 10000;
-        let mut m = Vec::<u32>::new();
-        for i in (0..x).rev() {
-            m.push(i);
-        }
-    }: {
-        m.sort();
-    }
+const USER_SEED: u32 = 999666;
 
+const CODE: &str = r#"(module
+    (func (export "call"))
+    (func (export "deploy"))
+)"#;
+
+benchmarks! {
     decompose_io_schedule{
+        let io_schedule = b"component1;".to_vec();
+        let components: Vec<Compose<T::AccountId, BalanceOf<T>>> = vec![Compose {
+            name: b"component1".to_vec(),
+            code_txt: CODE.as_bytes().to_vec(),
+            exec_type: b"exec_escrow".to_vec(),
+            dest: account("TEST", 1_u32, USER_SEED),
+            value: 0u32.into(),
+            bytes: vec![],
+            input_data: vec![],
+        }];
+
         let expected = InterExecSchedule {
             phases: vec![ExecPhase {
                 steps: vec![ExecStep {
                     compose: Compose {
                         name: b"component1".to_vec(),
-                        code_txt: r#""#.as_bytes().to_vec(),
+                        code_txt: CODE.as_bytes().to_vec(),
                         exec_type: b"exec_escrow".to_vec(),
-                        dest: T::AccountId::decode(&mut &hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d")[..]).expect("should not fail for dummy data"), //AccountId::new([1 as u8; 32]),
-                        value: BalanceOf::<T>::from(10u32),
+                        dest: account("TEST", 1_u32, USER_SEED),
+                        value: 0u32.into(),
                         bytes: vec![],
                         input_data: vec![],
                     },
                 }],
             }],
         };
-
-        let io_schedule = b"component1;".to_vec();
-        let components = vec![Compose {
-            name: b"component1".to_vec(),
-            code_txt: r#""#.as_bytes().to_vec(),
-            exec_type: b"exec_escrow".to_vec(),
-            dest: T::AccountId::decode(&mut &hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d")[..]).expect("should not fail for dummy data"), //AccountId::new([1 as u8; 32]),
-            value: BalanceOf::<T>::from(10u32),
-            bytes: vec![],
-            input_data: vec![],
-        }];
     }: {
         Pallet::<T>::decompose_io_schedule(components.clone(), io_schedule.clone()).unwrap();
     } verify {
         assert_eq!(
             Pallet::<T>::decompose_io_schedule(components, io_schedule).unwrap(),
             expected
-        )
+        );
     }
 
-    register_gateway {
-        let caller: T::AccountId = account("caller", 0, 0);
+    register_gateway_default_polka {
         let url = b"ws://localhost:9944".to_vec();
         let gateway_id = [0; 4];
         let gateway_abi: GatewayABIConfig = Default::default();
-
-        //     fn default() -> GatewayABIConfig {
-        //         GatewayABIConfig {
-        //             block_number_type_size: 32,
-        //             hash_size: 32,
-        //             hasher: HasherAlgo::Blake2,
-        //             crypto: CryptoAlgo::Sr25519,
-        //             address_length: 32,
-        //             value_type_size: 64,
-        //             decimals: 8,
-        //             structs: vec![],
-        //         }
-        //     }
 
         let gateway_vendor = GatewayVendor::Substrate;
         let gateway_type = GatewayType::ProgrammableInternal(0);
@@ -103,42 +100,109 @@ benchmarks! {
             genesis_hash: Default::default(),
         };
 
-        let first_header: CurrentHeader<T, DefaultPolkadotLikeGateway> = bp_test_utils::test_header(Default::default());
+        let first_header: CurrentHeader<T, DefaultPolkadotLikeGateway> = test_header(0u32.into());
 
         let authorities = Some(vec![]);
+    }: { Pallet::<T>::register_gateway(RawOrigin::Root.into(), url, gateway_id, gateway_abi, gateway_vendor, gateway_type, gateway_genesis, first_header.encode(), authorities).unwrap()}
+    verify{}
 
-    }: _(RawOrigin::Signed(caller), url, gateway_id, gateway_abi, gateway_vendor, gateway_type, gateway_genesis, first_header.encode(), authorities)
-    verify {
-        assert_eq!(1,1);
-    }
+    register_gateway_polka_u64 {
+        let url = b"ws://localhost:9944".to_vec();
+        let gateway_id = [0; 4];
+        let gateway_abi: GatewayABIConfig = Default::default();
+
+        let gateway_vendor = GatewayVendor::Substrate;
+        let gateway_type = GatewayType::ProgrammableInternal(0);
+
+        let _gateway_pointer = GatewayPointer {
+            id: [0; 4],
+            vendor: GatewayVendor::Substrate,
+            gateway_type: GatewayType::ProgrammableInternal(0),
+        };
+
+        let gateway_genesis = GatewayGenesisConfig {
+            modules_encoded: None,
+            signed_extension: None,
+            runtime_version: TEST_RUNTIME_VERSION,
+            genesis_hash: Default::default(),
+        };
+
+        let first_header: CurrentHeader<T, PolkadotLikeValU64Gateway> = test_header(0u32.into());
+
+        let authorities = Some(vec![]);
+    }: { Pallet::<T>::register_gateway(RawOrigin::Root.into(), url, gateway_id, gateway_abi, gateway_vendor, gateway_type, gateway_genesis, first_header.encode(), authorities).unwrap()}
+    verify{}
+
+    register_gateway_default_eth {
+        let url = b"ws://localhost:9944".to_vec();
+        let gateway_id = [0; 4];
+        let gateway_abi: GatewayABIConfig = Default::default();
+
+        let gateway_vendor = GatewayVendor::Substrate;
+        let gateway_type = GatewayType::ProgrammableInternal(0);
+
+        let _gateway_pointer = GatewayPointer {
+            id: [0; 4],
+            vendor: GatewayVendor::Substrate,
+            gateway_type: GatewayType::ProgrammableInternal(0),
+        };
+
+        let gateway_genesis = GatewayGenesisConfig {
+            modules_encoded: None,
+            signed_extension: None,
+            runtime_version: TEST_RUNTIME_VERSION,
+            genesis_hash: Default::default(),
+        };
+
+        let first_header: CurrentHeader<T, EthLikeKeccak256ValU32Gateway> = test_header(0u32.into());
+
+        let authorities = Some(vec![]);
+    }: { Pallet::<T>::register_gateway(RawOrigin::Root.into(), url, gateway_id, gateway_abi, gateway_vendor, gateway_type, gateway_genesis, first_header.encode(), authorities).unwrap()}
+    verify{}
+
+    register_gateway_eth_u64 {
+        let url = b"ws://localhost:9944".to_vec();
+        let gateway_id = [0; 4];
+        let gateway_abi: GatewayABIConfig = Default::default();
+
+        let gateway_vendor = GatewayVendor::Substrate;
+        let gateway_type = GatewayType::ProgrammableInternal(0);
+
+        let _gateway_pointer = GatewayPointer {
+            id: [0; 4],
+            vendor: GatewayVendor::Substrate,
+            gateway_type: GatewayType::ProgrammableInternal(0),
+        };
+
+        let gateway_genesis = GatewayGenesisConfig {
+            modules_encoded: None,
+            signed_extension: None,
+            runtime_version: TEST_RUNTIME_VERSION,
+            genesis_hash: Default::default(),
+        };
+
+        let first_header: CurrentHeader<T, EthLikeKeccak256ValU64Gateway> = test_header(0u32.into());
+
+        let authorities = Some(vec![]);
+    }: { Pallet::<T>::register_gateway(RawOrigin::Root.into(), url, gateway_id, gateway_abi, gateway_vendor, gateway_type, gateway_genesis, first_header.encode(), authorities).unwrap()}
+    verify{}
+
+    // Need help!
 
     // submit_composable_exec_order {
-    //     let caller: T::AccountId = account("caller", 0, 0);
-    //     let io_schedule = b"component1;".to_vec();
-
-    //     const CONTRACT: &str = r#"
-    //             (module
-    //                 (func (export "call"))
-    //                 (func (export "deploy"))
-    //             )
-    //             "#;
-
-    //     let components = vec![Compose {
+    //     let components: Vec<Compose<T::AccountId, BalanceOf<T>>> = vec![Compose {
     //         name: b"component1".to_vec(),
-    //         code_txt: CONTRACT.encode(),
+    //         code_txt: CODE.as_bytes().to_vec(),
     //         exec_type: b"exec_escrow".to_vec(),
-    //         dest: AccountId::new([1 as u8; 32]),
-    //         value: BalanceOf::from(0u32),
-    //         bytes: vec![
-    //             0, 97, 115, 109, 1, 0, 0, 0, 1, 4, 1, 96, 0, 0, 3, 3, 2, 0, 0, 7, 17, 2, 4, 99, 97,
-    //             108, 108, 0, 0, 6, 100, 101, 112, 108, 111, 121, 0, 1, 10, 7, 2, 2, 0, 11, 2, 0, 11,
-    //         ],
+    //         dest: account("TEST", 1_u32, USER_SEED),
+    //         value: 0u32.into(),
+    //         bytes: vec![0, 97, 115, 109, 1, 0, 0, 0, 1, 4, 1, 96, 0, 0, 3, 3, 2, 0, 0, 7, 17, 2, 4, 99, 97, 108, 108, 0, 0, 6, 100, 101, 112, 108, 111, 121, 0, 1, 10, 7, 2, 2, 0, 11, 2, 0, 11],
     //         input_data: vec![],
     //     }];
-
+    //     let io_schedule = b"component1;".to_vec();
     //     let keystore = KeyStore::new();
 
-    //     // Insert Alice's keys
+    //     Insert Alice's keys
     //     const SURI_ALICE: &str = "//Alice";
     //     let key_pair_alice = sr25519::Pair::from_string(SURI_ALICE, None).expect("Generates key pair");
     //     SyncCryptoStore::insert_unknown(
@@ -148,15 +212,10 @@ benchmarks! {
     //         key_pair_alice.public().as_ref(),
     //     )
     //     .expect("Inserts unknown key");
+    //    insert_default_xdns_record();
 
-    // }: _(RawOrigin::Signed(caller.clone()), io_schedule.clone(), components.clone())
-    // verify {
-    //     assert_ok!(Pallet::<T>::submit_composable_exec_order(
-    //         RawOrigin::Signed(caller),
-    //         io_schedule,
-    //         components
-    //     ));
-    // }
+    // }: _(RawOrigin::Signed(Default::default()), io_schedule, components)
+    // verify{}
 
 }
 
@@ -168,23 +227,37 @@ mod tests {
     use frame_support::assert_ok;
 
     #[test]
-    fn benchmark_sort_vector() {
-        new_test_ext().execute_with(|| {
-            assert_ok!(test_benchmark_sort_vector::<Test>());
-        })
-    }
-
-    #[test]
     fn benchmark_decompose_io_schedule() {
         new_test_ext().execute_with(|| {
-            assert_ok!(test_benchmark_decompose_io_schedule::<Test>());
+            assert_ok(test_benchmark_decompose_io_schedule::<Test>());
         })
     }
 
     #[test]
-    fn benchmark_register_gateway() {
+    fn benchmark_register_gateway_default_polka() {
         new_test_ext().execute_with(|| {
-            assert_ok!(test_benchmark_register_gateway::<Test>());
+            assert_ok!(test_benchmark_register_gateway_default_polka::<Test>());
+        })
+    }
+
+    #[test]
+    fn benchmark_register_gateway_polka_u64() {
+        new_test_ext().execute_with(|| {
+            assert_ok!(test_benchmark_register_gateway_polka_u64::<Test>());
+        })
+    }
+
+    #[test]
+    fn benchmark_register_gateway_default_eth() {
+        new_test_ext().execute_with(|| {
+            assert_ok!(test_benchmark_register_gateway_default_eth::<Test>());
+        })
+    }
+
+    #[test]
+    fn benchmark_register_gateway_eth_u64() {
+        new_test_ext().execute_with(|| {
+            assert_ok!(test_benchmark_register_gateway_eth_64::<Test>());
         })
     }
 
