@@ -26,53 +26,53 @@
 // --output
 // .
 
-
 #![allow(unused_parens)]
 #![allow(unused_imports)]
 
-use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
+use frame_support::{
+    traits::Get,
+    weights::{constants::RocksDbWeight, Weight},
+};
 use sp_std::marker::PhantomData;
 
 /// Weight functions needed for pallet_contracts_registry.
 pub trait WeightInfo {
-	fn add_new_contract() -> Weight;
-	fn purge() -> Weight;
-	fn fetch_contracts() -> Weight;
+    fn add_new_contract() -> Weight;
+    fn purge() -> Weight;
+    fn fetch_contracts() -> Weight;
 }
 
 /// Weights for pallet_contracts_registry using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
-	fn add_new_contract() -> Weight {
-		(52_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
-	}
-	fn purge() -> Weight {
-		(37_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
-	}
-	fn fetch_contracts() -> Weight {
-		(53_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(4 as Weight))
-	}
+    fn add_new_contract() -> Weight {
+        (52_000_000 as Weight)
+            .saturating_add(T::DbWeight::get().reads(1 as Weight))
+            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+    }
+    fn purge() -> Weight {
+        (37_000_000 as Weight)
+            .saturating_add(T::DbWeight::get().reads(1 as Weight))
+            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+    }
+    fn fetch_contracts() -> Weight {
+        (53_000_000 as Weight).saturating_add(T::DbWeight::get().reads(4 as Weight))
+    }
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
-	fn add_new_contract() -> Weight {
-		(52_000_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
-	}
-	fn purge() -> Weight {
-		(37_000_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
-	}
-	fn fetch_contracts() -> Weight {
-		(53_000_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(4 as Weight))
-	}
+    fn add_new_contract() -> Weight {
+        (52_000_000 as Weight)
+            .saturating_add(RocksDbWeight::get().reads(1 as Weight))
+            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+    }
+    fn purge() -> Weight {
+        (37_000_000 as Weight)
+            .saturating_add(RocksDbWeight::get().reads(1 as Weight))
+            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+    }
+    fn fetch_contracts() -> Weight {
+        (53_000_000 as Weight).saturating_add(RocksDbWeight::get().reads(4 as Weight))
+    }
 }
