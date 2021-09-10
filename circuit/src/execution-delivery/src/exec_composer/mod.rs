@@ -593,7 +593,7 @@ mod tests {
 )
 "#;
 
-    const WROONG_CODE_MODULE_DISPATCH_NO_FUNC: &str = r#"
+    const WRONG_CODE_MODULE_DISPATCH_NO_FUNC: &str = r#"
 (module
 	(import "__unstable__" "seal_call" (func $seal_call (param i32 i32 i64 i32 i32 i32 i32 i32) (result i32)))
 	(import "seal0" "seal_input" (func $seal_input (param i32 i32)))
@@ -842,7 +842,7 @@ mod tests {
         let gas_limit = Weight::MAX;
         let gateway_id = None; // on-chain contract = None as a target_id
         let compose = make_compose_out_of_raw_wat_code::<Test>(
-            WROONG_CODE_MODULE_DISPATCH_NO_FUNC,
+            WRONG_CODE_MODULE_DISPATCH_NO_FUNC,
             vec![],
             requester.clone(),
             value,
@@ -905,7 +905,7 @@ mod tests {
             make_compose_out_of_raw_wat_code::<Test>(CODE_CALL, vec![], requester.clone(), value);
 
         let compose_two = make_compose_out_of_raw_wat_code::<Test>(
-            WROONG_CODE_MODULE_DISPATCH_NO_FUNC,
+            WRONG_CODE_MODULE_DISPATCH_NO_FUNC,
             vec![],
             requester.clone(),
             value,
