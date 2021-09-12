@@ -14,17 +14,24 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity Bridges Common.  If not, see <http://www.gnu.org/licenses/>.
 
+use std::{collections::BTreeMap, str::FromStr};
+
+use async_std::task;
 use bp_circuit::derive_account_from_gateway_id;
+use bp_runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID};
+use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+use sp_core::{sr25519, Encode, Pair, Public};
+use sp_finality_grandpa::AuthorityId as GrandpaId;
+use sp_runtime::traits::{IdentifyAccount, Verify};
+
 use circuit_runtime::{
     AccountId, AuraConfig, BalancesConfig, ContractsRegistryConfig, EVMConfig, GenesisConfig,
     GrandpaConfig, MultiFinalityVerifierConfig, SessionConfig, SessionKeys, Signature, SudoConfig,
     SystemConfig, XDNSConfig, WASM_BINARY,
 };
-use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{sr25519, Pair, Public};
-use sp_finality_grandpa::AuthorityId as GrandpaId;
-use sp_runtime::traits::{IdentifyAccount, Verify};
-use std::{collections::BTreeMap, str::FromStr};
+use jsonrpc_runtime_client::{create_rpc_client, get_metadata, ConnectionParams};
+use pallet_xdns::XdnsRecord;
+use t3rn_primitives::{GatewayGenesisConfig, GatewayType, GatewayVendor};
 
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
@@ -66,6 +73,65 @@ pub fn get_authority_keys_from_seed(s: &str) -> (AccountId, AuraId, GrandpaId) {
     )
 }
 
+/// Helper function that fetches metadata from live networks and generates an XdnsRecord
+fn fetch_xdns_record_from_rpc(
+    params: &ConnectionParams,
+    chain_id: t3rn_primitives::ChainId,
+) -> Result<XdnsRecord<AccountId>, std::io::Error> {
+    task::block_on(async move {
+        let client = create_rpc_client(params).await.unwrap();
+
+        let runtime_version = client.clone().runtime_version().await.unwrap();
+        let metadata = get_metadata(&client.clone()).await.unwrap();
+
+        let mut modules_vec = vec![];
+        let mut extension_vec = vec![];
+        metadata.modules.encode_to(&mut modules_vec);
+        metadata
+            .extrinsic
+            .signed_extensions
+            .encode_to(&mut extension_vec);
+
+        Ok(<XdnsRecord<AccountId>>::new(
+            format!("wss://{}", params.host).as_bytes().to_vec(),
+            chain_id,
+            Default::default(),
+            GatewayVendor::Substrate,
+            GatewayType::ProgrammableExternal(0),
+            GatewayGenesisConfig {
+                modules_encoded: Some(modules_vec),
+                extrinsics_version: metadata.extrinsic.version.into(),
+                signed_extension: Some(extension_vec),
+                runtime_version,
+                genesis_hash: client.genesis_hash.0.to_vec(),
+            },
+        ))
+    })
+}
+
+/// Helper function to generate Polkadot and Kusama XdnsRecords from RPC
+fn seed_xdns_registry() -> Result<Vec<XdnsRecord<AccountId>>, std::io::Error> {
+    let polkadot_connection_params: ConnectionParams = ConnectionParams {
+        host: String::from("rpc.polkadot.io"),
+        port: 443,
+        secure: true,
+    };
+
+    let kusama_connection_params: ConnectionParams = ConnectionParams {
+        host: String::from("kusama-rpc.polkadot.io"),
+        port: 443,
+        secure: true,
+    };
+
+    let polkadot_xdns =
+        fetch_xdns_record_from_rpc(&polkadot_connection_params, POLKADOT_CHAIN_ID).unwrap();
+
+    let kusama_xdns =
+        fetch_xdns_record_from_rpc(&kusama_connection_params, KUSAMA_CHAIN_ID).unwrap();
+
+    Ok(vec![polkadot_xdns, kusama_xdns])
+}
+
 impl Alternative {
     /// Get an actual chain config from one of the alternatives.
     pub(crate) fn load(self) -> ChainSpec {
@@ -81,6 +147,7 @@ impl Alternative {
             .expect("Map given; qed")
             .clone(),
         );
+
         match self {
             Alternative::Development => ChainSpec::from_genesis(
                 "Development",
@@ -99,6 +166,7 @@ impl Alternative {
                                 get_account_id_from_seed::<sr25519::Public>("Alice"),
                             )),
                         ],
+                        seed_xdns_registry().unwrap_or_default(),
                         true,
                     )
                 },
@@ -153,6 +221,7 @@ impl Alternative {
                                 get_account_id_from_seed::<sr25519::Public>("Eve"),
                             )),
                         ],
+                        seed_xdns_registry().unwrap_or_default(),
                         true,
                     )
                 },
@@ -174,6 +243,7 @@ fn testnet_genesis(
     initial_authorities: Vec<(AccountId, AuraId, GrandpaId)>,
     root_key: AccountId,
     endowed_accounts: Vec<AccountId>,
+    xdns_records: Vec<XdnsRecord<AccountId>>,
     _enable_println: bool,
 ) -> GenesisConfig {
     GenesisConfig {
@@ -229,7 +299,7 @@ fn testnet_genesis(
             },
         },
         xdns: XDNSConfig {
-            known_xdns_records: Vec::new(),
+            known_xdns_records: xdns_records,
         },
         contracts_registry: ContractsRegistryConfig {
             known_contracts: Vec::new(),
@@ -250,4 +320,10 @@ fn derived_dave_account_is_as_expected() {
         derived.to_string(),
         "5C9NFeDzVveQeCvyUDA7fJv47NygtdL69i6JjmBAGf1KEDv5".to_string()
     );
+}
+
+#[test]
+fn fetch_xdns_should_return_results() {
+    let actual = seed_xdns_registry().unwrap();
+    assert_eq!(actual.len(), 2);
 }
