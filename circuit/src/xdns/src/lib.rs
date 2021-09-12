@@ -230,8 +230,6 @@ pub mod pallet {
                 gateway_genesis,
             );
 
-            xdns_record.assign_registrant(registrant.clone());
-
             let now = TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now())
                 .map_err(|_| "Unable to compute current timestamp")?;
 
