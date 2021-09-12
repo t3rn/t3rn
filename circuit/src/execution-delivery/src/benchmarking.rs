@@ -20,10 +20,8 @@ use sp_keystore::{KeystoreExt, SyncCryptoStore};
 
 use crate::{
     CurrentHeader, DefaultPolkadotLikeGateway, EthLikeKeccak256ValU32Gateway,
-    EthLikeKeccak256ValU64Gateway, PolkadotLikeValU64Gateway,
+    EthLikeKeccak256ValU64Gateway, Pallet as ExecDelivery, PolkadotLikeValU64Gateway,
 };
-
-use crate::exec_composer::tests::insert_default_xdns_record;
 
 pub const TEST_RUNTIME_VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("test-runtime"),
@@ -229,7 +227,7 @@ mod tests {
     #[test]
     fn benchmark_decompose_io_schedule() {
         new_test_ext().execute_with(|| {
-            assert_ok(test_benchmark_decompose_io_schedule::<Test>());
+            assert_ok!(test_benchmark_decompose_io_schedule::<Test>());
         })
     }
 
@@ -257,7 +255,7 @@ mod tests {
     #[test]
     fn benchmark_register_gateway_eth_u64() {
         new_test_ext().execute_with(|| {
-            assert_ok!(test_benchmark_register_gateway_eth_64::<Test>());
+            assert_ok!(test_benchmark_register_gateway_eth_u64::<Test>());
         })
     }
 
