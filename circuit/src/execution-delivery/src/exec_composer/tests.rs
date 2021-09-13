@@ -8,18 +8,18 @@ use crate::{
     RegistryContract, KEY_TYPE,
 };
 use codec::Encode;
-use hex_literal::hex;
-use t3rn_primitives::{GatewayExpectedOutput, GatewayType, GatewayPointer, GatewayVendor};
-use std::fs::File;
-use std::io::{BufReader, Read};
 use frame_support::{assert_err, assert_ok, weights::Weight};
+use hex_literal::hex;
 use sp_core::H256;
 use sp_core::{crypto::Pair, sr25519, Hasher};
 use sp_io::TestExternalities;
 use sp_keystore::testing::KeyStore;
 use sp_keystore::{KeystoreExt, SyncCryptoStore};
 use sp_runtime::AccountId32;
+use std::fs::File;
+use std::io::{BufReader, Read};
 use std::str::FromStr;
+use t3rn_primitives::{GatewayExpectedOutput, GatewayPointer, GatewayType, GatewayVendor};
 use volatile_vm::wasm::{PrefabWasmModule, RunMode};
 use volatile_vm::VolatileVM;
 
@@ -78,8 +78,7 @@ fn setup_test_escrow_as_tx_signer(ext: &mut TestExternalities) -> AccountId32 {
     // Insert Alice's keys
     const SURI_ALICE: &str = "//Alice";
 
-    let key_pair_alice =
-        sr25519::Pair::from_string(SURI_ALICE, None).expect("Generates key pair");
+    let key_pair_alice = sr25519::Pair::from_string(SURI_ALICE, None).expect("Generates key pair");
     SyncCryptoStore::insert_unknown(
         &keystore,
         KEY_TYPE,
@@ -129,8 +128,7 @@ const WRONG_CODE_MODULE_DISPATCH_NO_FUNC: &str = "wrong_code_module_dispatch_no_
 #[test]
 fn dry_run_succeeds_for_valid_call_contract_with_declared_foreign_target() {
     // Bob - dest
-    let dest =
-        AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+    let dest = AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
     let value = BalanceOf::<Test>::from(0u32);
     let _gateway_id = [0 as u8; 4];
     let compose = make_compose_out_of_raw_wat_code::<Test>(CODE_CALL, vec![], dest, value);
@@ -175,8 +173,7 @@ fn dry_run_succeeds_for_valid_call_contract_with_declared_foreign_target() {
 #[test]
 fn dry_run_succeeds_for_valid_call_contract() {
     // Bob - dest
-    let dest =
-        AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+    let dest = AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
     let value = BalanceOf::<Test>::from(0u32);
     let _gateway_id = [0 as u8; 4];
     let compose = make_compose_out_of_raw_wat_code::<Test>(CODE_CALL, vec![], dest, value);
@@ -212,8 +209,7 @@ fn dry_run_succeeds_for_valid_call_contract() {
 #[test]
 fn dry_run_fails_for_invalid_call_contract() {
     // Bob - dest
-    let dest =
-        AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
+    let dest = AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
     let value = BalanceOf::<Test>::from(0u32);
     let _gateway_id = [0 as u8; 4];
 
@@ -309,11 +305,11 @@ fn pre_run_produces_outbound_messages_if_declared_remote_target() {
             ],
             vec![0, 0, 4, 95, 1, 2, 3, 4],
             vec![
-                0, 0, 4, 95, 1, 2, 3, 4, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 14, 87, 81, 192, 38,
-                229, 67, 178, 232, 171, 46, 176, 96, 153, 218, 161, 209, 229, 223, 71, 119,
-                143, 119, 135, 250, 171, 69, 205, 241, 47, 227, 168, 14, 87, 81, 192, 38, 229,
-                67, 178, 232, 171, 46, 176, 96, 153, 218, 161, 209, 229, 223, 71, 119, 143,
-                119, 135, 250, 171, 69, 205, 241, 47, 227, 168,
+                0, 0, 4, 95, 1, 2, 3, 4, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 14, 87, 81, 192, 38, 229,
+                67, 178, 232, 171, 46, 176, 96, 153, 218, 161, 209, 229, 223, 71, 119, 143, 119,
+                135, 250, 171, 69, 205, 241, 47, 227, 168, 14, 87, 81, 192, 38, 229, 67, 178, 232,
+                171, 46, 176, 96, 153, 218, 161, 209, 229, 223, 71, 119, 143, 119, 135, 250, 171,
+                69, 205, 241, 47, 227, 168,
             ],
             "state",
             "call",
@@ -490,12 +486,8 @@ fn preload_bunch_of_contracts_fails_for_one_contract_when_contract_invalid() {
     let requester =
         AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
     let value = BalanceOf::<Test>::from(0u32);
-    let temp_contract_one = make_registry_contract_out_of_wat::<Test>(
-        INVALID_CODE,
-        vec![],
-        requester.clone(),
-        value,
-    );
+    let temp_contract_one =
+        make_registry_contract_out_of_wat::<Test>(INVALID_CODE, vec![], requester.clone(), value);
 
     ext.execute_with(|| {
         insert_default_xdns_record();
@@ -517,12 +509,8 @@ fn preload_bunch_of_contracts_fails_for_two_contracts_when_one_contract_invalid(
     let value = BalanceOf::<Test>::from(0u32);
     let temp_contract_one =
         make_registry_contract_out_of_wat::<Test>(CODE_CALL, vec![], requester.clone(), value);
-    let temp_contract_two = make_registry_contract_out_of_wat::<Test>(
-        INVALID_CODE,
-        vec![],
-        requester.clone(),
-        value,
-    );
+    let temp_contract_two =
+        make_registry_contract_out_of_wat::<Test>(INVALID_CODE, vec![], requester.clone(), value);
 
     ext.execute_with(|| {
         insert_default_xdns_record();
@@ -598,12 +586,8 @@ fn run_single_contract_fails_with_wasm_parse_error_when_contract_is_invalid() {
     let requester =
         AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
     let value = BalanceOf::<Test>::from(0u32);
-    let mut temp_contract_one = make_registry_contract_out_of_wat::<Test>(
-        INVALID_CODE,
-        vec![],
-        requester.clone(),
-        value,
-    );
+    let mut temp_contract_one =
+        make_registry_contract_out_of_wat::<Test>(INVALID_CODE, vec![], requester.clone(), value);
     ext.execute_with(|| {
         insert_default_xdns_record();
         let res = ExecComposer::run_single_contract::<Test, OptimisticOutputMode>(
