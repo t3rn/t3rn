@@ -61,12 +61,13 @@ fn insert_default_xdns_record() {
             [0, 0, 0, 0],
             Default::default(),
             GatewayVendor::Substrate,
-            GatewayType::ProgrammableExternal,
+            GatewayType::ProgrammableExternal(0),
             GatewayGenesisConfig {
                 modules_encoded: None,
                 signed_extension: None,
                 runtime_version: TEST_RUNTIME_VERSION,
                 genesis_hash: Default::default(),
+                extrinsics_version: 0u8,
             },
         ),
     );
@@ -686,11 +687,11 @@ fn run_single_contract_succeeds() {
 fn retrieve_gateway_pointer_success_with_some() {
     let gateway_id = [0 as u8; 4];
 
-    let gateway_pointer = ExecComposer::retrieve_gateway_pointer(Some(gateway_id));
+    let gateway_pointer = ExecComposer::retrieve_gateway_pointer::<Test>(Some(gateway_id));
 
     let expected = Ok(GatewayPointer {
         id: gateway_id,
-        gateway_type: GatewayType::ProgrammableExternal,
+        gateway_type: GatewayType::ProgrammableExternal(0),
         vendor: GatewayVendor::Substrate,
     });
 
@@ -701,11 +702,11 @@ fn retrieve_gateway_pointer_success_with_some() {
 fn retrieve_gateway_pointer_success_with_none() {
     let gateway_id = None;
 
-    let gateway_pointer = ExecComposer::retrieve_gateway_pointer(gateway_id);
+    let gateway_pointer = ExecComposer::retrieve_gateway_pointer::<Test>(gateway_id);
 
     let expected = Ok(GatewayPointer {
         id: Default::default(),
-        gateway_type: GatewayType::ProgrammableExternal,
+        gateway_type: GatewayType::ProgrammableExternal(0),
         vendor: GatewayVendor::Substrate,
     });
 
