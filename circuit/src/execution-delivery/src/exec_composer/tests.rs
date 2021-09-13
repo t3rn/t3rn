@@ -386,7 +386,7 @@ fn pre_run_recognizes_call_module_from_flags_and_fails_for_empty_names() {
 }
 
 #[test]
-fn pre_run_bunch_until_break_multiple_contracts_succeeds() {
+fn pre_run_bunch_until_break_succeeds_for_two_contracts() {
     let mut ext = TestExternalities::new_empty();
     let requester =
         AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
@@ -432,7 +432,7 @@ fn pre_run_bunch_until_break_multiple_contracts_succeeds() {
 }
 
 #[test]
-fn preload_bunch_of_contracts_one_contract_succeeds() {
+fn preload_bunch_of_contracts_succeeds_for_one_contract() {
     let mut ext = TestExternalities::new_empty();
     let requester =
         AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
@@ -466,7 +466,7 @@ fn preload_bunch_of_contracts_one_contract_succeeds() {
 }
 
 #[test]
-fn preload_bunch_of_contracts_multiple_contract_succeeds() {
+fn preload_bunch_of_contracts_succeeds_for_two_contracts() {
     let mut ext = TestExternalities::new_empty();
     let requester =
         AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
@@ -488,7 +488,7 @@ fn preload_bunch_of_contracts_multiple_contract_succeeds() {
 }
 
 #[test]
-fn preload_bunch_of_contracts_one_contract_fails() {
+fn preload_bunch_of_contracts_fails_for_one_contract_when_contract_invalid() {
     let mut ext = TestExternalities::new_empty();
     let requester =
         AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
@@ -513,7 +513,7 @@ fn preload_bunch_of_contracts_one_contract_fails() {
 }
 
 #[test]
-fn preload_bunch_of_contracts_multiple_contract_fails() {
+fn preload_bunch_of_contracts_fails_for_two_contracts_when_one_contract_invalid() {
     let mut ext = TestExternalities::new_empty();
     let requester =
         AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
@@ -539,7 +539,7 @@ fn preload_bunch_of_contracts_multiple_contract_fails() {
 }
 
 #[test]
-fn run_single_contract_fails_stack_error() {
+fn run_single_contract_fails_with_stack_error_when_contract_not_preloaded() {
     let mut ext = TestExternalities::new_empty();
     let requester =
         AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
@@ -566,7 +566,7 @@ fn run_single_contract_fails_stack_error() {
 }
 
 #[test]
-fn run_single_contract_fails_xdns_error() {
+fn run_single_contract_fails_with_xdns_error_when_xdns_record_not_present() {
     let mut ext = TestExternalities::new_empty();
     let requester =
         AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
@@ -596,7 +596,7 @@ fn run_single_contract_fails_xdns_error() {
 }
 
 #[test]
-fn run_single_contract_fails_wasm_parse_error() {
+fn run_single_contract_fails_with_wasm_parse_error_when_contract_is_invalid() {
     let mut ext = TestExternalities::new_empty();
     let requester =
         AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
@@ -627,7 +627,7 @@ fn run_single_contract_fails_wasm_parse_error() {
 
 #[test]
 #[ignore = "Please implement proper assertions when retrieve_gateway_protocol is properly implemented"]
-fn run_single_contract_fails_retrieve_gateway_protocol_error() {
+fn run_single_contract_fails_with_retrieve_gateway_protocol_error() {
     let mut ext = TestExternalities::new_empty();
     let requester =
         AccountId32::from_str("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv").unwrap();
