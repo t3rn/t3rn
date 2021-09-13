@@ -10,11 +10,9 @@ use frame_system::RawOrigin;
 use t3rn_primitives::abi::GatewayABIConfig;
 use t3rn_primitives::Compose;
 
-use sp_core::H256;
 use sp_runtime::{create_runtime_str, AccountId32};
 use sp_version::RuntimeVersion;
 
-use sp_core::{crypto::Pair, sr25519};
 use sp_keystore::testing::KeyStore;
 use sp_keystore::{KeystoreExt, SyncCryptoStore};
 
