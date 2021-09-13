@@ -43,9 +43,19 @@ pub type ChainId = [u8; 4];
 #[derive(Clone, Eq, PartialEq, PartialOrd, Ord, Encode, Decode, Debug)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum GatewayType {
-    ProgrammableInternal,
-    ProgrammableExternal,
-    TxOnly,
+    ProgrammableInternal(u32),
+    ProgrammableExternal(u32),
+    TxOnly(u32),
+}
+
+impl GatewayType {
+    pub fn fetch_nonce(self) -> u32 {
+        match self {
+            Self::ProgrammableInternal(nonce) => nonce,
+            Self::ProgrammableExternal(nonce) => nonce,
+            Self::TxOnly(nonce) => nonce,
+        }
+    }
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
@@ -82,9 +92,23 @@ pub struct GatewayGenesisConfig {
     pub signed_extension: Option<Vec<u8>>,
     /// Runtime version
     pub runtime_version: sp_version::RuntimeVersion,
+    /// Extrinsics version
+    pub extrinsics_version: u8,
     /// Genesis hash - block id of the genesis block use to distinct the network and sign messages
     /// Length depending on parameter passed in abi::GatewayABIConfig
     pub genesis_hash: Vec<u8>,
+}
+
+impl Default for GatewayGenesisConfig {
+    fn default() -> Self {
+        Self {
+            extrinsics_version: 0,
+            runtime_version: Default::default(),
+            genesis_hash: vec![],
+            modules_encoded: None,
+            signed_extension: None,
+        }
+    }
 }
 
 /// A struct that encodes RPC parameters required for a call to a smart-contract.
@@ -300,11 +324,11 @@ pub struct ExtraMessagePayload {
 
 /// Retrieves all available gateways for a given ChainId.
 /// Currently returns a vector with a single hardcoded result.
-/// Eventually this will return all known gateways on pallet-xdns.
+/// Eventually this will search all known gateways on pallet-xdns.
 pub fn retrieve_gateway_pointers(gateway_id: ChainId) -> Result<Vec<GatewayPointer>, &'static str> {
     Ok(vec![GatewayPointer {
         id: gateway_id,
-        gateway_type: GatewayType::ProgrammableExternal,
+        gateway_type: GatewayType::ProgrammableExternal(0),
         vendor: GatewayVendor::Substrate,
     }])
 }

@@ -12,7 +12,7 @@ pub use polkadot_like_chain::PolkadotLike;
 
 /// Useful Substrate network RPC queries
 pub mod useful_queries;
-pub use useful_queries::get_first_header;
+pub use useful_queries::{get_first_header, get_metadata};
 
 /// Run single transaction proof relay and stop.
 pub async fn create_rpc_client(

@@ -28,7 +28,7 @@ use sc_rpc::system::SystemApi;
 
 use t3rn_primitives::*;
 
-use pallet_circuit_execution_delivery::message_test_utils::create_test_stuffed_gateway_protocol;
+use circuit_test_utils::create_test_stuffed_gateway_protocol;
 
 use sp_keyring::Sr25519Keyring;
 
@@ -124,7 +124,7 @@ fn successfully_dispatches_signed_transfer_outbound_message_from_circuit_to_exte
             .transfer(
                 GenericAddress::Id(Sr25519Keyring::Bob.to_account_id()),
                 Compact::from(100000000000000u128),
-                GatewayType::ProgrammableExternal,
+                GatewayType::ProgrammableExternal(0),
             )
             .expect("shouldn't fail");
 

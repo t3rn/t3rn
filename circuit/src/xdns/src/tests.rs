@@ -15,112 +15,162 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Tests for pallet-example.
+//! Tests for pallet-xdns.
 
-use crate::*;
-use frame_support::parameter_types;
-use sp_core::H256;
-// The testing primitives are very useful for avoiding having to work with signatures
-// or public keys. `u64` is used as the `AccountId` and no `Signature`s are required.
-use sp_runtime::{
-    testing::Header,
-    traits::{BlakeTwo256, IdentityLookup},
-};
-// Reexport crate as its pallet name for construct_runtime.
-use crate as pallet_example;
-use t3rn_primitives::EscrowTrait;
+use super::*;
+use crate::mock::{ExtBuilder, Test, WithAuthorities, XDNS};
+use frame_support::{assert_err, assert_noop, assert_ok};
+use frame_system::Origin;
+use sp_runtime::DispatchError;
+use t3rn_primitives::abi::{CryptoAlgo, HasherAlgo};
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
+#[test]
+fn genesis_should_seed_circuit_gateway_polkadot_and_kusama_nodes() {
+    let circuit_hash = <Test as frame_system::Config>::Hashing::hash(b"circ");
+    let gateway_hash = <Test as frame_system::Config>::Hashing::hash(b"gate");
+    let polkadot_hash = <Test as frame_system::Config>::Hashing::hash(b"pdot");
+    let kusama_hash = <Test as frame_system::Config>::Hashing::hash(b"ksma");
 
-// For testing the pallet, we construct a mock runtime.
-frame_support::construct_runtime!(
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        Example: pallet_example::{Pallet, Call, Storage, Config<T>, Event<T>},
-        Timestamp: pallet_timestamp::{Pallet},
-        Sudo: pallet_sudo::{Pallet, Call, Event<T>},
-    }
-);
-
-parameter_types! {
-    pub const MinimumPeriod: u64 = 1;
-    pub const TransactionByteFee: u64 = 1;
+    ExtBuilder::default()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            assert_eq!(XDNSRegistry::<Test>::iter().count(), 4);
+            assert!(XDNSRegistry::<Test>::get(circuit_hash).is_some());
+            assert!(XDNSRegistry::<Test>::get(gateway_hash).is_some());
+            assert!(XDNSRegistry::<Test>::get(polkadot_hash).is_some());
+            assert!(XDNSRegistry::<Test>::get(kusama_hash).is_some());
+        });
 }
 
-impl pallet_timestamp::Config for Test {
-    type Moment = u64;
-    type OnTimestampSet = ();
-    type MinimumPeriod = MinimumPeriod;
-    type WeightInfo = ();
+#[test]
+fn should_add_a_new_xdns_record_if_it_doesnt_exist() {
+    ExtBuilder::default().build().execute_with(|| {
+        assert_ok!(XDNS::add_new_xdns_record(
+            Origin::<Test>::Signed(1).into(),
+            b"some_url".to_vec(),
+            *b"test",
+            Default::default(),
+            GatewayVendor::Substrate,
+            GatewayType::TxOnly(0),
+            Default::default(),
+        ));
+        assert_eq!(XDNSRegistry::<Test>::iter().count(), 1);
+        assert!(
+            XDNSRegistry::<Test>::get(<Test as frame_system::Config>::Hashing::hash(b"test"))
+                .is_some()
+        );
+    });
 }
 
-impl EscrowTrait for Test {
-    type Currency = Balances;
-    type Time = Timestamp;
+#[test]
+fn should_not_add_a_new_xdns_record_if_it_already_exists() {
+    ExtBuilder::default()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            assert_noop!(
+                XDNS::add_new_xdns_record(
+                    Origin::<Test>::Signed(1).into(),
+                    b"some_url".to_vec(),
+                    *b"circ",
+                    Default::default(),
+                    GatewayVendor::Substrate,
+                    GatewayType::TxOnly(0),
+                    Default::default(),
+                ),
+                crate::pallet::Error::<Test>::XdnsRecordAlreadyExists
+            );
+            assert_eq!(XDNSRegistry::<Test>::iter().count(), 4);
+        });
 }
 
-parameter_types! {
-    pub const BlockHashCount: u64 = 250;
-    pub BlockWeights: frame_system::limits::BlockWeights =
-        frame_system::limits::BlockWeights::simple_max(1024);
-}
-impl frame_system::Config for Test {
-    type BaseCallFilter = ();
-    type BlockWeights = ();
-    type BlockLength = ();
-    type DbWeight = ();
-    type Origin = Origin;
-    type Index = u64;
-    type BlockNumber = u64;
-    type Hash = H256;
-    type Call = Call;
-    type Hashing = BlakeTwo256;
-    type AccountId = u64;
-    type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
-    type Event = Event;
-    type BlockHashCount = BlockHashCount;
-    type Version = ();
-    type PalletInfo = PalletInfo;
-    type AccountData = pallet_balances::AccountData<u64>;
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type SystemWeightInfo = ();
-    type SS58Prefix = ();
-    type OnSetCode = ();
-}
-parameter_types! {
-    pub const ExistentialDeposit: u64 = 1;
+#[test]
+fn should_purge_a_xdns_record_successfully() {
+    ExtBuilder::default()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let gateway_hash = <Test as frame_system::Config>::Hashing::hash(b"gate");
+
+            assert_ok!(XDNS::purge_xdns_record(
+                Origin::<Test>::Root.into(),
+                1,
+                gateway_hash
+            ));
+            assert_eq!(XDNSRegistry::<Test>::iter().count(), 3);
+            assert!(XDNSRegistry::<Test>::get(gateway_hash).is_none());
+        });
 }
 
-impl pallet_sudo::Config for Test {
-    type Event = Event;
-    type Call = Call;
+#[test]
+fn should_error_trying_to_purge_a_missing_xdns_record() {
+    let missing_hash = <Test as frame_system::Config>::Hashing::hash(b"miss");
+
+    ExtBuilder::default()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            assert_noop!(
+                XDNS::purge_xdns_record(Origin::<Test>::Root.into(), 1, missing_hash),
+                crate::pallet::Error::<Test>::UnknownXdnsRecord
+            );
+            assert_eq!(XDNSRegistry::<Test>::iter().count(), 4);
+        });
 }
 
-parameter_types! {
-    pub const MaxReserves: u32 = 50;
+#[test]
+fn should_error_trying_to_purge_an_xdns_record_if_not_root() {
+    ExtBuilder::default()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let gateway_hash = <Test as frame_system::Config>::Hashing::hash(b"gate");
+
+            assert_noop!(
+                XDNS::purge_xdns_record(Origin::<Test>::Signed(1).into(), 1, gateway_hash),
+                DispatchError::BadOrigin
+            );
+            assert_eq!(XDNSRegistry::<Test>::iter().count(), 4);
+            assert!(XDNSRegistry::<Test>::get(gateway_hash).is_some());
+        });
 }
 
-impl pallet_balances::Config for Test {
-    type MaxLocks = ();
-    type Balance = u64;
-    type DustRemoval = ();
-    type Event = Event;
-    type ExistentialDeposit = ExistentialDeposit;
-    type AccountStore = System;
-    type WeightInfo = ();
-    type MaxReserves = MaxReserves;
-    type ReserveIdentifier = [u8; 8];
+#[test]
+fn should_update_ttl_for_a_known_xdns_record() {
+    ExtBuilder::default()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let gateway_hash = <Test as frame_system::Config>::Hashing::hash(b"gate");
+
+            assert_ok!(XDNS::update_ttl(Origin::<Test>::Root.into(), *b"gate", 2));
+            assert_eq!(XDNSRegistry::<Test>::iter().count(), 4);
+            assert_eq!(
+                XDNSRegistry::<Test>::get(gateway_hash)
+                    .unwrap()
+                    .last_finalized,
+                Some(2)
+            );
+        });
 }
 
-impl Config for Test {
-    type Event = Event;
-    type WeightInfo = ();
+#[test]
+fn should_error_when_trying_to_update_ttl_for_a_missing_xdns_record() {
+    ExtBuilder::default().build().execute_with(|| {
+        assert_noop!(
+            XDNS::update_ttl(Origin::<Test>::Root.into(), *b"miss", 2),
+            crate::pallet::Error::<Test>::XdnsRecordNotFound
+        );
+    });
+}
+
+#[test]
+fn should_error_when_trying_to_update_ttl_as_non_root() {
+    ExtBuilder::default().build().execute_with(|| {
+        assert_noop!(
+            XDNS::update_ttl(Origin::<Test>::Signed(1).into(), *b"gate", 2),
+            DispatchError::BadOrigin
+        );
+    });
 }

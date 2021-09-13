@@ -16,7 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::sync::Arc;
+use std::env;
+use std::sync::{Arc, Mutex};
 
 use sp_core::crypto::KeyTypeId;
 
@@ -43,9 +44,11 @@ use jsonrpc_pubsub::manager::SubscriptionManager;
 use futures::{compat::Future01CompatExt, executor, FutureExt};
 use jsonrpc_core::futures::future as future01;
 
+use jsonrpc_runtime_client::create_rpc_client;
+use jsonrpc_runtime_client::polkadot_like_chain::PolkadotLike;
+use relay_substrate_client::{Client as RemoteClient, ConnectionParams};
 use sc_keystore::LocalKeystore;
 use sp_keyring::Sr25519Keyring;
-
 // Executor shared by all tests.
 //
 // This shared executor is used to prevent `Too many open files` errors
@@ -53,6 +56,8 @@ use sp_keyring::Sr25519Keyring;
 lazy_static::lazy_static! {
     static ref EXECUTOR: executor::ThreadPool = executor::ThreadPool::new()
         .expect("Failed to create thread pool executor for tests");
+
+    pub static ref REMOTE_CLIENT:  Mutex<Option<RemoteClient<PolkadotLike>>> = Mutex::new(None);
 }
 
 pub type Boxed01Future01 = Box<dyn future01::Future<Item = (), Error = ()> + Send + 'static>;
@@ -121,6 +126,24 @@ impl Default for TestSetup {
             spawner,
             client.clone(),
         );
+
+        let mut remote_client = REMOTE_CLIENT.lock().unwrap();
+        if remote_client.is_none() {
+            let ws: RemoteClient<PolkadotLike> = async_std::task::block_on(async move {
+                let host = env::var("TEST_REMOTE_HOST").unwrap_or("localhost".into());
+                let port = env::var("TEST_REMOTE_PORT").unwrap_or("9944".into());
+                let secure = env::var("TEST_REMOTE_SECURE").unwrap_or("false".into());
+                let conn_params = ConnectionParams {
+                    host,
+                    port: port.parse().unwrap(),
+                    secure: secure.parse().unwrap(),
+                };
+
+                create_rpc_client(&conn_params).await.unwrap()
+            });
+
+            *remote_client = Some(ws);
+        }
 
         TestSetup {
             client,

@@ -19,7 +19,7 @@
 
 use crate::mock::{ContractsRegistry, ExtBuilder, Origin, Test};
 use crate::pallet::Error;
-use crate::types::{ContractAccessError, RegistryContract};
+use crate::types::RegistryContract;
 use frame_support::{assert_err, assert_ok};
 use sp_core::H256;
 use sp_runtime::DispatchError;

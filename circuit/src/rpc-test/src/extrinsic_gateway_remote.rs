@@ -17,7 +17,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 use codec::{Compact, Encode};
 
-use crate::mock_rpc_setup::TestSetup;
+use crate::mock_rpc_setup::{TestSetup, REMOTE_CLIENT};
 
 use sp_core::Bytes;
 use sp_io::TestExternalities;
@@ -25,7 +25,7 @@ use sp_keystore::KeystoreExt;
 
 use t3rn_primitives::*;
 
-use pallet_circuit_execution_delivery::message_test_utils::{
+use circuit_test_utils::{
     create_gateway_protocol_from_client, create_test_stuffed_gateway_protocol,
 };
 
@@ -34,54 +34,44 @@ use jsonrpsee_types::{traits::Client, JsonValue};
 use sp_keyring::Sr25519Keyring;
 
 #[test]
-#[ignore] // ToDo: Won't run at CI for additional localhost target
 fn successfully_dispatches_signed_transfer_outbound_message_with_protocol_from_circuit_to_remote_target(
 ) {
-    let localhost_params: ConnectionParams = ConnectionParams {
-        host: "localhost".to_string(),
-        port: 9944,
-        secure: false,
-    };
-    let _devnet_params: ConnectionParams = ConnectionParams {
-        host: "dev.net.t3rn.io".to_string(),
-        port: 443,
-        secure: true,
-    };
-
     async_std::task::block_on(async move {
-        let client = create_rpc_client(&localhost_params).await.unwrap();
-
         // Re-use mocked test setup since signing must happen in test externalities env
         let p = TestSetup::default();
+        let opt_client = REMOTE_CLIENT.lock().unwrap();
+        let client = opt_client.as_ref().unwrap();
+
         let mut ext = TestExternalities::new_empty();
         ext.register_extension(KeystoreExt(p.keystore));
 
         let signer = Sr25519Keyring::Alice;
         let test_protocol =
-            create_gateway_protocol_from_client(client.clone(), signer.public().into()).await;
-
-        let signed_ext = ext.execute_with(|| {
-            let transfer_outbound_message = test_protocol
-                .transfer(
-                    GenericAddress::Id(Sr25519Keyring::Bob.to_account_id()),
-                    Compact::from(100000000000000u128),
-                    GatewayType::ProgrammableExternal,
-                )
-                .unwrap();
-
-            transfer_outbound_message
-                .to_jsonrpc_signed()
-                .unwrap()
-                .signed_extrinsic
-        });
+            create_gateway_protocol_from_client(client, signer.public().into()).await;
 
         let ext_hash = client
-            .submit_signed_extrinsic(signer.to_account_id(), |_nonce| signed_ext.into())
+            .submit_signed_extrinsic(signer.to_account_id(), |nonce| {
+                let signed_ext = ext.execute_with(|| {
+                    let transfer_outbound_message = test_protocol
+                        .transfer(
+                            GenericAddress::Id(Sr25519Keyring::Bob.to_account_id()),
+                            Compact::from(100000000000000u128),
+                            GatewayType::ProgrammableExternal(nonce),
+                        )
+                        .unwrap();
+
+                    transfer_outbound_message
+                        .to_jsonrpc_signed()
+                        .unwrap()
+                        .signed_extrinsic
+                });
+
+                signed_ext.into()
+            })
             .await;
 
-        assert!(ext_hash.is_ok(), "result should be true");
-
         println!("client.author_submit_extrinsic result = {:?}", ext_hash);
+        assert!(ext_hash.is_ok(), "result should be true");
     });
 }
 
@@ -126,7 +116,7 @@ fn successfully_dispatches_signed_call_outbound_message_with_protocol_from_circu
         GenericAddress::Id(Sr25519Keyring::Charlie.to_account_id()).encode(), // to/dest
         Compact::from(100000000000000u128).encode(),                          // value
         Compact::from(200000000000000u128).encode(),                          // gas
-        GatewayType::ProgrammableExternal,
+        GatewayType::ProgrammableExternal(0),
         None, // optional return value which already might have been known
     );
     ext.execute_with(|| {

@@ -33,6 +33,7 @@ frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch =
 frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 node-inspect = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+pallet-xdns = { path = "./src/xdns" }
 sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8', features = ["wasmtime"] }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
@@ -54,6 +55,9 @@ sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch 
 sp-inherents = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 substrate-frame-rpc-system = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+t3rn-primitives = { path = "src/primitives" }
+jsonrpc-runtime-client = { path = "src/rpc-test/jsonrpc-runtime-client" }
+async-std = "1.10.0"
 
 [build-dependencies]
 substrate-build-script-utils = "3.0.0"
@@ -65,6 +69,7 @@ default = []
 # TODO: https://github.com/paritytech/parity-bridges-common/issues/390
 # I've left the feature flag here to test our CI configuration
 runtime-benchmarks = [
+    "circuit-runtime/runtime-benchmarks",
     # "millau-runtime/runtime-benchmarks",
 ]
 
@@ -81,6 +86,6 @@ members = [
     "src/runtime",
     "src/primitives",
     "src/xdns",
-    "src/rpc-test"
+    "src/test-utils"
 ]
 exclude = []

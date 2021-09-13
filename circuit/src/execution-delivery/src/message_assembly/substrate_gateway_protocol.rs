@@ -52,15 +52,16 @@ where
         namespace: &'static str,
         name: &'static str,
         arguments: Vec<u8>,
+        nonce: u32,
     ) -> Result<ExtraMessagePayload, &'static str> {
         let extrinsic = self
             .assembly
-            .assemble_signed_call(namespace, name, arguments)?;
+            .assemble_signed_call(namespace, name, arguments, nonce)?;
 
         let signature = extrinsic
             .signature
             .clone()
-            .expect("Signature of extrinsic should be valid if assemble_signed_tx was successfull")
+            .expect("Signature of extrinsic should be valid if assemble_signed_tx was successful")
             .signature;
 
         Ok(ExtraMessagePayload {
@@ -69,7 +70,7 @@ where
             method_name: name.encode(),
             call_bytes: extrinsic.function.encode(),
             signature: signature.encode(),
-            extra: GenericExtra::new(Era::Immortal, 0).encode(),
+            extra: GenericExtra::new(Era::Immortal, nonce).encode(),
             tx_signed: extrinsic.encode(),
             custom_payload: None,
         })
@@ -125,7 +126,7 @@ where
         &self,
         key: Vec<u8>, //sp_core::storage
         value: Option<Vec<u8>>,
-        _gateway_type: GatewayType,
+        gateway_type: GatewayType,
     ) -> Result<CircuitOutboundMessage, &'static str> {
         // storage
         let expected_storage = GatewayExpectedOutput::Storage {
@@ -145,6 +146,7 @@ where
                 "state",
                 "setStorage",
                 Self::collect_args(arguments),
+                gateway_type.fetch_nonce(),
             )?),
             sender: None,
             target: None,
@@ -164,7 +166,7 @@ where
         _return_value: Option<Vec<u8>>,
     ) -> Result<CircuitOutboundMessage, &'static str> {
         match gateway_type {
-            GatewayType::ProgrammableInternal => {
+            GatewayType::ProgrammableInternal(nonce) => {
                 let arguments = vec![to, value, gas, data];
                 Ok(CircuitOutboundMessage {
                     name: b"call_static".to_vec(),
@@ -181,13 +183,14 @@ where
                         "gatewayEscrowed",
                         "callStatic",
                         Self::collect_args(arguments),
+                        nonce,
                     )?),
                     sender: None,
                     target: None,
                 })
             }
             // Don't think there is a way of enforcing calls to be static on via external dispatch?
-            GatewayType::ProgrammableExternal | GatewayType::TxOnly => {
+            GatewayType::ProgrammableExternal(_) | GatewayType::TxOnly(_) => {
                 unimplemented!();
             }
         }
@@ -203,7 +206,7 @@ where
         _to: Vec<u8>,
         _value: Vec<u8>,
         _gas: Vec<u8>,
-        _gateway_type: GatewayType,
+        gateway_type: GatewayType,
         _return_value: Option<Vec<u8>>,
     ) -> Result<CircuitOutboundMessage, &'static str> {
         // For state::call first argument is PalletName_MethodName
@@ -234,6 +237,7 @@ where
                 "state",
                 "call",
                 Self::collect_args(arguments),
+                gateway_type.fetch_nonce(),
             )?),
             sender: None,
             target: None,
@@ -251,7 +255,7 @@ where
         gateway_type: GatewayType,
     ) -> Result<CircuitOutboundMessage, &'static str> {
         match gateway_type {
-            GatewayType::ProgrammableInternal => {
+            GatewayType::ProgrammableInternal(nonce) => {
                 let expected_output = vec![GatewayExpectedOutput::Events {
                     signatures: vec![
                         // dest, value, gas_limit, data
@@ -269,13 +273,14 @@ where
                         "gatewayEscrowed",
                         "callEscrowed",
                         Self::collect_args(arguments),
+                        nonce,
                     )?),
                     sender: None,
                     target: None,
                 })
             }
             // Don't think there is a way of enforcing calls to be static on via external dispatch?
-            GatewayType::ProgrammableExternal | GatewayType::TxOnly => {
+            GatewayType::ProgrammableExternal(_) | GatewayType::TxOnly(_) => {
                 unimplemented!();
             }
         }
@@ -327,7 +332,7 @@ where
         &self,
         to: GenericAddress,
         value: Compact<u128>,
-        _gateway_type: GatewayType,
+        gateway_type: GatewayType,
     ) -> Result<CircuitOutboundMessage, &'static str> {
         let expected_output = vec![GatewayExpectedOutput::Events {
             signatures: vec![
@@ -340,14 +345,15 @@ where
 
         Ok(CircuitOutboundMessage {
             name: b"transfer".to_vec(),
-            module_name: b"balances".to_vec(),
+            module_name: b"Balances".to_vec(),
             method_name: b"transfer".to_vec(),
             arguments: arguments.clone(),
             expected_output,
             extra_payload: Some(self.produce_signed_payload(
-                "balances",
+                "Balances",
                 "transfer",
                 Self::collect_args(arguments),
+                gateway_type.fetch_nonce(),
             )?),
             sender: None,
             target: None,
@@ -365,7 +371,7 @@ where
     ) -> Result<CircuitOutboundMessage, &'static str> {
         let arguments = vec![to.clone(), value.clone(), vec![]];
         match gateway_type {
-            GatewayType::ProgrammableInternal => {
+            GatewayType::ProgrammableInternal(nonce) => {
                 let expected_output = vec![GatewayExpectedOutput::Events {
                     signatures: vec![
                         // from, to, value
@@ -383,12 +389,13 @@ where
                         "gateway",
                         "transfer",
                         Self::collect_args(arguments),
+                        nonce,
                     )?),
                     sender: None,
                     target: None,
                 })
             }
-            GatewayType::ProgrammableExternal | GatewayType::TxOnly => {
+            GatewayType::ProgrammableExternal(nonce) | GatewayType::TxOnly(nonce) => {
                 let expected_output = vec![GatewayExpectedOutput::Events {
                     signatures: vec![
                         // from, to, value
@@ -398,22 +405,24 @@ where
                 }];
 
                 let transfers = vec![
-                    self.produce_signed_payload(
-                        "balances",
-                        "transfer",
-                        Self::collect_args(vec![
-                            self.assembly.submitter.to_raw_vec(),
-                            escrow_account.clone(),
-                            value.clone(),
-                        ]),
-                    )?
-                    .encode(),
-                    self.produce_signed_payload(
-                        "balances",
-                        "transfer",
-                        Self::collect_args(vec![escrow_account, to, value]),
-                    )?
-                    .encode(),
+                    self.assembly
+                        .assemble_call(
+                            "Balances",
+                            "transfer",
+                            Self::collect_args(vec![
+                                self.assembly.submitter.to_raw_vec(),
+                                escrow_account.clone(),
+                                value.clone(),
+                            ]),
+                        )?
+                        .encode(),
+                    self.assembly
+                        .assemble_call(
+                            "Balances",
+                            "transfer",
+                            Self::collect_args(vec![escrow_account, to, value]),
+                        )?
+                        .encode(),
                 ];
 
                 Ok(CircuitOutboundMessage {
@@ -423,9 +432,10 @@ where
                     arguments: arguments.clone(),
                     expected_output,
                     extra_payload: Some(self.produce_signed_payload(
-                        "utility",
+                        "Utility",
                         "batchAll",
                         Self::collect_args(transfers),
+                        nonce,
                     )?),
                     sender: None,
                     target: None,
@@ -555,19 +565,19 @@ pub mod tests {
         // TODO: update these tests as soon implementation takes the gateway type into account
         assert_eq!(
             test_protocol
-                .get_storage(test_key.clone(), GatewayType::ProgrammableInternal)
+                .get_storage(test_key.clone(), GatewayType::ProgrammableInternal(0))
                 .unwrap(),
             expected_message
         );
         assert_eq!(
             test_protocol
-                .get_storage(test_key.clone(), GatewayType::ProgrammableExternal)
+                .get_storage(test_key.clone(), GatewayType::ProgrammableExternal(0))
                 .unwrap(),
             expected_message
         );
         assert_eq!(
             test_protocol
-                .get_storage(test_key, GatewayType::TxOnly)
+                .get_storage(test_key, GatewayType::TxOnly(0))
                 .unwrap(),
             expected_message
         );
@@ -591,9 +601,9 @@ pub mod tests {
 
             // TODO: update these tests as soon implementation takes the gateway type into account
             for gateway_type in vec![
-                GatewayType::ProgrammableInternal,
-                GatewayType::ProgrammableExternal,
-                GatewayType::TxOnly,
+                GatewayType::ProgrammableInternal(0),
+                GatewayType::ProgrammableExternal(0),
+                GatewayType::TxOnly(0),
             ] {
                 let actual = test_protocol
                     .set_storage(test_key.clone(), test_value.clone(), gateway_type)
@@ -676,7 +686,7 @@ pub mod tests {
                         to,
                         value,
                         gas,
-                        GatewayType::ProgrammableInternal,
+                        GatewayType::ProgrammableInternal(0),
                         None,
                     )
                     .unwrap(),
@@ -716,7 +726,7 @@ pub mod tests {
                     to.clone(),
                     value.clone(),
                     gas.clone(),
-                    GatewayType::ProgrammableInternal,
+                    GatewayType::ProgrammableInternal(0),
                 )
                 .unwrap();
 
@@ -759,7 +769,7 @@ pub mod tests {
                 [1_u8; 32].to_vec(),
                 1_u128.encode(),
                 1_u64.encode(),
-                GatewayType::ProgrammableExternal,
+                GatewayType::ProgrammableExternal(0),
             )
             .unwrap();
     }
@@ -776,7 +786,7 @@ pub mod tests {
                 [1_u8; 32].to_vec(),
                 1_u128.encode(),
                 1_u64.encode(),
-                GatewayType::TxOnly,
+                GatewayType::TxOnly(0),
             )
             .unwrap();
     }
@@ -806,7 +816,7 @@ pub mod tests {
                     to.clone(),
                     value.clone(),
                     gas.clone(),
-                    GatewayType::ProgrammableInternal,
+                    GatewayType::ProgrammableInternal(0),
                     None,
                 )
                 .unwrap();
@@ -850,7 +860,7 @@ pub mod tests {
                 [1_u8; 32].to_vec(),
                 1_u128.encode(),
                 1_u64.encode(),
-                GatewayType::ProgrammableExternal,
+                GatewayType::ProgrammableExternal(0),
                 None,
             )
             .unwrap();
@@ -868,7 +878,7 @@ pub mod tests {
                 [1_u8; 32].to_vec(),
                 1_u128.encode(),
                 1_u64.encode(),
-                GatewayType::TxOnly,
+                GatewayType::TxOnly(0),
                 None,
             )
             .unwrap();
@@ -896,7 +906,7 @@ pub mod tests {
                 .transfer(
                     GenericAddress::Id(to.into()),
                     value.clone(),
-                    GatewayType::ProgrammableInternal,
+                    GatewayType::ProgrammableInternal(0),
                 )
                 .unwrap();
 
@@ -914,18 +924,18 @@ pub mod tests {
                     signatures: vec![b"Transfer(address,address,value)".to_vec()],
                 }],
                 vec![
-                    11, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+                    8, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
                     4, 4, 4, 4, 4, 4, 4, 4, 4, 16,
                 ],
                 vec![
-                    11, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+                    8, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
                     4, 4, 4, 4, 4, 4, 4, 4, 4, 16, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 228, 91, 54,
                     23, 242, 175, 145, 3, 62, 53, 1, 176, 110, 242, 112, 238, 216, 163, 225, 49,
                     11, 192, 245, 48, 220, 24, 125, 95, 95, 230, 28, 240, 228, 91, 54, 23, 242,
                     175, 145, 3, 62, 53, 1, 176, 110, 242, 112, 238, 216, 163, 225, 49, 11, 192,
                     245, 48, 220, 24, 125, 95, 95, 230, 28, 240,
                 ],
-                "balances",
+                "Balances",
                 "transfer",
             );
         });
@@ -956,7 +966,7 @@ pub mod tests {
                     to.to_vec(),
                     value.clone(),
                     &mut _transfers,
-                    GatewayType::ProgrammableInternal,
+                    GatewayType::ProgrammableInternal(0),
                 )
                 .unwrap();
 
@@ -1000,8 +1010,8 @@ pub mod tests {
         ext.execute_with(|| {
             let test_protocol = create_test_gateway_protocol(
                 vec![
-                    ("balances", vec!["transfer"]),
-                    ("utility", vec!["batchAll"]),
+                    ("Balances", vec!["transfer"]),
+                    ("Utility", vec!["batchAll"]),
                 ],
                 submitter.into(),
             );
@@ -1013,7 +1023,7 @@ pub mod tests {
                     to.clone(),
                     value.clone(),
                     &mut transfers,
-                    GatewayType::ProgrammableExternal,
+                    GatewayType::ProgrammableExternal(0),
                 )
                 .unwrap();
 
@@ -1051,7 +1061,7 @@ pub mod tests {
                             custom_payload: _,
                         }) => {
                             assert_eq!(signer, submitter.encode());
-                            assert_eq!(module_name, "utility".encode());
+                            assert_eq!(module_name, "Utility".encode());
                             assert_eq!(method_name, "batchAll".encode());
                             assert_eq!(extra, vec![0, 0, 0]);
                         }
