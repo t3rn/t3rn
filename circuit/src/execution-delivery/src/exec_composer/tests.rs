@@ -30,12 +30,8 @@ fn make_compose_out_of_raw_wat_code<T: Config>(
     value: BalanceOf<T>,
 ) -> Compose<T::AccountId, BalanceOf<T>> {
     let fixture_path = ["fixtures/", wat_string_path, ".wat"].concat();
-    let file = File::open(fixture_path);
-    let t = match file {
-        Ok(t) => t,
-        Err(e) => {println!("{:?}",e); todo!(); },
-    };
-    let mut buf_reader = BufReader::new(t);
+    let file = File::open(fixture_path).unwrap();
+    let mut buf_reader = BufReader::new(file);
     let mut wat_string = String::new();
     let _res = buf_reader.read_to_string(&mut wat_string);
     let wasm = match wat::parse_str(wat_string.clone()) {
