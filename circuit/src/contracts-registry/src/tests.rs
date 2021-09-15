@@ -339,7 +339,7 @@ fn fetch_contracts_with_no_parameters_should_error() {
 }
 
 #[test]
-fn add_new_contract_success() {
+fn add_new_contract_succeeds_for_default() {
     let origin = Origin::root();
     let test_contract = RegistryContract {
         code_txt: b"some_code".to_vec(),
@@ -377,7 +377,7 @@ fn add_new_contract_success() {
 }
 
 #[test]
-fn add_new_contract_fails_if_origin_not_root() {
+fn add_new_contract_fails_for_no_sudo_origin() {
     let origin = Origin::signed(1);
     let test_contract = RegistryContract {
         code_txt: b"some_code".to_vec(),
@@ -452,7 +452,7 @@ fn add_new_contract_fails_if_contract_already_exists() {
 }
 
 #[test]
-fn purge_success() {
+fn purge_succeeds_for_default_contract() {
     let origin = Origin::root();
     let requester = 1_u64;
 
@@ -487,8 +487,13 @@ fn purge_success() {
                 test_contract.generate_id::<Test>(),
                 test_contract.clone(),
             );
-            assert_ok!(ContractsRegistry::purge(origin, requester, contract_id));
-        })
+            assert_ok!(ContractsRegistry::purge(
+                origin,
+                requester,
+                contract_id.clone()
+            ));
+            assert_eq!(crate::ContractsRegistry::<Test>::get(contract_id), None);
+        });
 }
 
 #[test]
