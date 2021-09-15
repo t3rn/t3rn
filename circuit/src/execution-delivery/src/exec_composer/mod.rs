@@ -309,7 +309,7 @@ impl ExecComposer {
 
         Ok(())
     }
-    
+
     fn retrieve_gateway_pointer<T: Config>(
         gateway_id: Option<t3rn_primitives::ChainId>,
     ) -> Result<GatewayPointer, &'static str> {
