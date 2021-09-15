@@ -49,7 +49,7 @@ fn make_compose_out_of_raw_wat_code<T: Config>(
     }
 }
 
-fn insert_default_xdns_record() {
+pub fn insert_default_xdns_record() {
     use pallet_xdns::XdnsRecord;
     pallet_xdns::XDNSRegistry::<Test>::insert(
         // Below is blake2_hash of [0, 0, 0, 0]

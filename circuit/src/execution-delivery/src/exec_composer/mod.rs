@@ -27,7 +27,7 @@ use volatile_vm::{CallStamp, DeferredStorageWrite, ExecReturnValue};
 pub mod volatile_vm_impl;
 
 #[cfg(test)]
-mod tests;
+pub mod tests;
 
 use crate::exec_composer::volatile_vm_impl::*;
 use crate::AuthorityId;
