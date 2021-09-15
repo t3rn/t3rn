@@ -18,6 +18,7 @@ use sp_runtime::{
     testing::UintAuthorityId, traits::Convert, DispatchError, DispatchResult, FixedU128,
 };
 
+use frame_support::pallet_prelude::GenesisBuild;
 use frame_support::{parameter_types, traits::KeyOwnerProofSystem};
 
 use frame_election_provider_support::onchain;
@@ -42,9 +43,11 @@ use bp_messages::{
     Parameter as MessagesParameter,
 };
 
+use pallet_xdns::XdnsRecord;
 use std::collections::BTreeMap;
 use t3rn_primitives::transfers::BalanceOf;
 use t3rn_primitives::EscrowTrait;
+use t3rn_primitives::{GatewayType, GatewayVendor};
 use volatile_vm::DispatchRuntimeCall;
 
 use pallet_evm::{AddressMapping, FeeCalculator};
@@ -80,7 +83,7 @@ frame_support::construct_runtime!(
         VolatileVM: volatile_vm::{Pallet, Call, Event<T>, Storage},
         Randomness: pallet_randomness_collective_flip::{Pallet, Storage},
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Storage, Event<T>},
-        XDNS: pallet_xdns::{Pallet, Call, Storage, Event<T>},
+        XDNS: pallet_xdns::{Pallet, Call, Storage, Config<T>, Event<T>},
         Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
         EVM: pallet_evm::{Pallet, Config, Storage, Event<T>},
     }
@@ -864,4 +867,80 @@ impl pallet_babe::Config for Test {
         EquivocationHandler<Self::KeyOwnerIdentification, Offences, ReportLongevity>;
 
     type WeightInfo = ();
+}
+
+pub(crate) struct ExtBuilder {
+    known_xdns_records: Vec<XdnsRecord<AccountId>>,
+}
+
+impl Default for ExtBuilder {
+    fn default() -> ExtBuilder {
+        ExtBuilder {
+            known_xdns_records: vec![],
+        }
+    }
+}
+
+impl ExtBuilder {
+    pub(crate) fn with_default_xdns_records(mut self) -> ExtBuilder {
+        let circuit_xdns_record = <XdnsRecord<AccountId>>::new(
+            vec![],
+            *b"circ",
+            Default::default(),
+            GatewayVendor::Substrate,
+            GatewayType::ProgrammableExternal(0),
+            Default::default(),
+        );
+        let gateway_xdns_record = <XdnsRecord<AccountId>>::new(
+            vec![],
+            *b"gate",
+            Default::default(),
+            GatewayVendor::Substrate,
+            GatewayType::ProgrammableExternal(0),
+            Default::default(),
+        );
+        let polkadot_xdns_record = <XdnsRecord<AccountId>>::new(
+            vec![],
+            *b"pdot",
+            Default::default(),
+            GatewayVendor::Substrate,
+            GatewayType::ProgrammableExternal(0),
+            Default::default(),
+        );
+        let kusama_xdns_record = <XdnsRecord<AccountId>>::new(
+            vec![],
+            *b"ksma",
+            Default::default(),
+            GatewayVendor::Substrate,
+            GatewayType::ProgrammableExternal(0),
+            Default::default(),
+        );
+        self.known_xdns_records = vec![
+            circuit_xdns_record,
+            gateway_xdns_record,
+            polkadot_xdns_record,
+            kusama_xdns_record,
+        ];
+        self
+    }
+
+    pub(crate) fn build(self) -> sp_io::TestExternalities {
+        let mut t = frame_system::GenesisConfig::default()
+            .build_storage::<Test>()
+            .expect("Frame system builds valid default genesis config");
+
+        pallet_balances::GenesisConfig::<Test> { balances: vec![] }
+            .assimilate_storage(&mut t)
+            .expect("Pallet balances storage can be assimilated");
+
+        pallet_xdns::GenesisConfig::<Test> {
+            known_xdns_records: self.known_xdns_records,
+        }
+        .assimilate_storage(&mut t)
+        .expect("Pallet xdns can be assimilated");
+
+        let mut ext = sp_io::TestExternalities::new(t);
+        ext.execute_with(|| System::set_block_number(1));
+        ext
+    }
 }
