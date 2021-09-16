@@ -13,9 +13,6 @@ use t3rn_primitives::Compose;
 use sp_runtime::{create_runtime_str, AccountId32};
 use sp_version::RuntimeVersion;
 
-use sp_keystore::testing::KeyStore;
-use sp_keystore::{KeystoreExt, SyncCryptoStore};
-
 use crate::{
     CurrentHeader, DefaultPolkadotLikeGateway, EthLikeKeccak256ValU32Gateway,
     EthLikeKeccak256ValU64Gateway, Pallet as ExecDelivery, PolkadotLikeValU64Gateway,
