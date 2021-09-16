@@ -23,7 +23,7 @@ use t3rn_primitives::{GatewayExpectedOutput, GatewayPointer, GatewayType, Gatewa
 use volatile_vm::wasm::{PrefabWasmModule, RunMode};
 use volatile_vm::VolatileVM;
 
-fn make_compose_out_of_raw_wat_code<T: Config>(
+pub fn make_compose_out_of_raw_wat_code<T: Config>(
     wat_string_path: &str,
     input_data: Vec<u8>,
     dest: T::AccountId,
