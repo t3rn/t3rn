@@ -16,14 +16,21 @@
 // limitations under the License.
 
 //! Test utilities
+use crate::ExecComposer;
 use crate::{self as pallet_execution_delivery};
-
 use codec::Encode;
-use frame_support::{assert_err, assert_ok};
 
+use frame_support::assert_err;
+
+use crate::Xtx;
 use sp_io;
 
-use sp_core::{crypto::Pair, sr25519};
+use sp_core::{crypto::Pair, sr25519, Hasher};
+use sp_runtime::traits::Zero;
+
+use crate::exec_composer::tests::{insert_default_xdns_record, make_compose_out_of_raw_wat_code};
+use crate::exec_composer::*;
+
 use sp_io::TestExternalities;
 use sp_keystore::testing::KeyStore;
 use sp_keystore::{KeystoreExt, SyncCryptoStore};
@@ -32,8 +39,6 @@ use pallet_execution_delivery::Compose;
 
 use t3rn_primitives::{abi::GatewayABIConfig, transfers::BalanceOf, *};
 
-use crate::exec_composer::tests::insert_default_xdns_record;
-use crate::exec_composer::*;
 use crate::mock::*;
 
 use crate::mock::AccountId;
@@ -542,6 +547,95 @@ fn error_if_incorrect_escrow_is_submitted() {
         let submitter = ExecDelivery::select_authority(escrow.clone());
 
         assert!(submitter.is_err());
+    });
+}
+
+const CODE_CALL: &str = "code_call";
+
+#[test]
+fn dry_run_whole_xtx_unseen_contract_one_phase_and_one_step_success() {
+    let mut ext = TestExternalities::new_empty();
+    ext.execute_with(|| {
+        let mut contracts = vec![];
+        let mut action_descriptions = vec![];
+        let mut unseen_contracts = vec![];
+        let mut contract_ids = vec![];
+
+        let input_data = vec![];
+        let dest = AccountId::new([1 as u8; 32]);
+        let value = 0;
+
+        let compose = make_compose_out_of_raw_wat_code::<Test>(CODE_CALL, input_data, dest, value);
+
+        let inter_schedule = InterExecSchedule {
+            phases: vec![ExecPhase {
+                steps: vec![ExecStep { compose: compose }],
+            }],
+        };
+
+        let escrow_account: AccountId =
+            hex_literal::hex!["8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48"]
+                .into();
+
+        let requester: AccountId =
+            hex_literal::hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"]
+                .into();
+
+        let first_phase = inter_schedule
+            .phases
+            .get(0)
+            .expect("At least one phase should be in inter schedule");
+
+        let step = first_phase
+            .steps
+            .get(0)
+            .expect("At least one step in a phase");
+
+        insert_default_xdns_record();
+
+        let unseen_contract =
+            ExecComposer::dry_run_single_contract::<Test>(step.compose.clone()).unwrap();
+
+        unseen_contracts.push(unseen_contract.clone());
+        contracts.extend(unseen_contracts);
+
+        action_descriptions.extend(unseen_contract.action_descriptions.clone());
+
+        let mut protocol_part_of_contract = step.compose.code_txt.clone();
+        protocol_part_of_contract.extend(step.compose.bytes.clone());
+
+        let key = <Test as frame_system::Config>::Hashing::hash(
+            Encode::encode(&mut protocol_part_of_contract).as_ref(),
+        );
+
+        contract_ids.push(key);
+
+        let max_steps = contracts.len() as u32;
+
+        let (current_block_no, block_zero) = (
+            <frame_system::Pallet<Test>>::block_number(),
+            <Test as frame_system::Config>::BlockNumber::zero(),
+        );
+
+        let expected_xtx = Xtx {
+            estimated_worth: Default::default(),
+            current_worth: Default::default(),
+            requester: requester.clone(),
+            escrow_account: escrow_account.clone(),
+            payload: vec![],
+            current_step: 0,
+            steps_no: max_steps,
+            current_phase: 0,
+            current_round: 0,
+            result_status: vec![],
+            phases_blockstamps: (current_block_no, block_zero),
+            schedule: Default::default(),
+        };
+
+        assert_eq!(
+            ExecDelivery::dry_run_whole_xtx(inter_schedule, escrow_account, requester),
+            Ok((expected_xtx, contracts, contract_ids, action_descriptions))
+        );
     });
 }
 

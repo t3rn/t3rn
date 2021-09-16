@@ -8,7 +8,6 @@ homepage = "https://substrate.dev"
 repository = "https://github.com/paritytech/substrate/"
 description = "FRAME example pallet for offchain worker"
 readme = "README.md"
-resolver = "2"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
@@ -32,7 +31,6 @@ frame-support = { default-features = false, git = "https://github.com/paritytech
 frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8'  }
 frame-metadata = { version = "13.0.0", git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8', default-features = false }
 
-sp-keystore = { default-features = false, version = "0.9.0", git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8'  }
@@ -82,8 +80,8 @@ sp-consensus-babe = { default-features = false, git = "https://github.com/parity
 relay-substrate-client = { version = "0.1.0", path = "../../../vendor/bridges/relays/client-substrate", optional = true }
 
 # Benchmarking
-bp-test-utils = { version = "0.1.0", default-features = false,  path = "../../../vendor/bridges/primitives/test-utils", optional = true }
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8', optional = true }
+sp-keystore = { default-features = false, version = "0.9.0", git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8', optional = false }
 
 [dev-dependencies]
 serde_json = "1.0.41"
@@ -153,7 +151,6 @@ std = [
     "pallet-offences/std",
     "frame-election-provider-support/std",
     "hex/std",
-    "bp-test-utils/std",
 ]
 runtime-benchmarks = [
     "frame-benchmarking",
