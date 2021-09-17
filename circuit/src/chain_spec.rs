@@ -266,16 +266,13 @@ fn testnet_genesis(
                 .collect(),
         },
         aura: AuraConfig {
-            authorities: initial_authorities.iter().map(|x| (x.1.clone())).collect(),
+            authorities: vec![],
         },
         grandpa: GrandpaConfig {
-            authorities: initial_authorities
-                .iter()
-                .map(|x| (x.2.clone(), 1))
-                .collect(),
+            authorities: vec![],
         },
         beefy: BeefyConfig {
-            authorities: initial_authorities.iter().map(|x| (x.3.clone())).collect(),
+            authorities: vec![],
         },
         sudo: SudoConfig {
             key: root_key.clone(),
