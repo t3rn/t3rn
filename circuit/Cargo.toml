@@ -1,91 +1,14 @@
-[package]
-name = "circuit"
-description = "Circuit node"
-version = "0.1.0"
-authors = ["MaciejBaj <maciej@maciejbaj.com>"]
-edition = "2018"
-build = "build.rs"
-homepage = "https://t3rn.io"
-license = "Apache 2.0"
-repository = "https://github.com/t3rn/t3rn/"
-resolver = "2"
-
-[dependencies]
-jsonrpc-core = "15.1.0"
-structopt = "0.3.21"
-serde_json = "1.0.59"
-
-# Bridge dependencies
-
-bp-messages = { path = "../vendor/bridges/primitives/messages" }
-bp-circuit = { path = "../vendor/bridges/primitives/chain-circuit" }
-bp-runtime = { path = "../vendor/bridges/primitives/runtime" }
-circuit-runtime = { path = "./src/runtime" }
-pallet-bridge-messages = { path = "../vendor/bridges/modules/messages" }
-
-#VM dependencies
-
-pallet-evm = { path = "../vendor/frontier/frame/evm" }
-
-# Substrate Dependencies
-
-frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-node-inspect = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-pallet-xdns = { path = "./src/xdns" }
-sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8', features = ["wasmtime"] }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-sc-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-sc-executor = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-sc-finality-grandpa-rpc = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-sc-keystore = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-sc-rpc = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-sc-service = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-sp-consensus = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-substrate-frame-rpc-system = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-t3rn-primitives = { path = "src/primitives" }
-jsonrpc-runtime-client = { path = "src/rpc-test/jsonrpc-runtime-client" }
-async-std = "1.10.0"
-
-[build-dependencies]
-substrate-build-script-utils = "3.0.0"
-frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-
-[features]
-default = []
-
-# TODO: https://github.com/paritytech/parity-bridges-common/issues/390
-# I've left the feature flag here to test our CI configuration
-runtime-benchmarks = [
-    "circuit-runtime/runtime-benchmarks",
-    # "millau-runtime/runtime-benchmarks",
-]
-
 [workspace]
 members = [
-    "src/contracts-registry",
-    "src/contracts-registry/rpc",
-    "src/contracts-registry/rpc/runtime-api",
-    "src/execution-delivery",
-    "src/rpc",
-    "src/rpc-test",
-    "src/rpc-test/jsonrpc-runtime-client",
-    "src/rpc/runtime-api",
-    "src/runtime",
-    "src/primitives",
-    "src/xdns",
-    "src/test-utils"
+    'runtime',
+    'node',
+    'rpc',
 ]
 exclude = []
+
+[profile.release]
+panic = 'unwind'
+
+[patch.crates-io]
+snow = { git = "https://github.com/mcginty/snow", branch = "master" }
+aes = { git = "https://github.com/RustCrypto/block-ciphers", tag = "aes-v0.4.0" }

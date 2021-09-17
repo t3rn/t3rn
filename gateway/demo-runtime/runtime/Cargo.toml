@@ -48,7 +48,7 @@ sp-version = {default-features = false, version = '3.0.0', git = 'https://github
 # local dependencies
 pallet-runtime-gateway = {default-features = false, path = "../../pallet-escrow-gateway/runtime-gateway"}
 versatile-wasm = {default-features = false, path = "../../../vm/versatile-wasm"}
-t3rn-primitives = {default-features = false, path = "../../../circuit/src/primitives"}
+t3rn-primitives = {default-features = false, path = "../../../circuit/primitives" }
 pallet-bridge-messages = {default-features = false, path = "../../../vendor/bridges/modules/messages" }
 bp-messages = {default-features = false, path = "../../../vendor/bridges/primitives/messages" }
 bp-runtime = {default-features = false, path = "../../../vendor/bridges/primitives/runtime" }

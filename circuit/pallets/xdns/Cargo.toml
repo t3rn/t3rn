@@ -1,0 +1,63 @@
+[package]
+name = "pallet-xdns"
+version = "0.4.0"
+authors = ["t3rn ltd. <team@t3rn.io>"]
+edition = "2018"
+license = "Apache 2.0"
+homepage = "https://t3rn.io"
+repository = "https://github.com/t3rn/t3rn/"
+description = "x-chain DNS"
+readme = "README.md"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
+log = { version = "0.4.14", default-features = false }
+serde = { version = "1.0.124", optional = true }
+
+bp-runtime = { path = "../../../vendor/bridges/primitives/runtime", default-features = false }
+
+frame-benchmarking = { version = "3.1.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8', optional = true }
+frame-support = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+frame-system = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+frame-metadata = { version = "13.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+
+pallet-balances = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+pallet-timestamp = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+pallet-sudo = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+
+sp-runtime = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+sp-version = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+sp-std = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+sp-io = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+
+t3rn-primitives = { version = "0.1.0", default-features = false, path = "../../primitives" }
+
+[dev-dependencies]
+sp-core = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8', default-features = false }
+sp-keystore = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8', default-features = false }
+
+[features]
+default = ["std"]
+std = [
+	"bp-runtime/std",
+	"codec/std",
+	"frame-benchmarking/std",
+	"frame-support/std",
+	"frame-metadata/std",
+	"frame-system/std",
+	"log/std",
+	"pallet-balances/std",
+	"pallet-sudo/std",
+	"pallet-timestamp/std",
+	"serde/std",
+	"sp-io/std",
+	"sp-version/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	"t3rn-primitives/std",
+]
+runtime-benchmarks = ["frame-benchmarking"]
+try-runtime = ["frame-support/try-runtime"]
