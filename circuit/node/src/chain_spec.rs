@@ -345,8 +345,11 @@ fn derived_dave_account_is_as_expected() {
     );
 }
 
+/// Ignore as this includes actual HTTP calls
 #[test]
+#[ignore]
 fn fetch_xdns_should_return_results() {
-    let actual = seed_xdns_registry().unwrap();
-    assert_eq!(actual.len(), 4);
+    let actual = seed_xdns_registry();
+    assert_ok!(actual);
+    assert_eq!(actual.unwrap().len(), 4);
 }

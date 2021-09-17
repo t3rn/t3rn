@@ -16,6 +16,7 @@ pub async fn get_first_header(
         .map_err(|error| format!("Error reading Substrate genesis header: {:?}", error))
 }
 
+/// Helper function to get a chain's metadata
 pub async fn get_metadata(
     sub_client: &SubstrateClient<PolkadotLike>,
 ) -> Result<RuntimeMetadataV13, String> {
