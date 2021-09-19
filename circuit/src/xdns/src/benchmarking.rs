@@ -79,7 +79,7 @@ benchmarks! {
         assert_eq!(
             XDNSRegistry::<T>::get(gateway_hash)
                 .unwrap()
-                .last_finalized, 
+                .last_finalized,
             Some(2)
         );
     }
