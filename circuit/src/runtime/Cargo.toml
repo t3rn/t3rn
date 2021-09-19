@@ -144,6 +144,7 @@ runtime-benchmarks = [
     'frame-system/runtime-benchmarks',
     'hex-literal',
     'pallet-balances/runtime-benchmarks',
+	'pallet-xdns/runtime-benchmarks',
     # 'pallet-circuit-execution-delivery/runtime-benchmarks',
     'pallet-timestamp/runtime-benchmarks',
     'sp-runtime/runtime-benchmarks',
