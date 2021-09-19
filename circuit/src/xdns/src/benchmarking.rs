@@ -102,7 +102,7 @@ benchmarks! {
         };
 
         XDNS::<T>::add_new_xdns_record(
-            RawOrigin::Signed(requester).into(),
+            RawOrigin::Signed(requester.clone()).into(),
             url,
             *gateway_id,
             gateway_abi,
@@ -113,7 +113,7 @@ benchmarks! {
         .unwrap();
 
         let gateway_hash = T::Hashing::hash(b"gate");
-    }: _(RawOrigin::Root, requester.clone(), gateway_hash.clone())
+    }: _(RawOrigin::Root, requester, gateway_hash.clone())
     verify{
         assert!(
             XDNSRegistry::<T>::get(gateway_hash)
