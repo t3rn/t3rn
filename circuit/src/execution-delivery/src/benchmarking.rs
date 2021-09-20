@@ -91,6 +91,7 @@ benchmarks! {
             signed_extension: None,
             runtime_version: TEST_RUNTIME_VERSION,
             genesis_hash: Default::default(),
+            extrinsics_version: 0u8,
         };
 
         let first_header: CurrentHeader<T, DefaultPolkadotLikeGateway> = test_header(0u32.into());
@@ -118,6 +119,7 @@ benchmarks! {
             signed_extension: None,
             runtime_version: TEST_RUNTIME_VERSION,
             genesis_hash: Default::default(),
+            extrinsics_version: 0u8,
         };
 
         let first_header: CurrentHeader<T, PolkadotLikeValU64Gateway> = test_header(0u32.into());
@@ -145,6 +147,7 @@ benchmarks! {
             signed_extension: None,
             runtime_version: TEST_RUNTIME_VERSION,
             genesis_hash: Default::default(),
+            extrinsics_version: 0u8,
         };
 
         let first_header: CurrentHeader<T, EthLikeKeccak256ValU32Gateway> = test_header(0u32.into());
@@ -172,6 +175,7 @@ benchmarks! {
             signed_extension: None,
             runtime_version: TEST_RUNTIME_VERSION,
             genesis_hash: Default::default(),
+            extrinsics_version: 0u8,
         };
 
         let first_header: CurrentHeader<T, EthLikeKeccak256ValU64Gateway> = test_header(0u32.into());

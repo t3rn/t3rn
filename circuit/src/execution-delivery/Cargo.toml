@@ -8,7 +8,6 @@ homepage = "https://substrate.dev"
 repository = "https://github.com/paritytech/substrate/"
 description = "FRAME example pallet for offchain worker"
 readme = "README.md"
-resolver = "2"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
@@ -32,7 +31,7 @@ frame-support = { default-features = false, git = "https://github.com/paritytech
 frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8'  }
 frame-metadata = { version = "13.0.0", git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8', default-features = false }
 
-sp-keystore = { default-features = false, version = "0.9.0", git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
+sp-keystore = { default-features = false, version = "0.9.0", git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' , optional = true }
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8'  }
@@ -82,8 +81,8 @@ sp-consensus-babe = { default-features = false, git = "https://github.com/parity
 relay-substrate-client = { version = "0.1.0", path = "../../../vendor/bridges/relays/client-substrate", optional = true }
 
 # Benchmarking
-bp-test-utils = { version = "0.1.0", default-features = false,  path = "../../../vendor/bridges/primitives/test-utils", optional = true }
-frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8', optional = true }
+frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8', optional = true }
+bp-test-utils = { path = "../../../vendor/bridges/primitives/test-utils", default-features = false, optional = true }
 
 [dev-dependencies]
 serde_json = "1.0.41"
@@ -134,6 +133,7 @@ std = [
     "bp-header-chain/std",
     "bp-polkadot-core/std",
     "bp-runtime/std",
+    "bp-test-utils/std",
     # native contracts VMs
     "pallet-contracts/std",
     "pallet-evm/std",
@@ -152,11 +152,13 @@ std = [
     "pallet-session/std",
     "pallet-offences/std",
     "frame-election-provider-support/std",
-    "hex/std",
-    "bp-test-utils/std",
+    "hex/std"
 ]
+
 runtime-benchmarks = [
-    "frame-benchmarking",
+    "bp-test-utils",
+    "frame-benchmarking"
+
 ]
 # need to add this for the app_crypto macro
 full_crypto = []
