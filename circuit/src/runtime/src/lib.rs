@@ -61,6 +61,7 @@ use sp_version::RuntimeVersion;
 
 use t3rn_primitives::{transfers::BalanceOf, ComposableExecResult, Compose};
 
+use ethereum_light_client::EthereumDifficultyConfig;
 use volatile_vm::DispatchRuntimeCall;
 
 // A few exports that help ease life for downstream crates.
@@ -694,6 +695,21 @@ impl pallet_utility::Config for Runtime {
     type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+    pub const DescendantsUntilFinalized: u8 = 3;
+    pub const DifficultyConfig: EthereumDifficultyConfig = EthereumDifficultyConfig::mainnet();
+    pub const VerifyPoW: bool = true;
+}
+
+impl ethereum_light_client::Config for Runtime {
+    type Event = Event;
+    type DescendantsUntilFinalized = DescendantsUntilFinalized;
+    type DifficultyConfig = DifficultyConfig;
+    type VerifyPoW = VerifyPoW;
+    // Todo: need to run benchmarks and set actual weights
+    type WeightInfo = ();
+}
+
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -725,6 +741,7 @@ construct_runtime!(
         ExecDelivery: pallet_circuit_execution_delivery::{Pallet, Call, Storage, Event<T>},
         Utility: pallet_utility::{Pallet, Call, Event},
         Mmr: pallet_mmr::{Pallet, Storage},
+        EthereumLightClient: ethereum_light_client::{Pallet, Call, Storage, Event, Config},
     }
 );
 
