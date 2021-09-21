@@ -316,6 +316,10 @@ fn testnet_genesis(
             owner: None,
             init_data: None,
         },
+        ethereum_light_client: circuit_runtime::EthereumLightClientConfig {
+            initial_header: Default::default(),
+            initial_difficulty: Default::default(),
+        },
     }
 }
 
