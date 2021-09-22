@@ -1,0 +1,11 @@
+[workspace]
+members = [
+    'node',
+    'runtime',
+]
+[profile.release]
+panic = 'unwind'
+
+[patch.crates-io]
+snow = { git = "https://github.com/mcginty/snow", branch = "master" }
+aes = { git = "https://github.com/RustCrypto/block-ciphers", tag = "aes-v0.4.0" }

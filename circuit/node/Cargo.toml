@@ -16,14 +16,14 @@ async-std = "1.10.0"
 
 # Bridge dependencies
 
-bp-messages = { path = "../../vendor/bridges/primitives/messages" }
-bp-circuit = { path = "../../vendor/bridges/primitives/chain-circuit" }
-bp-runtime = { path = "../../vendor/bridges/primitives/runtime" }
-pallet-bridge-messages = { path = "../../vendor/bridges/modules/messages" }
+bp-messages = { git = "https://github.com/t3rn/parity-bridges-common", branch = "refactor-circuit" }
+bp-circuit = { git = "https://github.com/t3rn/parity-bridges-common", branch = "refactor-circuit" }
+bp-runtime = { git = "https://github.com/t3rn/parity-bridges-common", branch = "refactor-circuit" }
+pallet-bridge-messages = { git = "https://github.com/t3rn/parity-bridges-common", branch = "refactor-circuit" }
 
 #VM dependencies
 
-pallet-evm = { path = "../../vendor/frontier/frame/evm" }
+pallet-evm = { git = "https://github.com/t3rn/frontier" }
 
 # Substrate Dependencies
 
@@ -57,6 +57,11 @@ circuit-runtime = { path = "../runtime" }
 pallet-xdns = { path = "../pallets/xdns" }
 t3rn-primitives = { path = "../primitives" }
 jsonrpc-runtime-client = { path = "../rpc/rpc-test/jsonrpc-runtime-client" }
+
+beefy-primitives = { git = "https://github.com/t3rn/grandpa-bridge-gadget", branch = 'polkadot-v0.9.8', default-features = false }
+beefy-gadget = { git = "https://github.com/t3rn/grandpa-bridge-gadget", branch = 'polkadot-v0.9.8', default-features = false }
+beefy-gadget-rpc = { git = "https://github.com/t3rn/grandpa-bridge-gadget", branch = 'polkadot-v0.9.8', default-features = false }
+
 
 [build-dependencies]
 substrate-build-script-utils = "3.0.0"

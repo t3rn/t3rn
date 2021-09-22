@@ -33,7 +33,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub mod gateway_messages;
 
 use crate::gateway_messages::{ToGatewayMessagePayload, WithGatewayMessageBridge};
-
+use beefy_primitives::{crypto::AuthorityId as BeefyId, ValidatorSet};
 use bridge_runtime_common::messages::{
     source::estimate_message_dispatch_and_delivery_fee, MessageBridge,
 };
@@ -61,6 +61,7 @@ use sp_version::RuntimeVersion;
 
 use t3rn_primitives::{transfers::BalanceOf, ComposableExecResult, Compose};
 
+use ethereum_light_client::EthereumDifficultyConfig;
 use volatile_vm::DispatchRuntimeCall;
 
 // A few exports that help ease life for downstream crates.
@@ -134,6 +135,7 @@ impl_opaque_keys! {
     pub struct SessionKeys {
         pub aura: Aura,
         pub grandpa: Grandpa,
+        pub beefy: Beefy,
     }
 }
 
@@ -245,6 +247,10 @@ impl pallet_grandpa::Config for Runtime {
     type WeightInfo = ();
 }
 
+impl pallet_beefy::Config for Runtime {
+    type BeefyId = BeefyId;
+}
+
 parameter_types! {
     pub const MinimumPeriod: u64 = bp_circuit::SLOT_DURATION / 2;
 }
@@ -298,6 +304,30 @@ impl pallet_randomness_collective_flip::Config for Runtime {}
 impl pallet_sudo::Config for Runtime {
     type Event = Event;
     type Call = Call;
+}
+
+type MmrHash = <Keccak256 as sp_runtime::traits::Hash>::Output;
+
+/// A BEEFY consensus digest item with MMR root hash.
+pub struct DepositLog;
+impl pallet_mmr::primitives::OnNewRoot<MmrHash> for DepositLog {
+    fn on_new_root(root: &Hash) {
+        let digest = DigestItem::Consensus(
+            beefy_primitives::BEEFY_ENGINE_ID,
+            codec::Encode::encode(&beefy_primitives::ConsensusLog::<BeefyId>::MmrRoot(*root)),
+        );
+        <frame_system::Pallet<Runtime>>::deposit_log(digest);
+    }
+}
+
+/// Configure Merkle Mountain Range pallet.
+impl pallet_mmr::Config for Runtime {
+    const INDEXING_PREFIX: &'static [u8] = b"mmr";
+    type Hashing = Keccak256;
+    type Hash = MmrHash;
+    type LeafData = frame_system::Pallet<Self>;
+    type OnNewRoot = DepositLog;
+    type WeightInfo = ();
 }
 
 parameter_types! {
@@ -665,6 +695,21 @@ impl pallet_utility::Config for Runtime {
     type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+    pub const DescendantsUntilFinalized: u8 = 3;
+    pub const DifficultyConfig: EthereumDifficultyConfig = EthereumDifficultyConfig::mainnet();
+    pub const VerifyPoW: bool = true;
+}
+
+impl ethereum_light_client::Config for Runtime {
+    type Event = Event;
+    type DescendantsUntilFinalized = DescendantsUntilFinalized;
+    type DifficultyConfig = DifficultyConfig;
+    type VerifyPoW = VerifyPoW;
+    // Todo: need to run benchmarks and set actual weights
+    type WeightInfo = ();
+}
+
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -679,6 +724,7 @@ construct_runtime!(
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         Aura: pallet_aura::{Pallet, Config<T>},
         Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event},
+        Beefy: pallet_beefy::{Pallet, Config<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
@@ -694,6 +740,8 @@ construct_runtime!(
         MultiFinalityVerifier: pallet_multi_finality_verifier::{Pallet, Call, Config<T>},
         ExecDelivery: pallet_circuit_execution_delivery::{Pallet, Call, Storage, Event<T>},
         Utility: pallet_utility::{Pallet, Call, Event},
+        Mmr: pallet_mmr::{Pallet, Storage},
+        EthereumLightClient: ethereum_light_client::{Pallet, Call, Storage, Event, Config},
     }
 );
 
@@ -858,6 +906,12 @@ impl_runtime_apis! {
             // defined our key owner proof type as a bottom type (i.e. a type
             // with no values).
             None
+        }
+    }
+
+    impl beefy_primitives::BeefyApi<Block> for Runtime {
+        fn validator_set() -> ValidatorSet<BeefyId> {
+            Beefy::validator_set()
         }
     }
 

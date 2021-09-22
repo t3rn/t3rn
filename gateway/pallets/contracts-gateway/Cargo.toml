@@ -22,7 +22,7 @@ version = "0.1"
 
 [dependencies.gateway-escrow-engine]
 default-features = false
-path = "../escrow-engine"
+path = "../../escrow-engine"
 version = '0.3.0'
 #branch = 'master'
 #git = 'https://github.com/t3rn/gateway-pallet.git'
@@ -49,7 +49,7 @@ version = '2.0.0'
 default-features = false
 #git = 'https://github.com/MaciejBaj/pallet-contracts.git'
 #branch = 'escrow-contracts-m3'
-path = "../escrow-engine/escrow-contracts-wrapper"
+path = "../../escrow-engine/escrow-contracts-wrapper"
 version = '0.3.0'
 
 [dependencies.sp-std]

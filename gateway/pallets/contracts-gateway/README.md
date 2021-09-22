@@ -165,8 +165,8 @@ Looks for a corresponig to the key value in the storage of contracts's address. 
 ## Related Modules
 
 * [Contracts](https://github.com/paritytech/substrate/blob/master/frame/contracts)
-* [escrow-contracts-wrapper](../escrow-engine/escrow-contracts-wrapper)
-* [escrow-engine](../escrow-engine)
+* [escrow-contracts-wrapper](../../escrow-engine/escrow-contracts-wrapper)
+* [escrow-engine](../../escrow-engine)
 
 ## License
 

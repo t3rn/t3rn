@@ -88,8 +88,8 @@ Depending on the `phase` invokes different behaviour:
 
 ## Related Modules
 
-* [versatile-wasm](../escrow-engine/versatile-wasm)
-* [escrow-engine](../escrow-engine)
+* [versatile-wasm](../../escrow-engine/versatile-wasm)
+* [escrow-engine](../../escrow-engine)
 
 ## License
 

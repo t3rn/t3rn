@@ -7,7 +7,7 @@ It's purpose is to demonstrate the setup of t3rn gateway pallets with both [`con
 ## What's extra inside?
 
 Extra pallets installed in `Cargo.toml`'s runtime:
-```rust
+```toml
 // Following 2 installed normally for parachains with contracts
 contracts = { package = "pallet-contracts", default-features = false, version = '2.0.0' }
 contracts-gateway = { package = "pallet-contracts-gateway", default-features = false, version = '0.3.0',  git = 'https://github.com/t3rn/gateway-pallet.git', branch = 'master' }

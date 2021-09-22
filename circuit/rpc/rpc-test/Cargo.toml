@@ -18,7 +18,7 @@ async-trait = "0.1.40"
 jsonrpc-runtime-client = { version = "0.1.0", path = "jsonrpc-runtime-client" }
 jsonrpc-core-client = { version = "15.1.0", features = ["http"] }
 jsonrpsee-types = "0.2.0"
-relay-substrate-client = { version = "0.1.0", path = "../../../vendor/bridges/relays/client-substrate" }
+relay-substrate-client = { version = "0.1.0", git = "https://github.com/t3rn/parity-bridges-common", branch = "refactor-circuit" }
 
 futures = { version = "0.3.16", features = ["compat"] }
 node-primitives = { version = "2.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8" }
@@ -72,7 +72,7 @@ sc-network = { version = "0.9.0", git = "https://github.com/paritytech/substrate
 sp-io = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8" }
 substrate-test-runtime = { version = "2.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8" }
 substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8" }
-bp-runtime = { path = "../../../vendor/bridges/primitives/runtime" }
+bp-runtime = { git = "https://github.com/t3rn/parity-bridges-common", branch = "refactor-circuit" }
 
 substrate-frame-rpc-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8" }
 tokio = "0.1.22"

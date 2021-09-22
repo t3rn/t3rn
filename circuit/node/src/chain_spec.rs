@@ -17,6 +17,7 @@
 use std::{collections::BTreeMap, str::FromStr};
 
 use async_std::task;
+use beefy_primitives::crypto::AuthorityId as BeefyId;
 use bp_circuit::derive_account_from_gateway_id;
 use bp_runtime::{CIRCUIT_CHAIN_ID, GATEWAY_CHAIN_ID, KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID};
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -25,9 +26,9 @@ use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
 use circuit_runtime::{
-    AccountId, AuraConfig, BalancesConfig, ContractsRegistryConfig, EVMConfig, GenesisConfig,
-    GrandpaConfig, MultiFinalityVerifierConfig, SessionConfig, SessionKeys, Signature, SudoConfig,
-    SystemConfig, XDNSConfig, WASM_BINARY,
+    AccountId, AuraConfig, BalancesConfig, BeefyConfig, ContractsRegistryConfig, EVMConfig,
+    GenesisConfig, GrandpaConfig, MultiFinalityVerifierConfig, SessionConfig, SessionKeys,
+    Signature, SudoConfig, SystemConfig, XDNSConfig, WASM_BINARY,
 };
 use jsonrpc_runtime_client::{create_rpc_client, get_metadata, ConnectionParams};
 use pallet_xdns::XdnsRecord;
@@ -65,11 +66,12 @@ where
 }
 
 /// Helper function to generate an authority key for Aura
-pub fn get_authority_keys_from_seed(s: &str) -> (AccountId, AuraId, GrandpaId) {
+pub fn get_authority_keys_from_seed(s: &str) -> (AccountId, AuraId, GrandpaId, BeefyId) {
     (
         get_account_id_from_seed::<sr25519::Public>(s),
         get_from_seed::<AuraId>(s),
         get_from_seed::<GrandpaId>(s),
+        get_from_seed::<BeefyId>(s),
     )
 }
 
@@ -258,12 +260,16 @@ impl Alternative {
     }
 }
 
-fn session_keys(aura: AuraId, grandpa: GrandpaId) -> SessionKeys {
-    SessionKeys { aura, grandpa }
+fn session_keys(aura: AuraId, grandpa: GrandpaId, beefy: BeefyId) -> SessionKeys {
+    SessionKeys {
+        aura,
+        grandpa,
+        beefy,
+    }
 }
 
 fn testnet_genesis(
-    initial_authorities: Vec<(AccountId, AuraId, GrandpaId)>,
+    initial_authorities: Vec<(AccountId, AuraId, GrandpaId, BeefyId)>,
     root_key: AccountId,
     endowed_accounts: Vec<AccountId>,
     xdns_records: Vec<XdnsRecord<AccountId>>,
@@ -284,10 +290,13 @@ fn testnet_genesis(
                 .collect(),
         },
         aura: AuraConfig {
-            authorities: Vec::new(),
+            authorities: vec![],
         },
         grandpa: GrandpaConfig {
-            authorities: Vec::new(),
+            authorities: vec![],
+        },
+        beefy: BeefyConfig {
+            authorities: vec![],
         },
         sudo: SudoConfig {
             key: root_key.clone(),
@@ -299,7 +308,7 @@ fn testnet_genesis(
                     (
                         x.0.clone(),
                         x.0.clone(),
-                        session_keys(x.1.clone(), x.2.clone()),
+                        session_keys(x.1.clone(), x.2.clone(), x.3.clone()),
                     )
                 })
                 .collect::<Vec<_>>(),
@@ -330,6 +339,10 @@ fn testnet_genesis(
         multi_finality_verifier: MultiFinalityVerifierConfig {
             owner: None,
             init_data: None,
+        },
+        ethereum_light_client: circuit_runtime::EthereumLightClientConfig {
+            initial_header: Default::default(),
+            initial_difficulty: Default::default(),
         },
     }
 }

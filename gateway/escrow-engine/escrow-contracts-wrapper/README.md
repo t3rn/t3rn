@@ -2,7 +2,7 @@
 
 This module re-uses the original Contracts trait but wraps it additionally into escrow execution that may be reverted still be reverted or committed in the later execution phases.
 
-The new functionality of escrow calls is solely contained in [`escrow_exec`](./src/escrow_exec.rs).
+The new functionality of escrow calls is solely contained in [`escrow_exec`](src/escrow_exec.rs).
 
 ## Interface
 

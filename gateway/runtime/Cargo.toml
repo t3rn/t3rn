@@ -1,10 +1,10 @@
 [package]
-authors = ['Substrate DevHub <https://github.com/substrate-developer-hub>']
+authors = ['t3rn <team@t3rn.io']
 edition = '2018'
-homepage = 'https://substrate.dev'
+homepage = 'https://t3rn.io'
 license = 'Unlicense'
-name = 'node-template-runtime'
-repository = 'https://github.com/substrate-developer-hub/substrate-node-template/'
+name = 'gateway-runtime'
+repository = 'https://github.com/t3rn/t3rn'
 version = '3.0.0'
 
 [package.metadata.docs.rs]
@@ -46,12 +46,12 @@ sp-transaction-pool = {default-features = false, version = '3.0.0', git = 'https
 sp-version = {default-features = false, version = '3.0.0', git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.8'}
 
 # local dependencies
-pallet-runtime-gateway = {default-features = false, path = "../../pallet-escrow-gateway/runtime-gateway"}
-versatile-wasm = {default-features = false, path = "../../../vm/versatile-wasm"}
-t3rn-primitives = {default-features = false, path = "../../../circuit/primitives" }
-pallet-bridge-messages = {default-features = false, path = "../../../vendor/bridges/modules/messages" }
-bp-messages = {default-features = false, path = "../../../vendor/bridges/primitives/messages" }
-bp-runtime = {default-features = false, path = "../../../vendor/bridges/primitives/runtime" }
+pallet-runtime-gateway = {default-features = false, path = "../pallets/runtime-gateway"}
+versatile-wasm = {default-features = false, path = "../../vm/versatile-wasm" }
+t3rn-primitives = {default-features = false, path = "../../circuit/primitives" }
+pallet-bridge-messages = {default-features = false, git = "https://github.com/t3rn/parity-bridges-common", branch = "refactor-circuit" }
+bp-messages = {default-features = false, git = "https://github.com/t3rn/parity-bridges-common", branch = "refactor-circuit" }
+bp-runtime = {default-features = false, git = "https://github.com/t3rn/parity-bridges-common", branch = "refactor-circuit" }
 
 [features]
 default = ['std']

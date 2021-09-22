@@ -12,5 +12,6 @@ frame-metadata = { version = "13.0.0", git = "https://github.com/paritytech/subs
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 sp-version = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 sp-std = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+relay-substrate-client = { version = "0.1.0", git = "https://github.com/t3rn/parity-bridges-common", branch = "refactor-circuit" }
+
 pallet-circuit-execution-delivery = { version = "0.1.0", path = "../pallets/execution-delivery" }
-relay-substrate-client = { version = "0.1.0", path = "../../vendor/bridges/relays/client-substrate" }
