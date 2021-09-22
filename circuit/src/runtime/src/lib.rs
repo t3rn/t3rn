@@ -526,7 +526,7 @@ impl pallet_bridge_messages::Config<WithGatewayMessagesInstance> for Runtime {
 
 impl pallet_xdns::Config for Runtime {
     type Event = Event;
-    type WeightInfo = ();
+    type WeightInfo = pallet_xdns::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_contracts_registry::Config for Runtime {
@@ -1032,6 +1032,7 @@ impl_runtime_apis! {
             let params = (&config, &whitelist);
 
             // add_benchmark!(params, batches, pallet_circuit_execution_delivery, ExecDelivery);
+            add_benchmark!(params, batches, pallet_xdns, XDNS);
             add_benchmark!(params, batches, pallet_contracts_registry, ContractsRegistry);
             if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
             Ok(batches)
