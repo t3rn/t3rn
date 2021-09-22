@@ -19,7 +19,7 @@
 
 use std::vec;
 
-use beefy_primitives::mmr::MmrLeafVersion;
+use crate::mmr::MmrLeafVersion;
 use frame_support::{
     construct_runtime, parameter_types, sp_io::TestExternalities, BasicExternalities,
 };
@@ -65,7 +65,7 @@ parameter_types! {
 }
 
 impl frame_system::Config for Test {
-    type BaseCallFilter = frame_support::traits::Everything;
+    type BaseCallFilter = ();
     type BlockWeights = ();
     type BlockLength = ();
     type DbWeight = ();
@@ -109,7 +109,7 @@ impl pallet_session::Config for Test {
     type WeightInfo = ();
 }
 
-pub type MmrLeaf = beefy_primitives::mmr::MmrLeaf<
+pub type MmrLeaf = crate::mmr::MmrLeaf<
     <Test as frame_system::Config>::BlockNumber,
     <Test as frame_system::Config>::Hash,
     <Test as pallet_mmr::Config>::Hash,

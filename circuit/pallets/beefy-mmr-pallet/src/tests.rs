@@ -16,10 +16,8 @@
 
 use std::vec;
 
-use beefy_primitives::{
-    mmr::{BeefyNextAuthoritySet, MmrLeafVersion},
-    ValidatorSet,
-};
+use crate::mmr::{BeefyNextAuthoritySet, MmrLeafVersion};
+use beefy_primitives::ValidatorSet;
 use codec::{Decode, Encode};
 use hex_literal::hex;
 
