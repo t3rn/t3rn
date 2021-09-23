@@ -42,6 +42,8 @@ jobs:
             -p pallet-contracts-registry
             -p pallet-xdns
             -p t3rn-primitives
+            -p pallet-beefy-mmr
+            -p beefy-merkle-tree
             --manifest-path circuit/Cargo.toml -- --check
 
   lint:
@@ -97,6 +99,8 @@ jobs:
             -p pallet-contracts-registry
             -p pallet-xdns
             -p t3rn-primitives
+            -p pallet-beefy-mmr
+            -p beefy-merkle-tree
             --manifest-path circuit/Cargo.toml
 
   build:
