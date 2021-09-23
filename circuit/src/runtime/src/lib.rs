@@ -38,9 +38,11 @@ use bridge_runtime_common::messages::{
     source::estimate_message_dispatch_and_delivery_fee, MessageBridge,
 };
 use codec::Decode;
+use pallet_beefy_mmr::mmr::MmrLeafVersion;
 use pallet_grandpa::{
     fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
+use pallet_mmr_primitives as mmr;
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -710,6 +712,29 @@ impl ethereum_light_client::Config for Runtime {
     type WeightInfo = ();
 }
 
+parameter_types! {
+    /// Version of the produced MMR leaf.
+    ///
+    /// The version consists of two parts;
+    /// - `major` (3 bits)
+    /// - `minor` (5 bits)
+    ///
+    /// `major` should be updated only if decoding the previous MMR Leaf format from the payload
+    /// is not possible (i.e. backward incompatible change).
+    /// `minor` should be updated if fields are added to the previous MMR Leaf, which given SCALE
+    /// encoding does not prevent old leafs from being decoded.
+    ///
+    /// Hence we expect `major` to be changed really rarely (think never).
+    /// See [`MmrLeafVersion`] type documentation for more details.
+    pub LeafVersion: MmrLeafVersion = MmrLeafVersion::new(0, 0);
+}
+
+impl pallet_beefy_mmr::Config for Runtime {
+    type LeafVersion = LeafVersion;
+    type BeefyAuthorityToMerkleLeaf = pallet_beefy_mmr::BeefyEcdsaToEthereum;
+    type ParachainHeads = ();
+}
+
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -742,6 +767,7 @@ construct_runtime!(
         Utility: pallet_utility::{Pallet, Call, Event},
         Mmr: pallet_mmr::{Pallet, Storage},
         EthereumLightClient: ethereum_light_client::{Pallet, Call, Storage, Event, Config},
+        MmrLeaf: pallet_beefy_mmr::{Pallet, Storage},
     }
 );
 
@@ -912,6 +938,39 @@ impl_runtime_apis! {
     impl beefy_primitives::BeefyApi<Block> for Runtime {
         fn validator_set() -> ValidatorSet<BeefyId> {
             Beefy::validator_set()
+        }
+    }
+
+    impl pallet_mmr_primitives::MmrApi<Block, Hash> for Runtime {
+        fn generate_proof(leaf_index: u64)
+            -> Result<(mmr::EncodableOpaqueLeaf, mmr::Proof<Hash>), mmr::Error>
+        {
+            Mmr::generate_proof(leaf_index)
+                .map(|(leaf, proof)| (mmr::EncodableOpaqueLeaf::from_leaf(&leaf), proof))
+        }
+
+        fn verify_proof(leaf: mmr::EncodableOpaqueLeaf, proof: mmr::Proof<Hash>)
+            -> Result<(), mmr::Error>
+        {
+            pub type Leaf = <
+                <Runtime as pallet_mmr::Config>::LeafData as mmr::LeafDataProvider
+            >::LeafData;
+
+            let leaf: Leaf = leaf
+                .into_opaque_leaf()
+                .try_decode()
+                .ok_or(mmr::Error::Verify)?;
+            Mmr::verify_leaf(leaf, proof)
+        }
+
+        fn verify_proof_stateless(
+            root: Hash,
+            leaf: mmr::EncodableOpaqueLeaf,
+            proof: mmr::Proof<Hash>
+        ) -> Result<(), mmr::Error> {
+            type MmrHashing = <Runtime as pallet_mmr::Config>::Hashing;
+            let node = mmr::DataOrHash::Data(leaf.into_opaque_leaf());
+            pallet_mmr::verify_leaf_proof::<MmrHashing, _>(root, node, proof)
         }
     }
 
