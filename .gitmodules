@@ -10,3 +10,6 @@
 [submodule "vendor/frontier"]
 	path = vendor/frontier
 	url = https://github.com/MaciejBaj/frontier
+[submodule "build/snowbridge"]
+	path = build/snowbridge
+	url = git@github.com:t3rn/snowbridge.git
