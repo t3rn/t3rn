@@ -20,9 +20,9 @@ use crate::ExecComposer;
 use crate::{self as pallet_execution_delivery};
 use codec::Encode;
 
-use frame_support::assert_err;
+use frame_support::{assert_err, assert_ok};
 
-use crate::Xtx;
+use crate::{Xtx, XtxSchedule};
 use sp_io;
 
 use sp_core::{crypto::Pair, sr25519, Hasher};
@@ -617,6 +617,17 @@ fn dry_run_whole_xtx_unseen_contract_one_phase_and_one_step_success() {
             <Test as frame_system::Config>::BlockNumber::zero(),
         );
 
+        let xtx_schedule = XtxSchedule::new_sequential_from_contracts(
+            contracts.clone(),
+            contract_ids.clone(),
+            vec![step.compose.clone()],
+            action_descriptions.clone(),
+            None,
+            current_block_no.clone(),
+        )
+        .unwrap();
+
+        
         let expected_xtx = Xtx {
             estimated_worth: Default::default(),
             current_worth: Default::default(),
@@ -629,7 +640,7 @@ fn dry_run_whole_xtx_unseen_contract_one_phase_and_one_step_success() {
             current_round: 0,
             result_status: vec![],
             phases_blockstamps: (current_block_no, block_zero),
-            schedule: Default::default(),
+            schedule: xtx_schedule,
         };
 
         assert_eq!(
@@ -638,8 +649,6 @@ fn dry_run_whole_xtx_unseen_contract_one_phase_and_one_step_success() {
         );
     });
 }
-
-use crate::exec_composer::tests::{make_compose_out_of_raw_wat_code, CODE_CALL};
 
 #[test]
 fn test_submit_composable_exec_order() {
@@ -703,6 +712,7 @@ fn test_register_gateway_with_default_polka_like_header() {
         signed_extension: None,
         runtime_version: TEST_RUNTIME_VERSION,
         genesis_hash: Default::default(),
+        extrinsics_version: 0u8,
     };
 
     let first_header: CurrentHeader<Test, DefaultPolkadotLikeGateway> = test_header(0);
@@ -746,6 +756,7 @@ fn test_register_gateway_with_u64_substrate_header() {
         signed_extension: None,
         runtime_version: TEST_RUNTIME_VERSION,
         genesis_hash: Default::default(),
+        extrinsics_version: 0u8,
     };
 
     let first_header: CurrentHeader<Test, PolkadotLikeValU64Gateway> = test_header(0);
@@ -789,6 +800,7 @@ fn test_register_gateway_with_default_eth_like_header() {
         signed_extension: None,
         runtime_version: TEST_RUNTIME_VERSION,
         genesis_hash: Default::default(),
+        extrinsics_version: 0u8,
     };
 
     let first_header: CurrentHeader<Test, EthLikeKeccak256ValU32Gateway> = test_header(0);
@@ -832,6 +844,7 @@ fn test_register_gateway_with_u64_eth_like_header() {
         signed_extension: None,
         runtime_version: TEST_RUNTIME_VERSION,
         genesis_hash: Default::default(),
+        extrinsics_version: 0u8,
     };
 
     let first_header: CurrentHeader<Test, EthLikeKeccak256ValU64Gateway> = test_header(0);
