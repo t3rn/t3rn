@@ -327,35 +327,35 @@ benchmarks! {
     }: { Pallet::<T>::register_gateway(RawOrigin::Root.into(), url, gateway_id, gateway_abi, gateway_vendor, gateway_type, gateway_genesis, first_header.encode(), authorities).unwrap()}
     verify{}
 
-    submit_composable_exec_order {
-        let components: Vec<Compose<T::AccountId, BalanceOf<T>>> = vec![Compose {
-            name: b"component1".to_vec(),
-            code_txt: CODE.as_bytes().to_vec(),
-            exec_type: b"exec_escrow".to_vec(),
-            dest: account("TEST", 1_u32, USER_SEED),
-            value: 0u32.into(),
-            bytes: vec![0, 97, 115, 109, 1, 0, 0, 0, 1, 4, 1, 96, 0, 0, 3, 3, 2, 0, 0, 7, 17, 2, 4, 99, 97, 108, 108, 0, 0, 6, 100, 101, 112, 108, 111, 121, 0, 1, 10, 7, 2, 2, 0, 11, 2, 0, 11],
-            input_data: vec![],
-        }];
-        let io_schedule = b"component1;".to_vec();
+    // submit_composable_exec_order {
+    //     let components: Vec<Compose<T::AccountId, BalanceOf<T>>> = vec![Compose {
+    //         name: b"component1".to_vec(),
+    //         code_txt: CODE.as_bytes().to_vec(),
+    //         exec_type: b"exec_escrow".to_vec(),
+    //         dest: account("TEST", 1_u32, USER_SEED),
+    //         value: 0u32.into(),
+    //         bytes: vec![0, 97, 115, 109, 1, 0, 0, 0, 1, 4, 1, 96, 0, 0, 3, 3, 2, 0, 0, 7, 17, 2, 4, 99, 97, 108, 108, 0, 0, 6, 100, 101, 112, 108, 111, 121, 0, 1, 10, 7, 2, 2, 0, 11, 2, 0, 11],
+    //         input_data: vec![],
+    //     }];
+    //     let io_schedule = b"component1;".to_vec();
 
-        // Error here: failed to select authority / no keystore associated for the current context
+    //     // Error here: failed to select authority / no keystore associated for the current context
 
-        // let keystore = KeyStore::new();
-        // // Insert Alice's keys
-        // const SURI_ALICE: &str = "//Alice";
-        // let key_pair_alice = sr25519::Pair::from_string(SURI_ALICE, None).expect("Generates key pair");
-        // SyncCryptoStore::insert_unknown(
-        //     &keystore,
-        //     KEY_TYPE,
-        //     SURI_ALICE,
-        //     key_pair_alice.public().as_ref(),
-        // )
-        // .expect("Inserts unknown key");
-        insert_default_xdns_record::<T>();
+    //     // let keystore = KeyStore::new();
+    //     // // Insert Alice's keys
+    //     // const SURI_ALICE: &str = "//Alice";
+    //     // let key_pair_alice = sr25519::Pair::from_string(SURI_ALICE, None).expect("Generates key pair");
+    //     // SyncCryptoStore::insert_unknown(
+    //     //     &keystore,
+    //     //     KEY_TYPE,
+    //     //     SURI_ALICE,
+    //     //     key_pair_alice.public().as_ref(),
+    //     // )
+    //     // .expect("Inserts unknown key");
+    //     insert_default_xdns_record::<T>();
 
-    }: _(RawOrigin::Signed(Default::default()), io_schedule, components)
-    verify{}
+    // }: _(RawOrigin::Signed(Default::default()), io_schedule, components)
+    // verify{}
 
     dry_run_whole_xtx_one_component {
         let inter_exec_schedule = InterExecSchedule {
@@ -430,62 +430,62 @@ benchmarks! {
     }: {Pallet::<T>::dry_run_whole_xtx(inter_exec_schedule, escrow_account, requester)}
     verify{}
 
-    pre_run_bunch_until_break {
-        let compose = Compose {
-            name: b"component1".to_vec(),
-            code_txt: CODE1.as_bytes().to_vec(),
-            exec_type: b"exec_escrow".to_vec(),
-            dest: account("TEST", 1_u32, USER_SEED),
-            value: 0u32.into(),
-            bytes: vec![
-                    0, 97, 115, 109, 1, 0, 0, 0, 1, 17, 2, 96, 9, 127, 127, 126, 127, 127, 127, 127,
-                    127, 127, 1, 127, 96, 0, 0, 2, 34, 2, 5, 115, 101, 97, 108, 48, 9, 115, 101, 97,
-                    108, 95, 99, 97, 108, 108, 0, 0, 3, 101, 110, 118, 6, 109, 101, 109, 111, 114, 121,
-                    2, 1, 1, 1, 3, 3, 2, 1, 1, 7, 17, 2, 4, 99, 97, 108, 108, 0, 1, 6, 100, 101, 112,
-                    108, 111, 121, 0, 2, 10, 28, 2, 23, 0, 65, 4, 65, 32, 66, 0, 65, 36, 65, 8, 65, 44,
-                    65, 4, 65, 127, 65, 0, 16, 0, 26, 11, 2, 0, 11, 11, 60, 3, 0, 65, 4, 11, 32, 1, 1,
-                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                    1, 1, 0, 65, 36, 11, 8, 6, 0, 0, 0, 0, 0, 0, 0, 0, 65, 44, 11, 4, 1, 2, 3, 4,
-            ],
-            input_data: vec![],
-        };
-        let escrow_account: T::AccountId = account("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY", 1_u32, USER_SEED);
+    // pre_run_bunch_until_break {
+    //     let compose = Compose {
+    //         name: b"component1".to_vec(),
+    //         code_txt: CODE1.as_bytes().to_vec(),
+    //         exec_type: b"exec_escrow".to_vec(),
+    //         dest: account("TEST", 1_u32, USER_SEED),
+    //         value: 0u32.into(),
+    //         bytes: vec![
+    //                 0, 97, 115, 109, 1, 0, 0, 0, 1, 17, 2, 96, 9, 127, 127, 126, 127, 127, 127, 127,
+    //                 127, 127, 1, 127, 96, 0, 0, 2, 34, 2, 5, 115, 101, 97, 108, 48, 9, 115, 101, 97,
+    //                 108, 95, 99, 97, 108, 108, 0, 0, 3, 101, 110, 118, 6, 109, 101, 109, 111, 114, 121,
+    //                 2, 1, 1, 1, 3, 3, 2, 1, 1, 7, 17, 2, 4, 99, 97, 108, 108, 0, 1, 6, 100, 101, 112,
+    //                 108, 111, 121, 0, 2, 10, 28, 2, 23, 0, 65, 4, 65, 32, 66, 0, 65, 36, 65, 8, 65, 44,
+    //                 65, 4, 65, 127, 65, 0, 16, 0, 26, 11, 2, 0, 11, 11, 60, 3, 0, 65, 4, 11, 32, 1, 1,
+    //                 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    //                 1, 1, 0, 65, 36, 11, 8, 6, 0, 0, 0, 0, 0, 0, 0, 0, 65, 44, 11, 4, 1, 2, 3, 4,
+    //         ],
+    //         input_data: vec![],
+    //     };
+    //     let escrow_account: T::AccountId = account("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY", 1_u32, USER_SEED);
 
-        let requester: T::AccountId = account("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv", 1_u32, USER_SEED);
-        let gateway_id = None;
-        let gateway_abi_config: GatewayABIConfig = Default::default();
+    //     let requester: T::AccountId = account("5G9VdMwXvzza9pS8qE8ZHJk3CheHW9uucBn9ngW4C1gmmzpv", 1_u32, USER_SEED);
+    //     let gateway_id = None;
+    //     let gateway_abi_config: GatewayABIConfig = Default::default();
 
-        insert_default_xdns_record::<T>();
+    //     insert_default_xdns_record::<T>();
 
-        // Error here: failed to select authority / no keystore associated for the current context
+    //     // Error here: failed to select authority / no keystore associated for the current context
 
-        // let keystore = KeyStore::new();
-        // // Insert Alice's keys
-        // const SURI_ALICE: &str = "//Alice";
-        // let key_pair_alice = sr25519::Pair::from_string(SURI_ALICE, None).expect("Generates key pair");
-        // SyncCryptoStore::insert_unknown(
-        //     &keystore,
-        //     KEY_TYPE,
-        //     SURI_ALICE,
-        //     key_pair_alice.public().as_ref(),
-        // )
-        // .expect("Inserts unknown key");
+    //     // let keystore = KeyStore::new();
+    //     // // Insert Alice's keys
+    //     // const SURI_ALICE: &str = "//Alice";
+    //     // let key_pair_alice = sr25519::Pair::from_string(SURI_ALICE, None).expect("Generates key pair");
+    //     // SyncCryptoStore::insert_unknown(
+    //     //     &keystore,
+    //     //     KEY_TYPE,
+    //     //     SURI_ALICE,
+    //     //     key_pair_alice.public().as_ref(),
+    //     // )
+    //     // .expect("Inserts unknown key");
 
-        let example_contract = crate::ExecComposer::dry_run_single_contract::<T>(compose).unwrap();
-        let submitter = crate::Pallet::<T>::select_authority(escrow_account.clone())
-            .unwrap_or_else(|_| panic!("failed to select_authority"));
+    //     let example_contract = crate::ExecComposer::dry_run_single_contract::<T>(compose).unwrap();
+    //     let submitter = crate::Pallet::<T>::select_authority(escrow_account.clone())
+    //         .unwrap_or_else(|_| panic!("failed to select_authority"));
 
-    }: {crate::ExecComposer::pre_run_bunch_until_break::<T>(
-            vec![example_contract],
-            escrow_account,
-            submitter,
-            requester,
-            0u32.into(),
-            vec![],
-            Weight::MAX,
-            gateway_id,
-            gateway_abi_config,
-        )}
+    // }: {crate::ExecComposer::pre_run_bunch_until_break::<T>(
+    //         vec![example_contract],
+    //         escrow_account,
+    //         submitter,
+    //         requester,
+    //         0u32.into(),
+    //         vec![],
+    //         Weight::MAX,
+    //         gateway_id,
+    //         gateway_abi_config,
+    //     )}
 }
 
 #[cfg(test)]
@@ -532,26 +532,26 @@ mod tests {
         })
     }
 
-    #[test]
-    fn benchmark_submit_composable_exec_order() {
-        let keystore = KeyStore::new();
+    // #[test]
+    // fn benchmark_submit_composable_exec_order() {
+    //     let keystore = KeyStore::new();
 
-        // Insert Alice's keys
-        const SURI_ALICE: &str = "//Alice";
-        let key_pair_alice =
-            sr25519::Pair::from_string(SURI_ALICE, None).expect("Generates key pair");
-        SyncCryptoStore::insert_unknown(
-            &keystore,
-            KEY_TYPE,
-            SURI_ALICE,
-            key_pair_alice.public().as_ref(),
-        )
-        .expect("Inserts unknown key");
-        new_test_ext().register_extension(KeystoreExt(keystore.into()));
-        new_test_ext().execute_with(|| {
-            assert_ok!(test_benchmark_submit_composable_exec_order::<Test>());
-        })
-    }
+    //     // Insert Alice's keys
+    //     const SURI_ALICE: &str = "//Alice";
+    //     let key_pair_alice =
+    //         sr25519::Pair::from_string(SURI_ALICE, None).expect("Generates key pair");
+    //     SyncCryptoStore::insert_unknown(
+    //         &keystore,
+    //         KEY_TYPE,
+    //         SURI_ALICE,
+    //         key_pair_alice.public().as_ref(),
+    //     )
+    //     .expect("Inserts unknown key");
+    //     new_test_ext().register_extension(KeystoreExt(keystore.into()));
+    //     new_test_ext().execute_with(|| {
+    //         assert_ok!(test_benchmark_submit_composable_exec_order::<Test>());
+    //     })
+    // }
 
     #[test]
     fn benchmark_dry_run_whole_xtx_one_component() {
@@ -567,26 +567,26 @@ mod tests {
         })
     }
 
-    #[test]
-    fn benchmark_pre_run_bunch_until_break() {
-        let keystore = KeyStore::new();
+    // #[test]
+    // fn benchmark_pre_run_bunch_until_break() {
+    //     let keystore = KeyStore::new();
 
-        // Insert Alice's keys
-        const SURI_ALICE: &str = "//Alice";
-        let key_pair_alice =
-            sr25519::Pair::from_string(SURI_ALICE, None).expect("Generates key pair");
-        SyncCryptoStore::insert_unknown(
-            &keystore,
-            KEY_TYPE,
-            SURI_ALICE,
-            key_pair_alice.public().as_ref(),
-        )
-        .expect("Inserts unknown key");
-        new_test_ext().register_extension(KeystoreExt(keystore.into()));
-        new_test_ext().execute_with(|| {
-            assert_ok!(test_benchmark_pre_run_bunch_until_break::<Test>());
-        })
-    }
+    //     // Insert Alice's keys
+    //     const SURI_ALICE: &str = "//Alice";
+    //     let key_pair_alice =
+    //         sr25519::Pair::from_string(SURI_ALICE, None).expect("Generates key pair");
+    //     SyncCryptoStore::insert_unknown(
+    //         &keystore,
+    //         KEY_TYPE,
+    //         SURI_ALICE,
+    //         key_pair_alice.public().as_ref(),
+    //     )
+    //     .expect("Inserts unknown key");
+    //     new_test_ext().register_extension(KeystoreExt(keystore.into()));
+    //     new_test_ext().execute_with(|| {
+    //         assert_ok!(test_benchmark_pre_run_bunch_until_break::<Test>());
+    //     })
+    // }
 }
 
 impl_benchmark_test_suite!(

@@ -627,7 +627,6 @@ fn dry_run_whole_xtx_unseen_contract_one_phase_and_one_step_success() {
         )
         .unwrap();
 
-        
         let expected_xtx = Xtx {
             estimated_worth: Default::default(),
             current_worth: Default::default(),
