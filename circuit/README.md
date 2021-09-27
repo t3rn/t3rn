@@ -22,13 +22,13 @@ You can then run the circuit with a locally stored data for development purposes
  cargo build --dev -lruntime=debug
 ```
 
-#### [RPC API](./src/rpc)
+#### [RPC API](rpc)
 RPC methods for interaction with Circuit.
 
-#### [Runtime](./src/runtime)
-The `modules` which are used to build the blockchain's logic, runtime pallets are available at [./src/runtime](./src/runtime). For relying messages - block headers and related to execution events from connected Gateways we intend to use [Parity Bridges](https://github.com/paritytech/parity-bridges-common). Integration is currently WIP.
+#### [Runtime](runtime)
+The `modules` which are used to build the blockchain's logic, runtime pallets are available at [./src/runtime](runtime). For relying messages - block headers and related to execution events from connected Gateways we intend to use [Parity Bridges](https://github.com/paritytech/parity-bridges-common). Integration is currently WIP.
 
-#### [Primitives](./src/primitives)
+#### [Primitives](primitives)
 A crate that hosts common definitions that are relevant for the Circuit.
 
 ## Circuit's Relevant Roadmap Phases

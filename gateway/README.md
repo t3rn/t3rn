@@ -10,8 +10,8 @@ The standalone version of the gateway brings additional phases over the regular 
 t3rn supports both Parachains with and without Contracts. The common features between both gateways are:
 ##### Escrow Balance Transfers
 Secure multi-phase balance transfers.
-- Single escrow transfer can be invoked [when no code is attached to the call](./pallet-escrow-gateway/src/tests.rs:85L). 
-- Multiple escrow transfers can be invoked when attaching an appropriate code containing the transfers from within the contract (see [transfer_return_code.wat` example](/pallet-escrow-gateway/fixtures/transfer_return_code.wat)).
+- Single escrow transfer can be invoked [when no code is attached to the call](pallets/src/tests.rs:85L). 
+- Multiple escrow transfers can be invoked when attaching an appropriate code containing the transfers from within the contract (see [transfer_return_code.wat` example](/pallets/fixtures/transfer_return_code.wat)).
 
 Funds are secured between execution phases on `escrow_account`:
 - `execution` phase moves the funds from `requester` to `escrow_account` 
@@ -20,8 +20,8 @@ Funds are secured between execution phases on `escrow_account`:
 
 ##### Escrow Generic Code Execution
 Secure multi-phase balance transfers.
-- Single escrow transfer can be invoked [when no code is attached to the call](./pallet-escrow-gateway/src/tests.rs:85L). 
-- Multiple escrow transfers can be invoked when attaching an appropriate code containing the transfers from within the contract (see [transfer_return_code.wat` example](/pallet-escrow-gateway/fixtures/transfer_return_code.wat)).
+- Single escrow transfer can be invoked [when no code is attached to the call](pallets/src/tests.rs:85L). 
+- Multiple escrow transfers can be invoked when attaching an appropriate code containing the transfers from within the contract (see [transfer_return_code.wat` example](/pallets/fixtures/transfer_return_code.wat)).
 
 Funds are secured between execution phases on `escrow_account`:
 - `execution` phase moves the funds from `requester` to `escrow_account` 
@@ -63,11 +63,11 @@ Both Contract and Execution Gateways is intended to work within the [Gateway Cir
 In this repository, both `escrow-gateway` & `escrow-pallet-balances` are installed as part of the demonstration node - `demo-runtime`, where the Escrow Gateway is one very few connected pallets. This is extended after [substrate-node-template](https://github.com/substrate-developer-hub/substrate-node-template). To start demonstration node run `bash run-node-full.sh`. The node runs on a default for Substrate `ws-port = 9944` & `http-port = 9933`. 
 
 ##### Front-end
-You can verify the Escrow Gateway running demo frontend app from [front-end](./front-end) directory, or using the `Extrinsics` tool of [@polkadot/apps](https://github.com/polkadot-js/apps) GUI which is hosted on https://polkadot.js.org/apps/#/extrinsics. Remember to select a "local node" from the left-menu dropdown.
+You can verify the Escrow Gateway running demo frontend app from [front-end](./frontend) directory, or using the `Extrinsics` tool of [@polkadot/apps](https://github.com/polkadot-js/apps) GUI which is hosted on https://polkadot.js.org/apps/#/extrinsics. Remember to select a "local node" from the left-menu dropdown.
 
 #### Installation
 
-Please follow independent installation manuals for [`contracts-gateway`](./pallet-escrow-gateway/contracts-gateway) and [`runtime-gateway`](./pallet-escrow-gateway/runtime-gateway) depending on needs. Both of the pallets are installed as part of the [`demo-runtime`](./demo-runtime).
+Please follow independent installation manuals for [`contracts-gateway`](pallets/contracts-gateway) and [`runtime-gateway`](pallets/runtime-gateway) depending on needs. Both of the pallets are installed as part of the [`demo-runtime`](./node).
 
 #### API
 The `escrow-gateway-api` pallet is intended to provide the way for a parachain to connect with the t3rn network operated by Gateway Circuit (scheduled to be implemented in [following development phases](../roadmap/following_development_phases.md)) or any other trusted service holding the 
@@ -85,7 +85,7 @@ Unit tests cover scenarios checking interaction between execution phases and run
 - `returns_from_start_fn.wasm` - checking the correct output and proofs
 - `transfer_return_code.wasm` - checking the correct output and transfers from within a contract.
 - `storage_size.wasm` - checking setting of the input and deferred storage writes to a contract.
-- `storage_runtime_demo.wasm` - (only `runtime-gateway`) dispatching calls to runtime as well as `deposit_event` on a demonstrative pallet that stores values and allows for multiple transformations on it - [weights](./pallet-escrow-gateway/contracts-gateway/fixtures/storage_runtime_demo.wat).
+- `storage_runtime_demo.wasm` - (only `runtime-gateway`) dispatching calls to runtime as well as `deposit_event` on a demonstrative pallet that stores values and allows for multiple transformations on it - [weights](pallets/contracts-gateway/fixtures/storage_runtime_demo.wat).
 
 To execute the unit test, type: 
 ```shell script
@@ -109,7 +109,7 @@ To run the integration tests against the tiny node:
 1. Build & run a `demo-runtime` with `bash run-node-tiny.sh`.
 1. Execute integration tests against `ws:9944` default port: `cd test-integration && npm test:tiny` or `cd test-integration && npm test:full`.
 
-###### [Execute multi-step transaction](./test-integration/multistep_call.spec.js)
+###### [Execute multi-step transaction](tests/multistep_call.spec.js)
 Uses Alice's account as the one that already has some positive balance on it allowing to put_code and instantiate contract. Also, by default Alice is registered as escrow account - sudo user with authorisation for calls. 
 
 That Escrow Account sends the signed transaction against the `multistep_call` API containing valid example code and checks the correct results of that execution by retrieving the events out of substrate node - there should be one from the contracts pallet (code is stored_ and one from escrow gateway pallet - mutlistep_call result. 
