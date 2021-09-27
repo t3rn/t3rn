@@ -73,7 +73,7 @@ pub fn insert_default_xdns_record() {
     );
 }
 
-fn setup_test_escrow_as_tx_signer(ext: &mut TestExternalities) -> AccountId32 {
+pub fn setup_test_escrow_as_tx_signer(ext: &mut TestExternalities) -> AccountId32 {
     let keystore = KeyStore::new();
     // Insert Alice's keys
     const SURI_ALICE: &str = "//Alice";
@@ -92,7 +92,7 @@ fn setup_test_escrow_as_tx_signer(ext: &mut TestExternalities) -> AccountId32 {
     hex_literal::hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"].into()
 }
 
-fn make_registry_contract_out_of_wat<T: Config>(
+pub fn make_registry_contract_out_of_wat<T: Config>(
     wat: &str,
     input_data: Vec<u8>,
     dest: T::AccountId,

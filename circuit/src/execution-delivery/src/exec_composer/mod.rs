@@ -334,7 +334,7 @@ impl ExecComposer {
     }
 
     /// Given a Gateway Pointer and an Authority, it returns the respective Gateway Protocol
-    pub fn retrieve_gateway_protocol<T: crate::Config>(
+    fn retrieve_gateway_protocol<T: crate::Config>(
         submitter_id: AuthorityId,
         gateway_pointer: &GatewayPointer,
     ) -> Result<Box<dyn GatewayInboundProtocol>, &'static str> {

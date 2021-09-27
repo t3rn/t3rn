@@ -54,7 +54,7 @@ use sp_runtime::{
     RuntimeAppPublic, RuntimeDebug,
 };
 
-use crate::exec_composer::ExecComposer;
+pub use crate::exec_composer::ExecComposer;
 pub use crate::message_assembly::circuit_inbound::StepConfirmation;
 use crate::message_assembly::merklize::*;
 use pallet_contracts_registry::{RegistryContract, RegistryContractId};
@@ -71,8 +71,13 @@ use volatile_vm::VolatileVM;
 #[cfg(test)]
 pub mod tests;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 #[cfg(test)]
 pub mod mock;
+
+pub mod weights;
+use weights::WeightInfo;
 
 pub mod exec_composer;
 pub mod message_assembly;
@@ -93,11 +98,11 @@ type EthLikeKeccak256ValU32Gateway = pallet_multi_finality_verifier::Instance3;
 
 pub fn init_bridge_instance<T: pallet_multi_finality_verifier::Config<I>, I: 'static>(
     origin: T::Origin,
-    first_header: GenericPrimitivesHeader,
+    first_header: Vec<u8>,
     authorities: Option<Vec<T::AccountId>>,
     gateway_id: bp_runtime::ChainId,
 ) -> DispatchResultWithPostInfo {
-    let header: CurrentHeader<T, I> = Decode::decode(&mut &first_header.encode()[..])
+    let header: CurrentHeader<T, I> = Decode::decode(&mut &first_header[..])
         .map_err(|_| "Decoding error: received GenericPrimitivesHeader -> CurrentHeader<T>")?;
 
     let init_data = bp_header_chain::InitializationData {
@@ -212,16 +217,15 @@ pub struct Xtx<AccountId, BlockNumber, Hash, BalanceOf> {
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
 pub struct StepEntry<AccountId, BlockNumber, Hash, BalanceOf> {
     contract_id: Hash,
-    cost: u128,
+    cost: BalanceOf,
     result: Option<Vec<u8>>,
     input: Vec<u8>,
-    dest: AccountId,
+    dest: Option<AccountId>,
     value: BalanceOf,
     proof: Option<Hash>,
-    updated_at: BlockNumber,
     relayer: Option<AccountId>,
     gateway_id: Option<bp_runtime::ChainId>,
-    gateway_entry_id: Hash,
+    updated_at: BlockNumber,
 }
 
 /// Schedule consist of phases
@@ -239,12 +243,72 @@ pub struct XtxSchedule<AccountId, BlockNumber, Hash, BalanceOf> {
     phases: Vec<RoundEntry<AccountId, BlockNumber, Hash, BalanceOf>>,
 }
 
+impl<
+        AccountId: Encode + Clone,
+        BlockNumber: Ord + Copy + Zero + Encode,
+        Hash: Ord + Copy + Encode,
+        BalanceOf: Copy + Zero + Encode + Decode + Default,
+    > XtxSchedule<AccountId, BlockNumber, Hash, BalanceOf>
+{
+    /// Simplify scheduled exec to a sequence of rounds with a single steps
+    pub fn new_sequential_from_contracts(
+        contracts: Vec<RegistryContract<Hash, AccountId, BalanceOf, BlockNumber>>,
+        contract_ids: Vec<Hash>,
+        compose_steps: Vec<Compose<AccountId, BalanceOf>>,
+        _contract_action_descriptions: Vec<ContractActionDesc<Hash, ChainId, AccountId>>,
+        gateway_id: Option<ChainId>,
+        updated_at: BlockNumber,
+    ) -> Result<XtxSchedule<AccountId, BlockNumber, Hash, BalanceOf>, &'static str> {
+        ensure!(
+            contracts.len() == contract_ids.len() && contract_ids.len() == compose_steps.len(),
+            "XtxSchedule::new_sequential_from_contracts - contracts length must be equal to contracts ids and number of steps",
+        );
+
+        let mut phases: Vec<RoundEntry<AccountId, BlockNumber, Hash, BalanceOf>> = vec![];
+
+        for (i, _contract) in contracts.iter().enumerate() {
+            let current_step = compose_steps
+                .get(i as usize)
+                .expect("steps and contracts length ensured to be equal above");
+            let curr_step_entry = StepEntry::<AccountId, BlockNumber, Hash, BalanceOf> {
+                contract_id: *contract_ids
+                    .get(i as usize)
+                    .expect("contract_ids and contracts length ensured to be equal above"),
+                cost: Default::default(), // ToDo: Generating cost estimate is part of Milestone 2.
+                result: None, // ToDo: Read expected output from contract_action_descriptions
+                input: current_step.input_data.clone(), // ToDo: Prefer to read input from contract_action_descriptions
+                dest: Some(current_step.dest.clone()),  // Some if a smart contract
+                value: Decode::decode(&mut &current_step.value.encode()[..]).map_err(|_| {
+                    "Can't decode value from step in XtxSchedule::new_sequential_from_contracts"
+                })?,
+                proof: None,
+                updated_at: updated_at.clone(),
+                relayer: None,
+                gateway_id,
+            };
+            phases.push(vec![curr_step_entry]);
+        }
+
+        let xtx_schedule = XtxSchedule::<AccountId, BlockNumber, Hash, BalanceOf> { phases };
+
+        Ok(xtx_schedule)
+    }
+
+    pub fn new_from_inter_exec_schedule(
+        _inter_schedule: InterExecSchedule<AccountId, BalanceOf>,
+        _rounds: Vec<RoundEntry<AccountId, BlockNumber, Hash, BalanceOf>>,
+    ) {
+        // ToDo: Create new one based on inter_schedule provided by requester and discovered rounds order.
+        unimplemented!();
+    }
+}
+
 // check frame/democracy/src/vote.rs
 impl<
         AccountId: Encode,
         BlockNumber: Ord + Copy + Zero + Encode,
         Hash: Ord + Copy + Encode,
-        BalanceOf: Encode,
+        BalanceOf: Copy + Zero + Encode + Decode,
     > Xtx<AccountId, BlockNumber, Hash, BalanceOf>
 {
     pub fn new(
@@ -304,7 +368,7 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
 
     use super::*;
-
+    use crate::WeightInfo;
     /// Current Circuit's context of active transactions
     ///
     /// The currently active composable transactions, indexed according to the order of creation.
@@ -347,6 +411,8 @@ pub mod pallet {
         type AccountId32Converter: Convert<Self::AccountId, [u8; 32]>;
 
         type ToStandardizedGatewayBalance: Convert<BalanceOf<Self>, u128>;
+
+        type WeightInfo: weights::WeightInfo;
     }
 
     #[pallet::pallet]
@@ -382,7 +448,7 @@ pub mod pallet {
     /// A public part of the pallet.
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(0)]
+        #[pallet::weight(<T as Config>::WeightInfo::dry_run_whole_xtx_three_components() + <T as Config>::WeightInfo::decompose_io_schedule())]
         pub fn submit_composable_exec_order(
             origin: OriginFor<T>,
             io_schedule: Vec<u8>,
@@ -458,7 +524,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(0)]
+        #[pallet::weight(<T as Config>::WeightInfo::register_gateway_default_polka())]
         pub fn register_gateway(
             origin: OriginFor<T>,
             url: Vec<u8>,
@@ -467,7 +533,7 @@ pub mod pallet {
             gateway_vendor: t3rn_primitives::GatewayVendor,
             gateway_type: t3rn_primitives::GatewayType,
             gateway_genesis: GatewayGenesisConfig,
-            first_header: GenericPrimitivesHeader,
+            first_header: Vec<u8>,
             authorities: Option<Vec<T::AccountId>>,
         ) -> DispatchResultWithPostInfo {
             // Retrieve sender of the transaction.
@@ -540,9 +606,12 @@ pub mod pallet {
             let gateway_id = current_step
                 .gateway_id
                 .expect("Confirmation step for remote (Some) gateways only");
-            let gateway_xdns_record =
-                pallet_xdns::Pallet::<T>::xdns_registry(current_step.gateway_entry_id)
-                    .ok_or(Error::<T>::StepConfirmationGatewayNotRecognised)?;
+
+            let gateway_xdns_record = pallet_xdns::Pallet::<T>::best_available(
+                current_step
+                    .gateway_id
+                    .expect("Foreign gateway id expected at receiving steps confirmation"),
+            )?;
 
             let declared_block_hash = step_confirmation.proof.block_hash;
 
@@ -755,6 +824,7 @@ impl<T: Config> Pallet<T> {
         let mut seen_contracts = vec![];
         let mut contract_ids = vec![];
         let mut action_descriptions = vec![];
+        let mut composes = vec![];
 
         // ToDo: Better phases getter
         let first_phase = inter_schedule
@@ -784,6 +854,7 @@ impl<T: Config> Pallet<T> {
                 seen_contracts.push(seen_contract);
             }
             contract_ids.push(key);
+            composes.push(step.compose.clone());
         }
 
         contracts.extend(seen_contracts);
@@ -793,6 +864,15 @@ impl<T: Config> Pallet<T> {
             <frame_system::Pallet<T>>::block_number(),
             T::BlockNumber::zero(),
         );
+
+        let xtx_schedule = XtxSchedule::new_sequential_from_contracts(
+            contracts.clone(),
+            contract_ids.clone(),
+            composes.clone(),
+            action_descriptions.clone(),
+            None,
+            current_block_no.clone(),
+        )?;
 
         let max_steps = contracts.len() as u32;
 
@@ -813,7 +893,7 @@ impl<T: Config> Pallet<T> {
             0,
             vec![],
             (current_block_no, block_zero),
-            Default::default(),
+            xtx_schedule,
         );
 
         Ok((new_xtx, contracts, contract_ids, action_descriptions))

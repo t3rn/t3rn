@@ -21,7 +21,6 @@ pub const TEST_RUNTIME_VERSION: RuntimeVersion = RuntimeVersion {
 
 benchmarks! {
     add_new_xdns_record {
-        let requester: T::AccountId = account("TEST", 1_u32, USER_SEED);
         let url = b"some_url".to_vec();
         let gateway_id = b"test";
         let gateway_abi: GatewayABIConfig = Default::default();
@@ -36,7 +35,7 @@ benchmarks! {
             extrinsics_version: 0u8,
             genesis_hash: Default::default(),
         };
-    }: _(RawOrigin::Signed(requester), url, *gateway_id, gateway_abi, gateway_vendor, gateway_type, gateway_genesis)
+    }: _(RawOrigin::Root, url, *gateway_id, gateway_abi, gateway_vendor, gateway_type, gateway_genesis)
     verify {
         assert!(
             XDNSRegistry::<T>::get(T::Hashing::hash(b"test"))
@@ -45,7 +44,6 @@ benchmarks! {
     }
 
     update_ttl {
-        let requester: T::AccountId = account("TEST", 1_u32, USER_SEED);
         let url = b"some_url".to_vec();
 
         let gateway_id = b"gate";
@@ -62,7 +60,7 @@ benchmarks! {
         };
 
         XDNS::<T>::add_new_xdns_record(
-            RawOrigin::Signed(requester).into(),
+            RawOrigin::Root.into(),
             url,
             *gateway_id,
             gateway_abi,
@@ -102,7 +100,7 @@ benchmarks! {
         };
 
         XDNS::<T>::add_new_xdns_record(
-            RawOrigin::Signed(requester.clone()).into(),
+            RawOrigin::Root.into(),
             url,
             *gateway_id,
             gateway_abi,
@@ -122,7 +120,6 @@ benchmarks! {
     }
 
     best_available {
-        let requester: T::AccountId = account("TEST", 1u32, USER_SEED);
         let url = b"some_url".to_vec();
 
         let gateway_id = b"gate";
@@ -139,7 +136,7 @@ benchmarks! {
         };
 
         XDNS::<T>::add_new_xdns_record(
-            RawOrigin::Signed(requester).into(),
+            RawOrigin::Root.into(),
             url,
             *gateway_id,
             gateway_abi,

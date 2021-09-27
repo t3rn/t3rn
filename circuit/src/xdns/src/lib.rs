@@ -23,7 +23,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use frame_system::ensure_signed;
+use frame_system::{ensure_root, ensure_signed};
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -218,7 +218,11 @@ pub mod pallet {
             gateway_type: GatewayType,
             gateway_genesis: GatewayGenesisConfig,
         ) -> DispatchResultWithPostInfo {
-            let registrant = ensure_signed(origin)?;
+            ensure_root(origin)?;
+
+            // ToDo: Uncomment when switching into a model with open registration. Sudo access for now.
+            // xdns_record.assign_registrant(registrant.clone());
+            let registrant = Default::default();
 
             let mut xdns_record = XdnsRecord::<T::AccountId>::new(
                 url,
@@ -228,8 +232,6 @@ pub mod pallet {
                 gateway_type,
                 gateway_genesis,
             );
-
-            xdns_record.assign_registrant(registrant.clone());
 
             let now = TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now())
                 .map_err(|_| "Unable to compute current timestamp")?;
