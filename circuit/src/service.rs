@@ -226,9 +226,13 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
     let prometheus_registry = config.prometheus_registry().cloned();
     let shared_voter_state = sc_finality_grandpa::SharedVoterState::empty();
 
+    let (signed_commitment_sender, signed_commitment_stream) =
+        beefy_gadget::notification::BeefySignedCommitmentStream::channel();
+
     let rpc_extensions_builder = {
         use sc_finality_grandpa::FinalityProofProvider as GrandpaFinalityProofProvider;
 
+        use pallet_mmr_rpc::{Mmr, MmrApi};
         use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
         use sc_finality_grandpa_rpc::{GrandpaApi, GrandpaRpcHandler};
         use sc_rpc::DenyUnsafe;
@@ -247,25 +251,34 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
             Some(shared_authority_set.clone()),
         );
 
-        Box::new(move |_, subscription_executor| {
-            let mut io = jsonrpc_core::IoHandler::default();
-            io.extend_with(SystemApi::to_delegate(FullSystem::new(
-                client.clone(),
-                pool.clone(),
-                DenyUnsafe::No,
-            )));
-            io.extend_with(TransactionPaymentApi::to_delegate(TransactionPayment::new(
-                client.clone(),
-            )));
-            io.extend_with(GrandpaApi::to_delegate(GrandpaRpcHandler::new(
-                shared_authority_set.clone(),
-                shared_voter_state.clone(),
-                justification_stream.clone(),
-                subscription_executor,
-                finality_proof_provider.clone(),
-            )));
-            io
-        })
+        Box::new(
+            move |_, subscription_executor: sc_rpc::SubscriptionTaskExecutor| {
+                let mut io = jsonrpc_core::IoHandler::default();
+                io.extend_with(SystemApi::to_delegate(FullSystem::new(
+                    client.clone(),
+                    pool.clone(),
+                    DenyUnsafe::No,
+                )));
+                io.extend_with(TransactionPaymentApi::to_delegate(TransactionPayment::new(
+                    client.clone(),
+                )));
+                io.extend_with(MmrApi::to_delegate(Mmr::new(client.clone())));
+                io.extend_with(GrandpaApi::to_delegate(GrandpaRpcHandler::new(
+                    shared_authority_set.clone(),
+                    shared_voter_state.clone(),
+                    justification_stream.clone(),
+                    subscription_executor.clone(),
+                    finality_proof_provider.clone(),
+                )));
+                io.extend_with(beefy_gadget_rpc::BeefyApi::to_delegate(
+                    beefy_gadget_rpc::BeefyRpcHandler::new(
+                        signed_commitment_stream.clone(),
+                        subscription_executor,
+                    ),
+                ));
+                io
+            },
+        )
     };
 
     let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
@@ -277,7 +290,7 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
         rpc_extensions_builder,
         on_demand: None,
         remote_blockchain: None,
-        backend,
+        backend: backend.clone(),
         system_rpc_tx,
         config,
         telemetry: telemetry.as_mut(),
@@ -301,7 +314,7 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
         let aura = sc_consensus_aura::start_aura::<AuraPair, _, _, _, _, _, _, _, _, _, _, _>(
             StartAuraParams {
                 slot_duration,
-                client,
+                client: client.clone(),
                 select_chain,
                 block_import,
                 proposer_factory,
@@ -369,6 +382,22 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
     } else {
         None
     };
+
+    let beefy_params = beefy_gadget::BeefyParams {
+        client,
+        backend,
+        key_store: keystore.clone(),
+        network: network.clone(),
+        signed_commitment_sender,
+        min_block_delta: 4,
+        prometheus_registry: prometheus_registry.clone(),
+    };
+
+    // Start the BEEFY bridge gadget.
+    task_manager.spawn_essential_handle().spawn_blocking(
+        "beefy-gadget",
+        beefy_gadget::start_beefy_gadget::<_, _, _, _>(beefy_params),
+    );
 
     let grandpa_config = sc_finality_grandpa::Config {
         // FIXME #1578 make this available through chainspec

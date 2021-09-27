@@ -33,14 +33,16 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub mod gateway_messages;
 
 use crate::gateway_messages::{ToGatewayMessagePayload, WithGatewayMessageBridge};
-
+use beefy_primitives::{crypto::AuthorityId as BeefyId, ValidatorSet};
 use bridge_runtime_common::messages::{
     source::estimate_message_dispatch_and_delivery_fee, MessageBridge,
 };
 use codec::Decode;
+use pallet_beefy_mmr::mmr::MmrLeafVersion;
 use pallet_grandpa::{
     fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
+use pallet_mmr_primitives as mmr;
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -61,6 +63,7 @@ use sp_version::RuntimeVersion;
 
 use t3rn_primitives::{transfers::BalanceOf, ComposableExecResult, Compose};
 
+use ethereum_light_client::EthereumDifficultyConfig;
 use volatile_vm::DispatchRuntimeCall;
 
 // A few exports that help ease life for downstream crates.
@@ -134,6 +137,7 @@ impl_opaque_keys! {
     pub struct SessionKeys {
         pub aura: Aura,
         pub grandpa: Grandpa,
+        pub beefy: Beefy,
     }
 }
 
@@ -245,6 +249,10 @@ impl pallet_grandpa::Config for Runtime {
     type WeightInfo = ();
 }
 
+impl pallet_beefy::Config for Runtime {
+    type BeefyId = BeefyId;
+}
+
 parameter_types! {
     pub const MinimumPeriod: u64 = bp_circuit::SLOT_DURATION / 2;
 }
@@ -298,6 +306,30 @@ impl pallet_randomness_collective_flip::Config for Runtime {}
 impl pallet_sudo::Config for Runtime {
     type Event = Event;
     type Call = Call;
+}
+
+type MmrHash = <Keccak256 as sp_runtime::traits::Hash>::Output;
+
+/// A BEEFY consensus digest item with MMR root hash.
+pub struct DepositLog;
+impl pallet_mmr::primitives::OnNewRoot<MmrHash> for DepositLog {
+    fn on_new_root(root: &Hash) {
+        let digest = DigestItem::Consensus(
+            beefy_primitives::BEEFY_ENGINE_ID,
+            codec::Encode::encode(&beefy_primitives::ConsensusLog::<BeefyId>::MmrRoot(*root)),
+        );
+        <frame_system::Pallet<Runtime>>::deposit_log(digest);
+    }
+}
+
+/// Configure Merkle Mountain Range pallet.
+impl pallet_mmr::Config for Runtime {
+    const INDEXING_PREFIX: &'static [u8] = b"mmr";
+    type Hashing = Keccak256;
+    type Hash = MmrHash;
+    type LeafData = frame_system::Pallet<Self>;
+    type OnNewRoot = DepositLog;
+    type WeightInfo = ();
 }
 
 parameter_types! {
@@ -496,7 +528,7 @@ impl pallet_bridge_messages::Config<WithGatewayMessagesInstance> for Runtime {
 
 impl pallet_xdns::Config for Runtime {
     type Event = Event;
-    type WeightInfo = ();
+    type WeightInfo = pallet_xdns::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_contracts_registry::Config for Runtime {
@@ -666,6 +698,44 @@ impl pallet_utility::Config for Runtime {
     type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+    pub const DescendantsUntilFinalized: u8 = 3;
+    pub const DifficultyConfig: EthereumDifficultyConfig = EthereumDifficultyConfig::mainnet();
+    pub const VerifyPoW: bool = true;
+}
+
+impl ethereum_light_client::Config for Runtime {
+    type Event = Event;
+    type DescendantsUntilFinalized = DescendantsUntilFinalized;
+    type DifficultyConfig = DifficultyConfig;
+    type VerifyPoW = VerifyPoW;
+    // Todo: need to run benchmarks and set actual weights
+    type WeightInfo = ();
+}
+
+parameter_types! {
+    /// Version of the produced MMR leaf.
+    ///
+    /// The version consists of two parts;
+    /// - `major` (3 bits)
+    /// - `minor` (5 bits)
+    ///
+    /// `major` should be updated only if decoding the previous MMR Leaf format from the payload
+    /// is not possible (i.e. backward incompatible change).
+    /// `minor` should be updated if fields are added to the previous MMR Leaf, which given SCALE
+    /// encoding does not prevent old leafs from being decoded.
+    ///
+    /// Hence we expect `major` to be changed really rarely (think never).
+    /// See [`MmrLeafVersion`] type documentation for more details.
+    pub LeafVersion: MmrLeafVersion = MmrLeafVersion::new(0, 0);
+}
+
+impl pallet_beefy_mmr::Config for Runtime {
+    type LeafVersion = LeafVersion;
+    type BeefyAuthorityToMerkleLeaf = pallet_beefy_mmr::BeefyEcdsaToEthereum;
+    type ParachainHeads = ();
+}
+
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -680,6 +750,7 @@ construct_runtime!(
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         Aura: pallet_aura::{Pallet, Config<T>},
         Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event},
+        Beefy: pallet_beefy::{Pallet, Config<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
@@ -695,6 +766,9 @@ construct_runtime!(
         MultiFinalityVerifier: pallet_multi_finality_verifier::{Pallet, Call, Config<T>},
         ExecDelivery: pallet_circuit_execution_delivery::{Pallet, Call, Storage, Event<T>},
         Utility: pallet_utility::{Pallet, Call, Event},
+        Mmr: pallet_mmr::{Pallet, Storage},
+        EthereumLightClient: ethereum_light_client::{Pallet, Call, Storage, Event, Config},
+        MmrLeaf: pallet_beefy_mmr::{Pallet, Storage},
     }
 );
 
@@ -862,6 +936,45 @@ impl_runtime_apis! {
         }
     }
 
+    impl beefy_primitives::BeefyApi<Block> for Runtime {
+        fn validator_set() -> ValidatorSet<BeefyId> {
+            Beefy::validator_set()
+        }
+    }
+
+    impl pallet_mmr_primitives::MmrApi<Block, Hash> for Runtime {
+        fn generate_proof(leaf_index: u64)
+            -> Result<(mmr::EncodableOpaqueLeaf, mmr::Proof<Hash>), mmr::Error>
+        {
+            Mmr::generate_proof(leaf_index)
+                .map(|(leaf, proof)| (mmr::EncodableOpaqueLeaf::from_leaf(&leaf), proof))
+        }
+
+        fn verify_proof(leaf: mmr::EncodableOpaqueLeaf, proof: mmr::Proof<Hash>)
+            -> Result<(), mmr::Error>
+        {
+            pub type Leaf = <
+                <Runtime as pallet_mmr::Config>::LeafData as mmr::LeafDataProvider
+            >::LeafData;
+
+            let leaf: Leaf = leaf
+                .into_opaque_leaf()
+                .try_decode()
+                .ok_or(mmr::Error::Verify)?;
+            Mmr::verify_leaf(leaf, proof)
+        }
+
+        fn verify_proof_stateless(
+            root: Hash,
+            leaf: mmr::EncodableOpaqueLeaf,
+            proof: mmr::Proof<Hash>
+        ) -> Result<(), mmr::Error> {
+            type MmrHashing = <Runtime as pallet_mmr::Config>::Hashing;
+            let node = mmr::DataOrHash::Data(leaf.into_opaque_leaf());
+            pallet_mmr::verify_leaf_proof::<MmrHashing, _>(root, node, proof)
+        }
+    }
+
     // impl bp_gateway::GatewayFinalityApi<Block> for Runtime {
     // 	fn best_finalized() -> (bp_gateway::BlockNumber, bp_gateway::Hash) {
     // 		let header = BridgeGatewayGrandpa::best_finalized();
@@ -979,6 +1092,7 @@ impl_runtime_apis! {
             let params = (&config, &whitelist);
 
             add_benchmark!(params, batches, pallet_circuit_execution_delivery, ExecDelivery);
+            add_benchmark!(params, batches, pallet_xdns, XDNS);
             add_benchmark!(params, batches, pallet_contracts_registry, ContractsRegistry);
             if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
             Ok(batches)

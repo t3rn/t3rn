@@ -28,7 +28,6 @@ pallet-bridge-messages = { path = "../vendor/bridges/modules/messages" }
 pallet-evm = { path = "../vendor/frontier/frame/evm" }
 
 # Substrate Dependencies
-
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 node-inspect = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
@@ -58,6 +57,10 @@ substrate-frame-rpc-system = { git = "https://github.com/paritytech/substrate", 
 t3rn-primitives = { path = "src/primitives" }
 jsonrpc-runtime-client = { path = "src/rpc-test/jsonrpc-runtime-client" }
 async-std = "1.10.0"
+beefy-primitives = { git = "https://github.com/t3rn/grandpa-bridge-gadget", branch = 'polkadot-v0.9.8', default-features = false }
+beefy-gadget = { git = "https://github.com/t3rn/grandpa-bridge-gadget", branch = 'polkadot-v0.9.8', default-features = false }
+beefy-gadget-rpc = { git = "https://github.com/t3rn/grandpa-bridge-gadget", branch = 'polkadot-v0.9.8', default-features = false }
+pallet-mmr-rpc = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 
 [build-dependencies]
 substrate-build-script-utils = "3.0.0"
@@ -85,6 +88,8 @@ members = [
     "src/runtime",
     "src/primitives",
     "src/xdns",
-    "src/test-utils"
+    "src/test-utils",
+    "pallets/beefy-mmr-pallet",
+    "pallets/beefy-merkle-tree"
 ]
 exclude = []

@@ -41,9 +41,11 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-mod weights;
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 
-pub use weights::*;
+pub mod weights;
+use weights::WeightInfo;
 
 /// A hash based on encoding the complete XdnsRecord
 pub type XdnsRecordId<T> = <T as frame_system::Config>::Hash;
@@ -151,6 +153,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
 pub mod pallet {
     // Import various types used to declare pallet in scope.
     use super::*;
+    use crate::WeightInfo;
     use frame_support::pallet_prelude::*;
     use frame_support::traits::Time;
     use frame_system::pallet_prelude::*;
@@ -163,7 +166,7 @@ pub mod pallet {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
         /// Type representing the weight of this pallet
-        type WeightInfo: WeightInfo;
+        type WeightInfo: weights::WeightInfo;
     }
 
     // Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
@@ -205,7 +208,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Inserts a xdns_record into the on-chain registry. Root only access.
-        #[pallet::weight(500_000_000 + T::DbWeight::get().reads_writes(1,1))]
+        #[pallet::weight(<T as Config>::WeightInfo::add_new_xdns_record())]
         pub fn add_new_xdns_record(
             origin: OriginFor<T>,
             url: Vec<u8>,
@@ -247,7 +250,7 @@ pub mod pallet {
         }
 
         /// Updates the last_finalized field for an xdns_record from the onchain registry. Root only access.
-        #[pallet::weight(500_000_000 + T::DbWeight::get().reads_writes(1,1))]
+        #[pallet::weight(<T as Config>::WeightInfo::update_ttl())]
         pub fn update_ttl(
             origin: OriginFor<T>,
             gateway_id: ChainId,
@@ -274,7 +277,7 @@ pub mod pallet {
         }
 
         /// Removes a xdns_record from the onchain registry. Root only access.
-        #[pallet::weight(500_000_000 + T::DbWeight::get().reads_writes(1,1))]
+        #[pallet::weight(<T as Config>::WeightInfo::purge_xdns_record())]
         pub fn purge_xdns_record(
             origin: OriginFor<T>,
             requester: T::AccountId,
