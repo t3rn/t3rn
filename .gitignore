@@ -3,5 +3,5 @@ comms
 # Added by cargo
 
 /target
-Cargo.lock
+./Cargo.lock
 .idea
