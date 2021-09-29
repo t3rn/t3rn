@@ -144,8 +144,9 @@ pub async fn create_gateway_protocol_from_client<Chain: relay_substrate_client::
         client
             .runtime_version()
             .await
-            .expect("must return runtime version"),
-        client.genesis_hash,
+            .expect("must return runtime version")
+            .into(),
+        *client.genesis_hash(),
         submitter,
     )
 }

@@ -27,8 +27,8 @@ use crate::{
     BalanceOf, CodeHash, Config, Error, ExecError, ExecReturnValue, ReturnFlags,
 };
 use bitflags::bitflags;
-use codec::{Decode, DecodeAll, Encode};
-use frame_support::{dispatch::DispatchError, ensure, traits::MaxEncodedLen, weights::Weight};
+use codec::{Decode, DecodeAll, Encode, MaxEncodedLen};
+use frame_support::{dispatch::DispatchError, ensure, weights::Weight};
 use pwasm_utils::parity_wasm::elements::ValueType;
 use sp_core::Bytes;
 use sp_io::hashing::{blake2_128, blake2_256, keccak_256, sha2_256};

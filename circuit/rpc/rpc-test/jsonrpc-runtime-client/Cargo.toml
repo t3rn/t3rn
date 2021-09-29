@@ -17,11 +17,12 @@ jsonrpsee-types = "0.2.0"
 log = "0.4.8"
 env_logger = "0.8.2"
 
-node-primitives = { version = "2.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8" }
-sp-tracing = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8" }
-sc-rpc = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8"}
-sp-core = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8"}
-frame-metadata = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8"}
+node-primitives = { version = "2.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10" }
+sp-tracing = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10" }
+sc-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10"}
+sp-core = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10"}
+frame-metadata = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10"}
+frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10"}
 
 async-std = { version = "1.6.5", features = ["attributes", "tokio1"] }
 async-trait = "0.1.40"
@@ -29,5 +30,5 @@ codec = { package = "parity-scale-codec", version = "2.0.0" }
 num-traits = "0.2"
 
 tokio = "1.8.0"
-bp-polkadot-core = { git = "https://github.com/t3rn/parity-bridges-common", branch = "refactor-circuit" }
-relay-substrate-client = { version = "0.1.0", git = "https://github.com/t3rn/parity-bridges-common", branch = "refactor-circuit" }
+bp-polkadot-core = { path = "../../../../bridges/primitives/polkadot-core"  }
+relay-substrate-client = { path = "../../../../bridges/relays/client-substrate" }

@@ -70,7 +70,8 @@ type ToGatewayMessagesDeliveryProof =
 pub type FromGatewayMessageDispatch = messages::target::FromBridgedChainMessageDispatch<
     WithGatewayMessageBridge,
     crate::Runtime,
-    pallet_bridge_dispatch::DefaultInstance,
+    pallet_balances::Pallet<Runtime>,
+    (),
 >;
 
 /// Circuit <-> Gateway message bridge.
@@ -79,6 +80,10 @@ pub struct WithGatewayMessageBridge;
 
 impl MessageBridge for WithGatewayMessageBridge {
     const RELAYER_FEE_PERCENT: u32 = 10;
+    const THIS_CHAIN_ID: ChainId = CIRCUIT_CHAIN_ID;
+    const BRIDGED_CHAIN_ID: ChainId = GATEWAY_CHAIN_ID;
+    const BRIDGED_MESSAGES_PALLET_NAME: &'static str =
+        bp_circuit::WITH_GATEWAY_MESSAGES_PALLET_NAME;
 
     type ThisChain = Circuit;
     type BridgedChain = Gateway;
@@ -98,16 +103,12 @@ impl MessageBridge for WithGatewayMessageBridge {
 pub struct Circuit;
 
 impl messages::ChainWithMessages for Circuit {
-    const ID: ChainId = CIRCUIT_CHAIN_ID;
-
     type Hash = bp_circuit::Hash;
     type AccountId = bp_circuit::AccountId;
     type Signer = bp_circuit::AccountSigner;
     type Signature = bp_circuit::Signature;
     type Weight = Weight;
     type Balance = bp_circuit::Balance;
-
-    type MessagesInstance = crate::WithGatewayMessagesInstance;
 }
 
 impl messages::ThisChainWithMessages for Circuit {
@@ -124,6 +125,7 @@ impl messages::ThisChainWithMessages for Circuit {
     fn estimate_delivery_confirmation_transaction() -> MessageTransaction<Weight> {
         let inbound_data_size = InboundLaneData::<bp_circuit::AccountId>::encoded_size_hint(
             bp_circuit::MAXIMAL_ENCODED_ACCOUNT_ID_SIZE,
+            1,
             1,
         )
         .unwrap_or(u32::MAX);
@@ -155,16 +157,12 @@ impl messages::ThisChainWithMessages for Circuit {
 pub struct Gateway;
 
 impl messages::ChainWithMessages for Gateway {
-    const ID: ChainId = GATEWAY_CHAIN_ID;
-
     type Hash = bp_gateway::Hash;
     type AccountId = bp_gateway::AccountId;
     type Signer = bp_gateway::AccountSigner;
     type Signature = bp_gateway::Signature;
     type Weight = Weight;
     type Balance = bp_gateway::Balance;
-
-    type MessagesInstance = pallet_bridge_messages::DefaultInstance;
 }
 
 impl messages::BridgedChainWithMessages for Gateway {
@@ -188,6 +186,7 @@ impl messages::BridgedChainWithMessages for Gateway {
 
     fn estimate_delivery_transaction(
         message_payload: &[u8],
+        _include_pay_dispatch_fee_cost: bool,
         message_dispatch_weight: Weight,
     ) -> MessageTransaction<Weight> {
         let message_payload_len = u32::try_from(message_payload.len()).unwrap_or(u32::MAX);

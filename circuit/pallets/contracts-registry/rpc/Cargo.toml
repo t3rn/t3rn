@@ -20,10 +20,10 @@ jsonrpc-derive = "15.0.0"
 
 serde = { version = "1.0.124", features = ["derive"] }
 
-frame-system = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-sp-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-sp-blockchain = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-sp-core = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-sp-runtime = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.10' }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.10' }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.10' }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.10' }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.10' }
 pallet-contracts-registry-rpc-runtime-api = { version = "0.1.0", path = "runtime-api" }
 pallet-contracts-registry = { path = ".." }

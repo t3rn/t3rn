@@ -218,11 +218,12 @@ impl frame_system::Config for Runtime {
 
 impl pallet_aura::Config for Runtime {
     type AuthorityId = AuraId;
+    type DisabledValidators = ();
 }
 
 impl pallet_bridge_dispatch::Config for Runtime {
     type Event = Event;
-    type MessageId = (bp_messages::LaneId, bp_messages::MessageNonce);
+    type BridgeMessageId = (bp_messages::LaneId, bp_messages::MessageNonce);
     type Call = Call;
     type CallFilter = ();
     type EncodedCall = crate::gateway_messages::FromGatewayEncodedCall;
@@ -424,6 +425,8 @@ impl pallet_contracts::Config for Runtime {
     type DeletionQueueDepth = DeletionQueueDepth;
     type DeletionWeightLimit = DeletionWeightLimit;
     type Schedule = MySchedule;
+    type Call = Call;
+    type CallFilter = ();
 }
 
 // EVM
@@ -472,7 +475,8 @@ impl pallet_evm::Config for Runtime {
     type ChainId = ChainId;
     type BlockGasLimit = BlockGasLimit;
     type OnChargeTransaction = ();
-    type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping;
+    type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Self>;
+    type FindAuthor = ();
 }
 
 impl pallet_shift_session_manager::Config for Runtime {}
@@ -487,15 +491,17 @@ parameter_types! {
     pub const GetDeliveryConfirmationTransactionFee: Balance =
         bp_circuit::MAX_SINGLE_MESSAGE_DELIVERY_CONFIRMATION_TX_WEIGHT as _;
     pub const RootAccountForPayments: Option<AccountId> = None;
+    pub const GatewayChainId: ChainId = bp_runtime::GATEWAY_CHAIN_ID;
 }
 
 /// Instance of the messages pallet used to relay messages to/from Gateway chain.
-pub type WithGatewayMessagesInstance = pallet_bridge_messages::DefaultInstance;
+pub type WithGatewayMessagesInstance = ();
 
 impl pallet_bridge_messages::Config<WithGatewayMessagesInstance> for Runtime {
     type Event = Event;
     // TODO: https://github.com/paritytech/parity-bridges-common/issues/390
     type WeightInfo = ();
+    type BridgedChainId = ();
     type Parameter = gateway_messages::CircuitToGatewayMessagesParameter;
     type MaxMessagesToPruneAtOnce = MaxMessagesToPruneAtOnce;
     type MaxUnrewardedRelayerEntriesAtInboundLane = MaxUnrewardedRelayerEntriesAtInboundLane;
@@ -519,6 +525,8 @@ impl pallet_bridge_messages::Config<WithGatewayMessagesInstance> for Runtime {
             GetDeliveryConfirmationTransactionFee,
             RootAccountForPayments,
         >;
+    type OnMessageAccepted = ();
+    type OnDeliveryConfirmed = ();
 
     type SourceHeaderChain = crate::gateway_messages::Gateway;
     type MessageDispatch = crate::gateway_messages::FromGatewayMessageDispatch;
@@ -632,6 +640,8 @@ impl bp_runtime::Chain for Blake2ValU64Chain {
     type Hash = <Runtime as frame_system::Config>::Hash;
     type Hasher = <Runtime as frame_system::Config>::Hashing;
     type Header = <Runtime as frame_system::Config>::Header;
+    type AccountId = <Runtime as frame_system::Config>::AccountId;
+    type Index = <Runtime as frame_system::Config>::Index;
 }
 
 #[derive(Debug)]
@@ -641,6 +651,8 @@ impl bp_runtime::Chain for Blake2ValU32Chain {
     type Hash = H256;
     type Hasher = BlakeTwo256;
     type Header = sp_runtime::generic::Header<u32, BlakeTwo256>;
+    type AccountId = <Runtime as frame_system::Config>::AccountId;
+    type Index = <Runtime as frame_system::Config>::Index;
 }
 
 #[derive(Debug)]
@@ -650,6 +662,8 @@ impl bp_runtime::Chain for Keccak256ValU64Chain {
     type Hash = H256;
     type Hasher = Keccak256;
     type Header = sp_runtime::generic::Header<u64, Keccak256>;
+    type AccountId = <Runtime as frame_system::Config>::AccountId;
+    type Index = <Runtime as frame_system::Config>::Index;
 }
 
 #[derive(Debug)]
@@ -659,6 +673,10 @@ impl bp_runtime::Chain for Keccak256ValU32Chain {
     type Hash = H256;
     type Hasher = Keccak256;
     type Header = sp_runtime::generic::Header<u32, Keccak256>;
+    type AccountId = <Runtime as frame_system::Config>::AccountId;
+    // type Balance = <Runtime as frame_system::Config>::Balance;
+    type Index = <Runtime as frame_system::Config>::Index;
+    // type Signature = <Runtime as frame_system::Config>::Signature;
 }
 
 impl pallet_multi_finality_verifier::Config<Blake2ValU64BridgeInstance> for Runtime {
@@ -716,9 +734,9 @@ construct_runtime!(
         NodeBlock = opaque::Block,
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
-        BridgeGatewayMessages: pallet_bridge_messages::{Pallet, Call, Storage, Event<T>},
-        BridgeDispatch: pallet_bridge_dispatch::{Pallet, Event<T>},
-        BridgeGatewayGrandpa: pallet_bridge_grandpa::{Pallet, Call, Storage},
+        // BridgeGatewayMessages: pallet_bridge_messages::{Pallet, Call, Storage, Event<T>},
+        // BridgeDispatch: pallet_bridge_dispatch::{Pallet, Event<T>},
+        // BridgeGatewayGrandpa: pallet_bridge_grandpa::{Pallet, Call, Storage},
         BridgePolkadotLikeMultiFinalityVerifier: pallet_multi_finality_verifier::<Instance1>::{Pallet, Call, Storage},
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
@@ -746,7 +764,7 @@ construct_runtime!(
 );
 
 /// The address format for describing accounts.
-pub type Address = sp_runtime::MultiAddress<AccountId, ()>;
+pub type Address = sp_runtime::MultiAddress<AccountId, AccountIndex>;
 /// Block header type as expected by this runtime.
 pub type Header = generic::Header<BlockNumber, Hashing>;
 /// Block type as expected by this runtime.
@@ -926,71 +944,71 @@ impl_runtime_apis! {
     // 	}
     // }
 
-    impl bp_gateway::GatewayFinalityApi<Block> for Runtime {
-        fn best_finalized() -> (bp_gateway::BlockNumber, bp_gateway::Hash) {
-            // ToDo: Add argument and change call to pallet_multi_finality_verifier (gateway_id)
-            // let header = BridgeGatewayGrandpa::best_finalized();
-            let defa_gate: bp_runtime::ChainId = *b"gwes";
-            let header = BridgePolkadotLikeMultiFinalityVerifier::best_finalized_map(defa_gate);
-            (header.number, header.hash())
-        }
-
-        fn is_known_header(hash: bp_gateway::Hash) -> bool {
-            // ToDo: Add argument and change call to pallet_multi_finality_verifier (gateway_id)
-            // BridgeGatewayGrandpa::is_known_header(hash)
-            let defa_gate: bp_runtime::ChainId = *b"gwes";
-            BridgePolkadotLikeMultiFinalityVerifier::is_known_header(hash, defa_gate)
-        }
-    }
-
-    impl bp_gateway::ToGatewayOutboundLaneApi<Block, Balance, ToGatewayMessagePayload> for Runtime {
-        fn estimate_message_delivery_and_dispatch_fee(
-            _lane_id: bp_messages::LaneId,
-            payload: ToGatewayMessagePayload,
-        ) -> Option<Balance> {
-            estimate_message_dispatch_and_delivery_fee::<WithGatewayMessageBridge>(
-                &payload,
-                WithGatewayMessageBridge::RELAYER_FEE_PERCENT,
-            ).ok()
-        }
-
-        fn messages_dispatch_weight(
-            lane: bp_messages::LaneId,
-            begin: bp_messages::MessageNonce,
-            end: bp_messages::MessageNonce,
-        ) -> Vec<(bp_messages::MessageNonce, Weight, u32)> {
-            (begin..=end).filter_map(|nonce| {
-                let encoded_payload = BridgeGatewayMessages::outbound_message_payload(lane, nonce)?;
-                let decoded_payload = gateway_messages::ToGatewayMessagePayload::decode(
-                    &mut &encoded_payload[..]
-                ).ok()?;
-                Some((nonce, decoded_payload.weight, encoded_payload.len() as _))
-            })
-            .collect()
-        }
-
-        fn latest_received_nonce(lane: bp_messages::LaneId) -> bp_messages::MessageNonce {
-            BridgeGatewayMessages::outbound_latest_received_nonce(lane)
-        }
-
-        fn latest_generated_nonce(lane: bp_messages::LaneId) -> bp_messages::MessageNonce {
-            BridgeGatewayMessages::outbound_latest_generated_nonce(lane)
-        }
-    }
-
-    impl bp_gateway::FromGatewayInboundLaneApi<Block> for Runtime {
-        fn latest_received_nonce(lane: bp_messages::LaneId) -> bp_messages::MessageNonce {
-            BridgeGatewayMessages::inbound_latest_received_nonce(lane)
-        }
-
-        fn latest_confirmed_nonce(lane: bp_messages::LaneId) -> bp_messages::MessageNonce {
-            BridgeGatewayMessages::inbound_latest_confirmed_nonce(lane)
-        }
-
-        fn unrewarded_relayers_state(lane: bp_messages::LaneId) -> bp_messages::UnrewardedRelayersState {
-            BridgeGatewayMessages::inbound_unrewarded_relayers_state(lane)
-        }
-    }
+    // impl bp_gateway::GatewayFinalityApi<Block> for Runtime {
+    //     fn best_finalized() -> (bp_gateway::BlockNumber, bp_gateway::Hash) {
+    //         // ToDo: Add argument and change call to pallet_multi_finality_verifier (gateway_id)
+    //         // let header = BridgeGatewayGrandpa::best_finalized();
+    //         let defa_gate: bp_runtime::ChainId = *b"gwes";
+    //         let header = BridgePolkadotLikeMultiFinalityVerifier::best_finalized_map(defa_gate);
+    //         (header.number, header.hash())
+    //     }
+    //
+    //     fn is_known_header(hash: bp_gateway::Hash) -> bool {
+    //         // ToDo: Add argument and change call to pallet_multi_finality_verifier (gateway_id)
+    //         // BridgeGatewayGrandpa::is_known_header(hash)
+    //         let defa_gate: bp_runtime::ChainId = *b"gwes";
+    //         BridgePolkadotLikeMultiFinalityVerifier::is_known_header(hash, defa_gate)
+    //     }
+    // }
+    //
+    // impl bp_gateway::ToGatewayOutboundLaneApi<Block, Balance, ToGatewayMessagePayload> for Runtime {
+    //     fn estimate_message_delivery_and_dispatch_fee(
+    //         _lane_id: bp_messages::LaneId,
+    //         payload: ToGatewayMessagePayload,
+    //     ) -> Option<Balance> {
+    //         estimate_message_dispatch_and_delivery_fee::<WithGatewayMessageBridge>(
+    //             &payload,
+    //             WithGatewayMessageBridge::RELAYER_FEE_PERCENT,
+    //         ).ok()
+    //     }
+    //
+    //     fn messages_dispatch_weight(
+    //         lane: bp_messages::LaneId,
+    //         begin: bp_messages::MessageNonce,
+    //         end: bp_messages::MessageNonce,
+    //     ) -> Vec<(bp_messages::MessageNonce, Weight, u32)> {
+    //         (begin..=end).filter_map(|nonce| {
+    //             let encoded_payload = BridgeGatewayMessages::outbound_message_payload(lane, nonce)?;
+    //             let decoded_payload = gateway_messages::ToGatewayMessagePayload::decode(
+    //                 &mut &encoded_payload[..]
+    //             ).ok()?;
+    //             Some((nonce, decoded_payload.weight, encoded_payload.len() as _))
+    //         })
+    //         .collect()
+    //     }
+    //
+    //     fn latest_received_nonce(lane: bp_messages::LaneId) -> bp_messages::MessageNonce {
+    //         BridgeGatewayMessages::outbound_latest_received_nonce(lane)
+    //     }
+    //
+    //     fn latest_generated_nonce(lane: bp_messages::LaneId) -> bp_messages::MessageNonce {
+    //         BridgeGatewayMessages::outbound_latest_generated_nonce(lane)
+    //     }
+    // }
+    //
+    // impl bp_gateway::FromGatewayInboundLaneApi<Block> for Runtime {
+    //     fn latest_received_nonce(lane: bp_messages::LaneId) -> bp_messages::MessageNonce {
+    //         BridgeGatewayMessages::inbound_latest_received_nonce(lane)
+    //     }
+    //
+    //     fn latest_confirmed_nonce(lane: bp_messages::LaneId) -> bp_messages::MessageNonce {
+    //         BridgeGatewayMessages::inbound_latest_confirmed_nonce(lane)
+    //     }
+    //
+    //     fn unrewarded_relayers_state(lane: bp_messages::LaneId) -> bp_messages::UnrewardedRelayersState {
+    //         BridgeGatewayMessages::inbound_unrewarded_relayers_state(lane)
+    //     }
+    // }
 
     impl circuit_rpc_runtime_api::CircuitApi<Block, AccountId, Balance, BlockNumber> for Runtime
     {
@@ -1076,6 +1094,8 @@ mod tests {
             bp_circuit::DEFAULT_MESSAGE_DELIVERY_TX_WEIGHT,
             bp_circuit::ADDITIONAL_MESSAGE_BYTE_DELIVERY_WEIGHT,
             bp_circuit::MAX_SINGLE_MESSAGE_DELIVERY_CONFIRMATION_TX_WEIGHT,
+            0,
+            Default::default(),
         );
 
         let max_incoming_message_proof_size = bp_gateway::EXTRA_STORAGE_PROOF_SIZE.saturating_add(
@@ -1094,6 +1114,7 @@ mod tests {
             bp_messages::InboundLaneData::<()>::encoded_size_hint(
                 bp_circuit::MAXIMAL_ENCODED_ACCOUNT_ID_SIZE,
                 bp_gateway::MAX_UNREWARDED_RELAYER_ENTRIES_AT_INBOUND_LANE as _,
+                0,
             )
             .unwrap_or(u32::MAX);
         pallet_bridge_messages::ensure_able_to_receive_confirmation::<Weights>(
@@ -1102,6 +1123,7 @@ mod tests {
             max_incoming_inbound_lane_data_proof_size,
             bp_gateway::MAX_UNREWARDED_RELAYER_ENTRIES_AT_INBOUND_LANE,
             bp_gateway::MAX_UNCONFIRMED_MESSAGES_AT_INBOUND_LANE,
+            Default::default(),
         );
     }
 }

@@ -86,7 +86,14 @@ impl AsGatewayOutboundEvent for EthLog {
         };
 
         let args_decoded = event
-            .decode(self.topics.clone(), self.data.to_vec())
+            .decode(
+                self.topics
+                    .clone()
+                    .iter()
+                    .map(|i| ethabi_decode::H256(i.0))
+                    .collect(),
+                self.data.to_vec(),
+            )
             .map_err(|_| "Error decoding native eth event using ethabi-decoder")?;
 
         let args_encoded = args_decoded

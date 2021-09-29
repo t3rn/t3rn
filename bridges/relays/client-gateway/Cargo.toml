@@ -1,0 +1,26 @@
+[package]
+name = "relay-gateway-client"
+version = "0.1.0"
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = "2018"
+license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "2.0.0" }
+headers-relay = { git = "https://github.com/t3rn/parity-bridges-common", branch = "polkadot-v0.9.10-dev" }
+relay-substrate-client = { path = "../client-substrate" }
+relay-utils = { git = "https://github.com/t3rn/parity-bridges-common", branch = "polkadot-v0.9.10-dev" }
+
+# Bridge dependencies
+
+bp-gateway = { path = "../../primitives/chain-gateway" }
+gateway-runtime = { path = "../../bin/runtimes/gateway-runtime" }
+
+# Substrate Dependencies
+
+frame-system = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.10' }
+frame-support = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.10' }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.10' }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.10' }
+sp-keyring = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.10' }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.10' }

@@ -1,3 +1,4 @@
+use frame_support::weights::IdentityFee;
 use relay_substrate_client::{Chain, ChainBase};
 use std::time::Duration;
 
@@ -15,14 +16,19 @@ impl ChainBase for PolkadotLike {
     type Hash = bp_polkadot_core::Hash;
     type Hasher = bp_polkadot_core::Hasher;
     type Header = bp_polkadot_core::Header;
+    type AccountId = bp_polkadot_core::AccountId;
+    type Balance = bp_polkadot_core::Balance;
+    type Index = bp_polkadot_core::Index;
+    type Signature = bp_polkadot_core::Signature;
 }
 
 impl Chain for PolkadotLike {
     const NAME: &'static str = "Polkadot";
     const AVERAGE_BLOCK_INTERVAL: Duration = Duration::from_secs(6);
 
-    type AccountId = bp_polkadot_core::AccountId;
-    type Index = bp_polkadot_core::Nonce;
+    const STORAGE_PROOF_OVERHEAD: u32 = 0;
+    const MAXIMAL_ENCODED_ACCOUNT_ID_SIZE: u32 = 0;
     type SignedBlock = bp_polkadot_core::SignedBlock;
     type Call = ();
+    type WeightToFee = IdentityFee<bp_polkadot_core::Balance>;
 }
