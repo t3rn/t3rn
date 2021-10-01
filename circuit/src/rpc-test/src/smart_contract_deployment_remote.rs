@@ -18,17 +18,40 @@
 use crate::mock_rpc_setup::{TestSetup, REMOTE_CLIENT};
 use codec::{Compact, Encode};
 
+use sp_core::crypto::{AccountId32, UncheckedFrom};
 use sp_core::storage::StorageKey;
 use sp_io::TestExternalities;
 use sp_keystore::KeystoreExt;
 
-use circuit_runtime::Runtime;
+use circuit_runtime::{AccountId, Runtime};
 use circuit_test_utils::create_gateway_protocol_from_client;
 use sp_keyring::Sr25519Keyring;
 use volatile_vm::wasm::PrefabWasmModule;
 
 use jsonrpc_runtime_client::polkadot_like_chain::PolkadotLike;
 use relay_substrate_client::Client as RemoteClient;
+use std::{thread, time};
+use t3rn_primitives::*;
+
+/// Determine the address of a contract : copied from pallet-contracts
+/// Formula: `hash(deploying_address ++ code_hash ++ salt)`
+pub fn contract_address(
+    deploying_address: Sr25519Keyring,
+    code_hash: <sp_runtime::traits::BlakeTwo256 as sp_runtime::traits::Hash>::Output,
+    salt: &[u8],
+) -> AccountId32 {
+    let buf: Vec<_> = deploying_address
+        .to_raw_public_vec()
+        .iter()
+        .chain(code_hash.as_ref())
+        .chain(salt)
+        .cloned()
+        .collect();
+
+    let hash = <sp_runtime::traits::BlakeTwo256 as sp_runtime::traits::Hash>::hash(&buf);
+    let account_id: AccountId32 = UncheckedFrom::unchecked_from(hash);
+    account_id
+}
 
 pub fn collect_args(args: Vec<Vec<u8>>) -> Vec<u8> {
     args.iter().fold(vec![], |mut a, b| {
@@ -98,6 +121,11 @@ pub fn assert_contract_present_on_chain(
     code_hash: <sp_runtime::traits::BlakeTwo256 as sp_runtime::traits::Hash>::Output,
     code_length: usize,
 ) {
+    // lets wait for the block to be finanlized
+    println!("Waiting for 10 seconds..");
+    thread::sleep(time::Duration::from_secs(10));
+    println!("Waiting end");
+    // Keyring only supports test accounts and it will be None since it tries to find it in the map.
     let key = storage_map_key("Contracts", "CodeStorage", &code_hash);
     let storage_key = StorageKey(key);
 
@@ -174,7 +202,7 @@ fn successfully_deploys_smart_contract() {
 }
 
 #[test]
-fn successfully_deploys_and_calls_smart_contract() {
+fn successfully_deploys_flipper_and_calls_flip() {
     async_std::task::block_on(async move {
         // Arrange
 
@@ -191,10 +219,13 @@ fn successfully_deploys_and_calls_smart_contract() {
         let test_protocol =
             create_gateway_protocol_from_client(client, signer.public().into()).await;
 
-        // Internally encoded
+        // Prepare data field for deploy
         let mut constructor_selector = hex::decode("9bae9d5e").unwrap();
         let constructor_argument = false.encode();
         constructor_selector.extend(constructor_argument);
+
+        // Prepare data field for flip call
+        let message_selector = hex::decode("633aa551").unwrap();
 
         let empty: Vec<u8> = vec![];
         let deploy_arguments = vec![
@@ -205,9 +236,19 @@ fn successfully_deploys_and_calls_smart_contract() {
             empty.encode(),
         ];
 
-        // Act
+        // 73VX371dpMKd1n7kfaSX6kFrV8bpSnTr5kcrYFm5TP1T93XJ
+        let dest = contract_address(signer, code_hash, &empty);
 
-        let ext_hash = client
+        let call_arguments = vec![
+            GenericAddress::Id(dest).encode(),
+            Compact::from(3_000_000_000u128).encode(),
+            Compact::from(1_714_624_000u64).encode(),
+            message_selector.encode(),
+        ];
+
+        // Act : Deploy smart contract
+
+        let ext_hash_deploy = client
             .submit_signed_extrinsic(signer.to_account_id(), |nonce| {
                 let signed_ext = ext.execute_with(|| {
                     let payload = test_protocol
@@ -227,14 +268,35 @@ fn successfully_deploys_and_calls_smart_contract() {
         // Assert
 
         assert!(
-            ext_hash.is_ok(),
+            ext_hash_deploy.is_ok(),
             "Contract deploy not successful : {}",
-            ext_hash.unwrap_err()
+            ext_hash_deploy.unwrap_err()
         );
-
         assert_contract_present_on_chain(client, code_hash, wasm.len());
 
-        // here we call the contract.
+        // Act : Call flip() function on smart contract
+        let ext_hash_call = client
+            .submit_signed_extrinsic(signer.to_account_id(), |nonce| {
+                let signed_ext = ext.execute_with(|| {
+                    let payload = test_protocol
+                        .produce_signed_payload(
+                            "Contracts",
+                            "call",
+                            collect_args(call_arguments),
+                            nonce,
+                        )
+                        .unwrap();
+                    payload.tx_signed
+                });
+                signed_ext.into()
+            })
+            .await;
+
+        assert!(
+            ext_hash_call.is_ok(),
+            "Contract call not successful : {}",
+            ext_hash_call.unwrap_err()
+        );
 
         // here we read contract storage and see if we did flip it or not
     });
