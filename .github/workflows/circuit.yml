@@ -6,7 +6,7 @@ on:
       - circuit/**/*.rs
       - circuit/**/Cargo.toml
       - circuit/**/Cargo.lock
-      - .github/workflows/*.yml
+      - .github/workflows/circuit.yml
 
 env:
   RUST_BACKTRACE: 1
@@ -60,7 +60,7 @@ jobs:
         with:
           path: |
             ./llvm
-          key: llvm
+          key: llvm-circuit
 
       - name: 🔨 Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v1
@@ -118,7 +118,7 @@ jobs:
         with:
           path: |
             ./llvm
-          key: llvm
+          key: llvm-circuit
 
       - name: 🔨 Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v1
@@ -152,16 +152,15 @@ jobs:
           command: build
           args: --locked --manifest-path circuit/Cargo.toml --release
 
-      - name: Upload binary
+      - name: 📤 Upload binary
         uses: actions/upload-artifact@v2
         with:
           name: ${{ github.sha }}-artifacts
           path: circuit/target/release/circuit
           if-no-files-found: error
-
   test:
     runs-on: ubuntu-20.04
-    needs: [format, lint, build]
+    needs: [build]
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@master
@@ -173,7 +172,7 @@ jobs:
         with:
           path: |
             ./llvm
-          key: llvm
+          key: llvm-circuit
 
       - name: 🔨 Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v1
@@ -212,3 +211,42 @@ jobs:
           sudo chmod +x circuit/target/release/circuit
           circuit/target/release/circuit --alice --log=main,debug --tmp > /dev/null 2>&1 &
           cargo test --workspace --locked --features runtime-benchmarks --manifest-path circuit/Cargo.toml
+
+  release:
+#    if: github.event.pull_request.merged == 'true'
+    runs-on: ubuntu-20.04
+    needs: [test]
+    steps:
+      - name: ☁️Checkout git repo
+        uses: actions/checkout@master
+        with:
+          submodules: recursive
+      - name: 🔧 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: 🕒 Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+      - name: 📥 Download circuit
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ github.sha }}-artifacts
+          path: circuit/target/release/
+      - name: 🐋 Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: 🐳 Build & Publish Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: t3rn/circuit:latest
+          platforms: linux/amd64
+          file: docker/circuit.Dockerfile
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
