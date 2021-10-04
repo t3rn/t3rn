@@ -4,10 +4,15 @@ get_geth_container_id() {
   docker ps -q -f name=geth
 }
 
-circuit_pid_file="/tmp/circuit.pid"
-get_circuit_process_id() {
-  if [[ -s "${circuit_pid_file}" ]]; then
-    cat "${circuit_pid_file}"
+get_beefy_pid_file() {
+  name=$1
+  echo "/tmp/beefy_${name}.pid"
+}
+
+get_beefy_process_id() {
+  pid_file=$(get_beefy_pid_file "$1")
+  if [[ -s "${pid_file}" ]]; then
+    cat "${pid_file}"
   fi
 }
 
@@ -58,37 +63,50 @@ clean-contracts)
   echo "done"
   ;;
 
-start-circuit)
-  c_pid=$(get_circuit_process_id)
+build-beefy)
+  dir=$(dirname "${0}")
+  build="${BUILD_BEEFY:-false}"
+  if [[ "${build}" == "true" ]]; then
+    echo "Building beefy..."
+    cargo build --release --manifest-path="${dir}/../beefy/Cargo.toml" &> /tmp/beefy.build
+  fi
+  ;;
+
+start-beefy)
+  c_pid=$(get_beefy_process_id "$2")
   if [ -n "${c_pid}" ]; then
-      echo "circuit already running[${c_pid}]"
+      echo "beefy[$2] already running[${c_pid}]"
       exit 0
   fi
   dir=$(dirname "${0}")
-  echo "building circuit..."
-  cargo build --release --manifest-path="${dir}/../circuit/Cargo.toml" &> /tmp/circuit.build && \
-  "${dir}"/../circuit/target/release/circuit --alice --log=main,info --tmp &> /tmp/circuit.log &
+  log_file="/tmp/beefy_$2.log"
+  "${dir}"/../beefy/target/release/beefy-node --enable-offchain-indexing=true --"$2" --log=main,info --tmp &> "${log_file}" &
   c_pid=$!
-  echo "${c_pid}" > "${circuit_pid_file}"
-  echo "circuit started[${c_pid}]..."
+  pid_file=$(get_beefy_pid_file "$2")
+  echo "${c_pid}" > "${pid_file}"
+  echo "beefy[$2] started[${c_pid}]..."
   ;;
 
-stop-circuit)
-  c_pid=$(get_circuit_process_id)
+stop-beefy)
+  c_pid=$(get_beefy_process_id "$2")
   if [ -z "${c_pid}" ]; then
-      echo "circuit not running"
+      echo "beefy[$2] not running"
       exit 0
   fi
 
   kill -9 "${c_pid}" &> /dev/null
-  rm -rf "${circuit_pid_file}"
-  echo "circuit stopped"
+  pid_file=$(get_beefy_pid_file "$2")
+  rm -rf "${pid_file}"
+  echo "beefy[$2] stopped"
   ;;
 
 all)
   echo "starting environment. may take sometime..."
   $0 start-geth && \
-  $0 start-circuit && \
+  $0 build-beefy && \
+  $0 start-beefy alice && \
+  $0 start-beefy bob && \
+  $0 start-beefy charlie && \
   $0 deploy-contracts && \
   echo "done"
   ;;
@@ -96,7 +114,9 @@ all)
 clean)
   echo "cleaning up..."
   $0 stop-geth && \
-  $0 stop-circuit && \
+  $0 stop-beefy alice && \
+  $0 stop-beefy bob && \
+  $0 stop-beefy charlie && \
   $0 clean-contracts && \
   echo "done"
   ;;

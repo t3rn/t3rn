@@ -5,3 +5,4 @@ comms
 /target
 ./Cargo.lock
 .idea
+/beefy/target/
