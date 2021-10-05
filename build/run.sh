@@ -53,6 +53,7 @@ deploy-contracts)
   yarn install && \
   cp env.template .env && \
   npx hardhat deploy --network localhost
+  RELAYCHAIN_ENDPOINT="ws://localhost:9944" npx hardhat run ./scripts/configure-beefy.ts --network localhost
   ;;
 
 clean-contracts)
