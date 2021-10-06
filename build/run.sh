@@ -26,7 +26,7 @@ start-geth)
   fi
 
   docker run -d --name=geth -p 8545:8545 -p 8546:8546 -v ~/Ethereum/Local:/Data ethereum/client-go:stable --datadir /Data \
-   --dev --dev.period 14 --rpc --rpcport 8545 --rpcaddr 0.0.0.0 --rpcapi db,eth,net,web3,personal,admin,txpool \
+   --dev --dev.period 14 --http --http.port 8545 --http.addr 0.0.0.0 --http.api db,eth,net,web3,personal,admin,txpool --http.corsdomain="https://remix.ethereum.org" \
   --ws --ws.port 8546 --ws.addr 0.0.0.0 --ws.origins "*" --ws.api db,eth,net,web3,personal,admin,txpool &> /dev/null && \
   id=$(get_geth_container_id) && \
   echo "Started geth[${id}]"
@@ -41,6 +41,7 @@ stop-geth)
 
   docker stop geth &> /dev/null && \
   docker rm geth &> /dev/null && \
+  rm -rf ~/Ethereum/Local && \
   echo "geth node stopped"
   ;;
 
@@ -54,6 +55,9 @@ deploy-contracts)
   cp env.template .env && \
   npx hardhat deploy --network localhost
   RELAYCHAIN_ENDPOINT="ws://localhost:9944" npx hardhat run ./scripts/configure-beefy.ts --network localhost
+  # private key: 0x935b65c833ced92c43ef9de6bff30703d941bd92a2637cb00cfad389f5862109
+  eth_address=0x87D987206180B8f3807Dd90455606eEa85cdB87a
+  docker run --net=host ethereum/client-go:latest attach http://localhost:8545 --exec "eth.sendTransaction({from: eth.coinbase, to:'${eth_address}', value: web3.toWei(10, 'ether'), gas:21000});"
   ;;
 
 clean-contracts)
