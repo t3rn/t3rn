@@ -14,7 +14,7 @@ env:
 
 jobs:
   format:
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@master
@@ -47,7 +47,7 @@ jobs:
             --manifest-path circuit/Cargo.toml -- --check
 
   lint:
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@master
@@ -102,10 +102,11 @@ jobs:
             -p pallet-beefy-mmr
             -p beefy-merkle-tree
             --manifest-path circuit/Cargo.toml
+            --release
 
   build:
-    runs-on: ubuntu-20.04
-    needs: [format, lint]
+    runs-on: self-hosted
+#    needs: [format, lint]
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@master
@@ -159,7 +160,7 @@ jobs:
           path: circuit/target/release/circuit
           if-no-files-found: error
   test:
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     needs: [build]
     steps:
       - name: ☁️Checkout git repo
@@ -208,13 +209,13 @@ jobs:
       - name: 📼 Run unit tests
         continue-on-error: false
         run: |
-          sudo chmod +x circuit/target/release/circuit
+          chmod +x circuit/target/release/circuit
           circuit/target/release/circuit --alice --log=main,debug --tmp > /dev/null 2>&1 &
-          cargo test --workspace --locked --features runtime-benchmarks --manifest-path circuit/Cargo.toml
+          cargo test --workspace --locked --release --features runtime-benchmarks --manifest-path circuit/Cargo.toml
 
   release:
 #    if: github.event.pull_request.merged == 'true'
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     needs: [test]
     steps:
       - name: ☁️Checkout git repo

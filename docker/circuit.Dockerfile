@@ -11,7 +11,7 @@ RUN useradd -m -u 1000 -U -s /bin/sh -d /t3rn t3rn && \
 
 USER t3rn
 
-COPY --chown=t3rn build /t3rn
+COPY --chown=t3rn circuit/target/release /t3rn
 RUN chmod uog+x /t3rn/circuit
 
 # 9933 for RPC call
