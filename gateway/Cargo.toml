@@ -5,6 +5,7 @@ members = [
     'rpc',
 ]
 exclude = []
+resolver = '2'
 
 [profile.release]
 panic = 'unwind'
