@@ -102,11 +102,10 @@ jobs:
             -p pallet-beefy-mmr
             -p beefy-merkle-tree
             --manifest-path circuit/Cargo.toml
-            --release
 
   build:
     runs-on: self-hosted
-#    needs: [format, lint]
+    needs: [format, lint]
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@master
@@ -151,13 +150,13 @@ jobs:
         continue-on-error: false
         with:
           command: build
-          args: --locked --manifest-path circuit/Cargo.toml --release
+          args: --locked --manifest-path circuit/Cargo.toml
 
       - name: 📤 Upload binary
         uses: actions/upload-artifact@v2
         with:
           name: ${{ github.sha }}-artifacts
-          path: circuit/target/release/circuit
+          path: circuit/target/debug/circuit
           if-no-files-found: error
   test:
     runs-on: self-hosted
@@ -204,50 +203,12 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: ${{ github.sha }}-artifacts
-          path: circuit/target/release/
+          path: circuit/target/debug/
 
       - name: 📼 Run unit tests
         continue-on-error: false
         run: |
-          chmod +x circuit/target/release/circuit
-          circuit/target/release/circuit --alice --log=main,debug --tmp > /dev/null 2>&1 &
-          cargo test --workspace --locked --release --features runtime-benchmarks --manifest-path circuit/Cargo.toml
+          chmod +x circuit/target/debug/circuit
+          circuit/target/debug/circuit --alice --log=main,debug --tmp > /dev/null 2>&1 &
+          cargo test --workspace --locked --features runtime-benchmarks --manifest-path circuit/Cargo.toml
 
-  release:
-#    if: github.event.pull_request.merged == 'true'
-    runs-on: self-hosted
-    needs: [test]
-    steps:
-      - name: ☁️Checkout git repo
-        uses: actions/checkout@master
-        with:
-          submodules: recursive
-      - name: 🔧 Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-      - name: 🕒 Cache Docker layers
-        uses: actions/cache@v2
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
-      - name: 📥 Download circuit
-        uses: actions/download-artifact@v2
-        with:
-          name: ${{ github.sha }}-artifacts
-          path: circuit/target/release/
-      - name: 🐋 Login to Docker Hub
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: 🐳 Build & Publish Docker image
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          push: true
-          tags: t3rn/circuit:latest
-          platforms: linux/amd64
-          file: docker/circuit.Dockerfile
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache

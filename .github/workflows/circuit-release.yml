@@ -1,0 +1,108 @@
+name: Circuit Release
+
+on:
+  push:
+    branches:
+      - development
+    paths:
+      - circuit/**/*.rs
+      - circuit/**/Cargo.toml
+      - circuit/**/Cargo.lock
+
+env:
+  RUST_BACKTRACE: 1
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-release:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@master
+        with:
+          submodules: recursive
+
+      - name: 🕒 Cache LLVM and Clang
+        id: cache-llvm
+        uses: actions/cache@v2
+        with:
+          path: |
+            ./llvm
+          key: llvm-circuit-release
+
+      - name: 🔨 Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@v1
+        with:
+          version: "12.0.0"
+          ubuntu-version: "20.04"
+          directory: ${{ runner.temp }}/llvm
+          cached: ${{ steps.cache-llvm.outputs.cache-hit }}
+
+      - name: ⚙️Get nightly rust toolchain with wasm target
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2021-08-01
+          target: wasm32-unknown-unknown
+          override: true
+
+      - name: 🕒 Cache Rust binaries and packages
+        uses: actions/cache@v2
+        id: cache-rust
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            circuit/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('circuit/Cargo.lock') }}
+
+      - name: 🏭 Build circuit
+        uses: actions-rs/cargo@v1
+        continue-on-error: false
+        with:
+          command: build
+          args: --locked --manifest-path circuit/Cargo.toml --release
+
+      - name: 📤 Upload binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.sha }}-artifacts
+          path: circuit/target/release/circuit
+          if-no-files-found: error
+
+  push-to-docker:
+    runs-on: ubuntu-20.04
+    needs: [build]
+    steps:
+      - name: ☁️Checkout git repo
+        uses: actions/checkout@master
+        with:
+          submodules: recursive
+      - name: 🔧 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: 🕒 Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+      - name: 📥 Download circuit
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ github.sha }}-artifacts
+          path: circuit/target/release/
+      - name: 🐋 Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: 🐳 Build & Publish Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: t3rn/circuit:latest
+          platforms: linux/amd64
+          file: docker/circuit.Dockerfile
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache

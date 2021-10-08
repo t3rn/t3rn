@@ -6,8 +6,7 @@ ARG PROFILE=release
 RUN useradd -m -u 1000 -U -s /bin/sh -d /t3rn t3rn && \
 	mkdir -p /t3rn/.local/share/circuit && \
 	chown -R t3rn:t3rn /t3rn && \
-	ln -s /t3rn/.local/share/circuit /data && \
-	rm -rf /usr/bin /usr/sbin
+	ln -s /t3rn/.local/share/circuit /data
 
 USER t3rn
 
