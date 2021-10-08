@@ -29,6 +29,9 @@ circuit-rpc-runtime-api = { version = "0.1.0", path = "runtime-api" }
 pallet-contracts-registry = { path = "../pallets/contracts-registry" }
 pallet-contracts-registry-rpc = { path = "../pallets/contracts-registry/rpc" }
 pallet-contracts-registry-rpc-runtime-api = { path = "../pallets/contracts-registry/rpc/runtime-api" }
+pallet-xdns = { path = "../pallets/xdns" }
+pallet-xdns-rpc = { path = "../pallets/xdns/rpc" }
+pallet-xdns-rpc-runtime-api = { path = "../pallets/xdns/rpc/runtime-api" }
 
 [dev-dependencies]
 serde_json = "1.0.67"

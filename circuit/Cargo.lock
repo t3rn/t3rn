@@ -1259,6 +1259,9 @@ dependencies = [
  "pallet-contracts-registry",
  "pallet-contracts-registry-rpc",
  "pallet-contracts-registry-rpc-runtime-api",
+ "pallet-xdns",
+ "pallet-xdns-rpc",
+ "pallet-xdns-rpc-runtime-api",
  "parity-scale-codec",
  "sc-rpc",
  "serde",
@@ -5980,6 +5983,36 @@ dependencies = [
  "sp-std",
  "sp-version",
  "t3rn-primitives",
+]
+
+[[package]]
+name = "pallet-xdns-rpc"
+version = "0.1.0"
+dependencies = [
+ "frame-system",
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "pallet-xdns",
+ "pallet-xdns-rpc-runtime-api",
+ "parity-scale-codec",
+ "serde",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-xdns-rpc-runtime-api"
+version = "0.1.0"
+dependencies = [
+ "pallet-xdns",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-core",
+ "sp-runtime",
 ]
 
 [[package]]

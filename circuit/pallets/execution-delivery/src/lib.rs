@@ -96,6 +96,7 @@ type PolkadotLikeValU64Gateway = pallet_multi_finality_verifier::Instance1;
 type EthLikeKeccak256ValU64Gateway = pallet_multi_finality_verifier::Instance2;
 type EthLikeKeccak256ValU32Gateway = pallet_multi_finality_verifier::Instance3;
 
+///
 pub fn init_bridge_instance<T: pallet_multi_finality_verifier::Config<I>, I: 'static>(
     origin: T::Origin,
     first_header: Vec<u8>,
