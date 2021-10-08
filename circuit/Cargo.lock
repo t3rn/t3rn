@@ -5993,7 +5993,6 @@ dependencies = [
  "jsonrpc-core",
  "jsonrpc-core-client",
  "jsonrpc-derive",
- "pallet-xdns",
  "pallet-xdns-rpc-runtime-api",
  "parity-scale-codec",
  "serde",

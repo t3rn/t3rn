@@ -7,11 +7,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::Codec;
-use pallet_xdns::types::FetchXdnsRecordsResponse;
+pub use pallet_xdns::types::FetchXdnsRecordsResponse;
 
 sp_api::decl_runtime_apis! {
     /// The API to interact with pallet XDNS
-    pub trait XdnsRuntimeApi<AccountId> where
+    pub trait XdnsApi<AccountId> where
         AccountId: Codec,
     {
         /// Returns metadata for all known Blockchains

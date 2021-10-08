@@ -7,9 +7,9 @@ use codec::Codec;
 use jsonrpc_core::{Error, ErrorCode, Result};
 use jsonrpc_core_client::RpcError;
 use jsonrpc_derive::rpc;
-use pallet_xdns::types::FetchXdnsRecordsResponse;
-use pallet_xdns_rpc_runtime_api::*;
-use sp_api::{ProvideRuntimeApi};
+use pallet_xdns_rpc_runtime_api::FetchXdnsRecordsResponse;
+pub use pallet_xdns_rpc_runtime_api::XdnsApi as XdnsRuntimeApi;
+use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::{Block as BlockT, MaybeDisplay};
 
@@ -33,13 +33,12 @@ where
     AccountId: Codec + MaybeDisplay,
     Block: BlockT,
     Client: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
-    Client::Api: XdnsApi<AccountId>
+    Client::Api: XdnsApi<AccountId>,
 {
     fn fetch_records(&self) -> Result<FetchXdnsRecordsResponse<AccountId>> {
         let api = self.client.runtime_api();
 
-        let result = api.fetch_records()
-            .map_err(runtime_error_into_rpc_err)?;
+        let result = api.fetch_records().map_err(runtime_error_into_rpc_err)?;
 
         Ok(result)
     }

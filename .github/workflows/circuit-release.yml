@@ -8,6 +8,7 @@ on:
       - circuit/**/*.rs
       - circuit/**/Cargo.toml
       - circuit/**/Cargo.lock
+      - .github/workflows/circuit*.yml
 
 env:
   RUST_BACKTRACE: 1

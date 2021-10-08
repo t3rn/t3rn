@@ -21,7 +21,6 @@ use pallet_contracts_registry_rpc::{
 };
 use pallet_contracts_registry_rpc_runtime_api::ContractsRegistryRuntimeApi;
 use pallet_xdns_rpc::{Xdns as XdnsClient, XdnsApi};
-use pallet_xdns_rpc_runtime_api::XdnsRuntimeApi;
 use serde::{Deserialize, Serialize};
 use sp_api::codec::Codec;
 use sp_api::ProvideRuntimeApi;
@@ -263,7 +262,7 @@ pub fn create_full<C, Block>(deps: FullDeps<C>) -> jsonrpc_core::IoHandler<sc_rp
 where
     Block: BlockT,
     C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
-    // C::Api: XdnsRuntimeApi<Block, sp_runtime::AccountId32>,
+    C::Api: XdnsRuntimeApi<Block, sp_runtime::AccountId32>,
     // TODO: Enable ContractsRegistry runtime API as soon as we add MultiAddress support
     // C::Api: ContractsRegistryRuntimeApi<
     //     Block,
@@ -273,6 +272,10 @@ where
 {
     let mut io = jsonrpc_core::IoHandler::default();
     let FullDeps { client } = deps;
+
+    // add XDNS RPC client to Circuit
+    io.extend_with(XdnsApi::to_delegate(XdnsClient::new(client.clone())));
+
     // TODO: to be enabled as soon as we add MultiAddress support
     // io.extend_with(ContractsRegistryApi::to_delegate(
     //     ContractsRegistryClient::new(client.clone()),
