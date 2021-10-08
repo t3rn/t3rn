@@ -29,7 +29,7 @@ start-geth)
       exit 0
   fi
   dir=$(dirname "$0")
-  geth --datadir "${eth_datadir}" init "${dir}"/t3rn_genesis.json
+  geth --datadir "${eth_datadir}" init "${dir}"/t3rn_eth_genesis.json &> /dev/null
   geth --datadir "${eth_datadir}" \
   --vmdebug --networkid 15 \
   --http --http.port 8545 --http.addr 0.0.0.0 --http.api debug,personal,eth,net,web3,txpool \

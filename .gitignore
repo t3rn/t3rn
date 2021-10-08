@@ -6,3 +6,4 @@ comms
 ./Cargo.lock
 .idea
 /beefy/target/
+/build/local_beefy_spec.json
