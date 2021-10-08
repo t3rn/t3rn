@@ -1,6 +1,6 @@
 use beefy_node_runtime::{
-	AccountId, AuraConfig, BalancesConfig, BeefyConfig, GenesisConfig, GrandpaConfig, Signature, SudoConfig,
-	SystemConfig, WASM_BINARY,
+	AccountId, AuraConfig, BalancesConfig, BeefyConfig, EthereumLightClientConfig, GenesisConfig, GrandpaConfig,
+	Signature, SudoConfig, SystemConfig, WASM_BINARY,
 };
 use beefy_primitives::crypto::AuthorityId as BeefyId;
 use sc_service::ChainType;
@@ -167,6 +167,10 @@ fn testnet_genesis(
 		sudo: SudoConfig {
 			// Assign network admin rights.
 			key: root_key,
+		},
+		ethereum_light_client: EthereumLightClientConfig {
+			initial_header: Default::default(),
+			initial_difficulty: Default::default(),
 		},
 	}
 }

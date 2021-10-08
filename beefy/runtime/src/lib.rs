@@ -12,13 +12,14 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+use ethereum_light_client::EthereumDifficultyConfig;
 use pallet_mmr_primitives as mmr;
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{crypto::KeyTypeId, Hasher, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{BlakeTwo256, Block as BlockT, IdentifyAccount, IdentityLookup, Keccak256, NumberFor, Verify},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, Keccak256, NumberFor, Verify},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, MultiSignature,
 };
@@ -110,7 +111,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	transaction_version: 1,
 };
 
-pub const MILLISECS_PER_BLOCK: u64 = 3000;
+pub const MILLISECS_PER_BLOCK: u64 = 6000;
 
 pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
 
@@ -180,7 +181,7 @@ impl frame_system::Config for Runtime {
 	/// The identifier used to distinguish between accounts.
 	type AccountId = AccountId;
 	/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
-	type Lookup = IdentityLookup<AccountId>;
+	type Lookup = AccountIdLookup<AccountId, ()>;
 	/// The header type.
 	type Header = generic::Header<BlockNumber, BlakeTwo256>;
 	/// The ubiquitous event type.
@@ -303,6 +304,27 @@ impl pallet_beefy_mmr::Config for Runtime {
 	type ParachainHeads = ();
 }
 
+parameter_types! {
+	pub const DescendantsUntilFinalized: u8 = 1;
+	pub const DifficultyConfig: EthereumDifficultyConfig = EthereumDifficultyConfig::ropsten();
+	// TODO(ved): POW verification os failing. Have to check with snowbrigde team. For now skip it
+	pub const VerifyPoW: bool = false;
+}
+
+impl ethereum_light_client::Config for Runtime {
+	type Event = Event;
+	type DescendantsUntilFinalized = DescendantsUntilFinalized;
+	type DifficultyConfig = DifficultyConfig;
+	type VerifyPoW = VerifyPoW;
+	type WeightInfo = ();
+}
+
+impl pallet_utility::Config for Runtime {
+	type Event = Event;
+	type Call = Call;
+	type WeightInfo = pallet_utility::weights::SubstrateWeight<Self>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -321,11 +343,13 @@ construct_runtime!(
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Mmr: pallet_mmr::{Pallet, Storage},
 		BeefyMmr: pallet_beefy_mmr::{Pallet, Storage},
+		EthereumLightClient: ethereum_light_client::{Pallet, Call, Storage, Event, Config},
+		Utility: pallet_utility::{Pallet, Call, Event}
 	}
 );
 
 /// The address format for describing accounts.
-pub type Address = AccountId;
+pub type Address = sp_runtime::MultiAddress<AccountId, ()>;
 /// Block header type as expected by this runtime.
 pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
 /// Block type as expected by this runtime.
