@@ -71,7 +71,7 @@ jobs:
 
   push-to-docker:
     runs-on: ubuntu-20.04
-    needs: [build]
+    needs: [build-release]
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@master
