@@ -4,7 +4,7 @@ if ! command -v cargo-t3rn-contract &> /dev/null; then
   echo -e "\033[0;34mcargo-t3rn-contracts could not be found"
   echo -e "\033[0;34mBuild the latest t3rn compiler from source (./compiler) ..."
 
-  # change rust version to 1.55.0
+  # change rust version to 1.55.0 due to build errors at subxt v0.12 and latest cargo
   rustup default nightly-2021-08-01
   rustup component add rust-src
   rustup target add wasm32-unknown-unknown
