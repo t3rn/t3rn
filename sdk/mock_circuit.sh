@@ -28,7 +28,6 @@ fi
 npm install -g ttab
 cd ../gateway || exit
 # Pre-install in the same terminal, can take time if build isn't ready.
-# # cd demo-runtime || exit
 cargo build || exit
 
 # Run demo-node in a separate terminal; should be fast as the build is ready.
