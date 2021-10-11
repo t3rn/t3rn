@@ -2,10 +2,15 @@
 
 geth_pid_file="/tmp/geth.pid"
 eth_datadir="/tmp/geth.data"
+
+get_pid_from_file() {
+  if [[ -s "$1" ]]; then
+      cat "$1"
+    fi
+}
+
 get_geth_pid() {
-  if [[ -s "${geth_pid_file}" ]]; then
-    cat "${geth_pid_file}"
-  fi
+  get_pid_from_file ${geth_pid_file}
 }
 
 get_beefy_pid_file() {
@@ -15,9 +20,17 @@ get_beefy_pid_file() {
 
 get_beefy_process_id() {
   pid_file=$(get_beefy_pid_file "$1")
-  if [[ -s "${pid_file}" ]]; then
-    cat "${pid_file}"
-  fi
+  get_pid_from_file "${pid_file}"
+}
+
+get_relayer_pid_file() {
+  name=$1
+  echo "/tmp/relayer_${name}.pid"
+}
+
+get_relayer_process_id() {
+  pid_file=$(get_relayer_pid_file "$1")
+  get_pid_from_file "${pid_file}"
 }
 
 mode=$1
@@ -81,7 +94,7 @@ clean-contracts)
 
 build-beefy)
   dir=$(dirname "${0}")
-  build="${BUILD_BEEFY:-false}"
+  build="${BUILD:-false}"
   if [[ "${build}" == "true" ]]; then
     echo "Building beefy..."
     cargo build --release --manifest-path="${dir}/../beefy/Cargo.toml" &> /tmp/beefy.build
@@ -146,6 +159,84 @@ stop-beefy)
   echo "Beefy[$2] stopped"
   ;;
 
+start-relayer-beefy)
+  c_pid=$(get_relayer_process_id beefy)
+  if [ -n "${c_pid}" ]; then
+      echo "Relayer[beefy] already running[${c_pid}]"
+      exit 0
+  fi
+  dir=$(dirname "${0}")
+  log_file="/tmp/relayer_beefy.log"
+  cd "${dir}/snowbridge/relayer" || exit
+  build="${BUILD:-false}"
+  if [[ "${build}" == "true" ]]; then
+    echo "Building relayer..."
+    go build -o "build/snowbridge-relay" main.go &> /tmp/relayer_build.log
+  fi
+  beefy_address=$(jq -r ".address" ../ethereum/.deployments/localhost/BeefyLightClient.json)
+  config=../test/config/beefy-relay.json
+  jq \
+    --arg beefy_address "$beefy_address" \
+    ' .sink.contracts.BeefyLightClient = $beefy_address' \
+    "${config}" | sponge /tmp/relayer_beefy.json
+  ./build/snowbridge-relay run beefy --config /tmp/relayer_beefy.json --ethereum.private-key "0x935b65c833ced92c43ef9de6bff30703d941bd92a2637cb00cfad389f5862109" &> /tmp/relayer_beefy.log &
+  c_pid=$!
+  pid_file=$(get_relayer_pid_file beefy)
+  echo "${c_pid}" > "${pid_file}"
+  echo "Relayer[beefy] started[${c_pid}]..."
+  ;;
+
+stop-relayer-beefy)
+  c_pid=$(get_relayer_process_id beefy)
+  if [ -z "${c_pid}" ]; then
+      echo "Relayer[beefy] not running"
+      exit 0
+  fi
+
+  kill -9 "${c_pid}" &> /dev/null
+  pid_file=$(get_relayer_pid_file beefy)
+  rm -rf "${pid_file}"
+  rm -rf /tmp/relayer_beefy.json
+  rm -rf /tmp/relayer_beefy.log
+  echo "Relayer[beefy] stopped"
+  ;;
+
+start-relayer-ethereum)
+  c_pid=$(get_relayer_process_id ethereum)
+  if [ -n "${c_pid}" ]; then
+      echo "Relayer[ethereum] already running[${c_pid}]"
+      exit 0
+  fi
+  dir=$(dirname "${0}")
+  log_file="/tmp/relayer_ethereum.log"
+  cd "${dir}/snowbridge/relayer" || exit
+  build="${BUILD:-false}"
+  if [[ "${build}" == "true" ]]; then
+    echo "Building relayer..."
+    go build -o "build/snowbridge-relay" main.go &> /tmp/relayer_build.log
+  fi
+  config=../test/config/ethereum-relay.json
+  ./build/snowbridge-relay run ethereum --config ../test/config/ethereum-relay.json --substrate.private-key "//Dave" &> /tmp/relayer_ethereum.log &
+  c_pid=$!
+  pid_file=$(get_relayer_pid_file ethereum)
+  echo "${c_pid}" > "${pid_file}"
+  echo "Relayer[ethereum] started[${c_pid}]..."
+  ;;
+
+stop-relayer-ethereum)
+  c_pid=$(get_relayer_process_id ethereum)
+  if [ -z "${c_pid}" ]; then
+      echo "Relayer[ethereum] not running"
+      exit 0
+  fi
+
+  kill -9 "${c_pid}" &> /dev/null
+  pid_file=$(get_relayer_pid_file ethereum)
+  rm -rf "${pid_file}"
+  rm -rf /tmp/relayer_ethereum.log
+  echo "Relayer[ethereum] stopped"
+  ;;
+
 all)
   echo "Starting environment. may take sometime..."
   $0 start-geth && \
@@ -155,6 +246,8 @@ all)
   $0 start-beefy bob && \
   $0 start-beefy charlie && \
   $0 deploy-contracts && \
+  $0 start-relayer-beefy && \
+  $0 start-relayer-ethereum && \
   echo "Done"
   ;;
 
@@ -166,6 +259,8 @@ clean)
   $0 stop-beefy charlie && \
   $0 clean-contracts && \
   $0 delete-chain-spec && \
+  $0 stop-relayer-beefy && \
+  $0 stop-relayer-ethereum && \
   echo "Done"
   ;;
 esac
