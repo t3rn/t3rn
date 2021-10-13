@@ -1,5 +1,6 @@
-use frame_metadata::{
-    DecodeDifferent, ExtrinsicMetadata, FunctionMetadata, ModuleMetadata, RuntimeMetadataV13,
+use frame_metadata::decode_different::DecodeDifferent;
+use frame_metadata::v13::{
+    ExtrinsicMetadata, FunctionMetadata, ModuleMetadata, RuntimeMetadataV13,
 };
 use sp_core::H256;
 use sp_version::{ApisVec, RuntimeVersion};
@@ -49,7 +50,7 @@ pub fn create_test_metadata(
         let functions = fn_names.into_iter().map(fn_metadata_generator).collect();
         modules.push(module_metadata_generator(
             module_name,
-            module_index,
+            module_index.clone(),
             functions,
         ));
         module_index = module_index + 1;
