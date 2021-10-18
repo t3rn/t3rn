@@ -731,8 +731,8 @@ dependencies = [
 name = "bp-circuit"
 version = "0.1.0"
 dependencies = [
- "bp-messages",
- "bp-runtime",
+ "bp-messages 0.1.0",
+ "bp-runtime 0.1.0",
  "fixed-hash",
  "frame-support",
  "frame-system",
@@ -753,9 +753,9 @@ dependencies = [
 name = "bp-gateway"
 version = "0.1.0"
 dependencies = [
- "bp-messages",
- "bp-polkadot-core",
- "bp-runtime",
+ "bp-messages 0.1.0",
+ "bp-polkadot-core 0.1.0",
+ "bp-runtime 0.1.0",
  "frame-support",
  "frame-system",
  "sp-api",
@@ -780,10 +780,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "bp-header-chain"
+version = "0.1.0"
+source = "git+https://github.com/t3rn/parity-bridges-common#e429f00c8a35498070737cbdeb6e65e48de0a10a"
+dependencies = [
+ "finality-grandpa",
+ "frame-support",
+ "parity-scale-codec",
+ "serde",
+ "sp-core",
+ "sp-finality-grandpa",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "bp-message-dispatch"
 version = "0.1.0"
 dependencies = [
- "bp-runtime",
+ "bp-runtime 0.1.0",
  "frame-support",
  "parity-scale-codec",
  "sp-std",
@@ -793,7 +808,20 @@ dependencies = [
 name = "bp-messages"
 version = "0.1.0"
 dependencies = [
- "bp-runtime",
+ "bp-runtime 0.1.0",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "serde",
+ "sp-std",
+]
+
+[[package]]
+name = "bp-messages"
+version = "0.1.0"
+source = "git+https://github.com/t3rn/parity-bridges-common#e429f00c8a35498070737cbdeb6e65e48de0a10a"
+dependencies = [
+ "bp-runtime 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
@@ -805,8 +833,25 @@ dependencies = [
 name = "bp-polkadot-core"
 version = "0.1.0"
 dependencies = [
- "bp-messages",
- "bp-runtime",
+ "bp-messages 0.1.0",
+ "bp-runtime 0.1.0",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "sp-version",
+]
+
+[[package]]
+name = "bp-polkadot-core"
+version = "0.1.0"
+source = "git+https://github.com/t3rn/parity-bridges-common#e429f00c8a35498070737cbdeb6e65e48de0a10a"
+dependencies = [
+ "bp-messages 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
+ "bp-runtime 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
  "frame-support",
  "frame-system",
  "parity-scale-codec",
@@ -821,8 +866,23 @@ dependencies = [
 name = "bp-rialto"
 version = "0.1.0"
 dependencies = [
- "bp-messages",
- "bp-runtime",
+ "bp-messages 0.1.0",
+ "bp-runtime 0.1.0",
+ "frame-support",
+ "frame-system",
+ "sp-api",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "bp-rialto"
+version = "0.1.0"
+source = "git+https://github.com/t3rn/parity-bridges-common#e429f00c8a35498070737cbdeb6e65e48de0a10a"
+dependencies = [
+ "bp-messages 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
+ "bp-runtime 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
  "frame-support",
  "frame-system",
  "sp-api",
@@ -848,10 +908,42 @@ dependencies = [
 ]
 
 [[package]]
+name = "bp-runtime"
+version = "0.1.0"
+source = "git+https://github.com/t3rn/parity-bridges-common#e429f00c8a35498070737cbdeb6e65e48de0a10a"
+dependencies = [
+ "frame-support",
+ "hash-db",
+ "num-traits",
+ "parity-scale-codec",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-std",
+ "sp-trie",
+]
+
+[[package]]
 name = "bp-test-utils"
 version = "0.1.0"
 dependencies = [
- "bp-header-chain",
+ "bp-header-chain 0.1.0",
+ "ed25519-dalek",
+ "finality-grandpa",
+ "parity-scale-codec",
+ "sp-application-crypto",
+ "sp-finality-grandpa",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "bp-test-utils"
+version = "0.1.0"
+source = "git+https://github.com/t3rn/parity-bridges-common#e429f00c8a35498070737cbdeb6e65e48de0a10a"
+dependencies = [
+ "bp-header-chain 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
  "ed25519-dalek",
  "finality-grandpa",
  "parity-scale-codec",
@@ -865,10 +957,10 @@ dependencies = [
 name = "bp-westend"
 version = "0.1.0"
 dependencies = [
- "bp-header-chain",
- "bp-messages",
- "bp-polkadot-core",
- "bp-runtime",
+ "bp-header-chain 0.1.0",
+ "bp-messages 0.1.0",
+ "bp-polkadot-core 0.1.0",
+ "bp-runtime 0.1.0",
  "parity-scale-codec",
  "sp-api",
  "sp-runtime",
@@ -881,8 +973,8 @@ name = "bridge-runtime-common"
 version = "0.1.0"
 dependencies = [
  "bp-message-dispatch",
- "bp-messages",
- "bp-runtime",
+ "bp-messages 0.1.0",
+ "bp-runtime 0.1.0",
  "frame-support",
  "hash-db",
  "pallet-bridge-dispatch",
@@ -1113,8 +1205,8 @@ dependencies = [
  "beefy-gadget-rpc",
  "beefy-primitives",
  "bp-circuit",
- "bp-messages",
- "bp-runtime",
+ "bp-messages 0.1.0",
+ "bp-runtime 0.1.0",
  "circuit-runtime",
  "frame-benchmarking",
  "frame-benchmarking-cli",
@@ -1200,9 +1292,9 @@ dependencies = [
  "beefy-primitives",
  "bp-circuit",
  "bp-gateway",
- "bp-messages",
- "bp-polkadot-core",
- "bp-runtime",
+ "bp-messages 0.1.0",
+ "bp-polkadot-core 0.1.0",
+ "bp-runtime 0.1.0",
  "bp-westend",
  "bridge-runtime-common",
  "circuit-rpc-runtime-api",
@@ -2232,7 +2324,7 @@ dependencies = [
  "async-trait",
  "backoff",
  "backtrace 0.3.60",
- "bp-header-chain",
+ "bp-header-chain 0.1.0",
  "futures 0.3.16",
  "headers-relay",
  "log",
@@ -3564,7 +3656,7 @@ version = "0.1.0"
 dependencies = [
  "async-std",
  "async-trait",
- "bp-polkadot-core",
+ "bp-polkadot-core 0.1.0",
  "env_logger 0.8.4",
  "frame-metadata 14.0.0",
  "futures 0.1.31",
@@ -4685,6 +4777,33 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0debeb9fcf88823ea64d64e4a815ab1643f33127d995978e099942ce38f25238"
 
 [[package]]
+name = "multi-finality-verifier"
+version = "0.1.0"
+dependencies = [
+ "bp-header-chain 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
+ "bp-polkadot-core 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
+ "bp-rialto 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
+ "bp-runtime 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
+ "bp-test-utils 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
+ "finality-grandpa",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-balances",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "pallet-xdns",
+ "parity-scale-codec",
+ "serde",
+ "sp-finality-grandpa",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "sp-trie",
+ "t3rn-primitives",
+]
+
+[[package]]
 name = "multibase"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5154,7 +5273,7 @@ name = "pallet-bridge-dispatch"
 version = "0.1.0"
 dependencies = [
  "bp-message-dispatch",
- "bp-runtime",
+ "bp-runtime 0.1.0",
  "frame-support",
  "frame-system",
  "log",
@@ -5168,9 +5287,9 @@ dependencies = [
 name = "pallet-bridge-grandpa"
 version = "0.1.0"
 dependencies = [
- "bp-header-chain",
- "bp-runtime",
- "bp-test-utils",
+ "bp-header-chain 0.1.0",
+ "bp-runtime 0.1.0",
+ "bp-test-utils 0.1.0",
  "finality-grandpa",
  "frame-support",
  "frame-system",
@@ -5188,9 +5307,9 @@ dependencies = [
 name = "pallet-bridge-messages"
 version = "0.1.0"
 dependencies = [
- "bp-messages",
- "bp-rialto",
- "bp-runtime",
+ "bp-messages 0.1.0",
+ "bp-rialto 0.1.0",
+ "bp-runtime 0.1.0",
  "frame-support",
  "frame-system",
  "log",
@@ -5208,11 +5327,11 @@ version = "0.1.0"
 dependencies = [
  "assert_matches",
  "bp-circuit",
- "bp-header-chain",
- "bp-messages",
- "bp-polkadot-core",
- "bp-runtime",
- "bp-test-utils",
+ "bp-header-chain 0.1.0",
+ "bp-messages 0.1.0",
+ "bp-polkadot-core 0.1.0",
+ "bp-runtime 0.1.0",
+ "bp-test-utils 0.1.0",
  "ethabi-decode",
  "frame-benchmarking",
  "frame-election-provider-support",
@@ -5525,8 +5644,8 @@ dependencies = [
 name = "pallet-multi-finality-verifier"
 version = "0.1.0"
 dependencies = [
- "bp-header-chain",
- "bp-runtime",
+ "bp-header-chain 0.1.0",
+ "bp-runtime 0.1.0",
  "finality-grandpa",
  "frame-support",
  "frame-system",
@@ -5728,7 +5847,7 @@ dependencies = [
 name = "pallet-xdns"
 version = "0.4.0"
 dependencies = [
- "bp-runtime",
+ "bp-runtime 0.1.0",
  "frame-benchmarking",
  "frame-metadata 14.0.0",
  "frame-support",
@@ -6729,9 +6848,9 @@ version = "0.1.0"
 dependencies = [
  "async-std",
  "async-trait",
- "bp-header-chain",
- "bp-messages",
- "bp-runtime",
+ "bp-header-chain 0.1.0",
+ "bp-messages 0.1.0",
+ "bp-runtime 0.1.0",
  "finality-relay",
  "frame-support",
  "frame-system",
@@ -9589,7 +9708,7 @@ dependencies = [
 name = "t3rn-primitives"
 version = "0.1.0"
 dependencies = [
- "bp-header-chain",
+ "bp-header-chain 0.1.0",
  "frame-support",
  "frame-system",
  "pallet-sudo",

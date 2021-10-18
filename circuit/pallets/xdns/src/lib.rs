@@ -257,23 +257,7 @@ pub mod pallet {
             last_finalized: u64,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
-
-            let xdns_record_id = T::Hashing::hash(Encode::encode(&gateway_id).as_ref());
-
-            if !XDNSRegistry::<T>::contains_key(xdns_record_id) {
-                Err(Error::<T>::XdnsRecordNotFound.into())
-            } else {
-                XDNSRegistry::<T>::mutate(xdns_record_id, |xdns_record| match xdns_record {
-                    None => Err(Error::<T>::XdnsRecordNotFound),
-                    Some(record) => {
-                        record.set_last_finalized(last_finalized);
-                        Ok(())
-                    }
-                })?;
-
-                Self::deposit_event(Event::<T>::XdnsRecordUpdated(xdns_record_id));
-                Ok(().into())
-            }
+            Self::update_gateway_ttl(gateway_id, last_finalized)
         }
 
         /// Removes a xdns_record from the onchain registry. Root only access.
@@ -382,6 +366,28 @@ pub mod pallet {
             }
 
             Ok(sorted_gateways[0].clone())
+        }
+
+        pub fn update_gateway_ttl(
+            gateway_id: ChainId,
+            last_finalized: u64,
+        ) -> DispatchResultWithPostInfo {
+            let xdns_record_id = T::Hashing::hash(Encode::encode(&gateway_id).as_ref());
+
+            if !XDNSRegistry::<T>::contains_key(xdns_record_id) {
+                Err(Error::<T>::XdnsRecordNotFound.into())
+            } else {
+                XDNSRegistry::<T>::mutate(xdns_record_id, |xdns_record| match xdns_record {
+                    None => Err(Error::<T>::XdnsRecordNotFound),
+                    Some(record) => {
+                        record.set_last_finalized(last_finalized);
+                        Ok(())
+                    }
+                })?;
+
+                Self::deposit_event(Event::<T>::XdnsRecordUpdated(xdns_record_id));
+                Ok(().into())
+            }
         }
     }
 }

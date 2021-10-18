@@ -3,6 +3,7 @@ members = [
     'runtime',
     'node',
     'rpc',
+    'pallets/multi-finality-verifier'
 ]
 exclude = []
 resolver = '2'
