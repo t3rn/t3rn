@@ -18,6 +18,7 @@ use async_std::task;
 use beefy_primitives::crypto::AuthorityId as BeefyId;
 use bp_circuit::derive_account_from_gateway_id;
 use bp_runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID};
+use log::info;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{sr25519, Encode, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
@@ -87,7 +88,7 @@ fn fetch_xdns_record_from_rpc(
 
         let mut modules_vec = vec![];
         let mut extension_vec = vec![];
-        metadata.modules.encode_to(&mut modules_vec);
+        metadata.pallets.encode_to(&mut modules_vec);
         metadata
             .extrinsic
             .signed_extensions
@@ -126,9 +127,10 @@ fn seed_xdns_registry() -> Result<Vec<XdnsRecord<AccountId>>, std::io::Error> {
 
     let polkadot_xdns =
         fetch_xdns_record_from_rpc(&polkadot_connection_params, POLKADOT_CHAIN_ID).unwrap();
-
+    info!("Fetched Polkadot metadata successfully!");
     let kusama_xdns =
         fetch_xdns_record_from_rpc(&kusama_connection_params, KUSAMA_CHAIN_ID).unwrap();
+    info!("Fetched Kusama metadata successfully!");
 
     Ok(vec![polkadot_xdns, kusama_xdns])
 }
