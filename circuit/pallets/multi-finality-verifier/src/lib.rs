@@ -220,9 +220,7 @@ pub mod pallet {
             let now = TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now())
                 .map_err(|_| "Unable to compute current timestamp")?;
 
-            let _updated_ttl =
-                pallet_xdns::Pallet::<T>::update_ttl(origin.clone(), gateway_id, now.clone());
-            ensure!(_updated_ttl.is_ok(), "Could not update TTL.");
+            pallet_xdns::Pallet::<T>::update_gateway_ttl(gateway_id, now.clone())?;
 
             log::info!(
                 "Successfully updated gateway {:?} with finalized timestamp {:?}!",
@@ -747,18 +745,19 @@ mod tests {
     use frame_support::weights::PostDispatchInfo;
     use frame_support::{assert_err, assert_noop, assert_ok};
     use sp_runtime::{Digest, DigestItem, DispatchError};
+    use t3rn_primitives::{GatewayType, GatewayVendor};
 
     fn teardown_substrate_bridge() {
         let default_gateway: ChainId = *b"gate";
         // Reset storage so we can initialize the pallet again
         BestFinalizedMap::<TestRuntime>::remove(default_gateway);
         PalletOwnerMap::<TestRuntime>::remove(default_gateway);
-        MultiImportedRoots::<TestRuntime>::remove_prefix(default_gateway);
+        MultiImportedRoots::<TestRuntime>::remove_prefix(default_gateway, None);
         BestFinalizedMap::<TestRuntime>::remove(default_gateway);
         MultiImportedHashesPointer::<TestRuntime>::remove(default_gateway);
-        MultiImportedHashes::<TestRuntime>::remove_prefix(default_gateway);
-        MultiImportedHeaders::<TestRuntime>::remove_prefix(default_gateway);
-        MultiImportedRoots::<TestRuntime>::remove_prefix(default_gateway);
+        MultiImportedHashes::<TestRuntime>::remove_prefix(default_gateway, None);
+        MultiImportedHeaders::<TestRuntime>::remove_prefix(default_gateway, None);
+        MultiImportedRoots::<TestRuntime>::remove_prefix(default_gateway, None);
         RequestCountMap::<TestRuntime>::remove(default_gateway);
         InstantiatedGatewaysMap::<TestRuntime>::kill();
     }
@@ -791,6 +790,16 @@ mod tests {
             set_id: 1,
             is_halted: false,
         };
+
+        let _ = pallet_xdns::Pallet::<TestRuntime>::add_new_xdns_record(
+            RawOrigin::Root.into(),
+            Default::default(),
+            gateway_id,
+            Default::default(),
+            GatewayVendor::Substrate,
+            GatewayType::TxOnly(0),
+            Default::default(),
+        );
 
         Pallet::<TestRuntime>::initialize_single(origin, init_data.clone(), gateway_id)
             .map(|_| init_data)
