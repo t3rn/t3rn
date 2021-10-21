@@ -1,6 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use alloc::fmt::format;
 use codec::Compact;
 use ethabi_decode::{self as ethabi, Address, Token};
 use sp_core::U256;
@@ -69,27 +68,27 @@ impl GatewayInboundProtocol for EthereumGatewayProtocol {
             .get(0..20)
             .ok_or("invalid to address")
             .map(|v| Address::from_slice(v))?;
-        let value = U256::from_big_endian(value.as_slice());
-        let gas = U256::from_big_endian(gas.as_slice());
+        let value_uint = U256::from_big_endian(value.as_slice());
+        let gas_uint = U256::from_big_endian(gas.as_slice());
         let tokens = vec![
             Token::Address(token_address),
             Token::Bytes(requester.clone()),
             Token::Address(to_address),
-            Token::Uint(value),
-            Token::Uint(gas),
+            Token::Uint(value_uint),
+            Token::Uint(gas_uint),
         ];
 
         let expected_outputs = vec![GatewayExpectedOutput::Events {
             // sender, receiver, amount
-            signatures: "Unlocked(address,address,uint256)".into(),
+            signatures: vec!["Unlocked(address,address,uint256)".as_bytes().to_vec()],
         }];
 
         // call escrow contract which will in turn call the specific ERC 20 token
         Ok(CircuitOutboundMessage {
             name: b"call".to_vec(),
             module_name: escrow_account,
-            method_name: fn_name.as_bytes().to_vec(),
-            arguments: vec![module_name, to, value, gas],
+            method_name: fn_name,
+            arguments: vec![module_name.clone(), to, value, gas],
             expected_output: expected_outputs,
             sender: Some(requester),
             target: None,
