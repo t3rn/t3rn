@@ -1215,6 +1215,7 @@ dependencies = [
  "log",
  "node-inspect",
  "pallet-bridge-messages",
+ "pallet-contracts-rpc",
  "pallet-evm",
  "pallet-mmr-rpc",
  "pallet-transaction-payment-rpc",
@@ -1381,8 +1382,10 @@ dependencies = [
  "pallet-bridge-messages",
  "pallet-circuit-execution-delivery",
  "pallet-contracts",
+ "pallet-contracts-primitives",
  "pallet-contracts-registry",
  "pallet-contracts-registry-rpc-runtime-api",
+ "pallet-contracts-rpc-runtime-api",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-simple",
@@ -5566,6 +5569,37 @@ dependencies = [
  "sp-api",
  "sp-core",
  "sp-runtime",
+]
+
+[[package]]
+name = "pallet-contracts-rpc"
+version = "3.0.0"
+source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.8#74101dc21cfffb4c2d014fcc28edc166d5ca1b16"
+dependencies = [
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "pallet-contracts-primitives",
+ "pallet-contracts-rpc-runtime-api",
+ "parity-scale-codec",
+ "serde",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-contracts-rpc-runtime-api"
+version = "3.0.0"
+source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.8#74101dc21cfffb4c2d014fcc28edc166d5ca1b16"
+dependencies = [
+ "pallet-contracts-primitives",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]

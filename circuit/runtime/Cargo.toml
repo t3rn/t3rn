@@ -41,6 +41,8 @@ pallet-evm = { path = "../../vendor/frontier/frame/evm", default-features = fals
 pallet-ethereum = { path = "../../vendor/frontier/frame/ethereum", default-features = false  }
 pallet-evm-precompile-simple = { path = "../../vendor/frontier/frame/evm/precompile/simple", default-features = false }
 pallet-contracts = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+pallet-contracts-primitives = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+pallet-contracts-rpc-runtime-api = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 
 # Substrate Dependencies
 frame-executive = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' , default-features = false }
@@ -109,6 +111,8 @@ std = [
 	"volatile-vm/std",
 	# native contracts VMs
 	"pallet-contracts/std",
+	"pallet-contracts-primitives/std",
+	"pallet-contracts-rpc-runtime-api/std",
 	"pallet-evm/std",
 	"pallet-ethereum/std",
 	"pallet-evm-precompile-simple/std",
