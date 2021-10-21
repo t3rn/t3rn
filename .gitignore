@@ -1,7 +1,7 @@
 comms
 
 # Added by cargo
-
+/gateway/target
 /target
 ./Cargo.lock
 .idea
