@@ -1293,6 +1293,7 @@ dependencies = [
  "async-std",
  "async-trait",
  "bp-runtime 0.1.0",
+ "circuit-runtime",
  "circuit-test-utils",
  "env_logger 0.8.4",
  "frame-system",
@@ -1347,6 +1348,8 @@ dependencies = [
  "t3rn-primitives",
  "tempfile",
  "tokio 0.1.22",
+ "volatile-vm",
+ "wat",
 ]
 
 [[package]]
