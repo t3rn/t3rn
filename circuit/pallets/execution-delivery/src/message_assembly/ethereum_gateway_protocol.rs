@@ -71,7 +71,7 @@ impl GatewayInboundProtocol for EthereumGatewayProtocol {
         let tokens = vec![
             Token::Address(contract_address),
             Token::Bytes(requester.clone()),
-            Token::Bytes(data),
+            Token::Bytes(data.clone()),
             Token::Uint(value_uint),
             Token::Uint(gas_uint),
         ];
@@ -86,7 +86,7 @@ impl GatewayInboundProtocol for EthereumGatewayProtocol {
             name: b"call".to_vec(),
             module_name: module_name.clone(),
             method_name: fn_name.clone(),
-            arguments: vec![module_name.clone(), data.clone(), to, value, gas],
+            arguments: vec![module_name.clone(), data, to, value, gas],
             expected_output: expected_outputs,
             sender: Some(requester),
             target: None,
@@ -123,6 +123,7 @@ impl GatewayInboundProtocol for EthereumGatewayProtocol {
             value,
             gas,
             gateway_type,
+            None,
         )
     }
 
@@ -175,7 +176,7 @@ impl GatewayInboundProtocol for EthereumGatewayProtocol {
         gateway_type: GatewayType,
     ) -> Result<CircuitOutboundMessage, &'static str> {
         let to = match to {
-            GenericAddress::Address20(data) => Ok(data.as_bytes().to_vec()),
+            GenericAddress::Address20(data) => Ok(data.to_vec()),
             _ => Err("Not an ethereum address"),
         }?;
 
@@ -218,13 +219,13 @@ impl GatewayInboundProtocol for EthereumGatewayProtocol {
             name: b"transfer".to_vec(),
             module_name: "Erc20".as_bytes().to_vec(),
             method_name: "transfer".as_bytes().to_vec(),
-            arguments: vec![to_addr.as_bytes().to_vec(), value.0.to_be_bytes()],
+            arguments: vec![to_addr.as_bytes().to_vec(), value],
             expected_output: expected_outputs,
             sender: Some(requester),
             target: None,
             extra_payload: Some(ExtraMessagePayload {
                 signer: vec![],
-                module_name: escrow_account.as_bytes().to_vec(),
+                module_name: escrow_account,
                 method_name: "transfer".as_bytes().to_vec(),
                 call_bytes: ethabi::encode_function(signature, &tokens),
                 signature: vec![],
