@@ -1,0 +1,36 @@
+{
+  "name": "@t3rn/types",
+  "version": "0.1.0",
+  "description": "t3rn protocol's type definitions for use with polkadot.js",
+  "main": "index.js",
+  "repository": "https://github.com/t3rn/t3rn-js",
+  "author": "t3rn <team@t3rn.io>",
+  "license": "Apache-2.0",
+  "private": false,
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "scripts": {
+    "build": "yarn generate:defs && yarn generate:meta",
+    "generate:defs": "ts-node --skip-project node_modules/.bin/polkadot-types-from-defs --package t3rn-circuit-typegen/interfaces --input ./src/interfaces",
+    "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package t3rn-circuit-typegen/interfaces --endpoint wss://dev.net.t3rn.io --output ./src/interfaces",
+    "lint": "tsc --noEmit --pretty"
+  },
+  "bugs": {
+    "url": "https://github.com/t3rn/t3rn-js/issues"
+  },
+  "homepage": "https://github.com/t3rn/t3rn-js",
+  "dependencies": {
+    "@polkadot/api": "^6.4.1"
+  },
+  "devDependencies": {
+    "@polkadot/typegen": "^6.4.1",
+    "ts-node": "^10.3.0",
+    "typescript": "^4.4.4"
+  },
+  "peerDependencies": {
+    "@polkadot/api": "^6.4.1",
+    "@polkadot/types": "^6.4.1"
+  }
+}
