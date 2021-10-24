@@ -16,30 +16,10 @@
 // limitations under the License.
 
 //! <!-- markdown-link-check-disable -->
-//! # Offchain Worker Example Pallet
-//!
-//! The Offchain Worker Example: A simple pallet demonstrating
-//! concepts, APIs and structures common to most offchain workers.
-//!
-//! Run `cargo doc --package pallet-example-offchain-worker --open` to view this module's
-//! documentation.
-//!
-//! - [`Config`]
-//! - [`Call`]
-//! - [`Pallet`]
-//!
 //!
 //! ## Overview
 //!
-//! In this example we are going to build a very simplistic, naive and definitely NOT
-//! production-ready oracle for BTC/USD price.
-//! Offchain Worker (OCW) will be triggered after every block, fetch the current price
-//! and prepare either signed or unsigned transaction to feed the result back on chain.
-//! The on-chain logic will simply aggregate the results and store last `64` values to compute
-//! the average price.
-//! Additional logic in OCW is put in place to prevent spamming the network with both signed
-//! and unsigned transactions, and custom `UnsignedValidator` makes sure that there is only
-//! one unsigned transaction floating in the network.
+//! Circuit MVP
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
@@ -83,70 +63,14 @@ pub mod exec_composer;
 pub mod message_assembly;
 
 pub use crate::message_assembly::test_utils as message_test_utils;
-
-pub type CurrentHash<T, I> =
-    <<T as pallet_multi_finality_verifier::Config<I>>::BridgedChain as bp_runtime::Chain>::Hash;
-pub type CurrentHasher<T, I> =
-    <<T as pallet_multi_finality_verifier::Config<I>>::BridgedChain as bp_runtime::Chain>::Hasher;
-pub type CurrentHeader<T, I> =
-    <<T as pallet_multi_finality_verifier::Config<I>>::BridgedChain as bp_runtime::Chain>::Header;
-
-type DefaultPolkadotLikeGateway = ();
-type PolkadotLikeValU64Gateway = pallet_multi_finality_verifier::Instance1;
-type EthLikeKeccak256ValU64Gateway = pallet_multi_finality_verifier::Instance2;
-type EthLikeKeccak256ValU32Gateway = pallet_multi_finality_verifier::Instance3;
-
-pub fn init_bridge_instance<T: pallet_multi_finality_verifier::Config<I>, I: 'static>(
-    origin: T::Origin,
-    first_header: Vec<u8>,
-    authorities: Option<Vec<T::AccountId>>,
-    gateway_id: bp_runtime::ChainId,
-) -> DispatchResultWithPostInfo {
-    let header: CurrentHeader<T, I> = Decode::decode(&mut &first_header[..])
-        .map_err(|_| "Decoding error: received GenericPrimitivesHeader -> CurrentHeader<T>")?;
-
-    let init_data = bp_header_chain::InitializationData {
-        header,
-        authority_list: authorities
-            .unwrap_or(vec![])
-            .iter()
-            .map(|id| {
-                (
-                    sp_finality_grandpa::AuthorityId::from_slice(&id.encode()),
-                    1,
-                )
-            })
-            .collect::<Vec<_>>(),
-        set_id: 1,
-        is_halted: false,
-    };
-
-    pallet_multi_finality_verifier::Pallet::<T, I>::initialize_single(origin, init_data, gateway_id)
-}
-
-pub fn get_roots_from_bridge<T: pallet_multi_finality_verifier::Config<I>, I: 'static>(
-    block_hash: Bytes,
-    gateway_id: bp_runtime::ChainId,
-) -> Result<(sp_core::H256, sp_core::H256), Error<T>> {
-    let gateway_block_hash: CurrentHash<T, I> = Decode::decode(&mut &block_hash[..])
-        .map_err(|_| Error::<T>::StepConfirmationDecodingError)?;
-
-    let (extrinsics_root, storage_root): (CurrentHash<T, I>, CurrentHash<T, I>) =
-        pallet_multi_finality_verifier::Pallet::<T, I>::get_imported_roots(
-            gateway_id,
-            gateway_block_hash,
-        )
-        .ok_or(Error::<T>::StepConfirmationBlockUnrecognised)?;
-
-    let extrinsics_root_h256: sp_core::H256 = Decode::decode(&mut &extrinsics_root.encode()[..])
-        .map_err(|_| Error::<T>::StepConfirmationDecodingError)?;
-
-    let storage_root_h256: sp_core::H256 = Decode::decode(&mut &storage_root.encode()[..])
-        .map_err(|_| Error::<T>::StepConfirmationDecodingError)?;
-
-    Ok((extrinsics_root_h256, storage_root_h256))
-}
-
+pub mod xbridges;
+pub use xbridges::{
+    CurrentHeader, CurrentHasher, CurrentHash, get_roots_from_bridge, init_bridge_instance,
+    DefaultPolkadotLikeGateway,
+    PolkadotLikeValU64Gateway,
+    EthLikeKeccak256ValU64Gateway,
+    EthLikeKeccak256ValU32Gateway,
+};
 /// Defines application identifier for crypto keys of this module.
 ///
 /// Every module that deals with signatures needs to declare its unique identifier for
