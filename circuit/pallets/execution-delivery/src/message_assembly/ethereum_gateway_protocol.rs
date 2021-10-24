@@ -138,7 +138,7 @@ impl GatewayInboundProtocol for EthereumGatewayProtocol {
         gateway_type: GatewayType,
         return_value: Option<Vec<u8>>,
     ) -> Result<CircuitOutboundMessage, &'static str> {
-        todo!()
+        unimplemented!()
     }
 
     fn custom_call_dirty(
@@ -152,7 +152,7 @@ impl GatewayInboundProtocol for EthereumGatewayProtocol {
         gateway_type: GatewayType,
         return_value: Option<Vec<u8>>,
     ) -> Result<CircuitOutboundMessage, &'static str> {
-        todo!()
+        unimplemented!()
     }
 
     fn custom_call_escrow(
@@ -166,7 +166,7 @@ impl GatewayInboundProtocol for EthereumGatewayProtocol {
         gateway_type: GatewayType,
         return_value: Option<Vec<u8>>,
     ) -> Result<CircuitOutboundMessage, &'static str> {
-        todo!()
+        unimplemented!()
     }
 
     fn transfer(
