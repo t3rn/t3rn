@@ -1,17 +1,15 @@
-use sp_application_crypto::Public;
-use codec::{Decode, Encode};
-use super::{Config, pallet::*, };
+use super::pallet::*;
 use crate::{Bytes, DispatchResultWithPostInfo};
-use sp_std::{vec::Vec, vec};
-
-use t3rn_primitives::*;
+use codec::{Decode, Encode};
+use sp_application_crypto::Public;
+use sp_std::{vec, vec::Vec};
 
 pub type CurrentHash<T, I> =
-<<T as pallet_multi_finality_verifier::Config<I>>::BridgedChain as bp_runtime::Chain>::Hash;
+    <<T as pallet_multi_finality_verifier::Config<I>>::BridgedChain as bp_runtime::Chain>::Hash;
 pub type CurrentHasher<T, I> =
-<<T as pallet_multi_finality_verifier::Config<I>>::BridgedChain as bp_runtime::Chain>::Hasher;
+    <<T as pallet_multi_finality_verifier::Config<I>>::BridgedChain as bp_runtime::Chain>::Hasher;
 pub type CurrentHeader<T, I> =
-<<T as pallet_multi_finality_verifier::Config<I>>::BridgedChain as bp_runtime::Chain>::Header;
+    <<T as pallet_multi_finality_verifier::Config<I>>::BridgedChain as bp_runtime::Chain>::Header;
 
 pub type DefaultPolkadotLikeGateway = ();
 pub type PolkadotLikeValU64Gateway = pallet_multi_finality_verifier::Instance1;
@@ -59,7 +57,7 @@ pub fn get_roots_from_bridge<T: pallet_multi_finality_verifier::Config<I>, I: 's
             gateway_id,
             gateway_block_hash,
         )
-            .ok_or(Error::<T>::StepConfirmationBlockUnrecognised)?;
+        .ok_or(Error::<T>::StepConfirmationBlockUnrecognised)?;
 
     let extrinsics_root_h256: sp_core::H256 = Decode::decode(&mut &extrinsics_root.encode()[..])
         .map_err(|_| Error::<T>::StepConfirmationDecodingError)?;
