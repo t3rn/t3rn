@@ -14,13 +14,10 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.0.0" }
-jsonrpc-core = "15.0.0"
-jsonrpc-core-client = "15.0.0"
-jsonrpc-derive = "15.0.0"
+jsonrpc-core = "15.1.0"
+jsonrpc-core-client = "15.1.0"
+jsonrpc-derive = "15.1.0"
 
-serde = { version = "1.0.124", features = ["derive"] }
-
-frame-system = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 sp-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 sp-blockchain = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 sp-core = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }

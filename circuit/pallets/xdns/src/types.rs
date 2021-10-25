@@ -115,5 +115,5 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
 #[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct FetchXdnsRecordsResponse<AccountId> {
-    xdns_records: Vec<XdnsRecord<AccountId>>
+    pub xdns_records: Vec<XdnsRecord<AccountId>>,
 }

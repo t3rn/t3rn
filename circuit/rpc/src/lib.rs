@@ -16,11 +16,6 @@ use std::sync::Arc;
 
 use jsonrpc_core::{Error, ErrorCode, Result};
 use jsonrpc_derive::rpc;
-use pallet_contracts_registry_rpc::{
-    ContractsRegistry as ContractsRegistryClient, ContractsRegistryApi,
-};
-use pallet_contracts_registry_rpc_runtime_api::ContractsRegistryRuntimeApi;
-use pallet_xdns_rpc::{Xdns as XdnsClient, XdnsApi};
 use serde::{Deserialize, Serialize};
 use sp_api::codec::Codec;
 use sp_api::ProvideRuntimeApi;
@@ -35,8 +30,7 @@ use sp_std::{prelude::*, str};
 use std::convert::TryInto;
 
 pub use circuit_rpc_runtime_api::{self as runtime_api, CircuitApi as CircuitRuntimeApi};
-use pallet_contracts_registry::ContractsRegistry;
-use t3rn_primitives::{ChainId, ComposableExecResult, Compose, ContractAccessError};
+use t3rn_primitives::{ChainId, ComposableExecResult, Compose};
 
 const RUNTIME_ERROR: i64 = 1;
 
@@ -154,7 +148,7 @@ pub struct Circuit<C, B> {
 }
 
 impl<C, B> Circuit<C, B> {
-    /// Create new `Contracts` with the given reference to the client.
+    /// Create new `Circuit` with the given reference to the client.
     pub fn new(client: Arc<C>) -> Self {
         Circuit {
             client,
@@ -178,8 +172,6 @@ where
         Balance,
         <<Block as BlockT>::Header as HeaderT>::Number,
     >,
-    C::Api:
-        pallet_contracts_registry_rpc::ContractsRegistryRuntimeApi<Block, AccountId, Block::Hash>,
     AccountId: Codec,
     Balance: Codec,
 {
@@ -262,24 +254,8 @@ pub fn create_full<C, Block>(deps: FullDeps<C>) -> jsonrpc_core::IoHandler<sc_rp
 where
     Block: BlockT,
     C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
-    C::Api: XdnsRuntimeApi<Block, sp_runtime::AccountId32>,
-    // TODO: Enable ContractsRegistry runtime API as soon as we add MultiAddress support
-    // C::Api: ContractsRegistryRuntimeApi<
-    //     Block,
-    //     t3rn_primitives::GenericAddress,
-    //     <Block as BlockT>::Hash,
-    // >,
 {
-    let mut io = jsonrpc_core::IoHandler::default();
-    let FullDeps { client } = deps;
-
-    // add XDNS RPC client to Circuit
-    io.extend_with(XdnsApi::to_delegate(XdnsClient::new(client.clone())));
-
-    // TODO: to be enabled as soon as we add MultiAddress support
-    // io.extend_with(ContractsRegistryApi::to_delegate(
-    //     ContractsRegistryClient::new(client.clone()),
-    // ));
+    let io = jsonrpc_core::IoHandler::default();
     io
 }
 

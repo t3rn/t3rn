@@ -2,15 +2,16 @@
 
 use std::sync::Arc;
 
-pub use self::gen_client::Client as ContractsRegistryClient;
+pub use self::gen_client::Client as XdnsClient;
 use codec::Codec;
 use jsonrpc_core::{Error, ErrorCode, Result};
 use jsonrpc_core_client::RpcError;
 use jsonrpc_derive::rpc;
 use pallet_xdns_rpc_runtime_api::FetchXdnsRecordsResponse;
-pub use pallet_xdns_rpc_runtime_api::XdnsApi as XdnsRuntimeApi;
+pub use pallet_xdns_rpc_runtime_api::XdnsRuntimeApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
+use sp_runtime::generic::BlockId;
 use sp_runtime::traits::{Block as BlockT, MaybeDisplay};
 
 const RUNTIME_ERROR: i64 = 1;
@@ -23,22 +24,34 @@ pub trait XdnsApi<AccountId> {
     fn fetch_records(&self) -> Result<FetchXdnsRecordsResponse<AccountId>>;
 }
 
-pub struct Xdns<Client, Block> {
-    client: Arc<Client>,
-    _marker: std::marker::PhantomData<Block>,
+/// A struct that implements the [`XdnsApi`].
+pub struct Xdns<C, P> {
+    client: Arc<C>,
+    _marker: std::marker::PhantomData<P>,
 }
 
-impl<Client, Block, AccountId> XdnsApi<AccountId> for Xdns<Client, Block>
+impl<C, P> Xdns<C, P> {
+    /// Create new `Xdns` with the given reference to the client.
+    pub fn new(client: Arc<C>) -> Self {
+        Self {
+            client,
+            _marker: Default::default(),
+        }
+    }
+}
+
+impl<C, Block, AccountId> XdnsApi<AccountId> for Xdns<C, Block>
 where
     AccountId: Codec + MaybeDisplay,
     Block: BlockT,
-    Client: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
-    Client::Api: XdnsApi<AccountId>,
+    C: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
+    C::Api: XdnsRuntimeApi<Block, AccountId>,
 {
     fn fetch_records(&self) -> Result<FetchXdnsRecordsResponse<AccountId>> {
         let api = self.client.runtime_api();
+        let at = BlockId::hash(self.client.info().best_hash);
 
-        let result = api.fetch_records().map_err(runtime_error_into_rpc_err)?;
+        let result = api.fetch_records(&at).map_err(runtime_error_into_rpc_err)?;
 
         Ok(result)
     }

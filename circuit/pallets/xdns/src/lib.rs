@@ -22,8 +22,8 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Encode};
-use frame_system::{ensure_root};
+use codec::Encode;
+use frame_system::ensure_root;
 
 use sp_runtime::traits::Hash;
 use sp_std::prelude::*;
@@ -289,6 +289,11 @@ pub mod pallet {
                 Self::deposit_event(Event::<T>::XdnsRecordUpdated(xdns_record_id));
                 Ok(().into())
             }
+        }
+
+        /// Fetches all known XDNS records
+        pub fn fetch_records() -> Vec<XdnsRecord<T::AccountId>> {
+            pallet::XDNSRegistry::<T>::iter_values().collect()
         }
     }
 }

@@ -1215,11 +1215,13 @@ dependencies = [
  "log",
  "node-inspect",
  "pallet-bridge-messages",
+ "pallet-contracts-registry-rpc",
  "pallet-contracts-rpc",
  "pallet-evm",
  "pallet-mmr-rpc",
  "pallet-transaction-payment-rpc",
  "pallet-xdns",
+ "pallet-xdns-rpc",
  "sc-basic-authorship",
  "sc-cli",
  "sc-client-api",
@@ -1256,12 +1258,6 @@ dependencies = [
  "jsonrpc-core-client",
  "jsonrpc-derive",
  "pallet-contracts-primitives",
- "pallet-contracts-registry",
- "pallet-contracts-registry-rpc",
- "pallet-contracts-registry-rpc-runtime-api",
- "pallet-xdns",
- "pallet-xdns-rpc",
- "pallet-xdns-rpc-runtime-api",
  "parity-scale-codec",
  "sc-rpc",
  "serde",
@@ -1280,8 +1276,6 @@ dependencies = [
 name = "circuit-rpc-runtime-api"
 version = "0.1.0"
 dependencies = [
- "frame-system",
- "pallet-contracts-registry-rpc-runtime-api",
  "parity-scale-codec",
  "sp-api",
  "sp-runtime",
@@ -1405,6 +1399,7 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-utility",
  "pallet-xdns",
+ "pallet-xdns-rpc-runtime-api",
  "parity-scale-codec",
  "serde",
  "snowbridge-ethereum-light-client",
@@ -5548,11 +5543,9 @@ dependencies = [
 name = "pallet-contracts-registry-rpc"
 version = "0.1.0"
 dependencies = [
- "frame-system",
  "jsonrpc-core",
  "jsonrpc-core-client",
  "jsonrpc-derive",
- "pallet-contracts-registry",
  "pallet-contracts-registry-rpc-runtime-api",
  "parity-scale-codec",
  "serde",
@@ -5989,13 +5982,11 @@ dependencies = [
 name = "pallet-xdns-rpc"
 version = "0.1.0"
 dependencies = [
- "frame-system",
  "jsonrpc-core",
  "jsonrpc-core-client",
  "jsonrpc-derive",
  "pallet-xdns-rpc-runtime-api",
  "parity-scale-codec",
- "serde",
  "sp-api",
  "sp-blockchain",
  "sp-core",
@@ -6010,7 +6001,6 @@ dependencies = [
  "pallet-xdns",
  "parity-scale-codec",
  "sp-api",
- "sp-core",
  "sp-runtime",
 ]
 

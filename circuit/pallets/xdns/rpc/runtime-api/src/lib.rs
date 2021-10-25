@@ -11,10 +11,10 @@ pub use pallet_xdns::types::FetchXdnsRecordsResponse;
 
 sp_api::decl_runtime_apis! {
     /// The API to interact with pallet XDNS
-    pub trait XdnsApi<AccountId> where
+    pub trait XdnsRuntimeApi<AccountId> where
         AccountId: Codec,
     {
         /// Returns metadata for all known Blockchains
-        fn fetch_chains() -> FetchXdnsRecordsResponse<AccountId>;
+        fn fetch_records() -> FetchXdnsRecordsResponse<AccountId>;
     }
 }

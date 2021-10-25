@@ -32,6 +32,7 @@ pallet-contracts-registry = {  path = "../pallets/contracts-registry", default-f
 pallet-contracts-registry-rpc-runtime-api = {  path = "../pallets/contracts-registry/rpc/runtime-api", default-features = false }
 pallet-circuit-execution-delivery = {  path = "../pallets/execution-delivery", default-features = false }
 pallet-xdns = { path = "../pallets/xdns", default-features = false }
+pallet-xdns-rpc-runtime-api = { path = "../pallets/xdns/rpc/runtime-api", default-features = false }
 volatile-vm = { path = "../../vm/volatile-vm", default-features = false }
 t3rn-primitives = { version = "0.1.0", default-features = false, path = "../primitives" }
 circuit-rpc-runtime-api = { path = "../rpc/runtime-api", default-features = false }

@@ -278,6 +278,14 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
                     ),
                 ));
                 io.extend_with(ContractsApi::to_delegate(Contracts::new(client.clone())));
+                io.extend_with(pallet_xdns_rpc::XdnsApi::to_delegate(
+                    pallet_xdns_rpc::Xdns::new(client.clone()),
+                ));
+                io.extend_with(
+                    pallet_contracts_registry_rpc::ContractsRegistryApi::to_delegate(
+                        pallet_contracts_registry_rpc::ContractsRegistry::new(client.clone()),
+                    ),
+                );
                 io
             },
         )
