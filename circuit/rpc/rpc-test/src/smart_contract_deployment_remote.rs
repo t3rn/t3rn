@@ -24,7 +24,7 @@ use sp_core::Bytes;
 use sp_io::TestExternalities;
 use sp_keystore::KeystoreExt;
 
-use circuit_runtime::{Runtime};
+use circuit_runtime::Runtime;
 use circuit_test_utils::create_gateway_protocol_from_client;
 use sp_keyring::Sr25519Keyring;
 use volatile_vm::wasm::PrefabWasmModule;
