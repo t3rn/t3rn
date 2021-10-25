@@ -27,3 +27,6 @@ mod extrinsic_gateway_remote;
 
 #[cfg(test)]
 mod intrinsic_gateway_remote;
+
+#[cfg(test)]
+mod smart_contract_deployment_remote;

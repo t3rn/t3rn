@@ -60,6 +60,7 @@ beefy-primitives = { git = "https://github.com/t3rn/grandpa-bridge-gadget", bran
 beefy-gadget = { git = "https://github.com/t3rn/grandpa-bridge-gadget", branch = 'polkadot-v0.9.8', default-features = false }
 beefy-gadget-rpc = { git = "https://github.com/t3rn/grandpa-bridge-gadget", branch = 'polkadot-v0.9.8', default-features = false }
 pallet-mmr-rpc = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+pallet-contracts-rpc = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 
 [build-dependencies]
 substrate-build-script-utils = "3.0.0"
