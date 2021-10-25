@@ -1099,7 +1099,7 @@ impl_runtime_apis! {
         fn rent_projection(
             _: AccountId
         ) -> Result<RentProjection<BlockNumber>, pallet_contracts_primitives::ContractAccessError> {
-            todo!()
+            unimplemented!();
         }
     }
 
