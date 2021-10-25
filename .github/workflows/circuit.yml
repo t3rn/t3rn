@@ -6,7 +6,7 @@ on:
       - circuit/**/*.rs
       - circuit/**/Cargo.toml
       - circuit/**/Cargo.lock
-      - .github/workflows/*.yml
+      - .github/workflows/circuit.yml
 
 env:
   RUST_BACKTRACE: 1
@@ -14,7 +14,7 @@ env:
 
 jobs:
   format:
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@master
@@ -47,7 +47,7 @@ jobs:
             --manifest-path circuit/Cargo.toml -- --check
 
   lint:
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@master
@@ -60,7 +60,7 @@ jobs:
         with:
           path: |
             ./llvm
-          key: llvm
+          key: llvm-circuit
 
       - name: 🔨 Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v1
@@ -104,7 +104,7 @@ jobs:
             --manifest-path circuit/Cargo.toml
 
   build:
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     needs: [format, lint]
     steps:
       - name: ☁ Checkout git repo
@@ -118,7 +118,7 @@ jobs:
         with:
           path: |
             ./llvm
-          key: llvm
+          key: llvm-circuit
 
       - name: 🔨 Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v1
@@ -150,18 +150,17 @@ jobs:
         continue-on-error: false
         with:
           command: build
-          args: --locked --manifest-path circuit/Cargo.toml --release
+          args: --locked --manifest-path circuit/Cargo.toml
 
-      - name: Upload binary
+      - name: 📤 Upload binary
         uses: actions/upload-artifact@v2
         with:
           name: ${{ github.sha }}-artifacts
-          path: circuit/target/release/circuit
+          path: circuit/target/debug/circuit
           if-no-files-found: error
-
   test:
-    runs-on: ubuntu-20.04
-    needs: [format, lint, build]
+    runs-on: self-hosted
+    needs: [build]
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@master
@@ -173,7 +172,7 @@ jobs:
         with:
           path: |
             ./llvm
-          key: llvm
+          key: llvm-circuit
 
       - name: 🔨 Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v1
@@ -204,11 +203,12 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: ${{ github.sha }}-artifacts
-          path: circuit/target/release/
+          path: circuit/target/debug/
 
       - name: 📼 Run unit tests
         continue-on-error: false
         run: |
-          sudo chmod +x circuit/target/release/circuit
-          circuit/target/release/circuit --alice --log=main,debug --tmp > /dev/null 2>&1 &
+          chmod +x circuit/target/debug/circuit
+          circuit/target/debug/circuit --alice --log=main,debug --tmp > /dev/null 2>&1 &
           cargo test --workspace --locked --features runtime-benchmarks --manifest-path circuit/Cargo.toml
+

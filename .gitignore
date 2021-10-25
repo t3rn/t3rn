@@ -7,3 +7,4 @@ comms
 .idea
 /beefy/target/
 /build/local_beefy_spec.json
+*.iml

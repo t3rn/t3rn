@@ -22,7 +22,7 @@ bp-runtime = { path = "../../../vendor/bridges/primitives/runtime", default-feat
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8', optional = true }
 frame-support = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 frame-system = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-frame-metadata = { version = "13.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+frame-metadata = { version = "14.0.0", features = ["v13", "v14"], default-features = false }
 
 pallet-balances = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 pallet-timestamp = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }

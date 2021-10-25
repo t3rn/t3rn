@@ -3,7 +3,9 @@ use sp_std::fmt::Debug;
 
 use sp_std::vec;
 
-use frame_metadata::{DecodeDifferent, ExtrinsicMetadata, RuntimeMetadataV13};
+use frame_metadata::decode_different::DecodeDifferent;
+use frame_metadata::v13::{ExtrinsicMetadata, RuntimeMetadataV13};
+use frame_metadata::RuntimeMetadataLastVersion;
 use frame_support::ensure;
 use sp_std::default::Default;
 use sp_std::prelude::*;
@@ -17,7 +19,7 @@ impl Default for Metadata {
     fn default() -> Self {
         Self {
             runtime_metadata: RuntimeMetadataV13 {
-                modules: frame_metadata::DecodeDifferent::Decoded(vec![]),
+                modules: DecodeDifferent::Decoded(vec![]),
                 extrinsic: ExtrinsicMetadata {
                     version: 4,
                     signed_extensions: vec![],
@@ -91,8 +93,9 @@ fn convert<B: 'static, O: 'static>(dd: DecodeDifferent<B, O>) -> Result<O, &'sta
 #[cfg(test)]
 mod tests {
     use super::Metadata;
-    use frame_metadata::{
-        DecodeDifferent, ExtrinsicMetadata, FunctionMetadata, ModuleMetadata, RuntimeMetadataV13,
+    use frame_metadata::decode_different::DecodeDifferent;
+    use frame_metadata::v13::{
+        ExtrinsicMetadata, FunctionMetadata, ModuleMetadata, RuntimeMetadataV13,
     };
     use frame_support::assert_err;
 

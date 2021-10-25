@@ -1,6 +1,7 @@
 use crate::polkadot_like_chain::PolkadotLike;
 use codec::{Decode, Encode};
-use frame_metadata::{RuntimeMetadata, RuntimeMetadataPrefixed, RuntimeMetadataV13};
+use frame_metadata::v14::RuntimeMetadataV14;
+use frame_metadata::{RuntimeMetadata, RuntimeMetadataLastVersion, RuntimeMetadataPrefixed};
 use jsonrpsee_types::{traits::Client, v2::params::JsonRpcParams};
 use num_traits::Zero;
 use relay_substrate_client::Client as SubstrateClient;
@@ -18,7 +19,7 @@ pub async fn get_first_header(
 
 pub async fn get_metadata(
     sub_client: &SubstrateClient<PolkadotLike>,
-) -> Result<RuntimeMetadataV13, String> {
+) -> Result<RuntimeMetadataV14, String> {
     let bytes: Bytes = sub_client
         .client
         .request("state_getMetadata", JsonRpcParams::NoParams)
@@ -27,7 +28,7 @@ pub async fn get_metadata(
 
     let meta: RuntimeMetadataPrefixed = Decode::decode(&mut &bytes[..]).unwrap();
     match meta.1 {
-        RuntimeMetadata::V13(md13) => Ok(md13),
+        RuntimeMetadata::V14(md14) => Ok(md14),
         _ => Err("Could not parse metadata".into()),
     }
 }

@@ -21,7 +21,7 @@ node-primitives = { version = "2.0.0", git = "https://github.com/paritytech/subs
 sp-tracing = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.8" }
 sc-rpc = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.8"}
 sp-core = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.8"}
-frame-metadata = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.8"}
+frame-metadata = { version = "14.0.0", features = ["v13", "v14"] }
 
 async-std = { version = "1.6.5", features = ["attributes", "tokio1"] }
 async-trait = "0.1.40"

@@ -7,12 +7,12 @@ edition = "2018"
 homepage = "https://t3rn.io"
 license = "Apache 2.0"
 repository = "https://github.com/t3rn/t3rn/"
-resolver = "2"
 
 [dependencies]
 jsonrpc-core = "15.1.0"
 structopt = "0.3.21"
 serde_json = "1.0.59"
+log = "0.4.14"
 
 # Bridge dependencies
 

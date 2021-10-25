@@ -137,8 +137,9 @@ where
 #[cfg(test)]
 pub mod tests {
 
-    use frame_metadata::{
-        DecodeDifferent, ExtrinsicMetadata, FunctionMetadata, ModuleMetadata, RuntimeMetadataV13,
+    use frame_metadata::decode_different::DecodeDifferent;
+    use frame_metadata::v13::{
+        ExtrinsicMetadata, FunctionMetadata, ModuleMetadata, RuntimeMetadataV13,
     };
     use frame_support::assert_err;
     use sp_core::H256;

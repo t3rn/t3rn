@@ -3,10 +3,10 @@ name: Gateway CI
 on:
   pull_request:
     paths:
-      - circuit/**/*.rs
-      - circuit/**/Cargo.toml
-      - circuit/**/Cargo.lock
-      - .github/workflows/*.yml
+      - gateway/**/*.rs
+      - gateway/**/Cargo.toml
+      - gateway/**/Cargo.lock
+      - .github/workflows/gateway.yml
 
 env:
   RUST_BACKTRACE: 1
@@ -34,15 +34,10 @@ jobs:
         with:
           command: fmt
           args: |
-            -p circuit
-            -p circuit-rpc
-            -p circuit-rpc-runtime-api
-            -p circuit-runtime
-            -p pallet-circuit-execution-delivery
-            -p pallet-contracts-registry
-            -p pallet-xdns
-            -p t3rn-primitives
-            --manifest-path circuit/Cargo.toml -- --check
+            -p gateway
+            -p gateway-runtime
+            -p gateway-rpc
+            --manifest-path gateway/Cargo.toml -- --check
 
   lint:
     runs-on: ubuntu-20.04
@@ -58,7 +53,7 @@ jobs:
         with:
           path: |
             ./llvm
-          key: llvm
+          key: llvm-gateway
 
       - name: 🔨 Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v1
@@ -83,21 +78,18 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            circuit/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('circuit/Cargo.lock') }}
+            gateway/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('gateway/Cargo.lock') }}
 
       - name: 📑 Lint code
         uses: actions-rs/cargo@v1
         with:
           command: clippy
           args: |
-            -p circuit
-            -p circuit-runtime
-            -p pallet-circuit-execution-delivery
-            -p pallet-contracts-registry
-            -p pallet-xdns
-            -p t3rn-primitives
-            --manifest-path circuit/Cargo.toml
+            -p gateway
+            -p gateway-runtime
+            -p gateway-rpc
+            --manifest-path gateway/Cargo.toml
 
   check:
     runs-on: ubuntu-20.04
@@ -114,7 +106,7 @@ jobs:
         with:
           path: |
             ./llvm
-          key: llvm
+          key: llvm-gateway
 
       - name: 🔨 Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v1
@@ -138,12 +130,12 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            circuit/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('circuit/Cargo.lock') }}
+            gateway/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('gateway/Cargo.lock') }}
 
-      - name: 🏭 Check circuit
+      - name: 🏭 Check gateway
         uses: actions-rs/cargo@v1
         continue-on-error: false
         with:
           command: check
-          args: --locked --manifest-path circuit/Cargo.toml
+          args: --locked --manifest-path gateway/Cargo.toml

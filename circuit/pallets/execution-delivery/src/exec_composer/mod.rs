@@ -39,6 +39,7 @@ use volatile_vm::wasm::RunMode;
 
 type ChainId = [u8; 4];
 
+use frame_metadata::v13::RuntimeMetadataV13;
 use sp_runtime::create_runtime_str;
 use sp_version::RuntimeVersion;
 
@@ -147,7 +148,7 @@ impl ExecComposer {
         gateway_id: Option<bp_runtime::ChainId>,
         gateway_abi: GatewayABIConfig,
     ) -> Result<(Vec<CircuitOutboundMessage>, Vec<u32>), &'static str> {
-        let gateway_pointer = Self::retrieve_gateway_pointer::<T>(gateway_id)?;
+        let gateway_pointer = Self::retrieve_gateway_pointer::<T>(gateway_id.clone())?;
         let gateway_inbound_protocol =
             Self::retrieve_gateway_protocol::<T>(submitter, &gateway_pointer)?;
 
@@ -177,7 +178,7 @@ impl ExecComposer {
             contract.bytes.clone(),
             &schedule,
             OM::get_run_mode(),
-            gateway_id,
+            gateway_id.clone(),
         )
         .map_err(|_e| "Can't decode WASM code")?;
 
@@ -297,7 +298,7 @@ impl ExecComposer {
             .collect::<Result<Vec<PrefabWasmModule<T>>, &'static str>>()?;
 
         for i in 0..contracts.len() {
-            let curr_executable = executables_map[i].clone();
+            let curr_executable = executables_map[i.clone()].clone();
             let contract_info = contracts[i].info.clone();
             volatile_vm::Pallet::<T>::add_contract_code_lazy(
                 curr_executable.code_hash,
@@ -340,9 +341,9 @@ impl ExecComposer {
     ) -> Result<Box<dyn GatewayInboundProtocol>, &'static str> {
         // Very dummy - replace asap with https://github.com/t3rn/t3rn/pull/87
         use crate::message_assembly::chain_generic_metadata::Metadata;
-        use frame_metadata::{
-            DecodeDifferent, ExtrinsicMetadata, FunctionMetadata, ModuleMetadata,
-            RuntimeMetadataV13,
+        use frame_metadata::decode_different::DecodeDifferent;
+        use frame_metadata::v13::{
+            ExtrinsicMetadata, FunctionMetadata, ModuleMetadata, RuntimeMetadataV13,
         };
         pub fn get_dummy_modules_with_functions() -> Vec<(&'static str, Vec<&'static str>)> {
             vec![
@@ -401,7 +402,7 @@ impl ExecComposer {
                 let functions = fn_names.into_iter().map(fn_metadata_generator).collect();
                 modules.push(module_metadata_generator(
                     module_name,
-                    module_index,
+                    module_index.clone(),
                     functions,
                 ));
                 module_index = module_index + 1;
@@ -417,7 +418,8 @@ impl ExecComposer {
             Metadata::new(runtime_metadata)
         }
 
-        let mut best_gateway = pallet_xdns::Pallet::<T>::best_available(gateway_pointer.id)?;
+        let mut best_gateway =
+            pallet_xdns::Pallet::<T>::best_available(gateway_pointer.clone().id)?;
 
         let genesis_hash = T::Hashing::hash(&mut best_gateway.gateway_genesis.genesis_hash);
         let runtime_version = best_gateway.gateway_genesis.runtime_version;
