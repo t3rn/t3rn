@@ -1,0 +1,5 @@
+edition = "2018"
+hard_tabs = true
+max_width = 120
+imports_granularity = "Crate"
+#width_heuristics = "Off"
