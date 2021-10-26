@@ -72,7 +72,7 @@ pub use frame_support::{
     construct_runtime, parameter_types,
     traits::{Currency, ExistenceRequirement, Imbalance, KeyOwnerProofSystem},
     weights::{constants::WEIGHT_PER_SECOND, DispatchClass, IdentityFee, RuntimeDbWeight, Weight},
-    StorageValue,
+    PalletId, StorageValue,
 };
 
 pub use frame_system::Call as SystemCall;
@@ -616,12 +616,17 @@ impl Convert<Balance, u128> for CircuitToGateway {
     }
 }
 
+parameter_types! {
+    pub const ExecPalletId: PalletId = PalletId(*b"pal/exec");
+}
+
 impl pallet_circuit_execution_delivery::Config for Runtime {
     type Event = Event;
     type Call = Call;
     type AccountId32Converter = AccountId32Converter;
     type ToStandardizedGatewayBalance = CircuitToGateway;
     type WeightInfo = pallet_circuit_execution_delivery::weights::SubstrateWeight<Runtime>;
+    type PalletId = ExecPalletId;
 }
 
 type Blake2ValU64BridgeInstance = ();

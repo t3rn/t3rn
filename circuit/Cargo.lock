@@ -1404,6 +1404,7 @@ dependencies = [
  "pallet-xdns",
  "parity-scale-codec",
  "serde",
+ "snowbridge-basic-channel",
  "snowbridge-ethereum-light-client",
  "sp-api",
  "sp-block-builder",
@@ -5455,6 +5456,7 @@ dependencies = [
  "sc-service",
  "serde",
  "serde_json",
+ "snowbridge-basic-channel",
  "sp-application-crypto",
  "sp-consensus-babe",
  "sp-consensus-vrf",
@@ -8620,6 +8622,41 @@ dependencies = [
 ]
 
 [[package]]
+name = "snowbridge-basic-channel"
+version = "0.1.1"
+source = "git+https://github.com/t3rn/snowbridge?rev=57eafa318d4b27d9d5c00c29e2db79504bd6ac77#57eafa318d4b27d9d5c00c29e2db79504bd6ac77"
+dependencies = [
+ "ethabi-decode",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "serde",
+ "snowbridge-core 0.1.1 (git+https://github.com/t3rn/snowbridge?rev=57eafa318d4b27d9d5c00c29e2db79504bd6ac77)",
+ "snowbridge-ethereum 0.1.0 (git+https://github.com/t3rn/snowbridge?rev=57eafa318d4b27d9d5c00c29e2db79504bd6ac77)",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "snowbridge-core"
+version = "0.1.1"
+source = "git+https://github.com/t3rn/snowbridge?rev=57eafa318d4b27d9d5c00c29e2db79504bd6ac77#57eafa318d4b27d9d5c00c29e2db79504bd6ac77"
+dependencies = [
+ "enum-iterator",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "serde",
+ "serde_derive",
+ "snowbridge-ethereum 0.1.0 (git+https://github.com/t3rn/snowbridge?rev=57eafa318d4b27d9d5c00c29e2db79504bd6ac77)",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "snowbridge-core"
 version = "0.1.1"
 source = "git+https://github.com/t3rn/snowbridge#f63169cd46722be41f8b09b05b7cd2ffca25e87b"
@@ -8630,8 +8667,32 @@ dependencies = [
  "parity-scale-codec",
  "serde",
  "serde_derive",
- "snowbridge-ethereum",
+ "snowbridge-ethereum 0.1.0 (git+https://github.com/t3rn/snowbridge)",
  "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "snowbridge-ethereum"
+version = "0.1.0"
+source = "git+https://github.com/t3rn/snowbridge?rev=57eafa318d4b27d9d5c00c29e2db79504bd6ac77#57eafa318d4b27d9d5c00c29e2db79504bd6ac77"
+dependencies = [
+ "ethabi-decode",
+ "ethash",
+ "ethbloom",
+ "ethereum-types",
+ "getrandom 0.2.3",
+ "hex-literal",
+ "libsecp256k1 0.3.5",
+ "parity-bytes",
+ "parity-scale-codec",
+ "rlp",
+ "rustc-hex",
+ "serde",
+ "serde-big-array",
+ "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
 ]
@@ -8672,8 +8733,8 @@ dependencies = [
  "rlp",
  "rustc-hex",
  "serde",
- "snowbridge-core",
- "snowbridge-ethereum",
+ "snowbridge-core 0.1.1 (git+https://github.com/t3rn/snowbridge)",
+ "snowbridge-ethereum 0.1.0 (git+https://github.com/t3rn/snowbridge)",
  "sp-core",
  "sp-io",
  "sp-runtime",

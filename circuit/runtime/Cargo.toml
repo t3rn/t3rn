@@ -82,6 +82,7 @@ pallet-mmr-primitives = { git = "https://github.com/paritytech/substrate", branc
 
 # snowbridge dependencies
 ethereum-light-client = { git = "https://github.com/t3rn/snowbridge", package = "snowbridge-ethereum-light-client", default-features = false }
+snowbridge-basic-channel = { git = "https://github.com/t3rn/snowbridge", rev = "57eafa318d4b27d9d5c00c29e2db79504bd6ac77", default-features = false }
 
 # Benchmarking
 frame-benchmarking = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8', optional = true}
@@ -152,7 +153,8 @@ std = [
 	"pallet-beefy/std",
 	"ethereum-light-client/std",
 	"pallet-beefy-mmr/std",
-	"pallet-mmr-primitives/std"
+	"pallet-mmr-primitives/std",
+	"snowbridge-basic-channel/std"
 ]
 # TODO: https://github.com/paritytech/parity-bridges-common/issues/390
 # I've left the feature flag here to test our CI configuration
