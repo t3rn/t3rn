@@ -602,6 +602,22 @@ impl volatile_vm::VolatileVM for Runtime {
     type Schedule = MyScheduleVVM;
 }
 
+pub const INDEXING_PREFIX: &'static [u8] = b"commitment";
+parameter_types! {
+    pub const MaxMessagePayloadSize: usize = 256;
+    pub const MaxMessagesPerCommit: usize = 20;
+}
+
+impl snowbridge_basic_channel::outbound::Config for Runtime {
+    type Event = Event;
+    const INDEXING_PREFIX: &'static [u8] = INDEXING_PREFIX;
+    type Hashing = Keccak256;
+    type MaxMessagePayloadSize = MaxMessagePayloadSize;
+    type MaxMessagesPerCommit = MaxMessagesPerCommit;
+    type SetPrincipalOrigin = pallet_circuit_execution_delivery::EnsureExecDelivery<Runtime>;
+    type WeightInfo = ();
+}
+
 pub struct AccountId32Converter;
 impl Convert<AccountId, [u8; 32]> for AccountId32Converter {
     fn convert(account_id: AccountId) -> [u8; 32] {
@@ -775,6 +791,7 @@ construct_runtime!(
         Mmr: pallet_mmr::{Pallet, Storage},
         EthereumLightClient: ethereum_light_client::{Pallet, Call, Storage, Event, Config},
         MmrLeaf: pallet_beefy_mmr::{Pallet, Storage},
+        BasicOutboundChannel: snowbridge_basic_channel::outbound::{Pallet, Config<T>, Storage, Event},
     }
 );
 

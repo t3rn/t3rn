@@ -60,7 +60,8 @@ use crate::message_assembly::merklize::*;
 use pallet_contracts_registry::{RegistryContract, RegistryContractId};
 
 use bp_runtime::ChainId;
-use frame_support::traits::Get;
+use frame_support::traits::{EnsureOrigin, Get};
+use frame_system::RawOrigin;
 pub use pallet::*;
 use sp_runtime::traits::AccountIdConversion;
 use sp_std::vec;
@@ -990,5 +991,20 @@ impl<T: Config> Pallet<T> {
     ) -> Result<Vec<CircuitOutboundMessage>, &'static str> {
         // Decide on the next execution phase and enact on it
         Ok(vec![])
+    }
+}
+
+/// Simple ensure origin from the exec delivery
+pub struct EnsureExecDelivery<T>(sp_std::marker::PhantomData<T>);
+
+impl<T: pallet::Config> EnsureOrigin<T::Origin> for EnsureExecDelivery<T> {
+    type Success = T::AccountId;
+
+    fn try_origin(o: T::Origin) -> Result<Self::Success, T::Origin> {
+        let loan_id = T::PalletId::get().into_account();
+        o.into().and_then(|o| match o {
+            RawOrigin::Signed(who) if who == loan_id => Ok(loan_id),
+            r => Err(T::Origin::from(r)),
+        })
     }
 }
