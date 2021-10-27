@@ -61,6 +61,7 @@ impl GatewayType {
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum GatewayVendor {
+    Ethereum,
     Substrate,
 }
 
@@ -187,13 +188,6 @@ pub trait EscrowTrait: frame_system::Config + pallet_sudo::Config {
 
 type Bytes = Vec<u8>;
 
-#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub enum GatewayChain {
-    Ethereum,
-    Substrate,
-}
-
 /// Outbound Step that specifies expected transmission medium for relayers connecting with that gateway.
 /// Request message format that derivative of could be compatible with JSON-RPC API
 /// with either signed or unsigned payload or custom transmission medium like XCMP protocol
@@ -217,7 +211,7 @@ pub struct CircuitOutboundMessage {
     /// Extra payload in case the message is signed or uses custom delivery protocols like XCMP
     pub extra_payload: Option<ExtraMessagePayload>,
     /// type of gateway chain this message is intended for
-    pub gateway_chain: GatewayChain,
+    pub gateway_vendor: GatewayVendor,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

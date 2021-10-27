@@ -10,7 +10,7 @@ pub fn submit_messages_to_relayers<T: Config>(
     // loop through each message and filter ethereum messages
     let res = messages
         .into_iter()
-        .filter(|msg| msg.gateway_chain == GatewayChain::Ethereum)
+        .filter(|msg| msg.gateway_vendor == GatewayVendor::Ethereum)
         .map(|msg| {
             let target = msg
                 .module_name

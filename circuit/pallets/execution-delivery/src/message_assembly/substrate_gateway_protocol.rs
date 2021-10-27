@@ -115,7 +115,7 @@ where
             extra_payload: None,
             sender: None,
             target: None,
-            gateway_chain: GatewayChain::Substrate,
+            gateway_vendor: GatewayVendor::Substrate,
         })
     }
 
@@ -151,7 +151,7 @@ where
             )?),
             sender: None,
             target: None,
-            gateway_chain: GatewayChain::Substrate,
+            gateway_vendor: GatewayVendor::Substrate,
         })
     }
 
@@ -189,7 +189,7 @@ where
                     )?),
                     sender: None,
                     target: None,
-                    gateway_chain: GatewayChain::Substrate,
+                    gateway_vendor: GatewayVendor::Substrate,
                 })
             }
             // Don't think there is a way of enforcing calls to be static on via external dispatch?
@@ -244,7 +244,7 @@ where
             )?),
             sender: None,
             target: None,
-            gateway_chain: GatewayChain::Substrate,
+            gateway_vendor: GatewayVendor::Substrate,
         })
     }
 
@@ -281,7 +281,7 @@ where
                     )?),
                     sender: None,
                     target: None,
-                    gateway_chain: GatewayChain::Substrate,
+                    gateway_vendor: GatewayVendor::Substrate,
                 })
             }
             // Don't think there is a way of enforcing calls to be static on via external dispatch?
@@ -362,7 +362,7 @@ where
             )?),
             sender: None,
             target: None,
-            gateway_chain: GatewayChain::Substrate,
+            gateway_vendor: GatewayVendor::Substrate,
         })
     }
 
@@ -399,7 +399,7 @@ where
                     )?),
                     sender: None,
                     target: None,
-                    gateway_chain: GatewayChain::Substrate,
+                    gateway_vendor: GatewayVendor::Substrate,
                 })
             }
             GatewayType::ProgrammableExternal(nonce) | GatewayType::TxOnly(nonce) => {
@@ -446,7 +446,7 @@ where
                     )?),
                     sender: None,
                     target: None,
-                    gateway_chain: GatewayChain::Substrate,
+                    gateway_vendor: GatewayVendor::Substrate,
                 })
             }
         }
@@ -488,7 +488,7 @@ pub mod tests {
     use sp_keystore::{KeystoreExt, SyncCryptoStore};
 
     use t3rn_primitives::transfers::TransferEntry;
-    use t3rn_primitives::{GatewayChain, GatewayType};
+    use t3rn_primitives::{GatewayType, GatewayVendor};
 
     use crate::KEY_TYPE;
 
@@ -520,7 +520,7 @@ pub mod tests {
                 sender: _,
                 target: _,
                 extra_payload,
-                gateway_chain,
+                gateway_vendor: gateway_chain,
             } => {
                 assert_eq!(arguments, exp_arguments);
                 assert_eq!(expected_output, exp_output);
@@ -540,7 +540,7 @@ pub mod tests {
                         assert_eq!(module_name, expected_module.encode());
                         assert_eq!(method_name, expected_fn.encode());
                         assert_eq!(call_bytes, exp_call_bytes);
-                        assert_eq!(gateway_chain, GatewayChain::Substrate);
+                        assert_eq!(gateway_chain, GatewayVendor::Substrate);
 
                         let expected_message = expected_payload;
                         assert!(submitter.verify(
@@ -572,7 +572,7 @@ pub mod tests {
             extra_payload: None,
             sender: None,
             target: None,
-            gateway_chain: GatewayChain::Substrate,
+            gateway_vendor: GatewayVendor::Substrate,
         };
         // TODO: update these tests as soon implementation takes the gateway type into account
         assert_eq!(
@@ -681,7 +681,7 @@ pub mod tests {
             extra_payload: None,
             sender: None,
             target: None,
-            gateway_chain: GatewayChain::Substrate,
+            gateway_vendor: GatewayVendor::Substrate,
         };
         let keystore = KeyStore::new();
 
@@ -1050,7 +1050,7 @@ pub mod tests {
                     extra_payload,
                     sender: _,
                     target: _,
-                    gateway_chain,
+                    gateway_vendor: gateway_chain,
                 } => {
                     assert_eq!(name, b"transfer_escrow".to_vec());
                     assert_eq!(arguments, vec![to.clone(), value, vec![]]);
@@ -1063,7 +1063,7 @@ pub mod tests {
                             ],
                         }]
                     );
-                    assert_eq!(gateway_chain, GatewayChain::Substrate);
+                    assert_eq!(gateway_chain, GatewayVendor::Substrate);
                     match extra_payload {
                         Some(ExtraMessagePayload {
                             signer,
