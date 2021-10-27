@@ -61,7 +61,7 @@ use pallet_contracts_registry::{RegistryContract, RegistryContractId};
 
 use bp_runtime::ChainId;
 use frame_support::traits::{EnsureOrigin, Get};
-use frame_system::RawOrigin;
+use frame_system::{Origin, RawOrigin};
 pub use pallet::*;
 use sp_runtime::traits::AccountIdConversion;
 use sp_std::vec;
@@ -76,6 +76,9 @@ pub mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
+#[cfg(feature = "runtime-benchmarks")]
+use frame_support::traits::OriginTrait;
+
 #[cfg(test)]
 pub mod mock;
 
@@ -997,14 +1000,24 @@ impl<T: Config> Pallet<T> {
 /// Simple ensure origin from the exec delivery
 pub struct EnsureExecDelivery<T>(sp_std::marker::PhantomData<T>);
 
-impl<T: pallet::Config> EnsureOrigin<T::Origin> for EnsureExecDelivery<T> {
+impl<
+        T: pallet::Config,
+        O: Into<Result<RawOrigin<T::AccountId>, O>> + From<RawOrigin<T::AccountId>>,
+    > EnsureOrigin<O> for EnsureExecDelivery<T>
+{
     type Success = T::AccountId;
 
-    fn try_origin(o: T::Origin) -> Result<Self::Success, T::Origin> {
+    fn try_origin(o: O) -> Result<Self::Success, O> {
         let loan_id = T::PalletId::get().into_account();
         o.into().and_then(|o| match o {
             RawOrigin::Signed(who) if who == loan_id => Ok(loan_id),
-            r => Err(T::Origin::from(r)),
+            r => Err(O::from(r)),
         })
+    }
+
+    #[cfg(feature = "runtime-benchmarks")]
+    fn successful_origin() -> O {
+        let loan_id = T::PalletId::get().into_account();
+        O::from(RawOrigin::Signed(loan_id))
     }
 }
