@@ -8,7 +8,7 @@ use sp_std::vec::*;
 use t3rn_primitives::transfers::TransferEntry;
 use t3rn_primitives::{
     CircuitOutboundMessage, ExtraMessagePayload, GatewayExpectedOutput, GatewayInboundProtocol,
-    GatewayType, GenericAddress,
+    GatewayType, GatewayVendor, GenericAddress,
 };
 
 pub struct EthereumGatewayProtocol {
@@ -100,6 +100,7 @@ impl GatewayInboundProtocol for EthereumGatewayProtocol {
                 tx_signed: vec![],
                 custom_payload: None,
             }),
+            gateway_vendor: GatewayVendor::Ethereum,
         })
     }
 
@@ -233,6 +234,7 @@ impl GatewayInboundProtocol for EthereumGatewayProtocol {
                 tx_signed: vec![],
                 custom_payload: None,
             }),
+            gateway_vendor: GatewayVendor::Ethereum,
         })
     }
 

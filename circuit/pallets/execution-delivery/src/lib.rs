@@ -60,7 +60,10 @@ use crate::message_assembly::merklize::*;
 use pallet_contracts_registry::{RegistryContract, RegistryContractId};
 
 use bp_runtime::ChainId;
+use frame_support::traits::{EnsureOrigin, Get};
+use frame_system::RawOrigin;
 pub use pallet::*;
+use sp_runtime::traits::AccountIdConversion;
 use sp_std::vec;
 use sp_std::vec::*;
 use t3rn_primitives::abi::{ContractActionDesc, GatewayABIConfig, HasherAlgo as HA};
@@ -73,8 +76,11 @@ pub mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
+
 #[cfg(test)]
 pub mod mock;
+
+mod converter;
 
 pub mod weights;
 use weights::WeightInfo;
@@ -358,13 +364,16 @@ impl<
     }
 
     pub fn generate_xtx_id<T: Config>(&self) -> XtxId<T> {
-        T::Hashing::hash(Encode::encode(self).as_ref())
+        SystemHashing::<T>::hash(Encode::encode(self).as_ref())
     }
 }
+
+pub(crate) type SystemHashing<T> = <T as frame_system::Config>::Hashing;
 
 #[frame_support::pallet]
 pub mod pallet {
     use frame_support::pallet_prelude::*;
+    use frame_support::PalletId;
     use frame_system::pallet_prelude::*;
 
     use super::*;
@@ -401,6 +410,7 @@ pub mod pallet {
         + pallet_multi_finality_verifier::Config<PolkadotLikeValU64Gateway>
         + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU64Gateway>
         + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU32Gateway>
+        + snowbridge_basic_channel::outbound::Config
     {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -413,6 +423,8 @@ pub mod pallet {
         type ToStandardizedGatewayBalance: Convert<BalanceOf<Self>, u128>;
 
         type WeightInfo: weights::WeightInfo;
+
+        type PalletId: Get<PalletId>;
     }
 
     #[pallet::pallet]
@@ -513,8 +525,14 @@ pub mod pallet {
                     Default::default(),
                 )?;
 
-            // ToDo: Enact on the info about round finished.
+            // submit to relayers
+            let dispatch_account = Self::account_id();
+            converter::submit_messages_to_relayers::<T>(
+                &dispatch_account,
+                circuit_outbound_messages.clone(),
+            )?;
 
+            // ToDo: Enact on the info about round finished.
             Self::deposit_event(Event::StoredNewStep(
                 requester.clone(),
                 x_tx_id,
@@ -711,6 +729,10 @@ impl<T: SigningTypes> SignedPayload<T> for Payload<T::Public, T::BlockNumber> {
 }
 
 impl<T: Config> Pallet<T> {
+    fn account_id() -> T::AccountId {
+        T::PalletId::get().into_account()
+    }
+
     /// Receives a list of available components and an io schedule in text format
     /// and parses it to create an execution schedule
     pub fn decompose_io_schedule(
@@ -836,7 +858,8 @@ impl<T: Config> Pallet<T> {
         for step in &first_phase.steps {
             let mut protocol_part_of_contract = step.compose.code_txt.clone();
             protocol_part_of_contract.extend(step.compose.bytes.clone());
-            let key = T::Hashing::hash(Encode::encode(&mut protocol_part_of_contract).as_ref());
+            let key =
+                SystemHashing::<T>::hash(Encode::encode(&mut protocol_part_of_contract).as_ref());
 
             // If invalid new contract was submitted for execution - break. Otherwise, add the new contract to on-chain registry.
             if !pallet_contracts_registry::ContractsRegistry::<T>::contains_key(key) {
@@ -969,5 +992,30 @@ impl<T: Config> Pallet<T> {
     ) -> Result<Vec<CircuitOutboundMessage>, &'static str> {
         // Decide on the next execution phase and enact on it
         Ok(vec![])
+    }
+}
+
+/// Simple ensure origin from the exec delivery
+pub struct EnsureExecDelivery<T>(sp_std::marker::PhantomData<T>);
+
+impl<
+        T: pallet::Config,
+        O: Into<Result<RawOrigin<T::AccountId>, O>> + From<RawOrigin<T::AccountId>>,
+    > EnsureOrigin<O> for EnsureExecDelivery<T>
+{
+    type Success = T::AccountId;
+
+    fn try_origin(o: O) -> Result<Self::Success, O> {
+        let loan_id = T::PalletId::get().into_account();
+        o.into().and_then(|o| match o {
+            RawOrigin::Signed(who) if who == loan_id => Ok(loan_id),
+            r => Err(O::from(r)),
+        })
+    }
+
+    #[cfg(feature = "runtime-benchmarks")]
+    fn successful_origin() -> O {
+        let loan_id = T::PalletId::get().into_account();
+        O::from(RawOrigin::Signed(loan_id))
     }
 }
