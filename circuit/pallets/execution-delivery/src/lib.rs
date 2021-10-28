@@ -73,6 +73,9 @@ pub use xbridges::{
 pub mod xtx;
 pub use xtx::{Xtx, XtxId};
 
+pub mod side_effect;
+pub use side_effect::{InboundSideEffect, OutboundSideEffect, SideEffect};
+
 /// Defines application identifier for crypto keys of this module.
 ///
 /// Every module that deals with signatures needs to declare its unique identifier for
@@ -97,7 +100,7 @@ pub fn select_validator_for_x_tx_dummy<T: Config>(
 
 // todo: Implement and move as independent submodule
 pub type SideEffectsDFD = Vec<u8>;
-pub type SideEffect = Bytes;
+// pub type SideEffect = Bytes;
 pub type SideEffectId = Bytes;
 
 pub type AuthorityId = crate::message_assembly::signer::app::Public;
@@ -274,7 +277,7 @@ pub mod pallet {
         pub fn confirm_side_effect_blind(
             origin: OriginFor<T>,
             xtx_id: XtxId<T>,
-            side_effect: SideEffect,
+            side_effect: SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
             _inclusion_proof: Option<Bytes>,
         ) -> DispatchResultWithPostInfo {
             // ToDo #CNF-1: Reward releyers for inbound message dispatch.
@@ -393,7 +396,7 @@ pub mod pallet {
         pub fn confirm_side_effect(
             origin: OriginFor<T>,
             xtx_id: XtxId<T>,
-            side_effect: SideEffect,
+            side_effect: SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
             _inclusion_proof: Option<Bytes>,
             // ToDo: Replace step_confirmation with inclusion_proof
             step_confirmation: StepConfirmation,
@@ -486,15 +489,23 @@ pub mod pallet {
         XTransactionReceivedForExec(XtxId<T>, SideEffectsDFD),
         // Listeners - executioners/relayers to know new challenges and perform offline risk/reward calc
         //  of whether side effect is worth picking up
-        NewSideEffectsAvailable(T::AccountId, XtxId<T>, Vec<SideEffect>),
+        NewSideEffectsAvailable(
+            T::AccountId,
+            XtxId<T>,
+            Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+        ),
         // Listeners - executioners/relayers to know that certain SideEffects are no longer valid
         // ToDo: Implement Xtx timeout!
-        CancelledSideEffects(T::AccountId, XtxId<T>, Vec<SideEffect>),
+        CancelledSideEffects(
+            T::AccountId,
+            XtxId<T>,
+            Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+        ),
         // Listeners - executioners/relayers to know whether they won the confirmation challenge
         SideEffectConfirmed(
             T::AccountId, // winner
             XtxId<T>,
-            SideEffect,
+            SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
             u64, // reward?
         ),
         // Listeners - remote targets integrators/registrants
