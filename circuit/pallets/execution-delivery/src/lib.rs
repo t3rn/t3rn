@@ -61,7 +61,7 @@ use pallet_contracts_registry::{RegistryContract, RegistryContractId};
 
 use bp_runtime::ChainId;
 use frame_support::traits::{EnsureOrigin, Get};
-use frame_system::{Origin, RawOrigin};
+use frame_system::RawOrigin;
 pub use pallet::*;
 use sp_runtime::traits::AccountIdConversion;
 use sp_std::vec;
@@ -76,8 +76,6 @@ pub mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
-#[cfg(feature = "runtime-benchmarks")]
-use frame_support::traits::OriginTrait;
 
 #[cfg(test)]
 pub mod mock;
