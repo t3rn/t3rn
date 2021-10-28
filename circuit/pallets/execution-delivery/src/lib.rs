@@ -315,6 +315,7 @@ pub mod pallet {
             gateway_genesis: GatewayGenesisConfig,
             first_header: Vec<u8>,
             authorities: Option<Vec<T::AccountId>>,
+            allowed_side_effects: Option<Vec<Vec<u8>>>,
         ) -> DispatchResultWithPostInfo {
             // Retrieve sender of the transaction.
             pallet_xdns::Pallet::<T>::add_new_xdns_record(
@@ -322,8 +323,8 @@ pub mod pallet {
                 url,
                 gateway_id,
                 gateway_abi.clone(),
-                gateway_vendor,
-                gateway_type,
+                gateway_vendor.clone(),
+                gateway_type.clone(),
                 gateway_genesis,
             )?;
 
@@ -360,7 +361,32 @@ pub mod pallet {
                 )?,
             };
 
+            Self::deposit_event(Event::NewGatewayRegistered(
+                gateway_id,           // gateway id
+                gateway_type,         // type - external, programmable, tx-only
+                gateway_vendor,       // vendor - substrate, eth etc.
+                allowed_side_effects, // allowed side effects / enabled methods
+            ));
+
             Ok(res.into())
+        }
+
+        // ToDo: Create and move higher to main Circuit pallet
+        #[pallet::weight(<T as Config>::WeightInfo::register_gateway_default_polka())]
+        pub fn update_gateway(
+            _origin: OriginFor<T>,
+            gateway_id: bp_runtime::ChainId,
+            _url: Option<Vec<u8>>,
+            _gateway_abi: Option<GatewayABIConfig>,
+            _authorities: Option<Vec<T::AccountId>>,
+            allowed_side_effects: Option<Vec<Vec<u8>>>,
+        ) -> DispatchResultWithPostInfo {
+            // ToDo: Implement!
+            Self::deposit_event(Event::GatewayUpdated(
+                gateway_id,           // gateway id
+                allowed_side_effects, // allowed side effects / enabled methods
+            ));
+            Ok(().into())
         }
 
         #[pallet::weight(0)]
@@ -470,6 +496,17 @@ pub mod pallet {
             XtxId<T>,
             SideEffect,
             u64, // reward?
+        ),
+        // Listeners - remote targets integrators/registrants
+        NewGatewayRegistered(
+            bp_runtime::ChainId,  // gateway id
+            GatewayType,          // type - external, programmable, tx-only
+            GatewayVendor,        // vendor - substrate, eth etc.
+            Option<Vec<Vec<u8>>>, // allowed side effects / enabled methods
+        ),
+        GatewayUpdated(
+            bp_runtime::ChainId,  // gateway id
+            Option<Vec<Vec<u8>>>, // allowed side effects / enabled methods
         ),
     }
 
