@@ -1,23 +1,23 @@
 //! RPC interface for the contracts registry pallet.
 
 use std::sync::Arc;
-mod types;
 mod tests;
+mod types;
 pub use self::gen_client::Client as ContractsRegistryClient;
+use crate::types::GAS_PER_SECOND;
 use jsonrpc_core::{Error, ErrorCode, Result};
 use jsonrpc_derive::rpc;
 use pallet_circuit_execution_delivery_rpc_runtime_api::ExecutionDeliveryRuntimeApi;
 use sp_api::codec::Codec;
-use sp_api::{ProvideRuntimeApi};
+use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use types::*;
 use sp_runtime::{
     generic::BlockId,
     traits::{Block as BlockT, Header as HeaderT, MaybeDisplay},
 };
 use std::convert::TryInto;
 use t3rn_primitives::Compose;
-use crate::types::GAS_PER_SECOND;
+use types::*;
 
 #[rpc]
 pub trait ExecutionDeliveryApi<BlockHash, BlockNumber, AccountId, Balance> {
@@ -28,7 +28,7 @@ pub trait ExecutionDeliveryApi<BlockHash, BlockNumber, AccountId, Balance> {
     /// Circuit queues the request and awaits for an execution agent to volounteer to facilitate the execution
     /// across connected chains via gateways - acts as an escrow account and is accountable
     /// with her stake for proven misbehaviour.
-    #[rpc(name = "executionDelivery_composableExec")]
+    #[rpc(name = "execDelivery_composableExec")]
     fn composable_exec(
         &self,
         call_request: InterExecRequest<AccountId, Balance>,
@@ -52,18 +52,23 @@ impl<C, B> ExecutionDelivery<C, B> {
     }
 }
 
-impl<C, Block, AccountId, Balance> 
+impl<C, Block, AccountId, Balance>
     ExecutionDeliveryApi<
         <Block as BlockT>::Hash,
         <<Block as BlockT>::Header as HeaderT>::Number,
         AccountId,
-        Balance,>
-    for ExecutionDelivery<C, Block>
+        Balance,
+    > for ExecutionDelivery<C, Block>
 where
     Block: BlockT,
     AccountId: Codec + MaybeDisplay,
     C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
-    C::Api: ExecutionDeliveryRuntimeApi<Block, AccountId, Balance, <<Block as BlockT>::Header as HeaderT>::Number,>,
+    C::Api: ExecutionDeliveryRuntimeApi<
+        Block,
+        AccountId,
+        Balance,
+        <<Block as BlockT>::Header as HeaderT>::Number,
+    >,
     Balance: Codec,
 {
     fn composable_exec(

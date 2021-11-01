@@ -325,10 +325,8 @@ fn testnet_genesis(
         },
         basic_outbound_channel: circuit_runtime::BasicOutboundChannelConfig {
             // this is the account for pal/exec module_id
-            principal: AccountId::from_string(
-                "5FmrGR9YMhgHqcrNc4W9enTbmCLRE6sbAJKs3kqA5kJfWQoN",
-            )
-            .expect("Should not fail"),
+            principal: AccountId::from_string("5FmrGR9YMhgHqcrNc4W9enTbmCLRE6sbAJKs3kqA5kJfWQoN")
+                .expect("Should not fail"),
             interval: 1,
         },
     }
