@@ -12,6 +12,9 @@ import type { AccountId, Balance, BalanceOf, H160, Hash, PhantomData, Weight } f
 import type { SessionIndex } from '@polkadot/types/interfaces/session';
 import type { SpecVersion } from '@polkadot/types/interfaces/state';
 import type { DispatchError, DispatchInfo, DispatchResult } from '@polkadot/types/interfaces/system';
+import type { RegistryContractId } from 't3rn-circuit-typegen/interfaces/contracts_registry';
+import type { XtxId } from 't3rn-circuit-typegen/interfaces/execution_delivery';
+import type { CircuitOutboundMessage } from 't3rn-circuit-typegen/interfaces/primitives';
 import type { XdnsRecordId } from 't3rn-circuit-typegen/interfaces/xdns';
 
 declare module '@polkadot/api/types/events' {
@@ -123,7 +126,7 @@ declare module '@polkadot/api/types/events' {
       /**
        * A code with the specified hash was removed.
        * \[code_hash\]
-       *
+       * 
        * This happens when the last contract that uses this code hash was removed or evicted.
        **/
       CodeRemoved: AugmentedEvent<ApiType, [Hash]>;
@@ -134,9 +137,9 @@ declare module '@polkadot/api/types/events' {
       /**
        * A custom event emitted by the contract.
        * \[contract, data\]
-       *
+       * 
        * # Params
-       *
+       * 
        * - `contract`: The contract that emitted the event.
        * - `data`: Data supplied by the contract. Metadata generated during contract
        * compilation is needed to decode it.
@@ -153,9 +156,9 @@ declare module '@polkadot/api/types/events' {
       /**
        * Restoration of a contract has been successful.
        * \[restorer, dest, code_hash, rent_allowance\]
-       *
+       * 
        * # Params
-       *
+       * 
        * - `restorer`: Account ID of the restoring contract.
        * - `dest`: Account ID of the restored contract.
        * - `code_hash`: Code hash of the restored contract.
@@ -165,23 +168,23 @@ declare module '@polkadot/api/types/events' {
       /**
        * Triggered when the current schedule is updated.
        * \[version\]
-       *
+       * 
        * # Params
-       *
+       * 
        * - `version`: The version of the newly set schedule.
        **/
       ScheduleUpdated: AugmentedEvent<ApiType, [u32]>;
       /**
        * Contract has been terminated without leaving a tombstone.
        * \[contract, beneficiary\]
-       *
+       * 
        * # Params
-       *
+       * 
        * - `contract`: The contract that was terminated.
        * - `beneficiary`: The account that received the contracts remaining balance.
-       *
+       * 
        * # Note
-       *
+       * 
        * The only way for a contract to be removed without a tombstone and emitting
        * this event is by calling `seal_terminate`.
        **/
@@ -357,7 +360,7 @@ declare module '@polkadot/api/types/events' {
       /**
        * A code with the specified hash was removed.
        * \[code_hash\]
-       *
+       * 
        * This happens when the last contract that uses this code hash was removed or evicted.
        **/
       CodeRemoved: AugmentedEvent<ApiType, [Hash]>;
@@ -368,9 +371,9 @@ declare module '@polkadot/api/types/events' {
       /**
        * A custom event emitted by the contract.
        * \[contract, data\]
-       *
+       * 
        * # Params
-       *
+       * 
        * - `contract`: The contract that emitted the event.
        * - `data`: Data supplied by the contract. Metadata generated during contract
        * compilation is needed to decode it.
@@ -387,9 +390,9 @@ declare module '@polkadot/api/types/events' {
       /**
        * Restoration of a contract has been successful.
        * \[restorer, dest, code_hash, rent_allowance\]
-       *
+       * 
        * # Params
-       *
+       * 
        * - `restorer`: Account ID of the restoring contract.
        * - `dest`: Account ID of the restored contract.
        * - `code_hash`: Code hash of the restored contract.
@@ -399,9 +402,9 @@ declare module '@polkadot/api/types/events' {
       /**
        * Triggered when the current schedule is updated.
        * \[version\]
-       *
+       * 
        * # Params
-       *
+       * 
        * - `version`: The version of the newly set schedule.
        **/
       ScheduleUpdated: AugmentedEvent<ApiType, [u32]>;
@@ -412,14 +415,14 @@ declare module '@polkadot/api/types/events' {
       /**
        * Contract has been terminated without leaving a tombstone.
        * \[contract, beneficiary\]
-       *
+       * 
        * # Params
-       *
+       * 
        * - `contract`: The contract that was terminated.
        * - `beneficiary`: The account that received the contracts remaining balance.
-       *
+       * 
        * # Note
-       *
+       * 
        * The only way for a contract to be removed without a tombstone and emitting
        * this event is by calling `seal_terminate`.
        **/

@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2015",
+    "module": "ES2015",
+    "esModuleInterop": true,
+    "moduleResolution": "Node",
+    "baseUrl": ".",
+    "paths":
+    {
+      "@t3rn/types": ["../types"]
+    },
+    "skipLibCheck": true
+  }
+}

@@ -3,3 +3,6 @@
 
 export * from './primitives/types';
 export * from './xdns/types';
+export * from './contracts_registry/types';
+export * from './execution_delivery/types';
+export * from './volatile_vm/types';

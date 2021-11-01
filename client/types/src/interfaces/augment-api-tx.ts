@@ -11,7 +11,9 @@ import type { AccountId, Balance, BalanceOf, BlockNumber, Call, ChangesTrieConfi
 import type { Keys } from '@polkadot/types/interfaces/session';
 import type { Key } from '@polkadot/types/interfaces/system';
 import type { AnyNumber } from '@polkadot/types/types';
-import type { Compose, GatewayABIConfig } from 't3rn-circuit-typegen/interfaces/primitives';
+import type { RegistryContract, RegistryContractId } from 't3rn-circuit-typegen/interfaces/contracts_registry';
+import type { StepConfirmation, XtxId } from 't3rn-circuit-typegen/interfaces/execution_delivery';
+import type { Compose, GatewayABIConfig, GatewayGenesisConfig, GatewayType, GatewayVendor } from 't3rn-circuit-typegen/interfaces/primitives';
 import type { XdnsRecordId } from 't3rn-circuit-typegen/interfaces/xdns';
 
 declare module '@polkadot/api/types/submittable' {
@@ -28,14 +30,14 @@ declare module '@polkadot/api/types/submittable' {
       forceTransfer: AugmentedSubmittable<(source: LookupSource | { Id: any } | { Index: any } | { Raw: any } | { Address32: any } | { Address20: any } | string | Uint8Array, dest: LookupSource | { Id: any } | { Index: any } | { Raw: any } | { Address32: any } | { Address20: any } | string | Uint8Array, value: Compact<Balance> | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [LookupSource, LookupSource, Compact<Balance>]>;
       /**
        * Set the balances of a given account.
-       *
+       * 
        * This will alter `FreeBalance` and `ReservedBalance` in storage. it will
        * also decrease the total issuance of the system (`TotalIssuance`).
        * If the new free or reserved balance is below the existential deposit,
        * it will reset the account nonce (`frame_system::AccountNonce`).
-       *
+       * 
        * The dispatch origin for this call is `root`.
-       *
+       * 
        * # <weight>
        * - Independent of the arguments.
        * - Contains a limited number of reads and writes.
@@ -49,21 +51,21 @@ declare module '@polkadot/api/types/submittable' {
       setBalance: AugmentedSubmittable<(who: LookupSource | { Id: any } | { Index: any } | { Raw: any } | { Address32: any } | { Address20: any } | string | Uint8Array, newFree: Compact<Balance> | AnyNumber | Uint8Array, newReserved: Compact<Balance> | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [LookupSource, Compact<Balance>, Compact<Balance>]>;
       /**
        * Transfer some liquid free balance to another account.
-       *
+       * 
        * `transfer` will set the `FreeBalance` of the sender and receiver.
        * It will decrease the total issuance of the system by the `TransferFee`.
        * If the sender's account is below the existential deposit as a result
        * of the transfer, the account will be reaped.
-       *
+       * 
        * The dispatch origin for this call must be `Signed` by the transactor.
-       *
+       * 
        * # <weight>
        * - Dependent on arguments but not critical, given proper implementations for
        * input config types. See related functions below.
        * - It contains a limited number of reads and writes internally and no complex computation.
-       *
+       * 
        * Related functions:
-       *
+       * 
        * - `ensure_can_withdraw` is always called internally but has a bounded complexity.
        * - Transferring balances to accounts that did not exist before will cause
        * `T::OnNewAccount::on_new_account` to be called.
@@ -79,15 +81,15 @@ declare module '@polkadot/api/types/submittable' {
       transfer: AugmentedSubmittable<(dest: LookupSource | { Id: any } | { Index: any } | { Raw: any } | { Address32: any } | { Address20: any } | string | Uint8Array, value: Compact<Balance> | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [LookupSource, Compact<Balance>]>;
       /**
        * Transfer the entire transferable balance from the caller account.
-       *
+       * 
        * NOTE: This function only attempts to transfer _transferable_ balances. This means that
        * any locked, reserved, or existential deposits (when `keep_alive` is `true`), will not be
        * transferred by this function. To ensure that this function results in a killed account,
        * you might need to prepare the account by removing any reference counters, storage
        * deposits, etc...
-       *
+       * 
        * The dispatch origin of this call must be Signed.
-       *
+       * 
        * - `dest`: The recipient of the transfer.
        * - `keep_alive`: A boolean to determine if the `transfer_all` operation should send all
        * of the funds the account has, causing the sender account to be killed (false), or
@@ -101,9 +103,9 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Same as the [`transfer`] call, but with a check that the transfer will not kill the
        * origin account.
-       *
+       * 
        * 99% of the time you want [`transfer`] instead.
-       *
+       * 
        * [`transfer`]: struct.Pallet.html#method.transfer
        * # <weight>
        * - Cheaper than transfer because account cannot be killed.
@@ -120,11 +122,11 @@ declare module '@polkadot/api/types/submittable' {
     bridgeGatewayGrandpa: {
       /**
        * Bootstrap the bridge pallet with an initial header and authority set from which to sync.
-       *
+       * 
        * The initial configuration provided does not need to be the genesis header of the bridged
        * chain, it can be any arbirary header. You can also provide the next scheduled set change
        * if it is already know.
-       *
+       * 
        * This function is only allowed to be called from a trusted origin and writes to storage
        * with practically no checks in terms of the validity of the data. It is important that
        * you ensure that valid data is being passed in.
@@ -132,22 +134,22 @@ declare module '@polkadot/api/types/submittable' {
       initialize: AugmentedSubmittable<(initData: InitializationData | { header?: any; authorityList?: any; setId?: any; isHalted?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [InitializationData]>;
       /**
        * Halt or resume all pallet operations.
-       *
+       * 
        * May only be called either by root, or by `PalletOwner`.
        **/
       setOperational: AugmentedSubmittable<(operational: bool | boolean | Uint8Array) => SubmittableExtrinsic<ApiType>, [bool]>;
       /**
        * Change `PalletOwner`.
-       *
+       * 
        * May only be called either by root, or by `PalletOwner`.
        **/
       setOwner: AugmentedSubmittable<(newOwner: Option<AccountId> | null | object | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Option<AccountId>]>;
       /**
        * Verify a target header is finalized according to the given finality proof.
-       *
+       * 
        * It will use the underlying storage pallet to fetch information about the current
        * authorities and best finalized header in order to verify that the header is finalized.
-       *
+       * 
        * If successful in verification, it will write the target header to the underlying storage
        * pallet.
        **/
@@ -168,7 +170,7 @@ declare module '@polkadot/api/types/submittable' {
       receiveMessagesDeliveryProof: AugmentedSubmittable<(proof: MessagesDeliveryProofOf | { bridgedHeaderHash?: any; storageProof?: any; lane?: any } | string | Uint8Array, relayersState: UnrewardedRelayersState | { unrewardedRelayer_Entries?: any; messagesInOldestEntry?: any; totalMessages?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [MessagesDeliveryProofOf, UnrewardedRelayersState]>;
       /**
        * Receive messages proof from bridged chain.
-       *
+       * 
        * The weight of the call assumes that the transaction always brings outbound lane
        * state update. Because of that, the submitter (relayer) has no benefit of not including
        * this data in the transaction, so reward confirmations lags should be minimal.
@@ -180,21 +182,21 @@ declare module '@polkadot/api/types/submittable' {
       sendMessage: AugmentedSubmittable<(laneId: LaneId | string | Uint8Array, payload: OutboundPayload | { specVersion?: any; weight?: any; origin?: any; dispatchFeePayment?: any; call?: any } | string | Uint8Array, deliveryAndDispatchFee: OutboundMessageFee | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [LaneId, OutboundPayload, OutboundMessageFee]>;
       /**
        * Halt or resume all/some pallet operations.
-       *
+       * 
        * May only be called either by root, or by `PalletOwner`.
        **/
       setOperatingMode: AugmentedSubmittable<(operatingMode: OperatingMode | 'Normal' | 'RejectingOutboundMessages' | 'Halted' | number | Uint8Array) => SubmittableExtrinsic<ApiType>, [OperatingMode]>;
       /**
        * Change `PalletOwner`.
-       *
+       * 
        * May only be called either by root, or by `PalletOwner`.
        **/
       setOwner: AugmentedSubmittable<(newOwner: Option<AccountId> | null | object | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Option<AccountId>]>;
       /**
        * Update pallet parameter.
-       *
+       * 
        * May only be called either by root, or by `PalletOwner`.
-       *
+       * 
        * The weight is: single read for permissions check + 2 writes for parameter value and event.
        **/
       updatePalletParameter: AugmentedSubmittable<(parameter: Parameter | null) => SubmittableExtrinsic<ApiType>, [Parameter]>;
@@ -206,11 +208,11 @@ declare module '@polkadot/api/types/submittable' {
     bridgePolkadotLikeMultiFinalityVerifier: {
       /**
        * Bootstrap the bridge pallet with an initial header and authority set from which to sync.
-       *
+       * 
        * The initial configuration provided does not need to be the genesis header of the bridged
        * chain, it can be any arbirary header. You can also provide the next scheduled set change
        * if it is already know.
-       *
+       * 
        * This function is only allowed to be called from a trusted origin and writes to storage
        * with practically no checks in terms of the validity of the data. It is important that
        * you ensure that valid data is being passed in.
@@ -218,22 +220,22 @@ declare module '@polkadot/api/types/submittable' {
       initializeSingle: AugmentedSubmittable<(initData: InitializationData | { header?: any; authorityList?: any; setId?: any; isHalted?: any } | string | Uint8Array, gatewayId: ChainId | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [InitializationData, ChainId]>;
       /**
        * Halt or resume all pallet operations.
-       *
+       * 
        * May only be called either by root, or by `PalletOwner`.
        **/
       setOperational: AugmentedSubmittable<(operational: bool | boolean | Uint8Array, gatewayId: ChainId | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [bool, ChainId]>;
       /**
        * Change `PalletOwner`.
-       *
+       * 
        * May only be called either by root, or by `PalletOwner`.
        **/
       setOwner: AugmentedSubmittable<(newOwner: Option<AccountId> | null | object | string | Uint8Array, gatewayId: ChainId | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Option<AccountId>, ChainId]>;
       /**
        * Verify a target header is finalized according to the given finality proof.
-       *
+       * 
        * It will use the underlying storage pallet to fetch information about the current
        * authorities and best finalized header in order to verify that the header is finalized.
-       *
+       * 
        * If successful in verification, it will write the target header to the underlying storage
        * pallet.
        **/
@@ -250,7 +252,7 @@ declare module '@polkadot/api/types/submittable' {
     contracts: {
       /**
        * Makes a call to an account, optionally transferring some balance.
-       *
+       * 
        * * If the account is a smart-contract account, the associated code will be
        * executed and any value will be transferred.
        * * If the account is a regular account, any value will be transferred.
@@ -261,18 +263,18 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Allows block producers to claim a small reward for evicting a contract. If a block
        * producer fails to do so, a regular users will be allowed to claim the reward.
-       *
+       * 
        * In case of a successful eviction no fees are charged from the sender. However, the
        * reward is capped by the total amount of rent that was paid by the contract while
        * it was alive.
-       *
+       * 
        * If contract is not evicted as a result of this call, [`Error::ContractNotEvictable`]
        * is returned and the sender is not eligible for the reward.
        **/
       claimSurcharge: AugmentedSubmittable<(dest: AccountId | string | Uint8Array, auxSender: Option<AccountId> | null | object | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [AccountId, Option<AccountId>]>;
       /**
        * Instantiates a contract from a previously deployed wasm binary.
-       *
+       * 
        * This function is identical to [`Self::instantiate_with_code`] but without the
        * code deployment step. Instead, the `code_hash` of an on-chain deployed wasm binary
        * must be supplied.
@@ -281,19 +283,19 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Instantiates a new contract from the supplied `code` optionally transferring
        * some balance.
-       *
+       * 
        * This is the only function that can deploy new code to the chain.
-       *
+       * 
        * # Parameters
-       *
+       * 
        * * `endowment`: The balance to transfer from the `origin` to the newly created contract.
        * * `gas_limit`: The gas limit enforced when executing the constructor.
        * * `code`: The contract code to deploy in raw bytes.
        * * `data`: The input data to pass to the contract constructor.
        * * `salt`: Used for the address derivation. See [`Pallet::contract_address`].
-       *
+       * 
        * Instantiation is executed as follows:
-       *
+       * 
        * - The supplied `code` is instrumented, deployed, and a `code_hash` is created for that code.
        * - If the `code_hash` already exists on the chain the underlying `code` will be shared.
        * - The destination address is computed based on the sender, code_hash and the salt.
@@ -311,11 +313,11 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Inserts a contract into the on-chain registry. Root only access.
        **/
-      addNewContract: AugmentedSubmittable<(requester: AccountId | string | Uint8Array, contract: RegistryContract) => SubmittableExtrinsic<ApiType>, [AccountId, RegistryContract]>;
+      addNewContract: AugmentedSubmittable<(requester: AccountId | string | Uint8Array, contract: RegistryContract | { code_txt?: any; bytes?: any; author?: any; author_fees_per_single_use?: any; abi?: any; action_descriptions?: any; info?: any; meta?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [AccountId, RegistryContract]>;
       /**
        * Removes a contract from the onchain registry. Root only access.
        **/
-      purge: AugmentedSubmittable<(requester: AccountId | string | Uint8Array, contractId: RegistryContractId) => SubmittableExtrinsic<ApiType>, [AccountId, RegistryContractId]>;
+      purge: AugmentedSubmittable<(requester: AccountId | string | Uint8Array, contractId: RegistryContractId | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [AccountId, RegistryContractId]>;
       /**
        * Generic tx
        **/
@@ -324,10 +326,10 @@ declare module '@polkadot/api/types/submittable' {
     ethereumLightClient: {
       /**
        * Import a single Ethereum PoW header.
-       *
+       * 
        * Note that this extrinsic has a very high weight. The weight is affected by the
        * value of `DescendantsUntilFinalized`. Regenerate weights if it changes.
-       *
+       * 
        * The largest contributors to the worst case weight, in decreasing order, are:
        * - Pruning: max 2 writes per pruned header + 2 writes to finalize pruning state.
        * Up to `HEADERS_TO_PRUNE_IN_SINGLE_IMPORT` can be pruned in one call.
@@ -343,9 +345,9 @@ declare module '@polkadot/api/types/submittable' {
       [key: string]: SubmittableExtrinsicFunction<ApiType>;
     };
     execDelivery: {
-      registerGateway: AugmentedSubmittable<(url: Bytes | string | Uint8Array, gatewayId: ChainId | string | Uint8Array, gatewayAbi: GatewayABIConfig | { block_number_type_size?: any; hash_size?: any; hasher?: any; crypto?: any; address_length?: any; value_type_size?: any; decimals?: any; structs?: any } | string | Uint8Array, gatewayVendor: GatewayVendor, gatewayType: GatewayType, gatewayGenesis: GatewayGenesisConfig, firstHeader: Bytes | string | Uint8Array, authorities: Option<Vec<AccountId>> | null | object | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Bytes, ChainId, GatewayABIConfig, GatewayVendor, GatewayType, GatewayGenesisConfig, Bytes, Option<Vec<AccountId>>]>;
+      registerGateway: AugmentedSubmittable<(url: Bytes | string | Uint8Array, gatewayId: ChainId | string | Uint8Array, gatewayAbi: GatewayABIConfig | { block_number_type_size?: any; hash_size?: any; hasher?: any; crypto?: any; address_length?: any; value_type_size?: any; decimals?: any; structs?: any } | string | Uint8Array, gatewayVendor: GatewayVendor | 'Substrate' | 'Ethereum' | number | Uint8Array, gatewayType: GatewayType | 'Internal' | 'External' | number | Uint8Array, gatewayGenesis: GatewayGenesisConfig | { modules_encoded?: any; signed_extension?: any; runtime_version?: any; extrinsics_version?: any; genesis_hash?: any } | string | Uint8Array, firstHeader: Bytes | string | Uint8Array, authorities: Option<Vec<AccountId>> | null | object | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Bytes, ChainId, GatewayABIConfig, GatewayVendor, GatewayType, GatewayGenesisConfig, Bytes, Option<Vec<AccountId>>]>;
       submitComposableExecOrder: AugmentedSubmittable<(ioSchedule: Bytes | string | Uint8Array, components: Vec<Compose> | (Compose | { name?: any; code_txt?: any; exec_type?: any; dest?: any; value?: any; bytes?: any; input_data?: any } | string | Uint8Array)[]) => SubmittableExtrinsic<ApiType>, [Bytes, Vec<Compose>]>;
-      submitStepConfirmation: AugmentedSubmittable<(stepConfirmation: StepConfirmation, xtxId: XtxId) => SubmittableExtrinsic<ApiType>, [StepConfirmation, XtxId]>;
+      submitStepConfirmation: AugmentedSubmittable<(stepConfirmation: StepConfirmation | { step_index?: any; value?: any; proof?: any; outbound_event?: any } | string | Uint8Array, xtxId: XtxId | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [StepConfirmation, XtxId]>;
       /**
        * Generic tx
        **/
@@ -374,7 +376,7 @@ declare module '@polkadot/api/types/submittable' {
        * equivocation proof and validate the given key ownership proof
        * against the extracted offender. If both are valid, the offence
        * will be reported.
-       *
+       * 
        * This extrinsic must be called unsigned and it is expected that only
        * block authors will call it (validated in `ValidateUnsigned`), as such
        * if the block author is defined it will be defined as the equivocation
@@ -389,11 +391,11 @@ declare module '@polkadot/api/types/submittable' {
     multiFinalityVerifier: {
       /**
        * Bootstrap the bridge pallet with an initial header and authority set from which to sync.
-       *
+       * 
        * The initial configuration provided does not need to be the genesis header of the bridged
        * chain, it can be any arbirary header. You can also provide the next scheduled set change
        * if it is already know.
-       *
+       * 
        * This function is only allowed to be called from a trusted origin and writes to storage
        * with practically no checks in terms of the validity of the data. It is important that
        * you ensure that valid data is being passed in.
@@ -401,22 +403,22 @@ declare module '@polkadot/api/types/submittable' {
       initializeSingle: AugmentedSubmittable<(initData: InitializationData | { header?: any; authorityList?: any; setId?: any; isHalted?: any } | string | Uint8Array, gatewayId: ChainId | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [InitializationData, ChainId]>;
       /**
        * Halt or resume all pallet operations.
-       *
+       * 
        * May only be called either by root, or by `PalletOwner`.
        **/
       setOperational: AugmentedSubmittable<(operational: bool | boolean | Uint8Array, gatewayId: ChainId | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [bool, ChainId]>;
       /**
        * Change `PalletOwner`.
-       *
+       * 
        * May only be called either by root, or by `PalletOwner`.
        **/
       setOwner: AugmentedSubmittable<(newOwner: Option<AccountId> | null | object | string | Uint8Array, gatewayId: ChainId | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Option<AccountId>, ChainId]>;
       /**
        * Verify a target header is finalized according to the given finality proof.
-       *
+       * 
        * It will use the underlying storage pallet to fetch information about the current
        * authorities and best finalized header in order to verify that the header is finalized.
-       *
+       * 
        * If successful in verification, it will write the target header to the underlying storage
        * pallet.
        **/
@@ -434,9 +436,9 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Removes any session key(s) of the function caller.
        * This doesn't take effect until the next session.
-       *
+       * 
        * The dispatch origin of this function must be signed.
-       *
+       * 
        * # <weight>
        * - Complexity: `O(1)` in number of key types.
        * Actual cost depends on the number of length of `T::Keys::key_ids()` which is fixed.
@@ -450,9 +452,9 @@ declare module '@polkadot/api/types/submittable' {
        * Sets the session key(s) of the function caller to `keys`.
        * Allows an account to set its session key prior to becoming a validator.
        * This doesn't take effect until the next session.
-       *
+       * 
        * The dispatch origin of this function must be signed.
-       *
+       * 
        * # <weight>
        * - Complexity: `O(1)`
        * Actual cost depends on the number of length of `T::Keys::key_ids()` which is fixed.
@@ -471,9 +473,9 @@ declare module '@polkadot/api/types/submittable' {
     sudo: {
       /**
        * Authenticates the current sudo key and sets the given AccountId (`new`) as the new sudo key.
-       *
+       * 
        * The dispatch origin for this call must be _Signed_.
-       *
+       * 
        * # <weight>
        * - O(1).
        * - Limited storage reads.
@@ -483,9 +485,9 @@ declare module '@polkadot/api/types/submittable' {
       setKey: AugmentedSubmittable<(updated: LookupSource | { Id: any } | { Index: any } | { Raw: any } | { Address32: any } | { Address20: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [LookupSource]>;
       /**
        * Authenticates the sudo key and dispatches a function call with `Root` origin.
-       *
+       * 
        * The dispatch origin for this call must be _Signed_.
-       *
+       * 
        * # <weight>
        * - O(1).
        * - Limited storage reads.
@@ -497,9 +499,9 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Authenticates the sudo key and dispatches a function call with `Signed` origin from
        * a given account.
-       *
+       * 
        * The dispatch origin for this call must be _Signed_.
-       *
+       * 
        * # <weight>
        * - O(1).
        * - Limited storage reads.
@@ -512,9 +514,9 @@ declare module '@polkadot/api/types/submittable' {
        * Authenticates the sudo key and dispatches a function call with `Root` origin.
        * This function does not check the weight of the call, and instead allows the
        * Sudo user to specify the weight of the call.
-       *
+       * 
        * The dispatch origin for this call must be _Signed_.
-       *
+       * 
        * # <weight>
        * - O(1).
        * - The weight of this call is defined by the caller.
@@ -533,10 +535,10 @@ declare module '@polkadot/api/types/submittable' {
       fillBlock: AugmentedSubmittable<(ratio: Perbill | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [Perbill]>;
       /**
        * Kill all storage items with a key that starts with the given prefix.
-       *
+       * 
        * **NOTE:** We rely on the Root origin to provide us the number of subkeys under
        * the prefix we are removing to accurately calculate the weight of this function.
-       *
+       * 
        * # <weight>
        * - `O(P)` where `P` amount of keys with prefix `prefix`
        * - `P` storage deletions.
@@ -547,7 +549,7 @@ declare module '@polkadot/api/types/submittable' {
       killPrefix: AugmentedSubmittable<(prefix: Key | string | Uint8Array, subkeys: u32 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [Key, u32]>;
       /**
        * Kill some items from storage.
-       *
+       * 
        * # <weight>
        * - `O(IK)` where `I` length of `keys` and `K` length of one key
        * - `I` storage deletions.
@@ -558,7 +560,7 @@ declare module '@polkadot/api/types/submittable' {
       killStorage: AugmentedSubmittable<(keys: Vec<Key> | (Key | string | Uint8Array)[]) => SubmittableExtrinsic<ApiType>, [Vec<Key>]>;
       /**
        * Make some on-chain remark.
-       *
+       * 
        * # <weight>
        * - `O(1)`
        * # </weight>
@@ -566,7 +568,7 @@ declare module '@polkadot/api/types/submittable' {
       remark: AugmentedSubmittable<(remark: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Bytes]>;
       /**
        * Make some on-chain remark and emit event.
-       *
+       * 
        * # <weight>
        * - `O(b)` where b is the length of the remark.
        * - 1 event.
@@ -575,7 +577,7 @@ declare module '@polkadot/api/types/submittable' {
       remarkWithEvent: AugmentedSubmittable<(remark: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Bytes]>;
       /**
        * Set the new changes trie configuration.
-       *
+       * 
        * # <weight>
        * - `O(1)`
        * - 1 storage write or delete (codec `O(1)`).
@@ -588,7 +590,7 @@ declare module '@polkadot/api/types/submittable' {
       setChangesTrieConfig: AugmentedSubmittable<(changesTrieConfig: Option<ChangesTrieConfiguration> | null | object | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Option<ChangesTrieConfiguration>]>;
       /**
        * Set the new runtime code.
-       *
+       * 
        * # <weight>
        * - `O(C + S)` where `C` length of `code` and `S` complexity of `can_set_code`
        * - 1 storage write (codec `O(C)`).
@@ -601,7 +603,7 @@ declare module '@polkadot/api/types/submittable' {
       setCode: AugmentedSubmittable<(code: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Bytes]>;
       /**
        * Set the new runtime code without doing any checks of the given `code`.
-       *
+       * 
        * # <weight>
        * - `O(C)` where `C` length of `code`
        * - 1 storage write (codec `O(C)`).
@@ -612,7 +614,7 @@ declare module '@polkadot/api/types/submittable' {
       setCodeWithoutChecks: AugmentedSubmittable<(code: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Bytes]>;
       /**
        * Set the number of pages in the WebAssembly environment's heap.
-       *
+       * 
        * # <weight>
        * - `O(1)`
        * - 1 storage write.
@@ -623,7 +625,7 @@ declare module '@polkadot/api/types/submittable' {
       setHeapPages: AugmentedSubmittable<(pages: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [u64]>;
       /**
        * Set some items of storage.
-       *
+       * 
        * # <weight>
        * - `O(I)` where `I` length of `items`
        * - `I` storage writes (`O(1)`).
@@ -640,15 +642,15 @@ declare module '@polkadot/api/types/submittable' {
     timestamp: {
       /**
        * Set the current time.
-       *
+       * 
        * This call should be invoked exactly once per block. It will panic at the finalization
        * phase, if this call hasn't been invoked by that time.
-       *
+       * 
        * The timestamp should be greater than the previous one by the amount specified by
        * `MinimumPeriod`.
-       *
+       * 
        * The dispatch origin for this call must be `Inherent`.
-       *
+       * 
        * # <weight>
        * - `O(1)` (Note that implementations of `OnTimestampSet` must also be `O(1)`)
        * - 1 storage read and 1 storage mutation (codec `O(1)`). (because of `DidUpdate::take` in `on_finalize`)
@@ -664,34 +666,34 @@ declare module '@polkadot/api/types/submittable' {
     utility: {
       /**
        * Send a call through an indexed pseudonym of the sender.
-       *
+       * 
        * Filter from origin are passed along. The call will be dispatched with an origin which
        * use the same filter as the origin of this call.
-       *
+       * 
        * NOTE: If you need to ensure that any account-based filtering is not honored (i.e.
        * because you expect `proxy` to have been used prior in the call stack and you do not want
        * the call restrictions to apply to any sub-accounts), then use `as_multi_threshold_1`
        * in the Multisig pallet instead.
-       *
+       * 
        * NOTE: Prior to version *12, this was called `as_limited_sub`.
-       *
+       * 
        * The dispatch origin for this call must be _Signed_.
        **/
       asDerivative: AugmentedSubmittable<(index: u16 | AnyNumber | Uint8Array, call: Call | { callIndex?: any; args?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [u16, Call]>;
       /**
        * Send a batch of dispatch calls.
-       *
+       * 
        * May be called from any origin.
-       *
+       * 
        * - `calls`: The calls to be dispatched from the same origin.
-       *
+       * 
        * If origin is root then call are dispatch without checking origin filter. (This includes
        * bypassing `frame_system::Config::BaseCallFilter`).
-       *
+       * 
        * # <weight>
        * - Complexity: O(C) where C is the number of calls to be batched.
        * # </weight>
-       *
+       * 
        * This will return `Ok` in all circumstances. To determine the success of the batch, an
        * event is deposited. If a call failed and the batch was interrupted, then the
        * `BatchInterrupted` event is deposited, along with the number of successful calls made
@@ -702,14 +704,14 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Send a batch of dispatch calls and atomically execute them.
        * The whole transaction will rollback and fail if any of the calls failed.
-       *
+       * 
        * May be called from any origin.
-       *
+       * 
        * - `calls`: The calls to be dispatched from the same origin.
-       *
+       * 
        * If origin is root then call are dispatch without checking origin filter. (This includes
        * bypassing `frame_system::Config::BaseCallFilter`).
-       *
+       * 
        * # <weight>
        * - Complexity: O(C) where C is the number of calls to be batched.
        * # </weight>
@@ -730,7 +732,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Inserts a xdns_record into the on-chain registry. Root only access.
        **/
-      addNewXdnsRecord: AugmentedSubmittable<(url: Bytes | string | Uint8Array, gatewayId: ChainId | string | Uint8Array, gatewayAbi: GatewayABIConfig | { block_number_type_size?: any; hash_size?: any; hasher?: any; crypto?: any; address_length?: any; value_type_size?: any; decimals?: any; structs?: any } | string | Uint8Array, gatewayVendor: GatewayVendor, gatewayType: GatewayType, gatewayGenesis: GatewayGenesisConfig) => SubmittableExtrinsic<ApiType>, [Bytes, ChainId, GatewayABIConfig, GatewayVendor, GatewayType, GatewayGenesisConfig]>;
+      addNewXdnsRecord: AugmentedSubmittable<(url: Bytes | string | Uint8Array, gatewayId: ChainId | string | Uint8Array, gatewayAbi: GatewayABIConfig | { block_number_type_size?: any; hash_size?: any; hasher?: any; crypto?: any; address_length?: any; value_type_size?: any; decimals?: any; structs?: any } | string | Uint8Array, gatewayVendor: GatewayVendor | 'Substrate' | 'Ethereum' | number | Uint8Array, gatewayType: GatewayType | 'Internal' | 'External' | number | Uint8Array, gatewayGenesis: GatewayGenesisConfig | { modules_encoded?: any; signed_extension?: any; runtime_version?: any; extrinsics_version?: any; genesis_hash?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Bytes, ChainId, GatewayABIConfig, GatewayVendor, GatewayType, GatewayGenesisConfig]>;
       /**
        * Removes a xdns_record from the onchain registry. Root only access.
        **/

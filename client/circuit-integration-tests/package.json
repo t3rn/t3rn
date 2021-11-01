@@ -1,15 +1,15 @@
 {
-  "name": "circuit-integration-tests",
+  "name": "@t3rn/integration-tests",
   "version": "0.1.0",
   "license": "Apache-2.0",
   "scripts": {
     "test": "mocha -r ts-node/register 'test/**/*.test.ts' --exit",
-    "test:watch": "mocha -r ts-node/register 'test/**/*.test.ts --watch'"
+    "test:watch": "mocha -r ts-node/register 'test/**/*.test.ts' --watch"
   },
+  "private": true,
   "devDependencies": {
-    "@babel/preset-typescript": "^7.15.0",
-    "@babel/runtime": "^7.15.4",
     "@polkadot/api": "^6.5.2",
+    "@t3rn/types": "file:../types",
     "@types/chai": "^4.2.22",
     "@types/mocha": "^9.0.0",
     "chai": "^4.3.4",

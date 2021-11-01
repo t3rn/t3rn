@@ -13,6 +13,8 @@ import type { Keys, SessionIndex } from '@polkadot/types/interfaces/session';
 import type { AccountInfo, ConsumedWeight, DigestOf, EventIndex, EventRecord, LastRuntimeUpgradeInfo, Phase } from '@polkadot/types/interfaces/system';
 import type { Multiplier } from '@polkadot/types/interfaces/txpayment';
 import type { AnyNumber, ITuple, Observable } from '@polkadot/types/types';
+import type { RegistryContract, RegistryContractId } from 't3rn-circuit-typegen/interfaces/contracts_registry';
+import type { Xtx, XtxId } from 't3rn-circuit-typegen/interfaces/execution_delivery';
 import type { XdnsRecord, XdnsRecordId } from 't3rn-circuit-typegen/interfaces/xdns';
 
 declare module '@polkadot/api/types/storage' {
@@ -20,7 +22,7 @@ declare module '@polkadot/api/types/storage' {
     balances: {
       /**
        * The balance of an account.
-       *
+       * 
        * NOTE: This is only used in the case that this pallet is used to store balances.
        **/
       account: AugmentedQuery<ApiType, (arg: AccountId | string | Uint8Array) => Observable<AccountData>, [AccountId]> & QueryableStorageEntry<ApiType, [AccountId]>;
@@ -35,7 +37,7 @@ declare module '@polkadot/api/types/storage' {
       reserves: AugmentedQuery<ApiType, (arg: AccountId | string | Uint8Array) => Observable<Vec<ReserveData>>, [AccountId]> & QueryableStorageEntry<ApiType, [AccountId]>;
       /**
        * Storage version of the pallet.
-       *
+       * 
        * This is set to v2.0.0 for new networks.
        **/
       storageVersion: AugmentedQuery<ApiType, () => Observable<Releases>, []> & QueryableStorageEntry<ApiType, []>;
@@ -79,7 +81,7 @@ declare module '@polkadot/api/types/storage' {
       isHalted: AugmentedQuery<ApiType, () => Observable<bool>, []> & QueryableStorageEntry<ApiType, []>;
       /**
        * Optional pallet owner.
-       *
+       * 
        * Pallet owner has a right to halt all pallet operations and then resume it. If it is
        * `None`, then there are no direct ways to halt/resume pallet operations, but other
        * runtime methods may still be used to do that (i.e. democracy::referendum to update halt
@@ -88,10 +90,10 @@ declare module '@polkadot/api/types/storage' {
       palletOwner: AugmentedQuery<ApiType, () => Observable<Option<AccountId>>, []> & QueryableStorageEntry<ApiType, []>;
       /**
        * The current number of requests which have written to storage.
-       *
+       * 
        * If the `RequestCount` hits `MaxRequests`, no more calls will be allowed to the pallet until
        * the request capacity is increased.
-       *
+       * 
        * The `RequestCount` is decreased by one at the beginning of every block. This is to ensure
        * that the pallet can always make progress.
        **/
@@ -116,13 +118,13 @@ declare module '@polkadot/api/types/storage' {
       outboundMessages: AugmentedQuery<ApiType, (arg: MessageKey | { laneId?: any; nonce?: any } | string | Uint8Array) => Observable<Option<MessageData>>, [MessageKey]> & QueryableStorageEntry<ApiType, [MessageKey]>;
       /**
        * The current operating mode of the pallet.
-       *
+       * 
        * Depending on the mode either all, some, or no transactions will be allowed.
        **/
       palletOperatingMode: AugmentedQuery<ApiType, () => Observable<OperatingMode>, []> & QueryableStorageEntry<ApiType, []>;
       /**
        * Optional pallet owner.
-       *
+       * 
        * Pallet owner has a right to halt all pallet operations and then resume it. If it is
        * `None`, then there are no direct ways to halt/resume pallet operations, but other
        * runtime methods may still be used to do that (i.e. democracy::referendum to update halt
@@ -177,7 +179,7 @@ declare module '@polkadot/api/types/storage' {
       multiImportedRoots: AugmentedQuery<ApiType, (arg1: ChainId | string | Uint8Array, arg2: BridgedBlockHash | string | Uint8Array) => Observable<Option<ITuple<[BridgedBlockHash, BridgedBlockHash]>>>, [ChainId, BridgedBlockHash]> & QueryableStorageEntry<ApiType, [ChainId, BridgedBlockHash]>;
       /**
        * Optional pallet owner.
-       *
+       * 
        * Pallet owner has a right to halt all pallet operations and then resume it. If it is
        * `None`, then there are no direct ways to halt/resume pallet operations, but other
        * runtime methods may still be used to do that (i.e. democracy::referendum to update halt
@@ -186,7 +188,7 @@ declare module '@polkadot/api/types/storage' {
       palletOwner: AugmentedQuery<ApiType, () => Observable<Option<AccountId>>, []> & QueryableStorageEntry<ApiType, []>;
       /**
        * Optional pallet owner.
-       *
+       * 
        * Pallet owner has a right to halt all pallet operations and then resume it. If it is
        * `None`, then there are no direct ways to halt/resume pallet operations, but other
        * runtime methods may still be used to do that (i.e. democracy::referendum to update halt
@@ -195,10 +197,10 @@ declare module '@polkadot/api/types/storage' {
       palletOwnerMap: AugmentedQuery<ApiType, (arg: ChainId | string | Uint8Array) => Observable<Option<AccountId>>, [ChainId]> & QueryableStorageEntry<ApiType, [ChainId]>;
       /**
        * The current number of requests which have written to storage.
-       *
+       * 
        * If the `RequestCount` hits `MaxRequests`, no more calls will be allowed to the pallet until
        * the request capacity is increased.
-       *
+       * 
        * The `RequestCount` is decreased by one at the beginning of every block. This is to ensure
        * that the pallet can always make progress.
        **/
@@ -219,13 +221,13 @@ declare module '@polkadot/api/types/storage' {
       codeStorage: AugmentedQuery<ApiType, (arg: CodeHash | string | Uint8Array) => Observable<Option<PrefabWasmModule>>, [CodeHash]> & QueryableStorageEntry<ApiType, [CodeHash]>;
       /**
        * The code associated with a given account.
-       *
+       * 
        * TWOX-NOTE: SAFE since `AccountId` is a secure hash.
        **/
       contractInfoOf: AugmentedQuery<ApiType, (arg: AccountId | string | Uint8Array) => Observable<Option<ContractInfo>>, [AccountId]> & QueryableStorageEntry<ApiType, [AccountId]>;
       /**
        * Evicted contracts that await child trie deletion.
-       *
+       * 
        * Child trie deletion is a heavy operation depending on the amount of storage items
        * stored in said trie. Therefore this operation is performed lazily in `on_initialize`.
        **/
@@ -243,7 +245,7 @@ declare module '@polkadot/api/types/storage' {
       /**
        * The pre-validated composable contracts on-chain registry.
        **/
-      contractsRegistry: AugmentedQuery<ApiType, (arg: RegistryContractId) => Observable<Option<RegistryContract>>, [RegistryContractId]> & QueryableStorageEntry<ApiType, [RegistryContractId]>;
+      contractsRegistry: AugmentedQuery<ApiType, (arg: RegistryContractId | string | Uint8Array) => Observable<Option<RegistryContract>>, [RegistryContractId]> & QueryableStorageEntry<ApiType, [RegistryContractId]>;
       /**
        * Generic query
        **/
@@ -286,10 +288,10 @@ declare module '@polkadot/api/types/storage' {
     execDelivery: {
       /**
        * Current Circuit's context of active transactions
-       *
+       * 
        * The currently active composable transactions, indexed according to the order of creation.
        **/
-      activeXtxMap: AugmentedQuery<ApiType, (arg: XtxId) => Observable<Option<Xtx>>, [XtxId]> & QueryableStorageEntry<ApiType, [XtxId]>;
+      activeXtxMap: AugmentedQuery<ApiType, (arg: XtxId | string | Uint8Array) => Observable<Option<Xtx>>, [XtxId]> & QueryableStorageEntry<ApiType, [XtxId]>;
       /**
        * Generic query
        **/
@@ -312,7 +314,7 @@ declare module '@polkadot/api/types/storage' {
       /**
        * A mapping from grandpa set ID to the index of the *most recent* session for which its
        * members were responsible.
-       *
+       * 
        * TWOX-NOTE: `SetId` is not under user control.
        **/
       setIdSession: AugmentedQuery<ApiType, (arg: SetId | AnyNumber | Uint8Array) => Observable<Option<SessionIndex>>, [SetId]> & QueryableStorageEntry<ApiType, [SetId]>;
@@ -332,7 +334,7 @@ declare module '@polkadot/api/types/storage' {
     mmr: {
       /**
        * Hashes of the nodes in the MMR.
-       *
+       * 
        * Note this collection only contains MMR peaks, the inner nodes (and leaves)
        * are pruned and only stored in the Offchain DB.
        **/
@@ -353,7 +355,7 @@ declare module '@polkadot/api/types/storage' {
     mmrLeaf: {
       /**
        * Details of next BEEFY authority set.
-       *
+       * 
        * This storage entry is used as cache for calls to [`update_beefy_next_authority_set`].
        **/
       beefyNextAuthorities: AugmentedQuery<ApiType, () => Observable<BeefyNextAuthoritySet>, []> & QueryableStorageEntry<ApiType, []>;
@@ -381,7 +383,7 @@ declare module '@polkadot/api/types/storage' {
       currentIndex: AugmentedQuery<ApiType, () => Observable<SessionIndex>, []> & QueryableStorageEntry<ApiType, []>;
       /**
        * Indices of disabled validators.
-       *
+       * 
        * The set is cleared when `on_session_ending` returns a new set of identities.
        **/
       disabledValidators: AugmentedQuery<ApiType, () => Observable<Vec<u32>>, []> & QueryableStorageEntry<ApiType, []>;
@@ -454,11 +456,11 @@ declare module '@polkadot/api/types/storage' {
       /**
        * Mapping between a topic (represented by T::Hash) and a vector of indexes
        * of events in the `<Events<T>>` list.
-       *
+       * 
        * All topic vectors have deterministic storage locations depending on the topic. This
        * allows light-clients to leverage the changes trie storage tracking mechanism and
        * in case of changes fetch the list of events of interest.
-       *
+       * 
        * The value has the type `(T::BlockNumber, EventIndex)` because if we used only just
        * the `EventIndex` then in case if the topic has the same contents on the next block
        * no notification will be triggered thus the event might be lost.
@@ -531,7 +533,7 @@ declare module '@polkadot/api/types/storage' {
       accountCounter: AugmentedQuery<ApiType, () => Observable<u64>, []> & QueryableStorageEntry<ApiType, []>;
       /**
        * The code associated with a given account.
-       *
+       * 
        * TWOX-NOTE: SAFE since `AccountId` is a secure hash.
        **/
       contractInfoOf: AugmentedQuery<ApiType, (arg: AccountId | string | Uint8Array) => Observable<Option<ContractInfo>>, [AccountId]> & QueryableStorageEntry<ApiType, [AccountId]>;
@@ -542,7 +544,7 @@ declare module '@polkadot/api/types/storage' {
       declaredTargets: AugmentedQuery<ApiType, (arg: AccountId | string | Uint8Array) => Observable<Option<TargetId>>, [AccountId]> & QueryableStorageEntry<ApiType, [AccountId]>;
       /**
        * Evicted contracts that await child trie deletion.
-       *
+       * 
        * Child trie deletion is a heavy operation depending on the amount of storage items
        * stored in said trie. Therefore this operation is performed lazily in `on_initialize`.
        **/

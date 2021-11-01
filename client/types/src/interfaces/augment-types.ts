@@ -43,7 +43,7 @@ import type { ProxyAnnouncement, ProxyDefinition, ProxyType } from '@polkadot/ty
 import type { AccountStatus, AccountValidity } from '@polkadot/types/interfaces/purchase';
 import type { ActiveRecovery, RecoveryConfig } from '@polkadot/types/interfaces/recovery';
 import type { RpcMethods } from '@polkadot/types/interfaces/rpc';
-import type { AccountId, AccountId20, AccountId32, AccountIdOf, AccountIndex, Address, AssetId, Balance, BalanceOf, Block, BlockNumber, BlockNumberFor, BlockNumberOf, Call, CallHash, CallHashOf, ChangesTrieConfiguration, ChangesTrieSignal, CodecHash, Consensus, ConsensusEngineId, Digest, DigestItem, EncodedJustification, ExtrinsicsWeight, Fixed128, Fixed64, FixedI128, FixedI64, FixedU128, FixedU64, H1024, H128, H160, H2048, H256, H32, H512, H64, Hash, Header, HeaderPartial, I32F32, Index, IndicesLookupSource, Justification, Justifications, KeyTypeId, KeyValue, LockIdentifier, LookupSource, LookupTarget, ModuleId, Moment, MultiAddress, MultiSigner, OpaqueCall, Origin, OriginCaller, PalletId, PalletVersion, PalletsOrigin, Pays, PerU16, Perbill, Percent, Permill, Perquintill, Phantom, PhantomData, PreRuntime, Releases, RuntimeDbWeight, Seal, SealV0, SignedBlock, SignedBlockWithJustification, SignedBlockWithJustifications, Slot, StorageData, StorageProof, TransactionInfo, TransactionPriority, TransactionStorageProof, U32F32, ValidatorId, ValidatorIdOf, Weight, WeightMultiplier } from '@polkadot/types/interfaces/runtime';
+import type { AccountId, AccountId20, AccountId32, AccountIdOf, AccountIndex, Address, AssetId, Balance, BalanceOf, Block, BlockNumber, BlockNumberFor, BlockNumberOf, Call, CallHash, CallHashOf, ChangesTrieConfiguration, ChangesTrieSignal, CodecHash, Consensus, ConsensusEngineId, CrateVersion, Digest, DigestItem, EncodedJustification, ExtrinsicsWeight, Fixed128, Fixed64, FixedI128, FixedI64, FixedU128, FixedU64, H1024, H128, H160, H2048, H256, H32, H512, H64, Hash, Header, HeaderPartial, I32F32, Index, IndicesLookupSource, Justification, Justifications, KeyTypeId, KeyValue, LockIdentifier, LookupSource, LookupTarget, ModuleId, Moment, MultiAddress, MultiSigner, OpaqueCall, Origin, OriginCaller, PalletId, PalletVersion, PalletsOrigin, Pays, PerU16, Perbill, Percent, Permill, Perquintill, Phantom, PhantomData, PreRuntime, Releases, RuntimeDbWeight, Seal, SealV0, SignedBlock, SignedBlockWithJustification, SignedBlockWithJustifications, Slot, StorageData, StorageProof, TransactionInfo, TransactionPriority, TransactionStorageProof, U32F32, ValidatorId, ValidatorIdOf, Weight, WeightMultiplier } from '@polkadot/types/interfaces/runtime';
 import type { Si0Field, Si0LookupTypeId, Si0Path, Si0Type, Si0TypeDef, Si0TypeDefArray, Si0TypeDefBitSequence, Si0TypeDefCompact, Si0TypeDefComposite, Si0TypeDefPhantom, Si0TypeDefPrimitive, Si0TypeDefSequence, Si0TypeDefTuple, Si0TypeDefVariant, Si0TypeParameter, Si0Variant, Si1Field, Si1LookupTypeId, Si1Path, Si1Type, Si1TypeDef, Si1TypeDefArray, Si1TypeDefBitSequence, Si1TypeDefCompact, Si1TypeDefComposite, Si1TypeDefPrimitive, Si1TypeDefSequence, Si1TypeDefTuple, Si1TypeDefVariant, Si1TypeParameter, Si1Variant, SiField, SiLookupTypeId, SiPath, SiType, SiTypeDef, SiTypeDefArray, SiTypeDefBitSequence, SiTypeDefCompact, SiTypeDefComposite, SiTypeDefPrimitive, SiTypeDefSequence, SiTypeDefTuple, SiTypeDefVariant, SiTypeParameter, SiVariant } from '@polkadot/types/interfaces/scaleInfo';
 import type { Period, Priority, SchedulePeriod, SchedulePriority, Scheduled, ScheduledTo254, TaskAddress } from '@polkadot/types/interfaces/scheduler';
 import type { BeefyKey, FullIdentification, IdentificationTuple, Keys, MembershipProof, SessionIndex, SessionKeys1, SessionKeys10, SessionKeys10B, SessionKeys2, SessionKeys3, SessionKeys4, SessionKeys5, SessionKeys6, SessionKeys6B, SessionKeys7, SessionKeys7B, SessionKeys8, SessionKeys8B, SessionKeys9, SessionKeys9B, ValidatorCount } from '@polkadot/types/interfaces/session';
@@ -58,7 +58,10 @@ import type { ClassDetails, ClassId, ClassMetadata, DepositBalance, DepositBalan
 import type { Multisig, Timepoint } from '@polkadot/types/interfaces/utility';
 import type { VestingInfo } from '@polkadot/types/interfaces/vesting';
 import type { AssetInstance, AssetInstanceV0, AssetInstanceV1, AssetInstanceV2, BodyId, BodyPart, DoubleEncodedCall, Fungibility, FungibilityV0, FungibilityV1, FungibilityV2, InboundStatus, InstructionV2, InteriorMultiLocation, Junction, JunctionV0, JunctionV1, JunctionV2, Junctions, JunctionsV1, JunctionsV2, MultiAsset, MultiAssetFilter, MultiAssetFilterV1, MultiAssetFilterV2, MultiAssetV0, MultiAssetV1, MultiAssetV2, MultiAssets, MultiAssetsV1, MultiAssetsV2, MultiLocation, MultiLocationV0, MultiLocationV1, MultiLocationV2, NetworkId, OriginKindV0, OriginKindV1, OriginKindV2, OutboundStatus, Outcome, QueryId, QueryStatus, QueueConfigData, Response, ResponseV0, ResponseV1, ResponseV2, ResponseV2Error, ResponseV2Result, VersionMigrationStage, VersionedMultiAsset, VersionedMultiAssets, VersionedMultiLocation, VersionedResponse, VersionedXcm, WeightLimitV2, WildFungibility, WildFungibilityV0, WildFungibilityV1, WildFungibilityV2, WildMultiAsset, WildMultiAssetV1, WildMultiAssetV2, Xcm, XcmAssetId, XcmError, XcmErrorV0, XcmErrorV1, XcmErrorV2, XcmOrder, XcmOrderV0, XcmOrderV1, XcmOrderV2, XcmOrigin, XcmOriginKind, XcmV0, XcmV1, XcmV2, XcmVersion, XcmpMessageFormat } from '@polkadot/types/interfaces/xcm';
-import type { Compose, CryptoAlgo, GatewayABIConfig, HasherAlgo, StructDecl } from 't3rn-circuit-typegen/interfaces/primitives';
+import type { RegistryContract, RegistryContractId } from 't3rn-circuit-typegen/interfaces/contracts_registry';
+import type { GatewayOutboundEvent, GatewayOutboundEventId, Proof, ProofType, StepConfirmation, Xtx, XtxId, XtxSchedule, result_status } from 't3rn-circuit-typegen/interfaces/execution_delivery';
+import type { CircuitOutboundMessage, Compose, CryptoAlgo, GatewayABIConfig, GatewayExpectedOutput, GatewayGenesisConfig, GatewayPointer, GatewayType, GatewayVendor, HasherAlgo, ProofTriePointer, StructDecl } from 't3rn-circuit-typegen/interfaces/primitives';
+import type { RawAliveContractInfo } from 't3rn-circuit-typegen/interfaces/volatile_vm';
 import type { XdnsRecord, XdnsRecordId } from 't3rn-circuit-typegen/interfaces/xdns';
 
 declare module '@polkadot/types/types/registry' {
@@ -193,6 +196,7 @@ declare module '@polkadot/types/types/registry' {
     ChainType: ChainType;
     ChangesTrieConfiguration: ChangesTrieConfiguration;
     ChangesTrieSignal: ChangesTrieSignal;
+    CircuitOutboundMessage: CircuitOutboundMessage;
     ClassDetails: ClassDetails;
     ClassId: ClassId;
     ClassMetadata: ClassMetadata;
@@ -262,6 +266,7 @@ declare module '@polkadot/types/types/registry' {
     CoreAssignment: CoreAssignment;
     CoreIndex: CoreIndex;
     CoreOccupied: CoreOccupied;
+    CrateVersion: CrateVersion;
     CreatedBlock: CreatedBlock;
     CryptoAlgo: CryptoAlgo;
     Data: Data;
@@ -431,6 +436,13 @@ declare module '@polkadot/types/types/registry' {
     FungibilityV2: FungibilityV2;
     Gas: Gas;
     GatewayABIConfig: GatewayABIConfig;
+    GatewayExpectedOutput: GatewayExpectedOutput;
+    GatewayGenesisConfig: GatewayGenesisConfig;
+    GatewayOutboundEvent: GatewayOutboundEvent;
+    GatewayOutboundEventId: GatewayOutboundEventId;
+    GatewayPointer: GatewayPointer;
+    GatewayType: GatewayType;
+    GatewayVendor: GatewayVendor;
     GiltBid: GiltBid;
     GlobalValidationData: GlobalValidationData;
     GlobalValidationSchedule: GlobalValidationSchedule;
@@ -716,6 +728,9 @@ declare module '@polkadot/types/types/registry' {
     Prevotes: Prevotes;
     Priority: Priority;
     PriorLock: PriorLock;
+    Proof: Proof;
+    ProofTriePointer: ProofTriePointer;
+    ProofType: ProofType;
     PropIndex: PropIndex;
     Proposal: Proposal;
     ProposalIndex: ProposalIndex;
@@ -729,6 +744,7 @@ declare module '@polkadot/types/types/registry' {
     QueuedParathread: QueuedParathread;
     Randomness: Randomness;
     Raw: Raw;
+    RawAliveContractInfo: RawAliveContractInfo;
     RawAuraPreDigest: RawAuraPreDigest;
     RawBabePreDigest: RawBabePreDigest;
     RawBabePreDigestCompat: RawBabePreDigestCompat;
@@ -761,6 +777,8 @@ declare module '@polkadot/types/types/registry' {
     Registration: Registration;
     RegistrationJudgement: RegistrationJudgement;
     RegistrationTo198: RegistrationTo198;
+    RegistryContract: RegistryContract;
+    RegistryContractId: RegistryContractId;
     RelayBlockNumber: RelayBlockNumber;
     RelayChainBlockNumber: RelayChainBlockNumber;
     RelayChainHash: RelayChainHash;
@@ -782,6 +800,7 @@ declare module '@polkadot/types/types/registry' {
     ResponseV2: ResponseV2;
     ResponseV2Error: ResponseV2Error;
     ResponseV2Result: ResponseV2Result;
+    result_status: result_status;
     Retriable: Retriable;
     RewardDestination: RewardDestination;
     RewardPoint: RewardPoint;
@@ -906,6 +925,7 @@ declare module '@polkadot/types/types/registry' {
     StakingLedgerTo240: StakingLedgerTo240;
     Statement: Statement;
     StatementKind: StatementKind;
+    StepConfirmation: StepConfirmation;
     StorageChangeSet: StorageChangeSet;
     StorageData: StorageData;
     StorageEntryMetadataLatest: StorageEntryMetadataLatest;
@@ -1081,5 +1101,8 @@ declare module '@polkadot/types/types/registry' {
     XcmVersion: XcmVersion;
     XdnsRecord: XdnsRecord;
     XdnsRecordId: XdnsRecordId;
+    Xtx: Xtx;
+    XtxId: XtxId;
+    XtxSchedule: XtxSchedule;
   }
 }

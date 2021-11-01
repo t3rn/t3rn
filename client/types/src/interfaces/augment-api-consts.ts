@@ -25,7 +25,7 @@ declare module '@polkadot/api/types/consts' {
     bridgeGatewayGrandpa: {
       /**
        * Maximal number of finalized headers to keep in the storage.
-       *
+       * 
        * The setting is there to prevent growing the on-chain state indefinitely. Note
        * the setting does not relate to block numbers - we will simply keep as much items
        * in the storage, so it doesn't guarantee any fixed timeframe for finality headers.
@@ -33,9 +33,9 @@ declare module '@polkadot/api/types/consts' {
       headersToKeep: u32 & AugmentedConst<ApiType>;
       /**
        * The upper bound on the number of requests allowed by the pallet.
-       *
+       * 
        * A request refers to an action which writes a header to storage.
-       *
+       * 
        * Once this bound is reached the pallet will not allow any dispatchables to be called
        * until the request count has decreased.
        **/
@@ -48,7 +48,7 @@ declare module '@polkadot/api/types/consts' {
     bridgePolkadotLikeMultiFinalityVerifier: {
       /**
        * Maximal number of finalized headers to keep in the storage.
-       *
+       * 
        * The setting is there to prevent growing the on-chain state indefinitely. Note
        * the setting does not relate to block numbers - we will simply keep as much items
        * in the storage, so it doesn't guarantee any fixed timeframe for finality headers.
@@ -56,9 +56,9 @@ declare module '@polkadot/api/types/consts' {
       headersToKeep: u32 & AugmentedConst<ApiType>;
       /**
        * The upper bound on the number of requests allowed by the pallet.
-       *
+       * 
        * A request refers to an action which writes a header to storage.
-       *
+       * 
        * Once this bound is reached the pallet will not allow any dispatchables to be called
        * until the request count has decreased.
        **/
@@ -79,18 +79,18 @@ declare module '@polkadot/api/types/consts' {
       deletionWeightLimit: Weight & AugmentedConst<ApiType>;
       /**
        * The balance every contract needs to deposit to stay alive indefinitely.
-       *
+       * 
        * This is different from the [`Self::TombstoneDeposit`] because this only needs to be
        * deposited while the contract is alive. Costs for additional storage are added to
        * this base cost.
-       *
+       * 
        * This is a simple way to ensure that contracts with empty storage eventually get deleted by
        * making them pay rent. This creates an incentive to remove them early in order to save rent.
        **/
       depositPerContract: BalanceOf & AugmentedConst<ApiType>;
       /**
        * The balance a contract needs to deposit per storage byte to stay alive indefinitely.
-       *
+       * 
        * Let's suppose the deposit is 1,000 BU (balance units)/byte and the rent is 1 BU/byte/day,
        * then a contract with 1,000,000 BU that uses 1,000 bytes of storage would pay no rent.
        * But if the balance reduced to 500,000 BU and the storage stayed the same at 1,000,
@@ -99,13 +99,13 @@ declare module '@polkadot/api/types/consts' {
       depositPerStorageByte: BalanceOf & AugmentedConst<ApiType>;
       /**
        * The balance a contract needs to deposit per storage item to stay alive indefinitely.
-       *
+       * 
        * It works the same as [`Self::DepositPerStorageByte`] but for storage items.
        **/
       depositPerStorageItem: BalanceOf & AugmentedConst<ApiType>;
       /**
        * The fraction of the deposit that should be used as rent per block.
-       *
+       * 
        * When a contract hasn't enough balance deposited to stay alive indefinitely it needs
        * to pay per block for the storage it consumes that is not covered by the deposit.
        * This determines how high this rent payment is per block as a fraction of the deposit.
@@ -117,7 +117,7 @@ declare module '@polkadot/api/types/consts' {
       schedule: Schedule & AugmentedConst<ApiType>;
       /**
        * Number of block delay an extrinsic claim surcharge has.
-       *
+       * 
        * When claim surcharge is called by an extrinsic the rent is checked
        * for current_block - delay
        **/
@@ -139,7 +139,7 @@ declare module '@polkadot/api/types/consts' {
     multiFinalityVerifier: {
       /**
        * Maximal number of finalized headers to keep in the storage.
-       *
+       * 
        * The setting is there to prevent growing the on-chain state indefinitely. Note
        * the setting does not relate to block numbers - we will simply keep as much items
        * in the storage, so it doesn't guarantee any fixed timeframe for finality headers.
@@ -147,9 +147,9 @@ declare module '@polkadot/api/types/consts' {
       headersToKeep: u32 & AugmentedConst<ApiType>;
       /**
        * The upper bound on the number of requests allowed by the pallet.
-       *
+       * 
        * A request refers to an action which writes a header to storage.
-       *
+       * 
        * Once this bound is reached the pallet will not allow any dispatchables to be called
        * until the request count has decreased.
        **/
@@ -178,7 +178,7 @@ declare module '@polkadot/api/types/consts' {
       dbWeight: RuntimeDbWeight & AugmentedConst<ApiType>;
       /**
        * The designated SS85 prefix of this chain.
-       *
+       * 
        * This replaces the "ss58Format" property declared in the chain spec. Reason is
        * that the runtime should know about the prefix in order to make use of it as
        * an identifier of the chain.
@@ -231,18 +231,18 @@ declare module '@polkadot/api/types/consts' {
       deletionWeightLimit: Weight & AugmentedConst<ApiType>;
       /**
        * The balance every contract needs to deposit to stay alive indefinitely.
-       *
+       * 
        * This is different from the [`Self::TombstoneDeposit`] because this only needs to be
        * deposited while the contract is alive. Costs for additional storage are added to
        * this base cost.
-       *
+       * 
        * This is a simple way to ensure that contracts with empty storage eventually get deleted by
        * making them pay rent. This creates an incentive to remove them early in order to save rent.
        **/
       depositPerContract: BalanceOf & AugmentedConst<ApiType>;
       /**
        * The balance a contract needs to deposit per storage byte to stay alive indefinitely.
-       *
+       * 
        * Let's suppose the deposit is 1,000 BU (balance units)/byte and the rent is 1 BU/byte/day,
        * then a contract with 1,000,000 BU that uses 1,000 bytes of storage would pay no rent.
        * But if the balance reduced to 500,000 BU and the storage stayed the same at 1,000,
@@ -251,13 +251,13 @@ declare module '@polkadot/api/types/consts' {
       depositPerStorageByte: BalanceOf & AugmentedConst<ApiType>;
       /**
        * The balance a contract needs to deposit per storage item to stay alive indefinitely.
-       *
+       * 
        * It works the same as [`Self::DepositPerStorageByte`] but for storage items.
        **/
       depositPerStorageItem: BalanceOf & AugmentedConst<ApiType>;
       /**
        * The fraction of the deposit that should be used as rent per block.
-       *
+       * 
        * When a contract hasn't enough balance deposited to stay alive indefinitely it needs
        * to pay per block for the storage it consumes that is not covered by the deposit.
        * This determines how high this rent payment is per block as a fraction of the deposit.
@@ -269,7 +269,7 @@ declare module '@polkadot/api/types/consts' {
       schedule: Schedule & AugmentedConst<ApiType>;
       /**
        * Number of block delay an extrinsic claim surcharge has.
-       *
+       * 
        * When claim surcharge is called by an extrinsic the rent is checked
        * for current_block - delay
        **/
