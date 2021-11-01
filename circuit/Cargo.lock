@@ -1249,31 +1249,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "circuit-rpc"
-version = "0.1.0"
-dependencies = [
- "jsonrpc-core",
- "jsonrpc-core-client",
- "jsonrpc-derive",
- "pallet-contracts-primitives",
- "pallet-contracts-registry",
- "pallet-contracts-registry-rpc",
- "pallet-contracts-registry-rpc-runtime-api",
- "parity-scale-codec",
- "sc-rpc",
- "serde",
- "serde_json",
- "sp-api",
- "sp-blockchain",
- "sp-core",
- "sp-rpc",
- "sp-runtime",
- "sp-std",
- "substrate-test-runtime-client",
- "t3rn-primitives",
-]
-
-[[package]]
 name = "circuit-rpc-tests"
 version = "3.0.0"
 dependencies = [
@@ -5561,25 +5536,6 @@ dependencies = [
  "sp-std",
  "t3rn-primitives",
  "volatile-vm",
-]
-
-[[package]]
-name = "pallet-contracts-registry-rpc"
-version = "0.1.0"
-dependencies = [
- "frame-system",
- "jsonrpc-core",
- "jsonrpc-core-client",
- "jsonrpc-derive",
- "pallet-contracts-registry",
- "pallet-contracts-registry-rpc-runtime-api",
- "parity-scale-codec",
- "serde",
- "sp-api",
- "sp-blockchain",
- "sp-core",
- "sp-rpc",
- "sp-runtime",
 ]
 
 [[package]]

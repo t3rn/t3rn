@@ -54,7 +54,7 @@ sp-inherents = { git = "https://github.com/paritytech/substrate", branch = 'polk
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 substrate-frame-rpc-system = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 t3rn-primitives = { path = "../primitives" }
-jsonrpc-runtime-client = { path = "../rpc/rpc-test/jsonrpc-runtime-client" }
+jsonrpc-runtime-client = { path = "../rpc-test/jsonrpc-runtime-client" }
 async-std = "1.10.0"
 beefy-primitives = { git = "https://github.com/t3rn/grandpa-bridge-gadget", branch = 'polkadot-v0.9.8', default-features = false }
 beefy-gadget = { git = "https://github.com/t3rn/grandpa-bridge-gadget", branch = 'polkadot-v0.9.8', default-features = false }

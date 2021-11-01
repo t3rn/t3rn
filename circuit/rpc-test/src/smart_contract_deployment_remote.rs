@@ -74,7 +74,7 @@ fn compile_module(
     <sp_runtime::traits::BlakeTwo256 as sp_runtime::traits::Hash>::Output,
 )> {
     let fixture_path = [
-        "../../../gateway/pallets/contracts-gateway/",
+        "../../gateway/pallets/contracts-gateway/",
         "fixtures/",
         fixture_name,
         ".wat",
@@ -96,7 +96,7 @@ fn get_module(
     <sp_runtime::traits::BlakeTwo256 as sp_runtime::traits::Hash>::Output,
 )> {
     let fixture_path = [
-        "../../../gateway/pallets/contracts-gateway/",
+        "../../gateway/pallets/contracts-gateway/",
         "fixtures/",
         fixture_name,
         ".wasm",
