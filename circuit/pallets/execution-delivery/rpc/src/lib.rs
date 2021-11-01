@@ -2,6 +2,7 @@
 
 use std::sync::Arc;
 mod types;
+mod tests;
 pub use self::gen_client::Client as ContractsRegistryClient;
 use jsonrpc_core::{Error, ErrorCode, Result};
 use jsonrpc_derive::rpc;
