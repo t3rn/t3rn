@@ -1075,7 +1075,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl circuit_rpc_runtime_api::CircuitApi<Block, AccountId, Balance, BlockNumber> for Runtime
+    impl pallet_circuit_execution_delivery_rpc_runtime_api::ExecutionDeliveryRuntimeApi<Block, AccountId, Balance, BlockNumber> for Runtime
     {
         fn composable_exec(
             _origin: AccountId,
@@ -1083,7 +1083,7 @@ impl_runtime_apis! {
             _io: Vec<u8>,
             _gas_limit: u64,
             _input_data: Vec<u8>,
-        ) -> ComposableExecResult { todo!() }
+        ) -> ComposableExecResult { unimplemented!() }
     }
 
     impl pallet_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>

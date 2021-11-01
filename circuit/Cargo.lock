@@ -1251,7 +1251,6 @@ dependencies = [
 name = "circuit-rpc"
 version = "0.1.0"
 dependencies = [
- "circuit-rpc-runtime-api",
  "jsonrpc-core",
  "jsonrpc-core-client",
  "jsonrpc-derive",
@@ -1270,19 +1269,6 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "substrate-test-runtime-client",
- "t3rn-primitives",
-]
-
-[[package]]
-name = "circuit-rpc-runtime-api"
-version = "0.1.0"
-dependencies = [
- "frame-system",
- "pallet-contracts-registry-rpc-runtime-api",
- "parity-scale-codec",
- "sp-api",
- "sp-runtime",
- "sp-std",
  "t3rn-primitives",
 ]
 
@@ -1365,7 +1351,6 @@ dependencies = [
  "bp-runtime 0.1.0",
  "bp-westend",
  "bridge-runtime-common",
- "circuit-rpc-runtime-api",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -1381,6 +1366,7 @@ dependencies = [
  "pallet-bridge-grandpa",
  "pallet-bridge-messages",
  "pallet-circuit-execution-delivery",
+ "pallet-circuit-execution-delivery-rpc-runtime-api",
  "pallet-contracts",
  "pallet-contracts-primitives",
  "pallet-contracts-registry",
@@ -5474,6 +5460,19 @@ dependencies = [
  "versatile-wasm",
  "volatile-vm",
  "wat",
+]
+
+[[package]]
+name = "pallet-circuit-execution-delivery-rpc-runtime-api"
+version = "0.1.0"
+dependencies = [
+ "pallet-circuit-execution-delivery",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "t3rn-primitives",
 ]
 
 [[package]]

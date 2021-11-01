@@ -33,7 +33,7 @@ use sp_runtime::{
 use sp_std::{prelude::*, str};
 use std::convert::TryInto;
 
-pub use circuit_rpc_runtime_api::{self as runtime_api, CircuitApi as CircuitRuntimeApi};
+// pub use circuit_rpc_runtime_api::{self as runtime_api, CircuitApi as CircuitRuntimeApi};
 use pallet_contracts_registry::ContractsRegistry;
 use t3rn_primitives::{ChainId, ComposableExecResult, Compose, ContractAccessError};
 
@@ -161,92 +161,92 @@ impl<C, B> Circuit<C, B> {
         }
     }
 }
-impl<C, Block, AccountId, Balance>
-    CircuitApi<
-        <Block as BlockT>::Hash,
-        <<Block as BlockT>::Header as HeaderT>::Number,
-        AccountId,
-        Balance,
-    > for Circuit<C, Block>
-where
-    Block: BlockT,
-    C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
-    C::Api: CircuitRuntimeApi<
-        Block,
-        AccountId,
-        Balance,
-        <<Block as BlockT>::Header as HeaderT>::Number,
-    >,
-    C::Api:
-        pallet_contracts_registry_rpc::ContractsRegistryRuntimeApi<Block, AccountId, Block::Hash>,
-    AccountId: Codec,
-    Balance: Codec,
-{
-    fn composable_exec(
-        &self,
-        inter_exec_request: InterExecRequest<AccountId, Balance>,
-        at: Option<<Block as BlockT>::Hash>,
-    ) -> Result<RpcComposableExecResult> {
-        let api = self.client.runtime_api();
-        let at = BlockId::hash(at.unwrap_or_else(||
-			// If the block hash is not supplied assume the best block.
-			self.client.info().best_hash));
+// impl<C, Block, AccountId, Balance>
+//     CircuitApi<
+//         <Block as BlockT>::Hash,
+//         <<Block as BlockT>::Header as HeaderT>::Number,
+//         AccountId,
+//         Balance,
+//     > for Circuit<C, Block>
+// where
+//     Block: BlockT,
+//     C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
+//     C::Api: CircuitRuntimeApi<
+//         Block,
+//         AccountId,
+//         Balance,
+//         <<Block as BlockT>::Header as HeaderT>::Number,
+//     >,
+//     C::Api:
+//         pallet_contracts_registry_rpc::ContractsRegistryRuntimeApi<Block, AccountId, Block::Hash>,
+//     AccountId: Codec,
+//     Balance: Codec,
+// {
+//     fn composable_exec(
+//         &self,
+//         inter_exec_request: InterExecRequest<AccountId, Balance>,
+//         at: Option<<Block as BlockT>::Hash>,
+//     ) -> Result<RpcComposableExecResult> {
+//         let api = self.client.runtime_api();
+//         let at = BlockId::hash(at.unwrap_or_else(||
+// 			// If the block hash is not supplied assume the best block.
+// 			self.client.info().best_hash));
 
-        let InterExecRequest {
-            origin,
-            components,
-            io,
-            gas_limit,
-            input_data,
-        } = inter_exec_request;
+//         let InterExecRequest {
+//             origin,
+//             components,
+//             io,
+//             gas_limit,
+//             input_data,
+//         } = inter_exec_request;
 
-        // Make sure that gas_limit fits into 64 bits.
-        let gas_limit: u64 = gas_limit.try_into().map_err(|_| Error {
-            code: ErrorCode::InvalidParams,
-            message: format!("{:?} doesn't fit in 64 bit unsigned value", gas_limit),
-            data: None,
-        })?;
+//         // Make sure that gas_limit fits into 64 bits.
+//         let gas_limit: u64 = gas_limit.try_into().map_err(|_| Error {
+//             code: ErrorCode::InvalidParams,
+//             message: format!("{:?} doesn't fit in 64 bit unsigned value", gas_limit),
+//             data: None,
+//         })?;
 
-        let max_gas_limit = 5 * GAS_PER_SECOND;
-        if gas_limit > max_gas_limit {
-            return Err(Error {
-                code: ErrorCode::InvalidParams,
-                message: format!(
-                    "Requested gas limit is greater than maximum allowed: {} > {}",
-                    gas_limit, max_gas_limit
-                ),
-                data: None,
-            });
-        }
+//         let max_gas_limit = 5 * GAS_PER_SECOND;
+//         if gas_limit > max_gas_limit {
+//             return Err(Error {
+//                 code: ErrorCode::InvalidParams,
+//                 message: format!(
+//                     "Requested gas limit is greater than maximum allowed: {} > {}",
+//                     gas_limit, max_gas_limit
+//                 ),
+//                 data: None,
+//             });
+//         }
 
-        let mut components_runtime: Vec<Compose<AccountId, Balance>> = vec![];
+//         let mut components_runtime: Vec<Compose<AccountId, Balance>> = vec![];
 
-        for component_rpc in components.into_iter() {
-            components_runtime.push(Compose {
-                name: component_rpc.name.into_boxed_bytes().to_vec(),
-                code_txt: component_rpc.code_txt.into_boxed_bytes().to_vec(),
-                exec_type: component_rpc.exec_type.into_boxed_bytes().to_vec(),
-                dest: component_rpc.dest,
-                value: component_rpc.value,
-                bytes: component_rpc.bytes.to_vec(),
-                input_data: component_rpc.input_data.to_vec(),
-            });
-        }
+//         for component_rpc in components.into_iter() {
+//             components_runtime.push(Compose {
+//                 name: component_rpc.name.into_boxed_bytes().to_vec(),
+//                 code_txt: component_rpc.code_txt.into_boxed_bytes().to_vec(),
+//                 exec_type: component_rpc.exec_type.into_boxed_bytes().to_vec(),
+//                 dest: component_rpc.dest,
+//                 value: component_rpc.value,
+//                 bytes: component_rpc.bytes.to_vec(),
+//                 input_data: component_rpc.input_data.to_vec(),
+//             });
+//         }
 
-        let exec_result = api
-            .composable_exec(
-                &at,
-                origin,
-                components_runtime,
-                io.into_boxed_bytes().to_vec(),
-                gas_limit,
-                input_data.to_vec(),
-            )
-            .map_err(|e| runtime_error_into_rpc_err(e))?;
+//         let exec_result = api
+//             .composable_exec(
+//                 &at,
+//                 origin,
+//                 components_runtime,
+//                 io.into_boxed_bytes().to_vec(),
+//                 gas_limit,
+//                 input_data.to_vec(),
+//             )
+//             .map_err(|e| runtime_error_into_rpc_err(e))?;
 
-        Ok(exec_result.into())
-    }
-}
+//         Ok(exec_result.into())
+//     }
+// }
 
 /// Converts a runtime trap into an RPC error.
 fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> Error {
