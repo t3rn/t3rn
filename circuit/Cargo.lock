@@ -1215,6 +1215,7 @@ dependencies = [
  "log",
  "node-inspect",
  "pallet-bridge-messages",
+ "pallet-circuit-execution-delivery-rpc",
  "pallet-contracts-rpc",
  "pallet-evm",
  "pallet-mmr-rpc",
@@ -5460,6 +5461,25 @@ dependencies = [
  "versatile-wasm",
  "volatile-vm",
  "wat",
+]
+
+[[package]]
+name = "pallet-circuit-execution-delivery-rpc"
+version = "0.1.0"
+dependencies = [
+ "frame-system",
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "pallet-circuit-execution-delivery-rpc-runtime-api",
+ "parity-scale-codec",
+ "serde",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+ "t3rn-primitives",
 ]
 
 [[package]]

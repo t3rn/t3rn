@@ -1,42 +1,48 @@
 //! RPC interface for the contracts registry pallet.
 
 use std::sync::Arc;
-
+mod types;
 pub use self::gen_client::Client as ContractsRegistryClient;
-use codec::Codec;
 use jsonrpc_core::{Error, ErrorCode, Result};
-use jsonrpc_core_client::RpcError;
 use jsonrpc_derive::rpc;
-use pallet_contracts_registry::FetchContractsResult;
-pub use pallet_contracts_registry_rpc_runtime_api::ContractsRegistryRuntimeApi;
-use sp_api::{ApiError, ProvideRuntimeApi};
+use pallet_circuit_execution_delivery_rpc_runtime_api::ExecutionDeliveryRuntimeApi;
+use sp_api::codec::Codec;
+use sp_api::{ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
-use sp_core::Bytes;
-use sp_runtime::generic::BlockId;
-use sp_runtime::traits::{Block as BlockT, Hash as HashT, MaybeDisplay};
-
-const RUNTIME_ERROR: i64 = 1;
-const CONTRACT_DOESNT_EXIST: i64 = 2;
-const CONTRACT_IS_A_TOMBSTONE: i64 = 3;
+use types::*;
+use sp_runtime::{
+    generic::BlockId,
+    traits::{Block as BlockT, Header as HeaderT, MaybeDisplay},
+};
+use std::convert::TryInto;
+use t3rn_primitives::Compose;
+use crate::types::GAS_PER_SECOND;
 
 #[rpc]
-pub trait ContractsRegistryApi<AccountId, Hash> {
-    /// Returns the contracts searchable by name, author or metadata
-    #[rpc(name = "contractsRegistry_fetchContracts")]
-    fn fetch_contracts(
+pub trait ExecutionDeliveryApi<BlockHash, BlockNumber, AccountId, Balance> {
+    /// Executes all attached or appointed by ID composable contracts on appointed gateways.
+    ///
+    /// IO flow between components on different chains can be described using Input-Output schedule.
+    ///
+    /// Circuit queues the request and awaits for an execution agent to volounteer to facilitate the execution
+    /// across connected chains via gateways - acts as an escrow account and is accountable
+    /// with her stake for proven misbehaviour.
+    #[rpc(name = "executionDelivery_composableExec")]
+    fn composable_exec(
         &self,
-        author: Option<AccountId>,
-        data: Option<Bytes>,
-    ) -> Result<FetchContractsResult>;
+        call_request: InterExecRequest<AccountId, Balance>,
+        at: Option<BlockHash>,
+    ) -> Result<RpcComposableExecResult>;
 }
 
-/// A struct that implements the [ContractsRegistryApi].
-pub struct ContractsRegistry<C, B> {
+/// A struct that implements the [ExecutionDeliveryApi].
+pub struct ExecutionDelivery<C, B> {
     client: Arc<C>,
     _marker: std::marker::PhantomData<B>,
 }
 
-impl<C, B> ContractsRegistry<C, B> {
+impl<C, B> ExecutionDelivery<C, B> {
+    /// Create new `Contracts` with the given reference to the client.
     pub fn new(client: Arc<C>) -> Self {
         Self {
             client,
@@ -45,28 +51,83 @@ impl<C, B> ContractsRegistry<C, B> {
     }
 }
 
-impl<C, Block, AccountId, Hash> ContractsRegistryApi<AccountId, Hash>
-    for ContractsRegistry<C, Block>
+impl<C, Block, AccountId, Balance> 
+    ExecutionDeliveryApi<
+        <Block as BlockT>::Hash,
+        <<Block as BlockT>::Header as HeaderT>::Number,
+        AccountId,
+        Balance,>
+    for ExecutionDelivery<C, Block>
 where
-    AccountId: Codec + MaybeDisplay,
     Block: BlockT,
-    C: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
-    C::Api: ContractsRegistryRuntimeApi<Block, AccountId, Hash>,
-    Hash: HashT + Codec,
+    AccountId: Codec + MaybeDisplay,
+    C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
+    C::Api: ExecutionDeliveryRuntimeApi<Block, AccountId, Balance, <<Block as BlockT>::Header as HeaderT>::Number,>,
+    Balance: Codec,
 {
-    fn fetch_contracts(
+    fn composable_exec(
         &self,
-        author: Option<AccountId>,
-        metadata: Option<Bytes>,
-    ) -> Result<FetchContractsResult> {
+        inter_exec_request: InterExecRequest<AccountId, Balance>,
+        at: Option<<Block as BlockT>::Hash>,
+    ) -> Result<RpcComposableExecResult> {
         let api = self.client.runtime_api();
-        let at = BlockId::hash(self.client.info().best_hash);
+        let at = BlockId::hash(at.unwrap_or_else(||
+			// If the block hash is not supplied assume the best block.
+			self.client.info().best_hash));
 
-        let result = api
-            .fetch_contracts(&at, author, metadata)
+        let InterExecRequest {
+            origin,
+            components,
+            io,
+            gas_limit,
+            input_data,
+        } = inter_exec_request;
+
+        // Make sure that gas_limit fits into 64 bits.
+        let gas_limit: u64 = gas_limit.try_into().map_err(|_| Error {
+            code: ErrorCode::InvalidParams,
+            message: format!("{:?} doesn't fit in 64 bit unsigned value", gas_limit),
+            data: None,
+        })?;
+
+        let max_gas_limit = 5 * GAS_PER_SECOND;
+        if gas_limit > max_gas_limit {
+            return Err(Error {
+                code: ErrorCode::InvalidParams,
+                message: format!(
+                    "Requested gas limit is greater than maximum allowed: {} > {}",
+                    gas_limit, max_gas_limit
+                ),
+                data: None,
+            });
+        }
+
+        let mut components_runtime: Vec<Compose<AccountId, Balance>> = vec![];
+
+        for component_rpc in components.into_iter() {
+            components_runtime.push(Compose {
+                name: component_rpc.name.into_boxed_bytes().to_vec(),
+                code_txt: component_rpc.code_txt.into_boxed_bytes().to_vec(),
+                exec_type: component_rpc.exec_type.into_boxed_bytes().to_vec(),
+                dest: component_rpc.dest,
+                value: component_rpc.value,
+                bytes: component_rpc.bytes.to_vec(),
+                input_data: component_rpc.input_data.to_vec(),
+            });
+        }
+
+        let exec_result = api
+            .composable_exec(
+                &at,
+                origin,
+                components_runtime,
+                io.into_boxed_bytes().to_vec(),
+                gas_limit,
+                input_data.to_vec(),
+            )
             .map_err(|e| runtime_error_into_rpc_err(e))?;
 
-        Ok(result)
+        Ok(exec_result.into())
     }
 }
 

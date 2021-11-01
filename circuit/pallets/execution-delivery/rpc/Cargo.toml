@@ -26,5 +26,5 @@ sp-blockchain = { version = "3.0.0", git = "https://github.com/paritytech/substr
 sp-core = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 sp-rpc = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 sp-runtime = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-# pallet-contracts-registry-rpc-runtime-api = { version = "0.1.0", path = "runtime-api" }
-# pallet-contracts-registry = { path = ".." }
+t3rn-primitives = { version = "0.1.0", path = "../../../primitives", default-features = false }
+pallet-circuit-execution-delivery-rpc-runtime-api = { version = "0.1.0", path = "runtime-api" }
