@@ -1215,6 +1215,7 @@ dependencies = [
  "log",
  "node-inspect",
  "pallet-bridge-messages",
+ "pallet-circuit-execution-delivery-rpc",
  "pallet-contracts-rpc",
  "pallet-evm",
  "pallet-mmr-rpc",
@@ -1244,45 +1245,6 @@ dependencies = [
  "structopt",
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
- "t3rn-primitives",
-]
-
-[[package]]
-name = "circuit-rpc"
-version = "0.1.0"
-dependencies = [
- "circuit-rpc-runtime-api",
- "jsonrpc-core",
- "jsonrpc-core-client",
- "jsonrpc-derive",
- "pallet-contracts-primitives",
- "pallet-contracts-registry",
- "pallet-contracts-registry-rpc",
- "pallet-contracts-registry-rpc-runtime-api",
- "parity-scale-codec",
- "sc-rpc",
- "serde",
- "serde_json",
- "sp-api",
- "sp-blockchain",
- "sp-core",
- "sp-rpc",
- "sp-runtime",
- "sp-std",
- "substrate-test-runtime-client",
- "t3rn-primitives",
-]
-
-[[package]]
-name = "circuit-rpc-runtime-api"
-version = "0.1.0"
-dependencies = [
- "frame-system",
- "pallet-contracts-registry-rpc-runtime-api",
- "parity-scale-codec",
- "sp-api",
- "sp-runtime",
- "sp-std",
  "t3rn-primitives",
 ]
 
@@ -1365,7 +1327,6 @@ dependencies = [
  "bp-runtime 0.1.0",
  "bp-westend",
  "bridge-runtime-common",
- "circuit-rpc-runtime-api",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -1381,6 +1342,7 @@ dependencies = [
  "pallet-bridge-grandpa",
  "pallet-bridge-messages",
  "pallet-circuit-execution-delivery",
+ "pallet-circuit-execution-delivery-rpc-runtime-api",
  "pallet-contracts",
  "pallet-contracts-primitives",
  "pallet-contracts-registry",
@@ -5477,6 +5439,39 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-circuit-execution-delivery-rpc"
+version = "0.1.0"
+dependencies = [
+ "frame-system",
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "pallet-circuit-execution-delivery-rpc-runtime-api",
+ "parity-scale-codec",
+ "serde",
+ "serde_json",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+ "t3rn-primitives",
+]
+
+[[package]]
+name = "pallet-circuit-execution-delivery-rpc-runtime-api"
+version = "0.1.0"
+dependencies = [
+ "pallet-circuit-execution-delivery",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "t3rn-primitives",
+]
+
+[[package]]
 name = "pallet-contracts"
 version = "3.0.0"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.8#74101dc21cfffb4c2d014fcc28edc166d5ca1b16"
@@ -5541,25 +5536,6 @@ dependencies = [
  "sp-std",
  "t3rn-primitives",
  "volatile-vm",
-]
-
-[[package]]
-name = "pallet-contracts-registry-rpc"
-version = "0.1.0"
-dependencies = [
- "frame-system",
- "jsonrpc-core",
- "jsonrpc-core-client",
- "jsonrpc-derive",
- "pallet-contracts-registry",
- "pallet-contracts-registry-rpc-runtime-api",
- "parity-scale-codec",
- "serde",
- "sp-api",
- "sp-blockchain",
- "sp-core",
- "sp-rpc",
- "sp-runtime",
 ]
 
 [[package]]

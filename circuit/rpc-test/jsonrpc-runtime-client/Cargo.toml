@@ -29,5 +29,5 @@ codec = { package = "parity-scale-codec", version = "2.0.0" }
 num-traits = "0.2"
 
 tokio = "1.8.0"
-bp-polkadot-core = { path = "../../../../vendor/bridges/primitives/polkadot-core" }
-relay-substrate-client = { version = "0.1.0", path = "../../../../vendor/bridges/relays/client-substrate" }
+bp-polkadot-core = { path = "../../../vendor/bridges/primitives/polkadot-core" }
+relay-substrate-client = { version = "0.1.0", path = "../../../vendor/bridges/relays/client-substrate" }

@@ -31,10 +31,10 @@ pallet-shift-session-manager = { path = "../../vendor/bridges/modules/shift-sess
 pallet-contracts-registry = {  path = "../pallets/contracts-registry", default-features = false }
 pallet-contracts-registry-rpc-runtime-api = {  path = "../pallets/contracts-registry/rpc/runtime-api", default-features = false }
 pallet-circuit-execution-delivery = {  path = "../pallets/execution-delivery", default-features = false }
+pallet-circuit-execution-delivery-rpc-runtime-api = {  path = "../pallets/execution-delivery/rpc/runtime-api", default-features = false }
 pallet-xdns = { path = "../pallets/xdns", default-features = false }
 volatile-vm = { path = "../../vm/volatile-vm", default-features = false }
 t3rn-primitives = { version = "0.1.0", default-features = false, path = "../primitives" }
-circuit-rpc-runtime-api = { path = "../rpc/runtime-api", default-features = false }
 
 # Smart contracts VMs
 pallet-evm = { path = "../../vendor/frontier/frame/evm", default-features = false  }
@@ -119,6 +119,7 @@ std = [
 	"pallet-evm-precompile-simple/std",
 	"pallet-contracts-registry/std",
 	"pallet-circuit-execution-delivery/std",
+	"pallet-circuit-execution-delivery-rpc-runtime-api/std",
 	"pallet-balances/std",
 	"pallet-bridge-dispatch/std",
 	"pallet-bridge-grandpa/std",
@@ -132,7 +133,6 @@ std = [
 	"pallet-timestamp/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-mmr/std",
-	"circuit-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
 	"serde",
 	"sp-api/std",

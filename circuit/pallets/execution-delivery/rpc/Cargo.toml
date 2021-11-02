@@ -1,0 +1,30 @@
+[package]
+name = "pallet-circuit-execution-delivery-rpc"
+version = "0.1.0"
+authors = ["t3rn ltd. <team@t3rn.io>"]
+edition = "2018"
+license = "Apache-2.0"
+homepage = "https://t3rn.io"
+repository = "https://github.com/t3rn/t3rn/"
+description = "RPC interface for the execution delivery pallet."
+readme = "README.md"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "2.0.0" }
+jsonrpc-core = "15.0.0"
+jsonrpc-core-client = "15.0.0"
+jsonrpc-derive = "15.0.0"
+serde_json = "1.0.59"
+
+serde = { version = "1.0.124", features = ["derive"] }
+
+sp-api = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+sp-blockchain = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+sp-core = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+sp-rpc = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+sp-runtime = { version = "3.0.0", git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+t3rn-primitives = { version = "0.1.0", path = "../../../primitives", default-features = false }
+pallet-circuit-execution-delivery-rpc-runtime-api = { version = "0.1.0", path = "runtime-api" }

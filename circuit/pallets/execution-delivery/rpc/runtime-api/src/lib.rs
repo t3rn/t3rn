@@ -1,20 +1,8 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// 	http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-//! Runtime API definition required by Circuit RPC extensions.
+//! Runtime API definition required by Contracts Registry RPC extensions.
 //!
 //! This API should be imported and implemented by the runtime,
 //! of a node that wants to use the custom RPC extension
-//! adding Contracts access methods.
+//! adding Contracts Registry access methods.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -23,8 +11,8 @@ use sp_std::vec::Vec;
 use t3rn_primitives::{ComposableExecResult, Compose};
 
 sp_api::decl_runtime_apis! {
-    /// The API to interact with contracts without using executive.
-    pub trait CircuitApi<AccountId, Balance, BlockNumber> where
+    /// The API to interact with execution delivery
+    pub trait ExecutionDeliveryRuntimeApi<AccountId, Balance, BlockNumber> where
         AccountId: Codec,
         Balance: Codec,
         BlockNumber: Codec,
