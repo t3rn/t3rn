@@ -22,22 +22,22 @@
 //! Circuit MVP
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
-use frame_support::dispatch::DispatchResultWithPostInfo;
-use frame_support::ensure;
-use frame_system::offchain::{SignedPayload, SigningTypes};
-use hex_literal::hex;
-use sp_application_crypto::Public;
-use sp_core::crypto::KeyTypeId;
-use sp_runtime::{
-    traits::{Convert, Hash, Zero},
-    RuntimeAppPublic, RuntimeDebug,
-};
-
 pub use crate::exec_composer::ExecComposer;
 pub use crate::message_assembly::circuit_inbound::StepConfirmation;
 use crate::message_assembly::merklize::*;
+use codec::{Decode, Encode};
+use frame_support::dispatch::DispatchResultWithPostInfo;
+use frame_support::ensure;
+use frame_support::traits::Currency;
+use frame_system::offchain::{SignedPayload, SigningTypes};
+use hex_literal::hex;
 use pallet_contracts_registry::{RegistryContract, RegistryContractId};
+use sp_application_crypto::Public;
+use sp_core::crypto::KeyTypeId;
+use sp_runtime::{
+    traits::{Convert, Hash, Saturating, Zero},
+    RuntimeAppPublic, RuntimeDebug,
+};
 
 use bp_runtime::ChainId;
 pub use pallet::*;
@@ -85,9 +85,7 @@ pub use side_effect::{InboundSideEffect, OutboundSideEffect, SideEffect};
 /// The keys can be inserted manually via RPC (see `author_insertKey`).
 pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"circ");
 
-pub fn select_validator_for_x_tx_dummy<T: Config>(
-    _io_schedule: Vec<u8>,
-) -> Result<T::AccountId, &'static str> {
+pub fn select_validator_for_x_tx_dummy<T: Config>() -> Result<T::AccountId, &'static str> {
     // This is the well-known Substrate account of Alice (5GrwvaEF...)
     let default_recepient =
         hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d");
@@ -194,6 +192,73 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::weight(<T as Config>::WeightInfo::dry_run_whole_xtx_three_components() + <T as Config>::WeightInfo::decompose_io_schedule())]
+        pub fn submit_schedule_exec(
+            _origin: OriginFor<T>,
+            _io_schedule: Vec<u8>,
+            _input: Vec<u8>,
+        ) -> DispatchResultWithPostInfo {
+            Ok(().into())
+        }
+
+        #[pallet::weight(<T as Config>::WeightInfo::dry_run_whole_xtx_three_components() + <T as Config>::WeightInfo::decompose_io_schedule())]
+        pub fn submit_exec(
+            origin: OriginFor<T>,
+            contract_id: RegistryContractId<T>,
+            input: Vec<u8>,
+            value: BalanceOf<T>,
+            reward: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
+            // Retrieve sender of the transaction.
+            let requester = ensure_signed(origin)?;
+
+            // Ensure can afford
+            ensure!(
+                <T as EscrowTrait>::Currency::free_balance(&requester).saturating_sub(reward)
+                    >= <T as EscrowTrait>::Currency::minimum_balance(),
+                Error::<T>::RequesterNotEnoughBalance,
+            );
+
+            let contract =
+                if !<pallet_contracts_registry::ContractsRegistry<T>>::contains_key(&contract_id) {
+                    Err(Error::<T>::ContractDoesNotExists)?
+                } else {
+                    pallet_contracts_registry::ContractsRegistry::<T>::get(&contract_id)
+                        .expect("contains_key called above before accessing the contract")
+                };
+
+            // Why Gateway if targets are assigned only on the level of side effects
+            // let gateway_pointer = Self::retrieve_gateway_pointer::<T>(gateway_id.clone())?;
+            // let gateway_inbound_protocol =
+            //     Self::retrieve_gateway_protocol::<T>(submitter, &gateway_pointer)?;
+            let _preload_response = ExecComposer::preload_bunch_of_contracts::<T>(
+                vec![contract.clone()],
+                Default::default(),
+            );
+
+            // ToDo: Work out max gas limit acceptable by each escrow
+            let gas_limit = u64::max_value();
+            let escrow_account = select_validator_for_x_tx_dummy::<T>()?;
+            let submitter = Self::select_authority(escrow_account.clone())?;
+
+            let (_circuit_outbound_messages, _last_executed_contract_no) =
+                ExecComposer::pre_run_bunch_until_break::<T>(
+                    vec![contract.clone()],
+                    // ToDo: Remove escrow account from the execution pre-requisites. Leave Side Effects unassigned
+                    escrow_account.clone(),
+                    submitter.clone(),
+                    requester.clone(),
+                    value,
+                    input,
+                    gas_limit,
+                    None, // Circuit as a local Gateway ID = None
+                    // ToDo: Generate Circuit's params as default ABI
+                    Default::default(),
+                )?;
+
+            Ok(().into())
+        }
+
+        #[pallet::weight(<T as Config>::WeightInfo::dry_run_whole_xtx_three_components() + <T as Config>::WeightInfo::decompose_io_schedule())]
         pub fn submit_composable_exec_order(
             origin: OriginFor<T>,
             io_schedule: Vec<u8>,
@@ -210,7 +275,7 @@ pub mod pallet {
                 Self::decompose_io_schedule(components.clone(), io_schedule.clone())
                     .expect("Wrong io schedule");
 
-            let escrow_account = select_validator_for_x_tx_dummy::<T>(io_schedule.clone())?;
+            let escrow_account = select_validator_for_x_tx_dummy::<T>()?;
 
             // In dry run we would like to:
             // 1. Parse and validate the syntax of unseen in the on-chain registry contracts
@@ -533,6 +598,8 @@ pub mod pallet {
         StepConfirmationGatewayNotRecognised,
         SideEffectConfirmationInvalidInclusionProof,
         StepConfirmationDecodingError,
+        ContractDoesNotExists,
+        RequesterNotEnoughBalance,
     }
 }
 
@@ -562,7 +629,6 @@ impl<T: Config> Pallet<T> {
         const PHASE_SEPARATOR: u8 = b'|';
         const STEP_SEPARATOR: u8 = b',';
         const SCHEDULE_END: u8 = b';';
-
         // trims all whitespace chars from io_schedule vector
         fn trim_whitespace(input_string: Vec<u8>) -> Vec<u8> {
             let mut result = input_string.clone();

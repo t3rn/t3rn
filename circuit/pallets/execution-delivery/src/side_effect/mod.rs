@@ -1,8 +1,5 @@
-
 use codec::{Decode, Encode};
-use sp_runtime::{
-    RuntimeDebug,
-};
+use sp_runtime::RuntimeDebug;
 use sp_std::vec::Vec;
 
 pub type SideEffectId<T> = <T as frame_system::Config>::Hash;
