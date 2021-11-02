@@ -22,7 +22,7 @@ use codec::Encode;
 
 use frame_support::{assert_err, assert_ok};
 
-use crate::{Xtx, XtxSchedule};
+use crate::Xtx;
 use sp_io;
 
 use sp_core::{crypto::Pair, sr25519, Hasher};
@@ -610,37 +610,28 @@ fn dry_run_whole_xtx_unseen_contract_one_phase_and_one_step_success() {
 
         contract_ids.push(key);
 
-        let max_steps = contracts.len() as u32;
+        let _max_steps = contracts.len() as u32;
 
-        let (current_block_no, block_zero) = (
+        let (_current_block_no, _block_zero) = (
             <frame_system::Pallet<Test>>::block_number(),
             <Test as frame_system::Config>::BlockNumber::zero(),
         );
 
-        let xtx_schedule = XtxSchedule::new_sequential_from_contracts(
-            contracts.clone(),
-            contract_ids.clone(),
-            vec![step.compose.clone()],
-            action_descriptions.clone(),
-            None,
-            current_block_no.clone(),
-        )
-        .unwrap();
-
-        let expected_xtx = Xtx {
-            estimated_worth: Default::default(),
-            current_worth: Default::default(),
-            requester: requester.clone(),
-            escrow_account: escrow_account.clone(),
-            payload: vec![],
-            current_step: 0,
-            steps_no: max_steps,
-            current_phase: 0,
-            current_round: 0,
-            result_status: vec![],
-            phases_blockstamps: (current_block_no, block_zero),
-            schedule: xtx_schedule,
-        };
+        let expected_xtx = Xtx::new(requester.clone(), vec![], None, None, None);
+        //
+        // let expected_xtx = Xtx {
+        //     estimated_worth: Default::default(),
+        //     current_worth: Default::default(),
+        //     requester: requester.clone(),
+        //     escrow_account: escrow_account.clone(),
+        //     payload: vec![],
+        //     current_step: 0,
+        //     steps_no: max_steps,
+        //     current_phase: 0,
+        //     current_round: 0,
+        //     result_status: vec![],
+        //     phases_blockstamps: (current_block_no, block_zero),
+        // };
 
         assert_eq!(
             ExecDelivery::dry_run_whole_xtx(inter_schedule, escrow_account, requester),
@@ -717,6 +708,7 @@ fn test_register_gateway_with_default_polka_like_header() {
     let first_header: CurrentHeader<Test, DefaultPolkadotLikeGateway> = test_header(0);
 
     let authorities = Some(vec![]);
+    let allowed_side_effects = None;
 
     let mut ext = TestExternalities::new_empty();
     ext.execute_with(|| {
@@ -729,7 +721,8 @@ fn test_register_gateway_with_default_polka_like_header() {
             gateway_type,
             gateway_genesis,
             first_header.encode(),
-            authorities
+            authorities,
+            allowed_side_effects
         ));
     });
 }
@@ -761,6 +754,7 @@ fn test_register_gateway_with_u64_substrate_header() {
     let first_header: CurrentHeader<Test, PolkadotLikeValU64Gateway> = test_header(0);
 
     let authorities = Some(vec![]);
+    let allowed_side_effects = None;
 
     let mut ext = TestExternalities::new_empty();
     ext.execute_with(|| {
@@ -773,7 +767,8 @@ fn test_register_gateway_with_u64_substrate_header() {
             gateway_type,
             gateway_genesis,
             first_header.encode(),
-            authorities
+            authorities,
+            allowed_side_effects,
         ));
     });
 }
@@ -805,6 +800,7 @@ fn test_register_gateway_with_default_eth_like_header() {
     let first_header: CurrentHeader<Test, EthLikeKeccak256ValU32Gateway> = test_header(0);
 
     let authorities = Some(vec![]);
+    let allowed_side_effects = None;
 
     let mut ext = TestExternalities::new_empty();
     ext.execute_with(|| {
@@ -817,7 +813,8 @@ fn test_register_gateway_with_default_eth_like_header() {
             gateway_type,
             gateway_genesis,
             first_header.encode(),
-            authorities
+            authorities,
+            allowed_side_effects,
         ));
     });
 }
@@ -849,6 +846,7 @@ fn test_register_gateway_with_u64_eth_like_header() {
     let first_header: CurrentHeader<Test, EthLikeKeccak256ValU64Gateway> = test_header(0);
 
     let authorities = Some(vec![]);
+    let allowed_side_effects = None;
 
     let mut ext = TestExternalities::new_empty();
     ext.execute_with(|| {
@@ -861,7 +859,8 @@ fn test_register_gateway_with_u64_eth_like_header() {
             gateway_type,
             gateway_genesis,
             first_header.encode(),
-            authorities
+            authorities,
+            allowed_side_effects,
         ));
     });
 }
