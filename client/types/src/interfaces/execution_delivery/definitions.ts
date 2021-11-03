@@ -25,17 +25,6 @@ export default {
         MerklePath: 1,
       }
     },
-    Proof: {
-      value: 'Bytes',
-      value_hash: 'Bytes',
-      block_hash: 'Bytes',
-      proof_type: 'ProofType',
-      proof_trie_pointer: 'ProofTriePointer',
-      proof_data: 'Vec<Vec<u8>>',
-      in_proof_index: 'Option<U256>',
-      in_block_index: 'Option<U256>',
-      in_tx_index: 'Option<U256>',
-    },
     StepConfirmation: {
       step_index: 'u8',
       value: 'Bytes',

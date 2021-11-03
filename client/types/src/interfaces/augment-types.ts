@@ -13,7 +13,7 @@ import type { BeefyCommitment, BeefyId, BeefyNextAuthoritySet, BeefyPayload, Bee
 import type { BridgeMessageId, BridgedBlockHash, BridgedBlockNumber, BridgedHeader, CallOrigin, ChainId, DeliveredMessages, DispatchFeePayment, InboundLaneData, InboundRelayer, InitializationData, LaneId, MessageData, MessageKey, MessageNonce, MessagesDeliveryProofOf, MessagesProofOf, OperatingMode, OutboundLaneData, OutboundMessageFee, OutboundPayload, Parameter, RelayerId, UnrewardedRelayer, UnrewardedRelayersState } from '@polkadot/types/interfaces/bridges';
 import type { BlockHash } from '@polkadot/types/interfaces/chain';
 import type { PrefixedStorageKey } from '@polkadot/types/interfaces/childstate';
-import type { EthereumAddress, StatementKind } from '@polkadot/types/interfaces/claims';
+import type { StatementKind } from '@polkadot/types/interfaces/claims';
 import type { CollectiveOrigin, MemberCount, ProposalIndex, Votes, VotesTo230 } from '@polkadot/types/interfaces/collective';
 import type { AuthorityId, RawVRFOutput } from '@polkadot/types/interfaces/consensus';
 import type { AliveContractInfo, CodeHash, ContractCallRequest, ContractExecResult, ContractExecResultErr, ContractExecResultErrModule, ContractExecResultOk, ContractExecResultResult, ContractExecResultSuccessTo255, ContractExecResultSuccessTo260, ContractExecResultTo255, ContractExecResultTo260, ContractExecResultTo267, ContractInfo, ContractInstantiateResult, ContractInstantiateResultTo267, ContractStorageKey, DeletedContract, ExecReturnValue, Gas, HostFnWeights, HostFnWeightsTo264, InstantiateRequest, InstantiateReturnValue, InstantiateReturnValueTo267, InstructionWeights, Limits, LimitsTo264, PrefabWasmModule, RentProjection, Schedule, ScheduleTo212, ScheduleTo258, ScheduleTo264, SeedOf, TombstoneContractInfo, TrieId } from '@polkadot/types/interfaces/contracts';
@@ -23,7 +23,7 @@ import type { ConfigData, MessageId, OverweightIndex, PageCounter, PageIndexData
 import type { AccountVote, AccountVoteSplit, AccountVoteStandard, Conviction, Delegations, PreimageStatus, PreimageStatusAvailable, PriorLock, PropIndex, Proposal, ProxyState, ReferendumIndex, ReferendumInfo, ReferendumInfoFinished, ReferendumInfoTo239, ReferendumStatus, Tally, Voting, VotingDelegating, VotingDirect, VotingDirectVote } from '@polkadot/types/interfaces/democracy';
 import type { ApprovalFlag, DefunctVoter, Renouncing, SetIndex, Vote, VoteIndex, VoteThreshold, VoterInfo } from '@polkadot/types/interfaces/elections';
 import type { CreatedBlock, ImportedAux } from '@polkadot/types/interfaces/engine';
-import type { BlockV0, BlockV1, BlockV2, EIP1559Transaction, EIP2930Transaction, EthAccessList, EthAccessListItem, EthAccount, EthAddress, EthBlock, EthBloom, EthCallRequest, EthFilter, EthFilterAddress, EthFilterChanges, EthFilterTopic, EthFilterTopicEntry, EthFilterTopicInner, EthHeader, EthLog, EthReceipt, EthRichBlock, EthRichHeader, EthStorageProof, EthSubKind, EthSubParams, EthSubResult, EthSyncInfo, EthSyncStatus, EthTransaction, EthTransactionAction, EthTransactionCondition, EthTransactionRequest, EthTransactionSignature, EthTransactionStatus, EthWork, EthereumAccountId, EthereumLookupSource, EthereumSignature, LegacyTransaction, TransactionV0, TransactionV1, TransactionV2 } from '@polkadot/types/interfaces/eth';
+import type { BlockV0, BlockV1, BlockV2, EIP1559Transaction, EIP2930Transaction, EthAccessList, EthAccessListItem, EthAccount, EthAddress, EthBlock, EthBloom, EthCallRequest, EthFilter, EthFilterAddress, EthFilterChanges, EthFilterTopic, EthFilterTopicEntry, EthFilterTopicInner, EthHeader, EthLog, EthReceipt, EthRichBlock, EthRichHeader, EthStorageProof, EthSubKind, EthSubParams, EthSubResult, EthSyncInfo, EthSyncStatus, EthTransaction, EthTransactionAction, EthTransactionCondition, EthTransactionRequest, EthTransactionSignature, EthTransactionStatus, EthWork, EthereumAccountId, EthereumAddress, EthereumLookupSource, EthereumSignature, LegacyTransaction, TransactionV0, TransactionV1, TransactionV2 } from '@polkadot/types/interfaces/eth';
 import type { EvmAccount, EvmLog, EvmVicinity, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed } from '@polkadot/types/interfaces/evm';
 import type { AnySignature, EcdsaSignature, Ed25519Signature, Era, Extrinsic, ExtrinsicEra, ExtrinsicPayload, ExtrinsicPayloadUnknown, ExtrinsicPayloadV4, ExtrinsicSignature, ExtrinsicSignatureV4, ExtrinsicUnknown, ExtrinsicV4, ImmortalEra, MortalEra, MultiSignature, Signature, SignerPayload, Sr25519Signature } from '@polkadot/types/interfaces/extrinsics';
 import type { AssetOptions, Owner, PermissionLatest, PermissionVersions, PermissionsV1 } from '@polkadot/types/interfaces/genericAsset';
@@ -59,8 +59,9 @@ import type { Multisig, Timepoint } from '@polkadot/types/interfaces/utility';
 import type { VestingInfo } from '@polkadot/types/interfaces/vesting';
 import type { AssetInstance, AssetInstanceV0, AssetInstanceV1, AssetInstanceV2, BodyId, BodyPart, DoubleEncodedCall, Fungibility, FungibilityV0, FungibilityV1, FungibilityV2, InboundStatus, InstructionV2, InteriorMultiLocation, Junction, JunctionV0, JunctionV1, JunctionV2, Junctions, JunctionsV1, JunctionsV2, MultiAsset, MultiAssetFilter, MultiAssetFilterV1, MultiAssetFilterV2, MultiAssetV0, MultiAssetV1, MultiAssetV2, MultiAssets, MultiAssetsV1, MultiAssetsV2, MultiLocation, MultiLocationV0, MultiLocationV1, MultiLocationV2, NetworkId, OriginKindV0, OriginKindV1, OriginKindV2, OutboundStatus, Outcome, QueryId, QueryStatus, QueueConfigData, Response, ResponseV0, ResponseV1, ResponseV2, ResponseV2Error, ResponseV2Result, VersionMigrationStage, VersionedMultiAsset, VersionedMultiAssets, VersionedMultiLocation, VersionedResponse, VersionedXcm, WeightLimitV2, WildFungibility, WildFungibilityV0, WildFungibilityV1, WildFungibilityV2, WildMultiAsset, WildMultiAssetV1, WildMultiAssetV2, Xcm, XcmAssetId, XcmError, XcmErrorV0, XcmErrorV1, XcmErrorV2, XcmOrder, XcmOrderV0, XcmOrderV1, XcmOrderV2, XcmOrigin, XcmOriginKind, XcmV0, XcmV1, XcmV2, XcmVersion, XcmpMessageFormat } from '@polkadot/types/interfaces/xcm';
 import type { RegistryContract, RegistryContractId } from 't3rn-circuit-typegen/interfaces/contracts_registry';
-import type { GatewayOutboundEvent, GatewayOutboundEventId, Proof, ProofType, StepConfirmation, Xtx, XtxId, XtxSchedule, result_status } from 't3rn-circuit-typegen/interfaces/execution_delivery';
-import type { CircuitOutboundMessage, Compose, CryptoAlgo, GatewayABIConfig, GatewayExpectedOutput, GatewayGenesisConfig, GatewayPointer, GatewayType, GatewayVendor, HasherAlgo, ProofTriePointer, StructDecl } from 't3rn-circuit-typegen/interfaces/primitives';
+import type { GatewayOutboundEvent, GatewayOutboundEventId, ProofType, StepConfirmation, Xtx, XtxId, XtxSchedule, result_status } from 't3rn-circuit-typegen/interfaces/execution_delivery';
+import type { CircuitOutboundMessage, Compose, ContractActionDesc, CryptoAlgo, ExtraMessagePayload, GatewayABIConfig, GatewayExpectedOutput, GatewayGenesisConfig, GatewayPointer, GatewayType, GatewayVendor, HasherAlgo, ProofTriePointer, StructDecl, TargetId } from 't3rn-circuit-typegen/interfaces/primitives';
+import type { Bloom, ChannelId, DispatchMessageId, EthashProofData, EthereumDifficultyConfig, EthereumHeader, EthereumHeaderId, Message, Proof, PruningRange, StoredHeader, TokenData, TokenId, TokenInfoOf } from 't3rn-circuit-typegen/interfaces/snowfork';
 import type { RawAliveContractInfo } from 't3rn-circuit-typegen/interfaces/volatile_vm';
 import type { XdnsRecord, XdnsRecordId } from 't3rn-circuit-typegen/interfaces/xdns';
 
@@ -164,6 +165,7 @@ declare module '@polkadot/types/types/registry' {
     BlockV1: BlockV1;
     BlockV2: BlockV2;
     BlockWeights: BlockWeights;
+    Bloom: Bloom;
     BodyId: BodyId;
     BodyPart: BodyPart;
     bool: bool;
@@ -196,6 +198,7 @@ declare module '@polkadot/types/types/registry' {
     ChainType: ChainType;
     ChangesTrieConfiguration: ChangesTrieConfiguration;
     ChangesTrieSignal: ChangesTrieSignal;
+    ChannelId: ChannelId;
     CircuitOutboundMessage: CircuitOutboundMessage;
     ClassDetails: ClassDetails;
     ClassId: ClassId;
@@ -218,6 +221,7 @@ declare module '@polkadot/types/types/registry' {
     Consensus: Consensus;
     ConsensusEngineId: ConsensusEngineId;
     ConsumedWeight: ConsumedWeight;
+    ContractActionDesc: ContractActionDesc;
     ContractCallRequest: ContractCallRequest;
     ContractConstructorSpec: ContractConstructorSpec;
     ContractContractSpec: ContractContractSpec;
@@ -291,6 +295,7 @@ declare module '@polkadot/types/types/registry' {
     DispatchInfo: DispatchInfo;
     DispatchInfoTo190: DispatchInfoTo190;
     DispatchInfoTo244: DispatchInfoTo244;
+    DispatchMessageId: DispatchMessageId;
     DispatchOutcome: DispatchOutcome;
     DispatchResult: DispatchResult;
     DispatchResultOf: DispatchResultOf;
@@ -332,11 +337,15 @@ declare module '@polkadot/types/types/registry' {
     EthAccessListItem: EthAccessListItem;
     EthAccount: EthAccount;
     EthAddress: EthAddress;
+    EthashProofData: EthashProofData;
     EthBlock: EthBlock;
     EthBloom: EthBloom;
     EthCallRequest: EthCallRequest;
     EthereumAccountId: EthereumAccountId;
     EthereumAddress: EthereumAddress;
+    EthereumDifficultyConfig: EthereumDifficultyConfig;
+    EthereumHeader: EthereumHeader;
+    EthereumHeaderId: EthereumHeaderId;
     EthereumLookupSource: EthereumLookupSource;
     EthereumSignature: EthereumSignature;
     EthFilter: EthFilter;
@@ -386,6 +395,7 @@ declare module '@polkadot/types/types/registry' {
     ExplicitDisputeStatement: ExplicitDisputeStatement;
     Exposure: Exposure;
     ExtendedBalance: ExtendedBalance;
+    ExtraMessagePayload: ExtraMessagePayload;
     Extrinsic: Extrinsic;
     ExtrinsicEra: ExtrinsicEra;
     ExtrinsicMetadataLatest: ExtrinsicMetadataLatest;
@@ -560,6 +570,7 @@ declare module '@polkadot/types/types/registry' {
     MaybeVrf: MaybeVrf;
     MemberCount: MemberCount;
     MembershipProof: MembershipProof;
+    Message: Message;
     MessageData: MessageData;
     MessageId: MessageId;
     MessageIngestionType: MessageIngestionType;
@@ -738,6 +749,7 @@ declare module '@polkadot/types/types/registry' {
     ProxyDefinition: ProxyDefinition;
     ProxyState: ProxyState;
     ProxyType: ProxyType;
+    PruningRange: PruningRange;
     QueryId: QueryId;
     QueryStatus: QueryStatus;
     QueueConfigData: QueueConfigData;
@@ -964,6 +976,7 @@ declare module '@polkadot/types/types/registry' {
     StorageMetadataV13: StorageMetadataV13;
     StorageMetadataV9: StorageMetadataV9;
     StorageProof: StorageProof;
+    StoredHeader: StoredHeader;
     StoredPendingChange: StoredPendingChange;
     StoredState: StoredState;
     StrikeCount: StrikeCount;
@@ -975,12 +988,16 @@ declare module '@polkadot/types/types/registry' {
     SystemInherentData: SystemInherentData;
     SystemOrigin: SystemOrigin;
     Tally: Tally;
+    TargetId: TargetId;
     TaskAddress: TaskAddress;
     TAssetBalance: TAssetBalance;
     TAssetDepositBalance: TAssetDepositBalance;
     Text: Text;
     Timepoint: Timepoint;
+    TokenData: TokenData;
     TokenError: TokenError;
+    TokenId: TokenId;
+    TokenInfoOf: TokenInfoOf;
     TombstoneContractInfo: TombstoneContractInfo;
     TraceBlockResponse: TraceBlockResponse;
     TraceError: TraceError;

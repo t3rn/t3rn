@@ -15,6 +15,8 @@ import type { Multiplier } from '@polkadot/types/interfaces/txpayment';
 import type { AnyNumber, ITuple, Observable } from '@polkadot/types/types';
 import type { RegistryContract, RegistryContractId } from 't3rn-circuit-typegen/interfaces/contracts_registry';
 import type { Xtx, XtxId } from 't3rn-circuit-typegen/interfaces/execution_delivery';
+import type { TargetId } from 't3rn-circuit-typegen/interfaces/primitives';
+import type { EthereumHeaderId, PruningRange, StoredHeader } from 't3rn-circuit-typegen/interfaces/snowfork';
 import type { XdnsRecord, XdnsRecordId } from 't3rn-circuit-typegen/interfaces/xdns';
 
 declare module '@polkadot/api/types/storage' {

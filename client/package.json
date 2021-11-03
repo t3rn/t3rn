@@ -9,7 +9,6 @@
     "circuit-integration-tests"
   ],
   "resolutions": {
-    "@polkadot/api": "^6.5.2",
-    "@polkadot/types": "^6.5.2"
+    "@polkadot/types": "^6.6.1"
   }
 }

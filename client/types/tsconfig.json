@@ -1,13 +1,9 @@
 {
   "compilerOptions": {
-    "target": "ES5",
-    "module": "ES2015",
-    "moduleResolution": "Node",
-    "lib": ["es2017", "es7", "es6", "dom"],
-    "declaration": true,
-    "outDir": "dist",
-    "strict": true,
+    "target": "ES2015",
     "esModuleInterop": true,
+    "module": "CommonJS",
+    "outDir": "dist",
     "baseUrl": ".",
     "paths": {
       "t3rn-circuit-typegen/*": [
@@ -20,7 +16,7 @@
         "src/interfaces/augment-types.ts"
       ],
       "@polkadot/types/lookup": [
-        "src/interfaces/augment-types.ts"
+        "../node_modules/@polkadot/types/augment/lookup/index.js"
       ]
     }
   },

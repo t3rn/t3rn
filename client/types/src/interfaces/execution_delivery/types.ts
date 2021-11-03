@@ -1,10 +1,11 @@
 // Auto-generated via `yarn polkadot-types-from-defs`, do not edit
 /* eslint-disable */
 
-import type { Bytes, Enum, Option, Struct, Type, U256, Vec, u32, u64, u8 } from '@polkadot/types';
+import type { Bytes, Enum, Option, Struct, Type, Vec, u32, u64, u8 } from '@polkadot/types';
 import type { AccountId, BalanceOf, BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
 import type { ITuple } from '@polkadot/types/types';
-import type { GatewayPointer, ProofTriePointer } from 't3rn-circuit-typegen/interfaces/primitives';
+import type { GatewayPointer } from 't3rn-circuit-typegen/interfaces/primitives';
+import type { Proof } from 't3rn-circuit-typegen/interfaces/snowfork';
 
 /** @name GatewayOutboundEvent */
 export interface GatewayOutboundEvent extends Struct {
@@ -21,19 +22,6 @@ export interface GatewayOutboundEvent extends Struct {
 
 /** @name GatewayOutboundEventId */
 export interface GatewayOutboundEventId extends u64 {}
-
-/** @name Proof */
-export interface Proof extends Struct {
-  readonly value: Bytes;
-  readonly value_hash: Bytes;
-  readonly block_hash: Bytes;
-  readonly proof_type: ProofType;
-  readonly proof_trie_pointer: ProofTriePointer;
-  readonly proof_data: Vec<Bytes>;
-  readonly in_proof_index: Option<U256>;
-  readonly in_block_index: Option<U256>;
-  readonly in_tx_index: Option<U256>;
-}
 
 /** @name ProofType */
 export interface ProofType extends Enum {

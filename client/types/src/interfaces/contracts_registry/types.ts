@@ -4,6 +4,7 @@
 import type { Bytes, Option, Struct, Vec } from '@polkadot/types';
 import type { ContractMetadata } from '@polkadot/types/interfaces/contractsAbi';
 import type { AccountId, BalanceOf, Hash } from '@polkadot/types/interfaces/runtime';
+import type { ContractActionDesc } from 't3rn-circuit-typegen/interfaces/primitives';
 import type { RawAliveContractInfo } from 't3rn-circuit-typegen/interfaces/volatile_vm';
 
 /** @name RegistryContract */

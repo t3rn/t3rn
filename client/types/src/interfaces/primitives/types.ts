@@ -3,7 +3,7 @@
 
 import type { Bytes, Enum, Option, Struct, Type, Vec, u16, u64, u8 } from '@polkadot/types';
 import type { ChainId, Parameter } from '@polkadot/types/interfaces/bridges';
-import type { AccountId, Balance } from '@polkadot/types/interfaces/runtime';
+import type { AccountId, Balance, Hash } from '@polkadot/types/interfaces/runtime';
 import type { RuntimeVersion } from '@polkadot/types/interfaces/state';
 
 /** @name CircuitOutboundMessage */
@@ -29,11 +29,30 @@ export interface Compose extends Struct {
   readonly input_data: Bytes;
 }
 
+/** @name ContractActionDesc */
+export interface ContractActionDesc extends Struct {
+  readonly action_id: Hash;
+  readonly target_id: Option<TargetId>;
+  readonly to: Option<AccountId>;
+}
+
 /** @name CryptoAlgo */
 export interface CryptoAlgo extends Enum {
   readonly isEd25519: boolean;
   readonly isSr25519: boolean;
   readonly isEcdsa: boolean;
+}
+
+/** @name ExtraMessagePayload */
+export interface ExtraMessagePayload extends Struct {
+  readonly signer: Bytes;
+  readonly module_name: Bytes;
+  readonly method_name: Bytes;
+  readonly call_bytes: Bytes;
+  readonly signature: Bytes;
+  readonly extra: Bytes;
+  readonly tx_signed: Bytes;
+  readonly custom_payload: Option<Bytes>;
 }
 
 /** @name GatewayABIConfig */
@@ -116,5 +135,8 @@ export interface StructDecl extends Struct {
   readonly fields: Vec<Parameter>;
   readonly offsets: Vec<u16>;
 }
+
+/** @name TargetId */
+export interface TargetId extends ChainId {}
 
 export type PHANTOM_PRIMITIVES = 'primitives';

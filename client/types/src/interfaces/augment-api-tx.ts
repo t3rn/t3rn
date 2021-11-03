@@ -14,6 +14,7 @@ import type { AnyNumber } from '@polkadot/types/types';
 import type { RegistryContract, RegistryContractId } from 't3rn-circuit-typegen/interfaces/contracts_registry';
 import type { StepConfirmation, XtxId } from 't3rn-circuit-typegen/interfaces/execution_delivery';
 import type { Compose, GatewayABIConfig, GatewayGenesisConfig, GatewayType, GatewayVendor } from 't3rn-circuit-typegen/interfaces/primitives';
+import type { EthashProofData, EthereumHeader } from 't3rn-circuit-typegen/interfaces/snowfork';
 import type { XdnsRecordId } from 't3rn-circuit-typegen/interfaces/xdns';
 
 declare module '@polkadot/api/types/submittable' {
@@ -338,7 +339,7 @@ declare module '@polkadot/api/types/submittable' {
        * - Iterating over ancestors: min `DescendantsUntilFinalized` reads to find the
        * newly finalized ancestor of a header.
        **/
-      importHeader: AugmentedSubmittable<(header: EthereumHeader, proof: Vec<EthashProofData> | (EthashProofData)[]) => SubmittableExtrinsic<ApiType>, [EthereumHeader, Vec<EthashProofData>]>;
+      importHeader: AugmentedSubmittable<(header: EthereumHeader | { parentHash?: any; timestamp?: any; number?: any; author?: any; transactionsRoot?: any; ommersHash?: any; extraData?: any; stateRoot?: any; receiptsRoot?: any; logBloom?: any; gasUsed?: any; gasLimit?: any; difficulty?: any; seal?: any; baseFee?: any } | string | Uint8Array, proof: Vec<EthashProofData> | (EthashProofData | { dagNodes?: any; proof?: any } | string | Uint8Array)[]) => SubmittableExtrinsic<ApiType>, [EthereumHeader, Vec<EthashProofData>]>;
       /**
        * Generic tx
        **/

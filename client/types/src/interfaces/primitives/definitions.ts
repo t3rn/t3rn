@@ -91,6 +91,22 @@ export default {
       vendor: 'GatewayVendor',
       gateway_type: 'GatewayType',
     },
+    ExtraMessagePayload: {
+      signer: 'Bytes',
+      module_name: 'Bytes',
+      method_name: 'Bytes',
+      call_bytes: 'Bytes',
+      signature: 'Bytes',
+      extra: 'Bytes',
+      tx_signed: 'Bytes',
+      custom_payload: 'Option<Bytes>',
+    },
+    ContractActionDesc: {
+      action_id: 'Hash',
+      target_id: 'Option<TargetId>',
+      to: 'Option<AccountId>',
+    },
+    TargetId: 'ChainId'
     // ContractMetadata: {
     //   metadata_version: 'Vec<u8>',
     //   name: 'Vec<u8>',
