@@ -903,6 +903,7 @@ fn test_register_gateway_with_u64_substrate_header_and_allowed_side_effects() {
     let allowed_side_effects = Some(vec!["swap".into()]);
 
     let mut ext = TestExternalities::new_empty();
+    ext.execute_with( || System::set_block_number(1));
     ext.execute_with(|| {
         assert_ok!(ExecDelivery::register_gateway(
             origin,
@@ -932,19 +933,10 @@ fn test_register_gateway_with_u64_substrate_header_and_allowed_side_effects() {
 
         // Assert events emitted
 
-        // let events = System::events().clone();
-        // println!("{:?}",events);
-        // assert_eq!(System::events().len(), 2);
-        // assert_eq!(
-        // 	System::events(),
-        // 	vec![
-        // 		EventRecord {
-        // 			phase: Phase::Initialization,
-        // 			event: Event::ExecDelivery(pallet_execution_delivery::Event::NewGatewayRegistered(
-        //                 gateway_id, gateway_vendor, gateway_type, allowed_side_effects)),
-        // 			topics: vec![],
-        // 		},
-        // 	]
-        // );
+        System::assert_last_event(
+            Event::ExecDelivery(crate::Event::NewGatewayRegistered(gateway_id, gateway_vendor, gateway_type, allowed_side_effects))
+        );
+        // XdnsRecordStored and NewGatewayRegistered
+        assert_eq!(System::events().len(), 2);
     });
 }
