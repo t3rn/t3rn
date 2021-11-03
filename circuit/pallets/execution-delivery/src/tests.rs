@@ -37,6 +37,7 @@ use sp_keystore::testing::KeyStore;
 use sp_keystore::{KeystoreExt, SyncCryptoStore};
 
 use pallet_execution_delivery::Compose;
+use pallet_xdns::XdnsRecord;
 
 use t3rn_primitives::{abi::GatewayABIConfig, transfers::BalanceOf, *};
 
@@ -916,19 +917,34 @@ fn test_register_gateway_with_u64_substrate_header_and_allowed_side_effects() {
             allowed_side_effects.clone(),
         ));
 
+        // Assert the stored xdns record
+
+        let xdns_id =
+            <Test as frame_system::Config>::Hashing::hash(Encode::encode(&gateway_id).as_ref());
+        let result = pallet_xdns::XDNSRegistry::<Test>::get(xdns_id);
+
+        assert!(result.is_some());
+        let xdns_record = result.unwrap();
+        let stored_side_effects = xdns_record.allowed_side_effects.unwrap();
+
+        assert_eq!(stored_side_effects.len(), 1);
+        assert_eq!(stored_side_effects, allowed_side_effects.clone().unwrap());
+
+        // Assert events emitted
+
         // let events = System::events().clone();
         // println!("{:?}",events);
         // assert_eq!(System::events().len(), 2);
         // assert_eq!(
-		// 	System::events(),
-		// 	vec![
-		// 		EventRecord {
-		// 			phase: Phase::Initialization,
-		// 			event: Event::ExecDelivery(pallet_execution_delivery::Event::NewGatewayRegistered(
+        // 	System::events(),
+        // 	vec![
+        // 		EventRecord {
+        // 			phase: Phase::Initialization,
+        // 			event: Event::ExecDelivery(pallet_execution_delivery::Event::NewGatewayRegistered(
         //                 gateway_id, gateway_vendor, gateway_type, allowed_side_effects)),
-		// 			topics: vec![],
-		// 		},
-		// 	]
-		// );
+        // 			topics: vec![],
+        // 		},
+        // 	]
+        // );
     });
 }
