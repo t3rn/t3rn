@@ -192,15 +192,6 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::weight(<T as Config>::WeightInfo::dry_run_whole_xtx_three_components() + <T as Config>::WeightInfo::decompose_io_schedule())]
-        pub fn submit_schedule_exec(
-            _origin: OriginFor<T>,
-            _io_schedule: Vec<u8>,
-            _input: Vec<u8>,
-        ) -> DispatchResultWithPostInfo {
-            Ok(().into())
-        }
-
-        #[pallet::weight(<T as Config>::WeightInfo::dry_run_whole_xtx_three_components() + <T as Config>::WeightInfo::decompose_io_schedule())]
         pub fn submit_exec(
             origin: OriginFor<T>,
             contract_id: RegistryContractId<T>,
@@ -214,7 +205,7 @@ pub mod pallet {
             // Ensure can afford
             ensure!(
                 <T as EscrowTrait>::Currency::free_balance(&requester).saturating_sub(reward)
-                    >= <T as EscrowTrait>::Currency::minimum_balance(),
+                    >= BalanceOf::<T>::from(0 as u32),
                 Error::<T>::RequesterNotEnoughBalance,
             );
 
@@ -226,38 +217,12 @@ pub mod pallet {
                         .expect("contains_key called above before accessing the contract")
                 };
 
-            // Why Gateway if targets are assigned only on the level of side effects
-            // let gateway_pointer = Self::retrieve_gateway_pointer::<T>(gateway_id.clone())?;
-            // let gateway_inbound_protocol =
-            //     Self::retrieve_gateway_protocol::<T>(submitter, &gateway_pointer)?;
-            let _preload_response = ExecComposer::preload_bunch_of_contracts::<T>(
-                vec![contract.clone()],
-                Default::default(),
-            );
-
-            // ToDo: Work out max gas limit acceptable by each escrow
-            let gas_limit = u64::max_value();
-            let escrow_account = select_validator_for_x_tx_dummy::<T>()?;
-            let submitter = Self::select_authority(escrow_account.clone())?;
-
-            let (_circuit_outbound_messages, _last_executed_contract_no) =
-                ExecComposer::pre_run_bunch_until_break::<T>(
-                    vec![contract.clone()],
-                    // ToDo: Remove escrow account from the execution pre-requisites. Leave Side Effects unassigned
-                    escrow_account.clone(),
-                    submitter.clone(),
-                    requester.clone(),
-                    value,
-                    input,
-                    gas_limit,
-                    None, // Circuit as a local Gateway ID = None
-                    // ToDo: Generate Circuit's params as default ABI
-                    Default::default(),
-                )?;
+            Self::submit_xtx_execution(vec![contract], requester, input, value, reward);
 
             Ok(().into())
         }
 
+        /// Will be deprecated in v1.0.0-beta
         #[pallet::weight(<T as Config>::WeightInfo::dry_run_whole_xtx_three_components() + <T as Config>::WeightInfo::decompose_io_schedule())]
         pub fn submit_composable_exec_order(
             origin: OriginFor<T>,
@@ -275,65 +240,27 @@ pub mod pallet {
                 Self::decompose_io_schedule(components.clone(), io_schedule.clone())
                     .expect("Wrong io schedule");
 
-            let escrow_account = select_validator_for_x_tx_dummy::<T>()?;
+            let _escrow_account = select_validator_for_x_tx_dummy::<T>()?;
 
             // In dry run we would like to:
             // 1. Parse and validate the syntax of unseen in the on-chain registry contracts
             //     1.2. Add them to the on-chain registry
             // 2. Fetch all of the contracts from on-chain registry involved in that execution and dry run as one xtx.
-            let (new_xtx, contracts, _contract_ids, _contract_descriptions) =
-                Self::dry_run_whole_xtx(
-                    inter_schedule.clone(),
-                    requester.clone(),
-                    escrow_account.clone(),
-                )?;
+            let (contracts, _contract_ids, _contract_descriptions) =
+                Self::dry_run_whole_xtx(inter_schedule.clone(), requester.clone())?;
 
-            let x_tx_id: XtxId<T> = new_xtx.generate_xtx_id::<T>();
+            let initial_input = vec![];
+            let initial_value = Default::default();
+            let initial_reward = Default::default();
 
-            ActiveXtxMap::<T>::insert(x_tx_id, &new_xtx);
-
-            // Every time before the execution - preload the all of the involved contracts to the VM
-            ExecComposer::preload_bunch_of_contracts::<T>(contracts.clone(), requester.clone())?;
-
-            let submitter = Self::select_authority(escrow_account.clone())?;
-
-            // ToDo: Initial Input + Value should come for the requester as the submit_exec args.
-            let (value, input_data, gateway_id) = (
-                Default::default(),
-                Default::default(),
-                None, // Assign None for on-chain targets
+            Self::submit_xtx_execution(
+                contracts,
+                requester.clone(),
+                initial_input,
+                initial_value,
+                initial_reward,
             );
 
-            // ToDo: Work out max gas limit acceptable by each escrow
-            let gas_limit = u64::max_value();
-
-            // ToDo: Pick up execution for the last unconfirmed step
-            let (_circuit_outbound_messages, _last_executed_contract_no) =
-                ExecComposer::pre_run_bunch_until_break::<T>(
-                    contracts,
-                    escrow_account.clone(),
-                    submitter,
-                    requester.clone(),
-                    value,
-                    input_data,
-                    gas_limit,
-                    gateway_id,
-                    // ToDo: Generate Circuit's params as default ABI
-                    Default::default(),
-                )?;
-
-            Self::deposit_event(Event::XTransactionReceivedForExec(
-                x_tx_id.clone(),
-                // ToDo: Emit side effects DFD
-                Default::default(),
-            ));
-
-            Self::deposit_event(Event::NewSideEffectsAvailable(
-                requester.clone(),
-                x_tx_id.clone(),
-                // ToDo: Emit circuit outbound messages -> side effects
-                vec![],
-            ));
             Ok(().into())
         }
 
@@ -352,7 +279,6 @@ pub mod pallet {
             //  the side effect against incoming target's format and checking its validity
 
             // ToDo #CNF-3: Check validity of inclusion - skip in _blind version for testing
-
             // Verify whether the side effect completes the Xtx
             let _xtx: Xtx<T::AccountId, T::BlockNumber, BalanceOf<T>> =
                 ActiveXtxMap::<T>::get(xtx_id.clone())
@@ -714,11 +640,9 @@ impl<T: Config> Pallet<T> {
     /// The output is cross-chain transaction with a fixed schedule that covers all future steps of the incoming rounds and phases.
     pub fn dry_run_whole_xtx(
         inter_schedule: InterExecSchedule<T::AccountId, BalanceOf<T>>,
-        _escrow_account: T::AccountId,
-        requester: T::AccountId,
+        _requester: T::AccountId,
     ) -> Result<
         (
-            Xtx<T::AccountId, T::BlockNumber, BalanceOf<T>>,
             Vec<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>>,
             Vec<RegistryContractId<T>>,
             Vec<ContractActionDesc<T::Hash, ChainId, T::AccountId>>,
@@ -771,18 +695,67 @@ impl<T: Config> Pallet<T> {
             T::BlockNumber::zero(),
         );
 
-        // ToDo: read the first input of the first Compose
-        let initial_input = vec![];
+        Ok((contracts, contract_ids, action_descriptions))
+    }
 
+    pub fn submit_xtx_execution(
+        contracts: Vec<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>>,
+        requester: T::AccountId,
+        input: Vec<u8>,
+        value: BalanceOf<T>,
+        reward: BalanceOf<T>,
+    ) -> Result<(), &'static str> {
+        // ToDo: Refactor loading
+        let _preload_response =
+            ExecComposer::preload_bunch_of_contracts::<T>(contracts.clone(), Default::default());
+
+        // ToDo: Work out max gas limit acceptable by each escrow
+        let gas_limit = u64::max_value();
+        let escrow_account = select_validator_for_x_tx_dummy::<T>()?;
+        let submitter = Self::select_authority(escrow_account.clone())?;
+
+        let (_circuit_outbound_messages, _last_executed_contract_no) =
+            ExecComposer::pre_run_bunch_until_break::<T>(
+                contracts,
+                // ToDo: Remove escrow account from the execution pre-requisites. Leave Side Effects unassigned
+                escrow_account.clone(),
+                submitter.clone(),
+                requester.clone(),
+                value,
+                input.clone(),
+                gas_limit,
+                None, // Circuit as a local Gateway ID = None
+                // ToDo: Generate Circuit's params as default ABI
+                Default::default(),
+            )?;
+
+        // ToDo: Introduce default timeout + delay
+        let (timeouts_at, delay_steps_at) = (None, None);
         let new_xtx = Xtx::<T::AccountId, T::BlockNumber, BalanceOf<T>>::new(
             requester.clone(),
-            initial_input,
-            None,
-            None,
-            None,
+            input,
+            timeouts_at,
+            delay_steps_at,
+            Some(reward),
         );
 
-        Ok((new_xtx, contracts, contract_ids, action_descriptions))
+        let x_tx_id: XtxId<T> = new_xtx.generate_xtx_id::<T>();
+        ActiveXtxMap::<T>::insert(x_tx_id, &new_xtx);
+
+        Self::deposit_event(Event::XTransactionReceivedForExec(
+            x_tx_id.clone(),
+            // ToDo: Emit side effects DFD
+            Default::default(),
+        ));
+
+        Self::deposit_event(Event::NewSideEffectsAvailable(
+            requester.clone(),
+            x_tx_id.clone(),
+            // ToDo: Emit circuit outbound messages -> side effects
+            vec![],
+        ));
+
+        Ok(())
     }
 
     pub fn select_authority(escrow_account: T::AccountId) -> Result<AuthorityId, &'static str> {
