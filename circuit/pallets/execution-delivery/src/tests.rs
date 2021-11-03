@@ -22,7 +22,6 @@ use codec::Encode;
 
 use frame_support::{assert_err, assert_ok};
 
-use crate::Xtx;
 use sp_io;
 
 use sp_core::{crypto::Pair, sr25519, Hasher};
@@ -573,7 +572,7 @@ fn dry_run_whole_xtx_unseen_contract_one_phase_and_one_step_success() {
             }],
         };
 
-        let escrow_account: AccountId =
+        let _escrow_account: AccountId =
             hex_literal::hex!["8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48"]
                 .into();
 
@@ -617,25 +616,9 @@ fn dry_run_whole_xtx_unseen_contract_one_phase_and_one_step_success() {
             <Test as frame_system::Config>::BlockNumber::zero(),
         );
 
-        let expected_xtx = Xtx::new(requester.clone(), vec![], None, None, None);
-        //
-        // let expected_xtx = Xtx {
-        //     estimated_worth: Default::default(),
-        //     current_worth: Default::default(),
-        //     requester: requester.clone(),
-        //     escrow_account: escrow_account.clone(),
-        //     payload: vec![],
-        //     current_step: 0,
-        //     steps_no: max_steps,
-        //     current_phase: 0,
-        //     current_round: 0,
-        //     result_status: vec![],
-        //     phases_blockstamps: (current_block_no, block_zero),
-        // };
-
         assert_eq!(
-            ExecDelivery::dry_run_whole_xtx(inter_schedule, escrow_account, requester),
-            Ok((expected_xtx, contracts, contract_ids, action_descriptions))
+            ExecDelivery::dry_run_whole_xtx(inter_schedule, requester),
+            Ok((contracts, contract_ids, action_descriptions))
         );
     });
 }
@@ -670,6 +653,57 @@ fn test_submit_composable_exec_order() {
             Origin::signed(Default::default()),
             io_schedule,
             vec![compose],
+        ));
+    });
+}
+
+#[test]
+fn test_submit_exec_order() {
+    let dest = AccountId::new([1 as u8; 32]);
+    let value = BalanceOf::<Test>::from(0u32);
+    let input_data = vec![];
+    let io_schedule = b"component1;".to_vec();
+
+    let compose =
+        make_compose_out_of_raw_wat_code::<Test>(CODE_CALL, input_data.clone(), dest, value);
+
+    let keystore = KeyStore::new();
+
+    // Insert Alice's keys
+    const SURI_ALICE: &str = "//Alice";
+    let key_pair_alice = sr25519::Pair::from_string(SURI_ALICE, None).expect("Generates key pair");
+    SyncCryptoStore::insert_unknown(
+        &keystore,
+        KEY_TYPE,
+        SURI_ALICE,
+        key_pair_alice.public().as_ref(),
+    )
+    .expect("Inserts unknown key");
+
+    let mut ext = TestExternalities::new_empty();
+
+    ext.register_extension(KeystoreExt(keystore.into()));
+    ext.execute_with(|| {
+        insert_default_xdns_record();
+
+        // Must insert the composable contract first
+        assert_ok!(ExecDelivery::submit_composable_exec_order(
+            Origin::signed(Default::default()),
+            io_schedule,
+            vec![compose],
+        ));
+
+        let fixed_contract_id: RegistryContractId<Test> =
+            hex_literal::hex!["6f209cdc1d7e1ee9f16978deb34a865778ba4212d326713b495b90213e9fc0b3"]
+                .into();
+
+        // Can execute the contract now since inserted in previous step
+        assert_ok!(ExecDelivery::submit_exec(
+            Origin::signed(Default::default()),
+            fixed_contract_id,
+            input_data,
+            Default::default(),
+            Default::default(),
         ));
     });
 }
