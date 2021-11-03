@@ -185,12 +185,9 @@ pub mod pallet {
         }
     }
 
-    /// A public part of the pallet.
-    /// todo: split submit_composable_exec_order into
-    ///     submit_execution<origin, io_schedule, input>
-    ///     add_new_composable_contracts(origin, Vec<Compose<T::AccountId, BalanceOf<T>>>)
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+
         #[pallet::weight(<T as Config>::WeightInfo::dry_run_whole_xtx_three_components() + <T as Config>::WeightInfo::decompose_io_schedule())]
         pub fn submit_exec(
             origin: OriginFor<T>,
@@ -217,12 +214,12 @@ pub mod pallet {
                         .expect("contains_key called above before accessing the contract")
                 };
 
-            Self::submit_xtx_execution(vec![contract], requester, input, value, reward);
+            Self::submit_xtx_execution(vec![contract], requester, input, value, reward)?;
 
             Ok(().into())
         }
 
-        /// Will be deprecated in v1.0.0-beta
+        /// Will be deprecated in v1.0.0-RC
         #[pallet::weight(<T as Config>::WeightInfo::dry_run_whole_xtx_three_components() + <T as Config>::WeightInfo::decompose_io_schedule())]
         pub fn submit_composable_exec_order(
             origin: OriginFor<T>,
@@ -259,7 +256,7 @@ pub mod pallet {
                 initial_input,
                 initial_value,
                 initial_reward,
-            );
+            )?;
 
             Ok(().into())
         }
