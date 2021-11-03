@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "target": "ES2015",
-    "module": "ES2015",
+    "target": "ESNext",
+    "module": "ESNext",
     "esModuleInterop": true,
     "moduleResolution": "Node",
     "baseUrl": ".",
@@ -10,5 +10,6 @@
       "@t3rn/types": ["../types"]
     },
     "skipLibCheck": true
-  }
+  },
+  "include": ["test/**/*.test.ts"]
 }
