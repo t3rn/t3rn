@@ -21,6 +21,7 @@ use crate::{self as pallet_execution_delivery};
 use codec::Encode;
 
 use frame_support::{assert_err, assert_ok};
+use frame_system::{EventRecord, Phase};
 
 use crate::{Xtx, XtxSchedule};
 use sp_io;
@@ -867,5 +868,67 @@ fn test_register_gateway_with_u64_eth_like_header() {
             authorities,
             None,
         ));
+    });
+}
+
+#[test]
+fn test_register_gateway_with_u64_substrate_header_and_allowed_side_effects() {
+    let origin = Origin::root(); // only sudo access to register new gateways for now
+    let url = b"ws://localhost:9944".to_vec();
+    let gateway_id = [0; 4];
+    let gateway_abi: GatewayABIConfig = Default::default();
+
+    let gateway_vendor = GatewayVendor::Substrate;
+    let gateway_type = GatewayType::ProgrammableInternal(0);
+
+    let _gateway_pointer = GatewayPointer {
+        id: [0; 4],
+        vendor: GatewayVendor::Substrate,
+        gateway_type: GatewayType::ProgrammableInternal(0),
+    };
+
+    let gateway_genesis = GatewayGenesisConfig {
+        modules_encoded: None,
+        signed_extension: None,
+        runtime_version: TEST_RUNTIME_VERSION,
+        genesis_hash: Default::default(),
+        extrinsics_version: 0u8,
+    };
+
+    let first_header: CurrentHeader<Test, PolkadotLikeValU64Gateway> = test_header(0);
+
+    let authorities = Some(vec![]);
+
+    let allowed_side_effects = Some(vec!["swap".into()]);
+
+    let mut ext = TestExternalities::new_empty();
+    ext.execute_with(|| {
+        assert_ok!(ExecDelivery::register_gateway(
+            origin,
+            url,
+            gateway_id,
+            gateway_abi,
+            gateway_vendor.clone(),
+            gateway_type.clone(),
+            gateway_genesis,
+            first_header.encode(),
+            authorities,
+            allowed_side_effects.clone(),
+        ));
+
+        // let events = System::events().clone();
+        // println!("{:?}",events);
+        // assert_eq!(System::events().len(), 2);
+        // assert_eq!(
+		// 	System::events(),
+		// 	vec![
+		// 		EventRecord {
+		// 			phase: Phase::Initialization,
+		// 			event: Event::ExecDelivery(pallet_execution_delivery::Event::NewGatewayRegistered(
+        //                 gateway_id, gateway_vendor, gateway_type, allowed_side_effects)),
+		// 			topics: vec![],
+		// 		},
+		// 	]
+		// );
     });
 }
