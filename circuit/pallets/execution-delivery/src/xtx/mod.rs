@@ -1,4 +1,5 @@
 use super::Config;
+use crate::SystemHashing;
 use codec::{Decode, Encode};
 use sp_runtime::{
     traits::{Hash, Zero},
@@ -63,6 +64,6 @@ impl<
     }
 
     pub fn generate_xtx_id<T: Config>(&self) -> XtxId<T> {
-        T::Hashing::hash(Encode::encode(self).as_ref())
+        SystemHashing::<T>::hash(Encode::encode(self).as_ref())
     }
 }

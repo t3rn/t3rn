@@ -50,81 +50,81 @@
 #![allow(unused_imports)]
 
 use frame_support::{
-	traits::Get,
-	weights::{constants::RocksDbWeight, Weight},
+    traits::Get,
+    weights::{constants::RocksDbWeight, Weight},
 };
 use sp_std::marker::PhantomData;
 
 /// Weight functions needed for pallet_bridge_grandpa.
 pub trait WeightInfo {
-	fn submit_finality_proof(v: u32, p: u32) -> Weight;
-	fn submit_finality_proof_on_single_fork(v: u32) -> Weight;
-	fn submit_finality_proof_on_many_forks(p: u32) -> Weight;
-	fn find_scheduled_change(n: u32) -> Weight;
-	fn read_write_authority_sets(n: u32) -> Weight;
+    fn submit_finality_proof(v: u32, p: u32) -> Weight;
+    fn submit_finality_proof_on_single_fork(v: u32) -> Weight;
+    fn submit_finality_proof_on_many_forks(p: u32) -> Weight;
+    fn find_scheduled_change(n: u32) -> Weight;
+    fn read_write_authority_sets(n: u32) -> Weight;
 }
 
 /// Weights for pallet_bridge_grandpa using the Rialto node and recommended hardware.
 pub struct GatewayWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for GatewayWeight<T> {
-	fn submit_finality_proof(v: u32, p: u32) -> Weight {
-		(0 as Weight)
-			.saturating_add((160_060_000 as Weight).saturating_mul(v as Weight))
-			.saturating_add((640_223_000 as Weight).saturating_mul(p as Weight))
-			.saturating_add(T::DbWeight::get().reads(5 as Weight))
-			.saturating_add(T::DbWeight::get().writes(3 as Weight))
-	}
-	fn submit_finality_proof_on_single_fork(v: u32) -> Weight {
-		(189_597_000 as Weight)
-			.saturating_add((11_680_000 as Weight).saturating_mul(v as Weight))
-			.saturating_add(T::DbWeight::get().reads(5 as Weight))
-			.saturating_add(T::DbWeight::get().writes(3 as Weight))
-	}
-	fn submit_finality_proof_on_many_forks(p: u32) -> Weight {
-		(0 as Weight)
-			.saturating_add((130_061_000 as Weight).saturating_mul(p as Weight))
-			.saturating_add(T::DbWeight::get().reads(5 as Weight))
-			.saturating_add(T::DbWeight::get().writes(3 as Weight))
-	}
-	fn find_scheduled_change(n: u32) -> Weight {
-		(502_000 as Weight).saturating_add((8_000 as Weight).saturating_mul(n as Weight))
-	}
-	fn read_write_authority_sets(n: u32) -> Weight {
-		(7_677_000 as Weight)
-			.saturating_add((230_000 as Weight).saturating_mul(n as Weight))
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
-	}
+    fn submit_finality_proof(v: u32, p: u32) -> Weight {
+        (0 as Weight)
+            .saturating_add((160_060_000 as Weight).saturating_mul(v as Weight))
+            .saturating_add((640_223_000 as Weight).saturating_mul(p as Weight))
+            .saturating_add(T::DbWeight::get().reads(5 as Weight))
+            .saturating_add(T::DbWeight::get().writes(3 as Weight))
+    }
+    fn submit_finality_proof_on_single_fork(v: u32) -> Weight {
+        (189_597_000 as Weight)
+            .saturating_add((11_680_000 as Weight).saturating_mul(v as Weight))
+            .saturating_add(T::DbWeight::get().reads(5 as Weight))
+            .saturating_add(T::DbWeight::get().writes(3 as Weight))
+    }
+    fn submit_finality_proof_on_many_forks(p: u32) -> Weight {
+        (0 as Weight)
+            .saturating_add((130_061_000 as Weight).saturating_mul(p as Weight))
+            .saturating_add(T::DbWeight::get().reads(5 as Weight))
+            .saturating_add(T::DbWeight::get().writes(3 as Weight))
+    }
+    fn find_scheduled_change(n: u32) -> Weight {
+        (502_000 as Weight).saturating_add((8_000 as Weight).saturating_mul(n as Weight))
+    }
+    fn read_write_authority_sets(n: u32) -> Weight {
+        (7_677_000 as Weight)
+            .saturating_add((230_000 as Weight).saturating_mul(n as Weight))
+            .saturating_add(T::DbWeight::get().reads(1 as Weight))
+            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+    }
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
-	fn submit_finality_proof(v: u32, p: u32) -> Weight {
-		(0 as Weight)
-			.saturating_add((160_060_000 as Weight).saturating_mul(v as Weight))
-			.saturating_add((640_223_000 as Weight).saturating_mul(p as Weight))
-			.saturating_add(RocksDbWeight::get().reads(5 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(3 as Weight))
-	}
-	fn submit_finality_proof_on_single_fork(v: u32) -> Weight {
-		(189_597_000 as Weight)
-			.saturating_add((11_680_000 as Weight).saturating_mul(v as Weight))
-			.saturating_add(RocksDbWeight::get().reads(5 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(3 as Weight))
-	}
-	fn submit_finality_proof_on_many_forks(p: u32) -> Weight {
-		(0 as Weight)
-			.saturating_add((130_061_000 as Weight).saturating_mul(p as Weight))
-			.saturating_add(RocksDbWeight::get().reads(5 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(3 as Weight))
-	}
-	fn find_scheduled_change(n: u32) -> Weight {
-		(502_000 as Weight).saturating_add((8_000 as Weight).saturating_mul(n as Weight))
-	}
-	fn read_write_authority_sets(n: u32) -> Weight {
-		(7_677_000 as Weight)
-			.saturating_add((230_000 as Weight).saturating_mul(n as Weight))
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
-	}
+    fn submit_finality_proof(v: u32, p: u32) -> Weight {
+        (0 as Weight)
+            .saturating_add((160_060_000 as Weight).saturating_mul(v as Weight))
+            .saturating_add((640_223_000 as Weight).saturating_mul(p as Weight))
+            .saturating_add(RocksDbWeight::get().reads(5 as Weight))
+            .saturating_add(RocksDbWeight::get().writes(3 as Weight))
+    }
+    fn submit_finality_proof_on_single_fork(v: u32) -> Weight {
+        (189_597_000 as Weight)
+            .saturating_add((11_680_000 as Weight).saturating_mul(v as Weight))
+            .saturating_add(RocksDbWeight::get().reads(5 as Weight))
+            .saturating_add(RocksDbWeight::get().writes(3 as Weight))
+    }
+    fn submit_finality_proof_on_many_forks(p: u32) -> Weight {
+        (0 as Weight)
+            .saturating_add((130_061_000 as Weight).saturating_mul(p as Weight))
+            .saturating_add(RocksDbWeight::get().reads(5 as Weight))
+            .saturating_add(RocksDbWeight::get().writes(3 as Weight))
+    }
+    fn find_scheduled_change(n: u32) -> Weight {
+        (502_000 as Weight).saturating_add((8_000 as Weight).saturating_mul(n as Weight))
+    }
+    fn read_write_authority_sets(n: u32) -> Weight {
+        (7_677_000 as Weight)
+            .saturating_add((230_000 as Weight).saturating_mul(n as Weight))
+            .saturating_add(RocksDbWeight::get().reads(1 as Weight))
+            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+    }
 }

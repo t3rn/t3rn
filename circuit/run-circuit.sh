@@ -1,6 +1,8 @@
 #!/bin/bash
 set -xeu
 
+cargo clean -p circuit
+
 echo "[run-circuit.sh] Building circuit with 'cargo build'..."
 cargo build || exit
 

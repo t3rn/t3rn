@@ -20,6 +20,7 @@ use bp_circuit::derive_account_from_gateway_id;
 use bp_runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID};
 use log::info;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+use sp_core::crypto::Ss58Codec;
 use sp_core::{sr25519, Encode, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
@@ -321,6 +322,12 @@ fn testnet_genesis(
         ethereum_light_client: circuit_runtime::EthereumLightClientConfig {
             initial_header: Default::default(),
             initial_difficulty: Default::default(),
+        },
+        basic_outbound_channel: circuit_runtime::BasicOutboundChannelConfig {
+            // this is the account for pal/exec module_id
+            principal: AccountId::from_string("5FmrGR9YMhgHqcrNc4W9enTbmCLRE6sbAJKs3kqA5kJfWQoN")
+                .expect("Should not fail"),
+            interval: 1,
         },
     }
 }

@@ -61,6 +61,7 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
+use pallet_contracts_primitives::RentProjection;
 use t3rn_primitives::{transfers::BalanceOf, ComposableExecResult, Compose};
 
 use ethereum_light_client::EthereumDifficultyConfig;
@@ -71,7 +72,7 @@ pub use frame_support::{
     construct_runtime, parameter_types,
     traits::{Currency, ExistenceRequirement, Imbalance, KeyOwnerProofSystem},
     weights::{constants::WEIGHT_PER_SECOND, DispatchClass, IdentityFee, RuntimeDbWeight, Weight},
-    StorageValue,
+    PalletId, StorageValue,
 };
 
 pub use frame_system::Call as SystemCall;
@@ -601,6 +602,22 @@ impl volatile_vm::VolatileVM for Runtime {
     type Schedule = MyScheduleVVM;
 }
 
+pub const INDEXING_PREFIX: &'static [u8] = b"commitment";
+parameter_types! {
+    pub const MaxMessagePayloadSize: usize = 256;
+    pub const MaxMessagesPerCommit: usize = 20;
+}
+
+impl snowbridge_basic_channel::outbound::Config for Runtime {
+    type Event = Event;
+    const INDEXING_PREFIX: &'static [u8] = INDEXING_PREFIX;
+    type Hashing = Keccak256;
+    type MaxMessagePayloadSize = MaxMessagePayloadSize;
+    type MaxMessagesPerCommit = MaxMessagesPerCommit;
+    type SetPrincipalOrigin = pallet_circuit_execution_delivery::EnsureExecDelivery<Runtime>;
+    type WeightInfo = ();
+}
+
 pub struct AccountId32Converter;
 impl Convert<AccountId, [u8; 32]> for AccountId32Converter {
     fn convert(account_id: AccountId) -> [u8; 32] {
@@ -615,12 +632,17 @@ impl Convert<Balance, u128> for CircuitToGateway {
     }
 }
 
+parameter_types! {
+    pub const ExecPalletId: PalletId = PalletId(*b"pal/exec");
+}
+
 impl pallet_circuit_execution_delivery::Config for Runtime {
     type Event = Event;
     type Call = Call;
     type AccountId32Converter = AccountId32Converter;
     type ToStandardizedGatewayBalance = CircuitToGateway;
     type WeightInfo = pallet_circuit_execution_delivery::weights::SubstrateWeight<Runtime>;
+    type PalletId = ExecPalletId;
 }
 
 type Blake2ValU64BridgeInstance = ();
@@ -769,6 +791,7 @@ construct_runtime!(
         Mmr: pallet_mmr::{Pallet, Storage},
         EthereumLightClient: ethereum_light_client::{Pallet, Call, Storage, Event, Config},
         MmrLeaf: pallet_beefy_mmr::{Pallet, Storage},
+        BasicOutboundChannel: snowbridge_basic_channel::outbound::{Pallet, Config<T>, Storage, Event},
     }
 );
 
@@ -1052,7 +1075,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl circuit_rpc_runtime_api::CircuitApi<Block, AccountId, Balance, BlockNumber> for Runtime
+    impl pallet_circuit_execution_delivery_rpc_runtime_api::ExecutionDeliveryRuntimeApi<Block, AccountId, Balance, BlockNumber> for Runtime
     {
         fn composable_exec(
             _origin: AccountId,
@@ -1060,7 +1083,46 @@ impl_runtime_apis! {
             _io: Vec<u8>,
             _gas_limit: u64,
             _input_data: Vec<u8>,
-        ) -> ComposableExecResult { todo!() }
+        ) -> ComposableExecResult { unimplemented!() }
+    }
+
+    impl pallet_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
+        for Runtime
+    {
+        fn call(
+            origin: AccountId,
+            dest: AccountId,
+            value: Balance,
+            gas_limit: u64,
+            input_data: Vec<u8>,
+        ) -> pallet_contracts_primitives::ContractExecResult {
+            Contracts::bare_call(origin, dest, value, gas_limit, input_data, true)
+        }
+
+        fn instantiate(
+            origin: AccountId,
+            endowment: Balance,
+            gas_limit: u64,
+            code: pallet_contracts_primitives::Code<Hash>,
+            data: Vec<u8>,
+            salt: Vec<u8>,
+        ) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId, BlockNumber>
+        {
+            Contracts::bare_instantiate(origin, endowment, gas_limit, code, data, salt, false, true)
+        }
+
+        fn get_storage(
+            address: AccountId,
+            key: [u8; 32],
+        ) -> pallet_contracts_primitives::GetStorageResult {
+            Contracts::get_storage(address, key)
+        }
+
+        fn rent_projection(
+            _: AccountId
+        ) -> Result<RentProjection<BlockNumber>, pallet_contracts_primitives::ContractAccessError> {
+            unimplemented!();
+        }
     }
 
     #[cfg(feature = "runtime-benchmarks")]

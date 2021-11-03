@@ -20,7 +20,6 @@ pub fn init_bridge_instance<T: pallet_multi_finality_verifier::Config<I>, I: 'st
     origin: T::Origin,
     first_header: Vec<u8>,
     authorities: Option<Vec<T::AccountId>>,
-
     gateway_id: bp_runtime::ChainId,
 ) -> DispatchResultWithPostInfo {
     let header: CurrentHeader<T, I> = Decode::decode(&mut &first_header[..])

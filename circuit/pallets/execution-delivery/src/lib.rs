@@ -28,8 +28,9 @@ use crate::message_assembly::merklize::*;
 use codec::{Decode, Encode};
 use frame_support::dispatch::DispatchResultWithPostInfo;
 use frame_support::ensure;
-use frame_support::traits::Currency;
+use frame_support::traits::{Currency, EnsureOrigin, Get};
 use frame_system::offchain::{SignedPayload, SigningTypes};
+use frame_system::RawOrigin;
 use hex_literal::hex;
 use pallet_contracts_registry::{RegistryContract, RegistryContractId};
 use sp_application_crypto::Public;
@@ -41,6 +42,7 @@ use sp_runtime::{
 
 use bp_runtime::ChainId;
 pub use pallet::*;
+use sp_runtime::traits::AccountIdConversion;
 use sp_std::vec;
 use sp_std::vec::*;
 use t3rn_primitives::abi::{ContractActionDesc, GatewayABIConfig, HasherAlgo as HA};
@@ -102,10 +104,12 @@ pub type SideEffectsDFD = Vec<u8>;
 pub type SideEffectId = Bytes;
 
 pub type AuthorityId = crate::message_assembly::signer::app::Public;
+pub(crate) type SystemHashing<T> = <T as frame_system::Config>::Hashing;
 
 #[frame_support::pallet]
 pub mod pallet {
     use frame_support::pallet_prelude::*;
+    use frame_support::PalletId;
     use frame_system::pallet_prelude::*;
 
     use super::*;
@@ -141,6 +145,7 @@ pub mod pallet {
         + pallet_multi_finality_verifier::Config<PolkadotLikeValU64Gateway>
         + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU64Gateway>
         + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU32Gateway>
+        + snowbridge_basic_channel::outbound::Config
     {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -153,6 +158,8 @@ pub mod pallet {
         type ToStandardizedGatewayBalance: Convert<BalanceOf<Self>, u128>;
 
         type WeightInfo: weights::WeightInfo;
+
+        type PalletId: Get<PalletId>;
     }
 
     #[pallet::pallet]
@@ -187,7 +194,6 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-
         #[pallet::weight(<T as Config>::WeightInfo::dry_run_whole_xtx_three_components() + <T as Config>::WeightInfo::decompose_io_schedule())]
         pub fn submit_exec(
             origin: OriginFor<T>,
@@ -541,6 +547,9 @@ impl<T: SigningTypes> SignedPayload<T> for Payload<T::Public, T::BlockNumber> {
 }
 
 impl<T: Config> Pallet<T> {
+    fn account_id() -> T::AccountId {
+        T::PalletId::get().into_account()
+    }
     /// Receives a list of available components and an io schedule in text format
     /// and parses it to create an execution schedule
     pub fn decompose_io_schedule(
@@ -663,7 +672,8 @@ impl<T: Config> Pallet<T> {
         for step in &first_phase.steps {
             let mut protocol_part_of_contract = step.compose.code_txt.clone();
             protocol_part_of_contract.extend(step.compose.bytes.clone());
-            let key = T::Hashing::hash(Encode::encode(&mut protocol_part_of_contract).as_ref());
+            let key =
+                SystemHashing::<T>::hash(Encode::encode(&mut protocol_part_of_contract).as_ref());
 
             // If invalid new contract was submitted for execution - break. Otherwise, add the new contract to on-chain registry.
             if !pallet_contracts_registry::ContractsRegistry::<T>::contains_key(key) {
@@ -769,5 +779,30 @@ impl<T: Config> Pallet<T> {
             .ok_or("Can't match authority for given account")?;
 
         Ok(submitter)
+    }
+}
+
+/// Simple ensure origin from the exec delivery
+pub struct EnsureExecDelivery<T>(sp_std::marker::PhantomData<T>);
+
+impl<
+        T: pallet::Config,
+        O: Into<Result<RawOrigin<T::AccountId>, O>> + From<RawOrigin<T::AccountId>>,
+    > EnsureOrigin<O> for EnsureExecDelivery<T>
+{
+    type Success = T::AccountId;
+
+    fn try_origin(o: O) -> Result<Self::Success, O> {
+        let loan_id = T::PalletId::get().into_account();
+        o.into().and_then(|o| match o {
+            RawOrigin::Signed(who) if who == loan_id => Ok(loan_id),
+            r => Err(O::from(r)),
+        })
+    }
+
+    #[cfg(feature = "runtime-benchmarks")]
+    fn successful_origin() -> O {
+        let loan_id = T::PalletId::get().into_account();
+        O::from(RawOrigin::Signed(loan_id))
     }
 }

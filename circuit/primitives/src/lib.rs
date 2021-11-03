@@ -61,6 +61,7 @@ impl GatewayType {
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum GatewayVendor {
+    Ethereum,
     Substrate,
 }
 
@@ -209,6 +210,8 @@ pub struct CircuitOutboundMessage {
     pub expected_output: Vec<GatewayExpectedOutput>,
     /// Extra payload in case the message is signed or uses custom delivery protocols like XCMP
     pub extra_payload: Option<ExtraMessagePayload>,
+    /// type of gateway chain this message is intended for
+    pub gateway_vendor: GatewayVendor,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

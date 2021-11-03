@@ -232,6 +232,8 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
     let rpc_extensions_builder = {
         use sc_finality_grandpa::FinalityProofProvider as GrandpaFinalityProofProvider;
 
+        use pallet_circuit_execution_delivery_rpc::{ExecutionDelivery, ExecutionDeliveryApi};
+        use pallet_contracts_rpc::{Contracts, ContractsApi};
         use pallet_mmr_rpc::{Mmr, MmrApi};
         use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
         use sc_finality_grandpa_rpc::{GrandpaApi, GrandpaRpcHandler};
@@ -276,6 +278,10 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
                         subscription_executor,
                     ),
                 ));
+                io.extend_with(ContractsApi::to_delegate(Contracts::new(client.clone())));
+                io.extend_with(ExecutionDeliveryApi::to_delegate(ExecutionDelivery::new(
+                    client.clone(),
+                )));
                 io
             },
         )

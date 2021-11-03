@@ -2,7 +2,7 @@
 members = [
     'runtime',
     'node',
-    'rpc',
+    'rpc-test',
     'pallets/multi-finality-verifier'
 ]
 exclude = []
