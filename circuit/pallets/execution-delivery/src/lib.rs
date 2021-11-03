@@ -601,8 +601,8 @@ pub mod pallet {
 
             Self::deposit_event(Event::NewGatewayRegistered(
                 gateway_id,
-                gateway_type,
                 gateway_vendor,
+                gateway_type,
                 allowed_side_effects,
             ));
 
@@ -706,11 +706,11 @@ pub mod pallet {
         /// \[who, id, steps\]
         StoredNewStep(T::AccountId, XtxId<T>, Vec<CircuitOutboundMessage>),
         /// Event generated when new gateway is registered.
-        /// \[gateway_id, gateway_type, gateway_vendor, allowed_side_effects\]
+        /// \[gateway_id, gateway_vendor, gateway_type, allowed_side_effects\]
         NewGatewayRegistered(
             bp_runtime::ChainId,
-            GatewayType,
             GatewayVendor,
+            GatewayType,
             Option<Vec<Vec<u8>>>,
         ),
     }
