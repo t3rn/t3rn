@@ -102,6 +102,8 @@ type PolkadotLikeValU64Gateway = pallet_multi_finality_verifier::Instance1;
 type EthLikeKeccak256ValU64Gateway = pallet_multi_finality_verifier::Instance2;
 type EthLikeKeccak256ValU32Gateway = pallet_multi_finality_verifier::Instance3;
 
+pub type AllowedSideEffect = Vec<u8>;
+
 pub fn init_bridge_instance<T: pallet_multi_finality_verifier::Config<I>, I: 'static>(
     origin: T::Origin,
     first_header: Vec<u8>,
@@ -553,7 +555,7 @@ pub mod pallet {
             gateway_genesis: GatewayGenesisConfig,
             first_header: Vec<u8>,
             authorities: Option<Vec<T::AccountId>>,
-            allowed_side_effects: Option<Vec<Vec<u8>>>,
+            allowed_side_effects: Vec<AllowedSideEffect>,
         ) -> DispatchResultWithPostInfo {
             pallet_xdns::Pallet::<T>::add_new_xdns_record(
                 origin.clone(),
@@ -711,7 +713,7 @@ pub mod pallet {
             bp_runtime::ChainId,
             GatewayVendor,
             GatewayType,
-            Option<Vec<Vec<u8>>>,
+            Vec<AllowedSideEffect>,
         ),
     }
 

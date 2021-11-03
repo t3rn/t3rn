@@ -16,8 +16,8 @@
 // limitations under the License.
 
 //! Test utilities
-use crate::ExecComposer;
 use crate::{self as pallet_execution_delivery};
+use crate::{AllowedSideEffect, ExecComposer};
 use codec::Encode;
 
 use frame_support::{assert_err, assert_ok};
@@ -732,7 +732,7 @@ fn test_register_gateway_with_default_polka_like_header() {
             gateway_genesis,
             first_header.encode(),
             authorities,
-            None,
+            vec![],
         ));
     });
 }
@@ -777,7 +777,7 @@ fn test_register_gateway_with_u64_substrate_header() {
             gateway_genesis,
             first_header.encode(),
             authorities,
-            None,
+            vec![],
         ));
     });
 }
@@ -822,7 +822,7 @@ fn test_register_gateway_with_default_eth_like_header() {
             gateway_genesis,
             first_header.encode(),
             authorities,
-            None,
+            vec![],
         ));
     });
 }
@@ -867,7 +867,7 @@ fn test_register_gateway_with_u64_eth_like_header() {
             gateway_genesis,
             first_header.encode(),
             authorities,
-            None,
+            vec![],
         ));
     });
 }
@@ -900,10 +900,10 @@ fn test_register_gateway_with_u64_substrate_header_and_allowed_side_effects() {
 
     let authorities = Some(vec![]);
 
-    let allowed_side_effects = Some(vec!["swap".into()]);
+    let allowed_side_effects: Vec<AllowedSideEffect> = vec!["swap".into()];
 
     let mut ext = TestExternalities::new_empty();
-    ext.execute_with( || System::set_block_number(1));
+    ext.execute_with(|| System::set_block_number(1));
     ext.execute_with(|| {
         assert_ok!(ExecDelivery::register_gateway(
             origin,
@@ -926,16 +926,19 @@ fn test_register_gateway_with_u64_substrate_header_and_allowed_side_effects() {
 
         assert!(result.is_some());
         let xdns_record = result.unwrap();
-        let stored_side_effects = xdns_record.allowed_side_effects.unwrap();
+        let stored_side_effects = xdns_record.allowed_side_effects;
 
         assert_eq!(stored_side_effects.len(), 1);
-        assert_eq!(stored_side_effects, allowed_side_effects.clone().unwrap());
+        assert_eq!(stored_side_effects, allowed_side_effects.clone());
 
         // Assert events emitted
 
-        System::assert_last_event(
-            Event::ExecDelivery(crate::Event::NewGatewayRegistered(gateway_id, gateway_vendor, gateway_type, allowed_side_effects))
-        );
+        System::assert_last_event(Event::ExecDelivery(crate::Event::NewGatewayRegistered(
+            gateway_id,
+            gateway_vendor,
+            gateway_type,
+            allowed_side_effects,
+        )));
         // XdnsRecordStored and NewGatewayRegistered
         assert_eq!(System::events().len(), 2);
     });
