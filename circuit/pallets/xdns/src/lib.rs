@@ -76,6 +76,9 @@ pub struct XdnsRecord<AccountId> {
     pub registrant: Option<AccountId>,
 
     pub last_finalized: Option<u64>,
+
+    /// Methods enabled to be called on the remote target
+    pub allowed_side_effects: Option<Vec<Vec<u8>>>,
 }
 
 impl<AccountId: Encode> XdnsRecord<AccountId> {
@@ -92,6 +95,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
         gateway_type: GatewayType,
         registrant: Option<AccountId>,
         last_finalized: Option<u64>,
+        allowed_side_effects: Option<Vec<Vec<u8>>>,
     ) -> Self {
         let gateway_genesis = GatewayGenesisConfig {
             modules_encoded,
@@ -110,6 +114,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
             gateway_id,
             registrant,
             last_finalized,
+            allowed_side_effects,
         }
     }
 
@@ -120,6 +125,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
         gateway_vendor: GatewayVendor,
         gateway_type: GatewayType,
         gateway_genesis: GatewayGenesisConfig,
+        allowed_side_effects: Option<Vec<Vec<u8>>>,
     ) -> Self {
         XdnsRecord {
             url,
@@ -130,6 +136,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
             gateway_genesis,
             registrant: None,
             last_finalized: None,
+            allowed_side_effects,
         }
     }
 
@@ -217,6 +224,7 @@ pub mod pallet {
             gateway_vendor: GatewayVendor,
             gateway_type: GatewayType,
             gateway_genesis: GatewayGenesisConfig,
+            allowed_side_effects: Option<Vec<Vec<u8>>>,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
@@ -231,6 +239,7 @@ pub mod pallet {
                 gateway_vendor,
                 gateway_type,
                 gateway_genesis,
+                allowed_side_effects,
             );
 
             let now = TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now())

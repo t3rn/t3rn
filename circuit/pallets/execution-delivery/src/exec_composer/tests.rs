@@ -70,6 +70,7 @@ pub fn insert_default_xdns_record() {
                 genesis_hash: Default::default(),
                 extrinsics_version: 0u8,
             },
+            None,
         ),
     );
 }

@@ -729,7 +729,8 @@ fn test_register_gateway_with_default_polka_like_header() {
             gateway_type,
             gateway_genesis,
             first_header.encode(),
-            authorities
+            authorities,
+            None,
         ));
     });
 }
@@ -773,7 +774,8 @@ fn test_register_gateway_with_u64_substrate_header() {
             gateway_type,
             gateway_genesis,
             first_header.encode(),
-            authorities
+            authorities,
+            None,
         ));
     });
 }
@@ -817,7 +819,8 @@ fn test_register_gateway_with_default_eth_like_header() {
             gateway_type,
             gateway_genesis,
             first_header.encode(),
-            authorities
+            authorities,
+            None,
         ));
     });
 }
@@ -861,7 +864,8 @@ fn test_register_gateway_with_u64_eth_like_header() {
             gateway_type,
             gateway_genesis,
             first_header.encode(),
-            authorities
+            authorities,
+            None,
         ));
     });
 }

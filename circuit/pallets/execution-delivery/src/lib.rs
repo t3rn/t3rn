@@ -553,16 +553,17 @@ pub mod pallet {
             gateway_genesis: GatewayGenesisConfig,
             first_header: Vec<u8>,
             authorities: Option<Vec<T::AccountId>>,
+            allowed_side_effects: Option<Vec<Vec<u8>>>,
         ) -> DispatchResultWithPostInfo {
-            // Retrieve sender of the transaction.
             pallet_xdns::Pallet::<T>::add_new_xdns_record(
                 origin.clone(),
                 url,
                 gateway_id,
                 gateway_abi.clone(),
-                gateway_vendor,
-                gateway_type,
+                gateway_vendor.clone(),
+                gateway_type.clone(),
                 gateway_genesis,
+                allowed_side_effects.clone(),
             )?;
 
             let res = match (gateway_abi.hasher, gateway_abi.block_number_type_size) {
@@ -597,6 +598,13 @@ pub mod pallet {
                     gateway_id,
                 )?,
             };
+
+            Self::deposit_event(Event::NewGatewayRegistered(
+                gateway_id,
+                gateway_type,
+                gateway_vendor,
+                allowed_side_effects,
+            ));
 
             Ok(res.into())
         }
@@ -697,6 +705,14 @@ pub mod pallet {
         /// News steps that were just added for relayers to deliver.
         /// \[who, id, steps\]
         StoredNewStep(T::AccountId, XtxId<T>, Vec<CircuitOutboundMessage>),
+        /// Event generated when new gateway is registered.
+        /// \[gateway_id, gateway_type, gateway_vendor, allowed_side_effects\]
+        NewGatewayRegistered(
+            bp_runtime::ChainId,
+            GatewayType,
+            GatewayVendor,
+            Option<Vec<Vec<u8>>>,
+        ),
     }
 
     #[pallet::error]
