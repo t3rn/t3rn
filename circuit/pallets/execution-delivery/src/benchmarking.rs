@@ -174,6 +174,7 @@ fn insert_default_xdns_record<T: pallet_xdns::Config>() {
         gateway_vendor,
         gateway_type,
         gateway_genesis,
+        vec![],
     )
     .unwrap();
 }
