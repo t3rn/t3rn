@@ -34,8 +34,13 @@ pub trait WeightInfo {
     fn register_gateway_polka_u64() -> Weight;
     fn register_gateway_default_eth() -> Weight;
     fn register_gateway_eth_u64() -> Weight;
+    fn update_gateway() -> Weight;
     fn dry_run_whole_xtx_one_component() -> Weight;
     fn dry_run_whole_xtx_three_components() -> Weight;
+    fn confirm_side_effect_blind() -> Weight;
+    fn confirm_side_effect() -> Weight;
+    fn submit_exec() -> Weight;
+    fn submit_composable_exec_order() -> Weight;
 }
 
 /// Weights for pallet_circuit_execution_delivery using the Substrate node and recommended hardware.
@@ -43,6 +48,21 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
     fn decompose_io_schedule() -> Weight {
         (6_984_000 as Weight)
+    }
+    fn confirm_side_effect_blind() -> Weight {
+        (60_000_000 as Weight)
+    }
+    fn confirm_side_effect() -> Weight {
+        (60_000_000 as Weight)
+    }
+    fn update_gateway() -> Weight {
+        (60_000_000 as Weight)
+    }
+    fn submit_exec() -> Weight {
+        (60_000_000 as Weight)
+    }
+    fn submit_composable_exec_order() -> Weight {
+        (60_000_000 as Weight)
     }
     fn register_gateway_default_polka() -> Weight {
         (68_373_000 as Weight)
@@ -76,6 +96,21 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 impl WeightInfo for () {
     fn decompose_io_schedule() -> Weight {
         (6_984_000 as Weight)
+    }
+    fn confirm_side_effect_blind() -> Weight {
+        (60_000_000 as Weight)
+    }
+    fn confirm_side_effect() -> Weight {
+        (60_000_000 as Weight)
+    }
+    fn update_gateway() -> Weight {
+        (60_000_000 as Weight)
+    }
+    fn submit_exec() -> Weight {
+        (60_000_000 as Weight)
+    }
+    fn submit_composable_exec_order() -> Weight {
+        (60_000_000 as Weight)
     }
     fn register_gateway_default_polka() -> Weight {
         (68_373_000 as Weight)

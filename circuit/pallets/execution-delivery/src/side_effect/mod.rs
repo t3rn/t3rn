@@ -30,5 +30,5 @@ pub struct OutboundSideEffect<AccountId, BlockNumber, BalanceOf> {
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
 pub struct SideEffect<AccountId, BlockNumber, BalanceOf> {
     pub inbound: InboundSideEffect<AccountId, BlockNumber, BalanceOf>,
-    pub outbound: Option<InboundSideEffect<AccountId, BlockNumber, BalanceOf>>,
+    pub outbound: Option<OutboundSideEffect<AccountId, BlockNumber, BalanceOf>>,
 }

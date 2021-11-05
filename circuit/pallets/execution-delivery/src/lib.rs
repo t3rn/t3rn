@@ -194,7 +194,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(<T as Config>::WeightInfo::dry_run_whole_xtx_three_components() + <T as Config>::WeightInfo::decompose_io_schedule())]
+        #[pallet::weight(<T as Config>::WeightInfo::submit_exec())]
         pub fn submit_exec(
             origin: OriginFor<T>,
             contract_id: RegistryContractId<T>,
@@ -226,7 +226,7 @@ pub mod pallet {
         }
 
         /// Will be deprecated in v1.0.0-RC
-        #[pallet::weight(<T as Config>::WeightInfo::dry_run_whole_xtx_three_components() + <T as Config>::WeightInfo::decompose_io_schedule())]
+        #[pallet::weight(<T as Config>::WeightInfo::submit_composable_exec_order() + <T as Config>::WeightInfo::decompose_io_schedule())]
         pub fn submit_composable_exec_order(
             origin: OriginFor<T>,
             io_schedule: Vec<u8>,
@@ -268,7 +268,7 @@ pub mod pallet {
         }
 
         /// Blind version should only be used for testing - unsafe since skips inclusion proof check.
-        #[pallet::weight(0)]
+        #[pallet::weight(<T as Config>::WeightInfo::confirm_side_effect_blind())]
         pub fn confirm_side_effect_blind(
             origin: OriginFor<T>,
             xtx_id: XtxId<T>,
@@ -369,7 +369,7 @@ pub mod pallet {
         }
 
         // ToDo: Create and move higher to main Circuit pallet
-        #[pallet::weight(<T as Config>::WeightInfo::register_gateway_default_polka())]
+        #[pallet::weight(<T as Config>::WeightInfo::update_gateway())]
         pub fn update_gateway(
             _origin: OriginFor<T>,
             gateway_id: bp_runtime::ChainId,
@@ -386,7 +386,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(0)]
+        #[pallet::weight(<T as Config>::WeightInfo::confirm_side_effect())]
         pub fn confirm_side_effect(
             origin: OriginFor<T>,
             xtx_id: XtxId<T>,
