@@ -1,40 +1,47 @@
 {
   "name": "@t3rn/types",
-  "version": "0.2.0",
+  "version": "0.1.0",
   "description": "t3rn protocol's type definitions for use with polkadot.js clients",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "module": "true",
-  "repository": "https://github.com/t3rn/t3rn",
+  "main": "dist/types/index.js",
+  "types": "dist/interfaces/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/t3rn/t3rn",
+    "directory": "client/types"
+  },
   "author": "t3rn <team@t3rn.io>",
   "license": "Apache-2.0",
-  "private": false,
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org"
   },
   "scripts": {
     "build": "yarn generate && yarn compile",
+    "compile": "rm -rf dist && tsc",
     "generate:defs": "ts-node --skip-project node_modules/.bin/polkadot-types-from-defs --package t3rn-circuit-typegen/interfaces --input ./src/interfaces",
     "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package t3rn-circuit-typegen/interfaces --endpoint wss://dev.net.t3rn.io --output ./src/interfaces",
     "generate": "yarn generate:defs && yarn generate:meta",
-    "lint": "tsc --noEmit --pretty",
-    "compile": "rm -rf dist && tsc"
+    "lint": "tsc --noEmit --pretty"
   },
+  "keywords": [
+    "t3rn",
+    "interoperability",
+    "polkadot",
+    "cross-chain"
+  ],
   "bugs": {
     "url": "https://github.com/t3rn/t3rn/issues"
   },
   "homepage": "https://github.com/t3rn/t3rn",
-  "dependencies": {},
   "devDependencies": {
-    "@polkadot/keyring": "^7.7.1",
-    "@polkadot/typegen": "^6.6.1",
-    "@snowfork/snowbridge-types": "^0.2.6",
-    "@types/node": "^16.11.6",
-    "ts-node": "^10.3.0",
     "typescript": "^4.4.4"
   },
-  "peerDependencies": {
-    "@polkadot/types": "^6.6.1"
+  "dependencies": {
+    "@polkadot/typegen": "^6.6.1",
+    "@polkadot/types": "^6.6.1",
+    "@snowfork/snowbridge-types": "^0.2.6"
   }
 }
