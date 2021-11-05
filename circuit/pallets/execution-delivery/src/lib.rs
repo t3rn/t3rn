@@ -505,9 +505,9 @@ pub mod pallet {
         ),
         // Listeners - remote targets integrators/registrants
         NewGatewayRegistered(
-            bp_runtime::ChainId,  // gateway id
-            GatewayType,          // type - external, programmable, tx-only
-            GatewayVendor,        // vendor - substrate, eth etc.
+            bp_runtime::ChainId,    // gateway id
+            GatewayType,            // type - external, programmable, tx-only
+            GatewayVendor,          // vendor - substrate, eth etc.
             Vec<AllowedSideEffect>, // allowed side effects / enabled methods
         ),
         GatewayUpdated(

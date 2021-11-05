@@ -22,7 +22,6 @@ use codec::Encode;
 
 use frame_support::{assert_err, assert_ok};
 
-
 use sp_io;
 
 use sp_core::{crypto::Pair, sr25519, Hasher};
@@ -36,7 +35,6 @@ use sp_keystore::testing::KeyStore;
 use sp_keystore::{KeystoreExt, SyncCryptoStore};
 
 use pallet_execution_delivery::Compose;
-
 
 use t3rn_primitives::{abi::GatewayABIConfig, transfers::BalanceOf, *};
 
