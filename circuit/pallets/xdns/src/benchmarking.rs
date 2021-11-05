@@ -35,7 +35,7 @@ benchmarks! {
             extrinsics_version: 0u8,
             genesis_hash: Default::default(),
         };
-    }: _(RawOrigin::Root, url, *gateway_id, gateway_abi, gateway_vendor, gateway_type, gateway_genesis)
+    }: _(RawOrigin::Root, url, *gateway_id, gateway_abi, gateway_vendor, gateway_type, gateway_genesis, vec![])
     verify {
         assert!(
             XDNSRegistry::<T>::get(T::Hashing::hash(b"test"))
@@ -67,6 +67,7 @@ benchmarks! {
             gateway_vendor,
             gateway_type,
             gateway_genesis,
+            vec![],
         )
         .unwrap();
 
@@ -107,6 +108,7 @@ benchmarks! {
             gateway_vendor,
             gateway_type,
             gateway_genesis,
+            vec![],
         )
         .unwrap();
 
@@ -143,6 +145,7 @@ benchmarks! {
             gateway_vendor,
             gateway_type,
             gateway_genesis,
+            vec![],
         )
         .unwrap();
     }: {XDNS::<T>::best_available(*b"gate")}

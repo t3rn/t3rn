@@ -77,6 +77,7 @@ pub use xtx::{Xtx, XtxId};
 
 pub mod side_effect;
 pub use side_effect::{InboundSideEffect, OutboundSideEffect, SideEffect};
+pub type AllowedSideEffect = Vec<u8>;
 
 /// Defines application identifier for crypto keys of this module.
 ///
@@ -311,7 +312,7 @@ pub mod pallet {
             gateway_genesis: GatewayGenesisConfig,
             first_header: Vec<u8>,
             authorities: Option<Vec<T::AccountId>>,
-            allowed_side_effects: Option<Vec<Vec<u8>>>,
+            allowed_side_effects: Vec<AllowedSideEffect>,
         ) -> DispatchResultWithPostInfo {
             // Retrieve sender of the transaction.
             pallet_xdns::Pallet::<T>::add_new_xdns_record(
@@ -322,6 +323,7 @@ pub mod pallet {
                 gateway_vendor.clone(),
                 gateway_type.clone(),
                 gateway_genesis,
+                allowed_side_effects.clone(),
             )?;
 
             let res = match (gateway_abi.hasher, gateway_abi.block_number_type_size) {
@@ -375,7 +377,7 @@ pub mod pallet {
             _url: Option<Vec<u8>>,
             _gateway_abi: Option<GatewayABIConfig>,
             _authorities: Option<Vec<T::AccountId>>,
-            allowed_side_effects: Option<Vec<Vec<u8>>>,
+            allowed_side_effects: Option<Vec<AllowedSideEffect>>,
         ) -> DispatchResultWithPostInfo {
             // ToDo: Implement!
             Self::deposit_event(Event::GatewayUpdated(
@@ -506,7 +508,7 @@ pub mod pallet {
             bp_runtime::ChainId,  // gateway id
             GatewayType,          // type - external, programmable, tx-only
             GatewayVendor,        // vendor - substrate, eth etc.
-            Option<Vec<Vec<u8>>>, // allowed side effects / enabled methods
+            Vec<AllowedSideEffect>, // allowed side effects / enabled methods
         ),
         GatewayUpdated(
             bp_runtime::ChainId,  // gateway id

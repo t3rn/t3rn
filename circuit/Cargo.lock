@@ -5442,7 +5442,6 @@ dependencies = [
 name = "pallet-circuit-execution-delivery-rpc"
 version = "0.1.0"
 dependencies = [
- "frame-system",
  "jsonrpc-core",
  "jsonrpc-core-client",
  "jsonrpc-derive",
