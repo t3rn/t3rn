@@ -100,7 +100,6 @@ pub fn select_validator_for_x_tx_dummy<T: Config>() -> Result<T::AccountId, &'st
 
 // todo: Implement and move as independent submodule
 pub type SideEffectsDFD = Vec<u8>;
-// pub type SideEffect = Bytes;
 pub type SideEffectId = Bytes;
 
 pub type AuthorityId = crate::message_assembly::signer::app::Public;
