@@ -102,6 +102,8 @@ type PolkadotLikeValU64Gateway = pallet_multi_finality_verifier::Instance1;
 type EthLikeKeccak256ValU64Gateway = pallet_multi_finality_verifier::Instance2;
 type EthLikeKeccak256ValU32Gateway = pallet_multi_finality_verifier::Instance3;
 
+pub type AllowedSideEffect = Vec<u8>;
+
 pub fn init_bridge_instance<T: pallet_multi_finality_verifier::Config<I>, I: 'static>(
     origin: T::Origin,
     first_header: Vec<u8>,
@@ -553,16 +555,17 @@ pub mod pallet {
             gateway_genesis: GatewayGenesisConfig,
             first_header: Vec<u8>,
             authorities: Option<Vec<T::AccountId>>,
+            allowed_side_effects: Vec<AllowedSideEffect>,
         ) -> DispatchResultWithPostInfo {
-            // Retrieve sender of the transaction.
             pallet_xdns::Pallet::<T>::add_new_xdns_record(
                 origin.clone(),
                 url,
                 gateway_id,
                 gateway_abi.clone(),
-                gateway_vendor,
-                gateway_type,
+                gateway_vendor.clone(),
+                gateway_type.clone(),
                 gateway_genesis,
+                allowed_side_effects.clone(),
             )?;
 
             let res = match (gateway_abi.hasher, gateway_abi.block_number_type_size) {
@@ -597,6 +600,13 @@ pub mod pallet {
                     gateway_id,
                 )?,
             };
+
+            Self::deposit_event(Event::NewGatewayRegistered(
+                gateway_id,
+                gateway_vendor,
+                gateway_type,
+                allowed_side_effects,
+            ));
 
             Ok(res.into())
         }
@@ -697,6 +707,14 @@ pub mod pallet {
         /// News steps that were just added for relayers to deliver.
         /// \[who, id, steps\]
         StoredNewStep(T::AccountId, XtxId<T>, Vec<CircuitOutboundMessage>),
+        /// Event generated when new gateway is registered.
+        /// \[gateway_id, gateway_vendor, gateway_type, allowed_side_effects\]
+        NewGatewayRegistered(
+            bp_runtime::ChainId,
+            GatewayVendor,
+            GatewayType,
+            Vec<AllowedSideEffect>,
+        ),
     }
 
     #[pallet::error]
