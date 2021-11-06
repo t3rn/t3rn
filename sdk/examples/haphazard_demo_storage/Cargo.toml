@@ -5,14 +5,14 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
 
 [dependencies]
-ink_primitives = { version = "3.0.0-rc2", default-features = false }
-ink_metadata = { version = "3.0.0-rc2", default-features = false, features = ["derive"], optional = true }
-ink_env = { version = "3.0.0-rc2", default-features = false }
-ink_storage = { version = "3.0.0-rc2", default-features = false }
-ink_lang = { version = "3.0.0-rc2", default-features = false }
+ink_primitives = { version = "3.0.0-rc5", default-features = false }
+ink_metadata = { version = "3.0.0-rc5", default-features = false, features = ["derive"], optional = true }
+ink_env = { version = "3.0.0-rc5", default-features = false }
+ink_storage = { version = "3.0.0-rc5", default-features = false }
+ink_lang = { version = "3.0.0-rc5", default-features = false }
 
-scale = { package = "parity-scale-codec", version = "1.3.4", default-features = false, features = ["derive"] }
-scale-info = { version = "0.4", default-features = false, features = ["derive"], optional = true }
+scale = { package = "parity-scale-codec", version = "2.1", default-features = false, features = ["derive"] }
+scale-info = { version = "0.6.0", default-features = false, features = ["derive"], optional = true }
 
 
 [lib]
@@ -22,7 +22,7 @@ crate-type = ["cdylib"]
 
 [package.metadata]
 composables = ["runtime_demo_storage", "flipper_contract", "call_flipper"]
-deploy = [ { compose = "flipper_contract", vm = "pallet-contracts", url = "ws://localhost:9944" } ]
+deploy = [ { compose = "flipper_contract", vm = "pallet-contracts", url = "wss://dev.net.t3rn.io" } ]
 
 [features]
 default = ["std"]

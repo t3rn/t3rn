@@ -1,6 +1,15 @@
 [submodule "sdk/subxt"]
 	path = sdk/subxt
-	url = https://github.com/MaciejBaj/substrate-subxt
+	url = https://github.com/t3rn/substrate-subxt
 [submodule "sdk/compiler"]
 	path = sdk/compiler
-	url = https://github.com/MaciejBaj/cargo-contract
+	url = https://github.com/t3rn/cargo-contract
+[submodule "vendor/bridges"]
+	path = vendor/bridges
+	url = https://github.com/t3rn/parity-bridges-common
+[submodule "vendor/frontier"]
+	path = vendor/frontier
+	url = https://github.com/t3rn/frontier
+[submodule "build/snowbridge"]
+	path = build/snowbridge
+	url = https://github.com/t3rn/snowbridge.git

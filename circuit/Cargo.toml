@@ -1,0 +1,12 @@
+[workspace]
+members = [
+    'runtime',
+    'node',
+    'rpc-test',
+    'pallets/multi-finality-verifier'
+]
+exclude = []
+resolver = '2'
+
+[profile.release]
+panic = 'unwind'

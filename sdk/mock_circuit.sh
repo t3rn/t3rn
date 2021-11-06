@@ -3,8 +3,15 @@
 if ! command -v cargo-t3rn-contract &> /dev/null; then
   echo -e "\033[0;34mcargo-t3rn-contracts could not be found"
   echo -e "\033[0;34mBuild the latest t3rn compiler from source (./compiler) ..."
+
+  # change rust version to 1.55.0 due to build errors at subxt v0.12 and latest cargo
+  rustup default nightly-2021-08-01
+  rustup component add rust-src
+  rustup target add wasm32-unknown-unknown
+
   cd ./compiler || exit
   cargo build --features extrinsics || exit
+
   cd .. || exit
   T3RN_COMPILER_BIN=$(pwd)/compiler/target/debug/cargo-t3rn-contract
 else
@@ -21,14 +28,17 @@ fi
 npm install -g ttab
 cd ../gateway || exit
 # Pre-install in the same terminal, can take time if build isn't ready.
-cd demo-runtime || exit
 cargo build || exit
-cd ../
 
 # Run demo-node in a separate terminal; should be fast as the build is ready.
 ttab -w -a $TERM_NAME exec ./run-node-tiny.sh
 cd ../sdk || exit
 sleep 8
+
+# change rust version to latest
+rustup default nightly
+rustup component add rust-src
+rustup target add wasm32-unknown-unknown
 
 echo -e "\033[0;34mBuilding demo contract components using composable-build..."
 cd ./examples/haphazard_demo_storage || exit

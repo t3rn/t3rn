@@ -1,0 +1,59 @@
+[package]
+name = "versatile-wasm"
+version = "0.4.0"
+authors = ["Maciej Baj <maciej@maciejbaj.com>"]
+edition = "2018"
+license = "Apache-2.0"
+homepage = "https://t3rn.io"
+repository = "https://github.com/t3rn/t3rn/"
+description = "A crate that hosts a common definitions that are relevant for the escrow-gateway."
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+bitflags = "1.0"
+# This crate should not rely on any of the frame primitives.
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
+
+parity-wasm = { version = "0.41.0", default-features = false }
+pwasm-utils = { version = "0.14.0", default-features = false }
+wasmi-validation = { version = "0.3.0", default-features = false }
+wat = { version = "1.0.37", optional = true, default-features = false }
+t3rn-primitives = { default-features = false, path = "../../circuit/primitives" }
+serde = { version = "1", optional = true, features = ["derive"] }
+smallvec = { version = "1", default-features = false, features = ["const_generics"] }
+log = { version = "0.4", default-features = false }
+
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8'  }
+sp-io = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+sp-core = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+sp-std = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+sp-sandbox = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+
+system = { default-features = false, package = 'frame-system', git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8'  }
+sudo = { default-features = false, package = 'pallet-sudo', git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8'  }
+transaction-payment = { package = "pallet-transaction-payment", git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8', default-features = false }
+
+[features]
+default = ["std"]
+
+std = [
+	"serde",
+	'codec/std',
+	"sp-core/std",
+	"sp-runtime/std",
+	'sp-io/std',
+	'sp-std/std',
+	'sp-sandbox/std',
+	'frame-support/std',
+	'system/std',
+	'parity-wasm/std',
+	'pwasm-utils/std',
+	"wasmi-validation/std",
+	"log/std",
+	'transaction-payment/std',
+	'sudo/std',
+	't3rn-primitives/std'
+]
