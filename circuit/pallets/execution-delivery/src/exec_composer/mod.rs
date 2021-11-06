@@ -40,7 +40,6 @@ use volatile_vm::wasm::RunMode;
 
 type ChainId = [u8; 4];
 
-use frame_metadata::v13::RuntimeMetadataV13;
 use sp_runtime::create_runtime_str;
 use sp_version::RuntimeVersion;
 

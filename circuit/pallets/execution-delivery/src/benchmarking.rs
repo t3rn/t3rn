@@ -374,11 +374,9 @@ benchmarks! {
                 }],
             }],
         };
-        let escrow_account: T::AccountId = account("TEST", 1_u32, USER_SEED);
-
         let requester: T::AccountId = account("TEST", 1_u32, USER_SEED);
 
-    }: {Pallet::<T>::dry_run_whole_xtx(inter_exec_schedule, escrow_account, requester)}
+    }: {Pallet::<T>::dry_run_whole_xtx(inter_exec_schedule, requester)}
     verify{}
 
     dry_run_whole_xtx_three_components {
@@ -425,10 +423,8 @@ benchmarks! {
             }],
         };
 
-        let escrow_account: T::AccountId = account("TEST", 1_u32, USER_SEED);
-
         let requester: T::AccountId = account("TEST", 1_u32, USER_SEED);
-    }: {Pallet::<T>::dry_run_whole_xtx(inter_exec_schedule, escrow_account, requester)}
+    }: {Pallet::<T>::dry_run_whole_xtx(inter_exec_schedule, requester)}
     verify{}
 
     // pre_run_bunch_until_break {

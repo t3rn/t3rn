@@ -5,7 +5,7 @@ use sp_std::vec;
 
 use frame_metadata::decode_different::DecodeDifferent;
 use frame_metadata::v13::{ExtrinsicMetadata, RuntimeMetadataV13};
-use frame_metadata::RuntimeMetadataLastVersion;
+
 use frame_support::ensure;
 use sp_std::default::Default;
 use sp_std::prelude::*;
