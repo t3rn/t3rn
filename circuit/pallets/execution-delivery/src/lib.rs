@@ -101,6 +101,7 @@ pub fn select_validator_for_x_tx_dummy<T: Config>() -> Result<T::AccountId, &'st
 
 // todo: Implement and move as independent submodule
 pub type SideEffectsDFD = Vec<u8>;
+pub type GenericDFD = Vec<u8>;
 pub type SideEffectId = Bytes;
 
 pub type AuthorityId = crate::message_assembly::signer::app::Public;
@@ -194,6 +195,80 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+
+
+        /// Temporary entry for submitting a side effect directly for validation and event emittance
+        /// It's temporary, since will be replaced with a DFD, which allows to specify exactly the nature of argument
+        /// (SideEffect vs ComposableContract vs LocalContract or Mix)
+        #[pallet::weight(<T as Config>::WeightInfo::submit_exec())]
+        pub fn submit_side_effect_temp(
+            origin: OriginFor<T>,
+            inbound_side_effect: InboundSideEffect<T>,
+            input: Vec<u8>,
+            value: BalanceOf<T>,
+            reward: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
+            // Retrieve sender of the transaction.
+            let requester = ensure_signed(origin)?;
+            // Ensure can afford
+            ensure!(
+                <T as EscrowTrait>::Currency::free_balance(&requester).saturating_sub(reward)
+                    >= BalanceOf::<T>::from(0 as u32),
+                Error::<T>::RequesterNotEnoughBalance,
+            );
+
+            let side_effect = ExecDelivery::execute_side_effect(inbound_side_effect)?;
+
+            let x_tx_id: XtxId<T> = new_xtx.generate_xtx_id::<T>();
+            ActiveXtxMap::<T>::insert(x_tx_id, &new_xtx);
+
+            Self::deposit_event(Event::XTransactionReceivedForExec(
+                x_tx_id.clone(),
+                // ToDo: Emit side effects DFD
+                Default::default(),
+            ));
+
+            Self::deposit_event(Event::NewSideEffectsAvailable(
+                requester.clone(),
+                x_tx_id.clone(),
+                // ToDo: Emit circuit outbound messages -> side effects
+                vec![side_effect],
+            ));
+
+
+            Ok(().into())
+        }
+
+        #[pallet::weight(<T as Config>::WeightInfo::submit_exec())]
+        pub fn submit_exec_dfd(
+            origin: OriginFor<T>,
+            generic_dfd: GenericDFD<T>,
+            input: Vec<u8>,
+            value: BalanceOf<T>,
+            reward: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
+            // ToDo: Parse DFD to discover the flow of
+            // enum SubmittedInputArtifact  {
+            //      SideEffect,
+            //      ComposableContract,
+            //      LocalContract (?maybe?),
+            // let submitted_artifacts: Vec<SubmittedInputArtifact> = read_generic_dfd(generic_dfd);
+            // submitted_artifacts.iter().map(|submitted_artifact| {
+            //  match submitted_artifact {
+            //      case SubmittedInputArtifact::SideEffect {
+            //          ExecDelivery::execute_side_effect(submitted_artifact)
+            //      },
+            //      case SubmittedInputArtifact::ComposableContract {
+            //          VVM::execute_single_contract(submitted_artifact)
+            //      },
+            //      case SubmittedInputArtifact::LocalContract {
+            //          PalletContracts::call(submitted_artifact.address, input)
+            //      },
+            // })
+            unimplemented!();
+        }
+
+
         #[pallet::weight(<T as Config>::WeightInfo::submit_exec())]
         pub fn submit_exec(
             origin: OriginFor<T>,
