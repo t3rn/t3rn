@@ -9,6 +9,8 @@ pub mod substrate_gateway_assembly;
 pub mod ethereum_gateway_protocol;
 pub mod substrate_gateway_protocol;
 
+pub mod side_effects_protocol;
+
 pub mod eth_outbound;
 pub mod gateway_outbound_protocol;
 pub mod substrate_outbound;
