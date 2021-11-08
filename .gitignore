@@ -8,3 +8,4 @@ comms
 /beefy/target/
 /build/local_beefy_spec.json
 *.iml
+client/relayer/node_modules/*
