@@ -217,8 +217,32 @@ pub mod pallet {
                 Error::<T>::RequesterNotEnoughBalance,
             );
 
-            let side_effect = ExecDelivery::execute_side_effect(inbound_side_effect)?;
+            let gateway_pointer = Self::retrieve_gateway_pointer::<T>(Some(inbound_side_effect.target.clone()))?;
+           // ToDo: Generate Circuit's params as default ABI from let abi = pallet_xdns::get_abi(gateway_pointer)
+            let gateway_abi = Default::default();
 
+            let side_effects_protocol = SideEffectsProtocol::new(gateway_abi);
+
+            side_effects_protocol::validate_input_args(
+                inbound_side_effect.encoded_action,
+                inbound_side_effect.encoded_args,
+            )?;
+
+            let side_effect = SideEffect {
+                inbound: inbound_side_effect,
+                outbound: None,
+            };
+
+            // ToDo: Introduce default timeout + delay
+            let (timeouts_at, delay_steps_at) = (None, None);
+            let new_xtx = Xtx::<T::AccountId, T::BlockNumber, BalanceOf<T>>::new(
+                requester.clone(),
+                input,
+                timeouts_at,
+                delay_steps_at,
+                Some(reward),
+                // ToDo: Missing GenericDFD to link side effects / composable contracts with the Xtx
+            );
             let x_tx_id: XtxId<T> = new_xtx.generate_xtx_id::<T>();
             ActiveXtxMap::<T>::insert(x_tx_id, &new_xtx);
 
