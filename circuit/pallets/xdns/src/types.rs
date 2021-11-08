@@ -3,6 +3,7 @@
 
 use codec::{Decode, Encode};
 
+use frame_system::Config;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::{traits::Hash, RuntimeDebug};
@@ -10,7 +11,6 @@ use sp_std::prelude::*;
 use sp_std::vec::Vec;
 use t3rn_primitives::abi::GatewayABIConfig;
 use t3rn_primitives::{ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor};
-use frame_system::Config;
 
 /// A hash based on encoding the complete XdnsRecord
 pub type XdnsRecordId<T> = <T as frame_system::Config>::Hash;

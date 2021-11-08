@@ -22,9 +22,9 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use crate::types::{AllowedSideEffect, XdnsRecord, XdnsRecordId};
 use codec::{Decode, Encode};
 use frame_system::{ensure_root, ensure_signed};
-use crate::types::{XdnsRecordId, XdnsRecord, AllowedSideEffect};
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -47,6 +47,7 @@ mod benchmarking;
 
 pub mod types;
 pub mod weights;
+
 use weights::WeightInfo;
 
 // Definition of the pallet logic, to be aggregated at runtime definition through
@@ -74,7 +75,7 @@ pub mod pallet {
     // Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
     // method.
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
+    #[pallet::generate_store(pub (super) trait Store)]
     pub struct Pallet<T>(_);
 
     // Pallet implements [`Hooks`] trait to define some logic to execute in some context.
@@ -110,7 +111,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Inserts a xdns_record into the on-chain registry. Root only access.
-        #[pallet::weight(<T as Config>::WeightInfo::add_new_xdns_record())]
+        #[pallet::weight(< T as Config >::WeightInfo::add_new_xdns_record())]
         pub fn add_new_xdns_record(
             origin: OriginFor<T>,
             url: Vec<u8>,
@@ -154,7 +155,7 @@ pub mod pallet {
         }
 
         /// Updates the last_finalized field for an xdns_record from the onchain registry. Root only access.
-        #[pallet::weight(<T as Config>::WeightInfo::update_ttl())]
+        #[pallet::weight(< T as Config >::WeightInfo::update_ttl())]
         pub fn update_ttl(
             origin: OriginFor<T>,
             gateway_id: ChainId,
@@ -165,7 +166,7 @@ pub mod pallet {
         }
 
         /// Removes a xdns_record from the onchain registry. Root only access.
-        #[pallet::weight(<T as Config>::WeightInfo::purge_xdns_record())]
+        #[pallet::weight(< T as Config >::WeightInfo::purge_xdns_record())]
         pub fn purge_xdns_record(
             origin: OriginFor<T>,
             requester: T::AccountId,
@@ -184,7 +185,7 @@ pub mod pallet {
     }
 
     #[pallet::event]
-    #[pallet::generate_deposit(pub(super) fn deposit_event)]
+    #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// \[requester, xdns_record_id\]
         XdnsRecordStored(T::AccountId, XdnsRecordId<T>),
