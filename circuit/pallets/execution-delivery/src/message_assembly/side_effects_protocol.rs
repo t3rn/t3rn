@@ -7,6 +7,10 @@ use crate::OutboundSideEffect;
 type Bytes = Vec<u8>;
 type Arguments = Vec<Bytes>;
 
+pub struct SideEffectsProtocol {
+    gateway_abi: GatewayABIConfig,
+}
+
 pub trait InboundSideEffectsProtocol {
     fn confirm_get_storage(
         &self,
@@ -22,15 +26,12 @@ pub trait InboundSideEffectsProtocol {
 }
 
 // // ToDo: implement for Eth & Substrate!
-pub struct EthereumSideEffectsProtocol {
-    gateway_abi: GatewayABIConfig,
-}
+// pub struct EthereumSideEffectsProtocol {
+//     gateway_abi: GatewayABIConfig,
+// }
 // impl InboundSideEffectsProtocol for EthereumSideEffectsProtocol {}
-pub struct SubstrateSideEffectsProtocol {
-    gateway_abi: GatewayABIConfig,
-}
 
-pub struct SideEffectsProtocol {
+pub struct SubstrateSideEffectsProtocol {
     gateway_abi: GatewayABIConfig,
 }
 
@@ -82,7 +83,7 @@ impl SideEffectsProtocol {
         // ToDo: Change arguments to const, like below
         // const GET_STORAGE_ARGUMENTS_ABI: Vec<Type> = vec![Type::DynamicBytes];
         // const TRANSFER_ARGUMENTS_ABI: Vec<Type> = vec![Type::Address, Type::Address, Type::Value];
-        let GET_STORAGE_ARGUMENTS_ABI = vec![Type::Uint(gateway_abi.value_type_size)];
+        const GET_STORAGE_ARGUMENTS_ABI: Vec<Type>= vec![Type::Uint(gateway_abi.value_type_size)];
 
         // Args number must match with the args number in the protocol
         assert!(GET_STORAGE_ARGUMENTS_ABI.len() == args.len());
@@ -107,15 +108,14 @@ impl SideEffectsProtocol {
     // Perhaps could also return specifically defined arguments already?
         //  Result<GenericAddress, GenericAddress, GenericValue, &'static str>
         // ToDo: Change arguments to const, like below
-        // const GET_STORAGE_ARGUMENTS_ABI: Vec<Type> = vec![Type::DynamicBytes];
-        // const TRANSFER_ARGUMENTS_ABI: Vec<Type> = vec![Type::Address, Type::Address, Type::Value];
+        const TRANSFER_ARGUMENTS_ABI: Vec<Type> = vec![Type::Address, Type::Address, Type::Value];
 
         // Args number must match with the args number in the protocol
-        assert!(GET_STORAGE_ARGUMENTS_ABI.len() == args.len());
+        assert!(TRANSFER_ARGUMENTS_ABI.len() == args.len());
 
         // ToDo: Extract
         for (i, arg) in args.iter().enumerate()  {
-            let type_n = &GET_STORAGE_ARGUMENTS_ABI[i];
+            let type_n = &TRANSFER_ARGUMENTS_ABI[i];
             type_n.eval(arg.clone())?;
         }
 
@@ -128,14 +128,14 @@ impl SideEffectsProtocol {
         args: Vec<Bytes>,
     ) -> Result<Arguments, &'static str> {
         // Need to parse the action first
-        let _GET_STORAGE: Vec<u8> = b"get_storage".to_vec();
-        let _TRANSFER: Vec<u8> = b"transfer".to_vec();
+        let GET_STORAGE: Vec<u8> = b"get_storage".to_vec();
+        let TRANSFER: Vec<u8> = b"transfer".to_vec();
 
         match action {
-            _GET_STORAGE => {
+            GET_STORAGE => {
                 self.get_storage(args, self.gateway_abi)
             },
-            _TRANSFER => {
+            TRANSFER => {
                 self.transfer(args, self.gateway_abi)
             },
             _ => Err("Not an ethereum address"),
