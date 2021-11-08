@@ -10,12 +10,15 @@ use sp_std::prelude::*;
 use sp_std::vec::Vec;
 use t3rn_primitives::abi::GatewayABIConfig;
 use t3rn_primitives::{ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor};
+use frame_system::Config;
 
 /// A hash based on encoding the complete XdnsRecord
 pub type XdnsRecordId<T> = <T as frame_system::Config>::Hash;
 
 /// A hash based on encoding the Gateway ID
 pub type XdnsGatewayId<T> = <T as frame_system::Config>::Hash;
+
+pub type AllowedSideEffect = Vec<u8>;
 
 /// A preliminary representation of a xdns_record in the onchain registry.
 #[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
@@ -40,6 +43,9 @@ pub struct XdnsRecord<AccountId> {
     pub registrant: Option<AccountId>,
 
     pub last_finalized: Option<u64>,
+
+    /// Methods enabled to be called on the remote target
+    pub allowed_side_effects: Vec<AllowedSideEffect>,
 }
 
 impl<AccountId: Encode> XdnsRecord<AccountId> {
@@ -56,6 +62,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
         gateway_type: GatewayType,
         registrant: Option<AccountId>,
         last_finalized: Option<u64>,
+        allowed_side_effects: Vec<AllowedSideEffect>,
     ) -> Self {
         let gateway_genesis = GatewayGenesisConfig {
             modules_encoded,
@@ -74,6 +81,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
             gateway_id,
             registrant,
             last_finalized,
+            allowed_side_effects,
         }
     }
 
@@ -84,6 +92,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
         gateway_vendor: GatewayVendor,
         gateway_type: GatewayType,
         gateway_genesis: GatewayGenesisConfig,
+        allowed_side_effects: Vec<AllowedSideEffect>,
     ) -> Self {
         XdnsRecord {
             url,
@@ -94,6 +103,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
             gateway_genesis,
             registrant: None,
             last_finalized: None,
+            allowed_side_effects,
         }
     }
 
@@ -102,7 +112,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
     }
 
     /// Function that generates an XdnsRecordId hash based on the gateway id
-    pub fn generate_id<T: crate::pallet::Config>(&self) -> XdnsRecordId<T> {
+    pub fn generate_id<T: Config>(&self) -> XdnsRecordId<T> {
         T::Hashing::hash(Encode::encode(&self.gateway_id).as_ref())
     }
 

@@ -1106,7 +1106,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl circuit_rpc_runtime_api::CircuitApi<Block, AccountId, Balance, BlockNumber> for Runtime
+    impl pallet_circuit_execution_delivery_rpc_runtime_api::ExecutionDeliveryRuntimeApi<Block, AccountId, Balance, BlockNumber> for Runtime
     {
         fn composable_exec(
             _origin: AccountId,
