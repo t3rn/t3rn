@@ -44,17 +44,10 @@ export default {
       offsets: 'Vec<u16>',
     },
     HasherAlgo: {
-      _enum: {
-        Blake2: 0,
-        Keccak256: 1
-      }
+      _enum: [ "Blake2", "Keccak256"]
     },
     CryptoAlgo: {
-      _enum: {
-        Ed25519: 0,
-        Sr25519: 1,
-        Ecdsa: 2,
-      }
+      _enum: ["Ed25519", "Sr25519", "Ecdsa",]
     },
     CircuitOutboundMessage: {
       name: 'Bytes',
