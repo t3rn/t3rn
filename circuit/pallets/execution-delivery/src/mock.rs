@@ -27,7 +27,7 @@ use pallet_staking::EraIndex;
 use sp_consensus_babe::AuthorityId;
 use sp_staking::SessionIndex;
 
-use frame_support::weights::Weight;
+use frame_support::{weights::Weight, PalletId};
 use sp_core::{crypto::KeyTypeId, H160, H256, U256};
 use sp_runtime::traits::{BlakeTwo256, Keccak256};
 
@@ -86,6 +86,7 @@ frame_support::construct_runtime!(
         XDNS: pallet_xdns::{Pallet, Call, Storage, Config<T>, Event<T>},
         Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
         EVM: pallet_evm::{Pallet, Config, Storage, Event<T>},
+        BasicOutboundChannel: snowbridge_basic_channel::outbound::{Pallet, Config<T>, Storage, Event},
     }
 );
 
@@ -375,6 +376,10 @@ impl Convert<Balance, u128> for CircuitToGateway {
     }
 }
 
+parameter_types! {
+    pub const ExecPalletId: PalletId = PalletId(*b"pal/exec");
+}
+
 impl Config for Test {
     type Event = Event;
     // type AuthorityId = crypto::TestAuthId;
@@ -385,6 +390,7 @@ impl Config for Test {
     type AccountId32Converter = AccountId32Converter;
     type ToStandardizedGatewayBalance = CircuitToGateway;
     type WeightInfo = ();
+    type PalletId = ExecPalletId;
 }
 
 impl pallet_im_online::Config for Test {
@@ -440,6 +446,22 @@ impl pallet_contracts::Config for Test {
     type DeletionQueueDepth = DeletionQueueDepth;
     type DeletionWeightLimit = DeletionWeightLimit;
     type Schedule = MySchedule;
+}
+
+pub const INDEXING_PREFIX: &'static [u8] = b"commitment";
+parameter_types! {
+    pub const MaxMessagePayloadSize: usize = 256;
+    pub const MaxMessagesPerCommit: usize = 20;
+}
+
+impl snowbridge_basic_channel::outbound::Config for Test {
+    type Event = Event;
+    const INDEXING_PREFIX: &'static [u8] = INDEXING_PREFIX;
+    type Hashing = Keccak256;
+    type MaxMessagePayloadSize = MaxMessagePayloadSize;
+    type MaxMessagesPerCommit = MaxMessagesPerCommit;
+    type SetPrincipalOrigin = crate::EnsureExecDelivery<Test>;
+    type WeightInfo = ();
 }
 
 // EVM
@@ -891,6 +913,7 @@ impl ExtBuilder {
             GatewayVendor::Substrate,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
+            vec![],
         );
         let gateway_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -899,6 +922,7 @@ impl ExtBuilder {
             GatewayVendor::Substrate,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
+            vec![],
         );
         let polkadot_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -907,6 +931,7 @@ impl ExtBuilder {
             GatewayVendor::Substrate,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
+            vec![],
         );
         let kusama_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -915,6 +940,7 @@ impl ExtBuilder {
             GatewayVendor::Substrate,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
+            vec![],
         );
         self.known_xdns_records = vec![
             circuit_xdns_record,

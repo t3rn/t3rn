@@ -16,13 +16,12 @@
 // limitations under the License.
 
 //! Test utilities
-use crate::ExecComposer;
 use crate::{self as pallet_execution_delivery};
+use crate::{AllowedSideEffect, ExecComposer};
 use codec::Encode;
 
 use frame_support::{assert_err, assert_ok};
 
-use crate::{Xtx, XtxSchedule};
 use sp_io;
 
 use sp_core::{crypto::Pair, sr25519, Hasher};
@@ -573,7 +572,7 @@ fn dry_run_whole_xtx_unseen_contract_one_phase_and_one_step_success() {
             }],
         };
 
-        let escrow_account: AccountId =
+        let _escrow_account: AccountId =
             hex_literal::hex!["8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48"]
                 .into();
 
@@ -610,41 +609,16 @@ fn dry_run_whole_xtx_unseen_contract_one_phase_and_one_step_success() {
 
         contract_ids.push(key);
 
-        let max_steps = contracts.len() as u32;
+        let _max_steps = contracts.len() as u32;
 
-        let (current_block_no, block_zero) = (
+        let (_current_block_no, _block_zero) = (
             <frame_system::Pallet<Test>>::block_number(),
             <Test as frame_system::Config>::BlockNumber::zero(),
         );
 
-        let xtx_schedule = XtxSchedule::new_sequential_from_contracts(
-            contracts.clone(),
-            contract_ids.clone(),
-            vec![step.compose.clone()],
-            action_descriptions.clone(),
-            None,
-            current_block_no.clone(),
-        )
-        .unwrap();
-
-        let expected_xtx = Xtx {
-            estimated_worth: Default::default(),
-            current_worth: Default::default(),
-            requester: requester.clone(),
-            escrow_account: escrow_account.clone(),
-            payload: vec![],
-            current_step: 0,
-            steps_no: max_steps,
-            current_phase: 0,
-            current_round: 0,
-            result_status: vec![],
-            phases_blockstamps: (current_block_no, block_zero),
-            schedule: xtx_schedule,
-        };
-
         assert_eq!(
-            ExecDelivery::dry_run_whole_xtx(inter_schedule, escrow_account, requester),
-            Ok((expected_xtx, contracts, contract_ids, action_descriptions))
+            ExecDelivery::dry_run_whole_xtx(inter_schedule, requester),
+            Ok((contracts, contract_ids, action_descriptions))
         );
     });
 }
@@ -683,6 +657,57 @@ fn test_submit_composable_exec_order() {
     });
 }
 
+#[test]
+fn test_submit_exec_order() {
+    let dest = AccountId::new([1 as u8; 32]);
+    let value = BalanceOf::<Test>::from(0u32);
+    let input_data = vec![];
+    let io_schedule = b"component1;".to_vec();
+
+    let compose =
+        make_compose_out_of_raw_wat_code::<Test>(CODE_CALL, input_data.clone(), dest, value);
+
+    let keystore = KeyStore::new();
+
+    // Insert Alice's keys
+    const SURI_ALICE: &str = "//Alice";
+    let key_pair_alice = sr25519::Pair::from_string(SURI_ALICE, None).expect("Generates key pair");
+    SyncCryptoStore::insert_unknown(
+        &keystore,
+        KEY_TYPE,
+        SURI_ALICE,
+        key_pair_alice.public().as_ref(),
+    )
+    .expect("Inserts unknown key");
+
+    let mut ext = TestExternalities::new_empty();
+
+    ext.register_extension(KeystoreExt(keystore.into()));
+    ext.execute_with(|| {
+        insert_default_xdns_record();
+
+        // Must insert the composable contract first
+        assert_ok!(ExecDelivery::submit_composable_exec_order(
+            Origin::signed(Default::default()),
+            io_schedule,
+            vec![compose],
+        ));
+
+        let fixed_contract_id: RegistryContractId<Test> =
+            hex_literal::hex!["6f209cdc1d7e1ee9f16978deb34a865778ba4212d326713b495b90213e9fc0b3"]
+                .into();
+
+        // Can execute the contract now since inserted in previous step
+        assert_ok!(ExecDelivery::submit_exec(
+            Origin::signed(Default::default()),
+            fixed_contract_id,
+            input_data,
+            Default::default(),
+            Default::default(),
+        ));
+    });
+}
+
 use bp_test_utils::test_header;
 
 use crate::{
@@ -717,6 +742,7 @@ fn test_register_gateway_with_default_polka_like_header() {
     let first_header: CurrentHeader<Test, DefaultPolkadotLikeGateway> = test_header(0);
 
     let authorities = Some(vec![]);
+    let allowed_side_effects = vec![];
 
     let mut ext = TestExternalities::new_empty();
     ext.execute_with(|| {
@@ -729,7 +755,8 @@ fn test_register_gateway_with_default_polka_like_header() {
             gateway_type,
             gateway_genesis,
             first_header.encode(),
-            authorities
+            authorities,
+            allowed_side_effects,
         ));
     });
 }
@@ -761,6 +788,7 @@ fn test_register_gateway_with_u64_substrate_header() {
     let first_header: CurrentHeader<Test, PolkadotLikeValU64Gateway> = test_header(0);
 
     let authorities = Some(vec![]);
+    let allowed_side_effects = vec![];
 
     let mut ext = TestExternalities::new_empty();
     ext.execute_with(|| {
@@ -773,7 +801,8 @@ fn test_register_gateway_with_u64_substrate_header() {
             gateway_type,
             gateway_genesis,
             first_header.encode(),
-            authorities
+            authorities,
+            allowed_side_effects,
         ));
     });
 }
@@ -805,6 +834,7 @@ fn test_register_gateway_with_default_eth_like_header() {
     let first_header: CurrentHeader<Test, EthLikeKeccak256ValU32Gateway> = test_header(0);
 
     let authorities = Some(vec![]);
+    let allowed_side_effects = vec![];
 
     let mut ext = TestExternalities::new_empty();
     ext.execute_with(|| {
@@ -817,7 +847,8 @@ fn test_register_gateway_with_default_eth_like_header() {
             gateway_type,
             gateway_genesis,
             first_header.encode(),
-            authorities
+            authorities,
+            allowed_side_effects,
         ));
     });
 }
@@ -849,6 +880,7 @@ fn test_register_gateway_with_u64_eth_like_header() {
     let first_header: CurrentHeader<Test, EthLikeKeccak256ValU64Gateway> = test_header(0);
 
     let authorities = Some(vec![]);
+    let allowed_side_effects = vec![];
 
     let mut ext = TestExternalities::new_empty();
     ext.execute_with(|| {
@@ -861,7 +893,80 @@ fn test_register_gateway_with_u64_eth_like_header() {
             gateway_type,
             gateway_genesis,
             first_header.encode(),
-            authorities
+            authorities,
+            allowed_side_effects,
         ));
+    });
+}
+
+#[test]
+fn test_register_gateway_with_u64_substrate_header_and_allowed_side_effects() {
+    let origin = Origin::root(); // only sudo access to register new gateways for now
+    let url = b"ws://localhost:9944".to_vec();
+    let gateway_id = [0; 4];
+    let gateway_abi: GatewayABIConfig = Default::default();
+
+    let gateway_vendor = GatewayVendor::Substrate;
+    let gateway_type = GatewayType::ProgrammableInternal(0);
+
+    let _gateway_pointer = GatewayPointer {
+        id: [0; 4],
+        vendor: GatewayVendor::Substrate,
+        gateway_type: GatewayType::ProgrammableInternal(0),
+    };
+
+    let gateway_genesis = GatewayGenesisConfig {
+        modules_encoded: None,
+        signed_extension: None,
+        runtime_version: TEST_RUNTIME_VERSION,
+        genesis_hash: Default::default(),
+        extrinsics_version: 0u8,
+    };
+
+    let first_header: CurrentHeader<Test, PolkadotLikeValU64Gateway> = test_header(0);
+
+    let authorities = Some(vec![]);
+
+    let allowed_side_effects: Vec<AllowedSideEffect> = vec!["swap".into()];
+
+    let mut ext = TestExternalities::new_empty();
+    ext.execute_with(|| System::set_block_number(1));
+    ext.execute_with(|| {
+        assert_ok!(ExecDelivery::register_gateway(
+            origin,
+            url,
+            gateway_id,
+            gateway_abi,
+            gateway_vendor.clone(),
+            gateway_type.clone(),
+            gateway_genesis,
+            first_header.encode(),
+            authorities,
+            allowed_side_effects.clone(),
+        ));
+
+        // Assert the stored xdns record
+
+        let xdns_id =
+            <Test as frame_system::Config>::Hashing::hash(Encode::encode(&gateway_id).as_ref());
+        let result = pallet_xdns::XDNSRegistry::<Test>::get(xdns_id);
+
+        assert!(result.is_some());
+        let xdns_record = result.unwrap();
+        let stored_side_effects = xdns_record.allowed_side_effects;
+
+        assert_eq!(stored_side_effects.len(), 1);
+        assert_eq!(stored_side_effects, allowed_side_effects.clone());
+
+        // Assert events emitted
+
+        System::assert_last_event(Event::ExecDelivery(crate::Event::NewGatewayRegistered(
+            gateway_id,
+            gateway_type,
+            gateway_vendor,
+            allowed_side_effects,
+        )));
+        // XdnsRecordStored and NewGatewayRegistered
+        assert_eq!(System::events().len(), 2);
     });
 }

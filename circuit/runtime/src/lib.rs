@@ -75,7 +75,7 @@ pub use frame_support::{
     construct_runtime, parameter_types,
     traits::{Currency, ExistenceRequirement, Imbalance, KeyOwnerProofSystem},
     weights::{constants::WEIGHT_PER_SECOND, DispatchClass, IdentityFee, RuntimeDbWeight, Weight},
-    StorageValue,
+    PalletId, StorageValue,
 };
 
 pub use frame_system::Call as SystemCall;
@@ -605,6 +605,22 @@ impl volatile_vm::VolatileVM for Runtime {
     type Schedule = MyScheduleVVM;
 }
 
+pub const INDEXING_PREFIX: &'static [u8] = b"commitment";
+parameter_types! {
+    pub const MaxMessagePayloadSize: usize = 256;
+    pub const MaxMessagesPerCommit: usize = 20;
+}
+
+impl snowbridge_basic_channel::outbound::Config for Runtime {
+    type Event = Event;
+    const INDEXING_PREFIX: &'static [u8] = INDEXING_PREFIX;
+    type Hashing = Keccak256;
+    type MaxMessagePayloadSize = MaxMessagePayloadSize;
+    type MaxMessagesPerCommit = MaxMessagesPerCommit;
+    type SetPrincipalOrigin = pallet_circuit_execution_delivery::EnsureExecDelivery<Runtime>;
+    type WeightInfo = ();
+}
+
 pub struct AccountId32Converter;
 impl Convert<AccountId, [u8; 32]> for AccountId32Converter {
     fn convert(account_id: AccountId) -> [u8; 32] {
@@ -619,12 +635,17 @@ impl Convert<Balance, u128> for CircuitToGateway {
     }
 }
 
+parameter_types! {
+    pub const ExecPalletId: PalletId = PalletId(*b"pal/exec");
+}
+
 impl pallet_circuit_execution_delivery::Config for Runtime {
     type Event = Event;
     type Call = Call;
     type AccountId32Converter = AccountId32Converter;
     type ToStandardizedGatewayBalance = CircuitToGateway;
     type WeightInfo = pallet_circuit_execution_delivery::weights::SubstrateWeight<Runtime>;
+    type PalletId = ExecPalletId;
 }
 
 type Blake2ValU64BridgeInstance = ();
@@ -773,6 +794,7 @@ construct_runtime!(
         Mmr: pallet_mmr::{Pallet, Storage},
         EthereumLightClient: ethereum_light_client::{Pallet, Call, Storage, Event, Config},
         MmrLeaf: pallet_beefy_mmr::{Pallet, Storage},
+        BasicOutboundChannel: snowbridge_basic_channel::outbound::{Pallet, Config<T>, Storage, Event},
     }
 );
 

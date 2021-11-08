@@ -20,15 +20,19 @@ use codec::{Compact, Encode};
 
 use sp_core::crypto::{AccountId32, UncheckedFrom};
 use sp_core::storage::StorageKey;
+use sp_core::Bytes;
 use sp_io::TestExternalities;
 use sp_keystore::KeystoreExt;
 
-use circuit_runtime::{AccountId, Runtime};
+use circuit_runtime::Runtime;
 use circuit_test_utils::create_gateway_protocol_from_client;
 use sp_keyring::Sr25519Keyring;
 use volatile_vm::wasm::PrefabWasmModule;
 
 use jsonrpc_runtime_client::polkadot_like_chain::PolkadotLike;
+use jsonrpsee_types::{traits::Client, JsonValue};
+
+use codec::Decode;
 use relay_substrate_client::Client as RemoteClient;
 use std::{thread, time};
 use t3rn_primitives::*;
@@ -70,7 +74,7 @@ fn compile_module(
     <sp_runtime::traits::BlakeTwo256 as sp_runtime::traits::Hash>::Output,
 )> {
     let fixture_path = [
-        "../../../gateway/pallets/contracts-gateway/",
+        "../../gateway/pallets/contracts-gateway/",
         "fixtures/",
         fixture_name,
         ".wat",
@@ -92,7 +96,7 @@ fn get_module(
     <sp_runtime::traits::BlakeTwo256 as sp_runtime::traits::Hash>::Output,
 )> {
     let fixture_path = [
-        "../../../gateway/pallets/contracts-gateway/",
+        "../../gateway/pallets/contracts-gateway/",
         "fixtures/",
         fixture_name,
         ".wasm",
@@ -124,7 +128,6 @@ pub fn assert_contract_present_on_chain(
     // lets wait for the block to be finanlized
     println!("Waiting for 10 seconds..");
     thread::sleep(time::Duration::from_secs(10));
-    println!("Waiting end");
     // Keyring only supports test accounts and it will be None since it tries to find it in the map.
     let key = storage_map_key("Contracts", "CodeStorage", &code_hash);
     let storage_key = StorageKey(key);
@@ -144,6 +147,33 @@ pub fn assert_contract_present_on_chain(
             code_length
         );
     });
+}
+
+pub fn get_contract_storage(
+    client: &RemoteClient<PolkadotLike>,
+    contract_address: AccountId32,
+    key: &str,
+) -> Bytes {
+    async_std::task::block_on(async move {
+        let result_req: Result<Bytes, jsonrpsee_types::Error> = client
+            .client
+            .request(
+                "contracts_getStorage",
+                vec![
+                    JsonValue::String(contract_address.to_string()),
+                    JsonValue::String(key.to_string()),
+                ]
+                .into(),
+            )
+            .await;
+
+        assert!(
+            result_req.is_ok(),
+            "contracts_getStorage failed : {}",
+            result_req.unwrap_err()
+        );
+        result_req.unwrap()
+    })
 }
 #[test]
 fn successfully_deploys_smart_contract() {
@@ -220,6 +250,7 @@ fn successfully_deploys_flipper_and_calls_flip() {
             create_gateway_protocol_from_client(client, signer.public().into()).await;
 
         // Prepare data field for deploy
+        // Please check metadata file for these hex selector values
         let mut constructor_selector = hex::decode("9bae9d5e").unwrap();
         let constructor_argument = false.encode();
         constructor_selector.extend(constructor_argument);
@@ -236,13 +267,12 @@ fn successfully_deploys_flipper_and_calls_flip() {
             empty.encode(),
         ];
 
-        // 73VX371dpMKd1n7kfaSX6kFrV8bpSnTr5kcrYFm5TP1T93XJ
         let dest = contract_address(signer, code_hash, &empty);
 
         let call_arguments = vec![
-            GenericAddress::Id(dest).encode(),
-            Compact::from(3_000_000_000u128).encode(),
-            Compact::from(1_714_624_000u64).encode(),
+            GenericAddress::Id(dest.clone()).encode(),
+            Compact::from(0u128).encode(),
+            Compact::from(446_000_000u64).encode(),
             message_selector.encode(),
         ];
 
@@ -265,14 +295,20 @@ fn successfully_deploys_flipper_and_calls_flip() {
             })
             .await;
 
-        // Assert
-
         assert!(
             ext_hash_deploy.is_ok(),
             "Contract deploy not successful : {}",
             ext_hash_deploy.unwrap_err()
         );
         assert_contract_present_on_chain(client, code_hash, wasm.len());
+
+        // Get current bool value
+        let response = get_contract_storage(
+            client,
+            dest.clone(),
+            r#"0x0000000000000000000000000000000000000000000000000000000000000000"#,
+        );
+        let current_value: bool = Decode::decode(&mut &response[..]).unwrap();
 
         // Act : Call flip() function on smart contract
         let ext_hash_call = client
@@ -297,7 +333,16 @@ fn successfully_deploys_flipper_and_calls_flip() {
             "Contract call not successful : {}",
             ext_hash_call.unwrap_err()
         );
+        // Wait for block finalization
+        thread::sleep(time::Duration::from_secs(20));
 
-        // here we read contract storage and see if we did flip it or not
+        // Get current bool value
+        let response = get_contract_storage(
+            client,
+            dest.clone(),
+            r#"0x0000000000000000000000000000000000000000000000000000000000000000"#,
+        );
+        let new_value: bool = Decode::decode(&mut &response[..]).unwrap();
+        assert_eq!(current_value, !new_value, "Contract value not flipped");
     });
 }

@@ -8,7 +8,7 @@ use sp_std::vec::*;
 use t3rn_primitives::transfers::TransferEntry;
 use t3rn_primitives::{
     CircuitOutboundMessage, ExtraMessagePayload, GatewayExpectedOutput, GatewayInboundProtocol,
-    GatewayType, GenericAddress,
+    GatewayType, GatewayVendor, GenericAddress,
 };
 
 pub struct EthereumGatewayProtocol {
@@ -18,31 +18,31 @@ pub struct EthereumGatewayProtocol {
 impl GatewayInboundProtocol for EthereumGatewayProtocol {
     fn get_storage(
         &self,
-        key: Vec<u8>,
-        gateway_type: GatewayType,
+        _key: Vec<u8>,
+        _gateway_type: GatewayType,
     ) -> Result<CircuitOutboundMessage, &'static str> {
         unimplemented!()
     }
 
     fn set_storage(
         &self,
-        key: Vec<u8>,
-        value: Option<Vec<u8>>,
-        gateway_type: GatewayType,
+        _key: Vec<u8>,
+        _value: Option<Vec<u8>>,
+        _gateway_type: GatewayType,
     ) -> Result<CircuitOutboundMessage, &'static str> {
         unimplemented!()
     }
 
     fn call_static(
         &self,
-        module_name: &str,
-        fn_name: &str,
-        data: Vec<u8>,
-        to: Vec<u8>,
-        value: Vec<u8>,
-        gas: Vec<u8>,
-        gateway_type: GatewayType,
-        return_value: Option<Vec<u8>>,
+        _module_name: &str,
+        _fn_name: &str,
+        _data: Vec<u8>,
+        _to: Vec<u8>,
+        _value: Vec<u8>,
+        _gas: Vec<u8>,
+        _gateway_type: GatewayType,
+        _return_value: Option<Vec<u8>>,
     ) -> Result<CircuitOutboundMessage, &'static str> {
         unimplemented!()
     }
@@ -57,8 +57,8 @@ impl GatewayInboundProtocol for EthereumGatewayProtocol {
         to: Vec<u8>,
         value: Vec<u8>,
         gas: Vec<u8>,
-        gateway_type: GatewayType,
-        return_value: Option<Vec<u8>>,
+        _gateway_type: GatewayType,
+        _return_value: Option<Vec<u8>>,
     ) -> Result<CircuitOutboundMessage, &'static str> {
         // contract_address, requester, data, to, value, gas
         let signature = "call(address,bytes,bytes,uint256,unit256)";
@@ -100,6 +100,7 @@ impl GatewayInboundProtocol for EthereumGatewayProtocol {
                 tx_signed: vec![],
                 custom_payload: None,
             }),
+            gateway_vendor: GatewayVendor::Ethereum,
         })
     }
 
@@ -129,42 +130,42 @@ impl GatewayInboundProtocol for EthereumGatewayProtocol {
 
     fn custom_call_static(
         &self,
-        module_name: &str,
-        fn_name: &str,
-        data: Vec<u8>,
-        to: Vec<u8>,
-        value: Vec<u8>,
-        gas: Vec<u8>,
-        gateway_type: GatewayType,
-        return_value: Option<Vec<u8>>,
+        _module_name: &str,
+        _fn_name: &str,
+        _data: Vec<u8>,
+        _to: Vec<u8>,
+        _value: Vec<u8>,
+        _gas: Vec<u8>,
+        _gateway_type: GatewayType,
+        _return_value: Option<Vec<u8>>,
     ) -> Result<CircuitOutboundMessage, &'static str> {
         unimplemented!()
     }
 
     fn custom_call_dirty(
         &self,
-        module_name: &str,
-        fn_name: &str,
-        data: Vec<u8>,
-        to: Vec<u8>,
-        value: Vec<u8>,
-        gas: Vec<u8>,
-        gateway_type: GatewayType,
-        return_value: Option<Vec<u8>>,
+        _module_name: &str,
+        _fn_name: &str,
+        _data: Vec<u8>,
+        _to: Vec<u8>,
+        _value: Vec<u8>,
+        _gas: Vec<u8>,
+        _gateway_type: GatewayType,
+        _return_value: Option<Vec<u8>>,
     ) -> Result<CircuitOutboundMessage, &'static str> {
         unimplemented!()
     }
 
     fn custom_call_escrow(
         &self,
-        module_name: &str,
-        fn_name: &str,
-        data: Vec<u8>,
-        to: Vec<u8>,
-        value: Vec<u8>,
-        gas: Vec<u8>,
-        gateway_type: GatewayType,
-        return_value: Option<Vec<u8>>,
+        _module_name: &str,
+        _fn_name: &str,
+        _data: Vec<u8>,
+        _to: Vec<u8>,
+        _value: Vec<u8>,
+        _gas: Vec<u8>,
+        _gateway_type: GatewayType,
+        _return_value: Option<Vec<u8>>,
     ) -> Result<CircuitOutboundMessage, &'static str> {
         unimplemented!()
     }
@@ -197,8 +198,8 @@ impl GatewayInboundProtocol for EthereumGatewayProtocol {
         requester: Vec<u8>,
         to: Vec<u8>,
         value: Vec<u8>,
-        transfers: &mut Vec<TransferEntry>,
-        gateway_type: GatewayType,
+        _transfers: &mut Vec<TransferEntry>,
+        _gateway_type: GatewayType,
     ) -> Result<CircuitOutboundMessage, &'static str> {
         // contract_address, requester, data, to, value
         let signature = "transfer(address,uint256)";
@@ -233,28 +234,29 @@ impl GatewayInboundProtocol for EthereumGatewayProtocol {
                 tx_signed: vec![],
                 custom_payload: None,
             }),
+            gateway_vendor: GatewayVendor::Ethereum,
         })
     }
 
     fn swap_dirty(
         &self,
-        to: Vec<u8>,
-        value: Vec<u8>,
-        gas: Vec<u8>,
-        gateway_type: GatewayType,
+        _to: Vec<u8>,
+        _value: Vec<u8>,
+        _gas: Vec<u8>,
+        _gateway_type: GatewayType,
     ) -> Result<CircuitOutboundMessage, &'static str> {
         unimplemented!()
     }
 
     fn swap_escrow(
         &self,
-        from: Vec<u8>,
-        x_token: Vec<u8>,
-        y_token: Vec<u8>,
-        x_value: Vec<u8>,
-        y_value: Vec<u8>,
-        gas: Vec<u8>,
-        gateway_type: GatewayType,
+        _from: Vec<u8>,
+        _x_token: Vec<u8>,
+        _y_token: Vec<u8>,
+        _x_value: Vec<u8>,
+        _y_value: Vec<u8>,
+        _gas: Vec<u8>,
+        _gateway_type: GatewayType,
     ) -> Result<CircuitOutboundMessage, &'static str> {
         unimplemented!()
     }

@@ -799,6 +799,7 @@ mod tests {
             GatewayVendor::Substrate,
             GatewayType::TxOnly(0),
             Default::default(),
+            vec![],
         );
 
         Pallet::<TestRuntime>::initialize_single(origin, init_data.clone(), gateway_id)

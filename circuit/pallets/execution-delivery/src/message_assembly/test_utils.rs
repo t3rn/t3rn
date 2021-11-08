@@ -14,7 +14,7 @@ use crate::message_assembly::chain_generic_metadata::*;
 use crate::message_assembly::substrate_gateway_protocol::*;
 
 #[cfg(any(feature = "std", test))]
-use relay_substrate_client::{Chain as RelayChain, ChainBase, Client};
+use relay_substrate_client::{ChainBase, Client};
 
 pub fn create_test_metadata(
     modules_with_functions: Vec<(&'static str, Vec<&'static str>)>,

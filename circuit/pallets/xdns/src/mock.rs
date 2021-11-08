@@ -152,6 +152,7 @@ impl ExtBuilder {
             GatewayVendor::Substrate,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
+            vec![],
         );
         let gateway_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -160,6 +161,7 @@ impl ExtBuilder {
             GatewayVendor::Substrate,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
+            vec![],
         );
         let polkadot_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -168,6 +170,7 @@ impl ExtBuilder {
             GatewayVendor::Substrate,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
+            vec![],
         );
         let kusama_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -176,6 +179,7 @@ impl ExtBuilder {
             GatewayVendor::Substrate,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
+            vec![],
         );
         self.known_xdns_records = vec![
             circuit_xdns_record,

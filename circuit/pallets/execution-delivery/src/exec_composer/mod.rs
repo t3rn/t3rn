@@ -25,6 +25,7 @@ use volatile_vm::wasm::PrefabWasmModule;
 use volatile_vm::VolatileVM;
 use volatile_vm::{CallStamp, DeferredStorageWrite, ExecReturnValue};
 pub mod volatile_vm_impl;
+use crate::SystemHashing;
 
 #[cfg(test)]
 pub mod tests;
@@ -39,7 +40,6 @@ use volatile_vm::wasm::RunMode;
 
 type ChainId = [u8; 4];
 
-use frame_metadata::v13::RuntimeMetadataV13;
 use sp_runtime::create_runtime_str;
 use sp_version::RuntimeVersion;
 
@@ -110,7 +110,7 @@ impl ExecComposer {
                 trie_id: Default::default(),
                 storage_size: Default::default(),
                 pair_count: Default::default(),
-                code_hash: T::Hashing::hash(&compose.bytes),
+                code_hash: SystemHashing::<T>::hash(&compose.bytes),
                 rent_allowance: Default::default(),
                 rent_paid: Default::default(),
                 deduct_block: Default::default(),
@@ -322,7 +322,7 @@ impl ExecComposer {
                 vendor: GatewayVendor::Substrate,
             }),
             Some(gateway_id) => {
-                let xdns_record_id = T::Hashing::hash(Encode::encode(&gateway_id).as_ref());
+                let xdns_record_id = SystemHashing::<T>::hash(Encode::encode(&gateway_id).as_ref());
 
                 let xdns_record = pallet_xdns::Pallet::<T>::xdns_registry(xdns_record_id).unwrap();
                 Ok(GatewayPointer {
@@ -421,7 +421,7 @@ impl ExecComposer {
         let mut best_gateway =
             pallet_xdns::Pallet::<T>::best_available(gateway_pointer.clone().id)?;
 
-        let genesis_hash = T::Hashing::hash(&mut best_gateway.gateway_genesis.genesis_hash);
+        let genesis_hash = SystemHashing::<T>::hash(&mut best_gateway.gateway_genesis.genesis_hash);
         let runtime_version = best_gateway.gateway_genesis.runtime_version;
 
         Ok(Box::new(

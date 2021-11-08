@@ -3,6 +3,7 @@ use crate::exec_composer::{
     TEST_RUNTIME_VERSION,
 };
 use crate::mock::{ExtBuilder, Test};
+use crate::SystemHashing;
 use crate::{
     BalanceOf, Compose, Config, ContractActionDesc, GatewayABIConfig, GatewayGenesisConfig,
     RegistryContract, KEY_TYPE,
@@ -69,6 +70,7 @@ pub fn insert_default_xdns_record() {
                 genesis_hash: Default::default(),
                 extrinsics_version: 0u8,
             },
+            vec![],
         ),
     );
 }
@@ -110,7 +112,7 @@ pub fn make_registry_contract_out_of_wat<T: Config>(
             trie_id: Default::default(),
             storage_size: Default::default(),
             pair_count: Default::default(),
-            code_hash: T::Hashing::hash(&compose.bytes),
+            code_hash: SystemHashing::<T>::hash(&compose.bytes),
             rent_allowance: Default::default(),
             rent_paid: Default::default(),
             deduct_block: Default::default(),

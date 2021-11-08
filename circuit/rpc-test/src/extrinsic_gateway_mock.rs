@@ -83,6 +83,7 @@ fn successfully_dispatches_unsigned_get_storage_outbound_message_from_circuit_to
         extra_payload: None,
         sender: None,
         target: None,
+        gateway_vendor: GatewayVendor::Substrate,
     };
 
     let request_message: RpcPayloadUnsigned = get_storage_outbound_message

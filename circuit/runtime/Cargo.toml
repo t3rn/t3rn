@@ -31,11 +31,11 @@ pallet-shift-session-manager = { path = "../../vendor/bridges/modules/shift-sess
 pallet-contracts-registry = {  path = "../pallets/contracts-registry", default-features = false }
 pallet-contracts-registry-rpc-runtime-api = {  path = "../pallets/contracts-registry/rpc/runtime-api", default-features = false }
 pallet-circuit-execution-delivery = {  path = "../pallets/execution-delivery", default-features = false }
+pallet-circuit-execution-delivery-rpc-runtime-api = {  path = "../pallets/execution-delivery/rpc/runtime-api", default-features = false }
 pallet-xdns = { path = "../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api = { path = "../pallets/xdns/rpc/runtime-api", default-features = false }
 volatile-vm = { path = "../../vm/volatile-vm", default-features = false }
 t3rn-primitives = { version = "0.1.0", default-features = false, path = "../primitives" }
-circuit-rpc-runtime-api = { path = "../rpc/runtime-api", default-features = false }
 
 # Smart contracts VMs
 pallet-evm = { path = "../../vendor/frontier/frame/evm", default-features = false  }
@@ -83,6 +83,7 @@ pallet-mmr-primitives = { git = "https://github.com/paritytech/substrate", branc
 
 # snowbridge dependencies
 ethereum-light-client = { git = "https://github.com/t3rn/snowbridge", package = "snowbridge-ethereum-light-client", default-features = false }
+snowbridge-basic-channel = { git = "https://github.com/t3rn/snowbridge", rev = "57eafa318d4b27d9d5c00c29e2db79504bd6ac77", default-features = false }
 
 # Benchmarking
 frame-benchmarking = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8', optional = true}
@@ -119,6 +120,7 @@ std = [
 	"pallet-evm-precompile-simple/std",
 	"pallet-contracts-registry/std",
 	"pallet-circuit-execution-delivery/std",
+	"pallet-circuit-execution-delivery-rpc-runtime-api/std",
 	"pallet-balances/std",
 	"pallet-bridge-dispatch/std",
 	"pallet-bridge-grandpa/std",
@@ -132,7 +134,6 @@ std = [
 	"pallet-timestamp/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-mmr/std",
-	"circuit-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
 	"serde",
 	"sp-api/std",
@@ -153,7 +154,8 @@ std = [
 	"pallet-beefy/std",
 	"ethereum-light-client/std",
 	"pallet-beefy-mmr/std",
-	"pallet-mmr-primitives/std"
+	"pallet-mmr-primitives/std",
+	"snowbridge-basic-channel/std"
 ]
 # TODO: https://github.com/paritytech/parity-bridges-common/issues/390
 # I've left the feature flag here to test our CI configuration
