@@ -63,6 +63,7 @@ use weights::WeightInfo;
 
 pub mod exec_composer;
 pub mod message_assembly;
+use crate::message_assembly::side_effects_protocol::*;
 
 pub use crate::message_assembly::test_utils as message_test_utils;
 pub mod xbridges;
@@ -196,14 +197,13 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
 
-
         /// Temporary entry for submitting a side effect directly for validation and event emittance
         /// It's temporary, since will be replaced with a DFD, which allows to specify exactly the nature of argument
         /// (SideEffect vs ComposableContract vs LocalContract or Mix)
         #[pallet::weight(<T as Config>::WeightInfo::submit_exec())]
         pub fn submit_side_effect_temp(
             origin: OriginFor<T>,
-            inbound_side_effect: InboundSideEffect<T>,
+            inbound_side_effect: InboundSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
             input: Vec<u8>,
             value: BalanceOf<T>,
             reward: BalanceOf<T>,
@@ -271,7 +271,9 @@ pub mod pallet {
             value: BalanceOf<T>,
             reward: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
-            // ToDo: Parse DFD to discover the flow of
+            // ToDo: Parse DFD to discover the flow of Xtx:
+            // E.g.
+            // $ComposableContract#0x232233223($TransferSideEffect(
             // enum SubmittedInputArtifact  {
             //      SideEffect,
             //      ComposableContract,
@@ -379,6 +381,18 @@ pub mod pallet {
 
             // ToDo #CNF-2: Check validity of execution by parsing
             //  the side effect against incoming target's format and checking its validity
+
+            // ToDo: On confirmation of side effect instantiate vendor specific protocol
+            // let gateway_abi = pallet_xdns::get_abi(side_effect.inbound.target);
+            // let vendor_side_effects_protocol = match gateway_pointer.vendor {
+            //     GatewayVendor::Substrate => Ok(SubstrateSideEffectsProtocol::new(gateway_abi)),
+            //     GatewayVendor::Ethereum => Ok(EthereumSideEffectsProtocol::new(gateway_abi)),
+            //     _ => { Err("Vendor unsupported") },
+            // }?;
+            // let side_effects_protocol = SideEffectProtocol::new(gateway_abi);
+            // match side_effect.inbound.encoded_action {
+            //      b"transfer".to_vec() => side_effects_protocol<vendor_side_effects_protocol>::confirm_transfer(side_effect.outbound.encoded_effect)
+            // }
 
             // ToDo #CNF-3: Check validity of inclusion - skip in _blind version for testing
             // Verify whether the side effect completes the Xtx
