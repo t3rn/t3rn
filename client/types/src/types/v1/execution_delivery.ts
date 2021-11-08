@@ -43,5 +43,28 @@ export const types: RegistryTypes = {
       args_encoded: 'Vec<Bytes>',
       gateway_pointer: 'GatewayPointer',
   },
+  AllowedSideEffect: 'Vec<u8>',
   GatewayOutboundEventId: 'u64',
+  InboundSideEffect: {
+    target: 'TargetId',
+    prize: 'BalanceOf',
+    ordered_at: 'BlockNumber',
+    encoded_action: 'Bytes',
+    encoded_args: 'Vec<Bytes>',
+    signature: 'Bytes',
+    enforce_executioner: 'AccountId',
+  },
+  OutboundSideEffect: {
+    err: 'Option<Bytes>',
+    output: 'Option<Bytes>',
+    inclusion_proof: 'Option<Bytes>',
+    executioner: 'AccountId',
+    received_at: 'BlockNumber',
+    cost: 'Option<BalanceOf>',
+  },
+  SideEffect: {
+    inbound: 'InboundSideEffect',
+    outbound: 'OutboundSideEffect'
+  },
+  SideEffectsDFD: 'Vec<u8>'
 }

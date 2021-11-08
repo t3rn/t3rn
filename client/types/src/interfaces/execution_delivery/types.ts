@@ -4,8 +4,11 @@
 import type { Bytes, Enum, Option, Struct, Type, Vec, u32, u64, u8 } from '@polkadot/types';
 import type { AccountId, BalanceOf, BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
 import type { ITuple } from '@polkadot/types/types';
-import type { GatewayPointer } from 't3rn-circuit-typegen/interfaces/primitives';
+import type { GatewayPointer, TargetId } from 't3rn-circuit-typegen/interfaces/primitives';
 import type { Proof } from 't3rn-circuit-typegen/interfaces/snowfork';
+
+/** @name AllowedSideEffect */
+export interface AllowedSideEffect extends Bytes {}
 
 /** @name GatewayOutboundEvent */
 export interface GatewayOutboundEvent extends Struct {
@@ -23,6 +26,27 @@ export interface GatewayOutboundEvent extends Struct {
 /** @name GatewayOutboundEventId */
 export interface GatewayOutboundEventId extends u64 {}
 
+/** @name InboundSideEffect */
+export interface InboundSideEffect extends Struct {
+  readonly target: TargetId;
+  readonly prize: BalanceOf;
+  readonly ordered_at: BlockNumber;
+  readonly encoded_action: Bytes;
+  readonly encoded_args: Vec<Bytes>;
+  readonly signature: Bytes;
+  readonly enforce_executioner: AccountId;
+}
+
+/** @name OutboundSideEffect */
+export interface OutboundSideEffect extends Struct {
+  readonly err: Option<Bytes>;
+  readonly output: Option<Bytes>;
+  readonly inclusion_proof: Option<Bytes>;
+  readonly executioner: AccountId;
+  readonly received_at: BlockNumber;
+  readonly cost: Option<BalanceOf>;
+}
+
 /** @name ProofType */
 export interface ProofType extends Enum {
   readonly isFullValue: boolean;
@@ -31,6 +55,15 @@ export interface ProofType extends Enum {
 
 /** @name result_status */
 export interface result_status extends Bytes {}
+
+/** @name SideEffect */
+export interface SideEffect extends Struct {
+  readonly inbound: InboundSideEffect;
+  readonly outbound: OutboundSideEffect;
+}
+
+/** @name SideEffectsDFD */
+export interface SideEffectsDFD extends Bytes {}
 
 /** @name StepConfirmation */
 export interface StepConfirmation extends Struct {

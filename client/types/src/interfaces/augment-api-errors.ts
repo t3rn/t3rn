@@ -43,6 +43,28 @@ declare module '@polkadot/api/types/errors' {
        **/
       [key: string]: AugmentedError<ApiType>;
     };
+    basicOutboundChannel: {
+      /**
+       * Not authorized to send message
+       **/
+      NotAuthorized: AugmentedError<ApiType>;
+      /**
+       * Cannot increment nonce
+       **/
+      Overflow: AugmentedError<ApiType>;
+      /**
+       * The message payload exceeds byte limit.
+       **/
+      PayloadTooLarge: AugmentedError<ApiType>;
+      /**
+       * No more messages can be queued for the channel during this commit cycle.
+       **/
+      QueueSizeLimitReached: AugmentedError<ApiType>;
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
+    };
     bridgeGatewayGrandpa: {
       /**
        * The pallet has already been initialized.
@@ -400,6 +422,7 @@ declare module '@polkadot/api/types/errors' {
       [key: string]: AugmentedError<ApiType>;
     };
     execDelivery: {
+      ContractDoesNotExists: AugmentedError<ApiType>;
       /**
        * Non existent public key.
        **/
@@ -408,10 +431,11 @@ declare module '@polkadot/api/types/errors' {
       IOScheduleNoEndingSemicolon: AugmentedError<ApiType>;
       IOScheduleUnknownCompose: AugmentedError<ApiType>;
       ProcessStepGatewayNotRecognised: AugmentedError<ApiType>;
+      RequesterNotEnoughBalance: AugmentedError<ApiType>;
+      SideEffectConfirmationInvalidInclusionProof: AugmentedError<ApiType>;
       StepConfirmationBlockUnrecognised: AugmentedError<ApiType>;
       StepConfirmationDecodingError: AugmentedError<ApiType>;
       StepConfirmationGatewayNotRecognised: AugmentedError<ApiType>;
-      StepConfirmationInvalidInclusionProof: AugmentedError<ApiType>;
       /**
        * Generic error
        **/

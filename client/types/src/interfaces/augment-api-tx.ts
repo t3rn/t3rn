@@ -12,7 +12,7 @@ import type { Keys } from '@polkadot/types/interfaces/session';
 import type { Key } from '@polkadot/types/interfaces/system';
 import type { AnyNumber } from '@polkadot/types/types';
 import type { RegistryContract, RegistryContractId } from 't3rn-circuit-typegen/interfaces/contracts_registry';
-import type { StepConfirmation, XtxId } from 't3rn-circuit-typegen/interfaces/execution_delivery';
+import type { AllowedSideEffect, SideEffect, StepConfirmation, XtxId } from 't3rn-circuit-typegen/interfaces/execution_delivery';
 import type { Compose, GatewayABIConfig, GatewayGenesisConfig, GatewayType, GatewayVendor } from 't3rn-circuit-typegen/interfaces/primitives';
 import type { EthashProofData, EthereumHeader } from 't3rn-circuit-typegen/interfaces/snowfork';
 import type { XdnsRecordId } from 't3rn-circuit-typegen/interfaces/xdns';
@@ -346,9 +346,18 @@ declare module '@polkadot/api/types/submittable' {
       [key: string]: SubmittableExtrinsicFunction<ApiType>;
     };
     execDelivery: {
-      registerGateway: AugmentedSubmittable<(url: Bytes | string | Uint8Array, gatewayId: ChainId | string | Uint8Array, gatewayAbi: GatewayABIConfig | { block_number_type_size?: any; hash_size?: any; hasher?: any; crypto?: any; address_length?: any; value_type_size?: any; decimals?: any; structs?: any } | string | Uint8Array, gatewayVendor: GatewayVendor | 'Substrate' | 'Ethereum' | number | Uint8Array, gatewayType: GatewayType | 'Internal' | 'External' | number | Uint8Array, gatewayGenesis: GatewayGenesisConfig | { modules_encoded?: any; signed_extension?: any; runtime_version?: any; extrinsics_version?: any; genesis_hash?: any } | string | Uint8Array, firstHeader: Bytes | string | Uint8Array, authorities: Option<Vec<AccountId>> | null | object | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Bytes, ChainId, GatewayABIConfig, GatewayVendor, GatewayType, GatewayGenesisConfig, Bytes, Option<Vec<AccountId>>]>;
+      confirmSideEffect: AugmentedSubmittable<(xtxId: XtxId | string | Uint8Array, sideEffect: SideEffect | { inbound?: any; outbound?: any } | string | Uint8Array, inclusionProof: Option<Bytes> | null | object | string | Uint8Array, stepConfirmation: StepConfirmation | { step_index?: any; value?: any; proof?: any; outbound_event?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [XtxId, SideEffect, Option<Bytes>, StepConfirmation]>;
+      /**
+       * Blind version should only be used for testing - unsafe since skips inclusion proof check.
+       **/
+      confirmSideEffectBlind: AugmentedSubmittable<(xtxId: XtxId | string | Uint8Array, sideEffect: SideEffect | { inbound?: any; outbound?: any } | string | Uint8Array, inclusionProof: Option<Bytes> | null | object | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [XtxId, SideEffect, Option<Bytes>]>;
+      registerGateway: AugmentedSubmittable<(url: Bytes | string | Uint8Array, gatewayId: ChainId | string | Uint8Array, gatewayAbi: GatewayABIConfig | { block_number_type_size?: any; hash_size?: any; hasher?: any; crypto?: any; address_length?: any; value_type_size?: any; decimals?: any; structs?: any } | string | Uint8Array, gatewayVendor: GatewayVendor | 'Substrate' | 'Ethereum' | number | Uint8Array, gatewayType: GatewayType | 'Internal' | 'External' | number | Uint8Array, gatewayGenesis: GatewayGenesisConfig | { modules_encoded?: any; signed_extension?: any; runtime_version?: any; extrinsics_version?: any; genesis_hash?: any } | string | Uint8Array, firstHeader: Bytes | string | Uint8Array, authorities: Option<Vec<AccountId>> | null | object | string | Uint8Array, allowedSideEffects: Vec<AllowedSideEffect> | (AllowedSideEffect | string | Uint8Array)[]) => SubmittableExtrinsic<ApiType>, [Bytes, ChainId, GatewayABIConfig, GatewayVendor, GatewayType, GatewayGenesisConfig, Bytes, Option<Vec<AccountId>>, Vec<AllowedSideEffect>]>;
+      /**
+       * Will be deprecated in v1.0.0-RC
+       **/
       submitComposableExecOrder: AugmentedSubmittable<(ioSchedule: Bytes | string | Uint8Array, components: Vec<Compose> | (Compose | { name?: any; code_txt?: any; exec_type?: any; dest?: any; value?: any; bytes?: any; input_data?: any } | string | Uint8Array)[]) => SubmittableExtrinsic<ApiType>, [Bytes, Vec<Compose>]>;
-      submitStepConfirmation: AugmentedSubmittable<(stepConfirmation: StepConfirmation | { step_index?: any; value?: any; proof?: any; outbound_event?: any } | string | Uint8Array, xtxId: XtxId | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [StepConfirmation, XtxId]>;
+      submitExec: AugmentedSubmittable<(contractId: RegistryContractId | string | Uint8Array, input: Bytes | string | Uint8Array, value: BalanceOf | AnyNumber | Uint8Array, reward: BalanceOf | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [RegistryContractId, Bytes, BalanceOf, BalanceOf]>;
+      updateGateway: AugmentedSubmittable<(gatewayId: ChainId | string | Uint8Array, url: Option<Bytes> | null | object | string | Uint8Array, gatewayAbi: Option<GatewayABIConfig> | null | object | string | Uint8Array, authorities: Option<Vec<AccountId>> | null | object | string | Uint8Array, allowedSideEffects: Option<Vec<AllowedSideEffect>> | null | object | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [ChainId, Option<Bytes>, Option<GatewayABIConfig>, Option<Vec<AccountId>>, Option<Vec<AllowedSideEffect>>]>;
       /**
        * Generic tx
        **/
@@ -733,7 +742,7 @@ declare module '@polkadot/api/types/submittable' {
       /**
        * Inserts a xdns_record into the on-chain registry. Root only access.
        **/
-      addNewXdnsRecord: AugmentedSubmittable<(url: Bytes | string | Uint8Array, gatewayId: ChainId | string | Uint8Array, gatewayAbi: GatewayABIConfig | { block_number_type_size?: any; hash_size?: any; hasher?: any; crypto?: any; address_length?: any; value_type_size?: any; decimals?: any; structs?: any } | string | Uint8Array, gatewayVendor: GatewayVendor | 'Substrate' | 'Ethereum' | number | Uint8Array, gatewayType: GatewayType | 'Internal' | 'External' | number | Uint8Array, gatewayGenesis: GatewayGenesisConfig | { modules_encoded?: any; signed_extension?: any; runtime_version?: any; extrinsics_version?: any; genesis_hash?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Bytes, ChainId, GatewayABIConfig, GatewayVendor, GatewayType, GatewayGenesisConfig]>;
+      addNewXdnsRecord: AugmentedSubmittable<(url: Bytes | string | Uint8Array, gatewayId: ChainId | string | Uint8Array, gatewayAbi: GatewayABIConfig | { block_number_type_size?: any; hash_size?: any; hasher?: any; crypto?: any; address_length?: any; value_type_size?: any; decimals?: any; structs?: any } | string | Uint8Array, gatewayVendor: GatewayVendor | 'Substrate' | 'Ethereum' | number | Uint8Array, gatewayType: GatewayType | 'Internal' | 'External' | number | Uint8Array, gatewayGenesis: GatewayGenesisConfig | { modules_encoded?: any; signed_extension?: any; runtime_version?: any; extrinsics_version?: any; genesis_hash?: any } | string | Uint8Array, allowedSideEffects: Vec<AllowedSideEffect> | (AllowedSideEffect | string | Uint8Array)[]) => SubmittableExtrinsic<ApiType>, [Bytes, ChainId, GatewayABIConfig, GatewayVendor, GatewayType, GatewayGenesisConfig, Vec<AllowedSideEffect>]>;
       /**
        * Removes a xdns_record from the onchain registry. Root only access.
        **/

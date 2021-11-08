@@ -16,7 +16,7 @@ import type { AnyNumber, ITuple, Observable } from '@polkadot/types/types';
 import type { RegistryContract, RegistryContractId } from 't3rn-circuit-typegen/interfaces/contracts_registry';
 import type { Xtx, XtxId } from 't3rn-circuit-typegen/interfaces/execution_delivery';
 import type { TargetId } from 't3rn-circuit-typegen/interfaces/primitives';
-import type { EthereumHeaderId, PruningRange, StoredHeader } from 't3rn-circuit-typegen/interfaces/snowfork';
+import type { EthereumHeaderId, Message, PruningRange, StoredHeader } from 't3rn-circuit-typegen/interfaces/snowfork';
 import type { XdnsRecord, XdnsRecordId } from 't3rn-circuit-typegen/interfaces/xdns';
 
 declare module '@polkadot/api/types/storage' {
@@ -47,6 +47,25 @@ declare module '@polkadot/api/types/storage' {
        * The total units issued in the system.
        **/
       totalIssuance: AugmentedQuery<ApiType, () => Observable<Balance>, []> & QueryableStorageEntry<ApiType, []>;
+      /**
+       * Generic query
+       **/
+      [key: string]: QueryableStorageEntry<ApiType>;
+    };
+    basicOutboundChannel: {
+      /**
+       * Interval between committing messages.
+       **/
+      interval: AugmentedQuery<ApiType, () => Observable<BlockNumber>, []> & QueryableStorageEntry<ApiType, []>;
+      /**
+       * Messages waiting to be committed.
+       **/
+      messageQueue: AugmentedQuery<ApiType, () => Observable<Vec<Message>>, []> & QueryableStorageEntry<ApiType, []>;
+      nonce: AugmentedQuery<ApiType, () => Observable<u64>, []> & QueryableStorageEntry<ApiType, []>;
+      /**
+       * The Account authorized to submit messages
+       **/
+      principal: AugmentedQuery<ApiType, () => Observable<AccountId>, []> & QueryableStorageEntry<ApiType, []>;
       /**
        * Generic query
        **/

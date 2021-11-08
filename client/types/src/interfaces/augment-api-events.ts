@@ -2,7 +2,7 @@
 /* eslint-disable */
 
 import type { ApiTypes } from '@polkadot/api/types';
-import type { Bytes, U256, Vec, u32, u8 } from '@polkadot/types';
+import type { Bytes, Option, U256, Vec, u32, u64 } from '@polkadot/types';
 import type { BalanceStatus } from '@polkadot/types/interfaces/balances';
 import type { ChainId, LaneId, MessageNonce, Parameter } from '@polkadot/types/interfaces/bridges';
 import type { MessageId } from '@polkadot/types/interfaces/cumulus';
@@ -13,8 +13,8 @@ import type { SessionIndex } from '@polkadot/types/interfaces/session';
 import type { SpecVersion } from '@polkadot/types/interfaces/state';
 import type { DispatchError, DispatchInfo, DispatchResult } from '@polkadot/types/interfaces/system';
 import type { RegistryContractId } from 't3rn-circuit-typegen/interfaces/contracts_registry';
-import type { XtxId } from 't3rn-circuit-typegen/interfaces/execution_delivery';
-import type { CircuitOutboundMessage } from 't3rn-circuit-typegen/interfaces/primitives';
+import type { AllowedSideEffect, SideEffect, SideEffectsDFD, XtxId } from 't3rn-circuit-typegen/interfaces/execution_delivery';
+import type { GatewayType, GatewayVendor } from 't3rn-circuit-typegen/interfaces/primitives';
 import type { XdnsRecordId } from 't3rn-circuit-typegen/interfaces/xdns';
 
 declare module '@polkadot/api/types/events' {
@@ -55,6 +55,13 @@ declare module '@polkadot/api/types/events' {
        * Some balance was unreserved (moved from reserved to free). \[who, value\]
        **/
       Unreserved: AugmentedEvent<ApiType, [AccountId, Balance]>;
+      /**
+       * Generic event
+       **/
+      [key: string]: AugmentedEvent<ApiType>;
+    };
+    basicOutboundChannel: {
+      MessageAccepted: AugmentedEvent<ApiType, [MessageNonce]>;
       /**
        * Generic event
        **/
@@ -249,16 +256,13 @@ declare module '@polkadot/api/types/events' {
       [key: string]: AugmentedEvent<ApiType>;
     };
     execDelivery: {
-      /**
-       * Event generated when new price is accepted to contribute to the average.
-       * \[who, phase, name\]
-       **/
-      NewPhase: AugmentedEvent<ApiType, [AccountId, u8, Bytes]>;
-      /**
-       * News steps that were just added for relayers to deliver.
-       * \[who, id, steps\]
-       **/
-      StoredNewStep: AugmentedEvent<ApiType, [AccountId, XtxId, Vec<CircuitOutboundMessage>]>;
+      CancelledSideEffects: AugmentedEvent<ApiType, [AccountId, XtxId, Vec<SideEffect>]>;
+      GatewayUpdated: AugmentedEvent<ApiType, [ChainId, Option<Vec<Bytes>>]>;
+      NewGatewayRegistered: AugmentedEvent<ApiType, [ChainId, GatewayType, GatewayVendor, Vec<AllowedSideEffect>]>;
+      NewSideEffectsAvailable: AugmentedEvent<ApiType, [AccountId, XtxId, Vec<SideEffect>]>;
+      SideEffectConfirmed: AugmentedEvent<ApiType, [AccountId, XtxId, SideEffect, u64]>;
+      XTransactionReceivedForExec: AugmentedEvent<ApiType, [XtxId, SideEffectsDFD]>;
+      XTransactionSuccessfullyCompleted: AugmentedEvent<ApiType, [XtxId]>;
       /**
        * Generic event
        **/
