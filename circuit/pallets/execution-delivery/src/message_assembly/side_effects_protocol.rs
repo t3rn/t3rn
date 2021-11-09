@@ -1,10 +1,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-use crate::OutboundSideEffect;
+
 use sp_std::vec;
 use sp_std::vec::*;
 use t3rn_primitives::{
-    GatewayInboundProtocol,
     abi::{GatewayABIConfig, Type},
+    GatewayInboundProtocol,
 };
 
 type Bytes = Vec<u8>;
@@ -44,9 +44,9 @@ impl InboundSideEffectsProtocol for SubstrateSideEffectsProtocol {
     // ToDo: Confirm execution! Decode incoming extrinsic.
     fn confirm_get_storage(
         &self,
-        encoded_original_args: Arguments,
-        encoded_effect: Bytes,
-        gateway_abi: GatewayABIConfig,
+        _encoded_original_args: Arguments,
+        _encoded_effect: Bytes,
+        _gateway_abi: GatewayABIConfig,
     ) -> Result<(), &'static str> {
         // ToDo: Decode encoded_effect into signature / InboundSideEffect here
         // let inbound_side_effect_args = self.effect_to_args(encoded_effect, gateway_abi);
@@ -62,9 +62,9 @@ impl InboundSideEffectsProtocol for SubstrateSideEffectsProtocol {
 
     fn confirm_transfer(
         &self,
-        encoded_original_args: Arguments,
-        encoded_effect: Bytes,
-        gateway_abi: GatewayABIConfig,
+        _encoded_original_args: Arguments,
+        _encoded_effect: Bytes,
+        _gateway_abi: GatewayABIConfig,
     ) -> Result<(), &'static str> {
         // ToDo: Decode encoded_effect into signature / InboundSideEffect here
         // let inbound_side_effect_args = self.effect_to_args(encoded_effect, gateway_abi);
@@ -80,13 +80,11 @@ impl InboundSideEffectsProtocol for SubstrateSideEffectsProtocol {
 }
 
 impl SideEffectsProtocol {
-    fn get_storage(
-        &self,
-        args: Arguments,
-    ) -> Result<(), &'static str> {
+    fn get_storage(&self, args: Arguments) -> Result<(), &'static str> {
         // Perhaps could also return specifically defined arguments already?
         // Result<GenericValue, &'static str> {
-        let GET_STORAGE_ARGUMENTS_ABI: Vec<Type> = vec![Type::Uint(self.gateway_abi.value_type_size)];
+        let GET_STORAGE_ARGUMENTS_ABI: Vec<Type> =
+            vec![Type::Uint(self.gateway_abi.value_type_size)];
 
         // Args number must match with the args number in the protocol
         assert!(GET_STORAGE_ARGUMENTS_ABI.len() == args.len());
@@ -100,18 +98,22 @@ impl SideEffectsProtocol {
         }
 
         // ToDo: Maybe return a signature assuming it isn't created by a user?
-        Ok(().into())
+        Ok(())
     }
 
-    fn transfer(
-        &self,
-        args: Vec<Bytes>,
-    ) -> Result<Arguments, &'static str> {
+    fn transfer(&self, args: Vec<Bytes>) -> Result<(), &'static str> {
         // Perhaps could also return specifically defined arguments already?
         //  Result<GenericAddress, GenericAddress, GenericValue, &'static str>
-        let (addr_size, val_size) = (self.gateway_abi.address_length, self.gateway_abi.value_type_size);
+        let (addr_size, val_size) = (
+            self.gateway_abi.address_length,
+            self.gateway_abi.value_type_size,
+        );
         // ToDo: Change arguments to const, like below
-        let TRANSFER_ARGUMENTS_ABI: Vec<Type> = vec![Type::Address(addr_size), Type::Address(addr_size), Type::Uint(val_size)];
+        let TRANSFER_ARGUMENTS_ABI: Vec<Type> = vec![
+            Type::Address(addr_size),
+            Type::Address(addr_size),
+            Type::Uint(val_size),
+        ];
 
         // Args number must match with the args number in the protocol
         assert!(TRANSFER_ARGUMENTS_ABI.len() == args.len());
@@ -122,56 +124,22 @@ impl SideEffectsProtocol {
             type_n.eval(arg.clone())?;
         }
 
-        Ok(().into())
+        Ok(())
     }
 
-    pub fn validate_input_args(
-        &self,
-        action: Bytes,
-        args: Vec<Bytes>,
-    ) -> Result<Arguments, &'static str> {
+    pub fn validate_input_args(&self, action: Bytes, args: Vec<Bytes>) -> Result<(), &'static str> {
         // Need to parse the action first
-        let GET_STORAGE: Vec<u8> = b"get_storage".to_vec();
-        let TRANSFER: Vec<u8> = b"transfer".to_vec();
+        let _GET_STORAGE: Vec<u8> = b"get_storage".to_vec();
+        let _TRANSFER: Vec<u8> = b"transfer".to_vec();
 
         match action {
-            GET_STORAGE => self.get_storage(args, self.gateway_abi),
-            TRANSFER => self.transfer(args, self.gateway_abi),
+            _GET_STORAGE => self.get_storage(args),
+            _TRANSFER => self.transfer(args),
             _ => Err("Not an ethereum address"),
         }
     }
 
-    pub fn new<InboundVendor: InboundSideEffectsProtocol>(gateway_abi: GatewayABIConfig) {
+    pub fn new(gateway_abi: GatewayABIConfig) -> Self {
         SideEffectsProtocol { gateway_abi }
-    }
-}
-
-impl InboundSideEffectsProtocol for SideEffectsProtocol {
-    fn confirm_get_storage<InboundVendor: InboundSideEffectsProtocol>(
-        &self,
-        encoded_original_args: Arguments,
-        encoded_effect: Bytes,
-        gateway_abi: GatewayABIConfig,
-    ) -> Result<(), &'static str> {
-        InboundVendor::confirm_get_storage(
-            &self,
-            encoded_original_args,
-            encoded_effect,
-            gateway_abi,
-        )
-    }
-
-    fn confirm_transfer<InboundVendor: InboundSideEffectsProtocol>(
-        &self,
-        encoded_original_args: Arguments,
-        encoded_effect: Bytes,
-        gateway_abi: GatewayABIConfig,
-    ) -> Result<(), &'static str> {
-        InboundVendor::confirm_get_storage(
-            &self,
-            encoded_original_args,
-            encoded_effect,
-            gateway_abi,
-        )
     }
 }

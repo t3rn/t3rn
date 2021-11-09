@@ -202,9 +202,9 @@ pub mod pallet {
         #[pallet::weight(<T as Config>::WeightInfo::submit_exec())]
         pub fn submit_side_effect_temp(
             origin: OriginFor<T>,
-            inbound_side_effect: Vec<InboundSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+            inbound_side_effect: InboundSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
             input: Vec<u8>,
-            value: BalanceOf<T>,
+            _value: BalanceOf<T>,
             reward: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             // Retrieve sender of the transaction.
@@ -216,16 +216,14 @@ pub mod pallet {
                 Error::<T>::RequesterNotEnoughBalance,
             );
 
-            let gateway_pointer =
-                Self::retrieve_gateway_pointer::<T>(Some(inbound_side_effect.target.clone()))?;
-            // ToDo: Generate Circuit's params as default ABI from let abi = pallet_xdns::get_abi(gateway_pointer)
+            // ToDo: Generate Circuit's params as default ABI from let abi = pallet_xdns::get_abi(target_id)
             let gateway_abi = Default::default();
 
             let side_effects_protocol = SideEffectsProtocol::new(gateway_abi);
 
             side_effects_protocol.validate_input_args(
-                inbound_side_effect.encoded_action,
-                inbound_side_effect.encoded_args,
+                inbound_side_effect.encoded_action.clone(),
+                inbound_side_effect.encoded_args.clone(),
             )?;
 
             let side_effect = SideEffect {
@@ -264,11 +262,11 @@ pub mod pallet {
 
         #[pallet::weight(<T as Config>::WeightInfo::submit_exec())]
         pub fn submit_exec_dfd(
-            origin: OriginFor<T>,
-            generic_dfd: GenericDFD,
-            input: Vec<u8>,
-            value: BalanceOf<T>,
-            reward: BalanceOf<T>,
+            _origin: OriginFor<T>,
+            _generic_dfd: GenericDFD,
+            _input: Vec<u8>,
+            _value: BalanceOf<T>,
+            _reward: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             // ToDo: Parse DFD to discover the flow of Xtx:
             // E.g.
@@ -382,14 +380,13 @@ pub mod pallet {
 
             // ToDo: On confirmation of side effect instantiate vendor specific protocol
             // let gateway_abi = pallet_xdns::get_abi(side_effect.inbound.target);
-            // let vendor_side_effects_protocol = match gateway_pointer.vendor {
+            // let vendor_side_effects_confirmation_protocol: SideEffectsConfirmationProtocol = match gateway_pointer.vendor {
             //     GatewayVendor::Substrate => Ok(SubstrateSideEffectsProtocol::new(gateway_abi)),
             //     GatewayVendor::Ethereum => Ok(EthereumSideEffectsProtocol::new(gateway_abi)),
             //     _ => { Err("Vendor unsupported") },
             // }?;
-            // let side_effects_protocol = SideEffectProtocol::new(gateway_abi);
             // match side_effect.inbound.encoded_action {
-            //      b"transfer".to_vec() => side_effects_protocol<vendor_side_effects_protocol>::confirm_transfer(side_effect.outbound.encoded_effect)
+            //      b"transfer".to_vec() => vendor_side_effects_confirmation_protocol::confirm_transfer(side_effect.outbound.encoded_effect)
             // }
 
             // ToDo #CNF-3: Check validity of inclusion - skip in _blind version for testing
