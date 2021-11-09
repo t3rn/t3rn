@@ -76,6 +76,29 @@ pub struct RentParams<T: Config> {
     /// Reserved for backwards compatible changes to this data structure.
     _reserved: Option<()>,
 }
+/**
+
+    instantiate - >
+        - regular smart contracts
+            instantiate(state) => self.state = state
+        - composable smart contracts
+            --- do not have any ---
+
+    restore_to - > originates in time-finite contracts
+        - regular smart contracts
+             restore after contract rent is paid
+        - composable smart contracts
+            --- do not have any ---
+
+    terminate - > live-execution to terminate a contract
+      - regular smart contracts
+         sets flag to terminate next operation
+      - composable smart contracts
+         want to have it
+
+
+
+**/
 
 impl<T> RentParams<T>
 where
@@ -453,7 +476,7 @@ pub struct StackExtension<'a, T: Config> {
     /// Requester is now origin
     pub requester: T::AccountId,
     pub storage_trie_id: ChildInfo,
-    /// The first input data submitted by origin / requeter
+    /// The first input data submitted by origin / requester
     pub input_data: Option<Vec<u8>>,
     /// Collection deferred transfers - part of gateway output
     pub inner_exec_transfers: &'a mut Vec<TransferEntry>,
