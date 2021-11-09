@@ -74,7 +74,7 @@ pub use xbridges::{
 
 pub use t3rn_primitives::xtx::{Xtx, XtxId};
 
-pub use t3rn_primitives::side_effect::{SideEffect, ConfirmedSideEffect, FullSideEffect};
+pub use t3rn_primitives::side_effect::{ConfirmedSideEffect, FullSideEffect, SideEffect};
 pub type AllowedSideEffect = Vec<u8>;
 
 /// Defines application identifier for crypto keys of this module.
