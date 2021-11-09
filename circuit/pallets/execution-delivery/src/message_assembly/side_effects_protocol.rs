@@ -14,7 +14,7 @@ pub struct SideEffectsProtocol {
     gateway_abi: GatewayABIConfig,
 }
 
-pub trait InboundSideEffectsProtocol {
+pub trait SideEffectsConfirmationProtocol {
     fn confirm_get_storage(
         &self,
         encoded_original_args: Arguments,
@@ -34,13 +34,13 @@ pub trait InboundSideEffectsProtocol {
 // pub struct EthereumSideEffectsProtocol {
 //     gateway_abi: GatewayABIConfig,
 // }
-// impl InboundSideEffectsProtocol for EthereumSideEffectsProtocol {}
+// impl SideEffectsConfirmationProtocol for EthereumSideEffectsProtocol {}
 
 pub struct SubstrateSideEffectsProtocol {
     gateway_abi: GatewayABIConfig,
 }
 
-impl InboundSideEffectsProtocol for SubstrateSideEffectsProtocol {
+impl SideEffectsConfirmationProtocol for SubstrateSideEffectsProtocol {
     // ToDo: Confirm execution! Decode incoming extrinsic.
     fn confirm_get_storage(
         &self,
