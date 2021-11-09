@@ -24,6 +24,7 @@ frame-system = { default-features = false, git = "https://github.com/paritytech/
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 pallet-sudo = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 bp-header-chain = { default-features = false, path = "../../vendor/bridges/primitives/header-chain" }
+bp-runtime = { default-features = false, path = "../../vendor/bridges/primitives/runtime" }
 
 [features]
 default = ["std"]

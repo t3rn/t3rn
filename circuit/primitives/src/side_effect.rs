@@ -7,7 +7,7 @@ pub type SideEffectId<T> = <T as frame_system::Config>::Hash;
 pub type TargetId = bp_runtime::ChainId;
 
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
-pub struct InboundSideEffect<AccountId, BlockNumber, BalanceOf> {
+pub struct SideEffect<AccountId, BlockNumber, BalanceOf> {
     pub target: TargetId,
     pub prize: BalanceOf,
     pub ordered_at: BlockNumber,
@@ -18,7 +18,7 @@ pub struct InboundSideEffect<AccountId, BlockNumber, BalanceOf> {
 }
 
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
-pub struct OutboundSideEffect<AccountId, BlockNumber, BalanceOf> {
+pub struct ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub err: Option<Bytes>,
     pub output: Option<Bytes>,
     pub inclusion_proof: Option<Bytes>,
@@ -28,7 +28,7 @@ pub struct OutboundSideEffect<AccountId, BlockNumber, BalanceOf> {
 }
 
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
-pub struct SideEffect<AccountId, BlockNumber, BalanceOf> {
-    pub inbound: InboundSideEffect<AccountId, BlockNumber, BalanceOf>,
-    pub outbound: Option<OutboundSideEffect<AccountId, BlockNumber, BalanceOf>>,
+pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
+    pub input: SideEffect<AccountId, BlockNumber, BalanceOf>,
+    pub confirmed: Option<ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf>>,
 }
