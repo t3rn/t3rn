@@ -196,14 +196,13 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-
         /// Temporary entry for submitting a side effect directly for validation and event emittance
         /// It's temporary, since will be replaced with a DFD, which allows to specify exactly the nature of argument
         /// (SideEffect vs ComposableContract vs LocalContract or Mix)
         #[pallet::weight(<T as Config>::WeightInfo::submit_exec())]
         pub fn submit_side_effect_temp(
             origin: OriginFor<T>,
-            inbound_side_effect: InboundSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+            inbound_side_effect: Vec<InboundSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
             input: Vec<u8>,
             value: BalanceOf<T>,
             reward: BalanceOf<T>,
@@ -217,13 +216,14 @@ pub mod pallet {
                 Error::<T>::RequesterNotEnoughBalance,
             );
 
-            let gateway_pointer = Self::retrieve_gateway_pointer::<T>(Some(inbound_side_effect.target.clone()))?;
-           // ToDo: Generate Circuit's params as default ABI from let abi = pallet_xdns::get_abi(gateway_pointer)
+            let gateway_pointer =
+                Self::retrieve_gateway_pointer::<T>(Some(inbound_side_effect.target.clone()))?;
+            // ToDo: Generate Circuit's params as default ABI from let abi = pallet_xdns::get_abi(gateway_pointer)
             let gateway_abi = Default::default();
 
             let side_effects_protocol = SideEffectsProtocol::new(gateway_abi);
 
-            side_effects_protocol::validate_input_args(
+            side_effects_protocol.validate_input_args(
                 inbound_side_effect.encoded_action,
                 inbound_side_effect.encoded_args,
             )?;
@@ -259,14 +259,13 @@ pub mod pallet {
                 vec![side_effect],
             ));
 
-
             Ok(().into())
         }
 
         #[pallet::weight(<T as Config>::WeightInfo::submit_exec())]
         pub fn submit_exec_dfd(
             origin: OriginFor<T>,
-            generic_dfd: GenericDFD<T>,
+            generic_dfd: GenericDFD,
             input: Vec<u8>,
             value: BalanceOf<T>,
             reward: BalanceOf<T>,
@@ -293,7 +292,6 @@ pub mod pallet {
             // })
             unimplemented!();
         }
-
 
         #[pallet::weight(<T as Config>::WeightInfo::submit_exec())]
         pub fn submit_exec(

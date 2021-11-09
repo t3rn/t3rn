@@ -1,8 +1,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+use crate::OutboundSideEffect;
 use sp_std::vec;
 use sp_std::vec::*;
-use t3rn_primitives::{abi::{GatewayInboundProtocol, Type}, GatewayABIConfig};
-use crate::OutboundSideEffect;
+use t3rn_primitives::{
+    GatewayInboundProtocol,
+    abi::{GatewayABIConfig, Type},
+};
 
 type Bytes = Vec<u8>;
 type Arguments = Vec<Bytes>;
@@ -14,13 +17,15 @@ pub struct SideEffectsProtocol {
 pub trait InboundSideEffectsProtocol {
     fn confirm_get_storage(
         &self,
-        args: Arguments,
+        encoded_original_args: Arguments,
+        encoded_effect: Bytes,
         gateway_abi: GatewayABIConfig,
     ) -> Result<(), &'static str>;
 
     fn confirm_transfer(
         &self,
-        bytes: Arguments,
+        encoded_original_args: Arguments,
+        encoded_effect: Bytes,
         gateway_abi: GatewayABIConfig,
     ) -> Result<(), &'static str>;
 }
@@ -36,9 +41,10 @@ pub struct SubstrateSideEffectsProtocol {
 }
 
 impl InboundSideEffectsProtocol for SubstrateSideEffectsProtocol {
+    // ToDo: Confirm execution! Decode incoming extrinsic.
     fn confirm_get_storage(
         &self,
-        outbound_side_effect: OutboundSideEffect,
+        encoded_original_args: Arguments,
         encoded_effect: Bytes,
         gateway_abi: GatewayABIConfig,
     ) -> Result<(), &'static str> {
@@ -56,6 +62,7 @@ impl InboundSideEffectsProtocol for SubstrateSideEffectsProtocol {
 
     fn confirm_transfer(
         &self,
+        encoded_original_args: Arguments,
         encoded_effect: Bytes,
         gateway_abi: GatewayABIConfig,
     ) -> Result<(), &'static str> {
@@ -76,14 +83,10 @@ impl SideEffectsProtocol {
     fn get_storage(
         &self,
         args: Arguments,
-        gateway_abi: GatewayABIConfig,
     ) -> Result<(), &'static str> {
-    // Perhaps could also return specifically defined arguments already?
+        // Perhaps could also return specifically defined arguments already?
         // Result<GenericValue, &'static str> {
-        // ToDo: Change arguments to const, like below
-        // const GET_STORAGE_ARGUMENTS_ABI: Vec<Type> = vec![Type::DynamicBytes];
-        // const TRANSFER_ARGUMENTS_ABI: Vec<Type> = vec![Type::Address, Type::Address, Type::Value];
-        const GET_STORAGE_ARGUMENTS_ABI: Vec<Type>= vec![Type::Uint(gateway_abi.value_type_size)];
+        let GET_STORAGE_ARGUMENTS_ABI: Vec<Type> = vec![Type::Uint(self.gateway_abi.value_type_size)];
 
         // Args number must match with the args number in the protocol
         assert!(GET_STORAGE_ARGUMENTS_ABI.len() == args.len());
@@ -91,7 +94,7 @@ impl SideEffectsProtocol {
         // ToDo: Extract to a separate function
         // Validate that the input arguments set by a user follow the protocol for get_storage side effect
         // Evaluate each input argument against strictly defined type for that gateway.
-        for (i, arg) in args.iter().enumerate()  {
+        for (i, arg) in args.iter().enumerate() {
             let type_n = &GET_STORAGE_ARGUMENTS_ABI[i];
             type_n.eval(arg.clone())?;
         }
@@ -102,19 +105,19 @@ impl SideEffectsProtocol {
 
     fn transfer(
         &self,
-        _args: Vec<Bytes>,
-        _gateway_abi_config: GatewayABIConfig,
+        args: Vec<Bytes>,
     ) -> Result<Arguments, &'static str> {
-    // Perhaps could also return specifically defined arguments already?
+        // Perhaps could also return specifically defined arguments already?
         //  Result<GenericAddress, GenericAddress, GenericValue, &'static str>
+        let (addr_size, val_size) = (self.gateway_abi.address_length, self.gateway_abi.value_type_size);
         // ToDo: Change arguments to const, like below
-        const TRANSFER_ARGUMENTS_ABI: Vec<Type> = vec![Type::Address, Type::Address, Type::Value];
+        let TRANSFER_ARGUMENTS_ABI: Vec<Type> = vec![Type::Address(addr_size), Type::Address(addr_size), Type::Uint(val_size)];
 
         // Args number must match with the args number in the protocol
         assert!(TRANSFER_ARGUMENTS_ABI.len() == args.len());
 
         // ToDo: Extract
-        for (i, arg) in args.iter().enumerate()  {
+        for (i, arg) in args.iter().enumerate() {
             let type_n = &TRANSFER_ARGUMENTS_ABI[i];
             type_n.eval(arg.clone())?;
         }
@@ -132,30 +135,43 @@ impl SideEffectsProtocol {
         let TRANSFER: Vec<u8> = b"transfer".to_vec();
 
         match action {
-            GET_STORAGE => {
-                self.get_storage(args, self.gateway_abi)
-            },
-            TRANSFER => {
-                self.transfer(args, self.gateway_abi)
-            },
+            GET_STORAGE => self.get_storage(args, self.gateway_abi),
+            TRANSFER => self.transfer(args, self.gateway_abi),
             _ => Err("Not an ethereum address"),
         }
     }
 
-
-    pub fn new<InboundVendor: InboundSideEffectsProtocol>(
-        gateway_abi: GatewayABIConfig,
-    ) {
+    pub fn new<InboundVendor: InboundSideEffectsProtocol>(gateway_abi: GatewayABIConfig) {
         SideEffectsProtocol { gateway_abi }
     }
 }
 
 impl InboundSideEffectsProtocol for SideEffectsProtocol {
-    fn confirm_get_storage<InboundVendor: InboundSideEffectsProtocol>(&self, args: Arguments, gateway_abi: GatewayABIConfig) -> Result<(), &'static str> {
-        InboundVendor::confirm_get_storage(&self, args, gateway_abi)
+    fn confirm_get_storage<InboundVendor: InboundSideEffectsProtocol>(
+        &self,
+        encoded_original_args: Arguments,
+        encoded_effect: Bytes,
+        gateway_abi: GatewayABIConfig,
+    ) -> Result<(), &'static str> {
+        InboundVendor::confirm_get_storage(
+            &self,
+            encoded_original_args,
+            encoded_effect,
+            gateway_abi,
+        )
     }
 
-    fn confirm_transfer<InboundVendor: InboundSideEffectsProtocol>(&self, args: Arguments, gateway_abi: GatewayABIConfig) -> Result<(), &'static str> {
-        InboundVendor::confirm_get_storage(&self, args, gateway_abi)
+    fn confirm_transfer<InboundVendor: InboundSideEffectsProtocol>(
+        &self,
+        encoded_original_args: Arguments,
+        encoded_effect: Bytes,
+        gateway_abi: GatewayABIConfig,
+    ) -> Result<(), &'static str> {
+        InboundVendor::confirm_get_storage(
+            &self,
+            encoded_original_args,
+            encoded_effect,
+            gateway_abi,
+        )
     }
 }
