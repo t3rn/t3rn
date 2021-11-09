@@ -8,9 +8,9 @@ use sp_std::vec::*;
 
 use volatile_vm::wasm::RunMode;
 
-pub use crate::message_assembly::gateway_inbound_assembly::GatewayInboundAssembly;
-pub use crate::message_assembly::substrate_gateway_assembly::SubstrateGatewayAssembly;
-pub use crate::message_assembly::substrate_gateway_protocol::SubstrateGatewayProtocol;
+pub use t3rn_protocol::gateway_inbound_assembly::GatewayInboundAssembly;
+pub use t3rn_protocol::substrate_gateway_assembly::SubstrateGatewayAssembly;
+pub use t3rn_protocol::substrate_gateway_protocol::SubstrateGatewayProtocol;
 
 pub struct StuffedOutputMode {}
 

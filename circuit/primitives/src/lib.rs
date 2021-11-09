@@ -30,6 +30,7 @@ use sp_runtime::RuntimeDebug as Debug;
 use std::fmt::Debug;
 
 use sp_std::prelude::*;
+use sp_std::vec;
 
 pub mod abi;
 pub mod contract_metadata;
