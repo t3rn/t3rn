@@ -63,6 +63,7 @@ use weights::WeightInfo;
 
 pub mod exec_composer;
 pub mod message_assembly;
+use crate::message_assembly::side_effects_protocol::*;
 
 pub use crate::message_assembly::test_utils as message_test_utils;
 pub mod xbridges;
@@ -101,6 +102,7 @@ pub fn select_validator_for_x_tx_dummy<T: Config>() -> Result<T::AccountId, &'st
 
 // todo: Implement and move as independent submodule
 pub type SideEffectsDFD = Vec<u8>;
+pub type GenericDFD = Vec<u8>;
 pub type SideEffectId = Bytes;
 
 pub type AuthorityId = crate::message_assembly::signer::app::Public;
@@ -194,6 +196,101 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+        /// Temporary entry for submitting a side effect directly for validation and event emittance
+        /// It's temporary, since will be replaced with a DFD, which allows to specify exactly the nature of argument
+        /// (SideEffect vs ComposableContract vs LocalContract or Mix)
+        #[pallet::weight(<T as Config>::WeightInfo::submit_exec())]
+        pub fn submit_side_effect_temp(
+            origin: OriginFor<T>,
+            inbound_side_effect: InboundSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+            input: Vec<u8>,
+            _value: BalanceOf<T>,
+            reward: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
+            // Retrieve sender of the transaction.
+            let requester = ensure_signed(origin)?;
+            // Ensure can afford
+            ensure!(
+                <T as EscrowTrait>::Currency::free_balance(&requester).saturating_sub(reward)
+                    >= BalanceOf::<T>::from(0 as u32),
+                Error::<T>::RequesterNotEnoughBalance,
+            );
+
+            // ToDo: Generate Circuit's params as default ABI from let abi = pallet_xdns::get_abi(target_id)
+            let gateway_abi = Default::default();
+
+            let side_effects_protocol = SideEffectsProtocol::new(gateway_abi);
+
+            side_effects_protocol.validate_input_args(
+                inbound_side_effect.encoded_action.clone(),
+                inbound_side_effect.encoded_args.clone(),
+            )?;
+
+            let side_effect = SideEffect {
+                inbound: inbound_side_effect,
+                outbound: None,
+            };
+
+            // ToDo: Introduce default timeout + delay
+            let (timeouts_at, delay_steps_at) = (None, None);
+            let new_xtx = Xtx::<T::AccountId, T::BlockNumber, BalanceOf<T>>::new(
+                requester.clone(),
+                input,
+                timeouts_at,
+                delay_steps_at,
+                Some(reward),
+                // ToDo: Missing GenericDFD to link side effects / composable contracts with the Xtx
+            );
+            let x_tx_id: XtxId<T> = new_xtx.generate_xtx_id::<T>();
+            ActiveXtxMap::<T>::insert(x_tx_id, &new_xtx);
+
+            Self::deposit_event(Event::XTransactionReceivedForExec(
+                x_tx_id.clone(),
+                // ToDo: Emit side effects DFD
+                Default::default(),
+            ));
+
+            Self::deposit_event(Event::NewSideEffectsAvailable(
+                requester.clone(),
+                x_tx_id.clone(),
+                // ToDo: Emit circuit outbound messages -> side effects
+                vec![side_effect],
+            ));
+
+            Ok(().into())
+        }
+
+        #[pallet::weight(<T as Config>::WeightInfo::submit_exec())]
+        pub fn submit_exec_dfd(
+            _origin: OriginFor<T>,
+            _generic_dfd: GenericDFD,
+            _input: Vec<u8>,
+            _value: BalanceOf<T>,
+            _reward: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
+            // ToDo: Parse DFD to discover the flow of Xtx:
+            // E.g.
+            // $ComposableContract#0x232233223($TransferSideEffect(
+            // enum SubmittedInputArtifact  {
+            //      SideEffect,
+            //      ComposableContract,
+            //      LocalContract (?maybe?),
+            // let submitted_artifacts: Vec<SubmittedInputArtifact> = read_generic_dfd(generic_dfd);
+            // submitted_artifacts.iter().map(|submitted_artifact| {
+            //  match submitted_artifact {
+            //      case SubmittedInputArtifact::SideEffect {
+            //          ExecDelivery::execute_side_effect(submitted_artifact)
+            //      },
+            //      case SubmittedInputArtifact::ComposableContract {
+            //          VVM::execute_single_contract(submitted_artifact)
+            //      },
+            //      case SubmittedInputArtifact::LocalContract {
+            //          PalletContracts::call(submitted_artifact.address, input)
+            //      },
+            // })
+            unimplemented!();
+        }
+
         #[pallet::weight(<T as Config>::WeightInfo::submit_exec())]
         pub fn submit_exec(
             origin: OriginFor<T>,
@@ -280,6 +377,17 @@ pub mod pallet {
 
             // ToDo #CNF-2: Check validity of execution by parsing
             //  the side effect against incoming target's format and checking its validity
+
+            // ToDo: On confirmation of side effect instantiate vendor specific protocol
+            // let gateway_abi = pallet_xdns::get_abi(side_effect.inbound.target);
+            // let vendor_side_effects_confirmation_protocol: SideEffectsConfirmationProtocol = match gateway_pointer.vendor {
+            //     GatewayVendor::Substrate => Ok(SubstrateSideEffectsProtocol::new(gateway_abi)),
+            //     GatewayVendor::Ethereum => Ok(EthereumSideEffectsProtocol::new(gateway_abi)),
+            //     _ => { Err("Vendor unsupported") },
+            // }?;
+            // match side_effect.inbound.encoded_action {
+            //      b"transfer".to_vec() => vendor_side_effects_confirmation_protocol::confirm_transfer(side_effect.outbound.encoded_effect)
+            // }
 
             // ToDo #CNF-3: Check validity of inclusion - skip in _blind version for testing
             // Verify whether the side effect completes the Xtx
