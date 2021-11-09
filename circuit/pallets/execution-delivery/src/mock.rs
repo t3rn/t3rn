@@ -43,7 +43,7 @@ use bp_messages::{
     Parameter as MessagesParameter,
 };
 
-use pallet_xdns::XdnsRecord;
+use pallet_xdns::types::XdnsRecord;
 use std::collections::BTreeMap;
 use t3rn_primitives::transfers::BalanceOf;
 use t3rn_primitives::EscrowTrait;

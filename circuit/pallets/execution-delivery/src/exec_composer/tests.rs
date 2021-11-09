@@ -51,7 +51,7 @@ pub fn make_compose_out_of_raw_wat_code<T: Config>(
 }
 
 pub fn insert_default_xdns_record() {
-    use pallet_xdns::XdnsRecord;
+    use pallet_xdns::types::XdnsRecord;
     pallet_xdns::XDNSRegistry::<Test>::insert(
         // Below is blake2_hash of [0, 0, 0, 0]
         H256::from_slice(&hex!(
