@@ -76,29 +76,6 @@ pub struct RentParams<T: Config> {
     /// Reserved for backwards compatible changes to this data structure.
     _reserved: Option<()>,
 }
-/**
-
-    instantiate - >
-        - regular smart contracts
-            instantiate(state) => self.state = state
-        - composable smart contracts
-            --- do not have any ---
-
-    restore_to - > originates in time-finite contracts
-        - regular smart contracts
-             restore after contract rent is paid
-        - composable smart contracts
-            --- do not have any ---
-
-    terminate - > live-execution to terminate a contract
-      - regular smart contracts
-         sets flag to terminate next operation
-      - composable smart contracts
-         want to have it
-
-
-
-**/
 
 impl<T> RentParams<T>
 where
