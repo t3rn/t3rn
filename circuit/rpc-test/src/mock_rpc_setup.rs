@@ -111,10 +111,8 @@ impl Default for TestSetup {
     fn default() -> Self {
         let _ = env_logger::builder().is_test(true).try_init();
 
-        let keystore = create_temp_keystore::<
-            pallet_circuit_execution_delivery::message_assembly::signer::app::Pair,
-        >(Sr25519Keyring::Alice)
-        .0;
+        let keystore =
+            create_temp_keystore::<t3rn_protocol::signer::app::Pair>(Sr25519Keyring::Alice).0;
         let client_builder = substrate_test_runtime_client::TestClientBuilder::new();
         let client = Arc::new(client_builder.set_keystore(keystore.clone()).build());
 

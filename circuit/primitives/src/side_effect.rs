@@ -34,7 +34,6 @@ pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub confirmed: Option<ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf>>,
 }
 
-
 #[test]
 fn generates_signature_for_input_side_effect_with_get_storage() {
     todo!();

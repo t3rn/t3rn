@@ -5,9 +5,9 @@ use frame_metadata::v13::{
 use sp_core::H256;
 use sp_version::{ApisVec, RuntimeVersion};
 
+use sp_core::crypto::KeyTypeId;
 use sp_std::vec;
 use sp_std::vec::Vec;
-use sp_core::crypto::KeyTypeId;
 
 pub type AuthorityId = crate::signer::app::Public;
 pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"circ");
