@@ -19,6 +19,7 @@ hex = { version = "0.4.3", default-features = false }
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
 
 t3rn-primitives = { version = "0.1.0", default-features = false, path = "../../primitives" }
+t3rn-protocol = { version = "1.0.0-alpha.0", default-features = false, path = "../../protocol" }
 versatile-wasm = { default-features = false , path = "../../../vm/versatile-wasm" }
 serde = { version = "1.0.124", features = ["derive"], optional = true }
 lite-json = { version = "0.1", default-features = false }
@@ -107,6 +108,7 @@ std = [
     "plain_hasher/std",
     "versatile-wasm/std",
     "t3rn-primitives/std",
+    "t3rn-protocol/std",
     "frame-benchmarking/std",
     "frame-support/std",
     "frame-system/std",

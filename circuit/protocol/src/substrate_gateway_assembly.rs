@@ -7,11 +7,11 @@ use sp_runtime::{MultiSignature, RuntimeAppPublic};
 use sp_std::vec::*;
 use sp_version::RuntimeVersion;
 
-use crate::message_assembly::chain_generic_metadata::Metadata;
-use crate::message_assembly::signer::app::{
+use crate::chain_generic_metadata::Metadata;
+use crate::signer::app::{
     Args, Call, GenericAddress, GenericExtra, Signature, SignedPayload, UncheckedExtrinsicV4,
 };
-use crate::AuthorityId;
+pub type AuthorityId = crate::signer::app::Public;
 
 use super::gateway_inbound_assembly::GatewayInboundAssembly;
 
@@ -148,9 +148,11 @@ pub mod tests {
     use sp_runtime::generic::Era;
     use sp_runtime::traits::Verify;
     use sp_version::{ApisVec, RuntimeVersion};
+    use sp_core::crypto::KeyTypeId;
 
-    use crate::message_assembly::signer::app::Public;
-    use crate::KEY_TYPE;
+    use crate::signer::app::Public;
+
+    pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"circ");
 
     use super::*;
 
