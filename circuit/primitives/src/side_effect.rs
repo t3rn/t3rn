@@ -14,13 +14,14 @@ pub struct SideEffect<AccountId, BlockNumber, BalanceOf> {
     pub encoded_action: Bytes,
     pub encoded_args: Vec<Bytes>,
     pub signature: Bytes,
-    pub enforce_executioner: AccountId,
+    pub enforce_executioner: Option<AccountId>,
 }
 
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
 pub struct ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub err: Option<Bytes>,
     pub output: Option<Bytes>,
+    pub encoded_effect: Bytes,
     pub inclusion_proof: Option<Bytes>,
     pub executioner: AccountId,
     pub received_at: BlockNumber,

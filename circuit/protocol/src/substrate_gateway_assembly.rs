@@ -142,13 +142,13 @@ pub mod tests {
         ExtrinsicMetadata, FunctionMetadata, ModuleMetadata, RuntimeMetadataV13,
     };
     use frame_support::assert_err;
+    use sp_core::crypto::KeyTypeId;
     use sp_core::H256;
     use sp_io::TestExternalities;
     use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStore};
     use sp_runtime::generic::Era;
     use sp_runtime::traits::Verify;
     use sp_version::{ApisVec, RuntimeVersion};
-    use sp_core::crypto::KeyTypeId;
 
     use crate::signer::app::Public;
 

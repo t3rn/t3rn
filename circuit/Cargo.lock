@@ -1309,6 +1309,7 @@ dependencies = [
  "substrate-test-runtime",
  "substrate-test-runtime-client",
  "t3rn-primitives",
+ "t3rn-protocol",
  "tempfile",
  "tokio 0.1.22",
  "volatile-vm",
@@ -1398,6 +1399,7 @@ dependencies = [
  "sp-core",
  "sp-std",
  "sp-version",
+ "t3rn-protocol",
 ]
 
 [[package]]
