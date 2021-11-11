@@ -10,16 +10,10 @@ export default {
       input_data: 'Vec<u8>',
     },
     GatewayVendor: {
-      _enum: {
-        Substrate: 0,
-        Ethereum: 1
-      }
+      _enum: ['Substrate', 'Ethereum'],
     },
     GatewayType: {
-      _enum: {
-        Internal: 0,
-        External: 1
-      }
+      _enum: ['Internal', 'External'],
     },
     GatewayABIConfig: {
       block_number_type_size: 'u16',
@@ -44,10 +38,10 @@ export default {
       offsets: 'Vec<u16>',
     },
     HasherAlgo: {
-      _enum: [ "Blake2", "Keccak256"]
+      _enum: ['Blake2', 'Keccak256'],
     },
     CryptoAlgo: {
-      _enum: ["Ed25519", "Sr25519", "Ecdsa",]
+      _enum: ['Ed25519', 'Sr25519', 'Ecdsa'],
     },
     CircuitOutboundMessage: {
       name: 'Bytes',
@@ -65,11 +59,11 @@ export default {
           key: 'Vec<Vec<u8>>',
           value: 'Vec<Option<Bytes>>',
         },
-        Events: {signatures: 'Vec<Bytes>'},
+        Events: { signatures: 'Vec<Bytes>' },
         Extrinsic: {
           block_height: 'Option<u64>',
         },
-        Output: {output: 'Bytes'},
+        Output: { output: 'Bytes' },
       },
     },
     ProofTriePointer: {
@@ -77,7 +71,7 @@ export default {
         State: 0,
         Transaction: 1,
         Receipts: 2,
-      }
+      },
     },
     GatewayPointer: {
       id: 'ChainId',
@@ -99,7 +93,7 @@ export default {
       target_id: 'Option<TargetId>',
       to: 'Option<AccountId>',
     },
-    TargetId: 'ChainId'
+    TargetId: 'ChainId',
     // ContractMetadata: {
     //   metadata_version: 'Vec<u8>',
     //   name: 'Vec<u8>',
@@ -112,4 +106,4 @@ export default {
     //   license: 'Option<Vec<u8>>',
     // }
   },
-}
+};

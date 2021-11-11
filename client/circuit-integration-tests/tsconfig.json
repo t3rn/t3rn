@@ -1,15 +1,10 @@
 {
+  "extends": "../tsconfig.json",
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "CommonJS",
     "esModuleInterop": true,
     "moduleResolution": "Node",
     "baseUrl": ".",
-    "paths":
-    {
-      "@t3rn/types": ["../types"]
-    },
     "skipLibCheck": true
   },
-  "include": ["test/**/*.test.ts"]
+  "include": ["src/**/*.ts","test/**/*.test.ts"]
 }

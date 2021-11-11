@@ -90,7 +90,7 @@ export interface GatewayExpectedOutput extends Enum {
 
 /** @name GatewayGenesisConfig */
 export interface GatewayGenesisConfig extends Struct {
-  readonly modules_encoded: Option<Bytes>;
+  readonly modules_encoded: Option<HasherAlgo>;
   readonly signed_extension: Option<Bytes>;
   readonly runtime_version: RuntimeVersion;
   readonly extrinsics_version: u8;

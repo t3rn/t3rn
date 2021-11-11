@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
-    "target": "es2015",
     "module": "CommonJS",
+    "lib": ["ES6", "DOM"],
+    "target": "es2015",
     "esModuleInterop": true,
     "declaration": true,
     "outDir": "dist",
@@ -24,5 +25,5 @@
   "exclude": [
     "node_modules", "dist"
   ],
-  "include": ["src"]
+  "include": ["src/interfaces"],
 }

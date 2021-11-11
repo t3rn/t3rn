@@ -4,7 +4,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "test": "mocha -r ts-node/register 'test/**/*.test.ts' --exit",
-    "test:watch": "mocha -r ts-node/register 'test/**/*.test.ts' --watch"
+    "test:watch": "mocha -r ts-node/register 'test/**/*.test.ts' --watch --watch-files test/**/*.test.ts,src/**/*.ts"
   },
   "private": true,
   "devDependencies": {
