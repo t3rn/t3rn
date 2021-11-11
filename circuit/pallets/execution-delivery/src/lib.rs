@@ -200,12 +200,13 @@ pub mod pallet {
         /// It's temporary, since will be replaced with a DFD, which allows to specify exactly the nature of argument
         /// (SideEffect vs ComposableContract vs LocalContract or Mix)
         #[pallet::weight(<T as Config>::WeightInfo::submit_exec())]
-        pub fn submit_side_effect_temp(
+        pub fn submit_side_effects_temp(
             origin: OriginFor<T>,
-            side_effect: SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+            side_effects: Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
             input: Vec<u8>,
             _value: BalanceOf<T>,
             reward: BalanceOf<T>,
+            sequential: bool,
         ) -> DispatchResultWithPostInfo {
             // Retrieve sender of the transaction.
             let requester = ensure_signed(origin)?;
@@ -219,16 +220,28 @@ pub mod pallet {
             // ToDo: Generate Circuit's params as default ABI from let abi = pallet_xdns::get_abi(target_id)
             let gateway_abi = Default::default();
 
-            let side_effects_protocol = SideEffectsProtocol::new(gateway_abi);
+            let mut full_side_effects: Vec<
+                FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+            > = vec![];
 
-            side_effects_protocol.validate_input_args(
-                side_effect.encoded_action.clone(),
-                side_effect.encoded_args.clone(),
-            )?;
+            for side_effect in side_effects.iter() {
+                let side_effects_protocol = SideEffectsProtocol::new(gateway_abi);
+                side_effects_protocol.validate_input_args(
+                    side_effect.encoded_action.clone(),
+                    side_effect.encoded_args.clone(),
+                )?;
+                full_side_effects.push(FullSideEffect {
+                    input: side_effect.clone(),
+                    confirmed: None,
+                })
+            }
 
-            let _full_side_effect = FullSideEffect {
-                input: side_effect.clone(),
-                confirmed: None,
+            let full_side_effects_steps = match sequential {
+                true => vec![full_side_effects],
+                false => full_side_effects
+                    .iter()
+                    .map(|x| vec![x])
+                    .collect::<Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>>(),
             };
 
             // ToDo: Introduce default timeout + delay
@@ -240,6 +253,7 @@ pub mod pallet {
                 delay_steps_at,
                 Some(reward),
                 // ToDo: Missing GenericDFD to link side effects / composable contracts with the Xtx
+                full_side_effects_steps,
             );
             let x_tx_id: XtxId<T> = new_xtx.generate_xtx_id::<T>();
             ActiveXtxMap::<T>::insert(x_tx_id, &new_xtx);
@@ -254,7 +268,7 @@ pub mod pallet {
                 requester.clone(),
                 x_tx_id.clone(),
                 // ToDo: Emit circuit outbound messages -> side effects
-                vec![side_effect],
+                side_effects,
             ));
 
             Ok(().into())
@@ -853,6 +867,7 @@ impl<T: Config> Pallet<T> {
             timeouts_at,
             delay_steps_at,
             Some(reward),
+            vec![],
         );
 
         let x_tx_id: XtxId<T> = new_xtx.generate_xtx_id::<T>();

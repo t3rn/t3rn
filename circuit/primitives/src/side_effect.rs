@@ -1,10 +1,12 @@
 use codec::{Decode, Encode};
+use sp_runtime::traits::Zero;
 use sp_runtime::RuntimeDebug;
 use sp_std::vec::Vec;
 
 type Bytes = Vec<u8>;
 pub type SideEffectId<T> = <T as frame_system::Config>::Hash;
 pub type TargetId = [u8; 4];
+type SystemHashing<T> = <T as frame_system::Config>::Hashing;
 
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
 pub struct SideEffect<AccountId, BlockNumber, BalanceOf> {
@@ -15,6 +17,17 @@ pub struct SideEffect<AccountId, BlockNumber, BalanceOf> {
     pub encoded_args: Vec<Bytes>,
     pub signature: Bytes,
     pub enforce_executioner: Option<AccountId>,
+}
+
+impl<
+        AccountId: Encode,
+        BlockNumber: Ord + Copy + Zero + Encode,
+        BalanceOf: Copy + Zero + Encode + Decode,
+    > SideEffect<AccountId, BlockNumber, BalanceOf>
+{
+    pub fn generate_id<Hasher: sp_core::Hasher>(&self) -> <Hasher as sp_core::Hasher>::Out {
+        Hasher::hash(Encode::encode(self).as_ref())
+    }
 }
 
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
@@ -34,7 +47,61 @@ pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub confirmed: Option<ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf>>,
 }
 
-#[test]
-fn generates_signature_for_input_side_effect_with_get_storage() {
-    todo!();
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use hex_literal::hex;
+    use sp_runtime::testing::H256;
+
+    type BlockNumber = u64;
+    type BalanceOf = u64;
+    type AccountId = u64;
+    type Hashing = sp_runtime::traits::BlakeTwo256;
+    type Hash = sp_core::H256;
+
+    #[test]
+    fn successfully_creates_empty_side_effect() {
+        let empty_side_effect = SideEffect::<AccountId, BlockNumber, BalanceOf> {
+            target: [0, 0, 0, 0],
+            prize: 0,
+            ordered_at: 0,
+            encoded_action: vec![],
+            encoded_args: vec![],
+            signature: vec![],
+            enforce_executioner: None,
+        };
+
+        assert_eq!(
+            empty_side_effect,
+            SideEffect {
+                target: [0, 0, 0, 0],
+                prize: 0,
+                ordered_at: 0,
+                encoded_action: vec![],
+                encoded_args: vec![],
+                signature: vec![],
+                enforce_executioner: None,
+            }
+        );
+    }
+
+    #[test]
+    fn successfully_generates_id_for_side_empty_effect() {
+        let empty_side_effect = SideEffect::<AccountId, BlockNumber, BalanceOf> {
+            target: [0, 0, 0, 0],
+            prize: 0,
+            ordered_at: 0,
+            encoded_action: vec![],
+            encoded_args: vec![],
+            signature: vec![],
+            enforce_executioner: None,
+        };
+
+        assert_eq!(
+            empty_side_effect.generate_id::<Hashing>(),
+            H256::from_slice(&hex!(
+                "19ea4a516c66775ea1f648d71f6b8fa227e8b0c1a0c9203f82c33b89c4e759b5"
+            ))
+        );
+    }
 }
