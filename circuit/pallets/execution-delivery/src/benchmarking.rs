@@ -10,9 +10,7 @@ use frame_system::{Origin, RawOrigin};
 use t3rn_primitives::abi::GatewayABIConfig;
 use t3rn_primitives::Compose;
 
-
-
-use sp_runtime::{create_runtime_str};
+use sp_runtime::create_runtime_str;
 use sp_version::RuntimeVersion;
 
 use crate::{
@@ -493,8 +491,6 @@ mod tests {
     use crate::mock::Test;
     use crate::tests::new_test_ext;
     use frame_support::assert_ok;
-    
-    
 
     #[test]
     fn benchmark_decompose_io_schedule() {
