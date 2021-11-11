@@ -453,7 +453,7 @@ pub struct StackExtension<'a, T: Config> {
     /// Requester is now origin
     pub requester: T::AccountId,
     pub storage_trie_id: ChildInfo,
-    /// The first input data submitted by origin / requeter
+    /// The first input data submitted by origin / requester
     pub input_data: Option<Vec<u8>>,
     /// Collection deferred transfers - part of gateway output
     pub inner_exec_transfers: &'a mut Vec<TransferEntry>,

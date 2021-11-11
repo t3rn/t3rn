@@ -23,8 +23,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use crate::exec_composer::ExecComposer;
-pub use crate::message_assembly::circuit_inbound::StepConfirmation;
-use crate::message_assembly::merklize::*;
 use codec::{Decode, Encode};
 use frame_support::dispatch::DispatchResultWithPostInfo;
 use frame_support::ensure;
@@ -39,6 +37,8 @@ use sp_runtime::{
     traits::{Convert, Hash, Saturating, Zero},
     RuntimeAppPublic, RuntimeDebug,
 };
+pub use t3rn_protocol::circuit_inbound::StepConfirmation;
+use t3rn_protocol::merklize::*;
 
 use bp_runtime::ChainId;
 pub use pallet::*;
@@ -49,6 +49,8 @@ use t3rn_primitives::abi::{ContractActionDesc, GatewayABIConfig, HasherAlgo as H
 use t3rn_primitives::transfers::BalanceOf;
 use t3rn_primitives::*;
 use volatile_vm::VolatileVM;
+
+pub type Bytes = sp_core::Bytes;
 
 #[cfg(test)]
 pub mod tests;
@@ -62,10 +64,8 @@ pub mod weights;
 use weights::WeightInfo;
 
 pub mod exec_composer;
-pub mod message_assembly;
-use crate::message_assembly::side_effects_protocol::*;
 
-pub use crate::message_assembly::test_utils as message_test_utils;
+pub use t3rn_protocol::test_utils as message_test_utils;
 pub mod xbridges;
 pub use xbridges::{
     get_roots_from_bridge, init_bridge_instance, CurrentHash, CurrentHasher, CurrentHeader,
@@ -73,11 +73,11 @@ pub use xbridges::{
     PolkadotLikeValU64Gateway,
 };
 
-pub mod xtx;
-pub use xtx::{Xtx, XtxId};
+pub use t3rn_primitives::xtx::{Xtx, XtxId};
 
-pub mod side_effect;
-pub use side_effect::{InboundSideEffect, OutboundSideEffect, SideEffect};
+pub use t3rn_primitives::side_effect::{ConfirmedSideEffect, FullSideEffect, SideEffect};
+use t3rn_protocol::side_effects_protocol::*;
+
 pub type AllowedSideEffect = Vec<u8>;
 
 /// Defines application identifier for crypto keys of this module.
@@ -105,7 +105,7 @@ pub type SideEffectsDFD = Vec<u8>;
 pub type GenericDFD = Vec<u8>;
 pub type SideEffectId = Bytes;
 
-pub type AuthorityId = crate::message_assembly::signer::app::Public;
+pub type AuthorityId = t3rn_protocol::signer::app::Public;
 pub(crate) type SystemHashing<T> = <T as frame_system::Config>::Hashing;
 
 #[frame_support::pallet]
@@ -202,7 +202,7 @@ pub mod pallet {
         #[pallet::weight(<T as Config>::WeightInfo::submit_exec())]
         pub fn submit_side_effect_temp(
             origin: OriginFor<T>,
-            inbound_side_effect: InboundSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+            side_effect: SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
             input: Vec<u8>,
             _value: BalanceOf<T>,
             reward: BalanceOf<T>,
@@ -222,13 +222,13 @@ pub mod pallet {
             let side_effects_protocol = SideEffectsProtocol::new(gateway_abi);
 
             side_effects_protocol.validate_input_args(
-                inbound_side_effect.encoded_action.clone(),
-                inbound_side_effect.encoded_args.clone(),
+                side_effect.encoded_action.clone(),
+                side_effect.encoded_args.clone(),
             )?;
 
-            let side_effect = SideEffect {
-                inbound: inbound_side_effect,
-                outbound: None,
+            let _full_side_effect = FullSideEffect {
+                input: side_effect.clone(),
+                confirmed: None,
             };
 
             // ToDo: Introduce default timeout + delay
@@ -369,7 +369,7 @@ pub mod pallet {
         pub fn confirm_side_effect_blind(
             origin: OriginFor<T>,
             xtx_id: XtxId<T>,
-            side_effect: SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+            confirmed_side_effect: ConfirmedSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
             _inclusion_proof: Option<Bytes>,
         ) -> DispatchResultWithPostInfo {
             // ToDo #CNF-1: Reward releyers for inbound message dispatch.
@@ -398,7 +398,7 @@ pub mod pallet {
             Self::deposit_event(Event::SideEffectConfirmed(
                 relayer_id.clone(),
                 xtx_id,
-                side_effect,
+                confirmed_side_effect,
                 0,
             ));
 
@@ -499,7 +499,7 @@ pub mod pallet {
         pub fn confirm_side_effect(
             origin: OriginFor<T>,
             xtx_id: XtxId<T>,
-            side_effect: SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+            confirmed_side_effect: ConfirmedSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
             _inclusion_proof: Option<Bytes>,
             // ToDo: Replace step_confirmation with inclusion_proof
             step_confirmation: StepConfirmation,
@@ -571,7 +571,7 @@ pub mod pallet {
                 Self::deposit_event(Event::SideEffectConfirmed(
                     relayer_id.clone(),
                     xtx_id.clone(),
-                    side_effect,
+                    confirmed_side_effect,
                     0,
                 ));
 
@@ -608,7 +608,7 @@ pub mod pallet {
         SideEffectConfirmed(
             T::AccountId, // winner
             XtxId<T>,
-            SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+            ConfirmedSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
             u64, // reward?
         ),
         // Listeners - remote targets integrators/registrants

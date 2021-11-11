@@ -11,9 +11,9 @@ use sp_version::RuntimeVersion;
 use t3rn_primitives::transfers::TransferEntry;
 use t3rn_primitives::*;
 
-use crate::message_assembly::chain_generic_metadata::Metadata;
-use crate::message_assembly::gateway_inbound_assembly::GatewayInboundAssembly;
-use crate::message_assembly::signer::app::GenericExtra;
+use crate::chain_generic_metadata::Metadata;
+use crate::gateway_inbound_assembly::GatewayInboundAssembly;
+use crate::signer::app::GenericExtra;
 
 use super::substrate_gateway_assembly::SubstrateGatewayAssembly;
 
@@ -490,15 +490,18 @@ pub mod tests {
     use t3rn_primitives::transfers::TransferEntry;
     use t3rn_primitives::{GatewayType, GatewayVendor};
 
-    use crate::KEY_TYPE;
+    use sp_core::crypto::KeyTypeId;
 
-    use crate::message_assembly::test_utils::*;
+    type AuthorityId = crate::signer::app::Public;
+    const KEY_TYPE: KeyTypeId = KeyTypeId(*b"circ");
+
+    use crate::test_utils::*;
 
     use super::{
         CircuitOutboundMessage, ExtraMessagePayload, GatewayExpectedOutput, GatewayInboundProtocol,
         Vec,
     };
-    use crate::message_assembly::signer::app::GenericAddress;
+    use crate::signer::app::GenericAddress;
 
     pub fn assert_signed_payload(
         actual: CircuitOutboundMessage,

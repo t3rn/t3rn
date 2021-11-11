@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use sp_std::vec;
 use sp_std::vec::*;
 
-use crate::message_assembly::circuit_inbound::Proof;
+use crate::circuit_inbound::Proof;
 use t3rn_primitives::abi::{Bytes, GatewayABIConfig, Type};
 
 #[cfg(feature = "no_std")]
