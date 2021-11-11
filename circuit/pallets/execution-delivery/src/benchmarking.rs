@@ -4,21 +4,23 @@ use super::*;
 use bp_test_utils::test_header;
 
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
-use frame_support::{assert_ok, weights::Weight};
+
 use frame_system::{Origin, RawOrigin};
 
 use t3rn_primitives::abi::GatewayABIConfig;
 use t3rn_primitives::Compose;
 
-use sp_core::sr25519;
 
-use sp_runtime::{create_runtime_str, AccountId32};
+
+use sp_runtime::{create_runtime_str};
 use sp_version::RuntimeVersion;
 
 use crate::{
     CurrentHeader, DefaultPolkadotLikeGateway, EthLikeKeccak256ValU32Gateway,
-    EthLikeKeccak256ValU64Gateway, Pallet as ExecDelivery, PolkadotLikeValU64Gateway,
+    EthLikeKeccak256ValU64Gateway, PolkadotLikeValU64Gateway,
 };
+
+pub use crate::Pallet as ExecDelivery;
 
 pub const TEST_RUNTIME_VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("test-runtime"),
@@ -491,8 +493,8 @@ mod tests {
     use crate::mock::Test;
     use crate::tests::new_test_ext;
     use frame_support::assert_ok;
-    use sp_keystore::testing::KeyStore;
-    use sp_keystore::{KeystoreExt, SyncCryptoStore};
+    
+    
 
     #[test]
     fn benchmark_decompose_io_schedule() {
