@@ -1,5 +1,3 @@
-use super::Config;
-use crate::SystemHashing;
 use codec::{Decode, Encode};
 use sp_runtime::{
     traits::{Hash, Zero},
@@ -7,6 +5,7 @@ use sp_runtime::{
 };
 use sp_std::vec::Vec;
 
+type SystemHashing<T> = <T as frame_system::Config>::Hashing;
 pub type XtxId<T> = <T as frame_system::Config>::Hash;
 
 /// A composable cross-chain (X) transaction that has already been verified to be valid and submittable
@@ -63,7 +62,7 @@ impl<
         }
     }
 
-    pub fn generate_xtx_id<T: Config>(&self) -> XtxId<T> {
+    pub fn generate_xtx_id<T: frame_system::Config>(&self) -> XtxId<T> {
         SystemHashing::<T>::hash(Encode::encode(self).as_ref())
     }
 }

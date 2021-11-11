@@ -72,11 +72,9 @@ pub use xbridges::{
     PolkadotLikeValU64Gateway,
 };
 
-pub mod xtx;
-pub use xtx::{Xtx, XtxId};
+pub use t3rn_primitives::xtx::{Xtx, XtxId};
 
-pub mod side_effect;
-pub use side_effect::{InboundSideEffect, OutboundSideEffect, SideEffect};
+pub use t3rn_primitives::side_effect::{ConfirmedSideEffect, FullSideEffect, SideEffect};
 pub type AllowedSideEffect = Vec<u8>;
 
 /// Defines application identifier for crypto keys of this module.
@@ -272,7 +270,7 @@ pub mod pallet {
         pub fn confirm_side_effect_blind(
             origin: OriginFor<T>,
             xtx_id: XtxId<T>,
-            side_effect: SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+            confirmed_side_effect: ConfirmedSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
             _inclusion_proof: Option<Bytes>,
         ) -> DispatchResultWithPostInfo {
             // ToDo #CNF-1: Reward releyers for inbound message dispatch.
@@ -290,7 +288,7 @@ pub mod pallet {
             Self::deposit_event(Event::SideEffectConfirmed(
                 relayer_id.clone(),
                 xtx_id,
-                side_effect,
+                confirmed_side_effect,
                 0,
             ));
 
@@ -391,7 +389,7 @@ pub mod pallet {
         pub fn confirm_side_effect(
             origin: OriginFor<T>,
             xtx_id: XtxId<T>,
-            side_effect: SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+            confirmed_side_effect: ConfirmedSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
             _inclusion_proof: Option<Bytes>,
             // ToDo: Replace step_confirmation with inclusion_proof
             step_confirmation: StepConfirmation,
@@ -463,7 +461,7 @@ pub mod pallet {
                 Self::deposit_event(Event::SideEffectConfirmed(
                     relayer_id.clone(),
                     xtx_id.clone(),
-                    side_effect,
+                    confirmed_side_effect,
                     0,
                 ));
 
@@ -500,7 +498,7 @@ pub mod pallet {
         SideEffectConfirmed(
             T::AccountId, // winner
             XtxId<T>,
-            SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+            ConfirmedSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
             u64, // reward?
         ),
         // Listeners - remote targets integrators/registrants
