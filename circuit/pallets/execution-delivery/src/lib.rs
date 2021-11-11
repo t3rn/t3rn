@@ -743,6 +743,7 @@ impl<T: Config> Pallet<T> {
             timeouts_at,
             delay_steps_at,
             Some(reward),
+            vec![],
         );
 
         let x_tx_id: XtxId<T> = new_xtx.generate_xtx_id::<T>();

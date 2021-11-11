@@ -18,11 +18,11 @@
 //! Tests for pallet-xdns.
 
 use super::*;
-use crate::mock::{ExtBuilder, Test, WithAuthorities, XDNS};
-use frame_support::{assert_err, assert_noop, assert_ok};
+use crate::mock::{ExtBuilder, Test, XDNS};
+use frame_support::{assert_noop, assert_ok};
 use frame_system::Origin;
 use sp_runtime::DispatchError;
-use t3rn_primitives::abi::{CryptoAlgo, HasherAlgo};
+
 
 #[test]
 fn genesis_should_seed_circuit_gateway_polkadot_and_kusama_nodes() {
