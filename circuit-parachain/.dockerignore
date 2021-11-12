@@ -3,7 +3,7 @@
 **/*.txt
 **/*.md
 /docker/
-!/target/release/polkadot-collator
+!/target/release/circuit-collator
 
 # dotfiles in the repo root
 /.*

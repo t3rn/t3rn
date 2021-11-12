@@ -250,14 +250,26 @@ pub fn circuit_config(id: ParaId) -> ChainSpec {
 				hex!["68126f8cbad24797d5f1b5b40fe05db0e0292ac1336e575779f0c7a3fdf9825a"].into(),
 				vec![
 					(
-						// sudo 1 million
+						// sudo 97 million
 						hex!["68126f8cbad24797d5f1b5b40fe05db0e0292ac1336e575779f0c7a3fdf9825a"]
 							.into(),
-						(1_000_000 * UNIT).into(),
+						(97_000_000 * UNIT).into(),
 					),
 					(
 						// beqa 1 million
 						hex!["6818cda9ffb645241c3b1f11539cabbd347520ce3e73e83571502a6ff05dc220"]
+							.into(),
+						(1_000_000 * UNIT).into(),
+					),
+					(
+						// zannis 1 million
+						hex!["8ef3b1c8708e01ed0b707acc9ae1a9e0a0f3057c142c62e714652431aa9c6247"]
+							.into(),
+						(1_000_000 * UNIT).into(),
+					),
+					(
+						// ved 1 million
+						hex!["58eff1cf80796776dca1ffc26983c905ec35bc298f5f2e694fce682564c07f51"]
 							.into(),
 						(1_000_000 * UNIT).into(),
 					),
