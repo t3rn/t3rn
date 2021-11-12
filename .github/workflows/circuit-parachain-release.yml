@@ -1,12 +1,14 @@
-name: Circuit Release
+name: Circuit Parachain Release
 
 on:
-  pull_request:
+  push:
+    branches:
+      - development
     paths:
       - circuit-parachain/**/*.rs
       - circuit-parachain/**/Cargo.toml
       - circuit-parachain/**/Cargo.lock
-      - .github/workflows/circuit-parachain.yml
+      - .github/workflows/circuit-parachain-release.yml
 
 env:
   RUST_BACKTRACE: 1

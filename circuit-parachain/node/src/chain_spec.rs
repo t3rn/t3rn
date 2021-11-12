@@ -211,9 +211,7 @@ fn testnet_genesis(
 		// of this.
 		aura: Default::default(),
 		aura_ext: Default::default(),
-		sudo: parachain_template_runtime::SudoConfig {
-            key: root_key.clone(),
-        },
+		sudo: parachain_template_runtime::SudoConfig { key: root_key.clone() },
 		//parachain_system: Default::default(),
 	}
 }
