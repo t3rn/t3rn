@@ -247,11 +247,11 @@ pub fn circuit_config(id: ParaId) -> ChainSpec {
 					),
 				],
 				// sudo
-				hex!["68126f8cbad24797d5f1b5b40fe05db0e0292ac1336e575779f0c7a3fdf9825a"].into(),
+				hex!["2af656d7541a1911ade17e1eea634ea932f700767da7bf0f5e5e617efaec163e"].into(),
 				vec![
 					(
 						// sudo 97 million
-						hex!["68126f8cbad24797d5f1b5b40fe05db0e0292ac1336e575779f0c7a3fdf9825a"]
+						hex!["2af656d7541a1911ade17e1eea634ea932f700767da7bf0f5e5e617efaec163e"]
 							.into(),
 						(97_000_000 * UNIT).into(),
 					),
