@@ -24,6 +24,7 @@ fn load_spec(
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
 		"dev" => Box::new(chain_spec::development_config(para_id)),
+		"circuit" => Box::new(chain_spec::circuit_config(para_id)),
 		"" | "local" => Box::new(chain_spec::local_testnet_config(para_id)),
 		path => Box::new(chain_spec::ChainSpec::from_json_file(std::path::PathBuf::from(path))?),
 	})
