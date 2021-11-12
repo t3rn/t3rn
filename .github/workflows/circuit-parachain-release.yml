@@ -1,0 +1,89 @@
+name: Circuit Release
+
+on:
+  pull_request:
+    paths:
+      - circuit-parachain/**/*.rs
+      - circuit-parachain/**/Cargo.toml
+      - circuit-parachain/**/Cargo.lock
+      - .github/workflows/circuit-parachain.yml
+
+env:
+  RUST_BACKTRACE: 1
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-release:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@master
+
+      - name: ⚙️Get nightly rust toolchain with wasm target
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2021-09-29
+          target: wasm32-unknown-unknown
+          override: true
+
+      - name: 🕒 Cache Rust binaries and packages
+        uses: actions/cache@v2
+        id: cache-rust
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            circuit-parachain/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('circuit-parachain/Cargo.lock') }}
+
+      - name: 🏭 Build circuit
+        uses: actions-rs/cargo@v1
+        continue-on-error: false
+        with:
+          command: build
+          args: --locked --manifest-path circuit-parachain/Cargo.toml --release
+
+      - name: 📤 Upload binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.sha }}-parachain-release-artifacts
+          path: circuit-parachain/target/release/parachain-collator
+          if-no-files-found: error
+
+  push-to-docker:
+    runs-on: ubuntu-20.04
+    needs: [build-release]
+    steps:
+      - name: ☁️Checkout git repo
+        uses: actions/checkout@master
+        with:
+          submodules: recursive
+      - name: 🔧 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: 🕒 Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+      - name: 📥 Download circuit
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ github.sha }}-parachain-release-artifacts
+          path: circuit-parachain/target/release/
+      - name: 🐋 Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: 🐳 Build & Publish Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: t3rn/circuit-parachain:latest
+          platforms: linux/amd64
+          file: docker/circuit-parachain.Dockerfile
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
