@@ -1,5 +1,5 @@
 [package]
-name = "parachain-template-node"
+name = "t3rn-parachain-node"
 version = "0.1.0"
 authors = ["Anonymous"]
 description = "A new Cumulus FRAME-based Substrate Node, ready for hacking together a parachain."
@@ -20,7 +20,6 @@ name = "parachain-collator"
 path = "src/main.rs"
 
 [features]
-#runtime-benchmarks = ["parachain-template-runtime/runtime-benchmarks"]
 
 [dependencies]
 derive_more = "0.99.2"
@@ -34,7 +33,7 @@ hex-literal = "0.3.1"
 jsonrpc-core = "18.0.0"
 
 # Local Dependencies
-parachain-template-runtime = { path = "../runtime" }
+t3rn-parachain-runtime = { path = "../runtime" }
 
 # Substrate Dependencies
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.12" }
