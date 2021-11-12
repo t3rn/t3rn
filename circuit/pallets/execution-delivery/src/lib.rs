@@ -217,14 +217,13 @@ pub mod pallet {
                 Error::<T>::RequesterNotEnoughBalance,
             );
 
-            // ToDo: Generate Circuit's params as default ABI from let abi = pallet_xdns::get_abi(target_id)
-            let gateway_abi = Default::default();
-
             let mut full_side_effects: Vec<
                 FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
             > = vec![];
 
             for side_effect in side_effects.iter() {
+                // ToDo: Generate Circuit's params as default ABI from let abi = pallet_xdns::get_abi(target_id)
+                let gateway_abi = Default::default();
                 let side_effects_protocol = SideEffectsProtocol::new(gateway_abi);
                 side_effects_protocol.validate_input_args(
                     side_effect.encoded_action.clone(),
@@ -237,11 +236,16 @@ pub mod pallet {
             }
 
             let full_side_effects_steps = match sequential {
-                true => vec![full_side_effects],
-                false => full_side_effects
-                    .iter()
-                    .map(|x| vec![x])
-                    .collect::<Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>>(),
+                false => vec![full_side_effects],
+                true => {
+                    let mut sequential_order: Vec<
+                        Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+                    > = vec![];
+                    for fse in full_side_effects.iter() {
+                        sequential_order.push(vec![fse.clone()]);
+                    }
+                    sequential_order
+                }
             };
 
             // ToDo: Introduce default timeout + delay
