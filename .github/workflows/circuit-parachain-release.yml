@@ -1,14 +1,14 @@
-name: Circuit Release
+name: Circuit Parachain Release
 
 on:
   push:
     branches:
       - development
     paths:
-      - circuit/**/*.rs
-      - circuit/**/Cargo.toml
-      - circuit/**/Cargo.lock
-      - .github/workflows/circuit-release.yml
+      - circuit-parachain/**/*.rs
+      - circuit-parachain/**/Cargo.toml
+      - circuit-parachain/**/Cargo.lock
+      - .github/workflows/circuit-parachain-release.yml
 
 env:
   RUST_BACKTRACE: 1
@@ -20,29 +20,11 @@ jobs:
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@master
-        with:
-          submodules: recursive
-
-      - name: 🕒 Cache LLVM and Clang
-        id: cache-llvm
-        uses: actions/cache@v2
-        with:
-          path: |
-            ./llvm
-          key: llvm-circuit-release
-
-      - name: 🔨 Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v1
-        with:
-          version: "12.0.0"
-          ubuntu-version: "20.04"
-          directory: ${{ runner.temp }}/llvm
-          cached: ${{ steps.cache-llvm.outputs.cache-hit }}
 
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2021-08-01
+          toolchain: nightly-2021-09-29
           target: wasm32-unknown-unknown
           override: true
 
@@ -53,21 +35,21 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            circuit/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('circuit/Cargo.lock') }}
+            circuit-parachain/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('circuit-parachain/Cargo.lock') }}
 
       - name: 🏭 Build circuit
         uses: actions-rs/cargo@v1
         continue-on-error: false
         with:
           command: build
-          args: --locked --manifest-path circuit/Cargo.toml --release
+          args: --locked --manifest-path circuit-parachain/Cargo.toml --release
 
       - name: 📤 Upload binary
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ github.sha }}-artifacts
-          path: circuit/target/release/circuit
+          name: ${{ github.sha }}-parachain-release-artifacts
+          path: circuit-parachain/target/release/parachain-collator
           if-no-files-found: error
 
   push-to-docker:
@@ -90,8 +72,8 @@ jobs:
       - name: 📥 Download circuit
         uses: actions/download-artifact@v2
         with:
-          name: ${{ github.sha }}-artifacts
-          path: circuit/target/release/
+          name: ${{ github.sha }}-parachain-release-artifacts
+          path: circuit-parachain/target/release/
       - name: 🐋 Login to Docker Hub
         uses: docker/login-action@v1
         with:
@@ -102,8 +84,8 @@ jobs:
         with:
           context: .
           push: true
-          tags: t3rn/circuit:latest
+          tags: t3rn/circuit-parachain:latest
           platforms: linux/amd64
-          file: docker/circuit.Dockerfile
+          file: docker/circuit-parachain.Dockerfile
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache

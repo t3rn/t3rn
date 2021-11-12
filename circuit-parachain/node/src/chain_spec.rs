@@ -1,10 +1,10 @@
 use cumulus_primitives_core::ParaId;
-use t3rn_parachain_runtime::{AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
+use t3rn_parachain_runtime::{AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
@@ -211,9 +211,7 @@ fn testnet_genesis(
 		// of this.
 		aura: Default::default(),
 		aura_ext: Default::default(),
-		sudo: t3rn_parachain_runtime::SudoConfig {
-            key: root_key.clone(),
-        },
+		sudo: t3rn_parachain_runtime::SudoConfig { key: root_key.clone() },
 		//parachain_system: Default::default(),
 	}
 }
