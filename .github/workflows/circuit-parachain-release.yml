@@ -49,7 +49,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{ github.sha }}-parachain-release-artifacts
-          path: circuit-parachain/target/release/parachain-collator
+          path: circuit-parachain/target/release/circuit-collator
           if-no-files-found: error
 
   push-to-docker:

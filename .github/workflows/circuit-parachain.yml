@@ -98,7 +98,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{ github.sha }}-parachain-artifacts
-          path: circuit-parachain/target/debug/parachain-collator
+          path: circuit-parachain/target/debug/circuit-collator
           if-no-files-found: error
   test:
     runs-on: self-hosted
@@ -134,6 +134,6 @@ jobs:
       - name: 📼 Run unit tests
         continue-on-error: false
         run: |
-          chmod +x circuit-parachain/target/debug/parachain-collator
-          circuit-parachain/target/debug/parachain-collator --alice --log=main,debug --tmp > /dev/null 2>&1 &
+          chmod +x circuit-parachain/target/debug/circuit-collator
+          circuit-parachain/target/debug/circuit-collator --alice --log=main,debug --tmp > /dev/null 2>&1 &
           cargo test --workspace --locked --manifest-path circuit-parachain/Cargo.toml
