@@ -1,18 +1,8 @@
-# Substrate Cumulus Parachain Template
-
-A new [Cumulus](https://github.com/paritytech/cumulus/)-based Substrate node, ready for hacking :cloud:
-
-This project is a fork of the
-[Substrate Node Template](https://github.com/substrate-developer-hub/substrate-node-template)
-modified to include dependencies required for registering this node as a **parathread** or
-**parachain** to an established **relay chain**.
-
-👉 Learn more about parachains [here](https://wiki.polkadot.network/docs/learn-parachains), and
-parathreads [here](https://wiki.polkadot.network/docs/learn-parathreads).
+# Circuit Parachain
 
 ## Build & Run
 
-Follow these steps to prepare a local Substrate development environment :hammer_and_wrench:
+Follow these steps to prepare a local Circuit development environment :hammer_and_wrench:
 
 ### Setup of Machine
 
@@ -21,7 +11,7 @@ If necessary, refer to the setup instructions at the
 
 ### Build
 
-Once the development environment is set up, build the Cumulus Parachain Template. This command will
+Once the development environment is set up, build the Circuit Parachain. This command will
 build the
 [Wasm Runtime](https://substrate.dev/docs/en/knowledgebase/advanced/executor#wasm-execution) and
 [native](https://substrate.dev/docs/en/knowledgebase/advanced/executor#native-execution) code:
@@ -54,7 +44,7 @@ Clone and build [Polkadot](https://github.com/paritytech/polkadot) (beware of th
 
 ```bash
 # Get a fresh clone, or `cd` to where you have polkadot already:
-git clone -b v0.9.7 --depth 1 https://github.com/paritytech/polkadot.git
+git clone -b v0.9.12 --depth 1 https://github.com/paritytech/polkadot.git
 cd polkadot
 cargo build --release
 ```
@@ -147,26 +137,25 @@ We first generate the **genesis state** and **genesis wasm** needed for the para
 
 ```bash
 # Build the parachain node (from it's top level dir)
-cd substrate-parachain-template
 cargo build --release
 
 # Folder to store resource files needed for parachain registration
 mkdir -p resources
 
 # Build the chainspec
-./target/release/parachain-collator build-spec \
+./target/release/circuit-collator build-spec \
 --disable-default-bootnode > ./resources/template-local-plain.json
 
 # Build the raw chainspec file
-./target/release/parachain-collator build-spec \
+./target/release/circuit-collator build-spec \
 --chain=./resources/template-local-plain.json \
 --raw --disable-default-bootnode > ./resources/template-local-raw.json
 
 # Export genesis state to `./resources`, using 2000 as the ParaId
-./target/release/parachain-collator export-genesis-state --parachain-id 2000 > ./resources/para-2000-genesis
+./target/release/circuit-collator export-genesis-state --parachain-id 2000 > ./resources/para-2000-genesis
 
 # Export the genesis wasm
-./target/release/parachain-collator export-genesis-wasm > ./resources/para-2000-wasm
+./target/release/circuit-collator export-genesis-wasm > ./resources/para-2000-wasm
 ```
 
 > **NOTE**: we have set the `para_ID` to be **2000** here. This _must_ be unique for all parathreads/chains
@@ -175,14 +164,14 @@ mkdir -p resources
 
 ### Start a Parachain Node (Collator)
 
-From the parachain template working directory:
+From the parachain working directory:
 
 ```bash
 # NOTE: this command assumes the chain spec is in a directory named `polkadot`
-# that is at the same level of the template working directory. Change as needed.
+# that is at the same level of the circuit working directory. Change as needed.
 #
 # It also assumes a ParaId of 2000. Change as needed.
-./target/release/parachain-collator \
+./target/release/circuit-collator \
 -d /tmp/parachain/alice \
 --collator \
 --alice \
@@ -197,7 +186,7 @@ From the parachain template working directory:
 _Output:_
 
 ```bash
-2021-05-30 16:57:39 Parachain Collator Template
+2021-05-30 16:57:39 Circuit Parachain Collator
 2021-05-30 16:57:39 ✌️  version 3.0.0-acce183-x86_64-linux-gnu
 2021-05-30 16:57:39 ❤️  by Anonymous, 2017-2021
 2021-05-30 16:57:39 📋 Chain specification: Local Testnet
