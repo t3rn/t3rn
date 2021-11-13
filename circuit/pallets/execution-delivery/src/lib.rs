@@ -23,8 +23,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use crate::exec_composer::ExecComposer;
-pub use crate::message_assembly::circuit_inbound::StepConfirmation;
-use crate::message_assembly::merklize::*;
 use codec::{Decode, Encode};
 use frame_support::dispatch::DispatchResultWithPostInfo;
 use frame_support::ensure;
@@ -39,6 +37,8 @@ use sp_runtime::{
     traits::{Convert, Hash, Saturating, Zero},
     RuntimeAppPublic, RuntimeDebug,
 };
+pub use t3rn_protocol::circuit_inbound::StepConfirmation;
+use t3rn_protocol::merklize::*;
 
 use bp_runtime::ChainId;
 pub use pallet::*;
@@ -49,6 +49,8 @@ use t3rn_primitives::abi::{ContractActionDesc, GatewayABIConfig, HasherAlgo as H
 use t3rn_primitives::transfers::BalanceOf;
 use t3rn_primitives::*;
 use volatile_vm::VolatileVM;
+
+pub type Bytes = sp_core::Bytes;
 
 #[cfg(test)]
 pub mod tests;
@@ -62,9 +64,8 @@ pub mod weights;
 use weights::WeightInfo;
 
 pub mod exec_composer;
-pub mod message_assembly;
 
-pub use crate::message_assembly::test_utils as message_test_utils;
+pub use t3rn_protocol::test_utils as message_test_utils;
 pub mod xbridges;
 pub use xbridges::{
     get_roots_from_bridge, init_bridge_instance, CurrentHash, CurrentHasher, CurrentHeader,
@@ -100,7 +101,7 @@ pub fn select_validator_for_x_tx_dummy<T: Config>() -> Result<T::AccountId, &'st
 pub type SideEffectsDFD = Vec<u8>;
 pub type SideEffectId = Bytes;
 
-pub type AuthorityId = crate::message_assembly::signer::app::Public;
+pub type AuthorityId = t3rn_protocol::signer::app::Public;
 pub(crate) type SystemHashing<T> = <T as frame_system::Config>::Hashing;
 
 #[frame_support::pallet]

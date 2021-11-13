@@ -12,8 +12,8 @@ use sp_std::vec::Vec;
 
 use pallet_circuit_execution_delivery::AuthorityId;
 
-use pallet_circuit_execution_delivery::message_assembly::chain_generic_metadata::*;
-use pallet_circuit_execution_delivery::message_assembly::substrate_gateway_protocol::*;
+use t3rn_protocol::chain_generic_metadata::*;
+use t3rn_protocol::substrate_gateway_protocol::*;
 
 use codec::Decode;
 use jsonrpsee_types::traits::Client as WsClient;
