@@ -9,3 +9,6 @@ comms
 /build/local_beefy_spec.json
 *.iml
 client/relayer/node_modules/*
+
+# accound id info
+/.devkey

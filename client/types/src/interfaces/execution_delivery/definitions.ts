@@ -23,7 +23,7 @@ export default {
       _enum: {
         FullValue: 0,
         MerklePath: 1,
-      }
+      },
     },
     StepConfirmation: {
       step_index: 'u8',
@@ -63,8 +63,8 @@ export default {
     },
     SideEffect: {
       inbound: 'InboundSideEffect',
-      outbound: 'OutboundSideEffect'
+      outbound: 'OutboundSideEffect',
     },
-    SideEffectsDFD: 'Vec<u8>'
-  }
-}
+    SideEffectsDFD: 'Vec<u8>',
+  },
+};

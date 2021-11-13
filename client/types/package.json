@@ -22,7 +22,7 @@
     "build": "yarn generate && yarn compile",
     "compile": "rm -rf dist && tsc",
     "generate:defs": "ts-node --skip-project node_modules/.bin/polkadot-types-from-defs --package t3rn-circuit-typegen/interfaces --input ./src/interfaces",
-    "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package t3rn-circuit-typegen/interfaces --endpoint wss://dev.net.t3rn.io --output ./src/interfaces",
+    "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package t3rn-circuit-typegen/interfaces --endpoint ws://localhost:9944 --output ./src/interfaces",
     "generate": "yarn generate:defs && yarn generate:meta",
     "lint": "tsc --noEmit --pretty"
   },
@@ -40,8 +40,8 @@
     "typescript": "^4.4.4"
   },
   "dependencies": {
-    "@polkadot/typegen": "^6.6.1",
-    "@polkadot/types": "^6.6.1",
+    "@polkadot/typegen": "=6.6.1",
+    "@polkadot/types": "=6.6.1",
     "@snowfork/snowbridge-types": "^0.2.6"
   }
 }

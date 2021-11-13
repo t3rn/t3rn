@@ -19,6 +19,9 @@
       ],
       "@polkadot/types/lookup": [
         "../node_modules/@polkadot/types/augment/lookup/index.js"
+      ],
+      "@polkadot/rpc-core/types.jsonrpc": [
+        "../node_modules/@polkadot/rpc-core/types.jsonrpc"
       ]
     }
   },

@@ -10,7 +10,10 @@
     "relayer"
   ],
   "resolutions": {
-    "@polkadot/types": "^6.6.1"
+    "@polkadot/types": "=6.6.1"
+  },
+  "scripts": {
+    "lint": "eslint --fix && prettier --write **/*.ts "
   },
   "dependencies": {
     "@types/node": "^16.11.7",

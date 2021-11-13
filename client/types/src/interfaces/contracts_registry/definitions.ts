@@ -11,5 +11,5 @@ export default {
       info: 'Option<RawAliveContractInfo<Hash, BalanceOf, BlockNumber>>',
       meta: 'ContractMetadata',
     },
-  }
-}
+  },
+};

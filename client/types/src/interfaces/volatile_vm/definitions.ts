@@ -10,6 +10,6 @@ export default {
       deduct_block: 'BlockNumber',
       last_write: 'Option<BlockNumber>',
       _reserved: 'Option<()>',
-    }
-  }
-}
+    },
+  },
+};

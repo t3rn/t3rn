@@ -8,9 +8,10 @@
   },
   "private": true,
   "devDependencies": {
-    "@polkadot/api": "^6.6.1",
-    "@polkadot/keyring": "^7.7.1",
-    "@polkadot/types": "^6.6.1",
+    "@polkadot/api": "=6.6.1",
+    "@polkadot/keyring": "^7.8.2",
+    "@polkadot/types": "=6.6.1",
+    "@polkadot/util": "^7.8.2",
     "@t3rn/types": "file:../types",
     "@types/chai": "^4.2.22",
     "@types/mocha": "^9.0.0",

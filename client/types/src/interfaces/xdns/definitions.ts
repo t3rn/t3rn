@@ -12,5 +12,5 @@ export default {
       registrant: 'Option<AccountId>',
       last_finalized: 'Option<u64>',
     },
-  }
-}
+  },
+};
