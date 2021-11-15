@@ -23,7 +23,6 @@ use frame_support::{assert_noop, assert_ok};
 use frame_system::Origin;
 use sp_runtime::DispatchError;
 
-
 #[test]
 fn genesis_should_seed_circuit_gateway_polkadot_and_kusama_nodes() {
     let circuit_hash = <Test as frame_system::Config>::Hashing::hash(b"circ");
