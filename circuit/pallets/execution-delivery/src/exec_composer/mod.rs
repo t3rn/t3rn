@@ -340,11 +340,11 @@ impl ExecComposer {
         gateway_pointer: &GatewayPointer,
     ) -> Result<Box<dyn GatewayInboundProtocol>, &'static str> {
         // Very dummy - replace asap with https://github.com/t3rn/t3rn/pull/87
-        use crate::message_assembly::chain_generic_metadata::Metadata;
         use frame_metadata::decode_different::DecodeDifferent;
         use frame_metadata::v13::{
             ExtrinsicMetadata, FunctionMetadata, ModuleMetadata, RuntimeMetadataV13,
         };
+        use t3rn_protocol::chain_generic_metadata::Metadata;
         pub fn get_dummy_modules_with_functions() -> Vec<(&'static str, Vec<&'static str>)> {
             vec![
                 ("state", vec!["call"]),

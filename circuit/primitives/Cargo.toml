@@ -23,7 +23,9 @@ sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = 'po
 frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 pallet-sudo = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
-bp-header-chain = { default-features = false, path = "../../vendor/bridges/primitives/header-chain" }
+
+[dev-dependencies]
+serde_json = "1.0.41"
 
 [features]
 default = ["std"]
@@ -35,7 +37,6 @@ std = [
 	"sp-core/std",
 	"sp-version/std",
 	"sp-io/std",
-	"bp-header-chain/std",
 	"pallet-sudo/std",
 	"frame-system/std",
 	"frame-support/std",
