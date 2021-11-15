@@ -1,56 +1,40 @@
-import { u16, Vec } from '@polkadot/types';
-import { Registry } from '@polkadot/types/types';
+import { Metadata } from '@polkadot/types';
 import { GatewayABIConfig, GatewayGenesisConfig } from '@t3rn/types/dist';
 import { ApiPromise } from '@polkadot/api';
-import * as definitions from '@t3rn/types';
+import { Hash, RuntimeVersion } from '@polkadot/types/interfaces';
 
 export function createGatewayABIConfig(
-  registry: Registry,
+  api: ApiPromise,
   hash_size: number,
   address_length: number,
   block_number_type_size: number,
   decimals: number,
-  crypto: 'Sr25519' | 'Ed25519',
+  crypto: 'Ed25519' | 'Sr25519' | 'Ecdsa',
   hasher: 'Blake2' | 'Keccak256'
 ): GatewayABIConfig {
-  function toCryptoAlgo(crypto: 'Sr25519' | 'Ed25519') {
-    return crypto === 'Sr25519' ? 0 : crypto === 'Ed25519' ? 1 : new Error('Unknown crypto');
-  }
-
-  function toHasherAlgo(hasher: 'Blake2' | 'Keccak256') {
-    return hasher === 'Blake2' ? 0 : hasher === 'Keccak256' ? 1 : new Error('Unknown hasher');
-  }
-  return registry.createType('GatewayABIConfig', [
-    new u16(registry, block_number_type_size),
-    new u16(registry, hash_size),
-    toHasherAlgo(hasher),
-    toCryptoAlgo(crypto),
-    new u16(registry, address_length),
-    new u16(registry, 32),
-    new u16(registry, decimals),
-    new Vec(registry, 'StructDecl', []),
+  return api.createType('GatewayABIConfig', [
+    api.createType('u16', block_number_type_size),
+    api.createType('u16', hash_size),
+    api.createType('HasherAlgo', hasher),
+    api.createType('CryptoAlgo', crypto),
+    api.createType('u16', address_length),
+    api.createType('u16', 32),
+    api.createType('u16', decimals),
+    api.createType('Vec<StructDecl>', []),
   ]);
 }
 
-export async function createGatewayGenesisConfig(
-  gatewayApi: ApiPromise,
+export function createGatewayGenesisConfig(
+  metadata: Metadata,
+  runtimeVersion: RuntimeVersion,
+  genesisHash: Hash,
   circuitApi: ApiPromise
-): Promise<GatewayGenesisConfig> {
-  gatewayApi.registerTypes({
-    GatewayGenesisConfig: definitions.primitives.types.GatewayGenesisConfig,
-  });
-  // fetch runtime metadata
-  const gatewayMetadata = await gatewayApi.runtimeMetadata;
-  // fetch runtime version
-  const runtimeVersion = await gatewayApi.runtimeVersion;
-  // fetch genesis hash
-  const genesisHash = await gatewayApi.genesisHash;
-
+): GatewayGenesisConfig {
   return circuitApi.createType('GatewayGenesisConfig', [
-    circuitApi.createType('Option<Bytes>', gatewayMetadata.asV14.pallets.toHex()),
-    circuitApi.createType('Option<Bytes>', gatewayMetadata.asV14.extrinsic.signedExtensions.toHex()),
+    circuitApi.createType('Option<Bytes>'),
+    circuitApi.createType('Option<Bytes>'),
     runtimeVersion,
-    gatewayMetadata.asV14.extrinsic.version,
+    metadata.asV14.extrinsic.version,
     genesisHash,
   ]);
 }

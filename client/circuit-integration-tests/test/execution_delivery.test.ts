@@ -3,85 +3,85 @@ import * as definitions from '@t3rn/types';
 import { createGatewayABIConfig, createGatewayGenesisConfig } from '../src/utils/utils';
 import '@t3rn/types/dist/augment-api';
 import '@t3rn/types/dist/augment-types';
-import { Bytes, createType, Option, Vec } from '@polkadot/types';
+import '@t3rn/types/dist/augment-api-rpc';
+import { Vec } from '@polkadot/types';
 import {
   AllowedSideEffect,
-  GatewayABIConfig,
-  GatewayGenesisConfig,
-  GatewayType,
-  GatewayVendor,
 } from '@t3rn/types/dist';
-import { AccountId, ChainId } from '@polkadot/types/interfaces';
-import * as console from 'console';
+import { expect } from 'chai';
 
-describe('Execution Delivery | Extrinsics', function () {
-  const provider = new WsProvider('ws://localhost:9944');
-  const apis: ApiPromise[] = [];
-  describe('sudo register_gateway', function () {
-    this.timeout(30000);
+describe('Execution Delivery | Extrinsics', function() {
+  this.timeout(30000);
+  const rococoUrl = 'wss://rococo-rpc.polkadot.io';
+  const circuitProvider = new WsProvider('ws://localhost:9944');
+  const rococoProvider = new WsProvider('wss://rococo-rpc.polkadot.io');
+  const types = Object.values(definitions).reduce((res, { types }): object => ({ ...res, ...types }), {});
+  let circuitApi: ApiPromise;
+
+  beforeEach(async () => {
+    circuitApi = await ApiPromise.create({
+      provider: circuitProvider,
+      types,
+      rpc: {
+        xdns: {
+          fetchRecords: {
+            description: 'Fetches all available XDNS Records on Circuit',
+            params: [
+              {
+                name: 'at',
+                type: 'Hash',
+                isOptional: true,
+              },
+            ],
+            type: 'FetchXdnsRecordsResponse',
+          },
+        },
+      },
+    });
+  });
+
+  describe('sudo register_gateway', () => {
     it.only('should successfully register the Rococo gateway', async () => {
-      const rococoUrl = 'wss://rococo-rpc.polkadot.io';
-      const types = Object.values(definitions).reduce((res, { types }): object => ({ ...res, ...types }), {});
+      const rococoApi = await ApiPromise.create({ provider: rococoProvider });
+      const firstHeader = await rococoApi.rpc.chain.getHeader(rococoApi.genesisHash);
 
-      const circuitApi = await ApiPromise.create({
-        provider,
-        types,
-      });
-
-      const rococoApi = await ApiPromise.create({ provider: new WsProvider(rococoUrl) });
-      apis.push(circuitApi, rococoApi);
       // Constuct the keyring after the API (crypto has an async init)
       const keyring = new Keyring({ type: 'sr25519', ss58Format: 60 });
       const alice = keyring.addFromUri('//Alice');
+      const rococoMetadata = await rococoApi.runtimeMetadata;
+      const rococoRuntimeVersion = await rococoApi.runtimeVersion;
+      const rococoGenesisHash = await rococoApi.genesisHash;
 
-      // create the genesis config from the Rococo client
-      const genesisConfig = await createGatewayGenesisConfig(rococoApi, circuitApi);
-      const firstHeader = await rococoApi.rpc.chain.getHeader(rococoApi.genesisHash);
-      const gatewayABIConfig = createGatewayABIConfig(circuitApi.registry, 32, 32, 32, 12, 'Sr25519', 'Keccak256');
-
-      // genesisConfig.signed_extension.toU8a()
-      // console.log(genesisConfig.modules_encoded.toHuman());
-      console.log(genesisConfig.signed_extension.unwrap().toU8a());
-      // console.log(JSON.stringify(genesisConfig.modules_encoded));
-      console.log(genesisConfig.modules_encoded.unwrap().toU8a());
-      const params: [
-        Bytes,
-        ChainId,
-        GatewayABIConfig,
-        GatewayVendor,
-        GatewayType,
-        GatewayGenesisConfig,
-        Bytes,
-        Option<Vec<AccountId>>,
-        Vec<AllowedSideEffect>
-      ] = [
-        circuitApi.createType('Bytes', rococoUrl), // url
-        circuitApi.createType('ChainId', 'roco'), // gateway_id
-        gatewayABIConfig, // GatewayABI
-        createType(circuitApi.registry, 'GatewayVendor', 'Substrate'), // GatewayVendor
-        createType(circuitApi.registry, 'GatewayType', 'External'), // GatewayType
-        genesisConfig, // GatewayGenesisConfig
-        circuitApi.createType('Bytes', [firstHeader.toU8a()]), // first header
+      const registerGateway = circuitApi.tx.execDelivery.registerGateway(
+        rococoUrl, // url
+        'roco', // gateway_id
+        createGatewayABIConfig(circuitApi, 32, 32, 32, 12, 'Sr25519', 'Blake2'), // GatewayABI
+        circuitApi.createType('GatewayVendor', 'Substrate'), // GatewayVendor
+        circuitApi.createType( 'GatewayType', { ProgrammableExternal: 1 }), // GatewayType
+        createGatewayGenesisConfig(rococoMetadata, rococoRuntimeVersion, rococoGenesisHash, circuitApi), // GatewayGenesisConfig
+        circuitApi.createType('Bytes', firstHeader.toU8a()), // first header
         circuitApi.createType('Option<Vec<AccountId>>', []), // authorities
-        circuitApi.createType('Vec<AllowedSideEffect>', ['transfer']), // allowed side effects
-      ];
-      const registerGateway = circuitApi.tx.execDelivery.registerGateway(...params);
+        <Vec<AllowedSideEffect>>circuitApi.createType('Vec<AllowedSideEffect>', ['transfer', 'get_storage']), // allowed side effects
+      );
 
-      // Send the actual sudo transaction
-      const txResult = await circuitApi.tx.sudo.sudo(registerGateway).signAndSend(alice);
-      // const txResult = await registerGateway.signAndSend(alice);
-      // console.log(JSON.stringify(txResult));
+      // submit the extrinsic and make wait until finalized
+      const unsub = await circuitApi.tx.sudo.sudo(registerGateway).signAndSend(alice,(result => {
+        if (result.status.isFinalized) {
+          console.log(`Transaction finalized at blockHash ${result.status.asFinalized}`);
+          unsub();
+        }
+      }));
 
-      // console.log(registerGateway.toHex());
-      // .signAndSend(alice, (result) => {
-      //   console.log('Register Gateway called with hash', JSON.stringify(result));
-      //   console.log(result.toHuman());
-      // });
-      // const hash = await registerGateway.signAndSend(alice);
-      // console.log('Register Gateway called with hash', unsub.toHex());
+      // assert the new xdns record was added successfully
+      const xdns = await circuitApi.rpc.xdns.fetchRecords();
+      console.log(xdns.toJSON());
+      // expect(xdns.xdns_records).to.have.length(3)
+
+      // assert the bridge was instantiated properly
+    });
+    it('should not register a gateway if it already exists (Polkadot)', async () => {
+
     });
   });
-  afterEach(function () {
-    apis.map((i) => i.disconnect());
-  });
+  afterEach(async () => await circuitApi.disconnect());
 });

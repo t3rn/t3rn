@@ -1,7 +1,19 @@
 export default {
-  rpc: {},
+  rpc: {
+    fetchRecords: {
+      description: 'Fetches all available XDNS Records on Circuit',
+      params: [
+        {
+          name: 'at',
+          type: 'Hash',
+          isOptional: true
+        }
+      ],
+      type: 'FetchXdnsRecordsResponse'
+    }
+  },
   types: {
-    XdnsRecordId: {},
+    XdnsRecordId: 'Hash',
     XdnsRecord: {
       url: 'Vec<u8>',
       gateway_abi: 'GatewayABIConfig',
@@ -12,5 +24,8 @@ export default {
       registrant: 'Option<AccountId>',
       last_finalized: 'Option<u64>',
     },
+    FetchXdnsRecordsResponse: {
+      xdns_records: 'Vec<XdnsRecord<AccountId>>'
+    }
   },
 };

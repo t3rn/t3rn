@@ -13,12 +13,13 @@ use sp_std::vec::*;
 
 use crate::circuit_inbound::Proof;
 use t3rn_primitives::abi::GatewayABIConfig;
-use t3rn_primitives::abi::{Bytes, Type};
+use t3rn_primitives::abi::Type;
 
 use crate::gateway_outbound_protocol::{
     AsGatewayOutboundEvent, GatewayOutboundEvent, GatewayOutboundEventId,
 };
 
+use sp_core::Bytes;
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
 #[cfg(feature = "std")]

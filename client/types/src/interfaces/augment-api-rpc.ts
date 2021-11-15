@@ -21,6 +21,7 @@ import type { AccountId, BlockNumber, H160, H256, H64, Hash, Header, Index, Just
 import type { ReadProof, RuntimeVersion, TraceBlockResponse } from '@polkadot/types/interfaces/state';
 import type { ApplyExtrinsicResult, ChainProperties, ChainType, Health, NetworkState, NodeRole, PeerInfo, SyncState } from '@polkadot/types/interfaces/system';
 import type { AnyNumber, Codec, IExtrinsic, Observable } from '@polkadot/types/types';
+import type { FetchXdnsRecordsResponse } from 't3rn-circuit-typegen/interfaces/xdns';
 
 declare module '@polkadot/rpc-core/types.jsonrpc' {
   export interface RpcInterface {
@@ -555,6 +556,12 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
        * Returns sha3 of the given data
        **/
       sha3: AugmentedRpc<(data: Bytes | string | Uint8Array) => Observable<H256>>;
+    };
+    xdns: {
+      /**
+       * Fetches all available XDNS Records on Circuit
+       **/
+      fetchRecords: AugmentedRpc<(at?: Hash | string | Uint8Array) => Observable<FetchXdnsRecordsResponse>>;
     };
   }
 }

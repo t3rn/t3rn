@@ -13,7 +13,7 @@ export default {
       _enum: ['Substrate', 'Ethereum'],
     },
     GatewayType: {
-      _enum: ['Internal', 'External'],
+      _enum: {'ProgrammableInternal': 'u32', 'ProgrammableExternal': 'u32', 'TxOnly': 'u32'},
     },
     GatewayABIConfig: {
       block_number_type_size: 'u16',
@@ -26,11 +26,11 @@ export default {
       structs: 'Vec<StructDecl>',
     },
     GatewayGenesisConfig: {
-      modules_encoded: 'Option<Vec<u8>>',
-      signed_extension: 'Option<Vec<u8>>',
+      modules_encoded: 'Option<Bytes>',
+      signed_extensions: 'Option<Bytes>',
       runtime_version: 'RuntimeVersion',
       extrinsics_version: 'u8',
-      genesis_hash: 'Vec<u8>',
+      genesis_hash: 'Bytes',
     },
     StructDecl: {
       name: 'Type',

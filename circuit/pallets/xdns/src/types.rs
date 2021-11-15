@@ -6,6 +6,8 @@ use codec::{Decode, Encode};
 use frame_system::Config;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+use sp_core::Bytes;
+
 use sp_runtime::{traits::Hash, RuntimeDebug};
 use sp_std::prelude::*;
 use sp_std::vec::Vec;
@@ -53,7 +55,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
         url: Vec<u8>,
         gateway_abi: GatewayABIConfig,
         modules_encoded: Option<Vec<u8>>,
-        signed_extension: Option<Vec<u8>>,
+        signed_extensions: Option<Vec<u8>>,
         runtime_version: sp_version::RuntimeVersion,
         extrinsics_version: u8,
         genesis_hash: Vec<u8>,
@@ -66,7 +68,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
     ) -> Self {
         let gateway_genesis = GatewayGenesisConfig {
             modules_encoded,
-            signed_extension,
+            signed_extensions,
             runtime_version,
             extrinsics_version,
             genesis_hash,

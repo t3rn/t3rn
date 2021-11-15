@@ -587,7 +587,7 @@ declare module '@polkadot/api/types/storage' {
       /**
        * The pre-validated composable xdns_records on-chain registry.
        **/
-      xdnsRegistry: AugmentedQuery<ApiType, (arg: XdnsRecordId | {  } | string | Uint8Array) => Observable<Option<XdnsRecord>>, [XdnsRecordId]> & QueryableStorageEntry<ApiType, [XdnsRecordId]>;
+      xdnsRegistry: AugmentedQuery<ApiType, (arg: XdnsRecordId | string | Uint8Array) => Observable<Option<XdnsRecord>>, [XdnsRecordId]> & QueryableStorageEntry<ApiType, [XdnsRecordId]>;
       /**
        * Generic query
        **/

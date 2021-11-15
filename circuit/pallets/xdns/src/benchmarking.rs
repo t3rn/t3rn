@@ -30,7 +30,7 @@ benchmarks! {
 
         let gateway_genesis = GatewayGenesisConfig {
             modules_encoded: None,
-            signed_extension: None,
+            signed_extensions: None,
             runtime_version: TEST_RUNTIME_VERSION,
             extrinsics_version: 0u8,
             genesis_hash: Default::default(),
@@ -53,7 +53,7 @@ benchmarks! {
 
         let gateway_genesis = GatewayGenesisConfig {
             modules_encoded: None,
-            signed_extension: None,
+            signed_extensions: None,
             runtime_version: TEST_RUNTIME_VERSION,
             extrinsics_version: 0u8,
             genesis_hash: Default::default(),
@@ -94,7 +94,7 @@ benchmarks! {
 
         let gateway_genesis = GatewayGenesisConfig {
             modules_encoded: None,
-            signed_extension: None,
+            signed_extensions: None,
             runtime_version: TEST_RUNTIME_VERSION,
             extrinsics_version: 0u8,
             genesis_hash: Default::default(),
@@ -131,7 +131,7 @@ benchmarks! {
 
         let gateway_genesis = GatewayGenesisConfig {
             modules_encoded: None,
-            signed_extension: None,
+            signed_extensions: None,
             runtime_version: TEST_RUNTIME_VERSION,
             extrinsics_version: 0u8,
             genesis_hash: Default::default(),

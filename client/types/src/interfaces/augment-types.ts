@@ -63,7 +63,7 @@ import type { AllowedSideEffect, GatewayOutboundEvent, GatewayOutboundEventId, I
 import type { CircuitOutboundMessage, Compose, ContractActionDesc, CryptoAlgo, ExtraMessagePayload, GatewayABIConfig, GatewayExpectedOutput, GatewayGenesisConfig, GatewayPointer, GatewayType, GatewayVendor, HasherAlgo, ProofTriePointer, StructDecl, TargetId } from 't3rn-circuit-typegen/interfaces/primitives';
 import type { Bloom, ChannelId, DispatchMessageId, EthashProofData, EthereumDifficultyConfig, EthereumHeader, EthereumHeaderId, Message, Proof, PruningRange, StoredHeader, TokenData, TokenId, TokenInfoOf } from 't3rn-circuit-typegen/interfaces/snowfork';
 import type { RawAliveContractInfo } from 't3rn-circuit-typegen/interfaces/volatile_vm';
-import type { XdnsRecord, XdnsRecordId } from 't3rn-circuit-typegen/interfaces/xdns';
+import type { FetchXdnsRecordsResponse, XdnsRecord, XdnsRecordId } from 't3rn-circuit-typegen/interfaces/xdns';
 
 declare module '@polkadot/types/types/registry' {
   export interface InterfaceTypes {
@@ -415,6 +415,7 @@ declare module '@polkadot/types/types/registry' {
     ExtrinsicUnknown: ExtrinsicUnknown;
     ExtrinsicV4: ExtrinsicV4;
     FeeDetails: FeeDetails;
+    FetchXdnsRecordsResponse: FetchXdnsRecordsResponse;
     Fixed128: Fixed128;
     Fixed64: Fixed64;
     FixedI128: FixedI128;

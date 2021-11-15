@@ -1,10 +1,15 @@
 // Auto-generated via `yarn polkadot-types-from-defs`, do not edit
 /* eslint-disable */
 
-import type { Bytes, Option, Struct, u64 } from '@polkadot/types';
+import type { Bytes, Option, Struct, Vec, u64 } from '@polkadot/types';
 import type { ChainId } from '@polkadot/types/interfaces/bridges';
-import type { AccountId } from '@polkadot/types/interfaces/runtime';
+import type { AccountId, Hash } from '@polkadot/types/interfaces/runtime';
 import type { GatewayABIConfig, GatewayGenesisConfig, GatewayType, GatewayVendor } from 't3rn-circuit-typegen/interfaces/primitives';
+
+/** @name FetchXdnsRecordsResponse */
+export interface FetchXdnsRecordsResponse extends Struct {
+  readonly xdns_records: Vec<XdnsRecord>;
+}
 
 /** @name XdnsRecord */
 export interface XdnsRecord extends Struct {
@@ -19,6 +24,6 @@ export interface XdnsRecord extends Struct {
 }
 
 /** @name XdnsRecordId */
-export interface XdnsRecordId extends Struct {}
+export interface XdnsRecordId extends Hash {}
 
 export type PHANTOM_XDNS = 'xdns';

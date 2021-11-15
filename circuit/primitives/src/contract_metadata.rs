@@ -51,7 +51,7 @@ pub struct SourceLanguage {
 
 impl SourceLanguage {
     /// Constructs a new SourceLanguage.
-    pub fn new(language: Language, version: Vec<u8>) -> Self {
+    pub fn new(language: Language, version: Bytes) -> Self {
         SourceLanguage { language, version }
     }
 }

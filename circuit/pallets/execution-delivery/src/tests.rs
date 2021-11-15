@@ -733,7 +733,7 @@ fn test_register_gateway_with_default_polka_like_header() {
 
     let gateway_genesis = GatewayGenesisConfig {
         modules_encoded: None,
-        signed_extension: None,
+        signed_extensions: None,
         runtime_version: TEST_RUNTIME_VERSION,
         genesis_hash: Default::default(),
         extrinsics_version: 0u8,
@@ -779,7 +779,7 @@ fn test_register_gateway_with_u64_substrate_header() {
 
     let gateway_genesis = GatewayGenesisConfig {
         modules_encoded: None,
-        signed_extension: None,
+        signed_extensions: None,
         runtime_version: TEST_RUNTIME_VERSION,
         genesis_hash: Default::default(),
         extrinsics_version: 0u8,
@@ -825,7 +825,7 @@ fn test_register_gateway_with_default_eth_like_header() {
 
     let gateway_genesis = GatewayGenesisConfig {
         modules_encoded: None,
-        signed_extension: None,
+        signed_extensions: None,
         runtime_version: TEST_RUNTIME_VERSION,
         genesis_hash: Default::default(),
         extrinsics_version: 0u8,
@@ -871,7 +871,7 @@ fn test_register_gateway_with_u64_eth_like_header() {
 
     let gateway_genesis = GatewayGenesisConfig {
         modules_encoded: None,
-        signed_extension: None,
+        signed_extensions: None,
         runtime_version: TEST_RUNTIME_VERSION,
         genesis_hash: Default::default(),
         extrinsics_version: 0u8,
@@ -917,7 +917,7 @@ fn test_register_gateway_with_u64_substrate_header_and_allowed_side_effects() {
 
     let gateway_genesis = GatewayGenesisConfig {
         modules_encoded: None,
-        signed_extension: None,
+        signed_extensions: None,
         runtime_version: TEST_RUNTIME_VERSION,
         genesis_hash: Default::default(),
         extrinsics_version: 0u8,

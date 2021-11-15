@@ -104,7 +104,7 @@ fn fetch_xdns_record_from_rpc(
             GatewayGenesisConfig {
                 modules_encoded: Some(modules_vec),
                 extrinsics_version: metadata.extrinsic.version.into(),
-                signed_extension: Some(extension_vec),
+                signed_extensions: Some(extension_vec),
                 runtime_version,
                 genesis_hash: client.genesis_hash.0.to_vec(),
             },

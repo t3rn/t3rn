@@ -1,7 +1,7 @@
 // Auto-generated via `yarn polkadot-types-from-defs`, do not edit
 /* eslint-disable */
 
-import type { Bytes, Enum, Option, Struct, Type, Vec, u16, u64, u8 } from '@polkadot/types';
+import type { Bytes, Enum, Option, Struct, Type, Vec, u16, u32, u64, u8 } from '@polkadot/types';
 import type { ChainId, Parameter } from '@polkadot/types/interfaces/bridges';
 import type { AccountId, Balance, Hash } from '@polkadot/types/interfaces/runtime';
 import type { RuntimeVersion } from '@polkadot/types/interfaces/state';
@@ -91,7 +91,7 @@ export interface GatewayExpectedOutput extends Enum {
 /** @name GatewayGenesisConfig */
 export interface GatewayGenesisConfig extends Struct {
   readonly modules_encoded: Option<Bytes>;
-  readonly signed_extension: Option<Bytes>;
+  readonly signed_extensions: Option<Bytes>;
   readonly runtime_version: RuntimeVersion;
   readonly extrinsics_version: u8;
   readonly genesis_hash: Bytes;
@@ -106,8 +106,12 @@ export interface GatewayPointer extends Struct {
 
 /** @name GatewayType */
 export interface GatewayType extends Enum {
-  readonly isInternal: boolean;
-  readonly isExternal: boolean;
+  readonly isProgrammableInternal: boolean;
+  readonly asProgrammableInternal: u32;
+  readonly isProgrammableExternal: boolean;
+  readonly asProgrammableExternal: u32;
+  readonly isTxOnly: boolean;
+  readonly asTxOnly: u32;
 }
 
 /** @name GatewayVendor */
