@@ -34,6 +34,7 @@ impl<
 pub struct ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub err: Option<Bytes>,
     pub output: Option<Bytes>,
+    pub encoded_effect: Bytes,
     pub inclusion_proof: Option<Bytes>,
     pub executioner: AccountId,
     pub received_at: BlockNumber,
