@@ -31,8 +31,7 @@ export function createGatewayGenesisConfig(
   circuitApi: ApiPromise
 ): GatewayGenesisConfig {
   return circuitApi.createType('GatewayGenesisConfig', [
-    circuitApi.createType('Option<Bytes>'),
-    circuitApi.createType('Option<Bytes>'),
+    circuitApi.createType('Option<Bytes>', metadata.asV14.pallets.toHex()),
     runtimeVersion,
     metadata.asV14.extrinsic.version,
     genesisHash,
