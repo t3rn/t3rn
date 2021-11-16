@@ -73,6 +73,17 @@ impl<
         SystemHashing::<T>::hash(Encode::encode(self).as_ref())
     }
 
+    pub fn is_completed(&self) -> bool {
+        for step in self.full_side_effects.iter() {
+            for full_side_effect in step.iter() {
+                if full_side_effect.confirmed.is_none() {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     // Complete the full side effect of Xtx by assigning confirmed side effect/
     // This can only happen if the side effects is confirmed with respect to
     // the execution steps.
@@ -184,6 +195,8 @@ mod tests {
             }]],
         );
 
+        assert_eq!(xtx.is_completed(), false);
+
         let res = xtx
             .complete_side_effect::<Hashing>(
                 completing_side_effect_1.clone(),
@@ -200,6 +213,8 @@ mod tests {
                 confirmed: Some(completing_side_effect_1),
             }
         );
+
+        assert_eq!(xtx.is_completed(), true);
     }
 
     #[test]
@@ -288,6 +303,8 @@ mod tests {
             }
         );
 
+        assert_eq!(xtx.is_completed(), false);
+
         let res_2 = xtx
             .complete_side_effect::<Hashing>(
                 completing_side_effect_2.clone(),
@@ -305,6 +322,7 @@ mod tests {
                 confirmed: Some(completing_side_effect_2),
             }
         );
+        assert_eq!(xtx.is_completed(), true);
     }
 
     #[test]
@@ -411,6 +429,7 @@ mod tests {
                 confirmed: Some(completing_side_effect_2),
             }
         );
+        assert_eq!(xtx.is_completed(), true);
     }
 
     #[test]
@@ -497,5 +516,7 @@ mod tests {
                 confirmed: None,
             }
         );
+
+        assert_eq!(xtx.is_completed(), false);
     }
 }
