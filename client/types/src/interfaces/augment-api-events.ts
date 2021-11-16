@@ -13,8 +13,8 @@ import type { SessionIndex } from '@polkadot/types/interfaces/session';
 import type { SpecVersion } from '@polkadot/types/interfaces/state';
 import type { DispatchError, DispatchInfo, DispatchResult } from '@polkadot/types/interfaces/system';
 import type { RegistryContractId } from 't3rn-circuit-typegen/interfaces/contracts_registry';
-import type { AllowedSideEffect, SideEffect, SideEffectsDFD, XtxId } from 't3rn-circuit-typegen/interfaces/execution_delivery';
-import type { GatewayType, GatewayVendor } from 't3rn-circuit-typegen/interfaces/primitives';
+import type { AllowedSideEffect, SideEffectsDFD, XtxId } from 't3rn-circuit-typegen/interfaces/execution_delivery';
+import type { ConfirmedSideEffect, GatewayType, GatewayVendor, SideEffect } from 't3rn-circuit-typegen/interfaces/primitives';
 import type { XdnsRecordId } from 't3rn-circuit-typegen/interfaces/xdns';
 
 declare module '@polkadot/api/types/events' {
@@ -260,7 +260,7 @@ declare module '@polkadot/api/types/events' {
       GatewayUpdated: AugmentedEvent<ApiType, [ChainId, Option<Vec<Bytes>>]>;
       NewGatewayRegistered: AugmentedEvent<ApiType, [ChainId, GatewayType, GatewayVendor, Vec<AllowedSideEffect>]>;
       NewSideEffectsAvailable: AugmentedEvent<ApiType, [AccountId, XtxId, Vec<SideEffect>]>;
-      SideEffectConfirmed: AugmentedEvent<ApiType, [AccountId, XtxId, SideEffect, u64]>;
+      SideEffectConfirmed: AugmentedEvent<ApiType, [AccountId, XtxId, ConfirmedSideEffect, u64]>;
       XTransactionReceivedForExec: AugmentedEvent<ApiType, [XtxId, SideEffectsDFD]>;
       XTransactionSuccessfullyCompleted: AugmentedEvent<ApiType, [XtxId]>;
       /**

@@ -13,7 +13,7 @@ export default {
       _enum: ['Substrate', 'Ethereum'],
     },
     GatewayType: {
-      _enum: {'ProgrammableInternal': 'u32', 'ProgrammableExternal': 'u32', 'TxOnly': 'u32'},
+      _enum: { 'ProgrammableInternal': 'u32', 'ProgrammableExternal': 'u32', 'TxOnly': 'u32' },
     },
     GatewayABIConfig: {
       block_number_type_size: 'u16',
@@ -27,7 +27,7 @@ export default {
     },
     GatewayGenesisConfig: {
       modules_encoded: 'Option<Bytes>',
-      signed_extensions: 'Option<Bytes>',
+      // signed_extensions: 'Option<Bytes>',
       runtime_version: 'RuntimeVersion',
       extrinsics_version: 'u8',
       genesis_hash: 'Bytes',
@@ -94,16 +94,27 @@ export default {
       to: 'Option<AccountId>',
     },
     TargetId: 'ChainId',
-    // ContractMetadata: {
-    //   metadata_version: 'Vec<u8>',
-    //   name: 'Vec<u8>',
-    //   version: 'Vec<u8>',
-    //   authors: 'Vec<Vec<u8>>',
-    //   description: 'Option<Vec<u8>>',
-    //   documentation: 'Option<Vec<u8>>',
-    //   repository: 'Option<Vec<u8>>',
-    //   homepage: 'Option<Vec<u8>>',
-    //   license: 'Option<Vec<u8>>',
-    // }
+    SideEffect: {
+      target: 'ChainId',
+      prize: 'BalanceOf',
+      ordered_at: 'BlockNumber',
+      encoded_action: 'Bytes',
+      encoded_args: 'Vec<Bytes>',
+      signature: 'Bytes',
+      enforce_executioner: 'Option<AccountId>',
+    },
+    ConfirmedSideEffect: {
+      err: 'Option<Bytes>',
+      output: 'Option<Bytes>',
+      encoded_effect: 'Bytes',
+      inclusion_proof: 'Option<Bytes>',
+      executioner: 'AccountId',
+      received_at: 'BlockNumber',
+      cost: 'Option<BalanceOf>',
+    },
+    FullSideEffect: {
+      input: 'SideEffect',
+      confirmed: 'Option<ConfirmedSideEffect>'
+    }
   },
 };

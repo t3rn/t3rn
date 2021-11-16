@@ -3,7 +3,7 @@
 
 import type { Bytes, Enum, Option, Struct, Type, Vec, u16, u32, u64, u8 } from '@polkadot/types';
 import type { ChainId, Parameter } from '@polkadot/types/interfaces/bridges';
-import type { AccountId, Balance, Hash } from '@polkadot/types/interfaces/runtime';
+import type { AccountId, Balance, BalanceOf, BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
 import type { RuntimeVersion } from '@polkadot/types/interfaces/state';
 
 /** @name CircuitOutboundMessage */
@@ -27,6 +27,17 @@ export interface Compose extends Struct {
   readonly value: Balance;
   readonly bytes: Bytes;
   readonly input_data: Bytes;
+}
+
+/** @name ConfirmedSideEffect */
+export interface ConfirmedSideEffect extends Struct {
+  readonly err: Option<Bytes>;
+  readonly output: Option<Bytes>;
+  readonly encoded_effect: Bytes;
+  readonly inclusion_proof: Option<Bytes>;
+  readonly executioner: AccountId;
+  readonly received_at: BlockNumber;
+  readonly cost: Option<BalanceOf>;
 }
 
 /** @name ContractActionDesc */
@@ -53,6 +64,12 @@ export interface ExtraMessagePayload extends Struct {
   readonly extra: Bytes;
   readonly tx_signed: Bytes;
   readonly custom_payload: Option<Bytes>;
+}
+
+/** @name FullSideEffect */
+export interface FullSideEffect extends Struct {
+  readonly input: SideEffect;
+  readonly confirmed: Option<ConfirmedSideEffect>;
 }
 
 /** @name GatewayABIConfig */
@@ -91,7 +108,6 @@ export interface GatewayExpectedOutput extends Enum {
 /** @name GatewayGenesisConfig */
 export interface GatewayGenesisConfig extends Struct {
   readonly modules_encoded: Option<Bytes>;
-  readonly signed_extensions: Option<Bytes>;
   readonly runtime_version: RuntimeVersion;
   readonly extrinsics_version: u8;
   readonly genesis_hash: Bytes;
@@ -131,6 +147,17 @@ export interface ProofTriePointer extends Enum {
   readonly isState: boolean;
   readonly isTransaction: boolean;
   readonly isReceipts: boolean;
+}
+
+/** @name SideEffect */
+export interface SideEffect extends Struct {
+  readonly target: ChainId;
+  readonly prize: BalanceOf;
+  readonly ordered_at: BlockNumber;
+  readonly encoded_action: Bytes;
+  readonly encoded_args: Vec<Bytes>;
+  readonly signature: Bytes;
+  readonly enforce_executioner: Option<AccountId>;
 }
 
 /** @name StructDecl */
