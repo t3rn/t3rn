@@ -144,12 +144,12 @@ mkdir -p resources
 
 # Build the chainspec
 ./target/release/circuit-collator build-spec \
---disable-default-bootnode > ./resources/template-local-plain.json
+--disable-default-bootnode > ./resources/circuit-local-plain.json
 
 # Build the raw chainspec file
 ./target/release/circuit-collator build-spec \
---chain=./resources/template-local-plain.json \
---raw --disable-default-bootnode > ./resources/template-local-raw.json
+--chain=./resources/circuit-local-plain.json \
+--raw --disable-default-bootnode > ./resources/circuit-local-raw.json
 
 # Export genesis state to `./resources`, using 2000 as the ParaId
 ./target/release/circuit-collator export-genesis-state --parachain-id 2000 > ./resources/para-2000-genesis
@@ -193,7 +193,7 @@ _Output:_
 2021-05-30 16:57:39 🏷 Node name: Alice
 2021-05-30 16:57:39 👤 Role: AUTHORITY
 2021-05-30 16:57:39 💾 Database: RocksDb at /tmp/parachain/alice/chains/local_testnet/db
-2021-05-30 16:57:39 ⛓  Native runtime: template-parachain-1 (template-parachain-0.tx1.au1)
+2021-05-30 16:57:39 ⛓  Native runtime: circuit-parachain-1 (circuit-parachain-0.tx1.au1)
 2021-05-30 16:57:41 Parachain id: Id(2000)
 2021-05-30 16:57:41 Parachain Account: 5Ec4AhPUwPeyTFyuhGuBbD224mY85LKLMSqSSo33JYWCazU4
 2021-05-30 16:57:41 Parachain genesis state: 0x0000000000000000000000000000000000000000000000000000000000000000000a96f42b5cb798190e5f679bb16970905087a9a9fc612fb5ca6b982b85783c0d03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131400
@@ -315,7 +315,7 @@ reporting _parachain_ blocks:
 
 ## Rococo & Westend Relay Chain Testnets
 
-_Is this Cumulus Parachain Template Rococo & Westend testnets compatible?_ **Yes!**
+_Is this Circuit Parachain Rococo & Westend testnets compatible?_ **Yes!**
 
 -   **Rococo** is the testnet of Kusama (join the
     [Rococo Faucet](https://matrix.to/#/#rococo-faucet:matrix.org) to get testing funds).
