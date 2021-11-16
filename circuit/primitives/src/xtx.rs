@@ -39,10 +39,10 @@ pub struct Xtx<AccountId, BlockNumber, BalanceOf> {
 }
 
 impl<
-    AccountId: Encode + Clone + Debug,
-    BlockNumber: Ord + Copy + Zero + Encode + Clone + Debug,
-    BalanceOf: Copy + Zero + Encode + Decode + Clone + Debug,
-> Xtx<AccountId, BlockNumber, BalanceOf>
+        AccountId: Encode + Clone + Debug,
+        BlockNumber: Ord + Copy + Zero + Encode + Clone + Debug,
+        BalanceOf: Copy + Zero + Encode + Decode + Clone + Debug,
+    > Xtx<AccountId, BlockNumber, BalanceOf>
 {
     pub fn new(
         // Requester of xtx
