@@ -525,6 +525,7 @@ pub mod pallet {
         pub fn confirm_side_effect(
             origin: OriginFor<T>,
             xtx_id: XtxId<T>,
+            side_effect: SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
             confirmed_side_effect: ConfirmedSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
             _inclusion_proof: Option<Bytes>,
             // ToDo: Replace step_confirmation with inclusion_proof
@@ -534,7 +535,7 @@ pub mod pallet {
             let relayer_id = ensure_signed(origin)?;
             // ToDo: parse events to discover their content and verify execution
 
-            let _xtx: Xtx<T::AccountId, T::BlockNumber, BalanceOf<T>> =
+            let mut xtx: Xtx<T::AccountId, T::BlockNumber, BalanceOf<T>> =
                 ActiveXtxMap::<T>::get(xtx_id.clone())
                     .expect("submitted to confirm step id does not match with any Xtx");
 
@@ -592,17 +593,24 @@ pub mod pallet {
 
                 Err(Error::<T>::SideEffectConfirmationInvalidInclusionProof.into())
             } else {
-                // ToDo: Enact on the confirmation step and save the update
-                // Self::update_xtx(&xtx, xtx_id, step_confirmation);
-                Self::deposit_event(Event::SideEffectConfirmed(
-                    relayer_id.clone(),
-                    xtx_id.clone(),
-                    confirmed_side_effect,
-                    0,
-                ));
+                // Check if the side effect has been deposited with respect to the execution order
+                if xtx.complete_side_effect::<bp_circuit::Hasher>(
+                    confirmed_side_effect.clone(),
+                    side_effect.clone(),
+                )? {
+                    Self::deposit_event(Event::SideEffectConfirmed(
+                        relayer_id.clone(),
+                        xtx_id,
+                        confirmed_side_effect,
+                        0,
+                    ));
+                }
 
-                // ToDo: Check whether xtx.side_effects_dfd is now completed before completing xtx
-                Self::deposit_event(Event::XTransactionSuccessfullyCompleted(xtx_id.clone()));
+                if xtx.is_completed() {
+                    // ToDo: Check whether xtx.side_effects_dfd is now completed before completing xtx
+                    Self::deposit_event(Event::XTransactionSuccessfullyCompleted(xtx_id.clone()));
+                }
+
                 Ok(().into())
             }
         }
