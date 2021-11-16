@@ -81,7 +81,6 @@ use t3rn_protocol::side_effects_protocol::*;
 pub type AllowedSideEffect = Vec<u8>;
 
 /// Defines application identifier for crypto keys of this module.
-///
 /// Every module that deals with signatures needs to declare its unique identifier for
 /// its crypto keys.
 /// When offchain worker is signing transactions it's going to request keys of type
