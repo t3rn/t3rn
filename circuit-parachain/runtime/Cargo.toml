@@ -1,9 +1,9 @@
 [package]
 name = "circuit-parachain-runtime"
-version = "0.1.0"
+version = "1.0.0-alpha.0"
 authors = ["devs @ t3rn"]
 description = "Circuit parachain runtime"
-license = "Unlicense"
+license = "Apache 2.0"
 homepage = "https://t3rn.io"
 repository = 'https://github.com/t3rn/t3rn'
 edition = "2018"
