@@ -6,7 +6,6 @@ use sp_std::vec::Vec;
 type Bytes = Vec<u8>;
 pub type SideEffectId<T> = <T as frame_system::Config>::Hash;
 pub type TargetId = [u8; 4];
-type SystemHashing<T> = <T as frame_system::Config>::Hashing;
 
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
 pub struct SideEffect<AccountId, BlockNumber, BalanceOf> {
@@ -57,7 +56,6 @@ mod tests {
     type BalanceOf = u64;
     type AccountId = u64;
     type Hashing = sp_runtime::traits::BlakeTwo256;
-    type Hash = sp_core::H256;
 
     #[test]
     fn successfully_creates_empty_side_effect() {

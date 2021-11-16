@@ -92,7 +92,7 @@ impl<
             return Err("Xtx has no single side effect step to confirm");
         }
 
-        let mut step_with_unconfirmed_steps: Option<usize> = None;
+        let step_with_unconfirmed_steps: Option<usize>;
 
         for (i, step) in self.full_side_effects.iter_mut().enumerate() {
             // Double check there are some side effects for that Xtx - should have been checked at API level tho already
@@ -104,16 +104,16 @@ impl<
                     step_with_unconfirmed_steps = Some(i);
                     // Recalculate the ID for each input side effect and compare with the input one.
                     // Check the current unconfirmed step before attempt to confirm the full side effect.
-                    if full_side_effect.input.generate_id::<Hasher>() == input_side_effect_id
+                    return if full_side_effect.input.generate_id::<Hasher>() == input_side_effect_id
                         && step_with_unconfirmed_steps == Some(i)
                     {
                         // We found the side effect to confirm from inside the unconfirmed step.
                         full_side_effect.confirmed = Some(confirmed.clone());
-                        return Ok(true);
+                        Ok(true)
                     } else {
-                        return Err("Attempt to confirm side effect from the next step, \
-                                but there still is at least one unfishised step");
-                    }
+                        Err("Attempt to confirm side effect from the next step, \
+                                but there still is at least one unfinished step")
+                    };
                 }
             }
         }
@@ -130,7 +130,6 @@ mod tests {
     type BalanceOf = u64;
     type AccountId = u64;
     type Hashing = sp_runtime::traits::BlakeTwo256;
-    type Hash = sp_core::H256;
 
     #[test]
     fn successfully_creates_empty_xtx() {
@@ -166,6 +165,7 @@ mod tests {
         let completing_side_effect_1 = ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {
             err: None,
             output: None,
+            encoded_effect: vec![0],
             inclusion_proof: None,
             executioner: 1,
             received_at: 1,
@@ -226,6 +226,7 @@ mod tests {
 
         let completing_side_effect_1 = ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {
             err: None,
+            encoded_effect: vec![0],
             output: None,
             inclusion_proof: None,
             executioner: 1,
@@ -235,6 +236,7 @@ mod tests {
 
         let completing_side_effect_2 = ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {
             err: None,
+            encoded_effect: vec![1],
             output: None,
             inclusion_proof: None,
             executioner: 2,
@@ -305,13 +307,195 @@ mod tests {
         );
     }
 
-    // #[test]
-    // fn successfully_confirms_2_side_effect_in_2_steps_in_xtx() {
-    //     todo!()
-    // }
-    //
-    // #[test]
-    // fn throws_when_attempts_to_confirm_side_effect_from_2nd_step_without_1st_in_xtx() {
-    //     todo!()
-    // }
+    #[test]
+    fn successfully_confirms_2_side_effect_in_2_steps_in_xtx() {
+        let input_side_effect_1 = SideEffect::<AccountId, BlockNumber, BalanceOf> {
+            target: [0, 0, 0, 0],
+            prize: 0,
+            ordered_at: 0,
+            encoded_action: vec![],
+            encoded_args: vec![],
+            signature: vec![],
+            enforce_executioner: None,
+        };
+
+        let input_side_effect_2 = SideEffect::<AccountId, BlockNumber, BalanceOf> {
+            target: [0, 0, 0, 1],
+            prize: 0,
+            ordered_at: 0,
+            encoded_action: vec![],
+            encoded_args: vec![],
+            signature: vec![],
+            enforce_executioner: None,
+        };
+
+        let completing_side_effect_1 = ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {
+            err: None,
+            encoded_effect: vec![0],
+            output: None,
+            inclusion_proof: None,
+            executioner: 1,
+            received_at: 1,
+            cost: None,
+        };
+
+        let completing_side_effect_2 = ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {
+            err: None,
+            encoded_effect: vec![1],
+            output: None,
+            inclusion_proof: None,
+            executioner: 2,
+            received_at: 1,
+            cost: None,
+        };
+
+        // This time Xtx contains 2 steps each consisting from 1 side effect
+        let mut xtx = Xtx::<AccountId, BlockNumber, BalanceOf>::new(
+            0,
+            vec![],
+            None,
+            None,
+            None,
+            vec![
+                vec![FullSideEffect {
+                    input: input_side_effect_1.clone(),
+                    confirmed: None,
+                }],
+                vec![FullSideEffect {
+                    input: input_side_effect_2.clone(),
+                    confirmed: None,
+                }],
+            ],
+        );
+
+        let res_1 = xtx
+            .complete_side_effect::<Hashing>(
+                completing_side_effect_1.clone(),
+                input_side_effect_1.clone(),
+            )
+            .unwrap();
+
+        assert_eq!(res_1, true);
+        // Check that the first xtx.full_side_effects has been updated
+        assert_eq!(
+            xtx.full_side_effects[0][0],
+            FullSideEffect {
+                input: input_side_effect_1.clone(),
+                confirmed: Some(completing_side_effect_1),
+            }
+        );
+
+        // Check that the second xtx.full_side_effects has NOT been updated
+        assert_eq!(
+            xtx.full_side_effects[1][0],
+            FullSideEffect {
+                input: input_side_effect_2.clone(),
+                confirmed: None,
+            }
+        );
+
+        let res_2 = xtx
+            .complete_side_effect::<Hashing>(
+                completing_side_effect_2.clone(),
+                input_side_effect_2.clone(),
+            )
+            .unwrap();
+
+        assert_eq!(res_2, true);
+
+        // Check that the second xtx.full_side_effects has now been updated
+        assert_eq!(
+            xtx.full_side_effects[1][0],
+            FullSideEffect {
+                input: input_side_effect_2,
+                confirmed: Some(completing_side_effect_2),
+            }
+        );
+    }
+
+    #[test]
+    fn throws_when_attempts_to_confirm_side_effect_from_2nd_step_without_1st_in_xtx() {
+        let input_side_effect_1 = SideEffect::<AccountId, BlockNumber, BalanceOf> {
+            target: [0, 0, 0, 0],
+            prize: 0,
+            ordered_at: 0,
+            encoded_action: vec![],
+            encoded_args: vec![],
+            signature: vec![],
+            enforce_executioner: None,
+        };
+
+        let input_side_effect_2 = SideEffect::<AccountId, BlockNumber, BalanceOf> {
+            target: [0, 0, 0, 1],
+            prize: 0,
+            ordered_at: 0,
+            encoded_action: vec![],
+            encoded_args: vec![],
+            signature: vec![],
+            enforce_executioner: None,
+        };
+
+        let _completing_side_effect_1 = ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {
+            err: None,
+            encoded_effect: vec![0],
+            output: None,
+            inclusion_proof: None,
+            executioner: 1,
+            received_at: 1,
+            cost: None,
+        };
+
+        let completing_side_effect_2 = ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {
+            err: None,
+            encoded_effect: vec![1],
+            output: None,
+            inclusion_proof: None,
+            executioner: 2,
+            received_at: 1,
+            cost: None,
+        };
+
+        // This time Xtx contains 2 steps each consisting from 1 side effect
+        let mut xtx = Xtx::<AccountId, BlockNumber, BalanceOf>::new(
+            0,
+            vec![],
+            None,
+            None,
+            None,
+            vec![
+                vec![FullSideEffect {
+                    input: input_side_effect_1.clone(),
+                    confirmed: None,
+                }],
+                vec![FullSideEffect {
+                    input: input_side_effect_2.clone(),
+                    confirmed: None,
+                }],
+            ],
+        );
+
+        let res_2_err = xtx.complete_side_effect::<Hashing>(
+            completing_side_effect_2.clone(),
+            input_side_effect_2.clone(),
+        );
+
+        assert_eq!(res_2_err, Err("Attempt to confirm side effect from the next step, but there still is at least one unfinished step"));
+
+        // Check that the firsts AND second xtx.full_side_effects has NOT been updated
+        assert_eq!(
+            xtx.full_side_effects[0][0],
+            FullSideEffect {
+                input: input_side_effect_1.clone(),
+                confirmed: None,
+            }
+        );
+
+        assert_eq!(
+            xtx.full_side_effects[1][0],
+            FullSideEffect {
+                input: input_side_effect_2.clone(),
+                confirmed: None,
+            }
+        );
+    }
 }
