@@ -1,7 +1,7 @@
 // Import
 import { ApiPromise, WsProvider } from '@polkadot/api';
 
-export async function fetchCircuitEvents(api) {    
+export async function fetchCircuitEvents(api: ApiPromise) {
 
     // Subscribe to system events via storage
     api.query.system.events((events) => {
