@@ -2,15 +2,16 @@
   "name": "@t3rn/relayer",
   "version": "0.1.0",
   "description": "t3rn relayer",
-  "main": "index.js",
-  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
+    "start": "ts-node src/index.ts"
   },
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "@polkadot/api": "^6.7.1"
+    "@polkadot/api": "^6.7.1",
+    "@t3rn/types": "file:../types",
+    "ts-node": "^10.4.0",
+    "typescript": "^4.4.4"
   }
 }

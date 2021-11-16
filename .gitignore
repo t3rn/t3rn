@@ -8,7 +8,9 @@ comms
 /beefy/target/
 /build/local_beefy_spec.json
 *.iml
-client/relayer/node_modules/*
+client/*/node_modules/*
+client/node_modules/*
 
 # accound id info
 /.devkey
+client/circuit-integration-tests/node_modules/.bin/_mocha
