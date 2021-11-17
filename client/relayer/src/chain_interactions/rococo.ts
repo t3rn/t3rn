@@ -3,48 +3,41 @@ import { xxhashAsU8a } from '@polkadot/util-crypto';
 import { u8aToHex } from '@polkadot/util';
 import { TypeRegistry } from '@polkadot/types';
 import type { Hash } from '@polkadot/types/interfaces/runtime';
+import { TransactionResult } from '../utils/types';
 
-export interface TransactionResult {
-  blockHash: Hash;
-  status: boolean;
-}
+export async function submit_transfer_to_rococo_and_track(api: ApiPromise) : Promise<TransactionResult> {
+  return new Promise(async resolve => {
+    // ToDo : Replace with real signer
+    const keyring = new Keyring({ type: 'sr25519' });
+    const alice = keyring.addFromUri('//Alice');
+    const bob = keyring.addFromUri('//Bob');
 
-export async function submit_transfer_to_rococo_and_track(api: ApiPromise): Promise<TransactionResult> {
+    console.log(`Submitting transfer`);
 
-  // ToDo : Replace with real signer
-  const keyring = new Keyring({ type: 'sr25519' });
-  const alice = keyring.addFromUri('//Alice');
-  const bob = keyring.addFromUri('//Bob');
+    // Make a transfer from Alice to BOB, waiting for inclusion
+    const unsub = await api.tx.balances
+      .transfer(bob.address, 12345)
+      .signAndSend(alice, (result) => {
+        console.log(`Current status is ${result.status}`);
 
-  console.log(`Submitting transfer`);
+        if (result.status.isFinalized) {
+          console.log(`Transaction finalized at blockHash ${result.status.asFinalized}`);
 
-  let resultss: TransactionResult;
+          const extrinsicEvent = result.events.filter((item) => {
+            return (item.event.method === 'ExtrinsicSuccess' || item.event.method === 'ExtrinsicFailed');
+          });
 
-  // Make a transfer from Alice to BOB, waiting for inclusion
-  const unsub = await api.tx.balances
-  .transfer(bob.address, 12345)
-  .signAndSend(alice, (result) => {
-    console.log(`Current status is ${result.status}`);
+          unsub();
 
-    if (result.status.isFinalized) {
-      console.log(`Transaction finalized at blockHash ${result.status.asFinalized}`);
+          // there can only be one event
+          resolve({
+            'blockHash': result.status.asFinalized as Hash,
+            'status': (extrinsicEvent[0].event.method === 'ExtrinsicSuccess') ? true : false,
+          });
+        }
 
-      const extrinsicEvent = result.events.filter((item) => {
-        return (item.event.method === 'ExtrinsicSuccess' || item.event.method === 'ExtrinsicFailed');
       });
-
-      unsub();
-
-      // there can only be one event
-      resultss = {
-        'blockHash': result.status.asFinalized as Hash,
-        'status': (extrinsicEvent[0].event.method === 'ExtrinsicSuccess') ? true : false,
-      };
-    }
-
   });
-  // @ts-ignore
-  return resultss;
 }
 
 function generateSystemEventKey() {

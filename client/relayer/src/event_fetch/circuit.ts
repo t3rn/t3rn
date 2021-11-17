@@ -1,5 +1,7 @@
-// Import
-import { ApiPromise, WsProvider } from '@polkadot/api';
+import { Codec } from '@polkadot/types/types';
+import { SideEffect } from './../../../types/src/interfaces/primitives/types';
+import { ApiPromise } from '@polkadot/api';
+import { NewSideEffectsAvailableEvent } from '../utils/types';
 
 export async function fetchCircuitEvents(api: ApiPromise) {
 
@@ -7,19 +9,35 @@ export async function fetchCircuitEvents(api: ApiPromise) {
     api.query.system.events((events) => {
         console.log(`\nReceived ${events.length} events from Circuit:`);
 
-        // // Loop through the Vec<EventRecord>
-        // events.forEach((record) => {
-        //     // Extract the phase, event and the event types
-        //     const { event, phase } = record;
-        //     const types = event.typeDef;
+        // NewSideEffectsAvailable: AugmentedEvent<ApiType, [AccountId, XtxId, Vec<SideEffect>]>;
 
-        //     // Show what we are busy with
-        //     console.log(`\t${event.section}:${event.method}`);
+        events.forEach((record) => {
+            // Extract the phase, event and the event types
+            const { event } = record;
+            const types = event.typeDef;
+            if (event.method === "NewSideEffectsAvailable") {
 
-        //     // Loop through each of the parameters, displaying the type and data
-        //     event.data.forEach((data, index) => {
-        //         console.log(`\t\t\t${types[index].type}: ${data.toString()}`);
-        //     });
-        // });
+                let parsed = <NewSideEffectsAvailableEvent>{};
+                // parse out this particular event
+                for (let index = 0; index < event.data.length; index++) {
+
+                    switch (types[index].type) {
+                        case "AccountId":
+                            parsed.requester = api.createType("AccountId", event.data[index]);
+                            break;
+                        case "XtxId":
+                            parsed.xtx_id = api.createType("XtxId", event.data[index]);
+                            break;
+                        case "Vec<SideEffect>":
+                            parsed.sideEffects = api.createType("Vec<SideEffect>", event.data[index]);
+                            break;
+                    }
+                }
+
+                // queue the job
+                console.log("Printing the object created");
+                console.log(parsed);
+            }
+        });
     });
 }
