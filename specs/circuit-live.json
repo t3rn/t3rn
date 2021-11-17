@@ -4,7 +4,7 @@
   "chainType": "Live",
   "bootNodes": [],
   "telemetryEndpoints": null,
-  "protocolId": "circuit",
+  "protocolId": "t3rn",
   "properties": {
     "ss58Format": 1333,
     "tokenDecimals": 12,
