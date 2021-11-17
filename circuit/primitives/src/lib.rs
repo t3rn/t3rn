@@ -161,6 +161,7 @@ pub enum ContractAccessError {
     IsTombstone,
 }
 
+/// Exec phase consists out of many parallel steps
 #[derive(Eq, PartialEq, Encode, Decode, Debug, Clone, Default)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct ExecPhase<Account, Balance> {
