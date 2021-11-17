@@ -9,7 +9,7 @@ services:
       - "9944:9944"
     volumes:
       - type: bind
-        source: ./rococo-local.json
+        source: ./specs/rococo-local.json
         target: /chainspec.json
         read_only: true
     command: >
@@ -37,7 +37,7 @@ services:
       - "9945:9944"
     volumes:
       - type: bind
-        source: ./rococo-local.json
+        source: ./specs/rococo-local.json
         target: /chainspec.json
         read_only: true
     command: >
@@ -65,11 +65,11 @@ services:
       - "9954:9944"
     volumes:
       - type: bind
-        source: ./rococo-local.json
+        source: ./specs/rococo-local.json
         target: /chainspec.json
         read_only: true
       - type: bind
-        source: ./circuit-local.json
+        source: ./specs/circuit-local.json
         target: /circuit.json
         read_only: true
       - type: bind
@@ -104,11 +104,11 @@ services:
       - "9955:9944"
     volumes:
       - type: bind
-        source: ./rococo-local.json
+        source: ./specs/rococo-local.json
         target: /chainspec.json
         read_only: true
       - type: bind
-        source: ./circuit-local.json
+        source: ./specs/circuit-local.json
         target: /circuit.json
         read_only: true
       - type: bind
@@ -139,7 +139,7 @@ services:
     image: "t3rn/circuit-parachain:latest"
     volumes:
       - type: bind
-        source: ./circuit-local.json
+        source: ./specs/circuit-local.json
         target: /circuit.json
         read_only: true
     command: >
@@ -151,7 +151,7 @@ services:
     image: "t3rn/circuit-parachain:latest"
     volumes:
       - type: bind
-        source: ./circuit-local.json
+        source: ./specs/circuit-local.json
         target: /circuit.json
         read_only: true
       - type: bind
