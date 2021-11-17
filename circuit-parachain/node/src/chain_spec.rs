@@ -234,15 +234,15 @@ pub fn circuit_config(id: ParaId) -> ChainSpec {
 				// initial collators.
 				vec![
 					(
-						hex!["0e1f9741c4090d25d27b76d2e24c4f86cba2ba379f2657f391fca56eac3cf96b"]
+						hex!["4c5d8611f64604f0413b8277be968a7aa8295972399eb466989d1969e2bfbc7d"]
 							.into(),
-						hex!["0e1f9741c4090d25d27b76d2e24c4f86cba2ba379f2657f391fca56eac3cf96b"]
+						hex!["4c5d8611f64604f0413b8277be968a7aa8295972399eb466989d1969e2bfbc7d"]
 							.unchecked_into(),
 					),
 					(
-						hex!["6c6e5cc4bfa6ca9386f2d9a47b2f233e72fa7ebca321ca9ec2b81f55009d0b05"]
+						hex!["089fcfb60670b8c86237df9acdafc59b27b7c5a5bd3990da7bf753940767b023"]
 							.into(),
-						hex!["6c6e5cc4bfa6ca9386f2d9a47b2f233e72fa7ebca321ca9ec2b81f55009d0b05"]
+						hex!["089fcfb60670b8c86237df9acdafc59b27b7c5a5bd3990da7bf753940767b023"]
 							.unchecked_into(),
 					),
 				],
