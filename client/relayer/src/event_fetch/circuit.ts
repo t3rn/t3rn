@@ -1,9 +1,10 @@
+import { Emitter } from './../utils/types';
 import { Codec } from '@polkadot/types/types';
 import { SideEffect } from './../../../types/src/interfaces/primitives/types';
 import { ApiPromise } from '@polkadot/api';
 import { NewSideEffectsAvailableEvent } from '../utils/types';
 
-export async function fetchCircuitEvents(api: ApiPromise) {
+export async function fetchCircuitEvents(api: ApiPromise, emitter: Emitter) {
 
     // Subscribe to system events via storage
     api.query.system.events((events) => {
@@ -34,9 +35,10 @@ export async function fetchCircuitEvents(api: ApiPromise) {
                     }
                 }
 
-                // queue the job
+                // raise event for the parsed payload
                 console.log("Printing the object created");
-                console.log(parsed);
+                // console.log(parsed);
+                emitter.emitSideEffect(parsed);
             }
         });
     });
