@@ -1,5 +1,4 @@
-use super::pallet::*;
-use crate::{Bytes, DispatchResultWithPostInfo};
+use crate::{Bytes, DispatchResultWithPostInfo, Error};
 use codec::{Decode, Encode};
 use sp_application_crypto::Public;
 use sp_std::{vec, vec::Vec};

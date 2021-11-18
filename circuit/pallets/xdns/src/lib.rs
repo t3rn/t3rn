@@ -24,7 +24,6 @@
 
 use crate::types::{AllowedSideEffect, XdnsRecord, XdnsRecordId};
 use codec::{Decode, Encode};
-use frame_system::ensure_root;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -124,9 +123,13 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
-            // ToDo: Uncomment when switching into a model with open registration. Sudo access for now.
-            // xdns_record.assign_registrant(registrant.clone());
             let registrant = Default::default();
+
+            // early exit if record already exists in storage
+            let xdns_record_id = T::Hashing::hash(&gateway_id.encode());
+            if <XDNSRegistry<T>>::contains_key(&xdns_record_id) {
+                return Err(Error::<T>::XdnsRecordAlreadyExists.into());
+            }
 
             let mut xdns_record = XdnsRecord::<T::AccountId>::new(
                 url,
@@ -138,20 +141,18 @@ pub mod pallet {
                 allowed_side_effects,
             );
 
+            // ToDo: Uncomment when switching into a model with open registration. Sudo access for now.
+            // xdns_record.assign_registrant(registrant.clone());
+
             let now = TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now())
                 .map_err(|_| "Unable to compute current timestamp")?;
 
             xdns_record.set_last_finalized(now);
 
             let xdns_record_id = xdns_record.generate_id::<T>();
-
-            if <XDNSRegistry<T>>::contains_key(&xdns_record_id) {
-                Err(Error::<T>::XdnsRecordAlreadyExists.into())
-            } else {
-                <XDNSRegistry<T>>::insert(&xdns_record_id, xdns_record);
-                Self::deposit_event(Event::<T>::XdnsRecordStored(registrant, xdns_record_id));
-                Ok(().into())
-            }
+            <XDNSRegistry<T>>::insert(&xdns_record_id, xdns_record);
+            Self::deposit_event(Event::<T>::XdnsRecordStored(registrant, xdns_record_id));
+            Ok(().into())
         }
 
         /// Updates the last_finalized field for an xdns_record from the onchain registry. Root only access.

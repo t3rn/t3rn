@@ -1358,7 +1358,7 @@ dependencies = [
  "pallet-grandpa",
  "pallet-mmr",
  "pallet-mmr-primitives",
- "pallet-multi-finality-verifier",
+ "pallet-multi-finality-verifier 0.1.0",
  "pallet-randomness-collective-flip",
  "pallet-session",
  "pallet-shift-session-manager",
@@ -4830,33 +4830,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0debeb9fcf88823ea64d64e4a815ab1643f33127d995978e099942ce38f25238"
 
 [[package]]
-name = "multi-finality-verifier"
-version = "0.1.0"
-dependencies = [
- "bp-header-chain 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
- "bp-polkadot-core 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
- "bp-rialto 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
- "bp-runtime 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
- "bp-test-utils 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
- "finality-grandpa",
- "frame-support",
- "frame-system",
- "log",
- "pallet-balances",
- "pallet-sudo",
- "pallet-timestamp",
- "pallet-xdns",
- "parity-scale-codec",
- "serde",
- "sp-finality-grandpa",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "sp-trie",
- "t3rn-primitives",
-]
-
-[[package]]
 name = "multibase"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5406,7 +5379,7 @@ dependencies = [
  "pallet-evm",
  "pallet-evm-precompile-simple",
  "pallet-im-online",
- "pallet-multi-finality-verifier",
+ "pallet-multi-finality-verifier 0.1.0",
  "pallet-offences",
  "pallet-randomness-collective-flip",
  "pallet-session",
@@ -5770,6 +5743,33 @@ dependencies = [
  "parity-scale-codec",
  "serde",
  "sp-finality-grandpa",
+ "sp-runtime",
+ "sp-std",
+ "sp-trie",
+ "t3rn-primitives",
+]
+
+[[package]]
+name = "pallet-multi-finality-verifier"
+version = "0.2.0"
+dependencies = [
+ "bp-header-chain 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
+ "bp-polkadot-core 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
+ "bp-rialto 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
+ "bp-runtime 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
+ "bp-test-utils 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
+ "finality-grandpa",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-balances",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "pallet-xdns",
+ "parity-scale-codec",
+ "serde",
+ "sp-finality-grandpa",
+ "sp-io",
  "sp-runtime",
  "sp-std",
  "sp-trie",

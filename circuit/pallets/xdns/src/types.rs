@@ -22,7 +22,7 @@ pub type XdnsGatewayId<T> = <T as frame_system::Config>::Hash;
 pub type AllowedSideEffect = Vec<u8>;
 
 /// A preliminary representation of a xdns_record in the onchain registry.
-#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
+#[derive(Clone, Debug, Eq, PartialEq, Encode, Decode)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct XdnsRecord<AccountId> {
     /// SCALE-encoded url string on where given Consensus System can be accessed
