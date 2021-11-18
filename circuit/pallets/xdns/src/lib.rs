@@ -23,7 +23,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use frame_system::{ensure_root, ensure_signed};
+use frame_system::ensure_root;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};

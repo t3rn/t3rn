@@ -11,6 +11,7 @@ use crate::{
 use codec::Encode;
 use frame_support::{assert_err, assert_ok, weights::Weight};
 use hex_literal::hex;
+use sp_core::sr25519::Signature;
 use sp_core::H256;
 use sp_core::{crypto::Pair, sr25519, Hasher};
 use sp_io::TestExternalities;
@@ -23,6 +24,64 @@ use std::str::FromStr;
 use t3rn_primitives::{GatewayExpectedOutput, GatewayPointer, GatewayType, GatewayVendor};
 use volatile_vm::wasm::{PrefabWasmModule, RunMode};
 use volatile_vm::VolatileVM;
+
+use sp_application_crypto::RuntimePublic;
+use t3rn_primitives::*;
+
+pub fn assert_signed_payload(
+    actual: CircuitOutboundMessage,
+    submitter: sp_core::sr25519::Public,
+    exp_arguments: Vec<Vec<u8>>,
+    exp_output: Vec<GatewayExpectedOutput>,
+    exp_call_bytes: Vec<u8>,
+    expected_payload: Vec<u8>,
+    expected_module: &str,
+    expected_fn: &str,
+) {
+    match actual {
+        CircuitOutboundMessage {
+            name: _,
+            module_name: _,
+            method_name: _,
+            arguments,
+            expected_output,
+            sender: _,
+            target: _,
+            extra_payload,
+            gateway_vendor: gateway_chain,
+        } => {
+            assert_eq!(arguments, exp_arguments);
+            assert_eq!(expected_output, exp_output);
+
+            match extra_payload {
+                Some(ExtraMessagePayload {
+                    signer,
+                    module_name,
+                    method_name,
+                    call_bytes,
+                    signature,
+                    extra,
+                    custom_payload: _,
+                    tx_signed: _,
+                }) => {
+                    assert_eq!(signer, submitter.encode());
+                    assert_eq!(module_name, expected_module.encode());
+                    assert_eq!(method_name, expected_fn.encode());
+                    assert_eq!(call_bytes, exp_call_bytes);
+                    assert_eq!(gateway_chain, GatewayVendor::Substrate);
+
+                    let expected_message = expected_payload;
+                    assert!(submitter.verify(
+                        &expected_message,
+                        &Signature::from_slice(&signature.as_slice()[1..65]).into(),
+                    ));
+                    assert_eq!(extra, vec![0, 0, 0]);
+                }
+                _ => assert!(false),
+            }
+        }
+    }
+}
 
 pub fn make_compose_out_of_raw_wat_code<T: Config>(
     wat_string_path: &str,
@@ -293,7 +352,7 @@ fn pre_run_produces_outbound_messages_if_declared_remote_target() {
         let test_messages_at_this_round = succ_response.0;
         let first_message = test_messages_at_this_round[0].clone();
 
-        crate::message_assembly::substrate_gateway_protocol::tests::assert_signed_payload(
+        assert_signed_payload(
             first_message,
             submitter.into(),
             vec![vec![4, 95], vec![1, 2, 3, 4]], // arguments

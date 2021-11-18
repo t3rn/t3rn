@@ -80,16 +80,10 @@ cargo build --release --features runtime-benchmarks
 
 This concludes the process of generating weights for the pallet.
 
-## Development Roadmap 
-#### Phase 1: [Standalone Gateways & Contracts Compilation SDK](./roadmap/initial_development_phase.md)
-#### Phase 2: Live Circuit Prototype
-#### Phase 3: Feature-Complete PoA Circuit
-#### Phase 4: Trustless PoS Circuit
-
 ## License
 
 ---
-Copyright 2020 Maciej Baj.
+Copyright 2020 t3rn Ltd.
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,

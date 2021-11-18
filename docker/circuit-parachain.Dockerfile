@@ -11,7 +11,7 @@ RUN useradd -m -u 1000 -U -s /bin/sh -d /t3rn t3rn && \
 USER t3rn
 
 COPY --chown=t3rn circuit-parachain/target/release /t3rn
-RUN chmod uog+x /t3rn/parachain-collator
+RUN chmod uog+x /t3rn/circuit-collator
 
 # 9933 for RPC call
 # 9944 for Websocket
@@ -19,4 +19,4 @@ EXPOSE 9933 9944
 
 VOLUME ["/data"]
 
-CMD ["/t3rn/parachain-collator"]
+CMD ["/t3rn/circuit-collator"]

@@ -1,8 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use crate::pallet::Config;
-
 use bp_messages::LaneId;
+use pallet_bridge_messages::Config;
 use sp_std::vec;
 use sp_std::vec::*;
 

@@ -5,13 +5,15 @@ use frame_metadata::v13::{
 use sp_core::H256;
 use sp_version::{ApisVec, RuntimeVersion};
 
+use sp_core::crypto::KeyTypeId;
 use sp_std::vec;
 use sp_std::vec::Vec;
 
-use crate::AuthorityId;
+pub type AuthorityId = crate::signer::app::Public;
+pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"circ");
 
-use crate::message_assembly::chain_generic_metadata::*;
-use crate::message_assembly::substrate_gateway_protocol::*;
+use crate::chain_generic_metadata::*;
+use crate::substrate_gateway_protocol::*;
 
 #[cfg(any(feature = "std", test))]
 use relay_substrate_client::{ChainBase, Client};

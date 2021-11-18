@@ -30,11 +30,14 @@ use sp_runtime::RuntimeDebug as Debug;
 use std::fmt::Debug;
 
 use sp_std::prelude::*;
+use sp_std::vec;
 
 pub mod abi;
 pub mod contract_metadata;
 pub mod gateway_inbound_protocol;
+pub mod side_effect;
 pub mod transfers;
+pub mod xtx;
 
 pub use gateway_inbound_protocol::GatewayInboundProtocol;
 
