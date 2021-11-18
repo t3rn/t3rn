@@ -1,3 +1,4 @@
+import { TransferArguments } from './../utils/types';
 import { ApiPromise, Keyring } from '@polkadot/api';
 import { xxhashAsU8a } from '@polkadot/util-crypto';
 import { u8aToHex } from '@polkadot/util';
@@ -5,19 +6,13 @@ import { TypeRegistry } from '@polkadot/types';
 import type { Hash } from '@polkadot/types/interfaces/runtime';
 import { TransactionResult } from '../utils/types';
 
-export async function submit_transfer_to_rococo_and_track(api: ApiPromise) : Promise<TransactionResult> {
+export async function submit_transfer(api: ApiPromise, parameters: TransferArguments): Promise<TransactionResult> {
   return new Promise(async resolve => {
-    // ToDo : Replace with real signer
-    const keyring = new Keyring({ type: 'sr25519' });
-    const alice = keyring.addFromUri('//Alice');
-    const bob = keyring.addFromUri('//Bob');
-
     console.log(`Submitting transfer`);
 
-    // Make a transfer from Alice to BOB, waiting for inclusion
     const unsub = await api.tx.balances
-      .transfer(bob.address, 12345)
-      .signAndSend(alice, (result) => {
+      .transfer(parameters.to, parameters.amount)
+      .signAndSend(parameters.from, (result) => {
         console.log(`Current status is ${result.status}`);
 
         if (result.status.isFinalized) {
