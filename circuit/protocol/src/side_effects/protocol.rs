@@ -29,16 +29,10 @@ pub type String = Vec<u8>;
 ///       "call:dirty",
 ///       "call:escrow?",
 ///       "call:reversible?",
-///
-///       ToDo: Move Vendor Parser as dependency only for Confirm.
-///
 ///       Usage:
 ///         ExecDelivery Validates incoming SideEffects and their arguments:
 ///             Has the target_id and needs to load gateway_abi for it - lazy loading would make
 ///             sense
-///
-///       Todo: UniversalSEProtocol vs ValidateAndGenerateProtoocol + ConfirmSEProtocol
-///       -> Universal Lazy Loading Protocol Makes sense
 ///
 ///       USEProtocol.lazy_validate<XD(side_effect)
 ///         USEProtocol::lazy_load_gateway(side_effect.target_id)
@@ -52,13 +46,10 @@ pub type String = Vec<u8>;
 ///
 ///         3VM.use_protocol.generate_side_effect(arguments, target_id)
 ///
-
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
 pub struct TransferSideEffectProtocol {}
 
 impl SideEffectProtocol for TransferSideEffectProtocol {
-    // const NAME: &'static str = "transfer:dirty";
-
     fn get_name(&self) -> &'static str {
         "transfer:dirty"
     }
@@ -104,11 +95,24 @@ pub trait SideEffectProtocol {
     fn get_arguments_abi(&self) -> Vec<Type>;
     fn get_arguments_2_state_mapper(&self) -> Vec<&'static str>;
     fn get_confirming_events(&self) -> Vec<&'static str>;
+    fn get_escrowed_events(&self) -> Vec<&'static str> {
+        unimplemented!()
+    }
+    fn get_reversible_exec(&self) -> Vec<&'static str> {
+        unimplemented!()
+    }
+    fn get_reversible_commit(&self) -> Vec<&'static str> {
+        unimplemented!()
+    }
+    fn get_reversible_revert(&self) -> Vec<&'static str> {
+        unimplemented!()
+    }
 
     fn populate_state(&self, _encoded_args: Arguments) -> Result<(), &'static str> {
         // STATE_MAPPER.0 -> "from" = encoded_args.0;
         Ok(())
     }
+
     // For now just assume that State can only be recreated from args? where arg index (usize) will be translated to the arguments name and therefore could be re-used in created expectations in the signature for confirming Events
 
     fn validate_args(
@@ -202,34 +206,5 @@ pub mod tests {
         type ExistentialDeposit = ExistentialDeposit;
         type AccountStore = System;
         type WeightInfo = ();
-    }
-
-    pub fn load_standard_side_effects() {}
-
-    #[test]
-    fn successfully_confirms_encoded_balance_transferred_event() {
-        let encoded_balance_transfer_event = pallet_balances::Event::<Test>::Transfer(
-            hex!("0909090909090909090909090909090909090909090909090909090909090909").into(),
-            hex!("0606060606060606060606060606060606060606060606060606060606060606").into(),
-            1,
-        );
-
-        assert_eq!(
-            encoded_balance_transfer_event.encode(),
-            vec![
-                2, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                9, 9, 9, 9, 9, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-                6, 6, 6, 6, 6, 6, 6, 6, 6, 1, 0, 0, 0, 0, 0, 0, 0
-            ]
-        );
-    }
-
-    #[test]
-    fn successfully_creates_universal_side_effects_for_confirmation() {
-        let _encoded_balance_transfer_event = pallet_balances::Event::<Test>::Transfer(
-            hex!("0909090909090909090909090909090909090909090909090909090909090909").into(),
-            hex!("0606060606060606060606060606060606060606060606060606060606060606").into(),
-            1,
-        );
     }
 }

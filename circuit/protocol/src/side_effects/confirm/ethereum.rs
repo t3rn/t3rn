@@ -13,7 +13,7 @@ pub type String = Vec<u8>;
 struct EthereumSideEffectsParser {}
 
 impl VendorSideEffectsParser for EthereumSideEffectsParser {
-    fn parse_event(
+    fn parse_event<T: pallet_balances::Config>(
         name: &'static str,
         _event_encoded: Vec<u8>,
         _signature: &'static str,

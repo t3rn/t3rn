@@ -17,7 +17,7 @@ pub trait SideEffectConfirmationProtocol: SideEffectProtocol {
     //  3. Check each argument of decoded "encoded_remote_events" against the values from STATE
     //  4. Return error that will potentially be a subject for a punishment of the executioner - up to the misbehaviour manager
     // confirm.rs: SideEffectEventsConfirmation("Event::escrow_instantiated(from,to,u64,u32,u32)"), // from here on the trust falls back on the target escrow to emit the claim / refund txs
-    fn confirm<VendorParser: VendorSideEffectsParser>(
+    fn confirm<T: pallet_balances::Config, VendorParser: VendorSideEffectsParser>(
         &self,
         encoded_remote_events: Vec<Vec<u8>>,
     ) -> Result<(), &'static str> {
@@ -30,7 +30,7 @@ pub trait SideEffectConfirmationProtocol: SideEffectProtocol {
             .enumerate()
             .map(|(i, encoded_event)| {
                 let expected_event_signature = Self::get_confirming_events(self)[i];
-                VendorParser::parse_event(
+                VendorParser::parse_event::<T>(
                     Self::get_name(self),
                     encoded_event.clone(),
                     expected_event_signature,
