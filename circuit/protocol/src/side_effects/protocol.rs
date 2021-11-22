@@ -1,5 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use crate::side_effects::volatile::{LocalState, Volatile};
 use codec::{Decode, Encode};
 use sp_std::vec::*;
 use t3rn_primitives::abi::{GatewayABIConfig, Type};
@@ -108,8 +109,17 @@ pub trait SideEffectProtocol {
         unimplemented!()
     }
 
-    fn populate_state(&self, _encoded_args: Arguments) -> Result<(), &'static str> {
-        // STATE_MAPPER.0 -> "from" = encoded_args.0;
+    fn populate_state(
+        &self,
+        encoded_args: Arguments,
+        local_state: &mut LocalState,
+    ) -> Result<(), &'static str> {
+        let mapper = self.get_arguments_2_state_mapper();
+        assert!(mapper.len() == encoded_args.len());
+        for (i, arg) in encoded_args.iter().enumerate() {
+            let arg_name = mapper[i];
+            local_state.insert(arg_name, arg.to_vec())?;
+        }
         Ok(())
     }
 
@@ -119,6 +129,7 @@ pub trait SideEffectProtocol {
         &self,
         args: Arguments,
         _gateway_abi: GatewayABIConfig,
+        local_state: &mut LocalState,
     ) -> Result<(), &'static str> {
         // Args number must match with the args number in the protocol
         assert!(Self::get_arguments_abi(self).len() == args.len());
@@ -131,7 +142,7 @@ pub trait SideEffectProtocol {
             let type_n = &Self::get_arguments_abi(self)[i];
             type_n.eval(arg.clone())?;
         }
-        self.populate_state(args);
+        self.populate_state(args, local_state);
 
         // ToDo: Maybe return a signature assuming it isn't created by a user?
         Ok(())
@@ -141,9 +152,8 @@ pub trait SideEffectProtocol {
 #[cfg(test)]
 pub mod tests {
 
-    use codec::Encode;
     use frame_support::{parameter_types, weights::constants::WEIGHT_PER_SECOND};
-    use hex_literal::hex;
+
     use sp_runtime::{
         testing::{Header, H256},
         traits::{BlakeTwo256, IdentityLookup},

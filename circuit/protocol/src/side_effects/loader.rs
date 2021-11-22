@@ -10,6 +10,7 @@ use t3rn_primitives::side_effect::{SideEffect, TargetId};
 use crate::side_effects::protocol::SideEffectProtocol;
 use crate::side_effects::protocol::SideEffectProtocol as SideEffectProtocolT;
 use crate::side_effects::protocol::TransferSideEffectProtocol;
+use crate::side_effects::volatile::{LocalState, Volatile};
 
 type Bytes = Vec<u8>;
 type Arguments = Vec<Bytes>;
@@ -54,6 +55,7 @@ impl UniversalSideEffectsProtocol {
         &self,
         side_effect: SideEffect<AccountId, BlockNumber, BalanceOf>,
         gateway_abi: GatewayABIConfig,
+        local_state: &mut LocalState,
     ) -> Result<(), &'static str> {
         match self.seen_side_effects_protocol.get(&side_effect.target) {
             Some(available_side_effects) => {
@@ -62,7 +64,7 @@ impl UniversalSideEffectsProtocol {
                     _transfer_action_bytes => {
                         match available_side_effects.get("transfer:dirty") {
                             Some(transfer_side_effect_protocol) => {
-                                transfer_side_effect_protocol.validate_args(side_effect.encoded_args, gateway_abi)
+                                transfer_side_effect_protocol.validate_args(side_effect.encoded_args, gateway_abi, local_state)
                             },
                             None => Err("UniversalSideEffectsProtocol::validate_args - side effect unsupported on chosen gateway"),
                         }

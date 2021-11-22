@@ -38,6 +38,7 @@ pub trait SideEffectConfirmationProtocol: SideEffectProtocol {
             });
 
         // ToDo: 2. 3. 4. missing
+
         Ok(())
     }
 }
