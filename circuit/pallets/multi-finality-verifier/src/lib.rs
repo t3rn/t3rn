@@ -745,7 +745,8 @@ mod tests {
     use frame_support::weights::PostDispatchInfo;
     use frame_support::{assert_err, assert_noop, assert_ok};
     use sp_runtime::{Digest, DigestItem, DispatchError};
-    use t3rn_primitives::{GatewayType, GatewayVendor};
+    use sp_std::convert::TryFrom;
+    use t3rn_primitives::{GatewaySysProps, GatewayType, GatewayVendor};
 
     fn teardown_substrate_bridge() {
         let default_gateway: ChainId = *b"gate";
@@ -791,6 +792,8 @@ mod tests {
             is_halted: false,
         };
 
+        let gateway_sys_props = GatewaySysProps::try_from(&gateway_id)?;
+
         let _ = pallet_xdns::Pallet::<TestRuntime>::add_new_xdns_record(
             RawOrigin::Root.into(),
             Default::default(),
@@ -799,6 +802,7 @@ mod tests {
             GatewayVendor::Substrate,
             GatewayType::TxOnly(0),
             Default::default(),
+            gateway_sys_props,
             vec![],
         );
 
@@ -972,8 +976,8 @@ mod tests {
     #[test]
     fn init_can_initialize_pallet_for_multiple_gateway_but_only_once_per_each_gateway() {
         run_test(|| {
-            let gateway_a: ChainId = *b"rlta";
-            let gateway_b: ChainId = *b"rltb";
+            let gateway_a: ChainId = *b"pdot";
+            let gateway_b: ChainId = *b"ksma";
 
             initialize_substrate_bridge_for_gateway(gateway_a);
             initialize_substrate_bridge_for_gateway(gateway_b);

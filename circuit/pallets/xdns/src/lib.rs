@@ -31,7 +31,7 @@ use sp_runtime::{traits::Hash, RuntimeDebug};
 use sp_std::prelude::*;
 use sp_std::vec::Vec;
 use t3rn_primitives::abi::GatewayABIConfig;
-use t3rn_primitives::{ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor};
+use t3rn_primitives::{ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor};
 
 // Re-export pallet items so that they can be accessed from the crate namespace.
 pub use crate::pallet::*;
@@ -119,6 +119,7 @@ pub mod pallet {
             gateway_vendor: GatewayVendor,
             gateway_type: GatewayType,
             gateway_genesis: GatewayGenesisConfig,
+            gateway_sys_props: GatewaySysProps,
             allowed_side_effects: Vec<AllowedSideEffect>,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
@@ -138,6 +139,7 @@ pub mod pallet {
                 gateway_vendor,
                 gateway_type,
                 gateway_genesis,
+                gateway_sys_props,
                 allowed_side_effects,
             );
 

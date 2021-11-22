@@ -11,7 +11,7 @@ use sp_runtime::{traits::Hash, RuntimeDebug};
 use sp_std::prelude::*;
 use sp_std::vec::Vec;
 use t3rn_primitives::abi::GatewayABIConfig;
-use t3rn_primitives::{ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor};
+use t3rn_primitives::{ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor};
 
 /// A hash based on encoding the complete XdnsRecord
 pub type XdnsRecordId<T> = <T as frame_system::Config>::Hash;
@@ -41,6 +41,9 @@ pub struct XdnsRecord<AccountId> {
     /// Gateway Id
     pub gateway_id: ChainId,
 
+    /// Gateway System Properties
+    pub gateway_sys_props: GatewaySysProps,
+
     pub registrant: Option<AccountId>,
 
     pub last_finalized: Option<u64>,
@@ -61,6 +64,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
         gateway_id: ChainId,
         gateway_vendor: GatewayVendor,
         gateway_type: GatewayType,
+        gateway_sys_props: GatewaySysProps,
         registrant: Option<AccountId>,
         last_finalized: Option<u64>,
         allowed_side_effects: Vec<AllowedSideEffect>,
@@ -80,6 +84,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
             gateway_vendor,
             gateway_type,
             gateway_id,
+            gateway_sys_props,
             registrant,
             last_finalized,
             allowed_side_effects,
@@ -93,6 +98,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
         gateway_vendor: GatewayVendor,
         gateway_type: GatewayType,
         gateway_genesis: GatewayGenesisConfig,
+        gateway_sys_props: GatewaySysProps,
         allowed_side_effects: Vec<AllowedSideEffect>,
     ) -> Self {
         XdnsRecord {
@@ -102,6 +108,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
             gateway_vendor,
             gateway_type,
             gateway_genesis,
+            gateway_sys_props,
             registrant: None,
             last_finalized: None,
             allowed_side_effects,

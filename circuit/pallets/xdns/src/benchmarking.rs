@@ -35,7 +35,13 @@ benchmarks! {
             extrinsics_version: 0u8,
             genesis_hash: Default::default(),
         };
-    }: _(RawOrigin::Root, url, *gateway_id, gateway_abi, gateway_vendor, gateway_type, gateway_genesis, vec![])
+
+        let gateway_sys_props = GatewaySysProps {
+            ss58_format: 0,
+            token_symbol: Encode::encode(""),
+            token_decimals: 0,
+        };
+    }: _(RawOrigin::Root, url, *gateway_id, gateway_abi, gateway_vendor, gateway_type, gateway_genesis, gateway_sys_props, vec![])
     verify {
         assert!(
             XDNSRegistry::<T>::get(T::Hashing::hash(b"test"))
@@ -59,6 +65,12 @@ benchmarks! {
             genesis_hash: Default::default(),
         };
 
+        let gateway_sys_props = GatewaySysProps {
+            ss58_format: 0,
+            token_symbol: Encode::encode(""),
+            token_decimals: 0,
+        };
+
         XDNS::<T>::add_new_xdns_record(
             RawOrigin::Root.into(),
             url,
@@ -67,6 +79,7 @@ benchmarks! {
             gateway_vendor,
             gateway_type,
             gateway_genesis,
+            gateway_sys_props,
             vec![],
         )
         .unwrap();
@@ -100,6 +113,12 @@ benchmarks! {
             genesis_hash: Default::default(),
         };
 
+        let gateway_sys_props = GatewaySysProps {
+            ss58_format: 0,
+            token_symbol: Encode::encode(""),
+            token_decimals: 0,
+        };
+
         XDNS::<T>::add_new_xdns_record(
             RawOrigin::Root.into(),
             url,
@@ -108,6 +127,7 @@ benchmarks! {
             gateway_vendor,
             gateway_type,
             gateway_genesis,
+            gateway_sys_props,
             vec![],
         )
         .unwrap();
@@ -137,6 +157,12 @@ benchmarks! {
             genesis_hash: Default::default(),
         };
 
+        let gateway_sys_props = GatewaySysProps {
+            ss58_format: 0,
+            token_symbol: Encode::encode(""),
+            token_decimals: 0,
+        };
+
         XDNS::<T>::add_new_xdns_record(
             RawOrigin::Root.into(),
             url,
@@ -145,6 +171,7 @@ benchmarks! {
             gateway_vendor,
             gateway_type,
             gateway_genesis,
+            gateway_sys_props,
             vec![],
         )
         .unwrap();
