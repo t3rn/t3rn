@@ -30,6 +30,7 @@ frame-metadata = { version = "14.0.0", features = ["v13", "v14"], default-featur
 ethabi-decode = { git = "https://github.com/Snowfork/ethabi-decode.git", branch = "master", default-features = false }
 
 pallet-sudo = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
+pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 bp-header-chain = { default-features = false, path = "../../vendor/bridges/primitives/header-chain" }
 bp-messages = { default-features = false, path = "../../vendor/bridges/primitives/messages" }
 bp-runtime = { default-features = false, path = "../../vendor/bridges/primitives/runtime" }

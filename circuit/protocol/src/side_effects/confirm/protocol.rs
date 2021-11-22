@@ -1,7 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use sp_std::vec::*;
-use t3rn_primitives::abi::{GatewayABIConfig, Type};
 
 use crate::side_effects::confirm::parser::VendorSideEffectsParser;
 use crate::side_effects::protocol::SideEffectProtocol;

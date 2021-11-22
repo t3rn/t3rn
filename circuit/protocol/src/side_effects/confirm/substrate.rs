@@ -3,7 +3,7 @@
 use sp_std::vec;
 use sp_std::vec::*;
 
-use crate::side_effects::parser::VendorSideEffectsParser;
+use crate::side_effects::confirm::parser::VendorSideEffectsParser;
 
 type Bytes = Vec<u8>;
 type Arguments = Vec<Bytes>;
