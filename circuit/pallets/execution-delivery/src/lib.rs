@@ -61,12 +61,15 @@ mod benchmarking;
 pub mod mock;
 
 pub mod weights;
+
 use weights::WeightInfo;
 
 pub mod exec_composer;
 
 pub use t3rn_protocol::test_utils as message_test_utils;
+
 pub mod xbridges;
+
 pub use xbridges::{
     get_roots_from_bridge, init_bridge_instance, CurrentHash, CurrentHasher, CurrentHeader,
     DefaultPolkadotLikeGateway, EthLikeKeccak256ValU32Gateway, EthLikeKeccak256ValU64Gateway,
@@ -76,7 +79,8 @@ pub use xbridges::{
 pub use t3rn_primitives::xtx::{Xtx, XtxId};
 
 pub use t3rn_primitives::side_effect::{ConfirmedSideEffect, FullSideEffect, SideEffect};
-use t3rn_protocol::side_effects_protocol::*;
+use t3rn_protocol::side_effects::loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol};
+use t3rn_protocol::side_effects::volatile::LocalState;
 
 pub type AllowedSideEffect = Vec<u8>;
 
@@ -115,6 +119,7 @@ pub mod pallet {
 
     use super::*;
     use crate::WeightInfo;
+
     /// Current Circuit's context of active transactions
     ///
     /// The currently active composable transactions, indexed according to the order of creation.
@@ -164,7 +169,7 @@ pub mod pallet {
     }
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
+    #[pallet::generate_store(pub (super) trait Store)]
     pub struct Pallet<T>(_);
 
     #[pallet::hooks]
@@ -198,7 +203,7 @@ pub mod pallet {
         /// Temporary entry for submitting a side effect directly for validation and event emittance
         /// It's temporary, since will be replaced with a DFD, which allows to specify exactly the nature of argument
         /// (SideEffect vs ComposableContract vs LocalContract or Mix)
-        #[pallet::weight(<T as Config>::WeightInfo::submit_exec())]
+        #[pallet::weight(< T as Config >::WeightInfo::submit_exec())]
         pub fn submit_side_effects_temp(
             origin: OriginFor<T>,
             side_effects: Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
@@ -216,18 +221,24 @@ pub mod pallet {
                 Error::<T>::RequesterNotEnoughBalance,
             );
 
+            let _full_side_effects_steps: Vec<
+                Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+            >;
+
             let mut full_side_effects: Vec<
                 FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
             > = vec![];
 
+            let mut use_protocol = UniversalSideEffectsProtocol::new();
+            let mut local_state = LocalState::new();
+
             for side_effect in side_effects.iter() {
                 // ToDo: Generate Circuit's params as default ABI from let abi = pallet_xdns::get_abi(target_id)
                 let gateway_abi = Default::default();
-                let side_effects_protocol = SideEffectsProtocol::new(gateway_abi);
-                side_effects_protocol.validate_input_args(
-                    side_effect.encoded_action.clone(),
-                    side_effect.encoded_args.clone(),
-                )?;
+
+                use_protocol.notice_gateway(side_effect.target);
+                use_protocol.validate_args(side_effect.clone(), gateway_abi, &mut local_state)?;
+
                 full_side_effects.push(FullSideEffect {
                     input: side_effect.clone(),
                     confirmed: None,
@@ -277,7 +288,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(<T as Config>::WeightInfo::submit_exec())]
+        #[pallet::weight(< T as Config >::WeightInfo::submit_exec())]
         pub fn submit_exec_dfd(
             _origin: OriginFor<T>,
             _generic_dfd: GenericDFD,
@@ -308,7 +319,7 @@ pub mod pallet {
             unimplemented!();
         }
 
-        #[pallet::weight(<T as Config>::WeightInfo::submit_exec())]
+        #[pallet::weight(< T as Config >::WeightInfo::submit_exec())]
         pub fn submit_exec(
             origin: OriginFor<T>,
             contract_id: RegistryContractId<T>,
@@ -340,7 +351,7 @@ pub mod pallet {
         }
 
         /// Will be deprecated in v1.0.0-RC
-        #[pallet::weight(<T as Config>::WeightInfo::submit_composable_exec_order() + <T as Config>::WeightInfo::decompose_io_schedule())]
+        #[pallet::weight(< T as Config >::WeightInfo::submit_composable_exec_order() + < T as Config >::WeightInfo::decompose_io_schedule())]
         pub fn submit_composable_exec_order(
             origin: OriginFor<T>,
             io_schedule: Vec<u8>,
@@ -382,7 +393,7 @@ pub mod pallet {
         }
 
         /// Blind version should only be used for testing - unsafe since skips inclusion proof check.
-        #[pallet::weight(<T as Config>::WeightInfo::confirm_side_effect_blind())]
+        #[pallet::weight(< T as Config >::WeightInfo::confirm_side_effect_blind())]
         pub fn confirm_side_effect_blind(
             origin: OriginFor<T>,
             xtx_id: XtxId<T>,
@@ -411,7 +422,7 @@ pub mod pallet {
             // Verify whether the side effect completes the Xtx
             let mut xtx: Xtx<T::AccountId, T::BlockNumber, BalanceOf<T>> =
                 ActiveXtxMap::<T>::get(xtx_id.clone())
-                    .expect("submitted to confirm step id does not match with any Xtx");
+                    .expect("submitted to confirm.rs step id does not match with any Xtx");
 
             // Check if the side effect has been deposited with respect to the execution order
             if xtx.complete_side_effect::<bp_circuit::Hasher>(
@@ -435,7 +446,7 @@ pub mod pallet {
         }
 
         // ToDo: Create and move higher to main Circuit pallet
-        #[pallet::weight(<T as Config>::WeightInfo::register_gateway_default_polka())]
+        #[pallet::weight(< T as Config >::WeightInfo::register_gateway_default_polka())]
         pub fn register_gateway(
             origin: OriginFor<T>,
             url: Vec<u8>,
@@ -504,7 +515,7 @@ pub mod pallet {
         }
 
         // ToDo: Create and move higher to main Circuit pallet
-        #[pallet::weight(<T as Config>::WeightInfo::update_gateway())]
+        #[pallet::weight(< T as Config >::WeightInfo::update_gateway())]
         pub fn update_gateway(
             _origin: OriginFor<T>,
             gateway_id: bp_runtime::ChainId,
@@ -521,7 +532,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(<T as Config>::WeightInfo::confirm_side_effect())]
+        #[pallet::weight(< T as Config >::WeightInfo::confirm_side_effect())]
         pub fn confirm_side_effect(
             origin: OriginFor<T>,
             xtx_id: XtxId<T>,
@@ -537,7 +548,7 @@ pub mod pallet {
 
             let mut xtx: Xtx<T::AccountId, T::BlockNumber, BalanceOf<T>> =
                 ActiveXtxMap::<T>::get(xtx_id.clone())
-                    .expect("submitted to confirm step id does not match with any Xtx");
+                    .expect("submitted to confirm.rs step id does not match with any Xtx");
 
             // ToDo: Read gateway_id from xtx GatewaysDFD
             let gateway_id = Default::default();
@@ -618,7 +629,7 @@ pub mod pallet {
 
     /// Events for the pallet.
     #[pallet::event]
-    #[pallet::generate_deposit(pub(super) fn deposit_event)]
+    #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
         // Listeners - users + SDK + UI to know whether their request has ended
         XTransactionSuccessfullyCompleted(XtxId<T>),
