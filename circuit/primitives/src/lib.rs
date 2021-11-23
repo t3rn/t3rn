@@ -37,6 +37,7 @@ pub mod contract_metadata;
 pub mod gateway_inbound_protocol;
 pub mod side_effect;
 pub mod transfers;
+pub mod volatile;
 pub mod xtx;
 
 pub use gateway_inbound_protocol::GatewayInboundProtocol;
@@ -127,6 +128,7 @@ pub struct Compose<Account, Balance> {
     pub bytes: Vec<u8>,
     pub input_data: Vec<u8>,
 }
+
 /// A result type of a get storage call.
 pub type FetchContractsResult = Result<Vec<u8>, ContractAccessError>;
 
