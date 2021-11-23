@@ -13,7 +13,7 @@ pub type State = BTreeMap<StateKey, StateVal>;
 use sp_io::hashing::twox_256;
 
 pub struct LocalState {
-    state: State,
+    pub state: State,
 }
 
 impl LocalState {

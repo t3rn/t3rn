@@ -156,6 +156,9 @@ pub trait SideEffectProtocol {
 pub mod tests {
 
     use super::*;
+    use crate::side_effects::volatile::tests::{
+        FROM_2XX_32B_HASH, TO_2XX_32B_HASH, VALUE_2XX_32B_HASH,
+    };
     use hex_literal::hex;
 
     #[test]
@@ -164,11 +167,27 @@ pub mod tests {
         let encoded_transfer_args_input = vec![
             hex!("0909090909090909090909090909090909090909090909090909090909090909").into(),
             hex!("0606060606060606060606060606060606060606060606060606060606060606").into(),
-            1.encode(),
+            1u64.encode(),
         ];
         let mut local_state = LocalState::new();
         let transfer_protocol = TransferSideEffectProtocol {};
         let res = transfer_protocol.populate_state(encoded_transfer_args_input, &mut local_state);
+
         assert_eq!(res, Ok(()));
+
+        assert_eq!(
+            local_state.state.get(&FROM_2XX_32B_HASH),
+            Some(&hex!("0909090909090909090909090909090909090909090909090909090909090909").into())
+        );
+
+        assert_eq!(
+            local_state.state.get(&TO_2XX_32B_HASH),
+            Some(&hex!("0606060606060606060606060606060606060606060606060606060606060606").into())
+        );
+
+        assert_eq!(
+            local_state.state.get(&VALUE_2XX_32B_HASH),
+            Some(&hex!("0100000000000000").into())
+        );
     }
 }
