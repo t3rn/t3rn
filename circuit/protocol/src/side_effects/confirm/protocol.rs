@@ -71,11 +71,6 @@ pub mod tests {
             1u64,
         )
         .encode();
-        let _encoded_transfer_args_input = vec![
-            hex!("0909090909090909090909090909090909090909090909090909090909090909").into(),
-            hex!("0606060606060606060606060606060606060606060606060606060606060606").into(),
-            1u64.encode(),
-        ];
 
         let mut local_state = LocalState::new();
         // Preload state by with the arguments and their names first
@@ -101,5 +96,43 @@ pub mod tests {
             &mut local_state,
         );
         assert_eq!(res, Ok(()));
+    }
+
+    #[test]
+    fn errors_to_confirm_transfer_side_effect_with_wrong_receiver() {
+        let encoded_balance_transfer_event = pallet_balances::Event::<Test>::Transfer(
+            hex!("0909090909090909090909090909090909090909090909090909090909090909").into(),
+            hex!("0505050505050505050505050505050505050505050505050505050505050505").into(),
+            1u64,
+        )
+        .encode();
+
+        let mut local_state = LocalState::new();
+        // Preload state by with the arguments and their names first
+        local_state
+            .insert(
+                "from",
+                hex!("0909090909090909090909090909090909090909090909090909090909090909").into(),
+            )
+            .unwrap();
+        local_state
+            .insert(
+                "to",
+                hex!("0606060606060606060606060606060606060606060606060606060606060606").into(),
+            )
+            .unwrap();
+        local_state
+            .insert("value", hex!("0100000000000000").into())
+            .unwrap();
+
+        let transfer_protocol = TransferSideEffectProtocol {};
+        let res = transfer_protocol.confirm::<Test, SubstrateSideEffectsParser>(
+            vec![encoded_balance_transfer_event],
+            &mut local_state,
+        );
+        assert_eq!(
+            res,
+            Err("Confirmation Failed - received event arguments differ from expected by state")
+        );
     }
 }
