@@ -3,7 +3,9 @@
 pub use crate::side_effects::confirm::protocol::SideEffectConfirmationProtocol;
 pub use crate::side_effects::volatile::{LocalState, Volatile};
 use codec::{Decode, Encode};
+use sp_std::vec;
 use sp_std::vec::*;
+
 use t3rn_primitives::abi::{GatewayABIConfig, Type};
 
 use sp_runtime::RuntimeDebug;
@@ -131,6 +133,7 @@ pub mod tests {
         FROM_2XX_32B_HASH, TO_2XX_32B_HASH, VALUE_2XX_32B_HASH,
     };
     use hex_literal::hex;
+    use sp_std::vec;
 
     #[test]
     fn successfully_populates_state_for_transfer_arguments() {

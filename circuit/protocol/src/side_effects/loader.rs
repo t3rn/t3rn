@@ -4,12 +4,13 @@ use sp_std::boxed::Box;
 use sp_std::collections::btree_map::BTreeMap;
 
 use sp_std::vec::*;
+
 use t3rn_primitives::abi::GatewayABIConfig;
 use t3rn_primitives::side_effect::{SideEffect, TargetId};
 
 use crate::side_effects::protocol::SideEffectProtocol;
 use crate::side_effects::protocol::SideEffectProtocol as SideEffectProtocolT;
-use crate::side_effects::protocol::TransferSideEffectProtocol;
+use crate::side_effects::protocol::{CallSideEffectProtocol, TransferSideEffectProtocol};
 use crate::side_effects::volatile::{LocalState, Volatile};
 
 type Bytes = Vec<u8>;
@@ -18,11 +19,11 @@ pub type EventSignature = Vec<u8>;
 pub type String = Vec<u8>;
 
 pub trait SideEffectsLazyLoader {
-    fn notice_gateway(&mut self, gateway_id: TargetId, gateway_abi: GatewayABIConfig);
+    fn notice_gateway(&mut self, gateway_id: TargetId);
 }
 
 impl SideEffectsLazyLoader for UniversalSideEffectsProtocol {
-    fn notice_gateway(&mut self, gateway_id: TargetId, _gateway_abi: GatewayABIConfig) {
+    fn notice_gateway(&mut self, gateway_id: TargetId) {
         // ToDo: Just load the std side effects for the gateway for now
         //    but missing implementation would:
         //     1. compare the "allowed_methods" with std side effects and load only selected ones
@@ -32,7 +33,9 @@ impl SideEffectsLazyLoader for UniversalSideEffectsProtocol {
             let mut known_std_side_effects: BTreeMap<&'static str, Box<dyn SideEffectProtocolT>> =
                 BTreeMap::new();
             let transfer = TransferSideEffectProtocol {};
+            let call = CallSideEffectProtocol {};
             known_std_side_effects.insert(transfer.get_name(), Box::new(transfer.clone()));
+            known_std_side_effects.insert(call.get_name(), Box::new(call.clone()));
             self.seen_side_effects_protocol
                 .insert(gateway_id, known_std_side_effects);
         }
@@ -65,10 +68,10 @@ impl UniversalSideEffectsProtocol {
                         match available_side_effects.get("transfer:dirty") {
                             Some(transfer_side_effect_protocol) => {
                                 transfer_side_effect_protocol.validate_args(side_effect.encoded_args, gateway_abi, local_state)
-                            },
+                            }
                             None => Err("UniversalSideEffectsProtocol::validate_args - side effect unsupported on chosen gateway"),
                         }
-                    },
+                    }
                     _ => Err("UniversalSideEffectsProtocol::validate_args - unknown side effect type")
                 }
             }
