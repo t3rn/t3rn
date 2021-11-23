@@ -4,6 +4,8 @@ use sp_std::vec::*;
 
 use crate::side_effects::confirm::parser::VendorSideEffectsParser;
 use crate::side_effects::protocol::SideEffectProtocol;
+use crate::side_effects::volatile::LocalState;
+use crate::side_effects::volatile::Volatile;
 
 type Bytes = Vec<u8>;
 type Arguments = Vec<Bytes>;
@@ -11,7 +13,7 @@ pub type EventSignature = Vec<u8>;
 pub type String = Vec<u8>;
 
 pub trait SideEffectConfirmationProtocol: SideEffectProtocol {
-    // Use CONFIRMING_EVENTS now to
+    // Use CONFIRMING_EVENTS now to confirm that the content received events follows the protocol
     //  1. Decode each event following it's Vendor decoding implementation (substrate events vs eth events)
     //  2. Use STATE_MAPPER to map each variable name from CONFIRMING_EVENTS into expected value stored in STATE_MAPPER during the "validate_args" step before the SideEffect was emitted for execution
     //  3. Check each argument of decoded "encoded_remote_events" against the values from STATE
@@ -20,25 +22,33 @@ pub trait SideEffectConfirmationProtocol: SideEffectProtocol {
     fn confirm<T: pallet_balances::Config, VendorParser: VendorSideEffectsParser>(
         &self,
         encoded_remote_events: Vec<Vec<u8>>,
+        local_state: &mut LocalState,
     ) -> Result<(), &'static str> {
         // 0. Check incoming args with protocol requirements
         assert!(encoded_remote_events.len() == Self::get_arguments_abi(self).len());
-
         // 1. Decode event as relying on Vendor-specific decoding/parsing
-        let _decoded_events = encoded_remote_events
-            .iter()
-            .enumerate()
-            .map(|(i, encoded_event)| {
-                let expected_event_signature = Self::get_confirming_events(self)[i];
-                VendorParser::parse_event::<T>(
-                    Self::get_name(self),
-                    encoded_event.clone(),
-                    expected_event_signature,
-                )
-            });
 
-        // ToDo: 2. 3. 4. missing
-
+        for (i, encoded_event) in encoded_remote_events.iter().enumerate() {
+            let expected_event_signature = Self::get_confirming_events(self)[i];
+            let decoded_events = VendorParser::parse_event::<T>(
+                Self::get_name(self),
+                encoded_event.clone(),
+                expected_event_signature,
+            )?;
+            // 2.  Use STATE_MAPPER to map each variable name from CONFIRMING_EVENTS into expected value stored in STATE_MAPPER during the "validate_args"
+            // ToDo: It will work for transfer for now without analyzing the signature
+            //  since the args names are the same as expected confirmation events params.
+            //  the signature, but here there should be a lookup now for
+            //  arg_names = get_arg_names_from_signature(self.get_confirmation_event()[0])
+            let mapper = self.get_arguments_2_state_mapper();
+            assert!(mapper.len() == decoded_events.len());
+            for (j, arg_name) in mapper.iter().enumerate() {
+                //  3. Check each argument of decoded "encoded_remote_events" against the values from State
+                if !local_state.cmp(arg_name, decoded_events[j].clone()) {
+                    return Err("Confirmation Failed - received event arguments differ from expected by state");
+                }
+            }
+        }
         Ok(())
     }
 }

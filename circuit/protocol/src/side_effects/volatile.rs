@@ -1,17 +1,20 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::Encode;
+use codec::{Decode, Encode};
+use sp_runtime::RuntimeDebug;
 
 use sp_std::collections::btree_map::BTreeMap;
 
 use sp_std::vec::*;
 
 type StateKey = [u8; 32];
-type StateVal = Vec<u8>; // Although check if no longer than 64 bytes
+type StateVal = Vec<u8>;
+// Although check if no longer than 64 bytes
 pub type State = BTreeMap<StateKey, StateVal>;
 
 use sp_io::hashing::twox_256;
 
+#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
 pub struct LocalState {
     pub state: State,
 }
@@ -23,6 +26,7 @@ impl LocalState {
         }
     }
 }
+
 impl Volatile for LocalState {
     fn get_state_mut(&mut self) -> &mut State {
         &mut self.state
@@ -45,6 +49,14 @@ pub trait Volatile {
     fn key_2_state_key<K: Encode>(key: K) -> [u8; 32] {
         let key_as_array = &key.encode()[..];
         Self::hash(key_as_array)
+    }
+
+    fn get<K: Encode>(&self, key: K) -> Option<&StateVal> {
+        self.get_state().get(&Self::key_2_state_key(key))
+    }
+
+    fn cmp<K: Encode>(&self, key: K, cmp_value: Vec<u8>) -> bool {
+        self.get(key) == Some(cmp_value).as_ref()
     }
 
     // fn value_2_state_value(value: Vec<u8>) -> Result<[u8; 64], &'static str>  {
@@ -80,7 +92,6 @@ pub trait Volatile {
 
 #[cfg(test)]
 pub mod tests {
-
     pub const FROM_2XX_32B_HASH: [u8; 32] = [
         47u8, 140u8, 44u8, 35u8, 27u8, 124u8, 17u8, 66u8, 71u8, 139u8, 84u8, 182u8, 189u8, 44u8,
         255u8, 9u8, 216u8, 225u8, 72u8, 92u8, 140u8, 153u8, 36u8, 176u8, 243u8, 84u8, 204u8, 37u8,
