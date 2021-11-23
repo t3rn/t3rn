@@ -1,5 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+pub use crate::side_effects::confirm::protocol::SideEffectConfirmationProtocol;
 pub use crate::side_effects::volatile::{LocalState, Volatile};
 use codec::{Decode, Encode};
 use sp_std::vec::*;
@@ -13,40 +14,8 @@ pub type EventSignature = Vec<u8>;
 pub type String = Vec<u8>;
 
 /// The main idea would be to give a possibility of define the side effects dynamically
-/// We'd have the "standard" side effects in the codebase, but for the sake of
-/// define the new ones dynamically we could have the following generic structs via API, sth like:
-///     "instantiate_contract:escrow": ReversibleSideEffect { // provide the custom implementation of instantiate_contract available only on ?gateway_id: MOON#PURE_STAKE? but not on std gateway?
-///         state: ["from->arg_0::address,to->arg_1::address,value->arg_2::u64,arg_3::rent->u32,arg_4::fees->u32"],
-///         confirm.rs: SideEffectEventsConfirmation("Event::instantiated(from,to,value,rent,fees)"), // from here on the trust falls back on the target escrow to emit the claim / refund txs
-///         commit_confirm: SideEffectEventsCommitConfirmation("Event::?contract_transfer_ownership?(from,to,value,rent,fees)")
-///         revert_confirm: SideEffectEventsCommitConfirmation("Event::?destruct?(from,to,value,rent,fees)")
-///         report_confirm_error: ?perhaps the escrow can emit the event if for some reason neither commit not revert happen? or how to proof the the action hasn't happen on the target chain?
-///     }
-///  Elements like this would have to be defined here:
-///       "transfer:dirty",
-///       "transfer:escrow",
-///       "transfer:reversible",
-///       "get_storage",
-///       "call:dirty",
-///       "call:escrow?",
-///       "call:reversible?",
-///       Usage:
-///         ExecDelivery Validates incoming SideEffects and their arguments:
-///             Has the target_id and needs to load gateway_abi for it - lazy loading would make
-///             sense
-///
-///       USEProtocol.lazy_validate<XD(side_effect)
-///         USEProtocol::lazy_load_gateway(side_effect.target_id)
-///         USEProtocol.validate(side_effect) // throwable if gateway wasn't lazy-loaded
-///
-///       ExecDelivery<XDNS>::confirmation
-///         USEProtocol::lazy_load_gateway<XDNS>(side_effect.target_id)
-///         USEProtocol::lazy_confirm(side_effect)
-///
-///     From 3VM - i want to generate a side effect when the OPCODE encountered:
-///
-///         3VM.use_protocol.generate_side_effect(arguments, target_id)
-///
+/// We'd have the "standard" side effects in the codebase, but for the sake of extensions,
+/// the side effects should be made serialized, stored and pre-loaded before the exec pallet starts.
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
 pub struct TransferSideEffectProtocol {}
 
@@ -69,6 +38,8 @@ impl SideEffectProtocol for TransferSideEffectProtocol {
     }
 }
 
+impl SideEffectConfirmationProtocol for TransferSideEffectProtocol {}
+
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
 pub struct CallSideEffectProtocol {}
 
@@ -90,6 +61,8 @@ impl SideEffectProtocol for CallSideEffectProtocol {
         vec!["Call(from,to,value)"]
     }
 }
+
+impl SideEffectConfirmationProtocol for CallSideEffectProtocol {}
 
 pub trait SideEffectProtocol {
     fn get_name(&self) -> &'static str;
@@ -127,7 +100,6 @@ pub trait SideEffectProtocol {
     }
 
     // For now just assume that State can only be recreated from args? where arg index (usize) will be translated to the arguments name and therefore could be re-used in created expectations in the signature for confirming Events
-
     fn validate_args(
         &self,
         args: Arguments,
@@ -154,7 +126,6 @@ pub trait SideEffectProtocol {
 
 #[cfg(test)]
 pub mod tests {
-
     use super::*;
     use crate::side_effects::volatile::tests::{
         FROM_2XX_32B_HASH, TO_2XX_32B_HASH, VALUE_2XX_32B_HASH,

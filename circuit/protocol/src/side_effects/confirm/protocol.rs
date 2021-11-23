@@ -25,7 +25,7 @@ pub trait SideEffectConfirmationProtocol: SideEffectProtocol {
         local_state: &mut LocalState,
     ) -> Result<(), &'static str> {
         // 0. Check incoming args with protocol requirements
-        assert!(encoded_remote_events.len() == Self::get_arguments_abi(self).len());
+        assert!(encoded_remote_events.len() == Self::get_confirming_events(self).len());
         // 1. Decode event as relying on Vendor-specific decoding/parsing
 
         for (i, encoded_event) in encoded_remote_events.iter().enumerate() {
@@ -50,5 +50,56 @@ pub trait SideEffectConfirmationProtocol: SideEffectProtocol {
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use super::*;
+    use crate::side_effects::confirm::substrate::tests::Test;
+    use crate::side_effects::confirm::substrate::SubstrateSideEffectsParser;
+    use crate::side_effects::protocol::TransferSideEffectProtocol;
+    use codec::Encode;
+
+    use hex_literal::hex;
+
+    #[test]
+    fn successfully_confirms_transfer_side_effect() {
+        let encoded_balance_transfer_event = pallet_balances::Event::<Test>::Transfer(
+            hex!("0909090909090909090909090909090909090909090909090909090909090909").into(),
+            hex!("0606060606060606060606060606060606060606060606060606060606060606").into(),
+            1u64,
+        )
+        .encode();
+        let _encoded_transfer_args_input = vec![
+            hex!("0909090909090909090909090909090909090909090909090909090909090909").into(),
+            hex!("0606060606060606060606060606060606060606060606060606060606060606").into(),
+            1u64.encode(),
+        ];
+
+        let mut local_state = LocalState::new();
+        // Preload state by with the arguments and their names first
+        local_state
+            .insert(
+                "from",
+                hex!("0909090909090909090909090909090909090909090909090909090909090909").into(),
+            )
+            .unwrap();
+        local_state
+            .insert(
+                "to",
+                hex!("0606060606060606060606060606060606060606060606060606060606060606").into(),
+            )
+            .unwrap();
+        local_state
+            .insert("value", hex!("0100000000000000").into())
+            .unwrap();
+
+        let transfer_protocol = TransferSideEffectProtocol {};
+        let res = transfer_protocol.confirm::<Test, SubstrateSideEffectsParser>(
+            vec![encoded_balance_transfer_event],
+            &mut local_state,
+        );
+        assert_eq!(res, Ok(()));
     }
 }
