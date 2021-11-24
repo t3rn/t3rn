@@ -210,3 +210,23 @@ jobs:
           circuit/target/debug/circuit --alice --log=main,debug --tmp > /dev/null 2>&1 &
           cargo test --workspace --locked --features runtime-benchmarks --manifest-path circuit/Cargo.toml
 
+  test-integration:
+    runs-on: ubuntu-20.04
+    needs: [build]
+    steps:
+      - name: ☁️ Checkout git repo
+        uses: actions/checkout@master
+
+      - name: Setup node
+        uses: actions/setup-node@v2
+
+      - name: 🧶 Install yarn
+        run: npm install -g yarn
+
+      - name: 🏗 Install deps
+        working-directory: client
+        run: yarn --locked
+
+      - name: Run integration tests
+        working-directory: client/circuit-integration-tests
+        run: yarn test
