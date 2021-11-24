@@ -1,0 +1,60 @@
+[package]
+name = "pallet-xdns"
+version = "0.4.0"
+authors = ["t3rn ltd. <team@t3rn.io>"]
+edition = "2018"
+license = "Apache 2.0"
+homepage = "https://t3rn.io"
+repository = "https://github.com/t3rn/t3rn/"
+description = "x-chain DNS"
+readme = "README.md"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
+log = { version = "0.4.14", default-features = false }
+serde = { version = "1.0.124", optional = true }
+
+frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12', optional = true }
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12' }
+frame-system = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12' }
+frame-metadata = { version = "14.0.0", features = ["v13", "v14"], default-features = false }
+
+pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12' }
+pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12' }
+pallet-sudo = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12' }
+
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12' }
+sp-version = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12' }
+sp-std = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12' }
+sp-io = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12' }
+
+t3rn-primitives = { version = "0.1.0", default-features = false, path = "../../circuit/primitives" }
+
+[dev-dependencies]
+sp-core = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12', default-features = false }
+sp-keystore = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12', default-features = false }
+
+[features]
+default = ["std"]
+std = [
+	"codec/std",
+	"frame-benchmarking/std",
+	"frame-support/std",
+	"frame-metadata/std",
+	"frame-system/std",
+	"log/std",
+	"pallet-balances/std",
+	"pallet-sudo/std",
+	"pallet-timestamp/std",
+	"serde/std",
+	"sp-io/std",
+	"sp-version/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	"t3rn-primitives/std",
+]
+runtime-benchmarks = ["frame-benchmarking"]
+try-runtime = ["frame-support/try-runtime"]
