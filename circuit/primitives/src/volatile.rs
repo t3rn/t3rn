@@ -8,8 +8,8 @@ use sp_std::collections::btree_map::BTreeMap;
 use sp_std::vec::*;
 
 type StateKey = [u8; 32];
+// Keep Values as Vector although check if no longer than 64 bytes
 type StateVal = Vec<u8>;
-// Although check if no longer than 64 bytes
 pub type State = BTreeMap<StateKey, StateVal>;
 
 use sp_io::hashing::twox_256;
@@ -59,9 +59,7 @@ pub trait Volatile {
         self.get(key) == Some(cmp_value).as_ref()
     }
 
-    // fn value_2_state_value(value: Vec<u8>) -> Result<[u8; 64], &'static str>  {
     fn value_2_state_value(value: Vec<u8>) -> Result<Vec<u8>, &'static str> {
-        // let value_as_array = &value[..];
         return if value.len() > 64 {
             Err("Value is larger than max. 64 bytes allowed in the Volatile State")
         } else {
