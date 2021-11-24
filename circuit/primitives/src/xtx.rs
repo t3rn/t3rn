@@ -110,7 +110,7 @@ impl<
             return Err("Xtx has no single side effect step to confirm.rs");
         }
 
-        let step_with_unconfirmed_steps: Option<usize>;
+        let mut unconfirmed_step_no: Option<usize> = None;
 
         for (i, step) in self.full_side_effects.iter_mut().enumerate() {
             // Double check there are some side effects for that Xtx - should have been checked at API level tho already
@@ -119,11 +119,14 @@ impl<
             }
             for mut full_side_effect in step.iter_mut() {
                 if full_side_effect.confirmed.is_none() {
-                    step_with_unconfirmed_steps = Some(i);
+                    // Mark the first step no with encountered unconfirmed side effect
+                    if unconfirmed_step_no.is_none() {
+                        unconfirmed_step_no = Some(i);
+                    }
                     // Recalculate the ID for each input side effect and compare with the input one.
                     // Check the current unconfirmed step before attempt to confirm.rs the full side effect.
                     return if full_side_effect.input.generate_id::<Hasher>() == input_side_effect_id
-                        && step_with_unconfirmed_steps == Some(i)
+                        && unconfirmed_step_no == Some(i)
                     {
                         // We found the side effect to confirm.rs from inside the unconfirmed step.
                         full_side_effect.confirmed = Some(confirmed.clone());

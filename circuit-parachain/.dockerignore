@@ -1,0 +1,9 @@
+.git
+**/target/
+**/*.txt
+**/*.md
+/docker/
+!/target/release/circuit-collator
+
+# dotfiles in the repo root
+/.*

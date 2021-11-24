@@ -7,7 +7,7 @@ type Bytes = Vec<u8>;
 pub type SideEffectId<T> = <T as frame_system::Config>::Hash;
 pub type TargetId = [u8; 4];
 
-#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
+#[derive(Clone, Eq, PartialEq, Encode, Default, Decode, RuntimeDebug)]
 pub struct SideEffect<AccountId, BlockNumber, BalanceOf> {
     pub target: TargetId,
     pub prize: BalanceOf,
@@ -101,5 +101,20 @@ mod tests {
                 "19ea4a516c66775ea1f648d71f6b8fa227e8b0c1a0c9203f82c33b89c4e759b5"
             ))
         );
+    }
+
+    #[test]
+    fn successfully_defaults_side_effect_to_an_empty_one() {
+        let empty_side_effect = SideEffect::<AccountId, BlockNumber, BalanceOf> {
+            target: [0, 0, 0, 0],
+            prize: 0,
+            ordered_at: 0,
+            encoded_action: vec![],
+            encoded_args: vec![],
+            signature: vec![],
+            enforce_executioner: None,
+        };
+
+        assert_eq!(empty_side_effect, SideEffect::default(),);
     }
 }
