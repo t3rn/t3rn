@@ -79,8 +79,8 @@ pub use xbridges::{
 pub use t3rn_primitives::xtx::{Xtx, XtxId};
 
 pub use t3rn_primitives::side_effect::{ConfirmedSideEffect, FullSideEffect, SideEffect};
+use t3rn_primitives::volatile::LocalState;
 use t3rn_protocol::side_effects::loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol};
-use t3rn_protocol::side_effects::volatile::LocalState;
 
 pub type AllowedSideEffect = Vec<u8>;
 
@@ -266,6 +266,7 @@ pub mod pallet {
                 timeouts_at,
                 delay_steps_at,
                 Some(reward),
+                local_state,
                 // ToDo: Missing GenericDFD to link side effects / composable contracts with the Xtx
                 full_side_effects_steps,
             );
@@ -417,12 +418,17 @@ pub mod pallet {
             // match side_effect.inbound.encoded_action {
             //      b"transfer".to_vec() => vendor_side_effects_confirmation_protocol::confirm_transfer(side_effect.outbound.encoded_effect)
             // }
-
             // ToDo #CNF-3: Check validity of inclusion - skip in _blind version for testing
             // Verify whether the side effect completes the Xtx
             let mut xtx: Xtx<T::AccountId, T::BlockNumber, BalanceOf<T>> =
                 ActiveXtxMap::<T>::get(xtx_id.clone())
                     .expect("submitted to confirm.rs step id does not match with any Xtx");
+
+            let mut use_protocol = UniversalSideEffectsProtocol::new();
+            use_protocol.notice_gateway(side_effect.target);
+            let mut _state_copy = xtx.local_state.clone();
+            // use_protocol
+            //     .confirm::<T>(vec![confirmed_side_effect.encoded_effect], &mut state_copy)?;
 
             // Check if the side effect has been deposited with respect to the execution order
             if xtx.complete_side_effect::<bp_circuit::Hasher>(
@@ -898,6 +904,7 @@ impl<T: Config> Pallet<T> {
             timeouts_at,
             delay_steps_at,
             Some(reward),
+            LocalState::new(),
             vec![],
         );
 
