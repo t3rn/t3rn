@@ -5,12 +5,12 @@ on:
     branches:
       - development
     paths:
-       - circuit/**/*.rs
-       - circuit/**/Cargo.toml
-       - circuit/**/Cargo.lock
-       - .github/workflows/circuit-release.yml
-      tags:
-        - 'v*'
+      - circuit/**/*.rs
+      - circuit/**/Cargo.toml
+      - circuit/**/Cargo.lock
+      - .github/workflows/circuit-release.yml
+    tags:
+      - 'v*'
 
 env:
   RUST_BACKTRACE: 1
