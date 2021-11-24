@@ -30,8 +30,9 @@ use serde::{Deserialize, Serialize};
 use sp_runtime::{traits::Hash, RuntimeDebug};
 use sp_std::prelude::*;
 use sp_std::vec::Vec;
-use t3rn_primitives::abi::GatewayABIConfig;
-use t3rn_primitives::{ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor};
+use scale_info::TypeInfo;
+use t3rn_parachain_primitives::abi::GatewayABIConfig;
+use t3rn_parachain_primitives::{ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor};
 
 // Re-export pallet items so that they can be accessed from the crate namespace.
 pub use crate::pallet::*;
@@ -56,7 +57,7 @@ pub type XdnsGatewayId<T> = <T as frame_system::Config>::Hash;
 pub type AllowedSideEffect = Vec<u8>;
 
 /// A preliminary representation of a xdns_record in the onchain registry.
-#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct XdnsRecord<AccountId> {
     /// SCALE-encoded url string on where given Consensus System can be accessed
@@ -167,7 +168,7 @@ pub mod pallet {
     use frame_support::traits::Time;
     use frame_system::pallet_prelude::*;
     use sp_std::convert::TryInto;
-    use t3rn_primitives::{ChainId, EscrowTrait, GatewayType, GatewayVendor};
+    use t3rn_parachain_primitives::{ChainId, EscrowTrait, GatewayType, GatewayVendor};
 
     #[pallet::config]
     pub trait Config: pallet_balances::Config + frame_system::Config + EscrowTrait {
@@ -352,7 +353,7 @@ pub mod pallet {
             gateway_id: ChainId,
         ) -> Result<XdnsRecord<T::AccountId>, &'static str> {
             // Sort each available gateway pointer based on its GatewayType
-            let gateway_pointers = t3rn_primitives::retrieve_gateway_pointers(gateway_id);
+            let gateway_pointers = t3rn_parachain_primitives::retrieve_gateway_pointers(gateway_id);
             ensure!(gateway_pointers.is_ok(), "No available gateway pointers");
             let mut sorted_gateway_pointers = gateway_pointers.unwrap();
             sorted_gateway_pointers.sort_by(|a, b| a.gateway_type.cmp(&b.gateway_type));
