@@ -16,6 +16,8 @@ use sp_runtime::{
 	ApplyExtrinsicResult, MultiSignature,
 };
 
+use t3rn_parachain_primitives::EscrowTrait;
+
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -379,6 +381,16 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type ReservedXcmpWeight = ReservedXcmpWeight;
 }
 
+impl t3rn_parachain_primitives::EscrowTrait for Runtime {
+    type Currency = Balances;
+    type Time = Timestamp;
+}
+
+impl pallet_xdns::Config for Runtime {
+    type Event = Event;
+    type WeightInfo = pallet_xdns::weights::SubstrateWeight<Runtime>;
+}
+
 impl pallet_randomness_collective_flip::Config for Runtime {}
 
 impl parachain_info::Config for Runtime {}
@@ -621,6 +633,9 @@ construct_runtime!(
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin} = 31,
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
+
+		// t3rn pallets
+		XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>},
 
 		// admin
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
