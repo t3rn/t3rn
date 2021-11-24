@@ -520,7 +520,7 @@ mod tests {
             input_side_effect_2.clone(),
         );
 
-        assert_eq!(res_2_err, Err("Attempt to confirm.rs side effect from the next step, but there still is at least one unfinished step"));
+        assert_eq!(res_2_err, Err("Attempt to confirm side effect from the next step, but there still is at least one unfinished step"));
 
         // Check that the firsts AND second xtx.full_side_effects has NOT been updated
         assert_eq!(
