@@ -2,6 +2,8 @@ name: Circuit Release
 
 on:
   push:
+    branches:
+      - development
    paths:
       - circuit/**/*.rs
       - circuit/**/Cargo.toml
