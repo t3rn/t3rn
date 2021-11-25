@@ -97,7 +97,7 @@ pub struct BeefyNextAuthoritySet<MerkleRoot> {
     pub len: u32,
     /// Merkle Root Hash build from BEEFY AuthorityIds.
     ///
-    /// This is used by Light Clients to confirm that the commitments are signed by the correct
+    /// This is used by Light Clients to confirm.rs that the commitments are signed by the correct
     /// validator set. Light Clients using interactive protocol, might verify only subset of
     /// signatures, hence don't require the full list here (will receive inclusion proofs).
     pub root: MerkleRoot,

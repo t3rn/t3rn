@@ -43,9 +43,11 @@ use t3rn_protocol::merklize::*;
 use bp_runtime::ChainId;
 pub use pallet::*;
 use sp_runtime::traits::AccountIdConversion;
+
 use sp_std::vec;
 use sp_std::vec::*;
 use t3rn_primitives::abi::{ContractActionDesc, GatewayABIConfig, HasherAlgo as HA};
+pub use t3rn_primitives::side_effect::{ConfirmedSideEffect, FullSideEffect, SideEffect};
 use t3rn_primitives::transfers::BalanceOf;
 use t3rn_primitives::volatile::LocalState;
 use t3rn_primitives::*;
@@ -79,9 +81,12 @@ pub use xbridges::{
 
 pub use t3rn_primitives::xtx::{Xtx, XtxId};
 
-pub use t3rn_primitives::side_effect::{ConfirmedSideEffect, FullSideEffect, SideEffect};
-use t3rn_primitives::volatile::LocalState;
+
+
+use t3rn_protocol::side_effects::confirm::substrate::SubstrateSideEffectsParser;
 use t3rn_protocol::side_effects::loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol};
+pub use t3rn_protocol::side_effects::protocol::SideEffectConfirmationProtocol;
+use t3rn_protocol::side_effects::protocol::TransferSideEffectProtocol;
 
 pub type AllowedSideEffect = Vec<u8>;
 
@@ -406,30 +411,28 @@ pub mod pallet {
             // ToDo #CNF-1: Reward releyers for inbound message dispatch.
             let relayer_id = ensure_signed(origin)?;
 
-            // ToDo #CNF-2: Check validity of execution by parsing
-            //  the side effect against incoming target's format and checking its validity
-
-            // ToDo: On confirmation of side effect instantiate vendor specific protocol
-            // let gateway_abi = pallet_xdns::get_abi(side_effect.inbound.target);
-            // let vendor_side_effects_confirmation_protocol: SideEffectsConfirmationProtocol = match gateway_pointer.vendor {
-            //     GatewayVendor::Substrate => Ok(SubstrateSideEffectsProtocol::new(gateway_abi)),
-            //     GatewayVendor::Ethereum => Ok(EthereumSideEffectsProtocol::new(gateway_abi)),
-            //     _ => { Err("Vendor unsupported") },
-            // }?;
-            // match side_effect.inbound.encoded_action {
-            //      b"transfer".to_vec() => vendor_side_effects_confirmation_protocol::confirm_transfer(side_effect.outbound.encoded_effect)
-            // }
-            // ToDo #CNF-3: Check validity of inclusion - skip in _blind version for testing
+            // ToDo #CNF-1: Check validity of inclusion - skip in _blind version for testing
             // Verify whether the side effect completes the Xtx
             let mut xtx: Xtx<T::AccountId, T::BlockNumber, BalanceOf<T>> =
                 ActiveXtxMap::<T>::get(xtx_id.clone())
                     .expect("submitted to confirm.rs step id does not match with any Xtx");
 
-            let mut use_protocol = UniversalSideEffectsProtocol::new();
-            use_protocol.notice_gateway(side_effect.target);
-            let mut _state_copy = xtx.local_state.clone();
-            // use_protocol
-            //     .confirm::<T>(vec![confirmed_side_effect.encoded_effect], &mut state_copy)?;
+            // ToDo: Just covered a single path for substrate transfers for now
+
+            let mut state_copy = xtx.local_state.clone();
+            // ToDo: Must choose GatewayVendor here based on target_id
+            // let gateway_vendor pallet_xdns::get_vendor(side_effect.target)?;
+            // let parser: Box<dyn VendorSideEffectsParser> = match vendor {
+            //     GatewayVendor::Substrate => Ok(Box::new(SubstrateSideEffectsParser {})),
+            //     GatewayVendor::Ethereum => Ok(Box::new(EthereumSideEffectsParser {})),
+            //     _ => Err(Error::<T>::VendorUnknown.into()),
+            // }?;
+            //
+            let transfer_protocol = TransferSideEffectProtocol {};
+            transfer_protocol.confirm::<T, SubstrateSideEffectsParser>(
+                vec![confirmed_side_effect.encoded_effect.clone()],
+                &mut state_copy,
+            );
 
             // Check if the side effect has been deposited with respect to the execution order
             if xtx.complete_side_effect::<bp_circuit::Hasher>(
@@ -687,6 +690,8 @@ pub mod pallet {
         StepConfirmationBlockUnrecognised,
         StepConfirmationGatewayNotRecognised,
         SideEffectConfirmationInvalidInclusionProof,
+        VendorUnknown,
+        SideEffectTypeNotRecognized,
         StepConfirmationDecodingError,
         ContractDoesNotExists,
         RequesterNotEnoughBalance,
