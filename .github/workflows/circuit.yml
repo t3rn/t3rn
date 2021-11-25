@@ -227,6 +227,10 @@ jobs:
         working-directory: client
         run: yarn --locked
 
+      - name: 🔹 Compile types
+        working-directory: client/types
+        run: yarn build
+
       - name: Run integration tests
         working-directory: client/circuit-integration-tests
         run: yarn test
