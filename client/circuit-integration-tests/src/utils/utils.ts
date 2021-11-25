@@ -39,5 +39,5 @@ export function createGatewayGenesisConfig(
 }
 
 export function randomGatewayId() {
-  return String.fromCharCode(...[0, 0, 0, 0].map(() => Math.floor(97 + Math.random() * 26)))
+  return String.fromCharCode(...[0, 0, 0, 0].map(() => Math.floor(97 + Math.random() * 26)));
 }

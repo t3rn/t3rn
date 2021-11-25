@@ -1,39 +1,21 @@
 import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
-import * as definitions from '@t3rn/types';
+import { rpc, types } from '@t3rn/types';
 import { createGatewayABIConfig, createGatewayGenesisConfig, randomGatewayId } from '../src/utils/utils';
 import '@t3rn/types/dist/augment-api';
 import '@t3rn/types/dist/augment-types';
 import '@t3rn/types/dist/augment-api-rpc';
 import '@t3rn/types/dist/augment-api-query';
 import { Vec } from '@polkadot/types';
-import {
-  AllowedSideEffect, XdnsRecord,
-} from '@t3rn/types/dist';
+import { AllowedSideEffect, XdnsRecord } from '@t3rn/types/dist';
 import { expect } from 'chai';
 import { BN } from '@polkadot/util';
-import { blake2AsHex } from '@polkadot/util-crypto';
 
-const timeoutIn = (seconds: number) => new Promise<void>((resolve, reject) => setTimeout(() => reject(new Error('timeout')), seconds));
+const timeoutIn = (seconds: number) =>
+  new Promise<void>((resolve, reject) => setTimeout(() => reject(new Error('timeout')), seconds));
 
-describe('Execution Delivery | Extrinsics', function() {
+describe('Execution Delivery | Extrinsics', function () {
   this.timeout(30000);
   const circuitProvider = new WsProvider('ws://127.0.0.1:9944');
-  const types = Object.values(definitions).reduce((res, { types }): object => ({ ...res, ...types }), {});
-  const rpc = {
-    xdns: {
-      fetchRecords: {
-        description: 'Fetches all available XDNS Records on Circuit',
-        params: [
-          {
-            name: 'at',
-            type: 'Hash',
-            isOptional: true,
-          },
-        ],
-        type: 'FetchXdnsRecordsResponse',
-      },
-    },
-  };
   let circuitApi: ApiPromise;
 
   before(async () => {
@@ -49,12 +31,12 @@ describe('Execution Delivery | Extrinsics', function() {
       const rococoUrl = 'wss://rococo-rpc.polkadot.io';
       const rococoProvider = new WsProvider(rococoUrl);
       const rococoApi = await ApiPromise.create({ provider: rococoProvider });
-      const [
-        rococoCurrentHeader,
-        rococoMetadata,
-        rococoRuntimeVersion,
-        rococoGenesisHash,
-      ] = await Promise.all([await rococoApi.rpc.chain.getHeader(), await rococoApi.runtimeMetadata, await rococoApi.runtimeVersion, await rococoApi.genesisHash]);
+      const [rococoCurrentHeader, rococoMetadata, rococoRuntimeVersion, rococoGenesisHash] = await Promise.all([
+        await rococoApi.rpc.chain.getHeader(),
+        await rococoApi.runtimeMetadata,
+        await rococoApi.runtimeVersion,
+        await rococoApi.genesisHash,
+      ]);
       const rococoAtGenesis = await rococoApi.at(rococoGenesisHash);
       const rococoInitialAuthorityList = await rococoAtGenesis.query.session.validators();
       await rococoApi.disconnect();
@@ -74,24 +56,25 @@ describe('Execution Delivery | Extrinsics', function() {
         createGatewayGenesisConfig(rococoMetadata, rococoRuntimeVersion, rococoGenesisHash, circuitApi), // GatewayGenesisConfig
         circuitApi.createType('Bytes', rococoCurrentHeader.toHex()), // first header
         circuitApi.createType('Option<Vec<AccountId>>', rococoInitialAuthorityList), // authorities
-        <Vec<AllowedSideEffect>>circuitApi.createType('Vec<AllowedSideEffect>', ['transfer', 'get_storage']), // allowed side effects
+        <Vec<AllowedSideEffect>>circuitApi.createType('Vec<AllowedSideEffect>', ['transfer', 'get_storage']) // allowed side effects
       );
 
       // Wrap in sudo, submit the extrinsic and make wait until finalized
-      const result = new Promise<void>(resolve => circuitApi.tx.sudo.sudo(registerGateway).signAndSend(alice, (result) => {
-        if (result.status.isFinalized) {
-          expect(result.dispatchError).to.be.undefined;
-          expect(result.internalError).to.be.undefined;
-          expect(result.dispatchInfo).to.be.ok;
-          expect(result.dispatchInfo?.weight).to.be.ok;
-          expect(new BN('868383000').eq(result.dispatchInfo?.weight!)).to.be.true;
-          expect(result.dispatchInfo?.class.isNormal).to.be.true;
-          expect(result.dispatchInfo?.paysFee.isYes).to.be.true;
-          expect(result.events).to.be.an('array');
-          // expect(result.events).to.contain.;
-          resolve();
-        }
-      }));
+      const result = new Promise<void>((resolve) =>
+        circuitApi.tx.sudo.sudo(registerGateway).signAndSend(alice, (result) => {
+          if (result.status.isFinalized) {
+            expect(result.dispatchError).to.be.undefined;
+            expect(result.internalError).to.be.undefined;
+            expect(result.dispatchInfo).to.be.ok;
+            expect(result.dispatchInfo?.weight).to.be.ok;
+            expect(result.dispatchInfo?.class.isNormal).to.be.true;
+            expect(result.dispatchInfo?.paysFee.isYes).to.be.true;
+            expect(result.events).to.be.an('array');
+            // expect(result.events).to.contain.;
+            resolve();
+          }
+        })
+      );
 
       // The extrinsic should be finalized before the timeout
       await Promise.race([result, timeoutIn(30000)]);
@@ -107,12 +90,12 @@ describe('Execution Delivery | Extrinsics', function() {
     it('should not register a gateway if it already exists (Polkadot)', async () => {
       const polkadotUrl = 'wss://rpc.polkadot.io';
       const provider = new WsProvider(polkadotUrl);
-      const polkadotApi = await ApiPromise.create({provider})
-      const [
-        polkadotMetadata,
-        polkadotRuntimeVersion,
-        polkadotGenesisHash,
-      ] = await Promise.all([await polkadotApi.runtimeMetadata, await polkadotApi.runtimeVersion, await polkadotApi.genesisHash]);
+      const polkadotApi = await ApiPromise.create({ provider });
+      const [polkadotMetadata, polkadotRuntimeVersion, polkadotGenesisHash] = await Promise.all([
+        await polkadotApi.runtimeMetadata,
+        await polkadotApi.runtimeVersion,
+        await polkadotApi.genesisHash,
+      ]);
 
       // Constuct the keyring after the API (crypto has an async init)
       const keyring = new Keyring({ type: 'sr25519', ss58Format: 60 });
@@ -128,24 +111,25 @@ describe('Execution Delivery | Extrinsics', function() {
         createGatewayGenesisConfig(polkadotMetadata, polkadotRuntimeVersion, polkadotGenesisHash, circuitApi), // GatewayGenesisConfig
         circuitApi.createType('Bytes', []), // first header
         circuitApi.createType('Option<Vec<AccountId>>', []), // authorities
-        <Vec<AllowedSideEffect>>circuitApi.createType('Vec<AllowedSideEffect>', ['transfer', 'get_storage']), // allowed side effects
+        <Vec<AllowedSideEffect>>circuitApi.createType('Vec<AllowedSideEffect>', ['transfer', 'get_storage']) // allowed side effects
       );
 
       // Wrap in sudo, submit the extrinsic and make wait until finalized
-      const result = new Promise<void>(resolve => circuitApi.tx.sudo.sudo(registerGateway).signAndSend(alice, (result) => {
-        if (result.status.isFinalized) {
-          expect(result.dispatchError).to.be.undefined;
-          expect(result.internalError).to.be.undefined;
-          expect(result.dispatchInfo).to.be.ok;
-          expect(result.dispatchInfo?.weight).to.be.ok;
-          expect(new BN('868383000').eq(result.dispatchInfo?.weight!)).to.be.true;
-          expect(result.dispatchInfo?.class.isNormal).to.be.true;
-          expect(result.dispatchInfo?.paysFee.isYes).to.be.true;
-          expect(result.events).to.be.an('array');
-          expect(result.events.map(e => e.event.method)).to.not.contain.members(["XdnsRecordStored"])
-          resolve();
-        }
-      }));
+      const result = new Promise<void>((resolve) =>
+        circuitApi.tx.sudo.sudo(registerGateway).signAndSend(alice, (result) => {
+          if (result.status.isFinalized) {
+            expect(result.dispatchError).to.be.undefined;
+            expect(result.internalError).to.be.undefined;
+            expect(result.dispatchInfo).to.be.ok;
+            expect(result.dispatchInfo?.weight).to.be.ok;
+            expect(result.dispatchInfo?.class.isNormal).to.be.true;
+            expect(result.dispatchInfo?.paysFee.isYes).to.be.true;
+            expect(result.events).to.be.an('array');
+            expect(result.events.map((e) => e.event.method)).to.not.contain.members(['XdnsRecordStored']);
+            resolve();
+          }
+        })
+      );
 
       // The extrinsic should be finalized before the timeout
       await Promise.race([result, timeoutIn(60000)]);

@@ -13,7 +13,7 @@ export default {
       _enum: ['Substrate', 'Ethereum'],
     },
     GatewayType: {
-      _enum: { 'ProgrammableInternal': 'u32', 'ProgrammableExternal': 'u32', 'TxOnly': 'u32' },
+      _enum: { ProgrammableInternal: 'u32', ProgrammableExternal: 'u32', TxOnly: 'u32' },
     },
     GatewayABIConfig: {
       block_number_type_size: 'u16',
@@ -114,7 +114,7 @@ export default {
     },
     FullSideEffect: {
       input: 'SideEffect',
-      confirmed: 'Option<ConfirmedSideEffect>'
-    }
+      confirmed: 'Option<ConfirmedSideEffect>',
+    },
   },
 };
