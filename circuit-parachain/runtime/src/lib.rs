@@ -379,16 +379,6 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type ReservedXcmpWeight = ReservedXcmpWeight;
 }
 
-impl t3rn_parachain_primitives::EscrowTrait for Runtime {
-	type Currency = Balances;
-	type Time = Timestamp;
-}
-
-impl pallet_xdns::Config for Runtime {
-	type Event = Event;
-	type WeightInfo = pallet_xdns::weights::SubstrateWeight<Runtime>;
-}
-
 impl pallet_randomness_collective_flip::Config for Runtime {}
 
 impl parachain_info::Config for Runtime {}
@@ -599,6 +589,30 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = ();
 }
 
+// t3rn pallets
+
+impl t3rn_parachain_primitives::EscrowTrait for Runtime {
+	type Currency = Balances;
+	type Time = Timestamp;
+}
+
+impl pallet_xdns::Config for Runtime {
+	type Event = Event;
+	type WeightInfo = pallet_xdns::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+	pub const MaxRequests: u32 = 2;
+	pub const HeadersToKeep: u32 = 5;
+}
+
+impl pallet_mfv::Config<pallet_mfv::Instance1> for Runtime {
+	type BridgedChain = bp_polkadot_core::PolkadotLike;
+	type MaxRequests = MaxRequests;
+	type HeadersToKeep = HeadersToKeep;
+	type WeightInfo = ();
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -633,11 +647,13 @@ construct_runtime!(
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
 		// t3rn pallets
-		XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>},
+		XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
+		MultiFinalityVerifierPolkadotLike: pallet_mfv::<Instance1>::{
+			Pallet, Call, Storage, Config<T, I>
+		} = 101,
 
 		// admin
-		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
-
+		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
 	}
 );
 
