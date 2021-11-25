@@ -25,12 +25,13 @@
 use codec::{Decode, Encode};
 use frame_system::ensure_root;
 
+use scale_info::TypeInfo;
+
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::{traits::Hash, RuntimeDebug};
 use sp_std::prelude::*;
 use sp_std::vec::Vec;
-use scale_info::TypeInfo;
 use t3rn_parachain_primitives::abi::GatewayABIConfig;
 use t3rn_parachain_primitives::{ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor};
 

@@ -2,13 +2,14 @@
 
 use codec::{Decode, Encode};
 use frame_support::ensure;
+use scale_info::TypeInfo;
+
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::RuntimeString;
 use sp_std::boxed::Box;
 use sp_std::vec;
 use sp_std::vec::Vec;
-use scale_info::TypeInfo;
 
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
