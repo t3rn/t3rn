@@ -239,12 +239,14 @@ jobs:
         working-directory: client/types
         run: |
           chmod +x ../../circuit/target/debug/circuit
-          ../../circuit/target/debug/circuit --alice --tmp > /dev/null 2>&1 &
+          ../../circuit/target/debug/circuit --alice --tmp --ws-port 9900 > /dev/null 2>&1 &
           yarn build
 
 # Updates the node_modules first to make sure we grab the compiled types
       - name: 🦾 Run integration tests
         working-directory: client/circuit-integration-tests
+        env:
+          CIRCUIT_WS_URL: ws://127.0.0.1:9900
         run: |
           rm -rf node_modules
           yarn

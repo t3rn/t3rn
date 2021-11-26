@@ -9,7 +9,7 @@ describe('utils', function() {
     this.timeout(30000);
     it('should successfully create a genesis config for polkadot url', async () => {
       const targetApi = await ApiPromise.create({ provider: new WsProvider('wss://rpc.polkadot.io') });
-      const circuitApi = await ApiPromise.create({ provider: new WsProvider('ws://127.0.0.1:9944'), types });
+      const circuitApi = await ApiPromise.create({ provider: new WsProvider(process.env.CIRCUIT_WS_URL), types });
       const targetMetadata = await targetApi.runtimeMetadata;
       const targetRuntimeVersion = await targetApi.runtimeVersion;
       const targetGenesisHash = await targetApi.genesisHash;

@@ -8,14 +8,13 @@ import '@t3rn/types/dist/augment-api-query';
 import { Bytes, U8aFixed, Vec } from '@polkadot/types';
 import { AllowedSideEffect, SideEffect, XdnsRecord } from '@t3rn/types/dist';
 import { expect } from 'chai';
-import { BN } from '@polkadot/util';
 
 const timeoutIn = (seconds: number) =>
   new Promise<void>((resolve, reject) => setTimeout(() => reject(new Error('timeout')), seconds));
 
 describe('Execution Delivery | Extrinsics', function () {
-  this.timeout(30000);
-  const circuitProvider = new WsProvider('ws://127.0.0.1:9944');
+  this.timeout(60000);
+  const circuitProvider = new WsProvider(process.env.CIRCUIT_WS_URL);
   let circuitApi: ApiPromise;
 
   before(async () => {
@@ -26,7 +25,7 @@ describe('Execution Delivery | Extrinsics', function () {
     });
   });
 
-  describe('submitSideEffectsTemp', () => {
+  describe.skip('submitSideEffectsTemp', () => {
     it('should successfully submit submitSideEffectsTemp tx', async () => {
       await circuitApi.isReady;
 
