@@ -229,7 +229,7 @@ jobs:
         working-directory: client
         run: yarn --locked
 
-      - name: Download circuit
+      - name: 💾 Download circuit
         uses: actions/download-artifact@v2
         with:
           name: ${{ github.sha }}-artifacts
@@ -242,6 +242,10 @@ jobs:
           ../../circuit/target/debug/circuit --alice --tmp > /dev/null 2>&1 &
           yarn build
 
-      - name: Run integration tests
+# Updates the node_modules first to make sure we grab the compiled types
+      - name: 🦾 Run integration tests
         working-directory: client/circuit-integration-tests
-        run: yarn test
+        run: |
+          rm -rf node_modules
+          yarn
+          yarn test
