@@ -1,9 +1,9 @@
 {
   "name": "@t3rn/types",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "t3rn protocol's type definitions for use with polkadot.js clients",
-  "main": "dist/definitions.js",
-  "types": "dist/definitions.d.ts",
+  "main": "dist/flattened_definitions.js",
+  "types": "dist/flattened_definitions.d.ts",
   "files": [
     "dist"
   ],
@@ -22,18 +22,22 @@
     "build": "yarn generate && yarn compile",
     "compile": "rm -rf dist && tsc",
     "generate:defs": "ts-node --skip-project node_modules/.bin/polkadot-types-from-defs --package t3rn-circuit-typegen/interfaces --input ./src/interfaces",
-    "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package t3rn-circuit-typegen/interfaces --endpoint ws://localhost:9944 --output ./src/interfaces",
+    "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package t3rn-circuit-typegen/interfaces --endpoint ws://127.0.0.1:9944 --output ./src/interfaces",
     "generate": "yarn generate:defs && yarn generate:meta",
-    "lint": "tsc --noEmit --pretty"
+    "lint": "tsc --noEmit --pretty",
+    "types:json": "ts-node src/export.ts > dist/types.json"
   },
   "keywords": [
     "t3rn",
     "interoperability",
     "polkadot",
-    "cross-chain"
+    "cross-chain",
+    "parachain",
+    "types"
   ],
   "bugs": {
-    "url": "https://github.com/t3rn/t3rn/issues"
+    "url": "https://github.com/t3rn/t3rn/issues",
+    "email": "team@t3rn.io"
   },
   "homepage": "https://github.com/t3rn/t3rn",
   "devDependencies": {

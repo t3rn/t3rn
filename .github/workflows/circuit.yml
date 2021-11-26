@@ -210,3 +210,36 @@ jobs:
           circuit/target/debug/circuit --alice --log=main,debug --tmp > /dev/null 2>&1 &
           cargo test --workspace --locked --features runtime-benchmarks --manifest-path circuit/Cargo.toml
 
+  test-integration:
+    runs-on: self-hosted
+    needs: [build]
+    steps:
+      - name: ☁️ Checkout git repo
+        uses: actions/checkout@master
+
+      - name: Setup node
+        uses: actions/setup-node@v2
+
+      - name: 🧶 Install yarn
+        run: npm install -g yarn
+
+      - name: 🏗 Install deps
+        working-directory: client
+        run: yarn --locked
+
+#      - name: Download circuit
+#        uses: actions/download-artifact@v2
+#        with:
+#          name: ${{ github.sha }}-artifacts
+#          path: circuit/target/debug/
+
+      - name: 🔹 Compile types
+        working-directory: client/types
+        run: |
+          chmod +x circuit/target/debug/circuit
+          circuit/target/debug/circuit --alice --log=main,debug --tmp > /dev/null 2>&1 &
+          yarn build
+
+      - name: Run integration tests
+        working-directory: client/circuit-integration-tests
+        run: yarn test

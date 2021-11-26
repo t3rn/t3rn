@@ -8,7 +8,9 @@ on:
       - circuit/**/*.rs
       - circuit/**/Cargo.toml
       - circuit/**/Cargo.lock
-      - .github/workflows/circuit*.yml
+      - .github/workflows/circuit-release.yml
+    tags:
+      - 'v*'
 
 env:
   RUST_BACKTRACE: 1
@@ -107,3 +109,76 @@ jobs:
           file: docker/circuit.Dockerfile
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
+
+  release-on-github:
+    runs-on: ubuntu-20.04
+    needs: build-release
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v2
+
+      - name: 📥 Download circuit
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ github.sha }}-artifacts
+          path: circuit/target/release/
+
+      - name: 🎱 Gzip circuit
+        run: |
+          gzip -c ./circuit/target/release/circuit \
+          > ./circuit/target/release/circuit.gz
+
+      - name: 🖐🏾 Fingerprint the gball
+        run: |
+          sha256sum -b ./circuit/target/release/circuit.gz \
+          | grep -oE '^[a-f0-9]+' \
+          | tr -d '\n' \
+          > ./circuit/target/release/circuit.gz.sha256sum
+
+      - name: 🏷️ Get the version tag
+        run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+
+      - name: 🖨️ Get the release notes
+        run: |
+          node -e "
+            const lines = require('fs').readFileSync('./CHANGELOG.md', 'utf8').split(/(\n)/g).filter(Boolean);
+            let head = lines.findIndex(l => /^\s*##[^v]+${{ env.PUSHED_TAG }}/.test(l));
+            if (head === -1) { throw Error('failed parsing changelog') } else head = head + 1;
+            let tail = lines.slice(head).findIndex(l => /^\s*##[^v]+v/.test(l));
+            tail = tail === -1 ? lines.length : tail + head;
+            console.log(lines.slice(head, tail).join(''));
+          " \
+          > ./circuit/target/release/notes.md
+
+      - name: 🐙 Create a GitHub release
+        id: create_release
+        uses: actions/create-release@v1.1.4
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        with:
+          tag_name: ${{ env.PUSHED_TAG }}
+          release_name: ${{ env.PUSHED_TAG }}
+          body_path: ./circuit/target/release/notes.md
+          draft: false
+          prerelease: true
+
+      - name: 🍔 Provide the sha256sum as a release asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./circuit/target/release/circuit.gz.sha256sum
+          asset_name: t3rn-circuit-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz.sha256sum
+          asset_content_type: text/plain
+
+      - name: 📦 Upload the circuit gball as a release asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./circuit/target/release/circuit.gz
+          asset_name: t3rn-circuit-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz
+          asset_content_type: application/gzip

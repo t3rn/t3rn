@@ -25,6 +25,7 @@ frame-support = { default-features = false, git = "https://github.com/paritytech
 pallet-sudo = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 
 [dev-dependencies]
+hex-literal = { version = '0.3.1'}
 serde_json = "1.0.41"
 
 [features]

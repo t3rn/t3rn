@@ -1,0 +1,162 @@
+version: '3'
+services:
+  node_alice:
+    container_name: alice
+    image: "parity/polkadot:v0.9.12"
+    ports:
+      - "30333:30333"
+      - "9933:9933"
+      - "9944:9944"
+    volumes:
+      - type: bind
+        source: ./specs/rococo-local.json
+        target: /chainspec.json
+        read_only: true
+    command: >
+      --chain=/chainspec.json
+      --wasm-execution=compiled
+      --execution=wasm
+      --no-beefy
+      --base-path=/data
+      --port 30333
+      --rpc-port 9933
+      --ws-port 9944
+      --rpc-external
+      --rpc-cors all
+      --ws-external
+      --rpc-methods=Unsafe
+      --alice
+      --log="main,debug"
+
+  node_bob:
+    container_name: bob
+    image: "parity/polkadot:v0.9.12"
+    ports:
+      - "30344:30333"
+      - "9935:9933"
+      - "9945:9944"
+    volumes:
+      - type: bind
+        source: ./specs/rococo-local.json
+        target: /chainspec.json
+        read_only: true
+    command: >
+      --chain=/chainspec.json
+      --base-path=/data
+      --wasm-execution=compiled
+      --execution=wasm
+      --no-beefy
+      --port 30333
+      --rpc-port 9933
+      --ws-port 9944
+      --rpc-external
+      --ws-external
+      --rpc-cors all
+      --rpc-methods=Unsafe
+      --bob
+      --log="main,info"
+
+  para_alice:
+    container_name: para_alice
+    image: "t3rn/circuit-parachain:latest"
+    ports:
+      - "30433:30333"
+      - "9943:9933"
+      - "9954:9944"
+    volumes:
+      - type: bind
+        source: ./specs/rococo-local.json
+        target: /chainspec.json
+        read_only: true
+      - type: bind
+        source: ./specs/circuit-local.json
+        target: /circuit.json
+        read_only: true
+      - type: bind
+        source: ./keystore_1
+        target: /keystore
+        read_only: true
+    command: >
+      /t3rn/circuit-collator
+      --chain=/circuit.json
+      --collator
+      --parachain-id=2000
+      --base-path=/data
+      --wasm-execution=compiled
+      --keystore-path=/keystore
+      --execution=wasm
+      --rpc-external
+      --rpc-cors all
+      --ws-external
+      --rpc-methods=Unsafe
+      --log=main,debug
+      --
+      --wasm-execution=compiled
+      --execution=wasm
+      --chain=/chainspec.json
+
+  para_bob:
+    container_name: para_bob
+    image: "t3rn/circuit-parachain:latest"
+    ports:
+      - "30434:30333"
+      - "9946:9933"
+      - "9955:9944"
+    volumes:
+      - type: bind
+        source: ./specs/rococo-local.json
+        target: /chainspec.json
+        read_only: true
+      - type: bind
+        source: ./specs/circuit-local.json
+        target: /circuit.json
+        read_only: true
+      - type: bind
+        source: ./keystore_2
+        target: /keystore
+        read_only: true
+    command: >
+      /t3rn/circuit-collator
+      --chain=/circuit.json
+      --collator
+      --parachain-id=2000
+      --base-path=/data
+      --wasm-execution=compiled
+      --keystore-path=/keystore
+      --execution=wasm
+      --rpc-external
+      --rpc-cors all
+      --ws-external
+      --rpc-methods=Unsafe
+      --log=main,info
+      --
+      --wasm-execution=compiled
+      --execution=wasm
+      --chain=/chainspec.json
+
+  para_genesis:
+    container_name: para_genesis
+    image: "t3rn/circuit-parachain:latest"
+    volumes:
+      - type: bind
+        source: ./specs/circuit-local.json
+        target: /circuit.json
+        read_only: true
+    command: >
+      /t3rn/circuit-collator export-genesis-state
+      --chain=/circuit.json
+
+  para_wasm:
+    container_name: para_wasm
+    image: "t3rn/circuit-parachain:latest"
+    volumes:
+      - type: bind
+        source: ./specs/circuit-local.json
+        target: /circuit.json
+        read_only: true
+      - type: bind
+        source: ./circuit.wasm
+        target: /circuit.wasm
+        read_only: false
+    command: bash -c "/t3rn/circuit-collator export-genesis-wasm --chain=/circuit.json &> /circuit.wasm"
+

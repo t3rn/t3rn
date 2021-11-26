@@ -6,11 +6,11 @@ export default {
         {
           name: 'at',
           type: 'Hash',
-          isOptional: true
-        }
+          isOptional: true,
+        },
       ],
-      type: 'FetchXdnsRecordsResponse'
-    }
+      type: 'FetchXdnsRecordsResponse',
+    },
   },
   types: {
     XdnsRecordId: 'Hash',
@@ -25,7 +25,7 @@ export default {
       last_finalized: 'Option<u64>',
     },
     FetchXdnsRecordsResponse: {
-      xdns_records: 'Vec<XdnsRecord<AccountId>>'
-    }
+      xdns_records: 'Vec<XdnsRecord<AccountId>>',
+    },
   },
 };
