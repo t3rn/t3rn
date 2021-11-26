@@ -166,6 +166,7 @@ describe('Execution Delivery | Extrinsics', function () {
         await polkadotApi.runtimeVersion,
         await polkadotApi.genesisHash,
       ]);
+      await polkadotApi.disconnect();
 
       // Constuct the keyring after the API (crypto has an async init)
       const keyring = new Keyring({ type: 'sr25519', ss58Format: 60 });
@@ -203,11 +204,6 @@ describe('Execution Delivery | Extrinsics', function () {
 
       // The extrinsic should be finalized before the timeout
       await Promise.race([result, timeoutIn(60000)]);
-
-      // assert the record was added to the xdns storage
-      const xdns = await circuitApi.rpc.xdns.fetchRecords();
-      expect(xdns.xdns_records.map((x: XdnsRecord) => x.gateway_id.toHuman())).to.not.include.deep.members(['pdot']);
-      await polkadotApi.disconnect();
     });
 
     after(async () => await circuitApi.disconnect());
