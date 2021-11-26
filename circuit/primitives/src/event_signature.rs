@@ -11,57 +11,67 @@ pub fn ensure_str_err(condition: bool, err_message: &'static str) -> Result<(), 
     Ok(())
 }
 
+// Constants
+const WHITESPACE_MATRIX: [u8; 4] = [b' ', b'\t', b'\r', b'\n'];
+const ARGS_SEPARATOR: u8 = b',';
+const ARGS_START: u8 = b'(';
+const ARGS_END: u8 = b')';
+
+// Helper functions
+
+// Checks if signature is no-empty and ends correctly
+fn check_overall_sanity(signature: StrLike) -> Result<(), &'static str> {
+    let cloned = trim_whitespace(signature);
+    // make sure schedule is not empty
+    // probably irrelevant since there is already a check for that
+    let last_char = cloned.last();
+    ensure_str_err(
+        last_char.is_some(),
+        "Signature sanity failed - can't be empty",
+    )?;
+    // make sure the schedule ends correctly and remove ending character or panic
+    let ends_correctly = last_char.eq(&Some(&ARGS_END));
+    ensure_str_err(
+        ends_correctly,
+        "Signature sanity failed - must end with ')'",
+    )
+}
+// Trims all whitespace chars from io_schedule vector
+pub fn trim_whitespace(input_string: StrLike) -> StrLike {
+    let mut result = input_string.clone();
+
+    // checks if character is whitespace
+    let is_whitespace = |x: &u8| WHITESPACE_MATRIX.contains(x);
+
+    let mut i = 0;
+    while i < result.len() {
+        if is_whitespace(&result[i]) {
+            result.remove(i);
+        } else {
+            i += 1;
+        }
+    }
+    result
+}
+
 pub fn decode_signature(signature: StrLike) -> Result<(StrLike, Vec<StrLike>), &'static str> {
-    // Constants
-    const WHITESPACE_MATRIX: [u8; 4] = [b' ', b'\t', b'\r', b'\n'];
-    const ARGS_SEPARATOR: u8 = b',';
-    const ARGS_START: u8 = b'(';
-    const ARGS_END: u8 = b')';
 
     // Mutable variables
     let mut event_name: Option<StrLike> = None;
     let mut event_args: Vec<StrLike> = Vec::new();
     let mut current_word: StrLike = StrLike::new();
 
-    // Helper functions
-
-    // Trims all whitespace chars from io_schedule vector
-    fn trim_whitespace(input_string: StrLike) -> StrLike {
-        let mut result = input_string.clone();
-
-        // checks if character is whitespace
-        let is_whitespace = |x: &u8| WHITESPACE_MATRIX.contains(x);
-
-        let mut i = 0;
-        while i < result.len() {
-            if is_whitespace(&result[i]) {
-                result.remove(i);
-            } else {
-                i += 1;
-            }
-        }
-        result
-    }
-    // Checks if signature is no-empty and ends correctly
-    fn check_overall_sanity(signature: StrLike) -> Result<(), &'static str> {
-        let cloned = trim_whitespace(signature);
-        // make sure schedule is not empty
-        // probably irrelevant since there is already a check for that
-        let last_char = cloned.last();
-        ensure_str_err(
-            last_char.is_some(),
-            "Signature sanity failed - can't be empty",
-        )?;
-        // make sure the schedule ends correctly and remove ending character or panic
-        let ends_correctly = last_char.eq(&Some(&ARGS_END));
-        ensure_str_err(
-            ends_correctly,
-            "Signature sanity failed - must end with ')'",
-        )
-    }
-
     // Actual signature decoding start
     check_overall_sanity(signature.clone())?;
+
+    let cloned = trim_whitespace(signature);
+    // make sure schedule is not empty
+    // probably irrelevant since there is already a check for that
+    let last_char = cloned.last();
+    ensure_str_err(
+        last_char.is_some(),
+        "Signature sanity failed - can't be empty",
+    )?;
 
     for &char in signature.iter() {
         match char {
@@ -92,7 +102,52 @@ pub fn decode_signature(signature: StrLike) -> Result<(StrLike, Vec<StrLike>), &
     // Check sanity of result before returning
     let event_name_res = match event_name {
         Some(name) => Ok(name),
-        None => Err("Signature must have non-empty event name"),
+        _ => Err("Signature must have non-empty event name"),
+    }?;
+
+    return Ok((event_name_res, event_args));
+}
+
+pub fn decode_dfd(generic_dfd: StrLike) -> Result<(StrLike, Vec<StrLike>), &'static str> {
+
+    // Mutable variables
+    let mut event_name: Option<StrLike> = None;
+    let mut event_args: Vec<StrLike> = Vec::new();
+    let mut current_word: StrLike = StrLike::new();
+
+    // Actual generic_dfd decoding start
+    check_overall_sanity(generic_dfd.clone())?;
+
+    for &char in generic_dfd.iter() {
+        match char {
+            // Expect to start with an event name before the arguments start
+            ARGS_START => {
+                if current_word.is_empty() {
+                    return Err("Signature must have non-empty event name");
+                }
+                event_name = Some(current_word.clone());
+                current_word.clear();
+            }
+            // Before pushing next non-empty argument name make sure the name is already set
+            ARGS_SEPARATOR | ARGS_END => {
+                if current_word.is_empty() {
+                    return Err("Signature's argument name can't be empty");
+                }
+                if event_name.is_none() {
+                    return Err("Signature must start with event name");
+                }
+                event_args.push(current_word.clone());
+                current_word.clear();
+            }
+            // Push non-special character to the current word
+            _ => current_word.push(char),
+        };
+    }
+
+    // Check sanity of result before returning
+    let event_name_res = match event_name {
+        Some(name) => Ok(name),
+        _ => Err("Signature must have non-empty event name"),
     }?;
 
     return Ok((event_name_res, event_args));
