@@ -219,6 +219,8 @@ jobs:
 
       - name: Setup node
         uses: actions/setup-node@v2
+        with:
+          node-version: '16'
 
       - name: 🧶 Install yarn
         run: npm install -g yarn
@@ -227,11 +229,11 @@ jobs:
         working-directory: client
         run: yarn --locked
 
-#      - name: Download circuit
-#        uses: actions/download-artifact@v2
-#        with:
-#          name: ${{ github.sha }}-artifacts
-#          path: circuit/target/debug/
+      - name: Download circuit
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ github.sha }}-artifacts
+          path: circuit/target/debug/
 
       - name: 🔹 Compile types
         working-directory: client/types
