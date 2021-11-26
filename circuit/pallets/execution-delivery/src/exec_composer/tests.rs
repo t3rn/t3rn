@@ -124,7 +124,7 @@ pub fn insert_default_xdns_record() {
             GatewayType::ProgrammableExternal(0),
             GatewayGenesisConfig {
                 modules_encoded: None,
-                signed_extension: None,
+                // signed_extensions: None,
                 runtime_version: TEST_RUNTIME_VERSION,
                 genesis_hash: Default::default(),
                 extrinsics_version: 0u8,

@@ -117,4 +117,4 @@ pub struct ContractsRegistryResult<T> {
     pub flags: u32,
 }
 
-pub type FetchContractsResult = ContractsRegistryResult<Result<Vec<u8>, ContractAccessError>>;
+pub type FetchContractsResult = ContractsRegistryResult<Result<Vec<Vec<u8>>, ContractAccessError>>;

@@ -4,6 +4,7 @@ use codec::{Decode, Encode};
 use frame_support::ensure;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+use sp_core::Bytes;
 use sp_runtime::RuntimeString;
 use sp_std::boxed::Box;
 use sp_std::vec;
@@ -14,8 +15,6 @@ use sp_runtime::RuntimeDebug as Debug;
 
 #[cfg(feature = "std")]
 use std::fmt::Debug;
-
-pub type Bytes = sp_core::Bytes;
 
 /// ToDo: Introduce Compact Encoding for u8 + u16 + u32
 #[derive(PartialEq, Clone, Encode, Decode, Eq, Hash, Debug)]
