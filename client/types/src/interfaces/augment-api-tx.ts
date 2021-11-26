@@ -12,8 +12,8 @@ import type { Keys } from '@polkadot/types/interfaces/session';
 import type { Key } from '@polkadot/types/interfaces/system';
 import type { AnyNumber } from '@polkadot/types/types';
 import type { RegistryContract, RegistryContractId } from 't3rn-circuit-typegen/interfaces/contracts_registry';
-import type { AllowedSideEffect, GenericDFD, StepConfirmation, XtxId } from 't3rn-circuit-typegen/interfaces/execution_delivery';
-import type { Compose, ConfirmedSideEffect, GatewayABIConfig, GatewayGenesisConfig, GatewayType, GatewayVendor, SideEffect } from 't3rn-circuit-typegen/interfaces/primitives';
+import type { AllowedSideEffect, StepConfirmation, XtxId } from 't3rn-circuit-typegen/interfaces/execution_delivery';
+import type { Compose, ConfirmedSideEffect, GatewayABIConfig, GatewayGenesisConfig, GatewayType, GatewayVendor } from 't3rn-circuit-typegen/interfaces/primitives';
 import type { EthashProofData, EthereumHeader } from 't3rn-circuit-typegen/interfaces/snowfork';
 import type { XdnsRecordId } from 't3rn-circuit-typegen/interfaces/xdns';
 
@@ -346,24 +346,17 @@ declare module '@polkadot/api/types/submittable' {
       [key: string]: SubmittableExtrinsicFunction<ApiType>;
     };
     execDelivery: {
-      confirmSideEffect: AugmentedSubmittable<(xtxId: XtxId | string | Uint8Array, sideEffect: SideEffect | { target?: any; prize?: any; ordered_at?: any; encoded_action?: any; encoded_args?: any; signature?: any; enforce_executioner?: any } | string | Uint8Array, confirmedSideEffect: ConfirmedSideEffect | { err?: any; output?: any; encoded_effect?: any; inclusion_proof?: any; executioner?: any; received_at?: any; cost?: any } | string | Uint8Array, inclusionProof: Option<Bytes> | null | object | string | Uint8Array, stepConfirmation: StepConfirmation | { step_index?: any; value?: any; proof?: any; outbound_event?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [XtxId, SideEffect, ConfirmedSideEffect, Option<Bytes>, StepConfirmation]>;
+      confirmSideEffect: AugmentedSubmittable<(xtxId: XtxId | string | Uint8Array, confirmedSideEffect: ConfirmedSideEffect | { err?: any; output?: any; encoded_effect?: any; inclusion_proof?: any; executioner?: any; received_at?: any; cost?: any } | string | Uint8Array, inclusionProof: Option<Bytes> | null | object | string | Uint8Array, stepConfirmation: StepConfirmation | { step_index?: any; value?: any; proof?: any; outbound_event?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [XtxId, ConfirmedSideEffect, Option<Bytes>, StepConfirmation]>;
       /**
        * Blind version should only be used for testing - unsafe since skips inclusion proof check.
        **/
-      confirmSideEffectBlind: AugmentedSubmittable<(xtxId: XtxId | string | Uint8Array, sideEffect: SideEffect | { target?: any; prize?: any; ordered_at?: any; encoded_action?: any; encoded_args?: any; signature?: any; enforce_executioner?: any } | string | Uint8Array, confirmedSideEffect: ConfirmedSideEffect | { err?: any; output?: any; encoded_effect?: any; inclusion_proof?: any; executioner?: any; received_at?: any; cost?: any } | string | Uint8Array, inclusionProof: Option<Bytes> | null | object | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [XtxId, SideEffect, ConfirmedSideEffect, Option<Bytes>]>;
+      confirmSideEffectBlind: AugmentedSubmittable<(xtxId: XtxId | string | Uint8Array, confirmedSideEffect: ConfirmedSideEffect | { err?: any; output?: any; encoded_effect?: any; inclusion_proof?: any; executioner?: any; received_at?: any; cost?: any } | string | Uint8Array, inclusionProof: Option<Bytes> | null | object | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [XtxId, ConfirmedSideEffect, Option<Bytes>]>;
       registerGateway: AugmentedSubmittable<(url: Bytes | string | Uint8Array, gatewayId: ChainId | string | Uint8Array, gatewayAbi: GatewayABIConfig | { block_number_type_size?: any; hash_size?: any; hasher?: any; crypto?: any; address_length?: any; value_type_size?: any; decimals?: any; structs?: any } | string | Uint8Array, gatewayVendor: GatewayVendor | 'Substrate' | 'Ethereum' | number | Uint8Array, gatewayType: GatewayType | { ProgrammableInternal: any } | { ProgrammableExternal: any } | { TxOnly: any } | string | Uint8Array, gatewayGenesis: GatewayGenesisConfig | { modules_encoded?: any; runtime_version?: any; extrinsics_version?: any; genesis_hash?: any } | string | Uint8Array, firstHeader: Bytes | string | Uint8Array, authorities: Option<Vec<AccountId>> | null | object | string | Uint8Array, allowedSideEffects: Vec<AllowedSideEffect> | (AllowedSideEffect | string | Uint8Array)[]) => SubmittableExtrinsic<ApiType>, [Bytes, ChainId, GatewayABIConfig, GatewayVendor, GatewayType, GatewayGenesisConfig, Bytes, Option<Vec<AccountId>>, Vec<AllowedSideEffect>]>;
       /**
        * Will be deprecated in v1.0.0-RC
        **/
       submitComposableExecOrder: AugmentedSubmittable<(ioSchedule: Bytes | string | Uint8Array, components: Vec<Compose> | (Compose | { name?: any; code_txt?: any; exec_type?: any; dest?: any; value?: any; bytes?: any; input_data?: any } | string | Uint8Array)[]) => SubmittableExtrinsic<ApiType>, [Bytes, Vec<Compose>]>;
       submitExec: AugmentedSubmittable<(contractId: RegistryContractId | string | Uint8Array, input: Bytes | string | Uint8Array, value: BalanceOf | AnyNumber | Uint8Array, reward: BalanceOf | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [RegistryContractId, Bytes, BalanceOf, BalanceOf]>;
-      submitExecDfd: AugmentedSubmittable<(genericDfd: GenericDFD | string | Uint8Array, input: Bytes | string | Uint8Array, value: BalanceOf | AnyNumber | Uint8Array, reward: BalanceOf | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [GenericDFD, Bytes, BalanceOf, BalanceOf]>;
-      /**
-       * Temporary entry for submitting a side effect directly for validation and event emittance
-       * It's temporary, since will be replaced with a DFD, which allows to specify exactly the nature of argument
-       * (SideEffect vs ComposableContract vs LocalContract or Mix)
-       **/
-      submitSideEffectsTemp: AugmentedSubmittable<(sideEffects: Vec<SideEffect> | (SideEffect | { target?: any; prize?: any; ordered_at?: any; encoded_action?: any; encoded_args?: any; signature?: any; enforce_executioner?: any } | string | Uint8Array)[], input: Bytes | string | Uint8Array, value: BalanceOf | AnyNumber | Uint8Array, reward: BalanceOf | AnyNumber | Uint8Array, sequential: bool | boolean | Uint8Array) => SubmittableExtrinsic<ApiType>, [Vec<SideEffect>, Bytes, BalanceOf, BalanceOf, bool]>;
       updateGateway: AugmentedSubmittable<(gatewayId: ChainId | string | Uint8Array, url: Option<Bytes> | null | object | string | Uint8Array, gatewayAbi: Option<GatewayABIConfig> | null | object | string | Uint8Array, authorities: Option<Vec<AccountId>> | null | object | string | Uint8Array, allowedSideEffects: Option<Vec<AllowedSideEffect>> | null | object | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [ChainId, Option<Bytes>, Option<GatewayABIConfig>, Option<Vec<AccountId>>, Option<Vec<AllowedSideEffect>>]>;
       /**
        * Generic tx
