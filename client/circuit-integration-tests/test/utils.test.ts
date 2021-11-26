@@ -1,13 +1,12 @@
 import { createGatewayGenesisConfig } from '../src/utils/utils';
 import { expect } from 'chai';
 import { ApiPromise, WsProvider } from '@polkadot/api';
-import * as definitions from '@t3rn/types';
+import { types } from '@t3rn/types';
 
-describe('utils', function () {
-  describe('createGatewayGenesisConfig', function () {
+describe('utils', function() {
+  describe('createGatewayGenesisConfig', function() {
     this.timeout(30000);
     it('should successfully create a genesis config for polkadot url', async () => {
-      const types = Object.values(definitions).reduce((res, { types }): object => ({ ...res, ...types }), {});
       const targetApi = await ApiPromise.create({ provider: new WsProvider('wss://rpc.polkadot.io') });
       const circuitApi = await ApiPromise.create({ provider: new WsProvider('ws://127.0.0.1:9944'), types });
       const targetMetadata = await targetApi.runtimeMetadata;
