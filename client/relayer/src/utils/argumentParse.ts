@@ -1,8 +1,8 @@
-import { Keyring } from '@polkadot/api';
+import { ApiPromise, Keyring } from '@polkadot/api';
 import type { Vec, Bytes } from '@polkadot/types';
 import { TransferArguments } from './types';
 
-export function parseTransferArguments(params: Vec<Bytes>) : TransferArguments {
+export function parseTransferArguments(api: ApiPromise, params: Vec<Bytes>) : TransferArguments {
     // do some magic here and assing the correct values.
     // TODO : Do this later.
 
@@ -11,8 +11,8 @@ export function parseTransferArguments(params: Vec<Bytes>) : TransferArguments {
     const bob = keyring.addFromUri('//Bob');
 
     let parsed = <TransferArguments>{};
-    parsed.amount = 100000;
-    parsed.to = bob.address;
-    parsed.from = alice.address;
+    parsed.from = api.createType('AccountId',params[0].toHuman());
+    parsed.to = api.createType('AccountId',params[1].toHuman());
+    parsed.amount = api.createType('u128',params[2]);
     return parsed;
 }

@@ -9,10 +9,12 @@ import { TransactionResult } from '../utils/types';
 export async function submit_transfer(api: ApiPromise, parameters: TransferArguments): Promise<TransactionResult> {
   return new Promise(async resolve => {
     console.log(`Submitting transfer`);
+    const keyring = new Keyring({ type: 'sr25519' });
+    const alice = keyring.addFromUri('//Alice');
 
     const unsub = await api.tx.balances
       .transfer(parameters.to, parameters.amount)
-      .signAndSend(parameters.from, (result) => {
+      .signAndSend(alice, (result) => {
         console.log(`Current status is ${result.status}`);
 
         if (result.status.isFinalized) {

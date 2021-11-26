@@ -21,20 +21,17 @@ import { parseTransferArguments } from './argumentParse';
 import { NewSideEffectsAvailableEvent } from './types';
 export async function executionRouter(payload: NewSideEffectsAvailableEvent, api: ApiPromise) {
     // we have xtx_id and account outside which are common.
-    console.log("I am inside execution router");
     for (let index = 0; index < payload.sideEffects.length; index++) {
-        // here we parse what the side effect is and what we have to do.
         let item = payload.sideEffects[index];
-        console.log(item);
-        switch (item.encoded_action.toString()) {
+        switch (item.encoded_action.toHuman()) {
             case "transfer":
-                console.log("Execution Router : I am inside transfer");
-                let parameters = parseTransferArguments(item.encoded_args);
+                console.log("Execution Router : Transfer");
+                let parameters = parseTransferArguments(api, item.encoded_args);
                 await submit_transfer(api, parameters).then(
                     async result => {
                         if (result.status) {
                             console.log("Transfer success");
-                            let proofs_in_vec_of_bytes = await getProofs(api, result.blockHash);
+                            // let proofs_in_vec_of_bytes = await getProofs(api, result.blockHash);
                             // let { blockHash, status } = await send_tx_confirm_side_effect(circuitApi, proofs_in_vec_of_bytes);
                             // console.log(proofs_in_vec_of_bytes);
                         }
@@ -45,7 +42,10 @@ export async function executionRouter(payload: NewSideEffectsAvailableEvent, api
                 );
                 break;
             case "getStorage":
+                console.log("Execution Router : I am inside getStorage");
                 break;
+            default:
+                console.log("Default");
         }
     }
     console.log("Execution end");

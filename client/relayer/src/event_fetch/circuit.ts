@@ -36,8 +36,6 @@ export async function fetchCircuitEvents(api: ApiPromise, emitter: Emitter) {
                 }
 
                 // raise event for the parsed payload
-                console.log("Printing the object created");
-                // console.log(parsed);
                 emitter.emitSideEffect(parsed, api);
             }
         });

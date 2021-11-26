@@ -31,7 +31,7 @@ export class Emitter extends events.EventEmitter {
 // then how will it work if the relayer signs the tx.
 // I dont know.
 export interface TransferArguments {
-  to: string,
-  from: string,
+  to: AccountId,
+  from: AccountId,
   amount: Compact<u128> | AnyNumber | Uint8Array
 }

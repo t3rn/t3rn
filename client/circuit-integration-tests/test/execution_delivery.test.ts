@@ -34,14 +34,14 @@ describe('Execution Delivery | Extrinsics', function () {
       const keyring = new Keyring({ type: 'sr25519', ss58Format: 60 });
       const alice = keyring.addFromUri('//Alice');
       const bob = keyring.addFromUri('//Bob');
-      const gatewayId = randomGatewayId();
 
       // Create the extrinsic call
       let TargetId: U8aFixed = new U8aFixed(circuitApi.registry, [0, 0, 0, 1], 32);
       let encoded_action: Bytes = circuitApi.createType('Bytes', 'transfer');
       let arg_from: Bytes = new Bytes(circuitApi.registry, bob.address);
       let arg_to: Bytes = new Bytes(circuitApi.registry, bob.address);
-      let arg_value = circuitApi.createType('Bytes', Array.from(circuitApi.createType('u64', 1).toU8a()));
+      // 100000000000000 is 100 Kilo. I dont know what that means.
+      let arg_value = circuitApi.createType('Bytes', Array.from(circuitApi.createType('u128', 100000000000000).toU8a()));
 
       let sideEffectTransfer = circuitApi.createType('SideEffect', {
         target: circuitApi.createType('TargetId', TargetId),

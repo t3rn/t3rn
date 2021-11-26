@@ -9,14 +9,8 @@ import { TypeRegistry } from '@polkadot/types';
 
 const eventEmitter = new Emitter();
 eventEmitter.on('NewSideEffect', async (payload, rococoApi) => {
-  console.log('I was triggered. Here is the object');
   await executionRouter(payload, rococoApi);
 });
-
-const registry = new TypeRegistry();
-let temp = registry.createType('Bytes', 'transfer');
-console.log(temp.toHex());
-console.log(Buffer.from(temp.toU8a()).toString('hex'));
 
 const circuitProvider = new WsProvider('ws://localhost:9944');
 ApiPromise.create({
