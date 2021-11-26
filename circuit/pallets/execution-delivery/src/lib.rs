@@ -143,19 +143,19 @@ pub mod pallet {
     /// This pallet's configuration trait
     #[pallet::config]
     pub trait Config:
-    frame_system::Config
-    + pallet_bridge_messages::Config
-    + pallet_balances::Config
-    + VolatileVM
-    + pallet_contracts_registry::Config
-    + pallet_xdns::Config
-    + pallet_contracts::Config
-    + pallet_evm::Config
-    + pallet_multi_finality_verifier::Config<DefaultPolkadotLikeGateway>
-    + pallet_multi_finality_verifier::Config<PolkadotLikeValU64Gateway>
-    + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU64Gateway>
-    + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU32Gateway>
-    + snowbridge_basic_channel::outbound::Config
+        frame_system::Config
+        + pallet_bridge_messages::Config
+        + pallet_balances::Config
+        + VolatileVM
+        + pallet_contracts_registry::Config
+        + pallet_xdns::Config
+        + pallet_contracts::Config
+        + pallet_evm::Config
+        + pallet_multi_finality_verifier::Config<DefaultPolkadotLikeGateway>
+        + pallet_multi_finality_verifier::Config<PolkadotLikeValU64Gateway>
+        + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU64Gateway>
+        + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU32Gateway>
+        + snowbridge_basic_channel::outbound::Config
     {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -666,13 +666,13 @@ pub mod pallet {
         ),
         // Listeners - remote targets integrators/registrants
         NewGatewayRegistered(
-            bp_runtime::ChainId, // gateway id
-            GatewayType, // type - external, programmable, tx-only
-            GatewayVendor, // vendor - substrate, eth etc.
+            bp_runtime::ChainId,    // gateway id
+            GatewayType,            // type - external, programmable, tx-only
+            GatewayVendor,          // vendor - substrate, eth etc.
             Vec<AllowedSideEffect>, // allowed side effects / enabled methods
         ),
         GatewayUpdated(
-            bp_runtime::ChainId, // gateway id
+            bp_runtime::ChainId,  // gateway id
             Option<Vec<Vec<u8>>>, // allowed side effects / enabled methods
         ),
     }
@@ -952,9 +952,9 @@ impl<T: Config> Pallet<T> {
 pub struct EnsureExecDelivery<T>(sp_std::marker::PhantomData<T>);
 
 impl<
-    T: pallet::Config,
-    O: Into<Result<RawOrigin<T::AccountId>, O>> + From<RawOrigin<T::AccountId>>,
-> EnsureOrigin<O> for EnsureExecDelivery<T>
+        T: pallet::Config,
+        O: Into<Result<RawOrigin<T::AccountId>, O>> + From<RawOrigin<T::AccountId>>,
+    > EnsureOrigin<O> for EnsureExecDelivery<T>
 {
     type Success = T::AccountId;
 

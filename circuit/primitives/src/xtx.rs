@@ -107,7 +107,7 @@ impl<
 
         // Double check there are some side effects for that Xtx - should have been checked at API level tho already
         if self.full_side_effects.is_empty() {
-            return Err("Xtx has no single side effect step to confirm.rs");
+            return Err("Xtx has no single side effect step to confirm");
         }
 
         let mut unconfirmed_step_no: Option<usize> = None;
@@ -124,15 +124,15 @@ impl<
                         unconfirmed_step_no = Some(i);
                     }
                     // Recalculate the ID for each input side effect and compare with the input one.
-                    // Check the current unconfirmed step before attempt to confirm.rs the full side effect.
+                    // Check the current unconfirmed step before attempt to confirm the full side effect.
                     return if full_side_effect.input.generate_id::<Hasher>() == input_side_effect_id
                         && unconfirmed_step_no == Some(i)
                     {
-                        // We found the side effect to confirm.rs from inside the unconfirmed step.
+                        // We found the side effect to confirm from inside the unconfirmed step.
                         full_side_effect.confirmed = Some(confirmed.clone());
                         Ok(true)
                     } else {
-                        Err("Attempt to confirm.rs side effect from the next step, \
+                        Err("Attempt to confirm side effect from the next step, \
                                 but there still is at least one unfinished step")
                     };
                 }
@@ -520,7 +520,7 @@ mod tests {
             input_side_effect_2.clone(),
         );
 
-        assert_eq!(res_2_err, Err("Attempt to confirm.rs side effect from the next step, but there still is at least one unfinished step"));
+        assert_eq!(res_2_err, Err("Attempt to confirm side effect from the next step, but there still is at least one unfinished step"));
 
         // Check that the firsts AND second xtx.full_side_effects has NOT been updated
         assert_eq!(
