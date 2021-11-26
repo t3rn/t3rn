@@ -81,8 +81,6 @@ pub use xbridges::{
 
 pub use t3rn_primitives::xtx::{Xtx, XtxId};
 
-
-
 use t3rn_protocol::side_effects::confirm::substrate::SubstrateSideEffectsParser;
 use t3rn_protocol::side_effects::loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol};
 pub use t3rn_protocol::side_effects::protocol::SideEffectConfirmationProtocol;
@@ -145,19 +143,19 @@ pub mod pallet {
     /// This pallet's configuration trait
     #[pallet::config]
     pub trait Config:
-        frame_system::Config
-        + pallet_bridge_messages::Config
-        + pallet_balances::Config
-        + VolatileVM
-        + pallet_contracts_registry::Config
-        + pallet_xdns::Config
-        + pallet_contracts::Config
-        + pallet_evm::Config
-        + pallet_multi_finality_verifier::Config<DefaultPolkadotLikeGateway>
-        + pallet_multi_finality_verifier::Config<PolkadotLikeValU64Gateway>
-        + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU64Gateway>
-        + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU32Gateway>
-        + snowbridge_basic_channel::outbound::Config
+    frame_system::Config
+    + pallet_bridge_messages::Config
+    + pallet_balances::Config
+    + VolatileVM
+    + pallet_contracts_registry::Config
+    + pallet_xdns::Config
+    + pallet_contracts::Config
+    + pallet_evm::Config
+    + pallet_multi_finality_verifier::Config<DefaultPolkadotLikeGateway>
+    + pallet_multi_finality_verifier::Config<PolkadotLikeValU64Gateway>
+    + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU64Gateway>
+    + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU32Gateway>
+    + snowbridge_basic_channel::outbound::Config
     {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -415,7 +413,7 @@ pub mod pallet {
             // Verify whether the side effect completes the Xtx
             let mut xtx: Xtx<T::AccountId, T::BlockNumber, BalanceOf<T>> =
                 ActiveXtxMap::<T>::get(xtx_id.clone())
-                    .expect("submitted to confirm.rs step id does not match with any Xtx");
+                    .expect("submitted to confirm step id does not match with any Xtx");
 
             // ToDo: Just covered a single path for substrate transfers for now
 
@@ -558,7 +556,7 @@ pub mod pallet {
 
             let mut xtx: Xtx<T::AccountId, T::BlockNumber, BalanceOf<T>> =
                 ActiveXtxMap::<T>::get(xtx_id.clone())
-                    .expect("submitted to confirm.rs step id does not match with any Xtx");
+                    .expect("submitted to confirm step id does not match with any Xtx");
 
             // ToDo: Read gateway_id from xtx GatewaysDFD
             let gateway_id = Default::default();
@@ -668,13 +666,13 @@ pub mod pallet {
         ),
         // Listeners - remote targets integrators/registrants
         NewGatewayRegistered(
-            bp_runtime::ChainId,    // gateway id
-            GatewayType,            // type - external, programmable, tx-only
-            GatewayVendor,          // vendor - substrate, eth etc.
+            bp_runtime::ChainId, // gateway id
+            GatewayType, // type - external, programmable, tx-only
+            GatewayVendor, // vendor - substrate, eth etc.
             Vec<AllowedSideEffect>, // allowed side effects / enabled methods
         ),
         GatewayUpdated(
-            bp_runtime::ChainId,  // gateway id
+            bp_runtime::ChainId, // gateway id
             Option<Vec<Vec<u8>>>, // allowed side effects / enabled methods
         ),
     }
@@ -954,9 +952,9 @@ impl<T: Config> Pallet<T> {
 pub struct EnsureExecDelivery<T>(sp_std::marker::PhantomData<T>);
 
 impl<
-        T: pallet::Config,
-        O: Into<Result<RawOrigin<T::AccountId>, O>> + From<RawOrigin<T::AccountId>>,
-    > EnsureOrigin<O> for EnsureExecDelivery<T>
+    T: pallet::Config,
+    O: Into<Result<RawOrigin<T::AccountId>, O>> + From<RawOrigin<T::AccountId>>,
+> EnsureOrigin<O> for EnsureExecDelivery<T>
 {
     type Success = T::AccountId;
 
