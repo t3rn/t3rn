@@ -238,8 +238,8 @@ jobs:
       - name: 🔹 Compile types
         working-directory: client/types
         run: |
-          chmod +x circuit/target/debug/circuit
-          circuit/target/debug/circuit --alice --log=main,debug --tmp > /dev/null 2>&1 &
+          chmod +x ../../circuit/target/debug/circuit
+          ../../circuit/target/debug/circuit --alice --tmp > /dev/null 2>&1 &
           yarn build
 
       - name: Run integration tests
