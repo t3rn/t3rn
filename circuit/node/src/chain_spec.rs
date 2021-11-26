@@ -32,7 +32,7 @@ use circuit_runtime::{
     Signature, SudoConfig, SystemConfig, XDNSConfig, WASM_BINARY,
 };
 use jsonrpc_runtime_client::{create_rpc_client, get_metadata, ConnectionParams};
-use pallet_xdns::types::XdnsRecord;
+use pallet_xdns::XdnsRecord;
 use t3rn_primitives::{GatewayGenesisConfig, GatewayType, GatewayVendor};
 
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
