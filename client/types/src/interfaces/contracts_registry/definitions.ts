@@ -1,5 +1,6 @@
 export default {
   types: {
+    ChainId: '[u8; 4]',
     RegistryContractId: 'Hash',
     RegistryContract: {
       code_txt: 'Vec<u8>',

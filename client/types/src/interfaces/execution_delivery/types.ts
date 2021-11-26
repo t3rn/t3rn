@@ -26,6 +26,9 @@ export interface GatewayOutboundEvent extends Struct {
 /** @name GatewayOutboundEventId */
 export interface GatewayOutboundEventId extends u64 {}
 
+/** @name GenericDFD */
+export interface GenericDFD extends Bytes {}
+
 /** @name ProofType */
 export interface ProofType extends Enum {
   readonly isFullValue: boolean;

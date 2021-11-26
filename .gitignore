@@ -14,3 +14,4 @@ client/node_modules/*
 # accound id info
 /.devkey
 client/circuit-integration-tests/node_modules/.bin/_mocha
+client/types/dist/*

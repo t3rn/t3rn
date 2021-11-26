@@ -1,10 +1,13 @@
 // Auto-generated via `yarn polkadot-types-from-defs`, do not edit
 /* eslint-disable */
 
-import type { Bytes, Enum, Option, Struct, Type, Vec, u16, u32, u64, u8 } from '@polkadot/types';
+import type { Bytes, Enum, Option, Struct, Type, U8aFixed, Vec, u16, u32, u64, u8 } from '@polkadot/types';
 import type { ChainId, Parameter } from '@polkadot/types/interfaces/bridges';
-import type { AccountId, Balance, BalanceOf, BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
+import type { AccountId, Balance, BalanceOf, Hash } from '@polkadot/types/interfaces/runtime';
 import type { RuntimeVersion } from '@polkadot/types/interfaces/state';
+
+/** @name BlockNumber */
+export interface BlockNumber extends u64 {}
 
 /** @name CircuitOutboundMessage */
 export interface CircuitOutboundMessage extends Struct {
@@ -151,7 +154,7 @@ export interface ProofTriePointer extends Enum {
 
 /** @name SideEffect */
 export interface SideEffect extends Struct {
-  readonly target: ChainId;
+  readonly target: TargetId;
   readonly prize: BalanceOf;
   readonly ordered_at: BlockNumber;
   readonly encoded_action: Bytes;
@@ -168,6 +171,6 @@ export interface StructDecl extends Struct {
 }
 
 /** @name TargetId */
-export interface TargetId extends ChainId {}
+export interface TargetId extends U8aFixed {}
 
 export type PHANTOM_PRIMITIVES = 'primitives';

@@ -1,5 +1,6 @@
 export default {
   types: {
+    BlockNumber : 'u64',
     Compose: {
       name: 'Vec<u8>',
       code_txt: 'Vec<u8>',
@@ -93,9 +94,9 @@ export default {
       target_id: 'Option<TargetId>',
       to: 'Option<AccountId>',
     },
-    TargetId: 'ChainId',
+    TargetId: '[u8; 4]',
     SideEffect: {
-      target: 'ChainId',
+      target: 'TargetId',
       prize: 'BalanceOf',
       ordered_at: 'BlockNumber',
       encoded_action: 'Bytes',
