@@ -25,26 +25,31 @@
 use codec::{Decode, Encode};
 use frame_support::dispatch::DispatchResultWithPostInfo;
 
-use frame_support::traits::{EnsureOrigin, Get};
+use frame_support::traits::{Currency, EnsureOrigin, Get};
 use frame_system::offchain::{SignedPayload, SigningTypes};
 use frame_system::RawOrigin;
 
 use sp_core::crypto::KeyTypeId;
-use sp_runtime::{traits::Convert, RuntimeDebug};
-pub use t3rn_protocol::circuit_inbound::StepConfirmation;
-use t3rn_protocol::merklize::*;
-
-pub use pallet::*;
-use sp_runtime::traits::AccountIdConversion;
-
+use sp_runtime::{
+    traits::{AccountIdConversion, Convert, Saturating},
+    RuntimeDebug,
+};
 use sp_std::vec::*;
-use t3rn_primitives::abi::{GatewayABIConfig, HasherAlgo as HA};
-use t3rn_primitives::transfers::BalanceOf;
 
-use t3rn_primitives::*;
+pub use t3rn_primitives::{
+    abi::{GatewayABIConfig, HasherAlgo as HA},
+    side_effect::{ConfirmedSideEffect, FullSideEffect, SideEffect},
+    transfers::BalanceOf,
+    xtx::{LocalState, Xtx, XtxId},
+    *,
+};
+pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
+
 use volatile_vm::VolatileVM;
 
 pub type Bytes = sp_core::Bytes;
+
+pub use pallet::*;
 
 #[cfg(test)]
 pub mod tests;
@@ -65,9 +70,6 @@ pub use xbridges::{
     PolkadotLikeValU64Gateway,
 };
 
-pub use t3rn_primitives::xtx::{Xtx, XtxId};
-
-pub use t3rn_primitives::side_effect::{ConfirmedSideEffect, FullSideEffect, SideEffect};
 pub type AllowedSideEffect = Vec<u8>;
 
 /// Defines application identifier for crypto keys of this module.
@@ -173,6 +175,88 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+        /// Temporary entry for submitting a side effect directly for validation and event emittance
+        /// It's temporary, since will be replaced with a DFD, which allows to specify exactly the nature of argument
+        /// (SideEffect vs ComposableContract vs LocalContract or Mix)
+        #[pallet::weight(< T as Config >::WeightInfo::submit_exec())]
+        pub fn submit_side_effects_temp(
+            origin: OriginFor<T>,
+            side_effects: Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+            input: Vec<u8>,
+            _value: BalanceOf<T>,
+            reward: BalanceOf<T>,
+            sequential: bool,
+        ) -> DispatchResultWithPostInfo {
+            // Retrieve sender of the transaction.
+            let requester = ensure_signed(origin)?;
+            // Ensure can afford
+            ensure!(
+                <T as EscrowTrait>::Currency::free_balance(&requester).saturating_sub(reward)
+                    >= BalanceOf::<T>::from(0 as u32),
+                Error::<T>::RequesterNotEnoughBalance,
+            );
+
+            let mut full_side_effects: Vec<
+                FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+            > = vec![];
+
+            let mut local_state = LocalState::new();
+
+            for side_effect in side_effects.iter() {
+                // ToDo SSE-1: Generate Circuit's params as default ABI from let abi = pallet_xdns::get_abi(target_id)
+                // ToDo SSE-2: Port Protocol here to ensure that the input arguments set by a user
+                //  follow the protocol for defined for that side effect
+
+                full_side_effects.push(FullSideEffect {
+                    input: side_effect.clone(),
+                    confirmed: None,
+                })
+            }
+
+            let full_side_effects_steps = match sequential {
+                false => vec![full_side_effects],
+                true => {
+                    let mut sequential_order: Vec<
+                        Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+                    > = vec![];
+                    for full_side_effect in full_side_effects.iter() {
+                        sequential_order.push(vec![full_side_effect.clone()]);
+                    }
+                    sequential_order
+                }
+            };
+
+            // ToDo: SSE-Timeout - Introduce default timeout + delay
+            let (timeouts_at, delay_steps_at) = (None, None);
+            let new_xtx = Xtx::<T::AccountId, T::BlockNumber, BalanceOf<T>>::new(
+                requester.clone(),
+                input,
+                timeouts_at,
+                delay_steps_at,
+                Some(reward),
+                local_state,
+                // ToDo: SSE-DFD - Missing GenericDFD to link side effects
+                //  or composable contracts with the Xtx
+                full_side_effects_steps,
+            );
+            let x_tx_id: XtxId<T> = new_xtx.generate_xtx_id::<T>();
+            ActiveXtxMap::<T>::insert(x_tx_id, &new_xtx);
+
+            Self::deposit_event(Event::XTransactionReceivedForExec(
+                x_tx_id.clone(),
+                // ToDo: Emit side effects DFD - encode_dfd(side_effects)
+                Default::default(),
+            ));
+
+            Self::deposit_event(Event::NewSideEffectsAvailable(
+                requester.clone(),
+                x_tx_id.clone(),
+                side_effects,
+            ));
+
+            Ok(().into())
+        }
+
         /// Blind version should only be used for testing - unsafe since skips inclusion proof check.
         #[pallet::weight(<T as Config>::WeightInfo::confirm_side_effect_blind())]
         pub fn confirm_side_effect_blind(
