@@ -1,4 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+
 use codec::{Decode, Encode};
 
 use sp_std::vec;
@@ -27,6 +28,7 @@ impl VendorSideEffectsParser for SubstrateSideEffectsParser {
             "transfer:dirty" => {
                 // Assume that the different Pallet ID Circuit vs Target wouldn't matter for decoding on Circuit.
                 match Decode::decode(&mut &event_encoded[..]) {
+                    // TypeId::of<<T as pallet_system::AccountId>>()
                     Ok(pallet_balances::Event::<T>::Transfer(from, to, value)) => Ok(vec![from.encode(), to.encode(), value.encode()]),
                     Ok(pallet_balances::Event::<T>::Endowed(_, _)) => Err("Event decodes to pallet_balances::Event::Endowed, which is unsupported"),
                     Ok(pallet_balances::Event::<T>::DustLost(_, _)) => Err("Event decodes to pallet_balances::Event::DustLost, which is unsupported"),
@@ -35,7 +37,6 @@ impl VendorSideEffectsParser for SubstrateSideEffectsParser {
                     Ok(pallet_balances::Event::<T>::Unreserved(_, _)) => Err("Event decodes to pallet_balances::Event::Unreserved, which is unsupported"),
                     Ok(pallet_balances::Event::<T>::BalanceSet(_, _, _)) => Err("Event decodes to pallet_balances::Event::BalanceSet, which is unsupported"),
                     Ok(pallet_balances::Event::<T>::__Ignore(_, _)) => Err("Event decodes to pallet_balances::Event::BalanceSet, which is unsupported"),
-                    Ok(pallet_balances::Event::<T>::ReserveRepatriated(_, _, _, _)) => Err("Event decodes to pallet_balances::Event::ReserveRepatriated, which is unsupported"),
                     Ok(pallet_balances::Event::<T>::ReserveRepatriated(_, _, _, _)) => Err("Event decodes to pallet_balances::Event::ReserveRepatriated, which is unsupported"),
                     Err(_) => Err("Decoded event doesn't match expected for substrate form of pallet_balances::Event::Transfer"),
                 }
@@ -128,7 +129,7 @@ pub mod tests {
             vec![
                 2, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
                 9, 9, 9, 9, 9, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-                6, 6, 6, 6, 6, 6, 6, 6, 6, 1, 0, 0, 0, 0, 0, 0, 0
+                6, 6, 6, 6, 6, 6, 6, 6, 6, 1, 0, 0, 0, 0, 0, 0, 0,
             ]
         );
     }
@@ -153,13 +154,13 @@ pub mod tests {
             Ok(vec![
                 vec![
                     9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                    9, 9, 9, 9, 9, 9
+                    9, 9, 9, 9, 9, 9,
                 ],
                 vec![
                     6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-                    6, 6, 6, 6, 6, 6
+                    6, 6, 6, 6, 6, 6,
                 ],
-                vec![1, 0, 0, 0, 0, 0, 0, 0]
+                vec![1, 0, 0, 0, 0, 0, 0, 0],
             ])
         );
     }

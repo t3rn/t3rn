@@ -4,11 +4,8 @@ use sp_std::vec::*;
 
 use crate::side_effects::confirm::parser::VendorSideEffectsParser;
 use crate::side_effects::protocol::SideEffectProtocol;
-use crate::side_effects::volatile::LocalState;
-use crate::side_effects::volatile::Volatile;
+pub use t3rn_primitives::volatile::{LocalState, Volatile};
 
-type Bytes = Vec<u8>;
-type Arguments = Vec<Bytes>;
 pub type EventSignature = Vec<u8>;
 pub type String = Vec<u8>;
 

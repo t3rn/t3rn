@@ -1,10 +1,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use crate::side_effects::confirm::protocol::SideEffectConfirmationProtocol;
-pub use crate::side_effects::volatile::{LocalState, Volatile};
 use codec::{Decode, Encode};
 use sp_std::vec;
 use sp_std::vec::*;
+use t3rn_primitives::volatile::{LocalState, Volatile};
 
 use t3rn_primitives::abi::{GatewayABIConfig, Type};
 
@@ -119,21 +119,16 @@ pub trait SideEffectProtocol {
             let type_n = &Self::get_arguments_abi(self)[i];
             type_n.eval(arg.clone())?;
         }
-        self.populate_state(args, local_state);
-
-        // ToDo: Maybe return a signature assuming it isn't created by a user?
-        Ok(())
+        self.populate_state(args, local_state)
     }
 }
 
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::side_effects::volatile::tests::{
-        FROM_2XX_32B_HASH, TO_2XX_32B_HASH, VALUE_2XX_32B_HASH,
-    };
     use hex_literal::hex;
     use sp_std::vec;
+    use t3rn_primitives::volatile::{FROM_2XX_32B_HASH, TO_2XX_32B_HASH, VALUE_2XX_32B_HASH};
 
     #[test]
     fn successfully_populates_state_for_transfer_arguments() {

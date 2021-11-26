@@ -10,7 +10,7 @@ type Arguments = Vec<Bytes>;
 pub type EventSignature = Vec<u8>;
 pub type String = Vec<u8>;
 
-struct EthereumSideEffectsParser {}
+pub struct EthereumSideEffectsParser {}
 
 impl VendorSideEffectsParser for EthereumSideEffectsParser {
     fn parse_event<T: pallet_balances::Config>(
