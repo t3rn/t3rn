@@ -9890,6 +9890,7 @@ dependencies = [
  "hash-db",
  "hex",
  "hex-literal",
+ "pallet-balances",
  "pallet-bridge-messages",
  "pallet-sudo",
  "parity-scale-codec",

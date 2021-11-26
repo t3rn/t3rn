@@ -43,9 +43,11 @@ use t3rn_protocol::merklize::*;
 use bp_runtime::ChainId;
 pub use pallet::*;
 use sp_runtime::traits::AccountIdConversion;
+
 use sp_std::vec;
 use sp_std::vec::*;
 use t3rn_primitives::abi::{ContractActionDesc, GatewayABIConfig, HasherAlgo as HA};
+pub use t3rn_primitives::side_effect::{ConfirmedSideEffect, FullSideEffect, SideEffect};
 use t3rn_primitives::transfers::BalanceOf;
 use t3rn_primitives::volatile::LocalState;
 use t3rn_primitives::*;
@@ -62,12 +64,15 @@ mod benchmarking;
 pub mod mock;
 
 pub mod weights;
+
 use weights::WeightInfo;
 
 pub mod exec_composer;
 
 pub use t3rn_protocol::test_utils as message_test_utils;
+
 pub mod xbridges;
+
 pub use xbridges::{
     get_roots_from_bridge, init_bridge_instance, CurrentHash, CurrentHasher, CurrentHeader,
     DefaultPolkadotLikeGateway, EthLikeKeccak256ValU32Gateway, EthLikeKeccak256ValU64Gateway,
@@ -76,8 +81,10 @@ pub use xbridges::{
 
 pub use t3rn_primitives::xtx::{Xtx, XtxId};
 
-pub use t3rn_primitives::side_effect::{ConfirmedSideEffect, FullSideEffect, SideEffect};
-use t3rn_protocol::side_effects_protocol::*;
+use t3rn_protocol::side_effects::confirm::substrate::SubstrateSideEffectsParser;
+use t3rn_protocol::side_effects::loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol};
+pub use t3rn_protocol::side_effects::protocol::SideEffectConfirmationProtocol;
+use t3rn_protocol::side_effects::protocol::TransferSideEffectProtocol;
 
 pub type AllowedSideEffect = Vec<u8>;
 
@@ -116,6 +123,7 @@ pub mod pallet {
 
     use super::*;
     use crate::WeightInfo;
+
     /// Current Circuit's context of active transactions
     ///
     /// The currently active composable transactions, indexed according to the order of creation.
@@ -165,7 +173,7 @@ pub mod pallet {
     }
 
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
+    #[pallet::generate_store(pub (super) trait Store)]
     pub struct Pallet<T>(_);
 
     #[pallet::hooks]
@@ -199,13 +207,14 @@ pub mod pallet {
         /// Temporary entry for submitting a side effect directly for validation and event emittance
         /// It's temporary, since will be replaced with a DFD, which allows to specify exactly the nature of argument
         /// (SideEffect vs ComposableContract vs LocalContract or Mix)
-        #[pallet::weight(<T as Config>::WeightInfo::submit_exec())]
-        pub fn submit_side_effect_temp(
+        #[pallet::weight(< T as Config >::WeightInfo::submit_exec())]
+        pub fn submit_side_effects_temp(
             origin: OriginFor<T>,
-            side_effect: SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+            side_effects: Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
             input: Vec<u8>,
             _value: BalanceOf<T>,
             reward: BalanceOf<T>,
+            sequential: bool,
         ) -> DispatchResultWithPostInfo {
             // Retrieve sender of the transaction.
             let requester = ensure_signed(origin)?;
@@ -216,19 +225,41 @@ pub mod pallet {
                 Error::<T>::RequesterNotEnoughBalance,
             );
 
-            // ToDo: Generate Circuit's params as default ABI from let abi = pallet_xdns::get_abi(target_id)
-            let gateway_abi = Default::default();
+            let _full_side_effects_steps: Vec<
+                Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+            >;
 
-            let side_effects_protocol = SideEffectsProtocol::new(gateway_abi);
+            let mut full_side_effects: Vec<
+                FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+            > = vec![];
 
-            side_effects_protocol.validate_input_args(
-                side_effect.encoded_action.clone(),
-                side_effect.encoded_args.clone(),
-            )?;
+            let mut use_protocol = UniversalSideEffectsProtocol::new();
+            let mut local_state = LocalState::new();
 
-            let _full_side_effect = FullSideEffect {
-                input: side_effect.clone(),
-                confirmed: None,
+            for side_effect in side_effects.iter() {
+                // ToDo: Generate Circuit's params as default ABI from let abi = pallet_xdns::get_abi(target_id)
+                let gateway_abi = Default::default();
+
+                use_protocol.notice_gateway(side_effect.target);
+                use_protocol.validate_args(side_effect.clone(), gateway_abi, &mut local_state)?;
+
+                full_side_effects.push(FullSideEffect {
+                    input: side_effect.clone(),
+                    confirmed: None,
+                })
+            }
+
+            let full_side_effects_steps = match sequential {
+                false => vec![full_side_effects],
+                true => {
+                    let mut sequential_order: Vec<
+                        Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+                    > = vec![];
+                    for fse in full_side_effects.iter() {
+                        sequential_order.push(vec![fse.clone()]);
+                    }
+                    sequential_order
+                }
             };
 
             // ToDo: Introduce default timeout + delay
@@ -239,7 +270,9 @@ pub mod pallet {
                 timeouts_at,
                 delay_steps_at,
                 Some(reward),
+                local_state,
                 // ToDo: Missing GenericDFD to link side effects / composable contracts with the Xtx
+                full_side_effects_steps,
             );
             let x_tx_id: XtxId<T> = new_xtx.generate_xtx_id::<T>();
             ActiveXtxMap::<T>::insert(x_tx_id, &new_xtx);
@@ -254,13 +287,13 @@ pub mod pallet {
                 requester.clone(),
                 x_tx_id.clone(),
                 // ToDo: Emit circuit outbound messages -> side effects
-                vec![side_effect],
+                side_effects,
             ));
 
             Ok(().into())
         }
 
-        #[pallet::weight(<T as Config>::WeightInfo::submit_exec())]
+        #[pallet::weight(< T as Config >::WeightInfo::submit_exec())]
         pub fn submit_exec_dfd(
             _origin: OriginFor<T>,
             _generic_dfd: GenericDFD,
@@ -291,7 +324,7 @@ pub mod pallet {
             unimplemented!();
         }
 
-        #[pallet::weight(<T as Config>::WeightInfo::submit_exec())]
+        #[pallet::weight(< T as Config >::WeightInfo::submit_exec())]
         pub fn submit_exec(
             origin: OriginFor<T>,
             contract_id: RegistryContractId<T>,
@@ -323,7 +356,7 @@ pub mod pallet {
         }
 
         /// Will be deprecated in v1.0.0-RC
-        #[pallet::weight(<T as Config>::WeightInfo::submit_composable_exec_order() + <T as Config>::WeightInfo::decompose_io_schedule())]
+        #[pallet::weight(< T as Config >::WeightInfo::submit_composable_exec_order() + < T as Config >::WeightInfo::decompose_io_schedule())]
         pub fn submit_composable_exec_order(
             origin: OriginFor<T>,
             io_schedule: Vec<u8>,
@@ -365,51 +398,63 @@ pub mod pallet {
         }
 
         /// Blind version should only be used for testing - unsafe since skips inclusion proof check.
-        #[pallet::weight(<T as Config>::WeightInfo::confirm_side_effect_blind())]
+        #[pallet::weight(< T as Config >::WeightInfo::confirm_side_effect_blind())]
         pub fn confirm_side_effect_blind(
             origin: OriginFor<T>,
             xtx_id: XtxId<T>,
+            side_effect: SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
             confirmed_side_effect: ConfirmedSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
             _inclusion_proof: Option<Bytes>,
         ) -> DispatchResultWithPostInfo {
             // ToDo #CNF-1: Reward releyers for inbound message dispatch.
             let relayer_id = ensure_signed(origin)?;
 
-            // ToDo #CNF-2: Check validity of execution by parsing
-            //  the side effect against incoming target's format and checking its validity
-
-            // ToDo: On confirmation of side effect instantiate vendor specific protocol
-            // let gateway_abi = pallet_xdns::get_abi(side_effect.inbound.target);
-            // let vendor_side_effects_confirmation_protocol: SideEffectsConfirmationProtocol = match gateway_pointer.vendor {
-            //     GatewayVendor::Substrate => Ok(SubstrateSideEffectsProtocol::new(gateway_abi)),
-            //     GatewayVendor::Ethereum => Ok(EthereumSideEffectsProtocol::new(gateway_abi)),
-            //     _ => { Err("Vendor unsupported") },
-            // }?;
-            // match side_effect.inbound.encoded_action {
-            //      b"transfer".to_vec() => vendor_side_effects_confirmation_protocol::confirm_transfer(side_effect.outbound.encoded_effect)
-            // }
-
-            // ToDo #CNF-3: Check validity of inclusion - skip in _blind version for testing
+            // ToDo #CNF-1: Check validity of inclusion - skip in _blind version for testing
             // Verify whether the side effect completes the Xtx
-            let _xtx: Xtx<T::AccountId, T::BlockNumber, BalanceOf<T>> =
+            let mut xtx: Xtx<T::AccountId, T::BlockNumber, BalanceOf<T>> =
                 ActiveXtxMap::<T>::get(xtx_id.clone())
                     .expect("submitted to confirm step id does not match with any Xtx");
 
-            Self::deposit_event(Event::SideEffectConfirmed(
-                relayer_id.clone(),
-                xtx_id,
-                confirmed_side_effect,
-                0,
-            ));
+            // ToDo: Just covered a single path for substrate transfers for now
 
-            // ToDo: Check whether xtx.side_effects_dfd is now completed before completing xtx
-            Self::deposit_event(Event::XTransactionSuccessfullyCompleted(xtx_id.clone()));
+            let mut state_copy = xtx.local_state.clone();
+            // ToDo: Must choose GatewayVendor here based on target_id
+            // let gateway_vendor pallet_xdns::get_vendor(side_effect.target)?;
+            // let parser: Box<dyn VendorSideEffectsParser> = match vendor {
+            //     GatewayVendor::Substrate => Ok(Box::new(SubstrateSideEffectsParser {})),
+            //     GatewayVendor::Ethereum => Ok(Box::new(EthereumSideEffectsParser {})),
+            //     _ => Err(Error::<T>::VendorUnknown.into()),
+            // }?;
+            //
+            let transfer_protocol = TransferSideEffectProtocol {};
+            transfer_protocol.confirm::<T, SubstrateSideEffectsParser>(
+                vec![confirmed_side_effect.encoded_effect.clone()],
+                &mut state_copy,
+            );
+
+            // Check if the side effect has been deposited with respect to the execution order
+            if xtx.complete_side_effect::<bp_circuit::Hasher>(
+                confirmed_side_effect.clone(),
+                side_effect.clone(),
+            )? {
+                Self::deposit_event(Event::SideEffectConfirmed(
+                    relayer_id.clone(),
+                    xtx_id,
+                    confirmed_side_effect,
+                    0,
+                ));
+            }
+
+            if xtx.is_completed() {
+                // ToDo: Check whether xtx.side_effects_dfd is now completed before completing xtx
+                Self::deposit_event(Event::XTransactionSuccessfullyCompleted(xtx_id.clone()));
+            }
 
             Ok(().into())
         }
 
         // ToDo: Create and move higher to main Circuit pallet
-        #[pallet::weight(<T as Config>::WeightInfo::register_gateway_default_polka())]
+        #[pallet::weight(< T as Config >::WeightInfo::register_gateway_default_polka())]
         pub fn register_gateway(
             origin: OriginFor<T>,
             url: Vec<u8>,
@@ -478,7 +523,7 @@ pub mod pallet {
         }
 
         // ToDo: Create and move higher to main Circuit pallet
-        #[pallet::weight(<T as Config>::WeightInfo::update_gateway())]
+        #[pallet::weight(< T as Config >::WeightInfo::update_gateway())]
         pub fn update_gateway(
             _origin: OriginFor<T>,
             gateway_id: bp_runtime::ChainId,
@@ -495,10 +540,11 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(<T as Config>::WeightInfo::confirm_side_effect())]
+        #[pallet::weight(< T as Config >::WeightInfo::confirm_side_effect())]
         pub fn confirm_side_effect(
             origin: OriginFor<T>,
             xtx_id: XtxId<T>,
+            side_effect: SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
             confirmed_side_effect: ConfirmedSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
             _inclusion_proof: Option<Bytes>,
             // ToDo: Replace step_confirmation with inclusion_proof
@@ -508,7 +554,7 @@ pub mod pallet {
             let relayer_id = ensure_signed(origin)?;
             // ToDo: parse events to discover their content and verify execution
 
-            let _xtx: Xtx<T::AccountId, T::BlockNumber, BalanceOf<T>> =
+            let mut xtx: Xtx<T::AccountId, T::BlockNumber, BalanceOf<T>> =
                 ActiveXtxMap::<T>::get(xtx_id.clone())
                     .expect("submitted to confirm step id does not match with any Xtx");
 
@@ -566,17 +612,24 @@ pub mod pallet {
 
                 Err(Error::<T>::SideEffectConfirmationInvalidInclusionProof.into())
             } else {
-                // ToDo: Enact on the confirmation step and save the update
-                // Self::update_xtx(&xtx, xtx_id, step_confirmation);
-                Self::deposit_event(Event::SideEffectConfirmed(
-                    relayer_id.clone(),
-                    xtx_id.clone(),
-                    confirmed_side_effect,
-                    0,
-                ));
+                // Check if the side effect has been deposited with respect to the execution order
+                if xtx.complete_side_effect::<bp_circuit::Hasher>(
+                    confirmed_side_effect.clone(),
+                    side_effect.clone(),
+                )? {
+                    Self::deposit_event(Event::SideEffectConfirmed(
+                        relayer_id.clone(),
+                        xtx_id,
+                        confirmed_side_effect,
+                        0,
+                    ));
+                }
 
-                // ToDo: Check whether xtx.side_effects_dfd is now completed before completing xtx
-                Self::deposit_event(Event::XTransactionSuccessfullyCompleted(xtx_id.clone()));
+                if xtx.is_completed() {
+                    // ToDo: Check whether xtx.side_effects_dfd is now completed before completing xtx
+                    Self::deposit_event(Event::XTransactionSuccessfullyCompleted(xtx_id.clone()));
+                }
+
                 Ok(().into())
             }
         }
@@ -584,7 +637,7 @@ pub mod pallet {
 
     /// Events for the pallet.
     #[pallet::event]
-    #[pallet::generate_deposit(pub(super) fn deposit_event)]
+    #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
         // Listeners - users + SDK + UI to know whether their request has ended
         XTransactionSuccessfullyCompleted(XtxId<T>),
@@ -635,6 +688,8 @@ pub mod pallet {
         StepConfirmationBlockUnrecognised,
         StepConfirmationGatewayNotRecognised,
         SideEffectConfirmationInvalidInclusionProof,
+        VendorUnknown,
+        SideEffectTypeNotRecognized,
         StepConfirmationDecodingError,
         ContractDoesNotExists,
         RequesterNotEnoughBalance,

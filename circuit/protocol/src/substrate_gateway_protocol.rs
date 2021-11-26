@@ -492,7 +492,6 @@ pub mod tests {
 
     use sp_core::crypto::KeyTypeId;
 
-    type AuthorityId = crate::signer::app::Public;
     const KEY_TYPE: KeyTypeId = KeyTypeId(*b"circ");
 
     use crate::test_utils::*;

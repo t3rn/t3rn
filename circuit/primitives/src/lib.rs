@@ -129,6 +129,7 @@ pub struct Compose<Account, Balance> {
     pub bytes: Vec<u8>,
     pub input_data: Vec<u8>,
 }
+
 /// A result type of a get storage call.
 pub type FetchContractsResult = Result<Vec<u8>, ContractAccessError>;
 
