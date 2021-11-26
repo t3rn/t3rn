@@ -5,8 +5,8 @@ import '@t3rn/types/dist/augment-api';
 import '@t3rn/types/dist/augment-types';
 import '@t3rn/types/dist/augment-api-rpc';
 import '@t3rn/types/dist/augment-api-query';
-import { Vec } from '@polkadot/types';
-import { AllowedSideEffect, XdnsRecord } from '@t3rn/types/dist';
+import { Bytes, U8aFixed, Vec } from '@polkadot/types';
+import { AllowedSideEffect, SideEffect, XdnsRecord } from '@t3rn/types/dist';
 import { expect } from 'chai';
 import { BN } from '@polkadot/util';
 
@@ -25,6 +25,77 @@ describe('Execution Delivery | Extrinsics', function () {
       rpc,
     });
   });
+
+  describe('submitSideEffectsTemp', () => {
+    it('should successfully submit tx', async () => {
+      await circuitApi.isReady;
+
+      // Constuct the keyring after the API (crypto has an async init)
+      const keyring = new Keyring({ type: 'sr25519', ss58Format: 60 });
+      const alice = keyring.addFromUri('//Alice');
+      const bob = keyring.addFromUri('//Bob');
+      const gatewayId = randomGatewayId();
+
+      // Create the extrinsic call
+      let TargetId: U8aFixed = new U8aFixed(circuitApi.registry, [0, 0, 0, 1], 32);
+      let encoded_action: Bytes = circuitApi.createType('Bytes', 'transfer');
+      let arg_from: Bytes = new Bytes(circuitApi.registry, bob.address);
+      let arg_to: Bytes = new Bytes(circuitApi.registry, bob.address);
+      let arg_value = circuitApi.createType('Bytes', Array.from(circuitApi.createType('u64', 1).toU8a()));
+
+      let sideEffectTransfer = circuitApi.createType('SideEffect', {
+        target: circuitApi.createType('TargetId', TargetId),
+        prize: 10000,
+        ordered_at: 1,
+        encoded_action: encoded_action,
+        encoded_args: circuitApi.createType('Vec<Bytes>', [arg_from, arg_to, arg_value]),
+        signature: encoded_action,
+        enforce_executioner: circuitApi.createType('Option<AccountId>', alice.address)
+      });
+
+      let sideEffect_vec = <Vec<SideEffect>>circuitApi.createType('Vec<SideEffect>', [sideEffectTransfer]);
+
+      const submit_side_effects_temp = circuitApi.tx.execDelivery.submitSideEffectsTemp(
+        sideEffect_vec,
+        circuitApi.createType('Bytes', 'transfer'),
+        10000,
+        10000,
+        true
+      );
+
+      // Submit the extrinsic and make wait until finalized
+      const result = new Promise<void>((resolve) =>
+        submit_side_effects_temp.signAndSend(alice, (result) => {
+          if (result.status.isFinalized) {
+            expect(result.dispatchError).to.be.undefined;
+            expect(result.internalError).to.be.undefined;
+            expect(result.dispatchInfo).to.be.ok;
+            expect(result.dispatchInfo?.weight).to.be.ok;
+            expect(result.dispatchInfo?.class.isNormal).to.be.true;
+            expect(result.dispatchInfo?.paysFee.isYes).to.be.true;
+            expect(result.events).to.be.an('array');
+            result.events.forEach((record: { event: any; phase: any; }) => {
+              // Extract the phase, event and the event types
+              const { event, phase } = record;
+              const types = event.typeDef;
+
+              console.log(`\t${event.section}:${event.method}`);
+              event.data.forEach((data: { toString: () => any; }, index: string | number) => {
+                console.log(`\t\t\t${types[index].type}: ${data.toString()}`);
+              });
+            });
+            resolve();
+          }
+        })
+      );
+
+      // The extrinsic should be finalized before the timeout
+      await Promise.race([result, timeoutIn(30000)]);
+    });
+
+    after(async () => await circuitApi.disconnect());
+  });
+
 
   describe('sudo register_gateway', () => {
     it('should successfully register a substrate gateway (Rococo)', async () => {
