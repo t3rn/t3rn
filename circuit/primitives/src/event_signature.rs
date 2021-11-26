@@ -55,7 +55,6 @@ pub fn trim_whitespace(input_string: StrLike) -> StrLike {
 }
 
 pub fn decode_signature(signature: StrLike) -> Result<(StrLike, Vec<StrLike>), &'static str> {
-
     // Mutable variables
     let mut event_name: Option<StrLike> = None;
     let mut event_args: Vec<StrLike> = Vec::new();
@@ -63,15 +62,6 @@ pub fn decode_signature(signature: StrLike) -> Result<(StrLike, Vec<StrLike>), &
 
     // Actual signature decoding start
     check_overall_sanity(signature.clone())?;
-
-    let cloned = trim_whitespace(signature);
-    // make sure schedule is not empty
-    // probably irrelevant since there is already a check for that
-    let last_char = cloned.last();
-    ensure_str_err(
-        last_char.is_some(),
-        "Signature sanity failed - can't be empty",
-    )?;
 
     for &char in signature.iter() {
         match char {
@@ -108,49 +98,71 @@ pub fn decode_signature(signature: StrLike) -> Result<(StrLike, Vec<StrLike>), &
     return Ok((event_name_res, event_args));
 }
 
-pub fn decode_dfd(generic_dfd: StrLike) -> Result<(StrLike, Vec<StrLike>), &'static str> {
-
+pub fn decode_dfd(generic_dfd: StrLike) -> Result<Vec<Vec<StrLike>>, &'static str> {
     // Mutable variables
-    let mut event_name: Option<StrLike> = None;
-    let mut event_args: Vec<StrLike> = Vec::new();
+    let mut steps: Vec<Vec<StrLike>> = vec![vec![]];
+    let mut curr_step_index: usize = 0;
     let mut current_word: StrLike = StrLike::new();
 
     // Actual generic_dfd decoding start
-    check_overall_sanity(generic_dfd.clone())?;
+    let cloned = trim_whitespace(generic_dfd);
+    // make sure schedule is not empty
+    // probably irrelevant since there is already a check for that
+    let last_char = cloned.last();
+    ensure_str_err(
+        last_char.is_some(),
+        "Signature sanity failed - can't be empty",
+    )?;
 
-    for &char in generic_dfd.iter() {
+    for &char in cloned.iter() {
         match char {
-            // Expect to start with an event name before the arguments start
-            ARGS_START => {
-                if current_word.is_empty() {
-                    return Err("Signature must have non-empty event name");
+            ARGS_START | ARGS_SEPARATOR | ARGS_END => {
+                if !current_word.is_empty() {
+                    if let Some(last_step) = steps.get_mut(curr_step_index) {
+                        last_step.push(current_word.clone());
+                    } else {
+                        return Err("DFD Decoder - attempt to edit step at incorrect depth");
+                    }
+                    current_word.clear();
                 }
-                event_name = Some(current_word.clone());
-                current_word.clear();
-            }
-            // Before pushing next non-empty argument name make sure the name is already set
-            ARGS_SEPARATOR | ARGS_END => {
-                if current_word.is_empty() {
-                    return Err("Signature's argument name can't be empty");
+                if char == ARGS_START {
+                    curr_step_index += 1;
+                    steps.push(vec![])
                 }
-                if event_name.is_none() {
-                    return Err("Signature must start with event name");
+                if char == ARGS_SEPARATOR {
+                    current_word.clear();
                 }
-                event_args.push(current_word.clone());
-                current_word.clear();
+                if char == ARGS_END {
+                    if let Some(new_step_index) = curr_step_index.checked_sub(1) {
+                        curr_step_index = new_step_index;
+                    } else {
+                        return Err("DFD Decoder - attempt to edit step at incorrect depth");
+                    }
+                }
             }
             // Push non-special character to the current word
             _ => current_word.push(char),
         };
     }
 
-    // Check sanity of result before returning
-    let event_name_res = match event_name {
-        Some(name) => Ok(name),
-        _ => Err("Signature must have non-empty event name"),
-    }?;
+    if curr_step_index != 0 {
+        return Err("DFD Decoder - too many opening brackets");
+    }
 
-    return Ok((event_name_res, event_args));
+    // If last word didn't end with , or )
+    if !current_word.is_empty() {
+        if let Some(last_step) = steps.get_mut(curr_step_index) {
+            last_step.push(current_word.clone());
+        } else {
+            return Err("DFD Decoder - attempt to edit step at incorrect depth");
+        }
+        current_word.clear();
+    }
+
+    // Trim empty steps (support additional depths of DFD, like ((((A,B))) )
+    steps.retain(|step| !step.is_empty());
+
+    return Ok(steps);
 }
 
 #[cfg(test)]
@@ -224,5 +236,90 @@ pub mod tests {
         let decode_res =
             decode_signature(valid_signature_transfer_confirm_event.as_bytes().to_vec());
         assert_eq!(decode_res, Err("Signature must have non-empty event name"))
+    }
+
+    #[test]
+    fn successfully_decodes_dfd_for_3_parallel_events() {
+        let valid_dfd = "A,B,C";
+        // Important! If using .encode() instead of .as_bytes() + .to_vec(),
+        //  SCALE adds additional byte "92" to event name
+        let decode_res = decode_dfd(valid_dfd.as_bytes().to_vec());
+        assert_eq!(
+            decode_res,
+            Ok(vec![vec![b"A".to_vec(), b"B".to_vec(), b"C".to_vec(),]])
+        )
+    }
+    #[test]
+    fn successfully_decodes_dfd_for_3_parallel_events_in_single_brackets() {
+        let valid_dfd = "(A,B,C)";
+        // Important! If using .encode() instead of .as_bytes() + .to_vec(),
+        //  SCALE adds additional byte "92" to event name
+        let decode_res = decode_dfd(valid_dfd.as_bytes().to_vec());
+        assert_eq!(
+            decode_res,
+            Ok(vec![vec![b"A".to_vec(), b"B".to_vec(), b"C".to_vec(),]])
+        )
+    }
+    #[test]
+    fn successfully_decodes_dfd_for_3_parallel_events_in_triple_brackets() {
+        let valid_dfd = "(((A,B,C)))";
+        // Important! If using .encode() instead of .as_bytes() + .to_vec(),
+        //  SCALE adds additional byte "92" to event name
+        let decode_res = decode_dfd(valid_dfd.as_bytes().to_vec());
+        assert_eq!(
+            decode_res,
+            Ok(vec![vec![b"A".to_vec(), b"B".to_vec(), b"C".to_vec(),]])
+        )
+    }
+    #[test]
+    fn fails_to_decode_dfd_for_3_parallel_events_with_incorrect_closing_brackets() {
+        let valid_dfd = "(A,B,C";
+        // Important! If using .encode() instead of .as_bytes() + .to_vec(),
+        //  SCALE adds additional byte "92" to event name
+        let decode_res = decode_dfd(valid_dfd.as_bytes().to_vec());
+        assert_eq!(decode_res, Err("DFD Decoder - too many opening brackets"))
+    }
+    #[test]
+    fn fails_to_decode_dfd_for_3_parallel_events_with_incorrect_opening_brackets() {
+        let valid_dfd = "A,B,C)";
+        // Important! If using .encode() instead of .as_bytes() + .to_vec(),
+        //  SCALE adds additional byte "92" to event name
+        let decode_res = decode_dfd(valid_dfd.as_bytes().to_vec());
+        assert_eq!(
+            decode_res,
+            Err("DFD Decoder - attempt to edit step at incorrect depth")
+        )
+    }
+
+    #[test]
+    fn successfully_decodes_dfd_for_3_sequential_events() {
+        let valid_dfd = "(A(B(C)))";
+        // Important! If using .encode() instead of .as_bytes() + .to_vec(),
+        //  SCALE adds additional byte "92" to event name
+        let decode_res = decode_dfd(valid_dfd.as_bytes().to_vec());
+        assert_eq!(
+            decode_res,
+            Ok(vec![
+                vec![b"A".to_vec()],
+                vec![b"B".to_vec()],
+                vec![b"C".to_vec()]
+            ])
+        )
+    }
+
+    #[test]
+    fn successfully_decodes_dfd_for_2_sequential_events_after_2_parallel() {
+        let valid_dfd = "(D(C(A,B)))";
+        // Important! If using .encode() instead of .as_bytes() + .to_vec(),
+        //  SCALE adds additional byte "92" to event name
+        let decode_res = decode_dfd(valid_dfd.as_bytes().to_vec());
+        assert_eq!(
+            decode_res,
+            Ok(vec![
+                vec![b"D".to_vec()],
+                vec![b"C".to_vec()],
+                vec![b"A".to_vec(), b"B".to_vec()]
+            ])
+        )
     }
 }
