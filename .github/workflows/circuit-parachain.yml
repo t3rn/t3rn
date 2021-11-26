@@ -19,7 +19,7 @@ jobs:
       - name: ☁️Checkout git repo
         uses: actions/checkout@master
 
-      - name: ⚙️Get nightly rust toolchain with wasm target
+      - name: ⚙️Get rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable-2021-11-01
@@ -39,7 +39,7 @@ jobs:
       - name: ☁️Checkout git repo
         uses: actions/checkout@master
 
-      - name: ⚙️Get nightly rust toolchain with wasm target
+      - name: ⚙️Get rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable-2021-11-01
@@ -55,7 +55,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             circuit-parachain/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('circuit-parachain/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-${{ hashFiles('circuit-parachain/Cargo.lock') }}-stable-2021-11-01
 
       - name: 📑 Lint code
         uses: actions-rs/cargo@v1
@@ -70,7 +70,7 @@ jobs:
       - name: ☁ Checkout git repo
         uses: actions/checkout@master
 
-      - name: ⚙️Get nightly rust toolchain with wasm target
+      - name: ⚙️Get rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable-2021-11-01
@@ -85,7 +85,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             circuit-parachain/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('circuit-parachain/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-${{ hashFiles('circuit-parachain/Cargo.lock') }}-stable-2021-11-01
 
       - name: 🏭 Build circuit
         uses: actions-rs/cargo@v1
@@ -123,7 +123,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             circuit-parachain/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('circuit-parachain/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-${{ hashFiles('circuit-parachain/Cargo.lock') }}-stable-2021-11-01
 
       - name: Download circuit
         uses: actions/download-artifact@v2
