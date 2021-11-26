@@ -34,9 +34,11 @@ use sp_std::vec;
 
 pub mod abi;
 pub mod contract_metadata;
+pub mod event_signature;
 pub mod gateway_inbound_protocol;
 pub mod side_effect;
 pub mod transfers;
+pub mod volatile;
 pub mod xtx;
 
 pub use gateway_inbound_protocol::GatewayInboundProtocol;
@@ -164,6 +166,7 @@ pub enum ContractAccessError {
     IsTombstone,
 }
 
+/// Exec phase consists out of many parallel steps
 #[derive(Eq, PartialEq, Encode, Decode, Debug, Clone, Default)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct ExecPhase<Account, Balance> {

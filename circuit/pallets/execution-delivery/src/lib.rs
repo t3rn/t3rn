@@ -47,6 +47,7 @@ use sp_std::vec;
 use sp_std::vec::*;
 use t3rn_primitives::abi::{ContractActionDesc, GatewayABIConfig, HasherAlgo as HA};
 use t3rn_primitives::transfers::BalanceOf;
+use t3rn_primitives::volatile::LocalState;
 use t3rn_primitives::*;
 use volatile_vm::VolatileVM;
 
@@ -852,6 +853,7 @@ impl<T: Config> Pallet<T> {
             timeouts_at,
             delay_steps_at,
             Some(reward),
+            LocalState::new(),
             vec![],
         );
 
