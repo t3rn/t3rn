@@ -27,7 +27,7 @@ describe('Execution Delivery | Extrinsics', function () {
   });
 
   describe('submitSideEffectsTemp', () => {
-    it('should successfully submit tx', async () => {
+    it('should successfully submit submitSideEffectsTemp tx', async () => {
       await circuitApi.isReady;
 
       // Constuct the keyring after the API (crypto has an async init)
