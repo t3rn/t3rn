@@ -22,7 +22,7 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use crate::types::{AllowedSideEffect, XdnsRecord, XdnsRecordId};
+pub use crate::types::{AllowedSideEffect, XdnsRecord, XdnsRecordId};
 use codec::{Decode, Encode};
 
 #[cfg(feature = "std")]
