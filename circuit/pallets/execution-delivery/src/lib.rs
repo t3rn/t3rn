@@ -34,6 +34,7 @@ use sp_runtime::{
     traits::{AccountIdConversion, Convert, Saturating},
     RuntimeDebug,
 };
+use sp_std::vec;
 use sp_std::vec::*;
 
 pub use t3rn_primitives::{
@@ -200,7 +201,7 @@ pub mod pallet {
                 FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
             > = vec![];
 
-            let mut local_state = LocalState::new();
+            let local_state = LocalState::new();
 
             for side_effect in side_effects.iter() {
                 // ToDo SSE-1: Generate Circuit's params as default ABI from let abi = pallet_xdns::get_abi(target_id)
