@@ -593,20 +593,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bp-header-chain"
-version = "0.1.0"
-dependencies = [
- "finality-grandpa",
- "frame-support",
- "parity-scale-codec",
- "serde",
- "sp-core",
- "sp-finality-grandpa",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "bp-messages"
 version = "0.1.0"
 dependencies = [
@@ -7657,7 +7643,6 @@ dependencies = [
 name = "t3rn-primitives"
 version = "0.1.0"
 dependencies = [
- "bp-header-chain",
  "frame-support",
  "frame-system",
  "pallet-sudo",

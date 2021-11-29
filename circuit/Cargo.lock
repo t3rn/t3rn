@@ -1216,11 +1216,13 @@ dependencies = [
  "node-inspect",
  "pallet-bridge-messages",
  "pallet-circuit-execution-delivery-rpc",
+ "pallet-contracts-registry-rpc",
  "pallet-contracts-rpc",
  "pallet-evm",
  "pallet-mmr-rpc",
  "pallet-transaction-payment-rpc",
  "pallet-xdns",
+ "pallet-xdns-rpc",
  "sc-basic-authorship",
  "sc-cli",
  "sc-client-api",
@@ -1335,6 +1337,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "hex-literal",
+ "log",
  "pallet-aura",
  "pallet-balances",
  "pallet-beefy",
@@ -1355,7 +1358,7 @@ dependencies = [
  "pallet-grandpa",
  "pallet-mmr",
  "pallet-mmr-primitives",
- "pallet-multi-finality-verifier",
+ "pallet-multi-finality-verifier 0.1.0",
  "pallet-randomness-collective-flip",
  "pallet-session",
  "pallet-shift-session-manager",
@@ -1365,6 +1368,7 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-utility",
  "pallet-xdns",
+ "pallet-xdns-rpc-runtime-api",
  "parity-scale-codec",
  "serde",
  "snowbridge-basic-channel",
@@ -4826,33 +4830,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0debeb9fcf88823ea64d64e4a815ab1643f33127d995978e099942ce38f25238"
 
 [[package]]
-name = "multi-finality-verifier"
-version = "0.1.0"
-dependencies = [
- "bp-header-chain 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
- "bp-polkadot-core 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
- "bp-rialto 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
- "bp-runtime 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
- "bp-test-utils 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
- "finality-grandpa",
- "frame-support",
- "frame-system",
- "log",
- "pallet-balances",
- "pallet-sudo",
- "pallet-timestamp",
- "pallet-xdns",
- "parity-scale-codec",
- "serde",
- "sp-finality-grandpa",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "sp-trie",
- "t3rn-primitives",
-]
-
-[[package]]
 name = "multibase"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5402,7 +5379,7 @@ dependencies = [
  "pallet-evm",
  "pallet-evm-precompile-simple",
  "pallet-im-online",
- "pallet-multi-finality-verifier",
+ "pallet-multi-finality-verifier 0.1.0",
  "pallet-offences",
  "pallet-randomness-collective-flip",
  "pallet-session",
@@ -5538,6 +5515,23 @@ dependencies = [
  "sp-std",
  "t3rn-primitives",
  "volatile-vm",
+]
+
+[[package]]
+name = "pallet-contracts-registry-rpc"
+version = "0.1.0"
+dependencies = [
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "pallet-contracts-registry-rpc-runtime-api",
+ "parity-scale-codec",
+ "serde",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
 ]
 
 [[package]]
@@ -5756,6 +5750,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-multi-finality-verifier"
+version = "0.2.0"
+dependencies = [
+ "bp-header-chain 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
+ "bp-polkadot-core 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
+ "bp-rialto 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
+ "bp-runtime 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
+ "bp-test-utils 0.1.0 (git+https://github.com/t3rn/parity-bridges-common)",
+ "finality-grandpa",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-balances",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "pallet-xdns",
+ "parity-scale-codec",
+ "serde",
+ "sp-finality-grandpa",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "sp-trie",
+ "t3rn-primitives",
+]
+
+[[package]]
 name = "pallet-offences"
 version = "3.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.8#74101dc21cfffb4c2d014fcc28edc166d5ca1b16"
@@ -5960,6 +5981,32 @@ dependencies = [
  "sp-std",
  "sp-version",
  "t3rn-primitives",
+]
+
+[[package]]
+name = "pallet-xdns-rpc"
+version = "0.1.0"
+dependencies = [
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "pallet-xdns-rpc-runtime-api",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-xdns-rpc-runtime-api"
+version = "0.1.0"
+dependencies = [
+ "pallet-xdns",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-runtime",
 ]
 
 [[package]]

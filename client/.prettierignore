@@ -1,0 +1,4 @@
+types/src/interfaces/**/augment-*.ts
+types/src/interfaces/**/index.ts
+types/src/interfaces/**/types.ts
+**/dist/**
