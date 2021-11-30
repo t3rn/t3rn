@@ -215,6 +215,9 @@ fn testnet_genesis(
 		sudo: circuit_parachain_runtime::SudoConfig { key: root_key.clone() },
 		multi_finality_verifier_polkadot_like: Default::default(),
 		xdns: Default::default(),
+		elections: Default::default(),
+		council: Default::default(),
+		democracy: Default::default(),
 	}
 }
 
@@ -331,5 +334,8 @@ fn genesis(
 		sudo: circuit_parachain_runtime::SudoConfig { key: root_key.clone() },
 		multi_finality_verifier_polkadot_like: Default::default(),
 		xdns: Default::default(),
+		elections: Default::default(),
+		council: Default::default(),
+		democracy: Default::default(),
 	}
 }

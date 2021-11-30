@@ -28,7 +28,7 @@ jobs:
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable-2021-11-01
+          toolchain: nightly-2021-09-29
           target: wasm32-unknown-unknown
           components: rustfmt, clippy
           override: true
@@ -41,7 +41,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             circuit-parachain/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('circuit-parachain/Cargo.lock') }}-stable-2021-11-01
+          key: ${{ runner.os }}-cargo-${{ hashFiles('circuit-parachain/Cargo.lock') }}
 
       - name: 🏭 Build circuit
         uses: actions-rs/cargo@v1
