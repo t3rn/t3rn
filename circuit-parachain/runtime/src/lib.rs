@@ -5,11 +5,9 @@
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
-use frame_support::traits::LockIdentifier;
-use frame_support::traits::U128CurrencyToVote;
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{Everything, Nothing},
+	traits::{Everything, LockIdentifier, Nothing, U128CurrencyToVote},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
