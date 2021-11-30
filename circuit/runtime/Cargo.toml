@@ -11,6 +11,7 @@ license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
 hex-literal = { version = "0.3", optional = true}
 serde = { version = "1.0.124", optional = true, features = ["derive"] }
+log = { version = "0.4.14", default-features = false }
 
 # Bridge dependencies
 
@@ -33,6 +34,7 @@ pallet-contracts-registry-rpc-runtime-api = {  path = "../pallets/contracts-regi
 pallet-circuit-execution-delivery = {  path = "../pallets/execution-delivery", default-features = false }
 pallet-circuit-execution-delivery-rpc-runtime-api = {  path = "../pallets/execution-delivery/rpc/runtime-api", default-features = false }
 pallet-xdns = { path = "../pallets/xdns", default-features = false }
+pallet-xdns-rpc-runtime-api = { path = "../pallets/xdns/rpc/runtime-api", default-features = false }
 volatile-vm = { path = "../../vm/volatile-vm", default-features = false }
 t3rn-primitives = { version = "0.1.0", default-features = false, path = "../primitives" }
 

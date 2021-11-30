@@ -255,10 +255,10 @@ benchmarks! {
 
         let author_1: T::AccountId = account("TEST", 1_u32, USER_SEED);
 
-    }: {ContractsRegistry::<T>::fetch_contracts(Some(author_1.clone()), Some(b"contract".to_vec()))}
+    }: {ContractsRegistry::<T>::fetch_contracts(Some(author_1.clone()), Some(b"contract".to_vec().into()))}
     verify {
         assert_eq!(
-            ContractsRegistry::<T>::fetch_contracts(Some(author_1), Some(b"contract".to_vec())),
+            ContractsRegistry::<T>::fetch_contracts(Some(author_1), Some(b"contract".to_vec().into())),
             Ok(vec![
                 test_contract_author_1.clone(),
                 test_contract_author_2.clone()
