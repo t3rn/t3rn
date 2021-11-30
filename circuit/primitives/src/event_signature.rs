@@ -162,6 +162,9 @@ pub fn decode_dfd(generic_dfd: StrLike) -> Result<Vec<Vec<StrLike>>, &'static st
     // Trim empty steps (support additional depths of DFD, like ((((A,B))) )
     steps.retain(|step| !step.is_empty());
 
+    // Reverse the steps order
+    steps.reverse();
+
     return Ok(steps);
 }
 
@@ -300,9 +303,9 @@ pub mod tests {
         assert_eq!(
             decode_res,
             Ok(vec![
-                vec![b"A".to_vec()],
+                vec![b"C".to_vec()],
                 vec![b"B".to_vec()],
-                vec![b"C".to_vec()]
+                vec![b"A".to_vec()],
             ])
         )
     }
@@ -316,9 +319,9 @@ pub mod tests {
         assert_eq!(
             decode_res,
             Ok(vec![
-                vec![b"D".to_vec()],
+                vec![b"A".to_vec(), b"B".to_vec()],
                 vec![b"C".to_vec()],
-                vec![b"A".to_vec(), b"B".to_vec()]
+                vec![b"D".to_vec()],
             ])
         )
     }
