@@ -697,6 +697,74 @@ dependencies = [
 ]
 
 [[package]]
+name = "bp-header-chain"
+version = "0.1.0"
+source = "git+https://github.com/t3rn/parity-bridges-common?branch=polkadot-v0.9.12#127f4b6f2a04d601fc42bbce63c02091e066386e"
+dependencies = [
+ "finality-grandpa",
+ "frame-support",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-finality-grandpa",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "bp-messages"
+version = "0.1.0"
+source = "git+https://github.com/t3rn/parity-bridges-common?branch=polkadot-v0.9.12#127f4b6f2a04d601fc42bbce63c02091e066386e"
+dependencies = [
+ "bitvec 0.20.4",
+ "bp-runtime",
+ "frame-support",
+ "frame-system",
+ "impl-trait-for-tuples",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-std",
+]
+
+[[package]]
+name = "bp-polkadot-core"
+version = "0.1.0"
+source = "git+https://github.com/t3rn/parity-bridges-common?branch=polkadot-v0.9.12#127f4b6f2a04d601fc42bbce63c02091e066386e"
+dependencies = [
+ "bp-messages",
+ "bp-runtime",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-api",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "sp-version",
+]
+
+[[package]]
+name = "bp-runtime"
+version = "0.1.0"
+source = "git+https://github.com/t3rn/parity-bridges-common?branch=polkadot-v0.9.12#127f4b6f2a04d601fc42bbce63c02091e066386e"
+dependencies = [
+ "frame-support",
+ "hash-db",
+ "num-traits",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-std",
+ "sp-trie",
+]
+
+[[package]]
 name = "bs58"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -963,6 +1031,7 @@ dependencies = [
 name = "circuit-parachain-runtime"
 version = "1.0.0-alpha.0"
 dependencies = [
+ "bp-polkadot-core",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -978,17 +1047,23 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "log",
+ "multi-finality-verifier",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
  "pallet-collator-selection",
+ "pallet-collective",
+ "pallet-democracy",
+ "pallet-elections-phragmen",
  "pallet-randomness-collective-flip",
+ "pallet-scheduler",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-xcm",
+ "pallet-xdns",
  "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",
@@ -1008,7 +1083,9 @@ dependencies = [
  "sp-std",
  "sp-transaction-pool",
  "sp-version",
+ "static_assertions",
  "substrate-wasm-builder",
+ "t3rn-parachain-primitives",
  "xcm",
  "xcm-builder",
  "xcm-executor",
@@ -4239,6 +4316,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0debeb9fcf88823ea64d64e4a815ab1643f33127d995978e099942ce38f25238"
 
 [[package]]
+name = "multi-finality-verifier"
+version = "0.1.0"
+dependencies = [
+ "bp-header-chain",
+ "bp-runtime",
+ "finality-grandpa",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-xdns",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-finality-grandpa",
+ "sp-runtime",
+ "sp-std",
+ "sp-trie",
+ "t3rn-parachain-primitives",
+]
+
+[[package]]
 name = "multiaddr"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5237,6 +5335,28 @@ dependencies = [
  "sp-std",
  "xcm",
  "xcm-executor",
+]
+
+[[package]]
+name = "pallet-xdns"
+version = "0.4.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-metadata",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-balances",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "sp-version",
+ "t3rn-parachain-primitives",
 ]
 
 [[package]]
@@ -9747,6 +9867,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "t3rn-parachain-primitives"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-sudo",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "sp-version",
+]
+
+[[package]]
 name = "tap"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -10163,7 +10300,7 @@ version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f559b464de2e2bdabcac6a210d12e9b5a5973c251e102c44c585c71d51bd78e"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "rand 0.8.4",
  "static_assertions",
 ]

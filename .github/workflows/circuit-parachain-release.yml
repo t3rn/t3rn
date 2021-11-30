@@ -30,6 +30,7 @@ jobs:
         with:
           toolchain: nightly-2021-09-29
           target: wasm32-unknown-unknown
+          components: rustfmt, clippy
           override: true
 
       - name: 🕒 Cache Rust binaries and packages

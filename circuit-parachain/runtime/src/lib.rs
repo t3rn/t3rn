@@ -5,25 +5,9 @@
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
-
-use smallvec::smallvec;
-use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
-use sp_runtime::{
-	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, Verify},
-	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult, MultiSignature,
-};
-
-use sp_std::prelude::*;
-#[cfg(feature = "std")]
-use sp_version::NativeVersion;
-use sp_version::RuntimeVersion;
-
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{Everything, Nothing},
+	traits::{Everything, LockIdentifier, Nothing, U128CurrencyToVote},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -35,16 +19,31 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
 };
+use smallvec::smallvec;
+use sp_api::impl_runtime_apis;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-pub use sp_runtime::{MultiAddress, Perbill, Permill};
-
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
+use sp_runtime::{
+	create_runtime_str, generic, impl_opaque_keys,
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, Verify},
+	transaction_validity::{TransactionSource, TransactionValidity},
+	ApplyExtrinsicResult, MultiSignature,
+};
+pub use sp_runtime::{MultiAddress, Perbill, Permill};
+use sp_std::prelude::*;
+#[cfg(feature = "std")]
+use sp_version::NativeVersion;
+use sp_version::RuntimeVersion;
+use static_assertions::const_assert;
 
 // Polkadot Imports
+use pallet_collective::{EnsureMember, EnsureProportionAtLeast};
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
+use sp_core::u32_trait::{_1, _2, _3, _4};
 
 // XCM Imports
 use xcm::latest::prelude::*;
@@ -199,6 +198,7 @@ pub const DAYS: BlockNumber = HOURS * 24;
 pub const UNIT: Balance = 1_000_000_000_000;
 pub const MILLIUNIT: Balance = 1_000_000_000;
 pub const MICROUNIT: Balance = 1_000_000;
+pub const CENTIUNIT: Balance = 10_000;
 
 /// The existential deposit. Set to 1/10 of the Connected Relay Chain.
 pub const EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
@@ -368,6 +368,163 @@ parameter_types! {
 	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
 }
 
+parameter_types! {
+	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) * MAXIMUM_BLOCK_WEIGHT;
+	pub const MaxScheduledPerBlock: u32 = 50;
+}
+
+impl pallet_scheduler::Config for Runtime {
+	type Event = Event;
+	type Origin = Origin;
+	type PalletsOrigin = OriginCaller;
+	type Call = Call;
+	type MaximumWeight = MaximumSchedulerWeight;
+	type ScheduleOrigin = EnsureRoot<AccountId>;
+	type MaxScheduledPerBlock = MaxScheduledPerBlock;
+	type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Self>;
+}
+
+parameter_types! {
+	pub const CandidacyBond: Balance = 1000 * UNIT;
+	pub const VotingBond: Balance = 50 * CENTIUNIT;
+	pub const VotingBondBase: Balance = 50 * CENTIUNIT;
+	pub const TermDuration: BlockNumber = 7 * DAYS;
+	pub const DesiredMembers: u32 = 5;
+	pub const DesiredRunnersUp: u32 = 2;
+	pub const ElectionsPhragmenModuleId: LockIdentifier = *b"phrelect";
+}
+
+// Make sure that there are no more than `MAX_MEMBERS` members elected via elections-phragmen.
+const_assert!(DesiredMembers::get() <= CouncilMaxMembers::get());
+
+impl pallet_elections_phragmen::Config for Runtime {
+	type Event = Event;
+	type PalletId = ElectionsPhragmenModuleId;
+	type Currency = Balances;
+	type ChangeMembers = Council;
+	type InitializeMembers = Council;
+	type CurrencyToVote = U128CurrencyToVote;
+
+	/// How much should be locked up in order to submit one's candidacy.
+	type CandidacyBond = CandidacyBond;
+
+	/// Base deposit associated with voting
+	type VotingBondBase = VotingBondBase;
+
+	/// How much should be locked up in order to be able to submit votes.
+	type VotingBondFactor = VotingBond;
+
+	type LoserCandidate = ();
+	type KickedMember = ();
+
+	/// Number of members to elect.
+	type DesiredMembers = DesiredMembers;
+
+	/// Number of runners_up to keep.
+	type DesiredRunnersUp = DesiredRunnersUp;
+
+	/// How long each seat is kept. This defines the next block number at which an election
+	/// round will happen. If set to zero, no elections are ever triggered and the module will
+	/// be in passive mode.
+	type TermDuration = TermDuration;
+	type WeightInfo = pallet_elections_phragmen::weights::SubstrateWeight<Self>;
+}
+
+parameter_types! {
+	pub const CouncilMotionDuration: BlockNumber = 5 * DAYS;
+	pub const CouncilMaxProposals: u32 = 100;
+	pub const CouncilMaxMembers: u32 = 100;
+}
+
+type CouncilCollective = pallet_collective::Instance1;
+impl pallet_collective::Config<CouncilCollective> for Runtime {
+	type Origin = Origin;
+	type Proposal = Call;
+	type Event = Event;
+	type MotionDuration = CouncilMotionDuration;
+	type MaxProposals = CouncilMaxProposals;
+	type MaxMembers = CouncilMaxMembers;
+	type DefaultVote = pallet_collective::PrimeDefaultVote;
+	type WeightInfo = pallet_collective::weights::SubstrateWeight<Self>;
+}
+
+parameter_types! {
+	pub const LaunchPeriod: BlockNumber = 1 * DAYS;
+	pub const VotingPeriod: BlockNumber = 1 * DAYS;
+	pub const FastTrackVotingPeriod: BlockNumber = 1 * HOURS;
+	pub const InstantAllowed: bool = false;
+	pub const MinimumDeposit: Balance = 1000 * UNIT;
+	pub const EnactmentPeriod: BlockNumber = 8 * DAYS;
+	pub const CooloffPeriod: BlockNumber = 7 * DAYS;
+	pub const PreimageByteDeposit: Balance = 100 * MICROUNIT;
+	pub const MaxProposals: u32 = 100;
+	pub const MaxVotes: u32 = 100;
+}
+
+impl pallet_democracy::Config for Runtime {
+	type Proposal = Call;
+	type Event = Event;
+	type Currency = Balances;
+	/// The minimum period of locking and the period between a proposal being approved and enacted.
+	///
+	/// It should generally be a little more than the unstake period to ensure that
+	/// voting stakers have an opportunity to remove themselves from the system in the case where
+	/// they are on the losing side of a vote.
+	type EnactmentPeriod = EnactmentPeriod;
+	type VoteLockingPeriod = EnactmentPeriod; // Same as EnactmentPeriod
+	/// How often (in blocks) new public referenda are launched.
+	type LaunchPeriod = LaunchPeriod;
+
+	/// How often (in blocks) to check for new votes.
+	type VotingPeriod = VotingPeriod;
+
+	/// The minimum amount to be used as a deposit for a public referendum proposal.
+	type MinimumDeposit = MinimumDeposit;
+
+	/// A straight majority of the council can decide what their next motion is.
+	type ExternalOrigin = EnsureProportionAtLeast<_1, _2, AccountId, CouncilCollective>;
+
+	/// A super-majority can have the next scheduled referendum be a straight majority-carries vote.
+	type ExternalMajorityOrigin = EnsureProportionAtLeast<_3, _4, AccountId, CouncilCollective>;
+
+	/// A unanimous council can have the next scheduled referendum be a straight default-carries
+	/// (NTB) vote.
+	type ExternalDefaultOrigin = EnsureProportionAtLeast<_1, _1, AccountId, CouncilCollective>;
+
+	/// Two thirds of the council can have an ExternalMajority/ExternalDefault vote
+	/// be tabled immediately and with a shorter voting/enactment period.
+	type FastTrackOrigin = EnsureProportionAtLeast<_2, _3, AccountId, CouncilCollective>;
+
+	type InstantOrigin = EnsureProportionAtLeast<_1, _1, AccountId, CouncilCollective>;
+
+	type InstantAllowed = InstantAllowed;
+
+	type FastTrackVotingPeriod = FastTrackVotingPeriod;
+
+	// To cancel a proposal which has been passed, 2/3 of the council must agree to it.
+	type CancellationOrigin = EnsureProportionAtLeast<_2, _3, AccountId, CouncilCollective>;
+
+	type BlacklistOrigin = EnsureRoot<AccountId>;
+
+	// To cancel a proposal before it has been passed, must be root.
+	type CancelProposalOrigin = EnsureRoot<AccountId>;
+	// Any single council member may veto a coming council proposal, however they can
+	// only do it once and it lasts only for the cooloff period.
+	type VetoOrigin = EnsureMember<AccountId, CouncilCollective>;
+	/// Period in blocks where an external proposal may not be re-submitted after being vetoed.
+	type CooloffPeriod = CooloffPeriod;
+	/// The amount of balance that must be deposited per byte of preimage stored.
+	type PreimageByteDeposit = PreimageByteDeposit;
+	type OperationalPreimageOrigin = EnsureMember<AccountId, CouncilCollective>;
+	/// Handler for the unbalanced reduction when slashing a preimage deposit.
+	type Slash = ();
+	type Scheduler = Scheduler;
+	type PalletsOrigin = OriginCaller;
+	type MaxVotes = MaxVotes;
+	type WeightInfo = pallet_democracy::weights::SubstrateWeight<Self>;
+	type MaxProposals = MaxProposals;
+}
+
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type Event = Event;
 	type OnValidationData = ();
@@ -377,16 +534,6 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type OutboundXcmpMessageSource = XcmpQueue;
 	type XcmpMessageHandler = XcmpQueue;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
-}
-
-impl t3rn_parachain_primitives::EscrowTrait for Runtime {
-	type Currency = Balances;
-	type Time = Timestamp;
-}
-
-impl pallet_xdns::Config for Runtime {
-	type Event = Event;
-	type WeightInfo = pallet_xdns::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_randomness_collective_flip::Config for Runtime {}
@@ -599,6 +746,30 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = ();
 }
 
+// t3rn pallets
+
+impl t3rn_parachain_primitives::EscrowTrait for Runtime {
+	type Currency = Balances;
+	type Time = Timestamp;
+}
+
+impl pallet_xdns::Config for Runtime {
+	type Event = Event;
+	type WeightInfo = pallet_xdns::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+	pub const MaxRequests: u32 = 2;
+	pub const HeadersToKeep: u32 = 5;
+}
+
+impl pallet_mfv::Config<pallet_mfv::Instance1> for Runtime {
+	type BridgedChain = bp_polkadot_core::PolkadotLike;
+	type MaxRequests = MaxRequests;
+	type HeadersToKeep = HeadersToKeep;
+	type WeightInfo = ();
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -619,6 +790,12 @@ construct_runtime!(
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 11,
 
+		// governance stuff
+		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 15,
+		Council: pallet_collective::<Instance1>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 16,
+		Elections: pallet_elections_phragmen::{Pallet, Call, Storage, Event<T>, Config<T>} = 17,
+		Democracy: pallet_democracy::{Pallet, Call, Storage, Config<T>, Event<T>} = 18,
+
 		// Collator support. The order of these 4 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
 		CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
@@ -633,11 +810,13 @@ construct_runtime!(
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
 		// t3rn pallets
-		XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>},
+		XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
+		MultiFinalityVerifierPolkadotLike: pallet_mfv::<Instance1>::{
+			Pallet, Call, Storage, Config<T, I>
+		} = 101,
 
 		// admin
-		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
-
+		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
 	}
 );
 
