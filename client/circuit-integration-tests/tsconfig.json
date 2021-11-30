@@ -1,0 +1,10 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "moduleResolution": "Node",
+    "baseUrl": ".",
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts","test/**/*.test.ts"]
+}
