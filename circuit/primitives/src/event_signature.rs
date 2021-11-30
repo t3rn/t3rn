@@ -311,6 +311,24 @@ pub mod tests {
     }
 
     #[test]
+    fn successfully_decodes_dfd_for_3_sequential_32b_long_events() {
+        let valid_dfd = "(0909090909090909090909090909090909090909090909090909090909090909(\
+            0606060606060606060606060606060606060606060606060606060606060606(\
+                0303030303030303030303030303030303030303030303030303030303030303)))";
+        // Important! If using .encode() instead of .as_bytes() + .to_vec(),
+        //  SCALE adds additional byte "92" to event name
+        let decode_res = decode_dfd(valid_dfd.as_bytes().to_vec());
+        assert_eq!(
+            decode_res,
+            Ok(vec![
+                vec![b"0303030303030303030303030303030303030303030303030303030303030303".to_vec()],
+                vec![b"0606060606060606060606060606060606060606060606060606060606060606".to_vec()],
+                vec![b"0909090909090909090909090909090909090909090909090909090909090909".to_vec()],
+            ])
+        )
+    }
+
+    #[test]
     fn successfully_decodes_dfd_for_2_sequential_events_after_2_parallel() {
         let valid_dfd = "(D(C(A,B)))";
         // Important! If using .encode() instead of .as_bytes() + .to_vec(),
