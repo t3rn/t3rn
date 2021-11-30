@@ -9,6 +9,7 @@
     "@polkadot/api": "^6.9.2",
     "@polkadot/types": "^6.9.2",
     "@t3rn/types": "^0.1.1",
-    "ts-node": "^10.4.0"
+    "ts-node": "^10.4.0",
+    "typescript": "^4.5.2"
   }
 }

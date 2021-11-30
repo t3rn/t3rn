@@ -27,18 +27,21 @@ import { createGatewayABIConfig, createGatewayGenesisConfig } from './utils/util
 
     const gatewayId = String.fromCharCode(...[0, 0, 0, 0].map(() => Math.floor(97 + Math.random() * 26)));
 
-    const abiConfig = await createGatewayABIConfig(circuitApi, 32, 32, 32, 12, 'Sr25519', 'Blake2')
-
     const registerGateway = circuitApi.tx.execDelivery.registerGateway(
         rococoUrl,
         gatewayId,
-        abiConfig,
-        circuitApi.createType('GatewayVendor', 'Substrate'), // GatewayVendor
-        circuitApi.createType('GatewayType', { ProgrammableExternal: 1 }), // GatewayType
-        createGatewayGenesisConfig(rococoMetadata, rococoRuntimeVersion, rococoGenesisHash, circuitApi), // GatewayGenesisConfig
-        circuitApi.createType('Bytes', rococoCurrentHeader.toHex()), // first header
-        circuitApi.createType('Option<Vec<AccountId>>', rococoInitialAuthorityList), // authorities
-        circuitApi.createType('Vec<AllowedSideEffect>', ['transfer', 'get_storage']) // allowed side effects
+        createGatewayABIConfig(circuitApi, 32, 32, 32, 12, 'Sr25519', 'Blake2'),
+        //GatewayVendor: 'Substrate' as rococo is substrate-based  
+        circuitApi.createType('GatewayVendor', 'Substrate'),
+        //GatewayType: we connect as a ProgrammableExternal
+        circuitApi.createType('GatewayType', { ProgrammableExternal: 1 }),
+        createGatewayGenesisConfig(rococoMetadata, rococoRuntimeVersion, rococoGenesisHash, circuitApi),
+        //Initial rococo, acts as gateway activation point
+        circuitApi.createType('Bytes', rococoCurrentHeader.toHex()),
+        //List of current rococo authorities
+        circuitApi.createType('Option<Vec<AccountId>>', rococoInitialAuthorityList),
+        //SideEffects that are allowed on gateway instance
+        circuitApi.createType('Vec<AllowedSideEffect>', ['transfer', 'get_storage'])
     );
 
     const keyring = new Keyring({ type: 'sr25519', ss58Format: 60 });
