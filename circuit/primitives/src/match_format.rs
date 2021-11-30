@@ -54,7 +54,7 @@ pub fn trim_whitespace(input_string: StrLike) -> StrLike {
     result
 }
 
-pub fn decode_signature(signature: StrLike) -> Result<(StrLike, Vec<StrLike>), &'static str> {
+pub fn match_signature(signature: StrLike) -> Result<(StrLike, Vec<StrLike>), &'static str> {
     // Mutable variables
     let mut event_name: Option<StrLike> = None;
     let mut event_args: Vec<StrLike> = Vec::new();
@@ -98,7 +98,7 @@ pub fn decode_signature(signature: StrLike) -> Result<(StrLike, Vec<StrLike>), &
     return Ok((event_name_res, event_args));
 }
 
-pub fn decode_dfd(generic_dfd: StrLike) -> Result<Vec<Vec<StrLike>>, &'static str> {
+pub fn match_dfd(generic_dfd: StrLike) -> Result<Vec<Vec<StrLike>>, &'static str> {
     // Mutable variables
     let mut steps: Vec<Vec<StrLike>> = vec![vec![]];
     let mut curr_step_index: usize = 0;
@@ -173,12 +173,12 @@ pub mod tests {
     use super::*;
 
     #[test]
-    fn successfully_decodes_signature_for_transfer_confirmation_event() {
+    fn successfully_matches_signature_for_transfer_confirmation_event() {
         let valid_signature_transfer_confirm_event = "Transfer(from,to,value)";
         // Important! If using .encode() instead of .as_bytes() + .to_vec(),
         //  SCALE adds additional byte "92" to event name
         let decode_res =
-            decode_signature(valid_signature_transfer_confirm_event.as_bytes().to_vec());
+            match_signature(valid_signature_transfer_confirm_event.as_bytes().to_vec());
         assert_eq!(
             decode_res,
             Ok((
@@ -189,12 +189,12 @@ pub mod tests {
     }
 
     #[test]
-    fn fails_to_decode_signature_when_does_not_end_with_closing_bracket() {
+    fn fails_to_match_signature_when_does_not_end_with_closing_bracket() {
         let valid_signature_transfer_confirm_event = "Transfer(from,to,value";
         // Important! If using .encode() instead of .as_bytes() + .to_vec(),
         //  SCALE adds additional byte "92" to event name
         let decode_res =
-            decode_signature(valid_signature_transfer_confirm_event.as_bytes().to_vec());
+            match_signature(valid_signature_transfer_confirm_event.as_bytes().to_vec());
         assert_eq!(
             decode_res,
             Err("Signature sanity failed - must end with ')'")
@@ -202,92 +202,92 @@ pub mod tests {
     }
 
     #[test]
-    fn fails_to_decode_signature_when_too_many_closing_brackets() {
+    fn fails_to_match_signature_when_too_many_closing_brackets() {
         let valid_signature_transfer_confirm_event = "Transfer(from,to,value))))";
         // Important! If using .encode() instead of .as_bytes() + .to_vec(),
         //  SCALE adds additional byte "92" to event name
         let decode_res =
-            decode_signature(valid_signature_transfer_confirm_event.as_bytes().to_vec());
+            match_signature(valid_signature_transfer_confirm_event.as_bytes().to_vec());
         assert_eq!(decode_res, Err("Signature's argument name can't be empty"))
     }
 
     #[test]
-    fn fails_to_decode_signature_when_empty_arg_name() {
+    fn fails_to_match_signature_when_empty_arg_name() {
         let valid_signature_transfer_confirm_event = "Transfer(from,to,)";
         // Important! If using .encode() instead of .as_bytes() + .to_vec(),
         //  SCALE adds additional byte "92" to event name
         let decode_res =
-            decode_signature(valid_signature_transfer_confirm_event.as_bytes().to_vec());
+            match_signature(valid_signature_transfer_confirm_event.as_bytes().to_vec());
         assert_eq!(decode_res, Err("Signature's argument name can't be empty"))
     }
 
     #[test]
-    fn fails_to_decode_signature_when_no_opening_bracket() {
+    fn fails_to_match_signature_when_no_opening_bracket() {
         let valid_signature_transfer_confirm_event = "Transfer,from,to,value)";
         // Important! If using .encode() instead of .as_bytes() + .to_vec(),
         //  SCALE adds additional byte "92" to event name
         let decode_res =
-            decode_signature(valid_signature_transfer_confirm_event.as_bytes().to_vec());
+            match_signature(valid_signature_transfer_confirm_event.as_bytes().to_vec());
         assert_eq!(decode_res, Err("Signature must start with event name"))
     }
 
     #[test]
-    fn fails_to_decode_signature_when_empty_event_name() {
+    fn fails_to_match_signature_when_empty_event_name() {
         let valid_signature_transfer_confirm_event = "(from,to,value)";
         // Important! If using .encode() instead of .as_bytes() + .to_vec(),
         //  SCALE adds additional byte "92" to event name
         let decode_res =
-            decode_signature(valid_signature_transfer_confirm_event.as_bytes().to_vec());
+            match_signature(valid_signature_transfer_confirm_event.as_bytes().to_vec());
         assert_eq!(decode_res, Err("Signature must have non-empty event name"))
     }
 
     #[test]
-    fn successfully_decodes_dfd_for_3_parallel_events() {
+    fn successfully_matches_dfd_for_3_parallel_events() {
         let valid_dfd = "A,B,C";
         // Important! If using .encode() instead of .as_bytes() + .to_vec(),
         //  SCALE adds additional byte "92" to event name
-        let decode_res = decode_dfd(valid_dfd.as_bytes().to_vec());
+        let decode_res = match_dfd(valid_dfd.as_bytes().to_vec());
         assert_eq!(
             decode_res,
             Ok(vec![vec![b"A".to_vec(), b"B".to_vec(), b"C".to_vec(),]])
         )
     }
     #[test]
-    fn successfully_decodes_dfd_for_3_parallel_events_in_single_brackets() {
+    fn successfully_matches_dfd_for_3_parallel_events_in_single_brackets() {
         let valid_dfd = "(A,B,C)";
         // Important! If using .encode() instead of .as_bytes() + .to_vec(),
         //  SCALE adds additional byte "92" to event name
-        let decode_res = decode_dfd(valid_dfd.as_bytes().to_vec());
+        let decode_res = match_dfd(valid_dfd.as_bytes().to_vec());
         assert_eq!(
             decode_res,
             Ok(vec![vec![b"A".to_vec(), b"B".to_vec(), b"C".to_vec(),]])
         )
     }
     #[test]
-    fn successfully_decodes_dfd_for_3_parallel_events_in_triple_brackets() {
+    fn successfully_matches_dfd_for_3_parallel_events_in_triple_brackets() {
         let valid_dfd = "(((A,B,C)))";
         // Important! If using .encode() instead of .as_bytes() + .to_vec(),
         //  SCALE adds additional byte "92" to event name
-        let decode_res = decode_dfd(valid_dfd.as_bytes().to_vec());
+        let decode_res = match_dfd(valid_dfd.as_bytes().to_vec());
         assert_eq!(
             decode_res,
             Ok(vec![vec![b"A".to_vec(), b"B".to_vec(), b"C".to_vec(),]])
         )
     }
     #[test]
-    fn fails_to_decode_dfd_for_3_parallel_events_with_incorrect_closing_brackets() {
+    fn fails_to_match_dfd_for_3_parallel_events_with_incorrect_closing_brackets() {
         let valid_dfd = "(A,B,C";
         // Important! If using .encode() instead of .as_bytes() + .to_vec(),
         //  SCALE adds additional byte "92" to event name
-        let decode_res = decode_dfd(valid_dfd.as_bytes().to_vec());
+        let decode_res = match_dfd(valid_dfd.as_bytes().to_vec());
         assert_eq!(decode_res, Err("DFD Decoder - too many opening brackets"))
     }
     #[test]
-    fn fails_to_decode_dfd_for_3_parallel_events_with_incorrect_opening_brackets() {
+    fn fails_to_match_dfd_for_3_parallel_events_with_incorrect_opening_brackets() {
         let valid_dfd = "A,B,C)";
         // Important! If using .encode() instead of .as_bytes() + .to_vec(),
         //  SCALE adds additional byte "92" to event name
-        let decode_res = decode_dfd(valid_dfd.as_bytes().to_vec());
+        let decode_res = match_dfd(valid_dfd.as_bytes().to_vec());
         assert_eq!(
             decode_res,
             Err("DFD Decoder - attempt to edit step at incorrect depth")
@@ -295,11 +295,11 @@ pub mod tests {
     }
 
     #[test]
-    fn successfully_decodes_dfd_for_3_sequential_events() {
+    fn successfully_matches_dfd_for_3_sequential_events() {
         let valid_dfd = "(A(B(C)))";
         // Important! If using .encode() instead of .as_bytes() + .to_vec(),
         //  SCALE adds additional byte "92" to event name
-        let decode_res = decode_dfd(valid_dfd.as_bytes().to_vec());
+        let decode_res = match_dfd(valid_dfd.as_bytes().to_vec());
         assert_eq!(
             decode_res,
             Ok(vec![
@@ -311,13 +311,13 @@ pub mod tests {
     }
 
     #[test]
-    fn successfully_decodes_dfd_for_3_sequential_32b_long_events() {
+    fn successfully_matches_dfd_for_3_sequential_32b_long_events() {
         let valid_dfd = "(0909090909090909090909090909090909090909090909090909090909090909(\
             0606060606060606060606060606060606060606060606060606060606060606(\
                 0303030303030303030303030303030303030303030303030303030303030303)))";
         // Important! If using .encode() instead of .as_bytes() + .to_vec(),
         //  SCALE adds additional byte "92" to event name
-        let decode_res = decode_dfd(valid_dfd.as_bytes().to_vec());
+        let decode_res = match_dfd(valid_dfd.as_bytes().to_vec());
         assert_eq!(
             decode_res,
             Ok(vec![
@@ -329,11 +329,11 @@ pub mod tests {
     }
 
     #[test]
-    fn successfully_decodes_dfd_for_2_sequential_events_after_2_parallel() {
+    fn successfully_matches_dfd_for_2_sequential_events_after_2_parallel() {
         let valid_dfd = "(D(C(A,B)))";
         // Important! If using .encode() instead of .as_bytes() + .to_vec(),
         //  SCALE adds additional byte "92" to event name
-        let decode_res = decode_dfd(valid_dfd.as_bytes().to_vec());
+        let decode_res = match_dfd(valid_dfd.as_bytes().to_vec());
         assert_eq!(
             decode_res,
             Ok(vec![

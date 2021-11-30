@@ -34,7 +34,7 @@ use sp_std::vec;
 
 pub mod abi;
 pub mod contract_metadata;
-pub mod event_signature;
+pub mod match_format;
 pub mod gateway_inbound_protocol;
 pub mod side_effect;
 pub mod transfers;
