@@ -8,10 +8,6 @@ on:
       - circuit-parachain/**/Cargo.lock
       - .github/workflows/circuit-parachain.yml
 
-env:
-  RUST_BACKTRACE: 1
-  CARGO_TERM_COLOR: always
-
 jobs:
   format:
     runs-on: self-hosted
@@ -44,7 +40,7 @@ jobs:
         with:
           toolchain: nightly-2021-09-29
           target: wasm32-unknown-unknown
-          components: clippy
+          components: rustfmt, clippy
           override: true
 
       - name: 🕒 Cache Rust binaries and packages
@@ -75,6 +71,7 @@ jobs:
         with:
           toolchain: nightly-2021-09-29
           target: wasm32-unknown-unknown
+          components: rustfmt, clippy
           override: true
 
       - name: 🕒 Cache Rust binaries and packages
@@ -113,6 +110,7 @@ jobs:
         with:
           toolchain: nightly-2021-09-29
           target: wasm32-unknown-unknown
+          components: rustfmt, clippy
           override: true
 
       - name: 🕒 Cache Rust binaries and packages
