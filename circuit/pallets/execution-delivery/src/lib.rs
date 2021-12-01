@@ -216,10 +216,10 @@ pub mod pallet {
 
             for side_effect in side_effects.iter() {
                 // ToDo: Generate Circuit's params as default ABI from let abi = pallet_xdns::get_abi(target_id)
-                let gateway_abi = Default::default();
-
-                use_protocol.notice_gateway(side_effect.target);
-                use_protocol.validate_args(side_effect.clone(), gateway_abi, &mut local_state)?;
+                //let gateway_abi = Default::default();
+                //use_protocol.notice_gateway(side_effect.target);
+                //use_protocol.validate_args(side_effect.clone(), gateway_abi, &mut local_state)?;
+                
 
                 full_side_effects.push(FullSideEffect {
                     input: side_effect.clone(),

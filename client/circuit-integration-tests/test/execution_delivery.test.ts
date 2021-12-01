@@ -25,7 +25,7 @@ describe('Execution Delivery | Extrinsics', function () {
     });
   });
 
-  describe.skip('submitSideEffectsTemp', () => {
+  describe('submitSideEffectsTemp', () => {
     it('should successfully submit submitSideEffectsTemp tx', async () => {
       await circuitApi.isReady;
 
@@ -40,7 +40,7 @@ describe('Execution Delivery | Extrinsics', function () {
       let arg_from: Bytes = new Bytes(circuitApi.registry, bob.address);
       let arg_to: Bytes = new Bytes(circuitApi.registry, bob.address);
       // 100000000000000 is 100 Kilo. I dont know what that means.
-      let arg_value = circuitApi.createType('Bytes', Array.from(circuitApi.createType('u128', 100000000000000).toU8a()));
+      let arg_value = circuitApi.createType('Bytes', Array.from(circuitApi.createType('u64', 10000).toU8a()));
 
       let sideEffectTransfer = circuitApi.createType('SideEffect', {
         target: circuitApi.createType('TargetId', TargetId),
@@ -66,6 +66,7 @@ describe('Execution Delivery | Extrinsics', function () {
       const result = new Promise<void>((resolve) =>
         submit_side_effects_temp.signAndSend(alice, (result) => {
           if (result.status.isFinalized) {
+            console.log(result.status.asFinalized.toHex());
             expect(result.dispatchError).to.be.undefined;
             expect(result.internalError).to.be.undefined;
             expect(result.dispatchInfo).to.be.ok;

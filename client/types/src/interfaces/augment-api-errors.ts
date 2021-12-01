@@ -433,9 +433,11 @@ declare module '@polkadot/api/types/errors' {
       ProcessStepGatewayNotRecognised: AugmentedError<ApiType>;
       RequesterNotEnoughBalance: AugmentedError<ApiType>;
       SideEffectConfirmationInvalidInclusionProof: AugmentedError<ApiType>;
+      SideEffectTypeNotRecognized: AugmentedError<ApiType>;
       StepConfirmationBlockUnrecognised: AugmentedError<ApiType>;
       StepConfirmationDecodingError: AugmentedError<ApiType>;
       StepConfirmationGatewayNotRecognised: AugmentedError<ApiType>;
+      VendorUnknown: AugmentedError<ApiType>;
       /**
        * Generic error
        **/

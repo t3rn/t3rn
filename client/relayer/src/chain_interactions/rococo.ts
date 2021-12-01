@@ -52,13 +52,10 @@ function generateSystemEventKey() {
 
 }
 
-export async function getProofs(api: ApiPromise, blockHash: any) {
+export async function getEventProofs(api: ApiPromise, blockHash: any) {
   let key = generateSystemEventKey();
   console.log(key);
   let proofs = await api.rpc.state.getReadProof([key], blockHash);
-  console.log('PROOF');
-  console.log(proofs.proof.toJSON());
-
-  const registry = new TypeRegistry();
-  return registry.createType('Vec<Bytes>', proofs.proof.toJSON());
+  console.log(`getProofs : success : ${blockHash}`);
+  return proofs;
 }
