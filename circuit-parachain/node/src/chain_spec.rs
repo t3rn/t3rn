@@ -218,6 +218,7 @@ fn testnet_genesis(
 		elections: Default::default(),
 		council: Default::default(),
 		democracy: Default::default(),
+		contracts_registry: Default::default(),
 	}
 }
 
@@ -337,5 +338,6 @@ fn genesis(
 		elections: Default::default(),
 		council: Default::default(),
 		democracy: Default::default(),
+		contracts_registry: Default::default(),
 	}
 }
