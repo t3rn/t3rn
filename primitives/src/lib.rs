@@ -39,6 +39,7 @@ pub mod gateway_inbound_protocol;
 pub mod side_effect;
 pub mod transfers;
 pub mod xtx;
+pub mod storage;
 
 pub use gateway_inbound_protocol::GatewayInboundProtocol;
 
