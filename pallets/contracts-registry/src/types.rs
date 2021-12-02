@@ -2,6 +2,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
+use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::traits::Hash;
@@ -9,10 +10,9 @@ use sp_runtime::RuntimeDebug;
 use sp_std::vec::Vec;
 use t3rn_primitives::abi::ContractActionDesc;
 use t3rn_primitives::contract_metadata::ContractMetadata;
+use t3rn_primitives::storage::RawAliveContractInfo;
 use t3rn_primitives::Compose;
 pub use t3rn_primitives::RegistryContractId;
-use t3rn_primitives::storage::RawAliveContractInfo;
-use scale_info::TypeInfo;
 
 type ChainId = [u8; 4];
 

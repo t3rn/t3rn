@@ -1,12 +1,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_runtime::{
-    RuntimeDebug as Debug
-};
+use sp_runtime::RuntimeDebug as Debug;
 
-use codec::{Encode, Decode};
-use frame_support::storage::child::ChildInfo;
 use crate::transfers::BalanceOf;
+use codec::{Decode, Encode};
+use frame_support::storage::child::ChildInfo;
 use scale_info::TypeInfo;
 use sp_std::vec::Vec;
 

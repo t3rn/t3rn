@@ -759,8 +759,8 @@ impl pallet_xdns::Config for Runtime {
 }
 
 impl pallet_contracts_registry::Config for Runtime {
-    type Event = Event;
-    type WeightInfo = pallet_contracts_registry::weights::SubstrateWeight<Runtime>;
+	type Event = Event;
+	type WeightInfo = pallet_contracts_registry::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -819,7 +819,7 @@ construct_runtime!(
 		MultiFinalityVerifierPolkadotLike: pallet_mfv::<Instance1>::{
 			Pallet, Call, Storage, Config<T, I>
 		} = 101,
-        ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 102,
+		ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 102,
 
 		// admin
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
