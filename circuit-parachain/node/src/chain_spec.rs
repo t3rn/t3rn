@@ -213,6 +213,11 @@ fn testnet_genesis(
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		sudo: circuit_parachain_runtime::SudoConfig { key: root_key.clone() },
+		multi_finality_verifier_polkadot_like: Default::default(),
+		xdns: Default::default(),
+		elections: Default::default(),
+		council: Default::default(),
+		democracy: Default::default(),
 	}
 }
 
@@ -327,5 +332,10 @@ fn genesis(
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		sudo: circuit_parachain_runtime::SudoConfig { key: root_key.clone() },
+		multi_finality_verifier_polkadot_like: Default::default(),
+		xdns: Default::default(),
+		elections: Default::default(),
+		council: Default::default(),
+		democracy: Default::default(),
 	}
 }
