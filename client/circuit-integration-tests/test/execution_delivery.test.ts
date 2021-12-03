@@ -36,23 +36,37 @@ describe('Execution Delivery | Extrinsics', function () {
 
       // Create the extrinsic call
       let TargetId: U8aFixed = new U8aFixed(circuitApi.registry, [0, 0, 0, 1], 32);
-      let encoded_action: Bytes = circuitApi.createType('Bytes', 'transfer');
-      let arg_from: Bytes = new Bytes(circuitApi.registry, bob.address);
-      let arg_to: Bytes = new Bytes(circuitApi.registry, bob.address);
+      let encoded_action_transfer: Bytes = circuitApi.createType('Bytes', 'transfer');
+      let encoded_action_getStorage: Bytes = circuitApi.createType('Bytes', 'getStorage');
+      let transfer_arg_from: Bytes = new Bytes(circuitApi.registry, bob.address);
+      let transfer_arg_to: Bytes = new Bytes(circuitApi.registry, bob.address);
       // 100000000000000 is 100 Kilo. I dont know what that means.
-      let arg_value = circuitApi.createType('Bytes', Array.from(circuitApi.createType('u64', 10000).toU8a()));
+      let transfer_arg_value = circuitApi.createType('Bytes', Array.from(circuitApi.createType('u64', 10000).toU8a()));
+
+      // This key is for Balances::TotalIssuance StorageValue
+      let getStorage_arg_key = circuitApi.createType('StorageKey', '0xc2261276cc9d1f8598ea4b6a74b15c2f57c875e4cff74148e4628f264b974c80');
 
       let sideEffectTransfer = circuitApi.createType('SideEffect', {
         target: circuitApi.createType('TargetId', TargetId),
         prize: 10000,
         ordered_at: 1,
-        encoded_action: encoded_action,
-        encoded_args: circuitApi.createType('Vec<Bytes>', [arg_from, arg_to, arg_value]),
-        signature: encoded_action,
+        encoded_action: encoded_action_transfer,
+        encoded_args: circuitApi.createType('Vec<Bytes>', [transfer_arg_from, transfer_arg_to, transfer_arg_value]),
+        signature: encoded_action_transfer,
         enforce_executioner: circuitApi.createType('Option<AccountId>', alice.address)
       });
 
-      let sideEffect_vec = <Vec<SideEffect>>circuitApi.createType('Vec<SideEffect>', [sideEffectTransfer]);
+      let sideEffectGetStorage = circuitApi.createType('SideEffect', {
+        target: circuitApi.createType('TargetId', TargetId),
+        prize: 10000,
+        ordered_at: 1,
+        encoded_action: encoded_action_getStorage,
+        encoded_args: circuitApi.createType('Vec<Bytes>', [getStorage_arg_key]),
+        signature: encoded_action_getStorage,
+        enforce_executioner: circuitApi.createType('Option<AccountId>', alice.address)
+      });
+      
+      let sideEffect_vec = <Vec<SideEffect>>circuitApi.createType('Vec<SideEffect>', [sideEffectTransfer, sideEffectGetStorage]);
 
       const submit_side_effects_temp = circuitApi.tx.execDelivery.submitSideEffectsTemp(
         sideEffect_vec,

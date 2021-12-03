@@ -1,8 +1,7 @@
-import { TransferArguments } from './../utils/types';
+import { GetStorageArguments, StorageResult, TransferArguments } from './../utils/types';
 import { ApiPromise, Keyring } from '@polkadot/api';
 import { xxhashAsU8a } from '@polkadot/util-crypto';
 import { u8aToHex } from '@polkadot/util';
-import { TypeRegistry } from '@polkadot/types';
 import type { Hash } from '@polkadot/types/interfaces/runtime';
 import { TransactionResult } from '../utils/types';
 import { print_events } from '../utils/event_print';
@@ -38,10 +37,32 @@ export async function submit_transfer(api: ApiPromise, parameters: TransferArgum
   });
 }
 
+export async function getStorage(api: ApiPromise, parameters: GetStorageArguments): Promise<StorageResult> {
+  return new Promise(async resolve => {
+    let res = await api.rpc.state.getStorage(parameters.key);
+    resolve({
+      // @ts-ignore
+      // { value: '0x1c86d8cbffffffffffffffffffffffff', status: true }
+      // We may have to change it later down the line.
+      'value': res.toHuman(),
+      'status': (res !== undefined) ? true : false,
+    });
+  });
+
+}
+
 function generateSystemEventKey() {
+  return generateKeyForStorageValue('System', 'Events');
+}
+
+function generateBalancesKey() {
+  return generateKeyForStorageValue('Balances', 'TotalIssuance');
+}
+
+function generateKeyForStorageValue(module: string, variableName: string) {
   // lets prepare the storage key for system events.
-  let module_hash = xxhashAsU8a('System', 128);
-  let storage_value_hash = xxhashAsU8a('Events', 128);
+  let module_hash = xxhashAsU8a(module, 128);
+  let storage_value_hash = xxhashAsU8a(variableName, 128);
 
   // Special syntax to concatenate Uint8Array
   let final_key = new Uint8Array([

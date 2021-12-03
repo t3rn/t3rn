@@ -1,5 +1,5 @@
 import { ReadProof } from '@polkadot/types/interfaces/state';
-import { Bytes, Vec } from '@polkadot/types';
+import { Bytes, Vec, Option } from '@polkadot/types';
 import { ApiPromise, Keyring } from '@polkadot/api';
 import type {AccountId } from '@polkadot/types/interfaces/runtime';
 import '@t3rn/types/dist/augment-api';
@@ -16,7 +16,8 @@ export async function send_tx_confirm_side_effect(
     requester: AccountId,
     xtx_id: XtxId,
     sideEffect: SideEffect, 
-    proofs: ReadProof): Promise<TransactionResult> {
+    inclusion_proofs: Bytes,
+    encoded_effect: Bytes): Promise<TransactionResult> {
     return new Promise(async resolve => {
         // ToDo : Replace with real signer
         const keyring = new Keyring({ type: 'sr25519' });
@@ -27,8 +28,8 @@ export async function send_tx_confirm_side_effect(
             {
                 err: api.createType('Option<Bytes>', []),
                 output: api.createType('Option<Bytes>', []),
-                encoded_effect: api.createType('Bytes', []),
-                inclusion_proof: api.createType('Option<Bytes>', proofs.proof[0]),
+                encoded_effect: api.createType('Bytes', encoded_effect),
+                inclusion_proof: api.createType('Option<Bytes>', inclusion_proofs),
                 executioner: api.createType('AccountId', requester),
                 received_at: api.createType('BlockNumber', 1),
                 cost: api.createType('Option<BalanceOf>', 2)
@@ -38,7 +39,7 @@ export async function send_tx_confirm_side_effect(
             xtx_id,
             sideEffect,
             confirmed_side_effect,
-            proofs.proof);
+            []);
         let unsub = await tx.signAndSend(alice, (result => {
             if (result.status.isFinalized) {
                 console.log(`Transaction ConfirmedSideEffect finalized at blockHash ${result.status.asFinalized}`);
