@@ -1,4 +1,3 @@
-import { EventRecord } from '@polkadot/types/interfaces/system';
 import { ReadProof } from '@polkadot/types/interfaces/state';
 import { Bytes, Vec } from '@polkadot/types';
 import { ApiPromise, Keyring } from '@polkadot/api';
@@ -10,20 +9,7 @@ import { TransactionResult } from '../utils/types';
 import type { Hash } from '@polkadot/types/interfaces/runtime';
 import { XtxId } from 'types/src/interfaces/execution_delivery/types';
 import { ConfirmedSideEffect, SideEffect } from 'types/src/interfaces/primitives/types';
-
-function print_events(events : EventRecord[])
-{
-    events.forEach((record: { event: any; phase: any; }) => {
-        // Extract the phase, event and the event types
-        const { event, phase } = record;
-        const types = event.typeDef;
-
-        console.log(`\t${event.section}:${event.method}`);
-        event.data.forEach((data: { toString: () => any; }, index: string | number) => {
-          console.log(`\t\t\t${types[index].type}: ${data.toString()}`);
-        });
-      });
-}
+import { print_events } from '../utils/event_print';
 
 export async function send_tx_confirm_side_effect(
     api: ApiPromise, 
@@ -42,7 +28,7 @@ export async function send_tx_confirm_side_effect(
                 err: api.createType('Option<Bytes>', []),
                 output: api.createType('Option<Bytes>', []),
                 encoded_effect: api.createType('Bytes', []),
-                inclusion_proof: api.createType('Option<Bytes>', []),
+                inclusion_proof: api.createType('Option<Bytes>', proofs.proof[0]),
                 executioner: api.createType('AccountId', requester),
                 received_at: api.createType('BlockNumber', 1),
                 cost: api.createType('Option<BalanceOf>', 2)

@@ -5,6 +5,7 @@ import { u8aToHex } from '@polkadot/util';
 import { TypeRegistry } from '@polkadot/types';
 import type { Hash } from '@polkadot/types/interfaces/runtime';
 import { TransactionResult } from '../utils/types';
+import { print_events } from '../utils/event_print';
 
 export async function submit_transfer(api: ApiPromise, parameters: TransferArguments): Promise<TransactionResult> {
   return new Promise(async resolve => {
@@ -15,10 +16,10 @@ export async function submit_transfer(api: ApiPromise, parameters: TransferArgum
     const unsub = await api.tx.balances
       .transfer(parameters.to, parameters.amount)
       .signAndSend(alice, (result) => {
-        console.log(`Current status is ${result.status}`);
 
         if (result.status.isFinalized) {
           console.log(`Transaction finalized at blockHash ${result.status.asFinalized}`);
+          print_events(result.events);
 
           const extrinsicEvent = result.events.filter((item) => {
             return (item.event.method === 'ExtrinsicSuccess' || item.event.method === 'ExtrinsicFailed');
@@ -54,7 +55,6 @@ function generateSystemEventKey() {
 
 export async function getEventProofs(api: ApiPromise, blockHash: any) {
   let key = generateSystemEventKey();
-  console.log(key);
   let proofs = await api.rpc.state.getReadProof([key], blockHash);
   console.log(`getProofs : success : ${blockHash}`);
   return proofs;

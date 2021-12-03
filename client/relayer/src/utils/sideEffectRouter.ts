@@ -32,9 +32,8 @@ export async function executionRouter(payload: NewSideEffectsAvailableEvent, api
                 await submit_transfer(api, parameters).then(
                     async result => {
                         if (result.status) {
-                            console.log("Transfer success");
                             let proofs = await getEventProofs(api, result.blockHash);
-                            let { blockHash, status } = await send_tx_confirm_side_effect(
+                            let { status } = await send_tx_confirm_side_effect(
                                 api, 
                                 payload.requester,
                                 payload.xtx_id,
