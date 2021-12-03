@@ -59,9 +59,15 @@ pallet-democracy = { git = "https://github.com/paritytech/substrate", default-fe
 pallet-collective = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
 pallet-scheduler = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
 pallet-elections-phragmen = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
+pallet-utility = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12"}
 
 ## bridge dependencies
 bp-polkadot-core = { git = "https://github.com/t3rn/parity-bridges-common", branch = 'polkadot-v0.9.12', default-features = false }
+
+## snow bridge
+snowbridge-core = { git = "https://github.com/t3rn/snowbridge", default-features = false }
+ethereum-light-client = { git = "https://github.com/t3rn/snowbridge", package = "snowbridge-ethereum-light-client", default-features = false }
+snowbridge-channel = { git = "https://github.com/t3rn/snowbridge", package = "snowbridge-basic-channel", default-features = false }
 
 # t3rn Dependencies
 pallet-xdns = {path = "../../pallets/xdns", default-features = false }
@@ -127,6 +133,7 @@ std = [
 	"pallet-collective/std",
 	"pallet-scheduler/std",
 	"pallet-elections-phragmen/std",
+	"pallet-utility/std",
 	"cumulus-pallet-aura-ext/std",
 	"cumulus-pallet-parachain-system/std",
 	"cumulus-pallet-xcm/std",
@@ -142,7 +149,10 @@ std = [
 	"xcm-executor/std",
 	"xcm/std",
 	"pallet-mfv/std",
-	"bp-polkadot-core/std"
+	"bp-polkadot-core/std",
+	"ethereum-light-client/std",
+	"snowbridge-core/std",
+	"snowbridge-channel/std"
 ]
 
 runtime-benchmarks = [

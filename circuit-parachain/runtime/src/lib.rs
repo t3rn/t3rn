@@ -5,6 +5,7 @@
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
+use ethereum_light_client::EthereumDifficultyConfig;
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
 	traits::{Everything, LockIdentifier, Nothing, U128CurrencyToVote},
@@ -770,6 +771,28 @@ impl pallet_mfv::Config<pallet_mfv::Instance1> for Runtime {
 	type WeightInfo = ();
 }
 
+parameter_types! {
+	pub const DescendantsUntilFinalized: u8 = 1;
+	pub const DifficultyConfig: EthereumDifficultyConfig = EthereumDifficultyConfig::ropsten();
+	pub const VerifyPoW: bool = true;
+	pub const MaxHeadersForNumber: u32 = 100;
+}
+
+impl ethereum_light_client::Config for Runtime {
+	type Event = Event;
+	type DescendantsUntilFinalized = DescendantsUntilFinalized;
+	type DifficultyConfig = DifficultyConfig;
+	type VerifyPoW = VerifyPoW;
+	type WeightInfo = ();
+	type MaxHeadersForNumber = MaxHeadersForNumber;
+}
+
+impl pallet_utility::Config for Runtime {
+	type Event = Event;
+	type Call = Call;
+	type WeightInfo = pallet_utility::weights::SubstrateWeight<Self>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -814,6 +837,10 @@ construct_runtime!(
 		MultiFinalityVerifierPolkadotLike: pallet_mfv::<Instance1>::{
 			Pallet, Call, Storage, Config<T, I>
 		} = 101,
+
+		// snowfork deps
+		EthereumLightClient: ethereum_light_client::{Pallet, Call, Storage, Event<T>, Config} = 150,
+		Utility: pallet_utility::{Pallet, Call, Event} = 151,
 
 		// admin
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
