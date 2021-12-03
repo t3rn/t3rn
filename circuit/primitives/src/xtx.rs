@@ -5,8 +5,11 @@ use sp_runtime::{
     RuntimeDebug,
 };
 use sp_std::vec::Vec;
+
 type SystemHashing<T> = <T as frame_system::Config>::Hashing;
 pub type XtxId<T> = <T as frame_system::Config>::Hash;
+
+pub use crate::volatile::{LocalState, Volatile};
 use sp_std::fmt::Debug;
 
 /// A composable cross-chain (X) transaction that has already been verified to be valid and submittable
@@ -34,6 +37,9 @@ pub struct Xtx<AccountId, BlockNumber, BalanceOf> {
     /// Total reward
     pub total_reward: Option<BalanceOf>,
 
+    /// Local Xtx State
+    pub local_state: LocalState,
+
     /// Vector of Steps that each can consist out of at least one FullSideEffect
     pub full_side_effects: Vec<Vec<FullSideEffect<AccountId, BlockNumber, BalanceOf>>>,
 }
@@ -55,7 +61,7 @@ impl<
         delay_steps_at: Option<Vec<BlockNumber>>,
         // Total reward
         total_reward: Option<BalanceOf>,
-
+        local_state: LocalState,
         full_side_effects: Vec<Vec<FullSideEffect<AccountId, BlockNumber, BalanceOf>>>,
     ) -> Self {
         Xtx {
@@ -65,6 +71,7 @@ impl<
             delay_steps_at,
             result_status: None,
             total_reward,
+            local_state,
             full_side_effects,
         }
     }
@@ -100,7 +107,7 @@ impl<
 
         // Double check there are some side effects for that Xtx - should have been checked at API level tho already
         if self.full_side_effects.is_empty() {
-            return Err("Xtx has no single side effect step to confirm");
+            return Err("Xtx has no single side effect step to confirm.rs");
         }
 
         let mut unconfirmed_step_no: Option<usize> = None;
@@ -147,8 +154,15 @@ mod tests {
 
     #[test]
     fn successfully_creates_empty_xtx() {
-        let empty_xtx =
-            Xtx::<AccountId, BlockNumber, BalanceOf>::new(0, vec![], None, None, None, vec![]);
+        let empty_xtx = Xtx::<AccountId, BlockNumber, BalanceOf>::new(
+            0,
+            vec![],
+            None,
+            None,
+            None,
+            LocalState::new(),
+            vec![],
+        );
 
         assert_eq!(
             empty_xtx,
@@ -159,7 +173,8 @@ mod tests {
                 delay_steps_at: None,
                 result_status: None,
                 total_reward: None,
-                full_side_effects: vec![]
+                local_state: LocalState::new(),
+                full_side_effects: vec![],
             }
         );
     }
@@ -192,6 +207,7 @@ mod tests {
             None,
             None,
             None,
+            LocalState::new(),
             vec![vec![FullSideEffect {
                 input: input_side_effect_1.clone(),
                 confirmed: None,
@@ -268,6 +284,7 @@ mod tests {
             None,
             None,
             None,
+            LocalState::new(),
             vec![vec![
                 FullSideEffect {
                     input: input_side_effect_1.clone(),
@@ -377,6 +394,7 @@ mod tests {
             None,
             None,
             None,
+            LocalState::new(),
             vec![
                 vec![FullSideEffect {
                     input: input_side_effect_1.clone(),
@@ -484,6 +502,7 @@ mod tests {
             None,
             None,
             None,
+            LocalState::new(),
             vec![
                 vec![FullSideEffect {
                     input: input_side_effect_1.clone(),

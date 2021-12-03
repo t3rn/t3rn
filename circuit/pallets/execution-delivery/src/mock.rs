@@ -892,7 +892,7 @@ impl pallet_babe::Config for Test {
     type WeightInfo = ();
 }
 
-pub(crate) struct ExtBuilder {
+pub struct ExtBuilder {
     known_xdns_records: Vec<XdnsRecord<AccountId>>,
 }
 

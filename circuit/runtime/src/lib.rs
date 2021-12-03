@@ -37,13 +37,16 @@ use beefy_primitives::{crypto::AuthorityId as BeefyId, ValidatorSet};
 use bridge_runtime_common::messages::{
     source::estimate_message_dispatch_and_delivery_fee, MessageBridge,
 };
-use codec::Decode;
+use pallet_contracts_registry::FetchContractsResult;
+
+use codec::{Decode, Encode};
 use pallet_beefy_mmr::mmr::MmrLeafVersion;
 use pallet_grandpa::{
     fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
 use pallet_mmr_primitives as mmr;
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
+use pallet_xdns_rpc_runtime_api::FetchXdnsRecordsResponse;
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
@@ -1072,6 +1075,34 @@ impl_runtime_apis! {
 
         fn unrewarded_relayers_state(lane: bp_messages::LaneId) -> bp_messages::UnrewardedRelayersState {
             BridgeGatewayMessages::inbound_unrewarded_relayers_state(lane)
+        }
+    }
+
+    impl pallet_xdns_rpc_runtime_api::XdnsRuntimeApi<Block, AccountId> for Runtime
+    {
+        fn fetch_records() -> FetchXdnsRecordsResponse<AccountId> {
+            let records = XDNS::fetch_records();
+            FetchXdnsRecordsResponse::<AccountId> {
+                xdns_records: records
+            }
+        }
+    }
+
+    impl pallet_contracts_registry_rpc_runtime_api::ContractsRegistryRuntimeApi<Block, AccountId> for Runtime
+    {
+        fn fetch_contracts(
+            author: Option<AccountId>,
+            metadata: Option<sp_core::Bytes>
+        ) -> pallet_contracts_registry_rpc_runtime_api::FetchContractsResult {
+            let result = ContractsRegistry::fetch_contracts(author, metadata);
+
+            let encoded = result.unwrap().clone().iter().map(Encode::encode).collect();
+
+            FetchContractsResult {
+                gas_consumed: 0,
+                result: Ok(encoded),
+                flags: 0
+            }
         }
     }
 
