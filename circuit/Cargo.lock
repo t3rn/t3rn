@@ -1243,6 +1243,7 @@ dependencies = [
  "sp-finality-grandpa",
  "sp-inherents",
  "sp-runtime",
+ "sp-std",
  "sp-timestamp",
  "structopt",
  "substrate-build-script-utils",

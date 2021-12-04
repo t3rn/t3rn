@@ -30,7 +30,7 @@ use sp_runtime::{
 // Reexport crate as its pallet name for construct_runtime.
 use crate as pallet_xdns;
 use frame_support::pallet_prelude::GenesisBuild;
-use t3rn_primitives::EscrowTrait;
+use t3rn_primitives::{EscrowTrait, GatewaySysProps};
 
 use sp_keystore::testing::KeyStore;
 use sp_keystore::{KeystoreExt, SyncCryptoStore};
@@ -152,6 +152,11 @@ impl ExtBuilder {
             GatewayVendor::Substrate,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
+            GatewaySysProps {
+                ss58_format: 1333,
+                token_symbol: Encode::encode("T3RN"),
+                token_decimals: 12,
+            },
             vec![],
         );
         let gateway_xdns_record = <XdnsRecord<AccountId>>::new(
@@ -161,6 +166,11 @@ impl ExtBuilder {
             GatewayVendor::Substrate,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
+            GatewaySysProps {
+                ss58_format: 1333,
+                token_symbol: Encode::encode("T3RN"),
+                token_decimals: 12,
+            },
             vec![],
         );
         let polkadot_xdns_record = <XdnsRecord<AccountId>>::new(
@@ -170,6 +180,11 @@ impl ExtBuilder {
             GatewayVendor::Substrate,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
+            GatewaySysProps {
+                ss58_format: 0,
+                token_symbol: Encode::encode("DOT"),
+                token_decimals: 10,
+            },
             vec![],
         );
         let kusama_xdns_record = <XdnsRecord<AccountId>>::new(
@@ -179,6 +194,11 @@ impl ExtBuilder {
             GatewayVendor::Substrate,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
+            GatewaySysProps {
+                ss58_format: 2,
+                token_symbol: Encode::encode("KSM"),
+                token_decimals: 12,
+            },
             vec![],
         );
         self.known_xdns_records = vec![
