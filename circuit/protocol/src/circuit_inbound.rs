@@ -4,13 +4,12 @@ use codec::{Decode, Encode};
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::U256;
+use sp_core::{Bytes, U256};
 use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
 use sp_std::vec::Vec;
 
 use crate::gateway_outbound_protocol::GatewayOutboundEvent;
-use t3rn_primitives::abi::Bytes;
 use t3rn_primitives::ProofTriePointer;
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]

@@ -2,7 +2,7 @@ name: Circuit Release
 
 on:
   push:
-   paths:
+    paths:
       - circuit/**/*.rs
       - circuit/**/Cargo.toml
       - circuit/**/Cargo.lock

@@ -24,7 +24,12 @@ use sp_core::crypto::Ss58Codec;
 use sp_core::{sr25519, Encode, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use std::{collections::BTreeMap, str::FromStr};
+use sp_std::convert::TryFrom;
+use std::{
+    collections::BTreeMap,
+    io::{Error, ErrorKind},
+    str::FromStr,
+};
 
 use circuit_runtime::{
     AccountId, AuraConfig, BalancesConfig, BeefyConfig, ContractsRegistryConfig, EVMConfig,
@@ -33,7 +38,7 @@ use circuit_runtime::{
 };
 use jsonrpc_runtime_client::{create_rpc_client, get_metadata, ConnectionParams};
 use pallet_xdns::XdnsRecord;
-use t3rn_primitives::{GatewayGenesisConfig, GatewayType, GatewayVendor};
+use t3rn_primitives::{GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor};
 
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
@@ -80,12 +85,15 @@ pub fn get_authority_keys_from_seed(s: &str) -> (AccountId, AuraId, GrandpaId, B
 fn fetch_xdns_record_from_rpc(
     params: &ConnectionParams,
     chain_id: t3rn_primitives::ChainId,
-) -> Result<XdnsRecord<AccountId>, std::io::Error> {
+) -> Result<XdnsRecord<AccountId>, Error> {
     task::block_on(async move {
         let client = create_rpc_client(params).await.unwrap();
 
         let runtime_version = client.clone().runtime_version().await.unwrap();
         let metadata = get_metadata(&client.clone()).await.unwrap();
+
+        let gateway_sys_props = GatewaySysProps::try_from(&chain_id)
+            .map_err(|err| Error::new(ErrorKind::InvalidInput, err))?;
 
         let mut modules_vec = vec![];
         let mut extension_vec = vec![];
@@ -104,17 +112,18 @@ fn fetch_xdns_record_from_rpc(
             GatewayGenesisConfig {
                 modules_encoded: Some(modules_vec),
                 extrinsics_version: metadata.extrinsic.version.into(),
-                signed_extension: Some(extension_vec),
+                // signed_extensions: Some(extension_vec),
                 runtime_version,
                 genesis_hash: client.genesis_hash.0.to_vec(),
             },
+            gateway_sys_props,
             vec![],
         ))
     })
 }
 
 /// Helper function to generate Polkadot and Kusama XdnsRecords from RPC
-fn seed_xdns_registry() -> Result<Vec<XdnsRecord<AccountId>>, std::io::Error> {
+fn seed_xdns_registry() -> Result<Vec<XdnsRecord<AccountId>>, Error> {
     let polkadot_connection_params: ConnectionParams = ConnectionParams {
         host: String::from("rpc.polkadot.io"),
         port: 443,

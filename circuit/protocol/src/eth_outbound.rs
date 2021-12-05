@@ -5,7 +5,7 @@ use t3rn_primitives::GatewayPointer;
 use codec::{Decode, Encode};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::{H160, H256, U256};
+use sp_core::{Bytes, H160, H256, U256};
 use sp_std::vec::*;
 
 use ethabi_decode::{encode as eth_abi_encode, Event as EthAbiEvent};
@@ -15,7 +15,7 @@ use sp_runtime::RuntimeString;
 
 use crate::circuit_inbound::Proof;
 use t3rn_primitives::abi::GatewayABIConfig;
-use t3rn_primitives::abi::{create_signature, Bytes, Type};
+use t3rn_primitives::abi::{create_signature, Type};
 
 use crate::gateway_outbound_protocol::{
     AsGatewayOutboundEvent, GatewayOutboundEvent, GatewayOutboundEventId,

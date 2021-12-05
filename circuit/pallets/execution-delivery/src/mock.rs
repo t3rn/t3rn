@@ -47,7 +47,7 @@ use pallet_xdns::XdnsRecord;
 use std::collections::BTreeMap;
 use t3rn_primitives::transfers::BalanceOf;
 use t3rn_primitives::EscrowTrait;
-use t3rn_primitives::{GatewayType, GatewayVendor};
+use t3rn_primitives::{GatewaySysProps, GatewayType, GatewayVendor};
 use volatile_vm::DispatchRuntimeCall;
 
 use pallet_evm::{AddressMapping, FeeCalculator};
@@ -892,7 +892,7 @@ impl pallet_babe::Config for Test {
     type WeightInfo = ();
 }
 
-pub(crate) struct ExtBuilder {
+pub struct ExtBuilder {
     known_xdns_records: Vec<XdnsRecord<AccountId>>,
 }
 
@@ -913,6 +913,11 @@ impl ExtBuilder {
             GatewayVendor::Substrate,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
+            GatewaySysProps {
+                ss58_format: 1333,
+                token_symbol: Encode::encode("T3RN"),
+                token_decimals: 12,
+            },
             vec![],
         );
         let gateway_xdns_record = <XdnsRecord<AccountId>>::new(
@@ -922,6 +927,11 @@ impl ExtBuilder {
             GatewayVendor::Substrate,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
+            GatewaySysProps {
+                ss58_format: 1333,
+                token_symbol: Encode::encode("T3RN"),
+                token_decimals: 12,
+            },
             vec![],
         );
         let polkadot_xdns_record = <XdnsRecord<AccountId>>::new(
@@ -931,6 +941,11 @@ impl ExtBuilder {
             GatewayVendor::Substrate,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
+            GatewaySysProps {
+                ss58_format: 0,
+                token_symbol: Encode::encode("DOT"),
+                token_decimals: 10,
+            },
             vec![],
         );
         let kusama_xdns_record = <XdnsRecord<AccountId>>::new(
@@ -940,6 +955,11 @@ impl ExtBuilder {
             GatewayVendor::Substrate,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
+            GatewaySysProps {
+                ss58_format: 2,
+                token_symbol: Encode::encode("KSM"),
+                token_decimals: 12,
+            },
             vec![],
         );
         self.known_xdns_records = vec![

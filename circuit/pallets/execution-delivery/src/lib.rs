@@ -22,35 +22,35 @@
 //! Circuit MVP
 #![cfg_attr(not(feature = "std"), no_std)]
 
-pub use crate::exec_composer::ExecComposer;
 use codec::{Decode, Encode};
 use frame_support::dispatch::DispatchResultWithPostInfo;
-use frame_support::ensure;
+
 use frame_support::traits::{Currency, EnsureOrigin, Get};
 use frame_system::offchain::{SignedPayload, SigningTypes};
 use frame_system::RawOrigin;
-use hex_literal::hex;
-use pallet_contracts_registry::{RegistryContract, RegistryContractId};
-use sp_application_crypto::Public;
+
 use sp_core::crypto::KeyTypeId;
 use sp_runtime::{
-    traits::{Convert, Hash, Saturating, Zero},
-    RuntimeAppPublic, RuntimeDebug,
+    traits::{AccountIdConversion, Convert, Saturating},
+    RuntimeDebug,
 };
-pub use t3rn_protocol::circuit_inbound::StepConfirmation;
-use t3rn_protocol::merklize::*;
-
-use bp_runtime::ChainId;
-pub use pallet::*;
-use sp_runtime::traits::AccountIdConversion;
 use sp_std::vec;
 use sp_std::vec::*;
-use t3rn_primitives::abi::{ContractActionDesc, GatewayABIConfig, HasherAlgo as HA};
-use t3rn_primitives::transfers::BalanceOf;
-use t3rn_primitives::*;
+
+pub use t3rn_primitives::{
+    abi::{GatewayABIConfig, HasherAlgo as HA},
+    side_effect::{ConfirmedSideEffect, FullSideEffect, SideEffect},
+    transfers::BalanceOf,
+    xtx::{LocalState, Xtx, XtxId},
+    *,
+};
+pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
+
 use volatile_vm::VolatileVM;
 
 pub type Bytes = sp_core::Bytes;
+
+pub use pallet::*;
 
 #[cfg(test)]
 pub mod tests;
@@ -63,8 +63,6 @@ pub mod mock;
 pub mod weights;
 use weights::WeightInfo;
 
-pub mod exec_composer;
-
 pub use t3rn_protocol::test_utils as message_test_utils;
 pub mod xbridges;
 pub use xbridges::{
@@ -73,9 +71,6 @@ pub use xbridges::{
     PolkadotLikeValU64Gateway,
 };
 
-pub use t3rn_primitives::xtx::{Xtx, XtxId};
-
-pub use t3rn_primitives::side_effect::{ConfirmedSideEffect, FullSideEffect, SideEffect};
 pub type AllowedSideEffect = Vec<u8>;
 
 /// Defines application identifier for crypto keys of this module.
@@ -86,23 +81,12 @@ pub type AllowedSideEffect = Vec<u8>;
 /// The keys can be inserted manually via RPC (see `author_insertKey`).
 pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"circ");
 
-pub fn select_validator_for_x_tx_dummy<T: Config>() -> Result<T::AccountId, &'static str> {
-    // This is the well-known Substrate account of Alice (5GrwvaEF...)
-    let default_recepient =
-        hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d");
-
-    let dummy_escrow_alice =
-        T::AccountId::decode(&mut &default_recepient[..]).expect("should not fail for dummy data");
-
-    Ok(dummy_escrow_alice)
-}
-
 // todo: Implement and move as independent submodule
 pub type SideEffectsDFD = Vec<u8>;
 pub type SideEffectId = Bytes;
 
 pub type AuthorityId = t3rn_protocol::signer::app::Public;
-pub(crate) type SystemHashing<T> = <T as frame_system::Config>::Hashing;
+pub type SystemHashing<T> = <T as frame_system::Config>::Hashing;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -192,17 +176,20 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(<T as Config>::WeightInfo::submit_exec())]
-        pub fn submit_exec(
+        /// Temporary entry for submitting a side effect directly for validation and event emittance
+        /// It's temporary, since will be replaced with a DFD, which allows to specify exactly the nature of argument
+        /// (SideEffect vs ComposableContract vs LocalContract or Mix)
+        #[pallet::weight(< T as Config >::WeightInfo::submit_exec())]
+        pub fn submit_side_effects_temp(
             origin: OriginFor<T>,
-            contract_id: RegistryContractId<T>,
+            side_effects: Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
             input: Vec<u8>,
-            value: BalanceOf<T>,
+            _value: BalanceOf<T>,
             reward: BalanceOf<T>,
+            sequential: bool,
         ) -> DispatchResultWithPostInfo {
             // Retrieve sender of the transaction.
             let requester = ensure_signed(origin)?;
-
             // Ensure can afford
             ensure!(
                 <T as EscrowTrait>::Currency::free_balance(&requester).saturating_sub(reward)
@@ -210,57 +197,63 @@ pub mod pallet {
                 Error::<T>::RequesterNotEnoughBalance,
             );
 
-            let contract =
-                if !<pallet_contracts_registry::ContractsRegistry<T>>::contains_key(&contract_id) {
-                    Err(Error::<T>::ContractDoesNotExists)?
-                } else {
-                    pallet_contracts_registry::ContractsRegistry::<T>::get(&contract_id)
-                        .expect("contains_key called above before accessing the contract")
-                };
+            let mut full_side_effects: Vec<
+                FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+            > = vec![];
 
-            Self::submit_xtx_execution(vec![contract], requester, input, value, reward)?;
+            let local_state = LocalState::new();
 
-            Ok(().into())
-        }
+            for side_effect in side_effects.iter() {
+                // ToDo SSE-1: Generate Circuit's params as default ABI from let abi = pallet_xdns::get_abi(target_id)
+                // ToDo SSE-2: Port Protocol here to ensure that the input arguments set by a user
+                //  follow the protocol for defined for that side effect
 
-        /// Will be deprecated in v1.0.0-RC
-        #[pallet::weight(<T as Config>::WeightInfo::submit_composable_exec_order() + <T as Config>::WeightInfo::decompose_io_schedule())]
-        pub fn submit_composable_exec_order(
-            origin: OriginFor<T>,
-            io_schedule: Vec<u8>,
-            components: Vec<Compose<T::AccountId, BalanceOf<T>>>,
-        ) -> DispatchResultWithPostInfo {
-            // Retrieve sender of the transaction.
-            let requester = ensure_signed(origin)?;
-            ensure!(
-                !(components.len() == 0 || io_schedule.len() == 0),
-                "empty parameters submitted for execution order",
-            );
+                full_side_effects.push(FullSideEffect {
+                    input: side_effect.clone(),
+                    confirmed: None,
+                })
+            }
 
-            let inter_schedule: InterExecSchedule<T::AccountId, BalanceOf<T>> =
-                Self::decompose_io_schedule(components.clone(), io_schedule.clone())
-                    .expect("Wrong io schedule");
+            let full_side_effects_steps = match sequential {
+                false => vec![full_side_effects],
+                true => {
+                    let mut sequential_order: Vec<
+                        Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+                    > = vec![];
+                    for full_side_effect in full_side_effects.iter() {
+                        sequential_order.push(vec![full_side_effect.clone()]);
+                    }
+                    sequential_order
+                }
+            };
 
-            let _escrow_account = select_validator_for_x_tx_dummy::<T>()?;
-
-            // In dry run we would like to:
-            // 1. Parse and validate the syntax of unseen in the on-chain registry contracts
-            //     1.2. Add them to the on-chain registry
-            // 2. Fetch all of the contracts from on-chain registry involved in that execution and dry run as one xtx.
-            let (contracts, _contract_ids, _contract_descriptions) =
-                Self::dry_run_whole_xtx(inter_schedule.clone(), requester.clone())?;
-
-            let initial_input = vec![];
-            let initial_value = Default::default();
-            let initial_reward = Default::default();
-
-            Self::submit_xtx_execution(
-                contracts,
+            // ToDo: SSE-Timeout - Introduce default timeout + delay
+            let (timeouts_at, delay_steps_at) = (None, None);
+            let new_xtx = Xtx::<T::AccountId, T::BlockNumber, BalanceOf<T>>::new(
                 requester.clone(),
-                initial_input,
-                initial_value,
-                initial_reward,
-            )?;
+                input,
+                timeouts_at,
+                delay_steps_at,
+                Some(reward),
+                local_state,
+                // ToDo: SSE-DFD - Missing GenericDFD to link side effects
+                //  or composable contracts with the Xtx
+                full_side_effects_steps,
+            );
+            let x_tx_id: XtxId<T> = new_xtx.generate_xtx_id::<T>();
+            ActiveXtxMap::<T>::insert(x_tx_id, &new_xtx);
+
+            Self::deposit_event(Event::XTransactionReceivedForExec(
+                x_tx_id.clone(),
+                // ToDo: Emit side effects DFD - encode_dfd(side_effects)
+                Default::default(),
+            ));
+
+            Self::deposit_event(Event::NewSideEffectsAvailable(
+                requester.clone(),
+                x_tx_id.clone(),
+                side_effects,
+            ));
 
             Ok(().into())
         }
@@ -308,6 +301,7 @@ pub mod pallet {
             gateway_vendor: t3rn_primitives::GatewayVendor,
             gateway_type: t3rn_primitives::GatewayType,
             gateway_genesis: GatewayGenesisConfig,
+            gateway_sys_props: GatewaySysProps,
             first_header: Vec<u8>,
             authorities: Option<Vec<T::AccountId>>,
             allowed_side_effects: Vec<AllowedSideEffect>,
@@ -321,6 +315,7 @@ pub mod pallet {
                 gateway_vendor.clone(),
                 gateway_type.clone(),
                 gateway_genesis,
+                gateway_sys_props.clone(),
                 allowed_side_effects.clone(),
             )?;
 
@@ -361,6 +356,7 @@ pub mod pallet {
                 gateway_id,           // gateway id
                 gateway_type,         // type - external, programmable, tx-only
                 gateway_vendor,       // vendor - substrate, eth etc.
+                gateway_sys_props,    // system properties - ss58 format, token symbol etc.
                 allowed_side_effects, // allowed side effects / enabled methods
             ));
 
@@ -374,6 +370,7 @@ pub mod pallet {
             gateway_id: bp_runtime::ChainId,
             _url: Option<Vec<u8>>,
             _gateway_abi: Option<GatewayABIConfig>,
+            _gateway_sys_props: Option<GatewaySysProps>,
             _authorities: Option<Vec<T::AccountId>>,
             allowed_side_effects: Option<Vec<AllowedSideEffect>>,
         ) -> DispatchResultWithPostInfo {
@@ -506,6 +503,7 @@ pub mod pallet {
             bp_runtime::ChainId,    // gateway id
             GatewayType,            // type - external, programmable, tx-only
             GatewayVendor,          // vendor - substrate, eth etc.
+            GatewaySysProps,        // system properties - ss58 format, token symbol etc.
             Vec<AllowedSideEffect>, // allowed side effects / enabled methods
         ),
         GatewayUpdated(
@@ -548,237 +546,6 @@ impl<T: SigningTypes> SignedPayload<T> for Payload<T::Public, T::BlockNumber> {
 impl<T: Config> Pallet<T> {
     fn account_id() -> T::AccountId {
         T::PalletId::get().into_account()
-    }
-    /// Receives a list of available components and an io schedule in text format
-    /// and parses it to create an execution schedule
-    pub fn decompose_io_schedule(
-        _components: Vec<Compose<T::AccountId, BalanceOf<T>>>,
-        _io_schedule: Vec<u8>,
-    ) -> Result<InterExecSchedule<T::AccountId, BalanceOf<T>>, &'static str> {
-        // set constants
-        const WHITESPACE_MATRIX: [u8; 4] = [b' ', b'\t', b'\r', b'\n'];
-        const PHASE_SEPARATOR: u8 = b'|';
-        const STEP_SEPARATOR: u8 = b',';
-        const SCHEDULE_END: u8 = b';';
-        // trims all whitespace chars from io_schedule vector
-        fn trim_whitespace(input_string: Vec<u8>) -> Vec<u8> {
-            let mut result = input_string.clone();
-
-            // checks if character is whitespace
-            let is_whitespace = |x: &u8| WHITESPACE_MATRIX.contains(x);
-
-            let mut i = 0;
-            while i < result.len() {
-                if is_whitespace(&result[i]) {
-                    result.remove(i);
-                } else {
-                    i += 1;
-                }
-            }
-            result
-        }
-
-        // converts an exec_step vector string to an ExecStep
-        // throws error if a component is not found
-        let to_exec_step = |name: Vec<u8>| {
-            let compose = _components
-                .clone()
-                .into_iter()
-                .find(|comp| comp.name.encode() == name.encode());
-            match compose {
-                Some(value) => Ok(ExecStep { compose: value }),
-                None => Err(Error::<T>::IOScheduleUnknownCompose),
-            }
-        };
-
-        // splits a phase vector into ExecSteps
-        let split_into_steps = |phase: Vec<u8>| {
-            phase
-                .split(|char| char.eq(&STEP_SEPARATOR))
-                .filter(|step| !step.is_empty())
-                .map(|step| to_exec_step(step.to_vec()))
-                .collect()
-        };
-
-        // splits an io_schedule into phases and then into steps
-        let split_into_phases = |io_schedule: Vec<u8>| {
-            io_schedule
-                .split(|character| character.eq(&PHASE_SEPARATOR))
-                .filter(|phase| !phase.is_empty())
-                .map(|phase| {
-                    let steps: Result<Vec<ExecStep<T::AccountId, BalanceOf<T>>>, crate::Error<T>> =
-                        split_into_steps(phase.to_vec());
-                    ensure!(steps.is_ok(), Error::<T>::IOScheduleUnknownCompose);
-                    Ok(ExecPhase {
-                        steps: steps.unwrap(),
-                    })
-                })
-                .collect()
-        };
-
-        let mut cloned = trim_whitespace(_io_schedule);
-
-        // make sure schedule is not empty
-        // probably irrelevant since there is already a check for that
-        let last_char = cloned.last();
-        ensure!(last_char.is_some(), Error::<T>::IOScheduleEmpty);
-        // make sure the schedule ends correctly and remove ending character or panic
-        let ends_correctly = last_char.eq(&Some(&SCHEDULE_END));
-        ensure!(ends_correctly, Error::<T>::IOScheduleNoEndingSemicolon);
-        cloned.remove(cloned.len() - 1);
-
-        // make sure schedule can be split into phases
-        let phases: Result<Vec<ExecPhase<T::AccountId, BalanceOf<T>>>, crate::Error<T>> =
-            split_into_phases(cloned);
-        ensure!(phases.is_ok(), Error::<T>::IOScheduleUnknownCompose);
-
-        Ok(InterExecSchedule {
-            phases: phases.unwrap(),
-        })
-    }
-
-    /// Dry run submitted cross-chain transaction
-    /// User can additionally submit the IO schedule which comes on top as an additional order maker.
-    /// inter_schedule was analysed already and we at this point we can be sure within
-    ///    the inter_schedule components are in the correct order. At least an order that requester expects.
-    /// Task of the dry_run here is the decompose the phases into additional rounds that can be submitted in parallel.
-    /// The output is cross-chain transaction with a fixed schedule that covers all future steps of the incoming rounds and phases.
-    pub fn dry_run_whole_xtx(
-        inter_schedule: InterExecSchedule<T::AccountId, BalanceOf<T>>,
-        _requester: T::AccountId,
-    ) -> Result<
-        (
-            Vec<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>>,
-            Vec<RegistryContractId<T>>,
-            Vec<ContractActionDesc<T::Hash, ChainId, T::AccountId>>,
-        ),
-        &'static str,
-    > {
-        let mut contracts = vec![];
-        let mut unseen_contracts = vec![];
-        let mut seen_contracts = vec![];
-        let mut contract_ids = vec![];
-        let mut action_descriptions = vec![];
-        let mut composes = vec![];
-
-        // ToDo: Better phases getter
-        let first_phase = inter_schedule
-            .phases
-            .get(0)
-            .expect("At least one phase should always be there in inter_schedule");
-
-        // Check if there are some unseen contracts - if yes dry_run them in a single context. If fine - add to the contracts-repo.
-        for step in &first_phase.steps {
-            let mut protocol_part_of_contract = step.compose.code_txt.clone();
-            protocol_part_of_contract.extend(step.compose.bytes.clone());
-            let key =
-                SystemHashing::<T>::hash(Encode::encode(&mut protocol_part_of_contract).as_ref());
-
-            // If invalid new contract was submitted for execution - break. Otherwise, add the new contract to on-chain registry.
-            if !pallet_contracts_registry::ContractsRegistry::<T>::contains_key(key) {
-                let unseen_contract =
-                    ExecComposer::dry_run_single_contract::<T>(step.compose.clone())?;
-                // Assuming dry run step went well, add the contract now
-                pallet_contracts_registry::ContractsRegistry::<T>::insert(key, &unseen_contract);
-                unseen_contracts.push(unseen_contract.clone());
-                action_descriptions.extend(unseen_contract.action_descriptions);
-            } else {
-                // Query for the existent contract and push to queue.
-                let seen_contract = pallet_contracts_registry::ContractsRegistry::<T>::get(key)
-                    .expect("contains_key called above before accessing the contract");
-                action_descriptions.extend(seen_contract.action_descriptions.clone());
-                seen_contracts.push(seen_contract);
-            }
-            contract_ids.push(key);
-            composes.push(step.compose.clone());
-        }
-
-        contracts.extend(seen_contracts);
-        contracts.extend(unseen_contracts);
-
-        let (_current_block_no, _block_zero) = (
-            <frame_system::Pallet<T>>::block_number(),
-            T::BlockNumber::zero(),
-        );
-
-        Ok((contracts, contract_ids, action_descriptions))
-    }
-
-    pub fn submit_xtx_execution(
-        contracts: Vec<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>>,
-        requester: T::AccountId,
-        input: Vec<u8>,
-        value: BalanceOf<T>,
-        reward: BalanceOf<T>,
-    ) -> Result<(), &'static str> {
-        // ToDo: Refactor loading
-        let _preload_response =
-            ExecComposer::preload_bunch_of_contracts::<T>(contracts.clone(), Default::default());
-
-        // ToDo: Work out max gas limit acceptable by each escrow
-        let gas_limit = u64::max_value();
-        let escrow_account = select_validator_for_x_tx_dummy::<T>()?;
-        let submitter = Self::select_authority(escrow_account.clone())?;
-
-        let (_circuit_outbound_messages, _last_executed_contract_no) =
-            ExecComposer::pre_run_bunch_until_break::<T>(
-                contracts,
-                // ToDo: Remove escrow account from the execution pre-requisites. Leave Side Effects unassigned
-                escrow_account.clone(),
-                submitter.clone(),
-                requester.clone(),
-                value,
-                input.clone(),
-                gas_limit,
-                None, // Circuit as a local Gateway ID = None
-                // ToDo: Generate Circuit's params as default ABI
-                Default::default(),
-            )?;
-
-        // ToDo: Introduce default timeout + delay
-        let (timeouts_at, delay_steps_at) = (None, None);
-        let new_xtx = Xtx::<T::AccountId, T::BlockNumber, BalanceOf<T>>::new(
-            requester.clone(),
-            input,
-            timeouts_at,
-            delay_steps_at,
-            Some(reward),
-            vec![],
-        );
-
-        let x_tx_id: XtxId<T> = new_xtx.generate_xtx_id::<T>();
-        ActiveXtxMap::<T>::insert(x_tx_id, &new_xtx);
-
-        Self::deposit_event(Event::XTransactionReceivedForExec(
-            x_tx_id.clone(),
-            // ToDo: Emit side effects DFD
-            Default::default(),
-        ));
-
-        Self::deposit_event(Event::NewSideEffectsAvailable(
-            requester.clone(),
-            x_tx_id.clone(),
-            // ToDo: Emit circuit outbound messages -> side effects
-            vec![],
-        ));
-
-        Ok(())
-    }
-
-    pub fn select_authority(escrow_account: T::AccountId) -> Result<AuthorityId, &'static str> {
-        let mut local_keys = AuthorityId::all();
-
-        local_keys.sort();
-
-        let auth = AuthorityId::from_slice(escrow_account.encode().as_slice());
-
-        let submitter = local_keys
-            .binary_search(&auth)
-            .ok()
-            .map(|location| local_keys[location].clone())
-            .ok_or("Can't match authority for given account")?;
-
-        Ok(submitter)
     }
 }
 
