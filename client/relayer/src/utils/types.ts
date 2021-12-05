@@ -17,9 +17,9 @@ export interface StorageResult {
 }
 
 export interface NewSideEffectsAvailableEvent {
-  requester: AccountId,
-  xtx_id: XtxId,
-  sideEffects: Vec<SideEffect>
+  requester: AccountId;
+  xtx_id: XtxId;
+  sideEffects: Vec<SideEffect>;
 }
 
 export declare interface Emitter {
@@ -33,11 +33,11 @@ export class Emitter extends events.EventEmitter {
 }
 
 export interface TransferArguments {
-  to: AccountId,
-  from: AccountId,
-  amount: Compact<u128> | AnyNumber | Uint8Array
+  to: AccountId;
+  from: AccountId;
+  amount: Compact<u128> | AnyNumber | Uint8Array;
 }
 
 export interface GetStorageArguments {
-  key: StorageKey
+  key: StorageKey;
 }

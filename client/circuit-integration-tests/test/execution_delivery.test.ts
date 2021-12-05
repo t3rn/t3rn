@@ -44,7 +44,10 @@ describe('Execution Delivery | Extrinsics', function () {
       let transfer_arg_value = circuitApi.createType('Bytes', Array.from(circuitApi.createType('u64', 10000).toU8a()));
 
       // This key is for Balances::TotalIssuance StorageValue
-      let getStorage_arg_key = circuitApi.createType('StorageKey', '0xc2261276cc9d1f8598ea4b6a74b15c2f57c875e4cff74148e4628f264b974c80');
+      let getStorage_arg_key = circuitApi.createType(
+        'StorageKey',
+        '0xc2261276cc9d1f8598ea4b6a74b15c2f57c875e4cff74148e4628f264b974c80'
+      );
 
       let sideEffectTransfer = circuitApi.createType('SideEffect', {
         target: circuitApi.createType('TargetId', TargetId),
@@ -53,7 +56,7 @@ describe('Execution Delivery | Extrinsics', function () {
         encoded_action: encoded_action_transfer,
         encoded_args: circuitApi.createType('Vec<Bytes>', [transfer_arg_from, transfer_arg_to, transfer_arg_value]),
         signature: encoded_action_transfer,
-        enforce_executioner: circuitApi.createType('Option<AccountId>', alice.address)
+        enforce_executioner: circuitApi.createType('Option<AccountId>', alice.address),
       });
 
       let sideEffectGetStorage = circuitApi.createType('SideEffect', {
@@ -63,10 +66,12 @@ describe('Execution Delivery | Extrinsics', function () {
         encoded_action: encoded_action_getStorage,
         encoded_args: circuitApi.createType('Vec<Bytes>', [getStorage_arg_key]),
         signature: encoded_action_getStorage,
-        enforce_executioner: circuitApi.createType('Option<AccountId>', alice.address)
+        enforce_executioner: circuitApi.createType('Option<AccountId>', alice.address),
       });
-      
-      let sideEffect_vec = <Vec<SideEffect>>circuitApi.createType('Vec<SideEffect>', [sideEffectTransfer, sideEffectGetStorage]);
+
+      let sideEffect_vec = <Vec<SideEffect>>(
+        circuitApi.createType('Vec<SideEffect>', [sideEffectTransfer, sideEffectGetStorage])
+      );
 
       const submit_side_effects_temp = circuitApi.tx.execDelivery.submitSideEffectsTemp(
         sideEffect_vec,
@@ -88,13 +93,13 @@ describe('Execution Delivery | Extrinsics', function () {
             expect(result.dispatchInfo?.class.isNormal).to.be.true;
             expect(result.dispatchInfo?.paysFee.isYes).to.be.true;
             expect(result.events).to.be.an('array');
-            result.events.forEach((record: { event: any; phase: any; }) => {
+            result.events.forEach((record: { event: any; phase: any }) => {
               // Extract the phase, event and the event types
               const { event, phase } = record;
               const types = event.typeDef;
 
               console.log(`\t${event.section}:${event.method}`);
-              event.data.forEach((data: { toString: () => any; }, index: string | number) => {
+              event.data.forEach((data: { toString: () => any }, index: string | number) => {
                 console.log(`\t\t\t${types[index].type}: ${data.toString()}`);
               });
             });
@@ -109,7 +114,6 @@ describe('Execution Delivery | Extrinsics', function () {
 
     after(async () => await circuitApi.disconnect());
   });
-
 
   describe('sudo register_gateway', () => {
     it('should successfully register a substrate gateway (Rococo)', async () => {

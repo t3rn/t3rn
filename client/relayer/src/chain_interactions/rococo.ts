@@ -7,48 +7,43 @@ import { TransactionResult } from '../utils/types';
 import { print_events } from '../utils/event_print';
 
 export async function submit_transfer(api: ApiPromise, parameters: TransferArguments): Promise<TransactionResult> {
-  return new Promise(async resolve => {
+  return new Promise(async (resolve) => {
     console.log(`Submitting transfer`);
     const keyring = new Keyring({ type: 'sr25519' });
     const alice = keyring.addFromUri('//Alice');
 
-    const unsub = await api.tx.balances
-      .transfer(parameters.to, parameters.amount)
-      .signAndSend(alice, (result) => {
+    const unsub = await api.tx.balances.transfer(parameters.to, parameters.amount).signAndSend(alice, (result) => {
+      if (result.status.isFinalized) {
+        console.log(`Transaction finalized at blockHash ${result.status.asFinalized}`);
+        print_events(result.events);
 
-        if (result.status.isFinalized) {
-          console.log(`Transaction finalized at blockHash ${result.status.asFinalized}`);
-          print_events(result.events);
+        const extrinsicEvent = result.events.filter((item) => {
+          return item.event.method === 'ExtrinsicSuccess' || item.event.method === 'ExtrinsicFailed';
+        });
 
-          const extrinsicEvent = result.events.filter((item) => {
-            return (item.event.method === 'ExtrinsicSuccess' || item.event.method === 'ExtrinsicFailed');
-          });
+        unsub();
 
-          unsub();
-
-          // there can only be one event
-          resolve({
-            'blockHash': result.status.asFinalized as Hash,
-            'status': (extrinsicEvent[0].event.method === 'ExtrinsicSuccess') ? true : false,
-          });
-        }
-
-      });
+        // there can only be one event
+        resolve({
+          blockHash: result.status.asFinalized as Hash,
+          status: extrinsicEvent[0].event.method === 'ExtrinsicSuccess' ? true : false,
+        });
+      }
+    });
   });
 }
 
 export async function getStorage(api: ApiPromise, parameters: GetStorageArguments): Promise<StorageResult> {
-  return new Promise(async resolve => {
+  return new Promise(async (resolve) => {
     let res = await api.rpc.state.getStorage(parameters.key);
     resolve({
       // @ts-ignore
       // { value: '0x1c86d8cbffffffffffffffffffffffff', status: true }
       // We may have to change it later down the line.
-      'value': res.toHuman(),
-      'status': (res !== undefined) ? true : false,
+      value: res.toHuman(),
+      status: res !== undefined ? true : false,
     });
   });
-
 }
 
 function generateSystemEventKey() {
@@ -61,13 +56,9 @@ function generateKeyForStorageValue(module: string, variableName: string) {
   let storage_value_hash = xxhashAsU8a(variableName, 128);
 
   // Special syntax to concatenate Uint8Array
-  let final_key = new Uint8Array([
-    ...module_hash,
-    ...storage_value_hash,
-  ]);
+  let final_key = new Uint8Array([...module_hash, ...storage_value_hash]);
 
   return u8aToHex(final_key);
-
 }
 
 export async function getEventProofs(api: ApiPromise, blockHash: any) {

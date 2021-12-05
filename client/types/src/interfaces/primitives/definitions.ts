@@ -1,6 +1,6 @@
 export default {
   types: {
-    BlockNumber : 'u64',
+    BlockNumber: 'u64',
     Compose: {
       name: 'Vec<u8>',
       code_txt: 'Vec<u8>',
