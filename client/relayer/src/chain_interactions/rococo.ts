@@ -55,10 +55,6 @@ function generateSystemEventKey() {
   return generateKeyForStorageValue('System', 'Events');
 }
 
-function generateBalancesKey() {
-  return generateKeyForStorageValue('Balances', 'TotalIssuance');
-}
-
 function generateKeyForStorageValue(module: string, variableName: string) {
   // lets prepare the storage key for system events.
   let module_hash = xxhashAsU8a(module, 128);

@@ -32,9 +32,6 @@ export class Emitter extends events.EventEmitter {
   }
 }
 
-// there is no transfer exposed which also takes from parameter. Hmm interesting.
-// then how will it work if the relayer signs the tx.
-// I dont know.
 export interface TransferArguments {
   to: AccountId,
   from: AccountId,

@@ -1,12 +1,10 @@
 import { Emitter } from './../utils/types';
-import { Codec } from '@polkadot/types/types';
-import { SideEffect } from './../../../types/src/interfaces/primitives/types';
 import { ApiPromise } from '@polkadot/api';
 import { NewSideEffectsAvailableEvent } from '../utils/types';
 
-export async function fetchCircuitEvents(api: ApiPromise, emitter: Emitter) {
+export async function monitorCircuitEvents(api: ApiPromise, emitter: Emitter) {
 
-    // Subscribe to system events via storage
+    // Subscribe to system events
     api.query.system.events((events) => {
         console.log(`\nReceived ${events.length} events from Circuit:`);
 

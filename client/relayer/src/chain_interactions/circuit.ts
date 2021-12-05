@@ -1,5 +1,4 @@
-import { ReadProof } from '@polkadot/types/interfaces/state';
-import { Bytes, Vec, Option } from '@polkadot/types';
+import { Bytes } from '@polkadot/types';
 import { ApiPromise, Keyring } from '@polkadot/api';
 import type {AccountId } from '@polkadot/types/interfaces/runtime';
 import '@t3rn/types/dist/augment-api';

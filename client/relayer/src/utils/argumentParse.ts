@@ -3,8 +3,6 @@ import type { Vec, Bytes } from '@polkadot/types';
 import { TransferArguments, GetStorageArguments } from './types';
 
 export function parseTransferArguments(api: ApiPromise, params: Vec<Bytes>) : TransferArguments {
-    // do some magic here and assing the correct values.
-    // TODO : Do this later.
 
     const keyring = new Keyring({ type: 'sr25519' });
     const alice = keyring.addFromUri('//Alice');
