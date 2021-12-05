@@ -41,7 +41,7 @@ describe('Execution Delivery | Extrinsics', function () {
       let transfer_arg_from: Bytes = new Bytes(circuitApi.registry, bob.address);
       let transfer_arg_to: Bytes = new Bytes(circuitApi.registry, bob.address);
       // 100000000000000 is 100 Kilo. I dont know what that means.
-      let transfer_arg_value = circuitApi.createType('Bytes', Array.from(circuitApi.createType('u64', 10000).toU8a()));
+      let transfer_arg_value = circuitApi.createType('Bytes', Array.from(circuitApi.createType('u64', 1).toU8a()));
 
       // This key is for Balances::TotalIssuance StorageValue
       let getStorage_arg_key = circuitApi.createType(

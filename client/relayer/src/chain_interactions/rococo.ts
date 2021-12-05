@@ -12,7 +12,9 @@ export async function submit_transfer(api: ApiPromise, parameters: TransferArgum
     const keyring = new Keyring({ type: 'sr25519' });
     const alice = keyring.addFromUri('//Alice');
 
-    const unsub = await api.tx.balances.transfer(parameters.to, parameters.amount).signAndSend(alice, (result) => {
+    const signer = (process.env.SIGNER_KEY === undefined) ? keyring.addFromUri('//Alice') : keyring.addFromMnemonic(process.env.SIGNER_KEY);
+
+    const unsub = await api.tx.balances.transfer(parameters.to, parameters.amount).signAndSend(signer, (result) => {
       if (result.status.isFinalized) {
         console.log(`Transaction finalized at blockHash ${result.status.asFinalized}`);
         print_events(result.events);
