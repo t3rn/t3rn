@@ -2,10 +2,10 @@ import { Emitter } from './../utils/types';
 import { ApiPromise } from '@polkadot/api';
 import { NewSideEffectsAvailableEvent } from '../utils/types';
 
-export async function monitorCircuitEvents(api: ApiPromise, emitter: Emitter) {
+export async function monitorCircuitEvents(circuitApi: ApiPromise, rococoApi: ApiPromise, emitter: Emitter) {
   // Subscribe to system events
-  api.query.system.events((events) => {
-    console.log(`\nReceived ${events.length} events from Circuit:`);
+  circuitApi.query.system.events((events) => {
+    // console.log(`\nReceived ${events.length} events from Circuit:`);
 
     // NewSideEffectsAvailable: AugmentedEvent<ApiType, [AccountId, XtxId, Vec<SideEffect>]>;
 
@@ -19,19 +19,19 @@ export async function monitorCircuitEvents(api: ApiPromise, emitter: Emitter) {
         for (let index = 0; index < event.data.length; index++) {
           switch (types[index].type) {
             case 'AccountId':
-              parsed.requester = api.createType('AccountId', event.data[index]);
+              parsed.requester = circuitApi.createType('AccountId', event.data[index]);
               break;
             case 'XtxId':
-              parsed.xtx_id = api.createType('XtxId', event.data[index]);
+              parsed.xtx_id = circuitApi.createType('XtxId', event.data[index]);
               break;
             case 'Vec<SideEffect>':
-              parsed.sideEffects = api.createType('Vec<SideEffect>', event.data[index]);
+              parsed.sideEffects = circuitApi.createType('Vec<SideEffect>', event.data[index]);
               break;
           }
         }
 
         // raise event for the parsed payload
-        emitter.emitSideEffect(parsed, api);
+        emitter.emitSideEffect(parsed, circuitApi, rococoApi);
       }
     });
   });

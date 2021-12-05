@@ -3,28 +3,30 @@ import { types } from '@t3rn/types';
 import { monitorCircuitEvents } from './event_fetch/circuit';
 import { Emitter } from './utils/types';
 import { executionRouter } from './utils/sideEffectRouter';
+import { TypeRegistry } from '@polkadot/types';
 
 const eventEmitter = new Emitter();
-eventEmitter.on('NewSideEffect', async (payload, rococoApi) => {
-  await executionRouter(payload, rococoApi);
+eventEmitter.on('NewSideEffect', async (payload, circuitApi, rococoApi) => {
+  await executionRouter(payload, circuitApi, rococoApi);
 });
 
+// this process.env is not loading values
+const rococoProvider = new WsProvider('wss://rococo-rpc.polkadot.io');
+// it works because it connects to localhost as a fallback
 const circuitProvider = new WsProvider(process.env.CIRCUIT_WS_URL);
-ApiPromise.create({
-  provider: circuitProvider,
-  types,
-})
-  .then((api) => {
-    main(api).catch((error) => {
-      console.error(error);
-      process.exit(1);
-    });
-  })
-  .catch((error) => {
-    console.log('Failed to connect to the circuit');
-    process.exit(1);
-  });
 
-async function main(api: ApiPromise) {
-  monitorCircuitEvents(api, eventEmitter);
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});
+
+async function main() {
+  
+  const rococoApi = await ApiPromise.create({ provider: rococoProvider });
+  console.log('Rococo connected');
+  
+  const circuitApi = await ApiPromise.create({ provider: circuitProvider, types });
+  console.log('Circuit connected');
+
+  monitorCircuitEvents(circuitApi, rococoApi, eventEmitter);
 }
