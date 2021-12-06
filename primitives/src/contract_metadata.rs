@@ -19,6 +19,7 @@ use crate::Bytes;
 use codec::{Decode, Encode};
 #[cfg(feature = "std")]
 use core::fmt::{Display, Formatter, Result as DisplayResult};
+use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize, Serializer};
 use sp_runtime::RuntimeDebug;
@@ -141,7 +142,7 @@ impl Display for Compiler {
 }
 
 /// Metadata about a smart contract.
-#[derive(Clone, Debug, Eq, PartialEq, Encode, Decode)]
+#[derive(Clone, Debug, Eq, PartialEq, Encode, Decode, TypeInfo)]
 pub struct ContractMetadata {
     metadata_version: Vec<u8>,
     name: Vec<u8>,

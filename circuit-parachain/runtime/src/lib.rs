@@ -759,6 +759,11 @@ impl pallet_xdns::Config for Runtime {
 	type WeightInfo = pallet_xdns::weights::SubstrateWeight<Runtime>;
 }
 
+impl pallet_contracts_registry::Config for Runtime {
+	type Event = Event;
+	type WeightInfo = pallet_contracts_registry::weights::SubstrateWeight<Runtime>;
+}
+
 parameter_types! {
 	pub const MaxRequests: u32 = 2;
 	pub const HeadersToKeep: u32 = 5;
@@ -837,6 +842,7 @@ construct_runtime!(
 		MultiFinalityVerifierPolkadotLike: pallet_mfv::<Instance1>::{
 			Pallet, Call, Storage, Config<T, I>
 		} = 101,
+		ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 102,
 
 		// snowfork deps
 		EthereumLightClient: ethereum_light_client::{Pallet, Call, Storage, Event<T>, Config} = 150,
@@ -1011,6 +1017,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
 			add_benchmark!(params, batches, pallet_collator_selection, CollatorSelection);
 			add_benchmark!(params, batches, pallet_session, Session);
+			add_benchmark!(params, batches, pallet_contracts_registry, ContractsRegistry);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

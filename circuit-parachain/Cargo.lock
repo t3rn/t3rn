@@ -1053,6 +1053,7 @@ dependencies = [
  "pallet-balances",
  "pallet-collator-selection",
  "pallet-collective",
+ "pallet-contracts-registry",
  "pallet-democracy",
  "pallet-elections-phragmen",
  "pallet-randomness-collective-flip",
@@ -4904,6 +4905,26 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-contracts-registry"
+version = "0.4.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-balances",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "t3rn-parachain-primitives",
 ]
 
 [[package]]
