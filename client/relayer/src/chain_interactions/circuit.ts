@@ -48,6 +48,7 @@ export async function send_tx_confirm_side_effect(
         resolve({
           blockHash: result.status.asFinalized as Hash,
           status: extrinsicEvent[0].event.method === 'ExtrinsicSuccess' ? true : false,
+          events: result.events,
         });
       }
     });

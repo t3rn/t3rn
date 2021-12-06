@@ -21,7 +21,8 @@ export async function executionRouter(
         await submit_transfer(rococoApi, transfer_parameters).then(async (result) => {
           if (result.status) {
             let inclusion_proofs = await getEventProofs(rococoApi, result.blockHash);
-            let encoded_effect: Bytes = rococoApi.createType('Bytes', 'test');
+            // only one event coming in. Access first element.
+            let encoded_effect: Bytes = rococoApi.createType('Bytes', result.events[0].toU8a());
             let { status } = await send_tx_confirm_side_effect(
               circuitApi,
               payload.requester,

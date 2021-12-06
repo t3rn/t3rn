@@ -12,7 +12,10 @@ export async function submit_transfer(api: ApiPromise, parameters: TransferArgum
     const keyring = new Keyring({ type: 'sr25519' });
     const alice = keyring.addFromUri('//Alice');
 
-    const signer = (process.env.SIGNER_KEY === undefined) ? keyring.addFromUri('//Alice') : keyring.addFromMnemonic(process.env.SIGNER_KEY);
+    const signer =
+      process.env.SIGNER_KEY === undefined
+        ? keyring.addFromUri('//Alice')
+        : keyring.addFromMnemonic(process.env.SIGNER_KEY);
 
     const unsub = await api.tx.balances.transfer(parameters.to, parameters.amount).signAndSend(signer, (result) => {
       if (result.status.isFinalized) {
@@ -23,12 +26,17 @@ export async function submit_transfer(api: ApiPromise, parameters: TransferArgum
           return item.event.method === 'ExtrinsicSuccess' || item.event.method === 'ExtrinsicFailed';
         });
 
+        // filter transfer event
+        const transferEvent = result.events.filter((item) => {
+          return item.event.method === 'Transfer';
+        });
+
         unsub();
 
-        // there can only be one event
         resolve({
           blockHash: result.status.asFinalized as Hash,
           status: extrinsicEvent[0].event.method === 'ExtrinsicSuccess' ? true : false,
+          events: transferEvent,
         });
       }
     });

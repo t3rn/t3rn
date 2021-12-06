@@ -1,3 +1,4 @@
+import { EventRecord } from '@polkadot/types/interfaces/system';
 import { ApiPromise } from '@polkadot/api';
 import { SideEffect } from './../../../types/src/interfaces/primitives/types';
 import { XtxId } from './../../../types/src/interfaces/execution_delivery/types';
@@ -9,6 +10,8 @@ import events from 'events';
 export interface TransactionResult {
   blockHash: Hash;
   status: boolean;
+  // assumption : we relay multiple events
+  events: EventRecord[];
 }
 
 export interface StorageResult {
