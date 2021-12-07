@@ -2,14 +2,14 @@ import { Bytes } from '@polkadot/types';
 import { ApiPromise } from '@polkadot/api';
 import { send_tx_confirm_side_effect } from '../chain_interactions/circuit';
 
-import { getEventProofs, getStorage, submit_transfer } from '../chain_interactions/rococo';
+import { getEventProofs, getStorage, submit_transfer } from '../chain_interactions/gateway';
 import { parseTransferArguments, parseStorageArguments } from './argumentParse';
 import { NewSideEffectsAvailableEvent } from './types';
 
 export async function executionRouter(
   payload: NewSideEffectsAvailableEvent,
   circuitApi: ApiPromise,
-  rococoApi: ApiPromise
+  gatewayApi: ApiPromise
 ) {
   console.log(`Execution start for xtx_id : ${payload.xtx_id}`);
   for (let index = 0; index < payload.sideEffects.length; index++) {
@@ -17,12 +17,12 @@ export async function executionRouter(
     switch (sideEffect.encoded_action.toHuman()) {
       case 'transfer':
         console.log('Execution Router : Transfer');
-        let transfer_parameters = parseTransferArguments(rococoApi, sideEffect.encoded_args);
-        await submit_transfer(rococoApi, transfer_parameters).then(async (result) => {
+        let transfer_parameters = parseTransferArguments(gatewayApi, sideEffect.encoded_args);
+        await submit_transfer(gatewayApi, transfer_parameters).then(async (result) => {
           if (result.status) {
-            let inclusion_proofs = await getEventProofs(rococoApi, result.blockHash);
+            let inclusion_proofs = await getEventProofs(gatewayApi, result.blockHash);
             // only one event coming in. Access first element.
-            let encoded_effect: Bytes = rococoApi.createType('Bytes', result.events[0].toU8a());
+            let encoded_effect: Bytes = gatewayApi.createType('Bytes', result.events[0].toU8a());
             let { status } = await send_tx_confirm_side_effect(
               circuitApi,
               payload.requester,
@@ -38,12 +38,12 @@ export async function executionRouter(
         break;
       case 'getStorage':
         console.log('Execution Router : getStorage');
-        let getStorage_parameters = parseStorageArguments(rococoApi, sideEffect.encoded_args);
-        let storageData = await getStorage(rococoApi, getStorage_parameters);
+        let getStorage_parameters = parseStorageArguments(gatewayApi, sideEffect.encoded_args);
+        let storageData = await getStorage(gatewayApi, getStorage_parameters);
         console.log(storageData);
 
-        let inclusion_proofs = rococoApi.createType('Bytes', '');
-        let encoded_effect: Bytes = rococoApi.createType('Bytes', storageData.value);
+        let inclusion_proofs = gatewayApi.createType('Bytes', '');
+        let encoded_effect: Bytes = gatewayApi.createType('Bytes', storageData.value);
         let { status } = await send_tx_confirm_side_effect(
           circuitApi,
           payload.requester,

@@ -1,9 +1,9 @@
 import { ApiPromise } from '@polkadot/api';
 
-export async function fetchRococoEvents(api: ApiPromise) {
+export async function fetchGatewayEvents(api: ApiPromise) {
   // Subscribe to system events via storage
   api.query.system.events((events) => {
-    console.log(`\nReceived ${events.length} events from Rococo:`);
+    console.log(`\nReceived ${events.length} events from Gateway:`);
 
     // Loop through the Vec<EventRecord>
     events.forEach((record: { event: any; phase: any }) => {

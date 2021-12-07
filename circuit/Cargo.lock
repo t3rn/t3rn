@@ -9912,6 +9912,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hex-literal",
+ "log",
  "pallet-sudo",
  "parity-scale-codec",
  "serde",

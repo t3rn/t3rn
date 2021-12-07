@@ -9,13 +9,11 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 const eventEmitter = new Emitter();
-eventEmitter.on('NewSideEffect', async (payload, circuitApi, rococoApi) => {
-  await executionRouter(payload, circuitApi, rococoApi);
+eventEmitter.on('NewSideEffect', async (payload, circuitApi, gatewayApi) => {
+  await executionRouter(payload, circuitApi, gatewayApi);
 });
 
-// this process.env is not loading values
-const rococoProvider = new WsProvider(process.env.ROCOCO_WS_URL);
-// it works because it connects to localhost as a fallback
+const westendProvider = new WsProvider(process.env.WESTEND_WS_URL);
 const circuitProvider = new WsProvider(process.env.CIRCUIT_WS_URL);
 
 main().catch((error) => {
@@ -24,11 +22,11 @@ main().catch((error) => {
 });
 
 async function main() {
-  const rococoApi = await ApiPromise.create({ provider: rococoProvider });
-  console.log('Rococo connected');
+  const gatewayApi = await ApiPromise.create({ provider: westendProvider });
+  console.log('Gateway connected');
 
   const circuitApi = await ApiPromise.create({ provider: circuitProvider, types });
   console.log('Circuit connected');
 
-  monitorCircuitEvents(circuitApi, rococoApi, eventEmitter);
+  monitorCircuitEvents(circuitApi, gatewayApi, eventEmitter);
 }

@@ -28,13 +28,13 @@ export interface NewSideEffectsAvailableEvent {
 export declare interface Emitter {
   on(
     event: 'NewSideEffect',
-    listener: (payload: NewSideEffectsAvailableEvent, circuitApi: ApiPromise, rococoApi: ApiPromise) => void
+    listener: (payload: NewSideEffectsAvailableEvent, circuitApi: ApiPromise, gatewayApi: ApiPromise) => void
   ): this;
 }
 
 export class Emitter extends events.EventEmitter {
-  emitSideEffect(payload: NewSideEffectsAvailableEvent, circuitApi: ApiPromise, rococoApi: ApiPromise): void {
-    this.emit('NewSideEffect', payload, circuitApi, rococoApi);
+  emitSideEffect(payload: NewSideEffectsAvailableEvent, circuitApi: ApiPromise, gatewayApi: ApiPromise): void {
+    this.emit('NewSideEffect', payload, circuitApi, gatewayApi);
   }
 }
 

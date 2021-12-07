@@ -2,11 +2,9 @@ import { Emitter } from './../utils/types';
 import { ApiPromise } from '@polkadot/api';
 import { NewSideEffectsAvailableEvent } from '../utils/types';
 
-export async function monitorCircuitEvents(circuitApi: ApiPromise, rococoApi: ApiPromise, emitter: Emitter) {
+export async function monitorCircuitEvents(circuitApi: ApiPromise, gatewayApi: ApiPromise, emitter: Emitter) {
   // Subscribe to system events
   circuitApi.query.system.events((events) => {
-    // console.log(`\nReceived ${events.length} events from Circuit:`);
-
     // NewSideEffectsAvailable: AugmentedEvent<ApiType, [AccountId, XtxId, Vec<SideEffect>]>;
 
     events.forEach((record) => {
@@ -31,7 +29,7 @@ export async function monitorCircuitEvents(circuitApi: ApiPromise, rococoApi: Ap
         }
 
         // raise event for the parsed payload
-        emitter.emitSideEffect(parsed, circuitApi, rococoApi);
+        emitter.emitSideEffect(parsed, circuitApi, gatewayApi);
       }
     });
   });

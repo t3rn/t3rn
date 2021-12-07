@@ -1,4 +1,4 @@
-import { GetStorageArguments, StorageResult, TransferArguments } from './../utils/types';
+import { GetStorageArguments, StorageResult, TransferArguments } from '../utils/types';
 import { ApiPromise, Keyring } from '@polkadot/api';
 import { xxhashAsU8a } from '@polkadot/util-crypto';
 import { u8aToHex } from '@polkadot/util';
@@ -50,7 +50,7 @@ export async function getStorage(api: ApiPromise, parameters: GetStorageArgument
       // @ts-ignore
       // { value: '0x1c86d8cbffffffffffffffffffffffff', status: true }
       // We may have to change it later down the line.
-      value: res.toHuman(),
+      value: res.toHex(),
       status: res !== undefined ? true : false,
     });
   });

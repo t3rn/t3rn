@@ -343,6 +343,7 @@ pub mod pallet {
                 confirmed_side_effect.clone(),
                 side_effect.clone(),
             )? {
+                ActiveXtxMap::<T>::insert(xtx_id.clone(), xtx.clone());
                 Self::deposit_event(Event::SideEffectConfirmed(
                     relayer_id.clone(),
                     xtx_id,

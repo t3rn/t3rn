@@ -39,9 +39,9 @@ describe('Execution Delivery | Extrinsics', function () {
       let encoded_action_transfer: Bytes = circuitApi.createType('Bytes', 'transfer');
       let encoded_action_getStorage: Bytes = circuitApi.createType('Bytes', 'getStorage');
       let transfer_arg_from: Bytes = new Bytes(circuitApi.registry, bob.address);
-      let transfer_arg_to: Bytes = new Bytes(circuitApi.registry, bob.address);
-      // 100000000000000 is 100 Kilo. I dont know what that means.
-      let transfer_arg_value = circuitApi.createType('Bytes', Array.from(circuitApi.createType('u64', 1).toU8a()));
+      // Westend account
+      let transfer_arg_to: Bytes = new Bytes(circuitApi.registry, '5G17mWwKCLMnHLES4dEoymZtY6L7eHi5sa66rK6zNmi5vZN6');
+      let transfer_arg_value = circuitApi.createType('Bytes', Array.from(circuitApi.createType('u128', 1).toU8a()));
 
       // This key is for Balances::TotalIssuance StorageValue
       let getStorage_arg_key = circuitApi.createType(
