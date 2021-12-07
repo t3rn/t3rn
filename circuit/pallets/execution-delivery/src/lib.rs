@@ -219,7 +219,6 @@ pub mod pallet {
                 //let gateway_abi = Default::default();
                 //use_protocol.notice_gateway(side_effect.target);
                 //use_protocol.validate_args(side_effect.clone(), gateway_abi, &mut local_state)?;
-                
 
                 full_side_effects.push(FullSideEffect {
                     input: side_effect.clone(),
@@ -301,7 +300,6 @@ pub mod pallet {
             // })
             unimplemented!();
         }
-
 
         /// Blind version should only be used for testing - unsafe since skips inclusion proof check.
         #[pallet::weight(<T as Config>::WeightInfo::confirm_side_effect_blind())]
