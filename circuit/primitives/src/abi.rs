@@ -258,7 +258,8 @@ impl Type {
                 _ => Err("Unknown Address size"),
             },
             Type::DynamicAddress => {
-                let res: Vec<u8> = decode_buf2val(encoded_val)?;
+                log::warn!("Inside DynamicAddress. usually it is issue with type casting");
+                let res: Vec<u8> = decode_buf2val::<Vec<u8>>(encoded_val)?;
                 Ok(Box::new(res))
             }
             Type::Bool => {
@@ -449,7 +450,11 @@ pub fn from_signature_to_abi(signature: Vec<u8>) -> Result<(Vec<u8>, Vec<Type>),
 }
 
 pub fn decode_buf2val<D: Decode>(buf: Vec<u8>) -> Result<D, &'static str> {
-    D::decode(&mut &buf[..]).map_err(|_| "Decoding error: decode_buf2val")
+    log::warn!("Inside decode_buf2val");
+    D::decode(&mut &buf[..]).map_err(|e| {
+        log::warn!("{:?}",e);
+        "Decoding error: decode_buf2val"
+    })
 }
 
 #[cfg(test)]

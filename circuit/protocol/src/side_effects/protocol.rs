@@ -108,17 +108,23 @@ pub trait SideEffectProtocol {
         _gateway_abi: GatewayABIConfig,
         local_state: &mut LocalState,
     ) -> Result<(), &'static str> {
+        log::warn!("Inside validate_args");
         // Args number must match with the args number in the protocol
         assert!(Self::get_arguments_abi(self).len() == args.len());
+        log::warn!("Post length assert");
 
         // ToDo: Extract to a separate function
         // Validate that the input arguments set by a user follow the protocol for get_storage side effect
         // Evaluate each input argument against strictly defined type for that gateway.
         // ToDo: Dig now to self.gateway_abi and recover the length of values, addresses to check
         for (i, arg) in args.iter().enumerate() {
+            log::warn!("{:?}",arg);
             let type_n = &Self::get_arguments_abi(self)[i];
+            log::warn!("{:?}",type_n);
             type_n.eval(arg.clone())?;
+            log::warn!("Evaluation complete");
         }
+        log::warn!("Post for loop assert");
         self.populate_state(args, local_state)
     }
 }
