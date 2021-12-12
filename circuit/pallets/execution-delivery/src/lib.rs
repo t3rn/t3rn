@@ -42,7 +42,7 @@ pub use t3rn_primitives::{
     side_effect::{ConfirmedSideEffect, FullSideEffect, SideEffect},
     transfers::BalanceOf,
     xtx::{LocalState, Xtx, XtxId},
-    *,
+    GatewayType, *,
 };
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 
@@ -61,10 +61,13 @@ mod benchmarking;
 pub mod mock;
 
 pub mod weights;
+
 use weights::WeightInfo;
 
 pub use t3rn_protocol::test_utils as message_test_utils;
+
 pub mod xbridges;
+
 pub use xbridges::{
     get_roots_from_bridge, init_bridge_instance, CurrentHash, CurrentHasher, CurrentHeader,
     DefaultPolkadotLikeGateway, EthLikeKeccak256ValU32Gateway, EthLikeKeccak256ValU64Gateway,
@@ -102,6 +105,7 @@ pub mod pallet {
 
     use super::*;
     use crate::WeightInfo;
+
     /// Current Circuit's context of active transactions
     ///
     /// The currently active composable transactions, indexed according to the order of creation.
@@ -168,6 +172,9 @@ pub mod pallet {
 
         fn on_finalize(_n: T::BlockNumber) {
             // We don't do anything here.
+
+            // if module block number
+            // x-t3rn#4: Go over open Xtx and cancel if necessary
         }
 
         // A runtime code run after every block and have access to extended set of APIs.
@@ -302,9 +309,8 @@ pub mod pallet {
             unimplemented!();
         }
 
-
         /// Blind version should only be used for testing - unsafe since skips inclusion proof check.
-        #[pallet::weight(<T as Config>::WeightInfo::confirm_side_effect_blind())]
+        #[pallet::weight(< T as Config >::WeightInfo::confirm_side_effect_blind())]
         pub fn confirm_side_effect_blind(
             origin: OriginFor<T>,
             xtx_id: XtxId<T>,

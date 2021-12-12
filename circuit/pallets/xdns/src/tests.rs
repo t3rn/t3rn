@@ -18,7 +18,7 @@
 //! Tests for pallet-xdns.
 
 use super::*;
-use crate::mock::{ExtBuilder, Test, XDNS};
+use crate::mock::*;
 use frame_support::{assert_noop, assert_ok};
 use frame_system::Origin;
 use sp_runtime::DispatchError;

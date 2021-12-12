@@ -5,7 +5,7 @@ use std::sync::Arc;
 pub use self::gen_client::Client as XdnsClient;
 use codec::Codec;
 use jsonrpc_core::{Error, ErrorCode, Result};
-use jsonrpc_core_client::RpcError;
+
 use jsonrpc_derive::rpc;
 use pallet_xdns_rpc_runtime_api::FetchXdnsRecordsResponse;
 pub use pallet_xdns_rpc_runtime_api::XdnsRuntimeApi;

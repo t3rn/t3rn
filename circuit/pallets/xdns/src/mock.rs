@@ -30,7 +30,7 @@ use sp_runtime::{
 // Reexport crate as its pallet name for construct_runtime.
 use crate as pallet_xdns;
 use frame_support::pallet_prelude::GenesisBuild;
-use t3rn_primitives::EscrowTrait;
+pub use t3rn_primitives::{EscrowTrait, GatewayType, GatewayVendor};
 
 use sp_keystore::testing::KeyStore;
 use sp_keystore::{KeystoreExt, SyncCryptoStore};
