@@ -2,7 +2,7 @@ comms
 
 # Added by cargo
 /gateway/target
-/target
+**/target
 ./Cargo.lock
 .idea
 /beefy/target/
