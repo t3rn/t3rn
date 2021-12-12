@@ -23,15 +23,13 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use crate::types::{AllowedSideEffect, XdnsRecord, XdnsRecordId};
-use codec::{Decode, Encode};
+use codec::Encode;
 
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
-use sp_runtime::{traits::Hash, RuntimeDebug};
+use sp_runtime::traits::Hash;
 use sp_std::prelude::*;
 use sp_std::vec::Vec;
 use t3rn_primitives::abi::GatewayABIConfig;
-use t3rn_primitives::{ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor};
+use t3rn_primitives::GatewayGenesisConfig;
 
 // Re-export pallet items so that they can be accessed from the crate namespace.
 pub use crate::pallet::*;
