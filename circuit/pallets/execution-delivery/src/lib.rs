@@ -125,19 +125,19 @@ pub mod pallet {
     /// This pallet's configuration trait
     #[pallet::config]
     pub trait Config:
-        frame_system::Config
-        + pallet_bridge_messages::Config
-        + pallet_balances::Config
-        + VolatileVM
-        + pallet_contracts_registry::Config
-        + pallet_xdns::Config
-        + pallet_contracts::Config
-        + pallet_evm::Config
-        + pallet_multi_finality_verifier::Config<DefaultPolkadotLikeGateway>
-        + pallet_multi_finality_verifier::Config<PolkadotLikeValU64Gateway>
-        + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU64Gateway>
-        + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU32Gateway>
-        + snowbridge_basic_channel::outbound::Config
+    frame_system::Config
+    + pallet_bridge_messages::Config
+    + pallet_balances::Config
+    + VolatileVM
+    + pallet_contracts_registry::Config
+    + pallet_xdns::Config
+    + pallet_contracts::Config
+    + pallet_evm::Config
+    + pallet_multi_finality_verifier::Config<DefaultPolkadotLikeGateway>
+    + pallet_multi_finality_verifier::Config<PolkadotLikeValU64Gateway>
+    + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU64Gateway>
+    + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU32Gateway>
+    + snowbridge_basic_channel::outbound::Config
     {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -375,6 +375,7 @@ pub mod pallet {
             gateway_vendor: t3rn_primitives::GatewayVendor,
             gateway_type: t3rn_primitives::GatewayType,
             gateway_genesis: GatewayGenesisConfig,
+            gateway_sys_props: GatewaySysProps,
             first_header: Vec<u8>,
             authorities: Option<Vec<T::AccountId>>,
             allowed_side_effects: Vec<AllowedSideEffect>,
@@ -388,6 +389,7 @@ pub mod pallet {
                 gateway_vendor.clone(),
                 gateway_type.clone(),
                 gateway_genesis,
+                gateway_sys_props.clone(),
                 allowed_side_effects.clone(),
             )?;
 
@@ -428,6 +430,7 @@ pub mod pallet {
                 gateway_id,           // gateway id
                 gateway_type,         // type - external, programmable, tx-only
                 gateway_vendor,       // vendor - substrate, eth etc.
+                gateway_sys_props,    // system properties - ss58 format, token symbol etc.
                 allowed_side_effects, // allowed side effects / enabled methods
             ));
 
@@ -441,6 +444,7 @@ pub mod pallet {
             gateway_id: bp_runtime::ChainId,
             _url: Option<Vec<u8>>,
             _gateway_abi: Option<GatewayABIConfig>,
+            _gateway_sys_props: Option<GatewaySysProps>,
             _authorities: Option<Vec<T::AccountId>>,
             allowed_side_effects: Option<Vec<AllowedSideEffect>>,
         ) -> DispatchResultWithPostInfo {
@@ -578,13 +582,14 @@ pub mod pallet {
         ),
         // Listeners - remote targets integrators/registrants
         NewGatewayRegistered(
-            bp_runtime::ChainId,    // gateway id
-            GatewayType,            // type - external, programmable, tx-only
-            GatewayVendor,          // vendor - substrate, eth etc.
+            bp_runtime::ChainId, // gateway id
+            GatewayType, // type - external, programmable, tx-only
+            GatewayVendor, // vendor - substrate, eth etc.
+            GatewaySysProps, // system properties - ss58 format, token symbol etc.
             Vec<AllowedSideEffect>, // allowed side effects / enabled methods
         ),
         GatewayUpdated(
-            bp_runtime::ChainId,  // gateway id
+            bp_runtime::ChainId, // gateway id
             Option<Vec<Vec<u8>>>, // allowed side effects / enabled methods
         ),
     }
@@ -632,9 +637,9 @@ impl<T: Config> Pallet<T> {
 pub struct EnsureExecDelivery<T>(sp_std::marker::PhantomData<T>);
 
 impl<
-        T: pallet::Config,
-        O: Into<Result<RawOrigin<T::AccountId>, O>> + From<RawOrigin<T::AccountId>>,
-    > EnsureOrigin<O> for EnsureExecDelivery<T>
+    T: pallet::Config,
+    O: Into<Result<RawOrigin<T::AccountId>, O>> + From<RawOrigin<T::AccountId>>,
+> EnsureOrigin<O> for EnsureExecDelivery<T>
 {
     type Success = T::AccountId;
 
