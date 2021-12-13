@@ -19,7 +19,7 @@
 
 use super::*;
 use crate::mock::{ExtBuilder, Test, XDNS};
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{assert_err, assert_noop, assert_ok};
 use frame_system::Origin;
 use sp_runtime::DispatchError;
 
@@ -174,4 +174,26 @@ fn should_error_when_trying_to_update_ttl_as_non_root() {
             DispatchError::BadOrigin
         );
     });
+}
+
+#[test]
+fn fetch_abi_should_return_abi_for_a_known_xdns_record() {
+    ExtBuilder::default()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let actual = XDNS::get_abi(*b"pdot");
+            assert_ok!(actual);
+        });
+}
+
+#[test]
+fn fetch_abi_should_error_for_unknown_xdns_record() {
+    ExtBuilder::default()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let actual = XDNS::get_abi(*b"rand");
+            assert_err!(actual, "Xdns record not found");
+        });
 }

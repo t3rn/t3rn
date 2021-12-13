@@ -218,7 +218,7 @@ pub mod pallet {
                 // ToDo: Generate Circuit's params as default ABI from let abi = pallet_xdns::get_abi(target_id)
                 let gateway_abi = Default::default();
                 use_protocol.notice_gateway(side_effect.target);
-                log::warn!("Entering validation for {:?}",side_effect.encoded_action);
+                log::warn!("Entering validation for {:?}", side_effect.encoded_action);
                 use_protocol.validate_args(side_effect.clone(), gateway_abi, &mut local_state)?;
                 log::warn!("Exit validation");
 

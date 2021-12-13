@@ -27,11 +27,13 @@ use codec::{Decode, Encode};
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+
 use sp_runtime::{traits::Hash, RuntimeDebug};
 use sp_std::prelude::*;
 use sp_std::vec::Vec;
-use t3rn_primitives::abi::GatewayABIConfig;
-use t3rn_primitives::{ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor};
+pub use t3rn_primitives::{
+    abi::GatewayABIConfig, ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor,
+};
 
 // Re-export pallet items so that they can be accessed from the crate namespace.
 pub use crate::pallet::*;
@@ -299,6 +301,17 @@ pub mod pallet {
         /// Fetches all known XDNS records
         pub fn fetch_records() -> Vec<XdnsRecord<T::AccountId>> {
             pallet::XDNSRegistry::<T>::iter_values().collect()
+        }
+
+        // Fetches the GatewayABIConfig for a given XDNS record
+        pub fn get_abi(chain_id: ChainId) -> Result<GatewayABIConfig, &'static str> {
+            let xdns_record_id = T::Hashing::hash(Encode::encode(&chain_id).as_ref());
+
+            if !<XDNSRegistry<T>>::contains_key(xdns_record_id) {
+                return Err("Xdns record not found");
+            }
+
+            Ok(<XDNSRegistry<T>>::get(xdns_record_id).unwrap().gateway_abi)
         }
     }
 }
