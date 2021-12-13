@@ -81,7 +81,7 @@ pub struct GenericPrimitivesHeader {
     pub number: u64,
     pub state_root: Option<sp_core::hash::H256>,
     pub extrinsics_root: Option<sp_core::hash::H256>,
-    pub digest: Option<sp_runtime::generic::Digest<sp_core::hash::H256>>,
+    pub digest: Option<sp_runtime::generic::Digest>,
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
