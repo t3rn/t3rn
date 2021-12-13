@@ -100,6 +100,7 @@ jobs:
           name: ${{ github.sha }}-parachain-artifacts
           path: circuit-parachain/target/debug/circuit-collator
           if-no-files-found: error
+          retention-days: 1
   test:
     runs-on: ubuntu-20.04
     needs: [build]

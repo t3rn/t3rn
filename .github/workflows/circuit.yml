@@ -156,6 +156,7 @@ jobs:
           name: ${{ github.sha }}-artifacts
           path: circuit/target/debug/circuit
           if-no-files-found: error
+          retention-days: 1
   test:
     runs-on: ubuntu-20.04
     needs: [build]
