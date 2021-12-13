@@ -12,8 +12,21 @@ pub struct Signature {
     data: Vec<Vec<u8>>,
 }
 
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug)]
+pub enum Surrounding {
+    Local,
+    Remote,
+}
+
 pub trait HasXDNSAccess {
     fn get_abi(target: [u8; 4]) -> Result<GatewayABIConfig, &'static str>;
+    fn get_my_target_id() -> [u8; 4];
+    fn get_surrounding(target: [u8; 4]) -> Surrounding {
+        if Self::get_my_target_id() == target {
+            return Surrounding::Local;
+        }
+        Surrounding::Remote
+    }
 }
 
 pub fn validate_next_arg(
