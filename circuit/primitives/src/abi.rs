@@ -5,7 +5,7 @@ use frame_support::ensure;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_core::Bytes;
-use sp_runtime::RuntimeString;
+use sp_runtime::{RuntimeString, MultiAddress, AccountId32};
 use sp_std::boxed::Box;
 use sp_std::vec;
 use sp_std::vec::Vec;
@@ -243,7 +243,7 @@ impl Type {
     pub fn eval(
         &self,
         encoded_val: Vec<u8>,
-        // _gen: &GatewayABIConfig,
+        gen: &GatewayABIConfig,
     ) -> Result<Box<dyn sp_std::any::Any>, &'static str> {
         match self {
             Type::Address(size) => match size {
@@ -258,9 +258,12 @@ impl Type {
                 _ => Err("Unknown Address size"),
             },
             Type::DynamicAddress => {
-                log::warn!("Inside DynamicAddress. usually it is issue with type casting");
-                let res: Vec<u8> = decode_buf2val::<Vec<u8>>(encoded_val)?;
-                Ok(Box::new(res))
+                // the value is already decoded.
+                ensure!(encoded_val.len() as u16 == gen.address_length, "Address length does not match ABI");
+                let mut address: [u8; 32] = [0; 32];
+                address.copy_from_slice(encoded_val.as_slice());
+                let parsed_address = MultiAddress::<AccountId32, ()>::Address32(address);
+                Ok(Box::new(parsed_address))
             }
             Type::Bool => {
                 let res: bool = decode_buf2val(encoded_val)?;
