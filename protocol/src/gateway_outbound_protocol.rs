@@ -14,7 +14,8 @@ use sp_std::vec::*;
 use crate::circuit_inbound::Proof;
 use t3rn_primitives::abi::{GatewayABIConfig, Type};
 
-use sp_core::Bytes;
+pub type Bytes = Vec<u8>;
+
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
 #[cfg(feature = "std")]

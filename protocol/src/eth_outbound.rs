@@ -5,7 +5,7 @@ use t3rn_primitives::GatewayPointer;
 use codec::{Decode, Encode};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::{Bytes, H160, H256, U256};
+use sp_core::{H160, H256, U256};
 use sp_std::vec::*;
 
 use ethabi_decode::{encode as eth_abi_encode, Event as EthAbiEvent};
@@ -25,6 +25,8 @@ use crate::gateway_outbound_protocol::{
 use sp_runtime::RuntimeDebug as Debug;
 #[cfg(feature = "std")]
 use std::fmt::Debug;
+
+pub type Bytes = Vec<u8>;
 
 // That's the EthLogEntry localised to the block that comes via RPC
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
@@ -153,7 +155,6 @@ pub fn from_eth_abi(from_gateway_abi_type: Vec<Type>) -> Result<Vec<Param>, &'st
 mod tests {
     use super::*;
     use serde_json;
-    use sp_core::Bytes;
 
     use std::str::FromStr;
 
@@ -177,10 +178,10 @@ mod tests {
                     "0000000000000000000000000000000000000000000000000000000000000000"
                 )
                 .unwrap()],
-                data: Bytes(vec![
+                data: vec![
                     255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
                     255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
-                ])
+                ]
             },
             deserialized_eth_log
         );
@@ -206,10 +207,10 @@ mod tests {
                     "0000000000000000000000000000000000000000000000000000000000000000"
                 )
                 .unwrap()],
-                data: Bytes(vec![
+                data: vec![
                     255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
                     255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
-                ])
+                ]
             },
             deserialized_eth_log
         );

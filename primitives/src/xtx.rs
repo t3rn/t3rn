@@ -10,10 +10,11 @@ type SystemHashing<T> = <T as frame_system::Config>::Hashing;
 pub type XtxId<T> = <T as frame_system::Config>::Hash;
 
 pub use crate::volatile::{LocalState, Volatile};
+use scale_info::TypeInfo;
 use sp_std::fmt::Debug;
 
 /// A composable cross-chain (X) transaction that has already been verified to be valid and submittable
-#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
+#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct Xtx<AccountId, BlockNumber, BalanceOf> {
     // todo: Add missing DFDs
     // pub contracts_dfd: InterExecSchedule -> ContractsDFD

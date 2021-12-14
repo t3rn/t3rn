@@ -12,9 +12,10 @@ type StateKey = [u8; 32];
 type StateVal = Vec<u8>;
 pub type State = BTreeMap<StateKey, StateVal>;
 
+use scale_info::TypeInfo;
 use sp_io::hashing::twox_256;
 
-#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
+#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct LocalState {
     pub state: State,
 }

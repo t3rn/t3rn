@@ -19,7 +19,7 @@ sp-api = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v
 sp-core = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12', default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12', default-features = false }
 pallet-circuit-execution-delivery = { version = "0.1.0", path = "../..", default-features = false }
-t3rn-primitives = { version = "0.1.0", path = "../../../../../primitives", package = "t3rn-parachain-primitives", default-features = false }
+t3rn-primitives = { version = "0.1.0", path = "../../../../primitives", package = "t3rn-parachain-primitives", default-features = false }
 
 [features]
 default = ["std"]

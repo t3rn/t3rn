@@ -19,7 +19,8 @@ use crate::gateway_outbound_protocol::{
     AsGatewayOutboundEvent, GatewayOutboundEvent, GatewayOutboundEventId,
 };
 
-use sp_core::Bytes;
+pub type Bytes = Vec<u8>;
+
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
 #[cfg(feature = "std")]
@@ -102,7 +103,6 @@ impl AsGatewayOutboundEvent for SubstrateRawEvent {
 mod tests {
     use super::*;
     use serde_json;
-    use sp_core::Bytes;
     use sp_runtime::create_runtime_str;
 
     #[test]
@@ -124,10 +124,10 @@ mod tests {
             SubstrateRawEvent {
                 module: create_runtime_str!("Balances"),
                 variant: create_runtime_str!("Transfer"),
-                data: Bytes(vec![
+                data: vec![
                     255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
                     255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
-                ])
+                ]
             },
             deserialized_substrate_event
         );

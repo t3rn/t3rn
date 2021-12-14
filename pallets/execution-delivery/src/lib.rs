@@ -48,7 +48,7 @@ pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 
 //use volatile_vm::VolatileVM;
 
-pub type Bytes = sp_core::Bytes;
+pub type Bytes = Vec<u8>;
 
 pub use pallet::*;
 
