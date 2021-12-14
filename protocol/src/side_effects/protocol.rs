@@ -1,73 +1,20 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use crate::side_effects::confirm::protocol::SideEffectConfirmationProtocol;
-use codec::{Decode, Encode};
-use sp_std::vec;
+pub use crate::side_effects::standards::{CallSideEffectProtocol, TransferSideEffectProtocol};
+
 use sp_std::vec::*;
-use t3rn_primitives::volatile::{LocalState, Volatile};
-
 use t3rn_primitives::abi::{GatewayABIConfig, Type};
-
-use sp_runtime::RuntimeDebug;
+use t3rn_primitives::volatile::{LocalState, Volatile};
 
 type Bytes = Vec<u8>;
 type Arguments = Vec<Bytes>;
 pub type EventSignature = Vec<u8>;
 pub type String = Vec<u8>;
 
-/// The main idea would be to give a possibility of define the side effects dynamically
-/// We'd have the "standard" side effects in the codebase, but for the sake of extensions,
-/// the side effects should be made serialized, stored and pre-loaded before the exec pallet starts.
-#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
-pub struct TransferSideEffectProtocol {}
-
-impl SideEffectProtocol for TransferSideEffectProtocol {
-    fn get_name(&self) -> &'static str {
-        "transfer:dirty"
-    }
-    fn get_arguments_abi(&self) -> Vec<Type> {
-        vec![
-            Type::DynamicAddress, // argument_0: from
-            Type::DynamicAddress, // argument_1: to
-            Type::Value,          // argument_2: value
-        ]
-    }
-    fn get_arguments_2_state_mapper(&self) -> Vec<&'static str> {
-        vec!["from", "to", "value"]
-    }
-    fn get_confirming_events(&self) -> Vec<&'static str> {
-        vec!["Transfer(from,to,value)"]
-    }
-}
-
-impl SideEffectConfirmationProtocol for TransferSideEffectProtocol {}
-
-#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
-pub struct CallSideEffectProtocol {}
-
-impl SideEffectProtocol for CallSideEffectProtocol {
-    fn get_name(&self) -> &'static str {
-        "call:dirty"
-    }
-    fn get_arguments_abi(&self) -> Vec<Type> {
-        vec![
-            Type::DynamicAddress, // argument_0: from
-            Type::DynamicAddress, // argument_1: to
-            Type::Value,          // argument_2: value
-        ]
-    }
-    fn get_arguments_2_state_mapper(&self) -> Vec<&'static str> {
-        vec!["from", "to", "value"]
-    }
-    fn get_confirming_events(&self) -> Vec<&'static str> {
-        vec!["Call(from,to,value)"]
-    }
-}
-
-impl SideEffectConfirmationProtocol for CallSideEffectProtocol {}
-
 pub trait SideEffectProtocol {
     fn get_name(&self) -> &'static str;
+    fn get_id(&self) -> [u8; 4];
     fn get_arguments_abi(&self) -> Vec<Type>;
     fn get_arguments_2_state_mapper(&self) -> Vec<&'static str>;
     fn get_confirming_events(&self) -> Vec<&'static str>;
@@ -121,11 +68,17 @@ pub trait SideEffectProtocol {
         }
         self.populate_state(args, local_state)
     }
+
+    /// ToDo: Protocol::Reversible x-t3rn#69 - will be necessary to assign the executer here
+    fn commit_insurance_deposit(&self, _local_state: &mut LocalState) {
+        unimplemented!()
+    }
 }
 
 #[cfg(test)]
 pub mod tests {
     use super::*;
+    use codec::Encode;
     use hex_literal::hex;
     use sp_std::vec;
     use t3rn_primitives::volatile::{FROM_2XX_32B_HASH, TO_2XX_32B_HASH, VALUE_2XX_32B_HASH};
