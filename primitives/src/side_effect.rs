@@ -2,12 +2,13 @@ use codec::{Decode, Encode};
 use sp_runtime::traits::Zero;
 use sp_runtime::RuntimeDebug;
 use sp_std::vec::Vec;
+use scale_info::TypeInfo;
 
 type Bytes = Vec<u8>;
 pub type SideEffectId<T> = <T as frame_system::Config>::Hash;
 pub type TargetId = [u8; 4];
 
-#[derive(Clone, Eq, PartialEq, Encode, Default, Decode, RuntimeDebug)]
+#[derive(Clone, Eq, PartialEq, Encode, Default, Decode, RuntimeDebug, TypeInfo)]
 pub struct SideEffect<AccountId, BlockNumber, BalanceOf> {
     pub target: TargetId,
     pub prize: BalanceOf,
@@ -29,7 +30,7 @@ impl<
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
+#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub err: Option<Bytes>,
     pub output: Option<Bytes>,
