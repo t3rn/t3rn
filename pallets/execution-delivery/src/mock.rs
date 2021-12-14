@@ -48,7 +48,7 @@ use std::collections::BTreeMap;
 use t3rn_primitives::transfers::BalanceOf;
 use t3rn_primitives::EscrowTrait;
 use t3rn_primitives::{GatewaySysProps, GatewayType, GatewayVendor};
-use volatile_vm::DispatchRuntimeCall;
+//use volatile_vm::DispatchRuntimeCall;
 
 use pallet_evm::{AddressMapping, FeeCalculator};
 
@@ -80,7 +80,7 @@ frame_support::construct_runtime!(
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         ImOnline: pallet_im_online::{Pallet, Call, Storage, Config<T>, Event<T>},
         Sudo: pallet_sudo::{Pallet, Call, Event<T>},
-        VolatileVM: volatile_vm::{Pallet, Call, Event<T>, Storage},
+       // VolatileVM: volatile_vm::{Pallet, Call, Event<T>, Storage},
         Randomness: pallet_randomness_collective_flip::{Pallet, Storage},
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Storage, Event<T>},
         XDNS: pallet_xdns::{Pallet, Call, Storage, Config<T>, Event<T>},
@@ -167,31 +167,31 @@ impl EscrowTrait for Test {
     type Time = Timestamp;
 }
 
-parameter_types! {
-    pub MyScheduleVVM: volatile_vm::Schedule<Test> = <volatile_vm::Schedule<Test>>::default();
-}
+// parameter_types! {
+//     pub MyScheduleVVM: volatile_vm::Schedule<Test> = <volatile_vm::Schedule<Test>>::default();
+// }
 
-impl volatile_vm::VolatileVM for Test {
-    type Randomness = Randomness;
-    type Event = Event;
-    type Call = Call;
-    type DispatchRuntimeCall = ExampleDispatchRuntimeCall;
-    type SignedClaimHandicap = SignedClaimHandicap;
-    type TombstoneDeposit = TombstoneDeposit;
-    type DepositPerContract = DepositPerContract;
-    type DepositPerStorageByte = DepositPerStorageByte;
-    type DepositPerStorageItem = DepositPerStorageItem;
-    type RentFraction = RentFraction;
-    type SurchargeReward = SurchargeReward;
-    type CallStack = [volatile_vm::exec::Frame<Self>; 31];
-    type ContractsLazyLoaded = [volatile_vm::wasm::PrefabWasmModule<Self>; 31];
-    type WeightPrice = Self;
-    type WeightInfo = ();
-    type ChainExtension = ();
-    type DeletionQueueDepth = DeletionQueueDepth;
-    type DeletionWeightLimit = DeletionWeightLimit;
-    type Schedule = MyScheduleVVM;
-}
+// impl volatile_vm::VolatileVM for Test {
+//     type Randomness = Randomness;
+//     type Event = Event;
+//     type Call = Call;
+//     type DispatchRuntimeCall = ExampleDispatchRuntimeCall;
+//     type SignedClaimHandicap = SignedClaimHandicap;
+//     type TombstoneDeposit = TombstoneDeposit;
+//     type DepositPerContract = DepositPerContract;
+//     type DepositPerStorageByte = DepositPerStorageByte;
+//     type DepositPerStorageItem = DepositPerStorageItem;
+//     type RentFraction = RentFraction;
+//     type SurchargeReward = SurchargeReward;
+//     type CallStack = [volatile_vm::exec::Frame<Self>; 31];
+//     type ContractsLazyLoaded = [volatile_vm::wasm::PrefabWasmModule<Self>; 31];
+//     type WeightPrice = Self;
+//     type WeightInfo = ();
+//     type ChainExtension = ();
+//     type DeletionQueueDepth = DeletionQueueDepth;
+//     type DeletionWeightLimit = DeletionWeightLimit;
+//     type Schedule = MyScheduleVVM;
+// }
 
 impl pallet_contracts_registry::Config for Test {
     type Event = Event;
@@ -222,7 +222,7 @@ impl DispatchRuntimeCall<Test> for ExampleDispatchRuntimeCall {
         _requested: &<Test as frame_system::Config>::AccountId,
         _callee: &<Test as frame_system::Config>::AccountId,
         _value: BalanceOf<Test>,
-        _gas_meter: &mut volatile_vm::gas::GasMeter<Test>,
+        //_gas_meter: &mut volatile_vm::gas::GasMeter<Test>,
     ) -> DispatchResult {
         match (module_name, fn_name) {
             ("Weights", "complex_calculations") => {

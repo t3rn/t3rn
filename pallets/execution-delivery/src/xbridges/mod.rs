@@ -25,7 +25,7 @@ pub fn init_bridge_instance<T: pallet_multi_finality_verifier::Config<I>, I: 'st
         .map_err(|_| "Decoding error: received GenericPrimitivesHeader -> CurrentHeader<T>")?;
 
     let init_data = bp_header_chain::InitializationData {
-        header,
+        header: Box::new(header),
         authority_list: authorities
             .unwrap_or(vec![])
             .iter()

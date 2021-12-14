@@ -46,7 +46,7 @@ pub use t3rn_primitives::{
 };
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 
-use volatile_vm::VolatileVM;
+//use volatile_vm::VolatileVM;
 
 pub type Bytes = sp_core::Bytes;
 
@@ -118,7 +118,6 @@ pub mod pallet {
         frame_system::Config
         + pallet_bridge_messages::Config
         + pallet_balances::Config
-        + VolatileVM
         + pallet_contracts_registry::Config
         + pallet_xdns::Config
         + pallet_contracts::Config

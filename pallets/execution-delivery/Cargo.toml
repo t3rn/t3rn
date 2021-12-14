@@ -18,8 +18,8 @@ hex = { version = "0.4.3", default-features = false }
 
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
 
-t3rn-primitives = { version = "0.1.0", default-features = false, path = "../../primitives" }
-t3rn-protocol = { version = "1.0.0-alpha.0", default-features = false, path = "../../protocol" }
+t3rn-primitives = { version = "0.1.0", default-features = false, path = "../../primitives", package = "t3rn-parachain-primitives" }
+t3rn-protocol = { version = "1.0.0-alpha.0", default-features = false, path = "../../protocol", package = "t3rn-protocol" }
 serde = { version = "1.0.124", features = ["derive"], optional = true }
 lite-json = { version = "0.1", default-features = false }
 log = { version = "0.4.14", default-features = false }
@@ -39,11 +39,12 @@ sp-sandbox = { default-features = false, git = "https://github.com/paritytech/su
 sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.12' }
 sp-version = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.12' }
 sp-application-crypto = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.12' }
+scale-info = { version = "1.0", default-features = false, features = ["derive"] }
 
 pallet-bridge-messages = { git = "https://github.com/t3rn/parity-bridges-common", branch = 'polkadot-v0.9.12', default-features = false }
 pallet-transaction-payment = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.12' }
 pallet-randomness-collective-flip = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.12' }
-pallet-multi-finality-verifier = { default-features = false, path = "../multi-finality-verifier" }
+pallet-multi-finality-verifier = { default-features = false, path = "../multi-finality-verifier", package = 'multi-finality-verifier' }
 pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.12' }
 pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.12' }
 pallet-im-online = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.12' }
@@ -59,10 +60,10 @@ bp-circuit = { git = "https://github.com/t3rn/parity-bridges-common", branch = '
 bp-polkadot-core = { git = "https://github.com/t3rn/parity-bridges-common", branch = 'polkadot-v0.9.12', default-features = false }
 
 # Smart contracts VMs
-volatile-vm = { path = "../../../vm/volatile-vm", default-features = false }
-pallet-evm = { path = "../../../vendor/frontier/frame/evm", default-features = false  }
-pallet-ethereum = { path = "../../../vendor/frontier/frame/ethereum", default-features = false  }
-pallet-evm-precompile-simple = { path = "../../../vendor/frontier/frame/evm/precompile/simple", default-features = false }
+#volatile-vm = { path = "../../vm/volatile-vm", default-features = false }
+pallet-evm = { git = "https://github.com/t3rn/frontier", branch = 'polkadot-v0.9.12', default-features = false }
+pallet-ethereum = { git = "https://github.com/t3rn/frontier", branch = 'polkadot-v0.9.12', default-features = false }
+pallet-evm-precompile-simple = { git = "https://github.com/t3rn/frontier", branch = 'polkadot-v0.9.12', default-features = false }
 pallet-contracts = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.12' }
 ethabi-decode = { git = "https://github.com/Snowfork/ethabi-decode.git", branch = "master", default-features = false }
 
@@ -78,12 +79,12 @@ sp-staking = { default-features = false, git = "https://github.com/paritytech/su
 sp-finality-grandpa = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.12' }
 sp-consensus-vrf = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.12' }
 sp-consensus-babe = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.12' }
-relay-substrate-client = { version = "0.1.0", path = "../../../vendor/bridges/relays/client-substrate", optional = true }
-snowbridge-basic-channel = { git = "https://github.com/t3rn/snowbridge", rev = "57eafa318d4b27d9d5c00c29e2db79504bd6ac77", default-features = false }
+relay-substrate-client = { git = "https://github.com/t3rn/parity-bridges-common", branch = 'polkadot-v0.9.12', default-features = false, optional = true }
+snowbridge-basic-channel = { git = "https://github.com/t3rn/snowbridge", package = "snowbridge-basic-channel", default-features = false }
 
 # Benchmarking
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12', optional = true }
-bp-test-utils = { path = "../../../vendor/bridges/primitives/test-utils", default-features = false, optional = true }
+bp-test-utils = { git = "https://github.com/t3rn/parity-bridges-common", branch = 'polkadot-v0.9.12', default-features = false, optional = true }
 
 [dev-dependencies]
 serde_json = "1.0.41"
@@ -138,7 +139,7 @@ std = [
     # native contracts VMs
     "pallet-contracts/std",
     "pallet-evm/std",
-    "volatile-vm/std",
+    #"volatile-vm/std",
     "pallet-ethereum/std",
     "ethabi-decode/std",
     "pallet-evm-precompile-simple/std",
