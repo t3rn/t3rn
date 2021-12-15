@@ -5,7 +5,7 @@ use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::{U256};
+use sp_core::U256;
 use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
 use sp_std::vec::Vec;
