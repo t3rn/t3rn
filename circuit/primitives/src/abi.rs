@@ -4,8 +4,8 @@ use codec::{Decode, Encode};
 use frame_support::ensure;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::Bytes;
-use sp_runtime::{RuntimeString, MultiAddress, AccountId32};
+use sp_core::{Bytes, U256};
+use sp_runtime::{AccountId32, MultiAddress, RuntimeString};
 use sp_std::boxed::Box;
 use sp_std::vec;
 use sp_std::vec::Vec;
@@ -36,7 +36,7 @@ pub enum Type {
     Ref(Box<Type>),
     StorageRef(Box<Type>),
     /// There is no way to declare value in Solidity (should there be?)
-    Value,
+    Value(U256),
     /// DynamicBytes and String are lowered to a vector.
     Slice,
     Hasher(HasherAlgo, u16),
@@ -88,8 +88,8 @@ impl Default for GatewayABIConfig {
             hash_size: 32,
             hasher: HasherAlgo::Blake2,
             crypto: CryptoAlgo::Sr25519,
-            address_length: 32,
-            value_type_size: 64,
+            address_length: 32, // 32 bytes : 32 * 8 = 256 bits
+            value_type_size: 8, // u64 = 8 bytes = 64 bits.
             decimals: 8,
             structs: vec![],
         }
@@ -259,7 +259,10 @@ impl Type {
             },
             Type::DynamicAddress => {
                 // the value is already decoded.
-                ensure!(encoded_val.len() as u16 == gen.address_length, "Address length does not match ABI");
+                ensure!(
+                    encoded_val.len() as u16 == gen.address_length,
+                    "Address length does not match ABI"
+                );
                 let mut address: [u8; 32] = [0; 32];
                 address.copy_from_slice(encoded_val.as_slice());
                 let parsed_address = MultiAddress::<AccountId32, ()>::Address32(address);
@@ -455,7 +458,7 @@ pub fn from_signature_to_abi(signature: Vec<u8>) -> Result<(Vec<u8>, Vec<Type>),
 pub fn decode_buf2val<D: Decode>(buf: Vec<u8>) -> Result<D, &'static str> {
     log::warn!("Inside decode_buf2val");
     D::decode(&mut &buf[..]).map_err(|e| {
-        log::warn!("{:?}",e);
+        log::warn!("{:?}", e);
         "Decoding error: decode_buf2val"
     })
 }

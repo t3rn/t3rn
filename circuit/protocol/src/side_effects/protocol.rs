@@ -117,9 +117,9 @@ pub trait SideEffectProtocol {
         // Evaluate each input argument against strictly defined type for that gateway.
         // ToDo: Dig now to self.gateway_abi and recover the length of values, addresses to check
         for (i, arg) in args.iter().enumerate() {
-            log::warn!("{:?}",arg);
+            log::warn!("{:?}", arg);
             let type_n = &Self::get_arguments_abi(self)[i];
-            log::warn!("{:?}",type_n);
+            log::warn!("{:?}", type_n);
             type_n.eval(arg.clone(), &_gateway_abi)?;
             log::warn!("Evaluation complete");
         }
