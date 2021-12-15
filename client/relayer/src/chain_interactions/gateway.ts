@@ -1,3 +1,4 @@
+import { assert } from 'chai';
 import { GetStorageArguments, StorageResult, TransferArguments } from '../utils/types';
 import { ApiPromise, Keyring } from '@polkadot/api';
 import { xxhashAsU8a } from '@polkadot/util-crypto';
@@ -30,6 +31,7 @@ export async function submit_transfer(api: ApiPromise, parameters: TransferArgum
         const transferEvent = result.events.filter((item) => {
           return item.event.method === 'Transfer';
         });
+        assert(transferEvent.length == 1, "Multiple transfer events");
 
         unsub();
 

@@ -12,7 +12,6 @@ import type { Keys } from '@polkadot/types/interfaces/session';
 import type { Key } from '@polkadot/types/interfaces/system';
 import type { AnyNumber } from '@polkadot/types/types';
 import type { RegistryContract, RegistryContractId } from 't3rn-circuit-typegen/interfaces/contracts_registry';
-
 import type { AllowedSideEffect, GenericDFD, StepConfirmation, XtxId } from 't3rn-circuit-typegen/interfaces/execution_delivery';
 import type { ConfirmedSideEffect, GatewayABIConfig, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor, SideEffect } from 't3rn-circuit-typegen/interfaces/primitives';
 import type { EthashProofData, EthereumHeader } from 't3rn-circuit-typegen/interfaces/snowfork';
@@ -352,8 +351,8 @@ declare module '@polkadot/api/types/submittable' {
        * Blind version should only be used for testing - unsafe since skips inclusion proof check.
        **/
       confirmSideEffectBlind: AugmentedSubmittable<(xtxId: XtxId | string | Uint8Array, sideEffect: SideEffect | { target?: any; prize?: any; ordered_at?: any; encoded_action?: any; encoded_args?: any; signature?: any; enforce_executioner?: any } | string | Uint8Array, confirmedSideEffect: ConfirmedSideEffect | { err?: any; output?: any; encoded_effect?: any; inclusion_proof?: any; executioner?: any; received_at?: any; cost?: any } | string | Uint8Array, inclusionProof: Option<Bytes> | null | object | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [XtxId, SideEffect, ConfirmedSideEffect, Option<Bytes>]>;
-      submitExecDfd: AugmentedSubmittable<(genericDfd: GenericDFD | string | Uint8Array, input: Bytes | string | Uint8Array, value: BalanceOf | AnyNumber | Uint8Array, reward: BalanceOf | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [GenericDFD, Bytes, BalanceOf, BalanceOf]>;
       registerGateway: AugmentedSubmittable<(url: Bytes | string | Uint8Array, gatewayId: ChainId | string | Uint8Array, gatewayAbi: GatewayABIConfig | { block_number_type_size?: any; hash_size?: any; hasher?: any; crypto?: any; address_length?: any; value_type_size?: any; decimals?: any; structs?: any } | string | Uint8Array, gatewayVendor: GatewayVendor | 'Substrate' | 'Ethereum' | number | Uint8Array, gatewayType: GatewayType | { ProgrammableInternal: any } | { ProgrammableExternal: any } | { TxOnly: any } | string | Uint8Array, gatewayGenesis: GatewayGenesisConfig | { modules_encoded?: any; runtime_version?: any; extrinsics_version?: any; genesis_hash?: any } | string | Uint8Array, gatewaySysProps: GatewaySysProps | { ss58_format?: any; token_symbol?: any; token_decimals?: any } | string | Uint8Array, firstHeader: Bytes | string | Uint8Array, authorities: Option<Vec<AccountId>> | null | object | string | Uint8Array, allowedSideEffects: Vec<AllowedSideEffect> | (AllowedSideEffect | string | Uint8Array)[]) => SubmittableExtrinsic<ApiType>, [Bytes, ChainId, GatewayABIConfig, GatewayVendor, GatewayType, GatewayGenesisConfig, GatewaySysProps, Bytes, Option<Vec<AccountId>>, Vec<AllowedSideEffect>]>;
+      submitExecDfd: AugmentedSubmittable<(genericDfd: GenericDFD | string | Uint8Array, input: Bytes | string | Uint8Array, value: BalanceOf | AnyNumber | Uint8Array, reward: BalanceOf | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [GenericDFD, Bytes, BalanceOf, BalanceOf]>;
       /**
        * Temporary entry for submitting a side effect directly for validation and event emittance
        * It's temporary, since will be replaced with a DFD, which allows to specify exactly the nature of argument

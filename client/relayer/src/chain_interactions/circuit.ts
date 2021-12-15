@@ -27,7 +27,7 @@ export async function send_tx_confirm_side_effect(
     let confirmed_side_effect: ConfirmedSideEffect = api.createType('ConfirmedSideEffect', {
       err: api.createType('Option<Bytes>', []),
       output: api.createType('Option<Bytes>', []),
-      encoded_effect: api.createType('Bytes', encoded_effect),
+      encoded_effect,
       inclusion_proof: api.createType('Option<Bytes>', inclusion_proofs),
       executioner: api.createType('AccountId', requester),
       received_at: api.createType('BlockNumber', 1),

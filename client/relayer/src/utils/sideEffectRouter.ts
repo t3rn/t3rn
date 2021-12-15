@@ -22,7 +22,7 @@ export async function executionRouter(
           if (result.status) {
             let inclusion_proofs = await getEventProofs(gatewayApi, result.blockHash);
             // only one event coming in. Access first element.
-            let encoded_effect: Bytes = gatewayApi.createType('Bytes', result.events[0].toU8a());
+            let encoded_effect: Bytes = gatewayApi.createType('Bytes', result.events[0].event.toHex());
             let { status } = await send_tx_confirm_side_effect(
               circuitApi,
               payload.requester,
