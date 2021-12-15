@@ -47,7 +47,7 @@ export function createGatewaySysProps(
   return api.createType('GatewaySysProps', [
     api.createType('u16', ss58Format),
     api.createType('Bytes', new Bytes(api.registry, tokenSymbol)),
-    api.createType('u8', tokenDecimals)
+    api.createType('u8', tokenDecimals),
   ]);
 }
 

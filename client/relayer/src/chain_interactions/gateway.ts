@@ -31,7 +31,7 @@ export async function submit_transfer(api: ApiPromise, parameters: TransferArgum
         const transferEvent = result.events.filter((item) => {
           return item.event.method === 'Transfer';
         });
-        assert(transferEvent.length == 1, "Multiple transfer events");
+        assert(transferEvent.length == 1, 'Multiple transfer events');
 
         unsub();
 

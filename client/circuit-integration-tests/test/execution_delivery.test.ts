@@ -1,6 +1,11 @@
 import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
 import { rpc, types } from '@t3rn/types';
-import { createGatewayABIConfig, createGatewayGenesisConfig, createGatewaySysProps, randomGatewayId } from '../src/utils/utils';
+import {
+  createGatewayABIConfig,
+  createGatewayGenesisConfig,
+  createGatewaySysProps,
+  randomGatewayId,
+} from '../src/utils/utils';
 import '@t3rn/types/dist/augment-api';
 import '@t3rn/types/dist/augment-types';
 import '@t3rn/types/dist/augment-api-rpc';
@@ -76,9 +81,7 @@ describe('Execution Delivery | Extrinsics', function () {
         enforce_executioner: circuitApi.createType('Option<AccountId>', alice.address),
       });
 
-      let sideEffect_vec = <Vec<SideEffect>>circuitApi.createType('Vec<SideEffect>', [
-        sideEffectTransfer,
-      ]);
+      let sideEffect_vec = <Vec<SideEffect>>circuitApi.createType('Vec<SideEffect>', [sideEffectTransfer]);
 
       const submit_side_effects_temp = circuitApi.tx.execDelivery.submitSideEffectsTemp(
         sideEffect_vec,
@@ -149,7 +152,7 @@ describe('Execution Delivery | Extrinsics', function () {
         circuitApi.createType('GatewayVendor', 'Substrate'), // GatewayVendor
         circuitApi.createType('GatewayType', { ProgrammableExternal: 1 }), // GatewayType
         createGatewayGenesisConfig(rococoMetadata, rococoRuntimeVersion, rococoGenesisHash, circuitApi), // GatewayGenesisConfig
-        createGatewaySysProps(circuitApi, 60, "", 0), // GatewaySysProps
+        createGatewaySysProps(circuitApi, 60, '', 0), // GatewaySysProps
         circuitApi.createType('Bytes', rococoCurrentHeader.toHex()), // first header
         circuitApi.createType('Option<Vec<AccountId>>', rococoInitialAuthorityList), // authorities
         <Vec<AllowedSideEffect>>circuitApi.createType('Vec<AllowedSideEffect>', ['transfer', 'get_storage']) // allowed side effects
@@ -206,7 +209,7 @@ describe('Execution Delivery | Extrinsics', function () {
         circuitApi.createType('GatewayVendor', 'Substrate'), // GatewayVendor
         circuitApi.createType('GatewayType', { ProgrammableExternal: 1 }), // GatewayType
         createGatewayGenesisConfig(polkadotMetadata, polkadotRuntimeVersion, polkadotGenesisHash, circuitApi), // GatewayGenesisConfig
-        createGatewaySysProps(circuitApi, 60, "", 0), // GatewaySysProps
+        createGatewaySysProps(circuitApi, 60, '', 0), // GatewaySysProps
         circuitApi.createType('Bytes', []), // first header
         circuitApi.createType('Option<Vec<AccountId>>', []), // authorities
         <Vec<AllowedSideEffect>>circuitApi.createType('Vec<AllowedSideEffect>', ['transfer', 'get_storage']) // allowed side effects
