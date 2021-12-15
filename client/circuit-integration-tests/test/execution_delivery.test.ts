@@ -48,7 +48,7 @@ describe('Execution Delivery | Extrinsics', function () {
         256
       );
       let transfer_arg_to = circuitApi.createType('Bytes', transfer_to_32_byte_representation);
-      let transfer_arg_value = circuitApi.createType('Bytes', Array.from(circuitApi.createType('u128', 1).toU8a()));
+      let transfer_arg_value = circuitApi.createType('Bytes', Array.from(circuitApi.createType('u64', 1).toU8a()));
 
       // This key is for Balances::TotalIssuance StorageValue
       let getStorage_arg_key = circuitApi.createType(

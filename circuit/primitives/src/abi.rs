@@ -36,7 +36,7 @@ pub enum Type {
     Ref(Box<Type>),
     StorageRef(Box<Type>),
     /// There is no way to declare value in Solidity (should there be?)
-    Value(U256),
+    Value,
     /// DynamicBytes and String are lowered to a vector.
     Slice,
     Hasher(HasherAlgo, u16),
@@ -325,6 +325,26 @@ impl Type {
                     _ => unimplemented!(),
                 },
             },
+            Type::Value => {
+                match gen.value_type_size {
+                    8 => {
+                        // 8 bytes = 64 bits
+                        let res: u64 = decode_buf2val::<u64>(encoded_val)?;
+                        Ok(Box::new(res))
+                    }
+                    16 => {
+                        // 16 bytes = 128 bits
+                        let res: u128 = decode_buf2val::<u128>(encoded_val)?;
+                        Ok(Box::new(res))
+                    }
+                    32 => {
+                        // 32 bytes = 256 bits
+                        let res: U256 = decode_buf2val::<U256>(encoded_val)?;
+                        Ok(Box::new(res))
+                    }
+                    _ => unimplemented!(),
+                }
+            }
             _ => unimplemented!(),
         }
     }
