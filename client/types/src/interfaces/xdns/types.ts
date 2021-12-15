@@ -4,7 +4,7 @@
 import type { Bytes, Option, Struct, Vec, u64 } from '@polkadot/types';
 import type { ChainId } from '@polkadot/types/interfaces/bridges';
 import type { AccountId, Hash } from '@polkadot/types/interfaces/runtime';
-import type { GatewayABIConfig, GatewayGenesisConfig, GatewayType, GatewayVendor } from 't3rn-circuit-typegen/interfaces/primitives';
+import type { GatewayABIConfig, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor } from 't3rn-circuit-typegen/interfaces/primitives';
 
 /** @name FetchXdnsRecordsResponse */
 export interface FetchXdnsRecordsResponse extends Struct {
@@ -19,6 +19,7 @@ export interface XdnsRecord extends Struct {
   readonly gateway_vendor: GatewayVendor;
   readonly gateway_type: GatewayType;
   readonly gateway_id: ChainId;
+  readonly gateway_sys_props: GatewaySysProps;
   readonly registrant: Option<AccountId>;
   readonly last_finalized: Option<u64>;
 }

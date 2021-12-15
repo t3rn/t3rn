@@ -117,5 +117,10 @@ export default {
       input: 'SideEffect',
       confirmed: 'Option<ConfirmedSideEffect>',
     },
+    GatewaySysProps: {
+      ss58_format: 'u16',
+      token_symbol: 'Bytes',
+      token_decimals: 'u8',
+    },
   },
 };

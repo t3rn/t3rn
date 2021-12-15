@@ -43,6 +43,12 @@ fn insert_default_xdns_record<T: pallet_xdns::Config>() {
         extrinsics_version: 0u8,
         genesis_hash: Default::default(),
     };
+
+    let gateway_sys_props = GatewaySysProps {
+        ss58_format: 0,
+        token_symbol: Encode::encode(""),
+        token_decimals: 0,
+    };
     pallet_xdns::Pallet::<T>::add_new_xdns_record(
         Origin::<T>::Root.into(),
         url,
@@ -51,6 +57,7 @@ fn insert_default_xdns_record<T: pallet_xdns::Config>() {
         gateway_vendor,
         gateway_type,
         gateway_genesis,
+        gateway_sys_props,
         vec![],
     )
     .unwrap();
@@ -79,10 +86,16 @@ benchmarks! {
             extrinsics_version: 0u8,
         };
 
+        let gateway_sys_props = GatewaySysProps {
+            ss58_format: 0,
+            token_symbol: Encode::encode(""),
+            token_decimals: 0,
+        };
+
         let first_header: CurrentHeader<T, DefaultPolkadotLikeGateway> = test_header(0u32.into());
 
         let authorities = Some(vec![]);
-    }: { Pallet::<T>::register_gateway(RawOrigin::Root.into(), url, gateway_id, gateway_abi, gateway_vendor, gateway_type, gateway_genesis, first_header.encode(), authorities, vec![]).unwrap()}
+    }: { Pallet::<T>::register_gateway(RawOrigin::Root.into(), url, gateway_id, gateway_abi, gateway_vendor, gateway_type, gateway_genesis, gateway_sys_props, first_header.encode(), authorities, vec![]).unwrap()}
     verify{}
 
     register_gateway_polka_u64 {
@@ -107,10 +120,16 @@ benchmarks! {
             extrinsics_version: 0u8,
         };
 
+        let gateway_sys_props = GatewaySysProps {
+            ss58_format: 0,
+            token_symbol: Encode::encode(""),
+            token_decimals: 0,
+        };
+
         let first_header: CurrentHeader<T, PolkadotLikeValU64Gateway> = test_header(0u32.into());
 
         let authorities = Some(vec![]);
-    }: { Pallet::<T>::register_gateway(RawOrigin::Root.into(), url, gateway_id, gateway_abi, gateway_vendor, gateway_type, gateway_genesis, first_header.encode(), authorities, vec![]).unwrap()}
+    }: { Pallet::<T>::register_gateway(RawOrigin::Root.into(), url, gateway_id, gateway_abi, gateway_vendor, gateway_type, gateway_genesis, gateway_sys_props, first_header.encode(), authorities, vec![]).unwrap()}
     verify{}
 
     register_gateway_default_eth {
@@ -135,10 +154,16 @@ benchmarks! {
             extrinsics_version: 0u8,
         };
 
+        let gateway_sys_props = GatewaySysProps {
+            ss58_format: 0,
+            token_symbol: Encode::encode(""),
+            token_decimals: 0,
+        };
+
         let first_header: CurrentHeader<T, EthLikeKeccak256ValU32Gateway> = test_header(0u32.into());
 
         let authorities = Some(vec![]);
-    }: { Pallet::<T>::register_gateway(RawOrigin::Root.into(), url, gateway_id, gateway_abi, gateway_vendor, gateway_type, gateway_genesis, first_header.encode(), authorities, vec![]).unwrap()}
+    }: { Pallet::<T>::register_gateway(RawOrigin::Root.into(), url, gateway_id, gateway_abi, gateway_vendor, gateway_type, gateway_genesis, gateway_sys_props, first_header.encode(), authorities, vec![]).unwrap()}
     verify{}
 
     register_gateway_eth_u64 {
@@ -163,10 +188,16 @@ benchmarks! {
             extrinsics_version: 0u8,
         };
 
+        let gateway_sys_props = GatewaySysProps {
+            ss58_format: 0,
+            token_symbol: Encode::encode(""),
+            token_decimals: 0,
+        };
+
         let first_header: CurrentHeader<T, EthLikeKeccak256ValU64Gateway> = test_header(0u32.into());
 
         let authorities = Some(vec![]);
-    }: { Pallet::<T>::register_gateway(RawOrigin::Root.into(), url, gateway_id, gateway_abi, gateway_vendor, gateway_type, gateway_genesis, first_header.encode(), authorities, vec![]).unwrap()}
+    }: { Pallet::<T>::register_gateway(RawOrigin::Root.into(), url, gateway_id, gateway_abi, gateway_vendor, gateway_type, gateway_genesis, gateway_sys_props, first_header.encode(), authorities, vec![]).unwrap()}
     verify{}
 }
 
