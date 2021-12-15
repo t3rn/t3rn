@@ -63,6 +63,7 @@ pallet-utility = { git = "https://github.com/paritytech/substrate", default-feat
 
 ## bridge dependencies
 bp-polkadot-core = { git = "https://github.com/t3rn/parity-bridges-common", branch = 'polkadot-v0.9.12', default-features = false }
+bp-runtime = { git = "https://github.com/t3rn/parity-bridges-common", branch = 'polkadot-v0.9.12', default-features = false }
 
 ## snow bridge
 snowbridge-core = { git = "https://github.com/t3rn/snowbridge", default-features = false }
@@ -70,10 +71,20 @@ ethereum-light-client = { git = "https://github.com/t3rn/snowbridge", package = 
 snowbridge-channel = { git = "https://github.com/t3rn/snowbridge", package = "snowbridge-basic-channel", default-features = false }
 
 # t3rn Dependencies
-pallet-xdns = {path = "../../pallets/xdns", default-features = false }
-t3rn-parachain-primitives = { version = "0.1.0", default-features = false, path = "../../primitives" }
+t3rn-primitives = { version = "0.1.0", default-features = false, path = "../../primitives", package = "t3rn-parachain-primitives" }
 pallet-mfv = {path = "../../pallets/multi-finality-verifier", package = "multi-finality-verifier", default-features = false }
+pallet-xdns = {path = "../../pallets/xdns", default-features = false }
+pallet-xdns-rpc-runtime-api = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
 pallet-contracts-registry = {path = "../../pallets/contracts-registry", default-features = false}
+pallet-contracts-registry-rpc-runtime-api = {  path = "../../pallets/contracts-registry/rpc/runtime-api", default-features = false }
+pallet-circuit-execution-delivery = {path = "../../pallets/execution-delivery", default-features = false}
+pallet-circuit-execution-delivery-rpc-runtime-api = {  path = "../../pallets/execution-delivery/rpc/runtime-api", default-features = false }
+
+# # Smart contracts VMs
+# pallet-contracts = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12' }
+# pallet-contracts-primitives = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12' }
+# pallet-contracts-rpc-runtime-api = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12' }
+
 # Cumulus dependencies
 cumulus-pallet-aura-ext = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.12', default-features = false }
 cumulus-pallet-dmp-queue = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.12', default-features = false }
@@ -99,6 +110,7 @@ default = [
 	"std",
 ]
 std = [
+	"bp-runtime/std",
 	"codec/std",
 	"serde",
 	"scale-info/std",
@@ -121,7 +133,12 @@ std = [
 	"pallet-aura/std",
 	"pallet-authorship/std",
 	"pallet-balances/std",
+	"pallet-circuit-execution-delivery/std",
+	"pallet-circuit-execution-delivery-rpc-runtime-api/std",
 	"pallet-collator-selection/std",
+	# "pallet-contracts/std",
+	# "pallet-contracts-primitives/std",
+	# "pallet-contracts-rpc-runtime-api/std",
 	"pallet-contracts-registry/std",
 	"pallet-randomness-collective-flip/std",
 	"pallet-session/std",

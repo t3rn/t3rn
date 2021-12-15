@@ -1,7 +1,7 @@
 use crate::{Bytes, DispatchResultWithPostInfo, Error};
 use codec::{Decode, Encode};
 use sp_application_crypto::Public;
-use sp_std::{vec, vec::Vec};
+use sp_std::{boxed::Box, vec, vec::Vec};
 
 pub type CurrentHash<T, I> =
     <<T as pallet_multi_finality_verifier::Config<I>>::BridgedChain as bp_runtime::Chain>::Hash;

@@ -46,8 +46,6 @@ pub use t3rn_primitives::{
 };
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 
-//use volatile_vm::VolatileVM;
-
 pub type Bytes = Vec<u8>;
 
 pub use pallet::*;
@@ -116,12 +114,9 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config:
         frame_system::Config
-        + pallet_bridge_messages::Config
         + pallet_balances::Config
         + pallet_contracts_registry::Config
         + pallet_xdns::Config
-        + pallet_contracts::Config
-        + pallet_evm::Config
         + pallet_multi_finality_verifier::Config<DefaultPolkadotLikeGateway>
         + pallet_multi_finality_verifier::Config<PolkadotLikeValU64Gateway>
         + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU64Gateway>

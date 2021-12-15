@@ -1,12 +1,11 @@
 [package]
 name = "pallet-circuit-execution-delivery"
 version = "0.1.0"
-authors = ["Maciej Baj <maciej@t3rn.io>"]
+authors = ["devs @ t3rn"]
 edition = "2018"
-license = "Unlicense"
-homepage = "https://substrate.dev"
-repository = "https://github.com/paritytech/substrate/"
-description = "FRAME example pallet for offchain worker"
+license = "Apache 2.0"
+homepage = "https://t3rn.io"
+repository = 'https://github.com/t3rn/t3rn'
 readme = "README.md"
 
 [package.metadata.docs.rs]
@@ -60,10 +59,6 @@ bp-circuit = { git = "https://github.com/t3rn/parity-bridges-common", branch = '
 bp-polkadot-core = { git = "https://github.com/t3rn/parity-bridges-common", branch = 'polkadot-v0.9.12', default-features = false }
 
 # Smart contracts VMs
-#volatile-vm = { path = "../../vm/volatile-vm", default-features = false }
-pallet-evm = { git = "https://github.com/t3rn/frontier", branch = 'polkadot-v0.9.12', default-features = false }
-pallet-ethereum = { git = "https://github.com/t3rn/frontier", branch = 'polkadot-v0.9.12', default-features = false }
-pallet-evm-precompile-simple = { git = "https://github.com/t3rn/frontier", branch = 'polkadot-v0.9.12', default-features = false }
 pallet-contracts = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.12' }
 ethabi-decode = { git = "https://github.com/Snowfork/ethabi-decode.git", branch = "master", default-features = false }
 
@@ -138,11 +133,7 @@ std = [
     "bp-test-utils/std",
     # native contracts VMs
     "pallet-contracts/std",
-    "pallet-evm/std",
-    #"volatile-vm/std",
-    "pallet-ethereum/std",
     "ethabi-decode/std",
-    "pallet-evm-precompile-simple/std",
     # for tests only
     "pallet-babe/std",
     "pallet-staking/std",
