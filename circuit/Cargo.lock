@@ -5399,6 +5399,8 @@ dependencies = [
  "serde",
  "serde_json",
  "snowbridge-basic-channel",
+ "snowbridge-core 0.1.1 (git+https://github.com/t3rn/snowbridge?rev=57eafa318d4b27d9d5c00c29e2db79504bd6ac77)",
+ "snowbridge-ethereum 0.1.0 (git+https://github.com/t3rn/snowbridge?rev=57eafa318d4b27d9d5c00c29e2db79504bd6ac77)",
  "sp-application-crypto",
  "sp-consensus-babe",
  "sp-consensus-vrf",
@@ -9956,6 +9958,7 @@ dependencies = [
  "sp-std",
  "sp-version",
  "t3rn-primitives",
+ "tiny-keccak 1.5.0",
  "triehash",
 ]
 

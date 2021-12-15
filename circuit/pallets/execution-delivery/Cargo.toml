@@ -80,6 +80,8 @@ sp-finality-grandpa = { default-features = false, git = "https://github.com/pari
 sp-consensus-vrf = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 sp-consensus-babe = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 relay-substrate-client = { version = "0.1.0", path = "../../../vendor/bridges/relays/client-substrate", optional = true }
+snowbridge-core = { git = "https://github.com/t3rn/snowbridge", rev = "57eafa318d4b27d9d5c00c29e2db79504bd6ac77", default-features = false }
+snowbridge-ethereum = { git = "https://github.com/t3rn/snowbridge", rev = "57eafa318d4b27d9d5c00c29e2db79504bd6ac77", default-features = false }
 snowbridge-basic-channel = { git = "https://github.com/t3rn/snowbridge", rev = "57eafa318d4b27d9d5c00c29e2db79504bd6ac77", default-features = false }
 
 # Benchmarking
@@ -156,7 +158,9 @@ std = [
     "pallet-offences/std",
     "frame-election-provider-support/std",
     "hex/std",
-    "snowbridge-basic-channel/std"
+    "snowbridge-basic-channel/std",
+    "snowbridge-core/std",
+    "snowbridge-ethereum/std"
 ]
 
 runtime-benchmarks = [
