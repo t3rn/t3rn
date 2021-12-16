@@ -58,16 +58,19 @@ describe("Escrow", function () {
 	})
 
 	it("Should revert transfer", async () => {
-		// doesnt work yet, for some reason refund is not showing, but also not in contract.
 		const receiverBalancePre = await escrow.provider.getBalance(to.address);
-		const executorBalancePre = await escrow.provider.getBalance(executor.address);
 		const id = "0x" + crypto.createHash('sha256').update("ethTransfer1").digest('hex');
 		const amount = ethers.utils.parseEther("1");
+
 		await escrow.connect(executor).ethTransfer(to.address, id, {value: amount})
+		const executorBalancePre = await escrow.provider.getBalance(executor.address);
+
 		await escrow.connect(executor).releaseEthTransfer({xtxId: id, shouldCommit: false}, to.address, amount);
+
 		const receiverBalancePost = await escrow.provider.getBalance(to.address);
 		const executorBalancePost = await escrow.provider.getBalance(executor.address);
 		assert.ok(receiverBalancePre.toJSON().hex === receiverBalancePost.toJSON().hex)
-		assert.ok(executorBalancePre.add(amount).toJSON().hex === executorBalancePost.toJSON().hex)
+		// we're dividing here to round away the gas cost of executor
+		assert.ok(executorBalancePre.add(amount).div(ethers.BigNumber.from(1000000000000000)).toJSON().hex === executorBalancePost.div(ethers.BigNumber.from(1000000000000000)).toJSON().hex)
 	})
 });
