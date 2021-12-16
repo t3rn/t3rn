@@ -18,6 +18,8 @@ contract Escrow is SimplifiedMMRVerification, HeaderRegistry {
 
     event Commit(bytes32 xtxId);
     event Revert(bytes32 xtxId);
+    event EscrowTransfer(address from, address to, uint value);
+    event EscrowMultiTransfer(address from, address to, uint value, address token);
 
     struct CircuitEvent {
         // assumption here is, that the circut will only emit a commit event, if the amounts during execute are correct
@@ -36,6 +38,7 @@ contract Escrow is SimplifiedMMRVerification, HeaderRegistry {
         // 1. reduces gas cost, as storage is more expensive then compute
         // 2. we can store all escrow types in same mapping. makes duplicate prevention checks a lot cheaper
         active[xtxId] = _hashEthTransfer(to, msg.value, msg.sender);
+        emit EscrowTransfer(msg.sender, to, msg.value);
     }
 
     // intializes escrowed token transfer
@@ -45,9 +48,10 @@ contract Escrow is SimplifiedMMRVerification, HeaderRegistry {
     {
         _collectToken(amount, token);
         active[xtxId] = _hashTokenTransfer(to, token, amount, msg.sender);
+        emit EscrowMultiTransfer(msg.sender, to, amount, token);
     }
 
-    function releaseEthTransfer(CircuitEvent memory evnt, address to, uint amount)
+    function applyEthTransfer(CircuitEvent memory evnt, address to, uint amount)
         external
     {
         // verify finality of CircuitEvent here. See `_verifyFinality()`
@@ -66,7 +70,7 @@ contract Escrow is SimplifiedMMRVerification, HeaderRegistry {
         delete active[evnt.xtxId]; // gas refund
     }
 
-    function releaseTokenTransfer(CircuitEvent memory evnt, address to, address token, uint amount)
+    function applyTokenTransfer(CircuitEvent memory evnt, address to, address token, uint amount)
         external
     {
         // verify finality of CircuitEvent here. See `_verifyFinality()`

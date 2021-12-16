@@ -45,7 +45,7 @@ describe("Escrow", function () {
 		const userBalancePre = await escrow.provider.getBalance(to.address);
 		const id = "0x" + crypto.createHash('sha256').update("ethTransfer").digest('hex');
 		const amount = ethers.utils.parseEther("1");
-		await escrow.connect(executor).releaseEthTransfer({xtxId: id, shouldCommit: true}, to.address, amount);
+		await escrow.connect(executor).applyEthTransfer({xtxId: id, shouldCommit: true}, to.address, amount);
 		const userBalancePost = await escrow.provider.getBalance(to.address);
 		assert.ok(userBalancePre.add(amount).toJSON().hex === userBalancePost.toJSON().hex)
 	})
@@ -58,7 +58,7 @@ describe("Escrow", function () {
 		await escrow.connect(executor).ethTransfer(to.address, id, {value: amount})
 		const executorBalancePre = await escrow.provider.getBalance(executor.address);
 
-		await escrow.connect(executor).releaseEthTransfer({xtxId: id, shouldCommit: false}, to.address, amount);
+		await escrow.connect(executor).applyEthTransfer({xtxId: id, shouldCommit: false}, to.address, amount);
 
 		const receiverBalancePost = await escrow.provider.getBalance(to.address);
 		const executorBalancePost = await escrow.provider.getBalance(executor.address);
@@ -81,7 +81,7 @@ describe("Escrow", function () {
 		const userBalancePre = await token.balanceOf(to.address)
 		const id = "0x" + crypto.createHash('sha256').update("tokenTransfer").digest('hex');
 		const amount = ethers.utils.parseEther("100");
-		await escrow.connect(executor).releaseTokenTransfer({xtxId: id, shouldCommit: true}, to.address, token.address, amount);
+		await escrow.connect(executor).applyTokenTransfer({xtxId: id, shouldCommit: true}, to.address, token.address, amount);
 		const userBalancePost = await token.balanceOf(to.address)
 		assert.ok(userBalancePre.add(amount).toJSON().hex === userBalancePost.toJSON().hex)
 	})
@@ -95,7 +95,7 @@ describe("Escrow", function () {
 		await escrow.connect(executor).tokenTransfer(to.address, token.address, amount, id)
 		const executorBalancePre = await token.balanceOf(executor.address)
 
-		await escrow.connect(executor).releaseTokenTransfer({xtxId: id, shouldCommit: false}, to.address, token.address, amount);
+		await escrow.connect(executor).applyTokenTransfer({xtxId: id, shouldCommit: false}, to.address, token.address, amount);
 
 		const receiverBalancePost = await token.balanceOf(to.address)
 		const executorBalancePost = await token.balanceOf(executor.address)
