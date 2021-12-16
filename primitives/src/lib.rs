@@ -31,7 +31,7 @@ use sp_runtime::RuntimeDebug as Debug;
 use std::fmt::Debug;
 
 use sp_std::prelude::*;
-use sp_std::vec;
+use sp_std::{convert::TryFrom, vec};
 
 pub mod abi;
 pub mod bridges;
@@ -42,6 +42,7 @@ pub mod side_effect;
 pub mod signature_caster;
 pub mod storage;
 pub mod transfers;
+pub mod volatile;
 pub mod xtx;
 
 pub use gateway_inbound_protocol::GatewayInboundProtocol;
@@ -84,7 +85,7 @@ pub struct GenericPrimitivesHeader {
     pub digest: Option<sp_runtime::generic::Digest<sp_core::hash::H256>>,
 }
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct GatewayPointer {
     pub id: ChainId,
@@ -98,7 +99,7 @@ pub struct GatewayGenesisConfig {
     /// SCALE-encoded modules following the format of selected frame_metadata::RuntimeMetadataVXX
     pub modules_encoded: Option<Vec<u8>>,
     /// SCALE-encoded signed extension - see more at frame_metadata::ExtrinsicMetadata
-    pub signed_extension: Option<Vec<u8>>,
+    // pub signed_extension: Option<Vec<u8>>,
     /// Runtime version
     pub runtime_version: sp_version::RuntimeVersion,
     /// Extrinsics version
@@ -115,7 +116,49 @@ impl Default for GatewayGenesisConfig {
             runtime_version: Default::default(),
             genesis_hash: vec![],
             modules_encoded: None,
-            signed_extension: None,
+            // signed_extension: None,
+        }
+    }
+}
+
+/// Represents assorted gateway system properties.
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct GatewaySysProps {
+    pub ss58_format: u16,
+    pub token_symbol: Vec<u8>,
+    pub token_decimals: u8,
+}
+
+impl TryFrom<&ChainId> for GatewaySysProps {
+    type Error = &'static str;
+
+    /// Maps a chain id to its system properties.
+    ///
+    /// Based on https://wiki.polkadot.network/docs/build-ss58-registry.
+    fn try_from(chain_id: &ChainId) -> Result<Self, Self::Error> {
+        match chain_id {
+            b"circ" => Ok(GatewaySysProps {
+                ss58_format: 1333,
+                token_symbol: Encode::encode("T3RN"),
+                token_decimals: 12,
+            }),
+            b"gate" => Ok(GatewaySysProps {
+                ss58_format: 1333,
+                token_symbol: Encode::encode("T3RN"),
+                token_decimals: 12,
+            }),
+            b"pdot" => Ok(GatewaySysProps {
+                ss58_format: 0,
+                token_symbol: Encode::encode("DOT"),
+                token_decimals: 10,
+            }),
+            b"ksma" => Ok(GatewaySysProps {
+                ss58_format: 2,
+                token_symbol: Encode::encode("KSM"),
+                token_decimals: 12,
+            }),
+            _ => Err("unknown chain id"),
         }
     }
 }
@@ -267,7 +310,7 @@ impl CircuitOutboundMessage {
 }
 
 /// Inclusion proofs of different tries
-#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]
+#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum ProofTriePointer {
     /// Proof is a merkle path in the state trie

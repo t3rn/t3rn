@@ -4,7 +4,10 @@ use hex_literal::hex;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
-use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
+use sp_core::{
+	crypto::{Ss58Codec, UncheckedInto},
+	sr25519, Pair, Public,
+};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
@@ -220,6 +223,12 @@ fn testnet_genesis(
 		democracy: Default::default(),
 		contracts_registry: Default::default(),
 		ethereum_light_client: Default::default(),
+		basic_outbound_channel: circuit_parachain_runtime::BasicOutboundChannelConfig {
+			// this is the account for pal/exec module_id
+			principal: AccountId::from_string("5FmrGR9YMhgHqcrNc4W9enTbmCLRE6sbAJKs3kqA5kJfWQoN")
+				.expect("Should not fail"),
+			interval: 1,
+		},
 	}
 }
 
@@ -341,5 +350,11 @@ fn genesis(
 		democracy: Default::default(),
 		contracts_registry: Default::default(),
 		ethereum_light_client: Default::default(),
+		basic_outbound_channel: circuit_parachain_runtime::BasicOutboundChannelConfig {
+			// this is the account for pal/exec module_id
+			principal: AccountId::from_string("5FmrGR9YMhgHqcrNc4W9enTbmCLRE6sbAJKs3kqA5kJfWQoN")
+				.expect("Should not fail"),
+			interval: 1,
+		},
 	}
 }
