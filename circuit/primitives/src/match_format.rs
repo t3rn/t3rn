@@ -3,7 +3,7 @@
 use sp_std::vec;
 use sp_std::vec::*;
 
-type StrLike = Vec<u8>;
+pub type StrLike = Vec<u8>;
 
 pub fn ensure_str_err(condition: bool, err_message: &'static str) -> Result<(), &'static str> {
     if !condition {

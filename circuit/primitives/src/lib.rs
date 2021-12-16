@@ -37,6 +37,7 @@ pub mod contract_metadata;
 pub mod gateway_inbound_protocol;
 pub mod match_format;
 pub mod side_effect;
+pub mod signature_caster;
 pub mod transfers;
 pub mod volatile;
 pub mod xtx;
