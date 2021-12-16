@@ -13,23 +13,17 @@ let to;
 describe("Escrow", function () {
 
 	before(async () => {
-			const [exec, sender, receiver] = await ethers.getSigners();
-			executor = exec
-			from = sender
-			to = receiver
-			const Token = await hre.ethers.getContractFactory("_ERC20");
+		const [exec, sender, receiver] = await ethers.getSigners();
+		executor = exec
+		from = sender
+		to = receiver
+		const Token = await hre.ethers.getContractFactory("_ERC20");
 
-			// deploy tokens for testing
-			token = await Token.connect(executor).deploy("token", "tok");
-			await token.deployed()
+		// deploy tokens for testing
+		token = await Token.connect(executor).deploy("token", "tok");
+		await token.deployed()
 
-			// approve router for liquidity provisioning
-			// await token1.connect(lp).approve("0x7a250d5630b4cf539739df2c5dacb4c659f2488d", ethers.utils.parseEther("2000"))
-			// await token2.connect(lp).approve("0x7a250d5630b4cf539739df2c5dacb4c659f2488d", ethers.utils.parseEther("1000"))
-
-			
-
-		})
+	})
 
 	it("should depoy contract", async () => {
 		const Escrow = await hre.ethers.getContractFactory("Escrow");
@@ -53,7 +47,6 @@ describe("Escrow", function () {
 		const amount = ethers.utils.parseEther("1");
 		await escrow.connect(executor).releaseEthTransfer({xtxId: id, shouldCommit: true}, to.address, amount);
 		const userBalancePost = await escrow.provider.getBalance(to.address);
-		console.log(userBalancePost)
 		assert.ok(userBalancePre.add(amount).toJSON().hex === userBalancePost.toJSON().hex)
 	})
 
@@ -73,4 +66,41 @@ describe("Escrow", function () {
 		// we're dividing here to round away the gas cost of executor
 		assert.ok(executorBalancePre.add(amount).div(ethers.BigNumber.from(1000000000000000)).toJSON().hex === executorBalancePost.div(ethers.BigNumber.from(1000000000000000)).toJSON().hex)
 	})
+
+	it("Should initialze token transfer", async () => {
+		// executor must approve contract
+		await token.connect(executor).approve(escrow.address, ethers.utils.parseEther("100"))
+		const id = "0x" + crypto.createHash('sha256').update("tokenTransfer").digest('hex');
+		const amount = ethers.utils.parseEther("100");
+		await escrow.connect(executor).tokenTransfer(to.address, token.address, amount, id)
+		const contractBalance = await token.balanceOf(escrow.address)
+		assert.ok(contractBalance.toString() === "100000000000000000000")
+	});
+
+	it("Should commit token transfer", async () => {
+		const userBalancePre = await token.balanceOf(to.address)
+		const id = "0x" + crypto.createHash('sha256').update("tokenTransfer").digest('hex');
+		const amount = ethers.utils.parseEther("100");
+		await escrow.connect(executor).releaseTokenTransfer({xtxId: id, shouldCommit: true}, to.address, token.address, amount);
+		const userBalancePost = await token.balanceOf(to.address)
+		assert.ok(userBalancePre.add(amount).toJSON().hex === userBalancePost.toJSON().hex)
+	})
+
+	it("Should revert token transfer", async () => {
+		const receiverBalancePre = await token.balanceOf(to.address)
+		await token.connect(executor).approve(escrow.address, ethers.utils.parseEther("100"))
+		const id = "0x" + crypto.createHash('sha256').update("tokenTransfer1").digest('hex');
+		const amount = ethers.utils.parseEther("1");
+
+		await escrow.connect(executor).tokenTransfer(to.address, token.address, amount, id)
+		const executorBalancePre = await token.balanceOf(executor.address)
+
+		await escrow.connect(executor).releaseTokenTransfer({xtxId: id, shouldCommit: false}, to.address, token.address, amount);
+
+		const receiverBalancePost = await token.balanceOf(to.address)
+		const executorBalancePost = await token.balanceOf(executor.address)
+		assert.ok(receiverBalancePre.toJSON().hex === receiverBalancePost.toJSON().hex)
+		assert.ok(executorBalancePre.add(amount).toJSON().hex === executorBalancePost.toJSON().hex)
+	})
+
 });

@@ -121,9 +121,6 @@ contract Escrow is SimplifiedMMRVerification, HeaderRegistry {
     function _sendEth(address payable _to, uint amount)
         private
     {
-        console.log(msg.sender);
-        console.log(_to);
-        console.log(amount);
         _to.call{value: amount}("");
     }
 
