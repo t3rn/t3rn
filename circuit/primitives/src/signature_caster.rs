@@ -49,7 +49,6 @@ pub fn validate_next_args(
     let mut args_bytes: Vec<Vec<u8>> = vec![];
 
     for (arg_type, arg_size) in args_abi {
-        println!("curr arg size {:?} ", arg_size);
         // ToDo: Eliminate possible casting err since as takes only lower bytes - ABI should be in usize
         end_pos += arg_size as usize;
         args_bytes.push(validate_next_arg(input, arg_type, start_pos, end_pos)?);
