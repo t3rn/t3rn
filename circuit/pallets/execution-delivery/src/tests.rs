@@ -71,6 +71,12 @@ fn test_register_gateway_with_default_polka_like_header() {
         extrinsics_version: 0u8,
     };
 
+    let gateway_sys_props = GatewaySysProps {
+        ss58_format: 0,
+        token_symbol: Encode::encode(""),
+        token_decimals: 0,
+    };
+
     let first_header: CurrentHeader<Test, DefaultPolkadotLikeGateway> = test_header(0);
 
     let authorities = Some(vec![]);
@@ -86,6 +92,7 @@ fn test_register_gateway_with_default_polka_like_header() {
             gateway_vendor,
             gateway_type,
             gateway_genesis,
+            gateway_sys_props,
             first_header.encode(),
             authorities,
             allowed_side_effects,
@@ -117,6 +124,12 @@ fn test_register_gateway_with_u64_substrate_header() {
         extrinsics_version: 0u8,
     };
 
+    let gateway_sys_props = GatewaySysProps {
+        ss58_format: 0,
+        token_symbol: Encode::encode(""),
+        token_decimals: 0,
+    };
+
     let first_header: CurrentHeader<Test, PolkadotLikeValU64Gateway> = test_header(0);
 
     let authorities = Some(vec![]);
@@ -132,6 +145,7 @@ fn test_register_gateway_with_u64_substrate_header() {
             gateway_vendor,
             gateway_type,
             gateway_genesis,
+            gateway_sys_props,
             first_header.encode(),
             authorities,
             allowed_side_effects,
@@ -163,6 +177,12 @@ fn test_register_gateway_with_default_eth_like_header() {
         extrinsics_version: 0u8,
     };
 
+    let gateway_sys_props = GatewaySysProps {
+        ss58_format: 0,
+        token_symbol: Encode::encode(""),
+        token_decimals: 0,
+    };
+
     let first_header: CurrentHeader<Test, EthLikeKeccak256ValU32Gateway> = test_header(0);
 
     let authorities = Some(vec![]);
@@ -178,6 +198,7 @@ fn test_register_gateway_with_default_eth_like_header() {
             gateway_vendor,
             gateway_type,
             gateway_genesis,
+            gateway_sys_props,
             first_header.encode(),
             authorities,
             allowed_side_effects,
@@ -209,6 +230,12 @@ fn test_register_gateway_with_u64_eth_like_header() {
         extrinsics_version: 0u8,
     };
 
+    let gateway_sys_props = GatewaySysProps {
+        ss58_format: 0,
+        token_symbol: Encode::encode(""),
+        token_decimals: 0,
+    };
+
     let first_header: CurrentHeader<Test, EthLikeKeccak256ValU64Gateway> = test_header(0);
 
     let authorities = Some(vec![]);
@@ -224,6 +251,7 @@ fn test_register_gateway_with_u64_eth_like_header() {
             gateway_vendor,
             gateway_type,
             gateway_genesis,
+            gateway_sys_props,
             first_header.encode(),
             authorities,
             allowed_side_effects,
@@ -255,6 +283,12 @@ fn test_register_gateway_with_u64_substrate_header_and_allowed_side_effects() {
         extrinsics_version: 0u8,
     };
 
+    let gateway_sys_props = GatewaySysProps {
+        ss58_format: 0,
+        token_symbol: Encode::encode(""),
+        token_decimals: 0,
+    };
+
     let first_header: CurrentHeader<Test, PolkadotLikeValU64Gateway> = test_header(0);
 
     let authorities = Some(vec![]);
@@ -272,6 +306,7 @@ fn test_register_gateway_with_u64_substrate_header_and_allowed_side_effects() {
             gateway_vendor.clone(),
             gateway_type.clone(),
             gateway_genesis,
+            gateway_sys_props.clone(),
             first_header.encode(),
             authorities,
             allowed_side_effects.clone(),
@@ -296,6 +331,7 @@ fn test_register_gateway_with_u64_substrate_header_and_allowed_side_effects() {
             gateway_id,
             gateway_type,
             gateway_vendor,
+            gateway_sys_props,
             allowed_side_effects,
         )));
         // XdnsRecordStored and NewGatewayRegistered

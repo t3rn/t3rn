@@ -19,9 +19,11 @@
 
 use super::*;
 use crate::mock::{ExtBuilder, Test, XDNS};
+use codec::{Decode, Encode};
 use frame_support::{assert_noop, assert_ok};
 use frame_system::Origin;
 use sp_runtime::DispatchError;
+use t3rn_primitives::{GatewayType, GatewayVendor};
 
 #[test]
 fn genesis_should_seed_circuit_gateway_polkadot_and_kusama_nodes() {
@@ -53,6 +55,11 @@ fn should_add_a_new_xdns_record_if_it_doesnt_exist() {
             GatewayVendor::Substrate,
             GatewayType::TxOnly(0),
             Default::default(),
+            GatewaySysProps {
+                ss58_format: 0,
+                token_symbol: Encode::encode("SYM"),
+                token_decimals: 9,
+            },
             vec![],
         ));
         assert_eq!(XDNSRegistry::<Test>::iter().count(), 1);
@@ -78,6 +85,11 @@ fn should_not_add_a_new_xdns_record_if_it_already_exists() {
                     GatewayVendor::Substrate,
                     GatewayType::TxOnly(0),
                     Default::default(),
+                    GatewaySysProps {
+                        ss58_format: 1333,
+                        token_symbol: Encode::encode("T3RN"),
+                        token_decimals: 12,
+                    },
                     vec![],
                 ),
                 crate::pallet::Error::<Test>::XdnsRecordAlreadyExists
@@ -174,4 +186,31 @@ fn should_error_when_trying_to_update_ttl_as_non_root() {
             DispatchError::BadOrigin
         );
     });
+}
+
+#[test]
+fn should_contain_gateway_system_properties() {
+    let polkadot_hash = <Test as frame_system::Config>::Hashing::hash(b"pdot");
+    let kusama_hash = <Test as frame_system::Config>::Hashing::hash(b"ksma");
+
+    ExtBuilder::default()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let polkadot_xdns_record = XDNSRegistry::<Test>::get(polkadot_hash).unwrap();
+            let kusama_xdns_record = XDNSRegistry::<Test>::get(kusama_hash).unwrap();
+            let polkadot_symbol: Vec<u8> =
+                Decode::decode(&mut &polkadot_xdns_record.gateway_sys_props.token_symbol[..])
+                    .unwrap();
+            let kusama_symbol: Vec<u8> =
+                Decode::decode(&mut &kusama_xdns_record.gateway_sys_props.token_symbol[..])
+                    .unwrap();
+
+            assert_eq!(polkadot_xdns_record.gateway_sys_props.ss58_format, 0u16);
+            assert_eq!(kusama_xdns_record.gateway_sys_props.ss58_format, 2u16);
+            assert_eq!(&String::from_utf8_lossy(&polkadot_symbol), "DOT");
+            assert_eq!(&String::from_utf8_lossy(&kusama_symbol), "KSM");
+            assert_eq!(polkadot_xdns_record.gateway_sys_props.token_decimals, 10u8);
+            assert_eq!(kusama_xdns_record.gateway_sys_props.token_decimals, 12u8);
+        });
 }

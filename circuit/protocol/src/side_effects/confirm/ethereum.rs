@@ -2,14 +2,13 @@
 
 use codec::{Decode, Encode};
 use ethabi_decode::{Event, Param, ParamKind, Token};
-use frame_metadata::StorageEntryModifier::Default;
 use snowbridge_core::{Message, Verifier};
 use snowbridge_ethereum::{Header, Log};
 use sp_core::{H160, U256};
 use sp_runtime::DispatchError;
 use sp_runtime::RuntimeDebug;
 use sp_std::convert::TryFrom;
-use sp_std::default::Default as Def;
+use sp_std::default::Default;
 use sp_std::marker::PhantomData;
 use sp_std::vec;
 use sp_std::vec::Vec;
@@ -80,7 +79,7 @@ pub struct EthereumMockVerifier {}
 // TODO: Implement proper Ethereum Verifier
 impl Verifier for EthereumMockVerifier {
     fn verify(message: &Message) -> Result<Log, DispatchError> {
-        Ok(Def::default())
+        Ok(Default::default())
     }
 
     fn initialize_storage(

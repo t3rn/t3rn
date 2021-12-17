@@ -43,6 +43,7 @@ sc-finality-grandpa-rpc = { git = "https://github.com/paritytech/substrate", bra
 sc-keystore = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 sc-rpc = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 sc-service = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+sp-std = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8', default-features = false }
 sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }

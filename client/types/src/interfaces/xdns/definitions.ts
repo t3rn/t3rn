@@ -21,6 +21,7 @@ export default {
       gateway_vendor: 'GatewayVendor',
       gateway_type: 'GatewayType',
       gateway_id: 'ChainId',
+      gateway_sys_props: 'GatewaySysProps',
       registrant: 'Option<AccountId>',
       last_finalized: 'Option<u64>',
     },

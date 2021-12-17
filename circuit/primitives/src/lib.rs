@@ -30,12 +30,12 @@ use sp_runtime::RuntimeDebug as Debug;
 use std::fmt::Debug;
 
 use sp_std::prelude::*;
-use sp_std::vec;
+use sp_std::{convert::TryFrom, vec};
 
 pub mod abi;
 pub mod contract_metadata;
-pub mod event_signature;
 pub mod gateway_inbound_protocol;
+pub mod match_format;
 pub mod side_effect;
 pub mod transfers;
 pub mod volatile;
@@ -117,6 +117,48 @@ impl Default for GatewayGenesisConfig {
     }
 }
 
+/// Represents assorted gateway system properties.
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct GatewaySysProps {
+    pub ss58_format: u16,
+    pub token_symbol: Vec<u8>,
+    pub token_decimals: u8,
+}
+
+impl TryFrom<&ChainId> for GatewaySysProps {
+    type Error = &'static str;
+
+    /// Maps a chain id to its system properties.
+    ///
+    /// Based on https://wiki.polkadot.network/docs/build-ss58-registry.
+    fn try_from(chain_id: &ChainId) -> Result<Self, Self::Error> {
+        match chain_id {
+            b"circ" => Ok(GatewaySysProps {
+                ss58_format: 1333,
+                token_symbol: Encode::encode("T3RN"),
+                token_decimals: 12,
+            }),
+            b"gate" => Ok(GatewaySysProps {
+                ss58_format: 1333,
+                token_symbol: Encode::encode("T3RN"),
+                token_decimals: 12,
+            }),
+            b"pdot" => Ok(GatewaySysProps {
+                ss58_format: 0,
+                token_symbol: Encode::encode("DOT"),
+                token_decimals: 10,
+            }),
+            b"ksma" => Ok(GatewaySysProps {
+                ss58_format: 2,
+                token_symbol: Encode::encode("KSM"),
+                token_decimals: 12,
+            }),
+            _ => Err("unknown chain id"),
+        }
+    }
+}
+
 /// A struct that encodes RPC parameters required for a call to a smart-contract.
 #[derive(Eq, PartialEq, Encode, Decode, Debug, Clone, Default)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -129,7 +171,6 @@ pub struct Compose<Account, Balance> {
     pub bytes: Vec<u8>,
     pub input_data: Vec<u8>,
 }
-
 /// A result type of a get storage call.
 pub type FetchContractsResult = Result<Vec<u8>, ContractAccessError>;
 
