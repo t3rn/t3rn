@@ -42,8 +42,8 @@ pub mod side_effect;
 pub mod signature_caster;
 pub mod storage;
 pub mod transfers;
-pub mod volatile;
 pub mod xtx;
+pub mod volatile;
 
 pub use gateway_inbound_protocol::GatewayInboundProtocol;
 
@@ -82,7 +82,7 @@ pub struct GenericPrimitivesHeader {
     pub number: u64,
     pub state_root: Option<sp_core::hash::H256>,
     pub extrinsics_root: Option<sp_core::hash::H256>,
-    pub digest: Option<sp_runtime::generic::Digest<sp_core::hash::H256>>,
+    pub digest: Option<sp_runtime::generic::Digest>,
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]

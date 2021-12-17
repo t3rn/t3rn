@@ -102,6 +102,9 @@ pub mod pallet {
     use frame_support::pallet_prelude::*;
     use frame_support::PalletId;
     use frame_system::pallet_prelude::*;
+    use snowbridge_core::Verifier;
+    use t3rn_protocol::side_effects::confirm::ethereum::EthereumSideEffectsParser;
+    use t3rn_protocol::side_effects::confirm::parser::VendorSideEffectsParser;
 
     use super::*;
     use crate::WeightInfo;
@@ -152,6 +155,7 @@ pub mod pallet {
         type WeightInfo: weights::WeightInfo;
 
         type PalletId: Get<PalletId>;
+        type EthVerifier: Verifier;
     }
 
     #[pallet::pallet]
@@ -328,22 +332,20 @@ pub mod pallet {
                 ActiveXtxMap::<T>::get(xtx_id.clone())
                     .expect("submitted to confirm step id does not match with any Xtx");
 
-            // ToDo: Just covered a single path for substrate transfers for now
-
             let mut state_copy = xtx.local_state.clone();
-            // ToDo: Must choose GatewayVendor here based on target_id
-            // let gateway_vendor pallet_xdns::get_vendor(side_effect.target)?;
-            // let parser: Box<dyn VendorSideEffectsParser> = match vendor {
-            //     GatewayVendor::Substrate => Ok(Box::new(SubstrateSideEffectsParser {})),
-            //     GatewayVendor::Ethereum => Ok(Box::new(EthereumSideEffectsParser {})),
-            //     _ => Err(Error::<T>::VendorUnknown.into()),
-            // }?;
-            //
+            let gateway_vendor = pallet_xdns::Pallet::<T>::best_available(side_effect.target)?;
             let transfer_protocol = TransferSideEffectProtocol {};
-            transfer_protocol.confirm::<T, SubstrateSideEffectsParser>(
-                vec![confirmed_side_effect.encoded_effect.clone()],
-                &mut state_copy,
-            );
+            match gateway_vendor.gateway_vendor {
+                GatewayVendor::Substrate => transfer_protocol.confirm::<T, SubstrateSideEffectsParser>(
+                    vec![confirmed_side_effect.encoded_effect.clone()],
+                    &mut state_copy,
+                ),
+                GatewayVendor::Ethereum => transfer_protocol.confirm::<T, EthereumSideEffectsParser<T::EthVerifier>>(
+                    vec![confirmed_side_effect.encoded_effect.clone()],
+                    &mut state_copy,
+                ),
+                _ => Err(Error::<T>::VendorUnknown.into()),
+            }?;
 
             // Check if the side effect has been deposited with respect to the execution order
             if xtx.complete_side_effect::<bp_circuit::Hasher>(

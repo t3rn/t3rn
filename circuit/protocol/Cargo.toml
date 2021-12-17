@@ -51,6 +51,7 @@ plain_hasher = { version = "0.2.2", default-features = false }
 [dev-dependencies]
 serde_json = "1.0.59"
 t3rn-primitives = { version = "0.1.0", path = "../primitives" }
+tiny-keccak = { version = "1.4" }
 
 [features]
 default = ["std"]
