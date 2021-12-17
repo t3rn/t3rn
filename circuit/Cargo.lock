@@ -1388,6 +1388,7 @@ dependencies = [
  "sp-version",
  "substrate-wasm-builder 3.0.0",
  "t3rn-primitives",
+ "t3rn-protocol",
  "volatile-vm",
 ]
 

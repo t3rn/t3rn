@@ -1,15 +1,17 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use std::convert::TryFrom;
-use std::marker::PhantomData;
 use codec::{Decode, Encode};
 use ethabi_decode::{Event, Param, ParamKind, Token};
+use frame_metadata::StorageEntryModifier::Default;
 use snowbridge_core::{Message, Verifier};
-use snowbridge_ethereum::Log;
+use snowbridge_ethereum::{Header, Log};
 use sp_core::{H160, U256};
 use sp_runtime::DispatchError;
-use sp_std::vec;
 use sp_runtime::RuntimeDebug;
+use sp_std::convert::TryFrom;
+use sp_std::default::Default as Def;
+use sp_std::marker::PhantomData;
+use sp_std::vec;
 use sp_std::vec::Vec;
 
 use crate::side_effects::confirm::parser::VendorSideEffectsParser;
@@ -19,7 +21,7 @@ type Arguments = Vec<Bytes>;
 pub type EventSignature = Vec<u8>;
 pub type String = Vec<u8>;
 
-pub struct EthereumSideEffectsParser<Verifier> (PhantomData<Verifier>);
+pub struct EthereumSideEffectsParser<Verifier>(PhantomData<Verifier>);
 
 impl<V: Verifier> VendorSideEffectsParser for EthereumSideEffectsParser<V> {
     fn parse_event<T: pallet_balances::Config>(
@@ -27,16 +29,17 @@ impl<V: Verifier> VendorSideEffectsParser for EthereumSideEffectsParser<V> {
         encoded_data: Vec<u8>,
         _signature: &'static str,
     ) -> Result<Arguments, &'static str> {
-
         match name {
             "transfer:dirty" => {
-                let msg: Message = Decode::decode(&mut encoded_data.as_slice()).map_err(|_|"failed to decode eth message")?;
-                let log = V::verify(&msg).map_err(|_|"failed to verify eth message")?;
+                let msg: Message = Decode::decode(&mut encoded_data.as_slice())
+                    .map_err(|_| "failed to decode eth message")?;
+                let log = V::verify(&msg).map_err(|_| "failed to verify eth message")?;
                 // Decode log into an Envelope
-                let transfer = TransferERC20::try_from(log).map_err(|_|"failed to decode transfer event")?;
+                let transfer =
+                    TransferERC20::try_from(log).map_err(|_| "failed to decode transfer event")?;
                 Ok(transfer.to_args())
             }
-            &_ => Err("unknown eth event")
+            &_ => Err("unknown eth event"),
         }
     }
 }
@@ -45,11 +48,20 @@ impl<V: Verifier> VendorSideEffectsParser for EthereumSideEffectsParser<V> {
 static EVENT_ABI: &Event = &Event {
     signature: "Transfer(address indexed,address indexed,uint256)",
     inputs: &[
-        Param { kind: ParamKind::Address, indexed: true },
-        Param { kind: ParamKind::Address, indexed: true },
-        Param { kind: ParamKind::Uint(256), indexed: false },
+        Param {
+            kind: ParamKind::Address,
+            indexed: true,
+        },
+        Param {
+            kind: ParamKind::Address,
+            indexed: true,
+        },
+        Param {
+            kind: ParamKind::Uint(256),
+            indexed: false,
+        },
     ],
-    anonymous: false
+    anonymous: false,
 };
 
 /// An inbound message that has had its outer envelope decoded.
@@ -63,42 +75,54 @@ pub struct TransferERC20 {
 #[derive(Copy, Clone, PartialEq, Eq, RuntimeDebug)]
 pub struct EnvelopeDecodeError;
 
+pub struct EthereumMockVerifier {}
+
+// TODO: Implement proper Ethereum Verifier
+impl Verifier for EthereumMockVerifier {
+    fn verify(message: &Message) -> Result<Log, DispatchError> {
+        Ok(Def::default())
+    }
+
+    fn initialize_storage(
+        headers: Vec<Header>,
+        initial_difficulty: U256,
+        descendants_until_final: u8,
+    ) -> Result<(), &'static str> {
+        Ok(())
+    }
+}
+
 impl TryFrom<Log> for TransferERC20 {
     type Error = EnvelopeDecodeError;
 
     fn try_from(log: Log) -> Result<Self, Self::Error> {
-        let tokens = EVENT_ABI.decode(log.topics, log.data)
+        let tokens = EVENT_ABI
+            .decode(log.topics, log.data)
             .map_err(|_| EnvelopeDecodeError)?;
 
         let mut iter = tokens.into_iter();
 
         let from = match iter.next().ok_or(EnvelopeDecodeError)? {
-            Token::Address(addr) => {
-                addr
-            }
-            _ => return Err(EnvelopeDecodeError)
+            Token::Address(addr) => addr,
+            _ => return Err(EnvelopeDecodeError),
         };
 
         let to = match iter.next().ok_or(EnvelopeDecodeError)? {
-            Token::Address(addr) => {
-                addr
-            }
-            _ => return Err(EnvelopeDecodeError)
+            Token::Address(addr) => addr,
+            _ => return Err(EnvelopeDecodeError),
         };
 
         let amount = match iter.next().ok_or(EnvelopeDecodeError)? {
             Token::Uint(amount) => amount,
-            _ => return Err(EnvelopeDecodeError)
+            _ => return Err(EnvelopeDecodeError),
         };
 
-        Ok(Self {
-            from, to, amount
-        })
+        Ok(Self { from, to, amount })
     }
 }
 
 impl TransferERC20 {
-    fn to_args(&self) -> Arguments{
+    fn to_args(&self) -> Arguments {
         let mut args = vec![];
         // scale encoded args
         args.push(self.from.encode());
@@ -109,8 +133,8 @@ impl TransferERC20 {
 }
 
 mod tests {
-    use ethabi_decode::H256;
     use super::*;
+    use ethabi_decode::H256;
     use hex::FromHex;
     use tiny_keccak::Keccak;
 
@@ -127,20 +151,34 @@ mod tests {
         let event = Event {
             signature: "Transfer(address indexed,address indexed,uint256)",
             inputs: &[
-                Param { kind: ParamKind::Address, indexed: true },
-                Param { kind: ParamKind::Address, indexed: true },
-                Param { kind: ParamKind::Uint(256), indexed: false },
+                Param {
+                    kind: ParamKind::Address,
+                    indexed: true,
+                },
+                Param {
+                    kind: ParamKind::Address,
+                    indexed: true,
+                },
+                Param {
+                    kind: ParamKind::Uint(256),
+                    indexed: false,
+                },
             ],
             anonymous: false,
         };
 
         let topics: Vec<H256> = vec![
             keccak256("Transfer(address indexed,address indexed,uint256)"),
-            "000000000000000000000000a1d8d972560c2f8144af871db508f0b0b10a3fbf".parse().unwrap(),
-            "000000000000000000000000011f62348e983427a096063c328544b7dc189fa2".parse().unwrap(),
+            "000000000000000000000000a1d8d972560c2f8144af871db508f0b0b10a3fbf"
+                .parse()
+                .unwrap(),
+            "000000000000000000000000011f62348e983427a096063c328544b7dc189fa2"
+                .parse()
+                .unwrap(),
         ];
 
-        let data = hex::decode("0000000000000000000000000000000000000000000000000000000000000003").unwrap();
+        let data = hex::decode("0000000000000000000000000000000000000000000000000000000000000003")
+            .unwrap();
 
         let tokens = event.decode(topics, data).unwrap();
 
@@ -149,7 +187,9 @@ mod tests {
             vec![
                 Token::Address("a1d8d972560c2f8144af871db508f0b0b10a3fbf".parse().unwrap()),
                 Token::Address("011f62348e983427a096063c328544b7dc189fa2".parse().unwrap()),
-                Token::Uint("0000000000000000000000000000000000000000000000000000000000000003".into()),
+                Token::Uint(
+                    "0000000000000000000000000000000000000000000000000000000000000003".into()
+                ),
             ]
         )
     }

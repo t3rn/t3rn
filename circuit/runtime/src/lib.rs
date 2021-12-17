@@ -68,6 +68,7 @@ use pallet_contracts_primitives::RentProjection;
 use t3rn_primitives::{transfers::BalanceOf, ComposableExecResult, Compose};
 
 use ethereum_light_client::EthereumDifficultyConfig;
+use t3rn_protocol::side_effects::confirm::ethereum::EthereumMockVerifier;
 use volatile_vm::DispatchRuntimeCall;
 
 // A few exports that help ease life for downstream crates.
@@ -646,6 +647,7 @@ impl pallet_circuit_execution_delivery::Config for Runtime {
     type ToStandardizedGatewayBalance = CircuitToGateway;
     type WeightInfo = pallet_circuit_execution_delivery::weights::SubstrateWeight<Runtime>;
     type PalletId = ExecPalletId;
+    type EthVerifier = EthereumMockVerifier;
 }
 
 type Blake2ValU64BridgeInstance = ();

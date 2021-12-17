@@ -37,6 +37,7 @@ pallet-xdns = { path = "../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api = { path = "../pallets/xdns/rpc/runtime-api", default-features = false }
 volatile-vm = { path = "../../vm/volatile-vm", default-features = false }
 t3rn-primitives = { version = "0.1.0", default-features = false, path = "../primitives" }
+t3rn-protocol = { version = "1.0.0-alpha.0", default-features = false, path = "../protocol" }
 
 # Smart contracts VMs
 pallet-evm = { path = "../../vendor/frontier/frame/evm", default-features = false  }
