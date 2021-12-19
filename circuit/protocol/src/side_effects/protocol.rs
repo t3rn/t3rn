@@ -101,7 +101,9 @@ pub trait SideEffectProtocol {
         Ok(())
     }
 
-    // For now just assume that State can only be recreated from args? where arg index (usize) will be translated to the arguments name and therefore could be re-used in created expectations in the signature for confirming Events
+    // For now just assume that State can only be recreated from args? where arg index (usize) will
+    // be translated to the arguments name and therefore could be re-used in created expectations in
+    // the signature for confirming Events
     fn validate_args(
         &self,
         args: Arguments,

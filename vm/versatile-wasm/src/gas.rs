@@ -165,7 +165,6 @@ impl<T: Config> GasMeter<T> {
         }
     }
 
-
     /// Absorb the remaining gas of a nested meter after we are done using it.
     pub fn absorb_nested(&mut self, nested: Self) {
         self.gas_left += nested.gas_left;

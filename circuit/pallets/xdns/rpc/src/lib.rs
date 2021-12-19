@@ -7,8 +7,8 @@ use codec::Codec;
 use jsonrpc_core::{Error, ErrorCode, Result};
 
 use jsonrpc_derive::rpc;
-use pallet_xdns_rpc_runtime_api::FetchXdnsRecordsResponse;
 pub use pallet_xdns_rpc_runtime_api::XdnsRuntimeApi;
+use pallet_xdns_rpc_runtime_api::{ChainId, FetchXdnsRecordsResponse, GatewayABIConfig};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::generic::BlockId;
@@ -22,6 +22,9 @@ pub trait XdnsApi<AccountId> {
     /// Returns all known XDNS records
     #[rpc(name = "xdns_fetchRecords")]
     fn fetch_records(&self) -> Result<FetchXdnsRecordsResponse<AccountId>>;
+
+    #[rpc(name = "xdns_fetchAbi")]
+    fn fetch_abi(&self, chain_id: ChainId) -> Result<GatewayABIConfig>;
 }
 
 /// A struct that implements the [`XdnsApi`].
@@ -54,6 +57,21 @@ where
         let result = api.fetch_records(&at).map_err(runtime_error_into_rpc_err)?;
 
         Ok(result)
+    }
+
+    fn fetch_abi(&self, chain_id: ChainId) -> Result<GatewayABIConfig> {
+        let api = self.client.runtime_api();
+        let at = BlockId::hash(self.client.info().best_hash);
+
+        let result: Option<GatewayABIConfig> = api
+            .fetch_abi(&at, chain_id)
+            .map_err(runtime_error_into_rpc_err)?;
+
+        match result {
+            Some(abi) => Ok(abi),
+            None => Err("ABI doesn't exist"),
+        }
+        .map_err(runtime_error_into_rpc_err)
     }
 }
 

@@ -8,6 +8,7 @@
 
 use codec::Codec;
 pub use pallet_xdns::types::FetchXdnsRecordsResponse;
+pub use pallet_xdns::{ChainId, GatewayABIConfig};
 
 sp_api::decl_runtime_apis! {
     /// The API to interact with pallet XDNS
@@ -16,5 +17,8 @@ sp_api::decl_runtime_apis! {
     {
         /// Returns metadata for all known Blockchains
         fn fetch_records() -> FetchXdnsRecordsResponse<AccountId>;
+
+        /// Returns the GatewayABIConfig for a given ChainId
+        fn fetch_abi(chain_id: ChainId) -> Option<GatewayABIConfig>;
     }
 }

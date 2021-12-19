@@ -126,6 +126,16 @@ pub struct GatewaySysProps {
     pub token_decimals: u8,
 }
 
+impl Default for GatewaySysProps {
+    fn default() -> Self {
+        GatewaySysProps {
+            ss58_format: 42,
+            token_decimals: 12,
+            token_symbol: Vec::from(*b"TRN"),
+        }
+    }
+}
+
 impl TryFrom<&ChainId> for GatewaySysProps {
     type Error = &'static str;
 
