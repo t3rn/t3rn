@@ -6,13 +6,15 @@ use codec::{Decode, Encode};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
+use scale_info::TypeInfo;
 use sp_std::vec;
 use sp_std::vec::*;
 
 use crate::circuit_inbound::Proof;
 use t3rn_primitives::abi::{GatewayABIConfig, Type};
 
-use sp_core::Bytes;
+type Bytes = Vec<u8>;
+
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
 #[cfg(feature = "std")]
@@ -41,7 +43,7 @@ pub type GatewayOutboundEventId = u64;
 ///     submitted while registering gateway for that foreign consensus system
 /// - versatile-vm to go over args_abi + args_encoded and validate execution's validity
 /// - pallet-multi-finality-verifier to utilise the proof and check inclusion into foreign chain.
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct GatewayOutboundEvent {
     /// Id to find that event easier

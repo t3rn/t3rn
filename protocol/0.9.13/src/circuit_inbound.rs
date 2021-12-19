@@ -2,24 +2,27 @@
 
 use codec::{Decode, Encode};
 
+use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::{Bytes, U256};
+use sp_core::U256;
 use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
 use sp_std::vec::Vec;
 
+type Bytes = Vec<u8>;
+
 use crate::gateway_outbound_protocol::GatewayOutboundEvent;
 use t3rn_primitives::ProofTriePointer;
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum ProofType {
     FullValue,
     MerklePath,
 }
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct Proof {
     /// Original value to prove
@@ -42,7 +45,7 @@ pub struct Proof {
     pub in_tx_index: Option<U256>,
 }
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct StepConfirmation {
     pub step_index: u8,
     pub value: Bytes,
