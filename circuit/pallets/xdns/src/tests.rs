@@ -55,6 +55,7 @@ fn should_add_a_new_xdns_record_if_it_doesnt_exist() {
             GatewayVendor::Substrate,
             GatewayType::TxOnly(0),
             Default::default(),
+            Default::default(),
             vec![],
         ));
         assert_eq!(XDNSRegistry::<Test>::iter().count(), 1);
@@ -79,6 +80,7 @@ fn should_not_add_a_new_xdns_record_if_it_already_exists() {
                     Default::default(),
                     GatewayVendor::Substrate,
                     GatewayType::TxOnly(0),
+                    Default::default(),
                     Default::default(),
                     vec![],
                 ),

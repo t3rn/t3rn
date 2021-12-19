@@ -62,7 +62,7 @@ pub mod pallet {
     use frame_support::traits::Time;
     use frame_system::pallet_prelude::*;
     use sp_std::convert::TryInto;
-    use t3rn_primitives::{ChainId, EscrowTrait, GatewayType, GatewayVendor};
+    use t3rn_primitives::{ChainId, EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor};
 
     #[pallet::config]
     pub trait Config: pallet_balances::Config + frame_system::Config + EscrowTrait {
