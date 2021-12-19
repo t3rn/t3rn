@@ -28,8 +28,9 @@ jobs:
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2021-09-29
+          toolchain: nightly-2021-11-01
           target: wasm32-unknown-unknown
+          components: rustfmt, clippy
           override: true
 
       - name: 🕒 Cache Rust binaries and packages

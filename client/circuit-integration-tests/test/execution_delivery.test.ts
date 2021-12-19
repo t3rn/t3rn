@@ -1,6 +1,11 @@
 import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
 import { rpc, types } from '@t3rn/types';
-import { createGatewayABIConfig, createGatewayGenesisConfig, randomGatewayId } from '../src/utils/utils';
+import {
+  createGatewayABIConfig,
+  createGatewayGenesisConfig,
+  createGatewaySysProps,
+  randomGatewayId,
+} from '../src/utils/utils';
 import '@t3rn/types/dist/augment-api';
 import '@t3rn/types/dist/augment-types';
 import '@t3rn/types/dist/augment-api-rpc';
@@ -30,7 +35,7 @@ describe('Execution Delivery | Extrinsics', function () {
       await circuitApi.isReady;
 
       // Constuct the keyring after the API (crypto has an async init)
-      const keyring = new Keyring({ type: 'sr25519', ss58Format: 60 });
+      const keyring = new Keyring({ type: 'sr25519' });
       const alice = keyring.addFromUri('//Alice');
       const bob = keyring.addFromUri('//Bob');
 
@@ -38,10 +43,17 @@ describe('Execution Delivery | Extrinsics', function () {
       let TargetId: U8aFixed = new U8aFixed(circuitApi.registry, [0, 0, 0, 1], 32);
       let encoded_action_transfer: Bytes = circuitApi.createType('Bytes', 'transfer');
       let encoded_action_getStorage: Bytes = circuitApi.createType('Bytes', 'getStorage');
-      let transfer_arg_from: Bytes = new Bytes(circuitApi.registry, bob.address);
+      let transfer_from_32_byte_representation: U8aFixed = new U8aFixed(circuitApi.registry, bob.addressRaw, 256);
+      let transfer_arg_from = circuitApi.createType('Bytes', transfer_from_32_byte_representation);
+
       // Westend account
-      let transfer_arg_to: Bytes = new Bytes(circuitApi.registry, '5G17mWwKCLMnHLES4dEoymZtY6L7eHi5sa66rK6zNmi5vZN6');
-      let transfer_arg_value = circuitApi.createType('Bytes', Array.from(circuitApi.createType('u128', 1).toU8a()));
+      let transfer_to_32_byte_representation: U8aFixed = new U8aFixed(
+        circuitApi.registry,
+        keyring.decodeAddress('5G17mWwKCLMnHLES4dEoymZtY6L7eHi5sa66rK6zNmi5vZN6'),
+        256
+      );
+      let transfer_arg_to = circuitApi.createType('Bytes', transfer_to_32_byte_representation);
+      let transfer_arg_value = circuitApi.createType('Bytes', Array.from(circuitApi.createType('u64', 1).toU8a()));
 
       // This key is for Balances::TotalIssuance StorageValue
       let getStorage_arg_key = circuitApi.createType(
@@ -69,9 +81,7 @@ describe('Execution Delivery | Extrinsics', function () {
         enforce_executioner: circuitApi.createType('Option<AccountId>', alice.address),
       });
 
-      let sideEffect_vec = <Vec<SideEffect>>(
-        circuitApi.createType('Vec<SideEffect>', [sideEffectTransfer, sideEffectGetStorage])
-      );
+      let sideEffect_vec = <Vec<SideEffect>>circuitApi.createType('Vec<SideEffect>', [sideEffectTransfer]);
 
       const submit_side_effects_temp = circuitApi.tx.execDelivery.submitSideEffectsTemp(
         sideEffect_vec,
@@ -85,7 +95,6 @@ describe('Execution Delivery | Extrinsics', function () {
       const result = new Promise<void>((resolve) =>
         submit_side_effects_temp.signAndSend(alice, (result) => {
           if (result.status.isFinalized) {
-            console.log(result.status.asFinalized.toHex());
             expect(result.dispatchError).to.be.undefined;
             expect(result.internalError).to.be.undefined;
             expect(result.dispatchInfo).to.be.ok;
@@ -143,6 +152,7 @@ describe('Execution Delivery | Extrinsics', function () {
         circuitApi.createType('GatewayVendor', 'Substrate'), // GatewayVendor
         circuitApi.createType('GatewayType', { ProgrammableExternal: 1 }), // GatewayType
         createGatewayGenesisConfig(rococoMetadata, rococoRuntimeVersion, rococoGenesisHash, circuitApi), // GatewayGenesisConfig
+        createGatewaySysProps(circuitApi, 60, '', 0), // GatewaySysProps
         circuitApi.createType('Bytes', rococoCurrentHeader.toHex()), // first header
         circuitApi.createType('Option<Vec<AccountId>>', rococoInitialAuthorityList), // authorities
         <Vec<AllowedSideEffect>>circuitApi.createType('Vec<AllowedSideEffect>', ['transfer', 'get_storage']) // allowed side effects
@@ -199,6 +209,7 @@ describe('Execution Delivery | Extrinsics', function () {
         circuitApi.createType('GatewayVendor', 'Substrate'), // GatewayVendor
         circuitApi.createType('GatewayType', { ProgrammableExternal: 1 }), // GatewayType
         createGatewayGenesisConfig(polkadotMetadata, polkadotRuntimeVersion, polkadotGenesisHash, circuitApi), // GatewayGenesisConfig
+        createGatewaySysProps(circuitApi, 60, '', 0), // GatewaySysProps
         circuitApi.createType('Bytes', []), // first header
         circuitApi.createType('Option<Vec<AccountId>>', []), // authorities
         <Vec<AllowedSideEffect>>circuitApi.createType('Vec<AllowedSideEffect>', ['transfer', 'get_storage']) // allowed side effects

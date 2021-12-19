@@ -123,6 +123,13 @@ export interface GatewayPointer extends Struct {
   readonly gateway_type: GatewayType;
 }
 
+/** @name GatewaySysProps */
+export interface GatewaySysProps extends Struct {
+  readonly ss58_format: u16;
+  readonly token_symbol: Bytes;
+  readonly token_decimals: u8;
+}
+
 /** @name GatewayType */
 export interface GatewayType extends Enum {
   readonly isProgrammableInternal: boolean;

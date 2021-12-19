@@ -5,11 +5,11 @@ use std::sync::Arc;
 pub use self::gen_client::Client as ContractsRegistryClient;
 use codec::Codec;
 use jsonrpc_core::{Error, ErrorCode, Result};
-use jsonrpc_core_client::RpcError;
+
 use jsonrpc_derive::rpc;
 pub use pallet_contracts_registry_rpc_runtime_api::ContractsRegistryRuntimeApi;
 use pallet_contracts_registry_rpc_runtime_api::FetchContractsResult;
-use sp_api::{ApiError, ProvideRuntimeApi};
+use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::Bytes;
 use sp_runtime::generic::BlockId;

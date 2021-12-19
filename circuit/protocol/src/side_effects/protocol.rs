@@ -113,7 +113,6 @@ pub trait SideEffectProtocol {
         log::warn!("Inside validate_args");
         // Args number must match with the args number in the protocol
         assert!(Self::get_arguments_abi(self).len() == args.len());
-        log::warn!("Post length assert");
 
         // ToDo: Extract to a separate function
         // Validate that the input arguments set by a user follow the protocol for get_storage side effect
@@ -123,7 +122,7 @@ pub trait SideEffectProtocol {
             log::warn!("{:?}", arg);
             let type_n = &Self::get_arguments_abi(self)[i];
             log::warn!("{:?}", type_n);
-            type_n.eval(arg.clone())?;
+            type_n.eval(arg.clone(), &_gateway_abi)?;
             log::warn!("Evaluation complete");
         }
         log::warn!("Post for loop assert");

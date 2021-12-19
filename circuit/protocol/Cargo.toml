@@ -41,6 +41,9 @@ pallet-bridge-messages = { default-features = false, path = "../../vendor/bridge
 sp-application-crypto = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.8' }
 relay-substrate-client = { version = "0.1.0", path = "../../vendor/bridges/relays/client-substrate", optional = true }
 
+snowbridge-core = { git = "https://github.com/t3rn/snowbridge", rev = "57eafa318d4b27d9d5c00c29e2db79504bd6ac77", default-features = false }
+snowbridge-ethereum = { git = "https://github.com/t3rn/snowbridge", rev = "57eafa318d4b27d9d5c00c29e2db79504bd6ac77", default-features = false }
+
 hash-db = { version = "0.15.2", default-features = false }
 triehash = { version = "0.8.2", default-features = false }
 plain_hasher = { version = "0.2.2", default-features = false }
@@ -74,4 +77,6 @@ std = [
     "triehash/std",
     "plain_hasher/std",
     "ethabi-decode/std",
+    "snowbridge-core/std",
+    "snowbridge-ethereum/std"
 ]

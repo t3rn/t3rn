@@ -8,10 +8,6 @@ on:
       - circuit-parachain/**/Cargo.lock
       - .github/workflows/circuit-parachain.yml
 
-env:
-  RUST_BACKTRACE: 1
-  CARGO_TERM_COLOR: always
-
 jobs:
   format:
     runs-on: ubuntu-20.04
@@ -22,7 +18,7 @@ jobs:
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2021-09-29
+          toolchain: nightly-2021-11-01
           profile: minimal
           components: rustfmt
           override: true
@@ -42,9 +38,9 @@ jobs:
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2021-09-29
+          toolchain: nightly-2021-11-01
           target: wasm32-unknown-unknown
-          components: clippy
+          components: rustfmt, clippy
           override: true
 
       - name: 🕒 Cache Rust binaries and packages
@@ -73,8 +69,9 @@ jobs:
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2021-09-29
+          toolchain: nightly-2021-11-01
           target: wasm32-unknown-unknown
+          components: rustfmt, clippy
           override: true
 
       - name: 🕒 Cache Rust binaries and packages
@@ -112,8 +109,9 @@ jobs:
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2021-09-29
+          toolchain: nightly-2021-11-01
           target: wasm32-unknown-unknown
+          components: rustfmt, clippy
           override: true
 
       - name: 🕒 Cache Rust binaries and packages
