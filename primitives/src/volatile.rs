@@ -1,8 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
+use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
-
 use sp_std::collections::btree_map::BTreeMap;
 
 use sp_std::vec::*;
@@ -14,7 +14,7 @@ pub type State = BTreeMap<StateKey, StateVal>;
 
 use sp_io::hashing::twox_256;
 
-#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
+#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct LocalState {
     pub state: State,
 }

@@ -27,11 +27,11 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
 
-#[cfg(feature = "std")]
-use std::fmt::Debug;
-
+use sp_std::convert::TryFrom;
 use sp_std::prelude::*;
 use sp_std::vec;
+#[cfg(feature = "std")]
+use std::fmt::Debug;
 
 pub mod abi;
 pub mod bridges;
@@ -85,7 +85,7 @@ pub struct GenericPrimitivesHeader {
     pub digest: Option<sp_runtime::generic::Digest<sp_core::hash::H256>>,
 }
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct GatewayPointer {
     pub id: ChainId,
@@ -121,8 +121,50 @@ impl Default for GatewayGenesisConfig {
     }
 }
 
+/// Represents assorted gateway system properties.
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct GatewaySysProps {
+    pub ss58_format: u16,
+    pub token_symbol: Vec<u8>,
+    pub token_decimals: u8,
+}
+
+impl TryFrom<&ChainId> for GatewaySysProps {
+    type Error = &'static str;
+
+    /// Maps a chain id to its system properties.
+    ///
+    /// Based on https://wiki.polkadot.network/docs/build-ss58-registry.
+    fn try_from(chain_id: &ChainId) -> Result<Self, Self::Error> {
+        match chain_id {
+            b"circ" => Ok(GatewaySysProps {
+                ss58_format: 1333,
+                token_symbol: Encode::encode("T3RN"),
+                token_decimals: 12,
+            }),
+            b"gate" => Ok(GatewaySysProps {
+                ss58_format: 1333,
+                token_symbol: Encode::encode("T3RN"),
+                token_decimals: 12,
+            }),
+            b"pdot" => Ok(GatewaySysProps {
+                ss58_format: 0,
+                token_symbol: Encode::encode("DOT"),
+                token_decimals: 10,
+            }),
+            b"ksma" => Ok(GatewaySysProps {
+                ss58_format: 2,
+                token_symbol: Encode::encode("KSM"),
+                token_decimals: 12,
+            }),
+            _ => Err("unknown chain id"),
+        }
+    }
+}
+
 /// A struct that encodes RPC parameters required for a call to a smart-contract.
-#[derive(Eq, PartialEq, Encode, Decode, Debug, Clone, Default)]
+#[derive(Eq, PartialEq, Encode, Decode, Debug, Clone, Default, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct Compose<Account, Balance> {
     pub name: Vec<u8>,
@@ -202,7 +244,7 @@ type Bytes = Vec<u8>;
 /// Outbound Step that specifies expected transmission medium for relayers connecting with that gateway.
 /// Request message format that derivative of could be compatible with JSON-RPC API
 /// with either signed or unsigned payload or custom transmission medium like XCMP protocol
-#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]
+#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct CircuitOutboundMessage {
     /// Message name/identifier
@@ -268,7 +310,7 @@ impl CircuitOutboundMessage {
 }
 
 /// Inclusion proofs of different tries
-#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]
+#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum ProofTriePointer {
     /// Proof is a merkle path in the state trie
@@ -280,7 +322,7 @@ pub enum ProofTriePointer {
 }
 
 /// Inbound Steps that specifie expected data deposited by relayers back to the Circuit after each step
-#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]
+#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct CircuitInboundResult {
     pub result_format: Bytes,
@@ -288,7 +330,7 @@ pub struct CircuitInboundResult {
 }
 
 /// Inbound Steps that specifie expected data deposited by relayers back to the Circuit after each step
-#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]
+#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum GatewayExpectedOutput {
     /// Effect would be the modified storage key
@@ -315,7 +357,7 @@ pub enum GatewayExpectedOutput {
 
 /// Outbound Step that specifies expected transmission medium for relayers connecting with that gateway.
 /// Extra payload in case the message is signed ro has other custom parameters required by linking protocol.
-#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]
+#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct ExtraMessagePayload {
     pub signer: Bytes,
