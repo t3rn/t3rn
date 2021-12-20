@@ -1,6 +1,6 @@
 [package]
 name = "pallet-xdns"
-version = "0.4.0"
+version = "1.0.0-alpha.0"
 authors = ["t3rn ltd. <team@t3rn.io>"]
 edition = "2018"
 license = "Apache 2.0"
