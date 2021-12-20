@@ -336,14 +336,16 @@ pub mod pallet {
             let gateway_vendor = pallet_xdns::Pallet::<T>::best_available(side_effect.target)?;
             let transfer_protocol = TransferSideEffectProtocol {};
             match gateway_vendor.gateway_vendor {
-                GatewayVendor::Substrate => transfer_protocol.confirm::<T, SubstrateSideEffectsParser>(
-                    vec![confirmed_side_effect.encoded_effect.clone()],
-                    &mut state_copy,
-                ),
-                GatewayVendor::Ethereum => transfer_protocol.confirm::<T, EthereumSideEffectsParser<T::EthVerifier>>(
-                    vec![confirmed_side_effect.encoded_effect.clone()],
-                    &mut state_copy,
-                ),
+                GatewayVendor::Substrate => transfer_protocol
+                    .confirm::<T, SubstrateSideEffectsParser>(
+                        vec![confirmed_side_effect.encoded_effect.clone()],
+                        &mut state_copy,
+                    ),
+                GatewayVendor::Ethereum => transfer_protocol
+                    .confirm::<T, EthereumSideEffectsParser<T::EthVerifier>>(
+                        vec![confirmed_side_effect.encoded_effect.clone()],
+                        &mut state_copy,
+                    ),
                 _ => Err(Error::<T>::VendorUnknown.into()),
             }?;
 
