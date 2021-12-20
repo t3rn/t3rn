@@ -4,7 +4,11 @@ use sp_std::vec::*;
 
 use crate::side_effects::confirm::parser::VendorSideEffectsParser;
 use crate::side_effects::protocol::SideEffectProtocol;
-pub use t3rn_primitives::volatile::{LocalState, Volatile};
+use crate::side_effects::standards::{GetDataSideEffectProtocol, TransferSideEffectProtocol};
+pub use t3rn_primitives::{
+    volatile::{LocalState, Volatile},
+    GatewayVendor,
+};
 
 pub type EventSignature = Vec<u8>;
 pub type String = Vec<u8>;
@@ -47,6 +51,42 @@ pub trait SideEffectConfirmationProtocol: SideEffectProtocol {
             }
         }
         Ok(())
+    }
+}
+
+pub fn confirm_vendor_by_action_id<
+    T: pallet_balances::Config,
+    SubstrateParser: VendorSideEffectsParser,
+    EthParser: VendorSideEffectsParser,
+>(
+    gateway_vendor: GatewayVendor,
+    encoded_action: Vec<u8>,
+    encoded_effect: Vec<u8>,
+    mut state_copy: &mut LocalState,
+) -> Result<(), &'static str> {
+    let mut action_id_4b: [u8; 4] = [0, 0, 0, 0];
+    action_id_4b.copy_from_slice(&encoded_action[0..4]);
+
+    match &action_id_4b {
+        b"tran" => {
+            let side_effect_protocol = TransferSideEffectProtocol {};
+            match gateway_vendor {
+                GatewayVendor::Substrate => side_effect_protocol
+                    .confirm::<T, SubstrateParser>(vec![encoded_effect.clone()], &mut state_copy),
+                GatewayVendor::Ethereum => side_effect_protocol
+                    .confirm::<T, EthParser>(vec![encoded_effect.clone()], &mut state_copy),
+            }
+        }
+        b"data" => {
+            let side_effect_protocol = GetDataSideEffectProtocol {};
+            match gateway_vendor {
+                GatewayVendor::Substrate => side_effect_protocol
+                    .confirm::<T, SubstrateParser>(vec![encoded_effect.clone()], &mut state_copy),
+                GatewayVendor::Ethereum => side_effect_protocol
+                    .confirm::<T, EthParser>(vec![encoded_effect.clone()], &mut state_copy),
+            }
+        }
+        _ => Err("Side Effect Selection: Unknown ID"),
     }
 }
 

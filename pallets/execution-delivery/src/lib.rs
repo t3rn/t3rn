@@ -45,6 +45,7 @@ pub use t3rn_primitives::{
     xtx::{Xtx, XtxId},
     GatewayType, *,
 };
+use t3rn_protocol::side_effects::confirm::protocol::confirm_vendor_by_action_id;
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 
 pub type Bytes = Vec<u8>;
@@ -74,7 +75,7 @@ pub use xbridges::{
 use t3rn_protocol::side_effects::confirm::substrate::SubstrateSideEffectsParser;
 use t3rn_protocol::side_effects::loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol};
 pub use t3rn_protocol::side_effects::protocol::SideEffectConfirmationProtocol;
-use t3rn_protocol::side_effects::protocol::TransferSideEffectProtocol;
+
 
 pub type AllowedSideEffect = Vec<u8>;
 
@@ -325,19 +326,17 @@ pub mod pallet {
 
             let mut state_copy = xtx.local_state.clone();
             let gateway_vendor = pallet_xdns::Pallet::<T>::best_available(side_effect.target)?;
-            let transfer_protocol = TransferSideEffectProtocol {};
-            match gateway_vendor.gateway_vendor {
-                GatewayVendor::Substrate => transfer_protocol
-                    .confirm::<T, SubstrateSideEffectsParser>(
-                        vec![confirmed_side_effect.encoded_effect.clone()],
-                        &mut state_copy,
-                    ),
-                GatewayVendor::Ethereum => transfer_protocol
-                    .confirm::<T, EthereumSideEffectsParser<T::EthVerifier>>(
-                        vec![confirmed_side_effect.encoded_effect.clone()],
-                        &mut state_copy,
-                    ),
-            }?;
+
+            confirm_vendor_by_action_id::<
+                T,
+                SubstrateSideEffectsParser,
+                EthereumSideEffectsParser<T::EthVerifier>,
+            >(
+                gateway_vendor.gateway_vendor,
+                side_effect.encoded_action.clone(),
+                confirmed_side_effect.encoded_effect.clone(),
+                &mut state_copy,
+            )?;
 
             // Check if the side effect has been deposited with respect to the execution order
             if xtx.complete_side_effect::<bp_circuit::Hasher>(
