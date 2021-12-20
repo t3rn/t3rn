@@ -78,9 +78,9 @@ impl AsGatewayOutboundEvent for SubstrateRawEvent {
                 current_offset = new_offset;
                 // To make sure we read argument right decode the type
                 t.eval(argn_bytes.to_vec())?;
-                Ok(Bytes::from(argn_bytes))
+                Ok(argn_bytes)
             })
-            .collect::<Result<Vec<Bytes>, &'static str>>()?;
+            .collect::<Result<Vec<Vec<u8>>, &'static str>>()?;
 
         Ok(GatewayOutboundEvent {
             id,
@@ -89,7 +89,7 @@ impl AsGatewayOutboundEvent for SubstrateRawEvent {
             namespace: self.module.clone().encode(),
             /// translate variant into name
             name: self.variant.clone().encode(),
-            data: self.data.clone(),
+            data: self.data.to_vec(),
             proof,
             args_abi,
             args_encoded,

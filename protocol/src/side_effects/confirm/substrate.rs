@@ -53,12 +53,12 @@ pub mod tests {
     use super::{SubstrateSideEffectsParser, VendorSideEffectsParser};
     use codec::Encode;
     use frame_support::parameter_types;
+    use hex_literal::hex;
     use sp_runtime::{
         testing::{Header, H256},
         traits::{BlakeTwo256, IdentityLookup},
         AccountId32,
     };
-    use hex_literal::hex;
 
     type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
     type Block = frame_system::mocking::MockBlock<Test>;

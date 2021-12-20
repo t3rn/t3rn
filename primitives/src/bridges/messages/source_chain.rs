@@ -21,7 +21,6 @@ use crate::bridges::messages::{InboundLaneData, LaneId, MessageNonce, OutboundLa
 use crate::bridges::runtime::Size;
 use frame_support::{Parameter, RuntimeDebug};
 use sp_std::{collections::btree_map::BTreeMap, fmt::Debug};
-
 /// The sender of the message on the source chain.
 pub type Sender<AccountId> = frame_system::RawOrigin<AccountId>;
 

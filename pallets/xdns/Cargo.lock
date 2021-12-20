@@ -427,6 +427,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e88a8acf291dafb59c2d96e8f59828f3838bb1a70398823ade51a84de6a6deed"
 
 [[package]]
+name = "finality-grandpa"
+version = "0.14.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e8ac3ff5224ef91f3c97e03eb1de2db82743427e91aaa5ac635f454f0b164f5a"
+dependencies = [
+ "either",
+ "futures",
+ "futures-timer",
+ "log",
+ "num-traits",
+ "parity-scale-codec",
+ "parking_lot",
+ "scale-info",
+]
+
+[[package]]
 name = "fixed-hash"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1872,6 +1888,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "sp-finality-grandpa"
+version = "4.0.0-dev"
+source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.12#d76f39995315ec36980908e4b99709bd14927044"
+dependencies = [
+ "finality-grandpa",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-core",
+ "sp-keystore",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "sp-inherents"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.12#d76f39995315ec36980908e4b99709bd14927044"
@@ -2194,18 +2228,24 @@ dependencies = [
 
 [[package]]
 name = "t3rn-parachain-primitives"
-version = "0.1.0"
+version = "1.0.0-alpha.0"
 dependencies = [
+ "finality-grandpa",
  "frame-support",
  "frame-system",
+ "hash-db",
+ "num-traits",
  "pallet-sudo",
  "parity-scale-codec",
  "scale-info",
  "serde",
  "sp-core",
+ "sp-finality-grandpa",
  "sp-io",
  "sp-runtime",
+ "sp-state-machine",
  "sp-std",
+ "sp-trie",
  "sp-version",
 ]
 
