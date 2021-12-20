@@ -2260,6 +2260,7 @@ dependencies = [
 name = "t3rn-parachain-primitives"
 version = "1.0.0-alpha.0"
 dependencies = [
+ "ed25519-dalek",
  "finality-grandpa",
  "frame-support",
  "frame-system",
@@ -2269,6 +2270,8 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
+ "sp-api",
+ "sp-application-crypto",
  "sp-core",
  "sp-finality-grandpa",
  "sp-io",
