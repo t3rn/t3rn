@@ -65,7 +65,10 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use pallet_contracts_primitives::RentProjection;
-use t3rn_primitives::{transfers::BalanceOf, ComposableExecResult, Compose};
+use t3rn_primitives::{
+    abi::GatewayABIConfig, transfers::BalanceOf, ChainId as GatewayId, ComposableExecResult,
+    Compose,
+};
 
 use ethereum_light_client::EthereumDifficultyConfig;
 use volatile_vm::DispatchRuntimeCall;
@@ -818,7 +821,6 @@ pub type SignedExtra = (
     frame_system::CheckWeight<Runtime>,
     pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 );
-
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
 /// Extrinsic type that has already been checked.
@@ -1084,6 +1086,13 @@ impl_runtime_apis! {
             let records = XDNS::fetch_records();
             FetchXdnsRecordsResponse::<AccountId> {
                 xdns_records: records
+            }
+        }
+
+        fn fetch_abi(chain_id: GatewayId) -> Option<GatewayABIConfig> {
+            match XDNS::get_abi(chain_id) {
+                Ok(abi) => Some(abi),
+                Err(_) => None
             }
         }
     }
