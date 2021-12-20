@@ -3440,6 +3440,7 @@ dependencies = [
  "log",
  "pallet-balances",
  "pallet-circuit-execution-delivery",
+ "pallet-contracts-registry",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-xdns",

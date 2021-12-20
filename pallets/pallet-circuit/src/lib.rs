@@ -93,10 +93,11 @@ pub mod pallet {
     /// This pallet's configuration trait
     #[pallet::config]
     pub trait Config:
-    frame_system::Config
-    + pallet_balances::Config
-//     + pallet_contracts_registry::Config
-    + pallet_xdns::Config
+        frame_system::Config
+        + pallet_balances::Config
+        // + pallet_contracts_registry::Config
+        // + pallet_exec_delivery::Config
+        + pallet_xdns::Config
     {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -177,7 +178,14 @@ pub mod pallet {
         }
 
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
-        pub fn on_extrinsics_trigger(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn on_extrinsics_trigger(
+            _origin: OriginFor<T>,
+            _side_effects: Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+            _input: Vec<u8>,
+            _value: BalanceOf<T>,
+            _reward: BalanceOf<T>,
+            _sequential: bool,
+        ) -> DispatchResultWithPostInfo {
             // ToDo: Check TriggerAuthRights for remote gateway triggers
             unimplemented!();
         }
