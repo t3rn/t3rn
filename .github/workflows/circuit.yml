@@ -6,6 +6,9 @@ on:
       - circuit/**/*.rs
       - circuit/**/Cargo.toml
       - circuit/**/Cargo.lock
+      - pallets/**/*.rs
+      - pallets/**/Cargo.toml
+      - pallets/**/Cargo.lock
       - .github/workflows/circuit.yml
 
 env:
@@ -101,7 +104,7 @@ jobs:
             -p beefy-merkle-tree
             --manifest-path circuit/Cargo.toml
 
-  build:
+  build-test:
     runs-on: self-hosted
     needs: [format, lint]
     steps:
@@ -150,72 +153,12 @@ jobs:
           command: build
           args: --locked --manifest-path circuit/Cargo.toml
 
-      - name: 📤 Upload binary
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ github.sha }}-artifacts
-          path: circuit/target/debug/circuit
-          if-no-files-found: error
-  test:
-    runs-on: self-hosted
-    needs: [build]
-    steps:
-      - name: ☁️Checkout git repo
-        uses: actions/checkout@master
-        with:
-          submodules: recursive
-      - name: 🕒 Cache LLVM and Clang
-        id: cache-llvm
-        uses: actions/cache@v2
-        with:
-          path: |
-            ./llvm
-          key: llvm-circuit
-
-      - name: 🔨 Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v1
-        with:
-          version: "12.0.0"
-          ubuntu-version: "20.04"
-          directory: ${{ runner.temp }}/llvm
-          cached: ${{ steps.cache-llvm.outputs.cache-hit }}
-
-      - name: ⚙️Get nightly rust toolchain with wasm target
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly-2021-11-01
-          target: wasm32-unknown-unknown
-          override: true
-
-      - name: 🕒 Cache Rust binaries and packages
-        uses: actions/cache@v2
-        id: cache-rust
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            circuit/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('circuit/Cargo.lock') }}
-
-      - name: Download circuit
-        uses: actions/download-artifact@v2
-        with:
-          name: ${{ github.sha }}-artifacts
-          path: circuit/target/debug/
-
       - name: 📼 Run unit tests
         continue-on-error: false
         run: |
           chmod +x circuit/target/debug/circuit
-          circuit/target/debug/circuit --alice --log=main,debug --tmp > /dev/null 2>&1 &
+          circuit/target/debug/circuit circuit --alice --tmp --ws-port 9900 > /dev/null 2>&1 &
           cargo test --workspace --locked --features runtime-benchmarks --manifest-path circuit/Cargo.toml
-
-  test-integration:
-    runs-on: self-hosted
-    needs: [build]
-    steps:
-      - name: ☁️ Checkout git repo
-        uses: actions/checkout@master
 
       - name: Setup node
         uses: actions/setup-node@v2
@@ -229,20 +172,11 @@ jobs:
         working-directory: client
         run: yarn --locked
 
-      - name: 💾 Download circuit
-        uses: actions/download-artifact@v2
-        with:
-          name: ${{ github.sha }}-artifacts
-          path: circuit/target/debug/
-
       - name: 🔹 Compile types
         working-directory: client/types
-        run: |
-          chmod +x ../../circuit/target/debug/circuit
-          ../../circuit/target/debug/circuit --alice --tmp --ws-port 9900 > /dev/null 2>&1 &
-          yarn build
+        run: yarn build
 
-# Updates the node_modules first to make sure we grab the compiled types
+      # Updates the node_modules first to make sure we grab the compiled types
       - name: 🦾 Run integration tests
         working-directory: client/circuit-integration-tests
         env:
