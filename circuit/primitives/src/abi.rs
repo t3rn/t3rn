@@ -476,7 +476,6 @@ pub fn from_signature_to_abi(signature: Vec<u8>) -> Result<(Vec<u8>, Vec<Type>),
 }
 
 pub fn decode_buf2val<D: Decode>(buf: Vec<u8>) -> Result<D, &'static str> {
-    log::warn!("Inside decode_buf2val");
     D::decode(&mut &buf[..]).map_err(|e| {
         log::warn!("{:?}", e);
         "Decoding error: decode_buf2val"
