@@ -4,3 +4,4 @@ pub mod messages;
 pub mod polkadot_core;
 pub mod runtime;
 pub mod test_utils;
+pub mod chain_circuit;

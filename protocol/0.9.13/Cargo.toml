@@ -32,14 +32,9 @@ ethabi-decode = { git = "https://github.com/Snowfork/ethabi-decode.git", branch 
 
 pallet-sudo = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
 pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
-#bp-header-chain = { default-features = false, path = "../../vendor/bridges/primitives/header-chain" }
-#bp-messages = { default-features = false, path = "../../vendor/bridges/primitives/messages" }
-#bp-runtime = { default-features = false, path = "../../vendor/bridges/primitives/runtime" }
-t3rn-primitives = { package = "t3rn-parachain-primitives", version = "1.0.0-alpha.0", default-features = false, path = "../../primitives/0.9.13" }
+t3rn-primitives = { package = "t3rn-parachain-primitives", version = "1.0.0-alpha.0", default-features = false, path = "../../primitives" }
 
-#pallet-bridge-messages = { default-features = false, path = "../../vendor/bridges/modules/messages" }
 sp-application-crypto = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
-#relay-substrate-client = { version = "0.1.0", path = "../../vendor/bridges/relays/client-substrate", optional = true }
 
 snowbridge-core = { git = "https://github.com/t3rn/snowbridge", default-features = false }
 snowbridge-ethereum = { git = "https://github.com/t3rn/snowbridge", default-features = false }
@@ -50,13 +45,11 @@ plain_hasher = { version = "0.2.2", default-features = false }
 
 [dev-dependencies]
 serde_json = "1.0.59"
-#t3rn-primitives = { version = "0.1.0", path = "../primitives" }
 
 [features]
 default = ["std"]
 std = [
     "serde/std",
-    #    "relay-substrate-client",
     "codec/std",
     "hex/std",
     "sp-runtime/std",
@@ -65,14 +58,12 @@ std = [
     "sp-version/std",
     "sp-io/std",
     "sp-keystore/std",
-    #    "bp-header-chain/std",
     "pallet-sudo/std",
     "pallet-balances/std",
     "frame-system/std",
     "frame-support/std",
     "frame-metadata/std",
     "t3rn-primitives/std",
-    #    "pallet-bridge-messages/std",
     "sp-application-crypto/std",
     "hash-db/std",
     "triehash/std",

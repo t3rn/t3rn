@@ -1014,7 +1014,7 @@ dependencies = [
 
 [[package]]
 name = "multi-finality-verifier"
-version = "0.1.0"
+version = "1.0.0-alpha.0"
 dependencies = [
  "finality-grandpa",
  "frame-support",
