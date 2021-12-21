@@ -5,6 +5,7 @@ use codec::{Decode, Encode};
 
 use pallet_babe::EquivocationHandler;
 use pallet_babe::ExternalTrigger;
+use t3rn_primitives::bridges::runtime as bp_runtime;
 
 use bp_runtime::Size;
 use sp_runtime::{

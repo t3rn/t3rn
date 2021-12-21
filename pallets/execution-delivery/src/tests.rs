@@ -16,6 +16,7 @@
 // limitations under the License.
 
 //! Test utilities
+use t3rn_primitives::bridges::test_utils as bp_test_utils;
 use bp_test_utils::test_header;
 use codec::Encode;
 use frame_support::assert_ok;
