@@ -1,6 +1,6 @@
 [package]
 name = "pallet-xdns"
-version = "0.4.0"
+version = "1.0.0-alpha.0"
 authors = ["t3rn ltd. <team@t3rn.io>"]
 edition = "2018"
 license = "Apache 2.0"
@@ -32,7 +32,7 @@ sp-version = { default-features = false, git = "https://github.com/paritytech/su
 sp-std = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12' }
 sp-io = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12' }
 
-t3rn-parachain-primitives = { version = "1.0.0-alpha.0", default-features = false, path = "../../primitives" }
+t3rn-primitives = { default-features = false, path = "../../primitives", package = "t3rn-parachain-primitives" }
 
 [dev-dependencies]
 sp-core = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12', default-features = false }
@@ -56,7 +56,7 @@ std = [
 	"sp-version/std",
 	"sp-runtime/std",
 	"sp-std/std",
-	"t3rn-parachain-primitives/std",
+	"t3rn-primitives/std",
 ]
 runtime-benchmarks = ["frame-benchmarking"]
 try-runtime = ["frame-support/try-runtime"]

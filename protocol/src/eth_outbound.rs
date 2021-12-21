@@ -91,15 +91,15 @@ impl AsGatewayOutboundEvent for EthLog {
 
         let args_encoded = args_decoded
             .iter()
-            .map(|_a| Bytes::from(eth_abi_encode(&args_decoded)))
-            .collect::<Vec<Bytes>>();
+            .map(|_a| eth_abi_encode(&args_decoded))
+            .collect::<Vec<Vec<u8>>>();
 
         Ok(GatewayOutboundEvent {
             id,
             signature: Some(create_signature(name.encode(), args_abi.clone())?),
             namespace,
             name,
-            data: self.data.clone(),
+            data: self.data.to_vec(),
             proof,
             args_abi,
             args_encoded,

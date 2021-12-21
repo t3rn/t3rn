@@ -5,12 +5,16 @@ use sp_runtime::{
     RuntimeDebug,
 };
 use sp_std::vec::Vec;
+
 type SystemHashing<T> = <T as frame_system::Config>::Hashing;
 pub type XtxId<T> = <T as frame_system::Config>::Hash;
+
+pub use crate::volatile::{LocalState, Volatile};
+use scale_info::TypeInfo;
 use sp_std::fmt::Debug;
 
 /// A composable cross-chain (X) transaction that has already been verified to be valid and submittable
-#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
+#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct Xtx<AccountId, BlockNumber, BalanceOf> {
     // todo: Add missing DFDs
     // pub contracts_dfd: InterExecSchedule -> ContractsDFD
@@ -34,6 +38,9 @@ pub struct Xtx<AccountId, BlockNumber, BalanceOf> {
     /// Total reward
     pub total_reward: Option<BalanceOf>,
 
+    /// Local Xtx State
+    pub local_state: LocalState,
+
     /// Vector of Steps that each can consist out of at least one FullSideEffect
     pub full_side_effects: Vec<Vec<FullSideEffect<AccountId, BlockNumber, BalanceOf>>>,
 }
@@ -55,7 +62,7 @@ impl<
         delay_steps_at: Option<Vec<BlockNumber>>,
         // Total reward
         total_reward: Option<BalanceOf>,
-
+        local_state: LocalState,
         full_side_effects: Vec<Vec<FullSideEffect<AccountId, BlockNumber, BalanceOf>>>,
     ) -> Self {
         Xtx {
@@ -65,6 +72,7 @@ impl<
             delay_steps_at,
             result_status: None,
             total_reward,
+            local_state,
             full_side_effects,
         }
     }
@@ -147,8 +155,15 @@ mod tests {
 
     #[test]
     fn successfully_creates_empty_xtx() {
-        let empty_xtx =
-            Xtx::<AccountId, BlockNumber, BalanceOf>::new(0, vec![], None, None, None, vec![]);
+        let empty_xtx = Xtx::<AccountId, BlockNumber, BalanceOf>::new(
+            0,
+            vec![],
+            None,
+            None,
+            None,
+            LocalState::new(),
+            vec![],
+        );
 
         assert_eq!(
             empty_xtx,
@@ -159,7 +174,8 @@ mod tests {
                 delay_steps_at: None,
                 result_status: None,
                 total_reward: None,
-                full_side_effects: vec![]
+                local_state: LocalState::new(),
+                full_side_effects: vec![],
             }
         );
     }
@@ -192,6 +208,7 @@ mod tests {
             None,
             None,
             None,
+            LocalState::new(),
             vec![vec![FullSideEffect {
                 input: input_side_effect_1.clone(),
                 confirmed: None,
@@ -268,6 +285,7 @@ mod tests {
             None,
             None,
             None,
+            LocalState::new(),
             vec![vec![
                 FullSideEffect {
                     input: input_side_effect_1.clone(),
@@ -377,6 +395,7 @@ mod tests {
             None,
             None,
             None,
+            LocalState::new(),
             vec![
                 vec![FullSideEffect {
                     input: input_side_effect_1.clone(),
@@ -484,6 +503,7 @@ mod tests {
             None,
             None,
             None,
+            LocalState::new(),
             vec![
                 vec![FullSideEffect {
                     input: input_side_effect_1.clone(),

@@ -31,9 +31,9 @@ pub mod target_chain;
 
 // Weight is reexported to avoid additional frame-support dependencies in related crates.
 pub use frame_support::weights::Weight;
-
+use scale_info::TypeInfo;
 /// Messages pallet operating mode.
-#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub enum OperatingMode {
     /// Normal mode, when all operations are allowed.
@@ -75,7 +75,7 @@ pub type MessageId = (LaneId, MessageNonce);
 pub type MessagePayload = Vec<u8>;
 
 /// Message key (unique message identifier) as it is stored in the storage.
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct MessageKey {
     /// ID of the message lane.
     pub lane_id: LaneId,
@@ -84,7 +84,7 @@ pub struct MessageKey {
 }
 
 /// Message data as it is stored in the storage.
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct MessageData<Fee> {
     /// Message payload.
     pub payload: MessagePayload,
@@ -93,7 +93,7 @@ pub struct MessageData<Fee> {
 }
 
 /// Message as it is stored in the storage.
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct Message<Fee> {
     /// Message key.
     pub key: MessageKey,
@@ -102,7 +102,7 @@ pub struct Message<Fee> {
 }
 
 /// Inbound lane data.
-#[derive(Encode, Decode, Clone, RuntimeDebug, PartialEq, Eq)]
+#[derive(Encode, Decode, Clone, RuntimeDebug, TypeInfo, PartialEq, Eq)]
 pub struct InboundLaneData<RelayerId> {
     /// Identifiers of relayers and messages that they have delivered to this lane (ordered by message nonce).
     ///
@@ -164,7 +164,7 @@ impl<RelayerId> InboundLaneData<RelayerId> {
 }
 
 /// Gist of `InboundLaneData::relayers` field used by runtime APIs.
-#[derive(Clone, Default, Encode, Decode, RuntimeDebug, PartialEq, Eq)]
+#[derive(Clone, Default, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq, Eq)]
 pub struct UnrewardedRelayersState {
     /// Number of entries in the `InboundLaneData::relayers` set.
     pub unrewarded_relayer_entries: MessageNonce,
@@ -176,7 +176,7 @@ pub struct UnrewardedRelayersState {
 }
 
 /// Outbound lane data.
-#[derive(Encode, Decode, Clone, RuntimeDebug, PartialEq, Eq)]
+#[derive(Encode, Decode, Clone, RuntimeDebug, TypeInfo, PartialEq, Eq)]
 pub struct OutboundLaneData {
     /// Nonce of oldest message that we haven't yet pruned. May point to not-yet-generated message if
     /// all sent messages are already pruned.
