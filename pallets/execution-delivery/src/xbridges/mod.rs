@@ -1,7 +1,8 @@
 use crate::{Bytes, DispatchResultWithPostInfo, Error};
 use codec::{Decode, Encode};
 use sp_application_crypto::Public;
-use sp_std::{boxed::Box, vec, vec::Vec};
+use sp_std::{vec, vec::Vec};
+use t3rn_primitives::bridges::{header_chain as bp_header_chain, runtime as bp_runtime};
 
 pub type CurrentHash<T, I> =
     <<T as pallet_multi_finality_verifier::Config<I>>::BridgedChain as bp_runtime::Chain>::Hash;
@@ -25,7 +26,7 @@ pub fn init_bridge_instance<T: pallet_multi_finality_verifier::Config<I>, I: 'st
         .map_err(|_| "Decoding error: received GenericPrimitivesHeader -> CurrentHeader<T>")?;
 
     let init_data = bp_header_chain::InitializationData {
-        header: Box::new(header),
+        header,
         authority_list: authorities
             .unwrap_or(vec![])
             .iter()
