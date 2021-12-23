@@ -4,7 +4,7 @@ use sp_std::vec::*;
 
 use crate::side_effects::confirm::parser::VendorSideEffectsParser;
 use crate::side_effects::protocol::SideEffectProtocol;
-use crate::side_effects::standards::{GetDataSideEffectProtocol, TransferSideEffectProtocol};
+
 pub use t3rn_primitives::{
     volatile::{LocalState, Volatile},
     GatewayVendor,
@@ -54,7 +54,42 @@ pub trait SideEffectConfirmationProtocol: SideEffectProtocol {
     }
 }
 
-pub fn confirm_vendor_by_action_id<
+pub fn confirmation_plug<T: pallet_balances::Config, VendorParser: VendorSideEffectsParser>(
+    side_effect_protocol: Box<dyn SideEffectProtocol>,
+    encoded_remote_events: Vec<Vec<u8>>,
+    local_state: &mut LocalState,
+) -> Result<(), &'static str> {
+    // 0. Check incoming args with protocol requirements
+    assert!(encoded_remote_events.len() == side_effect_protocol.get_confirming_events().len());
+    // 1. Decode event as relying on Vendor-specific decoding/parsing
+
+    for (i, encoded_event) in encoded_remote_events.iter().enumerate() {
+        let expected_event_signature = side_effect_protocol.get_confirming_events()[i];
+        let decoded_events = VendorParser::parse_event::<T>(
+            side_effect_protocol.get_name(),
+            encoded_event.clone(),
+            expected_event_signature,
+        )?;
+        // 2.  Use STATE_MAPPER to map each variable name from CONFIRMING_EVENTS into expected value stored in STATE_MAPPER during the "validate_args"
+        // ToDo: It will work for transfer for now without analyzing the signature
+        //  since the args names are the same as expected confirmation events params.
+        //  the signature, but here there should be a lookup now for
+        //  arg_names = get_arg_names_from_signature(self.get_confirmation_event()[0])
+        let mapper = side_effect_protocol.get_arguments_2_state_mapper();
+        assert!(mapper.len() == decoded_events.len());
+        for (j, arg_name) in mapper.iter().enumerate() {
+            //  3. Check each argument of decoded "encoded_remote_events" against the values from State
+            if !local_state.cmp(arg_name, decoded_events[j].clone()) {
+                return Err(
+                    "Confirmation Failed - received event arguments differ from expected by state",
+                );
+            }
+        }
+    }
+    Ok(())
+}
+
+pub fn confirm_with_vendor_by_action_id<
     T: pallet_balances::Config,
     SubstrateParser: VendorSideEffectsParser,
     EthParser: VendorSideEffectsParser,
@@ -66,28 +101,43 @@ pub fn confirm_vendor_by_action_id<
 ) -> Result<(), &'static str> {
     let mut action_id_4b: [u8; 4] = [0, 0, 0, 0];
     action_id_4b.copy_from_slice(&encoded_action[0..4]);
+    let side_effect_protocol =
+        crate::side_effects::standards::select_side_effect_by_id(action_id_4b)?;
 
-    match &action_id_4b {
-        b"tran" => {
-            let side_effect_protocol = TransferSideEffectProtocol {};
-            match gateway_vendor {
-                GatewayVendor::Substrate => side_effect_protocol
-                    .confirm::<T, SubstrateParser>(vec![encoded_effect.clone()], &mut state_copy),
-                GatewayVendor::Ethereum => side_effect_protocol
-                    .confirm::<T, EthParser>(vec![encoded_effect.clone()], &mut state_copy),
-            }
-        }
-        b"data" => {
-            let side_effect_protocol = GetDataSideEffectProtocol {};
-            match gateway_vendor {
-                GatewayVendor::Substrate => side_effect_protocol
-                    .confirm::<T, SubstrateParser>(vec![encoded_effect.clone()], &mut state_copy),
-                GatewayVendor::Ethereum => side_effect_protocol
-                    .confirm::<T, EthParser>(vec![encoded_effect.clone()], &mut state_copy),
-            }
-        }
-        _ => Err("Side Effect Selection: Unknown ID"),
+    match gateway_vendor {
+        GatewayVendor::Substrate => confirmation_plug::<T, SubstrateParser>(
+            side_effect_protocol,
+            vec![encoded_effect.clone()],
+            &mut state_copy,
+        ),
+        GatewayVendor::Ethereum => confirmation_plug::<T, EthParser>(
+            side_effect_protocol,
+            vec![encoded_effect.clone()],
+            &mut state_copy,
+        ),
     }
+
+    // match &action_id_4b {
+    //     b"tran" => {
+    //         let side_effect_protocol = TransferSideEffectProtocol {};
+    //         match gateway_vendor {
+    //             GatewayVendor::Substrate => side_effect_protocol
+    //                 .confirm::<T, SubstrateParser>(vec![encoded_effect.clone()], &mut state_copy),
+    //             GatewayVendor::Ethereum => side_effect_protocol
+    //                 .confirm::<T, EthParser>(vec![encoded_effect.clone()], &mut state_copy),
+    //         }
+    //     }
+    //     b"data" => {
+    //         let side_effect_protocol = GetDataSideEffectProtocol {};
+    //         match gateway_vendor {
+    //             GatewayVendor::Substrate => side_effect_protocol
+    //                 .confirm::<T, SubstrateParser>(vec![encoded_effect.clone()], &mut state_copy),
+    //             GatewayVendor::Ethereum => side_effect_protocol
+    //                 .confirm::<T, EthParser>(vec![encoded_effect.clone()], &mut state_copy),
+    //         }
+    //     }
+    //     _ => Err("Side Effect Selection: Unknown ID"),
+    // }
 }
 
 #[cfg(test)]
@@ -129,10 +179,23 @@ pub mod tests {
 
         let transfer_protocol = TransferSideEffectProtocol {};
         let res = transfer_protocol.confirm::<Test, SubstrateSideEffectsParser>(
-            vec![encoded_balance_transfer_event],
+            vec![encoded_balance_transfer_event.clone()],
             &mut local_state,
         );
         assert_eq!(res, Ok(()));
+
+        let res_vendor = confirm_with_vendor_by_action_id::<
+            Test,
+            SubstrateSideEffectsParser,
+            SubstrateSideEffectsParser,
+        >(
+            GatewayVendor::Substrate,
+            b"tran".to_vec(),
+            encoded_balance_transfer_event,
+            &mut local_state,
+        );
+
+        assert_eq!(res_vendor, Ok(()));
     }
 
     #[test]
@@ -164,11 +227,27 @@ pub mod tests {
 
         let transfer_protocol = TransferSideEffectProtocol {};
         let res = transfer_protocol.confirm::<Test, SubstrateSideEffectsParser>(
-            vec![encoded_balance_transfer_event],
+            vec![encoded_balance_transfer_event.clone()],
             &mut local_state,
         );
         assert_eq!(
             res,
+            Err("Confirmation Failed - received event arguments differ from expected by state")
+        );
+
+        let res_vendor = confirm_with_vendor_by_action_id::<
+            Test,
+            SubstrateSideEffectsParser,
+            SubstrateSideEffectsParser,
+        >(
+            GatewayVendor::Substrate,
+            b"tran".to_vec(),
+            encoded_balance_transfer_event,
+            &mut local_state,
+        );
+
+        assert_eq!(
+            res_vendor,
             Err("Confirmation Failed - received event arguments differ from expected by state")
         );
     }

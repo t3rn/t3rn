@@ -4,6 +4,7 @@ pub mod circuit_inbound;
 
 pub mod ethereum_gateway_protocol;
 
+pub mod insurance;
 pub mod side_effects;
 
 pub mod eth_outbound;

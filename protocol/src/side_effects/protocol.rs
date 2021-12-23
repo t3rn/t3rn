@@ -3,6 +3,7 @@
 pub use crate::side_effects::confirm::protocol::SideEffectConfirmationProtocol;
 pub use crate::side_effects::standards::{CallSideEffectProtocol, TransferSideEffectProtocol};
 
+use codec::Encode;
 use sp_std::vec::*;
 use t3rn_primitives::abi::{GatewayABIConfig, Type};
 use t3rn_primitives::volatile::{LocalState, Volatile};
@@ -35,12 +36,29 @@ pub trait SideEffectProtocol {
         &self,
         encoded_args: Arguments,
         local_state: &mut LocalState,
+        key_prefix: Option<Bytes>,
     ) -> Result<(), &'static str> {
         let mapper = self.get_arguments_2_state_mapper();
         assert!(mapper.len() == encoded_args.len());
+
+        // ToDo: Mark the key prefix in side effects entries
+        // let known_side_effects = local_state.get(b"SIDE_EFFECTS".to_vec())?;
+        // match known_side_effects.find(|x| key_prefix == x) { Some(_) return Err("known already" }
+        // local_state.insert(b"SIDE_EFFECTS".to_vec(), arg.to_vec())?;
         for (i, arg) in encoded_args.iter().enumerate() {
-            let arg_name = mapper[i];
-            match local_state.insert(arg_name, arg.to_vec()) {
+            let key = match key_prefix {
+                None => mapper[i].encode(),
+                Some(ref prefix) => {
+                    let mut prefixed_key = prefix.clone();
+                    prefixed_key.append(&mut mapper[i].encode());
+                    prefixed_key.to_vec()
+                }
+            };
+
+            // a.append(&mut b);
+            // let arg_name = mapper[i];
+
+            match local_state.insert(key, arg.to_vec()) {
                 Ok((_state_key, _state_val)) => continue,
                 Err(err) => return Err(err),
             }
@@ -54,24 +72,26 @@ pub trait SideEffectProtocol {
         args: Arguments,
         _gateway_abi: GatewayABIConfig,
         local_state: &mut LocalState,
+        id: Option<Bytes>,
     ) -> Result<(), &'static str> {
         // Args number must match with the args number in the protocol
-        assert!(Self::get_arguments_abi(self).len() == args.len());
-
+        // assert!(Self::get_arguments_abi(self).len() == args.len());
         // ToDo: Extract to a separate function
         // Validate that the input arguments set by a user follow the protocol for get_storage side effect
         // Evaluate each input argument against strictly defined type for that gateway.
         // ToDo: Dig now to self.gateway_abi and recover the length of values, addresses to check
-        for (i, arg) in args.iter().enumerate() {
-            let type_n = &Self::get_arguments_abi(self)[i];
-            type_n.eval(arg.clone())?;
-        }
-        self.populate_state(args, local_state)
-    }
+        for (i, type_n) in Self::get_arguments_abi(self).iter().enumerate() {
+            let arg = match args.get(i) {
+                Some(bytes) => Ok(bytes.clone()),
+                None => match type_n {
+                    Type::OptionalInsurance => Ok(vec![]),
+                    _ => Err("Side Effect Validation - Incorrect arguments length"),
+                },
+            }?;
 
-    /// ToDo: Protocol::Reversible x-t3rn#69 - will be necessary to assign the executer here
-    fn commit_insurance_deposit(&self, _local_state: &mut LocalState) {
-        unimplemented!()
+            type_n.clone().eval(arg.clone())?;
+        }
+        self.populate_state(args, local_state, id)
     }
 }
 
@@ -93,7 +113,8 @@ pub mod tests {
         ];
         let mut local_state = LocalState::new();
         let transfer_protocol = TransferSideEffectProtocol {};
-        let res = transfer_protocol.populate_state(encoded_transfer_args_input, &mut local_state);
+        let res =
+            transfer_protocol.populate_state(encoded_transfer_args_input, &mut local_state, None);
 
         assert_eq!(res, Ok(()));
 
