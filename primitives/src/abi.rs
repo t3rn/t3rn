@@ -282,9 +282,7 @@ impl Type {
                         let res: [u128; 2] = decode_buf2val(encoded_val)?;
                         Ok(Box::new(res))
                     }
-                    _ => {
-                        Err("ABI OptionalInsurance eval error - wrong arg size")
-                    }
+                    _ => Err("ABI OptionalInsurance eval error - wrong arg size"),
                 }
             }
             Type::Int(size) => match size {
@@ -384,9 +382,7 @@ pub fn eval_to_encoded(t: Type, raw_val: Vec<u8>) -> Result<Vec<u8>, &'static st
                     let res: [u128; 2] = decode_buf2val(raw_val)?;
                     Ok(res.encode())
                 }
-                _ => {
-                    Err("ABI OptionalInsurance eval error - wrong arg size")
-                }
+                _ => Err("ABI OptionalInsurance eval error - wrong arg size"),
             }
         }
         _ => Ok(vec![]),
@@ -523,10 +519,7 @@ mod tests {
     fn successfully_abi_evals_empty_insurance_and_reward_optional_insurance() {
         let empty_bytes: Vec<u8> = vec![];
         let res = eval_to_encoded(Type::OptionalInsurance, empty_bytes.clone());
-        assert_eq!(
-            res,
-            Ok(empty_bytes)
-        );
+        assert_eq!(res, Ok(empty_bytes));
     }
 
     #[test]
@@ -534,7 +527,10 @@ mod tests {
         let valid_insurance_args_arr: [u128; 2] = [1, 2];
         let res = eval_to_encoded(Type::OptionalInsurance, valid_insurance_args_arr.encode());
         assert_eq!(
-            Ok(vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+            Ok(vec![
+                1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0
+            ]),
             res
         );
     }

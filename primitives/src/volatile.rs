@@ -10,6 +10,8 @@ use sp_std::vec::*;
 type StateKey = [u8; 32];
 // Keep Values as Vector although check if no longer than 64 bytes
 type StateVal = Vec<u8>;
+
+type Bytes = Vec<u8>;
 pub type State = BTreeMap<StateKey, StateVal>;
 
 use sp_io::hashing::twox_256;
@@ -49,6 +51,17 @@ pub trait Volatile {
     fn key_2_state_key<K: Encode>(key: K) -> [u8; 32] {
         let key_as_array = &key.encode()[..];
         Self::hash(key_as_array)
+    }
+
+    fn stick_key_with_prefix(mut key: Bytes, key_prefix: Option<Bytes>) -> Bytes {
+        match key_prefix {
+            None => key,
+            Some(ref prefix) => {
+                let mut prefixed_key = prefix.clone();
+                prefixed_key.append(&mut key);
+                prefixed_key.to_vec()
+            }
+        }
     }
 
     fn get<K: Encode>(&self, key: K) -> Option<&StateVal> {
