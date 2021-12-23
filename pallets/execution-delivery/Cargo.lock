@@ -4201,7 +4201,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-xdns"
-version = "0.4.0"
+version = "1.0.0-alpha.0"
 dependencies = [
  "frame-benchmarking",
  "frame-metadata",
