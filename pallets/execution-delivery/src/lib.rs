@@ -45,7 +45,7 @@ pub use t3rn_primitives::{
     xtx::{Xtx, XtxId},
     GatewayType, *,
 };
-use t3rn_protocol::side_effects::confirm::protocol::confirm_vendor_by_action_id;
+use t3rn_protocol::side_effects::confirm::protocol::confirm_with_vendor_by_action_id;
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 
 pub type Bytes = Vec<u8>;
@@ -75,7 +75,6 @@ pub use xbridges::{
 use t3rn_protocol::side_effects::confirm::substrate::SubstrateSideEffectsParser;
 use t3rn_protocol::side_effects::loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol};
 pub use t3rn_protocol::side_effects::protocol::SideEffectConfirmationProtocol;
-
 
 pub type AllowedSideEffect = Vec<u8>;
 
@@ -223,7 +222,12 @@ pub mod pallet {
                 let gateway_abi = Default::default();
 
                 use_protocol.notice_gateway(side_effect.target);
-                use_protocol.validate_args(side_effect.clone(), gateway_abi, &mut local_state)?;
+                use_protocol
+                    .validate_args::<T::AccountId, T::BlockNumber, BalanceOf<T>, SystemHashing<T>>(
+                        side_effect.clone(),
+                        gateway_abi,
+                        &mut local_state,
+                    )?;
 
                 full_side_effects.push(FullSideEffect {
                     input: side_effect.clone(),
@@ -327,7 +331,7 @@ pub mod pallet {
             let mut state_copy = xtx.local_state.clone();
             let gateway_vendor = pallet_xdns::Pallet::<T>::best_available(side_effect.target)?;
 
-            confirm_vendor_by_action_id::<
+            confirm_with_vendor_by_action_id::<
                 T,
                 SubstrateSideEffectsParser,
                 EthereumSideEffectsParser<T::EthVerifier>,
