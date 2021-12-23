@@ -37,6 +37,9 @@ pub enum Type {
     Mapping(Box<Type>, Box<Type>),
     Contract,
     Ref(Box<Type>),
+    Option(Box<Type>),
+    OptionalInsurance,
+    OptionalReward,
     StorageRef(Box<Type>),
     /// There is no way to declare value in Solidity (should there be?)
     Value,
@@ -268,6 +271,22 @@ impl Type {
                 let res: bool = decode_buf2val(encoded_val)?;
                 Ok(Box::new(res))
             }
+            Type::OptionalInsurance => {
+                // Assume it's gonna be an array of 2 x u128 values (Circuit's Balance)
+                //  First one is the insurance amount
+                //  Second one is the reward amount
+                // Since it's Optional - value can be an empty vector too.
+                match encoded_val.len() {
+                    0 => Ok(Box::new(encoded_val)),
+                    32 => {
+                        let res: [u128; 2] = decode_buf2val(encoded_val)?;
+                        Ok(Box::new(res))
+                    }
+                    _ => {
+                        Err("ABI OptionalInsurance eval error - wrong arg size")
+                    }
+                }
+            }
             Type::Int(size) => match size {
                 32 => {
                     let res: i32 = decode_buf2val(encoded_val)?;
@@ -354,6 +373,22 @@ pub fn eval_to_encoded(t: Type, raw_val: Vec<u8>) -> Result<Vec<u8>, &'static st
             }
             _ => Err("Unknown Uint size"),
         },
+        Type::OptionalInsurance => {
+            // Assume it's gonna be an array of 2 x u128 values (Circuit's Balance)
+            //  First one is the insurance amount
+            //  Second one is the reward amount
+            // Since it's Optional - value can be an empty vector too.
+            match raw_val.len() {
+                0 => Ok(raw_val),
+                32 => {
+                    let res: [u128; 2] = decode_buf2val(raw_val)?;
+                    Ok(res.encode())
+                }
+                _ => {
+                    Err("ABI OptionalInsurance eval error - wrong arg size")
+                }
+            }
+        }
         _ => Ok(vec![]),
     }
 }
@@ -480,6 +515,26 @@ mod tests {
                 b"testName".to_vec(),
                 vec![Type::DynamicBytes, Type::Address(20), Type::Uint(32),],
             ),
+            res
+        );
+    }
+
+    #[test]
+    fn successfully_abi_evals_empty_insurance_and_reward_optional_insurance() {
+        let empty_bytes: Vec<u8> = vec![];
+        let res = eval_to_encoded(Type::OptionalInsurance, empty_bytes.clone());
+        assert_eq!(
+            res,
+            Ok(empty_bytes)
+        );
+    }
+
+    #[test]
+    fn successfully_abi_evals_valid_insurance_and_reward_optional_insurance() {
+        let valid_insurance_args_arr: [u128; 2] = [1, 2];
+        let res = eval_to_encoded(Type::OptionalInsurance, valid_insurance_args_arr.encode());
+        assert_eq!(
+            Ok(vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
             res
         );
     }
