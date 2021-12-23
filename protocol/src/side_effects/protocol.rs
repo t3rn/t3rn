@@ -46,18 +46,7 @@ pub trait SideEffectProtocol {
         // match known_side_effects.find(|x| key_prefix == x) { Some(_) return Err("known already" }
         // local_state.insert(b"SIDE_EFFECTS".to_vec(), arg.to_vec())?;
         for (i, arg) in encoded_args.iter().enumerate() {
-            let key = match key_prefix {
-                None => mapper[i].encode(),
-                Some(ref prefix) => {
-                    let mut prefixed_key = prefix.clone();
-                    prefixed_key.append(&mut mapper[i].encode());
-                    prefixed_key.to_vec()
-                }
-            };
-
-            // a.append(&mut b);
-            // let arg_name = mapper[i];
-
+            let key = LocalState::stick_key_with_prefix(mapper[i].encode(), key_prefix.clone());
             match local_state.insert(key, arg.to_vec()) {
                 Ok((_state_key, _state_val)) => continue,
                 Err(err) => return Err(err),

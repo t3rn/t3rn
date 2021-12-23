@@ -7,12 +7,12 @@ use sp_std::collections::btree_map::BTreeMap;
 
 use sp_std::vec::*;
 
+use crate::side_effects::protocol::SideEffectProtocol as SideEffectProtocolT;
 use t3rn_primitives::abi::GatewayABIConfig;
 use t3rn_primitives::side_effect::{SideEffect, TargetId};
+use t3rn_primitives::volatile::Volatile;
 
-use crate::side_effects::protocol::SideEffectProtocol as SideEffectProtocolT;
-
-use t3rn_primitives::volatile::LocalState;
+use t3rn_primitives::{volatile::LocalState};
 
 pub type EventSignature = Vec<u8>;
 pub type String = Vec<u8>;
@@ -113,5 +113,51 @@ impl UniversalSideEffectsProtocol {
                 )
             },
         )
+    }
+
+    /// Based on the content of local state - check if it's necessary to commit the deposit
+    /// for a given side effect.
+    /// try_commit_insurance_deposit will parse the Opt. Insurance keys from the local state
+    /// and pass them to insurance protocol.
+    pub fn check_if_insurance_required<
+        AccountId: Encode + Clone,
+        BlockNumber: Ord + Copy + Zero + Encode + Clone,
+        BalanceOf: Copy + Zero + Encode + Decode + Clone,
+        Hasher: sp_core::Hasher,
+    >(
+        side_effect: SideEffect<AccountId, BlockNumber, BalanceOf>,
+        local_state: &mut LocalState,
+    ) -> Result<Option<[BalanceOf; 2]>, &'static str> {
+        const INSURANCE_SEARCH_KEY: &'static str = "insurance";
+        let key = LocalState::stick_key_with_prefix(
+            INSURANCE_SEARCH_KEY.encode(),
+            Some(side_effect.generate_id::<Hasher>().as_ref().to_vec()),
+        );
+        match local_state.get(key) {
+            None => Err(
+                "Critical Error - try_commit_insurance_deposit should always be \
+                called after side effects state is populated with 'insurance' entries",
+            ),
+            Some(maybe_insurance) => {
+                match maybe_insurance.to_vec().len() {
+                    // If no insurance entry - insurance isn't required. Do nothing.
+                    0 => Ok(None),
+                    32 => {
+                        let insurance_and_reward: [BalanceOf; 2] = Decode::decode(
+                            &mut &maybe_insurance.to_vec()[..],
+                        )
+                        .expect(
+                            "try_commit_insurance_deposit should always be called after validate \
+                                side effects which checked the insurance value sanity in eval",
+                        );
+                        Ok(Some(insurance_and_reward))
+                    }
+                    _ => Err(
+                        "Critical Error - try_commit_insurance_deposit should always be \
+                            called after side effects which checked the insurance value sanity in eval",
+                    ),
+                }
+            }
+        }
     }
 }
