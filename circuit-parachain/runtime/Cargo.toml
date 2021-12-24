@@ -71,7 +71,7 @@ snowbridge-channel = { git = "https://github.com/t3rn/snowbridge", package = "sn
 
 # t3rn Dependencies
 pallet-xdns = {path = "../../pallets/xdns", default-features = false }
-t3rn-parachain-primitives = { version = "0.1.0", default-features = false, path = "../../primitives" }
+t3rn-parachain-primitives = { version = "1.0.0-alpha.0", default-features = false, path = "../../primitives" }
 pallet-mfv = {path = "../../pallets/multi-finality-verifier", package = "multi-finality-verifier", default-features = false }
 pallet-contracts-registry = {path = "../../pallets/contracts-registry", default-features = false}
 # Cumulus dependencies

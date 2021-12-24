@@ -59,6 +59,7 @@ jobs:
           name: ${{ github.sha }}-parachain-release-artifacts
           path: circuit-parachain/target/release/circuit-collator
           if-no-files-found: error
+          retention-days: 1
 
   push-to-docker:
     runs-on: ubuntu-20.04
