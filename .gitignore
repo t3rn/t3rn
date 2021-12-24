@@ -15,3 +15,4 @@ client/node_modules/*
 /.devkey
 client/circuit-integration-tests/node_modules/.bin/_mocha
 client/types/dist/*
+client/relayer/.env

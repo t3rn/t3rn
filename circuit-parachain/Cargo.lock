@@ -4909,7 +4909,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-contracts-registry"
-version = "0.4.0"
+version = "1.0.0-alpha.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5424,7 +5424,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-xdns"
-version = "0.4.0"
+version = "1.0.0-alpha.0"
 dependencies = [
  "frame-benchmarking",
  "frame-metadata",
@@ -10064,18 +10064,24 @@ dependencies = [
 
 [[package]]
 name = "t3rn-parachain-primitives"
-version = "0.1.0"
+version = "1.0.0-alpha.0"
 dependencies = [
+ "finality-grandpa",
  "frame-support",
  "frame-system",
+ "hash-db",
+ "num-traits",
  "pallet-sudo",
  "parity-scale-codec",
  "scale-info",
  "serde",
  "sp-core",
+ "sp-finality-grandpa",
  "sp-io",
  "sp-runtime",
+ "sp-state-machine",
  "sp-std",
+ "sp-trie",
  "sp-version",
 ]
 

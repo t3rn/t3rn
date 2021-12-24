@@ -228,7 +228,6 @@ pub mod pallet {
             for side_effect in side_effects.iter() {
                 // ToDo: Generate Circuit's params as default ABI from let abi = pallet_xdns::get_abi(target_id)
                 let gateway_abi = Default::default();
-
                 use_protocol.notice_gateway(side_effect.target);
                 use_protocol.validate_args(side_effect.clone(), gateway_abi, &mut local_state)?;
 
@@ -353,6 +352,7 @@ pub mod pallet {
                 confirmed_side_effect.clone(),
                 side_effect.clone(),
             )? {
+                ActiveXtxMap::<T>::insert(xtx_id.clone(), xtx.clone());
                 Self::deposit_event(Event::SideEffectConfirmed(
                     relayer_id.clone(),
                     xtx_id,
