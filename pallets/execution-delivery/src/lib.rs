@@ -206,10 +206,6 @@ pub mod pallet {
                 Error::<T>::RequesterNotEnoughBalance,
             );
 
-            let _full_side_effects_steps: Vec<
-                Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
-            >;
-
             let mut full_side_effects: Vec<
                 FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
             > = vec![];
@@ -261,20 +257,10 @@ pub mod pallet {
                 full_side_effects_steps,
             );
             let x_tx_id: XtxId<T> = new_xtx.generate_xtx_id::<T>();
+
             ActiveXtxMap::<T>::insert(x_tx_id, &new_xtx);
 
-            Self::deposit_event(Event::XTransactionReceivedForExec(
-                x_tx_id.clone(),
-                // ToDo: Emit side effects DFD
-                Default::default(),
-            ));
-
-            Self::deposit_event(Event::NewSideEffectsAvailable(
-                requester.clone(),
-                x_tx_id.clone(),
-                // ToDo: Emit circuit outbound messages -> side effects
-                side_effects,
-            ));
+            Self::submit_side_effects(x_tx_id, requester, side_effects, sequential);
 
             Ok(().into())
         }
@@ -626,8 +612,28 @@ impl<T: SigningTypes> SignedPayload<T> for Payload<T::Public, T::BlockNumber> {
 }
 
 impl<T: Config> Pallet<T> {
-    fn account_id() -> T::AccountId {
+    pub fn account_id() -> T::AccountId {
         T::PalletId::get().into_account()
+    }
+
+    pub fn submit_side_effects(
+        x_tx_id: XtxId<T>,
+        requester: T::AccountId,
+        side_effects: Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+        sequential: bool,
+    ) {
+        Self::deposit_event(Event::XTransactionReceivedForExec(
+            x_tx_id.clone(),
+            // ToDo: Emit side effects DFD
+            sequential.encode(),
+        ));
+
+        Self::deposit_event(Event::NewSideEffectsAvailable(
+            requester.clone(),
+            x_tx_id.clone(),
+            // ToDo: Emit circuit outbound messages -> side effects
+            side_effects,
+        ));
     }
 }
 
