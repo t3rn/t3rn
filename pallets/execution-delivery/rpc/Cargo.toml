@@ -21,10 +21,10 @@ serde_json = "1.0.59"
 
 serde = { version = "1.0.124", features = ["derive"] }
 
-sp-api = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12' }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12' }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12' }
-sp-rpc = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12' }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12' }
-t3rn-primitives = { version = "0.1.0", path = "../../../primitives", default-features = false, package = "t3rn-parachain-primitives" }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
+sp-rpc = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
+t3rn-primitives = { version = "1.0.0-alpha.0", path = "../../../primitives", default-features = false, package = "t3rn-parachain-primitives" }
 pallet-circuit-execution-delivery-rpc-runtime-api = { version = "0.1.0", path = "runtime-api" }
