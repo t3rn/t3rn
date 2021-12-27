@@ -62,11 +62,11 @@ pub mod tests {
 
     #[test]
     fn successfully_confirms_transfer_side_effect() {
-        let encoded_balance_transfer_event = pallet_balances::Event::<Test>::Transfer(
-            hex!("0909090909090909090909090909090909090909090909090909090909090909").into(),
-            hex!("0606060606060606060606060606060606060606060606060606060606060606").into(),
-            1u64,
-        )
+        let encoded_balance_transfer_event = pallet_balances::Event::<Test>::Transfer {
+            from: hex!("0909090909090909090909090909090909090909090909090909090909090909").into(),
+            to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(),
+            amount: 1,
+        }
         .encode();
 
         let mut local_state = LocalState::new();
@@ -97,11 +97,11 @@ pub mod tests {
 
     #[test]
     fn errors_to_confirm_transfer_side_effect_with_wrong_receiver() {
-        let encoded_balance_transfer_event = pallet_balances::Event::<Test>::Transfer(
-            hex!("0909090909090909090909090909090909090909090909090909090909090909").into(),
-            hex!("0505050505050505050505050505050505050505050505050505050505050505").into(),
-            1u64,
-        )
+        let encoded_balance_transfer_event = pallet_balances::Event::<Test>::Transfer {
+            from: hex!("0909090909090909090909090909090909090909090909090909090909090909").into(),
+            to: hex!("0505050505050505050505050505050505050505050505050505050505050505").into(),
+            amount: 1,
+        }
         .encode();
 
         let mut local_state = LocalState::new();
