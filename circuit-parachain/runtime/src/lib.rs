@@ -5,10 +5,10 @@
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
-//use ethereum_light_client::EthereumDifficultyConfig;
+// use ethereum_light_client::EthereumDifficultyConfig;
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{Everything, LockIdentifier, Nothing, U128CurrencyToVote, EqualPrivilegeOnly},
+	traits::{EqualPrivilegeOnly, Everything, LockIdentifier, Nothing, U128CurrencyToVote},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -28,7 +28,7 @@ use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H256};
 pub use sp_runtime::BuildStorage;
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, Verify, Keccak256},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, Keccak256, Verify},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, MultiSignature,
 };
@@ -38,8 +38,7 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 use static_assertions::const_assert;
-use t3rn_primitives::bridges::polkadot_core as bp_polkadot_core;
-use t3rn_primitives::bridges::runtime as bp_runtime;
+use t3rn_primitives::bridges::{polkadot_core as bp_polkadot_core, runtime as bp_runtime};
 
 // Polkadot Imports
 use pallet_collective::{EnsureMember, EnsureProportionAtLeast};
@@ -385,7 +384,7 @@ impl pallet_scheduler::Config for Runtime {
 	type ScheduleOrigin = EnsureRoot<AccountId>;
 	type MaxScheduledPerBlock = MaxScheduledPerBlock;
 	type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Self>;
-	type OriginPrivilegeCmp = EqualPrivilegeOnly; 
+	type OriginPrivilegeCmp = EqualPrivilegeOnly;
 }
 
 parameter_types! {
@@ -921,10 +920,10 @@ construct_runtime!(
 		// snowfork deps
 		// EthereumLightClient: ethereum_light_client::{Pallet, Call, Storage, Event<T>, Config} = 150,
 		Utility: pallet_utility::{Pallet, Call, Event} = 151,
-		
+
 		// smart contracts
 		//Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>} = 161,
-		
+
 		// admin
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
 	}

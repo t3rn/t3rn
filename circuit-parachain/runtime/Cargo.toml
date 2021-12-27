@@ -29,7 +29,7 @@ sp-block-builder = { git = "https://github.com/paritytech/substrate", default-fe
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
 sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
 sp-inherents = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
-#sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
 sp-offchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
 sp-session = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
@@ -63,7 +63,7 @@ pallet-utility = { git = "https://github.com/paritytech/substrate", default-feat
 
 ## snow bridge
 snowbridge-core = { git = "https://github.com/t3rn/snowbridge", default-features = false }
-ethereum-light-client = { git = "https://github.com/t3rn/snowbridge", package = "snowbridge-ethereum-light-client", default-features = false }
+#ethereum-light-client = { git = "https://github.com/t3rn/snowbridge", package = "snowbridge-ethereum-light-client", default-features = false }
 snowbridge-channel = { git = "https://github.com/t3rn/snowbridge", package = "snowbridge-basic-channel", default-features = false }
 
 # t3rn Dependencies
@@ -107,7 +107,7 @@ std = [
 	"sp-consensus-aura/std",
 	"sp-core/std",
 	"sp-inherents/std",
-	#"sp-io/std",
+	"sp-io/std",
 	"sp-offchain/std",
 	"sp-runtime/std",
 	"sp-session/std",
@@ -151,7 +151,7 @@ std = [
 	"xcm-executor/std",
 	"xcm/std",
 	"pallet-mfv/std",
-	"ethereum-light-client/std",
+	#"ethereum-light-client/std",
 	"snowbridge-core/std",
 	"snowbridge-channel/std"
 ]
