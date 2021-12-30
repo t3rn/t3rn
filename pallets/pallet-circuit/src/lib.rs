@@ -24,7 +24,9 @@
 
 use codec::{Decode, Encode};
 
+use frame_system::ensure_signed;
 use frame_system::offchain::{SignedPayload, SigningTypes};
+use frame_system::pallet_prelude::OriginFor;
 
 use sp_runtime::RuntimeDebug;
 
@@ -209,47 +211,39 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
         pub fn on_extrinsics_trigger(
             origin: OriginFor<T>,
-            _side_effects: Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+            side_effects: Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
             _input: Vec<u8>,
             _value: BalanceOf<T>,
-            _fee: BalanceOf<T>,
-            _sequential: bool,
+            fee: BalanceOf<T>,
+            sequential: bool,
         ) -> DispatchResultWithPostInfo {
-            // Retrieve sender of the transaction.
-            let _requester = ensure_signed(origin)?;
-            // Ensure can afford
-            // ensure!(
-            //     <T as EscrowTrait>::Currency::free_balance(&fee).saturating_sub(reward)
-            //         >= BalanceOf::<T>::from(0 as u32),
-            //     Error::<T>::RequesterNotEnoughBalance,
-            // );
+            // Authorize: Retrieve sender of the transaction.
+            let requester = Self::authorize(origin)?;
+            // Charge: Ensure can afford
+            let _available_trn_balance = Self::charge(&requester)?;
+            // Setup: new xtx context
+            let mut local_xtx_ctx: LocalXtxCtx<T> =
+                Self::setup(CircuitExecStatus::Requested, &requester, fee);
+            // Validate: Side Effects
+            let full_side_effects = Self::validate(
+                &side_effects,
+                &mut local_xtx_ctx.use_protocol,
+                &mut local_xtx_ctx.local_state,
+                &requester,
+                local_xtx_ctx.xtx_id,
+                sequential,
+            )?;
+            // Apply: all necessary changes to state in 1 go
+            Self::apply(
+                CircuitExecStatus::Requested,
+                CircuitExecStatus::Validated,
+                &local_xtx_ctx,
+                &side_effects,
+                full_side_effects,
+            )?;
 
-            // let _new_xtx = Xtx::<T::AccountId, T::BlockNumber, BalanceOf<T>>::new(
-            //     requester.clone(),
-            //     input,
-            //     timeouts_at,
-            //     delay_steps_at,
-            //     Some(reward),
-            //     local_state,
-            //     // ToDo: Missing GenericDFD to link side effects / composable contracts with the Xtx
-            //     full_side_effects_steps,
-            // );
-
-            // ToDo: Merge with exec delivery submit_side_effect here
-            // ActiveXtxMap::<T>::insert(x_tx_id, &new_xtx);
-            //
-            // Self::deposit_event(Event::XTransactionReceivedForExec(
-            //     x_tx_id.clone(),
-            //     // ToDo: Emit side effects DFD
-            //     Default::default(),
-            // ));
-            //
-            // Self::deposit_event(Event::NewSideEffectsAvailable(
-            //     requester.clone(),
-            //     x_tx_id.clone(),
-            //     // ToDo: Emit circuit outbound messages -> side effects
-            //     side_effects,
-            // ));
+            // Emit: From Circuit events
+            Self::emit(local_xtx_ctx.xtx_id, &requester, &side_effects, sequential);
 
             Ok(().into())
         }
@@ -280,42 +274,22 @@ impl<T: SigningTypes> SignedPayload<T> for Payload<T::Public, T::BlockNumber> {
         self.public.clone()
     }
 }
-// CircuitExecStatus
-// Requested,
-// Bonded,
-// Committed,
-// Reverted,
-// RevertedTimedOut,
-// pub enum CircuitTriggerCause {
-//     Submission,
-//     Confirmation,
-//     Revert,
-//     Commit,
-//     Cancel,
-// }
 
 pub struct LocalXtxCtx<T: Config> {
     local_state: LocalState,
-    universal_sep: UniversalSideEffectsProtocol,
+    use_protocol: UniversalSideEffectsProtocol,
     xtx_id: XExecSignalId<T>,
     xtx: XExecSignal<T::AccountId, T::BlockNumber, BalanceOf<T>>,
 }
 
-// &'static mut LocalState,
-// &'static mut UniversalSideEffectsProtocol,
-// XExecSignalId<T>,
-// XExecSignal<T::AccountId, T::BlockNumber, BalanceOf<T>>,
-
 impl<T: Config> Pallet<T> {
     fn setup(
         current_status: CircuitExecStatus,
-        requester: T::AccountId,
+        requester: &T::AccountId,
         reward: BalanceOf<T>,
     ) -> LocalXtxCtx<T> {
         match current_status {
             CircuitExecStatus::Requested => {
-                // let mut local_state = LocalState::new();
-                // let mut use_protocol = UniversalSideEffectsProtocol::new();
                 // ToDo: Introduce default timeout + delay
                 let (timeouts_at, delay_steps_at): (
                     Option<T::BlockNumber>,
@@ -324,7 +298,7 @@ impl<T: Config> Pallet<T> {
 
                 let (x_exec_signal_id, x_exec_signal) =
                     XExecSignal::<T::AccountId, T::BlockNumber, BalanceOf<T>>::setup_fresh::<T>(
-                        requester.clone(),
+                        requester,
                         timeouts_at,
                         delay_steps_at,
                         Some(reward),
@@ -332,39 +306,79 @@ impl<T: Config> Pallet<T> {
 
                 LocalXtxCtx {
                     local_state: LocalState::new(),
-                    universal_sep: UniversalSideEffectsProtocol::new(),
+                    use_protocol: UniversalSideEffectsProtocol::new(),
                     xtx_id: x_exec_signal_id,
                     xtx: x_exec_signal,
                 }
-                //
-                // (
-                //     &mut local_state,
-                //     &mut use_protocol,
-                //     x_exec_signal_id,
-                //     x_exec_signal,
-                // )
             }
             _ => unimplemented!(),
         }
     }
 
-    fn apply(_current_status: CircuitExecStatus, _new_status: CircuitExecStatus) {
-        unimplemented!()
+    fn apply(
+        current_status: CircuitExecStatus,
+        new_status: CircuitExecStatus,
+        _local_xtx_ctx: &LocalXtxCtx<T>,
+        _side_effects: &Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+        _full_ordered_side_effects: Vec<
+            Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+        >,
+    ) -> Result<(), Error<T>> {
+        match (current_status, new_status) {
+            (CircuitExecStatus::Requested, CircuitExecStatus::Validated) => {
+
+                // <InsuranceDeposits<T>>::insert::<
+                //     XExecSignalId<T>,
+                //     SideEffectId<T>,
+                //     InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+                // >(
+                //     xtx_id,
+                //     side_effect.generate_id::<SystemHashing<T>>(),
+                //     InsuranceDeposit::new(
+                //         insurance,
+                //         promised_reward,
+                //         requester.clone(),
+                //         <frame_system::Pallet<T>>::block_number(),
+                //     ),
+                // );
+            }
+            (_, _) => unimplemented!(),
+        }
+        Ok(())
     }
 
-    fn charge(requester: T::AccountId) -> Result<BalanceOf<T>, Error<T>> {
-        let available_trn_balance = <T as EscrowTrait>::Currency::free_balance(&requester);
+    fn emit(
+        _xtx_id: XExecSignalId<T>,
+        _requester: &T::AccountId,
+        _side_effects: &Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+        _sequential: bool,
+    ) {
+        // <T as pallet_exec_delivery::Config>::submit_side_effect(
+        //     xtx_id,
+        //     requester: requester.clone(),
+        //     side_effects,
+        //     sequential,
+        // );
+    }
+
+    fn charge(requester: &T::AccountId) -> Result<BalanceOf<T>, Error<T>> {
+        let available_trn_balance = <T as EscrowTrait>::Currency::free_balance(requester);
         Ok(available_trn_balance)
     }
 
+    fn authorize(origin: OriginFor<T>) -> Result<T::AccountId, sp_runtime::traits::BadOrigin> {
+        ensure_signed(origin)
+    }
+
     fn validate(
-        side_effects: Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+        side_effects: &Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
         use_protocol: &mut UniversalSideEffectsProtocol,
         local_state: &mut LocalState,
-        requester: T::AccountId,
+        requester: &T::AccountId,
         _xtx_id: XExecSignalId<T>,
         sequential: bool,
-    ) -> Result<(), &'static str> {
+    ) -> Result<Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>, &'static str>
+    {
         let mut full_side_effects: Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>> =
             vec![];
 
@@ -393,7 +407,7 @@ impl<T: Config> Pallet<T> {
                     side_effect.clone(),
                     insurance,
                     reward,
-                    &requester,
+                    requester,
                     local_state,
                 )?;
             }
@@ -403,7 +417,7 @@ impl<T: Config> Pallet<T> {
             })
         }
 
-        let _full_side_effects_steps: Vec<
+        let full_side_effects_steps: Vec<
             Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
         > = match sequential {
             false => vec![full_side_effects],
@@ -418,7 +432,7 @@ impl<T: Config> Pallet<T> {
             }
         };
 
-        Ok(())
+        Ok(full_side_effects_steps)
     }
 
     /// On-submit
@@ -432,7 +446,8 @@ impl<T: Config> Pallet<T> {
     ) -> Result<(), Error<T>> {
         // ToDo: Prepare Treasury submodule with Vault Constant
         let VAULT: T::AccountId = Default::default();
-        let res = T::Currency::transfer(requester, &VAULT, promised_reward, AllowDeath); // should not fail
+        let res =
+            <T as EscrowTrait>::Currency::transfer(requester, &VAULT, promised_reward, AllowDeath); // should not fail
         debug_assert!(res.is_ok());
 
         <InsuranceDeposits<T>>::insert::<
