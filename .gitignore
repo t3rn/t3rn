@@ -3,16 +3,14 @@ comms
 # Added by cargo
 /gateway/target
 **/target
-./Cargo.lock
+*/Cargo.lock
 .idea
 /beefy/target/
 /build/local_beefy_spec.json
 *.iml
-client/*/node_modules/*
-client/node_modules/*
+client/**/node_modules
 
 # accound id info
 /.devkey
-client/circuit-integration-tests/node_modules/.bin/_mocha
 client/types/dist/*
 client/relayer/.env

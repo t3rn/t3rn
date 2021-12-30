@@ -1,4 +1,5 @@
-use circuit_parachain_runtime::{AccountId, AuraId, Balance, Signature, EXISTENTIAL_DEPOSIT, UNIT};
+use circuit_parachain_runtime::{AuraId, Balance, Signature, EXISTENTIAL_DEPOSIT, UNIT};
+use t3rn_primitives::{AccountId, AccountPublic};
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
@@ -7,49 +8,19 @@ use serde::{Deserialize, Serialize};
 use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
+use crate::chain_spec::{get_account_id_from_seed, get_authority_keys_from_seed, Extensions};
+
+pub const PARA_ID: ParaId = ParaId::from(3331 as u32);
+
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
 	sc_service::GenericChainSpec<circuit_parachain_runtime::GenesisConfig, Extensions>;
-
-/// Helper function to generate a crypto pair from seed
-pub fn get_public_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
-	TPublic::Pair::from_string(&format!("//{}", seed), None)
-		.expect("static values are valid; qed")
-		.public()
-}
-
-/// The extensions for the [`ChainSpec`].
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension)]
-#[serde(deny_unknown_fields)]
-pub struct Extensions {
-	/// The relay chain of the Parachain.
-	pub relay_chain: String,
-	/// The id of the Parachain.
-	pub para_id: u32,
-}
-
-impl Extensions {
-	/// Try to get the extension from the given `ChainSpec`.
-	pub fn try_get(chain_spec: &dyn sc_service::ChainSpec) -> Option<&Self> {
-		sc_chain_spec::get_extension(chain_spec.extensions())
-	}
-}
-
-type AccountPublic = <Signature as Verify>::Signer;
 
 /// Generate collator keys from seed.
 ///
 /// This function's return type must always match the session keys of the chain in tuple format.
 pub fn get_collator_keys_from_seed(seed: &str) -> AuraId {
 	get_public_from_seed::<AuraId>(seed)
-}
-
-/// Helper function to generate an account ID from seed
-pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
-where
-	AccountPublic: From<<TPublic::Pair as Pair>::Public>,
-{
-	AccountPublic::from(get_public_from_seed::<TPublic>(seed)).into_account()
 }
 
 /// Generate the session keys from individual elements.
@@ -62,7 +33,7 @@ pub fn session_keys(keys: AuraId) -> circuit_parachain_runtime::SessionKeys {
 pub fn development_config() -> ChainSpec {
 	// Give your base currency a unit name and decimal places
 	let mut properties = sc_chain_spec::Properties::new();
-	properties.insert("tokenSymbol".into(), "UNIT".into());
+	properties.insert("tokenSymbol".into(), "TRN".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 	properties.insert("ss58Format".into(), 42.into());
 
@@ -100,7 +71,7 @@ pub fn development_config() -> ChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
-				ParaId::from(3331 as u32),
+				PARA_ID,
 			)
 		},
 		Vec::new(),
@@ -109,7 +80,7 @@ pub fn development_config() -> ChainSpec {
 		None,
 		Extensions {
 			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
-			para_id: 3331,                      // You MUST set this correctly!
+			para_id: PARA_ID,                      // You MUST set this correctly!
 		},
 	)
 }
@@ -117,7 +88,7 @@ pub fn development_config() -> ChainSpec {
 pub fn local_testnet_config() -> ChainSpec {
 	// Give your base currency a unit name and decimal places
 	let mut properties = sc_chain_spec::Properties::new();
-	properties.insert("tokenSymbol".into(), "UNIT".into());
+	properties.insert("tokenSymbol".into(), "TRN".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 	properties.insert("ss58Format".into(), 42.into());
 
@@ -155,7 +126,7 @@ pub fn local_testnet_config() -> ChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
-				ParaId::from(3331 as u32),
+				PARA_ID,
 			)
 		},
 		// Bootnodes
@@ -169,7 +140,7 @@ pub fn local_testnet_config() -> ChainSpec {
 		// Extensions
 		Extensions {
 			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
-			para_id: 3331,                      // You MUST set this correctly!
+			para_id: PARA_ID,                      // You MUST set this correctly!
 		},
 	)
 }
@@ -226,7 +197,7 @@ fn testnet_genesis(
 pub fn circuit_config() -> ChainSpec {
 	// Give your base currency a unit name and decimal places
 	let mut properties = sc_chain_spec::Properties::new();
-	properties.insert("tokenSymbol".into(), "T3RN".into());
+	properties.insert("tokenSymbol".into(), "TRN".into());
 	properties.insert("tokenDecimals".into(), 12.into());
 	properties.insert("ss58Format".into(), 1333.into());
 
@@ -281,7 +252,7 @@ pub fn circuit_config() -> ChainSpec {
 						(1_000_000 * UNIT).into(),
 					),
 				],
-				ParaId::from(3331),
+				PARA_ID,
 			)
 		},
 		// Bootnodes
@@ -293,7 +264,7 @@ pub fn circuit_config() -> ChainSpec {
 		// Properties
 		Some(properties),
 		// Extensions
-		Extensions { relay_chain: "".into(), para_id: 3331 },
+		Extensions { relay_chain: "".into(), para_id: PARA_ID },
 	)
 }
 

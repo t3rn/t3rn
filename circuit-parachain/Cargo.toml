@@ -3,6 +3,6 @@ panic = 'unwind'
 
 [workspace]
 members = [
-	'node',
+    '../node',
 	'runtime',
 ]

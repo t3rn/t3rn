@@ -1,4 +1,4 @@
-//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
+//! t3rn service. Specialized wrapper over substrate service.
 
 // std
 use std::sync::Arc;
@@ -30,6 +30,8 @@ use sp_consensus::SlotData;
 use sp_keystore::SyncCryptoStorePtr;
 use sp_runtime::traits::BlakeTwo256;
 use substrate_prometheus_endpoint::Registry;
+
+mod rpc;
 
 /// Native executor instance.
 pub struct CircuitRuntimeExecutor;
