@@ -60,18 +60,20 @@ pallet-collective = { git = "https://github.com/paritytech/substrate", default-f
 pallet-scheduler = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
 pallet-elections-phragmen = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
 pallet-utility = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13"}
+pallet-contracts = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
 
 ## snow bridge
-snowbridge-core = { git = "https://github.com/t3rn/snowbridge", default-features = false }
-#ethereum-light-client = { git = "https://github.com/t3rn/snowbridge", package = "snowbridge-ethereum-light-client", default-features = false }
-snowbridge-channel = { git = "https://github.com/t3rn/snowbridge", package = "snowbridge-basic-channel", default-features = false }
+snowbridge-core = { git = "https://github.com/t3rn/snowbridge", branch = "polkadot-v0.9.13", default-features = false }
+ethereum-light-client = { git = "https://github.com/t3rn/snowbridge", branch = "polkadot-v0.9.13", package = "snowbridge-ethereum-light-client", default-features = false }
+snowbridge-basic-channel = { git = "https://github.com/t3rn/snowbridge", branch = "polkadot-v0.9.13", default-features = false }
 
 # t3rn Dependencies
-pallet-xdns = {path = "../../pallets/xdns", default-features = false }
 t3rn-primitives = { version = "1.0.0-alpha.0", default-features = false, path = "../../primitives", package = "t3rn-parachain-primitives" }
+t3rn-protocol = { version = "1.0.0-alpha.0", default-features = false, path = "../../protocol", package = "t3rn-protocol" }
+pallet-xdns = {path = "../../pallets/xdns", default-features = false }
 pallet-mfv = {path = "../../pallets/multi-finality-verifier", package = "multi-finality-verifier", default-features = false }
 pallet-contracts-registry = { path = "../../pallets/contracts-registry", default-features = false }
-#pallet-execution-delivery = { path = "../../pallets/execution-delivery", package = "pallet-circuit-execution-delivery", default-features = false }
+pallet-execution-delivery = { path = "../../pallets/execution-delivery", package = "pallet-circuit-execution-delivery", default-features = false }
 
 # Cumulus dependencies
 cumulus-pallet-aura-ext = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.13', default-features = false }
@@ -118,12 +120,14 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"t3rn-primitives/std",
+	"t3rn-protocol/std",
 	"pallet-aura/std",
 	"pallet-authorship/std",
 	"pallet-balances/std",
 	"pallet-collator-selection/std",
+	"pallet-contracts/std",
 	"pallet-contracts-registry/std",
-	#"pallet-execution-delivery/std",
+	"pallet-execution-delivery/std",
 	"pallet-randomness-collective-flip/std",
 	"pallet-session/std",
 	"pallet-sudo/std",
@@ -151,9 +155,9 @@ std = [
 	"xcm-executor/std",
 	"xcm/std",
 	"pallet-mfv/std",
-	#"ethereum-light-client/std",
+	"ethereum-light-client/std",
 	"snowbridge-core/std",
-	"snowbridge-channel/std"
+	"snowbridge-basic-channel/std"
 ]
 
 runtime-benchmarks = [
