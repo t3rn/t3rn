@@ -116,7 +116,7 @@ under the `Parachains` -> `Parathreads` tab and use the `+ ParaID` button.
 
 To operate your parachain, you need to specify the correct relay chain you will connect to in your
 collator `chain_spec.rs`. Specifically you pass the command for the network you need in the
-`Extensions` of your `ChainSpec::from_genesis()` [in the code](node/src/chain_spec.rs#78-81).
+`Extensions` of your `ChainSpec::from_genesis()` [in the code](../node/service/src/chain_spec/parachain#78-81).
 
 ```rust
 Extensions {

@@ -49,8 +49,8 @@ use std::collections::BTreeMap;
 use t3rn_primitives::transfers::BalanceOf;
 use t3rn_primitives::EscrowTrait;
 use t3rn_primitives::{GatewaySysProps, GatewayType, GatewayVendor};
-
 use t3rn_protocol::side_effects::confirm::ethereum::EthereumMockVerifier;
+use pallet_evm::{AddressMapping, FeeCalculator};
 
 pub type AccountId = sp_runtime::AccountId32;
 pub type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -798,7 +798,7 @@ type Keccak256ValU32BridgeInstance = pallet_multi_finality_verifier::Instance3;
 
 #[derive(Debug)]
 pub struct Blake2ValU64Chain;
-impl t3rn_primitives::bridges::runtime::Chain for Blake2ValU64Chain {
+impl bp_runtime::Chain for Blake2ValU64Chain {
     type BlockNumber = <Test as frame_system::Config>::BlockNumber;
     type Hash = <Test as frame_system::Config>::Hash;
     type Hasher = <Test as frame_system::Config>::Hashing;
@@ -807,7 +807,7 @@ impl t3rn_primitives::bridges::runtime::Chain for Blake2ValU64Chain {
 
 #[derive(Debug)]
 pub struct Blake2ValU32Chain;
-impl t3rn_primitives::bridges::runtime::Chain for Blake2ValU32Chain {
+impl bp_runtime::Chain for Blake2ValU32Chain {
     type BlockNumber = u32;
     type Hash = H256;
     type Hasher = BlakeTwo256;
@@ -816,7 +816,7 @@ impl t3rn_primitives::bridges::runtime::Chain for Blake2ValU32Chain {
 
 #[derive(Debug)]
 pub struct Keccak256ValU64Chain;
-impl t3rn_primitives::bridges::runtime::Chain for Keccak256ValU64Chain {
+impl bp_runtime::Chain for Keccak256ValU64Chain {
     type BlockNumber = u64;
     type Hash = H256;
     type Hasher = Keccak256;
@@ -825,7 +825,7 @@ impl t3rn_primitives::bridges::runtime::Chain for Keccak256ValU64Chain {
 
 #[derive(Debug)]
 pub struct Keccak256ValU32Chain;
-impl t3rn_primitives::bridges::runtime::Chain for Keccak256ValU32Chain {
+impl bp_runtime::Chain for Keccak256ValU32Chain {
     type BlockNumber = u32;
     type Hash = H256;
     type Hasher = Keccak256;

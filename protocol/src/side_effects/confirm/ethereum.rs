@@ -73,6 +73,24 @@ pub struct TransferERC20 {
 #[derive(Copy, Clone, PartialEq, Eq, RuntimeDebug)]
 pub struct EnvelopeDecodeError;
 
+pub struct EthereumMockVerifier {}
+
+// TODO: Implement proper Ethereum Verifier
+impl Verifier for EthereumMockVerifier {
+    fn verify(_message: &Message) -> Result<Log, DispatchError> {
+        Ok(Def::default())
+    }
+
+    fn initialize_storage(
+        _headers: Vec<Header>,
+        _initial_difficulty: U256,
+        _descendants_until_final: u8,
+    ) -> Result<(), &'static str> {
+        Ok(())
+    }
+}
+
+
 impl TryFrom<Log> for TransferERC20 {
     type Error = EnvelopeDecodeError;
 

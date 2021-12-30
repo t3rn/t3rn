@@ -26,6 +26,8 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
+use sp_runtime::MultiSignature;
+use sp_runtime::traits::{Verify, IdentifyAccount};
 
 use sp_std::convert::TryFrom;
 use sp_std::prelude::*;
@@ -388,3 +390,10 @@ pub fn retrieve_gateway_pointers(gateway_id: ChainId) -> Result<Vec<GatewayPoint
         vendor: GatewayVendor::Substrate,
     }])
 }
+
+pub type AccountId = <<MultiSignature as Verify>::Signer as IdentifyAccount>::AccountId;
+
+/// Alias to the public key used for this chain, actually a `MultiSigner`. Like
+/// the signature, this also isn't a fixed size when encoded, as different
+/// cryptos have different size public keys.
+pub type AccountPublic = <MultiSignature as Verify>::Signer;

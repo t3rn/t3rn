@@ -17,7 +17,7 @@ hex = { version = "0.4.3", default-features = false }
 
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
 
-t3rn-primitives = { version = "1.0.0-alpha.0", default-features = false, path = "../../primitives", package = "t3rn-parachain-primitives" }
+t3rn-primitives = { version = "1.0.0-alpha.0", default-features = false, path = "../../primitives" }
 t3rn-protocol = { version = "1.0.0-alpha.0", default-features = false, path = "../../protocol", package = "t3rn-protocol" }
 serde = { version = "1.0.124", features = ["derive"], optional = true }
 lite-json = { version = "0.1", default-features = false }

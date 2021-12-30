@@ -155,6 +155,8 @@ parameter_types! {
 }
 
 use frame_support::weights::IdentityFee;
+use t3rn_protocol::side_effects::confirm::ethereum::EthereumMockVerifier;
+
 impl pallet_transaction_payment::Config for Test {
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
     type TransactionByteFee = TransactionByteFee;
@@ -391,6 +393,7 @@ impl Config for Test {
     type ToStandardizedGatewayBalance = CircuitToGateway;
     type WeightInfo = ();
     type PalletId = ExecPalletId;
+    type EthVerifier = EthereumMockVerifier;
 }
 
 impl pallet_im_online::Config for Test {
