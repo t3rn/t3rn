@@ -1,6 +1,6 @@
 [package]
 name = "pallet-circuit-execution-delivery-rpc-runtime-api"
-version = "0.1.0"
+version = "1.0.0-alpha.0"
 authors = ["t3rn ltd. <team@t3rn.io>"]
 edition = "2018"
 license = "Apache-2.0"

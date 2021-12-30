@@ -4,6 +4,7 @@ pub use crate::side_effects::confirm::protocol::SideEffectConfirmationProtocol;
 pub use crate::side_effects::protocol::{EventSignature, SideEffectProtocol, String};
 use codec::{Decode, Encode};
 use sp_runtime::RuntimeDebug;
+use sp_std::boxed::Box;
 use sp_std::vec;
 use sp_std::vec::*;
 use t3rn_primitives::abi::Type;

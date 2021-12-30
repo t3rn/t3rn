@@ -3,9 +3,10 @@
 use codec::{Decode, Encode};
 use ethabi_decode::{Event, Param, ParamKind, Token};
 use snowbridge_core::{Message, Verifier};
-use snowbridge_ethereum::Log;
+use snowbridge_ethereum::{Header, Log};
 use sp_core::{H160, U256};
 
+use sp_runtime::DispatchError;
 use sp_runtime::RuntimeDebug;
 use sp_std::convert::TryFrom;
 use sp_std::marker::PhantomData;
@@ -72,6 +73,23 @@ pub struct TransferERC20 {
 
 #[derive(Copy, Clone, PartialEq, Eq, RuntimeDebug)]
 pub struct EnvelopeDecodeError;
+
+pub struct EthereumMockVerifier {}
+
+// TODO: Implement proper Ethereum Verifier
+impl Verifier for EthereumMockVerifier {
+    fn verify(_message: &Message) -> Result<Log, DispatchError> {
+        Ok(Default::default())
+    }
+
+    fn initialize_storage(
+        _headers: Vec<Header>,
+        _initial_difficulty: U256,
+        _descendants_until_final: u8,
+    ) -> Result<(), &'static str> {
+        Ok(())
+    }
+}
 
 impl TryFrom<Log> for TransferERC20 {
     type Error = EnvelopeDecodeError;
