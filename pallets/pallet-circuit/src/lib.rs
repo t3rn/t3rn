@@ -39,7 +39,6 @@ pub use t3rn_primitives::{
 use t3rn_protocol::side_effects::loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol};
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 
-use sp_runtime::traits::Saturating;
 use sp_runtime::traits::Zero;
 use sp_std::fmt::Debug;
 
@@ -79,7 +78,7 @@ use crate::state::*;
 pub mod pallet {
     use super::*;
     use frame_support::pallet_prelude::*;
-    use frame_support::traits::{Currency, Get};
+    use frame_support::traits::Get;
     use frame_support::PalletId;
     use frame_system::pallet_prelude::*;
 
@@ -210,22 +209,20 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
         pub fn on_extrinsics_trigger(
             origin: OriginFor<T>,
-            side_effects: Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+            _side_effects: Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
             _input: Vec<u8>,
             _value: BalanceOf<T>,
-            fee: BalanceOf<T>,
-            sequential: bool,
+            _fee: BalanceOf<T>,
+            _sequential: bool,
         ) -> DispatchResultWithPostInfo {
             // Retrieve sender of the transaction.
-            let requester = ensure_signed(origin)?;
+            let _requester = ensure_signed(origin)?;
             // Ensure can afford
             // ensure!(
             //     <T as EscrowTrait>::Currency::free_balance(&fee).saturating_sub(reward)
             //         >= BalanceOf::<T>::from(0 as u32),
             //     Error::<T>::RequesterNotEnoughBalance,
             // );
-
-            let available_trn_balance = <T as EscrowTrait>::Currency::free_balance(&requester);
 
             // let _new_xtx = Xtx::<T::AccountId, T::BlockNumber, BalanceOf<T>>::new(
             //     requester.clone(),
@@ -297,52 +294,79 @@ impl<T: SigningTypes> SignedPayload<T> for Payload<T::Public, T::BlockNumber> {
 //     Cancel,
 // }
 
+pub struct LocalXtxCtx<T: Config> {
+    local_state: LocalState,
+    universal_sep: UniversalSideEffectsProtocol,
+    xtx_id: XExecSignalId<T>,
+    xtx: XExecSignal<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+}
+
+// &'static mut LocalState,
+// &'static mut UniversalSideEffectsProtocol,
+// XExecSignalId<T>,
+// XExecSignal<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+
 impl<T: Config> Pallet<T> {
     fn setup(
         current_status: CircuitExecStatus,
-    ) -> (
-        &mut LocalState,
-        UniversalSideEffectsProtocol,
-        XExecSignalId<T>,
-        XExecSignal<T::AccountId, T::BlockNumber, BalanceOf<T>>,
-    ) {
+        requester: T::AccountId,
+        reward: BalanceOf<T>,
+    ) -> LocalXtxCtx<T> {
         match current_status {
             CircuitExecStatus::Requested => {
-                let mut local_state = LocalState::new();
-                let mut use_protocol = UniversalSideEffectsProtocol::new();
-
+                // let mut local_state = LocalState::new();
+                // let mut use_protocol = UniversalSideEffectsProtocol::new();
                 // ToDo: Introduce default timeout + delay
                 let (timeouts_at, delay_steps_at): (
                     Option<T::BlockNumber>,
                     Option<Vec<T::BlockNumber>>,
                 ) = (None, None);
 
-                let (x_exec_signal_id, x_exec_signal) = XExecSignal::setup_fresh(
-                    requester.clone(),
-                    timeouts_at,
-                    delay_steps_at,
-                    Some(reward),
-                );
+                let (x_exec_signal_id, x_exec_signal) =
+                    XExecSignal::<T::AccountId, T::BlockNumber, BalanceOf<T>>::setup_fresh::<T>(
+                        requester.clone(),
+                        timeouts_at,
+                        delay_steps_at,
+                        Some(reward),
+                    );
 
-                (local_state, use_protocol, x_exec_signal_id, x_exec_signal)
+                LocalXtxCtx {
+                    local_state: LocalState::new(),
+                    universal_sep: UniversalSideEffectsProtocol::new(),
+                    xtx_id: x_exec_signal_id,
+                    xtx: x_exec_signal,
+                }
+                //
+                // (
+                //     &mut local_state,
+                //     &mut use_protocol,
+                //     x_exec_signal_id,
+                //     x_exec_signal,
+                // )
             }
+            _ => unimplemented!(),
         }
     }
 
-    fn apply(current_status: CircuitExecStatus, new_status: CircuitExecStatus) {
+    fn apply(_current_status: CircuitExecStatus, _new_status: CircuitExecStatus) {
         unimplemented!()
     }
 
+    fn charge(requester: T::AccountId) -> Result<BalanceOf<T>, Error<T>> {
+        let available_trn_balance = <T as EscrowTrait>::Currency::free_balance(&requester);
+        Ok(available_trn_balance)
+    }
+
     fn validate(
-        side_effects: Vec<SideEffect<AccountId, BlockNumber, BalanceOf>>,
+        side_effects: Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+        use_protocol: &mut UniversalSideEffectsProtocol,
         local_state: &mut LocalState,
-        request_side_effect_insurance: OnRequestInsurance,
-        requester: AccountId,
-        xtx_id: XExecSignalId<T>,
-    ) {
-        let mut full_side_effects_steps: Vec<
-            Vec<FullSideEffect<AccountId, BlockNumber, BalanceOf>>,
-        > = vec![];
+        requester: T::AccountId,
+        _xtx_id: XExecSignalId<T>,
+        sequential: bool,
+    ) -> Result<(), &'static str> {
+        let mut full_side_effects: Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>> =
+            vec![];
 
         for side_effect in side_effects.iter() {
             // ToDo: Generate Circuit's params as default ABI from let abi = pallet_xdns::get_abi(target_id)
@@ -352,16 +376,16 @@ impl<T: Config> Pallet<T> {
                 .validate_args::<T::AccountId, T::BlockNumber, BalanceOf<T>, SystemHashing<T>>(
                     side_effect.clone(),
                     gateway_abi,
-                    &mut local_state,
+                    local_state,
                 )?;
 
             if let Some(insurance_and_reward) =
                 UniversalSideEffectsProtocol::check_if_insurance_required::<
-                    AccountId,
-                    BlockNumber,
-                    BalanceOf,
-                    Hasher,
-                >(side_effect.clone(), &mut local_state)?
+                    T::AccountId,
+                    T::BlockNumber,
+                    BalanceOf<T>,
+                    SystemHashing<T>,
+                >(side_effect.clone(), local_state)?
             {
                 let (insurance, reward) = (insurance_and_reward[0], insurance_and_reward[1]);
                 Self::request_side_effect_insurance(
@@ -370,7 +394,7 @@ impl<T: Config> Pallet<T> {
                     insurance,
                     reward,
                     &requester,
-                    &mut local_state,
+                    local_state,
                 )?;
             }
             full_side_effects.push(FullSideEffect {
@@ -379,7 +403,9 @@ impl<T: Config> Pallet<T> {
             })
         }
 
-        full_side_effects_steps = match sequential {
+        let _full_side_effects_steps: Vec<
+            Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+        > = match sequential {
             false => vec![full_side_effects],
             true => {
                 let mut sequential_order: Vec<
@@ -391,6 +417,8 @@ impl<T: Config> Pallet<T> {
                 sequential_order
             }
         };
+
+        Ok(())
     }
 
     /// On-submit
