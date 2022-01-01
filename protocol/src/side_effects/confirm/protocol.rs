@@ -12,6 +12,7 @@ pub use t3rn_primitives::{
 
 pub type EventSignature = Vec<u8>;
 pub type String = Vec<u8>;
+pub type Bytes = Vec<u8>;
 
 pub trait SideEffectConfirmationProtocol: SideEffectProtocol {
     // Use CONFIRMING_EVENTS now to confirm that the content received events follows the protocol
@@ -22,8 +23,9 @@ pub trait SideEffectConfirmationProtocol: SideEffectProtocol {
     // confirm.rs: SideEffectEventsConfirmation("Event::escrow_instantiated(from,to,u64,u32,u32)"), // from here on the trust falls back on the target escrow to emit the claim / refund txs
     fn confirm<T: pallet_balances::Config, VendorParser: VendorSideEffectsParser>(
         &self,
-        encoded_remote_events: Vec<Vec<u8>>,
+        encoded_remote_events: Vec<Bytes>,
         local_state: &mut LocalState,
+        _side_effect_id: Option<Bytes>,
     ) -> Result<(), &'static str> {
         // 0. Check incoming args with protocol requirements
         assert!(encoded_remote_events.len() == Self::get_confirming_events(self).len());
@@ -42,8 +44,10 @@ pub trait SideEffectConfirmationProtocol: SideEffectProtocol {
             //  the signature, but here there should be a lookup now for
             //  arg_names = get_arg_names_from_signature(self.get_confirmation_event()[0])
             let mapper = self.get_arguments_2_state_mapper();
-            assert!(mapper.len() == decoded_events.len());
+            // assert!(mapper.len() == decoded_events.len());
             for (j, arg_name) in mapper.iter().enumerate() {
+                // LocalState::stick_key_with_prefix(arg_name.encode(), side_effect_id);
+                // if u encode the confimration arg names no collision with insurance anymore
                 //  3. Check each argument of decoded "encoded_remote_events" against the values from State
                 if !local_state.cmp(arg_name, decoded_events[j].clone()) {
                     return Err("Confirmation Failed - received event arguments differ from expected by state");
@@ -56,8 +60,9 @@ pub trait SideEffectConfirmationProtocol: SideEffectProtocol {
 
 pub fn confirmation_plug<T: pallet_balances::Config, VendorParser: VendorSideEffectsParser>(
     side_effect_protocol: Box<dyn SideEffectProtocol>,
-    encoded_remote_events: Vec<Vec<u8>>,
+    encoded_remote_events: Vec<Bytes>,
     local_state: &mut LocalState,
+    _side_effect_id: Option<Bytes>,
 ) -> Result<(), &'static str> {
     // 0. Check incoming args with protocol requirements
     assert!(encoded_remote_events.len() == side_effect_protocol.get_confirming_events().len());
@@ -95,9 +100,10 @@ pub fn confirm_with_vendor_by_action_id<
     EthParser: VendorSideEffectsParser,
 >(
     gateway_vendor: GatewayVendor,
-    encoded_action: Vec<u8>,
-    encoded_effect: Vec<u8>,
+    encoded_action: Bytes,
+    encoded_effect: Bytes,
     mut state_copy: &mut LocalState,
+    side_effect_id: Option<Bytes>,
 ) -> Result<(), &'static str> {
     let mut action_id_4b: [u8; 4] = [0, 0, 0, 0];
     action_id_4b.copy_from_slice(&encoded_action[0..4]);
@@ -109,35 +115,15 @@ pub fn confirm_with_vendor_by_action_id<
             side_effect_protocol,
             vec![encoded_effect.clone()],
             &mut state_copy,
+            side_effect_id,
         ),
         GatewayVendor::Ethereum => confirmation_plug::<T, EthParser>(
             side_effect_protocol,
             vec![encoded_effect.clone()],
             &mut state_copy,
+            side_effect_id,
         ),
     }
-
-    // match &action_id_4b {
-    //     b"tran" => {
-    //         let side_effect_protocol = TransferSideEffectProtocol {};
-    //         match gateway_vendor {
-    //             GatewayVendor::Substrate => side_effect_protocol
-    //                 .confirm::<T, SubstrateParser>(vec![encoded_effect.clone()], &mut state_copy),
-    //             GatewayVendor::Ethereum => side_effect_protocol
-    //                 .confirm::<T, EthParser>(vec![encoded_effect.clone()], &mut state_copy),
-    //         }
-    //     }
-    //     b"data" => {
-    //         let side_effect_protocol = GetDataSideEffectProtocol {};
-    //         match gateway_vendor {
-    //             GatewayVendor::Substrate => side_effect_protocol
-    //                 .confirm::<T, SubstrateParser>(vec![encoded_effect.clone()], &mut state_copy),
-    //             GatewayVendor::Ethereum => side_effect_protocol
-    //                 .confirm::<T, EthParser>(vec![encoded_effect.clone()], &mut state_copy),
-    //         }
-    //     }
-    //     _ => Err("Side Effect Selection: Unknown ID"),
-    // }
 }
 
 #[cfg(test)]
@@ -146,12 +132,13 @@ pub mod tests {
     use crate::side_effects::confirm::substrate::tests::Test;
     use crate::side_effects::confirm::substrate::SubstrateSideEffectsParser;
     use crate::side_effects::protocol::TransferSideEffectProtocol;
+
     use codec::Encode;
 
     use hex_literal::hex;
 
     #[test]
-    fn successfully_confirms_transfer_side_effect() {
+    fn successfully_confirms_transfer_side_effect_no_prefix_no_insurance() {
         let encoded_balance_transfer_event = pallet_balances::Event::<Test>::Transfer(
             hex!("0909090909090909090909090909090909090909090909090909090909090909").into(),
             hex!("0606060606060606060606060606060606060606060606060606060606060606").into(),
@@ -181,7 +168,9 @@ pub mod tests {
         let res = transfer_protocol.confirm::<Test, SubstrateSideEffectsParser>(
             vec![encoded_balance_transfer_event.clone()],
             &mut local_state,
+            None,
         );
+
         assert_eq!(res, Ok(()));
 
         let res_vendor = confirm_with_vendor_by_action_id::<
@@ -193,13 +182,14 @@ pub mod tests {
             b"tran".to_vec(),
             encoded_balance_transfer_event,
             &mut local_state,
+            None,
         );
 
         assert_eq!(res_vendor, Ok(()));
     }
 
     #[test]
-    fn errors_to_confirm_transfer_side_effect_with_wrong_receiver() {
+    fn errors_to_confirm_transfer_side_effect_with_wrong_receiver_no_prefix() {
         let encoded_balance_transfer_event = pallet_balances::Event::<Test>::Transfer(
             hex!("0909090909090909090909090909090909090909090909090909090909090909").into(),
             hex!("0505050505050505050505050505050505050505050505050505050505050505").into(),
@@ -229,6 +219,7 @@ pub mod tests {
         let res = transfer_protocol.confirm::<Test, SubstrateSideEffectsParser>(
             vec![encoded_balance_transfer_event.clone()],
             &mut local_state,
+            None,
         );
         assert_eq!(
             res,
@@ -244,6 +235,7 @@ pub mod tests {
             b"tran".to_vec(),
             encoded_balance_transfer_event,
             &mut local_state,
+            None,
         );
 
         assert_eq!(

@@ -168,7 +168,7 @@ impl SideEffectProtocol for CallSideEffectProtocol {
             Type::DynamicAddress, // argument_0: from
             Type::DynamicAddress, // argument_1: dest
             Type::Value,          // argument_2: value
-            Type::DynamicBytes,   // argument_2: value
+            Type::DynamicBytes,   // argument_3: input
         ]
     }
     fn get_arguments_2_state_mapper(&self) -> Vec<&'static str> {
