@@ -1,7 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use crate::side_effects::confirm::protocol::SideEffectConfirmationProtocol;
-pub use crate::side_effects::standards::{GetDataSideEffectProtocol, CallSideEffectProtocol, TransferSideEffectProtocol};
+pub use crate::side_effects::standards::{
+    CallSideEffectProtocol, GetDataSideEffectProtocol, TransferSideEffectProtocol,
+};
 
 use codec::Encode;
 use sp_std::vec::*;
@@ -49,7 +51,12 @@ pub trait SideEffectProtocol {
                 Some(ref prefix) => {
                     let key =
                         LocalState::stick_key_with_prefix(mapper[i].encode(), prefix.to_vec());
-                    println!("POPULATE_STATE {:?} {:?} {:?}", key.clone(), arg.to_vec().clone(), mapper[i]);
+                    println!(
+                        "POPULATE_STATE {:?} {:?} {:?}",
+                        key.clone(),
+                        arg.to_vec().clone(),
+                        mapper[i]
+                    );
 
                     local_state.insert(key, arg.to_vec())
                 }
@@ -284,9 +291,7 @@ pub mod tests {
 
     #[test]
     fn successfully_validates_get_data_arguments_with_prefix() {
-        let encoded_get_data_args_input = produce_test_args(vec![
-            (Type::Bytes(32), ArgVariant::A),
-        ]);
+        let encoded_get_data_args_input = produce_test_args(vec![(Type::Bytes(32), ArgVariant::A)]);
 
         let valid_get_data_side_effect =
             produce_test_side_effect(*b"data", encoded_get_data_args_input.clone(), vec![]);

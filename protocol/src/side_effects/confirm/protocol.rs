@@ -1,11 +1,13 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::Encode;
 use sp_std::vec::*;
 
 use crate::side_effects::confirm::parser::VendorSideEffectsParser;
 use crate::side_effects::protocol::SideEffectProtocol;
 
 pub use t3rn_primitives::{
+    abi::extract_property_names_from_signature_as_bytes,
     volatile::{LocalState, Volatile},
     GatewayVendor,
 };
@@ -25,7 +27,7 @@ pub trait SideEffectConfirmationProtocol: SideEffectProtocol {
         &self,
         encoded_remote_events: Vec<Bytes>,
         local_state: &mut LocalState,
-        _side_effect_id: Option<Bytes>,
+        side_effect_id: Option<Bytes>,
     ) -> Result<(), &'static str> {
         // 0. Check incoming args with protocol requirements
         assert!(encoded_remote_events.len() == Self::get_confirming_events(self).len());
@@ -43,13 +45,23 @@ pub trait SideEffectConfirmationProtocol: SideEffectProtocol {
             //  since the args names are the same as expected confirmation events params.
             //  the signature, but here there should be a lookup now for
             //  arg_names = get_arg_names_from_signature(self.get_confirmation_event()[0])
-            let mapper = self.get_arguments_2_state_mapper();
+            let (_, property_names) =
+                extract_property_names_from_signature_as_bytes(expected_event_signature.encode())?;
+
+            // let mapper = side_effect_protocol.get_arguments_2_state_mapper();
             // assert!(mapper.len() == decoded_events.len());
-            for (j, arg_name) in mapper.iter().enumerate() {
-                // LocalState::stick_key_with_prefix(arg_name.encode(), side_effect_id);
-                // if u encode the confimration arg names no collision with insurance anymore
+            for (j, property_name) in property_names.iter().enumerate() {
                 //  3. Check each argument of decoded "encoded_remote_events" against the values from State
-                if !local_state.cmp(arg_name, decoded_events[j].clone()) {
+
+                let key = match side_effect_id.clone() {
+                    None => property_name.clone(),
+                    Some(ref prefix) => LocalState::stick_key_with_prefix(
+                        property_name.clone().encode(),
+                        side_effect_id.as_ref().unwrap().to_vec(),
+                    ),
+                };
+
+                if !local_state.cmp(key, decoded_events[j].clone()) {
                     return Err("Confirmation Failed - received event arguments differ from expected by state");
                 }
             }
@@ -62,7 +74,7 @@ pub fn confirmation_plug<T: pallet_balances::Config, VendorParser: VendorSideEff
     side_effect_protocol: Box<dyn SideEffectProtocol>,
     encoded_remote_events: Vec<Bytes>,
     local_state: &mut LocalState,
-    _side_effect_id: Option<Bytes>,
+    side_effect_id: Option<Bytes>,
 ) -> Result<(), &'static str> {
     // 0. Check incoming args with protocol requirements
     assert!(encoded_remote_events.len() == side_effect_protocol.get_confirming_events().len());
@@ -73,18 +85,28 @@ pub fn confirmation_plug<T: pallet_balances::Config, VendorParser: VendorSideEff
         let decoded_events = VendorParser::parse_event::<T>(
             side_effect_protocol.get_name(),
             encoded_event.clone(),
-            expected_event_signature,
+            expected_event_signature.clone(),
         )?;
         // 2.  Use STATE_MAPPER to map each variable name from CONFIRMING_EVENTS into expected value stored in STATE_MAPPER during the "validate_args"
         // ToDo: It will work for transfer for now without analyzing the signature
         //  since the args names are the same as expected confirmation events params.
         //  the signature, but here there should be a lookup now for
         //  arg_names = get_arg_names_from_signature(self.get_confirmation_event()[0])
-        let mapper = side_effect_protocol.get_arguments_2_state_mapper();
-        assert!(mapper.len() == decoded_events.len());
-        for (j, arg_name) in mapper.iter().enumerate() {
+        let (_, property_names) =
+            extract_property_names_from_signature_as_bytes(expected_event_signature.encode())?;
+
+        // let mapper = side_effect_protocol.get_arguments_2_state_mapper();
+        // assert!(mapper.len() == decoded_events.len());
+        for (j, property_name) in property_names.iter().enumerate() {
             //  3. Check each argument of decoded "encoded_remote_events" against the values from State
-            if !local_state.cmp(arg_name, decoded_events[j].clone()) {
+            let key = match side_effect_id.clone() {
+                None => property_name.clone(),
+                Some(ref prefix) => LocalState::stick_key_with_prefix(
+                    property_name.clone().encode(),
+                    side_effect_id.as_ref().unwrap().to_vec(),
+                ),
+            };
+            if !local_state.cmp(key, decoded_events[j].clone()) {
                 return Err(
                     "Confirmation Failed - received event arguments differ from expected by state",
                 );

@@ -596,6 +596,30 @@ pub fn from_signature_to_abi(signature: Vec<u8>) -> Result<(Vec<u8>, Vec<Type>),
     Ok((maybe_name.to_vec(), types))
 }
 
+pub fn extract_property_names_from_signature_as_bytes(signature: Vec<u8>) -> Result<(Vec<u8>, Vec<Vec<u8>>), &'static str> {
+    const BEGIN_ARGS_CHAR: u8 = b'(';
+    const END_ARGS_CHAR: u8 = b')';
+    const COMMA_SEPARATOR: u8 = b',';
+
+    let mut signature_iter = signature
+        .as_slice()
+        .split(|x| x.eq(&BEGIN_ARGS_CHAR) || x.eq(&COMMA_SEPARATOR) || x.eq(&END_ARGS_CHAR))
+        .filter(|&x| !x.is_empty());
+
+    let maybe_name = signature_iter.next().unwrap_or(&[]);
+
+    ensure!(
+        !maybe_name.is_empty(),
+        "Can't find a name while reading event's ABI"
+    );
+
+    let property_names = signature_iter
+        .map(|arg_candidate| arg_candidate.to_vec())
+        .collect::<Vec<Vec<u8>>>();
+
+    Ok((maybe_name.to_vec(), property_names))
+}
+
 pub fn decode_buf2val<D: Decode>(buf: Vec<u8>) -> Result<D, &'static str> {
     D::decode(&mut &buf[..]).map_err(|_| "Decoding error: decode_buf2val")
 }
