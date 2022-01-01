@@ -3,6 +3,7 @@ use crate::side_effects::standards::SideEffectProtocol;
 use codec::Encode;
 use hex_literal::hex;
 use sp_std::vec;
+use sp_std::vec::Vec;
 use t3rn_primitives::{
     abi::{GatewayABIConfig, Type},
     side_effect::SideEffect,
@@ -168,7 +169,7 @@ pub fn assert_populated_state_auto_key_derive(
     let derive_for_properties = protocol.get_arguments_2_state_mapper();
     let mut keys: Vec<Bytes> = vec![];
     for prop in derive_for_properties {
-        let key = LocalState::stick_key_with_prefix(prop.clone().encode(), side_effect_id.clone());
+        let key = LocalState::stick_key_with_prefix(prop.encode(), side_effect_id.clone());
         keys.push(key);
     }
 

@@ -85,7 +85,7 @@ pub fn confirmation_plug<T: pallet_balances::Config, VendorParser: VendorSideEff
         let decoded_events = VendorParser::parse_event::<T>(
             side_effect_protocol.get_name(),
             encoded_event.clone(),
-            expected_event_signature.clone(),
+            expected_event_signature,
         )?;
         // 2.  Use STATE_MAPPER to map each variable name from CONFIRMING_EVENTS into expected value stored in STATE_MAPPER during the "validate_args"
         // ToDo: It will work for transfer for now without analyzing the signature
@@ -133,7 +133,7 @@ pub fn confirm_with_vendor_by_action_id<
     match gateway_vendor {
         GatewayVendor::Substrate => confirmation_plug::<T, SubstrateParser>(
             side_effect_protocol,
-            vec![encoded_effect.clone()],
+            vec![encoded_effect],
             &mut state_copy,
             side_effect_id,
         ),
