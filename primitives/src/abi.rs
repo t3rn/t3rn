@@ -249,7 +249,6 @@ impl Type {
     pub fn eval_abi(
         &self,
         encoded_val: Vec<u8>,
-        // size: usize,
         gen: &GatewayABIConfig,
     ) -> Result<Vec<u8>, &'static str> {
         match self {
@@ -330,8 +329,7 @@ impl Type {
                 Ok(res.to_vec())
             }
             Type::DynamicBytes => {
-                let res: Vec<u8> = decode_buf2val(encoded_val)?;
-                Ok(res)
+                Ok(encoded_val)
             }
             Type::String => {
                 let res: RuntimeString = decode_buf2val(encoded_val)?;
