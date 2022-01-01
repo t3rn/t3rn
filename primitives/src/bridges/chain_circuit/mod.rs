@@ -19,21 +19,21 @@
 #![allow(clippy::too_many_arguments)]
 // Runtime-generated DecodeLimit::decode_all_With_depth_limit
 #![allow(clippy::unnecessary_mut_passed)]
-use crate::bridges::runtime as bp_runtime;
 use crate::bridges::messages as bp_messages;
+use crate::bridges::runtime as bp_runtime;
 
 use bp_messages::{LaneId, MessageNonce, UnrewardedRelayersState};
 use bp_runtime::Chain;
 use frame_support::{
-	weights::{constants::WEIGHT_PER_SECOND, DispatchClass, Weight},
-	Parameter, RuntimeDebug,
+    weights::{constants::WEIGHT_PER_SECOND, DispatchClass, Weight},
+    Parameter, RuntimeDebug,
 };
 //use frame_system::limits;
 use sp_core::Hasher as HasherT;
 use sp_runtime::traits::Convert;
 use sp_runtime::{
-	traits::{BlakeTwo256, IdentifyAccount, Verify},
-	MultiSignature, MultiSigner, Perbill,
+    traits::{BlakeTwo256, IdentifyAccount, Verify},
+    MultiSignature, MultiSigner, Perbill,
 };
 use sp_std::prelude::*;
 
@@ -101,14 +101,14 @@ pub use time_units::*;
 
 /// Human readable time units defined in terms of number of blocks.
 pub mod time_units {
-	use super::BlockNumber;
+    use super::BlockNumber;
 
-	pub const MILLISECS_PER_BLOCK: u64 = 6000;
-	pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
+    pub const MILLISECS_PER_BLOCK: u64 = 6000;
+    pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
 
-	pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
-	pub const HOURS: BlockNumber = MINUTES * 60;
-	pub const DAYS: BlockNumber = HOURS * 24;
+    pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
+    pub const HOURS: BlockNumber = MINUTES * 60;
+    pub const DAYS: BlockNumber = HOURS * 24;
 }
 
 /// Block number type used in Circuit.
@@ -144,19 +144,19 @@ pub type Index = u32;
 pub struct Circuit;
 
 impl Chain for Circuit {
-	type BlockNumber = BlockNumber;
-	type Hash = Hash;
-	type Hasher = Hasher;
-	type Header = Header;
+    type BlockNumber = BlockNumber;
+    type Hash = Hash;
+    type Hasher = Hasher;
+    type Header = Header;
 }
 
 /// Convert a 256-bit hash into an AccountId.
 pub struct AccountIdConverter;
 
 impl sp_runtime::traits::Convert<sp_core::H256, AccountId> for AccountIdConverter {
-	fn convert(hash: sp_core::H256) -> AccountId {
-		hash.to_fixed_bytes().into()
-	}
+    fn convert(hash: sp_core::H256) -> AccountId {
+        hash.to_fixed_bytes().into()
+    }
 }
 
 /// We use this to get the account on Circuit (target) which is derived from Gateway (source)
@@ -168,12 +168,12 @@ impl sp_runtime::traits::Convert<sp_core::H256, AccountId> for AccountIdConverte
 ///
 /// Note that this should only be used for testing.
 pub fn derive_account_from_gateway_id(id: bp_runtime::SourceAccount<AccountId>) -> AccountId {
-	let encoded_id = bp_runtime::derive_account_id(bp_runtime::GATEWAY_CHAIN_ID, id);
-	AccountIdConverter::convert(encoded_id)
+    let encoded_id = bp_runtime::derive_account_id(bp_runtime::GATEWAY_CHAIN_ID, id);
+    AccountIdConverter::convert(encoded_id)
 }
 
 frame_support::parameter_types! {
-	/// We allow for 2 seconds of compute with a 6 second average block time.
+    /// We allow for 2 seconds of compute with a 6 second average block time.
     pub BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights
         ::with_sensible_defaults(2 * WEIGHT_PER_SECOND, NORMAL_DISPATCH_RATIO);
     pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
@@ -182,15 +182,15 @@ frame_support::parameter_types! {
 
 /// Get the maximum weight (compute time) that a Normal extrinsic on the Circuit chain can use.
 pub fn max_extrinsic_weight() -> Weight {
-	BlockWeights::get()
-		.get(DispatchClass::Normal)
-		.max_extrinsic
-		.unwrap_or(Weight::MAX)
+    BlockWeights::get()
+        .get(DispatchClass::Normal)
+        .max_extrinsic
+        .unwrap_or(Weight::MAX)
 }
 
 /// Get the maximum length in bytes that a Normal extrinsic on the Circuit chain requires.
 pub fn max_extrinsic_size() -> u32 {
-	*BlockLength::get().max.get(DispatchClass::Normal)
+    *BlockLength::get().max.get(DispatchClass::Normal)
 }
 
 /// Name of the `CircuitFinalityApi::best_finalized` runtime method.
@@ -198,92 +198,98 @@ pub const BEST_FINALIZED_CIRCUIT_HEADER_METHOD: &str = "CircuitFinalityApi_best_
 
 /// Name of the `ToCircuitOutboundLaneApi::estimate_message_delivery_and_dispatch_fee` runtime method.
 pub const TO_CIRCUIT_ESTIMATE_MESSAGE_FEE_METHOD: &str =
-	"ToCircuitOutboundLaneApi_estimate_message_delivery_and_dispatch_fee";
+    "ToCircuitOutboundLaneApi_estimate_message_delivery_and_dispatch_fee";
 /// Name of the `ToCircuitOutboundLaneApi::messages_dispatch_weight` runtime method.
-pub const TO_CIRCUIT_MESSAGES_DISPATCH_WEIGHT_METHOD: &str = "ToCircuitOutboundLaneApi_messages_dispatch_weight";
+pub const TO_CIRCUIT_MESSAGES_DISPATCH_WEIGHT_METHOD: &str =
+    "ToCircuitOutboundLaneApi_messages_dispatch_weight";
 /// Name of the `ToCircuitOutboundLaneApi::latest_received_nonce` runtime method.
-pub const TO_CIRCUIT_LATEST_RECEIVED_NONCE_METHOD: &str = "ToCircuitOutboundLaneApi_latest_received_nonce";
+pub const TO_CIRCUIT_LATEST_RECEIVED_NONCE_METHOD: &str =
+    "ToCircuitOutboundLaneApi_latest_received_nonce";
 /// Name of the `ToCircuitOutboundLaneApi::latest_generated_nonce` runtime method.
-pub const TO_CIRCUIT_LATEST_GENERATED_NONCE_METHOD: &str = "ToCircuitOutboundLaneApi_latest_generated_nonce";
+pub const TO_CIRCUIT_LATEST_GENERATED_NONCE_METHOD: &str =
+    "ToCircuitOutboundLaneApi_latest_generated_nonce";
 
 /// Name of the `FromCircuitInboundLaneApi::latest_received_nonce` runtime method.
-pub const FROM_CIRCUIT_LATEST_RECEIVED_NONCE_METHOD: &str = "FromCircuitInboundLaneApi_latest_received_nonce";
+pub const FROM_CIRCUIT_LATEST_RECEIVED_NONCE_METHOD: &str =
+    "FromCircuitInboundLaneApi_latest_received_nonce";
 /// Name of the `FromCircuitInboundLaneApi::latest_onfirmed_nonce` runtime method.
-pub const FROM_CIRCUIT_LATEST_CONFIRMED_NONCE_METHOD: &str = "FromCircuitInboundLaneApi_latest_confirmed_nonce";
+pub const FROM_CIRCUIT_LATEST_CONFIRMED_NONCE_METHOD: &str =
+    "FromCircuitInboundLaneApi_latest_confirmed_nonce";
 /// Name of the `FromCircuitInboundLaneApi::unrewarded_relayers_state` runtime method.
-pub const FROM_CIRCUIT_UNREWARDED_RELAYERS_STATE: &str = "FromCircuitInboundLaneApi_unrewarded_relayers_state";
+pub const FROM_CIRCUIT_UNREWARDED_RELAYERS_STATE: &str =
+    "FromCircuitInboundLaneApi_unrewarded_relayers_state";
 
 sp_api::decl_runtime_apis! {
-	/// API for querying information about the finalized Circuit headers.
-	///
-	/// This API is implemented by runtimes that are bridging with the Circuit chain, not the
-	/// Circuit runtime itself.
-	pub trait CircuitFinalityApi {
-		/// Returns number and hash of the best finalized header known to the bridge module.
-		fn best_finalized() -> (BlockNumber, Hash);
-		/// Returns true if the header is known to the runtime.
-		fn is_known_header(hash: Hash) -> bool;
-	}
+    /// API for querying information about the finalized Circuit headers.
+    ///
+    /// This API is implemented by runtimes that are bridging with the Circuit chain, not the
+    /// Circuit runtime itself.
+    pub trait CircuitFinalityApi {
+        /// Returns number and hash of the best finalized header known to the bridge module.
+        fn best_finalized() -> (BlockNumber, Hash);
+        /// Returns true if the header is known to the runtime.
+        fn is_known_header(hash: Hash) -> bool;
+    }
 
-	/// Outbound message lane API for messages that are sent to Circuit chain.
-	///
-	/// This API is implemented by runtimes that are sending messages to Circuit chain, not the
-	/// Circuit runtime itself.
-	pub trait ToCircuitOutboundLaneApi<OutboundMessageFee: Parameter, OutboundPayload: Parameter> {
-		/// Estimate message delivery and dispatch fee that needs to be paid by the sender on
-		/// this chain.
-		///
-		/// Returns `None` if message is too expensive to be sent to Circuit from this chain.
-		///
-		/// Please keep in mind that this method returns lowest message fee required for message
-		/// to be accepted to the lane. It may be good idea to pay a bit over this price to account
-		/// future exchange rate changes and guarantee that relayer would deliver your message
-		/// to the target chain.
-		fn estimate_message_delivery_and_dispatch_fee(
-			lane_id: LaneId,
-			payload: OutboundPayload,
-		) -> Option<OutboundMessageFee>;
-		/// Returns total dispatch weight and encoded payload size of all messages in given inclusive range.
-		///
-		/// If some (or all) messages are missing from the storage, they'll also will
-		/// be missing from the resulting vector. The vector is ordered by the nonce.
-		fn messages_dispatch_weight(
-			lane: LaneId,
-			begin: MessageNonce,
-			end: MessageNonce,
-		) -> Vec<(MessageNonce, Weight, u32)>;
-		/// Returns nonce of the latest message, received by bridged chain.
-		fn latest_received_nonce(lane: LaneId) -> MessageNonce;
-		/// Returns nonce of the latest message, generated by given lane.
-		fn latest_generated_nonce(lane: LaneId) -> MessageNonce;
-	}
+    /// Outbound message lane API for messages that are sent to Circuit chain.
+    ///
+    /// This API is implemented by runtimes that are sending messages to Circuit chain, not the
+    /// Circuit runtime itself.
+    pub trait ToCircuitOutboundLaneApi<OutboundMessageFee: Parameter, OutboundPayload: Parameter> {
+        /// Estimate message delivery and dispatch fee that needs to be paid by the sender on
+        /// this chain.
+        ///
+        /// Returns `None` if message is too expensive to be sent to Circuit from this chain.
+        ///
+        /// Please keep in mind that this method returns lowest message fee required for message
+        /// to be accepted to the lane. It may be good idea to pay a bit over this price to account
+        /// future exchange rate changes and guarantee that relayer would deliver your message
+        /// to the target chain.
+        fn estimate_message_delivery_and_dispatch_fee(
+            lane_id: LaneId,
+            payload: OutboundPayload,
+        ) -> Option<OutboundMessageFee>;
+        /// Returns total dispatch weight and encoded payload size of all messages in given inclusive range.
+        ///
+        /// If some (or all) messages are missing from the storage, they'll also will
+        /// be missing from the resulting vector. The vector is ordered by the nonce.
+        fn messages_dispatch_weight(
+            lane: LaneId,
+            begin: MessageNonce,
+            end: MessageNonce,
+        ) -> Vec<(MessageNonce, Weight, u32)>;
+        /// Returns nonce of the latest message, received by bridged chain.
+        fn latest_received_nonce(lane: LaneId) -> MessageNonce;
+        /// Returns nonce of the latest message, generated by given lane.
+        fn latest_generated_nonce(lane: LaneId) -> MessageNonce;
+    }
 
-	/// Inbound message lane API for messages sent by Circuit chain.
-	///
-	/// This API is implemented by runtimes that are receiving messages from Circuit chain, not the
-	/// Circuit runtime itself.
-	pub trait FromCircuitInboundLaneApi {
-		/// Returns nonce of the latest message, received by given lane.
-		fn latest_received_nonce(lane: LaneId) -> MessageNonce;
-		/// Nonce of latest message that has been confirmed to the bridged chain.
-		fn latest_confirmed_nonce(lane: LaneId) -> MessageNonce;
-		/// State of the unrewarded relayers set at given lane.
-		fn unrewarded_relayers_state(lane: LaneId) -> UnrewardedRelayersState;
-	}
+    /// Inbound message lane API for messages sent by Circuit chain.
+    ///
+    /// This API is implemented by runtimes that are receiving messages from Circuit chain, not the
+    /// Circuit runtime itself.
+    pub trait FromCircuitInboundLaneApi {
+        /// Returns nonce of the latest message, received by given lane.
+        fn latest_received_nonce(lane: LaneId) -> MessageNonce;
+        /// Nonce of latest message that has been confirmed to the bridged chain.
+        fn latest_confirmed_nonce(lane: LaneId) -> MessageNonce;
+        /// State of the unrewarded relayers set at given lane.
+        fn unrewarded_relayers_state(lane: LaneId) -> UnrewardedRelayersState;
+    }
 }
 
 #[cfg(test)]
 mod tests {
-	use super::*;
-	use sp_runtime::codec::Encode;
+    use super::*;
+    use sp_runtime::codec::Encode;
 
-	#[test]
-	fn maximal_account_size_does_not_overflow_constant() {
-		assert!(
-			MAXIMAL_ENCODED_ACCOUNT_ID_SIZE as usize >= AccountId::default().encode().len(),
-			"Actual maximal size of encoded AccountId ({}) overflows expected ({})",
-			AccountId::default().encode().len(),
-			MAXIMAL_ENCODED_ACCOUNT_ID_SIZE,
-		);
-	}
+    #[test]
+    fn maximal_account_size_does_not_overflow_constant() {
+        assert!(
+            MAXIMAL_ENCODED_ACCOUNT_ID_SIZE as usize >= AccountId::default().encode().len(),
+            "Actual maximal size of encoded AccountId ({}) overflows expected ({})",
+            AccountId::default().encode().len(),
+            MAXIMAL_ENCODED_ACCOUNT_ID_SIZE,
+        );
+    }
 }

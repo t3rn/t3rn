@@ -36,8 +36,8 @@ t3rn-primitives = { package = "t3rn-parachain-primitives", version = "1.0.0-alph
 
 sp-application-crypto = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
 
-snowbridge-core = { git = "https://github.com/t3rn/snowbridge", default-features = false }
-snowbridge-ethereum = { git = "https://github.com/t3rn/snowbridge", default-features = false }
+snowbridge-core = { git = "https://github.com/t3rn/snowbridge", branch = "polkadot-v0.9.13", default-features = false }
+snowbridge-ethereum = { git = "https://github.com/t3rn/snowbridge", branch = "polkadot-v0.9.13", default-features = false }
 
 hash-db = { version = "0.15.2", default-features = false }
 triehash = { version = "0.8.2", default-features = false }
