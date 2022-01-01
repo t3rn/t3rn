@@ -6,13 +6,13 @@ use scale_info::TypeInfo;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+use sp_core::U256;
+#[cfg(feature = "no_std")]
+use sp_runtime::RuntimeDebug as Debug;
 use sp_runtime::RuntimeString;
 use sp_std::boxed::Box;
 use sp_std::vec;
 use sp_std::vec::Vec;
-use sp_core::U256;
-#[cfg(feature = "no_std")]
-use sp_runtime::RuntimeDebug as Debug;
 
 #[cfg(feature = "std")]
 use std::fmt::Debug;
@@ -263,19 +263,17 @@ impl Type {
                 }
                 _ => Err("Unknown Address size"),
             },
-            Type::DynamicAddress => {
-                match gen.address_length {
-                    20 => {
-                        let res: [u8; 20] = decode_buf2val(encoded_val)?;
-                        Ok(res.encode())
-                    }
-                    32 => {
-                        let res: [u8; 32] = decode_buf2val(encoded_val)?;
-                        Ok(res.encode())
-                    }
-                    _ => unimplemented!(),
+            Type::DynamicAddress => match gen.address_length {
+                20 => {
+                    let res: [u8; 20] = decode_buf2val(encoded_val)?;
+                    Ok(res.encode())
                 }
-            }
+                32 => {
+                    let res: [u8; 32] = decode_buf2val(encoded_val)?;
+                    Ok(res.encode())
+                }
+                _ => unimplemented!(),
+            },
             Type::Bool => {
                 let res: bool = decode_buf2val(encoded_val)?;
                 Ok(res.encode())
@@ -328,9 +326,7 @@ impl Type {
                 let res: Bytes = decode_buf2val(encoded_val)?;
                 Ok(res.to_vec())
             }
-            Type::DynamicBytes => {
-                Ok(encoded_val)
-            }
+            Type::DynamicBytes => Ok(encoded_val),
             Type::String => {
                 let res: RuntimeString = decode_buf2val(encoded_val)?;
                 Ok(res.encode())
@@ -596,7 +592,9 @@ pub fn from_signature_to_abi(signature: Vec<u8>) -> Result<(Vec<u8>, Vec<Type>),
     Ok((maybe_name.to_vec(), types))
 }
 
-pub fn extract_property_names_from_signature_as_bytes(signature: Vec<u8>) -> Result<(Vec<u8>, Vec<Vec<u8>>), &'static str> {
+pub fn extract_property_names_from_signature_as_bytes(
+    signature: Vec<u8>,
+) -> Result<(Vec<u8>, Vec<Vec<u8>>), &'static str> {
     const BEGIN_ARGS_CHAR: u8 = b'(';
     const END_ARGS_CHAR: u8 = b')';
     const COMMA_SEPARATOR: u8 = b',';
