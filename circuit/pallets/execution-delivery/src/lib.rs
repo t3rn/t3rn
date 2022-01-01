@@ -102,6 +102,9 @@ pub mod pallet {
     use frame_support::pallet_prelude::*;
     use frame_support::PalletId;
     use frame_system::pallet_prelude::*;
+    use snowbridge_core::Verifier;
+    use t3rn_protocol::side_effects::confirm::ethereum::EthereumSideEffectsParser;
+    use t3rn_protocol::side_effects::confirm::parser::VendorSideEffectsParser;
 
     use super::*;
     use crate::WeightInfo;
@@ -125,19 +128,19 @@ pub mod pallet {
     /// This pallet's configuration trait
     #[pallet::config]
     pub trait Config:
-    frame_system::Config
-    + pallet_bridge_messages::Config
-    + pallet_balances::Config
-    + VolatileVM
-    + pallet_contracts_registry::Config
-    + pallet_xdns::Config
-    + pallet_contracts::Config
-    + pallet_evm::Config
-    + pallet_multi_finality_verifier::Config<DefaultPolkadotLikeGateway>
-    + pallet_multi_finality_verifier::Config<PolkadotLikeValU64Gateway>
-    + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU64Gateway>
-    + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU32Gateway>
-    + snowbridge_basic_channel::outbound::Config
+        frame_system::Config
+        + pallet_bridge_messages::Config
+        + pallet_balances::Config
+        + VolatileVM
+        + pallet_contracts_registry::Config
+        + pallet_xdns::Config
+        + pallet_contracts::Config
+        + pallet_evm::Config
+        + pallet_multi_finality_verifier::Config<DefaultPolkadotLikeGateway>
+        + pallet_multi_finality_verifier::Config<PolkadotLikeValU64Gateway>
+        + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU64Gateway>
+        + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU32Gateway>
+        + snowbridge_basic_channel::outbound::Config
     {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -152,6 +155,7 @@ pub mod pallet {
         type WeightInfo: weights::WeightInfo;
 
         type PalletId: Get<PalletId>;
+        type EthVerifier: Verifier;
     }
 
     #[pallet::pallet]
@@ -224,7 +228,6 @@ pub mod pallet {
             for side_effect in side_effects.iter() {
                 // ToDo: Generate Circuit's params as default ABI from let abi = pallet_xdns::get_abi(target_id)
                 let gateway_abi = Default::default();
-
                 use_protocol.notice_gateway(side_effect.target);
                 use_protocol.validate_args(side_effect.clone(), gateway_abi, &mut local_state)?;
 
@@ -327,28 +330,29 @@ pub mod pallet {
                 ActiveXtxMap::<T>::get(xtx_id.clone())
                     .expect("submitted to confirm step id does not match with any Xtx");
 
-            // ToDo: Just covered a single path for substrate transfers for now
-
             let mut state_copy = xtx.local_state.clone();
-            // ToDo: Must choose GatewayVendor here based on target_id
-            // let gateway_vendor pallet_xdns::get_vendor(side_effect.target)?;
-            // let parser: Box<dyn VendorSideEffectsParser> = match vendor {
-            //     GatewayVendor::Substrate => Ok(Box::new(SubstrateSideEffectsParser {})),
-            //     GatewayVendor::Ethereum => Ok(Box::new(EthereumSideEffectsParser {})),
-            //     _ => Err(Error::<T>::VendorUnknown.into()),
-            // }?;
-            //
+            let gateway_vendor = pallet_xdns::Pallet::<T>::best_available(side_effect.target)?;
             let transfer_protocol = TransferSideEffectProtocol {};
-            transfer_protocol.confirm::<T, SubstrateSideEffectsParser>(
-                vec![confirmed_side_effect.encoded_effect.clone()],
-                &mut state_copy,
-            );
+            match gateway_vendor.gateway_vendor {
+                GatewayVendor::Substrate => transfer_protocol
+                    .confirm::<T, SubstrateSideEffectsParser>(
+                        vec![confirmed_side_effect.encoded_effect.clone()],
+                        &mut state_copy,
+                    ),
+                GatewayVendor::Ethereum => transfer_protocol
+                    .confirm::<T, EthereumSideEffectsParser<T::EthVerifier>>(
+                        vec![confirmed_side_effect.encoded_effect.clone()],
+                        &mut state_copy,
+                    ),
+                _ => Err(Error::<T>::VendorUnknown.into()),
+            }?;
 
             // Check if the side effect has been deposited with respect to the execution order
             if xtx.complete_side_effect::<bp_circuit::Hasher>(
                 confirmed_side_effect.clone(),
                 side_effect.clone(),
             )? {
+                ActiveXtxMap::<T>::insert(xtx_id.clone(), xtx.clone());
                 Self::deposit_event(Event::SideEffectConfirmed(
                     relayer_id.clone(),
                     xtx_id,
@@ -582,14 +586,14 @@ pub mod pallet {
         ),
         // Listeners - remote targets integrators/registrants
         NewGatewayRegistered(
-            bp_runtime::ChainId, // gateway id
-            GatewayType, // type - external, programmable, tx-only
-            GatewayVendor, // vendor - substrate, eth etc.
-            GatewaySysProps, // system properties - ss58 format, token symbol etc.
+            bp_runtime::ChainId,    // gateway id
+            GatewayType,            // type - external, programmable, tx-only
+            GatewayVendor,          // vendor - substrate, eth etc.
+            GatewaySysProps,        // system properties - ss58 format, token symbol etc.
             Vec<AllowedSideEffect>, // allowed side effects / enabled methods
         ),
         GatewayUpdated(
-            bp_runtime::ChainId, // gateway id
+            bp_runtime::ChainId,  // gateway id
             Option<Vec<Vec<u8>>>, // allowed side effects / enabled methods
         ),
     }
@@ -637,9 +641,9 @@ impl<T: Config> Pallet<T> {
 pub struct EnsureExecDelivery<T>(sp_std::marker::PhantomData<T>);
 
 impl<
-    T: pallet::Config,
-    O: Into<Result<RawOrigin<T::AccountId>, O>> + From<RawOrigin<T::AccountId>>,
-> EnsureOrigin<O> for EnsureExecDelivery<T>
+        T: pallet::Config,
+        O: Into<Result<RawOrigin<T::AccountId>, O>> + From<RawOrigin<T::AccountId>>,
+    > EnsureOrigin<O> for EnsureExecDelivery<T>
 {
     type Success = T::AccountId;
 

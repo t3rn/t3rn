@@ -38,6 +38,9 @@
 
 use crate::weights::WeightInfo;
 
+use t3rn_primitives::bridges::header_chain as bp_header_chain;
+use t3rn_primitives::bridges::runtime as bp_runtime;
+
 use bp_header_chain::justification::GrandpaJustification;
 use bp_header_chain::InitializationData;
 use bp_runtime::{BlockNumberOf, Chain, ChainId, HashOf, HasherOf, HeaderOf};
@@ -745,6 +748,8 @@ mod tests {
     use frame_support::weights::PostDispatchInfo;
     use frame_support::{assert_err, assert_noop, assert_ok};
     use sp_runtime::{Digest, DigestItem, DispatchError};
+    use t3rn_primitives::bridges::{chain_rialto as bp_rialto, test_utils as bp_test_utils};
+    use t3rn_primitives::GatewaySysProps;
     use t3rn_primitives::{GatewayType, GatewayVendor};
 
     fn teardown_substrate_bridge() {
@@ -791,6 +796,12 @@ mod tests {
             is_halted: false,
         };
 
+        let gateway_sys_props = GatewaySysProps {
+            ss58_format: 0,
+            token_symbol: Encode::encode(""),
+            token_decimals: 0,
+        };
+
         let _ = pallet_xdns::Pallet::<TestRuntime>::add_new_xdns_record(
             RawOrigin::Root.into(),
             Default::default(),
@@ -799,6 +810,7 @@ mod tests {
             GatewayVendor::Substrate,
             GatewayType::TxOnly(0),
             Default::default(),
+            gateway_sys_props,
             vec![],
         );
 
@@ -874,14 +886,14 @@ mod tests {
         let _ = Pallet::<TestRuntime>::on_initialize(current_number);
     }
 
-    fn change_log(delay: u64) -> Digest<TestHash> {
+    fn change_log(delay: u64) -> Digest {
         let consensus_log =
             ConsensusLog::<TestNumber>::ScheduledChange(sp_finality_grandpa::ScheduledChange {
                 next_authorities: vec![(ALICE.into(), 1), (BOB.into(), 1)],
                 delay,
             });
 
-        Digest::<TestHash> {
+        Digest {
             logs: vec![DigestItem::Consensus(
                 GRANDPA_ENGINE_ID,
                 consensus_log.encode(),
@@ -889,7 +901,7 @@ mod tests {
         }
     }
 
-    fn forced_change_log(delay: u64) -> Digest<TestHash> {
+    fn forced_change_log(delay: u64) -> Digest {
         let consensus_log = ConsensusLog::<TestNumber>::ForcedChange(
             delay,
             sp_finality_grandpa::ScheduledChange {
@@ -898,7 +910,7 @@ mod tests {
             },
         );
 
-        Digest::<TestHash> {
+        Digest {
             logs: vec![DigestItem::Consensus(
                 GRANDPA_ENGINE_ID,
                 consensus_log.encode(),

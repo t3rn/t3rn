@@ -65,9 +65,13 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use pallet_contracts_primitives::RentProjection;
-use t3rn_primitives::{transfers::BalanceOf, ComposableExecResult, Compose};
+use t3rn_primitives::{
+    abi::GatewayABIConfig, transfers::BalanceOf, ChainId as GatewayId, ComposableExecResult,
+    Compose,
+};
 
 use ethereum_light_client::EthereumDifficultyConfig;
+use t3rn_protocol::side_effects::confirm::ethereum::EthereumMockVerifier;
 use volatile_vm::DispatchRuntimeCall;
 
 // A few exports that help ease life for downstream crates.
@@ -646,6 +650,7 @@ impl pallet_circuit_execution_delivery::Config for Runtime {
     type ToStandardizedGatewayBalance = CircuitToGateway;
     type WeightInfo = pallet_circuit_execution_delivery::weights::SubstrateWeight<Runtime>;
     type PalletId = ExecPalletId;
+    type EthVerifier = EthereumMockVerifier;
 }
 
 type Blake2ValU64BridgeInstance = ();
@@ -818,7 +823,6 @@ pub type SignedExtra = (
     frame_system::CheckWeight<Runtime>,
     pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 );
-
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
 /// Extrinsic type that has already been checked.
@@ -1084,6 +1088,13 @@ impl_runtime_apis! {
             let records = XDNS::fetch_records();
             FetchXdnsRecordsResponse::<AccountId> {
                 xdns_records: records
+            }
+        }
+
+        fn fetch_abi(chain_id: GatewayId) -> Option<GatewayABIConfig> {
+            match XDNS::get_abi(chain_id) {
+                Ok(abi) => Some(abi),
+                Err(_) => None
             }
         }
     }

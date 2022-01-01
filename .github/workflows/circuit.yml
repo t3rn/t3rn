@@ -14,7 +14,7 @@ env:
 
 jobs:
   format:
-    runs-on: self-hosted
+    runs-on: ubuntu-20.04
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@master
@@ -45,7 +45,7 @@ jobs:
             --manifest-path circuit/Cargo.toml -- --check
 
   lint:
-    runs-on: self-hosted
+    runs-on: ubuntu-20.04
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@master
@@ -102,7 +102,7 @@ jobs:
             --manifest-path circuit/Cargo.toml
 
   build:
-    runs-on: self-hosted
+    runs-on: ubuntu-20.04
     needs: [format, lint]
     steps:
       - name: ☁ Checkout git repo
@@ -156,8 +156,9 @@ jobs:
           name: ${{ github.sha }}-artifacts
           path: circuit/target/debug/circuit
           if-no-files-found: error
+          retention-days: 1
   test:
-    runs-on: self-hosted
+    runs-on: ubuntu-20.04
     needs: [build]
     steps:
       - name: ☁️Checkout git repo
@@ -211,7 +212,7 @@ jobs:
           cargo test --workspace --locked --features runtime-benchmarks --manifest-path circuit/Cargo.toml
 
   test-integration:
-    runs-on: self-hosted
+    runs-on: ubuntu-20.04
     needs: [build]
     steps:
       - name: ☁️ Checkout git repo

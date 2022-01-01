@@ -45,6 +45,6 @@ export default {
     GatewayOutboundEventId: 'u64',
     AllowedSideEffect: 'Vec<u8>',
     SideEffectsDFD: 'Vec<u8>',
-    GenericDFD: 'Vec<u8>'
+    GenericDFD: 'Vec<u8>',
   },
 };

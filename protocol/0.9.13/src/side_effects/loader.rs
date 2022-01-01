@@ -12,7 +12,7 @@ use t3rn_primitives::abi::GatewayABIConfig;
 use t3rn_primitives::side_effect::{SideEffect, TargetId};
 use t3rn_primitives::volatile::Volatile;
 
-use t3rn_primitives::{volatile::LocalState};
+use t3rn_primitives::volatile::LocalState;
 
 pub type EventSignature = Vec<u8>;
 pub type String = Vec<u8>;
@@ -81,7 +81,7 @@ impl SideEffectsLazyLoader for UniversalSideEffectsProtocol {
 
 pub struct UniversalSideEffectsProtocol {
     pub seen_side_effects_protocol:
-    BTreeMap<TargetId, BTreeMap<[u8; 4], Box<dyn SideEffectProtocolT>>>,
+        BTreeMap<TargetId, BTreeMap<[u8; 4], Box<dyn SideEffectProtocolT>>>,
 }
 
 impl UniversalSideEffectsProtocol {
@@ -107,7 +107,7 @@ impl UniversalSideEffectsProtocol {
             |side_effect_protocol: &Box<dyn SideEffectProtocolT>| {
                 side_effect_protocol.validate_args(
                     side_effect.encoded_args.clone(),
-                    gateway_abi,
+                    &gateway_abi,
                     local_state,
                     Some(side_effect.generate_id::<Hasher>().as_ref().to_vec()), // or None
                 )
@@ -218,10 +218,10 @@ impl UniversalSideEffectsProtocol {
                         let insurance_and_reward: [BalanceOf; 2] = Decode::decode(
                             &mut &maybe_insurance.to_vec()[..],
                         )
-                            .expect(
-                                "try_commit_insurance_deposit should always be called after validate \
+                        .expect(
+                            "try_commit_insurance_deposit should always be called after validate \
                                 side effects which checked the insurance value sanity in eval",
-                            );
+                        );
                         Ok(Some(insurance_and_reward))
                     }
                     _ => Err(
@@ -231,5 +231,67 @@ impl UniversalSideEffectsProtocol {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+pub mod test {
+    use super::*;
+
+    use crate::side_effects::protocol::TransferSideEffectProtocol;
+    use crate::side_effects::test_utils::*;
+
+    use t3rn_primitives::abi::Type;
+
+    #[test]
+    fn loader_successfully_recognizes_insurance_required_for_transfer() {
+        // Validate and populate state first
+        let mut local_state = LocalState::new();
+        let transfer_protocol_box = Box::new(TransferSideEffectProtocol {});
+        let valid_transfer_side_effect = produce_and_validate_side_effect(
+            vec![
+                (Type::Address(32), ArgVariant::A),
+                (Type::Address(32), ArgVariant::B),
+                (Type::Uint(64), ArgVariant::A),
+                (Type::OptionalInsurance, ArgVariant::A),
+            ],
+            &mut local_state,
+            transfer_protocol_box.clone(),
+        );
+
+        let res = UniversalSideEffectsProtocol::check_if_insurance_required::<
+            AccountId,
+            BlockNumber,
+            BalanceOf,
+            Hashing,
+        >(valid_transfer_side_effect, &mut local_state);
+
+        assert_eq!(res, Ok(Some([1u64, 0u64])));
+    }
+
+    #[test]
+    fn loader_successfully_recognizes_insurance_not_required_for_transfer() {
+        // Validate and populate state first
+        let mut local_state = LocalState::new();
+        let transfer_protocol_box = Box::new(TransferSideEffectProtocol {});
+        let valid_transfer_side_effect = produce_and_validate_side_effect(
+            vec![
+                (Type::Address(32), ArgVariant::A),
+                (Type::Address(32), ArgVariant::B),
+                (Type::Uint(64), ArgVariant::A),
+                (Type::Bytes(0), ArgVariant::A), // empty bytes instead of insurance
+            ],
+            &mut local_state,
+            transfer_protocol_box.clone(),
+        );
+
+        let res = UniversalSideEffectsProtocol::check_if_insurance_required::<
+            AccountId,
+            BlockNumber,
+            BalanceOf,
+            Hashing,
+        >(valid_transfer_side_effect, &mut local_state);
+
+        assert_eq!(res, Ok(None));
     }
 }

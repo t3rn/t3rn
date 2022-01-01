@@ -1,4 +1,7 @@
 {
+  "references": [{
+    "path": "../types"
+  }],
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "esModuleInterop": true,

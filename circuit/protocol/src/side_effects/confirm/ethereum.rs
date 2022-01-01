@@ -3,11 +3,12 @@
 use codec::{Decode, Encode};
 use ethabi_decode::{Event, Param, ParamKind, Token};
 use snowbridge_core::{Message, Verifier};
-use snowbridge_ethereum::Log;
+use snowbridge_ethereum::{Header, Log};
 use sp_core::{H160, U256};
-
+use sp_runtime::DispatchError;
 use sp_runtime::RuntimeDebug;
 use sp_std::convert::TryFrom;
+use sp_std::default::Default;
 use sp_std::marker::PhantomData;
 use sp_std::vec;
 use sp_std::vec::Vec;
@@ -73,6 +74,23 @@ pub struct TransferERC20 {
 #[derive(Copy, Clone, PartialEq, Eq, RuntimeDebug)]
 pub struct EnvelopeDecodeError;
 
+pub struct EthereumMockVerifier {}
+
+// TODO: Implement proper Ethereum Verifier
+impl Verifier for EthereumMockVerifier {
+    fn verify(message: &Message) -> Result<Log, DispatchError> {
+        Ok(Default::default())
+    }
+
+    fn initialize_storage(
+        headers: Vec<Header>,
+        initial_difficulty: U256,
+        descendants_until_final: u8,
+    ) -> Result<(), &'static str> {
+        Ok(())
+    }
+}
+
 impl TryFrom<Log> for TransferERC20 {
     type Error = EnvelopeDecodeError;
 
@@ -110,5 +128,68 @@ impl TransferERC20 {
         args.push(self.to.encode());
         args.push(self.amount.encode());
         args
+    }
+}
+
+mod tests {
+    use super::*;
+    use ethabi_decode::H256;
+    use hex::FromHex;
+    use tiny_keccak::Keccak;
+
+    fn keccak256(data: &str) -> H256 {
+        let mut result = [0u8; 32];
+        let mut sponge = Keccak::new_keccak256();
+        sponge.update(data.as_ref());
+        sponge.finalize(&mut result);
+        result.into()
+    }
+
+    #[test]
+    fn test_decoding_event() {
+        let event = Event {
+            signature: "Transfer(address indexed,address indexed,uint256)",
+            inputs: &[
+                Param {
+                    kind: ParamKind::Address,
+                    indexed: true,
+                },
+                Param {
+                    kind: ParamKind::Address,
+                    indexed: true,
+                },
+                Param {
+                    kind: ParamKind::Uint(256),
+                    indexed: false,
+                },
+            ],
+            anonymous: false,
+        };
+
+        let topics: Vec<H256> = vec![
+            keccak256("Transfer(address indexed,address indexed,uint256)"),
+            "000000000000000000000000a1d8d972560c2f8144af871db508f0b0b10a3fbf"
+                .parse()
+                .unwrap(),
+            "000000000000000000000000011f62348e983427a096063c328544b7dc189fa2"
+                .parse()
+                .unwrap(),
+        ];
+
+        let data = hex::decode("0000000000000000000000000000000000000000000000000000000000000003")
+            .unwrap();
+
+        let tokens = event.decode(topics, data).unwrap();
+
+        assert_eq!(
+            tokens,
+            vec![
+                Token::Address("a1d8d972560c2f8144af871db508f0b0b10a3fbf".parse().unwrap()),
+                Token::Address("011f62348e983427a096063c328544b7dc189fa2".parse().unwrap()),
+                Token::Uint(
+                    "0000000000000000000000000000000000000000000000000000000000000003".into()
+                ),
+            ]
+        )
     }
 }
