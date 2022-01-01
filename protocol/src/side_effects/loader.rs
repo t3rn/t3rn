@@ -233,3 +233,65 @@ impl UniversalSideEffectsProtocol {
         }
     }
 }
+
+#[cfg(test)]
+pub mod test {
+    use super::*;
+
+    use crate::side_effects::protocol::TransferSideEffectProtocol;
+    use crate::side_effects::test_utils::*;
+
+    use t3rn_primitives::abi::Type;
+
+    #[test]
+    fn loader_successfully_recognizes_insurance_required_for_transfer() {
+        // Validate and populate state first
+        let mut local_state = LocalState::new();
+        let transfer_protocol_box = Box::new(TransferSideEffectProtocol {});
+        let valid_transfer_side_effect = produce_and_validate_side_effect(
+            vec![
+                (Type::Address(32), ArgVariant::A),
+                (Type::Address(32), ArgVariant::B),
+                (Type::Uint(64), ArgVariant::A),
+                (Type::OptionalInsurance, ArgVariant::A),
+            ],
+            &mut local_state,
+            transfer_protocol_box.clone()
+        );
+
+        let res = UniversalSideEffectsProtocol::check_if_insurance_required::<
+            AccountId,
+            BlockNumber,
+            BalanceOf,
+            Hashing,
+        >(valid_transfer_side_effect, &mut local_state);
+
+        assert_eq!(res, Ok(Some([1u64, 0u64])));
+    }
+
+    #[test]
+    fn loader_successfully_recognizes_insurance_not_required_for_transfer() {
+        // Validate and populate state first
+        let mut local_state = LocalState::new();
+        let transfer_protocol_box = Box::new(TransferSideEffectProtocol {});
+        let valid_transfer_side_effect = produce_and_validate_side_effect(
+            vec![
+                (Type::Address(32), ArgVariant::A),
+                (Type::Address(32), ArgVariant::B),
+                (Type::Uint(64), ArgVariant::A),
+                (Type::Bytes(0), ArgVariant::A), // empty bytes instead of insurance
+            ],
+            &mut local_state,
+            transfer_protocol_box.clone()
+        );
+
+        let res = UniversalSideEffectsProtocol::check_if_insurance_required::<
+            AccountId,
+            BlockNumber,
+            BalanceOf,
+            Hashing,
+        >(valid_transfer_side_effect, &mut local_state);
+
+        assert_eq!(res, Ok(None));
+    }
+}

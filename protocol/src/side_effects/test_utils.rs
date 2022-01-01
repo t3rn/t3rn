@@ -5,7 +5,7 @@ use hex_literal::hex;
 use sp_std::vec;
 use t3rn_primitives::{
     abi::{GatewayABIConfig, Type},
-    side_effect::SideEffect,
+    side_effect::{SideEffect},
 };
 
 pub use t3rn_primitives::volatile::{
@@ -213,8 +213,31 @@ pub fn assert_correct_validation_and_populated_state(
 
     assert_populated_state_auto_key_derive(
         local_state.clone(),
-        populate_state_args,
+        populate_state_args, // Consider going back to populate_state_args since when re-using args from SE emtpy values aren't checked
         protocol,
         valid_side_effect_id.as_ref().to_vec(),
     );
+}
+
+pub fn produce_and_validate_side_effect(
+    args_variants: Vec<(Type, ArgVariant)>,
+    local_state: &mut LocalState,
+    protocol: Box<dyn SideEffectProtocol>,
+) -> SideEffect<AccountId, BlockNumber, BalanceOf> {
+    let encoded_transfer_args_input = produce_test_args(args_variants);
+
+    let valid_transfer_side_effect = produce_test_side_effect(
+        protocol.get_id(),
+        encoded_transfer_args_input.clone(),
+        vec![],
+    );
+
+    assert_correct_validation_and_populated_state(
+        local_state,
+        valid_transfer_side_effect.clone(),
+        encoded_transfer_args_input,
+        protocol,
+    );
+
+    valid_transfer_side_effect
 }

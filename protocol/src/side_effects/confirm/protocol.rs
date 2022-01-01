@@ -57,7 +57,7 @@ pub trait SideEffectConfirmationProtocol: SideEffectProtocol {
                     None => property_name.clone(),
                     Some(ref prefix) => LocalState::stick_key_with_prefix(
                         property_name.clone().encode(),
-                        side_effect_id.as_ref().unwrap().to_vec(),
+                        prefix.to_vec(),
                     ),
                 };
 
@@ -95,15 +95,13 @@ pub fn confirmation_plug<T: pallet_balances::Config, VendorParser: VendorSideEff
         let (_, property_names) =
             extract_property_names_from_signature_as_bytes(expected_event_signature.encode())?;
 
-        // let mapper = side_effect_protocol.get_arguments_2_state_mapper();
-        // assert!(mapper.len() == decoded_events.len());
         for (j, property_name) in property_names.iter().enumerate() {
             //  3. Check each argument of decoded "encoded_remote_events" against the values from State
             let key = match side_effect_id.clone() {
                 None => property_name.clone(),
                 Some(ref prefix) => LocalState::stick_key_with_prefix(
                     property_name.clone().encode(),
-                    side_effect_id.as_ref().unwrap().to_vec(),
+                    prefix.to_vec(),
                 ),
             };
             if !local_state.cmp(key, decoded_events[j].clone()) {
@@ -154,10 +152,10 @@ pub mod tests {
     use crate::side_effects::confirm::substrate::tests::Test;
     use crate::side_effects::confirm::substrate::SubstrateSideEffectsParser;
     use crate::side_effects::protocol::TransferSideEffectProtocol;
-
+    use crate::side_effects::test_utils::*;
     use codec::Encode;
-
     use hex_literal::hex;
+    use t3rn_primitives::abi::Type;
 
     #[test]
     fn successfully_confirms_transfer_side_effect_no_prefix_no_insurance() {
@@ -264,5 +262,47 @@ pub mod tests {
             res_vendor,
             Err("Confirmation Failed - received event arguments differ from expected by state")
         );
+    }
+
+    #[test]
+    fn successfully_confirms_transfer_side_effect_with_id_prefix() {
+        // Validate and populate state first
+        let encoded_transfer_args_input = produce_test_args(vec![
+            (Type::Address(32), ArgVariant::A),
+            (Type::Address(32), ArgVariant::B),
+            (Type::Uint(64), ArgVariant::A),
+            (Type::OptionalInsurance, ArgVariant::A),
+        ]);
+
+        let valid_transfer_side_effect =
+            produce_test_side_effect(*b"tran", encoded_transfer_args_input.clone(), vec![]);
+
+        let valid_side_effect_id = valid_transfer_side_effect.generate_id::<Hashing>();
+
+        let mut local_state = LocalState::new();
+        let transfer_protocol_box = Box::new(TransferSideEffectProtocol {});
+        assert_correct_validation_and_populated_state(
+            &mut local_state,
+            valid_transfer_side_effect,
+            encoded_transfer_args_input,
+            transfer_protocol_box.clone(),
+        );
+
+        // Actual confirmation test
+        let encoded_balance_transfer_event = pallet_balances::Event::<Test>::Transfer(
+            hex!("0909090909090909090909090909090909090909090909090909090909090909").into(), // Variant A
+            hex!("0606060606060606060606060606060606060606060606060606060606060606").into(), // Variant B
+            1u64, // Variant A
+        )
+        .encode();
+
+        let res_confirm = confirmation_plug::<Test, SubstrateSideEffectsParser>(
+            transfer_protocol_box,
+            vec![encoded_balance_transfer_event],
+            &mut local_state,
+            Some(valid_side_effect_id.as_ref().to_vec()),
+        );
+
+        assert_eq!(res_confirm, Ok(()));
     }
 }
