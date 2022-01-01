@@ -256,7 +256,7 @@ pub mod test {
                 (Type::OptionalInsurance, ArgVariant::A),
             ],
             &mut local_state,
-            transfer_protocol_box.clone()
+            transfer_protocol_box.clone(),
         );
 
         let res = UniversalSideEffectsProtocol::check_if_insurance_required::<
@@ -282,7 +282,7 @@ pub mod test {
                 (Type::Bytes(0), ArgVariant::A), // empty bytes instead of insurance
             ],
             &mut local_state,
-            transfer_protocol_box.clone()
+            transfer_protocol_box.clone(),
         );
 
         let res = UniversalSideEffectsProtocol::check_if_insurance_required::<

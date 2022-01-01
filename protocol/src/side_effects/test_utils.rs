@@ -5,7 +5,7 @@ use hex_literal::hex;
 use sp_std::vec;
 use t3rn_primitives::{
     abi::{GatewayABIConfig, Type},
-    side_effect::{SideEffect},
+    side_effect::SideEffect,
 };
 
 pub use t3rn_primitives::volatile::{
