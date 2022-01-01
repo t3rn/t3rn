@@ -39,14 +39,15 @@ use sp_std::vec::*;
 
 pub use t3rn_primitives::{
     abi::{GatewayABIConfig, HasherAlgo as HA},
+    bridges::chain_circuit as bp_circuit,
+    bridges::runtime as bp_runtime,
     side_effect::{ConfirmedSideEffect, FullSideEffect, SideEffect},
     transfers::BalanceOf,
     volatile::LocalState,
     xtx::{Xtx, XtxId},
-    bridges::runtime as bp_runtime,
-    bridges::chain_circuit as bp_circuit,
     GatewayType, *,
 };
+use t3rn_protocol::side_effects::confirm::protocol::confirm_with_vendor_by_action_id;
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 
 pub type Bytes = Vec<u8>;
@@ -76,7 +77,6 @@ pub use xbridges::{
 use t3rn_protocol::side_effects::confirm::substrate::SubstrateSideEffectsParser;
 use t3rn_protocol::side_effects::loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol};
 pub use t3rn_protocol::side_effects::protocol::SideEffectConfirmationProtocol;
-use t3rn_protocol::side_effects::protocol::TransferSideEffectProtocol;
 
 pub type AllowedSideEffect = Vec<u8>;
 
@@ -149,7 +149,7 @@ pub mod pallet {
         type WeightInfo: weights::WeightInfo;
 
         type PalletId: Get<PalletId>;
-        
+
         type EthVerifier: Verifier;
     }
 
@@ -194,7 +194,13 @@ pub mod pallet {
         #[pallet::weight(< T as Config >::WeightInfo::submit_exec())]
         pub fn submit_side_effects_temp(
             origin: OriginFor<T>,
-            side_effects: Vec<SideEffect<<T as frame_system::Config>::AccountId, <T as frame_system::Config>::BlockNumber, BalanceOf<T>>>,
+            side_effects: Vec<
+                SideEffect<
+                    <T as frame_system::Config>::AccountId,
+                    <T as frame_system::Config>::BlockNumber,
+                    BalanceOf<T>,
+                >,
+            >,
             input: Vec<u8>,
             _value: BalanceOf<T>,
             reward: BalanceOf<T>,
@@ -209,12 +215,12 @@ pub mod pallet {
                 Error::<T>::RequesterNotEnoughBalance,
             );
 
-            let _full_side_effects_steps: Vec<
-                Vec<FullSideEffect<<T as frame_system::Config>::AccountId, <T as frame_system::Config>::BlockNumber, BalanceOf<T>>>,
-            >;
-
             let mut full_side_effects: Vec<
-                FullSideEffect<<T as frame_system::Config>::AccountId, <T as frame_system::Config>::BlockNumber, BalanceOf<T>>,
+                FullSideEffect<
+                    <T as frame_system::Config>::AccountId,
+                    <T as frame_system::Config>::BlockNumber,
+                    BalanceOf<T>,
+                >,
             > = vec![];
 
             let mut use_protocol = UniversalSideEffectsProtocol::new();
@@ -225,7 +231,12 @@ pub mod pallet {
                 let gateway_abi = Default::default();
 
                 use_protocol.notice_gateway(side_effect.target);
-                use_protocol.validate_args(side_effect.clone(), gateway_abi, &mut local_state)?;
+                use_protocol
+                    .validate_args::<<T as frame_system::Config>::AccountId, <T as frame_system::Config>::BlockNumber, BalanceOf<T>, SystemHashing<T>>(
+                        side_effect.clone(),
+                        gateway_abi,
+                        &mut local_state,
+                    )?;
 
                 full_side_effects.push(FullSideEffect {
                     input: side_effect.clone(),
@@ -237,7 +248,13 @@ pub mod pallet {
                 false => vec![full_side_effects],
                 true => {
                     let mut sequential_order: Vec<
-                        Vec<FullSideEffect<<T as frame_system::Config>::AccountId, <T as frame_system::Config>::BlockNumber, BalanceOf<T>>>,
+                        Vec<
+                            FullSideEffect<
+                                <T as frame_system::Config>::AccountId,
+                                <T as frame_system::Config>::BlockNumber,
+                                BalanceOf<T>,
+                            >,
+                        >,
                     > = vec![];
                     for fse in full_side_effects.iter() {
                         sequential_order.push(vec![fse.clone()]);
@@ -248,7 +265,11 @@ pub mod pallet {
 
             // ToDo: Introduce default timeout + delay
             let (timeouts_at, delay_steps_at) = (None, None);
-            let new_xtx = Xtx::<<T as frame_system::Config>::AccountId, <T as frame_system::Config>::BlockNumber, BalanceOf<T>>::new(
+            let new_xtx = Xtx::<
+                <T as frame_system::Config>::AccountId,
+                <T as frame_system::Config>::BlockNumber,
+                BalanceOf<T>,
+            >::new(
                 requester.clone(),
                 input,
                 timeouts_at,
@@ -259,20 +280,10 @@ pub mod pallet {
                 full_side_effects_steps,
             );
             let x_tx_id: XtxId<T> = new_xtx.generate_xtx_id::<T>();
+
             ActiveXtxMap::<T>::insert(x_tx_id, &new_xtx);
 
-            Self::deposit_event(Event::XTransactionReceivedForExec(
-                x_tx_id.clone(),
-                // ToDo: Emit side effects DFD
-                Default::default(),
-            ));
-
-            Self::deposit_event(Event::NewSideEffectsAvailable(
-                requester.clone(),
-                x_tx_id.clone(),
-                // ToDo: Emit circuit outbound messages -> side effects
-                side_effects,
-            ));
+            Self::submit_side_effects(x_tx_id, requester, side_effects, sequential);
 
             Ok(().into())
         }
@@ -313,8 +324,16 @@ pub mod pallet {
         pub fn confirm_side_effect_blind(
             origin: OriginFor<T>,
             xtx_id: XtxId<T>,
-            side_effect: SideEffect<<T as frame_system::Config>::AccountId, <T as frame_system::Config>::BlockNumber, BalanceOf<T>>,
-            confirmed_side_effect: ConfirmedSideEffect<<T as frame_system::Config>::AccountId, <T as frame_system::Config>::BlockNumber, BalanceOf<T>>,
+            side_effect: SideEffect<
+                <T as frame_system::Config>::AccountId,
+                <T as frame_system::Config>::BlockNumber,
+                BalanceOf<T>,
+            >,
+            confirmed_side_effect: ConfirmedSideEffect<
+                <T as frame_system::Config>::AccountId,
+                <T as frame_system::Config>::BlockNumber,
+                BalanceOf<T>,
+            >,
             _inclusion_proof: Option<Bytes>,
         ) -> DispatchResultWithPostInfo {
             // ToDo #CNF-1: Reward releyers for inbound message dispatch.
@@ -322,25 +341,28 @@ pub mod pallet {
 
             // ToDo #CNF-1: Check validity of inclusion - skip in _blind version for testing
             // Verify whether the side effect completes the Xtx
-            let mut xtx: Xtx<<T as frame_system::Config>::AccountId, <T as frame_system::Config>::BlockNumber, BalanceOf<T>> =
-                ActiveXtxMap::<T>::get(xtx_id.clone())
-                    .expect("submitted to confirm step id does not match with any Xtx");
+            let mut xtx: Xtx<
+                <T as frame_system::Config>::AccountId,
+                <T as frame_system::Config>::BlockNumber,
+                BalanceOf<T>,
+            > = ActiveXtxMap::<T>::get(xtx_id.clone())
+                .expect("submitted to confirm step id does not match with any Xtx");
 
             let mut state_copy = xtx.local_state.clone();
             let gateway_vendor = pallet_xdns::Pallet::<T>::best_available(side_effect.target)?;
-            let transfer_protocol = TransferSideEffectProtocol {};
-            match gateway_vendor.gateway_vendor {
-                GatewayVendor::Substrate => transfer_protocol
-                    .confirm::<T, SubstrateSideEffectsParser>(
-                        vec![confirmed_side_effect.encoded_effect.clone()],
-                        &mut state_copy,
-                    ),
-                GatewayVendor::Ethereum => transfer_protocol
-                    .confirm::<T, EthereumSideEffectsParser<T::EthVerifier>>(
-                        vec![confirmed_side_effect.encoded_effect.clone()],
-                        &mut state_copy,
-                    ),
-            }?;
+            let side_effect_id = side_effect.generate_id::<SystemHashing<T>>();
+
+            confirm_with_vendor_by_action_id::<
+                T,
+                SubstrateSideEffectsParser,
+                EthereumSideEffectsParser<T::EthVerifier>,
+            >(
+                gateway_vendor.gateway_vendor,
+                side_effect.encoded_action.clone(),
+                confirmed_side_effect.encoded_effect.clone(),
+                &mut state_copy,
+                Some(side_effect_id.as_ref().to_vec()),
+            )?;
 
             // Check if the side effect has been deposited with respect to the execution order
             if xtx.complete_side_effect::<bp_circuit::Hasher>(
@@ -458,8 +480,16 @@ pub mod pallet {
         pub fn confirm_side_effect(
             origin: OriginFor<T>,
             xtx_id: XtxId<T>,
-            side_effect: SideEffect<<T as frame_system::Config>::AccountId, <T as frame_system::Config>::BlockNumber, BalanceOf<T>>,
-            confirmed_side_effect: ConfirmedSideEffect<<T as frame_system::Config>::AccountId, <T as frame_system::Config>::BlockNumber, BalanceOf<T>>,
+            side_effect: SideEffect<
+                <T as frame_system::Config>::AccountId,
+                <T as frame_system::Config>::BlockNumber,
+                BalanceOf<T>,
+            >,
+            confirmed_side_effect: ConfirmedSideEffect<
+                <T as frame_system::Config>::AccountId,
+                <T as frame_system::Config>::BlockNumber,
+                BalanceOf<T>,
+            >,
             _inclusion_proof: Option<Bytes>,
             // ToDo: Replace step_confirmation with inclusion_proof
             step_confirmation: StepConfirmation,
@@ -468,9 +498,12 @@ pub mod pallet {
             let relayer_id = ensure_signed(origin)?;
             // ToDo: parse events to discover their content and verify execution
 
-            let mut xtx: Xtx<<T as frame_system::Config>::AccountId, <T as frame_system::Config>::BlockNumber, BalanceOf<T>> =
-                ActiveXtxMap::<T>::get(xtx_id.clone())
-                    .expect("submitted to confirm step id does not match with any Xtx");
+            let mut xtx: Xtx<
+                <T as frame_system::Config>::AccountId,
+                <T as frame_system::Config>::BlockNumber,
+                BalanceOf<T>,
+            > = ActiveXtxMap::<T>::get(xtx_id.clone())
+                .expect("submitted to confirm step id does not match with any Xtx");
 
             // ToDo: Read gateway_id from xtx GatewaysDFD
             let gateway_id = Default::default();
@@ -562,20 +595,36 @@ pub mod pallet {
         NewSideEffectsAvailable(
             <T as frame_system::Config>::AccountId,
             XtxId<T>,
-            Vec<SideEffect<<T as frame_system::Config>::AccountId, <T as frame_system::Config>::BlockNumber, BalanceOf<T>>>,
+            Vec<
+                SideEffect<
+                    <T as frame_system::Config>::AccountId,
+                    <T as frame_system::Config>::BlockNumber,
+                    BalanceOf<T>,
+                >,
+            >,
         ),
         // Listeners - executioners/relayers to know that certain SideEffects are no longer valid
         // ToDo: Implement Xtx timeout!
         CancelledSideEffects(
             <T as frame_system::Config>::AccountId,
             XtxId<T>,
-            Vec<SideEffect<<T as frame_system::Config>::AccountId, <T as frame_system::Config>::BlockNumber, BalanceOf<T>>>,
+            Vec<
+                SideEffect<
+                    <T as frame_system::Config>::AccountId,
+                    <T as frame_system::Config>::BlockNumber,
+                    BalanceOf<T>,
+                >,
+            >,
         ),
         // Listeners - executioners/relayers to know whether they won the confirmation challenge
         SideEffectConfirmed(
             <T as frame_system::Config>::AccountId, // winner
             XtxId<T>,
-            ConfirmedSideEffect<<T as frame_system::Config>::AccountId, <T as frame_system::Config>::BlockNumber, BalanceOf<T>>,
+            ConfirmedSideEffect<
+                <T as frame_system::Config>::AccountId,
+                <T as frame_system::Config>::BlockNumber,
+                BalanceOf<T>,
+            >,
             u64, // reward?
         ),
         // Listeners - remote targets integrators/registrants
@@ -626,8 +675,34 @@ impl<T: SigningTypes> SignedPayload<T> for Payload<T::Public, T::BlockNumber> {
 }
 
 impl<T: Config> Pallet<T> {
-    fn account_id() -> <T as frame_system::Config>::AccountId {
+    pub fn account_id() -> <T as frame_system::Config>::AccountId {
         T::PalletId::get().into_account()
+    }
+
+    pub fn submit_side_effects(
+        x_tx_id: XtxId<T>,
+        requester: <T as frame_system::Config>::AccountId,
+        side_effects: Vec<
+            SideEffect<
+                <T as frame_system::Config>::AccountId,
+                <T as frame_system::Config>::BlockNumber,
+                BalanceOf<T>,
+            >,
+        >,
+        sequential: bool,
+    ) {
+        Self::deposit_event(Event::XTransactionReceivedForExec(
+            x_tx_id.clone(),
+            // ToDo: Emit side effects DFD
+            sequential.encode(),
+        ));
+
+        Self::deposit_event(Event::NewSideEffectsAvailable(
+            requester.clone(),
+            x_tx_id.clone(),
+            // ToDo: Emit circuit outbound messages -> side effects
+            side_effects,
+        ));
     }
 }
 
@@ -636,7 +711,8 @@ pub struct EnsureExecDelivery<T>(sp_std::marker::PhantomData<T>);
 
 impl<
         T: pallet::Config,
-        O: Into<Result<RawOrigin<<T as frame_system::Config>::AccountId>, O>> + From<RawOrigin<<T as frame_system::Config>::AccountId>>,
+        O: Into<Result<RawOrigin<<T as frame_system::Config>::AccountId>, O>>
+            + From<RawOrigin<<T as frame_system::Config>::AccountId>>,
     > EnsureOrigin<O> for EnsureExecDelivery<T>
 {
     type Success = <T as frame_system::Config>::AccountId;

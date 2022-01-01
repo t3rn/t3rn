@@ -1,6 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use crate::side_effects::confirm::protocol::SideEffectConfirmationProtocol;
+
 pub use crate::side_effects::protocol::{EventSignature, SideEffectProtocol, String};
 use codec::{Decode, Encode};
 use sp_runtime::RuntimeDebug;
@@ -90,7 +91,7 @@ pub fn select_side_effect_by_id(id: [u8; 4]) -> Result<Box<dyn SideEffectProtoco
 }
 
 /// Return the ones that are working for now :)
-pub fn get_all_standard_side_effects(_id: [u8; 4]) -> Vec<Box<dyn SideEffectProtocol>> {
+pub fn get_all_standard_side_effects() -> Vec<Box<dyn SideEffectProtocol>> {
     vec![
         Box::new(TransferSideEffectProtocol {}),
         Box::new(GetDataSideEffectProtocol {}),
@@ -116,9 +117,10 @@ impl SideEffectProtocol for TransferSideEffectProtocol {
     }
     fn get_arguments_abi(&self) -> Vec<Type> {
         vec![
-            Type::DynamicAddress, // argument_0: from
-            Type::DynamicAddress, // argument_1: to
-            Type::Value,          // argument_2: value
+            Type::DynamicAddress,    // argument_0: from
+            Type::DynamicAddress,    // argument_1: to
+            Type::Value,             // argument_2: value
+            Type::OptionalInsurance, // argument_3: insurance
         ]
     }
     /// ToDo: Protocol::Reversible x-t3rn#69 - !Inspect if from is doable here - the original transfer is from a user,
@@ -127,7 +129,7 @@ impl SideEffectProtocol for TransferSideEffectProtocol {
     /// ToDo: Protocol::Reversible - Support optional parameters like insurance. - must be hardcoded name
     ///         // vec!["from", "to", "value", "Option<insurance>"]
     fn get_arguments_2_state_mapper(&self) -> Vec<&'static str> {
-        vec!["from", "to", "value"]
+        vec!["from", "to", "value", "insurance"]
     }
     fn get_confirming_events(&self) -> Vec<&'static str> {
         vec!["Transfer(from,to,value)"]
@@ -166,7 +168,7 @@ impl SideEffectProtocol for CallSideEffectProtocol {
             Type::DynamicAddress, // argument_0: from
             Type::DynamicAddress, // argument_1: dest
             Type::Value,          // argument_2: value
-            Type::DynamicBytes,   // argument_2: value
+            Type::DynamicBytes,   // argument_3: input
         ]
     }
     fn get_arguments_2_state_mapper(&self) -> Vec<&'static str> {
