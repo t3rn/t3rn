@@ -51,13 +51,6 @@ pub trait SideEffectProtocol {
                 Some(ref prefix) => {
                     let key =
                         LocalState::stick_key_with_prefix(mapper[i].encode(), prefix.to_vec());
-                    println!(
-                        "POPULATE_STATE {:?} {:?} {:?}",
-                        key.clone(),
-                        arg.to_vec().clone(),
-                        mapper[i]
-                    );
-
                     local_state.insert(key, arg.to_vec())
                 }
             };
@@ -93,10 +86,7 @@ pub trait SideEffectProtocol {
                     _ => Err("Side Effect Validation - Incorrect arguments length"),
                 },
             }?;
-
-            println!("VALIDATE ABI: {:?} {:?} {:?}", i, type_n, arg.clone());
             let res = type_n.clone().eval_abi(arg.clone(), gateway_abi)?;
-            println!("VALIDATE ABI result: {:?} ", res);
             validated_args.push(res);
         }
 

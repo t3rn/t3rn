@@ -155,7 +155,6 @@ pub fn assert_populated_state(
     keys: Vec<[u8; 32]>,
 ) {
     for (i, key) in keys.iter().enumerate() {
-        println!("ASSERT {:?}", key);
         assert_eq!(local_state.state.get(key), Some(&expected_arguments[i]));
     }
 }
@@ -170,21 +169,10 @@ pub fn assert_populated_state_auto_key_derive(
     let mut keys: Vec<Bytes> = vec![];
     for prop in derive_for_properties {
         let key = LocalState::stick_key_with_prefix(prop.clone().encode(), side_effect_id.clone());
-        println!("DERIVED KEYS = {:?} FOR PROP {:?}", key, prop);
-
         keys.push(key);
     }
-    println!("DERIVED KEYS = {:?}", keys);
 
     for (i, key) in keys.iter().enumerate() {
-        println!(
-            "AUTO ASSERT GET FOR KEY {:?} {:?} VAL = {:?}, HASH_KEY {:?}",
-            i,
-            key,
-            local_state.get(key.clone()),
-            LocalState::key_2_state_key(key),
-        );
-
         assert_eq!(local_state.get(key), Some(&expected_arguments[i]));
     }
 }
