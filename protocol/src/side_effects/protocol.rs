@@ -6,6 +6,7 @@ pub use crate::side_effects::standards::{
 };
 
 use codec::Encode;
+use sp_std::vec;
 use sp_std::vec::*;
 use t3rn_primitives::abi::{GatewayABIConfig, Type};
 use t3rn_primitives::volatile::{LocalState, Volatile};
