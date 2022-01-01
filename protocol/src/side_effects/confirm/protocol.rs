@@ -2,6 +2,7 @@
 
 use codec::Encode;
 use sp_std::boxed::Box;
+use sp_std::vec;
 use sp_std::vec::*;
 
 use crate::side_effects::confirm::parser::VendorSideEffectsParser;
