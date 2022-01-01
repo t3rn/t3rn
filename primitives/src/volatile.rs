@@ -53,15 +53,10 @@ pub trait Volatile {
         Self::hash(key_as_array)
     }
 
-    fn stick_key_with_prefix(mut key: Bytes, key_prefix: Option<Bytes>) -> Bytes {
-        match key_prefix {
-            None => key,
-            Some(ref prefix) => {
-                let mut prefixed_key = prefix.clone();
-                prefixed_key.append(&mut key);
-                prefixed_key.to_vec()
-            }
-        }
+    fn stick_key_with_prefix(mut key: Bytes, prefix: Bytes) -> Bytes {
+        let mut prefixed_key = prefix.clone();
+        prefixed_key.append(&mut key);
+        prefixed_key.to_vec()
     }
 
     fn get<K: Encode>(&self, key: K) -> Option<&StateVal> {

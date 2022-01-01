@@ -10,7 +10,7 @@ use sp_runtime::RuntimeString;
 use sp_std::boxed::Box;
 use sp_std::vec;
 use sp_std::vec::Vec;
-
+use sp_core::U256;
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
 
@@ -95,7 +95,7 @@ impl Default for GatewayABIConfig {
             hasher: HasherAlgo::Blake2,
             crypto: CryptoAlgo::Sr25519,
             address_length: 32,
-            value_type_size: 64,
+            value_type_size: 8, // it's 8 bytes of u64
             decimals: 8,
             structs: vec![],
         }
@@ -171,14 +171,14 @@ impl Type {
             Type::Bytes(_) => b"bytes",
             Type::Uint(n) => match n {
                 32 => b"uint32",
-                64 => b"uint32",
-                128 => b"uint32",
+                64 => b"uint64",
+                128 => b"uint128",
                 _ => unimplemented!(),
             },
             Type::Int(n) => match n {
                 32 => b"int32",
-                64 => b"int32",
-                128 => b"int32",
+                64 => b"int64",
+                128 => b"int128",
                 _ => unimplemented!(),
             },
             Type::String => b"string",
@@ -241,6 +241,122 @@ impl Type {
                 CryptoAlgo::Sr25519 => RuntimeString::from("sr25519"),
                 CryptoAlgo::Ecdsa => RuntimeString::from("ecdsa"),
             },
+            _ => unimplemented!(),
+        }
+    }
+
+    /// eval assumes encoded_val is bytes Vector encoded with SCALE
+    pub fn eval_abi(
+        &self,
+        encoded_val: Vec<u8>,
+        // size: usize,
+        gen: &GatewayABIConfig,
+    ) -> Result<Vec<u8>, &'static str> {
+        match self {
+            Type::Address(size) => match size {
+                20 => {
+                    let res: [u8; 20] = decode_buf2val(encoded_val)?;
+                    Ok(res.encode())
+                }
+                32 => {
+                    let res: [u8; 32] = decode_buf2val(encoded_val)?;
+                    Ok(res.encode())
+                }
+                _ => Err("Unknown Address size"),
+            },
+            Type::DynamicAddress => {
+                match gen.address_length {
+                    20 => {
+                        let res: [u8; 20] = decode_buf2val(encoded_val)?;
+                        Ok(res.encode())
+                    }
+                    32 => {
+                        let res: [u8; 32] = decode_buf2val(encoded_val)?;
+                        Ok(res.encode())
+                    }
+                    _ => unimplemented!(),
+                }
+            }
+            Type::Bool => {
+                let res: bool = decode_buf2val(encoded_val)?;
+                Ok(res.encode())
+            }
+            Type::OptionalInsurance => {
+                // Assume it's gonna be an array of 2 x u128 values (Circuit's Balance)
+                //  First one is the insurance amount
+                //  Second one is the reward amount
+                // Since it's Optional - value can be an empty vector too.
+                match encoded_val.len() {
+                    0 => Ok(encoded_val),
+                    32 => {
+                        let res: [u128; 2] = decode_buf2val(encoded_val)?;
+                        Ok(res.encode())
+                    }
+                    _ => Err("ABI OptionalInsurance eval error - wrong arg size"),
+                }
+            }
+            Type::Int(size) => match size {
+                32 => {
+                    let res: i32 = decode_buf2val(encoded_val)?;
+                    Ok(res.encode())
+                }
+                64 => {
+                    let res: i64 = decode_buf2val(encoded_val)?;
+                    Ok(res.encode())
+                }
+                128 => {
+                    let res: i128 = decode_buf2val(encoded_val)?;
+                    Ok(res.encode())
+                }
+                _ => Err("Unknown Uint size"),
+            },
+            Type::Uint(size) => match size {
+                32 => {
+                    let res: u32 = decode_buf2val(encoded_val)?;
+                    Ok(res.encode())
+                }
+                64 => {
+                    let res: u64 = decode_buf2val(encoded_val)?;
+                    Ok(res.encode())
+                }
+                128 => {
+                    let res: u128 = decode_buf2val(encoded_val)?;
+                    Ok(res.encode())
+                }
+                _ => Err("Unknown Uint size"),
+            },
+            Type::Bytes(_) => {
+                let res: Bytes = decode_buf2val(encoded_val)?;
+                Ok(res.to_vec())
+            }
+            Type::DynamicBytes => {
+                let res: Vec<u8> = decode_buf2val(encoded_val)?;
+                Ok(res)
+            }
+            Type::String => {
+                let res: RuntimeString = decode_buf2val(encoded_val)?;
+                Ok(res.encode())
+            }
+            Type::Value => {
+                match gen.value_type_size {
+                    8 => {
+                        // 8 bytes = 64 bits
+                        let res: u64 = decode_buf2val::<u64>(encoded_val)?;
+                        Ok(res.encode())
+                    }
+                    16 => {
+                        // 16 bytes = 128 bits
+                        let res: u128 = decode_buf2val::<u128>(encoded_val)?;
+                        Ok(res.encode())
+                    }
+                    32 => {
+                        // 32 bytes = 256 bits
+                        let res: U256 = decode_buf2val::<U256>(encoded_val)?;
+                        Ok(res.encode())
+                    }
+                    _ => unimplemented!(),
+                }
+            }
             _ => unimplemented!(),
         }
     }
