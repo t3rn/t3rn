@@ -316,6 +316,7 @@ pub mod pallet {
 
             let mut state_copy = xtx.local_state.clone();
             let gateway_vendor = pallet_xdns::Pallet::<T>::best_available(side_effect.target)?;
+            let side_effect_id = side_effect.generate_id::<SystemHashing<T>>();
 
             confirm_with_vendor_by_action_id::<
                 T,
@@ -326,6 +327,7 @@ pub mod pallet {
                 side_effect.encoded_action.clone(),
                 confirmed_side_effect.encoded_effect.clone(),
                 &mut state_copy,
+                Some(side_effect_id.as_ref().to_vec()),
             )?;
 
             // Check if the side effect has been deposited with respect to the execution order
