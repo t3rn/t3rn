@@ -89,9 +89,10 @@ pub mod pallet {
 
     pub use crate::weights::WeightInfo;
 
-    /// Current Circuit's context of active transactions
+    /// Current Circuit's context of active insurance deposits
     ///
     #[pallet::storage]
+    #[pallet::getter(fn get_insurance_deposits)]
     pub type InsuranceDeposits<T> = StorageDoubleMap<
         _,
         Identity,
@@ -102,6 +103,41 @@ pub mod pallet {
             <T as frame_system::Config>::AccountId,
             <T as frame_system::Config>::BlockNumber,
             BalanceOf<T>,
+        >,
+        ValueQuery,
+    >;
+
+    /// Current Circuit's context of active transactions
+    ///
+    #[pallet::storage]
+    #[pallet::getter(fn get_x_exec_signals)]
+    pub type XExecSignals<T> = StorageMap<
+        _,
+        Identity,
+        XExecSignalId<T>,
+        XExecSignal<
+            <T as frame_system::Config>::AccountId,
+            <T as frame_system::Config>::BlockNumber,
+            BalanceOf<T>,
+        >,
+        ValueQuery,
+    >;
+
+    /// Current Circuit's context of active full side effects (requested + confirmation proofs)
+    #[pallet::storage]
+    #[pallet::getter(fn get_full_side_effects)]
+    pub type FullSideEffects<T> = StorageMap<
+        _,
+        Identity,
+        XExecSignalId<T>,
+        Vec<
+            Vec<
+                FullSideEffect<
+                    <T as frame_system::Config>::AccountId,
+                    <T as frame_system::Config>::BlockNumber,
+                    BalanceOf<T>,
+                >,
+            >,
         >,
         ValueQuery,
     >;
@@ -227,14 +263,8 @@ pub mod pallet {
             let mut local_xtx_ctx: LocalXtxCtx<T> =
                 Self::setup(CircuitExecStatus::Requested, &requester, fee);
             // Validate: Side Effects
-            let full_side_effects = Self::validate(
-                &side_effects,
-                &mut local_xtx_ctx.use_protocol,
-                &mut local_xtx_ctx.local_state,
-                &requester,
-                local_xtx_ctx.xtx_id,
-                sequential,
-            )?;
+            let full_side_effects =
+                Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential)?;
             // Apply: all necessary changes to state in 1 go
             Self::apply(
                 CircuitExecStatus::Requested,
@@ -254,8 +284,24 @@ pub mod pallet {
 
     /// Events for the pallet.
     #[pallet::event]
-    //     #[pallet::generate_deposit(pub (super) fn deposit_event)]
-    pub enum Event<T: Config> {}
+    #[pallet::generate_deposit(pub (super) fn deposit_event)]
+    pub enum Event<T: Config> {
+        // Listeners - users + SDK + UI to know whether their request is accepted for exec and pending
+        XTransactionReceivedForExec(XExecSignalId<T>),
+        // Listeners - executioners/relayers to know new challenges and perform offline risk/reward calc
+        //  of whether side effect is worth picking up
+        NewSideEffectsAvailable(
+            <T as frame_system::Config>::AccountId,
+            XExecSignalId<T>,
+            Vec<
+                SideEffect<
+                    <T as frame_system::Config>::AccountId,
+                    <T as frame_system::Config>::BlockNumber,
+                    BalanceOf<T>,
+                >,
+            >,
+        ),
+    }
 
     #[pallet::error]
     pub enum Error<T> {
@@ -305,6 +351,7 @@ impl<T: Config> Pallet<T> {
                     use_protocol: UniversalSideEffectsProtocol::new(),
                     xtx_id: x_exec_signal_id,
                     xtx: x_exec_signal,
+                    insurance_deposits: vec![],
                 }
             }
             _ => unimplemented!(),
@@ -314,29 +361,34 @@ impl<T: Config> Pallet<T> {
     fn apply(
         current_status: CircuitExecStatus,
         new_status: CircuitExecStatus,
-        _local_xtx_ctx: &LocalXtxCtx<T>,
+        local_ctx: &LocalXtxCtx<T>,
         _side_effects: &Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
-        _full_ordered_side_effects: Vec<
+        full_ordered_side_effects: Vec<
             Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
         >,
     ) -> Result<(), Error<T>> {
         match (current_status, new_status) {
             (CircuitExecStatus::Requested, CircuitExecStatus::Validated) => {
+                <FullSideEffects<T>>::insert::<
+                    XExecSignalId<T>,
+                    Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
+                >(local_ctx.xtx_id.clone(), full_ordered_side_effects);
 
-                // <InsuranceDeposits<T>>::insert::<
-                //     XExecSignalId<T>,
-                //     SideEffectId<T>,
-                //     InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
-                // >(
-                //     xtx_id,
-                //     side_effect.generate_id::<SystemHashing<T>>(),
-                //     InsuranceDeposit::new(
-                //         insurance,
-                //         promised_reward,
-                //         requester.clone(),
-                //         <frame_system::Pallet<T>>::block_number(),
-                //     ),
-                // );
+                for (side_effect_id, insurance_deposit) in &local_ctx.insurance_deposits {
+                    <InsuranceDeposits<T>>::insert::<
+                        XExecSignalId<T>,
+                        SideEffectId<T>,
+                        InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+                    >(
+                        local_ctx.xtx_id.clone(),
+                        side_effect_id.clone(),
+                        insurance_deposit.clone(),
+                    );
+                }
+                <XExecSignals<T>>::insert::<
+                    XExecSignalId<T>,
+                    XExecSignal<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+                >(local_ctx.xtx_id.clone(), local_ctx.xtx.clone());
             }
             (_, _) => unimplemented!(),
         }
@@ -344,11 +396,21 @@ impl<T: Config> Pallet<T> {
     }
 
     fn emit(
-        _xtx_id: XExecSignalId<T>,
-        _requester: &T::AccountId,
-        _side_effects: &Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+        xtx_id: XExecSignalId<T>,
+        requester: &T::AccountId,
+        side_effects: &Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
         _sequential: bool,
     ) {
+        println!("HELLO EMIT");
+        Self::deposit_event(Event::XTransactionReceivedForExec(xtx_id.clone()));
+
+        Self::deposit_event(Event::NewSideEffectsAvailable(
+            requester.clone(),
+            xtx_id.clone(),
+            // ToDo: Emit circuit outbound messages -> side effects
+            side_effects.to_vec(),
+        ));
+
         // <T as pallet_exec_delivery::Config>::submit_side_effect(
         //     xtx_id,
         //     requester: requester.clone(),
@@ -372,10 +434,8 @@ impl<T: Config> Pallet<T> {
 
     fn validate(
         side_effects: &Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
-        use_protocol: &mut UniversalSideEffectsProtocol,
-        local_state: &mut LocalState,
+        local_ctx: &mut LocalXtxCtx<T>,
         requester: &T::AccountId,
-        _xtx_id: XExecSignalId<T>,
         sequential: bool,
     ) -> Result<Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>, &'static str>
     {
@@ -385,12 +445,13 @@ impl<T: Config> Pallet<T> {
         for side_effect in side_effects.iter() {
             // ToDo: Generate Circuit's params as default ABI from let abi = pallet_xdns::get_abi(target_id)
             let gateway_abi = Default::default();
-            use_protocol.notice_gateway(side_effect.target);
-            use_protocol
+            local_ctx.use_protocol.notice_gateway(side_effect.target);
+            local_ctx
+                .use_protocol
                 .validate_args::<T::AccountId, T::BlockNumber, BalanceOf<T>, SystemHashing<T>>(
                     side_effect.clone(),
                     gateway_abi,
-                    local_state,
+                    &mut local_ctx.local_state,
                 )?;
 
             if let Some(insurance_and_reward) =
@@ -399,16 +460,15 @@ impl<T: Config> Pallet<T> {
                     T::BlockNumber,
                     BalanceOf<T>,
                     SystemHashing<T>,
-                >(side_effect.clone(), local_state)?
+                >(side_effect.clone(), &mut local_ctx.local_state)?
             {
                 let (insurance, reward) = (insurance_and_reward[0], insurance_and_reward[1]);
                 Self::request_side_effect_insurance(
-                    Default::default(), // ToDo: Obtain XtxId before let x_tx_id: XtxId<T> = new_xtx.generate_xtx_id::<T>();
-                    side_effect.clone(),
+                    &mut local_ctx.insurance_deposits,
+                    side_effect.generate_id::<SystemHashing<T>>(),
                     insurance,
                     reward,
                     requester,
-                    local_state,
                 )?;
             }
             full_side_effects.push(FullSideEffect {
@@ -437,12 +497,14 @@ impl<T: Config> Pallet<T> {
 
     /// On-submit
     fn request_side_effect_insurance(
-        xtx_id: XExecSignalId<T>,
-        side_effect: SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+        insurance_deposits: &mut Vec<(
+            SideEffectId<T>,
+            InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+        )>,
+        side_effect_id: SideEffectId<T>,
         insurance: BalanceOf<T>,
         promised_reward: BalanceOf<T>,
         requester: &T::AccountId,
-        _local_state: &mut LocalState,
     ) -> Result<(), Error<T>> {
         // ToDo: Prepare Treasury submodule with Vault Constant
         let VAULT: T::AccountId = Default::default();
@@ -450,20 +512,16 @@ impl<T: Config> Pallet<T> {
             <T as EscrowTrait>::Currency::transfer(requester, &VAULT, promised_reward, AllowDeath); // should not fail
         debug_assert!(res.is_ok());
 
-        <InsuranceDeposits<T>>::insert::<
-            XExecSignalId<T>,
-            SideEffectId<T>,
-            InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
-        >(
-            xtx_id,
-            side_effect.generate_id::<SystemHashing<T>>(),
+        insurance_deposits.push((
+            side_effect_id,
             InsuranceDeposit::new(
                 insurance,
                 promised_reward,
                 requester.clone(),
                 <frame_system::Pallet<T>>::block_number(),
             ),
-        );
+        ));
+
         Ok(())
     }
 

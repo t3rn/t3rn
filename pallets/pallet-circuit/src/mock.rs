@@ -75,7 +75,7 @@ impl frame_system::Config for Test {
     type Event = Event;
     type BlockHashCount = BlockHashCount;
     type PalletInfo = PalletInfo;
-    type AccountData = pallet_balances::AccountData<u128>;
+    type AccountData = pallet_balances::AccountData<Balance>;
     type OnNewAccount = ();
     type OnKilledAccount = ();
     type SystemWeightInfo = ();
@@ -111,7 +111,7 @@ impl pallet_xdns::Config for Test {
     type WeightInfo = ();
 }
 
-pub type Balance = u128;
+pub type Balance = u64;
 
 parameter_types! {
     pub const UncleGenerations: u64 = 0;
@@ -125,13 +125,13 @@ impl pallet_timestamp::Config for Test {
 }
 
 parameter_types! {
-    pub const ExistentialDeposit: u128 = 1;
+    pub const ExistentialDeposit: Balance = 1;
     pub const MaxReserves: u32 = 50;
 }
 
 impl pallet_balances::Config for Test {
     type MaxLocks = ();
-    type Balance = u128;
+    type Balance = Balance;
     type DustRemoval = ();
     type Event = Event;
     type ExistentialDeposit = ExistentialDeposit;
