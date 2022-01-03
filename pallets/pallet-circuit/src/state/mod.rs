@@ -4,6 +4,11 @@ use sp_core::Hasher;
 use sp_runtime::RuntimeDebug;
 use sp_std::vec::Vec;
 
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
+#[cfg(feature = "no_std")]
+use sp_runtime::RuntimeDebug as Debug;
+
 type SystemHashing<T> = <T as frame_system::Config>::Hashing;
 pub type XExecSignalId<T> = <T as frame_system::Config>::Hash;
 
@@ -19,6 +24,13 @@ pub enum CircuitExecStatus {
     Committed,
     Reverted,
     RevertedTimedOut,
+}
+
+pub struct LocalXtxCtx<T: Config> {
+    pub local_state: LocalState,
+    pub use_protocol: UniversalSideEffectsProtocol,
+    pub xtx_id: XExecSignalId<T>,
+    pub xtx: XExecSignal<T::AccountId, T::BlockNumber, BalanceOf<T>>,
 }
 
 impl Default for CircuitExecStatus {

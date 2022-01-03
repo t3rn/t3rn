@@ -41,10 +41,13 @@ pub use t3rn_primitives::{
 use t3rn_protocol::side_effects::loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol};
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 
-use sp_runtime::traits::Zero;
+use sp_runtime::traits::{Saturating, Zero};
+
 use sp_std::fmt::Debug;
 
+use frame_support::ensure;
 use frame_support::traits::{Currency, ExistenceRequirement::AllowDeath};
+
 use sp_runtime::KeyTypeId;
 
 pub type Bytes = sp_core::Bytes;
@@ -212,15 +215,14 @@ pub mod pallet {
         pub fn on_extrinsics_trigger(
             origin: OriginFor<T>,
             side_effects: Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
-            _input: Vec<u8>,
-            _value: BalanceOf<T>,
             fee: BalanceOf<T>,
             sequential: bool,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin)?;
+
             // Charge: Ensure can afford
-            let _available_trn_balance = Self::charge(&requester)?;
+            let _available_trn_balance = Self::charge(&requester, fee)?;
             // Setup: new xtx context
             let mut local_xtx_ctx: LocalXtxCtx<T> =
                 Self::setup(CircuitExecStatus::Requested, &requester, fee);
@@ -242,6 +244,7 @@ pub mod pallet {
                 full_side_effects,
             )?;
 
+            println!("Emit: From Circuit events XTX {:?}", local_xtx_ctx.xtx);
             // Emit: From Circuit events
             Self::emit(local_xtx_ctx.xtx_id, &requester, &side_effects, sequential);
 
@@ -273,13 +276,6 @@ impl<T: SigningTypes> SignedPayload<T> for Payload<T::Public, T::BlockNumber> {
     fn public(&self) -> T::Public {
         self.public.clone()
     }
-}
-
-pub struct LocalXtxCtx<T: Config> {
-    local_state: LocalState,
-    use_protocol: UniversalSideEffectsProtocol,
-    xtx_id: XExecSignalId<T>,
-    xtx: XExecSignal<T::AccountId, T::BlockNumber, BalanceOf<T>>,
 }
 
 impl<T: Config> Pallet<T> {
@@ -361,8 +357,12 @@ impl<T: Config> Pallet<T> {
         // );
     }
 
-    fn charge(requester: &T::AccountId) -> Result<BalanceOf<T>, Error<T>> {
+    fn charge(requester: &T::AccountId, fee: BalanceOf<T>) -> Result<BalanceOf<T>, Error<T>> {
         let available_trn_balance = <T as EscrowTrait>::Currency::free_balance(requester);
+        ensure!(
+            available_trn_balance.saturating_sub(fee) > BalanceOf::<T>::from(0 as u32),
+            Error::<T>::RequesterNotEnoughBalance,
+        );
         Ok(available_trn_balance)
     }
 

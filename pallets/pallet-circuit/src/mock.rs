@@ -1,5 +1,5 @@
 //! Test utilities
-use crate::{self as pallet_execution_delivery, Config};
+use crate::{self as pallet_circuit, Config};
 
 use codec::Encode;
 
@@ -33,7 +33,7 @@ frame_support::construct_runtime!(
         NodeBlock = Block,
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
-        ExecDelivery: pallet_execution_delivery::{Pallet, Call, Storage, Event<T>},
+        Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>},
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 
