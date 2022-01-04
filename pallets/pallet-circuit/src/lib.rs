@@ -261,15 +261,15 @@ pub mod pallet {
             let _available_trn_balance = Self::charge(&requester, fee)?;
             // Setup: new xtx context
             let mut local_xtx_ctx: LocalXtxCtx<T> =
-                Self::setup(CircuitExecStatus::Requested, &requester, fee);
+                Self::setup(CircuitStatus::Requested, &requester, fee);
             // Validate: Side Effects
             let full_side_effects =
                 Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential)?;
             // Apply: all necessary changes to state in 1 go
             Self::apply(
-                CircuitExecStatus::Requested,
-                CircuitExecStatus::Validated,
-                &local_xtx_ctx,
+                CircuitStatus::Requested,
+                CircuitStatus::Validated,
+                &mut local_xtx_ctx,
                 &side_effects,
                 full_side_effects,
             )?;
@@ -326,12 +326,12 @@ impl<T: SigningTypes> SignedPayload<T> for Payload<T::Public, T::BlockNumber> {
 
 impl<T: Config> Pallet<T> {
     fn setup(
-        current_status: CircuitExecStatus,
+        current_status: CircuitStatus,
         requester: &T::AccountId,
         reward: BalanceOf<T>,
     ) -> LocalXtxCtx<T> {
         match current_status {
-            CircuitExecStatus::Requested => {
+            CircuitStatus::Requested => {
                 // ToDo: Introduce default timeout + delay
                 let (timeouts_at, delay_steps_at): (
                     Option<T::BlockNumber>,
@@ -359,16 +359,16 @@ impl<T: Config> Pallet<T> {
     }
 
     fn apply(
-        current_status: CircuitExecStatus,
-        new_status: CircuitExecStatus,
-        local_ctx: &LocalXtxCtx<T>,
+        current_status: CircuitStatus,
+        new_status: CircuitStatus,
+        local_ctx: &mut LocalXtxCtx<T>,
         _side_effects: &Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
         full_ordered_side_effects: Vec<
             Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
         >,
     ) -> Result<(), Error<T>> {
         match (current_status, new_status) {
-            (CircuitExecStatus::Requested, CircuitExecStatus::Validated) => {
+            (CircuitStatus::Requested, CircuitStatus::Validated) => {
                 <FullSideEffects<T>>::insert::<
                     XExecSignalId<T>,
                     Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
@@ -385,6 +385,8 @@ impl<T: Config> Pallet<T> {
                         insurance_deposit.clone(),
                     );
                 }
+
+                local_ctx.xtx.status = CircuitStatus::Validated;
                 <XExecSignals<T>>::insert::<
                     XExecSignalId<T>,
                     XExecSignal<T::AccountId, T::BlockNumber, BalanceOf<T>>,

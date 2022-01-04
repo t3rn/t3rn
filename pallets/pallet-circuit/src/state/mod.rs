@@ -14,14 +14,107 @@ pub type XExecSignalId<T> = <T as frame_system::Config>::Hash;
 // use t3rn_primitives::volatile::{LocalState, Volatile};
 use scale_info::TypeInfo;
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
-pub enum CircuitExecStatus {
+/// Status of Circuit storage items:
+/// Requested - default
+/// Requested -> Validated - successfully passed the validation
+/// Option<Validated -> PendingInsurance>: If there are some side effects that request insurance,
+///         the status will stay in PendingInsurance until all insurance deposits are committed
+/// Validated/PendingInsurance -> Ready - ready for relayers to pick up and start executing on targets
+/// Ready -> PendingExecution - at least one side effect has already been confirmed, but not all of them
+/// Circuit::Apply -> called internally - based on the side effects confirmations decides:
+///     Ready -> Committed: All of the side effects have been successfully confirmed
+///     Ready -> Reverted: Some of the side effects failed and the Xtx was reverted
+#[derive(Clone, Eq, PartialEq, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo)]
+pub enum CircuitStatus {
     Requested,
     Validated,
+    PendingInsurance,
     Bonded,
+    Ready,
+    PendingExecution,
+    Finished,
     Committed,
     Reverted,
     RevertedTimedOut,
+}
+
+impl CircuitStatus {
+    fn determine_insurance_status<T: Config>(
+        side_effect_id: SideEffectId<T>,
+        insurance_deposits: &Vec<(
+            SideEffectId<T>,
+            InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+        )>,
+    ) -> CircuitStatus {
+        return if let Some((_id, insurance_request)) = insurance_deposits
+            .iter()
+            .find(|(id, _)| *id == side_effect_id)
+        {
+            if let Some(_) = insurance_request.bonded_relayer {
+                CircuitStatus::Bonded
+            } else {
+                CircuitStatus::PendingInsurance
+            }
+        } else {
+            CircuitStatus::Ready
+        };
+    }
+
+    /// Based solely on full steps + insurance deposits determine the execution status.
+    /// Start with checking the criteria from the earliest status to latest
+    pub fn determine_step_status<T: Config>(
+        step: Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+        insurance_deposits: &Vec<(
+            SideEffectId<T>,
+            InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+        )>,
+    ) -> Result<CircuitStatus, &'static str> {
+        // Those are determined post - ready
+        let mut highest_post_ready_determined_status = CircuitStatus::Ready;
+        let mut lowest_post_ready_determined_status = CircuitStatus::Finished;
+
+        for (_i, full_side_effect) in step.iter().enumerate() {
+            let current_id = full_side_effect.input.generate_id::<SystemHashing<T>>();
+            let current_determined_status =
+                Self::determine_insurance_status::<T>(current_id, insurance_deposits);
+            if current_determined_status == CircuitStatus::PendingInsurance
+                && highest_post_ready_determined_status > CircuitStatus::Ready
+            {
+                // If we are here it means that the side effect has requested for insurance that is still pending
+                //  but at the same time some of the previous side effects already has been confirmed.
+                // This should never happen and the refund for users should be handled
+                //  with the same time punishing relayers responsible for too early execution
+                return Err(
+                    "Panic! Xtx status should have not been in Pending Execution \
+                                    when there is still some Pending Insurance",
+                );
+            }
+
+            if current_determined_status != CircuitStatus::Ready {
+                return Ok(current_determined_status);
+            }
+            // Checking further only if CircuitStatus::Ready after this point
+            if let Some(_) = full_side_effect.confirmed {
+                highest_post_ready_determined_status = CircuitStatus::Finished
+            } else {
+                lowest_post_ready_determined_status = CircuitStatus::PendingExecution
+            }
+        }
+
+        // Find CircuitStatus::min(lowest_determined, highest_determined)
+        let lowest_determined =
+            if highest_post_ready_determined_status >= lowest_post_ready_determined_status {
+                // Either CircuitStatus::Finished if never found a side effect with CircuitStatus::PendingExecution
+                //  Or CircuitStatus::PendingExecution otherwise
+                lowest_post_ready_determined_status
+            } else {
+                // Either CircuitStatus::Finished if never found a side effect with CircuitStatus::PendingExecution
+                //  Or CircuitStatus::Ready otherwise if None of the side effects are confirmed yet
+                highest_post_ready_determined_status
+            };
+
+        Ok(lowest_determined)
+    }
 }
 
 pub struct LocalXtxCtx<T: Config> {
@@ -35,9 +128,9 @@ pub struct LocalXtxCtx<T: Config> {
     )>,
 }
 
-impl Default for CircuitExecStatus {
+impl Default for CircuitStatus {
     fn default() -> Self {
-        CircuitExecStatus::Requested
+        CircuitStatus::Requested
     }
 }
 
@@ -47,7 +140,7 @@ pub struct InsuranceDeposit<AccountId, BlockNumber, BalanceOf> {
     pub reward: BalanceOf,
     pub requester: AccountId,
     pub bonded_relayer: Option<AccountId>,
-    pub status: CircuitExecStatus,
+    pub status: CircuitStatus,
     pub requested_at: BlockNumber,
 }
 
@@ -68,7 +161,7 @@ impl<
             reward,
             requester,
             bonded_relayer: None,
-            status: CircuitExecStatus::Requested,
+            status: CircuitStatus::Requested,
             requested_at,
         }
     }
@@ -91,7 +184,7 @@ pub struct XExecSignal<AccountId, BlockNumber, BalanceOf> {
     pub delay_steps_at: Option<Vec<BlockNumber>>,
 
     /// Has returned status already and what
-    pub status: CircuitExecStatus,
+    pub status: CircuitStatus,
 
     /// Total reward
     pub total_reward: Option<BalanceOf>,
