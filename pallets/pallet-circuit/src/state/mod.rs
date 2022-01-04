@@ -63,12 +63,12 @@ impl CircuitStatus {
     /// Based solely on full steps + insurance deposits determine the execution status.
     /// Start with checking the criteria from the earliest status to latest
     pub fn determine_step_status<T: Config>(
-        step: Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+        step: &Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
         insurance_deposits: &Vec<(
             SideEffectId<T>,
             InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
         )>,
-    ) -> Result<CircuitStatus, &'static str> {
+    ) -> Result<CircuitStatus, Error<T>> {
         // Those are determined post - ready
         let mut highest_post_ready_determined_status = CircuitStatus::Ready;
         let mut lowest_post_ready_determined_status = CircuitStatus::Finished;
@@ -84,10 +84,7 @@ impl CircuitStatus {
                 //  but at the same time some of the previous side effects already has been confirmed.
                 // This should never happen and the refund for users should be handled
                 //  with the same time punishing relayers responsible for too early execution
-                return Err(
-                    "Panic! Xtx status should have not been in Pending Execution \
-                                    when there is still some Pending Insurance",
-                );
+                return Err(Error::<T>::DeterminedForbiddenXtxStatus);
             }
 
             if current_determined_status != CircuitStatus::Ready {
@@ -114,6 +111,24 @@ impl CircuitStatus {
             };
 
         Ok(lowest_determined)
+    }
+
+    pub fn determine_xtx_status<T: Config>(
+        steps: &Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
+        insurance_deposits: &Vec<(
+            SideEffectId<T>,
+            InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+        )>,
+    ) -> Result<CircuitStatus, Error<T>> {
+        let mut lowest_determined_status = CircuitStatus::Requested;
+
+        for step in steps.iter() {
+            let current_step_status = Self::determine_step_status::<T>(&step, insurance_deposits)?;
+            if current_step_status > lowest_determined_status {
+                lowest_determined_status = current_step_status;
+            }
+        }
+        Ok(lowest_determined_status)
     }
 }
 

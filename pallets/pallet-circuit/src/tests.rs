@@ -169,6 +169,27 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
             Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
             void_insurance_deposit
         );
+
+        assert_eq!(
+            Circuit::get_x_exec_signals(xtx_id),
+            XExecSignal {
+                requester: AccountId32::new(hex!(
+                    "0101010101010101010101010101010101010101010101010101010101010101"
+                )),
+                timeouts_at: None,
+                delay_steps_at: None,
+                status: CircuitStatus::Ready,
+                total_reward: Some(1000000)
+            }
+        );
+
+        assert_eq!(
+            Circuit::get_full_side_effects(xtx_id),
+            vec![vec![FullSideEffect {
+                input: valid_transfer_side_effect,
+                confirmed: None,
+            }]]
+        );
     });
 }
 
@@ -360,7 +381,7 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
                 )),
                 timeouts_at: None,
                 delay_steps_at: None,
-                status: CircuitStatus::Validated,
+                status: CircuitStatus::PendingInsurance,
                 total_reward: Some(1000000)
             }
         );
@@ -440,7 +461,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
                 )),
                 timeouts_at: None,
                 delay_steps_at: None,
-                status: CircuitStatus::Validated,
+                status: CircuitStatus::PendingInsurance,
                 total_reward: Some(1000000)
             }
         );

@@ -271,7 +271,7 @@ pub mod pallet {
                 CircuitStatus::Validated,
                 &mut local_xtx_ctx,
                 &side_effects,
-                full_side_effects,
+                &full_side_effects,
             )?;
 
             println!("Emit: From Circuit events XTX {:?}", local_xtx_ctx.xtx);
@@ -306,6 +306,7 @@ pub mod pallet {
     #[pallet::error]
     pub enum Error<T> {
         RequesterNotEnoughBalance,
+        DeterminedForbiddenXtxStatus,
     }
 }
 
@@ -363,7 +364,7 @@ impl<T: Config> Pallet<T> {
         new_status: CircuitStatus,
         local_ctx: &mut LocalXtxCtx<T>,
         _side_effects: &Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
-        full_ordered_side_effects: Vec<
+        full_ordered_side_effects: &Vec<
             Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
         >,
     ) -> Result<(), Error<T>> {
@@ -372,7 +373,7 @@ impl<T: Config> Pallet<T> {
                 <FullSideEffects<T>>::insert::<
                     XExecSignalId<T>,
                     Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
-                >(local_ctx.xtx_id.clone(), full_ordered_side_effects);
+                >(local_ctx.xtx_id.clone(), full_ordered_side_effects.clone());
 
                 for (side_effect_id, insurance_deposit) in &local_ctx.insurance_deposits {
                     <InsuranceDeposits<T>>::insert::<
@@ -386,7 +387,12 @@ impl<T: Config> Pallet<T> {
                     );
                 }
 
-                local_ctx.xtx.status = CircuitStatus::Validated;
+                // local_ctx.xtx.status = CircuitStatus::Validated;
+                local_ctx.xtx.status = CircuitStatus::determine_xtx_status(
+                    full_ordered_side_effects,
+                    &local_ctx.insurance_deposits,
+                )?;
+
                 <XExecSignals<T>>::insert::<
                     XExecSignalId<T>,
                     XExecSignal<T::AccountId, T::BlockNumber, BalanceOf<T>>,
