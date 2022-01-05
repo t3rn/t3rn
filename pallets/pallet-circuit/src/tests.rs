@@ -499,5 +499,18 @@ fn circuit_handles_insurance_deposit_for_transfers() {
             Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
             expected_bonded_insurance_deposit
         );
+
+        assert_eq!(
+            Circuit::get_x_exec_signals(xtx_id),
+            XExecSignal {
+                requester: AccountId32::new(hex!(
+                    "0101010101010101010101010101010101010101010101010101010101010101"
+                )),
+                timeouts_at: None,
+                delay_steps_at: None,
+                status: CircuitStatus::Ready,
+                total_reward: Some(1000000)
+            }
+        );
     });
 }

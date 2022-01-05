@@ -66,6 +66,24 @@ impl CircuitStatus {
         };
     }
 
+    pub fn determine_effects_insurance_status<T: Config>(
+        insurance_deposits: &Vec<(
+            SideEffectId<T>,
+            InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+        )>,
+    ) -> CircuitStatus {
+        for (current_id, _insurance_deposit) in insurance_deposits {
+            println!("NEW STATUS: INSIDE determine_effects_insurance_status::insurance_deposits {:?}", insurance_deposits);
+
+            if Self::determine_insurance_status::<T>(*current_id, insurance_deposits)
+                == CircuitStatus::PendingInsurance
+            {
+                return CircuitStatus::PendingInsurance;
+            }
+        }
+        CircuitStatus::Ready
+    }
+
     /// Based solely on full steps + insurance deposits determine the execution status.
     /// Start with checking the criteria from the earliest status to latest
     pub fn determine_step_status<T: Config>(

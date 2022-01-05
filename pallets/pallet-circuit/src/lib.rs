@@ -231,10 +231,15 @@ pub mod pallet {
             // ToDo: pallet-circuit x-t3rn# : Emit : Connect to ExecDelivery::submit_side_effect_temp( )
 
             // ToDo: pallet-circuit x-t3rn# : Cancel : Execution on timeout
+
             // ToDo: pallet-circuit x-t3rn# : Apply - Submission : Apply changes to storage after Submit has passed
+
             // ToDo: pallet-circuit x-t3rn# : Apply - Confirmation : Apply changes to storage after Confirmation has passed
+
             // ToDo: pallet-circuit x-t3rn# : Apply - Revert : Apply changes to storage after Revert has been proven
+
             // ToDo: pallet-circuit x-t3rn# : Apply - Commit : Apply changes to storage after Successfully Commit has been requested
+
             // ToDo: pallet-circuit x-t3rn# : Apply - Cancel : Apply changes to storage after the timeout has passed
 
             unimplemented!();
@@ -249,6 +254,13 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
         pub fn on_remote_gateway_trigger(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             // ToDo: Check TriggerAuthRights for remote gateway triggers
+
+            // Because no incentive for external relayers
+            // - Composable can only call the CALL::3VM Contract
+            // -
+
+            // Writing an app on t3rn - i can create 2 smart contracts - one one composable and the other on Circuit
+            //      writing additional smart contracts guarantes steps atomicity
             unimplemented!();
         }
 
@@ -263,7 +275,7 @@ pub mod pallet {
             let requester = Self::authorize(origin, CircuitRole::Requester)?;
 
             // Charge: Ensure can afford
-            let _available_trn_balance = Self::charge(&requester, fee)?;
+            Self::charge(&requester, fee)?;
             // Setup: new xtx context
             let mut local_xtx_ctx: LocalXtxCtx<T> =
                 Self::setup(CircuitStatus::Requested, &requester, fee, None)?;
@@ -496,6 +508,18 @@ impl<T: Config> Pallet<T> {
                         side_effect_id,
                         |x| *x = insurance_deposit,
                     );
+                    let new_status = CircuitStatus::determine_effects_insurance_status::<T>(
+                        &local_ctx.insurance_deposits,
+                    );
+
+                    println!("NEW STATUS: CircuitStatus::determine_effects {:?}", new_status);
+                    if new_status != local_ctx.xtx.status {
+                        local_ctx.xtx.status = new_status;
+
+                        <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
+                            *x = local_ctx.xtx.clone()
+                        });
+                    }
                 } else {
                     return Err(Error::<T>::ApplyFailed);
                 }
