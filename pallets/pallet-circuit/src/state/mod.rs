@@ -27,7 +27,6 @@ use scale_info::TypeInfo;
 #[derive(Clone, Eq, PartialEq, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum CircuitStatus {
     Requested,
-    Validated,
     PendingInsurance,
     Bonded,
     Ready,
@@ -36,6 +35,13 @@ pub enum CircuitStatus {
     Committed,
     Reverted,
     RevertedTimedOut,
+}
+
+#[derive(Clone, Eq, PartialEq, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo)]
+pub enum CircuitRole {
+    Relayer,
+    Requester,
+    Local,
 }
 
 impl CircuitStatus {

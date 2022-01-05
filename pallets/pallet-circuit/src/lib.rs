@@ -45,7 +45,6 @@ use sp_runtime::traits::{Saturating, Zero};
 
 use sp_std::fmt::Debug;
 
-use frame_support::ensure;
 use frame_support::traits::{Currency, ExistenceRequirement::AllowDeath};
 
 use sp_runtime::KeyTypeId;
@@ -122,6 +121,12 @@ pub mod pallet {
         >,
         ValueQuery,
     >;
+
+    /// Current Circuit's context of active full side effects (requested + confirmation proofs)
+    #[pallet::storage]
+    #[pallet::getter(fn get_xtx_insurance_links)]
+    pub type XtxInsuranceLinks<T> =
+        StorageMap<_, Identity, XExecSignalId<T>, Vec<SideEffectId<T>>, ValueQuery>;
 
     /// Current Circuit's context of active full side effects (requested + confirmation proofs)
     #[pallet::storage]
@@ -255,28 +260,66 @@ pub mod pallet {
             sequential: bool,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
-            let requester = Self::authorize(origin)?;
+            let requester = Self::authorize(origin, CircuitRole::Requester)?;
 
             // Charge: Ensure can afford
             let _available_trn_balance = Self::charge(&requester, fee)?;
             // Setup: new xtx context
             let mut local_xtx_ctx: LocalXtxCtx<T> =
-                Self::setup(CircuitStatus::Requested, &requester, fee);
+                Self::setup(CircuitStatus::Requested, &requester, fee, None)?;
             // Validate: Side Effects
             let full_side_effects =
                 Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential)?;
             // Apply: all necessary changes to state in 1 go
-            Self::apply(
-                CircuitStatus::Requested,
-                CircuitStatus::Validated,
-                &mut local_xtx_ctx,
-                &side_effects,
-                &full_side_effects,
-            )?;
-
-            println!("Emit: From Circuit events XTX {:?}", local_xtx_ctx.xtx);
+            Self::apply(&mut local_xtx_ctx, &full_side_effects, None)?;
             // Emit: From Circuit events
             Self::emit(local_xtx_ctx.xtx_id, &requester, &side_effects, sequential);
+
+            Ok(().into())
+        }
+
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
+        pub fn bond_insurance_deposit(
+            origin: OriginFor<T>, // Active relayer
+            xtx_id: XExecSignalId<T>,
+            side_effect_id: SideEffectId<T>,
+        ) -> DispatchResultWithPostInfo {
+            // Authorize: Retrieve sender of the transaction.
+            let relayer = Self::authorize(origin, CircuitRole::Relayer)?;
+
+            // Setup: retrieve local xtx context
+            let mut local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
+                CircuitStatus::PendingInsurance,
+                &relayer,
+                Zero::zero(),
+                Some(xtx_id),
+            )?;
+
+            let (_id, mut insurance_deposit) = if let Some(ref mut insurance_tuple) = local_xtx_ctx
+                .insurance_deposits
+                .iter_mut()
+                .find(|(id, _)| *id == side_effect_id)
+            {
+                Ok(insurance_tuple.clone())
+            } else {
+                Err(Error::<T>::InsuranceBondNotRequired)
+            }?;
+
+            // Charge: Ensure can afford
+            Self::charge(&relayer, insurance_deposit.insurance)?;
+
+            insurance_deposit.bonded_relayer = Some(relayer);
+            // ToDo: Consider removing status from insurance_deposit since redundant with relayer: Option<Relayer>
+            insurance_deposit.status = CircuitStatus::Bonded;
+
+            // Apply: all necessary changes to state in 1 go
+            Self::apply(
+                &mut local_xtx_ctx,
+                &vec![],
+                Some((side_effect_id, insurance_deposit)),
+            )?;
+            // Emit: From Circuit events
+            // Self::deposit_event(InsuredTransfer(relayer,insurance_deposit.requester,insurance_deposit.insurance))
 
             Ok(().into())
         }
@@ -306,7 +349,13 @@ pub mod pallet {
     #[pallet::error]
     pub enum Error<T> {
         RequesterNotEnoughBalance,
+        ChargingTransferFailed,
+        InsuranceBondNotRequired,
+        InsuranceBondAlreadyDeposited,
+        SetupFailed,
+        ApplyFailed,
         DeterminedForbiddenXtxStatus,
+        UnsupportedRole,
     }
 }
 
@@ -330,9 +379,15 @@ impl<T: Config> Pallet<T> {
         current_status: CircuitStatus,
         requester: &T::AccountId,
         reward: BalanceOf<T>,
-    ) -> LocalXtxCtx<T> {
+        xtx_id: Option<XExecSignalId<T>>,
+    ) -> Result<LocalXtxCtx<T>, Error<T>> {
         match current_status {
             CircuitStatus::Requested => {
+                if let Some(id) = xtx_id {
+                    if <Self as Store>::XExecSignals::contains_key(id) {
+                        return Err(Error::<T>::SetupFailed);
+                    }
+                }
                 // ToDo: Introduce default timeout + delay
                 let (timeouts_at, delay_steps_at): (
                     Option<T::BlockNumber>,
@@ -347,12 +402,40 @@ impl<T: Config> Pallet<T> {
                         Some(reward),
                     );
 
-                LocalXtxCtx {
+                Ok(LocalXtxCtx {
                     local_state: LocalState::new(),
                     use_protocol: UniversalSideEffectsProtocol::new(),
                     xtx_id: x_exec_signal_id,
                     xtx: x_exec_signal,
                     insurance_deposits: vec![],
+                })
+            }
+            CircuitStatus::PendingInsurance => {
+                if let Some(id) = xtx_id {
+                    if !<Self as Store>::XExecSignals::contains_key(id) {
+                        return Err(Error::<T>::SetupFailed);
+                    }
+                    let xtx = <Self as Store>::XExecSignals::get(id);
+                    if xtx.status != CircuitStatus::PendingInsurance {
+                        return Err(Error::<T>::SetupFailed);
+                    }
+                    let insurance_deposits = <Self as Store>::XtxInsuranceLinks::get(id)
+                        .iter()
+                        .map(|&se_id| (se_id, <Self as Store>::InsuranceDeposits::get(id, se_id)))
+                        .collect::<Vec<(
+                            SideEffectId<T>,
+                            InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+                        )>>();
+
+                    Ok(LocalXtxCtx {
+                        local_state: LocalState::new(),
+                        use_protocol: UniversalSideEffectsProtocol::new(),
+                        xtx_id: id,
+                        xtx,
+                        insurance_deposits,
+                    })
+                } else {
+                    Err(Error::<T>::SetupFailed)
                 }
             }
             _ => unimplemented!(),
@@ -360,21 +443,26 @@ impl<T: Config> Pallet<T> {
     }
 
     fn apply(
-        current_status: CircuitStatus,
-        new_status: CircuitStatus,
         local_ctx: &mut LocalXtxCtx<T>,
-        _side_effects: &Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
         full_ordered_side_effects: &Vec<
             Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
         >,
+        maybe_insurance_tuple: Option<(
+            SideEffectId<T>,
+            InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+        )>,
     ) -> Result<(), Error<T>> {
-        match (current_status, new_status) {
-            (CircuitStatus::Requested, CircuitStatus::Validated) => {
+        // Apply will try to move the status of Xtx from the current to the closest valid one.
+        let current_status = local_ctx.xtx.status.clone();
+
+        match current_status {
+            CircuitStatus::Requested => {
                 <FullSideEffects<T>>::insert::<
                     XExecSignalId<T>,
                     Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
                 >(local_ctx.xtx_id.clone(), full_ordered_side_effects.clone());
 
+                let mut ids_with_insurance: Vec<SideEffectId<T>> = vec![];
                 for (side_effect_id, insurance_deposit) in &local_ctx.insurance_deposits {
                     <InsuranceDeposits<T>>::insert::<
                         XExecSignalId<T>,
@@ -385,9 +473,12 @@ impl<T: Config> Pallet<T> {
                         side_effect_id.clone(),
                         insurance_deposit.clone(),
                     );
+                    ids_with_insurance.push(*side_effect_id);
                 }
-
-                // local_ctx.xtx.status = CircuitStatus::Validated;
+                <XtxInsuranceLinks<T>>::insert::<XExecSignalId<T>, Vec<SideEffectId<T>>>(
+                    local_ctx.xtx_id.clone(),
+                    ids_with_insurance,
+                );
                 local_ctx.xtx.status = CircuitStatus::determine_xtx_status(
                     full_ordered_side_effects,
                     &local_ctx.insurance_deposits,
@@ -398,7 +489,18 @@ impl<T: Config> Pallet<T> {
                     XExecSignal<T::AccountId, T::BlockNumber, BalanceOf<T>>,
                 >(local_ctx.xtx_id.clone(), local_ctx.xtx.clone());
             }
-            (_, _) => unimplemented!(),
+            CircuitStatus::PendingInsurance => {
+                if let Some((side_effect_id, insurance_deposit)) = maybe_insurance_tuple {
+                    <Self as Store>::InsuranceDeposits::mutate(
+                        local_ctx.xtx_id,
+                        side_effect_id,
+                        |x| *x = insurance_deposit,
+                    );
+                } else {
+                    return Err(Error::<T>::ApplyFailed);
+                }
+            }
+            _ => unimplemented!(),
         }
         Ok(())
     }
@@ -409,7 +511,6 @@ impl<T: Config> Pallet<T> {
         side_effects: &Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
         _sequential: bool,
     ) {
-        println!("HELLO EMIT");
         Self::deposit_event(Event::XTransactionReceivedForExec(xtx_id.clone()));
 
         Self::deposit_event(Event::NewSideEffectsAvailable(
@@ -418,7 +519,7 @@ impl<T: Config> Pallet<T> {
             // ToDo: Emit circuit outbound messages -> side effects
             side_effects.to_vec(),
         ));
-
+        // ToDo: Align with ExecDelivery::submit_side_effect
         // <T as pallet_exec_delivery::Config>::submit_side_effect(
         //     xtx_id,
         //     requester: requester.clone(),
@@ -429,15 +530,24 @@ impl<T: Config> Pallet<T> {
 
     fn charge(requester: &T::AccountId, fee: BalanceOf<T>) -> Result<BalanceOf<T>, Error<T>> {
         let available_trn_balance = <T as EscrowTrait>::Currency::free_balance(requester);
-        ensure!(
-            available_trn_balance.saturating_sub(fee) > BalanceOf::<T>::from(0 as u32),
-            Error::<T>::RequesterNotEnoughBalance,
-        );
-        Ok(available_trn_balance)
+        let new_balance = available_trn_balance.saturating_sub(fee);
+        let VAULT: T::AccountId = Default::default();
+        <T as EscrowTrait>::Currency::transfer(requester, &VAULT, fee, AllowDeath)
+            .map_err(|_| Error::<T>::ChargingTransferFailed)?; // should not fail
+        Ok(new_balance)
     }
 
-    fn authorize(origin: OriginFor<T>) -> Result<T::AccountId, sp_runtime::traits::BadOrigin> {
-        ensure_signed(origin)
+    fn authorize(
+        origin: OriginFor<T>,
+        role: CircuitRole,
+    ) -> Result<T::AccountId, sp_runtime::traits::BadOrigin> {
+        match role {
+            CircuitRole::Requester => ensure_signed(origin),
+            // ToDo: Handle active Relayer authorisation
+            CircuitRole::Relayer => ensure_signed(origin),
+            // ToDo: Handle other CircuitRoles
+            _ => unimplemented!(),
+        }
     }
 
     fn validate(
@@ -514,11 +624,7 @@ impl<T: Config> Pallet<T> {
         promised_reward: BalanceOf<T>,
         requester: &T::AccountId,
     ) -> Result<(), Error<T>> {
-        // ToDo: Prepare Treasury submodule with Vault Constant
-        let VAULT: T::AccountId = Default::default();
-        let res =
-            <T as EscrowTrait>::Currency::transfer(requester, &VAULT, promised_reward, AllowDeath); // should not fail
-        debug_assert!(res.is_ok());
+        Self::charge(requester, promised_reward)?;
 
         insurance_deposits.push((
             side_effect_id,

@@ -101,9 +101,11 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
             sequential,
         ));
 
-        // Assert Circuit::emit generates 2 correct events
+        // Assert Circuit::emit generates 5 correct events: 3 from charging and 2 Circuit-specific
+        let events = System::events();
+        assert_eq!(events.len(), 5);
         assert_eq!(
-            System::events(),
+            vec![events[3].clone(), events[4].clone()],
             vec![
                 EventRecord {
                     phase: Phase::Initialization,
@@ -147,7 +149,6 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                 }
             ]
         );
-
         let xtx_id: sp_core::H256 =
             hex!("6aa7d045405e48f6badcdc58fbb1183031bb74895de69ff51ea785f778e573ef").into();
         let side_effect_a_id =
@@ -263,13 +264,14 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
             sequential,
         ));
 
-        // Assert Circuit::emit generates 2 correct events
+        // Assert Circuit::emit generates 5 correct events: 3 for charging and 2 Circuit-specific
+        let events = System::events();
+        assert_eq!(events.len(), 5);
         assert_eq!(
-            System::events(),
+            vec![events[3].clone(), events[4].clone()],
             vec![
                 EventRecord {
                     phase: Phase::Initialization,
-                    // event: Event::call_dispatch(call_dispatch::Event::<TestRuntime>::MessageVersionSpecMismatch(
                     event: Event::Circuit(crate::Event::<Test>::XTransactionReceivedForExec(
                         hex!("6aa7d045405e48f6badcdc58fbb1183031bb74895de69ff51ea785f778e573ef")
                             .into()
