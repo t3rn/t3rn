@@ -73,7 +73,10 @@ impl CircuitStatus {
         )>,
     ) -> CircuitStatus {
         for (current_id, _insurance_deposit) in insurance_deposits {
-            println!("NEW STATUS: INSIDE determine_effects_insurance_status::insurance_deposits {:?}", insurance_deposits);
+            println!(
+                "NEW STATUS: INSIDE determine_effects_insurance_status::insurance_deposits {:?}",
+                insurance_deposits
+            );
 
             if Self::determine_insurance_status::<T>(*current_id, insurance_deposits)
                 == CircuitStatus::PendingInsurance

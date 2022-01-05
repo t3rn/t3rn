@@ -307,29 +307,24 @@ pub mod pallet {
                 Some(xtx_id),
             )?;
 
-            let (_id, mut insurance_deposit) = if let Some(ref mut insurance_tuple) = local_xtx_ctx
+            if let Some((_id, insurance_deposit)) = local_xtx_ctx
                 .insurance_deposits
                 .iter_mut()
                 .find(|(id, _)| *id == side_effect_id)
             {
-                Ok(insurance_tuple.clone())
+                Self::charge(&relayer, insurance_deposit.insurance.clone())?;
+
+                insurance_deposit.bonded_relayer = Some(relayer);
+                // ToDo: Consider removing status from insurance_deposit since redundant with relayer: Option<Relayer>
+                insurance_deposit.status = CircuitStatus::Bonded;
+
+                let insurance_deposit_copy = insurance_deposit.clone();
+                // Apply: all necessary changes to state in 1 go
+                Self::apply(&mut local_xtx_ctx, &vec![], Some((side_effect_id, insurance_deposit_copy)))
             } else {
                 Err(Error::<T>::InsuranceBondNotRequired)
             }?;
 
-            // Charge: Ensure can afford
-            Self::charge(&relayer, insurance_deposit.insurance)?;
-
-            insurance_deposit.bonded_relayer = Some(relayer);
-            // ToDo: Consider removing status from insurance_deposit since redundant with relayer: Option<Relayer>
-            insurance_deposit.status = CircuitStatus::Bonded;
-
-            // Apply: all necessary changes to state in 1 go
-            Self::apply(
-                &mut local_xtx_ctx,
-                &vec![],
-                Some((side_effect_id, insurance_deposit)),
-            )?;
             // Emit: From Circuit events
             // Self::deposit_event(InsuredTransfer(relayer,insurance_deposit.requester,insurance_deposit.insurance))
 
@@ -512,7 +507,10 @@ impl<T: Config> Pallet<T> {
                         &local_ctx.insurance_deposits,
                     );
 
-                    println!("NEW STATUS: CircuitStatus::determine_effects {:?}", new_status);
+                    println!(
+                        "NEW STATUS: CircuitStatus::determine_effects {:?}",
+                        new_status
+                    );
                     if new_status != local_ctx.xtx.status {
                         local_ctx.xtx.status = new_status;
 
