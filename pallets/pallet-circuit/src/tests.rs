@@ -16,7 +16,6 @@
 // limitations under the License.
 
 //! Test utilities
-
 use frame_support::assert_ok;
 use frame_support::traits::Currency;
 use frame_system::{EventRecord, Phase};
@@ -43,7 +42,7 @@ pub fn new_test_ext() -> TestExternalities {
 }
 
 pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);
-pub const BOB: AccountId32 = AccountId32::new([2u8; 32]);
+pub const BOB_RELAYER: AccountId32 = AccountId32::new([2u8; 32]);
 pub const CHARLIE: AccountId32 = AccountId32::new([3u8; 32]);
 pub const DJANGO: AccountId32 = AccountId32::new([4u8; 32]);
 
@@ -423,6 +422,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
 
     ext.execute_with(|| {
         let _ = Balances::deposit_creating(&ALICE, 1_000_001);
+        let _ = Balances::deposit_creating(&BOB_RELAYER, 1_000_001);
         System::set_block_number(1);
 
         assert_ok!(Circuit::on_extrinsics_trigger(
@@ -474,6 +474,30 @@ fn circuit_handles_insurance_deposit_for_transfers() {
                 input: valid_transfer_side_effect,
                 confirmed: None,
             }]]
+        );
+
+        let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
+
+        assert_ok!(Circuit::bond_insurance_deposit(
+            origin_relayer_bob,
+            xtx_id,
+            side_effect_a_id,
+        ));
+
+        let expected_bonded_insurance_deposit = InsuranceDeposit {
+            insurance: 1,
+            reward: 0,
+            requester: AccountId32::new(hex!(
+                "0101010101010101010101010101010101010101010101010101010101010101"
+            )),
+            bonded_relayer: Some(BOB_RELAYER),
+            status: CircuitStatus::Bonded,
+            requested_at: 1,
+        };
+
+        assert_eq!(
+            Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
+            expected_bonded_insurance_deposit
         );
     });
 }
