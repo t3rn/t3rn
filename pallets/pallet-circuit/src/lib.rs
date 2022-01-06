@@ -38,6 +38,9 @@ pub use t3rn_primitives::{
     xtx::{Xtx, XtxId},
     GatewayType, *,
 };
+
+use t3rn_protocol::side_effects::confirm::protocol::*;
+
 use t3rn_protocol::side_effects::loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol};
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 
@@ -350,6 +353,61 @@ pub mod pallet {
 
             Ok(().into())
         }
+
+        /// Blind version should only be used for testing - unsafe since skips inclusion proof check.
+        #[pallet::weight(< T as Config >::WeightInfo::on_local_trigger())]
+        pub fn confirm_side_effect(
+            origin: OriginFor<T>,
+            xtx_id: XtxId<T>,
+            side_effect: SideEffect<
+                <T as frame_system::Config>::AccountId,
+                <T as frame_system::Config>::BlockNumber,
+                BalanceOf<T>,
+            >,
+            confirmation: ConfirmedSideEffect<
+                <T as frame_system::Config>::AccountId,
+                <T as frame_system::Config>::BlockNumber,
+                BalanceOf<T>,
+            >,
+            inclusion_proof: Option<Vec<u8>>,
+        ) -> DispatchResultWithPostInfo {
+            // let relayer_id = ensure_signed(origin)?;
+            // Authorize: Retrieve sender of the transaction.
+            let relayer = Self::authorize(origin, CircuitRole::Relayer)?;
+
+            // Setup: retrieve local xtx context
+            let mut local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
+                CircuitStatus::PendingExecution,
+                &relayer,
+                Zero::zero(),
+                Some(xtx_id),
+            )?;
+
+            let full_side_effect = Self::confirm(
+                &mut local_xtx_ctx,
+                &relayer,
+                &side_effect,
+                &confirmation,
+                inclusion_proof,
+            )?;
+
+            Self::reward(&local_xtx_ctx, &relayer, &side_effect)?;
+
+            // Apply: all necessary changes to state in 1 go
+            let (maybe_xtx_changed, assert_full_side_effects_changed) =
+                Self::apply(&mut local_xtx_ctx, &vec![vec![full_side_effect]], None)?;
+
+            // Emit: From Circuit events
+            Self::emit(
+                local_xtx_ctx.xtx_id,
+                maybe_xtx_changed,
+                &relayer,
+                &vec![],
+                assert_full_side_effects_changed,
+            );
+
+            Ok(().into())
+        }
     }
 
     /// Events for the pallet.
@@ -474,6 +532,34 @@ impl<T: Config> Pallet<T> {
                     }
                     let xtx = <Self as Store>::XExecSignals::get(id);
                     if xtx.status != CircuitStatus::PendingInsurance {
+                        return Err(Error::<T>::SetupFailed);
+                    }
+                    let insurance_deposits = <Self as Store>::XtxInsuranceLinks::get(id)
+                        .iter()
+                        .map(|&se_id| (se_id, <Self as Store>::InsuranceDeposits::get(id, se_id)))
+                        .collect::<Vec<(
+                            SideEffectId<T>,
+                            InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+                        )>>();
+
+                    Ok(LocalXtxCtx {
+                        local_state: LocalState::new(),
+                        use_protocol: UniversalSideEffectsProtocol::new(),
+                        xtx_id: id,
+                        xtx,
+                        insurance_deposits,
+                    })
+                } else {
+                    Err(Error::<T>::SetupFailed)
+                }
+            }
+            CircuitStatus::PendingExecution => {
+                if let Some(id) = xtx_id {
+                    if !<Self as Store>::XExecSignals::contains_key(id) {
+                        return Err(Error::<T>::SetupFailed);
+                    }
+                    let xtx = <Self as Store>::XExecSignals::get(id);
+                    if xtx.status <= CircuitStatus::Ready {
                         return Err(Error::<T>::SetupFailed);
                     }
                     let insurance_deposits = <Self as Store>::XtxInsuranceLinks::get(id)
@@ -635,9 +721,13 @@ impl<T: Config> Pallet<T> {
         Ok(new_balance)
     }
 
-    // fn reward(requester: &T::AccountId, fee: BalanceOf<T>) -> Result<BalanceOf<T>, Error<T>> {
-    //     Ok(())
-    // }
+    fn reward(
+        _local_ctx: &LocalXtxCtx<T>,
+        _relyer: &T::AccountId,
+        _side_effect: &SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+    ) -> Result<(), Error<T>> {
+        Ok(())
+    }
 
     fn authorize(
         origin: OriginFor<T>,
@@ -715,14 +805,67 @@ impl<T: Config> Pallet<T> {
         Ok(full_side_effects_steps)
     }
 
-    // fn confirm(
-    //     side_effects: &Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
-    //     local_ctx: &mut LocalXtxCtx<T>,
-    //     requester: &T::AccountId,
-    //     relayer: &T::AccountId,
-    // ) -> Result<(), &'static str> {
-    //     Ok(())
-    // }
+    fn confirm(
+        _local_ctx: &mut LocalXtxCtx<T>,
+        _relayer: &T::AccountId,
+        side_effect: &SideEffect<
+            <T as frame_system::Config>::AccountId,
+            <T as frame_system::Config>::BlockNumber,
+            BalanceOf<T>,
+        >,
+        confirmation: &ConfirmedSideEffect<
+            <T as frame_system::Config>::AccountId,
+            <T as frame_system::Config>::BlockNumber,
+            BalanceOf<T>,
+        >,
+        _inclusion_proof: Option<Vec<u8>>,
+    ) -> Result<
+        FullSideEffect<
+            <T as frame_system::Config>::AccountId,
+            <T as frame_system::Config>::BlockNumber,
+            BalanceOf<T>,
+        >,
+        &'static str,
+    > {
+        let confirm_inclusion = || {};
+
+        let confirm_execution = |_gateway_vendor| {
+            // confirm_with_vendor_by_action_id::<
+            //     T,
+            //     SubstrateSideEffectsParser,
+            //     EthereumSideEffectsParser<<T as pallet_exec_delivery::Config>::EthVerifier>,
+            // >(
+            //     gateway_vendor,
+            //     side_effect.encoded_action.clone(),
+            //     confirmation.encoded_effect.clone(),
+            //     &mut local_ctx.local_state,
+            //     Some(
+            //         side_effect
+            //             .generate_id::<SystemHashing<T>>()
+            //             .as_ref()
+            //             .to_vec(),
+            //     ),
+            // )
+        };
+
+        let confirm_order = || {
+            // xtx.complete_side_effect::<SystemHashing<T>>(
+            //     confirmation.clone(),
+            //     side_effect.clone(),
+            // )
+        };
+
+        confirm_inclusion();
+        confirm_execution(
+            pallet_xdns::Pallet::<T>::best_available(side_effect.target)?.gateway_vendor,
+        );
+        confirm_order();
+
+        Ok(FullSideEffect {
+            input: side_effect.clone(),
+            confirmed: Some(confirmation.clone()),
+        })
+    }
 
     /// On-submit
     fn request_side_effect_insurance(
