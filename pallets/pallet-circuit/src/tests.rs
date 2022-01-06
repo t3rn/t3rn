@@ -108,8 +108,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
             vec![
                 EventRecord {
                     phase: Phase::Initialization,
-                    // event: Event::call_dispatch(call_dispatch::Event::<TestRuntime>::MessageVersionSpecMismatch(
-                    event: Event::Circuit(crate::Event::<Test>::XTransactionReceivedForExec(
+                    event: Event::Circuit(crate::Event::<Test>::XTransactionReadyForExec(
                         hex!("6aa7d045405e48f6badcdc58fbb1183031bb74895de69ff51ea785f778e573ef")
                             .into()
                     )),
