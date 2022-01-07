@@ -40,6 +40,7 @@ pub use t3rn_primitives::{
 };
 
 use t3rn_protocol::side_effects::confirm::protocol::*;
+use t3rn_protocol::side_effects::confirm::substrate::SubstrateSideEffectsParser;
 
 use t3rn_protocol::side_effects::loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol};
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
@@ -835,7 +836,7 @@ impl<T: Config> Pallet<T> {
     }
 
     fn confirm(
-        _local_ctx: &mut LocalXtxCtx<T>,
+        local_ctx: &mut LocalXtxCtx<T>,
         _relayer: &T::AccountId,
         side_effect: &SideEffect<
             <T as frame_system::Config>::AccountId,
@@ -856,70 +857,96 @@ impl<T: Config> Pallet<T> {
         >,
         &'static str,
     > {
-        let confirm_inclusion = || {};
-
-        let confirm_execution = |_gateway_vendor| {
-            // confirm_with_vendor_by_action_id::<
-            //     T,
-            //     SubstrateSideEffectsParser,
-            //     EthereumSideEffectsParser<<T as pallet_exec_delivery::Config>::EthVerifier>,
-            // >(
-            //     gateway_vendor,
-            //     side_effect.encoded_action.clone(),
-            //     confirmation.encoded_effect.clone(),
-            //     &mut local_ctx.local_state,
-            //     Some(
-            //         side_effect
-            //             .generate_id::<SystemHashing<T>>()
-            //             .as_ref()
-            //             .to_vec(),
-            //     ),
-            // )
+        let confirm_inclusion = || {
+            // ToDo: Missing call to pallet_exec_delivery
         };
 
-        let confirm_order = || {
-            // xtx.complete_side_effect::<SystemHashing<T>>(
-            //     confirmation.clone(),
-            //     side_effect.clone(),
-            // )
-            //         let input_side_effect_id = input.generate_id::<Hasher>();
-            //         let mut unconfirmed_step_no: Option<usize> = None;
-            //
-            //         for (i, step) in full_side_effects.iter_mut().enumerate() {
-            //             // Double check there are some side effects for that Xtx - should have been checked at API level tho already
-            //             if step.is_empty() {
-            //                 return Err("Xtx has an empty single step.");
-            //             }
-            //             for mut full_side_effect in step.iter_mut() {
-            //                 if full_side_effect.confirmed.is_none() {
-            //                     // Mark the first step no with encountered unconfirmed side effect
-            //                     if unconfirmed_step_no.is_none() {
-            //                         unconfirmed_step_no = Some(i);
-            //                     }
-            //                     // Recalculate the ID for each input side effect and compare with the input one.
-            //                     // Check the current unconfirmed step before attempt to confirm the full side effect.
-            //                     return if full_side_effect.input.generate_id::<Hasher>() == input_side_effect_id
-            //                         && unconfirmed_step_no == Some(i)
-            //                     {
-            //                         // We found the side effect to confirm from inside the unconfirmed step.
-            //                         full_side_effect.confirmed = Some(confirmed.clone());
-            //                         Ok(true)
-            //                     } else {
-            //                         Err("Attempt to confirm side effect from the next step, \
-            //                                 but there still is at least one unfinished step")
-            //                     };
-            //                 }
-            //             }
-            //         }
-            //
-            //         return Ok(false);
+        let confirm_execution = |gateway_vendor, state_copy| {
+            confirm_with_vendor_by_action_id::<
+                T,
+                SubstrateSideEffectsParser,
+                SubstrateSideEffectsParser,
+                // EthereumSideEffectsParser<<T as pallet_exec_delivery::Config>::EthVerifier>,
+            >(
+                gateway_vendor,
+                side_effect.encoded_action.clone(),
+                confirmation.encoded_effect.clone(),
+                state_copy,
+                Some(
+                    side_effect
+                        .generate_id::<SystemHashing<T>>()
+                        .as_ref()
+                        .to_vec(),
+                ),
+            )
         };
 
+        fn confirm_order<T: Config>(
+            side_effect: &SideEffect<
+                <T as frame_system::Config>::AccountId,
+                <T as frame_system::Config>::BlockNumber,
+                BalanceOf<T>,
+            >,
+            confirmation: &ConfirmedSideEffect<
+                <T as frame_system::Config>::AccountId,
+                <T as frame_system::Config>::BlockNumber,
+                BalanceOf<T>,
+            >,
+            full_side_effects: &mut Vec<
+                Vec<
+                    FullSideEffect<
+                        <T as frame_system::Config>::AccountId,
+                        <T as frame_system::Config>::BlockNumber,
+                        BalanceOf<T>,
+                    >,
+                >,
+            >,
+        ) -> Result<bool, &'static str> {
+            // ToDo: Extract as a separate function and migrate tests from Xtx
+            let input_side_effect_id = side_effect.generate_id::<SystemHashing<T>>();
+            let mut unconfirmed_step_no: Option<usize> = None;
+
+            for (i, step) in full_side_effects.iter_mut().enumerate() {
+                // Double check there are some side effects for that Xtx - should have been checked at API level tho already
+                if step.is_empty() {
+                    return Err("Xtx has an empty single step.");
+                }
+                for mut full_side_effect in step.iter_mut() {
+                    if full_side_effect.confirmed.is_none() {
+                        // Mark the first step no with encountered unconfirmed side effect
+                        if unconfirmed_step_no.is_none() {
+                            unconfirmed_step_no = Some(i);
+                        }
+                        // Recalculate the ID for each input side effect and compare with the input one.
+                        // Check the current unconfirmed step before attempt to confirm the full side effect.
+                        return if full_side_effect.input.generate_id::<SystemHashing<T>>()
+                            == input_side_effect_id
+                            && unconfirmed_step_no == Some(i)
+                        {
+                            // We found the side effect to confirm from inside the unconfirmed step.
+                            full_side_effect.confirmed = Some(confirmation.clone());
+                            Ok(true)
+                        } else {
+                            Err("Attempt to confirm side effect from the next step, \
+                                    but there still is at least one unfinished step")
+                        };
+                    }
+                }
+            }
+
+            return Ok(false);
+        }
+
+        if !confirm_order::<T>(side_effect, confirmation, &mut local_ctx.full_side_effects)? {
+            return Err(
+                "Side effect confirmation wasn't matched with full side effects order from state",
+            );
+        }
         confirm_inclusion();
         confirm_execution(
             pallet_xdns::Pallet::<T>::best_available(side_effect.target)?.gateway_vendor,
-        );
-        confirm_order();
+            &local_ctx.local_state,
+        )?;
 
         Ok(FullSideEffect {
             input: side_effect.clone(),
