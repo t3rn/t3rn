@@ -127,9 +127,7 @@ pub mod pallet {
     pub trait Config:
         frame_system::Config
         + pallet_balances::Config
-        + pallet_contracts_registry::Config
         + pallet_xdns::Config
-        + pallet_contracts::Config
         + pallet_multi_finality_verifier::Config<DefaultPolkadotLikeGateway>
         + pallet_multi_finality_verifier::Config<PolkadotLikeValU64Gateway>
         + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU64Gateway>
@@ -576,6 +574,8 @@ pub mod pallet {
                     // ToDo: Check whether xtx.side_effects_dfd is now completed before completing xtx
                     Self::deposit_event(Event::XTransactionSuccessfullyCompleted(xtx_id.clone()));
                 }
+                // Update list of current side effects and get authorized to call apply
+                // pallet_circuit::Pallet::<T>::apply(xtx.full_side_effects)
 
                 Ok(().into())
             }

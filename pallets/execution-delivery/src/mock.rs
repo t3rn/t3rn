@@ -517,6 +517,20 @@ impl ExtBuilder {
             },
             vec![],
         );
+        let zero_xdns_record = <XdnsRecord<AccountId>>::new(
+            vec![],
+            [0u8, 0u8, 0u8, 0u8],
+            Default::default(),
+            GatewayVendor::Substrate,
+            GatewayType::ProgrammableExternal(0),
+            Default::default(),
+            GatewaySysProps {
+                ss58_format: 1333,
+                token_symbol: Encode::encode("ZERO"),
+                token_decimals: 0,
+            },
+            vec![],
+        );
         let gateway_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
             *b"gate",
@@ -560,6 +574,7 @@ impl ExtBuilder {
             vec![],
         );
         self.known_xdns_records = vec![
+            zero_xdns_record,
             circuit_xdns_record,
             gateway_xdns_record,
             polkadot_xdns_record,
