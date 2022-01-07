@@ -44,6 +44,13 @@ pub enum CircuitRole {
     Local,
 }
 
+#[derive(Clone, Eq, PartialEq, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo)]
+pub enum InsuranceEnact {
+    Reward,
+    RefundAndPunish,
+    RefundBoth,
+}
+
 impl CircuitStatus {
     fn determine_insurance_status<T: Config>(
         side_effect_id: SideEffectId<T>,

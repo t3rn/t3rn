@@ -390,7 +390,8 @@ pub mod pallet {
                 inclusion_proof,
             )?;
 
-            Self::reward(&local_xtx_ctx, &relayer, &side_effect)?;
+            // FixMe: Reward should be triggered by apply after the whole Xtx finishes
+            Self::enact_insurance(&local_xtx_ctx, &side_effect, InsuranceEnact::Reward)?;
 
             // Apply: all necessary changes to state in 1 go
             let (maybe_xtx_changed, assert_full_side_effects_changed) =
@@ -752,10 +753,10 @@ impl<T: Config> Pallet<T> {
         Ok(new_balance)
     }
 
-    fn reward(
+    fn enact_insurance(
         local_ctx: &LocalXtxCtx<T>,
-        relayer: &T::AccountId,
         side_effect: &SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+        enact_status: InsuranceEnact,
     ) -> Result<bool, Error<T>> {
         let side_effect_id = side_effect.generate_id::<SystemHashing<T>>();
         // Reward insurance
@@ -767,35 +768,53 @@ impl<T: Config> Pallet<T> {
             .find(|(id, _)| *id == side_effect_id)
         {
             if let Some(bonded_relayer) = &insurance_request.bonded_relayer {
-                if bonded_relayer != relayer {
-                    // Or should we allow the volountary work done by non-bonded relayers for free?
-                    return Err(Error::<T>::RewardTransferFailed);
+                match enact_status {
+                    InsuranceEnact::Reward => {
+                        // Reward relayer with and give back his insurance from Vault
+                        <T as EscrowTrait>::Currency::transfer(
+                            &Self::account_id(),
+                            bonded_relayer,
+                            insurance_request.insurance + insurance_request.reward,
+                            AllowDeath,
+                        )
+                        .map_err(|_| Error::<T>::RewardTransferFailed)?; // should not fail
+                    }
+                    InsuranceEnact::RefundBoth => {
+                        <T as EscrowTrait>::Currency::transfer(
+                            &Self::account_id(),
+                            &insurance_request.requester,
+                            insurance_request.reward,
+                            AllowDeath,
+                        )
+                        .map_err(|_| Error::<T>::RefundTransferFailed)?; // should not fail
+
+                        <T as EscrowTrait>::Currency::transfer(
+                            &Self::account_id(),
+                            bonded_relayer,
+                            insurance_request.insurance,
+                            AllowDeath,
+                        )
+                        .map_err(|_| Error::<T>::RefundTransferFailed)?; // should not fail
+                    }
+                    InsuranceEnact::RefundAndPunish => {
+                        <T as EscrowTrait>::Currency::transfer(
+                            &Self::account_id(),
+                            &insurance_request.requester,
+                            insurance_request.reward,
+                            AllowDeath,
+                        )
+                        .map_err(|_| Error::<T>::RefundTransferFailed)?; // should not fail
+                    }
                 }
-                // Reward relayer with and give back his insurance from Vault
-                <T as EscrowTrait>::Currency::transfer(
-                    &Self::account_id(),
-                    relayer,
-                    insurance_request.insurance + insurance_request.reward,
-                    AllowDeath,
-                )
-                .map_err(|_| Error::<T>::RewardTransferFailed)?; // should not fail
             } else {
                 // This is a forbidden state which should have not happened -
                 //  at this point all of the insurances should have a bonded relayer assigned
-                return Err(Error::<T>::RewardTransferFailed);
+                return Err(Error::<T>::RefundTransferFailed);
             }
             Ok(true)
         } else {
             Ok(false)
         };
-    }
-
-    fn refund_insurance(
-        _local_ctx: &LocalXtxCtx<T>,
-        _relyer: &T::AccountId,
-        _side_effect: &SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
-    ) -> Result<(), Error<T>> {
-        Ok(())
     }
 
     fn authorize(
