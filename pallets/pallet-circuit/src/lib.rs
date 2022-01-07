@@ -464,6 +464,8 @@ pub mod pallet {
     pub enum Error<T> {
         RequesterNotEnoughBalance,
         ChargingTransferFailed,
+        RewardTransferFailed,
+        RefundTransferFailed,
         InsuranceBondNotRequired,
         InsuranceBondAlreadyDeposited,
         SetupFailed,
@@ -751,6 +753,44 @@ impl<T: Config> Pallet<T> {
     }
 
     fn reward(
+        local_ctx: &LocalXtxCtx<T>,
+        relayer: &T::AccountId,
+        side_effect: &SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+    ) -> Result<bool, Error<T>> {
+        let side_effect_id = side_effect.generate_id::<SystemHashing<T>>();
+        // Reward insurance
+        // Check if the side effect was insured and if the relayer matches the bonded one
+        // ToDo: FIX_ME: WRONG! ONLY REWARD RELAYERS AFTER THE WHOLE STEP IS COMPLETED, NOT INDIVIDUALLY PER CONFIRMATION
+        return if let Some((_id, insurance_request)) = local_ctx
+            .insurance_deposits
+            .iter()
+            .find(|(id, _)| *id == side_effect_id)
+        {
+            if let Some(bonded_relayer) = &insurance_request.bonded_relayer {
+                if bonded_relayer != relayer {
+                    // Or should we allow the volountary work done by non-bonded relayers for free?
+                    return Err(Error::<T>::RewardTransferFailed);
+                }
+                // Reward relayer with and give back his insurance from Vault
+                <T as EscrowTrait>::Currency::transfer(
+                    &Self::account_id(),
+                    relayer,
+                    insurance_request.insurance + insurance_request.reward,
+                    AllowDeath,
+                )
+                .map_err(|_| Error::<T>::RewardTransferFailed)?; // should not fail
+            } else {
+                // This is a forbidden state which should have not happened -
+                //  at this point all of the insurances should have a bonded relayer assigned
+                return Err(Error::<T>::RewardTransferFailed);
+            }
+            Ok(true)
+        } else {
+            Ok(false)
+        };
+    }
+
+    fn refund_insurance(
         _local_ctx: &LocalXtxCtx<T>,
         _relyer: &T::AccountId,
         _side_effect: &SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
