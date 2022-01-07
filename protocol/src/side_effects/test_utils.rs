@@ -1,7 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 use crate::side_effects::standards::SideEffectProtocol;
 use codec::Encode;
-use hex_literal::hex;
+pub use hex_literal::hex;
+use sp_runtime::AccountId32;
 use sp_std::boxed::Box;
 use sp_std::vec;
 use sp_std::vec::Vec;
@@ -19,7 +20,7 @@ pub type Bytes = Vec<u8>;
 pub type Arguments = Vec<Bytes>;
 pub type BlockNumber = u64;
 pub type BalanceOf = u64;
-pub type AccountId = u64;
+pub type AccountId = AccountId32;
 pub type Hashing = sp_runtime::traits::BlakeTwo256;
 
 // Below constants are for arguments with 32 insurance bytes (u128 insurance + u128 reward)
@@ -58,6 +59,7 @@ pub const NO_INSURANCE_INSURANCE_PLUS_PREFIX_2XX_32B_HASH: [u8; 32] = [
     213, 107, 157, 73, 99, 211, 237, 206, 137, 158, 242, 99,
 ];
 
+/// Assumes BlockNumber, BalanceOf = u64, AccountId = AccountId32
 pub fn produce_test_side_effect(
     name: [u8; 4],
     arguments: Arguments,

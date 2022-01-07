@@ -111,6 +111,7 @@ impl pallet_xdns::Config for Test {
     type WeightInfo = ();
 }
 
+// ToDo: Must be u128 as t3rn_protocol + insurances assume it's hardcoded u128 for value of insurance and reward
 pub type Balance = u64;
 
 parameter_types! {

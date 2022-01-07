@@ -45,11 +45,12 @@ fn on_extrinsic_trigger_works_with_empty_side_effects() {
 
     let mut ext = TestExternalities::new_empty();
     let side_effects = vec![];
-    let fee = 1_000_000;
+    let fee = 1;
     let sequential = true;
 
     ext.execute_with(|| {
-        let _ = Balances::deposit_creating(&ALICE, 1_000_001);
+        let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+
         assert_ok!(Circuit::on_extrinsics_trigger(
             origin,
             side_effects,
@@ -79,11 +80,12 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
-    let fee = 1_000_000;
+    let fee = 1;
     let sequential = true;
 
     ext.execute_with(|| {
-        let _ = Balances::deposit_creating(&ALICE, 1_000_001);
+        let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+
         System::set_block_number(1);
 
         assert_ok!(Circuit::on_extrinsics_trigger(
@@ -102,7 +104,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                 EventRecord {
                     phase: Phase::Initialization,
                     event: Event::Circuit(crate::Event::<Test>::XTransactionReadyForExec(
-                        hex!("6aa7d045405e48f6badcdc58fbb1183031bb74895de69ff51ea785f778e573ef")
+                        hex!("7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6")
                             .into()
                     )),
                     topics: vec![]
@@ -113,7 +115,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                         AccountId32::new(hex!(
                             "0101010101010101010101010101010101010101010101010101010101010101"
                         )),
-                        hex!("6aa7d045405e48f6badcdc58fbb1183031bb74895de69ff51ea785f778e573ef")
+                        hex!("7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6")
                             .into(),
                         vec![SideEffect {
                             target: [0u8, 0u8, 0u8, 0u8],
@@ -141,7 +143,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
             ]
         );
         let xtx_id: sp_core::H256 =
-            hex!("6aa7d045405e48f6badcdc58fbb1183031bb74895de69ff51ea785f778e573ef").into();
+            hex!("7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6").into();
         let side_effect_a_id =
             valid_transfer_side_effect.generate_id::<crate::SystemHashing<Test>>();
 
@@ -171,7 +173,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                 timeouts_at: None,
                 delay_steps_at: None,
                 status: CircuitStatus::Ready,
-                total_reward: Some(1000000)
+                total_reward: Some(fee)
             }
         );
 
@@ -205,11 +207,12 @@ fn on_extrinsic_trigger_validation_works_with_single_transfer_insured() {
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
-    let fee = 1_000_000;
+    let fee = 1;
     let sequential = true;
 
     ext.execute_with(|| {
-        let _ = Balances::deposit_creating(&ALICE, 1_000_001);
+        let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+
         System::set_block_number(1);
 
         assert_ok!(Circuit::on_extrinsics_trigger(
@@ -241,11 +244,12 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
-    let fee = 1_000_000;
+    let fee = 1;
     let sequential = true;
 
     ext.execute_with(|| {
-        let _ = Balances::deposit_creating(&ALICE, 1_000_001);
+        let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+
         System::set_block_number(1);
 
         assert_ok!(Circuit::on_extrinsics_trigger(
@@ -257,14 +261,14 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
 
         // Assert Circuit::emit generates 5 correct events: 3 for charging and 2 Circuit-specific
         let events = System::events();
-        assert_eq!(events.len(), 5);
+        assert_eq!(events.len(), 7);
         assert_eq!(
-            vec![events[3].clone(), events[4].clone()],
+            vec![events[5].clone(), events[6].clone()],
             vec![
                 EventRecord {
                     phase: Phase::Initialization,
                     event: Event::Circuit(crate::Event::<Test>::XTransactionReceivedForExec(
-                        hex!("6aa7d045405e48f6badcdc58fbb1183031bb74895de69ff51ea785f778e573ef")
+                        hex!("7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6")
                             .into()
                     )),
                     topics: vec![]
@@ -275,7 +279,7 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
                         AccountId32::new(hex!(
                             "0101010101010101010101010101010101010101010101010101010101010101"
                         )),
-                        hex!("6aa7d045405e48f6badcdc58fbb1183031bb74895de69ff51ea785f778e573ef")
+                        hex!("7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6")
                             .into(),
                         vec![SideEffect {
                             target: [0u8, 0u8, 0u8, 0u8],
@@ -329,11 +333,12 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
-    let fee = 1_000_000;
+    let fee = 1;
     let sequential = true;
 
     ext.execute_with(|| {
-        let _ = Balances::deposit_creating(&ALICE, 1_000_001);
+        let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+
         System::set_block_number(1);
 
         assert_ok!(Circuit::on_extrinsics_trigger(
@@ -344,7 +349,7 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
         ));
 
         let xtx_id: sp_core::H256 =
-            hex!("6aa7d045405e48f6badcdc58fbb1183031bb74895de69ff51ea785f778e573ef").into();
+            hex!("7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6").into();
         let side_effect_a_id =
             valid_transfer_side_effect.generate_id::<crate::SystemHashing<Test>>();
 
@@ -352,7 +357,7 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
         // Returns void insurance for that side effect
         let valid_insurance_deposit = InsuranceDeposit {
             insurance: 1,
-            reward: 0,
+            reward: 2,
             requester: AccountId32::new(hex!(
                 "0101010101010101010101010101010101010101010101010101010101010101"
             )),
@@ -375,7 +380,7 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
                 timeouts_at: None,
                 delay_steps_at: None,
                 status: CircuitStatus::PendingInsurance,
-                total_reward: Some(1000000)
+                total_reward: Some(fee)
             }
         );
 
@@ -402,19 +407,20 @@ fn circuit_handles_insurance_deposit_for_transfers() {
             (Type::Address(32), ArgVariant::A),
             (Type::Address(32), ArgVariant::B),
             (Type::Uint(64), ArgVariant::A),
-            (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
+            (Type::OptionalInsurance, ArgVariant::A), // insurance = 1, reward = 2
         ],
         &mut local_state,
         transfer_protocol_box.clone(),
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
-    let fee = 1_000_000;
+    let fee = 1;
     let sequential = true;
 
     ext.with_default_xdns_records().build().execute_with(|| {
-        let _ = Balances::deposit_creating(&ALICE, 1_000_001);
-        let _ = Balances::deposit_creating(&BOB_RELAYER, 1_000_001);
+        let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+        let _ = Balances::deposit_creating(&BOB_RELAYER, 1); // Bob should have at least: insurance deposit (1)(for VariantA)
+
         System::set_block_number(1);
 
         assert_ok!(Circuit::on_extrinsics_trigger(
@@ -425,7 +431,8 @@ fn circuit_handles_insurance_deposit_for_transfers() {
         ));
 
         let xtx_id: sp_core::H256 =
-            hex!("6aa7d045405e48f6badcdc58fbb1183031bb74895de69ff51ea785f778e573ef").into();
+            hex!("7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6").into();
+
         let side_effect_a_id =
             valid_transfer_side_effect.generate_id::<crate::SystemHashing<Test>>();
 
@@ -433,7 +440,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
         // Returns void insurance for that side effect
         let valid_insurance_deposit = InsuranceDeposit {
             insurance: 1,
-            reward: 0,
+            reward: 2,
             requester: AccountId32::new(hex!(
                 "0101010101010101010101010101010101010101010101010101010101010101"
             )),
@@ -456,7 +463,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
                 timeouts_at: None,
                 delay_steps_at: None,
                 status: CircuitStatus::PendingInsurance,
-                total_reward: Some(1000000)
+                total_reward: Some(fee)
             }
         );
 
@@ -478,7 +485,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
 
         let expected_bonded_insurance_deposit = InsuranceDeposit {
             insurance: 1,
-            reward: 0,
+            reward: 2,
             requester: AccountId32::new(hex!(
                 "0101010101010101010101010101010101010101010101010101010101010101"
             )),
@@ -501,7 +508,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
                 timeouts_at: None,
                 delay_steps_at: None,
                 status: CircuitStatus::Ready,
-                total_reward: Some(1000000)
+                total_reward: Some(fee)
             }
         );
 
@@ -530,5 +537,8 @@ fn circuit_handles_insurance_deposit_for_transfers() {
             confirmation,
             None
         ));
+
+        // Check that Bob collected the relayer reward
+        assert_eq!(Balances::free_balance(&BOB_RELAYER), 1 + 2);
     });
 }

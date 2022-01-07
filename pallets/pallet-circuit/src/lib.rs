@@ -1039,7 +1039,6 @@ impl<T: Config> Pallet<T> {
         requester: &T::AccountId,
     ) -> Result<(), Error<T>> {
         Self::charge(requester, promised_reward)?;
-
         insurance_deposits.push((
             side_effect_id,
             InsuranceDeposit::new(
