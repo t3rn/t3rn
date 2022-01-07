@@ -134,6 +134,11 @@ pub mod pallet {
 
     /// Current Circuit's context of active full side effects (requested + confirmation proofs)
     #[pallet::storage]
+    #[pallet::getter(fn get_local_xtx_state)]
+    pub type LocalXtxStates<T> = StorageMap<_, Identity, XExecSignalId<T>, LocalState, ValueQuery>;
+
+    /// Current Circuit's context of active full side effects (requested + confirmation proofs)
+    #[pallet::storage]
     #[pallet::getter(fn get_full_side_effects)]
     pub type FullSideEffects<T> = StorageMap<
         _,
@@ -579,9 +584,10 @@ impl<T: Config> Pallet<T> {
                         )>>();
 
                     let full_side_effects = <Self as Store>::FullSideEffects::get(id);
+                    let local_state = <Self as Store>::LocalXtxStates::get(id);
 
                     Ok(LocalXtxCtx {
-                        local_state: LocalState::new(),
+                        local_state,
                         use_protocol: UniversalSideEffectsProtocol::new(),
                         xtx_id: id,
                         xtx,
@@ -641,6 +647,10 @@ impl<T: Config> Pallet<T> {
                 <XtxInsuranceLinks<T>>::insert::<XExecSignalId<T>, Vec<SideEffectId<T>>>(
                     local_ctx.xtx_id.clone(),
                     ids_with_insurance,
+                );
+                <LocalXtxStates<T>>::insert::<XExecSignalId<T>, LocalState>(
+                    local_ctx.xtx_id.clone(),
+                    local_ctx.local_state.clone(),
                 );
                 local_ctx.xtx.status = CircuitStatus::determine_xtx_status(
                     &local_ctx.full_side_effects,

@@ -34,13 +34,6 @@ use sp_io::TestExternalities;
 use codec::Encode;
 use sp_runtime::AccountId32;
 
-pub fn new_test_ext() -> TestExternalities {
-    let t = frame_system::GenesisConfig::default()
-        .build_storage::<Test>()
-        .unwrap();
-    TestExternalities::new(t)
-}
-
 pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);
 pub const BOB_RELAYER: AccountId32 = AccountId32::new([2u8; 32]);
 pub const CHARLIE: AccountId32 = AccountId32::new([3u8; 32]);
@@ -400,7 +393,7 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
 fn circuit_handles_insurance_deposit_for_transfers() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let mut ext = TestExternalities::new_empty();
+    let ext = ExtBuilder::default();
 
     let mut local_state = LocalState::new();
     let transfer_protocol_box = Box::new(TransferSideEffectProtocol {});
@@ -419,7 +412,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
     let fee = 1_000_000;
     let sequential = true;
 
-    ext.execute_with(|| {
+    ext.with_default_xdns_records().build().execute_with(|| {
         let _ = Balances::deposit_creating(&ALICE, 1_000_001);
         let _ = Balances::deposit_creating(&BOB_RELAYER, 1_000_001);
         System::set_block_number(1);
