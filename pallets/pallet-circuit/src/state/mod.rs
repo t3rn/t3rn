@@ -168,6 +168,7 @@ pub struct LocalXtxCtx<T: Config> {
         SideEffectId<T>,
         InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
     )>,
+    pub full_side_effects: Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
 }
 
 impl Default for CircuitStatus {

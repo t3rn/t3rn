@@ -287,17 +287,16 @@ pub mod pallet {
             let mut local_xtx_ctx: LocalXtxCtx<T> =
                 Self::setup(CircuitStatus::Requested, &requester, fee, None)?;
             // Validate: Side Effects
-            let full_side_effects =
-                Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential)?;
+            Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential)?;
             // Apply: all necessary changes to state in 1 go
-            Self::apply(&mut local_xtx_ctx, &full_side_effects, None)?;
+            let (_, added_full_side_effects) = Self::apply(&mut local_xtx_ctx, None)?;
             // Emit: From Circuit events
             Self::emit(
                 local_xtx_ctx.xtx_id,
                 Some(local_xtx_ctx.xtx),
                 &requester,
                 &side_effects,
-                Some(full_side_effects),
+                added_full_side_effects,
             );
 
             Ok(().into())
@@ -335,7 +334,6 @@ pub mod pallet {
                 // Apply: all necessary changes to state in 1 go
                 Self::apply(
                     &mut local_xtx_ctx,
-                    &vec![],
                     Some((side_effect_id, insurance_deposit_copy)),
                 )
             } else {
@@ -383,7 +381,7 @@ pub mod pallet {
                 Some(xtx_id),
             )?;
 
-            let full_side_effect = Self::confirm(
+            let _full_side_effect = Self::confirm(
                 &mut local_xtx_ctx,
                 &relayer,
                 &side_effect,
@@ -395,7 +393,7 @@ pub mod pallet {
 
             // Apply: all necessary changes to state in 1 go
             let (maybe_xtx_changed, assert_full_side_effects_changed) =
-                Self::apply(&mut local_xtx_ctx, &vec![vec![full_side_effect]], None)?;
+                Self::apply(&mut local_xtx_ctx, None)?;
 
             // Emit: From Circuit events
             Self::emit(
@@ -523,6 +521,7 @@ impl<T: Config> Pallet<T> {
                     xtx_id: x_exec_signal_id,
                     xtx: x_exec_signal,
                     insurance_deposits: vec![],
+                    full_side_effects: vec![],
                 })
             }
             CircuitStatus::PendingInsurance => {
@@ -548,6 +547,7 @@ impl<T: Config> Pallet<T> {
                         xtx_id: id,
                         xtx,
                         insurance_deposits,
+                        full_side_effects: vec![], // Update of full side effects won't be needed to update the insurance info
                     })
                 } else {
                     Err(Error::<T>::SetupFailed)
@@ -570,12 +570,16 @@ impl<T: Config> Pallet<T> {
                             InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
                         )>>();
 
+                    let full_side_effects = <Self as Store>::FullSideEffects::get(id);
+
                     Ok(LocalXtxCtx {
                         local_state: LocalState::new(),
                         use_protocol: UniversalSideEffectsProtocol::new(),
                         xtx_id: id,
                         xtx,
                         insurance_deposits,
+                        // We need to retrieve full side effects to validate the confirmation order
+                        full_side_effects,
                     })
                 } else {
                     Err(Error::<T>::SetupFailed)
@@ -589,9 +593,6 @@ impl<T: Config> Pallet<T> {
     ///     For now only returns Xtx and FullSideEffects that changed.
     fn apply(
         local_ctx: &mut LocalXtxCtx<T>,
-        full_ordered_side_effects: &Vec<
-            Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
-        >,
         maybe_insurance_tuple: Option<(
             SideEffectId<T>,
             InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
@@ -611,7 +612,10 @@ impl<T: Config> Pallet<T> {
                 <FullSideEffects<T>>::insert::<
                     XExecSignalId<T>,
                     Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
-                >(local_ctx.xtx_id.clone(), full_ordered_side_effects.clone());
+                >(
+                    local_ctx.xtx_id.clone(),
+                    local_ctx.full_side_effects.clone(),
+                );
 
                 let mut ids_with_insurance: Vec<SideEffectId<T>> = vec![];
                 for (side_effect_id, insurance_deposit) in &local_ctx.insurance_deposits {
@@ -631,7 +635,7 @@ impl<T: Config> Pallet<T> {
                     ids_with_insurance,
                 );
                 local_ctx.xtx.status = CircuitStatus::determine_xtx_status(
-                    full_ordered_side_effects,
+                    &local_ctx.full_side_effects,
                     &local_ctx.insurance_deposits,
                 )?;
 
@@ -642,7 +646,7 @@ impl<T: Config> Pallet<T> {
 
                 Ok((
                     Some(local_ctx.xtx.clone()),
-                    Some(full_ordered_side_effects.to_vec()),
+                    Some(local_ctx.full_side_effects.to_vec()),
                 ))
             }
             CircuitStatus::PendingInsurance => {
@@ -668,6 +672,30 @@ impl<T: Config> Pallet<T> {
                     }
                 } else {
                     return Err(Error::<T>::ApplyFailed);
+                }
+            }
+            CircuitStatus::Ready | CircuitStatus::PendingExecution => {
+                // Update set of full side effects assuming the new confirmed has appeared
+                <Self as Store>::FullSideEffects::mutate(local_ctx.xtx_id, |x| {
+                    *x = local_ctx.full_side_effects.clone()
+                });
+
+                let new_status = CircuitStatus::determine_xtx_status::<T>(
+                    &local_ctx.full_side_effects,
+                    &local_ctx.insurance_deposits,
+                )?;
+
+                if new_status != local_ctx.xtx.status {
+                    local_ctx.xtx.status = new_status;
+                    <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
+                        *x = local_ctx.xtx.clone()
+                    });
+                    Ok((
+                        Some(local_ctx.xtx.clone()),
+                        Some(local_ctx.full_side_effects.clone()),
+                    ))
+                } else {
+                    Ok((None, Some(local_ctx.full_side_effects.to_vec())))
                 }
             }
             _ => unimplemented!(),
@@ -747,8 +775,7 @@ impl<T: Config> Pallet<T> {
         local_ctx: &mut LocalXtxCtx<T>,
         requester: &T::AccountId,
         sequential: bool,
-    ) -> Result<Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>, &'static str>
-    {
+    ) -> Result<(), &'static str> {
         let mut full_side_effects: Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>> =
             vec![];
 
@@ -802,7 +829,9 @@ impl<T: Config> Pallet<T> {
             }
         };
 
-        Ok(full_side_effects_steps)
+        local_ctx.full_side_effects = full_side_effects_steps;
+
+        Ok(())
     }
 
     fn confirm(
@@ -853,6 +882,37 @@ impl<T: Config> Pallet<T> {
             //     confirmation.clone(),
             //     side_effect.clone(),
             // )
+            //         let input_side_effect_id = input.generate_id::<Hasher>();
+            //         let mut unconfirmed_step_no: Option<usize> = None;
+            //
+            //         for (i, step) in full_side_effects.iter_mut().enumerate() {
+            //             // Double check there are some side effects for that Xtx - should have been checked at API level tho already
+            //             if step.is_empty() {
+            //                 return Err("Xtx has an empty single step.");
+            //             }
+            //             for mut full_side_effect in step.iter_mut() {
+            //                 if full_side_effect.confirmed.is_none() {
+            //                     // Mark the first step no with encountered unconfirmed side effect
+            //                     if unconfirmed_step_no.is_none() {
+            //                         unconfirmed_step_no = Some(i);
+            //                     }
+            //                     // Recalculate the ID for each input side effect and compare with the input one.
+            //                     // Check the current unconfirmed step before attempt to confirm the full side effect.
+            //                     return if full_side_effect.input.generate_id::<Hasher>() == input_side_effect_id
+            //                         && unconfirmed_step_no == Some(i)
+            //                     {
+            //                         // We found the side effect to confirm from inside the unconfirmed step.
+            //                         full_side_effect.confirmed = Some(confirmed.clone());
+            //                         Ok(true)
+            //                     } else {
+            //                         Err("Attempt to confirm side effect from the next step, \
+            //                                 but there still is at least one unfinished step")
+            //                     };
+            //                 }
+            //             }
+            //         }
+            //
+            //         return Ok(false);
         };
 
         confirm_inclusion();
