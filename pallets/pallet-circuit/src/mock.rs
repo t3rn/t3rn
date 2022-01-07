@@ -3,23 +3,40 @@ use crate::{self as pallet_circuit, Config};
 
 use codec::Encode;
 
+use pallet_babe::EquivocationHandler;
+use pallet_babe::ExternalTrigger;
+
 use sp_runtime::traits::Convert;
 use sp_runtime::{
+    curve::PiecewiseLinear,
+    impl_opaque_keys,
     testing::{Header, TestXt},
-    traits::IdentityLookup,
+    traits::{IdentityLookup, OpaqueKeys},
     Perbill,
 };
 
 use frame_support::pallet_prelude::GenesisBuild;
-use frame_support::PalletId;
-use frame_support::{parameter_types, traits::Everything};
+use frame_support::{
+    parameter_types,
+    traits::{ConstU32, Everything, KeyOwnerProofSystem},
+};
+
+use frame_election_provider_support::onchain;
+use pallet_session::historical as pallet_session_historical;
+use pallet_staking::EraIndex;
+use sp_consensus_babe::AuthorityId;
+use sp_staking::SessionIndex;
+
+use frame_support::{weights::Weight, PalletId};
 use sp_core::{crypto::KeyTypeId, H256};
-use sp_runtime::traits::BlakeTwo256;
+use sp_runtime::traits::{BlakeTwo256, Keccak256};
 
 use pallet_xdns::XdnsRecord;
-
+use t3rn_primitives::transfers::BalanceOf;
 use t3rn_primitives::EscrowTrait;
 use t3rn_primitives::{GatewaySysProps, GatewayType, GatewayVendor};
+
+use t3rn_protocol::side_effects::confirm::ethereum::EthereumMockVerifier;
 
 pub type AccountId = sp_runtime::AccountId32;
 pub type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -33,25 +50,34 @@ frame_support::construct_runtime!(
         NodeBlock = Block,
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
-        Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>},
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+        Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+        Historical: pallet_session_historical::{Pallet},
+        Offences: pallet_offences::{Pallet, Storage, Event},
+        MultiFinalityVerifier: pallet_multi_finality_verifier::{Pallet},
 
+        Babe: pallet_babe::{Pallet, Call, Storage, Config},
+        TransactionPayment: pallet_transaction_payment::{Pallet},
+        Staking: pallet_staking::{Pallet, Call, Storage, Config<T>, Event<T>},
+        Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         Sudo: pallet_sudo::{Pallet, Call, Event<T>},
+
+        Randomness: pallet_randomness_collective_flip::{Pallet, Storage},
         XDNS: pallet_xdns::{Pallet, Call, Storage, Config<T>, Event<T>},
+        ExecDelivery: pallet_exec_delivery::{Pallet, Call, Storage, Event<T>},
+        BasicOutboundChannel: snowbridge_basic_channel::outbound::{Pallet, Config<T>, Storage, Event<T>},
+
+        Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>},
     }
 );
 
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
-    pub const DisabledValidatorsThreshold: Perbill = Perbill::from_percent(16);
     pub BlockWeights: frame_system::limits::BlockWeights =
         frame_system::limits::BlockWeights::simple_max(1024);
 }
-
-//ToDo: Uncomment when upgrading to v4.0.0 substrate
-// impl pallet_randomness_collective_flip::Config for Test {}
 
 /// The hashing algorithm used.
 pub type Hashing = BlakeTwo256;
@@ -60,20 +86,19 @@ impl frame_system::Config for Test {
     type BaseCallFilter = Everything;
     type BlockWeights = ();
     type BlockLength = ();
-    type DbWeight = ();
     type Origin = Origin;
+    type Call = Call;
     type Index = u64;
     type BlockNumber = u64;
-    type Call = Call;
     type Hash = H256;
-    type Version = ();
-    type Hashing = Hashing;
-    // type AccountId = DummyValidatorId;
+    type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
     type Event = Event;
     type BlockHashCount = BlockHashCount;
+    type DbWeight = ();
+    type Version = ();
     type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<Balance>;
     type OnNewAccount = ();
@@ -91,14 +116,30 @@ where
     type Extrinsic = TestXt<Call, ()>;
 }
 
+impl_opaque_keys! {
+    pub struct MockSessionKeys {
+        pub babe_authority: pallet_babe::Pallet<Test>,
+    }
+}
+
 impl pallet_sudo::Config for Test {
     type Event = Event;
     type Call = Call;
 }
 
 parameter_types! {
-    pub const MinimumPeriod: u64 = 1;
     pub const TransactionByteFee: u64 = 1;
+    pub const OperationalFeeMultiplier: u8 = 5;
+
+}
+
+use frame_support::weights::IdentityFee;
+impl pallet_transaction_payment::Config for Test {
+    type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
+    type TransactionByteFee = TransactionByteFee;
+    type WeightToFee = IdentityFee<Balance>;
+    type FeeMultiplierUpdate = ();
+    type OperationalFeeMultiplier = OperationalFeeMultiplier;
 }
 
 impl EscrowTrait for Test {
@@ -111,16 +152,45 @@ impl pallet_xdns::Config for Test {
     type WeightInfo = ();
 }
 
-// ToDo: Must be u128 as t3rn_protocol + insurances assume it's hardcoded u128 for value of insurance and reward
+impl pallet_randomness_collective_flip::Config for Test {}
+
 pub type Balance = u64;
+
+impl pallet_session::Config for Test {
+    type Event = Event;
+    type ValidatorId = <Self as frame_system::Config>::AccountId;
+    type ValidatorIdOf = pallet_staking::StashOf<Self>;
+    type ShouldEndSession = Babe;
+    type NextSessionRotation = Babe;
+    type SessionManager = pallet_session::historical::NoteHistoricalRoot<Self, Staking>;
+    type SessionHandler = <MockSessionKeys as OpaqueKeys>::KeyTypeIdProviders;
+    type Keys = MockSessionKeys;
+    type WeightInfo = ();
+}
+
+impl pallet_session::historical::Config for Test {
+    type FullIdentification = pallet_staking::Exposure<AccountId, Balance>;
+    type FullIdentificationOf = pallet_staking::ExposureOf<Test>;
+}
 
 parameter_types! {
     pub const UncleGenerations: u64 = 0;
 }
 
+impl pallet_authorship::Config for Test {
+    type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Babe>;
+    type UncleGenerations = UncleGenerations;
+    type FilterUncle = ();
+    type EventHandler = ();
+}
+
+parameter_types! {
+    pub const MinimumPeriod: u64 = 1;
+}
+
 impl pallet_timestamp::Config for Test {
     type Moment = u64;
-    type OnTimestampSet = ();
+    type OnTimestampSet = Babe;
     type MinimumPeriod = MinimumPeriod;
     type WeightInfo = ();
 }
@@ -142,10 +212,65 @@ impl pallet_balances::Config for Test {
     type ReserveIdentifier = [u8; 8];
 }
 
+pallet_staking_reward_curve::build! {
+    const REWARD_CURVE: PiecewiseLinear<'static> = curve!(
+        min_inflation: 0_025_000u64,
+        max_inflation: 0_100_000,
+        ideal_stake: 0_500_000,
+        falloff: 0_050_000,
+        max_piece_count: 40,
+        test_precision: 0_005_000,
+    );
+}
+
 parameter_types! {
-    pub const GracePeriod: u64 = 5;
-    pub const UnsignedInterval: u64 = 128;
-    pub const UnsignedPriority: u64 = 1 << 20;
+    pub const SessionsPerEra: SessionIndex = 3;
+    pub const BondingDuration: EraIndex = 3;
+    pub const SlashDeferDuration: EraIndex = 0;
+    pub const AttestationPeriod: u64 = 100;
+    pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
+    pub const MaxNominatorRewardedPerValidator: u32 = 64;
+    pub const ElectionLookahead: u64 = 0;
+    pub const StakingUnsignedPriority: u64 = u64::max_value() / 2;
+}
+
+impl onchain::Config for Test {
+    type Accuracy = Perbill;
+    type DataProvider = Staking;
+}
+
+parameter_types! {
+    pub const OffendingValidatorsThreshold: Perbill = Perbill::from_percent(75);
+}
+
+impl pallet_staking::Config for Test {
+    const MAX_NOMINATIONS: u32 = 16;
+    type RewardRemainder = ();
+    type CurrencyToVote = frame_support::traits::SaturatingCurrencyToVote;
+    type Event = Event;
+    type Currency = Balances;
+    type Slash = ();
+    type Reward = ();
+    type SessionsPerEra = SessionsPerEra;
+    type BondingDuration = BondingDuration;
+    type SlashDeferDuration = SlashDeferDuration;
+    type SlashCancelOrigin = frame_system::EnsureRoot<Self::AccountId>;
+    type SessionInterface = Self;
+    type UnixTime = pallet_timestamp::Pallet<Test>;
+    type EraPayout = pallet_staking::ConvertCurve<RewardCurve>;
+    type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
+    type NextNewSession = Session;
+    type OffendingValidatorsThreshold = OffendingValidatorsThreshold;
+    type SortedListProvider = pallet_staking::UseNominatorsMap<Self>;
+    type WeightInfo = ();
+    type ElectionProvider = onchain::OnChainSequentialPhragmen<Self>;
+    type GenesisElectionProvider = Self::ElectionProvider;
+}
+
+impl pallet_offences::Config for Test {
+    type Event = Event;
+    type IdentificationTuple = pallet_session::historical::IdentificationTuple<Self>;
+    type OnOffenceHandler = Staking;
 }
 
 pub struct AccountId32Converter;
@@ -163,14 +288,151 @@ impl Convert<Balance, u128> for CircuitToGateway {
 }
 
 parameter_types! {
-    pub const CircuitPalletId: PalletId = PalletId(*b"pal/circ");
+    pub const ExecPalletId: PalletId = PalletId(*b"pal/exec");
 }
 
-impl Config for Test {
+impl pallet_exec_delivery::Config for Test {
     type Event = Event;
     type Call = Call;
+    type EthVerifier = EthereumMockVerifier;
+    type AccountId32Converter = ();
+    type ToStandardizedGatewayBalance = ();
     type WeightInfo = ();
-    type PalletId = CircuitPalletId;
+    type PalletId = ExecPalletId;
+}
+
+parameter_types! {
+    pub const UnsignedPriority: u64 = 1 << 20;
+}
+
+// start of contracts VMs
+
+impl Convert<Weight, BalanceOf<Self>> for Test {
+    fn convert(w: Weight) -> BalanceOf<Self> {
+        w.into()
+    }
+}
+
+pub const INDEXING_PREFIX: &'static [u8] = b"commitment";
+parameter_types! {
+    pub const MaxMessagePayloadSize: u64 = 256;
+    pub const MaxMessagesPerCommit: u64 = 20;
+}
+
+impl snowbridge_basic_channel::outbound::Config for Test {
+    type Event = Event;
+    const INDEXING_PREFIX: &'static [u8] = INDEXING_PREFIX;
+    type Hashing = Keccak256;
+    type MaxMessagePayloadSize = MaxMessagePayloadSize;
+    type MaxMessagesPerCommit = MaxMessagesPerCommit;
+    type SetPrincipalOrigin = pallet_exec_delivery::EnsureExecDelivery<Test>;
+    type WeightInfo = ();
+}
+
+type Blake2ValU64BridgeInstance = ();
+type Blake2ValU32BridgeInstance = pallet_multi_finality_verifier::Instance1;
+type Keccak256ValU64BridgeInstance = pallet_multi_finality_verifier::Instance2;
+type Keccak256ValU32BridgeInstance = pallet_multi_finality_verifier::Instance3;
+
+#[derive(Debug)]
+pub struct Blake2ValU64Chain;
+impl t3rn_primitives::bridges::runtime::Chain for Blake2ValU64Chain {
+    type BlockNumber = <Test as frame_system::Config>::BlockNumber;
+    type Hash = <Test as frame_system::Config>::Hash;
+    type Hasher = <Test as frame_system::Config>::Hashing;
+    type Header = <Test as frame_system::Config>::Header;
+}
+
+#[derive(Debug)]
+pub struct Blake2ValU32Chain;
+impl t3rn_primitives::bridges::runtime::Chain for Blake2ValU32Chain {
+    type BlockNumber = u32;
+    type Hash = H256;
+    type Hasher = BlakeTwo256;
+    type Header = sp_runtime::generic::Header<u32, BlakeTwo256>;
+}
+
+#[derive(Debug)]
+pub struct Keccak256ValU64Chain;
+impl t3rn_primitives::bridges::runtime::Chain for Keccak256ValU64Chain {
+    type BlockNumber = u64;
+    type Hash = H256;
+    type Hasher = Keccak256;
+    type Header = sp_runtime::generic::Header<u64, Keccak256>;
+}
+
+#[derive(Debug)]
+pub struct Keccak256ValU32Chain;
+impl t3rn_primitives::bridges::runtime::Chain for Keccak256ValU32Chain {
+    type BlockNumber = u32;
+    type Hash = H256;
+    type Hasher = Keccak256;
+    type Header = sp_runtime::generic::Header<u32, Keccak256>;
+}
+
+parameter_types! {
+    pub const MaxRequests: u32 = 2;
+    pub const HeadersToKeep: u32 = 5;
+    pub const SessionLength: u64 = 5;
+    pub const NumValidators: u32 = 5;
+}
+
+impl pallet_multi_finality_verifier::Config<Blake2ValU64BridgeInstance> for Test {
+    type BridgedChain = Blake2ValU64Chain;
+    type MaxRequests = MaxRequests;
+    type HeadersToKeep = HeadersToKeep;
+    type WeightInfo = ();
+}
+
+impl pallet_multi_finality_verifier::Config<Blake2ValU32BridgeInstance> for Test {
+    type BridgedChain = Blake2ValU32Chain;
+    type MaxRequests = MaxRequests;
+    type HeadersToKeep = HeadersToKeep;
+    type WeightInfo = ();
+}
+
+impl pallet_multi_finality_verifier::Config<Keccak256ValU64BridgeInstance> for Test {
+    type BridgedChain = Keccak256ValU64Chain;
+    type MaxRequests = MaxRequests;
+    type HeadersToKeep = HeadersToKeep;
+    type WeightInfo = ();
+}
+
+impl pallet_multi_finality_verifier::Config<Keccak256ValU32BridgeInstance> for Test {
+    type BridgedChain = Keccak256ValU32Chain;
+    type MaxRequests = MaxRequests;
+    type HeadersToKeep = HeadersToKeep;
+    type WeightInfo = ();
+}
+
+parameter_types! {
+    pub const EpochDuration: u64 = 3;
+    pub const ExpectedBlockTime: u64 = 1;
+    pub const ReportLongevity: u64 =
+        BondingDuration::get() as u64 * SessionsPerEra::get() as u64 * EpochDuration::get();
+}
+
+impl pallet_babe::Config for Test {
+    type EpochDuration = EpochDuration;
+    type ExpectedBlockTime = ExpectedBlockTime;
+    type EpochChangeTrigger = ExternalTrigger;
+    type DisabledValidators = Session;
+
+    type KeyOwnerProofSystem = Historical;
+
+    type KeyOwnerProof =
+        <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, AuthorityId)>>::Proof;
+
+    type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
+        KeyTypeId,
+        AuthorityId,
+    )>>::IdentificationTuple;
+
+    type HandleEquivocation =
+        EquivocationHandler<Self::KeyOwnerIdentification, Offences, ReportLongevity>;
+
+    type WeightInfo = ();
+    type MaxAuthorities = ConstU32<10>;
 }
 
 pub struct ExtBuilder {
@@ -185,22 +447,19 @@ impl Default for ExtBuilder {
     }
 }
 
+parameter_types! {
+    pub const CircuitPalletId: PalletId = PalletId(*b"pal/circ");
+}
+
+impl Config for Test {
+    type Event = Event;
+    type Call = Call;
+    type WeightInfo = ();
+    type PalletId = CircuitPalletId;
+}
+
 impl ExtBuilder {
-    pub fn with_default_xdns_records(mut self) -> ExtBuilder {
-        let zero_xdns_record = <XdnsRecord<AccountId>>::new(
-            vec![],
-            [0u8, 0u8, 0u8, 0u8],
-            Default::default(),
-            GatewayVendor::Substrate,
-            GatewayType::ProgrammableExternal(0),
-            Default::default(),
-            GatewaySysProps {
-                ss58_format: 1333,
-                token_symbol: Encode::encode("ZERO"),
-                token_decimals: 0,
-            },
-            vec![],
-        );
+    pub(crate) fn with_default_xdns_records(mut self) -> ExtBuilder {
         let circuit_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
             *b"circ",
@@ -212,6 +471,20 @@ impl ExtBuilder {
                 ss58_format: 1333,
                 token_symbol: Encode::encode("T3RN"),
                 token_decimals: 12,
+            },
+            vec![],
+        );
+        let zero_xdns_record = <XdnsRecord<AccountId>>::new(
+            vec![],
+            [0u8, 0u8, 0u8, 0u8],
+            Default::default(),
+            GatewayVendor::Substrate,
+            GatewayType::ProgrammableExternal(0),
+            Default::default(),
+            GatewaySysProps {
+                ss58_format: 1333,
+                token_symbol: Encode::encode("ZERO"),
+                token_decimals: 0,
             },
             vec![],
         );
@@ -267,7 +540,7 @@ impl ExtBuilder {
         self
     }
 
-    pub fn build(self) -> sp_io::TestExternalities {
+    pub(crate) fn build(self) -> sp_io::TestExternalities {
         let mut t = frame_system::GenesisConfig::default()
             .build_storage::<Test>()
             .expect("Frame system builds valid default genesis config");

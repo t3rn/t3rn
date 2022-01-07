@@ -39,6 +39,7 @@ pub use t3rn_primitives::{
     GatewayType, *,
 };
 
+use t3rn_protocol::side_effects::confirm::ethereum::EthereumSideEffectsParser;
 use t3rn_protocol::side_effects::confirm::protocol::*;
 use t3rn_protocol::side_effects::confirm::substrate::SubstrateSideEffectsParser;
 
@@ -174,8 +175,7 @@ pub mod pallet {
     pub trait Config:
         frame_system::Config
         + pallet_balances::Config
-        // + pallet_contracts_registry::Config
-        // + pallet_exec_delivery::Config
+        + pallet_exec_delivery::Config
         + pallet_xdns::Config
     {
         /// The Circuit's pallet id
@@ -938,8 +938,8 @@ impl<T: Config> Pallet<T> {
             confirm_with_vendor_by_action_id::<
                 T,
                 SubstrateSideEffectsParser,
-                SubstrateSideEffectsParser,
-                // EthereumSideEffectsParser<<T as pallet_exec_delivery::Config>::EthVerifier>,
+                // SubstrateSideEffectsParser,
+                EthereumSideEffectsParser<<T as pallet_exec_delivery::Config>::EthVerifier>,
             >(
                 gateway_vendor,
                 side_effect.encoded_action.clone(),
@@ -1054,6 +1054,6 @@ impl<T: Config> Pallet<T> {
 
     /// The account ID of the Circuit Vault.
     pub fn account_id() -> T::AccountId {
-        T::PalletId::get().into_account()
+        <T as pallet::Config>::PalletId::get().into_account()
     }
 }
