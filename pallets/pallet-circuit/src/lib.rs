@@ -470,6 +470,10 @@ pub mod pallet {
         InsuranceBondNotRequired,
         InsuranceBondAlreadyDeposited,
         SetupFailed,
+        SetupFailedIncorrectXtxStatus,
+        SetupFailedUnknownXtx,
+        SetupFailedDuplicatedXtx,
+        SetupFailedEmptyXtx,
         ApplyFailed,
         DeterminedForbiddenXtxStatus,
         UnsupportedRole,
@@ -502,7 +506,7 @@ impl<T: Config> Pallet<T> {
             CircuitStatus::Requested => {
                 if let Some(id) = xtx_id {
                     if <Self as Store>::XExecSignals::contains_key(id) {
-                        return Err(Error::<T>::SetupFailed);
+                        return Err(Error::<T>::SetupFailedDuplicatedXtx);
                     }
                 }
                 // ToDo: Introduce default timeout + delay
@@ -531,11 +535,11 @@ impl<T: Config> Pallet<T> {
             CircuitStatus::PendingInsurance => {
                 if let Some(id) = xtx_id {
                     if !<Self as Store>::XExecSignals::contains_key(id) {
-                        return Err(Error::<T>::SetupFailed);
+                        return Err(Error::<T>::SetupFailedUnknownXtx);
                     }
                     let xtx = <Self as Store>::XExecSignals::get(id);
                     if xtx.status != CircuitStatus::PendingInsurance {
-                        return Err(Error::<T>::SetupFailed);
+                        return Err(Error::<T>::SetupFailedIncorrectXtxStatus);
                     }
                     let insurance_deposits = <Self as Store>::XtxInsuranceLinks::get(id)
                         .iter()
@@ -554,17 +558,17 @@ impl<T: Config> Pallet<T> {
                         full_side_effects: vec![], // Update of full side effects won't be needed to update the insurance info
                     })
                 } else {
-                    Err(Error::<T>::SetupFailed)
+                    Err(Error::<T>::SetupFailedEmptyXtx)
                 }
             }
             CircuitStatus::PendingExecution => {
                 if let Some(id) = xtx_id {
                     if !<Self as Store>::XExecSignals::contains_key(id) {
-                        return Err(Error::<T>::SetupFailed);
+                        return Err(Error::<T>::SetupFailedUnknownXtx);
                     }
                     let xtx = <Self as Store>::XExecSignals::get(id);
-                    if xtx.status <= CircuitStatus::Ready {
-                        return Err(Error::<T>::SetupFailed);
+                    if xtx.status < CircuitStatus::Ready {
+                        return Err(Error::<T>::SetupFailedIncorrectXtxStatus);
                     }
                     let insurance_deposits = <Self as Store>::XtxInsuranceLinks::get(id)
                         .iter()
@@ -586,7 +590,7 @@ impl<T: Config> Pallet<T> {
                         full_side_effects,
                     })
                 } else {
-                    Err(Error::<T>::SetupFailed)
+                    Err(Error::<T>::SetupFailedEmptyXtx)
                 }
             }
             _ => unimplemented!(),

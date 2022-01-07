@@ -31,8 +31,8 @@ use crate::state::*;
 
 use sp_io::TestExternalities;
 
+use codec::Encode;
 use sp_runtime::AccountId32;
-// use crate::*;
 
 pub fn new_test_ext() -> TestExternalities {
     let t = frame_system::GenesisConfig::default()
@@ -470,7 +470,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
         assert_eq!(
             Circuit::get_full_side_effects(xtx_id),
             vec![vec![FullSideEffect {
-                input: valid_transfer_side_effect,
+                input: valid_transfer_side_effect.clone(),
                 confirmed: None,
             }]]
         );
@@ -478,7 +478,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
         let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
 
         assert_ok!(Circuit::bond_insurance_deposit(
-            origin_relayer_bob,
+            origin_relayer_bob.clone(),
             xtx_id,
             side_effect_a_id,
         ));
@@ -511,5 +511,31 @@ fn circuit_handles_insurance_deposit_for_transfers() {
                 total_reward: Some(1000000)
             }
         );
+
+        // Confirmation start
+        let encoded_balance_transfer_event = pallet_balances::Event::<Test>::Transfer {
+            from: hex!("0909090909090909090909090909090909090909090909090909090909090909").into(), // variant A
+            to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(), // variant B (dest)
+            amount: 1, // variant A
+        }
+        .encode();
+
+        let confirmation = ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
+            err: None,
+            output: None,
+            encoded_effect: encoded_balance_transfer_event,
+            inclusion_proof: None,
+            executioner: BOB_RELAYER,
+            received_at: 0,
+            cost: None,
+        };
+
+        assert_ok!(Circuit::confirm_side_effect(
+            origin_relayer_bob,
+            xtx_id,
+            valid_transfer_side_effect,
+            confirmation,
+            None
+        ));
     });
 }
