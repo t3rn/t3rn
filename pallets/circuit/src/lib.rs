@@ -875,13 +875,18 @@ impl<T: Config> Pallet<T> {
                 >(side_effect.clone(), &mut local_ctx.local_state)?
             {
                 let (insurance, reward) = (insurance_and_reward[0], insurance_and_reward[1]);
-                Self::request_side_effect_insurance(
-                    &mut local_ctx.insurance_deposits,
+
+                Self::charge(&requester, reward)?;
+
+                local_ctx.insurance_deposits.push((
                     side_effect.generate_id::<SystemHashing<T>>(),
-                    insurance,
-                    reward,
-                    requester,
-                )?;
+                    InsuranceDeposit::new(
+                        insurance,
+                        reward,
+                        requester.clone(),
+                        <frame_system::Pallet<T>>::block_number(),
+                    ),
+                ));
             }
             full_side_effects.push(FullSideEffect {
                 input: side_effect.clone(),
@@ -1038,31 +1043,6 @@ impl<T: Config> Pallet<T> {
             input: side_effect.clone(),
             confirmed: Some(confirmation.clone()),
         })
-    }
-
-    /// On-submit
-    fn request_side_effect_insurance(
-        insurance_deposits: &mut Vec<(
-            SideEffectId<T>,
-            InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
-        )>,
-        side_effect_id: SideEffectId<T>,
-        insurance: BalanceOf<T>,
-        promised_reward: BalanceOf<T>,
-        requester: &T::AccountId,
-    ) -> Result<(), Error<T>> {
-        Self::charge(requester, promised_reward)?;
-        insurance_deposits.push((
-            side_effect_id,
-            InsuranceDeposit::new(
-                insurance,
-                promised_reward,
-                requester.clone(),
-                <frame_system::Pallet<T>>::block_number(),
-            ),
-        ));
-
-        Ok(())
     }
 
     /// The account ID of the Circuit Vault.
