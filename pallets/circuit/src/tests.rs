@@ -76,7 +76,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
             (Type::Bytes(0), ArgVariant::A), // empty bytes instead of insurance
         ],
         &mut local_state,
-        transfer_protocol_box.clone(),
+        transfer_protocol_box,
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
@@ -203,10 +203,10 @@ fn on_extrinsic_trigger_validation_works_with_single_transfer_insured() {
             (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
         ],
         &mut local_state,
-        transfer_protocol_box.clone(),
+        transfer_protocol_box,
     );
 
-    let side_effects = vec![valid_transfer_side_effect.clone()];
+    let side_effects = vec![valid_transfer_side_effect];
     let fee = 1;
     let sequential = true;
 
@@ -240,10 +240,10 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
             (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
         ],
         &mut local_state,
-        transfer_protocol_box.clone(),
+        transfer_protocol_box,
     );
 
-    let side_effects = vec![valid_transfer_side_effect.clone()];
+    let side_effects = vec![valid_transfer_side_effect];
     let fee = 1;
     let sequential = true;
 
@@ -329,7 +329,7 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
             (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
         ],
         &mut local_state,
-        transfer_protocol_box.clone(),
+        transfer_protocol_box,
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
@@ -410,7 +410,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
             (Type::OptionalInsurance, ArgVariant::A), // insurance = 1, reward = 2
         ],
         &mut local_state,
-        transfer_protocol_box.clone(),
+        transfer_protocol_box,
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];

@@ -317,7 +317,7 @@ pub mod pallet {
                 .iter_mut()
                 .find(|(id, _)| *id == side_effect_id)
             {
-                Self::charge(&relayer, insurance_deposit.insurance.clone())?;
+                Self::charge(&relayer, insurance_deposit.insurance)?;
 
                 insurance_deposit.bonded_relayer = Some(relayer.clone());
                 // ToDo: Consider removing status from insurance_deposit since redundant with relayer: Option<Relayer>
@@ -614,10 +614,7 @@ impl<T: Config> Pallet<T> {
                 <FullSideEffects<T>>::insert::<
                     XExecSignalId<T>,
                     Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
-                >(
-                    local_ctx.xtx_id.clone(),
-                    local_ctx.full_side_effects.clone(),
-                );
+                >(local_ctx.xtx_id, local_ctx.full_side_effects.clone());
 
                 let mut ids_with_insurance: Vec<SideEffectId<T>> = vec![];
                 for (side_effect_id, insurance_deposit) in &local_ctx.insurance_deposits {
@@ -626,18 +623,16 @@ impl<T: Config> Pallet<T> {
                         SideEffectId<T>,
                         InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
                     >(
-                        local_ctx.xtx_id.clone(),
-                        side_effect_id.clone(),
-                        insurance_deposit.clone(),
+                        local_ctx.xtx_id, *side_effect_id, insurance_deposit.clone()
                     );
                     ids_with_insurance.push(*side_effect_id);
                 }
                 <XtxInsuranceLinks<T>>::insert::<XExecSignalId<T>, Vec<SideEffectId<T>>>(
-                    local_ctx.xtx_id.clone(),
+                    local_ctx.xtx_id,
                     ids_with_insurance,
                 );
                 <LocalXtxStates<T>>::insert::<XExecSignalId<T>, LocalState>(
-                    local_ctx.xtx_id.clone(),
+                    local_ctx.xtx_id,
                     local_ctx.local_state.clone(),
                 );
                 local_ctx.xtx.status = CircuitStatus::determine_xtx_status(
@@ -648,7 +643,7 @@ impl<T: Config> Pallet<T> {
                 <XExecSignals<T>>::insert::<
                     XExecSignalId<T>,
                     XExecSignal<T::AccountId, T::BlockNumber, BalanceOf<T>>,
-                >(local_ctx.xtx_id.clone(), local_ctx.xtx.clone());
+                >(local_ctx.xtx_id, local_ctx.xtx.clone());
 
                 Ok((
                     Some(local_ctx.xtx.clone()),
@@ -677,7 +672,7 @@ impl<T: Config> Pallet<T> {
                         Ok((None, None))
                     }
                 } else {
-                    return Err(Error::<T>::ApplyFailed);
+                    Err(Error::<T>::ApplyFailed)
                 }
             }
             CircuitStatus::Ready | CircuitStatus::PendingExecution => {
@@ -720,13 +715,13 @@ impl<T: Config> Pallet<T> {
         if let Some(xtx) = maybe_xtx {
             match xtx.status {
                 CircuitStatus::PendingInsurance => {
-                    Self::deposit_event(Event::XTransactionReceivedForExec(xtx_id.clone()))
+                    Self::deposit_event(Event::XTransactionReceivedForExec(xtx_id))
                 }
                 CircuitStatus::Ready => {
-                    Self::deposit_event(Event::XTransactionReadyForExec(xtx_id.clone()))
+                    Self::deposit_event(Event::XTransactionReadyForExec(xtx_id))
                 }
                 CircuitStatus::Finished => {
-                    Self::deposit_event(Event::XTransactionFinishedExec(xtx_id.clone()))
+                    Self::deposit_event(Event::XTransactionFinishedExec(xtx_id))
                 }
                 _ => {}
             }
@@ -739,7 +734,7 @@ impl<T: Config> Pallet<T> {
         if !side_effects.is_empty() {
             Self::deposit_event(Event::NewSideEffectsAvailable(
                 subjected_account.clone(),
-                xtx_id.clone(),
+                xtx_id,
                 // ToDo: Emit circuit outbound messages -> side effects
                 side_effects.to_vec(),
             ));
@@ -863,7 +858,7 @@ impl<T: Config> Pallet<T> {
             {
                 let (insurance, reward) = (insurance_and_reward[0], insurance_and_reward[1]);
 
-                Self::charge(&requester, reward)?;
+                Self::charge(requester, reward)?;
 
                 local_ctx.insurance_deposits.push((
                     side_effect.generate_id::<SystemHashing<T>>(),
@@ -1012,7 +1007,7 @@ impl<T: Config> Pallet<T> {
                 }
             }
 
-            return Ok(false);
+            Ok(false)
         }
 
         if !confirm_order::<T>(side_effect, confirmation, &mut local_ctx.full_side_effects)? {

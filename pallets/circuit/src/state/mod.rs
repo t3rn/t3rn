@@ -157,7 +157,7 @@ impl CircuitStatus {
         let mut lowest_determined_status = CircuitStatus::Requested;
 
         for step in steps.iter() {
-            let current_step_status = Self::determine_step_status::<T>(&step, insurance_deposits)?;
+            let current_step_status = Self::determine_step_status::<T>(step, insurance_deposits)?;
             if current_step_status > lowest_determined_status {
                 lowest_determined_status = current_step_status;
             }

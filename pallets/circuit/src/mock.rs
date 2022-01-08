@@ -309,11 +309,11 @@ parameter_types! {
 
 impl Convert<Weight, BalanceOf<Self>> for Test {
     fn convert(w: Weight) -> BalanceOf<Self> {
-        w.into()
+        w
     }
 }
 
-pub const INDEXING_PREFIX: &'static [u8] = b"commitment";
+pub const INDEXING_PREFIX: &[u8] = b"commitment";
 parameter_types! {
     pub const MaxMessagePayloadSize: u64 = 256;
     pub const MaxMessagesPerCommit: u64 = 20;

@@ -39,31 +39,31 @@ pub trait WeightInfo {
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
     fn on_local_trigger() -> Weight {
-        (6_984_000 as Weight)
+        6_984_000_u64
     }
     fn on_extrinsic_trigger() -> Weight {
-        (60_000_000 as Weight)
+        60_000_000_u64
     }
     fn confirm_side_effect() -> Weight {
-        (60_000_000 as Weight)
+        60_000_000_u64
     }
     fn bond_insurance_deposit() -> Weight {
-        (60_000_000 as Weight)
+        60_000_000_u64
     }
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
     fn on_local_trigger() -> Weight {
-        (6_984_000 as Weight)
+        6_984_000_u64
     }
     fn on_extrinsic_trigger() -> Weight {
-        (60_000_000 as Weight)
+        60_000_000_u64
     }
     fn confirm_side_effect() -> Weight {
-        (60_000_000 as Weight)
+        60_000_000_u64
     }
     fn bond_insurance_deposit() -> Weight {
-        (60_000_000 as Weight)
+        60_000_000_u64
     }
 }
