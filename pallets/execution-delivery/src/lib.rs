@@ -103,22 +103,6 @@ pub mod pallet {
     use super::*;
     use crate::WeightInfo;
 
-    /// Current Circuit's context of active transactions
-    ///
-    /// The currently active composable transactions, indexed according to the order of creation.
-    #[pallet::storage]
-    pub type ActiveXtxMap<T> = StorageMap<
-        _,
-        Blake2_128Concat,
-        XtxId<T>,
-        Xtx<
-            <T as frame_system::Config>::AccountId,
-            <T as frame_system::Config>::BlockNumber,
-            BalanceOf<T>,
-        >,
-        OptionQuery,
-    >;
-
     /// This pallet's configuration trait
     #[pallet::config]
     pub trait Config:
@@ -279,47 +263,6 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
-        // Listeners - users + SDK + UI to know whether their request has ended
-        XTransactionSuccessfullyCompleted(XtxId<T>),
-        // Listeners - users + SDK + UI to know whether their request is accepted for exec and pending
-        XTransactionReceivedForExec(XtxId<T>, SideEffectsDFD),
-        // Listeners - executioners/relayers to know new challenges and perform offline risk/reward calc
-        //  of whether side effect is worth picking up
-        NewSideEffectsAvailable(
-            <T as frame_system::Config>::AccountId,
-            XtxId<T>,
-            Vec<
-                SideEffect<
-                    <T as frame_system::Config>::AccountId,
-                    <T as frame_system::Config>::BlockNumber,
-                    BalanceOf<T>,
-                >,
-            >,
-        ),
-        // Listeners - executioners/relayers to know that certain SideEffects are no longer valid
-        // ToDo: Implement Xtx timeout!
-        CancelledSideEffects(
-            <T as frame_system::Config>::AccountId,
-            XtxId<T>,
-            Vec<
-                SideEffect<
-                    <T as frame_system::Config>::AccountId,
-                    <T as frame_system::Config>::BlockNumber,
-                    BalanceOf<T>,
-                >,
-            >,
-        ),
-        // Listeners - executioners/relayers to know whether they won the confirmation challenge
-        SideEffectConfirmed(
-            <T as frame_system::Config>::AccountId, // winner
-            XtxId<T>,
-            ConfirmedSideEffect<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                BalanceOf<T>,
-            >,
-            u64, // reward?
-        ),
         // Listeners - remote targets integrators/registrants
         NewGatewayRegistered(
             bp_runtime::ChainId,    // gateway id
@@ -452,32 +395,6 @@ impl<T: Config> Pallet<T> {
                 };
             }
         }
-    }
-
-    pub fn submit_side_effects(
-        x_tx_id: XtxId<T>,
-        requester: <T as frame_system::Config>::AccountId,
-        side_effects: Vec<
-            SideEffect<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                BalanceOf<T>,
-            >,
-        >,
-        sequential: bool,
-    ) {
-        Self::deposit_event(Event::XTransactionReceivedForExec(
-            x_tx_id.clone(),
-            // ToDo: Emit side effects DFD
-            sequential.encode(),
-        ));
-
-        Self::deposit_event(Event::NewSideEffectsAvailable(
-            requester.clone(),
-            x_tx_id.clone(),
-            // ToDo: Emit circuit outbound messages -> side effects
-            side_effects,
-        ));
     }
 }
 
