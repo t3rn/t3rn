@@ -74,6 +74,7 @@ pallet-xdns = {path = "../../pallets/xdns", default-features = false }
 pallet-mfv = {path = "../../pallets/multi-finality-verifier", package = "multi-finality-verifier", default-features = false }
 pallet-contracts-registry = { path = "../../pallets/contracts-registry", default-features = false }
 pallet-circuit-portal = { path = "../../pallets/circuit-portal", default-features = false }
+pallet-circuit = { path = "../../pallets/circuit", default-features = false }
 
 # Cumulus dependencies
 cumulus-pallet-aura-ext = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.13', default-features = false }
@@ -128,6 +129,7 @@ std = [
 	"pallet-contracts/std",
 	"pallet-contracts-registry/std",
 	"pallet-circuit-portal/std",
+	"pallet-circuit/std",
 	"pallet-randomness-collective-flip/std",
 	"pallet-session/std",
 	"pallet-sudo/std",
