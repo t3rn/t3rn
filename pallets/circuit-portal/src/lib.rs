@@ -398,14 +398,14 @@ impl<T: Config> Pallet<T> {
     }
 }
 
-/// Simple ensure origin from the exec delivery
-pub struct EnsureExecDelivery<T>(sp_std::marker::PhantomData<T>);
+/// Simple ensure origin from the portal
+pub struct EnsureCircuitPortal<T>(sp_std::marker::PhantomData<T>);
 
 impl<
         T: pallet::Config,
         O: Into<Result<RawOrigin<<T as frame_system::Config>::AccountId>, O>>
             + From<RawOrigin<<T as frame_system::Config>::AccountId>>,
-    > EnsureOrigin<O> for EnsureExecDelivery<T>
+    > EnsureOrigin<O> for EnsureCircuitPortal<T>
 {
     type Success = <T as frame_system::Config>::AccountId;
 

@@ -962,7 +962,7 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-circuit-execution-delivery",
+ "pallet-circuit-portal",
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-contracts",
@@ -4850,7 +4850,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-circuit-execution-delivery"
+name = "pallet-circuit-portal"
 version = "1.0.0-alpha.0"
 dependencies = [
  "ethabi-decode",

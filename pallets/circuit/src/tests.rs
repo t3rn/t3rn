@@ -51,7 +51,7 @@ fn on_extrinsic_trigger_works_with_empty_side_effects() {
     ext.execute_with(|| {
         let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
 
-        assert_ok!(Circuit::on_extrinsics_trigger(
+        assert_ok!(Circuit::on_extrinsic_trigger(
             origin,
             side_effects,
             fee,
@@ -88,7 +88,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
 
         System::set_block_number(1);
 
-        assert_ok!(Circuit::on_extrinsics_trigger(
+        assert_ok!(Circuit::on_extrinsic_trigger(
             origin,
             side_effects,
             fee,
@@ -215,7 +215,7 @@ fn on_extrinsic_trigger_validation_works_with_single_transfer_insured() {
 
         System::set_block_number(1);
 
-        assert_ok!(Circuit::on_extrinsics_trigger(
+        assert_ok!(Circuit::on_extrinsic_trigger(
             origin,
             side_effects,
             fee,
@@ -252,7 +252,7 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
 
         System::set_block_number(1);
 
-        assert_ok!(Circuit::on_extrinsics_trigger(
+        assert_ok!(Circuit::on_extrinsic_trigger(
             origin,
             side_effects,
             fee,
@@ -341,7 +341,7 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
 
         System::set_block_number(1);
 
-        assert_ok!(Circuit::on_extrinsics_trigger(
+        assert_ok!(Circuit::on_extrinsic_trigger(
             origin,
             side_effects,
             fee,
@@ -423,7 +423,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
 
         System::set_block_number(1);
 
-        assert_ok!(Circuit::on_extrinsics_trigger(
+        assert_ok!(Circuit::on_extrinsic_trigger(
             origin,
             side_effects,
             fee,

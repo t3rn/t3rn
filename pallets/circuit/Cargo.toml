@@ -29,7 +29,7 @@ log = { version = "0.4.14", default-features = false }
 t3rn-primitives = { version = "1.0.0-alpha.0", default-features = false, path = "../../primitives", package = "t3rn-parachain-primitives" }
 t3rn-protocol = { version = "1.0.0-alpha.0", default-features = false, path = "../../protocol" }
 pallet-xdns = { version = "1.0.0-alpha.0", default-features = false, path = "../../pallets/xdns" }
-pallet-exec-delivery = { package = "pallet-circuit-execution-delivery", version = "1.0.0-alpha.0", default-features = false, path = "../../pallets/execution-delivery" }
+pallet-circuit-portal = { version = "1.0.0-alpha.0", default-features = false, path = "../circuit-portal" }
 pallet-contracts-registry = { package = "pallet-contracts-registry", version = "1.0.0-alpha.0", default-features = false, path = "../../pallets/contracts-registry" }
 
 sp-core = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13', default-features = false }
@@ -72,7 +72,7 @@ std = [
     "t3rn-primitives/std",
     "t3rn-protocol/std",
     "pallet-xdns/std",
-    "pallet-exec-delivery/std",
+    "pallet-circuit-portal/std",
     "pallet-contracts-registry/std",
     "scale-info/std",
 ]

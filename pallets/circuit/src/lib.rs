@@ -156,26 +156,13 @@ pub mod pallet {
         >,
         ValueQuery,
     >;
-    //     /// The currently active composable transactions, indexed according to the order of creation.
-    //     #[pallet::storage]
-    //     pub type ActiveXtxMap<T> = StorageMap<
-    //         _,
-    //         Blake2_128Concat,
-    //         XtxId<T>,
-    //         Xtx<
-    //             <T as frame_system::Config>::AccountId,
-    //             <T as frame_system::Config>::BlockNumber,
-    //             BalanceOf<T>,
-    //         >,
-    //         OptionQuery,
-    //     >;
 
     /// This pallet's configuration trait
     #[pallet::config]
     pub trait Config:
         frame_system::Config
         + pallet_balances::Config
-        + pallet_exec_delivery::Config
+        + pallet_circuit_portal::Config
         + pallet_xdns::Config
     {
         /// The Circuit's pallet id
@@ -237,11 +224,11 @@ pub mod pallet {
 
             // ToDo: pallet-circuit x-t3rn# : Charge : fees
 
-            // ToDo: pallet-circuit x-t3rn# : Design Storage - Propose and organise the state of Circuit. Specifically inspect the state updates in between ExecDelivery + Circuit
+            // ToDo: pallet-circuit x-t3rn# : Design Storage - Propose and organise the state of Circuit. Specifically inspect the state updates in between CircuitPortal + Circuit
 
             // ToDo: pallet-circuit x-t3rn# : Setup : Create new Xtx and modify state - get LocalState (for Xtx) + GlobalState (for Circuit) for exec
 
-            // ToDo: pallet-circuit x-t3rn# : Emit : Connect to ExecDelivery::submit_side_effect_temp( )
+            // ToDo: pallet-circuit x-t3rn# : Emit : Connect to CircuitPortal::submit_side_effect_temp( )
 
             // ToDo: pallet-circuit x-t3rn# : Cancel : Execution on timeout
 
@@ -277,8 +264,8 @@ pub mod pallet {
             unimplemented!();
         }
 
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
-        pub fn on_extrinsics_trigger(
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::on_extrinsic_trigger())]
+        pub fn on_extrinsic_trigger(
             origin: OriginFor<T>,
             side_effects: Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
             fee: BalanceOf<T>,
@@ -308,7 +295,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::bond_insurance_deposit())]
         pub fn bond_insurance_deposit(
             origin: OriginFor<T>, // Active relayer
             xtx_id: XExecSignalId<T>,
@@ -359,7 +346,7 @@ pub mod pallet {
         }
 
         /// Blind version should only be used for testing - unsafe since skips inclusion proof check.
-        #[pallet::weight(< T as Config >::WeightInfo::on_local_trigger())]
+        #[pallet::weight(< T as Config >::WeightInfo::confirm_side_effect())]
         pub fn confirm_side_effect(
             origin: OriginFor<T>,
             xtx_id: XtxId<T>,
@@ -941,7 +928,7 @@ impl<T: Config> Pallet<T> {
             // ToDo: Remove below after testing inclusion
             // Temporarily allow skip inclusion if proofs aren't provided
             if !(block_hash.is_none() && inclusion_proof.is_none()) {
-                pallet_exec_delivery::Pallet::<T>::confirm_inclusion(
+                pallet_circuit_portal::Pallet::<T>::confirm_inclusion(
                     side_effect.target,
                     confirmation.encoded_effect.clone(),
                     ProofTriePointer::State,
@@ -957,7 +944,7 @@ impl<T: Config> Pallet<T> {
             confirm_with_vendor_by_action_id::<
                 T,
                 SubstrateSideEffectsParser,
-                EthereumSideEffectsParser<<T as pallet_exec_delivery::Config>::EthVerifier>,
+                EthereumSideEffectsParser<<T as pallet_circuit_portal::Config>::EthVerifier>,
             >(
                 gateway_vendor,
                 side_effect.encoded_action.clone(),
@@ -1033,7 +1020,7 @@ impl<T: Config> Pallet<T> {
                 "Side effect confirmation wasn't matched with full side effects order from state",
             );
         }
-        confirm_inclusion();
+        confirm_inclusion()?;
         confirm_execution(
             pallet_xdns::Pallet::<T>::best_available(side_effect.target)?.gateway_vendor,
             &local_ctx.local_state,

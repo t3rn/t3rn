@@ -66,7 +66,7 @@ frame_support::construct_runtime!(
 
         Randomness: pallet_randomness_collective_flip::{Pallet, Storage},
         XDNS: pallet_xdns::{Pallet, Call, Storage, Config<T>, Event<T>},
-        ExecDelivery: pallet_exec_delivery::{Pallet, Call, Storage, Event<T>},
+        CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>},
         BasicOutboundChannel: snowbridge_basic_channel::outbound::{Pallet, Config<T>, Storage, Event<T>},
 
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>},
@@ -291,7 +291,7 @@ parameter_types! {
     pub const ExecPalletId: PalletId = PalletId(*b"pal/exec");
 }
 
-impl pallet_exec_delivery::Config for Test {
+impl pallet_circuit_portal::Config for Test {
     type Event = Event;
     type Call = Call;
     type EthVerifier = EthereumMockVerifier;
@@ -325,7 +325,7 @@ impl snowbridge_basic_channel::outbound::Config for Test {
     type Hashing = Keccak256;
     type MaxMessagePayloadSize = MaxMessagePayloadSize;
     type MaxMessagesPerCommit = MaxMessagesPerCommit;
-    type SetPrincipalOrigin = pallet_exec_delivery::EnsureExecDelivery<Test>;
+    type SetPrincipalOrigin = pallet_circuit_portal::EnsureCircuitPortal<Test>;
     type WeightInfo = ();
 }
 

@@ -819,17 +819,17 @@ impl Convert<Balance, u128> for CircuitToGateway {
 }
 
 parameter_types! {
-	pub const ExecPalletId: PalletId = PalletId(*b"pal/exec");
+	pub const CircuitPortalPalletId: PalletId = PalletId(*b"pal/port");
 }
 
-impl pallet_execution_delivery::Config for Runtime {
+impl pallet_circuit_portal::Config for Runtime {
 	type Event = Event;
 	type Call = Call;
 	type EthVerifier = EthereumMockVerifier;
 	type AccountId32Converter = AccountId32Converter;
 	type ToStandardizedGatewayBalance = CircuitToGateway;
 	type WeightInfo = ();
-	type PalletId = ExecPalletId;
+	type PalletId = CircuitPortalPalletId;
 }
 
 pub const INDEXING_PREFIX: &'static [u8] = b"commitment";
@@ -844,7 +844,7 @@ impl snowbridge_basic_channel::outbound::Config for Runtime {
 	type Hashing = Keccak256;
 	type MaxMessagePayloadSize = MaxMessagePayloadSize;
 	type MaxMessagesPerCommit = MaxMessagesPerCommit;
-	type SetPrincipalOrigin = pallet_execution_delivery::EnsureExecDelivery<Runtime>;
+	type SetPrincipalOrigin = pallet_circuit_portal::EnsureCircuitPortal<Runtime>;
 	type WeightInfo = ();
 }
 
@@ -990,7 +990,7 @@ construct_runtime!(
 			Pallet, Call, Storage, Config<T, I>
 		} = 101,
 		ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 102,
-		ExecDelivery: pallet_execution_delivery::{Pallet, Call, Storage, Event<T>} = 103,
+		CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>} = 103,
 
 		// snowfork deps
 		EthereumLightClient: ethereum_light_client::{Pallet, Call, Storage, Event<T>, Config} = 150,
