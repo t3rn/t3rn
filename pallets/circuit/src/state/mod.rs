@@ -2,7 +2,6 @@ use crate::*;
 use codec::{Decode, Encode};
 use sp_core::Hasher;
 use sp_runtime::RuntimeDebug;
-use sp_std::vec::Vec;
 
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
@@ -10,8 +9,6 @@ use sp_runtime::RuntimeDebug as Debug;
 type SystemHashing<T> = <T as frame_system::Config>::Hashing;
 pub type XExecSignalId<T> = <T as frame_system::Config>::Hash;
 
-// use t3rn_primitives::side_effect::*;
-// use t3rn_primitives::volatile::{LocalState, Volatile};
 use scale_info::TypeInfo;
 
 /// Status of Circuit storage items:
@@ -63,7 +60,7 @@ impl CircuitStatus {
             .iter()
             .find(|(id, _)| *id == side_effect_id)
         {
-            if let Some(_) = insurance_request.bonded_relayer {
+            if insurance_request.bonded_relayer.is_some() {
                 CircuitStatus::Bonded
             } else {
                 CircuitStatus::PendingInsurance
@@ -80,11 +77,6 @@ impl CircuitStatus {
         )>,
     ) -> CircuitStatus {
         for (current_id, _insurance_deposit) in insurance_deposits {
-            println!(
-                "NEW STATUS: INSIDE determine_effects_insurance_status::insurance_deposits {:?}",
-                insurance_deposits
-            );
-
             if Self::determine_insurance_status::<T>(*current_id, insurance_deposits)
                 == CircuitStatus::PendingInsurance
             {

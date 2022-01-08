@@ -435,16 +435,9 @@ impl pallet_babe::Config for Test {
     type MaxAuthorities = ConstU32<10>;
 }
 
+#[derive(Default)]
 pub struct ExtBuilder {
     known_xdns_records: Vec<XdnsRecord<AccountId>>,
-}
-
-impl Default for ExtBuilder {
-    fn default() -> ExtBuilder {
-        ExtBuilder {
-            known_xdns_records: vec![],
-        }
-    }
 }
 
 parameter_types! {

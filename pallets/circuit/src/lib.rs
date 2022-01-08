@@ -49,6 +49,7 @@ pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 use sp_runtime::traits::{AccountIdConversion, Saturating, Zero};
 
 use sp_std::fmt::Debug;
+use sp_std::prelude::*;
 
 use frame_support::traits::{Currency, ExistenceRequirement::AllowDeath, Get};
 

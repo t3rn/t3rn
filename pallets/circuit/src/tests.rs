@@ -33,6 +33,7 @@ use sp_io::TestExternalities;
 
 use codec::Encode;
 use sp_runtime::AccountId32;
+use sp_std::prelude::*;
 
 pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);
 pub const BOB_RELAYER: AccountId32 = AccountId32::new([2u8; 32]);
