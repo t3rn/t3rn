@@ -25,16 +25,16 @@
 use codec::{Decode, Encode};
 use frame_support::dispatch::DispatchResultWithPostInfo;
 
-use frame_support::traits::{Currency, EnsureOrigin, Get};
+use frame_support::traits::{EnsureOrigin, Get};
 use frame_system::offchain::{SignedPayload, SigningTypes};
 use frame_system::RawOrigin;
 
 use sp_core::crypto::KeyTypeId;
 use sp_runtime::{
-    traits::{AccountIdConversion, Convert, Saturating},
+    traits::{AccountIdConversion, Convert},
     RuntimeDebug,
 };
-use sp_std::vec;
+
 use sp_std::vec::*;
 
 pub use t3rn_primitives::{
@@ -47,7 +47,7 @@ pub use t3rn_primitives::{
     xtx::{Xtx, XtxId},
     GatewayType, *,
 };
-use t3rn_protocol::side_effects::confirm::protocol::confirm_with_vendor_by_action_id;
+
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 
 pub type Bytes = Vec<u8>;
@@ -74,8 +74,6 @@ pub use xbridges::{
     PolkadotLikeValU64Gateway,
 };
 
-use t3rn_protocol::side_effects::confirm::substrate::SubstrateSideEffectsParser;
-use t3rn_protocol::side_effects::loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol};
 pub use t3rn_protocol::side_effects::protocol::SideEffectConfirmationProtocol;
 
 pub type AllowedSideEffect = Vec<u8>;
@@ -101,7 +99,6 @@ pub mod pallet {
     use frame_support::PalletId;
     use frame_system::pallet_prelude::*;
     use snowbridge_core::Verifier;
-    use t3rn_protocol::side_effects::confirm::ethereum::EthereumSideEffectsParser;
 
     use super::*;
     use crate::WeightInfo;
@@ -186,203 +183,6 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Temporary entry for submitting a side effect directly for validation and event emittance
-        /// It's temporary, since will be replaced with a DFD, which allows to specify exactly the nature of argument
-        /// (SideEffect vs ComposableContract vs LocalContract or Mix)
-        #[pallet::weight(< T as Config >::WeightInfo::submit_exec())]
-        pub fn submit_side_effects_temp(
-            origin: OriginFor<T>,
-            side_effects: Vec<
-                SideEffect<
-                    <T as frame_system::Config>::AccountId,
-                    <T as frame_system::Config>::BlockNumber,
-                    BalanceOf<T>,
-                >,
-            >,
-            input: Vec<u8>,
-            _value: BalanceOf<T>,
-            reward: BalanceOf<T>,
-            sequential: bool,
-        ) -> DispatchResultWithPostInfo {
-            // Retrieve sender of the transaction.
-            let requester = ensure_signed(origin)?;
-            // Ensure can afford
-            ensure!(
-                <T as EscrowTrait>::Currency::free_balance(&requester).saturating_sub(reward)
-                    >= BalanceOf::<T>::from(0 as u32),
-                Error::<T>::RequesterNotEnoughBalance,
-            );
-
-            let mut full_side_effects: Vec<
-                FullSideEffect<
-                    <T as frame_system::Config>::AccountId,
-                    <T as frame_system::Config>::BlockNumber,
-                    BalanceOf<T>,
-                >,
-            > = vec![];
-
-            let mut use_protocol = UniversalSideEffectsProtocol::new();
-            let mut local_state = LocalState::new();
-
-            for side_effect in side_effects.iter() {
-                // ToDo: Generate Circuit's params as default ABI from let abi = pallet_xdns::get_abi(target_id)
-                let gateway_abi = Default::default();
-
-                use_protocol.notice_gateway(side_effect.target);
-                use_protocol
-                    .validate_args::<<T as frame_system::Config>::AccountId, <T as frame_system::Config>::BlockNumber, BalanceOf<T>, SystemHashing<T>>(
-                        side_effect.clone(),
-                        gateway_abi,
-                        &mut local_state,
-                    )?;
-
-                full_side_effects.push(FullSideEffect {
-                    input: side_effect.clone(),
-                    confirmed: None,
-                })
-            }
-
-            let full_side_effects_steps = match sequential {
-                false => vec![full_side_effects],
-                true => {
-                    let mut sequential_order: Vec<
-                        Vec<
-                            FullSideEffect<
-                                <T as frame_system::Config>::AccountId,
-                                <T as frame_system::Config>::BlockNumber,
-                                BalanceOf<T>,
-                            >,
-                        >,
-                    > = vec![];
-                    for fse in full_side_effects.iter() {
-                        sequential_order.push(vec![fse.clone()]);
-                    }
-                    sequential_order
-                }
-            };
-
-            // ToDo: Introduce default timeout + delay
-            let (timeouts_at, delay_steps_at) = (None, None);
-            let new_xtx = Xtx::<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                BalanceOf<T>,
-            >::new(
-                requester.clone(),
-                input,
-                timeouts_at,
-                delay_steps_at,
-                Some(reward),
-                local_state,
-                // ToDo: Missing GenericDFD to link side effects / composable contracts with the Xtx
-                full_side_effects_steps,
-            );
-            let x_tx_id: XtxId<T> = new_xtx.generate_xtx_id::<T>();
-
-            ActiveXtxMap::<T>::insert(x_tx_id, &new_xtx);
-
-            Self::submit_side_effects(x_tx_id, requester, side_effects, sequential);
-
-            Ok(().into())
-        }
-
-        #[pallet::weight(< T as Config >::WeightInfo::submit_exec())]
-        pub fn submit_exec_dfd(
-            _origin: OriginFor<T>,
-            _generic_dfd: GenericDFD,
-            _input: Vec<u8>,
-            _value: BalanceOf<T>,
-            _reward: BalanceOf<T>,
-        ) -> DispatchResultWithPostInfo {
-            // ToDo: Parse DFD to discover the flow of Xtx:
-            // E.g.
-            // $ComposableContract#0x232233223($TransferSideEffect(
-            // enum SubmittedInputArtifact  {
-            //      SideEffect,
-            //      ComposableContract,
-            //      LocalContract (?maybe?),
-            // let submitted_artifacts: Vec<SubmittedInputArtifact> = read_generic_dfd(generic_dfd);
-            // submitted_artifacts.iter().map(|submitted_artifact| {
-            //  match submitted_artifact {
-            //      case SubmittedInputArtifact::SideEffect {
-            //          ExecDelivery::execute_side_effect(submitted_artifact)
-            //      },
-            //      case SubmittedInputArtifact::ComposableContract {
-            //          VVM::execute_single_contract(submitted_artifact)
-            //      },
-            //      case SubmittedInputArtifact::LocalContract {
-            //          PalletContracts::call(submitted_artifact.address, input)
-            //      },
-            // })
-            unimplemented!();
-        }
-
-        /// Blind version should only be used for testing - unsafe since skips inclusion proof check.
-        #[pallet::weight(< T as Config >::WeightInfo::confirm_side_effect_blind())]
-        pub fn confirm_side_effect_blind(
-            origin: OriginFor<T>,
-            xtx_id: XtxId<T>,
-            side_effect: SideEffect<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                BalanceOf<T>,
-            >,
-            confirmed_side_effect: ConfirmedSideEffect<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                BalanceOf<T>,
-            >,
-            _inclusion_proof: Option<Bytes>,
-        ) -> DispatchResultWithPostInfo {
-            // ToDo #CNF-1: Reward releyers for inbound message dispatch.
-            let relayer_id = ensure_signed(origin)?;
-
-            // ToDo #CNF-1: Check validity of inclusion - skip in _blind version for testing
-            // Verify whether the side effect completes the Xtx
-            let mut xtx: Xtx<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                BalanceOf<T>,
-            > = ActiveXtxMap::<T>::get(xtx_id.clone())
-                .expect("submitted to confirm step id does not match with any Xtx");
-
-            let mut state_copy = xtx.local_state.clone();
-            let gateway_vendor = pallet_xdns::Pallet::<T>::best_available(side_effect.target)?;
-            let side_effect_id = side_effect.generate_id::<SystemHashing<T>>();
-
-            confirm_with_vendor_by_action_id::<
-                T,
-                SubstrateSideEffectsParser,
-                EthereumSideEffectsParser<T::EthVerifier>,
-            >(
-                gateway_vendor.gateway_vendor,
-                side_effect.encoded_action.clone(),
-                confirmed_side_effect.encoded_effect.clone(),
-                &mut state_copy,
-                Some(side_effect_id.as_ref().to_vec()),
-            )?;
-
-            // Check if the side effect has been deposited with respect to the execution order
-            if xtx.complete_side_effect::<bp_circuit::Hasher>(
-                confirmed_side_effect.clone(),
-                side_effect.clone(),
-            )? {
-                Self::deposit_event(Event::SideEffectConfirmed(
-                    relayer_id.clone(),
-                    xtx_id,
-                    confirmed_side_effect,
-                    0,
-                ));
-            }
-
-            if xtx.is_completed() {
-                // ToDo: Check whether xtx.side_effects_dfd is now completed before completing xtx
-                Self::deposit_event(Event::XTransactionSuccessfullyCompleted(xtx_id.clone()));
-            }
-
-            Ok(().into())
-        }
-
         // ToDo: Create and move higher to main Circuit pallet
         #[pallet::weight(< T as Config >::WeightInfo::register_gateway_default_polka())]
         pub fn register_gateway(
@@ -472,113 +272,6 @@ pub mod pallet {
                 allowed_side_effects, // allowed side effects / enabled methods
             ));
             Ok(().into())
-        }
-
-        #[pallet::weight(< T as Config >::WeightInfo::confirm_side_effect())]
-        pub fn confirm_side_effect(
-            origin: OriginFor<T>,
-            xtx_id: XtxId<T>,
-            side_effect: SideEffect<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                BalanceOf<T>,
-            >,
-            confirmed_side_effect: ConfirmedSideEffect<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                BalanceOf<T>,
-            >,
-            _inclusion_proof: Option<Bytes>,
-            // ToDo: Replace step_confirmation with inclusion_proof
-            step_confirmation: StepConfirmation,
-        ) -> DispatchResultWithPostInfo {
-            // Retrieve sender of the transaction.
-            let relayer_id = ensure_signed(origin)?;
-            // ToDo: parse events to discover their content and verify execution
-
-            let mut xtx: Xtx<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                BalanceOf<T>,
-            > = ActiveXtxMap::<T>::get(xtx_id.clone())
-                .expect("submitted to confirm step id does not match with any Xtx");
-
-            // ToDo: Read gateway_id from xtx GatewaysDFD
-            let gateway_id = Default::default();
-
-            let gateway_xdns_record = pallet_xdns::Pallet::<T>::best_available(gateway_id)?;
-
-            let declared_block_hash = step_confirmation.proof.block_hash;
-
-            // Check inclusion relying on data in palet-multi-verifier
-            let (extrinsics_root_h256, storage_root_h256) = match (
-                gateway_xdns_record.gateway_abi.hasher.clone(),
-                gateway_xdns_record.gateway_abi.block_number_type_size,
-            ) {
-                (HA::Blake2, 32) => get_roots_from_bridge::<T, DefaultPolkadotLikeGateway>(
-                    declared_block_hash,
-                    gateway_id,
-                )?,
-                (HA::Blake2, 64) => get_roots_from_bridge::<T, PolkadotLikeValU64Gateway>(
-                    declared_block_hash,
-                    gateway_id,
-                )?,
-                (HA::Keccak256, 32) => get_roots_from_bridge::<T, EthLikeKeccak256ValU32Gateway>(
-                    declared_block_hash,
-                    gateway_id,
-                )?,
-                (HA::Keccak256, 64) => get_roots_from_bridge::<T, EthLikeKeccak256ValU64Gateway>(
-                    declared_block_hash,
-                    gateway_id,
-                )?,
-                (_, _) => get_roots_from_bridge::<T, DefaultPolkadotLikeGateway>(
-                    declared_block_hash,
-                    gateway_id,
-                )?,
-            };
-
-            let expected_root = match step_confirmation.proof.proof_trie_pointer {
-                ProofTriePointer::State => storage_root_h256,
-                ProofTriePointer::Transaction => extrinsics_root_h256,
-                ProofTriePointer::Receipts => storage_root_h256,
-            };
-
-            if let Err(computed_root) = check_merkle_proof(
-                expected_root,
-                step_confirmation.proof.proof_data.into_iter(),
-                gateway_xdns_record.gateway_abi.hasher,
-            ) {
-                log::trace!(
-                    target: "circuit-runtime",
-                    "Step confirmation check failed: inclusion root mismatch. Expected: {}, computed: {}",
-                    expected_root,
-                    computed_root,
-                );
-
-                Err(Error::<T>::SideEffectConfirmationInvalidInclusionProof.into())
-            } else {
-                // Check if the side effect has been deposited with respect to the execution order
-                if xtx.complete_side_effect::<bp_circuit::Hasher>(
-                    confirmed_side_effect.clone(),
-                    side_effect.clone(),
-                )? {
-                    Self::deposit_event(Event::SideEffectConfirmed(
-                        relayer_id.clone(),
-                        xtx_id,
-                        confirmed_side_effect,
-                        0,
-                    ));
-                }
-
-                if xtx.is_completed() {
-                    // ToDo: Check whether xtx.side_effects_dfd is now completed before completing xtx
-                    Self::deposit_event(Event::XTransactionSuccessfullyCompleted(xtx_id.clone()));
-                }
-                // Update list of current side effects and get authorized to call apply
-                // pallet_circuit::Pallet::<T>::apply(xtx.full_side_effects)
-
-                Ok(().into())
-            }
         }
     }
 
@@ -677,6 +370,88 @@ impl<T: SigningTypes> SignedPayload<T> for Payload<T::Public, T::BlockNumber> {
 impl<T: Config> Pallet<T> {
     pub fn account_id() -> <T as frame_system::Config>::AccountId {
         T::PalletId::get().into_account()
+    }
+
+    pub fn confirm_inclusion(
+        gateway_id: [u8; 4],
+        _encoded_message: Vec<u8>,
+        trie_type: ProofTriePointer,
+        maybe_block_hash: Option<Vec<u8>>,
+        maybe_proof: Option<Vec<Vec<u8>>>,
+    ) -> Result<(), &'static str> {
+        let gateway_xdns_record = pallet_xdns::Pallet::<T>::best_available(gateway_id)?;
+
+        match gateway_xdns_record.gateway_vendor {
+            GatewayVendor::Ethereum => {
+                unimplemented!()
+            }
+            GatewayVendor::Substrate => {
+                // For Substrate bridges block hash is required
+                let block_hash = if let Some(x) = maybe_block_hash {
+                    Ok(x)
+                } else {
+                    Err(
+                        "Must provide a valid read proof when proving inclusion with Substrate Bridge"
+                    )
+                }?;
+                let proof = if let Some(x) = maybe_proof {
+                    Ok(x)
+                } else {
+                    Err(
+                        "Must provide a valid read proof when proving inclusion with Substrate Bridge"
+                    )
+                }?;
+                // Check inclusion relying on data in pallet-multi-verifier
+                let (extrinsics_root_h256, storage_root_h256) =
+                    match (
+                        gateway_xdns_record.gateway_abi.hasher.clone(),
+                        gateway_xdns_record.gateway_abi.block_number_type_size,
+                    ) {
+                        (HA::Blake2, 32) => get_roots_from_bridge::<T, DefaultPolkadotLikeGateway>(
+                            block_hash, gateway_id,
+                        )?,
+                        (HA::Blake2, 64) => get_roots_from_bridge::<T, PolkadotLikeValU64Gateway>(
+                            block_hash, gateway_id,
+                        )?,
+                        (HA::Keccak256, 32) => get_roots_from_bridge::<
+                            T,
+                            EthLikeKeccak256ValU32Gateway,
+                        >(block_hash, gateway_id)?,
+                        (HA::Keccak256, 64) => get_roots_from_bridge::<
+                            T,
+                            EthLikeKeccak256ValU64Gateway,
+                        >(block_hash, gateway_id)?,
+                        (_, _) => get_roots_from_bridge::<T, DefaultPolkadotLikeGateway>(
+                            block_hash, gateway_id,
+                        )?,
+                    };
+
+                // let expected_root = match step_confirmation.proof.proof_trie_pointer {
+                let expected_root = match trie_type {
+                    ProofTriePointer::State => storage_root_h256,
+                    ProofTriePointer::Transaction => extrinsics_root_h256,
+                    ProofTriePointer::Receipts => storage_root_h256,
+                };
+
+                return if let Err(computed_root) = check_merkle_proof(
+                    expected_root,
+                    // step_confirmation.proof.proof_data.into_iter(),
+                    proof.into_iter(),
+                    gateway_xdns_record.gateway_abi.hasher,
+                ) {
+                    log::trace!(
+                        target: "circuit-runtime",
+                        "Step confirmation check failed: inclusion root mismatch. Expected: {}, computed: {}",
+                        expected_root,
+                        computed_root,
+                    );
+
+                    Err(Error::<T>::SideEffectConfirmationInvalidInclusionProof.into())
+                } else {
+                    Ok(())
+                };
+            }
+        }
     }
 
     pub fn submit_side_effects(

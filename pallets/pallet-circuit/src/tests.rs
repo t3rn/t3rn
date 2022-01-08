@@ -535,7 +535,8 @@ fn circuit_handles_insurance_deposit_for_transfers() {
             xtx_id,
             valid_transfer_side_effect,
             confirmation,
-            None
+            None,
+            None,
         ));
 
         // Check that Bob collected the relayer reward

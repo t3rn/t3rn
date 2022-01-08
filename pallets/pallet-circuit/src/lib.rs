@@ -373,9 +373,9 @@ pub mod pallet {
                 <T as frame_system::Config>::BlockNumber,
                 BalanceOf<T>,
             >,
-            inclusion_proof: Option<Vec<u8>>,
+            inclusion_proof: Option<Vec<Vec<u8>>>,
+            block_hash: Option<Vec<u8>>,
         ) -> DispatchResultWithPostInfo {
-            // let relayer_id = ensure_signed(origin)?;
             // Authorize: Retrieve sender of the transaction.
             let relayer = Self::authorize(origin, CircuitRole::Relayer)?;
 
@@ -393,6 +393,7 @@ pub mod pallet {
                 &side_effect,
                 &confirmation,
                 inclusion_proof,
+                block_hash,
             )?;
 
             // FixMe: Reward should be triggered by apply after the whole Xtx finishes
@@ -921,7 +922,8 @@ impl<T: Config> Pallet<T> {
             <T as frame_system::Config>::BlockNumber,
             BalanceOf<T>,
         >,
-        _inclusion_proof: Option<Vec<u8>>,
+        inclusion_proof: Option<Vec<Vec<u8>>>,
+        block_hash: Option<Vec<u8>>,
     ) -> Result<
         FullSideEffect<
             <T as frame_system::Config>::AccountId,
@@ -931,14 +933,25 @@ impl<T: Config> Pallet<T> {
         &'static str,
     > {
         let confirm_inclusion = || {
-            // ToDo: Missing call to pallet_exec_delivery
+            // ToDo: Remove below after testing inclusion
+            // Temporarily allow skip inclusion if proofs aren't provided
+            if !(block_hash.is_none() && inclusion_proof.is_none()) {
+                pallet_exec_delivery::Pallet::<T>::confirm_inclusion(
+                    side_effect.target,
+                    confirmation.encoded_effect.clone(),
+                    ProofTriePointer::State,
+                    block_hash,
+                    inclusion_proof,
+                )
+            } else {
+                Ok(())
+            }
         };
 
         let confirm_execution = |gateway_vendor, state_copy| {
             confirm_with_vendor_by_action_id::<
                 T,
                 SubstrateSideEffectsParser,
-                // SubstrateSideEffectsParser,
                 EthereumSideEffectsParser<<T as pallet_exec_delivery::Config>::EthVerifier>,
             >(
                 gateway_vendor,
