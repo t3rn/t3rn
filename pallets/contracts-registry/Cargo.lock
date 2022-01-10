@@ -1180,7 +1180,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "t3rn-parachain-primitives",
+ "t3rn-primitives",
 ]
 
 [[package]]
@@ -2233,7 +2233,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "t3rn-parachain-primitives"
+name = "t3rn-primitives"
 version = "1.0.0-alpha.0"
 dependencies = [
  "ed25519-dalek",

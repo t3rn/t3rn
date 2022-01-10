@@ -20,7 +20,7 @@
 use super::*;
 use crate::mock::{ExtBuilder, Test, XDNS};
 use codec::{Decode, Encode};
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{assert_err, assert_noop, assert_ok};
 use frame_system::Origin;
 use sp_runtime::DispatchError;
 use t3rn_primitives::{GatewaySysProps, GatewayType, GatewayVendor};
@@ -55,11 +55,7 @@ fn should_add_a_new_xdns_record_if_it_doesnt_exist() {
             GatewayVendor::Substrate,
             GatewayType::TxOnly(0),
             Default::default(),
-            GatewaySysProps {
-                ss58_format: 0,
-                token_symbol: Encode::encode("SYM"),
-                token_decimals: 9,
-            },
+            Default::default(),
             vec![],
         ));
         assert_eq!(XDNSRegistry::<Test>::iter().count(), 1);
@@ -85,11 +81,7 @@ fn should_not_add_a_new_xdns_record_if_it_already_exists() {
                     GatewayVendor::Substrate,
                     GatewayType::TxOnly(0),
                     Default::default(),
-                    GatewaySysProps {
-                        ss58_format: 1333,
-                        token_symbol: Encode::encode("T3RN"),
-                        token_decimals: 12,
-                    },
+                    Default::default(),
                     vec![],
                 ),
                 crate::pallet::Error::<Test>::XdnsRecordAlreadyExists
@@ -212,5 +204,27 @@ fn should_contain_gateway_system_properties() {
             assert_eq!(&String::from_utf8_lossy(&kusama_symbol), "KSM");
             assert_eq!(polkadot_xdns_record.gateway_sys_props.token_decimals, 10u8);
             assert_eq!(kusama_xdns_record.gateway_sys_props.token_decimals, 12u8);
+        });
+}
+
+#[test]
+fn fetch_abi_should_return_abi_for_a_known_xdns_record() {
+    ExtBuilder::default()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let actual = XDNS::get_abi(*b"pdot");
+            assert_ok!(actual);
+        });
+}
+
+#[test]
+fn fetch_abi_should_error_for_unknown_xdns_record() {
+    ExtBuilder::default()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let actual = XDNS::get_abi(*b"rand");
+            assert_err!(actual, "Xdns record not found");
         });
 }
