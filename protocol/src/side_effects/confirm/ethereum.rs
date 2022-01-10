@@ -6,9 +6,9 @@ use snowbridge_core::{Message, Verifier};
 use snowbridge_ethereum::{Header, Log};
 use sp_core::{H160, U256};
 
-use sp_runtime::DispatchError;
-use sp_runtime::RuntimeDebug;
+use sp_runtime::{DispatchError, RuntimeDebug};
 use sp_std::convert::TryFrom;
+use sp_std::default::Default;
 use sp_std::marker::PhantomData;
 use sp_std::vec;
 use sp_std::vec::Vec;
