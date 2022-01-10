@@ -1,20 +1,3 @@
-// This file is part of Substrate.
-
-// Copyright (C) 2017-2021 Parity Technologies (UK) Ltd.
-// SPDX-License-Identifier: Apache-2.0
-
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// 	http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 //! <!-- markdown-link-check-disable -->
 //! # X-DNS Pallet
 //! </pre></p></details>
@@ -23,13 +6,17 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use crate::types::{AllowedSideEffect, XdnsRecord, XdnsRecordId};
-use codec::Encode;
+use codec::{Decode, Encode};
 
-use sp_runtime::traits::Hash;
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
+
+use sp_runtime::{traits::Hash, RuntimeDebug};
 use sp_std::prelude::*;
 use sp_std::vec::Vec;
-use t3rn_primitives::abi::GatewayABIConfig;
-use t3rn_primitives::{GatewayGenesisConfig, GatewaySysProps};
+pub use t3rn_primitives::{
+    abi::GatewayABIConfig, ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor,
+};
 
 // Re-export pallet items so that they can be accessed from the crate namespace.
 pub use crate::pallet::*;
@@ -58,7 +45,7 @@ pub mod pallet {
     use frame_support::traits::Time;
     use frame_system::pallet_prelude::*;
     use sp_std::convert::TryInto;
-    use t3rn_primitives::{ChainId, EscrowTrait, GatewayType, GatewayVendor};
+    use t3rn_primitives::{ChainId, EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor};
 
     #[pallet::config]
     pub trait Config: pallet_balances::Config + frame_system::Config + EscrowTrait {
@@ -299,6 +286,17 @@ pub mod pallet {
         /// Fetches all known XDNS records
         pub fn fetch_records() -> Vec<XdnsRecord<T::AccountId>> {
             pallet::XDNSRegistry::<T>::iter_values().collect()
+        }
+
+        // Fetches the GatewayABIConfig for a given XDNS record
+        pub fn get_abi(chain_id: ChainId) -> Result<GatewayABIConfig, &'static str> {
+            let xdns_record_id = T::Hashing::hash(Encode::encode(&chain_id).as_ref());
+
+            if !<XDNSRegistry<T>>::contains_key(xdns_record_id) {
+                return Err("Xdns record not found");
+            }
+
+            Ok(<XDNSRegistry<T>>::get(xdns_record_id).unwrap().gateway_abi)
         }
     }
 }

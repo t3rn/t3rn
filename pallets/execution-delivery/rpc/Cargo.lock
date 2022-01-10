@@ -1451,7 +1451,7 @@ dependencies = [
  "sp-runtime 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.13)",
  "sp-std 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.13)",
  "sp-trie 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.13)",
- "t3rn-parachain-primitives",
+ "t3rn-primitives",
 ]
 
 [[package]]
@@ -1693,7 +1693,7 @@ dependencies = [
  "sp-staking 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.13)",
  "sp-std 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.13)",
  "sp-version 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.13)",
- "t3rn-parachain-primitives",
+ "t3rn-primitives",
  "t3rn-protocol",
  "triehash",
 ]
@@ -1714,7 +1714,7 @@ dependencies = [
  "sp-core 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.13)",
  "sp-rpc",
  "sp-runtime 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.13)",
- "t3rn-parachain-primitives",
+ "t3rn-primitives",
 ]
 
 [[package]]
@@ -1727,7 +1727,7 @@ dependencies = [
  "sp-core 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.13)",
  "sp-runtime 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.13)",
  "sp-std 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.13)",
- "t3rn-parachain-primitives",
+ "t3rn-primitives",
 ]
 
 [[package]]
@@ -1798,7 +1798,7 @@ dependencies = [
  "sp-io 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.13)",
  "sp-runtime 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.13)",
  "sp-std 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.13)",
- "t3rn-parachain-primitives",
+ "t3rn-primitives",
 ]
 
 [[package]]
@@ -1971,7 +1971,7 @@ dependencies = [
  "sp-runtime 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.13)",
  "sp-std 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.13)",
  "sp-version 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.13)",
- "t3rn-parachain-primitives",
+ "t3rn-primitives",
 ]
 
 [[package]]
@@ -3712,7 +3712,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "t3rn-parachain-primitives"
+name = "t3rn-primitives"
 version = "1.0.0-alpha.0"
 dependencies = [
  "ed25519-dalek",
@@ -3763,7 +3763,7 @@ dependencies = [
  "sp-runtime 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.13)",
  "sp-std 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.13)",
  "sp-version 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.13)",
- "t3rn-parachain-primitives",
+ "t3rn-primitives",
  "triehash",
 ]
 

@@ -1,0 +1,16 @@
+[profile.release]
+panic = 'unwind'
+
+[workspace]
+members = [
+    'node',
+    'node/service',
+    'pallets/*',
+    'primitives',
+    'protocol',
+    'runtime/parachain',
+]
+exclude = [
+    'pallets/beefy-merkle-tree',
+    'pallets/beefy-mmr-pallet',
+]

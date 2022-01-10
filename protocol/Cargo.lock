@@ -2831,7 +2831,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "t3rn-parachain-primitives"
+name = "t3rn-primitives"
 version = "1.0.0-alpha.0"
 dependencies = [
  "ed25519-dalek",
@@ -2883,7 +2883,7 @@ dependencies = [
  "sp-runtime 4.0.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.13)",
  "sp-std 4.0.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.13)",
  "sp-version 4.0.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.13)",
- "t3rn-parachain-primitives",
+ "t3rn-primitives",
  "triehash",
 ]
 

@@ -32,7 +32,7 @@ ethabi-decode = { git = "https://github.com/Snowfork/ethabi-decode.git", branch 
 
 pallet-sudo = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
 pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
-t3rn-primitives = { package = "t3rn-parachain-primitives", version = "1.0.0-alpha.0", default-features = false, path = "../primitives" }
+t3rn-primitives = { package = "t3rn-primitives", version = "1.0.0-alpha.0", default-features = false, path = "../primitives" }
 
 sp-application-crypto = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
 
