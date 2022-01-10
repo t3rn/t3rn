@@ -20,12 +20,34 @@ contract Escrow is SimplifiedMMRVerification, HeaderRegistry {
     event Revert(bytes32 xtxId);
     event EscrowTransfer(address from, address to, uint value);
     event EscrowMultiTransfer(address from, address to, uint value, address token);
+    event EscrowSwap(address from, address to, uint value, address token);
+
 
     struct CircuitEvent {
         // assumption here is, that the circut will only emit a commit event, if the amounts during execute are correct
         bytes32 xtxId;
         bool shouldCommit;
         // will need more fields for inclusion proof
+    }
+
+    // function for swapping to ether. Turns out these are very similar to the transfers.
+    function ethSwap(address to, bytes32 xtxId)
+        external
+        payable
+        noDuplicateXtx(xtxId)
+    {
+        active[xtxId] = _hashEthSwap(to, msg.value, msg.sender);
+        emit EscrowSwap(msg.sender, to, msg.value, address(0x0));
+    }
+
+    // for swapping to a token
+    function tokenSwap(address to, address token, uint amount, bytes32 xtxId)
+        external
+        noDuplicateXtx(xtxId)
+    {
+        _collectToken(amount, token);
+        active[xtxId] = _hashTokenSwap(to, token, amount, msg.sender);
+        emit EscrowSwap(msg.sender, to, amount, token);
     }
 
     // initializes escrowed eth transfer
@@ -51,41 +73,47 @@ contract Escrow is SimplifiedMMRVerification, HeaderRegistry {
         emit EscrowMultiTransfer(msg.sender, to, amount, token);
     }
 
-    function applyEthTransfer(CircuitEvent memory evnt, address to, uint amount)
+    function settleEthSwap(CircuitEvent memory evnt, address to, uint amount)
+        external
+    {
+        // verify finality of CircuitEvent here. See `_verifyFinality()`
+
+        // ensure the correct inputs where passed
+        require(_hashEthSwap(to, amount, msg.sender) == active[evnt.xtxId], "False inputs passed");
+        _settleEth(evnt, to, amount);
+        delete active[evnt.xtxId]; // gas refund
+    }
+
+    function settleTokenSwap(CircuitEvent memory evnt, address to, address token, uint amount)
+        external
+    {
+        // verify finality of CircuitEvent here. See `_verifyFinality()`
+
+        // ensure the correct inputs where passed
+        require(_hashTokenSwap(to, token, amount, msg.sender) == active[evnt.xtxId], "False inputs passed");
+        _settleToken(evnt, to, amount, token);
+        delete active[evnt.xtxId]; // gas refund
+    }
+
+    function settleEthTransfer(CircuitEvent memory evnt, address to, uint amount)
         external
     {
         // verify finality of CircuitEvent here. See `_verifyFinality()`
 
         // ensure the correct inputs where passed
         require(_hashEthTransfer(to, amount, msg.sender) == active[evnt.xtxId], "False inputs passed");
-        if(evnt.shouldCommit) {
-            // we are commiting
-            _sendEth(payable(to), amount);
-            emit Commit(evnt.xtxId);
-        } else {   
-            // reverting
-            _sendEth(payable(msg.sender), amount);
-            emit Revert(evnt.xtxId);
-        }
+        _settleEth(evnt, to, amount);
         delete active[evnt.xtxId]; // gas refund
     }
 
-    function applyTokenTransfer(CircuitEvent memory evnt, address to, address token, uint amount)
+    function settleTokenTransfer(CircuitEvent memory evnt, address to, address token, uint amount)
         external
     {
         // verify finality of CircuitEvent here. See `_verifyFinality()`
 
         // ensure the correct inputs where passed
         require(_hashTokenTransfer(to, token, amount, msg.sender) == active[evnt.xtxId], "False inputs passed");
-
-        if(evnt.shouldCommit) {
-            _sendToken(to, token, amount);
-            emit Commit(evnt.xtxId);
-        } else {   
-            _sendToken(payable(msg.sender), token, amount);
-            emit Revert(evnt.xtxId);
-        }
-
+        _settleToken(evnt, to, amount, token);
         delete active[evnt.xtxId]; // gas refund
     }
 
@@ -104,6 +132,50 @@ contract Escrow is SimplifiedMMRVerification, HeaderRegistry {
         // Run imnclusion proof, prooving the finality and valifity of submitred event
         // we need something that does a patricia-tri tree no?
         require(SimplifiedMMRVerification.verifyInclusionProof(root, leafHash, proof), "MMR verification failed.");
+    }
+
+    // used for settling eth based transactions
+    function _settleEth(CircuitEvent memory evnt, address to, uint amount)
+        private
+    {
+        if(evnt.shouldCommit) {
+            // we are commiting
+            _sendEth(payable(to), amount);
+            emit Commit(evnt.xtxId);
+        } else {   
+            // reverting
+            _sendEth(payable(msg.sender), amount);
+            emit Revert(evnt.xtxId);
+        }
+    }
+
+    // used to settle token based transactions
+    function _settleToken(CircuitEvent memory evnt, address to, uint amount, address token)
+        private
+    {
+         if(evnt.shouldCommit) {
+            _sendToken(to, token, amount);
+            emit Commit(evnt.xtxId);
+        } else {   
+            _sendToken(payable(msg.sender), token, amount);
+            emit Revert(evnt.xtxId);
+        }
+    }
+
+    function _hashEthSwap(address to, uint amount, address executor)
+        private
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encodePacked(to, amount, executor));
+    }
+
+    function _hashTokenSwap(address to, address asset, uint amount, address executor)
+        private
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encodePacked(to, asset, amount, executor));
     }
 
     function _hashEthTransfer(address to, uint amount, address executor)

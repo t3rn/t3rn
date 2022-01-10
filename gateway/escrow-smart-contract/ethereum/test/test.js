@@ -45,7 +45,7 @@ describe("Escrow", function () {
 		const userBalancePre = await escrow.provider.getBalance(to.address);
 		const id = "0x" + crypto.createHash('sha256').update("ethTransfer").digest('hex');
 		const amount = ethers.utils.parseEther("1");
-		await escrow.connect(executor).applyEthTransfer({xtxId: id, shouldCommit: true}, to.address, amount);
+		await escrow.connect(executor).settleEthTransfer({xtxId: id, shouldCommit: true}, to.address, amount);
 		const userBalancePost = await escrow.provider.getBalance(to.address);
 		assert.ok(userBalancePre.add(amount).toJSON().hex === userBalancePost.toJSON().hex)
 	})
@@ -58,7 +58,7 @@ describe("Escrow", function () {
 		await escrow.connect(executor).ethTransfer(to.address, id, {value: amount})
 		const executorBalancePre = await escrow.provider.getBalance(executor.address);
 
-		await escrow.connect(executor).applyEthTransfer({xtxId: id, shouldCommit: false}, to.address, amount);
+		await escrow.connect(executor).settleEthTransfer({xtxId: id, shouldCommit: false}, to.address, amount);
 
 		const receiverBalancePost = await escrow.provider.getBalance(to.address);
 		const executorBalancePost = await escrow.provider.getBalance(executor.address);
@@ -81,7 +81,7 @@ describe("Escrow", function () {
 		const userBalancePre = await token.balanceOf(to.address)
 		const id = "0x" + crypto.createHash('sha256').update("tokenTransfer").digest('hex');
 		const amount = ethers.utils.parseEther("100");
-		await escrow.connect(executor).applyTokenTransfer({xtxId: id, shouldCommit: true}, to.address, token.address, amount);
+		await escrow.connect(executor).settleTokenTransfer({xtxId: id, shouldCommit: true}, to.address, token.address, amount);
 		const userBalancePost = await token.balanceOf(to.address)
 		assert.ok(userBalancePre.add(amount).toJSON().hex === userBalancePost.toJSON().hex)
 	})
@@ -95,7 +95,78 @@ describe("Escrow", function () {
 		await escrow.connect(executor).tokenTransfer(to.address, token.address, amount, id)
 		const executorBalancePre = await token.balanceOf(executor.address)
 
-		await escrow.connect(executor).applyTokenTransfer({xtxId: id, shouldCommit: false}, to.address, token.address, amount);
+		await escrow.connect(executor).settleTokenTransfer({xtxId: id, shouldCommit: false}, to.address, token.address, amount);
+
+		const receiverBalancePost = await token.balanceOf(to.address)
+		const executorBalancePost = await token.balanceOf(executor.address)
+		assert.ok(receiverBalancePre.toJSON().hex === receiverBalancePost.toJSON().hex)
+		assert.ok(executorBalancePre.add(amount).toJSON().hex === executorBalancePost.toJSON().hex)
+	})
+
+	it("Should initialze ethSwap", async () => {
+		const id = "0x" + crypto.createHash('sha256').update("ethSwap").digest('hex');
+		const amount = ethers.utils.parseEther("1");
+		await escrow.connect(executor).ethSwap(to.address, id, {value: amount})
+		const contractBalance = await escrow.provider.getBalance(escrow.address)
+		assert.ok(contractBalance.toString() === "1000000000000000000")
+	});
+
+	it("Should commit ethSwap", async () => {
+		const userBalancePre = await escrow.provider.getBalance(to.address);
+		const id = "0x" + crypto.createHash('sha256').update("ethSwap").digest('hex');
+		const amount = ethers.utils.parseEther("1");
+		await escrow.connect(executor).settleEthSwap({xtxId: id, shouldCommit: true}, to.address, amount);
+		const userBalancePost = await escrow.provider.getBalance(to.address);
+		assert.ok(userBalancePre.add(amount).toJSON().hex === userBalancePost.toJSON().hex)
+	})
+
+	it("Should revert ethSwap", async () => {
+		const receiverBalancePre = await escrow.provider.getBalance(to.address);
+		const id = "0x" + crypto.createHash('sha256').update("ethSwap1").digest('hex');
+		const amount = ethers.utils.parseEther("1");
+
+		await escrow.connect(executor).ethSwap(to.address, id, {value: amount})
+		const executorBalancePre = await escrow.provider.getBalance(executor.address);
+
+		await escrow.connect(executor).settleEthSwap({xtxId: id, shouldCommit: false}, to.address, amount);
+
+		const receiverBalancePost = await escrow.provider.getBalance(to.address);
+		const executorBalancePost = await escrow.provider.getBalance(executor.address);
+		assert.ok(receiverBalancePre.toJSON().hex === receiverBalancePost.toJSON().hex)
+		// we're dividing here to round away the gas cost of executor
+		assert.ok(executorBalancePre.add(amount).div(ethers.BigNumber.from(1000000000000000)).toJSON().hex === executorBalancePost.div(ethers.BigNumber.from(1000000000000000)).toJSON().hex)
+	})
+
+
+	it("Should initialze tokenSwap", async () => {
+		// executor must approve contract
+		await token.connect(executor).approve(escrow.address, ethers.utils.parseEther("100"))
+		const id = "0x" + crypto.createHash('sha256').update("tokenSwap").digest('hex');
+		const amount = ethers.utils.parseEther("100");
+		await escrow.connect(executor).tokenSwap(to.address, token.address, amount, id)
+		const contractBalance = await token.balanceOf(escrow.address)
+		assert.ok(contractBalance.toString() === "100000000000000000000")
+	});
+
+	it("Should commit token transfer", async () => {
+		const userBalancePre = await token.balanceOf(to.address)
+		const id = "0x" + crypto.createHash('sha256').update("tokenSwap").digest('hex');
+		const amount = ethers.utils.parseEther("100");
+		await escrow.connect(executor).settleTokenSwap({xtxId: id, shouldCommit: true}, to.address, token.address, amount);
+		const userBalancePost = await token.balanceOf(to.address)
+		assert.ok(userBalancePre.add(amount).toJSON().hex === userBalancePost.toJSON().hex)
+	})
+
+	it("Should revert token transfer", async () => {
+		const receiverBalancePre = await token.balanceOf(to.address)
+		await token.connect(executor).approve(escrow.address, ethers.utils.parseEther("100"))
+		const id = "0x" + crypto.createHash('sha256').update("tokenSwap1").digest('hex');
+		const amount = ethers.utils.parseEther("1");
+
+		await escrow.connect(executor).tokenSwap(to.address, token.address, amount, id)
+		const executorBalancePre = await token.balanceOf(executor.address)
+
+		await escrow.connect(executor).settleTokenSwap({xtxId: id, shouldCommit: false}, to.address, token.address, amount);
 
 		const receiverBalancePost = await token.balanceOf(to.address)
 		const executorBalancePost = await token.balanceOf(executor.address)
