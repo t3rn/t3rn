@@ -29,7 +29,7 @@ impl VendorSideEffectsParser for SubstrateSideEffectsParser {
                 // Assume that the different Pallet ID Circuit vs Target wouldn't matter for decoding on Circuit.
                 match Decode::decode(&mut &event_encoded[..]) {
                     // TypeId::of<<T as pallet_system::AccountId>>()
-                    Ok(pallet_balances::Event::<T>::Transfer(from, to, amount)) => Ok(vec![from.encode(), to.encode(), amount.encode()]),
+                    Ok(pallet_balances::Event::<T>::Transfer { from, to, amount }) => Ok(vec![from.encode(), to.encode(), amount.encode()]),
                     Ok(pallet_balances::Event::<T>::Endowed { .. }) => Err("Event decodes to pallet_balances::Event::Endowed, which is unsupported"),
                     Ok(pallet_balances::Event::<T>::DustLost { .. }) => Err("Event decodes to pallet_balances::Event::DustLost, which is unsupported"),
                     Ok(pallet_balances::Event::<T>::Deposit { .. }) => Err("Event decodes to pallet_balances::Event::Deposit, which is unsupported"),
@@ -122,11 +122,11 @@ pub mod tests {
 
     #[test]
     fn successfully_encodes_transferred_event() {
-        let encoded_balance_transfer_event = pallet_balances::Event::<Test>::Transfer(
-            hex!("0909090909090909090909090909090909090909090909090909090909090909").into(),
-            hex!("0606060606060606060606060606060606060606060606060606060606060606").into(),
-            1,
-        );
+        let encoded_balance_transfer_event = pallet_balances::Event::<Test>::Transfer {
+            from: hex!("0909090909090909090909090909090909090909090909090909090909090909").into(),
+            to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(),
+            amount: 1,
+        };
 
         assert_eq!(
             encoded_balance_transfer_event.encode(),
@@ -140,11 +140,11 @@ pub mod tests {
 
     #[test]
     fn successfully_parses_encoded_transferred_event_with_substrate_parser() {
-        let encoded_balance_transfer_event = pallet_balances::Event::<Test>::Transfer(
-            hex!("0909090909090909090909090909090909090909090909090909090909090909").into(),
-            hex!("0606060606060606060606060606060606060606060606060606060606060606").into(),
-            1,
-        );
+        let encoded_balance_transfer_event = pallet_balances::Event::<Test>::Transfer {
+            from: hex!("0909090909090909090909090909090909090909090909090909090909090909").into(),
+            to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(),
+            amount: 1,
+        };
 
         let res = SubstrateSideEffectsParser::parse_event::<Test>(
             "transfer:dirty",

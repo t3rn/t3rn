@@ -59,7 +59,7 @@ pub fn session_keys(keys: AuraId) -> circuit_parachain_runtime::SessionKeys {
 	circuit_parachain_runtime::SessionKeys { aura: keys }
 }
 
-pub fn development_config(id: ParaId) -> ChainSpec {
+pub fn development_config() -> ChainSpec {
 	// Give your base currency a unit name and decimal places
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "UNIT".into());
@@ -100,7 +100,7 @@ pub fn development_config(id: ParaId) -> ChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
-				id,
+				ParaId::from(3331 as u32),
 			)
 		},
 		Vec::new(),
@@ -109,12 +109,12 @@ pub fn development_config(id: ParaId) -> ChainSpec {
 		None,
 		Extensions {
 			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
-			para_id: id.into(),
+			para_id: 3331,                      // You MUST set this correctly!
 		},
 	)
 }
 
-pub fn local_testnet_config(id: ParaId) -> ChainSpec {
+pub fn local_testnet_config() -> ChainSpec {
 	// Give your base currency a unit name and decimal places
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "UNIT".into());
@@ -155,7 +155,7 @@ pub fn local_testnet_config(id: ParaId) -> ChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
-				id,
+				ParaId::from(3331 as u32),
 			)
 		},
 		// Bootnodes
@@ -169,7 +169,7 @@ pub fn local_testnet_config(id: ParaId) -> ChainSpec {
 		// Extensions
 		Extensions {
 			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
-			para_id: id.into(),
+			para_id: 3331,                      // You MUST set this correctly!
 		},
 	)
 }
@@ -185,7 +185,6 @@ fn testnet_genesis(
 			code: circuit_parachain_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
-			changes_trie_config: Default::default(),
 		},
 		balances: circuit_parachain_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
@@ -220,10 +219,11 @@ fn testnet_genesis(
 		democracy: Default::default(),
 		contracts_registry: Default::default(),
 		ethereum_light_client: Default::default(),
+		basic_outbound_channel: Default::default(),
 	}
 }
 
-pub fn circuit_config(id: ParaId) -> ChainSpec {
+pub fn circuit_config() -> ChainSpec {
 	// Give your base currency a unit name and decimal places
 	let mut properties = sc_chain_spec::Properties::new();
 	properties.insert("tokenSymbol".into(), "T3RN".into());
@@ -281,7 +281,7 @@ pub fn circuit_config(id: ParaId) -> ChainSpec {
 						(1_000_000 * UNIT).into(),
 					),
 				],
-				id,
+				ParaId::from(3331),
 			)
 		},
 		// Bootnodes
@@ -293,7 +293,7 @@ pub fn circuit_config(id: ParaId) -> ChainSpec {
 		// Properties
 		Some(properties),
 		// Extensions
-		Extensions { relay_chain: "".into(), para_id: id.into() },
+		Extensions { relay_chain: "".into(), para_id: 3331 },
 	)
 }
 
@@ -308,7 +308,6 @@ fn genesis(
 			code: circuit_parachain_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
-			changes_trie_config: Default::default(),
 		},
 		balances: circuit_parachain_runtime::BalancesConfig { balances: endowed_accounts },
 		parachain_info: circuit_parachain_runtime::ParachainInfoConfig { parachain_id: id },
@@ -341,5 +340,6 @@ fn genesis(
 		democracy: Default::default(),
 		contracts_registry: Default::default(),
 		ethereum_light_client: Default::default(),
+		basic_outbound_channel: Default::default(),
 	}
 }
