@@ -4,6 +4,7 @@ use super::*;
 use crate::Pallet as XDNS;
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
 use frame_system::RawOrigin;
+use t3rn_primitives::GatewaySysProps;
 
 use sp_runtime::create_runtime_str;
 use sp_version::RuntimeVersion;
@@ -15,7 +16,7 @@ pub const TEST_RUNTIME_VERSION: RuntimeVersion = RuntimeVersion {
     authoring_version: 1,
     spec_version: 1,
     impl_version: 1,
-    apis: sp_version::create_apis_vec!([]),
+    apis: sp_version::create_apis_vec!(Default::default()),
     transaction_version: 1,
 };
 
