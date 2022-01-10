@@ -67,9 +67,9 @@ sp-staking = { default-features = false, git = "https://github.com/paritytech/su
 sp-finality-grandpa = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
 sp-consensus-vrf = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
 sp-consensus-babe = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
-snowbridge-core = { git = "https://github.com/t3rn/snowbridge",  default-features = false }
-snowbridge-ethereum = { git = "https://github.com/t3rn/snowbridge",  default-features = false }
-snowbridge-basic-channel = { git = "https://github.com/t3rn/snowbridge",  default-features = false }
+snowbridge-core = { git = "https://github.com/t3rn/snowbridge", branch = "polkadot-v0.9.13", default-features = false }
+snowbridge-ethereum = { git = "https://github.com/t3rn/snowbridge", branch = "polkadot-v0.9.13", default-features = false }
+snowbridge-basic-channel = { git = "https://github.com/t3rn/snowbridge", branch = "polkadot-v0.9.13", default-features = false }
 
 # Benchmarking
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13', optional = true }
