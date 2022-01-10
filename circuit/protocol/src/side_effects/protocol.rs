@@ -101,7 +101,9 @@ pub trait SideEffectProtocol {
         Ok(())
     }
 
-    // For now just assume that State can only be recreated from args? where arg index (usize) will be translated to the arguments name and therefore could be re-used in created expectations in the signature for confirming Events
+    // For now just assume that State can only be recreated from args? where arg index (usize) will
+    // be translated to the arguments name and therefore could be re-used in created expectations in
+    // the signature for confirming Events
     fn validate_args(
         &self,
         args: Arguments,
@@ -117,7 +119,7 @@ pub trait SideEffectProtocol {
         // ToDo: Dig now to self.gateway_abi and recover the length of values, addresses to check
         for (i, arg) in args.iter().enumerate() {
             let type_n = &Self::get_arguments_abi(self)[i];
-            type_n.eval(arg.clone())?;
+            type_n.eval(arg.clone(), &_gateway_abi)?;
         }
         self.populate_state(args, local_state)
     }

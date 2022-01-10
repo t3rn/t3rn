@@ -4,8 +4,8 @@ import { ApiPromise, WsProvider } from '@polkadot/api';
 
 import { types } from '@t3rn/types';
 
-describe('utils', function() {
-  describe('createGatewayGenesisConfig', function() {
+describe('utils', function () {
+  describe('createGatewayGenesisConfig', function () {
     this.timeout(30000);
     it('should successfully create a genesis config for polkadot url', async () => {
       const targetApi = await ApiPromise.create({ provider: new WsProvider('wss://rpc.polkadot.io') });

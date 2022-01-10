@@ -1,6 +1,7 @@
-import { Metadata } from '@polkadot/types';
+import { Bytes, Metadata } from '@polkadot/types';
 import { ApiPromise } from '@polkadot/api';
 import { Hash, RuntimeVersion } from '@polkadot/types/interfaces';
+import { GatewaySysProps } from 'types/dist';
 
 export function createGatewayABIConfig(
   api: ApiPromise,
@@ -34,6 +35,19 @@ export function createGatewayGenesisConfig(
     runtimeVersion,
     metadata.asV14.extrinsic.version,
     genesisHash,
+  ]);
+}
+
+export function createGatewaySysProps(
+  api: ApiPromise,
+  ss58Format: number,
+  tokenSymbol: string,
+  tokenDecimals: number
+): GatewaySysProps {
+  return api.createType('GatewaySysProps', [
+    api.createType('u16', ss58Format),
+    api.createType('Bytes', new Bytes(api.registry, tokenSymbol)),
+    api.createType('u8', tokenDecimals),
   ]);
 }
 

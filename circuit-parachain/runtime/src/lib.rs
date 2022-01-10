@@ -8,7 +8,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use ethereum_light_client::EthereumDifficultyConfig;
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{Everything, LockIdentifier, Nothing, U128CurrencyToVote},
+	traits::{EqualPrivilegeOnly, Everything, LockIdentifier, Nothing, U128CurrencyToVote},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
 		DispatchClass, IdentityFee, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -23,12 +23,14 @@ use frame_system::{
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H256};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, Verify},
+	traits::{
+		AccountIdLookup, BlakeTwo256, Block as BlockT, Convert, IdentifyAccount, Keccak256, Verify,
+	},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, MultiSignature,
 };
@@ -38,6 +40,8 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 use static_assertions::const_assert;
+use t3rn_primitives::bridges::runtime as bp_runtime;
+use t3rn_protocol::side_effects::confirm::ethereum::EthereumMockVerifier;
 
 // Polkadot Imports
 use pallet_collective::{EnsureMember, EnsureProportionAtLeast};
@@ -383,6 +387,7 @@ impl pallet_scheduler::Config for Runtime {
 	type ScheduleOrigin = EnsureRoot<AccountId>;
 	type MaxScheduledPerBlock = MaxScheduledPerBlock;
 	type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Self>;
+	type OriginPrivilegeCmp = EqualPrivilegeOnly;
 }
 
 parameter_types! {
@@ -747,9 +752,44 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = ();
 }
 
+// Pallet Contracts
+
+parameter_types! {
+	pub const SignedClaimHandicap: u64 = 2;
+	pub const TombstoneDeposit: u128 = 16;
+	pub const ContractDeposit: u64 = 16;
+	pub const DepositPerContract: u128 = 8 * DepositPerStorageByte::get();
+	pub const DepositPerStorageByte: u128 = 10_000;
+	pub const DepositPerStorageItem: u128 = 10_000;
+	pub RentFraction: Perbill = Perbill::from_rational(4u32, 10_000u32);
+	pub const SurchargeReward: u128 = 500_000;
+	pub const MaxValueSize: u32 = 16_384;
+	pub const DeletionQueueDepth: u32 = 1024;
+	pub const DeletionWeightLimit: Weight = 500_000_000_000;
+	pub const MaxCodeSize: u32 = 2 * 1024;
+	pub MySchedule: pallet_contracts::Schedule<Runtime> = <pallet_contracts::Schedule<Runtime>>::default();
+}
+
+impl pallet_contracts::Config for Runtime {
+	type Time = Timestamp;
+	type Randomness = RandomnessCollectiveFlip;
+	type Currency = Balances;
+	type Event = Event;
+	type Call = Call;
+	type CallFilter = frame_support::traits::Nothing;
+	type ContractDeposit = ContractDeposit;
+	type WeightPrice = pallet_transaction_payment::Pallet<Self>;
+	type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
+	type ChainExtension = ();
+	type DeletionQueueDepth = DeletionQueueDepth;
+	type DeletionWeightLimit = DeletionWeightLimit;
+	type Schedule = MySchedule;
+	type CallStack = [pallet_contracts::Frame<Self>; 31];
+}
+
 // t3rn pallets
 
-impl t3rn_parachain_primitives::EscrowTrait for Runtime {
+impl t3rn_primitives::EscrowTrait for Runtime {
 	type Currency = Balances;
 	type Time = Timestamp;
 }
@@ -764,13 +804,119 @@ impl pallet_contracts_registry::Config for Runtime {
 	type WeightInfo = pallet_contracts_registry::weights::SubstrateWeight<Runtime>;
 }
 
+pub struct AccountId32Converter;
+impl Convert<AccountId, [u8; 32]> for AccountId32Converter {
+	fn convert(account_id: AccountId) -> [u8; 32] {
+		account_id.into()
+	}
+}
+
+pub struct CircuitToGateway;
+impl Convert<Balance, u128> for CircuitToGateway {
+	fn convert(val: Balance) -> u128 {
+		val.into()
+	}
+}
+
+parameter_types! {
+	pub const ExecPalletId: PalletId = PalletId(*b"pal/exec");
+}
+
+impl pallet_execution_delivery::Config for Runtime {
+	type Event = Event;
+	type Call = Call;
+	type EthVerifier = EthereumMockVerifier;
+	type AccountId32Converter = AccountId32Converter;
+	type ToStandardizedGatewayBalance = CircuitToGateway;
+	type WeightInfo = ();
+	type PalletId = ExecPalletId;
+}
+
+pub const INDEXING_PREFIX: &'static [u8] = b"commitment";
+parameter_types! {
+	pub const MaxMessagePayloadSize: u64 = 256;
+	pub const MaxMessagesPerCommit: u64 = 20;
+}
+
+impl snowbridge_basic_channel::outbound::Config for Runtime {
+	type Event = Event;
+	const INDEXING_PREFIX: &'static [u8] = INDEXING_PREFIX;
+	type Hashing = Keccak256;
+	type MaxMessagePayloadSize = MaxMessagePayloadSize;
+	type MaxMessagesPerCommit = MaxMessagesPerCommit;
+	type SetPrincipalOrigin = pallet_execution_delivery::EnsureExecDelivery<Runtime>;
+	type WeightInfo = ();
+}
+
 parameter_types! {
 	pub const MaxRequests: u32 = 2;
 	pub const HeadersToKeep: u32 = 5;
 }
 
-impl pallet_mfv::Config<pallet_mfv::Instance1> for Runtime {
-	type BridgedChain = bp_polkadot_core::PolkadotLike;
+type Blake2ValU64BridgeInstance = ();
+type Blake2ValU32BridgeInstance = pallet_mfv::Instance1;
+type Keccak256ValU64BridgeInstance = pallet_mfv::Instance2;
+type Keccak256ValU32BridgeInstance = pallet_mfv::Instance3;
+
+#[derive(Debug)]
+pub struct Blake2ValU64Chain;
+impl bp_runtime::Chain for Blake2ValU64Chain {
+	type BlockNumber = <Runtime as frame_system::Config>::BlockNumber;
+	type Hash = <Runtime as frame_system::Config>::Hash;
+	type Hasher = <Runtime as frame_system::Config>::Hashing;
+	type Header = <Runtime as frame_system::Config>::Header;
+}
+
+#[derive(Debug)]
+pub struct Blake2ValU32Chain;
+impl bp_runtime::Chain for Blake2ValU32Chain {
+	type BlockNumber = u32;
+	type Hash = H256;
+	type Hasher = BlakeTwo256;
+	type Header = sp_runtime::generic::Header<u32, BlakeTwo256>;
+}
+
+#[derive(Debug)]
+pub struct Keccak256ValU64Chain;
+impl bp_runtime::Chain for Keccak256ValU64Chain {
+	type BlockNumber = u64;
+	type Hash = H256;
+	type Hasher = Keccak256;
+	type Header = sp_runtime::generic::Header<u64, Keccak256>;
+}
+
+#[derive(Debug)]
+pub struct Keccak256ValU32Chain;
+impl bp_runtime::Chain for Keccak256ValU32Chain {
+	type BlockNumber = u32;
+	type Hash = H256;
+	type Hasher = Keccak256;
+	type Header = sp_runtime::generic::Header<u32, Keccak256>;
+}
+
+impl pallet_mfv::Config<Blake2ValU64BridgeInstance> for Runtime {
+	type BridgedChain = Blake2ValU64Chain;
+	type MaxRequests = MaxRequests;
+	type HeadersToKeep = HeadersToKeep;
+	type WeightInfo = ();
+}
+
+impl pallet_mfv::Config<Blake2ValU32BridgeInstance> for Runtime {
+	type BridgedChain = Blake2ValU32Chain;
+	type MaxRequests = MaxRequests;
+	type HeadersToKeep = HeadersToKeep;
+	type WeightInfo = ();
+}
+
+impl pallet_mfv::Config<Keccak256ValU64BridgeInstance> for Runtime {
+	type BridgedChain = Keccak256ValU64Chain;
+	type MaxRequests = MaxRequests;
+	type HeadersToKeep = HeadersToKeep;
+	type WeightInfo = ();
+}
+
+impl pallet_mfv::Config<Keccak256ValU32BridgeInstance> for Runtime {
+	type BridgedChain = Keccak256ValU32Chain;
 	type MaxRequests = MaxRequests;
 	type HeadersToKeep = HeadersToKeep;
 	type WeightInfo = ();
@@ -796,6 +942,7 @@ impl pallet_utility::Config for Runtime {
 	type Event = Event;
 	type Call = Call;
 	type WeightInfo = pallet_utility::weights::SubstrateWeight<Self>;
+	type PalletsOrigin = OriginCaller;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -843,10 +990,16 @@ construct_runtime!(
 			Pallet, Call, Storage, Config<T, I>
 		} = 101,
 		ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 102,
+		ExecDelivery: pallet_execution_delivery::{Pallet, Call, Storage, Event<T>} = 103,
 
 		// snowfork deps
 		EthereumLightClient: ethereum_light_client::{Pallet, Call, Storage, Event<T>, Config} = 150,
-		Utility: pallet_utility::{Pallet, Call, Event} = 151,
+		BasicOutboundChannel: snowbridge_basic_channel::outbound::{Pallet, Config<T>, Storage, Event<T>} = 151,
+
+		Utility: pallet_utility::{Pallet, Call, Event} = 160,
+
+		// smart contracts
+		Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>} = 170,
 
 		// admin
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,

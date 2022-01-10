@@ -13,7 +13,7 @@ on:
 
 jobs:
   format:
-    runs-on: self-hosted
+    runs-on: ubuntu-20.04
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@master
@@ -33,7 +33,7 @@ jobs:
           args: --all --manifest-path circuit-parachain/Cargo.toml -- --check
 
   lint:
-    runs-on: self-hosted
+    runs-on: ubuntu-20.04
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@master
