@@ -84,6 +84,12 @@ pub fn confirmation_plug<T: pallet_balances::Config, VendorParser: VendorSideEff
 
     for (i, encoded_event) in encoded_remote_events.iter().enumerate() {
         let expected_event_signature = side_effect_protocol.get_confirming_events()[i];
+        // Handle special case for vec!["<InclusionOnly>"]
+        //  where the execution confirmation isn't required hence the side effect doesn't produce
+        //  any event or event's arguments can't be known beforehand - like GetDataSideEffect
+        if expected_event_signature.as_bytes() == b"<InclusionOnly>".encode() {
+            continue;
+        }
         let decoded_events = VendorParser::parse_event::<T>(
             side_effect_protocol.get_name(),
             encoded_event.clone(),
@@ -153,7 +159,7 @@ pub mod tests {
     use super::*;
     use crate::side_effects::confirm::substrate::tests::Test;
     use crate::side_effects::confirm::substrate::SubstrateSideEffectsParser;
-    use crate::side_effects::protocol::TransferSideEffectProtocol;
+    use crate::side_effects::protocol::{GetDataSideEffectProtocol, TransferSideEffectProtocol};
     use crate::side_effects::test_utils::*;
     use codec::Encode;
     use hex_literal::hex;
@@ -301,6 +307,31 @@ pub mod tests {
         let res_confirm = confirmation_plug::<Test, SubstrateSideEffectsParser>(
             transfer_protocol_box,
             vec![encoded_balance_transfer_event],
+            &mut local_state,
+            Some(valid_side_effect_id.as_ref().to_vec()),
+        );
+
+        assert_eq!(res_confirm, Ok(()));
+    }
+
+    #[test]
+    fn successfully_skips_exec_validation_for_get_data_side_effect_with_id_prefix() {
+        // Validate and populate state first
+        let mut local_state = LocalState::new();
+        let data_protocol_box = Box::new(GetDataSideEffectProtocol {});
+        let valid_get_data_side_effect = produce_and_validate_side_effect(
+            vec![(Type::Bytes(32), ArgVariant::A)],
+            &mut local_state,
+            data_protocol_box.clone(),
+        );
+
+        let valid_side_effect_id = valid_get_data_side_effect.generate_id::<Hashing>();
+        // Actual confirmation test
+        let encoded_empty_get_data_event = vec![];
+
+        let res_confirm = confirmation_plug::<Test, SubstrateSideEffectsParser>(
+            data_protocol_box,
+            vec![encoded_empty_get_data_event],
             &mut local_state,
             Some(valid_side_effect_id.as_ref().to_vec()),
         );
