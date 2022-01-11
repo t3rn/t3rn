@@ -31,7 +31,7 @@ contract Escrow is SimplifiedMMRVerification, HeaderRegistry {
     }
 
     // initializes escrowed eth transfer or swap. We can use the same interface for both operations, as this contract is simply holding the funds to receive (ETH)
-    function executeEth(address to, bytes32 xtxId)
+    function executeEth(bytes32 xtxId, address to)
         external
         payable
         noDuplicateXtx(xtxId)
@@ -66,7 +66,7 @@ contract Escrow is SimplifiedMMRVerification, HeaderRegistry {
     }
 
     // intializes escrowed token transfer, token swap or liquidity provision. In all three cases contract is holding the token to receive until commit
-    function executeToken(address to, address token, uint amount, bytes32 xtxId)
+    function executeToken(bytes32 xtxId, address to, address token, uint amount)
         external
         noDuplicateXtx(xtxId)
     {
@@ -87,7 +87,7 @@ contract Escrow is SimplifiedMMRVerification, HeaderRegistry {
     }
 
     // can be used for any pool, wont unwrap WETH though. Do we want a version that unwraps WETH?
-    function removeLiquidity(address to, address tokenA, address tokenB, uint amountA, uint amountB, bytes32 xtxId)
+    function removeLiquidity(bytes32 xtxId, address to, address tokenA, address tokenB, uint amountA, uint amountB)
         external
         noDuplicateXtx(xtxId)
     {
