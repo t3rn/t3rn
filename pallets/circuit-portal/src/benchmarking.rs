@@ -1,4 +1,4 @@
-//! Benchmarking setup for pallet-circuit-execution-delivery
+//! Benchmarking setup for pallet-circuit-portal
 
 use super::*;
 use bp_test_utils::test_header;
@@ -17,7 +17,7 @@ use crate::{
     EthLikeKeccak256ValU64Gateway, PolkadotLikeValU64Gateway,
 };
 
-pub use crate::Pallet as ExecDelivery;
+pub use crate::Pallet as Portal;
 
 pub const TEST_RUNTIME_VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("test-runtime"),
@@ -237,8 +237,4 @@ mod tests {
     }
 }
 
-impl_benchmark_test_suite!(
-    ExecDelivery,
-    crate::tests::new_test_ext(),
-    crate::mock::Test
-);
+impl_benchmark_test_suite!(Portal, crate::tests::new_test_ext(), crate::mock::Test);

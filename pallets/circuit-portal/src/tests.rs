@@ -85,7 +85,7 @@ fn test_register_gateway_with_default_polka_like_header() {
 
     let mut ext = TestExternalities::new_empty();
     ext.execute_with(|| {
-        assert_ok!(ExecDelivery::register_gateway(
+        assert_ok!(Portal::register_gateway(
             origin,
             url,
             gateway_id,
@@ -138,7 +138,7 @@ fn test_register_gateway_with_u64_substrate_header() {
 
     let mut ext = TestExternalities::new_empty();
     ext.execute_with(|| {
-        assert_ok!(ExecDelivery::register_gateway(
+        assert_ok!(Portal::register_gateway(
             origin,
             url,
             gateway_id,
@@ -191,7 +191,7 @@ fn test_register_gateway_with_default_eth_like_header() {
 
     let mut ext = TestExternalities::new_empty();
     ext.execute_with(|| {
-        assert_ok!(ExecDelivery::register_gateway(
+        assert_ok!(Portal::register_gateway(
             origin,
             url,
             gateway_id,
@@ -244,7 +244,7 @@ fn test_register_gateway_with_u64_eth_like_header() {
 
     let mut ext = TestExternalities::new_empty();
     ext.execute_with(|| {
-        assert_ok!(ExecDelivery::register_gateway(
+        assert_ok!(Portal::register_gateway(
             origin,
             url,
             gateway_id,
@@ -299,7 +299,7 @@ fn test_register_gateway_with_u64_substrate_header_and_allowed_side_effects() {
     let mut ext = TestExternalities::new_empty();
     ext.execute_with(|| System::set_block_number(1));
     ext.execute_with(|| {
-        assert_ok!(ExecDelivery::register_gateway(
+        assert_ok!(Portal::register_gateway(
             origin,
             url,
             gateway_id,
@@ -328,7 +328,7 @@ fn test_register_gateway_with_u64_substrate_header_and_allowed_side_effects() {
 
         // Assert events emitted
 
-        System::assert_last_event(Event::ExecDelivery(crate::Event::NewGatewayRegistered(
+        System::assert_last_event(Event::Portal(crate::Event::NewGatewayRegistered(
             gateway_id,
             gateway_type,
             gateway_vendor,

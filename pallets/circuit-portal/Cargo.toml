@@ -1,5 +1,5 @@
 [package]
-name = "pallet-circuit-execution-delivery"
+name = "pallet-circuit-portal"
 version = "1.0.0-alpha.0"
 authors = ["devs @ t3rn"]
 edition = "2018"

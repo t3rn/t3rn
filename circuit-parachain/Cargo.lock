@@ -962,7 +962,8 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-circuit-execution-delivery",
+ "pallet-circuit",
+ "pallet-circuit-portal",
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-contracts",
@@ -4850,7 +4851,32 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-circuit-execution-delivery"
+name = "pallet-circuit"
+version = "1.0.0-alpha.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-balances",
+ "pallet-circuit-portal",
+ "pallet-contracts-registry",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "pallet-xdns",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "t3rn-parachain-primitives",
+ "t3rn-protocol",
+]
+
+[[package]]
+name = "pallet-circuit-portal"
 version = "1.0.0-alpha.0"
 dependencies = [
  "ethabi-decode",

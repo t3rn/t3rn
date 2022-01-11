@@ -143,14 +143,32 @@ impl UniversalSideEffectsProtocol {
                     // If no insurance entry - insurance isn't required. Do nothing.
                     0 => Ok(None),
                     32 => {
-                        let insurance_and_reward: [BalanceOf; 2] = Decode::decode(
+                        // ToDo: Must be u128 as t3rn_protocol + insurances assume it's hardcoded u128 for value of insurance and reward
+                        // FixMe: Please someone fix below
+                        let insurance_and_reward_u128: [u128; 2] = Decode::decode(
                             &mut &maybe_insurance.to_vec()[..],
                         )
                         .expect(
                             "try_commit_insurance_deposit should always be called after validate \
                                 side effects which checked the insurance value sanity in eval",
                         );
-                        Ok(Some(insurance_and_reward))
+
+                        let insurance: BalanceOf = Decode::decode(
+                            &mut &insurance_and_reward_u128[0].encode()[..],
+                        )
+                        .expect(
+                            "try_commit_insurance_deposit should arrive from u128 to BalanceOf Circuit type",
+                        );
+
+                        let reward: BalanceOf = Decode::decode(
+                            &mut &insurance_and_reward_u128[1].encode()[..],
+                        )
+                        .expect(
+                            "try_commit_insurance_deposit should arrive from u128 to BalanceOf Circuit type",
+                        );
+                        Ok(Some([
+                            insurance, reward
+                        ]))
                     }
                     _ => Err(
                         "Critical Error - try_commit_insurance_deposit should always be \

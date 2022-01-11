@@ -11,8 +11,8 @@ use sp_std::vec::Vec;
 use t3rn_primitives::{ComposableExecResult, Compose};
 
 sp_api::decl_runtime_apis! {
-    /// The API to interact with execution delivery
-    pub trait ExecutionDeliveryRuntimeApi<AccountId, Balance, BlockNumber> where
+    /// The API to interact with circuit portal
+    pub trait CircuitPortalRuntimeApi<AccountId, Balance, BlockNumber> where
         AccountId: Codec,
         Balance: Codec,
         BlockNumber: Codec,

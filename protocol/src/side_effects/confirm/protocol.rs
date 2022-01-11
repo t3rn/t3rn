@@ -75,7 +75,7 @@ pub trait SideEffectConfirmationProtocol: SideEffectProtocol {
 pub fn confirmation_plug<T: pallet_balances::Config, VendorParser: VendorSideEffectsParser>(
     side_effect_protocol: Box<dyn SideEffectProtocol>,
     encoded_remote_events: Vec<Bytes>,
-    local_state: &mut LocalState,
+    local_state: &LocalState,
     side_effect_id: Option<Bytes>,
 ) -> Result<(), &'static str> {
     // 0. Check incoming args with protocol requirements
@@ -124,7 +124,7 @@ pub fn confirm_with_vendor_by_action_id<
     gateway_vendor: GatewayVendor,
     encoded_action: Bytes,
     encoded_effect: Bytes,
-    mut state_copy: &mut LocalState,
+    state_copy: &LocalState,
     side_effect_id: Option<Bytes>,
 ) -> Result<(), &'static str> {
     let mut action_id_4b: [u8; 4] = [0, 0, 0, 0];
@@ -136,13 +136,13 @@ pub fn confirm_with_vendor_by_action_id<
         GatewayVendor::Substrate => confirmation_plug::<T, SubstrateParser>(
             side_effect_protocol,
             vec![encoded_effect],
-            &mut state_copy,
+            state_copy,
             side_effect_id,
         ),
         GatewayVendor::Ethereum => confirmation_plug::<T, EthParser>(
             side_effect_protocol,
             vec![encoded_effect.clone()],
-            &mut state_copy,
+            state_copy,
             side_effect_id,
         ),
     }

@@ -1,5 +1,5 @@
 //! Test utilities
-use crate::{self as pallet_execution_delivery, Config};
+use crate::{self as pallet_circuit_portal, Config};
 
 use codec::Encode;
 
@@ -68,7 +68,7 @@ frame_support::construct_runtime!(
         Randomness: pallet_randomness_collective_flip::{Pallet, Storage},
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Storage, Event<T>},
         XDNS: pallet_xdns::{Pallet, Call, Storage, Config<T>, Event<T>},
-        ExecDelivery: pallet_execution_delivery::{Pallet, Call, Storage, Event<T>},
+        Portal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>},
         Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
         BasicOutboundChannel: snowbridge_basic_channel::outbound::{Pallet, Config<T>, Storage, Event<T>},
     }
@@ -379,7 +379,7 @@ impl snowbridge_basic_channel::outbound::Config for Test {
     type Hashing = Keccak256;
     type MaxMessagePayloadSize = MaxMessagePayloadSize;
     type MaxMessagesPerCommit = MaxMessagesPerCommit;
-    type SetPrincipalOrigin = crate::EnsureExecDelivery<Test>;
+    type SetPrincipalOrigin = crate::EnsureCircuitPortal<Test>;
     type WeightInfo = ();
 }
 
@@ -517,6 +517,20 @@ impl ExtBuilder {
             },
             vec![],
         );
+        let zero_xdns_record = <XdnsRecord<AccountId>>::new(
+            vec![],
+            [0u8, 0u8, 0u8, 0u8],
+            Default::default(),
+            GatewayVendor::Substrate,
+            GatewayType::ProgrammableExternal(0),
+            Default::default(),
+            GatewaySysProps {
+                ss58_format: 1333,
+                token_symbol: Encode::encode("ZERO"),
+                token_decimals: 0,
+            },
+            vec![],
+        );
         let gateway_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
             *b"gate",
@@ -560,6 +574,7 @@ impl ExtBuilder {
             vec![],
         );
         self.known_xdns_records = vec![
+            zero_xdns_record,
             circuit_xdns_record,
             gateway_xdns_record,
             polkadot_xdns_record,
