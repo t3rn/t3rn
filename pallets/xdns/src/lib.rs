@@ -235,7 +235,7 @@ pub mod pallet {
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
             for xdns_record in self.known_xdns_records.clone() {
-                <XDNSRegistry<T>>::insert(xdns_record.generate_id::<T>(), xdns_record);
+                <XDNSRegistry<T>>::insert(&xdns_record.generate_id::<T>(), xdns_record);
             }
         }
     }

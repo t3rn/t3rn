@@ -6,6 +6,9 @@ on:
       - circuit/**/*.rs
       - circuit/**/Cargo.toml
       - circuit/**/Cargo.lock
+      - pallets/**/*.rs
+      - pallets/**/Cargo.toml
+      - pallets/**/Cargo.lock
       - .github/workflows/circuit-release.yml
     tags:
       - 'v*'

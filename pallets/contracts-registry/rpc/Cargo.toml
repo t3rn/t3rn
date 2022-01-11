@@ -1,6 +1,6 @@
 [package]
 name = "pallet-contracts-registry-rpc"
-version = "0.1.0"
+version = "1.0.0-aplha.0"
 authors = ["t3rn"]
 edition = "2018"
 license = "Apache-2.0"
@@ -20,11 +20,11 @@ jsonrpc-derive = "15.0.0"
 
 serde = { version = "1.0.124", features = ["derive"] }
 
-frame-system = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12' }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12' }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12' }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12' }
-sp-rpc = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12' }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.12' }
-pallet-contracts-registry-rpc-runtime-api = { version = "0.1.0", path = "runtime-api" }
-pallet-contracts-registry = { path = ".." }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
+sp-rpc = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
+pallet-contracts-registry-rpc-runtime-api = { version = "1.0.0-aplha.0", path = "runtime-api" }
+pallet-contracts-registry = { version = "1.0.0-alpha.0", path = ".." }

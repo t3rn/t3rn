@@ -7,7 +7,7 @@ pub use self::gen_client::Client as ContractsRegistryClient;
 use crate::types::GAS_PER_SECOND;
 use jsonrpc_core::{Error, ErrorCode, Result};
 use jsonrpc_derive::rpc;
-use pallet_circuit_execution_delivery_rpc_runtime_api::ExecutionDeliveryRuntimeApi;
+use pallet_circuit_circuit_portal_rpc_runtime_api::CircuitPortalRuntimeApi;
 use sp_api::codec::Codec;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
@@ -20,7 +20,7 @@ use t3rn_primitives::Compose;
 use types::*;
 
 #[rpc]
-pub trait ExecutionDeliveryApi<BlockHash, BlockNumber, AccountId, Balance> {
+pub trait CircuitPortalApi<BlockHash, BlockNumber, AccountId, Balance> {
     /// Executes all attached or appointed by ID composable contracts on appointed gateways.
     ///
     /// IO flow between components on different chains can be described using Input-Output schedule.
@@ -28,7 +28,7 @@ pub trait ExecutionDeliveryApi<BlockHash, BlockNumber, AccountId, Balance> {
     /// Circuit queues the request and awaits for an execution agent to volounteer to facilitate the execution
     /// across connected chains via gateways - acts as an escrow account and is accountable
     /// with her stake for proven misbehaviour.
-    #[rpc(name = "execDelivery_composableExec")]
+    #[rpc(name = "circuitPortal_composableExec")]
     fn composable_exec(
         &self,
         call_request: InterExecRequest<AccountId, Balance>,
@@ -36,13 +36,13 @@ pub trait ExecutionDeliveryApi<BlockHash, BlockNumber, AccountId, Balance> {
     ) -> Result<RpcComposableExecResult>;
 }
 
-/// A struct that implements the [ExecutionDeliveryApi].
-pub struct ExecutionDelivery<C, B> {
+/// A struct that implements the [CircuitPortalApi].
+pub struct CircuitPortal<C, B> {
     client: Arc<C>,
     _marker: std::marker::PhantomData<B>,
 }
 
-impl<C, B> ExecutionDelivery<C, B> {
+impl<C, B> CircuitPortal<C, B> {
     /// Create new `Contracts` with the given reference to the client.
     pub fn new(client: Arc<C>) -> Self {
         Self {
@@ -53,17 +53,17 @@ impl<C, B> ExecutionDelivery<C, B> {
 }
 
 impl<C, Block, AccountId, Balance>
-    ExecutionDeliveryApi<
+    CircuitPortalApi<
         <Block as BlockT>::Hash,
         <<Block as BlockT>::Header as HeaderT>::Number,
         AccountId,
         Balance,
-    > for ExecutionDelivery<C, Block>
+    > for CircuitPortal<C, Block>
 where
     Block: BlockT,
     AccountId: Codec + MaybeDisplay,
     C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
-    C::Api: ExecutionDeliveryRuntimeApi<
+    C::Api: CircuitPortalRuntimeApi<
         Block,
         AccountId,
         Balance,

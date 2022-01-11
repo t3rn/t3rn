@@ -4,6 +4,7 @@ use super::*;
 use crate::Pallet as XDNS;
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
 use frame_system::RawOrigin;
+use t3rn_primitives::GatewaySysProps;
 
 use sp_runtime::create_runtime_str;
 use sp_version::RuntimeVersion;
