@@ -4,7 +4,6 @@ pragma experimental ABIEncoderV2; // allows us to pass structs
 import "./SimplifiedMMRVerification.sol";
 import "./HeaderRegistry.sol";
 import "./interface/IERC20.sol";
-import "hardhat/console.sol";
 
 contract Escrow is SimplifiedMMRVerification, HeaderRegistry {
 
@@ -82,12 +81,20 @@ contract Escrow is SimplifiedMMRVerification, HeaderRegistry {
         // verify finality of CircuitEvent here. See `_verifyFinality()`
 
         require(keccak256(abi.encodePacked(evnt.xtxId, msg.sender, to, token, amount)) == active[evnt.xtxId], "False inputs passed");
-        _settleToken(evnt, to, token, amount);
+        
+        if(evnt.shouldCommit) {
+            _sendToken(to, token, amount);
+            emit Commit(evnt.xtxId);
+        } else {   
+            _sendToken(payable(msg.sender), token, amount);
+            emit Revert(evnt.xtxId);
+        }
+        
         delete active[evnt.xtxId]; // gas refund
     }
 
     // can be used for any pool, wont unwrap WETH though. Do we want a version that unwraps WETH?
-    function removeLiquidity(bytes32 xtxId, address to, address tokenA, address tokenB, uint amountA, uint amountB)
+    function executeRemoveLiquidity(bytes32 xtxId, address to, address tokenA, address tokenB, uint amountA, uint amountB)
         external
         noDuplicateXtx(xtxId)
     {
@@ -101,8 +108,17 @@ contract Escrow is SimplifiedMMRVerification, HeaderRegistry {
         external
     {
         require(keccak256(abi.encodePacked(evnt.xtxId, msg.sender, to, tokenA, tokenB, amountA, amountB)) == active[evnt.xtxId], "False inputs passed");
-        _settleToken(evnt, to, tokenA, amountA);
-        _settleToken(evnt, to, tokenB, amountB);
+
+        if(evnt.shouldCommit) {
+            _sendToken(to, tokenA, amountA);
+            _sendToken(to, tokenB, amountB);
+            emit Commit(evnt.xtxId);
+        } else {   
+            _sendToken(payable(msg.sender), tokenA, amountA);
+            _sendToken(payable(msg.sender), tokenB, amountB);
+            emit Revert(evnt.xtxId);
+        }
+        
         delete active[evnt.xtxId]; // gas refund
     }
 
@@ -121,19 +137,6 @@ contract Escrow is SimplifiedMMRVerification, HeaderRegistry {
         // Run imnclusion proof, prooving the finality and valifity of submitred event
         // we need something that does a patricia-tri tree no?
         require(SimplifiedMMRVerification.verifyInclusionProof(root, leafHash, proof), "MMR verification failed.");
-    }
-
-    // used to settle token based transactions
-    function _settleToken(CircuitEvent memory evnt, address to, address token, uint amount)
-        private
-    {
-         if(evnt.shouldCommit) {
-            _sendToken(to, token, amount);
-            emit Commit(evnt.xtxId);
-        } else {   
-            _sendToken(payable(msg.sender), token, amount);
-            emit Revert(evnt.xtxId);
-        }
     }
 
     function _sendEth(address payable _to, uint amount)

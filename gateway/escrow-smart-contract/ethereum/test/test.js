@@ -136,7 +136,7 @@ describe("Escrow", function () {
 		await token.connect(executor).approve(escrow.address, amountA) // we're using the token here we already have. In prod this would be lp token
 		await token1.connect(executor).approve(escrow.address, amountB)
 		const id = "0x" + crypto.createHash('sha256').update("removeLiquidity").digest('hex');
-		const tx = await escrow.connect(executor).removeLiquidity(id, to.address, token.address, token1.address, amountA, amountB)
+		const tx = await escrow.connect(executor).executeRemoveLiquidity(id, to.address, token.address, token1.address, amountA, amountB)
 		const contractBalanceA = await token.balanceOf(escrow.address)
 		const contractBalanceB = await token.balanceOf(escrow.address)
 		const event = (await tx.wait()).events.find(event => event.event === 'ExecuteRemoveLiquidity');
@@ -173,7 +173,7 @@ describe("Escrow", function () {
 		await token.connect(executor).approve(escrow.address, amountA) // we're using the token here we already have. In prod this would be lp token
 		await token1.connect(executor).approve(escrow.address, amountB)
 		const id = "0x" + crypto.createHash('sha256').update("removeLiquidity1").digest('hex');
-		await escrow.connect(executor).removeLiquidity(id, to.address, token.address, token1.address, amountA, amountB)
+		await escrow.connect(executor).executeRemoveLiquidity(id, to.address, token.address, token1.address, amountA, amountB)
 
 		const contractBalanceAPre = await token.balanceOf(escrow.address)
 		const executorBalanceAPre = await token.balanceOf(executor.address)
