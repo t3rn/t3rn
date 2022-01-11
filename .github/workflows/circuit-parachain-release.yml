@@ -8,6 +8,9 @@ on:
       - circuit-parachain/**/*.rs
       - circuit-parachain/**/Cargo.toml
       - circuit-parachain/**/Cargo.lock
+      - pallets/**/*.rs
+      - pallets/**/Cargo.toml
+      - pallets/**/Cargo.lock
       - .github/workflows/circuit-parachain-release.yml
   release:
     types:

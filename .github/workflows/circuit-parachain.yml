@@ -6,11 +6,14 @@ on:
       - circuit-parachain/**/*.rs
       - circuit-parachain/**/Cargo.toml
       - circuit-parachain/**/Cargo.lock
+      - pallets/**/*.rs
+      - pallets/**/Cargo.toml
+      - pallets/**/Cargo.lock
       - .github/workflows/circuit-parachain.yml
 
 jobs:
   format:
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@master
@@ -30,7 +33,7 @@ jobs:
           args: --all --manifest-path circuit-parachain/Cargo.toml -- --check
 
   lint:
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@master
@@ -59,8 +62,8 @@ jobs:
           command: clippy
           args: --all --manifest-path circuit-parachain/Cargo.toml
 
-  build:
-    runs-on: ubuntu-20.04
+  build-test:
+    runs-on: self-hosted
     needs: [format, lint]
     steps:
       - name: ☁ Checkout git repo
@@ -90,45 +93,6 @@ jobs:
         with:
           command: build
           args: --locked --manifest-path circuit-parachain/Cargo.toml
-
-      - name: 📤 Upload binary
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ github.sha }}-parachain-artifacts
-          path: circuit-parachain/target/debug/circuit-collator
-          if-no-files-found: error
-          retention-days: 1
-  test:
-    runs-on: ubuntu-20.04
-    needs: [build]
-    steps:
-      - name: ☁️Checkout git repo
-        uses: actions/checkout@master
-
-
-      - name: ⚙️Get nightly rust toolchain with wasm target
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly-2021-11-01
-          target: wasm32-unknown-unknown
-          components: rustfmt, clippy
-          override: true
-
-      - name: 🕒 Cache Rust binaries and packages
-        uses: actions/cache@v2
-        id: cache-rust
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            circuit-parachain/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('circuit-parachain/Cargo.lock') }}
-
-      - name: Download circuit
-        uses: actions/download-artifact@v2
-        with:
-          name: ${{ github.sha }}-parachain-artifacts
-          path: circuit-parachain/target/debug/
 
       - name: 📼 Run unit tests
         continue-on-error: false
