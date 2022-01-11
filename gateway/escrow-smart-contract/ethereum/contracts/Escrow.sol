@@ -16,13 +16,12 @@ contract Escrow is SimplifiedMMRVerification, HeaderRegistry {
         _;
     }
 
+    event ExecuteEth(bytes32 xtxId, address executor, address to, uint amount);
+    event ExecuteToken(bytes32 xtxId, address executor, address to, address token, uint amount);
+    event ExecuteRemoveLiquidity(bytes32 xtxId, address executor, address to, address tokenA, address tokenB, uint amountA, uint amountB);
+
     event Commit(bytes32 xtxId);
     event Revert(bytes32 xtxId);
-    event EscrowTransfer(address from, address to, uint amount);
-    event EscrowMultiTransfer(address from, address to, uint amount, address token);
-    event EscrowSwap(address executor, address to, uint amount, address token);
-    event EscrowAddLiquidity(address executor, address to, address token, uint amount);
-    event EscrowRemoveLiquidity(address executor, address to, address tokenA, uint amountA, address tokenB, uint amountB, bytes32 xtxId);
 
     struct CircuitEvent {
         // assumption here is, that the circut will only emit a commit event, if the amounts during execute are correct
@@ -31,49 +30,8 @@ contract Escrow is SimplifiedMMRVerification, HeaderRegistry {
         // will need more fields for inclusion proof
     }
 
-    // function for swapping to ether. Turns out these are very similar to the transfers.
-    function ethSwap(address to, bytes32 xtxId)
-        external
-        payable
-        noDuplicateXtx(xtxId)
-    {
-        active[xtxId] = _hashEthSwap(to, msg.value, msg.sender);
-        emit EscrowSwap(msg.sender, to, msg.value, address(0x0));
-    }
-
-    function addLiquidity(address to, address token, uint amount, bytes32 xtxId)
-        external
-        noDuplicateXtx(xtxId)
-    {
-        // dont think we need to add the source of fund (assets being deposited) as the correctness of this is checked in the circuit
-        _collectToken(amount, token); // collects liq token from executor
-        active[xtxId] = keccak256(abi.encodePacked(msg.sender, to, token, amount, xtxId));
-        emit EscrowAddLiquidity(msg.sender, to, token, amount);
-    }
-
-    // can be used for any pool, wont unwrap WETH
-    function removeLiquidity(address to, address tokenA, address tokenB, uint amountA, uint amountB, bytes32 xtxId)
-        external
-        noDuplicateXtx(xtxId)
-    {
-        require(_collectToken(amountA, tokenA), "tokenA couldn't be collected!");
-        require(_collectToken(amountB, tokenB), "tokenB couldn't be collected!");
-        active[xtxId] = keccak256(abi.encodePacked(msg.sender, to, tokenA, amountA, tokenB, amountB, xtxId));
-        emit EscrowRemoveLiquidity(msg.sender, to, tokenA, amountA, tokenB, amountB, xtxId);
-    }
-        
-    // for swapping to a token
-    function tokenSwap(address to, address token, uint amount, bytes32 xtxId)
-        external
-        noDuplicateXtx(xtxId)
-    {
-        _collectToken(amount, token);
-        active[xtxId] = _hashTokenSwap(to, token, amount, msg.sender);
-        emit EscrowSwap(msg.sender, to, amount, token);
-    }
-
-    // initializes escrowed eth transfer
-    function ethTransfer(address to, bytes32 xtxId)
+    // initializes escrowed eth transfer or swap. We can use the same interface for both operations, as this contract is simply holding the funds to receive (ETH)
+    function executeEth(address to, bytes32 xtxId)
         external
         payable
         noDuplicateXtx(xtxId)
@@ -81,79 +39,70 @@ contract Escrow is SimplifiedMMRVerification, HeaderRegistry {
         // we hash the inputs, this has two benefits
         // 1. reduces gas cost, as storage is more expensive then compute
         // 2. we can store all escrow types in same mapping. makes duplicate prevention checks a lot cheaper
-        active[xtxId] = _hashEthTransfer(to, msg.value, msg.sender);
-        emit EscrowTransfer(msg.sender, to, msg.value);
+        active[xtxId] = keccak256(abi.encodePacked(xtxId, msg.sender, to, msg.value));
+        emit ExecuteEth(xtxId, msg.sender, to, msg.value);
     }
 
-    // intializes escrowed token transfer
-    function tokenTransfer(address to, address token, uint amount, bytes32 xtxId)
+    function settleEth(CircuitEvent memory evnt, address to, uint amount)
+        external
+
+    {
+        // verify finality of CircuitEvent here. See `_verifyFinality()`
+
+        // ensure the correct inputs where passed
+        require(keccak256(abi.encodePacked(evnt.xtxId, msg.sender, to, amount)) == active[evnt.xtxId], "False inputs passed");
+
+        if(evnt.shouldCommit) {
+            // we are commiting
+            _sendEth(payable(to), amount);
+            emit Commit(evnt.xtxId);
+        } else {   
+            // reverting
+            _sendEth(payable(msg.sender), amount);
+            emit Revert(evnt.xtxId);
+        }
+        
+        delete active[evnt.xtxId]; // gas refund
+    }
+
+    // intializes escrowed token transfer, token swap or liquidity provision. In all three cases contract is holding the token to receive until commit
+    function executeToken(address to, address token, uint amount, bytes32 xtxId)
         external
         noDuplicateXtx(xtxId)
-        returns (bool)
     {
         _collectToken(amount, token);
-        active[xtxId] = _hashTokenTransfer(to, token, amount, msg.sender);
-        emit EscrowMultiTransfer(msg.sender, to, amount, token);
+        active[xtxId] = keccak256(abi.encodePacked(xtxId, msg.sender, to, token, amount));
+        emit ExecuteToken(xtxId, msg.sender, to, token, amount);
     }
 
-    function settleEthSwap(CircuitEvent memory evnt, address to, uint amount)
+    // settles token transaction (transfer, swap or addLiquidity)
+    function settleToken(CircuitEvent memory evnt, address to, address token, uint amount)
         external
     {
         // verify finality of CircuitEvent here. See `_verifyFinality()`
 
-        // ensure the correct inputs where passed
-        require(_hashEthSwap(to, amount, msg.sender) == active[evnt.xtxId], "False inputs passed");
-        _settleEth(evnt, to, amount);
+        require(keccak256(abi.encodePacked(evnt.xtxId, msg.sender, to, token, amount)) == active[evnt.xtxId], "False inputs passed");
+        _settleToken(evnt, to, token, amount);
         delete active[evnt.xtxId]; // gas refund
     }
 
-    function settleTokenSwap(CircuitEvent memory evnt, address to, address token, uint amount)
+    // can be used for any pool, wont unwrap WETH though. Do we want a version that unwraps WETH?
+    function removeLiquidity(address to, address tokenA, address tokenB, uint amountA, uint amountB, bytes32 xtxId)
         external
+        noDuplicateXtx(xtxId)
     {
-        // verify finality of CircuitEvent here. See `_verifyFinality()`
-
-        // ensure the correct inputs where passed
-        require(_hashTokenSwap(to, token, amount, msg.sender) == active[evnt.xtxId], "False inputs passed");
-        _settleToken(evnt, to, amount, token);
-        delete active[evnt.xtxId]; // gas refund
-    }
-
-    function settleEthTransfer(CircuitEvent memory evnt, address to, uint amount)
-        external
-    {
-        // verify finality of CircuitEvent here. See `_verifyFinality()`
-
-        // ensure the correct inputs where passed
-        require(_hashEthTransfer(to, amount, msg.sender) == active[evnt.xtxId], "False inputs passed");
-        _settleEth(evnt, to, amount);
-        delete active[evnt.xtxId]; // gas refund
-    }
-
-    function settleTokenTransfer(CircuitEvent memory evnt, address to, address token, uint amount)
-        external
-    {
-        // verify finality of CircuitEvent here. See `_verifyFinality()`
-
-        // ensure the correct inputs where passed
-        require(_hashTokenTransfer(to, token, amount, msg.sender) == active[evnt.xtxId], "False inputs passed");
-        _settleToken(evnt, to, amount, token);
-        delete active[evnt.xtxId]; // gas refund
-    }
-
-    function settleAddLiquidity(CircuitEvent memory evnt, address to, address token, uint amount)
-        external
-    {
-        require(keccak256(abi.encodePacked(msg.sender, to, token, amount, evnt.xtxId)) == active[evnt.xtxId], "False inputs passed");
-        _settleToken(evnt, to, amount, token);
-        delete active[evnt.xtxId]; // gas refund
+        require(_collectToken(amountA, tokenA), "tokenA couldn't be collected!");
+        require(_collectToken(amountB, tokenB), "tokenB couldn't be collected!");
+        active[xtxId] = keccak256(abi.encodePacked(xtxId, msg.sender, to, tokenA, tokenB, amountA, amountB));
+        emit ExecuteRemoveLiquidity(xtxId, msg.sender, to, tokenA, tokenB, amountA, amountB);
     }
 
     function settleRemoveLiquidity(CircuitEvent memory evnt, address to, address tokenA, address tokenB, uint amountA, uint amountB)
         external
     {
-        require(keccak256(abi.encodePacked(msg.sender, to, tokenA, amountA, tokenB, amountB, evnt.xtxId)) == active[evnt.xtxId], "False inputs passed");
-        _settleToken(evnt, to, amountA, tokenA);
-        _settleToken(evnt, to, amountB, tokenB);
+        require(keccak256(abi.encodePacked(evnt.xtxId, msg.sender, to, tokenA, tokenB, amountA, amountB)) == active[evnt.xtxId], "False inputs passed");
+        _settleToken(evnt, to, tokenA, amountA);
+        _settleToken(evnt, to, tokenB, amountB);
         delete active[evnt.xtxId]; // gas refund
     }
 
@@ -174,23 +123,8 @@ contract Escrow is SimplifiedMMRVerification, HeaderRegistry {
         require(SimplifiedMMRVerification.verifyInclusionProof(root, leafHash, proof), "MMR verification failed.");
     }
 
-    // used for settling eth based transactions
-    function _settleEth(CircuitEvent memory evnt, address to, uint amount)
-        private
-    {
-        if(evnt.shouldCommit) {
-            // we are commiting
-            _sendEth(payable(to), amount);
-            emit Commit(evnt.xtxId);
-        } else {   
-            // reverting
-            _sendEth(payable(msg.sender), amount);
-            emit Revert(evnt.xtxId);
-        }
-    }
-
     // used to settle token based transactions
-    function _settleToken(CircuitEvent memory evnt, address to, uint amount, address token)
+    function _settleToken(CircuitEvent memory evnt, address to, address token, uint amount)
         private
     {
          if(evnt.shouldCommit) {
@@ -200,47 +134,6 @@ contract Escrow is SimplifiedMMRVerification, HeaderRegistry {
             _sendToken(payable(msg.sender), token, amount);
             emit Revert(evnt.xtxId);
         }
-    }
-
-    // TODO: hashing not dry, need to refactor!
-    function _hashEthSwap(address to, uint amount, address executor)
-        private
-        pure
-        returns (bytes32)
-    {
-        return keccak256(abi.encodePacked(to, amount, executor));
-    }
-
-    function _hashTokenSwap(address to, address asset, uint amount, address executor)
-        private
-        pure
-        returns (bytes32)
-    {
-        return keccak256(abi.encodePacked(to, asset, amount, executor));
-    }
-
-    function _hashAddLiquidity(address to, address asset, uint amount, address executor)
-        private
-        pure
-        returns (bytes32)
-    {
-        return keccak256(abi.encodePacked(to, asset, amount, executor));
-    }
-
-    function _hashEthTransfer(address to, uint amount, address executor)
-        private
-        pure
-        returns (bytes32)
-    {
-        return keccak256(abi.encodePacked(to, amount, executor));
-    }
-
-    function _hashTokenTransfer(address to, address asset, uint amount, address executor)
-        private
-        pure
-        returns (bytes32)
-    {
-        return keccak256(abi.encodePacked(to, asset, amount, executor));
     }
 
     function _sendEth(address payable _to, uint amount)
