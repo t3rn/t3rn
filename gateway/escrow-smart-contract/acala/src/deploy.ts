@@ -19,8 +19,6 @@ const main = async () => {
   const signingKey = new TestAccountSigningKey(provider.api.registry);
   signingKey.addKeyringPair(pair);
   const wallet = new Signer(provider, pair.address, signingKey)
-
-  console.log(wallet)
   // deploy contract
   const instance = await ContractFactory.fromSolidity(Escrow).connect(wallet as any).deploy();
   console.log('Escrow address:', instance.address);
