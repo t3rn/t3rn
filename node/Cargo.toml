@@ -31,7 +31,6 @@ hex-literal = "0.3.4"
 jsonrpc-core = "18.0.0"
 
 # Local Dependencies
-circuit-parachain-runtime = { path = "../runtime/parachain" }
 circuit-service = { path = "./service" }
 
 # Substrate Dependencies

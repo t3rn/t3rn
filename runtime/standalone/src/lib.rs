@@ -1,28 +1,20 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
-// Runtime-generated enums
-#![allow(clippy::large_enum_variant)]
-// Runtime-generated DecodeLimit::decode_all_With_depth_limit
-#![allow(clippy::unnecessary_mut_passed)]
-// From construct_runtime macro
-#![allow(clippy::from_over_into)]
 
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
+use t3rn_primitives::bridges::chain_circuit as bp_circuit;
+use t3rn_primitives::bridges::runtime as bp_runtime;
 
-pub mod gateway_messages;
+// pub mod gateway_messages;
 
-use crate::gateway_messages::{ToGatewayMessagePayload, WithGatewayMessageBridge};
-use beefy_primitives::{crypto::AuthorityId as BeefyId, ValidatorSet};
-use bridge_runtime_common::messages::{
-    source::estimate_message_dispatch_and_delivery_fee, MessageBridge,
-};
+// use crate::gateway_messages::{ToGatewayMessagePayload, WithGatewayMessageBridge};
 use pallet_contracts_registry::FetchContractsResult;
 
 use codec::{Decode, Encode};
-use pallet_beefy_mmr::mmr::MmrLeafVersion;
+// use pallet_beefy_mmr::mmr::MmrLeafVersion;
 use pallet_grandpa::{
     fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
@@ -46,7 +38,6 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use pallet_contracts_primitives::RentProjection;
 use t3rn_primitives::{
     abi::GatewayABIConfig, transfers::BalanceOf, ChainId as GatewayId, ComposableExecResult,
     Compose,
@@ -54,7 +45,7 @@ use t3rn_primitives::{
 
 use ethereum_light_client::EthereumDifficultyConfig;
 use t3rn_protocol::side_effects::confirm::ethereum::EthereumMockVerifier;
-use volatile_vm::DispatchRuntimeCall;
+// use volatile_vm::DispatchRuntimeCall;
 
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
@@ -66,8 +57,8 @@ pub use frame_support::{
 
 pub use frame_system::Call as SystemCall;
 pub use pallet_balances::Call as BalancesCall;
-pub use pallet_bridge_grandpa::Call as BridgeGrandpaGatewayCall;
-pub use pallet_bridge_messages::Call as MessagesCall;
+// pub use pallet_bridge_grandpa::Call as BridgeGrandpaGatewayCall;
+// pub use pallet_bridge_messages::Call as MessagesCall;
 pub use pallet_multi_finality_verifier::Call as BridgePolkadotLikeMultiFinalityVerifierCall;
 pub use pallet_sudo::Call as SudoCall;
 pub use pallet_timestamp::Call as TimestampCall;
@@ -77,19 +68,12 @@ use frame_support::weights::constants::RocksDbWeight;
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
-/// An index to a block.
-pub type BlockNumber = bp_circuit::BlockNumber;
-
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
 pub type Signature = bp_circuit::Signature;
 
 /// Some way of identifying an account on the chain. We intentionally make it equivalent
 /// to the public key of our transaction signing scheme.
 pub type AccountId = bp_circuit::AccountId;
-
-/// The type for looking up accounts. We don't expect more than 4 billion of them, but you
-/// never know...
-pub type AccountIndex = u32;
 
 /// Balance of an account.
 pub type Balance = bp_circuit::Balance;
@@ -100,11 +84,11 @@ pub type Index = u32;
 /// A hash of some data used by the chain.
 pub type Hash = bp_circuit::Hash;
 
+/// An index to a block.
+pub type BlockNumber = u32;
+
 /// Hashing algorithm used by the chain.
 pub type Hashing = bp_circuit::Hasher;
-
-/// Digest item type.
-pub type DigestItem = generic::DigestItem<Hash>;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
@@ -127,15 +111,15 @@ impl_opaque_keys! {
     pub struct SessionKeys {
         pub aura: Aura,
         pub grandpa: Grandpa,
-        pub beefy: Beefy,
+        // pub beefy: Beefy,
     }
 }
 
 /// This runtime version.
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("Circuit-standalone-runtime"),
-    impl_name: create_runtime_str!("Circuit-standalone-runtime"),
+    spec_name: create_runtime_str!("circuit-standalone"),
+    impl_name: create_runtime_str!("circuit-standalone"),
     authoring_version: 1,
     spec_version: 1,
     impl_version: 1,
@@ -210,19 +194,21 @@ impl frame_system::Config for Runtime {
 
 impl pallet_aura::Config for Runtime {
     type AuthorityId = AuraId;
+    type DisabledValidators = ();
+    type MaxAuthorities = MaxAuthorities;
 }
 
-impl pallet_bridge_dispatch::Config for Runtime {
-    type Event = Event;
-    type MessageId = (bp_messages::LaneId, bp_messages::MessageNonce);
-    type Call = Call;
-    type CallFilter = ();
-    type EncodedCall = crate::gateway_messages::FromGatewayEncodedCall;
-    type SourceChainAccountId = bp_gateway::AccountId;
-    type TargetChainAccountPublic = MultiSigner;
-    type TargetChainSignature = MultiSignature;
-    type AccountIdConverter = bp_circuit::AccountIdConverter;
-}
+// impl pallet_bridge_dispatch::Config for Runtime {
+//     type Event = Event;
+//     type MessageId = (bp_messages::LaneId, bp_messages::MessageNonce);
+//     type Call = Call;
+//     type CallFilter = ();
+//     type EncodedCall = crate::gateway_messages::FromGatewayEncodedCall;
+//     type SourceChainAccountId = bp_gateway::AccountId;
+//     type TargetChainAccountPublic = MultiSigner;
+//     type TargetChainSignature = MultiSignature;
+//     type AccountIdConverter = bp_circuit::AccountIdConverter;
+// }
 
 impl pallet_grandpa::Config for Runtime {
     type Event = Event;
@@ -239,9 +225,9 @@ impl pallet_grandpa::Config for Runtime {
     type WeightInfo = ();
 }
 
-impl pallet_beefy::Config for Runtime {
-    type BeefyId = BeefyId;
-}
+// impl pallet_beefy::Config for Runtime {
+//     type BeefyId = BeefyId;
+// }
 
 parameter_types! {
     pub const MinimumPeriod: u64 = bp_circuit::SLOT_DURATION / 2;
@@ -301,16 +287,16 @@ impl pallet_sudo::Config for Runtime {
 type MmrHash = <Keccak256 as sp_runtime::traits::Hash>::Output;
 
 /// A BEEFY consensus digest item with MMR root hash.
-pub struct DepositLog;
-impl pallet_mmr::primitives::OnNewRoot<MmrHash> for DepositLog {
-    fn on_new_root(root: &Hash) {
-        let digest = DigestItem::Consensus(
-            beefy_primitives::BEEFY_ENGINE_ID,
-            codec::Encode::encode(&beefy_primitives::ConsensusLog::<BeefyId>::MmrRoot(*root)),
-        );
-        <frame_system::Pallet<Runtime>>::deposit_log(digest);
-    }
-}
+// pub struct DepositLog;
+// impl pallet_mmr::primitives::OnNewRoot<MmrHash> for DepositLog {
+//     fn on_new_root(root: &Hash) {
+//         let digest = DigestItem::Consensus(
+//             beefy_primitives::BEEFY_ENGINE_ID,
+//             codec::Encode::encode(&beefy_primitives::ConsensusLog::<BeefyId>::MmrRoot(*root)),
+//         );
+//         <frame_system::Pallet<Runtime>>::deposit_log(digest);
+//     }
+// }
 
 /// Configure Merkle Mountain Range pallet.
 impl pallet_mmr::Config for Runtime {
@@ -365,58 +351,14 @@ parameter_types! {
 }
 
 pub type GatewayGrandpaInstance = ();
-impl pallet_bridge_grandpa::Config for Runtime {
-    type BridgedChain = bp_gateway::Gateway;
-    type MaxRequests = MaxRequests;
-    type HeadersToKeep = HeadersToKeep;
-
-    // TODO [#391]: Use weights generated for the Circuit runtime instead of Gateway ones.
-    type WeightInfo = ();
-}
-
-// start of contracts VMs
-parameter_types! {
-    pub const SignedClaimHandicap: u64 = 2;
-    pub const TombstoneDeposit: u128 = 16;
-    pub const DepositPerContract: u128 = 8 * DepositPerStorageByte::get();
-    pub const DepositPerStorageByte: u128 = 10_000;
-    pub const DepositPerStorageItem: u128 = 10_000;
-    pub RentFraction: Perbill = Perbill::from_rational(4u32, 10_000u32);
-    pub const SurchargeReward: u128 = 500_000;
-    pub const MaxValueSize: u32 = 16_384;
-    pub const DeletionQueueDepth: u32 = 1024;
-    pub const DeletionWeightLimit: Weight = 500_000_000_000;
-    pub const MaxCodeSize: u32 = 2 * 1024;
-    pub MySchedule: pallet_contracts::Schedule<Runtime> = <pallet_contracts::Schedule<Runtime>>::default();
-}
-
-impl Convert<Weight, BalanceOf<Self>> for Runtime {
-    fn convert(w: Weight) -> BalanceOf<Self> {
-        w.into()
-    }
-}
-
-impl pallet_contracts::Config for Runtime {
-    type Time = Timestamp;
-    type Randomness = Randomness;
-    type Currency = Balances;
-    type Event = Event;
-    type RentPayment = ();
-    type SignedClaimHandicap = SignedClaimHandicap;
-    type TombstoneDeposit = TombstoneDeposit;
-    type DepositPerContract = DepositPerContract;
-    type DepositPerStorageByte = DepositPerStorageByte;
-    type DepositPerStorageItem = DepositPerStorageItem;
-    type RentFraction = RentFraction;
-    type SurchargeReward = SurchargeReward;
-    type CallStack = [pallet_contracts::Frame<Self>; 31];
-    type WeightPrice = Self;
-    type WeightInfo = ();
-    type ChainExtension = ();
-    type DeletionQueueDepth = DeletionQueueDepth;
-    type DeletionWeightLimit = DeletionWeightLimit;
-    type Schedule = MySchedule;
-}
+// impl pallet_bridge_grandpa::Config for Runtime {
+//     type BridgedChain = bp_gateway::Gateway;
+//     type MaxRequests = MaxRequests;
+//     type HeadersToKeep = HeadersToKeep;
+//
+//     // TODO [#391]: Use weights generated for the Circuit runtime instead of Gateway ones.
+//     type WeightInfo = ();
+// }
 
 // EVM
 
@@ -482,39 +424,39 @@ parameter_types! {
 }
 
 /// Instance of the messages pallet used to relay messages to/from Gateway chain.
-pub type WithGatewayMessagesInstance = pallet_bridge_messages::DefaultInstance;
+// pub type WithGatewayMessagesInstance = pallet_bridge_messages::DefaultInstance;
 
-impl pallet_bridge_messages::Config<WithGatewayMessagesInstance> for Runtime {
-    type Event = Event;
-    // TODO: https://github.com/paritytech/parity-bridges-common/issues/390
-    type WeightInfo = ();
-    type Parameter = gateway_messages::CircuitToGatewayMessagesParameter;
-    type MaxMessagesToPruneAtOnce = MaxMessagesToPruneAtOnce;
-    type MaxUnrewardedRelayerEntriesAtInboundLane = MaxUnrewardedRelayerEntriesAtInboundLane;
-    type MaxUnconfirmedMessagesAtInboundLane = MaxUnconfirmedMessagesAtInboundLane;
-
-    type OutboundPayload = crate::gateway_messages::ToGatewayMessagePayload;
-    type OutboundMessageFee = Balance;
-
-    type InboundPayload = crate::gateway_messages::FromGatewayMessagePayload;
-    type InboundMessageFee = bp_gateway::Balance;
-    type InboundRelayer = bp_gateway::AccountId;
-
-    type AccountIdConverter = bp_circuit::AccountIdConverter;
-
-    type TargetHeaderChain = crate::gateway_messages::Gateway;
-    type LaneMessageVerifier = crate::gateway_messages::ToGatewayMessageVerifier;
-    type MessageDeliveryAndDispatchPayment =
-        pallet_bridge_messages::instant_payments::InstantCurrencyPayments<
-            Runtime,
-            pallet_balances::Pallet<Runtime>,
-            GetDeliveryConfirmationTransactionFee,
-            RootAccountForPayments,
-        >;
-
-    type SourceHeaderChain = crate::gateway_messages::Gateway;
-    type MessageDispatch = crate::gateway_messages::FromGatewayMessageDispatch;
-}
+// impl pallet_bridge_messages::Config<WithGatewayMessagesInstance> for Runtime {
+//     type Event = Event;
+//     // TODO: https://github.com/paritytech/parity-bridges-common/issues/390
+//     type WeightInfo = ();
+//     type Parameter = gateway_messages::CircuitToGatewayMessagesParameter;
+//     type MaxMessagesToPruneAtOnce = MaxMessagesToPruneAtOnce;
+//     type MaxUnrewardedRelayerEntriesAtInboundLane = MaxUnrewardedRelayerEntriesAtInboundLane;
+//     type MaxUnconfirmedMessagesAtInboundLane = MaxUnconfirmedMessagesAtInboundLane;
+//
+//     type OutboundPayload = crate::gateway_messages::ToGatewayMessagePayload;
+//     type OutboundMessageFee = Balance;
+//
+//     type InboundPayload = crate::gateway_messages::FromGatewayMessagePayload;
+//     type InboundMessageFee = bp_gateway::Balance;
+//     type InboundRelayer = bp_gateway::AccountId;
+//
+//     type AccountIdConverter = bp_circuit::AccountIdConverter;
+//
+//     type TargetHeaderChain = crate::gateway_messages::Gateway;
+//     type LaneMessageVerifier = crate::gateway_messages::ToGatewayMessageVerifier;
+//     type MessageDeliveryAndDispatchPayment =
+//         pallet_bridge_messages::instant_payments::InstantCurrencyPayments<
+//             Runtime,
+//             pallet_balances::Pallet<Runtime>,
+//             GetDeliveryConfirmationTransactionFee,
+//             RootAccountForPayments,
+//         >;
+//
+//     type SourceHeaderChain = crate::gateway_messages::Gateway;
+//     type MessageDispatch = crate::gateway_messages::FromGatewayMessageDispatch;
+// }
 
 impl pallet_xdns::Config for Runtime {
     type Event = Event;
@@ -537,7 +479,7 @@ impl DispatchRuntimeCall<Runtime> for ExampleDispatchRuntimeCall {
         _requested: &<Runtime as frame_system::Config>::AccountId,
         _callee: &<Runtime as frame_system::Config>::AccountId,
         _value: BalanceOf<Runtime>,
-        _gas_meter: &mut volatile_vm::gas::GasMeter<Runtime>,
+        // _gas_meter: &mut GasMeter<Runtime>,
     ) -> DispatchResult {
         // match (module_name, fn_name) {
         //     ("Weights", "complex_calculations") => {
@@ -564,32 +506,32 @@ impl DispatchRuntimeCall<Runtime> for ExampleDispatchRuntimeCall {
 
 parameter_types! {
     pub const UncleGenerations: u64 = 0;
-    pub MyScheduleVVM: volatile_vm::Schedule<Runtime> = <volatile_vm::Schedule<Runtime>>::default();
+    // pub MyScheduleVVM: volatile_vm::Schedule<Runtime> = <volatile_vm::Schedule<Runtime>>::default();
 }
 
 parameter_types! {}
 
-impl volatile_vm::VolatileVM for Runtime {
-    type Randomness = Randomness;
-    type Event = Event;
-    type Call = Call;
-    type DispatchRuntimeCall = ExampleDispatchRuntimeCall;
-    type SignedClaimHandicap = SignedClaimHandicap;
-    type TombstoneDeposit = TombstoneDeposit;
-    type DepositPerContract = DepositPerContract;
-    type DepositPerStorageByte = DepositPerStorageByte;
-    type DepositPerStorageItem = DepositPerStorageItem;
-    type RentFraction = RentFraction;
-    type SurchargeReward = SurchargeReward;
-    type CallStack = [volatile_vm::exec::Frame<Self>; 31];
-    type ContractsLazyLoaded = [volatile_vm::wasm::PrefabWasmModule<Self>; 31];
-    type WeightPrice = Self;
-    type WeightInfo = ();
-    type ChainExtension = ();
-    type DeletionQueueDepth = DeletionQueueDepth;
-    type DeletionWeightLimit = DeletionWeightLimit;
-    type Schedule = MyScheduleVVM;
-}
+// impl volatile_vm::VolatileVM for Runtime {
+//     type Randomness = Randomness;
+//     type Event = Event;
+//     type Call = Call;
+//     type DispatchRuntimeCall = ExampleDispatchRuntimeCall;
+//     type SignedClaimHandicap = SignedClaimHandicap;
+//     type TombstoneDeposit = TombstoneDeposit;
+//     type DepositPerContract = DepositPerContract;
+//     type DepositPerStorageByte = DepositPerStorageByte;
+//     type DepositPerStorageItem = DepositPerStorageItem;
+//     type RentFraction = RentFraction;
+//     type SurchargeReward = SurchargeReward;
+//     type CallStack = [volatile_vm::exec::Frame<Self>; 31];
+//     type ContractsLazyLoaded = [volatile_vm::wasm::PrefabWasmModule<Self>; 31];
+//     type WeightPrice = Self;
+//     type WeightInfo = ();
+//     type ChainExtension = ();
+//     type DeletionQueueDepth = DeletionQueueDepth;
+//     type DeletionWeightLimit = DeletionWeightLimit;
+//     type Schedule = MyScheduleVVM;
+// }
 
 pub const INDEXING_PREFIX: &'static [u8] = b"commitment";
 parameter_types! {
@@ -603,7 +545,7 @@ impl snowbridge_basic_channel::outbound::Config for Runtime {
     type Hashing = Keccak256;
     type MaxMessagePayloadSize = MaxMessagePayloadSize;
     type MaxMessagesPerCommit = MaxMessagesPerCommit;
-    type SetPrincipalOrigin = pallet_circuit_execution_delivery::EnsureExecDelivery<Runtime>;
+    type SetPrincipalOrigin = pallet_circuit_portal::EnsureCircuitPortal<Runtime>;
     type WeightInfo = ();
 }
 
@@ -625,12 +567,12 @@ parameter_types! {
     pub const ExecPalletId: PalletId = PalletId(*b"pal/exec");
 }
 
-impl pallet_circuit_execution_delivery::Config for Runtime {
+impl pallet_circuit_portal::Config for Runtime {
     type Event = Event;
     type Call = Call;
     type AccountId32Converter = AccountId32Converter;
     type ToStandardizedGatewayBalance = CircuitToGateway;
-    type WeightInfo = pallet_circuit_execution_delivery::weights::SubstrateWeight<Runtime>;
+    type WeightInfo = pallet_circuit_portal::weights::SubstrateWeight<Runtime>;
     type PalletId = ExecPalletId;
     type EthVerifier = EthereumMockVerifier;
 }
@@ -742,11 +684,11 @@ parameter_types! {
     pub LeafVersion: MmrLeafVersion = MmrLeafVersion::new(0, 0);
 }
 
-impl pallet_beefy_mmr::Config for Runtime {
-    type LeafVersion = LeafVersion;
-    type BeefyAuthorityToMerkleLeaf = pallet_beefy_mmr::BeefyEcdsaToEthereum;
-    type ParachainHeads = ();
-}
+// impl pallet_beefy_mmr::Config for Runtime {
+//     type LeafVersion = LeafVersion;
+//     type BeefyAuthorityToMerkleLeaf = pallet_beefy_mmr::BeefyEcdsaToEthereum;
+//     type ParachainHeads = ();
+// }
 
 construct_runtime!(
     pub enum Runtime where
@@ -754,15 +696,15 @@ construct_runtime!(
         NodeBlock = opaque::Block,
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
-        BridgeGatewayMessages: pallet_bridge_messages::{Pallet, Call, Storage, Event<T>},
-        BridgeDispatch: pallet_bridge_dispatch::{Pallet, Event<T>},
-        BridgeGatewayGrandpa: pallet_bridge_grandpa::{Pallet, Call, Storage},
+        // BridgeGatewayMessages: pallet_bridge_messages::{Pallet, Call, Storage, Event<T>},
+        // BridgeDispatch: pallet_bridge_dispatch::{Pallet, Event<T>},
+        // BridgeGatewayGrandpa: pallet_bridge_grandpa::{Pallet, Call, Storage},
         BridgePolkadotLikeMultiFinalityVerifier: pallet_multi_finality_verifier::<Instance1>::{Pallet, Call, Storage},
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         Aura: pallet_aura::{Pallet, Config<T>},
         Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event},
-        Beefy: pallet_beefy::{Pallet, Config<T>},
+        // Beefy: pallet_beefy::{Pallet, Config<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
@@ -770,17 +712,17 @@ construct_runtime!(
         ShiftSessionManager: pallet_shift_session_manager::{Pallet},
 
         Randomness: pallet_randomness_collective_flip::{Pallet, Storage},
-        Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
-        EVM: pallet_evm::{Pallet, Config, Storage, Event<T>},
+        // Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
+        // EVM: pallet_evm::{Pallet, Config, Storage, Event<T>},
         XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>},
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>},
-        VolatileVM: volatile_vm::{Pallet, Call, Event<T>, Storage},
+        // VolatileVM: volatile_vm::{Pallet, Call, Event<T>, Storage},
         MultiFinalityVerifier: pallet_multi_finality_verifier::{Pallet, Call, Config<T>},
-        ExecDelivery: pallet_circuit_execution_delivery::{Pallet, Call, Storage, Event<T>},
+        CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>},
         Utility: pallet_utility::{Pallet, Call, Event},
         Mmr: pallet_mmr::{Pallet, Storage},
         EthereumLightClient: ethereum_light_client::{Pallet, Call, Storage, Event, Config},
-        MmrLeaf: pallet_beefy_mmr::{Pallet, Storage},
+        // MmrLeaf: pallet_beefy_mmr::{Pallet, Storage},
         BasicOutboundChannel: snowbridge_basic_channel::outbound::{Pallet, Config<T>, Storage, Event},
     }
 );
@@ -948,11 +890,11 @@ impl_runtime_apis! {
         }
     }
 
-    impl beefy_primitives::BeefyApi<Block> for Runtime {
-        fn validator_set() -> ValidatorSet<BeefyId> {
-            Beefy::validator_set()
-        }
-    }
+    // impl beefy_primitives::BeefyApi<Block> for Runtime {
+    //     fn validator_set() -> ValidatorSet<BeefyId> {
+    //         Beefy::validator_set()
+    //     }
+    // }
 
     impl pallet_mmr_primitives::MmrApi<Block, Hash> for Runtime {
         fn generate_proof(leaf_index: u64)
@@ -1020,10 +962,11 @@ impl_runtime_apis! {
             _lane_id: bp_messages::LaneId,
             payload: ToGatewayMessagePayload,
         ) -> Option<Balance> {
-            estimate_message_dispatch_and_delivery_fee::<WithGatewayMessageBridge>(
-                &payload,
-                WithGatewayMessageBridge::RELAYER_FEE_PERCENT,
-            ).ok()
+            // estimate_message_dispatch_and_delivery_fee::<WithGatewayMessageBridge>(
+            //     &payload,
+            //     WithGatewayMessageBridge::RELAYER_FEE_PERCENT,
+            // ).ok()
+            Ok(())
         }
 
         fn messages_dispatch_weight(
@@ -1099,7 +1042,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl pallet_circuit_execution_delivery_rpc_runtime_api::ExecutionDeliveryRuntimeApi<Block, AccountId, Balance, BlockNumber> for Runtime
+    impl pallet_circuit_portal_rpc_runtime_api::ExecutionDeliveryRuntimeApi<Block, AccountId, Balance, BlockNumber> for Runtime
     {
         fn composable_exec(
             _origin: AccountId,
@@ -1141,12 +1084,6 @@ impl_runtime_apis! {
         ) -> pallet_contracts_primitives::GetStorageResult {
             Contracts::get_storage(address, key)
         }
-
-        fn rent_projection(
-            _: AccountId
-        ) -> Result<RentProjection<BlockNumber>, pallet_contracts_primitives::ContractAccessError> {
-            unimplemented!();
-        }
     }
 
     #[cfg(feature = "runtime-benchmarks")]
@@ -1177,7 +1114,7 @@ impl_runtime_apis! {
             let mut batches = Vec::<BenchmarkBatch>::new();
             let params = (&config, &whitelist);
 
-            add_benchmark!(params, batches, pallet_circuit_execution_delivery, ExecDelivery);
+            add_benchmark!(params, batches, pallet_circuit_portal, CircuitPortal);
             add_benchmark!(params, batches, pallet_xdns, XDNS);
             add_benchmark!(params, batches, pallet_contracts_registry, ContractsRegistry);
             if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }

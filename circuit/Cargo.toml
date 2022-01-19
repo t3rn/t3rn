@@ -2,11 +2,11 @@
 members = [
     'runtime',
     'node',
-    'rpc-test',
+#    'rpc-test',
     'protocol',
-    'pallets/multi-finality-verifier'
+    'pallets/*'
 ]
-exclude = []
+exclude = ['pallets/beefy-*']
 resolver = '2'
 
 [profile.release]

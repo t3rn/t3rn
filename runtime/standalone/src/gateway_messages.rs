@@ -18,21 +18,24 @@
 
 use crate::Runtime;
 
-use bp_messages::{
+// use bridge_runtime_common::messages::{self, MessageBridge, MessageTransaction};
+use codec::{Codec, Decode, Encode, EncodeLike, Error, Input};
+use frame_support::{
+    parameter_types,
+    weights::{DispatchClass, Weight},
+    Parameter, RuntimeDebug,
+};
+use scale_info::{Type, TypeInfo};
+use sp_runtime::{traits::Zero, FixedPointNumber, FixedU128};
+use sp_std::{convert::TryFrom, ops::RangeInclusive};
+use t3rn_primitives::bridges::chain_circuit as bp_circuit;
+use t3rn_primitives::bridges::messages;
+use t3rn_primitives::bridges::messages::{
     source_chain::TargetHeaderChain,
     target_chain::{ProvedMessages, SourceHeaderChain},
     InboundLaneData, LaneId, Message, MessageNonce, Parameter as MessagesParameter,
 };
-use bp_runtime::{ChainId, CIRCUIT_CHAIN_ID, GATEWAY_CHAIN_ID};
-use bridge_runtime_common::messages::{self, MessageBridge, MessageTransaction};
-use codec::{Decode, Encode};
-use frame_support::{
-    parameter_types,
-    weights::{DispatchClass, Weight},
-    RuntimeDebug,
-};
-use sp_runtime::{traits::Zero, FixedPointNumber, FixedU128};
-use sp_std::{convert::TryFrom, ops::RangeInclusive};
+use t3rn_primitives::bridges::runtime::{ChainId, CIRCUIT_CHAIN_ID, GATEWAY_CHAIN_ID};
 
 /// Initial value of `GatewayToCircuitConversionRate` parameter.
 pub const INITIAL_GATEWAY_TO_CIRCUIT_CONVERSION_RATE: FixedU128 =

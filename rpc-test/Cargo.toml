@@ -15,10 +15,10 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dev-dependencies]
 async-std = { version = "1.6.5", features = ["attributes", "tokio1"] }
 async-trait = "0.1.40"
-jsonrpc-runtime-client = { version = "0.1.0", path = "jsonrpc-runtime-client" }
+jsonrpc-runtime-client = { version = "0.1.0", path = "../relayers/jsonrpc-runtime-client" }
 jsonrpc-core-client = { version = "15.1.0", features = ["http"] }
 jsonrpsee-types = "0.2.0"
-relay-substrate-client = { version = "0.1.0", path = "../../vendor/bridges/relays/client-substrate" }
+relay-substrate-client = { version = "0.1.0", path = "../relayers/client-substrate" }
 
 futures = { version = "0.3.16", features = ["compat"] }
 node-primitives = { version = "2.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.8" }
@@ -68,7 +68,7 @@ futures01 = { package = "futures", version = "0.1.29" }
 lazy_static = "1.4.0"
 frame-system = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.8" }
 circuit-test-utils = { version = "0.1.0", path = "../test-utils" }
-pallet-circuit-execution-delivery = { version = "0.1.0", path = "../pallets/execution-delivery" }
+pallet-circuit-portal = { version = "0.1.0", path = "../pallets/circuit-portal" }
 sc-network = { version = "0.9.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.8" }
 sp-io = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.8" }
 substrate-test-runtime = { version = "2.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.8" }

@@ -17,7 +17,7 @@ use t3rn_primitives::{
 #[cfg(feature = "with-parachain-runtime")]
 pub mod parachain;
 
-#[cfg(feature = "standalone-runtime")]
+#[cfg(feature = "with-standalone-runtime")]
 pub mod standalone;
 
 /// Node `ChainSpec` extensions.

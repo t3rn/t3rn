@@ -18,9 +18,9 @@ async-task = "4.0.3"
 
 # RPC related Dependencies
 jsonrpc-core = "18.0.0"
-jsonrpc-runtime-client = { version = "0.1.0", path = "jsonrpc-runtime-client" }
+jsonrpc-runtime-client = { version = "0.1.0", path = "../../relayers/jsonrpc-runtime-client" }
 # Local Dependencies
-#circuit-standalone-runtime = { path = "../../runtime/standalone", optional = true }
+circuit-standalone-runtime = { path = "../../runtime/standalone", optional = true }
 circuit-parachain-runtime = { path = "../../runtime/parachain", optional = true }
 t3rn-primitives = { path = "../../primitives" }
 
@@ -83,13 +83,11 @@ polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "r
 polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13" }
 
 [features]
-default = [ "std", "circuit-parachain-runtime" ]
+default = [ "std", "with-parachain-runtime" ]
 std = []
-#runtime-benchmarks = [
-#    "circuit-standalone-runtime/runtime-benchmarks",
-#    "circuit-parachain-runtime/runtime-benchmarks"
-#]
-
-#standalone = [
-#    "circuit-standalone-runtime"
-#]
+with-parachain-runtime = [ "circuit-parachain-runtime" ]
+with-standalone-runtime = [ "circuit-parachain-runtime" ]
+runtime-benchmarks = [
+    "circuit-standalone-runtime/runtime-benchmarks",
+    "circuit-parachain-runtime/runtime-benchmarks"
+]

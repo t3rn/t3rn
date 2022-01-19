@@ -134,7 +134,7 @@ fn fetch_contracts_by_metadata_should_return_all_matching_contracts() {
             test_contract_wrong.generate_id::<Test>(),
             test_contract_wrong.clone(),
         );
-        let actual = ContractsRegistry::fetch_contracts(None, Some(b"contract".to_vec().into()));
+        let actual = ContractsRegistry::fetch_contracts(None, Some(b"contract".to_vec()));
         assert_ok!(
             actual,
             vec![test_contract_name.clone(), test_contract_desc.clone()]
