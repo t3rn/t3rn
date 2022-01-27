@@ -1,0 +1,26 @@
+{
+  "name": "acala-escrow",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/chai": "~4.2.22",
+    "@types/mocha": "~9.0.0",
+    "chai": "~4.3.4",
+    "ethereum-waffle": "~3.4.0",
+    "mocha": "~9.1.3",
+    "ts-node": "~10.3.0",
+    "typescript": "~4.4.4"
+  },
+  "scripts": {
+    "build": "waffle",
+    "test": "export NODE_ENV=test && mocha -r ts-node/register/transpile-only --timeout 50000 --no-warnings test/**/*.test.ts",
+    "deploy": "ts-node --transpile-only src/deploy.ts"
+  },
+  "dependencies": {
+    "@acala-network/api": "~3.0.3-3",
+    "@acala-network/bodhi": "2.1.8-beta",
+    "@acala-network/contracts": "^3.0.0",
+    "@openzeppelin/contracts": "^4.4.2"
+  }
+}
