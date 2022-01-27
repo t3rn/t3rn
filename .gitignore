@@ -14,3 +14,6 @@ client/**/node_modules
 /.devkey
 client/types/dist/*
 client/relayer/.env
+
+# mac
+**/.DS_Store

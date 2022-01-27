@@ -1,6 +1,6 @@
 
 [package]
-name = "multi-finality-verifier"
+name = "pallet-multi-finality-verifier"
 version = "1.0.0-alpha.0"
 authors = ["t3rn ltd. <team@t3rn.io>"]
 edition = "2018"

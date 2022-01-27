@@ -18,7 +18,7 @@ hex = { version = "0.4.3", default-features = false }
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
 
 t3rn-primitives = { version = "1.0.0-alpha.0", default-features = false, path = "../../primitives" }
-t3rn-protocol = { version = "1.0.0-alpha.0", default-features = false, path = "../../protocol", package = "t3rn-protocol" }
+t3rn-protocol = { git = "https://github.com/t3rn/protocol", version = "1.0.0-alpha.0", default-features = false }
 serde = { version = "1.0.124", features = ["derive"], optional = true }
 lite-json = { version = "0.1", default-features = false }
 log = { version = "0.4.14", default-features = false }
@@ -42,7 +42,7 @@ scale-info = { version = "1.0", default-features = false, features = ["derive"] 
 
 pallet-transaction-payment = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
 pallet-randomness-collective-flip = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
-pallet-multi-finality-verifier = { default-features = false, path = "../multi-finality-verifier", package = 'multi-finality-verifier' }
+pallet-multi-finality-verifier = { default-features = false, path = "../multi-finality-verifier" }
 pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
 pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
 pallet-im-online = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }

@@ -7,8 +7,9 @@ members = [
     'node/service',
     'pallets/*',
     'primitives',
-    'protocol',
     'runtime/parachain',
+    'runtime/standalone',
+    'test-utils'
 ]
 exclude = [
     'pallets/beefy-merkle-tree',

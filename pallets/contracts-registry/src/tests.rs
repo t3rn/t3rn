@@ -20,7 +20,9 @@
 use crate::mock::{ContractsRegistry, ExtBuilder, Origin, Test};
 use crate::pallet::Error;
 use crate::types::RegistryContract;
+use crate::ContractsRegistry;
 use frame_support::{assert_err, assert_ok};
+use frame_system::Origin;
 use sp_core::H256;
 use sp_runtime::DispatchError;
 use t3rn_primitives::contract_metadata::ContractMetadata;

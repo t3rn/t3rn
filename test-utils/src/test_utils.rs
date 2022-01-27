@@ -3,7 +3,6 @@ use frame_metadata::v13::{
     ExtrinsicMetadata, FunctionMetadata, ModuleMetadata, RuntimeMetadataV13,
 };
 use frame_metadata::{RuntimeMetadata, RuntimeMetadataPrefixed};
-// RuntimeMetadata, RuntimeMetadataPrefixed
 use sp_core::H256;
 use sp_version::{ApisVec, RuntimeVersion};
 

@@ -160,7 +160,7 @@ pub mod pallet {
 
     // Errors inform users that something went wrong.
     #[pallet::error]
-    #[derive(Eq, PartialEq)]
+    #[derive(Eq, PartialEq, Clone)]
     pub enum Error<T> {
         /// Stored contract has already been added before
         ContractAlreadyExists,

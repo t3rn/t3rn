@@ -25,10 +25,10 @@ pallet-circuit-portal = {  path = "../../pallets/circuit-portal", default-featur
 pallet-circuit-portal-rpc-runtime-api = {  path = "../../pallets/circuit-portal/rpc/runtime-api", default-features = false }
 pallet-xdns = { path = "../../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
-pallet-multi-finality-verifier = { path = "../../pallets/multi-finality-verifier", default-features = false, package="multi-finality-verifier" }
+pallet-multi-finality-verifier = { path = "../../pallets/multi-finality-verifier", version = "1.0.0-alpha.0", default-features = false }
 #volatile-vm = { path = "../../vm/volatile-vm", default-features = false }
 t3rn-primitives = { version = "1.0.0-alpha.0", default-features = false, path = "../../primitives" }
-t3rn-protocol = { version = "1.0.0-alpha.0", default-features = false, path = "../../protocol" }
+t3rn-protocol = { git = "https://github.com/t3rn/protocol", version = "1.0.0-alpha.0", default-features = false }
 
 # Smart contracts VMs
 #pallet-evm = { git = "https://github.com/t3rn/frontier", default-features = false }
