@@ -38,7 +38,7 @@ use sp_runtime::{
 use sp_std::vec::*;
 
 pub use t3rn_primitives::{
-    abi::{GatewayABIConfig, HasherAlgo as HA},
+    abi::{GatewayABIConfig, HasherAlgo},
     bridges::chain_circuit as bp_circuit,
     bridges::runtime as bp_runtime,
     side_effect::{ConfirmedSideEffect, FullSideEffect, SideEffect},
@@ -196,29 +196,29 @@ pub mod pallet {
             )?;
 
             let res = match (gateway_abi.hasher, gateway_abi.block_number_type_size) {
-                (HA::Blake2, 32) => init_bridge_instance::<T, DefaultPolkadotLikeGateway>(
+                (HasherAlgo::Blake2, 32) => init_bridge_instance::<T, DefaultPolkadotLikeGateway>(
                     origin,
                     first_header,
                     authorities,
                     gateway_id,
                 )?,
-                (HA::Blake2, 64) => init_bridge_instance::<T, PolkadotLikeValU64Gateway>(
+                (HasherAlgo::Blake2, 64) => init_bridge_instance::<T, PolkadotLikeValU64Gateway>(
                     origin,
                     first_header,
                     authorities,
                     gateway_id,
                 )?,
-                (HA::Keccak256, 32) => init_bridge_instance::<T, EthLikeKeccak256ValU32Gateway>(
-                    origin,
-                    first_header,
-                    authorities,
-                    gateway_id,
+                (HasherAlgo::Keccak256, 32) => init_bridge_instance::<
+                    T,
+                    EthLikeKeccak256ValU32Gateway,
+                >(
+                    origin, first_header, authorities, gateway_id
                 )?,
-                (HA::Keccak256, 64) => init_bridge_instance::<T, EthLikeKeccak256ValU64Gateway>(
-                    origin,
-                    first_header,
-                    authorities,
-                    gateway_id,
+                (HasherAlgo::Keccak256, 64) => init_bridge_instance::<
+                    T,
+                    EthLikeKeccak256ValU64Gateway,
+                >(
+                    origin, first_header, authorities, gateway_id
                 )?,
                 (_, _) => init_bridge_instance::<T, DefaultPolkadotLikeGateway>(
                     origin,
@@ -345,29 +345,30 @@ impl<T: Config> Pallet<T> {
                     )
                 }?;
                 // Check inclusion relying on data in pallet-multi-verifier
-                let (extrinsics_root_h256, storage_root_h256) =
-                    match (
-                        gateway_xdns_record.gateway_abi.hasher.clone(),
-                        gateway_xdns_record.gateway_abi.block_number_type_size,
-                    ) {
-                        (HA::Blake2, 32) => get_roots_from_bridge::<T, DefaultPolkadotLikeGateway>(
-                            block_hash, gateway_id,
-                        )?,
-                        (HA::Blake2, 64) => get_roots_from_bridge::<T, PolkadotLikeValU64Gateway>(
-                            block_hash, gateway_id,
-                        )?,
-                        (HA::Keccak256, 32) => get_roots_from_bridge::<
-                            T,
-                            EthLikeKeccak256ValU32Gateway,
-                        >(block_hash, gateway_id)?,
-                        (HA::Keccak256, 64) => get_roots_from_bridge::<
-                            T,
-                            EthLikeKeccak256ValU64Gateway,
-                        >(block_hash, gateway_id)?,
-                        (_, _) => get_roots_from_bridge::<T, DefaultPolkadotLikeGateway>(
-                            block_hash, gateway_id,
-                        )?,
-                    };
+                let (extrinsics_root_h256, storage_root_h256) = match (
+                    gateway_xdns_record.gateway_abi.hasher.clone(),
+                    gateway_xdns_record.gateway_abi.block_number_type_size,
+                ) {
+                    (HasherAlgo::Blake2, 32) => get_roots_from_bridge::<
+                        T,
+                        DefaultPolkadotLikeGateway,
+                    >(block_hash, gateway_id)?,
+                    (HasherAlgo::Blake2, 64) => get_roots_from_bridge::<
+                        T,
+                        PolkadotLikeValU64Gateway,
+                    >(block_hash, gateway_id)?,
+                    (HasherAlgo::Keccak256, 32) => get_roots_from_bridge::<
+                        T,
+                        EthLikeKeccak256ValU32Gateway,
+                    >(block_hash, gateway_id)?,
+                    (HasherAlgo::Keccak256, 64) => get_roots_from_bridge::<
+                        T,
+                        EthLikeKeccak256ValU64Gateway,
+                    >(block_hash, gateway_id)?,
+                    (_, _) => get_roots_from_bridge::<T, DefaultPolkadotLikeGateway>(
+                        block_hash, gateway_id,
+                    )?,
+                };
 
                 // let expected_root = match step_confirmation.proof.proof_trie_pointer {
                 let expected_root = match trie_type {

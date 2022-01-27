@@ -28,7 +28,7 @@ pallet-xdns-rpc-runtime-api = { path = "../../pallets/xdns/rpc/runtime-api", def
 pallet-multi-finality-verifier = { path = "../../pallets/multi-finality-verifier", version = "1.0.0-alpha.0", default-features = false }
 #volatile-vm = { path = "../../vm/volatile-vm", default-features = false }
 t3rn-primitives = { version = "1.0.0-alpha.0", default-features = false, path = "../../primitives" }
-t3rn-protocol = { git = "https://github.com/t3rn/protocol", version = "1.0.0-alpha.0", default-features = false }
+t3rn-protocol = { git = "https://github.com/t3rn/protocol", version = "1.0.0-alpha.1", default-features = false }
 
 # Smart contracts VMs
 #pallet-evm = { git = "https://github.com/t3rn/frontier", default-features = false }
