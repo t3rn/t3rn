@@ -12,10 +12,13 @@ use t3rn_primitives::bridges::runtime as bp_runtime;
 // pub mod gateway_messages;
 
 // use crate::gateway_messages::{ToGatewayMessagePayload, WithGatewayMessageBridge};
-use pallet_contracts_registry::FetchContractsResult;
+use pallet_contracts_registry::{
+    ContractAccessError, ContractsRegistryResult, FetchContractsResult,
+};
 
+use beefy_primitives::mmr::MmrLeafVersion;
+use beefy_primitives::{crypto::AuthorityId as BeefyId, ValidatorSet};
 use codec::{Decode, Encode};
-// use pallet_beefy_mmr::mmr::MmrLeafVersion;
 use pallet_grandpa::{
     fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
@@ -32,7 +35,7 @@ use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::Convert,
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult,
+    ApplyExtrinsicResult, DigestItem,
 };
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -41,7 +44,7 @@ use sp_version::RuntimeVersion;
 
 use t3rn_primitives::{abi::GatewayABIConfig, ChainId as GatewayId, ComposableExecResult, Compose};
 
-// use ethereum_light_client::EthereumDifficultyConfig;
+use ethereum_light_client::EthereumDifficultyConfig;
 use t3rn_protocol::side_effects::confirm::ethereum::EthereumMockVerifier;
 // use volatile_vm::DispatchRuntimeCall;
 
@@ -63,7 +66,6 @@ pub use pallet_sudo::Call as SudoCall;
 pub use pallet_timestamp::Call as TimestampCall;
 
 use frame_support::weights::constants::RocksDbWeight;
-use pallet_circuit_portal::mock::OperationalFeeMultiplier;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
@@ -230,9 +232,9 @@ impl pallet_grandpa::Config for Runtime {
     type MaxAuthorities = MaxAuthorities;
 }
 
-// impl pallet_beefy::Config for Runtime {
-//     type BeefyId = BeefyId;
-// }
+impl pallet_beefy::Config for Runtime {
+    type BeefyId = BeefyId;
+}
 
 parameter_types! {
     pub const MinimumPeriod: u64 = bp_circuit::SLOT_DURATION / 2;
@@ -294,30 +296,30 @@ impl pallet_sudo::Config for Runtime {
 type MmrHash = <Keccak256 as sp_runtime::traits::Hash>::Output;
 
 /// A BEEFY consensus digest item with MMR root hash.
-// pub struct DepositLog;
-// impl pallet_mmr::primitives::OnNewRoot<MmrHash> for DepositLog {
-//     fn on_new_root(root: &Hash) {
-//         let digest = DigestItem::Consensus(
-//             beefy_primitives::BEEFY_ENGINE_ID,
-//             codec::Encode::encode(&beefy_primitives::ConsensusLog::<BeefyId>::MmrRoot(*root)),
-//         );
-//         <frame_system::Pallet<Runtime>>::deposit_log(digest);
-//     }
-// }
+pub struct DepositLog;
+impl pallet_mmr::primitives::OnNewRoot<MmrHash> for DepositLog {
+    fn on_new_root(root: &Hash) {
+        let digest = DigestItem::Consensus(
+            beefy_primitives::BEEFY_ENGINE_ID,
+            codec::Encode::encode(&beefy_primitives::ConsensusLog::<BeefyId>::MmrRoot(*root)),
+        );
+        <frame_system::Pallet<Runtime>>::deposit_log(digest);
+    }
+}
 
 /// Configure Merkle Mountain Range pallet.
-// impl pallet_mmr::Config for Runtime {
-//     const INDEXING_PREFIX: &'static [u8] = b"mmr";
-//     type Hashing = Keccak256;
-//     type Hash = MmrHash;
-//     type LeafData = frame_system::Pallet<Self>;
-//     type OnNewRoot = DepositLog;
-//     type WeightInfo = ();
-// }
+impl pallet_mmr::Config for Runtime {
+    const INDEXING_PREFIX: &'static [u8] = b"mmr";
+    type Hashing = Keccak256;
+    type Hash = MmrHash;
+    type LeafData = frame_system::Pallet<Self>;
+    type OnNewRoot = DepositLog;
+    type WeightInfo = ();
+}
 
 parameter_types! {
     /// Authorities are changing every 5 minutes.
-    pub const Period: BlockNumber = bp_circuit::SESSION_LENGTH;
+    pub const Period: BlockNumber = bp_circuit::SESSION_LENGTH as u32;
     pub const Offset: BlockNumber = 0;
 }
 
@@ -488,8 +490,8 @@ parameter_types! {
 
 pub const INDEXING_PREFIX: &'static [u8] = b"commitment";
 parameter_types! {
-    pub const MaxMessagePayloadSize: usize = 256;
-    pub const MaxMessagesPerCommit: usize = 20;
+    pub const MaxMessagePayloadSize: u32 = 256;
+    pub const MaxMessagesPerCommit: u32 = 20;
 }
 
 impl snowbridge_basic_channel::outbound::Config for Runtime {
@@ -527,7 +529,7 @@ impl pallet_circuit_portal::Config for Runtime {
     type ToStandardizedGatewayBalance = CircuitToGateway;
     type WeightInfo = pallet_circuit_portal::weights::SubstrateWeight<Runtime>;
     type PalletId = ExecPalletId;
-    type EthVerifier = EthereumMockVerifier;
+    type EthVerifier = ethereum_light_client::Pallet<Runtime>;
 }
 
 type Blake2ValU64BridgeInstance = ();
@@ -606,24 +608,24 @@ impl pallet_utility::Config for Runtime {
     type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
 }
 
-// parameter_types! {
-//     pub const DescendantsUntilFinalized: u8 = 3;
-//     pub const DifficultyConfig: EthereumDifficultyConfig = EthereumDifficultyConfig::mainnet();
-//     pub const VerifyPoW: bool = true;
-//     pub const MaxHeadersForNumber: u32 = 100;
-// }
-//
-// impl ethereum_light_client::Config for Runtime {
-//     type Event = Event;
-//     type DescendantsUntilFinalized = DescendantsUntilFinalized;
-//     type DifficultyConfig = DifficultyConfig;
-//     type VerifyPoW = VerifyPoW;
-//     // Todo: need to run benchmarks and set actual weights
-//     type WeightInfo = ();
-//     type MaxHeadersForNumber = MaxHeadersForNumber;
-// }
+parameter_types! {
+    pub const DescendantsUntilFinalized: u8 = 3;
+    pub const DifficultyConfig: EthereumDifficultyConfig = EthereumDifficultyConfig::mainnet();
+    pub const VerifyPoW: bool = true;
+    pub const MaxHeadersForNumber: u32 = 100;
+}
 
-// parameter_types! {
+impl ethereum_light_client::Config for Runtime {
+    type Event = Event;
+    type DescendantsUntilFinalized = DescendantsUntilFinalized;
+    type DifficultyConfig = DifficultyConfig;
+    type VerifyPoW = VerifyPoW;
+    // Todo: need to run benchmarks and set actual weights
+    type WeightInfo = ();
+    type MaxHeadersForNumber = MaxHeadersForNumber;
+}
+
+parameter_types! {
 /// Version of the produced MMR leaf.
 ///
 /// The version consists of two parts;
@@ -637,14 +639,14 @@ impl pallet_utility::Config for Runtime {
 ///
 /// Hence we expect `major` to be changed really rarely (think never).
 /// See [`MmrLeafVersion`] type documentation for more details.
-// pub LeafVersion: MmrLeafVersion = MmrLeafVersion::new(0, 0);
-// }
+    pub LeafVersion: MmrLeafVersion = MmrLeafVersion::new(0, 0);
+}
 
-// impl pallet_beefy_mmr::Config for Runtime {
-//     type LeafVersion = LeafVersion;
-//     type BeefyAuthorityToMerkleLeaf = pallet_beefy_mmr::BeefyEcdsaToEthereum;
-//     type ParachainHeads = ();
-// }
+impl pallet_beefy_mmr::Config for Runtime {
+    type LeafVersion = LeafVersion;
+    type BeefyAuthorityToMerkleLeaf = pallet_beefy_mmr::BeefyEcdsaToEthereum;
+    type ParachainHeads = ();
+}
 
 construct_runtime!(
     pub enum Runtime where
@@ -660,7 +662,7 @@ construct_runtime!(
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         Aura: pallet_aura::{Pallet, Config<T>},
         Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event},
-        // Beefy: pallet_beefy::{Pallet, Config<T>},
+        Beefy: pallet_beefy::{Pallet, Config<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
@@ -674,9 +676,9 @@ construct_runtime!(
         CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>},
         Utility: pallet_utility::{Pallet, Call, Event},
         Mmr: pallet_mmr::{Pallet, Storage},
-        // EthereumLightClient: ethereum_light_client::{Pallet, Call, Storage, Event, Config},
-        // MmrLeaf: pallet_beefy_mmr::{Pallet, Storage},
-        // BasicOutboundChannel: snowbridge_basic_channel::outbound::{Pallet, Config<T>, Storage, Event},
+        EthereumLightClient: ethereum_light_client::{Pallet, Call, Storage, Event<T>, Config},
+        MmrLeaf: pallet_beefy_mmr::{Pallet, Storage},
+        BasicOutboundChannel: snowbridge_basic_channel::outbound::{Pallet, Config<T>, Storage, Event<T>},
     }
 );
 
@@ -731,7 +733,7 @@ impl_runtime_apis! {
 
     impl sp_api::Metadata<Block> for Runtime {
         fn metadata() -> OpaqueMetadata {
-            Runtime::metadata().into()
+            OpaqueMetadata::new(Runtime::metadata().into())
         }
     }
 
@@ -784,7 +786,7 @@ impl_runtime_apis! {
         }
 
         fn authorities() -> Vec<AuraId> {
-            Aura::authorities()
+            Aura::authorities().into_inner()
         }
     }
 
@@ -847,11 +849,11 @@ impl_runtime_apis! {
         }
     }
 
-    // impl beefy_primitives::BeefyApi<Block> for Runtime {
-    //     fn validator_set() -> ValidatorSet<BeefyId> {
-    //         Beefy::validator_set()
-    //     }
-    // }
+    impl beefy_primitives::BeefyApi<Block> for Runtime {
+        fn validator_set() -> ValidatorSet<BeefyId> {
+            Beefy::validator_set()
+        }
+    }
 
     impl pallet_mmr_primitives::MmrApi<Block, Hash> for Runtime {
         fn generate_proof(leaf_index: u64)
@@ -907,17 +909,18 @@ impl_runtime_apis! {
     {
         fn fetch_contracts(
             author: Option<AccountId>,
-            metadata: Option<sp_core::Bytes>
+            metadata: Option<Vec<u8>>
         ) -> pallet_contracts_registry_rpc_runtime_api::FetchContractsResult {
-            let result = ContractsRegistry::fetch_contracts(author, metadata);
-
-            let encoded = result.unwrap().clone().iter().map(Encode::encode).collect();
-
-            FetchContractsResult {
-                gas_consumed: 0,
-                result: Ok(encoded),
-                flags: 0
-            }
+            unimplemented!()
+            // let result = ContractsRegistry::fetch_contracts(author, metadata);
+            //
+            // let encoded = result.unwrap().clone().iter().map(codec::Encode::encode).collect().encode();
+            //
+            // FetchContractsResult {
+            //     gas_consumed: 0,
+            //     result: Ok(encoded),
+            //     flags: 0
+            // }
         }
     }
 

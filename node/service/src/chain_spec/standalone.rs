@@ -2,6 +2,7 @@ use async_std::task;
 use beefy_primitives::crypto::AuthorityId as BeefyId;
 use bp_circuit::derive_account_from_gateway_id;
 use bp_runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID};
+use jsonrpc_core::serde_json;
 use log::info;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::crypto::Ss58Codec;
@@ -15,14 +16,18 @@ use std::{
     str::FromStr,
 };
 
+use crate::chain_spec::{get_account_id_from_seed, get_from_seed, seed_xdns_registry};
 use circuit_standalone_runtime::{
-    AuraConfig, BalancesConfig, BeefyConfig, ContractsRegistryConfig, EVMConfig,
-    GenesisConfig, GrandpaConfig, MultiFinalityVerifierConfig, SessionConfig, SessionKeys,
-    Signature, SudoConfig, SystemConfig, XDNSConfig, WASM_BINARY,
+    AuraConfig, BalancesConfig, BeefyConfig, ContractsRegistryConfig, EVMConfig, GenesisConfig,
+    GrandpaConfig, MultiFinalityVerifierConfig, SessionConfig, SessionKeys, Signature, SudoConfig,
+    SystemConfig, XDNSConfig, WASM_BINARY,
 };
 use jsonrpc_runtime_client::{create_rpc_client, get_metadata, ConnectionParams};
 use pallet_xdns::XdnsRecord;
-use t3rn_primitives::{AccountId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor};
+use t3rn_primitives::bridges::chain_circuit::derive_account_from_gateway_id;
+use t3rn_primitives::{
+    AccountId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
+};
 
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;

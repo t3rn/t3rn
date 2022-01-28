@@ -14,7 +14,7 @@ codec = { package = "parity-scale-codec", version = "2.3.1" }
 structopt = "0.3.8"
 serde = { version = "1.0.119", features = ["derive"] }
 hex-literal = "0.3.4"
-async-task = "4.0.3"
+async-std = "1.10.0"
 
 # RPC related Dependencies
 jsonrpc-core = "18.0.0"
@@ -22,6 +22,7 @@ jsonrpc-runtime-client = { version = "0.1.0", path = "../../relayers/jsonrpc-run
 # Local Dependencies
 circuit-standalone-runtime = { path = "../../runtime/standalone", optional = true }
 circuit-parachain-runtime = { path = "../../runtime/parachain", optional = true }
+pallet-xdns = { path = "../../pallets/xdns"}
 t3rn-primitives = { path = "../../primitives" }
 
 # Substrate Dependencies
@@ -86,7 +87,7 @@ polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch
 default = [ "std", "with-parachain-runtime" ]
 std = []
 with-parachain-runtime = [ "circuit-parachain-runtime" ]
-with-standalone-runtime = [ "circuit-parachain-runtime" ]
+with-standalone-runtime = [ "circuit-standalone-runtime" ]
 runtime-benchmarks = [
     "circuit-standalone-runtime/runtime-benchmarks",
     "circuit-parachain-runtime/runtime-benchmarks"

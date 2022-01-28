@@ -9,7 +9,4 @@ members = [
     'primitives',
     'runtime/*',
 ]
-exclude = [
-    'pallets/beefy-merkle-tree',
-    'pallets/beefy-mmr-pallet',
-]
+exclude = []

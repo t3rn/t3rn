@@ -11,7 +11,6 @@ use pallet_contracts_registry::FetchContractsResult;
 pub use pallet_contracts_registry_rpc_runtime_api::ContractsRegistryRuntimeApi;
 use sp_api::{ApiError, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
-use sp_core::Bytes;
 use sp_runtime::generic::BlockId;
 use sp_runtime::traits::{Block as BlockT, Hash as HashT, MaybeDisplay};
 
@@ -26,7 +25,7 @@ pub trait ContractsRegistryApi<AccountId> {
     fn fetch_contracts(
         &self,
         author: Option<AccountId>,
-        data: Option<Bytes>,
+        data: Option<Vec<u8>>,
     ) -> Result<FetchContractsResult>;
 }
 

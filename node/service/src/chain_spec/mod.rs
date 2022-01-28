@@ -1,11 +1,11 @@
-use async_task::task;
+use codec::Encode;
 use jsonrpc_runtime_client::ConnectionParams;
 use log::info;
+use pallet_xdns::types::XdnsRecord;
 use sc_chain_spec::ChainSpecExtension;
 use serde::{Deserialize, Serialize};
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{sr25519, Pair, Public};
-use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::IdentifyAccount;
 use std::convert::TryFrom;
 use std::io::{Error, ErrorKind};
@@ -82,11 +82,15 @@ fn fetch_xdns_record_from_rpc(
     params: &ConnectionParams,
     chain_id: t3rn_primitives::ChainId,
 ) -> Result<XdnsRecord<AccountId>, Error> {
-    task::block_on(async move {
-        let client = create_rpc_client(params).await.unwrap();
+    async_std::task::block_on(async move {
+        let client = jsonrpc_runtime_client::create_rpc_client(params)
+            .await
+            .unwrap();
 
         let runtime_version = client.clone().runtime_version().await.unwrap();
-        let metadata = get_metadata(&client.clone()).await.unwrap();
+        let metadata = jsonrpc_runtime_client::get_metadata(&client.clone())
+            .await
+            .unwrap();
 
         let gateway_sys_props = GatewaySysProps::try_from(&chain_id)
             .map_err(|err| Error::new(ErrorKind::InvalidInput, err))?;
