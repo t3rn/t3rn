@@ -28,7 +28,7 @@ pallet-xdns-rpc-runtime-api = { path = "../../pallets/xdns/rpc/runtime-api", def
 pallet-multi-finality-verifier = { path = "../../pallets/multi-finality-verifier", version = "1.0.0-alpha.0", default-features = false }
 #volatile-vm = { path = "../../vm/volatile-vm", default-features = false }
 t3rn-primitives = { version = "1.0.0-alpha.0", default-features = false, path = "../../primitives" }
-t3rn-protocol = { git = "https://github.com/t3rn/protocol", version = "1.0.0-alpha.1", default-features = false }
+t3rn-protocol = { path = "../../protocol", version = "1.0.0-alpha.1", default-features = false }
 
 # Smart contracts VMs
 #pallet-evm = { git = "https://github.com/t3rn/frontier", default-features = false }
@@ -47,7 +47,6 @@ pallet-aura = { git = "https://github.com/paritytech/substrate", branch = 'polka
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' , default-features = false }
 pallet-grandpa = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' , default-features = false }
 pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' , default-features = false }
-pallet-session = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' , default-features = false }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' , default-features = false }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' , default-features = false }
 pallet-utility = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' , default-features = false }
@@ -75,7 +74,7 @@ sp-version = { git = "https://github.com/paritytech/substrate", branch = 'polkad
 pallet-mmr-primitives = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13', default-features = false }
 
 # snowbridge dependencies
-ethereum-light-client = { git = "https://github.com/t3rn/snowbridge", package = "snowbridge-ethereum-light-client", branch="polkadot-v0.9.13", default-features = false }
+#ethereum-light-client = { git = "https://github.com/t3rn/snowbridge", package = "snowbridge-ethereum-light-client", branch="polkadot-v0.9.13", default-features = false }
 snowbridge-basic-channel = { git = "https://github.com/t3rn/snowbridge", branch="polkadot-v0.9.13", default-features = false }
 
 # Benchmarking
@@ -118,8 +117,6 @@ std = [
 #	"pallet-bridge-messages/std",
 	"pallet-grandpa/std",
 	"pallet-randomness-collective-flip/std",
-	"pallet-session/std",
-#	"pallet-shift-session-manager/std",
 	"pallet-sudo/std",
 	"pallet-timestamp/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",

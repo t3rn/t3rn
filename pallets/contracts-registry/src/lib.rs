@@ -122,7 +122,7 @@ pub mod pallet {
             );
 
             if <ContractsRegistry<T>>::contains_key(&contract_id) {
-                Err(Error::<T>::ContractAlreadyExists)?
+                Err(Error::<T>::ContractAlreadyExists.into())
             } else {
                 <ContractsRegistry<T>>::insert(&contract_id, contract);
                 Self::deposit_event(Event::<T>::ContractStored(requester, contract_id));
@@ -268,7 +268,7 @@ impl<T: Config> Pallet<T> {
                 )
                 .collect();
 
-        if contracts.len() == 0 {
+        if contracts.is_empty() {
             return Err(pallet::Error::<T>::UnknownContract);
         }
         Ok(contracts)

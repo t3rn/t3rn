@@ -56,7 +56,7 @@ hash-db = { version = "0.15.2" }
 parking_lot = "0.11.1"
 sp-tracing = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.13" }
 t3rn-primitives = { version = "1.0.0.-alpha.0", path = "../primitives" }
-t3rn-protocol = { git = "https://github.com/t3rn/protocol", version = "1.0.0-alpha.1", default-features = false }
+t3rn-protocol = { path = "../protocol", version = "1.0.0-alpha.1", default-features = false }
 sp-application-crypto = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
 sp-core = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.13" }
 sp-keyring = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.13" }

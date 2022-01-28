@@ -4,3 +4,6 @@
 [submodule "build/snowbridge"]
 	path = build/snowbridge
 	url = https://github.com/t3rn/snowbridge.git
+[submodule "protocol"]
+	path = protocol
+	url = https://github.com/t3rn/protocol

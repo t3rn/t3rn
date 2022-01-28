@@ -1029,7 +1029,7 @@ dependencies = [
  "sp-version",
  "static_assertions",
  "substrate-wasm-builder",
- "t3rn-primitives 1.0.0-alpha.0",
+ "t3rn-primitives",
  "xcm",
  "xcm-builder",
  "xcm-executor",
@@ -1095,7 +1095,7 @@ dependencies = [
  "structopt",
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint",
- "t3rn-primitives 1.0.0-alpha.0",
+ "t3rn-primitives",
 ]
 
 [[package]]
@@ -1121,7 +1121,6 @@ dependencies = [
  "pallet-mmr-primitives",
  "pallet-multi-finality-verifier",
  "pallet-randomness-collective-flip",
- "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -1133,7 +1132,6 @@ dependencies = [
  "scale-info",
  "serde",
  "snowbridge-basic-channel",
- "snowbridge-ethereum-light-client",
  "sp-api",
  "sp-block-builder",
  "sp-consensus-aura",
@@ -1148,22 +1146,7 @@ dependencies = [
  "sp-trie",
  "sp-version",
  "substrate-wasm-builder",
- "t3rn-primitives 1.0.0-alpha.0",
- "t3rn-protocol",
-]
-
-[[package]]
-name = "circuit-test-utils"
-version = "0.1.0"
-dependencies = [
- "frame-metadata",
- "jsonrpsee-types 0.2.0",
- "pallet-circuit-portal",
- "parity-scale-codec",
- "relay-substrate-client",
- "sp-core",
- "sp-std",
- "sp-version",
+ "t3rn-primitives",
  "t3rn-protocol",
 ]
 
@@ -2455,7 +2438,7 @@ dependencies = [
  "parking_lot 0.11.2",
  "relay-utils",
  "stacktrace",
- "t3rn-primitives 1.0.0-alpha.0",
+ "t3rn-primitives",
 ]
 
 [[package]]
@@ -2523,7 +2506,7 @@ dependencies = [
  "linregress",
  "log",
  "parity-scale-codec",
- "paste 1.0.6",
+ "paste",
  "scale-info",
  "sp-api",
  "sp-io",
@@ -2613,7 +2596,7 @@ dependencies = [
  "log",
  "once_cell",
  "parity-scale-codec",
- "paste 1.0.6",
+ "paste",
  "scale-info",
  "serde",
  "smallvec 1.8.0",
@@ -3761,7 +3744,7 @@ dependencies = [
  "sc-rpc",
  "sp-core",
  "sp-tracing",
- "t3rn-primitives 1.0.0-alpha.0",
+ "t3rn-primitives",
  "tokio 1.15.0",
 ]
 
@@ -4646,24 +4629,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "687387ff42ec7ea4f2149035a5675fedb675d26f98db90a1846ac63d3addb5f5"
 
 [[package]]
-name = "lite-json"
-version = "0.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0460d985423a026b4d9b828a7c6eed1bcf606f476322f3f9b507529686a61715"
-dependencies = [
- "lite-parser",
-]
-
-[[package]]
-name = "lite-parser"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c50092e40e0ccd1bf2015a10333fde0502ff95b832b0895dc1ca0d7ac6c52f6"
-dependencies = [
- "paste 0.1.18",
-]
-
-[[package]]
 name = "lock_api"
 version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5538,7 +5503,7 @@ dependencies = [
  "sp-runtime",
  "sp-staking",
  "sp-std",
- "t3rn-primitives 1.0.0-alpha.0",
+ "t3rn-primitives",
  "t3rn-protocol",
 ]
 
@@ -5549,33 +5514,19 @@ dependencies = [
  "assert_matches",
  "ethabi-decode",
  "frame-benchmarking",
- "frame-election-provider-support",
  "frame-metadata",
  "frame-support",
  "frame-system",
  "hash-db",
  "hex",
  "hex-literal",
- "lite-json",
  "log",
- "pallet-authorship",
- "pallet-babe",
  "pallet-balances",
- "pallet-contracts",
- "pallet-contracts-registry",
- "pallet-im-online",
  "pallet-multi-finality-verifier",
- "pallet-offences",
- "pallet-randomness-collective-flip",
- "pallet-session",
- "pallet-staking",
- "pallet-staking-reward-curve",
  "pallet-sudo",
- "pallet-timestamp",
- "pallet-transaction-payment",
  "pallet-xdns",
  "parity-scale-codec",
- "paste 1.0.6",
+ "paste",
  "plain_hasher",
  "pretty_assertions",
  "sc-service",
@@ -5586,18 +5537,15 @@ dependencies = [
  "snowbridge-core",
  "snowbridge-ethereum",
  "sp-application-crypto",
- "sp-consensus-babe",
- "sp-consensus-vrf",
  "sp-core",
  "sp-finality-grandpa",
  "sp-io",
  "sp-keystore",
  "sp-runtime",
- "sp-sandbox",
  "sp-staking",
  "sp-std",
  "sp-version",
- "t3rn-primitives 1.0.0-alpha.0",
+ "t3rn-primitives",
  "t3rn-protocol",
  "triehash",
  "wat",
@@ -5613,7 +5561,7 @@ dependencies = [
  "sp-core",
  "sp-runtime",
  "sp-std",
- "t3rn-primitives 1.0.0-alpha.0",
+ "t3rn-primitives",
 ]
 
 [[package]]
@@ -5654,57 +5602,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-contracts"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.13#afb74de23dfe2994e7ce38c0870efb9734e966f7"
-dependencies = [
- "bitflags",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "libsecp256k1 0.7.0",
- "log",
- "pallet-contracts-primitives",
- "pallet-contracts-proc-macro",
- "parity-scale-codec",
- "pwasm-utils",
- "rand 0.8.4",
- "scale-info",
- "serde",
- "smallvec 1.8.0",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-sandbox",
- "sp-std",
- "wasmi-validation",
-]
-
-[[package]]
-name = "pallet-contracts-primitives"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.13#afb74de23dfe2994e7ce38c0870efb9734e966f7"
-dependencies = [
- "bitflags",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-core",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-contracts-proc-macro"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.13#afb74de23dfe2994e7ce38c0870efb9734e966f7"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "pallet-contracts-registry"
 version = "1.0.0-alpha.0"
 dependencies = [
@@ -5722,7 +5619,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "t3rn-primitives 1.0.0-alpha.0",
+ "t3rn-primitives",
 ]
 
 [[package]]
@@ -5951,7 +5848,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-trie",
- "t3rn-primitives 1.0.0-alpha.0",
+ "t3rn-primitives",
 ]
 
 [[package]]
@@ -6275,7 +6172,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-version",
- "t3rn-primitives 1.0.0-alpha.0",
+ "t3rn-primitives",
 ]
 
 [[package]]
@@ -6517,28 +6414,9 @@ dependencies = [
 
 [[package]]
 name = "paste"
-version = "0.1.18"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "45ca20c77d80be666aef2b45486da86238fabe33e38306bd3118fe4af33fa880"
-dependencies = [
- "paste-impl",
- "proc-macro-hack",
-]
-
-[[package]]
-name = "paste"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0744126afe1a6dd7f394cb50a716dbe086cb06e255e53d8d0185d82828358fb5"
-
-[[package]]
-name = "paste-impl"
-version = "0.1.18"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d95a7db200b97ef370c8e6de0088252f7e0dfff7d047a28528e47456c0fc98b6"
-dependencies = [
- "proc-macro-hack",
-]
 
 [[package]]
 name = "pbkdf2"
@@ -8369,7 +8247,7 @@ dependencies = [
  "sp-storage",
  "sp-trie",
  "sp-version",
- "t3rn-primitives 1.0.0-alpha.0",
+ "t3rn-primitives",
  "tokio 1.15.0",
 ]
 
@@ -9891,7 +9769,7 @@ dependencies = [
  "approx",
  "num-complex",
  "num-traits",
- "paste 1.0.6",
+ "paste",
 ]
 
 [[package]]
@@ -9907,7 +9785,7 @@ source = "git+https://github.com/paritytech/polkadot?branch=release-v0.9.13#7d8f
 dependencies = [
  "enumn",
  "parity-scale-codec",
- "paste 1.0.6",
+ "paste",
  "sp-runtime",
  "sp-std",
 ]
@@ -10562,7 +10440,7 @@ dependencies = [
  "log",
  "parity-scale-codec",
  "parity-util-mem",
- "paste 1.0.6",
+ "paste",
  "rand 0.7.3",
  "scale-info",
  "serde",
@@ -10600,20 +10478,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "sp-sandbox"
-version = "0.10.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.13#afb74de23dfe2994e7ce38c0870efb9734e966f7"
-dependencies = [
- "log",
- "parity-scale-codec",
- "sp-core",
- "sp-io",
- "sp-std",
- "sp-wasm-interface",
- "wasmi",
 ]
 
 [[package]]
@@ -11181,36 +11045,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "t3rn-primitives"
-version = "1.0.0-alpha.0"
-source = "git+https://github.com/t3rn/x-t3rn?branch=refactor-runtime-node#60d590ad56b0d20dc33c08e6b9160f5816997627"
-dependencies = [
- "ed25519-dalek",
- "finality-grandpa",
- "frame-support",
- "frame-system",
- "hash-db",
- "num-traits",
- "pallet-sudo",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-api",
- "sp-application-crypto",
- "sp-core",
- "sp-finality-grandpa",
- "sp-io",
- "sp-runtime",
- "sp-state-machine",
- "sp-std",
- "sp-trie",
- "sp-version",
-]
-
-[[package]]
 name = "t3rn-protocol"
 version = "1.0.0-alpha.1"
-source = "git+https://github.com/t3rn/protocol#e5969a24fbca75a8e048a399df6c6a09fbf4c5b2"
 dependencies = [
  "ethabi-decode",
  "frame-metadata",
@@ -11225,6 +11061,7 @@ dependencies = [
  "plain_hasher",
  "scale-info",
  "serde",
+ "serde_json",
  "snowbridge-core",
  "snowbridge-ethereum",
  "sp-application-crypto",
@@ -11234,7 +11071,8 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-version",
- "t3rn-primitives 1.0.0-alpha.0 (git+https://github.com/t3rn/x-t3rn?branch=refactor-runtime-node)",
+ "t3rn-primitives",
+ "tiny-keccak 2.0.2",
  "triehash",
 ]
 
@@ -12175,7 +12013,6 @@ checksum = "ca00c5147c319a8ec91ec1a0edbec31e566ce2c9cc93b3f9bb86a9efd0eb795d"
 dependencies = [
  "downcast-rs",
  "libc",
- "libm",
  "memory_units",
  "num-rational 0.2.4",
  "num-traits",
@@ -12214,7 +12051,7 @@ dependencies = [
  "libc",
  "log",
  "object",
- "paste 1.0.6",
+ "paste",
  "psm",
  "rayon",
  "region",

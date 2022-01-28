@@ -6,6 +6,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use t3rn_primitives::bridges::chain_circuit as bp_circuit;
+use t3rn_primitives::bridges::messages as bp_messages;
 use t3rn_primitives::bridges::runtime as bp_runtime;
 
 // pub mod gateway_messages;
@@ -23,7 +24,7 @@ use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
 use pallet_xdns_rpc_runtime_api::FetchXdnsRecordsResponse;
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H256, U256};
 use sp_runtime::traits::{
     AccountIdLookup, BlakeTwo256, Block as BlockT, Keccak256, NumberFor, OpaqueKeys,
 };
@@ -31,23 +32,21 @@ use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::Convert,
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, DispatchResult, MultiSignature, MultiSigner,
+    ApplyExtrinsicResult,
 };
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use t3rn_primitives::{
-    abi::GatewayABIConfig, transfers::BalanceOf, ChainId as GatewayId, ComposableExecResult,
-    Compose,
-};
+use t3rn_primitives::{abi::GatewayABIConfig, ChainId as GatewayId, ComposableExecResult, Compose};
 
-use ethereum_light_client::EthereumDifficultyConfig;
+// use ethereum_light_client::EthereumDifficultyConfig;
 use t3rn_protocol::side_effects::confirm::ethereum::EthereumMockVerifier;
 // use volatile_vm::DispatchRuntimeCall;
 
 // A few exports that help ease life for downstream crates.
+use frame_support::traits::Everything;
 pub use frame_support::{
     construct_runtime, parameter_types,
     traits::{Currency, ExistenceRequirement, Imbalance, KeyOwnerProofSystem},
@@ -64,6 +63,7 @@ pub use pallet_sudo::Call as SudoCall;
 pub use pallet_timestamp::Call as TimestampCall;
 
 use frame_support::weights::constants::RocksDbWeight;
+use pallet_circuit_portal::mock::OperationalFeeMultiplier;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
@@ -144,7 +144,7 @@ parameter_types! {
 
 impl frame_system::Config for Runtime {
     /// The basic call filter to use in dispatchable.
-    type BaseCallFilter = ();
+    type BaseCallFilter = Everything;
     /// Block and extrinsics weights: base values and limits.
     type BlockWeights = bp_circuit::BlockWeights;
     /// The maximum length of a block (in bytes).
@@ -192,10 +192,14 @@ impl frame_system::Config for Runtime {
     type OnSetCode = ();
 }
 
+parameter_types! {
+    pub const MaxAuthorities: u32 = 10_000;
+}
+
 impl pallet_aura::Config for Runtime {
     type AuthorityId = AuraId;
-    type DisabledValidators = ();
     type MaxAuthorities = MaxAuthorities;
+    type DisabledValidators = ();
 }
 
 // impl pallet_bridge_dispatch::Config for Runtime {
@@ -223,6 +227,7 @@ impl pallet_grandpa::Config for Runtime {
     type HandleEquivocation = ();
     // TODO: update me (https://github.com/paritytech/parity-bridges-common/issues/78)
     type WeightInfo = ();
+    type MaxAuthorities = MaxAuthorities;
 }
 
 // impl pallet_beefy::Config for Runtime {
@@ -268,11 +273,13 @@ impl pallet_balances::Config for Runtime {
 parameter_types! {
     pub const TransactionBaseFee: Balance = 0;
     pub const TransactionByteFee: Balance = 1;
+    pub const OperationalFeeMultiplier: u8 = 5;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
     type TransactionByteFee = TransactionByteFee;
+    type OperationalFeeMultiplier = OperationalFeeMultiplier;
     type WeightToFee = IdentityFee<Balance>;
     type FeeMultiplierUpdate = ();
 }
@@ -299,14 +306,14 @@ type MmrHash = <Keccak256 as sp_runtime::traits::Hash>::Output;
 // }
 
 /// Configure Merkle Mountain Range pallet.
-impl pallet_mmr::Config for Runtime {
-    const INDEXING_PREFIX: &'static [u8] = b"mmr";
-    type Hashing = Keccak256;
-    type Hash = MmrHash;
-    type LeafData = frame_system::Pallet<Self>;
-    type OnNewRoot = DepositLog;
-    type WeightInfo = ();
-}
+// impl pallet_mmr::Config for Runtime {
+//     const INDEXING_PREFIX: &'static [u8] = b"mmr";
+//     type Hashing = Keccak256;
+//     type Hash = MmrHash;
+//     type LeafData = frame_system::Pallet<Self>;
+//     type OnNewRoot = DepositLog;
+//     type WeightInfo = ();
+// }
 
 parameter_types! {
     /// Authorities are changing every 5 minutes.
@@ -321,20 +328,6 @@ parameter_types! {
 //     type WeightInfo = pallet_multi_finality_verifier::weights::GatewayWeight<Runtime>;
 //     type HeadersToKeep = HeadersToKeep;
 // }
-
-impl pallet_session::Config for Runtime {
-    type Event = Event;
-    type ValidatorId = <Self as frame_system::Config>::AccountId;
-    type ValidatorIdOf = ();
-    type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
-    type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
-    type SessionManager = pallet_shift_session_manager::Pallet<Runtime>;
-    type SessionHandler = <SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
-    type Keys = SessionKeys;
-    type DisabledValidatorsThreshold = ();
-    // TODO: update me (https://github.com/paritytech/parity-bridges-common/issues/78)
-    type WeightInfo = ();
-}
 
 parameter_types! {
     // This is a pretty unscientific cap.
@@ -367,49 +360,47 @@ parameter_types! {
     pub const BlockGasLimit: U256 = U256::MAX;
 }
 
-pub struct FixedGasPrice;
-impl pallet_evm::FeeCalculator for FixedGasPrice {
-    fn min_gas_price() -> U256 {
-        1.into()
-    }
-}
-pub struct HashedAddressMapping;
-
-impl pallet_evm::AddressMapping<AccountId> for HashedAddressMapping {
-    fn into_account_id(address: H160) -> AccountId {
-        let mut data = [0u8; 32];
-        data[0..20].copy_from_slice(&address[..]);
-        AccountId::from(Into::<[u8; 32]>::into(data))
-    }
-}
+// pub struct FixedGasPrice;
+// impl pallet_evm::FeeCalculator for FixedGasPrice {
+//     fn min_gas_price() -> U256 {
+//         1.into()
+//     }
+// }
+// pub struct HashedAddressMapping;
+//
+// impl pallet_evm::AddressMapping<AccountId> for HashedAddressMapping {
+//     fn into_account_id(address: H160) -> AccountId {
+//         let mut data = [0u8; 32];
+//         data[0..20].copy_from_slice(&address[..]);
+//         AccountId::from(Into::<[u8; 32]>::into(data))
+//     }
+// }
 
 impl t3rn_primitives::EscrowTrait for Runtime {
     type Currency = Balances;
     type Time = Timestamp;
 }
 
-impl pallet_evm::Config for Runtime {
-    type FeeCalculator = FixedGasPrice;
-    type GasWeightMapping = ();
-    type CallOrigin = pallet_evm::EnsureAddressTruncated;
-    type WithdrawOrigin = pallet_evm::EnsureAddressTruncated;
-    type AddressMapping = HashedAddressMapping;
-    type Currency = Balances;
-    type Event = Event;
-    type Runner = pallet_evm::runner::stack::Runner<Self>;
-    type Precompiles = (
-        pallet_evm_precompile_simple::ECRecover,
-        pallet_evm_precompile_simple::Sha256,
-        pallet_evm_precompile_simple::Ripemd160,
-        pallet_evm_precompile_simple::Identity,
-    );
-    type ChainId = ChainId;
-    type BlockGasLimit = BlockGasLimit;
-    type OnChargeTransaction = ();
-    type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping;
-}
-
-impl pallet_shift_session_manager::Config for Runtime {}
+// impl pallet_evm::Config for Runtime {
+//     type FeeCalculator = FixedGasPrice;
+//     type GasWeightMapping = ();
+//     type CallOrigin = pallet_evm::EnsureAddressTruncated;
+//     type WithdrawOrigin = pallet_evm::EnsureAddressTruncated;
+//     type AddressMapping = HashedAddressMapping;
+//     type Currency = Balances;
+//     type Event = Event;
+//     type Runner = pallet_evm::runner::stack::Runner<Self>;
+//     type Precompiles = (
+//         pallet_evm_precompile_simple::ECRecover,
+//         pallet_evm_precompile_simple::Sha256,
+//         pallet_evm_precompile_simple::Ripemd160,
+//         pallet_evm_precompile_simple::Identity,
+//     );
+//     type ChainId = ChainId;
+//     type BlockGasLimit = BlockGasLimit;
+//     type OnChargeTransaction = ();
+//     type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping;
+// }
 
 parameter_types! {
     pub const MaxMessagesToPruneAtOnce: bp_messages::MessageNonce = 8;
@@ -468,48 +459,10 @@ impl pallet_contracts_registry::Config for Runtime {
     type WeightInfo = pallet_contracts_registry::weights::SubstrateWeight<Runtime>;
 }
 
-pub struct ExampleDispatchRuntimeCall;
-
-impl DispatchRuntimeCall<Runtime> for ExampleDispatchRuntimeCall {
-    fn dispatch_runtime_call(
-        _module_name: &str,
-        _fn_name: &str,
-        _input: &[u8],
-        _escrow_account: &<Runtime as frame_system::Config>::AccountId,
-        _requested: &<Runtime as frame_system::Config>::AccountId,
-        _callee: &<Runtime as frame_system::Config>::AccountId,
-        _value: BalanceOf<Runtime>,
-        // _gas_meter: &mut GasMeter<Runtime>,
-    ) -> DispatchResult {
-        // match (module_name, fn_name) {
-        //     ("Weights", "complex_calculations") => {
-        //         let (_decoded_x, _decoded_y): (u32, u32) = match Decode::decode(&mut _input.clone())
-        //         {
-        //             Ok(dec) => dec,
-        //             Err(_) => {
-        //                 return Err(DispatchError::Other(
-        //                     "Can't decode input for Weights::store_value. Expected u32.",
-        //                 ));
-        //             }
-        //         };
-
-        //         Ok(())
-        //     }
-        //     (_, _) => Err(DispatchError::Other(
-        //         "Call to unrecognized runtime function",
-        //     )),
-        // }
-
-        Ok(())
-    }
-}
-
 parameter_types! {
     pub const UncleGenerations: u64 = 0;
     // pub MyScheduleVVM: volatile_vm::Schedule<Runtime> = <volatile_vm::Schedule<Runtime>>::default();
 }
-
-parameter_types! {}
 
 // impl volatile_vm::VolatileVM for Runtime {
 //     type Randomness = Randomness;
@@ -649,40 +602,43 @@ impl pallet_multi_finality_verifier::Config<Keccak256ValU32BridgeInstance> for R
 impl pallet_utility::Config for Runtime {
     type Event = Event;
     type Call = Call;
+    type PalletsOrigin = OriginCaller;
     type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
 }
 
-parameter_types! {
-    pub const DescendantsUntilFinalized: u8 = 3;
-    pub const DifficultyConfig: EthereumDifficultyConfig = EthereumDifficultyConfig::mainnet();
-    pub const VerifyPoW: bool = true;
-}
+// parameter_types! {
+//     pub const DescendantsUntilFinalized: u8 = 3;
+//     pub const DifficultyConfig: EthereumDifficultyConfig = EthereumDifficultyConfig::mainnet();
+//     pub const VerifyPoW: bool = true;
+//     pub const MaxHeadersForNumber: u32 = 100;
+// }
+//
+// impl ethereum_light_client::Config for Runtime {
+//     type Event = Event;
+//     type DescendantsUntilFinalized = DescendantsUntilFinalized;
+//     type DifficultyConfig = DifficultyConfig;
+//     type VerifyPoW = VerifyPoW;
+//     // Todo: need to run benchmarks and set actual weights
+//     type WeightInfo = ();
+//     type MaxHeadersForNumber = MaxHeadersForNumber;
+// }
 
-impl ethereum_light_client::Config for Runtime {
-    type Event = Event;
-    type DescendantsUntilFinalized = DescendantsUntilFinalized;
-    type DifficultyConfig = DifficultyConfig;
-    type VerifyPoW = VerifyPoW;
-    // Todo: need to run benchmarks and set actual weights
-    type WeightInfo = ();
-}
-
-parameter_types! {
-    /// Version of the produced MMR leaf.
-    ///
-    /// The version consists of two parts;
-    /// - `major` (3 bits)
-    /// - `minor` (5 bits)
-    ///
-    /// `major` should be updated only if decoding the previous MMR Leaf format from the payload
-    /// is not possible (i.e. backward incompatible change).
-    /// `minor` should be updated if fields are added to the previous MMR Leaf, which given SCALE
-    /// encoding does not prevent old leafs from being decoded.
-    ///
-    /// Hence we expect `major` to be changed really rarely (think never).
-    /// See [`MmrLeafVersion`] type documentation for more details.
-    pub LeafVersion: MmrLeafVersion = MmrLeafVersion::new(0, 0);
-}
+// parameter_types! {
+/// Version of the produced MMR leaf.
+///
+/// The version consists of two parts;
+/// - `major` (3 bits)
+/// - `minor` (5 bits)
+///
+/// `major` should be updated only if decoding the previous MMR Leaf format from the payload
+/// is not possible (i.e. backward incompatible change).
+/// `minor` should be updated if fields are added to the previous MMR Leaf, which given SCALE
+/// encoding does not prevent old leafs from being decoded.
+///
+/// Hence we expect `major` to be changed really rarely (think never).
+/// See [`MmrLeafVersion`] type documentation for more details.
+// pub LeafVersion: MmrLeafVersion = MmrLeafVersion::new(0, 0);
+// }
 
 // impl pallet_beefy_mmr::Config for Runtime {
 //     type LeafVersion = LeafVersion;
@@ -708,9 +664,6 @@ construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
-        Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
-        ShiftSessionManager: pallet_shift_session_manager::{Pallet},
-
         Randomness: pallet_randomness_collective_flip::{Pallet, Storage},
         // Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
         // EVM: pallet_evm::{Pallet, Config, Storage, Event<T>},
@@ -721,9 +674,9 @@ construct_runtime!(
         CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>},
         Utility: pallet_utility::{Pallet, Call, Event},
         Mmr: pallet_mmr::{Pallet, Storage},
-        EthereumLightClient: ethereum_light_client::{Pallet, Call, Storage, Event, Config},
+        // EthereumLightClient: ethereum_light_client::{Pallet, Call, Storage, Event, Config},
         // MmrLeaf: pallet_beefy_mmr::{Pallet, Storage},
-        BasicOutboundChannel: snowbridge_basic_channel::outbound::{Pallet, Config<T>, Storage, Event},
+        // BasicOutboundChannel: snowbridge_basic_channel::outbound::{Pallet, Config<T>, Storage, Event},
     }
 );
 
@@ -864,6 +817,10 @@ impl_runtime_apis! {
             Grandpa::grandpa_authorities()
         }
 
+        fn current_set_id() -> fg_primitives::SetId {
+            Grandpa::current_set_id()
+        }
+
         fn submit_report_equivocation_unsigned_extrinsic(
             equivocation_proof: fg_primitives::EquivocationProof<
                 <Block as BlockT>::Hash,
@@ -929,84 +886,6 @@ impl_runtime_apis! {
         }
     }
 
-    // impl bp_gateway::GatewayFinalityApi<Block> for Runtime {
-    // 	fn best_finalized() -> (bp_gateway::BlockNumber, bp_gateway::Hash) {
-    // 		let header = BridgeGatewayGrandpa::best_finalized();
-    // 		(header.number, header.hash())
-    // 	}
-    //
-    // 	fn is_known_header(hash: bp_gateway::Hash) -> bool {
-    // 		BridgeGatewayGrandpa::is_known_header(hash)
-    // 	}
-    // }
-
-    impl bp_gateway::GatewayFinalityApi<Block> for Runtime {
-        fn best_finalized() -> (bp_gateway::BlockNumber, bp_gateway::Hash) {
-            // ToDo: Add argument and change call to pallet_multi_finality_verifier (gateway_id)
-            // let header = BridgeGatewayGrandpa::best_finalized();
-            let defa_gate: bp_runtime::ChainId = *b"gwes";
-            let header = BridgePolkadotLikeMultiFinalityVerifier::best_finalized_map(defa_gate);
-            (header.number, header.hash())
-        }
-
-        fn is_known_header(hash: bp_gateway::Hash) -> bool {
-            // ToDo: Add argument and change call to pallet_multi_finality_verifier (gateway_id)
-            // BridgeGatewayGrandpa::is_known_header(hash)
-            let defa_gate: bp_runtime::ChainId = *b"gwes";
-            BridgePolkadotLikeMultiFinalityVerifier::is_known_header(hash, defa_gate)
-        }
-    }
-
-    impl bp_gateway::ToGatewayOutboundLaneApi<Block, Balance, ToGatewayMessagePayload> for Runtime {
-        fn estimate_message_delivery_and_dispatch_fee(
-            _lane_id: bp_messages::LaneId,
-            payload: ToGatewayMessagePayload,
-        ) -> Option<Balance> {
-            // estimate_message_dispatch_and_delivery_fee::<WithGatewayMessageBridge>(
-            //     &payload,
-            //     WithGatewayMessageBridge::RELAYER_FEE_PERCENT,
-            // ).ok()
-            Ok(())
-        }
-
-        fn messages_dispatch_weight(
-            lane: bp_messages::LaneId,
-            begin: bp_messages::MessageNonce,
-            end: bp_messages::MessageNonce,
-        ) -> Vec<(bp_messages::MessageNonce, Weight, u32)> {
-            (begin..=end).filter_map(|nonce| {
-                let encoded_payload = BridgeGatewayMessages::outbound_message_payload(lane, nonce)?;
-                let decoded_payload = gateway_messages::ToGatewayMessagePayload::decode(
-                    &mut &encoded_payload[..]
-                ).ok()?;
-                Some((nonce, decoded_payload.weight, encoded_payload.len() as _))
-            })
-            .collect()
-        }
-
-        fn latest_received_nonce(lane: bp_messages::LaneId) -> bp_messages::MessageNonce {
-            BridgeGatewayMessages::outbound_latest_received_nonce(lane)
-        }
-
-        fn latest_generated_nonce(lane: bp_messages::LaneId) -> bp_messages::MessageNonce {
-            BridgeGatewayMessages::outbound_latest_generated_nonce(lane)
-        }
-    }
-
-    impl bp_gateway::FromGatewayInboundLaneApi<Block> for Runtime {
-        fn latest_received_nonce(lane: bp_messages::LaneId) -> bp_messages::MessageNonce {
-            BridgeGatewayMessages::inbound_latest_received_nonce(lane)
-        }
-
-        fn latest_confirmed_nonce(lane: bp_messages::LaneId) -> bp_messages::MessageNonce {
-            BridgeGatewayMessages::inbound_latest_confirmed_nonce(lane)
-        }
-
-        fn unrewarded_relayers_state(lane: bp_messages::LaneId) -> bp_messages::UnrewardedRelayersState {
-            BridgeGatewayMessages::inbound_unrewarded_relayers_state(lane)
-        }
-    }
-
     impl pallet_xdns_rpc_runtime_api::XdnsRuntimeApi<Block, AccountId> for Runtime
     {
         fn fetch_records() -> FetchXdnsRecordsResponse<AccountId> {
@@ -1042,7 +921,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl pallet_circuit_portal_rpc_runtime_api::ExecutionDeliveryRuntimeApi<Block, AccountId, Balance, BlockNumber> for Runtime
+    impl pallet_circuit_portal_rpc_runtime_api::CircuitPortalRuntimeApi<Block, AccountId, Balance, BlockNumber> for Runtime
     {
         fn composable_exec(
             _origin: AccountId,
@@ -1051,39 +930,6 @@ impl_runtime_apis! {
             _gas_limit: u64,
             _input_data: Vec<u8>,
         ) -> ComposableExecResult { unimplemented!() }
-    }
-
-    impl pallet_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
-        for Runtime
-    {
-        fn call(
-            origin: AccountId,
-            dest: AccountId,
-            value: Balance,
-            gas_limit: u64,
-            input_data: Vec<u8>,
-        ) -> pallet_contracts_primitives::ContractExecResult {
-            Contracts::bare_call(origin, dest, value, gas_limit, input_data, true)
-        }
-
-        fn instantiate(
-            origin: AccountId,
-            endowment: Balance,
-            gas_limit: u64,
-            code: pallet_contracts_primitives::Code<Hash>,
-            data: Vec<u8>,
-            salt: Vec<u8>,
-        ) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId, BlockNumber>
-        {
-            Contracts::bare_instantiate(origin, endowment, gas_limit, code, data, salt, false, true)
-        }
-
-        fn get_storage(
-            address: AccountId,
-            key: [u8; 32],
-        ) -> pallet_contracts_primitives::GetStorageResult {
-            Contracts::get_storage(address, key)
-        }
     }
 
     #[cfg(feature = "runtime-benchmarks")]
@@ -1128,28 +974,30 @@ impl_runtime_apis! {
 /// The byte vector returned by this function should be signed with a Gateway account private key.
 /// This way, the owner of `circuit_account_id` on Circuit proves that the Gateway account private key
 /// is also under his control.
-pub fn circuit_to_gateway_account_ownership_digest<Call, AccountId, SpecVersion>(
-    gateway_call: &Call,
-    circuit_account_id: AccountId,
-    gateway_spec_version: SpecVersion,
-) -> sp_std::vec::Vec<u8>
-where
-    Call: codec::Encode,
-    AccountId: codec::Encode,
-    SpecVersion: codec::Encode,
-{
-    pallet_bridge_dispatch::account_ownership_digest(
-        gateway_call,
-        circuit_account_id,
-        gateway_spec_version,
-        bp_runtime::CIRCUIT_CHAIN_ID,
-        bp_runtime::GATEWAY_CHAIN_ID,
-    )
-}
+// pub fn circuit_to_gateway_account_ownership_digest<Call, AccountId, SpecVersion>(
+//     gateway_call: &Call,
+//     circuit_account_id: AccountId,
+//     gateway_spec_version: SpecVersion,
+// ) -> sp_std::vec::Vec<u8>
+// where
+//     Call: codec::Encode,
+//     AccountId: codec::Encode,
+//     SpecVersion: codec::Encode,
+// {
+//     pallet_bridge_dispatch::account_ownership_digest(
+//         gateway_call,
+//         circuit_account_id,
+//         gateway_spec_version,
+//         bp_runtime::CIRCUIT_CHAIN_ID,
+//         bp_runtime::GATEWAY_CHAIN_ID,
+//     )
+// }
 
 #[cfg(test)]
 mod tests {
     use bridge_runtime_common::messages;
+    use t3rn_primitives::bridges::chain_circuit as bp_circuit;
+    use t3rn_primitives::bridges::messages;
 
     #[test]
     fn ensure_circuit_message_lane_weights_are_correct() {

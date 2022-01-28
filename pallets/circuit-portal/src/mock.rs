@@ -31,12 +31,12 @@ use frame_support::{weights::Weight, PalletId};
 use sp_core::{crypto::KeyTypeId, H256};
 use sp_runtime::traits::{BlakeTwo256, Keccak256};
 
+use pallet_evm::{AddressMapping, FeeCalculator};
 use pallet_xdns::XdnsRecord;
 use t3rn_primitives::transfers::BalanceOf;
 use t3rn_primitives::EscrowTrait;
 use t3rn_primitives::{GatewaySysProps, GatewayType, GatewayVendor};
 use t3rn_protocol::side_effects::confirm::ethereum::EthereumMockVerifier;
-use pallet_evm::{AddressMapping, FeeCalculator};
 
 pub type AccountId = sp_runtime::AccountId32;
 pub type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;

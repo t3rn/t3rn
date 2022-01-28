@@ -152,8 +152,7 @@ impl Type {
                     .ok_or("Can't access requested struct from gateway genesis")?
                     .offsets
                     .last()
-                    .cloned()
-                    .unwrap_or_else(|| 0);
+                    .cloned().unwrap_or(0);
                 Ok(struct_size.into())
             }
             Type::String | Type::DynamicBytes => Ok(4),
@@ -586,7 +585,7 @@ pub fn from_signature_to_abi(signature: Vec<u8>) -> Result<(Vec<u8>, Vec<Type>),
     );
 
     let types = signature_iter
-        .map(|arg_candidate| from_bytes_string(arg_candidate))
+        .map(from_bytes_string)
         .collect::<Vec<Type>>();
 
     Ok((maybe_name.to_vec(), types))

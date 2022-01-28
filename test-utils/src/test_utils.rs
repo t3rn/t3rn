@@ -9,7 +9,7 @@ use sp_version::{ApisVec, RuntimeVersion};
 use sp_std::vec;
 use sp_std::vec::Vec;
 
-use pallet_circuit_execution_delivery::AuthorityId;
+use t3rn_primitives::AuthorityId;
 
 use t3rn_protocol::chain_generic_metadata::*;
 use t3rn_protocol::substrate_gateway_protocol::*;

@@ -16,7 +16,6 @@ hex-literal = { version = '0.3.1'}
 hex = { version = "0.4.3", default-features = false }
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
 serde = { version = "1.0.124", features = ["derive"], optional = true }
-lite-json = { version = "0.1", default-features = false }
 log = { version = "0.4.14", default-features = false }
 hash-db = { version = "0.15.2", default-features = false }
 triehash = { version = "0.8.2", default-features = false }
@@ -30,41 +29,25 @@ sp-keystore = { default-features = false, git = "https://github.com/paritytech/s
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
 sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13'  }
-sp-sandbox = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13'  }
 sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
 sp-version = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
 sp-application-crypto = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
 scale-info = { version = "1.0", default-features = false, features = ["derive"] }
 
-pallet-transaction-payment = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
-pallet-randomness-collective-flip = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
 pallet-multi-finality-verifier = { default-features = false, path = "../multi-finality-verifier" }
 pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
-pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
-pallet-im-online = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
 pallet-sudo = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
 
 pallet-xdns = { default-features = false, path = "../xdns" }
-pallet-contracts-registry = { default-features = false, path = "../contracts-registry" }
 t3rn-primitives = { version = "1.0.0-alpha.0", default-features = false, path = "../../primitives" }
-t3rn-protocol = { git = "https://github.com/t3rn/protocol", version = "1.0.0-alpha.1", default-features = false }
+t3rn-protocol = { path = "../../protocol", version = "1.0.0-alpha.1", default-features = false }
 
 # Smart contracts VMs
-pallet-contracts = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
 ethabi-decode = { git = "https://github.com/Snowfork/ethabi-decode.git", branch = "master", default-features = false }
 
 # for tests only
-frame-election-provider-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
-pallet-offences = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
-pallet-session = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
-pallet-staking = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
-pallet-authorship = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
-pallet-babe = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
-pallet-staking-reward-curve = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
 sp-staking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
 sp-finality-grandpa = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
-sp-consensus-vrf = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
-sp-consensus-babe = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
 snowbridge-core = { git = "https://github.com/t3rn/snowbridge", branch = "polkadot-v0.9.13", default-features = false }
 snowbridge-ethereum = { git = "https://github.com/t3rn/snowbridge", branch = "polkadot-v0.9.13", default-features = false }
 snowbridge-basic-channel = { git = "https://github.com/t3rn/snowbridge", branch = "polkadot-v0.9.13", default-features = false }
@@ -87,7 +70,6 @@ std = [
     "codec/std",
     "serde",
     "log/std",
-    "lite-json/std",
     "hash-db/std",
     "triehash/std",
     "plain_hasher/std",
@@ -99,35 +81,20 @@ std = [
     "frame-metadata/std",
     "pallet-balances/std",
     "pallet-sudo/std",
-    "pallet-timestamp/std",
-    "pallet-im-online/std",
-    "pallet-transaction-payment/std",
-    "pallet-randomness-collective-flip/std",
-    "pallet-contracts-registry/std",
     "pallet-xdns/std",
     "pallet-multi-finality-verifier/std",
     "sp-keystore/std",
     "sp-core/std",
     "sp-io/std",
     "sp-runtime/std",
-    "sp-sandbox/std",
     "sp-std/std",
     "sp-version/std",
     "sp-application-crypto/std",
     # native contracts VMs
-    "pallet-contracts/std",
     "ethabi-decode/std",
     # for tests only
-    "pallet-babe/std",
-    "pallet-staking/std",
     "sp-staking/std",
     "sp-finality-grandpa/std",
-    "sp-consensus-vrf/std",
-    "pallet-authorship/std",
-    "sp-consensus-babe/std",
-    "pallet-session/std",
-    "pallet-offences/std",
-    "frame-election-provider-support/std",
     "hex/std",
     "snowbridge-basic-channel/std",
     "snowbridge-core/std",

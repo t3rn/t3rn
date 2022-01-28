@@ -54,7 +54,7 @@ pub trait Volatile {
     }
 
     fn stick_key_with_prefix(mut key: Bytes, prefix: Bytes) -> Bytes {
-        let mut prefixed_key = prefix.clone();
+        let mut prefixed_key = prefix;
         prefixed_key.append(&mut key);
         prefixed_key.to_vec()
     }
@@ -68,11 +68,11 @@ pub trait Volatile {
     }
 
     fn value_2_state_value(value: Vec<u8>) -> Result<Vec<u8>, &'static str> {
-        return if value.len() > 64 {
+        if value.len() > 64 {
             Err("Value is larger than max. 64 bytes allowed in the Volatile State")
         } else {
             Ok(value)
-        };
+        }
     }
 
     fn insert<K: Encode>(
@@ -88,7 +88,7 @@ pub trait Volatile {
 
         match self
             .get_state_mut()
-            .insert(key_candidate.clone(), value_candidate.clone())
+            .insert(key_candidate, value_candidate.clone())
         {
             Some(_) => Err("Critical ERR - key override in Volatile storage, despite check!"),
             None => Ok((key_candidate, value_candidate)),

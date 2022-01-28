@@ -6,12 +6,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use crate::types::{AllowedSideEffect, XdnsRecord, XdnsRecordId};
-use codec::{Decode, Encode};
+use codec::Encode;
 
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
-
-use sp_runtime::{traits::Hash, RuntimeDebug};
+use sp_runtime::traits::Hash;
 use sp_std::prelude::*;
 use sp_std::vec::Vec;
 pub use t3rn_primitives::{
@@ -163,7 +160,7 @@ pub mod pallet {
             ensure_root(origin)?;
 
             if !<XDNSRegistry<T>>::contains_key(&xdns_record_id) {
-                Err(Error::<T>::UnknownXdnsRecord)?
+                Err(Error::<T>::UnknownXdnsRecord.into())
             } else {
                 <XDNSRegistry<T>>::remove(&xdns_record_id);
                 Self::deposit_event(Event::<T>::XdnsRecordPurged(requester, xdns_record_id));
@@ -247,8 +244,7 @@ pub mod pallet {
                         Encode::encode(&gateway_pointer.id).as_ref(),
                     ))
                 })
-                .filter(|xdns_record| xdns_record.is_some())
-                .map(|xdns_record| xdns_record.unwrap())
+                .flatten()
                 .collect();
             sorted_gateways
                 .sort_by(|xdns_a, xdns_b| xdns_b.last_finalized.cmp(&xdns_a.last_finalized));
