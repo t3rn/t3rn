@@ -25,7 +25,10 @@ pub trait SideEffectConfirmationProtocol: SideEffectProtocol {
     //  3. Check each argument of decoded "encoded_remote_events" against the values from STATE
     //  4. Return error that will potentially be a subject for a punishment of the executioner - up to the misbehaviour manager
     // confirm.rs: SideEffectEventsConfirmation("Event::escrow_instantiated(from,to,u64,u32,u32)"), // from here on the trust falls back on the target escrow to emit the claim / refund txs
-    fn confirm<T: pallet_balances::Config, VendorParser: VendorSideEffectsParser>(
+    fn confirm<
+        T: pallet_balances::Config + orml_tokens::Config,
+        VendorParser: VendorSideEffectsParser,
+    >(
         &self,
         encoded_remote_events: Vec<Bytes>,
         local_state: &mut LocalState,
@@ -72,7 +75,10 @@ pub trait SideEffectConfirmationProtocol: SideEffectProtocol {
     }
 }
 
-pub fn confirmation_plug<T: pallet_balances::Config, VendorParser: VendorSideEffectsParser>(
+pub fn confirmation_plug<
+    T: pallet_balances::Config + orml_tokens::Config,
+    VendorParser: VendorSideEffectsParser,
+>(
     side_effect_protocol: Box<dyn SideEffectProtocol>,
     encoded_remote_events: Vec<Bytes>,
     local_state: &LocalState,
@@ -96,15 +102,15 @@ pub fn confirmation_plug<T: pallet_balances::Config, VendorParser: VendorSideEff
             expected_event_signature,
         )?;
         // 2.  Use STATE_MAPPER to map each variable name from CONFIRMING_EVENTS into expected value stored in STATE_MAPPER during the "validate_args"
-        // ToDo: It will work for transfer for now without analyzing the signature
-        //  since the args names are the same as expected confirmation events params.
-        //  the signature, but here there should be a lookup now for
-        //  arg_names = get_arg_names_from_signature(self.get_confirmation_event()[0])
         let (_, property_names) =
             extract_property_names_from_signature_as_bytes(expected_event_signature.encode())?;
 
         for (j, property_name) in property_names.iter().enumerate() {
             //  3. Check each argument of decoded "encoded_remote_events" against the values from State
+            //      Don't check arguments starts with "_" - (95u8). In case of dirty actions we don't know / care who the author is
+            if property_name.is_empty() || property_name[0] == 95u8 {
+                continue;
+            }
             let key = match side_effect_id.clone() {
                 None => property_name.clone(),
                 Some(ref prefix) => LocalState::stick_key_with_prefix(
@@ -123,7 +129,7 @@ pub fn confirmation_plug<T: pallet_balances::Config, VendorParser: VendorSideEff
 }
 
 pub fn confirm_with_vendor_by_action_id<
-    T: pallet_balances::Config,
+    T: pallet_balances::Config + orml_tokens::Config,
     SubstrateParser: VendorSideEffectsParser,
     EthParser: VendorSideEffectsParser,
 >(

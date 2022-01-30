@@ -8,7 +8,7 @@ pub type EventSignature = Vec<u8>;
 pub type String = Vec<u8>;
 
 pub trait VendorSideEffectsParser {
-    fn parse_event<T: pallet_balances::Config>(
+    fn parse_event<T: pallet_balances::Config + orml_tokens::Config>(
         name: &'static str,
         event_encoded: Vec<u8>,
         signature: &'static str,

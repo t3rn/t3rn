@@ -98,6 +98,8 @@ pub fn get_all_standard_side_effects() -> Vec<Box<dyn SideEffectProtocol>> {
     vec![
         Box::new(TransferSideEffectProtocol {}),
         Box::new(GetDataSideEffectProtocol {}),
+        Box::new(SwapSideEffectProtocol {}),
+        Box::new(AddLiquiditySideEffectProtocol {}),
     ]
 }
 
@@ -120,12 +122,13 @@ impl SideEffectProtocol for SwapSideEffectProtocol {
     }
     fn get_arguments_abi(&self) -> Vec<Type> {
         vec![
-            Type::DynamicAddress, // argument_0: caller
-            Type::DynamicAddress, // argument_1: to
-            Type::Value,          // argument_2: amount_from
-            Type::Value,          // argument_2: amount_to
-            Type::DynamicBytes,   // argument_2: asset_from
-            Type::DynamicBytes,   // argument_2: asset_to
+            Type::DynamicAddress,    // argument_0: caller
+            Type::DynamicAddress,    // argument_1: to
+            Type::Value,             // argument_2: amount_from
+            Type::Value,             // argument_3: amount_to
+            Type::DynamicBytes,      // argument_4: asset_from
+            Type::DynamicBytes,      // argument_5: asset_to
+            Type::OptionalInsurance, // argument_6: insurance
         ]
     }
     /// Supports optional parameters - insurance.
@@ -142,11 +145,11 @@ impl SideEffectProtocol for SwapSideEffectProtocol {
     }
 
     fn get_confirming_events(&self) -> Vec<&'static str> {
-        vec!["ExecuteToken(executor,to,asset_to,asset_to)"]
+        vec!["ExecuteToken(_executor,to,asset_to,amount_to)"]
     }
     /// This event must be emitted by Escrow Contracts
     fn get_escrowed_events(&self) -> Vec<&'static str> {
-        vec!["ExecuteToken(xtx_id,executor,to,asset_to,asset_to)"]
+        vec!["ExecuteToken(xtx_id,_executor,to,asset_to,amount_to)"]
     }
     /// This event must be emitted by Insurance Submodule on pallet-circuit x-t3rn#44
     /// ToDo: Protocol::Reversible x-t3rn#69 - get_reversible_exec should also populate additional parameters to the LocalState
@@ -178,14 +181,15 @@ impl SideEffectProtocol for AddLiquiditySideEffectProtocol {
 
     fn get_arguments_abi(&self) -> Vec<Type> {
         vec![
-            Type::DynamicAddress, // argument_0: caller
-            Type::DynamicAddress, // argument_1: to
-            Type::DynamicBytes,   // argument_2: asset_left
-            Type::DynamicBytes,   // argument_2: asset_right
-            Type::DynamicBytes,   // argument_2: liquidity_token
-            Type::Value,          // argument_2: amount_left
-            Type::Value,          // argument_2: amount_right
-            Type::Value,          // argument_2: amount_liquidity_token
+            Type::DynamicAddress,    // argument_0: caller
+            Type::DynamicAddress,    // argument_1: to
+            Type::DynamicBytes,      // argument_2: asset_left
+            Type::DynamicBytes,      // argument_3: asset_right
+            Type::DynamicBytes,      // argument_4: liquidity_token
+            Type::Value,             // argument_5: amount_left
+            Type::Value,             // argument_6: amount_right
+            Type::Value,             // argument_7: amount_liquidity_token
+            Type::OptionalInsurance, // argument_8: insurance
         ]
     }
     /// Supports optional parameters - insurance.
@@ -245,7 +249,7 @@ impl SideEffectProtocol for AddLiquiditySideEffectProtocol {
 
 impl SideEffectProtocol for TransferSideEffectProtocol {
     fn get_name(&self) -> &'static str {
-        "transfer:dirty"
+        "transfer"
     }
     fn get_id(&self) -> [u8; 4] {
         *b"tran"
