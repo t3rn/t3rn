@@ -64,8 +64,8 @@ pub struct CallCustomSideEffectProtocol {}
 impl SideEffectConfirmationProtocol for TransferSideEffectProtocol {}
 // impl SideEffectConfirmationProtocol for MultiTransferSideEffectProtocol {}
 impl SideEffectConfirmationProtocol for GetDataSideEffectProtocol {}
-// impl SideEffectConfirmationProtocol for SwapSideEffectProtocol {}
-// impl SideEffectConfirmationProtocol for AddLiquiditySideEffectProtocol {}
+impl SideEffectConfirmationProtocol for SwapSideEffectProtocol {}
+impl SideEffectConfirmationProtocol for AddLiquiditySideEffectProtocol {}
 impl SideEffectConfirmationProtocol for CallEVMSideEffectProtocol {}
 // impl SideEffectConfirmationProtocol for CallWASMSideEffectProtocol {}
 impl SideEffectConfirmationProtocol for CallSideEffectProtocol {}
@@ -87,6 +87,8 @@ pub fn select_side_effect_by_id(id: [u8; 4]) -> Result<Box<dyn SideEffectProtoco
     match &id {
         b"tran" => Ok(Box::new(TransferSideEffectProtocol {})),
         b"data" => Ok(Box::new(GetDataSideEffectProtocol {})),
+        b"swap" => Ok(Box::new(SwapSideEffectProtocol {})),
+        b"aliq" => Ok(Box::new(AddLiquiditySideEffectProtocol {})),
         _ => Err("Side Effect Selection: Unknown ID"),
     }
 }
@@ -109,6 +111,138 @@ pub fn get_all_experimental_side_effects(_id: [u8; 4]) -> Vec<Box<dyn SideEffect
     ]
 }
 
+impl SideEffectProtocol for SwapSideEffectProtocol {
+    fn get_name(&self) -> &'static str {
+        "swap"
+    }
+    fn get_id(&self) -> [u8; 4] {
+        *b"swap"
+    }
+    fn get_arguments_abi(&self) -> Vec<Type> {
+        vec![
+            Type::DynamicAddress, // argument_0: caller
+            Type::DynamicAddress, // argument_1: to
+            Type::Value,          // argument_2: amount_from
+            Type::Value,          // argument_2: amount_to
+            Type::DynamicBytes,   // argument_2: asset_from
+            Type::DynamicBytes,   // argument_2: asset_to
+        ]
+    }
+    /// Supports optional parameters - insurance.
+    fn get_arguments_2_state_mapper(&self) -> Vec<&'static str> {
+        vec![
+            "caller",
+            "to",
+            "amount_from",
+            "amount_to",
+            "asset_from",
+            "asset_to",
+            "insurance",
+        ]
+    }
+
+    fn get_confirming_events(&self) -> Vec<&'static str> {
+        vec!["ExecuteToken(executor,to,asset_to,asset_to)"]
+    }
+    /// This event must be emitted by Escrow Contracts
+    fn get_escrowed_events(&self) -> Vec<&'static str> {
+        vec!["ExecuteToken(xtx_id,executor,to,asset_to,asset_to)"]
+    }
+    /// This event must be emitted by Insurance Submodule on pallet-circuit x-t3rn#44
+    /// ToDo: Protocol::Reversible x-t3rn#69 - get_reversible_exec should also populate additional parameters to the LocalState
+    ///     e.g here executor that insures transfer wasn't known before the execution.
+    fn get_reversible_exec(&self) -> Vec<&'static str> {
+        vec!["InsuredTransfer(executor,caller,insurance)"]
+    }
+    fn get_reversible_commit(&self) -> Vec<&'static str> {
+        vec!["MultiTransfer(executor,to,asset_to,amount_to)"]
+    }
+    /// ToDo: Protocol::Reversible x-t3rn#69 - If executors wants to avoid loosing their insurance deposit, must return the funds to the original user
+    ///     - that's problematic since we don't know user's address on target
+    ///     Temp. solution before the locks in wrapped tokens on Circuit is to leave it empty
+    ///     and Commit relayer to perform the transfer for 100% or they loose insured deposit
+    fn get_reversible_revert(&self) -> Vec<&'static str> {
+        // Or introducing swap_value:
+        //      vec!["Transfer(executor,caller,swap_value"]
+        vec!["MultiTransfer(executor,caller,asset_from,amount_from)"]
+    }
+}
+
+impl SideEffectProtocol for AddLiquiditySideEffectProtocol {
+    fn get_name(&self) -> &'static str {
+        "add_liquidity"
+    }
+    fn get_id(&self) -> [u8; 4] {
+        *b"aliq"
+    }
+
+    fn get_arguments_abi(&self) -> Vec<Type> {
+        vec![
+            Type::DynamicAddress, // argument_0: caller
+            Type::DynamicAddress, // argument_1: to
+            Type::DynamicBytes,   // argument_2: asset_left
+            Type::DynamicBytes,   // argument_2: asset_right
+            Type::DynamicBytes,   // argument_2: liquidity_token
+            Type::Value,          // argument_2: amount_left
+            Type::Value,          // argument_2: amount_right
+            Type::Value,          // argument_2: amount_liquidity_token
+        ]
+    }
+    /// Supports optional parameters - insurance.
+    fn get_arguments_2_state_mapper(&self) -> Vec<&'static str> {
+        vec![
+            "caller",
+            "to",
+            "asset_left",
+            "asset_right",
+            "liquidity_token",
+            "amount_left",
+            "amount_right",
+            "amount_liquidity_token",
+            "insurance",
+        ]
+    }
+
+    fn get_confirming_events(&self) -> Vec<&'static str> {
+        vec!["ExecuteToken(executor,to,liquidity_token,amount_liquidity_token)"]
+    }
+    /// This event must be emitted by Escrow Contracts
+    fn get_escrowed_events(&self) -> Vec<&'static str> {
+        vec!["ExecuteToken(xtx_id,to,liquidity_token,amount_liquidity_token)"]
+    }
+    /// This event must be emitted by Insurance Submodule on pallet-circuit x-t3rn#44
+    /// ToDo: Protocol::Reversible x-t3rn#69 - get_reversible_exec should also populate additional parameters to the LocalState
+    ///     e.g here executor that insures transfer wasn't known before the execution.
+    fn get_reversible_exec(&self) -> Vec<&'static str> {
+        vec!["InsuredTransfer(executor,caller,insurance)"]
+    }
+    fn get_reversible_commit(&self) -> Vec<&'static str> {
+        vec!["MultiTransfer(executor,to,liquidity_token,amount_liquidity_token)"]
+    }
+    /// ToDo: Protocol::Reversible x-t3rn#69 - If executors wants to avoid loosing their insurance deposit, must return the funds to the original user
+    ///     - that's problematic since we don't know user's address on target
+    ///     Temp. solution before the locks in wrapped tokens on Circuit is to leave it empty
+    ///     and Commit relayer to perform the transfer for 100% or they loose insured deposit
+    fn get_reversible_revert(&self) -> Vec<&'static str> {
+        // a) Could be either returning LP-token back to the caller: altough the caller doesn't
+        // necessarily has the address on the target + doesn't really set back the effects of
+        // adding liquidity. Discard for now.
+        //      vec!["MultiTransfer(executor,caller,amount_from)"]
+        // b) Or return both wrapped assets back to the caller. !Warning! Assumes caller providing
+        // wrapper assets into Circuit.
+        // Provide both ways b) and c) -> with wrapped tokens and automatic liqudity out of pool
+        // value
+        vec![
+            "MultiTransfer(executor,caller,asset_left,amount_left)",
+            "MultiTransfer(executor,caller,asset_right,amount_right)",
+        ]
+        // c) Or return the total value in TRN token back to caller - requires a different type of
+        // adding liquidity accepting the total value as locked value parameter that will be
+        // converted equally into left + right assets of liquidity pool
+        //      vec!["Transfer(executor,to,pool_value)"]
+    }
+}
+
 impl SideEffectProtocol for TransferSideEffectProtocol {
     fn get_name(&self) -> &'static str {
         "transfer:dirty"
@@ -125,7 +259,7 @@ impl SideEffectProtocol for TransferSideEffectProtocol {
         ]
     }
     /// ToDo: Protocol::Reversible x-t3rn#69 - !Inspect if from is doable here - the original transfer is from a user,
-    ///     whereas the transfers on targets are made by relayers/executers.
+    ///     whereas the transfers on targets are made by relayers/executors.
     ///     Prefer to only inspect the the target
     /// ToDo: Protocol::Reversible - Support optional parameters like insurance. - must be hardcoded name
     ///         // vec!["from", "to", "value", "Option<insurance>"]
@@ -141,19 +275,19 @@ impl SideEffectProtocol for TransferSideEffectProtocol {
     }
     /// This event must be emitted by Insurance Submodule on pallet-circuit x-t3rn#44
     /// ToDo: Protocol::Reversible x-t3rn#69 - get_reversible_exec should also populate additional parameters to the LocalState
-    ///     e.g here executer that insures transfer wasn't known before the execution.
+    ///     e.g here executor that insures transfer wasn't known before the execution.
     fn get_reversible_exec(&self) -> Vec<&'static str> {
-        vec!["InsuredTransfer(Append<executer>,to,insurance)"]
+        vec!["InsuredTransfer(Append<executor>,to,insurance)"]
     }
     fn get_reversible_commit(&self) -> Vec<&'static str> {
-        vec!["Transfer(executer,to,value)"]
+        vec!["Transfer(executor,to,value)"]
     }
-    /// ToDo: Protocol::Reversible x-t3rn#69 - If executers wants to avoid loosing their insurance deposit, must return the funds to the original user
+    /// ToDo: Protocol::Reversible x-t3rn#69 - If executors wants to avoid loosing their insurance deposit, must return the funds to the original user
     ///     - that's problematic since we don't know user's address on target
     ///     Temp. solution before the locks in wrapped tokens on Circuit is to leave it empty
     ///     and Commit relayer to perform the transfer for 100% or they loose insured deposit
     fn get_reversible_revert(&self) -> Vec<&'static str> {
-        vec!["Transfer(executer,from,value)"]
+        vec!["Transfer(executor,from,value)"]
     }
 }
 
