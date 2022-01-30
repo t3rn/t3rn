@@ -34,6 +34,8 @@ pallet-contracts-registry = { package = "pallet-contracts-registry", version = "
 
 sp-core = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13', default-features = false }
 
+orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library", branch = "polkadot-v0.9.13", default-features = false }
+
 [dev-dependencies]
 pallet-multi-finality-verifier = { default-features = false, path = "../multi-finality-verifier", package = 'multi-finality-verifier' }
 frame-election-provider-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
@@ -52,6 +54,8 @@ pallet-transaction-payment = { default-features = false, git = "https://github.c
 pallet-randomness-collective-flip = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
 
 snowbridge-basic-channel = { git = "https://github.com/t3rn/snowbridge", branch = "polkadot-v0.9.13", default-features = false }
+
+orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library", branch = "polkadot-v0.9.13", default-features = false }
 
 [features]
 default = ["std"]
@@ -75,6 +79,8 @@ std = [
     "pallet-circuit-portal/std",
     "pallet-contracts-registry/std",
     "scale-info/std",
+    "orml-tokens/std",
+    "orml-traits/std",
 ]
 runtime-benchmarks = ["frame-benchmarking"]
 try-runtime = ["frame-support/try-runtime"]
