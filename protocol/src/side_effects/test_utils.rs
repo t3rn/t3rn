@@ -88,8 +88,8 @@ pub fn produce_test_args(types: Vec<(Type, ArgVariant)>) -> Arguments {
         match t {
             Type::Bytes(n) => {
                 let mut bytes: Vec<u8> = vec![];
-                for _ in 0..n {
-                    bytes.push(0u8);
+                for m in 0..n {
+                    bytes.push(m);
                 }
                 args.push(bytes);
             }
