@@ -112,7 +112,7 @@ pub fn get_all_experimental_side_effects(_id: [u8; 4]) -> Vec<Box<dyn SideEffect
         Box::new(CallEVMSideEffectProtocol {}),
     ]
 }
-
+/// !Insurance is enacted on in the upper layer Circuit, where the Executor and XtxID + SideEffect are matched.
 impl SideEffectProtocol for SwapSideEffectProtocol {
     fn get_name(&self) -> &'static str {
         "swap"
@@ -148,15 +148,11 @@ impl SideEffectProtocol for SwapSideEffectProtocol {
         vec!["ExecuteToken(_executor,to,asset_to,amount_to)"]
     }
     /// This event must be emitted by Escrow Contracts
+    /// Info: XtxID is checked in the upper context of Circuit, where the Side Effect + XtxId are matched.
     fn get_escrowed_events(&self) -> Vec<&'static str> {
-        vec!["ExecuteToken(xtx_id,_executor,to,asset_to,amount_to)"]
+        vec!["ExecuteToken(_executor,to,asset_to,amount_to)"]
     }
-    /// This event must be emitted by Insurance Submodule on pallet-circuit x-t3rn#44
-    /// ToDo: Protocol::Reversible x-t3rn#69 - get_reversible_exec should also populate additional parameters to the LocalState
-    ///     e.g here executor that insures transfer wasn't known before the execution.
-    fn get_reversible_exec(&self) -> Vec<&'static str> {
-        vec!["InsuredTransfer(executor,caller,insurance)"]
-    }
+
     fn get_reversible_commit(&self) -> Vec<&'static str> {
         vec!["MultiTransfer(executor,to,asset_to,amount_to)"]
     }
@@ -211,15 +207,11 @@ impl SideEffectProtocol for AddLiquiditySideEffectProtocol {
         vec!["ExecuteToken(executor,to,liquidity_token,amount_liquidity_token)"]
     }
     /// This event must be emitted by Escrow Contracts
+    /// Info: XtxID is checked in the upper context of Circuit, where the Side Effect + XtxId are matched.
     fn get_escrowed_events(&self) -> Vec<&'static str> {
         vec!["ExecuteToken(xtx_id,to,liquidity_token,amount_liquidity_token)"]
     }
-    /// This event must be emitted by Insurance Submodule on pallet-circuit x-t3rn#44
-    /// ToDo: Protocol::Reversible x-t3rn#69 - get_reversible_exec should also populate additional parameters to the LocalState
-    ///     e.g here executor that insures transfer wasn't known before the execution.
-    fn get_reversible_exec(&self) -> Vec<&'static str> {
-        vec!["InsuredTransfer(executor,caller,insurance)"]
-    }
+
     fn get_reversible_commit(&self) -> Vec<&'static str> {
         vec!["MultiTransfer(executor,to,liquidity_token,amount_liquidity_token)"]
     }
@@ -276,12 +268,6 @@ impl SideEffectProtocol for TransferSideEffectProtocol {
     /// This event must be emitted by Escrow Contracts
     fn get_escrowed_events(&self) -> Vec<&'static str> {
         vec!["EscrowTransfer(from,to,value)"]
-    }
-    /// This event must be emitted by Insurance Submodule on pallet-circuit x-t3rn#44
-    /// ToDo: Protocol::Reversible x-t3rn#69 - get_reversible_exec should also populate additional parameters to the LocalState
-    ///     e.g here executor that insures transfer wasn't known before the execution.
-    fn get_reversible_exec(&self) -> Vec<&'static str> {
-        vec!["InsuredTransfer(Append<executor>,to,insurance)"]
     }
     fn get_reversible_commit(&self) -> Vec<&'static str> {
         vec!["Transfer(executor,to,value)"]
