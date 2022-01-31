@@ -59,15 +59,14 @@ where
 }
 
 /// Generate an Aura authority key.
-/// TODO: this is implemented in standalone runtime
-// pub fn get_authority_keys_from_seed(seed: &str) -> (AccountId, AccountId, GrandpaId, AuraId) {
-//     (
-//         get_account_id_from_seed::<sr25519::Public>(&format!("{}//stash", seed)),
-//         get_account_id_from_seed::<sr25519::Public>(seed),
-//         get_from_seed::<GrandpaId>(seed),
-//         get_from_seed::<AuraId>(seed),
-//     )
-// }
+pub fn get_authority_keys_from_seed(s: &str) -> (AccountId, AuraId, GrandpaId, BeefyId) {
+    (
+        get_account_id_from_seed::<sr25519::Public>(s),
+        get_from_seed::<AuraId>(s),
+        get_from_seed::<GrandpaId>(s),
+        get_from_seed::<BeefyId>(s),
+    )
+}
 
 /// Generate an Aura authority key for Karura.
 pub fn get_parachain_authority_keys_from_seed(seed: &str) -> (AccountId, AuraId) {

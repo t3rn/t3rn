@@ -43,16 +43,6 @@ pub enum Alternative {
     LocalTestnet,
 }
 
-/// Helper function to generate an authority key for Aura
-pub fn get_authority_keys_from_seed(s: &str) -> (AccountId, AuraId, GrandpaId, BeefyId) {
-    (
-        get_account_id_from_seed::<sr25519::Public>(s),
-        get_from_seed::<AuraId>(s),
-        get_from_seed::<GrandpaId>(s),
-        get_from_seed::<BeefyId>(s),
-    )
-}
-
 impl Alternative {
     /// Get an actual chain config from one of the alternatives.
     pub(crate) fn load(self) -> ChainSpec {
@@ -247,6 +237,10 @@ fn testnet_genesis(
             interval: 1,
         },
     }
+}
+
+fn is_standalone() -> bool {
+    true
 }
 
 #[test]

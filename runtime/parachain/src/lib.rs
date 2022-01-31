@@ -38,7 +38,6 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 use static_assertions::const_assert;
-use t3rn_primitives::bridges::polkadot_core as bp_polkadot_core;
 use t3rn_primitives::bridges::runtime as bp_runtime;
 
 // Polkadot Imports
@@ -818,17 +817,11 @@ parameter_types! {
     pub const HeadersToKeep: u32 = 5;
 }
 
-impl pallet_mfv::Config<pallet_mfv::Instance1> for Runtime {
-    type BridgedChain = bp_polkadot_core::PolkadotLike;
-    type MaxRequests = MaxRequests;
-    type HeadersToKeep = HeadersToKeep;
-    type WeightInfo = ();
-}
-
-// type Blake2ValU64BridgeInstance = ();
+type DefaultPolkadotBridgeInstance = ();
 type Blake2ValU32BridgeInstance = pallet_mfv::Instance1;
-type Keccak256ValU64BridgeInstance = pallet_mfv::Instance2;
-type Keccak256ValU32BridgeInstance = pallet_mfv::Instance3;
+type Blake2ValU64BridgeInstance = pallet_mfv::Instance2;
+type Keccak256ValU64BridgeInstance = pallet_mfv::Instance3;
+type Keccak256ValU32BridgeInstance = pallet_mfv::Instance4;
 
 #[derive(Debug)]
 pub struct Blake2ValU64Chain;
@@ -888,6 +881,13 @@ impl pallet_mfv::Config<Keccak256ValU64BridgeInstance> for Runtime {
 }
 
 impl pallet_mfv::Config<Keccak256ValU32BridgeInstance> for Runtime {
+    type BridgedChain = Keccak256ValU32Chain;
+    type MaxRequests = MaxRequests;
+    type HeadersToKeep = HeadersToKeep;
+    type WeightInfo = ();
+}
+
+impl pallet_mfv::Config<DefaultPolkadotBridgeInstance> for Runtime {
     type BridgedChain = Keccak256ValU32Chain;
     type MaxRequests = MaxRequests;
     type HeadersToKeep = HeadersToKeep;
@@ -961,13 +961,13 @@ construct_runtime!(
         MultiFinalityVerifierPolkadotLike: pallet_mfv::<Instance1>::{
             Pallet, Call, Storage, Config<T, I>
         } = 101,
-        MultiFinalityVerifierPolkadotLike: pallet_mfv::<Instance2>::{
+        MultiFinalityVerifierSubstrateLike: pallet_mfv::<Instance2>::{
             Pallet, Call, Storage, Config<T, I>
         } = 102,
-        MultiFinalityVerifierPolkadotLike: pallet_mfv::<Instance3>::{
+        MultiFinalityVerifierEthereumLike: pallet_mfv::<Instance3>::{
             Pallet, Call, Storage, Config<T, I>
         } = 103,
-        MultiFinalityVerifierPolkadotLike: pallet_mfv::<Instance4>::{
+        MultiFinalityVerifierGenericLike: pallet_mfv::<Instance4>::{
             Pallet, Call, Storage, Config<T, I>
         } = 104,
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 105,

@@ -10,7 +10,7 @@ use t3rn_primitives::{AccountId, AccountPublic};
 
 use crate::chain_spec::{get_account_id_from_seed, get_from_seed, Extensions};
 
-pub const PARA_ID: ParaId = ParaId::from(3331 as u32);
+pub const PARA_ID: ParaId = ParaId::new(3331 as u32);
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
@@ -198,6 +198,9 @@ fn testnet_genesis(
         democracy: Default::default(),
         contracts_registry: Default::default(),
         ethereum_light_client: Default::default(),
+        multi_finality_verifier_ethereum_like: Default::default(),
+        multi_finality_verifier_generic_like: Default::default(),
+        multi_finality_verifier_substrate_like: Default::default(),
     }
 }
 
@@ -326,5 +329,12 @@ fn genesis(
         democracy: Default::default(),
         contracts_registry: Default::default(),
         ethereum_light_client: Default::default(),
+        multi_finality_verifier_ethereum_like: Default::default(),
+        multi_finality_verifier_generic_like: Default::default(),
+        multi_finality_verifier_substrate_like: Default::default(),
     }
+}
+
+fn is_parachain() -> bool {
+    true
 }

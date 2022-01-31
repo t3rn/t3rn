@@ -32,6 +32,8 @@ jsonrpc-core = "18.0.0"
 
 # Local Dependencies
 circuit-service = { path = "./service" }
+circuit-parachain-runtime = { path = "../runtime/parachain", optional = true }
+circuit-standalone-runtime = { path = "../runtime/standalone", optional = true }
 
 # Substrate Dependencies
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }

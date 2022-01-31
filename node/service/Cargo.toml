@@ -82,13 +82,3 @@ polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = 
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13" }
 polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13" }
-
-[features]
-default = [ "std", "with-parachain-runtime" ]
-std = []
-with-parachain-runtime = [ "circuit-parachain-runtime" ]
-with-standalone-runtime = [ "circuit-standalone-runtime" ]
-runtime-benchmarks = [
-    "circuit-standalone-runtime/runtime-benchmarks",
-    "circuit-parachain-runtime/runtime-benchmarks"
-]

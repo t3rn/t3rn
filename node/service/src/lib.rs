@@ -5,7 +5,12 @@ pub mod chain_spec;
 use std::sync::Arc;
 
 // Local Runtime Types
+#[cfg(feature = "with-parachain-runtime")]
 use circuit_parachain_runtime::{
+    opaque::Block, AccountId, Balance, Hash, Index as Nonce, RuntimeApi,
+};
+#[cfg(feature = "with-standalone-runtime")]
+use circuit_standalone_runtime::{
     opaque::Block, AccountId, Balance, Hash, Index as Nonce, RuntimeApi,
 };
 
