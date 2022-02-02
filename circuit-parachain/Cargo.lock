@@ -4908,6 +4908,7 @@ dependencies = [
  "frame-system",
  "log",
  "orml-tokens",
+ "orml-traits",
  "pallet-balances",
  "pallet-circuit-portal",
  "pallet-contracts-registry",
