@@ -281,8 +281,6 @@ pub mod pallet {
             // Setup: new xtx context
             let mut local_xtx_ctx: LocalXtxCtx<T> =
                 Self::setup(CircuitStatus::Requested, &requester, fee, None)?;
-
-            println!("Circuit: local_xtx_ctx.xtx_id {:?}", local_xtx_ctx.xtx_id);
             // Validate: Side Effects
             Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential)?;
             // Apply: all necessary changes to state in 1 go

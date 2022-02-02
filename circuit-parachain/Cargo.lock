@@ -959,6 +959,8 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "log",
  "multi-finality-verifier",
+ "orml-tokens",
+ "orml-traits",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
@@ -4683,6 +4685,53 @@ dependencies = [
 ]
 
 [[package]]
+name = "orml-tokens"
+version = "0.4.1-dev"
+source = "git+https://github.com/open-web3-stack/open-runtime-module-library?branch=polkadot-v0.9.13#1f520348f31b5e94b8a5dd7f8e6b8ec359df4177"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "orml-traits",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "orml-traits"
+version = "0.4.1-dev"
+source = "git+https://github.com/open-web3-stack/open-runtime-module-library?branch=polkadot-v0.9.13#1f520348f31b5e94b8a5dd7f8e6b8ec359df4177"
+dependencies = [
+ "frame-support",
+ "impl-trait-for-tuples",
+ "num-traits",
+ "orml-utilities",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+]
+
+[[package]]
+name = "orml-utilities"
+version = "0.4.1-dev"
+source = "git+https://github.com/open-web3-stack/open-runtime-module-library?branch=polkadot-v0.9.13#1f520348f31b5e94b8a5dd7f8e6b8ec359df4177"
+dependencies = [
+ "frame-support",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "owning_ref"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4858,6 +4907,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
+ "orml-tokens",
  "pallet-balances",
  "pallet-circuit-portal",
  "pallet-contracts-registry",
@@ -10234,6 +10284,8 @@ dependencies = [
  "hash-db",
  "hex",
  "hex-literal",
+ "orml-tokens",
+ "orml-traits",
  "pallet-balances",
  "pallet-sudo",
  "parity-scale-codec",
