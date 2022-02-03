@@ -25,9 +25,6 @@ pub trait SideEffectProtocol {
     fn get_escrowed_events(&self) -> Vec<&'static str> {
         unimplemented!()
     }
-    fn get_reversible_exec(&self) -> Vec<&'static str> {
-        unimplemented!()
-    }
     fn get_reversible_commit(&self) -> Vec<&'static str> {
         unimplemented!()
     }

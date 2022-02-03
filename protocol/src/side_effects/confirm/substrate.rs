@@ -18,14 +18,14 @@ pub type String = Vec<u8>;
 pub struct SubstrateSideEffectsParser {}
 
 impl VendorSideEffectsParser for SubstrateSideEffectsParser {
-    fn parse_event<T: pallet_balances::Config>(
+    fn parse_event<T: pallet_balances::Config + orml_tokens::Config>(
         name: &'static str,
         event_encoded: Vec<u8>,
         // If we go with decoding events based on the pallet-inherited Event encoder we won't need the signature to decode from Substrate
         _signature: &'static str,
     ) -> Result<Arguments, &'static str> {
         match name {
-            "transfer:dirty" => {
+            "transfer" => {
                 // Assume that the different Pallet ID Circuit vs Target wouldn't matter for decoding on Circuit.
                 match Decode::decode(&mut &event_encoded[..]) {
                     // TypeId::of<<T as pallet_system::AccountId>>()
@@ -43,6 +43,19 @@ impl VendorSideEffectsParser for SubstrateSideEffectsParser {
                     Err(_) => Err("Decoded event doesn't match expected for substrate form of pallet_balances::Event::Transfer"),
                 }
             }
+            "swap" => {
+                match Decode::decode(&mut &event_encoded[..]) {
+                    Ok(orml_tokens::Event::<T>::Transfer(currency_id, from, to, amount)) => Ok(vec![from.encode(), to.encode(), currency_id.encode(), amount.encode()]),
+                    Ok(orml_tokens::Event::<T>::BalanceSet(_currency_id, _from, _amount_left, _amount_right)) => Err("Event decodes to orml_tokens::Event::BalanceSet, which is unsupported"),
+                    Ok(orml_tokens::Event::<T>::RepatriatedReserve(_currency_id, _from, _to, _amount, _balance_status)) => Err("Event decodes to orml_tokens::Event::RepatriatedReserve, which is unsupported"),
+                    Ok(orml_tokens::Event::<T>::Endowed(_currency_id, _account, _amount)) => Err("Event decodes to orml_tokens::Event::Endowed, which is unsupported"),
+                    Ok(orml_tokens::Event::<T>::DustLost(_currency_id, _account, _amount)) => Err("Event decodes to orml_tokens::Event::DustLost, which is unsupported"),
+                    Ok(orml_tokens::Event::<T>::Reserved(_currency_id, _account, _amount)) => Err("Event decodes to orml_tokens::Event::Reserved, which is unsupported"),
+                    Ok(orml_tokens::Event::<T>::Unreserved(_currency_id, _account, _amount)) => Err("Event decodes to orml_tokens::Event::Unreserved, which is unsupported"),
+                    Err(_) => Err("Decoded event doesn't match expected for substrate form of orml_tokens::Event::Transfer"),
+                    Ok(_) => Err("Decoded event doesn't match expected for substrate form of orml_tokens::Event::Transfer"),
+                }
+            }
             &_ => Err("Event name unrecognized for the Substrate vendor"),
         }
     }
@@ -53,6 +66,8 @@ pub mod tests {
     use super::{SubstrateSideEffectsParser, VendorSideEffectsParser};
     use codec::Encode;
     use frame_support::parameter_types;
+    use frame_support::traits::Nothing;
+
     use hex_literal::hex;
     use sp_runtime::{
         testing::{Header, H256},
@@ -60,8 +75,13 @@ pub mod tests {
         AccountId32,
     };
 
+    // ORML-related
+    use orml_traits::parameter_type_with_key;
+
     type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
     type Block = frame_system::mocking::MockBlock<Test>;
+    type Balance = u64;
+    type Amount = i64;
 
     frame_support::construct_runtime!(
         pub enum Test where
@@ -71,6 +91,7 @@ pub mod tests {
         {
             System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
             Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+            ORMLTokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>},
         }
     );
 
@@ -112,12 +133,32 @@ pub mod tests {
         type MaxLocks = ();
         type MaxReserves = ();
         type ReserveIdentifier = [u8; 8];
-        type Balance = u64;
+        type Balance = Balance;
         type DustRemoval = ();
         type Event = Event;
         type ExistentialDeposit = ExistentialDeposit;
         type AccountStore = System;
         type WeightInfo = ();
+    }
+
+    // ORML Tokens
+    pub type CurrencyId = u32;
+    parameter_type_with_key! {
+        pub ExistentialDeposits: |_currency_id: CurrencyId| -> Balance {
+            Default::default()
+        };
+    }
+
+    impl orml_tokens::Config for Test {
+        type Event = Event;
+        type Balance = Balance;
+        type Amount = Amount;
+        type CurrencyId = CurrencyId;
+        type WeightInfo = ();
+        type ExistentialDeposits = ExistentialDeposits;
+        type OnDust = ();
+        type MaxLocks = ();
+        type DustRemovalWhitelist = Nothing;
     }
 
     #[test]
@@ -147,7 +188,7 @@ pub mod tests {
         };
 
         let res = SubstrateSideEffectsParser::parse_event::<Test>(
-            "transfer:dirty",
+            "transfer",
             encoded_balance_transfer_event.encode(),
             // If we go with decoding events based on the pallet-inherited Event encoder we won't need the signature to decode from Substrate
             "empty signature - not used by Substrate decoder",
