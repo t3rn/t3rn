@@ -238,6 +238,7 @@ fn testnet_genesis(
                 .expect("Should not fail"),
             interval: 1,
         },
+        orml_tokens: Default::default(),
     }
 }
 

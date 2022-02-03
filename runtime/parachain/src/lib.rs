@@ -93,6 +93,9 @@ pub type SignedBlock = generic::SignedBlock<Block>;
 /// BlockId type as expected by this runtime.
 pub type BlockId = generic::BlockId<Block>;
 
+/// Amount of an account
+pub type Amount = i128;
+
 /// The SignedExtension to the basic transaction logic.
 pub type SignedExtra = (
     frame_system::CheckSpecVersion<Runtime>,
@@ -917,6 +920,27 @@ impl pallet_utility::Config for Runtime {
     type PalletsOrigin = OriginCaller;
 }
 
+// ORML Tokens
+use orml_traits::parameter_type_with_key;
+pub type CurrencyId = u32;
+parameter_type_with_key! {
+    pub ExistentialDeposits: |_currency_id: CurrencyId| -> Balance {
+        Default::default()
+    };
+}
+
+impl orml_tokens::Config for Runtime {
+    type Event = Event;
+    type Balance = Balance;
+    type Amount = Amount;
+    type CurrencyId = CurrencyId;
+    type WeightInfo = ();
+    type ExistentialDeposits = ExistentialDeposits;
+    type OnDust = ();
+    type MaxLocks = ();
+    type DustRemovalWhitelist = Nothing;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -977,6 +1001,9 @@ construct_runtime!(
         EthereumLightClient: ethereum_light_client::{Pallet, Call, Storage, Event<T>, Config} = 150,
         Utility: pallet_utility::{Pallet, Call, Event} = 151,
         BasicOutboundChannel: snowbridge_channel::outbound::{Pallet, Call, Storage, Event<T>} = 152,
+
+        // ORML
+        ORMLTokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>} = 161,
 
         // smart contracts
         //Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>} = 161,

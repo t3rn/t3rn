@@ -201,6 +201,7 @@ fn testnet_genesis(
         multi_finality_verifier_ethereum_like: Default::default(),
         multi_finality_verifier_generic_like: Default::default(),
         multi_finality_verifier_substrate_like: Default::default(),
+        orml_tokens: Default::default(),
     }
 }
 
@@ -332,6 +333,7 @@ fn genesis(
         multi_finality_verifier_ethereum_like: Default::default(),
         multi_finality_verifier_generic_like: Default::default(),
         multi_finality_verifier_substrate_like: Default::default(),
+        orml_tokens: Default::default(),
     }
 }
 

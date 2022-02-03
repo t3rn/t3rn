@@ -26,13 +26,16 @@ sp-io = { default-features = false, git = "https://github.com/paritytech/substra
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13', optional = true }
 scale-info = { version = "1.0", default-features = false, features = ["derive"] }
 log = { version = "0.4.14", default-features = false }
-t3rn-primitives = { version = "1.0.0-alpha.0", default-features = false, path = "../../primitives" }
+t3rn-primitives = { path = "../../primitives", version = "1.0.0-alpha.0", default-features = false }
 t3rn-protocol = { path = "../../protocol", version = "1.0.0-alpha.1", default-features = false }
 pallet-xdns = { version = "1.0.0-alpha.0", default-features = false, path = "../../pallets/xdns" }
 pallet-circuit-portal = { version = "1.0.0-alpha.0", default-features = false, path = "../circuit-portal" }
 pallet-contracts-registry = { package = "pallet-contracts-registry", version = "1.0.0-alpha.0", default-features = false, path = "../../pallets/contracts-registry" }
 
 sp-core = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13', default-features = false }
+
+orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library", branch = "polkadot-v0.9.13", default-features = false }
+orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library", branch = "polkadot-v0.9.13", default-features = false }
 
 [dev-dependencies]
 pallet-multi-finality-verifier = { default-features = false, path = "../multi-finality-verifier" }
@@ -75,6 +78,8 @@ std = [
     "pallet-circuit-portal/std",
     "pallet-contracts-registry/std",
     "scale-info/std",
+    "orml-tokens/std",
+    "orml-traits/std",
 ]
 runtime-benchmarks = ["frame-benchmarking"]
 try-runtime = ["frame-support/try-runtime"]

@@ -90,6 +90,10 @@ xcm = { git = "https://github.com/paritytech/polkadot", default-features = false
 xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.13" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.13" }
 
+# ORML
+orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library", branch = "polkadot-v0.9.13", default-features = false }
+orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library", branch = "polkadot-v0.9.13", default-features = false }
+
 [features]
 default = [
 	"std",
@@ -150,7 +154,9 @@ std = [
 	"pallet-mfv/std",
 	"ethereum-light-client/std",
 	"snowbridge-core/std",
-	"snowbridge-channel/std"
+	"snowbridge-channel/std",
+	"orml-tokens/std",
+	"orml-traits/std"
 ]
 
 runtime-benchmarks = [

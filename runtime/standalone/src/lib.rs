@@ -49,7 +49,7 @@ use t3rn_protocol::side_effects::confirm::ethereum::EthereumMockVerifier;
 // use volatile_vm::DispatchRuntimeCall;
 
 // A few exports that help ease life for downstream crates.
-use frame_support::traits::Everything;
+use frame_support::traits::{Everything, Nothing};
 pub use frame_support::{
     construct_runtime, parameter_types,
     traits::{Currency, ExistenceRequirement, Imbalance, KeyOwnerProofSystem},
@@ -91,6 +91,9 @@ pub type BlockNumber = u32;
 
 /// Hashing algorithm used by the chain.
 pub type Hashing = bp_circuit::Hasher;
+
+/// Amount of an account
+pub type Amount = i128;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
@@ -648,6 +651,27 @@ impl pallet_beefy_mmr::Config for Runtime {
     type ParachainHeads = ();
 }
 
+// ORML Tokens
+use orml_traits::parameter_type_with_key;
+pub type CurrencyId = u32;
+parameter_type_with_key! {
+    pub ExistentialDeposits: |_currency_id: CurrencyId| -> Balance {
+        Default::default()
+    };
+}
+
+impl orml_tokens::Config for Runtime {
+    type Event = Event;
+    type Balance = Balance;
+    type Amount = Amount;
+    type CurrencyId = CurrencyId;
+    type WeightInfo = ();
+    type ExistentialDeposits = ExistentialDeposits;
+    type OnDust = ();
+    type MaxLocks = ();
+    type DustRemovalWhitelist = Nothing;
+}
+
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -679,6 +703,9 @@ construct_runtime!(
         EthereumLightClient: ethereum_light_client::{Pallet, Call, Storage, Event<T>, Config},
         MmrLeaf: pallet_beefy_mmr::{Pallet, Storage},
         BasicOutboundChannel: snowbridge_basic_channel::outbound::{Pallet, Config<T>, Storage, Event<T>},
+        // ORML
+        ORMLTokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>},
+
     }
 );
 
