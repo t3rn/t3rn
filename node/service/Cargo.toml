@@ -1,6 +1,6 @@
 [package]
 name = "circuit-service"
-version = "1.0.0-alpha.0"
+version = "1.0.0-alpha.1"
 authors = ["devs @ t3rn"]
 license = "Apache 2.0"
 homepage = "https://t3rn.io"
@@ -58,6 +58,7 @@ sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "pol
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
 sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
 sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
 sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
@@ -65,6 +66,7 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkad
 sp-session = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
 sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+beefy-primitives = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", optional = true }
 
 # Cumulus dependencies
 cumulus-client-cli = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.13' }
@@ -82,3 +84,14 @@ polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = 
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13" }
 polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13" }
+
+[features]
+default = [ "std" ]
+std = []
+runtime-benchmarks = [
+    "circuit-standalone-runtime/runtime-benchmarks",
+    "circuit-parachain-runtime/runtime-benchmarks"
+]
+
+with-standalone-runtime = [ "circuit-standalone-runtime", "beefy-primitives" ]
+with-parachain-runtime = [ "circuit-parachain-runtime" ]

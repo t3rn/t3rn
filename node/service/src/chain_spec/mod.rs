@@ -58,7 +58,13 @@ where
     AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
 }
 
+#[cfg(feature = "with-standalone-runtime")]
+use beefy_primitives::crypto::AuthorityId as BeefyId;
 /// Generate an Aura authority key.
+
+#[cfg(feature = "with-standalone-runtime")]
+use sp_finality_grandpa::AuthorityId as GrandpaId;
+#[cfg(feature = "with-standalone-runtime")]
 pub fn get_authority_keys_from_seed(s: &str) -> (AccountId, AuraId, GrandpaId, BeefyId) {
     (
         get_account_id_from_seed::<sr25519::Public>(s),

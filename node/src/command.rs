@@ -1,16 +1,21 @@
 use crate::cli::{Cli, RelayChainCli, Subcommand};
-use circuit_parachain_runtime::{Block, RuntimeApi};
+
+#[cfg(feature = "with-parachain-runtime")]
+use circuit_parachain_runtime::{RuntimeApi, VERSION};
+
 #[cfg(feature = "with-parachain-runtime")]
 use circuit_service::chain_spec::parachain::{
-    self as chain_spec, circuit_config, development_config, local_testnet_config, ChainSpec,
+    self as chain_spec, circuit_config, development_config, local_testnet_config,
 };
+
 #[cfg(feature = "with-standalone-runtime")]
-use circuit_service::chain_spec::standalone::{
-    self as chain_spec, circuit_config, development_config, local_testnet_config, ChainSpec,
-};
-use circuit_service::{
-    new_partial, parachain_build_import_queue, start_parachain_node, CircuitRuntimeExecutor,
-};
+use circuit_service::chain_spec::standalone::{self as chain_spec};
+use circuit_service::chain_spec::Extensions;
+use circuit_service::{new_partial, CircuitRuntimeExecutor};
+#[cfg(feature = "with-parachain-runtime")]
+use circuit_service::{parachain_build_import_queue, start_parachain_node};
+#[cfg(feature = "with-standalone-runtime")]
+use circuit_standalone_runtime::{RuntimeApi, VERSION};
 use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
@@ -21,9 +26,11 @@ use sc_cli::{
     Result, RuntimeVersion, SharedParams, SubstrateCli,
 };
 use sc_service::config::{BasePath, PrometheusConfig};
+use sc_service::PartialComponents;
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::Block as BlockT;
 use std::{io::Write, net::SocketAddr};
+use t3rn_primitives::Block;
 
 #[cfg(feature = "with-parachain-runtime")]
 fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
@@ -40,44 +47,14 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 #[cfg(feature = "with-standalone-runtime")]
 fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
     Ok(match id {
-        "dev" => Box::new(chain_spec::development_config()),
-        "circuit" => Box::new(chain_spec::circuit_config()),
-        "" | "local" => Box::new(chain_spec::local_testnet_config()),
+        "dev" => Box::new(chain_spec::Alternative::Development.load()),
+        "circuit" => Box::new(chain_spec::Alternative::Development.load()),
+        "" | "local" => Box::new(chain_spec::Alternative::LocalTestnet.load()),
         path => Box::new(chain_spec::ChainSpec::from_json_file(
             std::path::PathBuf::from(path),
         )?),
     })
 }
-
-// macro_rules! with_runtime_or_err {
-// 	($chain_spec:expr, { $( $code:tt )* }) => {
-// 		if $chain_spec.is_parachain() {
-// 			#[cfg(feature = "with-parachain-runtime")]
-// 			#[allow(unused_imports)]
-//          use circuit_service::chain_spec::parachain::{
-//              self as chain_spec, circuit_config, development_config, local_testnet_config, ChainSpec,
-//          };
-// 			#[cfg(feature = "with-parachain-runtime")]
-// 			$( $code )*
-//
-// 			#[cfg(not(feature = "with-standalone-runtime"))]
-// 			return Err(service::PARACHAIN_RUNTIME_NOT_AVAILABLE.into());
-// 		} else if $chain_spec.is_standalone() {
-// 			#[cfg(feature = "with-standalone-runtime")]
-// 		   	#[allow(unused_imports)]
-//          use circuit_service::chain_spec::standalone::{
-//              self as chain_spec, circuit_config, development_config, local_testnet_config, ChainSpec,
-//          };
-// 			#[cfg(feature = "with-standalone-runtime")]
-// 			$( $code )*
-//
-// 			#[cfg(not(feature = "with-standalone-runtime"))]
-// 			return Err(service::STANDALONE_RUNTIME_NOT_AVAILABLE.into());
-// 		} else {
-// 			return Err(service::PARACHAIN_RUNTIME_NOT_AVAILABLE.into());
-// 		}
-// 	}
-// }
 
 impl SubstrateCli for Cli {
     fn impl_name() -> String {
@@ -115,7 +92,7 @@ impl SubstrateCli for Cli {
     }
 
     fn native_runtime_version(_: &Box<dyn sc_service::ChainSpec>) -> &'static RuntimeVersion {
-        &circuit_parachain_runtime::VERSION
+        &VERSION
     }
 }
 
@@ -169,6 +146,7 @@ fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<V
         .ok_or_else(|| "Could not find wasm file in genesis state!".into())
 }
 
+#[cfg(feature = "with-parachain-runtime")]
 macro_rules! construct_async_run {
 	(|$components:ident, $cli:ident, $cmd:ident, $config:ident| $( $code:tt )* ) => {{
 		let runner = $cli.create_runner($cmd)?;
@@ -188,6 +166,7 @@ macro_rules! construct_async_run {
 }
 
 /// Parse command line arguments into service configuration.
+#[cfg(feature = "with-parachain-runtime")]
 pub fn run() -> Result<()> {
     let cli = Cli::from_args();
 
@@ -343,6 +322,99 @@ pub fn run() -> Result<()> {
                     .map_err(Into::into)
             })
         }
+    }
+}
+
+/// Parse and run command line arguments
+#[cfg(feature = "with-standalone-runtime")]
+pub fn run() -> sc_cli::Result<()> {
+    let cli = Cli::from_args();
+
+    match &cli.subcommand {
+        Some(Subcommand::BuildSpec(cmd)) => {
+            let runner = cli.create_runner(cmd)?;
+            runner.sync_run(|config| cmd.run(config.chain_spec, config.network))
+        }
+        Some(Subcommand::CheckBlock(cmd)) => {
+            let runner = cli.create_runner(cmd)?;
+            runner.async_run(|config| {
+                let PartialComponents {
+                    client,
+                    task_manager,
+                    import_queue,
+                    ..
+                } = new_partial(&config)?;
+                Ok((cmd.run(client, import_queue), task_manager))
+            })
+        }
+        Some(Subcommand::ExportBlocks(cmd)) => {
+            let runner = cli.create_runner(cmd)?;
+            runner.async_run(|config| {
+                let PartialComponents {
+                    client,
+                    task_manager,
+                    ..
+                } = new_partial(&config)?;
+                Ok((cmd.run(client, config.database), task_manager))
+            })
+        }
+        Some(Subcommand::ExportState(cmd)) => {
+            let runner = cli.create_runner(cmd)?;
+            runner.async_run(|config| {
+                let PartialComponents {
+                    client,
+                    task_manager,
+                    ..
+                } = new_partial(&config)?;
+                Ok((cmd.run(client, config.chain_spec), task_manager))
+            })
+        }
+        Some(Subcommand::ImportBlocks(cmd)) => {
+            let runner = cli.create_runner(cmd)?;
+            runner.async_run(|config| {
+                let PartialComponents {
+                    client,
+                    task_manager,
+                    import_queue,
+                    ..
+                } = new_partial(&config)?;
+                Ok((cmd.run(client, import_queue), task_manager))
+            })
+        }
+        Some(Subcommand::PurgeChain(cmd)) => {
+            let runner = cli.create_runner(cmd)?;
+            runner.sync_run(|config| cmd.run(config.database))
+        }
+        Some(Subcommand::Revert(cmd)) => {
+            let runner = cli.create_runner(cmd)?;
+            runner.async_run(|config| {
+                let PartialComponents {
+                    client,
+                    task_manager,
+                    backend,
+                    ..
+                } = new_partial(&config)?;
+                Ok((cmd.run(client, backend), task_manager))
+            })
+        }
+        Some(Subcommand::Benchmark(cmd)) => {
+            if cfg!(feature = "runtime-benchmarks") {
+                let runner = cli.create_runner(cmd)?;
+
+                runner.sync_run(|config| cmd.run::<Block, Executor>(config))
+            } else {
+                Err("Benchmarking wasn't enabled when building the node. \
+				You can enable it with `--features runtime-benchmarks`."
+                    .into())
+            }
+        }
+        None => {
+            let runner = cli.create_runner(&cli.run)?;
+            runner.run_node_until_exit(|config| async move {
+                new_full(config).map_err(sc_cli::Error::Service)
+            })
+        }
+        _ => {}
     }
 }
 

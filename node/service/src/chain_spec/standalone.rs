@@ -1,26 +1,29 @@
+use crate::chain_spec::get_authority_keys_from_seed;
 use async_std::task;
+#[cfg(feature = "with-standalone-runtime")]
 use beefy_primitives::crypto::AuthorityId as BeefyId;
-use bp_circuit::derive_account_from_gateway_id;
-use bp_runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID};
 use jsonrpc_core::serde_json;
 use log::info;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::crypto::Ss58Codec;
+use sp_core::sp_std::convert::TryFrom;
 use sp_core::{sr25519, Encode, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use sp_std::convert::TryFrom;
 use std::{
     collections::BTreeMap,
     io::{Error, ErrorKind},
     str::FromStr,
 };
+use t3rn_primitives::bridges::runtime::{
+    SourceAccount, GATEWAY_CHAIN_ID, KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID,
+};
 
 use crate::chain_spec::{get_account_id_from_seed, get_from_seed, seed_xdns_registry};
 use circuit_standalone_runtime::{
-    AuraConfig, BalancesConfig, BeefyConfig, ContractsRegistryConfig, EVMConfig, GenesisConfig,
-    GrandpaConfig, MultiFinalityVerifierConfig, SessionConfig, SessionKeys, Signature, SudoConfig,
-    SystemConfig, XDNSConfig, WASM_BINARY,
+    AuraConfig, BalancesConfig, BeefyConfig, ContractsRegistryConfig, GenesisConfig, GrandpaConfig,
+    MultiFinalityVerifierConfig, SessionKeys, Signature, SudoConfig, SystemConfig, XDNSConfig,
+    WASM_BINARY,
 };
 use jsonrpc_runtime_client::{create_rpc_client, get_metadata, ConnectionParams};
 use pallet_xdns::XdnsRecord;
@@ -45,13 +48,13 @@ pub enum Alternative {
 
 impl Alternative {
     /// Get an actual chain config from one of the alternatives.
-    pub(crate) fn load(self) -> ChainSpec {
+    pub fn load(self) -> ChainSpec {
         let properties = Some(
             serde_json::json!({
-                "tokenDecimals": 9,
+                "tokenDecimals": 9_u8,
                 "tokenSymbol": "TRN",
                 "bridgeIds": {
-                    "Gateway": bp_runtime::GATEWAY_CHAIN_ID,
+                    "Gateway": GATEWAY_CHAIN_ID,
                 }
             })
             .as_object()
@@ -73,7 +76,7 @@ impl Alternative {
                             get_account_id_from_seed::<sr25519::Public>("Bob"),
                             get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
                             get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-                            derive_account_from_gateway_id(bp_runtime::SourceAccount::Account(
+                            derive_account_from_gateway_id(SourceAccount::Account(
                                 get_account_id_from_seed::<sr25519::Public>("Alice"),
                             )),
                         ],
@@ -118,17 +121,17 @@ impl Alternative {
                             get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
                             get_account_id_from_seed::<sr25519::Public>("George//stash"),
                             get_account_id_from_seed::<sr25519::Public>("Harry//stash"),
-                            pallet_bridge_messages::Pallet::<
-                                circuit_standalone_runtime::Runtime,
-                                pallet_bridge_messages::DefaultInstance,
-                            >::relayer_fund_account_id(),
-                            derive_account_from_gateway_id(bp_runtime::SourceAccount::Account(
+                            // pallet_bridge_messages::Pallet::<
+                            //     circuit_standalone_runtime::Runtime,
+                            //     pallet_bridge_messages::DefaultInstance,
+                            // >::relayer_fund_account_id(),
+                            derive_account_from_gateway_id(SourceAccount::Account(
                                 get_account_id_from_seed::<sr25519::Public>("Alice"),
                             )),
-                            derive_account_from_gateway_id(bp_runtime::SourceAccount::Account(
+                            derive_account_from_gateway_id(SourceAccount::Account(
                                 get_account_id_from_seed::<sr25519::Public>("Charlie"),
                             )),
-                            derive_account_from_gateway_id(bp_runtime::SourceAccount::Account(
+                            derive_account_from_gateway_id(SourceAccount::Account(
                                 get_account_id_from_seed::<sr25519::Public>("Eve"),
                             )),
                         ],
@@ -166,7 +169,6 @@ fn testnet_genesis(
             code: WASM_BINARY
                 .expect("Circuit development WASM not available")
                 .to_vec(),
-            changes_trie_config: Default::default(),
         },
         balances: BalancesConfig {
             balances: endowed_accounts
@@ -187,35 +189,35 @@ fn testnet_genesis(
         sudo: SudoConfig {
             key: root_key.clone(),
         },
-        session: SessionConfig {
-            keys: initial_authorities
-                .iter()
-                .map(|x| {
-                    (
-                        x.0.clone(),
-                        x.0.clone(),
-                        session_keys(x.1.clone(), x.2.clone(), x.3.clone()),
-                    )
-                })
-                .collect::<Vec<_>>(),
-        },
-        evm: EVMConfig {
-            accounts: {
-                let mut map = BTreeMap::new();
-                map.insert(
-                    sp_core::H160::from_str("6be02d1d3665660d22ff9624b7be0551ee1ac91b")
-                        .expect("internal H160 is valid; qed"),
-                    pallet_evm::GenesisAccount {
-                        balance: sp_core::U256::from_str("0xffffffffffffffffffffffffffffffff")
-                            .expect("internal U256 is valid; qed"),
-                        code: Default::default(),
-                        nonce: Default::default(),
-                        storage: Default::default(),
-                    },
-                );
-                map
-            },
-        },
+        // session: SessionConfig {
+        //     keys: initial_authorities
+        //         .iter()
+        //         .map(|x| {
+        //             (
+        //                 x.0.clone(),
+        //                 x.0.clone(),
+        //                 session_keys(x.1.clone(), x.2.clone(), x.3.clone()),
+        //             )
+        //         })
+        //         .collect::<Vec<_>>(),
+        // },
+        // evm: EVMConfig {
+        //     accounts: {
+        //         let mut map = BTreeMap::new();
+        //         map.insert(
+        //             sp_core::H160::from_str("6be02d1d3665660d22ff9624b7be0551ee1ac91b")
+        //                 .expect("internal H160 is valid; qed"),
+        //             pallet_evm::GenesisAccount {
+        //                 balance: sp_core::U256::from_str("0xffffffffffffffffffffffffffffffff")
+        //                     .expect("internal U256 is valid; qed"),
+        //                 code: Default::default(),
+        //                 nonce: Default::default(),
+        //                 storage: Default::default(),
+        //             },
+        //         );
+        //         map
+        //     },
+        // },
         xdns: XDNSConfig {
             known_xdns_records: xdns_records,
         },

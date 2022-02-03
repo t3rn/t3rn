@@ -24,10 +24,10 @@ use scale_info::TypeInfo;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+use sp_runtime::traits::{BlakeTwo256, IdentifyAccount, Verify};
+use sp_runtime::MultiSignature;
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
-use sp_runtime::MultiSignature;
-use sp_runtime::traits::{Verify, IdentifyAccount};
 
 use sp_std::convert::TryFrom;
 use sp_std::prelude::*;
@@ -396,3 +396,21 @@ pub type AccountId = <<MultiSignature as Verify>::Signer as IdentifyAccount>::Ac
 /// the signature, this also isn't a fixed size when encoded, as different
 /// cryptos have different size public keys.
 pub type AccountPublic = <MultiSignature as Verify>::Signer;
+
+/// Common types across all runtimes
+pub type BlockNumber = u32;
+
+pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
+
+pub type Header = sp_runtime::generic::Header<BlockNumber, BlakeTwo256>;
+
+pub type Block = sp_runtime::generic::Block<Header, UncheckedExtrinsic>;
+
+/// Index of a transaction in the chain. 32-bit should be plenty.
+pub type Nonce = u32;
+
+/// Balance of an account.
+pub type Balance = u128;
+
+/// A hash of some data used by the chain.
+pub type Hash = sp_core::H256;

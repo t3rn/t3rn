@@ -113,7 +113,7 @@ impl_opaque_keys! {
     pub struct SessionKeys {
         pub aura: Aura,
         pub grandpa: Grandpa,
-        // pub beefy: Beefy,
+        pub beefy: Beefy,
     }
 }
 
@@ -357,10 +357,10 @@ pub type GatewayGrandpaInstance = ();
 
 // EVM
 
-parameter_types! {
-    pub const ChainId: u64 = 33;
-    pub const BlockGasLimit: U256 = U256::MAX;
-}
+// parameter_types! {
+//     pub const ChainId: u64 = 33;
+//     pub const BlockGasLimit: U256 = U256::MAX;
+// }
 
 // pub struct FixedGasPrice;
 // impl pallet_evm::FeeCalculator for FixedGasPrice {
@@ -369,7 +369,7 @@ parameter_types! {
 //     }
 // }
 // pub struct HashedAddressMapping;
-//
+
 // impl pallet_evm::AddressMapping<AccountId> for HashedAddressMapping {
 //     fn into_account_id(address: H160) -> AccountId {
 //         let mut data = [0u8; 32];
@@ -888,52 +888,52 @@ impl_runtime_apis! {
         }
     }
 
-    impl pallet_xdns_rpc_runtime_api::XdnsRuntimeApi<Block, AccountId> for Runtime
-    {
-        fn fetch_records() -> FetchXdnsRecordsResponse<AccountId> {
-            let records = XDNS::fetch_records();
-            FetchXdnsRecordsResponse::<AccountId> {
-                xdns_records: records
-            }
-        }
+    // impl pallet_xdns_rpc_runtime_api::XdnsRuntimeApi<Block, AccountId> for Runtime
+    // {
+    //     fn fetch_records() -> FetchXdnsRecordsResponse<AccountId> {
+    //         let records = XDNS::fetch_records();
+    //         FetchXdnsRecordsResponse::<AccountId> {
+    //             xdns_records: records
+    //         }
+    //     }
+    //
+    //     fn fetch_abi(chain_id: GatewayId) -> Option<GatewayABIConfig> {
+    //         match XDNS::get_abi(chain_id) {
+    //             Ok(abi) => Some(abi),
+    //             Err(_) => None
+    //         }
+    //     }
+    // }
 
-        fn fetch_abi(chain_id: GatewayId) -> Option<GatewayABIConfig> {
-            match XDNS::get_abi(chain_id) {
-                Ok(abi) => Some(abi),
-                Err(_) => None
-            }
-        }
-    }
+    // impl pallet_contracts_registry_rpc_runtime_api::ContractsRegistryRuntimeApi<Block, AccountId> for Runtime
+    // {
+    //     fn fetch_contracts(
+    //         author: Option<AccountId>,
+    //         metadata: Option<Vec<u8>>
+    //     ) -> pallet_contracts_registry_rpc_runtime_api::FetchContractsResult {
+    //         unimplemented!()
+    //         // let result = ContractsRegistry::fetch_contracts(author, metadata);
+    //         //
+    //         // let encoded = result.unwrap().clone().iter().map(codec::Encode::encode).collect().encode();
+    //         //
+    //         // FetchContractsResult {
+    //         //     gas_consumed: 0,
+    //         //     result: Ok(encoded),
+    //         //     flags: 0
+    //         // }
+    //     }
+    // }
 
-    impl pallet_contracts_registry_rpc_runtime_api::ContractsRegistryRuntimeApi<Block, AccountId> for Runtime
-    {
-        fn fetch_contracts(
-            author: Option<AccountId>,
-            metadata: Option<Vec<u8>>
-        ) -> pallet_contracts_registry_rpc_runtime_api::FetchContractsResult {
-            unimplemented!()
-            // let result = ContractsRegistry::fetch_contracts(author, metadata);
-            //
-            // let encoded = result.unwrap().clone().iter().map(codec::Encode::encode).collect().encode();
-            //
-            // FetchContractsResult {
-            //     gas_consumed: 0,
-            //     result: Ok(encoded),
-            //     flags: 0
-            // }
-        }
-    }
-
-    impl pallet_circuit_portal_rpc_runtime_api::CircuitPortalRuntimeApi<Block, AccountId, Balance, BlockNumber> for Runtime
-    {
-        fn composable_exec(
-            _origin: AccountId,
-            _components: Vec<Compose<AccountId, Balance>>,
-            _io: Vec<u8>,
-            _gas_limit: u64,
-            _input_data: Vec<u8>,
-        ) -> ComposableExecResult { unimplemented!() }
-    }
+    // impl pallet_circuit_portal_rpc_runtime_api::CircuitPortalRuntimeApi<Block, AccountId, Balance, BlockNumber> for Runtime
+    // {
+    //     fn composable_exec(
+    //         _origin: AccountId,
+    //         _components: Vec<Compose<AccountId, Balance>>,
+    //         _io: Vec<u8>,
+    //         _gas_limit: u64,
+    //         _input_data: Vec<u8>,
+    //     ) -> ComposableExecResult { unimplemented!() }
+    // }
 
     #[cfg(feature = "runtime-benchmarks")]
     impl frame_benchmarking::Benchmark<Block> for Runtime {
