@@ -217,7 +217,7 @@ pub fn signed_precommit<H: HeaderT>(
 
 /// Get a header for testing.
 ///
-/// The correct parent hash will be used if given a non-zero header.
+/// The parent will only be correct for the first block, as the genesis block has no parent -> default is correct
 pub fn test_header<H: HeaderT>(number: H::Number) -> H {
     let default = |num| {
         H::new(
@@ -233,6 +233,28 @@ pub fn test_header<H: HeaderT>(number: H::Number) -> H {
     if number != Zero::zero() {
         let parent_hash = default(number - One::one()).hash();
         header.set_parent_hash(parent_hash);
+    }
+
+    header
+}
+
+/// Get a header for testing, with correct parent_hash
+pub fn test_header_with_correct_parent<H: HeaderT>(number: H::Number, parent_hash: Option<H::Hash>) -> H {
+    let default = |num| {
+        H::new(
+            num,
+            Default::default(),
+            Default::default(),
+            Default::default(),
+            Default::default(),
+        )
+    };
+
+    let mut header = default(number);
+
+    match parent_hash {
+        Some(hash) => header.set_parent_hash(hash),
+        None => ()
     }
 
     header
