@@ -989,6 +989,10 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "log",
+<<<<<<< HEAD:Cargo.lock
+=======
+ "multi-finality-verifier",
+>>>>>>> development:circuit-parachain/Cargo.lock
  "orml-tokens",
  "orml-traits",
  "pallet-aura",
@@ -5352,6 +5356,7 @@ dependencies = [
 ]
 
 [[package]]
+<<<<<<< HEAD:Cargo.lock
 name = "output_vt100"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5361,6 +5366,8 @@ dependencies = [
 ]
 
 [[package]]
+=======
+>>>>>>> development:circuit-parachain/Cargo.lock
 name = "owning_ref"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5539,8 +5546,11 @@ dependencies = [
  "log",
  "orml-tokens",
  "orml-traits",
+<<<<<<< HEAD:Cargo.lock
  "pallet-authorship",
  "pallet-babe",
+=======
+>>>>>>> development:circuit-parachain/Cargo.lock
  "pallet-balances",
  "pallet-circuit-portal",
  "pallet-contracts-registry",
