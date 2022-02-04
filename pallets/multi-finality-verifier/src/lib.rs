@@ -248,22 +248,22 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             ensure_operational_single::<T, I>(gateway_id)?;
             ensure_signed(origin.clone())?;
+
+            // This results in failure, not sure why tbh
             // ensure!(
             //     Self::request_count_map(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
             //     <Error<T, I>>::TooManyRequests
             // );
 
             // fetch the 'anchor' (block we're basing the proof on), knowing its been verified
-            let mut anchor_header = <MultiImportedHeaders<T, I>>::try_get(gateway_id, anchor_header_hash).unwrap();
-            
-            // This is implicitly checked
-            // assert!(*headers_reversed[0].number() == *anchor_header.number() - One::one(), "Headers have gap"); // ensure there is no gap
+            let mut anchor_header =
+                <MultiImportedHeaders<T, I>>::try_get(gateway_id, anchor_header_hash).unwrap();
 
             let mut index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
 
             for header in headers_reversed {
                 if *anchor_header.parent_hash() == header.hash() {
-                    // currently this allows overwrites. Block 1 is already proven via GRANDPA, but we overwrite it. 
+                    // currently this allows overwrites. Block 1 is already proven via GRANDPA, but we overwrite it.
                     // We could add additional checks, but not sure if thats worth it
                     <MultiImportedHeaders<T, I>>::insert(gateway_id, header.hash(), header.clone());
                     <MultiImportedHashes<T, I>>::insert(gateway_id, index, header.hash());
@@ -278,8 +278,8 @@ pub mod pallet {
                     if let Ok(hash) = pruning {
                         <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
                         // <MultiImportedRoots<T, I>>::remove(gateway_id, pruning);
-                    } 
-                    
+                    }
+
                     anchor_header = header;
                 } else {
                     log::info!(
@@ -293,10 +293,7 @@ pub mod pallet {
             }
 
             // update ring buffer pointer
-            <MultiImportedHashesPointer<T, I>>::insert(
-                gateway_id,
-                index % T::HeadersToKeep::get(),
-            );
+            <MultiImportedHashesPointer<T, I>>::insert(gateway_id, index % T::HeadersToKeep::get());
 
             // im guessing this should count as one?
             <RequestCountMap<T, I>>::mutate(gateway_id, |count| {
@@ -315,7 +312,6 @@ pub mod pallet {
 
             Ok(().into())
         }
-
 
         /// Submit finality proofs for the header and additionally preserve state and extrinsics root.
         #[pallet::weight(0)]
@@ -821,7 +817,8 @@ pub fn initialize_for_benchmarks<T: Config<I>, I: 'static>(header: BridgedHeader
 mod tests {
     use super::*;
     use crate::mock::{
-        run_test, test_header, Origin, TestHash, TestHeader, TestNumber, TestRuntime, test_header_range,
+        run_test, test_header, test_header_range, Origin, TestHash, TestHeader, TestNumber,
+        TestRuntime,
     };
     use bp_test_utils::{
         authority_list, make_default_justification, make_justification_for_header,
@@ -940,7 +937,9 @@ mod tests {
         )
     }
 
-    fn submit_finality_proof_with_header(header: TestHeader) -> frame_support::dispatch::DispatchResultWithPostInfo {
+    fn submit_finality_proof_with_header(
+        header: TestHeader,
+    ) -> frame_support::dispatch::DispatchResultWithPostInfo {
         let justification = make_default_justification(&header);
 
         let default_gateway: ChainId = *b"gate";
@@ -957,14 +956,17 @@ mod tests {
         )
     }
 
-    pub fn submit_header_range(headers_reversed: Vec<TestHeader>, anchor_header_hash: TestHash) -> frame_support::dispatch::DispatchResultWithPostInfo {
+    pub fn submit_header_range(
+        headers_reversed: Vec<TestHeader>,
+        anchor_header_hash: TestHash,
+    ) -> frame_support::dispatch::DispatchResultWithPostInfo {
         let default_gateway: ChainId = *b"gate";
 
         Pallet::<TestRuntime>::submit_header_range(
             Origin::signed(1),
             default_gateway,
             headers_reversed,
-            anchor_header_hash
+            anchor_header_hash,
         )
     }
 
@@ -1285,13 +1287,13 @@ mod tests {
             let mut headers = test_header_range(0, 10, None);
             assert_ok!(submit_finality_proof_with_header(headers[1].clone()));
             assert_ok!(submit_finality_proof_with_header(headers[10].clone()));
-            
+
             // verified header stored in circuit we're basing the proof on
             let anchor_header = headers.pop().unwrap();
-            
+
             // we want to submit the headers in reverse, as we have to iterate backwards
             headers.reverse();
-    
+
             assert_ok!(submit_header_range(headers.clone(), anchor_header.hash()));
 
             headers.reverse(); // reversing for tests because I struggle to think backwards
@@ -1302,7 +1304,7 @@ mod tests {
             ));
 
             assert_eq!(
-                <MultiImportedHeaders<TestRuntime>>::try_get(default_gateway,headers[9].hash()),
+                <MultiImportedHeaders<TestRuntime>>::try_get(default_gateway, headers[9].hash()),
                 Ok(headers[9].clone())
             );
 
@@ -1342,15 +1344,15 @@ mod tests {
             let mut headers = test_header_range(0, 10, None);
             assert_ok!(submit_finality_proof_with_header(headers[1].clone()));
             assert_ok!(submit_finality_proof_with_header(headers[10].clone()));
-            
+
             // verified header stored in circuit we're basing the proof on
             let anchor_header = headers.pop().unwrap();
-            
+
             // we want to submit the headers in reverse, as we have to iterate backwards
             headers.reverse();
 
             headers[1] = headers[2].clone(); // create an invalid chain after block 9 -> block 9 should be added, block 8 not
-    
+
             assert_ok!(submit_header_range(headers.clone(), anchor_header.hash()));
 
             headers.reverse(); // reversing for tests because I struggle to think backwards
@@ -1361,7 +1363,7 @@ mod tests {
             ));
 
             assert_eq!(
-                <MultiImportedHeaders<TestRuntime>>::try_get(default_gateway,headers[9].hash()),
+                <MultiImportedHeaders<TestRuntime>>::try_get(default_gateway, headers[9].hash()),
                 Ok(headers[9].clone())
             );
 
@@ -1394,21 +1396,24 @@ mod tests {
             let mut headers = test_header_range(0, 10, None);
             assert_ok!(submit_finality_proof_with_header(headers[1].clone()));
             assert_ok!(submit_finality_proof_with_header(headers[10].clone()));
-            
+
             // verified header stored in circuit we're basing the proof on
             let anchor_header = headers.pop().unwrap();
-            
+
             // we want to submit the headers in reverse, as we have to iterate backwards
             headers.reverse();
 
             headers[0] = headers[1].clone(); // range is now invalid, nothing should be added
-    
+
             assert_ok!(submit_header_range(headers.clone(), anchor_header.hash()));
 
             headers.reverse(); // reversing for tests because I struggle to think backwards
 
             assert_eq!(
-                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[9].hash()),
+                <MultiImportedHeaders<TestRuntime>>::contains_key(
+                    default_gateway,
+                    headers[9].hash()
+                ),
                 false
             );
 
