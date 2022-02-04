@@ -239,7 +239,10 @@ pub fn test_header<H: HeaderT>(number: H::Number) -> H {
 }
 
 /// Get a header for testing, with correct parent_hash
-pub fn test_header_with_correct_parent<H: HeaderT>(number: H::Number, parent_hash: Option<H::Hash>) -> H {
+pub fn test_header_with_correct_parent<H: HeaderT>(
+    number: H::Number,
+    parent_hash: Option<H::Hash>,
+) -> H {
     let default = |num| {
         H::new(
             num,
