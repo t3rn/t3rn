@@ -181,3 +181,18 @@ pub fn test_header(num: TestNumber) -> TestHeader {
     // We wrap the call to avoid explicit type annotations in our tests
     t3rn_primitives::bridges::test_utils::test_header(num)
 }
+
+pub fn test_header_with_correct_parent(num: TestNumber, parent_hash: Option<H256>) -> TestHeader {
+    t3rn_primitives::bridges::test_utils::test_header_with_correct_parent(num, parent_hash)
+}
+
+pub fn test_header_range(from: u64, to: u64, mut parent_hash: Option<H256>) -> Vec<TestHeader> {
+    let mut headers: Vec<TestHeader> = vec![];
+    for (i, block) in (from..to).enumerate() {
+        let header = test_header_with_correct_parent(block.into(), parent_hash);
+        headers.push(header);
+        parent_hash = Some(headers[i].hash());
+    }
+
+    return headers;
+}
