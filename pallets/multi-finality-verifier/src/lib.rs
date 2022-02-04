@@ -141,8 +141,8 @@ pub mod pallet {
         /// If successful in verification, it will write the target header to the underlying storage
         /// pallet.
         #[pallet::weight(<T as pallet::Config<I>>::WeightInfo::submit_finality_proof(
-		justification.votes_ancestries.len() as u32,
-		justification.commit.precommits.len() as u32,
+            justification.votes_ancestries.len() as u32,
+            justification.commit.precommits.len() as u32,
 		))]
         pub fn submit_finality_proof(
             origin: OriginFor<T>,
@@ -185,6 +185,7 @@ pub mod pallet {
                 gateway_id,
             )?;
 
+            // We have to incentivise authority_set update submissions in some way. Important to receive proofs of changing set, even when no transaction is included
             let _enacted =
                 try_enact_authority_change_single::<T, I>(&finality_target, set_id, gateway_id)?;
             let index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
@@ -233,6 +234,88 @@ pub mod pallet {
 
             Ok(().into())
         }
+
+        #[pallet::weight(<T as pallet::Config<I>>::WeightInfo::submit_finality_proof_on_single_fork(
+            headers_reversed.len() as u32,
+		))]
+        pub fn submit_header_range(
+            origin: OriginFor<T>,
+            gateway_id: ChainId,
+            headers_reversed: Vec<BridgedHeader<T, I>>,
+            anchor_header_hash: BridgedBlockHash<T, I>,
+            // extrinsics_roots: Vec<BridgedBlockHash<T, I>>,
+            // state_roots: Vec<BridgedBlockHash<T, I>>,
+        ) -> DispatchResultWithPostInfo {
+            ensure_operational_single::<T, I>(gateway_id)?;
+            ensure_signed(origin.clone())?;
+            // ensure!(
+            //     Self::request_count_map(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
+            //     <Error<T, I>>::TooManyRequests
+            // );
+
+            // fetch the 'anchor' (block we're basing the proof on), knowing its been verified
+            let mut anchor_header = <MultiImportedHeaders<T, I>>::try_get(gateway_id, anchor_header_hash).unwrap();
+            
+            // This is implicitly checked
+            // assert!(*headers_reversed[0].number() == *anchor_header.number() - One::one(), "Headers have gap"); // ensure there is no gap
+
+            let mut index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
+
+            for header in headers_reversed {
+                if *anchor_header.parent_hash() == header.hash() {
+                    // currently this allows overwrites. Block 1 is already proven via GRANDPA, but we overwrite it. 
+                    // We could add additional checks, but not sure if thats worth it
+                    <MultiImportedHeaders<T, I>>::insert(gateway_id, header.hash(), header.clone());
+                    <MultiImportedHashes<T, I>>::insert(gateway_id, index, header.hash());
+
+                    // not implemented yet, because I need to find out why we dont check these inputs with the header in MFV
+                    // <MultiImportedRoots<T, I>>::insert(gateway_id, hash, (extrinsics_root, state_root));
+
+                    // select next header to prune and remove
+                    index += 1;
+                    let pruning = <MultiImportedHashes<T, I>>::try_get(gateway_id, index);
+
+                    if let Ok(hash) = pruning {
+                        <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
+                        // <MultiImportedRoots<T, I>>::remove(gateway_id, pruning);
+                    } 
+                    
+                    anchor_header = header;
+                } else {
+                    log::info!(
+                        "Invalid header detected: {:?}, skipping the remaining imports for gateway {:?}!",
+                        header,
+                        gateway_id
+                    );
+
+                    break;
+                }
+            }
+
+            // update ring buffer pointer
+            <MultiImportedHashesPointer<T, I>>::insert(
+                gateway_id,
+                index % T::HeadersToKeep::get(),
+            );
+
+            // im guessing this should count as one?
+            <RequestCountMap<T, I>>::mutate(gateway_id, |count| {
+                match count {
+                    Some(count) => *count += 1,
+                    None => *count = Some(1),
+                }
+                *count
+            });
+
+            // not sure if we want this here as well as we're adding old blocks
+            let now = TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now())
+                .map_err(|_| "Unable to compute current timestamp")?;
+
+            pallet_xdns::Pallet::<T>::update_gateway_ttl(gateway_id, now.clone())?;
+
+            Ok(().into())
+        }
+
 
         /// Submit finality proofs for the header and additionally preserve state and extrinsics root.
         #[pallet::weight(0)]
@@ -738,7 +821,7 @@ pub fn initialize_for_benchmarks<T: Config<I>, I: 'static>(header: BridgedHeader
 mod tests {
     use super::*;
     use crate::mock::{
-        run_test, test_header, Origin, TestHash, TestHeader, TestNumber, TestRuntime,
+        run_test, test_header, Origin, TestHash, TestHeader, TestNumber, TestRuntime, test_header_range,
     };
     use bp_test_utils::{
         authority_list, make_default_justification, make_justification_for_header,
@@ -854,6 +937,34 @@ mod tests {
             default_gateway,
             default_roots.0,
             default_roots.1,
+        )
+    }
+
+    fn submit_finality_proof_with_header(header: TestHeader) -> frame_support::dispatch::DispatchResultWithPostInfo {
+        let justification = make_default_justification(&header);
+
+        let default_gateway: ChainId = *b"gate";
+
+        let default_roots = (Default::default(), Default::default());
+
+        Pallet::<TestRuntime>::submit_finality_proof(
+            Origin::signed(1),
+            header,
+            justification,
+            default_gateway,
+            default_roots.0,
+            default_roots.1,
+        )
+    }
+
+    pub fn submit_header_range(headers_reversed: Vec<TestHeader>, anchor_header_hash: TestHash) -> frame_support::dispatch::DispatchResultWithPostInfo {
+        let default_gateway: ChainId = *b"gate";
+
+        Pallet::<TestRuntime>::submit_header_range(
+            Origin::signed(1),
+            default_gateway,
+            headers_reversed,
+            anchor_header_hash
         )
     }
 
@@ -1162,6 +1273,53 @@ mod tests {
                 default_gateway,
                 header.hash()
             ));
+        })
+    }
+
+    #[test]
+    fn succesfully_imports_header_ranges() {
+        let default_gateway: ChainId = *b"gate";
+        run_test(|| {
+            initialize_substrate_bridge();
+            // generate valid headers
+            let mut headers = test_header_range(0, 10, None);
+            assert_ok!(submit_finality_proof_with_header(headers[1].clone()));
+            assert_ok!(submit_finality_proof_with_header(headers[10].clone()));
+
+            // verified header stored in circuit we're basing the proof on
+            let anchor_header = headers.pop().unwrap();
+
+            // we want to submit the headers in reverse, as we have to iterate backwards
+            headers.reverse();
+
+            submit_header_range(headers.clone(), anchor_header.hash());
+
+            headers.reverse(); // reversing so checks are easier
+
+            assert!(<MultiImportedHeaders<TestRuntime>>::contains_key(
+                default_gateway,
+                headers[9].hash()
+            ));
+
+            assert_eq!(
+                <MultiImportedHeaders<TestRuntime>>::try_get(default_gateway,headers[9].hash()),
+                Ok(headers[9].clone())
+            );
+
+            assert!(<MultiImportedHeaders<TestRuntime>>::contains_key(
+                default_gateway,
+                headers[8].hash()
+            ));
+
+            assert_eq!(
+                <MultiImportedHeaders<TestRuntime>>::try_get(default_gateway, headers[8].hash()),
+                Ok(headers[8].clone())
+            );
+
+            assert_eq!(
+                <MultiImportedHashesPointer<TestRuntime>>::try_get(default_gateway),
+                Ok(2) // ring buffer size is 5 -> 12 % 5 = 2
+            );
         })
     }
 
