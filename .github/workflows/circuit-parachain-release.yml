@@ -27,7 +27,8 @@ jobs:
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@master
-
+        with:
+          submodules: recursive
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
