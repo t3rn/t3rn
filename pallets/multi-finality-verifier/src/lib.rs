@@ -1285,16 +1285,16 @@ mod tests {
             let mut headers = test_header_range(0, 10, None);
             assert_ok!(submit_finality_proof_with_header(headers[1].clone()));
             assert_ok!(submit_finality_proof_with_header(headers[10].clone()));
-
+            
             // verified header stored in circuit we're basing the proof on
             let anchor_header = headers.pop().unwrap();
-
+            
             // we want to submit the headers in reverse, as we have to iterate backwards
             headers.reverse();
+    
+            assert_ok!(submit_header_range(headers.clone(), anchor_header.hash()));
 
-            submit_header_range(headers.clone(), anchor_header.hash());
-
-            headers.reverse(); // reversing so checks are easier
+            headers.reverse(); // reversing for tests because I struggle to think backwards
 
             assert!(<MultiImportedHeaders<TestRuntime>>::contains_key(
                 default_gateway,
@@ -1304,6 +1304,11 @@ mod tests {
             assert_eq!(
                 <MultiImportedHeaders<TestRuntime>>::try_get(default_gateway,headers[9].hash()),
                 Ok(headers[9].clone())
+            );
+
+            assert_eq!(
+                <MultiImportedHashes<TestRuntime>>::try_get(default_gateway, 2),
+                Ok(headers[9].hash())
             );
 
             assert!(<MultiImportedHeaders<TestRuntime>>::contains_key(
@@ -1317,8 +1322,99 @@ mod tests {
             );
 
             assert_eq!(
+                <MultiImportedHashes<TestRuntime>>::try_get(default_gateway, 3),
+                Ok(headers[8].hash())
+            );
+
+            assert_eq!(
                 <MultiImportedHashesPointer<TestRuntime>>::try_get(default_gateway),
                 Ok(2) // ring buffer size is 5 -> 12 % 5 = 2
+            );
+        })
+    }
+
+    #[test]
+    fn succesfully_imports_partial_header_ranges() {
+        let default_gateway: ChainId = *b"gate";
+        run_test(|| {
+            initialize_substrate_bridge();
+            // generate valid headers
+            let mut headers = test_header_range(0, 10, None);
+            assert_ok!(submit_finality_proof_with_header(headers[1].clone()));
+            assert_ok!(submit_finality_proof_with_header(headers[10].clone()));
+            
+            // verified header stored in circuit we're basing the proof on
+            let anchor_header = headers.pop().unwrap();
+            
+            // we want to submit the headers in reverse, as we have to iterate backwards
+            headers.reverse();
+
+            headers[1] = headers[2].clone(); // create an invalid chain after block 9 -> block 9 should be added, block 8 not
+    
+            assert_ok!(submit_header_range(headers.clone(), anchor_header.hash()));
+
+            headers.reverse(); // reversing for tests because I struggle to think backwards
+
+            assert!(<MultiImportedHeaders<TestRuntime>>::contains_key(
+                default_gateway,
+                headers[9].hash()
+            ));
+
+            assert_eq!(
+                <MultiImportedHeaders<TestRuntime>>::try_get(default_gateway,headers[9].hash()),
+                Ok(headers[9].clone())
+            );
+
+            assert_eq!(
+                <MultiImportedHashes<TestRuntime>>::try_get(default_gateway, 2),
+                Ok(headers[9].hash())
+            );
+
+            assert_eq!(
+                <MultiImportedHeaders<TestRuntime>>::contains_key(
+                    default_gateway,
+                    headers[8].hash()
+                ),
+                false
+            );
+
+            assert_eq!(
+                <MultiImportedHashesPointer<TestRuntime>>::try_get(default_gateway),
+                Ok(3)
+            );
+        })
+    }
+
+    #[test]
+    fn reject_invalid_header_ranges() {
+        let default_gateway: ChainId = *b"gate";
+        run_test(|| {
+            initialize_substrate_bridge();
+            // generate valid headers
+            let mut headers = test_header_range(0, 10, None);
+            assert_ok!(submit_finality_proof_with_header(headers[1].clone()));
+            assert_ok!(submit_finality_proof_with_header(headers[10].clone()));
+            
+            // verified header stored in circuit we're basing the proof on
+            let anchor_header = headers.pop().unwrap();
+            
+            // we want to submit the headers in reverse, as we have to iterate backwards
+            headers.reverse();
+
+            headers[0] = headers[1].clone(); // range is now invalid, nothing should be added
+    
+            assert_ok!(submit_header_range(headers.clone(), anchor_header.hash()));
+
+            headers.reverse(); // reversing for tests because I struggle to think backwards
+
+            assert_eq!(
+                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[9].hash()),
+                false
+            );
+
+            assert_eq!(
+                <MultiImportedHashesPointer<TestRuntime>>::try_get(default_gateway),
+                Ok(2)
             );
         })
     }
