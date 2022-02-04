@@ -252,9 +252,8 @@ pub fn test_header_with_correct_parent<H: HeaderT>(number: H::Number, parent_has
 
     let mut header = default(number);
 
-    match parent_hash {
-        Some(hash) => header.set_parent_hash(hash),
-        None => ()
+    if let Some(hash) = parent_hash {
+        header.set_parent_hash(hash);
     }
 
     header
