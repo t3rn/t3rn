@@ -218,6 +218,7 @@ fn testnet_genesis(
 		council: Default::default(),
 		democracy: Default::default(),
 		contracts_registry: Default::default(),
+		orml_tokens: Default::default(),
 		ethereum_light_client: Default::default(),
 		basic_outbound_channel: Default::default(),
 	}
@@ -339,6 +340,7 @@ fn genesis(
 		council: Default::default(),
 		democracy: Default::default(),
 		contracts_registry: Default::default(),
+		orml_tokens: Default::default(),
 		ethereum_light_client: Default::default(),
 		basic_outbound_channel: Default::default(),
 	}

@@ -29,7 +29,7 @@ impl<V: Verifier> VendorSideEffectsParser for EthereumSideEffectsParser<V> {
         _signature: &'static str,
     ) -> Result<Arguments, &'static str> {
         match name {
-            "transfer:dirty" => {
+            "transfer" => {
                 let msg: Message = Decode::decode(&mut encoded_data.as_slice())
                     .map_err(|_| "failed to decode eth message")?;
                 let log = V::verify(&msg).map_err(|_| "failed to verify eth message")?;

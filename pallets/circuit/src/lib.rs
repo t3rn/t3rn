@@ -165,6 +165,7 @@ pub mod pallet {
         + pallet_balances::Config
         + pallet_circuit_portal::Config
         + pallet_xdns::Config
+        + orml_tokens::Config
     {
         /// The Circuit's pallet id
         #[pallet::constant]

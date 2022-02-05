@@ -212,7 +212,7 @@ pub mod test {
             Hashing,
         >(valid_transfer_side_effect, &mut local_state);
 
-        assert_eq!(res, Ok(Some([1u64, 0u64])));
+        assert_eq!(res, Ok(Some([1u64, 2u64])));
     }
 
     #[test]

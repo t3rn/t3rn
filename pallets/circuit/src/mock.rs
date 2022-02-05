@@ -18,7 +18,7 @@ use sp_runtime::{
 use frame_support::pallet_prelude::GenesisBuild;
 use frame_support::{
     parameter_types,
-    traits::{ConstU32, Everything, KeyOwnerProofSystem},
+    traits::{ConstU32, Everything, KeyOwnerProofSystem, Nothing},
 };
 
 use frame_election_provider_support::onchain;
@@ -68,6 +68,8 @@ frame_support::construct_runtime!(
         XDNS: pallet_xdns::{Pallet, Call, Storage, Config<T>, Event<T>},
         CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>},
         BasicOutboundChannel: snowbridge_basic_channel::outbound::{Pallet, Config<T>, Storage, Event<T>},
+
+        ORMLTokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>},
 
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>},
     }
@@ -147,6 +149,27 @@ impl EscrowTrait for Test {
     type Time = Timestamp;
 }
 
+// ORML Tokens
+use orml_traits::parameter_type_with_key;
+pub type CurrencyId = u32;
+parameter_type_with_key! {
+    pub ExistentialDeposits: |_currency_id: CurrencyId| -> Balance {
+        Default::default()
+    };
+}
+
+impl orml_tokens::Config for Test {
+    type Event = Event;
+    type Balance = Balance;
+    type Amount = Amount;
+    type CurrencyId = CurrencyId;
+    type WeightInfo = ();
+    type ExistentialDeposits = ExistentialDeposits;
+    type OnDust = ();
+    type MaxLocks = ();
+    type DustRemovalWhitelist = Nothing;
+}
+
 impl pallet_xdns::Config for Test {
     type Event = Event;
     type WeightInfo = ();
@@ -155,6 +178,7 @@ impl pallet_xdns::Config for Test {
 impl pallet_randomness_collective_flip::Config for Test {}
 
 pub type Balance = u64;
+pub type Amount = i64;
 
 impl pallet_session::Config for Test {
     type Event = Event;
