@@ -40,53 +40,53 @@ pub trait WeightInfo {
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
     fn update_gateway() -> Weight {
-        (6_000_000 as Weight)
+        6_000_000_u64
     }
     fn register_gateway_default_polka() -> Weight {
-        (68_373_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(4 as Weight))
-            .saturating_add(T::DbWeight::get().writes(7 as Weight))
+        68_373_000_u64
+            .saturating_add(T::DbWeight::get().reads(4_u64))
+            .saturating_add(T::DbWeight::get().writes(7_u64))
     }
     fn register_gateway_polka_u64() -> Weight {
-        (68_058_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(4 as Weight))
-            .saturating_add(T::DbWeight::get().writes(7 as Weight))
+        68_058_000_u64
+            .saturating_add(T::DbWeight::get().reads(4_u64))
+            .saturating_add(T::DbWeight::get().writes(7_u64))
     }
     fn register_gateway_default_eth() -> Weight {
-        (68_073_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(4 as Weight))
-            .saturating_add(T::DbWeight::get().writes(7 as Weight))
+        68_073_000_u64
+            .saturating_add(T::DbWeight::get().reads(4_u64))
+            .saturating_add(T::DbWeight::get().writes(7_u64))
     }
     fn register_gateway_eth_u64() -> Weight {
-        (67_939_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(4 as Weight))
-            .saturating_add(T::DbWeight::get().writes(7 as Weight))
+        67_939_000_u64
+            .saturating_add(T::DbWeight::get().reads(4_u64))
+            .saturating_add(T::DbWeight::get().writes(7_u64))
     }
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
     fn update_gateway() -> Weight {
-        (6_000_000 as Weight)
+        6_000_000_u64
     }
     fn register_gateway_default_polka() -> Weight {
-        (68_373_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(4 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(7 as Weight))
+        68_373_000_u64
+            .saturating_add(RocksDbWeight::get().reads(4_u64))
+            .saturating_add(RocksDbWeight::get().writes(7_u64))
     }
     fn register_gateway_polka_u64() -> Weight {
-        (68_058_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(4 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(7 as Weight))
+        68_058_000_u64
+            .saturating_add(RocksDbWeight::get().reads(4_u64))
+            .saturating_add(RocksDbWeight::get().writes(7_u64))
     }
     fn register_gateway_default_eth() -> Weight {
-        (68_073_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(4 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(7 as Weight))
+        68_073_000_u64
+            .saturating_add(RocksDbWeight::get().reads(4_u64))
+            .saturating_add(RocksDbWeight::get().writes(7_u64))
     }
     fn register_gateway_eth_u64() -> Weight {
-        (67_939_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(4 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(7 as Weight))
+        67_939_000_u64
+            .saturating_add(RocksDbWeight::get().reads(4_u64))
+            .saturating_add(RocksDbWeight::get().writes(7_u64))
     }
 }

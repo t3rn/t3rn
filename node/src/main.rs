@@ -3,7 +3,7 @@
 #![warn(missing_docs)]
 
 #[macro_use]
-use circuit_service;
+
 mod cli;
 mod command;
 

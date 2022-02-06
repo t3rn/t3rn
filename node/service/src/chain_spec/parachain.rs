@@ -1,16 +1,16 @@
-use circuit_parachain_runtime::{AuraId, Balance, Signature, EXISTENTIAL_DEPOSIT, UNIT};
+use circuit_parachain_runtime::{AuraId, Balance, EXISTENTIAL_DEPOSIT, UNIT};
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
-use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
+
 use sc_service::ChainType;
-use serde::{Deserialize, Serialize};
-use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
-use sp_runtime::traits::{IdentifyAccount, Verify};
-use t3rn_primitives::{AccountId, AccountPublic};
+
+use sp_core::{crypto::UncheckedInto, sr25519};
+
+use t3rn_primitives::AccountId;
 
 use crate::chain_spec::{get_account_id_from_seed, get_from_seed, Extensions};
 
-pub const PARA_ID: ParaId = ParaId::new(3331 as u32);
+pub const PARA_ID: ParaId = ParaId::new(3331_u32);
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
@@ -188,9 +188,7 @@ fn testnet_genesis(
         // of this.
         aura: Default::default(),
         aura_ext: Default::default(),
-        sudo: circuit_parachain_runtime::SudoConfig {
-            key: root_key.clone(),
-        },
+        sudo: circuit_parachain_runtime::SudoConfig { key: root_key },
         multi_finality_verifier_polkadot_like: Default::default(),
         xdns: Default::default(),
         elections: Default::default(),
@@ -242,25 +240,25 @@ pub fn circuit_config() -> ChainSpec {
                         // sudo 97 million
                         hex!["2af656d7541a1911ade17e1eea634ea932f700767da7bf0f5e5e617efaec163e"]
                             .into(),
-                        (97_000_000 * UNIT).into(),
+                        (97_000_000 * UNIT),
                     ),
                     (
                         // beqa 1 million
                         hex!["6818cda9ffb645241c3b1f11539cabbd347520ce3e73e83571502a6ff05dc220"]
                             .into(),
-                        (1_000_000 * UNIT).into(),
+                        (1_000_000 * UNIT),
                     ),
                     (
                         // zannis 1 million
                         hex!["8ef3b1c8708e01ed0b707acc9ae1a9e0a0f3057c142c62e714652431aa9c6247"]
                             .into(),
-                        (1_000_000 * UNIT).into(),
+                        (1_000_000 * UNIT),
                     ),
                     (
                         // ved 1 million
                         hex!["58eff1cf80796776dca1ffc26983c905ec35bc298f5f2e694fce682564c07f51"]
                             .into(),
-                        (1_000_000 * UNIT).into(),
+                        (1_000_000 * UNIT),
                     ),
                 ],
                 PARA_ID,
@@ -320,9 +318,7 @@ fn genesis(
         // of this.
         aura: Default::default(),
         aura_ext: Default::default(),
-        sudo: circuit_parachain_runtime::SudoConfig {
-            key: root_key.clone(),
-        },
+        sudo: circuit_parachain_runtime::SudoConfig { key: root_key },
         multi_finality_verifier_polkadot_like: Default::default(),
         xdns: Default::default(),
         elections: Default::default(),

@@ -132,7 +132,7 @@ impl Convert<AccountId, [u8; 32]> for AccountId32Converter {
 pub struct CircuitToGateway;
 impl Convert<Balance, u128> for CircuitToGateway {
     fn convert(val: Balance) -> u128 {
-        val.into()
+        val
     }
 }
 /// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
@@ -750,7 +750,7 @@ parameter_types! {
     pub const ExecutiveBody: BodyId = BodyId::Executive;
 }
 
-pub const INDEXING_PREFIX: &'static [u8] = b"commitment";
+pub const INDEXING_PREFIX: &[u8] = b"commitment";
 parameter_types! {
     pub const MaxMessagePayloadSize: u32 = 256;
     pub const MaxMessagesPerCommit: u32 = 20;

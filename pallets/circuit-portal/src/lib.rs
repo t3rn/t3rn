@@ -237,7 +237,7 @@ pub mod pallet {
                 allowed_side_effects, // allowed side effects / enabled methods
             ));
 
-            Ok(res.into())
+            Ok(res)
         }
 
         // ToDo: Create and move higher to main Circuit pallet

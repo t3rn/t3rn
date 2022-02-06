@@ -110,8 +110,8 @@ pub async fn run<P: FinalitySyncPipeline>(
     let exit_signal = exit_signal.shared();
     relay_utils::relay_loop(source_client, target_client)
         .with_metrics(Some(metrics_prefix::<P>()), metrics_params)
-        .loop_metric(|registry, prefix| SyncLoopMetrics::new(registry, prefix))?
-        .standalone_metric(|registry, prefix| GlobalMetrics::new(registry, prefix))?
+        .loop_metric(SyncLoopMetrics::new)?
+        .standalone_metric(GlobalMetrics::new)?
         .expose()
         .await?
         .run(
@@ -494,7 +494,7 @@ pub(crate) async fn read_missing_headers<
             }
         }
 
-        header_number = header_number.clone() + One::one();
+        header_number = header_number + One::one();
     }
 
     Ok(match selected_finality_proof {

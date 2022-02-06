@@ -737,9 +737,7 @@ pub fn initialize_for_benchmarks<T: Config<I>, I: 'static>(header: BridgedHeader
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::mock::{
-        run_test, test_header, Origin, TestHash, TestHeader, TestNumber, TestRuntime,
-    };
+    use crate::mock::{run_test, test_header, Origin, TestHeader, TestNumber, TestRuntime};
     use bp_test_utils::{
         authority_list, make_default_justification, make_justification_for_header,
         JustificationGeneratorParams, ALICE, BOB,
@@ -748,7 +746,7 @@ mod tests {
     use frame_support::weights::PostDispatchInfo;
     use frame_support::{assert_err, assert_noop, assert_ok};
     use sp_runtime::{Digest, DigestItem, DispatchError};
-    use t3rn_primitives::bridges::chain_circuit as bp_circuit;
+
     use t3rn_primitives::bridges::test_utils as bp_test_utils;
     use t3rn_primitives::GatewaySysProps;
     use t3rn_primitives::{GatewayType, GatewayVendor};

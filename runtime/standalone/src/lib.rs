@@ -12,22 +12,19 @@ use t3rn_primitives::bridges::runtime as bp_runtime;
 // pub mod gateway_messages;
 
 // use crate::gateway_messages::{ToGatewayMessagePayload, WithGatewayMessageBridge};
-use pallet_contracts_registry::{
-    ContractAccessError, ContractsRegistryResult, FetchContractsResult,
-};
 
 use beefy_primitives::mmr::MmrLeafVersion;
 use beefy_primitives::{crypto::AuthorityId as BeefyId, ValidatorSet};
-use codec::{Decode, Encode};
+use codec::Decode;
 use pallet_grandpa::{
     fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
 use pallet_mmr_primitives as mmr;
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
-use pallet_xdns_rpc_runtime_api::FetchXdnsRecordsResponse;
+
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H256, U256};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H256};
 use sp_runtime::traits::{
     AccountIdLookup, BlakeTwo256, Block as BlockT, Keccak256, NumberFor, OpaqueKeys,
 };
@@ -42,10 +39,8 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use t3rn_primitives::{abi::GatewayABIConfig, ChainId as GatewayId, ComposableExecResult, Compose};
-
 use ethereum_light_client::EthereumDifficultyConfig;
-use t3rn_protocol::side_effects::confirm::ethereum::EthereumMockVerifier;
+
 // use volatile_vm::DispatchRuntimeCall;
 
 // A few exports that help ease life for downstream crates.
@@ -491,7 +486,7 @@ parameter_types! {
 //     type Schedule = MyScheduleVVM;
 // }
 
-pub const INDEXING_PREFIX: &'static [u8] = b"commitment";
+pub const INDEXING_PREFIX: &[u8] = b"commitment";
 parameter_types! {
     pub const MaxMessagePayloadSize: u32 = 256;
     pub const MaxMessagesPerCommit: u32 = 20;
@@ -517,7 +512,7 @@ impl Convert<AccountId, [u8; 32]> for AccountId32Converter {
 pub struct CircuitToGateway;
 impl Convert<Balance, u128> for CircuitToGateway {
     fn convert(val: Balance) -> u128 {
-        val.into()
+        val
     }
 }
 

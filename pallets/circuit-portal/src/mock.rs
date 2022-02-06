@@ -3,20 +3,15 @@ use crate::{self as pallet_circuit_portal, bp_runtime, Config};
 
 use codec::Encode;
 
+use sp_runtime::traits::Convert;
 use sp_runtime::{
-    curve::PiecewiseLinear,
-    impl_opaque_keys,
     testing::{Header, TestXt},
     traits::{IdentityLookup, OpaqueKeys},
     Perbill,
 };
-use sp_runtime::{testing::UintAuthorityId, traits::Convert};
 
 use frame_support::pallet_prelude::GenesisBuild;
-use frame_support::{
-    parameter_types,
-    traits::{ConstU32, Everything, KeyOwnerProofSystem},
-};
+use frame_support::{parameter_types, traits::Everything};
 
 use frame_support::{weights::Weight, PalletId};
 use sp_core::{crypto::KeyTypeId, H256};
@@ -105,8 +100,6 @@ parameter_types! {
 
 }
 
-use frame_support::weights::IdentityFee;
-
 impl EscrowTrait for Test {
     type Currency = Balances;
     type Time = Timestamp;
@@ -150,7 +143,7 @@ impl Convert<AccountId, [u8; 32]> for AccountId32Converter {
 pub struct CircuitToGateway;
 impl Convert<Balance, u128> for CircuitToGateway {
     fn convert(val: Balance) -> u128 {
-        val.into()
+        val
     }
 }
 
@@ -190,7 +183,7 @@ impl Convert<Weight, BalanceOf<Self>> for Test {
     }
 }
 
-pub const INDEXING_PREFIX: &'static [u8] = b"commitment";
+pub const INDEXING_PREFIX: &[u8] = b"commitment";
 parameter_types! {
     pub const MaxMessagePayloadSize: u64 = 256;
     pub const MaxMessagesPerCommit: u64 = 20;

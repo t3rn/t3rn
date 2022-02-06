@@ -18,7 +18,6 @@
 //! and are aborting process if some condition fails.
 
 use crate::{Chain, ChainWithBalances, Client};
-use t3rn_primitives::bridges::runtime as bp_runtime;
 
 use async_trait::async_trait;
 use num_traits::CheckedSub;
@@ -188,6 +187,7 @@ mod tests {
         stream::StreamExt,
         SinkExt,
     };
+    use t3rn_primitives::bridges::runtime as bp_runtime;
 
     #[derive(Debug, Clone)]
     struct TestChain;

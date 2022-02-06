@@ -31,7 +31,7 @@ use relay_utils::relay_loop::Client as RelayClient;
 use sp_runtime::traits::Header as HeaderT;
 use std::{marker::PhantomData, pin::Pin};
 use t3rn_primitives::bridges::header_chain as bp_header_chain;
-use t3rn_primitives::bridges::messages as bp_messages;
+
 use t3rn_primitives::bridges::runtime as bp_runtime;
 
 /// Shared updatable reference to the maximal header number that we want to sync from the source.

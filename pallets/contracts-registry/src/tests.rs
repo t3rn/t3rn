@@ -487,11 +487,7 @@ fn purge_succeeds_for_default_contract() {
                 test_contract.generate_id::<Test>(),
                 test_contract.clone(),
             );
-            assert_ok!(ContractsRegistry::purge(
-                origin,
-                requester,
-                contract_id
-            ));
+            assert_ok!(ContractsRegistry::purge(origin, requester, contract_id));
             assert_eq!(crate::ContractsRegistry::<Test>::get(contract_id), None);
         });
 }

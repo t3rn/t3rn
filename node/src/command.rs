@@ -4,9 +4,7 @@ use crate::cli::{Cli, RelayChainCli, Subcommand};
 use circuit_parachain_runtime::{RuntimeApi, VERSION};
 
 #[cfg(feature = "with-parachain-runtime")]
-use circuit_service::chain_spec::parachain::{
-    self as chain_spec, circuit_config, development_config, local_testnet_config,
-};
+use circuit_service::chain_spec::parachain::{self as chain_spec};
 
 #[cfg(feature = "with-standalone-runtime")]
 use circuit_service::chain_spec::standalone::{self as chain_spec};
@@ -30,7 +28,7 @@ use sc_cli::{
     Result, RuntimeVersion, SharedParams, SubstrateCli,
 };
 use sc_service::config::{BasePath, PrometheusConfig};
-use sc_service::PartialComponents;
+
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::Block as BlockT;
 use std::{io::Write, net::SocketAddr};
@@ -285,7 +283,7 @@ pub fn run() -> Result<()> {
             runner.run_node_until_exit(|config| async move {
                 let para_id = Extensions::try_get(&*config.chain_spec)
                     .map(|e| e.para_id)
-                    .ok_or_else(|| "Could not find parachain ID in chain-spec.")?;
+                    .ok_or("Could not find parachain ID in chain-spec.")?;
 
                 let polkadot_cli = RelayChainCli::new(
                     &config,
