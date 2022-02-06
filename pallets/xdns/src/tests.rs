@@ -19,11 +19,11 @@
 
 use super::*;
 use crate::mock::{ExtBuilder, Test, XDNS};
-use codec::{Decode, Encode};
+use codec::{Decode};
 use frame_support::{assert_err, assert_noop, assert_ok};
 use frame_system::Origin;
 use sp_runtime::DispatchError;
-use t3rn_primitives::{GatewaySysProps, GatewayType, GatewayVendor};
+use t3rn_primitives::{GatewayType, GatewayVendor};
 
 #[test]
 fn genesis_should_seed_circuit_gateway_polkadot_and_kusama_nodes() {

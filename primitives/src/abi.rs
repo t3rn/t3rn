@@ -152,7 +152,8 @@ impl Type {
                     .ok_or("Can't access requested struct from gateway genesis")?
                     .offsets
                     .last()
-                    .cloned().unwrap_or(0);
+                    .cloned()
+                    .unwrap_or(0);
                 Ok(struct_size.into())
             }
             Type::String | Type::DynamicBytes => Ok(4),
@@ -584,9 +585,7 @@ pub fn from_signature_to_abi(signature: Vec<u8>) -> Result<(Vec<u8>, Vec<Type>),
         "Can't find a name while reading event's ABI"
     );
 
-    let types = signature_iter
-        .map(from_bytes_string)
-        .collect::<Vec<Type>>();
+    let types = signature_iter.map(from_bytes_string).collect::<Vec<Type>>();
 
     Ok((maybe_name.to_vec(), types))
 }
@@ -633,7 +632,7 @@ mod tests {
         let signature_bytes = create_signature(test_name, test_types_vec).unwrap();
         let signature_string = String::from_utf8(signature_bytes).unwrap();
 
-        assert_eq!(signature_string, "testName(bytes,address,uint32)");
+        assert_eq!(signature_string, "testName(bytes,address,uint64)");
     }
 
     #[test]

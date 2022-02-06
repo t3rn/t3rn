@@ -13,12 +13,12 @@
 
 // You should have received a copy of the GNU General Public License
 // along with Parity Bridges Common.  If not, see <http://www.gnu.org/licenses/>.
-use t3rn_primitives::bridges::header_chain::find_grandpa_authorities_scheduled_change;
 use finality_relay::SourceHeader as FinalitySourceHeader;
 use headers_relay::sync_types::SourceHeader;
 use num_traits::{CheckedSub, One};
 use relay_utils::HeaderId;
 use sp_runtime::traits::Header as HeaderT;
+use t3rn_primitives::bridges::header_chain::find_grandpa_authorities_scheduled_change;
 
 /// Generic wrapper for `sp_runtime::traits::Header` based headers, that
 /// implements `headers_relay::sync_types::SourceHeader` and may be used in headers sync directly.
@@ -26,47 +26,47 @@ use sp_runtime::traits::Header as HeaderT;
 pub struct SyncHeader<Header>(Header);
 
 impl<Header> SyncHeader<Header> {
-	/// Extracts wrapped header from self.
-	pub fn into_inner(self) -> Header {
-		self.0
-	}
+    /// Extracts wrapped header from self.
+    pub fn into_inner(self) -> Header {
+        self.0
+    }
 }
 
 impl<Header> std::ops::Deref for SyncHeader<Header> {
-	type Target = Header;
+    type Target = Header;
 
-	fn deref(&self) -> &Self::Target {
-		&self.0
-	}
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
 
 impl<Header> From<Header> for SyncHeader<Header> {
-	fn from(header: Header) -> Self {
-		Self(header)
-	}
+    fn from(header: Header) -> Self {
+        Self(header)
+    }
 }
 
 impl<Header: HeaderT> SourceHeader<Header::Hash, Header::Number> for SyncHeader<Header> {
-	fn id(&self) -> HeaderId<Header::Hash, Header::Number> {
-		relay_utils::HeaderId(*self.0.number(), self.hash())
-	}
+    fn id(&self) -> HeaderId<Header::Hash, Header::Number> {
+        relay_utils::HeaderId(*self.0.number(), self.hash())
+    }
 
-	fn parent_id(&self) -> HeaderId<Header::Hash, Header::Number> {
-		relay_utils::HeaderId(
-			self.number()
-				.checked_sub(&One::one())
-				.expect("should never be called for genesis header"),
-			*self.parent_hash(),
-		)
-	}
+    fn parent_id(&self) -> HeaderId<Header::Hash, Header::Number> {
+        relay_utils::HeaderId(
+            self.number()
+                .checked_sub(&One::one())
+                .expect("should never be called for genesis header"),
+            *self.parent_hash(),
+        )
+    }
 }
 
 impl<Header: HeaderT> FinalitySourceHeader<Header::Number> for SyncHeader<Header> {
-	fn number(&self) -> Header::Number {
-		*self.0.number()
-	}
+    fn number(&self) -> Header::Number {
+        *self.0.number()
+    }
 
-	fn is_mandatory(&self) -> bool {
-		find_grandpa_authorities_scheduled_change(&self.0).is_some()
-	}
+    fn is_mandatory(&self) -> bool {
+        find_grandpa_authorities_scheduled_change(&self.0).is_some()
+    }
 }

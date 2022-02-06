@@ -516,10 +516,8 @@ mod tests {
             ],
         );
 
-        let res_2_err = xtx.complete_side_effect::<Hashing>(
-            completing_side_effect_2,
-            input_side_effect_2.clone(),
-        );
+        let res_2_err = xtx
+            .complete_side_effect::<Hashing>(completing_side_effect_2, input_side_effect_2.clone());
 
         assert_eq!(res_2_err, Err("Attempt to confirm side effect from the next step, but there still is at least one unfinished step"));
 

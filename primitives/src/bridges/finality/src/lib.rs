@@ -19,37 +19,38 @@
 //! are still submitted to the target node, but are treated as auxiliary data as we are not trying
 //! to submit all source headers to the target node.
 
-pub use crate::finality_loop::{metrics_prefix, run, FinalitySyncParams, SourceClient, TargetClient};
+pub use crate::finality_loop::{
+    metrics_prefix, run, FinalitySyncParams, SourceClient, TargetClient,
+};
 #[macro_use]
 extern crate stacktrace;
 
-use t3rn_primitives::bridges::header_chain::FinalityProof;
 use std::fmt::Debug;
+use t3rn_primitives::bridges::header_chain::FinalityProof;
 
 mod finality_loop;
 mod finality_loop_tests;
 
 /// Finality proofs synchronization pipeline.
 pub trait FinalitySyncPipeline: 'static + Clone + Debug + Send + Sync {
-	/// Name of the finality proofs source.
-	const SOURCE_NAME: &'static str;
-	/// Name of the finality proofs target.
-	const TARGET_NAME: &'static str;
-
-	/// Headers we're syncing are identified by this hash.
-	type Hash: Eq + Clone + Copy + Send + Sync + Debug;
-	/// Headers we're syncing are identified by this number.
-	type Number: relay_utils::BlockNumberBase;
-	/// Type of header that we're syncing.
-	type Header: SourceHeader<Self::Number>;
-	/// Finality proof type.
-	type FinalityProof: FinalityProof<Self::Number>;
+    /// Name of the finality proofs source.
+    const SOURCE_NAME: &'static str;
+    /// Name of the finality proofs target.
+    const TARGET_NAME: &'static str;
+    /// Headers we're syncing are identified by this hash.
+    type Hash: Eq + Clone + Copy + Send + Sync + Debug;
+    /// Headers we're syncing are identified by this number.
+    type Number: relay_utils::BlockNumberBase;
+    /// Type of header that we're syncing.
+    type Header: SourceHeader<Self::Number>;
+    /// Finality proof type.
+    type FinalityProof: FinalityProof<Self::Number>;
 }
 
 /// Header that we're receiving from source node.
 pub trait SourceHeader<Number>: Clone + Debug + PartialEq + Send + Sync {
-	/// Returns number of header.
-	fn number(&self) -> Number;
-	/// Returns true if this header needs to be submitted to target node.
-	fn is_mandatory(&self) -> bool;
+    /// Returns number of header.
+    fn number(&self) -> Number;
+    /// Returns true if this header needs to be submitted to target node.
+    fn is_mandatory(&self) -> bool;
 }

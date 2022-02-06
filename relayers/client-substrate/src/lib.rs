@@ -23,18 +23,18 @@ mod client;
 mod error;
 mod sync_header;
 
-pub mod rpc;
 pub mod finality_source;
 pub mod guard;
 pub mod headers_source;
 pub mod metrics;
+pub mod rpc;
 
-use t3rn_primitives::bridges::runtime as bp_runtime;
 pub use crate::chain::{BlockWithJustification, Chain, ChainWithBalances, TransactionSignScheme};
 pub use crate::client::{Client, JustificationsSubscription, OpaqueGrandpaAuthoritiesSet};
 pub use crate::error::{Error, Result};
 pub use crate::sync_header::SyncHeader;
 pub use bp_runtime::{BlockNumberOf, Chain as ChainBase, HashOf, HeaderOf};
+use t3rn_primitives::bridges::runtime as bp_runtime;
 
 /// Header id used by the chain.
 pub type HeaderIdOf<C> = relay_utils::HeaderId<HashOf<C>, BlockNumberOf<C>>;
@@ -42,20 +42,20 @@ pub type HeaderIdOf<C> = relay_utils::HeaderId<HashOf<C>, BlockNumberOf<C>>;
 /// Substrate-over-websocket connection params.
 #[derive(Debug, Clone)]
 pub struct ConnectionParams {
-	/// Websocket server hostname.
-	pub host: String,
-	/// Websocket server TCP port.
-	pub port: u16,
-	/// Use secure websocket connection.
-	pub secure: bool,
+    /// Websocket server hostname.
+    pub host: String,
+    /// Websocket server TCP port.
+    pub port: u16,
+    /// Use secure websocket connection.
+    pub secure: bool,
 }
 
 impl Default for ConnectionParams {
-	fn default() -> Self {
-		ConnectionParams {
-			host: "localhost".into(),
-			port: 9944,
-			secure: false,
-		}
-	}
+    fn default() -> Self {
+        ConnectionParams {
+            host: "localhost".into(),
+            port: 9944,
+            secure: false,
+        }
+    }
 }

@@ -14,93 +14,107 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity Bridges Common.  If not, see <http://www.gnu.org/licenses/>.
 
-use t3rn_primitives::bridges::runtime as bp_runtime;
 use bp_runtime::Chain as ChainBase;
 use frame_support::Parameter;
 use jsonrpsee_ws_client::{DeserializeOwned, Serialize};
 use num_traits::{CheckedSub, Zero};
 use sp_core::{storage::StorageKey, Pair};
 use sp_runtime::{
-	generic::SignedBlock,
-	traits::{
-		AtLeast32Bit, Block as BlockT, Dispatchable, MaybeDisplay, MaybeSerialize, MaybeSerializeDeserialize, Member,
-	},
-	EncodedJustification,
+    generic::SignedBlock,
+    traits::{
+        AtLeast32Bit, Block as BlockT, Dispatchable, MaybeDisplay, MaybeSerialize,
+        MaybeSerializeDeserialize, Member,
+    },
+    EncodedJustification,
 };
 use std::{fmt::Debug, time::Duration};
+use t3rn_primitives::bridges::runtime as bp_runtime;
 
 /// Substrate-based chain from minimal relay-client point of view.
 pub trait Chain: ChainBase + Clone {
-	/// Chain name.
-	const NAME: &'static str;
-	/// Average block interval.
-	///
-	/// How often blocks are produced on that chain. It's suggested to set this value
-	/// to match the block time of the chain.
-	const AVERAGE_BLOCK_INTERVAL: Duration;
+    /// Chain name.
+    const NAME: &'static str;
+    /// Average block interval.
+    ///
+    /// How often blocks are produced on that chain. It's suggested to set this value
+    /// to match the block time of the chain.
+    const AVERAGE_BLOCK_INTERVAL: Duration;
 
-	/// The user account identifier type for the runtime.
-	type AccountId: Parameter + Member + MaybeSerializeDeserialize + Debug + MaybeDisplay + Ord + Default;
-	/// Index of a transaction used by the chain.
-	type Index: Parameter
-		+ Member
-		+ MaybeSerialize
-		+ Debug
-		+ Default
-		+ MaybeDisplay
-		+ DeserializeOwned
-		+ AtLeast32Bit
-		+ Copy;
-	/// Block type.
-	type SignedBlock: Member + Serialize + DeserializeOwned + BlockWithJustification<Self::Header>;
-	/// The aggregated `Call` type.
-	type Call: Dispatchable + Debug;
+    /// The user account identifier type for the runtime.
+    type AccountId: Parameter
+        + Member
+        + MaybeSerializeDeserialize
+        + Debug
+        + MaybeDisplay
+        + Ord
+        + Default;
+    /// Index of a transaction used by the chain.
+    type Index: Parameter
+        + Member
+        + MaybeSerialize
+        + Debug
+        + Default
+        + MaybeDisplay
+        + DeserializeOwned
+        + AtLeast32Bit
+        + Copy;
+    /// Block type.
+    type SignedBlock: Member + Serialize + DeserializeOwned + BlockWithJustification<Self::Header>;
+    /// The aggregated `Call` type.
+    type Call: Dispatchable + Debug;
 }
 
 /// Substrate-based chain with `frame_system::Config::AccountData` set to
 /// the `pallet_balances::AccountData<NativeBalance>`.
 pub trait ChainWithBalances: Chain {
-	/// Balance of an account in native tokens.
-	type NativeBalance: Parameter + Member + DeserializeOwned + Clone + Copy + CheckedSub + PartialOrd + Zero;
+    /// Balance of an account in native tokens.
+    type NativeBalance: Parameter
+        + Member
+        + DeserializeOwned
+        + Clone
+        + Copy
+        + CheckedSub
+        + PartialOrd
+        + Zero;
 
-	/// Return runtime storage key for getting `frame_system::AccountInfo` of given account.
-	fn account_info_storage_key(account_id: &Self::AccountId) -> StorageKey;
+    /// Return runtime storage key for getting `frame_system::AccountInfo` of given account.
+    fn account_info_storage_key(account_id: &Self::AccountId) -> StorageKey;
 }
 
 /// Block with justification.
 pub trait BlockWithJustification<Header> {
-	/// Return block header.
-	fn header(&self) -> Header;
-	/// Return block justification, if known.
-	fn justification(&self) -> Option<&EncodedJustification>;
+    /// Return block header.
+    fn header(&self) -> Header;
+    /// Return block justification, if known.
+    fn justification(&self) -> Option<&EncodedJustification>;
 }
 
 /// Substrate-based chain transactions signing scheme.
 pub trait TransactionSignScheme {
-	/// Chain that this scheme is to be used.
-	type Chain: Chain;
-	/// Type of key pairs used to sign transactions.
-	type AccountKeyPair: Pair;
-	/// Signed transaction.
-	type SignedTransaction;
+    /// Chain that this scheme is to be used.
+    type Chain: Chain;
+    /// Type of key pairs used to sign transactions.
+    type AccountKeyPair: Pair;
+    /// Signed transaction.
+    type SignedTransaction;
 
-	/// Create transaction for given runtime call, signed by given account.
-	fn sign_transaction(
-		genesis_hash: <Self::Chain as ChainBase>::Hash,
-		signer: &Self::AccountKeyPair,
-		signer_nonce: <Self::Chain as Chain>::Index,
-		call: <Self::Chain as Chain>::Call,
-	) -> Self::SignedTransaction;
+    /// Create transaction for given runtime call, signed by given account.
+    fn sign_transaction(
+        genesis_hash: <Self::Chain as ChainBase>::Hash,
+        signer: &Self::AccountKeyPair,
+        signer_nonce: <Self::Chain as Chain>::Index,
+        call: <Self::Chain as Chain>::Call,
+    ) -> Self::SignedTransaction;
 }
 
 impl<Block: BlockT> BlockWithJustification<Block::Header> for SignedBlock<Block> {
-	fn header(&self) -> Block::Header {
-		self.block.header().clone()
-	}
+    fn header(&self) -> Block::Header {
+        self.block.header().clone()
+    }
 
-	fn justification(&self) -> Option<&EncodedJustification> {
-		self.justifications
-			.as_ref()
-			.and_then(|j| j.get(sp_finality_grandpa::GRANDPA_ENGINE_ID))
-	}
+    fn justification(&self) -> Option<&EncodedJustification> {
+        self.justifications
+            .as_ref()
+            .and_then(|j| j.get(sp_finality_grandpa::GRANDPA_ENGINE_ID))
+    }
 }

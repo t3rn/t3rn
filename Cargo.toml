@@ -7,6 +7,9 @@ members = [
     'node/service',
     'pallets/*',
     'primitives',
+    'primitives/src/bridges/finality',
+    'primitives/src/bridges/headers',
+    'primitives/src/bridges/utils',
     'runtime/*',
 ]
 exclude = []

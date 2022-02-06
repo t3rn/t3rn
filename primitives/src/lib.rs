@@ -164,6 +164,16 @@ impl TryFrom<&ChainId> for GatewaySysProps {
     }
 }
 
+impl Default for GatewaySysProps {
+    fn default() -> Self {
+        Self {
+            token_symbol: Encode::encode("TKN"),
+            token_decimals: 9,
+            ss58_format: 42,
+        }
+    }
+}
+
 /// A struct that encodes RPC parameters required for a call to a smart-contract.
 #[derive(Eq, PartialEq, Encode, Decode, Debug, Clone, Default, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]

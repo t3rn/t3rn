@@ -140,7 +140,7 @@ pub mod pallet {
             ensure_root(origin)?;
 
             if !<ContractsRegistry<T>>::contains_key(&contract_id) {
-                Err(Error::<T>::UnknownContract)?
+                Err(Error::<T>::UnknownContract.into())
             } else {
                 <ContractsRegistry<T>>::remove(&contract_id);
                 Self::deposit_event(Event::<T>::ContractPurged(requester, contract_id));

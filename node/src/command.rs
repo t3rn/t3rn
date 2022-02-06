@@ -11,6 +11,10 @@ use circuit_service::chain_spec::parachain::{
 #[cfg(feature = "with-standalone-runtime")]
 use circuit_service::chain_spec::standalone::{self as chain_spec};
 use circuit_service::chain_spec::Extensions;
+#[cfg(any(
+    feature = "with-parachain-runtime",
+    feature = "with-standalone-runtime"
+))]
 use circuit_service::{new_partial, CircuitRuntimeExecutor};
 #[cfg(feature = "with-parachain-runtime")]
 use circuit_service::{parachain_build_import_queue, start_parachain_node};

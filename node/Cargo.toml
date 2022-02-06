@@ -95,7 +95,7 @@ polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "r
 polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13" }
 
 [features]
-default = []
+default = ["with-parachain-runtime"]
 with-parachain-runtime = [
     "circuit-parachain-runtime",
     "circuit-service/with-parachain-runtime"

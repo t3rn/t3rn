@@ -153,7 +153,7 @@ pub mod pallet {
             state_root: BridgedBlockHash<T, I>,
         ) -> DispatchResultWithPostInfo {
             ensure_operational_single::<T, I>(gateway_id)?;
-            ensure_signed(origin.clone())?;
+            ensure_signed(origin)?;
             ensure!(
                 Self::request_count_map(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
                 <Error<T, I>>::TooManyRequests
@@ -223,7 +223,7 @@ pub mod pallet {
             let now = TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now())
                 .map_err(|_| "Unable to compute current timestamp")?;
 
-            pallet_xdns::Pallet::<T>::update_gateway_ttl(gateway_id, now.clone())?;
+            pallet_xdns::Pallet::<T>::update_gateway_ttl(gateway_id, now)?;
 
             log::info!(
                 "Successfully updated gateway {:?} with finalized timestamp {:?}!",
@@ -235,33 +235,33 @@ pub mod pallet {
         }
 
         /// Submit finality proofs for the header and additionally preserve state and extrinsics root.
-        #[pallet::weight(0)]
-        pub fn submit_finality_proof_and_roots(
-            origin: OriginFor<T>,
-            finality_target: BridgedHeader<T, I>,
-            justification: GrandpaJustification<BridgedHeader<T, I>>,
-            gateway_id: ChainId,
-            // ToDo: Try passing Vec<u8> here and cast to appropriate header type with help of xDNS
-            state_root: BridgedBlockHash<T, I>,
-            extrinsics_root: BridgedBlockHash<T, I>,
-        ) -> DispatchResultWithPostInfo {
-            Self::submit_finality_proof(
-                origin,
-                finality_target,
-                justification,
-                gateway_id,
-                extrinsics_root,
-                state_root,
-            )?;
-
-            log::info!(
-                "submit_finality_proof_and_roots, _state_root: {:?}, _extrinsics_root: {:?}",
-                state_root,
-                extrinsics_root
-            );
-
-            Ok(().into())
-        }
+        // #[pallet::weight(0)]
+        // pub fn submit_finality_proof_and_roots(
+        //     origin: OriginFor<T>,
+        //     finality_target: BridgedHeader<T, I>,
+        //     justification: GrandpaJustification<BridgedHeader<T, I>>,
+        //     gateway_id: ChainId,
+        //     // ToDo: Try passing Vec<u8> here and cast to appropriate header type with help of xDNS
+        //     state_root: BridgedBlockHash<T, I>,
+        //     extrinsics_root: BridgedBlockHash<T, I>,
+        // ) -> DispatchResultWithPostInfo {
+        //     Self::submit_finality_proof(
+        //         origin,
+        //         finality_target,
+        //         justification,
+        //         gateway_id,
+        //         extrinsics_root,
+        //         state_root,
+        //     )?;
+        //
+        //     log::info!(
+        //         "submit_finality_proof_and_roots, _state_root: {:?}, _extrinsics_root: {:?}",
+        //         state_root,
+        //         extrinsics_root
+        //     );
+        //
+        //     Ok(().into())
+        // }
 
         /// Bootstrap the bridge pallet with an initial header and authority set from which to sync.
         ///
@@ -564,7 +564,7 @@ pub mod pallet {
             (hash, number),
             set_id,
             &voter_set,
-            &justification,
+            justification,
         )
         .map_err(|e| {
             log::error!("Received invalid justification for {:?}: {:?}", hash, e);
@@ -748,7 +748,8 @@ mod tests {
     use frame_support::weights::PostDispatchInfo;
     use frame_support::{assert_err, assert_noop, assert_ok};
     use sp_runtime::{Digest, DigestItem, DispatchError};
-    use t3rn_primitives::bridges::{chain_rialto as bp_rialto, test_utils as bp_test_utils};
+    use t3rn_primitives::bridges::chain_circuit as bp_circuit;
+    use t3rn_primitives::bridges::test_utils as bp_test_utils;
     use t3rn_primitives::GatewaySysProps;
     use t3rn_primitives::{GatewayType, GatewayVendor};
 
@@ -857,26 +858,27 @@ mod tests {
         )
     }
 
-    fn submit_finality_proof_and_roots(
-        header: u8,
-        state_root: TestHash,
-        extrinsics_root: TestHash,
-    ) -> frame_support::dispatch::DispatchResultWithPostInfo {
-        let header = test_header(header.into());
-
-        let justification = make_default_justification(&header);
-
-        let default_gateway: ChainId = *b"gate";
-
-        Pallet::<TestRuntime>::submit_finality_proof_and_roots(
-            Origin::signed(1),
-            header,
-            justification,
-            default_gateway,
-            state_root,
-            extrinsics_root,
-        )
-    }
+    // TODO: enable when this is implemented
+    // fn submit_finality_proof_and_roots(
+    //     header: u8,
+    //     state_root: TestHash,
+    //     extrinsics_root: TestHash,
+    // ) -> frame_support::dispatch::DispatchResultWithPostInfo {
+    //     let header = test_header(header.into());
+    //
+    //     let justification = make_default_justification(&header);
+    //
+    //     let default_gateway: ChainId = *b"gate";
+    //
+    //     Pallet::<TestRuntime>::submit_finality_proof_and_roots(
+    //         Origin::signed(1),
+    //         header,
+    //         justification,
+    //         default_gateway,
+    //         state_root,
+    //         extrinsics_root,
+    //     )
+    // }
 
     fn next_block() {
         use frame_support::traits::OnInitialize;
@@ -996,33 +998,33 @@ mod tests {
         })
     }
 
-    #[test]
-    fn can_initialize_new_polka_like_bridge_with_separate_vefifier_instance() {
-        run_test(|| {
-            let gateway_a: ChainId = *b"rlta";
-
-            let rh: bp_rialto::Header = bp_rialto::Header::new(
-                1,
-                Default::default(),
-                Default::default(),
-                Default::default(),
-                Default::default(),
-            );
-            let init_data = InitializationData {
-                header: rh,
-                authority_list: authority_list(),
-                set_id: 1,
-                is_halted: false,
-            };
-
-            assert_ok!(mock::MultiFinalityVerifierPolkadotLike::initialize_single(
-                Origin::root(),
-                init_data.clone(),
-                gateway_a
-            )
-            .map(|_| init_data));
-        })
-    }
+    // #[test]
+    // fn can_initialize_new_polka_like_bridge_with_separate_vefifier_instance() {
+    //     run_test(|| {
+    //         let gateway_a: ChainId = *b"rlta";
+    //
+    //         let rh: bp_circuit::Header = bp_circuit::Header::new(
+    //             1,
+    //             Default::default(),
+    //             Default::default(),
+    //             Default::default(),
+    //             Default::default(),
+    //         );
+    //         let init_data = InitializationData {
+    //             header: rh,
+    //             authority_list: authority_list(),
+    //             set_id: 1,
+    //             is_halted: false,
+    //         };
+    //
+    //         assert_ok!(mock::MultiFinalityVerifierPolkadotLike::initialize_single(
+    //             Origin::root(),
+    //             init_data.clone(),
+    //             gateway_a
+    //         )
+    //         .map(|_| init_data));
+    //     })
+    // }
 
     #[test]
     fn pallet_owner_may_change_owner() {

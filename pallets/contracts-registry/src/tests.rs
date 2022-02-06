@@ -20,9 +20,7 @@
 use crate::mock::{ContractsRegistry, ExtBuilder, Origin, Test};
 use crate::pallet::Error;
 use crate::types::RegistryContract;
-use crate::ContractsRegistry;
 use frame_support::{assert_err, assert_ok};
-use frame_system::Origin;
 use sp_core::H256;
 use sp_runtime::DispatchError;
 use t3rn_primitives::contract_metadata::ContractMetadata;
@@ -492,7 +490,7 @@ fn purge_succeeds_for_default_contract() {
             assert_ok!(ContractsRegistry::purge(
                 origin,
                 requester,
-                contract_id.clone()
+                contract_id
             ));
             assert_eq!(crate::ContractsRegistry::<Test>::get(contract_id), None);
         });
@@ -527,7 +525,7 @@ fn purge_fails_if_contract_does_not_exist() {
     let contract_id = test_contract.generate_id::<Test>();
 
     ExtBuilder::default()
-        .with_contracts(vec![test_contract.clone()])
+        .with_contracts(vec![test_contract])
         .build()
         .execute_with(|| {
             assert_err!(
