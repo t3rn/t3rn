@@ -1,7 +1,7 @@
 import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
 import { Vec } from '@polkadot/types';
-import { rpc, types } from '@t3rn/types';
-import { AllowedSideEffect } from 'types/dist';
+import { rpc, types } from 'client/types';
+import { AllowedSideEffect } from 'client/types/dist';
 import { createGatewayABIConfig, createGatewayGenesisConfig, createGatewaySysProps } from './utils/utils';
 
 (async () => {

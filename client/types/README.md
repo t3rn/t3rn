@@ -28,7 +28,7 @@ To get a JSON file ready for use with the https://polkadot.js.org/apps interface
 ## Development
 
 To build the type definitions, access to a running circuit standalone or collator node is required. This can be either locally 
-as documented in the [circuit README](../../circuit/README.md), or online.
+as documented in the [circuit README](../../node/README.md), or online.
 
 Make any updates to the proper `definitions.ts` file, please make sure to not edit any other file as they are generated
 by the `@polkadot/types` tools and your changes will be overwritten.

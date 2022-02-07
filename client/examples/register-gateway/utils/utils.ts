@@ -1,7 +1,7 @@
 import { Bytes, Metadata } from '@polkadot/types';
 import { ApiPromise } from '@polkadot/api';
 import { Hash, RuntimeVersion } from '@polkadot/types/interfaces';
-import { GatewaySysProps } from 'types/dist';
+import { GatewaySysProps } from 'client/types/dist';
 
 export function createGatewayABIConfig(
   api: ApiPromise,

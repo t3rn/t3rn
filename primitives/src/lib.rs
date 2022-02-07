@@ -24,6 +24,8 @@ use scale_info::TypeInfo;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+use sp_runtime::traits::{BlakeTwo256, IdentifyAccount, Verify};
+use sp_runtime::MultiSignature;
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
 
@@ -99,7 +101,7 @@ pub struct GatewayGenesisConfig {
     /// SCALE-encoded modules following the format of selected frame_metadata::RuntimeMetadataVXX
     pub modules_encoded: Option<Vec<u8>>,
     /// SCALE-encoded signed extension - see more at frame_metadata::ExtrinsicMetadata
-    pub signed_extension: Option<Vec<u8>>,
+    // pub signed_extension: Option<Vec<u8>>,
     /// Runtime version
     pub runtime_version: sp_version::RuntimeVersion,
     /// Extrinsics version
@@ -116,7 +118,6 @@ impl Default for GatewayGenesisConfig {
             runtime_version: Default::default(),
             genesis_hash: vec![],
             modules_encoded: None,
-            signed_extension: None,
         }
     }
 }
@@ -159,6 +160,16 @@ impl TryFrom<&ChainId> for GatewaySysProps {
                 token_decimals: 12,
             }),
             _ => Err("unknown chain id"),
+        }
+    }
+}
+
+impl Default for GatewaySysProps {
+    fn default() -> Self {
+        Self {
+            token_symbol: Encode::encode("TKN"),
+            token_decimals: 9,
+            ss58_format: 42,
         }
     }
 }
@@ -388,3 +399,28 @@ pub fn retrieve_gateway_pointers(gateway_id: ChainId) -> Result<Vec<GatewayPoint
         vendor: GatewayVendor::Substrate,
     }])
 }
+
+pub type AccountId = <<MultiSignature as Verify>::Signer as IdentifyAccount>::AccountId;
+
+/// Alias to the public key used for this chain, actually a `MultiSigner`. Like
+/// the signature, this also isn't a fixed size when encoded, as different
+/// cryptos have different size public keys.
+pub type AccountPublic = <MultiSignature as Verify>::Signer;
+
+/// Common types across all runtimes
+pub type BlockNumber = u32;
+
+pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
+
+pub type Header = sp_runtime::generic::Header<BlockNumber, BlakeTwo256>;
+
+pub type Block = sp_runtime::generic::Block<Header, UncheckedExtrinsic>;
+
+/// Index of a transaction in the chain. 32-bit should be plenty.
+pub type Nonce = u32;
+
+/// Balance of an account.
+pub type Balance = u128;
+
+/// A hash of some data used by the chain.
+pub type Hash = sp_core::H256;

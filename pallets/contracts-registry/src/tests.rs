@@ -487,11 +487,7 @@ fn purge_succeeds_for_default_contract() {
                 test_contract.generate_id::<Test>(),
                 test_contract.clone(),
             );
-            assert_ok!(ContractsRegistry::purge(
-                origin,
-                requester,
-                contract_id.clone()
-            ));
+            assert_ok!(ContractsRegistry::purge(origin, requester, contract_id));
             assert_eq!(crate::ContractsRegistry::<Test>::get(contract_id), None);
         });
 }
@@ -525,7 +521,7 @@ fn purge_fails_if_contract_does_not_exist() {
     let contract_id = test_contract.generate_id::<Test>();
 
     ExtBuilder::default()
-        .with_contracts(vec![test_contract.clone()])
+        .with_contracts(vec![test_contract])
         .build()
         .execute_with(|| {
             assert_err!(
