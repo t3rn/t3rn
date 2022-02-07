@@ -941,6 +941,17 @@ impl orml_tokens::Config for Runtime {
     type DustRemovalWhitelist = Nothing;
 }
 
+parameter_types! {
+    pub const CircuitPalletId: PalletId = PalletId(*b"pal/circ");
+}
+
+impl pallet_circuit::Config for Runtime {
+    type Event = Event;
+    type Call = Call;
+    type WeightInfo = ();
+    type PalletId = CircuitPalletId;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -996,6 +1007,7 @@ construct_runtime!(
         } = 104,
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 105,
         CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>} = 106,
+        Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 107,
 
         // snowfork deps
         EthereumLightClient: ethereum_light_client::{Pallet, Call, Storage, Event<T>, Config} = 150,
