@@ -667,6 +667,17 @@ impl orml_tokens::Config for Runtime {
     type DustRemovalWhitelist = Nothing;
 }
 
+parameter_types! {
+    pub const CircuitPalletId: PalletId = PalletId(*b"pal/circ");
+}
+
+impl pallet_circuit::Config for Runtime {
+    type Event = Event;
+    type Call = Call;
+    type WeightInfo = ();
+    type PalletId = CircuitPalletId;
+}
+
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -693,6 +704,7 @@ construct_runtime!(
         // VolatileVM: volatile_vm::{Pallet, Call, Event<T>, Storage},
         MultiFinalityVerifier: pallet_multi_finality_verifier::{Pallet, Call, Config<T>},
         CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>},
+        Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>},
         Utility: pallet_utility::{Pallet, Call, Event},
         Mmr: pallet_mmr::{Pallet, Storage},
         EthereumLightClient: ethereum_light_client::{Pallet, Call, Storage, Event<T>, Config},
