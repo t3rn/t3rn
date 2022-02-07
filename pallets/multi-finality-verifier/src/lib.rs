@@ -248,12 +248,10 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             ensure_operational_single::<T, I>(gateway_id)?;
             ensure_signed(origin.clone())?;
-
-            // This results in failure, not sure why tbh
-            // ensure!(
-            //     Self::request_count_map(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
-            //     <Error<T, I>>::TooManyRequests
-            // );
+            ensure!(
+                Self::request_count_map(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
+                <Error<T, I>>::TooManyRequests
+            );
 
             // fetch the 'anchor' (block we're basing the proof on), knowing its been verified
             let mut anchor_header =
@@ -1287,12 +1285,14 @@ mod tests {
             let mut headers = test_header_range(0, 10, None);
             assert_ok!(submit_finality_proof_with_header(headers[1].clone()));
             assert_ok!(submit_finality_proof_with_header(headers[10].clone()));
+            next_block();
 
             // verified header stored in circuit we're basing the proof on
             let anchor_header = headers.pop().unwrap();
 
             // we want to submit the headers in reverse, as we have to iterate backwards
             headers.reverse();
+            
 
             assert_ok!(submit_header_range(headers.clone(), anchor_header.hash()));
 
@@ -1344,7 +1344,7 @@ mod tests {
             let mut headers = test_header_range(0, 10, None);
             assert_ok!(submit_finality_proof_with_header(headers[1].clone()));
             assert_ok!(submit_finality_proof_with_header(headers[10].clone()));
-
+            next_block();
             // verified header stored in circuit we're basing the proof on
             let anchor_header = headers.pop().unwrap();
 
@@ -1396,7 +1396,7 @@ mod tests {
             let mut headers = test_header_range(0, 10, None);
             assert_ok!(submit_finality_proof_with_header(headers[1].clone()));
             assert_ok!(submit_finality_proof_with_header(headers[10].clone()));
-
+            next_block();
             // verified header stored in circuit we're basing the proof on
             let anchor_header = headers.pop().unwrap();
 
