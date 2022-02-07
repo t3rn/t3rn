@@ -29,6 +29,7 @@ jobs:
         uses: actions/checkout@master
         with:
           submodules: recursive
+          token: ${{ secrets.GH_PAT }}
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
@@ -70,6 +71,7 @@ jobs:
         uses: actions/checkout@master
         with:
           submodules: recursive
+          token: ${{ secrets.GH_PAT }}
       - name: 🔧 Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
       - name: 🕒 Cache Docker layers
