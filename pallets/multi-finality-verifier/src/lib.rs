@@ -259,7 +259,8 @@ pub mod pallet {
             );
 
             // fetch the 'anchor' (block we're basing the proof on), knowing its been verified
-            let mut anchor_header = <MultiImportedHeaders<T, I>>::try_get(gateway_id, anchor_header_hash).unwrap();
+            let mut anchor_header =
+                <MultiImportedHeaders<T, I>>::try_get(gateway_id, anchor_header_hash).unwrap();
 
             let mut index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
 
@@ -1298,7 +1299,6 @@ mod tests {
 
             // we want to submit the headers in reverse, as we have to iterate backwards
             headers.reverse();
-            
 
             assert_ok!(submit_header_range(headers.clone(), anchor_header.hash()));
 
