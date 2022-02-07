@@ -252,10 +252,14 @@ pub mod pallet {
                 Self::request_count_map(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
                 <Error<T, I>>::TooManyRequests
             );
+            // not ideal because we're doing 2 reads
+            ensure!(
+                <MultiImportedHeaders<T, I>>::contains_key(gateway_id, anchor_header_hash),
+                <Error<T, I>>::InvalidAnchorHeader
+            );
 
             // fetch the 'anchor' (block we're basing the proof on), knowing its been verified
-            let mut anchor_header =
-                <MultiImportedHeaders<T, I>>::try_get(gateway_id, anchor_header_hash).unwrap();
+            let mut anchor_header = <MultiImportedHeaders<T, I>>::try_get(gateway_id, anchor_header_hash).unwrap();
 
             let mut index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
 
@@ -568,6 +572,8 @@ pub mod pallet {
         Halted,
         /// The storage proof doesn't contains storage root. So it is invalid for given header.
         StorageRootMismatch,
+        // Submitted anchor header(verified header stored on circuit) was not found
+        InvalidAnchorHeader,
     }
 
     /// Check the given header for a GRANDPA scheduled authority set change. If a change
@@ -1406,6 +1412,47 @@ mod tests {
             headers[0] = headers[1].clone(); // range is now invalid, nothing should be added
 
             assert_ok!(submit_header_range(headers.clone(), anchor_header.hash()));
+
+            headers.reverse(); // reversing for tests because I struggle to think backwards
+
+            assert_eq!(
+                <MultiImportedHeaders<TestRuntime>>::contains_key(
+                    default_gateway,
+                    headers[9].hash()
+                ),
+                false
+            );
+
+            assert_eq!(
+                <MultiImportedHashesPointer<TestRuntime>>::try_get(default_gateway),
+                Ok(2)
+            );
+        })
+    }
+
+    #[test]
+    fn reject_invalid_anchor() {
+        let default_gateway: ChainId = *b"gate";
+        run_test(|| {
+            initialize_substrate_bridge();
+            // generate valid headers
+            let mut headers = test_header_range(0, 10, None);
+            assert_ok!(submit_finality_proof_with_header(headers[1].clone()));
+            assert_ok!(submit_finality_proof_with_header(headers[10].clone()));
+            next_block();
+
+            // verified header stored in circuit we're basing the proof on
+            let anchor_header = headers.pop().unwrap();
+
+            // we want to submit the headers in reverse, as we have to iterate backwards
+            headers.reverse();
+
+            headers[0] = headers[1].clone(); // range is now invalid, nothing should be added
+
+            assert_err!(
+                submit_header_range(headers.clone(), headers[2].clone().hash()),
+                <Error<TestRuntime>>::InvalidAnchorHeader
+            );
 
             headers.reverse(); // reversing for tests because I struggle to think backwards
 
