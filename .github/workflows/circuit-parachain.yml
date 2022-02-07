@@ -3,12 +3,9 @@ name: Circuit Parachain Build & Test CI
 on:
   pull_request:
     paths:
-      - ./**/*.rs
-      - ./Cargo.toml
-      - ./Cargo.lock
-      - pallets/**/*.rs
-      - pallets/**/Cargo.toml
-      - pallets/**/Cargo.lock
+      - '**/*.rs'
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
       - .github/workflows/circuit-parachain.yml
 
 jobs:
