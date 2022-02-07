@@ -67,6 +67,10 @@ snowbridge-core = { git = "https://github.com/t3rn/snowbridge", branch = "polkad
 ethereum-light-client = { git = "https://github.com/t3rn/snowbridge", branch = "polkadot-v0.9.13", package = "snowbridge-ethereum-light-client", default-features = false }
 snowbridge-basic-channel = { git = "https://github.com/t3rn/snowbridge", branch = "polkadot-v0.9.13", default-features = false }
 
+## ORML
+orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library", branch = "polkadot-v0.9.13", default-features = false }
+orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library", branch = "polkadot-v0.9.13", default-features = false }
+
 # t3rn Dependencies
 t3rn-primitives = { version = "1.0.0-alpha.0", default-features = false, path = "../../primitives", package = "t3rn-parachain-primitives" }
 t3rn-protocol = { version = "1.0.0-alpha.0", default-features = false, path = "../../protocol", package = "t3rn-protocol" }
@@ -158,6 +162,8 @@ std = [
 	"xcm/std",
 	"pallet-mfv/std",
 	"ethereum-light-client/std",
+	"orml-tokens/std",
+	"orml-traits/std",
 	"snowbridge-core/std",
 	"snowbridge-basic-channel/std"
 ]

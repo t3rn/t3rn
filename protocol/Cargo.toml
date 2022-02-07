@@ -38,6 +38,10 @@ sp-application-crypto = { default-features = false, git = "https://github.com/pa
 
 snowbridge-core = { git = "https://github.com/t3rn/snowbridge", branch = "polkadot-v0.9.13", default-features = false }
 snowbridge-ethereum = { git = "https://github.com/t3rn/snowbridge", branch = "polkadot-v0.9.13", default-features = false }
+orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library", branch = "polkadot-v0.9.13", default-features = false }
+orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library", branch = "polkadot-v0.9.13", default-features = false }
+#acala-primitives = {  git = "https://github.com/AcalaNetwork/Acala", branch = "release-acala-2.2.2", default-features = false }
+#acala-primitives = {  version = "2.2.2", default-features = false }
 
 hash-db = { version = "0.15.2", default-features = false }
 triehash = { version = "0.8.2", default-features = false }
@@ -70,5 +74,8 @@ std = [
     "plain_hasher/std",
     "ethabi-decode/std",
     "snowbridge-core/std",
-    "snowbridge-ethereum/std"
+    "snowbridge-ethereum/std",
+    "orml-traits/std",
+    "orml-tokens/std",
+#    "acala-primitives/std"
 ]

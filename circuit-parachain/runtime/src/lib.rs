@@ -71,6 +71,9 @@ pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::Account
 /// Balance of an account.
 pub type Balance = u128;
 
+/// Amount of an account.
+pub type Amount = i128;
+
 /// Index of a transaction in the chain.
 pub type Index = u32;
 
@@ -840,6 +843,27 @@ impl pallet_circuit_portal::Config for Runtime {
 	type PalletId = CircuitPortalPalletId;
 }
 
+// ORML Tokens
+use orml_traits::parameter_type_with_key;
+pub type CurrencyId = u32;
+parameter_type_with_key! {
+	pub ExistentialDeposits: |_currency_id: CurrencyId| -> Balance {
+		Default::default()
+	};
+}
+
+impl orml_tokens::Config for Runtime {
+	type Event = Event;
+	type Balance = Balance;
+	type Amount = Amount;
+	type CurrencyId = CurrencyId;
+	type WeightInfo = ();
+	type ExistentialDeposits = ExistentialDeposits;
+	type OnDust = ();
+	type MaxLocks = ();
+	type DustRemovalWhitelist = Nothing;
+}
+
 pub const INDEXING_PREFIX: &'static [u8] = b"commitment";
 parameter_types! {
 	pub const MaxMessagePayloadSize: u64 = 256;
@@ -1004,6 +1028,9 @@ construct_runtime!(
 		// snowfork deps
 		EthereumLightClient: ethereum_light_client::{Pallet, Call, Storage, Event<T>, Config} = 150,
 		BasicOutboundChannel: snowbridge_basic_channel::outbound::{Pallet, Config<T>, Storage, Event<T>} = 151,
+
+		// ORML
+		ORMLTokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>} = 152,
 
 		Utility: pallet_utility::{Pallet, Call, Event} = 160,
 
