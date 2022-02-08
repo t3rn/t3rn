@@ -149,8 +149,6 @@ pub mod pallet {
             finality_target: BridgedHeader<T, I>,
             justification: GrandpaJustification<BridgedHeader<T, I>>,
             gateway_id: ChainId,
-            extrinsics_root: BridgedBlockHash<T, I>,
-            state_root: BridgedBlockHash<T, I>,
         ) -> DispatchResultWithPostInfo {
             ensure_operational_single::<T, I>(gateway_id)?;
             ensure_signed(origin.clone())?;
@@ -193,9 +191,9 @@ pub mod pallet {
             let pruning = <MultiImportedHashes<T, I>>::try_get(gateway_id, index);
 
             <BestFinalizedMap<T, I>>::insert(gateway_id, hash);
-            <MultiImportedHeaders<T, I>>::insert(gateway_id, hash, finality_target);
+            <MultiImportedHeaders<T, I>>::insert(gateway_id, hash, finality_target.clone());
             <MultiImportedHashes<T, I>>::insert(gateway_id, index, hash);
-            <MultiImportedRoots<T, I>>::insert(gateway_id, hash, (extrinsics_root, state_root));
+            <MultiImportedRoots<T, I>>::insert(gateway_id, hash, (finality_target.extrinsics_root(), finality_target.state_root()));
             <RequestCountMap<T, I>>::mutate(gateway_id, |count| {
                 match count {
                     Some(count) => *count += 1,
@@ -243,8 +241,6 @@ pub mod pallet {
             gateway_id: ChainId,
             headers_reversed: Vec<BridgedHeader<T, I>>,
             anchor_header_hash: BridgedBlockHash<T, I>,
-            // extrinsics_roots: Vec<BridgedBlockHash<T, I>>,
-            // state_roots: Vec<BridgedBlockHash<T, I>>,
         ) -> DispatchResultWithPostInfo {
             ensure_operational_single::<T, I>(gateway_id)?;
             ensure_signed(origin.clone())?;
@@ -270,9 +266,7 @@ pub mod pallet {
                     // We could add additional checks, but not sure if thats worth it
                     <MultiImportedHeaders<T, I>>::insert(gateway_id, header.hash(), header.clone());
                     <MultiImportedHashes<T, I>>::insert(gateway_id, index, header.hash());
-
-                    // not implemented yet, because I need to find out why we dont check these inputs with the header in MFV
-                    // <MultiImportedRoots<T, I>>::insert(gateway_id, hash, (extrinsics_root, state_root));
+                    <MultiImportedRoots<T, I>>::insert(gateway_id, header.hash(), (header.extrinsics_root(), header.state_root()));
 
                     // select next header to prune and remove
                     index += 1;
@@ -280,7 +274,7 @@ pub mod pallet {
 
                     if let Ok(hash) = pruning {
                         <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
-                        // <MultiImportedRoots<T, I>>::remove(gateway_id, pruning);
+                        <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
                     }
 
                     anchor_header = header;
@@ -324,22 +318,18 @@ pub mod pallet {
             justification: GrandpaJustification<BridgedHeader<T, I>>,
             gateway_id: ChainId,
             // ToDo: Try passing Vec<u8> here and cast to appropriate header type with help of xDNS
-            state_root: BridgedBlockHash<T, I>,
-            extrinsics_root: BridgedBlockHash<T, I>,
         ) -> DispatchResultWithPostInfo {
             Self::submit_finality_proof(
                 origin,
-                finality_target,
+                finality_target.clone(),
                 justification,
                 gateway_id,
-                extrinsics_root,
-                state_root,
             )?;
 
             log::info!(
                 "submit_finality_proof_and_roots, _state_root: {:?}, _extrinsics_root: {:?}",
-                state_root,
-                extrinsics_root
+                finality_target.state_root(),
+                finality_target.extrinsics_root()
             );
 
             Ok(().into())
@@ -930,15 +920,11 @@ mod tests {
 
         let default_gateway: ChainId = *b"gate";
 
-        let default_roots = (Default::default(), Default::default());
-
         Pallet::<TestRuntime>::submit_finality_proof(
             Origin::signed(1),
             header,
             justification,
             default_gateway,
-            default_roots.0,
-            default_roots.1,
         )
     }
 
@@ -949,15 +935,11 @@ mod tests {
 
         let default_gateway: ChainId = *b"gate";
 
-        let default_roots = (Default::default(), Default::default());
-
         Pallet::<TestRuntime>::submit_finality_proof(
             Origin::signed(1),
             header,
             justification,
             default_gateway,
-            default_roots.0,
-            default_roots.1,
         )
     }
 
@@ -976,9 +958,7 @@ mod tests {
     }
 
     fn submit_finality_proof_and_roots(
-        header: u8,
-        state_root: TestHash,
-        extrinsics_root: TestHash,
+        header: u8
     ) -> frame_support::dispatch::DispatchResultWithPostInfo {
         let header = test_header(header.into());
 
@@ -991,8 +971,6 @@ mod tests {
             header,
             justification,
             default_gateway,
-            state_root,
-            extrinsics_root,
         )
     }
 
@@ -1256,8 +1234,6 @@ mod tests {
                     header,
                     justification,
                     gateway_a,
-                    Default::default(),
-                    Default::default()
                 ),
                 Error::<TestRuntime>::Halted,
             );
@@ -1290,6 +1266,8 @@ mod tests {
             initialize_substrate_bridge();
             // generate valid headers
             let mut headers = test_header_range(0, 10, None);
+
+            println!("{:?}", headers);
             assert_ok!(submit_finality_proof_with_header(headers[1].clone()));
             assert_ok!(submit_finality_proof_with_header(headers[10].clone()));
             next_block();
@@ -1492,8 +1470,6 @@ mod tests {
                     header,
                     justification,
                     default_gateway,
-                    Default::default(),
-                    Default::default()
                 ),
                 <Error<TestRuntime>>::InvalidJustification
             );
@@ -1516,8 +1492,6 @@ mod tests {
                     header,
                     justification,
                     default_gateway,
-                    Default::default(),
-                    Default::default()
                 ),
                 <Error<TestRuntime>>::InvalidJustification
             );
@@ -1554,8 +1528,6 @@ mod tests {
                     header,
                     justification,
                     default_gateway,
-                    Default::default(),
-                    Default::default()
                 ),
                 <Error<TestRuntime>>::InvalidAuthoritySet
             );
@@ -1596,8 +1568,6 @@ mod tests {
                 header.clone(),
                 justification,
                 default_gateway,
-                Default::default(),
-                Default::default(),
             ));
 
             // Make sure that our header is the best finalized
@@ -1642,8 +1612,6 @@ mod tests {
                     header,
                     justification,
                     default_gateway,
-                    Default::default(),
-                    Default::default()
                 ),
                 <Error<TestRuntime>>::UnsupportedScheduledChange
             );
@@ -1671,8 +1639,6 @@ mod tests {
                     header,
                     justification,
                     default_gateway,
-                    Default::default(),
-                    Default::default()
                 ),
                 <Error<TestRuntime>>::UnsupportedScheduledChange
             );
@@ -1750,8 +1716,6 @@ mod tests {
                     header,
                     invalid_justification,
                     default_gateway,
-                    Default::default(),
-                    Default::default(),
                 )
             };
 
