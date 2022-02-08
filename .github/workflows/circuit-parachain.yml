@@ -102,4 +102,4 @@ jobs:
         run: |
           chmod +x target/debug/circuit-collator
           target/debug/circuit-collator --alice --log=main,debug --tmp > /dev/null 2>&1 &
-          cargo test --workspace --locked --manifest-path Cargo.toml
+          cargo test --features with-parachain-runtime --workspace --locked --manifest-path Cargo.toml

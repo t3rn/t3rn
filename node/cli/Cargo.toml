@@ -32,7 +32,7 @@ circuit-parachain-runtime = { path = "../../runtime/parachain" }
 t3rn-primitives = { path = "../../primitives" }
 
 [features]
-default = ["with-standalone-runtime"]
+default = []
 try-runtime = [
     "try-runtime-cli",
 ]
