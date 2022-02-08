@@ -193,7 +193,14 @@ pub mod pallet {
             <BestFinalizedMap<T, I>>::insert(gateway_id, hash);
             <MultiImportedHeaders<T, I>>::insert(gateway_id, hash, finality_target.clone());
             <MultiImportedHashes<T, I>>::insert(gateway_id, index, hash);
-            <MultiImportedRoots<T, I>>::insert(gateway_id, hash, (finality_target.extrinsics_root(), finality_target.state_root()));
+            <MultiImportedRoots<T, I>>::insert(
+                gateway_id,
+                hash,
+                (
+                    finality_target.extrinsics_root(),
+                    finality_target.state_root(),
+                ),
+            );
             <RequestCountMap<T, I>>::mutate(gateway_id, |count| {
                 match count {
                     Some(count) => *count += 1,
@@ -266,7 +273,11 @@ pub mod pallet {
                     // We could add additional checks, but not sure if thats worth it
                     <MultiImportedHeaders<T, I>>::insert(gateway_id, header.hash(), header.clone());
                     <MultiImportedHashes<T, I>>::insert(gateway_id, index, header.hash());
-                    <MultiImportedRoots<T, I>>::insert(gateway_id, header.hash(), (header.extrinsics_root(), header.state_root()));
+                    <MultiImportedRoots<T, I>>::insert(
+                        gateway_id,
+                        header.hash(),
+                        (header.extrinsics_root(), header.state_root()),
+                    );
 
                     // select next header to prune and remove
                     index += 1;
@@ -958,7 +969,7 @@ mod tests {
     }
 
     fn submit_finality_proof_and_roots(
-        header: u8
+        header: u8,
     ) -> frame_support::dispatch::DispatchResultWithPostInfo {
         let header = test_header(header.into());
 
