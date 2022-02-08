@@ -5,6 +5,8 @@ use structopt::StructOpt;
 /// Sub-commands supported by the collator.
 #[derive(Debug, StructOpt)]
 pub enum Subcommand {
+    /// Key management cli utilities
+    Key(sc_cli::KeySubcommand),
     /// Export the genesis state of the parachain.
     #[structopt(name = "export-genesis-state")]
     ExportGenesisState(ExportGenesisStateCommand),
@@ -79,9 +81,9 @@ pub struct ExportGenesisWasmCommand {
 
 #[derive(Debug, StructOpt)]
 #[structopt(settings = &[
-	structopt::clap::AppSettings::GlobalVersion,
-	structopt::clap::AppSettings::ArgsNegateSubcommands,
-	structopt::clap::AppSettings::SubcommandsNegateReqs,
+structopt::clap::AppSettings::GlobalVersion,
+structopt::clap::AppSettings::ArgsNegateSubcommands,
+structopt::clap::AppSettings::SubcommandsNegateReqs,
 ])]
 pub struct Cli {
     #[structopt(subcommand)]

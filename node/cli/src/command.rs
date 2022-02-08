@@ -1,7 +1,12 @@
-use crate::cli::{Cli, RelayChainCli, Subcommand};
+#[cfg(feature = "with-parachain-runtime")]
+use crate::parachain::{Cli, RelayChainCli, Subcommand};
+
+#[cfg(feature = "with-standalone-runtime")]
+use crate::standalone::{Cli, Subcommand};
 
 #[cfg(feature = "with-parachain-runtime")]
 use circuit_parachain_runtime::{RuntimeApi, VERSION};
+use sc_service::PartialComponents;
 
 #[cfg(feature = "with-parachain-runtime")]
 use circuit_service::chain_spec::parachain::{self as chain_spec};
@@ -9,13 +14,14 @@ use circuit_service::chain_spec::parachain::{self as chain_spec};
 #[cfg(feature = "with-standalone-runtime")]
 use circuit_service::chain_spec::standalone::{self as chain_spec};
 use circuit_service::chain_spec::Extensions;
-#[cfg(any(
-    feature = "with-parachain-runtime",
-    feature = "with-standalone-runtime"
-))]
-use circuit_service::{new_partial, CircuitRuntimeExecutor};
+
+#[cfg(feature = "with-standalone-runtime")]
+use circuit_service::standalone::{new_full, new_partial, ExecutorDispatch};
+
 #[cfg(feature = "with-parachain-runtime")]
-use circuit_service::{parachain_build_import_queue, start_parachain_node};
+use circuit_service::parachain::{
+    new_partial, parachain_build_import_queue, start_parachain_node, CircuitRuntimeExecutor,
+};
 #[cfg(feature = "with-standalone-runtime")]
 use circuit_standalone_runtime::{RuntimeApi, VERSION};
 use codec::Encode;
@@ -59,12 +65,18 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, St
 }
 
 impl SubstrateCli for Cli {
+    #[cfg(feature = "with-parachain-runtime")]
     fn impl_name() -> String {
         "Circuit Parachain Collator".into()
     }
 
+    #[cfg(feature = "with-standalone-runtime")]
+    fn impl_name() -> String {
+        "Circuit Node".into()
+    }
+
     fn impl_version() -> String {
-        env!("SUBSTRATE_CLI_IMPL_VERSION").into()
+        "0.1.0".into()
     }
 
     fn description() -> String {
@@ -78,7 +90,7 @@ impl SubstrateCli for Cli {
     }
 
     fn author() -> String {
-        env!("CARGO_PKG_AUTHORS").into()
+        "t3rn".into()
     }
 
     fn support_url() -> String {
@@ -98,13 +110,14 @@ impl SubstrateCli for Cli {
     }
 }
 
+#[cfg(feature = "with-parachain-runtime")]
 impl SubstrateCli for RelayChainCli {
     fn impl_name() -> String {
         "Circuit Parachain Collator".into()
     }
 
     fn impl_version() -> String {
-        env!("SUBSTRATE_CLI_IMPL_VERSION").into()
+        "0.1.0".into()
     }
 
     fn description() -> String {
@@ -173,6 +186,7 @@ pub fn run() -> Result<()> {
     let cli = Cli::from_args();
 
     match &cli.subcommand {
+        Some(Subcommand::Key(cmd)) => cmd.run(&cli),
         Some(Subcommand::BuildSpec(cmd)) => {
             let runner = cli.create_runner(cmd)?;
             runner.sync_run(|config| cmd.run(config.chain_spec, config.network))
@@ -333,6 +347,7 @@ pub fn run() -> sc_cli::Result<()> {
     let cli = Cli::from_args();
 
     match &cli.subcommand {
+        Some(Subcommand::Key(cmd)) => cmd.run(&cli),
         Some(Subcommand::BuildSpec(cmd)) => {
             let runner = cli.create_runner(cmd)?;
             runner.sync_run(|config| cmd.run(config.chain_spec, config.network))
@@ -403,11 +418,13 @@ pub fn run() -> sc_cli::Result<()> {
             if cfg!(feature = "runtime-benchmarks") {
                 let runner = cli.create_runner(cmd)?;
 
-                runner.sync_run(|config| cmd.run::<Block, Executor>(config))
+                runner.sync_run(|config| cmd.run::<Block, ExecutorDispatch>(config))
             } else {
-                Err("Benchmarking wasn't enabled when building the node. \
-				You can enable it with `--features runtime-benchmarks`."
-                    .into())
+                Err(
+                    "Benchmarking wasn't enabled when building the node. You can enable it with \
+				     `--features runtime-benchmarks`."
+                        .into(),
+                )
             }
         }
         None => {
@@ -416,10 +433,10 @@ pub fn run() -> sc_cli::Result<()> {
                 new_full(config).map_err(sc_cli::Error::Service)
             })
         }
-        _ => {}
     }
 }
 
+#[cfg(feature = "with-parachain-runtime")]
 impl DefaultConfigurationValues for RelayChainCli {
     fn p2p_listen_port() -> u16 {
         30334
@@ -438,6 +455,7 @@ impl DefaultConfigurationValues for RelayChainCli {
     }
 }
 
+#[cfg(feature = "with-parachain-runtime")]
 impl CliConfiguration<Self> for RelayChainCli {
     fn shared_params(&self) -> &SharedParams {
         self.base.base.shared_params()

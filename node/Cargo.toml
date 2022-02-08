@@ -34,6 +34,7 @@ jsonrpc-core = "18.0.0"
 circuit-service = { path = "./service" }
 circuit-parachain-runtime = { path = "../runtime/parachain", optional = true }
 circuit-standalone-runtime = { path = "../runtime/standalone", optional = true }
+circuit-cli = { path = "./cli" }
 t3rn-primitives = { path = "../primitives" }
 
 # Substrate Dependencies
@@ -68,6 +69,7 @@ sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
+sc-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
 sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
 sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }

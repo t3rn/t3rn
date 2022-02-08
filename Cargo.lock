@@ -907,9 +907,38 @@ dependencies = [
 ]
 
 [[package]]
+name = "circuit-cli"
+version = "0.1.0"
+dependencies = [
+ "circuit-parachain-runtime",
+ "circuit-service",
+ "circuit-standalone-runtime",
+ "cumulus-client-cli",
+ "cumulus-client-service",
+ "cumulus-primitives-core",
+ "frame-benchmarking-cli",
+ "log",
+ "parity-scale-codec",
+ "polkadot-cli",
+ "polkadot-parachain",
+ "polkadot-primitives",
+ "polkadot-service",
+ "sc-cli",
+ "sc-service",
+ "sc-telemetry",
+ "sc-tracing",
+ "sp-core",
+ "sp-runtime",
+ "structopt",
+ "t3rn-primitives",
+ "try-runtime-cli",
+]
+
+[[package]]
 name = "circuit-parachain-node"
 version = "1.0.0-alpha.0"
 dependencies = [
+ "circuit-cli",
  "circuit-parachain-runtime",
  "circuit-service",
  "circuit-standalone-runtime",
@@ -939,6 +968,7 @@ dependencies = [
  "sc-cli",
  "sc-client-api",
  "sc-consensus",
+ "sc-consensus-aura",
  "sc-executor",
  "sc-keystore",
  "sc-network",
@@ -1077,7 +1107,9 @@ dependencies = [
  "sc-cli",
  "sc-client-api",
  "sc-consensus",
+ "sc-consensus-aura",
  "sc-executor",
+ "sc-finality-grandpa",
  "sc-keystore",
  "sc-network",
  "sc-rpc",
