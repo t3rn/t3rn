@@ -61,20 +61,18 @@ git clone https://github.com/t3rn/t3rn
 git checkout origin/development
 git submodule init
 git submodule update
-cd circuit
-cargo build --release
-bash run-circuit.sh
+cargo build --release --features with-standalone-runtime
+cargo run --bin circuit-collator --features with-standalone-runtime
 ```
 #### Running benchmarks
 
 1. Build the circuit node with ```runtime-benchmarks``` feature:
 ```bash
-cd circuit
-cargo build --release --features runtime-benchmarks
+cargo build --release --features with-standalone-runtime,runtime-benchmarks
 ```
 2. Run the command to execute the benchmarks for desirable pallet:
 ```bash
-./target/release/circuit benchmark --chain dev --execution wasm --wasm-execution compiled --pallet pallet_you_want --extrinsic '*' --steps 50 --repeat 20 --raw --template=./benchmarking/frame-weight-template.hbs --output .
+./target/release/circuit-collator benchmark --chain dev --execution wasm --wasm-execution compiled --pallet pallet_you_want --extrinsic '*' --steps 50 --repeat 20 --raw --template=./benchmarking/frame-weight-template.hbs --output .
 ```
 3. After executing following commands a file called ```pallet_you_want.rs``` will be generated. The file contains weights for the desirable pallet, copy that file into the pallets src directory, and rename it to ```weights.rs```. 
 
