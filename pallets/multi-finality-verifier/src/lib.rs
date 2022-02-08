@@ -1278,7 +1278,6 @@ mod tests {
             // generate valid headers
             let mut headers = test_header_range(0, 10, None);
 
-            println!("{:?}", headers);
             assert_ok!(submit_finality_proof_with_header(headers[1].clone()));
             assert_ok!(submit_finality_proof_with_header(headers[10].clone()));
             next_block();
