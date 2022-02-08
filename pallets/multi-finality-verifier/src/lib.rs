@@ -321,30 +321,30 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// Submit finality proofs for the header and additionally preserve state and extrinsics root.
-        #[pallet::weight(0)]
-        pub fn submit_finality_proof_and_roots(
-            origin: OriginFor<T>,
-            finality_target: BridgedHeader<T, I>,
-            justification: GrandpaJustification<BridgedHeader<T, I>>,
-            gateway_id: ChainId,
-            // ToDo: Try passing Vec<u8> here and cast to appropriate header type with help of xDNS
-        ) -> DispatchResultWithPostInfo {
-            Self::submit_finality_proof(
-                origin,
-                finality_target.clone(),
-                justification,
-                gateway_id,
-            )?;
+        // TODO: Do we still need this? Essentially just logging stuff...
+        // #[pallet::weight(0)]
+        // pub fn submit_finality_proof_and_roots(
+        //     origin: OriginFor<T>,
+        //     finality_target: BridgedHeader<T, I>,
+        //     justification: GrandpaJustification<BridgedHeader<T, I>>,
+        //     gateway_id: ChainId,
+        //     // ToDo: Try passing Vec<u8> here and cast to appropriate header type with help of xDNS
+        // ) -> DispatchResultWithPostInfo {
+        //     Self::submit_finality_proof(
+        //         origin,
+        //         finality_target.clone(),
+        //         justification,
+        //         gateway_id,
+        //     )?;
 
-            log::info!(
-                "submit_finality_proof_and_roots, _state_root: {:?}, _extrinsics_root: {:?}",
-                finality_target.state_root(),
-                finality_target.extrinsics_root()
-            );
+        //     log::info!(
+        //         "submit_finality_proof_and_roots, _state_root: {:?}, _extrinsics_root: {:?}",
+        //         finality_target.state_root(),
+        //         finality_target.extrinsics_root()
+        //     );
 
-            Ok(().into())
-        }
+        //     Ok(().into())
+        // }
 
         /// Bootstrap the bridge pallet with an initial header and authority set from which to sync.
         ///
@@ -969,22 +969,23 @@ mod tests {
         )
     }
 
-    fn submit_finality_proof_and_roots(
-        header: u8,
-    ) -> frame_support::dispatch::DispatchResultWithPostInfo {
-        let header = test_header(header.into());
+    // TODO: Do we still need this?
+    // fn submit_finality_proof_and_roots(
+    //     header: u8,
+    // ) -> frame_support::dispatch::DispatchResultWithPostInfo {
+    //     let header = test_header(header.into());
 
-        let justification = make_default_justification(&header);
+    //     let justification = make_default_justification(&header);
 
-        let default_gateway: ChainId = *b"gate";
+    //     let default_gateway: ChainId = *b"gate";
 
-        Pallet::<TestRuntime>::submit_finality_proof_and_roots(
-            Origin::signed(1),
-            header,
-            justification,
-            default_gateway,
-        )
-    }
+    //     Pallet::<TestRuntime>::submit_finality_proof_and_roots(
+    //         Origin::signed(1),
+    //         header,
+    //         justification,
+    //         default_gateway,
+    //     )
+    // }
 
     fn next_block() {
         use frame_support::traits::OnInitialize;
@@ -1431,7 +1432,7 @@ mod tests {
             next_block();
 
             // verified header stored in circuit we're basing the proof on
-            let anchor_header = headers.pop().unwrap();
+            headers.pop().unwrap();
 
             // we want to submit the headers in reverse, as we have to iterate backwards
             headers.reverse();
