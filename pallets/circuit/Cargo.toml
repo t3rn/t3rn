@@ -26,8 +26,8 @@ sp-io = { default-features = false, git = "https://github.com/paritytech/substra
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13', optional = true }
 scale-info = { version = "1.0", default-features = false, features = ["derive"] }
 log = { version = "0.4.14", default-features = false }
-t3rn-primitives = { version = "1.0.0-alpha.0", default-features = false, path = "../../primitives", package = "t3rn-parachain-primitives" }
-t3rn-protocol = { version = "1.0.0-alpha.0", default-features = false, path = "../../protocol" }
+t3rn-primitives = { path = "../../primitives", version = "1.0.0-alpha.0", default-features = false }
+t3rn-protocol = { path = "../../protocol", version = "1.0.0-alpha.1", default-features = false }
 pallet-xdns = { version = "1.0.0-alpha.0", default-features = false, path = "../../pallets/xdns" }
 pallet-circuit-portal = { version = "1.0.0-alpha.0", default-features = false, path = "../circuit-portal" }
 pallet-contracts-registry = { package = "pallet-contracts-registry", version = "1.0.0-alpha.0", default-features = false, path = "../../pallets/contracts-registry" }
@@ -38,7 +38,7 @@ orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-li
 orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library", branch = "polkadot-v0.9.13", default-features = false }
 
 [dev-dependencies]
-pallet-multi-finality-verifier = { default-features = false, path = "../multi-finality-verifier", package = 'multi-finality-verifier' }
+pallet-multi-finality-verifier = { default-features = false, path = "../multi-finality-verifier" }
 frame-election-provider-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
 pallet-offences = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
 pallet-session = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }

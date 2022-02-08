@@ -3,12 +3,9 @@ name: Circuit Parachain Build & Test CI
 on:
   pull_request:
     paths:
-      - circuit-parachain/**/*.rs
-      - circuit-parachain/**/Cargo.toml
-      - circuit-parachain/**/Cargo.lock
-      - pallets/**/*.rs
-      - pallets/**/Cargo.toml
-      - pallets/**/Cargo.lock
+      - '**/*.rs'
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
       - .github/workflows/circuit-parachain.yml
 
 jobs:
@@ -17,7 +14,9 @@ jobs:
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@master
-
+        with:
+          submodules: recursive
+          token: ${{ secrets.GH_PAT }}
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
@@ -30,14 +29,16 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: fmt
-          args: --all --manifest-path circuit-parachain/Cargo.toml -- --check
+          args: --all -- --check
 
   lint:
     runs-on: self-hosted
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@master
-
+        with:
+          submodules: recursive
+          token: ${{ secrets.GH_PAT }}
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
@@ -53,14 +54,14 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            circuit-parachain/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('circuit-parachain/Cargo.lock') }}
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
 
       - name: 📑 Lint code
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --all --manifest-path circuit-parachain/Cargo.toml
+          args: --all --features with-parachain-runtime
 
   build-test:
     runs-on: self-hosted
@@ -68,7 +69,9 @@ jobs:
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@master
-
+        with:
+          submodules: recursive
+          token: ${{ secrets.GH_PAT }}
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
@@ -84,19 +87,19 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            circuit-parachain/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('circuit-parachain/Cargo.lock') }}
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
 
       - name: 🏭 Build circuit
         uses: actions-rs/cargo@v1
         continue-on-error: false
         with:
           command: build
-          args: --locked --manifest-path circuit-parachain/Cargo.toml
+          args: --locked --features with-parachain-runtime
 
       - name: 📼 Run unit tests
         continue-on-error: false
         run: |
-          chmod +x circuit-parachain/target/debug/circuit-collator
-          circuit-parachain/target/debug/circuit-collator --alice --log=main,debug --tmp > /dev/null 2>&1 &
-          cargo test --workspace --locked --manifest-path circuit-parachain/Cargo.toml
+          chmod +x target/debug/circuit-collator
+          target/debug/circuit-collator --alice --log=main,debug --tmp > /dev/null 2>&1 &
+          cargo test --features with-parachain-runtime --workspace --locked --manifest-path Cargo.toml

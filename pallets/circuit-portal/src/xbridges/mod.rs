@@ -1,7 +1,7 @@
 use crate::{Bytes, DispatchResultWithPostInfo, Error};
 use codec::{Decode, Encode};
 use sp_application_crypto::Public;
-use sp_std::{vec, vec::Vec};
+use sp_std::vec::Vec;
 use t3rn_primitives::bridges::{header_chain as bp_header_chain, runtime as bp_runtime};
 
 pub type CurrentHash<T, I> =
@@ -28,7 +28,7 @@ pub fn init_bridge_instance<T: pallet_multi_finality_verifier::Config<I>, I: 'st
     let init_data = bp_header_chain::InitializationData {
         header,
         authority_list: authorities
-            .unwrap_or(vec![])
+            .unwrap_or_default()
             .iter()
             .map(|id| {
                 (

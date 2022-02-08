@@ -122,7 +122,7 @@ pub mod pallet {
             );
 
             if <ContractsRegistry<T>>::contains_key(&contract_id) {
-                Err(Error::<T>::ContractAlreadyExists)?
+                Err(Error::<T>::ContractAlreadyExists.into())
             } else {
                 <ContractsRegistry<T>>::insert(&contract_id, contract);
                 Self::deposit_event(Event::<T>::ContractStored(requester, contract_id));
@@ -140,7 +140,7 @@ pub mod pallet {
             ensure_root(origin)?;
 
             if !<ContractsRegistry<T>>::contains_key(&contract_id) {
-                Err(Error::<T>::UnknownContract)?
+                Err(Error::<T>::UnknownContract.into())
             } else {
                 <ContractsRegistry<T>>::remove(&contract_id);
                 Self::deposit_event(Event::<T>::ContractPurged(requester, contract_id));
@@ -160,7 +160,7 @@ pub mod pallet {
 
     // Errors inform users that something went wrong.
     #[pallet::error]
-    #[derive(Eq, PartialEq)]
+    #[derive(Eq, PartialEq, Clone)]
     pub enum Error<T> {
         /// Stored contract has already been added before
         ContractAlreadyExists,
@@ -268,7 +268,7 @@ impl<T: Config> Pallet<T> {
                 )
                 .collect();
 
-        if contracts.len() == 0 {
+        if contracts.is_empty() {
             return Err(pallet::Error::<T>::UnknownContract);
         }
         Ok(contracts)

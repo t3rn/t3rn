@@ -25,7 +25,7 @@ pallet-transaction-payment = { default-features = false, git = "https://github.c
 pallet-randomness-collective-flip = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 
 versatile-wasm = { default-features = false, path = "../../../vm/versatile-wasm" }
-t3rn-primitives = { version = "0.1.0", default-features = false, path = "../../../circuit/primitives" }
+t3rn-primitives = { default-features = false, path = "../../../primitives" }
 
 sp-std = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }

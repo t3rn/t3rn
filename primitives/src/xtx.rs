@@ -89,7 +89,7 @@ impl<
                 }
             }
         }
-        return true;
+        true
     }
 
     // Complete the full side effect of Xtx by assigning confirmed side effect/
@@ -130,7 +130,7 @@ impl<
                         && unconfirmed_step_no == Some(i)
                     {
                         // We found the side effect to confirm from inside the unconfirmed step.
-                        full_side_effect.confirmed = Some(confirmed.clone());
+                        full_side_effect.confirmed = Some(confirmed);
                         Ok(true)
                     } else {
                         Err("Attempt to confirm side effect from the next step, \
@@ -140,7 +140,7 @@ impl<
             }
         }
 
-        return Ok(false);
+        Ok(false)
     }
 }
 
@@ -310,7 +310,7 @@ mod tests {
         assert_eq!(
             xtx.full_side_effects[0][0],
             FullSideEffect {
-                input: input_side_effect_1.clone(),
+                input: input_side_effect_1,
                 confirmed: Some(completing_side_effect_1),
             }
         );
@@ -420,7 +420,7 @@ mod tests {
         assert_eq!(
             xtx.full_side_effects[0][0],
             FullSideEffect {
-                input: input_side_effect_1.clone(),
+                input: input_side_effect_1,
                 confirmed: Some(completing_side_effect_1),
             }
         );
@@ -516,10 +516,8 @@ mod tests {
             ],
         );
 
-        let res_2_err = xtx.complete_side_effect::<Hashing>(
-            completing_side_effect_2.clone(),
-            input_side_effect_2.clone(),
-        );
+        let res_2_err = xtx
+            .complete_side_effect::<Hashing>(completing_side_effect_2, input_side_effect_2.clone());
 
         assert_eq!(res_2_err, Err("Attempt to confirm side effect from the next step, but there still is at least one unfinished step"));
 
@@ -527,7 +525,7 @@ mod tests {
         assert_eq!(
             xtx.full_side_effects[0][0],
             FullSideEffect {
-                input: input_side_effect_1.clone(),
+                input: input_side_effect_1,
                 confirmed: None,
             }
         );
@@ -535,7 +533,7 @@ mod tests {
         assert_eq!(
             xtx.full_side_effects[1][0],
             FullSideEffect {
-                input: input_side_effect_2.clone(),
+                input: input_side_effect_2,
                 confirmed: None,
             }
         );

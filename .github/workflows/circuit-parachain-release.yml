@@ -5,9 +5,9 @@ on:
     branches:
       - development
     paths:
-      - circuit-parachain/**/*.rs
-      - circuit-parachain/**/Cargo.toml
-      - circuit-parachain/**/Cargo.lock
+      - ./**/*.rs
+      - ./**/Cargo.toml
+      - ./**/Cargo.lock
       - pallets/**/*.rs
       - pallets/**/Cargo.toml
       - pallets/**/Cargo.lock
@@ -27,7 +27,9 @@ jobs:
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@master
-
+        with:
+          submodules: recursive
+          token: ${{ secrets.GH_PAT }}
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
@@ -43,21 +45,21 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            circuit-parachain/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('circuit-parachain/Cargo.lock') }}
+            ./target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('./Cargo.lock') }}
 
       - name: 🏭 Build circuit
         uses: actions-rs/cargo@v1
         continue-on-error: false
         with:
           command: build
-          args: --locked --manifest-path circuit-parachain/Cargo.toml --release
+          args: --locked --manifest-path ./Cargo.toml --release
 
       - name: 📤 Upload binary
         uses: actions/upload-artifact@v2
         with:
           name: ${{ github.sha }}-parachain-release-artifacts
-          path: circuit-parachain/target/release/circuit-collator
+          path: ./target/release/circuit-collator
           if-no-files-found: error
           retention-days: 1
 
@@ -69,6 +71,7 @@ jobs:
         uses: actions/checkout@master
         with:
           submodules: recursive
+          token: ${{ secrets.GH_PAT }}
       - name: 🔧 Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
       - name: 🕒 Cache Docker layers
@@ -82,7 +85,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: ${{ github.sha }}-parachain-release-artifacts
-          path: circuit-parachain/target/release/
+          path: ./target/release/
       - name: 🐋 Login to Docker Hub
         uses: docker/login-action@v1
         with:
@@ -108,19 +111,19 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: ${{ github.sha }}-parachain-release-artifacts
-          path: circuit-parachain/target/release/
+          path: ./target/release/
 
       - name: 🎱 Gzip circuit parachain
         run: |
-          gzip -c ./circuit-parachain/target/release/parachain-collator \
-          > ./circuit-parachain/target/release/parachain-collator.gz
+          gzip -c ./target/release/parachain-collator \
+          > ./target/release/parachain-collator.gz
 
       - name: 🖐🏾 Fingerprint the gball
         run: |
-          sha256sum -b ./circuit-parachain/target/release/parachain-collator.gz \
+          sha256sum -b ./target/release/parachain-collator.gz \
           | grep -oE '^[a-f0-9]+' \
           | tr -d '\n' \
-          > ./circuit-parachain/target/release/parachain-collator.gz.sha256sum
+          > ./target/release/parachain-collator.gz.sha256sum
 
       - name: 🏷️ Get the version tag
         run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
@@ -131,7 +134,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./circuit-parachain/target/release/parachain-collator.gz.sha256sum
+          asset_path: ./target/release/parachain-collator.gz.sha256sum
           asset_name: t3rn-circuit-parachain-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz.sha256sum
           asset_content_type: text/plain
 
@@ -141,6 +144,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./circuit-parachain/target/release/parachain-collator.gz
+          asset_path: ./target/release/parachain-collator.gz
           asset_name: t3rn-circuit-parachain-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz
           asset_content_type: application/gzip

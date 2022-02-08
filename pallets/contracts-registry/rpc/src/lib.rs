@@ -11,7 +11,6 @@ use pallet_contracts_registry::FetchContractsResult;
 pub use pallet_contracts_registry_rpc_runtime_api::ContractsRegistryRuntimeApi;
 use sp_api::{ApiError, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
-use sp_core::Bytes;
 use sp_runtime::generic::BlockId;
 use sp_runtime::traits::{Block as BlockT, Hash as HashT, MaybeDisplay};
 
@@ -20,13 +19,13 @@ const CONTRACT_DOESNT_EXIST: i64 = 2;
 const CONTRACT_IS_A_TOMBSTONE: i64 = 3;
 
 #[rpc]
-pub trait ContractsRegistryApi<AccountId, Hash> {
+pub trait ContractsRegistryApi<AccountId> {
     /// Returns the contracts searchable by name, author or metadata
     #[rpc(name = "contractsRegistry_fetchContracts")]
     fn fetch_contracts(
         &self,
         author: Option<AccountId>,
-        data: Option<Bytes>,
+        data: Option<Vec<u8>>,
     ) -> Result<FetchContractsResult>;
 }
 
@@ -45,14 +44,12 @@ impl<C, B> ContractsRegistry<C, B> {
     }
 }
 
-impl<C, Block, AccountId, Hash> ContractsRegistryApi<AccountId, Hash>
-    for ContractsRegistry<C, Block>
+impl<C, Block, AccountId> ContractsRegistryApi<AccountId> for ContractsRegistry<C, Block>
 where
     AccountId: Codec + MaybeDisplay,
     Block: BlockT,
     C: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
-    C::Api: ContractsRegistryRuntimeApi<Block, AccountId, Hash>,
-    Hash: HashT + Codec,
+    C::Api: ContractsRegistryRuntimeApi<Block, AccountId>,
 {
     fn fetch_contracts(
         &self,
