@@ -2,11 +2,6 @@
 
 #![warn(missing_docs)]
 
-#[macro_use]
-
-mod cli;
-mod command;
-
 fn main() -> sc_cli::Result<()> {
-    command::run()
+    circuit_cli::command::run()
 }

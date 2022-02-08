@@ -5,6 +5,7 @@ panic = 'unwind'
 members = [
     'node',
     'node/service',
+    'node/cli',
     'pallets/*',
     'primitives',
     'primitives/src/bridges/finality',
