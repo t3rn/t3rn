@@ -26,6 +26,7 @@ pallet-circuit-portal-rpc-runtime-api = {  path = "../../pallets/circuit-portal/
 pallet-xdns = { path = "../../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
 pallet-multi-finality-verifier = { path = "../../pallets/multi-finality-verifier", version = "1.0.0-alpha.0", default-features = false }
+pallet-circuit = { path = "../../pallets/circuit", default-features = false }
 #volatile-vm = { path = "../../vm/volatile-vm", default-features = false }
 t3rn-primitives = { version = "1.0.0-alpha.0", default-features = false, path = "../../primitives" }
 t3rn-protocol = { path = "../../protocol", version = "1.0.0-alpha.1", default-features = false }
@@ -103,6 +104,7 @@ std = [
 	"pallet-aura/std",
 	"t3rn-primitives/std",
 	"pallet-xdns/std",
+	"pallet-circuit/std",
 	#"volatile-vm/std",
 	# native contracts VMs
 #	"pallet-contracts/std",
