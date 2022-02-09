@@ -1,22 +1,26 @@
-name: Circuit Parachain Build & Test CI
+name: Gateway CI
 
 on:
   pull_request:
     paths:
-      - '**/*.rs'
-      - '**/Cargo.toml'
-      - '**/Cargo.lock'
-      - .github/workflows/circuit-parachain.yml
+      - gateway/**/*.rs
+      - gateway/**/Cargo.toml
+      - gateway/**/Cargo.lock
+      - .github/workflows/gateway.yml
+
+env:
+  RUST_BACKTRACE: 1
+  CARGO_TERM_COLOR: always
 
 jobs:
   format:
-    runs-on: self-hosted
+    runs-on: ubuntu-20.04
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@master
         with:
           submodules: recursive
-          token: ${{ secrets.GH_PAT }}
+
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
@@ -29,22 +33,42 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: fmt
-          args: --all -- --check
+          args: |
+            -p gateway
+            -p gateway-runtime
+            -p gateway-rpc
+            --manifest-path gateway/Cargo.toml -- --check
 
   lint:
-    runs-on: self-hosted
+    runs-on: ubuntu-20.04
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@master
         with:
           submodules: recursive
-          token: ${{ secrets.GH_PAT }}
+
+      - name: 🕒 Cache LLVM and Clang
+        id: cache-llvm
+        uses: actions/cache@v2
+        with:
+          path: |
+            ./llvm
+          key: llvm-gateway
+
+      - name: 🔨 Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@v1
+        with:
+          version: "12.0.0"
+          ubuntu-version: "20.04"
+          directory: ${{ runner.temp }}/llvm
+          cached: ${{ steps.cache-llvm.outputs.cache-hit }}
+
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly-2021-11-01
           target: wasm32-unknown-unknown
-          components: rustfmt, clippy
+          components: clippy
           override: true
 
       - name: 🕒 Cache Rust binaries and packages
@@ -54,30 +78,49 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
+            gateway/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('gateway/Cargo.lock') }}
 
       - name: 📑 Lint code
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --all --features with-parachain-runtime
+          args: |
+            -p gateway
+            -p gateway-runtime
+            -p gateway-rpc
+            --manifest-path gateway/Cargo.toml
 
-  build-test:
-    runs-on: self-hosted
+  check:
+    runs-on: ubuntu-20.04
     needs: [format, lint]
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@master
         with:
           submodules: recursive
-          token: ${{ secrets.GH_PAT }}
+
+      - name: 🕒 Cache LLVM and Clang
+        id: cache-llvm
+        uses: actions/cache@v2
+        with:
+          path: |
+            ./llvm
+          key: llvm-gateway
+
+      - name: 🔨 Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@v1
+        with:
+          version: "12.0.0"
+          ubuntu-version: "20.04"
+          directory: ${{ runner.temp }}/llvm
+          cached: ${{ steps.cache-llvm.outputs.cache-hit }}
+
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly-2021-11-01
           target: wasm32-unknown-unknown
-          components: rustfmt, clippy
           override: true
 
       - name: 🕒 Cache Rust binaries and packages
@@ -87,19 +130,12 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
+            gateway/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('gateway/Cargo.lock') }}
 
-      - name: 🏭 Build circuit
+      - name: 🏭 Check gateway
         uses: actions-rs/cargo@v1
         continue-on-error: false
         with:
-          command: build
-          args: --locked --features with-parachain-runtime
-
-      - name: 📼 Run unit tests
-        continue-on-error: false
-        run: |
-          chmod +x target/debug/circuit-collator
-          target/debug/circuit-collator --alice --log=main,debug --tmp > /dev/null 2>&1 &
-          cargo test --features with-parachain-runtime --workspace --locked --manifest-path Cargo.toml
+          command: check
+          args: --locked --manifest-path gateway/Cargo.toml
