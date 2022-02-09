@@ -249,8 +249,7 @@ fn is_standalone() -> bool {
 #[test]
 fn derived_dave_account_is_as_expected() {
     let dave = get_account_id_from_seed::<sr25519::Public>("Dave");
-    let derived: AccountId =
-        derive_account_from_gateway_id(bp_runtime::SourceAccount::Account(dave));
+    let derived: AccountId = derive_account_from_gateway_id(SourceAccount::Account(dave));
     assert_eq!(
         derived.to_string(),
         "5C9NFeDzVveQeCvyUDA7fJv47NygtdL69i6JjmBAGf1KEDv5".to_string()
