@@ -52,6 +52,11 @@ jobs:
         uses: actions/cache@v2
         id: cache-rust
         with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
       - name: 📑 Lint code (standalone)
         uses: actions-rs/cargo@v1
         with:
