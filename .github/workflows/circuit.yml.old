@@ -3,17 +3,13 @@ name: Circuit CI
 on:
   pull_request:
     paths:
-      - circuit/**/*.rs
-      - circuit/**/Cargo.toml
-      - circuit/**/Cargo.lock
-      - pallets/**/*.rs
-      - pallets/**/Cargo.toml
-      - pallets/**/Cargo.lock
+      - '**/*.rs'
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
       - .github/workflows/circuit.yml
 
 env:
   RUST_BACKTRACE: 1
-  CARGO_TERM_COLOR: always
 
 jobs:
   format:
@@ -23,7 +19,7 @@ jobs:
         uses: actions/checkout@master
         with:
           submodules: recursive
-
+          token: ${{ secrets.GH_PAT }}
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
@@ -37,15 +33,7 @@ jobs:
         with:
           command: fmt
           args: |
-            -p circuit
-            -p circuit-runtime
-            -p pallet-circuit-execution-delivery
-            -p pallet-contracts-registry
-            -p pallet-xdns
-            -p t3rn-primitives
-            -p pallet-beefy-mmr
-            -p beefy-merkle-tree
-            --manifest-path circuit/Cargo.toml -- --check
+            --go.toml -- --check
 
   lint:
     runs-on: self-hosted
