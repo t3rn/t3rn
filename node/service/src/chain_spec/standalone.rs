@@ -1,6 +1,5 @@
 use crate::chain_spec::get_authority_keys_from_seed;
 use async_std::task;
-#[cfg(feature = "with-standalone-runtime")]
 use beefy_primitives::crypto::AuthorityId as BeefyId;
 use jsonrpc_core::serde_json;
 use log::info;
@@ -178,13 +177,16 @@ fn testnet_genesis(
                 .collect(),
         },
         aura: AuraConfig {
-            authorities: vec![],
+            authorities: initial_authorities.iter().map(|x| (x.1.clone())).collect(),
         },
         grandpa: GrandpaConfig {
-            authorities: vec![],
+            authorities: initial_authorities
+                .iter()
+                .map(|x| (x.2.clone(), 2))
+                .collect(),
         },
         beefy: BeefyConfig {
-            authorities: vec![],
+            authorities: initial_authorities.iter().map(|x| (x.3.clone())).collect(),
         },
         sudo: SudoConfig {
             key: root_key.clone(),
