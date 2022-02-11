@@ -1,4 +1,4 @@
-use circuit_parachain_runtime::{AuraId, Balance, EXISTENTIAL_DEPOSIT, UNIT};
+use circuit_parachain_runtime::{AuraId, Balance, XDNSConfig, EXISTENTIAL_DEPOSIT, UNIT};
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
 
@@ -8,7 +8,9 @@ use sp_core::{crypto::UncheckedInto, sr25519};
 
 use t3rn_primitives::AccountId;
 
-use crate::chain_spec::{get_account_id_from_seed, get_from_seed, Extensions};
+use pallet_xdns::XdnsRecord;
+
+use crate::chain_spec::{get_account_id_from_seed, get_from_seed, seed_xdns_registry, Extensions};
 
 pub const PARA_ID: ParaId = ParaId::new(3331_u32);
 
@@ -71,6 +73,7 @@ pub fn development_config() -> ChainSpec {
                     get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
                     get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
                 ],
+                seed_xdns_registry().unwrap_or_default(),
                 PARA_ID,
             )
         },
@@ -127,6 +130,7 @@ pub fn local_testnet_config() -> ChainSpec {
                     get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
                     get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
                 ],
+                seed_xdns_registry().unwrap_or_default(),
                 PARA_ID,
             )
         },
@@ -151,6 +155,7 @@ fn testnet_genesis(
     invulnerables: Vec<(AccountId, AuraId)>,
     root_key: AccountId,
     endowed_accounts: Vec<AccountId>,
+    xdns_records: Vec<XdnsRecord<AccountId>>,
     id: ParaId,
 ) -> circuit_parachain_runtime::GenesisConfig {
     circuit_parachain_runtime::GenesisConfig {
@@ -190,7 +195,9 @@ fn testnet_genesis(
         aura_ext: Default::default(),
         sudo: circuit_parachain_runtime::SudoConfig { key: root_key },
         multi_finality_verifier_polkadot_like: Default::default(),
-        xdns: Default::default(),
+        xdns: XDNSConfig {
+            known_xdns_records: xdns_records,
+        },
         elections: Default::default(),
         council: Default::default(),
         democracy: Default::default(),
@@ -261,6 +268,7 @@ pub fn circuit_config() -> ChainSpec {
                         (1_000_000 * UNIT),
                     ),
                 ],
+                seed_xdns_registry().unwrap_or_default(),
                 PARA_ID,
             )
         },
@@ -285,6 +293,7 @@ fn genesis(
     invulnerables: Vec<(AccountId, AuraId)>,
     root_key: AccountId,
     endowed_accounts: Vec<(AccountId, Balance)>,
+    xdns_records: Vec<XdnsRecord<AccountId>>,
     id: ParaId,
 ) -> circuit_parachain_runtime::GenesisConfig {
     circuit_parachain_runtime::GenesisConfig {
@@ -320,7 +329,9 @@ fn genesis(
         aura_ext: Default::default(),
         sudo: circuit_parachain_runtime::SudoConfig { key: root_key },
         multi_finality_verifier_polkadot_like: Default::default(),
-        xdns: Default::default(),
+        xdns: XDNSConfig {
+            known_xdns_records: xdns_records,
+        },
         elections: Default::default(),
         council: Default::default(),
         democracy: Default::default(),

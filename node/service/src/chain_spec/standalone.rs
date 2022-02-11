@@ -24,7 +24,6 @@ use circuit_standalone_runtime::{
     MultiFinalityVerifierConfig, SessionKeys, Signature, SudoConfig, SystemConfig, XDNSConfig,
     WASM_BINARY,
 };
-use jsonrpc_runtime_client::{create_rpc_client, get_metadata, ConnectionParams};
 use pallet_xdns::XdnsRecord;
 use t3rn_primitives::bridges::chain_circuit::derive_account_from_gateway_id;
 use t3rn_primitives::{
