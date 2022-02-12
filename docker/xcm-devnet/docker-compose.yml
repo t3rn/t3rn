@@ -1,0 +1,192 @@
+version: "3.9"
+
+networks:
+  devnet:
+    name: devnet
+
+services:
+  alice:
+    image: polkadot:release-v0.9.13
+    build:
+      context: .
+      dockerfile: polkadot.Dockerfile
+    networks:
+      - devnet
+    ports:
+      - "10001:10001"
+      - "8844:8844"
+      - "9944:9944"
+    volumes:
+      - type: bind
+        source: ./specs/rococo-local.raw.json
+        target: /pdot/rococo-local.raw.json
+        read_only: true
+      - type: bind
+        source: /tmp/alice
+        target: /pdot/data
+        read_only: false
+    container_name: alice
+    command: >
+      --port 10001
+      --rpc-port 8844
+      --ws-port 9944
+      --alice
+      -d /pdot/data
+      --validator
+      --chain /pdot/rococo-local.raw.json
+
+  bob:
+    image: polkadot:release-v0.9.13
+    build:
+      context: .
+      dockerfile: polkadot.Dockerfile
+    networks:
+      - devnet
+    ports:
+      - "10002:10002"
+      - "8845:8845"
+      - "9945:9945"
+    volumes:
+      - type: bind
+        source: ./specs/rococo-local.raw.json
+        target: /pdot/rococo-local.raw.json
+        read_only: true
+      - type: bind
+        source: /tmp/bob
+        target: /pdot/data
+        read_only: false
+    container_name: bob
+    command: >
+      --port 10002
+      --rpc-port 8845
+      --ws-port 9945
+      --bob
+      -d /pdot/data
+      --validator
+      --chain /pdot/rococo-local.raw.json
+
+  charlie:
+    image: polkadot:release-v0.9.13
+    build:
+      context: .
+      dockerfile: polkadot.Dockerfile
+    networks:
+      - devnet
+    ports:
+      - "10003:10003"
+      - "8846:8846"
+      - "9946:9946"
+    volumes:
+      - type: bind
+        source: ./specs/rococo-local.raw.json
+        target: /pdot/rococo-local.raw.json
+        read_only: true
+      - type: bind
+        source: /tmp/charlie
+        target: /pdot/data
+        read_only: false
+    container_name: charlie
+    command: >
+      --port 10003
+      --rpc-port 8846
+      --ws-port 9946
+      --charlie
+      -d /pdot/data
+      --validator
+      --chain /pdot/rococo-local.raw.json
+
+  acala:
+    image: acala:release-acala-2.3.2
+    build:
+      context: .
+      dockerfile: acala.Dockerfile
+    networks:
+      - devnet
+    ports:
+      - "22222:22222"
+      - "8822:8822"
+      - "9922:9922"
+      - "22221:22221"
+      - "8821:8821"
+      - "9921:9921"
+    volumes:
+      - type: bind
+        source: ./specs/rococo-local.raw.json
+        target: /acala/rococo-local.raw.json
+        read_only: true
+      - type: bind
+        source: ./specs/acala.raw.json
+        target: /acala/acala.raw.json
+        read_only: true
+      - type: bind
+        source: /tmp/acala
+        target: /acala/data
+        read_only: false
+    container_name: acala
+    command: >
+      --port 22222
+      --rpc-port 8822
+      --ws-port 9922
+      -d /acala/data
+      --collator
+      --rpc-cors all
+      --unsafe-ws-external
+      --unsafe-rpc-external
+      --execution=native
+      -lruntime=debug
+      --chain /acala/acala.raw.json
+      --
+      --chain /acala/rococo-local.raw.json
+      --discover-local
+      --port 22221
+      --rpc-port 8821
+      --ws-port 9921
+      --execution=wasm
+
+  t3rn:
+    image: circuit-collator:latest
+    build:
+      context: ../..
+      dockerfile: docker/xcm-devnet/t3rn.Dockerfile
+    networks:
+      - devnet
+    ports:
+      - "33333:33333"
+      - "8833:8833"
+      - "9933:9933"
+      - "33332:33332"
+      - "8832:8832"
+      - "9932:9932"
+    volumes:
+      - type: bind
+        source: ./specs/rococo-local.raw.json
+        target: /t3rn/rococo-local.raw.json
+        read_only: true
+      - type: bind
+        source: ./specs/t3rn.raw.json
+        target: /t3rn/t3rn.raw.json
+        read_only: true
+      - type: bind
+        source: /tmp/t3rn
+        target: /t3rn/data
+        read_only: false
+    container_name: t3rn
+    command: >
+      --port 33333
+      --rpc-port 8833
+      --ws-port 9933
+      -d /t3rn/data
+      --collator
+      --rpc-cors all
+      --unsafe-ws-external
+      --unsafe-rpc-external
+      --execution=native
+      -lruntime=debug
+      --chain /t3rn/t3rn.raw.json
+      --
+      --chain /t3rn/rococo-local.raw.json
+      --discover-local
+      --port 33332
+      --rpc-port 8832
+      --ws-port 9932
+      --execution=wasm

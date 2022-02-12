@@ -1,0 +1,52 @@
+{
+  "AccountData": {
+    "free": "Balance",
+    "reserved": "Balance",
+    "frozen": "Balance"
+  },
+  "Currency": "CurrencyIdOf",
+  "CurrencyIdOf": "CurrencyId",
+  "AmountOf": "Balance",
+  "Amount": "AmountOf",
+  "TransferOriginType": {
+    "_enum": {
+      "FromSelf": 0,
+      "FromRelayChain": 1,
+      "FromSiblingParaChain": 2
+    }
+  },
+  "TokenSymbol": {
+    "_enum": {
+      "TRN": 0,
+      "GAT": 1,
+      "AUSD": 3,
+      "KSM": 4,
+      "ETH": 5
+    }
+  },
+  "CurrencyId": {
+    "_enum": {
+      "Native": "TokenSymbol",
+      "VToken": "TokenSymbol",
+      "Token": "TokenSymbol",
+      "Stable": "TokenSymbol",
+      "VSToken": "TokenSymbol",
+      "VSBond": "(TokenSymbol, ParaId, LeasePeriod, LeasePeriod)",
+      "LPToken": "(TokenSymbol, u8, TokenSymbol, u8)"
+    }
+  },
+  "TAssetBalance": "Balance",
+  "PalletBalanceOf": "Balance",
+  "BlockNumberFor": "BlockNumber",
+  "NumberOrHex": {
+    "_enum": {
+      "Number": "u64",
+      "Hex": "U256"
+    }
+  },
+  "AssetId": {
+    "chain_id": "u32",
+    "asset_type": "u8",
+    "asset_index": "u64"
+  }
+}
