@@ -1,0 +1,27 @@
+[package]
+name = "dev-parachain-primitives"
+version = "0.1.0"
+authors = ["Zenlink Developers"]
+edition = "2018"
+
+[dependencies]
+bstringify = "0.1.2"
+codec = { package = "parity-scale-codec", version = "2.2.0", default-features = false, features = ["derive"] }
+serde = { version = "1.0.124", optional = true }
+sp-runtime = { git = 'https://github.com/paritytech/substrate', default-features = false, branch = 'polkadot-v0.9.16' }
+sp-core = { git = 'https://github.com/paritytech/substrate', default-features = false, branch = 'polkadot-v0.9.16' }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
+
+zenlink-protocol = { git = "https://github.com/zenlinkpro/Zenlink-DEX-Module", default-features = false, branch = "polkadot-v0.9.16" }
+
+[features]
+default = ["std"]
+std = [
+	"codec/std",
+	"serde",
+	"sp-core/std",
+	"sp-runtime/std",
+	"sp-std/std",
+
+	'zenlink-protocol/std',
+]

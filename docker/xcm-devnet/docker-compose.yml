@@ -6,7 +6,7 @@ networks:
 
 services:
   alice:
-    image: polkadot:release-v0.9.13
+    image: polkadot:release-v0.9.16
     build:
       context: .
       dockerfile: polkadot.Dockerfile
@@ -36,7 +36,7 @@ services:
       --chain /pdot/rococo-local.raw.json
 
   bob:
-    image: polkadot:release-v0.9.13
+    image: polkadot:release-v0.9.16
     build:
       context: .
       dockerfile: polkadot.Dockerfile
@@ -68,7 +68,7 @@ services:
       --chain /pdot/rococo-local.raw.json
 
   charlie:
-    image: polkadot:release-v0.9.13
+    image: polkadot:release-v0.9.16
     build:
       context: .
       dockerfile: polkadot.Dockerfile

@@ -1,6 +1,5 @@
 FROM rust:buster as blacksmith
 
-ARG CUMULUS_BRANCH
 ARG BUILD_ARGS
 
 WORKDIR /workshop
