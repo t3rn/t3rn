@@ -36,6 +36,6 @@ USER acala
 
 VOLUME /acala/data
 
-EXPOSE 22222 8822 9922
+EXPOSE 22222 8822 9922 22221 8821 9921 
 
 ENTRYPOINT ["/usr/local/bin/acala"]

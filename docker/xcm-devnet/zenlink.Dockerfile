@@ -1,6 +1,6 @@
 FROM rust:buster as blacksmith
 
-ARG POLKADOT_BRANCH
+ARG CUMULUS_BRANCH
 ARG BUILD_ARGS
 
 WORKDIR /workshop
@@ -12,12 +12,7 @@ RUN apt-get update && \
 	apt-get dist-upgrade -y -o Dpkg::Options::="--force-confnew" && \
 	apt-get install -y cmake pkg-config libssl-dev git clang libclang-dev
 
-RUN git clone \
-        --depth 1 \
-        --single-branch \
-        --branch ${POLKADOT_BRANCH:-release-v0.9.16} \
-        https://github.com/paritytech/polkadot.git \
-        .
+COPY ./zenlink .
 
 RUN cargo build --locked --release $BUILD_ARGS
 
@@ -25,18 +20,16 @@ RUN cargo build --locked --release $BUILD_ARGS
 
 FROM phusion/baseimage:focal-1.1.0
 
-COPY --from=blacksmith /workshop/target/release/polkadot /usr/local/bin
+COPY --from=blacksmith /workshop/target/release/parachain-collator /usr/local/bin
 
-RUN useradd -m -u 1000 -U -s /bin/sh -d /pdot pdot && \
-    mkdir /pdot/data && \
+RUN useradd -m -u 1000 -U -s /bin/sh -d /zenlink zenlink && \
+    mkdir /zenlink/data && \
     rm -rf /usr/lib/python* /usr/bin /usr/sbin /usr/share/man
 
-USER pdot
+USER zenlink
 
-VOLUME /pdot/data
+VOLUME /zenlink/data
 
-EXPOSE 10001 8844 9944
-     # 10002 8845 9945
-     # 10003 8846 9946
+EXPOSE 99999 8899 9999 99998 8898 9998
 
-ENTRYPOINT ["/usr/local/bin/polkadot"]
+ENTRYPOINT ["/usr/local/bin/parachain-collator"]

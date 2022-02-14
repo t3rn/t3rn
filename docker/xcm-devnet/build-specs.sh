@@ -1,6 +1,6 @@
 #!/bin/bash -x
 
-docker build -t polkadot:release-v0.9.17 -f polkadot.Dockerfile .
+docker build -t polkadot:release-v0.9.16 -f polkadot.Dockerfile .
 docker build -t acala:release-acala-2.3.2 -f acala.Dockerfile .
 docker build -t circuit-collator:latest -f t3rn.Dockerfile .
 

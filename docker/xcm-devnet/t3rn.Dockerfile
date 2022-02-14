@@ -38,6 +38,6 @@ USER t3rn
 
 VOLUME /t3rn/data
 
-EXPOSE 33333 8833 9933
+EXPOSE 33333 8833 9933 33332 8832 9932
 
 ENTRYPOINT ["/usr/local/bin/circuit-collator"]
