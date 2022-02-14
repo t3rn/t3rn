@@ -56,6 +56,8 @@ services:
         target: /pdot/data
         read_only: false
     container_name: bob
+    depends_on:
+      - alice
     command: >
       --port 10002
       --rpc-port 8845
@@ -86,6 +88,9 @@ services:
         target: /pdot/data
         read_only: false
     container_name: charlie
+    depends_on:
+      - alice
+      - bob
     command: >
       --port 10003
       --rpc-port 8846
@@ -123,6 +128,10 @@ services:
         target: /acala/data
         read_only: false
     container_name: acala
+    depends_on:
+      - alice
+      - bob
+      - charlie
     command: >
       --port 22222
       --rpc-port 8822
@@ -171,6 +180,10 @@ services:
         target: /t3rn/data
         read_only: false
     container_name: t3rn
+    depends_on:
+      - alice
+      - bob
+      - charlie
     command: >
       --port 33333
       --rpc-port 8833

@@ -41,7 +41,7 @@
   "NumberOrHex": {
     "_enum": {
       "Number": "u64",
-      "Hex": "U256"
+      "Hex": "u256"
     }
   },
   "AssetId": {
