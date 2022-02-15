@@ -6,7 +6,7 @@ networks:
 
 services:
   alice:
-    image: polkadot:release-v0.9.16
+    image: polkadot:release-v0.9.13
     build:
       context: .
       dockerfile: polkadot.Dockerfile
@@ -22,7 +22,7 @@ services:
         target: /pdot/rococo-local.raw.json
         read_only: true
       - type: bind
-        source: /tmp/alice
+        source: ./data/alice
         target: /pdot/data
         read_only: false
     container_name: alice
@@ -36,7 +36,7 @@ services:
       --chain /pdot/rococo-local.raw.json
 
   bob:
-    image: polkadot:release-v0.9.16
+    image: polkadot:release-v0.9.13
     build:
       context: .
       dockerfile: polkadot.Dockerfile
@@ -52,7 +52,7 @@ services:
         target: /pdot/rococo-local.raw.json
         read_only: true
       - type: bind
-        source: /tmp/bob
+        source: ./data/bob
         target: /pdot/data
         read_only: false
     container_name: bob
@@ -68,7 +68,7 @@ services:
       --chain /pdot/rococo-local.raw.json
 
   charlie:
-    image: polkadot:release-v0.9.16
+    image: polkadot:release-v0.9.13
     build:
       context: .
       dockerfile: polkadot.Dockerfile
@@ -84,7 +84,7 @@ services:
         target: /pdot/rococo-local.raw.json
         read_only: true
       - type: bind
-        source: /tmp/charlie
+        source: ./data/charlie
         target: /pdot/data
         read_only: false
     container_name: charlie
@@ -101,7 +101,7 @@ services:
       --chain /pdot/rococo-local.raw.json
 
   acala:
-    image: acala:release-acala-2.3.2
+    image: acala:release-acala-2.2.0
     build:
       context: .
       dockerfile: acala.Dockerfile
@@ -124,7 +124,7 @@ services:
         target: /acala/acala.raw.json
         read_only: true
       - type: bind
-        source: /tmp/acala
+        source: ./data/acala
         target: /acala/data
         read_only: false
     container_name: acala
@@ -176,7 +176,7 @@ services:
         target: /t3rn/t3rn.raw.json
         read_only: true
       - type: bind
-        source: /tmp/t3rn
+        source: ./data/t3rn
         target: /t3rn/data
         read_only: false
     container_name: t3rn
@@ -204,8 +204,8 @@ services:
       --ws-port 9932
       --execution=wasm
 
-  parachain:
-    image: parachain:latest
+  pchain:
+    image: parachain-collator:polkadot-v0.9.13
     build:
       context: ./parachain
       dockerfile: ../parachain.Dockerfile
@@ -213,10 +213,10 @@ services:
       - devnet
     ports:
       - "44444:44444"
-      - "8844:8844"
+      - "4488:4488"
       - "4499:4499"
       - "44443:44443"
-      - "8843:8843"
+      - "4487:4487"
       - "4498:4498"
     volumes:
       - type: bind
@@ -224,11 +224,11 @@ services:
         target: /para/rococo-local.raw.json
         read_only: true
       - type: bind
-        source: ./specs/parachain.raw.json
-        target: /para/parachain.raw.json
+        source: ./specs/pchain.raw.json
+        target: /para/pchain.raw.json
         read_only: true
       - type: bind
-        source: /tmp/parachain
+        source: ./data/parachain
         target: /para/data
         read_only: false
     container_name: parachain
@@ -238,7 +238,7 @@ services:
       - charlie
     command: >
       --port 44444
-      --rpc-port 8844
+      --rpc-port 4488
       --ws-port 4499
       -d /para/data
       --collator
@@ -247,11 +247,11 @@ services:
       --unsafe-rpc-external
       --execution=native
       -lruntime=debug
-      --chain /acala/acala.raw.json
+      --chain /para/pchain.raw.json
       --
-      --chain /acala/rococo-local.raw.json
+      --chain /para/rococo-local.raw.json
       --discover-local
       --port 44443
-      --rpc-port 8843
+      --rpc-port 4487
       --ws-port 4498
       --execution=wasm

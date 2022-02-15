@@ -1,15 +1,15 @@
-# XCM devnet
+# ⚡*CM* devnet
 
-## Running
+## Run
 
 ```nofmt
-mkdir /tmp/alice /tmp/bob /tmp/charlie /tmp/acala /tmp/t3rn /tmp/parachain
+mkdir -p ./data/{alice,bob,charlie,acala,t3rn,pchain}
 docker-compose up
 ```
 
-Spins up a rococo devnet consisting of 3 relay chain validators and 1 collator for each parachain with base path bind mounts as created above.
+Spins up a rococo local devnet consisting of 3 relay chain validators and 1 collator for each parachain.
 
-> Parachains must be registered and HRMP channels initialzed as described [in this Zenlink README](https://github.com/zenlinkpro/Zenlink-DEX-Module#register-parachain--establish-hrmp-channel)
+> Parachains must be registered (HRMP channels initialzed) as illustrated [in this Zenlink README](https://github.com/zenlinkpro/Zenlink-DEX-Module#register-parachain--establish-hrmp-channel).
 
 <table>
   <tr>
@@ -20,8 +20,8 @@ Spins up a rococo devnet consisting of 3 relay chain validators and 1 collator f
     <td><b>Parachain Id</b></td>
   </tr>
   <tr>
-    <td>Rococo</td>
-    <td>Alice</td>
+    <td>rococo</td>
+    <td>alice</td>
     <td>10001</td>
     <td>8844</td>
     <td>9944</td>
@@ -31,8 +31,8 @@ Spins up a rococo devnet consisting of 3 relay chain validators and 1 collator f
     <td>-</td>
   </tr>
   <tr>
-    <td>Rococo</td>
-    <td>Bob</td>
+    <td>rococo</td>
+    <td>bob</td>
     <td>10002</td>
     <td>8845</td>
     <td>9945</td>
@@ -42,8 +42,8 @@ Spins up a rococo devnet consisting of 3 relay chain validators and 1 collator f
     <td>-</td>
   </tr>
   <tr>
-    <td>Rococo</td>
-    <td>Charlie</td>
+    <td>rococo</td>
+    <td>charlie</td>
     <td>10003</td>
     <td>8846</td>
     <td>9946</td>
@@ -53,7 +53,7 @@ Spins up a rococo devnet consisting of 3 relay chain validators and 1 collator f
     <td>-</td>
   </tr>
   <tr>
-    <td>Acala</td>
+    <td>acala</td>
     <td>-</td>
     <td>22221</td>
     <td>8821</td>
@@ -75,18 +75,20 @@ Spins up a rococo devnet consisting of 3 relay chain validators and 1 collator f
     <td>3000</td>
   </tr>
   <tr>
-    <td>parachain</td>
+    <td>pchain</td>
     <td>-</td>
     <td>44444</td>
-    <td>8844</td>
+    <td>4488</td>
     <td>4499</td>
     <td>44443</td>
-    <td>8843</td>
+    <td>4487</td>
     <td>4498</td>
     <td>4000</td>
   </tr>
 </table>
 
+*The "pchain" is a plain [Substrate parachain instance](https://github.com/substrate-developer-hub/substrate-parachain-template)*. All code uses `polkadot-v0.9.13` Substrate.
+
 ## Specs
 
-To *regenerate* chain specs and artifacts simply run `./build-specs.sh`
+To *regenerate* chain specs and artifacts simply run `./build-specs.sh`.

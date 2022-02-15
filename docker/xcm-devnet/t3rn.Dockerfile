@@ -12,7 +12,7 @@ RUN apt-get update && \
 	apt-get dist-upgrade -y -o Dpkg::Options::="--force-confnew" && \
 	apt-get install -y cmake pkg-config libssl-dev git clang libclang-dev
 
-# FIXME: git clone rather than copy repo when public
+# FIXME: git clone 4 copy
 COPY . .
 # RUN	git clone \
 # 		--depth 1 \

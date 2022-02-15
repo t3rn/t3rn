@@ -1,5 +1,6 @@
 FROM rust:buster as blacksmith
 
+ARG PCHAIN_BRANCH
 ARG BUILD_ARGS
 
 WORKDIR /workshop
@@ -11,7 +12,12 @@ RUN apt-get update && \
 	apt-get dist-upgrade -y -o Dpkg::Options::="--force-confnew" && \
 	apt-get install -y cmake pkg-config libssl-dev git clang libclang-dev
 
-COPY ./parachain .
+RUN git clone \
+        --depth 1 \
+        --single-branch \
+        --branch ${PCHAIN_BRANCH:-polkadot-v0.9.13} \
+        https://github.com/substrate-developer-hub/substrate-parachain-template.git \
+        .
 
 RUN cargo build --locked --release $BUILD_ARGS
 
@@ -29,6 +35,6 @@ USER para
 
 VOLUME /para/data
 
-EXPOSE 44444 8844 4499 44443 8843 4498
+EXPOSE 44444 4488 4499 44443 4487 4498
 
 ENTRYPOINT ["/usr/local/bin/parachain-collator"]

@@ -15,12 +15,12 @@ RUN apt-get update && \
 RUN git clone \
         --depth 1 \
         --single-branch \
-        --branch ${ACALA_BRANCH:-release-acala-2.3.2} \
+        --branch ${ACALA_BRANCH:-release-acala-2.2.0} \
 		--recurse-submodules \
 		https://github.com/AcalaNetwork/Acala \
         .
 
-RUN cargo build --locked --release $BUILD_ARGS
+RUN cargo build --locked --release --features with-acala-runtime $BUILD_ARGS
 
 ###############################################################################
 

@@ -15,7 +15,7 @@ RUN apt-get update && \
 RUN git clone \
         --depth 1 \
         --single-branch \
-        --branch ${POLKADOT_BRANCH:-release-v0.9.16} \
+        --branch ${POLKADOT_BRANCH:-release-v0.9.13} \
         https://github.com/paritytech/polkadot.git \
         .
 
