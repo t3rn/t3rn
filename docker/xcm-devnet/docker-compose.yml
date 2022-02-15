@@ -207,7 +207,7 @@ services:
   parachain:
     image: parachain:latest
     build:
-      context: ./substrate-parachain-template
+      context: ./parachain
       dockerfile: ../parachain.Dockerfile
     networks:
       - devnet

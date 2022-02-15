@@ -11,7 +11,7 @@ RUN apt-get update && \
 	apt-get dist-upgrade -y -o Dpkg::Options::="--force-confnew" && \
 	apt-get install -y cmake pkg-config libssl-dev git clang libclang-dev
 
-COPY ./substrate-parachain-template .
+COPY ./parachain .
 
 RUN cargo build --locked --release $BUILD_ARGS
 
