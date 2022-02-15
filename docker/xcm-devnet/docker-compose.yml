@@ -100,58 +100,6 @@ services:
       --validator
       --chain /pdot/rococo-local.raw.json
 
-  acala:
-    image: acala:release-acala-2.2.0
-    build:
-      context: .
-      dockerfile: acala.Dockerfile
-    networks:
-      - devnet
-    ports:
-      - "22222:22222"
-      - "8822:8822"
-      - "9922:9922"
-      - "22221:22221"
-      - "8821:8821"
-      - "9921:9921"
-    volumes:
-      - type: bind
-        source: ./specs/rococo-local.raw.json
-        target: /acala/rococo-local.raw.json
-        read_only: true
-      - type: bind
-        source: ./specs/acala.raw.json
-        target: /acala/acala.raw.json
-        read_only: true
-      - type: bind
-        source: ./data/acala
-        target: /acala/data
-        read_only: false
-    container_name: acala
-    depends_on:
-      - alice
-      - bob
-      - charlie
-    command: >
-      --port 22222
-      --rpc-port 8822
-      --ws-port 9922
-      -d /acala/data
-      --collator
-      --rpc-cors all
-      --unsafe-ws-external
-      --unsafe-rpc-external
-      --execution=native
-      -lruntime=debug
-      --chain /acala/acala.raw.json
-      --
-      --chain /acala/rococo-local.raw.json
-      --discover-local
-      --port 22221
-      --rpc-port 8821
-      --ws-port 9921
-      --execution=wasm
-
   t3rn:
     image: circuit-collator:latest
     build:
@@ -207,8 +155,8 @@ services:
   pchain:
     image: parachain-collator:polkadot-v0.9.13
     build:
-      context: ./parachain
-      dockerfile: ../parachain.Dockerfile
+      context: .
+      dockerfile: pchain.Dockerfile
     networks:
       - devnet
     ports:
@@ -228,10 +176,10 @@ services:
         target: /para/pchain.raw.json
         read_only: true
       - type: bind
-        source: ./data/parachain
+        source: ./data/pchain
         target: /para/data
         read_only: false
-    container_name: parachain
+    container_name: pchain
     depends_on:
       - alice
       - bob

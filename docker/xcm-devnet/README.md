@@ -3,7 +3,7 @@
 ## Run
 
 ```nofmt
-mkdir -p ./data/{alice,bob,charlie,acala,t3rn,pchain}
+mkdir -p ./data/{alice,bob,charlie,t3rn,pchain}
 docker-compose up
 ```
 
@@ -51,17 +51,6 @@ Spins up a rococo local devnet consisting of 3 relay chain validators and 1 coll
     <td>-</td>
     <td>-</td>
     <td>-</td>
-  </tr>
-  <tr>
-    <td>acala</td>
-    <td>-</td>
-    <td>22221</td>
-    <td>8821</td>
-    <td>9921</td>
-    <td>22222</td>
-    <td>8822</td>
-    <td>9922</td>
-    <td>2000</td>
   </tr>
   <tr>
     <td>t3rn</td>
