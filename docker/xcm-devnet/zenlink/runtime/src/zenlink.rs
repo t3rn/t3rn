@@ -1,13 +1,17 @@
 // Copyright 2020-2021 Zenlink
 // Licensed under GPL-3.0.
 
-use sp_std::{convert::TryInto, marker::PhantomData};
+use sp_std::{
+	convert::TryInto, 
+	marker::PhantomData, 
+	// vec::Vec
+};
 
 use frame_support::dispatch::{DispatchError, DispatchResult};
 use orml_traits::MultiCurrency;
 
 use super::{
-	parameter_types, vec, AccountId, AccountId32, AccountId32Aliases, Balances, Currencies, Event, Get, MultiLocation,
+	parameter_types, vec, AccountId, AccountId32, AccountId32Aliases, Balances, Event, Get, MultiLocation, Currencies,
 	NetworkId, PalletId, Parachain, ParachainInfo, Runtime, ShouldExecute, Sibling, SiblingParachainConvertsVia, Vec,
 	Weight, Xcm, XcmConfig, XcmExecutor, ZenlinkProtocol, X1,
 };
@@ -50,7 +54,7 @@ where
 {
 	fn should_execute<Call>(
 		origin: &MultiLocation,
-		_top_level: bool,
+		// _top_level: bool,
 		_message: &Xcm<Call>,
 		_shallow_weight: Weight,
 		_weight_credit: &mut Weight,
@@ -153,4 +157,6 @@ impl zenlink_protocol::Config for Runtime {
 	type TargetChains = ZenlinkRegistedParaChains;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type Conversion = ZenlinkLocationToAccountId;
+
+	type WeightInfo = ();
 }

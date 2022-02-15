@@ -30,18 +30,20 @@ use dev_parachain_primitives::currency::CurrencyId::Native;
 use dev_parachain_primitives::*;
 
 use sp_api::impl_runtime_apis;
-use sp_core::OpaqueMetadata;
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, Zero, IdentifyAccount, Verify},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, MultiSignature, // Perbill
 };
-// use sp_std::{
-// 	prelude::{Box, Vec},
-// 	vec,
-// };
-use sp::std::prelude::*;
+use sp_std::{
+	prelude::{Box, Vec},
+	vec,
+    prelude::*
+};
+use smallvec::smallvec;
+// use sp_std::prelude::*;
 
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -216,13 +218,14 @@ impl_opaque_keys! {
 /// This runtime version.
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("dev-zenlink"),
-	impl_name: create_runtime_str!("dev-zenlink"),
+	spec_name: create_runtime_str!("dev-parachain-runtime"),
+	impl_name: create_runtime_str!("dev-parachain-runtime"),
 	authoring_version: 1,
-	spec_version: 144,
-	impl_version: 1,
+	spec_version: 1,
+	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
-	transaction_version: 1,
+	transaction_version: 0,
+	state_version: 0,
 };
 
 /// The version information used to identify this runtime when compiled natively.
@@ -270,7 +273,7 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 const MAXIMUM_BLOCK_WEIGHT: Weight = 2 * WEIGHT_PER_SECOND;
 
 parameter_types! {
-	pub const BlockHashCount: BlockNumber = 250;
+	// pub const BlockHashCount: BlockNumber = 250;
 	pub const Version: RuntimeVersion = VERSION;
 	pub RuntimeBlockLength: BlockLength =
 		BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
@@ -332,6 +335,7 @@ impl frame_system::Config for Runtime {
 	type BlockLength = RuntimeBlockLength;
 	type SS58Prefix = SS58Prefix;
 	type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
@@ -380,7 +384,7 @@ impl pallet_balances::Config for Runtime {
 
 parameter_types! {
 	/// Relay Chain `TransactionByteFee` / 10
-	pub const TransactionByteFee: Balance = 10 * MICROUNIT;
+	// pub const TransactionByteFee: Balance = 10 * MICROUNIT;
 	pub const OperationalFeeMultiplier: u8 = 5;
 }
 
@@ -420,11 +424,11 @@ impl pallet_sudo::Config for Runtime {
 	type Event = Event;
 }
 
-impl pallet_utility::Config for Runtime {
-	type Event = Event;
-	type Call = Call;
-	type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
-}
+// impl pallet_utility::Config for Runtime {
+// 	type Event = Event;
+// 	type Call = Call;
+// 	type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
+// }
 
 impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
@@ -515,7 +519,7 @@ pub type Barrier = (
 );
 
 pub type Transactors = (
-	TransactorAdaptor<MultiAssets, LocationToAccountId, AccountId>,
+	TransactorAdaptor<zenlink::MultiAssets, LocationToAccountId, AccountId>,
 	LocalAssetTransactor,
 );
 
@@ -615,11 +619,11 @@ impl pallet_session::Config for Runtime {
 	type WeightInfo = ();
 }
 
-impl pallet_aura::Config for Runtime {
-	type AuthorityId = AuraId;
-	type DisabledValidators = ();
-	type MaxAuthorities = MaxAuthorities;
-}
+// impl pallet_aura::Config for Runtime {
+// 	type AuthorityId = AuraId;
+// 	type DisabledValidators = ();
+// 	type MaxAuthorities = MaxAuthorities;
+// }
 
 parameter_types! {
 	pub const PotId: PalletId = PalletId(*b"PotStake");
@@ -752,6 +756,8 @@ construct_runtime!(
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
 
 		// Zenlink
+		Tokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>} = 97,
+		Currencies: orml_currencies::{Pallet, Call, Event<T>} = 98,
 		ZenlinkProtocol: zenlink_protocol::{Pallet, Call, Storage, Config<T>, Event<T>} = 99,
 	}
 );
@@ -893,7 +899,7 @@ impl_runtime_apis! {
 
 	impl zenlink_protocol_runtime_api::ZenlinkProtocolApi<Block, AccountId> for Runtime {
 		fn get_balance(
-			asset_id: AssetId,
+			asset_id: zenlink_protocol::AssetId,
 			owner: AccountId
 		) -> AssetBalance {
 			<Runtime as zenlink_protocol::Config>::MultiAssetsHandler::balance_of(asset_id, &owner)
