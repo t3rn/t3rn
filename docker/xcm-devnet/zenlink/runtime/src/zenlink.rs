@@ -55,7 +55,7 @@ where
 	fn should_execute<Call>(
 		origin: &MultiLocation,
 		// _top_level: bool,
-		_message: &Xcm<Call>,
+		_message: &mut Xcm<Call>,
 		_shallow_weight: Weight,
 		_weight_credit: &mut Weight,
 	) -> Result<(), ()> {

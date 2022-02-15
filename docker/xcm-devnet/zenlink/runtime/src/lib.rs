@@ -906,35 +906,35 @@ impl_runtime_apis! {
 		}
 
 		fn get_sovereigns_info(
-			asset_id: AssetId
+			asset_id: zenlink_protocol::AssetId
 		) -> Vec<(u32, AccountId, AssetBalance)> {
 			ZenlinkProtocol::get_sovereigns_info(&asset_id)
 		}
 
 		fn get_pair_by_asset_id(
-			asset_0: AssetId,
-			asset_1: AssetId
+			asset_0: zenlink_protocol::AssetId,
+			asset_1: zenlink_protocol::AssetId
 		) -> Option<PairInfo<AccountId, AssetBalance>> {
 			ZenlinkProtocol::get_pair_by_asset_id(asset_0, asset_1)
 		}
 
 		fn get_amount_in_price(
 			supply: AssetBalance,
-			path: Vec<AssetId>
+			path: Vec<zenlink_protocol::AssetId>
 		) -> AssetBalance {
 			ZenlinkProtocol::desired_in_amount(supply, path)
 		}
 
 		fn get_amount_out_price(
 			supply: AssetBalance,
-			path: Vec<AssetId>
+			path: Vec<zenlink_protocol::AssetId>
 		) -> AssetBalance {
 			ZenlinkProtocol::supply_out_amount(supply, path)
 		}
 
 		fn get_estimate_lptoken(
-			asset_0: AssetId,
-			asset_1: AssetId,
+			asset_0: zenlink_protocol::AssetId,
+			asset_1: zenlink_protocol::AssetId,
 			amount_0_desired: AssetBalance,
 			amount_1_desired: AssetBalance,
 			amount_0_min: AssetBalance,
