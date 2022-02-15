@@ -3,7 +3,7 @@
 ## Running
 
 ```nofmt
-mkdir /tmp/alice /tmp/bob /tmp/charlie /tmp/acala /tmp/t3rn
+mkdir /tmp/alice /tmp/bob /tmp/charlie /tmp/acala /tmp/t3rn /tmp/parachain
 docker-compose up
 ```
 
@@ -14,7 +14,7 @@ Spins up a rococo devnet consisting of 3 relay chain validators and 1 collator f
 <table>
   <tr>
     <td><b>Network</b></td>
-    <td><b>Account</b></td>
+    <td><b>Authority</b></td>
     <td colspan="3"><b>Relaychain Ports</b></td>
     <td colspan="3"><b>Parachain Ports</b></td>
     <td><b>Parachain Id</b></td>
@@ -73,6 +73,17 @@ Spins up a rococo devnet consisting of 3 relay chain validators and 1 collator f
     <td>8833</td>
     <td>9933</td>
     <td>3000</td>
+  </tr>
+  <tr>
+    <td>parachain</td>
+    <td>-</td>
+    <td>44444</td>
+    <td>8844</td>
+    <td>4499</td>
+    <td>44443</td>
+    <td>8843</td>
+    <td>4498</td>
+    <td>4000</td>
   </tr>
 </table>
 

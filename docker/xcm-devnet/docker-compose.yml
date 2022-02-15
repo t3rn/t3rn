@@ -203,3 +203,55 @@ services:
       --rpc-port 8832
       --ws-port 9932
       --execution=wasm
+
+  parachain:
+    image: parachain:latest
+    build:
+      context: ./substrate-parachain-template
+      dockerfile: ../parachain.Dockerfile
+    networks:
+      - devnet
+    ports:
+      - "44444:44444"
+      - "8844:8844"
+      - "4499:4499"
+      - "44443:44443"
+      - "8843:8843"
+      - "4498:4498"
+    volumes:
+      - type: bind
+        source: ./specs/rococo-local.raw.json
+        target: /para/rococo-local.raw.json
+        read_only: true
+      - type: bind
+        source: ./specs/parachain.raw.json
+        target: /para/parachain.raw.json
+        read_only: true
+      - type: bind
+        source: /tmp/parachain
+        target: /para/data
+        read_only: false
+    container_name: parachain
+    depends_on:
+      - alice
+      - bob
+      - charlie
+    command: >
+      --port 44444
+      --rpc-port 8844
+      --ws-port 4499
+      -d /para/data
+      --collator
+      --rpc-cors all
+      --unsafe-ws-external
+      --unsafe-rpc-external
+      --execution=native
+      -lruntime=debug
+      --chain /acala/acala.raw.json
+      --
+      --chain /acala/rococo-local.raw.json
+      --discover-local
+      --port 44443
+      --rpc-port 8843
+      --ws-port 4498
+      --execution=wasm
