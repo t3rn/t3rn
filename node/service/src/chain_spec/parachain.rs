@@ -1,5 +1,6 @@
 use circuit_parachain_runtime::{AuraId, Balance, XDNSConfig, EXISTENTIAL_DEPOSIT, UNIT};
 use cumulus_primitives_core::ParaId;
+use frame_benchmarking::frame_support::metadata::StorageEntryModifier::Default;
 use hex_literal::hex;
 
 use sc_service::ChainType;
@@ -207,6 +208,7 @@ fn testnet_genesis(
         multi_finality_verifier_generic_like: Default::default(),
         multi_finality_verifier_substrate_like: Default::default(),
         orml_tokens: Default::default(),
+        evm: Default::default(),
     }
 }
 
@@ -341,6 +343,7 @@ fn genesis(
         multi_finality_verifier_generic_like: Default::default(),
         multi_finality_verifier_substrate_like: Default::default(),
         orml_tokens: Default::default(),
+        evm: Default::default(),
     }
 }
 
