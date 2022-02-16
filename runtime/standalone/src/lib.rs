@@ -24,7 +24,7 @@ use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
 
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H256};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
 use sp_runtime::traits::{
     AccountIdLookup, BlakeTwo256, Block as BlockT, Keccak256, NumberFor, OpaqueKeys,
 };
@@ -40,6 +40,11 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use ethereum_light_client::EthereumDifficultyConfig;
+
+// use pallet_evm::{
+//          EVMCurrencyAdapter, EnsureAddressNever, EnsureAddressRoot,
+//         FeeCalculator, GasWeightMapping, OnChargeEVMTransaction, Runner,
+// };
 
 // use volatile_vm::DispatchRuntimeCall;
 
@@ -217,13 +222,13 @@ impl pallet_aura::Config for Runtime {
 impl pallet_grandpa::Config for Runtime {
     type Event = Event;
     type Call = Call;
-    type KeyOwnerProofSystem = ();
     type KeyOwnerProof =
         <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
     type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
         KeyTypeId,
         GrandpaId,
     )>>::IdentificationTuple;
+    type KeyOwnerProofSystem = ();
     type HandleEquivocation = ();
     // TODO: update me (https://github.com/paritytech/parity-bridges-common/issues/78)
     type WeightInfo = ();
@@ -401,6 +406,51 @@ impl t3rn_primitives::EscrowTrait for Runtime {
 //     type OnChargeTransaction = ();
 //     type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping;
 // }
+
+parameter_types! {
+    pub const ContractDeposit: u64 = 16;
+
+	// The lazy deletion runs inside on_initialize.
+	pub const DeletionQueueDepth: u32 = 1024;
+	pub const DeletionWeightLimit: Weight = 500_000_000_000;
+	pub Schedule: pallet_contracts::Schedule<Runtime> = {
+		let mut schedule = pallet_contracts::Schedule::<Runtime>::default();
+		// We decided to **temporarily* increase the default allowed contract size here
+		// (the default is `128 * 1024`).
+		//
+		// Our reasoning is that a number of people ran into `CodeTooLarge` when trying
+		// to deploy their contracts. We are currently introducing a number of optimizations
+		// into ink! which should bring the contract sizes lower. In the meantime we don't
+		// want to pose additional friction on developers.
+		schedule.limits.code_len = 256 * 1024;
+		schedule
+	};
+}
+
+pub const CONTRACTS_DEBUG_OUTPUT: bool = true;
+
+impl pallet_contracts::Config for Runtime {
+    type Time = Timestamp;
+    type Randomness = Randomness;
+    type Currency = Balances;
+    type Event = Event;
+    type Call = Call;
+    /// The safest default is to allow no calls at all.
+    ///
+    /// Runtimes should whitelist dispatchables that are allowed to be called from contracts
+    /// and make sure they are stable. Dispatchables exposed to contracts are not allowed to
+    /// change because that would break already deployed contracts. The `Call` structure itself
+    /// is not allowed to change the indices of existing pallets, too.
+    type CallFilter = frame_support::traits::Nothing;
+    type WeightPrice = pallet_transaction_payment::Pallet<Self>;
+    type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
+    type ChainExtension = ();
+    type Schedule = Schedule;
+    type ContractDeposit = ContractDeposit;
+    type CallStack = [pallet_contracts::Frame<Self>; 31];
+    type DeletionQueueDepth = DeletionQueueDepth;
+    type DeletionWeightLimit = DeletionWeightLimit;
+}
 
 parameter_types! {
     pub const MaxMessagesToPruneAtOnce: bp_messages::MessageNonce = 8;
@@ -697,7 +747,7 @@ construct_runtime!(
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
         Randomness: pallet_randomness_collective_flip::{Pallet, Storage},
-        // Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
+        Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
         // EVM: pallet_evm::{Pallet, Config, Storage, Event<T>},
         XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>},
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>},
@@ -921,6 +971,39 @@ impl_runtime_apis! {
             pallet_mmr::verify_leaf_proof::<MmrHashing, _>(root, node, proof)
         }
     }
+
+	impl pallet_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
+		for Runtime
+	{
+		fn call(
+			origin: AccountId,
+			dest: AccountId,
+			value: Balance,
+			gas_limit: u64,
+			input_data: Vec<u8>,
+		) -> pallet_contracts_primitives::ContractExecResult {
+			Contracts::bare_call(origin, dest, value, gas_limit, input_data, CONTRACTS_DEBUG_OUTPUT)
+		}
+
+		fn instantiate(
+			origin: AccountId,
+			endowment: Balance,
+			gas_limit: u64,
+			code: pallet_contracts_primitives::Code<Hash>,
+			data: Vec<u8>,
+			salt: Vec<u8>,
+		) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId>
+		{
+			Contracts::bare_instantiate(origin, endowment, gas_limit, code, data, salt, CONTRACTS_DEBUG_OUTPUT)
+		}
+
+		fn get_storage(
+			address: AccountId,
+			key: [u8; 32],
+		) -> pallet_contracts_primitives::GetStorageResult {
+			Contracts::get_storage(address, key)
+		}
+	}
 
     // impl pallet_xdns_rpc_runtime_api::XdnsRuntimeApi<Block, AccountId> for Runtime
     // {

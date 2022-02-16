@@ -58,6 +58,11 @@ pallet-scheduler = { git = "https://github.com/paritytech/substrate", default-fe
 pallet-elections-phragmen = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13" }
 pallet-utility = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13"}
 
+# contracts
+pallet-contracts = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13"}
+pallet-contracts-primitives = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
+pallet-contracts-rpc-runtime-api = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
+
 ## snow bridge
 snowbridge-core = { git = "https://github.com/t3rn/snowbridge", branch = "polkadot-v0.9.13", default-features = false }
 ethereum-light-client = { git = "https://github.com/t3rn/snowbridge", package = "snowbridge-ethereum-light-client", branch = "polkadot-v0.9.13", default-features = false }
@@ -127,6 +132,9 @@ std = [
 	"pallet-contracts-registry/std",
 	"pallet-circuit/std",
 	"pallet-circuit-portal/std",
+	"pallet-contracts/std",
+	"pallet-contracts-primitives/std",
+	"pallet-contracts-rpc-runtime-api/default",
 	"pallet-randomness-collective-flip/std",
 	"pallet-session/std",
 	"pallet-sudo/std",
