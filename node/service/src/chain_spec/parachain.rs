@@ -1,6 +1,5 @@
 use circuit_parachain_runtime::{AuraId, Balance, XDNSConfig, EXISTENTIAL_DEPOSIT, UNIT};
 use cumulus_primitives_core::ParaId;
-use frame_benchmarking::frame_support::metadata::StorageEntryModifier::Default;
 use hex_literal::hex;
 
 use sc_service::ChainType;
