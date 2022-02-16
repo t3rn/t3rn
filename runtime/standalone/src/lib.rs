@@ -44,20 +44,19 @@ use sp_version::RuntimeVersion;
 use ethereum_light_client::EthereumDifficultyConfig;
 
 use pallet_evm::{
-         EVMCurrencyAdapter, EnsureAddressNever, EnsureAddressRoot,
-        FeeCalculator, GasWeightMapping, OnChargeEVMTransaction, Runner, IdentityAddressMapping,
+    EVMCurrencyAdapter, EnsureAddressNever, EnsureAddressRoot, FeeCalculator, GasWeightMapping,
+    IdentityAddressMapping, OnChargeEVMTransaction, Runner,
 };
 
 // use volatile_vm::DispatchRuntimeCall;
 
 // A few exports that help ease life for downstream crates.
-use frame_support::traits::{Everything, Nothing, FindAuthor};
+use frame_support::traits::{Everything, FindAuthor, Nothing};
 pub use frame_support::{
-    ConsensusEngineId,
     construct_runtime, parameter_types,
     traits::{Currency, ExistenceRequirement, Imbalance, KeyOwnerProofSystem},
     weights::{constants::WEIGHT_PER_SECOND, DispatchClass, IdentityFee, RuntimeDbWeight, Weight},
-    PalletId, StorageValue,
+    ConsensusEngineId, PalletId, StorageValue,
 };
 
 pub use frame_system::Call as SystemCall;
@@ -382,8 +381,8 @@ impl pallet_evm::FeeCalculator for FixedGasPrice {
 pub struct FindAuthorTruncated;
 impl FindAuthor<H160> for FindAuthorTruncated {
     fn find_author<'a, I>(_digests: I) -> Option<H160>
-        where
-            I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
+    where
+        I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
     {
         Some(H160::from_str("1234500000000000000000000000000000000000").unwrap())
     }
@@ -431,21 +430,21 @@ impl pallet_evm::Config for Runtime {
 parameter_types! {
     pub const ContractDeposit: u64 = 16;
 
-	// The lazy deletion runs inside on_initialize.
-	pub const DeletionQueueDepth: u32 = 1024;
-	pub const DeletionWeightLimit: Weight = 500_000_000_000;
-	pub Schedule: pallet_contracts::Schedule<Runtime> = {
-		let mut schedule = pallet_contracts::Schedule::<Runtime>::default();
-		// We decided to **temporarily* increase the default allowed contract size here
-		// (the default is `128 * 1024`).
-		//
-		// Our reasoning is that a number of people ran into `CodeTooLarge` when trying
-		// to deploy their contracts. We are currently introducing a number of optimizations
-		// into ink! which should bring the contract sizes lower. In the meantime we don't
-		// want to pose additional friction on developers.
-		schedule.limits.code_len = 256 * 1024;
-		schedule
-	};
+    // The lazy deletion runs inside on_initialize.
+    pub const DeletionQueueDepth: u32 = 1024;
+    pub const DeletionWeightLimit: Weight = 500_000_000_000;
+    pub Schedule: pallet_contracts::Schedule<Runtime> = {
+        let mut schedule = pallet_contracts::Schedule::<Runtime>::default();
+        // We decided to **temporarily* increase the default allowed contract size here
+        // (the default is `128 * 1024`).
+        //
+        // Our reasoning is that a number of people ran into `CodeTooLarge` when trying
+        // to deploy their contracts. We are currently introducing a number of optimizations
+        // into ink! which should bring the contract sizes lower. In the meantime we don't
+        // want to pose additional friction on developers.
+        schedule.limits.code_len = 256 * 1024;
+        schedule
+    };
 }
 
 pub const CONTRACTS_DEBUG_OUTPUT: bool = true;
@@ -993,38 +992,38 @@ impl_runtime_apis! {
         }
     }
 
-	impl pallet_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
-		for Runtime
-	{
-		fn call(
-			origin: AccountId,
-			dest: AccountId,
-			value: Balance,
-			gas_limit: u64,
-			input_data: Vec<u8>,
-		) -> pallet_contracts_primitives::ContractExecResult {
-			Contracts::bare_call(origin, dest, value, gas_limit, input_data, CONTRACTS_DEBUG_OUTPUT)
-		}
+    impl pallet_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
+        for Runtime
+    {
+        fn call(
+            origin: AccountId,
+            dest: AccountId,
+            value: Balance,
+            gas_limit: u64,
+            input_data: Vec<u8>,
+        ) -> pallet_contracts_primitives::ContractExecResult {
+            Contracts::bare_call(origin, dest, value, gas_limit, input_data, CONTRACTS_DEBUG_OUTPUT)
+        }
 
-		fn instantiate(
-			origin: AccountId,
-			endowment: Balance,
-			gas_limit: u64,
-			code: pallet_contracts_primitives::Code<Hash>,
-			data: Vec<u8>,
-			salt: Vec<u8>,
-		) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId>
-		{
-			Contracts::bare_instantiate(origin, endowment, gas_limit, code, data, salt, CONTRACTS_DEBUG_OUTPUT)
-		}
+        fn instantiate(
+            origin: AccountId,
+            endowment: Balance,
+            gas_limit: u64,
+            code: pallet_contracts_primitives::Code<Hash>,
+            data: Vec<u8>,
+            salt: Vec<u8>,
+        ) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId>
+        {
+            Contracts::bare_instantiate(origin, endowment, gas_limit, code, data, salt, CONTRACTS_DEBUG_OUTPUT)
+        }
 
-		fn get_storage(
-			address: AccountId,
-			key: [u8; 32],
-		) -> pallet_contracts_primitives::GetStorageResult {
-			Contracts::get_storage(address, key)
-		}
-	}
+        fn get_storage(
+            address: AccountId,
+            key: [u8; 32],
+        ) -> pallet_contracts_primitives::GetStorageResult {
+            Contracts::get_storage(address, key)
+        }
+    }
 
     // impl pallet_xdns_rpc_runtime_api::XdnsRuntimeApi<Block, AccountId> for Runtime
     // {
