@@ -3,6 +3,7 @@ version: "3.9"
 networks:
   devnet:
     name: devnet
+    driver: bridge
 
 services:
   alice:
@@ -33,6 +34,9 @@ services:
       --alice
       -d /pdot/data
       --validator
+      --rpc-cors all
+      --unsafe-ws-external
+      --unsafe-rpc-external
       --chain /pdot/rococo-local.raw.json
 
   bob:
@@ -65,6 +69,9 @@ services:
       --bob
       -d /pdot/data
       --validator
+      --rpc-cors all
+      --unsafe-ws-external
+      --unsafe-rpc-external
       --chain /pdot/rococo-local.raw.json
 
   charlie:
@@ -98,6 +105,9 @@ services:
       --charlie
       -d /pdot/data
       --validator
+      --rpc-cors all
+      --unsafe-ws-external
+      --unsafe-rpc-external
       --chain /pdot/rococo-local.raw.json
 
   t3rn:
