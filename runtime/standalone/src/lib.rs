@@ -35,22 +35,25 @@ use sp_runtime::{
     ApplyExtrinsicResult, DigestItem,
 };
 use sp_std::prelude::*;
+use sp_std::str::FromStr;
+
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use ethereum_light_client::EthereumDifficultyConfig;
 
-// use pallet_evm::{
-//          EVMCurrencyAdapter, EnsureAddressNever, EnsureAddressRoot,
-//         FeeCalculator, GasWeightMapping, OnChargeEVMTransaction, Runner,
-// };
+use pallet_evm::{
+         EVMCurrencyAdapter, EnsureAddressNever, EnsureAddressRoot,
+        FeeCalculator, GasWeightMapping, OnChargeEVMTransaction, Runner, IdentityAddressMapping,
+};
 
 // use volatile_vm::DispatchRuntimeCall;
 
 // A few exports that help ease life for downstream crates.
-use frame_support::traits::{Everything, Nothing};
+use frame_support::traits::{Everything, Nothing, FindAuthor};
 pub use frame_support::{
+    ConsensusEngineId,
     construct_runtime, parameter_types,
     traits::{Currency, ExistenceRequirement, Imbalance, KeyOwnerProofSystem},
     weights::{constants::WEIGHT_PER_SECOND, DispatchClass, IdentityFee, RuntimeDbWeight, Weight},
@@ -358,54 +361,72 @@ pub type GatewayGrandpaInstance = ();
 //     type WeightInfo = ();
 // }
 
-// EVM
-
-// parameter_types! {
-//     pub const ChainId: u64 = 33;
-//     pub const BlockGasLimit: U256 = U256::MAX;
-// }
-
-// pub struct FixedGasPrice;
-// impl pallet_evm::FeeCalculator for FixedGasPrice {
-//     fn min_gas_price() -> U256 {
-//         1.into()
-//     }
-// }
-// pub struct HashedAddressMapping;
-
-// impl pallet_evm::AddressMapping<AccountId> for HashedAddressMapping {
-//     fn into_account_id(address: H160) -> AccountId {
-//         let mut data = [0u8; 32];
-//         data[0..20].copy_from_slice(&address[..]);
-//         AccountId::from(Into::<[u8; 32]>::into(data))
-//     }
-// }
-
 impl t3rn_primitives::EscrowTrait for Runtime {
     type Currency = Balances;
     type Time = Timestamp;
 }
 
-// impl pallet_evm::Config for Runtime {
-//     type FeeCalculator = FixedGasPrice;
-//     type GasWeightMapping = ();
-//     type CallOrigin = pallet_evm::EnsureAddressTruncated;
-//     type WithdrawOrigin = pallet_evm::EnsureAddressTruncated;
-//     type AddressMapping = HashedAddressMapping;
-//     type Currency = Balances;
-//     type Event = Event;
-//     type Runner = pallet_evm::runner::stack::Runner<Self>;
-//     type Precompiles = (
-//         pallet_evm_precompile_simple::ECRecover,
-//         pallet_evm_precompile_simple::Sha256,
-//         pallet_evm_precompile_simple::Ripemd160,
-//         pallet_evm_precompile_simple::Identity,
-//     );
-//     type ChainId = ChainId;
-//     type BlockGasLimit = BlockGasLimit;
-//     type OnChargeTransaction = ();
-//     type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping;
-// }
+// EVM
+parameter_types! {
+    pub const ChainId: u64 = 33;
+    pub const BlockGasLimit: U256 = U256::MAX;
+}
+
+pub struct FixedGasPrice;
+impl pallet_evm::FeeCalculator for FixedGasPrice {
+    fn min_gas_price() -> U256 {
+        1.into()
+    }
+}
+
+pub struct FindAuthorTruncated;
+impl FindAuthor<H160> for FindAuthorTruncated {
+    fn find_author<'a, I>(_digests: I) -> Option<H160>
+        where
+            I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
+    {
+        Some(H160::from_str("1234500000000000000000000000000000000000").unwrap())
+    }
+}
+
+pub struct IntoAddressMapping;
+
+impl<T: From<H160>> pallet_evm::AddressMapping<T> for IntoAddressMapping {
+    fn into_account_id(address: H160) -> T {
+        address.into()
+    }
+}
+
+pub struct HashedAddressMapping;
+
+impl pallet_evm::AddressMapping<AccountId> for HashedAddressMapping {
+    fn into_account_id(address: H160) -> AccountId {
+        let mut data = [0u8; 32];
+        data[0..20].copy_from_slice(&address[..]);
+        AccountId::from(Into::<[u8; 32]>::into(data))
+    }
+}
+
+impl pallet_evm::Config for Runtime {
+    type FeeCalculator = FixedGasPrice;
+    type GasWeightMapping = ();
+
+    type BlockHashMapping = pallet_evm::SubstrateBlockHashMapping<Self>;
+    type CallOrigin = EnsureAddressRoot<Self::AccountId>;
+
+    type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
+    type AddressMapping = HashedAddressMapping;
+    type Currency = Balances;
+
+    type Event = Event;
+    type PrecompilesType = ();
+    type PrecompilesValue = ();
+    type ChainId = ChainId;
+    type BlockGasLimit = BlockGasLimit;
+    type Runner = pallet_evm::runner::stack::Runner<Self>;
+    type OnChargeTransaction = ();
+    type FindAuthor = FindAuthorTruncated;
+}
 
 parameter_types! {
     pub const ContractDeposit: u64 = 16;
@@ -748,7 +769,7 @@ construct_runtime!(
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
         Randomness: pallet_randomness_collective_flip::{Pallet, Storage},
         Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
-        // EVM: pallet_evm::{Pallet, Config, Storage, Event<T>},
+        EVM: pallet_evm::{Pallet, Config, Storage, Event<T>},
         XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>},
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>},
         // VolatileVM: volatile_vm::{Pallet, Call, Event<T>, Storage},
