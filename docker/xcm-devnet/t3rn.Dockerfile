@@ -1,7 +1,6 @@
 FROM rust:buster as blacksmith
 
-ARG T3RN_BRANCH
-ARG BUILD_ARGS
+ARG BRANCH=development
 
 WORKDIR /workshop
 
@@ -12,17 +11,17 @@ RUN apt-get update && \
 	apt-get dist-upgrade -y -o Dpkg::Options::="--force-confnew" && \
 	apt-get install -y cmake pkg-config libssl-dev git clang libclang-dev
 
-# FIXME: git clone 4 copy
+# FIXME
 COPY . .
 # RUN	git clone \
 # 		--depth 1 \
 # 		--single-branch \
-# 		--branch ${T3RN_BRANCH:-development} \
+# 		--branch $BRANCH \
 # 		--recurse-submodules \
 # 		https://github.com/t3rn/x-t3rn.git \
 # 		.
 
-RUN cargo build --locked --release --features with-parachain-runtime $BUILD_ARGS
+RUN cargo build --locked --release --features with-parachain-runtime
 
 ###############################################################################
 

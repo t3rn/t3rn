@@ -1,7 +1,6 @@
 FROM rust:buster as blacksmith
 
-ARG PCHAIN_BRANCH
-ARG BUILD_ARGS
+ARG BRANCH=polkadot-v0.9.13
 
 WORKDIR /workshop
 
@@ -15,11 +14,11 @@ RUN apt-get update && \
 RUN git clone \
         --depth 1 \
         --single-branch \
-        --branch ${PCHAIN_BRANCH:-polkadot-v0.9.13} \
+        --branch $BRANCH \
         https://github.com/substrate-developer-hub/substrate-parachain-template.git \
         .
 
-RUN cargo build --locked --release $BUILD_ARGS
+RUN cargo build --locked --release
 
 ###############################################################################
 
