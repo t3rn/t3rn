@@ -58,7 +58,7 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config:
-    pallet_balances::Config + frame_system::Config + t3rn_primitives::EscrowTrait
+        pallet_balances::Config + frame_system::Config + t3rn_primitives::EscrowTrait
     {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -256,7 +256,7 @@ impl<T: Config> Pallet<T> {
                             (Some(author), Some(text)) => {
                                 contract.author == author
                                     && find_subsequence(contract.meta.encode(), text.as_slice())
-                                    .is_some()
+                                        .is_some()
                             }
                             (Some(author), None) => contract.author == author,
                             (None, Some(text)) => {
