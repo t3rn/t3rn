@@ -37,11 +37,7 @@ use sp_runtime::{
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, DigestItem,
 };
-use sp_std::{
-    marker::PhantomData,
-    prelude::*,
-    str::FromStr
-};
+use sp_std::{marker::PhantomData, prelude::*, str::FromStr};
 
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;

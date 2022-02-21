@@ -46,11 +46,7 @@ use sp_runtime::{
     ApplyExtrinsicResult, MultiSignature,
 };
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
-use sp_std::{
-    marker::PhantomData,
-    prelude::*,
-    str::FromStr
-};
+use sp_std::{marker::PhantomData, prelude::*, str::FromStr};
 
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -1033,7 +1029,7 @@ impl pallet_evm::Config for Runtime {
     type Currency = Balances;
 
     type Event = Event;
-    type PrecompilesType = ();  // Left empty for now, we can use frontier precompiles or create our owns
+    type PrecompilesType = (); // Left empty for now, we can use frontier precompiles or create our owns
     type PrecompilesValue = ();
     type ChainId = ChainId;
     type BlockGasLimit = BlockGasLimit;
