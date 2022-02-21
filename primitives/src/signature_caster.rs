@@ -44,8 +44,8 @@ pub fn validate_next_args(
     input: &Vec<u8>,
     args_abi: Vec<(Type, u16)>,
 ) -> Result<Vec<Vec<u8>>, &'static str> {
-    let mut start_pos: usize = 0;
-    let mut end_pos: usize = 0;
+    let mut start_pos: usize = SIDE_EFFECT_HEADER_SIZE;
+    let mut end_pos: usize = SIDE_EFFECT_HEADER_SIZE;
     let mut args_bytes: Vec<Vec<u8>> = vec![];
 
     for (arg_type, arg_size) in args_abi {
@@ -58,6 +58,7 @@ pub fn validate_next_args(
     Ok(args_bytes)
 }
 
+pub const SIDE_EFFECT_HEADER_SIZE: usize = 12;
 pub const TARGET_ID_SIZE: usize = 4;
 pub const SIDE_EFFECT_NAME_SIZE: usize = 4;
 pub const SIDE_EFFECT_TYPE_SIZE: usize = 4;
@@ -69,7 +70,7 @@ pub type RawSideEffectHeader = [[u8; 4]; 3];
 
 pub fn read_raw_side_effect_header(input: Vec<u8>) -> Result<RawSideEffectHeader, &'static str> {
     ensure_str_err(
-        input.len() >= 12,
+        input.len() >= SIDE_EFFECT_HEADER_SIZE,
         "Side Effect Raw Header can't be shorter than 12 bytes",
     )?;
 

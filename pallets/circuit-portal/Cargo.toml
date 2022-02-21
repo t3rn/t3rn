@@ -1,0 +1,111 @@
+[package]
+name = "pallet-circuit-portal"
+version = "1.0.0-alpha.0"
+authors = ["devs @ t3rn"]
+edition = "2018"
+license = "Apache 2.0"
+homepage = "https://t3rn.io"
+repository = 'https://github.com/t3rn/t3rn'
+readme = "README.md"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+hex-literal = { version = '0.3.1'}
+hex = { version = "0.4.3", default-features = false }
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
+serde = { version = "1.0.124", features = ["derive"], optional = true }
+log = { version = "0.4.14", default-features = false }
+hash-db = { version = "0.15.2", default-features = false }
+triehash = { version = "0.8.2", default-features = false }
+plain_hasher = { version = "0.2.2", default-features = false }
+
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
+frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13'  }
+frame-metadata = { version = "14.0.0", features = ["v13", "v14"], default-features = false }
+
+sp-keystore = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13', optional = true }
+sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
+sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13'  }
+sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
+sp-version = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
+sp-application-crypto = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
+scale-info = { version = "1.0", default-features = false, features = ["derive"] }
+
+pallet-multi-finality-verifier = { default-features = false, path = "../multi-finality-verifier" }
+pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
+pallet-sudo = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13', default-features = false }
+
+pallet-xdns = { default-features = false, path = "../xdns" }
+t3rn-primitives = { version = "1.0.0-alpha.0", default-features = false, path = "../../primitives" }
+t3rn-protocol = { path = "../../protocol", version = "1.0.0-alpha.1", default-features = false }
+
+# Smart contracts VMs
+ethabi-decode = { git = "https://github.com/Snowfork/ethabi-decode.git", branch = "master", default-features = false }
+
+# for tests only
+sp-staking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
+sp-finality-grandpa = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.13' }
+snowbridge-core = { git = "https://github.com/t3rn/snowbridge", branch = "polkadot-v0.9.13", default-features = false }
+snowbridge-ethereum = { git = "https://github.com/t3rn/snowbridge", branch = "polkadot-v0.9.13", default-features = false }
+snowbridge-basic-channel = { git = "https://github.com/t3rn/snowbridge", branch = "polkadot-v0.9.13", default-features = false }
+
+# Benchmarking
+frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13', optional = true }
+
+[dev-dependencies]
+serde_json = "1.0.41"
+sc-service = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
+assert_matches = "1"
+hex-literal = "0.3"
+paste = "1"
+pretty_assertions = "0.7"
+wat = "1"
+
+[features]
+default = ["std"]
+std = [
+    "codec/std",
+    "serde",
+    "log/std",
+    "hash-db/std",
+    "triehash/std",
+    "plain_hasher/std",
+    "t3rn-primitives/std",
+    "t3rn-protocol/std",
+    "frame-benchmarking/std",
+    "frame-support/std",
+    "frame-system/std",
+    "frame-metadata/std",
+    "pallet-balances/std",
+    "pallet-sudo/std",
+    "pallet-xdns/std",
+    "pallet-multi-finality-verifier/std",
+    "sp-keystore/std",
+    "sp-core/std",
+    "sp-io/std",
+    "sp-runtime/std",
+    "sp-std/std",
+    "sp-version/std",
+    "sp-application-crypto/std",
+    # native contracts VMs
+    "ethabi-decode/std",
+    # for tests only
+    "sp-staking/std",
+    "sp-finality-grandpa/std",
+    "hex/std",
+    "snowbridge-basic-channel/std",
+    "snowbridge-core/std",
+    "snowbridge-ethereum/std"
+]
+
+runtime-benchmarks = [
+    "frame-benchmarking"
+]
+# need to add this for the app_crypto macro
+full_crypto = []
+
+try-runtime = ["frame-support/try-runtime"]

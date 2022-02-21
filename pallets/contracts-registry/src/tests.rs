@@ -134,7 +134,7 @@ fn fetch_contracts_by_metadata_should_return_all_matching_contracts() {
             test_contract_wrong.generate_id::<Test>(),
             test_contract_wrong.clone(),
         );
-        let actual = ContractsRegistry::fetch_contracts(None, Some(b"contract".to_vec()));
+        let actual = ContractsRegistry::fetch_contracts(None, Some(b"contract".to_vec().into()));
         assert_ok!(
             actual,
             vec![test_contract_name.clone(), test_contract_desc.clone()]
@@ -260,7 +260,7 @@ fn fetch_contracts_by_author_and_metadata_should_return_all_matching_contracts()
             test_contract_author3.generate_id::<Test>(),
             test_contract_author3.clone(),
         );
-        let actual = ContractsRegistry::fetch_contracts(Some(1), Some(b"contract".to_vec()));
+        let actual = ContractsRegistry::fetch_contracts(Some(1), Some(b"contract".to_vec().into()));
         assert_ok!(
             actual,
             vec![test_contract_author1.clone(), test_contract_author2.clone()]
@@ -487,11 +487,7 @@ fn purge_succeeds_for_default_contract() {
                 test_contract.generate_id::<Test>(),
                 test_contract.clone(),
             );
-            assert_ok!(ContractsRegistry::purge(
-                origin,
-                requester,
-                contract_id.clone()
-            ));
+            assert_ok!(ContractsRegistry::purge(origin, requester, contract_id));
             assert_eq!(crate::ContractsRegistry::<Test>::get(contract_id), None);
         });
 }
@@ -525,7 +521,7 @@ fn purge_fails_if_contract_does_not_exist() {
     let contract_id = test_contract.generate_id::<Test>();
 
     ExtBuilder::default()
-        .with_contracts(vec![test_contract.clone()])
+        .with_contracts(vec![test_contract])
         .build()
         .execute_with(|| {
             assert_err!(

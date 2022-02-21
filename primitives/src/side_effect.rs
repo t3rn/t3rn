@@ -1,4 +1,5 @@
 use codec::{Decode, Encode};
+use scale_info::TypeInfo;
 use sp_runtime::traits::Zero;
 use sp_runtime::RuntimeDebug;
 use sp_std::vec::Vec;
@@ -7,7 +8,7 @@ type Bytes = Vec<u8>;
 pub type SideEffectId<T> = <T as frame_system::Config>::Hash;
 pub type TargetId = [u8; 4];
 
-#[derive(Clone, Eq, PartialEq, Encode, Default, Decode, RuntimeDebug)]
+#[derive(Clone, Eq, PartialEq, Encode, Default, Decode, RuntimeDebug, TypeInfo)]
 pub struct SideEffect<AccountId, BlockNumber, BalanceOf> {
     pub target: TargetId,
     pub prize: BalanceOf,
@@ -27,9 +28,13 @@ impl<
     pub fn generate_id<Hasher: sp_core::Hasher>(&self) -> <Hasher as sp_core::Hasher>::Out {
         Hasher::hash(Encode::encode(self).as_ref())
     }
+
+    pub fn id_as_bytes<Hasher: sp_core::Hasher>(id: <Hasher as sp_core::Hasher>::Out) -> Bytes {
+        id.as_ref().to_vec()
+    }
 }
 
-#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
+#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub err: Option<Bytes>,
     pub output: Option<Bytes>,
@@ -40,7 +45,7 @@ pub struct ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub cost: Option<BalanceOf>,
 }
 
-#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug)]
+#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub input: SideEffect<AccountId, BlockNumber, BalanceOf>,
     pub confirmed: Option<ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf>>,

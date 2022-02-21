@@ -1,0 +1,16 @@
+[profile.release]
+panic = 'unwind'
+
+[workspace]
+members = [
+    'node',
+    'node/service',
+    'node/cli',
+    'pallets/*',
+    'primitives',
+    'primitives/src/bridges/finality',
+    'primitives/src/bridges/headers',
+    'primitives/src/bridges/utils',
+    'runtime/*',
+]
+exclude = []

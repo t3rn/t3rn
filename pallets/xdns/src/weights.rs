@@ -47,43 +47,43 @@ pub trait WeightInfo {
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
     fn add_new_xdns_record() -> Weight {
-        (72_795_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(2 as Weight))
-            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+        72_795_000_u64
+            .saturating_add(T::DbWeight::get().reads(2_u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
     }
     fn update_ttl() -> Weight {
-        (73_255_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(1 as Weight))
-            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+        73_255_000_u64
+            .saturating_add(T::DbWeight::get().reads(1_u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
     }
     fn purge_xdns_record() -> Weight {
-        (58_912_000 as Weight)
-            .saturating_add(T::DbWeight::get().reads(1 as Weight))
-            .saturating_add(T::DbWeight::get().writes(1 as Weight))
+        58_912_000_u64
+            .saturating_add(T::DbWeight::get().reads(1_u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
     }
     fn best_available() -> Weight {
-        (25_265_000 as Weight).saturating_add(T::DbWeight::get().reads(1 as Weight))
+        25_265_000_u64.saturating_add(T::DbWeight::get().reads(1_u64))
     }
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
     fn add_new_xdns_record() -> Weight {
-        (72_795_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(2 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+        72_795_000_u64
+            .saturating_add(RocksDbWeight::get().reads(2_u64))
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
     fn update_ttl() -> Weight {
-        (73_255_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(1 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+        73_255_000_u64
+            .saturating_add(RocksDbWeight::get().reads(1_u64))
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
     fn purge_xdns_record() -> Weight {
-        (58_912_000 as Weight)
-            .saturating_add(RocksDbWeight::get().reads(1 as Weight))
-            .saturating_add(RocksDbWeight::get().writes(1 as Weight))
+        58_912_000_u64
+            .saturating_add(RocksDbWeight::get().reads(1_u64))
+            .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
     fn best_available() -> Weight {
-        (25_265_000 as Weight).saturating_add(RocksDbWeight::get().reads(1 as Weight))
+        25_265_000_u64.saturating_add(RocksDbWeight::get().reads(1_u64))
     }
 }

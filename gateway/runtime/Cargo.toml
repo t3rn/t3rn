@@ -49,7 +49,7 @@ sp-version = {default-features = false, git = 'https://github.com/paritytech/sub
 # local dependencies
 pallet-runtime-gateway = {default-features = false, path = "../pallets/runtime-gateway" }
 versatile-wasm = {default-features = false, path = "../../vm/versatile-wasm" }
-t3rn-primitives = {default-features = false, path = "../../circuit/primitives" }
+t3rn-primitives = {default-features = false, path = "../../primitives" }
 pallet-bridge-messages = {default-features = false, path = "../../vendor/bridges/modules/messages" }
 bp-messages = {default-features = false, path = "../../vendor/bridges/primitives/messages" }
 bp-runtime = {default-features = false, path = "../../vendor/bridges/primitives/runtime" }

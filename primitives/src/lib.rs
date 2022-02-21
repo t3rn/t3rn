@@ -24,14 +24,14 @@ use scale_info::TypeInfo;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+use sp_runtime::traits::{BlakeTwo256, IdentifyAccount, Verify};
+use sp_runtime::MultiSignature;
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
 
-#[cfg(feature = "std")]
-use std::fmt::Debug;
-
+use sp_std::convert::TryFrom;
 use sp_std::prelude::*;
-use sp_std::vec;
+use sp_std::{convert::TryFrom, vec};
 
 pub mod abi;
 pub mod bridges;
@@ -40,8 +40,8 @@ pub mod gateway_inbound_protocol;
 pub mod match_format;
 pub mod side_effect;
 pub mod signature_caster;
-pub mod storage;
 pub mod transfers;
+pub mod volatile;
 pub mod xtx;
 
 pub use gateway_inbound_protocol::GatewayInboundProtocol;
@@ -81,10 +81,10 @@ pub struct GenericPrimitivesHeader {
     pub number: u64,
     pub state_root: Option<sp_core::hash::H256>,
     pub extrinsics_root: Option<sp_core::hash::H256>,
-    pub digest: Option<sp_runtime::generic::Digest<sp_core::hash::H256>>,
+    pub digest: Option<sp_runtime::generic::Digest>,
 }
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct GatewayPointer {
     pub id: ChainId,
@@ -98,7 +98,7 @@ pub struct GatewayGenesisConfig {
     /// SCALE-encoded modules following the format of selected frame_metadata::RuntimeMetadataVXX
     pub modules_encoded: Option<Vec<u8>>,
     /// SCALE-encoded signed extension - see more at frame_metadata::ExtrinsicMetadata
-    pub signed_extension: Option<Vec<u8>>,
+    // pub signed_extensions: Option<Vec<u8>>,
     /// Runtime version
     pub runtime_version: sp_version::RuntimeVersion,
     /// Extrinsics version
@@ -115,13 +115,55 @@ impl Default for GatewayGenesisConfig {
             runtime_version: Default::default(),
             genesis_hash: vec![],
             modules_encoded: None,
-            signed_extension: None,
+            // signed_extensions: None,
+        }
+    }
+}
+
+/// Represents assorted gateway system properties.
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct GatewaySysProps {
+    pub ss58_format: u16,
+    pub token_symbol: Vec<u8>,
+    pub token_decimals: u8,
+}
+
+impl TryFrom<&ChainId> for GatewaySysProps {
+    type Error = &'static str;
+
+    /// Maps a chain id to its system properties.
+    ///
+    /// Based on https://wiki.polkadot.network/docs/build-ss58-registry.
+    fn try_from(chain_id: &ChainId) -> Result<Self, Self::Error> {
+        match chain_id {
+            b"circ" => Ok(GatewaySysProps {
+                ss58_format: 1333,
+                token_symbol: Encode::encode("T3RN"),
+                token_decimals: 12,
+            }),
+            b"gate" => Ok(GatewaySysProps {
+                ss58_format: 1333,
+                token_symbol: Encode::encode("T3RN"),
+                token_decimals: 12,
+            }),
+            b"pdot" => Ok(GatewaySysProps {
+                ss58_format: 0,
+                token_symbol: Encode::encode("DOT"),
+                token_decimals: 10,
+            }),
+            b"ksma" => Ok(GatewaySysProps {
+                ss58_format: 2,
+                token_symbol: Encode::encode("KSM"),
+                token_decimals: 12,
+            }),
+            _ => Err("unknown chain id"),
         }
     }
 }
 
 /// A struct that encodes RPC parameters required for a call to a smart-contract.
-#[derive(Eq, PartialEq, Encode, Decode, Debug, Clone, Default)]
+#[derive(Eq, PartialEq, Encode, Decode, Debug, Clone, Default, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct Compose<Account, Balance> {
     pub name: Vec<u8>,
@@ -201,7 +243,7 @@ type Bytes = Vec<u8>;
 /// Outbound Step that specifies expected transmission medium for relayers connecting with that gateway.
 /// Request message format that derivative of could be compatible with JSON-RPC API
 /// with either signed or unsigned payload or custom transmission medium like XCMP protocol
-#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]
+#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct CircuitOutboundMessage {
     /// Message name/identifier
@@ -267,7 +309,7 @@ impl CircuitOutboundMessage {
 }
 
 /// Inclusion proofs of different tries
-#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]
+#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum ProofTriePointer {
     /// Proof is a merkle path in the state trie
@@ -279,7 +321,7 @@ pub enum ProofTriePointer {
 }
 
 /// Inbound Steps that specifie expected data deposited by relayers back to the Circuit after each step
-#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]
+#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct CircuitInboundResult {
     pub result_format: Bytes,
@@ -287,7 +329,7 @@ pub struct CircuitInboundResult {
 }
 
 /// Inbound Steps that specifie expected data deposited by relayers back to the Circuit after each step
-#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]
+#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum GatewayExpectedOutput {
     /// Effect would be the modified storage key
@@ -314,7 +356,7 @@ pub enum GatewayExpectedOutput {
 
 /// Outbound Step that specifies expected transmission medium for relayers connecting with that gateway.
 /// Extra payload in case the message is signed ro has other custom parameters required by linking protocol.
-#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq)]
+#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct ExtraMessagePayload {
     pub signer: Bytes,
@@ -345,3 +387,28 @@ pub fn retrieve_gateway_pointers(gateway_id: ChainId) -> Result<Vec<GatewayPoint
         vendor: GatewayVendor::Substrate,
     }])
 }
+
+pub type AccountId = <<MultiSignature as Verify>::Signer as IdentifyAccount>::AccountId;
+
+/// Alias to the public key used for this chain, actually a `MultiSigner`. Like
+/// the signature, this also isn't a fixed size when encoded, as different
+/// cryptos have different size public keys.
+pub type AccountPublic = <MultiSignature as Verify>::Signer;
+
+/// Common types across all runtimes
+pub type BlockNumber = u32;
+
+pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
+
+pub type Header = sp_runtime::generic::Header<BlockNumber, BlakeTwo256>;
+
+pub type Block = sp_runtime::generic::Block<Header, UncheckedExtrinsic>;
+
+/// Index of a transaction in the chain. 32-bit should be plenty.
+pub type Nonce = u32;
+
+/// Balance of an account.
+pub type Balance = u128;
+
+/// A hash of some data used by the chain.
+pub type Hash = sp_core::H256;
