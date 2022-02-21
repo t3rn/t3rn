@@ -31,7 +31,9 @@ use sp_runtime::RuntimeDebug as Debug;
 
 use sp_std::convert::TryFrom;
 use sp_std::prelude::*;
-use sp_std::{convert::TryFrom, vec};
+use sp_std::vec;
+#[cfg(feature = "std")]
+use std::fmt::Debug;
 
 pub mod abi;
 pub mod bridges;
@@ -40,6 +42,7 @@ pub mod gateway_inbound_protocol;
 pub mod match_format;
 pub mod side_effect;
 pub mod signature_caster;
+pub mod storage;
 pub mod transfers;
 pub mod volatile;
 pub mod xtx;
@@ -98,7 +101,7 @@ pub struct GatewayGenesisConfig {
     /// SCALE-encoded modules following the format of selected frame_metadata::RuntimeMetadataVXX
     pub modules_encoded: Option<Vec<u8>>,
     /// SCALE-encoded signed extension - see more at frame_metadata::ExtrinsicMetadata
-    // pub signed_extensions: Option<Vec<u8>>,
+    // pub signed_extension: Option<Vec<u8>>,
     /// Runtime version
     pub runtime_version: sp_version::RuntimeVersion,
     /// Extrinsics version
@@ -115,13 +118,12 @@ impl Default for GatewayGenesisConfig {
             runtime_version: Default::default(),
             genesis_hash: vec![],
             modules_encoded: None,
-            // signed_extensions: None,
         }
     }
 }
 
 /// Represents assorted gateway system properties.
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct GatewaySysProps {
     pub ss58_format: u16,
@@ -158,6 +160,16 @@ impl TryFrom<&ChainId> for GatewaySysProps {
                 token_decimals: 12,
             }),
             _ => Err("unknown chain id"),
+        }
+    }
+}
+
+impl Default for GatewaySysProps {
+    fn default() -> Self {
+        Self {
+            token_symbol: Encode::encode("TKN"),
+            token_decimals: 9,
+            ss58_format: 42,
         }
     }
 }

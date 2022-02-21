@@ -25,7 +25,6 @@
 use codec::Encode;
 use frame_support::dispatch::DispatchResult;
 use frame_system::ensure_signed;
-use sp_core::Bytes;
 use sp_std::prelude::*;
 use t3rn_primitives::transfers::BalanceOf;
 
@@ -59,7 +58,7 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config:
-        pallet_balances::Config + frame_system::Config + t3rn_primitives::EscrowTrait
+    pallet_balances::Config + frame_system::Config + t3rn_primitives::EscrowTrait
     {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -233,7 +232,7 @@ impl<T: Config> Pallet<T> {
     //#[pallet::weight(<T as Config>::WeightInfo::fetch_contracts())]
     pub fn fetch_contracts(
         author: Option<T::AccountId>,
-        metadata: Option<Bytes>,
+        metadata: Option<Vec<u8>>,
     ) -> Result<Vec<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>>, Error<T>>
     {
         // helper function to find a number of byte slice inside a larger slice
@@ -256,11 +255,12 @@ impl<T: Config> Pallet<T> {
                         match (author.clone(), metadata.clone()) {
                             (Some(author), Some(text)) => {
                                 contract.author == author
-                                    && find_subsequence(contract.meta.encode(), &text[..]).is_some()
+                                    && find_subsequence(contract.meta.encode(), text.as_slice())
+                                    .is_some()
                             }
                             (Some(author), None) => contract.author == author,
                             (None, Some(text)) => {
-                                find_subsequence(contract.meta.encode(), &text[..]).is_some()
+                                find_subsequence(contract.meta.encode(), text.as_slice()).is_some()
                             }
                             (None, None) => false,
                         }

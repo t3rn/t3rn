@@ -8,7 +8,7 @@
 
 use codec::Codec;
 pub use pallet_contracts_registry::FetchContractsResult;
-use sp_core::Bytes;
+use sp_core::sp_std::vec::Vec;
 
 sp_api::decl_runtime_apis! {
     /// The API to interact with contracts without using executive.
