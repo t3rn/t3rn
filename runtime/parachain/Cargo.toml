@@ -100,7 +100,7 @@ default = [
 	"std",
 ]
 std = [
-	"bp-runtime/std",
+#	"bp-runtime/std",
 	"codec/std",
 	"serde",
 	"scale-info/std",
