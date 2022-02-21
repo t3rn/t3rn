@@ -33,7 +33,10 @@ use frame_system::{
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
+use sp_core::{
+    crypto::{KeyTypeId, Public},
+    OpaqueMetadata, H160, H256, U256,
+};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 use sp_runtime::{
@@ -43,8 +46,12 @@ use sp_runtime::{
     ApplyExtrinsicResult, MultiSignature,
 };
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
-use sp_std::prelude::*;
-use sp_std::str::FromStr;
+use sp_std::{
+    marker::PhantomData,
+    prelude::*,
+    str::FromStr
+};
+
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -989,21 +996,18 @@ impl pallet_evm::FeeCalculator for FixedGasPrice {
     }
 }
 
-pub struct FindAuthorTruncated;
-impl FindAuthor<H160> for FindAuthorTruncated {
-    fn find_author<'a, I>(_digests: I) -> Option<H160>
+pub struct FindAuthorTruncated<F>(PhantomData<F>);
+
+impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
+    fn find_author<'a, I>(digests: I) -> Option<H160>
     where
         I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
     {
-        Some(H160::from_str("1234500000000000000000000000000000000000").unwrap())
-    }
-}
-
-pub struct IntoAddressMapping;
-
-impl<T: From<H160>> pallet_evm::AddressMapping<T> for IntoAddressMapping {
-    fn into_account_id(address: H160) -> T {
-        address.into()
+        if let Some(author_index) = F::find_author(digests) {
+            let authority_id = Aura::authorities()[author_index as usize].clone();
+            return Some(H160::from_slice(&authority_id.to_raw_vec()[4..24]));
+        }
+        None
     }
 }
 
@@ -1029,13 +1033,13 @@ impl pallet_evm::Config for Runtime {
     type Currency = Balances;
 
     type Event = Event;
-    type PrecompilesType = ();
+    type PrecompilesType = ();  // Left empty for now, we can use frontier precompiles or create our owns
     type PrecompilesValue = ();
     type ChainId = ChainId;
     type BlockGasLimit = BlockGasLimit;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type OnChargeTransaction = ();
-    type FindAuthor = FindAuthorTruncated;
+    type FindAuthor = FindAuthorTruncated<Aura>;
 }
 
 // ORML Tokens
