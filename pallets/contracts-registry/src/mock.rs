@@ -22,7 +22,8 @@
 use crate as pallet_contracts_registry;
 use crate::types::RegistryContract;
 use frame_support::{
-    construct_runtime, pallet_prelude::GenesisBuild, parameter_types, weights::Weight,
+    construct_runtime, pallet_prelude::GenesisBuild, parameter_types, traits::Everything,
+    weights::Weight,
 };
 use sp_core::H256;
 use sp_runtime::{
@@ -60,7 +61,7 @@ parameter_types! {
 }
 
 impl frame_system::Config for Test {
-    type BaseCallFilter = ();
+    type BaseCallFilter = Everything;
     type DbWeight = ();
     type Origin = Origin;
     type Index = u64;

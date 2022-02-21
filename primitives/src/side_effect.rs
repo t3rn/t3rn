@@ -28,6 +28,10 @@ impl<
     pub fn generate_id<Hasher: sp_core::Hasher>(&self) -> <Hasher as sp_core::Hasher>::Out {
         Hasher::hash(Encode::encode(self).as_ref())
     }
+
+    pub fn id_as_bytes<Hasher: sp_core::Hasher>(id: <Hasher as sp_core::Hasher>::Out) -> Bytes {
+        id.as_ref().to_vec()
+    }
 }
 
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]

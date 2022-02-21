@@ -40,7 +40,7 @@ fn check_overall_sanity(signature: StrLike) -> Result<(), &'static str> {
 
 // Trims all whitespace chars from io_schedule vector
 pub fn trim_whitespace(input_string: StrLike) -> StrLike {
-    let mut result = input_string.clone();
+    let mut result = input_string;
 
     // checks if character is whitespace
     let is_whitespace = |x: &u8| WHITESPACE_MATRIX.contains(x);
@@ -97,7 +97,7 @@ pub fn match_signature(signature: StrLike) -> Result<(StrLike, Vec<StrLike>), &'
         _ => Err("Signature must have non-empty event name"),
     }?;
 
-    return Ok((event_name_res, event_args));
+    Ok((event_name_res, event_args))
 }
 
 pub fn match_dfd(generic_dfd: StrLike) -> Result<Vec<Vec<StrLike>>, &'static str> {
@@ -167,7 +167,7 @@ pub fn match_dfd(generic_dfd: StrLike) -> Result<Vec<Vec<StrLike>>, &'static str
     // Reverse the steps order
     steps.reverse();
 
-    return Ok(steps);
+    Ok(steps)
 }
 
 #[cfg(test)]
