@@ -6,13 +6,13 @@ use scale_info::TypeInfo;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+use sp_core::U256;
+#[cfg(feature = "no_std")]
+use sp_runtime::RuntimeDebug as Debug;
 use sp_runtime::RuntimeString;
 use sp_std::boxed::Box;
 use sp_std::vec;
 use sp_std::vec::Vec;
-
-#[cfg(feature = "no_std")]
-use sp_runtime::RuntimeDebug as Debug;
 
 #[cfg(feature = "std")]
 use std::fmt::Debug;
@@ -37,6 +37,9 @@ pub enum Type {
     Mapping(Box<Type>, Box<Type>),
     Contract,
     Ref(Box<Type>),
+    Option(Box<Type>),
+    OptionalInsurance,
+    OptionalReward,
     StorageRef(Box<Type>),
     /// There is no way to declare value in Solidity (should there be?)
     Value,
@@ -91,8 +94,8 @@ impl Default for GatewayABIConfig {
             hash_size: 32,
             hasher: HasherAlgo::Blake2,
             crypto: CryptoAlgo::Sr25519,
-            address_length: 32,
-            value_type_size: 64,
+            address_length: 32, // 32 bytes : 32 * 8 = 256 bits
+            value_type_size: 8, // u64 = 8 bytes = 64 bits.
             decimals: 8,
             structs: vec![],
         }
@@ -150,7 +153,7 @@ impl Type {
                     .offsets
                     .last()
                     .cloned()
-                    .unwrap_or_else(|| 0);
+                    .unwrap_or(0);
                 Ok(struct_size.into())
             }
             Type::String | Type::DynamicBytes => Ok(4),
@@ -168,14 +171,14 @@ impl Type {
             Type::Bytes(_) => b"bytes",
             Type::Uint(n) => match n {
                 32 => b"uint32",
-                64 => b"uint32",
-                128 => b"uint32",
+                64 => b"uint64",
+                128 => b"uint128",
                 _ => unimplemented!(),
             },
             Type::Int(n) => match n {
                 32 => b"int32",
-                64 => b"int32",
-                128 => b"int32",
+                64 => b"int64",
+                128 => b"int128",
                 _ => unimplemented!(),
             },
             Type::String => b"string",
@@ -243,6 +246,116 @@ impl Type {
     }
 
     /// eval assumes encoded_val is bytes Vector encoded with SCALE
+    pub fn eval_abi(
+        &self,
+        encoded_val: Vec<u8>,
+        gen: &GatewayABIConfig,
+    ) -> Result<Vec<u8>, &'static str> {
+        match self {
+            Type::Address(size) => match size {
+                20 => {
+                    let res: [u8; 20] = decode_buf2val(encoded_val)?;
+                    Ok(res.encode())
+                }
+                32 => {
+                    let res: [u8; 32] = decode_buf2val(encoded_val)?;
+                    Ok(res.encode())
+                }
+                _ => Err("Unknown Address size"),
+            },
+            Type::DynamicAddress => match gen.address_length {
+                20 => {
+                    let res: [u8; 20] = decode_buf2val(encoded_val)?;
+                    Ok(res.encode())
+                }
+                32 => {
+                    let res: [u8; 32] = decode_buf2val(encoded_val)?;
+                    Ok(res.encode())
+                }
+                _ => unimplemented!(),
+            },
+            Type::Bool => {
+                let res: bool = decode_buf2val(encoded_val)?;
+                Ok(res.encode())
+            }
+            Type::OptionalInsurance => {
+                // Assume it's gonna be an array of 2 x u128 values (Circuit's Balance)
+                //  First one is the insurance amount
+                //  Second one is the reward amount
+                // Since it's Optional - value can be an empty vector too.
+                match encoded_val.len() {
+                    0 => Ok(encoded_val),
+                    32 => {
+                        let res: [u128; 2] = decode_buf2val(encoded_val)?;
+                        Ok(res.encode())
+                    }
+                    _ => Err("ABI OptionalInsurance eval error - wrong arg size"),
+                }
+            }
+            Type::Int(size) => match size {
+                32 => {
+                    let res: i32 = decode_buf2val(encoded_val)?;
+                    Ok(res.encode())
+                }
+                64 => {
+                    let res: i64 = decode_buf2val(encoded_val)?;
+                    Ok(res.encode())
+                }
+                128 => {
+                    let res: i128 = decode_buf2val(encoded_val)?;
+                    Ok(res.encode())
+                }
+                _ => Err("Unknown Uint size"),
+            },
+            Type::Uint(size) => match size {
+                32 => {
+                    let res: u32 = decode_buf2val(encoded_val)?;
+                    Ok(res.encode())
+                }
+                64 => {
+                    let res: u64 = decode_buf2val(encoded_val)?;
+                    Ok(res.encode())
+                }
+                128 => {
+                    let res: u128 = decode_buf2val(encoded_val)?;
+                    Ok(res.encode())
+                }
+                _ => Err("Unknown Uint size"),
+            },
+            Type::Bytes(_) => {
+                let res: Bytes = decode_buf2val(encoded_val)?;
+                Ok(res.to_vec())
+            }
+            Type::DynamicBytes => Ok(encoded_val),
+            Type::String => {
+                let res: RuntimeString = decode_buf2val(encoded_val)?;
+                Ok(res.encode())
+            }
+            Type::Value => {
+                match gen.value_type_size {
+                    8 => {
+                        // 8 bytes = 64 bits
+                        let res: u64 = decode_buf2val::<u64>(encoded_val)?;
+                        Ok(res.encode())
+                    }
+                    16 => {
+                        // 16 bytes = 128 bits
+                        let res: u128 = decode_buf2val::<u128>(encoded_val)?;
+                        Ok(res.encode())
+                    }
+                    32 => {
+                        // 32 bytes = 256 bits
+                        let res: U256 = decode_buf2val::<U256>(encoded_val)?;
+                        Ok(res.encode())
+                    }
+                    _ => unimplemented!(),
+                }
+            }
+            _ => unimplemented!(),
+        }
+    }
+
+    /// eval assumes encoded_val is bytes Vector encoded with SCALE
     pub fn eval(
         &self,
         encoded_val: Vec<u8>,
@@ -267,6 +380,20 @@ impl Type {
             Type::Bool => {
                 let res: bool = decode_buf2val(encoded_val)?;
                 Ok(Box::new(res))
+            }
+            Type::OptionalInsurance => {
+                // Assume it's gonna be an array of 2 x u128 values (Circuit's Balance)
+                //  First one is the insurance amount
+                //  Second one is the reward amount
+                // Since it's Optional - value can be an empty vector too.
+                match encoded_val.len() {
+                    0 => Ok(Box::new(encoded_val)),
+                    32 => {
+                        let res: [u128; 2] = decode_buf2val(encoded_val)?;
+                        Ok(Box::new(res))
+                    }
+                    _ => Err("ABI OptionalInsurance eval error - wrong arg size"),
+                }
             }
             Type::Int(size) => match size {
                 32 => {
@@ -354,6 +481,20 @@ pub fn eval_to_encoded(t: Type, raw_val: Vec<u8>) -> Result<Vec<u8>, &'static st
             }
             _ => Err("Unknown Uint size"),
         },
+        Type::OptionalInsurance => {
+            // Assume it's gonna be an array of 2 x u128 values (Circuit's Balance)
+            //  First one is the insurance amount
+            //  Second one is the reward amount
+            // Since it's Optional - value can be an empty vector too.
+            match raw_val.len() {
+                0 => Ok(raw_val),
+                32 => {
+                    let res: [u128; 2] = decode_buf2val(raw_val)?;
+                    Ok(res.encode())
+                }
+                _ => Err("ABI OptionalInsurance eval error - wrong arg size"),
+            }
+        }
         _ => Ok(vec![]),
     }
 }
@@ -444,11 +585,35 @@ pub fn from_signature_to_abi(signature: Vec<u8>) -> Result<(Vec<u8>, Vec<Type>),
         "Can't find a name while reading event's ABI"
     );
 
-    let types = signature_iter
-        .map(|arg_candidate| from_bytes_string(arg_candidate))
-        .collect::<Vec<Type>>();
+    let types = signature_iter.map(from_bytes_string).collect::<Vec<Type>>();
 
     Ok((maybe_name.to_vec(), types))
+}
+
+pub fn extract_property_names_from_signature_as_bytes(
+    signature: Vec<u8>,
+) -> Result<(Vec<u8>, Vec<Vec<u8>>), &'static str> {
+    const BEGIN_ARGS_CHAR: u8 = b'(';
+    const END_ARGS_CHAR: u8 = b')';
+    const COMMA_SEPARATOR: u8 = b',';
+
+    let mut signature_iter = signature
+        .as_slice()
+        .split(|x| x.eq(&BEGIN_ARGS_CHAR) || x.eq(&COMMA_SEPARATOR) || x.eq(&END_ARGS_CHAR))
+        .filter(|&x| !x.is_empty());
+
+    let maybe_name = signature_iter.next().unwrap_or(&[]);
+
+    ensure!(
+        !maybe_name.is_empty(),
+        "Can't find a name while reading event's ABI"
+    );
+
+    let property_names = signature_iter
+        .map(|arg_candidate| arg_candidate.to_vec())
+        .collect::<Vec<Vec<u8>>>();
+
+    Ok((maybe_name.to_vec(), property_names))
 }
 
 pub fn decode_buf2val<D: Decode>(buf: Vec<u8>) -> Result<D, &'static str> {
@@ -467,7 +632,7 @@ mod tests {
         let signature_bytes = create_signature(test_name, test_types_vec).unwrap();
         let signature_string = String::from_utf8(signature_bytes).unwrap();
 
-        assert_eq!(signature_string, "testName(bytes,address,uint32)");
+        assert_eq!(signature_string, "testName(bytes,address,uint64)");
     }
 
     #[test]
@@ -480,6 +645,26 @@ mod tests {
                 b"testName".to_vec(),
                 vec![Type::DynamicBytes, Type::Address(20), Type::Uint(32),],
             ),
+            res
+        );
+    }
+
+    #[test]
+    fn successfully_abi_evals_empty_insurance_and_reward_optional_insurance() {
+        let empty_bytes: Vec<u8> = vec![];
+        let res = eval_to_encoded(Type::OptionalInsurance, empty_bytes.clone());
+        assert_eq!(res, Ok(empty_bytes));
+    }
+
+    #[test]
+    fn successfully_abi_evals_valid_insurance_and_reward_optional_insurance() {
+        let valid_insurance_args_arr: [u128; 2] = [1, 2];
+        let res = eval_to_encoded(Type::OptionalInsurance, valid_insurance_args_arr.encode());
+        assert_eq!(
+            Ok(vec![
+                1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0
+            ]),
             res
         );
     }

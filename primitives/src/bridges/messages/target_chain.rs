@@ -22,7 +22,6 @@ use crate::bridges::runtime::Size;
 use codec::{Decode, Encode, Error as CodecError};
 use frame_support::{weights::Weight, Parameter, RuntimeDebug};
 use sp_std::{collections::btree_map::BTreeMap, fmt::Debug, prelude::*};
-
 /// Proved messages from the source chain.
 pub type ProvedMessages<Message> = BTreeMap<LaneId, ProvedLaneMessages<Message>>;
 

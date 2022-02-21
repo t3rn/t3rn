@@ -7,19 +7,18 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::Codec;
-use pallet_contracts_registry::FetchContractsResult;
-use sp_core::Bytes;
+pub use pallet_contracts_registry::FetchContractsResult;
+use sp_core::sp_std::vec::Vec;
 
 sp_api::decl_runtime_apis! {
     /// The API to interact with contracts without using executive.
-    pub trait ContractsRegistryRuntimeApi<AccountId, Hash> where
-        AccountId: Codec,
-        Hash: Codec,
+    pub trait ContractsRegistryRuntimeApi<AccountId> where
+        AccountId: Codec
     {
         /// Returns the contracts searchable by name, author or metadata
         fn fetch_contracts(
             author: Option<AccountId>,
-            metadata: Option<Bytes>,
+            metadata: Option<Vec<u8>>,
         ) -> FetchContractsResult;
     }
 }

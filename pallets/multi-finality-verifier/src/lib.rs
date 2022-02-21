@@ -38,6 +38,9 @@
 
 use crate::weights::WeightInfo;
 
+use t3rn_primitives::bridges::header_chain as bp_header_chain;
+use t3rn_primitives::bridges::runtime as bp_runtime;
+
 use bp_header_chain::justification::GrandpaJustification;
 use bp_header_chain::InitializationData;
 use bp_runtime::{BlockNumberOf, Chain, ChainId, HashOf, HasherOf, HeaderOf};
@@ -138,19 +141,17 @@ pub mod pallet {
         /// If successful in verification, it will write the target header to the underlying storage
         /// pallet.
         #[pallet::weight(<T as pallet::Config<I>>::WeightInfo::submit_finality_proof(
-		justification.votes_ancestries.len() as u32,
-		justification.commit.precommits.len() as u32,
+            justification.votes_ancestries.len() as u32,
+            justification.commit.precommits.len() as u32,
 		))]
         pub fn submit_finality_proof(
             origin: OriginFor<T>,
             finality_target: BridgedHeader<T, I>,
             justification: GrandpaJustification<BridgedHeader<T, I>>,
             gateway_id: ChainId,
-            extrinsics_root: BridgedBlockHash<T, I>,
-            state_root: BridgedBlockHash<T, I>,
         ) -> DispatchResultWithPostInfo {
             ensure_operational_single::<T, I>(gateway_id)?;
-            ensure_signed(origin.clone())?;
+            ensure_signed(origin)?;
             ensure!(
                 Self::request_count_map(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
                 <Error<T, I>>::TooManyRequests
@@ -182,6 +183,7 @@ pub mod pallet {
                 gateway_id,
             )?;
 
+            // We have to incentivise authority_set update submissions in some way. Important to receive proofs of changing set, even when no transaction is included
             let _enacted =
                 try_enact_authority_change_single::<T, I>(&finality_target, set_id, gateway_id)?;
             let index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
@@ -189,9 +191,16 @@ pub mod pallet {
             let pruning = <MultiImportedHashes<T, I>>::try_get(gateway_id, index);
 
             <BestFinalizedMap<T, I>>::insert(gateway_id, hash);
-            <MultiImportedHeaders<T, I>>::insert(gateway_id, hash, finality_target);
+            <MultiImportedHeaders<T, I>>::insert(gateway_id, hash, finality_target.clone());
             <MultiImportedHashes<T, I>>::insert(gateway_id, index, hash);
-            <MultiImportedRoots<T, I>>::insert(gateway_id, hash, (extrinsics_root, state_root));
+            <MultiImportedRoots<T, I>>::insert(
+                gateway_id,
+                hash,
+                (
+                    finality_target.extrinsics_root(),
+                    finality_target.state_root(),
+                ),
+            );
             <RequestCountMap<T, I>>::mutate(gateway_id, |count| {
                 match count {
                     Some(count) => *count += 1,
@@ -220,7 +229,7 @@ pub mod pallet {
             let now = TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now())
                 .map_err(|_| "Unable to compute current timestamp")?;
 
-            pallet_xdns::Pallet::<T>::update_gateway_ttl(gateway_id, now.clone())?;
+            pallet_xdns::Pallet::<T>::update_gateway_ttl(gateway_id, now)?;
 
             log::info!(
                 "Successfully updated gateway {:?} with finalized timestamp {:?}!",
@@ -231,34 +240,111 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// Submit finality proofs for the header and additionally preserve state and extrinsics root.
-        #[pallet::weight(0)]
-        pub fn submit_finality_proof_and_roots(
+        #[pallet::weight(<T as pallet::Config<I>>::WeightInfo::submit_finality_proof_on_single_fork(
+            headers_reversed.len() as u32,
+		))]
+        pub fn submit_header_range(
             origin: OriginFor<T>,
-            finality_target: BridgedHeader<T, I>,
-            justification: GrandpaJustification<BridgedHeader<T, I>>,
             gateway_id: ChainId,
-            // ToDo: Try passing Vec<u8> here and cast to appropriate header type with help of xDNS
-            state_root: BridgedBlockHash<T, I>,
-            extrinsics_root: BridgedBlockHash<T, I>,
+            headers_reversed: Vec<BridgedHeader<T, I>>,
+            anchor_header_hash: BridgedBlockHash<T, I>,
         ) -> DispatchResultWithPostInfo {
-            Self::submit_finality_proof(
-                origin,
-                finality_target,
-                justification,
-                gateway_id,
-                extrinsics_root,
-                state_root,
-            )?;
-
-            log::info!(
-                "submit_finality_proof_and_roots, _state_root: {:?}, _extrinsics_root: {:?}",
-                state_root,
-                extrinsics_root
+            ensure_operational_single::<T, I>(gateway_id)?;
+            ensure_signed(origin.clone())?;
+            ensure!(
+                Self::request_count_map(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
+                <Error<T, I>>::TooManyRequests
             );
+            // not ideal because we're doing 2 reads
+            ensure!(
+                <MultiImportedHeaders<T, I>>::contains_key(gateway_id, anchor_header_hash),
+                <Error<T, I>>::InvalidAnchorHeader
+            );
+
+            // fetch the 'anchor' (block we're basing the proof on), knowing its been verified
+            let mut anchor_header =
+                <MultiImportedHeaders<T, I>>::try_get(gateway_id, anchor_header_hash).unwrap();
+
+            let mut index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
+
+            for header in headers_reversed {
+                if *anchor_header.parent_hash() == header.hash() {
+                    // currently this allows overwrites. Block 1 is already proven via GRANDPA, but we overwrite it.
+                    // We could add additional checks, but not sure if thats worth it
+                    <MultiImportedHeaders<T, I>>::insert(gateway_id, header.hash(), header.clone());
+                    <MultiImportedHashes<T, I>>::insert(gateway_id, index, header.hash());
+                    <MultiImportedRoots<T, I>>::insert(
+                        gateway_id,
+                        header.hash(),
+                        (header.extrinsics_root(), header.state_root()),
+                    );
+
+                    // select next header to prune and remove
+                    index += 1;
+                    let pruning = <MultiImportedHashes<T, I>>::try_get(gateway_id, index);
+
+                    if let Ok(hash) = pruning {
+                        <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
+                        <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
+                    }
+
+                    anchor_header = header;
+                } else {
+                    log::info!(
+                        "Invalid header detected: {:?}, skipping the remaining imports for gateway {:?}!",
+                        header,
+                        gateway_id
+                    );
+
+                    break;
+                }
+            }
+
+            // update ring buffer pointer
+            <MultiImportedHashesPointer<T, I>>::insert(gateway_id, index % T::HeadersToKeep::get());
+
+            // im guessing this should count as one?
+            <RequestCountMap<T, I>>::mutate(gateway_id, |count| {
+                match count {
+                    Some(count) => *count += 1,
+                    None => *count = Some(1),
+                }
+                *count
+            });
+
+            // not sure if we want this here as well as we're adding old blocks
+            let now = TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now())
+                .map_err(|_| "Unable to compute current timestamp")?;
+
+            pallet_xdns::Pallet::<T>::update_gateway_ttl(gateway_id, now.clone())?;
 
             Ok(().into())
         }
+
+        // TODO: Do we still need this? Essentially just logging stuff...
+        // #[pallet::weight(0)]
+        // pub fn submit_finality_proof_and_roots(
+        //     origin: OriginFor<T>,
+        //     finality_target: BridgedHeader<T, I>,
+        //     justification: GrandpaJustification<BridgedHeader<T, I>>,
+        //     gateway_id: ChainId,
+        //     // ToDo: Try passing Vec<u8> here and cast to appropriate header type with help of xDNS
+        // ) -> DispatchResultWithPostInfo {
+        //     Self::submit_finality_proof(
+        //         origin,
+        //         finality_target.clone(),
+        //         justification,
+        //         gateway_id,
+        //     )?;
+
+        //     log::info!(
+        //         "submit_finality_proof_and_roots, _state_root: {:?}, _extrinsics_root: {:?}",
+        //         finality_target.state_root(),
+        //         finality_target.extrinsics_root()
+        //     );
+
+        //     Ok(().into())
+        // }
 
         /// Bootstrap the bridge pallet with an initial header and authority set from which to sync.
         ///
@@ -488,6 +574,8 @@ pub mod pallet {
         Halted,
         /// The storage proof doesn't contains storage root. So it is invalid for given header.
         StorageRootMismatch,
+        // Submitted anchor header(verified header stored on circuit) was not found
+        InvalidAnchorHeader,
     }
 
     /// Check the given header for a GRANDPA scheduled authority set change. If a change
@@ -561,7 +649,7 @@ pub mod pallet {
             (hash, number),
             set_id,
             &voter_set,
-            &justification,
+            justification,
         )
         .map_err(|e| {
             log::error!("Received invalid justification for {:?}: {:?}", hash, e);
@@ -735,7 +823,8 @@ pub fn initialize_for_benchmarks<T: Config<I>, I: 'static>(header: BridgedHeader
 mod tests {
     use super::*;
     use crate::mock::{
-        run_test, test_header, Origin, TestHash, TestHeader, TestNumber, TestRuntime,
+        run_test, test_header, test_header_range, Origin, TestHash, TestHeader, TestNumber,
+        TestRuntime,
     };
     use bp_test_utils::{
         authority_list, make_default_justification, make_justification_for_header,
@@ -745,6 +834,9 @@ mod tests {
     use frame_support::weights::PostDispatchInfo;
     use frame_support::{assert_err, assert_noop, assert_ok};
     use sp_runtime::{Digest, DigestItem, DispatchError};
+
+    use t3rn_primitives::bridges::test_utils as bp_test_utils;
+    use t3rn_primitives::GatewaySysProps;
     use t3rn_primitives::{GatewayType, GatewayVendor};
 
     fn teardown_substrate_bridge() {
@@ -791,6 +883,12 @@ mod tests {
             is_halted: false,
         };
 
+        let gateway_sys_props = GatewaySysProps {
+            ss58_format: 0,
+            token_symbol: Encode::encode(""),
+            token_decimals: 0,
+        };
+
         let _ = pallet_xdns::Pallet::<TestRuntime>::add_new_xdns_record(
             RawOrigin::Root.into(),
             Default::default(),
@@ -799,6 +897,7 @@ mod tests {
             GatewayVendor::Substrate,
             GatewayType::TxOnly(0),
             Default::default(),
+            gateway_sys_props,
             vec![],
         );
 
@@ -833,38 +932,60 @@ mod tests {
 
         let default_gateway: ChainId = *b"gate";
 
-        let default_roots = (Default::default(), Default::default());
+        Pallet::<TestRuntime>::submit_finality_proof(
+            Origin::signed(1),
+            header,
+            justification,
+            default_gateway,
+        )
+    }
+
+    fn submit_finality_proof_with_header(
+        header: TestHeader,
+    ) -> frame_support::dispatch::DispatchResultWithPostInfo {
+        let justification = make_default_justification(&header);
+
+        let default_gateway: ChainId = *b"gate";
 
         Pallet::<TestRuntime>::submit_finality_proof(
             Origin::signed(1),
             header,
             justification,
             default_gateway,
-            default_roots.0,
-            default_roots.1,
         )
     }
 
-    fn submit_finality_proof_and_roots(
-        header: u8,
-        state_root: TestHash,
-        extrinsics_root: TestHash,
+    pub fn submit_header_range(
+        headers_reversed: Vec<TestHeader>,
+        anchor_header_hash: TestHash,
     ) -> frame_support::dispatch::DispatchResultWithPostInfo {
-        let header = test_header(header.into());
-
-        let justification = make_default_justification(&header);
-
         let default_gateway: ChainId = *b"gate";
 
-        Pallet::<TestRuntime>::submit_finality_proof_and_roots(
+        Pallet::<TestRuntime>::submit_header_range(
             Origin::signed(1),
-            header,
-            justification,
             default_gateway,
-            state_root,
-            extrinsics_root,
+            headers_reversed,
+            anchor_header_hash,
         )
     }
+
+    // TODO: Do we still need this?
+    // fn submit_finality_proof_and_roots(
+    //     header: u8,
+    // ) -> frame_support::dispatch::DispatchResultWithPostInfo {
+    //     let header = test_header(header.into());
+
+    //     let justification = make_default_justification(&header);
+
+    //     let default_gateway: ChainId = *b"gate";
+
+    //     Pallet::<TestRuntime>::submit_finality_proof_and_roots(
+    //         Origin::signed(1),
+    //         header,
+    //         justification,
+    //         default_gateway,
+    //     )
+    // }
 
     fn next_block() {
         use frame_support::traits::OnInitialize;
@@ -874,14 +995,14 @@ mod tests {
         let _ = Pallet::<TestRuntime>::on_initialize(current_number);
     }
 
-    fn change_log(delay: u64) -> Digest<TestHash> {
+    fn change_log(delay: u64) -> Digest {
         let consensus_log =
             ConsensusLog::<TestNumber>::ScheduledChange(sp_finality_grandpa::ScheduledChange {
                 next_authorities: vec![(ALICE.into(), 1), (BOB.into(), 1)],
                 delay,
             });
 
-        Digest::<TestHash> {
+        Digest {
             logs: vec![DigestItem::Consensus(
                 GRANDPA_ENGINE_ID,
                 consensus_log.encode(),
@@ -889,7 +1010,7 @@ mod tests {
         }
     }
 
-    fn forced_change_log(delay: u64) -> Digest<TestHash> {
+    fn forced_change_log(delay: u64) -> Digest {
         let consensus_log = ConsensusLog::<TestNumber>::ForcedChange(
             delay,
             sp_finality_grandpa::ScheduledChange {
@@ -898,7 +1019,7 @@ mod tests {
             },
         );
 
-        Digest::<TestHash> {
+        Digest {
             logs: vec![DigestItem::Consensus(
                 GRANDPA_ENGINE_ID,
                 consensus_log.encode(),
@@ -984,33 +1105,33 @@ mod tests {
         })
     }
 
-    #[test]
-    fn can_initialize_new_polka_like_bridge_with_separate_vefifier_instance() {
-        run_test(|| {
-            let gateway_a: ChainId = *b"rlta";
-
-            let rh: bp_rialto::Header = bp_rialto::Header::new(
-                1,
-                Default::default(),
-                Default::default(),
-                Default::default(),
-                Default::default(),
-            );
-            let init_data = InitializationData {
-                header: rh,
-                authority_list: authority_list(),
-                set_id: 1,
-                is_halted: false,
-            };
-
-            assert_ok!(mock::MultiFinalityVerifierPolkadotLike::initialize_single(
-                Origin::root(),
-                init_data.clone(),
-                gateway_a
-            )
-            .map(|_| init_data));
-        })
-    }
+    // #[test]
+    // fn can_initialize_new_polka_like_bridge_with_separate_vefifier_instance() {
+    //     run_test(|| {
+    //         let gateway_a: ChainId = *b"rlta";
+    //
+    //         let rh: bp_circuit::Header = bp_circuit::Header::new(
+    //             1,
+    //             Default::default(),
+    //             Default::default(),
+    //             Default::default(),
+    //             Default::default(),
+    //         );
+    //         let init_data = InitializationData {
+    //             header: rh,
+    //             authority_list: authority_list(),
+    //             set_id: 1,
+    //             is_halted: false,
+    //         };
+    //
+    //         assert_ok!(mock::MultiFinalityVerifierPolkadotLike::initialize_single(
+    //             Origin::root(),
+    //             init_data.clone(),
+    //             gateway_a
+    //         )
+    //         .map(|_| init_data));
+    //     })
+    // }
 
     #[test]
     fn pallet_owner_may_change_owner() {
@@ -1126,8 +1247,6 @@ mod tests {
                     header,
                     justification,
                     gateway_a,
-                    Default::default(),
-                    Default::default()
                 ),
                 Error::<TestRuntime>::Halted,
             );
@@ -1154,6 +1273,195 @@ mod tests {
     }
 
     #[test]
+    fn succesfully_imports_header_ranges() {
+        let default_gateway: ChainId = *b"gate";
+        run_test(|| {
+            initialize_substrate_bridge();
+            // generate valid headers
+            let mut headers = test_header_range(0, 10, None);
+
+            assert_ok!(submit_finality_proof_with_header(headers[1].clone()));
+            assert_ok!(submit_finality_proof_with_header(headers[10].clone()));
+            next_block();
+
+            // verified header stored in circuit we're basing the proof on
+            let anchor_header = headers.pop().unwrap();
+
+            // we want to submit the headers in reverse, as we have to iterate backwards
+            headers.reverse();
+
+            assert_ok!(submit_header_range(headers.clone(), anchor_header.hash()));
+
+            headers.reverse(); // reversing for tests because I struggle to think backwards
+
+            assert!(<MultiImportedHeaders<TestRuntime>>::contains_key(
+                default_gateway,
+                headers[9].hash()
+            ));
+
+            assert_eq!(
+                <MultiImportedHeaders<TestRuntime>>::try_get(default_gateway, headers[9].hash()),
+                Ok(headers[9].clone())
+            );
+
+            assert_eq!(
+                <MultiImportedHashes<TestRuntime>>::try_get(default_gateway, 2),
+                Ok(headers[9].hash())
+            );
+
+            assert!(<MultiImportedHeaders<TestRuntime>>::contains_key(
+                default_gateway,
+                headers[8].hash()
+            ));
+
+            assert_eq!(
+                <MultiImportedHeaders<TestRuntime>>::try_get(default_gateway, headers[8].hash()),
+                Ok(headers[8].clone())
+            );
+
+            assert_eq!(
+                <MultiImportedHashes<TestRuntime>>::try_get(default_gateway, 3),
+                Ok(headers[8].hash())
+            );
+
+            assert_eq!(
+                <MultiImportedHashesPointer<TestRuntime>>::try_get(default_gateway),
+                Ok(2) // ring buffer size is 5 -> 12 % 5 = 2
+            );
+        })
+    }
+
+    #[test]
+    fn succesfully_imports_partial_header_ranges() {
+        let default_gateway: ChainId = *b"gate";
+        run_test(|| {
+            initialize_substrate_bridge();
+            // generate valid headers
+            let mut headers = test_header_range(0, 10, None);
+            assert_ok!(submit_finality_proof_with_header(headers[1].clone()));
+            assert_ok!(submit_finality_proof_with_header(headers[10].clone()));
+            next_block();
+            // verified header stored in circuit we're basing the proof on
+            let anchor_header = headers.pop().unwrap();
+
+            // we want to submit the headers in reverse, as we have to iterate backwards
+            headers.reverse();
+
+            headers[1] = headers[2].clone(); // create an invalid chain after block 9 -> block 9 should be added, block 8 not
+
+            assert_ok!(submit_header_range(headers.clone(), anchor_header.hash()));
+
+            headers.reverse(); // reversing for tests because I struggle to think backwards
+
+            assert!(<MultiImportedHeaders<TestRuntime>>::contains_key(
+                default_gateway,
+                headers[9].hash()
+            ));
+
+            assert_eq!(
+                <MultiImportedHeaders<TestRuntime>>::try_get(default_gateway, headers[9].hash()),
+                Ok(headers[9].clone())
+            );
+
+            assert_eq!(
+                <MultiImportedHashes<TestRuntime>>::try_get(default_gateway, 2),
+                Ok(headers[9].hash())
+            );
+
+            assert_eq!(
+                <MultiImportedHeaders<TestRuntime>>::contains_key(
+                    default_gateway,
+                    headers[8].hash()
+                ),
+                false
+            );
+
+            assert_eq!(
+                <MultiImportedHashesPointer<TestRuntime>>::try_get(default_gateway),
+                Ok(3)
+            );
+        })
+    }
+
+    #[test]
+    fn reject_invalid_header_ranges() {
+        let default_gateway: ChainId = *b"gate";
+        run_test(|| {
+            initialize_substrate_bridge();
+            // generate valid headers
+            let mut headers = test_header_range(0, 10, None);
+            assert_ok!(submit_finality_proof_with_header(headers[1].clone()));
+            assert_ok!(submit_finality_proof_with_header(headers[10].clone()));
+            next_block();
+            // verified header stored in circuit we're basing the proof on
+            let anchor_header = headers.pop().unwrap();
+
+            // we want to submit the headers in reverse, as we have to iterate backwards
+            headers.reverse();
+
+            headers[0] = headers[1].clone(); // range is now invalid, nothing should be added
+
+            assert_ok!(submit_header_range(headers.clone(), anchor_header.hash()));
+
+            headers.reverse(); // reversing for tests because I struggle to think backwards
+
+            assert_eq!(
+                <MultiImportedHeaders<TestRuntime>>::contains_key(
+                    default_gateway,
+                    headers[9].hash()
+                ),
+                false
+            );
+
+            assert_eq!(
+                <MultiImportedHashesPointer<TestRuntime>>::try_get(default_gateway),
+                Ok(2)
+            );
+        })
+    }
+
+    #[test]
+    fn reject_invalid_anchor() {
+        let default_gateway: ChainId = *b"gate";
+        run_test(|| {
+            initialize_substrate_bridge();
+            // generate valid headers
+            let mut headers = test_header_range(0, 10, None);
+            assert_ok!(submit_finality_proof_with_header(headers[1].clone()));
+            assert_ok!(submit_finality_proof_with_header(headers[10].clone()));
+            next_block();
+
+            // verified header stored in circuit we're basing the proof on
+            headers.pop().unwrap();
+
+            // we want to submit the headers in reverse, as we have to iterate backwards
+            headers.reverse();
+
+            headers[0] = headers[1].clone(); // range is now invalid, nothing should be added
+
+            assert_err!(
+                submit_header_range(headers.clone(), headers[2].clone().hash()),
+                <Error<TestRuntime>>::InvalidAnchorHeader
+            );
+
+            headers.reverse(); // reversing for tests because I struggle to think backwards
+
+            assert_eq!(
+                <MultiImportedHeaders<TestRuntime>>::contains_key(
+                    default_gateway,
+                    headers[9].hash()
+                ),
+                false
+            );
+
+            assert_eq!(
+                <MultiImportedHashesPointer<TestRuntime>>::try_get(default_gateway),
+                Ok(2)
+            );
+        })
+    }
+
+    #[test]
     fn rejects_justification_that_skips_authority_set_transition() {
         run_test(|| {
             initialize_substrate_bridge();
@@ -1174,8 +1482,6 @@ mod tests {
                     header,
                     justification,
                     default_gateway,
-                    Default::default(),
-                    Default::default()
                 ),
                 <Error<TestRuntime>>::InvalidJustification
             );
@@ -1198,8 +1504,6 @@ mod tests {
                     header,
                     justification,
                     default_gateway,
-                    Default::default(),
-                    Default::default()
                 ),
                 <Error<TestRuntime>>::InvalidJustification
             );
@@ -1236,8 +1540,6 @@ mod tests {
                     header,
                     justification,
                     default_gateway,
-                    Default::default(),
-                    Default::default()
                 ),
                 <Error<TestRuntime>>::InvalidAuthoritySet
             );
@@ -1278,8 +1580,6 @@ mod tests {
                 header.clone(),
                 justification,
                 default_gateway,
-                Default::default(),
-                Default::default(),
             ));
 
             // Make sure that our header is the best finalized
@@ -1324,8 +1624,6 @@ mod tests {
                     header,
                     justification,
                     default_gateway,
-                    Default::default(),
-                    Default::default()
                 ),
                 <Error<TestRuntime>>::UnsupportedScheduledChange
             );
@@ -1353,8 +1651,6 @@ mod tests {
                     header,
                     justification,
                     default_gateway,
-                    Default::default(),
-                    Default::default()
                 ),
                 <Error<TestRuntime>>::UnsupportedScheduledChange
             );
@@ -1432,8 +1728,6 @@ mod tests {
                     header,
                     invalid_justification,
                     default_gateway,
-                    Default::default(),
-                    Default::default(),
                 )
             };
 
