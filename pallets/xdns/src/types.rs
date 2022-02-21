@@ -13,15 +13,16 @@ use sp_runtime::{traits::Hash, RuntimeDebug};
 use sp_std::prelude::*;
 use sp_std::vec::Vec;
 use t3rn_primitives::abi::GatewayABIConfig;
-use t3rn_primitives::{ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor};
-
+use t3rn_primitives::{ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor, abi::Type};
+pub use t3rn_protocol::side_effects::protocol::{SideEffectName, EventSignature};
 /// A hash based on encoding the complete XdnsRecord
 pub type XdnsRecordId<T> = <T as frame_system::Config>::Hash;
 
 /// A hash based on encoding the Gateway ID
 pub type XdnsGatewayId<T> = <T as frame_system::Config>::Hash;
 
-pub type AllowedSideEffect = Vec<u8>;
+pub type AllowedSideEffect = [u8; 4];
+
 
 /// A preliminary representation of a xdns_record in the onchain registry.
 #[derive(Clone, Debug, Eq, PartialEq, Encode, Decode, TypeInfo)]
@@ -52,6 +53,28 @@ pub struct XdnsRecord<AccountId> {
 
     /// Methods enabled to be called on the remote target
     pub allowed_side_effects: Vec<AllowedSideEffect>,
+}
+
+pub type SideEffectId<T> = <T as frame_system::Config>::Hash;
+
+#[derive(Clone, Debug, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct SideEffectInterface {
+    pub id: [u8; 4],
+    pub name: SideEffectName,
+    pub argument_abi: Vec<Type>,
+    pub argument_to_state_mapper: Vec<EventSignature>,
+    pub confirm_events: Vec<EventSignature>,
+    pub escrowed_events: Vec<EventSignature>,
+    pub commit_events: Vec<EventSignature>,
+    pub revert_events: Vec<EventSignature>,
+}
+
+impl SideEffectInterface {
+     /// Function that generates an XdnsRecordId hash based on the gateway id
+    pub fn generate_id<T: Config>(&self) -> SideEffectId<T> {
+        T::Hashing::hash(Encode::encode(&self.id).as_ref())
+    }
 }
 
 impl<AccountId: Encode> XdnsRecord<AccountId> {
