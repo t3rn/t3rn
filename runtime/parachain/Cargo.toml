@@ -100,7 +100,6 @@ default = [
 	"std",
 ]
 std = [
-#	"bp-runtime/std",
 	"codec/std",
 	"serde",
 	"scale-info/std",
@@ -124,8 +123,6 @@ std = [
 	"pallet-aura/std",
 	"pallet-authorship/std",
 	"pallet-balances/std",
-	"pallet-circuit-execution-delivery/std",
-	"pallet-circuit-execution-delivery-rpc-runtime-api/std",
 	"pallet-collator-selection/std",
 	"pallet-contracts-registry/std",
 	"pallet-circuit/std",
