@@ -1,22 +1,19 @@
+use codec::Decode;
 use frame_metadata::decode_different::DecodeDifferent;
 use frame_metadata::v13::{
     ExtrinsicMetadata, FunctionMetadata, ModuleMetadata, RuntimeMetadataV13,
 };
 use frame_metadata::{RuntimeMetadata, RuntimeMetadataPrefixed};
-use sp_core::H256;
-use sp_version::{ApisVec, RuntimeVersion};
-
-use sp_std::vec;
-use sp_std::vec::Vec;
-
-use t3rn_primitives::AuthorityId;
-
-use t3rn_protocol::chain_generic_metadata::*;
-use t3rn_protocol::substrate_gateway_protocol::*;
-
-use codec::Decode;
 use jsonrpsee_types::traits::Client as WsClient;
 use relay_substrate_client::{Chain, ChainBase, Client};
+use sp_core::H256;
+use sp_std::vec;
+use sp_std::{convert::TryFrom, vec::Vec};
+use sp_version::{ApisVec, RuntimeVersion};
+use t3rn_protocol::{
+    chain_generic_metadata::*, substrate_gateway_assembly::AuthorityId,
+    substrate_gateway_protocol::*,
+};
 
 fn create_test_metadata(
     modules_with_functions: Vec<(&'static str, Vec<&'static str>)>,
@@ -65,7 +62,7 @@ fn create_test_metadata(
         },
         modules: DecodeDifferent::Decoded(modules),
     };
-    Metadata::new(runtime_metadata)
+    Metadata::try_from(RuntimeMetadata::V13(runtime_metadata)).unwrap()
 }
 
 pub async fn create_metadata_from_client<C: Chain>(client: &Client<C>) -> Metadata {
@@ -78,10 +75,7 @@ pub async fn create_metadata_from_client<C: Chain>(client: &Client<C>) -> Metada
         .await
         .unwrap();
     let meta: RuntimeMetadataPrefixed = Decode::decode(&mut &bytes[..]).unwrap();
-    match meta.1 {
-        RuntimeMetadata::V13(md13) => Metadata::new(md13),
-        _ => Default::default(),
-    }
+    Metadata::try_from(meta.1).unwrap()
 }
 
 fn create_test_runtime_version() -> RuntimeVersion {

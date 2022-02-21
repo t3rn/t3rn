@@ -16,62 +16,35 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::env;
-use std::sync::{Arc, Mutex};
-
-use sp_core::crypto::KeyTypeId;
-
-use sp_application_crypto::AppPair;
-
+use jsonrpc_core::futures::executor::ThreadPool;
+use jsonrpc_pubsub::manager::SubscriptionManager;
+use jsonrpc_runtime_client::{create_rpc_client, polkadot_like_chain::PolkadotLike};
+use relay_substrate_client::{Client as RemoteClient, ConnectionParams};
+use sc_keystore::LocalKeystore;
+use sc_rpc::{
+    author::Author,
+    state::{new_full, State},
+    system::System,
+};
+use sc_rpc_api::{system::SystemInfo, DenyUnsafe};
 use sc_transaction_pool::{BasicPool, FullChainApi};
+use sc_utils::mpsc::tracing_unbounded;
+use sp_application_crypto::AppPair;
+use sp_core::crypto::KeyTypeId;
+use sp_keyring::Sr25519Keyring;
+use sp_keystore::{SyncCryptoStore, SyncCryptoStorePtr};
+use std::{
+    env,
+    sync::{Arc, Mutex},
+};
 use substrate_test_runtime_client::{
     self,
     runtime::{Block, Extrinsic, Transfer},
     AccountKeyring, Backend, Client, DefaultTestClientBuilderExt, TestClientBuilderExt,
 };
 
-use sp_keystore::{SyncCryptoStore, SyncCryptoStorePtr};
-
-use sc_rpc::author::Author;
-use sc_rpc::state::{new_full, State};
-use sc_rpc::system::System;
-use sc_rpc_api::{system::SystemInfo, DenyUnsafe};
-
-use sp_utils::mpsc::tracing_unbounded;
-
-use jsonrpc_pubsub::manager::SubscriptionManager;
-
-use futures::{compat::Future01CompatExt, executor, FutureExt};
-use jsonrpc_core::futures::future as future01;
-
-use jsonrpc_runtime_client::create_rpc_client;
-use jsonrpc_runtime_client::polkadot_like_chain::PolkadotLike;
-use relay_substrate_client::{Client as RemoteClient, ConnectionParams};
-use sc_keystore::LocalKeystore;
-use sp_keyring::Sr25519Keyring;
-// Executor shared by all tests.
-//
-// This shared executor is used to prevent `Too many open files` errors
-// on systems with a lot of cores.
 lazy_static::lazy_static! {
-    static ref EXECUTOR: executor::ThreadPool = executor::ThreadPool::new()
-        .expect("Failed to create thread pool executor for tests");
-
     pub static ref REMOTE_CLIENT:  Mutex<Option<RemoteClient<PolkadotLike>>> = Mutex::new(None);
-}
-
-pub type Boxed01Future01 = Box<dyn future01::Future<Item = (), Error = ()> + Send + 'static>;
-
-/// Executor for use in testing
-pub struct TaskExecutor;
-impl future01::Executor<Boxed01Future01> for TaskExecutor {
-    fn execute(
-        &self,
-        future: Boxed01Future01,
-    ) -> std::result::Result<(), future01::ExecuteError<Boxed01Future01>> {
-        EXECUTOR.spawn_ok(future.compat().map(drop));
-        Ok(())
-    }
 }
 
 /// creates keystore backed by a temp file
@@ -156,7 +129,7 @@ impl TestSetup {
         Author::new(
             self.client.clone(),
             self.pool.clone(),
-            SubscriptionManager::new(Arc::new(TaskExecutor)),
+            SubscriptionManager::new(Arc::new(ThreadPool::new().expect("test executor"))),
             self.keystore.clone(),
             DenyUnsafe::No,
         )
@@ -165,7 +138,7 @@ impl TestSetup {
     pub fn state(&self) -> State<Block, Client<Backend>> {
         let (state, _) = new_full(
             self.client.clone(),
-            SubscriptionManager::new(Arc::new(TaskExecutor)),
+            SubscriptionManager::new(Arc::new(ThreadPool::new().expect("test executor"))),
             DenyUnsafe::No,
             None,
         );

@@ -12,5 +12,6 @@ members = [
     'primitives/src/bridges/headers',
     'primitives/src/bridges/utils',
     'runtime/*',
+    'rpc-test',
 ]
 exclude = []

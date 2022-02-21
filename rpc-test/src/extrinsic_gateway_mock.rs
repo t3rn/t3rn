@@ -15,24 +15,19 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
+use crate::{
+    mock_rpc_setup::{uxt, TestSetup},
+    test_utils::create_test_stuffed_gateway_protocol,
+};
 use codec::{Compact, Encode};
-
-use sp_keystore::KeystoreExt;
-
-use sp_io::TestExternalities;
-
 use hex_literal::hex;
 use sc_rpc::author::AuthorApi;
 use sc_rpc::state::StateApi;
 use sc_rpc::system::SystemApi;
-
-use t3rn_primitives::*;
-
-use circuit_test_utils::create_test_stuffed_gateway_protocol;
-
+use sp_io::TestExternalities;
 use sp_keyring::Sr25519Keyring;
-
-use crate::mock_rpc_setup::{uxt, TestSetup};
+use sp_keystore::KeystoreExt;
+use t3rn_primitives::*;
 
 #[test]
 fn rpc_prints_system_version() {

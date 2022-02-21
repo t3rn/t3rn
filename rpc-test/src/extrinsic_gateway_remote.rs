@@ -15,23 +15,18 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
-use codec::{Compact, Encode};
-
-use crate::mock_rpc_setup::{TestSetup, REMOTE_CLIENT};
-
-use sp_core::Bytes;
-use sp_io::TestExternalities;
-use sp_keystore::KeystoreExt;
-
-use t3rn_primitives::*;
-
-use circuit_test_utils::{
-    create_gateway_protocol_from_client, create_test_stuffed_gateway_protocol,
+use crate::{
+    mock_rpc_setup::{TestSetup, REMOTE_CLIENT},
+    test_utils::{create_gateway_protocol_from_client, create_test_stuffed_gateway_protocol},
 };
-
+use codec::{Compact, Encode};
 use jsonrpc_runtime_client::{create_rpc_client, ConnectionParams};
 use jsonrpsee_types::{traits::Client, JsonValue};
+use sp_core::Bytes;
+use sp_io::TestExternalities;
 use sp_keyring::Sr25519Keyring;
+use sp_keystore::KeystoreExt;
+use t3rn_primitives::*;
 
 #[test]
 fn successfully_dispatches_signed_transfer_outbound_message_with_protocol_from_circuit_to_remote_target(

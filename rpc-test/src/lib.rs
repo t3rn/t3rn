@@ -30,3 +30,6 @@ mod intrinsic_gateway_remote;
 
 #[cfg(test)]
 mod smart_contract_deployment_remote;
+
+#[cfg(test)]
+mod test_utils;
