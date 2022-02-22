@@ -65,8 +65,6 @@ fn on_extrinsic_trigger_works_with_empty_side_effects() {
 fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let mut ext = TestExternalities::new_empty();
-
     let mut local_state = LocalState::new();
     let transfer_protocol_box = Box::new(TransferSideEffectProtocol {});
     let valid_transfer_side_effect = produce_and_validate_side_effect(
@@ -84,7 +82,11 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
     let fee = 1;
     let sequential = true;
 
-    ext.execute_with(|| {
+     ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+         .execute_with(|| {
         let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
 
         System::set_block_number(1);
@@ -98,9 +100,9 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
 
         // Assert Circuit::emit generates 5 correct events: 3 from charging and 2 Circuit-specific
         let events = System::events();
-        assert_eq!(events.len(), 5);
+        assert_eq!(events.len(), 8);
         assert_eq!(
-            vec![events[3].clone(), events[4].clone()],
+            vec![events[6].clone(), events[7].clone()],
             vec![
                 EventRecord {
                     phase: Phase::Initialization,
@@ -192,8 +194,6 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
 fn on_extrinsic_trigger_validation_works_with_single_transfer_insured() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let mut ext = TestExternalities::new_empty();
-
     let mut local_state = LocalState::new();
     let transfer_protocol_box = Box::new(TransferSideEffectProtocol {});
     let valid_transfer_side_effect = produce_and_validate_side_effect(
@@ -211,17 +211,21 @@ fn on_extrinsic_trigger_validation_works_with_single_transfer_insured() {
     let fee = 1;
     let sequential = true;
 
-    ext.execute_with(|| {
-        let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
 
-        System::set_block_number(1);
+            System::set_block_number(1);
 
-        assert_ok!(Circuit::on_extrinsic_trigger(
-            origin,
-            side_effects,
-            fee,
-            sequential,
-        ));
+            assert_ok!(Circuit::on_extrinsic_trigger(
+                origin,
+                side_effects,
+                fee,
+                sequential,
+            ));
     });
 }
 
@@ -229,8 +233,6 @@ fn on_extrinsic_trigger_validation_works_with_single_transfer_insured() {
 fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let mut ext = TestExternalities::new_empty();
-
     let mut local_state = LocalState::new();
     let transfer_protocol_box = Box::new(TransferSideEffectProtocol {});
     let valid_transfer_side_effect = produce_and_validate_side_effect(
@@ -248,7 +250,12 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
     let fee = 1;
     let sequential = true;
 
-    ext.execute_with(|| {
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
         let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
 
         System::set_block_number(1);
@@ -262,9 +269,9 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
 
         // Assert Circuit::emit generates 5 correct events: 3 for charging and 2 Circuit-specific
         let events = System::events();
-        assert_eq!(events.len(), 7);
+        assert_eq!(events.len(), 10);
         assert_eq!(
-            vec![events[5].clone(), events[6].clone()],
+            vec![events[8].clone(), events[9].clone()],
             vec![
                 EventRecord {
                     phase: Phase::Initialization,
@@ -318,8 +325,6 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
 fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let mut ext = TestExternalities::new_empty();
-
     let mut local_state = LocalState::new();
     let transfer_protocol_box = Box::new(TransferSideEffectProtocol {});
     let valid_transfer_side_effect = produce_and_validate_side_effect(
@@ -337,7 +342,12 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
     let fee = 1;
     let sequential = true;
 
-    ext.execute_with(|| {
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
         let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
 
         System::set_block_number(1);
@@ -418,7 +428,11 @@ fn circuit_handles_insurance_deposit_for_transfers() {
     let fee = 1;
     let sequential = true;
 
-    ext.with_default_xdns_records().build().execute_with(|| {
+    ext
+        .with_default_xdns_records()
+        .with_standard_side_effects()
+        .build()
+        .execute_with(|| {
         let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
         let _ = Balances::deposit_creating(&BOB_RELAYER, 1); // Bob should have at least: insurance deposit (1)(for VariantA)
 
@@ -572,7 +586,11 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
     let fee = 1;
     let sequential = true;
 
-    ext.with_default_xdns_records().build().execute_with(|| {
+    ext
+        .with_default_xdns_records()
+        .with_standard_side_effects()
+        .build()
+        .execute_with(|| {
         let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
         let _ = Balances::deposit_creating(&BOB_RELAYER, 1); // Bob should have at least: insurance deposit (1)(for VariantA)
 

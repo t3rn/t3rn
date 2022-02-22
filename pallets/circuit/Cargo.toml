@@ -81,6 +81,21 @@ std = [
     "scale-info/std",
     "orml-tokens/std",
     "orml-traits/std",
+    "pallet-multi-finality-verifier/std",
+    "frame-election-provider-support/std",
+    "pallet-offences/std",
+    "pallet-session/std",
+    "pallet-staking/std",
+    "pallet-authorship/std",
+    "pallet-babe/std",
+    "sp-staking/std",
+    "sp-finality-grandpa/std",
+    "sp-consensus-vrf/std",
+    "sp-consensus-babe/std",
+    "pallet-transaction-payment/std",
+    "pallet-randomness-collective-flip/std",
+    "snowbridge-basic-channel/std",
+#    pallet-staking-reward-curve not needed here
 ]
 runtime-benchmarks = ["frame-benchmarking"]
 try-runtime = ["frame-support/try-runtime"]

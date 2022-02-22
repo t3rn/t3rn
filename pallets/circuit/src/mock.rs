@@ -1,5 +1,4 @@
 //! Test utilities
-// use std::iter::FromIterator;
 use crate::{self as pallet_circuit, Config};
 
 use codec::Encode;
@@ -7,6 +6,11 @@ use codec::Encode;
 use pallet_babe::EquivocationHandler;
 use pallet_babe::ExternalTrigger;
 
+use frame_support::pallet_prelude::GenesisBuild;
+use frame_support::{
+    parameter_types,
+    traits::{ConstU32, Everything, KeyOwnerProofSystem, Nothing},
+};
 use sp_runtime::traits::Convert;
 use sp_runtime::{
     curve::PiecewiseLinear,
@@ -15,13 +19,7 @@ use sp_runtime::{
     traits::{IdentityLookup, OpaqueKeys},
     Perbill,
 };
-use sp_std::collections::btree_map::BTreeMap;
-
-use frame_support::pallet_prelude::GenesisBuild;
-use frame_support::{
-    parameter_types,
-    traits::{ConstU32, Everything, KeyOwnerProofSystem, Nothing},
-};
+use sp_std::{collections::btree_map::BTreeMap, fmt::Debug};
 
 use frame_election_provider_support::onchain;
 use pallet_session::historical as pallet_session_historical;
@@ -154,6 +152,7 @@ impl EscrowTrait for Test {
 // ORML Tokens
 use orml_traits::parameter_type_with_key;
 use t3rn_primitives::abi::Type;
+
 
 pub type CurrencyId = u32;
 parameter_type_with_key! {
@@ -508,7 +507,7 @@ impl ExtBuilder {
                 token_symbol: Encode::encode("ZERO"),
                 token_decimals: 0,
             },
-            vec![],
+            vec![*b"tran", *b"swap"],
         );
         let gateway_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -536,7 +535,7 @@ impl ExtBuilder {
                 token_symbol: Encode::encode("DOT"),
                 token_decimals: 10,
             },
-            vec![],
+            vec![*b"tran", *b"swap"],
         );
         let kusama_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -562,7 +561,7 @@ impl ExtBuilder {
         self
     }
 
-     pub(crate) fn with_standard_side_effects(mut self) -> ExtBuilder {
+    pub(crate) fn with_standard_side_effects(mut self) -> ExtBuilder {
         let transfer_side_effect = SideEffectInterface {
             id: *b"tran",
             name: b"transfer".to_vec(),
@@ -576,12 +575,12 @@ impl ExtBuilder {
                 b"from".to_vec(),
                 b"to".to_vec(),
                 b"value".to_vec(),
-                b"insurance".to_vec()
+                b"insurance".to_vec(),
             ],
             confirm_events: vec![b"Transfer(from,to,value)".to_vec()],
             escrowed_events: vec![b"EscrowTransfer(from,to,value)".to_vec()],
             commit_events: vec![b"Transfer(executor,to,value)".to_vec()],
-            revert_events: vec![b"Transfer(executor,from,value)".to_vec()]
+            revert_events: vec![b"Transfer(executor,from,value)".to_vec()],
         };
 
         let swap_side_effect = SideEffectInterface {
@@ -608,10 +607,10 @@ impl ExtBuilder {
             confirm_events: vec![b"ExecuteToken(_executor,to,asset_to,amount_to)".to_vec()],
             escrowed_events: vec![b"ExecuteToken(_executor,to,asset_to,amount_to)".to_vec()],
             commit_events: vec![b"MultiTransfer(executor,to,asset_to,amount_to)".to_vec()],
-            revert_events: vec![b"MultiTransfer(executor,caller,asset_from,amount_from)".to_vec()]
+            revert_events: vec![b"MultiTransfer(executor,caller,asset_from,amount_from)".to_vec()],
         };
 
-         let add_liquidity_side_effect = SideEffectInterface {
+        let add_liquidity_side_effect = SideEffectInterface {
             id: *b"aliq",
             name: b"add_liquidity".to_vec(),
             argument_abi: vec![
@@ -636,13 +635,19 @@ impl ExtBuilder {
                 b"amount_liquidity_token".to_vec(),
                 b"insurance".to_vec(),
             ],
-            confirm_events: vec![b"ExecuteToken(executor,to,liquidity_token,amount_liquidity_token)".to_vec()],
-            escrowed_events: vec![b"ExecuteToken(xtx_id,to,liquidity_token,amount_liquidity_token)".to_vec()],
-            commit_events: vec![b"MultiTransfer(executor,to,liquidity_token,amount_liquidity_token)".to_vec()],
+            confirm_events: vec![
+                b"ExecuteToken(executor,to,liquidity_token,amount_liquidity_token)".to_vec(),
+            ],
+            escrowed_events: vec![
+                b"ExecuteToken(xtx_id,to,liquidity_token,amount_liquidity_token)".to_vec(),
+            ],
+            commit_events: vec![
+                b"MultiTransfer(executor,to,liquidity_token,amount_liquidity_token)".to_vec(),
+            ],
             revert_events: vec![
                 b"MultiTransfer(executor,caller,asset_left,amount_left)".to_vec(),
-                b"MultiTransfer(executor,caller,asset_right,amount_right)".to_vec()
-            ]
+                b"MultiTransfer(executor,caller,asset_right,amount_right)".to_vec(),
+            ],
         };
 
         let call_evm_side_effect = SideEffectInterface {
@@ -670,13 +675,15 @@ impl ExtBuilder {
                 b"nonce".to_vec(),
                 b"access_list".to_vec(),
             ],
-            confirm_events: vec![b"TransactCall(Append<caller>,source,value,input,gas_limit)".to_vec()],
+            confirm_events: vec![
+                b"TransactCall(Append<caller>,source,value,input,gas_limit)".to_vec()
+            ],
             escrowed_events: vec![],
             commit_events: vec![],
-            revert_events: vec![]
+            revert_events: vec![],
         };
 
-         let get_data_side_effect = SideEffectInterface {
+        let get_data_side_effect = SideEffectInterface {
             id: *b"data",
             name: b"data:get".to_vec(),
             argument_abi: vec![
@@ -686,19 +693,18 @@ impl ExtBuilder {
             confirm_events: vec![b"<InclusionOnly>".to_vec()],
             escrowed_events: vec![],
             commit_events: vec![],
-            revert_events: vec![]
+            revert_events: vec![],
         };
-
-         // map side_effects to id, keeping lib.rs clean
+        //
+        // map side_effects to id, keeping lib.rs clean
         self.standard_side_effects_map = BTreeMap::from([
             (transfer_side_effect.id, transfer_side_effect),
             (swap_side_effect.id, swap_side_effect),
             (add_liquidity_side_effect.id, add_liquidity_side_effect),
             (call_evm_side_effect.id, call_evm_side_effect),
-            (get_data_side_effect.id, get_data_side_effect)
+            (get_data_side_effect.id, get_data_side_effect),
         ]);
-
-         self
+        self
     }
 
     pub(crate) fn build(self) -> sp_io::TestExternalities {
