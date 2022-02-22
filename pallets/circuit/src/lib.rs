@@ -841,7 +841,9 @@ impl<T: Config> Pallet<T> {
         for side_effect in side_effects.iter() {
             // ToDo: Generate Circuit's params as default ABI from let abi = pallet_xdns::get_abi(target_id)
             let gateway_abi = Default::default();
-            local_ctx.use_protocol.notice_gateway(side_effect.target);
+            let allowed_side_effects =  pallet_xdns::Pallet::<T>::allowed_side_effects(&side_effect.target);
+
+            local_ctx.use_protocol.notice_gateway(side_effect.target, allowed_side_effects);
             local_ctx
                 .use_protocol
                 .validate_args::<T::AccountId, T::BlockNumber, BalanceOf<T>, SystemHashing<T>>(

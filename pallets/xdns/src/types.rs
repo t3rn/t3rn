@@ -23,7 +23,6 @@ pub type XdnsGatewayId<T> = <T as frame_system::Config>::Hash;
 
 pub type AllowedSideEffect = [u8; 4];
 
-
 /// A preliminary representation of a xdns_record in the onchain registry.
 #[derive(Clone, Debug, Eq, PartialEq, Encode, Decode, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]

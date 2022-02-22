@@ -6271,6 +6271,7 @@ dependencies = [
  "sp-std",
  "sp-version",
  "t3rn-primitives",
+ "t3rn-protocol",
 ]
 
 [[package]]

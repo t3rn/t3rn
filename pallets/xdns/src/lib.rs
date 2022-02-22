@@ -316,22 +316,22 @@ pub mod pallet {
         /// returns a mapping of all allowed side_effects of a gateway.
         pub fn allowed_side_effects(
             gateway_id: &ChainId,
-        ) -> BTreeMap<[u8; 4], Box<SideEffectInterface>> {
+        ) -> BTreeMap<[u8; 4], Box<dyn SideEffectProtocol>> {
             let xdns_record_id = T::Hashing::hash(&gateway_id.encode());
-            let mut side_effect_interfaces: BTreeMap<[u8; 4], Box<SideEffectInterface>> = BTreeMap::new();
+            let mut allowed_side_effects: BTreeMap<[u8; 4], Box<dyn SideEffectProtocol>> = BTreeMap::new();
 
             let standard_side_effects = <StandardSideEffects<T>>::get().unwrap();
             for side_effect in <XDNSRegistry<T>>::get(&xdns_record_id).unwrap().allowed_side_effects {
                 if standard_side_effects.contains_key(&side_effect) {
                     // is it somehow possible to only pass a reference here? aka each gateway would access the same addresses/structs in memory?
                     let se = standard_side_effects.get(&side_effect).unwrap();
-                    side_effect_interfaces.insert(se.get_id(),Box::new(se.clone()));
+                    allowed_side_effects.insert(se.get_id(),Box::new(se.clone()));
                 } else {
                     // TODO implement custom side_effect lookup
                 }
             }
 
-            return side_effect_interfaces
+            return allowed_side_effects
         }
 
         pub fn update_gateway_ttl(

@@ -228,7 +228,6 @@ fn finds_correct_amount_of_allowed_side_effects() {
                 2
             )
         });
-
 }
 
 #[test]
