@@ -2,267 +2,180 @@
 /* eslint-disable */
 
 import type { ApiTypes } from '@polkadot/api/types';
-import type { Bytes, Option, U256, Vec, u32, u64 } from '@polkadot/types';
-import type { BalanceStatus } from '@polkadot/types/interfaces/balances';
-import type { ChainId, LaneId, MessageNonce, Parameter } from '@polkadot/types/interfaces/bridges';
-import type { MessageId } from '@polkadot/types/interfaces/cumulus';
-import type { EvmLog } from '@polkadot/types/interfaces/evm';
-import type { AuthorityList } from '@polkadot/types/interfaces/grandpa';
-import type { AccountId, Balance, BalanceOf, H160, Hash, PhantomData, Weight } from '@polkadot/types/interfaces/runtime';
-import type { SessionIndex } from '@polkadot/types/interfaces/session';
-import type { SpecVersion } from '@polkadot/types/interfaces/state';
-import type { DispatchError, DispatchInfo, DispatchResult } from '@polkadot/types/interfaces/system';
-import type { RegistryContractId } from 't3rn-circuit-typegen/interfaces/contracts_registry';
-import type { AllowedSideEffect, SideEffectsDFD, XtxId } from 't3rn-circuit-typegen/interfaces/execution_delivery';
-import type { ConfirmedSideEffect, GatewaySysProps, GatewayType, GatewayVendor, SideEffect } from 't3rn-circuit-typegen/interfaces/primitives';
-import type { XdnsRecordId } from 't3rn-circuit-typegen/interfaces/xdns';
+import type { Bytes, Null, Option, Result, U8aFixed, Vec, bool, u128, u16, u32, u64, u8 } from '@polkadot/types';
+import type { AccountId32, H256 } from '@polkadot/types/interfaces/runtime';
+import type { FrameSupportTokensMiscBalanceStatus, FrameSupportWeightsDispatchInfo, PalletImOnlineSr25519AppSr25519Public, PalletMultisigTimepoint, PolkadotParachainPrimitivesHrmpChannelId, PolkadotPrimitivesV1CandidateReceipt, SpFinalityGrandpaAppPublic, SpRuntimeDispatchError, XcmV1MultiLocation, XcmV2Response, XcmV2TraitsError, XcmV2TraitsOutcome, XcmV2Xcm, XcmVersionedMultiAssets, XcmVersionedMultiLocation } from '@polkadot/types/lookup';
+import type { ITuple } from '@polkadot/types/types';
 
 declare module '@polkadot/api/types/events' {
   export interface AugmentedEvents<ApiType> {
+    auctions: {
+      /**
+       * An auction ended. All funds become unreserved. `[auction_index]`
+       **/
+      AuctionClosed: AugmentedEvent<ApiType, [u32]>;
+      /**
+       * An auction started. Provides its index and the block number where it will begin to
+       * close and the first lease period of the quadruplet that is auctioned.
+       * `[auction_index, lease_period, ending]`
+       **/
+      AuctionStarted: AugmentedEvent<ApiType, [u32, u32, u32]>;
+      /**
+       * A new bid has been accepted as the current winner.
+       * `[who, para_id, amount, first_slot, last_slot]`
+       **/
+      BidAccepted: AugmentedEvent<ApiType, [AccountId32, u32, u128, u32, u32]>;
+      /**
+       * Someone attempted to lease the same slot twice for a parachain. The amount is held in reserve
+       * but no parachain slot has been leased.
+       * `[parachain_id, leaser, amount]`
+       **/
+      ReserveConfiscated: AugmentedEvent<ApiType, [u32, AccountId32, u128]>;
+      /**
+       * Funds were reserved for a winning bid. First balance is the extra amount reserved.
+       * Second is the total. `[bidder, extra_reserved, total_amount]`
+       **/
+      Reserved: AugmentedEvent<ApiType, [AccountId32, u128, u128]>;
+      /**
+       * Funds were unreserved since bidder is no longer active. `[bidder, amount]`
+       **/
+      Unreserved: AugmentedEvent<ApiType, [AccountId32, u128]>;
+      /**
+       * The winning offset was chosen for an auction. This will map into the `Winning` storage map.
+       * `[auction_index, block_number]`
+       **/
+      WinningOffset: AugmentedEvent<ApiType, [u32, u32]>;
+      /**
+       * Generic event
+       **/
+      [key: string]: AugmentedEvent<ApiType>;
+    };
     balances: {
       /**
-       * A balance was set by root. \[who, free, reserved\]
+       * A balance was set by root.
        **/
-      BalanceSet: AugmentedEvent<ApiType, [AccountId, Balance, Balance]>;
+      BalanceSet: AugmentedEvent<ApiType, [AccountId32, u128, u128]>;
       /**
-       * Some amount was deposited (e.g. for transaction fees). \[who, deposit\]
+       * Some amount was deposited (e.g. for transaction fees).
        **/
-      Deposit: AugmentedEvent<ApiType, [AccountId, Balance]>;
+      Deposit: AugmentedEvent<ApiType, [AccountId32, u128]>;
       /**
        * An account was removed whose balance was non-zero but below ExistentialDeposit,
-       * resulting in an outright loss. \[account, balance\]
+       * resulting in an outright loss.
        **/
-      DustLost: AugmentedEvent<ApiType, [AccountId, Balance]>;
+      DustLost: AugmentedEvent<ApiType, [AccountId32, u128]>;
       /**
-       * An account was created with some free balance. \[account, free_balance\]
+       * An account was created with some free balance.
        **/
-      Endowed: AugmentedEvent<ApiType, [AccountId, Balance]>;
+      Endowed: AugmentedEvent<ApiType, [AccountId32, u128]>;
       /**
-       * Some balance was reserved (moved from free to reserved). \[who, value\]
+       * Some balance was reserved (moved from free to reserved).
        **/
-      Reserved: AugmentedEvent<ApiType, [AccountId, Balance]>;
+      Reserved: AugmentedEvent<ApiType, [AccountId32, u128]>;
       /**
        * Some balance was moved from the reserve of the first account to the second account.
        * Final argument indicates the destination balance type.
-       * \[from, to, balance, destination_status\]
        **/
-      ReserveRepatriated: AugmentedEvent<ApiType, [AccountId, AccountId, Balance, BalanceStatus]>;
+      ReserveRepatriated: AugmentedEvent<ApiType, [AccountId32, AccountId32, u128, FrameSupportTokensMiscBalanceStatus]>;
       /**
-       * Transfer succeeded. \[from, to, value\]
+       * Some amount was removed from the account (e.g. for misbehavior).
        **/
-      Transfer: AugmentedEvent<ApiType, [AccountId, AccountId, Balance]>;
+      Slashed: AugmentedEvent<ApiType, [AccountId32, u128]>;
       /**
-       * Some balance was unreserved (moved from reserved to free). \[who, value\]
+       * Transfer succeeded.
        **/
-      Unreserved: AugmentedEvent<ApiType, [AccountId, Balance]>;
+      Transfer: AugmentedEvent<ApiType, [AccountId32, AccountId32, u128]>;
       /**
-       * Generic event
+       * Some balance was unreserved (moved from reserved to free).
        **/
-      [key: string]: AugmentedEvent<ApiType>;
-    };
-    basicOutboundChannel: {
-      MessageAccepted: AugmentedEvent<ApiType, [MessageNonce]>;
+      Unreserved: AugmentedEvent<ApiType, [AccountId32, u128]>;
       /**
-       * Generic event
+       * Some amount was withdrawn from the account (e.g. for transaction fees).
        **/
-      [key: string]: AugmentedEvent<ApiType>;
-    };
-    bridgeDispatch: {
-      /**
-       * Phantom member, never used. Needed to handle multiple pallet instances.
-       **/
-      _Dummy: AugmentedEvent<ApiType, [PhantomData]>;
-      /**
-       * We have failed to decode Call from the message.
-       **/
-      MessageCallDecodeFailed: AugmentedEvent<ApiType, [ChainId, MessageId]>;
-      /**
-       * The call from the message has been rejected by the call filter.
-       **/
-      MessageCallRejected: AugmentedEvent<ApiType, [ChainId, MessageId]>;
-      /**
-       * Message has been dispatched with given result.
-       **/
-      MessageDispatched: AugmentedEvent<ApiType, [ChainId, MessageId, DispatchResult]>;
-      /**
-       * Message has been rejected before reaching dispatch.
-       **/
-      MessageRejected: AugmentedEvent<ApiType, [ChainId, MessageId]>;
-      /**
-       * Message signature mismatch.
-       **/
-      MessageSignatureMismatch: AugmentedEvent<ApiType, [ChainId, MessageId]>;
-      /**
-       * Message has been rejected by dispatcher because of spec version mismatch.
-       * Last two arguments are: expected and passed spec version.
-       **/
-      MessageVersionSpecMismatch: AugmentedEvent<ApiType, [ChainId, MessageId, SpecVersion, SpecVersion]>;
-      /**
-       * Message has been rejected by dispatcher because of weight mismatch.
-       * Last two arguments are: expected and passed call weight.
-       **/
-      MessageWeightMismatch: AugmentedEvent<ApiType, [ChainId, MessageId, Weight, Weight]>;
+      Withdraw: AugmentedEvent<ApiType, [AccountId32, u128]>;
       /**
        * Generic event
        **/
       [key: string]: AugmentedEvent<ApiType>;
     };
-    bridgeGatewayMessages: {
+    collective: {
       /**
-       * Phantom member, never used.
+       * A motion was approved by the required threshold.
        **/
-      Dummy: AugmentedEvent<ApiType, [PhantomData]>;
+      Approved: AugmentedEvent<ApiType, [H256]>;
       /**
-       * Message has been accepted and is waiting to be delivered.
+       * A proposal was closed because its threshold was reached or after its duration was up.
        **/
-      MessageAccepted: AugmentedEvent<ApiType, [LaneId, MessageNonce]>;
+      Closed: AugmentedEvent<ApiType, [H256, u32, u32]>;
       /**
-       * Messages in the inclusive range have been delivered and processed by the bridged chain.
+       * A motion was not approved by the required threshold.
        **/
-      MessagesDelivered: AugmentedEvent<ApiType, [LaneId, MessageNonce, MessageNonce]>;
+      Disapproved: AugmentedEvent<ApiType, [H256]>;
       /**
-       * Pallet parameter has been updated.
+       * A motion was executed; result will be `Ok` if it returned without error.
        **/
-      ParameterUpdated: AugmentedEvent<ApiType, [Parameter]>;
+      Executed: AugmentedEvent<ApiType, [H256, Result<Null, SpRuntimeDispatchError>]>;
       /**
-       * Generic event
+       * A single member did some action; result will be `Ok` if it returned without error.
        **/
-      [key: string]: AugmentedEvent<ApiType>;
-    };
-    contracts: {
+      MemberExecuted: AugmentedEvent<ApiType, [H256, Result<Null, SpRuntimeDispatchError>]>;
       /**
-       * A code with the specified hash was removed.
-       * \[code_hash\]
-       * 
-       * This happens when the last contract that uses this code hash was removed or evicted.
+       * A motion (given hash) has been proposed (by given account) with a threshold (given
+       * `MemberCount`).
        **/
-      CodeRemoved: AugmentedEvent<ApiType, [Hash]>;
+      Proposed: AugmentedEvent<ApiType, [AccountId32, u32, H256, u32]>;
       /**
-       * Code with the specified hash has been stored. \[code_hash\]
+       * A motion (given hash) has been voted on by given account, leaving
+       * a tally (yes votes and no votes given respectively as `MemberCount`).
        **/
-      CodeStored: AugmentedEvent<ApiType, [Hash]>;
-      /**
-       * A custom event emitted by the contract.
-       * \[contract, data\]
-       * 
-       * # Params
-       * 
-       * - `contract`: The contract that emitted the event.
-       * - `data`: Data supplied by the contract. Metadata generated during contract
-       * compilation is needed to decode it.
-       **/
-      ContractEmitted: AugmentedEvent<ApiType, [AccountId, Bytes]>;
-      /**
-       * Contract has been evicted and is now in tombstone state. \[contract\]
-       **/
-      Evicted: AugmentedEvent<ApiType, [AccountId]>;
-      /**
-       * Contract deployed by address at the specified address. \[deployer, contract\]
-       **/
-      Instantiated: AugmentedEvent<ApiType, [AccountId, AccountId]>;
-      /**
-       * Restoration of a contract has been successful.
-       * \[restorer, dest, code_hash, rent_allowance\]
-       * 
-       * # Params
-       * 
-       * - `restorer`: Account ID of the restoring contract.
-       * - `dest`: Account ID of the restored contract.
-       * - `code_hash`: Code hash of the restored contract.
-       * - `rent_allowance`: Rent allowance of the restored contract.
-       **/
-      Restored: AugmentedEvent<ApiType, [AccountId, AccountId, Hash, Balance]>;
-      /**
-       * Triggered when the current schedule is updated.
-       * \[version\]
-       * 
-       * # Params
-       * 
-       * - `version`: The version of the newly set schedule.
-       **/
-      ScheduleUpdated: AugmentedEvent<ApiType, [u32]>;
-      /**
-       * Contract has been terminated without leaving a tombstone.
-       * \[contract, beneficiary\]
-       * 
-       * # Params
-       * 
-       * - `contract`: The contract that was terminated.
-       * - `beneficiary`: The account that received the contracts remaining balance.
-       * 
-       * # Note
-       * 
-       * The only way for a contract to be removed without a tombstone and emitting
-       * this event is by calling `seal_terminate`.
-       **/
-      Terminated: AugmentedEvent<ApiType, [AccountId, AccountId]>;
+      Voted: AugmentedEvent<ApiType, [AccountId32, H256, bool, u32, u32]>;
       /**
        * Generic event
        **/
       [key: string]: AugmentedEvent<ApiType>;
     };
-    contractsRegistry: {
+    crowdloan: {
       /**
-       * \[requester, contract_id\]
+       * A parachain has been moved to `NewRaise`
        **/
-      ContractPurged: AugmentedEvent<ApiType, [AccountId, RegistryContractId]>;
+      AddedToNewRaise: AugmentedEvent<ApiType, [u32]>;
       /**
-       * \[requester, contract_id\]
+       * All loans in a fund have been refunded. `[fund_index]`
        **/
-      ContractStored: AugmentedEvent<ApiType, [AccountId, RegistryContractId]>;
+      AllRefunded: AugmentedEvent<ApiType, [u32]>;
       /**
-       * Generic event
+       * Contributed to a crowd sale. `[who, fund_index, amount]`
        **/
-      [key: string]: AugmentedEvent<ApiType>;
-    };
-    ethereumLightClient: {
+      Contributed: AugmentedEvent<ApiType, [AccountId32, u32, u128]>;
       /**
-       * Generic event
+       * Create a new crowdloaning campaign. `[fund_index]`
        **/
-      [key: string]: AugmentedEvent<ApiType>;
-    };
-    evm: {
+      Created: AugmentedEvent<ApiType, [u32]>;
       /**
-       * A deposit has been made at a given address. \[sender, address, value\]
+       * Fund is dissolved. `[fund_index]`
        **/
-      BalanceDeposit: AugmentedEvent<ApiType, [AccountId, H160, U256]>;
+      Dissolved: AugmentedEvent<ApiType, [u32]>;
       /**
-       * A withdrawal has been made from a given address. \[sender, address, value\]
+       * The configuration to a crowdloan has been edited. `[fund_index]`
        **/
-      BalanceWithdraw: AugmentedEvent<ApiType, [AccountId, H160, U256]>;
+      Edited: AugmentedEvent<ApiType, [u32]>;
       /**
-       * A contract has been created at given \[address\].
+       * The result of trying to submit a new bid to the Slots pallet.
        **/
-      Created: AugmentedEvent<ApiType, [H160]>;
+      HandleBidResult: AugmentedEvent<ApiType, [u32, Result<Null, SpRuntimeDispatchError>]>;
       /**
-       * A \[contract\] was attempted to be created, but the execution failed.
+       * A memo has been updated. `[who, fund_index, memo]`
        **/
-      CreatedFailed: AugmentedEvent<ApiType, [H160]>;
+      MemoUpdated: AugmentedEvent<ApiType, [AccountId32, u32, Bytes]>;
       /**
-       * A \[contract\] has been executed successfully with states applied.
+       * The loans in a fund have been partially dissolved, i.e. there are some left
+       * over child keys that still need to be killed. `[fund_index]`
        **/
-      Executed: AugmentedEvent<ApiType, [H160]>;
+      PartiallyRefunded: AugmentedEvent<ApiType, [u32]>;
       /**
-       * A \[contract\] has been executed with errors. States are reverted with only gas fees applied.
+       * Withdrew full balance of a contributor. `[who, fund_index, amount]`
        **/
-      ExecutedFailed: AugmentedEvent<ApiType, [H160]>;
-      /**
-       * Ethereum events from contracts.
-       **/
-      Log: AugmentedEvent<ApiType, [EvmLog]>;
-      /**
-       * Generic event
-       **/
-      [key: string]: AugmentedEvent<ApiType>;
-    };
-    execDelivery: {
-      CancelledSideEffects: AugmentedEvent<ApiType, [AccountId, XtxId, Vec<SideEffect>]>;
-      GatewayUpdated: AugmentedEvent<ApiType, [ChainId, Option<Vec<Bytes>>]>;
-      NewGatewayRegistered: AugmentedEvent<ApiType, [ChainId, GatewayType, GatewayVendor, GatewaySysProps, Vec<AllowedSideEffect>]>;
-      NewSideEffectsAvailable: AugmentedEvent<ApiType, [AccountId, XtxId, Vec<SideEffect>]>;
-      SideEffectConfirmed: AugmentedEvent<ApiType, [AccountId, XtxId, ConfirmedSideEffect, u64]>;
-      XTransactionReceivedForExec: AugmentedEvent<ApiType, [XtxId, SideEffectsDFD]>;
-      XTransactionSuccessfullyCompleted: AugmentedEvent<ApiType, [XtxId]>;
+      Withdrew: AugmentedEvent<ApiType, [AccountId32, u32, u128]>;
       /**
        * Generic event
        **/
@@ -270,9 +183,9 @@ declare module '@polkadot/api/types/events' {
     };
     grandpa: {
       /**
-       * New authority set has been applied. \[authority_set\]
+       * New authority set has been applied.
        **/
-      NewAuthorities: AugmentedEvent<ApiType, [AuthorityList]>;
+      NewAuthorities: AugmentedEvent<ApiType, [Vec<ITuple<[SpFinalityGrandpaAppPublic, u64]>>]>;
       /**
        * Current authority set has been paused.
        **/
@@ -286,12 +199,256 @@ declare module '@polkadot/api/types/events' {
        **/
       [key: string]: AugmentedEvent<ApiType>;
     };
+    hrmp: {
+      /**
+       * HRMP channel closed. `[by_parachain, channel_id]`
+       **/
+      ChannelClosed: AugmentedEvent<ApiType, [u32, PolkadotParachainPrimitivesHrmpChannelId]>;
+      /**
+       * Open HRMP channel accepted. `[sender, recipient]`
+       **/
+      OpenChannelAccepted: AugmentedEvent<ApiType, [u32, u32]>;
+      /**
+       * An HRMP channel request sent by the receiver was canceled by either party.
+       * `[by_parachain, channel_id]`
+       **/
+      OpenChannelCanceled: AugmentedEvent<ApiType, [u32, PolkadotParachainPrimitivesHrmpChannelId]>;
+      /**
+       * Open HRMP channel requested.
+       * `[sender, recipient, proposed_max_capacity, proposed_max_message_size]`
+       **/
+      OpenChannelRequested: AugmentedEvent<ApiType, [u32, u32, u32, u32]>;
+      /**
+       * Generic event
+       **/
+      [key: string]: AugmentedEvent<ApiType>;
+    };
+    imOnline: {
+      /**
+       * At the end of the session, no offence was committed.
+       **/
+      AllGood: AugmentedEvent<ApiType, []>;
+      /**
+       * A new heartbeat was received from `AuthorityId`.
+       **/
+      HeartbeatReceived: AugmentedEvent<ApiType, [PalletImOnlineSr25519AppSr25519Public]>;
+      /**
+       * At the end of the session, at least one validator was found to be offline.
+       **/
+      SomeOffline: AugmentedEvent<ApiType, [Vec<ITuple<[AccountId32, Null]>>]>;
+      /**
+       * Generic event
+       **/
+      [key: string]: AugmentedEvent<ApiType>;
+    };
+    indices: {
+      /**
+       * A account index was assigned.
+       **/
+      IndexAssigned: AugmentedEvent<ApiType, [AccountId32, u32]>;
+      /**
+       * A account index has been freed up (unassigned).
+       **/
+      IndexFreed: AugmentedEvent<ApiType, [u32]>;
+      /**
+       * A account index has been frozen to its current account ID.
+       **/
+      IndexFrozen: AugmentedEvent<ApiType, [u32, AccountId32]>;
+      /**
+       * Generic event
+       **/
+      [key: string]: AugmentedEvent<ApiType>;
+    };
+    membership: {
+      /**
+       * Phantom member, never used.
+       **/
+      Dummy: AugmentedEvent<ApiType, []>;
+      /**
+       * One of the members' keys changed.
+       **/
+      KeyChanged: AugmentedEvent<ApiType, []>;
+      /**
+       * The given member was added; see the transaction for who.
+       **/
+      MemberAdded: AugmentedEvent<ApiType, []>;
+      /**
+       * The given member was removed; see the transaction for who.
+       **/
+      MemberRemoved: AugmentedEvent<ApiType, []>;
+      /**
+       * The membership was reset; see the transaction for who the new set is.
+       **/
+      MembersReset: AugmentedEvent<ApiType, []>;
+      /**
+       * Two members were swapped; see the transaction for who.
+       **/
+      MembersSwapped: AugmentedEvent<ApiType, []>;
+      /**
+       * Generic event
+       **/
+      [key: string]: AugmentedEvent<ApiType>;
+    };
+    multisig: {
+      /**
+       * A multisig operation has been approved by someone.
+       **/
+      MultisigApproval: AugmentedEvent<ApiType, [AccountId32, PalletMultisigTimepoint, AccountId32, U8aFixed]>;
+      /**
+       * A multisig operation has been cancelled.
+       **/
+      MultisigCancelled: AugmentedEvent<ApiType, [AccountId32, PalletMultisigTimepoint, AccountId32, U8aFixed]>;
+      /**
+       * A multisig operation has been executed.
+       **/
+      MultisigExecuted: AugmentedEvent<ApiType, [AccountId32, PalletMultisigTimepoint, AccountId32, U8aFixed, Result<Null, SpRuntimeDispatchError>]>;
+      /**
+       * A new multisig operation has begun.
+       **/
+      NewMultisig: AugmentedEvent<ApiType, [AccountId32, AccountId32, U8aFixed]>;
+      /**
+       * Generic event
+       **/
+      [key: string]: AugmentedEvent<ApiType>;
+    };
+    offences: {
+      /**
+       * There is an offence reported of the given `kind` happened at the `session_index` and
+       * (kind-specific) time slot. This event is not deposited for duplicate slashes.
+       * \[kind, timeslot\].
+       **/
+      Offence: AugmentedEvent<ApiType, [U8aFixed, Bytes]>;
+      /**
+       * Generic event
+       **/
+      [key: string]: AugmentedEvent<ApiType>;
+    };
+    paraInclusion: {
+      /**
+       * A candidate was backed. `[candidate, head_data]`
+       **/
+      CandidateBacked: AugmentedEvent<ApiType, [PolkadotPrimitivesV1CandidateReceipt, Bytes, u32, u32]>;
+      /**
+       * A candidate was included. `[candidate, head_data]`
+       **/
+      CandidateIncluded: AugmentedEvent<ApiType, [PolkadotPrimitivesV1CandidateReceipt, Bytes, u32, u32]>;
+      /**
+       * A candidate timed out. `[candidate, head_data]`
+       **/
+      CandidateTimedOut: AugmentedEvent<ApiType, [PolkadotPrimitivesV1CandidateReceipt, Bytes, u32]>;
+      /**
+       * Generic event
+       **/
+      [key: string]: AugmentedEvent<ApiType>;
+    };
+    paras: {
+      /**
+       * A para has been queued to execute pending actions. `para_id`
+       **/
+      ActionQueued: AugmentedEvent<ApiType, [u32, u32]>;
+      /**
+       * A code upgrade has been scheduled for a Para. `para_id`
+       **/
+      CodeUpgradeScheduled: AugmentedEvent<ApiType, [u32]>;
+      /**
+       * Current code has been updated for a Para. `para_id`
+       **/
+      CurrentCodeUpdated: AugmentedEvent<ApiType, [u32]>;
+      /**
+       * Current head has been updated for a Para. `para_id`
+       **/
+      CurrentHeadUpdated: AugmentedEvent<ApiType, [u32]>;
+      /**
+       * A new head has been noted for a Para. `para_id`
+       **/
+      NewHeadNoted: AugmentedEvent<ApiType, [u32]>;
+      /**
+       * Generic event
+       **/
+      [key: string]: AugmentedEvent<ApiType>;
+    };
+    parasDisputes: {
+      /**
+       * A dispute has concluded for or against a candidate.
+       * `\[para id, candidate hash, dispute result\]`
+       **/
+      DisputeConcluded: AugmentedEvent<ApiType, [H256, PolkadotRuntimeParachainsDisputesDisputeResult]>;
+      /**
+       * A dispute has been initiated. \[candidate hash, dispute location\]
+       **/
+      DisputeInitiated: AugmentedEvent<ApiType, [H256, PolkadotRuntimeParachainsDisputesDisputeLocation]>;
+      /**
+       * A dispute has timed out due to insufficient participation.
+       * `\[para id, candidate hash\]`
+       **/
+      DisputeTimedOut: AugmentedEvent<ApiType, [H256]>;
+      /**
+       * A dispute has concluded with supermajority against a candidate.
+       * Block authors should no longer build on top of this head and should
+       * instead revert the block at the given height. This should be the
+       * number of the child of the last known valid block in the chain.
+       **/
+      Revert: AugmentedEvent<ApiType, [u32]>;
+      /**
+       * Generic event
+       **/
+      [key: string]: AugmentedEvent<ApiType>;
+    };
+    proxy: {
+      /**
+       * An announcement was placed to make a call in the future.
+       **/
+      Announced: AugmentedEvent<ApiType, [AccountId32, AccountId32, H256]>;
+      /**
+       * Anonymous account has been created by new proxy with given
+       * disambiguation index and proxy type.
+       **/
+      AnonymousCreated: AugmentedEvent<ApiType, [AccountId32, AccountId32, RococoRuntimeProxyType, u16]>;
+      /**
+       * A proxy was added.
+       **/
+      ProxyAdded: AugmentedEvent<ApiType, [AccountId32, AccountId32, RococoRuntimeProxyType, u32]>;
+      /**
+       * A proxy was executed correctly, with the given.
+       **/
+      ProxyExecuted: AugmentedEvent<ApiType, [Result<Null, SpRuntimeDispatchError>]>;
+      /**
+       * Generic event
+       **/
+      [key: string]: AugmentedEvent<ApiType>;
+    };
+    registrar: {
+      Deregistered: AugmentedEvent<ApiType, [u32]>;
+      Registered: AugmentedEvent<ApiType, [u32, AccountId32]>;
+      Reserved: AugmentedEvent<ApiType, [u32, AccountId32]>;
+      /**
+       * Generic event
+       **/
+      [key: string]: AugmentedEvent<ApiType>;
+    };
     session: {
       /**
-       * New session has happened. Note that the argument is the \[session_index\], not the block
-       * number as the type might suggest.
+       * New session has happened. Note that the argument is the session index, not the
+       * block number as the type might suggest.
        **/
-      NewSession: AugmentedEvent<ApiType, [SessionIndex]>;
+      NewSession: AugmentedEvent<ApiType, [u32]>;
+      /**
+       * Generic event
+       **/
+      [key: string]: AugmentedEvent<ApiType>;
+    };
+    slots: {
+      /**
+       * A para has won the right to a continuous set of lease periods as a parachain.
+       * First balance is any extra amount reserved on top of the para's existing deposit.
+       * Second balance is the total amount reserved.
+       * `[parachain_id, leaser, period_begin, period_count, extra_reserved, total_amount]`
+       **/
+      Leased: AugmentedEvent<ApiType, [u32, AccountId32, u32, u32, u128, u128]>;
+      /**
+       * A new `[lease_period]` is beginning.
+       **/
+      NewLeasePeriod: AugmentedEvent<ApiType, [u32]>;
       /**
        * Generic event
        **/
@@ -301,15 +458,15 @@ declare module '@polkadot/api/types/events' {
       /**
        * The \[sudoer\] just switched identity; the old key is supplied.
        **/
-      KeyChanged: AugmentedEvent<ApiType, [AccountId]>;
+      KeyChanged: AugmentedEvent<ApiType, [AccountId32]>;
       /**
        * A sudo just took place. \[result\]
        **/
-      Sudid: AugmentedEvent<ApiType, [DispatchResult]>;
+      Sudid: AugmentedEvent<ApiType, [Result<Null, SpRuntimeDispatchError>]>;
       /**
        * A sudo just took place. \[result\]
        **/
-      SudoAsDone: AugmentedEvent<ApiType, [DispatchResult]>;
+      SudoAsDone: AugmentedEvent<ApiType, [Result<Null, SpRuntimeDispatchError>]>;
       /**
        * Generic event
        **/
@@ -323,23 +480,70 @@ declare module '@polkadot/api/types/events' {
       /**
        * An extrinsic failed. \[error, info\]
        **/
-      ExtrinsicFailed: AugmentedEvent<ApiType, [DispatchError, DispatchInfo]>;
+      ExtrinsicFailed: AugmentedEvent<ApiType, [SpRuntimeDispatchError, FrameSupportWeightsDispatchInfo]>;
       /**
        * An extrinsic completed successfully. \[info\]
        **/
-      ExtrinsicSuccess: AugmentedEvent<ApiType, [DispatchInfo]>;
+      ExtrinsicSuccess: AugmentedEvent<ApiType, [FrameSupportWeightsDispatchInfo]>;
       /**
        * An \[account\] was reaped.
        **/
-      KilledAccount: AugmentedEvent<ApiType, [AccountId]>;
+      KilledAccount: AugmentedEvent<ApiType, [AccountId32]>;
       /**
        * A new \[account\] was created.
        **/
-      NewAccount: AugmentedEvent<ApiType, [AccountId]>;
+      NewAccount: AugmentedEvent<ApiType, [AccountId32]>;
       /**
        * On on-chain remark happened. \[origin, remark_hash\]
        **/
-      Remarked: AugmentedEvent<ApiType, [AccountId, Hash]>;
+      Remarked: AugmentedEvent<ApiType, [AccountId32, H256]>;
+      /**
+       * Generic event
+       **/
+      [key: string]: AugmentedEvent<ApiType>;
+    };
+    ump: {
+      /**
+       * Upward message executed with the given outcome.
+       * \[ id, outcome \]
+       **/
+      ExecutedUpward: AugmentedEvent<ApiType, [U8aFixed, XcmV2TraitsOutcome]>;
+      /**
+       * Upward message is invalid XCM.
+       * \[ id \]
+       **/
+      InvalidFormat: AugmentedEvent<ApiType, [U8aFixed]>;
+      /**
+       * The weight budget was exceeded for an individual upward message.
+       * 
+       * This message can be later dispatched manually using `service_overweight` dispatchable
+       * using the assigned `overweight_index`.
+       * 
+       * \[ para, id, overweight_index, required \]
+       **/
+      OverweightEnqueued: AugmentedEvent<ApiType, [u32, U8aFixed, u64, u64]>;
+      /**
+       * Upward message from the overweight queue was executed with the given actual weight
+       * used.
+       * 
+       * \[ overweight_index, used \]
+       **/
+      OverweightServiced: AugmentedEvent<ApiType, [u64, u64]>;
+      /**
+       * Upward message is unsupported version of XCM.
+       * \[ id \]
+       **/
+      UnsupportedVersion: AugmentedEvent<ApiType, [U8aFixed]>;
+      /**
+       * Some upward messages have been received and will be processed.
+       * \[ para, count, size \]
+       **/
+      UpwardMessagesReceived: AugmentedEvent<ApiType, [u32, u32, u32]>;
+      /**
+       * The weight limit for handling upward messages was reached.
+       * \[ id, remaining, required \]
+       **/
+      WeightExhausted: AugmentedEvent<ApiType, [U8aFixed, u64, u64]>;
       /**
        * Generic event
        **/
@@ -352,108 +556,153 @@ declare module '@polkadot/api/types/events' {
       BatchCompleted: AugmentedEvent<ApiType, []>;
       /**
        * Batch of dispatches did not complete fully. Index of first failing dispatch given, as
-       * well as the error. \[index, error\]
+       * well as the error.
        **/
-      BatchInterrupted: AugmentedEvent<ApiType, [u32, DispatchError]>;
+      BatchInterrupted: AugmentedEvent<ApiType, [u32, SpRuntimeDispatchError]>;
+      /**
+       * A call was dispatched. \[result\]
+       **/
+      DispatchedAs: AugmentedEvent<ApiType, [Result<Null, SpRuntimeDispatchError>]>;
+      /**
+       * A single item within a Batch of dispatches has completed with no error.
+       **/
+      ItemCompleted: AugmentedEvent<ApiType, []>;
       /**
        * Generic event
        **/
       [key: string]: AugmentedEvent<ApiType>;
     };
-    volatileVm: {
+    validatorManager: {
       /**
-       * A code with the specified hash was removed.
-       * \[code_hash\]
-       * 
-       * This happens when the last contract that uses this code hash was removed or evicted.
+       * Validators were removed from the set.
        **/
-      CodeRemoved: AugmentedEvent<ApiType, [Hash]>;
+      ValidatorsDeregistered: AugmentedEvent<ApiType, [Vec<AccountId32>]>;
       /**
-       * Code with the specified hash has been stored. \[code_hash\]
+       * New validators were added to the set.
        **/
-      CodeStored: AugmentedEvent<ApiType, [Hash]>;
-      /**
-       * A custom event emitted by the contract.
-       * \[contract, data\]
-       * 
-       * # Params
-       * 
-       * - `contract`: The contract that emitted the event.
-       * - `data`: Data supplied by the contract. Metadata generated during contract
-       * compilation is needed to decode it.
-       **/
-      ContractEmitted: AugmentedEvent<ApiType, [AccountId, Bytes]>;
-      /**
-       * Contract has been evicted and is now in tombstone state. \[contract\]
-       **/
-      Evicted: AugmentedEvent<ApiType, [AccountId]>;
-      /**
-       * Contract deployed by address at the specified address. \[deployer, contract\]
-       **/
-      Instantiated: AugmentedEvent<ApiType, [AccountId, AccountId]>;
-      /**
-       * Restoration of a contract has been successful.
-       * \[restorer, dest, code_hash, rent_allowance\]
-       * 
-       * # Params
-       * 
-       * - `restorer`: Account ID of the restoring contract.
-       * - `dest`: Account ID of the restored contract.
-       * - `code_hash`: Code hash of the restored contract.
-       * - `rent_allowance`: Rent allowance of the restored contract.
-       **/
-      Restored: AugmentedEvent<ApiType, [AccountId, AccountId, Hash, BalanceOf]>;
-      /**
-       * Triggered when the current schedule is updated.
-       * \[version\]
-       * 
-       * # Params
-       * 
-       * - `version`: The version of the newly set schedule.
-       **/
-      ScheduleUpdated: AugmentedEvent<ApiType, [u32]>;
-      /**
-       * Contract deployed by address at the specified address. \[deployer, contract\]
-       **/
-      TempInstantiated: AugmentedEvent<ApiType, [AccountId, AccountId]>;
-      /**
-       * Contract has been terminated without leaving a tombstone.
-       * \[contract, beneficiary\]
-       * 
-       * # Params
-       * 
-       * - `contract`: The contract that was terminated.
-       * - `beneficiary`: The account that received the contracts remaining balance.
-       * 
-       * # Note
-       * 
-       * The only way for a contract to be removed without a tombstone and emitting
-       * this event is by calling `seal_terminate`.
-       **/
-      Terminated: AugmentedEvent<ApiType, [AccountId, AccountId]>;
-      /**
-       * An event deposited upon execution of a contract from the account.
-       * \[escrow_account, requester_account, data\]
-       **/
-      VolatileVMEmitted: AugmentedEvent<ApiType, [AccountId, AccountId, Bytes]>;
+      ValidatorsRegistered: AugmentedEvent<ApiType, [Vec<AccountId32>]>;
       /**
        * Generic event
        **/
       [key: string]: AugmentedEvent<ApiType>;
     };
-    xdns: {
+    xcmPallet: {
       /**
-       * \[requester, xdns_record_id\]
+       * Some assets have been placed in an asset trap.
+       * 
+       * \[ hash, origin, assets \]
        **/
-      XdnsRecordPurged: AugmentedEvent<ApiType, [AccountId, XdnsRecordId]>;
+      AssetsTrapped: AugmentedEvent<ApiType, [H256, XcmV1MultiLocation, XcmVersionedMultiAssets]>;
       /**
-       * \[requester, xdns_record_id\]
+       * Execution of an XCM message was attempted.
+       * 
+       * \[ outcome \]
        **/
-      XdnsRecordStored: AugmentedEvent<ApiType, [AccountId, XdnsRecordId]>;
+      Attempted: AugmentedEvent<ApiType, [XcmV2TraitsOutcome]>;
       /**
-       * \[xdns_record_id\]
+       * Expected query response has been received but the origin location of the response does
+       * not match that expected. The query remains registered for a later, valid, response to
+       * be received and acted upon.
+       * 
+       * \[ origin location, id, expected location \]
        **/
-      XdnsRecordUpdated: AugmentedEvent<ApiType, [XdnsRecordId]>;
+      InvalidResponder: AugmentedEvent<ApiType, [XcmV1MultiLocation, u64, Option<XcmV1MultiLocation>]>;
+      /**
+       * Expected query response has been received but the expected origin location placed in
+       * storage by this runtime previously cannot be decoded. The query remains registered.
+       * 
+       * This is unexpected (since a location placed in storage in a previously executing
+       * runtime should be readable prior to query timeout) and dangerous since the possibly
+       * valid response will be dropped. Manual governance intervention is probably going to be
+       * needed.
+       * 
+       * \[ origin location, id \]
+       **/
+      InvalidResponderVersion: AugmentedEvent<ApiType, [XcmV1MultiLocation, u64]>;
+      /**
+       * Query response has been received and query is removed. The registered notification has
+       * been dispatched and executed successfully.
+       * 
+       * \[ id, pallet index, call index \]
+       **/
+      Notified: AugmentedEvent<ApiType, [u64, u8, u8]>;
+      /**
+       * Query response has been received and query is removed. The dispatch was unable to be
+       * decoded into a `Call`; this might be due to dispatch function having a signature which
+       * is not `(origin, QueryId, Response)`.
+       * 
+       * \[ id, pallet index, call index \]
+       **/
+      NotifyDecodeFailed: AugmentedEvent<ApiType, [u64, u8, u8]>;
+      /**
+       * Query response has been received and query is removed. There was a general error with
+       * dispatching the notification call.
+       * 
+       * \[ id, pallet index, call index \]
+       **/
+      NotifyDispatchError: AugmentedEvent<ApiType, [u64, u8, u8]>;
+      /**
+       * Query response has been received and query is removed. The registered notification could
+       * not be dispatched because the dispatch weight is greater than the maximum weight
+       * originally budgeted by this runtime for the query result.
+       * 
+       * \[ id, pallet index, call index, actual weight, max budgeted weight \]
+       **/
+      NotifyOverweight: AugmentedEvent<ApiType, [u64, u8, u8, u64, u64]>;
+      /**
+       * A given location which had a version change subscription was dropped owing to an error
+       * migrating the location to our new XCM format.
+       * 
+       * \[ location, query ID \]
+       **/
+      NotifyTargetMigrationFail: AugmentedEvent<ApiType, [XcmVersionedMultiLocation, u64]>;
+      /**
+       * A given location which had a version change subscription was dropped owing to an error
+       * sending the notification to it.
+       * 
+       * \[ location, query ID, error \]
+       **/
+      NotifyTargetSendFail: AugmentedEvent<ApiType, [XcmV1MultiLocation, u64, XcmV2TraitsError]>;
+      /**
+       * Query response has been received and is ready for taking with `take_response`. There is
+       * no registered notification call.
+       * 
+       * \[ id, response \]
+       **/
+      ResponseReady: AugmentedEvent<ApiType, [u64, XcmV2Response]>;
+      /**
+       * Received query response has been read and removed.
+       * 
+       * \[ id \]
+       **/
+      ResponseTaken: AugmentedEvent<ApiType, [u64]>;
+      /**
+       * A XCM message was sent.
+       * 
+       * \[ origin, destination, message \]
+       **/
+      Sent: AugmentedEvent<ApiType, [XcmV1MultiLocation, XcmV1MultiLocation, XcmV2Xcm]>;
+      /**
+       * The supported version of a location has been changed. This might be through an
+       * automatic notification or a manual intervention.
+       * 
+       * \[ location, XCM version \]
+       **/
+      SupportedVersionChanged: AugmentedEvent<ApiType, [XcmV1MultiLocation, u32]>;
+      /**
+       * Query response received which does not match a registered query. This may be because a
+       * matching query was never registered, it may be because it is a duplicate response, or
+       * because the query timed out.
+       * 
+       * \[ origin location, id \]
+       **/
+      UnexpectedResponse: AugmentedEvent<ApiType, [XcmV1MultiLocation, u64]>;
+      /**
+       * An XCM version change notification message has been attempted to be sent.
+       * 
+       * \[ destination, result \]
+       **/
+      VersionChangeNotified: AugmentedEvent<ApiType, [XcmV1MultiLocation, u32]>;
       /**
        * Generic event
        **/
