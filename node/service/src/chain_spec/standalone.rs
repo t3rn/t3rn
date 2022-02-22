@@ -18,7 +18,9 @@ use t3rn_primitives::bridges::runtime::{
     SourceAccount, GATEWAY_CHAIN_ID, KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID,
 };
 
-use crate::chain_spec::{get_account_id_from_seed, get_from_seed, seed_xdns_registry, standard_side_effects_map};
+use crate::chain_spec::{
+    get_account_id_from_seed, get_from_seed, seed_xdns_registry, standard_side_effects_map,
+};
 use circuit_standalone_runtime::{
     AuraConfig, BalancesConfig, BeefyConfig, ContractsRegistryConfig, GenesisConfig, GrandpaConfig,
     MultiFinalityVerifierConfig, SessionKeys, Signature, SudoConfig, SystemConfig, XDNSConfig,
@@ -80,7 +82,7 @@ impl Alternative {
                         ],
                         seed_xdns_registry().unwrap_or_default(),
                         standard_side_effects_map(),
-                        true
+                        true,
                     )
                 },
                 vec![],
@@ -224,7 +226,7 @@ fn testnet_genesis(
         // },
         xdns: XDNSConfig {
             known_xdns_records: xdns_records,
-            standard_side_effects_map: standard_side_effects_map
+            standard_side_effects_map: standard_side_effects_map,
         },
         contracts_registry: ContractsRegistryConfig {
             known_contracts: Vec::new(),

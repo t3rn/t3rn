@@ -153,7 +153,6 @@ impl EscrowTrait for Test {
 use orml_traits::parameter_type_with_key;
 use t3rn_primitives::abi::Type;
 
-
 pub type CurrencyId = u32;
 parameter_type_with_key! {
     pub ExistentialDeposits: |_currency_id: CurrencyId| -> Balance {
