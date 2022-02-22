@@ -13,8 +13,10 @@ use sp_runtime::{traits::Hash, RuntimeDebug};
 use sp_std::prelude::*;
 use sp_std::vec::Vec;
 use t3rn_primitives::abi::GatewayABIConfig;
-use t3rn_primitives::{ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor, abi::Type};
-pub use t3rn_protocol::side_effects::protocol::{SideEffectName, EventSignature};
+use t3rn_primitives::{
+    abi::Type, ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
+};
+pub use t3rn_protocol::side_effects::protocol::{EventSignature, SideEffectName};
 /// A hash based on encoding the complete XdnsRecord
 pub type XdnsRecordId<T> = <T as frame_system::Config>::Hash;
 
@@ -70,7 +72,7 @@ pub struct SideEffectInterface {
 }
 
 impl SideEffectInterface {
-     /// Function that generates an XdnsRecordId hash based on the gateway id
+    /// Function that generates an XdnsRecordId hash based on the gateway id
     pub fn generate_id<T: Config>(&self) -> SideEffectId<T> {
         T::Hashing::hash(Encode::encode(&self.id).as_ref())
     }

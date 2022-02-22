@@ -5,16 +5,20 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-pub use crate::types::{AllowedSideEffect, XdnsRecord, XdnsRecordId, SideEffectInterface, SideEffectId};
+pub use crate::types::{
+    AllowedSideEffect, SideEffectId, SideEffectInterface, XdnsRecord, XdnsRecordId,
+};
 use codec::Encode;
 use sp_runtime::traits::Hash;
-use sp_std::prelude::*;
-use sp_std::vec::Vec;
 use sp_std::collections::btree_map::BTreeMap;
+use sp_std::prelude::*;
+
 pub use t3rn_primitives::{
-    abi::GatewayABIConfig, ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor, abi::Type,
+    abi::GatewayABIConfig, abi::Type, ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor,
 };
-pub use t3rn_protocol::side_effects::protocol::{SideEffectProtocol, SideEffectName, EventSignature, SideEffectConfirmationProtocol};
+pub use t3rn_protocol::side_effects::protocol::{
+    EventSignature, SideEffectConfirmationProtocol, SideEffectName, SideEffectProtocol,
+};
 // Re-export pallet items so that they can be accessed from the crate namespace.
 pub use crate::pallet::*;
 
@@ -115,7 +119,7 @@ pub mod pallet {
             }
 
             // TODO: check if side_effect exists
-            
+
             let mut xdns_record = XdnsRecord::<T::AccountId>::new(
                 url,
                 gateway_id,
@@ -157,7 +161,9 @@ pub mod pallet {
 
             let side_effect_id: SideEffectId<T> = T::Hashing::hash(&id.encode());
 
-            if <CustomSideEffects<T>>::contains_key(&side_effect_id) | <StandardSideEffects<T>>::get().unwrap().contains_key(&id) {
+            if <CustomSideEffects<T>>::contains_key(&side_effect_id)
+                | <StandardSideEffects<T>>::get().unwrap().contains_key(&id)
+            {
                 return Err(Error::<T>::SideEffectInterfaceAlreadyExists.into());
             }
 
@@ -169,12 +175,12 @@ pub mod pallet {
                 confirm_events,
                 escrowed_events,
                 commit_events,
-                revert_events
+                revert_events,
             };
 
             <CustomSideEffects<T>>::insert(&side_effect_id, side_effect);
 
-             Ok(().into())
+            Ok(().into())
         }
 
         /// Updates the last_finalized field for an xdns_record from the onchain registry. Root only access.
@@ -228,11 +234,12 @@ pub mod pallet {
         /// Xdns Record not found
         XdnsRecordNotFound,
         /// SideEffect already stored
-        SideEffectInterfaceAlreadyExists
+        SideEffectInterfaceAlreadyExists,
     }
 
     #[pallet::storage]
-    pub type StandardSideEffects<T: Config> = StorageValue<_, BTreeMap<[u8; 4], SideEffectInterface>>;
+    pub type StandardSideEffects<T: Config> =
+        StorageValue<_, BTreeMap<[u8; 4], SideEffectInterface>>;
 
     #[pallet::storage]
     #[pallet::getter(fn side_effect_registry)]
@@ -244,7 +251,6 @@ pub mod pallet {
     #[pallet::getter(fn xdns_registry)]
     pub type XDNSRegistry<T: Config> =
         StorageMap<_, Blake2_128Concat, XdnsRecordId<T>, XdnsRecord<T::AccountId>, OptionQuery>;
-
 
     // The genesis config type.
     #[pallet::genesis_config]
@@ -318,20 +324,24 @@ pub mod pallet {
             gateway_id: &ChainId,
         ) -> BTreeMap<[u8; 4], Box<dyn SideEffectProtocol>> {
             let xdns_record_id = T::Hashing::hash(&gateway_id.encode());
-            let mut allowed_side_effects: BTreeMap<[u8; 4], Box<dyn SideEffectProtocol>> = BTreeMap::new();
+            let mut allowed_side_effects: BTreeMap<[u8; 4], Box<dyn SideEffectProtocol>> =
+                BTreeMap::new();
 
             let standard_side_effects = <StandardSideEffects<T>>::get().unwrap();
-            for side_effect in <XDNSRegistry<T>>::get(&xdns_record_id).unwrap().allowed_side_effects {
+            for side_effect in <XDNSRegistry<T>>::get(&xdns_record_id)
+                .unwrap()
+                .allowed_side_effects
+            {
                 if standard_side_effects.contains_key(&side_effect) {
                     // is it somehow possible to only pass a reference here? aka each gateway would access the same addresses/structs in memory?
                     let se = standard_side_effects.get(&side_effect).unwrap();
-                    allowed_side_effects.insert(se.get_id(),Box::new(se.clone()));
+                    allowed_side_effects.insert(se.get_id(), Box::new(se.clone()));
                 } else {
                     // TODO implement custom side_effect lookup
                 }
             }
 
-            return allowed_side_effects
+            return allowed_side_effects;
         }
 
         pub fn update_gateway_ttl(
@@ -376,32 +386,47 @@ pub mod pallet {
 
 // Not sure if we really need this, just getters.
 impl SideEffectProtocol for SideEffectInterface {
+    fn get_id(&self) -> [u8; 4] {
+        self.id
+    }
 
-    fn get_id(&self) -> [u8; 4] { self.id }
+    fn get_name(&self) -> SideEffectName {
+        self.name.clone()
+    }
 
-    fn get_name(&self) -> SideEffectName { self.name.clone() }
-
-    fn get_arguments_abi(&self) -> Vec<Type> { self.argument_abi.clone() }
+    fn get_arguments_abi(&self) -> Vec<Type> {
+        self.argument_abi.clone()
+    }
 
     /// ToDo: Protocol::Reversible x-t3rn#69 - !Inspect if from is doable here - the original transfer is from a user,
     ///     whereas the transfers on targets are made by relayers/executors.
     ///     Prefer to only inspect the the target
     /// ToDo: Protocol::Reversible - Support optional parameters like insurance. - must be hardcoded name
     ///         // vec!["from", "to", "value", "Option<insurance>"]
-    fn get_arguments_2_state_mapper(&self) -> Vec<EventSignature> { self.argument_to_state_mapper.clone() }
+    fn get_arguments_2_state_mapper(&self) -> Vec<EventSignature> {
+        self.argument_to_state_mapper.clone()
+    }
 
-    fn get_confirming_events(&self) -> Vec<EventSignature> { self.confirm_events.clone() }
+    fn get_confirming_events(&self) -> Vec<EventSignature> {
+        self.confirm_events.clone()
+    }
 
     /// This event must be emitted by Escrow Contracts
-    fn get_escrowed_events(&self) -> Vec<EventSignature> { self.escrowed_events.clone() }
+    fn get_escrowed_events(&self) -> Vec<EventSignature> {
+        self.escrowed_events.clone()
+    }
 
-    fn get_reversible_commit(&self) -> Vec<EventSignature> { self.commit_events.clone() }
+    fn get_reversible_commit(&self) -> Vec<EventSignature> {
+        self.commit_events.clone()
+    }
 
     /// ToDo: Protocol::Reversible x-t3rn#69 - If executors wants to avoid loosing their insurance deposit, must return the funds to the original user
     ///     - that's problematic since we don't know user's address on target
     ///     Temp. solution before the locks in wrapped tokens on Circuit is to leave it empty
     ///     and Commit relayer to perform the transfer for 100% or they loose insured deposit
-    fn get_reversible_revert(&self) -> Vec<EventSignature> { self.revert_events.clone() }
+    fn get_reversible_revert(&self) -> Vec<EventSignature> {
+        self.revert_events.clone()
+    }
 }
 
 impl SideEffectConfirmationProtocol for SideEffectInterface {}
