@@ -240,6 +240,7 @@ fn testnet_genesis(
             interval: 1,
         },
         orml_tokens: Default::default(),
+        evm: Default::default(),
     }
 }
 
