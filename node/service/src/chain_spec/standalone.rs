@@ -19,7 +19,7 @@ use t3rn_primitives::bridges::runtime::{
 };
 
 use crate::chain_spec::{
-    get_account_id_from_seed, get_from_seed, seed_xdns_registry, standard_side_effects_map,
+    get_account_id_from_seed, get_from_seed, seed_xdns_registry, standard_side_effects,
 };
 use circuit_standalone_runtime::{
     AuraConfig, BalancesConfig, BeefyConfig, ContractsRegistryConfig, GenesisConfig, GrandpaConfig,
@@ -81,7 +81,7 @@ impl Alternative {
                             )),
                         ],
                         seed_xdns_registry().unwrap_or_default(),
-                        standard_side_effects_map(),
+                        standard_side_effects(),
                         true,
                     )
                 },
@@ -137,7 +137,7 @@ impl Alternative {
                             )),
                         ],
                         seed_xdns_registry().unwrap_or_default(),
-                        standard_side_effects_map(),
+                        standard_side_effects(),
                         true,
                     )
                 },
@@ -164,7 +164,7 @@ fn testnet_genesis(
     root_key: AccountId,
     endowed_accounts: Vec<AccountId>,
     xdns_records: Vec<XdnsRecord<AccountId>>,
-    standard_side_effects_map: BTreeMap<[u8; 4], SideEffectInterface>,
+    standard_side_effects: Vec<SideEffectInterface>,
     _enable_println: bool,
 ) -> GenesisConfig {
     GenesisConfig {
@@ -226,7 +226,7 @@ fn testnet_genesis(
         // },
         xdns: XDNSConfig {
             known_xdns_records: xdns_records,
-            standard_side_effects_map: standard_side_effects_map,
+            standard_side_effects: standard_side_effects,
         },
         contracts_registry: ContractsRegistryConfig {
             known_contracts: Vec::new(),

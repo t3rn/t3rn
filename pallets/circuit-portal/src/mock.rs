@@ -278,14 +278,14 @@ impl pallet_multi_finality_verifier::Config<Keccak256ValU32BridgeInstance> for T
 
 pub struct ExtBuilder {
     known_xdns_records: Vec<XdnsRecord<AccountId>>,
-    standard_side_effects_map: BTreeMap<[u8; 4], SideEffectInterface>,
+    standard_side_effects: Vec<SideEffectInterface>,
 }
 
 impl Default for ExtBuilder {
     fn default() -> ExtBuilder {
         ExtBuilder {
             known_xdns_records: vec![],
-            standard_side_effects_map: BTreeMap::new(),
+            standard_side_effects: vec![],
         }
     }
 }
@@ -508,13 +508,13 @@ impl ExtBuilder {
         };
 
         // map side_effects to id, keeping lib.rs clean
-        self.standard_side_effects_map = BTreeMap::from([
-            (transfer_side_effect.id, transfer_side_effect),
-            (swap_side_effect.id, swap_side_effect),
-            (add_liquidity_side_effect.id, add_liquidity_side_effect),
-            (call_evm_side_effect.id, call_evm_side_effect),
-            (get_data_side_effect.id, get_data_side_effect),
-        ]);
+        self.standard_side_effects = vec![
+            transfer_side_effect,
+            swap_side_effect,
+            add_liquidity_side_effect,
+            call_evm_side_effect,
+            get_data_side_effect,
+        ];
         self
     }
 
@@ -529,7 +529,7 @@ impl ExtBuilder {
 
         pallet_xdns::GenesisConfig::<Test> {
             known_xdns_records: self.known_xdns_records,
-            standard_side_effects_map: self.standard_side_effects_map,
+            standard_side_effects: self.standard_side_effects,
         }
         .assimilate_storage(&mut t)
         .expect("Pallet xdns can be assimilated");

@@ -155,7 +155,7 @@ fn seed_xdns_registry() -> Result<Vec<XdnsRecord<AccountId>>, Error> {
     Ok(vec![polkadot_xdns, kusama_xdns])
 }
 
-fn standard_side_effects_map() -> BTreeMap<[u8; 4], SideEffectInterface> {
+fn standard_side_effects() -> Vec<SideEffectInterface> {
     let transfer_side_effect = SideEffectInterface {
         id: *b"tran",
         name: b"transfer".to_vec(),
@@ -288,11 +288,11 @@ fn standard_side_effects_map() -> BTreeMap<[u8; 4], SideEffectInterface> {
         revert_events: vec![],
     };
 
-    BTreeMap::from([
-        (transfer_side_effect.id, transfer_side_effect),
-        (swap_side_effect.id, swap_side_effect),
-        (add_liquidity_side_effect.id, add_liquidity_side_effect),
-        (call_evm_side_effect.id, call_evm_side_effect),
-        (get_data_side_effect.id, get_data_side_effect),
-    ])
+    vec![
+        transfer_side_effect,
+        swap_side_effect,
+        add_liquidity_side_effect,
+        call_evm_side_effect,
+        get_data_side_effect,
+    ]
 }

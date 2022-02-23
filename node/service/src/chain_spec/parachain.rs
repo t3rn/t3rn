@@ -12,7 +12,7 @@ use t3rn_primitives::AccountId;
 use pallet_xdns::{SideEffectInterface, XdnsRecord};
 
 use crate::chain_spec::{
-    get_account_id_from_seed, get_from_seed, seed_xdns_registry, standard_side_effects_map,
+    get_account_id_from_seed, get_from_seed, seed_xdns_registry, standard_side_effects,
     Extensions,
 };
 
@@ -78,7 +78,7 @@ pub fn development_config() -> ChainSpec {
                     get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
                 ],
                 seed_xdns_registry().unwrap_or_default(),
-                standard_side_effects_map(),
+                standard_side_effects(),
                 PARA_ID,
             )
         },
@@ -136,7 +136,7 @@ pub fn local_testnet_config() -> ChainSpec {
                     get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
                 ],
                 seed_xdns_registry().unwrap_or_default(),
-                standard_side_effects_map(),
+                standard_side_effects(),
                 PARA_ID,
             )
         },
@@ -162,7 +162,7 @@ fn testnet_genesis(
     root_key: AccountId,
     endowed_accounts: Vec<AccountId>,
     xdns_records: Vec<XdnsRecord<AccountId>>,
-    standard_side_effects: BTreeMap<[u8; 4], SideEffectInterface>,
+    standard_side_effects: Vec<SideEffectInterface>,
     id: ParaId,
 ) -> circuit_parachain_runtime::GenesisConfig {
     circuit_parachain_runtime::GenesisConfig {
@@ -204,7 +204,7 @@ fn testnet_genesis(
         multi_finality_verifier_polkadot_like: Default::default(),
         xdns: XDNSConfig {
             known_xdns_records: xdns_records,
-            standard_side_effects_map: standard_side_effects,
+            standard_side_effects: standard_side_effects,
         },
         elections: Default::default(),
         council: Default::default(),
@@ -277,7 +277,7 @@ pub fn circuit_config() -> ChainSpec {
                     ),
                 ],
                 seed_xdns_registry().unwrap_or_default(),
-                standard_side_effects_map(),
+                standard_side_effects(),
                 PARA_ID,
             )
         },
@@ -303,7 +303,7 @@ fn genesis(
     root_key: AccountId,
     endowed_accounts: Vec<(AccountId, Balance)>,
     xdns_records: Vec<XdnsRecord<AccountId>>,
-    standard_side_effects: BTreeMap<[u8; 4], SideEffectInterface>,
+    standard_side_effects: Vec<SideEffectInterface>,
     id: ParaId,
 ) -> circuit_parachain_runtime::GenesisConfig {
     circuit_parachain_runtime::GenesisConfig {
@@ -341,7 +341,7 @@ fn genesis(
         multi_finality_verifier_polkadot_like: Default::default(),
         xdns: XDNSConfig {
             known_xdns_records: xdns_records,
-            standard_side_effects_map: standard_side_effects,
+            standard_side_effects: standard_side_effects,
         },
         elections: Default::default(),
         council: Default::default(),
