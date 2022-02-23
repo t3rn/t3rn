@@ -19,7 +19,6 @@ use sp_runtime::{
     traits::{IdentityLookup, OpaqueKeys},
     Perbill,
 };
-use sp_std::{collections::btree_map::BTreeMap, fmt::Debug};
 
 use frame_election_provider_support::onchain;
 use pallet_session::historical as pallet_session_historical;
@@ -464,7 +463,7 @@ impl pallet_babe::Config for Test {
 #[derive(Default)]
 pub struct ExtBuilder {
     known_xdns_records: Vec<XdnsRecord<AccountId>>,
-    standard_side_effects: Vec<SideEffectInterface>,
+    pub standard_side_effects: Vec<SideEffectInterface>,
 }
 
 parameter_types! {
