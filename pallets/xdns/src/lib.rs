@@ -162,7 +162,7 @@ pub mod pallet {
             let side_effect_id: SideEffectId<T> = T::Hashing::hash(&id.encode());
 
             if <CustomSideEffects<T>>::contains_key(&side_effect_id)
-                | <StandardSideEffects<T>>::get().unwrap().contains_key(&id)
+                | <StandardSideEffects<T>>::contains_key(&id)
             {
                 return Err(Error::<T>::SideEffectInterfaceAlreadyExists.into());
             }
@@ -237,9 +237,10 @@ pub mod pallet {
         SideEffectInterfaceAlreadyExists,
     }
 
+    /// I think its nicer to use [u8; 4] as id here, as we dont
     #[pallet::storage]
     pub type StandardSideEffects<T: Config> =
-        StorageValue<_, BTreeMap<[u8; 4], SideEffectInterface>>;
+        StorageMap<_, Blake2_128Concat, [u8; 4], SideEffectInterface>;
 
     #[pallet::storage]
     #[pallet::getter(fn side_effect_registry)]
@@ -256,7 +257,7 @@ pub mod pallet {
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
         pub known_xdns_records: Vec<XdnsRecord<T::AccountId>>,
-        pub standard_side_effects_map: BTreeMap<[u8; 4], SideEffectInterface>,
+        pub standard_side_effects:Vec<SideEffectInterface>,
     }
 
     /// The default value for the genesis config type.
@@ -265,7 +266,7 @@ pub mod pallet {
         fn default() -> Self {
             Self {
                 known_xdns_records: Default::default(),
-                standard_side_effects_map: Default::default(),
+                standard_side_effects: Default::default(),
             }
         }
     }
@@ -279,10 +280,9 @@ pub mod pallet {
                 <XDNSRegistry<T>>::insert(&xdns_record.generate_id::<T>(), xdns_record);
             }
 
-            // for side_effect in self.standard_side_effects.clone() {
-            //     <SideEffectRegistry<T>>::insert(&side_effect.generate_id::<T>(), side_effect.clone());
-            // }
-            <StandardSideEffects<T>>::set(Some(self.standard_side_effects_map.clone()));
+             for side_effect in self.standard_side_effects.clone() {
+                <StandardSideEffects<T>>::insert(side_effect.get_id(), side_effect);
+            }
         }
     }
 
@@ -327,21 +327,21 @@ pub mod pallet {
             let mut allowed_side_effects: BTreeMap<[u8; 4], Box<dyn SideEffectProtocol>> =
                 BTreeMap::new();
 
-            let standard_side_effects = <StandardSideEffects<T>>::get().unwrap();
-            for side_effect in <XDNSRegistry<T>>::get(&xdns_record_id)
-                .unwrap()
-                .allowed_side_effects
-            {
-                if standard_side_effects.contains_key(&side_effect) {
-                    // is it somehow possible to only pass a reference here? aka each gateway would access the same addresses/structs in memory?
-                    let se = standard_side_effects.get(&side_effect).unwrap();
-                    allowed_side_effects.insert(se.get_id(), Box::new(se.clone()));
-                } else {
-                    // TODO implement custom side_effect lookup
+            if let Some(xdns_entry) = <XDNSRegistry<T>>::get(&xdns_record_id) {
+                for side_effect in xdns_entry.allowed_side_effects {
+
+                    if <StandardSideEffects<T>>::contains_key(&side_effect) {
+                        // is it somehow possible to only pass a reference here? aka each gateway would access the same addresses/structs in memory?
+                        let se = <StandardSideEffects<T>>::get(&side_effect).unwrap();
+                        allowed_side_effects.insert(se.get_id(), Box::new(se.clone()));
+                    } else {
+                        // TODO implement custom side_effect lookup
+                    }
+
                 }
             }
 
-            return allowed_side_effects;
+            allowed_side_effects
         }
 
         pub fn update_gateway_ttl(

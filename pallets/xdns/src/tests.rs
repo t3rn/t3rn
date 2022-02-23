@@ -127,7 +127,7 @@ fn should_add_standard_side_effects() {
         .with_standard_side_effects()
         .build()
         .execute_with(|| {
-            assert_eq!(StandardSideEffects::<Test>::get().unwrap().len(), 5);
+            assert_eq!(StandardSideEffects::<Test>::iter().count(), 5);
         });
 }
 
