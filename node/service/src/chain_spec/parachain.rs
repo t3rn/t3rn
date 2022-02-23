@@ -12,8 +12,7 @@ use t3rn_primitives::AccountId;
 use pallet_xdns::{SideEffectInterface, XdnsRecord};
 
 use crate::chain_spec::{
-    get_account_id_from_seed, get_from_seed, seed_xdns_registry, standard_side_effects,
-    Extensions,
+    get_account_id_from_seed, get_from_seed, seed_xdns_registry, standard_side_effects, Extensions,
 };
 
 pub const PARA_ID: ParaId = ParaId::new(3331_u32);

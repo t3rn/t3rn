@@ -257,7 +257,7 @@ pub mod pallet {
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
         pub known_xdns_records: Vec<XdnsRecord<T::AccountId>>,
-        pub standard_side_effects:Vec<SideEffectInterface>,
+        pub standard_side_effects: Vec<SideEffectInterface>,
     }
 
     /// The default value for the genesis config type.
@@ -280,7 +280,7 @@ pub mod pallet {
                 <XDNSRegistry<T>>::insert(&xdns_record.generate_id::<T>(), xdns_record);
             }
 
-             for side_effect in self.standard_side_effects.clone() {
+            for side_effect in self.standard_side_effects.clone() {
                 <StandardSideEffects<T>>::insert(side_effect.get_id(), side_effect);
             }
         }
@@ -329,7 +329,6 @@ pub mod pallet {
 
             if let Some(xdns_entry) = <XDNSRegistry<T>>::get(&xdns_record_id) {
                 for side_effect in xdns_entry.allowed_side_effects {
-
                     if <StandardSideEffects<T>>::contains_key(&side_effect) {
                         // is it somehow possible to only pass a reference here? aka each gateway would access the same addresses/structs in memory?
                         let se = <StandardSideEffects<T>>::get(&side_effect).unwrap();
@@ -337,7 +336,6 @@ pub mod pallet {
                     } else {
                         // TODO implement custom side_effect lookup
                     }
-
                 }
             }
 
