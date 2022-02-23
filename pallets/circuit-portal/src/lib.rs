@@ -274,7 +274,7 @@ pub mod pallet {
         ),
         GatewayUpdated(
             bp_runtime::ChainId,  // gateway id
-            Option<Vec<[u8; 4]>>, // allowed side effects / enabled methods
+            Option<Vec<AllowedSideEffect>>, // allowed side effects / enabled methods
         ),
     }
 
