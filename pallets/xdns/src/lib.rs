@@ -237,7 +237,6 @@ pub mod pallet {
         SideEffectInterfaceAlreadyExists,
     }
 
-    /// I think its nicer to use [u8; 4] as id here, as we dont
     #[pallet::storage]
     pub type StandardSideEffects<T: Config> =
         StorageMap<_, Blake2_128Concat, [u8; 4], SideEffectInterface>;
@@ -340,6 +339,19 @@ pub mod pallet {
             }
 
             allowed_side_effects
+        }
+
+        pub fn fetch_side_effect_interface(
+            id: [u8; 4],
+        ) -> Result<Box<dyn SideEffectProtocol>, &'static str> {
+            return if <StandardSideEffects<T>>::contains_key(id) {
+                Ok(Box::new(<StandardSideEffects<T>>::get(id).unwrap()))
+            } else {
+                return match <CustomSideEffects<T>>::get(T::Hashing::hash(&id.encode())) {
+                    Some(entry) => Ok(Box::new(entry)),
+                    None => Err("Side Effect Interface was not found!"),
+                };
+            };
         }
 
         pub fn update_gateway_ttl(

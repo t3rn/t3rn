@@ -942,13 +942,23 @@ impl<T: Config> Pallet<T> {
         };
 
         let confirm_execution = |gateway_vendor, state_copy| {
-            confirm_with_vendor_by_action_id::<
+            let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
+            side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
+            let side_effect_interface =
+                pallet_xdns::Pallet::<T>::fetch_side_effect_interface(side_effect_id);
+
+            // I guess this could be omitted, as SE submission would prevent this?
+            if let Err(msg) = side_effect_interface {
+                return Err(msg);
+            }
+
+            confirm_with_vendor::<
                 T,
                 SubstrateSideEffectsParser,
                 EthereumSideEffectsParser<<T as pallet_circuit_portal::Config>::EthVerifier>,
             >(
                 gateway_vendor,
-                side_effect.encoded_action.clone(),
+                &Box::new(side_effect_interface.unwrap()),
                 confirmation.encoded_effect.clone(),
                 state_copy,
                 Some(

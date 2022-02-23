@@ -1,7 +1,6 @@
 //! Test utilities
 use crate::{self as pallet_circuit_portal, bp_runtime, Config};
 use codec::Encode;
-use sp_std::{collections::btree_map::BTreeMap, fmt::Debug};
 
 use sp_runtime::traits::Convert;
 use sp_runtime::{
