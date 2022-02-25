@@ -362,29 +362,6 @@ pub type GatewayGrandpaInstance = ();
 //     type WeightInfo = ();
 // }
 
-// EVM
-
-// parameter_types! {
-//     pub const ChainId: u64 = 33;
-//     pub const BlockGasLimit: U256 = U256::MAX;
-// }
-
-// pub struct FixedGasPrice;
-// impl pallet_evm::FeeCalculator for FixedGasPrice {
-//     fn min_gas_price() -> U256 {
-//         1.into()
-//     }
-// }
-// pub struct HashedAddressMapping;
-
-// impl pallet_evm::AddressMapping<AccountId> for HashedAddressMapping {
-//     fn into_account_id(address: H160) -> AccountId {
-//         let mut data = [0u8; 32];
-//         data[0..20].copy_from_slice(&address[..]);
-//         AccountId::from(Into::<[u8; 32]>::into(data))
-//     }
-// }
-
 impl t3rn_primitives::EscrowTrait for Runtime {
     type Currency = Balances;
     type Time = Timestamp;
@@ -392,7 +369,7 @@ impl t3rn_primitives::EscrowTrait for Runtime {
 
 // EVM
 parameter_types! {
-    pub const ChainId: u64 = 33;
+    pub const ChainId: u64 = 3330;
     pub const BlockGasLimit: U256 = U256::MAX;
 }
 

@@ -978,7 +978,7 @@ impl pallet_contracts::Config for Runtime {
 
 // EVM
 parameter_types! {
-    pub const ChainId: u64 = 33;
+    pub const ChainId: u64 = 3331;
     pub const BlockGasLimit: U256 = U256::MAX;
 }
 
