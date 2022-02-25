@@ -6,15 +6,23 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use ethereum_light_client::EthereumDifficultyConfig;
+
+use pallet_evm::{
+    EVMCurrencyAdapter, EnsureAddressNever, EnsureAddressRoot, FeeCalculator, GasWeightMapping,
+    HashedAddressMapping, IdentityAddressMapping, OnChargeEVMTransaction, Runner,
+};
+
 use frame_support::{
     construct_runtime, match_type, parameter_types,
-    traits::{EqualPrivilegeOnly, Everything, LockIdentifier, Nothing, U128CurrencyToVote},
+    traits::{
+        EqualPrivilegeOnly, Everything, FindAuthor, LockIdentifier, Nothing, U128CurrencyToVote,
+    },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
         DispatchClass, IdentityFee, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
         WeightToFeePolynomial,
     },
-    PalletId,
+    ConsensusEngineId, PalletId,
 };
 use frame_system::{
     limits::{BlockLength, BlockWeights},
@@ -23,7 +31,10 @@ use frame_system::{
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H256};
+use sp_core::{
+    crypto::{KeyTypeId, Public},
+    OpaqueMetadata, H160, H256, U256,
+};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 use sp_runtime::{
@@ -33,7 +44,7 @@ use sp_runtime::{
     ApplyExtrinsicResult, MultiSignature,
 };
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
-use sp_std::prelude::*;
+use sp_std::{marker::PhantomData, prelude::*, str::FromStr};
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -916,8 +927,103 @@ impl ethereum_light_client::Config for Runtime {
 impl pallet_utility::Config for Runtime {
     type Event = Event;
     type Call = Call;
-    type WeightInfo = pallet_utility::weights::SubstrateWeight<Self>;
     type PalletsOrigin = OriginCaller;
+    type WeightInfo = pallet_utility::weights::SubstrateWeight<Self>;
+}
+
+pub const CONTRACTS_DEBUG_OUTPUT: bool = true;
+
+parameter_types! {
+    pub const ContractDeposit: u64 = 16;
+
+    // The lazy deletion runs inside on_initialize.
+    pub const DeletionQueueDepth: u32 = 1024;
+    pub const DeletionWeightLimit: Weight = 500_000_000_000;
+    pub Schedule: pallet_contracts::Schedule<Runtime> = {
+        let mut schedule = pallet_contracts::Schedule::<Runtime>::default();
+        // We decided to **temporarily* increase the default allowed contract size here
+        // (the default is `128 * 1024`).
+        //
+        // Our reasoning is that a number of people ran into `CodeTooLarge` when trying
+        // to deploy their contracts. We are currently introducing a number of optimizations
+        // into ink! which should bring the contract sizes lower. In the meantime we don't
+        // want to pose additional friction on developers.
+        schedule.limits.code_len = 256 * 1024;
+        schedule
+    };
+}
+
+impl pallet_contracts::Config for Runtime {
+    type Time = Timestamp;
+    type Randomness = RandomnessCollectiveFlip;
+    type Currency = Balances;
+    type Event = Event;
+    type Call = Call;
+    /// The safest default is to allow no calls at all.
+    ///
+    /// Runtimes should whitelist dispatchables that are allowed to be called from contracts
+    /// and make sure they are stable. Dispatchables exposed to contracts are not allowed to
+    /// change because that would break already deployed contracts. The `Call` structure itself
+    /// is not allowed to change the indices of existing pallets, too.
+    type CallFilter = frame_support::traits::Nothing;
+    type WeightPrice = pallet_transaction_payment::Pallet<Self>;
+    type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
+    type ChainExtension = ();
+    type Schedule = Schedule;
+    type ContractDeposit = ContractDeposit;
+    type CallStack = [pallet_contracts::Frame<Self>; 31];
+    type DeletionQueueDepth = DeletionQueueDepth;
+    type DeletionWeightLimit = DeletionWeightLimit;
+}
+
+// EVM
+parameter_types! {
+    pub const ChainId: u64 = 3331;
+    pub const BlockGasLimit: U256 = U256::MAX;
+}
+
+pub struct FixedGasPrice;
+impl pallet_evm::FeeCalculator for FixedGasPrice {
+    fn min_gas_price() -> U256 {
+        1.into()
+    }
+}
+
+pub struct FindAuthorTruncated<F>(PhantomData<F>);
+
+impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
+    fn find_author<'a, I>(digests: I) -> Option<H160>
+    where
+        I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
+    {
+        if let Some(author_index) = F::find_author(digests) {
+            let authority_id = Aura::authorities()[author_index as usize].clone();
+            return Some(H160::from_slice(&authority_id.to_raw_vec()[4..24]));
+        }
+        None
+    }
+}
+
+impl pallet_evm::Config for Runtime {
+    type FeeCalculator = FixedGasPrice;
+    type GasWeightMapping = ();
+
+    type BlockHashMapping = pallet_evm::SubstrateBlockHashMapping<Self>;
+    type CallOrigin = EnsureAddressRoot<Self::AccountId>;
+
+    type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
+    type AddressMapping = HashedAddressMapping<BlakeTwo256>;
+    type Currency = Balances;
+
+    type Event = Event;
+    type PrecompilesType = ();
+    // Left empty for now, we can use frontier precompiles or create our owns
+    type PrecompilesValue = ();
+    type ChainId = ChainId;
+    type BlockGasLimit = BlockGasLimit;
+    type Runner = pallet_evm::runner::stack::Runner<Self>;
+    type OnChargeTransaction = ();
+    type FindAuthor = FindAuthorTruncated<Aura>;
 }
 
 // ORML Tokens
@@ -1018,8 +1124,10 @@ construct_runtime!(
         ORMLTokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>} = 161,
 
         // smart contracts
-        //Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>} = 161,
+        Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>} = 171,
 
+        // VMs
+        EVM: pallet_evm::{Pallet, Config, Storage, Event<T>} = 181,
         // admin
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
     }
@@ -1132,6 +1240,38 @@ impl_runtime_apis! {
         }
     }
 
+    impl pallet_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
+        for Runtime
+    {
+        fn call(
+            origin: AccountId,
+            dest: AccountId,
+            value: Balance,
+            gas_limit: u64,
+            input_data: Vec<u8>,
+        ) -> pallet_contracts_primitives::ContractExecResult {
+            Contracts::bare_call(origin, dest, value, gas_limit, input_data, CONTRACTS_DEBUG_OUTPUT)
+        }
+
+        fn instantiate(
+            origin: AccountId,
+            endowment: Balance,
+            gas_limit: u64,
+            code: pallet_contracts_primitives::Code<Hash>,
+            data: Vec<u8>,
+            salt: Vec<u8>,
+        ) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId>
+        {
+            Contracts::bare_instantiate(origin, endowment, gas_limit, code, data, salt, CONTRACTS_DEBUG_OUTPUT)
+        }
+
+        fn get_storage(
+            address: AccountId,
+            key: [u8; 32],
+        ) -> pallet_contracts_primitives::GetStorageResult {
+            Contracts::get_storage(address, key)
+        }
+    }
 
     #[cfg(feature = "runtime-benchmarks")]
     impl frame_benchmarking::Benchmark<Block> for Runtime {
