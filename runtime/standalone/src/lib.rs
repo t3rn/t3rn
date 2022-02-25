@@ -11,7 +11,7 @@ use t3rn_primitives::bridges::runtime as bp_runtime;
 
 use pallet_evm::{
     EVMCurrencyAdapter, EnsureAddressNever, EnsureAddressRoot, FeeCalculator, GasWeightMapping,
-    IdentityAddressMapping, OnChargeEVMTransaction, Runner,
+    IdentityAddressMapping, OnChargeEVMTransaction, Runner, HashedAddressMapping
 };
 
 // pub mod gateway_messages;
@@ -417,16 +417,6 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
     }
 }
 
-pub struct HashedAddressMapping;
-
-impl pallet_evm::AddressMapping<AccountId> for HashedAddressMapping {
-    fn into_account_id(address: H160) -> AccountId {
-        let mut data = [0u8; 32];
-        data[0..20].copy_from_slice(&address[..]);
-        AccountId::from(Into::<[u8; 32]>::into(data))
-    }
-}
-
 impl pallet_evm::Config for Runtime {
     type FeeCalculator = FixedGasPrice;
     type GasWeightMapping = ();
@@ -435,7 +425,7 @@ impl pallet_evm::Config for Runtime {
     type CallOrigin = EnsureAddressRoot<Self::AccountId>;
 
     type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
-    type AddressMapping = HashedAddressMapping;
+    type AddressMapping = HashedAddressMapping<BlakeTwo256>;
     type Currency = Balances;
 
     type Event = Event;
