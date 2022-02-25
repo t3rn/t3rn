@@ -11,7 +11,7 @@ use t3rn_primitives::bridges::runtime as bp_runtime;
 
 use pallet_evm::{
     EVMCurrencyAdapter, EnsureAddressNever, EnsureAddressRoot, FeeCalculator, GasWeightMapping,
-    IdentityAddressMapping, OnChargeEVMTransaction, Runner, HashedAddressMapping
+    HashedAddressMapping, IdentityAddressMapping, OnChargeEVMTransaction, Runner,
 };
 
 // pub mod gateway_messages;

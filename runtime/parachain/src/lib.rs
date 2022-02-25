@@ -9,7 +9,7 @@ use ethereum_light_client::EthereumDifficultyConfig;
 
 use pallet_evm::{
     EVMCurrencyAdapter, EnsureAddressNever, EnsureAddressRoot, FeeCalculator, GasWeightMapping,
-    IdentityAddressMapping, OnChargeEVMTransaction, Runner, HashedAddressMapping
+    HashedAddressMapping, IdentityAddressMapping, OnChargeEVMTransaction, Runner,
 };
 
 use frame_support::{
