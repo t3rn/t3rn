@@ -9,22 +9,16 @@ use sp_core::crypto::Ss58Codec;
 use sp_core::{sr25519, Pair};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 
-
-use t3rn_primitives::bridges::runtime::{
-    SourceAccount, GATEWAY_CHAIN_ID,
-};
+use t3rn_primitives::bridges::runtime::{SourceAccount, GATEWAY_CHAIN_ID};
 
 use crate::chain_spec::{get_account_id_from_seed, seed_xdns_registry};
 use circuit_standalone_runtime::{
     AuraConfig, BalancesConfig, BeefyConfig, ContractsRegistryConfig, GenesisConfig, GrandpaConfig,
-    MultiFinalityVerifierConfig, SessionKeys, SudoConfig, SystemConfig, XDNSConfig,
-    WASM_BINARY,
+    MultiFinalityVerifierConfig, SessionKeys, SudoConfig, SystemConfig, XDNSConfig, WASM_BINARY,
 };
 use pallet_xdns::XdnsRecord;
 use t3rn_primitives::bridges::chain_circuit::derive_account_from_gateway_id;
-use t3rn_primitives::{
-    AccountId,
-};
+use t3rn_primitives::AccountId;
 
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
@@ -183,9 +177,7 @@ fn testnet_genesis(
         beefy: BeefyConfig {
             authorities: initial_authorities.iter().map(|x| (x.3.clone())).collect(),
         },
-        sudo: SudoConfig {
-            key: root_key,
-        },
+        sudo: SudoConfig { key: root_key },
         // session: SessionConfig {
         //     keys: initial_authorities
         //         .iter()

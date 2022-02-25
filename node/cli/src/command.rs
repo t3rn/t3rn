@@ -30,7 +30,7 @@ pub mod standalone {
         }
 
         fn description() -> String {
-            format!("Circuit Standalone Node")
+            "Circuit Standalone Node".to_string()
         }
 
         fn author() -> String {
@@ -170,7 +170,7 @@ pub mod parachain {
         Result, RuntimeVersion, SharedParams, SubstrateCli,
     };
     use sc_service::config::PrometheusConfig;
-    use sc_service::{BasePath, PartialComponents};
+    use sc_service::BasePath;
     use sp_core::hexdisplay::HexDisplay;
     use sp_runtime::traits::Block as BlockT;
     use std::io::Write;
@@ -216,6 +216,49 @@ pub mod parachain {
                 std::path::PathBuf::from(path),
             )?),
         })
+    }
+
+    impl SubstrateCli for Cli {
+        fn impl_name() -> String {
+            "Circuit Parachain Collator".into()
+        }
+
+        fn impl_version() -> String {
+            "0.1.0".into()
+        }
+
+        fn description() -> String {
+            format!(
+                "Circuit Parachain Collator\n\nThe command-line arguments provided first will be \
+		passed to the parachain node, while the arguments provided after -- will be passed \
+		to the relay chain node.\n\n\
+		{} [parachain-args] -- [relaychain-args]",
+                Self::executable_name()
+            )
+        }
+
+        fn author() -> String {
+            "t3rn".into()
+        }
+
+        fn support_url() -> String {
+            "https://github.com/t3rn/t3rn/issues/new".into()
+        }
+
+        fn copyright_start_year() -> i32 {
+            2020
+        }
+
+        fn load_spec(
+            &self,
+            id: &str,
+        ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
+            load_spec(id)
+        }
+
+        fn native_runtime_version(_: &Box<dyn sc_service::ChainSpec>) -> &'static RuntimeVersion {
+            &VERSION
+        }
     }
 
     impl SubstrateCli for RelayChainCli {

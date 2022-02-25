@@ -250,7 +250,7 @@ pub mod pallet {
             anchor_header_hash: BridgedBlockHash<T, I>,
         ) -> DispatchResultWithPostInfo {
             ensure_operational_single::<T, I>(gateway_id)?;
-            ensure_signed(origin.clone())?;
+            ensure_signed(origin)?;
             ensure!(
                 Self::request_count_map(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
                 <Error<T, I>>::TooManyRequests
@@ -316,7 +316,7 @@ pub mod pallet {
             let now = TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now())
                 .map_err(|_| "Unable to compute current timestamp")?;
 
-            pallet_xdns::Pallet::<T>::update_gateway_ttl(gateway_id, now.clone())?;
+            pallet_xdns::Pallet::<T>::update_gateway_ttl(gateway_id, now)?;
 
             Ok(().into())
         }

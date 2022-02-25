@@ -1,6 +1,4 @@
-use circuit_standalone_runtime::{
-    opaque::Block, RuntimeApi,
-};
+use circuit_standalone_runtime::{opaque::Block, RuntimeApi};
 
 use sc_client_api::ExecutorProvider;
 use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
@@ -61,7 +59,9 @@ pub fn new_partial(
     ServiceError,
 > {
     if config.keystore_remote.is_some() {
-        return Err(ServiceError::Other("Remote Keystores are not supported.".to_string()));
+        return Err(ServiceError::Other(
+            "Remote Keystores are not supported.".to_string(),
+        ));
     }
 
     let telemetry = config
