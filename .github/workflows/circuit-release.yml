@@ -5,13 +5,10 @@ on:
     branches:
       - development
     paths:
-      - ./**/*.rs
-      - ./**/Cargo.toml
-      - ./**/Cargo.lock
-      - pallets/**/*.rs
-      - pallets/**/Cargo.toml
-      - pallets/**/Cargo.lock
-      - .github/workflows/circuit-parachain-release.yml
+      - '**/*.rs'
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
+      - .github/workflows/circuit-release.yml
   release:
     types:
       - prereleased
@@ -53,7 +50,7 @@ jobs:
         continue-on-error: false
         with:
           command: build
-          args: --locked --manifest-path ./Cargo.toml --release
+          args: --locked --release --features with-parachain-runtime
 
       - name: 📤 Upload binary
         uses: actions/upload-artifact@v2
@@ -98,7 +95,7 @@ jobs:
           push: true
           tags: t3rn/circuit-parachain:latest
           platforms: linux/amd64
-          file: docker/circuit-parachain.Dockerfile
+          file: docker/xcm-devnet/t3rn.Dockerfile
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
 
@@ -115,15 +112,15 @@ jobs:
 
       - name: 🎱 Gzip circuit parachain
         run: |
-          gzip -c ./target/release/parachain-collator \
-          > ./target/release/parachain-collator.gz
+          gzip -c ./target/release/circuit-collator \
+          > ./target/release/circuit-collator.gz
 
       - name: 🖐🏾 Fingerprint the gball
         run: |
-          sha256sum -b ./target/release/parachain-collator.gz \
+          sha256sum -b ./target/release/circuit-collator.gz \
           | grep -oE '^[a-f0-9]+' \
           | tr -d '\n' \
-          > ./target/release/parachain-collator.gz.sha256sum
+          > ./target/release/circuit-collator.gz.sha256sum
 
       - name: 🏷️ Get the version tag
         run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
@@ -134,7 +131,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./target/release/parachain-collator.gz.sha256sum
+          asset_path: ./target/release/circuit-collator.gz.sha256sum
           asset_name: t3rn-circuit-parachain-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz.sha256sum
           asset_content_type: text/plain
 
@@ -144,6 +141,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./target/release/parachain-collator.gz
+          asset_path: ./target/release/circuit-collator.gz
           asset_name: t3rn-circuit-parachain-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz
           asset_content_type: application/gzip

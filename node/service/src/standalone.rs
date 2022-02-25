@@ -1,5 +1,5 @@
 use circuit_standalone_runtime::{
-    opaque::Block, AccountId, Balance, Hash, Index as Nonce, RuntimeApi,
+    opaque::Block, RuntimeApi,
 };
 
 use sc_client_api::ExecutorProvider;
@@ -61,9 +61,7 @@ pub fn new_partial(
     ServiceError,
 > {
     if config.keystore_remote.is_some() {
-        return Err(ServiceError::Other(format!(
-            "Remote Keystores are not supported."
-        )));
+        return Err(ServiceError::Other("Remote Keystores are not supported.".to_string()));
     }
 
     let telemetry = config
@@ -85,7 +83,7 @@ pub fn new_partial(
 
     let (client, backend, keystore_container, task_manager) =
         sc_service::new_full_parts::<Block, RuntimeApi, _>(
-            &config,
+            config,
             telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
             executor,
         )?;
@@ -269,7 +267,7 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
         let aura = sc_consensus_aura::start_aura::<AuraPair, _, _, _, _, _, _, _, _, _, _, _>(
             StartAuraParams {
                 slot_duration,
-                client: client.clone(),
+                client,
                 select_chain,
                 block_import,
                 proposer_factory,

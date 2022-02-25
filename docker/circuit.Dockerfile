@@ -1,6 +1,6 @@
 FROM ubuntu:20.04
 LABEL maintainer="team@t3rn.io"
-LABEL description="Circuit network node"
+LABEL description="Circuit standalone network node"
 ARG PROFILE=release
 
 RUN useradd -m -u 1000 -U -s /bin/sh -d /t3rn t3rn && \
@@ -19,4 +19,4 @@ EXPOSE 9933 9944
 
 VOLUME ["/data"]
 
-CMD ["/t3rn/circuit --dev"]
+CMD ["/t3rn/circuit-collator --dev"]
