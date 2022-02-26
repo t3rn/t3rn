@@ -12,7 +12,7 @@ use cumulus_primitives_core::ParaId;
 
 // Substrate Imports
 use sc_client_api::ExecutorProvider;
-use sc_executor::{NativeElseWasmExecutor, NativeExecutionDispatch};
+use sc_executor::NativeElseWasmExecutor;
 use sc_network::NetworkService;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};

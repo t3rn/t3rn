@@ -1,34 +1,24 @@
 use crate::chain_spec::get_authority_keys_from_seed;
-use async_std::task;
+
 use beefy_primitives::crypto::AuthorityId as BeefyId;
 use jsonrpc_core::serde_json;
-use log::info;
+
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::crypto::Ss58Codec;
-use sp_core::sp_std::convert::TryFrom;
-use sp_core::{sr25519, Encode, Pair, Public};
-use sp_finality_grandpa::AuthorityId as GrandpaId;
-use sp_runtime::traits::{IdentifyAccount, Verify};
-use std::{
-    collections::BTreeMap,
-    io::{Error, ErrorKind},
-    str::FromStr,
-};
-use t3rn_primitives::bridges::runtime::{
-    SourceAccount, GATEWAY_CHAIN_ID, KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID,
-};
 
-use crate::chain_spec::{get_account_id_from_seed, get_from_seed, seed_xdns_registry};
+use sp_core::{sr25519, Pair};
+use sp_finality_grandpa::AuthorityId as GrandpaId;
+
+use t3rn_primitives::bridges::runtime::{SourceAccount, GATEWAY_CHAIN_ID};
+
+use crate::chain_spec::{get_account_id_from_seed, seed_xdns_registry};
 use circuit_standalone_runtime::{
     AuraConfig, BalancesConfig, BeefyConfig, ContractsRegistryConfig, GenesisConfig, GrandpaConfig,
-    MultiFinalityVerifierConfig, SessionKeys, Signature, SudoConfig, SystemConfig, XDNSConfig,
-    WASM_BINARY,
+    MultiFinalityVerifierConfig, SessionKeys, SudoConfig, SystemConfig, XDNSConfig, WASM_BINARY,
 };
 use pallet_xdns::XdnsRecord;
 use t3rn_primitives::bridges::chain_circuit::derive_account_from_gateway_id;
-use t3rn_primitives::{
-    AccountId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
-};
+use t3rn_primitives::AccountId;
 
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
@@ -187,9 +177,7 @@ fn testnet_genesis(
         beefy: BeefyConfig {
             authorities: initial_authorities.iter().map(|x| (x.3.clone())).collect(),
         },
-        sudo: SudoConfig {
-            key: root_key.clone(),
-        },
+        sudo: SudoConfig { key: root_key },
         // session: SessionConfig {
         //     keys: initial_authorities
         //         .iter()
