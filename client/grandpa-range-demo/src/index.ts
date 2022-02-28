@@ -1,16 +1,28 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { SubstrateListener } from "./listeners/substrate";
+import { fork } from 'child_process';
+import * as path from "path"
 
 class GrandpaRangeRelayer {
-    target: SubstrateListener;
+	batchSize: number;
+	targetRpc: string;	
+	anchorJustification: any;
+	headers: any[];
 
     constructor() {
-      	this.target = new SubstrateListener("wss://rococo-rpc.polkadot.io", 5);
 
     }
 
-	init() {
-		this.target.initListener()
+	async initTargetListener() {
+		let targetListener = fork(path.join(__dirname, 'listeners/substrate' + path.extname(__filename)));
+
+		targetListener.send('init');
+
+		targetListener.on('message', (msg:any) => {
+			if (msg.instruction === 'results'){
+				console.log(msg)
+			}
+		})		
 	}
 
 
@@ -18,4 +30,4 @@ class GrandpaRangeRelayer {
 
 
 let bla = new GrandpaRangeRelayer();
-bla.init()
+bla.initTargetListener()

@@ -1,28 +1,29 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
-import { RpcPromiseResult } from '@polkadot/api/types';
-// import {RpcPromiseResult} from "@polkadot/api/types";
+// import { RpcPromiseResult } from '@polkadot/api/types';
 
-export class SubstrateListener {
+require('dotenv').config();
 
+export class SubstrateListener{
+    wsProvider: WsProvider
     rangeSize: number;
-    wsEndpoint: string;
+    gatewayId: number;
     headers: any[] = [];
     headerListener: any;
     anchorJustification: any;
     apiPromise: ApiPromise;
 
-
-    constructor(wsEndpoint: string, rangeSize: number) {
-        this.wsEndpoint = wsEndpoint;
-        this.rangeSize = rangeSize;
+    constructor() {
+        this.wsProvider = new WsProvider(process.env.TARGET_RPC);
+        this.rangeSize = Number(process.env.RANGE_SIZE);
+        this.gatewayId = Number(process.env.GATEWAY_ID) 
     }
 
     async initListener() {
-        this.apiPromise = await ApiPromise.create({ provider: new WsProvider(this.wsEndpoint)});
-
+        this.apiPromise = await ApiPromise.create({ provider: this.wsProvider});
         this.headerListener = await this.apiPromise.rpc.chain.subscribeNewHeads(async (header) => {
             console.log(`Received Header: #${header.number}`);
             this.headers.push(header)
+            
             if (this.headers.length === this.rangeSize) {
                 console.log("range size reached! continuing listen until matchig justification is found")
                 this.fetchIncomingGrandpaJustification();
@@ -34,6 +35,7 @@ export class SubstrateListener {
         console.log("Started Grandpa Justification Listener...")
         let listener = await this.apiPromise.rpc.grandpa.subscribeJustifications((justification) => {
             console.log("Caught Justification!")
+            console.log(justification)
             this.anchorJustification = justification;
             this.conclude()
             listener();
@@ -43,7 +45,18 @@ export class SubstrateListener {
     async conclude() {
         this.headerListener() // terminate header listener
         console.log("Headers found:", this.headers.length);
-        console.log(this.anchorJustification)
+
+        // TS might be undefined error workarounf
+        (<any>process).send({instruction: "results", gatewayId: this.gatewayId, anchor: this.anchorJustification, headers: this.headers})
     }
 
 }
+
+let instance = new SubstrateListener();
+
+process.on("message", (msg:string) => {
+    if(msg === "init") {
+        instance.initListener()
+    }
+})
+

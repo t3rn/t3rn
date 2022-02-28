@@ -10,7 +10,7 @@
   "dependencies": {
     "@polkadot/api": "=6.6.1",
     "@t3rn/types": "^0.1.1",
-    "dotenv": "^10.0.0",
+    "dotenv": "^16.0.0",
     "ts-node": "^10.4.0",
     "typescript": "^4.4.4"
   }
