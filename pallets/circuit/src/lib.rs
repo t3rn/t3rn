@@ -276,15 +276,29 @@ pub mod pallet {
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin, CircuitRole::Requester)?;
 
+            log::info!("Requester authorized: {:?}", requester.clone());
+
             // Charge: Ensure can afford
             Self::charge(&requester, fee)?;
+
+            log::info!("Requester charged with: {:?}", fee.clone());
+
             // Setup: new xtx context
             let mut local_xtx_ctx: LocalXtxCtx<T> =
                 Self::setup(CircuitStatus::Requested, &requester, fee, None)?;
+
+            log::info!("New xtx context setup");
+
             // Validate: Side Effects
             Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential)?;
+
+            log::info!("Validating side effects: {:?}", side_effects.clone());
+
             // Apply: all necessary changes to state in 1 go
             let (_, added_full_side_effects) = Self::apply(&mut local_xtx_ctx, None)?;
+
+            log::info!("Added full side effects: {:?}", added_full_side_effects.clone());
+            
             // Emit: From Circuit events
             Self::emit(
                 local_xtx_ctx.xtx_id,
