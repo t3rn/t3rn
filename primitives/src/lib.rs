@@ -38,6 +38,7 @@ use std::fmt::Debug;
 pub mod abi;
 pub mod bridges;
 pub mod contract_metadata;
+pub mod contracts_registry;
 pub mod gateway_inbound_protocol;
 pub mod match_format;
 pub mod side_effect;
@@ -189,8 +190,6 @@ pub struct Compose<Account, Balance> {
 
 /// A result type of a get storage call.
 pub type FetchContractsResult = Result<Vec<u8>, ContractAccessError>;
-
-pub type RegistryContractId<T> = <T as frame_system::Config>::Hash;
 
 /// A result of execution of a contract.
 #[derive(Eq, PartialEq, Encode, Decode, Debug, Clone)]

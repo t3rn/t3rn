@@ -34,7 +34,6 @@ num-traits = { version = "0.2", default-features = false }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13', default-features = false }
 sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13', default-features = false }
 sp-trie = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13', default-features = false }
-
 sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", default-features = false, branch = 'polkadot-v0.9.13' }
 finality-grandpa = { version = "0.14.0", default-features = false }
 
@@ -46,7 +45,7 @@ hex = "0.4"
 [features]
 default = ["std"]
 std = [
-	"ed25519-dalek/std",
+    "ed25519-dalek/std",
     "serde/std",
     "codec/std",
     "sp-api/std",
