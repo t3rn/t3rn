@@ -46,7 +46,7 @@ hex = "0.4"
 [features]
 default = ["std"]
 std = [
-	"ed25519-dalek/std",
+    "ed25519-dalek/std",
     "serde/std",
     "codec/std",
     "sp-api/std",
