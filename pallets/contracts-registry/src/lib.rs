@@ -218,7 +218,10 @@ impl<T: Config> Pallet<T> {
     }
 }
 
-impl<T: Config> t3rn_primitives::contracts_registry::ContractsRegistry<T> for Pallet<T> {
+impl<T: Config>
+    t3rn_primitives::contracts_registry::ContractsRegistry<T::Hash, T::AccountId, T::BlockNumber, T>
+    for Pallet<T>
+{
     type Error = Error<T>;
 
     /// Internal function that queries the RegistryContract storage for a contract by its ID
