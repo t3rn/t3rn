@@ -8,6 +8,8 @@ use scale_info::TypeInfo;
 use sp_runtime::traits::Hash;
 use sp_runtime::RuntimeDebug;
 
+use crate::Vec;
+
 pub type RegistryContractId<T> = <T as frame_system::Config>::Hash;
 
 /// In some instances, to enable the escrow trait to be configured once, we may need to have an escrowable
