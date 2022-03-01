@@ -1,8 +1,8 @@
 name: Backlog Item
 description: Add an item to the backlog
-title: ""
+title: "Add a title here"
 labels: []
-assignees:
+assignees: []
 body:
   - type: dropdown
     id: item-type
@@ -61,5 +61,5 @@ body:
     attributes:
       label: Is the issue ready?
       description: Ready means that the issue is actionable right away, has a defined acceptance criteria and size so that anybody with reasonable knowledge can start to work on the item
-      options:
-          required: false
+    validations:
+      required: false
