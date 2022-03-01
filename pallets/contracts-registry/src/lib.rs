@@ -113,7 +113,7 @@ pub mod pallet {
             requester: T::AccountId,
             contract: RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>,
         ) -> DispatchResultWithPostInfo {
-            ensure_root(origin)?;
+            // ensure_root(origin)?;
 
             let contract_id = contract.generate_id::<T>();
 
