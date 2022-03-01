@@ -6,8 +6,8 @@ import * as path from "path"
 class GrandpaRangeRelayer {
 	batchSize: number;
 	targetRpc: string;	
-	anchorJustification: any;
-	headers: any[];
+	
+
 
     constructor() {
 
