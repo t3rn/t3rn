@@ -251,6 +251,7 @@ pub struct InterExecSchedule<Account, Balance> {
     pub phases: Vec<ExecPhase<Account, Balance>>,
 }
 
+/// TODO: need a currency shim for base currency here
 pub trait EscrowTrait: frame_system::Config + pallet_sudo::Config {
     type Currency: Currency<Self::AccountId>;
     type Time: Time;

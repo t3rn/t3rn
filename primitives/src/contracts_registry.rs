@@ -4,30 +4,33 @@ use crate::storage::RawAliveContractInfo;
 use crate::transfers::BalanceOf;
 use crate::{ChainId, Compose, EscrowTrait};
 use codec::{Decode, Encode};
-use frame_system::Config;
 use scale_info::TypeInfo;
 use sp_runtime::traits::Hash;
 use sp_runtime::RuntimeDebug;
 
 pub type RegistryContractId<T> = <T as frame_system::Config>::Hash;
 
-pub trait ContractsRegistry<T>
+/// In some instances, to enable the escrow trait to be configured once, we may need to have an escrowable
+/// injected to the pallet. In this case you might have something like:
+///
+///    /// The pallet that handles the contracts registry, used to fetch contracts by their id
+///    type ContractsRegistry: ContractsRegistry<Self, Self::Escrowed>;
+///    /// An escrow provider to the registry
+///    type Escrowed: EscrowTrait;
+pub trait ContractsRegistry<Hash, AccountId, BlockNumber, Escrowed>
 where
-    T: Config + EscrowTrait,
+    Escrowed: EscrowTrait,
 {
     type Error;
 
     fn fetch_contract_by_id(
-        contract_id: RegistryContractId<T>,
-    ) -> Result<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>, Self::Error>;
+        contract_id: Hash,
+    ) -> Result<RegistryContract<Hash, AccountId, BalanceOf<Escrowed>, BlockNumber>, Self::Error>;
 
     fn fetch_contracts(
-        author: Option<T::AccountId>,
+        author: Option<AccountId>,
         metadata: Option<Vec<u8>>,
-    ) -> Result<
-        Vec<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>>,
-        Self::Error,
-    >;
+    ) -> Result<Vec<RegistryContract<Hash, AccountId, BalanceOf<Escrowed>, BlockNumber>>, Self::Error>;
 }
 
 /// A preliminary representation of a contract in the onchain registry.
