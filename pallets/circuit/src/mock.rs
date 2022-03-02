@@ -463,7 +463,7 @@ impl pallet_babe::Config for Test {
 #[derive(Default)]
 pub struct ExtBuilder {
     known_xdns_records: Vec<XdnsRecord<AccountId>>,
-    pub standard_side_effects: Vec<SideEffectInterface>,
+    standard_side_effects: Vec<SideEffectInterface>,
 }
 
 parameter_types! {
@@ -696,13 +696,68 @@ impl ExtBuilder {
         //
         // map side_effects to id, keeping lib.rs clean
         self.standard_side_effects = vec![
-            transfer_side_effect,
-            swap_side_effect,
+            transfer_side_effect.clone(),
+            swap_side_effect.clone(),
             add_liquidity_side_effect,
             call_evm_side_effect,
             get_data_side_effect,
         ];
+
         self
+    }
+
+    pub(crate) fn get_transfer_protocol_box() -> Box<SideEffectInterface> {
+        let transfer_side_effect = SideEffectInterface {
+            id: *b"tran",
+            name: b"transfer".to_vec(),
+            argument_abi: vec![
+                Type::DynamicAddress,    // argument_0: from
+                Type::DynamicAddress,    // argument_1: to
+                Type::Value,             // argument_2: value
+                Type::OptionalInsurance, // argument_3: insurance
+            ],
+            argument_to_state_mapper: vec![
+                b"from".to_vec(),
+                b"to".to_vec(),
+                b"value".to_vec(),
+                b"insurance".to_vec(),
+            ],
+            confirm_events: vec![b"Transfer(from,to,value)".to_vec()],
+            escrowed_events: vec![b"EscrowTransfer(from,to,value)".to_vec()],
+            commit_events: vec![b"Transfer(executor,to,value)".to_vec()],
+            revert_events: vec![b"Transfer(executor,from,value)".to_vec()],
+        };
+        Box::new(transfer_side_effect)
+    }
+
+    pub(crate) fn get_swap_protocol_box() -> Box<SideEffectInterface> {
+        let swap_side_effect = SideEffectInterface {
+            id: *b"swap",
+            name: b"swap".to_vec(),
+            argument_abi: vec![
+                Type::DynamicAddress,    // argument_0: caller
+                Type::DynamicAddress,    // argument_1: to
+                Type::Value,             // argument_2: amount_from
+                Type::Value,             // argument_3: amount_to
+                Type::DynamicBytes,      // argument_4: asset_from
+                Type::DynamicBytes,      // argument_5: asset_to
+                Type::OptionalInsurance, // argument_6: insurance
+            ],
+            argument_to_state_mapper: vec![
+                b"caller".to_vec(),
+                b"to".to_vec(),
+                b"amount_from".to_vec(),
+                b"amount_to".to_vec(),
+                b"asset_from".to_vec(),
+                b"asset_to".to_vec(),
+                b"insurance".to_vec(),
+            ],
+            confirm_events: vec![b"ExecuteToken(_executor,to,asset_to,amount_to)".to_vec()],
+            escrowed_events: vec![b"ExecuteToken(_executor,to,asset_to,amount_to)".to_vec()],
+            commit_events: vec![b"MultiTransfer(executor,to,asset_to,amount_to)".to_vec()],
+            revert_events: vec![b"MultiTransfer(executor,caller,asset_from,amount_from)".to_vec()],
+        };
+        Box::new(swap_side_effect)
     }
 
     pub(crate) fn build(self) -> sp_io::TestExternalities {

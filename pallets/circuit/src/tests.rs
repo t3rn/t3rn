@@ -33,7 +33,7 @@ use sp_io::TestExternalities;
 use codec::Encode;
 use sp_runtime::AccountId32;
 use sp_std::prelude::*;
-use t3rn_protocol::side_effects::protocol::SideEffectProtocol;
+// use crate::mock;
 
 pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);
 pub const BOB_RELAYER: AccountId32 = AccountId32::new([2u8; 32]);
@@ -65,15 +65,7 @@ fn on_extrinsic_trigger_works_with_empty_side_effects() {
 fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    // Initializing early to query side_effects
-    let ext_builder = ExtBuilder::default().with_standard_side_effects();
-
-    let transfer_protocol_box = ext_builder
-        .standard_side_effects
-        .clone()
-        .into_iter()
-        .find(|se| se.get_id() == *b"tran")
-        .unwrap();
+    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
 
     let mut local_state = LocalState::new();
     let valid_transfer_side_effect = produce_and_validate_side_effect(
@@ -84,14 +76,15 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
             (Type::Bytes(0), ArgVariant::A), // empty bytes instead of insurance
         ],
         &mut local_state,
-        Box::new(transfer_protocol_box),
+        transfer_protocol_box,
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
     let fee = 1;
     let sequential = true;
 
-    ext_builder
+    ExtBuilder::default()
+        .with_standard_side_effects()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -206,15 +199,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
 fn on_extrinsic_trigger_validation_works_with_single_transfer_insured() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    // Initializing early to query side_effects
-    let ext_builder = ExtBuilder::default().with_standard_side_effects();
-
-    let transfer_protocol_box = ext_builder
-        .standard_side_effects
-        .clone()
-        .into_iter()
-        .find(|se| se.get_id() == *b"tran")
-        .unwrap();
+    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
 
     let mut local_state = LocalState::new();
 
@@ -226,14 +211,15 @@ fn on_extrinsic_trigger_validation_works_with_single_transfer_insured() {
             (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
         ],
         &mut local_state,
-        Box::new(transfer_protocol_box),
+        transfer_protocol_box,
     );
 
     let side_effects = vec![valid_transfer_side_effect];
     let fee = 1;
     let sequential = true;
 
-    ext_builder
+    ExtBuilder::default()
+        .with_standard_side_effects()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -254,15 +240,7 @@ fn on_extrinsic_trigger_validation_works_with_single_transfer_insured() {
 fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    // Initializing early to query side_effects
-    let ext_builder = ExtBuilder::default().with_standard_side_effects();
-
-    let transfer_protocol_box = ext_builder
-        .standard_side_effects
-        .clone()
-        .into_iter()
-        .find(|se| se.get_id() == *b"tran")
-        .unwrap();
+    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
 
     let mut local_state = LocalState::new();
 
@@ -274,14 +252,15 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
             (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
         ],
         &mut local_state,
-        Box::new(transfer_protocol_box),
+        transfer_protocol_box,
     );
 
     let side_effects = vec![valid_transfer_side_effect];
     let fee = 1;
     let sequential = true;
 
-    ext_builder
+    ExtBuilder::default()
+        .with_standard_side_effects()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -358,15 +337,7 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
 fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    // Initializing early to query side_effects
-    let ext_builder = ExtBuilder::default().with_standard_side_effects();
-
-    let transfer_protocol_box = ext_builder
-        .standard_side_effects
-        .clone()
-        .into_iter()
-        .find(|se| se.get_id() == *b"tran")
-        .unwrap();
+    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
 
     let mut local_state = LocalState::new();
 
@@ -378,14 +349,15 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
             (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
         ],
         &mut local_state,
-        Box::new(transfer_protocol_box),
+        transfer_protocol_box,
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
     let fee = 1;
     let sequential = true;
 
-    ext_builder
+    ExtBuilder::default()
+        .with_standard_side_effects()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -450,15 +422,7 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
 fn circuit_handles_insurance_deposit_for_transfers() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    // Initializing early to query side_effects
-    let ext_builder = ExtBuilder::default().with_standard_side_effects();
-
-    let transfer_protocol_box = ext_builder
-        .standard_side_effects
-        .clone()
-        .into_iter()
-        .find(|se| se.get_id() == *b"tran")
-        .unwrap();
+    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
 
     let mut local_state = LocalState::new();
 
@@ -470,14 +434,15 @@ fn circuit_handles_insurance_deposit_for_transfers() {
             (Type::OptionalInsurance, ArgVariant::A), // insurance = 1, reward = 2
         ],
         &mut local_state,
-        Box::new(transfer_protocol_box),
+        transfer_protocol_box,
     );
 
     let side_effects = vec![valid_transfer_side_effect.clone()];
     let fee = 1;
     let sequential = true;
 
-    ext_builder
+    ExtBuilder::default()
+        .with_standard_side_effects()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -613,15 +578,7 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
     let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
 
-    // Initializing early to query side_effects
-    let ext_builder = ExtBuilder::default().with_standard_side_effects();
-
-    let swap_protocol_box = ext_builder
-        .standard_side_effects
-        .clone()
-        .into_iter()
-        .find(|se| se.get_id() == *b"swap")
-        .unwrap();
+    let swap_protocol_box = ExtBuilder::get_swap_protocol_box();
 
     let mut local_state = LocalState::new();
 
@@ -636,14 +593,15 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
             (Type::Bytes(0), ArgVariant::A),    // empty bytes instead of insurance
         ],
         &mut local_state,
-        Box::new(swap_protocol_box),
+        swap_protocol_box,
     );
 
     let side_effects = vec![valid_swap_side_effect.clone()];
     let fee = 1;
     let sequential = true;
 
-    ext_builder
+    ExtBuilder::default()
+        .with_standard_side_effects()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
