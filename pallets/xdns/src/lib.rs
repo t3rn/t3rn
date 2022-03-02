@@ -6,7 +6,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use crate::types::{
-    AllowedSideEffect, SideEffectId, SideEffectInterface, XdnsRecord, XdnsRecordId,
+    AllowedSideEffect, EventSignature, SideEffectId, SideEffectInterface, SideEffectName,
+    XdnsRecord, XdnsRecordId,
 };
 use codec::Encode;
 use sp_runtime::traits::Hash;
@@ -14,7 +15,7 @@ use sp_std::collections::btree_map::BTreeMap;
 use sp_std::prelude::*;
 
 pub use t3rn_primitives::{
-    abi::GatewayABIConfig, abi::Type, ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor, side_effect::{EventSignature, SideEffectName}
+    abi::GatewayABIConfig, abi::Type, ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor,
 };
 pub use t3rn_protocol::side_effects::protocol::{
     SideEffectConfirmationProtocol, SideEffectProtocol,
@@ -394,7 +395,6 @@ pub mod pallet {
     }
 }
 
-// Not sure if we really need this, just getters.
 impl SideEffectProtocol for SideEffectInterface {
     fn get_id(&self) -> [u8; 4] {
         self.id

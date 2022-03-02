@@ -13,10 +13,10 @@ use sp_runtime::{traits::Hash, RuntimeDebug};
 use sp_std::prelude::*;
 use sp_std::vec::Vec;
 use t3rn_primitives::abi::GatewayABIConfig;
+pub use t3rn_primitives::side_effect::{EventSignature, SideEffectId, SideEffectName};
 use t3rn_primitives::{
     abi::Type, ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
 };
-pub use t3rn_protocol::side_effects::protocol::{EventSignature, SideEffectName};
 /// A hash based on encoding the complete XdnsRecord
 pub type XdnsRecordId<T> = <T as frame_system::Config>::Hash;
 
@@ -56,7 +56,37 @@ pub struct XdnsRecord<AccountId> {
     pub allowed_side_effects: Vec<AllowedSideEffect>,
 }
 
-pub type SideEffectId<T> = <T as frame_system::Config>::Hash;
+// ToDo: If I import this from primitives, I get this error. Maybe someone has an idea? Don't understand the conflicting trait impl error
+// error[E0119]: conflicting implementations of trait `t3rn_protocol::side_effects::protocol::SideEffectProtocol` for type `t3rn_primitives::side_effect::SideEffectInterface`
+//    --> pallets/xdns/src/lib.rs:400:1
+//     |
+// 400 | impl SideEffectProtocol for SideEffectInterface {
+//     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//     |
+//     = note: conflicting implementation in crate `t3rn_protocol`:
+//             - impl t3rn_protocol::side_effects::protocol::SideEffectProtocol for t3rn_primitives::side_effect::SideEffectInterface;
+//
+// error[E0117]: only traits defined in the current crate can be implemented for arbitrary types
+//    --> pallets/xdns/src/lib.rs:400:1
+//     |
+// 400 | impl SideEffectProtocol for SideEffectInterface {
+//     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^-------------------
+//     | |                           |
+//     | |                           `t3rn_primitives::side_effect::SideEffectInterface` is not defined in the current crate
+//     | impl doesn't use only types from inside the current crate
+//     |
+//     = note: define and implement a trait or new type instead
+//
+// error[E0117]: only traits defined in the current crate can be implemented for arbitrary types
+//    --> pallets/xdns/src/lib.rs:444:1
+//     |
+// 444 | impl SideEffectConfirmationProtocol for SideEffectInterface {}
+//     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-------------------
+//     | |                                       |
+//     | |                                       `t3rn_primitives::side_effect::SideEffectInterface` is not defined in the current crate
+//     | impl doesn't use only types from inside the current crate
+//     |
+//     = note: define and implement a trait or new type instead
 
 #[derive(Clone, Debug, Encode, Decode, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
