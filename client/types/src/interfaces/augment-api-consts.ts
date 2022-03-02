@@ -12,6 +12,7 @@ import type {
   u8,
 } from "@polkadot/types-codec";
 import type { Codec } from "@polkadot/types-codec/types";
+import type { AccountId32 } from "@polkadot/types/interfaces/runtime";
 import type {
   FrameSupportPalletId,
   FrameSupportWeightsRuntimeDbWeight,
@@ -47,10 +48,13 @@ declare module "@polkadot/api-base/types/consts" {
       palletId: FrameSupportPalletId & AugmentedConst<ApiType>;
       /** The Circuit's self gateway id */
       selfGatewayId: U8aFixed & AugmentedConst<ApiType>;
+<<<<<<< HEAD
       /** The Circuit's Xtx timeout check interval */
       xtxTimeoutCheckInterval: u32 & AugmentedConst<ApiType>;
       /** The Circuit's Default Xtx timeout */
       xtxTimeoutDefault: u32 & AugmentedConst<ApiType>;
+=======
+>>>>>>> df7a772d... Add pallet-inflation types
       /** Generic const */
       [key: string]: Codec;
     };
@@ -109,6 +113,13 @@ declare module "@polkadot/api-base/types/consts" {
     grandpa: {
       /** Max Authorities in use */
       maxAuthorities: u32 & AugmentedConst<ApiType>;
+      /** Generic const */
+      [key: string]: Codec;
+    };
+    inflation: {
+      defaultBlocksPerRound: u32 & AugmentedConst<ApiType>;
+      tokenCirculationAtGenesis: u32 & AugmentedConst<ApiType>;
+      treasuryAccount: AccountId32 & AugmentedConst<ApiType>;
       /** Generic const */
       [key: string]: Codec;
     };

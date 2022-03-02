@@ -214,6 +214,15 @@ declare module "@polkadot/api-base/types/errors" {
       /** Generic error */
       [key: string]: AugmentedError<ApiType>;
     };
+    inflation: {
+      InvalidInflationSchedule: AugmentedError<ApiType>;
+      MintingFailed: AugmentedError<ApiType>;
+      NotCandidate: AugmentedError<ApiType>;
+      NotEnoughFunds: AugmentedError<ApiType>;
+      NoWritingSameValue: AugmentedError<ApiType>;
+      /** Generic error */
+      [key: string]: AugmentedError<ApiType>;
+    };
     multiFinalityVerifierDefault: {
       /** The pallet has already been initialized. */
       AlreadyInitialized: AugmentedError<ApiType>;
