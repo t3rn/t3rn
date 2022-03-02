@@ -1,5 +1,5 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
-import { GrandpaJustification } from '@polkadot/types/interfaces/';
+import { JustificationNotification } from '@polkadot/types/interfaces/';
 import { Header } from "@polkadot/api/node_modules/@polkadot/types/interfaces/runtime/types"
 require('dotenv').config();
 
@@ -9,7 +9,7 @@ export class SubstrateListener{
     gatewayId: number;
     headers: Header[] = [];
     headerListener: any;
-    anchorJustification: any;
+    anchorJustification: JustificationNotification;
     apiPromise: ApiPromise;
 
     constructor() {
@@ -34,8 +34,8 @@ export class SubstrateListener{
         console.log("Started Grandpa Justification Listener...")
         let listener = await this.apiPromise.rpc.grandpa.subscribeJustifications((justification) => {
             console.log("Caught Justification!")
-            console.log(justification.constructor.name)
-            this.anchorJustification = justification;
+            console.log(justification)
+            // this.anchorJustification = justification;
 
             this.conclude()
             listener();
