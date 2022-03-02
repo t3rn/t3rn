@@ -32,6 +32,8 @@ import type {
   PalletCircuitStateXExecSignal,
   PalletGrandpaStoredPendingChange,
   PalletGrandpaStoredState,
+  PalletInflationInflationInflationInfo,
+  PalletInflationInflationRoundInfo,
   PalletTransactionPaymentReleases,
   PalletWasmContractsStorageDeletedContract,
   PalletWasmContractsStorageRawContractInfo,
@@ -366,6 +368,43 @@ declare module "@polkadot/api-base/types/storage" {
         []
       > &
         QueryableStorageEntry<ApiType, []>;
+      /** Generic query */
+      [key: string]: QueryableStorageEntry<ApiType>;
+    };
+    inflation: {
+      availableTokensToBeMinted: AugmentedQuery<
+        ApiType,
+        () => Observable<Option<u128>>,
+        []
+      > &
+        QueryableStorageEntry<ApiType, []>;
+      candidatesForRewards: AugmentedQuery<
+        ApiType,
+        (arg: AccountId32 | string | Uint8Array) => Observable<Option<u128>>,
+        [AccountId32]
+      > &
+        QueryableStorageEntry<ApiType, [AccountId32]>;
+      currentRound: AugmentedQuery<
+        ApiType,
+        () => Observable<PalletInflationInflationRoundInfo>,
+        []
+      > &
+        QueryableStorageEntry<ApiType, []>;
+      inflationConfig: AugmentedQuery<
+        ApiType,
+        () => Observable<PalletInflationInflationInflationInfo>,
+        []
+      > &
+        QueryableStorageEntry<ApiType, []>;
+      rewardsPerCandidatePerRound: AugmentedQuery<
+        ApiType,
+        (
+          arg1: AccountId32 | string | Uint8Array,
+          arg2: u32 | AnyNumber | Uint8Array
+        ) => Observable<u128>,
+        [AccountId32, u32]
+      > &
+        QueryableStorageEntry<ApiType, [AccountId32, u32]>;
       /** Generic query */
       [key: string]: QueryableStorageEntry<ApiType>;
     };
