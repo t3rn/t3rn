@@ -14,10 +14,10 @@ use sp_std::collections::btree_map::BTreeMap;
 use sp_std::prelude::*;
 
 pub use t3rn_primitives::{
-    abi::GatewayABIConfig, abi::Type, ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor,
+    abi::GatewayABIConfig, abi::Type, ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor, side_effect::{EventSignature, SideEffectName}
 };
 pub use t3rn_protocol::side_effects::protocol::{
-    EventSignature, SideEffectConfirmationProtocol, SideEffectName, SideEffectProtocol,
+    SideEffectConfirmationProtocol, SideEffectProtocol,
 };
 // Re-export pallet items so that they can be accessed from the crate namespace.
 pub use crate::pallet::*;
