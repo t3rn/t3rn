@@ -620,7 +620,7 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
             let xtx_id: sp_core::H256 =
                 hex!("7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6").into();
 
-            let _side_effect_a_id =
+            let side_effect_a_id =
                 valid_swap_side_effect.generate_id::<crate::SystemHashing<Test>>();
 
             assert_eq!(
@@ -642,6 +642,23 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
                     input: valid_swap_side_effect.clone(),
                     confirmed: None,
                 }]]
+            );
+
+            // Returns void insurance for that side effect
+            let void_insurance_deposit = InsuranceDeposit {
+                insurance: 0,
+                reward: 0,
+                requester: AccountId32::new(hex!(
+                    "0000000000000000000000000000000000000000000000000000000000000000"
+                )),
+                bonded_relayer: None,
+                status: CircuitStatus::Requested,
+                requested_at: 0,
+            };
+
+            assert_eq!(
+                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
+                void_insurance_deposit
             );
 
             fn as_u32_le(array: &[u8; 4]) -> u32 {
