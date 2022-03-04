@@ -25,21 +25,20 @@ pallet-circuit-portal = {  path = "../../pallets/circuit-portal", default-featur
 pallet-circuit-portal-rpc-runtime-api = {  path = "../../pallets/circuit-portal/rpc/runtime-api", default-features = false }
 pallet-xdns = { path = "../../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
-pallet-multi-finality-verifier = { path = "../../pallets/multi-finality-verifier", default-features = false }
+pallet-multi-finality-verifier = { path = "../../pallets/multi-finality-verifier", version = "1.0.0-alpha.0", default-features = false }
 pallet-circuit = { path = "../../pallets/circuit", default-features = false }
 #volatile-vm = { path = "../../vm/volatile-vm", default-features = false }
 t3rn-primitives = { version = "1.0.0-alpha.0", default-features = false, path = "../../primitives" }
 t3rn-protocol = { path = "../../protocol", version = "1.0.0-alpha.1", default-features = false }
 
 # Smart contracts VMs
-pallet-contracts = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
-pallet-contracts-primitives = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
-pallet-contracts-rpc-runtime-api = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
-
 # branch frontier-para uses polkadot-V0.9.13
 pallet-evm = { git = "https://github.com/paritytech/frontier", branch = "frontier-para", default-features = false }
 pallet-ethereum = { git = "https://github.com/paritytech/frontier", branch = "frontier-para", default-features = false }
 pallet-evm-precompile-simple = { git = "https://github.com/paritytech/frontier", branch = "frontier-para", default-features = false }
+pallet-contracts = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
+pallet-contracts-primitives = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
+pallet-contracts-rpc-runtime-api = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
 
 # Substrate Dependencies
 frame-executive = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' , default-features = false }

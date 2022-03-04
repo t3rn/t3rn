@@ -9,8 +9,10 @@ use ethereum_light_client::EthereumDifficultyConfig;
 
 use pallet_evm::{
     EVMCurrencyAdapter, EnsureAddressNever, EnsureAddressRoot, FeeCalculator, GasWeightMapping,
-    HashedAddressMapping, IdentityAddressMapping, OnChargeEVMTransaction, Runner,
+    IdentityAddressMapping, OnChargeEVMTransaction, Runner,
 };
+
+// use volatile_vm::DispatchRuntimeCall;
 
 use frame_support::{
     construct_runtime, match_type, parameter_types,
@@ -45,6 +47,7 @@ use sp_runtime::{
 };
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 use sp_std::{marker::PhantomData, prelude::*, str::FromStr};
+
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -978,7 +981,7 @@ impl pallet_contracts::Config for Runtime {
 
 // EVM
 parameter_types! {
-    pub const ChainId: u64 = 3331;
+    pub const ChainId: u64 = 33;
     pub const BlockGasLimit: U256 = U256::MAX;
 }
 
@@ -1004,6 +1007,16 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
     }
 }
 
+pub struct HashedAddressMapping;
+
+impl pallet_evm::AddressMapping<AccountId> for HashedAddressMapping {
+    fn into_account_id(address: H160) -> AccountId {
+        let mut data = [0u8; 32];
+        data[0..20].copy_from_slice(&address[..]);
+        AccountId::from(Into::<[u8; 32]>::into(data))
+    }
+}
+
 impl pallet_evm::Config for Runtime {
     type FeeCalculator = FixedGasPrice;
     type GasWeightMapping = ();
@@ -1012,12 +1025,11 @@ impl pallet_evm::Config for Runtime {
     type CallOrigin = EnsureAddressRoot<Self::AccountId>;
 
     type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
-    type AddressMapping = HashedAddressMapping<BlakeTwo256>;
+    type AddressMapping = HashedAddressMapping;
     type Currency = Balances;
 
     type Event = Event;
-    type PrecompilesType = ();
-    // Left empty for now, we can use frontier precompiles or create our owns
+    type PrecompilesType = (); // Left empty for now, we can use frontier precompiles or create our owns
     type PrecompilesValue = ();
     type ChainId = ChainId;
     type BlockGasLimit = BlockGasLimit;
@@ -1128,6 +1140,7 @@ construct_runtime!(
 
         // VMs
         EVM: pallet_evm::{Pallet, Config, Storage, Event<T>} = 181,
+
         // admin
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
     }
