@@ -19,7 +19,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use frame_support::traits::{Currency, Time};
+use frame_support::traits::{ReservableCurrency, Time};
 use scale_info::TypeInfo;
 
 #[cfg(feature = "std")]
@@ -253,7 +253,7 @@ pub struct InterExecSchedule<Account, Balance> {
 
 /// TODO: need a currency shim for base currency here
 pub trait EscrowTrait: frame_system::Config + pallet_sudo::Config {
-    type Currency: Currency<Self::AccountId>;
+    type Currency: ReservableCurrency<Self::AccountId>;
     type Time: Time;
 }
 
