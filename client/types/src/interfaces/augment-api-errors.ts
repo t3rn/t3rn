@@ -5,92 +5,6 @@ import type { ApiTypes } from '@polkadot/api/types';
 
 declare module '@polkadot/api/types/errors' {
   export interface AugmentedErrors<ApiType> {
-    auctions: {
-      /**
-       * The para is already leased out for part of this range.
-       **/
-      AlreadyLeasedOut: AugmentedError<ApiType>;
-      /**
-       * Auction has already ended.
-       **/
-      AuctionEnded: AugmentedError<ApiType>;
-      /**
-       * This auction is already in progress.
-       **/
-      AuctionInProgress: AugmentedError<ApiType>;
-      /**
-       * The lease period is in the past.
-       **/
-      LeasePeriodInPast: AugmentedError<ApiType>;
-      /**
-       * Not an auction.
-       **/
-      NotAuction: AugmentedError<ApiType>;
-      /**
-       * Not a current auction.
-       **/
-      NotCurrentAuction: AugmentedError<ApiType>;
-      /**
-       * Para is not registered
-       **/
-      ParaNotRegistered: AugmentedError<ApiType>;
-      /**
-       * Generic error
-       **/
-      [key: string]: AugmentedError<ApiType>;
-    };
-    authorship: {
-      /**
-       * The uncle is genesis.
-       **/
-      GenesisUncle: AugmentedError<ApiType>;
-      /**
-       * The uncle parent not in the chain.
-       **/
-      InvalidUncleParent: AugmentedError<ApiType>;
-      /**
-       * The uncle isn't recent enough to be included.
-       **/
-      OldUncle: AugmentedError<ApiType>;
-      /**
-       * The uncle is too high in chain.
-       **/
-      TooHighUncle: AugmentedError<ApiType>;
-      /**
-       * Too many uncles.
-       **/
-      TooManyUncles: AugmentedError<ApiType>;
-      /**
-       * The uncle is already included.
-       **/
-      UncleAlreadyIncluded: AugmentedError<ApiType>;
-      /**
-       * Uncles already set in the block.
-       **/
-      UnclesAlreadySet: AugmentedError<ApiType>;
-      /**
-       * Generic error
-       **/
-      [key: string]: AugmentedError<ApiType>;
-    };
-    babe: {
-      /**
-       * A given equivocation report is valid but already previously reported.
-       **/
-      DuplicateOffenceReport: AugmentedError<ApiType>;
-      /**
-       * An equivocation proof provided as part of an equivocation report is invalid.
-       **/
-      InvalidEquivocationProof: AugmentedError<ApiType>;
-      /**
-       * A key ownership proof provided as part of an equivocation report is invalid.
-       **/
-      InvalidKeyOwnershipProof: AugmentedError<ApiType>;
-      /**
-       * Generic error
-       **/
-      [key: string]: AugmentedError<ApiType>;
-    };
     balances: {
       /**
        * Beneficiary account must pre-exist
@@ -129,155 +43,401 @@ declare module '@polkadot/api/types/errors' {
        **/
       [key: string]: AugmentedError<ApiType>;
     };
-    collective: {
+    basicOutboundChannel: {
       /**
-       * Members are already initialized!
+       * Not authorized to send message
        **/
-      AlreadyInitialized: AugmentedError<ApiType>;
+      NotAuthorized: AugmentedError<ApiType>;
       /**
-       * Duplicate proposals not allowed
-       **/
-      DuplicateProposal: AugmentedError<ApiType>;
-      /**
-       * Duplicate vote ignored
-       **/
-      DuplicateVote: AugmentedError<ApiType>;
-      /**
-       * Account is not a member
-       **/
-      NotMember: AugmentedError<ApiType>;
-      /**
-       * Proposal must exist
-       **/
-      ProposalMissing: AugmentedError<ApiType>;
-      /**
-       * The close call was made too early, before the end of the voting.
-       **/
-      TooEarly: AugmentedError<ApiType>;
-      /**
-       * There can only be a maximum of `MaxProposals` active proposals.
-       **/
-      TooManyProposals: AugmentedError<ApiType>;
-      /**
-       * Mismatched index
-       **/
-      WrongIndex: AugmentedError<ApiType>;
-      /**
-       * The given length bound for the proposal was too low.
-       **/
-      WrongProposalLength: AugmentedError<ApiType>;
-      /**
-       * The given weight bound for the proposal was too low.
-       **/
-      WrongProposalWeight: AugmentedError<ApiType>;
-      /**
-       * Generic error
-       **/
-      [key: string]: AugmentedError<ApiType>;
-    };
-    configuration: {
-      /**
-       * The new value for a configuration parameter is invalid.
-       **/
-      InvalidNewValue: AugmentedError<ApiType>;
-      /**
-       * Generic error
-       **/
-      [key: string]: AugmentedError<ApiType>;
-    };
-    crowdloan: {
-      /**
-       * The fund is already in `NewRaise`
-       **/
-      AlreadyInNewRaise: AugmentedError<ApiType>;
-      /**
-       * This parachain's bid or lease is still active and withdraw cannot yet begin.
-       **/
-      BidOrLeaseActive: AugmentedError<ApiType>;
-      /**
-       * The campaign ends before the current block number. The end must be in the future.
-       **/
-      CannotEndInPast: AugmentedError<ApiType>;
-      /**
-       * Contributions exceed maximum amount.
-       **/
-      CapExceeded: AugmentedError<ApiType>;
-      /**
-       * The contribution period has already ended.
-       **/
-      ContributionPeriodOver: AugmentedError<ApiType>;
-      /**
-       * The contribution was below the minimum, `MinContribution`.
-       **/
-      ContributionTooSmall: AugmentedError<ApiType>;
-      /**
-       * The end date for this crowdloan is not sensible.
-       **/
-      EndTooFarInFuture: AugmentedError<ApiType>;
-      /**
-       * The current lease period is more than the first lease period.
-       **/
-      FirstPeriodInPast: AugmentedError<ApiType>;
-      /**
-       * The first lease period needs to at least be less than 3 `max_value`.
-       **/
-      FirstPeriodTooFarInFuture: AugmentedError<ApiType>;
-      /**
-       * The crowdloan has not yet ended.
-       **/
-      FundNotEnded: AugmentedError<ApiType>;
-      /**
-       * The origin of this call is invalid.
-       **/
-      InvalidOrigin: AugmentedError<ApiType>;
-      /**
-       * Invalid fund index.
-       **/
-      InvalidParaId: AugmentedError<ApiType>;
-      /**
-       * Invalid signature.
-       **/
-      InvalidSignature: AugmentedError<ApiType>;
-      /**
-       * Last lease period must be greater than first lease period.
-       **/
-      LastPeriodBeforeFirstPeriod: AugmentedError<ApiType>;
-      /**
-       * The last lease period cannot be more than 3 periods after the first period.
-       **/
-      LastPeriodTooFarInFuture: AugmentedError<ApiType>;
-      /**
-       * This parachain lease is still active and retirement cannot yet begin.
-       **/
-      LeaseActive: AugmentedError<ApiType>;
-      /**
-       * The provided memo is too large.
-       **/
-      MemoTooLarge: AugmentedError<ApiType>;
-      /**
-       * There are no contributions stored in this crowdloan.
-       **/
-      NoContributions: AugmentedError<ApiType>;
-      /**
-       * A lease period has not started yet, due to an offset in the starting block.
-       **/
-      NoLeasePeriod: AugmentedError<ApiType>;
-      /**
-       * This crowdloan does not correspond to a parachain.
-       **/
-      NotParachain: AugmentedError<ApiType>;
-      /**
-       * The crowdloan is not ready to dissolve. Potentially still has a slot or in retirement period.
-       **/
-      NotReadyToDissolve: AugmentedError<ApiType>;
-      /**
-       * There was an overflow.
+       * Cannot increment nonce
        **/
       Overflow: AugmentedError<ApiType>;
       /**
-       * No contributions allowed during the VRF delay
+       * The message payload exceeds byte limit.
        **/
-      VrfDelayInProgress: AugmentedError<ApiType>;
+      PayloadTooLarge: AugmentedError<ApiType>;
+      /**
+       * No more messages can be queued for the channel during this commit cycle.
+       **/
+      QueueSizeLimitReached: AugmentedError<ApiType>;
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
+    };
+    bridgeGatewayGrandpa: {
+      /**
+       * The pallet has already been initialized.
+       **/
+      AlreadyInitialized: AugmentedError<ApiType>;
+      /**
+       * All pallet operations are halted.
+       **/
+      Halted: AugmentedError<ApiType>;
+      /**
+       * The authority set from the underlying header chain is invalid.
+       **/
+      InvalidAuthoritySet: AugmentedError<ApiType>;
+      /**
+       * The given justification is invalid for the given header.
+       **/
+      InvalidJustification: AugmentedError<ApiType>;
+      /**
+       * The pallet is not yet initialized.
+       **/
+      NotInitialized: AugmentedError<ApiType>;
+      /**
+       * The header being imported is older than the best finalized header known to the pallet.
+       **/
+      OldHeader: AugmentedError<ApiType>;
+      /**
+       * The storage proof doesn't contains storage root. So it is invalid for given header.
+       **/
+      StorageRootMismatch: AugmentedError<ApiType>;
+      /**
+       * There are too many requests for the current window to handle.
+       **/
+      TooManyRequests: AugmentedError<ApiType>;
+      /**
+       * The header is unknown to the pallet.
+       **/
+      UnknownHeader: AugmentedError<ApiType>;
+      /**
+       * The scheduled authority set change found in the header is unsupported by the pallet.
+       * 
+       * This is the case for non-standard (e.g forced) authority set changes.
+       **/
+      UnsupportedScheduledChange: AugmentedError<ApiType>;
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
+    };
+    bridgePolkadotLikeMultiFinalityVerifier: {
+      /**
+       * The pallet has already been initialized.
+       **/
+      AlreadyInitialized: AugmentedError<ApiType>;
+      /**
+       * All pallet operations are halted.
+       **/
+      Halted: AugmentedError<ApiType>;
+      /**
+       * The authority set from the underlying header chain is invalid.
+       **/
+      InvalidAuthoritySet: AugmentedError<ApiType>;
+      /**
+       * The given justification is invalid for the given header.
+       **/
+      InvalidJustification: AugmentedError<ApiType>;
+      /**
+       * The header being imported is older than the best finalized header known to the pallet.
+       **/
+      OldHeader: AugmentedError<ApiType>;
+      /**
+       * The storage proof doesn't contains storage root. So it is invalid for given header.
+       **/
+      StorageRootMismatch: AugmentedError<ApiType>;
+      /**
+       * There are too many requests for the current window to handle.
+       **/
+      TooManyRequests: AugmentedError<ApiType>;
+      /**
+       * The header is unknown to the pallet.
+       **/
+      UnknownHeader: AugmentedError<ApiType>;
+      /**
+       * The scheduled authority set change found in the header is unsupported by the pallet.
+       * 
+       * This is the case for non-standard (e.g forced) authority set changes.
+       **/
+      UnsupportedScheduledChange: AugmentedError<ApiType>;
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
+    };
+    contracts: {
+      /**
+       * Performing the requested transfer would have brought the contract below
+       * the subsistence threshold. No transfer is allowed to do this in order to allow
+       * for a tombstone to be created. Use `seal_terminate` to remove a contract without
+       * leaving a tombstone behind.
+       **/
+      BelowSubsistenceThreshold: AugmentedError<ApiType>;
+      /**
+       * No code could be found at the supplied code hash.
+       **/
+      CodeNotFound: AugmentedError<ApiType>;
+      /**
+       * The code supplied to `instantiate_with_code` exceeds the limit specified in the
+       * current schedule.
+       **/
+      CodeTooLarge: AugmentedError<ApiType>;
+      /**
+       * A tombstone exist at the specified address.
+       * 
+       * Tombstone cannot be called. Anyone can use `seal_restore_to` in order to revive
+       * the contract, though.
+       **/
+      ContractIsTombstone: AugmentedError<ApiType>;
+      /**
+       * A contract could not be evicted because it has enough balance to pay rent.
+       * 
+       * This can be returned from [`Pallet::claim_surcharge`] because the target
+       * contract has enough balance to pay for its rent.
+       **/
+      ContractNotEvictable: AugmentedError<ApiType>;
+      /**
+       * No contract was found at the specified address.
+       **/
+      ContractNotFound: AugmentedError<ApiType>;
+      /**
+       * Contract trapped during execution.
+       **/
+      ContractTrapped: AugmentedError<ApiType>;
+      /**
+       * The debug message specified to `seal_debug_message` does contain invalid UTF-8.
+       **/
+      DebugMessageInvalidUTF8: AugmentedError<ApiType>;
+      /**
+       * Input passed to a contract API function failed to decode as expected type.
+       **/
+      DecodingFailed: AugmentedError<ApiType>;
+      /**
+       * Removal of a contract failed because the deletion queue is full.
+       * 
+       * This can happen when either calling [`Pallet::claim_surcharge`] or `seal_terminate`.
+       * The queue is filled by deleting contracts and emptied by a fixed amount each block.
+       * Trying again during another block is the only way to resolve this issue.
+       **/
+      DeletionQueueFull: AugmentedError<ApiType>;
+      /**
+       * A contract with the same AccountId already exists.
+       **/
+      DuplicateContract: AugmentedError<ApiType>;
+      /**
+       * The topics passed to `seal_deposit_events` contains at least one duplicate.
+       **/
+      DuplicateTopics: AugmentedError<ApiType>;
+      /**
+       * `seal_call` forwarded this contracts input. It therefore is no longer available.
+       **/
+      InputForwarded: AugmentedError<ApiType>;
+      /**
+       * An origin TrieId written in the current block.
+       **/
+      InvalidContractOrigin: AugmentedError<ApiType>;
+      /**
+       * Cannot restore to nonexisting or alive contract.
+       **/
+      InvalidDestinationContract: AugmentedError<ApiType>;
+      /**
+       * A new schedule must have a greater version than the current one.
+       **/
+      InvalidScheduleVersion: AugmentedError<ApiType>;
+      /**
+       * Cannot restore from nonexisting or tombstone contract.
+       **/
+      InvalidSourceContract: AugmentedError<ApiType>;
+      /**
+       * An origin must be signed or inherent and auxiliary sender only provided on inherent.
+       **/
+      InvalidSurchargeClaim: AugmentedError<ApiType>;
+      /**
+       * Tombstones don't match.
+       **/
+      InvalidTombstone: AugmentedError<ApiType>;
+      /**
+       * Performing a call was denied because the calling depth reached the limit
+       * of what is specified in the schedule.
+       **/
+      MaxCallDepthReached: AugmentedError<ApiType>;
+      /**
+       * The newly created contract is below the subsistence threshold after executing
+       * its contructor. No contracts are allowed to exist below that threshold.
+       **/
+      NewContractNotFunded: AugmentedError<ApiType>;
+      /**
+       * The chain does not provide a chain extension. Calling the chain extension results
+       * in this error. Note that this usually  shouldn't happen as deploying such contracts
+       * is rejected.
+       **/
+      NoChainExtension: AugmentedError<ApiType>;
+      /**
+       * A buffer outside of sandbox memory was passed to a contract API function.
+       **/
+      OutOfBounds: AugmentedError<ApiType>;
+      /**
+       * The executed contract exhausted its gas limit.
+       **/
+      OutOfGas: AugmentedError<ApiType>;
+      /**
+       * The output buffer supplied to a contract API call was too small.
+       **/
+      OutputBufferTooSmall: AugmentedError<ApiType>;
+      /**
+       * The subject passed to `seal_random` exceeds the limit.
+       **/
+      RandomSubjectTooLong: AugmentedError<ApiType>;
+      /**
+       * A call tried to invoke a contract that is flagged as non-reentrant.
+       **/
+      ReentranceDenied: AugmentedError<ApiType>;
+      /**
+       * The called contract does not have enough balance to pay for its storage.
+       * 
+       * The contract ran out of balance and is therefore eligible for eviction into a
+       * tombstone. Anyone can evict the contract by submitting a `claim_surcharge`
+       * extrinsic. Alternatively, a plain balance transfer can be used in order to
+       * increase the contracts funds so that it can be called again.
+       **/
+      RentNotPaid: AugmentedError<ApiType>;
+      /**
+       * A storage modification exhausted the 32bit type that holds the storage size.
+       * 
+       * This can either happen when the accumulated storage in bytes is too large or
+       * when number of storage items is too large.
+       **/
+      StorageExhausted: AugmentedError<ApiType>;
+      /**
+       * A contract self destructed in its constructor.
+       * 
+       * This can be triggered by a call to `seal_terminate` or `seal_restore_to`.
+       **/
+      TerminatedInConstructor: AugmentedError<ApiType>;
+      /**
+       * Termination of a contract is not allowed while the contract is already
+       * on the call stack. Can be triggered by `seal_terminate` or `seal_restore_to.
+       **/
+      TerminatedWhileReentrant: AugmentedError<ApiType>;
+      /**
+       * The amount of topics passed to `seal_deposit_events` exceeds the limit.
+       **/
+      TooManyTopics: AugmentedError<ApiType>;
+      /**
+       * Performing the requested transfer failed for a reason originating in the
+       * chosen currency implementation of the runtime. Most probably the balance is
+       * too low or locks are placed on it.
+       **/
+      TransferFailed: AugmentedError<ApiType>;
+      /**
+       * The size defined in `T::MaxValueSize` was exceeded.
+       **/
+      ValueTooLarge: AugmentedError<ApiType>;
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
+    };
+    contractsRegistry: {
+      /**
+       * Stored contract has already been added before
+       **/
+      ContractAlreadyExists: AugmentedError<ApiType>;
+      /**
+       * Access of unknown contract
+       **/
+      UnknownContract: AugmentedError<ApiType>;
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
+    };
+    ethereumLightClient: {
+      /**
+       * Header is same height or older than finalized block (we don't support forks).
+       **/
+      AncientHeader: AugmentedError<ApiType>;
+      /**
+       * Log could not be decoded
+       **/
+      DecodeFailed: AugmentedError<ApiType>;
+      /**
+       * Header has already been imported.
+       **/
+      DuplicateHeader: AugmentedError<ApiType>;
+      /**
+       * Header referenced in inclusion proof is not final yet.
+       **/
+      HeaderNotFinalized: AugmentedError<ApiType>;
+      /**
+       * Header is on a stale fork, i.e. it's not a descendant of the latest finalized block
+       **/
+      HeaderOnStaleFork: AugmentedError<ApiType>;
+      /**
+       * One or more header fields are invalid.
+       **/
+      InvalidHeader: AugmentedError<ApiType>;
+      /**
+       * Proof could not be applied / verified.
+       **/
+      InvalidProof: AugmentedError<ApiType>;
+      /**
+       * Header referenced in inclusion proof doesn't exist, e.g. because it's
+       * pruned or older than genesis.
+       **/
+      MissingHeader: AugmentedError<ApiType>;
+      /**
+       * Header's parent has not been imported.
+       **/
+      MissingParentHeader: AugmentedError<ApiType>;
+      /**
+       * This should never be returned - indicates a bug
+       **/
+      Unknown: AugmentedError<ApiType>;
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
+    };
+    evm: {
+      /**
+       * Not enough balance to perform action
+       **/
+      BalanceLow: AugmentedError<ApiType>;
+      /**
+       * Calculating total fee overflowed
+       **/
+      FeeOverflow: AugmentedError<ApiType>;
+      /**
+       * Gas price is too low.
+       **/
+      GasPriceTooLow: AugmentedError<ApiType>;
+      /**
+       * Nonce is invalid
+       **/
+      InvalidNonce: AugmentedError<ApiType>;
+      /**
+       * Calculating total payment overflowed
+       **/
+      PaymentOverflow: AugmentedError<ApiType>;
+      /**
+       * Withdraw fee failed
+       **/
+      WithdrawFailed: AugmentedError<ApiType>;
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
+    };
+    execDelivery: {
+      ContractDoesNotExists: AugmentedError<ApiType>;
+      /**
+       * Non existent public key.
+       **/
+      InvalidKey: AugmentedError<ApiType>;
+      IOScheduleEmpty: AugmentedError<ApiType>;
+      IOScheduleNoEndingSemicolon: AugmentedError<ApiType>;
+      IOScheduleUnknownCompose: AugmentedError<ApiType>;
+      ProcessStepGatewayNotRecognised: AugmentedError<ApiType>;
+      RequesterNotEnoughBalance: AugmentedError<ApiType>;
+      SideEffectConfirmationInvalidInclusionProof: AugmentedError<ApiType>;
+      SideEffectTypeNotRecognized: AugmentedError<ApiType>;
+      StepConfirmationBlockUnrecognised: AugmentedError<ApiType>;
+      StepConfirmationDecodingError: AugmentedError<ApiType>;
+      StepConfirmationGatewayNotRecognised: AugmentedError<ApiType>;
+      VendorUnknown: AugmentedError<ApiType>;
       /**
        * Generic error
        **/
@@ -319,514 +479,45 @@ declare module '@polkadot/api/types/errors' {
        **/
       [key: string]: AugmentedError<ApiType>;
     };
-    hrmp: {
+    multiFinalityVerifier: {
       /**
-       * The channel is already confirmed.
+       * The pallet has already been initialized.
        **/
-      AcceptHrmpChannelAlreadyConfirmed: AugmentedError<ApiType>;
+      AlreadyInitialized: AugmentedError<ApiType>;
       /**
-       * The channel from the sender to the origin doesn't exist.
+       * All pallet operations are halted.
        **/
-      AcceptHrmpChannelDoesntExist: AugmentedError<ApiType>;
+      Halted: AugmentedError<ApiType>;
       /**
-       * The recipient already has the maximum number of allowed inbound channels.
+       * The authority set from the underlying header chain is invalid.
        **/
-      AcceptHrmpChannelLimitExceeded: AugmentedError<ApiType>;
+      InvalidAuthoritySet: AugmentedError<ApiType>;
       /**
-       * Canceling is requested by neither the sender nor recipient of the open channel request.
+       * The given justification is invalid for the given header.
        **/
-      CancelHrmpOpenChannelUnauthorized: AugmentedError<ApiType>;
+      InvalidJustification: AugmentedError<ApiType>;
       /**
-       * The channel close request is already requested.
+       * The header being imported is older than the best finalized header known to the pallet.
        **/
-      CloseHrmpChannelAlreadyUnderway: AugmentedError<ApiType>;
+      OldHeader: AugmentedError<ApiType>;
       /**
-       * The channel to be closed doesn't exist.
+       * The storage proof doesn't contains storage root. So it is invalid for given header.
        **/
-      CloseHrmpChannelDoesntExist: AugmentedError<ApiType>;
+      StorageRootMismatch: AugmentedError<ApiType>;
       /**
-       * The origin tries to close a channel where it is neither the sender nor the recipient.
+       * There are too many requests for the current window to handle.
        **/
-      CloseHrmpChannelUnauthorized: AugmentedError<ApiType>;
+      TooManyRequests: AugmentedError<ApiType>;
       /**
-       * Cannot cancel an HRMP open channel request because it is already confirmed.
+       * The header is unknown to the pallet.
        **/
-      OpenHrmpChannelAlreadyConfirmed: AugmentedError<ApiType>;
+      UnknownHeader: AugmentedError<ApiType>;
       /**
-       * The channel already exists
+       * The scheduled authority set change found in the header is unsupported by the pallet.
+       * 
+       * This is the case for non-standard (e.g forced) authority set changes.
        **/
-      OpenHrmpChannelAlreadyExists: AugmentedError<ApiType>;
-      /**
-       * There is already a request to open the same channel.
-       **/
-      OpenHrmpChannelAlreadyRequested: AugmentedError<ApiType>;
-      /**
-       * The requested capacity exceeds the global limit.
-       **/
-      OpenHrmpChannelCapacityExceedsLimit: AugmentedError<ApiType>;
-      /**
-       * The open request doesn't exist.
-       **/
-      OpenHrmpChannelDoesntExist: AugmentedError<ApiType>;
-      /**
-       * The recipient is not a valid para.
-       **/
-      OpenHrmpChannelInvalidRecipient: AugmentedError<ApiType>;
-      /**
-       * The sender already has the maximum number of allowed outbound channels.
-       **/
-      OpenHrmpChannelLimitExceeded: AugmentedError<ApiType>;
-      /**
-       * The open request requested the message size that exceeds the global limit.
-       **/
-      OpenHrmpChannelMessageSizeExceedsLimit: AugmentedError<ApiType>;
-      /**
-       * The sender tried to open a channel to themselves.
-       **/
-      OpenHrmpChannelToSelf: AugmentedError<ApiType>;
-      /**
-       * The requested capacity is zero.
-       **/
-      OpenHrmpChannelZeroCapacity: AugmentedError<ApiType>;
-      /**
-       * The requested maximum message size is 0.
-       **/
-      OpenHrmpChannelZeroMessageSize: AugmentedError<ApiType>;
-      /**
-       * Generic error
-       **/
-      [key: string]: AugmentedError<ApiType>;
-    };
-    imOnline: {
-      /**
-       * Duplicated heartbeat.
-       **/
-      DuplicatedHeartbeat: AugmentedError<ApiType>;
-      /**
-       * Non existent public key.
-       **/
-      InvalidKey: AugmentedError<ApiType>;
-      /**
-       * Generic error
-       **/
-      [key: string]: AugmentedError<ApiType>;
-    };
-    indices: {
-      /**
-       * The index was not available.
-       **/
-      InUse: AugmentedError<ApiType>;
-      /**
-       * The index was not already assigned.
-       **/
-      NotAssigned: AugmentedError<ApiType>;
-      /**
-       * The index is assigned to another account.
-       **/
-      NotOwner: AugmentedError<ApiType>;
-      /**
-       * The source and destination accounts are identical.
-       **/
-      NotTransfer: AugmentedError<ApiType>;
-      /**
-       * The index is permanent and may not be freed/changed.
-       **/
-      Permanent: AugmentedError<ApiType>;
-      /**
-       * Generic error
-       **/
-      [key: string]: AugmentedError<ApiType>;
-    };
-    membership: {
-      /**
-       * Already a member.
-       **/
-      AlreadyMember: AugmentedError<ApiType>;
-      /**
-       * Not a member.
-       **/
-      NotMember: AugmentedError<ApiType>;
-      /**
-       * Generic error
-       **/
-      [key: string]: AugmentedError<ApiType>;
-    };
-    multisig: {
-      /**
-       * Call is already approved by this signatory.
-       **/
-      AlreadyApproved: AugmentedError<ApiType>;
-      /**
-       * The data to be stored is already stored.
-       **/
-      AlreadyStored: AugmentedError<ApiType>;
-      /**
-       * The maximum weight information provided was too low.
-       **/
-      MaxWeightTooLow: AugmentedError<ApiType>;
-      /**
-       * Threshold must be 2 or greater.
-       **/
-      MinimumThreshold: AugmentedError<ApiType>;
-      /**
-       * Call doesn't need any (more) approvals.
-       **/
-      NoApprovalsNeeded: AugmentedError<ApiType>;
-      /**
-       * Multisig operation not found when attempting to cancel.
-       **/
-      NotFound: AugmentedError<ApiType>;
-      /**
-       * No timepoint was given, yet the multisig operation is already underway.
-       **/
-      NoTimepoint: AugmentedError<ApiType>;
-      /**
-       * Only the account that originally created the multisig is able to cancel it.
-       **/
-      NotOwner: AugmentedError<ApiType>;
-      /**
-       * The sender was contained in the other signatories; it shouldn't be.
-       **/
-      SenderInSignatories: AugmentedError<ApiType>;
-      /**
-       * The signatories were provided out of order; they should be ordered.
-       **/
-      SignatoriesOutOfOrder: AugmentedError<ApiType>;
-      /**
-       * There are too few signatories in the list.
-       **/
-      TooFewSignatories: AugmentedError<ApiType>;
-      /**
-       * There are too many signatories in the list.
-       **/
-      TooManySignatories: AugmentedError<ApiType>;
-      /**
-       * A timepoint was given, yet no multisig operation is underway.
-       **/
-      UnexpectedTimepoint: AugmentedError<ApiType>;
-      /**
-       * A different timepoint was given to the multisig operation that is underway.
-       **/
-      WrongTimepoint: AugmentedError<ApiType>;
-      /**
-       * Generic error
-       **/
-      [key: string]: AugmentedError<ApiType>;
-    };
-    paraInclusion: {
-      /**
-       * Multiple bitfields submitted by same validator or validators out of order by index.
-       **/
-      BitfieldDuplicateOrUnordered: AugmentedError<ApiType>;
-      /**
-       * A bitfield that references a freed core,
-       * either intentionally or as part of a concluded
-       * invalid dispute.
-       **/
-      BitfieldReferencesFreedCore: AugmentedError<ApiType>;
-      /**
-       * Candidate not in parent context.
-       **/
-      CandidateNotInParentContext: AugmentedError<ApiType>;
-      /**
-       * Candidate scheduled despite pending candidate already existing for the para.
-       **/
-      CandidateScheduledBeforeParaFree: AugmentedError<ApiType>;
-      /**
-       * Head data exceeds the configured maximum.
-       **/
-      HeadDataTooLarge: AugmentedError<ApiType>;
-      /**
-       * The candidate didn't follow the rules of HRMP watermark advancement.
-       **/
-      HrmpWatermarkMishandling: AugmentedError<ApiType>;
-      /**
-       * The downward message queue is not processed correctly.
-       **/
-      IncorrectDownwardMessageHandling: AugmentedError<ApiType>;
-      /**
-       * Insufficient (non-majority) backing.
-       **/
-      InsufficientBacking: AugmentedError<ApiType>;
-      /**
-       * Invalid (bad signature, unknown validator, etc.) backing.
-       **/
-      InvalidBacking: AugmentedError<ApiType>;
-      /**
-       * Invalid signature
-       **/
-      InvalidBitfieldSignature: AugmentedError<ApiType>;
-      /**
-       * Invalid group index in core assignment.
-       **/
-      InvalidGroupIndex: AugmentedError<ApiType>;
-      /**
-       * The HRMP messages sent by the candidate is not valid.
-       **/
-      InvalidOutboundHrmp: AugmentedError<ApiType>;
-      /**
-       * At least one upward message sent does not pass the acceptance criteria.
-       **/
-      InvalidUpwardMessages: AugmentedError<ApiType>;
-      /**
-       * The validation code hash of the candidate is not valid.
-       **/
-      InvalidValidationCodeHash: AugmentedError<ApiType>;
-      /**
-       * Output code is too large
-       **/
-      NewCodeTooLarge: AugmentedError<ApiType>;
-      /**
-       * Collator did not sign PoV.
-       **/
-      NotCollatorSigned: AugmentedError<ApiType>;
-      /**
-       * The `para_head` hash in the candidate descriptor doesn't match the hash of the actual para head in the
-       * commitments.
-       **/
-      ParaHeadMismatch: AugmentedError<ApiType>;
-      /**
-       * Code upgrade prematurely.
-       **/
-      PrematureCodeUpgrade: AugmentedError<ApiType>;
-      /**
-       * Scheduled cores out of order.
-       **/
-      ScheduledOutOfOrder: AugmentedError<ApiType>;
-      /**
-       * Candidate submitted but para not scheduled.
-       **/
-      UnscheduledCandidate: AugmentedError<ApiType>;
-      /**
-       * The validation data hash does not match expected.
-       **/
-      ValidationDataHashMismatch: AugmentedError<ApiType>;
-      /**
-       * Validator index out of bounds.
-       **/
-      ValidatorIndexOutOfBounds: AugmentedError<ApiType>;
-      /**
-       * Availability bitfield has unexpected size.
-       **/
-      WrongBitfieldSize: AugmentedError<ApiType>;
-      /**
-       * Candidate included with the wrong collator.
-       **/
-      WrongCollator: AugmentedError<ApiType>;
-      /**
-       * Generic error
-       **/
-      [key: string]: AugmentedError<ApiType>;
-    };
-    paraInherent: {
-      /**
-       * Disputed candidate that was concluded invalid.
-       **/
-      CandidateConcludedInvalid: AugmentedError<ApiType>;
-      /**
-       * The data given to the inherent will result in an overweight block.
-       **/
-      InherentOverweight: AugmentedError<ApiType>;
-      /**
-       * The hash of the submitted parent header doesn't correspond to the saved block hash of
-       * the parent.
-       **/
-      InvalidParentHeader: AugmentedError<ApiType>;
-      /**
-       * Inclusion inherent called more than once per block.
-       **/
-      TooManyInclusionInherents: AugmentedError<ApiType>;
-      /**
-       * Generic error
-       **/
-      [key: string]: AugmentedError<ApiType>;
-    };
-    paras: {
-      /**
-       * Para cannot be downgraded to a parathread.
-       **/
-      CannotDowngrade: AugmentedError<ApiType>;
-      /**
-       * Para cannot be offboarded at this time.
-       **/
-      CannotOffboard: AugmentedError<ApiType>;
-      /**
-       * Para cannot be onboarded because it is already tracked by our system.
-       **/
-      CannotOnboard: AugmentedError<ApiType>;
-      /**
-       * Para cannot be upgraded to a parachain.
-       **/
-      CannotUpgrade: AugmentedError<ApiType>;
-      /**
-       * Para is not registered in our system.
-       **/
-      NotRegistered: AugmentedError<ApiType>;
-      /**
-       * Generic error
-       **/
-      [key: string]: AugmentedError<ApiType>;
-    };
-    parasDisputes: {
-      /**
-       * Ancient dispute statement provided.
-       **/
-      AncientDisputeStatement: AugmentedError<ApiType>;
-      /**
-       * Duplicate dispute statement sets provided.
-       **/
-      DuplicateDisputeStatementSets: AugmentedError<ApiType>;
-      /**
-       * Validator vote submitted more than once to dispute.
-       **/
-      DuplicateStatement: AugmentedError<ApiType>;
-      /**
-       * Invalid signature on statement.
-       **/
-      InvalidSignature: AugmentedError<ApiType>;
-      /**
-       * Too many spam slots used by some specific validator.
-       **/
-      PotentialSpam: AugmentedError<ApiType>;
-      /**
-       * A dispute where there are only votes on one side.
-       **/
-      SingleSidedDispute: AugmentedError<ApiType>;
-      /**
-       * Validator index on statement is out of bounds for session.
-       **/
-      ValidatorIndexOutOfBounds: AugmentedError<ApiType>;
-      /**
-       * Generic error
-       **/
-      [key: string]: AugmentedError<ApiType>;
-    };
-    parasSudoWrapper: {
-      /**
-       * Cannot downgrade parachain.
-       **/
-      CannotDowngrade: AugmentedError<ApiType>;
-      /**
-       * Cannot upgrade parathread.
-       **/
-      CannotUpgrade: AugmentedError<ApiType>;
-      /**
-       * Could not schedule para cleanup.
-       **/
-      CouldntCleanup: AugmentedError<ApiType>;
-      /**
-       * A DMP message couldn't be sent because it exceeds the maximum size allowed for a downward
-       * message.
-       **/
-      ExceedsMaxMessageSize: AugmentedError<ApiType>;
-      /**
-       * Not a parachain.
-       **/
-      NotParachain: AugmentedError<ApiType>;
-      /**
-       * Not a parathread.
-       **/
-      NotParathread: AugmentedError<ApiType>;
-      /**
-       * The specified parachain or parathread is already registered.
-       **/
-      ParaAlreadyExists: AugmentedError<ApiType>;
-      /**
-       * The specified parachain or parathread is not registered.
-       **/
-      ParaDoesntExist: AugmentedError<ApiType>;
-      /**
-       * Generic error
-       **/
-      [key: string]: AugmentedError<ApiType>;
-    };
-    proxy: {
-      /**
-       * Account is already a proxy.
-       **/
-      Duplicate: AugmentedError<ApiType>;
-      /**
-       * Call may not be made by proxy because it may escalate its privileges.
-       **/
-      NoPermission: AugmentedError<ApiType>;
-      /**
-       * Cannot add self as proxy.
-       **/
-      NoSelfProxy: AugmentedError<ApiType>;
-      /**
-       * Proxy registration not found.
-       **/
-      NotFound: AugmentedError<ApiType>;
-      /**
-       * Sender is not a proxy of the account to be proxied.
-       **/
-      NotProxy: AugmentedError<ApiType>;
-      /**
-       * There are too many proxies registered or too many announcements pending.
-       **/
-      TooMany: AugmentedError<ApiType>;
-      /**
-       * Announcement, if made at all, was made too recently.
-       **/
-      Unannounced: AugmentedError<ApiType>;
-      /**
-       * A call which is incompatible with the proxy type's filter was attempted.
-       **/
-      Unproxyable: AugmentedError<ApiType>;
-      /**
-       * Generic error
-       **/
-      [key: string]: AugmentedError<ApiType>;
-    };
-    registrar: {
-      /**
-       * The ID is already registered.
-       **/
-      AlreadyRegistered: AugmentedError<ApiType>;
-      /**
-       * Cannot deregister para
-       **/
-      CannotDeregister: AugmentedError<ApiType>;
-      /**
-       * Cannot schedule downgrade of parachain to parathread
-       **/
-      CannotDowngrade: AugmentedError<ApiType>;
-      /**
-       * Cannot schedule upgrade of parathread to parachain
-       **/
-      CannotUpgrade: AugmentedError<ApiType>;
-      /**
-       * Invalid para code size.
-       **/
-      CodeTooLarge: AugmentedError<ApiType>;
-      /**
-       * Invalid para head data size.
-       **/
-      HeadDataTooLarge: AugmentedError<ApiType>;
-      /**
-       * The caller is not the owner of this Id.
-       **/
-      NotOwner: AugmentedError<ApiType>;
-      /**
-       * Para is not a Parachain.
-       **/
-      NotParachain: AugmentedError<ApiType>;
-      /**
-       * Para is not a Parathread.
-       **/
-      NotParathread: AugmentedError<ApiType>;
-      /**
-       * The ID is not registered.
-       **/
-      NotRegistered: AugmentedError<ApiType>;
-      /**
-       * The ID given for registration has not been reserved.
-       **/
-      NotReserved: AugmentedError<ApiType>;
-      /**
-       * Para is locked from manipulation by the manager. Must use parachain or relay chain governance.
-       **/
-      ParaLocked: AugmentedError<ApiType>;
+      UnsupportedScheduledChange: AugmentedError<ApiType>;
       /**
        * Generic error
        **/
@@ -858,20 +549,6 @@ declare module '@polkadot/api/types/errors' {
        **/
       [key: string]: AugmentedError<ApiType>;
     };
-    slots: {
-      /**
-       * There was an error with the lease.
-       **/
-      LeaseError: AugmentedError<ApiType>;
-      /**
-       * The parachain ID is not onboarding.
-       **/
-      ParaNotOnboarding: AugmentedError<ApiType>;
-      /**
-       * Generic error
-       **/
-      [key: string]: AugmentedError<ApiType>;
-    };
     sudo: {
       /**
        * Sender must be the Sudo account
@@ -883,10 +560,6 @@ declare module '@polkadot/api/types/errors' {
       [key: string]: AugmentedError<ApiType>;
     };
     system: {
-      /**
-       * The origin filter prevent the call to be dispatched.
-       **/
-      CallFiltered: AugmentedError<ApiType>;
       /**
        * Failed to extract the runtime version from the new runtime.
        * 
@@ -916,92 +589,212 @@ declare module '@polkadot/api/types/errors' {
        **/
       [key: string]: AugmentedError<ApiType>;
     };
-    ump: {
+    volatileVm: {
       /**
-       * The message index given is unknown.
+       * Performing the requested transfer would have brought the contract below
+       * the subsistence threshold. No transfer is allowed to do this in order to allow
+       * for a tombstone to be created. Use `seal_terminate` to remove a contract without
+       * leaving a tombstone behind.
        **/
-      UnknownMessageIndex: AugmentedError<ApiType>;
+      BelowSubsistenceThreshold: AugmentedError<ApiType>;
       /**
-       * The amount of weight given is possibly not enough for executing the message.
+       * No code could be found at the supplied code hash.
        **/
-      WeightOverLimit: AugmentedError<ApiType>;
+      CodeNotFound: AugmentedError<ApiType>;
+      /**
+       * No code could be found at the supplied code hash.
+       **/
+      CodeNotFoundLazyGet: AugmentedError<ApiType>;
+      /**
+       * No code could be found at the supplied code hash.
+       **/
+      CodeNotFoundLazyUpdate: AugmentedError<ApiType>;
+      /**
+       * No code could be found at the supplied code hash.
+       **/
+      CodeNotFoundOther: AugmentedError<ApiType>;
+      /**
+       * The code supplied to `instantiate_with_code` exceeds the limit specified in the
+       * current schedule.
+       **/
+      CodeTooLarge: AugmentedError<ApiType>;
+      /**
+       * A tombstone exist at the specified address.
+       * 
+       * Tombstone cannot be called. Anyone can use `seal_restore_to` in order to revive
+       * the contract, though.
+       **/
+      ContractIsTombstone: AugmentedError<ApiType>;
+      /**
+       * A contract could not be evicted because it has enough balance to pay rent.
+       * 
+       * This can be returned from [`Pallet::claim_surcharge`] because the target
+       * contract has enough balance to pay for its rent.
+       **/
+      ContractNotEvictable: AugmentedError<ApiType>;
+      /**
+       * No contract was found at the specified address.
+       **/
+      ContractNotFound: AugmentedError<ApiType>;
+      /**
+       * Contract trapped during execution.
+       **/
+      ContractTrapped: AugmentedError<ApiType>;
+      /**
+       * The debug message specified to `seal_debug_message` does contain invalid UTF-8.
+       **/
+      DebugMessageInvalidUTF8: AugmentedError<ApiType>;
+      /**
+       * Input passed to a contract API function failed to decode as expected type.
+       **/
+      DecodingFailed: AugmentedError<ApiType>;
+      /**
+       * Removal of a contract failed because the deletion queue is full.
+       * 
+       * This can happen when either calling [`Pallet::claim_surcharge`] or `seal_terminate`.
+       * The queue is filled by deleting contracts and emptied by a fixed amount each block.
+       * Trying again during another block is the only way to resolve this issue.
+       **/
+      DeletionQueueFull: AugmentedError<ApiType>;
+      /**
+       * A contract with the same AccountId already exists.
+       **/
+      DuplicateContract: AugmentedError<ApiType>;
+      /**
+       * The topics passed to `seal_deposit_events` contains at least one duplicate.
+       **/
+      DuplicateTopics: AugmentedError<ApiType>;
+      /**
+       * `seal_call` forwarded this contracts input. It therefore is no longer available.
+       **/
+      InputForwarded: AugmentedError<ApiType>;
+      /**
+       * An origin TrieId written in the current block.
+       **/
+      InvalidContractOrigin: AugmentedError<ApiType>;
+      /**
+       * Cannot restore to nonexisting or alive contract.
+       **/
+      InvalidDestinationContract: AugmentedError<ApiType>;
+      /**
+       * A new schedule must have a greater version than the current one.
+       **/
+      InvalidScheduleVersion: AugmentedError<ApiType>;
+      /**
+       * Cannot restore from nonexisting or tombstone contract.
+       **/
+      InvalidSourceContract: AugmentedError<ApiType>;
+      /**
+       * An origin must be signed or inherent and auxiliary sender only provided on inherent.
+       **/
+      InvalidSurchargeClaim: AugmentedError<ApiType>;
+      /**
+       * Tombstones don't match.
+       **/
+      InvalidTombstone: AugmentedError<ApiType>;
+      /**
+       * Performing a call was denied because the calling depth reached the limit
+       * of what is specified in the schedule.
+       **/
+      MaxCallDepthReached: AugmentedError<ApiType>;
+      /**
+       * The newly created contract is below the subsistence threshold after executing
+       * its contructor. No contracts are allowed to exist below that threshold.
+       **/
+      NewContractNotFunded: AugmentedError<ApiType>;
+      /**
+       * The chain does not provide a chain extension. Calling the chain extension results
+       * in this error. Note that this usually  shouldn't happen as deploying such contracts
+       * is rejected.
+       **/
+      NoChainExtension: AugmentedError<ApiType>;
+      /**
+       * A buffer outside of sandbox memory was passed to a contract API function.
+       **/
+      OutOfBounds: AugmentedError<ApiType>;
+      /**
+       * The executed contract exhausted its gas limit.
+       **/
+      OutOfGas: AugmentedError<ApiType>;
+      /**
+       * The output buffer supplied to a contract API call was too small.
+       **/
+      OutputBufferTooSmall: AugmentedError<ApiType>;
+      /**
+       * The subject passed to `seal_random` exceeds the limit.
+       **/
+      RandomSubjectTooLong: AugmentedError<ApiType>;
+      /**
+       * A call tried to invoke a contract that is flagged as non-reentrant.
+       **/
+      ReentranceDenied: AugmentedError<ApiType>;
+      /**
+       * The called contract does not have enough balance to pay for its storage.
+       * 
+       * The contract ran out of balance and is therefore eligible for eviction into a
+       * tombstone. Anyone can evict the contract by submitting a `claim_surcharge`
+       * extrinsic. Alternatively, a plain balance transfer can be used in order to
+       * increase the contracts funds so that it can be called again.
+       **/
+      RentNotPaid: AugmentedError<ApiType>;
+      /**
+       * A storage modification exhausted the 32bit type that holds the storage size.
+       * 
+       * This can either happen when the accumulated storage in bytes is too large or
+       * when number of storage items is too large.
+       **/
+      StorageExhausted: AugmentedError<ApiType>;
+      /**
+       * Contract trapped during execution.
+       **/
+      TargetActionDescNotFound: AugmentedError<ApiType>;
+      /**
+       * Target changes to an external one that causes execution to break and messages grouped in round.
+       **/
+      TargetChangeAndRoundFinished: AugmentedError<ApiType>;
+      /**
+       * A contract self destructed in its constructor.
+       * 
+       * This can be triggered by a call to `seal_terminate` or `seal_restore_to`.
+       **/
+      TerminatedInConstructor: AugmentedError<ApiType>;
+      /**
+       * Termination of a contract is not allowed while the contract is already
+       * on the call stack. Can be triggered by `seal_terminate` or `seal_restore_to.
+       **/
+      TerminatedWhileReentrant: AugmentedError<ApiType>;
+      /**
+       * The amount of topics passed to `seal_deposit_events` exceeds the limit.
+       **/
+      TooManyTopics: AugmentedError<ApiType>;
+      /**
+       * Performing the requested transfer failed for a reason originating in the
+       * chosen currency implementation of the runtime. Most probably the balance is
+       * too low or locks are placed on it.
+       **/
+      TransferFailed: AugmentedError<ApiType>;
+      /**
+       * The size defined in `T::MaxValueSize` was exceeded.
+       **/
+      ValueTooLarge: AugmentedError<ApiType>;
       /**
        * Generic error
        **/
       [key: string]: AugmentedError<ApiType>;
     };
-    utility: {
+    xdns: {
       /**
-       * Too many calls batched.
+       * Access of unknown xdns_record
        **/
-      TooManyCalls: AugmentedError<ApiType>;
+      UnknownXdnsRecord: AugmentedError<ApiType>;
       /**
-       * Generic error
+       * Stored xdns_record has already been added before
        **/
-      [key: string]: AugmentedError<ApiType>;
-    };
-    validatorManager: {
+      XdnsRecordAlreadyExists: AugmentedError<ApiType>;
       /**
-       * Generic error
+       * Xdns Record not found
        **/
-      [key: string]: AugmentedError<ApiType>;
-    };
-    xcmPallet: {
-      /**
-       * The location is invalid since it already has a subscription from us.
-       **/
-      AlreadySubscribed: AugmentedError<ApiType>;
-      /**
-       * The given location could not be used (e.g. because it cannot be expressed in the
-       * desired version of XCM).
-       **/
-      BadLocation: AugmentedError<ApiType>;
-      /**
-       * The version of the `Versioned` value used is not able to be interpreted.
-       **/
-      BadVersion: AugmentedError<ApiType>;
-      /**
-       * Could not re-anchor the assets to declare the fees for the destination chain.
-       **/
-      CannotReanchor: AugmentedError<ApiType>;
-      /**
-       * The destination `MultiLocation` provided cannot be inverted.
-       **/
-      DestinationNotInvertible: AugmentedError<ApiType>;
-      /**
-       * The assets to be sent are empty.
-       **/
-      Empty: AugmentedError<ApiType>;
-      /**
-       * The message execution fails the filter.
-       **/
-      Filtered: AugmentedError<ApiType>;
-      /**
-       * Origin is invalid for sending.
-       **/
-      InvalidOrigin: AugmentedError<ApiType>;
-      /**
-       * The referenced subscription could not be found.
-       **/
-      NoSubscription: AugmentedError<ApiType>;
-      /**
-       * There was some other issue (i.e. not to do with routing) in sending the message. Perhaps
-       * a lack of space for buffering the message.
-       **/
-      SendFailure: AugmentedError<ApiType>;
-      /**
-       * Too many assets have been attempted for transfer.
-       **/
-      TooManyAssets: AugmentedError<ApiType>;
-      /**
-       * The desired destination was unreachable, generally because there is a no way of routing
-       * to it.
-       **/
-      Unreachable: AugmentedError<ApiType>;
-      /**
-       * The message's weight could not be determined.
-       **/
-      UnweighableMessage: AugmentedError<ApiType>;
+      XdnsRecordNotFound: AugmentedError<ApiType>;
       /**
        * Generic error
        **/

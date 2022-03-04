@@ -24,7 +24,10 @@ use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
 
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H256};
+use sp_core::{
+    crypto::{KeyTypeId, Public},
+    OpaqueMetadata, H160, H256, U256,
+};
 use sp_runtime::traits::{
     AccountIdLookup, BlakeTwo256, Block as BlockT, Keccak256, NumberFor, OpaqueKeys,
 };
@@ -34,22 +37,28 @@ use sp_runtime::{
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, DigestItem,
 };
-use sp_std::prelude::*;
+use sp_std::{marker::PhantomData, prelude::*, str::FromStr};
+
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use ethereum_light_client::EthereumDifficultyConfig;
 
+use pallet_evm::{
+    EVMCurrencyAdapter, EnsureAddressNever, EnsureAddressRoot, FeeCalculator, GasWeightMapping,
+    IdentityAddressMapping, OnChargeEVMTransaction, Runner,
+};
+
 // use volatile_vm::DispatchRuntimeCall;
 
 // A few exports that help ease life for downstream crates.
-use frame_support::traits::{Everything, Nothing};
+use frame_support::traits::{Everything, FindAuthor, Nothing};
 pub use frame_support::{
     construct_runtime, parameter_types,
     traits::{Currency, ExistenceRequirement, Imbalance, KeyOwnerProofSystem},
     weights::{constants::WEIGHT_PER_SECOND, DispatchClass, IdentityFee, RuntimeDbWeight, Weight},
-    PalletId, StorageValue,
+    ConsensusEngineId, PalletId, StorageValue,
 };
 
 pub use frame_system::Call as SystemCall;
@@ -217,13 +226,13 @@ impl pallet_aura::Config for Runtime {
 impl pallet_grandpa::Config for Runtime {
     type Event = Event;
     type Call = Call;
-    type KeyOwnerProofSystem = ();
     type KeyOwnerProof =
         <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
     type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
         KeyTypeId,
         GrandpaId,
     )>>::IdentificationTuple;
+    type KeyOwnerProofSystem = ();
     type HandleEquivocation = ();
     // TODO: update me (https://github.com/paritytech/parity-bridges-common/issues/78)
     type WeightInfo = ();
@@ -353,54 +362,112 @@ pub type GatewayGrandpaInstance = ();
 //     type WeightInfo = ();
 // }
 
-// EVM
-
-// parameter_types! {
-//     pub const ChainId: u64 = 33;
-//     pub const BlockGasLimit: U256 = U256::MAX;
-// }
-
-// pub struct FixedGasPrice;
-// impl pallet_evm::FeeCalculator for FixedGasPrice {
-//     fn min_gas_price() -> U256 {
-//         1.into()
-//     }
-// }
-// pub struct HashedAddressMapping;
-
-// impl pallet_evm::AddressMapping<AccountId> for HashedAddressMapping {
-//     fn into_account_id(address: H160) -> AccountId {
-//         let mut data = [0u8; 32];
-//         data[0..20].copy_from_slice(&address[..]);
-//         AccountId::from(Into::<[u8; 32]>::into(data))
-//     }
-// }
-
 impl t3rn_primitives::EscrowTrait for Runtime {
     type Currency = Balances;
     type Time = Timestamp;
 }
 
-// impl pallet_evm::Config for Runtime {
-//     type FeeCalculator = FixedGasPrice;
-//     type GasWeightMapping = ();
-//     type CallOrigin = pallet_evm::EnsureAddressTruncated;
-//     type WithdrawOrigin = pallet_evm::EnsureAddressTruncated;
-//     type AddressMapping = HashedAddressMapping;
-//     type Currency = Balances;
-//     type Event = Event;
-//     type Runner = pallet_evm::runner::stack::Runner<Self>;
-//     type Precompiles = (
-//         pallet_evm_precompile_simple::ECRecover,
-//         pallet_evm_precompile_simple::Sha256,
-//         pallet_evm_precompile_simple::Ripemd160,
-//         pallet_evm_precompile_simple::Identity,
-//     );
-//     type ChainId = ChainId;
-//     type BlockGasLimit = BlockGasLimit;
-//     type OnChargeTransaction = ();
-//     type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping;
-// }
+// EVM
+parameter_types! {
+    pub const ChainId: u64 = 3330;
+    pub const BlockGasLimit: U256 = U256::MAX;
+}
+
+pub struct FixedGasPrice;
+impl pallet_evm::FeeCalculator for FixedGasPrice {
+    fn min_gas_price() -> U256 {
+        1.into()
+    }
+}
+
+pub struct HashedAddressMapping;
+impl pallet_evm::AddressMapping<AccountId> for HashedAddressMapping {
+    fn into_account_id(address: H160) -> AccountId {
+        let mut data = [0u8; 32];
+        data[0..20].copy_from_slice(&address[..]);
+        AccountId::from(Into::<[u8; 32]>::into(data))
+    }
+}
+
+pub struct FindAuthorTruncated<F>(PhantomData<F>);
+impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
+    fn find_author<'a, I>(digests: I) -> Option<H160>
+    where
+        I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
+    {
+        if let Some(author_index) = F::find_author(digests) {
+            let authority_id = Aura::authorities()[author_index as usize].clone();
+            return Some(H160::from_slice(&authority_id.to_raw_vec()[4..24]));
+        }
+        None
+    }
+}
+
+impl pallet_evm::Config for Runtime {
+    type FeeCalculator = FixedGasPrice;
+    type GasWeightMapping = ();
+
+    type BlockHashMapping = pallet_evm::SubstrateBlockHashMapping<Self>;
+    type CallOrigin = EnsureAddressRoot<Self::AccountId>;
+
+    type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
+    type AddressMapping = HashedAddressMapping;
+    type Currency = Balances;
+
+    type Event = Event;
+    type PrecompilesType = (); // Left empty for now, we can use frontier precompiles or create our owns
+    type PrecompilesValue = ();
+    type ChainId = ChainId;
+    type BlockGasLimit = BlockGasLimit;
+    type Runner = pallet_evm::runner::stack::Runner<Self>;
+    type OnChargeTransaction = ();
+    type FindAuthor = FindAuthorTruncated<Aura>;
+}
+
+parameter_types! {
+    pub const ContractDeposit: u64 = 16;
+
+    // The lazy deletion runs inside on_initialize.
+    pub const DeletionQueueDepth: u32 = 1024;
+    pub const DeletionWeightLimit: Weight = 500_000_000_000;
+    pub Schedule: pallet_contracts::Schedule<Runtime> = {
+        let mut schedule = pallet_contracts::Schedule::<Runtime>::default();
+        // We decided to **temporarily* increase the default allowed contract size here
+        // (the default is `128 * 1024`).
+        //
+        // Our reasoning is that a number of people ran into `CodeTooLarge` when trying
+        // to deploy their contracts. We are currently introducing a number of optimizations
+        // into ink! which should bring the contract sizes lower. In the meantime we don't
+        // want to pose additional friction on developers.
+        schedule.limits.code_len = 256 * 1024;
+        schedule
+    };
+}
+
+pub const CONTRACTS_DEBUG_OUTPUT: bool = true;
+
+impl pallet_contracts::Config for Runtime {
+    type Time = Timestamp;
+    type Randomness = Randomness;
+    type Currency = Balances;
+    type Event = Event;
+    type Call = Call;
+    /// The safest default is to allow no calls at all.
+    ///
+    /// Runtimes should whitelist dispatchables that are allowed to be called from contracts
+    /// and make sure they are stable. Dispatchables exposed to contracts are not allowed to
+    /// change because that would break already deployed contracts. The `Call` structure itself
+    /// is not allowed to change the indices of existing pallets, too.
+    type CallFilter = frame_support::traits::Nothing;
+    type WeightPrice = pallet_transaction_payment::Pallet<Self>;
+    type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
+    type ChainExtension = ();
+    type Schedule = Schedule;
+    type ContractDeposit = ContractDeposit;
+    type CallStack = [pallet_contracts::Frame<Self>; 31];
+    type DeletionQueueDepth = DeletionQueueDepth;
+    type DeletionWeightLimit = DeletionWeightLimit;
+}
 
 parameter_types! {
     pub const MaxMessagesToPruneAtOnce: bp_messages::MessageNonce = 8;
@@ -697,8 +764,8 @@ construct_runtime!(
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
         Randomness: pallet_randomness_collective_flip::{Pallet, Storage},
-        // Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
-        // EVM: pallet_evm::{Pallet, Config, Storage, Event<T>},
+        Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
+        EVM: pallet_evm::{Pallet, Config, Storage, Event<T>},
         XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>},
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>},
         // VolatileVM: volatile_vm::{Pallet, Call, Event<T>, Storage},
@@ -919,6 +986,39 @@ impl_runtime_apis! {
             type MmrHashing = <Runtime as pallet_mmr::Config>::Hashing;
             let node = mmr::DataOrHash::Data(leaf.into_opaque_leaf());
             pallet_mmr::verify_leaf_proof::<MmrHashing, _>(root, node, proof)
+        }
+    }
+
+    impl pallet_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
+        for Runtime
+    {
+        fn call(
+            origin: AccountId,
+            dest: AccountId,
+            value: Balance,
+            gas_limit: u64,
+            input_data: Vec<u8>,
+        ) -> pallet_contracts_primitives::ContractExecResult {
+            Contracts::bare_call(origin, dest, value, gas_limit, input_data, CONTRACTS_DEBUG_OUTPUT)
+        }
+
+        fn instantiate(
+            origin: AccountId,
+            endowment: Balance,
+            gas_limit: u64,
+            code: pallet_contracts_primitives::Code<Hash>,
+            data: Vec<u8>,
+            salt: Vec<u8>,
+        ) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId>
+        {
+            Contracts::bare_instantiate(origin, endowment, gas_limit, code, data, salt, CONTRACTS_DEBUG_OUTPUT)
+        }
+
+        fn get_storage(
+            address: AccountId,
+            key: [u8; 32],
+        ) -> pallet_contracts_primitives::GetStorageResult {
+            Contracts::get_storage(address, key)
         }
     }
 

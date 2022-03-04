@@ -5,7 +5,7 @@
   "license": "MIT",
   "dependencies": {
     "@nomiclabs/hardhat-etherscan": "^2.1.8",
-    "@openzeppelin/contracts": "^4.4.2",
+    "@openzeppelin/contracts": "^4.4.0",
     "dotenv": "^10.0.0",
     "hardhat": "^2.7.1",
     "hardhat-gas-reporter": "^1.0.6",
