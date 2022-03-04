@@ -1,28 +1,26 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { SubstrateListener } from "./listeners/substrate";
+import { types } from '@t3rn/types';
 import { fork } from 'child_process';
 import * as path from "path"
 
 class GrandpaRangeRelayer {
 	batchSize: number;
 	targetRpc: string;	
+	circuit: ApiPromise;
+
+		
+		
+	constructor() {
+		
+	}
+
 	
-
-
-    constructor() {
-
-    }
-
 	async initTargetListener() {
-		let targetListener = fork(path.join(__dirname, 'listeners/substrate' + path.extname(__filename)));
+		const circuitProvider = new WsProvider("ws://127.0.0.1:9944");
+		this.circuit = await ApiPromise.create({ provider: circuitProvider, types });
 
-		targetListener.send('init');
-
-		targetListener.on('message', (msg:any) => {
-			if (msg.instruction === 'results'){
-				console.log(msg)
-			}
-		})		
+		console.log(this.circuit)	
 	}
 
 
