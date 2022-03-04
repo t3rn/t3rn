@@ -275,7 +275,6 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin, CircuitRole::Requester)?;
-
             // Charge: Ensure can afford
             Self::charge(&requester, fee)?;
             // Setup: new xtx context
@@ -841,7 +840,12 @@ impl<T: Config> Pallet<T> {
         for side_effect in side_effects.iter() {
             // ToDo: Generate Circuit's params as default ABI from let abi = pallet_xdns::get_abi(target_id)
             let gateway_abi = Default::default();
-            local_ctx.use_protocol.notice_gateway(side_effect.target);
+            let allowed_side_effects =
+                pallet_xdns::Pallet::<T>::allowed_side_effects(&side_effect.target);
+
+            local_ctx
+                .use_protocol
+                .notice_gateway(side_effect.target, allowed_side_effects);
             local_ctx
                 .use_protocol
                 .validate_args::<T::AccountId, T::BlockNumber, BalanceOf<T>, SystemHashing<T>>(
@@ -938,13 +942,23 @@ impl<T: Config> Pallet<T> {
         };
 
         let confirm_execution = |gateway_vendor, state_copy| {
-            confirm_with_vendor_by_action_id::<
+            let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
+            side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
+            let side_effect_interface =
+                pallet_xdns::Pallet::<T>::fetch_side_effect_interface(side_effect_id);
+
+            // I guess this could be omitted, as SE submission would prevent this?
+            if let Err(msg) = side_effect_interface {
+                return Err(msg);
+            }
+
+            confirm_with_vendor::<
                 T,
                 SubstrateSideEffectsParser,
                 EthereumSideEffectsParser<<T as pallet_circuit_portal::Config>::EthVerifier>,
             >(
                 gateway_vendor,
-                side_effect.encoded_action.clone(),
+                &Box::new(side_effect_interface.unwrap()),
                 confirmation.encoded_effect.clone(),
                 state_copy,
                 Some(

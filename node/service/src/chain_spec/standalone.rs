@@ -18,13 +18,15 @@ use t3rn_primitives::bridges::runtime::{
     SourceAccount, GATEWAY_CHAIN_ID, KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID,
 };
 
-use crate::chain_spec::{get_account_id_from_seed, get_from_seed, seed_xdns_registry};
+use crate::chain_spec::{
+    get_account_id_from_seed, get_from_seed, seed_xdns_registry, standard_side_effects,
+};
 use circuit_standalone_runtime::{
     AuraConfig, BalancesConfig, BeefyConfig, ContractsRegistryConfig, GenesisConfig, GrandpaConfig,
     MultiFinalityVerifierConfig, SessionKeys, Signature, SudoConfig, SystemConfig, XDNSConfig,
     WASM_BINARY,
 };
-use pallet_xdns::XdnsRecord;
+use pallet_xdns::{SideEffectInterface, XdnsRecord};
 use t3rn_primitives::bridges::chain_circuit::derive_account_from_gateway_id;
 use t3rn_primitives::{
     AccountId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
@@ -79,6 +81,7 @@ impl Alternative {
                             )),
                         ],
                         seed_xdns_registry().unwrap_or_default(),
+                        standard_side_effects(),
                         true,
                     )
                 },
@@ -134,6 +137,7 @@ impl Alternative {
                             )),
                         ],
                         seed_xdns_registry().unwrap_or_default(),
+                        standard_side_effects(),
                         true,
                     )
                 },
@@ -160,6 +164,7 @@ fn testnet_genesis(
     root_key: AccountId,
     endowed_accounts: Vec<AccountId>,
     xdns_records: Vec<XdnsRecord<AccountId>>,
+    standard_side_effects: Vec<SideEffectInterface>,
     _enable_println: bool,
 ) -> GenesisConfig {
     GenesisConfig {
@@ -221,6 +226,7 @@ fn testnet_genesis(
         // },
         xdns: XDNSConfig {
             known_xdns_records: xdns_records,
+            standard_side_effects: standard_side_effects,
         },
         contracts_registry: ContractsRegistryConfig {
             known_contracts: Vec::new(),
