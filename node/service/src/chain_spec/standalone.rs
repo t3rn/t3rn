@@ -1,24 +1,36 @@
 use crate::chain_spec::get_authority_keys_from_seed;
-
+use async_std::task;
 use beefy_primitives::crypto::AuthorityId as BeefyId;
 use jsonrpc_core::serde_json;
-
+use log::info;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::crypto::Ss58Codec;
-
-use sp_core::{sr25519, Pair};
+use sp_core::sp_std::convert::TryFrom;
+use sp_core::{sr25519, Encode, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
+use sp_runtime::traits::{IdentifyAccount, Verify};
+use std::{
+    collections::BTreeMap,
+    io::{Error, ErrorKind},
+    str::FromStr,
+};
+use t3rn_primitives::bridges::runtime::{
+    SourceAccount, GATEWAY_CHAIN_ID, KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID,
+};
 
-use t3rn_primitives::bridges::runtime::{SourceAccount, GATEWAY_CHAIN_ID};
-
-use crate::chain_spec::{get_account_id_from_seed, seed_xdns_registry};
+use crate::chain_spec::{
+    get_account_id_from_seed, get_from_seed, seed_xdns_registry, standard_side_effects,
+};
 use circuit_standalone_runtime::{
     AuraConfig, BalancesConfig, BeefyConfig, ContractsRegistryConfig, GenesisConfig, GrandpaConfig,
-    MultiFinalityVerifierConfig, SessionKeys, SudoConfig, SystemConfig, XDNSConfig, WASM_BINARY,
+    MultiFinalityVerifierConfig, SessionKeys, Signature, SudoConfig, SystemConfig, XDNSConfig,
+    WASM_BINARY,
 };
-use pallet_xdns::XdnsRecord;
+use pallet_xdns::{SideEffectInterface, XdnsRecord};
 use t3rn_primitives::bridges::chain_circuit::derive_account_from_gateway_id;
-use t3rn_primitives::AccountId;
+use t3rn_primitives::{
+    AccountId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
+};
 
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
@@ -69,6 +81,7 @@ impl Alternative {
                             )),
                         ],
                         seed_xdns_registry().unwrap_or_default(),
+                        standard_side_effects(),
                         true,
                     )
                 },
@@ -124,6 +137,7 @@ impl Alternative {
                             )),
                         ],
                         seed_xdns_registry().unwrap_or_default(),
+                        standard_side_effects(),
                         true,
                     )
                 },
@@ -150,6 +164,7 @@ fn testnet_genesis(
     root_key: AccountId,
     endowed_accounts: Vec<AccountId>,
     xdns_records: Vec<XdnsRecord<AccountId>>,
+    standard_side_effects: Vec<SideEffectInterface>,
     _enable_println: bool,
 ) -> GenesisConfig {
     GenesisConfig {
@@ -177,7 +192,9 @@ fn testnet_genesis(
         beefy: BeefyConfig {
             authorities: initial_authorities.iter().map(|x| (x.3.clone())).collect(),
         },
-        sudo: SudoConfig { key: root_key },
+        sudo: SudoConfig {
+            key: root_key.clone(),
+        },
         // session: SessionConfig {
         //     keys: initial_authorities
         //         .iter()
@@ -209,6 +226,7 @@ fn testnet_genesis(
         // },
         xdns: XDNSConfig {
             known_xdns_records: xdns_records,
+            standard_side_effects: standard_side_effects,
         },
         contracts_registry: ContractsRegistryConfig {
             known_contracts: Vec::new(),

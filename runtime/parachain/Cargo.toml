@@ -62,7 +62,6 @@ pallet-utility = { git = "https://github.com/paritytech/substrate", default-feat
 pallet-contracts = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.13"}
 pallet-contracts-primitives = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
 pallet-contracts-rpc-runtime-api = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
-
 # branch frontier-para uses polkadot-V0.9.13
 pallet-evm = { git = "https://github.com/paritytech/frontier", branch = "frontier-para", default-features = false }
 pallet-ethereum = { git = "https://github.com/paritytech/frontier", branch = "frontier-para", default-features = false }

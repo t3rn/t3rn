@@ -77,7 +77,7 @@ pub use xbridges::{
 
 pub use t3rn_protocol::side_effects::protocol::SideEffectConfirmationProtocol;
 
-pub type AllowedSideEffect = Vec<u8>;
+pub type AllowedSideEffect = [u8; 4];
 
 /// Defines application identifier for crypto keys of this module.
 /// Every module that deals with signatures needs to declare its unique identifier for
@@ -273,8 +273,8 @@ pub mod pallet {
             Vec<AllowedSideEffect>, // allowed side effects / enabled methods
         ),
         GatewayUpdated(
-            bp_runtime::ChainId,  // gateway id
-            Option<Vec<Vec<u8>>>, // allowed side effects / enabled methods
+            bp_runtime::ChainId,            // gateway id
+            Option<Vec<AllowedSideEffect>>, // allowed side effects / enabled methods
         ),
     }
 

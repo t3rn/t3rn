@@ -184,7 +184,7 @@ fn test_register_gateway_with_default_eth_like_header() {
     let first_header: CurrentHeader<Test, EthLikeKeccak256ValU32Gateway> = test_header(0);
 
     let authorities = Some(vec![]);
-    let allowed_side_effects = vec![];
+    let allowed_side_effects = vec![*b"tran"];
 
     let mut ext = TestExternalities::new_empty();
     ext.execute_with(|| {
@@ -289,7 +289,7 @@ fn test_register_gateway_with_u64_substrate_header_and_allowed_side_effects() {
 
     let authorities = Some(vec![]);
 
-    let allowed_side_effects: Vec<AllowedSideEffect> = vec!["swap".into()];
+    let allowed_side_effects: Vec<AllowedSideEffect> = vec![*b"swap"];
 
     let mut ext = TestExternalities::new_empty();
     ext.execute_with(|| System::set_block_number(1));

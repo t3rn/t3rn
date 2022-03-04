@@ -33,6 +33,7 @@ sp-std = { default-features = false, git = "https://github.com/paritytech/substr
 sp-io = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
 
 t3rn-primitives = { default-features = false, path = "../../primitives" }
+t3rn-protocol = { path = "../../protocol", version = "1.0.0-alpha.1", default-features = false }
 
 [dev-dependencies]
 sp-core = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13', default-features = false }
@@ -57,6 +58,7 @@ std = [
 	"sp-runtime/std",
 	"sp-std/std",
 	"t3rn-primitives/std",
+	"t3rn-protocol/std"
 ]
 runtime-benchmarks = ["frame-benchmarking"]
 try-runtime = ["frame-support/try-runtime"]
