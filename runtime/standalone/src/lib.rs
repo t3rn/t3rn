@@ -380,21 +380,14 @@ impl pallet_evm::FeeCalculator for FixedGasPrice {
     }
 }
 
-pub struct FindAuthorTruncated<F>(PhantomData<F>);
-impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
-    fn find_author<'a, I>(digests: I) -> Option<H160>
-    where
-        I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
-    {
-        if let Some(author_index) = F::find_author(digests) {
-            let authority_id = Aura::authorities()[author_index as usize].clone();
-            return Some(H160::from_slice(&authority_id.to_raw_vec()[4..24]));
-        }
-        None
+pub struct HashedAddressMapping;
+impl pallet_evm::AddressMapping<AccountId> for HashedAddressMapping {
+    fn into_account_id(address: H160) -> AccountId {
+        let mut data = [0u8; 32];
+        data[0..20].copy_from_slice(&address[..]);
+        AccountId::from(Into::<[u8; 32]>::into(data))
     }
 }
-
-pub struct HashedAddressMapping;
 
 pub struct FindAuthorTruncated<F>(PhantomData<F>);
 impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
