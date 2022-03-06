@@ -1,5 +1,4 @@
-// use ethereum_types::{H128, H256, H512};
-use sp_core::{H128, H256, H512};
+use ethereum_types::{H128, H256, H512};
 use serde::{Deserialize, Deserializer};
 use std::{fs::File, path::Path};
 
