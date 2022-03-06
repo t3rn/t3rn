@@ -1,7 +1,7 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -35,6 +35,14 @@ pub struct RegistryContract<Hash, AccountId, BalanceOf, BlockNumber> {
     pub info: Option<RawAliveContractInfo<Hash, BalanceOf, BlockNumber>>,
     /// Contract metadata to be used in queries
     pub meta: ContractMetadata,
+}
+
+impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode> MaxEncodedLen
+    for RegistryContract<Hash, AccountId, BalanceOf, BlockNumber>
+{
+    fn max_encoded_len() -> usize {
+        4096 as usize
+    }
 }
 
 impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode>
