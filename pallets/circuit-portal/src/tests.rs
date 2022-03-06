@@ -46,6 +46,7 @@ pub const TEST_RUNTIME_VERSION: RuntimeVersion = RuntimeVersion {
     impl_version: 1,
     apis: sp_version::create_apis_vec!([]),
     transaction_version: 1,
+    state_version: 1,
 };
 
 #[test]
