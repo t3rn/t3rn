@@ -19,7 +19,6 @@
 use codec::Encode;
 use ed25519_dalek::{Keypair, PublicKey, SecretKey, Signature};
 use finality_grandpa::voter_set::VoterSet;
-use sp_application_crypto::Public;
 use sp_finality_grandpa::{AuthorityId, AuthorityList, AuthorityWeight};
 use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
@@ -70,7 +69,7 @@ impl Account {
 
 impl From<Account> for AuthorityId {
     fn from(p: Account) -> Self {
-        AuthorityId::from_slice(&p.public().to_bytes())
+        sp_application_crypto::UncheckedFrom::unchecked_from(p.public().to_bytes())
     }
 }
 
@@ -81,10 +80,7 @@ pub fn voter_set() -> VoterSet<AuthorityId> {
 
 /// Convenience function to get a list of Grandpa authorities.
 pub fn authority_list() -> AuthorityList {
-    test_keyring()
-        .iter()
-        .map(|(id, w)| (AuthorityId::from(*id), *w))
-        .collect()
+    test_keyring().iter().map(|(id, w)| (AuthorityId::from(*id), *w)).collect()
 }
 
 /// Get the corresponding identities from the keyring for the "standard" authority set.

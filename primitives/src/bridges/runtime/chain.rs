@@ -15,6 +15,7 @@
 // along with Parity Bridges Common.  If not, see <http://www.gnu.org/licenses/>.
 
 use frame_support::Parameter;
+use codec::{Encode, Decode, MaxEncodedLen};
 use num_traits::AsPrimitive;
 use sp_runtime::traits::{
     AtLeast32BitUnsigned, Hash as HashT, Header as HeaderT, MaybeDisplay, MaybeMallocSizeOf,
@@ -75,6 +76,19 @@ pub trait Chain: Send + Sync + 'static {
         + HeaderT<Number = Self::BlockNumber, Hash = Self::Hash>
         + MaybeSerializeDeserialize;
 }
+
+// impl<Hash, AccountId, BalanceOf, BlockNumber> MaxEncodedLen
+// for BlockNumberOf<Hash, AccountId, BalanceOf, BlockNumber>
+// where
+// Hash: MaxEncodedLen,
+// AccountId: MaxEncodedLen,
+// BalanceOf: MaxEncodedLen,
+// BlockNumber: MaxEncodedLen,
+// {
+//     fn max_encoded_len() -> usize {
+//         4096 as usize
+//     }
+// }
 
 /// Block number used by the chain.
 pub type BlockNumberOf<C> = <C as Chain>::BlockNumber;

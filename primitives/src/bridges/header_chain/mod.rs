@@ -19,7 +19,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Codec, Decode, Encode, EncodeLike};
+use codec::{Codec, Decode, Encode, EncodeLike, MaxEncodedLen};
 use core::clone::Clone;
 use core::cmp::Eq;
 use core::default::Default;
@@ -49,6 +49,13 @@ pub struct AuthoritySet {
     pub set_id: SetId,
 }
 
+impl MaxEncodedLen
+for AuthoritySet
+{
+    fn max_encoded_len() -> usize {
+        4096 as usize
+    }
+}
 impl AuthoritySet {
     /// Create a new GRANDPA Authority Set.
     pub fn new(authorities: AuthorityList, set_id: SetId) -> Self {
