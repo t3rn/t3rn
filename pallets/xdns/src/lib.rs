@@ -111,8 +111,6 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
-            let registrant = Default::default();
-
             // early exit if record already exists in storage
             let xdns_record_id = T::Hashing::hash(&gateway_id.encode());
             if <XDNSRegistry<T>>::contains_key(&xdns_record_id) {
@@ -142,7 +140,7 @@ pub mod pallet {
 
             let xdns_record_id = xdns_record.generate_id::<T>();
             <XDNSRegistry<T>>::insert(&xdns_record_id, xdns_record);
-            Self::deposit_event(Event::<T>::XdnsRecordStored(registrant, xdns_record_id));
+            Self::deposit_event(Event::<T>::XdnsRecordStored(xdns_record_id));
             Ok(().into())
         }
 
@@ -217,8 +215,8 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
-        /// \[requester, xdns_record_id\]
-        XdnsRecordStored(T::AccountId, XdnsRecordId<T>),
+        /// \[xdns_record_id\]
+        XdnsRecordStored(XdnsRecordId<T>),
         /// \[requester, xdns_record_id\]
         XdnsRecordPurged(T::AccountId, XdnsRecordId<T>),
         /// \[xdns_record_id\]
