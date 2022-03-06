@@ -22,10 +22,13 @@ use pallet_grandpa::{
 use pallet_mmr_primitives as mmr;
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
 
+use pallet_contracts::weights::WeightInfo;
+use sp_core::crypto::ByteArray;
+
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{
-    crypto::{KeyTypeId, Public},
+    crypto::{KeyTypeId},
     OpaqueMetadata, H160, H256, U256,
 };
 use sp_runtime::traits::{
@@ -37,18 +40,15 @@ use sp_runtime::{
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, DigestItem,
 };
-use sp_std::{marker::PhantomData, prelude::*, str::FromStr};
+use sp_std::{marker::PhantomData, prelude::*};
 
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use ethereum_light_client::EthereumDifficultyConfig;
+// use ethereum_light_client::EthereumDifficultyConfig;
 
-use pallet_evm::{
-    EVMCurrencyAdapter, EnsureAddressNever, EnsureAddressRoot, FeeCalculator, GasWeightMapping,
-    IdentityAddressMapping, OnChargeEVMTransaction, Runner,
-};
+// use pallet_evm::{EVMCurrencyAdapter, EnsureAddressNever, EnsureAddressRoot, FeeCalculator, GasWeightMapping, IdentityAddressMapping, OnChargeEVMTransaction, Runner, Config};
 
 // use volatile_vm::DispatchRuntimeCall;
 
@@ -99,6 +99,21 @@ pub type Hashing = bp_circuit::Hasher;
 /// Amount of an account
 pub type Amount = i128;
 
+/// Money matters.
+pub mod currency {
+    use node_primitives::Balance;
+
+    pub const MILLICENTS: Balance = 1_000_000_000;
+    pub const CENTS: Balance = 1_000 * MILLICENTS; // assume this is worth about a cent.
+    pub const DOLLARS: Balance = 100 * CENTS;
+
+    pub const fn deposit(items: u32, bytes: u32) -> Balance {
+        items as Balance * 15 * CENTS + (bytes as Balance) * 6 * CENTS
+    }
+}
+
+use crate::currency::*;
+
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
 /// of data like extrinsics, allowing for them to continue syncing the network through upgrades
@@ -134,6 +149,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
+    state_version: 1,
 };
 
 /// The version information used to identify this runtime when compiled natively.
@@ -144,11 +160,39 @@ pub fn native_version() -> NativeVersion {
         can_author_with: Default::default(),
     }
 }
+use frame_support::weights::constants::BlockExecutionWeight;
 
+/// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used by
+/// `Operational` extrinsics.
+const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
+use frame_system::{limits};
+/// We allow for 0.5 of a second of compute with a 12 second average block time.
+const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
+use frame_support::weights::constants::ExtrinsicBaseWeight;
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 250;
     pub const Version: RuntimeVersion = VERSION;
     pub const SS58Prefix: u8 = 60;
+    pub RuntimeBlockLength: limits::BlockLength =
+        limits::BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
+    pub RuntimeBlockWeights: limits::BlockWeights = limits::BlockWeights::builder()
+        .base_block(BlockExecutionWeight::get())
+        .for_class(DispatchClass::all(), |weights| {
+            weights.base_extrinsic = ExtrinsicBaseWeight::get();
+        })
+        .for_class(DispatchClass::Normal, |weights| {
+            weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
+        })
+        .for_class(DispatchClass::Operational, |weights| {
+            weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
+            // Operational transactions have some extra reserved space, so that they
+            // are included even if block reached `MAXIMUM_BLOCK_WEIGHT`.
+            weights.reserved = Some(
+                MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT
+            );
+        })
+        .avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
+        .build_or_panic();
 }
 
 impl frame_system::Config for Runtime {
@@ -199,6 +243,8 @@ impl frame_system::Config for Runtime {
     type SS58Prefix = SS58Prefix;
     /// The set code logic, just the default since we're not a parachain.
     type OnSetCode = ();
+
+    type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
@@ -247,14 +293,21 @@ parameter_types! {
     pub const MinimumPeriod: u64 = bp_circuit::SLOT_DURATION / 2;
 }
 
-impl pallet_timestamp::Config for Runtime {
+impl pallet_timestamp::pallet::Config for Runtime {
     /// A timestamp: milliseconds since the unix epoch.
     type Moment = u64;
     type OnTimestampSet = Aura;
     type MinimumPeriod = MinimumPeriod;
     // TODO: update me (https://github.com/paritytech/parity-bridges-common/issues/78)
-    type WeightInfo = ();
+    type WeightInfo = pallet_timestamp::weights::SubstrateWeight<Runtime>;
 }
+
+// impl pallet_timestamp::Config for Runtime {
+//     type Moment = Moment;
+//     type OnTimestampSet = Babe;
+//     type MinimumPeriod = MinimumPeriod;
+//     type WeightInfo = pallet_timestamp::weights::SubstrateWeight<Runtime>;
+// }
 
 parameter_types! {
     pub const ExistentialDeposit: bp_circuit::Balance = 500;
@@ -373,21 +426,21 @@ parameter_types! {
     pub const BlockGasLimit: U256 = U256::MAX;
 }
 
-pub struct FixedGasPrice;
-impl pallet_evm::FeeCalculator for FixedGasPrice {
-    fn min_gas_price() -> U256 {
-        1.into()
-    }
-}
-
-pub struct HashedAddressMapping;
-impl pallet_evm::AddressMapping<AccountId> for HashedAddressMapping {
-    fn into_account_id(address: H160) -> AccountId {
-        let mut data = [0u8; 32];
-        data[0..20].copy_from_slice(&address[..]);
-        AccountId::from(Into::<[u8; 32]>::into(data))
-    }
-}
+// pub struct FixedGasPrice;
+// impl pallet_evm::FeeCalculator for FixedGasPrice {
+//     fn min_gas_price() -> U256 {
+//         1.into()
+//     }
+// }
+//
+// pub struct HashedAddressMapping;
+// impl pallet_evm::AddressMapping<AccountId> for HashedAddressMapping {
+//     fn into_account_id(address: H160) -> AccountId {
+//         let mut data = [0u8; 32];
+//         data[0..20].copy_from_slice(&address[..]);
+//         AccountId::from(Into::<[u8; 32]>::into(data))
+//     }
+// }
 
 pub struct FindAuthorTruncated<F>(PhantomData<F>);
 impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
@@ -403,46 +456,64 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
     }
 }
 
-impl pallet_evm::Config for Runtime {
-    type FeeCalculator = FixedGasPrice;
-    type GasWeightMapping = ();
-
-    type BlockHashMapping = pallet_evm::SubstrateBlockHashMapping<Self>;
-    type CallOrigin = EnsureAddressRoot<Self::AccountId>;
-
-    type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
-    type AddressMapping = HashedAddressMapping;
-    type Currency = Balances;
-
-    type Event = Event;
-    type PrecompilesType = (); // Left empty for now, we can use frontier precompiles or create our owns
-    type PrecompilesValue = ();
-    type ChainId = ChainId;
-    type BlockGasLimit = BlockGasLimit;
-    type Runner = pallet_evm::runner::stack::Runner<Self>;
-    type OnChargeTransaction = ();
-    type FindAuthor = FindAuthorTruncated<Aura>;
-}
+// impl pallet_evm::Config for Runtime {
+//     type FeeCalculator = FixedGasPrice;
+//     type GasWeightMapping = ();
+//
+//     type BlockHashMapping = pallet_evm::SubstrateBlockHashMapping<Self>;
+//     type CallOrigin = EnsureAddressRoot<Self::AccountId>;
+//
+//     type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
+//     type AddressMapping = HashedAddressMapping;
+//     type Currency = Balances;
+//
+//     type Event = Event;
+//     type PrecompilesType = (); // Left empty for now, we can use frontier precompiles or create our owns
+//     type PrecompilesValue = ();
+//     type ChainId = ChainId;
+//     type BlockGasLimit = BlockGasLimit;
+//     type Runner = pallet_evm::runner::stack::Runner<Self>;
+//     type OnChargeTransaction = ();
+//     type FindAuthor = FindAuthorTruncated<Aura>;
+//     type WeightInfo = ();
+// }
+const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 
 parameter_types! {
-    pub const ContractDeposit: u64 = 16;
-
+    pub const DepositPerItem: Balance = deposit(1, 0);
+    pub const DepositPerByte: Balance = deposit(0, 1);
+    pub const MaxValueSize: u32 = 16 * 1024;
     // The lazy deletion runs inside on_initialize.
-    pub const DeletionQueueDepth: u32 = 1024;
-    pub const DeletionWeightLimit: Weight = 500_000_000_000;
-    pub Schedule: pallet_contracts::Schedule<Runtime> = {
-        let mut schedule = pallet_contracts::Schedule::<Runtime>::default();
-        // We decided to **temporarily* increase the default allowed contract size here
-        // (the default is `128 * 1024`).
-        //
-        // Our reasoning is that a number of people ran into `CodeTooLarge` when trying
-        // to deploy their contracts. We are currently introducing a number of optimizations
-        // into ink! which should bring the contract sizes lower. In the meantime we don't
-        // want to pose additional friction on developers.
-        schedule.limits.code_len = 256 * 1024;
-        schedule
-    };
+    pub DeletionWeightLimit: Weight = AVERAGE_ON_INITIALIZE_RATIO *
+        RuntimeBlockWeights::get().max_block;
+    // The weight needed for decoding the queue should be less or equal than a fifth
+    // of the overall weight dedicated to the lazy deletion.
+    pub DeletionQueueDepth: u32 = ((DeletionWeightLimit::get() / (
+            <Runtime as pallet_contracts::Config>::WeightInfo::on_initialize_per_queue_item(1) -
+            <Runtime as pallet_contracts::Config>::WeightInfo::on_initialize_per_queue_item(0)
+        )) / 5) as u32;
+    pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
 }
+
+// parameter_types! {
+//     pub const ContractDeposit: u64 = 16;
+//
+//     // The lazy deletion runs inside on_initialize.
+//     pub const DeletionQueueDepth: u32 = 1024;
+//     pub const DeletionWeightLimit: Weight = 500_000_000_000;
+//     pub Schedule: pallet_contracts::Schedule<Runtime> = {
+//         let mut schedule = pallet_contracts::Schedule::<Runtime>::default();
+//         // We decided to **temporarily* increase the default allowed contract size here
+//         // (the default is `128 * 1024`).
+//         //
+//         // Our reasoning is that a number of people ran into `CodeTooLarge` when trying
+//         // to deploy their contracts. We are currently introducing a number of optimizations
+//         // into ink! which should bring the contract sizes lower. In the meantime we don't
+//         // want to pose additional friction on developers.
+//         schedule.limits.code_len = 256 * 1024;
+//         schedule
+//     };
+// }
 
 pub const CONTRACTS_DEBUG_OUTPUT: bool = true;
 
@@ -458,16 +529,41 @@ impl pallet_contracts::Config for Runtime {
     /// and make sure they are stable. Dispatchables exposed to contracts are not allowed to
     /// change because that would break already deployed contracts. The `Call` structure itself
     /// is not allowed to change the indices of existing pallets, too.
-    type CallFilter = frame_support::traits::Nothing;
+    type CallFilter = Nothing;
+    type DepositPerItem = DepositPerItem;
+    type DepositPerByte = DepositPerByte;
+    type CallStack = [pallet_contracts::Frame<Self>; 31];
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
     type ChainExtension = ();
-    type Schedule = Schedule;
-    type ContractDeposit = ContractDeposit;
-    type CallStack = [pallet_contracts::Frame<Self>; 31];
     type DeletionQueueDepth = DeletionQueueDepth;
     type DeletionWeightLimit = DeletionWeightLimit;
+    type Schedule = Schedule;
+    type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
 }
+
+// impl pallet_contracts::Config for Runtime {
+//     type Time = Timestamp;
+//     type Randomness = Randomness;
+//     type Currency = Balances;
+//     type Event = Event;
+//     type Call = Call;
+//     /// The safest default is to allow no calls at all.
+//     ///
+//     /// Runtimes should whitelist dispatchables that are allowed to be called from contracts
+//     /// and make sure they are stable. Dispatchables exposed to contracts are not allowed to
+//     /// change because that would break already deployed contracts. The `Call` structure itself
+//     /// is not allowed to change the indices of existing pallets, too.
+//     type CallFilter = frame_support::traits::Nothing;
+//     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
+//     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
+//     type ChainExtension = ();
+//     type Schedule = Schedule;
+//     type ContractDeposit = ContractDeposit;
+//     type CallStack = [pallet_contracts::Frame<Self>; 31];
+//     type DeletionQueueDepth = DeletionQueueDepth;
+//     type DeletionWeightLimit = DeletionWeightLimit;
+// }
 
 parameter_types! {
     pub const MaxMessagesToPruneAtOnce: bp_messages::MessageNonce = 8;
@@ -559,15 +655,15 @@ parameter_types! {
     pub const MaxMessagesPerCommit: u32 = 20;
 }
 
-impl snowbridge_basic_channel::outbound::Config for Runtime {
-    type Event = Event;
-    const INDEXING_PREFIX: &'static [u8] = INDEXING_PREFIX;
-    type Hashing = Keccak256;
-    type MaxMessagePayloadSize = MaxMessagePayloadSize;
-    type MaxMessagesPerCommit = MaxMessagesPerCommit;
-    type SetPrincipalOrigin = pallet_circuit_portal::EnsureCircuitPortal<Runtime>;
-    type WeightInfo = ();
-}
+// impl snowbridge_basic_channel::outbound::Config for Runtime {
+//     type Event = Event;
+//     const INDEXING_PREFIX: &'static [u8] = INDEXING_PREFIX;
+//     type Hashing = Keccak256;
+//     type MaxMessagePayloadSize = MaxMessagePayloadSize;
+//     type MaxMessagesPerCommit = MaxMessagesPerCommit;
+//     type SetPrincipalOrigin = pallet_circuit_portal::EnsureCircuitPortal<Runtime>;
+//     type WeightInfo = ();
+// }
 
 pub struct AccountId32Converter;
 impl Convert<AccountId, [u8; 32]> for AccountId32Converter {
@@ -594,7 +690,8 @@ impl pallet_circuit_portal::Config for Runtime {
     type ToStandardizedGatewayBalance = CircuitToGateway;
     type WeightInfo = pallet_circuit_portal::weights::SubstrateWeight<Runtime>;
     type PalletId = ExecPalletId;
-    type EthVerifier = ethereum_light_client::Pallet<Runtime>;
+    // type EthVerifier = ethereum_light_client::Pallet<Runtime>;
+    type EthVerifier = t3rn_protocol::side_effects::confirm::ethereum::EthereumMockVerifier;
 }
 
 type Blake2ValU64BridgeInstance = ();
@@ -673,22 +770,22 @@ impl pallet_utility::Config for Runtime {
     type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
 }
 
-parameter_types! {
-    pub const DescendantsUntilFinalized: u8 = 3;
-    pub const DifficultyConfig: EthereumDifficultyConfig = EthereumDifficultyConfig::mainnet();
-    pub const VerifyPoW: bool = true;
-    pub const MaxHeadersForNumber: u32 = 100;
-}
+// parameter_types! {
+//     pub const DescendantsUntilFinalized: u8 = 3;
+//     pub const DifficultyConfig: EthereumDifficultyConfig = EthereumDifficultyConfig::mainnet();
+//     pub const VerifyPoW: bool = true;
+//     pub const MaxHeadersForNumber: u32 = 100;
+// }
 
-impl ethereum_light_client::Config for Runtime {
-    type Event = Event;
-    type DescendantsUntilFinalized = DescendantsUntilFinalized;
-    type DifficultyConfig = DifficultyConfig;
-    type VerifyPoW = VerifyPoW;
-    // Todo: need to run benchmarks and set actual weights
-    type WeightInfo = ();
-    type MaxHeadersForNumber = MaxHeadersForNumber;
-}
+// impl ethereum_light_client::Config for Runtime {
+//     type Event = Event;
+//     type DescendantsUntilFinalized = DescendantsUntilFinalized;
+//     type DifficultyConfig = DifficultyConfig;
+//     type VerifyPoW = VerifyPoW;
+//     // Todo: need to run benchmarks and set actual weights
+//     type WeightInfo = ();
+//     type MaxHeadersForNumber = MaxHeadersForNumber;
+// }
 
 parameter_types! {
 /// Version of the produced MMR leaf.
@@ -765,7 +862,7 @@ construct_runtime!(
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
         Randomness: pallet_randomness_collective_flip::{Pallet, Storage},
         Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
-        EVM: pallet_evm::{Pallet, Config, Storage, Event<T>},
+        // EVM: pallet_evm::{Pallet, Config, Storage, Event<T>},
         XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>},
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>},
         // VolatileVM: volatile_vm::{Pallet, Call, Event<T>, Storage},
@@ -774,9 +871,9 @@ construct_runtime!(
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>},
         Utility: pallet_utility::{Pallet, Call, Event},
         Mmr: pallet_mmr::{Pallet, Storage},
-        EthereumLightClient: ethereum_light_client::{Pallet, Call, Storage, Event<T>, Config},
+        // EthereumLightClient: ethereum_light_client::{Pallet, Call, Storage, Event<T>, Config},
         MmrLeaf: pallet_beefy_mmr::{Pallet, Storage},
-        BasicOutboundChannel: snowbridge_basic_channel::outbound::{Pallet, Config<T>, Storage, Event<T>},
+        // BasicOutboundChannel: snowbridge_basic_channel::outbound::{Pallet, Config<T>, Storage, Event<T>},
         // ORML
         ORMLTokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>},
 
@@ -951,7 +1048,7 @@ impl_runtime_apis! {
     }
 
     impl beefy_primitives::BeefyApi<Block> for Runtime {
-        fn validator_set() -> ValidatorSet<BeefyId> {
+        fn validator_set() -> Option<ValidatorSet<BeefyId>> {
             Beefy::validator_set()
         }
     }
@@ -989,7 +1086,9 @@ impl_runtime_apis! {
         }
     }
 
-    impl pallet_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
+    impl pallet_contracts_rpc_runtime_api::ContractsApi<
+        Block, AccountId, Balance, BlockNumber, Hash,
+    >
         for Runtime
     {
         fn call(
@@ -997,21 +1096,32 @@ impl_runtime_apis! {
             dest: AccountId,
             value: Balance,
             gas_limit: u64,
+            storage_deposit_limit: Option<Balance>,
             input_data: Vec<u8>,
-        ) -> pallet_contracts_primitives::ContractExecResult {
-            Contracts::bare_call(origin, dest, value, gas_limit, input_data, CONTRACTS_DEBUG_OUTPUT)
+        ) -> pallet_contracts_primitives::ContractExecResult<Balance> {
+            Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, true)
         }
 
         fn instantiate(
             origin: AccountId,
-            endowment: Balance,
+            value: Balance,
             gas_limit: u64,
+            storage_deposit_limit: Option<Balance>,
             code: pallet_contracts_primitives::Code<Hash>,
             data: Vec<u8>,
             salt: Vec<u8>,
-        ) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId>
+        ) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId, Balance>
         {
-            Contracts::bare_instantiate(origin, endowment, gas_limit, code, data, salt, CONTRACTS_DEBUG_OUTPUT)
+            Contracts::bare_instantiate(origin, value, gas_limit, storage_deposit_limit, code, data, salt, true)
+        }
+
+        fn upload_code(
+            origin: AccountId,
+            code: Vec<u8>,
+            storage_deposit_limit: Option<Balance>,
+        ) -> pallet_contracts_primitives::CodeUploadResult<Hash, Balance>
+        {
+            Contracts::bare_upload_code(origin, code, storage_deposit_limit)
         }
 
         fn get_storage(
