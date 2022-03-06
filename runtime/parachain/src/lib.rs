@@ -6,6 +6,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+pub mod circuit_config;
 pub mod orml_config;
 pub mod xcm_config;
 
@@ -452,6 +453,11 @@ impl pallet_collator_selection::Config for Runtime {
     type WeightInfo = ();
 }
 
+impl pallet_sudo::Config for Runtime {
+    type Event = Event;
+    type Call = Call;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -486,6 +492,29 @@ construct_runtime!(
 
         // ORML
         ORMLTokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>} = 161,
+
+        // Circuit
+        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 200,
+       // t3rn pallets
+        XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
+        MultiFinalityVerifierPolkadotLike: pallet_mfv::<Instance1>::{
+            Pallet, Call, Storage, Config<T, I>
+        } = 101,
+        MultiFinalityVerifierSubstrateLike: pallet_mfv::<Instance2>::{
+            Pallet, Call, Storage, Config<T, I>
+        } = 102,
+        MultiFinalityVerifierEthereumLike: pallet_mfv::<Instance3>::{
+            Pallet, Call, Storage, Config<T, I>
+        } = 103,
+        MultiFinalityVerifierGenericLike: pallet_mfv::<Instance4>::{
+            Pallet, Call, Storage, Config<T, I>
+        } = 104,
+        ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 105,
+        CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>} = 106,
+        Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 107,
+
+        // admin
+        Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
     }
 );
 
