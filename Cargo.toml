@@ -4,6 +4,8 @@ panic = 'unwind'
 [workspace]
 members = [
     'node',
+    'node/standalone',
+#    'node/parachain',
     'node/service',
     'node/cli',
     'pallets/*',
@@ -11,6 +13,7 @@ members = [
     'primitives/src/bridges/finality',
     'primitives/src/bridges/headers',
     'primitives/src/bridges/utils',
+    'primitives/src/bridges/snowfork/*',
     'runtime/*',
 ]
 exclude = []
