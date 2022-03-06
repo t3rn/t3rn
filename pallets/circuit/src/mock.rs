@@ -22,8 +22,8 @@ use sp_runtime::{
 
 use frame_election_provider_support::onchain;
 use pallet_session::historical as pallet_session_historical;
-use pallet_staking::EraIndex;
 use sp_consensus_babe::AuthorityId;
+use sp_staking::EraIndex;
 use sp_staking::SessionIndex;
 
 use frame_support::{weights::Weight, PalletId};
@@ -144,10 +144,10 @@ impl pallet_transaction_payment::Config for Test {
     type OperationalFeeMultiplier = OperationalFeeMultiplier;
 }
 
-// impl EscrowTrait for Test {
-//     type Currency = Balances;
-//     type Time = Timestamp;
-// }
+impl EscrowTrait for Test {
+    type Currency = Balances;
+    type Time = Timestamp;
+}
 
 // ORML Tokens
 use orml_traits::parameter_type_with_key;
@@ -269,8 +269,12 @@ parameter_types! {
     pub const OffendingValidatorsThreshold: Perbill = Perbill::from_percent(75);
 }
 
+parameter_types! {
+    pub static MaxNominations: u32 = 16;
+}
+
 impl pallet_staking::Config for Test {
-    const MAX_NOMINATIONS: u32 = 16;
+    type MaxNominations = MaxNominations;
     type RewardRemainder = ();
     type CurrencyToVote = frame_support::traits::SaturatingCurrencyToVote;
     type Event = Event;
@@ -291,6 +295,8 @@ impl pallet_staking::Config for Test {
     type WeightInfo = ();
     type ElectionProvider = onchain::OnChainSequentialPhragmen<Self>;
     type GenesisElectionProvider = Self::ElectionProvider;
+    // type MaxUnlockingChunks = ConstU32<32>;
+    type BenchmarkingConfig = pallet_staking::TestBenchmarkingConfig;
 }
 
 impl pallet_offences::Config for Test {
@@ -475,7 +481,6 @@ impl Config for Test {
     type Event = Event;
     type Call = Call;
     type WeightInfo = ();
-    // type Currency = Balances;
     type PalletId = CircuitPalletId;
 }
 
