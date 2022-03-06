@@ -105,10 +105,11 @@ where
         })
         .transpose()?;
 
-    let executor = sc_executor::NativeElseWasmExecutor::<Executor>::new(
+    let executor = NativeElseWasmExecutor::<Executor>::new(
         config.wasm_method,
         config.default_heap_pages,
         config.max_runtime_instances,
+        config.runtime_cache_size,
     );
 
     let (client, backend, keystore_container, task_manager) =
@@ -465,8 +466,6 @@ pub async fn start_parachain_node(
                     }
                 },
                 block_import: client.clone(),
-                relay_chain_client: relay_chain_node.client.clone(),
-                relay_chain_backend: relay_chain_node.backend.clone(),
                 para_client: client,
                 backoff_authoring_blocks: Option::<()>::None,
                 sync_oracle,

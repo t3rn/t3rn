@@ -88,7 +88,9 @@ impl Alternative {
                 vec![],
                 None,
                 None,
+                None,
                 properties,
+                // Extensions
                 None,
             ),
             Alternative::LocalTestnet => ChainSpec::from_genesis(
@@ -144,6 +146,7 @@ impl Alternative {
                 vec![],
                 None,
                 None,
+                None,
                 properties,
                 None,
             ),
@@ -193,7 +196,7 @@ fn testnet_genesis(
             authorities: initial_authorities.iter().map(|x| (x.3.clone())).collect(),
         },
         sudo: SudoConfig {
-            key: root_key.clone(),
+            key: Some(root_key.clone()),
         },
         // session: SessionConfig {
         //     keys: initial_authorities
@@ -235,18 +238,18 @@ fn testnet_genesis(
             owner: None,
             init_data: None,
         },
-        ethereum_light_client: circuit_standalone_runtime::EthereumLightClientConfig {
-            initial_header: Default::default(),
-            initial_difficulty: Default::default(),
-        },
-        basic_outbound_channel: circuit_standalone_runtime::BasicOutboundChannelConfig {
-            // this is the account for pal/exec module_id
-            principal: AccountId::from_string("5FmrGR9YMhgHqcrNc4W9enTbmCLRE6sbAJKs3kqA5kJfWQoN")
-                .expect("Should not fail"),
-            interval: 1,
-        },
+        // ethereum_light_client: circuit_standalone_runtime::EthereumLightClientConfig {
+        //     initial_header: Default::default(),
+        //     initial_difficulty: Default::default(),
+        // },
+        // basic_outbound_channel: circuit_standalone_runtime::BasicOutboundChannelConfig {
+        //     // this is the account for pal/exec module_id
+        //     principal: AccountId::from_string("5FmrGR9YMhgHqcrNc4W9enTbmCLRE6sbAJKs3kqA5kJfWQoN")
+        //         .expect("Should not fail"),
+        //     interval: 1,
+        // },
         orml_tokens: Default::default(),
-        evm: Default::default(),
+        // evm: Default::default(),
     }
 }
 

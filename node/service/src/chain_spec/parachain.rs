@@ -85,6 +85,7 @@ pub fn development_config() -> ChainSpec {
         None,
         None,
         None,
+        None,
         Extensions {
             relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
             para_id: u32::from(PARA_ID),        // You MUST set this correctly!
@@ -143,6 +144,7 @@ pub fn local_testnet_config() -> ChainSpec {
         Vec::new(),
         // Telemetry
         None,
+        None,
         // Protocol ID
         Some("circuit-local"),
         // Properties
@@ -199,22 +201,22 @@ fn testnet_genesis(
         // of this.
         aura: Default::default(),
         aura_ext: Default::default(),
-        sudo: circuit_parachain_runtime::SudoConfig { key: root_key },
+        sudo: circuit_parachain_runtime::SudoConfig { key: Some(root_key) },
         multi_finality_verifier_polkadot_like: Default::default(),
         xdns: XDNSConfig {
             known_xdns_records: xdns_records,
-            standard_side_effects: standard_side_effects,
+            standard_side_effects,
         },
-        elections: Default::default(),
-        council: Default::default(),
-        democracy: Default::default(),
+        // elections: Default::default(),
+        // council: Default::default(),
+        // democracy: Default::default(),
         contracts_registry: Default::default(),
-        ethereum_light_client: Default::default(),
+        // ethereum_light_client: Default::default(),
         multi_finality_verifier_ethereum_like: Default::default(),
         multi_finality_verifier_generic_like: Default::default(),
         multi_finality_verifier_substrate_like: Default::default(),
         orml_tokens: Default::default(),
-        evm: Default::default(),
+        // evm: Default::default(),
     }
 }
 
@@ -285,8 +287,9 @@ pub fn circuit_config() -> ChainSpec {
         Vec::new(),
         // Telemetry
         None,
-        // Protocol ID
         Some("circuit"),
+        None,
+        // Protocol ID
         // Properties
         Some(properties),
         // Extensions
@@ -337,22 +340,22 @@ fn genesis(
         // of this.
         aura: Default::default(),
         aura_ext: Default::default(),
-        sudo: circuit_parachain_runtime::SudoConfig { key: root_key },
+        sudo: circuit_parachain_runtime::SudoConfig { key: Some(root_key) },
         multi_finality_verifier_polkadot_like: Default::default(),
         xdns: XDNSConfig {
             known_xdns_records: xdns_records,
-            standard_side_effects: standard_side_effects,
+            standard_side_effects,
         },
-        elections: Default::default(),
-        council: Default::default(),
-        democracy: Default::default(),
+        // elections: Default::default(),
+        // council: Default::default(),
+        // democracy: Default::default(),
         contracts_registry: Default::default(),
-        ethereum_light_client: Default::default(),
+        // ethereum_light_client: Default::default(),
         multi_finality_verifier_ethereum_like: Default::default(),
         multi_finality_verifier_generic_like: Default::default(),
         multi_finality_verifier_substrate_like: Default::default(),
         orml_tokens: Default::default(),
-        evm: Default::default(),
+        // evm: Default::default(),
     }
 }
 
