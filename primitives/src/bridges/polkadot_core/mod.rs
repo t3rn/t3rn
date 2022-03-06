@@ -16,7 +16,6 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use std::fmt::{Debug, Formatter};
 use crate::bridges::messages as bp_messages;
 use crate::bridges::runtime as bp_runtime;
 

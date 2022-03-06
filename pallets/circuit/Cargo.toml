@@ -34,8 +34,8 @@ pallet-contracts-registry = { package = "pallet-contracts-registry", version = "
 
 sp-core = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', default-features = false }
 
-orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library", branch = "master", default-features = false }
-orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library", branch = "master", default-features = false }
+orml-tokens = { git = "https://github.com/t3rn/open-runtime-module-library", branch = "polkadot-v0.9.17", default-features = false }
+orml-traits = { git = "https://github.com/t3rn/open-runtime-module-library", branch = "polkadot-v0.9.17", default-features = false }
 
 [dev-dependencies]
 pallet-multi-finality-verifier = { default-features = false, path = "../multi-finality-verifier" }

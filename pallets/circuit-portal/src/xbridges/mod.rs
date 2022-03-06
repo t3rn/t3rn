@@ -1,7 +1,8 @@
 use crate::{Bytes, DispatchResultWithPostInfo, Error};
 use codec::{Decode, Encode};
 
-use sp_core::ByteArray;
+use sp_core::crypto::ByteArray;
+use sp_core::crypto::UncheckedFrom;
 use sp_std::vec::Vec;
 
 use t3rn_primitives::bridges::{header_chain as bp_header_chain, runtime as bp_runtime};
@@ -33,7 +34,6 @@ pub fn init_bridge_instance<T: pallet_multi_finality_verifier::Config<I>, I: 'st
             .unwrap_or_default()
             .iter()
             .map(|id| sp_finality_grandpa::AuthorityId::from_slice(&id.encode()).unwrap())
-            // .map(|id| sp_application_crypto::UncheckedFrom::unchecked_from(&id.encode()))
             .map(|authority| (authority, 1))
             .collect::<Vec<_>>(),
         set_id: 1,
