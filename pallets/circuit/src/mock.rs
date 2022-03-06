@@ -66,7 +66,7 @@ frame_support::construct_runtime!(
         Randomness: pallet_randomness_collective_flip::{Pallet, Storage},
         XDNS: pallet_xdns::{Pallet, Call, Storage, Config<T>, Event<T>},
         CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>},
-        BasicOutboundChannel: snowbridge_basic_channel::outbound::{Pallet, Config<T>, Storage, Event<T>},
+        // BasicOutboundChannel: snowbridge_basic_channel::outbound::{Pallet, Config<T>, Storage, Event<T>},
 
         ORMLTokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>},
 
@@ -107,6 +107,7 @@ impl frame_system::Config for Test {
     type SystemWeightInfo = ();
     type SS58Prefix = ();
     type OnSetCode = ();
+    type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 impl<C> frame_system::offchain::SendTransactionTypes<C> for Test
@@ -143,10 +144,10 @@ impl pallet_transaction_payment::Config for Test {
     type OperationalFeeMultiplier = OperationalFeeMultiplier;
 }
 
-impl EscrowTrait for Test {
-    type Currency = Balances;
-    type Time = Timestamp;
-}
+// impl EscrowTrait for Test {
+//     type Currency = Balances;
+//     type Time = Timestamp;
+// }
 
 // ORML Tokens
 use orml_traits::parameter_type_with_key;
@@ -344,15 +345,15 @@ parameter_types! {
     pub const MaxMessagesPerCommit: u64 = 20;
 }
 
-impl snowbridge_basic_channel::outbound::Config for Test {
-    type Event = Event;
-    const INDEXING_PREFIX: &'static [u8] = INDEXING_PREFIX;
-    type Hashing = Keccak256;
-    type MaxMessagePayloadSize = MaxMessagePayloadSize;
-    type MaxMessagesPerCommit = MaxMessagesPerCommit;
-    type SetPrincipalOrigin = pallet_circuit_portal::EnsureCircuitPortal<Test>;
-    type WeightInfo = ();
-}
+// impl snowbridge_basic_channel::outbound::Config for Test {
+//     type Event = Event;
+//     const INDEXING_PREFIX: &'static [u8] = INDEXING_PREFIX;
+//     type Hashing = Keccak256;
+//     type MaxMessagePayloadSize = MaxMessagePayloadSize;
+//     type MaxMessagesPerCommit = MaxMessagesPerCommit;
+//     type SetPrincipalOrigin = pallet_circuit_portal::EnsureCircuitPortal<Test>;
+//     type WeightInfo = ();
+// }
 
 type Blake2ValU64BridgeInstance = ();
 type Blake2ValU32BridgeInstance = pallet_multi_finality_verifier::Instance1;
@@ -474,6 +475,7 @@ impl Config for Test {
     type Event = Event;
     type Call = Call;
     type WeightInfo = ();
+    // type Currency = Balances;
     type PalletId = CircuitPalletId;
 }
 

@@ -33,11 +33,15 @@ use sp_runtime::RuntimeDebug;
 pub use t3rn_primitives::{
     abi::{GatewayABIConfig, HasherAlgo as HA},
     side_effect::{ConfirmedSideEffect, FullSideEffect, SideEffect, SideEffectId},
-    transfers::BalanceOf,
+    // transfers::BalanceOf,
     volatile::LocalState,
     xtx::{Xtx, XtxId},
     GatewayType, *,
 };
+
+
+type BalanceOf<T> =
+    <<T as EscrowTrait>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 use t3rn_protocol::side_effects::confirm::ethereum::EthereumSideEffectsParser;
 use t3rn_protocol::side_effects::confirm::protocol::*;
@@ -109,7 +113,7 @@ pub mod pallet {
             <T as frame_system::Config>::BlockNumber,
             BalanceOf<T>,
         >,
-        ValueQuery,
+        OptionQuery,
     >;
 
     /// Current Circuit's context of active transactions
@@ -125,7 +129,7 @@ pub mod pallet {
             <T as frame_system::Config>::BlockNumber,
             BalanceOf<T>,
         >,
-        ValueQuery,
+        OptionQuery,
     >;
 
     /// Current Circuit's context of active full side effects (requested + confirmation proofs)
@@ -137,7 +141,7 @@ pub mod pallet {
     /// Current Circuit's context of active full side effects (requested + confirmation proofs)
     #[pallet::storage]
     #[pallet::getter(fn get_local_xtx_state)]
-    pub type LocalXtxStates<T> = StorageMap<_, Identity, XExecSignalId<T>, LocalState, ValueQuery>;
+    pub type LocalXtxStates<T> = StorageMap<_, Identity, XExecSignalId<T>, LocalState, OptionQuery>;
 
     /// Current Circuit's context of active full side effects (requested + confirmation proofs)
     #[pallet::storage]
@@ -155,7 +159,7 @@ pub mod pallet {
                 >,
             >,
         >,
-        ValueQuery,
+        OptionQuery,
     >;
 
     /// This pallet's configuration trait
@@ -166,6 +170,7 @@ pub mod pallet {
         + pallet_circuit_portal::Config
         + pallet_xdns::Config
         + orml_tokens::Config
+        + EscrowTrait
     {
         /// The Circuit's pallet id
         #[pallet::constant]
@@ -183,6 +188,7 @@ pub mod pallet {
 
     #[pallet::pallet]
     #[pallet::generate_store(pub (super) trait Store)]
+    #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
     #[pallet::hooks]
