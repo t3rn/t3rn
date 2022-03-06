@@ -46,8 +46,7 @@ pub trait Chain: ChainBase + Clone {
         + MaybeSerializeDeserialize
         + Debug
         + MaybeDisplay
-        + Ord
-        + Default;
+        + Ord;
     /// Index of a transaction used by the chain.
     type Index: Parameter
         + Member
