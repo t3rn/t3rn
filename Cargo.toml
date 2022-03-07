@@ -5,7 +5,7 @@ panic = 'unwind'
 members = [
     'node',
     'node/standalone',
-#    'node/parachain',
+    'node/parachain',
     'node/service',
     'node/cli',
     'pallets/*',
