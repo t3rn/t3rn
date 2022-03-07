@@ -15,7 +15,7 @@ use t3rn_primitives::{
 	GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
 };
 use pallet_xdns::types::{XdnsRecord, SideEffectInterface};
-use jsonrpc_runtimce_client::ConnectionParams;
+use jsonrpc_runtime_client::ConnectionParams;
 use sp_core::Encode;
 
 use std::convert::TryFrom;
@@ -404,35 +404,6 @@ fn testnet_genesis(
 			// authorities: initial_authorities.iter().map(|x| (x.1.clone())).collect(),
 			authorities: Vec::new()
 		},
-		// session: SessionConfig {
-		//     keys: initial_authorities
-		//         .iter()
-		//         .map(|x| {
-		//             (
-		//                 x.0.clone(),
-		//                 x.0.clone(),
-		//                 session_keys(x.1.clone(), x.2.clone(), x.3.clone()),
-		//             )
-		//         })
-		//         .collect::<Vec<_>>(),
-		// },
-		// evm: EVMConfig {
-		//     accounts: {
-		//         let mut map = BTreeMap::new();
-		//         map.insert(
-		//             sp_core::H160::from_str("6be02d1d3665660d22ff9624b7be0551ee1ac91b")
-		//                 .expect("internal H160 is valid; qed"),
-		//             pallet_evm::GenesisAccount {
-		//                 balance: sp_core::U256::from_str("0xffffffffffffffffffffffffffffffff")
-		//                     .expect("internal U256 is valid; qed"),
-		//                 code: Default::default(),
-		//                 nonce: Default::default(),
-		//                 storage: Default::default(),
-		//             },
-		//         );
-		//         map
-		//     },
-		// },
 		xdns: XDNSConfig {
 			known_xdns_records: xdns_records,
 			standard_side_effects,
@@ -444,16 +415,6 @@ fn testnet_genesis(
 			owner: None,
 			init_data: None,
 		},
-		// ethereum_light_client: circuit_standalone_runtime::EthereumLightClientConfig {
-		//     initial_header: Default::default(),
-		//     initial_difficulty: Default::default(),
-		// },
-		// basic_outbound_channel: circuit_standalone_runtime::BasicOutboundChannelConfig {
-		//     // this is the account for pal/exec module_id
-		//     principal: AccountId::from_string("5FmrGR9YMhgHqcrNc4W9enTbmCLRE6sbAJKs3kqA5kJfWQoN")
-		//         .expect("Should not fail"),
-		//     interval: 1,
-		// },
 		orml_tokens: Default::default(),
 	}
 }

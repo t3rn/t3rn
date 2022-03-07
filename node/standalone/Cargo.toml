@@ -20,7 +20,6 @@ path = "src/main.rs"
 clap = { version = "3.0", features = ["derive"] }
 async-std = "1.10.0"
 log = "0.4.14"
-
 jsonrpc-runtime-client = { version = "0.1.0", path = "../../relayers/jsonrpc-runtime-client" }
 
 sc-cli = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17", features = ["wasmtime"] }
