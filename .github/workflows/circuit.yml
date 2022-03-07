@@ -16,10 +16,11 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: ☁️Checkout git repo
-        uses: actions/checkout@master
+        uses: actions/checkout@v2
         with:
-          submodules: true
+          submodules: recursive
           token: ${{ secrets.GH_PAT }}
+#        run: git submodule deinit --all && git submodule init && git submodule update
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
@@ -37,10 +38,14 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: ☁️Checkout git repo
-        uses: actions/checkout@master
+        uses: actions/checkout@v2
         with:
-          submodules: true
+          submodules: recursive
           token: ${{ secrets.GH_PAT }}
+#        run: |
+#          git submodule deinit --all
+#          git submodule init
+#          git submodule update
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
@@ -73,10 +78,14 @@ jobs:
     needs: [format, lint]
     steps:
       - name: ☁ Checkout git repo
-        uses: actions/checkout@master
+        uses: actions/checkout@v2
         with:
-          submodules: true
+          submodules: recursive
           token: ${{ secrets.GH_PAT }}
+#        run: |
+#          git submodule deinit --all
+#          git submodule init
+#          git submodule update
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
