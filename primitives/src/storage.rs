@@ -14,6 +14,8 @@ pub type TrieId = Vec<u8>;
 pub type AliveContractInfo<T> =
     RawAliveContractInfo<CodeHash<T>, BalanceOf<T>, <T as frame_system::Config>::BlockNumber>;
 
+// TODO: this needs to be tied in with 3VM and how it utilises storage. At the moment it just makes it's
+// own copy of the contract, but since we hold it in the registry, this need to be smarter.
 /// Information for managing an account and its sub trie abstraction.
 /// This is the required info to cache for an account.
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, Default, TypeInfo)]
