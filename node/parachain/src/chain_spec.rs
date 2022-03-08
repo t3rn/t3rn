@@ -257,6 +257,9 @@ pub struct Extensions {
     pub relay_chain: String,
     /// The id of the Parachain.
     pub para_id: u32,
+    /// Known bad block hashes.
+    #[serde(default)]
+    pub bad_blocks: sc_client_api::BadBlocks<polkadot_primitives::v1::Block>,
 }
 
 impl Extensions {
@@ -344,7 +347,8 @@ pub fn development_config() -> ChainSpec {
         None,
         Extensions {
             relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
-            para_id: 1000,
+            para_id: u32::from(3333),           // You MUST set this correctly!
+            bad_blocks: None,
         },
     )
 }
@@ -352,7 +356,7 @@ pub fn development_config() -> ChainSpec {
 pub fn local_testnet_config() -> ChainSpec {
     // Give your base currency a unit name and decimal places
     let mut properties = sc_chain_spec::Properties::new();
-    properties.insert("tokenSymbol".into(), "UNIT".into());
+    properties.insert("tokenSymbol".into(), "TRN".into());
     properties.insert("tokenDecimals".into(), 12.into());
     properties.insert("ss58Format".into(), 42.into());
 
@@ -401,7 +405,7 @@ pub fn local_testnet_config() -> ChainSpec {
         // Telemetry
         None,
         // Protocol ID
-        Some("template-local"),
+        Some("circuit-local"),
         // Fork ID
         None,
         // Properties
@@ -409,7 +413,8 @@ pub fn local_testnet_config() -> ChainSpec {
         // Extensions
         Extensions {
             relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
-            para_id: 1000,
+            para_id: u32::from(3333),           // You MUST set this correctly!
+            bad_blocks: None,
         },
     )
 }
