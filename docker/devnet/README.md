@@ -148,4 +148,4 @@ Builds docker images and regenerates chain specs, and collator keys. Only necess
   </tr>
 </table>
 
-*The "pchain" is a plain [Substrate parachain instance](https://github.com/substrate-developer-hub/substrate-parachain-template)*. All code uses `polkadot-v0.9.13` Substrate.
+*The "pchain" is a plain [Substrate parachain instance](https://github.com/substrate-developer-hub/substrate-parachain-template)*. All code uses `v0.9.17` Substrate.

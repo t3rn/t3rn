@@ -7,7 +7,7 @@ networks:
 
 services:
   alice:
-    image: polkadot:release-v0.9.13
+    image: polkadot:release-v0.9.17
     build:
       context: .
       dockerfile: polkadot.Dockerfile
@@ -40,7 +40,7 @@ services:
       --chain /pdot/rococo-local.raw.json
 
   bob:
-    image: polkadot:release-v0.9.13
+    image: polkadot:release-v0.9.17
     build:
       context: .
       dockerfile: polkadot.Dockerfile
@@ -75,7 +75,7 @@ services:
       --chain /pdot/rococo-local.raw.json
 
   charlie:
-    image: polkadot:release-v0.9.13
+    image: polkadot:release-v0.9.17
     build:
       context: .
       dockerfile: polkadot.Dockerfile
@@ -111,7 +111,7 @@ services:
       --chain /pdot/rococo-local.raw.json
 
   dave:
-    image: polkadot:release-v0.9.13
+    image: polkadot:release-v0.9.17
     build:
       context: .
       dockerfile: polkadot.Dockerfile
@@ -148,7 +148,7 @@ services:
       --chain /pdot/rococo-local.raw.json
 
   eve:
-    image: polkadot:release-v0.9.13
+    image: polkadot:release-v0.9.17
     build:
       context: .
       dockerfile: polkadot.Dockerfile
@@ -186,7 +186,7 @@ services:
       --chain /pdot/rococo-local.raw.json
 
   t3rn1:
-    image: circuit-collator:lean
+    image: circuit-collator:update_v0.9.17
     build:
       context: ../..
       dockerfile: docker/xcm-devnet/t3rn.Dockerfile
@@ -244,7 +244,7 @@ services:
       --execution Native
 
   t3rn2:
-    image: circuit-collator:lean
+    image: circuit-collator:update_v0.9.17
     build:
       context: ../..
       dockerfile: docker/xcm-devnet/t3rn.Dockerfile
@@ -300,7 +300,7 @@ services:
       --execution Native
 
   pchain1:
-    image: parachain-collator:polkadot-v0.9.13
+    image: parachain-collator:polkadot-v0.9.17
     build:
       context: .
       dockerfile: pchain.Dockerfile
@@ -357,7 +357,7 @@ services:
       --execution Native
 
   pchain2:
-    image: parachain-collator:polkadot-v0.9.13
+    image: parachain-collator:polkadot-v0.9.17
     build:
       context: .
       dockerfile: pchain.Dockerfile

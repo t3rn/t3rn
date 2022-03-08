@@ -1,6 +1,6 @@
 FROM rust:buster as blacksmith
 
-ARG BRANCH=development
+ARG BRANCH=update_v0.9.17
 
 WORKDIR /workshop
 
@@ -21,7 +21,7 @@ COPY . .
 # 		https://github.com/t3rn/t3rn.git \
 # 		.
 
-RUN cargo build --features with-parachain-runtime
+RUN cargo build --manifest-path ./node/parachain/Cargo.toml
 
 ###############################################################################
 

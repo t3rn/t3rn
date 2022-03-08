@@ -4,14 +4,14 @@ set -xEeo pipefail
 
 build_docker_images() {
   # NOTE: docker tags should stay in sync with those in docker-compose.yml
-  if ! docker inspect polkadot:release-v0.9.13 > /dev/null; then
-    docker build -t polkadot:release-v0.9.13 -f polkadot.Dockerfile .
+  if ! docker inspect polkadot:release-v0.9.17 > /dev/null; then
+    docker build -t polkadot:release-v0.9.17 -f polkadot.Dockerfile .
   fi
-  if ! docker inspect circuit-collator:lean > /dev/null; then
-    docker build -t circuit-collator:lean -f t3rn.Dockerfile ../..
+  if ! docker inspect circuit-collator:update_v0.9.17 > /dev/null; then
+    docker build -t circuit-collator:update_v0.9.17 -f t3rn.Dockerfile ../..
   fi
-  if ! docker inspect parachain-collator:polkadot-v0.9.13 > /dev/null; then
-    docker build -t parachain-collator:polkadot-v0.9.13 -f pchain.Dockerfile .
+  if ! docker inspect parachain-collator:polkadot-v0.9.17 > /dev/null; then
+    docker build -t parachain-collator:polkadot-v0.9.17 -f pchain.Dockerfile .
   fi
 }
 
@@ -25,7 +25,7 @@ keygen() {
 
 build_relay_chain_spec() {
   docker run \
-      polkadot:release-v0.9.13 \
+      polkadot:release-v0.9.17 \
       build-spec \
       --chain rococo-local \
       --disable-default-bootnode \
@@ -34,7 +34,7 @@ build_relay_chain_spec() {
       -i ./specs/rococo-local.json
   docker run \
       -v "$(pwd)/specs:/usr/local/etc" \
-      polkadot:release-v0.9.13 \
+      polkadot:release-v0.9.17 \
       build-spec \
       --chain /usr/local/etc/rococo-local.json \
       --disable-default-bootnode \
@@ -49,7 +49,7 @@ build_para_chain_specs() {
   pchain1_adrs=$(grep -oP '(?<=\(SS58\):\s)[^\n]+' ./specs/pchain1.key)
   pchain2_adrs=$(grep -oP '(?<=\(SS58\):\s)[^\n]+' ./specs/pchain2.key)
   ## gen t3rn chain spec
-  docker run circuit-collator:lean build-spec \
+  docker run circuit-collator:update_v0.9.17 build-spec \
       --disable-default-bootnode \
   > ./specs/t3rn.json
   # rm config fields that would be unprocessable in further steps
@@ -69,7 +69,7 @@ build_para_chain_specs() {
       -i ./specs/t3rn.json
   docker run \
       -v "$(pwd)/specs:/usr/local/etc" \
-      circuit-collator:lean \
+      circuit-collator:update_v0.9.17 \
       build-spec \
       --chain /usr/local/etc/t3rn.json \
       --disable-default-bootnode \
@@ -99,7 +99,7 @@ build_para_chain_specs() {
   mv ./specs/_pchain.json ./specs/pchain.json
   docker run \
       -v "$(pwd)/specs:/usr/local/etc" \
-      parachain-collator:polkadot-v0.9.13 \
+      parachain-collator:polkadot-v0.9.17 \
       build-spec \
       --chain /usr/local/etc/pchain.json \
       --disable-default-bootnode \
@@ -110,13 +110,13 @@ build_para_chain_specs() {
 build_para_genesis_states() {
   docker run \
       -v "$(pwd)/specs:/usr/local/etc" \
-      circuit-collator:lean \
+      circuit-collator:update_v0.9.17 \
       export-genesis-state \
       --chain /usr/local/etc/t3rn.raw.json \
   > ./specs/t3rn.genesis
   docker run \
       -v "$(pwd)/specs:/usr/local/etc" \
-      parachain-collator:polkadot-v0.9.13 \
+      parachain-collator:polkadot-v0.9.17 \
       export-genesis-state \
       --chain /usr/local/etc/pchain.raw.json \
   > ./specs/pchain.genesis
@@ -125,11 +125,11 @@ build_para_genesis_states() {
 build_para_wasm_runtimes() {
   docker run \
       -v "$(pwd)/specs:/usr/local/etc" \
-      parachain-collator:polkadot-v0.9.13 \
+      parachain-collator:polkadot-v0.9.17 \
       export-genesis-wasm \
       --chain /usr/local/etc/pchain.raw.json \
   > ./specs/pchain.wasm
-  docker run circuit-collator:lean export-genesis-wasm \
+  docker run circuit-collator:update_v0.9.17 export-genesis-wasm \
   > ./specs/t3rn.wasm
 }
 
