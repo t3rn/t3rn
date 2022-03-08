@@ -257,9 +257,6 @@ pub struct Extensions {
     pub relay_chain: String,
     /// The id of the Parachain.
     pub para_id: u32,
-    /// Known bad block hashes.
-    #[serde(default)]
-    pub bad_blocks: sc_client_api::BadBlocks<polkadot_primitives::v1::Block>,
 }
 
 impl Extensions {
@@ -348,7 +345,6 @@ pub fn development_config() -> ChainSpec {
         Extensions {
             relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
             para_id: u32::from(3333),           // You MUST set this correctly!
-            bad_blocks: None,
         },
     )
 }
@@ -414,7 +410,6 @@ pub fn local_testnet_config() -> ChainSpec {
         Extensions {
             relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
             para_id: u32::from(3333),           // You MUST set this correctly!
-            bad_blocks: None,
         },
     )
 }
