@@ -344,7 +344,7 @@ pub fn development_config() -> ChainSpec {
         None,
         Extensions {
             relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
-            para_id: u32::from(3333),           // You MUST set this correctly!
+            para_id: 3333,                      // You MUST set this correctly!
         },
     )
 }
@@ -409,7 +409,7 @@ pub fn local_testnet_config() -> ChainSpec {
         // Extensions
         Extensions {
             relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
-            para_id: u32::from(3333),           // You MUST set this correctly!
+            para_id: 3333,                      // You MUST set this correctly!
         },
     )
 }
