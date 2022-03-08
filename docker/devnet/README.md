@@ -16,7 +16,7 @@ Must be run after `./run.sh devnet`.
 
 Initializes registration with the relay chain for both t3rn and pchain.
 
-After onboarding is complete the parachains should start to collate.
+After [onboarding](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/parachains) is complete the parachains should start to collate.
 
 ## `./run.sh cleanup`
 
