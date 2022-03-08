@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE or
-// http://www.apache.org/licenses/LICENSE-2.0>. This file may not be 
+// http://www.apache.org/licenses/LICENSE-2.0>. This file may not be
 // copied, modified, or distributed except according to those terms.
 
 //! Contract event.
@@ -13,7 +13,6 @@ use crate::std::Vec;
 use tiny_keccak::Keccak;
 
 use crate::{decode, Error, Param, ParamKind, Token, H256};
-
 
 /// Contract event.
 #[derive(Clone, Debug, PartialEq)]
@@ -61,7 +60,6 @@ impl<'a> Event<'a> {
 	}
 
 	pub fn decode(&self, topics: Vec<H256>, data: Vec<u8>) -> Result<Vec<Token>, Error> {
-
 		// Take first topic if event is not anonymous
 		let to_skip = if self.anonymous {
 			0
@@ -81,7 +79,6 @@ impl<'a> Event<'a> {
 		let data_params = self.indexed_params(false);
 		let topic_params_indices = self.indices(true);
 		let data_params_indices = self.indices(false);
-
 
 		let topic_types =
 			topic_params.iter().map(|p| self.convert_topic_param_type(&p.kind)).collect::<Vec<ParamKind>>();
@@ -129,7 +126,8 @@ mod tests {
 	fn test_decoding_event() {
 		let event = Event {
 			signature: "foo(int256,int256,address,address,string,int256[],address[5])",
-			inputs: &[Param { kind: ParamKind::Int(256), indexed: false },
+			inputs: &[
+				Param { kind: ParamKind::Int(256), indexed: false },
 				Param { kind: ParamKind::Int(256), indexed: true },
 				Param { kind: ParamKind::Address, indexed: false },
 				Param { kind: ParamKind::Address, indexed: true },

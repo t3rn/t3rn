@@ -8,9 +8,9 @@
 
 //! ABI encoder.
 
+use crate::std::{vec, Vec};
 use crate::{util::pad_u32, Token, Word};
 use tiny_keccak::Keccak;
-use crate::std::{vec, Vec};
 
 fn pad_bytes(bytes: &[u8]) -> Vec<Word> {
 	let mut result = vec![pad_u32(bytes.len() as u32)];
@@ -137,7 +137,6 @@ pub fn encode_function(signature: &str, inputs: &[Token]) -> Vec<u8> {
 	let encoded = encode(inputs);
 	signed.to_vec().into_iter().chain(encoded.into_iter()).collect()
 }
-
 
 fn encode_token(token: &Token) -> Mediate {
 	match *token {
@@ -839,7 +838,8 @@ mod tests {
 			0000004500000000000000000000000000000000000000000000000000000000
 			00000001
 			"
-		).to_vec();
+		)
+		.to_vec();
 		assert_eq!(encoded, expected);
 	}
 }

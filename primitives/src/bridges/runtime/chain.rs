@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity Bridges Common.  If not, see <http://www.gnu.org/licenses/>.
 
+use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::Parameter;
-use codec::{Encode, Decode, MaxEncodedLen};
 use num_traits::AsPrimitive;
 use sp_runtime::traits::{
     AtLeast32BitUnsigned, Hash as HashT, Header as HeaderT, MaybeDisplay, MaybeMallocSizeOf,

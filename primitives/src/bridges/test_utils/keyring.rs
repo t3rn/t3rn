@@ -80,7 +80,10 @@ pub fn voter_set() -> VoterSet<AuthorityId> {
 
 /// Convenience function to get a list of Grandpa authorities.
 pub fn authority_list() -> AuthorityList {
-    test_keyring().iter().map(|(id, w)| (AuthorityId::from(*id), *w)).collect()
+    test_keyring()
+        .iter()
+        .map(|(id, w)| (AuthorityId::from(*id), *w))
+        .collect()
 }
 
 /// Get the corresponding identities from the keyring for the "standard" authority set.

@@ -22,6 +22,7 @@ use crate::bridges::runtime as bp_runtime;
 use bp_messages::MessageNonce;
 use bp_runtime::Chain;
 use codec::Compact;
+use frame_support::codec::{Codec, Decode, Encode, Error, Input};
 use frame_support::{
     dispatch::Dispatchable,
     parameter_types,
@@ -31,7 +32,6 @@ use frame_support::{
     },
     Blake2_128Concat, RuntimeDebug, StorageHasher, Twox128,
 };
-use frame_support::codec::{Codec, Decode, Encode, Error, Input};
 use frame_system::limits;
 use scale_info::{StaticTypeInfo, Type, TypeInfo};
 use sp_core::Hasher as HasherT;
@@ -387,11 +387,11 @@ mod tests {
     // fn maximal_encoded_account_id_size_is_correct() {
     //     let actual_size = AccountId::default().encode().len();
     //     assert!(
-	// 		actual_size <= MAXIMAL_ENCODED_ACCOUNT_ID_SIZE as usize,
-	// 		"Actual size of encoded account id for Polkadot-like chains ({}) is larger than expected {}",
-	// 		actual_size,
-	// 		MAXIMAL_ENCODED_ACCOUNT_ID_SIZE,
-	// 	);
+    // 		actual_size <= MAXIMAL_ENCODED_ACCOUNT_ID_SIZE as usize,
+    // 		"Actual size of encoded account id for Polkadot-like chains ({}) is larger than expected {}",
+    // 		actual_size,
+    // 		MAXIMAL_ENCODED_ACCOUNT_ID_SIZE,
+    // 	);
     // }
 
     #[test]

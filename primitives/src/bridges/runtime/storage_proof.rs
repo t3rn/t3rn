@@ -25,16 +25,16 @@ use sp_trie::{read_trie_value, LayoutV1, MemoryDB, StorageProof};
 /// is a subset of the nodes in the Merkle structure of the database, so that it provides
 /// authentication against a known Merkle root as well as the values in the database themselves.
 pub struct StorageProofChecker<H>
-    where
-        H: Hasher,
+where
+    H: Hasher,
 {
     root: H::Out,
     db: MemoryDB<H>,
 }
 
 impl<H> StorageProofChecker<H>
-    where
-        H: Hasher,
+where
+    H: Hasher,
 {
     /// Constructs a new storage proof checker.
     ///
@@ -42,7 +42,7 @@ impl<H> StorageProofChecker<H>
     pub fn new(root: H::Out, proof: StorageProof) -> Result<Self, Error> {
         let db = proof.into_memory_db();
         if !db.contains(&root, EMPTY_PREFIX) {
-            return Err(Error::StorageRootMismatch)
+            return Err(Error::StorageRootMismatch);
         }
 
         let checker = StorageProofChecker { root, db };
@@ -108,7 +108,10 @@ pub mod tests {
             <StorageProofChecker<sp_core::Blake2Hasher>>::new(root, proof.clone()).unwrap();
         assert_eq!(checker.read_value(b"key1"), Ok(Some(b"value1".to_vec())));
         assert_eq!(checker.read_value(b"key2"), Ok(Some(b"value2".to_vec())));
-        assert_eq!(checker.read_value(b"key11111"), Err(Error::StorageValueUnavailable));
+        assert_eq!(
+            checker.read_value(b"key11111"),
+            Err(Error::StorageValueUnavailable)
+        );
         assert_eq!(checker.read_value(b"key22"), Ok(None));
 
         // checking proof against invalid commitment fails

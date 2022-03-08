@@ -32,7 +32,7 @@ pub enum Error {
 	/// Invalid entity such as a bad function name.
 	InvalidName,
 	/// Invalid data.
-	InvalidData
+	InvalidData,
 }
 
 /// ABI Address

@@ -6,10 +6,10 @@
 #![allow(unused_variables)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use ethereum_types::{H160, U256};
 use frame_support::dispatch::{DispatchError, DispatchResult};
 use frame_system::Config;
 use snowbridge_ethereum::{Header, Log};
-use ethereum_types::{H160, U256};
 use sp_std::prelude::*;
 
 pub mod assets;
@@ -25,32 +25,32 @@ pub use nft::{ERC721TokenData, TokenInfo};
 /// This trait should be implemented by runtime modules that wish to provide message verification
 /// functionality.
 pub trait Verifier {
-	fn verify(message: &Message) -> Result<Log, DispatchError>;
-	fn initialize_storage(
-		headers: Vec<Header>,
-		initial_difficulty: U256,
-		descendants_until_final: u8,
-	) -> Result<(), &'static str>;
+    fn verify(message: &Message) -> Result<Log, DispatchError>;
+    fn initialize_storage(
+        headers: Vec<Header>,
+        initial_difficulty: U256,
+        descendants_until_final: u8,
+    ) -> Result<(), &'static str>;
 }
 
 /// Outbound submission for applications
 pub trait OutboundRouter<AccountId> {
-	fn submit(
-		channel_id: ChannelId,
-		who: &AccountId,
-		target: H160,
-		payload: &[u8],
-	) -> DispatchResult;
+    fn submit(
+        channel_id: ChannelId,
+        who: &AccountId,
+        target: H160,
+        payload: &[u8],
+    ) -> DispatchResult;
 }
 
 /// Add a message to a commitment
 pub trait MessageCommitment {
-	fn add(channel_id: ChannelId, target: H160, nonce: u64, payload: &[u8]) -> DispatchResult;
+    fn add(channel_id: ChannelId, target: H160, nonce: u64, payload: &[u8]) -> DispatchResult;
 }
 
 /// Dispatch a message
 pub trait MessageDispatch<T: Config, MessageId> {
-	fn dispatch(source: H160, id: MessageId, payload: &[u8]);
-	#[cfg(feature = "runtime-benchmarks")]
-	fn successful_dispatch_event(id: MessageId) -> Option<<T as Config>::Event>;
+    fn dispatch(source: H160, id: MessageId, payload: &[u8]);
+    #[cfg(feature = "runtime-benchmarks")]
+    fn successful_dispatch_event(id: MessageId) -> Option<<T as Config>::Event>;
 }
