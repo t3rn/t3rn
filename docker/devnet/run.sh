@@ -5,13 +5,19 @@ set -xEeo pipefail
 build_docker_images() {
   # NOTE: docker tags should stay in sync with those in docker-compose.yml
   if ! docker inspect polkadot:release-v0.9.17 > /dev/null; then
-    docker build -t polkadot:release-v0.9.17 -f polkadot.Dockerfile .
+    DOCKER_BUILDKIT=1 docker build \
+      -t polkadot:release-v0.9.17 \
+      -f polkadot.Dockerfile .
   fi
   if ! docker inspect circuit-collator:update_v0.9.17 > /dev/null; then
-    docker build -t circuit-collator:update_v0.9.17 -f t3rn.Dockerfile ../..
+    DOCKER_BUILDKIT=1 docker build \
+      -t circuit-collator:update_v0.9.17 \
+      -f t3rn.Dockerfile ../..
   fi
   if ! docker inspect parachain-collator:polkadot-v0.9.17 > /dev/null; then
-    docker build -t parachain-collator:polkadot-v0.9.17 -f pchain.Dockerfile .
+    DOCKER_BUILDKIT=1 docker build \
+      -t parachain-collator:polkadot-v0.9.17 \
+      -f pchain.Dockerfile .
   fi
 }
 
@@ -165,8 +171,8 @@ set_keys() {
     --suri "$t3rn2_phrase" \
     --key-type aura
 
-  echo "$pchain1_phrase" > "./data/pchain1/chains/local_testnet/keystore/61757261${pchain1_adrs#0x}"
-  echo "$pchain2_phrase" > "./data/pchain2/chains/local_testnet/keystore/61757261${pchain2_adrs#0x}"
+  printf "$pchain1_phrase" > "./data/pchain1/chains/local_testnet/keystore/61757261${pchain1_adrs#0x}"
+  printf "$pchain2_phrase" > "./data/pchain2/chains/local_testnet/keystore/61757261${pchain2_adrs#0x}"
 }
 
 onboard() {
