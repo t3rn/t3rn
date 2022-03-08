@@ -21,7 +21,7 @@ ENV RUSTC_WRAPPER="/usr/local/cargo/bin/sccache"
 RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && \
 	apt-get dist-upgrade -y -o Dpkg::Options::="--force-confnew" && \
-	apt-get install -y cmake pkg-config libssl-dev git clang libclang-dev sed
+	apt-get install -y cmake pkg-config libssl-dev git clang libclang-dev
 
 # NOTE: workaround 4 private submodule t3rn/protocol
 COPY . .
@@ -34,7 +34,7 @@ COPY . .
 # 		.
 
 RUN sed 's/[dev-dependencies]/# [dev-dependencies]/g' \
-      -i ./pallets/contracts-registry/Cargo.toml &&
+      -i ./pallets/contracts-registry/Cargo.toml && \
     sed 's/[dev-dependencies]/# [dev-dependencies]/g' \
       -i ./pallets/circuit/Cargo.toml
 
