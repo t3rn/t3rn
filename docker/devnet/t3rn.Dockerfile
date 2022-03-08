@@ -21,9 +21,9 @@ ENV RUSTC_WRAPPER="/usr/local/cargo/bin/sccache"
 RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && \
 	apt-get dist-upgrade -y -o Dpkg::Options::="--force-confnew" && \
-	apt-get install -y cmake pkg-config libssl-dev git clang libclang-dev
+	apt-get install -y cmake pkg-config libssl-dev git clang libclang-dev sed
 
-# FIXME: workaround 4 private submodule t3rn/protocol
+# NOTE: workaround 4 private submodule t3rn/protocol
 COPY . .
 # RUN	git clone \
 # 		--depth 1 \
