@@ -151,6 +151,7 @@ set_keys() {
   printf "$pchain2_phrase" > "./data/pchain2/chains/local_testnet/keystore/61757261${pchain2_adrs#0x}"
 }
 
+# FIXME
 onboard() {
   npx --yes @polkadot/api-cli@beta \
     --ws 'ws://localhost:9944' \
