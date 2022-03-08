@@ -82,7 +82,7 @@ build_para_chain_specs() {
       --raw \
   > ./specs/t3rn.raw.json
   ## gen pchain chain spec
-  docker run parachain-collator:latest build-spec \
+  docker run parachain-collator:polkadot-v0.9.17 build-spec \
       --disable-default-bootnode \
   > ./specs/pchain.json
   # rm config fields that would be unprocessable in further steps
