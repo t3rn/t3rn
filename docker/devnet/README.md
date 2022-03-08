@@ -24,7 +24,9 @@ Stops all nodes and swipes their base path data directories.
 
 ## `./run.sh build`
 
-Builds docker images and regenerates chain specs, and collator keys. Only necessary if any of the runtimes have changed.
+Builds docker images and regenerates chain specs, and collator keys.
+
+Only necessary if any of the runtimes have changed.
 
 ## Topology
 
