@@ -33,9 +33,9 @@ COPY . .
 # 		https://github.com/t3rn/t3rn.git \
 # 		.
 
-RUN sed 's/[dev-dependencies]/# [dev-dependencies]/g' \
+RUN sed 's/[dev-dependencies]/\# [dev-dependencies]/g' \
       -i ./pallets/contracts-registry/Cargo.toml && \
-    sed 's/[dev-dependencies]/# [dev-dependencies]/g' \
+    sed 's/[dev-dependencies]/\# [dev-dependencies]/g' \
       -i ./pallets/circuit/Cargo.toml
 
 RUN --mount=type=cache,target=/usr/local/cargo/git \
