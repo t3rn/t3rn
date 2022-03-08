@@ -217,4 +217,8 @@ build|make|mk)
   build_para_genesis_states
   build_para_wasm_runtimes
   ;;
+*)
+  echo "unknown subcommand" 1>&2
+  exit 1
+  ;;
 esac
