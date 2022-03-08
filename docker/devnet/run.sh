@@ -100,9 +100,6 @@ build_para_chain_specs() {
   # set the pchain2 node address
   sed "s/5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty/$pchain2_adrs/g" \
       -i ./specs/pchain.json
-  # rm another unprocessable field
-  jq 'del(.genesis.runtime.polkadotXcm)' ./specs/pchain.json  > ./specs/_pchain.json
-  mv ./specs/_pchain.json ./specs/pchain.json
   docker run \
       -v "$(pwd)/specs:/usr/local/etc" \
       parachain-collator:polkadot-v0.9.17 \
