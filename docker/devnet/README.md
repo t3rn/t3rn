@@ -4,7 +4,7 @@
 
 Spins up a rococo local devnet consisting of 5 relay chain validators and 2 collators for each parachain.
 
-The `setkeys` command needs to be run and onboarding completed for a full fledged relay-parachain topology.
+The `setkeys` and `onboard` commands need to be run for a full fledged relay-parachain topology.
 
 ##  `./run.sh setkeys`
 
@@ -12,17 +12,11 @@ Inserts static collator keys into the nodes' keystores.
 
 Must be run after `./run.sh devnet`.
 
-## Onboarding
+## `./run.sh onboard`
 
-Follow these steps to [reserve a para id](https://docs.substrate.io/tutorials/v3/cumulus/connect-parachain/#reserve-a-para-id) and [register the parachain](https://docs.substrate.io/tutorials/v3/cumulus/connect-parachain/#register-using-sudo).
+Initializes registration with the relay chain for both t3rn and pchain.
 
-Find the parachain ids in the table below, and other artifacts in `./specs`.
-
-<!-- ## `./run.sh onboard`
-
-Initializes parachain registration with the relay chain.
-
-After the onboarding is complete the parachain will start to collate. -->
+After onboarding is complete the parachains should start to collate.
 
 ## `./run.sh cleanup`
 

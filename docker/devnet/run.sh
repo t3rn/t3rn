@@ -151,7 +151,6 @@ set_keys() {
   printf "$pchain2_phrase" > "./data/pchain2/chains/local_testnet/keystore/61757261${pchain2_adrs#0x}"
 }
 
-# FIXME
 onboard() {
   npx --yes @polkadot/api-cli@beta \
     --ws 'ws://localhost:9944' \
@@ -159,7 +158,7 @@ onboard() {
     tx.registrar.reserve
 
   printf \
-    "%s {\"genesisHead\":\"%s\",\"validationCode\":\"%s\",\"parachain\":true}" \
+    "%d {\"genesisHead\":\"%s\",\"validationCode\":\"%s\",\"parachain\":true}" \
     3333 \
     $(<./specs/t3rn.genesis) \
     $(<./specs/t3rn.wasm) \
@@ -167,6 +166,7 @@ onboard() {
 
   npx @polkadot/api-cli@beta \
     --ws 'ws://localhost:9944' \
+    --sudo \
     --seed '//Alice' \
     --params /tmp/t3rn.params \
     tx.parasSudoWrapper.sudoScheduleParaInitialize
@@ -177,7 +177,7 @@ onboard() {
     tx.registrar.reserve
 
   printf \
-    "%s {\"genesisHead\":\"%s\",\"validationCode\":\"%s\",\"parachain\":true}" \
+    "%d {\"genesisHead\":\"%s\",\"validationCode\":\"%s\",\"parachain\":true}" \
     3334 \
     $(<./specs/pchain.genesis) \
     $(<./specs/pchain.wasm) \
@@ -185,6 +185,7 @@ onboard() {
 
   npx @polkadot/api-cli@beta \
     --ws 'ws://localhost:9944' \
+    --sudo \
     --seed '//Alice' \
     --params /tmp/pchain.params \
     tx.parasSudoWrapper.sudoScheduleParaInitialize
