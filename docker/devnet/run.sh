@@ -145,10 +145,10 @@ set_keys() {
   pchain2_phrase="$(grep -oP '(?<=phrase:)[^\n]+' ./specs/pchain2.key | xargs)"
   pchain1_adrs="$(grep -oP '(?<=\(SS58\):\s)[^\n]+' ./specs/pchain1.key)"
   pchain2_adrs="$(grep -oP '(?<=\(SS58\):\s)[^\n]+' ./specs/pchain2.key)"
-  printf "$t3rn1_phrase" > "./data/t3rn1/chains/local_testnet/keystore/61757261${t3rn1_adrs#0x}"
-  printf "$t3rn2_phrase" > "./data/t3rn2/chains/local_testnet/keystore/61757261${t3rn2_adrs#0x}"
-  printf "$pchain1_phrase" > "./data/pchain1/chains/local_testnet/keystore/61757261${pchain1_adrs#0x}"
-  printf "$pchain2_phrase" > "./data/pchain2/chains/local_testnet/keystore/61757261${pchain2_adrs#0x}"
+  printf "\"$t3rn1_phrase"\" > "./data/t3rn1/chains/local_testnet/keystore/61757261${t3rn1_adrs#0x}"
+  printf "\"$t3rn2_phrase"\" > "./data/t3rn2/chains/local_testnet/keystore/61757261${t3rn2_adrs#0x}"
+  printf "\"$pchain1_phrase"\" > "./data/pchain1/chains/local_testnet/keystore/61757261${pchain1_adrs#0x}"
+  printf "\"$pchain2_phrase"\" > "./data/pchain2/chains/local_testnet/keystore/61757261${pchain2_adrs#0x}"
 }
 
 onboard() {
