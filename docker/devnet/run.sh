@@ -139,6 +139,8 @@ build_para_wasm_runtimes() {
 set_keys() {
   t3rn1_phrase="$(grep -oP '(?<=phrase:)[^\n]+' ./specs/t3rn1.key | xargs)"
   t3rn2_phrase="$(grep -oP '(?<=phrase:)[^\n]+' ./specs/t3rn2.key | xargs)"
+  t3rn1_adrs="$(grep -oP '(?<=\(SS58\):\s)[^\n]+' ./specs/t3rn1.key)"
+  t3rn2_adrs="$(grep -oP '(?<=\(SS58\):\s)[^\n]+' ./specs/t3rn2.key)"
   pchain1_phrase="$(grep -oP '(?<=phrase:)[^\n]+' ./specs/pchain1.key | xargs)"
   pchain2_phrase="$(grep -oP '(?<=phrase:)[^\n]+' ./specs/pchain2.key | xargs)"
   pchain1_adrs="$(grep -oP '(?<=\(SS58\):\s)[^\n]+' ./specs/pchain1.key)"
