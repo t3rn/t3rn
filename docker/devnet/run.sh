@@ -58,8 +58,6 @@ build_para_chain_specs() {
   docker run circuit-collator:update_v0.9.17 build-spec \
       --disable-default-bootnode \
   > ./specs/t3rn.json
-  # rm config fields that would be unprocessable in further steps
-  sed 's/"forkId": null,//g' -i ./specs/t3rn.json
   # set parachain id(s)
   sed 's/"paraId": [[:digit:]]\+/"paraId": 3333/g' \
       -i ./specs/t3rn.json
@@ -85,8 +83,6 @@ build_para_chain_specs() {
   docker run parachain-collator:polkadot-v0.9.17 build-spec \
       --disable-default-bootnode \
   > ./specs/pchain.json
-  # rm config fields that would be unprocessable in further steps
-  sed 's/"forkId": null,//g' -i ./specs/pchain.json
   # set parachain id(s)
   sed 's/"paraId": [[:digit:]]\+/"paraId": 3334/g' \
       -i ./specs/pchain.json
