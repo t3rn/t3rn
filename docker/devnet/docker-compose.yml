@@ -219,8 +219,6 @@ services:
       - charlie
       - dave
       - eve
-    environment:
-      - RUST_LOG=debug
     command: >
       --port 33333
       --rpc-port 8833
