@@ -39,6 +39,7 @@ services:
       --unsafe-rpc-external
       --chain /pdot/rococo-local.raw.json
       --execution Wasm
+      -lruntime=debug,parachain::pvf-checker=debug
 
   bob:
     image: polkadot:release-v0.9.17
@@ -75,6 +76,7 @@ services:
       --unsafe-rpc-external
       --chain /pdot/rococo-local.raw.json
       --execution Wasm
+      -lruntime=debug,parachain::pvf-checker=debug
 
   charlie:
     image: polkadot:release-v0.9.17
@@ -112,6 +114,7 @@ services:
       --unsafe-rpc-external
       --chain /pdot/rococo-local.raw.json
       --execution Wasm
+      -lruntime=debug,parachain::pvf-checker=debug
 
   dave:
     image: polkadot:release-v0.9.17
@@ -150,6 +153,7 @@ services:
       --unsafe-rpc-external
       --chain /pdot/rococo-local.raw.json
       --execution Wasm
+      -lruntime=debug,parachain::pvf-checker=debug
 
   eve:
     image: polkadot:release-v0.9.17
@@ -189,6 +193,7 @@ services:
       --unsafe-rpc-external
       --chain /pdot/rococo-local.raw.json
       --execution Wasm
+      -lruntime=debug,parachain::pvf-checker=debug
 
   t3rn1:
     image: circuit-collator:update_v0.9.17
@@ -235,7 +240,7 @@ services:
       --unsafe-ws-external
       --unsafe-rpc-external
       --execution Native
-      -lruntime=debug,cumulus-collator=trace,cumulus-network=trace,cumulus-consensus=trace,cumulus-pov-recovery=trace,executor=debug,aura::cumulus=trace,parachain-inherent=trace,cumulus-consensus-relay-chain=trace
+      -lruntime=debug,cumulus-collator=debug,cumulus-network=debug,cumulus-consensus=debug,cumulus-pov-recovery=debug,executor=debug,aura::cumulus=debug,parachain-inherent=debug,cumulus-consensus-relay-chain=debug,parachain::pvf-checker=debug
       --chain /t3rn/t3rn.raw.json
       --name t3rn1
       --
@@ -291,7 +296,7 @@ services:
       --unsafe-ws-external
       --unsafe-rpc-external
       --execution Native
-      -lruntime=warn,cumulus-collator=debug,cumulus-network=warn,cumulus-consensus=warn,cumulus-pov-recovery=warn,executor=debug,aura::cumulus=trace,parachain-inherent=trace,cumulus-consensus-relay-chain=trace
+      -lruntime=debug,cumulus-collator=debug,cumulus-network=debug,cumulus-consensus=debug,cumulus-pov-recovery=debug,executor=debug,aura::cumulus=debug,parachain-inherent=debug,cumulus-consensus-relay-chain=debug,parachain::pvf-checker=debug
       --chain /t3rn/t3rn.raw.json
       --name t3rn2
       --
@@ -348,7 +353,7 @@ services:
       --unsafe-ws-external
       --unsafe-rpc-external
       --execution Native
-      -lruntime=warn,cumulus-collator=debug,cumulus-network=warn,cumulus-consensus=warn,cumulus-pov-recovery=warn,executor=debug,aura::cumulus=trace,parachain-inherent=trace,cumulus-consensus-relay-chain=trace
+      -lruntime=debug,cumulus-collator=debug,cumulus-network=debug,cumulus-consensus=debug,cumulus-pov-recovery=debug,executor=debug,aura::cumulus=debug,parachain-inherent=debug,cumulus-consensus-relay-chain=debug,parachain::pvf-checker=debug
       --chain /para/pchain.raw.json
       --name pchain1
       --
@@ -405,7 +410,7 @@ services:
       --unsafe-ws-external
       --unsafe-rpc-external
       --execution Native
-      -lruntime=warn,cumulus-collator=debug,cumulus-network=warn,cumulus-consensus=warn,cumulus-pov-recovery=warn,executor=debug,aura::cumulus=trace,parachain-inherent=trace,cumulus-consensus-relay-chain=trace
+      -lruntime=debug,cumulus-collator=debug,cumulus-network=debug,cumulus-consensus=debug,cumulus-pov-recovery=debug,executor=debug,aura::cumulus=debug,parachain-inherent=debug,cumulus-consensus-relay-chain=debug,parachain::pvf-checker=debug
       --chain /para/pchain.raw.json
       --name pchain2
       --
