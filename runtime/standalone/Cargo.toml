@@ -25,7 +25,7 @@ pallet-circuit-portal = {  path = "../../pallets/circuit-portal", default-featur
 pallet-circuit-portal-rpc-runtime-api = {  path = "../../pallets/circuit-portal/rpc/runtime-api", default-features = false }
 pallet-xdns = { path = "../../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
-pallet-multi-finality-verifier = { path = "../../pallets/multi-finality-verifier", version = "1.0.0-alpha.0", default-features = false }
+pallet-mfv= { package = "pallet-multi-finality-verifier", path = "../../pallets/multi-finality-verifier", version = "1.0.0-alpha.0", default-features = false }
 pallet-circuit = { path = "../../pallets/circuit", default-features = false }
 #volatile-vm = { path = "../../vm/volatile-vm", default-features = false }
 t3rn-primitives = { default-features = false, path = "../../primitives" }
@@ -124,7 +124,7 @@ std = [
 	"pallet-balances/std",
 #	"pallet-bridge-dispatch/std",
 #	"pallet-bridge-grandpa/std",
-	"pallet-multi-finality-verifier/std",
+	"pallet-mfv/std",
 #	"pallet-bridge-messages/std",
 	"pallet-grandpa/std",
 	"pallet-randomness-collective-flip/std",

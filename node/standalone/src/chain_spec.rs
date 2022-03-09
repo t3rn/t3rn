@@ -1,11 +1,8 @@
-// use circuit_standalone_runtime::{
-// 	AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig, Signature, SudoConfig,
-// 	SystemConfig, WASM_BINARY,
-// };
 use circuit_standalone_runtime::{
-    AccountId, AuraConfig, BalancesConfig, BeefyConfig, ContractsRegistryConfig, GenesisConfig,
-    GrandpaConfig, MultiFinalityVerifierConfig, Signature, SudoConfig, SystemConfig, XDNSConfig,
-    WASM_BINARY,
+    AccountId, AuraConfig, BalancesConfig, ContractsRegistryConfig, GenesisConfig, GrandpaConfig,
+    MultiFinalityVerifierEthereumLikeConfig, MultiFinalityVerifierGenericLikeConfig,
+    MultiFinalityVerifierPolkadotLikeConfig, MultiFinalityVerifierSubstrateLikeConfig, Signature,
+    SudoConfig, SystemConfig, XDNSConfig, WASM_BINARY,
 };
 
 use jsonrpc_runtime_client::ConnectionParams;
@@ -404,11 +401,11 @@ fn testnet_genesis(
             // Assign network admin rights.
             key: Some(root_key),
         },
-        // transaction_payment: Default::default(),
-        beefy: BeefyConfig {
-            // authorities: initial_authorities.iter().map(|x| (x.1.clone())).collect(),
-            authorities: Vec::new(),
-        },
+        transaction_payment: Default::default(),
+        // beefy: BeefyConfig {
+        //     // authorities: initial_authorities.iter().map(|x| (x.1.clone())).collect(),
+        //     authorities: Vec::new(),
+        // },
         xdns: XDNSConfig {
             known_xdns_records: xdns_records,
             standard_side_effects,
@@ -416,7 +413,19 @@ fn testnet_genesis(
         contracts_registry: ContractsRegistryConfig {
             known_contracts: Vec::new(),
         },
-        multi_finality_verifier: MultiFinalityVerifierConfig {
+        multi_finality_verifier_substrate_like: MultiFinalityVerifierSubstrateLikeConfig {
+            owner: None,
+            init_data: None,
+        },
+        multi_finality_verifier_generic_like: MultiFinalityVerifierGenericLikeConfig {
+            owner: None,
+            init_data: None,
+        },
+        multi_finality_verifier_ethereum_like: MultiFinalityVerifierEthereumLikeConfig {
+            owner: None,
+            init_data: None,
+        },
+        multi_finality_verifier_polkadot_like: MultiFinalityVerifierPolkadotLikeConfig {
             owner: None,
             init_data: None,
         },
