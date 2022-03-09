@@ -297,9 +297,7 @@ pub mod pallet {
             // Fetch each XdnsRecord and re-sort based on its last_finalized descending
             let mut sorted_gateways: Vec<XdnsRecord<T::AccountId>> = sorted_gateway_pointers
                 .into_iter()
-                .map(|gateway_pointer| {
-                    <XDNSRegistry<T>>::get(gateway_pointer.id)
-                })
+                .map(|gateway_pointer| <XDNSRegistry<T>>::get(gateway_pointer.id))
                 .flatten()
                 .collect();
             sorted_gateways
