@@ -219,6 +219,8 @@ services:
       - charlie
       - dave
       - eve
+    environment:
+      - RUST_LOG=debug
     command: >
       --port 33333
       --rpc-port 8833
@@ -230,7 +232,7 @@ services:
       --unsafe-ws-external
       --unsafe-rpc-external
       --execution Native
-      -lruntime=warn,cumulus-collator=debug,cumulus-network=warn,cumulus-consensus=warn,cumulus-pov-recovery=warn,executor=debug,aura::cumulus=trace,parachain-inherent=trace,cumulus-consensus-relay-chain=trace
+      -lruntime=debug,cumulus-collator=trace,cumulus-network=debug,cumulus-consensus=debug,cumulus-pov-recovery=trace,executor=debug,aura::cumulus=trace,parachain-inherent=trace,cumulus-consensus-relay-chain=trace
       --chain /t3rn/t3rn.raw.json
       --name t3rn1
       --

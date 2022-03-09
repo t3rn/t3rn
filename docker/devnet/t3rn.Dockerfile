@@ -33,6 +33,7 @@ COPY . .
 # 		https://github.com/t3rn/t3rn.git \
 # 		.
 
+# FIXME: tmp workaround 2 force compile the parachain runtime
 RUN sed 's/\[dev-dependencies/\# \[dev-dependencies/g' \
       -i ./pallets/contracts-registry/Cargo.toml && \
     sed 's/\[dev-dependencies/\# \[dev-dependencies/g' \
