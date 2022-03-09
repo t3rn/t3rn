@@ -59,6 +59,13 @@ pub enum GatewayType {
     TxOnly(u32),
 }
 
+
+impl Default for GatewayType {
+    fn default() -> GatewayType {
+        GatewayType::ProgrammableExternal(0)
+    }
+}
+
 impl GatewayType {
     pub fn fetch_nonce(self) -> u32 {
         match self {
@@ -74,6 +81,12 @@ impl GatewayType {
 pub enum GatewayVendor {
     Ethereum,
     Substrate,
+}
+
+impl Default for GatewayVendor {
+    fn default() -> Self {
+        GatewayVendor::Substrate
+    }
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
@@ -100,10 +113,6 @@ pub struct GatewayPointer {
 pub struct GatewayGenesisConfig {
     /// SCALE-encoded modules following the format of selected frame_metadata::RuntimeMetadataVXX
     pub modules_encoded: Option<Vec<u8>>,
-    /// SCALE-encoded signed extension - see more at frame_metadata::ExtrinsicMetadata
-    // pub signed_extension: Option<Vec<u8>>,
-    /// Runtime version
-    pub runtime_version: sp_version::RuntimeVersion,
     /// Extrinsics version
     pub extrinsics_version: u8,
     /// Genesis hash - block id of the genesis block use to distinct the network and sign messages
@@ -115,7 +124,6 @@ impl Default for GatewayGenesisConfig {
     fn default() -> Self {
         Self {
             extrinsics_version: 0,
-            runtime_version: Default::default(),
             genesis_hash: vec![],
             modules_encoded: None,
         }
