@@ -36,6 +36,7 @@ use sp_io::TestExternalities;
 use codec::Encode;
 use sp_runtime::AccountId32;
 use sp_std::prelude::*;
+// use crate::mock;
 
 pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);
 pub const BOB_RELAYER: AccountId32 = AccountId32::new([2u8; 32]);
@@ -85,10 +86,9 @@ fn on_extrinsic_trigger_works_with_empty_side_effects() {
 fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let mut ext = TestExternalities::new_empty();
+    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
 
     let mut local_state = LocalState::new();
-    let transfer_protocol_box = Box::new(TransferSideEffectProtocol {});
     let valid_transfer_side_effect = produce_and_validate_side_effect(
         vec![
             (Type::Address(32), ArgVariant::A),
@@ -104,116 +104,126 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
     let fee = 1;
     let sequential = true;
 
-    ext.execute_with(|| {
-        let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
 
-        System::set_block_number(1);
+            System::set_block_number(1);
 
-        assert_ok!(Circuit::on_extrinsic_trigger(
-            origin,
-            side_effects,
-            fee,
-            sequential,
-        ));
+            assert_ok!(Circuit::on_extrinsic_trigger(
+                origin,
+                side_effects,
+                fee,
+                sequential,
+            ));
 
-        // Assert Circuit::emit generates 5 correct events: 3 from charging and 2 Circuit-specific
-        let events = System::events();
-        assert_eq!(events.len(), 5);
-        assert_eq!(
-            vec![events[3].clone(), events[4].clone()],
-            vec![
-                EventRecord {
-                    phase: Phase::Initialization,
-                    event: Event::Circuit(crate::Event::<Test>::XTransactionReadyForExec(
-                        hex!("7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6")
+            // Assert Circuit::emit generates 5 correct events: 3 from charging and 2 Circuit-specific
+            let events = System::events();
+            assert_eq!(events.len(), 8);
+            assert_eq!(
+                vec![events[6].clone(), events[7].clone()],
+                vec![
+                    EventRecord {
+                        phase: Phase::Initialization,
+                        event: Event::Circuit(crate::Event::<Test>::XTransactionReadyForExec(
+                            hex!(
+                                "7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6"
+                            )
                             .into()
-                    )),
-                    topics: vec![]
-                },
-                EventRecord {
-                    phase: Phase::Initialization,
-                    event: Event::Circuit(crate::Event::<Test>::NewSideEffectsAvailable(
-                        AccountId32::new(hex!(
-                            "0101010101010101010101010101010101010101010101010101010101010101"
                         )),
-                        hex!("7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6")
+                        topics: vec![]
+                    },
+                    EventRecord {
+                        phase: Phase::Initialization,
+                        event: Event::Circuit(crate::Event::<Test>::NewSideEffectsAvailable(
+                            AccountId32::new(hex!(
+                                "0101010101010101010101010101010101010101010101010101010101010101"
+                            )),
+                            hex!(
+                                "7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6"
+                            )
                             .into(),
-                        vec![SideEffect {
-                            target: [0u8, 0u8, 0u8, 0u8],
-                            prize: 0,
-                            ordered_at: 0,
-                            encoded_action: vec![116, 114, 97, 110],
-                            encoded_args: vec![
-                                vec![
-                                    9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                                    9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9
+                            vec![SideEffect {
+                                target: [0u8, 0u8, 0u8, 0u8],
+                                prize: 0,
+                                ordered_at: 0,
+                                encoded_action: vec![116, 114, 97, 110],
+                                encoded_args: vec![
+                                    vec![
+                                        9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+                                        9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9
+                                    ],
+                                    vec![
+                                        6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+                                        6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6
+                                    ],
+                                    vec![1, 0, 0, 0, 0, 0, 0, 0],
+                                    vec![]
                                 ],
-                                vec![
-                                    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-                                    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6
-                                ],
-                                vec![1, 0, 0, 0, 0, 0, 0, 0],
-                                vec![]
-                            ],
-                            signature: vec![],
-                            enforce_executioner: None
-                        }]
-                    )),
-                    topics: vec![]
-                }
-            ]
-        );
+                                signature: vec![],
+                                enforce_executioner: None
+                            }]
+                        )),
+                        topics: vec![]
+                    }
+                ]
+            );
+            let xtx_id: sp_core::H256 =
+                hex!("7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6").into();
+            let side_effect_a_id =
+                valid_transfer_side_effect.generate_id::<crate::SystemHashing<Test>>();
 
-        let (xtx_id, side_effect_a_id) = set_ids(valid_transfer_side_effect.clone());
-
-        // Returns void insurance for that side effect
-        let void_insurance_deposit = InsuranceDeposit {
-            insurance: 0,
-            reward: 0,
-            requester: AccountId32::new(hex!(
-                "0000000000000000000000000000000000000000000000000000000000000000"
-            )),
-            bonded_relayer: None,
-            status: CircuitStatus::Requested,
-            requested_at: 0,
-        };
-
-        assert_eq!(
-            Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
-            void_insurance_deposit
-        );
-
-        assert_eq!(
-            Circuit::get_x_exec_signals(xtx_id),
-            XExecSignal {
+            // Returns void insurance for that side effect
+            let void_insurance_deposit = InsuranceDeposit {
+                insurance: 0,
+                reward: 0,
                 requester: AccountId32::new(hex!(
-                    "0101010101010101010101010101010101010101010101010101010101010101"
+                    "0000000000000000000000000000000000000000000000000000000000000000"
                 )),
-                timeouts_at: None,
-                delay_steps_at: None,
-                status: CircuitStatus::Ready,
-                total_reward: Some(fee)
-            }
-        );
+                bonded_relayer: None,
+                status: CircuitStatus::Requested,
+                requested_at: 0,
+            };
 
-        assert_eq!(
-            Circuit::get_full_side_effects(xtx_id),
-            vec![vec![FullSideEffect {
-                input: valid_transfer_side_effect,
-                confirmed: None,
-            }]]
-        );
-    });
+            assert_eq!(
+                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
+                void_insurance_deposit
+            );
+
+            assert_eq!(
+                Circuit::get_x_exec_signals(xtx_id),
+                XExecSignal {
+                    requester: AccountId32::new(hex!(
+                        "0101010101010101010101010101010101010101010101010101010101010101"
+                    )),
+                    timeouts_at: None,
+                    delay_steps_at: None,
+                    status: CircuitStatus::Ready,
+                    total_reward: Some(fee)
+                }
+            );
+
+            assert_eq!(
+                Circuit::get_full_side_effects(xtx_id),
+                vec![vec![FullSideEffect {
+                    input: valid_transfer_side_effect,
+                    confirmed: None,
+                }]]
+            );
+        });
 }
 
 #[test]
 fn on_extrinsic_trigger_validation_works_with_single_transfer_insured() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let mut ext = TestExternalities::new_empty();
+    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
 
     let mut local_state = LocalState::new();
-    let transfer_protocol_box = Box::new(TransferSideEffectProtocol {});
+
     let valid_transfer_side_effect = produce_and_validate_side_effect(
         vec![
             (Type::Address(32), ArgVariant::A),
@@ -229,28 +239,32 @@ fn on_extrinsic_trigger_validation_works_with_single_transfer_insured() {
     let fee = 1;
     let sequential = true;
 
-    ext.execute_with(|| {
-        let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
 
-        System::set_block_number(1);
+            System::set_block_number(1);
 
-        assert_ok!(Circuit::on_extrinsic_trigger(
-            origin,
-            side_effects,
-            fee,
-            sequential,
-        ));
-    });
+            assert_ok!(Circuit::on_extrinsic_trigger(
+                origin,
+                side_effects,
+                fee,
+                sequential,
+            ));
+        });
 }
 
 #[test]
 fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let mut ext = TestExternalities::new_empty();
+    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
 
     let mut local_state = LocalState::new();
-    let transfer_protocol_box = Box::new(TransferSideEffectProtocol {});
+
     let valid_transfer_side_effect = produce_and_validate_side_effect(
         vec![
             (Type::Address(32), ArgVariant::A),
@@ -266,80 +280,88 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
     let fee = 1;
     let sequential = true;
 
-    ext.execute_with(|| {
-        let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
 
-        System::set_block_number(1);
+            System::set_block_number(1);
 
-        assert_ok!(Circuit::on_extrinsic_trigger(
-            origin,
-            side_effects,
-            fee,
-            sequential,
-        ));
+            assert_ok!(Circuit::on_extrinsic_trigger(
+                origin,
+                side_effects,
+                fee,
+                sequential,
+            ));
 
-        // Assert Circuit::emit generates 5 correct events: 3 for charging and 2 Circuit-specific
-        let events = System::events();
-        assert_eq!(events.len(), 7);
-        assert_eq!(
-            vec![events[5].clone(), events[6].clone()],
-            vec![
-                EventRecord {
-                    phase: Phase::Initialization,
-                    event: Event::Circuit(crate::Event::<Test>::XTransactionReceivedForExec(
-                        hex!("7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6")
+            // Assert Circuit::emit generates 5 correct events: 3 for charging and 2 Circuit-specific
+            let events = System::events();
+            assert_eq!(events.len(), 10);
+            assert_eq!(
+                vec![events[8].clone(), events[9].clone()],
+                vec![
+                    EventRecord {
+                        phase: Phase::Initialization,
+                        event: Event::Circuit(crate::Event::<Test>::XTransactionReceivedForExec(
+                            hex!(
+                                "7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6"
+                            )
                             .into()
-                    )),
-                    topics: vec![]
-                },
-                EventRecord {
-                    phase: Phase::Initialization,
-                    event: Event::Circuit(crate::Event::<Test>::NewSideEffectsAvailable(
-                        AccountId32::new(hex!(
-                            "0101010101010101010101010101010101010101010101010101010101010101"
                         )),
-                        hex!("7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6")
+                        topics: vec![]
+                    },
+                    EventRecord {
+                        phase: Phase::Initialization,
+                        event: Event::Circuit(crate::Event::<Test>::NewSideEffectsAvailable(
+                            AccountId32::new(hex!(
+                                "0101010101010101010101010101010101010101010101010101010101010101"
+                            )),
+                            hex!(
+                                "7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6"
+                            )
                             .into(),
-                        vec![SideEffect {
-                            target: [0u8, 0u8, 0u8, 0u8],
-                            prize: 0,
-                            ordered_at: 0,
-                            encoded_action: vec![116, 114, 97, 110],
-                            encoded_args: vec![
-                                vec![
-                                    9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                                    9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9
+                            vec![SideEffect {
+                                target: [0u8, 0u8, 0u8, 0u8],
+                                prize: 0,
+                                ordered_at: 0,
+                                encoded_action: vec![116, 114, 97, 110],
+                                encoded_args: vec![
+                                    vec![
+                                        9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+                                        9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9
+                                    ],
+                                    vec![
+                                        6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+                                        6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6
+                                    ],
+                                    vec![1, 0, 0, 0, 0, 0, 0, 0],
+                                    // Insurance goes here
+                                    vec![
+                                        1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0,
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+                                    ]
                                 ],
-                                vec![
-                                    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-                                    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6
-                                ],
-                                vec![1, 0, 0, 0, 0, 0, 0, 0],
-                                // Insurance goes here
-                                vec![
-                                    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0,
-                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-                                ]
-                            ],
-                            signature: vec![],
-                            enforce_executioner: None
-                        }]
-                    )),
-                    topics: vec![]
-                }
-            ]
-        );
-    });
+                                signature: vec![],
+                                enforce_executioner: None
+                            }]
+                        )),
+                        topics: vec![]
+                    }
+                ]
+            );
+        });
 }
 
 #[test]
 fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let mut ext = TestExternalities::new_empty();
+    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
 
     let mut local_state = LocalState::new();
-    let transfer_protocol_box = Box::new(TransferSideEffectProtocol {});
+
     let valid_transfer_side_effect = produce_and_validate_side_effect(
         vec![
             (Type::Address(32), ArgVariant::A),
@@ -355,69 +377,73 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
     let fee = 1;
     let sequential = true;
 
-    ext.execute_with(|| {
-        let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
 
-        System::set_block_number(1);
+            System::set_block_number(1);
 
-        assert_ok!(Circuit::on_extrinsic_trigger(
-            origin,
-            side_effects,
-            fee,
-            sequential,
-        ));
+            assert_ok!(Circuit::on_extrinsic_trigger(
+                origin,
+                side_effects,
+                fee,
+                sequential,
+            ));
 
         let (xtx_id, side_effect_a_id) = set_ids(valid_transfer_side_effect.clone());
 
-        // Test Apply State
-        // Returns void insurance for that side effect
-        let valid_insurance_deposit = InsuranceDeposit {
-            insurance: 1,
-            reward: 2,
-            requester: AccountId32::new(hex!(
-                "0101010101010101010101010101010101010101010101010101010101010101"
-            )),
-            bonded_relayer: None,
-            status: CircuitStatus::Requested,
-            requested_at: 1,
-        };
-
-        assert_eq!(
-            Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
-            valid_insurance_deposit
-        );
-
-        assert_eq!(
-            Circuit::get_x_exec_signals(xtx_id),
-            XExecSignal {
+            // Test Apply State
+            // Returns void insurance for that side effect
+            let valid_insurance_deposit = InsuranceDeposit {
+                insurance: 1,
+                reward: 2,
                 requester: AccountId32::new(hex!(
                     "0101010101010101010101010101010101010101010101010101010101010101"
                 )),
-                timeouts_at: None,
-                delay_steps_at: None,
-                status: CircuitStatus::PendingInsurance,
-                total_reward: Some(fee)
-            }
-        );
+                bonded_relayer: None,
+                status: CircuitStatus::Requested,
+                requested_at: 1,
+            };
 
-        assert_eq!(
-            Circuit::get_full_side_effects(xtx_id),
-            vec![vec![FullSideEffect {
-                input: valid_transfer_side_effect,
-                confirmed: None,
-            }]]
-        );
-    });
+            assert_eq!(
+                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
+                valid_insurance_deposit
+            );
+
+            assert_eq!(
+                Circuit::get_x_exec_signals(xtx_id),
+                XExecSignal {
+                    requester: AccountId32::new(hex!(
+                        "0101010101010101010101010101010101010101010101010101010101010101"
+                    )),
+                    timeouts_at: None,
+                    delay_steps_at: None,
+                    status: CircuitStatus::PendingInsurance,
+                    total_reward: Some(fee)
+                }
+            );
+
+            assert_eq!(
+                Circuit::get_full_side_effects(xtx_id),
+                vec![vec![FullSideEffect {
+                    input: valid_transfer_side_effect,
+                    confirmed: None,
+                }]]
+            );
+        });
 }
 
 #[test]
 fn circuit_handles_insurance_deposit_for_transfers() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let ext = ExtBuilder::default();
+    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
 
     let mut local_state = LocalState::new();
-    let transfer_protocol_box = Box::new(TransferSideEffectProtocol {});
+
     let valid_transfer_side_effect = produce_and_validate_side_effect(
         vec![
             (Type::Address(32), ArgVariant::A),
@@ -433,127 +459,132 @@ fn circuit_handles_insurance_deposit_for_transfers() {
     let fee = 1;
     let sequential = true;
 
-    ext.with_default_xdns_records().build().execute_with(|| {
-        let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
-        let _ = Balances::deposit_creating(&BOB_RELAYER, 1); // Bob should have at least: insurance deposit (1)(for VariantA)
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+            let _ = Balances::deposit_creating(&BOB_RELAYER, 1); // Bob should have at least: insurance deposit (1)(for VariantA)
 
-        System::set_block_number(1);
+            System::set_block_number(1);
 
-        assert_ok!(Circuit::on_extrinsic_trigger(
-            origin,
-            side_effects,
-            fee,
-            sequential,
-        ));
+            assert_ok!(Circuit::on_extrinsic_trigger(
+                origin,
+                side_effects,
+                fee,
+                sequential,
+            ));
 
         let (xtx_id, side_effect_a_id) = set_ids(valid_transfer_side_effect.clone());
 
-        // Test Apply State
-        // Returns void insurance for that side effect
-        let valid_insurance_deposit = InsuranceDeposit {
-            insurance: 1,
-            reward: 2,
-            requester: AccountId32::new(hex!(
-                "0101010101010101010101010101010101010101010101010101010101010101"
-            )),
-            bonded_relayer: None,
-            status: CircuitStatus::Requested,
-            requested_at: 1,
-        };
-
-        assert_eq!(
-            Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
-            valid_insurance_deposit
-        );
-
-        assert_eq!(
-            Circuit::get_x_exec_signals(xtx_id),
-            XExecSignal {
+            // Test Apply State
+            // Returns void insurance for that side effect
+            let valid_insurance_deposit = InsuranceDeposit {
+                insurance: 1,
+                reward: 2,
                 requester: AccountId32::new(hex!(
                     "0101010101010101010101010101010101010101010101010101010101010101"
                 )),
-                timeouts_at: None,
-                delay_steps_at: None,
-                status: CircuitStatus::PendingInsurance,
-                total_reward: Some(fee)
-            }
-        );
+                bonded_relayer: None,
+                status: CircuitStatus::Requested,
+                requested_at: 1,
+            };
 
-        assert_eq!(
-            Circuit::get_full_side_effects(xtx_id),
-            vec![vec![FullSideEffect {
-                input: valid_transfer_side_effect.clone(),
-                confirmed: None,
-            }]]
-        );
+            assert_eq!(
+                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
+                valid_insurance_deposit
+            );
 
-        let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
+            assert_eq!(
+                Circuit::get_x_exec_signals(xtx_id),
+                XExecSignal {
+                    requester: AccountId32::new(hex!(
+                        "0101010101010101010101010101010101010101010101010101010101010101"
+                    )),
+                    timeouts_at: None,
+                    delay_steps_at: None,
+                    status: CircuitStatus::PendingInsurance,
+                    total_reward: Some(fee)
+                }
+            );
 
-        assert_ok!(Circuit::bond_insurance_deposit(
-            origin_relayer_bob.clone(),
-            xtx_id,
-            side_effect_a_id,
-        ));
+            assert_eq!(
+                Circuit::get_full_side_effects(xtx_id),
+                vec![vec![FullSideEffect {
+                    input: valid_transfer_side_effect.clone(),
+                    confirmed: None,
+                }]]
+            );
 
-        let expected_bonded_insurance_deposit = InsuranceDeposit {
-            insurance: 1,
-            reward: 2,
-            requester: AccountId32::new(hex!(
-                "0101010101010101010101010101010101010101010101010101010101010101"
-            )),
-            bonded_relayer: Some(BOB_RELAYER),
-            status: CircuitStatus::Bonded,
-            requested_at: 1,
-        };
+            let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
 
-        assert_eq!(
-            Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
-            expected_bonded_insurance_deposit
-        );
+            assert_ok!(Circuit::bond_insurance_deposit(
+                origin_relayer_bob.clone(),
+                xtx_id,
+                side_effect_a_id,
+            ));
 
-        assert_eq!(
-            Circuit::get_x_exec_signals(xtx_id),
-            XExecSignal {
+            let expected_bonded_insurance_deposit = InsuranceDeposit {
+                insurance: 1,
+                reward: 2,
                 requester: AccountId32::new(hex!(
                     "0101010101010101010101010101010101010101010101010101010101010101"
                 )),
-                timeouts_at: None,
-                delay_steps_at: None,
-                status: CircuitStatus::Ready,
-                total_reward: Some(fee)
+                bonded_relayer: Some(BOB_RELAYER),
+                status: CircuitStatus::Bonded,
+                requested_at: 1,
+            };
+
+            assert_eq!(
+                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
+                expected_bonded_insurance_deposit
+            );
+
+            assert_eq!(
+                Circuit::get_x_exec_signals(xtx_id),
+                XExecSignal {
+                    requester: AccountId32::new(hex!(
+                        "0101010101010101010101010101010101010101010101010101010101010101"
+                    )),
+                    timeouts_at: None,
+                    delay_steps_at: None,
+                    status: CircuitStatus::Ready,
+                    total_reward: Some(fee)
+                }
+            );
+
+            // Confirmation start
+            let encoded_balance_transfer_event = pallet_balances::Event::<Test>::Transfer {
+                from: hex!("0909090909090909090909090909090909090909090909090909090909090909")
+                    .into(), // variant A
+                to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(), // variant B (dest)
+                amount: 1, // variant A
             }
-        );
+            .encode();
 
-        // Confirmation start
-        let encoded_balance_transfer_event = pallet_balances::Event::<Test>::Transfer {
-            from: hex!("0909090909090909090909090909090909090909090909090909090909090909").into(), // variant A
-            to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(), // variant B (dest)
-            amount: 1, // variant A
-        }
-        .encode();
+            let confirmation = ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
+                err: None,
+                output: None,
+                encoded_effect: encoded_balance_transfer_event,
+                inclusion_proof: None,
+                executioner: BOB_RELAYER,
+                received_at: 0,
+                cost: None,
+            };
 
-        let confirmation = ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
-            err: None,
-            output: None,
-            encoded_effect: encoded_balance_transfer_event,
-            inclusion_proof: None,
-            executioner: BOB_RELAYER,
-            received_at: 0,
-            cost: None,
-        };
+            assert_ok!(Circuit::confirm_side_effect(
+                origin_relayer_bob,
+                xtx_id,
+                valid_transfer_side_effect,
+                confirmation,
+                None,
+                None,
+            ));
 
-        assert_ok!(Circuit::confirm_side_effect(
-            origin_relayer_bob,
-            xtx_id,
-            valid_transfer_side_effect,
-            confirmation,
-            None,
-            None,
-        ));
-
-        // Check that Bob collected the relayer reward
-        assert_eq!(Balances::free_balance(&BOB_RELAYER), 1 + 2);
-    });
+            // Check that Bob collected the relayer reward
+            assert_eq!(Balances::free_balance(&BOB_RELAYER), 1 + 2);
+        });
 }
 
 #[test]
@@ -561,10 +592,10 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
     let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
 
-    let ext = ExtBuilder::default();
+    let swap_protocol_box = ExtBuilder::get_swap_protocol_box();
 
     let mut local_state = LocalState::new();
-    let swap_protocol_box = Box::new(SwapSideEffectProtocol {});
+
     let valid_swap_side_effect = produce_and_validate_side_effect(
         vec![
             (Type::Address(32), ArgVariant::A), // caller
@@ -583,41 +614,45 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
     let fee = 1;
     let sequential = true;
 
-    ext.with_default_xdns_records().build().execute_with(|| {
-        let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
-        let _ = Balances::deposit_creating(&BOB_RELAYER, 1); // Bob should have at least: insurance deposit (1)(for VariantA)
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+            let _ = Balances::deposit_creating(&BOB_RELAYER, 1); // Bob should have at least: insurance deposit (1)(for VariantA)
 
-        System::set_block_number(1);
+            System::set_block_number(1);
 
-        assert_ok!(Circuit::on_extrinsic_trigger(
-            origin,
-            side_effects,
-            fee,
-            sequential,
-        ));
+            assert_ok!(Circuit::on_extrinsic_trigger(
+                origin,
+                side_effects,
+                fee,
+                sequential,
+            ));
 
         let (xtx_id, _side_effect_a_id) = set_ids(valid_swap_side_effect.clone());
 
-        assert_eq!(
-            Circuit::get_x_exec_signals(xtx_id),
-            XExecSignal {
-                requester: AccountId32::new(hex!(
-                    "0101010101010101010101010101010101010101010101010101010101010101"
-                )),
-                timeouts_at: None,
-                delay_steps_at: None,
-                status: CircuitStatus::Ready,
-                total_reward: Some(fee)
-            }
-        );
+            assert_eq!(
+                Circuit::get_x_exec_signals(xtx_id),
+                XExecSignal {
+                    requester: AccountId32::new(hex!(
+                        "0101010101010101010101010101010101010101010101010101010101010101"
+                    )),
+                    timeouts_at: None,
+                    delay_steps_at: None,
+                    status: CircuitStatus::Ready,
+                    total_reward: Some(fee)
+                }
+            );
 
-        assert_eq!(
-            Circuit::get_full_side_effects(xtx_id),
-            vec![vec![FullSideEffect {
-                input: valid_swap_side_effect.clone(),
-                confirmed: None,
-            }]]
-        );
+            assert_eq!(
+                Circuit::get_full_side_effects(xtx_id),
+                vec![vec![FullSideEffect {
+                    input: valid_swap_side_effect.clone(),
+                    confirmed: None,
+                }]]
+            );
 
         // Confirmation start
         let encoded_swap_transfer_event = orml_tokens::Event::<Test>::Transfer(
@@ -766,24 +801,24 @@ fn circuit_handles_swap_with_insurance() {
             }
         );
 
-        // Confirmation start
-        let encoded_swap_transfer_event = orml_tokens::Event::<Test>::Transfer(
-            as_u32_le(&[0, 1, 2, 3]), // currency_id as u8 bytes [0,1,2,3] -> u32
-            BOB_RELAYER,              // executor - Bob
-            hex!("0606060606060606060606060606060606060606060606060606060606060606").into(), // variant B (dest)
-            2u64, // amount - variant B
-        )
-        .encode();
+            // Confirmation start
+            let encoded_swap_transfer_event = orml_tokens::Event::<Test>::Transfer(
+                as_u32_le(&[0, 1, 2, 3]), // currency_id as u8 bytes [0,1,2,3] -> u32
+                BOB_RELAYER,              // executor - Bob
+                hex!("0606060606060606060606060606060606060606060606060606060606060606").into(), // variant B (dest)
+                2u64, // amount - variant B
+            )
+            .encode();
 
-        let confirmation = ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
-            err: None,
-            output: None,
-            encoded_effect: encoded_swap_transfer_event,
-            inclusion_proof: None,
-            executioner: BOB_RELAYER,
-            received_at: 0,
-            cost: None,
-        };
+            let confirmation = ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
+                err: None,
+                output: None,
+                encoded_effect: encoded_swap_transfer_event,
+                inclusion_proof: None,
+                executioner: BOB_RELAYER,
+                received_at: 0,
+                cost: None,
+            };
 
         assert_ok!(Circuit::confirm_side_effect(
             origin_relayer_bob,
