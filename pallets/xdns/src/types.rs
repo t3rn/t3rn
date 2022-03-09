@@ -23,7 +23,7 @@ use t3rn_primitives::{
     abi::Type, ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
 };
 /// A hash based on encoding the complete XdnsRecord
-pub type XdnsRecordId<T> = <T as frame_system::Config>::Hash;
+pub type XdnsRecordId = [u8; 4];
 
 /// A hash based on encoding the Gateway ID
 pub type XdnsGatewayId<T> = <T as frame_system::Config>::Hash;
@@ -107,7 +107,7 @@ pub struct SideEffectInterface {
 }
 
 impl SideEffectInterface {
-    /// Function that generates an XdnsRecordId hash based on the gateway id
+    /// Function that generates an SideEffectId hash based on the gateway id
     pub fn generate_id<T: Config>(&self) -> SideEffectId<T> {
         T::Hashing::hash(Encode::encode(&self.id).as_ref())
     }
@@ -177,8 +177,8 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
     }
 
     /// Function that generates an XdnsRecordId hash based on the gateway id
-    pub fn generate_id<T: Config>(&self) -> XdnsRecordId<T> {
-        T::Hashing::hash(&self.gateway_id)
+    pub fn generate_id<T: Config>(&self) -> XdnsRecordId {
+        self.gateway_id
     }
 
     pub fn set_last_finalized(&mut self, last_finalized: u64) {
