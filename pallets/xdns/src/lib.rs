@@ -299,9 +299,6 @@ pub mod pallet {
                 .into_iter()
                 .map(|gateway_pointer| {
                     <XDNSRegistry<T>>::get(gateway_pointer.id)
-                    // <XDNSRegistry<T>>::get(T::Hashing::hash(
-                    //     Encode::encode(&gateway_pointer.id).as_ref(),
-                    // ))
                 })
                 .flatten()
                 .collect();
@@ -378,8 +375,6 @@ pub mod pallet {
 
         // Fetches the GatewayABIConfig for a given XDNS record
         pub fn get_abi(chain_id: ChainId) -> Result<GatewayABIConfig, &'static str> {
-            let _xdns_record_id = T::Hashing::hash(Encode::encode(&chain_id).as_ref());
-
             if !<XDNSRegistry<T>>::contains_key(chain_id) {
                 return Err("Xdns record not found");
             }
