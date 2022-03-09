@@ -38,6 +38,7 @@ services:
       --unsafe-ws-external
       --unsafe-rpc-external
       --chain /pdot/rococo-local.raw.json
+      --execution Wasm
 
   bob:
     image: polkadot:release-v0.9.17
@@ -73,6 +74,7 @@ services:
       --unsafe-ws-external
       --unsafe-rpc-external
       --chain /pdot/rococo-local.raw.json
+      --execution Wasm
 
   charlie:
     image: polkadot:release-v0.9.17
@@ -109,6 +111,7 @@ services:
       --unsafe-ws-external
       --unsafe-rpc-external
       --chain /pdot/rococo-local.raw.json
+      --execution Wasm
 
   dave:
     image: polkadot:release-v0.9.17
@@ -146,6 +149,7 @@ services:
       --unsafe-ws-external
       --unsafe-rpc-external
       --chain /pdot/rococo-local.raw.json
+      --execution Wasm
 
   eve:
     image: polkadot:release-v0.9.17
@@ -184,6 +188,7 @@ services:
       --unsafe-ws-external
       --unsafe-rpc-external
       --chain /pdot/rococo-local.raw.json
+      --execution Wasm
 
   t3rn1:
     image: circuit-collator:update_v0.9.17
@@ -219,8 +224,6 @@ services:
       - charlie
       - dave
       - eve
-    environment:
-      - RUST_LOG=debug
     command: >
       --port 33333
       --rpc-port 8833
