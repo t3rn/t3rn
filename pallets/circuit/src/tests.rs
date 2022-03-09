@@ -630,7 +630,7 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
                     input: valid_swap_side_effect.clone(),
                     confirmed: None,
                 }]]
-            );cd
+            );
 
             assert_eq!(
                 Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
