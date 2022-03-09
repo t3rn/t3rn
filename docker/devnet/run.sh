@@ -197,7 +197,7 @@ devnet|dev|net)
   echo "⛓️ setting up collator keystores and initializing parachain onboarding..."
   set_keys
   onboard
-  echo "👀 parachains' onboarding => https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/parachains"
+  echo "👀 parachains onboarding => https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/parachains"
   ;;
 setkeys|keys)
   set_keys
