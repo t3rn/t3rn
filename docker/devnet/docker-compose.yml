@@ -232,7 +232,7 @@ services:
       --unsafe-ws-external
       --unsafe-rpc-external
       --execution Native
-      -lruntime=debug,cumulus-collator=trace,cumulus-network=debug,cumulus-consensus=debug,cumulus-pov-recovery=trace,executor=debug,aura::cumulus=trace,parachain-inherent=trace,cumulus-consensus-relay-chain=trace
+      -lruntime=debug,cumulus-collator=trace,cumulus-network=trace,cumulus-consensus=trace,cumulus-pov-recovery=trace,executor=debug,aura::cumulus=trace,parachain-inherent=trace,cumulus-consensus-relay-chain=trace
       --chain /t3rn/t3rn.raw.json
       --name t3rn1
       --
