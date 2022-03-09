@@ -59,7 +59,6 @@ pub enum GatewayType {
     TxOnly(u32),
 }
 
-
 impl Default for GatewayType {
     fn default() -> GatewayType {
         GatewayType::ProgrammableExternal(0)
