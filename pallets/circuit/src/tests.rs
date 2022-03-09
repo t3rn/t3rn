@@ -155,21 +155,9 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
             let side_effect_a_id =
                 valid_transfer_side_effect.generate_id::<crate::SystemHashing<Test>>();
 
-            // Returns void insurance for that side effect
-            let void_insurance_deposit = InsuranceDeposit {
-                insurance: 0,
-                reward: 0,
-                requester: AccountId32::new(hex!(
-                    "0000000000000000000000000000000000000000000000000000000000000000"
-                )),
-                bonded_relayer: None,
-                status: CircuitStatus::Requested,
-                requested_at: 0,
-            };
-
             assert_eq!(
-                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id).unwrap(),
-                void_insurance_deposit
+                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
+                None
             );
 
             assert_eq!(
@@ -642,23 +630,11 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
                     input: valid_swap_side_effect.clone(),
                     confirmed: None,
                 }]]
-            );
-
-            // Returns void insurance for that side effect
-            let void_insurance_deposit = InsuranceDeposit {
-                insurance: 0,
-                reward: 0,
-                requester: AccountId32::new(hex!(
-                    "0000000000000000000000000000000000000000000000000000000000000000"
-                )),
-                bonded_relayer: None,
-                status: CircuitStatus::Requested,
-                requested_at: 0,
-            };
+            );cd
 
             assert_eq!(
-                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id).unwrap(),
-                void_insurance_deposit
+                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
+                None
             );
 
             fn as_u32_le(array: &[u8; 4]) -> u32 {
