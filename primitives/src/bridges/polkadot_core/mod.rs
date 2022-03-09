@@ -22,9 +22,8 @@ use crate::bridges::runtime as bp_runtime;
 use bp_messages::MessageNonce;
 use bp_runtime::Chain;
 use codec::Compact;
-use frame_support::codec::{Codec, Decode, Encode, Error, Input};
+
 use frame_support::{
-    dispatch::Dispatchable,
     parameter_types,
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
@@ -33,13 +32,12 @@ use frame_support::{
     Blake2_128Concat, RuntimeDebug, StorageHasher, Twox128,
 };
 use frame_system::limits;
-use scale_info::{StaticTypeInfo, Type, TypeInfo};
+
 use sp_core::Hasher as HasherT;
 use sp_runtime::{
     generic,
-    traits::{BlakeTwo256, DispatchInfoOf, IdentifyAccount, Verify},
-    transaction_validity::TransactionValidityError,
-    MultiAddress, MultiSignature, OpaqueExtrinsic, Perbill,
+    traits::{BlakeTwo256, IdentifyAccount, Verify},
+    MultiSignature, OpaqueExtrinsic, Perbill,
 };
 use sp_std::prelude::Vec;
 // Re-export's to avoid extra substrate dependencies in chain-specific crates.
@@ -381,7 +379,6 @@ pub fn account_info_storage_key(id: &AccountId) -> Vec<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sp_runtime::codec::Encode;
 
     // #[test]
     // fn maximal_encoded_account_id_size_is_correct() {

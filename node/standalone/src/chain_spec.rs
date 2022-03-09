@@ -4,7 +4,7 @@
 // };
 use circuit_standalone_runtime::{
     AccountId, AuraConfig, BalancesConfig, BeefyConfig, ContractsRegistryConfig, GenesisConfig,
-    GrandpaConfig, MultiFinalityVerifierConfig, SessionKeys, Signature, SudoConfig, SystemConfig,
+    GrandpaConfig, MultiFinalityVerifierConfig, Signature, SudoConfig, SystemConfig,
     XDNSConfig, WASM_BINARY,
 };
 
@@ -13,7 +13,7 @@ use pallet_xdns::types::{SideEffectInterface, XdnsRecord};
 use sp_core::Encode;
 use t3rn_primitives::abi::Type;
 use t3rn_primitives::bridges::runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID};
-use t3rn_primitives::side_effect::*;
+
 use t3rn_primitives::{GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor};
 
 use log::info;
@@ -74,7 +74,7 @@ fn fetch_xdns_record_from_rpc(
             .await
             .unwrap();
 
-        let runtime_version = client.clone().runtime_version().await.unwrap();
+        let _runtime_version = client.clone().runtime_version().await.unwrap();
         let metadata = jsonrpc_runtime_client::get_metadata(&client.clone())
             .await
             .unwrap();
@@ -99,8 +99,6 @@ fn fetch_xdns_record_from_rpc(
             GatewayGenesisConfig {
                 modules_encoded: Some(modules_vec),
                 extrinsics_version: metadata.extrinsic.version,
-                // signed_extensions: Some(extension_vec),
-                runtime_version,
                 genesis_hash: client.genesis_hash.0.to_vec(),
             },
             gateway_sys_props,

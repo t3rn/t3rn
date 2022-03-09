@@ -34,7 +34,7 @@ fn fetch_xdns_record_from_rpc(
             .await
             .unwrap();
 
-        let runtime_version = client.clone().runtime_version().await.unwrap();
+        let _runtime_version = client.clone().runtime_version().await.unwrap();
         let metadata = jsonrpc_runtime_client::get_metadata(&client.clone())
             .await
             .unwrap();
@@ -59,8 +59,6 @@ fn fetch_xdns_record_from_rpc(
             GatewayGenesisConfig {
                 modules_encoded: Some(modules_vec),
                 extrinsics_version: metadata.extrinsic.version,
-                // signed_extensions: Some(extension_vec),
-                runtime_version,
                 genesis_hash: client.genesis_hash.0.to_vec(),
             },
             gateway_sys_props,
