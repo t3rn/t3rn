@@ -28,6 +28,8 @@ Builds docker images and regenerates chain specs, and collator keys.
 
 Only necessary if any of the runtimes have changed.
 
+To actually have docker images rebuilt, prune them manually in advance, fx `docker image rm circuit-collator:update_v0.9.17 -f`.
+
 ## Topology
 
 <table style="margin-bottom:0;">
