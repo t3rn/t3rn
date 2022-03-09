@@ -197,8 +197,8 @@ case ${1:-devnet} in
 devnet|dev|net)
   mkdir -p ./data/{alice,bob,charlie,dave,eve,t3rn1,t3rn2,pchain1,pchain2}
   docker-compose up > /dev/null &
+  sleep 13s # allow node startup ~ basepath/datadir/keystore creation
   echo "⛓️ setting up collator keystores and initializing parachain onboarding..."
-  sleep 13s # allow node startup
   set_keys
   onboard
   echo "👀 parachains' onboarding => https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/parachains"

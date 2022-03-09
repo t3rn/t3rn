@@ -2,15 +2,17 @@
 
 ##  `./run.sh devnet`
 
-Spins up a rococo local devnet consisting of 5 relay chain validators and 2 collators for each parachain.
+Spins up a full-fledged rococo local devnet consisting of 5 relay chain validators and 2 collators for each parachain.
 
-The `setkeys` and `onboard` commands need to be run for a full fledged relay-parachain topology.
+## `./run.sh cleanup`
 
-##  `./run.sh setkeys`
+Stops all nodes and swipes their base path data directories.
+
+<!-- ## `./run.sh setkeys`
 
 Inserts static collator keys into the nodes' keystores.
 
-Must be run after `./run.sh devnet`.
+Is run as part of `./run.sh devnet`, no manual execution required.
 
 ## `./run.sh onboard`
 
@@ -18,9 +20,7 @@ Initializes registration with the relay chain for both t3rn and pchain.
 
 After [onboarding](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/parachains) is complete the parachains should start to collate.
 
-## `./run.sh cleanup`
-
-Stops all nodes and swipes their base path data directories.
+Also run as part of `./run.sh devnet`, no manual execution required. -->
 
 ## `./run.sh build`
 
