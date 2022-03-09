@@ -176,7 +176,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
-    state_version: 1,
+    // https://github.com/paritytech/cumulus/issues/998
+    // https://github.com/paritytech/substrate/pull/9732
+    // https://github.com/paritytech/substrate/pull/10073
+    state_version: 0, // 0 = old, 1 = new; see above 4 details
 };
 
 /// This determines the average expected block time that we are targeting.
