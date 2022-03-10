@@ -23,9 +23,6 @@ use frame_system::{EventRecord, Phase};
 use t3rn_primitives::abi::*;
 use t3rn_primitives::side_effect::*;
 
-// use t3rn_protocol::side_effects::standards::{
-//     AddLiquiditySideEffectProtocol, SwapSideEffectProtocol, TransferSideEffectProtocol,
-// };
 use t3rn_protocol::side_effects::test_utils::*;
 
 use crate::mock::*;
@@ -36,7 +33,6 @@ use sp_io::TestExternalities;
 use codec::Encode;
 use sp_runtime::AccountId32;
 use sp_std::prelude::*;
-// use crate::mock;
 
 pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);
 pub const BOB_RELAYER: AccountId32 = AccountId32::new([2u8; 32]);
