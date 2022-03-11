@@ -21,7 +21,6 @@ use codec::Encode;
 use frame_support::assert_ok;
 use t3rn_primitives::bridges::test_utils as bp_test_utils;
 
-
 use sp_io::TestExternalities;
 use sp_version::{create_runtime_str, RuntimeVersion};
 
