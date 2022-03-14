@@ -475,6 +475,7 @@ pub struct ExtBuilder {
 
 parameter_types! {
     pub const CircuitPalletId: PalletId = PalletId(*b"pal/circ");
+    pub const SelfGatewayId: [u8; 4] = [3, 3, 3, 3];
 }
 
 impl Config for Test {
@@ -482,6 +483,7 @@ impl Config for Test {
     type Call = Call;
     type WeightInfo = ();
     type PalletId = CircuitPalletId;
+    type SelfGatewayId = SelfGatewayId;
 }
 
 impl ExtBuilder {

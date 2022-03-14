@@ -8,6 +8,7 @@ use sp_runtime::RuntimeDebug as Debug;
 
 type SystemHashing<T> = <T as frame_system::Config>::Hashing;
 pub type XExecSignalId<T> = <T as frame_system::Config>::Hash;
+pub type XExecStepSideEffectId<T> = <T as frame_system::Config>::Hash;
 
 use scale_info::TypeInfo;
 
@@ -99,7 +100,7 @@ impl CircuitStatus {
         let mut highest_post_ready_determined_status = CircuitStatus::Ready;
         let mut lowest_post_ready_determined_status = CircuitStatus::Finished;
 
-        for (_i, full_side_effect) in step.iter().enumerate() {
+        for (_step_cnt, full_side_effect) in step.iter().enumerate() {
             let current_id = full_side_effect.input.generate_id::<SystemHashing<T>>();
             let current_determined_status =
                 Self::determine_insurance_status::<T>(current_id, insurance_deposits);
@@ -228,6 +229,9 @@ pub struct XExecSignal<AccountId, BlockNumber, BalanceOf> {
     /// Has returned status already and what
     pub status: CircuitStatus,
 
+    /// Has returned status already and what
+    pub steps_cnt: (u32, u32),
+
     /// Total reward
     pub total_reward: Option<BalanceOf>,
 }
@@ -247,6 +251,8 @@ impl<
         delay_steps_at: Option<Vec<BlockNumber>>,
         // Total reward
         total_reward: Option<BalanceOf>,
+        // Current steps count
+        steps_cnt: (u32, u32),
     ) -> Self {
         XExecSignal {
             requester: requester.clone(),
@@ -254,11 +260,21 @@ impl<
             delay_steps_at,
             status: Default::default(),
             total_reward,
+            steps_cnt,
         }
     }
 
     pub fn generate_id<T: frame_system::Config>(&self) -> XExecSignalId<T> {
         SystemHashing::<T>::hash(Encode::encode(self).as_ref())
+    }
+
+    pub fn generate_step_id<T: frame_system::Config>(
+        xtx_id: XExecSignalId<T>,
+        n_step: usize,
+    ) -> XExecStepSideEffectId<T> {
+        let mut xtx_id_buf = xtx_id.encode();
+        xtx_id_buf.append(&mut (n_step as u32).encode());
+        SystemHashing::<T>::hash(xtx_id_buf.to_vec().as_ref())
     }
 
     pub fn setup_fresh<T: frame_system::Config>(
@@ -274,7 +290,7 @@ impl<
         XExecSignalId<T>,
         XExecSignal<T::AccountId, T::BlockNumber, BalanceOf>,
     ) {
-        let signal = XExecSignal::new(requester, timeouts_at, delay_steps_at, total_reward);
+        let signal = XExecSignal::new(requester, timeouts_at, delay_steps_at, total_reward, (0, 0));
         let id = signal.generate_id::<T>();
         (id, signal)
     }

@@ -169,7 +169,8 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                     timeouts_at: None,
                     delay_steps_at: None,
                     status: CircuitStatus::Ready,
-                    total_reward: Some(fee)
+                    total_reward: Some(fee),
+                    steps_cnt: (1, 1),
                 }
             );
 
@@ -392,7 +393,8 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
                     timeouts_at: None,
                     delay_steps_at: None,
                     status: CircuitStatus::PendingInsurance,
-                    total_reward: Some(fee)
+                    total_reward: Some(fee),
+                    steps_cnt: (1, 1)
                 }
             );
 
@@ -479,7 +481,8 @@ fn circuit_handles_insurance_deposit_for_transfers() {
                     timeouts_at: None,
                     delay_steps_at: None,
                     status: CircuitStatus::PendingInsurance,
-                    total_reward: Some(fee)
+                    total_reward: Some(fee),
+                    steps_cnt: (1, 1),
                 }
             );
 
@@ -524,7 +527,8 @@ fn circuit_handles_insurance_deposit_for_transfers() {
                     timeouts_at: None,
                     delay_steps_at: None,
                     status: CircuitStatus::Ready,
-                    total_reward: Some(fee)
+                    total_reward: Some(fee),
+                    steps_cnt: (1, 1),
                 }
             );
 
@@ -620,7 +624,8 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
                     timeouts_at: None,
                     delay_steps_at: None,
                     status: CircuitStatus::Ready,
-                    total_reward: Some(fee)
+                    total_reward: Some(fee),
+                    steps_cnt: (1, 1),
                 }
             );
 

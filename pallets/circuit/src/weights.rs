@@ -33,6 +33,7 @@ pub trait WeightInfo {
     fn on_extrinsic_trigger() -> Weight;
     fn bond_insurance_deposit() -> Weight;
     fn confirm_side_effect() -> Weight;
+    fn execute_side_effects_via_circuit() -> Weight;
 }
 
 /// Weights for pallet_circuit_circuit_portal using the Substrate node and recommended hardware.
@@ -50,6 +51,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
     fn bond_insurance_deposit() -> Weight {
         60_000_000_u64
     }
+    fn execute_side_effects_via_circuit() -> Weight {
+        60_000_000_u64
+    }
 }
 
 // For backwards compatibility and tests
@@ -64,6 +68,9 @@ impl WeightInfo for () {
         60_000_000_u64
     }
     fn bond_insurance_deposit() -> Weight {
+        60_000_000_u64
+    }
+    fn execute_side_effects_via_circuit() -> Weight {
         60_000_000_u64
     }
 }
