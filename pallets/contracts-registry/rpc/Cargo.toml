@@ -13,18 +13,18 @@ readme = "README.md"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "2.0.0" }
+codec = { package = "parity-scale-codec", version = "2.2.0" }
 jsonrpc-core = "15.0.0"
 jsonrpc-core-client = "15.0.0"
 jsonrpc-derive = "15.0.0"
 
-serde = { version = "1.0.124", features = ["derive"] }
+serde = { version = "1.0.136", features = ["derive"] }
 
-frame-system = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
-sp-rpc = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13' }
-pallet-contracts-registry-rpc-runtime-api = { version = "1.0.0-aplha.0", path = "runtime-api" }
-pallet-contracts-registry = { version = "1.0.0-alpha.0", path = ".." }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
+sp-api = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
+sp-rpc = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
+pallet-contracts-registry-rpc-runtime-api = { path = "runtime-api" }
+pallet-contracts-registry = { path = ".." }

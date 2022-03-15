@@ -38,14 +38,16 @@
 
 use crate::weights::WeightInfo;
 
-use t3rn_primitives::bridges::header_chain as bp_header_chain;
-use t3rn_primitives::bridges::runtime as bp_runtime;
-
 use bp_header_chain::justification::GrandpaJustification;
 use bp_header_chain::InitializationData;
 use bp_runtime::{BlockNumberOf, Chain, ChainId, HashOf, HasherOf, HeaderOf};
+
 use finality_grandpa::voter_set::VoterSet;
 use frame_support::ensure;
+use frame_support::pallet_prelude::*;
+use t3rn_primitives::bridges::header_chain as bp_header_chain;
+use t3rn_primitives::bridges::runtime as bp_runtime;
+
 use frame_system::{ensure_signed, RawOrigin};
 use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
 use sp_runtime::traits::{BadOrigin, Header as HeaderT, Zero};
@@ -75,7 +77,7 @@ pub type BridgedHeader<T, I> = HeaderOf<<T as Config<I>>::BridgedChain>;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use frame_support::pallet_prelude::*;
+
     use frame_support::traits::Time;
     use frame_system::pallet_prelude::*;
     use sp_std::convert::TryInto;
@@ -110,6 +112,7 @@ pub mod pallet {
     }
 
     #[pallet::pallet]
+    #[pallet::without_storage_info]
     pub struct Pallet<T, I = ()>(PhantomData<(T, I)>);
 
     #[pallet::hooks]
@@ -436,21 +439,25 @@ pub mod pallet {
 
     /// Hash of the header used to bootstrap the pallet.
     #[pallet::storage]
+    #[pallet::getter(fn get_initial_hash_map)]
     pub(super) type InitialHashMap<T: Config<I>, I: 'static = ()> =
         StorageMap<_, Blake2_256, ChainId, BridgedBlockHash<T, I>>;
 
     /// Map of hashes of the best finalized header.
     #[pallet::storage]
+    #[pallet::getter(fn get_bridged_block_hash)]
     pub(super) type BestFinalizedMap<T: Config<I>, I: 'static = ()> =
         StorageMap<_, Blake2_256, ChainId, BridgedBlockHash<T, I>>;
 
     /// A ring buffer of imported hashes. Ordered by the insertion time.
     #[pallet::storage]
+    #[pallet::getter(fn get_multi_imported_hashes)]
     pub(super) type MultiImportedHashes<T: Config<I>, I: 'static = ()> =
         StorageDoubleMap<_, Blake2_256, ChainId, Identity, u32, BridgedBlockHash<T, I>>;
 
     /// Current ring buffer position.
     #[pallet::storage]
+    #[pallet::getter(fn get_multi_imported_hashes_pointer)]
     pub(super) type MultiImportedHashesPointer<T: Config<I>, I: 'static = ()> =
         StorageMap<_, Blake2_256, ChainId, u32>;
 
@@ -992,7 +999,9 @@ mod tests {
 
         let current_number = frame_system::Pallet::<TestRuntime>::block_number();
         frame_system::Pallet::<TestRuntime>::set_block_number(current_number + 1);
-        let _ = Pallet::<TestRuntime>::on_initialize(current_number);
+        let _ = <Pallet<TestRuntime> as OnInitialize<
+            <TestRuntime as frame_system::Config>::BlockNumber,
+        >>::on_initialize(current_number);
     }
 
     fn change_log(delay: u64) -> Digest {

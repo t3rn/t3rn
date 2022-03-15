@@ -41,13 +41,7 @@ pub trait Chain: ChainBase + Clone {
     const AVERAGE_BLOCK_INTERVAL: Duration;
 
     /// The user account identifier type for the runtime.
-    type AccountId: Parameter
-        + Member
-        + MaybeSerializeDeserialize
-        + Debug
-        + MaybeDisplay
-        + Ord
-        + Default;
+    type AccountId: Parameter + Member + MaybeSerializeDeserialize + Debug + MaybeDisplay + Ord;
     /// Index of a transaction used by the chain.
     type Index: Parameter
         + Member

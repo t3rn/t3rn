@@ -33,11 +33,15 @@ use sp_runtime::RuntimeDebug;
 pub use t3rn_primitives::{
     abi::{GatewayABIConfig, HasherAlgo as HA},
     side_effect::{ConfirmedSideEffect, FullSideEffect, SideEffect, SideEffectId},
-    transfers::BalanceOf,
+    // transfers::BalanceOf,
     volatile::LocalState,
     xtx::{Xtx, XtxId},
-    GatewayType, *,
+    GatewayType,
+    *,
 };
+
+type BalanceOf<T> =
+    <<T as EscrowTrait>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 use t3rn_protocol::side_effects::confirm::ethereum::EthereumSideEffectsParser;
 use t3rn_protocol::side_effects::confirm::protocol::*;
@@ -109,7 +113,7 @@ pub mod pallet {
             <T as frame_system::Config>::BlockNumber,
             BalanceOf<T>,
         >,
-        ValueQuery,
+        OptionQuery,
     >;
 
     /// Current Circuit's context of active transactions
@@ -125,7 +129,7 @@ pub mod pallet {
             <T as frame_system::Config>::BlockNumber,
             BalanceOf<T>,
         >,
-        ValueQuery,
+        OptionQuery,
     >;
 
     /// Current Circuit's context of active full side effects (requested + confirmation proofs)
@@ -137,7 +141,7 @@ pub mod pallet {
     /// Current Circuit's context of active full side effects (requested + confirmation proofs)
     #[pallet::storage]
     #[pallet::getter(fn get_local_xtx_state)]
-    pub type LocalXtxStates<T> = StorageMap<_, Identity, XExecSignalId<T>, LocalState, ValueQuery>;
+    pub type LocalXtxStates<T> = StorageMap<_, Identity, XExecSignalId<T>, LocalState, OptionQuery>;
 
     /// Current Circuit's context of active full side effects (requested + confirmation proofs)
     #[pallet::storage]
@@ -155,7 +159,7 @@ pub mod pallet {
                 >,
             >,
         >,
-        ValueQuery,
+        OptionQuery,
     >;
 
     /// This pallet's configuration trait
@@ -166,6 +170,7 @@ pub mod pallet {
         + pallet_circuit_portal::Config
         + pallet_xdns::Config
         + orml_tokens::Config
+        + EscrowTrait
     {
         /// The Circuit's pallet id
         #[pallet::constant]
@@ -183,6 +188,7 @@ pub mod pallet {
 
     #[pallet::pallet]
     #[pallet::generate_store(pub (super) trait Store)]
+    #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
     #[pallet::hooks]
@@ -531,13 +537,20 @@ impl<T: Config> Pallet<T> {
                     if !<Self as Store>::XExecSignals::contains_key(id) {
                         return Err(Error::<T>::SetupFailedUnknownXtx);
                     }
-                    let xtx = <Self as Store>::XExecSignals::get(id);
+                    let xtx = <Self as Store>::XExecSignals::get(id)
+                        .ok_or(Error::<T>::SetupFailedIncorrectXtxStatus)?;
                     if xtx.status != CircuitStatus::PendingInsurance {
                         return Err(Error::<T>::SetupFailedIncorrectXtxStatus);
                     }
                     let insurance_deposits = <Self as Store>::XtxInsuranceLinks::get(id)
                         .iter()
-                        .map(|&se_id| (se_id, <Self as Store>::InsuranceDeposits::get(id, se_id)))
+                        .map(|&se_id| {
+                            (
+                                se_id,
+                                <Self as Store>::InsuranceDeposits::get(id, se_id)
+                                    .expect("Should not be state inconsistency"),
+                            )
+                        })
                         .collect::<Vec<(
                             SideEffectId<T>,
                             InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
@@ -560,20 +573,29 @@ impl<T: Config> Pallet<T> {
                     if !<Self as Store>::XExecSignals::contains_key(id) {
                         return Err(Error::<T>::SetupFailedUnknownXtx);
                     }
-                    let xtx = <Self as Store>::XExecSignals::get(id);
+                    let xtx = <Self as Store>::XExecSignals::get(id)
+                        .ok_or(Error::<T>::SetupFailedIncorrectXtxStatus)?;
                     if xtx.status < CircuitStatus::Ready {
                         return Err(Error::<T>::SetupFailedIncorrectXtxStatus);
                     }
                     let insurance_deposits = <Self as Store>::XtxInsuranceLinks::get(id)
                         .iter()
-                        .map(|&se_id| (se_id, <Self as Store>::InsuranceDeposits::get(id, se_id)))
+                        .map(|&se_id| {
+                            (
+                                se_id,
+                                <Self as Store>::InsuranceDeposits::get(id, se_id)
+                                    .expect("Should not be state inconsistency"),
+                            )
+                        })
                         .collect::<Vec<(
                             SideEffectId<T>,
                             InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
                         )>>();
 
-                    let full_side_effects = <Self as Store>::FullSideEffects::get(id);
-                    let local_state = <Self as Store>::LocalXtxStates::get(id);
+                    let full_side_effects = <Self as Store>::FullSideEffects::get(id)
+                        .ok_or(Error::<T>::SetupFailedIncorrectXtxStatus)?;
+                    let local_state = <Self as Store>::LocalXtxStates::get(id)
+                        .ok_or(Error::<T>::SetupFailedIncorrectXtxStatus)?;
 
                     Ok(LocalXtxCtx {
                         local_state,
@@ -656,7 +678,7 @@ impl<T: Config> Pallet<T> {
                     <Self as Store>::InsuranceDeposits::mutate(
                         local_ctx.xtx_id,
                         side_effect_id,
-                        |x| *x = insurance_deposit,
+                        |x| *x = Some(insurance_deposit),
                     );
                     let new_status = CircuitStatus::determine_effects_insurance_status::<T>(
                         &local_ctx.insurance_deposits,
@@ -666,7 +688,7 @@ impl<T: Config> Pallet<T> {
                         local_ctx.xtx.status = new_status;
 
                         <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
-                            *x = local_ctx.xtx.clone()
+                            *x = Some(local_ctx.xtx.clone())
                         });
                         Ok((Some(local_ctx.xtx.clone()), None))
                     } else {
@@ -679,7 +701,7 @@ impl<T: Config> Pallet<T> {
             CircuitStatus::Ready | CircuitStatus::PendingExecution => {
                 // Update set of full side effects assuming the new confirmed has appeared
                 <Self as Store>::FullSideEffects::mutate(local_ctx.xtx_id, |x| {
-                    *x = local_ctx.full_side_effects.clone()
+                    *x = Some(local_ctx.full_side_effects.clone())
                 });
 
                 let new_status = CircuitStatus::determine_xtx_status::<T>(
@@ -690,7 +712,7 @@ impl<T: Config> Pallet<T> {
                 if new_status != local_ctx.xtx.status {
                     local_ctx.xtx.status = new_status;
                     <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
-                        *x = local_ctx.xtx.clone()
+                        *x = Some(local_ctx.xtx.clone())
                     });
                     Ok((
                         Some(local_ctx.xtx.clone()),

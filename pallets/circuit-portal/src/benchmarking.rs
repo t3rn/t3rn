@@ -38,8 +38,6 @@ fn insert_default_xdns_record<T: pallet_xdns::Config>() {
 
     let gateway_genesis = GatewayGenesisConfig {
         modules_encoded: None,
-        // signed_extensions: None,
-        runtime_version: TEST_RUNTIME_VERSION,
         extrinsics_version: 0u8,
         genesis_hash: Default::default(),
     };
@@ -80,8 +78,6 @@ benchmarks! {
 
         let gateway_genesis = GatewayGenesisConfig {
             modules_encoded: None,
-            // signed_extensions: None,
-            runtime_version: TEST_RUNTIME_VERSION,
             genesis_hash: Default::default(),
             extrinsics_version: 0u8,
         };
@@ -114,8 +110,6 @@ benchmarks! {
 
         let gateway_genesis = GatewayGenesisConfig {
             modules_encoded: None,
-            // signed_extensions: None,
-            runtime_version: TEST_RUNTIME_VERSION,
             genesis_hash: Default::default(),
             extrinsics_version: 0u8,
         };
@@ -148,8 +142,6 @@ benchmarks! {
 
         let gateway_genesis = GatewayGenesisConfig {
             modules_encoded: None,
-            // signed_extensions: None,
-            runtime_version: TEST_RUNTIME_VERSION,
             genesis_hash: Default::default(),
             extrinsics_version: 0u8,
         };
@@ -182,8 +174,6 @@ benchmarks! {
 
         let gateway_genesis = GatewayGenesisConfig {
             modules_encoded: None,
-            // signed_extensions: None,
-            runtime_version: TEST_RUNTIME_VERSION,
             genesis_hash: Default::default(),
             extrinsics_version: 0u8,
         };
