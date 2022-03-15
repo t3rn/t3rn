@@ -76,6 +76,8 @@ pub mod weights;
 
 pub mod state;
 
+pub mod escrow;
+
 pub use t3rn_protocol::side_effects::protocol::SideEffectConfirmationProtocol;
 
 /// Defines application identifier for crypto keys of this module.
@@ -92,6 +94,7 @@ use crate::state::*;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
+    use crate::escrow::Escrow;
     use frame_support::pallet_prelude::*;
     use frame_support::traits::Get;
     use frame_support::PalletId;
@@ -445,17 +448,13 @@ pub mod pallet {
             let encoded_4b_action: [u8; 4] =
                 Decode::decode(&mut side_effect.encoded_action.encode().as_ref())
                     .expect("Encoded Type was already validated before saving");
-            let actionable_call: Box<<T as Config>::Call> = Self::actionable_with_vendor(
-                GatewayVendor::Substrate,
-                GatewayType::OnCircuit(0),
+
+            Escrow::<T>::exec(
                 &encoded_4b_action,
                 side_effect.encoded_args,
+                Self::account_id(),
+                relayer,
             )?;
-
-            actionable_call
-                .clone()
-                .dispatch(origin)
-                .map_err(|e| e.error)?;
 
             Ok(().into())
         }
@@ -566,6 +565,12 @@ pub mod pallet {
                     >,
                 >,
             >,
+        ),
+        EscrowTransfer(
+            // ToDo: Inspect if Xtx needs to be here and how to process from protocol
+            T::AccountId, // from
+            T::AccountId, // to
+            BalanceOf<T>, // value
         ),
     }
 
