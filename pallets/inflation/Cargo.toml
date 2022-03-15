@@ -24,8 +24,11 @@ frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/parityte
 sp-runtime = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.13" }
 
 ## substrate deps
+sp-std = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.13" }
 pallet-balances = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.13", default-features = false }
 pallet-staking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.13", default-features = false }
+
+fixed = { git = "https://github.com/encointer/substrate-fixed", package = "substrate-fixed", default-features = false }
 
 [dev-dependencies]
 sp-core = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.13" }
