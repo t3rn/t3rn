@@ -33,12 +33,6 @@ use sp_io::TestExternalities;
 use codec::Encode;
 use sp_runtime::AccountId32;
 use sp_std::prelude::*;
-// use crate::mock;
-
-pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);
-pub const BOB_RELAYER: AccountId32 = AccountId32::new([2u8; 32]);
-pub const CHARLIE: AccountId32 = AccountId32::new([3u8; 32]);
-pub const DJANGO: AccountId32 = AccountId32::new([4u8; 32]);
 
 #[test]
 fn on_extrinsic_trigger_works_with_empty_side_effects() {
