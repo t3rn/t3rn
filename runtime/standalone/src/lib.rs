@@ -9,11 +9,6 @@ use t3rn_primitives::bridges::chain_circuit as bp_circuit;
 use t3rn_primitives::bridges::messages as bp_messages;
 use t3rn_primitives::bridges::runtime as bp_runtime;
 
-use pallet_evm::{
-    EVMCurrencyAdapter, EnsureAddressNever, EnsureAddressRoot, FeeCalculator, GasWeightMapping,
-    HashedAddressMapping, IdentityAddressMapping, OnChargeEVMTransaction, Runner,
-};
-
 // pub mod gateway_messages;
 
 // use crate::gateway_messages::{ToGatewayMessagePayload, WithGatewayMessageBridge};
@@ -49,6 +44,11 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use ethereum_light_client::EthereumDifficultyConfig;
+
+use pallet_evm::{
+    EVMCurrencyAdapter, EnsureAddressNever, EnsureAddressRoot, FeeCalculator, GasWeightMapping,
+    IdentityAddressMapping, OnChargeEVMTransaction, Runner,
+};
 
 // use volatile_vm::DispatchRuntimeCall;
 
@@ -380,6 +380,15 @@ impl pallet_evm::FeeCalculator for FixedGasPrice {
     }
 }
 
+pub struct HashedAddressMapping;
+impl pallet_evm::AddressMapping<AccountId> for HashedAddressMapping {
+    fn into_account_id(address: H160) -> AccountId {
+        let mut data = [0u8; 32];
+        data[0..20].copy_from_slice(&address[..]);
+        AccountId::from(Into::<[u8; 32]>::into(data))
+    }
+}
+
 pub struct FindAuthorTruncated<F>(PhantomData<F>);
 impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
     fn find_author<'a, I>(digests: I) -> Option<H160>
@@ -402,7 +411,7 @@ impl pallet_evm::Config for Runtime {
     type CallOrigin = EnsureAddressRoot<Self::AccountId>;
 
     type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
-    type AddressMapping = HashedAddressMapping<BlakeTwo256>;
+    type AddressMapping = HashedAddressMapping;
     type Currency = Balances;
 
     type Event = Event;
@@ -980,6 +989,39 @@ impl_runtime_apis! {
         }
     }
 
+    impl pallet_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
+        for Runtime
+    {
+        fn call(
+            origin: AccountId,
+            dest: AccountId,
+            value: Balance,
+            gas_limit: u64,
+            input_data: Vec<u8>,
+        ) -> pallet_contracts_primitives::ContractExecResult {
+            Contracts::bare_call(origin, dest, value, gas_limit, input_data, CONTRACTS_DEBUG_OUTPUT)
+        }
+
+        fn instantiate(
+            origin: AccountId,
+            endowment: Balance,
+            gas_limit: u64,
+            code: pallet_contracts_primitives::Code<Hash>,
+            data: Vec<u8>,
+            salt: Vec<u8>,
+        ) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId>
+        {
+            Contracts::bare_instantiate(origin, endowment, gas_limit, code, data, salt, CONTRACTS_DEBUG_OUTPUT)
+        }
+
+        fn get_storage(
+            address: AccountId,
+            key: [u8; 32],
+        ) -> pallet_contracts_primitives::GetStorageResult {
+            Contracts::get_storage(address, key)
+        }
+    }
+
     // impl pallet_xdns_rpc_runtime_api::XdnsRuntimeApi<Block, AccountId> for Runtime
     // {
     //     fn fetch_records() -> FetchXdnsRecordsResponse<AccountId> {
@@ -1026,39 +1068,6 @@ impl_runtime_apis! {
     //         _input_data: Vec<u8>,
     //     ) -> ComposableExecResult { unimplemented!() }
     // }
-
-    impl pallet_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
-        for Runtime
-    {
-        fn call(
-            origin: AccountId,
-            dest: AccountId,
-            value: Balance,
-            gas_limit: u64,
-            input_data: Vec<u8>,
-        ) -> pallet_contracts_primitives::ContractExecResult {
-            Contracts::bare_call(origin, dest, value, gas_limit, input_data, CONTRACTS_DEBUG_OUTPUT)
-        }
-
-        fn instantiate(
-            origin: AccountId,
-            endowment: Balance,
-            gas_limit: u64,
-            code: pallet_contracts_primitives::Code<Hash>,
-            data: Vec<u8>,
-            salt: Vec<u8>,
-        ) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId>
-        {
-            Contracts::bare_instantiate(origin, endowment, gas_limit, code, data, salt, CONTRACTS_DEBUG_OUTPUT)
-        }
-
-        fn get_storage(
-            address: AccountId,
-            key: [u8; 32],
-        ) -> pallet_contracts_primitives::GetStorageResult {
-            Contracts::get_storage(address, key)
-        }
-    }
 
     #[cfg(feature = "runtime-benchmarks")]
     impl frame_benchmarking::Benchmark<Block> for Runtime {

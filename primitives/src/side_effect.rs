@@ -1,5 +1,8 @@
+use crate::abi::Type;
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 use sp_runtime::traits::Zero;
 use sp_runtime::RuntimeDebug;
 use sp_std::vec::Vec;
@@ -31,6 +34,28 @@ impl<
 
     pub fn id_as_bytes<Hasher: sp_core::Hasher>(id: <Hasher as sp_core::Hasher>::Out) -> Bytes {
         id.as_ref().to_vec()
+    }
+}
+
+pub type EventSignature = Vec<u8>;
+pub type SideEffectName = Vec<u8>;
+
+#[derive(Clone, Debug, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct SideEffectInterface {
+    pub id: [u8; 4],
+    pub name: SideEffectName,
+    pub argument_abi: Vec<Type>,
+    pub argument_to_state_mapper: Vec<EventSignature>,
+    pub confirm_events: Vec<EventSignature>,
+    pub escrowed_events: Vec<EventSignature>,
+    pub commit_events: Vec<EventSignature>,
+    pub revert_events: Vec<EventSignature>,
+}
+
+impl SideEffectInterface {
+    pub fn generate_id<Hasher: sp_core::Hasher>(&self) -> <Hasher as sp_core::Hasher>::Out {
+        Hasher::hash(Encode::encode(self).as_ref())
     }
 }
 

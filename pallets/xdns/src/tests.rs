@@ -23,7 +23,7 @@ use codec::Decode;
 use frame_support::{assert_err, assert_noop, assert_ok};
 use frame_system::Origin;
 use sp_runtime::DispatchError;
-use t3rn_primitives::{GatewayType, GatewayVendor};
+use t3rn_primitives::{abi::Type, GatewayType, GatewayVendor};
 
 #[test]
 fn genesis_should_seed_circuit_gateway_polkadot_and_kusama_nodes() {
@@ -67,6 +67,121 @@ fn should_add_a_new_xdns_record_if_it_doesnt_exist() {
 }
 
 #[test]
+fn should_not_add_a_new_side_effect_if_it_exist() {
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .build()
+        .execute_with(|| {
+            assert_noop!(
+                XDNS::add_side_effect(
+                    Origin::<Test>::Root.into(),
+                    *b"aliq",
+                    b"add_liquidity".to_vec(),
+                    vec![
+                        Type::DynamicAddress,    // argument_0: caller
+                        Type::DynamicAddress,    // argument_1: to
+                        Type::DynamicBytes,      // argument_2: asset_left
+                        Type::DynamicBytes,      // argument_3: asset_right
+                        Type::DynamicBytes,      // argument_4: liquidity_token
+                        Type::Value,             // argument_5: amount_left
+                        Type::Value,             // argument_6: amount_right
+                        Type::Value,             // argument_7: amount_liquidity_token
+                        Type::OptionalInsurance, // argument_8: insurance
+                    ],
+                    vec![
+                        b"caller".to_vec(),
+                        b"to".to_vec(),
+                        b"asset_left".to_vec(),
+                        b"assert_right".to_vec(),
+                        b"liquidity_token".to_vec(),
+                        b"amount_left".to_vec(),
+                        b"amount_right".to_vec(),
+                        b"amount_liquidity_token".to_vec(),
+                        b"insurance".to_vec(),
+                    ],
+                    vec![
+                        b"ExecuteToken(executor,to,liquidity_token,amount_liquidity_token)"
+                            .to_vec()
+                    ],
+                    vec![
+                        b"ExecuteToken(xtx_id,to,liquidity_token,amount_liquidity_token)".to_vec()
+                    ],
+                    vec![
+                        b"MultiTransfer(executor,to,liquidity_token,amount_liquidity_token)"
+                            .to_vec()
+                    ],
+                    vec![
+                        b"MultiTransfer(executor,caller,asset_left,amount_left)".to_vec(),
+                        b"MultiTransfer(executor,caller,asset_right,amount_right)".to_vec()
+                    ]
+                ),
+                crate::pallet::Error::<Test>::SideEffectInterfaceAlreadyExists
+            );
+            assert_eq!(CustomSideEffects::<Test>::iter().count(), 0);
+        });
+}
+
+#[test]
+fn should_add_standard_side_effects() {
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .build()
+        .execute_with(|| {
+            assert_eq!(StandardSideEffects::<Test>::iter().count(), 5);
+        });
+}
+
+#[test]
+fn should_add_a_new_side_effect_if_it_doesnt_exist() {
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .build()
+        .execute_with(|| {
+            assert_ok!(XDNS::add_side_effect(
+                Origin::<Test>::Root.into(),
+                *b"cust",
+                b"custom_side_effect".to_vec(),
+                vec![
+                    Type::DynamicAddress,    // argument_0: caller
+                    Type::DynamicAddress,    // argument_1: to
+                    Type::DynamicBytes,      // argument_2: asset_left
+                    Type::DynamicBytes,      // argument_3: asset_right
+                    Type::DynamicBytes,      // argument_4: liquidity_token
+                    Type::Value,             // argument_5: amount_left
+                    Type::Value,             // argument_6: amount_right
+                    Type::Value,             // argument_7: amount_liquidity_token
+                    Type::OptionalInsurance, // argument_8: insurance
+                ],
+                vec![
+                    b"caller".to_vec(),
+                    b"to".to_vec(),
+                    b"asset_left".to_vec(),
+                    b"assert_right".to_vec(),
+                    b"liquidity_token".to_vec(),
+                    b"amount_left".to_vec(),
+                    b"amount_right".to_vec(),
+                    b"amount_liquidity_token".to_vec(),
+                    b"insurance".to_vec(),
+                ],
+                vec![b"ExecuteToken(executor,to,liquidity_token,amount_liquidity_token)".to_vec()],
+                vec![b"ExecuteToken(xtx_id,to,liquidity_token,amount_liquidity_token)".to_vec()],
+                vec![b"MultiTransfer(executor,to,liquidity_token,amount_liquidity_token)".to_vec()],
+                vec![
+                    b"MultiTransfer(executor,caller,asset_left,amount_left)".to_vec(),
+                    b"MultiTransfer(executor,caller,asset_right,amount_right)".to_vec()
+                ]
+            ));
+            assert_eq!(CustomSideEffects::<Test>::iter().count(), 1);
+            let side_effect = CustomSideEffects::<Test>::get(
+                <Test as frame_system::Config>::Hashing::hash(b"cust"),
+            )
+            .unwrap();
+            assert_eq!(side_effect.get_id(), *b"cust");
+            assert_eq!(side_effect.get_name(), *b"custom_side_effect");
+        });
+}
+
+#[test]
 fn should_not_add_a_new_xdns_record_if_it_already_exists() {
     ExtBuilder::default()
         .with_default_xdns_records()
@@ -106,6 +221,15 @@ fn should_purge_a_xdns_record_successfully() {
             assert_eq!(XDNSRegistry::<Test>::iter().count(), 3);
             assert!(XDNSRegistry::<Test>::get(gateway_hash).is_none());
         });
+}
+
+#[test]
+fn finds_correct_amount_of_allowed_side_effects() {
+    ExtBuilder::default()
+        .with_default_xdns_records()
+        .with_standard_side_effects()
+        .build()
+        .execute_with(|| assert_eq!(XDNS::allowed_side_effects(b"circ").iter().count(), 2));
 }
 
 #[test]
