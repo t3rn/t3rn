@@ -15,8 +15,10 @@
 // along with Parity Bridges Common.  If not, see <http://www.gnu.org/licenses/>.
 
 #![cfg_attr(not(feature = "std"), no_std)]
+
 use crate::bridges::messages as bp_messages;
 use crate::bridges::runtime as bp_runtime;
+use std::fmt::{Debug, Formatter};
 
 use bp_messages::MessageNonce;
 use bp_runtime::Chain;
@@ -31,7 +33,7 @@ use frame_support::{
     Blake2_128Concat, RuntimeDebug, StorageHasher, Twox128,
 };
 use frame_system::limits;
-use scale_info::{StaticTypeInfo, TypeInfo};
+use scale_info::{StaticTypeInfo, Type, TypeInfo};
 use sp_core::Hasher as HasherT;
 use sp_runtime::{
     generic,
@@ -269,25 +271,25 @@ impl<Call> SignedExtensions<Call> {
         }
     }
 }
-
-impl<Call> sp_runtime::traits::SignedExtension for SignedExtensions<Call>
-where
-    Call: codec::Codec + sp_std::fmt::Debug + Sync + Send + Clone + Eq + PartialEq + StaticTypeInfo,
-    Call: Dispatchable,
-{
-    const IDENTIFIER: &'static str = "Not needed.";
-
-    type AccountId = AccountId;
-    type Call = Call;
-    type AdditionalSigned = AdditionalSigned;
-    type Pre = ();
-
-    fn additional_signed(
-        &self,
-    ) -> Result<Self::AdditionalSigned, frame_support::unsigned::TransactionValidityError> {
-        Ok(self.additional_signed)
-    }
-}
+//
+// impl<Call> sp_runtime::traits::SignedExtension for SignedExtensions<Call>
+// where
+//     Call: codec::Codec + sp_std::fmt::Debug + Sync + Send + Clone + Eq + PartialEq + StaticTypeInfo,
+//     Call: Dispatchable,
+// {
+//     const IDENTIFIER: &'static str = "Not needed.";
+//
+//     type AccountId = AccountId;
+//     type Call = Call;
+//     type AdditionalSigned = AdditionalSigned;
+//     type Pre = ();
+//
+//     fn additional_signed(
+//         &self,
+//     ) -> Result<Self::AdditionalSigned, frame_support::unsigned::TransactionValidityError> {
+//         Ok(self.additional_signed)
+//     }
+// }
 
 /// Polkadot-like chain.
 #[derive(RuntimeDebug)]
