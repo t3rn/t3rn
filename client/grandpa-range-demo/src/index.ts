@@ -5,10 +5,10 @@ async function main() {
   const listener: Listener = new Listener()
   const relayer: Relayer = new Relayer()
 
-  Listener.debug('endpoint', listener.endpoint)
-  Relayer.debug('endpoint', relayer.endpoint)
-  Listener.debug('gateway id', listener.gatewayId.toString())
-  Listener.debug('range size', listener.rangeSize)
+  Listener.debug('🦅 remote endpoint', listener.endpoint)
+  Relayer.debug('⚡ circuit endpoint', relayer.endpoint)
+  Listener.debug('⛩️  gateway id', listener.gatewayId.toString())
+  Listener.debug('🏔️  range size', listener.rangeSize)
 
   await listener.init()
 
