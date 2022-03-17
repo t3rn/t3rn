@@ -160,17 +160,21 @@ pub mod pallet {
                 <Error<T, I>>::TooManyRequests
             );
 
-            log::debug!("Going to try and finalize header {:?} gateway {:?}", finality_target, gateway_id);
+            log::debug!(
+                "Going to try and finalize header {:?} gateway {:?}",
+                finality_target,
+                gateway_id
+            );
 
             let (hash, number) = (finality_target.hash(), finality_target.number());
 
             let best_finalized = <MultiImportedHeaders<T, I>>::get(
-				gateway_id,
-				<BestFinalizedMap<T, I>>::get(gateway_id)
-                  // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
-				  // `ImportedHeaders` must contain an entry for `BestFinalized`.
-                  .ok_or_else(|| <Error<T, I>>::NoFinalizedHeader)?
-			)
+                gateway_id,
+                <BestFinalizedMap<T, I>>::get(gateway_id)
+                    // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
+                    // `ImportedHeaders` must contain an entry for `BestFinalized`.
+                    .ok_or_else(|| <Error<T, I>>::NoFinalizedHeader)?,
+            )
             // In order to reach this point the bridge must have been initialized for given gateway.
             .ok_or_else(|| <Error<T, I>>::InvalidAnchorHeader)?;
 
@@ -592,7 +596,7 @@ pub mod pallet {
         // Submitted anchor header(verified header stored on circuit) was not found
         InvalidAnchorHeader,
         // No finalized header known for the corresponding gateway.
-        NoFinalizedHeader
+        NoFinalizedHeader,
     }
 
     /// Check the given header for a GRANDPA scheduled authority set change. If a change
