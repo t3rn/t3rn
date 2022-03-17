@@ -1,4 +1,4 @@
-import { ApiPromise, WsProvider } from '@polkadot/api'
+import { ApiPromise, WsProvider, Keyring } from '@polkadot/api'
 import { createTestPairs } from '@polkadot/keyring/testingPairs'
 import {
   JustificationNotification,
@@ -6,6 +6,7 @@ import {
   BridgedHeader,
   GrandpaJustification,
 } from '@polkadot/types/interfaces'
+import registerKusamaGateway from './register'
 import createDebug from 'debug'
 import 'dotenv/config'
 
@@ -14,19 +15,27 @@ const keyring = createTestPairs({ type: 'sr25519' })
 export default class Relayer {
   static debug = createDebug('relayer')
 
+  kusama: ApiPromise
+  kusamaEndpoint: string = process.env.KUSAMA_RPC as string
   circuit: ApiPromise
-  endpoint: string = process.env.CIRCUIT_WS_URL as string
-  // gateway id for given chain
+  circuitEndpoint: string = process.env.CIRCUIT_WS_URL as string
   gatewayId: Buffer = Buffer.from(process.env.GATEWAY_ID as string, 'utf8')
 
   async init() {
+    this.kusama = await ApiPromise.create({
+      provider: new WsProvider(this.kusamaEndpoint),
+    })
+
     this.circuit = await ApiPromise.create({
-      provider: new WsProvider(this.endpoint),
+      provider: new WsProvider(this.circuitEndpoint),
       types: {
         /*3*/
       },
     })
 
+    await registerKusamaGateway(this.circuit, this.kusama)
+
+    // needed ?
     return new Promise(async (resolve, reject) => {
       await this.circuit.tx.multiFinalityVerifierSubstrateLike
         .setOperational(true, this.gatewayId)

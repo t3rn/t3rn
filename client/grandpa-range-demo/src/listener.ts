@@ -7,13 +7,10 @@ import 'dotenv/config'
 export default class Listener extends EventEmitter {
   static debug = createDebug('listener')
 
-  api: ApiPromise
-  endpoint: string = process.env.KUSAMA_RPC as string
-  // number of headers in a range
+  kusama: ApiPromise
+  kusamaEndpoint: string = process.env.KUSAMA_RPC as string
   rangeSize: number = Number(process.env.RANGE_SIZE)
-  // gateway id for given chain
   gatewayId: Buffer = Buffer.from(process.env.GATEWAY_ID as string, 'utf8')
-  // header list, guaranteed to be sequential
   headers: Header[] = []
   // offset in this.headers for the current range batch
   offset: number = 0
@@ -28,11 +25,11 @@ export default class Listener extends EventEmitter {
   unsubNewHeads: () => void
 
   async init() {
-    this.api = await ApiPromise.create({
-      provider: new WsProvider(this.endpoint),
+    this.kusama = await ApiPromise.create({
+      provider: new WsProvider(this.kusamaEndpoint),
     })
 
-    this.unsubNewHeads = await this.api.derive.chain.subscribeNewHeads(
+    this.unsubNewHeads = await this.kusama.derive.chain.subscribeNewHeads(
       async (header: Header) => {
         await this.handleGrandpaSet()
 
@@ -47,7 +44,7 @@ export default class Listener extends EventEmitter {
 
   async handleGrandpaSet() {
     const currentSetId: number = Number(
-      (await this.api.query.grandpa.currentSetId()).toJSON()
+      (await this.kusama.query.grandpa.currentSetId()).toJSON()
     )
 
     if (this.grandpaSetId !== 0 && currentSetId !== this.grandpaSetId) {
@@ -91,7 +88,7 @@ export default class Listener extends EventEmitter {
     this.offset += this.rangeSize
 
     const unsubJustifications =
-      await this.api.rpc.grandpa.subscribeJustifications(
+      await this.kusama.rpc.grandpa.subscribeJustifications(
         async (justification: JustificationNotification) => {
           Listener.debug('got a grandpa justification...')
           this.emit('range', range, justification, this.gatewayId)
