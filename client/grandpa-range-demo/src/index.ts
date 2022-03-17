@@ -10,6 +10,7 @@ async function main() {
   Listener.debug('⛩️  gateway id', listener.gatewayId.toString())
   Listener.debug('🏔️  range size', listener.rangeSize)
 
+  Relayer.debug('initializing...')
   await relayer.init()
   await listener.init()
 
