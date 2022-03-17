@@ -1,0 +1,90 @@
+Arguments: 
+  /opt/homebrew/Cellar/node/17.6.0_1/bin/node /opt/homebrew/bin/yarn
+
+PATH: 
+  /Users/paul/.local/share/solana/install/active_release/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/paul/.cargo/bin
+
+Yarn version: 
+  1.22.17
+
+Node version: 
+  17.6.0
+
+Platform: 
+  darwin arm64
+
+Trace: 
+  SyntaxError: /Users/paul/t3rn/client/package.json: Unexpected end of JSON input
+      at JSON.parse (<anonymous>)
+      at /opt/homebrew/lib/node_modules/yarn/lib/cli.js:1625:59
+      at Generator.next (<anonymous>)
+      at step (/opt/homebrew/lib/node_modules/yarn/lib/cli.js:310:30)
+      at /opt/homebrew/lib/node_modules/yarn/lib/cli.js:321:13
+
+npm manifest: 
+  {
+    "name": "@t3rn/types",
+    "version": "0.1.1",
+    "description": "t3rn protocol's type definitions for use with polkadot.js clients",
+    "main": "dist/flattened_definitions.js",
+    "types": "dist/flattened_definitions.d.ts",
+    "files": [
+      "dist"
+    ],
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/t3rn/t3rn",
+      "directory": "client/types"
+    },
+    "author": "t3rn <team@t3rn.io>",
+    "license": "Apache-2.0",
+    "publishConfig": {
+      "access": "public",
+      "registry": "https://registry.npmjs.org"
+    }, "scripts": {
+      "generate": "npm run load:meta && npm run generate:defs && npm run generate:meta",
+      "postgenerate": "npm run pretty",
+      "load:meta": "curl -s -H \"Content-Type: application/json\" -d '{\"id\":\"1\", \"jsonrpc\":\"2.0\", \"method\": \"state_getMetadata\", \"params\":[]}' http://127.0.0.1:9933 > metadata-t3rn.json",
+      "generate:defs": "ts-node --skip-project node_modules/.bin/polkadot-types-from-defs --package t3rn-circuit-typegen/interfaces --input ./src/interfaces --endpoint ./metadata-t3rn.json",
+      "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package t3rn-circuit-typegen/interfaces --endpoint ./metadata-t3rn.json --output ./src/interfaces",
+      "prebuild": "rimraf build",
+      "build": "tsc -b --verbose",
+      "publish": "cd build && npm publish",
+      "deploy": "npm run generate && npm run build && npm run publish",
+      "pretty": "prettier --write --ignore-unknown --plugin prettier-plugin-jsdoc 'src/**/*' 'scripts/**/*'",
+      "types:json": "ts-node src/export.ts > dist/types.json"
+    },
+    "keywords": [
+      "t3rn",
+      "interoperability",
+      "polkadot",
+      "cross-chain",
+      "parachain",
+      "types"
+    ],
+    "bugs": {
+      "url": "https://github.com/t3rn/t3rn/issues",
+      "email": "team@t3rn.io"
+    },
+    "homepage": "https://github.com/t3rn/t3rn",
+    "devDependencies": {
+      "typescript": "^4.4.4"
+    },
+    "dependencies": {
+      "@polkadot/typegen": "=7.4.1",
+      "@polkadot/api": "=7.4.1",
+      "@snowfork/snowbridge-types": "^0.2.6",
+      "prettier": "^2.5.1",
+      "prettier-plugin-jsdoc": "^0.3.31",
+      "rimraf": "^3.0.2"
+    },
+    "resolutions": {
+      "@polkadot/types": "=7.3.1"
+    }
+  }
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile

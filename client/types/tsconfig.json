@@ -1,32 +1,26 @@
 {
   "compilerOptions": {
-    "module": "CommonJS",
-    "lib": ["ES6", "DOM"],
     "target": "es2015",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "strict": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
     "esModuleInterop": true,
-    "declaration": true,
-    "outDir": "dist",
+    "skipLibCheck": true,
     "baseUrl": ".",
+    "composite": true,
+    "declaration": true,
+    "rootDir": ".",
+    "outDir": "./dist/",
     "paths": {
-      "t3rn-circuit-typegen/*": [
-        "src/*"
-      ],
-      "@polkadot/api/augment": [
-        "src/interfaces/augment-api.ts"
-      ],
-      "@polkadot/types/augment": [
-        "src/interfaces/augment-types.ts"
-      ],
-      "@polkadot/types/lookup": [
-        "../node_modules/@polkadot/types/augment/lookup/index.js"
-      ],
-      "@polkadot/rpc-core/types.jsonrpc": [
-        "../node_modules/@polkadot/rpc-core/types.jsonrpc"
-      ]
+      "t3rn-circuit-typegen/*": ["src/*"],
+      "@polkadot/api/augment": ["src/interfaces/augment-api.ts"],
+      "@polkadot/types/augment": ["src/interfaces/augment-types.ts"],
+      "@polkadot/types/lookup": ["src/interfaces/types-lookup.ts"],
+      "@polkadot/types/types/registry": ["src/interfaces/augment-types.ts"],
     }
   },
-  "exclude": [
-    "node_modules", "dist"
-  ],
+  "exclude": ["node_modules", "dist"],
   "include": ["src/interfaces"],
 }

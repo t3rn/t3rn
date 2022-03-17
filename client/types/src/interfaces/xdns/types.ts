@@ -1,10 +1,16 @@
 // Auto-generated via `yarn polkadot-types-from-defs`, do not edit
 /* eslint-disable */
 
-import type { Bytes, Option, Struct, Vec, u64 } from '@polkadot/types';
+import type { Bytes, Option, Struct, Vec, u64 } from '@polkadot/types-codec';
 import type { ChainId } from '@polkadot/types/interfaces/bridges';
 import type { AccountId, Hash } from '@polkadot/types/interfaces/runtime';
-import type { GatewayABIConfig, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor } from 't3rn-circuit-typegen/interfaces/primitives';
+import type { GatewayABIConfig } from 't3rn-circuit-typegen/interfaces/circuit_portal';
+import type {
+  GatewayGenesisConfig,
+  GatewaySysProps,
+  GatewayType,
+  GatewayVendor,
+} from 't3rn-circuit-typegen/interfaces/primitives';
 
 /** @name FetchXdnsRecordsResponse */
 export interface FetchXdnsRecordsResponse extends Struct {

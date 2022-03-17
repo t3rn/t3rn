@@ -1,7 +1,7 @@
 // Auto-generated via `yarn polkadot-types-from-defs`, do not edit
 /* eslint-disable */
 
-import type { Bytes, Option, Struct, U8aFixed, Vec } from '@polkadot/types';
+import type { Bytes, Option, Struct, U8aFixed, Vec } from '@polkadot/types-codec';
 import type { ContractMetadata } from '@polkadot/types/interfaces/contractsAbi';
 import type { AccountId, BalanceOf, Hash } from '@polkadot/types/interfaces/runtime';
 import type { ContractActionDesc } from 't3rn-circuit-typegen/interfaces/primitives';

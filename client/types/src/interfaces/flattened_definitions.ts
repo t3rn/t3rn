@@ -7,3 +7,5 @@ export const types = Object.values(definitions).reduce((res, { types }): object 
 export const rpc = {
   xdns: { ...definitions.xdns.rpc },
 };
+
+export * from './types';

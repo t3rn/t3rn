@@ -1,5 +1,22 @@
 export default {
   types: {
+    GatewayVendor: {
+      _enum: ['Substrate', 'Ethereum'],
+    },
+    GatewayType: {
+      _enum: { ProgrammableInternal: 'u32', ProgrammableExternal: 'u32', TxOnly: 'u32' },
+    },
+    GatewayGenesisConfig: {
+      modules_encoded: 'Option<Bytes>',
+      extrinsics_version: 'u8',
+      genesis_hash: 'Bytes',
+    },
+    GatewaySysProps: {
+      ss58_format: 'u16',
+      token_symbol: 'Bytes',
+      token_decimals: 'u8',
+    },
+    AllowedSideEffect: '[u8; 4]',
     BlockNumber: 'u64',
     Compose: {
       name: 'Vec<u8>',
@@ -9,40 +26,6 @@ export default {
       value: 'Balance',
       bytes: 'Vec<u8>',
       input_data: 'Vec<u8>',
-    },
-    GatewayVendor: {
-      _enum: ['Substrate', 'Ethereum'],
-    },
-    GatewayType: {
-      _enum: { ProgrammableInternal: 'u32', ProgrammableExternal: 'u32', TxOnly: 'u32' },
-    },
-    GatewayABIConfig: {
-      block_number_type_size: 'u16',
-      hash_size: 'u16',
-      hasher: 'HasherAlgo',
-      crypto: 'CryptoAlgo',
-      address_length: 'u16',
-      value_type_size: 'u16',
-      decimals: 'u16',
-      structs: 'Vec<StructDecl>',
-    },
-    GatewayGenesisConfig: {
-      modules_encoded: 'Option<Bytes>',
-      // signed_extensions: 'Option<Bytes>',
-      runtime_version: 'RuntimeVersion',
-      extrinsics_version: 'u8',
-      genesis_hash: 'Bytes',
-    },
-    StructDecl: {
-      name: 'Type',
-      fields: 'Vec<Parameter>',
-      offsets: 'Vec<u16>',
-    },
-    HasherAlgo: {
-      _enum: ['Blake2', 'Keccak256'],
-    },
-    CryptoAlgo: {
-      _enum: ['Ed25519', 'Sr25519', 'Ecdsa'],
     },
     CircuitOutboundMessage: {
       name: 'Bytes',
@@ -104,6 +87,7 @@ export default {
       signature: 'Bytes',
       enforce_executioner: 'Option<AccountId>',
     },
+    SideEffectId: 'Hash',
     ConfirmedSideEffect: {
       err: 'Option<Bytes>',
       output: 'Option<Bytes>',
@@ -117,10 +101,52 @@ export default {
       input: 'SideEffect',
       confirmed: 'Option<ConfirmedSideEffect>',
     },
-    GatewaySysProps: {
-      ss58_format: 'u16',
-      token_symbol: 'Bytes',
-      token_decimals: 'u8',
+    XtxId: 'Hash',
+    EventSignature: 'Vec<u8>',
+    EventName: 'Vec<u8>',
+  },
+  result_status: 'Vec<u8>',
+  Xtx: {
+    estimated_worth: 'BalanceOf',
+    current_worth: 'BalanceOf',
+    requester: 'AccountId',
+    escrow_account: 'AccountId',
+    payload: 'Vec<u8>',
+    current_step: 'u32',
+    steps_no: 'u32',
+    current_phase: 'u32',
+    current_round: 'u32',
+    schedule: 'XtxSchedule<AccountId,BlockNumber,Hash,BalanceOf>',
+    phases_blockstamps: '(BlockNumber, BlockNumber)',
+  },
+  XtxSchedule: {
+    result_status: 'Vec<u8>',
+    phases_blockstamps: '(BlockNumber, BlockNumber)',
+  },
+  ProofType: {
+    _enum: {
+      FullValue: 0,
+      MerklePath: 1,
     },
   },
+  StepConfirmation: {
+    step_index: 'u8',
+    value: 'Bytes',
+    proof: 'Proof',
+    outbound_event: 'GatewayOutboundEvent',
+  },
+  GatewayOutboundEvent: {
+    id: 'GatewayOutboundEventId',
+    signature: 'Option<Vec<u8>>',
+    namespace: 'Vec<u8>',
+    name: 'Vec<u8>',
+    data: 'Bytes',
+    proof: 'Option<Proof>',
+    args_abi: 'Vec<Type>',
+    args_encoded: 'Vec<Bytes>',
+    gateway_pointer: 'GatewayPointer',
+  },
+  GatewayOutboundEventId: 'u64',
+  SideEffectsDFD: 'Vec<u8>',
+  GenericDFD: 'Vec<u8>',
 };
