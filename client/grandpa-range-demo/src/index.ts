@@ -10,7 +10,8 @@ async function main() {
   Listener.debug('⛩️  gateway id', listener.gatewayId.toString())
   Listener.debug('🏔️  range size', listener.rangeSize)
 
-  await Promise.all([listener.init(), relayer.init()])
+  await relayer.init()
+  await listener.init()
 
   listener.on('range', relayer.submit.bind(relayer))
 }
