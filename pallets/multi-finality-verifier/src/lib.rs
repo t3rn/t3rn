@@ -74,6 +74,8 @@ pub type BridgedBlockHasher<T, I> = HasherOf<<T as Config<I>>::BridgedChain>;
 /// Header of the bridged chain.
 pub type BridgedHeader<T, I> = HeaderOf<<T as Config<I>>::BridgedChain>;
 
+const LOG_TARGET: &str = "multi-finality-verifier";
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -161,6 +163,7 @@ pub mod pallet {
             );
 
             log::debug!(
+                target: LOG_TARGET,
                 "Going to try and finalize header {:?} gateway {:?}",
                 finality_target,
                 gateway_id
@@ -230,12 +233,18 @@ pub mod pallet {
             );
 
             if let Ok(hash) = pruning {
-                log::debug!(target: "runtime::multi-finality-verifier", "Pruning old header: {:?} for gateway {:?}.", hash, gateway_id);
+                log::debug!(
+                    target: LOG_TARGET,
+                    "Pruning old header: {:?} for gateway {:?}.",
+                    hash,
+                    gateway_id
+                );
                 <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
                 <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
             }
 
             log::debug!(
+                target: LOG_TARGET,
                 "Successfully imported finalized header with hash {:?} for gateway {:?}!",
                 hash,
                 gateway_id
@@ -247,6 +256,7 @@ pub mod pallet {
             pallet_xdns::Pallet::<T>::update_gateway_ttl(gateway_id, now)?;
 
             log::debug!(
+                target: LOG_TARGET,
                 "Successfully updated gateway {:?} with finalized timestamp {:?}!",
                 gateway_id,
                 now.clone()
