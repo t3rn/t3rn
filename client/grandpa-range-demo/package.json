@@ -4,7 +4,11 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "DEBUG=listener,relayer ts-node src/index.ts",
+<<<<<<< HEAD
     "standalone": "RUST_LOG=multi-finality-verifier=debug cargo run --manifest-path ../../node/standalone/Cargo.toml -- --dev --ws-port 3333",
+=======
+    "standalone": "RUST_LOG=debug cargo run --manifest-path ../../node/standalone/Cargo.toml -- --dev --ws-port 3333",
+>>>>>>> bee6480b... chore: enable rust debug logs
     "fmt": "npx prettier --no-semi --arrow-parens avoid --print-width 80 --write ./src/**.ts"
   },
   "author": "",
