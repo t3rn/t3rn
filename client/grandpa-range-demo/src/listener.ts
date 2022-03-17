@@ -39,7 +39,7 @@ export default class Listener extends EventEmitter {
         await this.handleHeader(header)
 
         if (this.headers.length - this.offset === this.rangeSize) {
-          await this.concludeRange()
+          await this.emitRange()
         }
       }
     )
@@ -52,7 +52,7 @@ export default class Listener extends EventEmitter {
 
     if (this.grandpaSetId !== 0 && currentSetId !== this.grandpaSetId) {
       Listener.debug('grandpa set change', this.grandpaSetId, currentSetId)
-      await this.concludeRange()
+      await this.emitRange()
     }
 
     this.grandpaSetId = currentSetId
@@ -81,8 +81,8 @@ export default class Listener extends EventEmitter {
     }
   }
 
-  async concludeRange() {
-    Listener.debug('concluding range...')
+  async emitRange() {
+    Listener.debug('emitting range...')
 
     const range: Header[] = this.headers.slice(
       this.offset,

@@ -7,6 +7,7 @@ import {
   GrandpaJustification,
 } from '@polkadot/types/interfaces'
 import createDebug from 'debug'
+import { resolveCname } from 'dns'
 import 'dotenv/config'
 
 const keyring = createTestPairs({ type: 'sr25519' })
@@ -33,7 +34,7 @@ export default class Relayer {
         .signAndSend(keyring.alice, result => {
           if (result.isError) {
             reject(Error(result.status.toString()))
-          } else if (result.isFinalized) {
+          } else if (result.isInBlock) {
             Relayer.debug(`gateway ${this.gatewayId.toString()} operational`)
             resolve(undefined)
           }
@@ -50,14 +51,12 @@ export default class Relayer {
 
     const anchor: Header = range[range.length - 1]
 
-    await this.circuit.tx.multiFinalityVerifierSubstrateLike
+    const hash = await this.circuit.tx.multiFinalityVerifierSubstrateLike
       .submitFinalityProof(anchor, justification, gatewayId)
-      .signAndSend(keyring.alice, result => {
-        if (result.isError) {
-          Relayer.debug(`error: ${result.status.toString()}`)
-        } else if (result.isInBlock) {
-          Relayer.debug('submitted finality proof')
-        }
-      })
+      .signAndSend(keyring.alice)
+
+    Relayer.debug(
+      'submitted finality proof, xt hash 0x' + Buffer.from(hash).toString('hex')
+    )
   }
 }
