@@ -41,7 +41,7 @@ jobs:
         continue-on-error: false
         with:
           command: build
-          args: --locked --manifest-path ./Cargo.toml --release
+          args: --manifest-path ./node/parachain/Cargo.toml --locked --release
 
       - name: 📤 Upload binary
         uses: actions/upload-artifact@v2
@@ -126,7 +126,7 @@ jobs:
             tail = tail === -1 ? lines.length : tail + head;
             console.log(lines.slice(head, tail).join(''));
           " \
-          > ./circuit/target/release/notes.md
+          > ./target/release/notes.md
 
       - name: 🐙 Create a GitHub release
         id: create_release
@@ -136,7 +136,7 @@ jobs:
         with:
           tag_name: ${{ env.PUSHED_TAG }}
           release_name: ${{ env.PUSHED_TAG }}
-          body_path: ./circuit/target/release/notes.md
+          body_path: ./target/release/notes.md
           draft: false
           prerelease: true
 
