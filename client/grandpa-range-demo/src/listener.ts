@@ -84,7 +84,10 @@ export default class Listener extends EventEmitter {
   async concludeRange() {
     Listener.debug('concluding range...')
 
-    const range: Header[] = this.headers.slice(this.offset, this.offset + this.rangeSize)
+    const range: Header[] = this.headers.slice(
+      this.offset,
+      this.offset + this.rangeSize
+    )
     this.offset += this.rangeSize
 
     const unsubJustifications =

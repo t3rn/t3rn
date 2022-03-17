@@ -14,17 +14,13 @@ const keyring = createTestPairs({ type: 'sr25519' })
 export default class Relayer {
   static debug = createDebug('relayer')
 
-  circuitPromise: Promise<ApiPromise>
   endpoint: string = process.env.CIRCUIT_WS_URL as string
-
-  constructor() {
-    this.circuitPromise = ApiPromise.create({
-      provider: new WsProvider(this.endpoint),
-      types: {
-        /*3*/
-      },
-    })
-  }
+  circuitPromise: Promise<ApiPromise> = ApiPromise.create({
+    provider: new WsProvider(this.endpoint),
+    types: {
+      /*3*/
+    },
+  })
 
   async submit(
     range: Header[],
