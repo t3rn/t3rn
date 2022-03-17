@@ -7,7 +7,6 @@ import {
   GrandpaJustification,
 } from '@polkadot/types/interfaces'
 import createDebug from 'debug'
-import { resolveCname } from 'dns'
 import 'dotenv/config'
 
 const keyring = createTestPairs({ type: 'sr25519' })
