@@ -9,6 +9,7 @@ import {
 import registerKusamaGateway from './register'
 import createDebug from 'debug'
 import 'dotenv/config'
+import types from "./types.json"
 
 const keyring = createTestPairs({ type: 'sr25519' })
 
@@ -22,15 +23,7 @@ export default class Relayer {
   async init() {
     this.circuit = await ApiPromise.create({
       provider: new WsProvider(this.circuitEndpoint),
-      types: {
-        /*3*/
-        HasherAlgo: {
-          _enum: ['Blake2', 'Keccak256'],
-        },
-        CryptoAlgo: {
-          _enum: ['Ed25519', 'Sr25519', 'Ecdsa'],
-        },
-      },
+      types: types as any,
     })
 
     await registerKusamaGateway(this.circuit)
