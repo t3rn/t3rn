@@ -24,6 +24,12 @@ export default class Relayer {
       provider: new WsProvider(this.circuitEndpoint),
       types: {
         /*3*/
+        HasherAlgo: {
+          _enum: ['Blake2', 'Keccak256'],
+        },
+        CryptoAlgo: {
+          _enum: ['Ed25519', 'Sr25519', 'Ecdsa'],
+        },
       },
     })
 
