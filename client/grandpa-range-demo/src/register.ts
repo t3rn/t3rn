@@ -52,5 +52,13 @@ export default async function registerKusamaGateway(circuit: ApiPromise) {
     circuit.createType('Vec<AllowedSideEffect>', ['transfer', 'get_storage'])
   )
 
-  await circuit.tx.sudo.sudo(registerGateway).signAndSend(keyring.alice)
+  return new Promise(async (resolve, reject) => {
+    await registerGateway.signAndSend(keyring.alice, result => {
+        if (result.isError) {
+            reject("registerGateway failed")
+        } else if (result.isInBlock) {
+            resolve(undefined)
+        }
+    })
+  })
 }
