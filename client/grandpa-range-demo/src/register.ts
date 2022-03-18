@@ -39,7 +39,6 @@ export default async function registerKusamaGateway(circuit: ApiPromise) {
     circuit.createType('GatewayType', { ProgrammableExternal: 1 }),
     circuit.createType('GatewayGenesisConfig', [
       circuit.createType('Option<Bytes>', metadata.asV14.pallets.toHex()),
-      runtimeVersion,
       metadata.asV14.extrinsic.version,
       genesisHash,
     ]),
