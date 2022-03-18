@@ -93,15 +93,14 @@ jobs:
   release-on-github:
     runs-on: ubuntu-20.04
     needs: build-release
-    if: startsWith(github.ref, 'refs/tags/v')
     steps:
-      - name: 📥 Download circuit parachain
+      - name: 📥 Download circuit collator
         uses: actions/download-artifact@v2
         with:
           name: ${{ github.sha }}-parachain-release-artifacts
           path: ./target/release/
 
-      - name: 🎱 Gzip circuit parachain
+      - name: 🎱 Gzip circuit collator
         run: |
           gzip -c ./target/release/circuit-collator \
           > ./target/release/circuit-collator.gz
