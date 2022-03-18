@@ -1,13 +1,14 @@
 import { Bytes } from '@polkadot/types'
-import { ApiPromise } from '@polkadot/api'
+import { ApiPromise, WsProvider } from '@polkadot/api'
 import { createTestPairs } from '@polkadot/keyring/testingPairs'
 
 const keyring = createTestPairs({ type: 'sr25519' })
 
-export default async function registerKusamaGateway(
-  circuit: ApiPromise,
-  kusama: ApiPromise
-) {
+export default async function registerKusamaGateway(circuit: ApiPromise) {
+  const kusama = await ApiPromise.create({
+    provider: new WsProvider(process.env.KUSAMA_RPC as string),
+  })
+
   const [currentHeader, metadata, runtimeVersion, genesisHash] =
     await Promise.all([
       kusama.rpc.chain.getHeader(),
