@@ -1241,32 +1241,4 @@ impl<T: Config> Pallet<T> {
     pub fn account_id() -> T::AccountId {
         <T as pallet::Config>::PalletId::get().into_account()
     }
-
-    pub fn actionable_with_vendor(
-        gateway_vendor: GatewayVendor,
-        gateway_type: GatewayType,
-        side_effect_encoded_type: &[u8; 4],
-        side_effect_encoded_args: Vec<Vec<u8>>,
-    ) -> Result<Box<<T as Config>::Call>, &'static str> {
-        match (gateway_vendor, gateway_type) {
-            (GatewayVendor::Substrate, GatewayType::OnCircuit(_)) => match side_effect_encoded_type
-            {
-                b"tran" => {
-                    let _dest: T::AccountId =
-                        Decode::decode(&mut side_effect_encoded_args[1].as_ref())
-                            .map_err(|_e| "Decoding err")?;
-                    let _value: BalanceOf<T> =
-                        Decode::decode(&mut side_effect_encoded_args[2].as_ref())
-                            .map_err(|_e| "Decoding err")?;
-
-                    unimplemented!();
-                    // Ok(Box::new(<T as Config>::Call::Balances(
-                    //     pallet_balances::Call::transfer { dest, value },
-                    // )))
-                }
-                &_ => Err("Side effect type unrecognized for the Substrate vendor"),
-            },
-            _ => Err("Actionables for other than local targets unsupported yet"),
-        }
-    }
 }

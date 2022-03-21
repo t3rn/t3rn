@@ -94,7 +94,7 @@ impl<T: Config> EscrowExec<T> for Transfer<T> {
         escrow_account: T::AccountId,
         executioner: T::AccountId,
     ) -> Result<(), &'static str> {
-        let dest: T::AccountId =
+        let _dest: T::AccountId =
             Decode::decode(&mut encoded_args[1].as_ref()).map_err(|_e| "Decoding err")?;
         let value: BalanceOf<T> =
             Decode::decode(&mut encoded_args[2].as_ref()).map_err(|_e| "Decoding err")?;
@@ -173,9 +173,6 @@ pub mod test {
     use t3rn_protocol::side_effects::test_utils::*;
 
     use crate::mock::*;
-    use crate::state::*;
-
-    use sp_runtime::AccountId32;
 
     #[test]
     fn escrow_transfer_execute_and_commit_work() {
