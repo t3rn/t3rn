@@ -30,13 +30,14 @@ export default class Relayer {
 
     Relayer.debug(`gateway ${this.gatewayId.toString()} registered`)
 
-    return new Promise(async (resolve, reject) => {
-      await this.circuit.tx.multiFinalityVerifierSubstrateLike
+    const setOperational = this.circuit.tx.multiFinalityVerifierSubstrateLike
         .setOperational(true, this.gatewayId)
-        .signAndSend(keyring.alice, result => {
+
+    return new Promise(async (resolve, reject) => {
+      await this.circuit.tx.sudo.sudo(setOperational).signAndSend(keyring.alice, result => {
           if (result.isError) {
             reject(Error(result.status.toString()))
-          } else if (result.isInBlock) {
+          } else if (result.isFinalized) {
             Relayer.debug(`gateway ${this.gatewayId.toString()} operational`)
             resolve(undefined)
           }
