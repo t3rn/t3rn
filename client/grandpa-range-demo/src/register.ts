@@ -53,12 +53,14 @@ export default async function registerKusamaGateway(circuit: ApiPromise) {
   )
 
   return new Promise(async (resolve, reject) => {
-    await circuit.tx.sudo.sudo(registerGateway).signAndSend(keyring.alice, result => {
+    await circuit.tx.sudo
+      .sudo(registerGateway)
+      .signAndSend(keyring.alice, result => {
         if (result.isError) {
-            reject("registerGateway failed")
-        } else if (result.isFinalized) {
-            resolve(undefined)
+          reject('submitting registerGateway failed')
+        } else if (result.isInBlock) {
+          resolve(undefined)
         }
-    })
+      })
   })
 }
