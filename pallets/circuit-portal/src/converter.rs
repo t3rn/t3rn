@@ -1,6 +1,6 @@
 use super::*;
 use ethabi_decode::Address;
-use snowbridge_basic_channel::outbound::Module as snowbridge;
+// use snowbridge_basic_channel::outbound::Module as snowbridge;
 use sp_runtime::DispatchResult;
 
 pub fn submit_messages_to_relayers<T: Config>(
@@ -19,7 +19,7 @@ pub fn submit_messages_to_relayers<T: Config>(
                 .map(|v| Address::from_slice(v))?;
 
             let data = msg.extra_payload.ok_or("no payload given")?;
-            snowbridge::<T>::submit(dispatch_account, target, data.call_bytes.as_slice())?;
+            // snowbridge::<T>::submit(dispatch_account, target, data.call_bytes.as_slice())?;
             Ok(())
         })
         .all(|res: Result<(), &'static str>| res.is_ok());

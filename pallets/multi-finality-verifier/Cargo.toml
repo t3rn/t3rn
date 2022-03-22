@@ -11,7 +11,7 @@ repository = "https://github.com/t3rn/t3rn/"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
+codec = { package = "parity-scale-codec", version = "2.2.0", default-features = false }
 finality-grandpa = { version = "0.14.0", default-features = false }
 log = { version = "0.4.14", default-features = false }
 serde = { version = "1.0", optional = true }
@@ -19,20 +19,20 @@ scale-info = { version = "1.0", default-features = false, features = ["derive"] 
 
 # Substrate Dependencies
 
-frame-support = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13', default-features = false }
-frame-system = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13', default-features = false }
-sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13', default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13', default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13', default-features = false }
-sp-trie = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13', default-features = false }
+frame-support = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', default-features = false }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', default-features = false }
+sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', default-features = false }
+sp-trie = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', default-features = false }
 pallet-xdns = { path = "../xdns", default-features = false }
 t3rn-primitives = { path = "../../primitives", default-features = false }
 
 [dev-dependencies]
-sp-io = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13', default-features = false, features = ['std'] }
-pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13', features = ['std'] }
-pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13', features = ['std'] }
-pallet-sudo = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.13', features = ['std'] }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', default-features = false, features = ['std'] }
+pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', features = ['std'] }
+pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', features = ['std'] }
+pallet-sudo = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', features = ['std'] }
 
 
 [features]

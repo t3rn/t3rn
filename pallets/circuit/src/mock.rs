@@ -22,8 +22,8 @@ use sp_runtime::{
 
 use frame_election_provider_support::onchain;
 use pallet_session::historical as pallet_session_historical;
-use pallet_staking::EraIndex;
 use sp_consensus_babe::AuthorityId;
+use sp_staking::EraIndex;
 use sp_staking::SessionIndex;
 
 use frame_support::{weights::Weight, PalletId};
@@ -66,7 +66,7 @@ frame_support::construct_runtime!(
         Randomness: pallet_randomness_collective_flip::{Pallet, Storage},
         XDNS: pallet_xdns::{Pallet, Call, Storage, Config<T>, Event<T>},
         CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>},
-        BasicOutboundChannel: snowbridge_basic_channel::outbound::{Pallet, Config<T>, Storage, Event<T>},
+        // BasicOutboundChannel: snowbridge_basic_channel::outbound::{Pallet, Config<T>, Storage, Event<T>},
 
         ORMLTokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>},
 
@@ -107,6 +107,7 @@ impl frame_system::Config for Test {
     type SystemWeightInfo = ();
     type SS58Prefix = ();
     type OnSetCode = ();
+    type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 impl<C> frame_system::offchain::SendTransactionTypes<C> for Test
@@ -268,8 +269,12 @@ parameter_types! {
     pub const OffendingValidatorsThreshold: Perbill = Perbill::from_percent(75);
 }
 
+parameter_types! {
+    pub static MaxNominations: u32 = 16;
+}
+
 impl pallet_staking::Config for Test {
-    const MAX_NOMINATIONS: u32 = 16;
+    type MaxNominations = MaxNominations;
     type RewardRemainder = ();
     type CurrencyToVote = frame_support::traits::SaturatingCurrencyToVote;
     type Event = Event;
@@ -290,6 +295,8 @@ impl pallet_staking::Config for Test {
     type WeightInfo = ();
     type ElectionProvider = onchain::OnChainSequentialPhragmen<Self>;
     type GenesisElectionProvider = Self::ElectionProvider;
+    // type MaxUnlockingChunks = ConstU32<32>;
+    type BenchmarkingConfig = pallet_staking::TestBenchmarkingConfig;
 }
 
 impl pallet_offences::Config for Test {
@@ -344,15 +351,15 @@ parameter_types! {
     pub const MaxMessagesPerCommit: u64 = 20;
 }
 
-impl snowbridge_basic_channel::outbound::Config for Test {
-    type Event = Event;
-    const INDEXING_PREFIX: &'static [u8] = INDEXING_PREFIX;
-    type Hashing = Keccak256;
-    type MaxMessagePayloadSize = MaxMessagePayloadSize;
-    type MaxMessagesPerCommit = MaxMessagesPerCommit;
-    type SetPrincipalOrigin = pallet_circuit_portal::EnsureCircuitPortal<Test>;
-    type WeightInfo = ();
-}
+// impl snowbridge_basic_channel::outbound::Config for Test {
+//     type Event = Event;
+//     const INDEXING_PREFIX: &'static [u8] = INDEXING_PREFIX;
+//     type Hashing = Keccak256;
+//     type MaxMessagePayloadSize = MaxMessagePayloadSize;
+//     type MaxMessagesPerCommit = MaxMessagesPerCommit;
+//     type SetPrincipalOrigin = pallet_circuit_portal::EnsureCircuitPortal<Test>;
+//     type WeightInfo = ();
+// }
 
 type Blake2ValU64BridgeInstance = ();
 type Blake2ValU32BridgeInstance = pallet_multi_finality_verifier::Instance1;

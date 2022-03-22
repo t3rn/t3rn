@@ -21,7 +21,6 @@ use codec::Encode;
 use frame_support::assert_ok;
 use t3rn_primitives::bridges::test_utils as bp_test_utils;
 
-use sp_core::Hasher;
 use sp_io::TestExternalities;
 use sp_version::{create_runtime_str, RuntimeVersion};
 
@@ -46,6 +45,7 @@ pub const TEST_RUNTIME_VERSION: RuntimeVersion = RuntimeVersion {
     impl_version: 1,
     apis: sp_version::create_apis_vec!([]),
     transaction_version: 1,
+    state_version: 1,
 };
 
 #[test]
@@ -66,7 +66,6 @@ fn test_register_gateway_with_default_polka_like_header() {
 
     let gateway_genesis = GatewayGenesisConfig {
         modules_encoded: None,
-        runtime_version: TEST_RUNTIME_VERSION,
         genesis_hash: Default::default(),
         extrinsics_version: 0u8,
     };
@@ -118,7 +117,6 @@ fn test_register_gateway_with_u64_substrate_header() {
 
     let gateway_genesis = GatewayGenesisConfig {
         modules_encoded: None,
-        runtime_version: TEST_RUNTIME_VERSION,
         genesis_hash: Default::default(),
         extrinsics_version: 0u8,
     };
@@ -170,7 +168,6 @@ fn test_register_gateway_with_default_eth_like_header() {
 
     let gateway_genesis = GatewayGenesisConfig {
         modules_encoded: None,
-        runtime_version: TEST_RUNTIME_VERSION,
         genesis_hash: Default::default(),
         extrinsics_version: 0u8,
     };
@@ -222,7 +219,6 @@ fn test_register_gateway_with_u64_eth_like_header() {
 
     let gateway_genesis = GatewayGenesisConfig {
         modules_encoded: None,
-        runtime_version: TEST_RUNTIME_VERSION,
         genesis_hash: Default::default(),
         extrinsics_version: 0u8,
     };
@@ -274,7 +270,6 @@ fn test_register_gateway_with_u64_substrate_header_and_allowed_side_effects() {
 
     let gateway_genesis = GatewayGenesisConfig {
         modules_encoded: None,
-        runtime_version: TEST_RUNTIME_VERSION,
         genesis_hash: Default::default(),
         extrinsics_version: 0u8,
     };
@@ -310,9 +305,7 @@ fn test_register_gateway_with_u64_substrate_header_and_allowed_side_effects() {
 
         // Assert the stored xdns record
 
-        let xdns_id =
-            <Test as frame_system::Config>::Hashing::hash(Encode::encode(&gateway_id).as_ref());
-        let result = pallet_xdns::XDNSRegistry::<Test>::get(xdns_id);
+        let result = pallet_xdns::XDNSRegistry::<Test>::get(gateway_id);
 
         assert!(result.is_some());
         let xdns_record = result.unwrap();

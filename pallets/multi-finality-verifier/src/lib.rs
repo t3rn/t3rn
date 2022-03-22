@@ -38,14 +38,16 @@
 
 use crate::weights::WeightInfo;
 
-use t3rn_primitives::bridges::header_chain as bp_header_chain;
-use t3rn_primitives::bridges::runtime as bp_runtime;
-
 use bp_header_chain::justification::GrandpaJustification;
 use bp_header_chain::InitializationData;
 use bp_runtime::{BlockNumberOf, Chain, ChainId, HashOf, HasherOf, HeaderOf};
+
 use finality_grandpa::voter_set::VoterSet;
 use frame_support::ensure;
+use frame_support::pallet_prelude::*;
+use t3rn_primitives::bridges::header_chain as bp_header_chain;
+use t3rn_primitives::bridges::runtime as bp_runtime;
+
 use frame_system::{ensure_signed, RawOrigin};
 use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
 use sp_runtime::traits::{BadOrigin, Header as HeaderT, Zero};
@@ -72,10 +74,12 @@ pub type BridgedBlockHasher<T, I> = HasherOf<<T as Config<I>>::BridgedChain>;
 /// Header of the bridged chain.
 pub type BridgedHeader<T, I> = HeaderOf<<T as Config<I>>::BridgedChain>;
 
+const LOG_TARGET: &str = "multi-finality-verifier";
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use frame_support::pallet_prelude::*;
+
     use frame_support::traits::Time;
     use frame_system::pallet_prelude::*;
     use sp_std::convert::TryInto;
@@ -110,6 +114,7 @@ pub mod pallet {
     }
 
     #[pallet::pallet]
+    #[pallet::without_storage_info]
     pub struct Pallet<T, I = ()>(PhantomData<(T, I)>);
 
     #[pallet::hooks]
@@ -157,24 +162,35 @@ pub mod pallet {
                 <Error<T, I>>::TooManyRequests
             );
 
+            log::debug!(
+                target: LOG_TARGET,
+                "Going to try and finalize header {:?} gateway {:?}",
+                finality_target,
+                gateway_id
+            );
+
             let (hash, number) = (finality_target.hash(), finality_target.number());
-            log::trace!("Going to try and finalize header {:?}", finality_target);
 
             let best_finalized = <MultiImportedHeaders<T, I>>::get(
-				gateway_id,
-				<BestFinalizedMap<T, I>>::get(gateway_id).expect(
-					" Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
-				`ImportedHeaders` must contain an entry for `BestFinalized`.",
-				),
-			)
-				.expect("In order to reach this point the bridge must have been initialized for given gateway.");
+                gateway_id,
+                <BestFinalizedMap<T, I>>::get(gateway_id)
+                    // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
+                    // `ImportedHeaders` must contain an entry for `BestFinalized`.
+                    .ok_or_else(|| <Error<T, I>>::NoFinalizedHeader)?,
+            )
+            // In order to reach this point the bridge must have been initialized for given gateway.
+            .ok_or_else(|| <Error<T, I>>::InvalidAnchorHeader)?;
 
             // We do a quick check here to ensure that our header chain is making progress and isn't
             // "travelling back in time" (which could be indicative of something bad, e.g a hard-fork).
             ensure!(best_finalized.number() < number, <Error<T, I>>::OldHeader);
+
             let authority_set = <CurrentAuthoritySetMap<T, I>>::get(gateway_id)
-                .expect("Expects authorities to be set before verify_justification");
+                // Expects authorities to be set before verify_justification
+                .ok_or_else(|| <Error<T, I>>::InvalidAuthoritySet)?;
+
             let set_id = authority_set.set_id;
+
             verify_justification_single::<T, I>(
                 &justification,
                 hash,
@@ -186,6 +202,7 @@ pub mod pallet {
             // We have to incentivise authority_set update submissions in some way. Important to receive proofs of changing set, even when no transaction is included
             let _enacted =
                 try_enact_authority_change_single::<T, I>(&finality_target, set_id, gateway_id)?;
+
             let index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
 
             let pruning = <MultiImportedHashes<T, I>>::try_get(gateway_id, index);
@@ -216,11 +233,18 @@ pub mod pallet {
             );
 
             if let Ok(hash) = pruning {
-                log::debug!(target: "runtime::multi-finality-verifier", "Pruning old header: {:?} for gateway {:?}.", hash, gateway_id);
+                log::debug!(
+                    target: LOG_TARGET,
+                    "Pruning old header: {:?} for gateway {:?}.",
+                    hash,
+                    gateway_id
+                );
                 <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
                 <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
             }
-            log::info!(
+
+            log::debug!(
+                target: LOG_TARGET,
                 "Successfully imported finalized header with hash {:?} for gateway {:?}!",
                 hash,
                 gateway_id
@@ -231,7 +255,8 @@ pub mod pallet {
 
             pallet_xdns::Pallet::<T>::update_gateway_ttl(gateway_id, now)?;
 
-            log::info!(
+            log::debug!(
+                target: LOG_TARGET,
                 "Successfully updated gateway {:?} with finalized timestamp {:?}!",
                 gateway_id,
                 now.clone()
@@ -436,21 +461,25 @@ pub mod pallet {
 
     /// Hash of the header used to bootstrap the pallet.
     #[pallet::storage]
+    #[pallet::getter(fn get_initial_hash_map)]
     pub(super) type InitialHashMap<T: Config<I>, I: 'static = ()> =
         StorageMap<_, Blake2_256, ChainId, BridgedBlockHash<T, I>>;
 
     /// Map of hashes of the best finalized header.
     #[pallet::storage]
+    #[pallet::getter(fn get_bridged_block_hash)]
     pub(super) type BestFinalizedMap<T: Config<I>, I: 'static = ()> =
         StorageMap<_, Blake2_256, ChainId, BridgedBlockHash<T, I>>;
 
     /// A ring buffer of imported hashes. Ordered by the insertion time.
     #[pallet::storage]
+    #[pallet::getter(fn get_multi_imported_hashes)]
     pub(super) type MultiImportedHashes<T: Config<I>, I: 'static = ()> =
         StorageDoubleMap<_, Blake2_256, ChainId, Identity, u32, BridgedBlockHash<T, I>>;
 
     /// Current ring buffer position.
     #[pallet::storage]
+    #[pallet::getter(fn get_multi_imported_hashes_pointer)]
     pub(super) type MultiImportedHashesPointer<T: Config<I>, I: 'static = ()> =
         StorageMap<_, Blake2_256, ChainId, u32>;
 
@@ -576,6 +605,8 @@ pub mod pallet {
         StorageRootMismatch,
         // Submitted anchor header(verified header stored on circuit) was not found
         InvalidAnchorHeader,
+        // No finalized header known for the corresponding gateway.
+        NoFinalizedHeader,
     }
 
     /// Check the given header for a GRANDPA scheduled authority set change. If a change
@@ -992,7 +1023,9 @@ mod tests {
 
         let current_number = frame_system::Pallet::<TestRuntime>::block_number();
         frame_system::Pallet::<TestRuntime>::set_block_number(current_number + 1);
-        let _ = Pallet::<TestRuntime>::on_initialize(current_number);
+        let _ = <Pallet<TestRuntime> as OnInitialize<
+            <TestRuntime as frame_system::Config>::BlockNumber,
+        >>::on_initialize(current_number);
     }
 
     fn change_log(delay: u64) -> Digest {

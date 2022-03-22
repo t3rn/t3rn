@@ -114,7 +114,7 @@ pub mod pallet {
         + pallet_multi_finality_verifier::Config<PolkadotLikeValU64Gateway>
         + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU64Gateway>
         + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU32Gateway>
-        + snowbridge_basic_channel::outbound::Config
+    // + snowbridge_basic_channel::outbound::Config
     {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -134,6 +134,7 @@ pub mod pallet {
     }
 
     #[pallet::pallet]
+    #[pallet::without_storage_info]
     #[pallet::generate_store(pub (super) trait Store)]
     pub struct Pallet<T>(_);
 
