@@ -1,8 +1,8 @@
 use circuit_parachain_runtime::{
-    AccountId, AuraId, ContractsRegistryConfig, MultiFinalityVerifierEthereumLikeConfig,
-    MultiFinalityVerifierGenericLikeConfig, MultiFinalityVerifierPolkadotLikeConfig, MultiFinalityVerifierDefaultConfig,
-    MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, XDNSConfig,
-    EXISTENTIAL_DEPOSIT,
+    AccountId, AuraId, ContractsRegistryConfig, MultiFinalityVerifierDefaultConfig,
+    MultiFinalityVerifierEthereumLikeConfig, MultiFinalityVerifierGenericLikeConfig,
+    MultiFinalityVerifierPolkadotLikeConfig, MultiFinalityVerifierSubstrateLikeConfig, Signature,
+    SudoConfig, XDNSConfig, EXISTENTIAL_DEPOSIT,
 };
 use cumulus_primitives_core::ParaId;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
