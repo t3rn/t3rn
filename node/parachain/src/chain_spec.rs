@@ -1,6 +1,6 @@
 use circuit_parachain_runtime::{
     AccountId, AuraId, ContractsRegistryConfig, MultiFinalityVerifierEthereumLikeConfig,
-    MultiFinalityVerifierGenericLikeConfig, MultiFinalityVerifierPolkadotLikeConfig,
+    MultiFinalityVerifierGenericLikeConfig, MultiFinalityVerifierPolkadotLikeConfig, MultiFinalityVerifierDefaultConfig,
     MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, XDNSConfig,
     EXISTENTIAL_DEPOSIT,
 };
@@ -490,6 +490,10 @@ fn testnet_genesis(
             init_data: None,
         },
         multi_finality_verifier_polkadot_like: MultiFinalityVerifierPolkadotLikeConfig {
+            owner: None,
+            init_data: None,
+        },
+        multi_finality_verifier_default: MultiFinalityVerifierDefaultConfig {
             owner: None,
             init_data: None,
         },
