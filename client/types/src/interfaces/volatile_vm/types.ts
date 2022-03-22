@@ -1,10 +1,10 @@
 // Auto-generated via `yarn polkadot-types-from-defs`, do not edit
 /* eslint-disable */
 
-import type { Option, Struct, u32 } from '@polkadot/types';
-import type { CodeHash, TrieId } from '@polkadot/types/interfaces/contracts';
-import type { Balance, BlockNumber } from '@polkadot/types/interfaces/runtime';
-import type { ITuple } from '@polkadot/types/types';
+import type { Option, Struct, u32 } from "@polkadot/types-codec";
+import type { ITuple } from "@polkadot/types-codec/types";
+import type { CodeHash, TrieId } from "@polkadot/types/interfaces/contracts";
+import type { Balance, BlockNumber } from "@polkadot/types/interfaces/runtime";
 
 /** @name RawAliveContractInfo */
 export interface RawAliveContractInfo extends Struct {
@@ -19,4 +19,4 @@ export interface RawAliveContractInfo extends Struct {
   readonly _reserved: Option<ITuple<[]>>;
 }
 
-export type PHANTOM_VOLATILE_VM = 'volatile_vm';
+export type PHANTOM_VOLATILE_VM = "volatile_vm";

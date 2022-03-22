@@ -1,32 +1,32 @@
 export default {
   rpc: {
     fetchRecords: {
-      description: 'Fetches all available XDNS Records on Circuit',
+      description: "Fetches all available XDNS Records on Circuit",
       params: [
         {
-          name: 'at',
-          type: 'Hash',
+          name: "at",
+          type: "Hash",
           isOptional: true,
         },
       ],
-      type: 'FetchXdnsRecordsResponse',
+      type: "FetchXdnsRecordsResponse",
     },
   },
   types: {
-    XdnsRecordId: 'Hash',
+    XdnsRecordId: "Hash",
     XdnsRecord: {
-      url: 'Vec<u8>',
-      gateway_abi: 'GatewayABIConfig',
-      gateway_genesis: 'GatewayGenesisConfig',
-      gateway_vendor: 'GatewayVendor',
-      gateway_type: 'GatewayType',
-      gateway_id: 'ChainId',
-      gateway_sys_props: 'GatewaySysProps',
-      registrant: 'Option<AccountId>',
-      last_finalized: 'Option<u64>',
+      url: "Vec<u8>",
+      gateway_abi: "GatewayABIConfig",
+      gateway_genesis: "GatewayGenesisConfig",
+      gateway_vendor: "GatewayVendor",
+      gateway_type: "GatewayType",
+      gateway_id: "ChainId",
+      gateway_sys_props: "GatewaySysProps",
+      registrant: "Option<AccountId>",
+      last_finalized: "Option<u64>",
     },
     FetchXdnsRecordsResponse: {
-      xdns_records: 'Vec<XdnsRecord<AccountId>>',
+      xdns_records: "Vec<XdnsRecord<AccountId>>",
     },
   },
 };

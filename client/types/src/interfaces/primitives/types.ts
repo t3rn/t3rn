@@ -1,10 +1,28 @@
 // Auto-generated via `yarn polkadot-types-from-defs`, do not edit
 /* eslint-disable */
 
-import type { Bytes, Enum, Option, Struct, Type, U8aFixed, Vec, u16, u32, u64, u8 } from '@polkadot/types';
-import type { ChainId, Parameter } from '@polkadot/types/interfaces/bridges';
-import type { AccountId, Balance, BalanceOf, Hash } from '@polkadot/types/interfaces/runtime';
-import type { RuntimeVersion } from '@polkadot/types/interfaces/state';
+import type {
+  Bytes,
+  Enum,
+  Option,
+  Struct,
+  U8aFixed,
+  Vec,
+  u16,
+  u32,
+  u64,
+  u8,
+} from "@polkadot/types-codec";
+import type { ChainId } from "@polkadot/types/interfaces/bridges";
+import type {
+  AccountId,
+  Balance,
+  BalanceOf,
+  Hash,
+} from "@polkadot/types/interfaces/runtime";
+
+/** @name AllowedSideEffect */
+export interface AllowedSideEffect extends U8aFixed {}
 
 /** @name BlockNumber */
 export interface BlockNumber extends u64 {}
@@ -50,12 +68,11 @@ export interface ContractActionDesc extends Struct {
   readonly to: Option<AccountId>;
 }
 
-/** @name CryptoAlgo */
-export interface CryptoAlgo extends Enum {
-  readonly isEd25519: boolean;
-  readonly isSr25519: boolean;
-  readonly isEcdsa: boolean;
-}
+/** @name EventName */
+export interface EventName extends Bytes {}
+
+/** @name EventSignature */
+export interface EventSignature extends Bytes {}
 
 /** @name ExtraMessagePayload */
 export interface ExtraMessagePayload extends Struct {
@@ -73,18 +90,6 @@ export interface ExtraMessagePayload extends Struct {
 export interface FullSideEffect extends Struct {
   readonly input: SideEffect;
   readonly confirmed: Option<ConfirmedSideEffect>;
-}
-
-/** @name GatewayABIConfig */
-export interface GatewayABIConfig extends Struct {
-  readonly block_number_type_size: u16;
-  readonly hash_size: u16;
-  readonly hasher: HasherAlgo;
-  readonly crypto: CryptoAlgo;
-  readonly address_length: u16;
-  readonly value_type_size: u16;
-  readonly decimals: u16;
-  readonly structs: Vec<StructDecl>;
 }
 
 /** @name GatewayExpectedOutput */
@@ -106,12 +111,12 @@ export interface GatewayExpectedOutput extends Enum {
   readonly asOutput: {
     readonly output: Bytes;
   } & Struct;
+  readonly type: "Storage" | "Events" | "Extrinsic" | "Output";
 }
 
 /** @name GatewayGenesisConfig */
 export interface GatewayGenesisConfig extends Struct {
   readonly modules_encoded: Option<Bytes>;
-  readonly runtime_version: RuntimeVersion;
   readonly extrinsics_version: u8;
   readonly genesis_hash: Bytes;
 }
@@ -138,18 +143,14 @@ export interface GatewayType extends Enum {
   readonly asProgrammableExternal: u32;
   readonly isTxOnly: boolean;
   readonly asTxOnly: u32;
+  readonly type: "ProgrammableInternal" | "ProgrammableExternal" | "TxOnly";
 }
 
 /** @name GatewayVendor */
 export interface GatewayVendor extends Enum {
-  readonly isSubstrate: boolean;
   readonly isEthereum: boolean;
-}
-
-/** @name HasherAlgo */
-export interface HasherAlgo extends Enum {
-  readonly isBlake2: boolean;
-  readonly isKeccak256: boolean;
+  readonly isSubstrate: boolean;
+  readonly type: "Ethereum" | "Substrate";
 }
 
 /** @name ProofTriePointer */
@@ -157,6 +158,7 @@ export interface ProofTriePointer extends Enum {
   readonly isState: boolean;
   readonly isTransaction: boolean;
   readonly isReceipts: boolean;
+  readonly type: "State" | "Transaction" | "Receipts";
 }
 
 /** @name SideEffect */
@@ -170,14 +172,13 @@ export interface SideEffect extends Struct {
   readonly enforce_executioner: Option<AccountId>;
 }
 
-/** @name StructDecl */
-export interface StructDecl extends Struct {
-  readonly name: Type;
-  readonly fields: Vec<Parameter>;
-  readonly offsets: Vec<u16>;
-}
+/** @name SideEffectId */
+export interface SideEffectId extends Hash {}
 
 /** @name TargetId */
 export interface TargetId extends U8aFixed {}
 
-export type PHANTOM_PRIMITIVES = 'primitives';
+/** @name XtxId */
+export interface XtxId extends Hash {}
+
+export type PHANTOM_PRIMITIVES = "primitives";

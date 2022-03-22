@@ -2,8 +2,8 @@
   "name": "@t3rn/types",
   "version": "0.1.1",
   "description": "t3rn protocol's type definitions for use with polkadot.js clients",
-  "main": "dist/flattened_definitions.js",
-  "types": "dist/flattened_definitions.d.ts",
+  "main": "dist/src/interfaces/flattened_definitions.js",
+  "types": "dist/src/interfaces/flattened_definitions.d.ts",
   "files": [
     "dist"
   ],
@@ -19,12 +19,16 @@
     "registry": "https://registry.npmjs.org"
   },
   "scripts": {
-    "build": "yarn generate && yarn compile",
-    "compile": "rm -rf dist && tsc",
-    "generate:defs": "ts-node --skip-project node_modules/.bin/polkadot-types-from-defs --package t3rn-circuit-typegen/interfaces --input ./src/interfaces",
-    "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package t3rn-circuit-typegen/interfaces --endpoint ws://127.0.0.1:9944 --output ./src/interfaces",
-    "generate": "yarn generate:defs && yarn generate:meta",
-    "lint": "tsc --noEmit --pretty",
+    "generate": "npm run load:meta && npm run generate:defs && npm run generate:meta",
+    "postgenerate": "npm run pretty",
+    "load:meta": "curl -s -H \"Content-Type: application/json\" -d '{\"id\":\"1\", \"jsonrpc\":\"2.0\", \"method\": \"state_getMetadata\", \"params\":[]}' http://127.0.0.1:9933 > metadata-t3rn.json",
+    "generate:defs": "ts-node --skip-project node_modules/.bin/polkadot-types-from-defs --package t3rn-circuit-typegen/interfaces --input ./src/interfaces --endpoint ./metadata-t3rn.json",
+    "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package t3rn-circuit-typegen/interfaces --endpoint ./metadata-t3rn.json --output ./src/interfaces",
+    "prebuild": "rimraf build",
+    "build": "tsc -b --verbose",
+    "publish": "cd build && npm publish",
+    "deploy": "npm run generate && npm run build && npm run publish",
+    "pretty": "prettier --write --ignore-unknown --plugin prettier-plugin-jsdoc 'src/**/*' 'scripts/**/*'",
     "types:json": "ts-node src/export.ts > dist/types.json"
   },
   "keywords": [
@@ -35,6 +39,9 @@
     "parachain",
     "types"
   ],
+  "resolutions": {
+    "@polkadot/types": "=7.3.1"
+  },
   "bugs": {
     "url": "https://github.com/t3rn/t3rn/issues",
     "email": "team@t3rn.io"
@@ -44,8 +51,11 @@
     "typescript": "^4.4.4"
   },
   "dependencies": {
-    "@polkadot/typegen": "=6.6.1",
-    "@polkadot/types": "=6.6.1",
-    "@snowfork/snowbridge-types": "^0.2.6"
+    "@polkadot/typegen": "=7.4.1",
+    "@polkadot/api": "=7.4.1",
+    "@snowfork/snowbridge-types": "^0.2.6",
+    "prettier": "^2.5.1",
+    "prettier-plugin-jsdoc": "^0.3.31",
+    "rimraf": "^3.0.2"
   }
 }

@@ -1,9 +1,28 @@
 // Auto-generated via `yarn polkadot-types-from-defs`, do not edit
 /* eslint-disable */
 
-import type { Bytes, Enum, Option, Struct, U256, U8aFixed, Vec, bool, u128, u32, u64 } from '@polkadot/types';
-import type { AccountId, H128, H160, H256, H512, MultiAddress } from '@polkadot/types/interfaces/runtime';
-import type { ITuple } from '@polkadot/types/types';
+import type {
+  Bytes,
+  Enum,
+  Option,
+  Struct,
+  U256,
+  U8aFixed,
+  Vec,
+  bool,
+  u128,
+  u32,
+  u64,
+} from "@polkadot/types-codec";
+import type { ITuple } from "@polkadot/types-codec/types";
+import type {
+  AccountId,
+  H128,
+  H160,
+  H256,
+  H512,
+  MultiAddress,
+} from "@polkadot/types/interfaces/runtime";
 
 /** @name Address */
 export interface Address extends MultiAddress {}
@@ -13,6 +32,7 @@ export interface AssetId extends Enum {
   readonly isEth: boolean;
   readonly isToken: boolean;
   readonly asToken: H160;
+  readonly type: "Eth" | "Token";
 }
 
 /** @name Bloom */
@@ -22,6 +42,7 @@ export interface Bloom extends U8aFixed {}
 export interface ChannelId extends Enum {
   readonly isBasic: boolean;
   readonly isIncentivized: boolean;
+  readonly type: "Basic" | "Incentivized";
 }
 
 /** @name DispatchMessageId */
@@ -118,4 +139,4 @@ export interface TokenInfoOf extends Struct {
   readonly data: TokenData;
 }
 
-export type PHANTOM_SNOWFORK = 'snowfork';
+export type PHANTOM_SNOWFORK = "snowfork";
