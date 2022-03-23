@@ -1,15 +1,7 @@
-name: Circuit Release
+name: Circuit Collator Release
 
 on:
   push:
-    paths:
-      - circuit/**/*.rs
-      - circuit/**/Cargo.toml
-      - circuit/**/Cargo.lock
-      - pallets/**/*.rs
-      - pallets/**/Cargo.toml
-      - pallets/**/Cargo.lock
-      - .github/workflows/circuit-release.yml
     tags:
       - 'v*'
 
@@ -25,28 +17,13 @@ jobs:
         uses: actions/checkout@master
         with:
           submodules: recursive
-
-      - name: 🕒 Cache LLVM and Clang
-        id: cache-llvm
-        uses: actions/cache@v2
-        with:
-          path: |
-            ./llvm
-          key: llvm-circuit-release
-
-      - name: 🔨 Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v1
-        with:
-          version: "12.0.0"
-          ubuntu-version: "20.04"
-          directory: ${{ runner.temp }}/llvm
-          cached: ${{ steps.cache-llvm.outputs.cache-hit }}
-
+          token: ${{ secrets.GH_PAT }}
       - name: ⚙️Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly-2021-11-01
           target: wasm32-unknown-unknown
+          components: rustfmt, clippy
           override: true
 
       - name: 🕒 Cache Rust binaries and packages
@@ -56,21 +33,21 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            circuit/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('circuit/Cargo.lock') }}
+            ./target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('./Cargo.lock') }}
 
       - name: 🏭 Build circuit
         uses: actions-rs/cargo@v1
         continue-on-error: false
         with:
           command: build
-          args: --locked --manifest-path circuit/Cargo.toml --release
+          args: --manifest-path ./node/parachain/Cargo.toml --locked --release
 
       - name: 📤 Upload binary
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ github.sha }}-artifacts
-          path: circuit/target/release/circuit
+          name: ${{ github.sha }}-parachain-release-artifacts
+          path: ./target/release/circuit-collator
           if-no-files-found: error
           retention-days: 1
 
@@ -82,6 +59,7 @@ jobs:
         uses: actions/checkout@master
         with:
           submodules: recursive
+          token: ${{ secrets.GH_PAT }}
       - name: 🔧 Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
       - name: 🕒 Cache Docker layers
@@ -94,8 +72,8 @@ jobs:
       - name: 📥 Download circuit
         uses: actions/download-artifact@v2
         with:
-          name: ${{ github.sha }}-artifacts
-          path: circuit/target/release/
+          name: ${{ github.sha }}-parachain-release-artifacts
+          path: ./target/release/
       - name: 🐋 Login to Docker Hub
         uses: docker/login-action@v1
         with:
@@ -106,37 +84,33 @@ jobs:
         with:
           context: .
           push: true
-          tags: t3rn/circuit:latest
+          tags: t3rn/circuit-parachain:latest
           platforms: linux/amd64
-          file: docker/circuit.Dockerfile
+          file: docker/circuit-parachain.Dockerfile
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
 
   release-on-github:
     runs-on: ubuntu-20.04
     needs: build-release
-    if: startsWith(github.ref, 'refs/tags/v')
     steps:
-      - name: ☁ Checkout git repo
-        uses: actions/checkout@v2
-
-      - name: 📥 Download circuit
+      - name: 📥 Download circuit collator
         uses: actions/download-artifact@v2
         with:
-          name: ${{ github.sha }}-artifacts
-          path: circuit/target/release/
+          name: ${{ github.sha }}-parachain-release-artifacts
+          path: ./target/release/
 
-      - name: 🎱 Gzip circuit
+      - name: 🎱 Gzip circuit collator
         run: |
-          gzip -c ./circuit/target/release/circuit \
-          > ./circuit/target/release/circuit.gz
+          gzip -c ./target/release/circuit-collator \
+          > ./target/release/circuit-collator.gz
 
       - name: 🖐🏾 Fingerprint the gball
         run: |
-          sha256sum -b ./circuit/target/release/circuit.gz \
+          sha256sum -b ./target/release/circuit-collator.gz \
           | grep -oE '^[a-f0-9]+' \
           | tr -d '\n' \
-          > ./circuit/target/release/circuit.gz.sha256sum
+          > ./target/release/circuit-collator.gz.sha256sum
 
       - name: 🏷️ Get the version tag
         run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
@@ -151,17 +125,17 @@ jobs:
             tail = tail === -1 ? lines.length : tail + head;
             console.log(lines.slice(head, tail).join(''));
           " \
-          > ./circuit/target/release/notes.md
+          > ./target/release/notes.md
 
       - name: 🐙 Create a GitHub release
         id: create_release
         uses: actions/create-release@v1.1.4
         env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
         with:
           tag_name: ${{ env.PUSHED_TAG }}
           release_name: ${{ env.PUSHED_TAG }}
-          body_path: ./circuit/target/release/notes.md
+          body_path: ./target/release/notes.md
           draft: false
           prerelease: true
 
@@ -170,17 +144,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./circuit/target/release/circuit.gz.sha256sum
-          asset_name: t3rn-circuit-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz.sha256sum
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./target/release/circuit-collator.gz.sha256sum
+          asset_name: t3rn-circuit-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz.sha256sum
           asset_content_type: text/plain
 
-      - name: 📦 Upload the circuit gball as a release asset
+      - name: 📦 Upload the circuit parachain collator gball as a release asset
         uses: actions/upload-release-asset@v1.0.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./circuit/target/release/circuit.gz
-          asset_name: t3rn-circuit-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./target/release/circuit-collator.gz
+          asset_name: t3rn-circuit-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz
           asset_content_type: application/gzip
