@@ -1,6 +1,6 @@
 FROM rust:buster as blacksmith
 
-ARG BRANCH=polkadot-v0.9.17
+ARG BRANCH=polkadot-v0.9.17+key
 
 WORKDIR /workshop
 
@@ -26,7 +26,7 @@ RUN git clone \
     --depth 1 \
     --single-branch \
     --branch $BRANCH \
-    https://github.com/substrate-developer-hub/substrate-parachain-template.git \
+    https://github.com/t3rn/substrate-parachain-template.git \
     pchain
 
 RUN --mount=type=cache,target=/usr/local/cargo/git \
