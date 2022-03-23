@@ -31,7 +31,7 @@ export default class Relayer {
     Relayer.debug(`gateway ${this.gatewayId.toString()} registered`)
 
     const setOperational =
-      this.circuit.tx.multiFinalityVerifierSubstrateLike.setOperational(
+      this.circuit.tx.multiFinalityVerifierPolkadotLike.setOperational(
         true,
         this.gatewayId
       )
@@ -60,7 +60,7 @@ export default class Relayer {
     const anchor: Header = range[range.length - 1]
 
     const submitFinalityProof =
-      this.circuit.tx.multiFinalityVerifierSubstrateLike.submitFinalityProof(
+      this.circuit.tx.multiFinalityVerifierPolkadotLike.submitFinalityProof(
         anchor,
         justification,
         gatewayId
