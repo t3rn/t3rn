@@ -135,14 +135,32 @@ build_para_wasm_runtimes() {
 set_keys() {
   t3rn1_phrase="$(grep -oP '(?<=phrase:)[^\n]+' ./specs/t3rn1.key | xargs)"
   t3rn2_phrase="$(grep -oP '(?<=phrase:)[^\n]+' ./specs/t3rn2.key | xargs)"
-  t3rn1_adrs="$(grep -oP '(?<=\(SS58\):\s)[^\n]+' ./specs/t3rn1.key)"
-  t3rn2_adrs="$(grep -oP '(?<=\(SS58\):\s)[^\n]+' ./specs/t3rn2.key)"
+  docker exec \
+    -u t3rn \
+    t3rn1 \
+    circuit-collator \
+    key \
+    insert \
+    --base-path /t3rn/data \
+    --chain /t3rn/t3rn.raw.json \
+    --scheme Sr25519 \
+    --suri "$t3rn1_phrase" \
+    --key-type aura
+  docker exec \
+    -u t3rn \
+    t3rn2 \
+    circuit-collator \
+    key \
+    insert \
+    --base-path /t3rn/data \
+    --chain /t3rn/t3rn.raw.json \
+    --scheme Sr25519 \
+    --suri "$t3rn2_phrase" \
+    --key-type aura
   pchain1_phrase="$(grep -oP '(?<=phrase:)[^\n]+' ./specs/pchain1.key | xargs)"
   pchain2_phrase="$(grep -oP '(?<=phrase:)[^\n]+' ./specs/pchain2.key | xargs)"
   pchain1_adrs="$(grep -oP '(?<=\(SS58\):\s)[^\n]+' ./specs/pchain1.key)"
   pchain2_adrs="$(grep -oP '(?<=\(SS58\):\s)[^\n]+' ./specs/pchain2.key)"
-  printf "\"$t3rn1_phrase"\" > "./data/t3rn1/chains/local_testnet/keystore/61757261${t3rn1_adrs#0x}"
-  printf "\"$t3rn2_phrase"\" > "./data/t3rn2/chains/local_testnet/keystore/61757261${t3rn2_adrs#0x}"
   printf "\"$pchain1_phrase"\" > "./data/pchain1/chains/local_testnet/keystore/61757261${pchain1_adrs#0x}"
   printf "\"$pchain2_phrase"\" > "./data/pchain2/chains/local_testnet/keystore/61757261${pchain2_adrs#0x}"
 }
