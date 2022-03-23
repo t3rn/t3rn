@@ -1,4 +1,4 @@
-# ⚡*CM* devnet WIP ⚠️
+# ⚡*CM* devnet
 
 ##  `./run.sh devnet`
 
@@ -128,20 +128,20 @@ To actually have docker images rebuilt, prune them manually in advance, fx `dock
     <td>9923</td>
     <td>3333</td>
   </tr>
-  <!-- <tr>
-    <td>acala</td>
-    <td>acala1</td>
-    <td>44444</td>
-    <td>4488</td>
-    <td>4499</td>
+  <tr>
+    <td>pchain</td>
+    <td>pchain1</td>
     <td>44443</td>
     <td>4487</td>
     <td>4498</td>
+    <td>44444</td>
+    <td>4488</td>
+    <td>4499</td>
     <td>3334</td>
   </tr>
   <tr>
-    <td>acala</td>
-    <td>acala2</td>
+    <td>pchain</td>
+    <td>pchain2</td>
     <td>44403</td>
     <td>4407</td>
     <td>4418</td>
@@ -149,7 +149,7 @@ To actually have docker images rebuilt, prune them manually in advance, fx `dock
     <td>4408</td>
     <td>4409</td>
     <td>3334</td>
-  </tr> -->
+  </tr>
 </table>
 
 All code uses `v0.9.17` Substrate.
