@@ -27,15 +27,16 @@ RUN git clone \
     --single-branch \
     --branch $BRANCH \
     https://github.com/substrate-developer-hub/substrate-parachain-template.git \
-    .
+    pchain
 
 RUN --mount=type=cache,target=/usr/local/cargo/git \
     --mount=type=cache,target=/var/sccache \
+    cd ./pchain && \
     cargo build --locked --release
 
 FROM phusion/baseimage:focal-1.1.0
 
-COPY --from=blacksmith /workshop/target/release/parachain-collator /usr/local/bin
+COPY --from=blacksmith /workshop/pchain/target/release/parachain-collator /usr/local/bin
 
 RUN useradd -m -u 1000 -U -s /bin/sh -d /para para && \
     mkdir /para/data && \

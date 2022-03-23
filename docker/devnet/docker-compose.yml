@@ -305,6 +305,116 @@ services:
       --ws-port 9922
       --execution Wasm
 
+  pchain1:
+    image: parachain-collator:polkadot-v0.9.17
+    build:
+      context: .
+      dockerfile: pchain.Dockerfile
+    networks:
+      - devnet
+    ports:
+      - "44444:44444"
+      - "4488:4488"
+      - "4499:4499"
+      - "44443:44443"
+      - "4487:4487"
+      - "4498:4498"
+    volumes:
+      - type: bind
+        source: ./specs/rococo-local.raw.json
+        target: /para/rococo-local.raw.json
+        read_only: true
+      - type: bind
+        source: ./specs/pchain.raw.json
+        target: /para/pchain.raw.json
+        read_only: true
+      - type: bind
+        source: ./data/pchain1
+        target: /para/data
+        read_only: false
+    container_name: pchain1
+    depends_on:
+      - alice
+      - bob
+      - charlie
+      - dave
+      - eve
+    command: >
+      --port 44444
+      --rpc-port 4488
+      --ws-port 4499
+      --base-path /para/data
+      --collator
+      --rpc-cors all
+      --unsafe-ws-external
+      --unsafe-rpc-external
+      --execution Wasm
+      -lruntime=debug
+      --chain /para/pchain.raw.json
+      --name pchain1
+      --
+      --chain /para/rococo-local.raw.json
+      --discover-local
+      --port 44443
+      --rpc-port 4487
+      --ws-port 4498
+      --execution Wasm
+
+  pchain2:
+    image: parachain-collator:polkadot-v0.9.17
+    build:
+      context: .
+      dockerfile: pchain.Dockerfile
+    networks:
+      - devnet
+    ports:
+      - "44404:44404"
+      - "4408:4408"
+      - "4409:4409"
+      - "44403:44403"
+      - "4407:4407"
+      - "4418:4418"
+    volumes:
+      - type: bind
+        source: ./specs/rococo-local.raw.json
+        target: /para/rococo-local.raw.json
+        read_only: true
+      - type: bind
+        source: ./specs/pchain.raw.json
+        target: /para/pchain.raw.json
+        read_only: true
+      - type: bind
+        source: ./data/pchain2
+        target: /para/data
+        read_only: false
+    container_name: pchain2
+    depends_on:
+      - alice
+      - bob
+      - charlie
+      - dave
+      - eve
+    command: >
+      --port 44404
+      --rpc-port 4408
+      --ws-port 4409
+      --base-path /para/data
+      --collator
+      --rpc-cors all
+      --unsafe-ws-external
+      --unsafe-rpc-external
+      --execution Wasm
+      -lruntime=debug
+      --chain /para/pchain.raw.json
+      --name pchain2
+      --
+      --chain /para/rococo-local.raw.json
+      --discover-local
+      --port 44403
+      --rpc-port 4407
+      --ws-port 4418
+      --execution Wasm
+
   # acala1:
   #   image: acala:release-acala-2.4.0
   #   build:
