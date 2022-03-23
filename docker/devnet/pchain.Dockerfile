@@ -1,6 +1,6 @@
 FROM rust:buster as blacksmith
 
-ARG BRANCH=polkadot-v0.9.17+key
+ARG BRANCH=polkadot-v0.9.17-keyed
 
 WORKDIR /workshop
 

@@ -14,9 +14,9 @@ build_docker_images() {
       -t circuit-collator:update_v0.9.17 \
       -f t3rn.Dockerfile ../..
   fi
-  if ! docker inspect parachain-collator:polkadot-v0.9.17+key > /dev/null; then
+  if ! docker inspect parachain-collator:polkadot-v0.9.17-keyed > /dev/null; then
     DOCKER_BUILDKIT=1 docker build \
-      -t parachain-collator:polkadot-v0.9.17+key \
+      -t parachain-collator:polkadot-v0.9.17-keyed \
       -f pchain.Dockerfile .
   fi
 }
@@ -80,7 +80,7 @@ build_para_chain_specs() {
       --raw \
   > ./specs/t3rn.raw.json
   ## gen pchain chain spec
-  docker run parachain-collator:polkadot-v0.9.17+key build-spec \
+  docker run parachain-collator:polkadot-v0.9.17-keyed build-spec \
       --disable-default-bootnode \
   > ./specs/pchain.json
   # set parachain id(s)
@@ -98,7 +98,7 @@ build_para_chain_specs() {
       -i ./specs/pchain.json
   docker run \
       -v "$(pwd)/specs:/usr/local/etc" \
-      parachain-collator:polkadot-v0.9.17+key \
+      parachain-collator:polkadot-v0.9.17-keyed \
       build-spec \
       --chain /usr/local/etc/pchain.json \
       --disable-default-bootnode \
@@ -115,7 +115,7 @@ build_para_genesis_states() {
   > ./specs/t3rn.genesis
   docker run \
       -v "$(pwd)/specs:/usr/local/etc" \
-      parachain-collator:polkadot-v0.9.17+key \
+      parachain-collator:polkadot-v0.9.17-keyed \
       export-genesis-state \
       --chain /usr/local/etc/pchain.raw.json \
   > ./specs/pchain.genesis
@@ -126,7 +126,7 @@ build_para_wasm_runtimes() {
   > ./specs/t3rn.wasm
   docker run \
       -v "$(pwd)/specs:/usr/local/etc" \
-      parachain-collator:polkadot-v0.9.17+key \
+      parachain-collator:polkadot-v0.9.17-keyed \
       export-genesis-wasm \
       --chain /usr/local/etc/pchain.raw.json \
   > ./specs/pchain.wasm

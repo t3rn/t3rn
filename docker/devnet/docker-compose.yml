@@ -306,7 +306,7 @@ services:
       --execution Wasm
 
   pchain1:
-    image: parachain-collator:polkadot-v0.9.17+key
+    image: parachain-collator:polkadot-v0.9.17-keyed
     build:
       context: .
       dockerfile: pchain.Dockerfile
@@ -361,7 +361,7 @@ services:
       --execution Wasm
 
   pchain2:
-    image: parachain-collator:polkadot-v0.9.17+key
+    image: parachain-collator:polkadot-v0.9.17-keyed
     build:
       context: .
       dockerfile: pchain.Dockerfile
