@@ -509,7 +509,7 @@ construct_runtime!(
         MultiFinalityVerifierGenericLike: pallet_mfv::<Instance4>::{
             Pallet, Call, Storage, Config<T, I>
         } = 104,
-         MultiFinalityVerifierDefault: pallet_mfv::{
+        MultiFinalityVerifierDefault: pallet_mfv::{
             Pallet, Call, Storage, Config<T, I>
         } = 105,
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
