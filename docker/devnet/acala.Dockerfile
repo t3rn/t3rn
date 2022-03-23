@@ -9,9 +9,9 @@ RUN rustup default nightly-2021-11-07 && \
 
 ENV SCCACHE_BINARY=sccache-v0.2.15-x86_64-unknown-linux-musl.tar.gz
 RUN curl -L -o ${SCCACHE_BINARY} https://github.com/mozilla/sccache/releases/download/v0.2.15/${SCCACHE_BINARY} && \
-  tar -xvf ${SCCACHE_BINARY} && \
-  chmod +x sccache-v0.2.15-x86_64-unknown-linux-musl/sccache && \
-  mv sccache-v0.2.15-x86_64-unknown-linux-musl/sccache /usr/local/cargo/bin/sccache
+    tar -xvf ${SCCACHE_BINARY} && \
+    chmod +x sccache-v0.2.15-x86_64-unknown-linux-musl/sccache && \
+    mv sccache-v0.2.15-x86_64-unknown-linux-musl/sccache /usr/local/cargo/bin/sccache
 
 RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && \
@@ -23,18 +23,16 @@ ENV SCCACHE_DIR=/var/sccache
 ENV RUSTC_WRAPPER="/usr/local/cargo/bin/sccache"
 
 RUN git clone \
-        --depth 1 \
-        --single-branch \
-        --branch $BRANCH \
-        https://github.com/AcalaNetwork/Acala.git \
-        acala
+    --depth 1 \
+    --single-branch \
+    --branch $BRANCH \
+    https://github.com/AcalaNetwork/Acala.git \
+    acala
 
 RUN --mount=type=cache,target=/usr/local/cargo/git \
     --mount=type=cache,target=/var/sccache \
     cd ./acala && \
     cargo build --features with-acala-runtime --workspace
-
-###############################################################################
 
 FROM phusion/baseimage:focal-1.1.0
 
@@ -45,9 +43,5 @@ RUN useradd -m -u 1000 -U -s /bin/sh -d /acala acala && \
     rm -rf /usr/lib/python* /usr/bin /usr/sbin /usr/share/man
 
 USER acala
-
-VOLUME /acala/data
-
-EXPOSE 44444 4488 4499 44443 4487 4498
 
 ENTRYPOINT ["/usr/local/bin/acala"]

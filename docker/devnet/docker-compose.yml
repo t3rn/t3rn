@@ -153,7 +153,7 @@ services:
       --unsafe-rpc-external
       --chain /pdot/rococo-local.raw.json
       --execution Wasm
-      -lruntime=debug,parachain::pvf-checker=debug
+      -lruntime=debug
 
   eve:
     image: polkadot:release-v0.9.17
@@ -193,7 +193,7 @@ services:
       --unsafe-rpc-external
       --chain /pdot/rococo-local.raw.json
       --execution Wasm
-      -lruntime=debug,parachain::pvf-checker=debug
+      -lruntime=debug
 
   t3rn1:
     image: circuit-collator:update_v0.9.17
@@ -234,13 +234,12 @@ services:
       --rpc-port 8833
       --ws-port 9933
       --base-path /t3rn/data
-      --keystore-path /t3rn/data/chains/local_testnet/keystore
       --collator
       --rpc-cors all
       --unsafe-ws-external
       --unsafe-rpc-external
-      --execution Native
-      -lruntime=debug,cumulus-collator=debug,cumulus-network=debug,cumulus-consensus=debug,cumulus-pov-recovery=debug,executor=debug,aura::cumulus=debug,parachain-inherent=debug,cumulus-consensus-relay-chain=debug,parachain::pvf-checker=debug
+      --execution Wasm
+      -lruntime=debug
       --chain /t3rn/t3rn.raw.json
       --name t3rn1
       --
@@ -249,7 +248,7 @@ services:
       --port 33332
       --rpc-port 8832
       --ws-port 9932
-      --execution Native
+      --execution Wasm
 
   t3rn2:
     image: circuit-collator:update_v0.9.17
@@ -290,13 +289,12 @@ services:
       --rpc-port 8823
       --ws-port 9923
       --base-path /t3rn/data
-      --keystore-path /t3rn/data/chains/local_testnet/keystore
       --collator
       --rpc-cors all
       --unsafe-ws-external
       --unsafe-rpc-external
-      --execution Native
-      -lruntime=debug,cumulus-collator=debug,cumulus-network=debug,cumulus-consensus=debug,cumulus-pov-recovery=debug,executor=debug,aura::cumulus=debug,parachain-inherent=debug,cumulus-consensus-relay-chain=debug,parachain::pvf-checker=debug
+      --execution Wasm
+      -lruntime=debug
       --chain /t3rn/t3rn.raw.json
       --name t3rn2
       --
@@ -305,7 +303,7 @@ services:
       --port 33322
       --rpc-port 8822
       --ws-port 9922
-      --execution Native
+      --execution Wasm
 
   # acala1:
   #   image: acala:release-acala-2.4.0
@@ -346,14 +344,12 @@ services:
   #     --rpc-port 4488
   #     --ws-port 4499
   #     --base-path /acala/data
-  #     --keystore-path /acala/data/chains/local_testnet/keystore
   #     --collator
-  #     --force-authoring
   #     --rpc-cors all
   #     --unsafe-ws-external
   #     --unsafe-rpc-external
-  #     --execution Native
-  #     -lruntime=debug,cumulus-collator=debug,cumulus-network=debug,cumulus-consensus=debug,cumulus-pov-recovery=debug,executor=debug,aura::cumulus=debug,parachain-inherent=debug,cumulus-consensus-relay-chain=debug,parachain::pvf-checker=debug
+  #     --execution Wasm
+  #     -lruntime=debug
   #     --chain /acala/acala.raw.json
   #     --name acala1
   #     --
@@ -362,7 +358,7 @@ services:
   #     --port 44443
   #     --rpc-port 4487
   #     --ws-port 4498
-  #     --execution Native
+  #     --execution Wasm
 
   # acala2:
   #   image: acala:release-acala-2.4.0
@@ -403,14 +399,12 @@ services:
   #     --rpc-port 4408
   #     --ws-port 4409
   #     --base-path /acala/data
-  #     --keystore-path /acala/data/chains/local_testnet/keystore
   #     --collator
-  #     --force-authoring
   #     --rpc-cors all
   #     --unsafe-ws-external
   #     --unsafe-rpc-external
-  #     --execution Native
-  #     -lruntime=debug,cumulus-collator=debug,cumulus-network=debug,cumulus-consensus=debug,cumulus-pov-recovery=debug,executor=debug,aura::cumulus=debug,parachain-inherent=debug,cumulus-consensus-relay-chain=debug,parachain::pvf-checker=debug
+  #     --execution Wasm
+  #     -lruntime=debug
   #     --chain /acala/acala.raw.json
   #     --name acala2
   #     --
@@ -419,4 +413,4 @@ services:
   #     --port 44403
   #     --rpc-port 4407
   #     --ws-port 4418
-  #     --execution Native
+  #     --execution Wasm
