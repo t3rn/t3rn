@@ -16,7 +16,7 @@ Is run as part of `./run.sh devnet`, no manual execution required.
 
 ## `./run.sh onboard`
 
-Initializes registration with the relay chain for both t3rn and pchain.
+Initializes registration with the relay chain for both t3rn and acala.
 
 After [onboarding](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/parachains) is complete the parachains should start to collate.
 
@@ -128,9 +128,9 @@ To actually have docker images rebuilt, prune them manually in advance, fx `dock
     <td>9923</td>
     <td>3333</td>
   </tr>
-  <tr>
-    <td>pchain</td>
-    <td>pchain1</td>
+  <!-- <tr>
+    <td>acala</td>
+    <td>acala1</td>
     <td>44444</td>
     <td>4488</td>
     <td>4499</td>
@@ -140,8 +140,8 @@ To actually have docker images rebuilt, prune them manually in advance, fx `dock
     <td>3334</td>
   </tr>
   <tr>
-    <td>pchain</td>
-    <td>pchain2</td>
+    <td>acala</td>
+    <td>acala2</td>
     <td>44403</td>
     <td>4407</td>
     <td>4418</td>
@@ -149,7 +149,7 @@ To actually have docker images rebuilt, prune them manually in advance, fx `dock
     <td>4408</td>
     <td>4409</td>
     <td>3334</td>
-  </tr>
+  </tr> -->
 </table>
 
-*The "pchain" is a plain [Substrate parachain instance](https://github.com/substrate-developer-hub/substrate-parachain-template)*. All code uses `v0.9.17` Substrate.
+All code uses `v0.9.17` Substrate.

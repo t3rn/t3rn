@@ -31,7 +31,7 @@ COPY . .
 # 		--branch $BRANCH \
 # 		--recurse-submodules \
 # 		https://github.com/t3rn/t3rn.git \
-# 		.
+#     t3rn
 
 # FIXME: tmp workaround 2 force compile the parachain runtime
 RUN sed 's/\[dev-dependencies/\# \[dev-dependencies/g' \
@@ -47,7 +47,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/git \
 
 FROM phusion/baseimage:focal-1.1.0
 
-COPY --from=blacksmith /workshop/target/debug/circuit-collator /usr/local/bin
+COPY --from=blacksmith /workshop/t3rn/target/debug/circuit-collator /usr/local/bin
 
 RUN useradd -m -u 1000 -U -s /bin/sh -d /t3rn t3rn && \
     mkdir /t3rn/data && \

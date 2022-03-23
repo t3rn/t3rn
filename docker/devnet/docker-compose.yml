@@ -307,116 +307,116 @@ services:
       --ws-port 9922
       --execution Native
 
-  pchain1:
-    image: parachain-collator:polkadot-v0.9.17
-    build:
-      context: .
-      dockerfile: pchain.Dockerfile
-    networks:
-      - devnet
-    ports:
-      - "44444:44444"
-      - "4488:4488"
-      - "4499:4499"
-      - "44443:44443"
-      - "4487:4487"
-      - "4498:4498"
-    volumes:
-      - type: bind
-        source: ./specs/rococo-local.raw.json
-        target: /para/rococo-local.raw.json
-        read_only: true
-      - type: bind
-        source: ./specs/pchain.raw.json
-        target: /para/pchain.raw.json
-        read_only: true
-      - type: bind
-        source: ./data/pchain1
-        target: /para/data
-        read_only: false
-    container_name: pchain1
-    depends_on:
-      - alice
-      - bob
-      - charlie
-      - dave
-      - eve
-    command: >
-      --port 44444
-      --rpc-port 4488
-      --ws-port 4499
-      --base-path /para/data
-      --keystore-path /para/data/chains/local_testnet/keystore
-      --collator
-      --force-authoring
-      --rpc-cors all
-      --unsafe-ws-external
-      --unsafe-rpc-external
-      --execution Native
-      -lruntime=debug,cumulus-collator=debug,cumulus-network=debug,cumulus-consensus=debug,cumulus-pov-recovery=debug,executor=debug,aura::cumulus=debug,parachain-inherent=debug,cumulus-consensus-relay-chain=debug,parachain::pvf-checker=debug
-      --chain /para/pchain.raw.json
-      --name pchain1
-      --
-      --chain /para/rococo-local.raw.json
-      --discover-local
-      --port 44443
-      --rpc-port 4487
-      --ws-port 4498
-      --execution Native
+  # acala1:
+  #   image: acala:release-acala-2.4.0
+  #   build:
+  #     context: .
+  #     dockerfile: acala.Dockerfile
+  #   networks:
+  #     - devnet
+  #   ports:
+  #     - "44444:44444"
+  #     - "4488:4488"
+  #     - "4499:4499"
+  #     - "44443:44443"
+  #     - "4487:4487"
+  #     - "4498:4498"
+  #   volumes:
+  #     - type: bind
+  #       source: ./specs/rococo-local.raw.json
+  #       target: /acala/rococo-local.raw.json
+  #       read_only: true
+  #     - type: bind
+  #       source: ./specs/acala.raw.json
+  #       target: /acala/acala.raw.json
+  #       read_only: true
+  #     - type: bind
+  #       source: ./data/acala1
+  #       target: /acala/data
+  #       read_only: false
+  #   container_name: acala1
+  #   depends_on:
+  #     - alice
+  #     - bob
+  #     - charlie
+  #     - dave
+  #     - eve
+  #   command: >
+  #     --port 44444
+  #     --rpc-port 4488
+  #     --ws-port 4499
+  #     --base-path /acala/data
+  #     --keystore-path /acala/data/chains/local_testnet/keystore
+  #     --collator
+  #     --force-authoring
+  #     --rpc-cors all
+  #     --unsafe-ws-external
+  #     --unsafe-rpc-external
+  #     --execution Native
+  #     -lruntime=debug,cumulus-collator=debug,cumulus-network=debug,cumulus-consensus=debug,cumulus-pov-recovery=debug,executor=debug,aura::cumulus=debug,parachain-inherent=debug,cumulus-consensus-relay-chain=debug,parachain::pvf-checker=debug
+  #     --chain /acala/acala.raw.json
+  #     --name acala1
+  #     --
+  #     --chain /acala/rococo-local.raw.json
+  #     --discover-local
+  #     --port 44443
+  #     --rpc-port 4487
+  #     --ws-port 4498
+  #     --execution Native
 
-  pchain2:
-    image: parachain-collator:polkadot-v0.9.17
-    build:
-      context: .
-      dockerfile: pchain.Dockerfile
-    networks:
-      - devnet
-    ports:
-      - "44404:44404"
-      - "4408:4408"
-      - "4409:4409"
-      - "44403:44403"
-      - "4407:4407"
-      - "4418:4418"
-    volumes:
-      - type: bind
-        source: ./specs/rococo-local.raw.json
-        target: /para/rococo-local.raw.json
-        read_only: true
-      - type: bind
-        source: ./specs/pchain.raw.json
-        target: /para/pchain.raw.json
-        read_only: true
-      - type: bind
-        source: ./data/pchain2
-        target: /para/data
-        read_only: false
-    container_name: pchain2
-    depends_on:
-      - alice
-      - bob
-      - charlie
-      - dave
-      - eve
-    command: >
-      --port 44404
-      --rpc-port 4408
-      --ws-port 4409
-      --base-path /para/data
-      --keystore-path /para/data/chains/local_testnet/keystore
-      --collator
-      --force-authoring
-      --rpc-cors all
-      --unsafe-ws-external
-      --unsafe-rpc-external
-      --execution Native
-      -lruntime=debug,cumulus-collator=debug,cumulus-network=debug,cumulus-consensus=debug,cumulus-pov-recovery=debug,executor=debug,aura::cumulus=debug,parachain-inherent=debug,cumulus-consensus-relay-chain=debug,parachain::pvf-checker=debug
-      --chain /para/pchain.raw.json
-      --name pchain2
-      --
-      --chain /para/rococo-local.raw.json
-      --discover-local
-      --port 44403
-      --rpc-port 4407
-      --ws-port 4418
-      --execution Native
+  # acala2:
+  #   image: acala:release-acala-2.4.0
+  #   build:
+  #     context: .
+  #     dockerfile: acala.Dockerfile
+  #   networks:
+  #     - devnet
+  #   ports:
+  #     - "44404:44404"
+  #     - "4408:4408"
+  #     - "4409:4409"
+  #     - "44403:44403"
+  #     - "4407:4407"
+  #     - "4418:4418"
+  #   volumes:
+  #     - type: bind
+  #       source: ./specs/rococo-local.raw.json
+  #       target: /acala/rococo-local.raw.json
+  #       read_only: true
+  #     - type: bind
+  #       source: ./specs/acala.raw.json
+  #       target: /acala/acala.raw.json
+  #       read_only: true
+  #     - type: bind
+  #       source: ./data/acala2
+  #       target: /acala/data
+  #       read_only: false
+  #   container_name: acala2
+  #   depends_on:
+  #     - alice
+  #     - bob
+  #     - charlie
+  #     - dave
+  #     - eve
+  #   command: >
+  #     --port 44404
+  #     --rpc-port 4408
+  #     --ws-port 4409
+  #     --base-path /acala/data
+  #     --keystore-path /acala/data/chains/local_testnet/keystore
+  #     --collator
+  #     --force-authoring
+  #     --rpc-cors all
+  #     --unsafe-ws-external
+  #     --unsafe-rpc-external
+  #     --execution Native
+  #     -lruntime=debug,cumulus-collator=debug,cumulus-network=debug,cumulus-consensus=debug,cumulus-pov-recovery=debug,executor=debug,aura::cumulus=debug,parachain-inherent=debug,cumulus-consensus-relay-chain=debug,parachain::pvf-checker=debug
+  #     --chain /acala/acala.raw.json
+  #     --name acala2
+  #     --
+  #     --chain /acala/rococo-local.raw.json
+  #     --discover-local
+  #     --port 44403
+  #     --rpc-port 4407
+  #     --ws-port 4418
+  #     --execution Native
