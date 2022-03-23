@@ -155,25 +155,13 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
             let side_effect_a_id =
                 valid_transfer_side_effect.generate_id::<crate::SystemHashing<Test>>();
 
-            // Returns void insurance for that side effect
-            let void_insurance_deposit = InsuranceDeposit {
-                insurance: 0,
-                reward: 0,
-                requester: AccountId32::new(hex!(
-                    "0000000000000000000000000000000000000000000000000000000000000000"
-                )),
-                bonded_relayer: None,
-                status: CircuitStatus::Requested,
-                requested_at: 0,
-            };
-
             assert_eq!(
                 Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
-                void_insurance_deposit
+                None
             );
 
             assert_eq!(
-                Circuit::get_x_exec_signals(xtx_id),
+                Circuit::get_x_exec_signals(xtx_id).unwrap(),
                 XExecSignal {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
@@ -186,7 +174,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
             );
 
             assert_eq!(
-                Circuit::get_full_side_effects(xtx_id),
+                Circuit::get_full_side_effects(xtx_id).unwrap(),
                 vec![vec![FullSideEffect {
                     input: valid_transfer_side_effect,
                     confirmed: None,
@@ -391,12 +379,12 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
             };
 
             assert_eq!(
-                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
+                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id).unwrap(),
                 valid_insurance_deposit
             );
 
             assert_eq!(
-                Circuit::get_x_exec_signals(xtx_id),
+                Circuit::get_x_exec_signals(xtx_id).unwrap(),
                 XExecSignal {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
@@ -409,7 +397,7 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
             );
 
             assert_eq!(
-                Circuit::get_full_side_effects(xtx_id),
+                Circuit::get_full_side_effects(xtx_id).unwrap(),
                 vec![vec![FullSideEffect {
                     input: valid_transfer_side_effect,
                     confirmed: None,
@@ -478,12 +466,12 @@ fn circuit_handles_insurance_deposit_for_transfers() {
             };
 
             assert_eq!(
-                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
+                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id).unwrap(),
                 valid_insurance_deposit
             );
 
             assert_eq!(
-                Circuit::get_x_exec_signals(xtx_id),
+                Circuit::get_x_exec_signals(xtx_id).unwrap(),
                 XExecSignal {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
@@ -496,7 +484,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
             );
 
             assert_eq!(
-                Circuit::get_full_side_effects(xtx_id),
+                Circuit::get_full_side_effects(xtx_id).unwrap(),
                 vec![vec![FullSideEffect {
                     input: valid_transfer_side_effect.clone(),
                     confirmed: None,
@@ -523,12 +511,12 @@ fn circuit_handles_insurance_deposit_for_transfers() {
             };
 
             assert_eq!(
-                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
+                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id).unwrap(),
                 expected_bonded_insurance_deposit
             );
 
             assert_eq!(
-                Circuit::get_x_exec_signals(xtx_id),
+                Circuit::get_x_exec_signals(xtx_id).unwrap(),
                 XExecSignal {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
@@ -624,7 +612,7 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
                 valid_swap_side_effect.generate_id::<crate::SystemHashing<Test>>();
 
             assert_eq!(
-                Circuit::get_x_exec_signals(xtx_id),
+                Circuit::get_x_exec_signals(xtx_id).unwrap(),
                 XExecSignal {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
@@ -637,28 +625,16 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
             );
 
             assert_eq!(
-                Circuit::get_full_side_effects(xtx_id),
+                Circuit::get_full_side_effects(xtx_id).unwrap(),
                 vec![vec![FullSideEffect {
                     input: valid_swap_side_effect.clone(),
                     confirmed: None,
                 }]]
             );
 
-            // Returns void insurance for that side effect
-            let void_insurance_deposit = InsuranceDeposit {
-                insurance: 0,
-                reward: 0,
-                requester: AccountId32::new(hex!(
-                    "0000000000000000000000000000000000000000000000000000000000000000"
-                )),
-                bonded_relayer: None,
-                status: CircuitStatus::Requested,
-                requested_at: 0,
-            };
-
             assert_eq!(
                 Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
-                void_insurance_deposit
+                None
             );
 
             fn as_u32_le(array: &[u8; 4]) -> u32 {
@@ -669,12 +645,12 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
             }
 
             // Confirmation start
-            let encoded_swap_transfer_event = orml_tokens::Event::<Test>::Transfer(
-                as_u32_le(&[0, 1, 2, 3]), // currency_id as u8 bytes [0,1,2,3] -> u32
-                BOB_RELAYER,              // executor - Bob
-                hex!("0606060606060606060606060606060606060606060606060606060606060606").into(), // variant B (dest)
-                2u64, // amount - variant B
-            )
+            let encoded_swap_transfer_event = orml_tokens::Event::<Test>::Transfer {
+                currency_id: as_u32_le(&[0, 1, 2, 3]), // currency_id as u8 bytes [0,1,2,3] -> u32
+                from: BOB_RELAYER,                     // executor - Bob
+                to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(), // variant B (dest)
+                amount: 2u64, // amount - variant B
+            }
             .encode();
 
             let confirmation = ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {

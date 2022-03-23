@@ -9,7 +9,12 @@ use serde::{Deserialize, Serialize};
 
 use scale_info::TypeInfo;
 
-use sp_runtime::{traits::Hash, RuntimeDebug};
+use sp_runtime::traits::Hash;
+#[cfg(feature = "no_std")]
+use sp_runtime::RuntimeDebug as Debug;
+#[cfg(feature = "std")]
+use std::fmt::Debug;
+
 use sp_std::prelude::*;
 use sp_std::vec::Vec;
 use t3rn_primitives::abi::GatewayABIConfig;
@@ -18,7 +23,7 @@ use t3rn_primitives::{
     abi::Type, ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
 };
 /// A hash based on encoding the complete XdnsRecord
-pub type XdnsRecordId<T> = <T as frame_system::Config>::Hash;
+pub type XdnsRecordId = [u8; 4];
 
 /// A hash based on encoding the Gateway ID
 pub type XdnsGatewayId<T> = <T as frame_system::Config>::Hash;
@@ -26,7 +31,7 @@ pub type XdnsGatewayId<T> = <T as frame_system::Config>::Hash;
 pub type AllowedSideEffect = [u8; 4];
 
 /// A preliminary representation of a xdns_record in the onchain registry.
-#[derive(Clone, Debug, Eq, PartialEq, Encode, Decode, TypeInfo)]
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct XdnsRecord<AccountId> {
     /// SCALE-encoded url string on where given Consensus System can be accessed
@@ -88,7 +93,7 @@ pub struct XdnsRecord<AccountId> {
 //     |
 //     = note: define and implement a trait or new type instead
 
-#[derive(Clone, Debug, Encode, Decode, TypeInfo)]
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct SideEffectInterface {
     pub id: [u8; 4],
@@ -102,7 +107,7 @@ pub struct SideEffectInterface {
 }
 
 impl SideEffectInterface {
-    /// Function that generates an XdnsRecordId hash based on the gateway id
+    /// Function that generates an SideEffectId hash based on the gateway id
     pub fn generate_id<T: Config>(&self) -> SideEffectId<T> {
         T::Hashing::hash(Encode::encode(&self.id).as_ref())
     }
@@ -113,8 +118,6 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
         url: Vec<u8>,
         gateway_abi: GatewayABIConfig,
         modules_encoded: Option<Vec<u8>>,
-        // signed_extensions: Option<Vec<u8>>,
-        runtime_version: sp_version::RuntimeVersion,
         extrinsics_version: u8,
         genesis_hash: Vec<u8>,
         gateway_id: ChainId,
@@ -127,8 +130,6 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
     ) -> Self {
         let gateway_genesis = GatewayGenesisConfig {
             modules_encoded,
-            // signed_extensions,
-            runtime_version,
             extrinsics_version,
             genesis_hash,
         };
@@ -176,8 +177,8 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
     }
 
     /// Function that generates an XdnsRecordId hash based on the gateway id
-    pub fn generate_id<T: Config>(&self) -> XdnsRecordId<T> {
-        T::Hashing::hash(Encode::encode(&self.gateway_id).as_ref())
+    pub fn generate_id<T: Config>(&self) -> XdnsRecordId {
+        self.gateway_id
     }
 
     pub fn set_last_finalized(&mut self, last_finalized: u64) {
@@ -186,7 +187,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
 }
 
 /// The object with XdnsRecords as returned by the RPC endpoint
-#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug)]
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct FetchXdnsRecordsResponse<AccountId> {
     pub xdns_records: Vec<XdnsRecord<AccountId>>,

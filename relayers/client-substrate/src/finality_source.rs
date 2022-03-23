@@ -28,7 +28,7 @@ use codec::Decode;
 use finality_relay::{FinalitySyncPipeline, SourceClient, SourceHeader};
 use futures::stream::{unfold, Stream, StreamExt};
 use relay_utils::relay_loop::Client as RelayClient;
-use sp_runtime::traits::Header as HeaderT;
+use sp_runtime::traits::Header;
 use std::{marker::PhantomData, pin::Pin};
 use t3rn_primitives::bridges::header_chain as bp_header_chain;
 

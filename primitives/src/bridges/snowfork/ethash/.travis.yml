@@ -1,0 +1,11 @@
+language: rust
+rust:
+  - stable
+  - beta
+  - nightly
+script:
+  - cargo build --release --all --verbose
+  - cargo test --release --all --verbose
+matrix:
+  allow_failures:
+    - rust: nightly
