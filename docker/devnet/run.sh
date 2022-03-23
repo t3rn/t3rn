@@ -160,24 +160,24 @@ set_keys() {
     --suri "$t3rn2_phrase" \
     --key-type aura
   docker exec \
-    -u pchain \
+    -u para \
     pchain1 \
     parachain-collator \
     key \
     insert \
-    --base-path /pchain/data \
-    --chain /pchain/pchain.raw.json \
+    --base-path /para/data \
+    --chain /para/pchain.raw.json \
     --scheme Sr25519 \
     --suri "$pchain1_phrase" \
     --key-type aura
   docker exec \
-    -u pchain \
+    -u para \
     pchain2 \
     parachain-collator \
     key \
     insert \
-    --base-path /pchain/data \
-    --chain /pchain/pchain.raw.json \
+    --base-path /para/data \
+    --chain /para/pchain.raw.json \
     --scheme Sr25519 \
     --suri "$pchain2_phrase" \
     --key-type aura
