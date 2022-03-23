@@ -52,8 +52,8 @@ To actually have docker images rebuilt, prune them manually in advance, fx `dock
     <td>-</td>
   </tr>
   <tr>
-    <td>Rococo</td>
-    <td>Alice</td>
+    <td>rococo</td>
+    <td>alice</td>
     <td>10001</td>
     <td>8844</td>
     <td>9944</td>
@@ -63,8 +63,8 @@ To actually have docker images rebuilt, prune them manually in advance, fx `dock
     <td>-</td>
   </tr>
   <tr>
-    <td>Rococo</td>
-    <td>Bob</td>
+    <td>rococo</td>
+    <td>bob</td>
     <td>10002</td>
     <td>8845</td>
     <td>9945</td>
@@ -74,8 +74,8 @@ To actually have docker images rebuilt, prune them manually in advance, fx `dock
     <td>-</td>
   </tr>
   <tr>
-    <td>Rococo</td>
-    <td>Charlie</td>
+    <td>rococo</td>
+    <td>charlie</td>
     <td>10003</td>
     <td>8846</td>
     <td>9946</td>
@@ -85,8 +85,8 @@ To actually have docker images rebuilt, prune them manually in advance, fx `dock
     <td>-</td>
   </tr>
   <tr>
-    <td>Rococo</td>
-    <td>Dave</td>
+    <td>rococo</td>
+    <td>dave</td>
     <td>10004</td>
     <td>8847</td>
     <td>9947</td>
@@ -96,8 +96,8 @@ To actually have docker images rebuilt, prune them manually in advance, fx `dock
     <td>-</td>
   </tr>
   <tr>
-    <td>Rococo</td>
-    <td>Eve</td>
+    <td>rococo</td>
+    <td>eve</td>
     <td>10005</td>
     <td>8848</td>
     <td>9948</td>
@@ -151,5 +151,8 @@ To actually have docker images rebuilt, prune them manually in advance, fx `dock
     <td>3334</td>
   </tr>
 </table>
+</br>
 
-All code uses `v0.9.17` Substrate.
+The HRMP channels setup between the parachains have a maximum capacity of 8 and a maximum message size of 1024 bytes.
+
+All codebases are based on `v0.9.17` Substrate.

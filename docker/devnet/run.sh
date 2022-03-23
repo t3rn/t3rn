@@ -216,7 +216,21 @@ onboard() {
     --seed '//Alice' \
     --params /tmp/pchain.params \
     tx.parasSudoWrapper.sudoScheduleParaInitialize
-  rm /tmp/{pchain.params,t3rn.params}
+}
+
+channel() {
+  npx @polkadot/api-cli@beta \
+    --ws 'ws://localhost:9944' \
+    --sudo \
+    --seed '//Alice' \
+    tx.parasSudoWrapper.sudoEstablishHrmpChannel \
+    3333 3334 8 1024
+  npx @polkadot/api-cli@beta \
+    --ws 'ws://localhost:9944' \
+    --sudo \
+    --seed '//Alice' \
+    tx.parasSudoWrapper.sudoEstablishHrmpChannel \
+    3334 3333 8 1024
 }
 
 case ${1:-devnet} in
@@ -227,7 +241,9 @@ devnet|dev|net)
   echo "⛓️ setting up collator keystores and initializing parachain onboarding..."
   set_keys
   onboard
+  channel
   echo "👀 parachains onboarding => https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/parachains"
+  rm /tmp/{pchain.params,t3rn.params}
   ;;
 setkeys|keys)
   set_keys
