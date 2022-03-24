@@ -435,7 +435,7 @@ pub mod pallet {
             gateway_id: ChainId,
         ) -> DispatchResultWithPostInfo {
             ensure_owner_or_root_single::<T, I>(origin, gateway_id)?;
-            <IsHaltedMap<T, I>>::insert(gateway_id, operational);
+            <IsHaltedMap<T, I>>::insert(gateway_id, !operational);
 
             if operational {
                 // If a gateway shall be operational the pallet must be too.
