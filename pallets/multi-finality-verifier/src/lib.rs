@@ -173,9 +173,9 @@ pub mod pallet {
 
             let best_finalized = <MultiImportedHeaders<T, I>>::get(
                 gateway_id,
+                // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
+                // `ImportedHeaders` must contain an entry for `BestFinalized`.
                 <BestFinalizedMap<T, I>>::get(gateway_id)
-                    // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
-                    // `ImportedHeaders` must contain an entry for `BestFinalized`.
                     .ok_or_else(|| <Error<T, I>>::NoFinalizedHeader)?,
             )
             // In order to reach this point the bridge must have been initialized for given gateway.
