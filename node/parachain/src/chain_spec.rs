@@ -286,7 +286,7 @@ where
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn template_session_keys(keys: AuraId) -> circuit_parachain_runtime::SessionKeys {
+pub fn session_keys(keys: AuraId) -> circuit_parachain_runtime::SessionKeys {
     circuit_parachain_runtime::SessionKeys { aura: keys }
 }
 
@@ -330,7 +330,7 @@ pub fn development_config() -> ChainSpec {
                     get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
                     get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
                 ],
-                1000.into(),
+                3333_u32.into(),
                 // Sudo account
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
                 seed_xdns_registry().unwrap_or_default(),
@@ -344,7 +344,7 @@ pub fn development_config() -> ChainSpec {
         None,
         Extensions {
             relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
-            para_id: 1000,
+            para_id: 3333_u32,                  // You MUST set this correctly!
         },
     )
 }
@@ -352,7 +352,7 @@ pub fn development_config() -> ChainSpec {
 pub fn local_testnet_config() -> ChainSpec {
     // Give your base currency a unit name and decimal places
     let mut properties = sc_chain_spec::Properties::new();
-    properties.insert("tokenSymbol".into(), "UNIT".into());
+    properties.insert("tokenSymbol".into(), "TRN".into());
     properties.insert("tokenDecimals".into(), 12.into());
     properties.insert("ss58Format".into(), 42.into());
 
@@ -389,7 +389,7 @@ pub fn local_testnet_config() -> ChainSpec {
                     get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
                     get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
                 ],
-                1000.into(),
+                3333_u32.into(),
                 // Sudo account
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
                 seed_xdns_registry().unwrap_or_default(),
@@ -401,7 +401,7 @@ pub fn local_testnet_config() -> ChainSpec {
         // Telemetry
         None,
         // Protocol ID
-        Some("template-local"),
+        Some("circuit-local"),
         // Fork ID
         None,
         // Properties
@@ -409,7 +409,7 @@ pub fn local_testnet_config() -> ChainSpec {
         // Extensions
         Extensions {
             relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
-            para_id: 1000,
+            para_id: 3333_u32,                  // You MUST set this correctly!
         },
     )
 }
@@ -446,9 +446,9 @@ fn testnet_genesis(
                 .into_iter()
                 .map(|(acc, aura)| {
                     (
-                        acc.clone(),                 // account id
-                        acc,                         // validator id
-                        template_session_keys(aura), // session keys
+                        acc.clone(),        // account id
+                        acc,                // validator id
+                        session_keys(aura), // session keys
                     )
                 })
                 .collect(),
