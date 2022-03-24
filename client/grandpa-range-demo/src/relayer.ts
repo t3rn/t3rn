@@ -67,8 +67,7 @@ export default class Relayer {
       )
 
     return new Promise(async (resolve, reject) => {
-      await this.circuit.tx.sudo
-        .sudo(submitFinalityProof)
+      await submitFinalityProof
         .signAndSend(keyring.alice, result => {
           if (result.isError) {
             Relayer.debug('submitting finality proof failed')
