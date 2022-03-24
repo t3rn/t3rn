@@ -446,9 +446,9 @@ fn testnet_genesis(
                 .into_iter()
                 .map(|(acc, aura)| {
                     (
-                        acc.clone(),                 // account id
-                        acc,                         // validator id
-                        session_keys(aura),          // session keys
+                        acc.clone(),        // account id
+                        acc,                // validator id
+                        session_keys(aura), // session keys
                     )
                 })
                 .collect(),
