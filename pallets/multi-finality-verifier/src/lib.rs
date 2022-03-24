@@ -443,6 +443,8 @@ pub mod pallet {
             <IsHaltedMap<T, I>>::insert(gateway_id, operational);
 
             if operational {
+                // If a gateway shall be operational the pallet must be too.
+                <IsHalted<T, I>>::put(false);
                 log::info!("Resuming pallet operations.");
             } else {
                 log::warn!("Stopping pallet operations.");
