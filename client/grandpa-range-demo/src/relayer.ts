@@ -73,12 +73,10 @@ export default class Relayer {
         if (result.isError) {
           reject(Error('submitting header range failed'))
         } else if (result.isInBlock) {
-          if (result.events.length) {
-            Relayer.debug(
-              'submit_header_range events',
-              ...formatEvents(result.events)
-            )
-          }
+          Relayer.debug(
+            'submit_header_range events',
+            ...formatEvents(result.events)
+          )
           resolve(undefined)
         }
       })
@@ -96,12 +94,10 @@ export default class Relayer {
         if (result.isError) {
           reject(Error('submitting finality proof failed'))
         } else if (result.isInBlock) {
-          if (result.events.length) {
-            Relayer.debug(
-              'submit_finality_proof events',
-              ...formatEvents(result.events)
-            )
-          }
+          Relayer.debug(
+            'submit_finality_proof events',
+            ...formatEvents(result.events)
+          )
           resolve(undefined)
         }
       })
