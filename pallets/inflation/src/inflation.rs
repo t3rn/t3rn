@@ -32,7 +32,7 @@ impl<T: Ord> Range<T> {
 }
 
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(Eq, PartialEq, Clone, Encode, Decode, Default, RuntimeDebug, TypeInfo)]
+#[derive(Eq, PartialEq, Clone, Encode, Decode, MaxEncodedLen, Default, RuntimeDebug, TypeInfo)]
 pub struct InflationInfo {
     pub(crate) annual: Range<Perbill>,
     pub(crate) per_round: Range<Perbill>,

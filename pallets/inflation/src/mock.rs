@@ -56,7 +56,7 @@ impl system::Config for Test {
 }
 
 parameter_types! {
-    pub const ExistentialDeposit: u128 = 1;
+    pub const ExistentialDeposit: u128 = 1u128;
     pub const MaxLocks: u32 = 50;
     pub const MaxReserves: u32 = 50;
 }
@@ -68,16 +68,27 @@ impl pallet_balances::Config for Test {
     /// The ubiquitous event type.
     type Event = Event;
     type DustRemoval = ();
-    type ExistentialDeposit = ExistentialDeposit;
+    type ExistentialDeposit = u64;
     type AccountStore = System;
     type WeightInfo = ();
     type MaxReserves = MaxReserves;
     type ReserveIdentifier = [u8; 8];
 }
 
+parameter_types! {
+    pub const TreasuryAccount: u32 = 1;
+    pub const DefaultBlocksPerRound: u32 = 1;
+    pub const TokenCirculationAtGenesis: u32 = 100;
+}
+
 impl pallet_inflation::Config for Test {
     type Event = Event;
     type Currency = Balances;
+    type Balance = u32;
+    type TreasuryAccount = u64;
+    type DefaultBlocksPerRound = u32;
+    type TokenCirculationAtGenesis = u32;
+    type WeightInfo = ();
 }
 
 // Build genesis storage according to the mock runtime.
