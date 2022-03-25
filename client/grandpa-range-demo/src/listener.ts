@@ -90,7 +90,7 @@ export default class Listener extends EventEmitter {
     const unsubJustifications =
       await this.kusama.rpc.grandpa.subscribeJustifications(
         async (justification: JustificationNotification) => {
-          Listener.debug('got a grandpa justification...')
+          Listener.debug('got a grandpa justification...', justification)
           this.emit('range', range, justification, this.gatewayId)
           unsubJustifications()
         }

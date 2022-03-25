@@ -82,25 +82,25 @@ export default class Relayer {
       })
     })
 
-    const submitFinalityProof =
-      this.circuit.tx.multiFinalityVerifierPolkadotLike.submitFinalityProof(
-        anchor,
-        justification,
-        gatewayId
-      )
+    // const submitFinalityProof =
+    //   this.circuit.tx.multiFinalityVerifierPolkadotLike.submitFinalityProof(
+    //     anchor,
+    //     justification,
+    //     gatewayId
+    //   )
 
-    await new Promise(async (resolve, reject) => {
-      await submitFinalityProof.signAndSend(keyring.alice, result => {
-        if (result.isError) {
-          reject(Error('submitting finality proof failed'))
-        } else if (result.isInBlock) {
-          Relayer.debug(
-            'submit_finality_proof events',
-            ...formatEvents(result.events)
-          )
-          resolve(undefined)
-        }
-      })
-    })
+    // await new Promise(async (resolve, reject) => {
+    //   await submitFinalityProof.signAndSend(keyring.alice, result => {
+    //     if (result.isError) {
+    //       reject(Error('submitting finality proof failed'))
+    //     } else if (result.isInBlock) {
+    //       Relayer.debug(
+    //         'submit_finality_proof events',
+    //         ...formatEvents(result.events)
+    //       )
+    //       resolve(undefined)
+    //     }
+    //   })
+    // })
   }
 }

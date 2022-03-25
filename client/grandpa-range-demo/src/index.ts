@@ -1,3 +1,4 @@
+import '@polkadot/api-augment/kusama'
 import Listener from './listener'
 import Relayer from './relayer'
 
