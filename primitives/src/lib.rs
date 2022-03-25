@@ -46,6 +46,7 @@ pub mod storage;
 pub mod transfers;
 pub mod volatile;
 pub mod xtx;
+pub mod circuit;
 
 pub use gateway_inbound_protocol::GatewayInboundProtocol;
 

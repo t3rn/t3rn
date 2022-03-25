@@ -3,4 +3,4 @@
 	url = https://github.com/t3rn/frontier
 [submodule "protocol"]
 	path = protocol
-	url = https://github.com/t3rn/protocol
+	url = git@github.com:t3rn/protocol.git

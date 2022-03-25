@@ -87,7 +87,7 @@ pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"circ");
 
 pub type SystemHashing<T> = <T as frame_system::Config>::Hashing;
 use crate::state::*;
-
+€
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -95,6 +95,7 @@ pub mod pallet {
     use frame_support::traits::Get;
     use frame_support::PalletId;
     use frame_system::pallet_prelude::*;
+    use t3rn_primitives::circuit::OnLocalTrigger;
 
     pub use crate::weights::WeightInfo;
 
@@ -221,11 +222,8 @@ pub mod pallet {
         }
     }
 
-    #[pallet::call]
-    impl<T: Config> Pallet<T> {
-        /// Used by other pallets that want to create the exec order
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
-        pub fn on_local_trigger(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+    impl OnLocalTrigger<T> for Pallet<T> {
+        fn on_local_trigger(origin: OriginFor<T>, side_effects: Vec<Vec<u8>>) -> DispatchResultWithPostInfo {
             // ToDo: pallet-circuit x-t3rn# : Authorize : Check TriggerAuthRights for local triggers
 
             // ToDo: pallet-circuit x-t3rn# : Validate : insurance for reversible side effects if necessary
@@ -250,7 +248,15 @@ pub mod pallet {
 
             // ToDo: pallet-circuit x-t3rn# : Apply - Cancel : Apply changes to storage after the timeout has passed
 
-            unimplemented!();
+            unimplemented!();        }
+    }
+
+    #[pallet::call]
+    impl<T: Config> Pallet<T> {
+        /// Used by other pallets that want to create the exec order
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
+        pub fn on_local_trigger(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            <Self as OnLocalTrigger<T>>::on_local_trigger(origin, )
         }
 
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
