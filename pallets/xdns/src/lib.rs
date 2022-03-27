@@ -380,9 +380,7 @@ pub mod pallet {
             Ok(<XDNSRegistry<T>>::get(chain_id).unwrap().gateway_abi)
         }
 
-        pub fn get_gateway_type_unsafe(
-            chain_id: &ChainId,
-        ) -> GatewayType {
+        pub fn get_gateway_type_unsafe(chain_id: &ChainId) -> GatewayType {
             <XDNSRegistry<T>>::get(chain_id).unwrap().gateway_type
         }
     }
