@@ -99,7 +99,7 @@ impl<T: Config> EscrowExec<T> for Transfer<T> {
         let value: BalanceOf<T> =
             Decode::decode(&mut encoded_args[2].as_ref()).map_err(|_e| "Decoding err")?;
 
-        println!(
+        log::debug!(
             "escrow exec transfer from {:?} to {:?} value {:?}",
             executioner, escrow_account, value
         );
@@ -125,7 +125,7 @@ impl<T: Config> EscrowExec<T> for Transfer<T> {
         <T as EscrowTrait>::Currency::transfer(&escrow_account, &executioner, value, AllowDeath)
             .map_err(|_| Error::<T>::RewardTransferFailed)?; // should not fail
 
-        println!(
+        log::debug!(
             "escrow revert transfer from {:?} to {:?} value {:?}",
             escrow_account, executioner, value
         );
@@ -148,7 +148,7 @@ impl<T: Config> EscrowExec<T> for Transfer<T> {
         let dest: T::AccountId =
             Decode::decode(&mut encoded_args[1].as_ref()).map_err(|_e| "Decoding err")?;
 
-        println!(
+        log::debug!(
             "escrow commit from {:?} to {:?} value {:?}",
             escrow_account, dest, value
         );
