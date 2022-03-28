@@ -1,5 +1,6 @@
 import { EventEmitter } from 'events'
 import { ApiPromise, WsProvider } from '@polkadot/api'
+import { createTestPairs } from '@polkadot/keyring/testingPairs'
 import {
   JustificationNotification,
   Header,
@@ -7,6 +8,8 @@ import {
 } from '@polkadot/types/interfaces'
 import createDebug from 'debug'
 import 'dotenv/config'
+
+const keyring = createTestPairs({ type: 'sr25519' })
 
 export default class Listener extends EventEmitter {
   static debug = createDebug('listener')
@@ -80,12 +83,9 @@ export default class Listener extends EventEmitter {
     const anchor: Header = reversedRange[0]
 
     const proofs: EncodedFinalityProofs = await this.kusama.rpc.grandpa
-      .proveFinality(
-        reversedRange[reversedRange.length - 1].hash,
-        anchor.hash,
-        this.grandpaSetId
-      )
-      .then(o => o.unwrap())
+      .proveFinality(anchor.number.toNumber())
+      .then(opt => opt.unwrap())
+
     Listener.debug('$$$$$', proofs.toHuman())
     const justification: any = null //TODO
 
