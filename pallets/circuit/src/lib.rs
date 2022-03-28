@@ -95,7 +95,7 @@ pub mod pallet {
     use frame_support::traits::Get;
     use frame_support::PalletId;
     use frame_system::pallet_prelude::*;
-    use t3rn_primitives::circuit::OnLocalTrigger;
+    use t3rn_primitives::circuit::{LocalTrigger, OnLocalTrigger};
 
     pub use crate::weights::WeightInfo;
 
@@ -223,7 +223,7 @@ pub mod pallet {
     }
 
     impl OnLocalTrigger<T> for Pallet<T> {
-        fn on_local_trigger(origin: OriginFor<T>, side_effects: Vec<Vec<u8>>) -> DispatchResultWithPostInfo {
+        fn on_local_trigger(origin: OriginFor<T>, trigger: LocalTrigger<T>) -> DispatchResultWithPostInfo {
             // ToDo: pallet-circuit x-t3rn# : Authorize : Check TriggerAuthRights for local triggers
 
             // ToDo: pallet-circuit x-t3rn# : Validate : insurance for reversible side effects if necessary
@@ -244,19 +244,20 @@ pub mod pallet {
 
             // ToDo: pallet-circuit x-t3rn# : Apply - Revert : Apply changes to storage after Revert has been proven
 
-            // ToDo: pallet-circuit x-t3rn# : Apply - Commit : Apply changes to storage after Successfully Commit has been requested
+            // ToDo: pallet-circuit x-t3rn# ©: Apply - Commit : Apply changes to storage after Successfully Commit has been requested
 
             // ToDo: pallet-circuit x-t3rn# : Apply - Cancel : Apply changes to storage after the timeout has passed
 
-            unimplemented!();        }
+            unimplemented!();
+        }
     }
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Used by other pallets that want to create the exec order
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
-        pub fn on_local_trigger(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            <Self as OnLocalTrigger<T>>::on_local_trigger(origin, )
+        pub fn on_local_trigger(origin: OriginFor<T>, trigger: LocalTrigger<T>) -> DispatchResultWithPostInfo {
+            <Self as OnLocalTrigger<T>>::on_local_trigger(origin, trigger)
         }
 
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
