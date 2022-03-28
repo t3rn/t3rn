@@ -96,7 +96,7 @@ export default class Listener extends EventEmitter {
       .proveFinality(anchor.number.toNumber())
       .then(opt => opt.unwrap())
 
-    Listener.debug('$$$$$', proofs.toHuman())
+    Listener.debug('$$$$$', proofs, proofs.toHuman())
     const justification: any = null //TODO
 
     this.emit('range', this.gatewayId, anchor, reversedRange, justification)
