@@ -47,7 +47,7 @@ export default class Listener extends EventEmitter {
   }
 
   async handleGrandpaSet() {
-    const currentSetId: number = Number(
+    const currentSetId = Number(
       await this.kusama.query.grandpa.currentSetId().then(id => id.toJSON())
     )
 
@@ -81,6 +81,15 @@ export default class Listener extends EventEmitter {
     this.offset += this.rangeSize
 
     const anchor: Header = reversedRange[0]
+
+    // Await anchor finalization for the proveFinality call
+    let anchorFinalized = false
+    while (!anchorFinalized) {
+      const head = await this.kusama.rpc.chain.getFinalizedHead()
+      if (head.eq(anchor.hash)) {
+        anchorFinalized = true
+      }
+    }
 
     const proofs: EncodedFinalityProofs = await this.kusama.rpc.grandpa
       .proveFinality(anchor.number.toNumber())
