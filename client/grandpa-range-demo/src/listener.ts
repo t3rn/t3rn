@@ -3,6 +3,7 @@ import { ApiPromise, WsProvider } from '@polkadot/api'
 import { createTestPairs } from '@polkadot/keyring/testingPairs'
 import {
   JustificationNotification,
+  BlockHash,
   Header,
   EncodedFinalityProofs,
 } from '@polkadot/types/interfaces'
@@ -85,8 +86,8 @@ export default class Listener extends EventEmitter {
     // Await anchor finalization for the proveFinality call
     let anchorFinalized = false
     while (!anchorFinalized) {
-      const head = await this.kusama.rpc.chain.getFinalizedHead()
-      if (head.eq(anchor.hash)) {
+      const head: BlockHash | void = await this.kusama.rpc.chain.getFinalizedHead().catch(() => {})
+      if (head && head.eq(anchor.hash)) {
         anchorFinalized = true
       }
     }
