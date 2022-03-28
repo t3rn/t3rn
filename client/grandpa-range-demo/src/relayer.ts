@@ -52,14 +52,33 @@ export default class Relayer {
   }
 
   async submit(
-    range: Header[],
-    justification: JustificationNotification,
-    gatewayId: Buffer
+    gatewayId: Buffer,
+    anchor: Header,
+    reversedRange: Header[],
+    justification: any
   ) {
-    Relayer.debug('submitting header range and finality proof...')
+    Relayer.debug('submitting finality proof and header range...')
 
-    const reversedRange: Header[] = range.reverse()
-    const anchor: Header = reversedRange[0]
+    const submitFinalityProof =
+      this.circuit.tx.multiFinalityVerifierPolkadotLike.submitFinalityProof(
+        anchor,
+        justification,
+        gatewayId
+      )
+
+    await new Promise(async (resolve, reject) => {
+      await submitFinalityProof.signAndSend(keyring.alice, result => {
+        if (result.isError) {
+          reject(Error('submitting finality proof failed'))
+        } else if (result.isInBlock) {
+          Relayer.debug(
+            'submit_finality_proof events',
+            ...formatEvents(result.events)
+          )
+          resolve(undefined)
+        }
+      })
+    })
 
     const submitHeaderRange =
       this.circuit.tx.multiFinalityVerifierPolkadotLike.submitHeaderRange(
@@ -81,26 +100,5 @@ export default class Relayer {
         }
       })
     })
-
-    // const submitFinalityProof =
-    //   this.circuit.tx.multiFinalityVerifierPolkadotLike.submitFinalityProof(
-    //     anchor,
-    //     justification,
-    //     gatewayId
-    //   )
-
-    // await new Promise(async (resolve, reject) => {
-    //   await submitFinalityProof.signAndSend(keyring.alice, result => {
-    //     if (result.isError) {
-    //       reject(Error('submitting finality proof failed'))
-    //     } else if (result.isInBlock) {
-    //       Relayer.debug(
-    //         'submit_finality_proof events',
-    //         ...formatEvents(result.events)
-    //       )
-    //       resolve(undefined)
-    //     }
-    //   })
-    // })
   }
 }

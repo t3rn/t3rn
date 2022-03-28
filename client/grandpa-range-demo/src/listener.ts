@@ -3,7 +3,7 @@ import { ApiPromise, WsProvider } from '@polkadot/api'
 import {
   JustificationNotification,
   Header,
-  BlockHash,
+  EncodedFinalityProofs,
 } from '@polkadot/types/interfaces'
 import createDebug from 'debug'
 import 'dotenv/config'
@@ -37,7 +37,7 @@ export default class Listener extends EventEmitter {
         await this.handleHeader(header)
 
         if (this.headers.length - this.offset === this.rangeSize) {
-          await this.emitRange()
+          await this.concludeRange()
         }
       }
     )
@@ -45,12 +45,12 @@ export default class Listener extends EventEmitter {
 
   async handleGrandpaSet() {
     const currentSetId: number = Number(
-      (await this.kusama.query.grandpa.currentSetId()).toJSON()
+      await this.kusama.query.grandpa.currentSetId().then(id => id.toJSON())
     )
 
     if (this.grandpaSetId !== 0 && currentSetId !== this.grandpaSetId) {
       Listener.debug('grandpa set change', this.grandpaSetId, currentSetId)
-      await this.emitRange()
+      await this.concludeRange()
     }
 
     this.grandpaSetId = currentSetId
@@ -70,21 +70,35 @@ export default class Listener extends EventEmitter {
     Listener.debug(`#${this.last}`)
   }
 
-  async emitRange() {
-    const range: Header[] = this.headers.slice(
-      this.offset,
-      this.offset + this.rangeSize
-    )
+  async concludeRange() {
+    const reversedRange: Header[] = this.headers
+      .slice(this.offset, this.offset + this.rangeSize)
+      .reverse()
+
     this.offset += this.rangeSize
 
-    const unsubJustifications =
-      await this.kusama.rpc.grandpa.subscribeJustifications(
-        async (justification: JustificationNotification) => {
-          Listener.debug('got a grandpa justification...', justification)
-          this.emit('range', range, justification, this.gatewayId)
-          unsubJustifications()
-        }
+    const anchor: Header = reversedRange[0]
+
+    const proofs: EncodedFinalityProofs = await this.kusama.rpc.grandpa
+      .proveFinality(
+        reversedRange[reversedRange.length - 1].hash,
+        anchor.hash,
+        this.grandpaSetId
       )
+      .then(o => o.unwrap())
+    Listener.debug('$$$$$', proofs.toHuman())
+    const justification: any = null //TODO
+
+    this.emit('range', this.gatewayId, anchor, reversedRange, justification)
+
+    // const unsubJustifications =
+    //   await this.kusama.rpc.grandpa.subscribeJustifications(
+    //     async (justification: JustificationNotification) => {
+    //       Listener.debug('got a grandpa justification...', justification)
+    //       this.emit('range', range, justification, this.gatewayId)
+    //       unsubJustifications()
+    //     }
+    //   )
   }
 
   kill() {
