@@ -18,6 +18,7 @@
 
 use crate::bridges::messages as bp_messages;
 use crate::bridges::runtime as bp_runtime;
+use std::fmt::{Debug, Formatter};
 
 use bp_messages::MessageNonce;
 use bp_runtime::Chain;
@@ -32,7 +33,7 @@ use frame_support::{
     Blake2_128Concat, RuntimeDebug, StorageHasher, Twox128,
 };
 use frame_system::limits;
-
+use scale_info::{StaticTypeInfo, Type, TypeInfo};
 use sp_core::Hasher as HasherT;
 use sp_runtime::{
     generic,
@@ -217,92 +218,64 @@ pub type SignedExtra = (
 /// Parameters which are part of the payload used to produce transaction signature,
 /// but don't end up in the transaction itself (i.e. inherent part of the runtime).
 pub type AdditionalSigned = (u32, u32, Hash, Hash, (), (), ());
-//
-// /// A simplified version of signed extensions meant for producing signed transactions
-// /// and signed payload in the client code.
-// #[derive(Encode, Decode, PartialEq, Eq, Clone, RuntimeDebug, TypeInfo)]
-// pub struct SignedExtensions<Call> {
-//     encode_payload: SignedExtra,
-//     additional_signed: AdditionalSigned,
-//     _data: sp_std::marker::PhantomData<Call>,
-// }
-//
-//
-// impl<Call> codec::Encode for SignedExtensions<Call> {
-//     fn using_encoded<R, F: FnOnce(&[u8]) -> R>(&self, f: F) -> R {
-//         self.encode_payload.using_encoded(f)
-//     }
-// }
-//
-// impl<Call> codec::Decode for SignedExtensions<Call> {
-//     fn decode<I: codec::Input>(_input: &mut I) -> Result<Self, codec::Error> {
-//         unimplemented!("SignedExtensions are never meant to be decoded, they are only used to create transaction");
-//     }
-// }
-//
-// impl<Call> SignedExtensions<Call> {
-//     /// Return signer nonce, used to craft transaction.
-//     pub fn nonce(&self) -> Nonce {
-//         self.encode_payload.4.into()
-//     }
-//
-//     /// Return transaction tip.
-//     pub fn tip(&self) -> Balance {
-//         self.encode_payload.6.into()
-//     }
-// }
-//
-// impl<Call> SignedExtensions<Call> {
-//     pub fn new(
-//         version: sp_version::RuntimeVersion,
-//         era: sp_runtime::generic::Era,
-//         genesis_hash: Hash,
-//         nonce: Nonce,
-//         tip: Balance,
-//     ) -> Self {
-//         Self {
-//             encode_payload: (
-//                 (),           // spec version
-//                 (),           // tx version
-//                 (),           // genesis
-//                 era,          // era
-//                 nonce.into(), // nonce (compact encoding)
-//                 (),           // Check weight
-//                 tip.into(),   // transaction payment / tip (compact encoding)
-//             ),
-//             additional_signed: (
-//                 version.spec_version,
-//                 version.transaction_version,
-//                 genesis_hash,
-//                 genesis_hash,
-//                 (),
-//                 (),
-//                 (),
-//             ),
-//             _data: Default::default(),
-//         }
-//     }
-// }
-//
-// // impl<Call> TypeInfo for SignedExtensions<Call> where Call: Clone + Dispatchable + Eq + PartialEq + Send + StaticTypeInfo + Sync + codec::Codec + sp_std::fmt::Debug {
-// //     type Identity = ();
-// //
-// //     fn type_info() -> Type {
-// //         todo!()
-// //     }
-// // }
+
+/// A simplified version of signed extensions meant for producing signed transactions
+/// and signed payload in the client code.
+#[derive(PartialEq, Eq, Clone, RuntimeDebug, TypeInfo)]
+pub struct SignedExtensions<Call> {
+    encode_payload: SignedExtra,
+    additional_signed: AdditionalSigned,
+    _data: sp_std::marker::PhantomData<Call>,
+}
+
+impl<Call> codec::Encode for SignedExtensions<Call> {
+    fn using_encoded<R, F: FnOnce(&[u8]) -> R>(&self, f: F) -> R {
+        self.encode_payload.using_encoded(f)
+    }
+}
+
+impl<Call> codec::Decode for SignedExtensions<Call> {
+    fn decode<I: codec::Input>(_input: &mut I) -> Result<Self, codec::Error> {
+        unimplemented!("SignedExtensions are never meant to be decoded, they are only used to create transaction");
+    }
+}
+
+impl<Call> SignedExtensions<Call> {
+    pub fn new(
+        version: sp_version::RuntimeVersion,
+        era: sp_runtime::generic::Era,
+        genesis_hash: Hash,
+        nonce: Nonce,
+        tip: Balance,
+    ) -> Self {
+        Self {
+            encode_payload: (
+                (),           // spec version
+                (),           // tx version
+                (),           // genesis
+                era,          // era
+                nonce.into(), // nonce (compact encoding)
+                (),           // Check weight
+                tip.into(),   // transaction payment / tip (compact encoding)
+            ),
+            additional_signed: (
+                version.spec_version,
+                version.transaction_version,
+                genesis_hash,
+                genesis_hash,
+                (),
+                (),
+                (),
+            ),
+            _data: Default::default(),
+        }
+    }
+}
 //
 // impl<Call> sp_runtime::traits::SignedExtension for SignedExtensions<Call>
-//     where
-//         Call: codec::Codec
-//         + sp_std::fmt::Debug
-//         + Sync
-//         + Send
-//         + Clone
-//         + Eq
-//         + PartialEq
-//         + StaticTypeInfo,
-//         Call: Dispatchable,
+// where
+//     Call: codec::Codec + sp_std::fmt::Debug + Sync + Send + Clone + Eq + PartialEq + StaticTypeInfo,
+//     Call: Dispatchable,
 // {
 //     const IDENTIFIER: &'static str = "Not needed.";
 //
@@ -314,23 +287,7 @@ pub type AdditionalSigned = (u32, u32, Hash, Hash, (), (), ());
 //     fn additional_signed(
 //         &self,
 //     ) -> Result<Self::AdditionalSigned, frame_support::unsigned::TransactionValidityError> {
-//         // we shall not ever see this error in relay, because we are never signing decoded
-//         // transactions. Instead we're constructing and signing new transactions. So the error code
-//         // is kinda random here
-//         self.additional_signed
-//             .ok_or(frame_support::unsigned::TransactionValidityError::Unknown(
-//                 frame_support::unsigned::UnknownTransaction::Custom(0xFF),
-//             ))
-//     }
-//
-//     fn pre_dispatch(
-//         self,
-//         _who: &Self::AccountId,
-//         _call: &Self::Call,
-//         _info: &DispatchInfoOf<Self::Call>,
-//         _len: usize,
-//     ) -> Result<Self::Pre, TransactionValidityError> {
-//         Ok(())
+//         Ok(self.additional_signed)
 //     }
 // }
 

@@ -19,7 +19,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use frame_support::traits::{Currency, Time};
+use frame_support::traits::{ReservableCurrency, Time};
 use scale_info::TypeInfo;
 
 #[cfg(feature = "std")]
@@ -38,6 +38,7 @@ use std::fmt::Debug;
 pub mod abi;
 pub mod bridges;
 pub mod contract_metadata;
+pub mod contracts_registry;
 pub mod gateway_inbound_protocol;
 pub mod match_format;
 pub mod side_effect;
@@ -198,8 +199,6 @@ pub struct Compose<Account, Balance> {
 /// A result type of a get storage call.
 pub type FetchContractsResult = Result<Vec<u8>, ContractAccessError>;
 
-pub type RegistryContractId<T> = <T as frame_system::Config>::Hash;
-
 /// A result of execution of a contract.
 #[derive(Eq, PartialEq, Encode, Decode, Debug, Clone)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -253,8 +252,9 @@ pub struct InterExecSchedule<Account, Balance> {
     pub phases: Vec<ExecPhase<Account, Balance>>,
 }
 
+/// TODO: need a currency shim for base currency here
 pub trait EscrowTrait: frame_system::Config + pallet_sudo::Config {
-    type Currency: Currency<Self::AccountId>;
+    type Currency: ReservableCurrency<Self::AccountId>;
     type Time: Time;
 }
 
