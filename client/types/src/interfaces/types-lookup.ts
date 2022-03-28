@@ -422,9 +422,9 @@ declare module "@polkadot/types/lookup" {
 
   /** @name T3rnPrimitivesGatewayVendor (42) */
   export interface T3rnPrimitivesGatewayVendor extends Enum {
-    readonly isEthereum: boolean;
     readonly isSubstrate: boolean;
-    readonly type: "Ethereum" | "Substrate";
+    readonly isEthereum: boolean;
+    readonly type: "Substrate" | "Ethereum";
   }
 
   /** @name T3rnPrimitivesGatewaySysProps (43) */

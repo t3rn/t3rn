@@ -285,7 +285,7 @@ export default {
   },
   /** Lookup42: t3rn_primitives::GatewayVendor */
   T3rnPrimitivesGatewayVendor: {
-    _enum: ["Ethereum", "Substrate"],
+    _enum: ["Substrate", "Ethereum"],
   },
   /** Lookup43: t3rn_primitives::GatewaySysProps */
   T3rnPrimitivesGatewaySysProps: {

@@ -14,7 +14,7 @@ import type {
   u32,
   u64,
 } from "@polkadot/types-codec";
-import type { ITuple } from "@polkadot/types-codec/types";
+import type { AnyNumber, ITuple } from "@polkadot/types-codec/types";
 import type { AccountId32, H256 } from "@polkadot/types/interfaces/runtime";
 import type {
   FrameSupportWeightsPerDispatchClassU64,
@@ -239,7 +239,7 @@ declare module "@polkadot/api-base/types/storage" {
        */
       setIdSession: AugmentedQuery<
         ApiType,
-        (arg: u64) => Observable<Option<u32>>,
+        (arg: u64 | AnyNumber | Uint8Array) => Observable<Option<u32>>,
         [u64]
       > &
         QueryableStorageEntry<ApiType, [u64]>;
@@ -306,7 +306,7 @@ declare module "@polkadot/api-base/types/storage" {
         ApiType,
         (
           arg1: U8aFixed | string | Uint8Array,
-          arg2: u32
+          arg2: u32 | AnyNumber | Uint8Array
         ) => Observable<Option<H256>>,
         [U8aFixed, u32]
       > &
@@ -447,7 +447,7 @@ declare module "@polkadot/api-base/types/storage" {
         ApiType,
         (
           arg1: U8aFixed | string | Uint8Array,
-          arg2: u32
+          arg2: u32 | AnyNumber | Uint8Array
         ) => Observable<Option<H256>>,
         [U8aFixed, u32]
       > &
@@ -588,7 +588,7 @@ declare module "@polkadot/api-base/types/storage" {
         ApiType,
         (
           arg1: U8aFixed | string | Uint8Array,
-          arg2: u32
+          arg2: u32 | AnyNumber | Uint8Array
         ) => Observable<Option<H256>>,
         [U8aFixed, u32]
       > &
@@ -729,7 +729,7 @@ declare module "@polkadot/api-base/types/storage" {
         ApiType,
         (
           arg1: U8aFixed | string | Uint8Array,
-          arg2: u32
+          arg2: u32 | AnyNumber | Uint8Array
         ) => Observable<Option<H256>>,
         [U8aFixed, u32]
       > &
@@ -870,7 +870,7 @@ declare module "@polkadot/api-base/types/storage" {
         ApiType,
         (
           arg1: U8aFixed | string | Uint8Array,
-          arg2: u32
+          arg2: u32 | AnyNumber | Uint8Array
         ) => Observable<Option<H256>>,
         [U8aFixed, u32]
       > &
@@ -977,7 +977,7 @@ declare module "@polkadot/api-base/types/storage" {
         ApiType,
         (
           arg1: AccountId32 | string | Uint8Array,
-          arg2: u32
+          arg2: u32 | AnyNumber | Uint8Array
         ) => Observable<OrmlTokensAccountData>,
         [AccountId32, u32]
       > &
@@ -990,7 +990,7 @@ declare module "@polkadot/api-base/types/storage" {
         ApiType,
         (
           arg1: AccountId32 | string | Uint8Array,
-          arg2: u32
+          arg2: u32 | AnyNumber | Uint8Array
         ) => Observable<Vec<OrmlTokensBalanceLock>>,
         [AccountId32, u32]
       > &
@@ -998,7 +998,7 @@ declare module "@polkadot/api-base/types/storage" {
       /** The total issuance of a token type. */
       totalIssuance: AugmentedQuery<
         ApiType,
-        (arg: u32) => Observable<u128>,
+        (arg: u32 | AnyNumber | Uint8Array) => Observable<u128>,
         [u32]
       > &
         QueryableStorageEntry<ApiType, [u32]>;
@@ -1043,7 +1043,7 @@ declare module "@polkadot/api-base/types/storage" {
       /** Map of block numbers to block hashes. */
       blockHash: AugmentedQuery<
         ApiType,
-        (arg: u32) => Observable<H256>,
+        (arg: u32 | AnyNumber | Uint8Array) => Observable<H256>,
         [u32]
       > &
         QueryableStorageEntry<ApiType, [u32]>;
@@ -1110,7 +1110,7 @@ declare module "@polkadot/api-base/types/storage" {
       /** Extrinsics data for the current block (maps an extrinsic's index to its data). */
       extrinsicData: AugmentedQuery<
         ApiType,
-        (arg: u32) => Observable<Bytes>,
+        (arg: u32 | AnyNumber | Uint8Array) => Observable<Bytes>,
         [u32]
       > &
         QueryableStorageEntry<ApiType, [u32]>;

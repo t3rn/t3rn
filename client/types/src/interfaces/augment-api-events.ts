@@ -81,10 +81,7 @@ declare module "@polkadot/api-base/types/events" {
       [key: string]: AugmentedEvent<ApiType>;
     };
     circuitPortal: {
-      GatewayUpdated: AugmentedEvent<
-        ApiType,
-        [U8aFixed, Option<Vec<U8aFixed>>]
-      >;
+      GatewayUpdated: AugmentedEvent<ApiType, [U8aFixed, Option<Vec<u32>>]>;
       NewGatewayRegistered: AugmentedEvent<
         ApiType,
         [
@@ -92,7 +89,7 @@ declare module "@polkadot/api-base/types/events" {
           T3rnPrimitivesGatewayType,
           T3rnPrimitivesGatewayVendor,
           T3rnPrimitivesGatewaySysProps,
-          Vec<U8aFixed>
+          Vec<u32>
         ]
       >;
       /** Generic event */
