@@ -73,14 +73,12 @@ export default class Listener extends EventEmitter {
         if (missingHeader) {
           this.headers.push(missingHeader)
           this.last = missingHeader.number.toNumber()
-          Listener.debug(`#${this.last}`)
         }
       }
     }
 
     this.headers.push(header)
     this.last = header.number.toNumber()
-    Listener.debug(`#${this.last}`)
   }
 
   async concludeRange() {
@@ -91,6 +89,13 @@ export default class Listener extends EventEmitter {
     this.offset += this.rangeSize
 
     const anchor: Header = reversedRange.shift() as Header
+
+    Listener.debug(
+      'concluding... anchor',
+      anchor.number.toNumber(),
+      'range',
+      ...reversedRange.map(h => h.number.toNumber())
+    )
 
     let anchorFinalized = false
     while (!anchorFinalized) {
