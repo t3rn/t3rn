@@ -7,6 +7,7 @@ import {
   Header,
   EncodedFinalityProofs,
 } from '@polkadot/types/interfaces'
+import { noop } from './util'
 import createDebug from 'debug'
 import 'dotenv/config'
 
@@ -62,11 +63,17 @@ export default class Listener extends EventEmitter {
 
   async handleHeader(header: Header) {
     while (this.last !== 0 && header.number.toNumber() !== this.last + 1) {
-      const missingHeader: Header = await this.kusama.rpc.chain.getHeader(
-        await this.kusama.rpc.chain.getBlockHash(this.last + 1)
-      )
-      this.headers.push(missingHeader)
-      this.last = missingHeader.number.toNumber()
+      const missingHeader: Header | void = await this.kusama.rpc.chain
+        .getHeader(
+          (await this.kusama.rpc.chain
+            .getBlockHash(this.last + 1)
+            .catch(noop)) as BlockHash
+        )
+        .catch(noop)
+      if (missingHeader) {
+        this.headers.push(missingHeader)
+        this.last = missingHeader.number.toNumber()
+      }
     }
 
     this.headers.push(header)
@@ -86,7 +93,9 @@ export default class Listener extends EventEmitter {
     // Await anchor finalization for the proveFinality call
     let anchorFinalized = false
     while (!anchorFinalized) {
-      const head: BlockHash | void = await this.kusama.rpc.chain.getFinalizedHead().catch(() => {})
+      const head: BlockHash | void = await this.kusama.rpc.chain
+        .getFinalizedHead()
+        .catch(noop)
       if (head && head.eq(anchor.hash)) {
         anchorFinalized = true
       }

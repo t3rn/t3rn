@@ -6,3 +6,5 @@ export function formatEvents(
       `${section}.${method} ${data.toString()}`
   )
 }
+
+export function noop(): void {}
