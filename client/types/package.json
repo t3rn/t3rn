@@ -2,11 +2,38 @@
   "name": "@t3rn/types",
   "version": "0.1.1",
   "description": "t3rn protocol's type definitions for use with polkadot.js clients",
-  "main": "dist/src/interfaces/flattened_definitions.js",
-  "types": "dist/src/interfaces/flattened_definitions.d.ts",
+  "main": "dist/src/interfaces/index.js",
+  "types": "dist/src/interfaces/index.d.ts",
   "files": [
     "dist"
   ],
+  "exports": {
+    ".": {
+      "types": "./dist/src/interfaces/index.d.ts",
+      "default": "./dist/src/interfaces/index.js"
+    },
+    "./flat": {
+      "types": "./dist/src/interfaces/definitions.d.ts",
+      "default": "./dist/src/interfaces/definitions.js"
+    },
+    "./api-augment": {
+      "types": "./dist/src/interfaces/augment.d.ts",
+      "default": "./dist/src/interfaces/augment.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "./": [
+        "dist/src/interfaces/index.d.ts"
+      ],
+      "flat": [
+        "./dist/src/interfaces/flattened_definitions.d.ts"
+      ],
+      "api-augment": [
+        "dist/src/interfaces/augment.d.ts"
+      ]
+    }
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/t3rn/t3rn",

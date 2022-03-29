@@ -186,11 +186,11 @@ declare module "@polkadot/api-base/types/events" {
     };
     xdns: {
       /** [requester, xdns_record_id] */
-      XdnsRecordPurged: AugmentedEvent<ApiType, [AccountId32, U8aFixed]>;
+      XdnsRecordPurged: AugmentedEvent<ApiType, [AccountId32, H256]>;
       /** [xdns_record_id] */
-      XdnsRecordStored: AugmentedEvent<ApiType, [U8aFixed]>;
+      XdnsRecordStored: AugmentedEvent<ApiType, [H256]>;
       /** [xdns_record_id] */
-      XdnsRecordUpdated: AugmentedEvent<ApiType, [U8aFixed]>;
+      XdnsRecordUpdated: AugmentedEvent<ApiType, [H256]>;
       /** Generic event */
       [key: string]: AugmentedEvent<ApiType>;
     };

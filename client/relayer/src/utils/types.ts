@@ -1,7 +1,7 @@
 import { EventRecord } from '@polkadot/types/interfaces/system';
 import { ApiPromise } from '@polkadot/api';
-import { SideEffect } from './../../../types/src/interfaces/primitives/types';
-import { XtxId } from './../../../types/src/interfaces/execution_delivery/types';
+import { SideEffect } from '@t3rn/types';
+// import { XtxId } from './../../../types/src/interfaces/execution_delivery/types';
 import type { Hash, AccountId } from '@polkadot/types/interfaces/runtime';
 import type { Vec, Compact, u128, StorageKey, Bytes } from '@polkadot/types';
 import type { AnyNumber } from '@polkadot/types/types';

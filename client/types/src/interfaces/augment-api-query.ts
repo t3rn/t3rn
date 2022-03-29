@@ -260,147 +260,6 @@ declare module "@polkadot/api-base/types/storage" {
       /** Generic query */
       [key: string]: QueryableStorageEntry<ApiType>;
     };
-    multiFinalityVerifierDefault: {
-      /** Map of hashes of the best finalized header. */
-      bestFinalizedMap: AugmentedQuery<
-        ApiType,
-        (arg: U8aFixed | string | Uint8Array) => Observable<Option<H256>>,
-        [U8aFixed]
-      > &
-        QueryableStorageEntry<ApiType, [U8aFixed]>;
-      /** The current GRANDPA Authority set map. */
-      currentAuthoritySetMap: AugmentedQuery<
-        ApiType,
-        (
-          arg: U8aFixed | string | Uint8Array
-        ) => Observable<Option<T3rnPrimitivesBridgesHeaderChainAuthoritySet>>,
-        [U8aFixed]
-      > &
-        QueryableStorageEntry<ApiType, [U8aFixed]>;
-      /** Hash of the header used to bootstrap the pallet. */
-      initialHashMap: AugmentedQuery<
-        ApiType,
-        (arg: U8aFixed | string | Uint8Array) => Observable<Option<H256>>,
-        [U8aFixed]
-      > &
-        QueryableStorageEntry<ApiType, [U8aFixed]>;
-      /** Map of instance ids of gateways which are active */
-      instantiatedGatewaysMap: AugmentedQuery<
-        ApiType,
-        () => Observable<Vec<U8aFixed>>,
-        []
-      > &
-        QueryableStorageEntry<ApiType, []>;
-      /** If true, all pallet transactions are failed immediately. */
-      isHalted: AugmentedQuery<ApiType, () => Observable<bool>, []> &
-        QueryableStorageEntry<ApiType, []>;
-      /** If true, all pallet transactions are failed immediately. */
-      isHaltedMap: AugmentedQuery<
-        ApiType,
-        (arg: U8aFixed | string | Uint8Array) => Observable<Option<bool>>,
-        [U8aFixed]
-      > &
-        QueryableStorageEntry<ApiType, [U8aFixed]>;
-      /** A ring buffer of imported hashes. Ordered by the insertion time. */
-      multiImportedHashes: AugmentedQuery<
-        ApiType,
-        (
-          arg1: U8aFixed | string | Uint8Array,
-          arg2: u32
-        ) => Observable<Option<H256>>,
-        [U8aFixed, u32]
-      > &
-        QueryableStorageEntry<ApiType, [U8aFixed, u32]>;
-      /** Current ring buffer position. */
-      multiImportedHashesPointer: AugmentedQuery<
-        ApiType,
-        (arg: U8aFixed | string | Uint8Array) => Observable<Option<u32>>,
-        [U8aFixed]
-      > &
-        QueryableStorageEntry<ApiType, [U8aFixed]>;
-      /** Headers which have been imported into the pallet. */
-      multiImportedHeaders: AugmentedQuery<
-        ApiType,
-        (
-          arg1: U8aFixed | string | Uint8Array,
-          arg2: H256 | string | Uint8Array
-        ) => Observable<
-          Option<
-            {
-              readonly parentHash: H256;
-              readonly number: Compact<u32>;
-              readonly stateRoot: H256;
-              readonly extrinsicsRoot: H256;
-              readonly digest: SpRuntimeDigest;
-            } & Struct
-          >
-        >,
-        [U8aFixed, H256]
-      > &
-        QueryableStorageEntry<ApiType, [U8aFixed, H256]>;
-      /**
-       * Roots (ExtrinsicsRoot + StateRoot) which have been imported into the
-       * pallet for a given gateway.
-       */
-      multiImportedRoots: AugmentedQuery<
-        ApiType,
-        (
-          arg1: U8aFixed | string | Uint8Array,
-          arg2: H256 | string | Uint8Array
-        ) => Observable<Option<ITuple<[H256, H256]>>>,
-        [U8aFixed, H256]
-      > &
-        QueryableStorageEntry<ApiType, [U8aFixed, H256]>;
-      /**
-       * Optional pallet owner.
-       *
-       * Pallet owner has a right to halt all pallet operations and then resume
-       * it. If it is `None`, then there are no direct ways to halt/resume
-       * pallet operations, but other runtime methods may still be used to do
-       * that (i.e. democracy::referendum to update halt flag directly or call
-       * the `halt_operations`).
-       */
-      palletOwner: AugmentedQuery<
-        ApiType,
-        () => Observable<Option<AccountId32>>,
-        []
-      > &
-        QueryableStorageEntry<ApiType, []>;
-      /**
-       * Optional pallet owner.
-       *
-       * Pallet owner has a right to halt all pallet operations and then resume
-       * it. If it is `None`, then there are no direct ways to halt/resume
-       * pallet operations, but other runtime methods may still be used to do
-       * that (i.e. democracy::referendum to update halt flag directly or call
-       * the `halt_operations`).
-       */
-      palletOwnerMap: AugmentedQuery<
-        ApiType,
-        (
-          arg: U8aFixed | string | Uint8Array
-        ) => Observable<Option<AccountId32>>,
-        [U8aFixed]
-      > &
-        QueryableStorageEntry<ApiType, [U8aFixed]>;
-      /**
-       * The current number of requests which have written to storage.
-       *
-       * If the `RequestCount` hits `MaxRequests`, no more calls will be allowed
-       * to the pallet until the request capacity is increased.
-       *
-       * The `RequestCount` is decreased by one at the beginning of every block.
-       * This is to ensure that the pallet can always make progress.
-       */
-      requestCountMap: AugmentedQuery<
-        ApiType,
-        (arg: U8aFixed | string | Uint8Array) => Observable<Option<u32>>,
-        [U8aFixed]
-      > &
-        QueryableStorageEntry<ApiType, [U8aFixed]>;
-      /** Generic query */
-      [key: string]: QueryableStorageEntry<ApiType>;
-    };
     multiFinalityVerifierEthereumLike: {
       /** Map of hashes of the best finalized header. */
       bestFinalizedMap: AugmentedQuery<
@@ -1196,11 +1055,11 @@ declare module "@polkadot/api-base/types/storage" {
       xdnsRegistry: AugmentedQuery<
         ApiType,
         (
-          arg: U8aFixed | string | Uint8Array
+          arg: H256 | string | Uint8Array
         ) => Observable<Option<PalletXdnsXdnsRecord>>,
-        [U8aFixed]
+        [H256]
       > &
-        QueryableStorageEntry<ApiType, [U8aFixed]>;
+        QueryableStorageEntry<ApiType, [H256]>;
       /** Generic query */
       [key: string]: QueryableStorageEntry<ApiType>;
     };

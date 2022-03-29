@@ -40,28 +40,6 @@ declare module "@polkadot/api-base/types/consts" {
       /** Generic const */
       [key: string]: Codec;
     };
-    multiFinalityVerifierDefault: {
-      /**
-       * Maximal number of finalized headers to keep in the storage.
-       *
-       * The setting is there to prevent growing the on-chain state
-       * indefinitely. Note the setting does not relate to block numbers - we
-       * will simply keep as much items in the storage, so it doesn't guarantee
-       * any fixed timeframe for finality headers.
-       */
-      headersToKeep: u32 & AugmentedConst<ApiType>;
-      /**
-       * The upper bound on the number of requests allowed by the pallet.
-       *
-       * A request refers to an action which writes a header to storage.
-       *
-       * Once this bound is reached the pallet will not allow any dispatchables
-       * to be called until the request count has decreased.
-       */
-      maxRequests: u32 & AugmentedConst<ApiType>;
-      /** Generic const */
-      [key: string]: Codec;
-    };
     multiFinalityVerifierEthereumLike: {
       /**
        * Maximal number of finalized headers to keep in the storage.

@@ -1,5 +1,5 @@
+import '@t3rn/types/api-augment';
 import { ApiPromise, WsProvider } from '@polkadot/api';
-import { types } from '@t3rn/types';
 import { monitorCircuitEvents } from './event_fetch/circuit';
 import { Emitter } from './utils/types';
 import { executionRouter } from './utils/sideEffectRouter';

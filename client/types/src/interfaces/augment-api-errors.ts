@@ -93,41 +93,6 @@ declare module "@polkadot/api-base/types/errors" {
       /** Generic error */
       [key: string]: AugmentedError<ApiType>;
     };
-    multiFinalityVerifierDefault: {
-      /** The pallet has already been initialized. */
-      AlreadyInitialized: AugmentedError<ApiType>;
-      /** All pallet operations are halted. */
-      Halted: AugmentedError<ApiType>;
-      InvalidAnchorHeader: AugmentedError<ApiType>;
-      /** The authority set from the underlying header chain is invalid. */
-      InvalidAuthoritySet: AugmentedError<ApiType>;
-      /** The given justification is invalid for the given header. */
-      InvalidJustification: AugmentedError<ApiType>;
-      NoFinalizedHeader: AugmentedError<ApiType>;
-      /**
-       * The header being imported is older than the best finalized header known
-       * to the pallet.
-       */
-      OldHeader: AugmentedError<ApiType>;
-      /**
-       * The storage proof doesn't contains storage root. So it is invalid for
-       * given header.
-       */
-      StorageRootMismatch: AugmentedError<ApiType>;
-      /** There are too many requests for the current window to handle. */
-      TooManyRequests: AugmentedError<ApiType>;
-      /** The header is unknown to the pallet. */
-      UnknownHeader: AugmentedError<ApiType>;
-      /**
-       * The scheduled authority set change found in the header is unsupported
-       * by the pallet.
-       *
-       * This is the case for non-standard (e.g forced) authority set changes.
-       */
-      UnsupportedScheduledChange: AugmentedError<ApiType>;
-      /** Generic error */
-      [key: string]: AugmentedError<ApiType>;
-    };
     multiFinalityVerifierEthereumLike: {
       /** The pallet has already been initialized. */
       AlreadyInitialized: AugmentedError<ApiType>;
@@ -138,7 +103,6 @@ declare module "@polkadot/api-base/types/errors" {
       InvalidAuthoritySet: AugmentedError<ApiType>;
       /** The given justification is invalid for the given header. */
       InvalidJustification: AugmentedError<ApiType>;
-      NoFinalizedHeader: AugmentedError<ApiType>;
       /**
        * The header being imported is older than the best finalized header known
        * to the pallet.
@@ -173,7 +137,6 @@ declare module "@polkadot/api-base/types/errors" {
       InvalidAuthoritySet: AugmentedError<ApiType>;
       /** The given justification is invalid for the given header. */
       InvalidJustification: AugmentedError<ApiType>;
-      NoFinalizedHeader: AugmentedError<ApiType>;
       /**
        * The header being imported is older than the best finalized header known
        * to the pallet.
@@ -208,7 +171,6 @@ declare module "@polkadot/api-base/types/errors" {
       InvalidAuthoritySet: AugmentedError<ApiType>;
       /** The given justification is invalid for the given header. */
       InvalidJustification: AugmentedError<ApiType>;
-      NoFinalizedHeader: AugmentedError<ApiType>;
       /**
        * The header being imported is older than the best finalized header known
        * to the pallet.
@@ -243,7 +205,6 @@ declare module "@polkadot/api-base/types/errors" {
       InvalidAuthoritySet: AugmentedError<ApiType>;
       /** The given justification is invalid for the given header. */
       InvalidJustification: AugmentedError<ApiType>;
-      NoFinalizedHeader: AugmentedError<ApiType>;
       /**
        * The header being imported is older than the best finalized header known
        * to the pallet.
