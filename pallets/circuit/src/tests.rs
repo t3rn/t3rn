@@ -23,10 +23,9 @@ use frame_system::{EventRecord, Phase};
 use t3rn_primitives::abi::*;
 use t3rn_primitives::side_effect::*;
 
-use t3rn_protocol::side_effects::test_utils::*;
-
 use crate::mock::*;
 use crate::state::*;
+use t3rn_protocol::side_effects::test_utils::*;
 
 use sp_io::TestExternalities;
 
@@ -39,6 +38,24 @@ pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);
 pub const BOB_RELAYER: AccountId32 = AccountId32::new([2u8; 32]);
 pub const CHARLIE: AccountId32 = AccountId32::new([3u8; 32]);
 pub const DJANGO: AccountId32 = AccountId32::new([4u8; 32]);
+
+fn set_ids(
+    valid_side_effect: SideEffect<AccountId32, BlockNumber, BalanceOf>,
+) -> (sp_core::H256, sp_core::H256) {
+    let xtx_id: sp_core::H256 =
+        hex!("7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6").into();
+
+    let side_effect_a_id = valid_side_effect.generate_id::<crate::SystemHashing<Test>>();
+
+    (xtx_id, side_effect_a_id)
+}
+
+fn as_u32_le(array: &[u8; 4]) -> u32 {
+    ((array[0] as u32) << 0)
+        + ((array[1] as u32) << 8)
+        + ((array[2] as u32) << 16)
+        + ((array[3] as u32) << 24)
+}
 
 #[test]
 fn on_extrinsic_trigger_works_with_empty_side_effects() {
@@ -360,10 +377,7 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
                 sequential,
             ));
 
-            let xtx_id: sp_core::H256 =
-                hex!("7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6").into();
-            let side_effect_a_id =
-                valid_transfer_side_effect.generate_id::<crate::SystemHashing<Test>>();
+            let (xtx_id, side_effect_a_id) = set_ids(valid_transfer_side_effect.clone());
 
             // Test Apply State
             // Returns void insurance for that side effect
@@ -446,11 +460,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
                 sequential,
             ));
 
-            let xtx_id: sp_core::H256 =
-                hex!("7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6").into();
-
-            let side_effect_a_id =
-                valid_transfer_side_effect.generate_id::<crate::SystemHashing<Test>>();
+            let (xtx_id, side_effect_a_id) = set_ids(valid_transfer_side_effect.clone());
 
             // Test Apply State
             // Returns void insurance for that side effect
@@ -605,11 +615,7 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
                 sequential,
             ));
 
-            let xtx_id: sp_core::H256 =
-                hex!("7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6").into();
-
-            let side_effect_a_id =
-                valid_swap_side_effect.generate_id::<crate::SystemHashing<Test>>();
+            let (xtx_id, side_effect_a_id) = set_ids(valid_swap_side_effect.clone());
 
             assert_eq!(
                 Circuit::get_x_exec_signals(xtx_id).unwrap(),
@@ -636,13 +642,6 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
                 Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
                 None
             );
-
-            fn as_u32_le(array: &[u8; 4]) -> u32 {
-                ((array[0] as u32) << 0)
-                    + ((array[1] as u32) << 8)
-                    + ((array[2] as u32) << 16)
-                    + ((array[3] as u32) << 24)
-            }
 
             // Confirmation start
             let encoded_swap_transfer_event = orml_tokens::Event::<Test>::Transfer {
