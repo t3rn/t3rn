@@ -800,7 +800,7 @@ fn circuit_handles_swap_with_insurance() {
                 to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(), // variant B (dest)
                 amount: 2u64, // amount - variant B
             }
-                .encode();
+            .encode();
 
             let confirmation = ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
                 err: None,
@@ -891,7 +891,7 @@ fn circuit_handles_add_liquidity_without_insurance() {
                 to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(), // variant B (dest)
                 amount: 1u64, // amount - variant B
             }
-                .encode();
+            .encode();
 
             let confirmation = ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
                 err: None,
@@ -1043,7 +1043,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
                 to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(), // variant B (dest)
                 amount: 1u64, // amount - variant B
             }
-                .encode();
+            .encode();
 
             let confirmation = ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
                 err: None,
@@ -1133,7 +1133,8 @@ fn circuit_handles_transfer_and_swap() {
                 println!("events after on_extrinsic_trigger: {:#?}", ev);
             }
 
-            let xtx_id: sp_core::H256 = hex!("7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6").into();
+            let xtx_id: sp_core::H256 =
+                hex!("7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6").into();
 
             // Confirmation start
             let encoded_balance_transfer_event = pallet_balances::Event::<Test>::Transfer {
@@ -1142,7 +1143,7 @@ fn circuit_handles_transfer_and_swap() {
                 to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(), // variant B (dest)
                 amount: 1, // variant A
             }
-                .encode();
+            .encode();
 
             println!(
                 "full side effects before confirmation: {:#?}",
@@ -1185,7 +1186,7 @@ fn circuit_handles_transfer_and_swap() {
                 to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(), // variant B (dest)
                 amount: 2u64, // amount - variant B
             }
-                .encode();
+            .encode();
 
             let confirmation_swap = ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
                 err: None,
@@ -1215,6 +1216,5 @@ fn circuit_handles_transfer_and_swap() {
                 None,
                 None,
             ));
-
         });
 }
