@@ -63,16 +63,18 @@ export default class Listener extends EventEmitter {
 
   async handleHeader(header: Header) {
     while (this.last !== 0 && header.number.toNumber() !== this.last + 1) {
-      const missingHeader: Header | void = await this.kusama.rpc.chain
-        .getHeader(
-          (await this.kusama.rpc.chain
-            .getBlockHash(this.last + 1)
-            .catch(noop)) as BlockHash
+      let missingHeader: Header | void
+      try {
+        missingHeader = await this.kusama.rpc.chain.getHeader(
+          await this.kusama.rpc.chain.getBlockHash(this.last + 1)
         )
-        .catch(noop)
-      if (missingHeader) {
-        this.headers.push(missingHeader)
-        this.last = missingHeader.number.toNumber()
+      } catch (_) {
+      } finally {
+        if (missingHeader) {
+          this.headers.push(missingHeader)
+          this.last = missingHeader.number.toNumber()
+          Listener.debug(`#${this.last}`)
+        }
       }
     }
 
@@ -90,7 +92,6 @@ export default class Listener extends EventEmitter {
 
     const anchor: Header = reversedRange.shift() as Header
 
-    // Await anchor finalization for the proveFinality call
     let anchorFinalized = false
     while (!anchorFinalized) {
       const head: BlockHash | void = await this.kusama.rpc.chain
