@@ -7,33 +7,6 @@
   "files": [
     "dist"
   ],
-  "exports": {
-    ".": {
-      "types": "./dist/src/interfaces/index.d.ts",
-      "default": "./dist/src/interfaces/index.js"
-    },
-    "./flat": {
-      "types": "./dist/src/interfaces/flattened_definitions.d.ts",
-      "default": "./dist/src/interfaces/flattened_definitions.js"
-    },
-    "./api-augment": {
-      "types": "./dist/src/interfaces/augment.d.ts",
-      "default": "./dist/src/interfaces/augment.js"
-    }
-  },
-  "typesVersions": {
-    "*": {
-      "./": [
-        "dist/src/interfaces/flattened_definitions.d.ts"
-      ],
-      "./flat": [
-        "./dist/src/interfaces/flattened_definitions.d.ts"
-      ],
-      "api-augment": [
-        "dist/src/interfaces/augment.d.ts"
-      ]
-    }
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/t3rn/t3rn",
@@ -46,16 +19,12 @@
     "registry": "https://registry.npmjs.org"
   },
   "scripts": {
-    "generate": "npm run load:meta && npm run generate:defs",
-    "postgenerate": "npm run pretty",
-    "load:meta": "curl -s -H \"Content-Type: application/json\" -d '{\"id\":\"1\", \"jsonrpc\":\"2.0\", \"method\": \"state_getMetadata\", \"params\":[]}' http://127.0.0.1:9933 > metadata-t3rn.json",
-    "generate:defs": "ts-node --skip-project node_modules/.bin/polkadot-types-from-defs --package t3rn-circuit-typegen/interfaces --input ./src/interfaces --endpoint ./metadata-t3rn.json",
-    "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package t3rn-circuit-typegen/interfaces --endpoint ./metadata-t3rn.json --output ./src/interfaces",
-    "prebuild": "rimraf build",
-    "build": "tsc -b --verbose",
-    "publish": "cd build && npm publish",
-    "deploy": "npm run generate && npm run build && npm run publish",
-    "pretty": "prettier --write --ignore-unknown --plugin prettier-plugin-jsdoc 'src/**/*' 'scripts/**/*'",
+    "build": "yarn generate && yarn compile",
+    "compile": "rm -rf dist && tsc",
+    "generate:defs": "ts-node --skip-project node_modules/.bin/polkadot-types-from-defs --package t3rn-circuit-typegen/interfaces --input ./src/interfaces",
+    "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package t3rn-circuit-typegen/interfaces --endpoint ws://127.0.0.1:9944 --output ./src/interfaces",
+    "generate": "yarn generate:defs && yarn generate:meta",
+    "lint": "tsc --noEmit --pretty",
     "types:json": "ts-node src/export.ts > dist/types.json"
   },
   "keywords": [
@@ -72,14 +41,10 @@
   },
   "homepage": "https://github.com/t3rn/t3rn",
   "devDependencies": {
-    "typescript": "^4.4.4"
+    "typescript": "^4.6.3"
   },
   "dependencies": {
-    "@polkadot/api": "^7.13.1",
-    "@polkadot/rpc-augment": "^7.13.1",
-    "@polkadot/typegen": "^7.13.1",
-    "@polkadot/types-augment": "^7.13.1",
-    "@snowfork/snowbridge-types": "^0.2.6",
+    "@polkadot/typegen": "^7.14.3",
     "prettier": "^2.5.1",
     "prettier-plugin-jsdoc": "^0.3.31",
     "rimraf": "^3.0.2"

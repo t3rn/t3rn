@@ -174,7 +174,7 @@ pub mod pallet {
         pub fn register_gateway(
             origin: OriginFor<T>,
             url: Vec<u8>,
-            gateway_id: bp_runtime::ChainId,
+            gateway_id: ChainId,
             gateway_abi: GatewayABIConfig,
             gateway_vendor: t3rn_primitives::GatewayVendor,
             gateway_type: t3rn_primitives::GatewayType,

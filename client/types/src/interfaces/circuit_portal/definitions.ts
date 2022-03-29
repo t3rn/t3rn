@@ -1,5 +1,6 @@
 export default {
   types: {
+    ChainId: '[u8; 4]',
     // GatewayABIConfig: {
     //   block_number_type_size: "u16",
     //   hash_size: "u16",
