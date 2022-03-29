@@ -104,20 +104,11 @@ export default class Listener extends EventEmitter {
     const proofs: EncodedFinalityProofs = await this.kusama.rpc.grandpa
       .proveFinality(anchor.number.toNumber())
       .then(opt => opt.unwrap())
-
+    // https://github.com/polkadot-js/api/issues/4583
     Listener.debug('$$$$$', proofs, proofs.toHuman())
-    const justification: any = null //TODO
+    const justification: any = proofs //TODO
 
     this.emit('range', this.gatewayId, anchor, reversedRange, justification)
-
-    // const unsubJustifications =
-    //   await this.kusama.rpc.grandpa.subscribeJustifications(
-    //     async (justification: JustificationNotification) => {
-    //       Listener.debug('got a grandpa justification...', justification)
-    //       this.emit('range', range, justification, this.gatewayId)
-    //       unsubJustifications()
-    //     }
-    //   )
   }
 
   kill() {
