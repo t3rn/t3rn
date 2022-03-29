@@ -88,7 +88,7 @@ export default class Listener extends EventEmitter {
 
     this.offset += this.rangeSize
 
-    const anchor: Header = reversedRange[0]
+    const anchor: Header = reversedRange.shift() as Header
 
     // Await anchor finalization for the proveFinality call
     let anchorFinalized = false
