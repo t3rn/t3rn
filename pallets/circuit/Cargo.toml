@@ -37,7 +37,6 @@ sp-core = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-
 orml-tokens = { git = "https://github.com/t3rn/open-runtime-module-library", branch = "polkadot-v0.9.17", default-features = false }
 orml-traits = { git = "https://github.com/t3rn/open-runtime-module-library", branch = "polkadot-v0.9.17", default-features = false }
 
-[dev-dependencies]
 pallet-multi-finality-verifier = { default-features = false, path = "../multi-finality-verifier" }
 frame-election-provider-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
 pallet-offences = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }

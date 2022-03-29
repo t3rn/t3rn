@@ -1,14 +1,11 @@
 import { EventEmitter } from 'events'
 import { ApiPromise, WsProvider } from '@polkadot/api'
 import { createTestPairs } from '@polkadot/keyring/testingPairs'
-import {
-  JustificationNotification,
-  BlockHash,
-  Header,
-  EncodedFinalityProofs,
-} from '@polkadot/types/interfaces'
-import { noop, sleep } from './util'
+import {Header,
+} from '@polkadot/types/interfaces';
+import {sleep} from './util'
 import createDebug from 'debug'
+import {HeaderExtended} from '@polkadot/api-derive/types';
 import 'dotenv/config'
 
 const keyring = createTestPairs({ type: 'sr25519' })
@@ -18,15 +15,15 @@ export default class Listener extends EventEmitter {
 
   kusama: ApiPromise
   kusamaEndpoint: string = process.env.KUSAMA_RPC as string
-  rangeSize: number = Number(process.env.RANGE_SIZE)
+  rangeSize = Number(process.env.RANGE_SIZE)
   gatewayId: Buffer = Buffer.from(process.env.GATEWAY_ID as string, 'utf8')
-  headers: Header[] = []
+  headers: any[] = [] // switched to any due to duplicate import conflict
   // offset in this.headers for the current range batch
-  offset: number = 0
+  offset = 0
   // block number of the last enqueued header
-  last: number = 0
+  last = 0
   // last known grandpa set id
-  grandpaSetId: number = 0
+  grandpaSetId = 0
 
   unsubNewHeads: () => void
 
@@ -36,7 +33,7 @@ export default class Listener extends EventEmitter {
     })
 
     this.unsubNewHeads = await this.kusama.derive.chain.subscribeNewHeads(
-      async (header: Header) => {
+      async (header) => {
         await this.handleGrandpaSet()
 
         await this.handleHeader(header)
@@ -61,9 +58,9 @@ export default class Listener extends EventEmitter {
     this.grandpaSetId = currentSetId
   }
 
-  async handleHeader(header: Header) {
+  async handleHeader(header: HeaderExtended) {
     while (this.last !== 0 && header.number.toNumber() > this.last + 1) {
-      let missingHeader: Header | void
+      let missingHeader
       try {
         missingHeader = await this.kusama.rpc.chain.getHeader(
           await this.kusama.rpc.chain.getBlockHash(this.last + 1)
@@ -80,6 +77,7 @@ export default class Listener extends EventEmitter {
 
     this.headers.push(header)
     this.last = header.number.toNumber()
+    Listener.debug(`#${this.last}`)
   }
 
   async concludeRange() {
@@ -100,20 +98,19 @@ export default class Listener extends EventEmitter {
 
     let anchorFinalized = false
     while (!anchorFinalized) {
-      const head: BlockHash | void = await this.kusama.rpc.chain
+      const head = await this.kusama.rpc.chain
         .getFinalizedHead()
-        .catch(noop)
       if (head && head.eq(anchor.hash)) {
         anchorFinalized = true
       }
     }
 
-    const proofs: EncodedFinalityProofs = await this.kusama.rpc.grandpa
+    const proofs = await this.kusama.rpc.grandpa
       .proveFinality(anchor.number.toNumber())
       .then(opt => opt.unwrap())
     // https://github.com/polkadot-js/api/issues/4583
     Listener.debug('$$$$$', proofs, proofs.toJSON())
-    const justification: any = proofs //TODO
+    const justification: any = proofs // TODO
 
     this.emit('range', this.gatewayId, anchor, reversedRange, justification)
   }
