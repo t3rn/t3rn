@@ -1067,3 +1067,154 @@ fn circuit_handles_add_liquidity_with_insurance() {
             assert_eq!(Balances::free_balance(&BOB_RELAYER), 1 + 2);
         });
 }
+
+#[test]
+fn circuit_handles_transfer_and_swap() {
+    let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
+
+    let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
+
+    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
+    let swap_protocol_box = ExtBuilder::get_swap_protocol_box();
+
+    let mut local_state = LocalState::new();
+    let valid_transfer_side_effect = produce_and_validate_side_effect(
+        vec![
+            (Type::Address(32), ArgVariant::A),
+            (Type::Address(32), ArgVariant::B),
+            (Type::Uint(64), ArgVariant::A),
+            (Type::Bytes(0), ArgVariant::A), // empty bytes instead of insurance
+        ],
+        &mut local_state,
+        transfer_protocol_box,
+    );
+
+    let valid_swap_side_effect = produce_and_validate_side_effect(
+        vec![
+            (Type::Address(32), ArgVariant::A), // caller
+            (Type::Address(32), ArgVariant::B), // to
+            (Type::Uint(64), ArgVariant::A),    // amount_from
+            (Type::Uint(64), ArgVariant::B),    // amount_to
+            (Type::Bytes(4), ArgVariant::A),    // asset_from
+            (Type::Bytes(4), ArgVariant::B),    // asset_to
+            (Type::Bytes(0), ArgVariant::A),    // no insurance
+        ],
+        &mut local_state,
+        swap_protocol_box,
+    );
+
+    let side_effects = vec![
+        valid_transfer_side_effect.clone(),
+        valid_swap_side_effect.clone(),
+    ];
+    let fee = 1;
+    let sequential = true;
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 10);
+
+            System::set_block_number(1);
+
+            assert_ok!(Circuit::on_extrinsic_trigger(
+                origin,
+                side_effects,
+                fee,
+                sequential,
+            ));
+
+            let events = System::events();
+            assert_eq!(events.len(), 8);
+
+            for ev in events {
+                println!("events after on_extrinsic_trigger: {:#?}", ev);
+            }
+
+            let xtx_id: sp_core::H256 = hex!("7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6").into();
+
+            // Confirmation start
+            let encoded_balance_transfer_event = pallet_balances::Event::<Test>::Transfer {
+                from: hex!("0909090909090909090909090909090909090909090909090909090909090909")
+                    .into(), // variant A
+                to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(), // variant B (dest)
+                amount: 1, // variant A
+            }
+                .encode();
+
+            println!(
+                "full side effects before confirmation: {:#?}",
+                Circuit::get_full_side_effects(xtx_id).unwrap()
+            );
+
+            println!(
+                "exec signals before confirmation: {:#?}",
+                Circuit::get_x_exec_signals(xtx_id).unwrap()
+            );
+
+            let confirmation_transfer = ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
+                err: None,
+                output: None,
+                encoded_effect: encoded_balance_transfer_event,
+                inclusion_proof: None,
+                executioner: BOB_RELAYER,
+                received_at: 0,
+                cost: None,
+            };
+
+            assert_ok!(Circuit::confirm_side_effect(
+                origin_relayer_bob.clone(),
+                xtx_id.clone(),
+                valid_transfer_side_effect,
+                confirmation_transfer,
+                None,
+                None,
+            ));
+
+            println!(
+                "exec signals after 1st confirmation, transfer: {:#?}",
+                Circuit::get_x_exec_signals(xtx_id).unwrap()
+            );
+
+            // Confirmation start
+            let encoded_swap_transfer_event = orml_tokens::Event::<Test>::Transfer {
+                currency_id: as_u32_le(&[0, 1, 2, 3]), // currency_id as u8 bytes [0,1,2,3] -> u32
+                from: BOB_RELAYER,                     // executor - Bob
+                to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(), // variant B (dest)
+                amount: 2u64, // amount - variant B
+            }
+                .encode();
+
+            let confirmation_swap = ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
+                err: None,
+                output: None,
+                encoded_effect: encoded_swap_transfer_event,
+                inclusion_proof: None,
+                executioner: BOB_RELAYER,
+                received_at: 0,
+                cost: None,
+            };
+
+            println!(
+                "full side effects after confirmation: {:#?}",
+                Circuit::get_full_side_effects(xtx_id).unwrap()
+            );
+
+            println!(
+                "exec signals after confirmation: {:#?}",
+                Circuit::get_x_exec_signals(xtx_id).unwrap()
+            );
+
+            assert_ok!(Circuit::confirm_side_effect(
+                origin_relayer_bob,
+                xtx_id,
+                valid_swap_side_effect,
+                confirmation_swap,
+                None,
+                None,
+            ));
+
+        });
+}
