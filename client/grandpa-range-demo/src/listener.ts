@@ -7,7 +7,7 @@ import {
   Header,
   EncodedFinalityProofs,
 } from '@polkadot/types/interfaces'
-import { noop } from './util'
+import { noop, sleep } from './util'
 import createDebug from 'debug'
 import 'dotenv/config'
 
@@ -62,13 +62,14 @@ export default class Listener extends EventEmitter {
   }
 
   async handleHeader(header: Header) {
-    while (this.last !== 0 && header.number.toNumber() !== this.last + 1) {
+    while (this.last !== 0 && header.number.toNumber() > this.last + 1) {
       let missingHeader: Header | void
       try {
         missingHeader = await this.kusama.rpc.chain.getHeader(
           await this.kusama.rpc.chain.getBlockHash(this.last + 1)
         )
       } catch (_) {
+        await sleep(6000)
       } finally {
         if (missingHeader) {
           this.headers.push(missingHeader)
@@ -111,7 +112,7 @@ export default class Listener extends EventEmitter {
       .proveFinality(anchor.number.toNumber())
       .then(opt => opt.unwrap())
     // https://github.com/polkadot-js/api/issues/4583
-    Listener.debug('$$$$$', proofs, proofs.toHuman())
+    Listener.debug('$$$$$', proofs, proofs.toJSON())
     const justification: any = proofs //TODO
 
     this.emit('range', this.gatewayId, anchor, reversedRange, justification)
