@@ -824,3 +824,92 @@ fn circuit_handles_swap_with_insurance() {
             assert_eq!(Balances::free_balance(&BOB_RELAYER), 1 + 2);
         });
 }
+
+#[test]
+fn circuit_handles_add_liquidity_without_insurance() {
+    let origin = Origin::signed(ALICE);
+
+    let origin_relayer_bob = Origin::signed(BOB_RELAYER);
+
+    let ext = ExtBuilder::default();
+    let mut local_state = LocalState::new();
+
+    let add_liquidity_protocol_box = ExtBuilder::get_add_liquidity_protocol_box();
+
+    let valid_add_liquidity_side_effect = produce_and_validate_side_effect(
+        vec![
+            (Type::Address(32), ArgVariant::A), // argument_0: caller
+            (Type::Address(32), ArgVariant::B), // argument_1: to
+            (Type::Bytes(4), ArgVariant::A),    // argument_2: asset_left
+            (Type::Bytes(4), ArgVariant::B),    // argument_3: asset_right
+            (Type::Bytes(4), ArgVariant::C),    // argument_4: liquidity_token
+            (Type::Uint(64), ArgVariant::A),    // argument_5: amount_left
+            (Type::Uint(64), ArgVariant::B),    // argument_6: amount_right
+            (Type::Uint(64), ArgVariant::A),    // argument_7: amount_liquidity_token
+            (Type::Bytes(0), ArgVariant::A),    // argument_8: no insurance, empty bytes
+        ],
+        &mut local_state,
+        add_liquidity_protocol_box,
+    );
+
+    let side_effects = vec![valid_add_liquidity_side_effect.clone()];
+    let fee = 1;
+    let sequential = true;
+
+    ext.with_default_xdns_records()
+        .with_standard_side_effects()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 1 + 2);
+            let _ = Balances::deposit_creating(&BOB_RELAYER, 1);
+
+            System::set_block_number(1);
+
+            assert_ok!(Circuit::on_extrinsic_trigger(
+                origin,
+                side_effects,
+                fee,
+                sequential,
+            ));
+
+            let (xtx_id, side_effect_a_id) = set_ids(valid_add_liquidity_side_effect.clone());
+
+            assert_eq!(
+                Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
+                None
+            );
+
+            let events = System::events();
+
+            // 5 events: new account, endowed, transfer, xtransactionreadytoexec, newsideeffectavailable
+            assert_eq!(events.len(), 11);
+
+            // Confirmation start
+            let encoded_add_liquidity_transfer_event = orml_tokens::Event::<Test>::Transfer {
+                currency_id: as_u32_le(&[0, 1, 2, 3]), // currency_id as u8 bytes [0,1,2,3] -> u32
+                from: BOB_RELAYER,                     // executor - Bob
+                to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(), // variant B (dest)
+                amount: 1u64, // amount - variant B
+            }
+                .encode();
+
+            let confirmation = ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
+                err: None,
+                output: None,
+                encoded_effect: encoded_add_liquidity_transfer_event,
+                inclusion_proof: None,
+                executioner: BOB_RELAYER,
+                received_at: 0,
+                cost: None,
+            };
+
+            assert_ok!(Circuit::confirm_side_effect(
+                origin_relayer_bob,
+                xtx_id,
+                valid_add_liquidity_side_effect,
+                confirmation,
+                None,
+                None,
+            ));
+        });
+}
