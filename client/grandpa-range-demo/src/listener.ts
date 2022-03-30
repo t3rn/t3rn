@@ -99,23 +99,28 @@ export default class Listener extends EventEmitter {
       ...reversedRange.map(h => h.number.toNumber())
     )
 
-    let anchorFinalized = false
-    while (!anchorFinalized) {
-      const head: BlockHash | void =
-        await this.kusama.rpc.chain.getFinalizedHead()
-      if (head && head.eq(anchor.hash)) {
-        anchorFinalized = true
-      }
-    }
+    // let anchorFinalized = false
+    // while (!anchorFinalized) {
+    //   const head: BlockHash | void =
+    //     await this.kusama.rpc.chain.getFinalizedHead()
+    //   if (head && head.eq(anchor.hash)) {
+    //     anchorFinalized = true
+    //   }
+    // }
 
-    const proofs: EncodedFinalityProofs = await this.kusama.rpc.grandpa
-      .proveFinality(anchor.number.toNumber())
-      .then(opt => opt.unwrap())
-    // https://github.com/polkadot-js/api/issues/4583
-    Listener.debug('$$$$$', proofs, proofs.toJSON())
-    const justification: any = proofs // TODO
+    // const proof: EncodedFinalityProofs = await this.kusama.rpc.grandpa
+    //   .proveFinality(anchor.number.toNumber())
+    //   .then(opt => opt.unwrap())
+    // this.emit('range', this.gatewayId, anchor, reversedRange, proof)
 
-    this.emit('range', this.gatewayId, anchor, reversedRange, justification)
+    const unsubJustifications =
+      await this.kusama.rpc.grandpa.subscribeJustifications(
+        async (justification) => {
+          Listener.debug('got a random justification...')
+          this.emit('range', this.gatewayId, anchor, reversedRange, justification)
+          unsubJustifications()
+        }
+      )
   }
 
   kill() {
