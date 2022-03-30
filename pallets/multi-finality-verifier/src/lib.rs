@@ -146,21 +146,25 @@ pub mod pallet {
         /// If successful in verification, it will write the target header to the underlying storage
         /// pallet.
         #[pallet::weight(<T as pallet::Config<I>>::WeightInfo::submit_finality_proof(
-            justification.votes_ancestries.len() as u32,
-            justification.commit.precommits.len() as u32,
+            encoded_justification.len() as u32,
+            encoded_justification.len() as u32,
 		))]
         pub fn submit_finality_proof(
             origin: OriginFor<T>,
             finality_target: BridgedHeader<T, I>,
-            justification: GrandpaJustification<BridgedHeader<T, I>>,
+            encoded_justification: Vec<u8>,
             gateway_id: ChainId,
         ) -> DispatchResultWithPostInfo {
-            ensure_operational_single::<T, I>(gateway_id)?;
-            ensure_signed(origin)?;
-            ensure!(
-                Self::request_count_map(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
-                <Error<T, I>>::TooManyRequests
-            );
+            // ensure_operational_single::<T, I>(gateway_id)?;
+            // ensure_signed(origin)?;
+            // ensure!(
+            //     Self::request_count_map(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
+            //     <Error<T, I>>::TooManyRequests
+            // );
+
+            let justification = GrandpaJustification::<BridgedHeader<T, I>>::decode(&mut &*encoded_justification).map_err(|_| "Decode Error")?;
+            log::info!("Justification Block: {:?}", justification.commit.target_number);
+            log::info!("Block height: {:?}", finality_target.number());
 
             log::debug!(
                 target: LOG_TARGET,
