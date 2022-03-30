@@ -12001,6 +12001,7 @@ dependencies = [
  "hash-db",
  "hex",
  "hex-literal 0.3.4",
+ "log",
  "num-traits",
  "pallet-sudo",
  "parity-scale-codec 2.3.1",

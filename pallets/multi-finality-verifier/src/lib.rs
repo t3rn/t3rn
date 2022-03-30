@@ -161,8 +161,9 @@ pub mod pallet {
             //     Self::request_count_map(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
             //     <Error<T, I>>::TooManyRequests
             // );
-
+            log::info!("here");
             let justification = GrandpaJustification::<BridgedHeader<T, I>>::decode(&mut &*encoded_justification).map_err(|_| "Decode Error")?;
+            log::info!("Gateway: {:?}", gateway_id);
             log::info!("Justification Block: {:?}", justification.commit.target_number);
             log::info!("Block height: {:?}", finality_target.number());
 
@@ -175,6 +176,9 @@ pub mod pallet {
 
             let (hash, number) = (finality_target.hash(), finality_target.number());
 
+            log::info!("Block Hash: {:?}, Block Num: {:?}", hash, number);
+            log::info!("Justification Hash: {:?}, Block Num: {:?}", justification.commit.target_hash, justification.commit.target_number);
+
             let best_finalized = <MultiImportedHeaders<T, I>>::get(
                 gateway_id,
                 // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
@@ -183,7 +187,7 @@ pub mod pallet {
                     .ok_or_else(|| <Error<T, I>>::NoFinalizedHeader)?,
             )
             // In order to reach this point the bridge must have been initialized for given gateway.
-            .ok_or_else(|| <Error<T, I>>::InvalidAnchorHeader)?;
+            .ok_or_else(|| <Error<T, I>>::NoFinalizedHeader)?;
 
             // We do a quick check here to ensure that our header chain is making progress and isn't
             // "travelling back in time" (which could be indicative of something bad, e.g a hard-fork).
@@ -192,6 +196,11 @@ pub mod pallet {
             let authority_set = <CurrentAuthoritySetMap<T, I>>::get(gateway_id)
                 // Expects authorities to be set before verify_justification
                 .ok_or_else(|| <Error<T, I>>::InvalidAuthoritySet)?;
+
+            // log::info!("Auth set: {:?}", authority_set.authorities[0]);
+            for auth in &authority_set.authorities {
+                log::info!("Addr: {:?}, weight: {:?}", auth.0, auth.1);
+            }
 
             let set_id = authority_set.set_id;
 
@@ -690,6 +699,7 @@ pub mod pallet {
         )
         .map_err(|e| {
             log::error!("Received invalid justification for {:?}: {:?}", hash, e);
+            log::info!("Received invalid justification for {:?}: {:?}", hash, e);
             <Error<T, I>>::InvalidJustification
         })?)
     }
@@ -718,9 +728,12 @@ pub mod pallet {
 
         let initial_hash = header.hash();
         <InitialHashMap<T, I>>::insert(gateway_id, initial_hash);
+        log::info!("Gateways: {:?}", gateway_id);
+        log::info!("header: {:?}", initial_hash);
         <BestFinalizedMap<T, I>>::insert(gateway_id, initial_hash);
+        log::info!("written hash: {:?}", <BestFinalizedMap<T, I>>::contains_key(gateway_id));
         <MultiImportedHeaders<T, I>>::insert(gateway_id, initial_hash, header);
-
+        log::info!("authority set id: {:?}", set_id);
         // might get problematic
         let authority_set = bp_header_chain::AuthoritySet::new(authority_list, set_id);
         <CurrentAuthoritySetMap<T, I>>::insert(gateway_id, authority_set);
