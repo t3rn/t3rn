@@ -75,6 +75,8 @@ pub use xbridges::{
     PolkadotLikeValU64Gateway,
 };
 
+use sp_finality_grandpa::{SetId};
+
 pub use t3rn_protocol::side_effects::protocol::SideEffectConfirmationProtocol;
 
 pub type AllowedSideEffect = [u8; 4];
@@ -182,6 +184,7 @@ pub mod pallet {
             gateway_sys_props: GatewaySysProps,
             first_header: Vec<u8>,
             authorities: Option<Vec<<T as frame_system::Config>::AccountId>>,
+            authority_set_id: Option<SetId>,
             allowed_side_effects: Vec<AllowedSideEffect>,
         ) -> DispatchResultWithPostInfo {
             // Retrieve sender of the transaction.
@@ -202,30 +205,33 @@ pub mod pallet {
                     origin,
                     first_header,
                     authorities,
+                    authority_set_id,
                     gateway_id,
                 )?,
                 (HasherAlgo::Blake2, 64) => init_bridge_instance::<T, PolkadotLikeValU64Gateway>(
                     origin,
                     first_header,
                     authorities,
+                    authority_set_id,
                     gateway_id,
                 )?,
                 (HasherAlgo::Keccak256, 32) => init_bridge_instance::<
                     T,
                     EthLikeKeccak256ValU32Gateway,
                 >(
-                    origin, first_header, authorities, gateway_id
+                    origin, first_header, authorities, authority_set_id, gateway_id
                 )?,
                 (HasherAlgo::Keccak256, 64) => init_bridge_instance::<
                     T,
                     EthLikeKeccak256ValU64Gateway,
                 >(
-                    origin, first_header, authorities, gateway_id
+                    origin, first_header, authorities, authority_set_id, gateway_id
                 )?,
                 (_, _) => init_bridge_instance::<T, DefaultPolkadotLikeGateway>(
                     origin,
                     first_header,
                     authorities,
+                    authority_set_id,
                     gateway_id,
                 )?,
             };
