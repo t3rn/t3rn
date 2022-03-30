@@ -7,6 +7,7 @@ import {
   GrandpaJustification,
 } from '@polkadot/types/interfaces'
 import registerKusamaGateway from './register'
+import { formatEvents } from './util'
 import createDebug from 'debug'
 import 'dotenv/config'
 import types from './types.json'
@@ -31,7 +32,7 @@ export default class Relayer {
     Relayer.debug(`gateway ${this.gatewayId.toString()} registered`)
 
     const setOperational =
-      this.circuit.tx.multiFinalityVerifierSubstrateLike.setOperational(
+      this.circuit.tx.multiFinalityVerifierPolkadotLike.setOperational(
         true,
         this.gatewayId
       )
@@ -51,40 +52,53 @@ export default class Relayer {
   }
 
   async submit(
-    range: Header[],
-    justification: JustificationNotification,
-    gatewayId: Buffer
+    gatewayId: Buffer,
+    anchor: Header,
+    reversedRange: Header[],
+    justification: any
   ) {
-    Relayer.debug('submitting finality proof...')
-
-    const anchor: Header = range[range.length - 1]
+    Relayer.debug('submitting finality proof and header range...')
 
     const submitFinalityProof =
-      this.circuit.tx.multiFinalityVerifierSubstrateLike.submitFinalityProof(
+      this.circuit.tx.multiFinalityVerifierPolkadotLike.submitFinalityProof(
         anchor,
         justification,
         gatewayId
       )
 
-    return new Promise(async (resolve, reject) => {
-      await this.circuit.tx.sudo
-        .sudo(submitFinalityProof)
-        .signAndSend(keyring.alice, result => {
-          if (result.isError) {
-            Relayer.debug('submitting finality proof failed')
-            reject(Error(result.status.toString()))
-          } else if (result.isInBlock) {
-            if (result.events.length)
-              Relayer.debug(
-                'events',
-                result.events.map(
-                  ({ event: { data, method, section } }) =>
-                    `${section}.${method} ` + data.toString()
-                )
-              )
-            resolve(undefined)
-          }
-        })
+    await new Promise(async (resolve, reject) => {
+      await submitFinalityProof.signAndSend(keyring.alice, result => {
+        if (result.isError) {
+          reject(Error('submitting finality proof failed'))
+        } else if (result.isInBlock) {
+          Relayer.debug(
+            'submit_finality_proof events',
+            ...formatEvents(result.events)
+          )
+          resolve(undefined)
+        }
+      })
+    })
+
+    const submitHeaderRange =
+      this.circuit.tx.multiFinalityVerifierPolkadotLike.submitHeaderRange(
+        gatewayId,
+        reversedRange,
+        anchor.hash
+      )
+
+    await new Promise(async (resolve, reject) => {
+      await submitHeaderRange.signAndSend(keyring.alice, result => {
+        if (result.isError) {
+          reject(Error('submitting header range failed'))
+        } else if (result.isInBlock) {
+          Relayer.debug(
+            'submit_header_range events',
+            ...formatEvents(result.events)
+          )
+          resolve(undefined)
+        }
+      })
     })
   }
 }

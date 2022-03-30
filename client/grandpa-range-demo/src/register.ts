@@ -44,7 +44,7 @@ export default async function registerKusamaGateway(circuit: ApiPromise) {
     ]),
     circuit.createType('GatewaySysProps', [
       circuit.createType('u16', 2),
-      circuit.createType('Bytes', new Bytes(circuit.registry, 'KSM')),
+      circuit.createType('Bytes', 'KSM'),
       circuit.createType('u8', 12),
     ]),
     circuit.createType('Bytes', currentHeader.toHex()),
@@ -52,12 +52,12 @@ export default async function registerKusamaGateway(circuit: ApiPromise) {
     circuit.createType('Vec<AllowedSideEffect>', ['transfer', 'get_storage'])
   )
 
-  return new Promise(async (resolve, reject) => {
-    await circuit.tx.sudo
+  return new Promise((resolve, reject) => {
+    return circuit.tx.sudo
       .sudo(registerGateway)
       .signAndSend(keyring.alice, result => {
         if (result.isError) {
-          reject('submitting registerGateway failed')
+          reject(new Error('submitting registerGateway failed'))
         } else if (result.isInBlock) {
           resolve(undefined)
         }

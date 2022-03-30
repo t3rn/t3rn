@@ -1,9 +1,10 @@
+import '@polkadot/api-augment/kusama'
 import Listener from './listener'
 import Relayer from './relayer'
 
 async function main() {
-  const listener: Listener = new Listener()
-  const relayer: Relayer = new Relayer()
+  const listener = new Listener()
+  const relayer = new Relayer()
 
   Listener.debug('🦅 remote endpoint', listener.kusamaEndpoint)
   Relayer.debug('⚡ circuit endpoint', relayer.circuitEndpoint)

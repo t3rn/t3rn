@@ -177,9 +177,9 @@ pub mod pallet {
 
             let best_finalized = <MultiImportedHeaders<T, I>>::get(
                 gateway_id,
+                // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
+                // `ImportedHeaders` must contain an entry for `BestFinalized`.
                 <BestFinalizedMap<T, I>>::get(gateway_id)
-                    // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
-                    // `ImportedHeaders` must contain an entry for `BestFinalized`.
                     .ok_or_else(|| <Error<T, I>>::NoFinalizedHeader)?,
             )
             // In order to reach this point the bridge must have been initialized for given gateway.
@@ -439,9 +439,11 @@ pub mod pallet {
             gateway_id: ChainId,
         ) -> DispatchResultWithPostInfo {
             ensure_owner_or_root_single::<T, I>(origin, gateway_id)?;
-            <IsHaltedMap<T, I>>::insert(gateway_id, operational);
+            <IsHaltedMap<T, I>>::insert(gateway_id, !operational);
 
             if operational {
+                // If a gateway shall be operational the pallet must be too.
+                <IsHalted<T, I>>::put(false);
                 log::info!("Resuming pallet operations.");
             } else {
                 log::warn!("Stopping pallet operations.");
