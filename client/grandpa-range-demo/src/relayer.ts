@@ -56,6 +56,9 @@ export default class Relayer {
     justification: any
   ) {
     Relayer.debug('submitting finality proof and header range...')
+    Relayer.debug(
+      `submit_finality_proof(\n${anchor},\n${justification},\n${gatewayId}\n)`
+    )
 
     const submitFinalityProof =
       this.circuit.tx.multiFinalityVerifierPolkadotLike.submitFinalityProof(
@@ -77,6 +80,10 @@ export default class Relayer {
         }
       })
     })
+
+    Relayer.debug(
+      `submit_header_range(\n${gatewayId},\n${reversedRange},\n${anchor.hash}\n)`
+    )
 
     const submitHeaderRange =
       this.circuit.tx.multiFinalityVerifierPolkadotLike.submitHeaderRange(
