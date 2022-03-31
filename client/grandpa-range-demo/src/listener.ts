@@ -1,6 +1,5 @@
 import { EventEmitter } from 'events'
 import { ApiPromise, WsProvider } from '@polkadot/api'
-import { createTestPairs } from '@polkadot/keyring/testingPairs'
 import { JustificationNotification, Header } from '@polkadot/types/interfaces'
 import { sleep } from './util'
 import createDebug from 'debug'
@@ -9,8 +8,6 @@ import { promisify } from 'util'
 import { exec as _exec } from 'child_process'
 
 const exec = promisify(_exec)
-
-const keyring = createTestPairs({ type: 'sr25519' })
 
 export default class Listener extends EventEmitter {
   static debug = createDebug('listener')
@@ -48,7 +45,7 @@ export default class Listener extends EventEmitter {
   }
 
   async handleGrandpaSet() {
-    const currentSetId = Number(
+    const currentSetId: number = Number(
       await this.kusama.query.grandpa.currentSetId().then(id => id.toJSON())
     )
 
@@ -61,8 +58,11 @@ export default class Listener extends EventEmitter {
   }
 
   async handleHeader(header: Header) {
-    // FIXME: don't trap
+    let attempts: number = 10
     while (this.last !== 0 && header.number.toNumber() > this.last + 1) {
+      if (attempts-- <= 0) {
+        throw Error(`cannot fetch block#${this.last + 1}`)
+      }
       let missingHeader: Header | void
       try {
         missingHeader = await this.kusama.rpc.chain.getHeader(
@@ -71,7 +71,10 @@ export default class Listener extends EventEmitter {
       } catch (_) {
         await sleep(6000)
       } finally {
-        if (missingHeader) {
+        if (
+          missingHeader &&
+          missingHeader.number.toNumber() === this.last + 1
+        ) {
           this.headers.push(missingHeader)
           this.last = missingHeader.number.toNumber()
         }
@@ -90,12 +93,12 @@ export default class Listener extends EventEmitter {
           unsubJustifications()
           Listener.debug('got a random justification...')
 
-          const justificationBlockNumber = await exec(
+          const justificationBlockNumber: number = await exec(
             '../justification-decoder/target/release/justification-decoder ' +
               justification.toString().slice(2)
           ).then(cmd => parseInt(cmd.stdout))
 
-          const justifiedHeaderIndex = this.headers.findIndex(
+          const justifiedHeaderIndex: number = this.headers.findIndex(
             h => h.number.toNumber() === justificationBlockNumber
           )
 

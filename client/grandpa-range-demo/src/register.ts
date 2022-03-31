@@ -19,6 +19,7 @@ export default async function registerKusamaGateway(circuit: ApiPromise) {
 
   const atGenesis = await kusama.at(genesisHash)
   const initialAuthorities = await atGenesis.query.session.validators()
+  const currentSetId = await kusama.query.grandpa.currentSetId()
 
   await kusama.disconnect()
 
@@ -49,6 +50,7 @@ export default async function registerKusamaGateway(circuit: ApiPromise) {
     ]),
     circuit.createType('Bytes', currentHeader.toHex()),
     circuit.createType('Option<Vec<AccountId>>', initialAuthorities),
+    circuit.createType('Option<SetId>', currentSetId),
     circuit.createType('Vec<AllowedSideEffect>', ['transfer', 'get_storage'])
   )
 
