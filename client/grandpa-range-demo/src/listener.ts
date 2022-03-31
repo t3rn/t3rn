@@ -1,14 +1,14 @@
 import { EventEmitter } from 'events'
 import { ApiPromise, WsProvider } from '@polkadot/api'
 import { createTestPairs } from '@polkadot/keyring/testingPairs'
-import {
-  BlockHash,
-  EncodedFinalityProofs,
-  Header,
-} from '@polkadot/types/interfaces'
+import { JustificationNotification, Header } from '@polkadot/types/interfaces'
 import { sleep } from './util'
 import createDebug from 'debug'
 import 'dotenv/config'
+import { promisify } from 'util'
+import { exec as _exec } from 'child_process'
+
+const exec = promisify(_exec)
 
 const keyring = createTestPairs({ type: 'sr25519' })
 
@@ -84,40 +84,34 @@ export default class Listener extends EventEmitter {
   }
 
   async concludeRange() {
-    const reversedRange: Header[] = this.headers
-      .slice(this.offset, this.offset + this.rangeSize)
-      .reverse()
-
-    this.offset += this.rangeSize
-
-    const anchor: Header = reversedRange.shift() as Header
-
-    Listener.debug(
-      'concluding... anchor',
-      anchor.number.toNumber(),
-      'range',
-      ...reversedRange.map(h => h.number.toNumber())
-    )
-
-    // let anchorFinalized = false
-    // while (!anchorFinalized) {
-    //   const head: BlockHash | void =
-    //     await this.kusama.rpc.chain.getFinalizedHead()
-    //   if (head && head.eq(anchor.hash)) {
-    //     anchorFinalized = true
-    //   }
-    // }
-
-    // const proof: EncodedFinalityProofs = await this.kusama.rpc.grandpa
-    //   .proveFinality(anchor.number.toNumber())
-    //   .then(opt => opt.unwrap())
-    // this.emit('range', this.gatewayId, anchor, reversedRange, proof)
-
     const unsubJustifications =
       await this.kusama.rpc.grandpa.subscribeJustifications(
-        async (justification) => {
+        async (justification: JustificationNotification) => {
           Listener.debug('got a random justification...')
-          this.emit('range', this.gatewayId, anchor, reversedRange, justification)
+
+          const hex = justification.toString().substring(2) // removes 0x
+          const cmd = await exec(
+            `../justification-decoder/target/release/justification-decoder ${hex}`
+          )
+          const blk = parseInt(cmd.stdout)
+
+          const idx = this.headers.findIndex(h => h.number.toNumber() === blk)
+
+          const reversedRange: Header[] = this.headers
+            .slice(this.offset, idx + 1)
+            .reverse()
+
+          this.offset = idx + 1
+
+          const anchor: Header = reversedRange.shift() as Header
+
+          this.emit(
+            'range',
+            this.gatewayId,
+            anchor,
+            reversedRange,
+            justification
+          )
           unsubJustifications()
         }
       )
