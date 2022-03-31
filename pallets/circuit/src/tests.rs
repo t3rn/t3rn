@@ -1068,7 +1068,9 @@ fn circuit_handles_add_liquidity_with_insurance() {
         });
 }
 
+// Ignored for now because of a bug described in t3rn#261
 #[test]
+#[ignore]
 fn circuit_handles_transfer_and_swap() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
@@ -1129,10 +1131,6 @@ fn circuit_handles_transfer_and_swap() {
             let events = System::events();
             assert_eq!(events.len(), 8);
 
-            for ev in events {
-                println!("events after on_extrinsic_trigger: {:#?}", ev);
-            }
-
             let xtx_id: sp_core::H256 =
                 hex!("7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6").into();
 
@@ -1146,12 +1144,12 @@ fn circuit_handles_transfer_and_swap() {
             .encode();
 
             println!(
-                "full side effects before confirmation: {:#?}",
+                "full side effects before confirmation: {:?}",
                 Circuit::get_full_side_effects(xtx_id).unwrap()
             );
 
             println!(
-                "exec signals before confirmation: {:#?}",
+                "exec signals before confirmation: {:?}",
                 Circuit::get_x_exec_signals(xtx_id).unwrap()
             );
 
@@ -1175,7 +1173,7 @@ fn circuit_handles_transfer_and_swap() {
             ));
 
             println!(
-                "exec signals after 1st confirmation, transfer: {:#?}",
+                "exec signals after 1st confirmation, transfer: {:?}",
                 Circuit::get_x_exec_signals(xtx_id).unwrap()
             );
 
@@ -1199,12 +1197,12 @@ fn circuit_handles_transfer_and_swap() {
             };
 
             println!(
-                "full side effects after confirmation: {:#?}",
+                "full side effects after confirmation: {:?}",
                 Circuit::get_full_side_effects(xtx_id).unwrap()
             );
 
             println!(
-                "exec signals after confirmation: {:#?}",
+                "exec signals after confirmation: {:?}",
                 Circuit::get_x_exec_signals(xtx_id).unwrap()
             );
 

@@ -641,7 +641,7 @@ impl ExtBuilder {
                 b"insurance".to_vec(),
             ],
             confirm_events: vec![
-                b"ExecuteToken(executor,to,liquidity_token,amount_liquidity_token)".to_vec(),
+                b"ExecuteToken(_executor,to,liquidity_token,amount_liquidity_token)".to_vec(),
             ],
             escrowed_events: vec![
                 b"ExecuteToken(xtx_id,to,liquidity_token,amount_liquidity_token)".to_vec(),
