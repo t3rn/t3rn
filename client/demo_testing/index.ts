@@ -34,35 +34,10 @@ class TransferSiseEffect {
         await this.delay()
         console.log("Registered Roccoco")
         await setOperational(this.circuit, this.target)
-        // await this.listener.test(this.target)
+        console.log("Set operational")
         await this.listener.initListener()
-        // await submitTransfer(this.api, this.target)
-        // console.log("Submitted Transfer")
-        // this.api.disconnect()
     }
-
-    // async initEventListener() : Promise<void> {
-    //     const api = await ApiPromise.create({
-    //         provider: new WsProvider("wss://rococo-rpc.polkadot.io"),
-    //     })
-
-    //     const circuit = await ApiPromise.create({
-    //         provider: new WsProvider("ws://127.0.0.1:9944"),
-    //     })
-
-    //     const subJust = await api.rpc.grandpa.subscribeJustifications(async res => {
-    //         console.log("Justification received")
-    //         let tx = await circuit.tx.multiFinalityVerifierPolkadotLike.submitFinalityProof(res.toHuman())
-
-    //         const keyring = new Keyring({ type: 'sr25519', ss58Format: 60 });
-    //         const alice = keyring.addFromUri('//Alice');
-    //         circuit.tx.sudo.sudoUncheckedWeight(tx, 1).signAndSend(alice)
-    //         .then(res => console.log("res:", res.toHuman()))
-            
-    //         subJust()
-    //     });
-    // }
-
+    
     async delay() {
         return new Promise<void>((res, rej) => {
             setTimeout(() => {

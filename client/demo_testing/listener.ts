@@ -24,7 +24,6 @@ export class SubstrateListener {
         let listener = await ApiPromise.create({
             provider: new WsProvider("wss://rococo-rpc.polkadot.io"),
         })
-        // this.circuit = a
         this.headerListener = await listener.rpc.chain.subscribeNewHeads(async (header) => {
             console.log("Header:", header.number.toNumber());
             this.headers.push(header)
@@ -52,7 +51,6 @@ export class SubstrateListener {
         console.log("Started Grandpa Justification Listener...")
         let listener = await api.rpc.grandpa.subscribeJustifications(async (justification: any) => {
             console.log("Caught Justification!")
-            // this.anchorJustification = justification;
             let hex_justification = justification.toString().substring(2) // removes 0x
             const decodedVals:any = await new Promise((res, rej) => {
                 return exec(`./rust_decode/target/release/decode_justification blocknumber ${hex_justification}`, (err, stdout, _) => {
@@ -65,7 +63,6 @@ export class SubstrateListener {
                     return res(JSON.parse(stdout));
                 });
             })
-            console.log(decodedVals)
             this.conclude(justification, decodedVals)
             listener();
         })
@@ -81,14 +78,4 @@ export class SubstrateListener {
 
         submitProof(justification, header, this.gatewayId);
     }
-
 }
-
-// let instance = new SubstrateListener();
-
-// process.on("message", (msg: string) => {
-//     if (msg === "init") {
-//         instance.initListener()
-//     }
-// })
-
