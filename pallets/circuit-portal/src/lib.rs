@@ -75,7 +75,7 @@ pub use xbridges::{
     PolkadotLikeValU64Gateway,
 };
 
-use sp_finality_grandpa::{SetId};
+use sp_finality_grandpa::SetId;
 
 pub use t3rn_protocol::side_effects::protocol::SideEffectConfirmationProtocol;
 
@@ -215,18 +215,24 @@ pub mod pallet {
                     authority_set_id,
                     gateway_id,
                 )?,
-                (HasherAlgo::Keccak256, 32) => init_bridge_instance::<
-                    T,
-                    EthLikeKeccak256ValU32Gateway,
-                >(
-                    origin, first_header, authorities, authority_set_id, gateway_id
-                )?,
-                (HasherAlgo::Keccak256, 64) => init_bridge_instance::<
-                    T,
-                    EthLikeKeccak256ValU64Gateway,
-                >(
-                    origin, first_header, authorities, authority_set_id, gateway_id
-                )?,
+                (HasherAlgo::Keccak256, 32) => {
+                    init_bridge_instance::<T, EthLikeKeccak256ValU32Gateway>(
+                        origin,
+                        first_header,
+                        authorities,
+                        authority_set_id,
+                        gateway_id,
+                    )?
+                }
+                (HasherAlgo::Keccak256, 64) => {
+                    init_bridge_instance::<T, EthLikeKeccak256ValU64Gateway>(
+                        origin,
+                        first_header,
+                        authorities,
+                        authority_set_id,
+                        gateway_id,
+                    )?
+                }
                 (_, _) => init_bridge_instance::<T, DefaultPolkadotLikeGateway>(
                     origin,
                     first_header,

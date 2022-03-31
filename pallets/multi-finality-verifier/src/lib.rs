@@ -161,7 +161,9 @@ pub mod pallet {
                 Self::request_count_map(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
                 <Error<T, I>>::TooManyRequests
             );
-            let justification = GrandpaJustification::<BridgedHeader<T, I>>::decode(&mut &*encoded_justification).map_err(|_| "Decode Error")?;
+            let justification =
+                GrandpaJustification::<BridgedHeader<T, I>>::decode(&mut &*encoded_justification)
+                    .map_err(|_| "Decode Error")?;
 
             log::debug!(
                 target: LOG_TARGET,
