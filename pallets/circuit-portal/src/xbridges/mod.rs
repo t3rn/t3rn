@@ -2,6 +2,7 @@ use crate::{Bytes, DispatchResultWithPostInfo, Error};
 use codec::{Decode, Encode};
 
 use sp_core::crypto::ByteArray;
+use sp_finality_grandpa::SetId;
 
 use sp_std::vec::Vec;
 
@@ -23,6 +24,7 @@ pub fn init_bridge_instance<T: pallet_multi_finality_verifier::Config<I>, I: 'st
     origin: T::Origin,
     first_header: Vec<u8>,
     authorities: Option<Vec<T::AccountId>>,
+    authority_set_id: Option<SetId>,
     gateway_id: bp_runtime::ChainId,
 ) -> DispatchResultWithPostInfo {
     let header: CurrentHeader<T, I> = Decode::decode(&mut &first_header[..])
@@ -36,7 +38,7 @@ pub fn init_bridge_instance<T: pallet_multi_finality_verifier::Config<I>, I: 'st
             .map(|id| sp_finality_grandpa::AuthorityId::from_slice(&id.encode()).unwrap())
             .map(|authority| (authority, 1))
             .collect::<Vec<_>>(),
-        set_id: 1,
+        set_id: authority_set_id.unwrap_or_default(),
         is_halted: false,
     };
 
