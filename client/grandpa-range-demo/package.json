@@ -5,7 +5,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "prestart": "cargo build --release --manifest-path ./justification-decoder/Cargo.toml",
     "start": "DEBUG=listener,relayer ts-node src/index.ts",
-    "standalone": "cargo run --manifest-path ../../node/standalone/Cargo.toml -- --dev --ws-port 3333 -lmulti-finality-verifier=debug",
+    "standalone": "SKIP_WASM_BUILD=1 cargo run --manifest-path ../../node/standalone/Cargo.toml -- --dev --ws-port 3333 -lmulti-finality-verifier=debug",
     "fmt": "npx prettier --no-semi --arrow-parens avoid --print-width 80 --write ./src/**.ts"
   },
   "author": "",

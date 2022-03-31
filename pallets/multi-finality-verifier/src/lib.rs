@@ -715,6 +715,7 @@ pub mod pallet {
         let initial_hash = header.hash();
         <InitialHashMap<T, I>>::insert(gateway_id, initial_hash);
         <BestFinalizedMap<T, I>>::insert(gateway_id, initial_hash);
+        println!("initialize_single_bridge <BestFinalizedMap<T, I>>::insert gtwy hash {:?} {:?}", gateway_id, initial_hash);
         <MultiImportedHeaders<T, I>>::insert(gateway_id, initial_hash, header);
 
         // might get problematic
