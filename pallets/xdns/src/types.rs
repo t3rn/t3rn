@@ -1,7 +1,7 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode, MaxEncodedLen};
+use codec::{Decode, Encode};
 
 use frame_system::Config;
 #[cfg(feature = "std")]
@@ -9,7 +9,12 @@ use serde::{Deserialize, Serialize};
 
 use scale_info::TypeInfo;
 
-use sp_runtime::{traits::Hash, RuntimeDebug};
+use sp_runtime::traits::Hash;
+#[cfg(feature = "no_std")]
+use sp_runtime::RuntimeDebug as Debug;
+#[cfg(feature = "std")]
+use std::fmt::Debug;
+
 use sp_std::prelude::*;
 use sp_std::vec::Vec;
 use t3rn_primitives::abi::GatewayABIConfig;
@@ -18,7 +23,7 @@ use t3rn_primitives::{
     abi::Type, ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
 };
 /// A hash based on encoding the complete XdnsRecord
-pub type XdnsRecordId<T> = <T as frame_system::Config>::Hash;
+pub type XdnsRecordId = [u8; 4];
 
 /// A hash based on encoding the Gateway ID
 pub type XdnsGatewayId<T> = <T as frame_system::Config>::Hash;
@@ -26,8 +31,7 @@ pub type XdnsGatewayId<T> = <T as frame_system::Config>::Hash;
 pub type AllowedSideEffect = [u8; 4];
 
 /// A preliminary representation of a xdns_record in the onchain registry.
-// #[derive(Clone, Debug, Eq, PartialEq, Encode, Decode, TypeInfo)]
-#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo)]
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct XdnsRecord<AccountId> {
     /// SCALE-encoded url string on where given Consensus System can be accessed
@@ -55,16 +59,6 @@ pub struct XdnsRecord<AccountId> {
 
     /// Methods enabled to be called on the remote target
     pub allowed_side_effects: Vec<AllowedSideEffect>,
-}
-
-impl<AccountId> MaxEncodedLen for XdnsRecord<AccountId>
-where
-    XdnsRecord<AccountId>: Encode,
-    AccountId: Encode,
-{
-    fn max_encoded_len() -> usize {
-        2048 as usize
-    }
 }
 
 // ToDo: If I import this from primitives, I get this error. Maybe someone has an idea? Don't understand the conflicting trait impl error
@@ -99,7 +93,7 @@ where
 //     |
 //     = note: define and implement a trait or new type instead
 
-#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo)]
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct SideEffectInterface {
     pub id: [u8; 4],
@@ -112,14 +106,8 @@ pub struct SideEffectInterface {
     pub revert_events: Vec<EventSignature>,
 }
 
-impl MaxEncodedLen for SideEffectInterface {
-    fn max_encoded_len() -> usize {
-        2048 as usize
-    }
-}
-
 impl SideEffectInterface {
-    /// Function that generates an XdnsRecordId hash based on the gateway id
+    /// Function that generates an SideEffectId hash based on the gateway id
     pub fn generate_id<T: Config>(&self) -> SideEffectId<T> {
         T::Hashing::hash(Encode::encode(&self.id).as_ref())
     }
@@ -130,8 +118,6 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
         url: Vec<u8>,
         gateway_abi: GatewayABIConfig,
         modules_encoded: Option<Vec<u8>>,
-        // signed_extensions: Option<Vec<u8>>,
-        _runtime_version: sp_version::RuntimeVersion,
         extrinsics_version: u8,
         genesis_hash: Vec<u8>,
         gateway_id: ChainId,
@@ -191,8 +177,8 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
     }
 
     /// Function that generates an XdnsRecordId hash based on the gateway id
-    pub fn generate_id<T: Config>(&self) -> XdnsRecordId<T> {
-        T::Hashing::hash(Encode::encode(&self.gateway_id).as_ref())
+    pub fn generate_id<T: Config>(&self) -> XdnsRecordId {
+        self.gateway_id
     }
 
     pub fn set_last_finalized(&mut self, last_finalized: u64) {
@@ -201,7 +187,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
 }
 
 /// The object with XdnsRecords as returned by the RPC endpoint
-#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo)]
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct FetchXdnsRecordsResponse<AccountId> {
     pub xdns_records: Vec<XdnsRecord<AccountId>>,

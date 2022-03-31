@@ -1,0 +1,160 @@
+name: Circuit Collator Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  RUST_BACKTRACE: 1
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-release:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@master
+        with:
+          submodules: recursive
+          token: ${{ secrets.GH_PAT }}
+      - name: ⚙️Get nightly rust toolchain with wasm target
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2021-11-01
+          target: wasm32-unknown-unknown
+          components: rustfmt, clippy
+          override: true
+
+      - name: 🕒 Cache Rust binaries and packages
+        uses: actions/cache@v2
+        id: cache-rust
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ./target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('./Cargo.lock') }}
+
+      - name: 🏭 Build circuit
+        uses: actions-rs/cargo@v1
+        continue-on-error: false
+        with:
+          command: build
+          args: --manifest-path ./node/parachain/Cargo.toml --locked --release
+
+      - name: 📤 Upload binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.sha }}-parachain-release-artifacts
+          path: ./target/release/circuit-collator
+          if-no-files-found: error
+          retention-days: 1
+
+  push-to-docker:
+    runs-on: ubuntu-20.04
+    needs: [build-release]
+    steps:
+      - name: ☁️Checkout git repo
+        uses: actions/checkout@master
+        with:
+          submodules: recursive
+          token: ${{ secrets.GH_PAT }}
+      - name: 🔧 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: 🕒 Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+      - name: 📥 Download circuit
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ github.sha }}-parachain-release-artifacts
+          path: ./target/release/
+      - name: 🐋 Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: 🐳 Build & Publish Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: t3rn/circuit-parachain:latest
+          platforms: linux/amd64
+          file: docker/circuit-parachain.Dockerfile
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
+
+  release-on-github:
+    runs-on: ubuntu-20.04
+    needs: build-release
+    steps:
+      - name: 📥 Download circuit collator
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ github.sha }}-parachain-release-artifacts
+          path: ./target/release/
+
+      - name: 🎱 Gzip circuit collator
+        run: |
+          gzip -c ./target/release/circuit-collator \
+          > ./target/release/circuit-collator.gz
+
+      - name: 🖐🏾 Fingerprint the gball
+        run: |
+          sha256sum -b ./target/release/circuit-collator.gz \
+          | grep -oE '^[a-f0-9]+' \
+          | tr -d '\n' \
+          > ./target/release/circuit-collator.gz.sha256sum
+
+      - name: 🏷️ Get the version tag
+        run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+
+      - name: 🖨️ Get the release notes
+        run: |
+          node -e "
+            const lines = require('fs').readFileSync('./CHANGELOG.md', 'utf8').split(/(\n)/g).filter(Boolean);
+            let head = lines.findIndex(l => /^\s*##[^v]+${{ env.PUSHED_TAG }}/.test(l));
+            if (head === -1) { throw Error('failed parsing changelog') } else head = head + 1;
+            let tail = lines.slice(head).findIndex(l => /^\s*##[^v]+v/.test(l));
+            tail = tail === -1 ? lines.length : tail + head;
+            console.log(lines.slice(head, tail).join(''));
+          " \
+          > ./target/release/notes.md
+
+      - name: 🐙 Create a GitHub release
+        id: create_release
+        uses: actions/create-release@v1.1.4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+        with:
+          tag_name: ${{ env.PUSHED_TAG }}
+          release_name: ${{ env.PUSHED_TAG }}
+          body_path: ./target/release/notes.md
+          draft: false
+          prerelease: true
+
+      - name: 🍔 Provide the sha256sum as a release asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./target/release/circuit-collator.gz.sha256sum
+          asset_name: t3rn-circuit-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz.sha256sum
+          asset_content_type: text/plain
+
+      - name: 📦 Upload the circuit parachain collator gball as a release asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./target/release/circuit-collator.gz
+          asset_name: t3rn-circuit-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz
+          asset_content_type: application/gzip

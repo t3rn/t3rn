@@ -74,6 +74,8 @@ pub type BridgedBlockHasher<T, I> = HasherOf<<T as Config<I>>::BridgedChain>;
 /// Header of the bridged chain.
 pub type BridgedHeader<T, I> = HeaderOf<<T as Config<I>>::BridgedChain>;
 
+const LOG_TARGET: &str = "multi-finality-verifier";
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -160,24 +162,35 @@ pub mod pallet {
                 <Error<T, I>>::TooManyRequests
             );
 
+            log::debug!(
+                target: LOG_TARGET,
+                "Going to try and finalize header {:?} gateway {:?}",
+                finality_target,
+                gateway_id
+            );
+
             let (hash, number) = (finality_target.hash(), finality_target.number());
-            log::trace!("Going to try and finalize header {:?}", finality_target);
 
             let best_finalized = <MultiImportedHeaders<T, I>>::get(
-				gateway_id,
-				<BestFinalizedMap<T, I>>::get(gateway_id).expect(
-					" Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
-				`ImportedHeaders` must contain an entry for `BestFinalized`.",
-				),
-			)
-				.expect("In order to reach this point the bridge must have been initialized for given gateway.");
+                gateway_id,
+                <BestFinalizedMap<T, I>>::get(gateway_id)
+                    // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
+                    // `ImportedHeaders` must contain an entry for `BestFinalized`.
+                    .ok_or_else(|| <Error<T, I>>::NoFinalizedHeader)?,
+            )
+            // In order to reach this point the bridge must have been initialized for given gateway.
+            .ok_or_else(|| <Error<T, I>>::InvalidAnchorHeader)?;
 
             // We do a quick check here to ensure that our header chain is making progress and isn't
             // "travelling back in time" (which could be indicative of something bad, e.g a hard-fork).
             ensure!(best_finalized.number() < number, <Error<T, I>>::OldHeader);
+
             let authority_set = <CurrentAuthoritySetMap<T, I>>::get(gateway_id)
-                .expect("Expects authorities to be set before verify_justification");
+                // Expects authorities to be set before verify_justification
+                .ok_or_else(|| <Error<T, I>>::InvalidAuthoritySet)?;
+
             let set_id = authority_set.set_id;
+
             verify_justification_single::<T, I>(
                 &justification,
                 hash,
@@ -189,6 +202,7 @@ pub mod pallet {
             // We have to incentivise authority_set update submissions in some way. Important to receive proofs of changing set, even when no transaction is included
             let _enacted =
                 try_enact_authority_change_single::<T, I>(&finality_target, set_id, gateway_id)?;
+
             let index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
 
             let pruning = <MultiImportedHashes<T, I>>::try_get(gateway_id, index);
@@ -219,11 +233,18 @@ pub mod pallet {
             );
 
             if let Ok(hash) = pruning {
-                log::debug!(target: "runtime::multi-finality-verifier", "Pruning old header: {:?} for gateway {:?}.", hash, gateway_id);
+                log::debug!(
+                    target: LOG_TARGET,
+                    "Pruning old header: {:?} for gateway {:?}.",
+                    hash,
+                    gateway_id
+                );
                 <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
                 <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
             }
-            log::info!(
+
+            log::debug!(
+                target: LOG_TARGET,
                 "Successfully imported finalized header with hash {:?} for gateway {:?}!",
                 hash,
                 gateway_id
@@ -234,7 +255,8 @@ pub mod pallet {
 
             pallet_xdns::Pallet::<T>::update_gateway_ttl(gateway_id, now)?;
 
-            log::info!(
+            log::debug!(
+                target: LOG_TARGET,
                 "Successfully updated gateway {:?} with finalized timestamp {:?}!",
                 gateway_id,
                 now.clone()
@@ -583,6 +605,8 @@ pub mod pallet {
         StorageRootMismatch,
         // Submitted anchor header(verified header stored on circuit) was not found
         InvalidAnchorHeader,
+        // No finalized header known for the corresponding gateway.
+        NoFinalizedHeader,
     }
 
     /// Check the given header for a GRANDPA scheduled authority set change. If a change

@@ -1,8 +1,9 @@
 use circuit_standalone_runtime::{
     AccountId, AuraConfig, BalancesConfig, ContractsRegistryConfig, GenesisConfig, GrandpaConfig,
-    MultiFinalityVerifierEthereumLikeConfig, MultiFinalityVerifierGenericLikeConfig,
-    MultiFinalityVerifierPolkadotLikeConfig, MultiFinalityVerifierSubstrateLikeConfig, Signature,
-    SudoConfig, SystemConfig, XDNSConfig, WASM_BINARY,
+    MultiFinalityVerifierDefaultConfig, MultiFinalityVerifierEthereumLikeConfig,
+    MultiFinalityVerifierGenericLikeConfig, MultiFinalityVerifierPolkadotLikeConfig,
+    MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, SystemConfig, XDNSConfig,
+    WASM_BINARY,
 };
 
 use jsonrpc_runtime_client::ConnectionParams;
@@ -99,7 +100,7 @@ fn fetch_xdns_record_from_rpc(
                 genesis_hash: client.genesis_hash.0.to_vec(),
             },
             gateway_sys_props,
-            vec![],
+            vec![*b"tran"],
         ))
     })
 }
@@ -426,6 +427,10 @@ fn testnet_genesis(
             init_data: None,
         },
         multi_finality_verifier_polkadot_like: MultiFinalityVerifierPolkadotLikeConfig {
+            owner: None,
+            init_data: None,
+        },
+        multi_finality_verifier_default: MultiFinalityVerifierDefaultConfig {
             owner: None,
             init_data: None,
         },

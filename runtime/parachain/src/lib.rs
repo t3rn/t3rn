@@ -169,14 +169,17 @@ impl_opaque_keys! {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("template-parachain"),
-    impl_name: create_runtime_str!("template-parachain"),
+    spec_name: create_runtime_str!("circuit-parachain"),
+    impl_name: create_runtime_str!("circuit-parachain"),
     authoring_version: 1,
     spec_version: 1,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
-    state_version: 1,
+    // https://github.com/paritytech/cumulus/issues/998
+    // https://github.com/paritytech/substrate/pull/9732
+    // https://github.com/paritytech/substrate/pull/10073
+    state_version: 1, // 0 = old, 1 = new; see above 4 details
 };
 
 /// This determines the average expected block time that we are targeting.
@@ -509,9 +512,12 @@ construct_runtime!(
         MultiFinalityVerifierGenericLike: pallet_mfv::<Instance4>::{
             Pallet, Call, Storage, Config<T, I>
         } = 104,
-        ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 105,
-        CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>} = 106,
-        Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 107,
+        MultiFinalityVerifierDefault: pallet_mfv::{
+            Pallet, Call, Storage, Config<T, I>
+        } = 105,
+        ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
+        CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>} = 107,
+        Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
 
         // admin
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,

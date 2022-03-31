@@ -11,7 +11,7 @@ pub struct Cli {
 
 #[derive(Debug, clap::Subcommand)]
 pub enum Subcommand {
-    /// Key management cli utilities
+    /// Key management CLI utilities
     #[clap(subcommand)]
     Key(sc_cli::KeySubcommand),
 

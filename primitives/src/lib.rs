@@ -78,8 +78,8 @@ impl GatewayType {
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum GatewayVendor {
-    Ethereum,
     Substrate,
+    Ethereum,
 }
 
 impl Default for GatewayVendor {
