@@ -24,8 +24,6 @@ export default class Relayer {
 
     await registerKusamaGateway(this.circuit, Relayer.debug)
 
-    Relayer.debug(`gateway ${this.gatewayId.toString()} registered`)
-
     const setOperational =
       this.circuit.tx.multiFinalityVerifierPolkadotLike.setOperational(
         true,
@@ -43,6 +41,9 @@ export default class Relayer {
               'set_operational events',
               ...formatEvents(result.events)
             )
+            Relayer.debug(
+              `gateway ${this.gatewayId.toString()} registered and operational`
+            )
             resolve(undefined)
           }
         })
@@ -57,7 +58,9 @@ export default class Relayer {
   ) {
     Relayer.debug('submitting finality proof and header range...')
     Relayer.debug(
-      `submit_finality_proof(\n${anchor},\n${justification},\n${gatewayId}\n)`
+      `submit_finality_proof(\n\t${anchor},\n\t${justification
+        .toString()
+        .slice(0, 10)}...,\n\t${gatewayId}\n)`
     )
 
     const submitFinalityProof =
@@ -82,7 +85,7 @@ export default class Relayer {
     })
 
     Relayer.debug(
-      `submit_header_range(\n${gatewayId},\n${reversedRange},\n${anchor.hash}\n)`
+      `submit_header_range(\n\t${gatewayId},\n\t${reversedRange},\n\t${anchor.hash}\n)`
     )
 
     const submitHeaderRange =
