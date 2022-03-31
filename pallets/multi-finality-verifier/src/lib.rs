@@ -155,17 +155,13 @@ pub mod pallet {
             encoded_justification: Vec<u8>,
             gateway_id: ChainId,
         ) -> DispatchResultWithPostInfo {
-            // ensure_operational_single::<T, I>(gateway_id)?;
-            // ensure_signed(origin)?;
-            // ensure!(
-            //     Self::request_count_map(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
-            //     <Error<T, I>>::TooManyRequests
-            // );
-            log::info!("here");
+            ensure_operational_single::<T, I>(gateway_id)?;
+            ensure_signed(origin)?;
+            ensure!(
+                Self::request_count_map(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
+                <Error<T, I>>::TooManyRequests
+            );
             let justification = GrandpaJustification::<BridgedHeader<T, I>>::decode(&mut &*encoded_justification).map_err(|_| "Decode Error")?;
-            log::info!("Gateway: {:?}", gateway_id);
-            log::info!("Justification Block: {:?}", justification.commit.target_number);
-            log::info!("Block height: {:?}", finality_target.number());
 
             log::debug!(
                 target: LOG_TARGET,
@@ -175,9 +171,6 @@ pub mod pallet {
             );
 
             let (hash, number) = (finality_target.hash(), finality_target.number());
-
-            log::info!("Block Hash: {:?}, Block Num: {:?}", hash, number);
-            log::info!("Justification Hash: {:?}, Block Num: {:?}", justification.commit.target_hash, justification.commit.target_number);
 
             let best_finalized = <MultiImportedHeaders<T, I>>::get(
                 gateway_id,
@@ -196,11 +189,6 @@ pub mod pallet {
             let authority_set = <CurrentAuthoritySetMap<T, I>>::get(gateway_id)
                 // Expects authorities to be set before verify_justification
                 .ok_or_else(|| <Error<T, I>>::InvalidAuthoritySet)?;
-
-            // log::info!("Auth set: {:?}", authority_set.authorities[0]);
-            for auth in &authority_set.authorities {
-                log::info!("Addr: {:?}, weight: {:?}", auth.0, auth.1);
-            }
 
             let set_id = authority_set.set_id;
 

@@ -6,7 +6,6 @@ use sp_runtime::traits::Header as HeaderT;
 use sp_std::prelude::*;
 use sp_runtime::{
     generic,
-    AccountId32,
     traits::{BlakeTwo256},
 };
 use std::env;
@@ -47,7 +46,6 @@ fn number(arg: Vec<u8>) {
         Ok(_) => println!("{:?}", decoded.unwrap()),
         Err(_) => println!("Decoding Error")
     }
-
 }
 
 fn authority_set(arg: Vec<u8>) {

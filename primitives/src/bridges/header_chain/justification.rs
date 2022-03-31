@@ -106,20 +106,15 @@ where
     let mut signature_buffer = Vec::new();
     let mut votes = BTreeSet::new();
     let mut cumulative_weight = 0u64;
-    log::info!("authority set id: {:?}", authorities_set_id);
-    log::info!("precommit number: {:?}", &justification.commit.precommits.len());
     for signed in &justification.commit.precommits {
         // authority must be in the set
         let authority_info = match authorities_set.get(&signed.id) {
             Some(authority_info) => authority_info,
             None => {
                 // just ignore precommit from unknown authority as `finality_grandpa::import_precommit` does
-                log::info!("Auth not found: {:?}", signed);
                 continue;
             }
         };
-
-        log::info!("authority info: {:?}", authority_info.weight());
 
         // check if authority has already voted in the same round.
         //
@@ -176,8 +171,6 @@ where
     // check that the cumulative weight of validators voted for the justification target (or one
     // of its descendents) is larger than required threshold.
     let threshold = authorities_set.threshold().0.into();
-    log::info!("threshhold: {:?}", threshold);
-    log::info!("weight: {:?}", cumulative_weight);
     if cumulative_weight >= threshold {
         Ok(())
     } else {

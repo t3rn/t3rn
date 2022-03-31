@@ -13,4 +13,6 @@ members = [
     'primitives/src/bridges/snowfork/*',
     'runtime/*',
 ]
-exclude = []
+exclude = [
+    'client/demo_testing/rust_decode'
+]

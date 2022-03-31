@@ -2226,23 +2226,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "decode_justification"
-version = "0.1.0"
-dependencies = [
- "finality-grandpa",
- "frame-support",
- "hex",
- "parity-scale-codec 2.3.1",
- "scale-info 1.0.0",
- "serde",
- "serde_json",
- "sp-core",
- "sp-finality-grandpa",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "derivative"
 version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
