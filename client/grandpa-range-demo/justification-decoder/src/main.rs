@@ -20,15 +20,16 @@ pub struct GrandpaJustification<Header: HeaderT> {
 }
 
 fn main() {
-    let payload = std::fs::read_to_string(&std::env::args().collect::<Vec<String>>()[1])
-        .expect("file not found!");
-    let hex = if payload.starts_with("0x") {
-        &payload[2..]
+    let args = std::env::args().collect::<Vec<String>>();
+    let payload = std::fs::read_to_string(&args[1])
+        .expect(&format!("usage: {} /tmp/justification_file", args[0]));
+    let hex = if payload.trim().starts_with("0x") {
+        &payload.trim()[2..]
     } else {
-        &payload
+        &payload.trim()
     };
-    let notification = hex::decode(hex).expect("Hex decoding error");
+    let scale_encoded = hex::decode(hex).expect("Hex decoding error");
     let justification =
-        GrandpaJustification::<Header>::decode(&mut &*notification).expect("SCALE decoding error");
+        GrandpaJustification::<Header>::decode(&mut &*scale_encoded).expect("SCALE decoding error");
     println!("{:?}", justification.commit.target_number);
 }

@@ -90,22 +90,25 @@ export default class Listener extends EventEmitter {
   }
 
   async concludeRange() {
+    Listener.debug('concluding range...')
     const unsubJustifications =
       await this.kusama.rpc.grandpa.subscribeJustifications(
         async (justification: JustificationNotification) => {
           unsubJustifications()
-          Listener.debug('got a random justification...')
 
           const tmpJustificationFile: string = join(
             tmpdir(),
             justification.toString().slice(0, 10)
           )
+
           await writeFile(tmpJustificationFile, justification.toString())
 
           const justificationBlockNumber: number = await exec(
-            '../justification-decoder/target/release/justification-decoder ' +
+            './justification-decoder/target/release/justification-decoder ' +
               tmpJustificationFile
           ).then(cmd => parseInt(cmd.stdout))
+
+          Listener.debug("jus blk num", justificationBlockNumber)
 
           const justifiedHeaderIndex: number = this.headers.findIndex(
             h => h.number.toNumber() === justificationBlockNumber
