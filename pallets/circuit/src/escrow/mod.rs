@@ -101,7 +101,9 @@ impl<T: Config> EscrowExec<T> for Transfer<T> {
 
         log::debug!(
             "escrow exec transfer from {:?} to {:?} value {:?}",
-            executioner, escrow_account, value
+            executioner,
+            escrow_account,
+            value
         );
         <T as EscrowTrait>::Currency::transfer(&executioner, &escrow_account, value, AllowDeath)
             .map_err(|_| Error::<T>::RewardTransferFailed)?; // should not fail
@@ -127,7 +129,9 @@ impl<T: Config> EscrowExec<T> for Transfer<T> {
 
         log::debug!(
             "escrow revert transfer from {:?} to {:?} value {:?}",
-            escrow_account, executioner, value
+            escrow_account,
+            executioner,
+            value
         );
 
         <pallet::Pallet<T>>::deposit_event(Event::EscrowTransfer(
@@ -150,7 +154,9 @@ impl<T: Config> EscrowExec<T> for Transfer<T> {
 
         log::debug!(
             "escrow commit from {:?} to {:?} value {:?}",
-            escrow_account, dest, value
+            escrow_account,
+            dest,
+            value
         );
         <T as EscrowTrait>::Currency::transfer(&escrow_account, &dest, value, AllowDeath)
             .map_err(|_| Error::<T>::RewardTransferFailed)?; // should not fail
