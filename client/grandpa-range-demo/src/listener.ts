@@ -1,11 +1,14 @@
 import { EventEmitter } from 'events'
+import { promisify } from 'util'
+import { exec as _exec } from 'child_process'
+import { tmpdir } from 'os'
+import { join } from 'path'
+import { writeFile } from 'fs/promises'
 import { ApiPromise, WsProvider } from '@polkadot/api'
 import { JustificationNotification, Header } from '@polkadot/types/interfaces'
 import { sleep } from './util'
 import createDebug from 'debug'
 import 'dotenv/config'
-import { promisify } from 'util'
-import { exec as _exec } from 'child_process'
 
 const exec = promisify(_exec)
 
@@ -93,9 +96,15 @@ export default class Listener extends EventEmitter {
           unsubJustifications()
           Listener.debug('got a random justification...')
 
+          const tmpJustificationFile: string = join(
+            tmpdir(),
+            justification.toString().slice(0, 10)
+          )
+          await writeFile(tmpJustificationFile, justification.toString())
+
           const justificationBlockNumber: number = await exec(
             '../justification-decoder/target/release/justification-decoder ' +
-              justification.toString().slice(2)
+              tmpJustificationFile
           ).then(cmd => parseInt(cmd.stdout))
 
           const justifiedHeaderIndex: number = this.headers.findIndex(
