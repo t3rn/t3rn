@@ -62,11 +62,14 @@ export default class Listener extends EventEmitter {
 
   async handleHeader(header: Header) {
     let attempts: number = 10
+
     while (this.last !== 0 && header.number.toNumber() > this.last + 1) {
       if (attempts-- <= 0) {
         throw Error(`cannot fetch block#${this.last + 1}`)
       }
+
       let missingHeader: Header | void
+
       try {
         missingHeader = await this.kusama.rpc.chain.getHeader(
           await this.kusama.rpc.chain.getBlockHash(this.last + 1)
@@ -80,6 +83,7 @@ export default class Listener extends EventEmitter {
         ) {
           this.headers.push(missingHeader)
           this.last = missingHeader.number.toNumber()
+          Listener.debug(`#${this.last}`)
         }
       }
     }
@@ -108,7 +112,7 @@ export default class Listener extends EventEmitter {
               tmpJustificationFile
           ).then(cmd => parseInt(cmd.stdout))
 
-          Listener.debug("jus blk num", justificationBlockNumber)
+          Listener.debug('jus blk num', justificationBlockNumber)
 
           const justifiedHeaderIndex: number = this.headers.findIndex(
             h => h.number.toNumber() === justificationBlockNumber

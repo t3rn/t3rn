@@ -1,10 +1,13 @@
-import { Bytes } from '@polkadot/types'
 import { ApiPromise, WsProvider } from '@polkadot/api'
 import { createTestPairs } from '@polkadot/keyring/testingPairs'
+import { formatEvents } from './util'
 
 const keyring = createTestPairs({ type: 'sr25519' })
 
-export default async function registerKusamaGateway(circuit: ApiPromise) {
+export default async function registerKusamaGateway(
+  circuit: ApiPromise,
+  log = console.log
+) {
   const kusama = await ApiPromise.create({
     provider: new WsProvider(process.env.KUSAMA_RPC as string),
   })
@@ -61,6 +64,7 @@ export default async function registerKusamaGateway(circuit: ApiPromise) {
         if (result.isError) {
           reject(new Error('submitting registerGateway failed'))
         } else if (result.isInBlock) {
+          log('register_gateway events', ...formatEvents(result.events))
           resolve(undefined)
         }
       })

@@ -1,11 +1,6 @@
 import { ApiPromise, WsProvider } from '@polkadot/api'
 import { createTestPairs } from '@polkadot/keyring/testingPairs'
-import {
-  JustificationNotification,
-  Header,
-  BridgedHeader,
-  GrandpaJustification,
-} from '@polkadot/types/interfaces'
+import { Header } from '@polkadot/types/interfaces'
 import registerKusamaGateway from './register'
 import { formatEvents } from './util'
 import createDebug from 'debug'
@@ -27,7 +22,7 @@ export default class Relayer {
       types: types as any,
     })
 
-    await registerKusamaGateway(this.circuit)
+    await registerKusamaGateway(this.circuit, Relayer.debug)
 
     Relayer.debug(`gateway ${this.gatewayId.toString()} registered`)
 
@@ -44,7 +39,10 @@ export default class Relayer {
           if (result.isError) {
             reject('submitting setOperational failed')
           } else if (result.isInBlock) {
-            Relayer.debug(`gateway ${this.gatewayId.toString()} operational`)
+            Relayer.debug(
+              'set_operational events',
+              ...formatEvents(result.events)
+            )
             resolve(undefined)
           }
         })
