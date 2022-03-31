@@ -40,7 +40,7 @@ export default class Listener extends EventEmitter {
 
         await this.handleHeader(header)
 
-        if (this.headers.length - this.offset === this.rangeSize) {
+        if (this.headers.length - this.offset >= this.rangeSize) {
           await this.concludeRange()
         }
       }
