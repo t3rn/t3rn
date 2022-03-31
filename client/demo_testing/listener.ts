@@ -55,7 +55,7 @@ export class SubstrateListener {
             // this.anchorJustification = justification;
             let hex_justification = justification.toString().substring(2) // removes 0x
             const decodedVals:any = await new Promise((res, rej) => {
-                return exec(`./rust_decode/target/release/decode_justification ${hex_justification}`, (err, stdout, _) => {
+                return exec(`./rust_decode/target/release/decode_justification blocknumber ${hex_justification}`, (err, stdout, _) => {
                     if (err) {
                         throw err
                     }
