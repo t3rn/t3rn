@@ -15,6 +15,5 @@ export const submitProof = async (justification: any, header: any, gatewayId: an
 
     const keyring = new Keyring({ type: 'sr25519', ss58Format: 60 });
     const alice = keyring.addFromUri('//Alice');
-    await circuit.tx.sudo.sudoUncheckedWeight(tx, 1).signAndSend(alice)
-        .then(res => console.log("res:", res.toHuman()))
+    await tx.signAndSend(alice)
 }
