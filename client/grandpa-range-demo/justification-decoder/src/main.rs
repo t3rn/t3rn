@@ -20,7 +20,7 @@ pub struct GrandpaJustification<Header: HeaderT> {
 }
 
 fn main() {
-    let payload = std::fs::read_to_string(std::env::args().collect::<Vec<String>>()[1])
+    let payload = std::fs::read_to_string(&std::env::args().collect::<Vec<String>>()[1])
         .expect("file not found!");
     let hex = if payload.starts_with("0x") {
         &payload[2..]
