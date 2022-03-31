@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@polkadot/api": "=7.9.1",
+    "@polkadot/keyring": "^8.6.1",
+    "dotenv": "^16.0.0"
+  }
+}
