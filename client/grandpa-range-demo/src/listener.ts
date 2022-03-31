@@ -87,21 +87,23 @@ export default class Listener extends EventEmitter {
     const unsubJustifications =
       await this.kusama.rpc.grandpa.subscribeJustifications(
         async (justification: JustificationNotification) => {
+          unsubJustifications()
           Listener.debug('got a random justification...')
 
-          const hex = justification.toString().substring(2) // removes 0x
-          const cmd = await exec(
-            `../justification-decoder/target/release/justification-decoder ${hex}`
-          )
-          const blk = parseInt(cmd.stdout)
+          const justificationBlockNumber = await exec(
+            '../justification-decoder/target/release/justification-decoder ' +
+              justification.toString().slice(2)
+          ).then(cmd => parseInt(cmd.stdout))
 
-          const idx = this.headers.findIndex(h => h.number.toNumber() === blk)
+          const justifiedHeaderIndex = this.headers.findIndex(
+            h => h.number.toNumber() === justificationBlockNumber
+          )
 
           const reversedRange: Header[] = this.headers
-            .slice(this.offset, idx + 1)
+            .slice(this.offset, justifiedHeaderIndex + 1)
             .reverse()
 
-          this.offset = idx + 1
+          this.offset = justifiedHeaderIndex + 1
 
           const anchor: Header = reversedRange.shift() as Header
 
@@ -112,7 +114,6 @@ export default class Listener extends EventEmitter {
             reversedRange,
             justification
           )
-          unsubJustifications()
         }
       )
   }
