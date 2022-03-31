@@ -716,12 +716,8 @@ pub mod pallet {
 
         let initial_hash = header.hash();
         <InitialHashMap<T, I>>::insert(gateway_id, initial_hash);
-        log::info!("Gateways: {:?}", gateway_id);
-        log::info!("header: {:?}", initial_hash);
         <BestFinalizedMap<T, I>>::insert(gateway_id, initial_hash);
-        log::info!("written hash: {:?}", <BestFinalizedMap<T, I>>::contains_key(gateway_id));
         <MultiImportedHeaders<T, I>>::insert(gateway_id, initial_hash, header);
-        log::info!("authority set id: {:?}", set_id);
         // might get problematic
         let authority_set = bp_header_chain::AuthoritySet::new(authority_list, set_id);
         <CurrentAuthoritySetMap<T, I>>::insert(gateway_id, authority_set);
