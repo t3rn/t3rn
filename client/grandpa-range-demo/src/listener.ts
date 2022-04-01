@@ -5,7 +5,7 @@ import { join } from 'path'
 import { writeFile } from 'fs/promises'
 import { ApiPromise, WsProvider } from '@polkadot/api'
 import { JustificationNotification, Header } from '@polkadot/types/interfaces'
-import { exec, sleep } from './util'
+import { exec } from './util'
 import createDebug from 'debug'
 import 'dotenv/config'
 
