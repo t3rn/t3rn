@@ -3,7 +3,7 @@ use crate::contract_metadata::ContractMetadata;
 use crate::storage::RawAliveContractInfo;
 use crate::transfers::BalanceOf;
 use crate::{ChainId, Compose, EscrowTrait};
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_runtime::traits::Hash;
 use sp_runtime::RuntimeDebug;
@@ -54,6 +54,14 @@ pub struct RegistryContract<Hash, AccountId, BalanceOf, BlockNumber> {
     pub info: Option<RawAliveContractInfo<Hash, BalanceOf, BlockNumber>>,
     /// Contract metadata to be used in queries
     pub meta: ContractMetadata,
+}
+
+impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode> MaxEncodedLen
+    for RegistryContract<Hash, AccountId, BalanceOf, BlockNumber>
+{
+    fn max_encoded_len() -> usize {
+        4096 as usize
+    }
 }
 
 impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode>
