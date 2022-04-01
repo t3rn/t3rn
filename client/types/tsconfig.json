@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "target": "es2017",
-    "module": "commonjs",
+    "target": "esnext",
+    "module": "esnext",
     "moduleResolution": "node",
     "strict": true,
     "noImplicitAny": true,
@@ -9,18 +9,16 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "baseUrl": ".",
-    "composite": true,
     "declaration": true,
-    "rootDir": ".",
+    "rootDir": "./src/",
     "outDir": "./dist/",
     "paths": {
-      "t3rn-circuit-typegen/*": ["src/*"],
+      "@t3rn/api-augment/*": ["src/*"],
       "@polkadot/api/augment": ["src/interfaces/augment-api.ts"],
       "@polkadot/types/augment": ["src/interfaces/augment-types.ts"],
       "@polkadot/types/lookup": ["src/interfaces/types-lookup.ts"],
-      "@polkadot/types/types/registry": ["src/interfaces/augment-types.ts"]
     }
   },
   "exclude": ["node_modules", "dist"],
-  "include": ["src/interfaces"],
+  "include": ["src"],
 }
