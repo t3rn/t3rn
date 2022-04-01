@@ -6,11 +6,9 @@ import { join } from 'path'
 import { writeFile } from 'fs/promises'
 import { ApiPromise, WsProvider } from '@polkadot/api'
 import { JustificationNotification, Header } from '@polkadot/types/interfaces'
-import { sleep } from './util'
+import { exec, sleep } from './util'
 import createDebug from 'debug'
 import 'dotenv/config'
-
-const exec = promisify(_exec)
 
 export default class Listener extends EventEmitter {
   static debug = createDebug('listener')
@@ -65,7 +63,7 @@ export default class Listener extends EventEmitter {
 
     while (this.last !== 0 && header.number.toNumber() > this.last + 1) {
       if (attempts-- <= 0) {
-        throw Error(`cannot fetch block#${this.last + 1}`)
+        throw Error(`cannot fetch header#${this.last + 1}`)
       }
 
       let missingHeader: Header | void
@@ -100,17 +98,17 @@ export default class Listener extends EventEmitter {
         async (justification: JustificationNotification) => {
           unsubJustifications()
 
-          const tmpJustificationFile: string = join(
+          const tmpFile: string = join(
             tmpdir(),
             justification.toString().slice(0, 10)
           )
 
-          await writeFile(tmpJustificationFile, justification.toString())
+          await writeFile(tmpFile, justification.toString())
 
           const justificationBlockNumber: number = await exec(
             './justification-decoder/target/release/justification-decoder ' +
               'block_number ' +
-              tmpJustificationFile
+              tmpFile
           ).then(cmd => parseInt(cmd.stdout))
 
           Listener.debug('jus blk num', justificationBlockNumber)

@@ -1,6 +1,10 @@
 import { ApiPromise, WsProvider } from '@polkadot/api'
 import { createTestPairs } from '@polkadot/keyring/testingPairs'
-import { formatEvents } from './util'
+import { JustificationNotification } from '@polkadot/types/interfaces'
+import { tmpdir } from 'os'
+import { join } from 'path'
+import { writeFile } from 'fs/promises'
+import { exec, formatEvents } from './util'
 
 const keyring = createTestPairs({ type: 'sr25519' })
 
@@ -12,17 +16,38 @@ export default async function registerKusamaGateway(
     provider: new WsProvider(process.env.KUSAMA_RPC as string),
   })
 
-  const [currentHeader, metadata, runtimeVersion, genesisHash] =
-    await Promise.all([
-      kusama.rpc.chain.getHeader(),
-      kusama.runtimeMetadata,
-      kusama.runtimeVersion,
-      kusama.genesisHash,
-    ])
+  const [metadata, genesisHash] = await Promise.all([
+    kusama.runtimeMetadata,
+    kusama.genesisHash,
+  ])
 
-  const atGenesis = await kusama.at(genesisHash)
-  const initialAuthorities = await atGenesis.query.session.validators()
-  const currentSetId = await kusama.query.grandpa.currentSetId()
+  const derived: any = await new Promise(async resolve => {
+    let unsubJustifications = await kusama.rpc.grandpa.subscribeJustifications(
+      async (justification: JustificationNotification) => {
+        unsubJustifications()
+
+        const tmpFile: string = join(
+          tmpdir(),
+          justification.toString().slice(0, 10)
+        )
+
+        await writeFile(tmpFile, justification.toString())
+
+        const { authoritySet, blockNumber } = await exec(
+          './justification-decoder/target/release/justification-decoder ' +
+            tmpFile
+        ).then(cmd => JSON.parse(cmd.stdout))
+
+        const registrationHeader = await kusama.rpc.chain.getHeader(
+          await kusama.rpc.chain.getBlockHash(blockNumber)
+        )
+
+        const currentSetId = await kusama.query.grandpa.currentSetId()
+
+        resolve({ authoritySet, blockNumber, registrationHeader, currentSetId })
+      }
+    )
+  })
 
   await kusama.disconnect()
 
@@ -51,10 +76,10 @@ export default async function registerKusamaGateway(
       circuit.createType('Bytes', 'KSM'),
       circuit.createType('u8', 12),
     ]),
-    circuit.createType('Bytes', currentHeader.toHex()),
-    circuit.createType('Option<Vec<AccountId>>', initialAuthorities),
-    circuit.createType('Option<SetId>', currentSetId),
-    circuit.createType('Vec<AllowedSideEffect>', ['transfer', 'get_storage'])
+    circuit.createType('Bytes', derived.registrationHeader.toHex()),
+    circuit.createType('Option<Vec<AccountId>>', derived.authoritySet),
+    circuit.createType('Option<SetId>', derived.currentSetId),
+    circuit.createType('Vec<AllowedSideEffect>', ['tran'])
   )
 
   return new Promise((resolve, reject) => {
