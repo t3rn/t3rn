@@ -21,7 +21,7 @@ pub struct GrandpaJustification<Header: HeaderT> {
 
 fn main() {
     let args = std::env::args().collect::<Vec<String>>();
-    let payload = std::fs::read_to_string(&args[2])
+    let payload = std::fs::read_to_string(&args[1])
         .expect(&format!("usage: {} /tmp/justification_file", args[0]));
     let hex = if payload.trim().starts_with("0x") {
         &payload.trim()[2..]
