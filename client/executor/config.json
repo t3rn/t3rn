@@ -1,0 +1,11 @@
+{
+    "circuit": {
+        "rpc": "ws://127.0.0.1::9944"
+    },
+    "gateways": [{
+        "name": "Rococo",
+        "id": "abcd",
+        "rpc": "wss://rococo-rpc.polkadot.io",
+        "type": "substrate"
+    }]
+}

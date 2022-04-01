@@ -1,15 +1,15 @@
 import { ApiPromise, WsProvider } from '@polkadot/api'
 import { createTestPairs } from '@polkadot/keyring/testingPairs'
 import { Header } from '@polkadot/types/interfaces'
-import registerKusamaGateway from './register'
 import { formatEvents } from './util'
 import createDebug from 'debug'
 import 'dotenv/config'
 import types from './types.json'
+import { EventEmitter } from 'stream'
 
 const keyring = createTestPairs({ type: 'sr25519' })
 
-export default class Relayer {
+export default class Relayer extends EventEmitter {
   static debug = createDebug('relayer')
 
   circuit: ApiPromise
@@ -21,40 +21,14 @@ export default class Relayer {
       provider: new WsProvider(this.circuitEndpoint),
       types: types as any,
     })
-
-    await registerKusamaGateway(this.circuit, Relayer.debug)
-
-    const setOperational =
-      this.circuit.tx.multiFinalityVerifierDefault.setOperational(
-        true,
-        this.gatewayId
-      )
-
-    return new Promise(async (resolve, reject) => {
-      await this.circuit.tx.sudo
-        .sudo(setOperational)
-        .signAndSend(keyring.alice, result => {
-          if (result.isError) {
-            reject('submitting setOperational failed')
-          } else if (result.isInBlock) {
-            Relayer.debug(
-              'set_operational events',
-              ...formatEvents(result.events)
-            )
-            Relayer.debug(
-              `gateway ${this.gatewayId.toString()} registered and operational`
-            )
-            resolve(undefined)
-          }
-        })
-    })
   }
 
   async submit(
     gatewayId: Buffer,
     anchor: Header,
     reversedRange: Header[],
-    justification: any
+    justification: any,
+    offset: number
   ) {
     Relayer.debug('submitting finality proof and header range...')
     Relayer.debug(
@@ -73,13 +47,13 @@ export default class Relayer {
     await new Promise(async (resolve, reject) => {
       await submitFinalityProof.signAndSend(keyring.alice, result => {
         if (result.isError) {
-          reject(Error('submitting finality proof failed'))
+          console.error('submitting finality proof failed')
         } else if (result.isInBlock) {
           Relayer.debug(
             'submit_finality_proof events',
             ...formatEvents(result.events)
           )
-          resolve(undefined)
+          return resolve(undefined)
         }
       })
     })
@@ -98,12 +72,13 @@ export default class Relayer {
     await new Promise(async (resolve, reject) => {
       await submitHeaderRange.signAndSend(keyring.alice, result => {
         if (result.isError) {
-          reject(Error('submitting header range failed'))
-        } else if (result.isInBlock) {
+          console.error('submitting header range failed')
+        } else if (result.status.isFinalized) {
           Relayer.debug(
             'submit_header_range events',
             ...formatEvents(result.events)
           )
+          this.emit("RangeSubmitted", offset);
           resolve(undefined)
         }
       })
