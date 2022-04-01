@@ -1,10 +1,7 @@
 import { ApiPromise, WsProvider } from '@polkadot/api'
 import { createTestPairs } from '@polkadot/keyring/testingPairs'
 import { JustificationNotification } from '@polkadot/types/interfaces'
-import { tmpdir } from 'os'
-import { join } from 'path'
-import { writeFile } from 'fs/promises'
-import { exec, formatEvents } from './util'
+import { grandpaDecode, formatEvents } from './util'
 
 const keyring = createTestPairs({ type: 'sr25519' })
 
@@ -28,13 +25,7 @@ export default async function registerKusamaGateway(
     }
   )
 
-  const tmpFile = join(tmpdir(), justification.toString().slice(0, 10))
-
-  await writeFile(tmpFile, justification.toString())
-
-  const { authoritySet, blockNumber } = await exec(
-    './justification-decoder/target/release/justification-decoder ' + tmpFile
-  ).then(cmd => JSON.parse(cmd.stdout))
+  const { authoritySet, blockNumber } = await grandpaDecode(justification)
 
   const blockHash = await kusama.rpc.chain.getBlockHash(blockNumber)
   const kusamaAt = await kusama.at(blockHash)

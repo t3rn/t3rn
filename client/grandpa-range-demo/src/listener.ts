@@ -1,11 +1,8 @@
 import { EventEmitter } from 'events'
 import { exec as _exec } from 'child_process'
-import { tmpdir } from 'os'
-import { join } from 'path'
-import { writeFile } from 'fs/promises'
 import { ApiPromise, WsProvider } from '@polkadot/api'
 import { JustificationNotification, Header } from '@polkadot/types/interfaces'
-import { exec } from './util'
+import { grandpaDecode } from './util'
 import createDebug from 'debug'
 import 'dotenv/config'
 
@@ -70,31 +67,24 @@ export default class Listener extends EventEmitter {
     Listener.debug('concluding range...')
     const unsubJustifications =
       await this.kusama.rpc.grandpa.subscribeJustifications(
-        async (justification: JustificationNotification) => {
+        async justification => {
           unsubJustifications()
 
-          const tmpFile = join(tmpdir(), justification.toString().slice(0, 10))
-
-          await writeFile(tmpFile, justification.toString())
-
-          const { blockNumber } = await exec(
-            './justification-decoder/target/release/justification-decoder ' +
-              tmpFile
-          ).then(cmd => JSON.parse(cmd.stdout))
+          const { blockNumber } = await grandpaDecode(justification)
 
           Listener.debug('decoded block number', blockNumber)
 
-          const justifiedHeaderIndex: number = this.headers.findIndex(
+          const justifiedHeaderIndex = this.headers.findIndex(
             h => h.number.toNumber() === blockNumber
           )
 
-          const reversedRange: Header[] = this.headers
+          const reversedRange = this.headers
             .slice(this.offset, justifiedHeaderIndex + 1)
             .reverse()
 
           this.offset = justifiedHeaderIndex + 1
 
-          const anchor: Header = reversedRange.shift() as Header
+          const anchor = reversedRange.shift() as Header
 
           this.emit(
             'range',
