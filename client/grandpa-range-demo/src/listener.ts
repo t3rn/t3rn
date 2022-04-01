@@ -40,9 +40,9 @@ export default class Listener extends EventEmitter {
   }
 
   async handleGrandpaSet() {
-    const currentSetId = Number(
-      await this.kusama.query.grandpa.currentSetId().then(id => id.toJSON())
-    )
+    const currentSetId = await this.kusama.query.grandpa
+      .currentSetId()
+      .then(id => Number(id.toJSON()))
 
     if (this.grandpaSetId !== 0 && currentSetId !== this.grandpaSetId) {
       Listener.debug('grandpa set change', this.grandpaSetId, currentSetId)
