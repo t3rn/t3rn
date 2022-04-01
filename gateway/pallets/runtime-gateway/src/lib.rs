@@ -46,8 +46,6 @@ mod tests;
 
 pub use pallet::*;
 
-// TODO: probably move this stuff to primitives
-
 // Bits of transfer flags associated with types on-gateway of transfer.
 bitflags! {
 

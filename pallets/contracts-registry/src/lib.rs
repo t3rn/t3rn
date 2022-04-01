@@ -229,7 +229,6 @@ impl<T: Config>
         contract_id: RegistryContractId<T>,
     ) -> Result<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>, Error<T>>
     {
-        //TODO[Optimisation, Cleanliness]: isn't this just contracts_registry(contract_id)?
         if !pallet::ContractsRegistry::<T>::contains_key(contract_id) {
             return Err(pallet::Error::<T>::UnknownContract);
         }
