@@ -105,16 +105,15 @@ export default class Listener extends EventEmitter {
 
           await writeFile(tmpFile, justification.toString())
 
-          const justificationBlockNumber: number = await exec(
+          const { blockNumber } = await exec(
             './justification-decoder/target/release/justification-decoder ' +
-              'block_number ' +
               tmpFile
-          ).then(cmd => parseInt(cmd.stdout))
+          ).then(cmd => JSON.parse(cmd.stdout))
 
-          Listener.debug('jus blk num', justificationBlockNumber)
+          Listener.debug('jus blk num', blockNumber)
 
           const justifiedHeaderIndex: number = this.headers.findIndex(
-            h => h.number.toNumber() === justificationBlockNumber
+            h => h.number.toNumber() === blockNumber
           )
 
           const reversedRange: Header[] = this.headers
