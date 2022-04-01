@@ -18,11 +18,6 @@
     "noImplicitThis": true,
 //    "noUnusedLocals": true,
     "resolveJsonModule": true,
-    "paths": {
-      "@t3rn/types": [
-        "types/src/definitions/index.ts"
-      ]
-    }
   },
   "references": [],
   "exclude": ["node_modules", "dist", "*.d.ts"]
