@@ -16,38 +16,30 @@ export default async function registerKusamaGateway(
     provider: new WsProvider(process.env.KUSAMA_RPC as string),
   })
 
-  const [metadata, genesisHash] = await Promise.all([
-    kusama.runtimeMetadata,
-    kusama.genesisHash,
-  ])
-
-  const derived: any = await new Promise(async resolve => {
-    let unsubJustifications = await kusama.rpc.grandpa.subscribeJustifications(
-      async (justification: JustificationNotification) => {
-        unsubJustifications()
-
-        const tmpFile: string = join(
-          tmpdir(),
-          justification.toString().slice(0, 10)
+  const justification: JustificationNotification = await new Promise(
+    async resolve => {
+      const unsubJustifications =
+        await kusama.rpc.grandpa.subscribeJustifications(
+          async justification => {
+            unsubJustifications()
+            resolve(justification)
+          }
         )
+    }
+  )
 
-        await writeFile(tmpFile, justification.toString())
+  const tmpFile: string = join(tmpdir(), justification.toString().slice(0, 10))
 
-        const { authoritySet, blockNumber } = await exec(
-          './justification-decoder/target/release/justification-decoder ' +
-            tmpFile
-        ).then(cmd => JSON.parse(cmd.stdout))
+  await writeFile(tmpFile, justification.toString())
 
-        const registrationHeader = await kusama.rpc.chain.getHeader(
-          await kusama.rpc.chain.getBlockHash(blockNumber)
-        )
+  const { authoritySet, blockNumber } = await exec(
+    './justification-decoder/target/release/justification-decoder ' + tmpFile
+  ).then(cmd => JSON.parse(cmd.stdout))
 
-        const currentSetId = await kusama.query.grandpa.currentSetId()
-
-        resolve({ authoritySet, blockNumber, registrationHeader, currentSetId })
-      }
-    )
-  })
+  const blockHash = await kusama.rpc.chain.getBlockHash(blockNumber)
+  const kusamaAt = await kusama.at(blockHash)
+  const registrationHeader = await kusama.rpc.chain.getHeader(blockHash)
+  const authoritySetId = await kusamaAt.query.grandpa.currentSetId()
 
   await kusama.disconnect()
 
@@ -67,18 +59,21 @@ export default async function registerKusamaGateway(
     circuit.createType('GatewayVendor', 'Substrate'),
     circuit.createType('GatewayType', { ProgrammableExternal: 1 }),
     circuit.createType('GatewayGenesisConfig', [
-      circuit.createType('Option<Bytes>', metadata.asV14.pallets.toHex()),
-      metadata.asV14.extrinsic.version,
-      genesisHash,
+      circuit.createType(
+        'Option<Bytes>',
+        kusama.runtimeMetadata.asV14.pallets.toHex()
+      ),
+      kusama.runtimeMetadata.asV14.extrinsic.version,
+      kusama.genesisHash,
     ]),
     circuit.createType('GatewaySysProps', [
       circuit.createType('u16', 2),
       circuit.createType('Bytes', 'KSM'),
       circuit.createType('u8', 12),
     ]),
-    circuit.createType('Bytes', derived.registrationHeader.toHex()),
-    circuit.createType('Option<Vec<AccountId>>', derived.authoritySet),
-    circuit.createType('Option<SetId>', derived.currentSetId),
+    circuit.createType('Bytes', registrationHeader.toHex()),
+    circuit.createType('Option<Vec<AccountId>>', authoritySet),
+    circuit.createType('Option<SetId>', authoritySetId),
     circuit.createType('Vec<AllowedSideEffect>', ['tran'])
   )
 
