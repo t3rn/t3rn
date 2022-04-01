@@ -26,6 +26,11 @@ class Executor {
             if(entry.type === "substrate") {
                 let instance = new SubstrateRelayer();
                 await instance.setup(entry.rpc)
+
+                instance.on("txFinalized", data => {
+                    this.handleTransactionExecution(data)
+                })
+                
                 gatewayInstances[entry.id] = instance;
             }
         }
@@ -41,6 +46,10 @@ class Executor {
     async sideEffectRouter(eventData: any) {
         let sideEffect = deconstruct(eventData);
         this.gatewayInstances[sideEffect.target.toHuman()].handleTx(sideEffect)
+    }
+
+    async handleTransactionExecution(data: any) {
+        console.log(data)
     }
 
     
