@@ -3,10 +3,12 @@ export type SideEffect = {
     xtxId: any,
     target: any,
     prize: any,
+    orderedAt: any,
     encodedAction: any,
     signature: any,
     enforceExecutioner: any,
-    encodedArgs: Transfer
+    decodedArgs: Transfer,
+    encodedArgs: any,
 }
 
 export type Transfer = {
@@ -21,10 +23,12 @@ export const deconstruct = (args: any): SideEffect => {
         xtxId: args[1],
         target: args[2][0].target,
         prize: args[2][0].prize,
+        orderedAt: args[2][0].orderedAt,
         encodedAction: args[2].encodedAction,
         signature: args[2][0].signature,
         enforceExecutioner: args[2][0].enforceExecutioner,
-        encodedArgs: deconstructArgs(args[2][0].encodedArgs)
+        decodedArgs: deconstructArgs(args[2][0].encodedArgs),
+        encodedArgs: args[2][0].encodedArgs,
     }
 
     return sideEffect;
@@ -32,8 +36,8 @@ export const deconstruct = (args: any): SideEffect => {
 
 const deconstructArgs = (args: any): Transfer => {
     let transfer: Transfer = {
-        from: args[0].toHuman(),
-        to: args[1].toHuman(),
+        from: args[0],
+        to: args[1],
         amount: args[2]
     }
     return transfer
