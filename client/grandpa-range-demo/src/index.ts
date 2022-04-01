@@ -1,31 +1,20 @@
-import { ApiPromise, WsProvider } from '@polkadot/api';
-import { SubstrateListener } from "./listeners/substrate";
-import { types } from '@t3rn/types';
-import { fork } from 'child_process';
-import * as path from "path"
+import Listener from './listener'
+import Relayer from './relayer'
 
-class GrandpaRangeRelayer {
-	batchSize: number;
-	targetRpc: string;	
-	circuit: ApiPromise;
+async function main() {
+  const listener: Listener = new Listener()
+  const relayer: Relayer = new Relayer()
 
-		
-		
-	constructor() {
-		
-	}
+  Listener.debug('🦅 remote endpoint', listener.kusamaEndpoint)
+  Relayer.debug('⚡ circuit endpoint', relayer.circuitEndpoint)
+  Listener.debug('⛩️  gateway id', listener.gatewayId.toString())
+  Listener.debug('🏔️  range size', listener.rangeSize)
 
-	
-	async initTargetListener() {
-		const circuitProvider = new WsProvider("ws://127.0.0.1:9944");
-		this.circuit = await ApiPromise.create({ provider: circuitProvider, types });
+  Relayer.debug('initializing...')
+  await relayer.init()
+  await listener.init()
 
-		console.log(this.circuit)	
-	}
-
-
+  listener.on('range', relayer.submit.bind(relayer))
 }
 
-
-let bla = new GrandpaRangeRelayer();
-bla.initTargetListener()
+main()

@@ -62,6 +62,7 @@ pub mod pallet {
     // method.
     #[pallet::pallet]
     #[pallet::generate_store(pub (super) trait Store)]
+    #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
     // Pallet implements [`Hooks`] trait to define some logic to execute in some context.
@@ -112,13 +113,11 @@ pub mod pallet {
             ensure_root(origin)?;
 
             // early exit if record already exists in storage
-            let xdns_record_id = T::Hashing::hash(&gateway_id.encode());
-            if <XDNSRegistry<T>>::contains_key(&xdns_record_id) {
+            if <XDNSRegistry<T>>::contains_key(&gateway_id) {
                 return Err(Error::<T>::XdnsRecordAlreadyExists.into());
             }
 
             // TODO: check if side_effect exists
-
             let mut xdns_record = XdnsRecord::<T::AccountId>::new(
                 url,
                 gateway_id,
@@ -132,15 +131,12 @@ pub mod pallet {
 
             // ToDo: Uncomment when switching into a model with open registration. Sudo access for now.
             // xdns_record.assign_registrant(registrant.clone());
-
             let now = TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now())
                 .map_err(|_| "Unable to compute current timestamp")?;
 
             xdns_record.set_last_finalized(now);
-
-            let xdns_record_id = xdns_record.generate_id::<T>();
-            <XDNSRegistry<T>>::insert(&xdns_record_id, xdns_record);
-            Self::deposit_event(Event::<T>::XdnsRecordStored(xdns_record_id));
+            <XDNSRegistry<T>>::insert(&gateway_id, xdns_record);
+            Self::deposit_event(Event::<T>::XdnsRecordStored(gateway_id));
             Ok(().into())
         }
 
@@ -198,10 +194,9 @@ pub mod pallet {
         pub fn purge_xdns_record(
             origin: OriginFor<T>,
             requester: T::AccountId,
-            xdns_record_id: XdnsRecordId<T>,
+            xdns_record_id: [u8; 4],
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
-
             if !<XDNSRegistry<T>>::contains_key(&xdns_record_id) {
                 Err(Error::<T>::UnknownXdnsRecord.into())
             } else {
@@ -216,11 +211,11 @@ pub mod pallet {
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// \[xdns_record_id\]
-        XdnsRecordStored(XdnsRecordId<T>),
+        XdnsRecordStored([u8; 4]),
         /// \[requester, xdns_record_id\]
-        XdnsRecordPurged(T::AccountId, XdnsRecordId<T>),
+        XdnsRecordPurged(T::AccountId, [u8; 4]),
         /// \[xdns_record_id\]
-        XdnsRecordUpdated(XdnsRecordId<T>),
+        XdnsRecordUpdated([u8; 4]),
     }
 
     // Errors inform users that something went wrong.
@@ -237,19 +232,17 @@ pub mod pallet {
     }
 
     #[pallet::storage]
-    pub type StandardSideEffects<T: Config> =
-        StorageMap<_, Blake2_128Concat, [u8; 4], SideEffectInterface>;
+    pub type StandardSideEffects<T: Config> = StorageMap<_, Identity, [u8; 4], SideEffectInterface>;
 
     #[pallet::storage]
     #[pallet::getter(fn side_effect_registry)]
-    pub type CustomSideEffects<T> =
-        StorageMap<_, Blake2_128Concat, SideEffectId<T>, SideEffectInterface>;
+    pub type CustomSideEffects<T> = StorageMap<_, Identity, SideEffectId<T>, SideEffectInterface>;
 
     /// The pre-validated composable xdns_records on-chain registry.
     #[pallet::storage]
     #[pallet::getter(fn xdns_registry)]
     pub type XDNSRegistry<T: Config> =
-        StorageMap<_, Blake2_128Concat, XdnsRecordId<T>, XdnsRecord<T::AccountId>, OptionQuery>;
+        StorageMap<_, Identity, [u8; 4], XdnsRecord<T::AccountId>, OptionQuery>;
 
     // The genesis config type.
     #[pallet::genesis_config]
@@ -274,8 +267,13 @@ pub mod pallet {
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
+            let _standard_enabled_side_effects: Vec<AllowedSideEffect> = self
+                .standard_side_effects
+                .iter()
+                .map(|s| s.get_id())
+                .collect();
             for xdns_record in self.known_xdns_records.clone() {
-                <XDNSRegistry<T>>::insert(&xdns_record.generate_id::<T>(), xdns_record);
+                <XDNSRegistry<T>>::insert(&xdns_record.gateway_id.clone(), xdns_record);
             }
 
             for side_effect in self.standard_side_effects.clone() {
@@ -299,11 +297,7 @@ pub mod pallet {
             // Fetch each XdnsRecord and re-sort based on its last_finalized descending
             let mut sorted_gateways: Vec<XdnsRecord<T::AccountId>> = sorted_gateway_pointers
                 .into_iter()
-                .map(|gateway_pointer| {
-                    <XDNSRegistry<T>>::get(T::Hashing::hash(
-                        Encode::encode(&gateway_pointer.id).as_ref(),
-                    ))
-                })
+                .map(|gateway_pointer| <XDNSRegistry<T>>::get(gateway_pointer.id))
                 .flatten()
                 .collect();
             sorted_gateways
@@ -321,11 +315,10 @@ pub mod pallet {
         pub fn allowed_side_effects(
             gateway_id: &ChainId,
         ) -> BTreeMap<[u8; 4], Box<dyn SideEffectProtocol>> {
-            let xdns_record_id = T::Hashing::hash(&gateway_id.encode());
             let mut allowed_side_effects: BTreeMap<[u8; 4], Box<dyn SideEffectProtocol>> =
                 BTreeMap::new();
 
-            if let Some(xdns_entry) = <XDNSRegistry<T>>::get(&xdns_record_id) {
+            if let Some(xdns_entry) = <XDNSRegistry<T>>::get(&gateway_id) {
                 for side_effect in xdns_entry.allowed_side_effects {
                     if <StandardSideEffects<T>>::contains_key(&side_effect) {
                         // is it somehow possible to only pass a reference here? aka each gateway would access the same addresses/structs in memory?
@@ -357,12 +350,10 @@ pub mod pallet {
             gateway_id: ChainId,
             last_finalized: u64,
         ) -> DispatchResultWithPostInfo {
-            let xdns_record_id = T::Hashing::hash(Encode::encode(&gateway_id).as_ref());
-
-            if !XDNSRegistry::<T>::contains_key(xdns_record_id) {
+            if !XDNSRegistry::<T>::contains_key(gateway_id) {
                 Err(Error::<T>::XdnsRecordNotFound.into())
             } else {
-                XDNSRegistry::<T>::mutate(xdns_record_id, |xdns_record| match xdns_record {
+                XDNSRegistry::<T>::mutate(gateway_id, |xdns_record| match xdns_record {
                     None => Err(Error::<T>::XdnsRecordNotFound),
                     Some(record) => {
                         record.set_last_finalized(last_finalized);
@@ -370,7 +361,7 @@ pub mod pallet {
                     }
                 })?;
 
-                Self::deposit_event(Event::<T>::XdnsRecordUpdated(xdns_record_id));
+                Self::deposit_event(Event::<T>::XdnsRecordUpdated(gateway_id));
                 Ok(().into())
             }
         }
@@ -382,13 +373,11 @@ pub mod pallet {
 
         // Fetches the GatewayABIConfig for a given XDNS record
         pub fn get_abi(chain_id: ChainId) -> Result<GatewayABIConfig, &'static str> {
-            let xdns_record_id = T::Hashing::hash(Encode::encode(&chain_id).as_ref());
-
-            if !<XDNSRegistry<T>>::contains_key(xdns_record_id) {
+            if !<XDNSRegistry<T>>::contains_key(chain_id) {
                 return Err("Xdns record not found");
             }
 
-            Ok(<XDNSRegistry<T>>::get(xdns_record_id).unwrap().gateway_abi)
+            Ok(<XDNSRegistry<T>>::get(chain_id).unwrap().gateway_abi)
         }
     }
 }

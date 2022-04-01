@@ -5,6 +5,10 @@ use std::path::PathBuf;
 /// Sub-commands supported by the collator.
 #[derive(Debug, clap::Subcommand)]
 pub enum Subcommand {
+    /// Key management CLI utilities
+    #[clap(subcommand)]
+    Key(sc_cli::KeySubcommand),
+
     /// Export the genesis state of the parachain.
     #[clap(name = "export-genesis-state")]
     ExportGenesisState(ExportGenesisStateCommand),

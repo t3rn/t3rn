@@ -21,7 +21,6 @@ use codec::Encode;
 use frame_support::assert_ok;
 use t3rn_primitives::bridges::test_utils as bp_test_utils;
 
-use sp_core::Hasher;
 use sp_io::TestExternalities;
 use sp_version::{create_runtime_str, RuntimeVersion};
 
@@ -306,9 +305,7 @@ fn test_register_gateway_with_u64_substrate_header_and_allowed_side_effects() {
 
         // Assert the stored xdns record
 
-        let xdns_id =
-            <Test as frame_system::Config>::Hashing::hash(Encode::encode(&gateway_id).as_ref());
-        let result = pallet_xdns::XDNSRegistry::<Test>::get(xdns_id);
+        let result = pallet_xdns::XDNSRegistry::<Test>::get(gateway_id);
 
         assert!(result.is_some());
         let xdns_record = result.unwrap();

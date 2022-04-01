@@ -27,20 +27,15 @@ use t3rn_primitives::{abi::Type, GatewayType, GatewayVendor};
 
 #[test]
 fn genesis_should_seed_circuit_gateway_polkadot_and_kusama_nodes() {
-    let circuit_hash = <Test as frame_system::Config>::Hashing::hash(b"circ");
-    let gateway_hash = <Test as frame_system::Config>::Hashing::hash(b"gate");
-    let polkadot_hash = <Test as frame_system::Config>::Hashing::hash(b"pdot");
-    let kusama_hash = <Test as frame_system::Config>::Hashing::hash(b"ksma");
-
     ExtBuilder::default()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
             assert_eq!(XDNSRegistry::<Test>::iter().count(), 4);
-            assert!(XDNSRegistry::<Test>::get(circuit_hash).is_some());
-            assert!(XDNSRegistry::<Test>::get(gateway_hash).is_some());
-            assert!(XDNSRegistry::<Test>::get(polkadot_hash).is_some());
-            assert!(XDNSRegistry::<Test>::get(kusama_hash).is_some());
+            assert!(XDNSRegistry::<Test>::get(b"circ").is_some());
+            assert!(XDNSRegistry::<Test>::get(b"gate").is_some());
+            assert!(XDNSRegistry::<Test>::get(b"pdot").is_some());
+            assert!(XDNSRegistry::<Test>::get(b"ksma").is_some());
         });
 }
 
@@ -59,10 +54,7 @@ fn should_add_a_new_xdns_record_if_it_doesnt_exist() {
             vec![],
         ));
         assert_eq!(XDNSRegistry::<Test>::iter().count(), 1);
-        assert!(
-            XDNSRegistry::<Test>::get(<Test as frame_system::Config>::Hashing::hash(b"test"))
-                .is_some()
-        );
+        assert!(XDNSRegistry::<Test>::get(b"test").is_some());
     });
 }
 
@@ -211,15 +203,13 @@ fn should_purge_a_xdns_record_successfully() {
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
-            let gateway_hash = <Test as frame_system::Config>::Hashing::hash(b"gate");
-
             assert_ok!(XDNS::purge_xdns_record(
                 Origin::<Test>::Root.into(),
                 1,
-                gateway_hash
+                *b"gate"
             ));
             assert_eq!(XDNSRegistry::<Test>::iter().count(), 3);
-            assert!(XDNSRegistry::<Test>::get(gateway_hash).is_none());
+            assert!(XDNSRegistry::<Test>::get(b"gate").is_none());
         });
 }
 
@@ -234,14 +224,14 @@ fn finds_correct_amount_of_allowed_side_effects() {
 
 #[test]
 fn should_error_trying_to_purge_a_missing_xdns_record() {
-    let missing_hash = <Test as frame_system::Config>::Hashing::hash(b"miss");
+    let _missing_hash = <Test as frame_system::Config>::Hashing::hash(b"miss");
 
     ExtBuilder::default()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
             assert_noop!(
-                XDNS::purge_xdns_record(Origin::<Test>::Root.into(), 1, missing_hash),
+                XDNS::purge_xdns_record(Origin::<Test>::Root.into(), 1, *b"miss"),
                 crate::pallet::Error::<Test>::UnknownXdnsRecord
             );
             assert_eq!(XDNSRegistry::<Test>::iter().count(), 4);
@@ -254,14 +244,12 @@ fn should_error_trying_to_purge_an_xdns_record_if_not_root() {
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
-            let gateway_hash = <Test as frame_system::Config>::Hashing::hash(b"gate");
-
             assert_noop!(
-                XDNS::purge_xdns_record(Origin::<Test>::Signed(1).into(), 1, gateway_hash),
+                XDNS::purge_xdns_record(Origin::<Test>::Signed(1).into(), 1, *b"gate"),
                 DispatchError::BadOrigin
             );
             assert_eq!(XDNSRegistry::<Test>::iter().count(), 4);
-            assert!(XDNSRegistry::<Test>::get(gateway_hash).is_some());
+            assert!(XDNSRegistry::<Test>::get(b"gate").is_some());
         });
 }
 
@@ -271,14 +259,10 @@ fn should_update_ttl_for_a_known_xdns_record() {
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
-            let gateway_hash = <Test as frame_system::Config>::Hashing::hash(b"gate");
-
             assert_ok!(XDNS::update_ttl(Origin::<Test>::Root.into(), *b"gate", 2));
             assert_eq!(XDNSRegistry::<Test>::iter().count(), 4);
             assert_eq!(
-                XDNSRegistry::<Test>::get(gateway_hash)
-                    .unwrap()
-                    .last_finalized,
+                XDNSRegistry::<Test>::get(b"gate").unwrap().last_finalized,
                 Some(2)
             );
         });
@@ -306,15 +290,12 @@ fn should_error_when_trying_to_update_ttl_as_non_root() {
 
 #[test]
 fn should_contain_gateway_system_properties() {
-    let polkadot_hash = <Test as frame_system::Config>::Hashing::hash(b"pdot");
-    let kusama_hash = <Test as frame_system::Config>::Hashing::hash(b"ksma");
-
     ExtBuilder::default()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
-            let polkadot_xdns_record = XDNSRegistry::<Test>::get(polkadot_hash).unwrap();
-            let kusama_xdns_record = XDNSRegistry::<Test>::get(kusama_hash).unwrap();
+            let polkadot_xdns_record = XDNSRegistry::<Test>::get(b"pdot").unwrap();
+            let kusama_xdns_record = XDNSRegistry::<Test>::get(b"ksma").unwrap();
             let polkadot_symbol: Vec<u8> =
                 Decode::decode(&mut &polkadot_xdns_record.gateway_sys_props.token_symbol[..])
                     .unwrap();
