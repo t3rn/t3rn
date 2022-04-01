@@ -21,7 +21,7 @@ pub struct GrandpaJustification<Header: HeaderT> {
 
 fn main() {
     let args = std::env::args().collect::<Vec<String>>();
-    let payload = std::fs::read_to_string(&args[1])
+    let payload = std::fs::read_to_string(&args[2])
         .expect(&format!("usage: {} /tmp/justification_file", args[0]));
     let hex = if payload.trim().starts_with("0x") {
         &payload.trim()[2..]
@@ -29,7 +29,25 @@ fn main() {
         &payload.trim()
     };
     let scale_encoded = hex::decode(hex).expect("Hex decoding error");
+    match args[1].as_str() {
+        "blocknumber" => println!("{:?}", block_number(scale_encoded)),
+        "authority_set" => println!("{:?}", authority_set(scale_encoded)),
+        _ => println!("Unknown subcommand"),
+    }
+}
+
+fn block_number(scale_encoded: Vec<u8>) -> u32 {
     let justification =
         GrandpaJustification::<Header>::decode(&mut &*scale_encoded).expect("SCALE decoding error");
-    println!("{:?}", justification.commit.target_number);
+    justification.commit.target_number
+}
+
+fn authority_set(scale_encoded: Vec<u8>) -> String {
+    let justification =
+        GrandpaJustification::<Header>::decode(&mut &*scale_encoded).expect("SCALE decoding error");
+    let mut authorities = vec![];
+    for signed in &justification.commit.precommits {
+        authorities.push(signed.id.encode());
+    }
+    serde_json::to_string(&authorities).expect("JSON stringify error")
 }

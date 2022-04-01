@@ -109,6 +109,7 @@ export default class Listener extends EventEmitter {
 
           const justificationBlockNumber: number = await exec(
             './justification-decoder/target/release/justification-decoder ' +
+              'block_number ' +
               tmpJustificationFile
           ).then(cmd => parseInt(cmd.stdout))
 
