@@ -28,7 +28,7 @@ export default async function registerKusamaGateway(
     }
   )
 
-  const tmpFile: string = join(tmpdir(), justification.toString().slice(0, 10))
+  const tmpFile = join(tmpdir(), justification.toString().slice(0, 10))
 
   await writeFile(tmpFile, justification.toString())
 

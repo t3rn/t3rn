@@ -1,5 +1,4 @@
 import { EventEmitter } from 'events'
-import { promisify } from 'util'
 import { exec as _exec } from 'child_process'
 import { tmpdir } from 'os'
 import { join } from 'path'
@@ -20,8 +19,6 @@ export default class Listener extends EventEmitter {
   headers: Header[] = []
   // offset in this.headers for the current range batch
   offset: number = 0
-  // block number of the last enqueued header
-  last: number = 0
   // last known grandpa set id
   grandpaSetId: number = 0
 
@@ -33,7 +30,7 @@ export default class Listener extends EventEmitter {
     })
 
     this.unsubNewHeads = await this.kusama.derive.chain.subscribeNewHeads(
-      async (header: Header) => {
+      async header => {
         await this.handleGrandpaSet()
 
         await this.handleHeader(header)
@@ -46,7 +43,7 @@ export default class Listener extends EventEmitter {
   }
 
   async handleGrandpaSet() {
-    const currentSetId: number = Number(
+    const currentSetId = Number(
       await this.kusama.query.grandpa.currentSetId().then(id => id.toJSON())
     )
 
@@ -59,36 +56,14 @@ export default class Listener extends EventEmitter {
   }
 
   async handleHeader(header: Header) {
-    let attempts: number = 10
-
-    while (this.last !== 0 && header.number.toNumber() > this.last + 1) {
-      if (attempts-- <= 0) {
-        throw Error(`cannot fetch header#${this.last + 1}`)
-      }
-
-      let missingHeader: Header | void
-
-      try {
-        missingHeader = await this.kusama.rpc.chain.getHeader(
-          await this.kusama.rpc.chain.getBlockHash(this.last + 1)
-        )
-      } catch (_) {
-        await sleep(6000)
-      } finally {
-        if (
-          missingHeader &&
-          missingHeader.number.toNumber() === this.last + 1
-        ) {
-          this.headers.push(missingHeader)
-          this.last = missingHeader.number.toNumber()
-          Listener.debug(`#${this.last}`)
-        }
-      }
+    if (
+      this.headers.length === 0 ||
+      this.headers[this.headers.length - 1].number.toNumber() + 1 ===
+        header.number.toNumber()
+    ) {
+      this.headers.push(header)
+      Listener.debug(`#${header.number.toNumber()}`)
     }
-
-    this.headers.push(header)
-    this.last = header.number.toNumber()
-    Listener.debug(`#${this.last}`)
   }
 
   async concludeRange() {
@@ -98,22 +73,16 @@ export default class Listener extends EventEmitter {
         async (justification: JustificationNotification) => {
           unsubJustifications()
 
-          const tmpFile: string = join(
-            tmpdir(),
-            justification.toString().slice(0, 10)
-          )
+          const tmpFile = join(tmpdir(), justification.toString().slice(0, 10))
 
           await writeFile(tmpFile, justification.toString())
 
-          const cmd = await exec(
+          const { blockNumber } = await exec(
             './justification-decoder/target/release/justification-decoder ' +
               tmpFile
-          )
-          Listener.debug('cmd.stdout', cmd.stdout)
-          const decoded = JSON.parse(JSON.parse(cmd.stdout))
-          Listener.debug('decoded', typeof decoded)
-          const blockNumber = decoded.blockNumber
-          Listener.debug('jus blk num', blockNumber)  
+          ).then(cmd => JSON.parse(cmd.stdout))
+
+          Listener.debug('decoded block number', blockNumber)
 
           const justifiedHeaderIndex: number = this.headers.findIndex(
             h => h.number.toNumber() === blockNumber

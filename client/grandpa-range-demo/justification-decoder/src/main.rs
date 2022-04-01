@@ -36,7 +36,7 @@ fn main() {
         authorities.push(signed.id.encode());
     }
     println!(
-        "{:?}",
+        "{}",
         serde_json::json!({
             "blockNumber": justification.commit.target_number,
             "authoritySet": authorities,
