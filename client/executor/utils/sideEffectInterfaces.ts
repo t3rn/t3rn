@@ -16,7 +16,6 @@ export type Transfer = {
 }
 
 export const deconstruct = (args: any): SideEffect => {
-    console.log(args.toHuman())
     let sideEffect: SideEffect = {
         sender: args[0],
         xtxId: args[1],
@@ -34,8 +33,8 @@ export const deconstruct = (args: any): SideEffect => {
 const deconstructArgs = (args: any): Transfer => {
     let transfer: Transfer = {
         from: args[0],
-        to: args[1],
-        amount: args[2]
+        to: args[1].toHuman(),
+        amount: args[2].toHuman()
     }
     return transfer
 } 

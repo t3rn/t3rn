@@ -26,31 +26,31 @@ export default class SubstrateRelayer extends EventEmitter {
     async handleTx(sideEffect: SideEffect) {
         console.log(sideEffect)
 
-        // const unsub = await api.tx.balances.transfer(parameters.to, parameters.amount).signAndSend(signer, (result) => {
-        //     if (result.status.isFinalized) {
-        //         console.log(`Transaction finalized at blockHash ${result.status.asFinalized}`);
-        //         // print_events(result.events);
 
-        //         const extrinsicEvent = result.events.filter((item) => {
-        //             return item.event.method === 'ExtrinsicSuccess' || item.event.method === 'ExtrinsicFailed';
-        //         });
+        const unsub = await this.api.tx.balances.transfer(sideEffect.encodedArgs.to, sideEffect.encodedArgs.amount).signAndSend(this.signer, (result) => {
+            if (result.status.isFinalized) {
+                console.log(`Transaction finalized at blockHash ${result.status.asFinalized}`);
+                // print_events(result.events);
 
-        //         // filter transfer event
-        //         const transferEvent = result.events.filter((item) => {
-        //             return item.event.method === 'Transfer';
-        //         });
-        //         // assert(transferEvent.length == 1, 'Multiple transfer events');
+                const extrinsicEvent = result.events.filter((item) => {
+                    return item.event.method === 'ExtrinsicSuccess' || item.event.method === 'ExtrinsicFailed';
+                });
 
-        //         unsub();
+                // filter transfer event
+                const transferEvent = result.events.filter((item) => {
+                    return item.event.method === 'Transfer';
+                });
+                // assert(transferEvent.length == 1, 'Multiple transfer events');
 
-        //         // resolve({
-        //         //     blockHash: result.status.asFinalized as Hash,
-        //         //     status: extrinsicEvent[0].event.method === 'ExtrinsicSuccess' ? true : false,
-        //         //     events: transferEvent,
-        //         // });
-        //     }
-        // });
-    // });
+                unsub();
+
+                // resolve({
+                //     blockHash: result.status.asFinalized as Hash,
+                //     status: extrinsicEvent[0].event.method === 'ExtrinsicSuccess' ? true : false,
+                //     events: transferEvent,
+                // });
+            }
+        });
        
     }
 
