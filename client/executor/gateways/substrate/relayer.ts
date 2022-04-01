@@ -27,35 +27,25 @@ export default class SubstrateRelayer extends EventEmitter {
         const unsub = await this.api.tx.balances.transfer(sideEffect.encodedArgs.to, sideEffect.encodedArgs.amount).signAndSend(this.signer, (result) => {
             if (result.status.isFinalized) {
                 console.log(`Transaction finalized at blockHash ${result.status.asFinalized}`);
-                // // print_events(result.events);
 
-                // console.log(result.events.forEach(evt => console.log(evt.toHuman())))
-                // const extrinsicEvent = result.events.filter((item) => {
-                //     return item.event.method === 'ExtrinsicSuccess' || item.event.method === 'ExtrinsicFailed';
-                // });
-
-                const success = result.events[result.events.length - 1].method.toHuman() === "ExtrinsicSuccess";
-
+                // should always be last event
+                const success = result.events[result.events.length - 1].event.method === "ExtrinsicSuccess";
                 console.log("Transaction Successful:", success)
 
-                // filter transfer event
-                const transferEvent = result.events.filter((item) => {
+                // find transfer event
+                const transferEvent = result.events.find((item) => {
                     return item.event.method === 'Transfer';
                 });
-                console.log(transferEvent);
 
-                // if(success) {
-
-                // }
-                // assert(transferEvent.length == 1, 'Multiple transfer events');
+                if(success) {
+                    this.emit("txFinalized", {
+                        blockHash: result.status.asFinalized,
+                        events: transferEvent,
+                        xtxId: sideEffect.xtxId
+                    })
+                }
 
                 unsub();
-
-                // resolve({
-                //     blockHash: result.status.asFinalized as Hash,
-                //     status: extrinsicEvent[0].event.method === 'ExtrinsicSuccess' ? true : false,
-                //     events: transferEvent,
-                // });
             }
         });
        
