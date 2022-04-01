@@ -5,7 +5,7 @@ use codec::Encode;
 use sp_runtime::traits::Convert;
 use sp_runtime::{
     testing::{Header, TestXt},
-    traits::{IdentityLookup, OpaqueKeys},
+    traits::IdentityLookup,
     Perbill,
 };
 

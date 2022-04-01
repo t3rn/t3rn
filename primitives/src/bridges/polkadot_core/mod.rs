@@ -18,7 +18,6 @@
 
 use crate::bridges::messages as bp_messages;
 use crate::bridges::runtime as bp_runtime;
-use std::fmt::{Debug, Formatter};
 
 use bp_messages::MessageNonce;
 use bp_runtime::Chain;
