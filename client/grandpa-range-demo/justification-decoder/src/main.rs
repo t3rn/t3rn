@@ -31,24 +31,16 @@ fn main() {
     let scale_encoded = hex::decode(hex).expect("Hex decoding error");
     let justification =
         GrandpaJustification::<Header>::decode(&mut &*scale_encoded).expect("SCALE decoding error");
-    match args[1].as_str() {
-        "block_number" | "blockNumber" => println!("{:?}", justification.commit.target_number),
-        "authority_set" | "authoritySet" => println!("{:?}", authority_set(&justification)),
-        _ => println!(
-            "{:?}",
-            serde_json::json!({
-                "blockNumber": justification.commit.target_number,
-                "authoritySet": authority_set(&justification),
-            })
-            .to_string()
-        ),
-    }
-}
-
-fn authority_set(justification: &GrandpaJustification<Header>) -> String {
     let mut authorities = Vec::with_capacity(justification.commit.precommits.len());
     for signed in &justification.commit.precommits {
         authorities.push(signed.id.encode());
     }
-    serde_json::to_string(&authorities).expect("JSON stringify error")
+    println!(
+        "{:?}",
+        serde_json::json!({
+            "blockNumber": justification.commit.target_number,
+            "authoritySet": authorities,
+        })
+        .to_string()
+    );
 }
