@@ -32,9 +32,9 @@ export const deconstruct = (args: any): SideEffect => {
 
 const deconstructArgs = (args: any): Transfer => {
     let transfer: Transfer = {
-        from: args[0],
+        from: args[0].toHuman(),
         to: args[1].toHuman(),
-        amount: args[2].toHuman()
+        amount: args[2]
     }
     return transfer
 } 
