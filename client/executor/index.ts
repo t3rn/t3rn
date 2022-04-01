@@ -3,6 +3,8 @@ import CircuitListener from "./circuit/listener";
 import SubstrateRelayer from "./gateways/substrate/relayer";
 import config from "./config.json"
 
+import { deconstruct } from "./utils/sideEffectInterfaces";
+
 class Executor {
     circuitListener: CircuitListener;
     gatewayInstances: any;
@@ -27,24 +29,26 @@ class Executor {
                 gatewayInstances[entry.id] = instance;
             }
         }
-        console.log(gatewayInstances)
         this.gatewayInstances = gatewayInstances;
     }
 
     async start() {
         this.circuitListener.on('NewSideEffect', (data) => {
-            console.log(data)
+            this.sideEffectRouter(data)
         })
     }
 
-    // async sideEffectRouter(eventData: any) {
-
-    // }
+    async sideEffectRouter(eventData: any) {
+        let sideEffect = deconstruct(eventData);
+        this.gatewayInstances[sideEffect.target.toHuman()].handleTx(sideEffect)
+    }
 
     
 
 }
 
-
-let exec = new Executor();
-exec.setup()
+(async () => {
+    let exec = new Executor();
+    await exec.setup()
+    exec.start()
+})()
