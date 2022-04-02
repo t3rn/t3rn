@@ -337,7 +337,10 @@ pub mod pallet {
             // Setup: new xtx context
             let mut local_xtx_ctx: LocalXtxCtx<T> =
                 Self::setup(CircuitStatus::Requested, &requester, fee, None)?;
-            println!("on_extrinsic_trigger -- finished setup -- XTX ID {:?}", local_xtx_ctx.xtx_id);
+            log::info!(
+                "on_extrinsic_trigger -- finished setup -- xtx id {:?}",
+                local_xtx_ctx.xtx_id
+            );
 
             // Validate: Side Effects
             Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential)?;

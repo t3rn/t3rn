@@ -387,7 +387,8 @@ pub mod pallet {
                 <XDNSRegistry<T>>::get(chain_id)
                     .unwrap()
                     .gateway_abi
-                    .value_type_size * 8,
+                    .value_type_size
+                    * 8,
             )
         }
     }
