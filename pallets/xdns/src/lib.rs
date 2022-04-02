@@ -383,6 +383,10 @@ pub mod pallet {
         pub fn get_gateway_type_unsafe(chain_id: &ChainId) -> GatewayType {
             <XDNSRegistry<T>>::get(chain_id).unwrap().gateway_type
         }
+
+        pub fn get_gateway_value_unsigned_type_unsafe(chain_id: &ChainId) -> Type {
+            Type::Uint(<XDNSRegistry<T>>::get(chain_id).unwrap().gateway_abi.value_type_size)
+        }
     }
 }
 
