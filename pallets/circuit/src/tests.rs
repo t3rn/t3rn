@@ -103,7 +103,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                         phase: Phase::Initialization,
                         event: Event::Circuit(crate::Event::<Test>::XTransactionReadyForExec(
                             hex!(
-                                "7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6"
+                                "d02e1b7d4ee308b8b0fad924fd35bb3688760fc986bc1b44e8f123f17aed8a7a"
                             )
                             .into()
                         )),
@@ -116,7 +116,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                                 "0101010101010101010101010101010101010101010101010101010101010101"
                             )),
                             hex!(
-                                "7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6"
+                                "d02e1b7d4ee308b8b0fad924fd35bb3688760fc986bc1b44e8f123f17aed8a7a"
                             )
                             .into(),
                             vec![SideEffect {
@@ -145,7 +145,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                 ]
             );
             let xtx_id: sp_core::H256 =
-                hex!("7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6").into();
+                hex!("d02e1b7d4ee308b8b0fad924fd35bb3688760fc986bc1b44e8f123f17aed8a7a").into();
             let side_effect_a_id =
                 valid_transfer_side_effect.generate_id::<crate::SystemHashing<Test>>();
 
@@ -164,7 +164,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                     delay_steps_at: None,
                     status: CircuitStatus::Ready,
                     total_reward: Some(fee),
-                    steps_cnt: (1, 1),
+                    steps_cnt: (0, 1),
                 }
             );
 
@@ -268,7 +268,7 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
                         phase: Phase::Initialization,
                         event: Event::Circuit(crate::Event::<Test>::XTransactionReceivedForExec(
                             hex!(
-                                "7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6"
+                                "d02e1b7d4ee308b8b0fad924fd35bb3688760fc986bc1b44e8f123f17aed8a7a"
                             )
                             .into()
                         )),
@@ -281,7 +281,7 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
                                 "0101010101010101010101010101010101010101010101010101010101010101"
                             )),
                             hex!(
-                                "7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6"
+                                "d02e1b7d4ee308b8b0fad924fd35bb3688760fc986bc1b44e8f123f17aed8a7a"
                             )
                             .into(),
                             vec![SideEffect {
@@ -356,7 +356,7 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
             ));
 
             let xtx_id: sp_core::H256 =
-                hex!("7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6").into();
+                hex!("d02e1b7d4ee308b8b0fad924fd35bb3688760fc986bc1b44e8f123f17aed8a7a").into();
             let side_effect_a_id =
                 valid_transfer_side_effect.generate_id::<crate::SystemHashing<Test>>();
 
@@ -388,7 +388,7 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
                     delay_steps_at: None,
                     status: CircuitStatus::PendingInsurance,
                     total_reward: Some(fee),
-                    steps_cnt: (1, 1)
+                    steps_cnt: (0, 1)
                 }
             );
 
@@ -443,7 +443,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
             ));
 
             let xtx_id: sp_core::H256 =
-                hex!("7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6").into();
+                hex!("d02e1b7d4ee308b8b0fad924fd35bb3688760fc986bc1b44e8f123f17aed8a7a").into();
 
             let side_effect_a_id =
                 valid_transfer_side_effect.generate_id::<crate::SystemHashing<Test>>();
@@ -476,7 +476,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
                     delay_steps_at: None,
                     status: CircuitStatus::PendingInsurance,
                     total_reward: Some(fee),
-                    steps_cnt: (1, 1),
+                    steps_cnt: (0, 1),
                 }
             );
 
@@ -522,7 +522,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
                     delay_steps_at: None,
                     status: CircuitStatus::Ready,
                     total_reward: Some(fee),
-                    steps_cnt: (1, 1),
+                    steps_cnt: (0, 1),
                 }
             );
 
@@ -604,7 +604,7 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
             ));
 
             let xtx_id: sp_core::H256 =
-                hex!("7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6").into();
+                hex!("d02e1b7d4ee308b8b0fad924fd35bb3688760fc986bc1b44e8f123f17aed8a7a").into();
 
             let side_effect_a_id =
                 valid_swap_side_effect.generate_id::<crate::SystemHashing<Test>>();
@@ -619,7 +619,7 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
                     delay_steps_at: None,
                     status: CircuitStatus::Ready,
                     total_reward: Some(fee),
-                    steps_cnt: (1, 1),
+                    steps_cnt: (0, 1),
                 }
             );
 
