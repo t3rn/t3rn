@@ -78,8 +78,6 @@ pub mod state;
 
 pub mod escrow;
 
-pub use t3rn_protocol::side_effects::protocol::SideEffectConfirmationProtocol;
-
 /// Defines application identifier for crypto keys of this module.
 /// Every module that deals with signatures needs to declare its unique identifier for
 /// its crypto keys.
@@ -339,7 +337,7 @@ pub mod pallet {
             // Setup: new xtx context
             let mut local_xtx_ctx: LocalXtxCtx<T> =
                 Self::setup(CircuitStatus::Requested, &requester, fee, None)?;
-            log::info!("on_extrinsic_trigger -- finished setup");
+            println!("on_extrinsic_trigger -- finished setup -- XTX ID {:?}", local_xtx_ctx.xtx_id);
 
             // Validate: Side Effects
             Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential)?;
@@ -1229,7 +1227,7 @@ impl<T: Config> Pallet<T> {
         confirm_inclusion()?;
         confirm_execution(
             pallet_xdns::Pallet::<T>::best_available(side_effect.target)?.gateway_vendor,
-            pallet_xdns::Pallet::<T>::get_gateway_value_type_unsafe(side_effect.target),
+            pallet_xdns::Pallet::<T>::get_gateway_value_unsigned_type_unsafe(&side_effect.target),
             &local_ctx.local_state,
         )?;
 
