@@ -1,5 +1,6 @@
 use crate as pallet_inflation;
-use frame_support::parameter_types;
+use frame_support::traits::GenesisBuild;
+use frame_support::{parameter_types, StorageValue};
 use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
@@ -47,16 +48,17 @@ impl system::Config for Test {
     type BlockHashCount = BlockHashCount;
     type Version = ();
     type PalletInfo = PalletInfo;
-    type AccountData = ();
     type OnNewAccount = ();
     type OnKilledAccount = ();
     type SystemWeightInfo = ();
     type SS58Prefix = SS58Prefix;
     type OnSetCode = ();
+    type AccountData = pallet_balances::AccountData<u64>;
+    type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
-    pub const ExistentialDeposit: u128 = 1u128;
+    pub const ExistentialDeposit: u64 = 1;
     pub const MaxLocks: u32 = 50;
     pub const MaxReserves: u32 = 50;
 }
@@ -68,7 +70,7 @@ impl pallet_balances::Config for Test {
     /// The ubiquitous event type.
     type Event = Event;
     type DustRemoval = ();
-    type ExistentialDeposit = u64;
+    type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
     type MaxReserves = MaxReserves;
@@ -85,9 +87,9 @@ impl pallet_inflation::Config for Test {
     type Event = Event;
     type Currency = Balances;
     type Balance = u32;
-    type TreasuryAccount = u64;
-    type DefaultBlocksPerRound = u32;
-    type TokenCirculationAtGenesis = u32;
+    type TreasuryAccount = TreasuryAccount;
+    type DefaultBlocksPerRound = DefaultBlocksPerRound;
+    type TokenCirculationAtGenesis = TokenCirculationAtGenesis;
     type WeightInfo = ();
 }
 

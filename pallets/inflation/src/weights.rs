@@ -13,3 +13,10 @@ impl<T: frame_system::Config> WeightInfo for InflationWeight<T> {
         (0 as Weight).saturating_add(T::DbWeight::get().reads(1 as Weight))
     }
 }
+
+// For backwards compatibility and tests
+impl WeightInfo for () {
+    fn update_round_on_initialize() -> Weight {
+        0
+    }
+}

@@ -77,9 +77,9 @@ pub fn annual_to_round<T: Config>(annual: Range<Perbill>) -> Range<Perbill> {
 
 pub(crate) type RoundIndex = u32;
 
-#[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 /// The current round index and transition information
-pub struct RoundInfo<BlockNumber> {
+pub struct RoundInfo<BlockNumber: MaxEncodedLen> {
     /// Current round index
     pub current: RoundIndex,
     /// The first block of the current round
@@ -88,7 +88,12 @@ pub struct RoundInfo<BlockNumber> {
     pub length: u32,
 }
 impl<
-        B: Copy + sp_std::ops::Add<Output = B> + sp_std::ops::Sub<Output = B> + From<u32> + PartialOrd,
+        B: Copy
+            + MaxEncodedLen
+            + sp_std::ops::Add<Output = B>
+            + sp_std::ops::Sub<Output = B>
+            + From<u32>
+            + PartialOrd,
     > RoundInfo<B>
 {
     pub fn new(current: RoundIndex, first_block: B, length: u32) -> RoundInfo<B> {
@@ -109,7 +114,12 @@ impl<
     }
 }
 impl<
-        B: Copy + sp_std::ops::Add<Output = B> + sp_std::ops::Sub<Output = B> + From<u32> + PartialOrd,
+        B: Copy
+            + MaxEncodedLen
+            + sp_std::ops::Add<Output = B>
+            + sp_std::ops::Sub<Output = B>
+            + From<u32>
+            + PartialOrd,
     > Default for RoundInfo<B>
 {
     fn default() -> RoundInfo<B> {

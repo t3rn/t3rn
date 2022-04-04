@@ -16,15 +16,14 @@ pub mod weights;
 
 #[pallet]
 pub mod pallet {
-    use crate::inflation::{InflationInfo, Range, RoundInfo};
+    use crate::inflation::{InflationInfo, Range, RoundIndex, RoundInfo};
     use crate::weights::WeightInfo;
     use frame_support::pallet_prelude::*;
     use frame_support::traits::{Currency, Imbalance, ReservableCurrency};
     use frame_system::ensure_root;
     use frame_system::pallet_prelude::*;
-    use sp_runtime::traits::{AtLeast32BitUnsigned, Zero};
+    use sp_runtime::traits::{AtLeast32BitUnsigned, Saturating, Zero};
     use sp_runtime::Perbill;
-    use std::ops::Div;
 
     pub type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -38,6 +37,7 @@ pub mod pallet {
             + AtLeast32BitUnsigned
             + Default
             + Copy
+            + MaxEncodedLen
             + MaybeSerializeDeserialize;
 
         #[pallet::constant]
@@ -72,6 +72,18 @@ pub mod pallet {
     pub type CandidatesForRewards<T: Config> =
         StorageMap<_, Twox64Concat, T::AccountId, T::Balance, OptionQuery>;
 
+    #[pallet::storage]
+    #[pallet::getter(fn rewards_per_round)]
+    pub type RewardsPerCandidatePerRound<T: Config> = StorageDoubleMap<
+        _,
+        Twox64Concat,
+        T::AccountId,
+        Twox64Concat,
+        RoundIndex,
+        T::Balance,
+        ValueQuery,
+    >;
+
     #[pallet::pallet]
     #[pallet::generate_store(pub(super) trait Store)]
     pub struct Pallet<T>(PhantomData<T>);
@@ -101,6 +113,7 @@ pub mod pallet {
         InvalidInflationSchedule,
         MintingFailed,
         NotEnoughFunds,
+        NotCandidate, // when someone tries to claim rewards when not being a candidate
         NoWritingSameValue, // when trying to update the inflation schedule
     }
 
@@ -145,7 +158,7 @@ pub mod pallet {
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        pub candidates: Vec<(T::AccountId, BalanceOf<T>)>,
+        pub candidates: Vec<T::AccountId>,
         pub annual_inflation: Range<T::Balance>,
     }
 
@@ -163,8 +176,11 @@ pub mod pallet {
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
             // set first round
-            let round: RoundInfo<T::BlockNumber> =
-                RoundInfo::new(1_u32, 0_u32.into(), T::DefaultBlocksPerRound::get());
+            let round: RoundInfo<T::BlockNumber> = RoundInfo::new(
+                1_u32,
+                T::BlockNumber::zero(),
+                T::DefaultBlocksPerRound::get(),
+            );
             <CurrentRound<T>>::put(round);
             <Pallet<T>>::deposit_event(Event::RoundStarted {
                 round: 1_u32,
@@ -185,21 +201,50 @@ pub mod pallet {
 
             let treasury = T::TreasuryAccount::get();
 
-            let mut remaining_minted_balance = T::Currency::issue(amount);
-            let mut candidates = <CandidatesForRewards<T>>::get()?;
+            // let mut remaining_minted_balance = T::Currency::issue(amount);
+            // let mut candidates = <CandidatesForRewards<T>>::get()?;
             // distribute to candidates equally
-            candidates.into_iter().for_each(|candidate| {
-                // calculate rewards per candidate
-                let amount_per_candidate = amount.div(T::Balance::from(candidates.len() as u8));
-                let (remaining_minted_balance, reward_amount) =
-                    remaining_minted_balance.split(amount_per_candidate);
-                T::Currency::deposit_into_existing(candidate, reward_amount);
-            });
+            // candidates.into_iter().for_each(|candidate| {
+            // calculate rewards per candidate
+            // let amount_per_candidate = amount.div(T::Balance::from(candidates.len() as u8));
+            // let (remaining_minted_balance, reward_amount) =
+            //     remaining_minted_balance.split(amount_per_candidate);
+            // T::Currency::deposit_into_existing(candidate, reward_amount);
+            // });
 
             // Emit an event.
             Self::deposit_event(Event::MintedTokensForRound(treasury, amount));
             // Return a successful DispatchResultWithPostInfo
             Ok(())
+        }
+
+        #[pallet::weight(10_000)]
+        pub fn claim_rewards(origin: OriginFor<T>) -> DispatchResult {
+            let who = ensure_signed(origin)?;
+            <Pallet<T>>::ensure_candidate(&who)?;
+
+            // accumulate rewards
+            let total_rewards = <RewardsPerCandidatePerRound<T>>::iter_key_prefix(&who)
+                .map(|key2| <RewardsPerCandidatePerRound<T>>::get(&who, &key2))
+                .fold(T::Balance::zero(), |acc, item| acc.saturating_add(item));
+
+            #[cfg(test)]
+            log::info!("rewards {:?}", total_rewards);
+            // log!("{}", total_rewards);
+            // calculate total rewards
+
+            // .map(|reward| {
+            //     match reward {
+            //         Some(reward) => reward,
+            //         None => T::Balance::zero(),
+            //     } { }
+            //     T::Currency::deposit_into_existing(who, reward.amount);
+            // })
+            // .drain();
+
+            // all_rewards.into_iter().for_each(|reward| {});
+
+            Ok(().into())
         }
 
         /// Sets the annual inflation rate to derive per-round inflation
@@ -230,6 +275,17 @@ pub mod pallet {
             });
             <InflationConfig<T>>::put(config);
             Ok(().into())
+        }
+    }
+
+    impl<T: Config> Pallet<T> {
+        /// Helper function to check if the origin belongs to the candidate list
+        pub fn ensure_candidate(who: &T::AccountId) -> Result<(), DispatchError> {
+            ensure!(
+                <CandidatesForRewards<T>>::contains_key(who),
+                Error::<T>::NotCandidate
+            );
+            Ok(())
         }
     }
 }
