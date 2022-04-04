@@ -77,21 +77,26 @@ export default class Listener extends EventEmitter {
             h => h.number.toNumber() === blockNumber
           )
 
-          const reversedRange = this.headers
-            .slice(this.offset, justifiedHeaderIndex + 1)
-            .reverse()
+          if (justifiedHeaderIndex + 1 > this.offset) {
+            const reversedRange = this.headers
+              .slice(this.offset, justifiedHeaderIndex + 1)
+              .reverse()
 
-          this.offset = justifiedHeaderIndex + 1
+            this.offset = justifiedHeaderIndex + 1
+            Listener.debug(
+              'reversedRange b4 shift',
+              reversedRange.map(h => h.number.toNumber())
+            )
+            const anchor = reversedRange.shift() as Header
 
-          const anchor = reversedRange.shift() as Header
-
-          this.emit(
-            'range',
-            this.gatewayId,
-            anchor,
-            reversedRange,
-            justification
-          )
+            this.emit(
+              'range',
+              this.gatewayId,
+              anchor,
+              reversedRange,
+              justification
+            )
+          }
         }
       )
   }
