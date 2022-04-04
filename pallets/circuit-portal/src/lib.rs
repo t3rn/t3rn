@@ -23,23 +23,22 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
-use codec::{Decode, Encode};
-use frame_support::dispatch::DispatchResultWithPostInfo;
 
-use frame_support::traits::{EnsureOrigin, Get};
+use codec::{Decode, Encode};
+use frame_support::{
+    dispatch::DispatchResultWithPostInfo,
+    traits::{EnsureOrigin, Get},
+};
 use frame_system::{
     offchain::{SignedPayload, SigningTypes},
     RawOrigin,
 };
-
 use sp_core::crypto::KeyTypeId;
 use sp_runtime::{
     traits::{AccountIdConversion, Convert},
     RuntimeDebug,
 };
-
 use sp_std::vec::*;
-
 pub use t3rn_primitives::{
     abi::{GatewayABIConfig, HasherAlgo},
     bridges::{chain_circuit as bp_circuit, runtime as bp_runtime},
@@ -49,7 +48,6 @@ pub use t3rn_primitives::{
     xtx::{Xtx, XtxId},
     GatewayType, *,
 };
-
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 
 pub type Bytes = Vec<u8>;

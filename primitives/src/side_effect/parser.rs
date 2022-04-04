@@ -1,5 +1,3 @@
-#![cfg_attr(not(feature = "std"), no_std)]
-
 use crate::{abi::Type, side_effect::EventSignature};
 use sp_std::vec::*;
 

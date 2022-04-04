@@ -17,8 +17,6 @@
 //! Defines traits which represent a common interface for Substrate pallets which want to
 //! incorporate bridge functionality.
 
-#![cfg_attr(not(feature = "std"), no_std)]
-
 use codec::{Codec, Decode, Encode, EncodeLike, MaxEncodedLen};
 use core::{clone::Clone, cmp::Eq, default::Default, fmt::Debug};
 use scale_info::TypeInfo;

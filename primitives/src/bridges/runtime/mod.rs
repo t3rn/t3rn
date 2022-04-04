@@ -16,8 +16,6 @@
 
 //! Primitives that may be used at (bridges) runtime level.
 
-#![cfg_attr(not(feature = "std"), no_std)]
-
 use codec::Encode;
 use sp_core::hash::H256;
 use sp_io::hashing::blake2_256;

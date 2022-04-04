@@ -1,5 +1,3 @@
-#![cfg_attr(not(feature = "std"), no_std)]
-
 use crate::{
     abi::{GatewayABIConfig, Type},
     match_format::{ensure_str_err, StrLike},

@@ -18,6 +18,7 @@
 //! proofs, as opposed to headers synchronization loop, which is built around headers. The headers
 //! are still submitted to the target node, but are treated as auxiliary data as we are not trying
 //! to submit all source headers to the target node.
+#![cfg_attr(not(feature = "std"), no_std)]
 
 pub use crate::finality_loop::{
     metrics_prefix, run, FinalitySyncParams, SourceClient, TargetClient,

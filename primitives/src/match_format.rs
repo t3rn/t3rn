@@ -1,5 +1,3 @@
-#![cfg_attr(not(feature = "std"), no_std)]
-
 use sp_std::{vec, vec::*};
 
 pub type StrLike = Vec<u8>;

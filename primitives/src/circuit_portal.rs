@@ -1,5 +1,6 @@
 use crate::ProofTriePointer;
 use snowbridge_core::Verifier;
+use sp_std::vec::Vec;
 
 pub trait CircuitPortal<T: frame_system::Config> {
     type EthVerifier: Verifier;

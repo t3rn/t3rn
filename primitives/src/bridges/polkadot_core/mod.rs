@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity Bridges Common.  If not, see <http://www.gnu.org/licenses/>.
 
-#![cfg_attr(not(feature = "std"), no_std)]
-
 use crate::bridges::{messages as bp_messages, runtime as bp_runtime};
 
 use bp_messages::MessageNonce;

@@ -1,4 +1,3 @@
-#![cfg_attr(not(feature = "std"), no_std)]
 use crate::{
     abi::extract_property_names_from_signature_as_bytes,
     protocol::SideEffectProtocol,

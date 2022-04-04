@@ -16,7 +16,6 @@
 
 //! Utilities for testing runtime code.
 
-#![cfg_attr(not(feature = "std"), no_std)]
 use crate::bridges::header_chain as bp_header_chain;
 
 use bp_header_chain::justification::GrandpaJustification;
