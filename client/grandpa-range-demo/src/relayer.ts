@@ -25,7 +25,7 @@ export default class Relayer {
     await registerKusamaGateway(this.circuit, Relayer.debug)
 
     const setOperational =
-      this.circuit.tx.multiFinalityVerifierPolkadotLike.setOperational(
+      this.circuit.tx.multiFinalityVerifierDefault.setOperational(
         true,
         this.gatewayId
       )
@@ -64,7 +64,7 @@ export default class Relayer {
     )
 
     const submitFinalityProof =
-      this.circuit.tx.multiFinalityVerifierPolkadotLike.submitFinalityProof(
+      this.circuit.tx.multiFinalityVerifierDefault.submitFinalityProof(
         anchor,
         justification,
         gatewayId
@@ -89,7 +89,7 @@ export default class Relayer {
     )
 
     const submitHeaderRange =
-      this.circuit.tx.multiFinalityVerifierPolkadotLike.submitHeaderRange(
+      this.circuit.tx.multiFinalityVerifierDefault.submitHeaderRange(
         gatewayId,
         reversedRange,
         anchor.hash
