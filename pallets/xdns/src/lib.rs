@@ -17,9 +17,7 @@ use sp_std::prelude::*;
 pub use t3rn_primitives::{
     abi::GatewayABIConfig, abi::Type, ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor,
 };
-pub use t3rn_protocol::side_effects::protocol::{
-    SideEffectConfirmationProtocol, SideEffectProtocol,
-};
+pub use t3rn_protocol::side_effects::protocol::SideEffectProtocol;
 // Re-export pallet items so that they can be accessed from the crate namespace.
 pub use crate::pallet::*;
 
@@ -383,6 +381,16 @@ pub mod pallet {
         pub fn get_gateway_type_unsafe(chain_id: &ChainId) -> GatewayType {
             <XDNSRegistry<T>>::get(chain_id).unwrap().gateway_type
         }
+
+        pub fn get_gateway_value_unsigned_type_unsafe(chain_id: &ChainId) -> Type {
+            Type::Uint(
+                <XDNSRegistry<T>>::get(chain_id)
+                    .unwrap()
+                    .gateway_abi
+                    .value_type_size
+                    * 8,
+            )
+        }
     }
 }
 
@@ -429,5 +437,3 @@ impl SideEffectProtocol for SideEffectInterface {
         self.revert_events.clone()
     }
 }
-
-impl SideEffectConfirmationProtocol for SideEffectInterface {}

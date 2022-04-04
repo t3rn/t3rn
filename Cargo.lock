@@ -12036,6 +12036,7 @@ dependencies = [
  "pallet-sudo",
  "parity-scale-codec 2.3.1",
  "plain_hasher",
+ "relay-substrate-client",
  "scale-info 1.0.0",
  "serde",
  "serde_json",

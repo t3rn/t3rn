@@ -78,8 +78,6 @@ pub mod state;
 
 pub mod escrow;
 
-pub use t3rn_protocol::side_effects::protocol::SideEffectConfirmationProtocol;
-
 /// Defines application identifier for crypto keys of this module.
 /// Every module that deals with signatures needs to declare its unique identifier for
 /// its crypto keys.
@@ -339,7 +337,10 @@ pub mod pallet {
             // Setup: new xtx context
             let mut local_xtx_ctx: LocalXtxCtx<T> =
                 Self::setup(CircuitStatus::Requested, &requester, fee, None)?;
-            log::info!("on_extrinsic_trigger -- finished setup");
+            log::info!(
+                "on_extrinsic_trigger -- finished setup -- xtx id {:?}",
+                local_xtx_ctx.xtx_id
+            );
 
             // Validate: Side Effects
             Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential)?;
@@ -1135,7 +1136,7 @@ impl<T: Config> Pallet<T> {
             }
         };
 
-        let confirm_execution = |gateway_vendor, state_copy| {
+        let confirm_execution = |gateway_vendor, value_abi_unsigned_type, state_copy| {
             let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
             side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
             let side_effect_interface =
@@ -1152,6 +1153,7 @@ impl<T: Config> Pallet<T> {
                 EthereumSideEffectsParser<<T as pallet_circuit_portal::Config>::EthVerifier>,
             >(
                 gateway_vendor,
+                value_abi_unsigned_type,
                 &Box::new(side_effect_interface.unwrap()),
                 confirmation.encoded_effect.clone(),
                 state_copy,
@@ -1228,6 +1230,7 @@ impl<T: Config> Pallet<T> {
         confirm_inclusion()?;
         confirm_execution(
             pallet_xdns::Pallet::<T>::best_available(side_effect.target)?.gateway_vendor,
+            pallet_xdns::Pallet::<T>::get_gateway_value_unsigned_type_unsafe(&side_effect.target),
             &local_ctx.local_state,
         )?;
 
