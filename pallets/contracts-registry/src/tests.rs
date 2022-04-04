@@ -24,6 +24,7 @@ use frame_support::{assert_err, assert_ok};
 use sp_core::H256;
 use sp_runtime::DispatchError;
 use t3rn_primitives::contract_metadata::ContractMetadata;
+use t3rn_primitives::contracts_registry::ContractsRegistry as ContractsRegistryExt;
 
 #[test]
 fn fetch_contract_by_id_should_return_single_contract() {
