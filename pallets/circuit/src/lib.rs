@@ -324,31 +324,31 @@ pub mod pallet {
                 .collect();
             let targets: Vec<[u8; 4]> = side_effects.iter().map(|s| s.target.clone()).collect();
 
-            log::info!("on_extrinsic_trigger -- start : SE IDs {:?}", ids);
-            log::info!("on_extrinsic_trigger -- start : SE args {:?}", args);
-            log::info!("on_extrinsic_trigger -- start : SE targets {:?}", targets);
+            log::debug!("on_extrinsic_trigger -- start : SE IDs {:?}", ids);
+            log::debug!("on_extrinsic_trigger -- start : SE args {:?}", args);
+            log::debug!("on_extrinsic_trigger -- start : SE targets {:?}", targets);
 
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin, CircuitRole::Requester)?;
             // Charge: Ensure can afford
             Self::charge(&requester, fee)?;
-            log::info!("on_extrinsic_trigger -- finished charged");
+            log::debug!("on_extrinsic_trigger -- finished charged");
 
             // Setup: new xtx context
             let mut local_xtx_ctx: LocalXtxCtx<T> =
                 Self::setup(CircuitStatus::Requested, &requester, fee, None)?;
-            log::info!(
+            log::debug!(
                 "on_extrinsic_trigger -- finished setup -- xtx id {:?}",
                 local_xtx_ctx.xtx_id
             );
 
             // Validate: Side Effects
             Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential)?;
-            log::info!("on_extrinsic_trigger -- finished validate");
+            log::debug!("on_extrinsic_trigger -- finished validate");
 
             // Apply: all necessary changes to state in 1 go
             let (_, added_full_side_effects) = Self::apply(&mut local_xtx_ctx, None)?;
-            log::info!("on_extrinsic_trigger -- finished apply");
+            log::debug!("on_extrinsic_trigger -- finished apply");
 
             // Emit: From Circuit events
             Self::emit(

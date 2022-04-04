@@ -171,7 +171,8 @@ pub mod pallet {
             log::debug!(
                 target: LOG_TARGET,
                 "gtwy {:?} best finalized map contained {:?}",
-                String::from_utf8_lossy(gateway_id.as_ref()).into_owned(),
+                scale_info::prelude::string::String::from_utf8_lossy(gateway_id.as_ref())
+                    .into_owned(),
                 <BestFinalizedMap<T, I>>::contains_key(gateway_id)
             );
 
@@ -727,7 +728,7 @@ pub mod pallet {
         log::debug!(
             target: LOG_TARGET,
             "gtwy {:?} best finalized header {:?} stored {:?}",
-            String::from_utf8_lossy(gateway_id.as_ref()).into_owned(),
+            scale_info::prelude::string::String::from_utf8_lossy(gateway_id.as_ref()).into_owned(),
             initial_number,
             <BestFinalizedMap<T, I>>::contains_key(gateway_id)
         );
