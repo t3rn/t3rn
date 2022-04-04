@@ -10,13 +10,6 @@ use crate::Vec;
 
 pub type RegistryContractId<T> = <T as frame_system::Config>::Hash;
 
-/// In some instances, to enable the escrow trait to be configured once, we may need to have an escrowable
-/// injected to the pallet. In this case you might have something like:
-///
-///    /// The pallet that handles the contracts registry, used to fetch contracts by their id
-///    type ContractsRegistry: ContractsRegistry<Self, Self::Escrowed>;
-///    /// An escrow provider to the registry
-///    type Escrowed: EscrowTrait;
 pub trait ContractsRegistry<T: frame_system::Config, Escrowed>
 where
     Escrowed: EscrowTrait<T>,
