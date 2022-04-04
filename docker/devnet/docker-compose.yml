@@ -39,7 +39,7 @@ services:
       --unsafe-rpc-external
       --chain /pdot/rococo-local.raw.json
       --execution Wasm
-      -lruntime=debug,parachain::pvf-checker=debug
+      -lruntime=debug
 
   bob:
     image: polkadot:release-v0.9.17
@@ -76,7 +76,7 @@ services:
       --unsafe-rpc-external
       --chain /pdot/rococo-local.raw.json
       --execution Wasm
-      -lruntime=debug,parachain::pvf-checker=debug
+      -lruntime=debug
 
   charlie:
     image: polkadot:release-v0.9.17
@@ -114,7 +114,7 @@ services:
       --unsafe-rpc-external
       --chain /pdot/rococo-local.raw.json
       --execution Wasm
-      -lruntime=debug,parachain::pvf-checker=debug
+      -lruntime=debug
 
   dave:
     image: polkadot:release-v0.9.17
@@ -199,7 +199,7 @@ services:
     image: circuit-collator:update_v0.9.17
     build:
       context: ../..
-      dockerfile: docker/xcm-devnet/t3rn.Dockerfile
+      dockerfile: docker/devnet/t3rn.Dockerfile
     networks:
       - devnet
     ports:
@@ -254,7 +254,7 @@ services:
     image: circuit-collator:update_v0.9.17
     build:
       context: ../..
-      dockerfile: docker/xcm-devnet/t3rn.Dockerfile
+      dockerfile: docker/devnet/t3rn.Dockerfile
     networks:
       - devnet
     ports:
@@ -414,113 +414,3 @@ services:
       --rpc-port 4407
       --ws-port 4418
       --execution Wasm
-
-  # acala1:
-  #   image: acala:release-acala-2.4.0
-  #   build:
-  #     context: .
-  #     dockerfile: acala.Dockerfile
-  #   networks:
-  #     - devnet
-  #   ports:
-  #     - "44444:44444"
-  #     - "4488:4488"
-  #     - "4499:4499"
-  #     - "44443:44443"
-  #     - "4487:4487"
-  #     - "4498:4498"
-  #   volumes:
-  #     - type: bind
-  #       source: ./specs/rococo-local.raw.json
-  #       target: /acala/rococo-local.raw.json
-  #       read_only: true
-  #     - type: bind
-  #       source: ./specs/acala.raw.json
-  #       target: /acala/acala.raw.json
-  #       read_only: true
-  #     - type: bind
-  #       source: ./data/acala1
-  #       target: /acala/data
-  #       read_only: false
-  #   container_name: acala1
-  #   depends_on:
-  #     - alice
-  #     - bob
-  #     - charlie
-  #     - dave
-  #     - eve
-  #   command: >
-  #     --port 44444
-  #     --rpc-port 4488
-  #     --ws-port 4499
-  #     --base-path /acala/data
-  #     --collator
-  #     --rpc-cors all
-  #     --unsafe-ws-external
-  #     --unsafe-rpc-external
-  #     --execution Wasm
-  #     -lruntime=debug
-  #     --chain /acala/acala.raw.json
-  #     --name acala1
-  #     --
-  #     --chain /acala/rococo-local.raw.json
-  #     --discover-local
-  #     --port 44443
-  #     --rpc-port 4487
-  #     --ws-port 4498
-  #     --execution Wasm
-
-  # acala2:
-  #   image: acala:release-acala-2.4.0
-  #   build:
-  #     context: .
-  #     dockerfile: acala.Dockerfile
-  #   networks:
-  #     - devnet
-  #   ports:
-  #     - "44404:44404"
-  #     - "4408:4408"
-  #     - "4409:4409"
-  #     - "44403:44403"
-  #     - "4407:4407"
-  #     - "4418:4418"
-  #   volumes:
-  #     - type: bind
-  #       source: ./specs/rococo-local.raw.json
-  #       target: /acala/rococo-local.raw.json
-  #       read_only: true
-  #     - type: bind
-  #       source: ./specs/acala.raw.json
-  #       target: /acala/acala.raw.json
-  #       read_only: true
-  #     - type: bind
-  #       source: ./data/acala2
-  #       target: /acala/data
-  #       read_only: false
-  #   container_name: acala2
-  #   depends_on:
-  #     - alice
-  #     - bob
-  #     - charlie
-  #     - dave
-  #     - eve
-  #   command: >
-  #     --port 44404
-  #     --rpc-port 4408
-  #     --ws-port 4409
-  #     --base-path /acala/data
-  #     --collator
-  #     --rpc-cors all
-  #     --unsafe-ws-external
-  #     --unsafe-rpc-external
-  #     --execution Wasm
-  #     -lruntime=debug
-  #     --chain /acala/acala.raw.json
-  #     --name acala2
-  #     --
-  #     --chain /acala/rococo-local.raw.json
-  #     --discover-local
-  #     --port 44403
-  #     --rpc-port 4407
-  #     --ws-port 4418
-  #     --execution Wasm
