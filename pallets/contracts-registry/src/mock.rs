@@ -21,10 +21,7 @@
 
 use crate as pallet_contracts_registry;
 use crate::types::RegistryContract;
-use frame_support::{
-    construct_runtime, pallet_prelude::GenesisBuild, parameter_types, traits::Everything,
-    weights::Weight,
-};
+use frame_support::{construct_runtime, parameter_types, traits::Everything, weights::Weight};
 use sp_core::H256;
 use sp_runtime::{
     testing::Header,
@@ -116,7 +113,7 @@ impl pallet_timestamp::Config for Test {
     type WeightInfo = ();
 }
 
-impl EscrowTrait for Test {
+impl EscrowTrait<Test> for Test {
     type Currency = Balances;
     type Time = Timestamp;
 }
@@ -127,6 +124,8 @@ impl pallet_sudo::Config for Test {
 }
 
 impl pallet_contracts_registry::Config for Test {
+    type Balances = Balances;
+    type Escrowed = Self;
     type Event = Event;
     type WeightInfo = ();
 }
@@ -160,12 +159,6 @@ impl ExtBuilder {
         pallet_balances::GenesisConfig::<Test> { balances: vec![] }
             .assimilate_storage(&mut t)
             .expect("Pallet balances storage can be assimilated");
-
-        pallet_contracts_registry::GenesisConfig::<Test> {
-            known_contracts: vec![],
-        }
-        .assimilate_storage(&mut t)
-        .expect("Pallet contracts registry can be assimilated");
 
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));

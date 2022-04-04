@@ -1,6 +1,7 @@
 use crate::{
-    abi::GatewayABIConfig, protocol::SideEffectProtocol, ChainId, GatewayGenesisConfig,
-    GatewaySysProps, GatewayType, GatewayVendor,
+    abi::{GatewayABIConfig, Type},
+    protocol::SideEffectProtocol,
+    ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
 };
 use codec::{Decode, Encode};
 use frame_support::dispatch::{DispatchResult, DispatchResultWithPostInfo};
@@ -150,4 +151,6 @@ pub trait Xdns<T: frame_system::Config> {
     fn update_gateway_ttl(gateway_id: ChainId, last_finalized: u64) -> DispatchResultWithPostInfo;
 
     fn get_abi(chain_id: ChainId) -> Result<GatewayABIConfig, &'static str>;
+
+    fn get_gateway_value_unsigned_type_unsafe(chain_id: &ChainId) -> Type;
 }

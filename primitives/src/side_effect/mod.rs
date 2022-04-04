@@ -10,6 +10,7 @@ use scale_info::TypeInfo;
 use sp_runtime::{traits::Zero, RuntimeDebug};
 use sp_std::vec::Vec;
 
+use crate::abi::Type;
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
 #[cfg(feature = "std")]
@@ -50,6 +51,7 @@ impl<
     }
 }
 
+// TODO: this was removed, @maciej why :D?
 pub trait SideEffectConfirmationProtocol: SideEffectProtocol {
     // Use CONFIRMING_EVENTS now to confirm that the content received events follows the protocol
     //  1. Decode each event following it's Vendor decoding implementation (substrate events vs eth events)
@@ -62,9 +64,13 @@ pub trait SideEffectConfirmationProtocol: SideEffectProtocol {
         encoded_remote_events: Vec<Bytes>,
         local_state: &mut LocalState,
         side_effect_id: Option<Bytes>,
+        value_abi_unsigned_type: Type,
     ) -> Result<(), &'static str> {
         // 0. Check incoming args with protocol requirements
-        assert!(encoded_remote_events.len() == Self::get_confirming_events(self).len());
+        assert_eq!(
+            encoded_remote_events.len(),
+            Self::get_confirming_events(self).len()
+        );
         // 1. Decode event as relying on Vendor-specific decoding/parsing
 
         for (i, encoded_event) in encoded_remote_events.iter().enumerate() {
@@ -73,6 +79,7 @@ pub trait SideEffectConfirmationProtocol: SideEffectProtocol {
                 &Self::get_id(self),
                 encoded_event.clone(),
                 &expected_event_signature.to_vec(),
+                value_abi_unsigned_type.clone(),
             )?;
             // 2.  Use STATE_MAPPER to map each variable name from CONFIRMING_EVENTS into expected value stored in STATE_MAPPER during the "validate_args"
             // ToDo: It will work for transfer for now without analyzing the signature
