@@ -17,9 +17,7 @@ use sp_std::prelude::*;
 pub use t3rn_primitives::{
     abi::GatewayABIConfig, abi::Type, ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor,
 };
-pub use t3rn_protocol::side_effects::protocol::{
-    SideEffectProtocol,
-};
+pub use t3rn_protocol::side_effects::protocol::SideEffectProtocol;
 // Re-export pallet items so that they can be accessed from the crate namespace.
 pub use crate::pallet::*;
 
