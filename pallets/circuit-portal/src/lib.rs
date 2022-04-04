@@ -96,6 +96,8 @@ pub type SideEffectId = Bytes;
 
 pub type SystemHashing<T> = <T as frame_system::Config>::Hashing;
 
+const LOG_TARGET: &str = "circuit-portal";
+
 #[frame_support::pallet]
 pub mod pallet {
     use frame_support::pallet_prelude::*;
@@ -199,41 +201,58 @@ pub mod pallet {
                 gateway_sys_props.clone(),
                 allowed_side_effects.clone(),
             )?;
-
+            let gtwy = String::from_utf8_lossy(gateway_id.as_ref()).into_owned();
             let res = match (gateway_abi.hasher, gateway_abi.block_number_type_size) {
-                (HasherAlgo::Blake2, 32) => init_bridge_instance::<T, DefaultPolkadotLikeGateway>(
-                    origin,
-                    first_header,
-                    authorities,
-                    authority_set_id,
-                    gateway_id,
-                )?,
-                (HasherAlgo::Blake2, 64) => init_bridge_instance::<T, PolkadotLikeValU64Gateway>(
-                    origin,
-                    first_header,
-                    authorities,
-                    authority_set_id,
-                    gateway_id,
-                )?,
-                (HasherAlgo::Keccak256, 32) => init_bridge_instance::<
-                    T,
-                    EthLikeKeccak256ValU32Gateway,
-                >(
-                    origin, first_header, authorities, authority_set_id, gateway_id
-                )?,
-                (HasherAlgo::Keccak256, 64) => init_bridge_instance::<
-                    T,
-                    EthLikeKeccak256ValU64Gateway,
-                >(
-                    origin, first_header, authorities, authority_set_id, gateway_id
-                )?,
-                (_, _) => init_bridge_instance::<T, DefaultPolkadotLikeGateway>(
-                    origin,
-                    first_header,
-                    authorities,
-                    authority_set_id,
-                    gateway_id,
-                )?,
+                (HasherAlgo::Blake2, 32) => {
+                    log::debug!(target: LOG_TARGET, "{} DefaultPolkadotLikeGateway", gtwy);
+                    init_bridge_instance::<T, DefaultPolkadotLikeGateway>(
+                        origin,
+                        first_header,
+                        authorities,
+                        authority_set_id,
+                        gateway_id,
+                    )?
+                }
+                (HasherAlgo::Blake2, 64) => {
+                    log::debug!(target: LOG_TARGET, "{} PolkadotLikeValU64Gateway", gtwy);
+                    init_bridge_instance::<T, PolkadotLikeValU64Gateway>(
+                        origin,
+                        first_header,
+                        authorities,
+                        authority_set_id,
+                        gateway_id,
+                    )?
+                }
+                (HasherAlgo::Keccak256, 32) => {
+                    log::debug!(target: LOG_TARGET, "{} EthLikeKeccak256ValU32Gateway", gtwy);
+                    init_bridge_instance::<T, EthLikeKeccak256ValU32Gateway>(
+                        origin,
+                        first_header,
+                        authorities,
+                        authority_set_id,
+                        gateway_id,
+                    )?
+                }
+                (HasherAlgo::Keccak256, 64) => {
+                    log::debug!(target: LOG_TARGET, "{} EthLikeKeccak256ValU64Gateway", gtwy);
+                    init_bridge_instance::<T, EthLikeKeccak256ValU64Gateway>(
+                        origin,
+                        first_header,
+                        authorities,
+                        authority_set_id,
+                        gateway_id,
+                    )?
+                }
+                (_, _) => {
+                    log::debug!(target: LOG_TARGET, "{} DefaultPolkadotLikeGateway", gtwy);
+                    init_bridge_instance::<T, DefaultPolkadotLikeGateway>(
+                        origin,
+                        first_header,
+                        authorities,
+                        authority_set_id,
+                        gateway_id,
+                    )?
+                }
             };
 
             Self::deposit_event(Event::NewGatewayRegistered(
