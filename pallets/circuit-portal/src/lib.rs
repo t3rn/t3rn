@@ -102,7 +102,7 @@ pub mod pallet {
     };
     use frame_system::pallet_prelude::*;
     use snowbridge_core::Verifier;
-    use t3rn_primitives::{transfers::EscrowedBalanceOf, xdns::Xdns};
+    use t3rn_primitives::xdns::Xdns;
 
     use super::*;
     use crate::WeightInfo;
@@ -125,10 +125,11 @@ pub mod pallet {
 
         type AccountId32Converter: Convert<<Self as frame_system::Config>::AccountId, [u8; 32]>;
 
-        type ToStandardizedGatewayBalance: Convert<
-            EscrowedBalanceOf<Self, <Self as Config>::Escrowed>,
-            u128,
-        >;
+        // TODO: removed since its better to have an account manager for this and is not used atm
+        // type ToStandardizedGatewayBalance: Convert<
+        //     EscrowedBalanceOf<Self, <Self as Config>::Escrowed>,
+        //     u128,
+        // >;
 
         type WeightInfo: weights::WeightInfo;
 

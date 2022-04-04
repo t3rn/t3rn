@@ -18,7 +18,7 @@ codec = { package = "parity-scale-codec", version = "2.0.0", default-features = 
 
 log              = { version = "0.4", default-features = false }
 pwasm-utils      = { version = "0.18.0", default-features = false }
-serde            = { version = "1", optional = true, features = [ "derive" ] }
+serde            = { version = "1.0", default-features = false, default-features = false, optional = true, features = [ "derive" ] }
 smallvec         = { version = "1", default-features = false, features = [ "const_generics" ] }
 t3rn-primitives  = { default-features = false, path = "../../primitives" }
 wasmi-validation = { version = "0.4.0", default-features = false }

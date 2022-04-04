@@ -36,13 +36,6 @@ impl Convert<AccountId, [u8; 32]> for AccountId32Converter {
     }
 }
 
-pub struct CircuitToGateway<T, E>;
-impl<T, E> Convert<EscrowedBalanceOf<T, E>, u128> for CircuitToGateway<T, E> {
-    fn convert(val: EscrowedBalanceOf<T, E>) -> u128 {
-        val
-    }
-}
-
 impl pallet_circuit_portal::Config for Runtime {
     type AccountId32Converter = AccountId32Converter;
     type Balances = Balances;
@@ -52,7 +45,6 @@ impl pallet_circuit_portal::Config for Runtime {
     type EthVerifier = t3rn_protocol::side_effects::confirm::ethereum::EthereumMockVerifier;
     type Event = Event;
     type PalletId = PortalPalletId;
-    type ToStandardizedGatewayBalance = CircuitToGateway<Runtime, Runtime>;
     type WeightInfo = pallet_circuit_portal::weights::SubstrateWeight<Runtime>;
     type Xdns = XDNS;
 }

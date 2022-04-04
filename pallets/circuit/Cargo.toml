@@ -13,14 +13,14 @@ version     = "1.0.0-alpha.0"
 targets = [ "x86_64-unknown-linux-gnu" ]
 
 [dependencies]
-codec              = { package = "parity-scale-codec", version = "2.2.0", default-features = false }
+codec              = { package = "parity-scale-codec", version = "2.2", default-features = false }
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', optional = true }
 frame-support      = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
 frame-system       = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
 log                = { version = "0.4", default-features = false }
 pallet-timestamp   = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
 scale-info         = { version = "1.0", default-features = false, features = [ "derive" ] }
-serde              = { version = "1.0", optional = true, features = [ "derive" ] }
+serde              = { version = "1.0", default-features = false, optional = true, features = [ "derive" ] }
 sp-io              = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
 sp-runtime         = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
 sp-std             = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
