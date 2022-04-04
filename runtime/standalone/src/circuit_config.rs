@@ -2,7 +2,7 @@ use super::*;
 use frame_support::{parameter_types, PalletId};
 use sp_core::H256;
 use sp_runtime::traits::*;
-use t3rn_primitives::bridges::runtime as bp_runtime;
+use t3rn_primitives::{bridges::runtime as bp_runtime, transfers::EscrowedBalanceOf};
 
 // impl pallet_randomness_collective_flip::Config for Runtime {}
 
@@ -36,23 +36,23 @@ impl Convert<AccountId, [u8; 32]> for AccountId32Converter {
     }
 }
 
-pub struct CircuitToGateway;
-impl Convert<Balance, u128> for CircuitToGateway {
-    fn convert(val: Balance) -> u128 {
+pub struct CircuitToGateway<T, E>;
+impl<T, E> Convert<EscrowedBalanceOf<T, E>, u128> for CircuitToGateway<T, E> {
+    fn convert(val: EscrowedBalanceOf<T, E>) -> u128 {
         val
     }
 }
 
 impl pallet_circuit_portal::Config for Runtime {
     type AccountId32Converter = AccountId32Converter;
-    type Balances = Self;
+    type Balances = Balances;
     type Call = Call;
-    type Escrowed = Balances;
+    type Escrowed = Self;
     // type EthVerifier = ethereum_light_client::Pallet<Runtime>;
     type EthVerifier = t3rn_protocol::side_effects::confirm::ethereum::EthereumMockVerifier;
     type Event = Event;
     type PalletId = PortalPalletId;
-    type ToStandardizedGatewayBalance = CircuitToGateway;
+    type ToStandardizedGatewayBalance = CircuitToGateway<Runtime, Runtime>;
     type WeightInfo = pallet_circuit_portal::weights::SubstrateWeight<Runtime>;
     type Xdns = XDNS;
 }
