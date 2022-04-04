@@ -1,8 +1,8 @@
 use circuit_parachain_runtime::{
-    AccountId, AuraId, ContractsRegistryConfig, MultiFinalityVerifierDefaultConfig,
-    MultiFinalityVerifierEthereumLikeConfig, MultiFinalityVerifierGenericLikeConfig,
-    MultiFinalityVerifierPolkadotLikeConfig, MultiFinalityVerifierSubstrateLikeConfig, Signature,
-    SudoConfig, XDNSConfig, EXISTENTIAL_DEPOSIT,
+    AccountId, AuraId, MultiFinalityVerifierDefaultConfig, MultiFinalityVerifierEthereumLikeConfig,
+    MultiFinalityVerifierGenericLikeConfig, MultiFinalityVerifierPolkadotLikeConfig,
+    MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, XDNSConfig,
+    EXISTENTIAL_DEPOSIT,
 };
 use cumulus_primitives_core::ParaId;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
@@ -12,7 +12,6 @@ use sp_core::{sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
 use jsonrpc_runtime_client::ConnectionParams;
-use pallet_xdns::types::{SideEffectInterface, XdnsRecord};
 use sp_core::Encode;
 /// t3rn-pallets chain spec config -- START
 use t3rn_primitives::abi::Type;
@@ -25,6 +24,7 @@ use std::{
     convert::TryFrom,
     io::{Error, ErrorKind},
 };
+use t3rn_primitives::{side_effect::interface::SideEffectInterface, xdns::XdnsRecord};
 
 /// Helper function that fetches metadata from live networks and generates an XdnsRecord
 fn fetch_xdns_record_from_rpc(
@@ -476,9 +476,7 @@ fn testnet_genesis(
             known_xdns_records: xdns_records,
             standard_side_effects,
         },
-        contracts_registry: ContractsRegistryConfig {
-            known_contracts: Vec::new(),
-        },
+        contracts_registry: Default::default(),
         multi_finality_verifier_substrate_like: MultiFinalityVerifierSubstrateLikeConfig {
             owner: None,
             init_data: None,

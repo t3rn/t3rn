@@ -7,7 +7,6 @@ use circuit_standalone_runtime::{
 };
 
 use jsonrpc_runtime_client::ConnectionParams;
-use pallet_xdns::types::{SideEffectInterface, XdnsRecord};
 use sp_core::Encode;
 use t3rn_primitives::{
     abi::Type,
@@ -27,6 +26,7 @@ use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
+use t3rn_primitives::{side_effect::interface::SideEffectInterface, xdns::XdnsRecord};
 
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
@@ -415,9 +415,7 @@ fn testnet_genesis(
             known_xdns_records: xdns_records,
             standard_side_effects,
         },
-        contracts_registry: ContractsRegistryConfig {
-            known_contracts: Vec::new(),
-        },
+        contracts_registry: Default::default(),
         multi_finality_verifier_substrate_like: MultiFinalityVerifierSubstrateLikeConfig {
             owner: None,
             init_data: None,

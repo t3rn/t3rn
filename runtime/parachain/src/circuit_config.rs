@@ -2,7 +2,7 @@ use super::*;
 use frame_support::parameter_types;
 use sp_core::H256;
 use sp_runtime::traits::*;
-use t3rn_primitives::{bridges::runtime as bp_runtime, transfers::EscrowedBalanceOf};
+use t3rn_primitives::bridges::runtime as bp_runtime;
 
 impl pallet_randomness_collective_flip::Config for Runtime {}
 
