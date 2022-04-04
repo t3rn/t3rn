@@ -52,7 +52,8 @@ export default class CircuitRelayer extends EventEmitter {
 
        
 
-        let tx = this.api.tx.circuit.confirmSideEffect(sideEffect.xtxId, circuitSideEffect, confirmedSideEffect, this.api.createType('Option<Vec<Bytes>>', []), this.api.createType('Option<Bytes>', []));
+        let tx = this.api.tx.circuit.confirmSideEffect(sideEffect.xtxId, circuitSideEffect);
+            // , confirmedSideEffect, this.api.createType('Option<Vec<Bytes>>', []), this.api.createType('Option<Bytes>', []));
         let unsub = await tx.signAndSend(this.signer, (result) => {
             if (result.status.isFinalized) {
                 console.log(`Transaction ConfirmedSideEffect finalized at blockHash ${result.status.asFinalized}`);
