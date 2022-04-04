@@ -17,6 +17,7 @@ export default class CircuitListener extends EventEmitter {
         this.api.query.system.events((notifications) => {
             notifications.forEach(notification => {
                 if (notification.event.method === 'NewSideEffectsAvailable') {
+                    console.log("Detected SideEffect")
                     this.emit(
                         'NewSideEffect',
                         notification.event.data
