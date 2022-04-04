@@ -13,6 +13,7 @@
     "@polkadot/api": "=7.14.3",
     "@t3rn/types": "=0.1.1",
     "@types/debug": "=4.1.7",
+    "async-mutex": "^0.3.2",
     "debug": "=4.3.3",
     "dotenv": "=16.0.0",
     "ts-node": "=10.7.0",

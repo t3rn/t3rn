@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events'
 import { ApiPromise, WsProvider } from '@polkadot/api'
 import { Header } from '@polkadot/types/interfaces'
+import { Mutex } from 'async-mutex'
 import { grandpaDecode } from './util'
 import createDebug from 'debug'
 import 'dotenv/config'
@@ -17,7 +18,7 @@ export default class Listener extends EventEmitter {
   offset: number = 0
   // last known grandpa set id
   grandpaSetId: number = 0
-
+  mutex: Mutex = new Mutex()
   unsubNewHeads: () => void
 
   async init() {
@@ -32,7 +33,12 @@ export default class Listener extends EventEmitter {
         await this.handleHeader(header)
 
         if (this.headers.length - this.offset >= this.rangeSize) {
-          await this.concludeRange()
+          const release = await this.mutex.acquire()
+          try {
+            await this.concludeRange()
+          } finally {
+            release()
+          }
         }
       }
     )
@@ -45,7 +51,12 @@ export default class Listener extends EventEmitter {
 
     if (this.grandpaSetId !== 0 && currentSetId !== this.grandpaSetId) {
       Listener.debug('grandpa set change', this.grandpaSetId, currentSetId)
-      await this.concludeRange()
+      const release = await this.mutex.acquire()
+      try {
+        await this.concludeRange()
+      } finally {
+        release()
+      }
     }
 
     this.grandpaSetId = currentSetId
@@ -83,11 +94,15 @@ export default class Listener extends EventEmitter {
               .reverse()
 
             this.offset = justifiedHeaderIndex + 1
+
+            const anchor = reversedRange.shift() as Header
+
             Listener.debug(
-              'reversedRange b4 shift',
+              'anchor',
+              anchor.number.toNumber(),
+              'reversedRange',
               reversedRange.map(h => h.number.toNumber())
             )
-            const anchor = reversedRange.shift() as Header
 
             this.emit(
               'range',
