@@ -16,8 +16,10 @@
 
 //! Metrics for headers synchronization relay loop.
 
-use crate::sync::HeadersSync;
-use crate::sync_types::{HeaderStatus, HeadersSyncPipeline};
+use crate::{
+    sync::HeadersSync,
+    sync_types::{HeaderStatus, HeadersSyncPipeline},
+};
 
 use num_traits::Zero;
 use relay_utils::metrics::{metric_name, register, GaugeVec, Opts, PrometheusError, Registry, U64};

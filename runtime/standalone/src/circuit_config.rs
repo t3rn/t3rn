@@ -1,6 +1,5 @@
 use super::*;
-use frame_support::parameter_types;
-use frame_support::PalletId;
+use frame_support::{parameter_types, PalletId};
 use sp_core::H256;
 use sp_runtime::traits::*;
 use t3rn_primitives::bridges::runtime as bp_runtime;
@@ -41,14 +40,14 @@ impl Convert<Balance, u128> for CircuitToGateway {
 }
 
 impl pallet_circuit_portal::Config for Runtime {
-    type Event = Event;
-    type Call = Call;
     type AccountId32Converter = AccountId32Converter;
-    type ToStandardizedGatewayBalance = CircuitToGateway;
-    type WeightInfo = pallet_circuit_portal::weights::SubstrateWeight<Runtime>;
-    type PalletId = PortalPalletId;
+    type Call = Call;
     // type EthVerifier = ethereum_light_client::Pallet<Runtime>;
     type EthVerifier = t3rn_protocol::side_effects::confirm::ethereum::EthereumMockVerifier;
+    type Event = Event;
+    type PalletId = PortalPalletId;
+    type ToStandardizedGatewayBalance = CircuitToGateway;
+    type WeightInfo = pallet_circuit_portal::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -56,10 +55,10 @@ parameter_types! {
 }
 
 impl pallet_circuit::Config for Runtime {
-    type Event = Event;
     type Call = Call;
-    type WeightInfo = ();
+    type Event = Event;
     type PalletId = CircuitPalletId;
+    type WeightInfo = ();
 }
 
 parameter_types! {
@@ -111,35 +110,35 @@ impl bp_runtime::Chain for Keccak256ValU32Chain {
 
 impl pallet_mfv::Config<Blake2ValU64BridgeInstance> for Runtime {
     type BridgedChain = Blake2ValU64Chain;
-    type MaxRequests = MaxRequests;
     type HeadersToKeep = HeadersToKeep;
+    type MaxRequests = MaxRequests;
     type WeightInfo = ();
 }
 
 impl pallet_mfv::Config<Blake2ValU32BridgeInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
-    type MaxRequests = MaxRequests;
     type HeadersToKeep = HeadersToKeep;
+    type MaxRequests = MaxRequests;
     type WeightInfo = ();
 }
 
 impl pallet_mfv::Config<Keccak256ValU64BridgeInstance> for Runtime {
     type BridgedChain = Keccak256ValU64Chain;
-    type MaxRequests = MaxRequests;
     type HeadersToKeep = HeadersToKeep;
+    type MaxRequests = MaxRequests;
     type WeightInfo = ();
 }
 
 impl pallet_mfv::Config<Keccak256ValU32BridgeInstance> for Runtime {
     type BridgedChain = Keccak256ValU32Chain;
-    type MaxRequests = MaxRequests;
     type HeadersToKeep = HeadersToKeep;
+    type MaxRequests = MaxRequests;
     type WeightInfo = ();
 }
 
 impl pallet_mfv::Config<DefaultPolkadotBridgeInstance> for Runtime {
     type BridgedChain = Keccak256ValU32Chain;
-    type MaxRequests = MaxRequests;
     type HeadersToKeep = HeadersToKeep;
+    type MaxRequests = MaxRequests;
     type WeightInfo = ();
 }

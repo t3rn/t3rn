@@ -347,7 +347,7 @@ pub fn mine<T: Encodable>(
         );
         let result_cmp: U256 = result.into_uint();
         if result_cmp <= target {
-            return (nonce_current, result);
+            return (nonce_current, result)
         }
         let nonce_u64 = nonce_current.into_uint().as_u64();
         nonce_current = H64::from_uint(&U64::from(nonce_u64 + 1));

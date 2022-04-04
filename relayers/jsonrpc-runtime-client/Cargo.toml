@@ -1,33 +1,33 @@
 [package]
-name = "jsonrpc-runtime-client"
-version = "0.1.0"
-edition = "2018"
-license = "Apache-2.0"
-homepage = "https://substrate.dev"
+edition    = "2018"
+homepage   = "https://substrate.dev"
+license    = "Apache-2.0"
+name       = "jsonrpc-runtime-client"
 repository = "https://github.com/paritytech/substrate/"
+version    = "0.1.0"
 
 [package.metadata.docs.rs]
-targets = ["x86_64-unknown-linux-gnu"]
+targets = [ "x86_64-unknown-linux-gnu" ]
 
 [dependencies]
-futures = "0.1.29"
-hyper = "~0.12.35"
-jsonrpc-core-client = { version = "15.1.0", features = ["http"] }
-jsonrpsee-types = "0.2.0"
-log = "0.4.8"
-env_logger = "0.8.2"
+env_logger          = "0.8.2"
+futures             = "0.1.29"
+hyper               = "~0.12.35"
+jsonrpc-core-client = { version = "15.1.0", features = [ "http" ] }
+jsonrpsee-types     = "0.2.0"
+log                 = "0.4.8"
 
+frame-metadata  = { version = "14.0.0", features = [ "v13", "v14" ] }
 node-primitives = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
-sp-tracing = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
-sc-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17"}
-sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17"}
-frame-metadata = { version = "14.0.0", features = ["v13", "v14"] }
+sc-rpc          = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
+sp-core         = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
+sp-tracing      = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
 
-async-std = { version = "1.6.5", features = ["attributes", "tokio1"] }
+async-std   = { version = "1.6.5", features = [ "attributes", "tokio1" ] }
 async-trait = "0.1.40"
-codec = { package = "parity-scale-codec", version = "2.0.0" }
-num-traits = "0.2"
+codec       = { package = "parity-scale-codec", version = "2.0.0" }
+num-traits  = "0.2"
 
-tokio = "1.8.0"
-t3rn-primitives = { path = "../../primitives" }
 relay-substrate-client = { path = "../client-substrate" }
+t3rn-primitives        = { path = "../../primitives" }
+tokio                  = "1.8.0"

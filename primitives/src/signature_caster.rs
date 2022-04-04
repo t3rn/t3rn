@@ -1,10 +1,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use crate::abi::{GatewayABIConfig, Type};
-use crate::match_format::{ensure_str_err, StrLike};
+use crate::{
+    abi::{GatewayABIConfig, Type},
+    match_format::{ensure_str_err, StrLike},
+};
 use codec::{Decode, Encode};
-use sp_std::vec;
-use sp_std::vec::*;
+use sp_std::{vec, vec::*};
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug)]
 pub struct Signature {
@@ -23,7 +24,7 @@ pub trait HasXDNSAccess {
     fn get_my_target_id() -> [u8; 4];
     fn get_surrounding(target: [u8; 4]) -> Surrounding {
         if Self::get_my_target_id() == target {
-            return Surrounding::Local;
+            return Surrounding::Local
         }
         Surrounding::Remote
     }

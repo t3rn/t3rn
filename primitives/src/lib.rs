@@ -24,32 +24,36 @@ use scale_info::TypeInfo;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_runtime::traits::{BlakeTwo256, IdentifyAccount, Verify};
-use sp_runtime::MultiSignature;
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
+use sp_runtime::{
+    traits::{BlakeTwo256, IdentifyAccount, Verify},
+    MultiSignature,
+};
 
-use sp_std::convert::TryFrom;
-use sp_std::prelude::*;
-use sp_std::vec;
+use sp_std::{convert::TryFrom, prelude::*, vec};
 #[cfg(feature = "std")]
 use std::fmt::Debug;
 
 pub mod abi;
 pub mod bridges;
+pub mod circuit;
+pub mod circuit_portal;
 pub mod contract_metadata;
 pub mod contracts_registry;
 pub mod gateway_inbound_protocol;
 pub mod match_format;
+pub mod protocol;
 pub mod side_effect;
 pub mod signature_caster;
 pub mod storage;
 pub mod transfers;
 pub mod volatile;
+pub mod xdns;
 pub mod xtx;
-pub mod circuit;
 
 pub use gateway_inbound_protocol::GatewayInboundProtocol;
+pub use orml_traits;
 
 pub type ChainId = [u8; 4];
 
@@ -252,9 +256,8 @@ pub struct InterExecSchedule<Account, Balance> {
     pub phases: Vec<ExecPhase<Account, Balance>>,
 }
 
-/// TODO: need a currency shim for base currency here
-pub trait EscrowTrait: frame_system::Config + pallet_sudo::Config {
-    type Currency: ReservableCurrency<Self::AccountId>;
+pub trait EscrowTrait<T: frame_system::Config> {
+    type Currency: ReservableCurrency<T::AccountId>;
     type Time: Time;
 }
 

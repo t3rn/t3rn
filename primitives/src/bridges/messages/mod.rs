@@ -211,7 +211,7 @@ pub fn total_unrewarded_messages<RelayerId>(
             } else {
                 Some(0)
             }
-        }
+        },
         _ => Some(0),
     }
 }

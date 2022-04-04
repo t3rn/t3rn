@@ -9,14 +9,18 @@ use circuit_standalone_runtime::{
 use jsonrpc_runtime_client::ConnectionParams;
 use pallet_xdns::types::{SideEffectInterface, XdnsRecord};
 use sp_core::Encode;
-use t3rn_primitives::abi::Type;
-use t3rn_primitives::bridges::runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID};
+use t3rn_primitives::{
+    abi::Type,
+    bridges::runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID},
+};
 
 use t3rn_primitives::{GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor};
 
 use log::info;
-use std::convert::TryFrom;
-use std::io::{Error, ErrorKind};
+use std::{
+    convert::TryFrom,
+    io::{Error, ErrorKind},
+};
 
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;

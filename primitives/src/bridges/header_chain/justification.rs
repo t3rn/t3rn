@@ -25,8 +25,10 @@ use frame_support::RuntimeDebug;
 use scale_info::TypeInfo;
 use sp_finality_grandpa::{AuthorityId, AuthoritySignature, SetId};
 use sp_runtime::traits::Header as HeaderT;
-use sp_std::collections::{btree_map::BTreeMap, btree_set::BTreeSet};
-use sp_std::prelude::*;
+use sp_std::{
+    collections::{btree_map::BTreeMap, btree_set::BTreeSet},
+    prelude::*,
+};
 /// A GRANDPA Justification is a proof that a given header was finalized
 /// at a certain height and with a certain set of authorities.
 ///
@@ -99,7 +101,7 @@ where
         justification.commit.target_number,
     ) != finalized_target
     {
-        return Err(Error::InvalidJustificationTarget);
+        return Err(Error::InvalidJustificationTarget)
     }
 
     let mut chain = AncestryChain::new(&justification.votes_ancestries);
@@ -112,8 +114,8 @@ where
             Some(authority_info) => authority_info,
             None => {
                 // just ignore precommit from unknown authority as `finality_grandpa::import_precommit` does
-                continue;
-            }
+                continue
+            },
         };
 
         // check if authority has already voted in the same round.
@@ -122,14 +124,14 @@ where
         // `finality-grandpa` crate (mostly related to reporing equivocations). But the only thing that we
         // care about is that only first vote from the authority is accepted
         if !votes.insert(signed.id.clone()) {
-            continue;
+            continue
         }
 
         // everything below this line can't just `continue`, because state is already altered
 
         // all precommits must be for block higher than the target
         if signed.precommit.target_number < justification.commit.target_number {
-            return Err(Error::PrecommitIsNotCommitDescendant);
+            return Err(Error::PrecommitIsNotCommitDescendant)
         }
         // all precommits must be for target block descendents
         chain = chain.ensure_descendant(
@@ -159,13 +161,13 @@ where
             authorities_set_id,
             &mut signature_buffer,
         ) {
-            return Err(Error::InvalidAuthoritySignature);
+            return Err(Error::InvalidAuthoritySignature)
         }
     }
 
     // check that there are no extra headers in the justification
     if !chain.unvisited.is_empty() {
-        return Err(Error::ExtraHeadersInVotesAncestries);
+        return Err(Error::ExtraHeadersInVotesAncestries)
     }
 
     // check that the cumulative weight of validators voted for the justification target (or one
@@ -210,7 +212,7 @@ impl<Header: HeaderT> AncestryChain<Header> {
         let mut current_hash = *precommit_target;
         loop {
             if current_hash == *commit_target {
-                break;
+                break
             }
 
             let is_visited_before = !self.unvisited.remove(&current_hash);
@@ -221,11 +223,11 @@ impl<Header: HeaderT> AncestryChain<Header> {
                         // `is_visited_before` means that it has been visited before in some of previous calls
                         // => since we assume that previous call has finished with `true`, this also will
                         //    be finished with `true`
-                        return Ok(self);
+                        return Ok(self)
                     }
 
                     *parent_hash
-                }
+                },
                 None => return Err(Error::PrecommitIsNotCommitDescendant),
             };
         }

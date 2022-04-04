@@ -109,12 +109,10 @@ where
     AccountId: Encode,
 {
     match id {
-        SourceAccount::Root => {
-            (ROOT_ACCOUNT_DERIVATION_PREFIX, bridge_id).using_encoded(blake2_256)
-        }
-        SourceAccount::Account(id) => {
-            (ACCOUNT_DERIVATION_PREFIX, bridge_id, id).using_encoded(blake2_256)
-        }
+        SourceAccount::Root =>
+            (ROOT_ACCOUNT_DERIVATION_PREFIX, bridge_id).using_encoded(blake2_256),
+        SourceAccount::Account(id) =>
+            (ACCOUNT_DERIVATION_PREFIX, bridge_id, id).using_encoded(blake2_256),
     }
     .into()
 }

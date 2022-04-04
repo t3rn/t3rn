@@ -16,10 +16,12 @@
 
 //! Default generic implementation of finality source for basic Substrate client.
 
-use crate::chain::{BlockWithJustification, Chain};
-use crate::client::Client;
-use crate::error::Error;
-use crate::sync_header::SyncHeader;
+use crate::{
+    chain::{BlockWithJustification, Chain},
+    client::Client,
+    error::Error,
+    sync_header::SyncHeader,
+};
 
 use async_std::sync::{Arc, Mutex};
 use async_trait::async_trait;

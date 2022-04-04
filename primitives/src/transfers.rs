@@ -19,50 +19,56 @@ pub struct TransferEntry {
     pub data: Vec<u8>,
 }
 
-pub type BalanceOf<T> =
-    <<T as EscrowTrait>::Currency as Currency<<T as system::Config>::AccountId>>::Balance;
+pub type EscrowedBalanceOf<T, E> =
+    <<E as EscrowTrait<T>>::Currency as Currency<<T as system::Config>::AccountId>>::Balance;
 
-pub fn just_transfer<'a, T: EscrowTrait>(
+pub type EscrowedCurrencyOf<T, E> = <E as EscrowTrait<T>>::Currency;
+
+pub type BalanceOf<T> =
+    <<T as EscrowTrait<T>>::Currency as Currency<<T as system::Config>::AccountId>>::Balance;
+
+pub fn just_transfer<'a, T: frame_system::Config, E: EscrowTrait<T>>(
     transactor: &T::AccountId,
     dest: &T::AccountId,
-    value: BalanceOf<T>,
+    value: EscrowedBalanceOf<T, E>,
 ) -> DispatchResult {
-    <T as EscrowTrait>::Currency::transfer(transactor, dest, value, ExistenceRequirement::KeepAlive)
+    EscrowedCurrencyOf::<T, E>::transfer(transactor, dest, value, ExistenceRequirement::KeepAlive)
 }
 
-pub fn commit_deferred_transfers<T: EscrowTrait>(
+pub fn commit_deferred_transfers<T: frame_system::Config, E: EscrowTrait<T>>(
     escrow_account: T::AccountId,
     transfers: &mut Vec<TransferEntry>,
 ) -> DispatchResult {
     // Give the money back to the requester from the transfers that succeeded.s
     for transfer in transfers.iter() {
-        just_transfer::<T>(
+        just_transfer::<T, E>(
             &escrow_account,
             &h256_to_account(transfer.to),
-            BalanceOf::<T>::from(transfer.value),
+            EscrowedBalanceOf::<T, E>::from(transfer.value),
         )
         .map_err(|e| e)?;
     }
     Ok(())
 }
 
-pub fn escrow_transfer<'a, T: EscrowTrait>(
+pub fn escrow_transfer<'a, T: frame_system::Config, E: EscrowTrait<T>>(
     escrow_account: &T::AccountId,
     requester: &T::AccountId,
     target_to: &T::AccountId,
-    value: BalanceOf<T>,
+    value: EscrowedBalanceOf<T, E>,
     transfers: &mut Vec<TransferEntry>,
 ) -> Result<(), DispatchError> {
     // Verify that requester has enough money to make the transfers from within the contract.
-    if <T as EscrowTrait>::Currency::total_balance(&requester.clone())
-        < <T as EscrowTrait>::Currency::minimum_balance() + value
-    {
+    let balance = <E as EscrowTrait<T>>::Currency::total_balance(&requester.clone());
+    let min = <E as EscrowTrait<T>>::Currency::minimum_balance();
+
+    if balance < min + value {
         return Err(DispatchError::Other(
             "Escrow Transfer failed as the requester doesn't have enough balance.",
-        ));
+        ))
     }
     // Just transfer here the value of internal for contract transfer to escrow account.
-    return match just_transfer::<T>(requester, escrow_account, value) {
+    return match just_transfer::<T, E>(requester, escrow_account, value) {
         Ok(_) => {
             transfers.push(TransferEntry {
                 to: account_encode_to_h256(target_to.encode().as_slice()),
@@ -70,9 +76,9 @@ pub fn escrow_transfer<'a, T: EscrowTrait>(
                 data: Vec::new(),
             });
             Ok(())
-        }
+        },
         Err(err) => Err(err),
-    };
+    }
 }
 
 pub fn account_encode_to_h256(account_bytes: &[u8]) -> H256 {
@@ -91,13 +97,13 @@ pub fn account_encode_to_h256(account_bytes: &[u8]) -> H256 {
                 ]
                 .concat()[..],
             )
-        }
+        },
         _ => {
             panic!(
                 "Surprised by AccountId bytes length different than 32 or 8 bytes while serializing. Not supported."
             );
             // H256::default()
-        }
+        },
     }
 }
 
@@ -110,12 +116,12 @@ pub fn h256_to_account<D: Decode + Encode>(account_h256: H256) -> D {
             let mut last_8b = account_h256.as_bytes()[24..].to_vec();
             last_8b.reverse();
             D::decode(&mut &last_8b[..]).unwrap()
-        }
+        },
         _ => {
             panic!(
                 "Surprised by AccountId bytes length different than 32 or 8 bytes while deserializing. Not supported."
             );
             // D::decode(&mut &H256::default()[..]).unwrap()
-        }
+        },
     }
 }

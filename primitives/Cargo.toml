@@ -1,68 +1,71 @@
 [package]
-name = "t3rn-primitives"
-version = "1.0.0-alpha.0"
-authors = ["t3rn ltd. <team@t3rn.io>"]
-edition = "2018"
-homepage = "https://t3rn.io"
-license = "Apache 2.0"
-repository = "https://github.com/t3rn/t3rn/"
+authors     = [ "t3rn ltd. <team@t3rn.io>" ]
 description = "A crate that hosts a common definitions that are relevant for the all t3rn pallets."
+edition     = "2018"
+homepage    = "https://t3rn.io"
+license     = "Apache 2.0"
+name        = "t3rn-primitives"
+repository  = "https://github.com/t3rn/t3rn/"
+version     = "1.0.0-alpha.0"
 
 [package.metadata.docs.rs]
-targets = ["x86_64-unknown-linux-gnu"]
+targets = [ "x86_64-unknown-linux-gnu" ]
 
 [dependencies]
 # This crate should not rely on any of the frame primitives.
-serde = { version = "1.0.136", optional = true }
-codec = { package = "parity-scale-codec", version = "2.2.0", default-features = false, features = ["derive"] }
-ed25519-dalek = { version = "1.0", default-features = false, features = ["u64_backend"] }
+codec                 = { package = "parity-scale-codec", version = "2.2.0", default-features = false, features = [ "derive" ] }
+ed25519-dalek         = { version = "1.0", default-features = false, features = [ "u64_backend" ] }
+frame-support         = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17' }
+frame-system          = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17' }
+orml-traits           = { git = "https://github.com/t3rn/open-runtime-module-library", branch = "polkadot-v0.9.17", default-features = false }
+pallet-sudo           = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17' }
+scale-info            = { version = "1.0", default-features = false, features = [ "derive" ] }
+serde                 = { version = "1.0.136", optional = true }
 sp-application-crypto = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17', default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17', default-features = false }
-sp-version = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17', default-features = false }
-sp-core = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17', default-features = false }
-sp-io = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17', default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17', default-features = false }
-frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17' }
-frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17' }
-pallet-sudo = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17' }
-scale-info = { version = "1.0", default-features = false, features = ["derive"] }
+sp-core               = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17', default-features = false }
+sp-io                 = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17', default-features = false }
+sp-runtime            = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17', default-features = false }
+sp-std                = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17', default-features = false }
+sp-version            = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17', default-features = false }
 #scale-info = { version = "2.0.1", default-features = false, features = ["derive"] }
 
 #bridges
-hash-db = { version = "0.15.2", default-features = false }
-num-traits = { version = "0.2", default-features = false }
-sp-api = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', default-features = false }
-sp-state-machine = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', default-features = false }
-sp-trie = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', default-features = false }
+finality-grandpa    = { version = "0.14.0", default-features = false }
+hash-db             = { version = "0.15.2", default-features = false }
+num-traits          = { version = "0.2", default-features = false }
+sp-api              = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', default-features = false }
 sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", default-features = false, branch = 'polkadot-v0.9.17' }
-finality-grandpa = { version = "0.14.0", default-features = false }
+sp-state-machine    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', default-features = false }
+sp-trie             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', default-features = false }
+
+snowbridge-core = { path = "src/bridges/snowfork/core", default-features = false }
 
 [dev-dependencies]
+hex         = "0.4"
 hex-literal = { version = '0.3.1' }
-serde_json = "1.0.41"
-hex = "0.4"
+serde_json  = "1.0.41"
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
-    "ed25519-dalek/std",
-    "serde/std",
-    "codec/std",
-    "sp-api/std",
-    "sp-application-crypto/std",
-    "sp-runtime/std",
-    "sp-std/std",
-    "sp-core/std",
-    "sp-version/std",
-    "sp-io/std",
-    "pallet-sudo/std",
-    "frame-system/std",
-    "frame-support/std",
-    #bridges
-    "hash-db/std",
-    "num-traits/std",
-    "sp-state-machine/std",
-    "sp-trie/std",
-    "sp-finality-grandpa/std",
-    "finality-grandpa/std",
+  "ed25519-dalek/std",
+  "serde/std",
+  "codec/std",
+  "sp-api/std",
+  "sp-application-crypto/std",
+  "sp-runtime/std",
+  "sp-std/std",
+  "sp-core/std",
+  "sp-version/std",
+  "sp-io/std",
+  "pallet-sudo/std",
+  "frame-system/std",
+  "frame-support/std",
+  #bridges
+  "hash-db/std",
+  "num-traits/std",
+  "sp-state-machine/std",
+  "sp-trie/std",
+  "sp-finality-grandpa/std",
+  "finality-grandpa/std",
 ]

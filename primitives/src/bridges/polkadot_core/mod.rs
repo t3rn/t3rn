@@ -16,9 +16,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use crate::bridges::messages as bp_messages;
-use crate::bridges::runtime as bp_runtime;
-use std::fmt::{Debug, Formatter};
+use crate::bridges::{messages as bp_messages, runtime as bp_runtime};
 
 use bp_messages::MessageNonce;
 use bp_runtime::Chain;
@@ -33,7 +31,7 @@ use frame_support::{
     Blake2_128Concat, RuntimeDebug, StorageHasher, Twox128,
 };
 use frame_system::limits;
-use scale_info::{StaticTypeInfo, Type, TypeInfo};
+use scale_info::TypeInfo;
 use sp_core::Hasher as HasherT;
 use sp_runtime::{
     generic,

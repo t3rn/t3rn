@@ -6,8 +6,7 @@ use codec::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 use sp_runtime::RuntimeDebug;
 use sp_std::vec::Vec;
-pub use t3rn_primitives::contracts_registry::RegistryContract;
-pub use t3rn_primitives::contracts_registry::RegistryContractId;
+pub use t3rn_primitives::contracts_registry::{RegistryContract, RegistryContractId};
 
 /// The possible errors that can happen querying the storage of a contract.
 #[derive(Eq, PartialEq, Encode, Decode, Debug, Clone)]

@@ -1,12 +1,10 @@
-use crate::abi::ContractActionDesc;
-use crate::contract_metadata::ContractMetadata;
-use crate::storage::RawAliveContractInfo;
-use crate::transfers::BalanceOf;
-use crate::{ChainId, Compose, EscrowTrait};
+use crate::{
+    abi::ContractActionDesc, contract_metadata::ContractMetadata, storage::RawAliveContractInfo,
+    transfers::EscrowedBalanceOf, ChainId, Compose, EscrowTrait,
+};
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
-use sp_runtime::traits::Hash;
-use sp_runtime::RuntimeDebug;
+use sp_runtime::{traits::Hash, RuntimeDebug};
 
 use crate::Vec;
 
@@ -19,20 +17,28 @@ pub type RegistryContractId<T> = <T as frame_system::Config>::Hash;
 ///    type ContractsRegistry: ContractsRegistry<Self, Self::Escrowed>;
 ///    /// An escrow provider to the registry
 ///    type Escrowed: EscrowTrait;
-pub trait ContractsRegistry<Hash, AccountId, BlockNumber, Escrowed>
+pub trait ContractsRegistry<T: frame_system::Config, Escrowed>
 where
-    Escrowed: EscrowTrait,
+    Escrowed: EscrowTrait<T>,
 {
     type Error;
 
     fn fetch_contract_by_id(
-        contract_id: Hash,
-    ) -> Result<RegistryContract<Hash, AccountId, BalanceOf<Escrowed>, BlockNumber>, Self::Error>;
+        contract_id: T::Hash,
+    ) -> Result<
+        RegistryContract<T::Hash, T::AccountId, EscrowedBalanceOf<T, Escrowed>, T::BlockNumber>,
+        Self::Error,
+    >;
 
     fn fetch_contracts(
-        author: Option<AccountId>,
+        author: Option<T::AccountId>,
         metadata: Option<Vec<u8>>,
-    ) -> Result<Vec<RegistryContract<Hash, AccountId, BalanceOf<Escrowed>, BlockNumber>>, Self::Error>;
+    ) -> Result<
+        Vec<
+            RegistryContract<T::Hash, T::AccountId, EscrowedBalanceOf<T, Escrowed>, T::BlockNumber>,
+        >,
+        Self::Error,
+    >;
 }
 
 /// A preliminary representation of a contract in the onchain registry.

@@ -16,8 +16,10 @@
 
 #![cfg(test)]
 
-use crate::sync_loop::{run, SourceClient, TargetClient};
-use crate::sync_types::{HeadersSyncPipeline, QueuedHeader, SourceHeader, SubmittedHeaders};
+use crate::{
+    sync_loop::{run, SourceClient, TargetClient},
+    sync_types::{HeadersSyncPipeline, QueuedHeader, SourceHeader, SubmittedHeaders},
+};
 
 use async_trait::async_trait;
 use backoff::backoff::Backoff;
@@ -70,14 +72,14 @@ impl MaybeConnectionError for TestError {
 pub struct TestHeadersSyncPipeline;
 
 impl HeadersSyncPipeline for TestHeadersSyncPipeline {
+    type Completion = TestCompletion;
+    type Extra = TestExtra;
+    type Hash = TestHash;
+    type Header = TestHeader;
+    type Number = TestNumber;
+
     const SOURCE_NAME: &'static str = "Source";
     const TARGET_NAME: &'static str = "Target";
-
-    type Hash = TestHash;
-    type Number = TestNumber;
-    type Header = TestHeader;
-    type Extra = TestExtra;
-    type Completion = TestCompletion;
 
     fn estimate_size(_: &TestQueuedHeader) -> usize {
         0

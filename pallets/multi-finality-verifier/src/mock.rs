@@ -25,8 +25,7 @@ use sp_runtime::{
 };
 use t3rn_primitives::bridges::runtime::Chain;
 
-use t3rn_primitives::bridges::polkadot_core::PolkadotLike;
-use t3rn_primitives::EscrowTrait;
+use t3rn_primitives::{bridges::polkadot_core::PolkadotLike, EscrowTrait};
 
 pub type AccountId = u64;
 pub type TestHeader = crate::BridgedHeader<TestRuntime, ()>;
@@ -62,30 +61,30 @@ parameter_types! {
 }
 
 impl frame_system::Config for TestRuntime {
+    type AccountData = pallet_balances::AccountData<u64>;
+    type AccountId = AccountId;
     type BaseCallFilter = Everything;
-    type BlockWeights = ();
+    type BlockHashCount = BlockHashCount;
     type BlockLength = ();
-    type Origin = Origin;
-    type Call = Call;
-    type Index = u64;
     type BlockNumber = u64;
+    type BlockWeights = ();
+    type Call = Call;
+    type DbWeight = ();
+    type Event = Event;
     type Hash = H256;
     type Hashing = BlakeTwo256;
-    type AccountId = AccountId;
-    type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
-    type BlockHashCount = BlockHashCount;
-    type DbWeight = ();
-    type Version = ();
-    type PalletInfo = PalletInfo;
-    type AccountData = pallet_balances::AccountData<u64>;
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type SystemWeightInfo = ();
-    type SS58Prefix = ();
-    type OnSetCode = ();
+    type Index = u64;
+    type Lookup = IdentityLookup<Self::AccountId>;
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    type OnKilledAccount = ();
+    type OnNewAccount = ();
+    type OnSetCode = ();
+    type Origin = Origin;
+    type PalletInfo = PalletInfo;
+    type SS58Prefix = ();
+    type SystemWeightInfo = ();
+    type Version = ();
 }
 
 parameter_types! {
@@ -94,15 +93,15 @@ parameter_types! {
 }
 
 impl pallet_timestamp::Config for TestRuntime {
+    type MinimumPeriod = MinimumPeriod;
     type Moment = u64;
     type OnTimestampSet = ();
-    type MinimumPeriod = MinimumPeriod;
     type WeightInfo = ();
 }
 
 impl pallet_sudo::Config for TestRuntime {
-    type Event = Event;
     type Call = Call;
+    type Event = Event;
 }
 
 impl EscrowTrait for TestRuntime {
@@ -123,15 +122,15 @@ parameter_types! {
 }
 
 impl pallet_balances::Config for TestRuntime {
-    type MaxLocks = ();
+    type AccountStore = System;
     type Balance = u64;
     type DustRemoval = ();
     type Event = Event;
     type ExistentialDeposit = ExistentialDeposit;
-    type AccountStore = System;
-    type WeightInfo = ();
+    type MaxLocks = ();
     type MaxReserves = MaxReserves;
     type ReserveIdentifier = [u8; 8];
+    type WeightInfo = ();
 }
 
 impl pallet_xdns::Config for TestRuntime {
@@ -141,16 +140,16 @@ impl pallet_xdns::Config for TestRuntime {
 
 impl multi_finality_verifier::Config for TestRuntime {
     type BridgedChain = TestCircuitLikeChain;
-    type MaxRequests = MaxRequests;
     type HeadersToKeep = HeadersToKeep;
+    type MaxRequests = MaxRequests;
     type WeightInfo = ();
 }
 
 pub type PolkadotLikeFinalityVerifierInstance = multi_finality_verifier::Instance1;
 impl multi_finality_verifier::Config<PolkadotLikeFinalityVerifierInstance> for TestRuntime {
     type BridgedChain = PolkadotLike;
-    type MaxRequests = MaxRequests;
     type HeadersToKeep = HeadersToKeep;
+    type MaxRequests = MaxRequests;
     type WeightInfo = ();
 }
 
@@ -194,5 +193,5 @@ pub fn test_header_range(from: u64, to: u64, mut parent_hash: Option<H256>) -> V
         headers.push(header);
         parent_hash = Some(headers[i].hash());
     }
-    return headers;
+    return headers
 }

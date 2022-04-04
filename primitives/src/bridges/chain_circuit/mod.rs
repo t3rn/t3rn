@@ -19,8 +19,7 @@
 #![allow(clippy::too_many_arguments)]
 // Runtime-generated DecodeLimit::decode_all_With_depth_limit
 #![allow(clippy::unnecessary_mut_passed)]
-use crate::bridges::messages as bp_messages;
-use crate::bridges::runtime as bp_runtime;
+use crate::bridges::{messages as bp_messages, runtime as bp_runtime};
 
 use bp_messages::{LaneId, MessageNonce, UnrewardedRelayersState};
 use bp_runtime::Chain;
@@ -30,9 +29,8 @@ use frame_support::{
 };
 //use frame_system::limits;
 use sp_core::Hasher as HasherT;
-use sp_runtime::traits::Convert;
 use sp_runtime::{
-    traits::{BlakeTwo256, IdentifyAccount, Verify},
+    traits::{BlakeTwo256, Convert, IdentifyAccount, Verify},
     MultiSignature, MultiSigner, Perbill,
 };
 use sp_std::prelude::*;

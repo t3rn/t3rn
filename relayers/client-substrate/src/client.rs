@@ -16,18 +16,18 @@
 
 //! Substrate node client.
 
-use crate::chain::{Chain, ChainWithBalances};
-use crate::rpc::Substrate;
-use crate::{ConnectionParams, Error, Result};
+use crate::{
+    chain::{Chain, ChainWithBalances},
+    rpc::Substrate,
+    ConnectionParams, Error, Result,
+};
 
 use async_std::sync::{Arc, Mutex};
 use codec::Decode;
 use frame_system::AccountInfo;
 use jsonrpsee_ws_client::{
-    traits::SubscriptionClient, v2::params::JsonRpcParams, DeserializeOwned,
-};
-use jsonrpsee_ws_client::{
-    Subscription, WsClient as RpcClient, WsClientBuilder as RpcClientBuilder,
+    traits::SubscriptionClient, v2::params::JsonRpcParams, DeserializeOwned, Subscription,
+    WsClient as RpcClient, WsClientBuilder as RpcClientBuilder,
 };
 use num_traits::Zero;
 use pallet_balances::AccountData;

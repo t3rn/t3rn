@@ -50,13 +50,12 @@ fn mod_mul_(a: u64, b: u64, m: u64) -> u64 {
 
 fn mod_mul(a: u64, b: u64, m: u64) -> u64 {
     match a.checked_mul(b) {
-        Some(r) => {
+        Some(r) =>
             if r >= m {
                 r % m
             } else {
                 r
-            }
-        }
+            },
         None => mod_mul_(a, b, m),
     }
 }
@@ -107,10 +106,10 @@ pub fn is_prime(n: u64) -> bool {
     ];
 
     if n % 2 == 0 {
-        return n == 2;
+        return n == 2
     }
     if n == 1 {
-        return false;
+        return false
     }
 
     let mut d = n - 1;
@@ -129,20 +128,20 @@ pub fn is_prime(n: u64) -> bool {
         let mut power = mod_exp(a, d, n);
         assert!(power < n);
         if power == 1 || power == n - 1 {
-            continue 'next_witness;
+            continue 'next_witness
         }
 
         for _r in 0..s {
             power = mod_sqr(power, n);
             assert!(power < n);
             if power == 1 {
-                return false;
+                return false
             }
             if power == n - 1 {
-                continue 'next_witness;
+                continue 'next_witness
             }
         }
-        return false;
+        return false
     }
 
     true

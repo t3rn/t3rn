@@ -16,17 +16,14 @@
 // limitations under the License.
 
 //! Test utilities
-use frame_support::assert_ok;
-use frame_support::traits::Currency;
+use frame_support::{assert_ok, traits::Currency};
 use frame_system::{EventRecord, Phase};
 
-use t3rn_primitives::abi::*;
-use t3rn_primitives::side_effect::*;
+use t3rn_primitives::{abi::*, side_effect::*};
 
 use t3rn_protocol::side_effects::test_utils::*;
 
-use crate::mock::*;
-use crate::state::*;
+use crate::{mock::*, state::*};
 
 use sp_io::TestExternalities;
 

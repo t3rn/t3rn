@@ -21,8 +21,7 @@ use crate::bridges::header_chain as bp_header_chain;
 
 use bp_header_chain::justification::GrandpaJustification;
 use sp_application_crypto::TryFrom;
-use sp_finality_grandpa::{AuthorityId, AuthorityWeight};
-use sp_finality_grandpa::{AuthoritySignature, SetId};
+use sp_finality_grandpa::{AuthorityId, AuthoritySignature, AuthorityWeight, SetId};
 use sp_runtime::traits::{Header as HeaderT, One, Zero};
 use sp_std::prelude::*;
 

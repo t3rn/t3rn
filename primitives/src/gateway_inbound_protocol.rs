@@ -1,7 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use crate::transfers::TransferEntry;
-use crate::*;
+use crate::{transfers::TransferEntry, *};
 use codec::Compact;
 use sp_std::vec::Vec;
 

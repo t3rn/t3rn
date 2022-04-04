@@ -38,15 +38,12 @@
 
 use crate::weights::WeightInfo;
 
-use bp_header_chain::justification::GrandpaJustification;
-use bp_header_chain::InitializationData;
+use bp_header_chain::{justification::GrandpaJustification, InitializationData};
 use bp_runtime::{BlockNumberOf, Chain, ChainId, HashOf, HasherOf, HeaderOf};
 
 use finality_grandpa::voter_set::VoterSet;
-use frame_support::ensure;
-use frame_support::pallet_prelude::*;
-use t3rn_primitives::bridges::header_chain as bp_header_chain;
-use t3rn_primitives::bridges::runtime as bp_runtime;
+use frame_support::{ensure, pallet_prelude::*};
+use t3rn_primitives::bridges::{header_chain as bp_header_chain, runtime as bp_runtime};
 
 use frame_system::{ensure_signed, RawOrigin};
 use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
@@ -83,12 +80,10 @@ pub mod pallet {
     use frame_support::traits::Time;
     use frame_system::pallet_prelude::*;
     use sp_std::convert::TryInto;
-    use t3rn_primitives::EscrowTrait;
+    use t3rn_primitives::{xdns::Xdns, EscrowTrait};
 
     #[pallet::config]
-    pub trait Config<I: 'static = ()>:
-        frame_system::Config + pallet_xdns::Config + t3rn_primitives::EscrowTrait
-    {
+    pub trait Config<I: 'static = ()>: frame_system::Config {
         /// The chain we are bridging to here.
         type BridgedChain: Chain;
 
@@ -111,6 +106,12 @@ pub mod pallet {
 
         /// Weights gathered through benchmarking.
         type WeightInfo: WeightInfo;
+
+        /// A type that provides access to Xdns
+        type Xdns: Xdns<Self>;
+
+        /// A type that manages escrow, and therefore balances
+        type Escrowed: EscrowTrait<Self>;
     }
 
     #[pallet::pallet]
@@ -250,10 +251,10 @@ pub mod pallet {
                 gateway_id
             );
 
-            let now = TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now())
+            let now = TryInto::<u64>::try_into(<T::Escrowed as EscrowTrait<T>>::Time::now())
                 .map_err(|_| "Unable to compute current timestamp")?;
 
-            pallet_xdns::Pallet::<T>::update_gateway_ttl(gateway_id, now)?;
+            <T::Xdns as Xdns<T>>::update_gateway_ttl(gateway_id, now)?;
 
             log::debug!(
                 target: LOG_TARGET,
@@ -321,7 +322,7 @@ pub mod pallet {
                         gateway_id
                     );
 
-                    break;
+                    break
                 }
             }
 
@@ -338,10 +339,10 @@ pub mod pallet {
             });
 
             // not sure if we want this here as well as we're adding old blocks
-            let now = TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now())
+            let now = TryInto::<u64>::try_into(<T::Escrowed as EscrowTrait<T>>::Time::now())
                 .map_err(|_| "Unable to compute current timestamp")?;
 
-            pallet_xdns::Pallet::<T>::update_gateway_ttl(gateway_id, now.clone())?;
+            <T::Xdns as Xdns<T>>::update_gateway_ttl(gateway_id, now.clone())?;
 
             Ok(().into())
         }
@@ -415,11 +416,11 @@ pub mod pallet {
                 Some(new_owner) => {
                     PalletOwnerMap::<T, I>::insert(gateway_id, &new_owner);
                     log::info!("Setting pallet Owner to: {:?}", new_owner);
-                }
+                },
                 None => {
                     PalletOwnerMap::<T, I>::remove(gateway_id);
                     log::info!("Removed Owner of pallet.");
-                }
+                },
             }
 
             Ok(().into())
@@ -736,9 +737,7 @@ pub mod pallet {
             Ok(RawOrigin::Signed(ref signer))
                 if <PalletOwnerMap<T, I>>::contains_key(gateway_id)
                     && Some(signer) == <PalletOwnerMap<T, I>>::get(gateway_id).as_ref() =>
-            {
-                Ok(())
-            }
+                Ok(()),
             _ => Err(BadOrigin),
         }
     }
@@ -862,13 +861,12 @@ mod tests {
         JustificationGeneratorParams, ALICE, BOB,
     };
     use codec::Encode;
-    use frame_support::weights::PostDispatchInfo;
-    use frame_support::{assert_err, assert_noop, assert_ok};
+    use frame_support::{assert_err, assert_noop, assert_ok, weights::PostDispatchInfo};
     use sp_runtime::{Digest, DigestItem, DispatchError};
 
-    use t3rn_primitives::bridges::test_utils as bp_test_utils;
-    use t3rn_primitives::GatewaySysProps;
-    use t3rn_primitives::{GatewayType, GatewayVendor};
+    use t3rn_primitives::{
+        bridges::test_utils as bp_test_utils, GatewaySysProps, GatewayType, GatewayVendor,
+    };
 
     fn teardown_substrate_bridge() {
         let default_gateway: ChainId = *b"gate";

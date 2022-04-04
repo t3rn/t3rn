@@ -82,7 +82,7 @@ pub trait Volatile {
     ) -> Result<(StateKey, StateVal), &'static str> {
         let key_candidate = Self::key_2_state_key(key);
         if self.get_state().contains_key(&key_candidate) {
-            return Err("Key already exists in the Volatile State");
+            return Err("Key already exists in the Volatile State")
         }
         let value_candidate = Self::value_2_state_value(val)?;
 

@@ -61,30 +61,30 @@ parameter_types! {
 }
 
 impl frame_system::Config for Test {
+    type AccountData = pallet_balances::AccountData<Balance>;
+    type AccountId = AccountId;
     type BaseCallFilter = Everything;
-    type DbWeight = ();
-    type Origin = Origin;
-    type Index = u64;
+    type BlockHashCount = BlockHashCount;
+    type BlockLength = ();
     type BlockNumber = BlockNumber;
+    type BlockWeights = ();
     type Call = Call;
+    type DbWeight = ();
+    type Event = Event;
     type Hash = H256;
     type Hashing = BlakeTwo256;
-    type AccountId = AccountId;
-    type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
-    type BlockHashCount = BlockHashCount;
-    type Version = ();
-    type PalletInfo = PalletInfo;
-    type AccountData = pallet_balances::AccountData<Balance>;
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type SystemWeightInfo = ();
-    type BlockWeights = ();
-    type BlockLength = ();
-    type SS58Prefix = ();
-    type OnSetCode = ();
+    type Index = u64;
+    type Lookup = IdentityLookup<Self::AccountId>;
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    type OnKilledAccount = ();
+    type OnNewAccount = ();
+    type OnSetCode = ();
+    type Origin = Origin;
+    type PalletInfo = PalletInfo;
+    type SS58Prefix = ();
+    type SystemWeightInfo = ();
+    type Version = ();
 }
 
 parameter_types! {
@@ -93,15 +93,15 @@ parameter_types! {
 }
 
 impl pallet_balances::Config for Test {
-    type MaxLocks = ();
+    type AccountStore = System;
     type Balance = Balance;
     type DustRemoval = ();
     type Event = Event;
     type ExistentialDeposit = ExistentialDeposit;
-    type AccountStore = System;
-    type WeightInfo = ();
+    type MaxLocks = ();
     type MaxReserves = MaxReserves;
     type ReserveIdentifier = [u8; 8];
+    type WeightInfo = ();
 }
 
 parameter_types! {
@@ -110,9 +110,9 @@ parameter_types! {
 }
 
 impl pallet_timestamp::Config for Test {
+    type MinimumPeriod = MinimumPeriod;
     type Moment = u64;
     type OnTimestampSet = ();
-    type MinimumPeriod = MinimumPeriod;
     type WeightInfo = ();
 }
 
@@ -122,8 +122,8 @@ impl EscrowTrait for Test {
 }
 
 impl pallet_sudo::Config for Test {
-    type Event = Event;
     type Call = Call;
+    type Event = Event;
 }
 
 impl pallet_contracts_registry::Config for Test {

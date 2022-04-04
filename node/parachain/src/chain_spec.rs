@@ -21,8 +21,10 @@ use t3rn_primitives::bridges::runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID};
 use t3rn_primitives::{GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor};
 
 use log::info;
-use std::convert::TryFrom;
-use std::io::{Error, ErrorKind};
+use std::{
+    convert::TryFrom,
+    io::{Error, ErrorKind},
+};
 
 /// Helper function that fetches metadata from live networks and generates an XdnsRecord
 fn fetch_xdns_record_from_rpc(
