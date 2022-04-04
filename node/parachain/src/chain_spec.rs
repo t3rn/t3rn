@@ -1,8 +1,8 @@
 use circuit_parachain_runtime::{
-    AccountId, AuraId, ContractsRegistryConfig, MultiFinalityVerifierEthereumLikeConfig,
-    MultiFinalityVerifierGenericLikeConfig, MultiFinalityVerifierPolkadotLikeConfig,
-    MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, XDNSConfig,
-    EXISTENTIAL_DEPOSIT,
+    AccountId, AuraId, ContractsRegistryConfig, MultiFinalityVerifierDefaultConfig,
+    MultiFinalityVerifierEthereumLikeConfig, MultiFinalityVerifierGenericLikeConfig,
+    MultiFinalityVerifierPolkadotLikeConfig, MultiFinalityVerifierSubstrateLikeConfig, Signature,
+    SudoConfig, XDNSConfig, EXISTENTIAL_DEPOSIT,
 };
 use cumulus_primitives_core::ParaId;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
@@ -490,6 +490,10 @@ fn testnet_genesis(
             init_data: None,
         },
         multi_finality_verifier_polkadot_like: MultiFinalityVerifierPolkadotLikeConfig {
+            owner: None,
+            init_data: None,
+        },
+        multi_finality_verifier_default: MultiFinalityVerifierDefaultConfig {
             owner: None,
             init_data: None,
         },

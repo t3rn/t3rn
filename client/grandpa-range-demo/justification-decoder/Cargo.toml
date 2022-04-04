@@ -1,0 +1,19 @@
+[package]
+name = "justification-decoder"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "2.2.0", default-features = true, features = ["derive"] }
+finality-grandpa = { version = "0.14.0", default-features = true }
+frame-support = { default-features = true, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17' }
+scale-info = { version = "1.0", default-features = true, features = ["derive"] }
+sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', default-features = true }
+sp-std = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17', default-features = true }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', default-features = true }
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17', default-features = true }
+serde = { version = "1.0.105", features = ["derive"] }
+serde_json = "1.0.50"
+hex = "0.4.3"

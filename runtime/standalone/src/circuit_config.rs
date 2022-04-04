@@ -140,7 +140,7 @@ impl pallet_mfv::Config<Keccak256ValU32BridgeInstance> for Runtime {
 }
 
 impl pallet_mfv::Config<DefaultPolkadotBridgeInstance> for Runtime {
-    type BridgedChain = Keccak256ValU32Chain;
+    type BridgedChain = Blake2ValU32Chain;
     type MaxRequests = MaxRequests;
     type HeadersToKeep = HeadersToKeep;
     type WeightInfo = ();

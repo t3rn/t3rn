@@ -1,8 +1,9 @@
 use circuit_standalone_runtime::{
     AccountId, AuraConfig, BalancesConfig, ContractsRegistryConfig, GenesisConfig, GrandpaConfig,
-    MultiFinalityVerifierEthereumLikeConfig, MultiFinalityVerifierGenericLikeConfig,
-    MultiFinalityVerifierPolkadotLikeConfig, MultiFinalityVerifierSubstrateLikeConfig, Signature,
-    SudoConfig, SystemConfig, XDNSConfig, WASM_BINARY,
+    MultiFinalityVerifierDefaultConfig, MultiFinalityVerifierEthereumLikeConfig,
+    MultiFinalityVerifierGenericLikeConfig, MultiFinalityVerifierPolkadotLikeConfig,
+    MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, SystemConfig, XDNSConfig,
+    WASM_BINARY,
 };
 
 use jsonrpc_runtime_client::ConnectionParams;
@@ -99,7 +100,7 @@ fn fetch_xdns_record_from_rpc(
                 genesis_hash: client.genesis_hash.0.to_vec(),
             },
             gateway_sys_props,
-            vec![],
+            vec![*b"tran"],
         ))
     })
 }
@@ -125,7 +126,8 @@ fn seed_xdns_registry() -> Result<Vec<XdnsRecord<AccountId>>, Error> {
         fetch_xdns_record_from_rpc(&kusama_connection_params, KUSAMA_CHAIN_ID).unwrap();
     info!("Fetched Kusama metadata successfully!");
 
-    Ok(vec![polkadot_xdns, kusama_xdns])
+    // Ok(vec![polkadot_xdns, kusama_xdns])
+    Ok(vec![])
 }
 
 fn standard_side_effects() -> Vec<SideEffectInterface> {
@@ -426,6 +428,10 @@ fn testnet_genesis(
             init_data: None,
         },
         multi_finality_verifier_polkadot_like: MultiFinalityVerifierPolkadotLikeConfig {
+            owner: None,
+            init_data: None,
+        },
+        multi_finality_verifier_default: MultiFinalityVerifierDefaultConfig {
             owner: None,
             init_data: None,
         },

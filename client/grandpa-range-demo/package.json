@@ -2,17 +2,20 @@
   "name": "@t3rn/demo_grandpa_ranges",
   "version": "0.1.0",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "ts-node src/index.ts"
+    "prestart": "cargo build --release --manifest-path ./justification-decoder/Cargo.toml",
+    "start": "DEBUG=listener,relayer ts-node src/index.ts",
+    "standalone": "SKIP_WASM_BUILD=1 cargo run --manifest-path ../../node/standalone/Cargo.toml -- --dev --ws-port 3333 -lmulti-finality-verifier=debug,circuit-portal=debug",
+    "fmt": "npx prettier --no-semi --arrow-parens avoid --print-width 80 --write ./src/**.ts"
   },
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "@polkadot/keyring": "*",
-    "@polkadot/api": "=6.6.1",
-    "@t3rn/types": "^0.1.1",
-    "dotenv": "^16.0.0",
-    "ts-node": "^10.4.0",
-    "typescript": "^4.4.4"
+    "@polkadot/api": "=7.14.3",
+    "@t3rn/types": "=0.1.1",
+    "@types/debug": "=4.1.7",
+    "debug": "=4.3.3",
+    "dotenv": "=16.0.0",
+    "ts-node": "=10.7.0",
+    "typescript": "=4.6.2"
   }
 }
