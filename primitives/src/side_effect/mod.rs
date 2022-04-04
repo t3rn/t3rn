@@ -5,8 +5,6 @@ use crate::{
     volatile::{LocalState, Volatile},
 };
 use codec::{Decode, Encode};
-use frame_support::traits::fungible::{Inspect, Mutate};
-use orml_traits::MultiCurrency;
 use parser::VendorSideEffectsParser;
 use scale_info::TypeInfo;
 use sp_runtime::{traits::Zero, RuntimeDebug};
@@ -59,12 +57,7 @@ pub trait SideEffectConfirmationProtocol: SideEffectProtocol {
     //  3. Check each argument of decoded "encoded_remote_events" against the values from STATE
     //  4. Return error that will potentially be a subject for a punishment of the executioner - up to the misbehaviour manager
     // confirm.rs: SideEffectEventsConfirmation("Event::escrow_instantiated(from,to,u64,u32,u32)"), // from here on the trust falls back on the target escrow to emit the claim / refund txs
-    fn confirm<
-        T: frame_system::Config,
-        Balances: Inspect<T::AccountId> + Mutate<T::AccountId>,
-        Tokens: MultiCurrency<T::AccountId>,
-        VendorParser: VendorSideEffectsParser,
-    >(
+    fn confirm<T: frame_system::Config, VendorParser: VendorSideEffectsParser>(
         &self,
         encoded_remote_events: Vec<Bytes>,
         local_state: &mut LocalState,
@@ -76,7 +69,7 @@ pub trait SideEffectConfirmationProtocol: SideEffectProtocol {
 
         for (i, encoded_event) in encoded_remote_events.iter().enumerate() {
             let expected_event_signature = &Self::get_confirming_events(self)[i];
-            let decoded_events = VendorParser::parse_event::<T, Balances, Tokens>(
+            let decoded_events = VendorParser::parse_event::<T>(
                 &Self::get_id(self),
                 encoded_event.clone(),
                 &expected_event_signature.to_vec(),
