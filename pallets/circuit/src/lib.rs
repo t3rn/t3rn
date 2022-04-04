@@ -31,7 +31,7 @@ use frame_system::pallet_prelude::OriginFor;
 use sp_runtime::RuntimeDebug;
 
 pub use t3rn_primitives::{
-    abi::{GatewayABIConfig, HasherAlgo as HA},
+    abi::{GatewayABIConfig, HasherAlgo as HA, Type},
     side_effect::{ConfirmedSideEffect, FullSideEffect, SideEffect, SideEffectId},
     // transfers::BalanceOf,
     volatile::LocalState,
@@ -75,7 +75,6 @@ pub mod weights;
 
 pub mod state;
 
-pub use t3rn_protocol::side_effects::protocol::SideEffectConfirmationProtocol;
 
 /// Defines application identifier for crypto keys of this module.
 /// Every module that deals with signatures needs to declare its unique identifier for
@@ -980,6 +979,7 @@ impl<T: Config> Pallet<T> {
                 EthereumSideEffectsParser<<T as pallet_circuit_portal::Config>::EthVerifier>,
             >(
                 gateway_vendor,
+                Type::Uint(64),
                 &Box::new(side_effect_interface.unwrap()),
                 confirmation.encoded_effect.clone(),
                 state_copy,
