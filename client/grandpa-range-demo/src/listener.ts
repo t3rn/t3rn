@@ -1,7 +1,6 @@
 import { EventEmitter } from 'events'
-import { exec as _exec } from 'child_process'
 import { ApiPromise, WsProvider } from '@polkadot/api'
-import { JustificationNotification, Header } from '@polkadot/types/interfaces'
+import { Header } from '@polkadot/types/interfaces'
 import { grandpaDecode } from './util'
 import createDebug from 'debug'
 import 'dotenv/config'
