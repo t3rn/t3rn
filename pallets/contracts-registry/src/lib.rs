@@ -30,6 +30,7 @@ use t3rn_primitives::transfers::BalanceOf;
 
 // Re-export pallet items so that they can be accessed from the crate namespace.
 pub use pallet::*;
+use t3rn_primitives::contracts_registry::RegistryContractId;
 
 #[cfg(test)]
 mod mock;
@@ -215,9 +216,15 @@ impl<T: Config> Pallet<T> {
 
         Ok(())
     }
+}
+
+impl<T: Config>
+    t3rn_primitives::contracts_registry::ContractsRegistry<T::Hash, T::AccountId, T::BlockNumber, T>
+    for Pallet<T>
+{
+    type Error = Error<T>;
 
     /// Internal function that queries the RegistryContract storage for a contract by its ID
-    #[allow(dead_code)]
     fn fetch_contract_by_id(
         contract_id: RegistryContractId<T>,
     ) -> Result<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>, Error<T>>
@@ -230,7 +237,7 @@ impl<T: Config> Pallet<T> {
     }
 
     //#[pallet::weight(<T as Config>::WeightInfo::fetch_contracts())]
-    pub fn fetch_contracts(
+    fn fetch_contracts(
         author: Option<T::AccountId>,
         metadata: Option<Vec<u8>>,
     ) -> Result<Vec<RegistryContract<T::Hash, T::AccountId, BalanceOf<T>, T::BlockNumber>>, Error<T>>

@@ -26,6 +26,7 @@ sp-io = { default-features = false, git = "https://github.com/paritytech/substra
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', optional = true }
 scale-info = { version = "1.0", default-features = false, features = ["derive"] }
 log = { version = "0.4.14", default-features = false }
+
 t3rn-primitives = { default-features = false, path = "../../primitives" }
 
 [dev-dependencies]
