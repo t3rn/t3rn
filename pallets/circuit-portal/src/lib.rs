@@ -204,7 +204,7 @@ pub mod pallet {
             let gtwy = String::from_utf8_lossy(gateway_id.as_ref()).into_owned();
             let res = match (gateway_abi.hasher, gateway_abi.block_number_type_size) {
                 (HasherAlgo::Blake2, 32) => {
-                    log::debug!(target: LOG_TARGET, "{} DefaultPolkadotLikeGateway", gtwy);
+                    log::debug!(target: LOG_TARGET, "{:?} DefaultPolkadotLikeGateway", gtwy);
                     init_bridge_instance::<T, DefaultPolkadotLikeGateway>(
                         origin,
                         first_header,
@@ -214,7 +214,7 @@ pub mod pallet {
                     )?
                 }
                 (HasherAlgo::Blake2, 64) => {
-                    log::debug!(target: LOG_TARGET, "{} PolkadotLikeValU64Gateway", gtwy);
+                    log::debug!(target: LOG_TARGET, "{:?} PolkadotLikeValU64Gateway", gtwy);
                     init_bridge_instance::<T, PolkadotLikeValU64Gateway>(
                         origin,
                         first_header,
@@ -224,7 +224,7 @@ pub mod pallet {
                     )?
                 }
                 (HasherAlgo::Keccak256, 32) => {
-                    log::debug!(target: LOG_TARGET, "{} EthLikeKeccak256ValU32Gateway", gtwy);
+                    log::debug!(target: LOG_TARGET, "{:?} EthLikeKeccak256ValU32Gateway", gtwy);
                     init_bridge_instance::<T, EthLikeKeccak256ValU32Gateway>(
                         origin,
                         first_header,
@@ -234,7 +234,7 @@ pub mod pallet {
                     )?
                 }
                 (HasherAlgo::Keccak256, 64) => {
-                    log::debug!(target: LOG_TARGET, "{} EthLikeKeccak256ValU64Gateway", gtwy);
+                    log::debug!(target: LOG_TARGET, "{:?} EthLikeKeccak256ValU64Gateway", gtwy);
                     init_bridge_instance::<T, EthLikeKeccak256ValU64Gateway>(
                         origin,
                         first_header,
@@ -244,7 +244,7 @@ pub mod pallet {
                     )?
                 }
                 (_, _) => {
-                    log::debug!(target: LOG_TARGET, "{} DefaultPolkadotLikeGateway", gtwy);
+                    log::debug!(target: LOG_TARGET, "{:?} DefaultPolkadotLikeGateway", gtwy);
                     init_bridge_instance::<T, DefaultPolkadotLikeGateway>(
                         origin,
                         first_header,
