@@ -22,4 +22,4 @@ sp-std     = { default-features = false, git = "https://github.com/paritytech/su
 
 [features]
 default = [ "std" ]
-std     = [ "sp-api/std", "sp-core/std", "codec/std", "sp-std/std", "sp-runtime/std", "serde" ]
+std     = [ "sp-api/std", "sp-core/std", "codec/std", "sp-std/std", "sp-runtime/std", "serde/std" ]

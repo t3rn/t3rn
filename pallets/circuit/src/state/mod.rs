@@ -52,10 +52,10 @@ pub enum InsuranceEnact {
 impl CircuitStatus {
     fn determine_insurance_status<T: Config>(
         side_effect_id: SideEffectId<T>,
-        insurance_deposits: &Vec<(
+        insurance_deposits: &[(
             SideEffectId<T>,
             InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        )>,
+        )],
     ) -> CircuitStatus {
         return if let Some((_id, insurance_request)) = insurance_deposits
             .iter()
@@ -90,11 +90,11 @@ impl CircuitStatus {
     /// Based solely on full steps + insurance deposits determine the execution status.
     /// Start with checking the criteria from the earliest status to latest
     pub fn determine_step_status<T: Config>(
-        step: &Vec<FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
-        insurance_deposits: &Vec<(
+        step: &[FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>],
+        insurance_deposits: &[(
             SideEffectId<T>,
             InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        )>,
+        )],
     ) -> Result<CircuitStatus, Error<T>> {
         // Those are determined post - ready
         let mut highest_post_ready_determined_status = CircuitStatus::Ready;
@@ -118,7 +118,7 @@ impl CircuitStatus {
                 return Ok(current_determined_status)
             }
             // Checking further only if CircuitStatus::Ready after this point
-            if let Some(_) = full_side_effect.confirmed {
+            if full_side_effect.confirmed.is_some() {
                 highest_post_ready_determined_status = CircuitStatus::Finished
             } else {
                 lowest_post_ready_determined_status = CircuitStatus::PendingExecution
@@ -141,13 +141,13 @@ impl CircuitStatus {
     }
 
     pub fn determine_xtx_status<T: Config>(
-        steps: &Vec<
-            Vec<FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
-        >,
-        insurance_deposits: &Vec<(
+        steps: &[Vec<
+            FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+        >],
+        insurance_deposits: &[(
             SideEffectId<T>,
             InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        )>,
+        )],
     ) -> Result<CircuitStatus, Error<T>> {
         let mut lowest_determined_status = CircuitStatus::Requested;
 

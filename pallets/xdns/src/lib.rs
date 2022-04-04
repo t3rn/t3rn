@@ -4,7 +4,8 @@
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
-
+#![allow(clippy::type_complexity)]
+#![allow(clippy::too_many_arguments)]
 pub use crate::types::{EventSignature, SideEffectId, SideEffectName};
 use codec::Encode;
 use sp_runtime::traits::Hash;

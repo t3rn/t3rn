@@ -19,7 +19,7 @@ jsonrpc-pubsub      = "15.1.0"
 sc-client-api       = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.8" }
 sc-rpc              = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.8" }
 sc-rpc-api          = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.8" }
-serde               = { version = "1.0.123", features = [ "derive" ] }
+serde               = { version = "1.0", features = [ "derive" ] }
 sp-api              = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.8" }
 
 hash-db             = { version = "0.15.2", default-features = false }

@@ -21,7 +21,8 @@
 //!
 //! Circuit MVP
 #![cfg_attr(not(feature = "std"), no_std)]
-
+#![allow(clippy::type_complexity)]
+#![allow(clippy::too_many_arguments)]
 use codec::{Decode, Encode};
 use frame_support::dispatch::DispatchResultWithPostInfo;
 

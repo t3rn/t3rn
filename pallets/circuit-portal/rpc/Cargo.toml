@@ -19,7 +19,7 @@ jsonrpc-core-client = "15.0.0"
 jsonrpc-derive      = "15.0.0"
 serde_json          = "1.0.59"
 
-serde = { version = "1.0.136", features = [ "derive" ] }
+serde = { version = "1.0", features = [ "derive" ] }
 
 pallet-circuit-portal-rpc-runtime-api = { path = "runtime-api" }
 sp-api                                = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }

@@ -27,7 +27,7 @@ pub type EscrowedCurrencyOf<T, E> = <E as EscrowTrait<T>>::Currency;
 pub type BalanceOf<T> =
     <<T as EscrowTrait<T>>::Currency as Currency<<T as system::Config>::AccountId>>::Balance;
 
-pub fn just_transfer<'a, T: frame_system::Config, E: EscrowTrait<T>>(
+pub fn just_transfer<T: frame_system::Config, E: EscrowTrait<T>>(
     transactor: &T::AccountId,
     dest: &T::AccountId,
     value: EscrowedBalanceOf<T, E>,
@@ -37,7 +37,7 @@ pub fn just_transfer<'a, T: frame_system::Config, E: EscrowTrait<T>>(
 
 pub fn commit_deferred_transfers<T: frame_system::Config, E: EscrowTrait<T>>(
     escrow_account: T::AccountId,
-    transfers: &mut Vec<TransferEntry>,
+    transfers: &mut [TransferEntry],
 ) -> DispatchResult {
     // Give the money back to the requester from the transfers that succeeded.s
     for transfer in transfers.iter() {
@@ -51,7 +51,7 @@ pub fn commit_deferred_transfers<T: frame_system::Config, E: EscrowTrait<T>>(
     Ok(())
 }
 
-pub fn escrow_transfer<'a, T: frame_system::Config, E: EscrowTrait<T>>(
+pub fn escrow_transfer<T: frame_system::Config, E: EscrowTrait<T>>(
     escrow_account: &T::AccountId,
     requester: &T::AccountId,
     target_to: &T::AccountId,

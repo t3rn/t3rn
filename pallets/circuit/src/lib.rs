@@ -21,7 +21,8 @@
 //!
 //! Circuit MVP
 #![cfg_attr(not(feature = "std"), no_std)]
-
+#![allow(clippy::type_complexity)]
+#![allow(clippy::too_many_arguments)]
 use codec::{Decode, Encode};
 
 use frame_system::{
@@ -237,7 +238,7 @@ pub mod pallet {
     }
 
     impl<T: Config> OnLocalTrigger<T> for Pallet<T> {
-        fn on_local_trigger(origin: &OriginFor<T>, trigger: LocalTrigger<T>) -> DispatchResult {
+        fn on_local_trigger(_origin: &OriginFor<T>, _trigger: LocalTrigger<T>) -> DispatchResult {
             // ToDo: pallet-circuit x-t3rn# : Authorize : Check TriggerAuthRights for local triggers
 
             // ToDo: pallet-circuit x-t3rn# : Validate : insurance for reversible side effects if necessary
@@ -367,13 +368,7 @@ pub mod pallet {
             }?;
 
             // Emit: From Circuit events
-            Self::emit(
-                local_xtx_ctx.xtx_id,
-                maybe_xtx_changed,
-                &relayer,
-                &vec![],
-                None,
-            );
+            Self::emit(local_xtx_ctx.xtx_id, maybe_xtx_changed, &relayer, &[], None);
 
             Ok(().into())
         }
@@ -428,7 +423,7 @@ pub mod pallet {
                 local_xtx_ctx.xtx_id,
                 maybe_xtx_changed,
                 &relayer,
-                &vec![],
+                &[],
                 assert_full_side_effects_changed,
             );
 
@@ -792,9 +787,11 @@ impl<T: Config> Pallet<T> {
             XExecSignal<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
         >,
         subjected_account: &T::AccountId,
-        side_effects: &Vec<
-            SideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        >,
+        side_effects: &[SideEffect<
+            T::AccountId,
+            T::BlockNumber,
+            EscrowedBalanceOf<T, T::Escrowed>,
+        >],
         maybe_full_side_effects: Option<
             Vec<
                 Vec<
@@ -919,9 +916,11 @@ impl<T: Config> Pallet<T> {
     }
 
     fn validate(
-        side_effects: &Vec<
-            SideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        >,
+        side_effects: &[SideEffect<
+            T::AccountId,
+            T::BlockNumber,
+            EscrowedBalanceOf<T, T::Escrowed>,
+        >],
         local_ctx: &mut LocalXtxCtx<T>,
         requester: &T::AccountId,
         sequential: bool,
@@ -1083,15 +1082,13 @@ impl<T: Config> Pallet<T> {
                 <T as frame_system::Config>::BlockNumber,
                 EscrowedBalanceOf<T, T::Escrowed>,
             >,
-            full_side_effects: &mut Vec<
-                Vec<
-                    FullSideEffect<
-                        <T as frame_system::Config>::AccountId,
-                        <T as frame_system::Config>::BlockNumber,
-                        EscrowedBalanceOf<T, T::Escrowed>,
-                    >,
+            full_side_effects: &mut [Vec<
+                FullSideEffect<
+                    <T as frame_system::Config>::AccountId,
+                    <T as frame_system::Config>::BlockNumber,
+                    EscrowedBalanceOf<T, T::Escrowed>,
                 >,
-            >,
+            >],
         ) -> Result<bool, &'static str> {
             // ToDo: Extract as a separate function and migrate tests from Xtx
             let input_side_effect_id = side_effect.generate_id::<SystemHashing<T>>();

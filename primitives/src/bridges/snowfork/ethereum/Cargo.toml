@@ -9,7 +9,7 @@ codec           = { package = "parity-scale-codec", version = "2.2.0", default-f
 ethbloom        = { version = "0.11.1", default-features = false }
 ethereum-types  = { version = "0.12.1", default-features = false, features = [ "codec", "rlp", "serialize" ] }
 scale-info      = { version = "1.0", default-features = false, features = [ "derive" ] }
-serde           = { version = "1.0.136", optional = true }
+serde           = { version = "1.0", optional = true }
 serde-big-array = { version = "0.3.2", optional = true, features = [ "const-generics" ] }
 #ethereum-types = { path = "../../../../../vendor/parity-common/ethereum-types", default-features = false, features = ["codec", "rlp", "serialize"] }
 getrandom    = { version = "0.2.1", features = [ "js" ] }
@@ -40,7 +40,7 @@ wasm-bindgen-test    = "0.3.19"
 default = [ "std" ]
 expensive_tests = [  ]
 std = [
-  "serde",
+  "serde/std",
   "serde-big-array",
   "codec/std",
   "scale-info/std",

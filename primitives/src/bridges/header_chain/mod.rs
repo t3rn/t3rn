@@ -47,7 +47,7 @@ pub struct AuthoritySet {
 
 impl MaxEncodedLen for AuthoritySet {
     fn max_encoded_len() -> usize {
-        4096 as usize
+        4096
     }
 }
 impl AuthoritySet {

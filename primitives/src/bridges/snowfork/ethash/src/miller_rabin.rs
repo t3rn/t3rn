@@ -86,13 +86,13 @@ fn mod_exp(mut x: u64, mut d: u64, n: u64) -> u64 {
 }
 
 pub fn is_prime(n: u64) -> bool {
-    const HINT: &'static [u64] = &[2];
+    const HINT: &[u64] = &[2];
 
     // we have a strict upper bound, so we can just use the witness
     // table of Pomerance, Selfridge & Wagstaff and Jeaschke to be as
     // efficient as possible, without having to fall back to
     // randomness.
-    const WITNESSES: &'static [(u64, &'static [u64])] = &[
+    const WITNESSES: &[(u64, &[u64])] = &[
         (2_046, HINT),
         (1_373_652, &[2, 3]),
         (9_080_190, &[31, 73]),

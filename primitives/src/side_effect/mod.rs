@@ -78,7 +78,7 @@ pub trait SideEffectConfirmationProtocol: SideEffectProtocol {
             let decoded_events = VendorParser::parse_event::<T>(
                 &Self::get_id(self),
                 encoded_event.clone(),
-                &expected_event_signature.to_vec(),
+                expected_event_signature,
                 value_abi_unsigned_type.clone(),
             )?;
             // 2.  Use STATE_MAPPER to map each variable name from CONFIRMING_EVENTS into expected value stored in STATE_MAPPER during the "validate_args"

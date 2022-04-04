@@ -52,7 +52,7 @@ runtime-benchmarks = [
   "sp-io/disable_oom",
 ]
 std = [
-  "serde",
+  "serde/std",
   "codec/std",
   "sp-core/std",
   "sp-runtime/std",

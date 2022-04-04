@@ -17,7 +17,8 @@
 //! A crate that hosts a common definitions that are relevant for the pallet-contracts.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-
+#![allow(clippy::type_complexity)]
+#![allow(clippy::too_many_arguments)]
 use codec::{Decode, Encode};
 use frame_support::traits::{ReservableCurrency, Time};
 use scale_info::TypeInfo;
@@ -113,7 +114,7 @@ pub struct GatewayPointer {
     pub gateway_type: GatewayType,
 }
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo, Default)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct GatewayGenesisConfig {
     /// SCALE-encoded modules following the format of selected frame_metadata::RuntimeMetadataVXX
@@ -123,16 +124,6 @@ pub struct GatewayGenesisConfig {
     /// Genesis hash - block id of the genesis block use to distinct the network and sign messages
     /// Length depending on parameter passed in abi::GatewayABIConfig
     pub genesis_hash: Vec<u8>,
-}
-
-impl Default for GatewayGenesisConfig {
-    fn default() -> Self {
-        Self {
-            extrinsics_version: 0,
-            genesis_hash: vec![],
-            modules_encoded: None,
-        }
-    }
 }
 
 /// Represents assorted gateway system properties.

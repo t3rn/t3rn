@@ -21,7 +21,8 @@
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
-
+#![allow(clippy::type_complexity)]
+#![allow(clippy::too_many_arguments)]
 use codec::Encode;
 use frame_support::dispatch::DispatchResult;
 use frame_system::ensure_signed;

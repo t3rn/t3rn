@@ -40,7 +40,7 @@ transaction-payment = { package = "pallet-transaction-payment", git = "https://g
 default = [ "std" ]
 
 std = [
-  "serde",
+  "serde/std",
   'codec/std',
   "sp-core/std",
   "sp-runtime/std",

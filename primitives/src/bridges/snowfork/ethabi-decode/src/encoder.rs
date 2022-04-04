@@ -77,7 +77,7 @@ impl Mediate {
 	fn head(&self, suffix_offset: u32) -> Vec<Word> {
 		match *self {
 			Mediate::Raw(ref raw) => raw.clone(),
-			Mediate::RawTuple(ref raw) => raw.iter().map(|mediate| mediate.head(0)).flatten().collect(),
+			Mediate::RawTuple(ref raw) => raw.iter().flat_map(|mediate| mediate.head(0)).collect(),
 			Mediate::Prefixed(_)
 			| Mediate::PrefixedArray(_)
 			| Mediate::PrefixedArrayWithLength(_)
@@ -104,7 +104,7 @@ impl Mediate {
 	}
 }
 
-fn encode_head_tail(mediates: &Vec<Mediate>) -> Vec<Word> {
+fn encode_head_tail(mediates: &[Mediate]) -> Vec<Word> {
 	let heads_len = mediates.iter().fold(0, |acc, m| acc + m.head_len());
 
 	let (mut result, len) =
@@ -124,9 +124,9 @@ fn encode_head_tail(mediates: &Vec<Mediate>) -> Vec<Word> {
 
 /// Encodes vector of tokens into ABI compliant vector of bytes.
 pub fn encode(tokens: &[Token]) -> Vec<u8> {
-	let mediates = &tokens.iter().map(encode_token).collect();
+	let mediates: Vec<Mediate> = tokens.iter().map(encode_token).collect();
 
-	encode_head_tail(mediates).iter().flat_map(|word| word.to_vec()).collect()
+	encode_head_tail(&mediates).iter().flat_map(|word| word.to_vec()).collect()
 }
 
 pub fn encode_function(signature: &str, inputs: &[Token]) -> Vec<u8> {

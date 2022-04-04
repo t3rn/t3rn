@@ -31,7 +31,7 @@ pub trait HasXDNSAccess {
 }
 
 pub fn validate_next_arg(
-    input: &Vec<u8>,
+    input: &[u8],
     abi_type: Type,
     start_pos: usize,
     end_pos: usize,
@@ -42,7 +42,7 @@ pub fn validate_next_arg(
 }
 
 pub fn validate_next_args(
-    input: &Vec<u8>,
+    input: &[u8],
     args_abi: Vec<(Type, u16)>,
 ) -> Result<Vec<Vec<u8>>, &'static str> {
     let mut start_pos: usize = SIDE_EFFECT_HEADER_SIZE;
@@ -75,7 +75,7 @@ pub fn read_raw_side_effect_header(input: Vec<u8>) -> Result<RawSideEffectHeader
         "Side Effect Raw Header can't be shorter than 12 bytes",
     )?;
 
-    fn cut_out_4_bytes(input: &Vec<u8>, start_pos: usize) -> [u8; 4] {
+    fn cut_out_4_bytes(input: &[u8], start_pos: usize) -> [u8; 4] {
         let mut tmp_4b: [u8; 4] = [0, 0, 0, 0];
         tmp_4b.copy_from_slice(&input[start_pos..start_pos + 4]);
         tmp_4b
