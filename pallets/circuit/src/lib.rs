@@ -810,8 +810,7 @@ impl<T: Config> Pallet<T> {
                     if *gateway_id == T::SelfGatewayId::get() {
                         return true
                     }
-                    let gateway_type =
-                        pallet_xdns::Pallet::<T>::get_gateway_type_unsafe(gateway_id);
+                    let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(gateway_id);
                     return gateway_type == GatewayType::ProgrammableInternal(0)
                 }
 
