@@ -159,7 +159,6 @@ impl Config for Test {
     type EthVerifier = EthereumMockVerifier;
     type Event = Event;
     type PalletId = ExecPalletId;
-    type ToStandardizedGatewayBalance = CircuitToGateway;
     type WeightInfo = ();
     type Xdns = XDNS;
 }

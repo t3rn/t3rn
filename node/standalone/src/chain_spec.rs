@@ -1,5 +1,5 @@
 use circuit_standalone_runtime::{
-    AccountId, AuraConfig, BalancesConfig, ContractsRegistryConfig, GenesisConfig, GrandpaConfig,
+    AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig,
     MultiFinalityVerifierDefaultConfig, MultiFinalityVerifierEthereumLikeConfig,
     MultiFinalityVerifierGenericLikeConfig, MultiFinalityVerifierPolkadotLikeConfig,
     MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, SystemConfig, XDNSConfig,

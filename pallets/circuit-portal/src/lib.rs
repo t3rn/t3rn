@@ -50,8 +50,6 @@ pub use t3rn_primitives::{
 };
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 
-pub type Bytes = Vec<u8>;
-
 pub use pallet::*;
 use t3rn_primitives::{circuit_portal::CircuitPortal, xdns::Xdns};
 

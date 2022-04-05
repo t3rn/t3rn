@@ -30,6 +30,7 @@ use sp_io::TestExternalities;
 use codec::Encode;
 use sp_runtime::AccountId32;
 use sp_std::prelude::*;
+use t3rn_primitives::volatile::LocalState;
 // use crate::mock;
 
 pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);

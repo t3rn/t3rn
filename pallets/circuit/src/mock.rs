@@ -329,7 +329,6 @@ impl pallet_circuit_portal::Config for Test {
     type EthVerifier = EthereumMockVerifier;
     type Event = Event;
     type PalletId = ExecPalletId;
-    type ToStandardizedGatewayBalance = ();
     type WeightInfo = ();
     type Xdns = XDNS;
 }

@@ -9,9 +9,9 @@ type StateKey = [u8; 32];
 // Keep Values as Vector although check if no longer than 64 bytes
 type StateVal = Vec<u8>;
 
-type Bytes = Vec<u8>;
 pub type State = BTreeMap<StateKey, StateVal>;
 
+use crate::Bytes;
 use sp_io::hashing::twox_256;
 
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]

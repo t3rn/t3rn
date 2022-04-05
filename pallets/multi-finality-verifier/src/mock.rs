@@ -104,7 +104,7 @@ impl pallet_sudo::Config for TestRuntime {
     type Event = Event;
 }
 
-impl EscrowTrait for TestRuntime {
+impl EscrowTrait<TestRuntime> for TestRuntime {
     type Currency = Balances;
     type Time = Timestamp;
 }
@@ -134,23 +134,29 @@ impl pallet_balances::Config for TestRuntime {
 }
 
 impl pallet_xdns::Config for TestRuntime {
+    type Balances = Balances;
+    type Escrowed = TestRuntime;
     type Event = Event;
     type WeightInfo = ();
 }
 
 impl multi_finality_verifier::Config for TestRuntime {
     type BridgedChain = TestCircuitLikeChain;
+    type Escrowed = TestRuntime;
     type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
+    type Xdns = XDNS;
 }
 
 pub type PolkadotLikeFinalityVerifierInstance = multi_finality_verifier::Instance1;
 impl multi_finality_verifier::Config<PolkadotLikeFinalityVerifierInstance> for TestRuntime {
     type BridgedChain = PolkadotLike;
+    type Escrowed = TestRuntime;
     type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
+    type Xdns = XDNS;
 }
 
 #[derive(Debug)]

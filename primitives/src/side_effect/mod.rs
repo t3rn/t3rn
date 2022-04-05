@@ -2,6 +2,7 @@ use crate::{
     abi::extract_property_names_from_signature_as_bytes,
     protocol::SideEffectProtocol,
     volatile::{LocalState, Volatile},
+    Bytes,
 };
 use codec::{Decode, Encode};
 use parser::VendorSideEffectsParser;
@@ -18,7 +19,6 @@ use std::fmt::Debug;
 pub mod interface;
 pub mod parser;
 
-type Bytes = Vec<u8>;
 pub type SideEffectId<T> = <T as frame_system::Config>::Hash;
 pub type TargetId = [u8; 4];
 pub type EventSignature = Vec<u8>;

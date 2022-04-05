@@ -56,8 +56,6 @@ use frame_support::traits::{Currency, ExistenceRequirement::AllowDeath, Get};
 
 use sp_runtime::KeyTypeId;
 
-pub type Bytes = sp_core::Bytes;
-
 pub use pallet::*;
 use t3rn_primitives::{circuit_portal::CircuitPortal, transfers::EscrowedBalanceOf, xdns::Xdns};
 
@@ -1060,13 +1058,14 @@ impl<T: Config> Pallet<T> {
                 gateway_vendor,
                 value_abi_unsigned_type,
                 &Box::new(side_effect_interface.unwrap()),
-                confirmation.encoded_effect.clone(),
+                confirmation.encoded_effect.clone().into(),
                 state_copy,
                 Some(
                     side_effect
                         .generate_id::<SystemHashing<T>>()
                         .as_ref()
-                        .to_vec(),
+                        .to_vec()
+                        .into(),
                 ),
             )
         };

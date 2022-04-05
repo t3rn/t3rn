@@ -252,7 +252,9 @@ pub trait EscrowTrait<T: frame_system::Config> {
     type Time: Time;
 }
 
-type Bytes = Vec<u8>;
+// When to use this over `abi::Bytes`, that comes from `sp-core` and has encode etc shimmed already.
+// only issue using that might be that it probably has the length prefixed so leaving this here for now.
+pub type Bytes = Vec<u8>;
 
 /// Outbound Step that specifies expected transmission medium for relayers connecting with that gateway.
 /// Request message format that derivative of could be compatible with JSON-RPC API
