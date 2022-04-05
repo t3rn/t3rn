@@ -14,10 +14,14 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 use jsonrpc_runtime_client::ConnectionParams;
 use sp_core::Encode;
 /// t3rn-pallets chain spec config -- START
-use t3rn_primitives::abi::Type;
-use t3rn_primitives::bridges::runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID};
-
-use t3rn_primitives::{GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor};
+use t3rn_primitives::{
+    abi::Type,
+    bridges::{
+        header_chain::InitializationData,
+        runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID},
+    },
+    GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
+};
 
 use log::info;
 use std::{

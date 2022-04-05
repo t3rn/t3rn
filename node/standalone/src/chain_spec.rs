@@ -10,10 +10,12 @@ use jsonrpc_runtime_client::ConnectionParams;
 use sp_core::Encode;
 use t3rn_primitives::{
     abi::Type,
-    bridges::runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID},
+    bridges::{
+        header_chain::InitializationData,
+        runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID},
+    },
+    GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor, Header,
 };
-
-use t3rn_primitives::{GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor};
 
 use log::info;
 use std::{
@@ -276,8 +278,45 @@ fn standard_side_effects() -> Vec<SideEffectInterface> {
     ]
 }
 
+/// Helper function that fetches standard gateway initialization data.
+fn fetch_gtwy_init_data(
+    gateway_id: t3rn_primitives::ChainId,
+) -> Result<InitializationData<Header>, Error> {
+    async_std::task::block_on(async move {
+        let endpoint = match &gateway_id {
+            b"pdot" => "rpc.polkadot.io",
+            b"ksma" => "kusama-rpc.polkadot.io",
+            _ => return Err(Error::new(ErrorKind::InvalidInput, "unknown gateway id")),
+        };
+
+        let client = jsonrpc_runtime_client::create_rpc_client(&ConnectionParams {
+            host: endpoint.to_string(),
+            port: 443,
+            secure: true,
+        })
+        .await
+        .map_err(|error| Error::new(ErrorKind::NotConnected, error))?;
+
+        let (authority_set, header) = jsonrpc_runtime_client::get_gtwy_init_data(&client.clone())
+            .await
+            .map_err(|error| Error::new(ErrorKind::InvalidData, error))?;
+
+        Ok(InitializationData {
+            header,
+            authority_list: authority_set.authorities,
+            set_id: authority_set.set_id,
+            is_halted: false,
+            gateway_id,
+        })
+    })
+}
+
 pub fn development_config() -> Result<ChainSpec, String> {
     let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
+    let initial_gateways = vec![
+        fetch_gtwy_init_data(*b"ksma").map_err(|error| error.to_string())?,
+        fetch_gtwy_init_data(*b"pdot").map_err(|error| error.to_string())?,
+    ];
 
     Ok(ChainSpec::from_genesis(
         // Name
@@ -301,6 +340,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
                 ],
                 seed_xdns_registry().unwrap_or_default(),
                 standard_side_effects(),
+                initial_gateways,
                 true,
             )
         },
@@ -320,6 +360,10 @@ pub fn development_config() -> Result<ChainSpec, String> {
 
 pub fn local_testnet_config() -> Result<ChainSpec, String> {
     let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
+    let initial_gateways = vec![
+        fetch_gtwy_init_data(*b"ksma").map_err(|error| error.to_string())?,
+        fetch_gtwy_init_data(*b"pdot").map_err(|error| error.to_string())?,
+    ];
 
     Ok(ChainSpec::from_genesis(
         // Name
@@ -354,6 +398,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
                 ],
                 seed_xdns_registry().unwrap_or_default(),
                 standard_side_effects(),
+                initial_gateways,
                 true,
             )
         },
@@ -379,6 +424,7 @@ fn testnet_genesis(
     endowed_accounts: Vec<AccountId>,
     xdns_records: Vec<XdnsRecord<AccountId>>,
     standard_side_effects: Vec<SideEffectInterface>,
+    initial_gateways: Vec<InitializationData<Header>>,
     _enable_println: bool,
 ) -> GenesisConfig {
     GenesisConfig {
@@ -435,7 +481,7 @@ fn testnet_genesis(
         },
         multi_finality_verifier_default: MultiFinalityVerifierDefaultConfig {
             owner: None,
-            init_data: None,
+            init_data: Some(initial_gateways),
         },
         orml_tokens: Default::default(),
     }

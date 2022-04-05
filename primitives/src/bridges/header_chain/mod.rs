@@ -24,6 +24,7 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_finality_grandpa::{AuthorityList, ConsensusLog, SetId, GRANDPA_ENGINE_ID};
 use sp_runtime::{generic::OpaqueDigestItemId, traits::Header as HeaderT, RuntimeDebug};
+use crate::bridges::runtime::ChainId;
 pub mod justification;
 
 /// A type that can be used as a parameter in a dispatchable function.
@@ -72,6 +73,8 @@ pub struct InitializationData<H: HeaderT> {
     pub set_id: SetId,
     /// Should the pallet block transaction immediately after initialization.
     pub is_halted: bool,
+    /// 4-byte gateway identifier.
+    pub gateway_id: ChainId,
 }
 
 /// base trait for verifying transaction inclusion proofs.
