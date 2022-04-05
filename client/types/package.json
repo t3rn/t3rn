@@ -1,6 +1,6 @@
 {
   "name": "@t3rn/types",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "t3rn protocol's type definitions for use with polkadot.js clients",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
