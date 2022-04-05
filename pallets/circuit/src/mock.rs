@@ -520,7 +520,7 @@ impl ExtBuilder {
                 token_symbol: Encode::encode("ZERO"),
                 token_decimals: 0,
             },
-            vec![*b"tran", *b"swap"],
+            vec![*b"tran", *b"swap", *b"aliq"],
         );
         let gateway_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -548,7 +548,7 @@ impl ExtBuilder {
                 token_symbol: Encode::encode("DOT"),
                 token_decimals: 10,
             },
-            vec![*b"tran", *b"swap"],
+            vec![*b"tran", *b"swap", *b"aliq"],
         );
         let kusama_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -649,7 +649,7 @@ impl ExtBuilder {
                 b"insurance".to_vec(),
             ],
             confirm_events: vec![
-                b"ExecuteToken(executor,to,liquidity_token,amount_liquidity_token)".to_vec(),
+                b"ExecuteToken(_executor,to,liquidity_token,amount_liquidity_token)".to_vec(),
             ],
             escrowed_events: vec![
                 b"ExecuteToken(xtx_id,to,liquidity_token,amount_liquidity_token)".to_vec(),
@@ -773,6 +773,49 @@ impl ExtBuilder {
             revert_events: vec![b"MultiTransfer(executor,caller,asset_from,amount_from)".to_vec()],
         };
         Box::new(swap_side_effect)
+    }
+
+    pub(crate) fn get_add_liquidity_protocol_box() -> Box<SideEffectInterface> {
+        let add_liquidity_protocol = SideEffectInterface {
+            id: *b"aliq",
+            name: b"add_liquidity".to_vec(),
+            argument_abi: vec![
+                Type::DynamicAddress,    // argument_0: caller
+                Type::DynamicAddress,    // argument_1: to
+                Type::DynamicBytes,      // argument_2: asset_left
+                Type::DynamicBytes,      // argument_3: asset_right
+                Type::DynamicBytes,      // argument_4: liquidity_token
+                Type::Value,             // argument_5: amount_left
+                Type::Value,             // argument_6: amount_right
+                Type::Value,             // argument_7: amount_liquidity_token
+                Type::OptionalInsurance, // argument_8: insurance
+            ],
+            argument_to_state_mapper: vec![
+                b"caller".to_vec(),
+                b"to".to_vec(),
+                b"asset_left".to_vec(),
+                b"asset_right".to_vec(),
+                b"liquidity_token".to_vec(),
+                b"amount_left".to_vec(),
+                b"amount_right".to_vec(),
+                b"amount_liquidity_token".to_vec(),
+                b"insurance".to_vec(),
+            ],
+            confirm_events: vec![
+                b"ExecuteToken(executor,to,liquidity_token,amount_liquidity_token)".to_vec(),
+            ],
+            escrowed_events: vec![
+                b"ExecuteToken(xtx_id,to,liquidity_token,amount_liquidity_token)".to_vec(),
+            ],
+            commit_events: vec![
+                b"MultiTransfer(executor,to,liquidity_token,amount_liquidity_token)".to_vec(),
+            ],
+            revert_events: vec![
+                b"MultiTransfer(executor,caller,asset_left,amount_left)".to_vec(),
+                b"MultiTransfer(executor,caller,asset_right,amount_right)".to_vec(),
+            ],
+        };
+        Box::new(add_liquidity_protocol)
     }
 
     pub(crate) fn build(self) -> sp_io::TestExternalities {

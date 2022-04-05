@@ -185,8 +185,8 @@ set_keys() {
 
 onboard() {
   npx --yes @polkadot/api-cli@beta \
-    --ws 'ws://localhost:9944' \
-    --seed '//Alice' \
+    --ws ws://localhost:9944 \
+    --seed //Alice \
     tx.registrar.reserve
   printf \
     "%d {\"genesisHead\":\"%s\",\"validationCode\":\"%s\",\"parachain\":true}" \
@@ -195,14 +195,14 @@ onboard() {
     $(<./specs/t3rn.wasm) \
   > /tmp/t3rn.params
   npx @polkadot/api-cli@beta \
-    --ws 'ws://localhost:9944' \
+    --ws ws://localhost:9944 \
     --sudo \
-    --seed '//Alice' \
+    --seed //Alice \
     --params /tmp/t3rn.params \
     tx.parasSudoWrapper.sudoScheduleParaInitialize
   npx @polkadot/api-cli@beta \
-    --ws 'ws://localhost:9944' \
-    --seed '//Alice' \
+    --ws ws://localhost:9944 \
+    --seed //Alice \
     tx.registrar.reserve
   printf \
     "%d {\"genesisHead\":\"%s\",\"validationCode\":\"%s\",\"parachain\":true}" \
@@ -211,24 +211,24 @@ onboard() {
     $(<./specs/pchain.wasm) \
   > /tmp/pchain.params
   npx @polkadot/api-cli@beta \
-    --ws 'ws://localhost:9944' \
+    --ws ws://localhost:9944 \
     --sudo \
-    --seed '//Alice' \
+    --seed //Alice \
     --params /tmp/pchain.params \
     tx.parasSudoWrapper.sudoScheduleParaInitialize
 }
 
 channel() {
   npx @polkadot/api-cli@beta \
-    --ws 'ws://localhost:9944' \
+    --ws ws://localhost:9944 \
     --sudo \
-    --seed '//Alice' \
+    --seed //Alice \
     tx.parasSudoWrapper.sudoEstablishHrmpChannel \
     3333 3334 8 1024
   npx @polkadot/api-cli@beta \
-    --ws 'ws://localhost:9944' \
+    --ws ws://localhost:9944 \
     --sudo \
-    --seed '//Alice' \
+    --seed //Alice \
     tx.parasSudoWrapper.sudoEstablishHrmpChannel \
     3334 3333 8 1024
 }

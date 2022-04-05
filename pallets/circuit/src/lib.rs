@@ -34,7 +34,7 @@ use frame_system::{
 use sp_runtime::RuntimeDebug;
 
 pub use t3rn_primitives::{
-    abi::{GatewayABIConfig, HasherAlgo as HA},
+    abi::{GatewayABIConfig, HasherAlgo as HA, Type},
     side_effect::{ConfirmedSideEffect, FullSideEffect, SideEffect, SideEffectId},
     volatile::LocalState,
     xtx::{Xtx, XtxId},
