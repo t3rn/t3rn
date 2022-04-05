@@ -305,10 +305,7 @@ fn test_register_gateway_with_u64_substrate_header_and_allowed_side_effects() {
 
         // Assert the stored xdns record
 
-        let result = pallet_xdns::XDNSRegistry::<Test>::get(gateway_id);
-
-        assert!(result.is_some());
-        let xdns_record = result.unwrap();
+        let xdns_record = pallet_xdns::XDNSRegistry::<Test>::get(gateway_id).unwrap();
         let stored_side_effects = xdns_record.allowed_side_effects;
 
         assert_eq!(stored_side_effects.len(), 1);
@@ -324,6 +321,7 @@ fn test_register_gateway_with_u64_substrate_header_and_allowed_side_effects() {
             allowed_side_effects,
         )));
         // XdnsRecordStored and NewGatewayRegistered
-        assert_eq!(System::events().len(), 2);
+        let events = System::events();
+        assert_eq!(events.len(), 2);
     });
 }

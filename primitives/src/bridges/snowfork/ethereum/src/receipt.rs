@@ -22,20 +22,18 @@ impl Receipt {
 
         let post_state_or_status: Vec<u8> = match iter.next() {
             Some(data) => data.as_val()?,
-            None => {
+            None =>
                 return Err(rlp::DecoderError::Custom(
                     "Expected receipt post state or status",
-                ))
-            }
+                )),
         };
 
         let cumulative_gas_used: u64 = match iter.next() {
             Some(data) => data.as_val()?,
-            None => {
+            None =>
                 return Err(rlp::DecoderError::Custom(
                     "Expected receipt cumulative gas used",
-                ))
-            }
+                )),
         };
 
         let bloom: Bloom = match iter.next() {
@@ -67,10 +65,10 @@ impl rlp::Decodable for Receipt {
                 1 | 2 => {
                     let receipt_rlp = &rlp::Rlp::new(&data[1..]);
                     if !receipt_rlp.is_list() {
-                        return Err(rlp::DecoderError::RlpExpectedToBeList);
+                        return Err(rlp::DecoderError::RlpExpectedToBeList)
                     }
                     Self::decode_list(&rlp::Rlp::new(&data[1..]))
-                }
+                },
                 _ => Err(rlp::DecoderError::Custom("Unsupported receipt type")),
             }
         } else if rlp.is_list() {

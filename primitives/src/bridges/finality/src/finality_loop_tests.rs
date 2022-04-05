@@ -18,12 +18,14 @@
 
 #![cfg(test)]
 
-use crate::finality_loop::{
-    prune_recent_finality_proofs, read_finality_proofs_from_stream, run,
-    select_better_recent_finality_proof, FinalityProofs, FinalitySyncParams, SourceClient,
-    TargetClient,
+use crate::{
+    finality_loop::{
+        prune_recent_finality_proofs, read_finality_proofs_from_stream, run,
+        select_better_recent_finality_proof, FinalityProofs, FinalitySyncParams, SourceClient,
+        TargetClient,
+    },
+    FinalityProof, FinalitySyncPipeline, SourceHeader,
 };
-use crate::{FinalityProof, FinalitySyncPipeline, SourceHeader};
 
 use async_trait::async_trait;
 use futures::{FutureExt, Stream, StreamExt};
@@ -51,13 +53,13 @@ impl MaybeConnectionError for TestError {
 struct TestFinalitySyncPipeline;
 
 impl FinalitySyncPipeline for TestFinalitySyncPipeline {
+    type FinalityProof = TestFinalityProof;
+    type Hash = u64;
+    type Header = TestSourceHeader;
+    type Number = TestNumber;
+
     const SOURCE_NAME: &'static str = "TestSource";
     const TARGET_NAME: &'static str = "TestTarget";
-
-    type Hash = u64;
-    type Number = TestNumber;
-    type Header = TestSourceHeader;
-    type FinalityProof = TestFinalityProof;
 }
 
 #[derive(Debug, Clone, PartialEq)]

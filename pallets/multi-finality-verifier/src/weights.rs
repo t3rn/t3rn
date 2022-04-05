@@ -74,21 +74,25 @@ impl<T: frame_system::Config> WeightInfo for GatewayWeight<T> {
             .saturating_add(T::DbWeight::get().reads(5 as Weight))
             .saturating_add(T::DbWeight::get().writes(3 as Weight))
     }
+
     fn submit_finality_proof_on_single_fork(v: u32) -> Weight {
         (189_597_000 as Weight)
             .saturating_add((11_680_000 as Weight).saturating_mul(v as Weight))
             .saturating_add(T::DbWeight::get().reads(5 as Weight))
             .saturating_add(T::DbWeight::get().writes(3 as Weight))
     }
+
     fn submit_finality_proof_on_many_forks(p: u32) -> Weight {
         (0 as Weight)
             .saturating_add((130_061_000 as Weight).saturating_mul(p as Weight))
             .saturating_add(T::DbWeight::get().reads(5 as Weight))
             .saturating_add(T::DbWeight::get().writes(3 as Weight))
     }
+
     fn find_scheduled_change(n: u32) -> Weight {
         (502_000 as Weight).saturating_add((8_000 as Weight).saturating_mul(n as Weight))
     }
+
     fn read_write_authority_sets(n: u32) -> Weight {
         (7_677_000 as Weight)
             .saturating_add((230_000 as Weight).saturating_mul(n as Weight))
@@ -106,21 +110,25 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(5 as Weight))
             .saturating_add(RocksDbWeight::get().writes(3 as Weight))
     }
+
     fn submit_finality_proof_on_single_fork(v: u32) -> Weight {
         (189_597_000 as Weight)
             .saturating_add((11_680_000 as Weight).saturating_mul(v as Weight))
             .saturating_add(RocksDbWeight::get().reads(5 as Weight))
             .saturating_add(RocksDbWeight::get().writes(3 as Weight))
     }
+
     fn submit_finality_proof_on_many_forks(p: u32) -> Weight {
         (0 as Weight)
             .saturating_add((130_061_000 as Weight).saturating_mul(p as Weight))
             .saturating_add(RocksDbWeight::get().reads(5 as Weight))
             .saturating_add(RocksDbWeight::get().writes(3 as Weight))
     }
+
     fn find_scheduled_change(n: u32) -> Weight {
         (502_000 as Weight).saturating_add((8_000 as Weight).saturating_mul(n as Weight))
     }
+
     fn read_write_authority_sets(n: u32) -> Weight {
         (7_677_000 as Weight)
             .saturating_add((230_000 as Weight).saturating_mul(n as Weight))

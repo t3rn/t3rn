@@ -14,8 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity Bridges Common.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::metrics::{Metrics, MetricsAddress, MetricsParams, PrometheusError, StandaloneMetrics};
-use crate::{FailedClient, MaybeConnectionError};
+use crate::{
+    metrics::{Metrics, MetricsAddress, MetricsParams, PrometheusError, StandaloneMetrics},
+    FailedClient, MaybeConnectionError,
+};
 
 use async_trait::async_trait;
 use std::{fmt::Debug, future::Future, net::SocketAddr, time::Duration};
@@ -135,15 +137,14 @@ impl<SC, TC, LM> Loop<SC, TC, LM> {
 
                 match result {
                     Ok(()) => break,
-                    Err(failed_client) => {
+                    Err(failed_client) =>
                         reconnect_failed_client(
                             failed_client,
                             self.reconnect_delay,
                             &mut self.source_client,
                             &mut self.target_client,
                         )
-                        .await
-                    }
+                        .await,
                 }
 
                 log::debug!(target: "bridge", "Restarting relay loop");
@@ -255,8 +256,8 @@ pub async fn reconnect_failed_client(
                         reconnect_delay.as_secs(),
                         error,
                     );
-                    continue;
-                }
+                    continue
+                },
             }
         }
         if failed_client == FailedClient::Both || failed_client == FailedClient::Target {
@@ -269,12 +270,12 @@ pub async fn reconnect_failed_client(
                         reconnect_delay.as_secs(),
                         error,
                     );
-                    continue;
-                }
+                    continue
+                },
             }
         }
 
-        break;
+        break
     }
 }
 
@@ -285,7 +286,7 @@ fn create_metrics_registry(prefix: Option<String>) -> Registry {
             assert!(!prefix.is_empty(), "Metrics prefix can not be empty");
             Registry::new_custom(Some(prefix), None)
                 .expect("only fails if prefix is empty; prefix is not empty; qed")
-        }
+        },
         None => Registry::new(),
     }
 }

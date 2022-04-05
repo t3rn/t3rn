@@ -19,11 +19,11 @@ impl ChainBase for PolkadotLike {
 }
 
 impl Chain for PolkadotLike {
-    const NAME: &'static str = "Polkadot";
-    const AVERAGE_BLOCK_INTERVAL: Duration = Duration::from_secs(6);
-
     type AccountId = bp_polkadot_core::AccountId;
+    type Call = ();
     type Index = bp_polkadot_core::Nonce;
     type SignedBlock = bp_polkadot_core::SignedBlock;
-    type Call = ();
+
+    const AVERAGE_BLOCK_INTERVAL: Duration = Duration::from_secs(6);
+    const NAME: &'static str = "Polkadot";
 }

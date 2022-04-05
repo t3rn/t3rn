@@ -22,7 +22,6 @@
 pub use crate::finality_loop::{
     metrics_prefix, run, FinalitySyncParams, SourceClient, TargetClient,
 };
-#[macro_use]
 extern crate stacktrace;
 
 use std::fmt::Debug;

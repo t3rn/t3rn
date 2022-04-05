@@ -1,69 +1,69 @@
 [package]
-authors = ['Maciej Baj <https://github.com/MaciejBaj>']
+authors     = [ 'Maciej Baj <https://github.com/MaciejBaj>' ]
 description = 'Gateway for multi-phase contracts execution secured by escrow accounts'
-edition = '2018'
-homepage = 'https://github.com/t3rn/t3rn'
-license = 'Apache 2.0'
-name = 'pallet-runtime-gateway'
-repository = 'https://github.com/t3rn/t3rn.git'
-version = '0.5.0'
+edition     = '2018'
+homepage    = 'https://github.com/t3rn/t3rn'
+license     = 'Apache 2.0'
+name        = 'pallet-runtime-gateway'
+repository  = 'https://github.com/t3rn/t3rn.git'
+version     = '0.5.0'
 
 [package.metadata.docs.rs]
-targets = ['x86_64-unknown-linux-gnu']
+targets = [ 'x86_64-unknown-linux-gnu' ]
 
 [dependencies]
-bitflags = "1.2.0"
-reduce = "0.1.4"
-anyhow = "*"
-codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
-frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-frame-system = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-pallet-sudo = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-pallet-transaction-payment = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+anyhow                            = "*"
+bitflags                          = "1.2.0"
+codec                             = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = [ "derive" ] }
+frame-support                     = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+frame-system                      = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+pallet-balances                   = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 pallet-randomness-collective-flip = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+pallet-sudo                       = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+pallet-timestamp                  = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+pallet-transaction-payment        = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+reduce                            = "0.1.4"
 
-versatile-wasm = { default-features = false, path = "../../../vm/versatile-wasm" }
 t3rn-primitives = { default-features = false, path = "../../../primitives" }
+versatile-wasm  = { default-features = false, path = "../../../vm/versatile-wasm" }
 
-sp-std = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-sp-core = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+sp-core           = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+sp-runtime        = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
+sp-std            = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 sp-wasm-interface = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
-sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 
 sp-io = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 
 pallet-runtime-gateway-rpc-runtime-api = { default-features = false, path = "./runtime-api" }
 
-pallet-bridge-messages = {default-features = false, path = "../../../vendor/bridges/modules/messages" }
-bp-messages = {default-features = false, path = "../../../vendor/bridges/primitives/messages" }
-bp-runtime = {default-features = false, path = "../../../vendor/bridges/primitives/runtime" }
+bp-messages            = { default-features = false, path = "../../../vendor/bridges/primitives/messages" }
+bp-runtime             = { default-features = false, path = "../../../vendor/bridges/primitives/runtime" }
+pallet-bridge-messages = { default-features = false, path = "../../../vendor/bridges/modules/messages" }
 
 [dev-dependencies]
-wat = { version = "1.0", default-features = false }
-flipper = {version = '3.0.0', path = "fixtures/flipper", default-features = false}
-weights = {version = '3.0.0', path = "fixtures/weights", default-features = false}
+flipper = { version = '3.0.0', path = "fixtures/flipper", default-features = false }
+wat     = { version = "1.0", default-features = false }
+weights = { version = '3.0.0', path = "fixtures/weights", default-features = false }
 
 [features]
-default = ['std']
+default = [ 'std' ]
 std = [
-    'codec/std',
-    'frame-support/std',
-    'frame-system/std',
-    'pallet-balances/std',
-    'pallet-sudo/std',
-    'pallet-timestamp/std',
-    'pallet-transaction-payment/std',
-    'pallet-randomness-collective-flip/std',
-    'pallet-runtime-gateway-rpc-runtime-api/std',
-    'pallet-bridge-messages/std',
-    'bp-messages/std',
-    'bp-runtime/std',
-    'versatile-wasm/std',
-    't3rn-primitives/std',
-    'sp-std/std',
-    'sp-core/std',
-    'sp-wasm-interface/std',
-    'sp-runtime/std',
+  'codec/std',
+  'frame-support/std',
+  'frame-system/std',
+  'pallet-balances/std',
+  'pallet-sudo/std',
+  'pallet-timestamp/std',
+  'pallet-transaction-payment/std',
+  'pallet-randomness-collective-flip/std',
+  'pallet-runtime-gateway-rpc-runtime-api/std',
+  'pallet-bridge-messages/std',
+  'bp-messages/std',
+  'bp-runtime/std',
+  'versatile-wasm/std',
+  't3rn-primitives/std',
+  'sp-std/std',
+  'sp-core/std',
+  'sp-wasm-interface/std',
+  'sp-runtime/std',
 ]
