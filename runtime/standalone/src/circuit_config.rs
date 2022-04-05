@@ -62,9 +62,9 @@ impl pallet_circuit::Config for Runtime {
     type Event = Event;
     type MultiCurrency = ORMLTokens;
     type PalletId = CircuitPalletId;
+    type SelfGatewayId = SelfGatewayId;
     type WeightInfo = ();
     type Xdns = XDNS;
-    type SelfGatewayId = SelfGatewayId;
 }
 
 parameter_types! {

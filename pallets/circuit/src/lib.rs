@@ -590,8 +590,8 @@ pub mod pallet {
         ),
         EscrowTransfer(
             // ToDo: Inspect if Xtx needs to be here and how to process from protocol
-            T::AccountId, // from
-            T::AccountId, // to
+            T::AccountId,                                  // from
+            T::AccountId,                                  // to
             EscrowedBalanceOf<T, <T as Config>::Escrowed>, // value
         ),
     }
@@ -815,7 +815,11 @@ impl<T: Config> Pallet<T> {
                     return gateway_type == GatewayType::ProgrammableInternal(0)
                 }
 
-                let steps_side_effects_ids: Vec<(usize, SideEffectId<T>, XExecStepSideEffectId<T>)> = local_ctx
+                let steps_side_effects_ids: Vec<(
+                    usize,
+                    SideEffectId<T>,
+                    XExecStepSideEffectId<T>,
+                )> = local_ctx
                     .full_side_effects
                     .clone()
                     .iter()
@@ -826,7 +830,17 @@ impl<T: Config> Pallet<T> {
                             .filter(|side_effect| is_local::<T>(&side_effect.target))
                             .map(|side_effect| side_effect.generate_id::<SystemHashing<T>>())
                             .map(|side_effect_hash| {
-                                (cnt, side_effect_hash, XExecSignal::<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, <T as Config>::Escrowed>>::generate_step_id::<T>(side_effect_hash, cnt))
+                                (
+                                    cnt,
+                                    side_effect_hash,
+                                    XExecSignal::<
+                                        T::AccountId,
+                                        T::BlockNumber,
+                                        EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+                                    >::generate_step_id::<T>(
+                                        side_effect_hash, cnt
+                                    ),
+                                )
                             })
                             .collect::<Vec<(usize, SideEffectId<T>, XExecStepSideEffectId<T>)>>()
                     })
@@ -933,7 +947,13 @@ impl<T: Config> Pallet<T> {
                             .clone()
                             .iter()
                             .filter(|&fse| fse.confirmed.is_none())
-                            .collect::<Vec<&FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, <T as Config>::Escrowed>>>>()
+                            .collect::<Vec<
+                                &FullSideEffect<
+                                    T::AccountId,
+                                    T::BlockNumber,
+                                    EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+                                >,
+                            >>()
                             .is_empty()
                     {
                         local_ctx.xtx.steps_cnt =

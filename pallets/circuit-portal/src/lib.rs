@@ -224,7 +224,7 @@ pub mod pallet {
                         authority_set_id,
                         gateway_id,
                     )?
-                }
+                },
                 (HasherAlgo::Blake2, 64) => {
                     log::debug!(target: LOG_TARGET, "{:?} PolkadotLikeValU64Gateway", gtwy);
                     init_bridge_instance::<T, PolkadotLikeValU64Gateway>(
@@ -234,7 +234,7 @@ pub mod pallet {
                         authority_set_id,
                         gateway_id,
                     )?
-                }
+                },
                 (HasherAlgo::Keccak256, 32) => {
                     log::debug!(
                         target: LOG_TARGET,
@@ -248,7 +248,7 @@ pub mod pallet {
                         authority_set_id,
                         gateway_id,
                     )?
-                }
+                },
                 (HasherAlgo::Keccak256, 64) => {
                     log::debug!(
                         target: LOG_TARGET,
@@ -262,7 +262,7 @@ pub mod pallet {
                         authority_set_id,
                         gateway_id,
                     )?
-                }
+                },
                 (_, _) => {
                     log::debug!(target: LOG_TARGET, "{:?} DefaultPolkadotLikeGateway", gtwy);
                     init_bridge_instance::<T, DefaultPolkadotLikeGateway>(
@@ -272,7 +272,7 @@ pub mod pallet {
                         authority_set_id,
                         gateway_id,
                     )?
-                }
+                },
             };
 
             Self::deposit_event(Event::NewGatewayRegistered(
