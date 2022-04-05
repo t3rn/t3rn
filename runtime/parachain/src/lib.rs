@@ -169,14 +169,17 @@ impl_opaque_keys! {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("template-parachain"),
-    impl_name: create_runtime_str!("template-parachain"),
+    spec_name: create_runtime_str!("circuit-parachain"),
+    impl_name: create_runtime_str!("circuit-parachain"),
     authoring_version: 1,
     spec_version: 1,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
-    state_version: 1,
+    // https://github.com/paritytech/cumulus/issues/998
+    // https://github.com/paritytech/substrate/pull/9732
+    // https://github.com/paritytech/substrate/pull/10073
+    state_version: 1, // 0 = old, 1 = new; see above 4 details
 };
 
 /// This determines the average expected block time that we are targeting.
