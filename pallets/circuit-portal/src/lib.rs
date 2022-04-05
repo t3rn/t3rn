@@ -75,8 +75,6 @@ pub use xbridges::{
     PolkadotLikeValU64Gateway,
 };
 
-pub use t3rn_protocol::side_effects::protocol::SideEffectConfirmationProtocol;
-
 pub type AllowedSideEffect = [u8; 4];
 
 /// Defines application identifier for crypto keys of this module.
