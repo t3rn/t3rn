@@ -33,11 +33,7 @@ export default class Listener extends EventEmitter {
         await this.handleGrandpaSet()
 
         await this.handleHeader(header)
-        Listener.debug(
-          `this.headers.length - this.offset ${
-            this.headers.length - this.offset
-          } busy ${this.busy}`
-        )
+
         if (!this.busy && this.headers.length - this.offset >= this.rangeSize) {
           await this.concludeRange()
         }
@@ -97,8 +93,10 @@ export default class Listener extends EventEmitter {
             Listener.debug(
               'anchor',
               anchor.number.toNumber(),
-              'reversedRange',
-              reversedRange.map(h => h.number.toNumber())
+              'reversed range',
+              reversedRange.map(h => h.number.toNumber()),
+              'range size',
+              reversedRange.length
             )
 
             this.emit(
