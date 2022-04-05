@@ -207,10 +207,12 @@ declare module "@polkadot/api-base/types/submittable" {
         [MultiAddress, bool]
       >;
       /**
-       * Same as the `transfer` call, but with a check that the transfer will
-       * not kill the origin account.
+       * Same as the [`transfer`][`transfer`] call, but with a check that the
+       * transfer will not kill the origin account.
        *
-       * 99% of the time you want `transfer` instead.
+       * 99% of the time you want [`transfer`][`transfer`] instead.
+       *
+       * [`transfer`]: struct.Pallet.html#method.transfer
        */
       transferKeepAlive: AugmentedSubmittable<
         (

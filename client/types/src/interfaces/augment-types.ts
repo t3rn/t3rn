@@ -983,6 +983,7 @@ import type {
   DispatchClass,
   DispatchError,
   DispatchErrorModule,
+  DispatchErrorModuleU8a,
   DispatchErrorTo198,
   DispatchInfo,
   DispatchInfoTo190,
@@ -1380,6 +1381,7 @@ declare module "@polkadot/types/types/registry" {
     DispatchClass: DispatchClass;
     DispatchError: DispatchError;
     DispatchErrorModule: DispatchErrorModule;
+    DispatchErrorModuleU8a: DispatchErrorModuleU8a;
     DispatchErrorTo198: DispatchErrorTo198;
     DispatchFeePayment: DispatchFeePayment;
     DispatchInfo: DispatchInfo;
