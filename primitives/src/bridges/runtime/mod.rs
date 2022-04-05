@@ -16,8 +16,6 @@
 
 //! Primitives that may be used at (bridges) runtime level.
 
-#![cfg_attr(not(feature = "std"), no_std)]
-
 use codec::Encode;
 use sp_core::hash::H256;
 use sp_io::hashing::blake2_256;
@@ -109,12 +107,10 @@ where
     AccountId: Encode,
 {
     match id {
-        SourceAccount::Root => {
-            (ROOT_ACCOUNT_DERIVATION_PREFIX, bridge_id).using_encoded(blake2_256)
-        }
-        SourceAccount::Account(id) => {
-            (ACCOUNT_DERIVATION_PREFIX, bridge_id, id).using_encoded(blake2_256)
-        }
+        SourceAccount::Root =>
+            (ROOT_ACCOUNT_DERIVATION_PREFIX, bridge_id).using_encoded(blake2_256),
+        SourceAccount::Account(id) =>
+            (ACCOUNT_DERIVATION_PREFIX, bridge_id, id).using_encoded(blake2_256),
     }
     .into()
 }

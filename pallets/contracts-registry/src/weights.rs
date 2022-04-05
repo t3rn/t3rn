@@ -50,11 +50,13 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
             .saturating_add(T::DbWeight::get().reads(1_u64))
             .saturating_add(T::DbWeight::get().writes(1_u64))
     }
+
     fn purge() -> Weight {
         37_000_000_u64
             .saturating_add(T::DbWeight::get().reads(1_u64))
             .saturating_add(T::DbWeight::get().writes(1_u64))
     }
+
     fn fetch_contracts() -> Weight {
         53_000_000_u64.saturating_add(T::DbWeight::get().reads(4_u64))
     }
@@ -67,11 +69,13 @@ impl WeightInfo for () {
             .saturating_add(RocksDbWeight::get().reads(1_u64))
             .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
+
     fn purge() -> Weight {
         37_000_000_u64
             .saturating_add(RocksDbWeight::get().reads(1_u64))
             .saturating_add(RocksDbWeight::get().writes(1_u64))
     }
+
     fn fetch_contracts() -> Weight {
         53_000_000_u64.saturating_add(RocksDbWeight::get().reads(4_u64))
     }

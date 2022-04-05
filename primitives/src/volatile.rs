@@ -1,5 +1,3 @@
-#![cfg_attr(not(feature = "std"), no_std)]
-
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
@@ -11,9 +9,9 @@ type StateKey = [u8; 32];
 // Keep Values as Vector although check if no longer than 64 bytes
 type StateVal = Vec<u8>;
 
-type Bytes = Vec<u8>;
 pub type State = BTreeMap<StateKey, StateVal>;
 
+use crate::Bytes;
 use sp_io::hashing::twox_256;
 
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
@@ -82,7 +80,7 @@ pub trait Volatile {
     ) -> Result<(StateKey, StateVal), &'static str> {
         let key_candidate = Self::key_2_state_key(key);
         if self.get_state().contains_key(&key_candidate) {
-            return Err("Key already exists in the Volatile State");
+            return Err("Key already exists in the Volatile State")
         }
         let value_candidate = Self::value_2_state_value(val)?;
 

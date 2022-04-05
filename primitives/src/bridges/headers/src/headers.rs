@@ -301,7 +301,7 @@ impl<P: HeadersSyncPipeline> QueuedHeaders<P> {
                 id,
                 status,
             );
-            return;
+            return
         }
 
         if id.0 < self.prune_border {
@@ -311,7 +311,7 @@ impl<P: HeadersSyncPipeline> QueuedHeaders<P> {
                 P::SOURCE_NAME,
                 id,
             );
-            return;
+            return
         }
 
         let parent_id = header.parent_id();
@@ -322,11 +322,11 @@ impl<P: HeadersSyncPipeline> QueuedHeaders<P> {
             HeaderStatus::Unknown | HeaderStatus::MaybeOrphan => {
                 insert_header(&mut self.maybe_orphan, id, header);
                 HeaderStatus::MaybeOrphan
-            }
+            },
             HeaderStatus::Orphan => {
                 insert_header(&mut self.orphan, id, header);
                 HeaderStatus::Orphan
-            }
+            },
             HeaderStatus::MaybeExtra
             | HeaderStatus::Extra
             | HeaderStatus::Ready
@@ -335,7 +335,7 @@ impl<P: HeadersSyncPipeline> QueuedHeaders<P> {
             | HeaderStatus::Synced => {
                 insert_header(&mut self.maybe_extra, id, header);
                 HeaderStatus::MaybeExtra
-            }
+            },
         };
 
         self.known_headers
@@ -366,7 +366,7 @@ impl<P: HeadersSyncPipeline> QueuedHeaders<P> {
                 HeaderStatus::Orphan,
                 id,
             );
-            return;
+            return
         }
 
         move_header_descendants::<P>(
@@ -429,8 +429,8 @@ impl<P: HeadersSyncPipeline> QueuedHeaders<P> {
                     id,
                 );
 
-                return;
-            }
+                return
+            },
         };
 
         // do not remove from `incomplete_headers` here, because otherwise we'll miss
@@ -590,9 +590,8 @@ impl<P: HeadersSyncPipeline> QueuedHeaders<P> {
     pub fn incomplete_header(&mut self) -> Option<HeaderIdOf<P>> {
         queued_incomplete_header(&mut self.incomplete_headers, |last_fetch_time| {
             let retry = match *last_fetch_time {
-                Some(last_fetch_time) => {
-                    last_fetch_time.elapsed() > RETRY_FETCH_COMPLETION_INTERVAL
-                }
+                Some(last_fetch_time) =>
+                    last_fetch_time.elapsed() > RETRY_FETCH_COMPLETION_INTERVAL,
                 None => true,
             };
 
@@ -613,7 +612,7 @@ impl<P: HeadersSyncPipeline> QueuedHeaders<P> {
     /// Prune and never accept headers before this block.
     pub fn prune(&mut self, prune_border: P::Number) {
         if prune_border <= self.prune_border {
-            return;
+            return
         }
 
         prune_queue(&mut self.maybe_orphan, prune_border);
@@ -665,7 +664,7 @@ impl<P: HeadersSyncPipeline> QueuedHeaders<P> {
                 self.incomplete_headers.contains_key(&parent_id)
                     || self.completion_data.contains_key(&parent_id)
                     || self.status(&parent_id) == HeaderStatus::Incomplete
-            }
+            },
             None => false,
         }
     }
@@ -975,7 +974,7 @@ fn queued_incomplete_header<Id: Clone + Eq + std::hash::Hash, T>(
             .pop_front()
             .expect("we have checked that front() exists; qed");
         map.insert(header_key, header);
-        return map.back().map(|(id, data)| (id.clone(), data));
+        return map.back().map(|(id, data)| (id.clone(), data))
     }
 
     None
@@ -984,10 +983,12 @@ fn queued_incomplete_header<Id: Clone + Eq + std::hash::Hash, T>(
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
-    use crate::sync_loop_tests::{
-        TestHash, TestHeader, TestHeaderId, TestHeadersSyncPipeline, TestNumber,
+    use crate::{
+        sync_loop_tests::{
+            TestHash, TestHeader, TestHeaderId, TestHeadersSyncPipeline, TestNumber,
+        },
+        sync_types::QueuedHeader,
     };
-    use crate::sync_types::QueuedHeader;
 
     pub(crate) fn header(number: TestNumber) -> QueuedHeader<TestHeadersSyncPipeline> {
         QueuedHeader::new(TestHeader {

@@ -32,8 +32,8 @@ use crate as pallet_xdns;
 use frame_support::pallet_prelude::GenesisBuild;
 use t3rn_primitives::{EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor};
 
-use sp_keystore::testing::KeyStore;
-use sp_keystore::{KeystoreExt, SyncCryptoStore};
+use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStore};
+use t3rn_primitives::{side_effect::interface::SideEffectInterface, xdns::XdnsRecord};
 
 type AccountId = u64;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -60,13 +60,13 @@ parameter_types! {
 }
 
 impl pallet_timestamp::Config for Test {
+    type MinimumPeriod = MinimumPeriod;
     type Moment = u64;
     type OnTimestampSet = ();
-    type MinimumPeriod = MinimumPeriod;
     type WeightInfo = ();
 }
 
-impl EscrowTrait for Test {
+impl EscrowTrait<Test> for Test {
     type Currency = Balances;
     type Time = Timestamp;
 }
@@ -77,38 +77,38 @@ parameter_types! {
         frame_system::limits::BlockWeights::simple_max(1024);
 }
 impl frame_system::Config for Test {
-    type BaseCallFilter = Everything;
-    type BlockWeights = ();
-    type BlockLength = ();
-    type DbWeight = ();
-    type Origin = Origin;
-    type Index = u64;
-    type BlockNumber = u64;
-    type Hash = H256;
-    type Call = Call;
-    type Hashing = BlakeTwo256;
-    type AccountId = u64;
-    type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
-    type Event = Event;
-    type BlockHashCount = BlockHashCount;
-    type Version = ();
-    type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<u64>;
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type SystemWeightInfo = ();
-    type SS58Prefix = ();
-    type OnSetCode = ();
+    type AccountId = u64;
+    type BaseCallFilter = Everything;
+    type BlockHashCount = BlockHashCount;
+    type BlockLength = ();
+    type BlockNumber = u64;
+    type BlockWeights = ();
+    type Call = Call;
+    type DbWeight = ();
+    type Event = Event;
+    type Hash = H256;
+    type Hashing = BlakeTwo256;
+    type Header = Header;
+    type Index = u64;
+    type Lookup = IdentityLookup<Self::AccountId>;
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    type OnKilledAccount = ();
+    type OnNewAccount = ();
+    type OnSetCode = ();
+    type Origin = Origin;
+    type PalletInfo = PalletInfo;
+    type SS58Prefix = ();
+    type SystemWeightInfo = ();
+    type Version = ();
 }
 parameter_types! {
     pub const ExistentialDeposit: u64 = 1;
 }
 
 impl pallet_sudo::Config for Test {
-    type Event = Event;
     type Call = Call;
+    type Event = Event;
 }
 
 parameter_types! {
@@ -116,18 +116,20 @@ parameter_types! {
 }
 
 impl pallet_balances::Config for Test {
-    type MaxLocks = ();
+    type AccountStore = System;
     type Balance = u64;
     type DustRemoval = ();
     type Event = Event;
     type ExistentialDeposit = ExistentialDeposit;
-    type AccountStore = System;
-    type WeightInfo = ();
+    type MaxLocks = ();
     type MaxReserves = MaxReserves;
     type ReserveIdentifier = [u8; 8];
+    type WeightInfo = ();
 }
 
 impl Config for Test {
+    type Balances = Balances;
+    type Escrowed = Self;
     type Event = Event;
     type WeightInfo = ();
 }

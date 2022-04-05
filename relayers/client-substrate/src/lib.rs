@@ -29,10 +29,12 @@ pub mod headers_source;
 pub mod metrics;
 pub mod rpc;
 
-pub use crate::chain::{BlockWithJustification, Chain, ChainWithBalances, TransactionSignScheme};
-pub use crate::client::{Client, JustificationsSubscription, OpaqueGrandpaAuthoritiesSet};
-pub use crate::error::{Error, Result};
-pub use crate::sync_header::SyncHeader;
+pub use crate::{
+    chain::{BlockWithJustification, Chain, ChainWithBalances, TransactionSignScheme},
+    client::{Client, JustificationsSubscription, OpaqueGrandpaAuthoritiesSet},
+    error::{Error, Result},
+    sync_header::SyncHeader,
+};
 pub use bp_runtime::{BlockNumberOf, Chain as ChainBase, HashOf, HeaderOf};
 use t3rn_primitives::bridges::runtime as bp_runtime;
 

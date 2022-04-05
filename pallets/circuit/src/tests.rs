@@ -16,22 +16,21 @@
 // limitations under the License.
 
 //! Test utilities
-use frame_support::assert_ok;
-use frame_support::traits::Currency;
+use frame_support::{assert_ok, traits::Currency};
 use frame_system::{EventRecord, Phase};
 
-use t3rn_primitives::abi::*;
-use t3rn_primitives::side_effect::*;
+use t3rn_primitives::{abi::*, side_effect::*};
 
-use crate::mock::*;
-use crate::state::*;
 use t3rn_protocol::side_effects::test_utils::*;
+
+use crate::{mock::*, state::*};
 
 use sp_io::TestExternalities;
 
 use codec::Encode;
 use sp_runtime::AccountId32;
 use sp_std::prelude::*;
+use t3rn_primitives::volatile::LocalState;
 // use crate::mock;
 
 pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);

@@ -37,7 +37,7 @@ where
             parents: 0,
             interior: Junctions::X1(Junction::AccountId32 {
                 network: NetworkId::Any,
-                id: recipient.as_ref().clone(),
+                id: *recipient.as_ref(),
             }),
         };
 

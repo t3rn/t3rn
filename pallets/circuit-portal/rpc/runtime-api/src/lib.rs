@@ -5,6 +5,8 @@
 //! adding Contracts Registry access methods.
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(clippy::type_complexity)]
+#![allow(clippy::too_many_arguments)]
 
 use sp_runtime::codec::Codec;
 use sp_std::vec::Vec;

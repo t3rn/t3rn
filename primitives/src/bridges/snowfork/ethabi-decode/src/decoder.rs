@@ -60,7 +60,7 @@ pub fn decode(types: &[ParamKind], data: &[u8]) -> Result<Vec<Token>, Error> {
 }
 
 fn peek(slices: &[Word], position: usize) -> Result<&Word, Error> {
-	slices.get(position).ok_or_else(|| Error::InvalidData)
+	slices.get(position).ok_or(Error::InvalidData)
 }
 
 fn take_bytes(slices: &[Word], position: usize, len: usize) -> Result<BytesTaken, Error> {
@@ -93,14 +93,14 @@ fn decode_param(param: &ParamKind, slices: &[Word], offset: usize) -> Result<Dec
 		ParamKind::Int(_) => {
 			let slice = peek(slices, offset)?;
 
-			let result = DecodeResult { token: Token::Int(slice.clone().into()), new_offset: offset + 1 };
+			let result = DecodeResult { token: Token::Int((*slice).into()), new_offset: offset + 1 };
 
 			Ok(result)
 		}
 		ParamKind::Uint(_) => {
 			let slice = peek(slices, offset)?;
 
-			let result = DecodeResult { token: Token::Uint(slice.clone().into()), new_offset: offset + 1 };
+			let result = DecodeResult { token: Token::Uint((*slice).into()), new_offset: offset + 1 };
 
 			Ok(result)
 		}
@@ -154,7 +154,7 @@ fn decode_param(param: &ParamKind, slices: &[Word], offset: usize) -> Result<Dec
 			let mut new_offset = 0;
 
 			for _ in 0..len {
-				let res = decode_param(t, &tail, new_offset)?;
+				let res = decode_param(t, tail, new_offset)?;
 				new_offset = res.new_offset;
 				tokens.push(res.token);
 			}
@@ -174,7 +174,7 @@ fn decode_param(param: &ParamKind, slices: &[Word], offset: usize) -> Result<Dec
 			};
 
 			for _ in 0..len {
-				let res = decode_param(t, &tail, new_offset)?;
+				let res = decode_param(t, tail, new_offset)?;
 				new_offset = res.new_offset;
 				tokens.push(res.token);
 			}
@@ -200,7 +200,7 @@ fn decode_param(param: &ParamKind, slices: &[Word], offset: usize) -> Result<Dec
 			let len = t.len();
 			let mut tokens = Vec::with_capacity(len);
 			for i in 0..len {
-				let res = decode_param(&t[i], &tail, new_offset)?;
+				let res = decode_param(&t[i], tail, new_offset)?;
 				new_offset = res.new_offset;
 				tokens.push(res.token);
 			}

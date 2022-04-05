@@ -12,13 +12,13 @@ parameter_type_with_key! {
 }
 
 impl orml_tokens::Config for Runtime {
-    type Event = Event;
-    type Balance = Balance;
     type Amount = Amount;
+    type Balance = Balance;
     type CurrencyId = CurrencyId;
-    type WeightInfo = ();
-    type ExistentialDeposits = ExistentialDeposits;
-    type OnDust = ();
-    type MaxLocks = ();
     type DustRemovalWhitelist = Nothing;
+    type Event = Event;
+    type ExistentialDeposits = ExistentialDeposits;
+    type MaxLocks = ();
+    type OnDust = ();
+    type WeightInfo = ();
 }
