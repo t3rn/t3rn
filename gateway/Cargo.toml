@@ -1,10 +1,6 @@
 [workspace]
-members = [
-    'node',
-    'runtime',
-    'rpc',
-]
-exclude = []
+exclude  = [  ]
+members  = [ 'node', 'runtime', 'rpc' ]
 resolver = '2'
 
 [profile.release]

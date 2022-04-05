@@ -16,9 +16,11 @@
 
 //! Default generic implementation of headers source for basic Substrate client.
 
-use crate::chain::{BlockWithJustification, Chain};
-use crate::client::Client;
-use crate::error::Error;
+use crate::{
+    chain::{BlockWithJustification, Chain},
+    client::Client,
+    error::Error,
+};
 
 use async_trait::async_trait;
 use headers_relay::{

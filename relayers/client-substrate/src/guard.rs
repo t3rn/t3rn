@@ -61,7 +61,7 @@ pub fn abort_on_spec_version_change<C: ChainWithBalances>(
         loop {
             let actual_spec_version = env.runtime_version().await;
             match actual_spec_version {
-                Ok(version) if version.spec_version == expected_spec_version => {}
+                Ok(version) if version.spec_version == expected_spec_version => {},
                 Ok(version) => {
                     log::error!(
                         target: "bridge-guard",
@@ -72,7 +72,7 @@ pub fn abort_on_spec_version_change<C: ChainWithBalances>(
                     );
 
                     env.abort().await;
-                }
+                },
                 Err(error) => log::warn!(
                     target: "bridge-guard",
                     "Failed to read {} runtime version: {:?}. Relay may need to be stopped manually",
@@ -138,7 +138,7 @@ pub fn abort_when_account_balance_decreased<C: ChainWithBalances>(
 
                         env.abort().await;
                     }
-                }
+                },
                 Err(error) => {
                     log::warn!(
                         target: "bridge-guard",
@@ -147,7 +147,7 @@ pub fn abort_when_account_balance_decreased<C: ChainWithBalances>(
                         account_id,
                         error,
                     );
-                }
+                },
             };
 
             env.sleep(conditions_check_delay::<C>()).await;
@@ -200,15 +200,15 @@ mod tests {
     }
 
     impl Chain for TestChain {
-        const NAME: &'static str = "Test";
-        const AVERAGE_BLOCK_INTERVAL: Duration = Duration::from_millis(1);
-
         type AccountId = u32;
+        type Call = ();
         type Index = u32;
         type SignedBlock = sp_runtime::generic::SignedBlock<
             sp_runtime::generic::Block<Self::Header, sp_runtime::OpaqueExtrinsic>,
         >;
-        type Call = ();
+
+        const AVERAGE_BLOCK_INTERVAL: Duration = Duration::from_millis(1);
+        const NAME: &'static str = "Test";
     }
 
     impl ChainWithBalances for TestChain {

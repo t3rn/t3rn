@@ -1,38 +1,37 @@
-use crate::abi::ContractActionDesc;
-use crate::contract_metadata::ContractMetadata;
-use crate::storage::RawAliveContractInfo;
-use crate::transfers::BalanceOf;
-use crate::{ChainId, Compose, EscrowTrait};
-use codec::{Decode, Encode, MaxEncodedLen};
+use crate::{
+    abi::ContractActionDesc, contract_metadata::ContractMetadata, storage::RawAliveContractInfo,
+    transfers::EscrowedBalanceOf, ChainId, Compose, EscrowTrait,
+};
+use codec::{Decode, Encode};
 use scale_info::TypeInfo;
-use sp_runtime::traits::Hash;
-use sp_runtime::RuntimeDebug;
+use sp_runtime::{traits::Hash, RuntimeDebug};
 
 use crate::Vec;
 
 pub type RegistryContractId<T> = <T as frame_system::Config>::Hash;
 
-/// In some instances, to enable the escrow trait to be configured once, we may need to have an escrowable
-/// injected to the pallet. In this case you might have something like:
-///
-///    /// The pallet that handles the contracts registry, used to fetch contracts by their id
-///    type ContractsRegistry: ContractsRegistry<Self, Self::Escrowed>;
-///    /// An escrow provider to the registry
-///    type Escrowed: EscrowTrait;
-pub trait ContractsRegistry<Hash, AccountId, BlockNumber, Escrowed>
+pub trait ContractsRegistry<T: frame_system::Config, Escrowed>
 where
-    Escrowed: EscrowTrait,
+    Escrowed: EscrowTrait<T>,
 {
     type Error;
 
     fn fetch_contract_by_id(
-        contract_id: Hash,
-    ) -> Result<RegistryContract<Hash, AccountId, BalanceOf<Escrowed>, BlockNumber>, Self::Error>;
+        contract_id: T::Hash,
+    ) -> Result<
+        RegistryContract<T::Hash, T::AccountId, EscrowedBalanceOf<T, Escrowed>, T::BlockNumber>,
+        Self::Error,
+    >;
 
     fn fetch_contracts(
-        author: Option<AccountId>,
+        author: Option<T::AccountId>,
         metadata: Option<Vec<u8>>,
-    ) -> Result<Vec<RegistryContract<Hash, AccountId, BalanceOf<Escrowed>, BlockNumber>>, Self::Error>;
+    ) -> Result<
+        Vec<
+            RegistryContract<T::Hash, T::AccountId, EscrowedBalanceOf<T, Escrowed>, T::BlockNumber>,
+        >,
+        Self::Error,
+    >;
 }
 
 /// A preliminary representation of a contract in the onchain registry.
@@ -54,14 +53,6 @@ pub struct RegistryContract<Hash, AccountId, BalanceOf, BlockNumber> {
     pub info: Option<RawAliveContractInfo<Hash, BalanceOf, BlockNumber>>,
     /// Contract metadata to be used in queries
     pub meta: ContractMetadata,
-}
-
-impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode> MaxEncodedLen
-    for RegistryContract<Hash, AccountId, BalanceOf, BlockNumber>
-{
-    fn max_encoded_len() -> usize {
-        4096 as usize
-    }
 }
 
 impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode>

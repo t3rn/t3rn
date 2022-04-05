@@ -144,7 +144,6 @@ const ALL_OUTBOUND_MESSAGES_REJECTED: &str =
 
 impl<Payload, AccountId> TargetHeaderChain<Payload, AccountId> for ForbidOutboundMessages {
     type Error = &'static str;
-
     type MessagesDeliveryProof = ();
 
     fn verify_message(_payload: &Payload) -> Result<(), Self::Error> {

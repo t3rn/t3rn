@@ -42,15 +42,19 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
     fn on_local_trigger() -> Weight {
         6_984_000_u64
     }
+
     fn on_extrinsic_trigger() -> Weight {
         60_000_000_u64
     }
+
     fn confirm_side_effect() -> Weight {
         60_000_000_u64
     }
+
     fn bond_insurance_deposit() -> Weight {
         60_000_000_u64
     }
+
     fn execute_side_effects_via_circuit() -> Weight {
         60_000_000_u64
     }
@@ -61,15 +65,19 @@ impl WeightInfo for () {
     fn on_local_trigger() -> Weight {
         6_984_000_u64
     }
+
     fn on_extrinsic_trigger() -> Weight {
         60_000_000_u64
     }
+
     fn confirm_side_effect() -> Weight {
         60_000_000_u64
     }
+
     fn bond_insurance_deposit() -> Weight {
         60_000_000_u64
     }
+
     fn execute_side_effects_via_circuit() -> Weight {
         60_000_000_u64
     }

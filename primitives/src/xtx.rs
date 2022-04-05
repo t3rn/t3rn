@@ -85,7 +85,7 @@ impl<
         for step in self.full_side_effects.iter() {
             for full_side_effect in step.iter() {
                 if full_side_effect.confirmed.is_none() {
-                    return false;
+                    return false
                 }
             }
         }
@@ -108,7 +108,7 @@ impl<
 
         // Double check there are some side effects for that Xtx - should have been checked at API level tho already
         if self.full_side_effects.is_empty() {
-            return Err("Xtx has no single side effect step to confirm");
+            return Err("Xtx has no single side effect step to confirm")
         }
 
         let mut unconfirmed_step_no: Option<usize> = None;
@@ -116,7 +116,7 @@ impl<
         for (i, step) in self.full_side_effects.iter_mut().enumerate() {
             // Double check there are some side effects for that Xtx - should have been checked at API level tho already
             if step.is_empty() {
-                return Err("Xtx has an empty single step.");
+                return Err("Xtx has an empty single step.")
             }
             for mut full_side_effect in step.iter_mut() {
                 if full_side_effect.confirmed.is_none() {
@@ -135,7 +135,7 @@ impl<
                     } else {
                         Err("Attempt to confirm side effect from the next step, \
                                 but there still is at least one unfinished step")
-                    };
+                    }
                 }
             }
         }

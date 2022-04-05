@@ -50,13 +50,12 @@ fn mod_mul_(a: u64, b: u64, m: u64) -> u64 {
 
 fn mod_mul(a: u64, b: u64, m: u64) -> u64 {
     match a.checked_mul(b) {
-        Some(r) => {
+        Some(r) =>
             if r >= m {
                 r % m
             } else {
                 r
-            }
-        }
+            },
         None => mod_mul_(a, b, m),
     }
 }
@@ -87,13 +86,13 @@ fn mod_exp(mut x: u64, mut d: u64, n: u64) -> u64 {
 }
 
 pub fn is_prime(n: u64) -> bool {
-    const HINT: &'static [u64] = &[2];
+    const HINT: &[u64] = &[2];
 
     // we have a strict upper bound, so we can just use the witness
     // table of Pomerance, Selfridge & Wagstaff and Jeaschke to be as
     // efficient as possible, without having to fall back to
     // randomness.
-    const WITNESSES: &'static [(u64, &'static [u64])] = &[
+    const WITNESSES: &[(u64, &[u64])] = &[
         (2_046, HINT),
         (1_373_652, &[2, 3]),
         (9_080_190, &[31, 73]),
@@ -107,10 +106,10 @@ pub fn is_prime(n: u64) -> bool {
     ];
 
     if n % 2 == 0 {
-        return n == 2;
+        return n == 2
     }
     if n == 1 {
-        return false;
+        return false
     }
 
     let mut d = n - 1;
@@ -129,20 +128,20 @@ pub fn is_prime(n: u64) -> bool {
         let mut power = mod_exp(a, d, n);
         assert!(power < n);
         if power == 1 || power == n - 1 {
-            continue 'next_witness;
+            continue 'next_witness
         }
 
         for _r in 0..s {
             power = mod_sqr(power, n);
             assert!(power < n);
             if power == 1 {
-                return false;
+                return false
             }
             if power == n - 1 {
-                continue 'next_witness;
+                continue 'next_witness
             }
         }
-        return false;
+        return false
     }
 
     true

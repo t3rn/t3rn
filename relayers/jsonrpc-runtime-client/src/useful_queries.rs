@@ -1,7 +1,6 @@
 use crate::polkadot_like_chain::PolkadotLike;
 use codec::{Decode, Encode};
-use frame_metadata::v14::RuntimeMetadataV14;
-use frame_metadata::{RuntimeMetadata, RuntimeMetadataPrefixed};
+use frame_metadata::{v14::RuntimeMetadataV14, RuntimeMetadata, RuntimeMetadataPrefixed};
 use jsonrpsee_types::{traits::Client, v2::params::JsonRpcParams};
 use num_traits::Zero;
 use relay_substrate_client::Client as SubstrateClient;

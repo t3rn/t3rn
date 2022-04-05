@@ -265,7 +265,7 @@ async fn run_until_connection_lost<P: FinalitySyncPipeline>(
                 last_transaction = updated_last_transaction;
                 retry_backoff.reset();
                 sync_params.tick
-            }
+            },
             Err(error) => {
                 log::error!(target: "bridge", "Finality sync loop iteration has failed with error: {:?}", error);
 
@@ -273,7 +273,7 @@ async fn run_until_connection_lost<P: FinalitySyncPipeline>(
                 retry_backoff
                     .next_backoff()
                     .unwrap_or(relay_utils::relay_loop::RECONNECT_DELAY)
-            }
+            },
         };
         if finality_proofs_stream.needs_restart {
             log::warn!(target: "bridge", "{} finality proofs stream is being restarted", P::SOURCE_NAME);
@@ -334,9 +334,9 @@ where
                 P::TARGET_NAME,
             );
 
-            return Err(Error::Stalled);
+            return Err(Error::Stalled)
         } else {
-            return Ok(Some(last_transaction));
+            return Ok(Some(last_transaction))
         }
     }
 
@@ -371,7 +371,7 @@ where
                 .await
                 .map_err(Error::Target)?;
             Ok(Some(new_transaction))
-        }
+        },
         None => Ok(None),
     }
 }
@@ -408,12 +408,10 @@ where
     )
     .await?;
     let (mut unjustified_headers, mut selected_finality_proof) = match selected_finality_proof {
-        SelectedFinalityProof::Mandatory(header, finality_proof) => {
-            return Ok(Some((header, finality_proof)))
-        }
-        SelectedFinalityProof::Regular(unjustified_headers, header, finality_proof) => {
-            (unjustified_headers, Some((header, finality_proof)))
-        }
+        SelectedFinalityProof::Mandatory(header, finality_proof) =>
+            return Ok(Some((header, finality_proof))),
+        SelectedFinalityProof::Regular(unjustified_headers, header, finality_proof) =>
+            (unjustified_headers, Some((header, finality_proof))),
         SelectedFinalityProof::None(unjustified_headers) => (unjustified_headers, None),
     };
 
@@ -481,17 +479,17 @@ pub(crate) async fn read_missing_headers<
         match (is_mandatory, finality_proof) {
             (true, Some(finality_proof)) => {
                 log::trace!(target: "bridge", "Header {:?} is mandatory", header_number);
-                return Ok(SelectedFinalityProof::Mandatory(header, finality_proof));
-            }
+                return Ok(SelectedFinalityProof::Mandatory(header, finality_proof))
+            },
             (true, None) => return Err(Error::MissingMandatoryFinalityProof(header.number())),
             (false, Some(finality_proof)) => {
                 log::trace!(target: "bridge", "Header {:?} has persistent finality proof", header_number);
                 unjustified_headers.clear();
                 selected_finality_proof = Some((header, finality_proof));
-            }
+            },
             (false, None) => {
                 unjustified_headers.push(header);
-            }
+            },
         }
 
         header_number = header_number + One::one();
@@ -517,8 +515,8 @@ pub(crate) fn read_finality_proofs_from_stream<
             Some(Some(finality_proof)) => finality_proof,
             Some(None) => {
                 finality_proofs_stream.needs_restart = true;
-                break;
-            }
+                break
+            },
             None => break,
         };
 
@@ -534,7 +532,7 @@ pub(crate) fn select_better_recent_finality_proof<P: FinalitySyncPipeline>(
     selected_finality_proof: Option<(P::Header, P::FinalityProof)>,
 ) -> Option<(P::Header, P::FinalityProof)> {
     if unjustified_headers.is_empty() || recent_finality_proofs.is_empty() {
-        return selected_finality_proof;
+        return selected_finality_proof
     }
 
     const NOT_EMPTY_PROOF: &str = "we have checked that the vec is not empty; qed";
@@ -559,7 +557,7 @@ pub(crate) fn select_better_recent_finality_proof<P: FinalitySyncPipeline>(
     let (selected_header_number, finality_proof) =
         &recent_finality_proofs[selected_finality_proof_index];
     if !intersection.contains(selected_header_number) {
-        return selected_finality_proof;
+        return selected_finality_proof
     }
 
     // now remove all obsolete headers and extract selected header
@@ -610,7 +608,7 @@ fn print_sync_progress<P: FinalitySyncPipeline>(
             .unwrap_or(true);
 
     if !need_update {
-        return (prev_time, prev_best_number_at_target);
+        return (prev_time, prev_best_number_at_target)
     }
 
     log::info!(

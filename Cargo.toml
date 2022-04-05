@@ -2,15 +2,15 @@
 panic = 'unwind'
 
 [workspace]
+exclude = [  ]
 members = [
-    'node/standalone',
-    'node/parachain',
-    'pallets/*',
-    'primitives',
-    'primitives/src/bridges/finality',
-    'primitives/src/bridges/headers',
-    'primitives/src/bridges/utils',
-    'primitives/src/bridges/snowfork/*',
-    'runtime/*',
+  'node/standalone',
+  'node/parachain',
+  'pallets/*',
+  'primitives',
+  'primitives/src/bridges/finality',
+  'primitives/src/bridges/headers',
+  'primitives/src/bridges/utils',
+  'primitives/src/bridges/snowfork/*',
+  'runtime/*',
 ]
-exclude = []

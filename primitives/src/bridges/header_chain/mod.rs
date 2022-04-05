@@ -17,19 +17,13 @@
 //! Defines traits which represent a common interface for Substrate pallets which want to
 //! incorporate bridge functionality.
 
-#![cfg_attr(not(feature = "std"), no_std)]
-
 use codec::{Codec, Decode, Encode, EncodeLike, MaxEncodedLen};
-use core::clone::Clone;
-use core::cmp::Eq;
-use core::default::Default;
-use core::fmt::Debug;
+use core::{clone::Clone, cmp::Eq, default::Default, fmt::Debug};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_finality_grandpa::{AuthorityList, ConsensusLog, SetId, GRANDPA_ENGINE_ID};
-use sp_runtime::RuntimeDebug;
-use sp_runtime::{generic::OpaqueDigestItemId, traits::Header as HeaderT};
+use sp_runtime::{generic::OpaqueDigestItemId, traits::Header as HeaderT, RuntimeDebug};
 pub mod justification;
 
 /// A type that can be used as a parameter in a dispatchable function.
@@ -51,7 +45,7 @@ pub struct AuthoritySet {
 
 impl MaxEncodedLen for AuthoritySet {
     fn max_encoded_len() -> usize {
-        4096 as usize
+        4096
     }
 }
 impl AuthoritySet {

@@ -2,6 +2,7 @@ use crate::*;
 use codec::Decode;
 
 use sp_std::marker::PhantomData;
+use t3rn_primitives::{circuit_portal::CircuitPortal, transfers::EscrowedBalanceOf, xdns::Xdns};
 
 pub struct Escrow<T: Config> {
     _phantom: PhantomData<T>,
@@ -96,7 +97,7 @@ impl<T: Config> EscrowExec<T> for Transfer<T> {
     ) -> Result<(), &'static str> {
         let _dest: T::AccountId =
             Decode::decode(&mut encoded_args[1].as_ref()).map_err(|_e| "Decoding err")?;
-        let value: BalanceOf<T> =
+        let value: EscrowedBalanceOf<T, <T as Config>::Escrowed> =
             Decode::decode(&mut encoded_args[2].as_ref()).map_err(|_e| "Decoding err")?;
 
         log::debug!(
@@ -105,7 +106,7 @@ impl<T: Config> EscrowExec<T> for Transfer<T> {
             escrow_account,
             value
         );
-        <T as EscrowTrait>::Currency::transfer(&executioner, &escrow_account, value, AllowDeath)
+        EscrowCurrencyOf::<T>::transfer(&executioner, &escrow_account, value, AllowDeath)
             .map_err(|_| Error::<T>::RewardTransferFailed)?; // should not fail
 
         <pallet::Pallet<T>>::deposit_event(Event::EscrowTransfer(
@@ -116,15 +117,16 @@ impl<T: Config> EscrowExec<T> for Transfer<T> {
 
         Ok(())
     }
+
     fn revert(
         encoded_args: Vec<Vec<u8>>,
         escrow_account: T::AccountId,
         executioner: T::AccountId,
     ) -> Result<(), &'static str> {
-        let value: BalanceOf<T> =
+        let value: EscrowedBalanceOf<T, <T as Config>::Escrowed> =
             Decode::decode(&mut encoded_args[2].as_ref()).map_err(|_e| "Decoding err")?;
 
-        <T as EscrowTrait>::Currency::transfer(&escrow_account, &executioner, value, AllowDeath)
+        EscrowCurrencyOf::<T>::transfer(&escrow_account, &executioner, value, AllowDeath)
             .map_err(|_| Error::<T>::RewardTransferFailed)?; // should not fail
 
         log::debug!(
@@ -142,12 +144,13 @@ impl<T: Config> EscrowExec<T> for Transfer<T> {
 
         Ok(())
     }
+
     fn commit(
         encoded_args: Vec<Vec<u8>>,
         escrow_account: T::AccountId,
         _executioner: T::AccountId,
     ) -> Result<(), &'static str> {
-        let value: BalanceOf<T> =
+        let value: EscrowedBalanceOf<T, <T as Config>::Escrowed> =
             Decode::decode(&mut encoded_args[2].as_ref()).map_err(|_e| "Decoding err")?;
         let dest: T::AccountId =
             Decode::decode(&mut encoded_args[1].as_ref()).map_err(|_e| "Decoding err")?;
@@ -158,7 +161,7 @@ impl<T: Config> EscrowExec<T> for Transfer<T> {
             dest,
             value
         );
-        <T as EscrowTrait>::Currency::transfer(&escrow_account, &dest, value, AllowDeath)
+        EscrowCurrencyOf::<T>::transfer(&escrow_account, &dest, value, AllowDeath)
             .map_err(|_| Error::<T>::RewardTransferFailed)?; // should not fail
         <pallet::Pallet<T>>::deposit_event(Event::EscrowTransfer(escrow_account, dest, value));
 
@@ -170,8 +173,7 @@ impl<T: Config> EscrowExec<T> for Transfer<T> {
 pub mod test {
 
     use super::*;
-    use frame_support::assert_ok;
-    use frame_support::traits::Currency;
+    use frame_support::{assert_ok, traits::Currency};
 
     use frame_system::{EventRecord, Phase};
 
