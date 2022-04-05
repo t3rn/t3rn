@@ -423,5 +423,9 @@ pub mod pallet {
                     * 8,
             )
         }
+
+        fn get_gateway_type_unsafe(chain_id: &ChainId) -> GatewayType {
+            <XDNSRegistry<T>>::get(chain_id).unwrap().gateway_type
+        }
     }
 }
