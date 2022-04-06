@@ -512,7 +512,7 @@ impl ExtBuilder {
                 token_symbol: Encode::encode("ZERO"),
                 token_decimals: 0,
             },
-            vec![*b"tran", *b"swap", *b"aliq"],
+            vec![*b"tran", *b"swap", *b"aliq", *b"call"],
         );
         let gateway_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -540,7 +540,7 @@ impl ExtBuilder {
                 token_symbol: Encode::encode("DOT"),
                 token_decimals: 10,
             },
-            vec![*b"tran", *b"swap", *b"aliq"],
+            vec![*b"tran", *b"swap", *b"aliq", *b"call"],
         );
         let kusama_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -700,6 +700,32 @@ impl ExtBuilder {
             commit_events: vec![],
             revert_events: vec![],
         };
+
+        let call_generic_protocol = SideEffectInterface {
+            id: *b"call",
+            name: b"call:geenric".to_vec(),
+            argument_abi: vec![
+                Type::DynamicAddress,
+                Type::DynamicBytes,
+                Type::Value,
+                Type::Value,
+                Type::OptionalInsurance,
+            ],
+            argument_to_state_mapper: vec![
+                b"from".to_vec(),
+                b"dest".to_vec(),
+                b"value".to_vec(),
+                b"data".to_vec(),
+                b"insurance".to_vec(),
+            ],
+            confirm_events: vec![
+                b"<Unknown>(_from,dest,value,data)".to_vec()
+            ],
+            escrowed_events: vec![],
+            commit_events: vec![],
+            revert_events: vec![],
+        };
+
         //
         // map side_effects to id, keeping lib.rs clean
         self.standard_side_effects = vec![
@@ -708,6 +734,7 @@ impl ExtBuilder {
             add_liquidity_side_effect,
             call_evm_side_effect,
             get_data_side_effect,
+            call_generic_protocol,
         ];
 
         self
@@ -808,6 +835,35 @@ impl ExtBuilder {
             ],
         };
         Box::new(add_liquidity_protocol)
+    }
+
+    pub(crate) fn get_generic_call_protocol() -> Box<SideEffectInterface> {
+        let call_generic_protocol = SideEffectInterface {
+            id: *b"call",
+            name: b"call:generic".to_vec(),
+            argument_abi: vec![
+                Type::DynamicAddress,
+                Type::Value,
+                Type::Value,
+                Type::Value,
+                Type::OptionalInsurance,
+            ],
+            argument_to_state_mapper: vec![
+                b"from".to_vec(),
+                b"dest".to_vec(),
+                b"value".to_vec(),
+                b"data".to_vec(),
+                b"insurance".to_vec(),
+            ],
+            confirm_events: vec![
+                b"<Unknown>(_from,dest,value,data)".to_vec()
+            ],
+            escrowed_events: vec![],
+            commit_events: vec![],
+            revert_events: vec![],
+        };
+
+        Box::new(call_generic_protocol)
     }
 
     pub(crate) fn build(self) -> sp_io::TestExternalities {
