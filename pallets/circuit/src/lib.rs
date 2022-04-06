@@ -928,7 +928,7 @@ impl<T: Config> Pallet<T> {
         > = vec![];
 
         for side_effect in side_effects.iter() {
-            let gateway_abi = pallet_xdns::Pallet::<T>::get_abi(&side_effect.target)?;
+            let gateway_abi = <T as Config>::Xdns::get_abi(side_effect.target)?;
             let allowed_side_effects =
                 <T as Config>::Xdns::allowed_side_effects(&side_effect.target);
 
