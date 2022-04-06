@@ -1,4 +1,4 @@
-use super::{AccountId, Amount, Balance, BlockWeights, Weight, AVERAGE_ON_INITIALIZE_RATIO};
+use super::{AccountId, Balance, BlockWeights, Weight, AVERAGE_ON_INITIALIZE_RATIO};
 use crate::{
     Call, Circuit, ContractsRegistry, Event, RandomnessCollectiveFlip, Runtime, Timestamp,
 };
