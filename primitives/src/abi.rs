@@ -668,4 +668,11 @@ mod tests {
             res
         );
     }
+
+    #[test]
+    fn extract_name_call_generic() {
+        let expected_event_signature = b"<Unknown>(from,_to,data)";
+        let (a, b) = extract_property_names_from_signature_as_bytes(expected_event_signature.encode()).unwrap();
+        println!("a: {:?}, b: {:?}", a, b);
+    }
 }
