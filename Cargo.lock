@@ -12030,6 +12030,7 @@ dependencies = [
  "hash-db",
  "hex",
  "hex-literal 0.3.4",
+ "log",
  "orml-tokens",
  "orml-traits",
  "pallet-balances",
