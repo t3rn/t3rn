@@ -22,9 +22,9 @@ serde       = { version = "1.0", default-features = false, optional = true, feat
 pallet-circuit                            = { path = "../../pallets/circuit", default-features = false }
 pallet-circuit-portal                     = { path = "../../pallets/circuit-portal", default-features = false }
 pallet-circuit-portal-rpc-runtime-api     = { path = "../../pallets/circuit-portal/rpc/runtime-api", default-features = false }
-pallet-contracts                          = { path = "../../../3vm/pallets/wasm-contracts", default-features = false, package = "pallet-wasm-contracts" }
-pallet-contracts-primitives               = { path = "../../../3vm/pallets/wasm-contracts/common", default-features = false }
-pallet-contracts-rpc-runtime-api          = { path = "../../../3vm/pallets/wasm-contracts/rpc/runtime-api", default-features = false }
+pallet-contracts                          = { path = "../../3vm/pallets/wasm-contracts", default-features = false, package = "pallet-wasm-contracts" }
+pallet-contracts-primitives               = { path = "../../3vm/pallets/wasm-contracts/common", default-features = false }
+pallet-contracts-rpc-runtime-api          = { path = "../../3vm/pallets/wasm-contracts/rpc/runtime-api", default-features = false }
 pallet-contracts-registry                 = { path = "../../pallets/contracts-registry", default-features = false }
 pallet-contracts-registry-rpc-runtime-api = { path = "../../pallets/contracts-registry/rpc/runtime-api", default-features = false }
 pallet-mfv                                = { package = "pallet-multi-finality-verifier", path = "../../pallets/multi-finality-verifier", version = "1.0.0-alpha.0", default-features = false }

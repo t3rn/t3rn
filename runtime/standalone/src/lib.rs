@@ -318,7 +318,7 @@ construct_runtime!(
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
 
         // 3VM
-        Contracts: pallet_contracts = 109,
+        Contracts: pallet_contracts = 119,
     }
 );
 
@@ -495,7 +495,6 @@ impl_runtime_apis! {
         }
     }
 
-    // TODO: make sure these are correct since i havent actually done anything to the rpc api yet
     impl pallet_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
         for Runtime
     {
