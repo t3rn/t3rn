@@ -406,7 +406,7 @@ pub mod pallet {
         }
 
         // Fetches the GatewayABIConfig for a given XDNS record
-        fn get_abi(chain_id: ChainId) -> Result<GatewayABIConfig, &'static str> {
+        pub fn get_abi(chain_id: &ChainId) -> Result<GatewayABIConfig, &'static str> {
             if !<XDNSRegistry<T>>::contains_key(chain_id) {
                 return Err("Xdns record not found")
             }
