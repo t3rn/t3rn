@@ -105,8 +105,8 @@ impl<T: frame_system::Config> WeightInfo for GatewayWeight<T> {
 impl WeightInfo for () {
     fn submit_finality_proof(v: u32, p: u32) -> Weight {
         (0 as Weight)
-            .saturating_add((160_060_000 as Weight).saturating_mul(v as Weight))
-            .saturating_add((640_223_000 as Weight).saturating_mul(p as Weight))
+            .saturating_add((160_060 as Weight).saturating_mul(v as Weight))
+            .saturating_add((640_223 as Weight).saturating_mul(p as Weight))
             .saturating_add(RocksDbWeight::get().reads(5 as Weight))
             .saturating_add(RocksDbWeight::get().writes(3 as Weight))
     }
