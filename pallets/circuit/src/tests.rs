@@ -1216,3 +1216,46 @@ fn circuit_handles_transfer_and_swap() {
             ));
         });
 }
+
+#[test]
+fn test_call_generic() {
+    let origin = Origin::signed(ALICE);
+    let call_generic_protocol = ExtBuilder::get_generic_call_protocol();
+    let mut local_state = LocalState::new();
+    let valid_call_side_effect = produce_and_validate_side_effect(
+        vec![
+            (Type::Address(32), ArgVariant::A),
+            (Type::Uint(64), ArgVariant::A),
+            (Type::Uint(64), ArgVariant::B),
+            (Type::Uint(64), ArgVariant::A),
+            (Type::Bytes(0), ArgVariant::A),
+        ],
+        &mut local_state,
+        call_generic_protocol,
+    );
+
+    let side_effects = vec![valid_call_side_effect.clone()];
+    let fee = 1;
+    let sequential = true;
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 3);
+
+            System::set_block_number(1);
+
+            assert_ok!(Circuit::on_extrinsic_trigger(
+                origin,
+                side_effects,
+                fee,
+                sequential,
+            ));
+
+            for event in System::events() {
+                println!("{:?}", event);
+            }
+        });
+}
