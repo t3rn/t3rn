@@ -94,7 +94,6 @@ export class SideEffectStateManager {
             }
             case "swap": {
                 this.transactionType = TransactionType.Swap;
-                console.log("set swap")
                 break;
             }
         }

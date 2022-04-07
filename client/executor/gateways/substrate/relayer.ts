@@ -1,10 +1,7 @@
 import { EventEmitter } from 'events'
 import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
-import { T3rnPrimitivesSideEffect } from '@polkadot/types/lookup';
 import { SideEffectStateManager, TransactionType } from "../../utils/types"
-const BN = require("bn.js");
 import { getEventProofs } from './utils/helper';
-import { threadId } from 'worker_threads';
 
 export default class SubstrateRelayer extends EventEmitter {
 
