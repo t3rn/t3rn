@@ -82,14 +82,14 @@ t3rn-primitives                   = { default-features = false, path = "../../pr
 t3rn-protocol                     = { default-features = false, path = "../../protocol" }
 
 # t3rn pallets
-pallet-circuit                    = { path = "../../pallets/circuit", package = "pallet-circuit", default-features = false }
-pallet-circuit-portal             = { path = "../../pallets/circuit-portal", package = "pallet-circuit-portal", default-features = false }
-pallet-contracts                  = { path = "../../3vm/pallets/wasm-contracts", default-features = false, package = "pallet-wasm-contracts" }
-pallet-contracts-primitives       = { path = "../../3vm/pallets/wasm-contracts/common", default-features = false }
-pallet-contracts-rpc-runtime-api  = { path = "../../3vm/pallets/wasm-contracts/rpc/runtime-api", default-features = false }
-pallet-contracts-registry         = { path = "../../pallets/contracts-registry", default-features = false }
-pallet-mfv                        = { path = "../../pallets/multi-finality-verifier", package = "pallet-multi-finality-verifier", default-features = false }
-pallet-xdns                       = { path = "../../pallets/xdns", default-features = false }
+pallet-circuit                        = { path = "../../pallets/circuit", package = "pallet-circuit", default-features = false }
+pallet-circuit-portal                 = { path = "../../pallets/circuit-portal", package = "pallet-circuit-portal", default-features = false }
+pallet-3vm-contracts                  = { path = "../../3vm/pallets/wasm-contracts", default-features = false, package = "pallet-wasm-contracts" }
+pallet-3vm-contracts-primitives       = { path = "../../3vm/pallets/wasm-contracts/common", default-features = false, package = "pallet-contracts-primitives" }
+pallet-3vm-contracts-rpc-runtime-api  = { path = "../../3vm/pallets/wasm-contracts/rpc/runtime-api", default-features = false, package = "pallet-contracts-rpc-runtime-api" }
+pallet-contracts-registry             = { path = "../../pallets/contracts-registry", default-features = false }
+pallet-mfv                            = { path = "../../pallets/multi-finality-verifier", package = "pallet-multi-finality-verifier", default-features = false }
+pallet-xdns                           = { path = "../../pallets/xdns", default-features = false }
 
 [features]
 default = [ "std" ]
@@ -114,9 +114,9 @@ std = [
   "pallet-authorship/std",
   "pallet-balances/std",
   "pallet-collator-selection/std",
-  "pallet-contracts/std",
-  "pallet-contracts-primitives/std",
-  "pallet-contracts-rpc-runtime-api/std",
+  "pallet-3vm-contracts/std",
+  "pallet-3vm-contracts-primitives/std",
+  "pallet-3vm-contracts-rpc-runtime-api/std",
   "pallet-session/std",
   "pallet-sudo/std",
   "pallet-timestamp/std",

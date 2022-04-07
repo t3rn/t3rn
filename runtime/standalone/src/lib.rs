@@ -318,7 +318,7 @@ construct_runtime!(
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
 
         // 3VM
-        Contracts: pallet_contracts = 119,
+        Contracts: pallet_3vm_contracts = 119,
     }
 );
 
@@ -495,7 +495,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl pallet_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
+    impl pallet_3vm_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
         for Runtime
     {
         fn call(
@@ -505,7 +505,7 @@ impl_runtime_apis! {
             gas_limit: u64,
             storage_deposit_limit: Option<Balance>,
             input_data: Vec<u8>,
-        ) -> pallet_contracts_primitives::ContractExecResult<Balance> {
+        ) -> pallet_3vm_contracts_primitives::ContractExecResult<Balance> {
             Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, CONTRACTS_DEBUG_OUTPUT)
         }
 
@@ -514,10 +514,10 @@ impl_runtime_apis! {
             value: Balance,
             gas_limit: u64,
             storage_deposit_limit: Option<Balance>,
-            code: pallet_contracts_primitives::Code<Hash>,
+            code: pallet_3vm_contracts_primitives::Code<Hash>,
             data: Vec<u8>,
             salt: Vec<u8>,
-        ) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId, Balance>
+        ) -> pallet_3vm_contracts_primitives::ContractInstantiateResult<AccountId, Balance>
         {
             Contracts::bare_instantiate(origin, value, gas_limit, storage_deposit_limit, code, data, salt, CONTRACTS_DEBUG_OUTPUT)
         }
@@ -526,7 +526,7 @@ impl_runtime_apis! {
             origin: AccountId,
             code: Vec<u8>,
             storage_deposit_limit: Option<Balance>,
-        ) -> pallet_contracts_primitives::CodeUploadResult<Hash, Balance>
+        ) -> pallet_3vm_contracts_primitives::CodeUploadResult<Hash, Balance>
         {
             Contracts::bare_upload_code(origin, code, storage_deposit_limit)
         }
@@ -534,7 +534,7 @@ impl_runtime_apis! {
         fn get_storage(
             address: AccountId,
             key: [u8; 32],
-        ) -> pallet_contracts_primitives::GetStorageResult {
+        ) -> pallet_3vm_contracts_primitives::GetStorageResult {
             Contracts::get_storage(address, key)
         }
     }

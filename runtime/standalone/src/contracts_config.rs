@@ -3,7 +3,7 @@ use crate::{
     Call, Circuit, ContractsRegistry, Event, RandomnessCollectiveFlip, Runtime, Timestamp,
 };
 use frame_support::parameter_types;
-use pallet_contracts::weights::WeightInfo;
+use pallet_3vm_contracts::weights::WeightInfo;
 
 // Unit = the base number of indivisible units for balances
 const UNIT: Balance = 1_000_000_000_000;
@@ -25,11 +25,11 @@ parameter_types! {
     // The weight needed for decoding the queue should be less or equal than a fifth
     // of the overall weight dedicated to the lazy deletion.
     pub DeletionQueueDepth: u32 = ((DeletionWeightLimit::get() / (
-            <Runtime as pallet_contracts::Config>::WeightInfo::on_initialize_per_queue_item(1) -
-            <Runtime as pallet_contracts::Config>::WeightInfo::on_initialize_per_queue_item(0)
+            <Runtime as pallet_3vm_contracts::Config>::WeightInfo::on_initialize_per_queue_item(1) -
+            <Runtime as pallet_3vm_contracts::Config>::WeightInfo::on_initialize_per_queue_item(0)
         )) / 5) as u32;
-    pub Schedule: pallet_contracts::Schedule<Runtime> = {
-        let mut schedule = pallet_contracts::Schedule::<Runtime>::default();
+    pub Schedule: pallet_3vm_contracts::Schedule<Runtime> = {
+        let mut schedule = pallet_3vm_contracts::Schedule::<Runtime>::default();
         // We decided to **temporarily* increase the default allowed contract size here
         // (the default is `128 * 1024`).
         //
@@ -45,8 +45,8 @@ parameter_types! {
     pub const DepositPerByte: Balance = deposit(0, 1);
 }
 
-impl pallet_contracts::Config for Runtime {
-    type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
+impl pallet_3vm_contracts::Config for Runtime {
+    type AddressGenerator = pallet_3vm_contracts::DefaultAddressGenerator;
     type Call = Call;
     /// The safest default is to allow no calls at all.
     ///
@@ -55,7 +55,7 @@ impl pallet_contracts::Config for Runtime {
     /// change because that would break already deployed contracts. The `Call` structure itself
     /// is not allowed to change the indices of existing pallets, too.
     type CallFilter = frame_support::traits::Nothing;
-    type CallStack = [pallet_contracts::Frame<Self>; 31];
+    type CallStack = [pallet_3vm_contracts::Frame<Self>; 31];
     type ChainExtension = ();
     type CircuitTargetId = CircuitTargetId;
     type ContractsRegistry = ContractsRegistry;
@@ -70,6 +70,6 @@ impl pallet_contracts::Config for Runtime {
     type Randomness = RandomnessCollectiveFlip;
     type Schedule = Schedule;
     type Time = Timestamp;
-    type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
+    type WeightInfo = pallet_3vm_contracts::weights::SubstrateWeight<Self>;
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
 }
