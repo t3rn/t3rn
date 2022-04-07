@@ -27,6 +27,6 @@ function generateKeyForStorageValue(module: string, variableName: string) {
 export const getEventProofs = async (api: ApiPromise, blockHash: any) => {
     let key = generateKeyForStorageValue('System', 'Events');
     let proofs = await api.rpc.state.getReadProof([key], blockHash);
-    console.log(`getProofs : success : ${blockHash}`);
+    // console.log(`getProofs : success : ${blockHash}`);
     return proofs;
 }
