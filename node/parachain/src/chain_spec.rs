@@ -274,7 +274,12 @@ fn fetch_gtwy_init_data(gateway_id: &ChainId) -> Result<InitializationData<Heade
 fn initial_gateways(gateway_ids: Vec<&ChainId>) -> Result<Vec<InitializationData<Header>>, Error> {
     let init_data = gateway_ids
         .iter()
-        .map(|gateway_id| fetch_gtwy_init_data(*gateway_id).expect("gtwy init data"))
+        .map(|gateway_id| {
+            fetch_gtwy_init_data(*gateway_id).expect(&format!(
+                "{:?} gtwy init data",
+                String::from_utf8_lossy(*gateway_id).into_owned()
+            ))
+        })
         .collect();
 
     Ok(init_data)

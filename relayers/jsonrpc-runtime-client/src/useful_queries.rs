@@ -45,9 +45,9 @@ pub async fn get_gtwy_init_data(
 ) -> Result<(AuthoritySet, Header), String> {
     let block_hash = sub_client
         .client
-        .request("chain_getFinalizedHash", JsonRpcParams::NoParams)
+        .request("chain_getFinalizedHead", JsonRpcParams::NoParams)
         .await
-        .map_err(|error| format!("chain_getBlockHash failed: {:?}", error))?;
+        .map_err(|error| format!("chain_getFinalizedHead failed: {:?}", error))?;
 
     let header: Header = sub_client
         .client

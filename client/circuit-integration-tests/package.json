@@ -5,7 +5,9 @@
   "scripts": {
     "test": "mocha -r ts-node/register -r dotenv/config 'test/**/*.test.ts' --exit",
     "testexd": "mocha -r ts-node/register -r dotenv/config 'test/**/*.test.ts' --grep 'should successfully submit submitSideEffectsTemp tx' --exit",
-    "test:watch": "mocha -r ts-node/register -r dotenv/config 'test/**/*.test.ts' --watch --watch-files test/**/*.test.ts,src/**/*.ts"
+    "testgtwy": "mocha -r ts-node/register -r dotenv/config 'test/**/gateway_preregistration.test.ts' --exit",
+    "test:watch": "mocha -r ts-node/register -r dotenv/config 'test/**/*.test.ts' --watch --watch-files test/**/*.test.ts,src/**/*.ts",
+    "fmt": "npx prettier --no-semi --arrow-parens avoid --print-width 80 --write ./test/gateway_preregistration.test.ts"
   },
   "private": true,
   "devDependencies": {
