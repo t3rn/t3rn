@@ -157,7 +157,7 @@ pub mod pallet {
             encoded_justification: Vec<u8>,
             gateway_id: ChainId,
         ) -> DispatchResultWithPostInfo {
-            // ensure_operational_single::<T, I>(gateway_id)?;
+            ensure_operational_single::<T, I>(gateway_id)?;
             ensure_signed(origin)?;
             ensure!(
                 Self::request_count_map(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
