@@ -703,7 +703,7 @@ impl ExtBuilder {
 
         let call_generic_protocol = SideEffectInterface {
             id: *b"call",
-            name: b"call:geenric".to_vec(),
+            name: b"call:generic".to_vec(),
             argument_abi: vec![
                 Type::DynamicAddress,
                 Type::DynamicBytes,
@@ -718,9 +718,7 @@ impl ExtBuilder {
                 b"data".to_vec(),
                 b"insurance".to_vec(),
             ],
-            confirm_events: vec![
-                b"<Unknown>(_from,dest,value,data)".to_vec()
-            ],
+            confirm_events: vec![b"<Unknown>(_from,dest,value,data)".to_vec()],
             escrowed_events: vec![],
             commit_events: vec![],
             revert_events: vec![],
@@ -855,9 +853,7 @@ impl ExtBuilder {
                 b"data".to_vec(),
                 b"insurance".to_vec(),
             ],
-            confirm_events: vec![
-                b"<Unknown>(_from,dest,value,data)".to_vec()
-            ],
+            confirm_events: vec![b"<Unknown>(_from,dest,value,data)".to_vec()],
             escrowed_events: vec![],
             commit_events: vec![],
             revert_events: vec![],
