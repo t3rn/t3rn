@@ -1,5 +1,5 @@
 Arguments: 
-  /opt/homebrew/Cellar/node/17.6.0_1/bin/node /opt/homebrew/bin/yarn add dotenv
+  /opt/homebrew/Cellar/node/17.6.0_1/bin/node /opt/homebrew/bin/yarn add BN.js
 
 PATH: 
   /Users/paul/.local/share/solana/install/active_release/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/paul/.cargo/bin
@@ -14,12 +14,17 @@ Platform:
   darwin arm64
 
 Trace: 
-  SyntaxError: /Users/paul/Documents/projects/t3rn/client/executor/package.json: Unexpected token } in JSON at position 142
-      at JSON.parse (<anonymous>)
-      at /opt/homebrew/lib/node_modules/yarn/lib/cli.js:1625:59
-      at Generator.next (<anonymous>)
-      at step (/opt/homebrew/lib/node_modules/yarn/lib/cli.js:310:30)
-      at /opt/homebrew/lib/node_modules/yarn/lib/cli.js:321:13
+  Error: https://registry.yarnpkg.com/BN.js: Not found
+      at Request.params.callback [as _callback] (/opt/homebrew/lib/node_modules/yarn/lib/cli.js:67029:18)
+      at Request.self.callback (/opt/homebrew/lib/node_modules/yarn/lib/cli.js:140883:22)
+      at Request.emit (node:events:527:28)
+      at Request.<anonymous> (/opt/homebrew/lib/node_modules/yarn/lib/cli.js:141855:10)
+      at Request.emit (node:events:527:28)
+      at IncomingMessage.<anonymous> (/opt/homebrew/lib/node_modules/yarn/lib/cli.js:141777:12)
+      at Object.onceWrapper (node:events:641:28)
+      at IncomingMessage.emit (node:events:539:35)
+      at endReadableNT (node:internal/streams/readable:1342:12)
+      at processTicksAndRejections (node:internal/process/task_queues:83:21)
 
 npm manifest: 
   {
@@ -29,6 +34,9 @@ npm manifest:
     "license": "MIT",
     "dependencies": {
       "@polkadot/api": "^7.14.3",
+      "@polkadot/util": "^8.7.1",
+      "debug": "^4.3.4",
+      "dotenv": "^16.0.0"
     }
   }
 
@@ -227,7 +235,7 @@ Lockfile:
       "@babel/runtime" "^7.17.8"
       "@polkadot/util" "^8.7.1"
   
-  "@polkadot/types@7.14.3", "@polkadot/types@^7.14.3":
+  "@polkadot/types@7.14.3":
     version "7.14.3"
     resolved "https://registry.yarnpkg.com/@polkadot/types/-/types-7.14.3.tgz#39d22b335e67574ad9f86ce08b606d945302a831"
     integrity sha512-Nx6BeEcGe9EgmGif9SRd1fbRVlrxq7snZWMAhrJLq6cwoDsmtA6uRxwT8wWINwXCeCOa9RS5GAeDCeWYlFP1tQ==
@@ -466,7 +474,7 @@ Lockfile:
     dependencies:
       ms "2.0.0"
   
-  debug@^4.1.0:
+  debug@^4.1.0, debug@^4.3.4:
     version "4.3.4"
     resolved "https://registry.yarnpkg.com/debug/-/debug-4.3.4.tgz#1319f6579357f2338d3337d2cdd4914bb5dcc865"
     integrity sha512-PRWFHuSU3eDtQJPvnNY7Jcket1j0t5OuOsFzPPzsekD52Zl8qUfFIPEiswXqIvHWGVHOgX+7G/vCNNhehwxfkQ==
@@ -477,6 +485,11 @@ Lockfile:
     version "1.0.0"
     resolved "https://registry.yarnpkg.com/delayed-stream/-/delayed-stream-1.0.0.tgz#df3ae199acadfb7d440aaae0b29e2272b24ec619"
     integrity sha1-3zrhmayt+31ECqrgsp4icrJOxhk=
+  
+  dotenv@^16.0.0:
+    version "16.0.0"
+    resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-16.0.0.tgz#c619001253be89ebb638d027b609c75c26e47411"
+    integrity sha512-qD9WU0MPM4SWLPJy/r2Be+2WgQj8plChsyrCNQzW/0WjvcJQiKQJ9mH3ZgB3fxbUUxgc/11ZJ0Fi5KiimWGz2Q==
   
   ed2curve@^0.3.0:
     version "0.3.0"

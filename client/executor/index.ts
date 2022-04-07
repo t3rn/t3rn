@@ -3,8 +3,7 @@ import CircuitListener from "./circuit/listener";
 import CircuitRelayer from "./circuit/relayer";
 import SubstrateRelayer from "./gateways/substrate/relayer";
 import config from "./config.json"
-
-import { deconstruct, SideEffect } from "./utils/sideEffectInterfaces";
+import { SideEffectStateManager } from "./utils/types";
 
 class Executor {
     circuitListener: CircuitListener;
@@ -22,6 +21,7 @@ class Executor {
         await this.circuitRelayer.setup(config.circuit.rpc)
         await this.circuitListener.start()
         await this.initializeGateways()
+        console.log("Main - Instances Initialized")
     }
 
     async initializeGateways() {
@@ -30,7 +30,7 @@ class Executor {
             const entry = config.gateways[i]
             if(entry.type === "substrate") {
                 let instance = new SubstrateRelayer();
-                await instance.setup(entry.rpc)
+                await instance.setup(entry.rpc, entry.name)
 
                 instance.on("txFinalized", data => {
                     this.handleSideEffectExecution(data)
@@ -48,21 +48,21 @@ class Executor {
         })
     }
 
-    async sideEffectRouter(eventData: any) {
-        let sideEffect = deconstruct(eventData);
+    async sideEffectRouter(sideEffectStateManager: SideEffectStateManager) {
         // store side effect for confirm step
-        this.currentlyRunning[sideEffect.xtxId.toHuman()] = sideEffect;
-        this.gatewayInstances[sideEffect.target.toHuman()].handleTx(sideEffect)
+        this.currentlyRunning[sideEffectStateManager.getId()] = sideEffectStateManager;
+        this.gatewayInstances[sideEffectStateManager.getTarget()].executeTx(sideEffectStateManager)
     }
 
-    async handleSideEffectExecution(data: any) {
-        const sideEffect = this.currentlyRunning[data.xtxId]
-        this.circuitRelayer.confirmSideEffect(sideEffect, data)
+    async handleSideEffectExecution(xtxId: string) {
 
+        console.log(this.currentlyRunning[xtxId])
+        // console.log(this.currentlyRunning[sideEffectStateManager.getId()])
+        // let sideEffect = this.addCompletionData(xtxId, completionData);
+
+
+        // this.circuitRelayer.confirmSideEffect(sideEffect)
     }
-
-    
-
 }
 
 (async () => {
