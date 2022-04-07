@@ -12032,7 +12032,6 @@ dependencies = [
  "sp-std",
  "sp-trie",
  "sp-version",
- "t3rn-protocol",
 ]
 
 [[package]]
