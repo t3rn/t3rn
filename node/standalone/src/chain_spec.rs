@@ -14,7 +14,7 @@ use t3rn_primitives::{
         header_chain::InitializationData,
         runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID},
     },
-    GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor, Header,
+    ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor, Header,
 };
 
 use log::info;
@@ -132,8 +132,7 @@ fn seed_xdns_registry() -> Result<Vec<XdnsRecord<AccountId>>, Error> {
         fetch_xdns_record_from_rpc(&kusama_connection_params, KUSAMA_CHAIN_ID).unwrap();
     info!("Fetched Kusama metadata successfully!");
 
-    // Ok(vec![polkadot_xdns, kusama_xdns])
-    Ok(vec![])
+    Ok(vec![polkadot_xdns, kusama_xdns])
 }
 
 fn standard_side_effects() -> Vec<SideEffectInterface> {
@@ -278,12 +277,10 @@ fn standard_side_effects() -> Vec<SideEffectInterface> {
     ]
 }
 
-/// Helper function that fetches standard gateway initialization data.
-fn fetch_gtwy_init_data(
-    gateway_id: t3rn_primitives::ChainId,
-) -> Result<InitializationData<Header>, Error> {
+/// Fetches gateway initialization data by chain id.
+fn fetch_gtwy_init_data(gateway_id: &ChainId) -> Result<InitializationData<Header>, Error> {
     async_std::task::block_on(async move {
-        let endpoint = match &gateway_id {
+        let endpoint = match gateway_id {
             b"pdot" => "rpc.polkadot.io",
             b"ksma" => "kusama-rpc.polkadot.io",
             _ => return Err(Error::new(ErrorKind::InvalidInput, "unknown gateway id")),
@@ -306,17 +303,23 @@ fn fetch_gtwy_init_data(
             authority_list: authority_set.authorities,
             set_id: authority_set.set_id,
             is_halted: false,
-            gateway_id,
+            gateway_id: *gateway_id,
         })
     })
 }
 
+/// Lists initialization data for indicated gatways.
+fn initial_gateways(gateway_ids: Vec<&ChainId>) -> Result<Vec<InitializationData<Header>>, Error> {
+    let init_data = gateway_ids
+        .iter()
+        .map(|gateway_id| fetch_gtwy_init_data(*gateway_id).expect("gtwy init data"))
+        .collect();
+
+    Ok(init_data)
+}
+
 pub fn development_config() -> Result<ChainSpec, String> {
     let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
-    let initial_gateways = vec![
-        fetch_gtwy_init_data(*b"ksma").map_err(|error| error.to_string())?,
-        fetch_gtwy_init_data(*b"pdot").map_err(|error| error.to_string())?,
-    ];
 
     Ok(ChainSpec::from_genesis(
         // Name
@@ -340,7 +343,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
                 ],
                 seed_xdns_registry().unwrap_or_default(),
                 standard_side_effects(),
-                initial_gateways,
+                initial_gateways(vec![b"pdot", b"ksma"]).expect("initial gateways"),
                 true,
             )
         },
@@ -360,10 +363,6 @@ pub fn development_config() -> Result<ChainSpec, String> {
 
 pub fn local_testnet_config() -> Result<ChainSpec, String> {
     let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
-    let initial_gateways = vec![
-        fetch_gtwy_init_data(*b"ksma").map_err(|error| error.to_string())?,
-        fetch_gtwy_init_data(*b"pdot").map_err(|error| error.to_string())?,
-    ];
 
     Ok(ChainSpec::from_genesis(
         // Name
@@ -398,7 +397,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
                 ],
                 seed_xdns_registry().unwrap_or_default(),
                 standard_side_effects(),
-                initial_gateways,
+                initial_gateways(vec![b"pdot", b"ksma"]).expect("initial gateways"),
                 true,
             )
         },
