@@ -130,7 +130,8 @@ fn seed_xdns_registry() -> Result<Vec<XdnsRecord<AccountId>>, Error> {
         fetch_xdns_record_from_rpc(&kusama_connection_params, KUSAMA_CHAIN_ID).unwrap();
     info!("Fetched Kusama metadata successfully!");
 
-    Ok(vec![polkadot_xdns, kusama_xdns])
+    // Ok(vec![polkadot_xdns, kusama_xdns])
+    Ok(vec![])
 }
 
 fn standard_side_effects() -> Vec<SideEffectInterface> {
