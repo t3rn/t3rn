@@ -61,6 +61,7 @@ std = [
   "pallet-sudo/std",
   "frame-system/std",
   "frame-support/std",
+  "orml-traits/std",
   #bridges
   "hash-db/std",
   "num-traits/std",

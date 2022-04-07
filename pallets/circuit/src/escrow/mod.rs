@@ -2,7 +2,7 @@ use crate::*;
 use codec::Decode;
 
 use sp_std::marker::PhantomData;
-use t3rn_primitives::{circuit_portal::CircuitPortal, transfers::EscrowedBalanceOf, xdns::Xdns};
+use t3rn_primitives::transfers::EscrowedBalanceOf;
 
 pub struct Escrow<T: Config> {
     _phantom: PhantomData<T>,
@@ -177,7 +177,6 @@ pub mod test {
 
     use frame_system::{EventRecord, Phase};
 
-    use t3rn_primitives::abi::*;
     use t3rn_protocol::side_effects::test_utils::*;
 
     use crate::mock::*;

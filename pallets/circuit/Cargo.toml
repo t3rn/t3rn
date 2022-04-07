@@ -30,6 +30,7 @@ t3rn-protocol      = { path = "../../protocol", default-features = false }
 
 orml-traits = { git = "https://github.com/t3rn/open-runtime-module-library", branch = "polkadot-v0.9.17", default-features = false }
 
+[dev-dependencies]
 frame-election-provider-support = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
 pallet-authorship               = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17' }
 pallet-babe                     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
@@ -60,39 +61,20 @@ pallet-contracts-registry = { path = "../../pallets/contracts-registry" }
 default = [ "std" ]
 runtime-benchmarks = [ "frame-benchmarking" ]
 std = [
-    "codec/std",
-    "frame-benchmarking/std",
-    "frame-support/std",
-    "frame-system/std",
-    "log/std",
-    "pallet-balances/std",
-    "pallet-sudo/std",
-    "pallet-timestamp/std",
-    "serde/std",
-    "sp-io/std",
-    "sp-core/std",
-    "sp-runtime/std",
-    "sp-std/std",
-    "t3rn-primitives/std",
-    "t3rn-protocol/std",
-    "pallet-xdns/std",
-    "pallet-circuit-portal/std",
-    "pallet-contracts-registry/std",
-    "scale-info/std",
-    "orml-tokens/std",
-    "orml-traits/std",
-    "pallet-multi-finality-verifier/std",
-    "frame-election-provider-support/std",
-    "pallet-offences/std",
-    "pallet-session/std",
-    "pallet-staking/std",
-    "pallet-authorship/std",
-    "pallet-babe/std",
-    "sp-staking/std",
-    "sp-finality-grandpa/std",
-    "sp-consensus-vrf/std",
-    "sp-consensus-babe/std",
-    "pallet-transaction-payment/std",
-    "pallet-randomness-collective-flip/std",
+  "codec/std",
+  "frame-benchmarking/std",
+  "frame-support/std",
+  "frame-system/std",
+  "log/std",
+  "pallet-timestamp/std",
+  "scale-info/std",
+  "serde/std",
+  "sp-core/std",
+  "sp-io/std",
+  "sp-runtime/std",
+  "sp-std/std",
+  "t3rn-primitives/std",
+  "t3rn-protocol/std",
+  "orml-traits/std",
 ]
 try-runtime = [ "frame-support/try-runtime" ]

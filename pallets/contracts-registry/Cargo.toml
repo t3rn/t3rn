@@ -27,6 +27,7 @@ sp-std             = { default-features = false, git = "https://github.com/parit
 
 t3rn-primitives = { default-features = false, path = "../../primitives" }
 
+[dev-dependencies]
 sp-core         = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
 pallet-sudo     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
@@ -35,20 +36,17 @@ pallet-sudo     = { git = "https://github.com/paritytech/substrate", branch = 'p
 default = [ "std" ]
 runtime-benchmarks = [ "frame-benchmarking" ]
 std = [
-    "codec/std",
-    "frame-benchmarking/std",
-    "frame-support/std",
-    "frame-system/std",
-    "log/std",
-    "pallet-timestamp/std",
-    "serde/std",
-    "sp-io/std",
-    "sp-runtime/std",
-    "sp-std/std",
-    "t3rn-primitives/std",
-    "scale-info/std",
-    "sp-core/std",
-    "pallet-balances/std",
-    "pallet-sudo/std",
+  "codec/std",
+  "frame-benchmarking/std",
+  "frame-support/std",
+  "frame-system/std",
+  "log/std",
+  "pallet-timestamp/std",
+  "serde/std",
+  "sp-io/std",
+  "sp-runtime/std",
+  "sp-std/std",
+  "t3rn-primitives/std",
+  "scale-info/std",
 ]
 try-runtime = [ "frame-support/try-runtime" ]
