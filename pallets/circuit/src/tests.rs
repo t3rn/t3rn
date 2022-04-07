@@ -29,7 +29,7 @@ use t3rn_protocol::side_effects::test_utils::*;
 
 use sp_io::TestExternalities;
 
-use codec::Encode;
+use codec::{Decode, Encode};
 use sp_runtime::AccountId32;
 use sp_std::prelude::*;
 // use crate::mock;
@@ -1217,18 +1217,72 @@ fn circuit_handles_transfer_and_swap() {
         });
 }
 
+#[derive(Encode, Decode)]
+pub enum CallGenericEventStub<T: frame_system::Config, Bytes> {
+    Call {
+        from: T::AccountId,
+        dest: Bytes,
+        value: Bytes,
+        data: Bytes,
+    },
+}
+
 #[test]
-fn test_call_generic() {
+fn on_extrinsic_trigger_works_for_calls() {
     let origin = Origin::signed(ALICE);
+
+    let call_generic_protocol = ExtBuilder::get_generic_call_protocol();
+    let mut local_state = LocalState::new();
+
+    let valid_call_side_effect = produce_and_validate_side_effect(
+        vec![
+            (Type::Address(32), ArgVariant::A), // from
+            (Type::Uint(64), ArgVariant::A),    // dest - pallet id
+            (Type::Uint(64), ArgVariant::B),    // value - method id
+            (Type::Uint(64), ArgVariant::A),    // data - hex encoded extrinsic body?
+            (Type::Bytes(0), ArgVariant::A),    // insurance
+        ],
+        &mut local_state,
+        call_generic_protocol,
+    );
+
+    let side_effects = vec![valid_call_side_effect.clone()];
+    let fee = 1;
+    let sequential = true;
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 3);
+
+            System::set_block_number(1);
+
+            assert_ok!(Circuit::on_extrinsic_trigger(
+                origin,
+                side_effects,
+                fee,
+                sequential,
+            ));
+        });
+}
+
+#[test]
+fn confirmation_for_generic_calls() {
+    let origin = Origin::signed(ALICE);
+
+    let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
+
     let call_generic_protocol = ExtBuilder::get_generic_call_protocol();
     let mut local_state = LocalState::new();
     let valid_call_side_effect = produce_and_validate_side_effect(
         vec![
-            (Type::Address(32), ArgVariant::A),
-            (Type::Uint(64), ArgVariant::A),
-            (Type::Uint(64), ArgVariant::B),
-            (Type::Uint(64), ArgVariant::A),
-            (Type::Bytes(0), ArgVariant::A),
+            (Type::Address(32), ArgVariant::A), // from
+            (Type::Uint(64), ArgVariant::A),    // dest - pallet id
+            (Type::Uint(64), ArgVariant::B),    // value - method id
+            (Type::Uint(64), ArgVariant::A),    // data
+            (Type::Bytes(0), ArgVariant::A),    // insurance
         ],
         &mut local_state,
         call_generic_protocol,
@@ -1254,8 +1308,42 @@ fn test_call_generic() {
                 sequential,
             ));
 
-            for event in System::events() {
-                println!("{:?}", event);
+            let (xtx_id, side_effect_a_id) = set_ids(valid_call_side_effect.clone());
+
+            let generic_call_encoded_event = CallGenericEventStub::<Test, u64>::Call {
+                from: hex!("0909090909090909090909090909090909090909090909090909090909090909")
+                    .into(), // variant A
+                dest: 1u64,  // variant A
+                value: 2u64, // variant B
+                data: 1u64,  // variant A
             }
+            .encode();
+
+            for ev in System::events() {
+                println!("ev: {:?}", ev);
+            }
+
+            let confirmation_call = ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
+                err: None,
+                output: None,
+                encoded_effect: generic_call_encoded_event,
+                inclusion_proof: None,
+                executioner: BOB_RELAYER,
+                received_at: 0,
+                cost: None,
+            };
+
+            assert_ok!(Circuit::confirm_side_effect(
+                origin_relayer_bob,
+                xtx_id,
+                valid_call_side_effect,
+                confirmation_call,
+                None,
+                None,
+            ));
         });
 }
+
+// ToDo test call with insurance
+#[test]
+fn circuit_handles_generic_call_with_insurance() {}
