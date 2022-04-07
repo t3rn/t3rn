@@ -1,7 +1,8 @@
 import { EventEmitter } from 'events'
 import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
-import { SideEffectStateManager, TransactionType } from "../../utils/types"
+import { SideEffectStateManager, TransactionType, EventMapper } from "../../utils/types"
 import { getEventProofs } from './utils/helper';
+import chalk from 'chalk';
 
 export default class SubstrateRelayer extends EventEmitter {
 
@@ -9,20 +10,29 @@ export default class SubstrateRelayer extends EventEmitter {
     api: ApiPromise;
     id: string;
     rpc: string;
-    signer: any
+    signer: any;
+    color: string;
+    name: string;
 
-    async setup(rpc: string, name: string) {
+    log(msg: string) {
+        console.log(chalk[this.color](this.name + " - "), msg)
+    }
+
+    async setup(rpc: string, name: string, color: string) {
         this.rpc = rpc;
         this.api = await ApiPromise.create({
             provider: new WsProvider(rpc)
         })
-
+        
         const keyring = new Keyring({ type: 'sr25519' });
-
+        
         this.signer =
-            process.env.SIGNER_KEY === undefined
-                ? keyring.addFromUri('//Alice')
-                : keyring.addFromMnemonic(process.env.SIGNER_KEY);
+        process.env.SIGNER_KEY === undefined
+        ? keyring.addFromUri('//Alice')
+        : keyring.addFromMnemonic(process.env.SIGNER_KEY);
+        
+        this.color = color;
+        this.name = name;
     }
 
     async executeTx(sideEffectStateManager: SideEffectStateManager) {
@@ -44,15 +54,8 @@ export default class SubstrateRelayer extends EventEmitter {
         if (result.status.isFinalized) {
             const blockHeader = result.status.asFinalized;
             const blockNumber = await this.getBlockNumber(blockHeader);
-            
-            const event = result.events.find((item) => {
-                return item.event.method === 'Transfer';
-            }).event.toHex();
-            
-            if(!event) {
-                console.error("No Transfer Event found");
-            }
-            
+            const event = this.getEvent(sideEffectStateManager.transactionType, result.events);
+
             // should always be last event
             const success = result.events[result.events.length - 1].event.method === "ExtrinsicSuccess";
             const inclusionProof = await getEventProofs(this.api, blockHeader);
@@ -66,8 +69,8 @@ export default class SubstrateRelayer extends EventEmitter {
                 success
             )
 
-            console.log("Transaction Successful:", success)
-            console.log(`Transaction finalized at blockHash ${blockHeader}`);
+            this.log(`SideEffect Executed: ${success}, ${blockHeader}`)
+            // console.log(`Transaction finalized at blockHash ${blockHeader}`);
 
             this.emit("txFinalized", sideEffectStateManager.getId())
             
@@ -78,4 +81,16 @@ export default class SubstrateRelayer extends EventEmitter {
     async getBlockNumber(hash: any) {
         return (await this.api.rpc.chain.getHeader(hash)).number.toNumber()
     }
+
+    getEvent(transactionType: TransactionType, events: any[]) {
+        const event = events.find((item) => {
+            return item.event.method === EventMapper[transactionType];
+        })
+
+        if(event) return event.event.toHex()
+
+        console.log("Transaction Successful but correct event not found!")
+        console.log("This could indicate an empty transaction value")
+    }
+
 }

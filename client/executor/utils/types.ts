@@ -9,6 +9,9 @@ export enum TransactionType {
     Swap,
 }
 
+// maps event names to TransactionType enum;
+export const EventMapper = ["Transfer", "MultiTransfer"]
+
 export class SideEffectStateManager {
     requester: AccountId32;
     executor: AccountId32;

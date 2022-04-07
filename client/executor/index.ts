@@ -3,24 +3,33 @@ import CircuitListener from "./circuit/listener";
 import CircuitRelayer from "./circuit/relayer";
 import SubstrateRelayer from "./gateways/substrate/relayer";
 import config from "./config.json"
+import { colors } from "./utils/helpers";
 import { SideEffectStateManager } from "./utils/types";
+import chalk from 'chalk';
 
 class Executor {
     circuitListener: CircuitListener;
     circuitRelayer: CircuitRelayer;
     gatewayInstances: any;
     currentlyRunning = {};
+    color: string;
 
     constructor() {
         this.circuitListener = new CircuitListener();
         this.circuitRelayer = new CircuitRelayer();
+        this.color = colors[0];
+    }
+
+    log(msg: string) {
+        console.log(chalk[this.color]("index.ts - "), msg)
     }
 
     async setup() {
         await this.circuitListener.setup(config.circuit.rpc)
-        await this.circuitRelayer.setup(config.circuit.rpc)
+        await this.circuitRelayer.setup(config.circuit.rpc, colors[1])
         await this.circuitListener.start()
         await this.initializeGateways()
+        this.log("Components Initialzed")
     }
 
     async initializeGateways() {
@@ -29,7 +38,7 @@ class Executor {
             const entry = config.gateways[i]
             if(entry.type === "substrate") {
                 let instance = new SubstrateRelayer();
-                await instance.setup(entry.rpc, entry.name)
+                await instance.setup(entry.rpc, entry.name, colors[i + 2])
 
                 instance.on("txFinalized", data => {
                     this.handleSideEffectExecution(data)
