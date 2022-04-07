@@ -47,7 +47,6 @@ export class SideEffectStateManager {
             }
             
         }
-
     }
 
     execute(encodedEffect: any, blockNumber: number, executioner: any, inclusionProof: any, blockHeader: any, executed: boolean) {
