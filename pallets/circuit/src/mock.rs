@@ -498,7 +498,7 @@ impl ExtBuilder {
     pub(crate) fn with_default_xdns_records(mut self) -> ExtBuilder {
         let circuit_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
-            *b"circ",
+            [3u8, 3u8, 3u8, 3u8],
             Default::default(),
             GatewayVendor::Substrate,
             GatewayType::ProgrammableExternal(0),
