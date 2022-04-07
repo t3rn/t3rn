@@ -56,12 +56,7 @@ class Executor {
 
     async handleSideEffectExecution(xtxId: string) {
 
-        console.log(this.currentlyRunning[xtxId])
-        // console.log(this.currentlyRunning[sideEffectStateManager.getId()])
-        // let sideEffect = this.addCompletionData(xtxId, completionData);
-
-
-        // this.circuitRelayer.confirmSideEffect(sideEffect)
+        this.circuitRelayer.confirmSideEffect(this.currentlyRunning[xtxId])
     }
 }
 
