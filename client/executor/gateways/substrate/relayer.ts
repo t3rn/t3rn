@@ -33,7 +33,6 @@ export default class SubstrateRelayer extends EventEmitter {
             case TransactionType.Transfer: {
                 const unsub = await this.api.tx.balances.transfer(...sideEffectStateManager.getTransactionArguments()).signAndSend(this.signer, async (result) => {
                     if (result.status.isFinalized) {
-                        console.log("is finalized")
                         this.handleTx(sideEffectStateManager, result, unsub);
                     }
                 })
@@ -42,50 +41,6 @@ export default class SubstrateRelayer extends EventEmitter {
                 return null;
             }
         }
-
-
-        // this replaces a SCALE decode, which is hard to use here because the arguments are just bytes. 
-        // const amount = new BN(sideEffect.encodedArgs[2], "le");
-        // console.log("Amount:", amount.toString());
-        // const unsub = await this.api.tx.balances.transfer(sideEffect.encodedArgs[1], amount.toString()).signAndSend(this.signer, async (result) => {
-        //     if (result.status.isFinalized) {
-        //         const blockHash = result.status.asFinalized;
-        //         const blockNumber = await this.getBlockNumber(blockHash);
-
-                
-                
-        //         const event = result.events.find((item) => {
-        //             return item.event.method === 'Transfer';
-        //         }).event.toHex();
-                
-        //         if(!event) {
-        //             console.error("No Transfer Event found");
-        //             unsub()
-        //         }
-                
-        //         // should always be last event
-        //         const success = result.events[result.events.length - 1].event.method === "ExtrinsicSuccess";
-        //         const inclusionProof = await getEventProofs(this.api, blockHash);
-
-        //         console.log("Transaction Successful:", success)
-        //         console.log(`Transaction finalized at blockHash ${blockHash}`);
-
-        //         let completionData = success ? <CompletionData>{
-        //             success,
-        //             blockHash,
-        //             blockNumber,
-        //             event,
-        //             inclusionProof
-        //         } : <CompletionData>{
-        //             success
-        //         }
-                
-        //         this.emit("txFinalized", completionData)
-
-        //         unsub();
-        //     }
-        // });
-       
     }
 
     async handleTx(sideEffectStateManager: SideEffectStateManager, result, unsub) {
@@ -95,7 +50,7 @@ export default class SubstrateRelayer extends EventEmitter {
             
             const event = result.events.find((item) => {
                 return item.event.method === 'Transfer';
-            }).event;
+            }).event.toHex();
             
             if(!event) {
                 console.error("No Transfer Event found");
@@ -105,7 +60,7 @@ export default class SubstrateRelayer extends EventEmitter {
             const success = result.events[result.events.length - 1].event.method === "ExtrinsicSuccess";
             const inclusionProof = await getEventProofs(this.api, blockHeader);
 
-            sideEffectStateManager.executed(
+            sideEffectStateManager.execute(
                 event,
                 blockNumber,
                 this.signer.address,

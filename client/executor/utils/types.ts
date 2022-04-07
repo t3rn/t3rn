@@ -1,8 +1,7 @@
 import '@t3rn/types';
 import { AccountId32, H256,  } from '@polkadot/types/interfaces/runtime';
-import { T3rnPrimitivesSideEffect, T3rnPrimitivesSideEffectConfirmedSideEffect } from '@polkadot/types/lookup';
+import { T3rnPrimitivesSideEffect, } from '@polkadot/types/lookup';
 import { TextDecoder } from 'util';
-import { match } from 'assert';
 const BN = require("bn.js");
 
 export enum TransactionType {
@@ -15,14 +14,15 @@ export class SideEffectStateManager {
     executor: AccountId32;
     xtxId: H256;
     sideEffect: T3rnPrimitivesSideEffect;
-    confirmedSideEffect: T3rnPrimitivesSideEffectConfirmedSideEffect;
+    confirmedSideEffect: object;
 
     inclusionProof: any;
-    blockHeader: any;
+    execBlockHeader: any;
 
     transactionType: TransactionType;
-    execd: boolean;
+    executed: boolean;
     confirmed: boolean;
+    confirmBlockHeader: any;
 
     setRequester(requester: AccountId32) {
         this.requester = requester;
@@ -50,8 +50,8 @@ export class SideEffectStateManager {
 
     }
 
-    executed(encodedEffect: any, blockNumber: number, executioner: any, inclusionProof: any, blockHeader: any, execd: boolean) {
-        this.confirmedSideEffect = <any>{
+    execute(encodedEffect: any, blockNumber: number, executioner: any, inclusionProof: any, blockHeader: any, executed: boolean) {
+        this.confirmedSideEffect = {
             err: null,
             output: null,
             encodedEffect: encodedEffect,
@@ -61,10 +61,15 @@ export class SideEffectStateManager {
             cost: null,
         };
 
-        this.execd = execd;
+        this.executed = executed;
         this.executor = executioner;
         this.inclusionProof = inclusionProof;
-        this.blockHeader = blockHeader;
+        this.execBlockHeader = blockHeader;
+    }
+
+    confirm(confirmed: boolean, blockHeader: any) {
+        this.confirmed = confirmed;
+        this.confirmBlockHeader = blockHeader;
     }
 
     /// returns xtxId as string
