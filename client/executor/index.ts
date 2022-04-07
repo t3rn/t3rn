@@ -21,7 +21,6 @@ class Executor {
         await this.circuitRelayer.setup(config.circuit.rpc)
         await this.circuitListener.start()
         await this.initializeGateways()
-        console.log("Main - Instances Initialized")
     }
 
     async initializeGateways() {
@@ -34,6 +33,10 @@ class Executor {
 
                 instance.on("txFinalized", data => {
                     this.handleSideEffectExecution(data)
+                })
+
+                instance.on("SideEffectConfirmed", data => {
+                    this.handleCompletion(data);
                 })
 
                 gatewayInstances[entry.id] = instance;
@@ -55,8 +58,11 @@ class Executor {
     }
 
     async handleSideEffectExecution(xtxId: string) {
-
         this.circuitRelayer.confirmSideEffect(this.currentlyRunning[xtxId])
+    }
+
+    async handleCompletion(xtxId: string) {
+        delete this.currentlyRunning[xtxId];
     }
 }
 
