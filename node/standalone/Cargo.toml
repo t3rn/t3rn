@@ -55,8 +55,10 @@ substrate-frame-rpc-system     = { git = "https://github.com/paritytech/substrat
 frame-benchmarking     = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
 frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
 
+
 # Local Dependencies
 circuit-standalone-runtime = { path = "../../runtime/standalone" }
+pallet-3vm-contracts-rpc   = { path = "../../3vm/pallets/wasm-contracts/rpc", package = "pallet-contracts-rpc" }
 pallet-xdns                = { path = "../../pallets/xdns" }
 t3rn-primitives            = { path = "../../primitives" }
 

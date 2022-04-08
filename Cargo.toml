@@ -2,7 +2,7 @@
 panic = 'unwind'
 
 [workspace]
-exclude = [  ]
+exclude = [ '3vm' ]
 members = [
   'node/standalone',
   'node/parachain',

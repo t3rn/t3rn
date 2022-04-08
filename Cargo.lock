@@ -1096,6 +1096,7 @@ dependencies = [
  "jsonrpc-core 18.0.0",
  "jsonrpc-runtime-client",
  "log",
+ "pallet-contracts-rpc",
  "pallet-transaction-payment-rpc",
  "pallet-xdns",
  "parity-scale-codec 2.3.1",
@@ -1170,7 +1171,9 @@ dependencies = [
  "pallet-circuit",
  "pallet-circuit-portal",
  "pallet-collator-selection",
+ "pallet-contracts-primitives",
  "pallet-contracts-registry",
+ "pallet-contracts-rpc-runtime-api",
  "pallet-multi-finality-verifier",
  "pallet-randomness-collective-flip",
  "pallet-session",
@@ -1178,6 +1181,7 @@ dependencies = [
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-wasm-contracts",
  "pallet-xcm",
  "pallet-xdns",
  "parachain-info",
@@ -1219,6 +1223,7 @@ dependencies = [
  "jsonrpc-core 18.0.0",
  "jsonrpc-runtime-client",
  "log",
+ "pallet-contracts-rpc",
  "pallet-transaction-payment-rpc",
  "pallet-xdns",
  "sc-basic-authorship",
@@ -1272,7 +1277,6 @@ dependencies = [
  "pallet-circuit",
  "pallet-circuit-portal",
  "pallet-circuit-portal-rpc-runtime-api",
- "pallet-contracts",
  "pallet-contracts-primitives",
  "pallet-contracts-registry",
  "pallet-contracts-registry-rpc-runtime-api",
@@ -1287,6 +1291,7 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-utility",
+ "pallet-wasm-contracts",
  "pallet-xdns",
  "pallet-xdns-rpc-runtime-api",
  "parity-scale-codec 2.3.1",
@@ -6221,36 +6226,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-contracts"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.17#22d40c761a985482f93bbbea5ba4199bdba74f8e"
-dependencies = [
- "bitflags",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "libsecp256k1 0.7.0",
- "log",
- "pallet-contracts-primitives",
- "pallet-contracts-proc-macro",
- "parity-scale-codec 2.3.1",
- "rand 0.8.5",
- "scale-info 1.0.0",
- "serde",
- "smallvec 1.8.0",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-sandbox",
- "sp-std",
- "wasm-instrument",
- "wasmi-validation",
-]
-
-[[package]]
 name = "pallet-contracts-primitives"
 version = "5.0.0"
-source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.17#22d40c761a985482f93bbbea5ba4199bdba74f8e"
 dependencies = [
  "bitflags",
  "parity-scale-codec 2.3.1",
@@ -6305,9 +6282,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-contracts-rpc"
+version = "4.0.0-dev"
+dependencies = [
+ "jsonrpc-core 18.0.0",
+ "jsonrpc-core-client 18.0.0",
+ "jsonrpc-derive",
+ "pallet-contracts-primitives",
+ "pallet-contracts-rpc-runtime-api",
+ "parity-scale-codec 2.3.1",
+ "serde",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+]
+
+[[package]]
 name = "pallet-contracts-rpc-runtime-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.17#22d40c761a985482f93bbbea5ba4199bdba74f8e"
 dependencies = [
  "pallet-contracts-primitives",
  "parity-scale-codec 2.3.1",
@@ -6936,6 +6930,34 @@ dependencies = [
  "scale-info 1.0.0",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-wasm-contracts"
+version = "1.0.0-alpha.0"
+dependencies = [
+ "bitflags",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "libsecp256k1 0.7.0",
+ "log",
+ "pallet-contracts-primitives",
+ "pallet-contracts-proc-macro",
+ "parity-scale-codec 2.3.1",
+ "rand 0.8.5",
+ "scale-info 1.0.0",
+ "serde",
+ "smallvec 1.8.0",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-sandbox",
+ "sp-std",
+ "t3rn-primitives",
+ "wasm-instrument",
+ "wasmi-validation",
 ]
 
 [[package]]
