@@ -123,14 +123,15 @@ fn seed_xdns_registry() -> Result<Vec<XdnsRecord<AccountId>>, Error> {
         secure: true,
     };
 
-    let polkadot_xdns =
+    let _polkadot_xdns =
         fetch_xdns_record_from_rpc(&polkadot_connection_params, POLKADOT_CHAIN_ID).unwrap();
     info!("Fetched Polkadot metadata successfully!");
-    let kusama_xdns =
+    let _kusama_xdns =
         fetch_xdns_record_from_rpc(&kusama_connection_params, KUSAMA_CHAIN_ID).unwrap();
     info!("Fetched Kusama metadata successfully!");
 
-    Ok(vec![polkadot_xdns, kusama_xdns])
+    // Ok(vec![polkadot_xdns, kusama_xdns])
+    Ok(vec![])
 }
 
 fn standard_side_effects() -> Vec<SideEffectInterface> {

@@ -94,6 +94,7 @@ fn test_register_gateway_with_default_polka_like_header() {
             gateway_sys_props,
             first_header.encode(),
             authorities,
+            Default::default(),
             allowed_side_effects,
         ));
     });
@@ -145,6 +146,7 @@ fn test_register_gateway_with_u64_substrate_header() {
             gateway_sys_props,
             first_header.encode(),
             authorities,
+            Default::default(),
             allowed_side_effects,
         ));
     });
@@ -196,6 +198,7 @@ fn test_register_gateway_with_default_eth_like_header() {
             gateway_sys_props,
             first_header.encode(),
             authorities,
+            Default::default(),
             allowed_side_effects,
         ));
     });
@@ -247,6 +250,7 @@ fn test_register_gateway_with_u64_eth_like_header() {
             gateway_sys_props,
             first_header.encode(),
             authorities,
+            Default::default(),
             allowed_side_effects,
         ));
     });
@@ -300,6 +304,7 @@ fn test_register_gateway_with_u64_substrate_header_and_allowed_side_effects() {
             gateway_sys_props.clone(),
             first_header.encode(),
             authorities,
+            Default::default(),
             allowed_side_effects.clone(),
         ));
 

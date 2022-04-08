@@ -153,4 +153,6 @@ pub trait Xdns<T: frame_system::Config> {
     fn get_abi(chain_id: ChainId) -> Result<GatewayABIConfig, &'static str>;
 
     fn get_gateway_value_unsigned_type_unsafe(chain_id: &ChainId) -> Type;
+
+    fn get_gateway_type_unsafe(chain_id: &ChainId) -> GatewayType;
 }

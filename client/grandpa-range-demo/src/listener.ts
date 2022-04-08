@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events'
 import { ApiPromise, WsProvider } from '@polkadot/api'
-import { JustificationNotification, Header } from '@polkadot/types/interfaces'
+import { Header } from '@polkadot/types/interfaces'
+import { grandpaDecode } from './util'
 import createDebug from 'debug'
 import 'dotenv/config'
 
@@ -14,14 +15,12 @@ export default class Listener extends EventEmitter {
   headers: Header[] = []
   // offset in this.headers for the current range batch
   offset: number = 0
-  // block number of the last enqueued header
-  last: number = 0
-  // tmp cache holding early bird headers
-  // i.e. if last #1, curr #3, then it would cache #3 until we got #2
-  cache: Map<number, Header> = new Map<number, Header>()
   // last known grandpa set id
   grandpaSetId: number = 0
-
+  // last emitted anchor
+  anchor: number = 0
+  // bike shed mutex
+  busy: boolean = false
   unsubNewHeads: () => void
 
   async init() {
@@ -30,69 +29,88 @@ export default class Listener extends EventEmitter {
     })
 
     this.unsubNewHeads = await this.kusama.derive.chain.subscribeNewHeads(
-      async (header: Header) => {
+      async header => {
         await this.handleGrandpaSet()
 
         await this.handleHeader(header)
-
-        if (this.headers.length - this.offset === this.rangeSize) {
-          await this.emitRange()
+        Listener.debug(
+          `this.headers.length - this.offset ${
+            this.headers.length - this.offset
+          } busy ${this.busy}`
+        )
+        if (!this.busy && this.headers.length - this.offset >= this.rangeSize) {
+          await this.concludeRange()
         }
       }
     )
   }
 
   async handleGrandpaSet() {
-    const currentSetId: number = Number(
-      (await this.kusama.query.grandpa.currentSetId()).toJSON()
-    )
+    const currentSetId = await this.kusama.query.grandpa
+      .currentSetId()
+      .then(id => Number(id.toJSON()))
 
     if (this.grandpaSetId !== 0 && currentSetId !== this.grandpaSetId) {
       Listener.debug('grandpa set change', this.grandpaSetId, currentSetId)
-      await this.emitRange()
+      await this.concludeRange()
     }
 
     this.grandpaSetId = currentSetId
   }
 
   async handleHeader(header: Header) {
-    if (this.last !== 0 && header.number.toNumber() > this.last + 1) {
-      // out of sequence early bird header
-      this.cache.set(header.number.toNumber(), header)
-      Listener.debug(`header#${header.number.toNumber()} out of sequence`)
-    } else if (this.last === 0 || header.number.toNumber() === this.last + 1) {
-      // in sequence
+    if (
+      this.headers.length === 0 ||
+      this.headers[this.headers.length - 1].number.toNumber() + 1 ===
+        header.number.toNumber()
+    ) {
       this.headers.push(header)
-      this.last = header.number.toNumber()
-      Listener.debug(`header#${header.number.toNumber()} in sequence`)
-      // if it is now a cached header's turn push it
-      const cached: Header | undefined = this.cache.get(this.last + 1)
-      if (cached) {
-        this.headers.push(cached)
-        this.cache.delete(this.last + 1)
-        this.last = cached.number.toNumber()
-        Listener.debug(`pushed cached header#${cached.number.toNumber()}`)
-      }
-    } else {
-      // old header we already got
+      Listener.debug(`#${header.number.toNumber()}`)
     }
   }
 
-  async emitRange() {
-    Listener.debug('emitting range...')
-
-    const range: Header[] = this.headers.slice(
-      this.offset,
-      this.offset + this.rangeSize
-    )
-    this.offset += this.rangeSize
-
+  async concludeRange() {
+    this.busy = true
+    Listener.debug('concluding range...')
     const unsubJustifications =
       await this.kusama.rpc.grandpa.subscribeJustifications(
-        async (justification: JustificationNotification) => {
-          Listener.debug('got a grandpa justification...')
-          this.emit('range', range, justification, this.gatewayId)
+        async justification => {
           unsubJustifications()
+
+          const { blockNumber } = await grandpaDecode(justification)
+
+          Listener.debug('decoded block number', blockNumber)
+
+          const justifiedHeaderIndex = this.headers.findIndex(
+            h => h.number.toNumber() === blockNumber
+          )
+
+          if (justifiedHeaderIndex + 1 > this.offset) {
+            const reversedRange = this.headers
+              .slice(this.offset, justifiedHeaderIndex + 1)
+              .reverse()
+
+            this.offset = justifiedHeaderIndex + 1
+
+            const anchor = reversedRange.shift() as Header
+
+            Listener.debug(
+              'anchor',
+              anchor.number.toNumber(),
+              'reversedRange',
+              reversedRange.map(h => h.number.toNumber())
+            )
+
+            this.emit(
+              'range',
+              this.gatewayId,
+              anchor,
+              reversedRange,
+              justification
+            )
+          }
+
+          this.busy = false
         }
       )
   }

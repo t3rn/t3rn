@@ -1,7 +1,7 @@
 use crate::{
     abi::Type,
     protocol::SideEffectProtocol,
-    side_effect::{EventSignature, SideEffectConfirmationProtocol, SideEffectName},
+    side_effect::{EventSignature, SideEffectName},
 };
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
@@ -73,5 +73,3 @@ impl SideEffectProtocol for SideEffectInterface {
         self.revert_events.clone()
     }
 }
-
-impl SideEffectConfirmationProtocol for SideEffectInterface {}

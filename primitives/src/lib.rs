@@ -64,6 +64,7 @@ pub enum GatewayType {
     ProgrammableInternal(u32),
     ProgrammableExternal(u32),
     TxOnly(u32),
+    OnCircuit(u32),
 }
 
 impl Default for GatewayType {
@@ -77,6 +78,7 @@ impl GatewayType {
         match self {
             Self::ProgrammableInternal(nonce) => nonce,
             Self::ProgrammableExternal(nonce) => nonce,
+            Self::OnCircuit(nonce) => nonce,
             Self::TxOnly(nonce) => nonce,
         }
     }
