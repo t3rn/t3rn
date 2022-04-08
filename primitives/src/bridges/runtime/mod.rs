@@ -54,6 +54,15 @@ pub const KUSAMA_CHAIN_ID: ChainId = *b"ksma";
 /// Bridge-with-Rococo instance id.
 pub const ROCOCO_CHAIN_ID: ChainId = *b"roco";
 
+/// Moonsama (Moonbeam Rococo parachain) bridge instance id.
+pub const MOONSAMA_CHAIN_ID: ChainId = *b"msma";
+
+/// Basilisk (HydraDX Rococo parachain) bridge instance id.
+pub const BASILISK_CHAIN_ID: ChainId = *b"basi";
+
+/// Catalyst (Centrifuge Rococo parachain) bridge instance id.
+pub const CATALYST_CHAIN_ID: ChainId = *b"cata";
+
 /// Bridge-with-Wococo instance id.
 pub const WOCOCO_CHAIN_ID: ChainId = *b"woco";
 

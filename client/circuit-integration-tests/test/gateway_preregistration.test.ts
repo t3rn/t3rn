@@ -1,7 +1,7 @@
 import '@t3rn/types'
 import { ApiPromise, Keyring, WsProvider } from '@polkadot/api'
-import { assert } from 'chai'
 import { T3rnPrimitivesXdnsXdnsRecord } from '@polkadot/types/lookup'
+import { assert } from 'chai'
 
 describe('Default Multi Finality Verifier', function () {
   this.timeout(60000)
@@ -18,15 +18,13 @@ describe('Default Multi Finality Verifier', function () {
 
   describe('gateway preregistration', () => {
     it('should have preregistered Polkadot and Kusama gateways', async () => {
-      /*
-      // FIXME: assert xdns record is stored
-      const xdnsRecord = await circuit.query.xdns
-        .xdnsRecords(Uint8Array.from([ 112, 100, 111, 116 ])) // pdot
-        //                           [ 107, 115, 109, 97 ]    // ksma
-        .then(encoded => encoded.toHuman())
+      // FIXME: assert xdns records are stored
+      // const xdnsRecord = await circuit.query.xdns
+      //   .xdnsRecords(Uint8Array.from([ 112, 100, 111, 116 ])) // pdot
+      //   //                           [ 107, 115, 109, 97 ]    // ksma
+      //   .then(encoded => encoded.toHuman())
 
-      console.log('$$$$$$$ xdnsRecord', xdnsRecord)
-      */
+      // console.log('$$$$$$$ xdnsRecord', xdnsRecord)
 
       // assert gtwy instantiated in mfv storage
       const instantiatedGateways =
@@ -37,7 +35,21 @@ describe('Default Multi Finality Verifier', function () {
       assert.deepEqual(instantiatedGateways, ['pdot', 'ksma'])
     })
 
-    // TODO
-    it('should have preregistered Rococo parachain gateways', async () => {})
+    it('should have preregistered Rococo parachain gateways', async () => {
+      // FIXME: assert xdns records are stored
+      // const xdnsRecord = await circuit.query.xdns
+      //   .xdnsRecords(Uint8Array.from([ ]))
+      //   .then(encoded => encoded.toHuman())
+
+      // console.log('$$$$$$$ xdnsRecord', xdnsRecord)
+
+      // assert gtwy instantiated in mfv storage
+      const instantiatedGateways =
+        await circuit.query.multiFinalityVerifierDefault
+          .instantiatedGatewaysMap()
+          .then(encoded => encoded.toHuman())
+
+      assert.deepEqual(instantiatedGateways, ['roco', 'basi', 'cata'])
+    })
   })
 })

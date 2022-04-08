@@ -11,14 +11,17 @@ use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
-use jsonrpc_runtime_client::ConnectionParams;
+use jsonrpc_runtime_client::{
+    create_rpc_client, get_gtwy_init_data, get_metadata, ConnectionParams,
+};
+use pallet_xdns::types::{SideEffectInterface, XdnsRecord};
 use sp_core::Encode;
 /// t3rn-pallets chain spec config -- START
 use t3rn_primitives::{
     abi::Type,
     bridges::{
         header_chain::InitializationData,
-        runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID},
+        runtime::{CATALYST_CHAIN_ID, KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID, ROCOCO_CHAIN_ID},
     },
     ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor, Header,
 };
@@ -36,14 +39,10 @@ fn fetch_xdns_record_from_rpc(
     chain_id: t3rn_primitives::ChainId,
 ) -> Result<XdnsRecord<AccountId>, Error> {
     async_std::task::block_on(async move {
-        let client = jsonrpc_runtime_client::create_rpc_client(params)
-            .await
-            .unwrap();
+        let client = create_rpc_client(params).await.unwrap();
 
         let _runtime_version = client.clone().runtime_version().await.unwrap();
-        let metadata = jsonrpc_runtime_client::get_metadata(&client.clone())
-            .await
-            .unwrap();
+        let metadata = get_metadata(&client.clone()).await.unwrap();
 
         let gateway_sys_props = GatewaySysProps::try_from(&chain_id)
             .map_err(|err| Error::new(ErrorKind::InvalidInput, err))?;
@@ -242,13 +241,20 @@ fn standard_side_effects() -> Vec<SideEffectInterface> {
 /// Fetches gateway initialization data by chain id.
 fn fetch_gtwy_init_data(gateway_id: &ChainId) -> Result<InitializationData<Header>, Error> {
     async_std::task::block_on(async move {
-        let endpoint = match gateway_id {
-            b"pdot" => "rpc.polkadot.io",
-            b"ksma" => "kusama-rpc.polkadot.io",
+        let endpoint = match *gateway_id {
+            POLKADOT_CHAIN_ID => "rpc.polkadot.io",
+            KUSAMA_CHAIN_ID => "kusama-rpc.polkadot.io",
+            ROCOCO_CHAIN_ID => "rococo-rpc.polkadot.io",
+            // FIXME: basilisk doesn't have grandpa_proveFinality
+            // used in jsonrpc_runtime_client::get_gtwy_init_data
+            // BASILISK_CHAIN_ID => "rpc-01.basilisk-rococo.hydradx.io",
+            CATALYST_CHAIN_ID => "fullnode.catalyst.cntrfg.com",
+            // NOTE: moonsama is stuck => pregregistration would fail
+            // MOONSAMA_CHAIN_ID => "moonsama-testnet-rpc.moonsama.com",
             _ => return Err(Error::new(ErrorKind::InvalidInput, "unknown gateway id")),
         };
 
-        let client = jsonrpc_runtime_client::create_rpc_client(&ConnectionParams {
+        let client = create_rpc_client(&ConnectionParams {
             host: endpoint.to_string(),
             port: 443,
             secure: true,
@@ -256,7 +262,12 @@ fn fetch_gtwy_init_data(gateway_id: &ChainId) -> Result<InitializationData<Heade
         .await
         .map_err(|error| Error::new(ErrorKind::NotConnected, error))?;
 
-        let (authority_set, header) = jsonrpc_runtime_client::get_gtwy_init_data(&client.clone())
+        let is_relay_chain = match *gateway_id {
+            POLKADOT_CHAIN_ID | KUSAMA_CHAIN_ID | ROCOCO_CHAIN_ID => true,
+            _ => false,
+        };
+
+        let (authority_set, header) = get_gtwy_init_data(&client.clone(), is_relay_chain)
             .await
             .map_err(|error| Error::new(ErrorKind::InvalidData, error))?;
 
@@ -275,7 +286,11 @@ fn initial_gateways(gateway_ids: Vec<&ChainId>) -> Result<Vec<InitializationData
     let init_data = gateway_ids
         .iter()
         .map(|gateway_id| {
-            fetch_gtwy_init_data(*gateway_id).expect(&format!(
+            let is_relay_chain = match *gateway_id {
+                POLKADOT_CHAIN_ID | KUSAMA_CHAIN_ID | ROCOCO_CHAIN_ID => true,
+                _ => false
+            };
+            fetch_gtwy_init_data(*gateway_id, is_relay_chain).expect(&format!(
                 "{:?} gtwy init data",
                 String::from_utf8_lossy(*gateway_id).into_owned()
             ))
@@ -387,7 +402,13 @@ pub fn development_config() -> ChainSpec {
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
                 seed_xdns_registry().unwrap_or_default(),
                 standard_side_effects(),
-                initial_gateways(vec![b"pdot", b"ksma"]).expect("initial gateways"),
+                initial_gateways(vec![
+                    &POLKADOT_CHAIN_ID,
+                    &KUSAMA_CHAIN_ID,
+                    &ROCOCO_CHAIN_ID,
+                    &CATALYST_CHAIN_ID,
+                ])
+                .expect("initial gateways"),
             )
         },
         Vec::new(),
@@ -447,7 +468,13 @@ pub fn local_testnet_config() -> ChainSpec {
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
                 seed_xdns_registry().unwrap_or_default(),
                 standard_side_effects(),
-                initial_gateways(vec![b"pdot", b"ksma"]).expect("initial gateways"),
+                initial_gateways(vec![
+                    &POLKADOT_CHAIN_ID,
+                    &KUSAMA_CHAIN_ID,
+                    &ROCOCO_CHAIN_ID,
+                    &CATALYST_CHAIN_ID,
+                ])
+                .expect("initial gateways"),
             )
         },
         // Bootnodes
