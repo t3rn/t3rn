@@ -15,7 +15,7 @@ use sp_runtime::{
     impl_opaque_keys,
     testing::{Header, TestXt},
     traits::{Convert, IdentityLookup, OpaqueKeys},
-    Perbill,
+    AccountId32, Perbill,
 };
 
 use frame_election_provider_support::onchain;
@@ -478,6 +478,7 @@ pub struct ExtBuilder {
 
 parameter_types! {
     pub const CircuitPalletId: PalletId = PalletId(*b"pal/circ");
+    pub const SelfGatewayId: [u8; 4] = [3, 3, 3, 3];
 }
 
 impl Config for Test {
@@ -488,6 +489,7 @@ impl Config for Test {
     type Event = Event;
     type MultiCurrency = ORMLTokens;
     type PalletId = CircuitPalletId;
+    type SelfGatewayId = SelfGatewayId;
     type WeightInfo = ();
     type Xdns = XDNS;
 }
@@ -496,7 +498,7 @@ impl ExtBuilder {
     pub(crate) fn with_default_xdns_records(mut self) -> ExtBuilder {
         let circuit_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
-            *b"circ",
+            [3u8, 3u8, 3u8, 3u8],
             Default::default(),
             GatewayVendor::Substrate,
             GatewayType::ProgrammableExternal(0),
@@ -839,3 +841,8 @@ impl ExtBuilder {
         ext
     }
 }
+
+pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);
+pub const BOB_RELAYER: AccountId32 = AccountId32::new([2u8; 32]);
+pub const CHARLIE: AccountId32 = AccountId32::new([3u8; 32]);
+pub const DJANGO: AccountId32 = AccountId32::new([4u8; 32]);

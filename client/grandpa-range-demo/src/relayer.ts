@@ -1,12 +1,8 @@
 import { ApiPromise, WsProvider } from '@polkadot/api'
 import { createTestPairs } from '@polkadot/keyring/testingPairs'
-import {
-  JustificationNotification,
-  Header,
-  BridgedHeader,
-  GrandpaJustification,
-} from '@polkadot/types/interfaces'
+import { Header } from '@polkadot/types/interfaces'
 import registerKusamaGateway from './register'
+import { formatEvents } from './util'
 import createDebug from 'debug'
 import 'dotenv/config'
 import types from './types.json'
@@ -26,12 +22,10 @@ export default class Relayer {
       types: types as any,
     })
 
-    await registerKusamaGateway(this.circuit)
-
-    Relayer.debug(`gateway ${this.gatewayId.toString()} registered`)
+    await registerKusamaGateway(this.circuit, Relayer.debug)
 
     const setOperational =
-      this.circuit.tx.multiFinalityVerifierSubstrateLike.setOperational(
+      this.circuit.tx.multiFinalityVerifierDefault.setOperational(
         true,
         this.gatewayId
       )
@@ -43,7 +37,13 @@ export default class Relayer {
           if (result.isError) {
             reject('submitting setOperational failed')
           } else if (result.isInBlock) {
-            Relayer.debug(`gateway ${this.gatewayId.toString()} operational`)
+            Relayer.debug(
+              'set_operational events',
+              ...formatEvents(result.events)
+            )
+            Relayer.debug(
+              `gateway ${this.gatewayId.toString()} registered and operational`
+            )
             resolve(undefined)
           }
         })
@@ -51,40 +51,62 @@ export default class Relayer {
   }
 
   async submit(
-    range: Header[],
-    justification: JustificationNotification,
-    gatewayId: Buffer
+    gatewayId: Buffer,
+    anchor: Header,
+    reversedRange: Header[],
+    justification: any
   ) {
-    Relayer.debug('submitting finality proof...')
-
-    const anchor: Header = range[range.length - 1]
+    Relayer.debug('submitting finality proof and header range...')
+    Relayer.debug(
+      `submit_finality_proof(\n\t${anchor},\n\t${justification
+        .toString()
+        .slice(0, 10)}...,\n\t${gatewayId}\n)`
+    )
 
     const submitFinalityProof =
-      this.circuit.tx.multiFinalityVerifierSubstrateLike.submitFinalityProof(
+      this.circuit.tx.multiFinalityVerifierDefault.submitFinalityProof(
         anchor,
         justification,
         gatewayId
       )
 
-    return new Promise(async (resolve, reject) => {
-      await this.circuit.tx.sudo
-        .sudo(submitFinalityProof)
-        .signAndSend(keyring.alice, result => {
-          if (result.isError) {
-            Relayer.debug('submitting finality proof failed')
-            reject(Error(result.status.toString()))
-          } else if (result.isInBlock) {
-            if (result.events.length)
-              Relayer.debug(
-                'events',
-                result.events.map(
-                  ({ event: { data, method, section } }) =>
-                    `${section}.${method} ` + data.toString()
-                )
-              )
-            resolve(undefined)
-          }
-        })
+    await new Promise(async (resolve, reject) => {
+      await submitFinalityProof.signAndSend(keyring.alice, result => {
+        if (result.isError) {
+          reject(Error('submitting finality proof failed'))
+        } else if (result.isInBlock) {
+          Relayer.debug(
+            'submit_finality_proof events',
+            ...formatEvents(result.events)
+          )
+          resolve(undefined)
+        }
+      })
+    })
+
+    Relayer.debug(
+      `submit_header_range(\n\t${gatewayId},\n\t${reversedRange},\n\t${anchor.hash}\n)`
+    )
+
+    const submitHeaderRange =
+      this.circuit.tx.multiFinalityVerifierDefault.submitHeaderRange(
+        gatewayId,
+        reversedRange,
+        anchor.hash
+      )
+
+    await new Promise(async (resolve, reject) => {
+      await submitHeaderRange.signAndSend(keyring.alice, result => {
+        if (result.isError) {
+          reject(Error('submitting header range failed'))
+        } else if (result.isInBlock) {
+          Relayer.debug(
+            'submit_header_range events',
+            ...formatEvents(result.events)
+          )
+          resolve(undefined)
+        }
+      })
     })
   }
 }

@@ -1,6 +1,6 @@
 use crate::{
     abi::{GatewayABIConfig, Type},
-    side_effect::{EventSignature, SideEffectConfirmationProtocol, SideEffectName},
+    side_effect::{EventSignature, SideEffectName},
     volatile::{LocalState, Volatile},
     Bytes,
 };
@@ -84,6 +84,3 @@ pub trait SideEffectProtocol {
         self.populate_state(validated_args, local_state, id)
     }
 }
-impl SideEffectConfirmationProtocol for dyn SideEffectProtocol {}
-
-// Tests live in protocol
