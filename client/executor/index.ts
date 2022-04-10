@@ -5,18 +5,21 @@ import SubstrateRelayer from "./gateways/substrate/relayer";
 import config from "./config.json"
 import { colors } from "./utils/helpers";
 import { SideEffectStateManager } from "./utils/types";
+import { ExecutionManager } from "./utils/executionManager";
 import chalk from 'chalk';
 
-class Executor {
+class InstanceManager extends ExecutionManager {
     circuitListener: CircuitListener;
     circuitRelayer: CircuitRelayer;
-    gatewayInstances: any;
-    currentlyRunning = {};
+
+    instances: any;
     color: string;
 
     constructor() {
+        super();
         this.circuitListener = new CircuitListener();
         this.circuitRelayer = new CircuitRelayer();
+
         this.color = colors[0];
     }
 
@@ -33,50 +36,46 @@ class Executor {
     }
 
     async initializeGateways() {
-        let gatewayInstances = {};
         for(let i = 0; i < config.gateways.length; i++) {
             const entry = config.gateways[i]
             if(entry.type === "substrate") {
                 let instance = new SubstrateRelayer();
                 await instance.setup(entry.rpc, entry.name, colors[i + 2])
 
-                instance.on("txFinalized", data => {
-                    this.handleSideEffectExecution(data)
+                instance.on("SideEffectExecuted", (id: string) => {
+                    this.executedSideEffect(id)
                 })
 
-                instance.on("SideEffectConfirmed", data => {
-                    this.handleCompletion(data);
+                instance.on("SideEffectConfirmed", (id: string) => {
+                    this.finalize(id);
                 })
 
-                gatewayInstances[entry.id] = instance;
+                this.addGateway(entry.id);
+
+                this.instances[entry.id] = instance;
             }
         }
-        this.gatewayInstances = gatewayInstances;
     }
 
     async start() {
-        this.circuitListener.on('NewSideEffect', (data) => {
-            this.sideEffectRouter(data)
+        this.circuitListener.on('NewSideEffect', (data: SideEffectStateManager) => {
+            this.addSideEffect(data);
+        })
+
+        this.circuitListener.on('NewHeaderRangeAvailable', (gatewayId: string, blockHeight: number) => {
+            this.updateGatewayHeight(gatewayId, blockHeight);
         })
     }
-
-    async sideEffectRouter(sideEffectStateManager: SideEffectStateManager) {
-        // store side effect for confirm step
-        this.currentlyRunning[sideEffectStateManager.getId()] = sideEffectStateManager;
-        this.gatewayInstances[sideEffectStateManager.getTarget()].executeTx(sideEffectStateManager)
+    
+    // this function is called by the ExecutionManager
+    async executeSideEffect(sideEffectStateManager: SideEffectStateManager) {
+        this.instances[sideEffectStateManager.getTarget()].executeTx(sideEffectStateManager)
     }
 
-    async handleSideEffectExecution(xtxId: string) {
-        this.circuitRelayer.confirmSideEffect(this.currentlyRunning[xtxId])
-    }
-
-    async handleCompletion(xtxId: string) {
-        delete this.currentlyRunning[xtxId];
-    }
 }
 
 (async () => {
-    let exec = new Executor();
+    let exec = new InstanceManager();
     await exec.setup()
     exec.start()
 })()

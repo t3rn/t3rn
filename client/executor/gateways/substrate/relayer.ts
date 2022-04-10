@@ -72,7 +72,7 @@ export default class SubstrateRelayer extends EventEmitter {
             this.log(`SideEffect Executed: ${success}, ${blockHeader}`)
             // console.log(`Transaction finalized at blockHash ${blockHeader}`);
 
-            this.emit("txFinalized", sideEffectStateManager.getId())
+            this.emit("SideEffectExecuted", sideEffectStateManager.getId())
             
             unsub();
         }

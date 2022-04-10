@@ -38,6 +38,18 @@ export default class CircuitListener extends EventEmitter {
                         'NewSideEffect',
                         sideEffectStateManager
                     )
+                } else if (notification.event.method === 'NewHeaderRangeAvailable') {
+                    // unimplemented
+
+                    const data = {
+                        gatewayId: "abcd",
+                        height: 123455,
+                    }
+
+                    this.emit(
+                        'NewHeaderRangeAvailable',
+                        data
+                    )
                 }
             })
         })
