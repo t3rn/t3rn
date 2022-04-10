@@ -2,7 +2,9 @@ import '@t3rn/types';
 import { AccountId32, H256,  } from '@polkadot/types/interfaces/runtime';
 import { T3rnPrimitivesSideEffect, } from '@polkadot/types/lookup';
 import { TextDecoder } from 'util';
+const { createHash } =  import('crypto');
 const BN = require("bn.js");
+
 
 export enum TransactionType {
     Transfer,
@@ -74,14 +76,24 @@ export class SideEffectStateManager {
         this.confirmBlockHeader = blockHeader;
     }
 
-    /// returns xtxId as string
     getId() {
+        return "0x0"
+    }
+
+    /// returns xtxId as string
+    getXtxId() {
         return this.xtxId.toString()
     }
 
     /// returns target as string
     getTarget() {
         return new TextDecoder().decode(this.sideEffect.target.toU8a());
+    }
+
+    getTargetBlock() {
+        if(!this.executed) return null;
+        // @ts-ignore
+        return this.confirmedSideEffect.receivedAt;
     }
 
     private getTransferArguments() {
