@@ -1065,7 +1065,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
             }
             .encode();
 
-             let mut encoded_event = vec![4];
+            let mut encoded_event = vec![4];
             encoded_event.append(&mut encoded_add_liquidity_transfer_event);
 
             let confirmation = ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
