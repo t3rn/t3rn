@@ -1,6 +1,6 @@
 {
   "name": "@t3rn/types",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "t3rn protocol's type definitions for use with polkadot.js clients",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -26,7 +26,6 @@
     "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --package t3rn-circuit-typegen/interfaces --endpoint ./metadata-t3rn.json --output ./src/interfaces",
     "prebuild": "rimraf build",
     "build": "tsc -b --verbose",
-    "publish": "cd build && npm publish",
     "deploy": "npm run generate && npm run build && npm run publish",
     "pretty": "prettier --write --ignore-unknown --plugin prettier-plugin-jsdoc 'src/**/*' 'scripts/**/*'",
     "types:json": "ts-node src/export.ts > dist/types.json"
