@@ -9,7 +9,7 @@ type Queue = {
         executing: string[],
         // to confirm we need to wait for a specific block height to be reached
         confirming: {
-            blockNumber: string[],
+            [key: number]: string[],
         }
     }
 }
@@ -20,7 +20,9 @@ export class ExecutionManager {
     // we map the current state in the queue
     queue: Queue;
     // and use this mapping for storing the actual side effect instances
-    sideEffects: object;
+    sideEffects: {
+        [id: string]: SideEffectStateManager
+    } = {};
 
     constructor() {
         this.queue = <Queue>{};
@@ -34,21 +36,23 @@ export class ExecutionManager {
             executing: [],
             confirming: {},
         }
+        console.log("Queue:", this.queue);
     }
 
     // add SideEffect to queue (either executing immediatly or adding as inactive)
     // idea is that inactives could be picked up later if the risk profile changes
     addSideEffect(sideEffect: SideEffectStateManager) {
         this.sideEffects[sideEffect.getId()] = sideEffect
-
         // plug off-chain riks assessment here
         const acceptRisk = true;
         if(acceptRisk) {
-            this.queue[sideEffect.getTarget()].executing.append(sideEffect.getId());
-            // this.super.executeSideEffect(sideEffect)
+            this.queue[sideEffect.getTarget()].executing.push(sideEffect.getId());
+            // this.executeSideEffect(sideEffect)
         } else {
-            this.queue[sideEffect.getTarget()].open.append(sideEffect.getId());
+            this.queue[sideEffect.getTarget()].open.push(sideEffect.getId());
         }
+
+        console.log("Added SideEffect: ", this.queue);
     }
 
     // once SideEffect has been executed on target we add it to the confirming pool
@@ -56,15 +60,24 @@ export class ExecutionManager {
     executedSideEffect(id: string) {
         const gatewayId = this.sideEffects[id].getTarget();
         const inclusionBlock = this.sideEffects[id].getTargetBlock()
-        this.queue[gatewayId].executing.remove(id)
-        this.queue[gatewayId].confirming[inclusionBlock].append(id);
+        // this.queue[gatewayId].executing.remove(id)
+        this.removeExecuting(id, gatewayId);
+
+        //create array if inclusionBlock is not available
+        if (!this.queue[gatewayId].confirming[inclusionBlock]) {
+            this.queue[gatewayId].confirming[inclusionBlock] = []
+        }
+
+        this.queue[gatewayId].confirming[inclusionBlock].push(id);
+        console.log("Executed:", this.queue);
     }
 
     finalize(id: string) {
         const gatewayId = this.sideEffects[id].getTarget();
         const inclusionBlock = this.sideEffects[id].getTargetBlock()
-        this.queue[gatewayId].confirming[inclusionBlock].remove(id);
+        this.removeConfirming(id, gatewayId, inclusionBlock)
         delete this.sideEffects[id];
+        console.log("Finalized:", this.queue);
     }
 
     // New header range was submitted on circuit
@@ -76,14 +89,30 @@ export class ExecutionManager {
     }
 
     // checks which unconfirmed SideEffects can be executed on circuit
-    private executeQueue(gatewayId: string, blockHeight: number) {
-        let ready = Object.keys(this.queue[gatewayId].confirming).filter(block => {
-            // flatten array of SideEffectIds
-            block <= blockHeight
-        })
+    executeQueue(gatewayId: string, blockHeight: number) { 
+        // console.log(Object.keys(this.queue[gatewayId].confirming))
+        // let ready = Object.keys(this.queue[gatewayId].confirming).filter(block => {
+        //     // flatten array of SideEffectIds
+        //     block <= blockHeight
+        // })
 
-        for(let i = 0; i < ready.length; i++) {
-            // this.super.
+        // for(let i = 0; i < ready.length; i++) {
+        //     // this.super.
+        // }
+    }
+
+    private removeExecuting(id: string, gatewayId: string) {
+        const index = this.queue[gatewayId].executing.indexOf(id);
+        this.queue[gatewayId].executing.splice(index, 1);
+    }
+
+    private removeConfirming(id: string, gatewayId: string, blockHeight: number) {
+        const index = this.queue[gatewayId].confirming[blockHeight].indexOf(id);
+        // high chance their is only one SideEffect in this block, so this is faster.
+        if (this.queue[gatewayId].confirming[blockHeight].length === 1) {
+            delete this.queue[gatewayId].confirming[blockHeight];
+        } else {
+            this.queue[gatewayId].confirming[blockHeight].splice(index, 1);
         }
     }
 }

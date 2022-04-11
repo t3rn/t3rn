@@ -2,7 +2,7 @@ import '@t3rn/types';
 import { AccountId32, H256,  } from '@polkadot/types/interfaces/runtime';
 import { T3rnPrimitivesSideEffect, } from '@polkadot/types/lookup';
 import { TextDecoder } from 'util';
-const { createHash } =  import('crypto');
+const crypto = require("crypto");
 const BN = require("bn.js");
 
 
@@ -77,7 +77,7 @@ export class SideEffectStateManager {
     }
 
     getId() {
-        return "0x0"
+        return crypto.createHash('sha256').update(JSON.stringify(this.sideEffect)).digest('hex');
     }
 
     /// returns xtxId as string

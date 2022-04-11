@@ -12,7 +12,9 @@ class InstanceManager extends ExecutionManager {
     circuitListener: CircuitListener;
     circuitRelayer: CircuitRelayer;
 
-    instances: any;
+    instances: {
+        [id: string]: SubstrateRelayer
+    } = {};
     color: string;
 
     constructor() {
@@ -43,13 +45,12 @@ class InstanceManager extends ExecutionManager {
                 await instance.setup(entry.rpc, entry.name, colors[i + 2])
 
                 instance.on("SideEffectExecuted", (id: string) => {
+                    console.log("SideEffectExecuted")
                     this.executedSideEffect(id)
+                    this.circuitRelayer.confirmSideEffect(this.sideEffects[id])
                 })
 
-                instance.on("SideEffectConfirmed", (id: string) => {
-                    this.finalize(id);
-                })
-
+            
                 this.addGateway(entry.id);
 
                 this.instances[entry.id] = instance;
@@ -60,6 +61,12 @@ class InstanceManager extends ExecutionManager {
     async start() {
         this.circuitListener.on('NewSideEffect', (data: SideEffectStateManager) => {
             this.addSideEffect(data);
+            this.executeSideEffect(data)
+        })
+
+        this.circuitRelayer.on("SideEffectConfirmed", (id: string) => {
+            console.log("SideEffectConfirmed")
+            this.finalize(id);
         })
 
         this.circuitListener.on('NewHeaderRangeAvailable', (gatewayId: string, blockHeight: number) => {
