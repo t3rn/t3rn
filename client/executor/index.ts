@@ -8,9 +8,10 @@ import { SideEffectStateManager } from "./utils/types";
 import { ExecutionManager } from "./utils/executionManager";
 import chalk from 'chalk';
 
-class InstanceManager extends ExecutionManager {
+class InstanceManager {
     circuitListener: CircuitListener;
     circuitRelayer: CircuitRelayer;
+    executionManager: ExecutionManager;
 
     instances: {
         [id: string]: SubstrateRelayer
@@ -18,9 +19,9 @@ class InstanceManager extends ExecutionManager {
     color: string;
 
     constructor() {
-        super();
         this.circuitListener = new CircuitListener();
         this.circuitRelayer = new CircuitRelayer();
+        this.executionManager = new ExecutionManager();
 
         this.color = colors[0];
     }
@@ -44,45 +45,52 @@ class InstanceManager extends ExecutionManager {
                 let instance = new SubstrateRelayer();
                 await instance.setup(entry.rpc, entry.name, colors[i + 2])
 
+
                 instance.on("SideEffectExecuted", (id: string) => {
                     console.log("SideEffectExecuted")
-                    this.executedSideEffect(id)
-                    this.circuitRelayer.confirmSideEffect(this.sideEffects[id])
+                    this.executionManager.sideEffectExecuted(id)
                 })
 
-            
-                this.addGateway(entry.id);
-
+                // setup in executionManager
+                this.executionManager.addGateway(entry.id);
+                // store relayer instance locally
                 this.instances[entry.id] = instance;
             }
         }
     }
 
-    async start() {
+    async initializeEventListeners() {
         this.circuitListener.on('NewSideEffect', (data: SideEffectStateManager) => {
-            this.addSideEffect(data);
-            this.executeSideEffect(data)
+            console.log('NewSideEffect')
+            this.executionManager.addSideEffect(data);
+        })
+
+        this.executionManager.on('ExecuteSideEffect', sideEffect => {
+            console.log('ExecuteSideEffect')
+            this.instances[sideEffect.getTarget()].executeTx(sideEffect)
+        })
+
+        this.executionManager.on("ConfirmSideEffects", (sideEffects: SideEffectStateManager[]) => {
+            console.log("ConfirmSideEffect")
+            this.circuitRelayer.confirmSideEffects(sideEffects)
         })
 
         this.circuitRelayer.on("SideEffectConfirmed", (id: string) => {
             console.log("SideEffectConfirmed")
-            this.finalize(id);
+            this.executionManager.finalize(id);
         })
 
         this.circuitListener.on('NewHeaderRangeAvailable', (gatewayId: string, blockHeight: number) => {
-            this.updateGatewayHeight(gatewayId, blockHeight);
+            console.log('NewHeaderRangeAvailable')
+            this.executionManager.updateGatewayHeight(gatewayId, blockHeight);
         })
-    }
-    
-    // this function is called by the ExecutionManager
-    async executeSideEffect(sideEffectStateManager: SideEffectStateManager) {
-        this.instances[sideEffectStateManager.getTarget()].executeTx(sideEffectStateManager)
-    }
 
+        
+    }
 }
 
 (async () => {
     let exec = new InstanceManager();
     await exec.setup()
-    exec.start()
+    exec.initializeEventListeners()
 })()
