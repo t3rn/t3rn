@@ -1,5 +1,5 @@
 import { EventEmitter } from "stream";
-import { SideEffectStateManager } from "./types"
+import { SideEffect } from "./types"
 
 type Queue = {
     gateways: {
@@ -22,7 +22,7 @@ export class ExecutionManager extends EventEmitter {
     queue: Queue = <Queue>{};
     // and use this mapping for storing the actual side effect instances
     sideEffects: {
-        [id: string]: SideEffectStateManager
+        [id: string]: SideEffect
     } = {};
 
     // adds gateways on startup
@@ -39,7 +39,7 @@ export class ExecutionManager extends EventEmitter {
 
     // add SideEffect to queue (either executing immediatly or adding as inactive)
     // idea is that inactives could be picked up later if the risk profile changes
-    addSideEffect(sideEffect: SideEffectStateManager) {
+    addSideEffect(sideEffect: SideEffect) {
         this.sideEffects[sideEffect.getId()] = sideEffect
         // plug off-chain riks assessment here
         const acceptRisk = true;

@@ -1,7 +1,7 @@
 import '@t3rn/types';
 import { EventEmitter } from 'events'
 import { ApiPromise, WsProvider } from '@polkadot/api';
-import { SideEffectStateManager } from '../utils/types';
+import { SideEffect } from '../utils/types';
 
 export default class CircuitListener extends EventEmitter {
 
@@ -19,24 +19,24 @@ export default class CircuitListener extends EventEmitter {
                 if (notification.event.method === 'NewSideEffectsAvailable') {
                     const { event } = notification;
                     const types = event.typeDef;
-                    let sideEffectStateManager = new SideEffectStateManager()
+                    let sideEffect = new SideEffect()
                     for (let index = 0; index < event.data.length; index++) {
                         switch (types[index].type) {
                             case 'AccountId32':
-                                sideEffectStateManager.setRequester(event.data[index]);
+                                sideEffect.setRequester(event.data[index]);
                                 break;
                             case 'H256':
-                                sideEffectStateManager.setXtxId(event.data[index]);
+                                sideEffect.setXtxId(event.data[index]);
                                 break;
                             case 'Vec<T3rnPrimitivesSideEffect>':
-                                sideEffectStateManager.setSideEffect(event.data[index][0]);
+                                sideEffect.setSideEffect(event.data[index][0]);
                                 break;
                         }
                     }
 
                     this.emit(
                         'NewSideEffect',
-                        sideEffectStateManager
+                        sideEffect
                     )
                 } else if (notification.event.method === 'NewHeaderRangeAvailable') {
                     // unimplemented

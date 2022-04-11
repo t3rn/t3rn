@@ -4,7 +4,7 @@ import CircuitRelayer from "./circuit/relayer";
 import SubstrateRelayer from "./gateways/substrate/relayer";
 import config from "./config.json"
 import { colors } from "./utils/helpers";
-import { SideEffectStateManager } from "./utils/types";
+import { SideEffect } from "./utils/types";
 import { ExecutionManager } from "./utils/executionManager";
 import chalk from 'chalk';
 
@@ -60,7 +60,7 @@ class InstanceManager {
     }
 
     async initializeEventListeners() {
-        this.circuitListener.on('NewSideEffect', (data: SideEffectStateManager) => {
+        this.circuitListener.on('NewSideEffect', (data: SideEffect) => {
             console.log('NewSideEffect')
             this.executionManager.addSideEffect(data);
         })
@@ -70,7 +70,7 @@ class InstanceManager {
             this.instances[sideEffect.getTarget()].executeTx(sideEffect)
         })
 
-        this.executionManager.on("ConfirmSideEffects", (sideEffects: SideEffectStateManager[]) => {
+        this.executionManager.on("ConfirmSideEffects", (sideEffects: SideEffect[]) => {
             console.log("ConfirmSideEffect")
             this.circuitRelayer.confirmSideEffects(sideEffects)
         })

@@ -14,11 +14,11 @@ export enum TransactionType {
 // maps event names to TransactionType enum;
 export const EventMapper = ["Transfer", "MultiTransfer"]
 
-export class SideEffectStateManager {
+export class SideEffect {
     requester: AccountId32;
     executor: AccountId32;
     xtxId: H256;
-    sideEffect: T3rnPrimitivesSideEffect;
+    object: T3rnPrimitivesSideEffect;
     confirmedSideEffect: object;
 
     inclusionProof: any;
@@ -38,7 +38,7 @@ export class SideEffectStateManager {
     }
 
     setSideEffect(sideEffect: T3rnPrimitivesSideEffect) {
-        this.sideEffect = sideEffect;
+        this.object = sideEffect;
         this.setTransactionType()
     }
 
@@ -77,7 +77,7 @@ export class SideEffectStateManager {
     }
 
     getId() {
-        return crypto.createHash('sha256').update(JSON.stringify(this.sideEffect)).digest('hex');
+        return crypto.createHash('sha256').update(JSON.stringify(this.object)).digest('hex');
     }
 
     /// returns xtxId as string
@@ -87,7 +87,7 @@ export class SideEffectStateManager {
 
     /// returns target as string
     getTarget() {
-        return new TextDecoder().decode(this.sideEffect.target.toU8a());
+        return new TextDecoder().decode(this.object.target.toU8a());
     }
 
     getTargetBlock() {
@@ -97,11 +97,11 @@ export class SideEffectStateManager {
     }
 
     private getTransferArguments() {
-        return [this.sideEffect.encodedArgs[1], new BN(this.sideEffect.encodedArgs[2], "le").toString()]
+        return [this.object.encodedArgs[1], new BN(this.object.encodedArgs[2], "le").toString()]
     }
 
     private setTransactionType() {
-        switch (this.sideEffect.encodedAction.toHuman()) {
+        switch (this.object.encodedAction.toHuman()) {
             case "tran": {
                 this.transactionType = TransactionType.Transfer;
                 break;
