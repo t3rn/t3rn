@@ -1,3 +1,4 @@
+import { EventEmitter } from "stream";
 import { SideEffectStateManager } from "./types"
 
 type Queue = {
@@ -9,24 +10,20 @@ type Queue = {
         executing: string[],
         // to confirm we need to wait for a specific block height to be reached
         confirming: {
-            [key: number]: string[],
+            [block: number]: string[],
         }
     }
 }
 
 
-export class ExecutionManager {
+export class ExecutionManager extends EventEmitter {
 
     // we map the current state in the queue
-    queue: Queue;
+    queue: Queue = <Queue>{};
     // and use this mapping for storing the actual side effect instances
     sideEffects: {
         [id: string]: SideEffectStateManager
     } = {};
-
-    constructor() {
-        this.queue = <Queue>{};
-    }
 
     // adds gateways on startup
     addGateway(id: string) {
@@ -34,9 +31,10 @@ export class ExecutionManager {
             blockHeight: 0,
             open: [],
             executing: [],
-            confirming: {},
+            confirming: {
+
+            },
         }
-        console.log("Queue:", this.queue);
     }
 
     // add SideEffect to queue (either executing immediatly or adding as inactive)
@@ -47,7 +45,8 @@ export class ExecutionManager {
         const acceptRisk = true;
         if(acceptRisk) {
             this.queue[sideEffect.getTarget()].executing.push(sideEffect.getId());
-            // this.executeSideEffect(sideEffect)
+            // Trigger execution
+            this.emit('ExecuteSideEffect', sideEffect)
         } else {
             this.queue[sideEffect.getTarget()].open.push(sideEffect.getId());
         }
@@ -57,7 +56,7 @@ export class ExecutionManager {
 
     // once SideEffect has been executed on target we add it to the confirming pool
     // the transactions resides here until the circuit has received targets header range
-    executedSideEffect(id: string) {
+    sideEffectExecuted(id: string) {
         const gatewayId = this.sideEffects[id].getTarget();
         const inclusionBlock = this.sideEffects[id].getTargetBlock()
         // this.queue[gatewayId].executing.remove(id)
@@ -72,6 +71,7 @@ export class ExecutionManager {
         console.log("Executed:", this.queue);
     }
 
+    // Once confirmed, delete from queue
     finalize(id: string) {
         const gatewayId = this.sideEffects[id].getTarget();
         const inclusionBlock = this.sideEffects[id].getTargetBlock()
@@ -84,21 +84,24 @@ export class ExecutionManager {
     // update local params and check which SideEffects can be confirmed
     updateGatewayHeight(gatewayId: string, blockHeight: number) {
         this.queue[gatewayId].blockHeight = blockHeight;
-
-        // this.executeQueue(gatewayId, blockHeight)
+        this.executeQueue(gatewayId, blockHeight)
     }
 
     // checks which unconfirmed SideEffects can be executed on circuit
     executeQueue(gatewayId: string, blockHeight: number) { 
-        // console.log(Object.keys(this.queue[gatewayId].confirming))
-        // let ready = Object.keys(this.queue[gatewayId].confirming).filter(block => {
-        //     // flatten array of SideEffectIds
-        //     block <= blockHeight
-        // })
+        // filter and flatten SideEffects ready to be confirmed.
+        let ready = Object.keys(this.queue[gatewayId].confirming).filter(block => {
+            //in node object keys are always strings
+            parseInt(block) <= blockHeight
+        }).flat()
 
-        // for(let i = 0; i < ready.length; i++) {
-        //     // this.super.
-        // }
+        console.log("ready:", ready);
+
+        const sideEffectsToConfirm = ready.map(sideEffectId => {
+            return this.sideEffects[sideEffectId]
+        })
+
+        this.emit("ConfirmSideEffects", sideEffectsToConfirm);
     }
 
     private removeExecuting(id: string, gatewayId: string) {

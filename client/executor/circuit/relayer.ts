@@ -31,6 +31,19 @@ export default class CircuitRelayer extends EventEmitter {
                 : keyring.addFromMnemonic(process.env.CIRCUIT_KEY);
     }
 
+    async confirmSideEffects(sideEffects: SideEffectStateManager[]) {
+        let promises = sideEffects.map(sideEffect => {
+            return new Promise(async (res, rej) => {
+                let unsub = await this.confirmSideEffect(sideEffect);
+                unsub();
+                res;
+            })
+        })
+
+        Promise.all(promises)
+        .then(() => this.log("Confirmed SideEffects: " + sideEffects.length))
+    }
+
     async confirmSideEffect(sideEffectStateManager: SideEffectStateManager) {
 
         let tx = this.api.tx.circuit.confirmSideEffect(
@@ -41,7 +54,7 @@ export default class CircuitRelayer extends EventEmitter {
             null
         )
 
-        let unsub = await tx.signAndSend(this.signer, (result) => {
+        return tx.signAndSend(this.signer, (result) => {
             if (result.status.isFinalized) {
                 const success = result.events[result.events.length - 1].event.method === "ExtrinsicSuccess";
                 this.log(`SideEffect confirmed: ${success}, ${result.status.asFinalized}`)
@@ -52,8 +65,6 @@ export default class CircuitRelayer extends EventEmitter {
                     "SideEffectConfirmed",
                     sideEffectStateManager.getId()
                 )
-               
-                unsub();
             }
         });
 
