@@ -47,6 +47,11 @@ export default class CircuitRelayer extends EventEmitter {
                 this.log(`SideEffect confirmed: ${success}, ${result.status.asFinalized}`)
 
                 sideEffectStateManager.confirm(success, result.status.asFinalized)
+
+                this.emit(
+                    "SideEffectConfirmed",
+                    sideEffectStateManager.getId()
+                )
                
                 unsub();
             }
