@@ -4038,6 +4038,7 @@ dependencies = [
  "env_logger 0.8.4",
  "frame-metadata",
  "futures 0.1.31",
+ "hex",
  "hyper 0.12.36",
  "jsonrpc-core-client 15.1.0",
  "jsonrpsee 0.2.0",

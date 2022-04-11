@@ -18,6 +18,7 @@ jsonrpsee = "0.2.0"
 log = "0.4.8"
 env_logger = "0.8.2"
 serde_json = "1.0.79"
+hex = "0.4.3"
 
 frame-metadata  = { version = "14.0.0", features = [ "v13", "v14" ] }
 node-primitives = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }

@@ -8,7 +8,7 @@ use jsonrpsee_types::{
 use num_traits::Zero;
 use relay_substrate_client::Client as SubstrateClient;
 use sc_finality_grandpa::FinalityProof;
-use sp_core::Bytes;
+use sp_core::{Bytes, storage::StorageKey};
 use sp_finality_grandpa::{AuthorityId, AuthorityList, SetId};
 use t3rn_primitives::{
     bridges::header_chain::{justification::GrandpaJustification, AuthoritySet},
@@ -42,7 +42,7 @@ pub async fn get_metadata(
 }
 
 const SESSION_VALIDATORS_STORAGE_KEY: &str =
-    "0xcec5070d609dd3497f72bde07fc96ba088dcde934c658227ee1dfafcd6e16903";
+    "cec5070d609dd3497f72bde07fc96ba088dcde934c658227ee1dfafcd6e16903";
 
 /// Gets the current authority set id, the actual authority set, and header for the latest finalized block.
 pub async fn get_gtwy_init_data(
@@ -89,12 +89,14 @@ pub async fn get_gtwy_init_data(
         Ok((authority_set, header))
     } else {
         // TODO:: if para gtwy query session validators
+        let storage_key_buf = hex::decode(SESSION_VALIDATORS_STORAGE_KEY).map_err(|error| format!("hex decoding failed: {:?}", error))?;
+        // let storage_keys = vec![StorageKey(storage_key_buf)];
         let collators = sub_client
             .client
             .request(
                 "state_queryStorageAt",
                 JsonRpcParams::Array(vec![
-                    serde_json::json!(SESSION_VALIDATORS_STORAGE_KEY),
+                    serde_json::json!(StorageKey(storage_key_buf)),
                     block_hash,
                 ]),
             )
