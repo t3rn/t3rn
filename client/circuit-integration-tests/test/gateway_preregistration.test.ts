@@ -17,7 +17,10 @@ describe('Default Multi Finality Verifier', function () {
   after(async () => await circuit.disconnect())
 
   describe('gateway preregistration', () => {
-    it('should have preregistered Polkadot and Kusama gateways', async () => {
+    it('should have preregistered relay- and parachain gateways', async () => {
+      const expectedGatewayIds = ['pdot', 'ksma', 'roco', 'basi', 'cata']
+
+      for (const gatewayId of expectedGatewayIds) {}
       // FIXME: assert xdns records are stored
       // const xdnsRecord = await circuit.query.xdns
       //   .xdnsRecords(Uint8Array.from([ 112, 100, 111, 116 ])) // pdot
@@ -32,24 +35,7 @@ describe('Default Multi Finality Verifier', function () {
           .instantiatedGatewaysMap()
           .then(encoded => encoded.toHuman())
 
-      assert.deepEqual(instantiatedGateways, ['pdot', 'ksma'])
-    })
-
-    it('should have preregistered Rococo parachain gateways', async () => {
-      // FIXME: assert xdns records are stored
-      // const xdnsRecord = await circuit.query.xdns
-      //   .xdnsRecords(Uint8Array.from([ ]))
-      //   .then(encoded => encoded.toHuman())
-
-      // console.log('$$$$$$$ xdnsRecord', xdnsRecord)
-
-      // assert gtwy instantiated in mfv storage
-      const instantiatedGateways =
-        await circuit.query.multiFinalityVerifierDefault
-          .instantiatedGatewaysMap()
-          .then(encoded => encoded.toHuman())
-
-      assert.deepEqual(instantiatedGateways, ['roco', 'basi', 'cata'])
+      assert.deepEqual(instantiatedGateways, expectedGatewayIds)
     })
   })
 })

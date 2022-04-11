@@ -26,7 +26,6 @@ sc-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "polkad
 sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17"}
 sc-finality-grandpa = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17' }
 sp-finality-grandpa = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17' }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17' }
 frame-metadata = { version = "14.0.0", features = ["v13", "v14"] }
 
 async-std   = { version = "1.6.5", features = [ "attributes", "tokio1" ] }

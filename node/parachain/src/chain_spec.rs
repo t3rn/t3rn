@@ -21,7 +21,10 @@ use t3rn_primitives::{
     abi::Type,
     bridges::{
         header_chain::InitializationData,
-        runtime::{CATALYST_CHAIN_ID, KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID, ROCOCO_CHAIN_ID},
+        runtime::{
+            BASILISK_CHAIN_ID, CATALYST_CHAIN_ID, KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID,
+            RILT_CHAIN_ID, ROCOCO_CHAIN_ID,
+        },
     },
     ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor, Header,
 };
@@ -245,12 +248,9 @@ fn fetch_gtwy_init_data(gateway_id: &ChainId) -> Result<InitializationData<Heade
             POLKADOT_CHAIN_ID => "rpc.polkadot.io",
             KUSAMA_CHAIN_ID => "kusama-rpc.polkadot.io",
             ROCOCO_CHAIN_ID => "rococo-rpc.polkadot.io",
-            // FIXME: basilisk doesn't have grandpa_proveFinality
-            // used in jsonrpc_runtime_client::get_gtwy_init_data
-            // BASILISK_CHAIN_ID => "rpc-01.basilisk-rococo.hydradx.io",
+            BASILISK_CHAIN_ID => "rpc-01.basilisk-rococo.hydradx.io",
             CATALYST_CHAIN_ID => "fullnode.catalyst.cntrfg.com",
-            // NOTE: moonsama is stuck => pregregistration would fail
-            // MOONSAMA_CHAIN_ID => "moonsama-testnet-rpc.moonsama.com",
+            RILT_CHAIN_ID => "rococo.kilt.io",
             _ => return Err(Error::new(ErrorKind::InvalidInput, "unknown gateway id")),
         };
 
@@ -281,21 +281,12 @@ fn fetch_gtwy_init_data(gateway_id: &ChainId) -> Result<InitializationData<Heade
     })
 }
 
-/// Lists initialization data for indicated gatways.
+/// Lists initialization data for indicated gateways.
 fn initial_gateways(gateway_ids: Vec<&ChainId>) -> Result<Vec<InitializationData<Header>>, Error> {
     let init_data = gateway_ids
         .iter()
-        .map(|gateway_id| {
-            let is_relay_chain = match *gateway_id {
-                POLKADOT_CHAIN_ID | KUSAMA_CHAIN_ID | ROCOCO_CHAIN_ID => true,
-                _ => false
-            };
-            fetch_gtwy_init_data(*gateway_id, is_relay_chain).expect(&format!(
-                "{:?} gtwy init data",
-                String::from_utf8_lossy(*gateway_id).into_owned()
-            ))
-        })
-        .collect();
+        .map(|gateway_id| fetch_gtwy_init_data(*gateway_id))
+        .collect::<Result<_, Error>>()?;
 
     Ok(init_data)
 }
@@ -406,7 +397,9 @@ pub fn development_config() -> ChainSpec {
                     &POLKADOT_CHAIN_ID,
                     &KUSAMA_CHAIN_ID,
                     &ROCOCO_CHAIN_ID,
+                    &BASILISK_CHAIN_ID,
                     &CATALYST_CHAIN_ID,
+                    &RILT_CHAIN_ID,
                 ])
                 .expect("initial gateways"),
             )
@@ -472,7 +465,9 @@ pub fn local_testnet_config() -> ChainSpec {
                     &POLKADOT_CHAIN_ID,
                     &KUSAMA_CHAIN_ID,
                     &ROCOCO_CHAIN_ID,
+                    &BASILISK_CHAIN_ID,
                     &CATALYST_CHAIN_ID,
+                    &RILT_CHAIN_ID,
                 ])
                 .expect("initial gateways"),
             )

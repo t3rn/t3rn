@@ -4052,7 +4052,6 @@ dependencies = [
  "serde_json",
  "sp-core",
  "sp-finality-grandpa",
- "sp-runtime",
  "sp-tracing",
  "t3rn-primitives",
  "tokio 1.17.0",

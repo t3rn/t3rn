@@ -10,7 +10,6 @@ use relay_substrate_client::Client as SubstrateClient;
 use sc_finality_grandpa::FinalityProof;
 use sp_core::Bytes;
 use sp_finality_grandpa::{AuthorityId, AuthorityList, SetId};
-use sp_runtime::{generic, traits::BlakeTwo256};
 use t3rn_primitives::{
     bridges::header_chain::{justification::GrandpaJustification, AuthoritySet},
     Header,

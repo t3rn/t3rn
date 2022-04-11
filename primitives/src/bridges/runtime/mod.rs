@@ -63,6 +63,9 @@ pub const BASILISK_CHAIN_ID: ChainId = *b"basi";
 /// Catalyst (Centrifuge Rococo parachain) bridge instance id.
 pub const CATALYST_CHAIN_ID: ChainId = *b"cata";
 
+/// Rilt (Kilt Rococo parachain) bridge instance id.
+pub const RILT_CHAIN_ID: ChainId = *b"rilt";
+
 /// Bridge-with-Wococo instance id.
 pub const WOCOCO_CHAIN_ID: ChainId = *b"woco";
 
