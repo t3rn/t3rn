@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events'
 import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
-import { SideEffectStateManager, TransactionType, EventMapper } from "../../utils/types"
+import { SideEffect, TransactionType, EventMapper } from "../../utils/types"
 import { getEventProofs } from './utils/helper';
 import chalk from 'chalk';
 
@@ -35,12 +35,12 @@ export default class SubstrateRelayer extends EventEmitter {
         this.name = name;
     }
 
-    async executeTx(sideEffectStateManager: SideEffectStateManager) {
-        switch (sideEffectStateManager.transactionType) {
+    async executeTx(sideEffect: SideEffect) {
+        switch (sideEffect.transactionType) {
             case TransactionType.Transfer: {
-                const unsub = await this.api.tx.balances.transfer(...sideEffectStateManager.getTransactionArguments()).signAndSend(this.signer, async (result) => {
+                const unsub = await this.api.tx.balances.transfer(...sideEffect.getTransactionArguments()).signAndSend(this.signer, async (result) => {
                     if (result.status.isFinalized) {
-                        this.handleTx(sideEffectStateManager, result, unsub);
+                        this.handleTx(sideEffect, result, unsub);
                     }
                 })
             }
@@ -50,17 +50,17 @@ export default class SubstrateRelayer extends EventEmitter {
         }
     }
 
-    async handleTx(sideEffectStateManager: SideEffectStateManager, result, unsub) {
+    async handleTx(sideEffect: SideEffect, result, unsub) {
         if (result.status.isFinalized) {
             const blockHeader = result.status.asFinalized;
             const blockNumber = await this.getBlockNumber(blockHeader);
-            const event = this.getEvent(sideEffectStateManager.transactionType, result.events);
+            const event = this.getEvent(sideEffect.transactionType, result.events);
 
             // should always be last event
             const success = result.events[result.events.length - 1].event.method === "ExtrinsicSuccess";
             const inclusionProof = await getEventProofs(this.api, blockHeader);
 
-            sideEffectStateManager.execute(
+            sideEffect.execute(
                 event,
                 blockNumber,
                 this.signer.address,
@@ -72,7 +72,7 @@ export default class SubstrateRelayer extends EventEmitter {
             this.log(`SideEffect Executed: ${success}, ${blockHeader}`)
             // console.log(`Transaction finalized at blockHash ${blockHeader}`);
 
-            this.emit("SideEffectExecuted", sideEffectStateManager.getId())
+            this.emit("SideEffectExecuted", sideEffect.getId())
             
             unsub();
         }
