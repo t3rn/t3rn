@@ -1,24 +1,36 @@
-import { Bytes } from '@polkadot/types'
 import { ApiPromise, WsProvider } from '@polkadot/api'
 import { createTestPairs } from '@polkadot/keyring/testingPairs'
+import { JustificationNotification } from '@polkadot/types/interfaces'
+import { grandpaDecode, formatEvents } from './util'
 
 const keyring = createTestPairs({ type: 'sr25519' })
 
-export default async function registerKusamaGateway(circuit: ApiPromise) {
+export default async function registerKusamaGateway(
+  circuit: ApiPromise,
+  log = console.log
+) {
   const kusama = await ApiPromise.create({
     provider: new WsProvider(process.env.KUSAMA_RPC as string),
   })
 
-  const [currentHeader, metadata, runtimeVersion, genesisHash] =
-    await Promise.all([
-      kusama.rpc.chain.getHeader(),
-      kusama.runtimeMetadata,
-      kusama.runtimeVersion,
-      kusama.genesisHash,
-    ])
+  const justification: JustificationNotification = await new Promise(
+    async resolve => {
+      const unsubJustifications =
+        await kusama.rpc.grandpa.subscribeJustifications(
+          async justification => {
+            unsubJustifications()
+            resolve(justification)
+          }
+        )
+    }
+  )
 
-  const atGenesis = await kusama.at(genesisHash)
-  const initialAuthorities = await atGenesis.query.session.validators()
+  const { authoritySet, blockNumber } = await grandpaDecode(justification)
+
+  const blockHash = await kusama.rpc.chain.getBlockHash(blockNumber)
+  const kusamaAt = await kusama.at(blockHash)
+  const registrationHeader = await kusama.rpc.chain.getHeader(blockHash)
+  const authoritySetId = await kusamaAt.query.grandpa.currentSetId()
 
   await kusama.disconnect()
 
@@ -38,27 +50,32 @@ export default async function registerKusamaGateway(circuit: ApiPromise) {
     circuit.createType('GatewayVendor', 'Substrate'),
     circuit.createType('GatewayType', { ProgrammableExternal: 1 }),
     circuit.createType('GatewayGenesisConfig', [
-      circuit.createType('Option<Bytes>', metadata.asV14.pallets.toHex()),
-      metadata.asV14.extrinsic.version,
-      genesisHash,
+      circuit.createType(
+        'Option<Bytes>',
+        kusama.runtimeMetadata.asV14.pallets.toHex()
+      ),
+      kusama.runtimeMetadata.asV14.extrinsic.version,
+      kusama.genesisHash,
     ]),
     circuit.createType('GatewaySysProps', [
       circuit.createType('u16', 2),
-      circuit.createType('Bytes', new Bytes(circuit.registry, 'KSM')),
+      circuit.createType('Bytes', 'KSM'),
       circuit.createType('u8', 12),
     ]),
-    circuit.createType('Bytes', currentHeader.toHex()),
-    circuit.createType('Option<Vec<AccountId>>', initialAuthorities),
-    circuit.createType('Vec<AllowedSideEffect>', ['transfer', 'get_storage'])
+    circuit.createType('Bytes', registrationHeader.toHex()),
+    circuit.createType('Option<Vec<AccountId>>', authoritySet),
+    circuit.createType('Option<SetId>', authoritySetId),
+    circuit.createType('Vec<AllowedSideEffect>', ['tran'])
   )
 
-  return new Promise(async (resolve, reject) => {
-    await circuit.tx.sudo
+  return new Promise((resolve, reject) => {
+    return circuit.tx.sudo
       .sudo(registerGateway)
       .signAndSend(keyring.alice, result => {
         if (result.isError) {
-          reject('submitting registerGateway failed')
+          reject(new Error('submitting registerGateway failed'))
         } else if (result.isInBlock) {
+          log('register_gateway events', ...formatEvents(result.events))
           resolve(undefined)
         }
       })

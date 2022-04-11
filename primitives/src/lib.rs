@@ -17,38 +17,44 @@
 //! A crate that hosts a common definitions that are relevant for the pallet-contracts.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-
+#![allow(clippy::type_complexity)]
+#![allow(clippy::too_many_arguments)]
 use codec::{Decode, Encode};
 use frame_support::traits::{ReservableCurrency, Time};
 use scale_info::TypeInfo;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_runtime::traits::{BlakeTwo256, IdentifyAccount, Verify};
-use sp_runtime::MultiSignature;
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
+use sp_runtime::{
+    traits::{BlakeTwo256, IdentifyAccount, Verify},
+    MultiSignature,
+};
 
-use sp_std::convert::TryFrom;
-use sp_std::prelude::*;
-use sp_std::vec;
+use sp_std::{convert::TryFrom, prelude::*, vec};
 #[cfg(feature = "std")]
 use std::fmt::Debug;
 
 pub mod abi;
 pub mod bridges;
+pub mod circuit;
+pub mod circuit_portal;
 pub mod contract_metadata;
 pub mod contracts_registry;
 pub mod gateway_inbound_protocol;
 pub mod match_format;
+pub mod protocol;
 pub mod side_effect;
 pub mod signature_caster;
 pub mod storage;
 pub mod transfers;
 pub mod volatile;
+pub mod xdns;
 pub mod xtx;
 
 pub use gateway_inbound_protocol::GatewayInboundProtocol;
+pub use orml_traits;
 
 pub type ChainId = [u8; 4];
 
@@ -58,6 +64,7 @@ pub enum GatewayType {
     ProgrammableInternal(u32),
     ProgrammableExternal(u32),
     TxOnly(u32),
+    OnCircuit(u32),
 }
 
 impl Default for GatewayType {
@@ -71,6 +78,7 @@ impl GatewayType {
         match self {
             Self::ProgrammableInternal(nonce) => nonce,
             Self::ProgrammableExternal(nonce) => nonce,
+            Self::OnCircuit(nonce) => nonce,
             Self::TxOnly(nonce) => nonce,
         }
     }
@@ -108,7 +116,7 @@ pub struct GatewayPointer {
     pub gateway_type: GatewayType,
 }
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo, Default)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct GatewayGenesisConfig {
     /// SCALE-encoded modules following the format of selected frame_metadata::RuntimeMetadataVXX
@@ -118,16 +126,6 @@ pub struct GatewayGenesisConfig {
     /// Genesis hash - block id of the genesis block use to distinct the network and sign messages
     /// Length depending on parameter passed in abi::GatewayABIConfig
     pub genesis_hash: Vec<u8>,
-}
-
-impl Default for GatewayGenesisConfig {
-    fn default() -> Self {
-        Self {
-            extrinsics_version: 0,
-            genesis_hash: vec![],
-            modules_encoded: None,
-        }
-    }
 }
 
 /// Represents assorted gateway system properties.
@@ -251,13 +249,14 @@ pub struct InterExecSchedule<Account, Balance> {
     pub phases: Vec<ExecPhase<Account, Balance>>,
 }
 
-/// TODO: need a currency shim for base currency here
-pub trait EscrowTrait: frame_system::Config + pallet_sudo::Config {
-    type Currency: ReservableCurrency<Self::AccountId>;
+pub trait EscrowTrait<T: frame_system::Config> {
+    type Currency: ReservableCurrency<T::AccountId>;
     type Time: Time;
 }
 
-type Bytes = Vec<u8>;
+// When to use this over `abi::Bytes`, that comes from `sp-core` and has encode etc shimmed already.
+// only issue using that might be that it probably has the length prefixed so leaving this here for now.
+pub type Bytes = Vec<u8>;
 
 /// Outbound Step that specifies expected transmission medium for relayers connecting with that gateway.
 /// Request message format that derivative of could be compatible with JSON-RPC API

@@ -1,4 +1,4 @@
-use crate::{mock::*, CandidatesForRewards, Error};
+use crate::{mock::*, CandidatesForRewards, Error, RewardsPerCandidatePerRound};
 use frame_support::{assert_err, assert_ok, StorageValue};
 
 // #[test]
@@ -9,10 +9,29 @@ use frame_support::{assert_err, assert_ok, StorageValue};
 // }
 
 #[test]
-fn it_claims_rewards_successfully() {
+fn it_claims_zero_rewards_successfully() {
     new_test_ext().execute_with(|| {
         <CandidatesForRewards<Test>>::insert(1, 0);
         assert_ok!(Inflation::claim_rewards(Origin::signed(1)));
+        // assert balance 0
+    })
+}
+#[test]
+fn it_claims_rewards_successfully() {
+    new_test_ext().execute_with(|| {
+        let candidate = Origin::signed(1);
+
+        // initialize account with some balance
+        Balances::set_balance(Origin::root(), 1, 100, 0).expect("Account should be created fine");
+        <CandidatesForRewards<Test>>::insert(1, 0);
+        <RewardsPerCandidatePerRound<Test>>::insert(1, 1, 1);
+        <RewardsPerCandidatePerRound<Test>>::insert(1, 2, 1);
+        assert_ok!(Inflation::claim_rewards(candidate));
+        // assert balance allocated
+        assert_eq!(Balances::free_balance(&1), 102);
+        // assert storage is empty for candidate
+        let remaining_storage = <RewardsPerCandidatePerRound<Test>>::iter_key_prefix(&1).count();
+        assert_eq!(remaining_storage, 0);
     })
 }
 

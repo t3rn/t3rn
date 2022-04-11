@@ -19,8 +19,10 @@
 //! to submit to the target chain? The context makes decisions basing on parameters
 //! passed using `HeadersSyncParams` structure.
 
-use crate::headers::QueuedHeaders;
-use crate::sync_types::{HeaderIdOf, HeaderStatus, HeadersSyncPipeline, QueuedHeader};
+use crate::{
+    headers::QueuedHeaders,
+    sync_types::{HeaderIdOf, HeaderStatus, HeadersSyncPipeline, QueuedHeader},
+};
 use num_traits::{One, Saturating, Zero};
 
 /// Common sync params.
@@ -127,14 +129,14 @@ impl<P: HeadersSyncPipeline> HeadersSync<P> {
         // if there's too many headers in the queue, stop downloading
         let in_memory_headers = self.headers.total_headers();
         if in_memory_headers >= self.params.max_future_headers_to_download {
-            return None;
+            return None
         }
 
         // if queue is empty and best header on target is > than best header on source,
         // then we shoud reorg
         let best_queued_number = self.headers.best_queued_number();
         if best_queued_number.is_zero() && source_best_number < target_best_header.0 {
-            return Some(source_best_number);
+            return Some(source_best_number)
         }
 
         // we assume that there were no reorgs if we have already downloaded best header
@@ -143,7 +145,7 @@ impl<P: HeadersSyncPipeline> HeadersSync<P> {
             target_best_header.0,
         );
         if best_downloaded_number >= source_best_number {
-            return None;
+            return None
         }
 
         // download new header
@@ -159,7 +161,7 @@ impl<P: HeadersSyncPipeline> HeadersSync<P> {
         // => let's avoid fetching duplicate headers
         let parent_id = orphan_header.parent_id();
         if self.headers.status(&parent_id) != HeaderStatus::Unknown {
-            return None;
+            return None
         }
 
         Some(orphan_header)
@@ -169,12 +171,12 @@ impl<P: HeadersSyncPipeline> HeadersSync<P> {
     pub fn select_headers_to_submit(&self, stalled: bool) -> Option<Vec<&QueuedHeader<P>>> {
         // maybe we have paused new headers submit?
         if self.pause_submit {
-            return None;
+            return None
         }
 
         // if we operate in backup mode, we only submit headers when sync has stalled
         if self.params.target_tx_mode == TargetTransactionMode::Backup && !stalled {
-            return None;
+            return None
         }
 
         let headers_in_submit_status = self.headers.headers_in_status(HeaderStatus::Submitted);
@@ -187,17 +189,17 @@ impl<P: HeadersSyncPipeline> HeadersSync<P> {
         let mut total_headers = 0;
         self.headers.headers(HeaderStatus::Ready, |header| {
             if total_headers == headers_to_submit_count {
-                return false;
+                return false
             }
             if total_headers == self.params.max_headers_in_single_submit {
-                return false;
+                return false
             }
 
             let encoded_size = P::estimate_size(header);
             if total_headers != 0
                 && total_size + encoded_size > self.params.max_headers_size_in_single_submit
             {
-                return false;
+                return false
             }
 
             total_size += encoded_size;
@@ -230,7 +232,7 @@ impl<P: HeadersSyncPipeline> HeadersSync<P> {
 
         // early return if it is still the same
         if self.target_best_header == Some(best_header) {
-            return false;
+            return false
         }
 
         // remember that this header is now known to the Substrate runtime
@@ -283,9 +285,11 @@ impl<P: HeadersSyncPipeline> HeadersSync<P> {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::headers::tests::{header, id};
-    use crate::sync_loop_tests::{TestHash, TestHeadersSyncPipeline, TestNumber};
-    use crate::sync_types::HeaderStatus;
+    use crate::{
+        headers::tests::{header, id},
+        sync_loop_tests::{TestHash, TestHeadersSyncPipeline, TestNumber},
+        sync_types::HeaderStatus,
+    };
     use relay_utils::HeaderId;
 
     fn side_hash(number: TestNumber) -> TestHash {

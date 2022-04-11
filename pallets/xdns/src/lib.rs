@@ -4,21 +4,16 @@
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
-
-pub use crate::types::{
-    AllowedSideEffect, EventSignature, SideEffectId, SideEffectInterface, SideEffectName,
-    XdnsRecord, XdnsRecordId,
-};
+#![allow(clippy::type_complexity)]
+#![allow(clippy::too_many_arguments)]
+pub use crate::types::{EventSignature, SideEffectId, SideEffectName};
 use codec::Encode;
 use sp_runtime::traits::Hash;
-use sp_std::collections::btree_map::BTreeMap;
-use sp_std::prelude::*;
-
+use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 pub use t3rn_primitives::{
-    abi::GatewayABIConfig, abi::Type, ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor,
-};
-pub use t3rn_protocol::side_effects::protocol::{
-    SideEffectConfirmationProtocol, SideEffectProtocol,
+    abi::{GatewayABIConfig, Type},
+    protocol::SideEffectProtocol,
+    ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor,
 };
 // Re-export pallet items so that they can be accessed from the crate namespace.
 pub use crate::pallet::*;
@@ -43,19 +38,34 @@ pub mod pallet {
     // Import various types used to declare pallet in scope.
     use super::*;
     use crate::WeightInfo;
-    use frame_support::pallet_prelude::*;
-    use frame_support::traits::Time;
+    use frame_support::{
+        pallet_prelude::*,
+        traits::{
+            fungible::{Inspect, Mutate},
+            Time,
+        },
+    };
     use frame_system::pallet_prelude::*;
     use sp_std::convert::TryInto;
-    use t3rn_primitives::{ChainId, EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor};
+    use t3rn_primitives::{
+        side_effect::interface::SideEffectInterface,
+        xdns::{AllowedSideEffect, Xdns, XdnsRecord},
+        ChainId, EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor,
+    };
 
     #[pallet::config]
-    pub trait Config: pallet_balances::Config + frame_system::Config + EscrowTrait {
+    pub trait Config: frame_system::Config {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
         /// Type representing the weight of this pallet
         type WeightInfo: weights::WeightInfo;
+
+        /// A type that provides inspection and mutation to some fungible assets
+        type Balances: Inspect<Self::AccountId> + Mutate<Self::AccountId>;
+
+        /// A type that manages escrow, and therefore balances
+        type Escrowed: EscrowTrait<Self>;
     }
 
     // Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
@@ -110,15 +120,8 @@ pub mod pallet {
             gateway_sys_props: GatewaySysProps,
             allowed_side_effects: Vec<AllowedSideEffect>,
         ) -> DispatchResultWithPostInfo {
-            ensure_root(origin)?;
-
-            // early exit if record already exists in storage
-            if <XDNSRegistry<T>>::contains_key(&gateway_id) {
-                return Err(Error::<T>::XdnsRecordAlreadyExists.into());
-            }
-
-            // TODO: check if side_effect exists
-            let mut xdns_record = XdnsRecord::<T::AccountId>::new(
+            <Self as Xdns<T>>::add_new_xdns_record(
+                origin,
                 url,
                 gateway_id,
                 gateway_abi,
@@ -127,16 +130,7 @@ pub mod pallet {
                 gateway_genesis,
                 gateway_sys_props,
                 allowed_side_effects,
-            );
-
-            // ToDo: Uncomment when switching into a model with open registration. Sudo access for now.
-            // xdns_record.assign_registrant(registrant.clone());
-            let now = TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now())
-                .map_err(|_| "Unable to compute current timestamp")?;
-
-            xdns_record.set_last_finalized(now);
-            <XDNSRegistry<T>>::insert(&gateway_id, xdns_record);
-            Self::deposit_event(Event::<T>::XdnsRecordStored(gateway_id));
+            )?;
             Ok(().into())
         }
 
@@ -159,7 +153,7 @@ pub mod pallet {
             if <CustomSideEffects<T>>::contains_key(&side_effect_id)
                 | <StandardSideEffects<T>>::contains_key(&id)
             {
-                return Err(Error::<T>::SideEffectInterfaceAlreadyExists.into());
+                return Err(Error::<T>::SideEffectInterfaceAlreadyExists.into())
             }
 
             let side_effect = SideEffectInterface {
@@ -282,12 +276,10 @@ pub mod pallet {
         }
     }
 
-    impl<T: Config> Pallet<T> {
+    impl<T: Config> Xdns<T> for Pallet<T> {
         /// Locates the best available gateway based on the time they were last finalized.
         /// Priority goes Internal > External > TxOnly, followed by the largest last_finalized value
-        pub fn best_available(
-            gateway_id: ChainId,
-        ) -> Result<XdnsRecord<T::AccountId>, &'static str> {
+        fn best_available(gateway_id: ChainId) -> Result<XdnsRecord<T::AccountId>, &'static str> {
             // Sort each available gateway pointer based on its GatewayType
             let gateway_pointers = t3rn_primitives::retrieve_gateway_pointers(gateway_id);
             ensure!(gateway_pointers.is_ok(), "No available gateway pointers");
@@ -305,14 +297,61 @@ pub mod pallet {
 
             // Return the first result
             if sorted_gateways.is_empty() {
-                return Err("Xdns record not found");
+                return Err("Xdns record not found")
             }
 
             Ok(sorted_gateways[0].clone())
         }
 
+        /// Fetches all known XDNS records
+        fn fetch_records() -> Vec<XdnsRecord<T::AccountId>> {
+            pallet::XDNSRegistry::<T>::iter_values().collect()
+        }
+
+        fn add_new_xdns_record(
+            origin: OriginFor<T>,
+            url: Vec<u8>,
+            gateway_id: ChainId,
+            gateway_abi: GatewayABIConfig,
+            gateway_vendor: GatewayVendor,
+            gateway_type: GatewayType,
+            gateway_genesis: GatewayGenesisConfig,
+            gateway_sys_props: GatewaySysProps,
+            allowed_side_effects: Vec<AllowedSideEffect>,
+        ) -> DispatchResult {
+            ensure_root(origin)?;
+
+            // early exit if record already exists in storage
+            if <XDNSRegistry<T>>::contains_key(&gateway_id) {
+                return Err(Error::<T>::XdnsRecordAlreadyExists.into())
+            }
+
+            // TODO: check if side_effect exists
+            let mut xdns_record = XdnsRecord::<T::AccountId>::new(
+                url,
+                gateway_id,
+                gateway_abi,
+                gateway_vendor,
+                gateway_type,
+                gateway_genesis,
+                gateway_sys_props,
+                allowed_side_effects,
+            );
+
+            // ToDo: Uncomment when switching into a model with open registration. Sudo access for now.
+            // xdns_record.assign_registrant(registrant.clone());
+            let now =
+                TryInto::<u64>::try_into(<<T as Config>::Escrowed as EscrowTrait<T>>::Time::now())
+                    .map_err(|_| "Unable to compute current timestamp")?;
+
+            xdns_record.set_last_finalized(now);
+            <XDNSRegistry<T>>::insert(&gateway_id, xdns_record);
+            Self::deposit_event(Event::<T>::XdnsRecordStored(gateway_id));
+            Ok(())
+        }
+
         /// returns a mapping of all allowed side_effects of a gateway.
-        pub fn allowed_side_effects(
+        fn allowed_side_effects(
             gateway_id: &ChainId,
         ) -> BTreeMap<[u8; 4], Box<dyn SideEffectProtocol>> {
             let mut allowed_side_effects: BTreeMap<[u8; 4], Box<dyn SideEffectProtocol>> =
@@ -333,7 +372,7 @@ pub mod pallet {
             allowed_side_effects
         }
 
-        pub fn fetch_side_effect_interface(
+        fn fetch_side_effect_interface(
             id: [u8; 4],
         ) -> Result<Box<dyn SideEffectProtocol>, &'static str> {
             return if <StandardSideEffects<T>>::contains_key(id) {
@@ -342,11 +381,11 @@ pub mod pallet {
                 return match <CustomSideEffects<T>>::get(T::Hashing::hash(&id.encode())) {
                     Some(entry) => Ok(Box::new(entry)),
                     None => Err("Side Effect Interface was not found!"),
-                };
-            };
+                }
+            }
         }
 
-        pub fn update_gateway_ttl(
+        fn update_gateway_ttl(
             gateway_id: ChainId,
             last_finalized: u64,
         ) -> DispatchResultWithPostInfo {
@@ -358,7 +397,7 @@ pub mod pallet {
                     Some(record) => {
                         record.set_last_finalized(last_finalized);
                         Ok(())
-                    }
+                    },
                 })?;
 
                 Self::deposit_event(Event::<T>::XdnsRecordUpdated(gateway_id));
@@ -366,64 +405,27 @@ pub mod pallet {
             }
         }
 
-        /// Fetches all known XDNS records
-        pub fn fetch_records() -> Vec<XdnsRecord<T::AccountId>> {
-            pallet::XDNSRegistry::<T>::iter_values().collect()
-        }
-
         // Fetches the GatewayABIConfig for a given XDNS record
-        pub fn get_abi(chain_id: ChainId) -> Result<GatewayABIConfig, &'static str> {
+        fn get_abi(chain_id: ChainId) -> Result<GatewayABIConfig, &'static str> {
             if !<XDNSRegistry<T>>::contains_key(chain_id) {
-                return Err("Xdns record not found");
+                return Err("Xdns record not found")
             }
 
             Ok(<XDNSRegistry<T>>::get(chain_id).unwrap().gateway_abi)
         }
+
+        fn get_gateway_value_unsigned_type_unsafe(chain_id: &ChainId) -> Type {
+            Type::Uint(
+                <XDNSRegistry<T>>::get(chain_id)
+                    .unwrap()
+                    .gateway_abi
+                    .value_type_size
+                    * 8,
+            )
+        }
+
+        fn get_gateway_type_unsafe(chain_id: &ChainId) -> GatewayType {
+            <XDNSRegistry<T>>::get(chain_id).unwrap().gateway_type
+        }
     }
 }
-
-impl SideEffectProtocol for SideEffectInterface {
-    fn get_id(&self) -> [u8; 4] {
-        self.id
-    }
-
-    fn get_name(&self) -> SideEffectName {
-        self.name.clone()
-    }
-
-    fn get_arguments_abi(&self) -> Vec<Type> {
-        self.argument_abi.clone()
-    }
-
-    /// ToDo: Protocol::Reversible x-t3rn#69 - !Inspect if from is doable here - the original transfer is from a user,
-    ///     whereas the transfers on targets are made by relayers/executors.
-    ///     Prefer to only inspect the the target
-    /// ToDo: Protocol::Reversible - Support optional parameters like insurance. - must be hardcoded name
-    ///         // vec!["from", "to", "value", "Option<insurance>"]
-    fn get_arguments_2_state_mapper(&self) -> Vec<EventSignature> {
-        self.argument_to_state_mapper.clone()
-    }
-
-    fn get_confirming_events(&self) -> Vec<EventSignature> {
-        self.confirm_events.clone()
-    }
-
-    /// This event must be emitted by Escrow Contracts
-    fn get_escrowed_events(&self) -> Vec<EventSignature> {
-        self.escrowed_events.clone()
-    }
-
-    fn get_reversible_commit(&self) -> Vec<EventSignature> {
-        self.commit_events.clone()
-    }
-
-    /// ToDo: Protocol::Reversible x-t3rn#69 - If executors wants to avoid loosing their insurance deposit, must return the funds to the original user
-    ///     - that's problematic since we don't know user's address on target
-    ///     Temp. solution before the locks in wrapped tokens on Circuit is to leave it empty
-    ///     and Commit relayer to perform the transfer for 100% or they loose insured deposit
-    fn get_reversible_revert(&self) -> Vec<EventSignature> {
-        self.revert_events.clone()
-    }
-}
-
-impl SideEffectConfirmationProtocol for SideEffectInterface {}

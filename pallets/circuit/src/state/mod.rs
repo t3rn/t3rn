@@ -8,8 +8,10 @@ use sp_runtime::RuntimeDebug as Debug;
 
 type SystemHashing<T> = <T as frame_system::Config>::Hashing;
 pub type XExecSignalId<T> = <T as frame_system::Config>::Hash;
+pub type XExecStepSideEffectId<T> = <T as frame_system::Config>::Hash;
 
 use scale_info::TypeInfo;
+use t3rn_primitives::transfers::EscrowedBalanceOf;
 
 /// Status of Circuit storage items:
 /// Requested - default
@@ -51,10 +53,10 @@ pub enum InsuranceEnact {
 impl CircuitStatus {
     fn determine_insurance_status<T: Config>(
         side_effect_id: SideEffectId<T>,
-        insurance_deposits: &Vec<(
+        insurance_deposits: &[(
             SideEffectId<T>,
-            InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
-        )>,
+            InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+        )],
     ) -> CircuitStatus {
         return if let Some((_id, insurance_request)) = insurance_deposits
             .iter()
@@ -67,20 +69,20 @@ impl CircuitStatus {
             }
         } else {
             CircuitStatus::Ready
-        };
+        }
     }
 
     pub fn determine_effects_insurance_status<T: Config>(
         insurance_deposits: &Vec<(
             SideEffectId<T>,
-            InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+            InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
         )>,
     ) -> CircuitStatus {
         for (current_id, _insurance_deposit) in insurance_deposits {
             if Self::determine_insurance_status::<T>(*current_id, insurance_deposits)
                 == CircuitStatus::PendingInsurance
             {
-                return CircuitStatus::PendingInsurance;
+                return CircuitStatus::PendingInsurance
             }
         }
         CircuitStatus::Ready
@@ -89,17 +91,17 @@ impl CircuitStatus {
     /// Based solely on full steps + insurance deposits determine the execution status.
     /// Start with checking the criteria from the earliest status to latest
     pub fn determine_step_status<T: Config>(
-        step: &Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
-        insurance_deposits: &Vec<(
+        step: &[FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>],
+        insurance_deposits: &[(
             SideEffectId<T>,
-            InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
-        )>,
+            InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+        )],
     ) -> Result<CircuitStatus, Error<T>> {
         // Those are determined post - ready
         let mut highest_post_ready_determined_status = CircuitStatus::Ready;
         let mut lowest_post_ready_determined_status = CircuitStatus::Finished;
 
-        for (_i, full_side_effect) in step.iter().enumerate() {
+        for (_step_cnt, full_side_effect) in step.iter().enumerate() {
             let current_id = full_side_effect.input.generate_id::<SystemHashing<T>>();
             let current_determined_status =
                 Self::determine_insurance_status::<T>(current_id, insurance_deposits);
@@ -110,14 +112,14 @@ impl CircuitStatus {
                 //  but at the same time some of the previous side effects already has been confirmed.
                 // This should never happen and the refund for users should be handled
                 //  with the same time punishing relayers responsible for too early execution
-                return Err(Error::<T>::DeterminedForbiddenXtxStatus);
+                return Err(Error::<T>::DeterminedForbiddenXtxStatus)
             }
 
             if current_determined_status != CircuitStatus::Ready {
-                return Ok(current_determined_status);
+                return Ok(current_determined_status)
             }
             // Checking further only if CircuitStatus::Ready after this point
-            if let Some(_) = full_side_effect.confirmed {
+            if full_side_effect.confirmed.is_some() {
                 highest_post_ready_determined_status = CircuitStatus::Finished
             } else {
                 lowest_post_ready_determined_status = CircuitStatus::PendingExecution
@@ -140,11 +142,13 @@ impl CircuitStatus {
     }
 
     pub fn determine_xtx_status<T: Config>(
-        steps: &Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
-        insurance_deposits: &Vec<(
+        steps: &[Vec<
+            FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+        >],
+        insurance_deposits: &[(
             SideEffectId<T>,
-            InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
-        )>,
+            InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+        )],
     ) -> Result<CircuitStatus, Error<T>> {
         let mut lowest_determined_status = CircuitStatus::Requested;
 
@@ -162,12 +166,13 @@ pub struct LocalXtxCtx<T: Config> {
     pub local_state: LocalState,
     pub use_protocol: UniversalSideEffectsProtocol,
     pub xtx_id: XExecSignalId<T>,
-    pub xtx: XExecSignal<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+    pub xtx: XExecSignal<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
     pub insurance_deposits: Vec<(
         SideEffectId<T>,
-        InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+        InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
     )>,
-    pub full_side_effects: Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
+    pub full_side_effects:
+        Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>>,
 }
 
 impl Default for CircuitStatus {
@@ -228,6 +233,9 @@ pub struct XExecSignal<AccountId, BlockNumber, BalanceOf> {
     /// Has returned status already and what
     pub status: CircuitStatus,
 
+    /// Has returned status already and what
+    pub steps_cnt: (u32, u32),
+
     /// Total reward
     pub total_reward: Option<BalanceOf>,
 }
@@ -247,6 +255,8 @@ impl<
         delay_steps_at: Option<Vec<BlockNumber>>,
         // Total reward
         total_reward: Option<BalanceOf>,
+        // Current steps count
+        steps_cnt: (u32, u32),
     ) -> Self {
         XExecSignal {
             requester: requester.clone(),
@@ -254,11 +264,21 @@ impl<
             delay_steps_at,
             status: Default::default(),
             total_reward,
+            steps_cnt,
         }
     }
 
     pub fn generate_id<T: frame_system::Config>(&self) -> XExecSignalId<T> {
         SystemHashing::<T>::hash(Encode::encode(self).as_ref())
+    }
+
+    pub fn generate_step_id<T: frame_system::Config>(
+        xtx_id: XExecSignalId<T>,
+        n_step: usize,
+    ) -> XExecStepSideEffectId<T> {
+        let mut xtx_id_buf = xtx_id.encode();
+        xtx_id_buf.append(&mut (n_step as u32).encode());
+        SystemHashing::<T>::hash(xtx_id_buf.to_vec().as_ref())
     }
 
     pub fn setup_fresh<T: frame_system::Config>(
@@ -274,7 +294,7 @@ impl<
         XExecSignalId<T>,
         XExecSignal<T::AccountId, T::BlockNumber, BalanceOf>,
     ) {
-        let signal = XExecSignal::new(requester, timeouts_at, delay_steps_at, total_reward);
+        let signal = XExecSignal::new(requester, timeouts_at, delay_steps_at, total_reward, (0, 0));
         let id = signal.generate_id::<T>();
         (id, signal)
     }

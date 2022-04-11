@@ -94,6 +94,7 @@ fn test_register_gateway_with_default_polka_like_header() {
             gateway_sys_props,
             first_header.encode(),
             authorities,
+            Default::default(),
             allowed_side_effects,
         ));
     });
@@ -145,6 +146,7 @@ fn test_register_gateway_with_u64_substrate_header() {
             gateway_sys_props,
             first_header.encode(),
             authorities,
+            Default::default(),
             allowed_side_effects,
         ));
     });
@@ -196,6 +198,7 @@ fn test_register_gateway_with_default_eth_like_header() {
             gateway_sys_props,
             first_header.encode(),
             authorities,
+            Default::default(),
             allowed_side_effects,
         ));
     });
@@ -247,6 +250,7 @@ fn test_register_gateway_with_u64_eth_like_header() {
             gateway_sys_props,
             first_header.encode(),
             authorities,
+            Default::default(),
             allowed_side_effects,
         ));
     });
@@ -300,15 +304,13 @@ fn test_register_gateway_with_u64_substrate_header_and_allowed_side_effects() {
             gateway_sys_props.clone(),
             first_header.encode(),
             authorities,
+            Default::default(),
             allowed_side_effects.clone(),
         ));
 
         // Assert the stored xdns record
 
-        let result = pallet_xdns::XDNSRegistry::<Test>::get(gateway_id);
-
-        assert!(result.is_some());
-        let xdns_record = result.unwrap();
+        let xdns_record = pallet_xdns::XDNSRegistry::<Test>::get(gateway_id).unwrap();
         let stored_side_effects = xdns_record.allowed_side_effects;
 
         assert_eq!(stored_side_effects.len(), 1);
@@ -324,6 +326,7 @@ fn test_register_gateway_with_u64_substrate_header_and_allowed_side_effects() {
             allowed_side_effects,
         )));
         // XdnsRecordStored and NewGatewayRegistered
-        assert_eq!(System::events().len(), 2);
+        let events = System::events();
+        assert_eq!(events.len(), 2);
     });
 }

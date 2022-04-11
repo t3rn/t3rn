@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity Bridges Common.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::chain::Chain;
-use crate::client::Client;
+use crate::{chain::Chain, client::Client};
 
 use async_trait::async_trait;
 use codec::Decode;

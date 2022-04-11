@@ -1,24 +1,22 @@
 [package]
-name = "ethabi-decode"
-version = "1.3.2"
-authors = ["Vincent Geddes <vincent.geddes@hey.com>"]
-edition = "2018"
-license = "Apache-2.0"
-keywords = ["ethereum", "eth", "abi", "solidity"]
+authors     = [ "Vincent Geddes <vincent.geddes@hey.com>" ]
 description = "Decoding of ABI-encoded data and event logs"
+edition     = "2018"
+keywords    = [ "ethereum", "eth", "abi", "solidity" ]
+license     = "Apache-2.0"
+name        = "ethabi-decode"
+version     = "1.3.2"
 
 [dependencies]
-tiny-keccak = { version = "1.4" }
 ethereum-types = { version = "0.12.1", default-features = false }
+tiny-keccak    = { version = "1.4" }
 
 [dev-dependencies]
-hex = { version = "2.0", package = "rustc-hex" }
+hex         = { version = "2.0", package = "rustc-hex" }
 hex-literal = "0.2.1"
-uint = { version = "0.8.2", default-features = false }
-paste = "0.1.6"
+paste       = "0.1.6"
+uint        = { version = "0.8.2", default-features = false }
 
 [features]
-default = ["std"]
-std = [
-    'ethereum-types/std',
-]
+default = [ "std" ]
+std     = [ 'ethereum-types/std' ]

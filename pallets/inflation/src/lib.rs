@@ -16,14 +16,19 @@ pub mod weights;
 
 #[pallet]
 pub mod pallet {
-    use crate::inflation::{InflationInfo, Range, RoundIndex, RoundInfo};
-    use crate::weights::WeightInfo;
-    use frame_support::pallet_prelude::*;
-    use frame_support::traits::{Currency, Imbalance, ReservableCurrency};
-    use frame_system::ensure_root;
-    use frame_system::pallet_prelude::*;
-    use sp_runtime::traits::{AtLeast32BitUnsigned, Saturating, Zero};
-    use sp_runtime::Perbill;
+    use crate::{
+        inflation::{InflationInfo, Range, RoundIndex, RoundInfo},
+        weights::WeightInfo,
+    };
+    use frame_support::{
+        pallet_prelude::*,
+        traits::{Currency, Imbalance, ReservableCurrency},
+    };
+    use frame_system::{ensure_root, pallet_prelude::*};
+    use sp_runtime::{
+        traits::{AtLeast32BitUnsigned, Saturating, Zero},
+        Perbill,
+    };
 
     pub type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -70,7 +75,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn candidates)]
     pub type CandidatesForRewards<T: Config> =
-        StorageMap<_, Twox64Concat, T::AccountId, T::Balance, OptionQuery>;
+        StorageMap<_, Twox64Concat, T::AccountId, BalanceOf<T>, OptionQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn rewards_per_round)]
@@ -80,7 +85,7 @@ pub mod pallet {
         T::AccountId,
         Twox64Concat,
         RoundIndex,
-        T::Balance,
+        BalanceOf<T>,
         ValueQuery,
     >;
 
@@ -91,9 +96,8 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        MintedTokensForRound(T::AccountId, T::Balance),
-        MintedTokensExactly(T::AccountId, T::Balance),
-        AllocatedToAccount(T::AccountId, T::Balance),
+        MintedTokensForRound(T::AccountId, BalanceOf<T>),
+        MintedTokensExactly(T::AccountId, BalanceOf<T>),
         InflationSet {
             annual_min: Perbill,
             annual_ideal: Perbill,
@@ -106,6 +110,7 @@ pub mod pallet {
             starting_block: T::BlockNumber,
             round: u32,
         },
+        ClaimedRewards(T::AccountId, BalanceOf<T>),
     }
 
     #[pallet::error]
@@ -149,6 +154,7 @@ pub mod pallet {
 
             T::WeightInfo::update_round_on_initialize()
         }
+
         fn on_finalize(_n: BlockNumberFor<T>) {
             // check if round finished in current block
             // if so, update storage reward objects and create a new empty one
@@ -159,7 +165,7 @@ pub mod pallet {
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
         pub candidates: Vec<T::AccountId>,
-        pub annual_inflation: Range<T::Balance>,
+        pub annual_inflation: Range<BalanceOf<T>>,
     }
 
     #[cfg(feature = "std")]
@@ -194,7 +200,7 @@ pub mod pallet {
         #[pallet::weight(10_000)]
         pub fn mint_for_round(
             origin: OriginFor<T>,
-            #[pallet::compact] amount: T::Balance,
+            #[pallet::compact] amount: BalanceOf<T>,
         ) -> DispatchResult {
             // mint can only be called from a root account
             ensure_root(origin)?;
@@ -224,25 +230,18 @@ pub mod pallet {
             <Pallet<T>>::ensure_candidate(&who)?;
 
             // accumulate rewards
-            let total_rewards = <RewardsPerCandidatePerRound<T>>::iter_key_prefix(&who)
-                .map(|key2| <RewardsPerCandidatePerRound<T>>::get(&who, &key2))
-                .fold(T::Balance::zero(), |acc, item| acc.saturating_add(item));
+            let total_rewards = <RewardsPerCandidatePerRound<T>>::iter_prefix(&who)
+                .drain()
+                .drain()
+                .map(|key2_value| key2_value.1)
+                .fold(BalanceOf::<T>::zero(), |acc, item| acc.saturating_add(item));
 
-            #[cfg(test)]
-            log::info!("rewards {:?}", total_rewards);
-            // log!("{}", total_rewards);
-            // calculate total rewards
+            // allocate to candidate
+            T::Currency::deposit_into_existing(&who, BalanceOf::<T>::from(total_rewards))
+                .expect("Should deposit balance to account");
 
-            // .map(|reward| {
-            //     match reward {
-            //         Some(reward) => reward,
-            //         None => T::Balance::zero(),
-            //     } { }
-            //     T::Currency::deposit_into_existing(who, reward.amount);
-            // })
-            // .drain();
-
-            // all_rewards.into_iter().for_each(|reward| {});
+            // emit event
+            Self::deposit_event(Event::ClaimedRewards(who, total_rewards));
 
             Ok(().into())
         }
