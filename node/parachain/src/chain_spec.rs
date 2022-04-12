@@ -14,7 +14,6 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 use jsonrpc_runtime_client::{
     create_rpc_client, get_gtwy_init_data, get_metadata, ConnectionParams,
 };
-use pallet_xdns::types::{SideEffectInterface, XdnsRecord};
 use sp_core::Encode;
 /// t3rn-pallets chain spec config -- START
 use t3rn_primitives::{
@@ -23,6 +22,8 @@ use t3rn_primitives::{
         header_chain::InitializationData,
         runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID, ROCOCO_CHAIN_ID},
     },
+    side_effect::interface::SideEffectInterface,
+    xdns::XdnsRecord,
     ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor, Header,
 };
 
@@ -31,7 +32,6 @@ use std::{
     convert::TryFrom,
     io::{Error, ErrorKind},
 };
-use t3rn_primitives::{side_effect::interface::SideEffectInterface, xdns::XdnsRecord};
 
 /// Helper function that fetches metadata from live networks and generates an XdnsRecord
 fn fetch_xdns_record_from_rpc(
@@ -86,14 +86,20 @@ fn seed_xdns_registry() -> Result<Vec<XdnsRecord<AccountId>>, Error> {
         secure: true,
     };
 
-    let polkadot_xdns =
-        fetch_xdns_record_from_rpc(&polkadot_connection_params, POLKADOT_CHAIN_ID).unwrap();
-    info!("Fetched Polkadot metadata successfully!");
-    let kusama_xdns =
-        fetch_xdns_record_from_rpc(&kusama_connection_params, KUSAMA_CHAIN_ID).unwrap();
-    info!("Fetched Kusama metadata successfully!");
+    let rococo_connection_params: ConnectionParams = ConnectionParams {
+        host: String::from("rococo-rpc.polkadot.io"),
+        port: 443,
+        secure: true,
+    };
 
-    Ok(vec![polkadot_xdns, kusama_xdns])
+    let polkadot_xdns = fetch_xdns_record_from_rpc(&polkadot_connection_params, POLKADOT_CHAIN_ID)
+        .expect("fetching polkadot xdns info failed");
+    let kusama_xdns = fetch_xdns_record_from_rpc(&kusama_connection_params, KUSAMA_CHAIN_ID)
+        .expect("fetching kusama xdns info failed");
+    let rococo_xdns = fetch_xdns_record_from_rpc(&rococo_connection_params, ROCOCO_CHAIN_ID)
+        .expect("fetching rococo xdns info failed");
+
+    Ok(vec![polkadot_xdns, kusama_xdns, rococo_xdns])
 }
 
 fn standard_side_effects() -> Vec<SideEffectInterface> {

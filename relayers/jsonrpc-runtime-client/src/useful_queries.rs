@@ -1,14 +1,11 @@
 use crate::polkadot_like_chain::PolkadotLike;
 use codec::{Decode, Encode};
 use frame_metadata::{v14::RuntimeMetadataV14, RuntimeMetadata, RuntimeMetadataPrefixed};
-use jsonrpsee_types::{
-    traits::Client,
-    v2::params::JsonRpcParams,
-};
+use jsonrpsee_types::{traits::Client, v2::params::JsonRpcParams};
 use num_traits::Zero;
 use relay_substrate_client::Client as SubstrateClient;
 use sc_finality_grandpa::FinalityProof;
-use sp_core::{Bytes, storage::StorageKey};
+use sp_core::{storage::StorageKey, Bytes};
 use sp_finality_grandpa::{AuthorityId, AuthorityList, SetId};
 use t3rn_primitives::{
     bridges::header_chain::{justification::GrandpaJustification, AuthoritySet},
@@ -57,7 +54,10 @@ pub async fn get_gtwy_init_data(
 
     let header: Header = sub_client
         .client
-        .request("chain_getHeader", JsonRpcParams::Array(vec![block_hash.clone()]))
+        .request(
+            "chain_getHeader",
+            JsonRpcParams::Array(vec![block_hash.clone()]),
+        )
         .await
         .map_err(|error| format!("chain_getHeader failed: {:?}", error))?;
 

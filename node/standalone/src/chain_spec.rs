@@ -9,7 +9,6 @@ use circuit_standalone_runtime::{
 use jsonrpc_runtime_client::{
     create_rpc_client, get_gtwy_init_data, get_metadata, ConnectionParams,
 };
-use pallet_xdns::types::{SideEffectInterface, XdnsRecord};
 use sp_core::Encode;
 use t3rn_primitives::{
     abi::Type,
@@ -17,6 +16,8 @@ use t3rn_primitives::{
         header_chain::InitializationData,
         runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID, ROCOCO_CHAIN_ID},
     },
+    side_effect::interface::SideEffectInterface,
+    xdns::XdnsRecord,
     ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor, Header,
 };
 
@@ -31,7 +32,6 @@ use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use t3rn_primitives::{side_effect::interface::SideEffectInterface, xdns::XdnsRecord};
 
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
@@ -124,14 +124,20 @@ fn seed_xdns_registry() -> Result<Vec<XdnsRecord<AccountId>>, Error> {
         secure: true,
     };
 
-    let _polkadot_xdns =
-        fetch_xdns_record_from_rpc(&polkadot_connection_params, POLKADOT_CHAIN_ID).unwrap();
-    info!("Fetched Polkadot metadata successfully!");
-    let _kusama_xdns =
-        fetch_xdns_record_from_rpc(&kusama_connection_params, KUSAMA_CHAIN_ID).unwrap();
-    info!("Fetched Kusama metadata successfully!");
+    let rococo_connection_params: ConnectionParams = ConnectionParams {
+        host: String::from("rococo-rpc.polkadot.io"),
+        port: 443,
+        secure: true,
+    };
 
-    Ok(vec![polkadot_xdns, kusama_xdns])
+    let polkadot_xdns = fetch_xdns_record_from_rpc(&polkadot_connection_params, POLKADOT_CHAIN_ID)
+        .expect("fetching polkadot xdns info failed");
+    let kusama_xdns = fetch_xdns_record_from_rpc(&kusama_connection_params, KUSAMA_CHAIN_ID)
+        .expect("fetching kusama xdns info failed");
+    let rococo_xdns = fetch_xdns_record_from_rpc(&rococo_connection_params, ROCOCO_CHAIN_ID)
+        .expect("fetching rococo xdns info failed");
+
+    Ok(vec![polkadot_xdns, kusama_xdns, rococo_xdns])
 }
 
 fn standard_side_effects() -> Vec<SideEffectInterface> {

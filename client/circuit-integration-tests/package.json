@@ -3,9 +3,8 @@
   "version": "0.1.0",
   "license": "Apache-2.0",
   "scripts": {
-    "test": "mocha -r ts-node/register -r dotenv/config 'test/**/*.test.ts' --exit",
+    "test": "mocha -r ts-node/register -r dotenv/config 'test/**/*.test.ts' --exclude 'test/execution_delivery.test.ts' --exclude 'test/utils.test.ts' --exit",
     "testexd": "mocha -r ts-node/register -r dotenv/config 'test/**/*.test.ts' --grep 'should successfully submit submitSideEffectsTemp tx' --exit",
-    "testgtwy": "mocha -r ts-node/register -r dotenv/config 'test/**/gateway_preregistration.test.ts' --exit",
     "test:watch": "mocha -r ts-node/register -r dotenv/config 'test/**/*.test.ts' --watch --watch-files test/**/*.test.ts,src/**/*.ts",
     "fmt": "npx prettier --no-semi --arrow-parens avoid --print-width 80 --write ./test/gateway_preregistration.test.ts"
   },
