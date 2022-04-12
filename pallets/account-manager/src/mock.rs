@@ -128,9 +128,8 @@ impl pallet_balances::Config for Test {
 }
 
 impl Config for Test {
-    type Balances = Balances;
-    type Escrowed = Self;
     type Event = Event;
+    type Time = Timestamp;
     type WeightInfo = ();
 }
 
@@ -369,13 +368,6 @@ impl ExtBuilder {
         pallet_balances::GenesisConfig::<Test> { balances: vec![] }
             .assimilate_storage(&mut t)
             .expect("Pallet balances storage can be assimilated");
-
-        pallet_xdns::GenesisConfig::<Test> {
-            known_xdns_records: self.known_xdns_records,
-            standard_side_effects: self.standard_side_effects,
-        }
-        .assimilate_storage(&mut t)
-        .expect("Pallet contracts registry can be assimilated");
 
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));

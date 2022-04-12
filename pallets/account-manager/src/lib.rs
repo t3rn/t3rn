@@ -1,15 +1,15 @@
 //! <!-- markdown-link-check-disable -->
-//! # X-DNS Pallet
+//! # Account Manager pallet
 //! </pre></p></details>
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
-pub use crate::types::{EventSignature, SideEffectId, SideEffectName};
 use codec::Encode;
 use sp_runtime::traits::Hash;
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
+use t3rn_primitives::EscrowTrait;
 pub use t3rn_primitives::{
     abi::{GatewayABIConfig, Type},
     protocol::SideEffectProtocol,
@@ -26,6 +26,7 @@ mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
+pub mod currency;
 pub mod types;
 pub mod weights;
 
@@ -54,15 +55,15 @@ pub mod pallet {
     };
 
     #[pallet::config]
-    pub trait Config: frame_system::Config {
+    pub trait Config<I: 'static = ()>: frame_system::Config + pallet_balances::Config {
         /// The overarching event type.
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
 
         /// Type representing the weight of this pallet
         type WeightInfo: weights::WeightInfo;
 
-        /// A type that provides inspection and mutation to some fungible assets
-        type Balances: Inspect<Self::AccountId> + Mutate<Self::AccountId>;
+        /// Type providing some time handler
+        type Time: frame_support::traits::Time;
     }
 
     // Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
@@ -70,11 +71,16 @@ pub mod pallet {
     #[pallet::pallet]
     #[pallet::generate_store(pub (super) trait Store)]
     #[pallet::without_storage_info]
-    pub struct Pallet<T>(_);
+    pub struct Pallet<T, I = ()>(PhantomData<(T, I)>);
 
     // Pallet implements [`Hooks`] trait to define some logic to execute in some context.
     #[pallet::hooks]
-    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+    impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I> {
+        // `on_finalize` is executed at the end of block after all extrinsic are dispatched.
+        fn on_finalize(_n: T::BlockNumber) {
+            // Perform necessary data/state clean up here.
+        }
+
         // `on_initialize` is executed at the beginning of the block before any extrinsic are
         // dispatched.
         //
@@ -83,11 +89,6 @@ pub mod pallet {
             // Anything that needs to be done at the start of the block.
             // We don't do anything here.
             0
-        }
-
-        // `on_finalize` is executed at the end of block after all extrinsic are dispatched.
-        fn on_finalize(_n: T::BlockNumber) {
-            // Perform necessary data/state clean up here.
         }
 
         // A runtime code run after every block and have access to extended set of APIs.
@@ -103,49 +104,58 @@ pub mod pallet {
     }
 
     #[pallet::call]
-    impl<T: Config> Pallet<T> {}
+    impl<T: Config<I>, I: 'static> Pallet<T, I> {}
 
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
-    pub enum Event<T: Config> {
+    pub enum Event<T: Config<I>, I: 'static = ()> {
         Example,
     }
 
     // Errors inform users that something went wrong.
     #[pallet::error]
-    pub enum Error<T> {
+    pub enum Error<T, I = ()> {
         Example,
     }
 
-    #[pallet::storage]
-    pub type StandardSideEffects<T: Config> = StorageMap<_, Identity, [u8; 4], SideEffectInterface>;
+    // #[pallet::storage]
+    // pub type StandardSideEffects<T: Config<I>, I: 'static> = StorageMap<_, Identity, [u8; 4], SideEffectInterface>;
 
-    #[pallet::storage]
-    #[pallet::getter(fn side_effect_registry)]
-    pub type CustomSideEffects<T> = StorageMap<_, Identity, SideEffectId<T>, SideEffectInterface>;
+    // #[pallet::storage]
+    // #[pallet::getter(fn side_effect_registry)]
+    // pub type CustomSideEffects<T> = StorageMap<_, Identity, SideEffectId<T>, SideEffectInterface>;
 
-    /// The pre-validated composable xdns_records on-chain registry.
-    #[pallet::storage]
-    #[pallet::getter(fn xdns_registry)]
-    pub type XDNSRegistry<T: Config> =
-        StorageMap<_, Identity, [u8; 4], XdnsRecord<T::AccountId>, OptionQuery>;
+    // /// The pre-validated composable xdns_records on-chain registry.
+    // #[pallet::storage]
+    // #[pallet::getter(fn xdns_registry)]
+    // pub type XDNSRegistry<T: Config<I>, I: 'static> =
+    //     StorageMap<_, Identity, [u8; 4], XdnsRecord<T::AccountId>, OptionQuery>;
 
     // The genesis config type.
     #[pallet::genesis_config]
-    pub struct GenesisConfig<T: Config> {}
+    pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
+        phantom: PhantomData<(T, I)>,
+    }
 
     /// The default value for the genesis config type.
     #[cfg(feature = "std")]
-    impl<T: Config> Default for GenesisConfig<T> {
+    impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
         fn default() -> Self {
-            Self {}
+            Self {
+                phantom: Default::default(),
+            }
         }
     }
 
     /// The build of genesis for the pallet.
     /// Populates storage with the known XDNS Records
     #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+    impl<T: Config<I>, I: 'static> GenesisBuild<T, I> for GenesisConfig<T, I> {
         fn build(&self) {}
     }
+}
+
+impl<T: Config + pallet_balances::Config> EscrowTrait<T> for Pallet<T> {
+    type Currency = Self;
+    type Time = T::Time;
 }
