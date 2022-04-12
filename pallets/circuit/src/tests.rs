@@ -550,6 +550,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
             }
             .encode();
 
+            // Adding 4 since Balances Pallet = 4 in construct_runtime! enum
             let mut encoded_event = vec![4];
             encoded_event.append(&mut encoded_balance_transfer_event);
 
@@ -1065,6 +1066,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
             }
             .encode();
 
+            // Adding 4 since Balances Pallet = 4 in construct_runtime! enum
             let mut encoded_event = vec![4];
             encoded_event.append(&mut encoded_add_liquidity_transfer_event);
 
