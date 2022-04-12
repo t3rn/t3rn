@@ -88,22 +88,6 @@ pub async fn get_gtwy_init_data(
 
         Ok((authority_set, header))
     } else {
-        // TODO:: if para gtwy query session validators
-        let storage_key_buf = hex::decode(SESSION_VALIDATORS_STORAGE_KEY).map_err(|error| format!("hex decoding failed: {:?}", error))?;
-        // let storage_keys = vec![StorageKey(storage_key_buf)];
-        let collators = sub_client
-            .client
-            .request(
-                "state_queryStorageAt",
-                JsonRpcParams::Array(vec![
-                    serde_json::json!(StorageKey(storage_key_buf)),
-                    block_hash,
-                ]),
-            )
-            .await
-            .map_err(|error| format!("querying collators failed: {:?}", error))?;
-
-        println!("$$$$$$$ collators {:?}", collators);
-        Err("333".to_string())
+        Err("parachain gateway preregistration is not supported yet".to_string())
     }
 }

@@ -17,10 +17,11 @@ describe('Default Multi Finality Verifier', function () {
   after(async () => await circuit.disconnect())
 
   describe('gateway preregistration', () => {
-    it('should have preregistered relay- and parachain gateways', async () => {
-      const expectedGatewayIds = ['pdot', 'ksma', 'roco', 'basi', 'cata']
+    it('should have preregistered relaychain gateways', async () => {
+      const expectedGatewayIds = ['pdot', 'ksma', 'roco']
 
-      for (const gatewayId of expectedGatewayIds) {}
+      for (const gatewayId of expectedGatewayIds) {
+      }
       // FIXME: assert xdns records are stored
       // const xdnsRecord = await circuit.query.xdns
       //   .xdnsRecords(Uint8Array.from([ 112, 100, 111, 116 ])) // pdot

@@ -15,10 +15,7 @@ use t3rn_primitives::{
     abi::Type,
     bridges::{
         header_chain::InitializationData,
-        runtime::{
-            BASILISK_CHAIN_ID, CATALYST_CHAIN_ID, KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID,
-            RILT_CHAIN_ID, ROCOCO_CHAIN_ID,
-        },
+        runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID, ROCOCO_CHAIN_ID},
     },
     ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor, Header,
 };
@@ -286,9 +283,6 @@ fn fetch_gtwy_init_data(gateway_id: &ChainId) -> Result<InitializationData<Heade
             POLKADOT_CHAIN_ID => "rpc.polkadot.io",
             KUSAMA_CHAIN_ID => "kusama-rpc.polkadot.io",
             ROCOCO_CHAIN_ID => "rococo-rpc.polkadot.io",
-            BASILISK_CHAIN_ID => "rpc-01.basilisk-rococo.hydradx.io",
-            CATALYST_CHAIN_ID => "fullnode.catalyst.cntrfg.com",
-            RILT_CHAIN_ID => "rococo.kilt.io",
             _ => return Err(Error::new(ErrorKind::InvalidInput, "unknown gateway id")),
         };
 
@@ -354,15 +348,8 @@ pub fn development_config() -> Result<ChainSpec, String> {
                 ],
                 seed_xdns_registry().unwrap_or_default(),
                 standard_side_effects(),
-                initial_gateways(vec![
-                    &POLKADOT_CHAIN_ID,
-                    &KUSAMA_CHAIN_ID,
-                    &ROCOCO_CHAIN_ID,
-                    &BASILISK_CHAIN_ID,
-                    &CATALYST_CHAIN_ID,
-                    &RILT_CHAIN_ID,
-                ])
-                .expect("initial gateways"),
+                initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
+                    .expect("initial gateways"),
                 true,
             )
         },
@@ -416,15 +403,8 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
                 ],
                 seed_xdns_registry().unwrap_or_default(),
                 standard_side_effects(),
-                initial_gateways(vec![
-                    &POLKADOT_CHAIN_ID,
-                    &KUSAMA_CHAIN_ID,
-                    &ROCOCO_CHAIN_ID,
-                    &BASILISK_CHAIN_ID,
-                    &CATALYST_CHAIN_ID,
-                    &RILT_CHAIN_ID,
-                ])
-                .expect("initial gateways"),
+                initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
+                    .expect("initial gateways"),
                 true,
             )
         },
