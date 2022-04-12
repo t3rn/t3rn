@@ -5866,6 +5866,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-account-manager"
+version = "1.0.0-alpha.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-metadata",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-balances",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "parity-scale-codec 2.3.1",
+ "scale-info 1.0.0",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-keystore",
+ "sp-runtime",
+ "sp-std",
+ "sp-version",
+ "t3rn-primitives",
+ "t3rn-protocol",
+]
+
+[[package]]
 name = "pallet-aura"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.17#22d40c761a985482f93bbbea5ba4199bdba74f8e"
