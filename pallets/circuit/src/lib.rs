@@ -1122,8 +1122,7 @@ impl<T: Config> Pallet<T> {
         > = vec![];
 
         for side_effect in side_effects.iter() {
-            // ToDo: Generate Circuit's params as default ABI from let abi = pallet_xdns::get_abi(target_id)
-            let gateway_abi = Default::default();
+            let gateway_abi = <T as Config>::Xdns::get_abi(side_effect.target)?;
             let allowed_side_effects =
                 <T as Config>::Xdns::allowed_side_effects(&side_effect.target);
 
