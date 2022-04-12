@@ -7,7 +7,8 @@
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
 use codec::Encode;
-use sp_runtime::traits::Hash;
+use frame_support::traits::{Currency, ExistenceRequirement, Get, ReservableCurrency};
+use sp_runtime::traits::{CheckedDiv, CheckedMul, Hash, Zero};
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 use t3rn_primitives::EscrowTrait;
 pub use t3rn_primitives::{
@@ -29,7 +30,12 @@ mod benchmarking;
 pub mod types;
 pub mod weights;
 
+use crate::types::{AccountManager, ExecutionRegistryItem, Reason};
 use weights::WeightInfo;
+
+pub type ExecutionId = u64;
+pub type BalanceOf<T> =
+    <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 // Definition of the pallet logic, to be aggregated at runtime definition through
 // `construct_runtime`.
@@ -37,12 +43,12 @@ use weights::WeightInfo;
 pub mod pallet {
     // Import various types used to declare pallet in scope.
     use super::*;
-    use crate::WeightInfo;
+    use crate::{types::ExecutionRegistryItem, WeightInfo};
     use frame_support::{
         pallet_prelude::*,
         traits::{
             fungible::{Inspect, Mutate},
-            ReservableCurrency, Time,
+            Currency, ReservableCurrency, Time,
         },
     };
     use frame_system::pallet_prelude::*;
@@ -65,6 +71,9 @@ pub mod pallet {
 
         /// Type providing some time handler
         type Time: frame_support::traits::Time;
+
+        #[pallet::constant]
+        type EscrowAccount: Get<Self::AccountId>;
     }
 
     // Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
@@ -73,6 +82,18 @@ pub mod pallet {
     #[pallet::generate_store(pub (super) trait Store)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(PhantomData<(T)>);
+
+    #[pallet::storage]
+    #[pallet::getter(fn execution_registry)]
+    pub type ExecutionRegistry<T: Config> = StorageMap<
+        _,
+        Blake2_128,
+        ExecutionId,
+        ExecutionRegistryItem<T::AccountId, <T::Currency as Currency<T::AccountId>>::Balance>,
+    >;
+
+    #[pallet::call]
+    impl<T: Config> Pallet<T> {}
 
     // Pallet implements [`Hooks`] trait to define some logic to execute in some context.
     #[pallet::hooks]
@@ -104,9 +125,6 @@ pub mod pallet {
         }
     }
 
-    #[pallet::call]
-    impl<T: Config> Pallet<T> {}
-
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
@@ -118,19 +136,6 @@ pub mod pallet {
     pub enum Error<T> {
         Example,
     }
-
-    // #[pallet::storage]
-    // pub type StandardSideEffects<T: Config> = StorageMap<_, Identity, [u8; 4], SideEffectInterface>;
-
-    // #[pallet::storage]
-    // #[pallet::getter(fn side_effect_registry)]
-    // pub type CustomSideEffects<T> = StorageMap<_, Identity, SideEffectId<T>, SideEffectInterface>;
-
-    // /// The pre-validated composable xdns_records on-chain registry.
-    // #[pallet::storage]
-    // #[pallet::getter(fn xdns_registry)]
-    // pub type XDNSRegistry<T: Config> =
-    //     StorageMap<_, Identity, [u8; 4], XdnsRecord<T::AccountId>, OptionQuery>;
 
     // The genesis config type.
     #[pallet::genesis_config]
@@ -156,7 +161,79 @@ pub mod pallet {
     }
 }
 
-impl<T: Config + pallet_balances::Config> EscrowTrait<T> for Pallet<T> {
+impl<T: Config> EscrowTrait<T> for Pallet<T> {
     type Currency = T::Currency;
     type Time = T::Time;
+}
+
+// TODO: remove unwraps from this
+impl<T: Config> AccountManager<T::AccountId, BalanceOf<T>> for Pallet<T> {
+    fn deposit(
+        &self,
+        execution_id: ExecutionId,
+        payee: T::AccountId,
+        recipient: T::AccountId,
+        amount: BalanceOf<T>,
+    ) {
+        /// Reserve the funds from the payee account
+        T::Currency::transfer(
+            &payee,
+            &T::EscrowAccount::get(),
+            amount,
+            ExistenceRequirement::KeepAlive,
+        )
+        .unwrap();
+
+        // TODO: Check if registry already has an entry for this execution id
+
+        ExecutionRegistry::<T>::insert(
+            execution_id,
+            ExecutionRegistryItem::new(payee, recipient, amount),
+        );
+    }
+
+    fn finalize(&self, execution_id: ExecutionId, reason: Option<Reason>) {
+        let item = Pallet::<T>::execution_registry(execution_id).unwrap();
+        self.split(item, reason);
+    }
+
+    fn issue(&self, recipient: &T::AccountId, amount: BalanceOf<T>) {
+        if !amount.is_zero() {
+            T::Currency::transfer(
+                &T::EscrowAccount::get(),
+                recipient,
+                amount,
+                ExistenceRequirement::KeepAlive,
+            )
+            .unwrap();
+        }
+    }
+
+    fn split(
+        &self,
+        item: ExecutionRegistryItem<T::AccountId, BalanceOf<T>>,
+        reason: Option<Reason>,
+    ) {
+        // Simple rules for splitting, for now
+        let (payee_split, recipient_split): (u32, u32) = match reason {
+            None => (0, 100),
+            Some(Reason::ContractReverted) => (90, 10),
+            Some(Reason::UnexpectedFailure) => (50, 50),
+        };
+        // TODO: check babies first maths
+        self.issue(
+            item.payee(),
+            (item.balance().checked_div(&100_u32.into()))
+                .unwrap()
+                .checked_mul(&payee_split.into())
+                .unwrap(),
+        );
+        self.issue(
+            item.recipient(),
+            (item.balance().checked_div(&100_u32.into()))
+                .unwrap()
+                .checked_mul(&recipient_split.into())
+                .unwrap(),
+        );
+    }
 }

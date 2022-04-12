@@ -30,6 +30,7 @@ use sp_runtime::{
 // Reexport crate as its pallet name for construct_runtime.
 use crate as pallet_xdns;
 use frame_support::pallet_prelude::GenesisBuild;
+use sp_core::crypto::AccountId32;
 use t3rn_primitives::{EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor};
 
 use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStore};
@@ -127,8 +128,13 @@ impl pallet_balances::Config for Test {
     type WeightInfo = ();
 }
 
+parameter_types! {
+    pub EscrowAccount: u64 = 50;
+}
+
 impl Config for Test {
-    type Currency = ();
+    type Currency = Balances;
+    type EscrowAccount = EscrowAccount;
     type Event = Event;
     type Time = Timestamp;
     type WeightInfo = ();
