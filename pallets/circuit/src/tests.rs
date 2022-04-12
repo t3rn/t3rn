@@ -542,7 +542,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
             );
 
             // Confirmation start
-            let encoded_balance_transfer_event = pallet_balances::Event::<Test>::Transfer {
+            let mut encoded_balance_transfer_event = pallet_balances::Event::<Test>::Transfer {
                 from: hex!("0909090909090909090909090909090909090909090909090909090909090909")
                     .into(), // variant A
                 to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(), // variant B (dest)
@@ -550,10 +550,14 @@ fn circuit_handles_insurance_deposit_for_transfers() {
             }
             .encode();
 
+            // Adding 4 since Balances Pallet = 4 in construct_runtime! enum
+            let mut encoded_event = vec![4];
+            encoded_event.append(&mut encoded_balance_transfer_event);
+
             let confirmation = ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
                 err: None,
                 output: None,
-                encoded_effect: encoded_balance_transfer_event,
+                encoded_effect: encoded_event,
                 inclusion_proof: None,
                 executioner: BOB_RELAYER,
                 received_at: 0,
@@ -648,7 +652,7 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
             );
 
             // Confirmation start
-            let encoded_swap_transfer_event = orml_tokens::Event::<Test>::Transfer {
+            let mut encoded_swap_transfer_event = orml_tokens::Event::<Test>::Transfer {
                 currency_id: as_u32_le(&[0, 1, 2, 3]), // currency_id as u8 bytes [0,1,2,3] -> u32
                 from: BOB_RELAYER,                     // executor - Bob
                 to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(), // variant B (dest)
@@ -656,10 +660,13 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
             }
             .encode();
 
+            let mut encoded_event = vec![4];
+            encoded_event.append(&mut encoded_swap_transfer_event);
+
             let confirmation = ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
                 err: None,
                 output: None,
-                encoded_effect: encoded_swap_transfer_event,
+                encoded_effect: encoded_event,
                 inclusion_proof: None,
                 executioner: BOB_RELAYER,
                 received_at: 0,
@@ -800,7 +807,7 @@ fn circuit_handles_swap_with_insurance() {
             );
 
             // Confirmation start
-            let encoded_swap_transfer_event = orml_tokens::Event::<Test>::Transfer {
+            let mut encoded_swap_transfer_event = orml_tokens::Event::<Test>::Transfer {
                 currency_id: as_u32_le(&[0, 1, 2, 3]), // currency_id as u8 bytes [0,1,2,3] -> u32
                 from: BOB_RELAYER,                     // executor - Bob
                 to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(), // variant B (dest)
@@ -808,10 +815,13 @@ fn circuit_handles_swap_with_insurance() {
             }
             .encode();
 
+            let mut encoded_event = vec![4];
+            encoded_event.append(&mut encoded_swap_transfer_event);
+
             let confirmation = ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
                 err: None,
                 output: None,
-                encoded_effect: encoded_swap_transfer_event,
+                encoded_effect: encoded_event,
                 inclusion_proof: None,
                 executioner: BOB_RELAYER,
                 received_at: 0,
@@ -891,7 +901,7 @@ fn circuit_handles_add_liquidity_without_insurance() {
             assert_eq!(events.len(), 11);
 
             // Confirmation start
-            let encoded_add_liquidity_transfer_event = orml_tokens::Event::<Test>::Transfer {
+            let mut encoded_add_liquidity_transfer_event = orml_tokens::Event::<Test>::Transfer {
                 currency_id: as_u32_le(&[0, 1, 2, 3]), // currency_id as u8 bytes [0,1,2,3] -> u32
                 from: BOB_RELAYER,                     // executor - Bob
                 to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(), // variant B (dest)
@@ -899,10 +909,13 @@ fn circuit_handles_add_liquidity_without_insurance() {
             }
             .encode();
 
+            let mut encoded_event = vec![4];
+            encoded_event.append(&mut encoded_add_liquidity_transfer_event);
+
             let confirmation = ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
                 err: None,
                 output: None,
-                encoded_effect: encoded_add_liquidity_transfer_event,
+                encoded_effect: encoded_event,
                 inclusion_proof: None,
                 executioner: BOB_RELAYER,
                 received_at: 0,
@@ -1045,7 +1058,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
             );
 
             // Confirmation start
-            let encoded_add_liquidity_transfer_event = orml_tokens::Event::<Test>::Transfer {
+            let mut encoded_add_liquidity_transfer_event = orml_tokens::Event::<Test>::Transfer {
                 currency_id: as_u32_le(&[0, 1, 2, 3]), // currency_id as u8 bytes [0,1,2,3] -> u32
                 from: BOB_RELAYER,                     // executor - Bob
                 to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(), // variant B (dest)
@@ -1053,10 +1066,14 @@ fn circuit_handles_add_liquidity_with_insurance() {
             }
             .encode();
 
+            // Adding 4 since Balances Pallet = 4 in construct_runtime! enum
+            let mut encoded_event = vec![4];
+            encoded_event.append(&mut encoded_add_liquidity_transfer_event);
+
             let confirmation = ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
                 err: None,
                 output: None,
-                encoded_effect: encoded_add_liquidity_transfer_event,
+                encoded_effect: encoded_event,
                 inclusion_proof: None,
                 executioner: BOB_RELAYER,
                 received_at: 0,

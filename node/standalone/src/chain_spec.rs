@@ -150,7 +150,7 @@ fn standard_side_effects() -> Vec<SideEffectInterface> {
             b"value".to_vec(),
             b"insurance".to_vec(),
         ],
-        confirm_events: vec![b"Transfer(from,to,value)".to_vec()],
+        confirm_events: vec![b"Transfer(_from,to,value)".to_vec()],
         escrowed_events: vec![b"EscrowTransfer(from,to,value)".to_vec()],
         commit_events: vec![b"Transfer(executor,to,value)".to_vec()],
         revert_events: vec![b"Transfer(executor,from,value)".to_vec()],
@@ -178,7 +178,7 @@ fn standard_side_effects() -> Vec<SideEffectInterface> {
             b"insurance".to_vec(),
         ],
         confirm_events: vec![b"ExecuteToken(_executor,to,asset_to,amount_to)".to_vec()],
-        escrowed_events: vec![b"ExecuteToken(_executor,to,asset_to,amount_to)".to_vec()],
+        escrowed_events: vec![b"ExecuteToken(executor,to,asset_to,amount_to)".to_vec()],
         commit_events: vec![b"MultiTransfer(executor,to,asset_to,amount_to)".to_vec()],
         revert_events: vec![b"MultiTransfer(executor,caller,asset_from,amount_from)".to_vec()],
     };

@@ -79,6 +79,7 @@ fn test_register_gateway_with_default_polka_like_header() {
     let first_header: CurrentHeader<Test, DefaultPolkadotLikeGateway> = test_header(0);
 
     let authorities = Some(vec![]);
+    let authority_set_id = None;
     let allowed_side_effects = vec![];
 
     let mut ext = TestExternalities::new_empty();
@@ -94,7 +95,7 @@ fn test_register_gateway_with_default_polka_like_header() {
             gateway_sys_props,
             first_header.encode(),
             authorities,
-            Default::default(),
+            authority_set_id,
             allowed_side_effects,
         ));
     });
@@ -132,6 +133,7 @@ fn test_register_gateway_with_u64_substrate_header() {
 
     let authorities = Some(vec![]);
     let allowed_side_effects = vec![];
+    let authority_set_id = None;
 
     let mut ext = TestExternalities::new_empty();
     ext.execute_with(|| {
@@ -146,7 +148,7 @@ fn test_register_gateway_with_u64_substrate_header() {
             gateway_sys_props,
             first_header.encode(),
             authorities,
-            Default::default(),
+            authority_set_id,
             allowed_side_effects,
         ));
     });
@@ -184,6 +186,7 @@ fn test_register_gateway_with_default_eth_like_header() {
 
     let authorities = Some(vec![]);
     let allowed_side_effects = vec![*b"tran"];
+    let authority_set_id = None;
 
     let mut ext = TestExternalities::new_empty();
     ext.execute_with(|| {
@@ -198,7 +201,7 @@ fn test_register_gateway_with_default_eth_like_header() {
             gateway_sys_props,
             first_header.encode(),
             authorities,
-            Default::default(),
+            authority_set_id,
             allowed_side_effects,
         ));
     });
@@ -236,6 +239,7 @@ fn test_register_gateway_with_u64_eth_like_header() {
 
     let authorities = Some(vec![]);
     let allowed_side_effects = vec![];
+    let authority_set_id = None;
 
     let mut ext = TestExternalities::new_empty();
     ext.execute_with(|| {
@@ -250,7 +254,7 @@ fn test_register_gateway_with_u64_eth_like_header() {
             gateway_sys_props,
             first_header.encode(),
             authorities,
-            Default::default(),
+            authority_set_id,
             allowed_side_effects,
         ));
     });
@@ -287,7 +291,7 @@ fn test_register_gateway_with_u64_substrate_header_and_allowed_side_effects() {
     let first_header: CurrentHeader<Test, PolkadotLikeValU64Gateway> = test_header(0);
 
     let authorities = Some(vec![]);
-
+    let authority_set_id = None;
     let allowed_side_effects: Vec<AllowedSideEffect> = vec![*b"swap"];
 
     let mut ext = TestExternalities::new_empty();
@@ -304,7 +308,7 @@ fn test_register_gateway_with_u64_substrate_header_and_allowed_side_effects() {
             gateway_sys_props.clone(),
             first_header.encode(),
             authorities,
-            Default::default(),
+            authority_set_id,
             allowed_side_effects.clone(),
         ));
 
