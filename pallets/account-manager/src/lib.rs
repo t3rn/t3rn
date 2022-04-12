@@ -26,7 +26,6 @@ mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
-pub mod currency;
 pub mod types;
 pub mod weights;
 
@@ -43,7 +42,7 @@ pub mod pallet {
         pallet_prelude::*,
         traits::{
             fungible::{Inspect, Mutate},
-            Time,
+            ReservableCurrency, Time,
         },
     };
     use frame_system::pallet_prelude::*;
@@ -55,12 +54,14 @@ pub mod pallet {
     };
 
     #[pallet::config]
-    pub trait Config<I: 'static = ()>: frame_system::Config + pallet_balances::Config {
+    pub trait Config: frame_system::Config {
         /// The overarching event type.
-        type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
+        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
         /// Type representing the weight of this pallet
         type WeightInfo: weights::WeightInfo;
+
+        type Currency: ReservableCurrency<Self::AccountId>;
 
         /// Type providing some time handler
         type Time: frame_support::traits::Time;
@@ -71,11 +72,11 @@ pub mod pallet {
     #[pallet::pallet]
     #[pallet::generate_store(pub (super) trait Store)]
     #[pallet::without_storage_info]
-    pub struct Pallet<T, I = ()>(PhantomData<(T, I)>);
+    pub struct Pallet<T>(PhantomData<(T)>);
 
     // Pallet implements [`Hooks`] trait to define some logic to execute in some context.
     #[pallet::hooks]
-    impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I> {
+    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         // `on_finalize` is executed at the end of block after all extrinsic are dispatched.
         fn on_finalize(_n: T::BlockNumber) {
             // Perform necessary data/state clean up here.
@@ -104,22 +105,22 @@ pub mod pallet {
     }
 
     #[pallet::call]
-    impl<T: Config<I>, I: 'static> Pallet<T, I> {}
+    impl<T: Config> Pallet<T> {}
 
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
-    pub enum Event<T: Config<I>, I: 'static = ()> {
+    pub enum Event<T: Config> {
         Example,
     }
 
     // Errors inform users that something went wrong.
     #[pallet::error]
-    pub enum Error<T, I = ()> {
+    pub enum Error<T> {
         Example,
     }
 
     // #[pallet::storage]
-    // pub type StandardSideEffects<T: Config<I>, I: 'static> = StorageMap<_, Identity, [u8; 4], SideEffectInterface>;
+    // pub type StandardSideEffects<T: Config> = StorageMap<_, Identity, [u8; 4], SideEffectInterface>;
 
     // #[pallet::storage]
     // #[pallet::getter(fn side_effect_registry)]
@@ -128,18 +129,18 @@ pub mod pallet {
     // /// The pre-validated composable xdns_records on-chain registry.
     // #[pallet::storage]
     // #[pallet::getter(fn xdns_registry)]
-    // pub type XDNSRegistry<T: Config<I>, I: 'static> =
+    // pub type XDNSRegistry<T: Config> =
     //     StorageMap<_, Identity, [u8; 4], XdnsRecord<T::AccountId>, OptionQuery>;
 
     // The genesis config type.
     #[pallet::genesis_config]
-    pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
-        phantom: PhantomData<(T, I)>,
+    pub struct GenesisConfig<T: Config> {
+        phantom: PhantomData<(T)>,
     }
 
     /// The default value for the genesis config type.
     #[cfg(feature = "std")]
-    impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
+    impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {
                 phantom: Default::default(),
@@ -150,12 +151,12 @@ pub mod pallet {
     /// The build of genesis for the pallet.
     /// Populates storage with the known XDNS Records
     #[pallet::genesis_build]
-    impl<T: Config<I>, I: 'static> GenesisBuild<T, I> for GenesisConfig<T, I> {
+    impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {}
     }
 }
 
 impl<T: Config + pallet_balances::Config> EscrowTrait<T> for Pallet<T> {
-    type Currency = Self;
+    type Currency = T::Currency;
     type Time = T::Time;
 }
