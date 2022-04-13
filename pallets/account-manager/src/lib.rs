@@ -84,6 +84,9 @@ pub mod pallet {
         ExecutionRegistryItem<T::AccountId, <T::Currency as Currency<T::AccountId>>::Balance>,
     >;
 
+    #[pallet::storage]
+    pub type ExecutionNonce<T: Config> = StorageValue<_, ExecutionId, ValueQuery>;
+
     #[pallet::call]
     impl<T: Config> Pallet<T> {}
 
