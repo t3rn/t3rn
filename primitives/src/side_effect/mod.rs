@@ -56,10 +56,24 @@ pub struct ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub cost: Option<BalanceOf>,
 }
 
+#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
+pub enum SecurityLvl {
+    Dirty,
+    Optimistic,
+    Escrowed
+}
+
+impl Default for SecurityLvl {
+    fn default() -> Self {
+        SecurityLvl::Dirty
+    }
+}
+
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub input: SideEffect<AccountId, BlockNumber, BalanceOf>,
     pub confirmed: Option<ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf>>,
+    pub security_lvl: SecurityLvl,
 }
 
 #[cfg(test)]

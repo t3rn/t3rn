@@ -57,9 +57,12 @@ use frame_support::traits::{Currency, ExistenceRequirement::AllowDeath, Get};
 
 use sp_runtime::KeyTypeId;
 
-use crate::CircuitStatus::PendingExecution;
+
 pub use pallet::*;
-use t3rn_primitives::{circuit_portal::CircuitPortal, transfers::EscrowedBalanceOf, xdns::Xdns};
+use t3rn_primitives::{
+    circuit_portal::CircuitPortal, side_effect::SecurityLvl, transfers::EscrowedBalanceOf,
+    xdns::Xdns,
+};
 
 #[cfg(test)]
 pub mod tests;
@@ -90,9 +93,8 @@ use crate::state::*;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use crate::{escrow::Escrow, CircuitStatus::Finished};
+    use crate::{escrow::Escrow};
     use frame_support::{
-        metadata::StorageEntryModifier::Default,
         pallet_prelude::*,
         traits::{
             fungible::{Inspect, Mutate},
@@ -271,24 +273,21 @@ pub mod pallet {
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
         fn on_initialize(n: T::BlockNumber) -> Weight {
-            // fn timeout_revert_xtx(xtx_id: XExecSignalId<T>) {
-            //
-            // }
-
             // Check every XtxTimeoutCheckInterval blocks
-            if T::XtxTimeoutCheckInterval::get() % n == T::BlockNumber::from(0u32) {
+            if T::XtxTimeoutCheckInterval::get() % n == T::BlockNumber::from(0u8) {
                 // Go over all unfinished Xtx to find those that timed out
                 <ActiveXExecSignalsTimingLinks<T>>::iter()
-                    .find(|(xtx_id, timeout_at)| {
+                    .find(|(_xtx_id, timeout_at)| {
                         timeout_at <= &frame_system::Pallet::<T>::block_number()
                     })
-                    .map(|(xtx_id, timeout_at)| {
+                    .map(|(xtx_id, _timeout_at)| {
                         let mut local_xtx_ctx = Self::setup(
                             CircuitStatus::RevertedTimedOut,
                             &Self::account_id(),
                             Zero::zero(),
                             Some(xtx_id),
-                        ).unwrap();
+                        )
+                        .unwrap();
 
                         Self::apply(&mut local_xtx_ctx, None).unwrap();
 
@@ -563,7 +562,7 @@ pub mod pallet {
                 Some(xtx_id),
             )?;
 
-            let _full_side_effect = Self::confirm(
+            Self::confirm(
                 &mut local_xtx_ctx,
                 &relayer,
                 &side_effect,
@@ -1032,7 +1031,9 @@ impl<T: Config> Pallet<T> {
                         // All of the steps are completed - the xtx has been finalized
                         if local_ctx.xtx.steps_cnt.0 == local_ctx.xtx.steps_cnt.1 {
                             local_ctx.xtx.status = CircuitStatus::FinishedAllSteps;
-                            <Self as Store>::ActiveXExecSignalsTimingLinks::remove(local_ctx.xtx_id);
+                            <Self as Store>::ActiveXExecSignalsTimingLinks::remove(
+                                local_ctx.xtx_id,
+                            );
                         }
                     }
                     <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
@@ -1237,17 +1238,55 @@ impl<T: Config> Pallet<T> {
                         <frame_system::Pallet<T>>::block_number(),
                     ),
                 ));
+
+                full_side_effects.push(FullSideEffect {
+                    input: side_effect.clone(),
+                    confirmed: None,
+                    security_lvl: SecurityLvl::Optimistic,
+                })
             }
+            fn determine_dirty_vs_escrowed_lvl<T: Config>(
+                side_effect: &SideEffect<
+                    <T as frame_system::Config>::AccountId,
+                    <T as frame_system::Config>::BlockNumber,
+                    EscrowedBalanceOf<T, T::Escrowed>,
+                >,
+            ) -> SecurityLvl {
+                fn is_escrowed<T: Config>(chain_id: &ChainId) -> bool {
+                    let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(chain_id);
+                    gateway_type == GatewayType::ProgrammableInternal(0)
+                        || gateway_type == GatewayType::OnCircuit(0)
+                }
+                if is_escrowed::<T>(&side_effect.target) {
+                    return SecurityLvl::Escrowed
+                }
+                SecurityLvl::Dirty
+            }
+
             full_side_effects.push(FullSideEffect {
                 input: side_effect.clone(),
                 confirmed: None,
-            })
+                security_lvl: determine_dirty_vs_escrowed_lvl::<T>(&side_effect),
+            });
         }
 
         let full_side_effects_steps: Vec<
             Vec<FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
         > = match sequential {
-            false => vec![full_side_effects],
+            false => {
+                // Here necessary to go over the break-point rules:
+                // R#1: there only can be max 1 dirty side effect at each step.
+                if full_side_effects.len() > 1
+                    && full_side_effects
+                        .iter()
+                        .filter(|&fse| fse.security_lvl == SecurityLvl::Dirty)
+                        .count()
+                        > 1
+                {
+                    return Err("Side Effects Validation Error - no more than 1 dirty side effects allowed per single step.")
+                }
+                vec![full_side_effects]
+            },
             true => {
                 let mut sequential_order: Vec<
                     Vec<
@@ -1285,14 +1324,7 @@ impl<T: Config> Pallet<T> {
         >,
         inclusion_proof: Option<Vec<Vec<u8>>>,
         block_hash: Option<Vec<u8>>,
-    ) -> Result<
-        FullSideEffect<
-            <T as frame_system::Config>::AccountId,
-            <T as frame_system::Config>::BlockNumber,
-            EscrowedBalanceOf<T, T::Escrowed>,
-        >,
-        &'static str,
-    > {
+    ) -> Result<(), &'static str> {
         let confirm_inclusion = || {
             // ToDo: Remove below after testing inclusion
             // Temporarily allow skip inclusion if proofs aren't provided
@@ -1408,10 +1440,7 @@ impl<T: Config> Pallet<T> {
             &local_ctx.local_state,
         )?;
 
-        Ok(FullSideEffect {
-            input: side_effect.clone(),
-            confirmed: Some(confirmation.clone()),
-        })
+        Ok(())
     }
 
     /// The account ID of the Circuit Vault.
