@@ -20,6 +20,7 @@ use t3rn_primitives::transfers::EscrowedBalanceOf;
 ///         the status will stay in PendingInsurance until all insurance deposits are committed
 /// Validated/PendingInsurance -> Ready - ready for relayers to pick up and start executing on targets
 /// Ready -> PendingExecution - at least one side effect has already been confirmed, but not all of them
+/// PendingExecution -> Finished - all of the side effects are confirmed, now awaiting for the decision about Revert/Commit
 /// Circuit::Apply -> called internally - based on the side effects confirmations decides:
 ///     Ready -> Committed: All of the side effects have been successfully confirmed
 ///     Ready -> Reverted: Some of the side effects failed and the Xtx was reverted
@@ -31,6 +32,7 @@ pub enum CircuitStatus {
     Ready,
     PendingExecution,
     Finished,
+    FinishedAllSteps,
     Committed,
     Reverted,
     RevertedTimedOut,
@@ -217,15 +219,11 @@ impl<
 /// A composable cross-chain (X) transaction that has already been verified to be valid and submittable
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct XExecSignal<AccountId, BlockNumber, BalanceOf> {
-    // todo: Add missing DFDs
-    // pub contracts_dfd: InterExecSchedule -> ContractsDFD
-    // pub side_effects_dfd: SideEffectsDFD
-    // pub gateways_dfd: GatewaysDFD
     /// The owner of the bid
     pub requester: AccountId,
 
     /// Expiry timeout
-    pub timeouts_at: Option<BlockNumber>,
+    pub timeouts_at: BlockNumber,
 
     /// Schedule execution of steps in the future intervals
     pub delay_steps_at: Option<Vec<BlockNumber>>,
@@ -250,7 +248,7 @@ impl<
         // Requester of xtx
         requester: &AccountId,
         // Expiry timeout
-        timeouts_at: Option<BlockNumber>,
+        timeouts_at: BlockNumber,
         // Schedule execution of steps in the future intervals
         delay_steps_at: Option<Vec<BlockNumber>>,
         // Total reward
@@ -285,7 +283,7 @@ impl<
         // Requester of xtx
         requester: &T::AccountId,
         // Expiry timeout
-        timeouts_at: Option<T::BlockNumber>,
+        timeouts_at: T::BlockNumber,
         // Schedule execution of steps in the future intervals
         delay_steps_at: Option<Vec<T::BlockNumber>>,
         // Total reward

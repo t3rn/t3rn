@@ -57,6 +57,7 @@ use frame_support::traits::{Currency, ExistenceRequirement::AllowDeath, Get};
 
 use sp_runtime::KeyTypeId;
 
+use crate::CircuitStatus::PendingExecution;
 pub use pallet::*;
 use t3rn_primitives::{circuit_portal::CircuitPortal, transfers::EscrowedBalanceOf, xdns::Xdns};
 
@@ -89,8 +90,9 @@ use crate::state::*;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use crate::escrow::Escrow;
+    use crate::{escrow::Escrow, CircuitStatus::Finished};
     use frame_support::{
+        metadata::StorageEntryModifier::Default,
         pallet_prelude::*,
         traits::{
             fungible::{Inspect, Mutate},
@@ -123,6 +125,18 @@ pub mod pallet {
             <T as frame_system::Config>::BlockNumber,
             EscrowedBalanceOf<T, <T as Config>::Escrowed>,
         >,
+        OptionQuery,
+    >;
+
+    /// Current Circuit's context of active insurance deposits
+    ///
+    #[pallet::storage]
+    #[pallet::getter(fn get_active_timing_links)]
+    pub type ActiveXExecSignalsTimingLinks<T> = StorageMap<
+        _,
+        Identity,
+        XExecSignalId<T>,
+        <T as frame_system::Config>::BlockNumber,
         OptionQuery,
     >;
 
@@ -209,6 +223,14 @@ pub mod pallet {
         #[pallet::constant]
         type SelfGatewayId: Get<[u8; 4]>;
 
+        /// The Circuit's Default Xtx timeout
+        #[pallet::constant]
+        type XtxTimeoutDefault: Get<Self::BlockNumber>;
+
+        /// The Circuit's Xtx timeout check interval
+        #[pallet::constant]
+        type XtxTimeoutCheckInterval: Get<Self::BlockNumber>;
+
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
@@ -248,7 +270,38 @@ pub mod pallet {
         // dispatched.
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
-        fn on_initialize(_n: T::BlockNumber) -> Weight {
+        fn on_initialize(n: T::BlockNumber) -> Weight {
+            // fn timeout_revert_xtx(xtx_id: XExecSignalId<T>) {
+            //
+            // }
+
+            // Check every XtxTimeoutCheckInterval blocks
+            if T::XtxTimeoutCheckInterval::get() % n == T::BlockNumber::from(0u32) {
+                // Go over all unfinished Xtx to find those that timed out
+                <ActiveXExecSignalsTimingLinks<T>>::iter()
+                    .find(|(xtx_id, timeout_at)| {
+                        timeout_at <= &frame_system::Pallet::<T>::block_number()
+                    })
+                    .map(|(xtx_id, timeout_at)| {
+                        let mut local_xtx_ctx = Self::setup(
+                            CircuitStatus::RevertedTimedOut,
+                            &Self::account_id(),
+                            Zero::zero(),
+                            Some(xtx_id),
+                        ).unwrap();
+
+                        Self::apply(&mut local_xtx_ctx, None).unwrap();
+
+                        Self::emit(
+                            local_xtx_ctx.xtx_id,
+                            Some(local_xtx_ctx.xtx),
+                            &Self::account_id(),
+                            &[],
+                            None,
+                        );
+                    });
+            }
+
             // Anything that needs to be done at the start of the block.
             // We don't do anything here.
             // ToDo: Do active xtx signals overview and Cancel if time elapsed
@@ -548,7 +601,9 @@ pub mod pallet {
         // Listeners - users + SDK + UI to know whether their request is accepted for exec and ready
         XTransactionReadyForExec(XExecSignalId<T>),
         // Listeners - users + SDK + UI to know whether their request is accepted for exec and finished
-        XTransactionFinishedExec(XExecSignalId<T>),
+        XTransactionStepFinishedExec(XExecSignalId<T>),
+        // Listeners - users + SDK + UI to know whether their request is accepted for exec and finished
+        XTransactionXtxFinishedExecAllSteps(XExecSignalId<T>),
         // Listeners - executioners/relayers to know new challenges and perform offline risk/reward calc
         //  of whether side effect is worth picking up
         NewSideEffectsAvailable(
@@ -606,6 +661,7 @@ pub mod pallet {
         InsuranceBondAlreadyDeposited,
         SetupFailed,
         SetupFailedIncorrectXtxStatus,
+        FatalXtxTimeoutXtxIdNotMatched,
         SetupFailedUnknownXtx,
         SetupFailedDuplicatedXtx,
         SetupFailedEmptyXtx,
@@ -646,11 +702,9 @@ impl<T: Config> Pallet<T> {
                         return Err(Error::<T>::SetupFailedDuplicatedXtx)
                     }
                 }
-                // ToDo: Introduce default timeout + delay
-                let (timeouts_at, delay_steps_at): (
-                    Option<T::BlockNumber>,
-                    Option<Vec<T::BlockNumber>>,
-                ) = (None, None);
+                // ToDo: Introduce default delay
+                let (timeouts_at, delay_steps_at): (T::BlockNumber, Option<Vec<T::BlockNumber>>) =
+                    (T::XtxTimeoutDefault::get(), None);
 
                 let (x_exec_signal_id, x_exec_signal) = XExecSignal::<
                     T::AccountId,
@@ -892,6 +946,11 @@ impl<T: Config> Pallet<T> {
                 )?;
                 local_ctx.xtx.steps_cnt = (0, local_ctx.full_side_effects.len() as u32);
 
+                <ActiveXExecSignalsTimingLinks<T>>::insert::<XExecSignalId<T>, T::BlockNumber>(
+                    local_ctx.xtx_id,
+                    local_ctx.xtx.timeouts_at,
+                );
+
                 <XExecSignals<T>>::insert::<
                     XExecSignalId<T>,
                     XExecSignal<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
@@ -927,6 +986,18 @@ impl<T: Config> Pallet<T> {
                     Err(Error::<T>::ApplyFailed)
                 }
             },
+            CircuitStatus::RevertedTimedOut => {
+                <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
+                    *x = Some(local_ctx.xtx.clone())
+                });
+
+                <Self as Store>::ActiveXExecSignalsTimingLinks::remove(local_ctx.xtx_id);
+
+                Ok((
+                    Some(local_ctx.xtx.clone()),
+                    Some(local_ctx.full_side_effects.clone()),
+                ))
+            },
             CircuitStatus::Ready | CircuitStatus::PendingExecution => {
                 // Update set of full side effects assuming the new confirmed has appeared
                 <Self as Store>::FullSideEffects::mutate(local_ctx.xtx_id, |x| {
@@ -940,7 +1011,7 @@ impl<T: Config> Pallet<T> {
 
                 if new_status != local_ctx.xtx.status {
                     local_ctx.xtx.status = new_status.clone();
-
+                    // Check whether all of the side effects in this steps are confirmed - the status now changes to CircuitStatus::Finished
                     if new_status == CircuitStatus::PendingExecution
                         && local_ctx.full_side_effects[local_ctx.xtx.steps_cnt.0 as usize]
                             .clone()
@@ -956,7 +1027,13 @@ impl<T: Config> Pallet<T> {
                             .is_empty()
                     {
                         local_ctx.xtx.steps_cnt =
-                            (local_ctx.xtx.steps_cnt.0 + 1, local_ctx.xtx.steps_cnt.1)
+                            (local_ctx.xtx.steps_cnt.0 + 1, local_ctx.xtx.steps_cnt.1);
+
+                        // All of the steps are completed - the xtx has been finalized
+                        if local_ctx.xtx.steps_cnt.0 == local_ctx.xtx.steps_cnt.1 {
+                            local_ctx.xtx.status = CircuitStatus::FinishedAllSteps;
+                            <Self as Store>::ActiveXExecSignalsTimingLinks::remove(local_ctx.xtx_id);
+                        }
                     }
                     <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
                         *x = Some(local_ctx.xtx.clone())
@@ -999,7 +1076,9 @@ impl<T: Config> Pallet<T> {
                 CircuitStatus::Ready =>
                     Self::deposit_event(Event::XTransactionReadyForExec(xtx_id)),
                 CircuitStatus::Finished =>
-                    Self::deposit_event(Event::XTransactionFinishedExec(xtx_id)),
+                    Self::deposit_event(Event::XTransactionStepFinishedExec(xtx_id)),
+                CircuitStatus::FinishedAllSteps =>
+                    Self::deposit_event(Event::XTransactionXtxFinishedExecAllSteps(xtx_id)),
                 _ => {},
             }
             if xtx.status >= CircuitStatus::PendingExecution {
