@@ -556,7 +556,7 @@ fn testnet_genesis(
         },
         multi_finality_verifier_default: MultiFinalityVerifierDefaultConfig {
             owner: None,
-            init_data: None,
+            init_data: Some(initial_gateways),
         },
         orml_tokens: Default::default(),
     }

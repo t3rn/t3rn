@@ -38,9 +38,6 @@ pub async fn get_metadata(
     }
 }
 
-const SESSION_VALIDATORS_STORAGE_KEY: &str =
-    "cec5070d609dd3497f72bde07fc96ba088dcde934c658227ee1dfafcd6e16903";
-
 /// Gets the current authority set id, the actual authority set, and header for the latest finalized block.
 pub async fn get_gtwy_init_data(
     sub_client: &SubstrateClient<PolkadotLike>,
