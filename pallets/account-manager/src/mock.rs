@@ -12,10 +12,6 @@ pub type Block = frame_system::mocking::MockBlock<Test>;
 
 pub const ALICE: AccountId = 1;
 pub const BOB: AccountId = 2;
-pub const CHARLIE: AccountId = 3;
-pub const DJANGO: AccountId = 4;
-pub const EDWARD: AccountId = 5;
-pub const FRED: AccountId = 6;
 
 // For testing the pallet, we construct a mock runtime.
 frame_support::construct_runtime!(

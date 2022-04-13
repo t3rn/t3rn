@@ -115,7 +115,19 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
-        Example,
+        DepositReceived {
+            execution_id: ExecutionId,
+            payee: T::AccountId,
+            recipient: T::AccountId,
+            amount: BalanceOf<T>,
+        },
+        ExecutionFinalized {
+            execution_id: ExecutionId,
+        },
+        Issued {
+            recipient: T::AccountId,
+            amount: BalanceOf<T>,
+        },
     }
 
     #[pallet::error]

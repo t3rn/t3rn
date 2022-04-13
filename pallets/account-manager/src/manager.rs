@@ -1,15 +1,13 @@
 use crate::{
-    AccountManager as AccountManagerExt, BalanceOf, Config, Error, ExecutionId, ExecutionRegistry,
-    ExecutionRegistryItem, Pallet, Reason,
+    AccountManager as AccountManagerExt, BalanceOf, Config, Error, Event, ExecutionId,
+    ExecutionRegistry, ExecutionRegistryItem, Pallet, Reason,
 };
 use frame_support::{
     dispatch::DispatchResult,
     traits::{Currency, ExistenceRequirement, Get},
 };
-use sp_runtime::{
-    traits::{Bounded, CheckedDiv, CheckedMul, Zero},
-    Perbill, Percent,
-};
+use sp_runtime::{traits::Zero, Percent};
+use sp_std::borrow::ToOwned;
 
 impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
     fn deposit(
@@ -31,8 +29,15 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 
         ExecutionRegistry::<T>::insert(
             execution_id,
-            ExecutionRegistryItem::new(payee, recipient, amount),
+            ExecutionRegistryItem::new(payee.clone(), recipient.clone(), amount),
         );
+
+        Self::deposit_event(Event::DepositReceived {
+            execution_id,
+            payee,
+            recipient,
+            amount,
+        });
 
         Ok(())
     }
@@ -41,7 +46,10 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
         let item = Pallet::<T>::execution_registry(execution_id)
             .ok_or(Error::<T>::ExecutionNotRegistered)?;
         Self::split(item, reason)?;
-        Ok(ExecutionRegistry::<T>::remove(execution_id))
+        ExecutionRegistry::<T>::remove(execution_id);
+
+        Self::deposit_event(Event::ExecutionFinalized { execution_id });
+        Ok(())
     }
 
     fn issue(recipient: &T::AccountId, amount: BalanceOf<T>) -> DispatchResult {
@@ -50,7 +58,14 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
             recipient,
             amount,
             ExistenceRequirement::KeepAlive,
-        )
+        )?;
+
+        Self::deposit_event(Event::Issued {
+            recipient: recipient.to_owned(),
+            amount,
+        });
+
+        Ok(())
     }
 
     fn split(
@@ -95,11 +110,12 @@ mod tests {
     fn test_deposit_works() {
         ExtBuilder::default().build().execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, DEFAULT_BALANCE);
-
             AccountManager::deposit(EXECUTION_ID, ALICE, BOB, DEFAULT_BALANCE / 10).unwrap();
 
-            let escrow_balance = Balances::free_balance(&<Test as Config>::EscrowAccount::get());
-            assert_eq!(escrow_balance, DEFAULT_BALANCE / 10);
+            assert_eq!(
+                Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
+                DEFAULT_BALANCE / 10
+            );
 
             let registry_item = AccountManager::execution_registry(EXECUTION_ID).unwrap();
             assert_eq!(*registry_item.payee(), ALICE);
@@ -112,9 +128,12 @@ mod tests {
     fn test_deposit_when_already_exist_fails() {
         ExtBuilder::default().build().execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, DEFAULT_BALANCE);
-
-            AccountManager::deposit(EXECUTION_ID, ALICE, BOB, DEFAULT_BALANCE / 10);
-
+            assert_ok!(AccountManager::deposit(
+                EXECUTION_ID,
+                ALICE,
+                BOB,
+                DEFAULT_BALANCE / 10
+            ));
             assert_err!(
                 AccountManager::deposit(EXECUTION_ID, ALICE, BOB, DEFAULT_BALANCE / 10),
                 Error::<Test>::ExecutionAlreadyRegistered
@@ -130,24 +149,20 @@ mod tests {
                 &<Test as Config>::EscrowAccount::get(),
                 DEFAULT_BALANCE,
             );
-
             let tx_amt = DEFAULT_BALANCE / 10;
 
             assert_ok!(AccountManager::deposit(EXECUTION_ID, ALICE, BOB, tx_amt));
-            let escrow_balance = Balances::free_balance(&<Test as Config>::EscrowAccount::get());
-            assert_eq!(escrow_balance, DEFAULT_BALANCE + tx_amt);
-
+            assert_eq!(
+                Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
+                DEFAULT_BALANCE + tx_amt
+            );
             assert_ok!(AccountManager::finalize(EXECUTION_ID, None));
-
-            let escrow_balance = Balances::free_balance(&<Test as Config>::EscrowAccount::get());
-            assert_eq!(escrow_balance, DEFAULT_BALANCE);
-
-            let bob_balance = Balances::free_balance(&BOB);
-            assert_eq!(bob_balance, tx_amt);
-
-            let alice_balance = Balances::free_balance(&ALICE);
-            assert_eq!(alice_balance, DEFAULT_BALANCE - tx_amt);
-
+            assert_eq!(
+                Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
+                DEFAULT_BALANCE
+            );
+            assert_eq!(Balances::free_balance(&BOB), tx_amt);
+            assert_eq!(Balances::free_balance(&ALICE), DEFAULT_BALANCE - tx_amt);
             assert_eq!(AccountManager::execution_registry(EXECUTION_ID), None);
         });
     }
@@ -160,27 +175,26 @@ mod tests {
                 &<Test as Config>::EscrowAccount::get(),
                 DEFAULT_BALANCE,
             );
-
             let tx_amt = DEFAULT_BALANCE / 10;
 
             assert_ok!(AccountManager::deposit(EXECUTION_ID, ALICE, BOB, tx_amt));
-            let escrow_balance = Balances::free_balance(&<Test as Config>::EscrowAccount::get());
-            assert_eq!(escrow_balance, DEFAULT_BALANCE + tx_amt);
-
+            assert_eq!(
+                Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
+                DEFAULT_BALANCE + tx_amt
+            );
             assert_ok!(AccountManager::finalize(
                 EXECUTION_ID,
                 Some(Reason::ContractReverted)
             ));
-
-            let escrow_balance = Balances::free_balance(&<Test as Config>::EscrowAccount::get());
-            assert_eq!(escrow_balance, DEFAULT_BALANCE);
-
-            let bob_balance = Balances::free_balance(&BOB);
-            assert_eq!(bob_balance, 10_000); // 10% of the original balance
-
-            let alice_balance = Balances::free_balance(&ALICE);
-            assert_eq!(alice_balance, (DEFAULT_BALANCE - tx_amt) + 90_000); // (DEFAULT - tx_amt) + 90% of tx_amt
-
+            assert_eq!(
+                Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
+                DEFAULT_BALANCE
+            );
+            assert_eq!(Balances::free_balance(&BOB), 10_000); // 10% of the original balance
+            assert_eq!(
+                Balances::free_balance(&ALICE),
+                (DEFAULT_BALANCE - tx_amt) + 90_000
+            ); // (DEFAULT - tx_amt) + 90% of tx_amt
             assert_eq!(AccountManager::execution_registry(EXECUTION_ID), None);
         });
     }
@@ -193,27 +207,26 @@ mod tests {
                 &<Test as Config>::EscrowAccount::get(),
                 DEFAULT_BALANCE,
             );
-
             let tx_amt = DEFAULT_BALANCE / 10;
 
             assert_ok!(AccountManager::deposit(EXECUTION_ID, ALICE, BOB, tx_amt));
-            let escrow_balance = Balances::free_balance(&<Test as Config>::EscrowAccount::get());
-            assert_eq!(escrow_balance, DEFAULT_BALANCE + tx_amt);
-
+            assert_eq!(
+                Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
+                DEFAULT_BALANCE + tx_amt
+            );
             assert_ok!(AccountManager::finalize(
                 EXECUTION_ID,
                 Some(Reason::UnexpectedFailure)
             ));
-
-            let escrow_balance = Balances::free_balance(&<Test as Config>::EscrowAccount::get());
-            assert_eq!(escrow_balance, DEFAULT_BALANCE);
-
-            let bob_balance = Balances::free_balance(&BOB);
-            assert_eq!(bob_balance, 50_000); // 50% of the original balance
-
-            let alice_balance = Balances::free_balance(&ALICE);
-            assert_eq!(alice_balance, (DEFAULT_BALANCE - tx_amt) + 50_000); // (DEFAULT - tx_amt) + 50% of tx_amt
-
+            assert_eq!(
+                Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
+                DEFAULT_BALANCE
+            );
+            assert_eq!(Balances::free_balance(&BOB), 50_000); // 50% of the original balance
+            assert_eq!(
+                Balances::free_balance(&ALICE),
+                (DEFAULT_BALANCE - tx_amt) + 50_000
+            ); // (DEFAULT - tx_amt) + 50% of tx_amt
             assert_eq!(AccountManager::execution_registry(EXECUTION_ID), None);
         });
     }

@@ -1,8 +1,8 @@
-use crate::{Error, ExecutionId};
+use crate::ExecutionId;
 use codec::{Decode, Encode};
 use frame_support::dispatch::DispatchResult;
 use scale_info::TypeInfo;
-use sp_std::{fmt::Debug, prelude::*, vec::Vec};
+use sp_std::{fmt::Debug, prelude::*};
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
 pub struct ExecutionRegistryItem<Account, Balance> {

@@ -23,7 +23,6 @@ frame-metadata     = { version = "14.0.0", features = [ "v13", "v14" ], default-
 frame-support      = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
 frame-system       = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
 
-pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
 
 sp-io      = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
@@ -31,14 +30,15 @@ sp-std     = { default-features = false, git = "https://github.com/paritytech/su
 sp-version = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
 
 t3rn-primitives = { path = "../../primitives", default-features = false }
-t3rn-protocol   = { path = "../../protocol", default-features = false }
 
 [dev-dependencies]
 sp-core     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', default-features = false }
 sp-keystore = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', default-features = false }
 
+
 pallet-balances           = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
 pallet-sudo               = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
+pallet-timestamp          = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
 
 [features]
 default = [ "std" ]
@@ -50,7 +50,6 @@ std = [
   "frame-metadata/std",
   "frame-system/std",
   "log/std",
-  "pallet-timestamp/std",
   "scale-info/std",
   "serde/std",
   "sp-io/std",
@@ -58,6 +57,5 @@ std = [
   "sp-runtime/std",
   "sp-std/std",
   "t3rn-primitives/std",
-  "t3rn-protocol/std",
 ]
 try-runtime = [ "frame-support/try-runtime" ]

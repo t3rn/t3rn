@@ -1,5 +1,3 @@
-//! Benchmarking setup for pallet-xdns
-
 use super::*;
 use crate::Pallet as AccountManager;
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
