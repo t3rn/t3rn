@@ -37,8 +37,8 @@ t3rn-protocol   = { path = "../../protocol", default-features = false }
 sp-core     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', default-features = false }
 sp-keystore = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', default-features = false }
 
-pallet-balances           = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
-pallet-sudo               = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
+pallet-sudo     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
 
 [features]
 default = [ "std" ]
