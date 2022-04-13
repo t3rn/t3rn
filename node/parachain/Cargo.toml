@@ -22,6 +22,7 @@ serde        = { version = "1.0", features = [ "derive" ] }
 
 # Local
 circuit-parachain-runtime = { path = "../../runtime/parachain" }
+pallet-3vm-contracts-rpc  = { path = "../../3vm/pallets/wasm-contracts/rpc", package = "pallet-contracts-rpc" }
 pallet-xdns               = { path = "../../pallets/xdns" }
 t3rn-primitives           = { path = "../../primitives" }
 
