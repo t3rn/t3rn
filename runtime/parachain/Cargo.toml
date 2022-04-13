@@ -85,6 +85,7 @@ t3rn-protocol                     = { default-features = false, path = "../../pr
 pallet-3vm-contracts                 = { path = "../../3vm/pallets/wasm-contracts", default-features = false, package = "pallet-wasm-contracts" }
 pallet-3vm-contracts-primitives      = { path = "../../3vm/pallets/wasm-contracts/common", default-features = false, package = "pallet-contracts-primitives" }
 pallet-3vm-contracts-rpc-runtime-api = { path = "../../3vm/pallets/wasm-contracts/rpc/runtime-api", default-features = false, package = "pallet-contracts-rpc-runtime-api" }
+pallet-account-manager               = { path = "../../pallets/account-manager", default-features = false }
 pallet-circuit                       = { path = "../../pallets/circuit", package = "pallet-circuit", default-features = false }
 pallet-circuit-portal                = { path = "../../pallets/circuit-portal", package = "pallet-circuit-portal", default-features = false }
 pallet-contracts-registry            = { path = "../../pallets/contracts-registry", default-features = false }
@@ -117,6 +118,7 @@ std = [
   "pallet-3vm-contracts/std",
   "pallet-3vm-contracts-primitives/std",
   "pallet-3vm-contracts-rpc-runtime-api/std",
+  "pallet-account-manager/std",
   "pallet-session/std",
   "pallet-sudo/std",
   "pallet-timestamp/std",

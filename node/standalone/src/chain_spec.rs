@@ -438,5 +438,6 @@ fn testnet_genesis(
             init_data: None,
         },
         orml_tokens: Default::default(),
+        account_manager: Default::default(),
     }
 }

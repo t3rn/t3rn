@@ -1,6 +1,7 @@
 use super::{AccountId, Balance, RuntimeBlockWeights, Weight, AVERAGE_ON_INITIALIZE_RATIO};
 use crate::{
-    Call, Circuit, ContractsRegistry, Event, RandomnessCollectiveFlip, Runtime, Timestamp,
+    accounts_config::EscrowAccount, AccountManager, Call, Circuit, ContractsRegistry,
+    EscrowAccount, Event, RandomnessCollectiveFlip, Runtime, Timestamp,
 };
 use frame_support::parameter_types;
 use pallet_3vm_contracts::weights::WeightInfo;
@@ -46,6 +47,7 @@ parameter_types! {
 }
 
 impl pallet_3vm_contracts::Config for Runtime {
+    type AccountManager = AccountManager;
     type AddressGenerator = pallet_3vm_contracts::DefaultAddressGenerator;
     type Call = Call;
     /// The safest default is to allow no calls at all.
@@ -64,6 +66,7 @@ impl pallet_3vm_contracts::Config for Runtime {
     type DeletionWeightLimit = DeletionWeightLimit;
     type DepositPerByte = DepositPerByte;
     type DepositPerItem = DepositPerItem;
+    type EscrowAccount = EscrowAccount;
     type Escrowed = Self;
     type Event = Event;
     type OnLocalTrigger = Circuit;

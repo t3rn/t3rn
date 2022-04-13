@@ -19,7 +19,13 @@ pub const TEST_RUNTIME_VERSION: RuntimeVersion = RuntimeVersion {
 };
 
 benchmarks! {
-    // TODO: implement me
+    deposit {
+        let payee: T::AccountId = account("PAYEE", 100_u32, USER_SEED);
+        let recipient: T::AccountId = account("RECIPIENT", 1_u32, USER_SEED);
+    } _(RawOrigin::Root, payee.clone(), recipient.clone(), 2_u32)
+    verify {
+        assert!(pallet::ExecutionRegistry::<T>::contains_key(&1))
+    }
 }
 
 #[cfg(test)]

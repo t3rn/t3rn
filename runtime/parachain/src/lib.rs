@@ -6,6 +6,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+pub mod accounts_config;
 pub mod circuit_config;
 pub mod contracts_config;
 pub mod orml_config;
@@ -527,6 +528,7 @@ construct_runtime!(
 
         // 3VM
         Contracts: pallet_3vm_contracts = 119,
+        AccountManager: pallet_account_manager = 125,
 
         // admin
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
