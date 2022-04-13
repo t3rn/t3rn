@@ -42,9 +42,9 @@ pub enum Reason {
 pub trait AccountManager<Account, Balance> {
     /// Send funds to a recipient via the escrow
     fn deposit(
-        execution_id: ExecutionId,
-        payee: Account,
-        recipient: Account,
+        execution_id: &ExecutionId,
+        payee: &Account,
+        recipient: &Account,
         amount: Balance,
     ) -> DispatchResult;
     /// Finalize a transaction, with an optional reason for failures

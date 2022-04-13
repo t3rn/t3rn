@@ -6,8 +6,13 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
+
 pub use crate::pallet::*;
-use frame_support::traits::{Currency, Get};
+use frame_support::{
+    pallet_prelude::Weight,
+    traits::{Currency, Get},
+};
+use sp_runtime::traits::Convert;
 pub use t3rn_primitives::{
     abi::{GatewayABIConfig, Type},
     protocol::SideEffectProtocol,
@@ -15,6 +20,7 @@ pub use t3rn_primitives::{
 };
 use t3rn_primitives::{
     account_manager::{AccountManager, ExecutionRegistryItem, Reason},
+    transfers::EscrowedBalanceOf,
     EscrowTrait,
 };
 
@@ -161,4 +167,14 @@ pub mod pallet {
 impl<T: Config> EscrowTrait<T> for Pallet<T> {
     type Currency = T::Currency;
     type Time = T::Time;
+}
+
+impl<T: Config> Convert<Weight, BalanceOf<T>> for Pallet<T>
+where
+    <<T as pallet::Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance:
+        From<u64>,
+{
+    fn convert(w: Weight) -> EscrowedBalanceOf<T, Self> {
+        EscrowedBalanceOf::<T, Self>::from(w)
+    }
 }

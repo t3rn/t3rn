@@ -12,13 +12,13 @@ use t3rn_primitives::account_manager::ExecutionId;
 
 impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
     fn deposit(
-        execution_id: ExecutionId,
-        payee: T::AccountId,
-        recipient: T::AccountId,
+        execution_id: &ExecutionId,
+        payee: &T::AccountId,
+        recipient: &T::AccountId,
         amount: BalanceOf<T>,
     ) -> DispatchResult {
         T::Currency::transfer(
-            &payee,
+            payee,
             &T::EscrowAccount::get(),
             amount,
             ExistenceRequirement::KeepAlive,
@@ -34,9 +34,9 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
         );
 
         Self::deposit_event(Event::DepositReceived {
-            execution_id,
-            payee,
-            recipient,
+            execution_id: *execution_id,
+            payee: payee.clone(),
+            recipient: recipient.clone(),
             amount,
         });
 
