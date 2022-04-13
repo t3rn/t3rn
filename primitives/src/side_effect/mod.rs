@@ -1,4 +1,4 @@
-use crate::{volatile::Volatile, Bytes};
+use crate::Bytes;
 use codec::{Decode, Encode};
 
 use scale_info::TypeInfo;

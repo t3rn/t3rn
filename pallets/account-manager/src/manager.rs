@@ -111,7 +111,7 @@ mod tests {
     fn test_deposit_works() {
         ExtBuilder::default().build().execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, DEFAULT_BALANCE);
-            AccountManager::deposit(EXECUTION_ID, ALICE, BOB, DEFAULT_BALANCE / 10).unwrap();
+            AccountManager::deposit(&EXECUTION_ID, &ALICE, &BOB, DEFAULT_BALANCE / 10).unwrap();
 
             assert_eq!(
                 Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
@@ -130,13 +130,13 @@ mod tests {
         ExtBuilder::default().build().execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, DEFAULT_BALANCE);
             assert_ok!(AccountManager::deposit(
-                EXECUTION_ID,
-                ALICE,
-                BOB,
+                &EXECUTION_ID,
+                &ALICE,
+                &BOB,
                 DEFAULT_BALANCE / 10
             ));
             assert_err!(
-                AccountManager::deposit(EXECUTION_ID, ALICE, BOB, DEFAULT_BALANCE / 10),
+                AccountManager::deposit(&EXECUTION_ID, &ALICE, &BOB, DEFAULT_BALANCE / 10),
                 Error::<Test>::ExecutionAlreadyRegistered
             );
         });
@@ -152,7 +152,7 @@ mod tests {
             );
             let tx_amt = DEFAULT_BALANCE / 10;
 
-            assert_ok!(AccountManager::deposit(EXECUTION_ID, ALICE, BOB, tx_amt));
+            assert_ok!(AccountManager::deposit(&EXECUTION_ID, &ALICE, &BOB, tx_amt));
             assert_eq!(
                 Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
                 DEFAULT_BALANCE + tx_amt
@@ -178,7 +178,7 @@ mod tests {
             );
             let tx_amt = DEFAULT_BALANCE / 10;
 
-            assert_ok!(AccountManager::deposit(EXECUTION_ID, ALICE, BOB, tx_amt));
+            assert_ok!(AccountManager::deposit(&EXECUTION_ID, &ALICE, &BOB, tx_amt));
             assert_eq!(
                 Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
                 DEFAULT_BALANCE + tx_amt
@@ -210,7 +210,7 @@ mod tests {
             );
             let tx_amt = DEFAULT_BALANCE / 10;
 
-            assert_ok!(AccountManager::deposit(EXECUTION_ID, ALICE, BOB, tx_amt));
+            assert_ok!(AccountManager::deposit(&EXECUTION_ID, &ALICE, &BOB, tx_amt));
             assert_eq!(
                 Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
                 DEFAULT_BALANCE + tx_amt
