@@ -113,7 +113,12 @@ mod tests {
     fn test_deposit_works() {
         ExtBuilder::default().build().execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, DEFAULT_BALANCE);
-            AccountManager::deposit(&EXECUTION_ID, &ALICE, &BOB, DEFAULT_BALANCE / 10).unwrap();
+            <AccountManager as AccountManagerExt<AccountId, BalanceOf<Test>>>::deposit(
+                &ALICE,
+                &BOB,
+                DEFAULT_BALANCE / 10,
+            )
+            .unwrap();
 
             assert_eq!(
                 Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
@@ -131,14 +136,16 @@ mod tests {
     fn test_deposit_when_already_exist_fails() {
         ExtBuilder::default().build().execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, DEFAULT_BALANCE);
-            assert_ok!(AccountManager::deposit(
-                &EXECUTION_ID,
-                &ALICE,
-                &BOB,
-                DEFAULT_BALANCE / 10
-            ));
+            assert_ok!(<AccountManager as AccountManagerExt<
+                AccountId,
+                BalanceOf<Test>,
+            >>::deposit(&ALICE, &BOB, DEFAULT_BALANCE / 10));
             assert_err!(
-                AccountManager::deposit(&EXECUTION_ID, &ALICE, &BOB, DEFAULT_BALANCE / 10),
+                <AccountManager as AccountManagerExt<AccountId, BalanceOf<Test>>>::deposit(
+                    &ALICE,
+                    &BOB,
+                    DEFAULT_BALANCE / 10
+                ),
                 Error::<Test>::ExecutionAlreadyRegistered
             );
         });
@@ -154,12 +161,18 @@ mod tests {
             );
             let tx_amt = DEFAULT_BALANCE / 10;
 
-            assert_ok!(AccountManager::deposit(&EXECUTION_ID, &ALICE, &BOB, tx_amt));
+            assert_ok!(<AccountManager as AccountManagerExt<
+                AccountId,
+                BalanceOf<Test>,
+            >>::deposit(&ALICE, &BOB, tx_amt));
             assert_eq!(
                 Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
                 DEFAULT_BALANCE + tx_amt
             );
-            assert_ok!(AccountManager::finalize(EXECUTION_ID, None));
+            assert_ok!(<AccountManager as AccountManagerExt<
+                AccountId,
+                BalanceOf<Test>,
+            >>::finalize(EXECUTION_ID, None));
             assert_eq!(
                 Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
                 DEFAULT_BALANCE
@@ -180,14 +193,19 @@ mod tests {
             );
             let tx_amt = DEFAULT_BALANCE / 10;
 
-            assert_ok!(AccountManager::deposit(&EXECUTION_ID, &ALICE, &BOB, tx_amt));
+            assert_ok!(<AccountManager as AccountManagerExt<
+                AccountId,
+                BalanceOf<Test>,
+            >>::deposit(&ALICE, &BOB, tx_amt));
             assert_eq!(
                 Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
                 DEFAULT_BALANCE + tx_amt
             );
-            assert_ok!(AccountManager::finalize(
-                EXECUTION_ID,
-                Some(Reason::ContractReverted)
+            assert_ok!(<AccountManager as AccountManagerExt<
+                AccountId,
+                BalanceOf<Test>,
+            >>::finalize(
+                EXECUTION_ID, Some(Reason::ContractReverted)
             ));
             assert_eq!(
                 Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
@@ -212,14 +230,19 @@ mod tests {
             );
             let tx_amt = DEFAULT_BALANCE / 10;
 
-            assert_ok!(AccountManager::deposit(&EXECUTION_ID, &ALICE, &BOB, tx_amt));
+            assert_ok!(<AccountManager as AccountManagerExt<
+                AccountId,
+                BalanceOf<Test>,
+            >>::deposit(&ALICE, &BOB, tx_amt));
             assert_eq!(
                 Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
                 DEFAULT_BALANCE + tx_amt
             );
-            assert_ok!(AccountManager::finalize(
-                EXECUTION_ID,
-                Some(Reason::UnexpectedFailure)
+            assert_ok!(<AccountManager as AccountManagerExt<
+                AccountId,
+                BalanceOf<Test>,
+            >>::finalize(
+                EXECUTION_ID, Some(Reason::UnexpectedFailure)
             ));
             assert_eq!(
                 Balances::free_balance(&<Test as Config>::EscrowAccount::get()),

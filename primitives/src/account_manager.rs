@@ -34,6 +34,7 @@ impl<Account, Balance> ExecutionRegistryItem<Account, Balance> {
     }
 }
 
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
 pub enum Reason {
     UnexpectedFailure,
     ContractReverted,

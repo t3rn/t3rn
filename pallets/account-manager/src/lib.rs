@@ -88,7 +88,32 @@ pub mod pallet {
     pub type ExecutionNonce<T: Config> = StorageValue<_, ExecutionId, ValueQuery>;
 
     #[pallet::call]
-    impl<T: Config> Pallet<T> {}
+    impl<T: Config> Pallet<T> {
+        #[pallet::weight(100)]
+        pub fn deposit(
+            origin: OriginFor<T>,
+            payee: T::AccountId,
+            recipient: T::AccountId,
+            amount: BalanceOf<T>,
+        ) -> DispatchResult {
+            ensure_root(origin)?;
+
+            <Self as AccountManager<T::AccountId, BalanceOf<T>>>::deposit(
+                &payee, &recipient, amount,
+            )
+        }
+
+        #[pallet::weight(100)]
+        pub fn finalize(
+            origin: OriginFor<T>,
+            execution_id: ExecutionId,
+            reason: Option<Reason>,
+        ) -> DispatchResult {
+            ensure_root(origin)?;
+
+            <Self as AccountManager<T::AccountId, BalanceOf<T>>>::finalize(execution_id, reason)
+        }
+    }
 
     // Pallet implements [`Hooks`] trait to define some logic to execute in some context.
     #[pallet::hooks]
