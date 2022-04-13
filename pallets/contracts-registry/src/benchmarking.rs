@@ -7,6 +7,10 @@ use frame_support::assert_ok;
 use frame_system::RawOrigin;
 use t3rn_primitives::contract_metadata::ContractMetadata;
 const USER_SEED: u32 = 999666;
+use t3rn_primitives::{
+    contracts_registry::{AuthorInfo, ContractsRegistry as ContractsRegistryExt},
+    transfers::BalanceOf,
+};
 
 const CODE_CALL: &str = r#"
 (module
@@ -70,8 +74,7 @@ benchmarks! {
                     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
                     1, 1, 0, 65, 36, 11, 8, 6, 0, 0, 0, 0, 0, 0, 0, 0, 65, 44, 11, 4, 1, 2, 3, 4,
                 ],
-                author: account("TEST", 1_u32, USER_SEED),
-                author_fees_per_single_use: None,
+                author: AuthorInfo::new(account("TEST", 1_u32, USER_SEED), None),
                 abi: None,
                 action_descriptions: vec![],
                 info: None,
@@ -101,8 +104,7 @@ benchmarks! {
             RegistryContract {
                 code_txt: b"some_code".to_vec(),
                 bytes: vec![],
-                author: account("TEST", 1_u32, USER_SEED),
-                author_fees_per_single_use: None,
+                author: AuthorInfo::new(account("TEST", 1_u32, USER_SEED), None),
                 abi: None,
                 action_descriptions: vec![],
                 info: None,
@@ -125,8 +127,7 @@ benchmarks! {
             RegistryContract {
                 code_txt: b"some_code_2".to_vec(),
                 bytes: vec![],
-                author: account("TEST", 2_u32, USER_SEED),
-                author_fees_per_single_use: None,
+                author: AuthorInfo::new(account("TEST", 2_u32, USER_SEED), None),
                 abi: None,
                 action_descriptions: vec![],
                 info: None,
@@ -172,8 +173,7 @@ benchmarks! {
         > = RegistryContract {
             code_txt: b"some_code_1".to_vec(),
             bytes: vec![],
-            author: account("TEST", 1_u32, USER_SEED),
-            author_fees_per_single_use: None,
+            author: AuthorInfo::new(account("TEST", 1_u32, USER_SEED), None),
             abi: None,
             action_descriptions: vec![],
             info: None,
@@ -197,8 +197,7 @@ benchmarks! {
         > = RegistryContract {
             code_txt: b"some_code_2".to_vec(),
             bytes: vec![],
-            author: account("TEST", 1_u32, USER_SEED),
-            author_fees_per_single_use: None,
+            author: AuthorInfo::new(account("TEST", 1_u32, USER_SEED), None),
             abi: None,
             action_descriptions: vec![],
             info: None,
@@ -222,8 +221,7 @@ benchmarks! {
         > = RegistryContract {
             code_txt: b"some_code_3".to_vec(),
             bytes: vec![],
-            author: account("TEST", 2_u32, USER_SEED),
-            author_fees_per_single_use: None,
+            author: AuthorInfo::new(account("TEST", 2_u32, USER_SEED), None),
             abi: None,
             action_descriptions: vec![],
             info: None,
