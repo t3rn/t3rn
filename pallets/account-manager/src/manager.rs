@@ -1,6 +1,6 @@
 use crate::{
-    AccountManager as AccountManagerExt, BalanceOf, Config, Error, Event, ExecutionId,
-    ExecutionRegistry, ExecutionRegistryItem, Pallet, Reason,
+    AccountManager as AccountManagerExt, BalanceOf, Config, Error, Event, ExecutionRegistry,
+    ExecutionRegistryItem, Pallet, Reason,
 };
 use frame_support::{
     dispatch::DispatchResult,
@@ -8,6 +8,7 @@ use frame_support::{
 };
 use sp_runtime::{traits::Zero, Percent};
 use sp_std::borrow::ToOwned;
+use t3rn_primitives::account_manager::ExecutionId;
 
 impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
     fn deposit(

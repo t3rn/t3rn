@@ -7,13 +7,15 @@
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
 pub use crate::pallet::*;
-use crate::types::{AccountManager, ExecutionRegistryItem, Reason};
 use frame_support::traits::{Currency, Get};
-use t3rn_primitives::EscrowTrait;
 pub use t3rn_primitives::{
     abi::{GatewayABIConfig, Type},
     protocol::SideEffectProtocol,
     ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor,
+};
+use t3rn_primitives::{
+    account_manager::{AccountManager, ExecutionRegistryItem, Reason},
+    EscrowTrait,
 };
 
 #[cfg(test)]
@@ -25,10 +27,8 @@ mod tests;
 mod benchmarking;
 
 pub mod manager;
-pub mod types;
 pub mod weights;
 
-pub type ExecutionId = u64;
 pub type BalanceOf<T> =
     <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
@@ -38,12 +38,12 @@ pub type BalanceOf<T> =
 pub mod pallet {
     // Import various types used to declare pallet in scope.
     use super::*;
-    use crate::types::ExecutionRegistryItem;
     use frame_support::{
         pallet_prelude::*,
         traits::{Currency, ReservableCurrency},
     };
     use frame_system::pallet_prelude::*;
+    use t3rn_primitives::account_manager::ExecutionId;
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
