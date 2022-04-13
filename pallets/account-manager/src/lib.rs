@@ -94,6 +94,7 @@ pub mod pallet {
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
         fn on_initialize(_n: T::BlockNumber) -> Weight {
+            // TODO: we may want to retry failed transactions here, ensuring a max weight and max retry list
             // Anything that needs to be done at the start of the block.
             // We don't do anything here.
             0
@@ -117,21 +118,17 @@ pub mod pallet {
         Example,
     }
 
-    // Errors inform users that something went wrong.
     #[pallet::error]
     pub enum Error<T> {
         ExecutionNotRegistered,
         ExecutionAlreadyRegistered,
-        SplitterArithmeticFailure,
     }
 
-    // The genesis config type.
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
         phantom: PhantomData<T>,
     }
 
-    /// The default value for the genesis config type.
     #[cfg(feature = "std")]
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {

@@ -11,7 +11,6 @@ use sp_runtime::{
     Perbill, Percent,
 };
 
-// TODO: remove unwraps from this
 impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
     fn deposit(
         execution_id: ExecutionId,
@@ -19,7 +18,6 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
         recipient: T::AccountId,
         amount: BalanceOf<T>,
     ) -> DispatchResult {
-        /// Reserve the funds from the payee account
         T::Currency::transfer(
             &payee,
             &T::EscrowAccount::get(),
@@ -43,7 +41,6 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
         let item = Pallet::<T>::execution_registry(execution_id)
             .ok_or(Error::<T>::ExecutionNotRegistered)?;
         Self::split(item, reason)?;
-        // TODO: remove execution from registry
         Ok(ExecutionRegistry::<T>::remove(execution_id))
     }
 
