@@ -20,17 +20,8 @@ describe('Default Multi Finality Verifier', function () {
     it('should have preregistered relaychain gateways', async () => {
       const expectedGatewayIds = ['pdot', 'ksma', 'roco']
 
-      for (const gatewayId of expectedGatewayIds) {
-      }
-      // FIXME: assert xdns records are stored
-      // const xdnsRecord = await circuit.query.xdns
-      //   .xdnsRecords(Uint8Array.from([ 112, 100, 111, 116 ])) // pdot
-      //   //                           [ 107, 115, 109, 97 ]    // ksma
-      //   .then(encoded => encoded.toHuman())
+      // TODO: assert xdns records are stored
 
-      // console.log('$$$$$$$ xdnsRecord', xdnsRecord)
-
-      // assert gtwy instantiated in mfv storage
       const instantiatedGateways =
         await circuit.query.multiFinalityVerifierDefault
           .instantiatedGatewaysMap()

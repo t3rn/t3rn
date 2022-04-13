@@ -17,6 +17,7 @@
 //! Defines traits which represent a common interface for Substrate pallets which want to
 //! incorporate bridge functionality.
 
+use crate::bridges::runtime::ChainId;
 use codec::{Codec, Decode, Encode, EncodeLike, MaxEncodedLen};
 use core::{clone::Clone, cmp::Eq, default::Default, fmt::Debug};
 use scale_info::TypeInfo;
@@ -24,7 +25,6 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_finality_grandpa::{AuthorityList, ConsensusLog, SetId, GRANDPA_ENGINE_ID};
 use sp_runtime::{generic::OpaqueDigestItemId, traits::Header as HeaderT, RuntimeDebug};
-use crate::bridges::runtime::ChainId;
 pub mod justification;
 
 /// A type that can be used as a parameter in a dispatchable function.

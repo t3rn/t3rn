@@ -18,7 +18,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use crate::bridges::runtime::{POLKADOT_CHAIN_ID, KUSAMA_CHAIN_ID, ROCOCO_CHAIN_ID};
+use crate::bridges::runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID, ROCOCO_CHAIN_ID};
 use codec::{Decode, Encode};
 use frame_support::traits::{ReservableCurrency, Time};
 use scale_info::TypeInfo;
