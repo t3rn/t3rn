@@ -2,35 +2,30 @@
 use crate::{self as pallet_circuit, Config};
 
 use codec::Encode;
-
-use pallet_babe::{EquivocationHandler, ExternalTrigger};
-
+use frame_election_provider_support::onchain;
 use frame_support::{
     pallet_prelude::GenesisBuild,
     parameter_types,
     traits::{ConstU32, Everything, KeyOwnerProofSystem, Nothing},
+    weights::Weight,
+    PalletId,
 };
+use pallet_babe::{EquivocationHandler, ExternalTrigger};
+use pallet_session::historical as pallet_session_historical;
+use sp_consensus_babe::AuthorityId;
+use sp_core::{crypto::KeyTypeId, H256};
 use sp_runtime::{
     curve::PiecewiseLinear,
     impl_opaque_keys,
     testing::{Header, TestXt},
-    traits::{Convert, IdentityLookup, OpaqueKeys},
-    AccountId32, Perbill,
+    traits::{BlakeTwo256, Convert, IdentityLookup, Keccak256, OpaqueKeys},
+    Perbill,
 };
-
-use frame_election_provider_support::onchain;
-use frame_support::{weights::Weight, PalletId};
-use pallet_session::historical as pallet_session_historical;
-use sp_consensus_babe::AuthorityId;
-use sp_core::{crypto::KeyTypeId, H256};
-use sp_runtime::traits::{BlakeTwo256, Keccak256};
 use sp_staking::{EraIndex, SessionIndex};
-use t3rn_primitives::side_effect::interface::SideEffectInterface;
-
 use t3rn_primitives::{
-    transfers::BalanceOf, EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor,
+    side_effect::interface::SideEffectInterface, transfers::BalanceOf, EscrowTrait,
+    GatewaySysProps, GatewayType, GatewayVendor,
 };
-
 use t3rn_protocol::side_effects::confirm::ethereum::EthereumMockVerifier;
 
 pub type AccountId = sp_runtime::AccountId32;

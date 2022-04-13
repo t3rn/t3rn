@@ -1,5 +1,6 @@
-use crate::ExecutionId;
+use crate::{Error, ExecutionId};
 use codec::{Decode, Encode};
+use frame_support::dispatch::DispatchResult;
 use scale_info::TypeInfo;
 use sp_std::{fmt::Debug, prelude::*, vec::Vec};
 
@@ -40,16 +41,18 @@ pub enum Reason {
 pub trait AccountManager<Account, Balance> {
     /// Send funds to a recipient via the escrow
     fn deposit(
-        &self,
         execution_id: ExecutionId,
         payee: Account,
         recipient: Account,
         amount: Balance,
-    );
+    ) -> DispatchResult;
     /// Finalize a transaction, with an optional reason for failures
-    fn finalize(&self, execution_id: ExecutionId, reason: Option<Reason>);
+    fn finalize(execution_id: ExecutionId, reason: Option<Reason>) -> DispatchResult;
     /// Issue the funds in the escrow to the recipient
-    fn issue(&self, recipient: &Account, amount: Balance);
+    fn issue(recipient: &Account, amount: Balance) -> DispatchResult;
     /// Split the funds, providing an optional reason for the split
-    fn split(&self, item: ExecutionRegistryItem<Account, Balance>, reason: Option<Reason>);
+    fn split(
+        item: ExecutionRegistryItem<Account, Balance>,
+        reason: Option<Reason>,
+    ) -> DispatchResult;
 }

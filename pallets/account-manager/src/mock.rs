@@ -1,44 +1,21 @@
-// This file is part of Substrate.
-
-// Copyright (C) 2019-2021 Parity Technologies (UK) Ltd.
-// SPDX-License-Identifier: Apache-2.0
-
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// 	http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-//! Mock runtime for pallet-xdns.
-
-use crate::*;
+use crate::{self as pallet_account_manager, Config};
 use frame_support::{parameter_types, traits::Everything};
-use sp_core::{sr25519, Pair, H256};
-// The testing primitives are very useful for avoiding having to work with signatures
-// or public keys. `u64` is used as the `AccountId` and no `Signature`s are required.
+use sp_core::H256;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
-    KeyTypeId,
 };
-// Reexport crate as its pallet name for construct_runtime.
-use crate as pallet_xdns;
-use frame_support::pallet_prelude::GenesisBuild;
-use sp_core::crypto::AccountId32;
-use t3rn_primitives::{EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor};
 
-use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStore};
-use t3rn_primitives::{side_effect::interface::SideEffectInterface, xdns::XdnsRecord};
+pub type AccountId = u64;
+pub type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+pub type Block = frame_system::mocking::MockBlock<Test>;
 
-type AccountId = u64;
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
+pub const ALICE: AccountId = 1;
+pub const BOB: AccountId = 2;
+pub const CHARLIE: AccountId = 3;
+pub const DJANGO: AccountId = 4;
+pub const EDWARD: AccountId = 5;
+pub const FRED: AccountId = 6;
 
 // For testing the pallet, we construct a mock runtime.
 frame_support::construct_runtime!(
@@ -49,7 +26,7 @@ frame_support::construct_runtime!(
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        XDNS: pallet_xdns::{Pallet, Call, Storage, Config<T>, Event<T>},
+        AccountManager: pallet_account_manager,
         Timestamp: pallet_timestamp::{Pallet},
         Sudo: pallet_sudo::{Pallet, Call, Event<T>},
     }
@@ -65,11 +42,6 @@ impl pallet_timestamp::Config for Test {
     type Moment = u64;
     type OnTimestampSet = ();
     type WeightInfo = ();
-}
-
-impl EscrowTrait<Test> for Test {
-    type Currency = Balances;
-    type Time = Timestamp;
 }
 
 parameter_types! {
@@ -103,9 +75,6 @@ impl frame_system::Config for Test {
     type SystemWeightInfo = ();
     type Version = ();
 }
-parameter_types! {
-    pub const ExistentialDeposit: u64 = 1;
-}
 
 impl pallet_sudo::Config for Test {
     type Call = Call;
@@ -113,6 +82,7 @@ impl pallet_sudo::Config for Test {
 }
 
 parameter_types! {
+    pub const ExistentialDeposit: u64 = 1;
     pub const MaxReserves: u32 = 50;
 }
 
