@@ -6,7 +6,10 @@ use frame_support::{
     dispatch::DispatchResult,
     traits::{Currency, ExistenceRequirement, Get},
 };
-use sp_runtime::traits::{CheckedDiv, CheckedMul, Zero};
+use sp_runtime::{
+    traits::{Bounded, CheckedDiv, CheckedMul, Zero},
+    Perbill, Percent,
+};
 
 // TODO: remove unwraps from this
 impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
@@ -45,16 +48,12 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
     }
 
     fn issue(recipient: &T::AccountId, amount: BalanceOf<T>) -> DispatchResult {
-        if !amount.is_zero() {
-            T::Currency::transfer(
-                &T::EscrowAccount::get(),
-                recipient,
-                amount,
-                ExistenceRequirement::KeepAlive,
-            )
-        } else {
-            Ok(())
-        }
+        T::Currency::transfer(
+            &T::EscrowAccount::get(),
+            recipient,
+            amount,
+            ExistenceRequirement::KeepAlive,
+        )
     }
 
     fn split(
@@ -67,22 +66,29 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
             Some(Reason::ContractReverted) => (90, 10),
             Some(Reason::UnexpectedFailure) => (50, 50),
         };
-        // TODO: check babies first
+        /// TODO: figure out sp_arithmetic for this
+        let max_percent: BalanceOf<T> = 100_u32.into();
+
+        let pay_split = |split: u32, recipient: &T::AccountId| -> DispatchResult {
+            if !split.is_zero() {
+                Self::issue(
+                    recipient,
+                    item.balance()
+                        .checked_div(&max_percent)
+                        .ok_or(Error::<T>::SplitterArithmeticFailure)?
+                        .checked_mul(&split.into())
+                        .ok_or(Error::<T>::SplitterArithmeticFailure)?,
+                )
+            } else {
+                Ok(())
+            }
+        };
+
         // TODO: these need to be joined
-        Self::issue(
-            item.payee(),
-            (item.balance().checked_div(&100_u32.into()))
-                .unwrap()
-                .checked_mul(&payee_split.into())
-                .unwrap(),
-        )?;
-        Self::issue(
-            item.recipient(),
-            (item.balance().checked_div(&100_u32.into()))
-                .unwrap()
-                .checked_mul(&recipient_split.into())
-                .unwrap(),
-        )
+        pay_split(payee_split, item.payee())?;
+        pay_split(recipient_split, item.recipient())?;
+
+        Ok(())
     }
 }
 

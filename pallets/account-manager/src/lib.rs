@@ -122,6 +122,7 @@ pub mod pallet {
     pub enum Error<T> {
         ExecutionNotRegistered,
         ExecutionAlreadyRegistered,
+        SplitterArithmeticFailure,
     }
 
     // The genesis config type.
