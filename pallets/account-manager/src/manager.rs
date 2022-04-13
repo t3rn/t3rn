@@ -61,30 +61,23 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
         reason: Option<Reason>,
     ) -> DispatchResult {
         // Simple rules for splitting, for now
-        let (payee_split, recipient_split): (u32, u32) = match reason {
+        let (payee_split, recipient_split): (u8, u8) = match reason {
             None => (0, 100),
             Some(Reason::ContractReverted) => (90, 10),
             Some(Reason::UnexpectedFailure) => (50, 50),
         };
-        /// TODO: figure out sp_arithmetic for this
-        let max_percent: BalanceOf<T> = 100_u32.into();
 
-        let pay_split = |split: u32, recipient: &T::AccountId| -> DispatchResult {
+        let pay_split = |split: u8, recipient: &T::AccountId| -> DispatchResult {
             if !split.is_zero() {
-                Self::issue(
-                    recipient,
-                    item.balance()
-                        .checked_div(&max_percent)
-                        .ok_or(Error::<T>::SplitterArithmeticFailure)?
-                        .checked_mul(&split.into())
-                        .ok_or(Error::<T>::SplitterArithmeticFailure)?,
-                )
+                let percent = Percent::from_percent(split);
+                let amt = percent * *item.balance();
+                Self::issue(recipient, amt)
             } else {
                 Ok(())
             }
         };
 
-        // TODO: these need to be joined
+        // TODO: these need to be joined or handle failure, maybe on_initialize retry a queue of failures after reserving
         pay_split(payee_split, item.payee())?;
         pay_split(recipient_split, item.recipient())?;
 
