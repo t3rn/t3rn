@@ -1,5 +1,5 @@
 use super::*;
-use frame_support::{parameter_types, PalletId, traits::ConstU64};
+use frame_support::{parameter_types, traits::ConstU64, PalletId};
 use sp_core::H256;
 use sp_runtime::traits::*;
 use t3rn_primitives::bridges::runtime as bp_runtime;
