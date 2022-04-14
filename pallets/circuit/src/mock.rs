@@ -837,7 +837,7 @@ impl ExtBuilder {
     }
 }
 
-pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);
-pub const BOB_RELAYER: AccountId32 = AccountId32::new([2u8; 32]);
-pub const CHARLIE: AccountId32 = AccountId32::new([3u8; 32]);
-pub const DJANGO: AccountId32 = AccountId32::new([4u8; 32]);
+pub const ALICE: AccountId = AccountId::new([1u8; 32]);
+pub const BOB_RELAYER: AccountId = AccountId::new([2u8; 32]);
+pub const CHARLIE: AccountId = AccountId::new([3u8; 32]);
+pub const DJANGO: AccountId = AccountId::new([4u8; 32]);
