@@ -57,7 +57,6 @@ use frame_support::traits::{Currency, ExistenceRequirement::AllowDeath, Get};
 
 use sp_runtime::KeyTypeId;
 
-use crate::CircuitStatus::PendingExecution;
 pub use pallet::*;
 use t3rn_primitives::{circuit_portal::CircuitPortal, transfers::EscrowedBalanceOf, xdns::Xdns};
 
@@ -90,9 +89,8 @@ use crate::state::*;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use crate::{escrow::Escrow, CircuitStatus::Finished};
+    use crate::escrow::Escrow;
     use frame_support::{
-        metadata::StorageEntryModifier::Default,
         pallet_prelude::*,
         traits::{
             fungible::{Inspect, Mutate},
@@ -271,24 +269,21 @@ pub mod pallet {
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
         fn on_initialize(n: T::BlockNumber) -> Weight {
-            // fn timeout_revert_xtx(xtx_id: XExecSignalId<T>) {
-            //
-            // }
-
             // Check every XtxTimeoutCheckInterval blocks
-            if T::XtxTimeoutCheckInterval::get() % n == T::BlockNumber::from(0u32) {
+            if T::XtxTimeoutCheckInterval::get() % n == T::BlockNumber::from(0u8) {
                 // Go over all unfinished Xtx to find those that timed out
                 <ActiveXExecSignalsTimingLinks<T>>::iter()
-                    .find(|(xtx_id, timeout_at)| {
+                    .find(|(_xtx_id, timeout_at)| {
                         timeout_at <= &frame_system::Pallet::<T>::block_number()
                     })
-                    .map(|(xtx_id, timeout_at)| {
+                    .map(|(xtx_id, _timeout_at)| {
                         let mut local_xtx_ctx = Self::setup(
                             CircuitStatus::RevertedTimedOut,
                             &Self::account_id(),
                             Zero::zero(),
                             Some(xtx_id),
-                        ).unwrap();
+                        )
+                        .unwrap();
 
                         Self::apply(&mut local_xtx_ctx, None).unwrap();
 
@@ -417,7 +412,7 @@ pub mod pallet {
             // Setup: new xtx context
             let mut local_xtx_ctx: LocalXtxCtx<T> =
                 Self::setup(CircuitStatus::Requested, &requester, fee, None)?;
-            log::debug!(
+            println!(
                 "on_extrinsic_trigger -- finished setup -- xtx id {:?}",
                 local_xtx_ctx.xtx_id
             );
@@ -1032,7 +1027,9 @@ impl<T: Config> Pallet<T> {
                         // All of the steps are completed - the xtx has been finalized
                         if local_ctx.xtx.steps_cnt.0 == local_ctx.xtx.steps_cnt.1 {
                             local_ctx.xtx.status = CircuitStatus::FinishedAllSteps;
-                            <Self as Store>::ActiveXExecSignalsTimingLinks::remove(local_ctx.xtx_id);
+                            <Self as Store>::ActiveXExecSignalsTimingLinks::remove(
+                                local_ctx.xtx_id,
+                            );
                         }
                     }
                     <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
