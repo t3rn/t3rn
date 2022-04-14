@@ -89,7 +89,7 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(100)]
+        #[pallet::weight(10_000 + T::DbWeight::get().reads(2) + T::DbWeight::get().writes(1))]
         pub fn deposit(
             origin: OriginFor<T>,
             payee: T::AccountId,
@@ -103,7 +103,7 @@ pub mod pallet {
             )
         }
 
-        #[pallet::weight(100)]
+        #[pallet::weight(10_000 + T::DbWeight::get().reads(1) + T::DbWeight::get().writes(1))]
         pub fn finalize(
             origin: OriginFor<T>,
             execution_id: ExecutionId,
