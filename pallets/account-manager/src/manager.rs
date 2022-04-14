@@ -107,7 +107,7 @@ mod tests {
     use frame_support::{assert_err, assert_ok};
 
     const DEFAULT_BALANCE: u64 = 1_000_000;
-    const EXECUTION_ID: u64 = 1;
+    const EXECUTION_ID: u64 = 0;
 
     #[test]
     fn test_deposit_works() {
@@ -136,10 +136,10 @@ mod tests {
     fn test_deposit_when_already_exist_fails() {
         ExtBuilder::default().build().execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, DEFAULT_BALANCE);
-            assert_ok!(<AccountManager as AccountManagerExt<
-                AccountId,
-                BalanceOf<Test>,
-            >>::deposit(&ALICE, &BOB, DEFAULT_BALANCE / 10));
+            ExecutionRegistry::<Test>::insert(
+                EXECUTION_ID,
+                ExecutionRegistryItem::new(ALICE.clone(), BOB.clone(), DEFAULT_BALANCE),
+            );
             assert_err!(
                 <AccountManager as AccountManagerExt<AccountId, BalanceOf<Test>>>::deposit(
                     &ALICE,
