@@ -270,7 +270,7 @@ pub mod pallet {
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
         fn on_initialize(n: T::BlockNumber) -> Weight {
             // Check every XtxTimeoutCheckInterval blocks
-            if T::XtxTimeoutCheckInterval::get() % n == T::BlockNumber::from(0u8) {
+            if n % T::XtxTimeoutCheckInterval::get() == T::BlockNumber::from(0u8) {
                 // Go over all unfinished Xtx to find those that timed out
                 <ActiveXExecSignalsTimingLinks<T>>::iter()
                     .find(|(_xtx_id, timeout_at)| {
@@ -285,6 +285,7 @@ pub mod pallet {
                         )
                         .unwrap();
 
+                        local_xtx_ctx.xtx.status = CircuitStatus::RevertedTimedOut;
                         Self::apply(&mut local_xtx_ctx, None).unwrap();
 
                         Self::emit(
@@ -761,7 +762,9 @@ impl<T: Config> Pallet<T> {
                     Err(Error::<T>::SetupFailedEmptyXtx)
                 }
             },
-            CircuitStatus::Ready | CircuitStatus::PendingExecution => {
+            CircuitStatus::Ready
+            | CircuitStatus::PendingExecution
+            | CircuitStatus::RevertedTimedOut => {
                 if let Some(id) = xtx_id {
                     if !<Self as Store>::XExecSignals::contains_key(id) {
                         return Err(Error::<T>::SetupFailedUnknownXtx)
