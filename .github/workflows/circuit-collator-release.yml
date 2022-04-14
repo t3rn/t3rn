@@ -53,32 +53,26 @@ jobs:
 
   push-to-docker:
     runs-on: ubuntu-20.04
-    needs: [build-release]
+    needs: build-release
     steps:
-      - name: ☁️Checkout git repo
+      - name: ☁️ Checkout git repo
         uses: actions/checkout@master
         with:
           submodules: recursive
           token: ${{ secrets.GH_PAT }}
-      - name: 🔧 Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-      - name: 🕒 Cache Docker layers
-        uses: actions/cache@v2
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
+
       - name: 📥 Download circuit
         uses: actions/download-artifact@v2
         with:
           name: ${{ github.sha }}-parachain-release-artifacts
           path: ./target/release/
+
       - name: 🐋 Login to Docker Hub
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: 🐳 Build & Publish Docker image
         uses: docker/build-push-action@v2
         with:
@@ -87,8 +81,6 @@ jobs:
           tags: t3rn/circuit-parachain:latest
           platforms: linux/amd64
           file: docker/circuit-parachain.Dockerfile
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache
 
   release-on-github:
     runs-on: ubuntu-20.04
