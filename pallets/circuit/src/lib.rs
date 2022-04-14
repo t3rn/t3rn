@@ -57,9 +57,12 @@ use frame_support::traits::{Currency, ExistenceRequirement::AllowDeath, Get};
 
 use sp_runtime::KeyTypeId;
 
+use crate::escrow::Escrow;
 pub use pallet::*;
 use t3rn_primitives::{
-    circuit_portal::CircuitPortal, side_effect::SecurityLvl, transfers::EscrowedBalanceOf,
+    circuit_portal::CircuitPortal,
+    side_effect::{ConfirmationOutcome, SecurityLvl},
+    transfers::EscrowedBalanceOf,
     xdns::Xdns,
 };
 
@@ -209,6 +212,23 @@ pub mod pallet {
                     EscrowedBalanceOf<T, <T as Config>::Escrowed>,
                 >,
             >,
+        >,
+        OptionQuery,
+    >;
+
+    /// Current Circuit's context of active full side effects (requested + confirmation proofs)
+    #[pallet::storage]
+    #[pallet::getter(fn get_escrow_side_effects_pending_relay)]
+    pub type EscrowedSideEffectsPendingRelay<T> = StorageDoubleMap<
+        _,
+        Identity,
+        XExecSignalId<T>,
+        Identity,
+        SideEffectId<T>,
+        FullSideEffect<
+            <T as frame_system::Config>::AccountId,
+            <T as frame_system::Config>::BlockNumber,
+            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
         >,
         OptionQuery,
     >;
@@ -568,8 +588,8 @@ pub mod pallet {
                 block_hash,
             )?;
 
-            // FixMe: Reward should be triggered by apply after the whole Xtx finishes
-            Self::enact_insurance(&local_xtx_ctx, &side_effect, InsuranceEnact::Reward)?;
+            // // FixMe: Reward should be triggered by apply after the whole Xtx finishes
+            // Self::enact_insurance(&local_xtx_ctx, &side_effect, InsuranceEnact::Reward)?;
 
             // Apply: all necessary changes to state in 1 go
             let (maybe_xtx_changed, assert_full_side_effects_changed) =
@@ -659,7 +679,11 @@ pub mod pallet {
         InsuranceBondAlreadyDeposited,
         SetupFailed,
         SetupFailedIncorrectXtxStatus,
+        EnactSideEffectsCanOnlyBeCalledWithMin1StepFinished,
         FatalXtxTimeoutXtxIdNotMatched,
+        FatalCommitSideEffectWithoutConfirmationAttempt,
+        FatalErroredCommitSideEffectConfirmationAttempt,
+        FatalErroredRevertSideEffectConfirmationAttempt,
         SetupFailedUnknownXtx,
         SetupFailedDuplicatedXtx,
         SetupFailedEmptyXtx,
@@ -993,6 +1017,8 @@ impl<T: Config> Pallet<T> {
 
                 <Self as Store>::ActiveXExecSignalsTimingLinks::remove(local_ctx.xtx_id);
 
+                Self::enact_step_side_effects(local_ctx)?;
+
                 Ok((
                     Some(local_ctx.xtx.clone()),
                     Some(local_ctx.full_side_effects.clone()),
@@ -1012,19 +1038,18 @@ impl<T: Config> Pallet<T> {
                 if new_status != local_ctx.xtx.status {
                     local_ctx.xtx.status = new_status.clone();
                     // Check whether all of the side effects in this steps are confirmed - the status now changes to CircuitStatus::Finished
-                    if new_status == CircuitStatus::PendingExecution
-                        && local_ctx.full_side_effects[local_ctx.xtx.steps_cnt.0 as usize]
-                            .clone()
-                            .iter()
-                            .filter(|&fse| fse.confirmed.is_none())
-                            .collect::<Vec<
-                                &FullSideEffect<
-                                    T::AccountId,
-                                    T::BlockNumber,
-                                    EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-                                >,
-                            >>()
-                            .is_empty()
+                    if local_ctx.full_side_effects[local_ctx.xtx.steps_cnt.0 as usize]
+                        .clone()
+                        .iter()
+                        .filter(|&fse| fse.confirmed.is_none())
+                        .collect::<Vec<
+                            &FullSideEffect<
+                                T::AccountId,
+                                T::BlockNumber,
+                                EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+                            >,
+                        >>()
+                        .is_empty()
                     {
                         local_ctx.xtx.steps_cnt =
                             (local_ctx.xtx.steps_cnt.0 + 1, local_ctx.xtx.steps_cnt.1);
@@ -1035,6 +1060,7 @@ impl<T: Config> Pallet<T> {
                             <Self as Store>::ActiveXExecSignalsTimingLinks::remove(
                                 local_ctx.xtx_id,
                             );
+                            Self::enact_step_side_effects(local_ctx)?
                         }
                     }
                     <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
@@ -1111,6 +1137,108 @@ impl<T: Config> Pallet<T> {
         EscrowCurrencyOf::<T>::transfer(requester, &vault, fee, AllowDeath)
             .map_err(|_| Error::<T>::ChargingTransferFailed)?; // should not fail
         Ok(new_balance)
+    }
+
+    fn enact_step_side_effects(local_ctx: &mut LocalXtxCtx<T>) -> Result<(), Error<T>> {
+        let current_step = local_ctx.xtx.steps_cnt.0;
+
+        match local_ctx.xtx.status {
+            CircuitStatus::RevertedTimedOut | CircuitStatus::Reverted => {
+                for fse in &local_ctx.full_side_effects[(current_step) as usize] {
+                    let encoded_4b_action: [u8; 4] =
+                        Decode::decode(&mut fse.input.encoded_action.encode().as_ref())
+                            .expect("Encoded Type was already validated before saving");
+
+                    let confirmed = fse.confirmed.clone().unwrap_or(ConfirmedSideEffect {
+                        err: Some(ConfirmationOutcome::TimedOut),
+                        output: None,
+                        encoded_effect: vec![0],
+                        inclusion_proof: None,
+                        executioner: Self::account_id(),
+                        received_at: <frame_system::Pallet<T>>::block_number(),
+                        cost: None,
+                    });
+                    match fse.security_lvl {
+                        SecurityLvl::Optimistic => {
+                            let _ = Self::enact_insurance(
+                                local_ctx,
+                                &fse.input,
+                                InsuranceEnact::RefundBoth,
+                            )?;
+                        },
+                        SecurityLvl::Escrowed => {
+                            if fse.input.target == T::SelfGatewayId::get() {
+                                Escrow::<T>::revert(
+                                    &encoded_4b_action,
+                                    fse.input.encoded_args.clone(),
+                                    Self::account_id(),
+                                    confirmed.executioner.clone(),
+                                )
+                                .map_err(|_| {
+                                    Error::<T>::FatalErroredRevertSideEffectConfirmationAttempt
+                                })?
+                            }
+                            <Self as Store>::EscrowedSideEffectsPendingRelay::insert(
+                                local_ctx.xtx_id,
+                                fse.input.generate_id::<SystemHashing<T>>(),
+                                fse.clone(),
+                            );
+                        },
+                        SecurityLvl::Dirty => {},
+                    }
+                }
+            },
+            CircuitStatus::Finished | CircuitStatus::FinishedAllSteps => {
+                if current_step == 0 {
+                    return Err(Error::<T>::EnactSideEffectsCanOnlyBeCalledWithMin1StepFinished)
+                }
+                for fse in &local_ctx.full_side_effects[(current_step - 1) as usize] {
+                    let encoded_4b_action: [u8; 4] =
+                        Decode::decode(&mut fse.input.encoded_action.encode().as_ref())
+                            .expect("Encoded Type was already validated before saving");
+                    // Perhaps redundant check for data integrity - make sure the confirmation is there & not an error
+                    let confirmation = if let Some(ref confirmed) = fse.confirmed {
+                        if confirmed.err.is_some() {
+                            return Err(Error::<T>::FatalErroredCommitSideEffectConfirmationAttempt)
+                        }
+                        confirmed.clone()
+                    } else {
+                        return Err(Error::<T>::FatalCommitSideEffectWithoutConfirmationAttempt)
+                    };
+                    match fse.security_lvl {
+                        SecurityLvl::Optimistic => {
+                            let _ = Self::enact_insurance(
+                                local_ctx,
+                                &fse.input,
+                                InsuranceEnact::Reward,
+                            )?;
+                        },
+                        SecurityLvl::Escrowed => {
+                            if fse.input.target == T::SelfGatewayId::get() {
+                                Escrow::<T>::commit(
+                                    &encoded_4b_action,
+                                    fse.input.encoded_args.clone(),
+                                    Self::account_id(),
+                                    confirmation.executioner.clone(),
+                                )
+                                .map_err(|_| {
+                                    Error::<T>::FatalErroredCommitSideEffectConfirmationAttempt
+                                })?
+                            }
+                            <Self as Store>::EscrowedSideEffectsPendingRelay::insert(
+                                local_ctx.xtx_id,
+                                fse.input.generate_id::<SystemHashing<T>>(),
+                                fse.clone(),
+                            );
+                        },
+                        SecurityLvl::Dirty => {},
+                    }
+                }
+            },
+            _ => {},
+        }
+
+        Ok(())
     }
 
     fn enact_insurance(

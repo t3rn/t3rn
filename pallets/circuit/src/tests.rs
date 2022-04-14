@@ -1297,7 +1297,7 @@ fn circuit_cancels_xtx_after_timeout() {
                 sequential,
             ));
 
-            let events = System::events();
+            let _events = System::events();
             // assert_eq!(events.len(), 8);
 
             let xtx_id: sp_core::H256 =
