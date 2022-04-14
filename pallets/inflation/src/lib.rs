@@ -20,6 +20,7 @@ pub mod pallet {
         inflation::{InflationInfo, Range, RoundIndex, RoundInfo},
         weights::WeightInfo,
     };
+    use codec::Codec;
     use frame_support::{
         pallet_prelude::*,
         traits::{Currency, Imbalance, ReservableCurrency},
@@ -27,7 +28,11 @@ pub mod pallet {
     use frame_system::{ensure_root, pallet_prelude::*};
     use sp_runtime::{
         traits::{AtLeast32BitUnsigned, Saturating, Zero},
-        Perbill,
+        Perbill, SaturatedConversion,
+    };
+    use std::{
+        fmt::Debug,
+        ops::{AddAssign, Div},
     };
 
     pub type BalanceOf<T> =
@@ -37,13 +42,16 @@ pub mod pallet {
     pub trait Config: frame_system::Config {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         type Currency: Currency<Self::AccountId> + ReservableCurrency<Self::AccountId>;
-        type Balance: Member
-            + Parameter
+        type Balance: Parameter
+            + Member
             + AtLeast32BitUnsigned
+            + Codec
             + Default
             + Copy
+            + MaybeSerializeDeserialize
+            + Debug
             + MaxEncodedLen
-            + MaybeSerializeDeserialize;
+            + TypeInfo;
 
         #[pallet::constant]
         type TreasuryAccount: Get<Self::AccountId>;
@@ -207,15 +215,21 @@ pub mod pallet {
 
             let treasury = T::TreasuryAccount::get();
 
+            let round = <CurrentRound<T>>::get();
+
+            let inflation_info = <InflationConfig<T>>::get();
+
+            let candidates = <CandidatesForRewards<T>>::iter_keys();
+
+            let mut inf = inflation_info.per_round.ideal.div(candidates.count());
+
+            // Percent::from_percent(inf.deconstruct()).ok_or(Error::<T>::InvalidInflationSchedule)?;
+
+            // let inflation_per_candidate: BalanceOf<T> =
+            //     BalanceOf::<T>::try_from(inf.into())?;
             // let mut remaining_minted_balance = T::Currency::issue(amount);
-            // let mut candidates = <CandidatesForRewards<T>>::get()?;
-            // distribute to candidates equally
-            // candidates.into_iter().for_each(|candidate| {
-            // calculate rewards per candidate
-            // let amount_per_candidate = amount.div(T::Balance::from(candidates.len() as u8));
-            // let (remaining_minted_balance, reward_amount) =
-            //     remaining_minted_balance.split(amount_per_candidate);
-            // T::Currency::deposit_into_existing(candidate, reward_amount);
+            // <CandidatesForRewards<T>>::iter_keys().for_each(|candidate| {
+            //     <RewardsPerCandidatePerRound<T>>::insert(candidate, round.current, inf.into());
             // });
 
             // Emit an event.
@@ -231,7 +245,6 @@ pub mod pallet {
 
             // accumulate rewards
             let total_rewards = <RewardsPerCandidatePerRound<T>>::iter_prefix(&who)
-                .drain()
                 .drain()
                 .map(|key2_value| key2_value.1)
                 .fold(BalanceOf::<T>::zero(), |acc, item| acc.saturating_add(item));

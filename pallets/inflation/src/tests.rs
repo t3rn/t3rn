@@ -1,5 +1,10 @@
-use crate::{mock::*, CandidatesForRewards, Error, RewardsPerCandidatePerRound};
-use frame_support::{assert_err, assert_ok, StorageValue};
+use crate::{
+    inflation::{InflationInfo, Range},
+    mock::*,
+    CandidatesForRewards, Error, InflationConfig, RewardsPerCandidatePerRound,
+};
+use frame_support::{assert_err, assert_ok};
+use sp_runtime::Perbill;
 
 // #[test]
 // fn it_works_for_default_value() {
@@ -13,9 +18,10 @@ fn it_claims_zero_rewards_successfully() {
     new_test_ext().execute_with(|| {
         <CandidatesForRewards<Test>>::insert(1, 0);
         assert_ok!(Inflation::claim_rewards(Origin::signed(1)));
-        // assert balance 0
+        assert_eq!(Balances::free_balance(&1), 0);
     })
 }
+
 #[test]
 fn it_claims_rewards_successfully() {
     new_test_ext().execute_with(|| {
@@ -41,6 +47,45 @@ fn it_errors_with_not_candidate_if_a_non_candidate_tries_to_claim_rewards() {
         assert_err!(
             Inflation::claim_rewards(Origin::signed(1)),
             Error::<Test>::NotCandidate
+        );
+    })
+}
+
+#[test]
+fn it_should_set_inflation_successfully() {
+    new_test_ext().execute_with(|| {
+        let new_inflation = Range {
+            min: Perbill::from_percent(0),
+            ideal: Perbill::from_percent(1),
+            max: Perbill::from_percent(2),
+        };
+        let new_round_inflation = Range {
+            min: Perbill::from_float(0.0),
+            ideal: Perbill::from_float(0.000000076),
+            max: Perbill::from_float(0.000000151),
+        };
+        assert_ok!(Inflation::set_inflation(Origin::root(), new_inflation));
+        assert_eq!(
+            <InflationConfig<Test>>::get(),
+            InflationInfo {
+                annual: new_inflation,
+                per_round: new_round_inflation,
+            }
+        );
+    })
+}
+
+#[test]
+fn it_should_fail_with_invalid_inflation_rate() {
+    new_test_ext().execute_with(|| {
+        let new_inflation = Range {
+            min: Perbill::from_percent(0),
+            ideal: Perbill::from_percent(2),
+            max: Perbill::from_percent(1),
+        };
+        assert_err!(
+            Inflation::set_inflation(Origin::root(), new_inflation),
+            Error::<Test>::InvalidInflationSchedule
         );
     })
 }
