@@ -417,7 +417,6 @@ pub mod pallet {
                 "on_extrinsic_trigger -- finished setup -- xtx id {:?}",
                 local_xtx_ctx.xtx_id
             );
-
             // Validate: Side Effects
             Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential)?;
             log::debug!("on_extrinsic_trigger -- finished validate");
