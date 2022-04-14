@@ -40,7 +40,7 @@ pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = '
 
 [features]
 default = [ "std" ]
-runtime-benchmarks = [ "frame-benchmarking" ]
+runtime-benchmarks = [ "frame-benchmarking/runtime-benchmarks" ]
 std = [
   "codec/std",
   "frame-benchmarking/std",
