@@ -1333,5 +1333,26 @@ fn circuit_cancels_xtx_after_timeout() {
             );
 
             assert_eq!(Circuit::get_active_timing_links(xtx_id), None);
+
+            // Emits event notifying about cancellation
+            let mut events = System::events();
+            assert_eq!(events.len(), 9);
+            assert_eq!(
+                events.pop(),
+                Some(EventRecord {
+                    phase: Phase::Initialization,
+                    event: Event::Circuit(
+                        crate::Event::<Test>::XTransactionXtxRevertedAfterTimeOut(
+                            hex!(
+                                "c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6"
+                            )
+                            .into()
+                        )
+                    ),
+                    topics: vec![]
+                }),
+            );
+
+            // Voids all associated side effects with Xtx by setting their confirmation to Err
         });
 }

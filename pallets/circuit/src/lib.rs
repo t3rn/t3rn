@@ -600,6 +600,8 @@ pub mod pallet {
         XTransactionStepFinishedExec(XExecSignalId<T>),
         // Listeners - users + SDK + UI to know whether their request is accepted for exec and finished
         XTransactionXtxFinishedExecAllSteps(XExecSignalId<T>),
+        // Listeners - users + SDK + UI to know whether their request is accepted for exec and finished
+        XTransactionXtxRevertedAfterTimeOut(XExecSignalId<T>),
         // Listeners - executioners/relayers to know new challenges and perform offline risk/reward calc
         //  of whether side effect is worth picking up
         NewSideEffectsAvailable(
@@ -1079,6 +1081,8 @@ impl<T: Config> Pallet<T> {
                     Self::deposit_event(Event::XTransactionStepFinishedExec(xtx_id)),
                 CircuitStatus::FinishedAllSteps =>
                     Self::deposit_event(Event::XTransactionXtxFinishedExecAllSteps(xtx_id)),
+                CircuitStatus::RevertedTimedOut =>
+                    Self::deposit_event(Event::XTransactionXtxRevertedAfterTimeOut(xtx_id)),
                 _ => {},
             }
             if xtx.status >= CircuitStatus::PendingExecution {
