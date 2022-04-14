@@ -42,7 +42,7 @@ fn set_ids(
     valid_side_effect: SideEffect<AccountId32, BlockNumber, BalanceOf>,
 ) -> (sp_core::H256, sp_core::H256) {
     let xtx_id: sp_core::H256 =
-        hex!("d02e1b7d4ee308b8b0fad924fd35bb3688760fc986bc1b44e8f123f17aed8a7a").into();
+        hex!("c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6").into();
 
     let side_effect_a_id = valid_side_effect.generate_id::<crate::SystemHashing<Test>>();
 
@@ -125,7 +125,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                         phase: Phase::Initialization,
                         event: Event::Circuit(crate::Event::<Test>::XTransactionReadyForExec(
                             hex!(
-                                "d02e1b7d4ee308b8b0fad924fd35bb3688760fc986bc1b44e8f123f17aed8a7a"
+                                "c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6"
                             )
                             .into()
                         )),
@@ -138,7 +138,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                                 "0101010101010101010101010101010101010101010101010101010101010101"
                             )),
                             hex!(
-                                "d02e1b7d4ee308b8b0fad924fd35bb3688760fc986bc1b44e8f123f17aed8a7a"
+                                "c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6"
                             )
                             .into(),
                             vec![SideEffect {
@@ -167,7 +167,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                 ]
             );
             let xtx_id: sp_core::H256 =
-                hex!("d02e1b7d4ee308b8b0fad924fd35bb3688760fc986bc1b44e8f123f17aed8a7a").into();
+                hex!("c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6").into();
             let side_effect_a_id =
                 valid_transfer_side_effect.generate_id::<crate::SystemHashing<Test>>();
 
@@ -182,7 +182,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: None,
+                    timeouts_at: 100u64,
                     delay_steps_at: None,
                     status: CircuitStatus::Ready,
                     total_reward: Some(fee),
@@ -195,6 +195,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                 vec![vec![FullSideEffect {
                     input: valid_transfer_side_effect,
                     confirmed: None,
+                    security_lvl: SecurityLvl::Dirty,
                 }]]
             );
         });
@@ -290,7 +291,7 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
                         phase: Phase::Initialization,
                         event: Event::Circuit(crate::Event::<Test>::XTransactionReceivedForExec(
                             hex!(
-                                "d02e1b7d4ee308b8b0fad924fd35bb3688760fc986bc1b44e8f123f17aed8a7a"
+                                "c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6"
                             )
                             .into()
                         )),
@@ -303,7 +304,7 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
                                 "0101010101010101010101010101010101010101010101010101010101010101"
                             )),
                             hex!(
-                                "d02e1b7d4ee308b8b0fad924fd35bb3688760fc986bc1b44e8f123f17aed8a7a"
+                                "c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6"
                             )
                             .into(),
                             vec![SideEffect {
@@ -403,7 +404,7 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: None,
+                    timeouts_at: 100u64,
                     delay_steps_at: None,
                     status: CircuitStatus::PendingInsurance,
                     total_reward: Some(fee),
@@ -416,6 +417,7 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
                 vec![vec![FullSideEffect {
                     input: valid_transfer_side_effect,
                     confirmed: None,
+                    security_lvl: SecurityLvl::Optimistic,
                 }]]
             );
         });
@@ -487,7 +489,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: None,
+                    timeouts_at: 100u64,
                     delay_steps_at: None,
                     status: CircuitStatus::PendingInsurance,
                     total_reward: Some(fee),
@@ -500,6 +502,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
                 vec![vec![FullSideEffect {
                     input: valid_transfer_side_effect.clone(),
                     confirmed: None,
+                    security_lvl: SecurityLvl::Optimistic,
                 }]]
             );
 
@@ -533,7 +536,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: None,
+                    timeouts_at: 100u64,
                     delay_steps_at: None,
                     status: CircuitStatus::Ready,
                     total_reward: Some(fee),
@@ -630,7 +633,7 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: None,
+                    timeouts_at: 100u64,
                     delay_steps_at: None,
                     status: CircuitStatus::Ready,
                     total_reward: Some(fee),
@@ -643,6 +646,7 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
                 vec![vec![FullSideEffect {
                     input: valid_swap_side_effect.clone(),
                     confirmed: None,
+                    security_lvl: SecurityLvl::Dirty,
                 }]]
             );
 
@@ -752,7 +756,7 @@ fn circuit_handles_swap_with_insurance() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: None,
+                    timeouts_at: 100u64,
                     delay_steps_at: None,
                     status: CircuitStatus::PendingInsurance,
                     total_reward: Some(fee),
@@ -765,6 +769,7 @@ fn circuit_handles_swap_with_insurance() {
                 vec![vec![FullSideEffect {
                     input: valid_swap_side_effect.clone(),
                     confirmed: None,
+                    security_lvl: SecurityLvl::Optimistic,
                 }]]
             );
 
@@ -798,7 +803,7 @@ fn circuit_handles_swap_with_insurance() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: None,
+                    timeouts_at: 100u64,
                     delay_steps_at: None,
                     status: CircuitStatus::Ready,
                     total_reward: Some(fee),
@@ -1003,7 +1008,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: None,
+                    timeouts_at: 100u64,
                     delay_steps_at: None,
                     status: CircuitStatus::PendingInsurance,
                     total_reward: Some(fee),
@@ -1016,6 +1021,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
                 vec![vec![FullSideEffect {
                     input: valid_add_liquidity_side_effect.clone(),
                     confirmed: None,
+                    security_lvl: SecurityLvl::Optimistic,
                 }]]
             );
 
@@ -1049,7 +1055,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: None,
+                    timeouts_at: 100u64,
                     delay_steps_at: None,
                     status: CircuitStatus::Ready,
                     total_reward: Some(fee),
@@ -1157,16 +1163,20 @@ fn circuit_handles_transfer_and_swap() {
             assert_eq!(events.len(), 8);
 
             let xtx_id: sp_core::H256 =
-                hex!("d02e1b7d4ee308b8b0fad924fd35bb3688760fc986bc1b44e8f123f17aed8a7a").into();
+                hex!("c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6").into();
 
             // Confirmation start
-            let encoded_balance_transfer_event = pallet_balances::Event::<Test>::Transfer {
+            let mut encoded_balance_transfer_event = pallet_balances::Event::<Test>::Transfer {
                 from: hex!("0909090909090909090909090909090909090909090909090909090909090909")
                     .into(), // variant A
                 to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(), // variant B (dest)
                 amount: 1, // variant A
             }
             .encode();
+
+            // Adding 4 since Balances Pallet = 4 in construct_runtime! enum
+            let mut encoded_event = vec![4];
+            encoded_event.append(&mut encoded_balance_transfer_event);
 
             println!(
                 "full side effects before confirmation: {:?}",
@@ -1203,13 +1213,17 @@ fn circuit_handles_transfer_and_swap() {
             );
 
             // Confirmation start
-            let encoded_swap_transfer_event = orml_tokens::Event::<Test>::Transfer {
+            let mut encoded_swap_transfer_event = orml_tokens::Event::<Test>::Transfer {
                 currency_id: as_u32_le(&[0, 1, 2, 3]), // currency_id as u8 bytes [0,1,2,3] -> u32
                 from: BOB_RELAYER,                     // executor - Bob
                 to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(), // variant B (dest)
                 amount: 2u64, // amount - variant B
             }
             .encode();
+
+            // Adding 4 since Balances Pallet = 4 in construct_runtime! enum
+            let mut encoded_event = vec![4];
+            encoded_event.append(&mut encoded_swap_transfer_event);
 
             let confirmation_swap = ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
                 err: None,
@@ -1239,5 +1253,112 @@ fn circuit_handles_transfer_and_swap() {
                 None,
                 None,
             ));
+        });
+}
+
+#[test]
+fn circuit_cancels_xtx_after_timeout() {
+    let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
+
+    let _origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
+
+    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
+    let _swap_protocol_box = ExtBuilder::get_swap_protocol_box();
+
+    let mut local_state = LocalState::new();
+    let valid_transfer_side_effect = produce_and_validate_side_effect(
+        vec![
+            (Type::Address(32), ArgVariant::A),
+            (Type::Address(32), ArgVariant::B),
+            (Type::Uint(64), ArgVariant::A),
+            (Type::Bytes(0), ArgVariant::A), // empty bytes instead of insurance
+        ],
+        &mut local_state,
+        transfer_protocol_box,
+    );
+
+    let side_effects = vec![valid_transfer_side_effect.clone()];
+    let fee = 1;
+    let sequential = false;
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 10);
+
+            System::set_block_number(1);
+
+            assert_ok!(Circuit::on_extrinsic_trigger(
+                origin,
+                side_effects,
+                fee,
+                sequential,
+            ));
+
+            let events = System::events();
+            // assert_eq!(events.len(), 8);
+
+            let xtx_id: sp_core::H256 =
+                hex!("c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6").into();
+
+            // The tiemout links that will be checked at on_initialize are there
+            assert_eq!(Circuit::get_active_timing_links(xtx_id), Some(100u64));
+
+            assert_eq!(
+                Circuit::get_x_exec_signals(xtx_id),
+                Some(XExecSignal {
+                    requester: AccountId32::new(hex!(
+                        "0101010101010101010101010101010101010101010101010101010101010101"
+                    )),
+                    timeouts_at: 100u64,
+                    delay_steps_at: None,
+                    status: CircuitStatus::Ready,
+                    total_reward: Some(fee),
+                    steps_cnt: (0, 1),
+                })
+            );
+
+            System::set_block_number(100);
+
+            <Circuit as frame_support::traits::OnInitialize<u64>>::on_initialize(100);
+
+            assert_eq!(
+                Circuit::get_x_exec_signals(xtx_id),
+                Some(XExecSignal {
+                    requester: AccountId32::new(hex!(
+                        "0101010101010101010101010101010101010101010101010101010101010101"
+                    )),
+                    timeouts_at: 100u64,
+                    delay_steps_at: None,
+                    status: CircuitStatus::RevertedTimedOut,
+                    total_reward: Some(fee),
+                    steps_cnt: (0, 1),
+                })
+            );
+
+            assert_eq!(Circuit::get_active_timing_links(xtx_id), None);
+
+            // Emits event notifying about cancellation
+            let mut events = System::events();
+            // assert_eq!(events.len(), 9);
+            assert_eq!(
+                events.pop(),
+                Some(EventRecord {
+                    phase: Phase::Initialization,
+                    event: Event::Circuit(
+                        crate::Event::<Test>::XTransactionXtxRevertedAfterTimeOut(
+                            hex!(
+                                "c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6"
+                            )
+                            .into()
+                        )
+                    ),
+                    topics: vec![]
+                }),
+            );
+
+            // Voids all associated side effects with Xtx by setting their confirmation to Err
         });
 }

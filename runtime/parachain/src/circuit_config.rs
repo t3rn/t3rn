@@ -1,5 +1,5 @@
 use super::*;
-use frame_support::parameter_types;
+use frame_support::{parameter_types, traits::ConstU32};
 use sp_core::H256;
 use sp_runtime::traits::*;
 use t3rn_primitives::bridges::runtime as bp_runtime;
@@ -65,6 +65,8 @@ impl pallet_circuit::Config for Runtime {
     type SelfGatewayId = SelfGatewayId;
     type WeightInfo = ();
     type Xdns = XDNS;
+    type XtxTimeoutCheckInterval = ConstU32<10>;
+    type XtxTimeoutDefault = ConstU32<100>;
 }
 
 parameter_types! {

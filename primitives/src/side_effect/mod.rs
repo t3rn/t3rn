@@ -45,9 +45,26 @@ impl<
     }
 }
 
+#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
+pub enum ConfirmationOutcome {
+    Success,
+    MisbehaviourMalformedValues {
+        key: Bytes,
+        expected: Bytes,
+        received: Bytes,
+    },
+    TimedOut,
+}
+
+impl Default for ConfirmationOutcome {
+    fn default() -> Self {
+        ConfirmationOutcome::Success
+    }
+}
+
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf> {
-    pub err: Option<Bytes>,
+    pub err: Option<ConfirmationOutcome>,
     pub output: Option<Bytes>,
     pub encoded_effect: Bytes,
     pub inclusion_proof: Option<Bytes>,

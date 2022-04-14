@@ -8,7 +8,7 @@ use pallet_babe::{EquivocationHandler, ExternalTrigger};
 use frame_support::{
     pallet_prelude::GenesisBuild,
     parameter_types,
-    traits::{ConstU32, Everything, KeyOwnerProofSystem, Nothing},
+    traits::{ConstU32, ConstU64, Everything, KeyOwnerProofSystem, Nothing},
 };
 use sp_runtime::{
     curve::PiecewiseLinear,
@@ -492,6 +492,8 @@ impl Config for Test {
     type SelfGatewayId = SelfGatewayId;
     type WeightInfo = ();
     type Xdns = XDNS;
+    type XtxTimeoutCheckInterval = ConstU64<10>;
+    type XtxTimeoutDefault = ConstU64<100>;
 }
 
 impl ExtBuilder {

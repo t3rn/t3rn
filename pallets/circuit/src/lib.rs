@@ -57,7 +57,6 @@ use frame_support::traits::{Currency, ExistenceRequirement::AllowDeath, Get};
 
 use sp_runtime::KeyTypeId;
 
-
 pub use pallet::*;
 use t3rn_primitives::{
     circuit_portal::CircuitPortal, side_effect::SecurityLvl, transfers::EscrowedBalanceOf,
@@ -93,7 +92,7 @@ use crate::state::*;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use crate::{escrow::Escrow};
+    use crate::escrow::Escrow;
     use frame_support::{
         pallet_prelude::*,
         traits::{
@@ -274,7 +273,7 @@ pub mod pallet {
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
         fn on_initialize(n: T::BlockNumber) -> Weight {
             // Check every XtxTimeoutCheckInterval blocks
-            if T::XtxTimeoutCheckInterval::get() % n == T::BlockNumber::from(0u8) {
+            if n % T::XtxTimeoutCheckInterval::get() == T::BlockNumber::from(0u8) {
                 // Go over all unfinished Xtx to find those that timed out
                 <ActiveXExecSignalsTimingLinks<T>>::iter()
                     .find(|(_xtx_id, timeout_at)| {
@@ -288,9 +287,8 @@ pub mod pallet {
                             Some(xtx_id),
                         )
                         .unwrap();
-
+                        local_xtx_ctx.xtx.status = CircuitStatus::RevertedTimedOut;
                         Self::apply(&mut local_xtx_ctx, None).unwrap();
-
                         Self::emit(
                             local_xtx_ctx.xtx_id,
                             Some(local_xtx_ctx.xtx),
@@ -420,7 +418,6 @@ pub mod pallet {
                 "on_extrinsic_trigger -- finished setup -- xtx id {:?}",
                 local_xtx_ctx.xtx_id
             );
-
             // Validate: Side Effects
             Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential)?;
             log::debug!("on_extrinsic_trigger -- finished validate");
@@ -603,6 +600,8 @@ pub mod pallet {
         XTransactionStepFinishedExec(XExecSignalId<T>),
         // Listeners - users + SDK + UI to know whether their request is accepted for exec and finished
         XTransactionXtxFinishedExecAllSteps(XExecSignalId<T>),
+        // Listeners - users + SDK + UI to know whether their request is accepted for exec and finished
+        XTransactionXtxRevertedAfterTimeOut(XExecSignalId<T>),
         // Listeners - executioners/relayers to know new challenges and perform offline risk/reward calc
         //  of whether side effect is worth picking up
         NewSideEffectsAvailable(
@@ -765,7 +764,9 @@ impl<T: Config> Pallet<T> {
                     Err(Error::<T>::SetupFailedEmptyXtx)
                 }
             },
-            CircuitStatus::Ready | CircuitStatus::PendingExecution => {
+            CircuitStatus::Ready
+            | CircuitStatus::PendingExecution
+            | CircuitStatus::RevertedTimedOut => {
                 if let Some(id) = xtx_id {
                     if !<Self as Store>::XExecSignals::contains_key(id) {
                         return Err(Error::<T>::SetupFailedUnknownXtx)
@@ -1080,6 +1081,8 @@ impl<T: Config> Pallet<T> {
                     Self::deposit_event(Event::XTransactionStepFinishedExec(xtx_id)),
                 CircuitStatus::FinishedAllSteps =>
                     Self::deposit_event(Event::XTransactionXtxFinishedExecAllSteps(xtx_id)),
+                CircuitStatus::RevertedTimedOut =>
+                    Self::deposit_event(Event::XTransactionXtxRevertedAfterTimeOut(xtx_id)),
                 _ => {},
             }
             if xtx.status >= CircuitStatus::PendingExecution {
@@ -1244,30 +1247,30 @@ impl<T: Config> Pallet<T> {
                     confirmed: None,
                     security_lvl: SecurityLvl::Optimistic,
                 })
-            }
-            fn determine_dirty_vs_escrowed_lvl<T: Config>(
-                side_effect: &SideEffect<
-                    <T as frame_system::Config>::AccountId,
-                    <T as frame_system::Config>::BlockNumber,
-                    EscrowedBalanceOf<T, T::Escrowed>,
-                >,
-            ) -> SecurityLvl {
-                fn is_escrowed<T: Config>(chain_id: &ChainId) -> bool {
-                    let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(chain_id);
-                    gateway_type == GatewayType::ProgrammableInternal(0)
-                        || gateway_type == GatewayType::OnCircuit(0)
+            } else {
+                fn determine_dirty_vs_escrowed_lvl<T: Config>(
+                    side_effect: &SideEffect<
+                        <T as frame_system::Config>::AccountId,
+                        <T as frame_system::Config>::BlockNumber,
+                        EscrowedBalanceOf<T, T::Escrowed>,
+                    >,
+                ) -> SecurityLvl {
+                    fn is_escrowed<T: Config>(chain_id: &ChainId) -> bool {
+                        let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(chain_id);
+                        gateway_type == GatewayType::ProgrammableInternal(0)
+                            || gateway_type == GatewayType::OnCircuit(0)
+                    }
+                    if is_escrowed::<T>(&side_effect.target) {
+                        return SecurityLvl::Escrowed
+                    }
+                    SecurityLvl::Dirty
                 }
-                if is_escrowed::<T>(&side_effect.target) {
-                    return SecurityLvl::Escrowed
-                }
-                SecurityLvl::Dirty
+                full_side_effects.push(FullSideEffect {
+                    input: side_effect.clone(),
+                    confirmed: None,
+                    security_lvl: determine_dirty_vs_escrowed_lvl::<T>(&side_effect),
+                });
             }
-
-            full_side_effects.push(FullSideEffect {
-                input: side_effect.clone(),
-                confirmed: None,
-                security_lvl: determine_dirty_vs_escrowed_lvl::<T>(&side_effect),
-            });
         }
 
         let full_side_effects_steps: Vec<
