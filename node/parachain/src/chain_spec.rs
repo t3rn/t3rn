@@ -55,6 +55,7 @@ fn fetch_xdns_record_from_rpc(
         Ok(<XdnsRecord<AccountId>>::new(
             format!("wss://{}", params.host).as_bytes().to_vec(),
             chain_id,
+            None,
             Default::default(),
             GatewayVendor::Substrate,
             GatewayType::ProgrammableExternal(0),

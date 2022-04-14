@@ -37,6 +37,8 @@ pub struct XdnsRecord<AccountId> {
     /// Gateway Id
     pub gateway_id: ChainId,
 
+    pub parachain_id: Option<u32>,
+
     /// Gateway System Properties
     pub gateway_sys_props: GatewaySysProps,
 
@@ -56,6 +58,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
         extrinsics_version: u8,
         genesis_hash: Vec<u8>,
         gateway_id: ChainId,
+        parachain_id: Option<u32>,
         gateway_vendor: GatewayVendor,
         gateway_type: GatewayType,
         gateway_sys_props: GatewaySysProps,
@@ -76,6 +79,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
             gateway_vendor,
             gateway_type,
             gateway_id,
+            parachain_id,
             gateway_sys_props,
             registrant,
             last_finalized,
@@ -86,6 +90,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
     pub fn new(
         url: Vec<u8>,
         gateway_id: ChainId,
+        parachain_id: Option<u32>,
         gateway_abi: GatewayABIConfig,
         gateway_vendor: GatewayVendor,
         gateway_type: GatewayType,
@@ -96,6 +101,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
         XdnsRecord {
             url,
             gateway_id,
+            parachain_id,
             gateway_abi,
             gateway_vendor,
             gateway_type,
@@ -133,6 +139,7 @@ pub trait Xdns<T: frame_system::Config> {
         origin: OriginFor<T>,
         url: Vec<u8>,
         gateway_id: ChainId,
+        parachain_id: Option<u32>,
         gateway_abi: GatewayABIConfig,
         gateway_vendor: GatewayVendor,
         gateway_type: GatewayType,
