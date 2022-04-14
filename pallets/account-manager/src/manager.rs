@@ -4,7 +4,7 @@ use crate::{
 };
 use frame_support::{
     dispatch::DispatchResult,
-    traits::{Currency, ExistenceRequirement, Get},
+    traits::{BalanceStatus, Currency, ExistenceRequirement, Get, ReservableCurrency},
 };
 use sp_runtime::{traits::Zero, Percent};
 use sp_std::borrow::ToOwned;
@@ -25,6 +25,7 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
             amount,
             ExistenceRequirement::KeepAlive,
         )?;
+        T::Currency::reserve(&T::EscrowAccount::get(), amount)?;
 
         if ExecutionRegistry::<T>::contains_key(execution_id) {
             return Err(Error::<T>::ExecutionAlreadyRegistered.into())
@@ -56,11 +57,11 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
     }
 
     fn issue(recipient: &T::AccountId, amount: BalanceOf<T>) -> DispatchResult {
-        T::Currency::transfer(
+        T::Currency::repatriate_reserved(
             &T::EscrowAccount::get(),
             recipient,
             amount,
-            ExistenceRequirement::KeepAlive,
+            BalanceStatus::Free,
         )?;
 
         Self::deposit_event(Event::Issued {
@@ -121,7 +122,7 @@ mod tests {
             .unwrap();
 
             assert_eq!(
-                Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
+                Balances::reserved_balance(&<Test as Config>::EscrowAccount::get()),
                 DEFAULT_BALANCE / 10
             );
 
@@ -155,6 +156,7 @@ mod tests {
     fn test_finalize_no_reason_works() {
         ExtBuilder::default().build().execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, DEFAULT_BALANCE);
+            let _ = Balances::deposit_creating(&BOB, DEFAULT_BALANCE);
             let _ = Balances::deposit_creating(
                 &<Test as Config>::EscrowAccount::get(),
                 DEFAULT_BALANCE,
@@ -166,18 +168,18 @@ mod tests {
                 BalanceOf<Test>,
             >>::deposit(&ALICE, &BOB, tx_amt));
             assert_eq!(
-                Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
-                DEFAULT_BALANCE + tx_amt
+                Balances::reserved_balance(&<Test as Config>::EscrowAccount::get()),
+                tx_amt
             );
             assert_ok!(<AccountManager as AccountManagerExt<
                 AccountId,
                 BalanceOf<Test>,
             >>::finalize(EXECUTION_ID, None));
             assert_eq!(
-                Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
-                DEFAULT_BALANCE
+                Balances::reserved_balance(&<Test as Config>::EscrowAccount::get()),
+                0
             );
-            assert_eq!(Balances::free_balance(&BOB), tx_amt);
+            assert_eq!(Balances::free_balance(&BOB), DEFAULT_BALANCE + tx_amt);
             assert_eq!(Balances::free_balance(&ALICE), DEFAULT_BALANCE - tx_amt);
             assert_eq!(AccountManager::execution_registry(EXECUTION_ID), None);
         });
@@ -187,6 +189,7 @@ mod tests {
     fn test_finalize_revert_works() {
         ExtBuilder::default().build().execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, DEFAULT_BALANCE);
+            let _ = Balances::deposit_creating(&BOB, DEFAULT_BALANCE);
             let _ = Balances::deposit_creating(
                 &<Test as Config>::EscrowAccount::get(),
                 DEFAULT_BALANCE,
@@ -198,8 +201,8 @@ mod tests {
                 BalanceOf<Test>,
             >>::deposit(&ALICE, &BOB, tx_amt));
             assert_eq!(
-                Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
-                DEFAULT_BALANCE + tx_amt
+                Balances::reserved_balance(&<Test as Config>::EscrowAccount::get()),
+                tx_amt
             );
             assert_ok!(<AccountManager as AccountManagerExt<
                 AccountId,
@@ -211,7 +214,7 @@ mod tests {
                 Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
                 DEFAULT_BALANCE
             );
-            assert_eq!(Balances::free_balance(&BOB), 10_000); // 10% of the original balance
+            assert_eq!(Balances::free_balance(&BOB), DEFAULT_BALANCE + 10_000); // 10% of the original balance
             assert_eq!(
                 Balances::free_balance(&ALICE),
                 (DEFAULT_BALANCE - tx_amt) + 90_000
@@ -224,6 +227,7 @@ mod tests {
     fn test_finalize_unexpected_works() {
         ExtBuilder::default().build().execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, DEFAULT_BALANCE);
+            let _ = Balances::deposit_creating(&BOB, DEFAULT_BALANCE);
             let _ = Balances::deposit_creating(
                 &<Test as Config>::EscrowAccount::get(),
                 DEFAULT_BALANCE,
@@ -235,8 +239,8 @@ mod tests {
                 BalanceOf<Test>,
             >>::deposit(&ALICE, &BOB, tx_amt));
             assert_eq!(
-                Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
-                DEFAULT_BALANCE + tx_amt
+                Balances::reserved_balance(&<Test as Config>::EscrowAccount::get()),
+                tx_amt
             );
             assert_ok!(<AccountManager as AccountManagerExt<
                 AccountId,
@@ -248,7 +252,7 @@ mod tests {
                 Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
                 DEFAULT_BALANCE
             );
-            assert_eq!(Balances::free_balance(&BOB), 50_000); // 50% of the original balance
+            assert_eq!(Balances::free_balance(&BOB), DEFAULT_BALANCE + 50_000); // 50% of the original balance
             assert_eq!(
                 Balances::free_balance(&ALICE),
                 (DEFAULT_BALANCE - tx_amt) + 50_000
