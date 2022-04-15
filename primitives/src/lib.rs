@@ -52,6 +52,7 @@ pub mod transfers;
 pub mod volatile;
 pub mod xdns;
 pub mod xtx;
+pub mod freevm;
 
 pub use gateway_inbound_protocol::GatewayInboundProtocol;
 pub use orml_traits;

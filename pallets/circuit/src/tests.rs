@@ -1101,7 +1101,6 @@ fn circuit_handles_add_liquidity_with_insurance() {
 
 // Ignored for now because of a bug described in t3rn#261
 #[test]
-#[ignore]
 fn circuit_handles_transfer_and_swap() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
@@ -1332,7 +1331,7 @@ fn circuit_cancels_xtx_after_timeout() {
                     )),
                     timeouts_at: 100u64,
                     delay_steps_at: None,
-                    status: CircuitStatus::RevertedTimedOut,
+                    status: CircuitStatus::RevertTimedOut,
                     total_reward: Some(fee),
                     steps_cnt: (0, 1),
                 })

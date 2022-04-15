@@ -33,15 +33,17 @@ pub enum CircuitStatus {
     PendingExecution,
     Finished,
     FinishedAllSteps,
+    RevertTimedOut,
+    RevertKill,
     Committed,
     Reverted,
-    RevertedTimedOut,
 }
 
 #[derive(Clone, Eq, PartialEq, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum CircuitRole {
     Relayer,
     Requester,
+    ContractAuthor,
     Local,
 }
 

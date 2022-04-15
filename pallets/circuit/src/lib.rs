@@ -273,6 +273,8 @@ pub mod pallet {
         /// A type that provides access to Xdns
         type Xdns: Xdns<Self>;
 
+        // type FreeVM: FreeVM<Self>;
+
         /// A type that manages escrow, and therefore balances
         type Escrowed: EscrowTrait<Self>;
 
@@ -301,19 +303,20 @@ pub mod pallet {
                     })
                     .map(|(xtx_id, _timeout_at)| {
                         let mut local_xtx_ctx = Self::setup(
-                            CircuitStatus::RevertedTimedOut,
+                            CircuitStatus::RevertTimedOut,
                             &Self::account_id(),
                             Zero::zero(),
                             Some(xtx_id),
                         )
                         .unwrap();
-                        local_xtx_ctx.xtx.status = CircuitStatus::RevertedTimedOut;
-                        Self::apply(&mut local_xtx_ctx, None).unwrap();
+
+                        Self::kill(&mut local_xtx_ctx, CircuitStatus::RevertTimedOut);
+
                         Self::emit(
                             local_xtx_ctx.xtx_id,
                             Some(local_xtx_ctx.xtx),
                             &Self::account_id(),
-                            &[],
+                            &vec![],
                             None,
                         );
                     });
@@ -343,31 +346,64 @@ pub mod pallet {
     }
 
     impl<T: Config> OnLocalTrigger<T> for Pallet<T> {
-        fn on_local_trigger(_origin: &OriginFor<T>, _trigger: LocalTrigger<T>) -> DispatchResult {
-            // ToDo: pallet-circuit x-t3rn# : Authorize : Check TriggerAuthRights for local triggers
+        fn on_local_trigger(origin: OriginFor<T>, trigger: LocalTrigger<T>) -> DispatchResult {
+            // Authorize: Retrieve sender of the transaction.
+            let requester = Self::authorize(origin, CircuitRole::ContractAuthor)?;
 
-            // ToDo: pallet-circuit x-t3rn# : Validate : insurance for reversible side effects if necessary
+            let fresh_or_revoked_exec = match trigger.maybe_xtx_id {
+                Some(_xtx_id) => CircuitStatus::Ready,
+                None => CircuitStatus::Requested,
+            };
+            // Setup: new xtx context
+            let mut local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
+                fresh_or_revoked_exec.clone(),
+                &requester,
+                Zero::zero(),
+                trigger.maybe_xtx_id,
+            )?;
 
-            // ToDo: pallet-circuit x-t3rn# : Charge : fees
+            // Charge: Ensure can afford
+            // ToDo: Charge requester for contract with gas_estimation
+            Self::charge(&requester, Zero::zero()).map_err(|_e| {
+                if fresh_or_revoked_exec == CircuitStatus::Ready {
+                    Self::kill(&mut local_xtx_ctx, CircuitStatus::RevertKill)
+                }
+                Error::<T>::ContractXtxKilledRunOutOfFunds
+            })?;
 
-            // ToDo: pallet-circuit x-t3rn# : Design Storage - Propose and organise the state of Circuit. Specifically inspect the state updates in between CircuitPortal + Circuit
+            // ToDo: This should be replaced with call to 3VM from the trait as a dep inj. @Don
+            // let side_effects = T::FreeVM::exec_in_xtx_ctx(
+            let side_effects = Self::exec_in_xtx_ctx(
+                local_xtx_ctx.xtx_id.clone(),
+                local_xtx_ctx.local_state.clone(),
+                local_xtx_ctx.full_side_effects.clone(),
+                local_xtx_ctx.xtx.steps_cnt.clone(),
+            )
+            .map_err(|_e| {
+                if fresh_or_revoked_exec == CircuitStatus::Ready {
+                    Self::kill(&mut local_xtx_ctx, CircuitStatus::RevertKill)
+                }
+                Error::<T>::ContractXtxKilledRunOutOfFunds
+            })?;
 
-            // ToDo: pallet-circuit x-t3rn# : Setup : Create new Xtx and modify state - get LocalState (for Xtx) + GlobalState (for Circuit) for exec
+            // ToDo: Align whether 3vm wants enfore side effects sequence into steps
+            let sequential = false;
+            // Validate: Side Effects
+            Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential)?;
 
-            // ToDo: pallet-circuit x-t3rn# : Emit : Connect to CircuitPortal::submit_side_effect_temp( )
+            // Apply: all necessary changes to state in 1 go
+            let (_, added_full_side_effects) = Self::apply(&mut local_xtx_ctx, None)?;
 
-            // ToDo: pallet-circuit x-t3rn# : Cancel : Execution on timeout
+            // Emit: From Circuit events
+            Self::emit(
+                local_xtx_ctx.xtx_id,
+                Some(local_xtx_ctx.xtx),
+                &requester,
+                &side_effects,
+                added_full_side_effects,
+            );
 
-            // ToDo: pallet-circuit x-t3rn# : Apply - Submission : Apply changes to storage after Submit has passed
-
-            // ToDo: pallet-circuit x-t3rn# : Apply - Confirmation : Apply changes to storage after Confirmation has passed
-
-            // ToDo: pallet-circuit x-t3rn# : Apply - Revert : Apply changes to storage after Revert has been proven
-
-            // ToDo: pallet-circuit x-t3rn# : Apply - Commit : Apply changes to storage after Successfully Commit has been requested
-
-            // ToDo: pallet-circuit x-t3rn# : Apply - Cancel : Apply changes to storage after the timeout has passed
-            Ok(())
+            Ok(().into())
         }
     }
 
@@ -377,7 +413,7 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
         pub fn on_local_trigger(origin: OriginFor<T>, trigger: Vec<u8>) -> DispatchResult {
             <Self as OnLocalTrigger<T>>::on_local_trigger(
-                &origin,
+                origin,
                 LocalTrigger::<T>::decode(&mut &trigger[..])
                     .map_err(|_| Error::<T>::InsuranceBondNotRequired)?,
             )
@@ -391,14 +427,6 @@ pub mod pallet {
 
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
         pub fn on_remote_gateway_trigger(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            // ToDo: Check TriggerAuthRights for remote gateway triggers
-
-            // Because no incentive for external relayers
-            // - Composable can only call the CALL::3VM Contract
-            // -
-
-            // Writing an app on t3rn - i can create 2 smart contracts - one one composable and the other on Circuit
-            //      writing additional smart contracts guarantes steps atomicity
             unimplemented!();
         }
 
@@ -411,20 +439,6 @@ pub mod pallet {
             fee: EscrowedBalanceOf<T, T::Escrowed>,
             sequential: bool,
         ) -> DispatchResultWithPostInfo {
-            let ids: Vec<Vec<u8>> = side_effects
-                .iter()
-                .map(|s| s.encoded_action.clone())
-                .collect();
-            let args: Vec<Vec<Vec<u8>>> = side_effects
-                .iter()
-                .map(|s| s.encoded_args.clone())
-                .collect();
-            let targets: Vec<[u8; 4]> = side_effects.iter().map(|s| s.target.clone()).collect();
-
-            log::debug!("on_extrinsic_trigger -- start : SE IDs {:?}", ids);
-            log::debug!("on_extrinsic_trigger -- start : SE args {:?}", args);
-            log::debug!("on_extrinsic_trigger -- start : SE targets {:?}", targets);
-
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin, CircuitRole::Requester)?;
             // Charge: Ensure can afford
@@ -497,7 +511,13 @@ pub mod pallet {
             }?;
 
             // Emit: From Circuit events
-            Self::emit(local_xtx_ctx.xtx_id, maybe_xtx_changed, &relayer, &[], None);
+            Self::emit(
+                local_xtx_ctx.xtx_id,
+                maybe_xtx_changed,
+                &relayer,
+                &vec![],
+                None,
+            );
 
             Ok(().into())
         }
@@ -600,7 +620,7 @@ pub mod pallet {
                 local_xtx_ctx.xtx_id,
                 maybe_xtx_changed,
                 &relayer,
-                &[],
+                &vec![],
                 assert_full_side_effects_changed,
             );
 
@@ -672,6 +692,7 @@ pub mod pallet {
     #[pallet::error]
     pub enum Error<T> {
         RequesterNotEnoughBalance,
+        ContractXtxKilledRunOutOfFunds,
         ChargingTransferFailed,
         RewardTransferFailed,
         RefundTransferFailed,
@@ -790,7 +811,7 @@ impl<T: Config> Pallet<T> {
             },
             CircuitStatus::Ready
             | CircuitStatus::PendingExecution
-            | CircuitStatus::RevertedTimedOut => {
+            | CircuitStatus::RevertTimedOut => {
                 if let Some(id) = xtx_id {
                     if !<Self as Store>::XExecSignals::contains_key(id) {
                         return Err(Error::<T>::SetupFailedUnknownXtx)
@@ -1010,7 +1031,7 @@ impl<T: Config> Pallet<T> {
                     Err(Error::<T>::ApplyFailed)
                 }
             },
-            CircuitStatus::RevertedTimedOut => {
+            CircuitStatus::RevertTimedOut => {
                 <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
                     *x = Some(local_ctx.xtx.clone())
                 });
@@ -1084,11 +1105,9 @@ impl<T: Config> Pallet<T> {
             XExecSignal<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
         >,
         subjected_account: &T::AccountId,
-        side_effects: &[SideEffect<
-            T::AccountId,
-            T::BlockNumber,
-            EscrowedBalanceOf<T, T::Escrowed>,
-        >],
+        side_effects: &Vec<
+            SideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+        >,
         maybe_full_side_effects: Option<
             Vec<
                 Vec<
@@ -1107,7 +1126,7 @@ impl<T: Config> Pallet<T> {
                     Self::deposit_event(Event::XTransactionStepFinishedExec(xtx_id)),
                 CircuitStatus::FinishedAllSteps =>
                     Self::deposit_event(Event::XTransactionXtxFinishedExecAllSteps(xtx_id)),
-                CircuitStatus::RevertedTimedOut =>
+                CircuitStatus::RevertTimedOut =>
                     Self::deposit_event(Event::XTransactionXtxRevertedAfterTimeOut(xtx_id)),
                 _ => {},
             }
@@ -1127,6 +1146,11 @@ impl<T: Config> Pallet<T> {
         }
     }
 
+    fn kill(local_ctx: &mut LocalXtxCtx<T>, cause: CircuitStatus) {
+        local_ctx.xtx.status = cause;
+        Self::apply(local_ctx, None).expect("Panic: apply triggered by panic should never fail");
+    }
+
     fn charge(
         requester: &T::AccountId,
         fee: EscrowedBalanceOf<T, T::Escrowed>,
@@ -1143,7 +1167,7 @@ impl<T: Config> Pallet<T> {
         let current_step = local_ctx.xtx.steps_cnt.0;
 
         match local_ctx.xtx.status {
-            CircuitStatus::RevertedTimedOut | CircuitStatus::Reverted => {
+            CircuitStatus::RevertTimedOut | CircuitStatus::Reverted => {
                 for fse in &local_ctx.full_side_effects[(current_step) as usize] {
                     let encoded_4b_action: [u8; 4] =
                         Decode::decode(&mut fse.input.encoded_action.encode().as_ref())
@@ -1310,7 +1334,7 @@ impl<T: Config> Pallet<T> {
         role: CircuitRole,
     ) -> Result<T::AccountId, sp_runtime::traits::BadOrigin> {
         match role {
-            CircuitRole::Requester => ensure_signed(origin),
+            CircuitRole::Requester | CircuitRole::ContractAuthor => ensure_signed(origin),
             // ToDo: Handle active Relayer authorisation
             CircuitRole::Relayer => ensure_signed(origin),
             // ToDo: Handle other CircuitRoles
@@ -1572,6 +1596,21 @@ impl<T: Config> Pallet<T> {
         )?;
 
         Ok(())
+    }
+
+    // ToDo: This should be called as a 3vm trait injection @Don
+    pub fn exec_in_xtx_ctx(
+        _xtx_id: T::Hash,
+        _local_state: LocalState,
+        _full_side_effects: Vec<
+            Vec<FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
+        >,
+        _steps_cnt: (u32, u32),
+    ) -> Result<
+        Vec<SideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
+        &'static str,
+    > {
+        return Ok(vec![])
     }
 
     /// The account ID of the Circuit Vault.

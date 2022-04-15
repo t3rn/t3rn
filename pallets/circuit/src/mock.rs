@@ -487,6 +487,7 @@ impl Config for Test {
     type CircuitPortal = CircuitPortal;
     type Escrowed = Self;
     type Event = Event;
+    // type FreeVM = FreeVM;
     type MultiCurrency = ORMLTokens;
     type PalletId = CircuitPalletId;
     type SelfGatewayId = SelfGatewayId;
