@@ -1350,7 +1350,7 @@ impl<T: Config> Pallet<T> {
         >],
         local_ctx: &mut LocalXtxCtx<T>,
         requester: &T::AccountId,
-        sequential: bool,
+        _sequential: bool,
     ) -> Result<(), &'static str> {
         let mut full_side_effects: Vec<
             FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
@@ -1425,39 +1425,29 @@ impl<T: Config> Pallet<T> {
             }
         }
 
-        let full_side_effects_steps: Vec<
+        // Circuit's automatic side effect ordering: execute escrowed asap, then line up optimistic ones
+        full_side_effects.sort_by(|a, b| b.security_lvl.partial_cmp(&a.security_lvl).unwrap());
+
+        // R#1: there only can be max 1 dirty side effect at each step.
+        let mut full_side_effects_steps: Vec<
             Vec<FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
-        > = match sequential {
-            false => {
-                // Here necessary to go over the break-point rules:
-                // R#1: there only can be max 1 dirty side effect at each step.
-                if full_side_effects.len() > 1
-                    && full_side_effects
-                        .iter()
-                        .filter(|&fse| fse.security_lvl == SecurityLvl::Dirty)
-                        .count()
-                        > 1
-                {
-                    return Err("Side Effects Validation Error - no more than 1 dirty side effects allowed per single step.")
-                }
-                vec![full_side_effects]
-            },
-            true => {
-                let mut sequential_order: Vec<
-                    Vec<
-                        FullSideEffect<
-                            T::AccountId,
-                            T::BlockNumber,
-                            EscrowedBalanceOf<T, T::Escrowed>,
-                        >,
-                    >,
-                > = vec![];
-                for fse in full_side_effects.iter() {
-                    sequential_order.push(vec![fse.clone()]);
-                }
-                sequential_order
-            },
-        };
+        > = vec![vec![]];
+
+        for sorted_fse in full_side_effects {
+            let current_step = full_side_effects_steps
+                .last_mut()
+                .expect("Vector initialized at declaration");
+
+            // Push to the single step as long as there's no Dirty side effect
+            if sorted_fse.security_lvl != SecurityLvl::Dirty
+                // Or if there was no Optimistic/Escrow side effects before
+                || sorted_fse.security_lvl == SecurityLvl::Dirty && current_step.is_empty()
+            {
+                current_step.push(sorted_fse);
+            } else if sorted_fse.security_lvl == SecurityLvl::Dirty {
+                full_side_effects_steps.push(vec![sorted_fse])
+            }
+        }
 
         local_ctx.full_side_effects = full_side_effects_steps;
 

@@ -1101,7 +1101,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
 
 // Ignored for now because of a bug described in t3rn#261
 #[test]
-fn circuit_handles_transfer_and_swap() {
+fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
     let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
@@ -1110,12 +1110,23 @@ fn circuit_handles_transfer_and_swap() {
     let swap_protocol_box = ExtBuilder::get_swap_protocol_box();
 
     let mut local_state = LocalState::new();
-    let valid_transfer_side_effect = produce_and_validate_side_effect(
+    let valid_transfer_side_effect_1 = produce_and_validate_side_effect(
         vec![
             (Type::Address(32), ArgVariant::A),
             (Type::Address(32), ArgVariant::B),
             (Type::Uint(64), ArgVariant::A),
             (Type::Bytes(0), ArgVariant::A), // empty bytes instead of insurance
+        ],
+        &mut local_state,
+        transfer_protocol_box.clone(),
+    );
+
+    let valid_transfer_side_effect_2 = produce_and_validate_side_effect(
+        vec![
+            (Type::Address(32), ArgVariant::A),
+            (Type::Address(32), ArgVariant::B),
+            (Type::Uint(64), ArgVariant::A),
+            (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
         ],
         &mut local_state,
         transfer_protocol_box,
@@ -1136,7 +1147,8 @@ fn circuit_handles_transfer_and_swap() {
     );
 
     let side_effects = vec![
-        valid_transfer_side_effect.clone(),
+        valid_transfer_side_effect_1.clone(),
+        valid_transfer_side_effect_2.clone(),
         valid_swap_side_effect.clone(),
     ];
     let fee = 1;
@@ -1159,7 +1171,7 @@ fn circuit_handles_transfer_and_swap() {
             ));
 
             let events = System::events();
-            assert_eq!(events.len(), 8);
+            assert_eq!(events.len(), 9);
 
             let xtx_id: sp_core::H256 =
                 hex!("c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6").into();
@@ -1200,7 +1212,7 @@ fn circuit_handles_transfer_and_swap() {
             assert_ok!(Circuit::confirm_side_effect(
                 origin_relayer_bob.clone(),
                 xtx_id.clone(),
-                valid_transfer_side_effect,
+                valid_transfer_side_effect_1,
                 confirmation_transfer,
                 None,
                 None,

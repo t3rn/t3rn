@@ -73,11 +73,11 @@ pub struct ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub cost: Option<BalanceOf>,
 }
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(Clone, Eq, PartialEq, PartialOrd, Ord, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum SecurityLvl {
-    Dirty,
-    Optimistic,
-    Escrowed
+    Dirty = 0,
+    Optimistic = 1,
+    Escrowed = 2
 }
 
 impl Default for SecurityLvl {
