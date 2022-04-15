@@ -73,14 +73,10 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: 🐳 Build & Publish Docker image
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          push: true
-          tags: t3rn/circuit-parachain:latest
-          platforms: linux/amd64
-          file: docker/circuit-parachain.Dockerfile
+      - name: 🐳 Build & publish Docker image
+        run: |
+          docker build -f docker/circuit-parachain.Dockerfile -t t3rn/circuit-parachain:latest .
+          docker push t3rn/circuit-parachain:latest
 
   release-on-github:
     runs-on: ubuntu-20.04
@@ -115,7 +111,8 @@ jobs:
           node -e "
             const lines = require('fs').readFileSync('./CHANGELOG.md', 'utf8').split(/(\n)/g).filter(Boolean);
             let head = lines.findIndex(l => /^\s*##[^v]+${{ env.PUSHED_TAG }}/.test(l));
-            if (head === -1) { throw Error('failed parsing changelog') } else head = head + 1;
+            if (head === -1) { throw Error('cannot parse ${{ env.PUSHED_TAG }} from changelog') }
+            else head = head + 1;
             let tail = lines.slice(head).findIndex(l => /^\s*##[^v]+v/.test(l));
             tail = tail === -1 ? lines.length : tail + head;
             console.log(lines.slice(head, tail).join(''));
