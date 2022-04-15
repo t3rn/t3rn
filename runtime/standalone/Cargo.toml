@@ -19,12 +19,13 @@ scale-info  = { version = "1.0", default-features = false, features = [ "derive"
 serde       = { version = "1.0", default-features = false, optional = true, features = [ "derive" ] }
 
 # Circuit dependencies
-pallet-circuit                            = { path = "../../pallets/circuit", default-features = false }
-pallet-circuit-portal                     = { path = "../../pallets/circuit-portal", default-features = false }
-pallet-circuit-portal-rpc-runtime-api     = { path = "../../pallets/circuit-portal/rpc/runtime-api", default-features = false }
 pallet-3vm-contracts                      = { path = "../../3vm/pallets/wasm-contracts", default-features = false, package = "pallet-wasm-contracts" }
 pallet-3vm-contracts-primitives           = { path = "../../3vm/pallets/wasm-contracts/common", default-features = false, package = "pallet-contracts-primitives" }
 pallet-3vm-contracts-rpc-runtime-api      = { path = "../../3vm/pallets/wasm-contracts/rpc/runtime-api", default-features = false, package = "pallet-contracts-rpc-runtime-api" }
+pallet-account-manager                    = { path = "../../pallets/account-manager", default-features = false }
+pallet-circuit                            = { path = "../../pallets/circuit", default-features = false }
+pallet-circuit-portal                     = { path = "../../pallets/circuit-portal", default-features = false }
+pallet-circuit-portal-rpc-runtime-api     = { path = "../../pallets/circuit-portal/rpc/runtime-api", default-features = false }
 pallet-contracts-registry                 = { path = "../../pallets/contracts-registry", default-features = false }
 pallet-contracts-registry-rpc-runtime-api = { path = "../../pallets/contracts-registry/rpc/runtime-api", default-features = false }
 pallet-mfv                                = { package = "pallet-multi-finality-verifier", path = "../../pallets/multi-finality-verifier", version = "1.0.0-alpha.0", default-features = false }
@@ -39,8 +40,6 @@ t3rn-protocol   = { path = "../../protocol", default-features = false }
 #pallet-evm = { git = "https://github.com/t3rn/frontier", branch = "polkadot-v0.9.17", default-features = false }
 #pallet-ethereum = { git = "https://github.com/t3rn/frontier", branch = "polkadot-v0.9.17", default-features = false }
 #pallet-evm-precompile-simple = { git = "https://github.com/t3rn/frontier", branch = "polkadot-v0.9.17", default-features = false }
-
-
 
 # Substrate Dependencies
 frame-executive                            = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', default-features = false }
@@ -118,6 +117,7 @@ std = [
   "pallet-3vm-contracts/std",
   "pallet-3vm-contracts-primitives/std",
   "pallet-3vm-contracts-rpc-runtime-api/std",
+  "pallet-account-manager/std",
   #	"pallet-evm/std",
   #	"pallet-ethereum/std",
   #	"pallet-evm-precompile-simple/std",
@@ -168,12 +168,13 @@ runtime-benchmarks = [
   'frame-system-benchmarking',
   'frame-system/runtime-benchmarks',
   'hex-literal',
+  'pallet-account-manager/runtime-benchmarks',
   'pallet-balances/runtime-benchmarks',
   'pallet-circuit-portal/runtime-benchmarks',
+  'pallet-contracts-registry/runtime-benchmarks',
   'pallet-xdns/runtime-benchmarks',
   'pallet-timestamp/runtime-benchmarks',
   'sp-runtime/runtime-benchmarks',
-  'pallet-contracts-registry/runtime-benchmarks',
   "orml-tokens/std",
   "orml-traits/std",
 ]

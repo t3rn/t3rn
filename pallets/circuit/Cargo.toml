@@ -21,7 +21,7 @@ log                = { version = "0.4", default-features = false }
 pallet-timestamp   = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
 scale-info         = { version = "1.0", default-features = false, features = [ "derive" ] }
 serde              = { version = "1.0", default-features = false, optional = true, features = [ "derive" ] }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', default-features = false }
+sp-core            = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', default-features = false }
 sp-io              = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
 sp-runtime         = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
 sp-std             = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
@@ -47,13 +47,13 @@ sp-staking                      = { git = "https://github.com/paritytech/substra
 pallet-randomness-collective-flip = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17' }
 pallet-transaction-payment        = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17' }
 
-orml-tokens               = { git = "https://github.com/t3rn/open-runtime-module-library", branch = "polkadot-v0.9.17" }
-pallet-balances           = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
-pallet-sudo               = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
+orml-tokens     = { git = "https://github.com/t3rn/open-runtime-module-library", branch = "polkadot-v0.9.17" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
+pallet-sudo     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
 
-pallet-xdns               = { path = "../../pallets/xdns" }
 pallet-circuit-portal     = { path = "../circuit-portal" }
 pallet-contracts-registry = { path = "../../pallets/contracts-registry" }
+pallet-xdns               = { path = "../../pallets/xdns" }
 
 #snowbridge-basic-channel = { git = "https://github.com/t3rn/snowbridge", branch = "polkadot-v0.9.17", default-features = false }
 

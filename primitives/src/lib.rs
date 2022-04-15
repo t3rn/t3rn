@@ -37,6 +37,7 @@ use sp_std::{convert::TryFrom, prelude::*, vec};
 use std::fmt::Debug;
 
 pub mod abi;
+pub mod account_manager;
 pub mod bridges;
 pub mod circuit;
 pub mod circuit_portal;

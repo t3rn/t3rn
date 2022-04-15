@@ -1165,6 +1165,7 @@ dependencies = [
  "log",
  "orml-tokens",
  "orml-traits",
+ "pallet-account-manager",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
@@ -1270,6 +1271,7 @@ dependencies = [
  "node-primitives",
  "orml-tokens",
  "orml-traits",
+ "pallet-account-manager",
  "pallet-aura",
  "pallet-balances",
  "pallet-beefy",
@@ -5863,6 +5865,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ff55baddef9e4ad00f88b6c743a2a8062d4c6ade126c2a528644b8e444d52ce"
 dependencies = [
  "stable_deref_trait",
+]
+
+[[package]]
+name = "pallet-account-manager"
+version = "1.0.0-alpha.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-metadata",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-balances",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "parity-scale-codec 2.3.1",
+ "scale-info 1.0.0",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-keystore",
+ "sp-runtime",
+ "sp-std",
+ "sp-version",
+ "t3rn-primitives",
 ]
 
 [[package]]

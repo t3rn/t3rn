@@ -40,6 +40,7 @@ use pallet_transaction_payment::CurrencyAdapter;
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
+pub mod accounts_config;
 pub mod circuit_config;
 pub mod contracts_config;
 pub mod orml_config;
@@ -319,6 +320,7 @@ construct_runtime!(
 
         // 3VM
         Contracts: pallet_3vm_contracts = 119,
+        AccountManager: pallet_account_manager = 125,
     }
 );
 
@@ -353,16 +355,6 @@ pub type Executive = frame_executive::Executive<
 #[cfg(feature = "runtime-benchmarks")]
 #[macro_use]
 extern crate frame_benchmarking;
-
-#[cfg(feature = "runtime-benchmarks")]
-mod benches {
-    define_benchmarks!(
-        [frame_benchmarking, BaselineBench::<Runtime>]
-        [frame_system, SystemBench::<Runtime>]
-        [pallet_balances, Balances]
-        [pallet_timestamp, Timestamp]
-    );
-}
 
 impl_runtime_apis! {
     impl sp_api::Core<Block> for Runtime {
@@ -589,4 +581,15 @@ impl_runtime_apis! {
             Ok(batches)
         }
     }
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benches {
+    define_benchmarks!(
+        [frame_benchmarking, BaselineBench::<Runtime>]
+        [frame_system, SystemBench::<Runtime>]
+        [pallet_balances, Balances]
+        [pallet_timestamp, Timestamp]
+        [pallet_account_manager, AccountManager]
+    );
 }
