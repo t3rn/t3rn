@@ -1099,8 +1099,146 @@ fn circuit_handles_add_liquidity_with_insurance() {
         });
 }
 
-// Ignored for now because of a bug described in t3rn#261
 #[test]
+fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_confirmed() {
+    let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
+
+    let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
+
+    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
+
+    let mut local_state = LocalState::new();
+    let valid_transfer_side_effect_1 = produce_and_validate_side_effect(
+        vec![
+            (Type::Address(32), ArgVariant::A),
+            (Type::Address(32), ArgVariant::B),
+            (Type::Uint(64), ArgVariant::A),
+            (Type::Bytes(0), ArgVariant::A), // empty bytes instead of insurance
+        ],
+        &mut local_state,
+        transfer_protocol_box.clone(),
+    );
+
+    let valid_transfer_side_effect_2 = produce_and_validate_side_effect(
+        vec![
+            (Type::Address(32), ArgVariant::B),
+            (Type::Address(32), ArgVariant::A),
+            (Type::Uint(64), ArgVariant::A),
+            (Type::Bytes(0), ArgVariant::A), // empty bytes instead of insurance
+        ],
+        &mut local_state,
+        transfer_protocol_box,
+    );
+
+    let side_effects = vec![
+        valid_transfer_side_effect_1.clone(),
+        valid_transfer_side_effect_2.clone(),
+    ];
+    let fee = 1;
+    let sequential = true;
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 10);
+
+            System::set_block_number(1);
+
+            assert_ok!(Circuit::on_extrinsic_trigger(
+                origin,
+                side_effects,
+                fee,
+                sequential,
+            ));
+
+            let events = System::events();
+            assert_eq!(events.len(), 8);
+
+            let xtx_id: sp_core::H256 =
+                hex!("c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6").into();
+
+            // Confirmation start - 1
+            let mut encoded_balance_transfer_event_1 = pallet_balances::Event::<Test>::Transfer {
+                from: hex!("0909090909090909090909090909090909090909090909090909090909090909")
+                    .into(), // variant A
+                to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(), // variant B (dest)
+                amount: 1, // variant A
+            }
+            .encode();
+
+            // Adding 4 since Balances Pallet = 4 in construct_runtime! enum
+            let mut encoded_event_1 = vec![4];
+            encoded_event_1.append(&mut encoded_balance_transfer_event_1);
+            let confirmation_transfer_1 =
+                ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
+                    err: None,
+                    output: None,
+                    encoded_effect: encoded_event_1,
+                    inclusion_proof: None,
+                    executioner: BOB_RELAYER,
+                    received_at: 0,
+                    cost: None,
+                };
+
+            assert_ok!(Circuit::confirm_side_effect(
+                origin_relayer_bob.clone(),
+                xtx_id.clone(),
+                valid_transfer_side_effect_1,
+                confirmation_transfer_1,
+                None,
+                None,
+            ));
+
+            println!(
+                "exec signals after 1st confirmation, transfer: {:?}",
+                Circuit::get_x_exec_signals(xtx_id).unwrap()
+            );
+
+            // Confirmation start - 2
+            let mut encoded_balance_transfer_event_2 = pallet_balances::Event::<Test>::Transfer {
+                from: hex!("0606060606060606060606060606060606060606060606060606060606060606")
+                    .into(), // variant B (dest)
+                to: hex!("0909090909090909090909090909090909090909090909090909090909090909").into(), // variant A
+                amount: 1, // variant A
+            }
+            .encode();
+
+            // Adding 4 since Balances Pallet = 4 in construct_runtime! enum
+            let mut encoded_event_2 = vec![4];
+            encoded_event_2.append(&mut encoded_balance_transfer_event_2);
+
+            let confirmation_transfer_2 =
+                ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
+                    err: None,
+                    output: None,
+                    encoded_effect: encoded_event_2,
+                    inclusion_proof: None,
+                    executioner: BOB_RELAYER,
+                    received_at: 0,
+                    cost: None,
+                };
+
+            assert_ok!(Circuit::confirm_side_effect(
+                origin_relayer_bob.clone(),
+                xtx_id.clone(),
+                valid_transfer_side_effect_2,
+                confirmation_transfer_2,
+                None,
+                None,
+            ));
+
+            println!(
+                "exec signals after 2nd confirmation, transfer: {:?}",
+                Circuit::get_x_exec_signals(xtx_id).unwrap()
+            );
+        });
+}
+
+// ToDo: Order for multiple should now be fixed - verify t3rn#261 is solved
+#[test]
+#[ignore]
 fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
@@ -1126,7 +1264,7 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
             (Type::Address(32), ArgVariant::A),
             (Type::Address(32), ArgVariant::B),
             (Type::Uint(64), ArgVariant::A),
-            (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
+            (Type::OptionalInsurance, ArgVariant::A),
         ],
         &mut local_state,
         transfer_protocol_box,

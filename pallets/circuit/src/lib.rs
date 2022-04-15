@@ -691,6 +691,7 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
+        ApplyTriggeredWithUnexpectedStatus,
         RequesterNotEnoughBalance,
         ContractXtxKilledRunOutOfFunds,
         ChargingTransferFailed,
@@ -1045,7 +1046,7 @@ impl<T: Config> Pallet<T> {
                     Some(local_ctx.full_side_effects.clone()),
                 ))
             },
-            CircuitStatus::Ready | CircuitStatus::PendingExecution => {
+            CircuitStatus::Ready | CircuitStatus::PendingExecution | CircuitStatus::Finished => {
                 // Update set of full side effects assuming the new confirmed has appeared
                 <Self as Store>::FullSideEffects::mutate(local_ctx.xtx_id, |x| {
                     *x = Some(local_ctx.full_side_effects.clone())
@@ -1095,7 +1096,7 @@ impl<T: Config> Pallet<T> {
                     Ok((None, Some(local_ctx.full_side_effects.to_vec())))
                 }
             },
-            _ => unimplemented!(),
+            _ => return Err(Error::<T>::ApplyTriggeredWithUnexpectedStatus),
         }
     }
 
@@ -1428,7 +1429,6 @@ impl<T: Config> Pallet<T> {
         // Circuit's automatic side effect ordering: execute escrowed asap, then line up optimistic ones
         full_side_effects.sort_by(|a, b| b.security_lvl.partial_cmp(&a.security_lvl).unwrap());
 
-        // R#1: there only can be max 1 dirty side effect at each step.
         let mut full_side_effects_steps: Vec<
             Vec<FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
         > = vec![vec![]];
@@ -1445,6 +1445,7 @@ impl<T: Config> Pallet<T> {
             {
                 current_step.push(sorted_fse);
             } else if sorted_fse.security_lvl == SecurityLvl::Dirty {
+                // R#1: there only can be max 1 dirty side effect at each step.
                 full_side_effects_steps.push(vec![sorted_fse])
             }
         }
