@@ -27,10 +27,10 @@ use crate::{mock::*, state::*};
 
 use sp_io::TestExternalities;
 
-use codec::Encode;
+use codec::{Decode, Encode};
 use sp_runtime::AccountId32;
 use sp_std::prelude::*;
-use t3rn_primitives::volatile::LocalState;
+use t3rn_primitives::{volatile::LocalState, xtx::XtxId};
 // use crate::mock;
 
 pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);
@@ -1099,6 +1099,83 @@ fn circuit_handles_add_liquidity_with_insurance() {
         });
 }
 
+// fn successfully_confirm_optimistic(side_effect: SideEffect<AccountId32, BlockNumber, BalanceOf>) {
+//
+//     let from = side_effect.encoded_args[0].clone();
+//     let to = side_effect.encoded_args[1].clone();
+//     let amount = side_effect.encoded_args[2].clone();
+//
+//     let mut encoded_balance_transfer_event_1 = pallet_balances::Event::<Test>::Transfer {
+//         from: from.into(), // variant A
+//         to: to.into(), // variant B (dest)
+//         amount: amount.into(), // variant A
+//     }
+//         .encode();
+//
+//     // Adding 4 since Balances Pallet = 4 in construct_runtime! enum
+//     let mut encoded_event_1 = vec![4];
+//     encoded_event_1.append(&mut encoded_balance_transfer_event_1);
+//     let confirmation_transfer_1 =
+//         ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
+//             err: None,
+//             output: None,
+//             encoded_effect: encoded_event_1,
+//             inclusion_proof: None,
+//             executioner: BOB_RELAYER,
+//             received_at: 0,
+//             cost: None,
+//         };
+//
+//     assert_ok!(Circuit::confirm_side_effect(
+//         origin_relayer_bob.clone(),
+//         xtx_id.clone(),
+//         valid_transfer_side_effect_1,
+//         confirmation_transfer_1,
+//         None,
+//         None,
+//     ));
+//
+// }
+
+fn successfully_confirm_dirty(
+    side_effect: SideEffect<AccountId32, BlockNumber, BalanceOf>,
+    xtx_id: XtxId<Test>,
+    relayer: AccountId32,
+) {
+    let from = side_effect.encoded_args[0].clone();
+    let to = side_effect.encoded_args[1].clone();
+    let amount = side_effect.encoded_args[2].clone();
+
+    let mut encoded_balance_transfer_event = pallet_balances::Event::<Test>::Transfer {
+        from: Decode::decode(&mut &from[..]).unwrap(), // variant A
+        to: Decode::decode(&mut &to[..]).unwrap(),     // variant A
+        amount: Decode::decode(&mut &amount[..]).unwrap(), // variant A
+    }
+    .encode();
+
+    // Adding 4 since Balances Pallet = 4 in construct_runtime! enum
+    let mut encoded_event = vec![4];
+    encoded_event.append(&mut encoded_balance_transfer_event);
+    let confirmation_transfer = ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
+        err: None,
+        output: None,
+        encoded_effect: encoded_event,
+        inclusion_proof: None,
+        executioner: BOB_RELAYER,
+        received_at: 0,
+        cost: None,
+    };
+
+    assert_ok!(Circuit::confirm_side_effect(
+        Origin::signed(relayer),
+        xtx_id.clone(),
+        side_effect,
+        confirmation_transfer,
+        None,
+        None,
+    ));
+}
+
 #[test]
 fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_confirmed() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
@@ -1160,79 +1237,10 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_confirmed() {
                 hex!("c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6").into();
 
             // Confirmation start - 1
-            let mut encoded_balance_transfer_event_1 = pallet_balances::Event::<Test>::Transfer {
-                from: hex!("0909090909090909090909090909090909090909090909090909090909090909")
-                    .into(), // variant A
-                to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(), // variant B (dest)
-                amount: 1, // variant A
-            }
-            .encode();
-
-            // Adding 4 since Balances Pallet = 4 in construct_runtime! enum
-            let mut encoded_event_1 = vec![4];
-            encoded_event_1.append(&mut encoded_balance_transfer_event_1);
-            let confirmation_transfer_1 =
-                ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
-                    err: None,
-                    output: None,
-                    encoded_effect: encoded_event_1,
-                    inclusion_proof: None,
-                    executioner: BOB_RELAYER,
-                    received_at: 0,
-                    cost: None,
-                };
-
-            assert_ok!(Circuit::confirm_side_effect(
-                origin_relayer_bob.clone(),
-                xtx_id.clone(),
-                valid_transfer_side_effect_1,
-                confirmation_transfer_1,
-                None,
-                None,
-            ));
-
-            println!(
-                "exec signals after 1st confirmation, transfer: {:?}",
-                Circuit::get_x_exec_signals(xtx_id).unwrap()
-            );
+            successfully_confirm_dirty(valid_transfer_side_effect_1, xtx_id.clone(), BOB_RELAYER);
 
             // Confirmation start - 2
-            let mut encoded_balance_transfer_event_2 = pallet_balances::Event::<Test>::Transfer {
-                from: hex!("0606060606060606060606060606060606060606060606060606060606060606")
-                    .into(), // variant B (dest)
-                to: hex!("0909090909090909090909090909090909090909090909090909090909090909").into(), // variant A
-                amount: 1, // variant A
-            }
-            .encode();
-
-            // Adding 4 since Balances Pallet = 4 in construct_runtime! enum
-            let mut encoded_event_2 = vec![4];
-            encoded_event_2.append(&mut encoded_balance_transfer_event_2);
-
-            let confirmation_transfer_2 =
-                ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
-                    err: None,
-                    output: None,
-                    encoded_effect: encoded_event_2,
-                    inclusion_proof: None,
-                    executioner: BOB_RELAYER,
-                    received_at: 0,
-                    cost: None,
-                };
-
-            assert_ok!(Circuit::confirm_side_effect(
-                origin_relayer_bob.clone(),
-                xtx_id.clone(),
-                valid_transfer_side_effect_2,
-                confirmation_transfer_2,
-                None,
-                None,
-            ));
-
-            println!(
-                "exec signals after 2nd confirmation, transfer: {:?}",
-                Circuit::get_x_exec_signals(xtx_id).unwrap()
-            );
+            successfully_confirm_dirty(valid_transfer_side_effect_2, xtx_id.clone(), BOB_RELAYER);
         });
 }
 
