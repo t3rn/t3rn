@@ -1176,11 +1176,181 @@ fn successfully_confirm_dirty(
     ));
 }
 
+fn successfully_confirm_optimistic(
+    side_effect: SideEffect<AccountId32, BlockNumber, BalanceOf>,
+    xtx_id: XtxId<Test>,
+    relayer: AccountId32,
+    submitter: AccountId32,
+) {
+    let optional_insurance = side_effect.encoded_args[3].clone();
+
+    assert!(
+        optional_insurance.len() == 32,
+        "Wrong test value - optimistic transfer assumes optimistic arguments"
+    );
+
+    assert_ok!(Circuit::bond_insurance_deposit(
+        Origin::signed(relayer.clone()),
+        xtx_id,
+        side_effect.generate_id::<crate::SystemHashing<Test>>(),
+    ));
+
+    let [insurance, reward]: [u128; 2] = Decode::decode(&mut &optional_insurance[..]).unwrap();
+
+    assert_eq!(
+        Circuit::get_insurance_deposits(
+            xtx_id,
+            side_effect.generate_id::<crate::SystemHashing<Test>>()
+        )
+        .unwrap(),
+        InsuranceDeposit {
+            insurance: insurance as u64,
+            reward: reward as u64,
+            requester: Decode::decode(&mut &submitter.encode()[..]).unwrap(),
+            bonded_relayer: Some(relayer.clone()),
+            status: CircuitStatus::Bonded,
+            requested_at: 1,
+        }
+    );
+
+    successfully_confirm_dirty(side_effect, xtx_id, relayer);
+}
+
+#[test]
+fn two_dirty_and_three_optimistic_transfers_are_allocated_to_3_steps_and_all_5_is_confirmed() {
+    let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
+
+    let _origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
+
+    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
+
+    let mut local_state = LocalState::new();
+    let valid_transfer_side_effect_1 = produce_and_validate_side_effect(
+        vec![
+            (Type::Address(32), ArgVariant::A),
+            (Type::Address(32), ArgVariant::B),
+            (Type::Uint(64), ArgVariant::A),
+            (Type::Bytes(0), ArgVariant::A), // empty bytes instead of insurance
+        ],
+        &mut local_state,
+        transfer_protocol_box.clone(),
+    );
+
+    let valid_transfer_side_effect_2 = produce_and_validate_side_effect(
+        vec![
+            (Type::Address(32), ArgVariant::B),
+            (Type::Address(32), ArgVariant::A),
+            (Type::Uint(64), ArgVariant::A),
+            (Type::Bytes(0), ArgVariant::A), // empty bytes instead of insurance
+        ],
+        &mut local_state,
+        transfer_protocol_box.clone(),
+    );
+
+    let valid_optimistic_transfer_side_effect_3 = produce_and_validate_side_effect(
+        vec![
+            (Type::Address(32), ArgVariant::C),
+            (Type::Address(32), ArgVariant::A),
+            (Type::Uint(64), ArgVariant::A),
+            (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
+        ],
+        &mut local_state,
+        transfer_protocol_box.clone(),
+    );
+
+    let valid_optimistic_transfer_side_effect_4 = produce_and_validate_side_effect(
+        vec![
+            (Type::Address(32), ArgVariant::C),
+            (Type::Address(32), ArgVariant::B),
+            (Type::Uint(64), ArgVariant::A),
+            (Type::OptionalInsurance, ArgVariant::B), // empty bytes instead of insurance
+        ],
+        &mut local_state,
+        transfer_protocol_box.clone(),
+    );
+
+    let valid_optimistic_transfer_side_effect_5 = produce_and_validate_side_effect(
+        vec![
+            (Type::Address(32), ArgVariant::C),
+            (Type::Address(32), ArgVariant::B),
+            (Type::Uint(64), ArgVariant::B),
+            (Type::OptionalInsurance, ArgVariant::B), // empty bytes instead of insurance
+        ],
+        &mut local_state,
+        transfer_protocol_box.clone(),
+    );
+
+    let side_effects = vec![
+        valid_transfer_side_effect_1.clone(),
+        valid_transfer_side_effect_2.clone(),
+        valid_optimistic_transfer_side_effect_3.clone(),
+        valid_optimistic_transfer_side_effect_4.clone(),
+        valid_optimistic_transfer_side_effect_5.clone(),
+    ];
+
+    let fee = 1;
+    let sequential = true;
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 50);
+            let _ = Balances::deposit_creating(&BOB_RELAYER, 50);
+
+            System::set_block_number(1);
+
+            assert_ok!(Circuit::on_extrinsic_trigger(
+                origin,
+                side_effects,
+                fee,
+                sequential,
+            ));
+
+            let _events = System::events();
+            // assert_eq!(events.len(), 8);
+
+            let xtx_id: sp_core::H256 =
+                hex!("c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6").into();
+
+            // Confirmation start - 3
+            successfully_confirm_optimistic(
+                valid_optimistic_transfer_side_effect_3,
+                xtx_id.clone(),
+                BOB_RELAYER,
+                ALICE,
+            );
+
+            // Confirmation start - 4
+            successfully_confirm_optimistic(
+                valid_optimistic_transfer_side_effect_4,
+                xtx_id.clone(),
+                BOB_RELAYER,
+                ALICE,
+            );
+
+            // Confirmation start - 5
+            successfully_confirm_optimistic(
+                valid_optimistic_transfer_side_effect_5,
+                xtx_id.clone(),
+                BOB_RELAYER,
+                ALICE,
+            );
+
+            // Confirmation start - 1
+            successfully_confirm_dirty(valid_transfer_side_effect_1, xtx_id.clone(), BOB_RELAYER);
+
+            // Confirmation start - 2
+            successfully_confirm_dirty(valid_transfer_side_effect_2, xtx_id.clone(), BOB_RELAYER);
+        });
+}
+
 #[test]
 fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_confirmed() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
+    let _origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
 
     let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
 
