@@ -18,7 +18,8 @@ jobs:
         with:
           submodules: recursive
           token: ${{ secrets.GH_PAT }}
-      - name: ⚙️Get nightly rust toolchain with wasm target
+
+      - name: ⚙️ Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly-2021-11-01
@@ -46,7 +47,7 @@ jobs:
       - name: 📤 Upload binary
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ github.sha }}-parachain-release-artifacts
+          name: ${{ github.sha }}-collator-release-artifacts
           path: ./target/release/circuit-collator
           if-no-files-found: error
           retention-days: 1
@@ -55,16 +56,10 @@ jobs:
     runs-on: ubuntu-20.04
     needs: build-release
     steps:
-      - name: ☁️ Checkout git repo
-        uses: actions/checkout@master
-        with:
-          submodules: recursive
-          token: ${{ secrets.GH_PAT }}
-
       - name: 📥 Download circuit
         uses: actions/download-artifact@v2
         with:
-          name: ${{ github.sha }}-parachain-release-artifacts
+          name: ${{ github.sha }}-collator-release-artifacts
           path: ./target/release/
 
       - name: 🐋 Login to Docker Hub
@@ -74,9 +69,11 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: 🐳 Build & publish Docker image
+        env:
+          DOCKER_BUILDKIT: 1
         run: |
-          docker build -f docker/circuit-parachain.Dockerfile -t t3rn/circuit-parachain:latest .
-          docker push t3rn/circuit-parachain:latest
+          docker build -f docker/circuit-collator.Dockerfile -t t3rn/circuit-collator:latest .
+          docker push t3rn/circuit-collator:latest
 
   release-on-github:
     runs-on: ubuntu-20.04
@@ -88,7 +85,7 @@ jobs:
       - name: 📥 Download circuit collator
         uses: actions/download-artifact@v2
         with:
-          name: ${{ github.sha }}-parachain-release-artifacts
+          name: ${{ github.sha }}-collator-release-artifacts
           path: ./target/release/
 
       - name: 🎱 Gzip circuit collator
