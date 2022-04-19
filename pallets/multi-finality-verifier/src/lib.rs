@@ -52,6 +52,9 @@ use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
 use sp_runtime::traits::{BadOrigin, Header as HeaderT, Zero};
 use sp_std::vec::Vec;
 
+use t3rn_primitives::circuit_portal::CircuitPortal;
+use sp_trie::StorageProof;
+
 #[cfg(test)]
 mod mock;
 
@@ -82,7 +85,7 @@ pub mod pallet {
     use frame_support::traits::Time;
     use frame_system::pallet_prelude::*;
     use sp_std::convert::TryInto;
-    use t3rn_primitives::{xdns::Xdns, EscrowTrait};
+    use t3rn_primitives::{xdns::Xdns, EscrowTrait, circuit_portal::CircuitPortal};
 
     #[pallet::config]
     pub trait Config<I: 'static = ()>: frame_system::Config {
@@ -116,6 +119,8 @@ pub mod pallet {
 
         /// A type that manages escrow, and therefore balances
         type Escrowed: EscrowTrait<Self>;
+
+        type CircuitPortal: CircuitPortal<Self>;
     }
 
     #[pallet::pallet]
@@ -364,30 +369,68 @@ pub mod pallet {
             Ok(().into())
         }
 
-        // TODO: Do we still need this? Essentially just logging stuff...
-        // #[pallet::weight(0)]
-        // pub fn submit_finality_proof_and_roots(
-        //     origin: OriginFor<T>,
-        //     finality_target: BridgedHeader<T, I>,
-        //     justification: GrandpaJustification<BridgedHeader<T, I>>,
-        //     gateway_id: ChainId,
-        //     // ToDo: Try passing Vec<u8> here and cast to appropriate header type with help of xDNS
-        // ) -> DispatchResultWithPostInfo {
-        //     Self::submit_finality_proof(
-        //         origin,
-        //         finality_target.clone(),
-        //         justification,
-        //         gateway_id,
-        //     )?;
+        #[pallet::weight(<T as pallet::Config<I>>::WeightInfo::submit_finality_proof(
+            block_hash.len() as u32,
+            block_hash.len() as u32,
+        ))]
+        pub fn submit_parachain_header(
+            origin: OriginFor<T>,
+            relay_chain_id: ChainId,
+            block_hash: Vec<u8>,
+            header_key: Vec<u8>,
+            proof: Vec<Vec<u8>>,
+        ) -> DispatchResultWithPostInfo {
+            // Plan:
+            let storage_proof: StorageProof = Decode::decode(&mut &proof.encode()[..]).unwrap();
+            let header = <T as Config<I>>::CircuitPortal::confirm_parachain(
+                relay_chain_id,
+                header_key,
+                block_hash,
+                storage_proof
+            );
 
-        //     log::info!(
-        //         "submit_finality_proof_and_roots, _state_root: {:?}, _extrinsics_root: {:?}",
-        //         finality_target.state_root(),
-        //         finality_target.extrinsics_root()
-        //     );
+            //  gateway_id: [u8; 4],
+            // keys: Vec<u8>,
+            // block_hash: Vec<u8>,
+            // proof: StorageProof,
+            //  let gateway_xdns_record = <T as Config>::Xdns::best_available(gateway_id)?;
+            //  let (extrinsics_root_h256, storage_root_h256) = match (
+            //         gateway_xdns_record.gateway_abi.hasher.clone(),
+            //         gateway_xdns_record.gateway_abi.block_number_type_size,
+            //     ) {
+            //         (HasherAlgo::Blake2, 32) => get_roots_from_bridge::<
+            //             T,
+            //             DefaultPolkadotLikeGateway,
+            //         >(block_hash, gateway_id)?,
+            //         (HasherAlgo::Blake2, 64) => get_roots_from_bridge::<
+            //             T,
+            //             PolkadotLikeValU64Gateway,
+            //         >(block_hash, gateway_id)?,
+            //         (HasherAlgo::Keccak256, 32) => get_roots_from_bridge::<
+            //             T,
+            //             EthLikeKeccak256ValU32Gateway,
+            //         >(block_hash, gateway_id)?,
+            //         (HasherAlgo::Keccak256, 64) => get_roots_from_bridge::<
+            //             T,
+            //             EthLikeKeccak256ValU64Gateway,
+            //         >(block_hash, gateway_id)?,
+            //         (_, _) => get_roots_from_bridge::<T, DefaultPolkadotLikeGateway>(
+            //             block_hash, gateway_id,
+            //         )?,
+            //     };
 
-        //     Ok(().into())
-        // }
+
+             // read_proof_check(relay_chain_storage_root, proof, keys);
+             log::info!("header: {:?}", header);
+
+
+
+            // - check if submitted header has same hash
+            // - write parachain header to storage -> now we can use it as a anchor header
+
+
+            Ok(().into())
+         }
 
         /// Bootstrap the bridge pallet with an initial header and authority set from which to sync.
         ///
@@ -945,6 +988,7 @@ mod tests {
             RawOrigin::Root.into(),
             Default::default(),
             gateway_id,
+            None,
             Default::default(),
             GatewayVendor::Substrate,
             GatewayType::TxOnly(0),

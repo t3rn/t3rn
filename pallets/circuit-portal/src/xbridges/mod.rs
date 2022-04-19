@@ -5,6 +5,7 @@ use sp_core::crypto::ByteArray;
 use sp_finality_grandpa::SetId;
 
 use sp_std::vec::Vec;
+use sp_trie::{read_trie_value, LayoutV1, StorageProof};
 
 use t3rn_primitives::bridges::{header_chain as bp_header_chain, runtime as bp_runtime};
 
@@ -49,10 +50,9 @@ pub fn init_bridge_instance<T: pallet_multi_finality_verifier::Config<I>, I: 'st
 pub fn get_roots_from_bridge<T: pallet_multi_finality_verifier::Config<I>, I: 'static>(
     block_hash: Bytes,
     gateway_id: bp_runtime::ChainId,
-) -> Result<(sp_core::H256, sp_core::H256), Error<T>> {
+) -> Result<(CurrentHash<T, I>, CurrentHash<T, I>), Error<T>> {
     let gateway_block_hash: CurrentHash<T, I> = Decode::decode(&mut &block_hash[..])
         .map_err(|_| Error::<T>::StepConfirmationDecodingError)?;
-
     let (extrinsics_root, storage_root): (CurrentHash<T, I>, CurrentHash<T, I>) =
         pallet_multi_finality_verifier::Pallet::<T, I>::get_imported_roots(
             gateway_id,
@@ -60,11 +60,34 @@ pub fn get_roots_from_bridge<T: pallet_multi_finality_verifier::Config<I>, I: 's
         )
         .ok_or(Error::<T>::StepConfirmationBlockUnrecognised)?;
 
-    let extrinsics_root_h256: sp_core::H256 = Decode::decode(&mut &extrinsics_root.encode()[..])
-        .map_err(|_| Error::<T>::StepConfirmationDecodingError)?;
+    Ok((extrinsics_root, storage_root))
+}
 
-    let storage_root_h256: sp_core::H256 = Decode::decode(&mut &storage_root.encode()[..])
-        .map_err(|_| Error::<T>::StepConfirmationDecodingError)?;
+pub fn verify_storage_proof<T: pallet_multi_finality_verifier::Config<I>, I: 'static>(
+    block_hash: Bytes,
+    gateway_id: bp_runtime::ChainId,
+    key: Vec<u8>,
+    proof: StorageProof,
+) -> Result<T::Header, Error<T>> {
 
-    Ok((extrinsics_root_h256, storage_root_h256))
+    return match get_roots_from_bridge::<T, I>(
+        block_hash,
+        gateway_id
+    ) {
+        Ok((_, storage_root)) => {
+            let db = proof.into_memory_db::<CurrentHasher<T, I>>();
+            let res = read_trie_value::<LayoutV1<CurrentHasher<T, I>>, _>(&db, &storage_root, key.as_ref());
+
+            match res {
+                Ok(Some(value)) => {
+                    let header: T::Header = Decode::decode(&mut &value[..]).unwrap();
+                    Ok(header)
+                },
+                _ => {
+                    Err(Error::<T>::ParachainHeaderNotVerified)
+                }
+            }
+        },
+        Err(e) => Err(e),
+    };
 }

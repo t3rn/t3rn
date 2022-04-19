@@ -6143,6 +6143,7 @@ dependencies = [
  "sp-runtime",
  "sp-staking",
  "sp-std",
+ "sp-trie",
  "t3rn-primitives",
  "t3rn-protocol",
 ]
@@ -6184,6 +6185,7 @@ dependencies = [
  "sp-runtime",
  "sp-staking",
  "sp-std",
+ "sp-trie",
  "sp-version",
  "t3rn-primitives",
  "t3rn-protocol",
