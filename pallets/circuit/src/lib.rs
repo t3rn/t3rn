@@ -697,6 +697,8 @@ pub mod pallet {
         InsuranceBondNotRequired,
         InsuranceBondAlreadyDeposited,
         SetupFailed,
+        SetupFailedXtxNotFound,
+        SetupFailedXtxStorageArtifactsNotFound,
         SetupFailedIncorrectXtxStatus,
         EnactSideEffectsCanOnlyBeCalledWithMin1StepFinished,
         FatalXtxTimeoutXtxIdNotMatched,
@@ -773,10 +775,10 @@ impl<T: Config> Pallet<T> {
                         return Err(Error::<T>::SetupFailedUnknownXtx)
                     }
                     let xtx = <Self as Store>::XExecSignals::get(id)
-                        .ok_or(Error::<T>::SetupFailedIncorrectXtxStatus)?;
-                    if xtx.status != CircuitStatus::PendingInsurance {
-                        return Err(Error::<T>::SetupFailedIncorrectXtxStatus)
-                    }
+                        .ok_or(Error::<T>::SetupFailedXtxStorageArtifactsNotFound)?;
+                    // if xtx.status != CircuitStatus::PendingInsurance {
+                    //     return Err(Error::<T>::SetupFailedIncorrectXtxStatus)
+                    // }
                     let insurance_deposits = <Self as Store>::XtxInsuranceLinks::get(id)
                         .iter()
                         .map(|&se_id| {
@@ -815,10 +817,10 @@ impl<T: Config> Pallet<T> {
                         return Err(Error::<T>::SetupFailedUnknownXtx)
                     }
                     let xtx = <Self as Store>::XExecSignals::get(id)
-                        .ok_or(Error::<T>::SetupFailedIncorrectXtxStatus)?;
-                    if xtx.status < CircuitStatus::Ready {
-                        return Err(Error::<T>::SetupFailedIncorrectXtxStatus)
-                    }
+                        .ok_or(Error::<T>::SetupFailedUnknownXtx)?;
+                    // if xtx.status < CircuitStatus::Ready {
+                    //     return Err(Error::<T>::SetupFailedIncorrectXtxStatus)
+                    // }
                     let insurance_deposits = <Self as Store>::XtxInsuranceLinks::get(id)
                         .iter()
                         .map(|&se_id| {
@@ -838,9 +840,9 @@ impl<T: Config> Pallet<T> {
                         )>>();
 
                     let full_side_effects = <Self as Store>::FullSideEffects::get(id)
-                        .ok_or(Error::<T>::SetupFailedIncorrectXtxStatus)?;
+                        .ok_or(Error::<T>::SetupFailedXtxStorageArtifactsNotFound)?;
                     let local_state = <Self as Store>::LocalXtxStates::get(id)
-                        .ok_or(Error::<T>::SetupFailedIncorrectXtxStatus)?;
+                        .ok_or(Error::<T>::SetupFailedXtxStorageArtifactsNotFound)?;
 
                     Ok(LocalXtxCtx {
                         local_state,
@@ -1043,7 +1045,10 @@ impl<T: Config> Pallet<T> {
                     Some(local_ctx.full_side_effects.clone()),
                 ))
             },
-            CircuitStatus::Ready | CircuitStatus::PendingExecution | CircuitStatus::Finished => {
+            CircuitStatus::Ready
+            | CircuitStatus::Bonded
+            | CircuitStatus::PendingExecution
+            | CircuitStatus::Finished => {
                 // Update set of full side effects assuming the new confirmed has appeared
                 <Self as Store>::FullSideEffects::mutate(local_ctx.xtx_id, |x| {
                     *x = Some(local_ctx.full_side_effects.clone())
@@ -1054,37 +1059,38 @@ impl<T: Config> Pallet<T> {
                     &local_ctx.insurance_deposits,
                 )?;
 
-                if new_status != local_ctx.xtx.status {
-                    local_ctx.xtx.status = new_status.clone();
-                    // Check whether all of the side effects in this steps are confirmed - the status now changes to CircuitStatus::Finished
-                    if local_ctx.full_side_effects[local_ctx.xtx.steps_cnt.0 as usize]
-                        .clone()
-                        .iter()
-                        .filter(|&fse| fse.confirmed.is_none())
-                        .collect::<Vec<
-                            &FullSideEffect<
-                                T::AccountId,
-                                T::BlockNumber,
-                                EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-                            >,
-                        >>()
-                        .is_empty()
-                    {
-                        local_ctx.xtx.steps_cnt =
-                            (local_ctx.xtx.steps_cnt.0 + 1, local_ctx.xtx.steps_cnt.1);
+                local_ctx.xtx.status = new_status.clone();
+                // Check whether all of the side effects in this steps are confirmed - the status now changes to CircuitStatus::Finished
+                if local_ctx.full_side_effects[local_ctx.xtx.steps_cnt.0 as usize]
+                    .clone()
+                    .iter()
+                    .filter(|&fse| fse.confirmed.is_none())
+                    .collect::<Vec<
+                        &FullSideEffect<
+                            T::AccountId,
+                            T::BlockNumber,
+                            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+                        >,
+                    >>()
+                    .is_empty()
+                {
+                    local_ctx.xtx.steps_cnt =
+                        (local_ctx.xtx.steps_cnt.0 + 1, local_ctx.xtx.steps_cnt.1);
 
-                        // All of the steps are completed - the xtx has been finalized
-                        if local_ctx.xtx.steps_cnt.0 == local_ctx.xtx.steps_cnt.1 {
-                            local_ctx.xtx.status = CircuitStatus::FinishedAllSteps;
-                            <Self as Store>::ActiveXExecSignalsTimingLinks::remove(
-                                local_ctx.xtx_id,
-                            );
-                            Self::enact_step_side_effects(local_ctx)?
-                        }
+                    local_ctx.xtx.status = CircuitStatus::Finished;
+
+                    // All of the steps are completed - the xtx has been finalized
+                    if local_ctx.xtx.steps_cnt.0 == local_ctx.xtx.steps_cnt.1 {
+                        local_ctx.xtx.status = CircuitStatus::FinishedAllSteps;
+                        <Self as Store>::ActiveXExecSignalsTimingLinks::remove(local_ctx.xtx_id);
+                        Self::enact_step_side_effects(local_ctx)?
                     }
-                    <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
-                        *x = Some(local_ctx.xtx.clone())
-                    });
+                }
+                <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
+                    *x = Some(local_ctx.xtx.clone())
+                });
+
+                if local_ctx.xtx.status.clone() > CircuitStatus::Ready {
                     Ok((
                         Some(local_ctx.xtx.clone()),
                         Some(local_ctx.full_side_effects.clone()),

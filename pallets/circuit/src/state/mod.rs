@@ -158,8 +158,17 @@ impl CircuitStatus {
 
         for step in steps.iter() {
             let current_step_status = Self::determine_step_status::<T>(step, insurance_deposits)?;
+            println!(
+                "Determine determine_xtx_status in loop Before -- {:?}",
+                current_step_status.clone()
+            );
             if current_step_status > lowest_determined_status {
                 lowest_determined_status = current_step_status;
+            }
+            // Xtx status is reflected with the lowest status of unresolved Step -
+            //  break the loop on the first unresolved step
+            if lowest_determined_status < CircuitStatus::Finished {
+                break
             }
         }
         Ok(lowest_determined_status)

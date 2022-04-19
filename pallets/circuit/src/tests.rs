@@ -1176,7 +1176,7 @@ fn successfully_confirm_dirty(
     ));
 }
 
-fn successfully_confirm_optimistic(
+fn successfully_bond_optimistic(
     side_effect: SideEffect<AccountId32, BlockNumber, BalanceOf>,
     xtx_id: XtxId<Test>,
     relayer: AccountId32,
@@ -1212,8 +1212,6 @@ fn successfully_confirm_optimistic(
             requested_at: 1,
         }
     );
-
-    successfully_confirm_dirty(side_effect, xtx_id, relayer);
 }
 
 #[test]
@@ -1308,41 +1306,113 @@ fn two_dirty_and_three_optimistic_transfers_are_allocated_to_3_steps_and_all_5_i
                 sequential,
             ));
 
-            let _events = System::events();
-            // assert_eq!(events.len(), 8);
-
             let xtx_id: sp_core::H256 =
                 hex!("c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6").into();
 
             // Confirmation start - 3
-            successfully_confirm_optimistic(
-                valid_optimistic_transfer_side_effect_3,
+            successfully_bond_optimistic(
+                valid_optimistic_transfer_side_effect_3.clone(),
                 xtx_id.clone(),
                 BOB_RELAYER,
                 ALICE,
+            );
+            assert_eq!(
+                Circuit::get_x_exec_signals(xtx_id.clone()).unwrap().status,
+                CircuitStatus::PendingInsurance
             );
 
             // Confirmation start - 4
-            successfully_confirm_optimistic(
-                valid_optimistic_transfer_side_effect_4,
+            successfully_bond_optimistic(
+                valid_optimistic_transfer_side_effect_4.clone(),
                 xtx_id.clone(),
                 BOB_RELAYER,
                 ALICE,
+            );
+            assert_eq!(
+                Circuit::get_x_exec_signals(xtx_id.clone()).unwrap().status,
+                CircuitStatus::PendingInsurance
             );
 
             // Confirmation start - 5
-            successfully_confirm_optimistic(
-                valid_optimistic_transfer_side_effect_5,
+            successfully_bond_optimistic(
+                valid_optimistic_transfer_side_effect_5.clone(),
                 xtx_id.clone(),
                 BOB_RELAYER,
                 ALICE,
             );
+            assert_eq!(
+                Circuit::get_x_exec_signals(xtx_id.clone()).unwrap().status,
+                CircuitStatus::Ready
+            );
 
+            // Confirmation start - 3
+            successfully_confirm_dirty(
+                valid_optimistic_transfer_side_effect_3,
+                xtx_id.clone(),
+                BOB_RELAYER,
+            );
+
+            assert_eq!(
+                Circuit::get_x_exec_signals(xtx_id.clone()).unwrap().status,
+                CircuitStatus::Bonded
+            );
+
+            // Confirmation start - 4
+            successfully_confirm_dirty(
+                valid_optimistic_transfer_side_effect_4,
+                xtx_id.clone(),
+                BOB_RELAYER,
+            );
+
+            assert_eq!(
+                Circuit::get_x_exec_signals(xtx_id.clone()).unwrap().status,
+                CircuitStatus::Bonded
+            );
+
+            // Confirmation start - 5
+            successfully_confirm_dirty(
+                valid_optimistic_transfer_side_effect_5,
+                xtx_id.clone(),
+                BOB_RELAYER,
+            );
+
+            assert_eq!(
+                Circuit::get_x_exec_signals(xtx_id.clone()).unwrap().status,
+                CircuitStatus::Finished
+            );
+            assert_eq!(
+                Circuit::get_x_exec_signals(xtx_id.clone())
+                    .unwrap()
+                    .steps_cnt,
+                (1, 3)
+            );
             // Confirmation start - 1
             successfully_confirm_dirty(valid_transfer_side_effect_1, xtx_id.clone(), BOB_RELAYER);
 
+            assert_eq!(
+                Circuit::get_x_exec_signals(xtx_id.clone()).unwrap().status,
+                CircuitStatus::Finished
+            );
+            assert_eq!(
+                Circuit::get_x_exec_signals(xtx_id.clone())
+                    .unwrap()
+                    .steps_cnt,
+                (2, 3)
+            );
+
             // Confirmation start - 2
             successfully_confirm_dirty(valid_transfer_side_effect_2, xtx_id.clone(), BOB_RELAYER);
+
+            assert_eq!(
+                Circuit::get_x_exec_signals(xtx_id.clone()).unwrap().status,
+                CircuitStatus::FinishedAllSteps
+            );
+            assert_eq!(
+                Circuit::get_x_exec_signals(xtx_id.clone())
+                    .unwrap()
+                    .steps_cnt,
+                (3, 3)
+            );
         });
 }
 
