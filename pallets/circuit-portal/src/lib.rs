@@ -49,6 +49,7 @@ pub use t3rn_primitives::{
     GatewayType, *,
 };
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
+use sp_trie::StorageProof;
 
 pub use pallet::*;
 use t3rn_primitives::{circuit_portal::CircuitPortal, xdns::Xdns};
@@ -67,9 +68,8 @@ pub mod weights;
 use weights::WeightInfo;
 
 pub mod xbridges;
-
 pub use xbridges::{
-    get_roots_from_bridge, init_bridge_instance, CurrentHash, CurrentHasher, CurrentHeader,
+    get_roots_from_bridge, verify_storage_proof, init_bridge_instance, CurrentHash, CurrentHasher,
     DefaultPolkadotLikeGateway, EthLikeKeccak256ValU32Gateway, EthLikeKeccak256ValU64Gateway,
     PolkadotLikeValU64Gateway,
 };
@@ -319,6 +319,7 @@ pub mod pallet {
         StepConfirmationDecodingError,
         ContractDoesNotExists,
         RequesterNotEnoughBalance,
+        ParachainHeaderNotVerified,
     }
 }
 
@@ -353,73 +354,110 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
                 unimplemented!()
             },
             GatewayVendor::Substrate => {
-                // For Substrate bridges block hash is required
-                let block_hash = if let Some(x) = maybe_block_hash {
-                    Ok(x)
-                } else {
-                    Err(
-                        "Must provide a valid read proof when proving inclusion with Substrate Bridge"
-                    )
-                }?;
-                let proof = if let Some(x) = maybe_proof {
-                    Ok(x)
-                } else {
-                    Err(
-                        "Must provide a valid read proof when proving inclusion with Substrate Bridge"
-                    )
-                }?;
-                // Check inclusion relying on data in pallet-multi-verifier
-                let (extrinsics_root_h256, storage_root_h256) = match (
-                    gateway_xdns_record.gateway_abi.hasher.clone(),
-                    gateway_xdns_record.gateway_abi.block_number_type_size,
-                ) {
-                    (HasherAlgo::Blake2, 32) => get_roots_from_bridge::<
-                        T,
-                        DefaultPolkadotLikeGateway,
-                    >(block_hash, gateway_id)?,
-                    (HasherAlgo::Blake2, 64) => get_roots_from_bridge::<
-                        T,
-                        PolkadotLikeValU64Gateway,
-                    >(block_hash, gateway_id)?,
-                    (HasherAlgo::Keccak256, 32) => get_roots_from_bridge::<
-                        T,
-                        EthLikeKeccak256ValU32Gateway,
-                    >(block_hash, gateway_id)?,
-                    (HasherAlgo::Keccak256, 64) => get_roots_from_bridge::<
-                        T,
-                        EthLikeKeccak256ValU64Gateway,
-                    >(block_hash, gateway_id)?,
-                    (_, _) => get_roots_from_bridge::<T, DefaultPolkadotLikeGateway>(
-                        block_hash, gateway_id,
-                    )?,
-                };
-
-                // let expected_root = match step_confirmation.proof.proof_trie_pointer {
-                let expected_root = match trie_type {
-                    ProofTriePointer::State => storage_root_h256,
-                    ProofTriePointer::Transaction => extrinsics_root_h256,
-                    ProofTriePointer::Receipts => storage_root_h256,
-                };
-
-                return if let Err(computed_root) = check_merkle_proof(
-                    expected_root,
-                    // step_confirmation.proof.proof_data.into_iter(),
-                    proof.into_iter(),
-                    gateway_xdns_record.gateway_abi.hasher,
-                ) {
-                    log::trace!(
-                        target: "circuit-runtime",
-                        "Step confirmation check failed: inclusion root mismatch. Expected: {}, computed: {}",
-                        expected_root,
-                        computed_root,
-                    );
-
-                    Err(Error::<T>::SideEffectConfirmationInvalidInclusionProof.into())
-                } else {
+            //     // For Substrate bridges block hash is required
+            //     let block_hash = if let Some(x) = maybe_block_hash {
+            //         Ok(x)
+            //     } else {
+            //         Err(
+            //             "Must provide a valid read proof when proving inclusion with Substrate Bridge"
+            //         )
+            //     }?;
+            //     let proof = if let Some(x) = maybe_proof {
+            //         Ok(x)
+            //     } else {
+            //         Err(
+            //             "Must provide a valid read proof when proving inclusion with Substrate Bridge"
+            //         )
+            //     }?;
+            //     // Check inclusion relying on data in pallet-multi-verifier
+            //     let (extrinsics_root_h256, storage_root_h256) = match (
+            //         gateway_xdns_record.gateway_abi.hasher.clone(),
+            //         gateway_xdns_record.gateway_abi.block_number_type_size,
+            //     ) {
+            //         (HasherAlgo::Blake2, 32) => get_roots_from_bridge::<
+            //             T,
+            //             DefaultPolkadotLikeGateway,
+            //         >(block_hash, gateway_id)?,
+            //         (HasherAlgo::Blake2, 64) => get_roots_from_bridge::<
+            //             T,
+            //             PolkadotLikeValU64Gateway,
+            //         >(block_hash, gateway_id)?,
+            //         (HasherAlgo::Keccak256, 32) => get_roots_from_bridge::<
+            //             T,
+            //             EthLikeKeccak256ValU32Gateway,
+            //         >(block_hash, gateway_id)?,
+            //         (HasherAlgo::Keccak256, 64) => get_roots_from_bridge::<
+            //             T,
+            //             EthLikeKeccak256ValU64Gateway,
+            //         >(block_hash, gateway_id)?,
+            //         (_, _) => get_roots_from_bridge::<T, DefaultPolkadotLikeGateway>(
+            //             block_hash, gateway_id,
+            //         )?,
+            //     };
+            //
+            //     // let expected_root = match step_confirmation.proof.proof_trie_pointer {
+            //     let expected_root = match trie_type {
+            //         ProofTriePointer::State => storage_root_h256,
+            //         ProofTriePointer::Transaction => extrinsics_root_h256,
+            //         ProofTriePointer::Receipts => storage_root_h256,
+            //     };
+            //
+            //     return if let Err(computed_root) = check_merkle_proof(
+            //         expected_root,
+            //         // step_confirmation.proof.proof_data.into_iter(),
+            //         proof.into_iter(),
+            //         gateway_xdns_record.gateway_abi.hasher,
+            //     ) {
+            //         log::trace!(
+            //             target: "circuit-runtime",
+            //             "Step confirmation check failed: inclusion root mismatch. Expected: {}, computed: {}",
+            //             expected_root,
+            //             computed_root,
+            //         );
+            //
+            //         Err(Error::<T>::SideEffectConfirmationInvalidInclusionProof.into())
+            //     } else {
                     Ok(())
-                }
+            //     }
             },
         }
+    }
+
+    fn confirm_parachain(
+        gateway_id: [u8; 4],
+        key: Vec<u8>,
+        block_hash: Vec<u8>,
+        proof: StorageProof,
+    ) -> Result<(), &'static str> {
+        let gateway_xdns_record = <T as Config>::Xdns::best_available(gateway_id)?;
+
+        // Check inclusion relying on data in pallet-multi-verifier
+        let header = match (
+            gateway_xdns_record.gateway_abi.hasher.clone(),
+            gateway_xdns_record.gateway_abi.block_number_type_size,
+        ) {
+            (HasherAlgo::Blake2, 32) => verify_storage_proof::<
+                T,
+                DefaultPolkadotLikeGateway,
+            >(
+                block_hash,
+                gateway_id,
+                key,
+                proof
+            )?,
+            (HasherAlgo::Blake2, 64) => verify_storage_proof::<
+                T,
+                PolkadotLikeValU64Gateway,
+            >(
+                block_hash,
+                gateway_id,
+                key,
+                proof
+            )?,
+            (_, _) => unimplemented!()
+        };
+
+        Ok(())
     }
 }
 impl<T: Config> Pallet<T> {

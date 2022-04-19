@@ -125,6 +125,7 @@ impl pallet_mfv::Config<Blake2ValU64BridgeInstance> for Runtime {
     type WeightInfo = ();
     type Xdns = XDNS;
     type Event = Event;
+    type CircuitPortal = CircuitPortal;
 }
 
 impl pallet_mfv::Config<Blake2ValU32BridgeInstance> for Runtime {
@@ -135,6 +136,7 @@ impl pallet_mfv::Config<Blake2ValU32BridgeInstance> for Runtime {
     type WeightInfo = ();
     type Xdns = XDNS;
     type Event = Event;
+    type CircuitPortal = CircuitPortal;
 }
 
 impl pallet_mfv::Config<Keccak256ValU64BridgeInstance> for Runtime {
@@ -145,6 +147,7 @@ impl pallet_mfv::Config<Keccak256ValU64BridgeInstance> for Runtime {
     type WeightInfo = ();
     type Xdns = XDNS;
     type Event = Event;
+    type CircuitPortal = CircuitPortal;
 }
 
 impl pallet_mfv::Config<Keccak256ValU32BridgeInstance> for Runtime {
@@ -155,6 +158,7 @@ impl pallet_mfv::Config<Keccak256ValU32BridgeInstance> for Runtime {
     type WeightInfo = ();
     type Xdns = XDNS;
     type Event = Event;
+    type CircuitPortal = CircuitPortal;
 }
 
 impl pallet_mfv::Config<DefaultPolkadotBridgeInstance> for Runtime {
@@ -165,4 +169,5 @@ impl pallet_mfv::Config<DefaultPolkadotBridgeInstance> for Runtime {
     type WeightInfo = ();
     type Xdns = XDNS;
     type Event = Event;
+    type CircuitPortal = CircuitPortal;
 }
