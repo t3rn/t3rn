@@ -6,12 +6,12 @@ use crate::{
 use frame_support::{assert_err, assert_ok};
 use sp_runtime::Perbill;
 
-// #[test]
-// fn it_works_for_default_value() {
-//     new_test_ext().execute_with(|| {
-//         assert_ok!(Inflation::mint_for_round(Origin::root(), 42));
-//     });
-// }
+#[test]
+fn it_works_for_default_value() {
+    new_test_ext().execute_with(|| {
+        assert_ok!(Inflation::mint_for_round(Origin::root(), 42));
+    });
+}
 
 #[test]
 fn it_claims_zero_rewards_successfully() {

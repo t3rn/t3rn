@@ -23,17 +23,14 @@ pub mod pallet {
     use codec::Codec;
     use frame_support::{
         pallet_prelude::*,
-        traits::{Currency, Imbalance, ReservableCurrency},
+        traits::{Currency, ReservableCurrency},
     };
     use frame_system::{ensure_root, pallet_prelude::*};
     use sp_runtime::{
         traits::{AtLeast32BitUnsigned, Saturating, Zero},
-        Perbill, SaturatedConversion,
+        Perbill,
     };
-    use std::{
-        fmt::Debug,
-        ops::{AddAssign, Div},
-    };
+    use sp_std::fmt::Debug;
 
     pub type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -132,9 +129,15 @@ pub mod pallet {
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+        fn on_finalize(_n: BlockNumberFor<T>) {
+            // check if round finished in current block
+            // if so, update storage reward objects and create a new empty one
+            todo!()
+        }
+
         fn on_initialize(n: BlockNumberFor<T>) -> Weight {
             let mut round = <CurrentRound<T>>::get();
-            let inflation_info = <InflationConfig<T>>::get();
+            let _inflation_info = <InflationConfig<T>>::get();
 
             if round.should_update(n) {
                 // mutate round
@@ -161,12 +164,6 @@ pub mod pallet {
             }
 
             T::WeightInfo::update_round_on_initialize()
-        }
-
-        fn on_finalize(_n: BlockNumberFor<T>) {
-            // check if round finished in current block
-            // if so, update storage reward objects and create a new empty one
-            todo!()
         }
     }
 
@@ -215,13 +212,14 @@ pub mod pallet {
 
             let treasury = T::TreasuryAccount::get();
 
-            let round = <CurrentRound<T>>::get();
+            let _round = <CurrentRound<T>>::get();
 
-            let inflation_info = <InflationConfig<T>>::get();
+            let _inflation_info = <InflationConfig<T>>::get();
 
-            let candidates = <CandidatesForRewards<T>>::iter_keys();
+            let _candidates = <CandidatesForRewards<T>>::iter_keys();
 
-            let mut inf = inflation_info.per_round.ideal.div(candidates.count());
+            // T::Currency::issue(candidates.count() * amount)
+            //     .map_err(|_| Error::<T>::MintingFailed)?;
 
             // Percent::from_percent(inf.deconstruct()).ok_or(Error::<T>::InvalidInflationSchedule)?;
 

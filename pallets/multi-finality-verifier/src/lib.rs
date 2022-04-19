@@ -47,6 +47,7 @@ use frame_support::{ensure, pallet_prelude::*};
 use t3rn_primitives::bridges::{header_chain as bp_header_chain, runtime as bp_runtime};
 
 use frame_system::{ensure_signed, RawOrigin};
+use scale_info::prelude::string::String;
 use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
 use sp_runtime::traits::{BadOrigin, Header as HeaderT, Zero};
 use sp_std::vec::Vec;
@@ -171,14 +172,7 @@ pub mod pallet {
                 target: LOG_TARGET,
                 "Going to try and finalize header {:?} gateway {:?}",
                 finality_target,
-                gateway_id
-            );
-            log::debug!(
-                target: LOG_TARGET,
-                "gtwy {:?} best finalized map contained {:?}",
-                scale_info::prelude::string::String::from_utf8_lossy(gateway_id.as_ref())
-                    .into_owned(),
-                <BestFinalizedMap<T, I>>::contains_key(gateway_id)
+                String::from_utf8_lossy(gateway_id.as_ref()).into_owned()
             );
 
             let (hash, number) = (finality_target.hash(), finality_target.number());
@@ -396,17 +390,16 @@ pub mod pallet {
         pub fn initialize_single(
             origin: OriginFor<T>,
             init_data: super::InitializationData<BridgedHeader<T, I>>,
-            gateway_id: ChainId,
         ) -> DispatchResultWithPostInfo {
-            ensure_owner_or_root_single::<T, I>(origin, gateway_id)?;
+            ensure_owner_or_root_single::<T, I>(origin, init_data.gateway_id)?;
 
-            let init_allowed = !<BestFinalizedMap<T, I>>::contains_key(gateway_id);
+            let init_allowed = !<BestFinalizedMap<T, I>>::contains_key(init_data.gateway_id);
             ensure!(init_allowed, <Error<T, I>>::AlreadyInitialized);
-            initialize_single_bridge::<T, I>(init_data.clone(), gateway_id);
+            initialize_single_bridge::<T, I>(init_data.clone());
 
             log::debug!(
-                "Pallet has been initialized with the following parameters: {:?}, {:?}",
-                gateway_id,
+                target: LOG_TARGET,
+                "Pallet has been initialized with the following parameters: {:?}",
                 init_data
             );
 
@@ -564,8 +557,8 @@ pub mod pallet {
     pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
         /// Optional module owner account.
         pub owner: Option<T::AccountId>,
-        /// Optional module initialization data.
-        pub init_data: Option<super::InitializationData<BridgedHeader<T, I>>>,
+        /// Optional initialization data list for pregregistering gateways.
+        pub init_data: Option<Vec<super::InitializationData<BridgedHeader<T, I>>>>,
     }
 
     #[cfg(feature = "std")]
@@ -586,7 +579,9 @@ pub mod pallet {
             }
 
             if let Some(init_data) = self.init_data.clone() {
-                initialize_bridge::<T, I>(init_data);
+                for gtwy in init_data {
+                    initialize_single_bridge::<T, I>(gtwy);
+                }
             } else {
                 // Since the bridge hasn't been initialized we shouldn't allow anyone to perform
                 // transactions.
@@ -704,39 +699,21 @@ pub mod pallet {
 
     /// Since this writes to storage with no real checks this should only be used in functions that
     /// were called by a trusted origin.
-    pub fn initialize_bridge<T: Config<I>, I: 'static>(
-        init_params: super::InitializationData<BridgedHeader<T, I>>,
-    ) {
-        let default_gateway: ChainId = *b"gate";
-        initialize_single_bridge::<T, I>(init_params, default_gateway)
-    }
-
-    /// Since this writes to storage with no real checks this should only be used in functions that
-    /// were called by a trusted origin.
     pub(crate) fn initialize_single_bridge<T: Config<I>, I: 'static>(
         init_params: super::InitializationData<BridgedHeader<T, I>>,
-        gateway_id: ChainId,
     ) {
         let super::InitializationData {
             header,
             authority_list,
             set_id,
             is_halted,
+            gateway_id,
         } = init_params;
 
         let initial_hash = header.hash();
-        let initial_number = header.number().clone();
         <InitialHashMap<T, I>>::insert(gateway_id, initial_hash);
         <BestFinalizedMap<T, I>>::insert(gateway_id, initial_hash);
         <MultiImportedHeaders<T, I>>::insert(gateway_id, initial_hash, header);
-
-        log::debug!(
-            target: LOG_TARGET,
-            "gtwy {:?} best finalized header {:?} stored {:?}",
-            scale_info::prelude::string::String::from_utf8_lossy(gateway_id.as_ref()).into_owned(),
-            initial_number,
-            <BestFinalizedMap<T, I>>::contains_key(gateway_id)
-        );
 
         // might get problematic
         let authority_set = bp_header_chain::AuthoritySet::new(authority_list, set_id);
@@ -863,11 +840,12 @@ pub(crate) fn find_forced_change<H: HeaderT>(
 /// (Re)initialize bridge with given header for using it in `pallet-bridge-messages` benchmarks.
 #[cfg(feature = "runtime-benchmarks")]
 pub fn initialize_for_benchmarks<T: Config<I>, I: 'static>(header: BridgedHeader<T, I>) {
-    initialize_bridge::<T, I>(InitializationData {
+    initialize_single_bridge::<T, I>(InitializationData {
         header,
         authority_list: sp_std::vec::Vec::new(), // we don't verify any proofs in external benchmarks
         set_id: 0,
         is_halted: false,
+        gateway_id: *b"gate",
     });
 }
 
@@ -932,6 +910,7 @@ mod tests {
             authority_list: authority_list(),
             set_id: 1,
             is_halted: false,
+            gateway_id,
         };
 
         let gateway_sys_props = GatewaySysProps {
@@ -952,8 +931,7 @@ mod tests {
             vec![],
         );
 
-        Pallet::<TestRuntime>::initialize_single(origin, init_data.clone(), gateway_id)
-            .map(|_| init_data)
+        Pallet::<TestRuntime>::initialize_single(origin, init_data.clone()).map(|_| init_data)
     }
 
     fn init_with_origin(
@@ -969,11 +947,10 @@ mod tests {
             authority_list: authority_list(),
             set_id: 1,
             is_halted: false,
+            gateway_id: *b"gate",
         };
-        let default_gateway: ChainId = *b"gate";
 
-        Pallet::<TestRuntime>::initialize_single(origin, init_data.clone(), default_gateway)
-            .map(|_| init_data)
+        Pallet::<TestRuntime>::initialize_single(origin, init_data.clone()).map(|_| init_data)
     }
 
     fn submit_finality_proof(header: u8) -> frame_support::dispatch::DispatchResultWithPostInfo {
@@ -1144,7 +1121,7 @@ mod tests {
     }
 
     #[test]
-    fn init_can_initialize_pallet_for_multiple_gateway_but_only_once_per_each_gateway() {
+    fn init_can_initialize_pallet_for_multiple_gateways_but_only_once_per_each_gateway() {
         run_test(|| {
             let gateway_a: ChainId = *b"rlta";
             let gateway_b: ChainId = *b"rltb";
@@ -1568,21 +1545,19 @@ mod tests {
     fn disallows_invalid_authority_set() {
         run_test(|| {
             let genesis = test_header(0);
-
+            let default_gateway: ChainId = *b"gate";
             let invalid_authority_list = vec![(ALICE.into(), u64::MAX), (BOB.into(), u64::MAX)];
             let init_data = InitializationData {
                 header: genesis,
                 authority_list: invalid_authority_list,
                 set_id: 1,
                 is_halted: false,
+                gateway_id: default_gateway,
             };
-
-            let default_gateway: ChainId = *b"gate";
 
             assert_ok!(Pallet::<TestRuntime>::initialize_single(
                 Origin::root(),
                 init_data,
-                default_gateway
             ));
 
             let header = test_header(1);

@@ -1,6 +1,5 @@
-use frame_support::traits::Get;
-use frame_support::weights::Weight;
-use std::marker::PhantomData;
+use frame_support::{traits::Get, weights::Weight};
+use sp_std::marker::PhantomData;
 
 pub trait WeightInfo {
     fn update_round_on_initialize() -> Weight;

@@ -7,6 +7,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 pub mod circuit_config;
+pub mod contracts_config;
 pub mod orml_config;
 pub mod xcm_config;
 
@@ -116,6 +117,10 @@ pub type Executive = frame_executive::Executive<
     Runtime,
     AllPalletsWithSystem,
 >;
+
+// Prints debug output of the `contracts` pallet to stdout if the node is
+// started with `-lruntime::contracts=debug`.
+const CONTRACTS_DEBUG_OUTPUT: bool = true;
 
 /// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
 /// node's balance type.
@@ -462,6 +467,22 @@ impl pallet_sudo::Config for Runtime {
     type Event = Event;
 }
 
+parameter_types! {
+    pub const DefaultBlocksPerRound: u32 = 6; // TODO placeholder
+    pub const TokenCirculationAtGenesis: u32 = 1_000_000; // TODO placeholder
+    pub const TreasuryAccount: AccountId = AccountId::new([0u8; 32]); //TODO placeholder
+}
+
+impl pallet_inflation::Config for Runtime {
+    type Balance = Balance;
+    type Currency = Balances;
+    type DefaultBlocksPerRound = DefaultBlocksPerRound;
+    type Event = Event;
+    type TokenCirculationAtGenesis = TokenCirculationAtGenesis;
+    type TreasuryAccount = TreasuryAccount;
+    type WeightInfo = pallet_inflation::weights::InflationWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -519,6 +540,10 @@ construct_runtime!(
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
         CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>} = 107,
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
+        Inflation: pallet_inflation::{Pallet, Call, Storage, Event<T>} = 109,
+
+        // 3VM
+        Contracts: pallet_3vm_contracts = 119,
 
         // admin
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
@@ -638,6 +663,50 @@ impl_runtime_apis! {
             len: u32,
         ) -> pallet_transaction_payment::FeeDetails<Balance> {
             TransactionPayment::query_fee_details(uxt, len)
+        }
+    }
+
+    impl pallet_3vm_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
+        for Runtime
+    {
+        fn call(
+            origin: AccountId,
+            dest: AccountId,
+            value: Balance,
+            gas_limit: u64,
+            storage_deposit_limit: Option<Balance>,
+            input_data: Vec<u8>,
+        ) -> pallet_3vm_contracts_primitives::ContractExecResult<Balance> {
+            Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, CONTRACTS_DEBUG_OUTPUT)
+        }
+
+        fn instantiate(
+            origin: AccountId,
+            value: Balance,
+            gas_limit: u64,
+            storage_deposit_limit: Option<Balance>,
+            code: pallet_3vm_contracts_primitives::Code<Hash>,
+            data: Vec<u8>,
+            salt: Vec<u8>,
+        ) -> pallet_3vm_contracts_primitives::ContractInstantiateResult<AccountId, Balance>
+        {
+            Contracts::bare_instantiate(origin, value, gas_limit, storage_deposit_limit, code, data, salt, CONTRACTS_DEBUG_OUTPUT)
+        }
+
+        fn upload_code(
+            origin: AccountId,
+            code: Vec<u8>,
+            storage_deposit_limit: Option<Balance>,
+        ) -> pallet_3vm_contracts_primitives::CodeUploadResult<Hash, Balance>
+        {
+            Contracts::bare_upload_code(origin, code, storage_deposit_limit)
+        }
+
+        fn get_storage(
+            address: AccountId,
+            key: [u8; 32],
+        ) -> pallet_3vm_contracts_primitives::GetStorageResult {
+            Contracts::get_storage(address, key)
         }
     }
 
