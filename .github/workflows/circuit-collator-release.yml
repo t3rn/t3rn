@@ -56,6 +56,9 @@ jobs:
     runs-on: ubuntu-20.04
     needs: build-release
     steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v3
+
       - name: 📥 Download circuit
         uses: actions/download-artifact@v2
         with:
