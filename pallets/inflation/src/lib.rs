@@ -132,7 +132,6 @@ pub mod pallet {
         fn on_finalize(_n: BlockNumberFor<T>) {
             // check if round finished in current block
             // if so, update storage reward objects and create a new empty one
-            todo!()
         }
 
         fn on_initialize(n: BlockNumberFor<T>) -> Weight {

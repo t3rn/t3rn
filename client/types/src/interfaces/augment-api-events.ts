@@ -3,6 +3,7 @@
 
 import type { ApiTypes } from "@polkadot/api-base/types";
 import type {
+  Bytes,
   Null,
   Option,
   Result,
@@ -13,7 +14,11 @@ import type {
   u64,
 } from "@polkadot/types-codec";
 import type { ITuple } from "@polkadot/types-codec/types";
-import type { AccountId32, H256 } from "@polkadot/types/interfaces/runtime";
+import type {
+  AccountId32,
+  H256,
+  Perbill,
+} from "@polkadot/types/interfaces/runtime";
 import type {
   FrameSupportTokensMiscBalanceStatus,
   FrameSupportWeightsDispatchInfo,
@@ -66,6 +71,7 @@ declare module "@polkadot/api-base/types/events" {
         ApiType,
         [AccountId32, H256, Vec<T3rnPrimitivesSideEffect>]
       >;
+      EscrowTransfer: AugmentedEvent<ApiType, [AccountId32, AccountId32, u128]>;
       NewSideEffectsAvailable: AugmentedEvent<
         ApiType,
         [AccountId32, H256, Vec<T3rnPrimitivesSideEffect>]
@@ -98,6 +104,29 @@ declare module "@polkadot/api-base/types/events" {
       /** Generic event */
       [key: string]: AugmentedEvent<ApiType>;
     };
+    contracts: {
+      /** A code with the specified hash was removed. */
+      CodeRemoved: AugmentedEvent<ApiType, [H256]>;
+      /** Code with the specified hash has been stored. */
+      CodeStored: AugmentedEvent<ApiType, [H256]>;
+      /** A contract's code was updated. */
+      ContractCodeUpdated: AugmentedEvent<ApiType, [AccountId32, H256, H256]>;
+      /** A custom event emitted by the contract. */
+      ContractEmitted: AugmentedEvent<ApiType, [AccountId32, Bytes]>;
+      /** Contract deployed by address at the specified address. */
+      Instantiated: AugmentedEvent<ApiType, [AccountId32, AccountId32]>;
+      /**
+       * Contract has been removed.
+       *
+       * # Note
+       *
+       * The only way for a contract to be removed and emitting this event is by
+       * calling `seal_terminate`.
+       */
+      Terminated: AugmentedEvent<ApiType, [AccountId32, AccountId32]>;
+      /** Generic event */
+      [key: string]: AugmentedEvent<ApiType>;
+    };
     contractsRegistry: {
       /** [requester, contract_id] */
       ContractPurged: AugmentedEvent<ApiType, [AccountId32, H256]>;
@@ -116,6 +145,18 @@ declare module "@polkadot/api-base/types/events" {
       Paused: AugmentedEvent<ApiType, []>;
       /** Current authority set has been resumed. */
       Resumed: AugmentedEvent<ApiType, []>;
+      /** Generic event */
+      [key: string]: AugmentedEvent<ApiType>;
+    };
+    inflation: {
+      ClaimedRewards: AugmentedEvent<ApiType, [AccountId32, u128]>;
+      InflationSet: AugmentedEvent<
+        ApiType,
+        [Perbill, Perbill, Perbill, Perbill, Perbill, Perbill]
+      >;
+      MintedTokensExactly: AugmentedEvent<ApiType, [AccountId32, u128]>;
+      MintedTokensForRound: AugmentedEvent<ApiType, [AccountId32, u128]>;
+      RoundStarted: AugmentedEvent<ApiType, [u32, u32]>;
       /** Generic event */
       [key: string]: AugmentedEvent<ApiType>;
     };
