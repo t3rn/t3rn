@@ -219,16 +219,16 @@ pub mod pallet {
     /// Current Circuit's context of active full side effects (requested + confirmation proofs)
     #[pallet::storage]
     #[pallet::getter(fn get_escrow_side_effects_pending_relay)]
-    pub type EscrowedSideEffectsPendingRelay<T> = StorageDoubleMap<
+    pub type EscrowedSideEffectsPendingRelay<T> = StorageMap<
         _,
         Identity,
         XExecSignalId<T>,
-        Identity,
-        SideEffectId<T>,
-        FullSideEffect<
-            <T as frame_system::Config>::AccountId,
-            <T as frame_system::Config>::BlockNumber,
-            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+        Vec<
+            FullSideEffect<
+                <T as frame_system::Config>::AccountId,
+                <T as frame_system::Config>::BlockNumber,
+                EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+            >,
         >,
         OptionQuery,
     >;
@@ -392,7 +392,7 @@ pub mod pallet {
             Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential)?;
 
             // Apply: all necessary changes to state in 1 go
-            let (_, added_full_side_effects) = Self::apply(&mut local_xtx_ctx, None)?;
+            let (_, added_full_side_effects) = Self::apply(&mut local_xtx_ctx, None, None)?;
 
             // Emit: From Circuit events
             Self::emit(
@@ -457,7 +457,7 @@ pub mod pallet {
             log::debug!("on_extrinsic_trigger -- finished validate");
 
             // Apply: all necessary changes to state in 1 go
-            let (_, added_full_side_effects) = Self::apply(&mut local_xtx_ctx, None)?;
+            let (_, added_full_side_effects) = Self::apply(&mut local_xtx_ctx, None, None)?;
             log::debug!("on_extrinsic_trigger -- finished apply");
 
             // Emit: From Circuit events
@@ -505,6 +505,7 @@ pub mod pallet {
                 Self::apply(
                     &mut local_xtx_ctx,
                     Some((side_effect_id, insurance_deposit_copy)),
+                    None,
                 )
             } else {
                 Err(Error::<T>::InsuranceBondNotRequired)
@@ -572,6 +573,102 @@ pub mod pallet {
 
         /// Blind version should only be used for testing - unsafe since skips inclusion proof check.
         #[pallet::weight(< T as Config >::WeightInfo::confirm_side_effect())]
+        pub fn confirm_commit_revert_relay(
+            origin: OriginFor<T>,
+            xtx_id: XtxId<T>,
+            side_effect: SideEffect<
+                <T as frame_system::Config>::AccountId,
+                <T as frame_system::Config>::BlockNumber,
+                EscrowedBalanceOf<T, T::Escrowed>,
+            >,
+            confirmation: ConfirmedSideEffect<
+                <T as frame_system::Config>::AccountId,
+                <T as frame_system::Config>::BlockNumber,
+                EscrowedBalanceOf<T, T::Escrowed>,
+            >,
+            inclusion_proof: Option<Vec<Vec<u8>>>,
+            block_hash: Option<Vec<u8>>,
+        ) -> DispatchResultWithPostInfo {
+            // Authorize: Retrieve sender of the transaction.
+            let relayer = Self::authorize(origin, CircuitRole::Relayer)?;
+
+            // Setup: retrieve local xtx context
+            let mut local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
+                CircuitStatus::Finished,
+                &relayer,
+                Zero::zero(),
+                Some(xtx_id),
+            )?;
+
+            let mut updated_list: Vec<
+                FullSideEffect<
+                    <T as frame_system::Config>::AccountId,
+                    <T as frame_system::Config>::BlockNumber,
+                    EscrowedBalanceOf<T, T::Escrowed>,
+                >,
+            > = vec![];
+
+            if let Some(to_confirm_list) =
+                <Self as Store>::EscrowedSideEffectsPendingRelay::get(local_xtx_ctx.xtx_id)
+            {
+                let side_effect_id = side_effect.generate_id::<SystemHashing<T>>();
+                let mut found: Option<
+                    FullSideEffect<
+                        <T as frame_system::Config>::AccountId,
+                        <T as frame_system::Config>::BlockNumber,
+                        EscrowedBalanceOf<T, T::Escrowed>,
+                    >,
+                > = None;
+
+                for to_confirm in to_confirm_list {
+                    if to_confirm.input.generate_id::<SystemHashing<T>>() == side_effect_id {
+                        found = Some(to_confirm);
+                    } else {
+                        updated_list.push(to_confirm);
+                    }
+                }
+                if found.is_none() {
+                    return Err(Error::<T>::RelayEscrowedFailedNothingToConfirm.into())
+                }
+            } else {
+                return Err(Error::<T>::RelayEscrowedFailedNothingToConfirm.into())
+            };
+
+            let _status = Self::confirm(
+                &mut local_xtx_ctx,
+                &relayer,
+                &side_effect,
+                &confirmation,
+                inclusion_proof,
+                block_hash,
+            )?;
+
+            // Apply: all necessary changes to state in 1 go
+            let (maybe_xtx_changed, assert_full_side_effects_changed) = Self::apply(
+                &mut local_xtx_ctx,
+                None,
+                Some((
+                    updated_list,
+                    &side_effect,
+                    &relayer,
+                    CircuitStatus::Committed,
+                )),
+            )?;
+
+            // Emit: From Circuit events
+            Self::emit(
+                local_xtx_ctx.xtx_id,
+                maybe_xtx_changed,
+                &relayer,
+                &vec![],
+                assert_full_side_effects_changed,
+            );
+
+            Ok(().into())
+        }
+
+        /// Blind version should only be used for testing - unsafe since skips inclusion proof check.
+        #[pallet::weight(< T as Config >::WeightInfo::confirm_side_effect())]
         pub fn confirm_side_effect(
             origin: OriginFor<T>,
             xtx_id: XtxId<T>,
@@ -610,7 +707,7 @@ pub mod pallet {
 
             // Apply: all necessary changes to state in 1 go
             let (maybe_xtx_changed, assert_full_side_effects_changed) =
-                Self::apply(&mut local_xtx_ctx, None)?;
+                Self::apply(&mut local_xtx_ctx, None, None)?;
 
             // Emit: From Circuit events
             Self::emit(
@@ -702,6 +799,7 @@ pub mod pallet {
         SetupFailedIncorrectXtxStatus,
         EnactSideEffectsCanOnlyBeCalledWithMin1StepFinished,
         FatalXtxTimeoutXtxIdNotMatched,
+        RelayEscrowedFailedNothingToConfirm,
         FatalCommitSideEffectWithoutConfirmationAttempt,
         FatalErroredCommitSideEffectConfirmationAttempt,
         FatalErroredRevertSideEffectConfirmationAttempt,
@@ -811,6 +909,7 @@ impl<T: Config> Pallet<T> {
             },
             CircuitStatus::Ready
             | CircuitStatus::PendingExecution
+            | CircuitStatus::Finished
             | CircuitStatus::RevertTimedOut => {
                 if let Some(id) = xtx_id {
                     if !<Self as Store>::XExecSignals::contains_key(id) {
@@ -818,9 +917,12 @@ impl<T: Config> Pallet<T> {
                     }
                     let xtx = <Self as Store>::XExecSignals::get(id)
                         .ok_or(Error::<T>::SetupFailedUnknownXtx)?;
-                    // if xtx.status < CircuitStatus::Ready {
-                    //     return Err(Error::<T>::SetupFailedIncorrectXtxStatus)
-                    // }
+                    // Make sure in case of commit_relay to only check finished Xtx
+                    if current_status == CircuitStatus::Finished
+                        && xtx.status < CircuitStatus::Finished
+                    {
+                        return Err(Error::<T>::SetupFailedIncorrectXtxStatus)
+                    }
                     let insurance_deposits = <Self as Store>::XtxInsuranceLinks::get(id)
                         .iter()
                         .map(|&se_id| {
@@ -868,6 +970,12 @@ impl<T: Config> Pallet<T> {
         maybe_insurance_tuple: Option<(
             SideEffectId<T>,
             InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+        )>,
+        maybe_escrowed_confirmation: Option<(
+            Vec<FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
+            &SideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+            &T::AccountId,
+            CircuitStatus,
         )>,
     ) -> Result<
         (
@@ -1099,6 +1207,34 @@ impl<T: Config> Pallet<T> {
                     Ok((None, Some(local_ctx.full_side_effects.to_vec())))
                 }
             },
+            // Fires only for confirmation of escrowed execution on remote targets
+            CircuitStatus::FinishedAllSteps => {
+                if let Some((side_effects, side_effect, relayer, completion_status)) =
+                    maybe_escrowed_confirmation
+                {
+                    <Self as Store>::EscrowedSideEffectsPendingRelay::mutate(
+                        local_ctx.xtx_id,
+                        |s| *s = Some(side_effects.clone()),
+                    );
+
+                    Self::reward_escrow_relayer(relayer, side_effect)?;
+
+                    if side_effects.is_empty() {
+                        local_ctx.xtx.status = completion_status;
+                        <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
+                            *x = Some(local_ctx.xtx.clone())
+                        });
+                        Ok((
+                            Some(local_ctx.xtx.clone()),
+                            Some(local_ctx.full_side_effects.clone()),
+                        ))
+                    } else {
+                        Ok((None, Some(local_ctx.full_side_effects.to_vec())))
+                    }
+                } else {
+                    return Err(Error::<T>::ApplyTriggeredWithUnexpectedStatus)
+                }
+            },
             _ => return Err(Error::<T>::ApplyTriggeredWithUnexpectedStatus),
         }
     }
@@ -1152,7 +1288,8 @@ impl<T: Config> Pallet<T> {
 
     fn kill(local_ctx: &mut LocalXtxCtx<T>, cause: CircuitStatus) {
         local_ctx.xtx.status = cause;
-        Self::apply(local_ctx, None).expect("Panic: apply triggered by panic should never fail");
+        Self::apply(local_ctx, None, None)
+            .expect("Panic: apply triggered by panic should never fail");
     }
 
     fn charge(
@@ -1169,6 +1306,13 @@ impl<T: Config> Pallet<T> {
 
     fn enact_step_side_effects(local_ctx: &mut LocalXtxCtx<T>) -> Result<(), Error<T>> {
         let current_step = local_ctx.xtx.steps_cnt.0;
+        let mut escrowed_to_confirm: Vec<
+            FullSideEffect<
+                <T as frame_system::Config>::AccountId,
+                <T as frame_system::Config>::BlockNumber,
+                EscrowedBalanceOf<T, T::Escrowed>,
+            >,
+        > = vec![];
 
         match local_ctx.xtx.status {
             CircuitStatus::RevertTimedOut | CircuitStatus::Reverted => {
@@ -1206,11 +1350,7 @@ impl<T: Config> Pallet<T> {
                                     Error::<T>::FatalErroredRevertSideEffectConfirmationAttempt
                                 })?
                             }
-                            <Self as Store>::EscrowedSideEffectsPendingRelay::insert(
-                                local_ctx.xtx_id,
-                                fse.input.generate_id::<SystemHashing<T>>(),
-                                fse.clone(),
-                            );
+                            escrowed_to_confirm.push(fse.clone());
                         },
                         SecurityLvl::Dirty => {},
                     }
@@ -1253,11 +1393,7 @@ impl<T: Config> Pallet<T> {
                                     Error::<T>::FatalErroredCommitSideEffectConfirmationAttempt
                                 })?
                             }
-                            <Self as Store>::EscrowedSideEffectsPendingRelay::insert(
-                                local_ctx.xtx_id,
-                                fse.input.generate_id::<SystemHashing<T>>(),
-                                fse.clone(),
-                            );
+                            escrowed_to_confirm.push(fse.clone());
                         },
                         SecurityLvl::Dirty => {},
                     }
@@ -1266,7 +1402,23 @@ impl<T: Config> Pallet<T> {
             _ => {},
         }
 
+        if !escrowed_to_confirm.is_empty() {
+            <Self as Store>::EscrowedSideEffectsPendingRelay::insert(
+                local_ctx.xtx_id,
+                escrowed_to_confirm,
+            );
+        }
+
         Ok(())
+    }
+
+    fn reward_escrow_relayer(
+        relayer: &T::AccountId,
+        side_effect: &SideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+    ) -> Result<(), Error<T>> {
+        // Reward insurance
+        EscrowCurrencyOf::<T>::transfer(&Self::account_id(), relayer, side_effect.prize, AllowDeath)
+            .map_err(|_| Error::<T>::RewardTransferFailed) // should not fail
     }
 
     fn enact_insurance(
@@ -1277,7 +1429,6 @@ impl<T: Config> Pallet<T> {
         let side_effect_id = side_effect.generate_id::<SystemHashing<T>>();
         // Reward insurance
         // Check if the side effect was insured and if the relayer matches the bonded one
-        // ToDo: FIX_ME: WRONG! ONLY REWARD RELAYERS AFTER THE WHOLE STEP IS COMPLETED, NOT INDIVIDUALLY PER CONFIRMATION
         return if let Some((_id, insurance_request)) = local_ctx
             .insurance_deposits
             .iter()
