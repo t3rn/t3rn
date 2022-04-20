@@ -16,7 +16,6 @@ pub trait CircuitPortal<T: frame_system::Config> {
 
      fn confirm_parachain(
         gateway_id: [u8; 4],
-        keys: Vec<u8>,
         block_hash: Vec<u8>,
         proof: StorageProof,
     ) -> Result<(), &'static str>;

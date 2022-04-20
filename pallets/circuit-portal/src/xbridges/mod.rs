@@ -77,9 +77,11 @@ pub fn verify_storage_proof<T: pallet_multi_finality_verifier::Config<I>, I: 'st
         Ok((_, storage_root)) => {
             let db = proof.into_memory_db::<CurrentHasher<T, I>>();
             let res = read_trie_value::<LayoutV1<CurrentHasher<T, I>>, _>(&db, &storage_root, key.as_ref());
-
             match res {
-                Ok(Some(value)) => {
+                Ok(Some(mut value)) => {
+                    // ToDo: two stray bytes where found again. Asking on stackexchange what they are
+                    value.remove(0);
+                    value.remove(0);
                     let header: T::Header = Decode::decode(&mut &value[..]).unwrap();
                     Ok(header)
                 },
