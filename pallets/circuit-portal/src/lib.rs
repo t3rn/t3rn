@@ -66,7 +66,7 @@ use weights::WeightInfo;
 
 pub mod xbridges;
 pub use xbridges::{
-    get_roots_from_bridge, verify_storage_proof, init_bridge_instance, CurrentHash, CurrentHasher,
+    get_roots_from_bridge, verify_storage_proof, init_bridge_instance, CurrentHash, CurrentHasher, CurrentHeader,
     DefaultPolkadotLikeGateway, EthLikeKeccak256ValU32Gateway, EthLikeKeccak256ValU64Gateway,
     PolkadotLikeValU64Gateway,
 };
@@ -423,7 +423,7 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
         }
     }
 
-    fn confirm_parachain(
+    fn confirm_parachain_header(
         gateway_id: [u8; 4],
         block_hash: Vec<u8>,
         proof: StorageProof,

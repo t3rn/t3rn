@@ -378,8 +378,10 @@ pub mod pallet {
             gateway_id: ChainId,
             proof: Vec<Vec<u8>>,
         ) -> DispatchResultWithPostInfo {
+            ensure_operational_single::<T, I>(gateway_id)?;
+            ensure_signed(origin)?;
             let storage_proof: StorageProof = Decode::decode(&mut &proof.encode()[..]).unwrap();
-            let result = <T as Config<I>>::CircuitPortal::confirm_parachain(
+            let result = <T as Config<I>>::CircuitPortal::confirm_parachain_header(
                 gateway_id,
                 block_hash,
                 storage_proof
@@ -390,7 +392,7 @@ pub mod pallet {
                 Err(err) => return Err(err.into())
             };
 
-            let (hash, number) = (header.hash(), header.number());
+            let hash = header.hash();
             let index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
 
             let pruning = <MultiImportedHashes<T, I>>::try_get(gateway_id, index);
