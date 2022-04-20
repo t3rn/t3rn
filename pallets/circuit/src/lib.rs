@@ -301,12 +301,16 @@ pub mod pallet {
         fn on_initialize(n: T::BlockNumber) -> Weight {
             // Check every XtxTimeoutCheckInterval blocks
             if n % T::XtxTimeoutCheckInterval::get() == T::BlockNumber::from(0u8) {
+                let mut deletion_counter: u32 = 0;
                 // Go over all unfinished Xtx to find those that timed out
                 <ActiveXExecSignalsTimingLinks<T>>::iter()
                     .find(|(_xtx_id, timeout_at)| {
                         timeout_at <= &frame_system::Pallet::<T>::block_number()
                     })
                     .map(|(xtx_id, _timeout_at)| {
+                        if deletion_counter > T::DeletionQueueLimit::get() {
+                            return
+                        }
                         let mut local_xtx_ctx = Self::setup(
                             CircuitStatus::RevertTimedOut,
                             &Self::account_id(),
@@ -324,6 +328,7 @@ pub mod pallet {
                             &vec![],
                             None,
                         );
+                        deletion_counter += 1;
                     });
             }
 
