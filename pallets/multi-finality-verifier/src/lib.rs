@@ -45,7 +45,6 @@ use bp_runtime::{BlockNumberOf, Chain, ChainId, HashOf, HasherOf, HeaderOf};
 use finality_grandpa::voter_set::VoterSet;
 use frame_support::{ensure, pallet_prelude::*};
 use t3rn_primitives::bridges::{header_chain as bp_header_chain, runtime as bp_runtime};
-
 use frame_system::{ensure_signed, RawOrigin};
 use scale_info::prelude::string::String;
 use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
@@ -375,59 +374,69 @@ pub mod pallet {
         ))]
         pub fn submit_parachain_header(
             origin: OriginFor<T>,
-            relay_chain_id: ChainId,
             block_hash: Vec<u8>,
-            header_key: Vec<u8>,
+            gateway_id: ChainId,
             proof: Vec<Vec<u8>>,
         ) -> DispatchResultWithPostInfo {
-            // Plan:
+            ensure_operational_single::<T, I>(gateway_id)?;
+            ensure_signed(origin)?;
             let storage_proof: StorageProof = Decode::decode(&mut &proof.encode()[..]).unwrap();
-            let header = <T as Config<I>>::CircuitPortal::confirm_parachain(
-                relay_chain_id,
-                header_key,
+            let result = <T as Config<I>>::CircuitPortal::confirm_parachain_header(
+                gateway_id,
                 block_hash,
                 storage_proof
             );
 
-            //  gateway_id: [u8; 4],
-            // keys: Vec<u8>,
-            // block_hash: Vec<u8>,
-            // proof: StorageProof,
-            //  let gateway_xdns_record = <T as Config>::Xdns::best_available(gateway_id)?;
-            //  let (extrinsics_root_h256, storage_root_h256) = match (
-            //         gateway_xdns_record.gateway_abi.hasher.clone(),
-            //         gateway_xdns_record.gateway_abi.block_number_type_size,
-            //     ) {
-            //         (HasherAlgo::Blake2, 32) => get_roots_from_bridge::<
-            //             T,
-            //             DefaultPolkadotLikeGateway,
-            //         >(block_hash, gateway_id)?,
-            //         (HasherAlgo::Blake2, 64) => get_roots_from_bridge::<
-            //             T,
-            //             PolkadotLikeValU64Gateway,
-            //         >(block_hash, gateway_id)?,
-            //         (HasherAlgo::Keccak256, 32) => get_roots_from_bridge::<
-            //             T,
-            //             EthLikeKeccak256ValU32Gateway,
-            //         >(block_hash, gateway_id)?,
-            //         (HasherAlgo::Keccak256, 64) => get_roots_from_bridge::<
-            //             T,
-            //             EthLikeKeccak256ValU64Gateway,
-            //         >(block_hash, gateway_id)?,
-            //         (_, _) => get_roots_from_bridge::<T, DefaultPolkadotLikeGateway>(
-            //             block_hash, gateway_id,
-            //         )?,
-            //     };
+            let header: BridgedHeader<T, I> = match result {
+                Ok(header) => Decode::decode(&mut &header[..]).unwrap(),
+                Err(err) => return Err(err.into())
+            };
 
+            let hash = header.hash();
+            let index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
 
-             // read_proof_check(relay_chain_storage_root, proof, keys);
-             log::info!("header: {:?}", header);
+            let pruning = <MultiImportedHashes<T, I>>::try_get(gateway_id, index);
 
+            <BestFinalizedMap<T, I>>::insert(gateway_id, hash);
 
+            <MultiImportedHeaders<T, I>>::insert(gateway_id, hash, header.clone());
+            <MultiImportedHashes<T, I>>::insert(gateway_id, index, hash);
+            <MultiImportedRoots<T, I>>::insert(
+                gateway_id,
+                hash,
+                (header.extrinsics_root(), header.state_root()),
+            );
 
-            // - check if submitted header has same hash
-            // - write parachain header to storage -> now we can use it as a anchor header
+            <RequestCountMap<T, I>>::mutate(gateway_id, |count| {
+                match count {
+                    Some(count) => *count += 1,
+                    None => *count = Some(1),
+                }
+                *count
+             });
 
+            // Update ring buffer pointer and remove old header.
+            <MultiImportedHashesPointer<T, I>>::insert(
+                gateway_id,
+                (index + 1) % T::HeadersToKeep::get(),
+            );
+
+            if let Ok(hash) = pruning {
+                log::debug!(
+                    target: LOG_TARGET,
+                    "Pruning old header: {:?} for gateway {:?}.",
+                    hash,
+                    gateway_id
+                );
+                <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
+                <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
+            }
+
+             // not sure if we want this here as well as we're adding old blocks
+            let now = TryInto::<u64>::try_into(<T::Escrowed as EscrowTrait<T>>::Time::now())
+                .map_err(|_| "Unable to compute current timestamp")?;
+
+            <T::Xdns as Xdns<T>>::update_gateway_ttl(gateway_id, now)?;
 
             Ok(().into())
          }
@@ -680,6 +689,8 @@ pub mod pallet {
         InvalidAnchorHeader,
         // No finalized header known for the corresponding gateway.
         NoFinalizedHeader,
+        // submitted gateway_id does not have the parachain field set
+        NoParachainEntryFound,
     }
 
     /// Check the given header for a GRANDPA scheduled authority set change. If a change

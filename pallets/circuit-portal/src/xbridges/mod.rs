@@ -68,7 +68,7 @@ pub fn verify_storage_proof<T: pallet_multi_finality_verifier::Config<I>, I: 'st
     gateway_id: bp_runtime::ChainId,
     key: Vec<u8>,
     proof: StorageProof,
-) -> Result<T::Header, Error<T>> {
+) -> Result<Vec<u8>, Error<T>> {
 
     return match get_roots_from_bridge::<T, I>(
         block_hash,
@@ -77,11 +77,10 @@ pub fn verify_storage_proof<T: pallet_multi_finality_verifier::Config<I>, I: 'st
         Ok((_, storage_root)) => {
             let db = proof.into_memory_db::<CurrentHasher<T, I>>();
             let res = read_trie_value::<LayoutV1<CurrentHasher<T, I>>, _>(&db, &storage_root, key.as_ref());
-
             match res {
                 Ok(Some(value)) => {
-                    let header: T::Header = Decode::decode(&mut &value[..]).unwrap();
-                    Ok(header)
+                    // the header is wrapped in a Vec<u8>, we decode that here
+                    Ok(Vec::<u8>::decode(&mut &value[..]).unwrap())
                 },
                 _ => {
                     Err(Error::<T>::ParachainHeaderNotVerified)

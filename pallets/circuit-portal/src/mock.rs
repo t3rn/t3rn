@@ -18,6 +18,7 @@ use t3rn_primitives::{
     abi::Type, side_effect::interface::SideEffectInterface, transfers::BalanceOf, xdns::XdnsRecord,
     EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor,
 };
+use t3rn_primitives::circuit_portal::CircuitPortal;
 use t3rn_protocol::side_effects::confirm::ethereum::EthereumMockVerifier;
 
 pub type AccountId = sp_runtime::AccountId32;
@@ -256,6 +257,7 @@ impl pallet_multi_finality_verifier::Config<Blake2ValU64BridgeInstance> for Test
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
     type Xdns = XDNS;
+    type CircuitPortal = Portal;
 }
 
 impl pallet_multi_finality_verifier::Config<Blake2ValU32BridgeInstance> for Test {
@@ -265,6 +267,7 @@ impl pallet_multi_finality_verifier::Config<Blake2ValU32BridgeInstance> for Test
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
     type Xdns = XDNS;
+    type CircuitPortal = Portal;
 }
 
 impl pallet_multi_finality_verifier::Config<Keccak256ValU64BridgeInstance> for Test {
@@ -274,6 +277,7 @@ impl pallet_multi_finality_verifier::Config<Keccak256ValU64BridgeInstance> for T
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
     type Xdns = XDNS;
+    type CircuitPortal = Portal;
 }
 
 impl pallet_multi_finality_verifier::Config<Keccak256ValU32BridgeInstance> for Test {
@@ -283,6 +287,7 @@ impl pallet_multi_finality_verifier::Config<Keccak256ValU32BridgeInstance> for T
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
     type Xdns = XDNS;
+    type CircuitPortal = Portal;
 }
 
 pub struct ExtBuilder {

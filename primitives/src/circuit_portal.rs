@@ -14,10 +14,9 @@ pub trait CircuitPortal<T: frame_system::Config> {
         maybe_proof: Option<Vec<Vec<u8>>>,
     ) -> Result<(), &'static str>;
 
-     fn confirm_parachain(
+     fn confirm_parachain_header(
         gateway_id: [u8; 4],
-        keys: Vec<u8>,
         block_hash: Vec<u8>,
         proof: StorageProof,
-    ) -> Result<(), &'static str>;
+    ) -> Result<Vec<u8>, &'static str>;
 }
