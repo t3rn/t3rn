@@ -212,8 +212,6 @@ pub mod pallet {
                 gateway_sys_props.clone(),
                 allowed_side_effects.clone(),
             )?;
-            let _gtwy = scale_info::prelude::string::String::from_utf8_lossy(gateway_id.as_ref())
-                .into_owned();
             let res = match (gateway_abi.hasher, gateway_abi.block_number_type_size) {
                 (HasherAlgo::Blake2, 32) => init_bridge_instance::<T, DefaultPolkadotLikeGateway>(
                     origin,

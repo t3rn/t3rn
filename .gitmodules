@@ -4,3 +4,6 @@
 [submodule "protocol"]
 	path = protocol
 	url = https://github.com/t3rn/protocol
+[submodule "3vm"]
+	path = 3vm
+	url = https://github.com/t3rn/3vm.git

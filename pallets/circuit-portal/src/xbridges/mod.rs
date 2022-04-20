@@ -40,9 +40,10 @@ pub fn init_bridge_instance<T: pallet_multi_finality_verifier::Config<I>, I: 'st
             .collect::<Vec<_>>(),
         set_id: authority_set_id.unwrap_or_default(),
         is_halted: false,
+        gateway_id,
     };
 
-    pallet_multi_finality_verifier::Pallet::<T, I>::initialize_single(origin, init_data, gateway_id)
+    pallet_multi_finality_verifier::Pallet::<T, I>::initialize_single(origin, init_data)
 }
 
 pub fn get_roots_from_bridge<T: pallet_multi_finality_verifier::Config<I>, I: 'static>(
