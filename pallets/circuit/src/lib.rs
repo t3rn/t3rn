@@ -384,10 +384,10 @@ pub mod pallet {
             // ToDo: This should be replaced with call to 3VM from the trait as a dep inj. @Don
             // let side_effects = T::FreeVM::exec_in_xtx_ctx(
             let side_effects = Self::exec_in_xtx_ctx(
-                local_xtx_ctx.xtx_id.clone(),
+                local_xtx_ctx.xtx_id,
                 local_xtx_ctx.local_state.clone(),
                 local_xtx_ctx.full_side_effects.clone(),
-                local_xtx_ctx.xtx.steps_cnt.clone(),
+                local_xtx_ctx.xtx.steps_cnt,
             )
             .map_err(|_e| {
                 if fresh_or_revoked_exec == CircuitStatus::Ready {
@@ -413,7 +413,7 @@ pub mod pallet {
                 added_full_side_effects,
             );
 
-            Ok(().into())
+            Ok(())
         }
     }
 
@@ -544,7 +544,7 @@ pub mod pallet {
             >,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
-            let relayer = Self::authorize(origin.clone(), CircuitRole::Relayer)?;
+            let relayer = Self::authorize(origin, CircuitRole::Relayer)?;
 
             // Setup: retrieve local xtx context
             let local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
@@ -1028,7 +1028,7 @@ impl<T: Config> Pallet<T> {
                         return true
                     }
                     let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(gateway_id);
-                    return gateway_type == GatewayType::ProgrammableInternal(0)
+                    gateway_type == GatewayType::ProgrammableInternal(0)
                 }
 
                 let steps_side_effects_ids: Vec<(
@@ -1040,7 +1040,7 @@ impl<T: Config> Pallet<T> {
                     .clone()
                     .iter()
                     .enumerate()
-                    .map(|(cnt, fse)| {
+                    .flat_map(|(cnt, fse)| {
                         fse.iter()
                             .map(|full_side_effect| full_side_effect.input.clone())
                             .filter(|side_effect| is_local::<T>(&side_effect.target))
@@ -1060,7 +1060,6 @@ impl<T: Config> Pallet<T> {
                             })
                             .collect::<Vec<(usize, SideEffectId<T>, XExecStepSideEffectId<T>)>>()
                     })
-                    .flatten()
                     .collect();
 
                 for (step_cnt, side_effect_id, step_side_effect_id) in steps_side_effects_ids {
@@ -1177,7 +1176,7 @@ impl<T: Config> Pallet<T> {
                     &local_ctx.insurance_deposits,
                 )?;
 
-                local_ctx.xtx.status = new_status.clone();
+                local_ctx.xtx.status = new_status;
                 // Check whether all of the side effects in this steps are confirmed - the status now changes to CircuitStatus::Finished
                 if local_ctx.full_side_effects[local_ctx.xtx.steps_cnt.0 as usize]
                     .clone()
@@ -1585,7 +1584,7 @@ impl<T: Config> Pallet<T> {
                 full_side_effects.push(FullSideEffect {
                     input: side_effect.clone(),
                     confirmed: None,
-                    security_lvl: determine_dirty_vs_escrowed_lvl::<T>(&side_effect),
+                    security_lvl: determine_dirty_vs_escrowed_lvl::<T>(side_effect),
                 });
             }
         }
@@ -1765,7 +1764,7 @@ impl<T: Config> Pallet<T> {
         Vec<SideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
         &'static str,
     > {
-        return Ok(vec![])
+        Ok(vec![])
     }
 
     /// The account ID of the Circuit Vault.

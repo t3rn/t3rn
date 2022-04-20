@@ -158,7 +158,7 @@ impl CircuitStatus {
 
         for step in steps.iter() {
             let current_step_status = Self::determine_step_status::<T>(step, insurance_deposits)?;
-            println!(
+            log::debug!(
                 "Determine determine_xtx_status in loop Before -- {:?}",
                 current_step_status.clone()
             );
