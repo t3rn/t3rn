@@ -369,16 +369,14 @@ pub mod pallet {
         ))]
         pub fn submit_parachain_header(
             origin: OriginFor<T>,
-            relay_chain_id: ChainId,
             block_hash: Vec<u8>,
-            header_key: Vec<u8>,
+            gateway_id: ChainId,
             proof: Vec<Vec<u8>>,
         ) -> DispatchResultWithPostInfo {
             // Plan:
             let storage_proof: StorageProof = Decode::decode(&mut &proof.encode()[..]).unwrap();
             let header = <T as Config<I>>::CircuitPortal::confirm_parachain(
-                relay_chain_id,
-                header_key,
+                gateway_id,
                 block_hash,
                 storage_proof
             );

@@ -52,6 +52,7 @@ pub mod pallet {
         xdns::{AllowedSideEffect, Xdns, XdnsRecord},
         ChainId, EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor,
     };
+    use t3rn_primitives::xdns::Parachain;
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -113,7 +114,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             url: Vec<u8>,
             gateway_id: ChainId,
-            parachain_id: Option<u32>,
+            parachain: Option<Parachain>,
             gateway_abi: GatewayABIConfig,
             gateway_vendor: GatewayVendor,
             gateway_type: GatewayType,
@@ -125,7 +126,7 @@ pub mod pallet {
                 origin,
                 url,
                 gateway_id,
-                parachain_id,
+                parachain,
                 gateway_abi,
                 gateway_vendor,
                 gateway_type,
@@ -314,7 +315,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             url: Vec<u8>,
             gateway_id: ChainId,
-            parachain_id: Option<u32>,
+            parachain: Option<Parachain>,
             gateway_abi: GatewayABIConfig,
             gateway_vendor: GatewayVendor,
             gateway_type: GatewayType,
@@ -333,7 +334,7 @@ pub mod pallet {
             let mut xdns_record = XdnsRecord::<T::AccountId>::new(
                 url,
                 gateway_id,
-                parachain_id,
+                parachain,
                 gateway_abi,
                 gateway_vendor,
                 gateway_type,

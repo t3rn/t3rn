@@ -25,10 +25,7 @@
 #![allow(clippy::too_many_arguments)]
 
 use codec::{Decode, Encode};
-use frame_support::{
-    dispatch::DispatchResultWithPostInfo,
-    traits::{EnsureOrigin, Get},
-};
+use frame_support::{dispatch::DispatchResultWithPostInfo, traits::{EnsureOrigin, Get}, Twox64Concat};
 use frame_system::{
     offchain::{SignedPayload, SigningTypes},
     RawOrigin,
@@ -103,7 +100,7 @@ pub mod pallet {
     };
     use frame_system::pallet_prelude::*;
     use snowbridge_core::Verifier;
-    use t3rn_primitives::xdns::Xdns;
+    use t3rn_primitives::xdns::{Parachain, Xdns};
 
     use super::*;
     use crate::WeightInfo;
@@ -190,7 +187,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             url: Vec<u8>,
             gateway_id: ChainId,
-            parachain_id: Option<u32>,
+            parachain: Option<Parachain>,
             gateway_abi: GatewayABIConfig,
             gateway_vendor: t3rn_primitives::GatewayVendor,
             gateway_type: t3rn_primitives::GatewayType,
@@ -206,7 +203,7 @@ pub mod pallet {
                 origin.clone(),
                 url,
                 gateway_id,
-                parachain_id,
+                parachain,
                 gateway_abi.clone(),
                 gateway_vendor.clone(),
                 gateway_type.clone(),
@@ -322,6 +319,7 @@ pub mod pallet {
         ContractDoesNotExists,
         RequesterNotEnoughBalance,
         ParachainHeaderNotVerified,
+        NoParachainEntryFound
     }
 }
 
@@ -427,23 +425,34 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
 
     fn confirm_parachain(
         gateway_id: [u8; 4],
-        key: Vec<u8>,
         block_hash: Vec<u8>,
         proof: StorageProof,
     ) -> Result<(), &'static str> {
-        let gateway_xdns_record = <T as Config>::Xdns::best_available(gateway_id)?;
+        // partial StorageKey for Paras_Heads. We now need to append the parachain_id as LE-u32 to generate the parachains StorageKey
+        let mut key: Vec<u8> = [205,113,11,48,189,46,171,3,82,221,204,38,65,122,161,148,27,60,37,47,203,41,216,142,255,79,61,229,222,68,118,195].to_vec();
+        let relay_xdns_record = <T as Config>::Xdns::best_available(gateway_id.clone())?;
+        let relay_chain_id: ChainId = match relay_xdns_record.parachain {
+            Some(parachain) => {
+                let mut arg = Twox64Concat::hash(parachain.id.encode().as_ref());
+                key.append(&mut arg);
+                parachain.relay_chain_id
+            },
+            None => {
+                return Err(Error::<T>::NoParachainEntryFound.into())
+            }
+        };
 
         // Check inclusion relying on data in pallet-multi-verifier
         let header = match (
-            gateway_xdns_record.gateway_abi.hasher.clone(),
-            gateway_xdns_record.gateway_abi.block_number_type_size,
+            relay_xdns_record.gateway_abi.hasher.clone(),
+            relay_xdns_record.gateway_abi.block_number_type_size,
         ) {
             (HasherAlgo::Blake2, 32) => verify_storage_proof::<
                 T,
                 DefaultPolkadotLikeGateway,
             >(
                 block_hash,
-                gateway_id,
+                relay_chain_id,
                 key,
                 proof
             )?,
@@ -452,12 +461,14 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
                 PolkadotLikeValU64Gateway,
             >(
                 block_hash,
-                gateway_id,
+                 relay_chain_id,
                 key,
                 proof
             )?,
             (_, _) => unimplemented!()
         };
+
+        log::info!("header: {:?}", header);
 
         Ok(())
     }

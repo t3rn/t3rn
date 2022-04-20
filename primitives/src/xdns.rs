@@ -17,6 +17,15 @@ pub type XdnsRecordId = [u8; 4];
 /// A hash based on encoding the Gateway ID
 pub type XdnsGatewayId<T> = <T as frame_system::Config>::Hash;
 
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+pub struct Parachain {
+    // gateway_id of relaychain
+    pub relay_chain_id: ChainId,
+    // parachain_id
+    pub id: u32
+}
+
 /// A preliminary representation of a xdns_record in the onchain registry.
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
@@ -37,7 +46,7 @@ pub struct XdnsRecord<AccountId> {
     /// Gateway Id
     pub gateway_id: ChainId,
 
-    pub parachain_id: Option<u32>,
+    pub parachain: Option<Parachain>,
 
     /// Gateway System Properties
     pub gateway_sys_props: GatewaySysProps,
@@ -58,7 +67,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
         extrinsics_version: u8,
         genesis_hash: Vec<u8>,
         gateway_id: ChainId,
-        parachain_id: Option<u32>,
+        parachain: Option<Parachain>,
         gateway_vendor: GatewayVendor,
         gateway_type: GatewayType,
         gateway_sys_props: GatewaySysProps,
@@ -79,7 +88,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
             gateway_vendor,
             gateway_type,
             gateway_id,
-            parachain_id,
+            parachain,
             gateway_sys_props,
             registrant,
             last_finalized,
@@ -90,7 +99,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
     pub fn new(
         url: Vec<u8>,
         gateway_id: ChainId,
-        parachain_id: Option<u32>,
+        parachain: Option<Parachain>,
         gateway_abi: GatewayABIConfig,
         gateway_vendor: GatewayVendor,
         gateway_type: GatewayType,
@@ -101,7 +110,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
         XdnsRecord {
             url,
             gateway_id,
-            parachain_id,
+            parachain,
             gateway_abi,
             gateway_vendor,
             gateway_type,
@@ -139,7 +148,7 @@ pub trait Xdns<T: frame_system::Config> {
         origin: OriginFor<T>,
         url: Vec<u8>,
         gateway_id: ChainId,
-        parachain_id: Option<u32>,
+        parachain: Option<Parachain>,
         gateway_abi: GatewayABIConfig,
         gateway_vendor: GatewayVendor,
         gateway_type: GatewayType,
