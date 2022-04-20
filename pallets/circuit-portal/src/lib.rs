@@ -25,7 +25,7 @@
 #![allow(clippy::too_many_arguments)]
 
 use codec::{Decode, Encode};
-use frame_support::{dispatch::DispatchResultWithPostInfo, traits::{EnsureOrigin, Get}, Twox64Concat};
+use frame_support::{dispatch::DispatchResultWithPostInfo, traits::{EnsureOrigin, Get}, Twox64Concat, StorageHasher};
 use frame_system::{
     offchain::{SignedPayload, SigningTypes},
     RawOrigin,
@@ -72,6 +72,8 @@ pub use xbridges::{
 };
 
 use sp_finality_grandpa::SetId;
+use pallet_multi_finality_verifier::BridgedHeader;
+
 pub type AllowedSideEffect = [u8; 4];
 
 /// Defines application identifier for crypto keys of this module.
@@ -425,8 +427,9 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
         gateway_id: [u8; 4],
         block_hash: Vec<u8>,
         proof: StorageProof,
-    ) -> Result<(), &'static str> {
+    ) -> Result<Vec<u8>, &'static str> {
         // partial StorageKey for Paras_Heads. We now need to append the parachain_id as LE-u32 to generate the parachains StorageKey
+        // ToDo: This is a bit unclean, but it makes no sense to hash the StorageKey for each exec
         let mut key: Vec<u8> = [205,113,11,48,189,46,171,3,82,221,204,38,65,122,161,148,27,60,37,47,203,41,216,142,255,79,61,229,222,68,118,195].to_vec();
         let relay_xdns_record = <T as Config>::Xdns::best_available(gateway_id.clone())?;
         let relay_chain_id: ChainId = match relay_xdns_record.parachain {
@@ -466,9 +469,7 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
             (_, _) => unimplemented!()
         };
 
-        log::info!("header: {:?}", header);
-
-        Ok(())
+        Ok(header)
     }
 }
 impl<T: Config> Pallet<T> {
