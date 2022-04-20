@@ -79,10 +79,8 @@ pub fn verify_storage_proof<T: pallet_multi_finality_verifier::Config<I>, I: 'st
             let res = read_trie_value::<LayoutV1<CurrentHasher<T, I>>, _>(&db, &storage_root, key.as_ref());
             match res {
                 Ok(Some(mut value)) => {
-                    // ToDo: two stray bytes where found again. Asking on stackexchange what they are
-                    value.remove(0);
-                    value.remove(0);
-                    Ok(value)
+                    // the header is wrapped in a Vec<u8>, we decode that here
+                    Ok(Vec::<u8>::decode(&mut &value[..]).unwrap())
                 },
                 _ => {
                     Err(Error::<T>::ParachainHeaderNotVerified)
