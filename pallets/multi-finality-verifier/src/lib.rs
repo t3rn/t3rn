@@ -378,7 +378,6 @@ pub mod pallet {
             gateway_id: ChainId,
             proof: Vec<Vec<u8>>,
         ) -> DispatchResultWithPostInfo {
-            // Plan:
             let storage_proof: StorageProof = Decode::decode(&mut &proof.encode()[..]).unwrap();
             let result = <T as Config<I>>::CircuitPortal::confirm_parachain(
                 gateway_id,
@@ -391,15 +390,45 @@ pub mod pallet {
                 Err(err) => return Err(err.into())
             };
 
+            let (hash, number) = (header.hash(), header.number());
             let index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
 
-            <MultiImportedHeaders<T, I>>::insert(gateway_id, header.hash(), header.clone());
-            <MultiImportedHashes<T, I>>::insert(gateway_id, index, header.hash());
+            let pruning = <MultiImportedHashes<T, I>>::try_get(gateway_id, index);
+
+            <BestFinalizedMap<T, I>>::insert(gateway_id, hash);
+
+            <MultiImportedHeaders<T, I>>::insert(gateway_id, hash, header.clone());
+            <MultiImportedHashes<T, I>>::insert(gateway_id, index, hash);
             <MultiImportedRoots<T, I>>::insert(
                 gateway_id,
-                header.hash(),
+                hash,
                 (header.extrinsics_root(), header.state_root()),
             );
+
+            <RequestCountMap<T, I>>::mutate(gateway_id, |count| {
+                match count {
+                    Some(count) => *count += 1,
+                    None => *count = Some(1),
+                }
+                *count
+             });
+
+            // Update ring buffer pointer and remove old header.
+            <MultiImportedHashesPointer<T, I>>::insert(
+                gateway_id,
+                (index + 1) % T::HeadersToKeep::get(),
+            );
+
+            if let Ok(hash) = pruning {
+                log::debug!(
+                    target: LOG_TARGET,
+                    "Pruning old header: {:?} for gateway {:?}.",
+                    hash,
+                    gateway_id
+                );
+                <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
+                <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
+            }
 
              // not sure if we want this here as well as we're adding old blocks
             let now = TryInto::<u64>::try_into(<T::Escrowed as EscrowTrait<T>>::Time::now())
