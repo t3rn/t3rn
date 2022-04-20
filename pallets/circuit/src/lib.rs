@@ -252,6 +252,11 @@ pub mod pallet {
         #[pallet::constant]
         type XtxTimeoutCheckInterval: Get<Self::BlockNumber>;
 
+        /// The Circuit's deletion queue limit - preventing potential
+        ///     delay when queue is too long in on_initialize
+        #[pallet::constant]
+        type DeletionQueueLimit: Get<u32>;
+
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 

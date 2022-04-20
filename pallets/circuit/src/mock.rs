@@ -485,6 +485,7 @@ impl Config for Test {
     type Balances = Balances;
     type Call = Call;
     type CircuitPortal = CircuitPortal;
+    type DeletionQueueLimit = ConstU32<100>;
     type Escrowed = Self;
     type Event = Event;
     // type FreeVM = FreeVM;
