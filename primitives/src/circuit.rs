@@ -26,7 +26,7 @@ impl<T: Config> LocalTrigger<T> {
             contract,
             side_effects,
             round_breakpoints,
-            maybe_xtx_id
+            maybe_xtx_id,
         }
     }
 }

@@ -77,7 +77,7 @@ pub struct ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf> {
 pub enum SecurityLvl {
     Dirty = 0,
     Optimistic = 1,
-    Escrowed = 2
+    Escrowed = 2,
 }
 
 impl Default for SecurityLvl {

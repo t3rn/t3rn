@@ -42,6 +42,7 @@ pub mod circuit;
 pub mod circuit_portal;
 pub mod contract_metadata;
 pub mod contracts_registry;
+pub mod freevm;
 pub mod gateway_inbound_protocol;
 pub mod match_format;
 pub mod protocol;
@@ -52,7 +53,6 @@ pub mod transfers;
 pub mod volatile;
 pub mod xdns;
 pub mod xtx;
-pub mod freevm;
 
 pub use gateway_inbound_protocol::GatewayInboundProtocol;
 pub use orml_traits;
