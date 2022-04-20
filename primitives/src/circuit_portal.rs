@@ -18,5 +18,5 @@ pub trait CircuitPortal<T: frame_system::Config> {
         gateway_id: [u8; 4],
         block_hash: Vec<u8>,
         proof: StorageProof,
-    ) -> Result<(), &'static str>;
+    ) -> Result<Vec<u8>, &'static str>;
 }

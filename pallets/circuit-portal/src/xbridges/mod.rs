@@ -67,7 +67,7 @@ pub fn verify_storage_proof<T: pallet_multi_finality_verifier::Config<I>, I: 'st
     gateway_id: bp_runtime::ChainId,
     key: Vec<u8>,
     proof: StorageProof,
-) -> Result<T::Header, Error<T>> {
+) -> Result<Vec<u8>, Error<T>> {
 
     return match get_roots_from_bridge::<T, I>(
         block_hash,
@@ -81,8 +81,7 @@ pub fn verify_storage_proof<T: pallet_multi_finality_verifier::Config<I>, I: 'st
                     // ToDo: two stray bytes where found again. Asking on stackexchange what they are
                     value.remove(0);
                     value.remove(0);
-                    let header: T::Header = Decode::decode(&mut &value[..]).unwrap();
-                    Ok(header)
+                    Ok(value)
                 },
                 _ => {
                     Err(Error::<T>::ParachainHeaderNotVerified)
