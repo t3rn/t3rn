@@ -77,7 +77,7 @@ pub fn verify_storage_proof<T: pallet_multi_finality_verifier::Config<I>, I: 'st
             let db = proof.into_memory_db::<CurrentHasher<T, I>>();
             let res = read_trie_value::<LayoutV1<CurrentHasher<T, I>>, _>(&db, &storage_root, key.as_ref());
             match res {
-                Ok(Some(mut value)) => {
+                Ok(Some(value)) => {
                     // the header is wrapped in a Vec<u8>, we decode that here
                     Ok(Vec::<u8>::decode(&mut &value[..]).unwrap())
                 },

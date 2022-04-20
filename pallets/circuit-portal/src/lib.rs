@@ -436,8 +436,10 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
         let relay_xdns_record = <T as Config>::Xdns::best_available(gateway_id.clone())?;
         let relay_chain_id: ChainId = match relay_xdns_record.parachain {
             Some(parachain) => {
+                // parachain_id is used as an encoded argument in the storage key
                 let mut arg = Twox64Concat::hash(parachain.id.encode().as_ref());
                 key.append(&mut arg);
+                // the relay_chain_id is set during registration and queried from storage
                 parachain.relay_chain_id
             },
             None => {
