@@ -416,6 +416,7 @@ impl pallet_multi_finality_verifier::Config<Blake2ValU64BridgeInstance> for Test
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
     type Xdns = XDNS;
+    type CircuitPortal = CircuitPortal;
 }
 
 impl pallet_multi_finality_verifier::Config<Blake2ValU32BridgeInstance> for Test {
@@ -425,6 +426,7 @@ impl pallet_multi_finality_verifier::Config<Blake2ValU32BridgeInstance> for Test
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
     type Xdns = XDNS;
+    type CircuitPortal = CircuitPortal;
 }
 
 impl pallet_multi_finality_verifier::Config<Keccak256ValU64BridgeInstance> for Test {
@@ -434,6 +436,7 @@ impl pallet_multi_finality_verifier::Config<Keccak256ValU64BridgeInstance> for T
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
     type Xdns = XDNS;
+    type CircuitPortal = CircuitPortal;
 }
 
 impl pallet_multi_finality_verifier::Config<Keccak256ValU32BridgeInstance> for Test {
@@ -443,6 +446,7 @@ impl pallet_multi_finality_verifier::Config<Keccak256ValU32BridgeInstance> for T
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
     type Xdns = XDNS;
+    type CircuitPortal = CircuitPortal;
 }
 
 parameter_types! {
