@@ -2,15 +2,15 @@
   "name": "@t3rn/demo_grandpa_ranges",
   "version": "0.1.0",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "prestart": "cargo build --release --manifest-path ./justification-decoder/Cargo.toml",
     "start": "DEBUG=listener,relayer ts-node src/index.ts",
-    "standalone": "cargo run --manifest-path ../../node/standalone/Cargo.toml -- --dev --ws-port 3333 -lmulti-finality-verifier=debug",
+    "standalone": "SKIP_WASM_BUILD=1 cargo run --manifest-path ../../node/standalone/Cargo.toml -- --dev --ws-port 3333 -lmulti-finality-verifier=debug,circuit-portal=debug",
     "fmt": "npx prettier --no-semi --arrow-parens avoid --print-width 80 --write ./src/**.ts"
   },
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "@polkadot/api": "=7.12.1",
+    "@polkadot/api": "=7.14.3",
     "@t3rn/types": "=0.1.1",
     "@types/debug": "=4.1.7",
     "debug": "=4.3.3",

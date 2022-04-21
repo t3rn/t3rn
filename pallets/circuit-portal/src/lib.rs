@@ -74,6 +74,7 @@ pub use xbridges::{
     PolkadotLikeValU64Gateway,
 };
 
+use sp_finality_grandpa::SetId;
 pub type AllowedSideEffect = [u8; 4];
 
 /// Defines application identifier for crypto keys of this module.
@@ -90,6 +91,8 @@ pub type GenericDFD = Vec<u8>;
 pub type SideEffectId = Bytes;
 
 pub type SystemHashing<T> = <T as frame_system::Config>::Hashing;
+
+const LOG_TARGET: &str = "circuit-portal";
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -186,7 +189,7 @@ pub mod pallet {
         pub fn register_gateway(
             origin: OriginFor<T>,
             url: Vec<u8>,
-            gateway_id: bp_runtime::ChainId,
+            gateway_id: ChainId,
             gateway_abi: GatewayABIConfig,
             gateway_vendor: t3rn_primitives::GatewayVendor,
             gateway_type: t3rn_primitives::GatewayType,
@@ -194,6 +197,7 @@ pub mod pallet {
             gateway_sys_props: GatewaySysProps,
             first_header: Vec<u8>,
             authorities: Option<Vec<<T as frame_system::Config>::AccountId>>,
+            authority_set_id: Option<SetId>,
             allowed_side_effects: Vec<AllowedSideEffect>,
         ) -> DispatchResultWithPostInfo {
             // Retrieve sender of the transaction.
@@ -208,36 +212,44 @@ pub mod pallet {
                 gateway_sys_props.clone(),
                 allowed_side_effects.clone(),
             )?;
-
+            let gtwy = scale_info::prelude::string::String::from_utf8_lossy(gateway_id.as_ref())
+                .into_owned();
             let res = match (gateway_abi.hasher, gateway_abi.block_number_type_size) {
                 (HasherAlgo::Blake2, 32) => init_bridge_instance::<T, DefaultPolkadotLikeGateway>(
                     origin,
                     first_header,
                     authorities,
+                    authority_set_id,
                     gateway_id,
                 )?,
                 (HasherAlgo::Blake2, 64) => init_bridge_instance::<T, PolkadotLikeValU64Gateway>(
                     origin,
                     first_header,
                     authorities,
+                    authority_set_id,
                     gateway_id,
                 )?,
-                (HasherAlgo::Keccak256, 32) => init_bridge_instance::<
-                    T,
-                    EthLikeKeccak256ValU32Gateway,
-                >(
-                    origin, first_header, authorities, gateway_id
-                )?,
-                (HasherAlgo::Keccak256, 64) => init_bridge_instance::<
-                    T,
-                    EthLikeKeccak256ValU64Gateway,
-                >(
-                    origin, first_header, authorities, gateway_id
-                )?,
+                (HasherAlgo::Keccak256, 32) =>
+                    init_bridge_instance::<T, EthLikeKeccak256ValU32Gateway>(
+                        origin,
+                        first_header,
+                        authorities,
+                        authority_set_id,
+                        gateway_id,
+                    )?,
+                (HasherAlgo::Keccak256, 64) =>
+                    init_bridge_instance::<T, EthLikeKeccak256ValU64Gateway>(
+                        origin,
+                        first_header,
+                        authorities,
+                        authority_set_id,
+                        gateway_id,
+                    )?,
                 (_, _) => init_bridge_instance::<T, DefaultPolkadotLikeGateway>(
                     origin,
                     first_header,
                     authorities,
+                    authority_set_id,
                     gateway_id,
                 )?,
             };

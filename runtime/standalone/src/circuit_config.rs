@@ -51,6 +51,7 @@ impl pallet_circuit_portal::Config for Runtime {
 
 parameter_types! {
     pub const CircuitPalletId: PalletId = PalletId(*b"pal/circ");
+    pub const SelfGatewayId: [u8; 4] = [3, 3, 3, 3];
 }
 
 impl pallet_circuit::Config for Runtime {
@@ -61,6 +62,7 @@ impl pallet_circuit::Config for Runtime {
     type Event = Event;
     type MultiCurrency = ORMLTokens;
     type PalletId = CircuitPalletId;
+    type SelfGatewayId = SelfGatewayId;
     type WeightInfo = ();
     type Xdns = XDNS;
 }
@@ -153,7 +155,7 @@ impl pallet_mfv::Config<Keccak256ValU32BridgeInstance> for Runtime {
 }
 
 impl pallet_mfv::Config<DefaultPolkadotBridgeInstance> for Runtime {
-    type BridgedChain = Keccak256ValU32Chain;
+    type BridgedChain = Blake2ValU32Chain;
     type Escrowed = Self;
     type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;

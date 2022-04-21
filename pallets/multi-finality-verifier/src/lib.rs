@@ -150,13 +150,13 @@ pub mod pallet {
         /// If successful in verification, it will write the target header to the underlying storage
         /// pallet.
         #[pallet::weight(<T as pallet::Config<I>>::WeightInfo::submit_finality_proof(
-            justification.votes_ancestries.len() as u32,
-            justification.commit.precommits.len() as u32,
+            encoded_justification.len() as u32,
+            encoded_justification.len() as u32,
 		))]
         pub fn submit_finality_proof(
             origin: OriginFor<T>,
             finality_target: BridgedHeader<T, I>,
-            justification: GrandpaJustification<BridgedHeader<T, I>>,
+            encoded_justification: Vec<u8>,
             gateway_id: ChainId,
         ) -> DispatchResultWithPostInfo {
             ensure_operational_single::<T, I>(gateway_id)?;
@@ -165,6 +165,9 @@ pub mod pallet {
                 Self::request_count_map(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
                 <Error<T, I>>::TooManyRequests
             );
+            let justification =
+                GrandpaJustification::<BridgedHeader<T, I>>::decode(&mut &*encoded_justification)
+                    .map_err(|_| "Decode Error")?;
 
             log::debug!(
                 target: LOG_TARGET,
@@ -172,19 +175,26 @@ pub mod pallet {
                 finality_target,
                 gateway_id
             );
+            log::debug!(
+                target: LOG_TARGET,
+                "gtwy {:?} best finalized map contained {:?}",
+                scale_info::prelude::string::String::from_utf8_lossy(gateway_id.as_ref())
+                    .into_owned(),
+                <BestFinalizedMap<T, I>>::contains_key(gateway_id)
+            );
 
             log::info!("1");
 
             let (hash, number) = (finality_target.hash(), finality_target.number());
 
+            // In order to reach this point the bridge must have been initialized for given gateway.
             let best_finalized = <MultiImportedHeaders<T, I>>::get(
                 gateway_id,
+                // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
+                // `ImportedHeaders` must contain an entry for `BestFinalized`.
                 <BestFinalizedMap<T, I>>::get(gateway_id)
-                    // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
-                    // `ImportedHeaders` must contain an entry for `BestFinalized`.
                     .ok_or_else(|| <Error<T, I>>::NoFinalizedHeader)?,
             )
-            // In order to reach this point the bridge must have been initialized for given gateway.
             .ok_or_else(|| <Error<T, I>>::InvalidAnchorHeader)?;
             log::info!("2");
             // We do a quick check here to ensure that our header chain is making progress and isn't
@@ -450,9 +460,11 @@ pub mod pallet {
             gateway_id: ChainId,
         ) -> DispatchResultWithPostInfo {
             ensure_owner_or_root_single::<T, I>(origin, gateway_id)?;
-            <IsHaltedMap<T, I>>::insert(gateway_id, operational);
+            <IsHaltedMap<T, I>>::insert(gateway_id, !operational);
 
             if operational {
+                // If a gateway shall be operational the pallet must be too.
+                <IsHalted<T, I>>::put(false);
                 log::info!("Resuming pallet operations.");
             } else {
                 log::warn!("Stopping pallet operations.");
@@ -732,9 +744,18 @@ pub mod pallet {
         } = init_params;
 
         let initial_hash = header.hash();
+        let initial_number = header.number().clone();
         <InitialHashMap<T, I>>::insert(gateway_id, initial_hash);
         <BestFinalizedMap<T, I>>::insert(gateway_id, initial_hash);
         <MultiImportedHeaders<T, I>>::insert(gateway_id, initial_hash, header);
+
+        log::debug!(
+            target: LOG_TARGET,
+            "gtwy {:?} best finalized header {:?} stored {:?}",
+            scale_info::prelude::string::String::from_utf8_lossy(gateway_id.as_ref()).into_owned(),
+            initial_number,
+            <BestFinalizedMap<T, I>>::contains_key(gateway_id)
+        );
 
         // might get problematic
         let authority_set = bp_header_chain::AuthoritySet::new(authority_list, set_id);
@@ -978,14 +999,14 @@ mod tests {
     fn submit_finality_proof(header: u8) -> frame_support::dispatch::DispatchResultWithPostInfo {
         let header = test_header(header.into());
 
-        let justification = make_default_justification(&header);
+        let encoded_justification = make_default_justification(&header).encode();
 
         let default_gateway: ChainId = *b"gate";
 
         Pallet::<TestRuntime>::submit_finality_proof(
             Origin::signed(1),
             header,
-            justification,
+            encoded_justification,
             default_gateway,
         )
     }
@@ -993,14 +1014,14 @@ mod tests {
     fn submit_finality_proof_with_header(
         header: TestHeader,
     ) -> frame_support::dispatch::DispatchResultWithPostInfo {
-        let justification = make_default_justification(&header);
+        let encoded_justification = make_default_justification(&header).encode();
 
         let default_gateway: ChainId = *b"gate";
 
         Pallet::<TestRuntime>::submit_finality_proof(
             Origin::signed(1),
             header,
-            justification,
+            encoded_justification,
             default_gateway,
         )
     }
@@ -1291,13 +1312,13 @@ mod tests {
             <IsHaltedMap<TestRuntime>>::insert(gateway_a, true);
 
             let header = test_header(1);
-            let justification = make_default_justification(&header);
+            let encoded_justification = make_default_justification(&header).encode();
 
             assert_noop!(
                 Pallet::<TestRuntime>::submit_finality_proof(
                     Origin::signed(1),
                     header,
-                    justification,
+                    encoded_justification,
                     gateway_a,
                 ),
                 Error::<TestRuntime>::Halted,
@@ -1524,7 +1545,7 @@ mod tests {
                 set_id: 2,
                 ..Default::default()
             };
-            let justification = make_justification_for_header(params);
+            let encoded_justification = make_justification_for_header(params).encode();
 
             let default_gateway: ChainId = *b"gate";
 
@@ -1532,7 +1553,7 @@ mod tests {
                 Pallet::<TestRuntime>::submit_finality_proof(
                     Origin::signed(1),
                     header,
-                    justification,
+                    encoded_justification,
                     default_gateway,
                 ),
                 <Error<TestRuntime>>::InvalidJustification
@@ -1548,13 +1569,14 @@ mod tests {
             let header = test_header(1);
             let mut justification = make_default_justification(&header);
             justification.round = 42;
+            let encoded_justification = justification.encode();
             let default_gateway: ChainId = *b"gate";
 
             assert_err!(
                 Pallet::<TestRuntime>::submit_finality_proof(
                     Origin::signed(1),
                     header,
-                    justification,
+                    encoded_justification,
                     default_gateway,
                 ),
                 <Error<TestRuntime>>::InvalidJustification
@@ -1584,13 +1606,13 @@ mod tests {
             ));
 
             let header = test_header(1);
-            let justification = make_default_justification(&header);
+            let encoded_justification = make_default_justification(&header).encode();
 
             assert_err!(
                 Pallet::<TestRuntime>::submit_finality_proof(
                     Origin::signed(1),
                     header,
-                    justification,
+                    encoded_justification,
                     default_gateway,
                 ),
                 <Error<TestRuntime>>::InvalidAuthoritySet
@@ -1622,7 +1644,7 @@ mod tests {
             let mut header = test_header(2);
             header.digest = change_log(0);
 
-            let justification = make_default_justification(&header);
+            let encoded_justification = make_default_justification(&header).encode();
 
             let default_gateway: ChainId = *b"gate";
 
@@ -1630,7 +1652,7 @@ mod tests {
             assert_ok!(Pallet::<TestRuntime>::submit_finality_proof(
                 Origin::signed(1),
                 header.clone(),
-                justification,
+                encoded_justification,
                 default_gateway,
             ));
 
@@ -1665,7 +1687,7 @@ mod tests {
             let mut header = test_header(2);
             header.digest = change_log(1);
 
-            let justification = make_default_justification(&header);
+            let encoded_justification = make_default_justification(&header).encode();
 
             let default_gateway: ChainId = *b"gate";
 
@@ -1674,7 +1696,7 @@ mod tests {
                 Pallet::<TestRuntime>::submit_finality_proof(
                     Origin::signed(1),
                     header,
-                    justification,
+                    encoded_justification,
                     default_gateway,
                 ),
                 <Error<TestRuntime>>::UnsupportedScheduledChange
@@ -1692,7 +1714,7 @@ mod tests {
             let mut header = test_header(2);
             header.digest = forced_change_log(0);
 
-            let justification = make_default_justification(&header);
+            let encoded_justification = make_default_justification(&header).encode();
 
             let default_gateway: ChainId = *b"gate";
 
@@ -1701,7 +1723,7 @@ mod tests {
                 Pallet::<TestRuntime>::submit_finality_proof(
                     Origin::signed(1),
                     header,
-                    justification,
+                    encoded_justification,
                     default_gateway,
                 ),
                 <Error<TestRuntime>>::UnsupportedScheduledChange
@@ -1774,11 +1796,12 @@ mod tests {
                 let header = test_header(1);
                 let mut invalid_justification = make_default_justification(&header);
                 invalid_justification.round = 42;
+                let encoded_justification = invalid_justification.encode();
 
                 Pallet::<TestRuntime>::submit_finality_proof(
                     Origin::signed(1),
                     header,
-                    invalid_justification,
+                    encoded_justification,
                     default_gateway,
                 )
             };

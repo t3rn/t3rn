@@ -45,8 +45,6 @@ hex         = "0.4"
 hex-literal = { version = '0.3.1' }
 serde_json  = "1.0.41"
 
-t3rn-protocol = { path = "../protocol" }
-
 [features]
 default = [ "std" ]
 std = [
@@ -63,6 +61,7 @@ std = [
   "pallet-sudo/std",
   "frame-system/std",
   "frame-support/std",
+  "orml-traits/std",
   #bridges
   "hash-db/std",
   "num-traits/std",
