@@ -72,7 +72,7 @@ impl pallet_circuit::Config for Runtime {
 
 parameter_types! {
     pub const MaxRequests: u32 = 2;
-    pub const HeadersToKeep: u32 = 5;
+    pub const HeadersToKeep: u32 = 100;
 }
 
 type DefaultPolkadotBridgeInstance = ();
@@ -124,6 +124,7 @@ impl pallet_mfv::Config<Blake2ValU64BridgeInstance> for Runtime {
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
     type Xdns = XDNS;
+    type Event = Event;
 }
 
 impl pallet_mfv::Config<Blake2ValU32BridgeInstance> for Runtime {
@@ -133,6 +134,7 @@ impl pallet_mfv::Config<Blake2ValU32BridgeInstance> for Runtime {
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
     type Xdns = XDNS;
+    type Event = Event;
 }
 
 impl pallet_mfv::Config<Keccak256ValU64BridgeInstance> for Runtime {
@@ -142,6 +144,7 @@ impl pallet_mfv::Config<Keccak256ValU64BridgeInstance> for Runtime {
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
     type Xdns = XDNS;
+    type Event = Event;
 }
 
 impl pallet_mfv::Config<Keccak256ValU32BridgeInstance> for Runtime {
@@ -151,6 +154,7 @@ impl pallet_mfv::Config<Keccak256ValU32BridgeInstance> for Runtime {
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
     type Xdns = XDNS;
+    type Event = Event;
 }
 
 impl pallet_mfv::Config<DefaultPolkadotBridgeInstance> for Runtime {
@@ -160,4 +164,5 @@ impl pallet_mfv::Config<DefaultPolkadotBridgeInstance> for Runtime {
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
     type Xdns = XDNS;
+    type Event = Event;
 }
