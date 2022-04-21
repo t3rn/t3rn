@@ -44,14 +44,13 @@ use bp_runtime::{BlockNumberOf, Chain, ChainId, HashOf, HasherOf, HeaderOf};
 
 use finality_grandpa::voter_set::VoterSet;
 use frame_support::{ensure, pallet_prelude::*};
-use t3rn_primitives::bridges::{header_chain as bp_header_chain, runtime as bp_runtime};
 use frame_system::{ensure_signed, RawOrigin};
 use scale_info::prelude::string::String;
 use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
 use sp_runtime::traits::{BadOrigin, Header as HeaderT, Zero};
 use sp_std::vec::Vec;
+use t3rn_primitives::bridges::{header_chain as bp_header_chain, runtime as bp_runtime};
 
-use t3rn_primitives::circuit_portal::CircuitPortal;
 use sp_trie::StorageProof;
 
 #[cfg(test)]
@@ -84,7 +83,7 @@ pub mod pallet {
     use frame_support::traits::Time;
     use frame_system::pallet_prelude::*;
     use sp_std::convert::TryInto;
-    use t3rn_primitives::{xdns::Xdns, EscrowTrait, circuit_portal::CircuitPortal};
+    use t3rn_primitives::{circuit_portal::CircuitPortal, xdns::Xdns, EscrowTrait};
 
     #[pallet::config]
     pub trait Config<I: 'static = ()>: frame_system::Config {
@@ -181,8 +180,6 @@ pub mod pallet {
                 String::from_utf8_lossy(gateway_id.as_ref()).into_owned()
             );
 
-            log::info!("1");
-
             let (hash, number) = (finality_target.hash(), finality_target.number());
 
             // In order to reach this point the bridge must have been initialized for given gateway.
@@ -194,11 +191,9 @@ pub mod pallet {
                     .ok_or_else(|| <Error<T, I>>::NoFinalizedHeader)?,
             )
             .ok_or_else(|| <Error<T, I>>::NoFinalizedHeader)?;
-            log::info!("2");
             // We do a quick check here to ensure that our header chain is making progress and isn't
             // "travelling back in time" (which could be indicative of something bad, e.g a hard-fork).
             ensure!(best_finalized.number() < number, <Error<T, I>>::OldHeader);
-            log::info!("3");
             let authority_set = <CurrentAuthoritySetMap<T, I>>::get(gateway_id)
                 // Expects authorities to be set before verify_justification
                 .ok_or_else(|| <Error<T, I>>::InvalidAuthoritySet)?;
@@ -256,7 +251,6 @@ pub mod pallet {
                 <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
                 <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
             }
-            log::info!("5");
             log::debug!(
                 target: LOG_TARGET,
                 "Successfully imported finalized header with hash {:?} for gateway {:?}!",
@@ -275,7 +269,6 @@ pub mod pallet {
                 gateway_id,
                 now.clone()
             );
-            log::info!("6");
             Ok(().into())
         }
 
@@ -337,7 +330,6 @@ pub mod pallet {
                         header,
                         gateway_id
                     );
-
                 }
             }
 
@@ -359,11 +351,7 @@ pub mod pallet {
 
             <T::Xdns as Xdns<T>>::update_gateway_ttl(gateway_id, now)?;
 
-            Self::deposit_event(Event::NewHeaderRangeAvailable(
-                gateway_id,
-                height,
-                range
-            ));
+            Self::deposit_event(Event::NewHeaderRangeAvailable(gateway_id, height, range));
 
             Ok(().into())
         }
@@ -384,17 +372,21 @@ pub mod pallet {
             let result = <T as Config<I>>::CircuitPortal::confirm_parachain_header(
                 gateway_id,
                 block_hash,
-                storage_proof
+                storage_proof,
             );
 
             let header: BridgedHeader<T, I> = match result {
-                Ok(header) => Decode::decode(&mut &header[..]).unwrap(),
-                Err(err) => return Err(err.into())
+                Ok(result) => {
+                    // we first need to decode the Vec
+                    let vec = &Vec::<u8>::decode(&mut &result[..]).unwrap();
+                    // then the header we want
+                    Decode::decode(&mut vec.as_ref()).unwrap()
+                },
+                Err(err) => return Err(err.into()),
             };
 
             let hash = header.hash();
             let index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
-
             let pruning = <MultiImportedHashes<T, I>>::try_get(gateway_id, index);
 
             <BestFinalizedMap<T, I>>::insert(gateway_id, hash);
@@ -413,7 +405,7 @@ pub mod pallet {
                     None => *count = Some(1),
                 }
                 *count
-             });
+            });
 
             // Update ring buffer pointer and remove old header.
             <MultiImportedHashesPointer<T, I>>::insert(
@@ -432,14 +424,14 @@ pub mod pallet {
                 <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
             }
 
-             // not sure if we want this here as well as we're adding old blocks
+            // not sure if we want this here as well as we're adding old blocks
             let now = TryInto::<u64>::try_into(<T::Escrowed as EscrowTrait<T>>::Time::now())
                 .map_err(|_| "Unable to compute current timestamp")?;
 
             <T::Xdns as Xdns<T>>::update_gateway_ttl(gateway_id, now)?;
 
             Ok(().into())
-         }
+        }
 
         /// Bootstrap the bridge pallet with an initial header and authority set from which to sync.
         ///
@@ -521,8 +513,8 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config<I>, I: 'static = ()> {
-         NewHeaderRangeAvailable(ChainId, BridgedBlockNumber<T, I>, u32),
-     }
+        NewHeaderRangeAvailable(ChainId, BridgedBlockNumber<T, I>, u32),
+    }
 
     /// The current number of requests which have written to storage.
     ///
@@ -926,7 +918,6 @@ pub fn initialize_for_benchmarks<T: Config<I>, I: 'static>(header: BridgedHeader
 
 #[cfg(test)]
 mod tests {
-    use std::alloc::System;
     use super::*;
     use crate::mock::{
         run_test, test_header, test_header_range, Origin, TestHash, TestHeader, TestNumber,
@@ -939,6 +930,7 @@ mod tests {
     use codec::Encode;
     use frame_support::{assert_err, assert_noop, assert_ok, weights::PostDispatchInfo};
     use sp_runtime::{Digest, DigestItem, DispatchError};
+    use std::alloc::System;
 
     use t3rn_primitives::{
         bridges::test_utils as bp_test_utils, GatewaySysProps, GatewayType, GatewayVendor,

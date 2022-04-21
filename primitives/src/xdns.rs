@@ -23,7 +23,7 @@ pub struct Parachain {
     // gateway_id of relaychain
     pub relay_chain_id: ChainId,
     // parachain_id
-    pub id: u32
+    pub id: u32,
 }
 
 /// A preliminary representation of a xdns_record in the onchain registry.

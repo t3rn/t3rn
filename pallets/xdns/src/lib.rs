@@ -49,10 +49,9 @@ pub mod pallet {
     use sp_std::convert::TryInto;
     use t3rn_primitives::{
         side_effect::interface::SideEffectInterface,
-        xdns::{AllowedSideEffect, Xdns, XdnsRecord},
+        xdns::{AllowedSideEffect, Parachain, Xdns, XdnsRecord},
         ChainId, EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor,
     };
-    use t3rn_primitives::xdns::Parachain;
 
     #[pallet::config]
     pub trait Config: frame_system::Config {

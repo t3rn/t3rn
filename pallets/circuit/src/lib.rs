@@ -715,6 +715,9 @@ pub mod pallet {
                 block_hash,
             )?;
 
+            // FixMe: Reward should be triggered by apply after the whole Xtx finishes
+            Self::enact_insurance(&local_xtx_ctx, &side_effect, InsuranceEnact::Reward)?;
+
             // Apply: all necessary changes to state in 1 go
             let (maybe_xtx_changed, assert_full_side_effects_changed) =
                 Self::apply(&mut local_xtx_ctx, None, None)?;
@@ -1638,12 +1641,11 @@ impl<T: Config> Pallet<T> {
             // ToDo: Remove below after testing inclusion
             // Temporarily allow skip inclusion if proofs aren't provided
             if !(block_hash.is_none() && inclusion_proof.is_none()) {
-                <T as Config>::CircuitPortal::confirm_inclusion(
+                <T as Config>::CircuitPortal::confirm_event_inclusion(
                     side_effect.target,
                     confirmation.encoded_effect.clone(),
-                    ProofTriePointer::State,
-                    block_hash,
                     inclusion_proof,
+                    block_hash,
                 )
             } else {
                 Ok(())
