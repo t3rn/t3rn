@@ -168,17 +168,23 @@ pub mod pallet {
                 finality_target,
                 gateway_id
             );
+            log::debug!(
+                target: LOG_TARGET,
+                "gtwy {:?} best finalized map contained {:?}",
+                String::from_utf8_lossy(gateway_id.as_ref()).into_owned(),
+                <BestFinalizedMap<T, I>>::contains_key(gateway_id)
+            );
 
             let (hash, number) = (finality_target.hash(), finality_target.number());
 
+            // In order to reach this point the bridge must have been initialized for given gateway.
             let best_finalized = <MultiImportedHeaders<T, I>>::get(
                 gateway_id,
+                // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
+                // `ImportedHeaders` must contain an entry for `BestFinalized`.
                 <BestFinalizedMap<T, I>>::get(gateway_id)
-                    // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
-                    // `ImportedHeaders` must contain an entry for `BestFinalized`.
                     .ok_or_else(|| <Error<T, I>>::NoFinalizedHeader)?,
             )
-            // In order to reach this point the bridge must have been initialized for given gateway.
             .ok_or_else(|| <Error<T, I>>::InvalidAnchorHeader)?;
 
             // We do a quick check here to ensure that our header chain is making progress and isn't
@@ -435,9 +441,11 @@ pub mod pallet {
             gateway_id: ChainId,
         ) -> DispatchResultWithPostInfo {
             ensure_owner_or_root_single::<T, I>(origin, gateway_id)?;
-            <IsHaltedMap<T, I>>::insert(gateway_id, operational);
+            <IsHaltedMap<T, I>>::insert(gateway_id, !operational);
 
             if operational {
+                // If a gateway shall be operational the pallet must be too.
+                <IsHalted<T, I>>::put(false);
                 log::info!("Resuming pallet operations.");
             } else {
                 log::warn!("Stopping pallet operations.");
@@ -711,9 +719,18 @@ pub mod pallet {
         } = init_params;
 
         let initial_hash = header.hash();
+        let initial_number = header.number().clone();
         <InitialHashMap<T, I>>::insert(gateway_id, initial_hash);
         <BestFinalizedMap<T, I>>::insert(gateway_id, initial_hash);
         <MultiImportedHeaders<T, I>>::insert(gateway_id, initial_hash, header);
+
+        log::debug!(
+            target: LOG_TARGET,
+            "gtwy {:?} best finalized header {:?} stored {:?}",
+            String::from_utf8_lossy(gateway_id.as_ref()).into_owned(),
+            initial_number,
+            <BestFinalizedMap<T, I>>::contains_key(gateway_id)
+        );
 
         // might get problematic
         let authority_set = bp_header_chain::AuthoritySet::new(authority_list, set_id);
