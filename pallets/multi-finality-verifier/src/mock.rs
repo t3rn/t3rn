@@ -44,8 +44,8 @@ construct_runtime! {
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        MultiFinalityVerifier: multi_finality_verifier::{Pallet, Call, Storage, Config<T, I>},
-        MultiFinalityVerifierPolkadotLike: multi_finality_verifier::<Instance1>::{Pallet, Call, Storage, Config<T, I>},
+        MultiFinalityVerifier: multi_finality_verifier::{Pallet, Call, Storage, Config<T, I>, Event<T, I>},
+        MultiFinalityVerifierPolkadotLike: multi_finality_verifier::<Instance1>::{Pallet, Call, Storage, Config<T, I>, Event<T, I>},
         XDNS: pallet_xdns::{Pallet, Call, Storage, Config<T>, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
@@ -147,6 +147,7 @@ impl multi_finality_verifier::Config for TestRuntime {
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
     type Xdns = XDNS;
+    type Event = Event;
 }
 
 pub type PolkadotLikeFinalityVerifierInstance = multi_finality_verifier::Instance1;
@@ -157,6 +158,7 @@ impl multi_finality_verifier::Config<PolkadotLikeFinalityVerifierInstance> for T
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
     type Xdns = XDNS;
+    type Event = Event;
 }
 
 #[derive(Debug)]

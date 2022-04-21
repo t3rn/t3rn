@@ -89,6 +89,8 @@ pub mod pallet {
         /// The chain we are bridging to here.
         type BridgedChain: Chain;
 
+        /// The overarching event type.
+        type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
         /// The upper bound on the number of requests allowed by the pallet.
         ///
         /// A request refers to an action which writes a header to storage.
@@ -175,6 +177,8 @@ pub mod pallet {
                 String::from_utf8_lossy(gateway_id.as_ref()).into_owned()
             );
 
+            log::info!("1");
+
             let (hash, number) = (finality_target.hash(), finality_target.number());
 
             // In order to reach this point the bridge must have been initialized for given gateway.
@@ -186,17 +190,17 @@ pub mod pallet {
                     .ok_or_else(|| <Error<T, I>>::NoFinalizedHeader)?,
             )
             .ok_or_else(|| <Error<T, I>>::InvalidAnchorHeader)?;
-
+            log::info!("2");
             // We do a quick check here to ensure that our header chain is making progress and isn't
             // "travelling back in time" (which could be indicative of something bad, e.g a hard-fork).
             ensure!(best_finalized.number() < number, <Error<T, I>>::OldHeader);
-
+            log::info!("3");
             let authority_set = <CurrentAuthoritySetMap<T, I>>::get(gateway_id)
                 // Expects authorities to be set before verify_justification
                 .ok_or_else(|| <Error<T, I>>::InvalidAuthoritySet)?;
 
             let set_id = authority_set.set_id;
-
+            log::info!("4");
             verify_justification_single::<T, I>(
                 &justification,
                 hash,
@@ -248,7 +252,7 @@ pub mod pallet {
                 <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
                 <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
             }
-
+            log::info!("5");
             log::debug!(
                 target: LOG_TARGET,
                 "Successfully imported finalized header with hash {:?} for gateway {:?}!",
@@ -267,7 +271,7 @@ pub mod pallet {
                 gateway_id,
                 now.clone()
             );
-
+            log::info!("6");
             Ok(().into())
         }
 
@@ -296,6 +300,9 @@ pub mod pallet {
             let mut anchor_header =
                 <MultiImportedHeaders<T, I>>::try_get(gateway_id, anchor_header_hash).unwrap();
 
+            let height = anchor_header.number().clone();
+            // this is safe, u32 gives us enough space for 300 days worth of blocks.
+            let range: u32 = headers_reversed.len().clone().try_into().unwrap();
             let mut index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
 
             for header in headers_reversed {
@@ -348,6 +355,12 @@ pub mod pallet {
                 .map_err(|_| "Unable to compute current timestamp")?;
 
             <T::Xdns as Xdns<T>>::update_gateway_ttl(gateway_id, now)?;
+
+            Self::deposit_event(Event::NewHeaderRangeAvailable(
+                gateway_id,
+                height,
+                range
+            ));
 
             Ok(().into())
         }
@@ -453,6 +466,12 @@ pub mod pallet {
             Ok(().into())
         }
     }
+
+    #[pallet::event]
+    #[pallet::generate_deposit(pub(super) fn deposit_event)]
+    pub enum Event<T: Config<I>, I: 'static = ()> {
+         NewHeaderRangeAvailable(ChainId, BridgedBlockNumber<T, I>, u32),
+     }
 
     /// The current number of requests which have written to storage.
     ///
@@ -851,6 +870,7 @@ pub fn initialize_for_benchmarks<T: Config<I>, I: 'static>(header: BridgedHeader
 
 #[cfg(test)]
 mod tests {
+    use std::alloc::System;
     use super::*;
     use crate::mock::{
         run_test, test_header, test_header_range, Origin, TestHash, TestHeader, TestNumber,

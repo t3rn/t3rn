@@ -300,19 +300,19 @@ construct_runtime!(
         // t3rn pallets
         XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
         MultiFinalityVerifierPolkadotLike: pallet_mfv::<Instance1>::{
-            Pallet, Call, Storage, Config<T, I>
+            Pallet, Call, Storage, Config<T, I>, Event<T, I>
         } = 101,
         MultiFinalityVerifierSubstrateLike: pallet_mfv::<Instance2>::{
-            Pallet, Call, Storage, Config<T, I>
+            Pallet, Call, Storage, Config<T, I>, Event<T, I>
         } = 102,
         MultiFinalityVerifierEthereumLike: pallet_mfv::<Instance3>::{
-            Pallet, Call, Storage, Config<T, I>
+            Pallet, Call, Storage, Config<T, I>, Event<T, I>
         } = 103,
         MultiFinalityVerifierGenericLike: pallet_mfv::<Instance4>::{
-            Pallet, Call, Storage, Config<T, I>
+            Pallet, Call, Storage, Config<T, I>, Event<T, I>
         } = 104,
         MultiFinalityVerifierDefault: pallet_mfv::{
-            Pallet, Call, Storage, Config<T, I>
+            Pallet, Call, Storage, Config<T, I>, Event<T, I>
         } = 105,
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
         CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>} = 107,
