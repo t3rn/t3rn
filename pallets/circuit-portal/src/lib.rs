@@ -423,6 +423,59 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
         }
     }
 
+    fn confirm_event_inclusion(
+        gateway_id: [u8; 4],
+        encoded_event: Vec<u8>,
+        maybe_block_hash: Option<Vec<u8>>,
+        maybe_proof: Option<Vec<Vec<u8>>>,
+    ) -> Result<(), &'static str> {
+        let block_hash = if let Some(x) = maybe_block_hash {
+            Ok(x)
+        } else {
+            Err("Must provide a valid read proof when proving inclusion with Substrate Bridge")
+        }?;
+        let storage_proof: StorageProof = if let Some(x) = maybe_proof {
+            Ok(Decode::decode(&mut &x.encode()[..]).unwrap())
+        } else {
+            Err("Must provide a valid read proof when proving inclusion with Substrate Bridge")
+        }?;
+
+        // StorageKey for System_Events
+        let gateway_xdns_record = <T as Config>::Xdns::best_available(gateway_id)?;
+        let key: Vec<u8> = [240,195,101,195,207,89,214,113,235,114,218,14,122,65,19,196,159,31,5,21,244,98,205,207,132,224,241,214,4,93,252,187].to_vec();
+        let verified_events = match (
+            gateway_xdns_record.gateway_abi.hasher.clone(),
+            gateway_xdns_record.gateway_abi.block_number_type_size,
+        ) {
+             (HasherAlgo::Blake2, 32) => verify_storage_proof::<
+                 T,
+                 DefaultPolkadotLikeGateway,
+             >(
+                 block_hash,
+                 gateway_id,
+                 key,
+                 storage_proof,
+                 ProofTriePointer::State
+             )?,
+             (HasherAlgo::Blake2, 64) => verify_storage_proof::<
+                 T,
+                 PolkadotLikeValU64Gateway,
+             >(
+                 block_hash,
+                 gateway_id,
+                 key,
+                 storage_proof,
+                 ProofTriePointer::State
+             )?,
+             (_, _) => unimplemented!()
+        };
+
+        log::info!("verified Events: {:?}", verified_events);
+        log::info!("encoded event: {:?}", encoded_event);
+        Ok(())
+
+    }
+
     fn confirm_parachain_header(
         gateway_id: [u8; 4],
         block_hash: Vec<u8>,
@@ -457,7 +510,8 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
                 block_hash,
                 relay_chain_id,
                 key,
-                proof
+                proof,
+                ProofTriePointer::State
             )?,
             (HasherAlgo::Blake2, 64) => verify_storage_proof::<
                 T,
@@ -466,7 +520,8 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
                 block_hash,
                  relay_chain_id,
                 key,
-                proof
+                proof,
+                ProofTriePointer::State
             )?,
             (_, _) => unimplemented!()
         };
