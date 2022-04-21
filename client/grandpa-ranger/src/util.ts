@@ -16,7 +16,7 @@ export function formatEvents(
   )
 }
 
-export async function grandpaDecode(justification: JustificationNotification) {
+export async function grandpaDecode(justification: any) {
   const tmpFile = join(tmpdir(), justification.toString().slice(0, 10))
 
   await writeFile(tmpFile, justification.toString())
