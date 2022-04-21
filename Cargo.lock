@@ -6982,6 +6982,7 @@ dependencies = [
  "sp-sandbox",
  "sp-std",
  "t3rn-primitives",
+ "t3rn-sdk-primitives",
  "wasm-instrument",
  "wasmi-validation",
 ]
@@ -12116,6 +12117,14 @@ dependencies = [
  "t3rn-primitives",
  "tiny-keccak 2.0.2",
  "triehash",
+]
+
+[[package]]
+name = "t3rn-sdk-primitives"
+version = "0.0.1"
+dependencies = [
+ "parity-scale-codec 2.3.1",
+ "scale-info 1.0.0",
 ]
 
 [[package]]

@@ -273,7 +273,8 @@ pub mod pallet {
     }
 
     impl<T: Config> OnLocalTrigger<T> for Pallet<T> {
-        fn on_local_trigger(_origin: &OriginFor<T>, _trigger: LocalTrigger<T>) -> DispatchResult {
+        fn on_local_trigger(_origin: &OriginFor<T>, trigger: LocalTrigger<T>) -> DispatchResult {
+            log::debug!(target: "runtime::circuit", "Handling on_local_trigger {:?}", trigger.side_effects);
             // ToDo: pallet-circuit x-t3rn# : Authorize : Check TriggerAuthRights for local triggers
 
             // ToDo: pallet-circuit x-t3rn# : Validate : insurance for reversible side effects if necessary

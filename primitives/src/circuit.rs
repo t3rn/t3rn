@@ -8,7 +8,7 @@ pub struct LocalTrigger<T: Config> {
     /// Id of the contract which generated the side effects
     contract: T::AccountId,
     /// Side effects generated from the contract call
-    side_effects: Vec<Vec<u8>>,
+    pub side_effects: Vec<Vec<u8>>,
     /// Breakpoints by outbound message index
     round_breakpoints: Vec<u32>,
 }
