@@ -6,9 +6,7 @@ use frame_election_provider_support::onchain;
 use frame_support::{
     pallet_prelude::GenesisBuild,
     parameter_types,
-    traits::{ConstU32, Everything, KeyOwnerProofSystem, Nothing},
-    weights::Weight,
-    PalletId,
+    traits::{ConstU32, ConstU64, Everything, KeyOwnerProofSystem, Nothing},
 };
 use pallet_babe::{EquivocationHandler, ExternalTrigger};
 use pallet_session::historical as pallet_session_historical;
@@ -480,13 +478,17 @@ impl Config for Test {
     type Balances = Balances;
     type Call = Call;
     type CircuitPortal = CircuitPortal;
+    type DeletionQueueLimit = ConstU32<100>;
     type Escrowed = Self;
     type Event = Event;
+    // type FreeVM = FreeVM;
     type MultiCurrency = ORMLTokens;
     type PalletId = CircuitPalletId;
     type SelfGatewayId = SelfGatewayId;
     type WeightInfo = ();
     type Xdns = XDNS;
+    type XtxTimeoutCheckInterval = ConstU64<10>;
+    type XtxTimeoutDefault = ConstU64<100>;
 }
 
 impl ExtBuilder {

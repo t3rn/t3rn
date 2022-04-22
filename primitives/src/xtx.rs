@@ -212,6 +212,7 @@ mod tests {
             vec![vec![FullSideEffect {
                 input: input_side_effect_1.clone(),
                 confirmed: None,
+                security_lvl: SecurityLvl::Dirty,
             }]],
         );
 
@@ -231,6 +232,7 @@ mod tests {
             FullSideEffect {
                 input: input_side_effect_1,
                 confirmed: Some(completing_side_effect_1),
+                security_lvl: SecurityLvl::Dirty,
             }
         );
 
@@ -290,10 +292,12 @@ mod tests {
                 FullSideEffect {
                     input: input_side_effect_1.clone(),
                     confirmed: None,
+                    security_lvl: SecurityLvl::Dirty,
                 },
                 FullSideEffect {
                     input: input_side_effect_2.clone(),
                     confirmed: None,
+                    security_lvl: SecurityLvl::Dirty,
                 },
             ]],
         );
@@ -312,6 +316,7 @@ mod tests {
             FullSideEffect {
                 input: input_side_effect_1,
                 confirmed: Some(completing_side_effect_1),
+                security_lvl: SecurityLvl::Dirty,
             }
         );
 
@@ -321,6 +326,7 @@ mod tests {
             FullSideEffect {
                 input: input_side_effect_2.clone(),
                 confirmed: None,
+                security_lvl: SecurityLvl::Dirty,
             }
         );
 
@@ -341,6 +347,7 @@ mod tests {
             FullSideEffect {
                 input: input_side_effect_2,
                 confirmed: Some(completing_side_effect_2),
+                security_lvl: SecurityLvl::Dirty,
             }
         );
         assert_eq!(xtx.is_completed(), true);
@@ -400,10 +407,12 @@ mod tests {
                 vec![FullSideEffect {
                     input: input_side_effect_1.clone(),
                     confirmed: None,
+                    security_lvl: SecurityLvl::Dirty,
                 }],
                 vec![FullSideEffect {
                     input: input_side_effect_2.clone(),
                     confirmed: None,
+                    security_lvl: SecurityLvl::Dirty,
                 }],
             ],
         );
@@ -422,6 +431,7 @@ mod tests {
             FullSideEffect {
                 input: input_side_effect_1,
                 confirmed: Some(completing_side_effect_1),
+                security_lvl: SecurityLvl::Dirty,
             }
         );
 
@@ -431,6 +441,7 @@ mod tests {
             FullSideEffect {
                 input: input_side_effect_2.clone(),
                 confirmed: None,
+                security_lvl: SecurityLvl::Dirty,
             }
         );
 
@@ -449,6 +460,7 @@ mod tests {
             FullSideEffect {
                 input: input_side_effect_2,
                 confirmed: Some(completing_side_effect_2),
+                security_lvl: SecurityLvl::Dirty,
             }
         );
         assert_eq!(xtx.is_completed(), true);
@@ -508,10 +520,12 @@ mod tests {
                 vec![FullSideEffect {
                     input: input_side_effect_1.clone(),
                     confirmed: None,
+                    security_lvl: SecurityLvl::Dirty,
                 }],
                 vec![FullSideEffect {
                     input: input_side_effect_2.clone(),
                     confirmed: None,
+                    security_lvl: SecurityLvl::Dirty,
                 }],
             ],
         );
@@ -527,6 +541,7 @@ mod tests {
             FullSideEffect {
                 input: input_side_effect_1,
                 confirmed: None,
+                security_lvl: SecurityLvl::Dirty,
             }
         );
 
@@ -535,6 +550,7 @@ mod tests {
             FullSideEffect {
                 input: input_side_effect_2,
                 confirmed: None,
+                security_lvl: SecurityLvl::Dirty,
             }
         );
 

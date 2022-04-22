@@ -4045,16 +4045,21 @@ dependencies = [
  "env_logger 0.8.4",
  "frame-metadata",
  "futures 0.1.31",
+ "hex",
  "hyper 0.12.36",
  "jsonrpc-core-client 15.1.0",
+ "jsonrpsee 0.2.0",
  "jsonrpsee-types 0.2.0",
  "log",
  "node-primitives",
  "num-traits",
  "parity-scale-codec 2.3.1",
  "relay-substrate-client",
+ "sc-finality-grandpa",
  "sc-rpc",
+ "serde_json",
  "sp-core",
+ "sp-finality-grandpa",
  "sp-tracing",
  "t3rn-primitives",
  "tokio 1.17.0",
@@ -4092,6 +4097,12 @@ dependencies = [
  "parking_lot 0.11.2",
  "slab",
 ]
+
+[[package]]
+name = "jsonrpsee"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "316a89048d2ea5530ab5502aa31e1128f6429b524a37e4c0bc54903bcdf3d342"
 
 [[package]]
 name = "jsonrpsee"
