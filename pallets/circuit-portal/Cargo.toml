@@ -33,7 +33,7 @@ sp-keystore           = { default-features = false, git = "https://github.com/pa
 sp-runtime            = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17' }
 sp-std                = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17' }
 sp-version            = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17' }
-
+sp-trie               = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.17' }
 pallet-multi-finality-verifier = { default-features = false, path = "../multi-finality-verifier" }
 pallet-timestamp               = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', default-features = false }
 

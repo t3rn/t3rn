@@ -416,6 +416,7 @@ impl pallet_multi_finality_verifier::Config<Blake2ValU64BridgeInstance> for Test
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
     type Xdns = XDNS;
+    type CircuitPortal = CircuitPortal;
 }
 
 impl pallet_multi_finality_verifier::Config<Blake2ValU32BridgeInstance> for Test {
@@ -425,6 +426,7 @@ impl pallet_multi_finality_verifier::Config<Blake2ValU32BridgeInstance> for Test
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
     type Xdns = XDNS;
+    type CircuitPortal = CircuitPortal;
 }
 
 impl pallet_multi_finality_verifier::Config<Keccak256ValU64BridgeInstance> for Test {
@@ -434,6 +436,7 @@ impl pallet_multi_finality_verifier::Config<Keccak256ValU64BridgeInstance> for T
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
     type Xdns = XDNS;
+    type CircuitPortal = CircuitPortal;
 }
 
 impl pallet_multi_finality_verifier::Config<Keccak256ValU32BridgeInstance> for Test {
@@ -443,6 +446,7 @@ impl pallet_multi_finality_verifier::Config<Keccak256ValU32BridgeInstance> for T
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
     type Xdns = XDNS;
+    type CircuitPortal = CircuitPortal;
 }
 
 parameter_types! {
@@ -499,6 +503,7 @@ impl ExtBuilder {
         let circuit_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
             [3u8, 3u8, 3u8, 3u8],
+            None,
             Default::default(),
             GatewayVendor::Substrate,
             GatewayType::ProgrammableExternal(0),
@@ -513,6 +518,7 @@ impl ExtBuilder {
         let zero_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
             [0u8, 0u8, 0u8, 0u8],
+            None,
             Default::default(),
             GatewayVendor::Substrate,
             GatewayType::ProgrammableExternal(0),
@@ -527,6 +533,7 @@ impl ExtBuilder {
         let gateway_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
             *b"gate",
+            None,
             Default::default(),
             GatewayVendor::Substrate,
             GatewayType::ProgrammableExternal(0),
@@ -541,6 +548,7 @@ impl ExtBuilder {
         let polkadot_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
             *b"pdot",
+            None,
             Default::default(),
             GatewayVendor::Substrate,
             GatewayType::ProgrammableExternal(0),
@@ -555,6 +563,7 @@ impl ExtBuilder {
         let kusama_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
             *b"ksma",
+            None,
             Default::default(),
             GatewayVendor::Substrate,
             GatewayType::ProgrammableExternal(0),

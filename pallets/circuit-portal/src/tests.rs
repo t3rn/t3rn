@@ -17,14 +17,16 @@
 
 //! Test utilities
 use bp_test_utils::test_header;
-use codec::Encode;
+use codec::{Decode, Encode};
 use frame_support::assert_ok;
+use hex_literal::hex;
 use t3rn_primitives::bridges::test_utils as bp_test_utils;
 
 use sp_io::TestExternalities;
 use sp_version::{create_runtime_str, RuntimeVersion};
 
 use t3rn_primitives::{abi::GatewayABIConfig, *};
+use t3rn_primitives::xdns::Parachain;
 
 use crate::{
     mock::*, AllowedSideEffect, CurrentHeader, DefaultPolkadotLikeGateway,
@@ -88,6 +90,66 @@ fn test_register_gateway_with_default_polka_like_header() {
             origin,
             url,
             gateway_id,
+            None,
+            gateway_abi,
+            gateway_vendor,
+            gateway_type,
+            gateway_genesis,
+            gateway_sys_props,
+            first_header.encode(),
+            authorities,
+            authority_set_id,
+            allowed_side_effects,
+        ));
+    });
+}
+
+#[test]
+fn test_register_parachain() {
+    let origin = Origin::root(); // only sudo access to register new gateways for now
+    let url = b"ws://localhost:9944".to_vec();
+    let gateway_id = [0; 4];
+    let gateway_abi: GatewayABIConfig = Default::default();
+
+    let gateway_vendor = GatewayVendor::Substrate;
+    let gateway_type = GatewayType::ProgrammableInternal(0);
+
+    let _gateway_pointer = GatewayPointer {
+        id: [0; 4],
+        vendor: GatewayVendor::Substrate,
+        gateway_type: GatewayType::ProgrammableInternal(0),
+    };
+
+    let gateway_genesis = GatewayGenesisConfig {
+        modules_encoded: None,
+        genesis_hash: Default::default(),
+        extrinsics_version: 0u8,
+    };
+
+    let gateway_sys_props = GatewaySysProps {
+        ss58_format: 0,
+        token_symbol: Encode::encode(""),
+        token_decimals: 0,
+    };
+
+    let parachain = Some(Parachain {
+        relay_chain_id: [1, 3, 3, 7],
+        id: 2015
+    });
+
+    let first_header: CurrentHeader<Test, DefaultPolkadotLikeGateway> = test_header(0);
+
+    let authorities = Some(vec![]);
+    let authority_set_id = None;
+    let allowed_side_effects = vec![];
+
+    let mut ext = TestExternalities::new_empty();
+    ext.execute_with(|| {
+        assert_ok!(Portal::register_gateway(
+            origin,
+            url,
+            gateway_id,
+            parachain,
             gateway_abi,
             gateway_vendor,
             gateway_type,
@@ -141,6 +203,7 @@ fn test_register_gateway_with_u64_substrate_header() {
             origin,
             url,
             gateway_id,
+            None,
             gateway_abi,
             gateway_vendor,
             gateway_type,
@@ -194,6 +257,7 @@ fn test_register_gateway_with_default_eth_like_header() {
             origin,
             url,
             gateway_id,
+            None,
             gateway_abi,
             gateway_vendor,
             gateway_type,
@@ -247,6 +311,7 @@ fn test_register_gateway_with_u64_eth_like_header() {
             origin,
             url,
             gateway_id,
+            None,
             gateway_abi,
             gateway_vendor,
             gateway_type,
@@ -301,6 +366,7 @@ fn test_register_gateway_with_u64_substrate_header_and_allowed_side_effects() {
             origin,
             url,
             gateway_id,
+            None,
             gateway_abi,
             gateway_vendor.clone(),
             gateway_type.clone(),

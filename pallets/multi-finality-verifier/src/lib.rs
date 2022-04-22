@@ -45,11 +45,13 @@ use bp_runtime::{BlockNumberOf, Chain, ChainId, HashOf, HasherOf, HeaderOf};
 use finality_grandpa::voter_set::VoterSet;
 use frame_support::{ensure, pallet_prelude::*};
 use t3rn_primitives::bridges::{header_chain as bp_header_chain, runtime as bp_runtime};
-
 use frame_system::{ensure_signed, RawOrigin};
 use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
 use sp_runtime::traits::{BadOrigin, Header as HeaderT, Zero};
 use sp_std::vec::Vec;
+
+use t3rn_primitives::circuit_portal::CircuitPortal;
+use sp_trie::StorageProof;
 
 #[cfg(test)]
 mod mock;
@@ -81,7 +83,7 @@ pub mod pallet {
     use frame_support::traits::Time;
     use frame_system::pallet_prelude::*;
     use sp_std::convert::TryInto;
-    use t3rn_primitives::{xdns::Xdns, EscrowTrait};
+    use t3rn_primitives::{xdns::Xdns, EscrowTrait, circuit_portal::CircuitPortal};
 
     #[pallet::config]
     pub trait Config<I: 'static = ()>: frame_system::Config {
@@ -115,6 +117,8 @@ pub mod pallet {
 
         /// A type that manages escrow, and therefore balances
         type Escrowed: EscrowTrait<Self>;
+
+        type CircuitPortal: CircuitPortal<Self>;
     }
 
     #[pallet::pallet]
@@ -370,30 +374,78 @@ pub mod pallet {
             Ok(().into())
         }
 
-        // TODO: Do we still need this? Essentially just logging stuff...
-        // #[pallet::weight(0)]
-        // pub fn submit_finality_proof_and_roots(
-        //     origin: OriginFor<T>,
-        //     finality_target: BridgedHeader<T, I>,
-        //     justification: GrandpaJustification<BridgedHeader<T, I>>,
-        //     gateway_id: ChainId,
-        //     // ToDo: Try passing Vec<u8> here and cast to appropriate header type with help of xDNS
-        // ) -> DispatchResultWithPostInfo {
-        //     Self::submit_finality_proof(
-        //         origin,
-        //         finality_target.clone(),
-        //         justification,
-        //         gateway_id,
-        //     )?;
+        #[pallet::weight(<T as pallet::Config<I>>::WeightInfo::submit_finality_proof(
+            block_hash.len() as u32,
+            block_hash.len() as u32,
+        ))]
+        pub fn submit_parachain_header(
+            origin: OriginFor<T>,
+            block_hash: Vec<u8>,
+            gateway_id: ChainId,
+            proof: Vec<Vec<u8>>,
+        ) -> DispatchResultWithPostInfo {
+            ensure_operational_single::<T, I>(gateway_id)?;
+            ensure_signed(origin)?;
+            let storage_proof: StorageProof = Decode::decode(&mut &proof.encode()[..]).unwrap();
+            let result = <T as Config<I>>::CircuitPortal::confirm_parachain_header(
+                gateway_id,
+                block_hash,
+                storage_proof
+            );
 
-        //     log::info!(
-        //         "submit_finality_proof_and_roots, _state_root: {:?}, _extrinsics_root: {:?}",
-        //         finality_target.state_root(),
-        //         finality_target.extrinsics_root()
-        //     );
+            let header: BridgedHeader<T, I> = match result {
+                Ok(header) => Decode::decode(&mut &header[..]).unwrap(),
+                Err(err) => return Err(err.into())
+            };
 
-        //     Ok(().into())
-        // }
+            let hash = header.hash();
+            let index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
+
+            let pruning = <MultiImportedHashes<T, I>>::try_get(gateway_id, index);
+
+            <BestFinalizedMap<T, I>>::insert(gateway_id, hash);
+
+            <MultiImportedHeaders<T, I>>::insert(gateway_id, hash, header.clone());
+            <MultiImportedHashes<T, I>>::insert(gateway_id, index, hash);
+            <MultiImportedRoots<T, I>>::insert(
+                gateway_id,
+                hash,
+                (header.extrinsics_root(), header.state_root()),
+            );
+
+            <RequestCountMap<T, I>>::mutate(gateway_id, |count| {
+                match count {
+                    Some(count) => *count += 1,
+                    None => *count = Some(1),
+                }
+                *count
+             });
+
+            // Update ring buffer pointer and remove old header.
+            <MultiImportedHashesPointer<T, I>>::insert(
+                gateway_id,
+                (index + 1) % T::HeadersToKeep::get(),
+            );
+
+            if let Ok(hash) = pruning {
+                log::debug!(
+                    target: LOG_TARGET,
+                    "Pruning old header: {:?} for gateway {:?}.",
+                    hash,
+                    gateway_id
+                );
+                <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
+                <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
+            }
+
+             // not sure if we want this here as well as we're adding old blocks
+            let now = TryInto::<u64>::try_into(<T::Escrowed as EscrowTrait<T>>::Time::now())
+                .map_err(|_| "Unable to compute current timestamp")?;
+
+            <T::Xdns as Xdns<T>>::update_gateway_ttl(gateway_id, now)?;
+
+            Ok(().into())
+         }
 
         /// Bootstrap the bridge pallet with an initial header and authority set from which to sync.
         ///
@@ -639,6 +691,8 @@ pub mod pallet {
         InvalidAnchorHeader,
         // No finalized header known for the corresponding gateway.
         NoFinalizedHeader,
+        // submitted gateway_id does not have the parachain field set
+        NoParachainEntryFound,
     }
 
     /// Check the given header for a GRANDPA scheduled authority set change. If a change
@@ -963,6 +1017,7 @@ mod tests {
             RawOrigin::Root.into(),
             Default::default(),
             gateway_id,
+            None,
             Default::default(),
             GatewayVendor::Substrate,
             GatewayType::TxOnly(0),

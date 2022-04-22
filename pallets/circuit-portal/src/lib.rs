@@ -25,10 +25,7 @@
 #![allow(clippy::too_many_arguments)]
 
 use codec::{Decode, Encode};
-use frame_support::{
-    dispatch::DispatchResultWithPostInfo,
-    traits::{EnsureOrigin, Get},
-};
+use frame_support::{dispatch::DispatchResultWithPostInfo, traits::{EnsureOrigin, Get}, Twox64Concat, StorageHasher};
 use frame_system::{
     offchain::{SignedPayload, SigningTypes},
     RawOrigin,
@@ -49,6 +46,7 @@ pub use t3rn_primitives::{
     GatewayType, *,
 };
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
+use sp_trie::StorageProof;
 
 pub use pallet::*;
 use t3rn_primitives::{circuit_portal::CircuitPortal, xdns::Xdns};
@@ -67,14 +65,15 @@ pub mod weights;
 use weights::WeightInfo;
 
 pub mod xbridges;
-
 pub use xbridges::{
-    get_roots_from_bridge, init_bridge_instance, CurrentHash, CurrentHasher, CurrentHeader,
+    get_roots_from_bridge, verify_storage_proof, init_bridge_instance, CurrentHash, CurrentHasher, CurrentHeader,
     DefaultPolkadotLikeGateway, EthLikeKeccak256ValU32Gateway, EthLikeKeccak256ValU64Gateway,
     PolkadotLikeValU64Gateway,
 };
 
 use sp_finality_grandpa::SetId;
+use pallet_multi_finality_verifier::BridgedHeader;
+
 pub type AllowedSideEffect = [u8; 4];
 
 /// Defines application identifier for crypto keys of this module.
@@ -103,7 +102,7 @@ pub mod pallet {
     };
     use frame_system::pallet_prelude::*;
     use snowbridge_core::Verifier;
-    use t3rn_primitives::xdns::Xdns;
+    use t3rn_primitives::xdns::{Parachain, Xdns};
 
     use super::*;
     use crate::WeightInfo;
@@ -190,6 +189,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             url: Vec<u8>,
             gateway_id: ChainId,
+            parachain: Option<Parachain>,
             gateway_abi: GatewayABIConfig,
             gateway_vendor: t3rn_primitives::GatewayVendor,
             gateway_type: t3rn_primitives::GatewayType,
@@ -205,6 +205,7 @@ pub mod pallet {
                 origin.clone(),
                 url,
                 gateway_id,
+                parachain,
                 gateway_abi.clone(),
                 gateway_vendor.clone(),
                 gateway_type.clone(),
@@ -319,6 +320,8 @@ pub mod pallet {
         StepConfirmationDecodingError,
         ContractDoesNotExists,
         RequesterNotEnoughBalance,
+        ParachainHeaderNotVerified,
+        NoParachainEntryFound
     }
 }
 
@@ -353,73 +356,179 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
                 unimplemented!()
             },
             GatewayVendor::Substrate => {
-                // For Substrate bridges block hash is required
-                let block_hash = if let Some(x) = maybe_block_hash {
-                    Ok(x)
-                } else {
-                    Err(
-                        "Must provide a valid read proof when proving inclusion with Substrate Bridge"
-                    )
-                }?;
-                let proof = if let Some(x) = maybe_proof {
-                    Ok(x)
-                } else {
-                    Err(
-                        "Must provide a valid read proof when proving inclusion with Substrate Bridge"
-                    )
-                }?;
-                // Check inclusion relying on data in pallet-multi-verifier
-                let (extrinsics_root_h256, storage_root_h256) = match (
-                    gateway_xdns_record.gateway_abi.hasher.clone(),
-                    gateway_xdns_record.gateway_abi.block_number_type_size,
-                ) {
-                    (HasherAlgo::Blake2, 32) => get_roots_from_bridge::<
-                        T,
-                        DefaultPolkadotLikeGateway,
-                    >(block_hash, gateway_id)?,
-                    (HasherAlgo::Blake2, 64) => get_roots_from_bridge::<
-                        T,
-                        PolkadotLikeValU64Gateway,
-                    >(block_hash, gateway_id)?,
-                    (HasherAlgo::Keccak256, 32) => get_roots_from_bridge::<
-                        T,
-                        EthLikeKeccak256ValU32Gateway,
-                    >(block_hash, gateway_id)?,
-                    (HasherAlgo::Keccak256, 64) => get_roots_from_bridge::<
-                        T,
-                        EthLikeKeccak256ValU64Gateway,
-                    >(block_hash, gateway_id)?,
-                    (_, _) => get_roots_from_bridge::<T, DefaultPolkadotLikeGateway>(
-                        block_hash, gateway_id,
-                    )?,
-                };
-
-                // let expected_root = match step_confirmation.proof.proof_trie_pointer {
-                let expected_root = match trie_type {
-                    ProofTriePointer::State => storage_root_h256,
-                    ProofTriePointer::Transaction => extrinsics_root_h256,
-                    ProofTriePointer::Receipts => storage_root_h256,
-                };
-
-                return if let Err(computed_root) = check_merkle_proof(
-                    expected_root,
-                    // step_confirmation.proof.proof_data.into_iter(),
-                    proof.into_iter(),
-                    gateway_xdns_record.gateway_abi.hasher,
-                ) {
-                    log::trace!(
-                        target: "circuit-runtime",
-                        "Step confirmation check failed: inclusion root mismatch. Expected: {}, computed: {}",
-                        expected_root,
-                        computed_root,
-                    );
-
-                    Err(Error::<T>::SideEffectConfirmationInvalidInclusionProof.into())
-                } else {
+            //     // For Substrate bridges block hash is required
+            //     let block_hash = if let Some(x) = maybe_block_hash {
+            //         Ok(x)
+            //     } else {
+            //         Err(
+            //             "Must provide a valid read proof when proving inclusion with Substrate Bridge"
+            //         )
+            //     }?;
+            //     let proof = if let Some(x) = maybe_proof {
+            //         Ok(x)
+            //     } else {
+            //         Err(
+            //             "Must provide a valid read proof when proving inclusion with Substrate Bridge"
+            //         )
+            //     }?;
+            //     // Check inclusion relying on data in pallet-multi-verifier
+            //     let (extrinsics_root_h256, storage_root_h256) = match (
+            //         gateway_xdns_record.gateway_abi.hasher.clone(),
+            //         gateway_xdns_record.gateway_abi.block_number_type_size,
+            //     ) {
+            //         (HasherAlgo::Blake2, 32) => get_roots_from_bridge::<
+            //             T,
+            //             DefaultPolkadotLikeGateway,
+            //         >(block_hash, gateway_id)?,
+            //         (HasherAlgo::Blake2, 64) => get_roots_from_bridge::<
+            //             T,
+            //             PolkadotLikeValU64Gateway,
+            //         >(block_hash, gateway_id)?,
+            //         (HasherAlgo::Keccak256, 32) => get_roots_from_bridge::<
+            //             T,
+            //             EthLikeKeccak256ValU32Gateway,
+            //         >(block_hash, gateway_id)?,
+            //         (HasherAlgo::Keccak256, 64) => get_roots_from_bridge::<
+            //             T,
+            //             EthLikeKeccak256ValU64Gateway,
+            //         >(block_hash, gateway_id)?,
+            //         (_, _) => get_roots_from_bridge::<T, DefaultPolkadotLikeGateway>(
+            //             block_hash, gateway_id,
+            //         )?,
+            //     };
+            //
+            //     // let expected_root = match step_confirmation.proof.proof_trie_pointer {
+            //     let expected_root = match trie_type {
+            //         ProofTriePointer::State => storage_root_h256,
+            //         ProofTriePointer::Transaction => extrinsics_root_h256,
+            //         ProofTriePointer::Receipts => storage_root_h256,
+            //     };
+            //
+            //     return if let Err(computed_root) = check_merkle_proof(
+            //         expected_root,
+            //         // step_confirmation.proof.proof_data.into_iter(),
+            //         proof.into_iter(),
+            //         gateway_xdns_record.gateway_abi.hasher,
+            //     ) {
+            //         log::trace!(
+            //             target: "circuit-runtime",
+            //             "Step confirmation check failed: inclusion root mismatch. Expected: {}, computed: {}",
+            //             expected_root,
+            //             computed_root,
+            //         );
+            //
+            //         Err(Error::<T>::SideEffectConfirmationInvalidInclusionProof.into())
+            //     } else {
                     Ok(())
-                }
+            //     }
             },
         }
+    }
+
+    fn confirm_event_inclusion(
+        gateway_id: [u8; 4],
+        encoded_event: Vec<u8>,
+        maybe_block_hash: Option<Vec<u8>>,
+        maybe_proof: Option<Vec<Vec<u8>>>,
+    ) -> Result<(), &'static str> {
+        let block_hash = if let Some(x) = maybe_block_hash {
+            Ok(x)
+        } else {
+            Err("Must provide a valid read proof when proving inclusion with Substrate Bridge")
+        }?;
+        let storage_proof: StorageProof = if let Some(x) = maybe_proof {
+            Ok(Decode::decode(&mut &x.encode()[..]).unwrap())
+        } else {
+            Err("Must provide a valid read proof when proving inclusion with Substrate Bridge")
+        }?;
+
+        // StorageKey for System_Events
+        let gateway_xdns_record = <T as Config>::Xdns::best_available(gateway_id)?;
+        let key: Vec<u8> = [240,195,101,195,207,89,214,113,235,114,218,14,122,65,19,196,159,31,5,21,244,98,205,207,132,224,241,214,4,93,252,187].to_vec();
+        let verified_events = match (
+            gateway_xdns_record.gateway_abi.hasher.clone(),
+            gateway_xdns_record.gateway_abi.block_number_type_size,
+        ) {
+             (HasherAlgo::Blake2, 32) => verify_storage_proof::<
+                 T,
+                 DefaultPolkadotLikeGateway,
+             >(
+                 block_hash,
+                 gateway_id,
+                 key,
+                 storage_proof,
+                 ProofTriePointer::State
+             )?,
+             (HasherAlgo::Blake2, 64) => verify_storage_proof::<
+                 T,
+                 PolkadotLikeValU64Gateway,
+             >(
+                 block_hash,
+                 gateway_id,
+                 key,
+                 storage_proof,
+                 ProofTriePointer::State
+             )?,
+             (_, _) => unimplemented!()
+        };
+
+        log::info!("verified Events: {:?}", verified_events);
+        log::info!("encoded event: {:?}", encoded_event);
+        Ok(())
+
+    }
+
+    fn confirm_parachain_header(
+        gateway_id: [u8; 4],
+        block_hash: Vec<u8>,
+        proof: StorageProof,
+    ) -> Result<Vec<u8>, &'static str> {
+        // partial StorageKey for Paras_Heads. We now need to append the parachain_id as LE-u32 to generate the parachains StorageKey
+        // ToDo: This is a bit unclean, but it makes no sense to hash the StorageKey for each exec
+        let mut key: Vec<u8> = [205,113,11,48,189,46,171,3,82,221,204,38,65,122,161,148,27,60,37,47,203,41,216,142,255,79,61,229,222,68,118,195].to_vec();
+        let relay_xdns_record = <T as Config>::Xdns::best_available(gateway_id.clone())?;
+        let relay_chain_id: ChainId = match relay_xdns_record.parachain {
+            Some(parachain) => {
+                // parachain_id is used as an encoded argument in the storage key
+                let mut arg = Twox64Concat::hash(parachain.id.encode().as_ref());
+                key.append(&mut arg);
+                // the relay_chain_id is set during registration and queried from storage
+                parachain.relay_chain_id
+            },
+            None => {
+                return Err(Error::<T>::NoParachainEntryFound.into())
+            }
+        };
+
+        // Check inclusion relying on data in pallet-multi-verifier
+        let header = match (
+            relay_xdns_record.gateway_abi.hasher.clone(),
+            relay_xdns_record.gateway_abi.block_number_type_size,
+        ) {
+            (HasherAlgo::Blake2, 32) => verify_storage_proof::<
+                T,
+                DefaultPolkadotLikeGateway,
+            >(
+                block_hash,
+                relay_chain_id,
+                key,
+                proof,
+                ProofTriePointer::State
+            )?,
+            (HasherAlgo::Blake2, 64) => verify_storage_proof::<
+                T,
+                PolkadotLikeValU64Gateway,
+            >(
+                block_hash,
+                 relay_chain_id,
+                key,
+                proof,
+                ProofTriePointer::State
+            )?,
+            (_, _) => unimplemented!()
+        };
+
+        Ok(header)
     }
 }
 impl<T: Config> Pallet<T> {
