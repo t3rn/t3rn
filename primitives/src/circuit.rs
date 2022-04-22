@@ -1,3 +1,8 @@
+use crate::{
+    side_effect::FullSideEffect,
+    transfers::{BalanceOf, EscrowedBalanceOf, EscrowedCurrencyOf},
+    xtx::LocalState,
+};
 use codec::{Decode, Encode};
 use frame_support::dispatch::DispatchResult;
 use frame_system::{pallet_prelude::OriginFor, Config};
@@ -8,25 +13,54 @@ pub struct LocalTrigger<T: Config> {
     /// Id of the contract which generated the side effects
     contract: T::AccountId,
     /// Side effects generated from the contract call
-    pub side_effects: Vec<Vec<u8>>,
-    /// Breakpoints by outbound message index
-    round_breakpoints: Vec<u32>,
+    pub submitted_side_effects: Vec<Vec<u8>>,
+    pub maybe_xtx_id: Option<T::Hash>,
 }
 
 impl<T: Config> LocalTrigger<T> {
     pub fn new(
         contract: T::AccountId,
-        side_effects: Vec<Vec<u8>>,
-        round_breakpoints: Vec<u32>,
+        submitted_side_effects: Vec<Vec<u8>>,
+        maybe_xtx_id: Option<T::Hash>,
     ) -> Self {
         LocalTrigger {
             contract,
-            side_effects,
-            round_breakpoints,
+            submitted_side_effects,
+            maybe_xtx_id,
+        }
+    }
+}
+
+// TODO: remove u128 when we remove escrowtrait
+#[derive(Debug, Clone, Eq, PartialEq, Encode, Decode)]
+pub struct LocalStateExecutionView<T: Config> {
+    execution_id: T::Hash,
+    local_state: LocalState,
+    full_side_effects: Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, u128>>>,
+    steps_cnt: (u32, u32),
+}
+
+impl<T: Config> LocalStateExecutionView<T> {
+    pub fn new(
+        execution_id: T::Hash,
+        local_state: LocalState,
+        full_side_effects: Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, u128>>>,
+        steps_cnt: (u32, u32),
+    ) -> Self {
+        LocalStateExecutionView {
+            execution_id,
+            local_state,
+            full_side_effects,
+            steps_cnt,
         }
     }
 }
 
 pub trait OnLocalTrigger<T: Config> {
     fn on_local_trigger(origin: &OriginFor<T>, trigger: LocalTrigger<T>) -> DispatchResult;
+
+    fn load_local_state(
+        origin: OriginFor<T>,
+        trigger: LocalTrigger<T>,
+    ) -> Result<LocalStateExecutionView<T>, sp_runtime::DispatchError>;
 }

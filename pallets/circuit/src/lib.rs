@@ -101,8 +101,9 @@ pub mod pallet {
     use frame_system::pallet_prelude::*;
     use orml_traits::MultiCurrency;
     use t3rn_primitives::{
-        circuit::{LocalTrigger, OnLocalTrigger},
+        circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
         circuit_portal::CircuitPortal,
+        transfers::BalanceOf,
         xdns::Xdns,
     };
 
@@ -273,8 +274,35 @@ pub mod pallet {
     }
 
     impl<T: Config> OnLocalTrigger<T> for Pallet<T> {
+        fn load_local_state(
+            origin: OriginFor<T>,
+            trigger: LocalTrigger<T>,
+        ) -> Result<LocalStateExecutionView<T>, sp_runtime::DispatchError> {
+            let requester = Self::authorize(origin, CircuitRole::ContractAuthor)?;
+
+            let fresh_or_revoked_exec = match trigger.maybe_xtx_id {
+                Some(_xtx_id) => CircuitStatus::Ready,
+                None => CircuitStatus::Requested,
+            };
+            // Setup: new xtx context
+            let mut local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
+                fresh_or_revoked_exec.clone(),
+                &requester,
+                Zero::zero(),
+                trigger.maybe_xtx_id,
+            )?;
+
+            Ok(LocalStateExecutionView::<T>::new(
+                local_xtx_ctx.xtx_id.clone(),
+                local_xtx_ctx.local_state.clone(),
+                // local_xtx_ctx.full_side_effects, // TODO: remove escrowtrait first
+                Default::default(),
+                local_xtx_ctx.xtx.steps_cnt.clone(),
+            ))
+        }
+
         fn on_local_trigger(_origin: &OriginFor<T>, trigger: LocalTrigger<T>) -> DispatchResult {
-            log::debug!(target: "runtime::circuit", "Handling on_local_trigger {:?}", trigger.side_effects);
+            log::debug!(target: "runtime::circuit", "Handling on_local_trigger {:?}", trigger.maybe_xtx_id);
             // ToDo: pallet-circuit x-t3rn# : Authorize : Check TriggerAuthRights for local triggers
 
             // ToDo: pallet-circuit x-t3rn# : Validate : insurance for reversible side effects if necessary
