@@ -5,7 +5,9 @@ use circuit_standalone_runtime::{
     MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, SystemConfig, XDNSConfig,
     WASM_BINARY,
 };
-use jsonrpc_runtime_client::ConnectionParams;
+use jsonrpc_runtime_client::{
+    create_rpc_client, get_gtwy_init_data, get_metadata, ConnectionParams,
+};
 use log::info;
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -18,10 +20,13 @@ use std::{
 };
 use t3rn_primitives::{
     abi::Type,
-    bridges::runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID},
+    bridges::{
+        header_chain::InitializationData,
+        runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID, ROCOCO_CHAIN_ID},
+    },
     side_effect::interface::SideEffectInterface,
     xdns::XdnsRecord,
-    GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
+    ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor, Header,
 };
 
 // The URL for the telemetry server.
@@ -68,14 +73,10 @@ fn fetch_xdns_record_from_rpc(
     chain_id: t3rn_primitives::ChainId,
 ) -> Result<XdnsRecord<AccountId>, Error> {
     async_std::task::block_on(async move {
-        let client = jsonrpc_runtime_client::create_rpc_client(params)
-            .await
-            .unwrap();
+        let client = create_rpc_client(params).await.unwrap();
 
         let _runtime_version = client.clone().runtime_version().await.unwrap();
-        let metadata = jsonrpc_runtime_client::get_metadata(&client.clone())
-            .await
-            .unwrap();
+        let metadata = get_metadata(&client.clone()).await.unwrap();
 
         let gateway_sys_props = GatewaySysProps::try_from(&chain_id)
             .map_err(|err| Error::new(ErrorKind::InvalidInput, err))?;
@@ -119,15 +120,20 @@ fn seed_xdns_registry() -> Result<Vec<XdnsRecord<AccountId>>, Error> {
         secure: true,
     };
 
-    let _polkadot_xdns =
-        fetch_xdns_record_from_rpc(&polkadot_connection_params, POLKADOT_CHAIN_ID).unwrap();
-    info!("Fetched Polkadot metadata successfully!");
-    let _kusama_xdns =
-        fetch_xdns_record_from_rpc(&kusama_connection_params, KUSAMA_CHAIN_ID).unwrap();
-    info!("Fetched Kusama metadata successfully!");
+    let rococo_connection_params: ConnectionParams = ConnectionParams {
+        host: String::from("rococo-rpc.polkadot.io"),
+        port: 443,
+        secure: true,
+    };
 
-    // Ok(vec![polkadot_xdns, kusama_xdns])
-    Ok(vec![])
+    let polkadot_xdns = fetch_xdns_record_from_rpc(&polkadot_connection_params, POLKADOT_CHAIN_ID)
+        .expect("fetching polkadot xdns info failed");
+    let kusama_xdns = fetch_xdns_record_from_rpc(&kusama_connection_params, KUSAMA_CHAIN_ID)
+        .expect("fetching kusama xdns info failed");
+    let rococo_xdns = fetch_xdns_record_from_rpc(&rococo_connection_params, ROCOCO_CHAIN_ID)
+        .expect("fetching rococo xdns info failed");
+
+    Ok(vec![polkadot_xdns, kusama_xdns, rococo_xdns])
 }
 
 fn standard_side_effects() -> Vec<SideEffectInterface> {
@@ -272,6 +278,53 @@ fn standard_side_effects() -> Vec<SideEffectInterface> {
     ]
 }
 
+/// Fetches gateway initialization data by chain id.
+fn fetch_gtwy_init_data(gateway_id: &ChainId) -> Result<InitializationData<Header>, Error> {
+    async_std::task::block_on(async move {
+        let endpoint = match *gateway_id {
+            POLKADOT_CHAIN_ID => "rpc.polkadot.io",
+            KUSAMA_CHAIN_ID => "kusama-rpc.polkadot.io",
+            ROCOCO_CHAIN_ID => "rococo-rpc.polkadot.io",
+            _ => return Err(Error::new(ErrorKind::InvalidInput, "unknown gateway id")),
+        };
+
+        let client = create_rpc_client(&ConnectionParams {
+            host: endpoint.to_string(),
+            port: 443,
+            secure: true,
+        })
+        .await
+        .map_err(|error| Error::new(ErrorKind::NotConnected, error))?;
+
+        let is_relay_chain = match *gateway_id {
+            POLKADOT_CHAIN_ID | KUSAMA_CHAIN_ID | ROCOCO_CHAIN_ID => true,
+            _ => false,
+        };
+
+        let (authority_set, header) = get_gtwy_init_data(&client.clone(), is_relay_chain)
+            .await
+            .map_err(|error| Error::new(ErrorKind::InvalidData, error))?;
+
+        Ok(InitializationData {
+            header,
+            authority_list: authority_set.authorities,
+            set_id: authority_set.set_id,
+            is_halted: false,
+            gateway_id: *gateway_id,
+        })
+    })
+}
+
+/// Lists initialization data for indicated gateways.
+fn initial_gateways(gateway_ids: Vec<&ChainId>) -> Result<Vec<InitializationData<Header>>, Error> {
+    let init_data = gateway_ids
+        .iter()
+        .map(|gateway_id| fetch_gtwy_init_data(*gateway_id))
+        .collect::<Result<_, Error>>()?;
+
+    Ok(init_data)
+}
+
 pub fn development_config() -> Result<ChainSpec, String> {
     let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
 
@@ -297,6 +350,8 @@ pub fn development_config() -> Result<ChainSpec, String> {
                 ],
                 seed_xdns_registry().unwrap_or_default(),
                 standard_side_effects(),
+                initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
+                    .expect("initial gateways"),
                 true,
             )
         },
@@ -350,6 +405,8 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
                 ],
                 seed_xdns_registry().unwrap_or_default(),
                 standard_side_effects(),
+                initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
+                    .expect("initial gateways"),
                 true,
             )
         },
@@ -375,6 +432,7 @@ fn testnet_genesis(
     endowed_accounts: Vec<AccountId>,
     xdns_records: Vec<XdnsRecord<AccountId>>,
     standard_side_effects: Vec<SideEffectInterface>,
+    initial_gateways: Vec<InitializationData<Header>>,
     _enable_println: bool,
 ) -> GenesisConfig {
     GenesisConfig {
@@ -431,7 +489,7 @@ fn testnet_genesis(
         },
         multi_finality_verifier_default: MultiFinalityVerifierDefaultConfig {
             owner: None,
-            init_data: None,
+            init_data: Some(initial_gateways),
         },
         orml_tokens: Default::default(),
         account_manager: Default::default(),

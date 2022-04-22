@@ -6,6 +6,8 @@ on:
       - 'v*'
 
 env:
+  RELAY_CHAIN_NAME: rococo
+  PARA_CHAIN_NAME: t0rn
   RUST_BACKTRACE: 1
   CARGO_TERM_COLOR: always
 
@@ -18,7 +20,8 @@ jobs:
         with:
           submodules: recursive
           token: ${{ secrets.GH_PAT }}
-      - name: ⚙️Get nightly rust toolchain with wasm target
+
+      - name: ⚙️ Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly-2021-11-01
@@ -46,58 +49,48 @@ jobs:
       - name: 📤 Upload binary
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ github.sha }}-parachain-release-artifacts
+          name: ${{ github.sha }}-collator-release-artifacts
           path: ./target/release/circuit-collator
           if-no-files-found: error
           retention-days: 1
 
   push-to-docker:
     runs-on: ubuntu-20.04
-    needs: [build-release]
+    needs: build-release
     steps:
-      - name: ☁️Checkout git repo
-        uses: actions/checkout@master
-        with:
-          submodules: recursive
-          token: ${{ secrets.GH_PAT }}
-      - name: 🔧 Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-      - name: 🕒 Cache Docker layers
-        uses: actions/cache@v2
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v3
+
       - name: 📥 Download circuit
         uses: actions/download-artifact@v2
         with:
-          name: ${{ github.sha }}-parachain-release-artifacts
+          name: ${{ github.sha }}-collator-release-artifacts
           path: ./target/release/
+
       - name: 🐋 Login to Docker Hub
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: 🐳 Build & Publish Docker image
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          push: true
-          tags: t3rn/circuit-parachain:latest
-          platforms: linux/amd64
-          file: docker/circuit-parachain.Dockerfile
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache
+
+      - name: 🐳 Build & publish Docker image
+        env:
+          DOCKER_BUILDKIT: 1
+        run: |
+          docker build -f docker/circuit-collator.Dockerfile -t t3rn/circuit-collator:latest .
+          docker push t3rn/circuit-collator:latest
 
   release-on-github:
     runs-on: ubuntu-20.04
     needs: build-release
     steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v3
+
       - name: 📥 Download circuit collator
         uses: actions/download-artifact@v2
         with:
-          name: ${{ github.sha }}-parachain-release-artifacts
+          name: ${{ github.sha }}-collator-release-artifacts
           path: ./target/release/
 
       - name: 🎱 Gzip circuit collator
@@ -120,7 +113,8 @@ jobs:
           node -e "
             const lines = require('fs').readFileSync('./CHANGELOG.md', 'utf8').split(/(\n)/g).filter(Boolean);
             let head = lines.findIndex(l => /^\s*##[^v]+${{ env.PUSHED_TAG }}/.test(l));
-            if (head === -1) { throw Error('failed parsing changelog') } else head = head + 1;
+            if (head === -1) { throw Error('cannot parse ${{ env.PUSHED_TAG }} from changelog') }
+            else head = head + 1;
             let tail = lines.slice(head).findIndex(l => /^\s*##[^v]+v/.test(l));
             tail = tail === -1 ? lines.length : tail + head;
             console.log(lines.slice(head, tail).join(''));
@@ -139,14 +133,34 @@ jobs:
           draft: false
           prerelease: true
 
+      - name: ⚡ Provide the raw parachain chain spec
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./specs/${{ env.PARA_CHAIN_NAME }}.raw.json
+          asset_name: ${{ env.PARA_CHAIN_NAME }}.raw.json
+          asset_content_type: application/json
+
+      - name: 🎢 Provide the raw relay chain spec
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./specs/${{ env.RELAY_CHAIN_NAME }}.raw.json
+          asset_name: ${{ env.RELAY_CHAIN_NAME }}.raw.json
+          asset_content_type: application/json
+
       - name: 🍔 Provide the sha256sum as a release asset
         uses: actions/upload-release-asset@v1.0.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ github.event.release.upload_url }}
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./target/release/circuit-collator.gz.sha256sum
-          asset_name: t3rn-circuit-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz.sha256sum
+          asset_name: ${{ env.PARA_CHAIN_NAME }}-circuit-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz.sha256sum
           asset_content_type: text/plain
 
       - name: 📦 Upload the circuit parachain collator gball as a release asset
@@ -154,7 +168,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ github.event.release.upload_url }}
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./target/release/circuit-collator.gz
-          asset_name: t3rn-circuit-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz
+          asset_name: ${{ env.PARA_CHAIN_NAME }}-circuit-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz
           asset_content_type: application/gzip

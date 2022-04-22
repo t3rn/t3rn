@@ -17,8 +17,8 @@
 //! A crate that hosts a common definitions that are relevant for the pallet-contracts.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![allow(clippy::type_complexity)]
-#![allow(clippy::too_many_arguments)]
+
+use crate::bridges::runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID, ROCOCO_CHAIN_ID};
 use codec::{Decode, Encode};
 use frame_support::traits::{ReservableCurrency, Time};
 use scale_info::TypeInfo;
@@ -43,6 +43,7 @@ pub mod circuit;
 pub mod circuit_portal;
 pub mod contract_metadata;
 pub mod contracts_registry;
+pub mod freevm;
 pub mod gateway_inbound_protocol;
 pub mod match_format;
 pub mod protocol;
@@ -156,14 +157,19 @@ impl TryFrom<&ChainId> for GatewaySysProps {
                 token_symbol: Encode::encode("T3RN"),
                 token_decimals: 12,
             }),
-            b"pdot" => Ok(GatewaySysProps {
+            &POLKADOT_CHAIN_ID => Ok(GatewaySysProps {
                 ss58_format: 0,
                 token_symbol: Encode::encode("DOT"),
                 token_decimals: 10,
             }),
-            b"ksma" => Ok(GatewaySysProps {
+            &KUSAMA_CHAIN_ID => Ok(GatewaySysProps {
                 ss58_format: 2,
                 token_symbol: Encode::encode("KSM"),
+                token_decimals: 12,
+            }),
+            &ROCOCO_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 42,
+                token_symbol: Encode::encode("ROC"),
                 token_decimals: 12,
             }),
             _ => Err("unknown chain id"),

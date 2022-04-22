@@ -17,6 +17,7 @@
 //! Defines traits which represent a common interface for Substrate pallets which want to
 //! incorporate bridge functionality.
 
+use crate::bridges::runtime::ChainId;
 use codec::{Codec, Decode, Encode, EncodeLike, MaxEncodedLen};
 use core::{clone::Clone, cmp::Eq, default::Default, fmt::Debug};
 use scale_info::TypeInfo;
@@ -72,6 +73,8 @@ pub struct InitializationData<H: HeaderT> {
     pub set_id: SetId,
     /// Should the pallet block transaction immediately after initialization.
     pub is_halted: bool,
+    /// 4-byte gateway identifier.
+    pub gateway_id: ChainId,
 }
 
 /// base trait for verifying transaction inclusion proofs.
