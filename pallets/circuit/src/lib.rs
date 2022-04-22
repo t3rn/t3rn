@@ -360,7 +360,7 @@ pub mod pallet {
         fn load_local_state(
             origin: &OriginFor<T>,
             maybe_xtx_id: Option<T::Hash>,
-        ) -> Result<LocalStateExecutionView, sp_runtime::DispatchError> {
+        ) -> Result<LocalStateExecutionView<T>, sp_runtime::DispatchError> {
             let requester = Self::authorize(origin.to_owned(), CircuitRole::ContractAuthor)?;
 
             let fresh_or_revoked_exec = match maybe_xtx_id {
@@ -381,14 +381,15 @@ pub mod pallet {
                 Err(err) => Err(err),
             }?;
 
-            Ok(LocalStateExecutionView::new(
+            Ok(LocalStateExecutionView::<T>::new(
+                local_xtx_ctx.xtx_id,
                 local_xtx_ctx.local_state.clone(),
                 local_xtx_ctx.xtx.steps_cnt.clone(),
             ))
         }
 
         fn on_local_trigger(origin: &OriginFor<T>, trigger: LocalTrigger<T>) -> DispatchResult {
-            log::debug!(target: "runtime::circuit", "Handling on_local_trigger {:?}", trigger.maybe_xtx_id);
+            log::debug!(target: "runtime::circuit", "Handling on_local_trigger xtx: {:?}, contract: {:?}, side_effects: {:?}", trigger.maybe_xtx_id, trigger.contract, trigger.submitted_side_effects);
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin.to_owned(), CircuitRole::ContractAuthor)?;
 
