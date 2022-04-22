@@ -5,28 +5,24 @@ use circuit_standalone_runtime::{
     MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, SystemConfig, XDNSConfig,
     WASM_BINARY,
 };
-
 use jsonrpc_runtime_client::ConnectionParams;
-use sp_core::Encode;
-use t3rn_primitives::{
-    abi::Type,
-    bridges::runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID},
-};
-
-use t3rn_primitives::{GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor};
-
 use log::info;
+use sc_service::ChainType;
+use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+use sp_core::{sr25519, Encode, Pair, Public};
+use sp_finality_grandpa::AuthorityId as GrandpaId;
+use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::{
     convert::TryFrom,
     io::{Error, ErrorKind},
 };
-
-use sc_service::ChainType;
-use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{sr25519, Pair, Public};
-use sp_finality_grandpa::AuthorityId as GrandpaId;
-use sp_runtime::traits::{IdentifyAccount, Verify};
-use t3rn_primitives::{side_effect::interface::SideEffectInterface, xdns::XdnsRecord};
+use t3rn_primitives::{
+    abi::Type,
+    bridges::runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID},
+    side_effect::interface::SideEffectInterface,
+    xdns::XdnsRecord,
+    GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
+};
 
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";

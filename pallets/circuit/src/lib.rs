@@ -100,6 +100,7 @@ pub mod pallet {
     };
     use frame_system::pallet_prelude::*;
     use orml_traits::MultiCurrency;
+    use sp_std::borrow::ToOwned;
     use t3rn_primitives::{
         circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
         circuit_portal::CircuitPortal,
@@ -275,12 +276,12 @@ pub mod pallet {
 
     impl<T: Config> OnLocalTrigger<T> for Pallet<T> {
         fn load_local_state(
-            origin: OriginFor<T>,
-            trigger: LocalTrigger<T>,
+            origin: &OriginFor<T>,
+            maybe_xtx_id: Option<T::Hash>,
         ) -> Result<LocalStateExecutionView<T>, sp_runtime::DispatchError> {
-            let requester = Self::authorize(origin, CircuitRole::ContractAuthor)?;
+            let requester = Self::authorize(origin.to_owned(), CircuitRole::ContractAuthor)?;
 
-            let fresh_or_revoked_exec = match trigger.maybe_xtx_id {
+            let fresh_or_revoked_exec = match maybe_xtx_id {
                 Some(_xtx_id) => CircuitStatus::Ready,
                 None => CircuitStatus::Requested,
             };
@@ -289,7 +290,7 @@ pub mod pallet {
                 fresh_or_revoked_exec.clone(),
                 &requester,
                 Zero::zero(),
-                trigger.maybe_xtx_id,
+                maybe_xtx_id,
             )?;
 
             Ok(LocalStateExecutionView::<T>::new(
@@ -1131,6 +1132,7 @@ impl<T: Config> Pallet<T> {
             CircuitRole::Requester => ensure_signed(origin),
             // ToDo: Handle active Relayer authorisation
             CircuitRole::Relayer => ensure_signed(origin),
+            CircuitRole::ContractAuthor => ensure_signed(origin),
             // ToDo: Handle other CircuitRoles
             _ => unimplemented!(),
         }
