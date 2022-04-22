@@ -99,20 +99,25 @@ export class ExecutionManager extends EventEmitter {
             return parseInt(block) <= blockHeight
         })
 
-        let res: any[] = [];
-        for(let i = 0; i < ready.length; i++) {
-            let sideEff = this.queue[gatewayId].confirming[ready[i]]
-            res.push(sideEff)
+        if(ready.length > 0) {
+            let res: any[] = [];
+            for(let i = 0; i < ready.length; i++) {
+                let sideEff = this.queue[gatewayId].confirming[ready[i]]
+                res.push(sideEff)
+            }
+    
+            // console.log("sideEffects:", this.sideEffects)
+            let sideEffectsToConfirm = res.flat().map(sideEffectId => {
+                return this.sideEffects[sideEffectId]
+            })
+    
+            console.log("Ready to Submit", ready)
+    
+    
+    
+            this.emit("ConfirmSideEffects", sideEffectsToConfirm);
         }
 
-        // console.log("sideEffects:", this.sideEffects)
-        let sideEffectsToConfirm = res.flat().map(sideEffectId => {
-            return this.sideEffects[sideEffectId]
-        })
-
-        console.log("Ready to Submit", ready)
-
-        this.emit("ConfirmSideEffects", sideEffectsToConfirm);
     }
 
     private removeExecuting(id: string, gatewayId: string) {
