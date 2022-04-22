@@ -411,42 +411,42 @@ parameter_types! {
 
 impl pallet_multi_finality_verifier::Config<Blake2ValU64BridgeInstance> for Test {
     type BridgedChain = Blake2ValU64Chain;
+    type CircuitPortal = CircuitPortal;
     type Escrowed = Self;
     type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
     type Xdns = XDNS;
-    type CircuitPortal = CircuitPortal;
 }
 
 impl pallet_multi_finality_verifier::Config<Blake2ValU32BridgeInstance> for Test {
     type BridgedChain = Blake2ValU32Chain;
+    type CircuitPortal = CircuitPortal;
     type Escrowed = Self;
     type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
     type Xdns = XDNS;
-    type CircuitPortal = CircuitPortal;
 }
 
 impl pallet_multi_finality_verifier::Config<Keccak256ValU64BridgeInstance> for Test {
     type BridgedChain = Keccak256ValU64Chain;
+    type CircuitPortal = CircuitPortal;
     type Escrowed = Self;
     type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
     type Xdns = XDNS;
-    type CircuitPortal = CircuitPortal;
 }
 
 impl pallet_multi_finality_verifier::Config<Keccak256ValU32BridgeInstance> for Test {
     type BridgedChain = Keccak256ValU32Chain;
+    type CircuitPortal = CircuitPortal;
     type Escrowed = Self;
     type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
     type Xdns = XDNS;
-    type CircuitPortal = CircuitPortal;
 }
 
 parameter_types! {
