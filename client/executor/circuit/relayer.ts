@@ -34,8 +34,7 @@ export default class CircuitRelayer extends EventEmitter {
     async confirmSideEffects(sideEffects: SideEffect[]) {
         let promises = sideEffects.map(sideEffect => {
             return new Promise(async (res, rej) => {
-                let unsub = await this.confirmSideEffect(sideEffect);
-                unsub();
+                await this.confirmSideEffect(sideEffect);
                 res;
             })
         })
@@ -54,19 +53,23 @@ export default class CircuitRelayer extends EventEmitter {
             null
         )
 
-        return tx.signAndSend(this.signer, (result) => {
-            if (result.status.isFinalized) {
-                const success = result.events[result.events.length - 1].event.method === "ExtrinsicSuccess";
-                this.log(`SideEffect confirmed: ${success}, ${result.status.asFinalized}`)
+        return new Promise(async (res, rej) => {
+            let unsub = await tx.signAndSend(this.signer, (result) => {
+                if (result.status.isFinalized) {
+                    const success = result.events[result.events.length - 1].event.method === "ExtrinsicSuccess";
+                    this.log(`SideEffect confirmed: ${success}, ${result.status.asFinalized}`)
+                    sideEffect.confirm(success, result.status.asFinalized)
+    
+                    this.emit(
+                        "SideEffectConfirmed",
+                        sideEffect.getId()
+                    )
+                    
+                    res(unsub());
+                }
+            });
+        })
 
-                sideEffect.confirm(success, result.status.asFinalized)
-
-                this.emit(
-                    "SideEffectConfirmed",
-                    sideEffect.getId()
-                )
-            }
-        });
 
     }
 }
