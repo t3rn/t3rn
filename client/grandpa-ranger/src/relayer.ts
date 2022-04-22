@@ -47,7 +47,7 @@ export default class Relayer extends EventEmitter {
     await new Promise(async (resolve, reject) => {
       await submitFinalityProof.signAndSend(keyring.alice, result => {
         if (result.isError) {
-          reject(Error('submitting finality proof failed'))
+          console.error('submitting finality proof failed')
         } else if (result.isInBlock) {
           Relayer.debug(
             'submit_finality_proof events',
@@ -72,7 +72,7 @@ export default class Relayer extends EventEmitter {
     await new Promise(async (resolve, reject) => {
       await submitHeaderRange.signAndSend(keyring.alice, result => {
         if (result.isError) {
-          reject(Error('submitting header range failed'))
+          console.error('submitting header range failed')
         } else if (result.status.isFinalized) {
           Relayer.debug(
             'submit_header_range events',

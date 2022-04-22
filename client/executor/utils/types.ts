@@ -1,5 +1,5 @@
 import '@t3rn/types';
-import { AccountId32, H256,  } from '@polkadot/types/interfaces/runtime';
+import { AccountId32, H256, } from '@polkadot/types/interfaces/runtime';
 import { T3rnPrimitivesSideEffect, } from '@polkadot/types/lookup';
 import { TextDecoder } from 'util';
 const crypto = require("crypto");
@@ -15,9 +15,9 @@ export enum TransactionType {
 export const EventMapper = ["Transfer", "MultiTransfer"]
 
 export class SideEffect {
-    requester: AccountId32;
-    executor: AccountId32;
-    xtxId: H256;
+    requester: any;
+    executor: any;
+    xtxId: any;
     object: T3rnPrimitivesSideEffect;
     confirmedSideEffect: object;
 
@@ -29,11 +29,11 @@ export class SideEffect {
     confirmed: boolean;
     confirmBlockHeader: any;
 
-    setRequester(requester: AccountId32) {
+    setRequester(requester: any) {
         this.requester = requester;
     }
 
-    setXtxId(xtxId: H256) {
+    setXtxId(xtxId: any) {
         this.xtxId = xtxId;
     }
 

@@ -2,6 +2,7 @@ import '@t3rn/types';
 import { EventEmitter } from 'events'
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { SideEffect } from '../utils/types';
+import { TextDecoder } from 'util';
 
 export default class CircuitListener extends EventEmitter {
 
@@ -39,11 +40,11 @@ export default class CircuitListener extends EventEmitter {
                         sideEffect
                     )
                 } else if (notification.event.method === 'NewHeaderRangeAvailable') {
-                    // unimplemented
 
                     const data = {
-                        gatewayId: "abcd",
-                        height: 123455,
+                        gatewayId: new TextDecoder().decode(notification.event.data[0].toU8a()),
+                        height: notification.event.data[1],
+                        range: notification.event.data[2]
                     }
 
                     this.emit(

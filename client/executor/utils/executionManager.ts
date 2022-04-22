@@ -82,24 +82,35 @@ export class ExecutionManager extends EventEmitter {
 
     // New header range was submitted on circuit
     // update local params and check which SideEffects can be confirmed
-    updateGatewayHeight(gatewayId: string, blockHeight: number) {
+    updateGatewayHeight(gatewayId: string, blockHeight: any) {
+        blockHeight = parseInt(blockHeight);
+
         this.queue[gatewayId].blockHeight = blockHeight;
         this.executeQueue(gatewayId, blockHeight)
     }
 
     // checks which unconfirmed SideEffects can be executed on circuit
+    // ToDo: This crime needs to be refactored
     executeQueue(gatewayId: string, blockHeight: number) { 
+
         // filter and flatten SideEffects ready to be confirmed.
         let ready = Object.keys(this.queue[gatewayId].confirming).filter(block => {
             //in node object keys are always strings
-            parseInt(block) <= blockHeight
-        }).flat()
+            return parseInt(block) <= blockHeight
+        })
 
-        console.log("ready:", ready);
+        let res: any[] = [];
+        for(let i = 0; i < ready.length; i++) {
+            let sideEff = this.queue[gatewayId].confirming[ready[i]]
+            res.push(sideEff)
+        }
 
-        const sideEffectsToConfirm = ready.map(sideEffectId => {
+        // console.log("sideEffects:", this.sideEffects)
+        let sideEffectsToConfirm = res.flat().map(sideEffectId => {
             return this.sideEffects[sideEffectId]
         })
+
+        console.log("Ready to Submit", ready)
 
         this.emit("ConfirmSideEffects", sideEffectsToConfirm);
     }
