@@ -75,7 +75,6 @@ bitflags! {
 
 // Bits of storage flags associated with types on-gateway of transfer.
 bitflags! {
-
     /// Flags used by a contract to customize calls.
     #[derive(Encode, Decode)]
     pub struct CallFlags: u8 {

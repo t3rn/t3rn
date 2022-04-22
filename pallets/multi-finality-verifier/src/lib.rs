@@ -35,18 +35,16 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 // Runtime-generated enums
 #![allow(clippy::large_enum_variant)]
-
+#![allow(clippy::type_complexity)]
+#![allow(clippy::too_many_arguments)]
 use crate::weights::WeightInfo;
 
-use bp_header_chain::justification::GrandpaJustification;
-use bp_header_chain::InitializationData;
+use bp_header_chain::{justification::GrandpaJustification, InitializationData};
 use bp_runtime::{BlockNumberOf, Chain, ChainId, HashOf, HasherOf, HeaderOf};
 
 use finality_grandpa::voter_set::VoterSet;
-use frame_support::ensure;
-use frame_support::pallet_prelude::*;
-use t3rn_primitives::bridges::header_chain as bp_header_chain;
-use t3rn_primitives::bridges::runtime as bp_runtime;
+use frame_support::{ensure, pallet_prelude::*};
+use t3rn_primitives::bridges::{header_chain as bp_header_chain, runtime as bp_runtime};
 
 use frame_system::{ensure_signed, RawOrigin};
 use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
@@ -83,15 +81,15 @@ pub mod pallet {
     use frame_support::traits::Time;
     use frame_system::pallet_prelude::*;
     use sp_std::convert::TryInto;
-    use t3rn_primitives::EscrowTrait;
+    use t3rn_primitives::{xdns::Xdns, EscrowTrait};
 
     #[pallet::config]
-    pub trait Config<I: 'static = ()>:
-        frame_system::Config + pallet_xdns::Config + t3rn_primitives::EscrowTrait
-    {
+    pub trait Config<I: 'static = ()>: frame_system::Config {
         /// The chain we are bridging to here.
         type BridgedChain: Chain;
 
+        /// The overarching event type.
+        type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
         /// The upper bound on the number of requests allowed by the pallet.
         ///
         /// A request refers to an action which writes a header to storage.
@@ -111,6 +109,12 @@ pub mod pallet {
 
         /// Weights gathered through benchmarking.
         type WeightInfo: WeightInfo;
+
+        /// A type that provides access to Xdns
+        type Xdns: Xdns<Self>;
+
+        /// A type that manages escrow, and therefore balances
+        type Escrowed: EscrowTrait<Self>;
     }
 
     #[pallet::pallet]
@@ -146,13 +150,13 @@ pub mod pallet {
         /// If successful in verification, it will write the target header to the underlying storage
         /// pallet.
         #[pallet::weight(<T as pallet::Config<I>>::WeightInfo::submit_finality_proof(
-            justification.votes_ancestries.len() as u32,
-            justification.commit.precommits.len() as u32,
+            encoded_justification.len() as u32,
+            encoded_justification.len() as u32,
 		))]
         pub fn submit_finality_proof(
             origin: OriginFor<T>,
             finality_target: BridgedHeader<T, I>,
-            justification: GrandpaJustification<BridgedHeader<T, I>>,
+            encoded_justification: Vec<u8>,
             gateway_id: ChainId,
         ) -> DispatchResultWithPostInfo {
             ensure_operational_single::<T, I>(gateway_id)?;
@@ -161,6 +165,9 @@ pub mod pallet {
                 Self::request_count_map(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
                 <Error<T, I>>::TooManyRequests
             );
+            let justification =
+                GrandpaJustification::<BridgedHeader<T, I>>::decode(&mut &*encoded_justification)
+                    .map_err(|_| "Decode Error")?;
 
             log::debug!(
                 target: LOG_TARGET,
@@ -171,9 +178,12 @@ pub mod pallet {
             log::debug!(
                 target: LOG_TARGET,
                 "gtwy {:?} best finalized map contained {:?}",
-                String::from_utf8_lossy(gateway_id.as_ref()).into_owned(),
+                scale_info::prelude::string::String::from_utf8_lossy(gateway_id.as_ref())
+                    .into_owned(),
                 <BestFinalizedMap<T, I>>::contains_key(gateway_id)
             );
+
+            log::info!("1");
 
             let (hash, number) = (finality_target.hash(), finality_target.number());
 
@@ -185,18 +195,18 @@ pub mod pallet {
                 <BestFinalizedMap<T, I>>::get(gateway_id)
                     .ok_or_else(|| <Error<T, I>>::NoFinalizedHeader)?,
             )
-            .ok_or_else(|| <Error<T, I>>::InvalidAnchorHeader)?;
-
+            .ok_or_else(|| <Error<T, I>>::NoFinalizedHeader)?;
+            log::info!("2");
             // We do a quick check here to ensure that our header chain is making progress and isn't
             // "travelling back in time" (which could be indicative of something bad, e.g a hard-fork).
             ensure!(best_finalized.number() < number, <Error<T, I>>::OldHeader);
-
+            log::info!("3");
             let authority_set = <CurrentAuthoritySetMap<T, I>>::get(gateway_id)
                 // Expects authorities to be set before verify_justification
                 .ok_or_else(|| <Error<T, I>>::InvalidAuthoritySet)?;
 
             let set_id = authority_set.set_id;
-
+            log::info!("4");
             verify_justification_single::<T, I>(
                 &justification,
                 hash,
@@ -248,7 +258,7 @@ pub mod pallet {
                 <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
                 <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
             }
-
+            log::info!("5");
             log::debug!(
                 target: LOG_TARGET,
                 "Successfully imported finalized header with hash {:?} for gateway {:?}!",
@@ -256,10 +266,10 @@ pub mod pallet {
                 gateway_id
             );
 
-            let now = TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now())
+            let now = TryInto::<u64>::try_into(<T::Escrowed as EscrowTrait<T>>::Time::now())
                 .map_err(|_| "Unable to compute current timestamp")?;
 
-            pallet_xdns::Pallet::<T>::update_gateway_ttl(gateway_id, now)?;
+            <T::Xdns as Xdns<T>>::update_gateway_ttl(gateway_id, now)?;
 
             log::debug!(
                 target: LOG_TARGET,
@@ -267,7 +277,7 @@ pub mod pallet {
                 gateway_id,
                 now.clone()
             );
-
+            log::info!("6");
             Ok(().into())
         }
 
@@ -281,7 +291,7 @@ pub mod pallet {
             anchor_header_hash: BridgedBlockHash<T, I>,
         ) -> DispatchResultWithPostInfo {
             ensure_operational_single::<T, I>(gateway_id)?;
-            ensure_signed(origin.clone())?;
+            ensure_signed(origin)?;
             ensure!(
                 Self::request_count_map(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
                 <Error<T, I>>::TooManyRequests
@@ -296,6 +306,9 @@ pub mod pallet {
             let mut anchor_header =
                 <MultiImportedHeaders<T, I>>::try_get(gateway_id, anchor_header_hash).unwrap();
 
+            let height = anchor_header.number().clone();
+            // this is safe, u32 gives us enough space for 300 days worth of blocks.
+            let range: u32 = headers_reversed.len().clone().try_into().unwrap();
             let mut index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
 
             for header in headers_reversed {
@@ -327,7 +340,6 @@ pub mod pallet {
                         gateway_id
                     );
 
-                    break;
                 }
             }
 
@@ -344,10 +356,16 @@ pub mod pallet {
             });
 
             // not sure if we want this here as well as we're adding old blocks
-            let now = TryInto::<u64>::try_into(<T as EscrowTrait>::Time::now())
+            let now = TryInto::<u64>::try_into(<T::Escrowed as EscrowTrait<T>>::Time::now())
                 .map_err(|_| "Unable to compute current timestamp")?;
 
-            pallet_xdns::Pallet::<T>::update_gateway_ttl(gateway_id, now.clone())?;
+            <T::Xdns as Xdns<T>>::update_gateway_ttl(gateway_id, now)?;
+
+            Self::deposit_event(Event::NewHeaderRangeAvailable(
+                gateway_id,
+                height,
+                range
+            ));
 
             Ok(().into())
         }
@@ -421,11 +439,11 @@ pub mod pallet {
                 Some(new_owner) => {
                     PalletOwnerMap::<T, I>::insert(gateway_id, &new_owner);
                     log::info!("Setting pallet Owner to: {:?}", new_owner);
-                }
+                },
                 None => {
                     PalletOwnerMap::<T, I>::remove(gateway_id);
                     log::info!("Removed Owner of pallet.");
-                }
+                },
             }
 
             Ok(().into())
@@ -454,6 +472,12 @@ pub mod pallet {
             Ok(().into())
         }
     }
+
+    #[pallet::event]
+    #[pallet::generate_deposit(pub(super) fn deposit_event)]
+    pub enum Event<T: Config<I>, I: 'static = ()> {
+         NewHeaderRangeAvailable(ChainId, BridgedBlockNumber<T, I>, u32),
+     }
 
     /// The current number of requests which have written to storage.
     ///
@@ -727,7 +751,7 @@ pub mod pallet {
         log::debug!(
             target: LOG_TARGET,
             "gtwy {:?} best finalized header {:?} stored {:?}",
-            String::from_utf8_lossy(gateway_id.as_ref()).into_owned(),
+            scale_info::prelude::string::String::from_utf8_lossy(gateway_id.as_ref()).into_owned(),
             initial_number,
             <BestFinalizedMap<T, I>>::contains_key(gateway_id)
         );
@@ -753,9 +777,7 @@ pub mod pallet {
             Ok(RawOrigin::Signed(ref signer))
                 if <PalletOwnerMap<T, I>>::contains_key(gateway_id)
                     && Some(signer) == <PalletOwnerMap<T, I>>::get(gateway_id).as_ref() =>
-            {
-                Ok(())
-            }
+                Ok(()),
             _ => Err(BadOrigin),
         }
     }
@@ -869,6 +891,7 @@ pub fn initialize_for_benchmarks<T: Config<I>, I: 'static>(header: BridgedHeader
 
 #[cfg(test)]
 mod tests {
+    use std::alloc::System;
     use super::*;
     use crate::mock::{
         run_test, test_header, test_header_range, Origin, TestHash, TestHeader, TestNumber,
@@ -879,13 +902,12 @@ mod tests {
         JustificationGeneratorParams, ALICE, BOB,
     };
     use codec::Encode;
-    use frame_support::weights::PostDispatchInfo;
-    use frame_support::{assert_err, assert_noop, assert_ok};
+    use frame_support::{assert_err, assert_noop, assert_ok, weights::PostDispatchInfo};
     use sp_runtime::{Digest, DigestItem, DispatchError};
 
-    use t3rn_primitives::bridges::test_utils as bp_test_utils;
-    use t3rn_primitives::GatewaySysProps;
-    use t3rn_primitives::{GatewayType, GatewayVendor};
+    use t3rn_primitives::{
+        bridges::test_utils as bp_test_utils, GatewaySysProps, GatewayType, GatewayVendor,
+    };
 
     fn teardown_substrate_bridge() {
         let default_gateway: ChainId = *b"gate";
@@ -976,14 +998,14 @@ mod tests {
     fn submit_finality_proof(header: u8) -> frame_support::dispatch::DispatchResultWithPostInfo {
         let header = test_header(header.into());
 
-        let justification = make_default_justification(&header);
+        let encoded_justification = make_default_justification(&header).encode();
 
         let default_gateway: ChainId = *b"gate";
 
         Pallet::<TestRuntime>::submit_finality_proof(
             Origin::signed(1),
             header,
-            justification,
+            encoded_justification,
             default_gateway,
         )
     }
@@ -991,14 +1013,14 @@ mod tests {
     fn submit_finality_proof_with_header(
         header: TestHeader,
     ) -> frame_support::dispatch::DispatchResultWithPostInfo {
-        let justification = make_default_justification(&header);
+        let encoded_justification = make_default_justification(&header).encode();
 
         let default_gateway: ChainId = *b"gate";
 
         Pallet::<TestRuntime>::submit_finality_proof(
             Origin::signed(1),
             header,
-            justification,
+            encoded_justification,
             default_gateway,
         )
     }
@@ -1289,13 +1311,13 @@ mod tests {
             <IsHaltedMap<TestRuntime>>::insert(gateway_a, true);
 
             let header = test_header(1);
-            let justification = make_default_justification(&header);
+            let encoded_justification = make_default_justification(&header).encode();
 
             assert_noop!(
                 Pallet::<TestRuntime>::submit_finality_proof(
                     Origin::signed(1),
                     header,
-                    justification,
+                    encoded_justification,
                     gateway_a,
                 ),
                 Error::<TestRuntime>::Halted,
@@ -1522,7 +1544,7 @@ mod tests {
                 set_id: 2,
                 ..Default::default()
             };
-            let justification = make_justification_for_header(params);
+            let encoded_justification = make_justification_for_header(params).encode();
 
             let default_gateway: ChainId = *b"gate";
 
@@ -1530,7 +1552,7 @@ mod tests {
                 Pallet::<TestRuntime>::submit_finality_proof(
                     Origin::signed(1),
                     header,
-                    justification,
+                    encoded_justification,
                     default_gateway,
                 ),
                 <Error<TestRuntime>>::InvalidJustification
@@ -1546,13 +1568,14 @@ mod tests {
             let header = test_header(1);
             let mut justification = make_default_justification(&header);
             justification.round = 42;
+            let encoded_justification = justification.encode();
             let default_gateway: ChainId = *b"gate";
 
             assert_err!(
                 Pallet::<TestRuntime>::submit_finality_proof(
                     Origin::signed(1),
                     header,
-                    justification,
+                    encoded_justification,
                     default_gateway,
                 ),
                 <Error<TestRuntime>>::InvalidJustification
@@ -1582,13 +1605,13 @@ mod tests {
             ));
 
             let header = test_header(1);
-            let justification = make_default_justification(&header);
+            let encoded_justification = make_default_justification(&header).encode();
 
             assert_err!(
                 Pallet::<TestRuntime>::submit_finality_proof(
                     Origin::signed(1),
                     header,
-                    justification,
+                    encoded_justification,
                     default_gateway,
                 ),
                 <Error<TestRuntime>>::InvalidAuthoritySet
@@ -1620,7 +1643,7 @@ mod tests {
             let mut header = test_header(2);
             header.digest = change_log(0);
 
-            let justification = make_default_justification(&header);
+            let encoded_justification = make_default_justification(&header).encode();
 
             let default_gateway: ChainId = *b"gate";
 
@@ -1628,7 +1651,7 @@ mod tests {
             assert_ok!(Pallet::<TestRuntime>::submit_finality_proof(
                 Origin::signed(1),
                 header.clone(),
-                justification,
+                encoded_justification,
                 default_gateway,
             ));
 
@@ -1663,7 +1686,7 @@ mod tests {
             let mut header = test_header(2);
             header.digest = change_log(1);
 
-            let justification = make_default_justification(&header);
+            let encoded_justification = make_default_justification(&header).encode();
 
             let default_gateway: ChainId = *b"gate";
 
@@ -1672,7 +1695,7 @@ mod tests {
                 Pallet::<TestRuntime>::submit_finality_proof(
                     Origin::signed(1),
                     header,
-                    justification,
+                    encoded_justification,
                     default_gateway,
                 ),
                 <Error<TestRuntime>>::UnsupportedScheduledChange
@@ -1690,7 +1713,7 @@ mod tests {
             let mut header = test_header(2);
             header.digest = forced_change_log(0);
 
-            let justification = make_default_justification(&header);
+            let encoded_justification = make_default_justification(&header).encode();
 
             let default_gateway: ChainId = *b"gate";
 
@@ -1699,7 +1722,7 @@ mod tests {
                 Pallet::<TestRuntime>::submit_finality_proof(
                     Origin::signed(1),
                     header,
-                    justification,
+                    encoded_justification,
                     default_gateway,
                 ),
                 <Error<TestRuntime>>::UnsupportedScheduledChange
@@ -1772,11 +1795,12 @@ mod tests {
                 let header = test_header(1);
                 let mut invalid_justification = make_default_justification(&header);
                 invalid_justification.round = 42;
+                let encoded_justification = invalid_justification.encode();
 
                 Pallet::<TestRuntime>::submit_finality_proof(
                     Origin::signed(1),
                     header,
-                    invalid_justification,
+                    encoded_justification,
                     default_gateway,
                 )
             };

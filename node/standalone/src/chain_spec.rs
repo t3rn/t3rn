@@ -1,5 +1,5 @@
 use circuit_standalone_runtime::{
-    AccountId, AuraConfig, BalancesConfig, ContractsRegistryConfig, GenesisConfig, GrandpaConfig,
+    AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig,
     MultiFinalityVerifierDefaultConfig, MultiFinalityVerifierEthereumLikeConfig,
     MultiFinalityVerifierGenericLikeConfig, MultiFinalityVerifierPolkadotLikeConfig,
     MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, SystemConfig, XDNSConfig,
@@ -7,22 +7,26 @@ use circuit_standalone_runtime::{
 };
 
 use jsonrpc_runtime_client::ConnectionParams;
-use pallet_xdns::types::{SideEffectInterface, XdnsRecord};
 use sp_core::Encode;
-use t3rn_primitives::abi::Type;
-use t3rn_primitives::bridges::runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID};
+use t3rn_primitives::{
+    abi::Type,
+    bridges::runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID},
+};
 
 use t3rn_primitives::{GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor};
 
 use log::info;
-use std::convert::TryFrom;
-use std::io::{Error, ErrorKind};
+use std::{
+    convert::TryFrom,
+    io::{Error, ErrorKind},
+};
 
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
+use t3rn_primitives::{side_effect::interface::SideEffectInterface, xdns::XdnsRecord};
 
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
@@ -119,10 +123,10 @@ fn seed_xdns_registry() -> Result<Vec<XdnsRecord<AccountId>>, Error> {
         secure: true,
     };
 
-    let polkadot_xdns =
+    let _polkadot_xdns =
         fetch_xdns_record_from_rpc(&polkadot_connection_params, POLKADOT_CHAIN_ID).unwrap();
     info!("Fetched Polkadot metadata successfully!");
-    let kusama_xdns =
+    let _kusama_xdns =
         fetch_xdns_record_from_rpc(&kusama_connection_params, KUSAMA_CHAIN_ID).unwrap();
     info!("Fetched Kusama metadata successfully!");
 
@@ -146,7 +150,7 @@ fn standard_side_effects() -> Vec<SideEffectInterface> {
             b"value".to_vec(),
             b"insurance".to_vec(),
         ],
-        confirm_events: vec![b"Transfer(from,to,value)".to_vec()],
+        confirm_events: vec![b"Transfer(_from,to,value)".to_vec()],
         escrowed_events: vec![b"EscrowTransfer(from,to,value)".to_vec()],
         commit_events: vec![b"Transfer(executor,to,value)".to_vec()],
         revert_events: vec![b"Transfer(executor,from,value)".to_vec()],
@@ -174,7 +178,7 @@ fn standard_side_effects() -> Vec<SideEffectInterface> {
             b"insurance".to_vec(),
         ],
         confirm_events: vec![b"ExecuteToken(_executor,to,asset_to,amount_to)".to_vec()],
-        escrowed_events: vec![b"ExecuteToken(_executor,to,asset_to,amount_to)".to_vec()],
+        escrowed_events: vec![b"ExecuteToken(executor,to,asset_to,amount_to)".to_vec()],
         commit_events: vec![b"MultiTransfer(executor,to,asset_to,amount_to)".to_vec()],
         revert_events: vec![b"MultiTransfer(executor,caller,asset_from,amount_from)".to_vec()],
     };
@@ -412,9 +416,7 @@ fn testnet_genesis(
             known_xdns_records: xdns_records,
             standard_side_effects,
         },
-        contracts_registry: ContractsRegistryConfig {
-            known_contracts: Vec::new(),
-        },
+        contracts_registry: Default::default(),
         multi_finality_verifier_substrate_like: MultiFinalityVerifierSubstrateLikeConfig {
             owner: None,
             init_data: None,

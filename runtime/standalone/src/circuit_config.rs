@@ -1,6 +1,5 @@
 use super::*;
-use frame_support::parameter_types;
-use frame_support::PalletId;
+use frame_support::{parameter_types, PalletId};
 use sp_core::H256;
 use sp_runtime::traits::*;
 use t3rn_primitives::bridges::runtime as bp_runtime;
@@ -8,17 +7,21 @@ use t3rn_primitives::bridges::runtime as bp_runtime;
 // impl pallet_randomness_collective_flip::Config for Runtime {}
 
 // t3rn pallets
-impl t3rn_primitives::EscrowTrait for Runtime {
+impl t3rn_primitives::EscrowTrait<Runtime> for Runtime {
     type Currency = Balances;
     type Time = Timestamp;
 }
 
 impl pallet_xdns::Config for Runtime {
+    type Balances = Balances;
+    type Escrowed = Self;
     type Event = Event;
     type WeightInfo = pallet_xdns::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_contracts_registry::Config for Runtime {
+    type Balances = Balances;
+    type Escrowed = Self;
     type Event = Event;
     type WeightInfo = pallet_contracts_registry::weights::SubstrateWeight<Runtime>;
 }
@@ -33,38 +36,40 @@ impl Convert<AccountId, [u8; 32]> for AccountId32Converter {
     }
 }
 
-pub struct CircuitToGateway;
-impl Convert<Balance, u128> for CircuitToGateway {
-    fn convert(val: Balance) -> u128 {
-        val
-    }
-}
-
 impl pallet_circuit_portal::Config for Runtime {
-    type Event = Event;
-    type Call = Call;
     type AccountId32Converter = AccountId32Converter;
-    type ToStandardizedGatewayBalance = CircuitToGateway;
-    type WeightInfo = pallet_circuit_portal::weights::SubstrateWeight<Runtime>;
-    type PalletId = PortalPalletId;
+    type Balances = Balances;
+    type Call = Call;
+    type Escrowed = Self;
     // type EthVerifier = ethereum_light_client::Pallet<Runtime>;
     type EthVerifier = t3rn_protocol::side_effects::confirm::ethereum::EthereumMockVerifier;
+    type Event = Event;
+    type PalletId = PortalPalletId;
+    type WeightInfo = pallet_circuit_portal::weights::SubstrateWeight<Runtime>;
+    type Xdns = XDNS;
 }
 
 parameter_types! {
     pub const CircuitPalletId: PalletId = PalletId(*b"pal/circ");
+    pub const SelfGatewayId: [u8; 4] = [3, 3, 3, 3];
 }
 
 impl pallet_circuit::Config for Runtime {
-    type Event = Event;
+    type Balances = Balances;
     type Call = Call;
-    type WeightInfo = ();
+    type CircuitPortal = CircuitPortal;
+    type Escrowed = Self;
+    type Event = Event;
+    type MultiCurrency = ORMLTokens;
     type PalletId = CircuitPalletId;
+    type SelfGatewayId = SelfGatewayId;
+    type WeightInfo = ();
+    type Xdns = XDNS;
 }
 
 parameter_types! {
     pub const MaxRequests: u32 = 2;
-    pub const HeadersToKeep: u32 = 5;
+    pub const HeadersToKeep: u32 = 100;
 }
 
 type DefaultPolkadotBridgeInstance = ();
@@ -111,35 +116,50 @@ impl bp_runtime::Chain for Keccak256ValU32Chain {
 
 impl pallet_mfv::Config<Blake2ValU64BridgeInstance> for Runtime {
     type BridgedChain = Blake2ValU64Chain;
-    type MaxRequests = MaxRequests;
+    type Escrowed = Self;
     type HeadersToKeep = HeadersToKeep;
+    type MaxRequests = MaxRequests;
     type WeightInfo = ();
+    type Xdns = XDNS;
+    type Event = Event;
 }
 
 impl pallet_mfv::Config<Blake2ValU32BridgeInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
-    type MaxRequests = MaxRequests;
+    type Escrowed = Self;
     type HeadersToKeep = HeadersToKeep;
+    type MaxRequests = MaxRequests;
     type WeightInfo = ();
+    type Xdns = XDNS;
+    type Event = Event;
 }
 
 impl pallet_mfv::Config<Keccak256ValU64BridgeInstance> for Runtime {
     type BridgedChain = Keccak256ValU64Chain;
-    type MaxRequests = MaxRequests;
+    type Escrowed = Self;
     type HeadersToKeep = HeadersToKeep;
+    type MaxRequests = MaxRequests;
     type WeightInfo = ();
+    type Xdns = XDNS;
+    type Event = Event;
 }
 
 impl pallet_mfv::Config<Keccak256ValU32BridgeInstance> for Runtime {
     type BridgedChain = Keccak256ValU32Chain;
-    type MaxRequests = MaxRequests;
+    type Escrowed = Self;
     type HeadersToKeep = HeadersToKeep;
+    type MaxRequests = MaxRequests;
     type WeightInfo = ();
+    type Xdns = XDNS;
+    type Event = Event;
 }
 
 impl pallet_mfv::Config<DefaultPolkadotBridgeInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
-    type MaxRequests = MaxRequests;
+    type Escrowed = Self;
     type HeadersToKeep = HeadersToKeep;
+    type MaxRequests = MaxRequests;
     type WeightInfo = ();
+    type Xdns = XDNS;
+    type Event = Event;
 }

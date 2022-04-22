@@ -2,25 +2,22 @@
 use crate::{self as pallet_circuit_portal, bp_runtime, Config};
 use codec::Encode;
 
-use sp_runtime::traits::Convert;
 use sp_runtime::{
     testing::{Header, TestXt},
-    traits::{IdentityLookup, OpaqueKeys},
+    traits::{Convert, IdentityLookup, OpaqueKeys},
     Perbill,
 };
 
-use frame_support::pallet_prelude::GenesisBuild;
-use frame_support::{parameter_types, traits::Everything};
+use frame_support::{pallet_prelude::GenesisBuild, parameter_types, traits::Everything};
 
 use frame_support::{weights::Weight, PalletId};
 use sp_core::{crypto::KeyTypeId, H256};
 use sp_runtime::traits::{BlakeTwo256, Keccak256};
 
-use pallet_xdns::{SideEffectInterface, XdnsRecord};
-use t3rn_primitives::abi::Type;
-use t3rn_primitives::transfers::BalanceOf;
-use t3rn_primitives::EscrowTrait;
-use t3rn_primitives::{GatewaySysProps, GatewayType, GatewayVendor};
+use t3rn_primitives::{
+    abi::Type, side_effect::interface::SideEffectInterface, transfers::BalanceOf, xdns::XdnsRecord,
+    EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor,
+};
 use t3rn_protocol::side_effects::confirm::ethereum::EthereumMockVerifier;
 
 pub type AccountId = sp_runtime::AccountId32;
@@ -56,43 +53,43 @@ parameter_types! {
 pub type Hashing = BlakeTwo256;
 
 impl frame_system::Config for Test {
+    type AccountData = pallet_balances::AccountData<Balance>;
+    type AccountId = AccountId;
     type BaseCallFilter = Everything;
-    type BlockWeights = ();
+    type BlockHashCount = BlockHashCount;
     type BlockLength = ();
-    type Origin = Origin;
-    type Call = Call;
-    type Index = u64;
     type BlockNumber = u64;
+    type BlockWeights = ();
+    type Call = Call;
+    type DbWeight = ();
+    type Event = Event;
     type Hash = H256;
     type Hashing = BlakeTwo256;
-    type AccountId = AccountId;
-    type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
-    type BlockHashCount = BlockHashCount;
-    type DbWeight = ();
-    type Version = ();
-    type PalletInfo = PalletInfo;
-    type AccountData = pallet_balances::AccountData<Balance>;
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type SystemWeightInfo = ();
-    type SS58Prefix = ();
-    type OnSetCode = ();
+    type Index = u64;
+    type Lookup = IdentityLookup<Self::AccountId>;
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    type OnKilledAccount = ();
+    type OnNewAccount = ();
+    type OnSetCode = ();
+    type Origin = Origin;
+    type PalletInfo = PalletInfo;
+    type SS58Prefix = ();
+    type SystemWeightInfo = ();
+    type Version = ();
 }
 
 impl<C> frame_system::offchain::SendTransactionTypes<C> for Test
 where
     Call: From<C>,
 {
-    type OverarchingCall = Call;
     type Extrinsic = TestXt<Call, ()>;
+    type OverarchingCall = Call;
 }
 
 impl pallet_sudo::Config for Test {
-    type Event = Event;
     type Call = Call;
+    type Event = Event;
 }
 
 parameter_types! {
@@ -101,12 +98,14 @@ parameter_types! {
 
 }
 
-impl EscrowTrait for Test {
+impl EscrowTrait<Test> for Test {
     type Currency = Balances;
     type Time = Timestamp;
 }
 
 impl pallet_xdns::Config for Test {
+    type Balances = Balances;
+    type Escrowed = Self;
     type Event = Event;
     type WeightInfo = ();
 }
@@ -119,15 +118,15 @@ parameter_types! {
 }
 
 impl pallet_balances::Config for Test {
-    type MaxLocks = ();
+    type AccountStore = System;
     type Balance = u128;
     type DustRemoval = ();
     type Event = Event;
     type ExistentialDeposit = ExistentialDeposit;
-    type AccountStore = System;
-    type WeightInfo = ();
+    type MaxLocks = ();
     type MaxReserves = MaxReserves;
     type ReserveIdentifier = [u8; 8];
+    type WeightInfo = ();
 }
 
 parameter_types! {
@@ -153,13 +152,15 @@ parameter_types! {
 }
 
 impl Config for Test {
-    type Event = Event;
-    type Call = Call;
     type AccountId32Converter = AccountId32Converter;
-    type ToStandardizedGatewayBalance = CircuitToGateway;
-    type WeightInfo = ();
-    type PalletId = ExecPalletId;
+    type Balances = Balances;
+    type Call = Call;
+    type Escrowed = Self;
     type EthVerifier = EthereumMockVerifier;
+    type Event = Event;
+    type PalletId = ExecPalletId;
+    type WeightInfo = ();
+    type Xdns = XDNS;
 }
 
 parameter_types! {
@@ -171,10 +172,10 @@ parameter_types! {
 }
 
 impl pallet_timestamp::Config for Test {
+    type MinimumPeriod = MinimumPeriod;
     /// A timestamp: milliseconds since the unix epoch.
     type Moment = u64;
     type OnTimestampSet = ();
-    type MinimumPeriod = MinimumPeriod;
     type WeightInfo = ();
 }
 
@@ -250,30 +251,38 @@ parameter_types! {
 
 impl pallet_multi_finality_verifier::Config<Blake2ValU64BridgeInstance> for Test {
     type BridgedChain = Blake2ValU64Chain;
-    type MaxRequests = MaxRequests;
+    type Escrowed = Self;
     type HeadersToKeep = HeadersToKeep;
+    type MaxRequests = MaxRequests;
     type WeightInfo = ();
+    type Xdns = XDNS;
 }
 
 impl pallet_multi_finality_verifier::Config<Blake2ValU32BridgeInstance> for Test {
     type BridgedChain = Blake2ValU32Chain;
-    type MaxRequests = MaxRequests;
+    type Escrowed = Self;
     type HeadersToKeep = HeadersToKeep;
+    type MaxRequests = MaxRequests;
     type WeightInfo = ();
+    type Xdns = XDNS;
 }
 
 impl pallet_multi_finality_verifier::Config<Keccak256ValU64BridgeInstance> for Test {
     type BridgedChain = Keccak256ValU64Chain;
-    type MaxRequests = MaxRequests;
+    type Escrowed = Self;
     type HeadersToKeep = HeadersToKeep;
+    type MaxRequests = MaxRequests;
     type WeightInfo = ();
+    type Xdns = XDNS;
 }
 
 impl pallet_multi_finality_verifier::Config<Keccak256ValU32BridgeInstance> for Test {
     type BridgedChain = Keccak256ValU32Chain;
-    type MaxRequests = MaxRequests;
+    type Escrowed = Self;
     type HeadersToKeep = HeadersToKeep;
+    type MaxRequests = MaxRequests;
     type WeightInfo = ();
+    type Xdns = XDNS;
 }
 
 pub struct ExtBuilder {

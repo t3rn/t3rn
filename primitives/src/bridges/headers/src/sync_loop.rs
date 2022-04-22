@@ -16,10 +16,10 @@
 
 //! Entrypoint for running headers synchronization loop.
 
-use crate::sync::{HeadersSync, HeadersSyncParams};
-use crate::sync_loop_metrics::SyncLoopMetrics;
-use crate::sync_types::{
-    HeaderIdOf, HeaderStatus, HeadersSyncPipeline, QueuedHeader, SubmittedHeaders,
+use crate::{
+    sync::{HeadersSync, HeadersSyncParams},
+    sync_loop_metrics::SyncLoopMetrics,
+    sync_types::{HeaderIdOf, HeaderStatus, HeadersSyncPipeline, QueuedHeader, SubmittedHeaders},
 };
 
 use async_trait::async_trait;
@@ -600,7 +600,7 @@ async fn run_until_connection_lost<P: HeadersSyncPipeline, TC: TargetClient<P>>(
                         P::SOURCE_NAME,
                         P::TARGET_NAME,
                     );
-                    return Ok(());
+                    return Ok(())
                 }
 
                 log::debug!(
@@ -638,13 +638,12 @@ fn print_sync_progress<P: HeadersSyncPipeline>(
 
     let need_update = now_time - prev_time > Duration::from_secs(10)
         || match (prev_best_header, now_best_header) {
-            (Some(prev_best_header), Some(now_best_header)) => {
-                now_best_header.0.saturating_sub(prev_best_header) > 10.into()
-            }
+            (Some(prev_best_header), Some(now_best_header)) =>
+                now_best_header.0.saturating_sub(prev_best_header) > 10.into(),
             _ => false,
         };
     if !need_update {
-        return (prev_time, prev_best_header, prev_target_header);
+        return (prev_time, prev_best_header, prev_target_header)
     }
 
     log::info!(

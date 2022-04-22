@@ -21,47 +21,44 @@
 //!
 //! Circuit MVP
 #![cfg_attr(not(feature = "std"), no_std)]
-
+#![allow(clippy::type_complexity)]
+#![allow(clippy::too_many_arguments)]
 use codec::{Decode, Encode};
 
-use frame_system::ensure_signed;
-use frame_system::offchain::{SignedPayload, SigningTypes};
-use frame_system::pallet_prelude::OriginFor;
+use frame_support::dispatch::{Dispatchable, GetDispatchInfo};
+use frame_system::{
+    ensure_signed,
+    offchain::{SignedPayload, SigningTypes},
+    pallet_prelude::OriginFor,
+};
 
 use sp_runtime::RuntimeDebug;
 
 pub use t3rn_primitives::{
-    abi::{GatewayABIConfig, HasherAlgo as HA},
+    abi::{GatewayABIConfig, HasherAlgo as HA, Type},
     side_effect::{ConfirmedSideEffect, FullSideEffect, SideEffect, SideEffectId},
-    // transfers::BalanceOf,
     volatile::LocalState,
     xtx::{Xtx, XtxId},
-    GatewayType,
-    *,
+    GatewayType, *,
 };
 
-type BalanceOf<T> =
-    <<T as EscrowTrait>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
-
-use t3rn_protocol::side_effects::confirm::ethereum::EthereumSideEffectsParser;
-use t3rn_protocol::side_effects::confirm::protocol::*;
-use t3rn_protocol::side_effects::confirm::substrate::SubstrateSideEffectsParser;
+use t3rn_protocol::side_effects::confirm::{
+    ethereum::EthereumSideEffectsParser, protocol::*, substrate::SubstrateSideEffectsParser,
+};
 
 use t3rn_protocol::side_effects::loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol};
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 
 use sp_runtime::traits::{AccountIdConversion, Saturating, Zero};
 
-use sp_std::fmt::Debug;
-use sp_std::prelude::*;
+use sp_std::{fmt::Debug, prelude::*};
 
 use frame_support::traits::{Currency, ExistenceRequirement::AllowDeath, Get};
 
 use sp_runtime::KeyTypeId;
 
-pub type Bytes = sp_core::Bytes;
-
 pub use pallet::*;
+use t3rn_primitives::{circuit_portal::CircuitPortal, transfers::EscrowedBalanceOf, xdns::Xdns};
 
 #[cfg(test)]
 pub mod tests;
@@ -75,7 +72,7 @@ pub mod weights;
 
 pub mod state;
 
-pub use t3rn_protocol::side_effects::protocol::SideEffectConfirmationProtocol;
+pub mod escrow;
 
 /// Defines application identifier for crypto keys of this module.
 /// Every module that deals with signatures needs to declare its unique identifier for
@@ -86,15 +83,28 @@ pub use t3rn_protocol::side_effects::protocol::SideEffectConfirmationProtocol;
 pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"circ");
 
 pub type SystemHashing<T> = <T as frame_system::Config>::Hashing;
+pub type EscrowCurrencyOf<T> = <<T as pallet::Config>::Escrowed as EscrowTrait<T>>::Currency;
 use crate::state::*;
 
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use frame_support::pallet_prelude::*;
-    use frame_support::traits::Get;
-    use frame_support::PalletId;
+    use crate::escrow::Escrow;
+    use frame_support::{
+        pallet_prelude::*,
+        traits::{
+            fungible::{Inspect, Mutate},
+            Get,
+        },
+        PalletId,
+    };
     use frame_system::pallet_prelude::*;
+    use orml_traits::MultiCurrency;
+    use t3rn_primitives::{
+        circuit::{LocalTrigger, OnLocalTrigger},
+        circuit_portal::CircuitPortal,
+        xdns::Xdns,
+    };
 
     pub use crate::weights::WeightInfo;
 
@@ -111,11 +121,37 @@ pub mod pallet {
         InsuranceDeposit<
             <T as frame_system::Config>::AccountId,
             <T as frame_system::Config>::BlockNumber,
-            BalanceOf<T>,
+            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
         >,
         OptionQuery,
     >;
 
+    /// Current Circuit's context of active insurance deposits
+    ///
+    #[pallet::storage]
+    #[pallet::getter(fn local_side_effects)]
+    pub type LocalSideEffects<T> = StorageDoubleMap<
+        _,
+        Identity,
+        XExecSignalId<T>,
+        Identity,
+        XExecStepSideEffectId<T>,
+        (u32, Option<<T as frame_system::Config>::AccountId>),
+        OptionQuery, // Vec<(usize, Vec<SideEffectId<T>>)>
+    >;
+    /// Current Circuit's context of active insurance deposits
+    ///
+    #[pallet::storage]
+    #[pallet::getter(fn local_side_effects_links)]
+    pub type LocalSideEffectsLinks<T> = StorageDoubleMap<
+        _,
+        Identity,
+        XExecSignalId<T>,
+        Identity,
+        SideEffectId<T>,
+        XExecStepSideEffectId<T>,
+        OptionQuery,
+    >;
     /// Current Circuit's context of active transactions
     ///
     #[pallet::storage]
@@ -127,7 +163,7 @@ pub mod pallet {
         XExecSignal<
             <T as frame_system::Config>::AccountId,
             <T as frame_system::Config>::BlockNumber,
-            BalanceOf<T>,
+            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
         >,
         OptionQuery,
     >;
@@ -155,7 +191,7 @@ pub mod pallet {
                 FullSideEffect<
                     <T as frame_system::Config>::AccountId,
                     <T as frame_system::Config>::BlockNumber,
-                    BalanceOf<T>,
+                    EscrowedBalanceOf<T, <T as Config>::Escrowed>,
                 >,
             >,
         >,
@@ -164,26 +200,41 @@ pub mod pallet {
 
     /// This pallet's configuration trait
     #[pallet::config]
-    pub trait Config:
-        frame_system::Config
-        + pallet_balances::Config
-        + pallet_circuit_portal::Config
-        + pallet_xdns::Config
-        + orml_tokens::Config
-        + EscrowTrait
-    {
+    pub trait Config: frame_system::Config {
         /// The Circuit's pallet id
         #[pallet::constant]
         type PalletId: Get<PalletId>;
 
+        /// The Circuit's self gateway id
+        #[pallet::constant]
+        type SelfGatewayId: Get<[u8; 4]>;
+
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
-        /// The overarching dispatch call type.
-        type Call: From<Call<Self>>;
+        /// A dispatchable call.
+        type Call: Parameter
+            + Dispatchable<Origin = Self::Origin>
+            + GetDispatchInfo
+            + From<frame_system::Call<Self>>;
 
-        /// Weight infos
+        /// Weight information for extrinsics in this pallet.
         type WeightInfo: weights::WeightInfo;
+
+        /// A type that provides MultiCurrency support
+        type MultiCurrency: MultiCurrency<Self::AccountId>;
+
+        /// A type that provides inspection and mutation to some fungible assets
+        type Balances: Inspect<Self::AccountId> + Mutate<Self::AccountId>;
+
+        /// A type that provides access to Xdns
+        type Xdns: Xdns<Self>;
+
+        /// A type that manages escrow, and therefore balances
+        type Escrowed: EscrowTrait<Self>;
+
+        /// A type that provides portal functionality
+        type CircuitPortal: CircuitPortal<Self>;
     }
 
     #[pallet::pallet]
@@ -221,11 +272,8 @@ pub mod pallet {
         }
     }
 
-    #[pallet::call]
-    impl<T: Config> Pallet<T> {
-        /// Used by other pallets that want to create the exec order
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
-        pub fn on_local_trigger(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+    impl<T: Config> OnLocalTrigger<T> for Pallet<T> {
+        fn on_local_trigger(_origin: &OriginFor<T>, _trigger: LocalTrigger<T>) -> DispatchResult {
             // ToDo: pallet-circuit x-t3rn# : Authorize : Check TriggerAuthRights for local triggers
 
             // ToDo: pallet-circuit x-t3rn# : Validate : insurance for reversible side effects if necessary
@@ -249,8 +297,20 @@ pub mod pallet {
             // ToDo: pallet-circuit x-t3rn# : Apply - Commit : Apply changes to storage after Successfully Commit has been requested
 
             // ToDo: pallet-circuit x-t3rn# : Apply - Cancel : Apply changes to storage after the timeout has passed
+            Ok(())
+        }
+    }
 
-            unimplemented!();
+    #[pallet::call]
+    impl<T: Config> Pallet<T> {
+        /// Used by other pallets that want to create the exec order
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
+        pub fn on_local_trigger(origin: OriginFor<T>, trigger: Vec<u8>) -> DispatchResult {
+            <Self as OnLocalTrigger<T>>::on_local_trigger(
+                &origin,
+                LocalTrigger::<T>::decode(&mut &trigger[..])
+                    .map_err(|_| Error::<T>::InsuranceBondNotRequired)?,
+            )
         }
 
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
@@ -275,21 +335,48 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_extrinsic_trigger())]
         pub fn on_extrinsic_trigger(
             origin: OriginFor<T>,
-            side_effects: Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
-            fee: BalanceOf<T>,
+            side_effects: Vec<
+                SideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+            >,
+            fee: EscrowedBalanceOf<T, T::Escrowed>,
             sequential: bool,
         ) -> DispatchResultWithPostInfo {
+            let ids: Vec<Vec<u8>> = side_effects
+                .iter()
+                .map(|s| s.encoded_action.clone())
+                .collect();
+            let args: Vec<Vec<Vec<u8>>> = side_effects
+                .iter()
+                .map(|s| s.encoded_args.clone())
+                .collect();
+            let targets: Vec<[u8; 4]> = side_effects.iter().map(|s| s.target.clone()).collect();
+
+            log::debug!("on_extrinsic_trigger -- start : SE IDs {:?}", ids);
+            log::debug!("on_extrinsic_trigger -- start : SE args {:?}", args);
+            log::debug!("on_extrinsic_trigger -- start : SE targets {:?}", targets);
+
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin, CircuitRole::Requester)?;
             // Charge: Ensure can afford
             Self::charge(&requester, fee)?;
+            log::debug!("on_extrinsic_trigger -- finished charged");
+
             // Setup: new xtx context
             let mut local_xtx_ctx: LocalXtxCtx<T> =
                 Self::setup(CircuitStatus::Requested, &requester, fee, None)?;
+            log::debug!(
+                "on_extrinsic_trigger -- finished setup -- xtx id {:?}",
+                local_xtx_ctx.xtx_id
+            );
+
             // Validate: Side Effects
             Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential)?;
+            log::debug!("on_extrinsic_trigger -- finished validate");
+
             // Apply: all necessary changes to state in 1 go
             let (_, added_full_side_effects) = Self::apply(&mut local_xtx_ctx, None)?;
+            log::debug!("on_extrinsic_trigger -- finished apply");
+
             // Emit: From Circuit events
             Self::emit(
                 local_xtx_ctx.xtx_id,
@@ -341,13 +428,55 @@ pub mod pallet {
             }?;
 
             // Emit: From Circuit events
-            Self::emit(
-                local_xtx_ctx.xtx_id,
-                maybe_xtx_changed,
+            Self::emit(local_xtx_ctx.xtx_id, maybe_xtx_changed, &relayer, &[], None);
+
+            Ok(().into())
+        }
+
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::execute_side_effects_via_circuit())]
+        pub fn execute_side_effects_via_circuit(
+            origin: OriginFor<T>, // Active relayer
+            xtx_id: XExecSignalId<T>,
+            side_effect: SideEffect<
+                <T as frame_system::Config>::AccountId,
+                <T as frame_system::Config>::BlockNumber,
+                EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+            >,
+        ) -> DispatchResultWithPostInfo {
+            // Authorize: Retrieve sender of the transaction.
+            let relayer = Self::authorize(origin.clone(), CircuitRole::Relayer)?;
+
+            // Setup: retrieve local xtx context
+            let local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
+                CircuitStatus::PendingExecution,
                 &relayer,
-                &vec![],
-                None,
-            );
+                Zero::zero(),
+                Some(xtx_id),
+            )?;
+
+            let side_effect_id = side_effect.generate_id::<SystemHashing<T>>();
+            // Verify allowance for local execution
+            let side_effect_link =
+                <Self as Store>::LocalSideEffectsLinks::get(local_xtx_ctx.xtx_id, side_effect_id)
+                    .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
+            let (step_no, maybe_assignee) =
+                <Self as Store>::LocalSideEffects::get(local_xtx_ctx.xtx_id, side_effect_link)
+                    .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
+
+            if local_xtx_ctx.xtx.steps_cnt.0 != step_no || maybe_assignee.is_some() {
+                return Err(Error::<T>::LocalSideEffectExecutionNotApplicable)?
+            }
+
+            let encoded_4b_action: [u8; 4] =
+                Decode::decode(&mut side_effect.encoded_action.encode().as_ref())
+                    .expect("Encoded Type was already validated before saving");
+
+            Escrow::<T>::exec(
+                &encoded_4b_action,
+                side_effect.encoded_args,
+                Self::account_id(),
+                relayer,
+            )?;
 
             Ok(().into())
         }
@@ -360,12 +489,12 @@ pub mod pallet {
             side_effect: SideEffect<
                 <T as frame_system::Config>::AccountId,
                 <T as frame_system::Config>::BlockNumber,
-                BalanceOf<T>,
+                EscrowedBalanceOf<T, T::Escrowed>,
             >,
             confirmation: ConfirmedSideEffect<
                 <T as frame_system::Config>::AccountId,
                 <T as frame_system::Config>::BlockNumber,
-                BalanceOf<T>,
+                EscrowedBalanceOf<T, T::Escrowed>,
             >,
             inclusion_proof: Option<Vec<Vec<u8>>>,
             block_hash: Option<Vec<u8>>,
@@ -402,7 +531,7 @@ pub mod pallet {
                 local_xtx_ctx.xtx_id,
                 maybe_xtx_changed,
                 &relayer,
-                &vec![],
+                &[],
                 assert_full_side_effects_changed,
             );
 
@@ -429,7 +558,7 @@ pub mod pallet {
                 SideEffect<
                     <T as frame_system::Config>::AccountId,
                     <T as frame_system::Config>::BlockNumber,
-                    BalanceOf<T>,
+                    EscrowedBalanceOf<T, T::Escrowed>,
                 >,
             >,
         ),
@@ -442,7 +571,7 @@ pub mod pallet {
                 SideEffect<
                     <T as frame_system::Config>::AccountId,
                     <T as frame_system::Config>::BlockNumber,
-                    BalanceOf<T>,
+                    EscrowedBalanceOf<T, T::Escrowed>,
                 >,
             >,
         ),
@@ -454,10 +583,16 @@ pub mod pallet {
                     FullSideEffect<
                         <T as frame_system::Config>::AccountId,
                         <T as frame_system::Config>::BlockNumber,
-                        BalanceOf<T>,
+                        EscrowedBalanceOf<T, T::Escrowed>,
                     >,
                 >,
             >,
+        ),
+        EscrowTransfer(
+            // ToDo: Inspect if Xtx needs to be here and how to process from protocol
+            T::AccountId,                                  // from
+            T::AccountId,                                  // to
+            EscrowedBalanceOf<T, <T as Config>::Escrowed>, // value
         ),
     }
 
@@ -476,7 +611,9 @@ pub mod pallet {
         SetupFailedEmptyXtx,
         ApplyFailed,
         DeterminedForbiddenXtxStatus,
+        LocalSideEffectExecutionNotApplicable,
         UnsupportedRole,
+        InvalidLocalTrigger,
     }
 }
 
@@ -499,14 +636,14 @@ impl<T: Config> Pallet<T> {
     fn setup(
         current_status: CircuitStatus,
         requester: &T::AccountId,
-        reward: BalanceOf<T>,
+        reward: EscrowedBalanceOf<T, T::Escrowed>,
         xtx_id: Option<XExecSignalId<T>>,
     ) -> Result<LocalXtxCtx<T>, Error<T>> {
         match current_status {
             CircuitStatus::Requested => {
                 if let Some(id) = xtx_id {
                     if <Self as Store>::XExecSignals::contains_key(id) {
-                        return Err(Error::<T>::SetupFailedDuplicatedXtx);
+                        return Err(Error::<T>::SetupFailedDuplicatedXtx)
                     }
                 }
                 // ToDo: Introduce default timeout + delay
@@ -515,13 +652,16 @@ impl<T: Config> Pallet<T> {
                     Option<Vec<T::BlockNumber>>,
                 ) = (None, None);
 
-                let (x_exec_signal_id, x_exec_signal) =
-                    XExecSignal::<T::AccountId, T::BlockNumber, BalanceOf<T>>::setup_fresh::<T>(
-                        requester,
-                        timeouts_at,
-                        delay_steps_at,
-                        Some(reward),
-                    );
+                let (x_exec_signal_id, x_exec_signal) = XExecSignal::<
+                    T::AccountId,
+                    T::BlockNumber,
+                    EscrowedBalanceOf<T, T::Escrowed>,
+                >::setup_fresh::<T>(
+                    requester,
+                    timeouts_at,
+                    delay_steps_at,
+                    Some(reward),
+                );
 
                 Ok(LocalXtxCtx {
                     local_state: LocalState::new(),
@@ -531,16 +671,16 @@ impl<T: Config> Pallet<T> {
                     insurance_deposits: vec![],
                     full_side_effects: vec![],
                 })
-            }
+            },
             CircuitStatus::PendingInsurance => {
                 if let Some(id) = xtx_id {
                     if !<Self as Store>::XExecSignals::contains_key(id) {
-                        return Err(Error::<T>::SetupFailedUnknownXtx);
+                        return Err(Error::<T>::SetupFailedUnknownXtx)
                     }
                     let xtx = <Self as Store>::XExecSignals::get(id)
                         .ok_or(Error::<T>::SetupFailedIncorrectXtxStatus)?;
                     if xtx.status != CircuitStatus::PendingInsurance {
-                        return Err(Error::<T>::SetupFailedIncorrectXtxStatus);
+                        return Err(Error::<T>::SetupFailedIncorrectXtxStatus)
                     }
                     let insurance_deposits = <Self as Store>::XtxInsuranceLinks::get(id)
                         .iter()
@@ -553,7 +693,11 @@ impl<T: Config> Pallet<T> {
                         })
                         .collect::<Vec<(
                             SideEffectId<T>,
-                            InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+                            InsuranceDeposit<
+                                T::AccountId,
+                                T::BlockNumber,
+                                EscrowedBalanceOf<T, T::Escrowed>,
+                            >,
                         )>>();
 
                     Ok(LocalXtxCtx {
@@ -567,16 +711,16 @@ impl<T: Config> Pallet<T> {
                 } else {
                     Err(Error::<T>::SetupFailedEmptyXtx)
                 }
-            }
-            CircuitStatus::PendingExecution => {
+            },
+            CircuitStatus::Ready | CircuitStatus::PendingExecution => {
                 if let Some(id) = xtx_id {
                     if !<Self as Store>::XExecSignals::contains_key(id) {
-                        return Err(Error::<T>::SetupFailedUnknownXtx);
+                        return Err(Error::<T>::SetupFailedUnknownXtx)
                     }
                     let xtx = <Self as Store>::XExecSignals::get(id)
                         .ok_or(Error::<T>::SetupFailedIncorrectXtxStatus)?;
                     if xtx.status < CircuitStatus::Ready {
-                        return Err(Error::<T>::SetupFailedIncorrectXtxStatus);
+                        return Err(Error::<T>::SetupFailedIncorrectXtxStatus)
                     }
                     let insurance_deposits = <Self as Store>::XtxInsuranceLinks::get(id)
                         .iter()
@@ -589,7 +733,11 @@ impl<T: Config> Pallet<T> {
                         })
                         .collect::<Vec<(
                             SideEffectId<T>,
-                            InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+                            InsuranceDeposit<
+                                T::AccountId,
+                                T::BlockNumber,
+                                EscrowedBalanceOf<T, T::Escrowed>,
+                            >,
                         )>>();
 
                     let full_side_effects = <Self as Store>::FullSideEffects::get(id)
@@ -609,7 +757,7 @@ impl<T: Config> Pallet<T> {
                 } else {
                     Err(Error::<T>::SetupFailedEmptyXtx)
                 }
-            }
+            },
             _ => unimplemented!(),
         }
     }
@@ -620,12 +768,22 @@ impl<T: Config> Pallet<T> {
         local_ctx: &mut LocalXtxCtx<T>,
         maybe_insurance_tuple: Option<(
             SideEffectId<T>,
-            InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+            InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
         )>,
     ) -> Result<
         (
-            Option<XExecSignal<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
-            Option<Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>>,
+            Option<XExecSignal<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
+            Option<
+                Vec<
+                    Vec<
+                        FullSideEffect<
+                            T::AccountId,
+                            T::BlockNumber,
+                            EscrowedBalanceOf<T, T::Escrowed>,
+                        >,
+                    >,
+                >,
+            >,
         ),
         Error<T>,
     > {
@@ -636,15 +794,85 @@ impl<T: Config> Pallet<T> {
             CircuitStatus::Requested => {
                 <FullSideEffects<T>>::insert::<
                     XExecSignalId<T>,
-                    Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
+                    Vec<
+                        Vec<
+                            FullSideEffect<
+                                T::AccountId,
+                                T::BlockNumber,
+                                EscrowedBalanceOf<T, T::Escrowed>,
+                            >,
+                        >,
+                    >,
                 >(local_ctx.xtx_id, local_ctx.full_side_effects.clone());
+
+                // Iterate over full side effects to detect ones to execute locally.
+                fn is_local<T: Config>(gateway_id: &[u8; 4]) -> bool {
+                    if *gateway_id == T::SelfGatewayId::get() {
+                        return true
+                    }
+                    let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(gateway_id);
+                    return gateway_type == GatewayType::ProgrammableInternal(0)
+                }
+
+                let steps_side_effects_ids: Vec<(
+                    usize,
+                    SideEffectId<T>,
+                    XExecStepSideEffectId<T>,
+                )> = local_ctx
+                    .full_side_effects
+                    .clone()
+                    .iter()
+                    .enumerate()
+                    .map(|(cnt, fse)| {
+                        fse.iter()
+                            .map(|full_side_effect| full_side_effect.input.clone())
+                            .filter(|side_effect| is_local::<T>(&side_effect.target))
+                            .map(|side_effect| side_effect.generate_id::<SystemHashing<T>>())
+                            .map(|side_effect_hash| {
+                                (
+                                    cnt,
+                                    side_effect_hash,
+                                    XExecSignal::<
+                                        T::AccountId,
+                                        T::BlockNumber,
+                                        EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+                                    >::generate_step_id::<T>(
+                                        side_effect_hash, cnt
+                                    ),
+                                )
+                            })
+                            .collect::<Vec<(usize, SideEffectId<T>, XExecStepSideEffectId<T>)>>()
+                    })
+                    .flatten()
+                    .collect();
+
+                for (step_cnt, side_effect_id, step_side_effect_id) in steps_side_effects_ids {
+                    <LocalSideEffects<T>>::insert::<
+                        XExecSignalId<T>,
+                        XExecStepSideEffectId<T>,
+                        (u32, Option<T::AccountId>),
+                    >(
+                        local_ctx.xtx_id,
+                        step_side_effect_id,
+                        (step_cnt as u32, None),
+                    );
+                    <LocalSideEffectsLinks<T>>::insert::<
+                        XExecSignalId<T>,
+                        SideEffectId<T>,
+                        XExecStepSideEffectId<T>,
+                    >(local_ctx.xtx_id, side_effect_id, step_side_effect_id);
+                }
 
                 let mut ids_with_insurance: Vec<SideEffectId<T>> = vec![];
                 for (side_effect_id, insurance_deposit) in &local_ctx.insurance_deposits {
                     <InsuranceDeposits<T>>::insert::<
                         XExecSignalId<T>,
                         SideEffectId<T>,
-                        InsuranceDeposit<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+                        InsuranceDeposit<
+                            T::AccountId,
+                            T::BlockNumber,
+                            EscrowedBalanceOf<T, T::Escrowed>,
+                        >,
                     >(
                         local_ctx.xtx_id, *side_effect_id, insurance_deposit.clone()
                     );
@@ -662,17 +890,18 @@ impl<T: Config> Pallet<T> {
                     &local_ctx.full_side_effects,
                     &local_ctx.insurance_deposits,
                 )?;
+                local_ctx.xtx.steps_cnt = (0, local_ctx.full_side_effects.len() as u32);
 
                 <XExecSignals<T>>::insert::<
                     XExecSignalId<T>,
-                    XExecSignal<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+                    XExecSignal<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
                 >(local_ctx.xtx_id, local_ctx.xtx.clone());
 
                 Ok((
                     Some(local_ctx.xtx.clone()),
                     Some(local_ctx.full_side_effects.to_vec()),
                 ))
-            }
+            },
             CircuitStatus::PendingInsurance => {
                 if let Some((side_effect_id, insurance_deposit)) = maybe_insurance_tuple {
                     <Self as Store>::InsuranceDeposits::mutate(
@@ -697,7 +926,7 @@ impl<T: Config> Pallet<T> {
                 } else {
                     Err(Error::<T>::ApplyFailed)
                 }
-            }
+            },
             CircuitStatus::Ready | CircuitStatus::PendingExecution => {
                 // Update set of full side effects assuming the new confirmed has appeared
                 <Self as Store>::FullSideEffects::mutate(local_ctx.xtx_id, |x| {
@@ -710,7 +939,25 @@ impl<T: Config> Pallet<T> {
                 )?;
 
                 if new_status != local_ctx.xtx.status {
-                    local_ctx.xtx.status = new_status;
+                    local_ctx.xtx.status = new_status.clone();
+
+                    if new_status == CircuitStatus::PendingExecution
+                        && local_ctx.full_side_effects[local_ctx.xtx.steps_cnt.0 as usize]
+                            .clone()
+                            .iter()
+                            .filter(|&fse| fse.confirmed.is_none())
+                            .collect::<Vec<
+                                &FullSideEffect<
+                                    T::AccountId,
+                                    T::BlockNumber,
+                                    EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+                                >,
+                            >>()
+                            .is_empty()
+                    {
+                        local_ctx.xtx.steps_cnt =
+                            (local_ctx.xtx.steps_cnt.0 + 1, local_ctx.xtx.steps_cnt.1)
+                    }
                     <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
                         *x = Some(local_ctx.xtx.clone())
                     });
@@ -721,32 +968,39 @@ impl<T: Config> Pallet<T> {
                 } else {
                     Ok((None, Some(local_ctx.full_side_effects.to_vec())))
                 }
-            }
+            },
             _ => unimplemented!(),
         }
     }
 
     fn emit(
         xtx_id: XExecSignalId<T>,
-        maybe_xtx: Option<XExecSignal<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+        maybe_xtx: Option<
+            XExecSignal<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+        >,
         subjected_account: &T::AccountId,
-        side_effects: &Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+        side_effects: &[SideEffect<
+            T::AccountId,
+            T::BlockNumber,
+            EscrowedBalanceOf<T, T::Escrowed>,
+        >],
         maybe_full_side_effects: Option<
-            Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
+            Vec<
+                Vec<
+                    FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+                >,
+            >,
         >,
     ) {
         if let Some(xtx) = maybe_xtx {
             match xtx.status {
-                CircuitStatus::PendingInsurance => {
-                    Self::deposit_event(Event::XTransactionReceivedForExec(xtx_id))
-                }
-                CircuitStatus::Ready => {
-                    Self::deposit_event(Event::XTransactionReadyForExec(xtx_id))
-                }
-                CircuitStatus::Finished => {
-                    Self::deposit_event(Event::XTransactionFinishedExec(xtx_id))
-                }
-                _ => {}
+                CircuitStatus::PendingInsurance =>
+                    Self::deposit_event(Event::XTransactionReceivedForExec(xtx_id)),
+                CircuitStatus::Ready =>
+                    Self::deposit_event(Event::XTransactionReadyForExec(xtx_id)),
+                CircuitStatus::Finished =>
+                    Self::deposit_event(Event::XTransactionFinishedExec(xtx_id)),
+                _ => {},
             }
             if xtx.status >= CircuitStatus::PendingExecution {
                 if let Some(full_side_effects) = maybe_full_side_effects {
@@ -764,18 +1018,21 @@ impl<T: Config> Pallet<T> {
         }
     }
 
-    fn charge(requester: &T::AccountId, fee: BalanceOf<T>) -> Result<BalanceOf<T>, Error<T>> {
-        let available_trn_balance = <T as EscrowTrait>::Currency::free_balance(requester);
+    fn charge(
+        requester: &T::AccountId,
+        fee: EscrowedBalanceOf<T, T::Escrowed>,
+    ) -> Result<EscrowedBalanceOf<T, T::Escrowed>, Error<T>> {
+        let available_trn_balance = EscrowCurrencyOf::<T>::free_balance(requester);
         let new_balance = available_trn_balance.saturating_sub(fee);
         let vault: T::AccountId = Self::account_id();
-        <T as EscrowTrait>::Currency::transfer(requester, &vault, fee, AllowDeath)
+        EscrowCurrencyOf::<T>::transfer(requester, &vault, fee, AllowDeath)
             .map_err(|_| Error::<T>::ChargingTransferFailed)?; // should not fail
         Ok(new_balance)
     }
 
     fn enact_insurance(
         local_ctx: &LocalXtxCtx<T>,
-        side_effect: &SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>,
+        side_effect: &SideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
         enact_status: InsuranceEnact,
     ) -> Result<bool, Error<T>> {
         let side_effect_id = side_effect.generate_id::<SystemHashing<T>>();
@@ -791,16 +1048,16 @@ impl<T: Config> Pallet<T> {
                 match enact_status {
                     InsuranceEnact::Reward => {
                         // Reward relayer with and give back his insurance from Vault
-                        <T as EscrowTrait>::Currency::transfer(
+                        EscrowCurrencyOf::<T>::transfer(
                             &Self::account_id(),
                             bonded_relayer,
                             insurance_request.insurance + insurance_request.reward,
                             AllowDeath,
                         )
                         .map_err(|_| Error::<T>::RewardTransferFailed)?; // should not fail
-                    }
+                    },
                     InsuranceEnact::RefundBoth => {
-                        <T as EscrowTrait>::Currency::transfer(
+                        EscrowCurrencyOf::<T>::transfer(
                             &Self::account_id(),
                             &insurance_request.requester,
                             insurance_request.reward,
@@ -808,33 +1065,33 @@ impl<T: Config> Pallet<T> {
                         )
                         .map_err(|_| Error::<T>::RefundTransferFailed)?; // should not fail
 
-                        <T as EscrowTrait>::Currency::transfer(
+                        EscrowCurrencyOf::<T>::transfer(
                             &Self::account_id(),
                             bonded_relayer,
                             insurance_request.insurance,
                             AllowDeath,
                         )
                         .map_err(|_| Error::<T>::RefundTransferFailed)?; // should not fail
-                    }
+                    },
                     InsuranceEnact::RefundAndPunish => {
-                        <T as EscrowTrait>::Currency::transfer(
+                        EscrowCurrencyOf::<T>::transfer(
                             &Self::account_id(),
                             &insurance_request.requester,
                             insurance_request.reward,
                             AllowDeath,
                         )
                         .map_err(|_| Error::<T>::RefundTransferFailed)?; // should not fail
-                    }
+                    },
                 }
             } else {
                 // This is a forbidden state which should have not happened -
                 //  at this point all of the insurances should have a bonded relayer assigned
-                return Err(Error::<T>::RefundTransferFailed);
+                return Err(Error::<T>::RefundTransferFailed)
             }
             Ok(true)
         } else {
             Ok(false)
-        };
+        }
     }
 
     fn authorize(
@@ -851,26 +1108,30 @@ impl<T: Config> Pallet<T> {
     }
 
     fn validate(
-        side_effects: &Vec<SideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+        side_effects: &[SideEffect<
+            T::AccountId,
+            T::BlockNumber,
+            EscrowedBalanceOf<T, T::Escrowed>,
+        >],
         local_ctx: &mut LocalXtxCtx<T>,
         requester: &T::AccountId,
         sequential: bool,
     ) -> Result<(), &'static str> {
-        let mut full_side_effects: Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>> =
-            vec![];
+        let mut full_side_effects: Vec<
+            FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+        > = vec![];
 
         for side_effect in side_effects.iter() {
-            // ToDo: Generate Circuit's params as default ABI from let abi = pallet_xdns::get_abi(target_id)
-            let gateway_abi = Default::default();
+            let gateway_abi = <T as Config>::Xdns::get_abi(side_effect.target)?;
             let allowed_side_effects =
-                pallet_xdns::Pallet::<T>::allowed_side_effects(&side_effect.target);
+                <T as Config>::Xdns::allowed_side_effects(&side_effect.target);
 
             local_ctx
                 .use_protocol
                 .notice_gateway(side_effect.target, allowed_side_effects);
             local_ctx
                 .use_protocol
-                .validate_args::<T::AccountId, T::BlockNumber, BalanceOf<T>, SystemHashing<T>>(
+                .validate_args::<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>, SystemHashing<T>>(
                     side_effect.clone(),
                     gateway_abi,
                     &mut local_ctx.local_state,
@@ -880,7 +1141,7 @@ impl<T: Config> Pallet<T> {
                 UniversalSideEffectsProtocol::check_if_insurance_required::<
                     T::AccountId,
                     T::BlockNumber,
-                    BalanceOf<T>,
+                    EscrowedBalanceOf<T, T::Escrowed>,
                     SystemHashing<T>,
                 >(side_effect.clone(), &mut local_ctx.local_state)?
             {
@@ -905,18 +1166,24 @@ impl<T: Config> Pallet<T> {
         }
 
         let full_side_effects_steps: Vec<
-            Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+            Vec<FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
         > = match sequential {
             false => vec![full_side_effects],
             true => {
                 let mut sequential_order: Vec<
-                    Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+                    Vec<
+                        FullSideEffect<
+                            T::AccountId,
+                            T::BlockNumber,
+                            EscrowedBalanceOf<T, T::Escrowed>,
+                        >,
+                    >,
                 > = vec![];
                 for fse in full_side_effects.iter() {
                     sequential_order.push(vec![fse.clone()]);
                 }
                 sequential_order
-            }
+            },
         };
 
         local_ctx.full_side_effects = full_side_effects_steps;
@@ -930,12 +1197,12 @@ impl<T: Config> Pallet<T> {
         side_effect: &SideEffect<
             <T as frame_system::Config>::AccountId,
             <T as frame_system::Config>::BlockNumber,
-            BalanceOf<T>,
+            EscrowedBalanceOf<T, T::Escrowed>,
         >,
         confirmation: &ConfirmedSideEffect<
             <T as frame_system::Config>::AccountId,
             <T as frame_system::Config>::BlockNumber,
-            BalanceOf<T>,
+            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
         >,
         inclusion_proof: Option<Vec<Vec<u8>>>,
         block_hash: Option<Vec<u8>>,
@@ -943,7 +1210,7 @@ impl<T: Config> Pallet<T> {
         FullSideEffect<
             <T as frame_system::Config>::AccountId,
             <T as frame_system::Config>::BlockNumber,
-            BalanceOf<T>,
+            EscrowedBalanceOf<T, T::Escrowed>,
         >,
         &'static str,
     > {
@@ -951,7 +1218,7 @@ impl<T: Config> Pallet<T> {
             // ToDo: Remove below after testing inclusion
             // Temporarily allow skip inclusion if proofs aren't provided
             if !(block_hash.is_none() && inclusion_proof.is_none()) {
-                pallet_circuit_portal::Pallet::<T>::confirm_inclusion(
+                <T as Config>::CircuitPortal::confirm_inclusion(
                     side_effect.target,
                     confirmation.encoded_effect.clone(),
                     ProofTriePointer::State,
@@ -963,31 +1230,35 @@ impl<T: Config> Pallet<T> {
             }
         };
 
-        let confirm_execution = |gateway_vendor, state_copy| {
+        let confirm_execution = |gateway_vendor, value_abi_unsigned_type, state_copy| {
             let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
             side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
             let side_effect_interface =
-                pallet_xdns::Pallet::<T>::fetch_side_effect_interface(side_effect_id);
+                <T as Config>::Xdns::fetch_side_effect_interface(side_effect_id);
 
             // I guess this could be omitted, as SE submission would prevent this?
             if let Err(msg) = side_effect_interface {
-                return Err(msg);
+                return Err(msg)
             }
 
             confirm_with_vendor::<
                 T,
                 SubstrateSideEffectsParser,
-                EthereumSideEffectsParser<<T as pallet_circuit_portal::Config>::EthVerifier>,
+                EthereumSideEffectsParser<
+                    <<T as Config>::CircuitPortal as CircuitPortal<T>>::EthVerifier,
+                >,
             >(
                 gateway_vendor,
+                value_abi_unsigned_type,
                 &Box::new(side_effect_interface.unwrap()),
-                confirmation.encoded_effect.clone(),
+                confirmation.encoded_effect.clone().into(),
                 state_copy,
                 Some(
                     side_effect
                         .generate_id::<SystemHashing<T>>()
                         .as_ref()
-                        .to_vec(),
+                        .to_vec()
+                        .into(),
                 ),
             )
         };
@@ -996,22 +1267,20 @@ impl<T: Config> Pallet<T> {
             side_effect: &SideEffect<
                 <T as frame_system::Config>::AccountId,
                 <T as frame_system::Config>::BlockNumber,
-                BalanceOf<T>,
+                EscrowedBalanceOf<T, T::Escrowed>,
             >,
             confirmation: &ConfirmedSideEffect<
                 <T as frame_system::Config>::AccountId,
                 <T as frame_system::Config>::BlockNumber,
-                BalanceOf<T>,
+                EscrowedBalanceOf<T, T::Escrowed>,
             >,
-            full_side_effects: &mut Vec<
-                Vec<
-                    FullSideEffect<
-                        <T as frame_system::Config>::AccountId,
-                        <T as frame_system::Config>::BlockNumber,
-                        BalanceOf<T>,
-                    >,
+            full_side_effects: &mut [Vec<
+                FullSideEffect<
+                    <T as frame_system::Config>::AccountId,
+                    <T as frame_system::Config>::BlockNumber,
+                    EscrowedBalanceOf<T, T::Escrowed>,
                 >,
-            >,
+            >],
         ) -> Result<bool, &'static str> {
             // ToDo: Extract as a separate function and migrate tests from Xtx
             let input_side_effect_id = side_effect.generate_id::<SystemHashing<T>>();
@@ -1020,7 +1289,7 @@ impl<T: Config> Pallet<T> {
             for (i, step) in full_side_effects.iter_mut().enumerate() {
                 // Double check there are some side effects for that Xtx - should have been checked at API level tho already
                 if step.is_empty() {
-                    return Err("Xtx has an empty single step.");
+                    return Err("Xtx has an empty single step.")
                 }
                 for mut full_side_effect in step.iter_mut() {
                     if full_side_effect.confirmed.is_none() {
@@ -1040,7 +1309,7 @@ impl<T: Config> Pallet<T> {
                         } else {
                             Err("Attempt to confirm side effect from the next step, \
                                     but there still is at least one unfinished step")
-                        };
+                        }
                     }
                 }
             }
@@ -1051,11 +1320,12 @@ impl<T: Config> Pallet<T> {
         if !confirm_order::<T>(side_effect, confirmation, &mut local_ctx.full_side_effects)? {
             return Err(
                 "Side effect confirmation wasn't matched with full side effects order from state",
-            );
+            )
         }
         confirm_inclusion()?;
         confirm_execution(
-            pallet_xdns::Pallet::<T>::best_available(side_effect.target)?.gateway_vendor,
+            <T as Config>::Xdns::best_available(side_effect.target)?.gateway_vendor,
+            <T as Config>::Xdns::get_gateway_value_unsigned_type_unsafe(&side_effect.target),
             &local_ctx.local_state,
         )?;
 

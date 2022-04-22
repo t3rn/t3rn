@@ -14,9 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity Bridges Common.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::chain::Chain;
-use crate::client::Client;
-use crate::error::Error;
+use crate::{chain::Chain, client::Client, error::Error};
 use t3rn_primitives::bridges::runtime as bp_runtime;
 
 use async_trait::async_trait;

@@ -1,13 +1,10 @@
-#![cfg_attr(not(feature = "std"), no_std)]
-
-use sp_std::vec;
-use sp_std::vec::*;
+use sp_std::{vec, vec::*};
 
 pub type StrLike = Vec<u8>;
 
 pub fn ensure_str_err(condition: bool, err_message: &'static str) -> Result<(), &'static str> {
     if !condition {
-        return Err(err_message);
+        return Err(err_message)
     }
     Ok(())
 }
@@ -70,22 +67,22 @@ pub fn match_signature(signature: StrLike) -> Result<(StrLike, Vec<StrLike>), &'
             // Expect to start with an event name before the arguments start
             ARGS_START => {
                 if current_word.is_empty() {
-                    return Err("Signature must have non-empty event name");
+                    return Err("Signature must have non-empty event name")
                 }
                 event_name = Some(current_word.clone());
                 current_word.clear();
-            }
+            },
             // Before pushing next non-empty argument name make sure the name is already set
             ARGS_SEPARATOR | ARGS_END => {
                 if current_word.is_empty() {
-                    return Err("Signature's argument name can't be empty");
+                    return Err("Signature's argument name can't be empty")
                 }
                 if event_name.is_none() {
-                    return Err("Signature must start with event name");
+                    return Err("Signature must start with event name")
                 }
                 event_args.push(current_word.clone());
                 current_word.clear();
-            }
+            },
             // Push non-special character to the current word
             _ => current_word.push(char),
         };
@@ -123,7 +120,7 @@ pub fn match_dfd(generic_dfd: StrLike) -> Result<Vec<Vec<StrLike>>, &'static str
                     if let Some(last_step) = steps.get_mut(curr_step_index) {
                         last_step.push(current_word.clone());
                     } else {
-                        return Err("DFD Decoder - attempt to edit step at incorrect depth");
+                        return Err("DFD Decoder - attempt to edit step at incorrect depth")
                     }
                     current_word.clear();
                 }
@@ -138,17 +135,17 @@ pub fn match_dfd(generic_dfd: StrLike) -> Result<Vec<Vec<StrLike>>, &'static str
                     if let Some(new_step_index) = curr_step_index.checked_sub(1) {
                         curr_step_index = new_step_index;
                     } else {
-                        return Err("DFD Decoder - attempt to edit step at incorrect depth");
+                        return Err("DFD Decoder - attempt to edit step at incorrect depth")
                     }
                 }
-            }
+            },
             // Push non-special character to the current word
             _ => current_word.push(char),
         };
     }
 
     if curr_step_index != 0 {
-        return Err("DFD Decoder - too many opening brackets");
+        return Err("DFD Decoder - too many opening brackets")
     }
 
     // If last word didn't end with , or )
@@ -156,7 +153,7 @@ pub fn match_dfd(generic_dfd: StrLike) -> Result<Vec<Vec<StrLike>>, &'static str
         if let Some(last_step) = steps.get_mut(curr_step_index) {
             last_step.push(current_word.clone());
         } else {
-            return Err("DFD Decoder - attempt to edit step at incorrect depth");
+            return Err("DFD Decoder - attempt to edit step at incorrect depth")
         }
         current_word.clear();
     }

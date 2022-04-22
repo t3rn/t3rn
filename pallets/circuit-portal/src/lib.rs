@@ -21,38 +21,37 @@
 //!
 //! Circuit MVP
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(clippy::type_complexity)]
+#![allow(clippy::too_many_arguments)]
 
 use codec::{Decode, Encode};
-use frame_support::dispatch::DispatchResultWithPostInfo;
-
-use frame_support::traits::{EnsureOrigin, Get};
-use frame_system::offchain::{SignedPayload, SigningTypes};
-use frame_system::RawOrigin;
-
+use frame_support::{
+    dispatch::DispatchResultWithPostInfo,
+    traits::{EnsureOrigin, Get},
+};
+use frame_system::{
+    offchain::{SignedPayload, SigningTypes},
+    RawOrigin,
+};
 use sp_core::crypto::KeyTypeId;
 use sp_runtime::{
     traits::{AccountIdConversion, Convert},
     RuntimeDebug,
 };
-
 use sp_std::vec::*;
-
 pub use t3rn_primitives::{
     abi::{GatewayABIConfig, HasherAlgo},
-    bridges::chain_circuit as bp_circuit,
-    bridges::runtime as bp_runtime,
+    bridges::{chain_circuit as bp_circuit, runtime as bp_runtime},
     side_effect::{ConfirmedSideEffect, FullSideEffect, SideEffect},
     transfers::BalanceOf,
     volatile::LocalState,
     xtx::{Xtx, XtxId},
     GatewayType, *,
 };
-
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 
-pub type Bytes = Vec<u8>;
-
 pub use pallet::*;
+use t3rn_primitives::{circuit_portal::CircuitPortal, xdns::Xdns};
 
 #[cfg(test)]
 pub mod tests;
@@ -76,9 +75,6 @@ pub use xbridges::{
 };
 
 use sp_finality_grandpa::SetId;
-
-pub use t3rn_protocol::side_effects::protocol::SideEffectConfirmationProtocol;
-
 pub type AllowedSideEffect = [u8; 4];
 
 /// Defines application identifier for crypto keys of this module.
@@ -100,10 +96,14 @@ const LOG_TARGET: &str = "circuit-portal";
 
 #[frame_support::pallet]
 pub mod pallet {
-    use frame_support::pallet_prelude::*;
-    use frame_support::PalletId;
+    use frame_support::{
+        pallet_prelude::*,
+        traits::fungible::{Inspect, Mutate},
+        PalletId,
+    };
     use frame_system::pallet_prelude::*;
     use snowbridge_core::Verifier;
+    use t3rn_primitives::xdns::Xdns;
 
     use super::*;
     use crate::WeightInfo;
@@ -112,8 +112,6 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config:
         frame_system::Config
-        + pallet_balances::Config
-        + pallet_xdns::Config
         + pallet_multi_finality_verifier::Config<DefaultPolkadotLikeGateway>
         + pallet_multi_finality_verifier::Config<PolkadotLikeValU64Gateway>
         + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU64Gateway>
@@ -128,13 +126,26 @@ pub mod pallet {
 
         type AccountId32Converter: Convert<<Self as frame_system::Config>::AccountId, [u8; 32]>;
 
-        type ToStandardizedGatewayBalance: Convert<BalanceOf<Self>, u128>;
+        // TODO: removed since its better to have an account manager for this and is not used atm
+        // type ToStandardizedGatewayBalance: Convert<
+        //     EscrowedBalanceOf<Self, <Self as Config>::Escrowed>,
+        //     u128,
+        // >;
 
         type WeightInfo: weights::WeightInfo;
 
         type PalletId: Get<PalletId>;
 
         type EthVerifier: Verifier;
+
+        /// A type that provides inspection and mutation to some fungible assets
+        type Balances: Inspect<Self::AccountId> + Mutate<Self::AccountId>;
+
+        /// A type that manages escrow, and therefore balances
+        type Escrowed: EscrowTrait<Self>;
+
+        /// A type that provides access to Xdns
+        type Xdns: Xdns<Self>;
     }
 
     #[pallet::pallet]
@@ -178,7 +189,7 @@ pub mod pallet {
         pub fn register_gateway(
             origin: OriginFor<T>,
             url: Vec<u8>,
-            gateway_id: bp_runtime::ChainId,
+            gateway_id: ChainId,
             gateway_abi: GatewayABIConfig,
             gateway_vendor: t3rn_primitives::GatewayVendor,
             gateway_type: t3rn_primitives::GatewayType,
@@ -190,7 +201,7 @@ pub mod pallet {
             allowed_side_effects: Vec<AllowedSideEffect>,
         ) -> DispatchResultWithPostInfo {
             // Retrieve sender of the transaction.
-            pallet_xdns::Pallet::<T>::add_new_xdns_record(
+            <T as Config>::Xdns::add_new_xdns_record(
                 origin.clone(),
                 url,
                 gateway_id,
@@ -201,58 +212,46 @@ pub mod pallet {
                 gateway_sys_props.clone(),
                 allowed_side_effects.clone(),
             )?;
-            let gtwy = String::from_utf8_lossy(gateway_id.as_ref()).into_owned();
+            let gtwy = scale_info::prelude::string::String::from_utf8_lossy(gateway_id.as_ref())
+                .into_owned();
             let res = match (gateway_abi.hasher, gateway_abi.block_number_type_size) {
-                (HasherAlgo::Blake2, 32) => {
-                    log::debug!(target: LOG_TARGET, "{:?} DefaultPolkadotLikeGateway", gtwy);
-                    init_bridge_instance::<T, DefaultPolkadotLikeGateway>(
-                        origin,
-                        first_header,
-                        authorities,
-                        authority_set_id,
-                        gateway_id,
-                    )?
-                }
-                (HasherAlgo::Blake2, 64) => {
-                    log::debug!(target: LOG_TARGET, "{:?} PolkadotLikeValU64Gateway", gtwy);
-                    init_bridge_instance::<T, PolkadotLikeValU64Gateway>(
-                        origin,
-                        first_header,
-                        authorities,
-                        authority_set_id,
-                        gateway_id,
-                    )?
-                }
-                (HasherAlgo::Keccak256, 32) => {
-                    log::debug!(target: LOG_TARGET, "{:?} EthLikeKeccak256ValU32Gateway", gtwy);
+                (HasherAlgo::Blake2, 32) => init_bridge_instance::<T, DefaultPolkadotLikeGateway>(
+                    origin,
+                    first_header,
+                    authorities,
+                    authority_set_id,
+                    gateway_id,
+                )?,
+                (HasherAlgo::Blake2, 64) => init_bridge_instance::<T, PolkadotLikeValU64Gateway>(
+                    origin,
+                    first_header,
+                    authorities,
+                    authority_set_id,
+                    gateway_id,
+                )?,
+                (HasherAlgo::Keccak256, 32) =>
                     init_bridge_instance::<T, EthLikeKeccak256ValU32Gateway>(
                         origin,
                         first_header,
                         authorities,
                         authority_set_id,
                         gateway_id,
-                    )?
-                }
-                (HasherAlgo::Keccak256, 64) => {
-                    log::debug!(target: LOG_TARGET, "{:?} EthLikeKeccak256ValU64Gateway", gtwy);
+                    )?,
+                (HasherAlgo::Keccak256, 64) =>
                     init_bridge_instance::<T, EthLikeKeccak256ValU64Gateway>(
                         origin,
                         first_header,
                         authorities,
                         authority_set_id,
                         gateway_id,
-                    )?
-                }
-                (_, _) => {
-                    log::debug!(target: LOG_TARGET, "{:?} DefaultPolkadotLikeGateway", gtwy);
-                    init_bridge_instance::<T, DefaultPolkadotLikeGateway>(
-                        origin,
-                        first_header,
-                        authorities,
-                        authority_set_id,
-                        gateway_id,
-                    )?
-                }
+                    )?,
+                (_, _) => init_bridge_instance::<T, DefaultPolkadotLikeGateway>(
+                    origin,
+                    first_header,
+                    authorities,
+                    authority_set_id,
+                    gateway_id,
+                )?,
             };
 
             Self::deposit_event(Event::NewGatewayRegistered(
@@ -337,24 +336,22 @@ impl<T: SigningTypes> SignedPayload<T> for Payload<T::Public, T::BlockNumber> {
     }
 }
 
-impl<T: Config> Pallet<T> {
-    pub fn account_id() -> <T as frame_system::Config>::AccountId {
-        T::PalletId::get().into_account()
-    }
+impl<T: Config> CircuitPortal<T> for Pallet<T> {
+    type EthVerifier = T::EthVerifier;
 
-    pub fn confirm_inclusion(
+    fn confirm_inclusion(
         gateway_id: [u8; 4],
         _encoded_message: Vec<u8>,
         trie_type: ProofTriePointer,
         maybe_block_hash: Option<Vec<u8>>,
         maybe_proof: Option<Vec<Vec<u8>>>,
     ) -> Result<(), &'static str> {
-        let gateway_xdns_record = pallet_xdns::Pallet::<T>::best_available(gateway_id)?;
+        let gateway_xdns_record = <T as Config>::Xdns::best_available(gateway_id)?;
 
         match gateway_xdns_record.gateway_vendor {
             GatewayVendor::Ethereum => {
                 unimplemented!()
-            }
+            },
             GatewayVendor::Substrate => {
                 // For Substrate bridges block hash is required
                 let block_hash = if let Some(x) = maybe_block_hash {
@@ -420,9 +417,14 @@ impl<T: Config> Pallet<T> {
                     Err(Error::<T>::SideEffectConfirmationInvalidInclusionProof.into())
                 } else {
                     Ok(())
-                };
-            }
+                }
+            },
         }
+    }
+}
+impl<T: Config> Pallet<T> {
+    pub fn account_id() -> <T as frame_system::Config>::AccountId {
+        T::PalletId::get().into_account()
     }
 }
 
