@@ -71,7 +71,7 @@ class InstanceManager {
         })
 
         this.executionManager.on("ConfirmSideEffects", (sideEffects: SideEffect[]) => {
-            console.log("ConfirmSideEffect")
+            console.log("ConfirmSideEffects")
             this.circuitRelayer.confirmSideEffects(sideEffects)
         })
 
@@ -80,9 +80,9 @@ class InstanceManager {
             this.executionManager.finalize(id);
         })
 
-        this.circuitListener.on('NewHeaderRangeAvailable', (gatewayId: string, blockHeight: number) => {
+        this.circuitListener.on('NewHeaderRangeAvailable', (data) => {
             console.log('NewHeaderRangeAvailable')
-            this.executionManager.updateGatewayHeight(gatewayId, blockHeight);
+            this.executionManager.updateGatewayHeight(data.gatewayId, data.height);
         })
 
         

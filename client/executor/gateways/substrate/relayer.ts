@@ -38,7 +38,8 @@ export default class SubstrateRelayer extends EventEmitter {
     async executeTx(sideEffect: SideEffect) {
         switch (sideEffect.transactionType) {
             case TransactionType.Transfer: {
-                const unsub = await this.api.tx.balances.transfer(...sideEffect.getTransactionArguments()).signAndSend(this.signer, async (result) => {
+                const data = sideEffect.getTransactionArguments();
+                const unsub = await this.api.tx.balances.transfer(data[0], data[1]).signAndSend(this.signer, async (result) => {
                     if (result.status.isFinalized) {
                         this.handleTx(sideEffect, result, unsub);
                     }
