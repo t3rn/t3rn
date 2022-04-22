@@ -360,26 +360,29 @@ pub mod pallet {
         fn load_local_state(
             origin: &OriginFor<T>,
             maybe_xtx_id: Option<T::Hash>,
-        ) -> Result<LocalStateExecutionView<T>, sp_runtime::DispatchError> {
+        ) -> Result<LocalStateExecutionView, sp_runtime::DispatchError> {
             let requester = Self::authorize(origin.to_owned(), CircuitRole::ContractAuthor)?;
 
             let fresh_or_revoked_exec = match maybe_xtx_id {
                 Some(_xtx_id) => CircuitStatus::Ready,
                 None => CircuitStatus::Requested,
             };
-            // Setup: new xtx context
-            let local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
+
+            // Setup:
+            let local_xtx_ctx: LocalXtxCtx<T> = match Self::setup(
                 fresh_or_revoked_exec.clone(),
                 &requester,
                 Zero::zero(),
                 maybe_xtx_id,
-            )?;
+            ) {
+                Err(Error::<T>::SetupFailedUnknownXtx) =>
+                    Self::setup(CircuitStatus::Requested, &requester, Zero::zero(), None),
+                Ok(happy) => Ok(happy),
+                Err(err) => Err(err),
+            }?;
 
-            Ok(LocalStateExecutionView::<T>::new(
-                local_xtx_ctx.xtx_id.clone(),
+            Ok(LocalStateExecutionView::new(
                 local_xtx_ctx.local_state.clone(),
-                // local_xtx_ctx.full_side_effects, // TODO: remove escrowtrait first
-                Default::default(),
                 local_xtx_ctx.xtx.steps_cnt.clone(),
             ))
         }

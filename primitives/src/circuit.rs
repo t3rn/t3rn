@@ -29,24 +29,15 @@ impl<T: Config> LocalTrigger<T> {
 
 // TODO: remove u128 when we remove escrowtrait
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode)]
-pub struct LocalStateExecutionView<T: Config> {
-    pub execution_id: T::Hash,
+pub struct LocalStateExecutionView {
     pub local_state: LocalState,
-    pub full_side_effects: Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, u128>>>,
     pub steps_cnt: (u32, u32),
 }
 
-impl<T: Config> LocalStateExecutionView<T> {
-    pub fn new(
-        execution_id: T::Hash,
-        local_state: LocalState,
-        full_side_effects: Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, u128>>>,
-        steps_cnt: (u32, u32),
-    ) -> Self {
+impl LocalStateExecutionView {
+    pub fn new(local_state: LocalState, steps_cnt: (u32, u32)) -> Self {
         LocalStateExecutionView {
-            execution_id,
             local_state,
-            full_side_effects,
             steps_cnt,
         }
     }
@@ -58,5 +49,5 @@ pub trait OnLocalTrigger<T: Config> {
     fn load_local_state(
         origin: &OriginFor<T>,
         maybe_xtx_id: Option<T::Hash>,
-    ) -> Result<LocalStateExecutionView<T>, sp_runtime::DispatchError>;
+    ) -> Result<LocalStateExecutionView, sp_runtime::DispatchError>;
 }

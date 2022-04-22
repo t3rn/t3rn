@@ -8,7 +8,6 @@ use circuit_standalone_runtime::{
 use jsonrpc_runtime_client::{
     create_rpc_client, get_gtwy_init_data, get_metadata, ConnectionParams,
 };
-use log::info;
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{sr25519, Encode, Pair, Public};
