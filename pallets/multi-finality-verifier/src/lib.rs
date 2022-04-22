@@ -388,7 +388,7 @@ pub mod pallet {
             );
 
             let header: BridgedHeader<T, I> = match result {
-                Ok(header) => Decode::decode(&mut &header[..]).unwrap(),
+                Ok(result) => Decode::decode(&mut &Vec::<u8>::decode(&mut &result[..]).unwrap()[..]).unwrap(),
                 Err(err) => return Err(err.into())
             };
 

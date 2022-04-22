@@ -1638,12 +1638,11 @@ impl<T: Config> Pallet<T> {
             // ToDo: Remove below after testing inclusion
             // Temporarily allow skip inclusion if proofs aren't provided
             if !(block_hash.is_none() && inclusion_proof.is_none()) {
-                <T as Config>::CircuitPortal::confirm_inclusion(
+                <T as Config>::CircuitPortal::confirm_event_inclusion(
                     side_effect.target,
                     confirmation.encoded_effect.clone(),
-                    ProofTriePointer::State,
-                    block_hash,
                     inclusion_proof,
+                    block_hash,
                 )
             } else {
                 Ok(())

@@ -60,7 +60,6 @@ pub fn get_roots_from_bridge<T: pallet_multi_finality_verifier::Config<I>, I: 's
             gateway_block_hash,
         )
         .ok_or(Error::<T>::StepConfirmationBlockUnrecognised)?;
-
     Ok((extrinsics_root, storage_root))
 }
 
@@ -87,8 +86,7 @@ pub fn verify_storage_proof<T: pallet_multi_finality_verifier::Config<I>, I: 'st
             let res = read_trie_value::<LayoutV1<CurrentHasher<T, I>>, _>(&db, &expected_root, key.as_ref());
             match res {
                 Ok(Some(value)) => {
-                    // the header is wrapped in a Vec<u8>, we decode that here
-                    Ok(Vec::<u8>::decode(&mut &value[..]).unwrap())
+                    Ok(value)
                 },
                 _ => {
                     Err(Error::<T>::ParachainHeaderNotVerified)

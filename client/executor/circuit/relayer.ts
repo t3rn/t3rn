@@ -44,13 +44,12 @@ export default class CircuitRelayer extends EventEmitter {
     }
 
     async confirmSideEffect(sideEffect: SideEffect) {
-
         let tx = this.api.tx.circuit.confirmSideEffect(
             sideEffect.xtxId, 
             sideEffect.object, 
             sideEffect.confirmedSideEffect, 
-            null, 
-            null
+            sideEffect.inclusionProof.toJSON().proof,
+            sideEffect.execBlockHeader.toJSON()
         )
 
         return new Promise(async (res, rej) => {
