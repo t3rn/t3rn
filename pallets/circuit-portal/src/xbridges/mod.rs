@@ -7,8 +7,10 @@ use sp_finality_grandpa::SetId;
 use sp_std::vec::Vec;
 use sp_trie::{read_trie_value, LayoutV1, StorageProof};
 
-use t3rn_primitives::bridges::{header_chain as bp_header_chain, runtime as bp_runtime};
-use t3rn_primitives::ProofTriePointer;
+use t3rn_primitives::{
+    bridges::{header_chain as bp_header_chain, runtime as bp_runtime},
+    ProofTriePointer,
+};
 
 pub type CurrentHash<T, I> =
     <<T as pallet_multi_finality_verifier::Config<I>>::BridgedChain as bp_runtime::Chain>::Hash;
@@ -69,11 +71,7 @@ pub fn verify_storage_proof<T: pallet_multi_finality_verifier::Config<I>, I: 'st
     proof: StorageProof,
     trie_type: ProofTriePointer,
 ) -> Result<Vec<u8>, Error<T>> {
-
-    return match get_roots_from_bridge::<T, I>(
-        block_hash,
-        gateway_id
-    ) {
+    return match get_roots_from_bridge::<T, I>(block_hash, gateway_id) {
         Ok((extrinsics_root, storage_root)) => {
             let expected_root = match trie_type {
                 ProofTriePointer::State => storage_root,
@@ -82,16 +80,16 @@ pub fn verify_storage_proof<T: pallet_multi_finality_verifier::Config<I>, I: 'st
             };
 
             let db = proof.into_memory_db::<CurrentHasher<T, I>>();
-            let res = read_trie_value::<LayoutV1<CurrentHasher<T, I>>, _>(&db, &expected_root, key.as_ref());
+            let res = read_trie_value::<LayoutV1<CurrentHasher<T, I>>, _>(
+                &db,
+                &expected_root,
+                key.as_ref(),
+            );
             match res {
-                Ok(Some(value)) => {
-                    Ok(value)
-                },
-                _ => {
-                    Err(Error::<T>::ParachainHeaderNotVerified)
-                }
+                Ok(Some(value)) => Ok(value),
+                _ => Err(Error::<T>::ParachainHeaderNotVerified),
             }
         },
         Err(e) => Err(e),
-    };
+    }
 }

@@ -143,22 +143,22 @@ impl pallet_xdns::Config for TestRuntime {
 impl multi_finality_verifier::Config for TestRuntime {
     type BridgedChain = TestCircuitLikeChain;
     type Escrowed = TestRuntime;
+    type Event = Event;
     type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
     type Xdns = XDNS;
-    type Event = Event;
 }
 
 pub type PolkadotLikeFinalityVerifierInstance = multi_finality_verifier::Instance1;
 impl multi_finality_verifier::Config<PolkadotLikeFinalityVerifierInstance> for TestRuntime {
     type BridgedChain = PolkadotLike;
     type Escrowed = TestRuntime;
+    type Event = Event;
     type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
     type Xdns = XDNS;
-    type Event = Event;
 }
 
 #[derive(Debug)]

@@ -509,7 +509,7 @@ pub mod pallet {
                 Zero::zero(),
                 Some(xtx_id),
             )?;
-            
+
             let _full_side_effect = Self::confirm(
                 &mut local_xtx_ctx,
                 &relayer,
@@ -518,14 +518,14 @@ pub mod pallet {
                 inclusion_proof,
                 block_hash,
             )?;
-            
+
             // FixMe: Reward should be triggered by apply after the whole Xtx finishes
             Self::enact_insurance(&local_xtx_ctx, &side_effect, InsuranceEnact::Reward)?;
-            
+
             // Apply: all necessary changes to state in 1 go
             let (maybe_xtx_changed, assert_full_side_effects_changed) =
                 Self::apply(&mut local_xtx_ctx, None)?;
-            
+
             // Emit: From Circuit events
             Self::emit(
                 local_xtx_ctx.xtx_id,

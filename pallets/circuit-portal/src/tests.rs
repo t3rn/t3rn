@@ -25,8 +25,7 @@ use t3rn_primitives::bridges::test_utils as bp_test_utils;
 use sp_io::TestExternalities;
 use sp_version::{create_runtime_str, RuntimeVersion};
 
-use t3rn_primitives::{abi::GatewayABIConfig, *};
-use t3rn_primitives::xdns::Parachain;
+use t3rn_primitives::{abi::GatewayABIConfig, xdns::Parachain, *};
 
 use crate::{
     mock::*, AllowedSideEffect, CurrentHeader, DefaultPolkadotLikeGateway,
@@ -134,7 +133,7 @@ fn test_register_parachain() {
 
     let parachain = Some(Parachain {
         relay_chain_id: [1, 3, 3, 7],
-        id: 2015
+        id: 2015,
     });
 
     let first_header: CurrentHeader<Test, DefaultPolkadotLikeGateway> = test_header(0);
