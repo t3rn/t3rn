@@ -375,8 +375,12 @@ pub mod pallet {
                 Zero::zero(),
                 maybe_xtx_id,
             ) {
-                Err(Error::<T>::SetupFailedUnknownXtx) =>
-                    Self::setup(CircuitStatus::Requested, &requester, Zero::zero(), None),
+                Err(Error::<T>::SetupFailedUnknownXtx) => {
+                    let mut local_xtx_ctx =
+                        Self::setup(CircuitStatus::Requested, &requester, Zero::zero(), None)?;
+                    let (_, _) = Self::apply(&mut local_xtx_ctx, None, None)?;
+                    Ok(local_xtx_ctx)
+                },
                 Ok(happy) => Ok(happy),
                 Err(err) => Err(err),
             }?;
