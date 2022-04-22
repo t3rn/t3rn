@@ -189,7 +189,7 @@ pub mod pallet {
                 <BestFinalizedMap<T, I>>::get(gateway_id)
                     .ok_or_else(|| <Error<T, I>>::NoFinalizedHeader)?,
             )
-            .ok_or_else(|| <Error<T, I>>::InvalidAnchorHeader)?;
+            .ok_or_else(|| <Error<T, I>>::NoFinalizedHeader)?;
             log::info!("2");
             // We do a quick check here to ensure that our header chain is making progress and isn't
             // "travelling back in time" (which could be indicative of something bad, e.g a hard-fork).
@@ -334,7 +334,6 @@ pub mod pallet {
                         gateway_id
                     );
 
-                    break
                 }
             }
 

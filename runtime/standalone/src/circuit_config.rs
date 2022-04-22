@@ -72,7 +72,7 @@ impl pallet_circuit::Config for Runtime {
 
 parameter_types! {
     pub const MaxRequests: u32 = 2;
-    pub const HeadersToKeep: u32 = 5;
+    pub const HeadersToKeep: u32 = 100;
 }
 
 type DefaultPolkadotBridgeInstance = ();
