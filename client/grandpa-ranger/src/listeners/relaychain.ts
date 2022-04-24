@@ -1,119 +1,111 @@
 import { EventEmitter } from 'events'
 import { ApiPromise, WsProvider } from '@polkadot/api'
 import { HeaderExtended } from '@polkadot/api-derive/types'
-import { grandpaDecode } from './../util'
+import { grandpaDecode, decodeHeader } from './../util'
+import { u8aConcat, u8aToU8a } from '@polkadot/util';
+import { xxhashAsU8a } from '@polkadot/util-crypto';
+import HeaderListener from "./headers"
 import createDebug from 'debug'
+const BN = require("bn.js");
 import 'dotenv/config'
 
-export default class Listener extends EventEmitter {
+// StorageKey for Paras_Heads
+const STORAGE_KEY = "cd710b30bd2eab0352ddcc26417aa1941b3c252fcb29d88eff4f3de5de4476c3";
+
+export default class Relaychain extends EventEmitter {
     static debug = createDebug('listener')
 
-    api: ApiPromise
-    endpoint: string = process.env.RELAY_ENDPOINT as string
-    rangeSize: number = Number(process.env.RANGE_SIZE)
-    gatewayId: Buffer = Buffer.from(process.env.GATEWAY_ID as string, 'utf8')
-    headers: HeaderExtended[] = []
-    // offset in this.headers for the current range batch
-    offset: number = 0
-    // last known grandpa set id
-    grandpaSetId: number = 0
-    // last emitted anchor
-    anchor: number = 0
-    // bike shed mutex
-    busy: boolean = false
-    unsubNewHeads: () => void
-
-    async init() {
+    api: ApiPromise;
+    headers: HeaderListener;
+    gatewayId: string;
+    //mapping for justifications, might be useful to store when dealing with authSetChange
+    justifications: {[block: number]: any} = {};
+    // latest finalized justification available
+    latestJustification: number = 0
+    // tracks the tip of a range to time the execution.
+    rangeReadyAt: number = 0;
+    unsubJustifications: () => void
+    
+    async setup(url: string, gatewayId: string) {
+        this.gatewayId = gatewayId;
         this.api = await ApiPromise.create({
-            provider: new WsProvider(this.endpoint),
+            provider: new WsProvider(url),
         })
 
-        this.unsubNewHeads = await this.api.derive.chain.subscribeNewHeads(
-            async header => {
-                await this.handleGrandpaSet()
+        this.headers = await new HeaderListener();
+        await this.headers.setup(url, true);
 
-                await this.handleHeader(header)
+        this.headers.on("RangeComplete", (block: number) => {
+            console.log("Received RangeComplete:", block)
+            this.rangeReadyAt = block;
+        })
 
-                if (this.headers.length > 0 && !this.busy && this.headers.length % this.rangeSize == 0) {
-                    await this.concludeRange()
+        this.headers.start()
+
+    }
+
+    async start() {
+        console.log("starting Relaychain-ranger")
+
+        this.unsubJustifications = await this.api.rpc.grandpa.subscribeJustifications(
+            async justification => {
+
+                // TODO: Detect AuthoritySetChanges
+                // the justification should contain the authoritySetId, so we need to update the decoder and detect the changes here. 
+                // If an update is detected we either need to submit this, or the previous justification. (in the plance with no internet :((  )
+                // We can figure the block out here, and then query the justification we need
+                const { blockNumber } = await grandpaDecode(justification)
+                this.justifications[blockNumber] = justification;
+                this.latestJustification = blockNumber;
+
+                console.log("Caught Justification:", blockNumber);
+
+                if(this.latestJustification > 0 && this.latestJustification <= this.rangeReadyAt && blockNumber >= this.rangeReadyAt) {
+                    console.log("Found Justification for Anchor!!")
+                    const anchorIndex = this.headers.getHeaderIndex(blockNumber)
+                    const anchorHeader = this.headers.headers[anchorIndex];
+
+                    this.emit("SubmitFinalityProof", {
+                        gatewayId: this.gatewayId,
+                        justification,
+                        anchorHeader,
+                        anchorIndex
+                    })
                 }
             }
         )
     }
 
-    removeAddedHeaders(index: number) {
-        this.headers = this.headers.splice(index);
+    async submitHeaderRange(anchorIndex: number) {
+        let range = this.headers.headers
+            .slice(0, anchorIndex + 1)
+            .reverse();
+
+        const anchorHeader = range.shift();
+
+        // we need to pass the anchorIndex around, so we can delete these header if everthing was successful
+        this.emit("SubmitHeaderRange", {
+            gatewayId: this.gatewayId,
+            range,
+            anchorHeader,
+            anchorIndex
+        })
     }
 
-    async handleGrandpaSet() {
-        const currentSetId = await this.api.query.grandpa
-            .currentSetId()
-            .then(id => Number(id.toJSON()))
-
-        if (this.grandpaSetId !== 0 && currentSetId !== this.grandpaSetId) {
-            Listener.debug('grandpa set change', this.grandpaSetId, currentSetId)
-            await this.concludeRange()
-        }
-
-        this.grandpaSetId = currentSetId
+    async getStorageProof(blockHash: any, parachainId: number) {
+        const key = this.generateArgumentKey(parachainId);
+        const proof = await this.api.rpc.state.getReadProof([key], blockHash);
+        const encodedHeader = await this.api.rpc.state.getStorage(key, blockHash).toString();
+        const headerHash = decodeHeader(encodedHeader)
+        return [proof, headerHash]
     }
 
-    async handleHeader(header: HeaderExtended) {
-        if (
-            this.headers.length === 0 ||
-            this.headers[this.headers.length - 1].number.toNumber() + 1 ===
-            header.number.toNumber()
-        ) {
-            this.headers.push(header)
-            Listener.debug(`#${header.number.toNumber()}`)
-        }
+    generateArgumentKey(parachainId: number) {
+        const encodedParachainId = "0x" + new BN(parachainId).toBuffer("le", 4).toString("hex");
+        return STORAGE_KEY + u8aConcat(xxhashAsU8a(encodedParachainId, 64), u8aToU8a(encodedParachainId))
     }
 
-    async concludeRange() {
-        this.busy = true
-        Listener.debug('concluding range...')
-        const unsubJustifications =
-            await this.api.rpc.grandpa.subscribeJustifications(
-                async justification => {
-                    unsubJustifications()
-
-                    const { blockNumber } = await grandpaDecode(justification)
-                    
-                    const anchorIndex = this.headers.findIndex(
-                        h => h.number.toNumber() === blockNumber
-                    )
-
-                    const reversedRange = this.headers
-                    .slice(0, anchorIndex + 1)
-                    .reverse()
-
-                    const anchor = reversedRange.shift() as HeaderExtended
-
-                    Listener.debug(
-                        'anchor',
-                        anchor.number.toNumber(),
-                        'reversed range',
-                        reversedRange.map(h => h.number.toNumber()),
-                        'range size',
-                        reversedRange.length
-                    )
-
-                    this.emit(
-                        'range',
-                        this.gatewayId,
-                        anchor,
-                        reversedRange,
-                        justification,
-                        anchorIndex
-                    )
-
-                    this.busy = false
-                }
-            )
-    }
-
-    kill() {
-        Listener.debug('kill')
-        this.unsubNewHeads()
+    async finalize(anchorIndex: number) {
+        this.headers.finalize(anchorIndex);
     }
 }
