@@ -52,7 +52,6 @@ use sp_std::vec::Vec;
 use t3rn_primitives::bridges::{header_chain as bp_header_chain, runtime as bp_runtime};
 
 use sp_trie::StorageProof;
-use t3rn_primitives::circuit_portal::CircuitPortal;
 
 #[cfg(test)]
 mod mock;
@@ -377,14 +376,17 @@ pub mod pallet {
             );
 
             let header: BridgedHeader<T, I> = match result {
-                Ok(result) =>
-                    Decode::decode(&mut &Vec::<u8>::decode(&mut &result[..]).unwrap()[..]).unwrap(),
+                Ok(result) => {
+                    // we first need to decode the Vec
+                    let vec = &Vec::<u8>::decode(&mut &result[..]).unwrap();
+                    // then the header we want
+                    Decode::decode(&mut vec.as_ref()).unwrap()
+                },
                 Err(err) => return Err(err.into()),
             };
 
             let hash = header.hash();
             let index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
-
             let pruning = <MultiImportedHashes<T, I>>::try_get(gateway_id, index);
 
             <BestFinalizedMap<T, I>>::insert(gateway_id, hash);
