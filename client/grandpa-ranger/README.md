@@ -25,3 +25,13 @@ Errors are sometimes not handled correctly, which can lead to header gaps to dev
 
 ### AuthoritySetChanges:
 AuthoritySet cahnges are currently not handled. I had some issues finding the correct justification to handle the update, which is why I changed the approach with the justification in general. In realychain.ts we now store all incoming justifications. We should then be able to detect authoritySetUpdates by decoding them. I have left some comments in the place where this should be implemented.
+
+## Run a Demo:
+To run the demo, a couple of things are required to run in parallel. Here a quick rundown:
+
+- run circuit
+- setup executor and ranger configs, by adding the chains that are supported for the demo. There are some examples.
+- Ensure that all chains are registered AND set to operational. Otherwise nothing will work. On github, there is a messy repo that contains yarn commands for these things (petscheit/circuit_commands -> be concious of the difference between relay and parachain registration)
+- Once registered, be quick to start the ranger. If a AuthoritySetUpdate occurs without it running, we error out, and need to reregister (or write another script that finds the GRANDPA justification we need and submits it, that also works but is not built)
+- now start the executor
+- thats pretty much it, you can test a tranfer with the circuit_commands repo by calling `yarn transfer`
