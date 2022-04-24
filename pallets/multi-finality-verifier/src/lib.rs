@@ -205,7 +205,6 @@ pub mod pallet {
                 .ok_or_else(|| <Error<T, I>>::InvalidAuthoritySet)?;
 
             let set_id = authority_set.set_id;
-            log::info!("4");
             verify_justification_single::<T, I>(
                 &justification,
                 hash,
