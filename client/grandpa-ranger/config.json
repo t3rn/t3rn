@@ -1,0 +1,19 @@
+{
+    "circuit": {
+        "rpc": "ws://127.0.0.1::9944"
+    },
+    "relaychains": [{
+        "name": "Rococo",
+        "id": "abcd",
+        "rpc": "wss://rococo-rpc.polkadot.io",
+        "type": "substrate"
+    }],
+    "parachains": [{
+        "name": "Moonbeam",
+        "id": "moon",
+        "rpc": "wss://moonbeam-alpha.api.onfinality.io/public-ws",
+        "type": "substrate",
+        "parachainId": 2015,
+        "relaychainId": "roco"
+    }]
+}
