@@ -4,7 +4,7 @@
     },
     "gateways": [{
         "name": "Rococo",
-        "id": "abcd",
+        "id": "roco",
         "rpc": "wss://rococo-rpc.polkadot.io",
         "type": "substrate"
     }]

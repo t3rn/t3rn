@@ -1,146 +1,158 @@
-require('dotenv').config()
-import Relayer from './relayer';
-import config from "../config.json";
-import Relaychain from "./listeners/relaychain";
-import Parachain from './listeners/parachain';
+import Relayer from "./relayer"
+import config from "../config.json"
+import RelaychainListener from "./listeners/relaychain"
+import ParachainListener from "./listeners/parachain"
+import createDebug from "debug"
 
 class InstanceManager {
-	// handles circuit communitcation
-  	relayer: Relayer;
-	// stores relay/parachains ranger instances
-	gateways: {
-		[id: string]: any;
-	} = {};
+  static debug = createDebug("instance-manager")
 
-	// used for mapping parachain instances to its respective relaychain
-	relayLookup: {
-		[id: string]: string[];
-	} = {};
+  // handles circuit communitcation
+  relayer: Relayer
+  // stores relay/parachains ranger instances
+  gateways: {
+    [id: string]: any
+  } = {}
 
-	constructor() {
-		this.relayer = new Relayer();
-	}
+  // used for mapping parachain instances to its respective relaychain
+  relayLookup: {
+    [id: string]: string[]
+  } = {}
 
-	async setup() {
-		await this.relayer.setup(config.circuit.rpc)
-		await this.initializesRelay()
-		await this.initialieParachains()
-		console.log("Components Initialzed")
-	}
+  constructor() {
+    this.relayer = new Relayer()
+  }
 
-	// initialize relaychain instances as defined in config.json
-	async initializesRelay() {
-		for (let i = 0; i < config.relaychains.length; i++) {
-			const entry = config.relaychains[i]
-		
-			let instance = new Relaychain();
-			await instance.setup(entry.rpc, entry.id)
+  async setup() {
+    await this.relayer.setup(config.circuit.rpc)
+    await this.initializeRelaychainListeners()
+    await this.initializeParachainListeners()
+    await this.initializeEventListeners()
+    InstanceManager.debug("Components Initialzed")
+  }
 
-			// forward SubmitFinalityProof request to relayer
-			instance.on("SubmitFinalityProof", (data: any) => {
-				console.log("Received SubmitFinalityProof")
-				this.relayer.submitFinalityProof(
-					data.gatewayId,
-					data.justification,
-					data.anchorHeader,
-					data.anchorIndex
-				)
-			})
+  // initialize relaychain instances as defined in config.json
+  async initializeRelaychainListeners() {
+    for (let i = 0; i < config.relaychains.length; i++) {
+      const entry = config.relaychains[i]
 
-			// forward SubmitHeaderRange request to relayer
-			instance.on("SubmitHeaderRange", (data: any) => {
-				console.log("Received SubmitHeaderRange")
-				this.relayer.submitHeaderRange(
-					data.gatewayId,
-					data.range,
-					data.anchorHeader,
-					data.anchorIndex
-				)
-			})
+      let instance = new RelaychainListener()
+      await instance.setup(entry.rpc, entry.id)
 
-			instance.start()
+      // forward SubmitFinalityProof request to relayer
+      instance.on("SubmitFinalityProof", (data: any) => {
+        InstanceManager.debug("Received SubmitFinalityProof")
+        this.relayer.submitFinalityProof(
+          data.gatewayId,
+          data.justification,
+          data.anchorHeader,
+          data.anchorIndex
+        )
+      })
 
-			// store relaychain instance in mapping
-			this.gateways[entry.id] = instance;
-			this.relayLookup[entry.id] = [];
-		}
-	}
+      // forward SubmitHeaderRange request to relayer
+      instance.on("SubmitHeaderRange", (data: any) => {
+        InstanceManager.debug("Received SubmitHeaderRange")
+        this.relayer.submitHeaderRange(
+          data.gatewayId,
+          data.range,
+          data.anchorHeader,
+          data.anchorIndex
+        )
+      })
 
-	// initialize parachain instances as defined in config.json
-	async initialieParachains() {
-		for (let i = 0; i < config.parachains.length; i++) {
-			const entry = config.parachains[i]
+      instance.start()
 
-			this.relayLookup[entry.relaychainId].push(entry.id);
+      // store relaychain instance in mapping
+      this.gateways[entry.id] = instance
+      this.relayLookup[entry.id] = []
+    }
+  }
 
-			let instance = new Parachain();
-			await instance.setup(entry.rpc, entry.id, entry.parachainId)
+  // initialize parachain instances as defined in config.json
+  async initializeParachainListeners() {
+    for (let i = 0; i < config.parachains.length; i++) {
+      const entry = config.parachains[i]
 
-			// forward SubmitHeaderRange request to relayer
-			instance.on("SubmitHeaderRange", (data: any) => {
-				console.log("Received SubmitHeaderRange")
-				this.relayer.submitHeaderRange(
-					data.gatewayId,
-					data.range,
-					data.anchorHeader,
-					data.anchorIndex
-				)
-			})
+      if (!this.relayLookup[entry.relaychainId]) {
+        throw new Error(`Setup Failed! Relaychain of ${entry.name} not found!`)
+      }
 
-			// store instance in mapping
-			this.gateways[entry.id] = instance;
-		}
-	}
+      this.relayLookup[entry.relaychainId].push(entry.id)
 
-	// routes relayer notification to respective function
-	async initializeEventListeners() {
-		// once a relaychains finality proof has been submitted
-		this.relayer.on("FinalityProofSubmitted", (data: any) => {
-			console.log("FinalityProofSubmitted")
-			// Once the relaychain has called submitFinalityProof, we can add relaychain headers
-			this.triggerParachainHeaderVerification(data)
-			// the relaychain can submit a header range immediatly
-			this.gateways[data.gatewayId].submitHeaderRange(data.anchorIndex)
-		})
+      let instance = new ParachainListener()
+      await instance.setup(entry.rpc, entry.id, entry.parachainId)
 
-		// once the headerRange has been submitted, we remove the header from respective instance by using anchorIndex
-		this.relayer.on("SubmittedHeaderRange", (data: any) => {
-			console.log("SubmittedHeaderRange")
-			this.gateways[data.gatewayId].finalize(data.anchorIndex);
-		})
-		
-		// once a parachain has submitted a header, a headerRange can be passed
-		this.relayer.on("ParachainHeaderSubmitted", (data: any) => {
-			console.log("ParachainHeaderSubmitted");
-			this.gateways[data.gatewayId].submitHeaderRange(data.anchorHash)
-		})
-  	}
+      // forward SubmitHeaderRange request to relayer
+      instance.on("SubmitHeaderRange", (data: any) => {
+        InstanceManager.debug("Received SubmitHeaderRange")
+        this.relayer.submitHeaderRange(
+          data.gatewayId,
+          data.range,
+          data.anchorHeader,
+          data.anchorIndex
+        )
+      })
 
-	// iterates through a relaychains parachain and submittes header 
-	async triggerParachainHeaderVerification(data: any) {
-		// we iterate over a relaychains parachains
-		let promises: Promise<any>[] = this.relayLookup[data.gatewayId].map(entry => {
-			return new Promise(async (res, rej) => {
-				//generate a storage read proof for the header we're looking to verify
-				let [storageProof, headerHash] = await this.gateways[data.gatewayId].getStorageProof(data.blockHash, this.gateways[entry].parachainId);
-				// this.gateways[entry]
-				this.relayer.submitParachainHeader(
-					entry,
-					data.blockHash,
-					storageProof.toJSON().proof,
-					headerHash //this is the encoded parachain header we are proving with this transaction
-				)
-				res;
-			})
-		})
+      // store instance in mapping
+      this.gateways[entry.id] = instance
+    }
+  }
 
-		Promise.all(promises)
-			.then(() => console.log("ran promises"))
-	}
+  // routes relayer notification to respective function
+  async initializeEventListeners() {
+    // once a relaychains finality proof has been submitted
+    this.relayer.on("FinalityProofSubmitted", async (data: any) => {
+      InstanceManager.debug("FinalityProofSubmitted")
+      // Once the relaychain has called submitFinalityProof, we can add relaychain headers
+      await this.triggerParachainHeaderVerification(data)
+      // the relaychain can submit a header range immediatly
+      this.gateways[data.gatewayId].submitHeaderRange(data.anchorIndex)
+    })
+
+    // once the headerRange has been submitted, we remove the header from respective instance by using anchorIndex
+    this.relayer.on("SubmittedHeaderRange", (data: any) => {
+      InstanceManager.debug("SubmittedHeaderRange")
+      this.gateways[data.gatewayId].finalize(data.anchorIndex)
+    })
+
+    // once a parachain has submitted a header, a headerRange can be passed
+    this.relayer.on("ParachainHeaderSubmitted", (data: any) => {
+      InstanceManager.debug("ParachainHeaderSubmitted")
+      InstanceManager.debug(data)
+      this.gateways[data.gatewayId].submitHeaderRange(data.anchorHash)
+    })
+  }
+
+  // iterates through a relaychains parachain and submittes header
+  async triggerParachainHeaderVerification(data: any) {
+    // we iterate over a relaychains parachains
+    let promises: Promise<any>[] = this.relayLookup[data.gatewayId].map(
+      entry => {
+        return new Promise(async (res, rej) => {
+          //generate a storage read proof for the header we're looking to verify. We also return the decoded headerHash, as this is the anchor for the parachain once header is complete
+          let [storageProof, headerNumber] = await this.gateways[
+            data.gatewayId
+          ].getStorageProof(data.anchorHash, this.gateways[entry].parachainId)
+          this.relayer.submitParachainHeader(
+            entry,
+            data.anchorHash,
+            storageProof.toJSON().proof,
+            headerNumber //this is the number of the parachain header we are verifying. We later use it to generate a matching range
+          )
+          res
+        })
+      }
+    )
+
+    return Promise.all(promises)
+    // .then(() => InstanceManager.debug("ran promises"))
+  }
 }
 
-(async () => {
-  let exec = new InstanceManager();
+async function main() {
+  let exec = new InstanceManager()
   await exec.setup()
-  exec.initializeEventListeners()
-})()
+}
+
+main()

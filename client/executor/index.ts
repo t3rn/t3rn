@@ -1,12 +1,12 @@
-require('dotenv').config()
 import CircuitListener from "./circuit/listener";
 import CircuitRelayer from "./circuit/relayer";
 import SubstrateRelayer from "./gateways/substrate/relayer";
 import config from "./config.json"
-import { colors } from "./utils/helpers";
+// import { colors } from "./utils/helpers";
 import { SideEffect } from "./utils/types";
 import { ExecutionManager } from "./utils/executionManager";
 import chalk from 'chalk';
+import "dotenv/config"
 
 class InstanceManager {
     circuitListener: CircuitListener;
@@ -16,23 +16,24 @@ class InstanceManager {
     instances: {
         [id: string]: SubstrateRelayer
     } = {};
-    color: string;
+    // color: string;
 
     constructor() {
         this.circuitListener = new CircuitListener();
         this.circuitRelayer = new CircuitRelayer();
         this.executionManager = new ExecutionManager();
 
-        this.color = colors[0];
+        // this.color = colors[0];
     }
 
     log(msg: string) {
-        console.log(chalk[this.color]("index.ts - "), msg)
+        // console.log(chalk[this.color]("index.ts - "), msg)
+        console.log("index.ts - ", msg)
     }
 
     async setup() {
         await this.circuitListener.setup(config.circuit.rpc)
-        await this.circuitRelayer.setup(config.circuit.rpc, colors[1])
+        await this.circuitRelayer.setup(config.circuit.rpc, )//colors[1])
         await this.circuitListener.start()
         await this.initializeGateways()
         this.log("Components Initialzed")
@@ -43,7 +44,7 @@ class InstanceManager {
             const entry = config.gateways[i]
             if(entry.type === "substrate") {
                 let instance = new SubstrateRelayer();
-                await instance.setup(entry.rpc, entry.name, colors[i + 2])
+                await instance.setup(entry.rpc, entry.name, )//colors[i + 2])
 
 
                 instance.on("SideEffectExecuted", (id: string) => {

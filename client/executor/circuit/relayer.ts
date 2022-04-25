@@ -9,19 +9,20 @@ export default class CircuitRelayer extends EventEmitter {
     id: string;
     rpc: string;
     signer: any;
-    color: string;
+    // color: string;
 
     log(msg: string) {
-        console.log(chalk[this.color]("Circuit - "), msg)
+        // console.log(chalk[this.color]("Circuit - "), msg)
+        console.log("Circuit - ", msg)
     }
 
-    async setup(rpc: string, color: string) {
+    async setup(rpc: string){//, color: string) {
         this.rpc = rpc;
         this.api = await ApiPromise.create({
             provider: new WsProvider(rpc),
         })
 
-        this.color = color;
+        // this.color = color;
         
         const keyring = new Keyring({ type: 'sr25519' });
 
@@ -32,15 +33,10 @@ export default class CircuitRelayer extends EventEmitter {
     }
 
     async confirmSideEffects(sideEffects: SideEffect[]) {
-        let promises = sideEffects.map(sideEffect => {
-            return new Promise(async (res, rej) => {
-                await this.confirmSideEffect(sideEffect);
-                res;
-            })
-        })
-
-        Promise.all(promises)
-        .then(() => this.log("Confirmed SideEffects: " + sideEffects.length))
+        await Promise.all(
+            sideEffects.map(sideEffect => this.confirmSideEffect(sideEffect))
+        )
+        this.log("Confirmed SideEffects: " + sideEffects.length)
     }
 
     async confirmSideEffect(sideEffect: SideEffect) {
