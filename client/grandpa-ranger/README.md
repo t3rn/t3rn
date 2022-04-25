@@ -26,6 +26,9 @@ Errors are sometimes not handled correctly, which can lead to header gaps to dev
 ### AuthoritySetChanges:
 AuthoritySet cahnges are currently not handled. I had some issues finding the correct justification to handle the update, which is why I changed the approach with the justification in general. In realychain.ts we now store all incoming justifications. We should then be able to detect authoritySetUpdates by decoding them. I have left some comments in the place where this should be implemented.
 
+### Submitting header_range for parachain:
+Currently doesn't work, because the header we submit via `submitParachainHeader` is not found be the listener. I suspect that the RPC we use points to a different chain, then the parachain.
+
 ## Run a Demo:
 To run the demo, a couple of things are required to run in parallel. Here a quick rundown:
 
