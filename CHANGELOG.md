@@ -1,16 +1,10 @@
 # Changelog
 
 ## `v1.0.0-rc.0` 2022-04-25
-Release Candidate to Rococo
+#### Release Candidate to Rococo
 
-## `v0.0.1-roco` 2022-04-20
+Includes the following sub products:
 
-Rococo prerelease patch 1
-
-## `v0.0.0-roco` 2022-04-19
-
-Rococo prerelease
-
-## `v1.0.0-alpha.0` 2020-10-21
-
-Initial milestone 2
+- #####  [Circuit LVL 2 - Xtx Lifecycle and steps auto-assignment for both Gateways & 3VM](https://github.com/t3rn/t3rn/pull/279)
+- #####  [Portal LVL 1 - Dynamic on-chain registration of new Substrate-based chains based on GRANDPA range proofs](https://github.com/t3rn/t3rn/tree/development/pallets/circuit-portal)
+- #####  [3VM LVL 1 - Volatile WASM Contracts execution from Contracts Registry](https://github.com/t3rn/t3rn/pull/270)
