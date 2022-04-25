@@ -39,6 +39,10 @@ export default class HeaderListener extends EventEmitter {
             this.headers.push(header)
         }
 
+        if(!this.relaychain) {
+            console.log("Para-Header", header.number.toNumber(), "-", header.hash.toJSON())
+        }
+
         // this is relaychain specific. Parachains follow the submissions of the relaychain and get notified differently
         if (this.relaychain && this.headers.length > 0 && this.headers.length % this.rangeSize === 0) {
             console.log("Range complete at:", header.number.toNumber());

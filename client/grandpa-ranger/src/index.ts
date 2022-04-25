@@ -3,7 +3,7 @@ import Relayer from './relayer';
 import config from "../config.json";
 import Relaychain from "./listeners/relaychain";
 import Parachain from './listeners/parachain';
-
+// import { decodeHeaderNumber } from "./util";
 class InstanceManager {
 	// handles circuit communitcation
   	relayer: Relayer;
@@ -22,6 +22,7 @@ class InstanceManager {
 	}
 
 	async setup() {
+		// decodeHeaderNumber()
 		await this.relayer.setup(config.circuit.rpc)
 		await this.initializesRelay()
 		await this.initialieParachains()
@@ -71,6 +72,10 @@ class InstanceManager {
 		for (let i = 0; i < config.parachains.length; i++) {
 			const entry = config.parachains[i]
 
+			if (!this.relayLookup[entry.relaychainId]) {
+				throw new Error(`Setup Failed! Relaychain of ${entry.name} not found!`)
+			}
+
 			this.relayLookup[entry.relaychainId].push(entry.id);
 
 			let instance = new Parachain();
@@ -112,6 +117,7 @@ class InstanceManager {
 		// once a parachain has submitted a header, a headerRange can be passed
 		this.relayer.on("ParachainHeaderSubmitted", (data: any) => {
 			console.log("ParachainHeaderSubmitted");
+			console.log(data)
 			this.gateways[data.gatewayId].submitHeaderRange(data.anchorHash)
 		})
   	}
@@ -121,14 +127,13 @@ class InstanceManager {
 		// we iterate over a relaychains parachains
 		let promises: Promise<any>[] = this.relayLookup[data.gatewayId].map(entry => {
 			return new Promise(async (res, rej) => {
-				//generate a storage read proof for the header we're looking to verify
-				let [storageProof, headerHash] = await this.gateways[data.gatewayId].getStorageProof(data.blockHash, this.gateways[entry].parachainId);
-				// this.gateways[entry]
+				//generate a storage read proof for the header we're looking to verify. We also return the decoded headerHash, as this is the anchor for the parachain once header is complete
+				let [storageProof, headerNumber] = await this.gateways[data.gatewayId].getStorageProof(data.anchorHash, this.gateways[entry].parachainId);
 				this.relayer.submitParachainHeader(
 					entry,
-					data.blockHash,
+					data.anchorHash,
 					storageProof.toJSON().proof,
-					headerHash //this is the encoded parachain header we are proving with this transaction
+					headerNumber //this is the number of the parachain header we are verifying. We later use it to generate a matching range
 				)
 				res;
 			})

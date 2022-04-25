@@ -32,13 +32,17 @@ export default class Parachain extends EventEmitter {
         this.headers.finalize(anchorIndex);
     }
 
-    async submitHeaderRange(anchorHeader: string) {
-        const anchorIndex = await this.findAnchorIndex(anchorHeader)
+    async submitHeaderRange(anchorHash: string) {
+        console.log("anchorHash:", anchorHash)
+        const anchorIndex = await this.findAnchorIndex(anchorHash)
+        console.log("AnchorIndex:", anchorIndex);
         let range = this.headers.headers
             .slice(0, anchorIndex + 1)
             .reverse();
 
-        anchorHeader = range.shift()
+        console.log(range)
+        const anchorHeader = range.shift()
+        console.log("Parachain Anchor:", anchorHeader)
 
         // we need to pass the anchorIndex, so we can delete these header if everthing was successful
         this.emit("SubmitHeaderRange", {

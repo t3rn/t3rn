@@ -1,7 +1,5 @@
 import { ApiPromise, WsProvider } from '@polkadot/api'
 import { createTestPairs } from '@polkadot/keyring/testingPairs'
-import { Header } from '@polkadot/types/interfaces'
-import { formatEvents } from './util'
 import createDebug from 'debug'
 import 'dotenv/config'
 import types from './types.json'
@@ -36,13 +34,14 @@ export default class Relayer extends EventEmitter {
 		)
 
 		// as this is event-driven now, we dont need the promises anymore
-		submitFinalityProof.signAndSend(keyring.alice, result => {
+		submitFinalityProof.signAndSend(keyring.alice, async result => {
+			// Issue #2 occures here
 			if (result.isError) { // this doesn't work for all error in the circuit, but for some
 				console.log('FinalityProofSubmitted failed');
 			} else if (result.isInBlock) {
 				this.emit("FinalityProofSubmitted", {
 					gatewayId,
-					blockHash: anchorHeader.hash,
+					anchorHash: anchorHeader.hash,
 					anchorIndex
 				})
 			}
@@ -50,35 +49,41 @@ export default class Relayer extends EventEmitter {
 	}
 
 	// here we pass the anchorHash, instead of anchorIndex. We can use the hash to find the index of the anchor header for the parachain.
-	submitParachainHeader(
+	async submitParachainHeader(
 		gatewayId: string,
 		blockHash: any,
 		proof: any,
-		anchorHash: string
+		anchorNumber: number
 	) {
 		console.log("Submitting Parachain Header");
-		console.log("blockHash parachain:", blockHash.toHuman());
-		console.log("gateway id:", gatewayId);
 		let submitParachainHeader = this.api.tx.multiFinalityVerifierDefault.submitParachainHeader(
 			blockHash,
 			gatewayId,
 			proof
 		)
 
-		submitParachainHeader.signAndSend(keyring.alice, result => {
+		// in substrate the nonce updates only once a transaction is confirmed. With this we can get the current nonce, inclusing transactions in mempool
+		const nextNonce = await this.api.rpc.system.accountNextIndex(keyring.alice.address);
+		submitParachainHeader.signAndSend(
+			keyring.alice, 
+			{
+				nonce: nextNonce
+			}, 
+			result => {
+			// Issue #2 occures here
 			if (result.isError) { // this doesn't work for all error in the circuit, but for some
 				console.log('ParachainHeaderSubmitted failed');
 			} else if (result.isInBlock) {
-				console.log("ParachainHeaderSubmitted - SUCCESS")
 				this.emit("ParachainHeaderSubmitted", {
 					gatewayId,
-					anchorHash
+					anchorNumber,
+					anchorHash: blockHash.toJSON()
 				})
 			}
 		})
 	}
 
-	submitHeaderRange(
+	async submitHeaderRange(
 		gatewayId: string,
 		range: any[],
 		anchorHeader: any,
@@ -91,79 +96,23 @@ export default class Relayer extends EventEmitter {
 				anchorHeader.hash
 			)
 
-		// as this is event-driven now, we dont need the promises anymore
-		submitHeaderRange.signAndSend(keyring.alice, result => {
+		// potentially more the one tx per block, so we dont rely on default nonce
+		const nextNonce = await this.api.rpc.system.accountNextIndex(keyring.alice.address);
+		submitHeaderRange.signAndSend(
+			keyring.alice,
+			{
+				nonce: nextNonce
+			},
+			result => {
+			// Issue #2 occures here
 			if (result.isError) { // this doesn't work for all error in the circuit, but for some
 				console.log("Header Range submissission failed")
 			} else if (result.status.isFinalized) {
-				console.log("SubmittedHeaderRange - SUCCESS")
 				this.emit("SubmittedHeaderRange", {
 					gatewayId,
-					anchorIndex
+					anchorIndex,
 				});
 			}
 		})
 	}
-
-//   async submit(
-//     gatewayId: Buffer,
-//     anchor: Header,
-//     reversedRange: Header[],
-//     justification: any,
-//     offset: number
-//   ) {
-//     Relayer.debug('submitting finality proof and header range...')
-//     Relayer.debug(
-//       `submit_finality_proof(\n\t${anchor},\n\t${justification
-//         .toString()
-//         .slice(0, 10)}...,\n\t${gatewayId}\n)`
-//     )
-
-//     const submitFinalityProof =
-//       this.circuit.tx.multiFinalityVerifierDefault.submitFinalityProof(
-//         anchor,
-//         justification,
-//         gatewayId
-//       )
-
-//     await new Promise(async (resolve, reject) => {
-//       await submitFinalityProof.signAndSend(keyring.alice, result => {
-//         if (result.isError) {
-//           console.error('submitting finality proof failed')
-//         } else if (result.isInBlock) {
-//           Relayer.debug(
-//             'submit_finality_proof events',
-//             ...formatEvents(result.events)
-//           )
-//           return resolve(undefined)
-//         }
-//       })
-//     })
-
-//     Relayer.debug(
-//       `submit_header_range(\n\t${gatewayId},\n\t${reversedRange},\n\t${anchor.hash}\n)`
-//     )
-
-//     const submitHeaderRange =
-//       this.circuit.tx.multiFinalityVerifierDefault.submitHeaderRange(
-//         gatewayId,
-//         reversedRange,
-//         anchor.hash
-//       )
-
-//     await new Promise(async (resolve, reject) => {
-//       await submitHeaderRange.signAndSend(keyring.alice, result => {
-//         if (result.isError) {
-//           console.error('submitting header range failed')
-//         } else if (result.status.isFinalized) {
-//           Relayer.debug(
-//             'submit_header_range events',
-//             ...formatEvents(result.events)
-//           )
-//           this.emit("RangeSubmitted", offset);
-//           resolve(undefined)
-//         }
-//       })
-//     })
-//   }
 }
