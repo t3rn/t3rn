@@ -9,11 +9,11 @@
         "type": "substrate"
     }],
     "parachains": [{
-        "name": "Moonbeam",
+        "name": "Acala",
         "id": "moon",
-        "rpc": "wss://moonbeam-alpha.api.onfinality.io/public-ws",
+        "rpc": "wss://node-6870830370282213376.rz.onfinality.io/ws?apikey=0f273197-e4d5-45e2-b23e-03b015cb7000",
         "type": "substrate",
-        "parachainId": 2015,
-        "relaychainId": "roco"
+        "parachainId": 2000,
+        "relaychainId": "abcd"
     }]
 }

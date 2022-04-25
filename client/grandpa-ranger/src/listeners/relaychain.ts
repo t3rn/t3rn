@@ -1,16 +1,13 @@
 import { EventEmitter } from 'events'
 import { ApiPromise, WsProvider } from '@polkadot/api'
 import { HeaderExtended } from '@polkadot/api-derive/types'
-import { grandpaDecode, decodeHeader } from './../util'
-import { u8aConcat, u8aToU8a } from '@polkadot/util';
+import { grandpaDecode, decodeHeaderNumber } from './../util'
+import { u8aConcat, u8aToU8a, u8aToHex } from '@polkadot/util';
 import { xxhashAsU8a } from '@polkadot/util-crypto';
 import HeaderListener from "./headers"
 import createDebug from 'debug'
 const BN = require("bn.js");
 import 'dotenv/config'
-
-// StorageKey for Paras_Heads
-const STORAGE_KEY = "cd710b30bd2eab0352ddcc26417aa1941b3c252fcb29d88eff4f3de5de4476c3";
 
 export default class Relaychain extends EventEmitter {
     static debug = createDebug('listener')
@@ -25,6 +22,7 @@ export default class Relaychain extends EventEmitter {
     // tracks the tip of a range to time the execution.
     rangeReadyAt: number = 0;
     unsubJustifications: () => void
+
     
     async setup(url: string, gatewayId: string) {
         this.gatewayId = gatewayId;
@@ -50,7 +48,7 @@ export default class Relaychain extends EventEmitter {
         this.unsubJustifications = await this.api.rpc.grandpa.subscribeJustifications(
             async justification => {
 
-                // TODO: Detect AuthoritySetChanges
+                // TODO: Issue #3 Detect AuthoritySetChanges
                 // the justification should contain the authoritySetId, so we need to update the decoder and detect the changes here. 
                 // If an update is detected we either need to submit this, or the previous justification. (in the plance with no internet :((  )
                 // We can figure the block out here, and then query the justification we need
@@ -64,7 +62,6 @@ export default class Relaychain extends EventEmitter {
                     console.log("Found Justification for Anchor!!")
                     const anchorIndex = this.headers.getHeaderIndex(blockNumber)
                     const anchorHeader = this.headers.headers[anchorIndex];
-
                     this.emit("SubmitFinalityProof", {
                         gatewayId: this.gatewayId,
                         justification,
@@ -80,7 +77,6 @@ export default class Relaychain extends EventEmitter {
         let range = this.headers.headers
             .slice(0, anchorIndex + 1)
             .reverse();
-
         const anchorHeader = range.shift();
 
         // we need to pass the anchorIndex around, so we can delete these header if everthing was successful
@@ -92,20 +88,35 @@ export default class Relaychain extends EventEmitter {
         })
     }
 
-    async getStorageProof(blockHash: any, parachainId: number) {
-        const key = this.generateArgumentKey(parachainId);
-        const proof = await this.api.rpc.state.getReadProof([key], blockHash);
-        const encodedHeader = await this.api.rpc.state.getStorage(key, blockHash).toString();
-        const headerHash = decodeHeader(encodedHeader)
-        return [proof, headerHash]
-    }
-
-    generateArgumentKey(parachainId: number) {
-        const encodedParachainId = "0x" + new BN(parachainId).toBuffer("le", 4).toString("hex");
-        return STORAGE_KEY + u8aConcat(xxhashAsU8a(encodedParachainId, 64), u8aToU8a(encodedParachainId))
-    }
-
     async finalize(anchorIndex: number) {
         this.headers.finalize(anchorIndex);
+    }
+
+    // This needs refactoring, as Paras and Heads are constants
+    async getStorageProof(blockHash: any, parachainId: number) {
+        const key = this.generateArgumentKey('Paras', 'Heads', parachainId);
+        const proof = await this.api.rpc.state.getReadProof([key], blockHash);
+        const encodedHeader: any = await this.api.rpc.state.getStorage(key, blockHash);
+        const headerNumber = decodeHeaderNumber(encodedHeader.toJSON()) // this is the parachain header we verify. We later use it to generate to correct range.
+        return [proof, headerNumber]
+    }
+
+    encodeParachainId(id: number) {
+        // this is the correct storageKey parameter encoding for u32
+        return "0x" + new BN(id).toBuffer("le", 4).toString("hex")
+    }
+
+    generateArgumentKey(module: string, variableName: string, parachainid: number) {
+        // lets prepare the storage key for system events.
+        let module_hash = xxhashAsU8a(module, 128);
+        let storage_value_hash = xxhashAsU8a(variableName, 128);
+
+        let encodedParachainId = this.encodeParachainId(parachainid)
+        let argumenteKey = u8aConcat(xxhashAsU8a(encodedParachainId, 64), u8aToU8a(encodedParachainId))
+
+        // Special syntax to concatenate Uint8Array
+        let final_key = new Uint8Array([...module_hash, ...storage_value_hash, ...argumenteKey]);
+
+        return u8aToHex(final_key);
     }
 }

@@ -39,14 +39,14 @@ export async function grandpaDecode(justification: any) {
   ).then(cmd => JSON.parse(cmd.stdout))
 }
 
-export function decodeHeader(data: string) {
+export function decodeHeaderNumber(data: string) {
+  // removes the Vec Decoding, bit hacky
   if(data.slice(0, 6) === "0xe902") {
     data = "0x" + data.split("e902")[1];
   }
+
   const typeObject = { type: 'Block::Header' }
   registry.register(typeObject);
-  const res = createType(registry, typeObject.type, data.trim())
-
-  console.log("Decoded header hash:", res.hash.toHuman())
-  return res.hash;
+  const res: any = createType(registry, typeObject.type, data)
+  return res.number.toNumber();
 }
