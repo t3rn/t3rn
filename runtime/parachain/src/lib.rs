@@ -467,22 +467,6 @@ impl pallet_sudo::Config for Runtime {
     type Event = Event;
 }
 
-parameter_types! {
-    pub const DefaultBlocksPerRound: u32 = 6; // TODO placeholder
-    pub const TokenCirculationAtGenesis: u32 = 1_000_000; // TODO placeholder
-    pub const TreasuryAccount: AccountId = AccountId::new([0u8; 32]); //TODO placeholder
-}
-
-impl pallet_inflation::Config for Runtime {
-    type Balance = Balance;
-    type Currency = Balances;
-    type DefaultBlocksPerRound = DefaultBlocksPerRound;
-    type Event = Event;
-    type TokenCirculationAtGenesis = TokenCirculationAtGenesis;
-    type TreasuryAccount = TreasuryAccount;
-    type WeightInfo = pallet_inflation::weights::InflationWeight<Runtime>;
-}
-
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where

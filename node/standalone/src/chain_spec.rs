@@ -1,5 +1,5 @@
 use circuit_standalone_runtime::{
-    AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig,
+    AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig, InflationConfig,
     MultiFinalityVerifierDefaultConfig, MultiFinalityVerifierEthereumLikeConfig,
     MultiFinalityVerifierGenericLikeConfig, MultiFinalityVerifierPolkadotLikeConfig,
     MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, SystemConfig, XDNSConfig,
@@ -496,5 +496,6 @@ fn testnet_genesis(
             init_data: Some(initial_gateways),
         },
         orml_tokens: Default::default(),
+        inflation: Default::default(),
     }
 }

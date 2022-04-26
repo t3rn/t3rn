@@ -1225,6 +1225,7 @@ dependencies = [
  "jsonrpc-runtime-client",
  "log",
  "pallet-contracts-rpc",
+ "pallet-inflation",
  "pallet-transaction-payment-rpc",
  "pallet-xdns",
  "sc-basic-authorship",

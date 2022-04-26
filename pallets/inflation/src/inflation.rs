@@ -1,7 +1,9 @@
 use crate::pallet::{Config, Pallet};
 use codec::{Decode, Encode, MaxEncodedLen};
-use fixed::transcendental::pow;
-use fixed::types::{I32F32, I64F64};
+use fixed::{
+    transcendental::pow,
+    types::{I32F32, I64F64},
+};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_runtime::{PerThing, Perbill, RuntimeDebug};
@@ -25,6 +27,13 @@ pub struct Range<T> {
     pub(crate) max: T,
 }
 
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Encode, Decode, TypeInfo, MaxEncodedLen)]
+pub enum CandidateRole {
+    Developer,
+    Executor,
+}
+
 impl<T: Ord> Range<T> {
     pub fn is_valid(&self) -> bool {
         self.min <= self.ideal && self.ideal <= self.max
@@ -33,9 +42,26 @@ impl<T: Ord> Range<T> {
 
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Eq, PartialEq, Clone, Encode, Decode, MaxEncodedLen, Default, RuntimeDebug, TypeInfo)]
+pub struct RewardsAllocationConfig {
+    pub(crate) developer: Perbill,
+    pub(crate) executor: Perbill,
+}
+
+impl RewardsAllocationConfig {
+    pub fn validate(&self) -> Result<(), &'static str> {
+        if self.developer + self.executor != Perbill::one() {
+            return Err("total must be 100%")
+        }
+        Ok(())
+    }
+}
+
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Eq, PartialEq, Clone, Encode, Decode, MaxEncodedLen, Default, RuntimeDebug, TypeInfo)]
 pub struct InflationInfo {
     pub(crate) annual: Range<Perbill>,
     pub(crate) per_round: Range<Perbill>,
+    pub(crate) allocation_percentage: RewardsAllocationConfig,
 }
 
 impl InflationInfo {
@@ -103,10 +129,12 @@ impl<
             length,
         }
     }
+
     /// Check if the round should be updated
     pub fn should_update(&self, now: B) -> bool {
         now - self.first_block >= self.length.into()
     }
+
     /// New round
     pub fn update(&mut self, now: B) {
         self.current = self.current.saturating_add(1u32);

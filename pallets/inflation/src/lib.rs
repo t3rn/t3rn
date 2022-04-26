@@ -17,7 +17,9 @@ pub mod weights;
 #[pallet]
 pub mod pallet {
     use crate::{
-        inflation::{InflationInfo, Range, RoundIndex, RoundInfo},
+        inflation::{
+            CandidateRole, InflationInfo, Range, RewardsAllocationConfig, RoundIndex, RoundInfo,
+        },
         weights::WeightInfo,
     };
     use codec::Codec;
@@ -27,7 +29,7 @@ pub mod pallet {
     };
     use frame_system::{ensure_root, pallet_prelude::*};
     use sp_runtime::{
-        traits::{AtLeast32BitUnsigned, Saturating, Zero},
+        traits::{AtLeast32BitUnsigned, CheckedMul, Saturating, Zero},
         Perbill,
     };
     use sp_std::fmt::Debug;
@@ -51,9 +53,6 @@ pub mod pallet {
             + TypeInfo;
 
         #[pallet::constant]
-        type TreasuryAccount: Get<Self::AccountId>;
-
-        #[pallet::constant]
         type DefaultBlocksPerRound: Get<u32>;
 
         #[pallet::constant]
@@ -61,6 +60,10 @@ pub mod pallet {
 
         type WeightInfo: WeightInfo;
     }
+
+    #[pallet::storage]
+    #[pallet::getter(fn treasury)]
+    pub type TreasuryAccount<T: Config> = StorageValue<_, T::AccountId, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn inflation_config)]
@@ -79,8 +82,15 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn candidates)]
-    pub type CandidatesForRewards<T: Config> =
-        StorageMap<_, Twox64Concat, T::AccountId, BalanceOf<T>, OptionQuery>;
+    pub type CandidatesForRewards<T: Config> = StorageDoubleMap<
+        _,
+        Twox64Concat,
+        T::AccountId,
+        Twox64Concat,
+        CandidateRole,
+        BalanceOf<T>,
+        OptionQuery,
+    >;
 
     #[pallet::storage]
     #[pallet::getter(fn rewards_per_round)]
@@ -103,6 +113,7 @@ pub mod pallet {
     pub enum Event<T: Config> {
         MintedTokensForRound(T::AccountId, BalanceOf<T>),
         MintedTokensExactly(T::AccountId, BalanceOf<T>),
+        MintedTokensForCandidate(T::AccountId, BalanceOf<T>),
         InflationSet {
             annual_min: Perbill,
             annual_ideal: Perbill,
@@ -110,6 +121,10 @@ pub mod pallet {
             round_min: Perbill,
             round_ideal: Perbill,
             round_max: Perbill,
+        },
+        RewardsConfigSet {
+            dev_reward: Perbill,
+            exec_reward: Perbill,
         },
         RoundStarted {
             starting_block: T::BlockNumber,
@@ -121,9 +136,11 @@ pub mod pallet {
     #[pallet::error]
     pub enum Error<T> {
         InvalidInflationSchedule,
+        InvalidInflationRewardsConfig,
         MintingFailed,
         NotEnoughFunds,
         NotCandidate, // when someone tries to claim rewards when not being a candidate
+        MisalignedCandidates, // when theres an error when calculating candidate rewards
         NoWritingSameValue, // when trying to update the inflation schedule
     }
 
@@ -169,7 +186,9 @@ pub mod pallet {
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
         pub candidates: Vec<T::AccountId>,
-        pub annual_inflation: Range<BalanceOf<T>>,
+        pub annual_inflation: Range<Perbill>,
+        pub allocation_percentage: RewardsAllocationConfig,
+        pub treasury_account: T::AccountId,
     }
 
     #[cfg(feature = "std")]
@@ -177,7 +196,19 @@ pub mod pallet {
         fn default() -> Self {
             Self {
                 candidates: Default::default(),
-                annual_inflation: Default::default(),
+                annual_inflation: Range {
+                    min: Perbill::from_percent(1),   // TODO placeholder
+                    ideal: Perbill::from_percent(2), // TODO placeholder
+                    max: Perbill::from_percent(3),   // TODO placeholder
+                },
+                allocation_percentage: RewardsAllocationConfig {
+                    executor: Perbill::from_percent(40),
+                    developer: Perbill::from_percent(60),
+                },
+                treasury_account: T::AccountId::decode(
+                    &mut "0x0000000000000000000000000000000000000000".as_bytes(),
+                )
+                .unwrap(),
             }
         }
     }
@@ -185,6 +216,8 @@ pub mod pallet {
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
+            // set treasury account to storage
+            <TreasuryAccount<T>>::put(&self.treasury_account);
             // set first round
             let round: RoundInfo<T::BlockNumber> = RoundInfo::new(
                 1_u32,
@@ -209,29 +242,45 @@ pub mod pallet {
             // mint can only be called from a root account
             ensure_root(origin)?;
 
-            let treasury = T::TreasuryAccount::get();
+            let treasury = <TreasuryAccount<T>>::get();
 
-            let _round = <CurrentRound<T>>::get();
+            let round = <CurrentRound<T>>::get();
 
-            let _inflation_info = <InflationConfig<T>>::get();
+            let inflation_info = <InflationConfig<T>>::get();
 
-            let _candidates = <CandidatesForRewards<T>>::iter_keys();
+            let candidates = <CandidatesForRewards<T>>::iter_keys();
 
-            // T::Currency::issue(candidates.count() * amount)
-            //     .map_err(|_| Error::<T>::MintingFailed)?;
+            let count_devs = candidates
+                .filter(|c| c.1 == CandidateRole::Developer)
+                .count();
+            let count_execs = candidates.count() - count_devs;
 
-            // Percent::from_percent(inf.deconstruct()).ok_or(Error::<T>::InvalidInflationSchedule)?;
+            ensure!(
+                count_devs + count_execs == candidates.count(),
+                Error::<T>::MisalignedCandidates
+            );
 
-            // let inflation_per_candidate: BalanceOf<T> =
-            //     BalanceOf::<T>::try_from(inf.into())?;
-            // let mut remaining_minted_balance = T::Currency::issue(amount);
-            // <CandidatesForRewards<T>>::iter_keys().for_each(|candidate| {
-            //     <RewardsPerCandidatePerRound<T>>::insert(candidate, round.current, inf.into());
-            // });
+            let per_developer = amount
+                .saturating_mul(&inflation_info.allocation_percentage.developer)
+                .div(&count_devs);
+            let per_executor = amount
+                .saturating_mul(&inflation_info.allocation_percentage.executor)?
+                .div(&count_execs);
+
+            // for each candidate in the round, calculate their reward
+            for (candidate, role) in candidates {
+                let issued = match role {
+                    CandidateRole::Developer => T::Currency::issue(amount * per_developer.clone()),
+                    CandidateRole::Executor => T::Currency::issue(amount * per_executor.clone()),
+                };
+
+                <RewardsPerCandidatePerRound<T>>::insert(candidate.clone(), round.current, issued);
+
+                Self::deposit_event(Event::MintedTokensForCandidate(candidate, &issued));
+            }
 
             // Emit an event.
             Self::deposit_event(Event::MintedTokensForRound(treasury, amount));
-            // Return a successful DispatchResultWithPostInfo
             Ok(())
         }
 
@@ -285,13 +334,38 @@ pub mod pallet {
             <InflationConfig<T>>::put(config);
             Ok(().into())
         }
+
+        /// Sets the reward percentage to be allocated between developers and executors
+        #[pallet::weight(10_000)]
+        pub fn set_rewards_config(
+            origin: OriginFor<T>,
+            rewards_config: RewardsAllocationConfig,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+            ensure!(
+                rewards_config.validate(),
+                Error::<T>::InvalidInflationRewardsConfig
+            );
+            let mut config = <InflationConfig<T>>::get();
+            ensure!(
+                config.allocation_percentage != rewards_config,
+                Error::<T>::NoWritingSameValue
+            );
+            config.allocation_percentage = rewards_config.clone();
+            Self::deposit_event(Event::RewardsConfigSet {
+                dev_reward: rewards_config.developer,
+                exec_reward: rewards_config.executor,
+            });
+            <InflationConfig<T>>::put(config);
+            Ok(().into())
+        }
     }
 
     impl<T: Config> Pallet<T> {
         /// Helper function to check if the origin belongs to the candidate list
         pub fn ensure_candidate(who: &T::AccountId) -> Result<(), DispatchError> {
             ensure!(
-                <CandidatesForRewards<T>>::contains_key(who),
+                <CandidatesForRewards<T>>::iter_prefix(who).count() == 1,
                 Error::<T>::NotCandidate
             );
             Ok(())
