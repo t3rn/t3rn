@@ -84,8 +84,8 @@ ExecStart=$collator_binary \
   --port 33333 \
   --rpc-port 8833 \
   --ws-port 9933 \
-  --rpc-methods=Safe \
-  --rpc-cors http://localhost,https://polkadot.js.org,https://t3rn.vercel.app,https://t3rn-alice.vercel.app \
+  --unsafe-ws-external \
+  --rpc-cors all \
   --execution Wasm \
   --pruning=archive \
   --no-prometheus \
@@ -137,8 +137,8 @@ ExecStart=$collator_binary \
   --port 33332 \
   --rpc-port 8832 \
   --ws-port 9932 \
-  --rpc-methods=Safe \
-  --rpc-cors http://localhost,https://polkadot.js.org,https://t3rn.vercel.app,https://t3rn-alice.vercel.app \
+  --unsafe-ws-external \
+  --rpc-cors all \
   --execution Wasm \
   --pruning=archive \
   --no-prometheus \

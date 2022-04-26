@@ -1,5 +1,9 @@
 # Changelog
 
+## `v1.0.0-rc.1` 2022-04-26
+
+Covers the same sub products as `v1.0.0-rc.0` but fixes the collator setup.
+
 ## `v1.0.0-rc.0` 2022-04-25
 #### Release Candidate to Rococo
 
