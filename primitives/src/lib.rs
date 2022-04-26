@@ -42,6 +42,7 @@ pub mod circuit;
 pub mod circuit_portal;
 pub mod contract_metadata;
 pub mod contracts_registry;
+pub mod freevm;
 pub mod gateway_inbound_protocol;
 pub mod match_format;
 pub mod protocol;

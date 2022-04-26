@@ -175,8 +175,8 @@ impl_opaque_keys! {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("circuit-parachain"),
-    impl_name: create_runtime_str!("circuit-parachain"),
+    spec_name: create_runtime_str!("t0rn"),
+    impl_name: create_runtime_str!("Circuit Collator"),
     authoring_version: 1,
     spec_version: 1,
     impl_version: 0,

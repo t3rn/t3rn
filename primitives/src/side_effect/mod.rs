@@ -45,9 +45,26 @@ impl<
     }
 }
 
+#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
+pub enum ConfirmationOutcome {
+    Success,
+    MisbehaviourMalformedValues {
+        key: Bytes,
+        expected: Bytes,
+        received: Bytes,
+    },
+    TimedOut,
+}
+
+impl Default for ConfirmationOutcome {
+    fn default() -> Self {
+        ConfirmationOutcome::Success
+    }
+}
+
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf> {
-    pub err: Option<Bytes>,
+    pub err: Option<ConfirmationOutcome>,
     pub output: Option<Bytes>,
     pub encoded_effect: Bytes,
     pub inclusion_proof: Option<Bytes>,
@@ -56,10 +73,24 @@ pub struct ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub cost: Option<BalanceOf>,
 }
 
+#[derive(Clone, Eq, PartialEq, PartialOrd, Ord, Encode, Decode, RuntimeDebug, TypeInfo)]
+pub enum SecurityLvl {
+    Dirty = 0,
+    Optimistic = 1,
+    Escrowed = 2,
+}
+
+impl Default for SecurityLvl {
+    fn default() -> Self {
+        SecurityLvl::Dirty
+    }
+}
+
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub input: SideEffect<AccountId, BlockNumber, BalanceOf>,
     pub confirmed: Option<ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf>>,
+    pub security_lvl: SecurityLvl,
 }
 
 #[cfg(test)]

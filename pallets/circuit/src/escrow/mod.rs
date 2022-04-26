@@ -260,4 +260,102 @@ pub mod test {
                 ));
             });
     }
+
+    #[test]
+    fn escrow_transfer_execute_and_revert_work() {
+        let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
+
+        let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
+
+        let mut local_state = LocalState::new();
+
+        let mut valid_transfer_side_effect = produce_and_validate_side_effect(
+            vec![
+                (Type::Address(32), ArgVariant::A),
+                (Type::Address(32), ArgVariant::B),
+                (Type::Uint(64), ArgVariant::A),
+                (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
+            ],
+            &mut local_state,
+            transfer_protocol_box,
+        );
+
+        valid_transfer_side_effect.target = [3, 3, 3, 3];
+        let side_effects = vec![valid_transfer_side_effect.clone()];
+        let fee = 1;
+        let sequential = true;
+
+        ExtBuilder::default()
+            .with_standard_side_effects()
+            .with_default_xdns_records()
+            .build()
+            .execute_with(|| {
+                let _ = Balances::deposit_creating(&ALICE, 1 + 2 + 1); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+                System::set_block_number(1);
+
+                // Submit for execution first
+                assert_ok!(Circuit::on_extrinsic_trigger(
+                    origin,
+                    side_effects,
+                    fee,
+                    sequential,
+                ));
+
+                assert_ok!(Escrow::<Test>::exec(
+                    b"tran",
+                    valid_transfer_side_effect.encoded_args.clone(),
+                    Circuit::account_id(),
+                    ALICE,
+                ));
+
+                let mut latest_events = System::events();
+
+                assert_eq!(
+                    latest_events.pop().unwrap(),
+                    EventRecord {
+                        phase: Phase::Initialization,
+                        event: mock::Event::Circuit(crate::Event::<Test>::EscrowTransfer(
+                            hex!(
+                                "0101010101010101010101010101010101010101010101010101010101010101"
+                            )
+                            .into(), // executor account
+                            hex!(
+                                "6d6f646c70616c2f636972630000000000000000000000000000000000000000"
+                            )
+                            .into(), // circuit account
+                            1u64, // value
+                        )),
+                        topics: vec![]
+                    },
+                );
+
+                assert_ok!(Escrow::<Test>::revert(
+                    b"tran",
+                    valid_transfer_side_effect.encoded_args,
+                    Circuit::account_id(),
+                    ALICE,
+                ));
+
+                let mut latest_events = System::events();
+
+                assert_eq!(
+                    latest_events.pop().unwrap(),
+                    EventRecord {
+                        phase: Phase::Initialization,
+                        event: mock::Event::Circuit(crate::Event::<Test>::EscrowTransfer(
+                            hex!(
+                                "6d6f646c70616c2f636972630000000000000000000000000000000000000000"
+                            )
+                            .into(), // executor account
+                            hex!(
+                                "0101010101010101010101010101010101010101010101010101010101010101"
+                            )
+                            .into(), // circuit account
+                            1u64, // value
+                        )),
+                        topics: vec![]
+                    },
+                );
+            });
+    }
 }

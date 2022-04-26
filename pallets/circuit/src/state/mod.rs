@@ -2,9 +2,9 @@ use crate::*;
 use codec::{Decode, Encode};
 use sp_core::Hasher;
 use sp_runtime::RuntimeDebug;
-
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
+use sp_std::default::Default;
 
 type SystemHashing<T> = <T as frame_system::Config>::Hashing;
 pub type XExecSignalId<T> = <T as frame_system::Config>::Hash;
@@ -20,6 +20,7 @@ use t3rn_primitives::transfers::EscrowedBalanceOf;
 ///         the status will stay in PendingInsurance until all insurance deposits are committed
 /// Validated/PendingInsurance -> Ready - ready for relayers to pick up and start executing on targets
 /// Ready -> PendingExecution - at least one side effect has already been confirmed, but not all of them
+/// PendingExecution -> Finished - all of the side effects are confirmed, now awaiting for the decision about Revert/Commit
 /// Circuit::Apply -> called internally - based on the side effects confirmations decides:
 ///     Ready -> Committed: All of the side effects have been successfully confirmed
 ///     Ready -> Reverted: Some of the side effects failed and the Xtx was reverted
@@ -31,15 +32,18 @@ pub enum CircuitStatus {
     Ready,
     PendingExecution,
     Finished,
+    FinishedAllSteps,
+    RevertTimedOut,
+    RevertKill,
     Committed,
     Reverted,
-    RevertedTimedOut,
 }
 
 #[derive(Clone, Eq, PartialEq, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum CircuitRole {
     Relayer,
     Requester,
+    ContractAuthor,
     Local,
 }
 
@@ -154,8 +158,17 @@ impl CircuitStatus {
 
         for step in steps.iter() {
             let current_step_status = Self::determine_step_status::<T>(step, insurance_deposits)?;
+            log::debug!(
+                "Determine determine_xtx_status in loop Before -- {:?}",
+                current_step_status.clone()
+            );
             if current_step_status > lowest_determined_status {
                 lowest_determined_status = current_step_status;
+            }
+            // Xtx status is reflected with the lowest status of unresolved Step -
+            //  break the loop on the first unresolved step
+            if lowest_determined_status < CircuitStatus::Finished {
+                break
             }
         }
         Ok(lowest_determined_status)
@@ -217,15 +230,11 @@ impl<
 /// A composable cross-chain (X) transaction that has already been verified to be valid and submittable
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct XExecSignal<AccountId, BlockNumber, BalanceOf> {
-    // todo: Add missing DFDs
-    // pub contracts_dfd: InterExecSchedule -> ContractsDFD
-    // pub side_effects_dfd: SideEffectsDFD
-    // pub gateways_dfd: GatewaysDFD
     /// The owner of the bid
     pub requester: AccountId,
 
     /// Expiry timeout
-    pub timeouts_at: Option<BlockNumber>,
+    pub timeouts_at: BlockNumber,
 
     /// Schedule execution of steps in the future intervals
     pub delay_steps_at: Option<Vec<BlockNumber>>,
@@ -250,7 +259,7 @@ impl<
         // Requester of xtx
         requester: &AccountId,
         // Expiry timeout
-        timeouts_at: Option<BlockNumber>,
+        timeouts_at: BlockNumber,
         // Schedule execution of steps in the future intervals
         delay_steps_at: Option<Vec<BlockNumber>>,
         // Total reward
@@ -285,7 +294,7 @@ impl<
         // Requester of xtx
         requester: &T::AccountId,
         // Expiry timeout
-        timeouts_at: Option<T::BlockNumber>,
+        timeouts_at: T::BlockNumber,
         // Schedule execution of steps in the future intervals
         delay_steps_at: Option<Vec<T::BlockNumber>>,
         // Total reward
