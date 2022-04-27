@@ -140,11 +140,28 @@ impl Display for Compiler {
     }
 }
 
+/// Type of the contract.
+#[derive(Clone, Debug, Eq, PartialEq, Encode, Decode, TypeInfo)]
+pub enum ContractType {
+    System,
+    VanillaEvm,
+    VanillaWasm,
+    VolatileEvm,
+    VolatileWasm,
+}
+
+impl Default for ContractType {
+    fn default() -> Self {
+        ContractType::System
+    }
+}
+
 /// Metadata about a smart contract.
 #[derive(Clone, Debug, Eq, PartialEq, Encode, Decode, TypeInfo)]
 pub struct ContractMetadata {
     metadata_version: Vec<u8>,
     name: Vec<u8>,
+    contract_type: Vec<u8>,
     version: Vec<u8>,
     authors: Vec<Vec<u8>>,
     description: Option<Vec<u8>>,
@@ -159,6 +176,7 @@ impl Default for ContractMetadata {
         ContractMetadata {
             metadata_version: b"0.0.1".encode(),
             name: b"Default contract".encode(),
+            contract_type: ContractType::System.encode(),
             version: b"0.0.1".encode(),
             authors: vec![b"Some author".encode()],
             description: None,
@@ -174,6 +192,7 @@ impl ContractMetadata {
     pub fn new(
         metadata_version: Vec<u8>,
         name: Vec<u8>,
+        contract_type: Vec<u8>,
         version: Vec<u8>,
         authors: Vec<Vec<u8>>,
         description: Option<Vec<u8>>,
@@ -185,6 +204,7 @@ impl ContractMetadata {
         ContractMetadata {
             metadata_version,
             name,
+            contract_type,
             version,
             authors,
             description,
