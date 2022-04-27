@@ -26,6 +26,7 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
+pub use frame_support::traits::EqualPrivilegeOnly;
 use frame_support::{
     construct_runtime, parameter_types,
     traits::Everything,
@@ -178,7 +179,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("t0rn"),
     impl_name: create_runtime_str!("Circuit Collator"),
     authoring_version: 1,
-    spec_version: 1,
+    spec_version: 2, // MUST: increment for runtime upgrades
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -231,6 +232,12 @@ pub fn native_version() -> NativeVersion {
         runtime_version: VERSION,
         can_author_with: Default::default(),
     }
+}
+
+/// Calculate the storage deposit based on the number of storage items and the
+/// combined byte size of those items.
+pub const fn deposit(items: u32, bytes: u32) -> Balance {
+    (items as Balance) * 56 * MILLIUNIT + (bytes as Balance) * 50 * MICROUNIT
 }
 
 parameter_types! {
@@ -467,6 +474,42 @@ impl pallet_sudo::Config for Runtime {
     type Event = Event;
 }
 
+parameter_types! {
+    pub const PreimageMaxSize: u32 = 4096 * 1024;
+    pub const PreImageBaseDeposit: Balance = deposit(2, 64);
+    pub const PreImageByteDeposit: Balance = deposit(0, 1);
+}
+
+impl pallet_preimage::Config for Runtime {
+    type BaseDeposit = PreImageBaseDeposit;
+    type ByteDeposit = PreImageByteDeposit;
+    type Currency = Balances;
+    type Event = Event;
+    type ManagerOrigin = EnsureRoot<AccountId>;
+    type MaxSize = PreimageMaxSize;
+    type WeightInfo = ();
+}
+
+parameter_types! {
+    pub MaximumSchedulerWeight: Weight = 10_000_000;
+    pub const MaxScheduledPerBlock: u32 = 50;
+    pub const NoPreimagePostponement: Option<BlockNumber> = Some(10);
+}
+
+impl pallet_scheduler::Config for Runtime {
+    type Call = Call;
+    type Event = Event;
+    type MaxScheduledPerBlock = MaxScheduledPerBlock;
+    type MaximumWeight = MaximumSchedulerWeight;
+    type NoPreimagePostponement = NoPreimagePostponement;
+    type Origin = Origin;
+    type OriginPrivilegeCmp = EqualPrivilegeOnly;
+    type PalletsOrigin = OriginCaller;
+    type PreimageProvider = Preimage;
+    type ScheduleOrigin = EnsureRoot<AccountId>;
+    type WeightInfo = ();
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -481,6 +524,8 @@ construct_runtime!(
         } = 1,
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
         ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
+        Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 4,
+        Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 5,
 
         // Monetary stuff.
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
