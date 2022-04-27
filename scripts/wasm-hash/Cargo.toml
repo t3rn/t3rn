@@ -1,0 +1,10 @@
+[package]
+name = "wasm-hash"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[dependencies]
+hex = "0.4.3"
+substrate-runtime-proposal-hash = "0.13.0"
