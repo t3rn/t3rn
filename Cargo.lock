@@ -1099,6 +1099,7 @@ dependencies = [
  "pallet-contracts-rpc",
  "pallet-transaction-payment-rpc",
  "pallet-xdns",
+ "pallet-xdns-rpc",
  "parity-scale-codec 2.3.1",
  "polkadot-cli",
  "polkadot-parachain",
@@ -1184,6 +1185,7 @@ dependencies = [
  "pallet-wasm-contracts",
  "pallet-xcm",
  "pallet-xdns",
+ "pallet-xdns-rpc-runtime-api",
  "parachain-info",
  "parity-scale-codec 2.3.1",
  "polkadot-parachain",
@@ -1226,6 +1228,7 @@ dependencies = [
  "pallet-contracts-rpc",
  "pallet-transaction-payment-rpc",
  "pallet-xdns",
+ "pallet-xdns-rpc",
  "sc-basic-authorship",
  "sc-cli",
  "sc-client-api",
@@ -7029,6 +7032,22 @@ dependencies = [
  "sp-version",
  "t3rn-primitives",
  "t3rn-protocol",
+]
+
+[[package]]
+name = "pallet-xdns-rpc"
+version = "1.0.0-alpha.0"
+dependencies = [
+ "jsonrpc-core 18.0.0",
+ "jsonrpc-core-client 18.0.0",
+ "jsonrpc-derive",
+ "pallet-xdns-rpc-runtime-api",
+ "parity-scale-codec 2.3.1",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
 ]
 
 [[package]]

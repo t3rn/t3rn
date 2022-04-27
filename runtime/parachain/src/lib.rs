@@ -21,6 +21,7 @@ use sp_runtime::{
     ApplyExtrinsicResult, MultiSignature,
 };
 
+use pallet_xdns_rpc_runtime_api::{ChainId, FetchXdnsRecordsResponse, GatewayABIConfig};
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -504,7 +505,7 @@ construct_runtime!(
 
         // Circuit
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 200,
-       // t3rn pallets
+        // t3rn pallets
         XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
         MultiFinalityVerifierPolkadotLike: pallet_mfv::<Instance1>::{
             Pallet, Call, Storage, Config<T, I>
@@ -690,6 +691,21 @@ impl_runtime_apis! {
             key: [u8; 32],
         ) -> pallet_3vm_contracts_primitives::GetStorageResult {
             Contracts::get_storage(address, key)
+        }
+    }
+
+    impl pallet_xdns_rpc_runtime_api::XdnsRuntimeApi<Block, AccountId> for Runtime {
+        fn fetch_records() -> FetchXdnsRecordsResponse<AccountId> {
+             FetchXdnsRecordsResponse {
+                xdns_records: <XDNS as t3rn_primitives::xdns::Xdns<Runtime>>::fetch_records()
+            }
+        }
+
+        fn fetch_abi(chain_id: ChainId) -> Option<GatewayABIConfig> {
+            match <XDNS as t3rn_primitives::xdns::Xdns<Runtime>>::get_abi(chain_id) {
+                Ok(abi) => Some(abi),
+                Err(_) => None,
+            }
         }
     }
 

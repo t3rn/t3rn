@@ -9,6 +9,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use pallet_grandpa::{
     fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
+use pallet_xdns_rpc_runtime_api::{ChainId, FetchXdnsRecordsResponse, GatewayABIConfig};
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -536,6 +537,21 @@ impl_runtime_apis! {
             key: [u8; 32],
         ) -> pallet_3vm_contracts_primitives::GetStorageResult {
             Contracts::get_storage(address, key)
+        }
+    }
+
+    impl pallet_xdns_rpc_runtime_api::XdnsRuntimeApi<Block, AccountId> for Runtime {
+        fn fetch_records() -> FetchXdnsRecordsResponse<AccountId> {
+             FetchXdnsRecordsResponse {
+                xdns_records: <XDNS as t3rn_primitives::xdns::Xdns<Runtime>>::fetch_records()
+            }
+        }
+
+        fn fetch_abi(chain_id: ChainId) -> Option<GatewayABIConfig> {
+            match <XDNS as t3rn_primitives::xdns::Xdns<Runtime>>::get_abi(chain_id) {
+                Ok(abi) => Some(abi),
+                Err(_) => None,
+            }
         }
     }
 
