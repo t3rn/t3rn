@@ -77,6 +77,7 @@ fn fetch_contracts_by_metadata_should_return_all_matching_contracts() {
             b"some contract".to_vec(),
             vec![],
             vec![],
+            vec![],
             None,
             None,
             None,
@@ -96,6 +97,7 @@ fn fetch_contracts_by_metadata_should_return_all_matching_contracts() {
             vec![],
             vec![],
             vec![],
+            vec![],
             Some(b"contract description".to_vec()),
             None,
             None,
@@ -111,6 +113,7 @@ fn fetch_contracts_by_metadata_should_return_all_matching_contracts() {
         action_descriptions: vec![],
         info: None,
         meta: ContractMetadata::new(
+            vec![],
             vec![],
             vec![],
             vec![],
@@ -152,7 +155,18 @@ fn fetch_contracts_by_author_should_return_all_matching_contracts() {
         abi: None,
         action_descriptions: vec![],
         info: None,
-        meta: ContractMetadata::new(vec![], vec![], vec![], vec![], None, None, None, None, None),
+        meta: ContractMetadata::new(
+            vec![],
+            vec![],
+            vec![],
+            vec![],
+            vec![],
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
     };
     let test_contract_author2 = RegistryContract {
         code_txt: b"some_code_2".to_vec(),
@@ -162,7 +176,18 @@ fn fetch_contracts_by_author_should_return_all_matching_contracts() {
         abi: None,
         action_descriptions: vec![],
         info: None,
-        meta: ContractMetadata::new(vec![], vec![], vec![], vec![], None, None, None, None, None),
+        meta: ContractMetadata::new(
+            vec![],
+            vec![],
+            vec![],
+            vec![],
+            vec![],
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
     };
     let test_contract_author3 = RegistryContract {
         code_txt: b"some_code_3".to_vec(),
@@ -171,7 +196,18 @@ fn fetch_contracts_by_author_should_return_all_matching_contracts() {
         abi: None,
         action_descriptions: vec![],
         info: None,
-        meta: ContractMetadata::new(vec![], vec![], vec![], vec![], None, None, None, None, None),
+        meta: ContractMetadata::new(
+            vec![],
+            vec![],
+            vec![],
+            vec![],
+            vec![],
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
     };
     ExtBuilder::default().build().execute_with(|| {
         crate::ContractsRegistry::<Test>::insert(
@@ -208,6 +244,7 @@ fn fetch_contracts_by_author_and_metadata_should_return_all_matching_contracts()
             b"contract 1".to_vec(),
             vec![],
             vec![],
+            vec![],
             None,
             None,
             None,
@@ -227,6 +264,7 @@ fn fetch_contracts_by_author_and_metadata_should_return_all_matching_contracts()
             vec![],
             vec![],
             vec![],
+            vec![],
             Some(b"contract 2".to_vec()),
             None,
             None,
@@ -241,7 +279,18 @@ fn fetch_contracts_by_author_and_metadata_should_return_all_matching_contracts()
         abi: None,
         action_descriptions: vec![],
         info: None,
-        meta: ContractMetadata::new(vec![], vec![], vec![], vec![], None, None, None, None, None),
+        meta: ContractMetadata::new(
+            vec![],
+            vec![],
+            vec![],
+            vec![],
+            vec![],
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
     };
     ExtBuilder::default().build().execute_with(|| {
         crate::ContractsRegistry::<Test>::insert(
@@ -278,6 +327,7 @@ fn fetch_contracts_with_no_parameters_should_error() {
             b"contract 1".to_vec(),
             vec![],
             vec![],
+            vec![],
             None,
             None,
             None,
@@ -297,6 +347,7 @@ fn fetch_contracts_with_no_parameters_should_error() {
             vec![],
             vec![],
             vec![],
+            vec![],
             Some(b"contract 2".to_vec()),
             None,
             None,
@@ -311,7 +362,18 @@ fn fetch_contracts_with_no_parameters_should_error() {
         abi: None,
         action_descriptions: vec![],
         info: None,
-        meta: ContractMetadata::new(vec![], vec![], vec![], vec![], None, None, None, None, None),
+        meta: ContractMetadata::new(
+            vec![],
+            vec![],
+            vec![],
+            vec![],
+            vec![],
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
     };
     ExtBuilder::default().build().execute_with(|| {
         crate::ContractsRegistry::<Test>::insert(
@@ -344,6 +406,7 @@ fn add_new_contract_succeeds_for_default() {
         meta: ContractMetadata::new(
             vec![],
             b"contract 1".to_vec(),
+            vec![],
             vec![],
             vec![],
             None,
@@ -383,6 +446,7 @@ fn add_new_contract_fails_for_no_sudo_origin() {
             b"contract 1".to_vec(),
             vec![],
             vec![],
+            vec![],
             None,
             None,
             None,
@@ -417,6 +481,7 @@ fn add_new_contract_fails_if_contract_already_exists() {
         meta: ContractMetadata::new(
             vec![],
             b"contract 1".to_vec(),
+            vec![],
             vec![],
             vec![],
             None,
@@ -456,6 +521,7 @@ fn purge_succeeds_for_default_contract() {
         meta: ContractMetadata::new(
             vec![],
             b"contract 1".to_vec(),
+            vec![],
             vec![],
             vec![],
             None,
@@ -498,6 +564,7 @@ fn purge_fails_if_contract_does_not_exist() {
             b"contract 1".to_vec(),
             vec![],
             vec![],
+            vec![],
             None,
             None,
             None,
@@ -534,6 +601,7 @@ fn purge_fails_if_origin_not_root() {
         meta: ContractMetadata::new(
             vec![],
             b"contract 1".to_vec(),
+            vec![],
             vec![],
             vec![],
             None,
