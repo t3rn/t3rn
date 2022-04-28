@@ -33,6 +33,8 @@ frame-try-runtime                          = { git = "https://github.com/parityt
 pallet-aura                                = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.17" }
 pallet-authorship                          = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.17" }
 pallet-balances                            = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.17" }
+pallet-preimage                            = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.17" }
+pallet-scheduler                           = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.17" }
 pallet-session                             = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.17" }
 pallet-sudo                                = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.17" }
 pallet-timestamp                           = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.17" }
@@ -90,6 +92,7 @@ pallet-3vm-contracts-rpc-runtime-api  = { path = "../../3vm/pallets/wasm-contrac
 pallet-contracts-registry             = { path = "../../pallets/contracts-registry", default-features = false }
 pallet-mfv                            = { path = "../../pallets/multi-finality-verifier", package = "pallet-multi-finality-verifier", default-features = false }
 pallet-xdns                           = { path = "../../pallets/xdns", default-features = false }
+pallet-xdns-rpc-runtime-api           = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
 
 [features]
 default = [ "std" ]
@@ -117,6 +120,8 @@ std = [
   "pallet-3vm-contracts/std",
   "pallet-3vm-contracts-primitives/std",
   "pallet-3vm-contracts-rpc-runtime-api/std",
+  "pallet-preimage/std",
+  'pallet-scheduler/std',
   "pallet-session/std",
   "pallet-sudo/std",
   "pallet-timestamp/std",
@@ -150,6 +155,7 @@ std = [
   "t3rn-protocol/std",
   # t3rn pallets
   "pallet-xdns/std",
+  "pallet-xdns-rpc-runtime-api/std",
   "pallet-mfv/std",
   "pallet-contracts-registry/std",
   "pallet-circuit-portal/std",
