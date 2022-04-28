@@ -4,7 +4,7 @@ set -Ee
 
 if [[ -z $1 || -z $2 ]]; then
   echo "usage: $0 't0rn collator one adrs' 't0rn collator two adrs'"
-  # fx: ssh alibaba@000.00.00.00 'bash -s' < ./get-rococo-artifacts.sh 'adrs one' 'adrs two'
+  # fx: ./get-rococo-artifacts.sh 'adrs one' 'adrs two'
   exit 1
 fi
 
