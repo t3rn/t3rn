@@ -4,9 +4,10 @@ use crate::{self as pallet_circuit, Config};
 use codec::Encode;
 use frame_election_provider_support::onchain;
 use frame_support::{
-    pallet_prelude::GenesisBuild,
+    pallet_prelude::{GenesisBuild, Weight},
     parameter_types,
     traits::{ConstU32, ConstU64, Everything, KeyOwnerProofSystem, Nothing},
+    PalletId,
 };
 use pallet_babe::{EquivocationHandler, ExternalTrigger};
 use pallet_session::historical as pallet_session_historical;

@@ -12,7 +12,7 @@ version     = "1.0.0-alpha.0"
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17" }
 
 [dependencies]
-codec       = { package = "parity-scale-codec", version = "2.2.0", default-features = false, features = [ "derive" ] }
+codec       = { package = "parity-scale-codec", version = "2.2", default-features = false, features = [ "derive" ] }
 hex-literal = { version = "0.3", optional = true }
 log         = { version = "0.4.14", default-features = false }
 scale-info  = { version = "1.0", default-features = false, features = [ "derive" ] }
@@ -91,7 +91,7 @@ orml-tokens = { git = "https://github.com/t3rn/open-runtime-module-library", bra
 orml-traits = { git = "https://github.com/t3rn/open-runtime-module-library", branch = "polkadot-v0.9.17", default-features = false }
 
 [features]
-default = [ "std" ]
+default = [ "std", "contracts-unstable-interface" ]
 std = [
   #	"bp-messages/std",
   #	"bp-runtime/std",
@@ -177,4 +177,9 @@ runtime-benchmarks = [
   'sp-runtime/runtime-benchmarks',
   "orml-tokens/std",
   "orml-traits/std",
+]
+# Make contract callable functions marked as __unstable__ available. Do not enable
+# on live chains as those are subject to change.
+contracts-unstable-interface = [
+  "pallet-3vm-contracts/unstable-interface"
 ]
