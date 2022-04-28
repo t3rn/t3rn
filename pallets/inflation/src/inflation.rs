@@ -48,11 +48,8 @@ pub struct RewardsAllocationConfig {
 }
 
 impl RewardsAllocationConfig {
-    pub fn validate(&self) -> Result<(), &'static str> {
-        if self.developer + self.executor != Perbill::one() {
-            return Err("total must be 100%")
-        }
-        Ok(())
+    pub fn validate(&self) -> bool {
+        self.developer + self.executor == Perbill::one()
     }
 }
 

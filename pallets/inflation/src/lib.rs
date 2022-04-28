@@ -29,10 +29,10 @@ pub mod pallet {
     };
     use frame_system::{ensure_root, pallet_prelude::*};
     use sp_runtime::{
-        traits::{AtLeast32BitUnsigned, CheckedMul, Saturating, Zero},
+        traits::{AtLeast32BitUnsigned, CheckedDiv, CheckedMul, Saturating, Zero},
         Perbill,
     };
-    use sp_std::fmt::Debug;
+    use sp_std::{fmt::Debug, ops::Mul};
 
     pub type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -58,12 +58,11 @@ pub mod pallet {
         #[pallet::constant]
         type TokenCirculationAtGenesis: Get<u32>;
 
+        #[pallet::constant]
+        type TreasuryAccount: Get<Self::AccountId>;
+
         type WeightInfo: WeightInfo;
     }
-
-    #[pallet::storage]
-    #[pallet::getter(fn treasury)]
-    pub type TreasuryAccount<T: Config> = StorageValue<_, T::AccountId, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn inflation_config)]
@@ -188,7 +187,6 @@ pub mod pallet {
         pub candidates: Vec<T::AccountId>,
         pub annual_inflation: Range<Perbill>,
         pub allocation_percentage: RewardsAllocationConfig,
-        pub treasury_account: T::AccountId,
     }
 
     #[cfg(feature = "std")]
@@ -205,10 +203,6 @@ pub mod pallet {
                     executor: Perbill::from_percent(40),
                     developer: Perbill::from_percent(60),
                 },
-                treasury_account: T::AccountId::decode(
-                    &mut "0x0000000000000000000000000000000000000000".as_bytes(),
-                )
-                .unwrap(),
             }
         }
     }
@@ -216,8 +210,6 @@ pub mod pallet {
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
-            // set treasury account to storage
-            <TreasuryAccount<T>>::put(&self.treasury_account);
             // set first round
             let round: RoundInfo<T::BlockNumber> = RoundInfo::new(
                 1_u32,
@@ -242,7 +234,7 @@ pub mod pallet {
             // mint can only be called from a root account
             ensure_root(origin)?;
 
-            let treasury = <TreasuryAccount<T>>::get();
+            let treasury = T::TreasuryAccount::get();
 
             let round = <CurrentRound<T>>::get();
 
@@ -260,12 +252,16 @@ pub mod pallet {
                 Error::<T>::MisalignedCandidates
             );
 
-            let per_developer = amount
-                .saturating_mul(&inflation_info.allocation_percentage.developer)
-                .div(&count_devs);
-            let per_executor = amount
-                .saturating_mul(&inflation_info.allocation_percentage.executor)?
-                .div(&count_execs);
+            let per_developer = inflation_info
+                .allocation_percentage
+                .developer
+                .saturating_mul(amount)
+                .checked_div(&count_devs)?;
+            let per_executor = inflation_info
+                .allocation_percentage
+                .executor
+                .saturating_mul(amount)
+                .checked_div(&count_execs)?;
 
             // for each candidate in the round, calculate their reward
             for (candidate, role) in candidates {
