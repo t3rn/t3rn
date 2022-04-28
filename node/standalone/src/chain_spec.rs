@@ -21,7 +21,6 @@ use t3rn_primitives::{
     ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor, Header,
 };
 
-use log::info;
 use std::{
     convert::TryFrom,
     io::{Error, ErrorKind},

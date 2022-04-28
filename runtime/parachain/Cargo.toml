@@ -92,6 +92,7 @@ pallet-3vm-contracts-rpc-runtime-api  = { path = "../../3vm/pallets/wasm-contrac
 pallet-contracts-registry             = { path = "../../pallets/contracts-registry", default-features = false }
 pallet-mfv                            = { path = "../../pallets/multi-finality-verifier", package = "pallet-multi-finality-verifier", default-features = false }
 pallet-xdns                           = { path = "../../pallets/xdns", default-features = false }
+pallet-xdns-rpc-runtime-api           = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
 
 [features]
 default = [ "std" ]
@@ -154,6 +155,7 @@ std = [
   "t3rn-protocol/std",
   # t3rn pallets
   "pallet-xdns/std",
+  "pallet-xdns-rpc-runtime-api/std",
   "pallet-mfv/std",
   "pallet-contracts-registry/std",
   "pallet-circuit-portal/std",
