@@ -1353,7 +1353,7 @@ impl<T: Config> Pallet<T> {
 
         match local_ctx.xtx.status {
             CircuitStatus::RevertTimedOut | CircuitStatus::Reverted => {
-                while let Some(outer) = local_ctx.full_side_effects.get(current_step as usize) {
+                if let Some(outer) = local_ctx.full_side_effects.get(current_step as usize) {
                     for fse in outer {
                         let encoded_4b_action: [u8; 4] =
                             Decode::decode(&mut fse.input.encoded_action.encode().as_ref())
