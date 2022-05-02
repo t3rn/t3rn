@@ -1,4 +1,3 @@
-require('dotenv').config()
 import CircuitListener from "./circuit/listener";
 import CircuitRelayer from "./circuit/relayer";
 import SubstrateRelayer from "./gateways/substrate/relayer";
@@ -7,6 +6,7 @@ import { colors } from "./utils/helpers";
 import { SideEffect } from "./utils/types";
 import { ExecutionManager } from "./utils/executionManager";
 import chalk from 'chalk';
+import "dotenv/config"
 
 class InstanceManager {
     circuitListener: CircuitListener;
