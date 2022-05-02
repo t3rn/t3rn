@@ -640,9 +640,12 @@ pub mod pallet {
             }
 
             if let Some(init_data) = self.init_data.clone() {
-                for gtwy in init_data {
-                    initialize_single_bridge::<T, I>(gtwy);
+                for gateway in init_data {
+                    let gateway_id = gateway.gateway_id;
+                    initialize_single_bridge::<T, I>(gateway);
+                    <IsHaltedMap<T, I>>::insert(gateway_id, false);
                 }
+                <IsHalted<T, I>>::put(false);
             } else {
                 // Since the bridge hasn't been initialized we shouldn't allow anyone to perform
                 // transactions.
