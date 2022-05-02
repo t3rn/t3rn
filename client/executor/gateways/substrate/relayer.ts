@@ -2,7 +2,7 @@ import { EventEmitter } from 'events'
 import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
 import { SideEffect, TransactionType, EventMapper } from "../../utils/types"
 import { getEventProofs } from './utils/helper';
-import chalk from 'chalk';
+// import chalk from 'chalk';
 
 export default class SubstrateRelayer extends EventEmitter {
 
@@ -11,14 +11,15 @@ export default class SubstrateRelayer extends EventEmitter {
     id: string;
     rpc: string;
     signer: any;
-    color: string;
+    // color: string;
     name: string;
 
     log(msg: string) {
-        console.log(chalk[this.color](this.name + " - "), msg)
+        // console.log(chalk[this.color](this.name + " - "), msg)
+        console.log(this.name + " - ", msg)
     }
 
-    async setup(rpc: string, name: string, color: string) {
+    async setup(rpc: string, name: string, ) {//color: string) {
         this.rpc = rpc;
         this.api = await ApiPromise.create({
             provider: new WsProvider(rpc)
@@ -31,7 +32,7 @@ export default class SubstrateRelayer extends EventEmitter {
         ? keyring.addFromUri('//Alice')
         : keyring.addFromMnemonic(process.env.SIGNER_KEY);
         
-        this.color = color;
+        // this.color = color;
         this.name = name;
     }
 
