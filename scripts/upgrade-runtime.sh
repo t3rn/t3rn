@@ -20,9 +20,10 @@ hash=0x$( \
   node --print " \
     const blake2b = require('blake2b'); \
     const magicBytes = Buffer.from([1, 3]); \
-    const wasm = Buffer.from('$wasm'.slice(2), 'hex'); \
-    const raw = blake2b(32).update(wasm).digest(); \
-    const prefixed = Buffer.concat([magicBytes, raw]); \
+    const wasmHex = fs.readFileSync('$wasm', 'utf8');
+    const wasmBuf = Buffer.from(wasmHex.slice(2), 'hex'); \
+    const digest = blake2b(32).update(wasmBuf).digest(); \
+    const prefixed = Buffer.concat([magicBytes, digest]); \
     const hash = blake2b(32).update(prefixed).digest('hex'); \
     hash \
     " \
@@ -37,12 +38,14 @@ if [[ "${answer,,}" != "y" ]]; then exit 1; fi
 
 npx --yes @polkadot/api-cli@beta \
   --ws $provider \
+  --sudo \
   --seed "$sudo_secret" \
   tx.parachainSystem.authorizeUpgrade \
   $hash
 
 npx @polkadot/api-cli@beta \
   --ws $provider \
+  --sudo \
   --seed "$sudo_secret" \
   --params $wasm \
   tx.parachainSystem.enactAuthorizedUpgrade
