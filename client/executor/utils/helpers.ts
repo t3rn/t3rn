@@ -7,21 +7,21 @@ export const goCatch= async (promise) => {
     }
 }
 
-// logging colors from chalk
-export const colors = [
-    "redBright",
-    "greenBright",
-    "yellowBright",
-    "blueBright",
-    "magentaBright",
-    "cyanBright",
-    "whiteBright",
-    "red",
-    "green",
-    "yellow",
-    "blue",
-    "magenta",
-    "cyan",
-    "white",
-    "grey",
-]
+// // logging colors from chalk
+// export const colors = [
+//     "redBright",
+//     "greenBright",
+//     "yellowBright",
+//     "blueBright",
+//     "magentaBright",
+//     "cyanBright",
+//     "whiteBright",
+//     "red",
+//     "green",
+//     "yellow",
+//     "blue",
+//     "magenta",
+//     "cyan",
+//     "white",
+//     "grey",
+// ]

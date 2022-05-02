@@ -9,19 +9,20 @@ export default class CircuitRelayer extends EventEmitter {
     id: string;
     rpc: string;
     signer: any;
-    color: string;
+    // color: string;
 
     log(msg: string) {
-        console.log(chalk[this.color]("Circuit - "), msg)
+        // console.log(chalk[this.color]("Circuit - "), msg)
+        console.log("Circuit - ", msg)
     }
 
-    async setup(rpc: string, color: string) {
+    async setup(rpc: string){//, color: string) {
         this.rpc = rpc;
         this.api = await ApiPromise.create({
             provider: new WsProvider(rpc),
         })
 
-        this.color = color;
+        // this.color = color;
         
         const keyring = new Keyring({ type: 'sr25519' });
 
