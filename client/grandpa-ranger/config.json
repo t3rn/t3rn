@@ -1,19 +1,20 @@
 {
+    "rangeSize": 7,
     "circuit": {
         "rpc": "ws://127.0.0.1::9944"
     },
     "relaychains": [{
         "name": "Rococo",
-        "id": "abcd",
+        "id": "roco",
         "rpc": "wss://rococo-rpc.polkadot.io",
         "type": "substrate"
     }],
     "parachains": [{
-        "name": "Acala",
-        "id": "moon",
-        "rpc": "wss://node-6870830370282213376.rz.onfinality.io/ws?apikey=0f273197-e4d5-45e2-b23e-03b015cb7000",
+        "name": "Dolphin",
+        "id": "dolp",
+        "rpc": "wss://anjie.rococo.dolphin.engineering",
         "type": "substrate",
-        "parachainId": 2000,
-        "relaychainId": "abcd"
+        "parachainId": 2084,
+        "relaychainId": "roco"
     }]
 }
