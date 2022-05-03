@@ -33,15 +33,10 @@ export default class CircuitRelayer extends EventEmitter {
     }
 
     async confirmSideEffects(sideEffects: SideEffect[]) {
-        let promises = sideEffects.map(sideEffect => {
-            return new Promise(async (res, rej) => {
-                await this.confirmSideEffect(sideEffect);
-                res;
-            })
-        })
-
-        Promise.all(promises)
-        .then(() => this.log("Confirmed SideEffects: " + sideEffects.length))
+        await Promise.all(
+            sideEffects.map(sideEffect => this.confirmSideEffect(sideEffect))
+        )
+        this.log("Confirmed SideEffects: " + sideEffects.length)
     }
 
     async confirmSideEffect(sideEffect: SideEffect) {
