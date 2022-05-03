@@ -33,6 +33,7 @@ mod tests;
 mod benchmarking;
 
 pub mod manager;
+pub mod transaction;
 pub mod weights;
 
 pub type BalanceOf<T> =

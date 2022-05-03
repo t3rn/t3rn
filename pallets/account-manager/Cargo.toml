@@ -30,6 +30,9 @@ sp-version = { default-features = false, git = "https://github.com/paritytech/su
 
 t3rn-primitives = { path = "../../primitives", default-features = false }
 
+#TODO remove
+pallet-transaction-payment                 = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', default-features = false }
+
 [dev-dependencies]
 sp-core     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', default-features = false }
 sp-keystore = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17', default-features = false }
