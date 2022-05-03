@@ -51,6 +51,7 @@ export default class CircuitRelayer extends EventEmitter {
         return new Promise(async (res, rej) => {
             let unsub = await tx.signAndSend(this.signer, (result) => {
                 if (result.status.isFinalized) {
+                    console.dir(result.events.map(e => e.toHuman()),  { depth: null })
                     const success = result.events[result.events.length - 1].event.method === "ExtrinsicSuccess";
                     this.log(`SideEffect confirmed: ${success}, ${result.status.asFinalized}`)
                     sideEffect.confirm(success, result.status.asFinalized)

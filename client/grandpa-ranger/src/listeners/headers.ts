@@ -13,6 +13,7 @@ export default class HeaderListener extends EventEmitter {
   relaychain: boolean
   grandpaSetId: number = 0
   rangeSize: number = parseInt((config as any).rangeSize)
+  rangePtr: number
 
   async setup(url: string, relaychain: boolean) {
     this.api = await new ApiPromise({
@@ -54,8 +55,10 @@ export default class HeaderListener extends EventEmitter {
     if (
       this.relaychain &&
       this.headers.length > 0 &&
-      this.headers.length % this.rangeSize === 0
+      this.headers.length % this.rangeSize === 0 &&
+      this.rangePtr !== header.number.toNumber()
     ) {
+      this.rangePtr = header.number.toNumber()
       HeaderListener.debug("Range complete at:", header.number.toNumber())
       this.emit("RangeComplete", header.number.toNumber())
     }
