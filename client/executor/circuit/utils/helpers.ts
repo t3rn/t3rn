@@ -1,6 +1,8 @@
 import { ApiPromise } from '@polkadot/api';
 import { u8aToHex } from '@polkadot/util';
+import { TypeRegistry, createType } from "@polkadot/types"
 import { xxhashAsU8a } from '@polkadot/util-crypto';
+import { SideEffect } from '../../utils/types';
 
 async function getStorage(api: ApiPromise, parameters: any) {
     let res = await api.rpc.state.getStorage(parameters.key);
@@ -29,4 +31,14 @@ export const getEventProofs = async (api: ApiPromise, blockHash: any) => {
     let proofs = await api.rpc.state.getReadProof([key], blockHash);
     console.log(`getProofs : success : ${blockHash}`);
     return proofs;
+}
+
+const typeRegistry = new TypeRegistry()
+const sfxType = { type: { type: "Vec<Bytes>" } }
+typeRegistry.register(sfxType)
+
+export function decodeSfxArgs(sideEffect: SideEffect) {
+    const args = createType(typeRegistry, sfxType.type.type, sideEffect.object.encodedArgs)
+    console.log("$$$$$ args", args)
+    return args
 }

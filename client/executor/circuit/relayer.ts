@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events'
 import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
 import { SideEffect } from '../utils/types';
+import { decodeSfxArgs } from './utils/helpers';
 import chalk from 'chalk';
 
 export default class CircuitRelayer extends EventEmitter {
@@ -30,6 +31,20 @@ export default class CircuitRelayer extends EventEmitter {
             process.env.CIRCUIT_KEY === undefined
                 ? keyring.addFromUri('//Alice')
                 : keyring.addFromMnemonic(process.env.CIRCUIT_KEY);
+    }
+
+    async maybeBondInsuranceDeposit(sideEffect: SideEffect) {
+        // const args = decodeSfxArgs(sideEffect)
+        console.log("maybeBond")
+
+        if (sideEffect.object.encodedArgs.length === 4) {
+            console.log("binanza party")
+            await this.api.tx.circuit
+            .bondInsuranceDeposit(sideEffect.xtxId, sideEffect.getId())
+            .signAndSend(this.signer, result => {
+                console.log("binanza afterparty",result.toHuman())
+            })  
+        }
     }
 
     async confirmSideEffects(sideEffects: SideEffect[]) {

@@ -64,11 +64,34 @@ class InstanceManager {
         }
     }
 
+
+    xtxSfxMap = {}
+
     async initializeEventListeners() {
-        this.circuitListener.on('NewSideEffect', (data: SideEffect) => {
-            console.log('NewSideEffect')
-            this.executionManager.addSideEffect(data);
+        this.circuitListener.on('XTransactionReadyForExec', async (xtxId) => {
+            console.log('XTransactionReadyForExec');
+
+            if (this.xtxSfxMap[xtxId]) {
+                this.xtxSfxMap[xtxId].forEach( (se) => {
+                    this.executionManager.addSideEffect(se)
+                } )
+            } else {
+                console.log('Xtransaction ready for exec ERROR - N side effects stored to xtx id')
+            }
+             
         })
+
+        this.circuitListener.on('NewSideEffect', async (sideEffect: SideEffect) => {
+            console.log('NewSideEffect')
+            if (!this.xtxSfxMap[sideEffect.xtxId]) {
+                this.xtxSfxMap[sideEffect.xtxId] = [sideEffect]
+            } else {
+                this.xtxSfxMap[sideEffect.xtxId].push(sideEffect) 
+            }
+            await this.circuitRelayer.maybeBondInsuranceDeposit(sideEffect)
+        })
+
+        
 
         this.executionManager.on('ExecuteSideEffect', sideEffect => {
             console.log('ExecuteSideEffect')
@@ -89,8 +112,6 @@ class InstanceManager {
             console.log('NewHeaderRangeAvailable')
             this.executionManager.updateGatewayHeight(data.gatewayId, data.height);
         })
-
-        
     }
 }
 
