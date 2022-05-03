@@ -14,7 +14,10 @@ use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
-    traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, NumberFor, Verify},
+    traits::{
+        AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, NumberFor, Saturating,
+        Verify,
+    },
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, MultiSignature,
 };
@@ -26,7 +29,10 @@ use sp_version::RuntimeVersion;
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
     construct_runtime, parameter_types,
-    traits::{ConstU128, ConstU32, ConstU8, KeyOwnerProofSystem, Randomness, StorageInfo},
+    traits::{
+        ConstU128, ConstU32, ConstU8, Imbalance, KeyOwnerProofSystem, OnUnbalanced, Randomness,
+        StorageInfo,
+    },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         IdentityFee, Weight,
@@ -260,13 +266,80 @@ impl pallet_balances::Config for Runtime {
     type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 }
 
+pub struct AccountManagerCurrencyAdapter<C, OU>(sp_std::marker::PhantomData<(C, OU)>);
+
+impl<T, C, OU> pallet_transaction_payment::OnChargeTransaction<T>
+    for AccountManagerCurrencyAdapter<C, OU>
+where
+    T: pallet_transaction_payment::Config,
+    T::TransactionByteFee: frame_support::pallet_prelude::Get<<C as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance>,
+    C: frame_support::traits::Currency<<T as frame_system::Config>::AccountId>,
+    C::PositiveImbalance: Imbalance<
+        <C as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance,
+        Opposite = C::NegativeImbalance,
+    >,
+    C::NegativeImbalance: Imbalance<
+        <C as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance,
+        Opposite = C::PositiveImbalance,
+    >,
+    OU: OnUnbalanced<<C as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance>,
+{
+    type Balance =
+        <C as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance;
+    type LiquidityInfo = Option<pallet_account_manager::transaction::NegativeImbalanceOf<T, C>>;
+
+    fn withdraw_fee(
+        who: &T::AccountId,
+        call: &T::Call,
+        info: &sp_runtime::traits::DispatchInfoOf<T::Call>,
+        fee: Self::Balance,
+        tip: Self::Balance,
+    ) -> Result<Self::LiquidityInfo, frame_support::pallet_prelude::TransactionValidityError> {
+        <CurrencyAdapter<C, OU> as pallet_transaction_payment::OnChargeTransaction<T>>::withdraw_fee(
+            who, call, info, fee, tip,
+        )
+    }
+
+    fn correct_and_deposit_fee(
+        who: &T::AccountId,
+        dispatch_info: &sp_runtime::traits::DispatchInfoOf<T::Call>,
+        _post_info: &sp_runtime::traits::PostDispatchInfoOf<T::Call>,
+        corrected_fee: Self::Balance,
+        tip: Self::Balance,
+        already_withdrawn: Self::LiquidityInfo,
+    ) -> Result<(), frame_support::pallet_prelude::TransactionValidityError> {
+        if let Some(paid) = already_withdrawn {
+            // Calculate how much refund we should return
+            let refund_amount = paid.peek().saturating_sub(corrected_fee);
+            // refund to the the account that paid the fees. If this fails, the
+            // account might have dropped below the existential balance. In
+            // that case we don't refund anything.
+            let refund_imbalance = C::deposit_into_existing(who, refund_amount)
+                .unwrap_or_else(|_| C::PositiveImbalance::zero());
+            // merge the imbalance caused by paying the fees and refunding parts of it again.
+            let adjusted_paid = paid.offset(refund_imbalance).same().map_err(|_| {
+                frame_support::pallet_prelude::TransactionValidityError::Invalid(
+                    frame_support::pallet_prelude::InvalidTransaction::Payment,
+                )
+            })?;
+            // Call someone else to handle the imbalance (fee and tip separately)
+            let (tip, fee) = adjusted_paid.split(tip);
+            // TODO: check if call is to contracts or evm
+
+            // pallet_account_manager::ImbalanceBeneficiary::on_unbalanceds(Some(fee).into_iter().chain(Some(tip)));
+            // TODO: else
+            <OU as OnUnbalanced<<C as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance>>::on_unbalanceds(Some(fee).into_iter().chain(Some(tip)));
+        }
+        Ok(())
+    }
+}
 parameter_types! {
     pub const TransactionByteFee: Balance = 1;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
     type FeeMultiplierUpdate = ();
-    type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
+    type OnChargeTransaction = AccountManagerCurrencyAdapter<Balances, ()>;
     type OperationalFeeMultiplier = ConstU8<5>;
     type TransactionByteFee = TransactionByteFee;
     type WeightToFee = IdentityFee<Balance>;

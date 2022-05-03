@@ -1,9 +1,8 @@
 use crate::{BalanceOf, Config};
 use frame_support::traits::{Currency, Imbalance, OnUnbalanced, SameOrOther, TryDrop};
 
-pub type NegativeImbalanceOf<T> = <<T as Config>::Currency as Currency<
-    <T as frame_system::Config>::AccountId,
->>::NegativeImbalance;
+pub type NegativeImbalanceOf<T, C> =
+    <C as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
 
 pub type PositiveImbalanceOf<T> = <<T as Config>::Currency as Currency<
     <T as frame_system::Config>::AccountId,
@@ -13,7 +12,7 @@ pub struct ImbalanceToBeneficiary<T>(sp_std::marker::PhantomData<T>);
 
 pub struct ImbalanceBeneficiary<T: Config>(
     Option<<T as frame_system::Config>::AccountId>,
-    NegativeImbalanceOf<T>,
+    NegativeImbalanceOf<T, <T as Config>::Currency>,
 );
 
 impl<T: Config> Default for ImbalanceBeneficiary<T> {
@@ -32,7 +31,10 @@ impl<T: Config> Imbalance<BalanceOf<T>> for ImbalanceBeneficiary<T> {
     type Opposite = PositiveImbalanceOf<T>;
 
     fn zero() -> Self {
-        Self(None, NegativeImbalanceOf::<T>::zero())
+        Self(
+            None,
+            NegativeImbalanceOf::<T, <T as Config>::Currency>::zero(),
+        )
     }
 
     fn drop_zero(self) -> Result<(), Self> {
@@ -74,6 +76,7 @@ impl<T> OnUnbalanced<ImbalanceBeneficiary<T>> for ImbalanceToBeneficiary<T>
 where
     T: Config,
 {
+    // TODO: fix unwraps, these should never be None anyhow
     // this seems to be called for substrate-based transactions when there is a difference between pre dispatch
     // and post dispatch balances.
     fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = ImbalanceBeneficiary<T>>) {
@@ -94,35 +97,6 @@ where
         <T as Config>::Currency::resolve_creating(&beneficiary.unwrap(), fees);
     }
 }
-
-// // TODO: determine if positive imbalance is needed, this is for validator rewards, might fight with our inflation
-// impl<C> OnUnbalanced<PositiveImbalanceOf<C>> for DealWithImbalances<C>
-// where
-//     C: Config,
-// {
-//     // this seems to be called for substrate-based transactions when there is a difference between pre dispatch
-//     // and post dispatch balances.
-//     fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = PositiveImbalanceOf<C>>) {
-//         if let Some(fees) = fees_then_tips.next() {
-//             // Balances pallet automatically burns dropped Negative Imbalances by decreasing
-//             // total_supply accordingly
-//             // for fees, 80% are burned, 20% to the treasury
-//             // TODO: these fees need to be both configurable and used
-//             // let (_, to_treasury) = fees.ration(80, 20);
-//             // <pallet_treasury::Pallet<R> as OnUnbalanced<_>>::on_unbalanced(to_treasury);
-//         }
-//     }
-//
-//     //
-//     // // this is called from pallet_evm for Ethereum-based transactions
-//     // // (technically, it calls on_unbalanced, which calls this when non-zero)
-//     fn on_nonzero_unbalanced(amount: PositiveImbalanceOf<C>) {
-//         // Balances pallet automatically burns dropped Negative Imbalances by decreasing
-//         // total_supply accordingly
-//         // TODO: these fees need to be both configurable and used
-//         // let (_, to_treasury) = amount.ration(80, 20);
-//     }
-// }
 
 // pub struct AccountManagerCurrencyAdapter<C, OU>(sp_std::marker::PhantomData<(C, OU)>);
 //
