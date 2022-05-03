@@ -106,8 +106,9 @@ pub mod pallet {
     };
     use frame_system::pallet_prelude::*;
     use orml_traits::MultiCurrency;
+    use sp_std::borrow::ToOwned;
     use t3rn_primitives::{
-        circuit::{LocalTrigger, OnLocalTrigger},
+        circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
         circuit_portal::CircuitPortal,
         xdns::Xdns,
     };
@@ -356,9 +357,36 @@ pub mod pallet {
     }
 
     impl<T: Config> OnLocalTrigger<T> for Pallet<T> {
-        fn on_local_trigger(origin: OriginFor<T>, trigger: LocalTrigger<T>) -> DispatchResult {
+        fn load_local_state(
+            origin: &OriginFor<T>,
+            maybe_xtx_id: Option<T::Hash>,
+        ) -> Result<LocalStateExecutionView<T>, sp_runtime::DispatchError> {
+            let requester = Self::authorize(origin.to_owned(), CircuitRole::ContractAuthor)?;
+
+            let fresh_or_revoked_exec = match maybe_xtx_id {
+                Some(_xtx_id) => CircuitStatus::Ready,
+                None => CircuitStatus::Requested,
+            };
+
+            let mut local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
+                fresh_or_revoked_exec.clone(),
+                &requester,
+                Zero::zero(),
+                maybe_xtx_id,
+            )?;
+            Self::apply(&mut local_xtx_ctx, None, None)?;
+
+            Ok(LocalStateExecutionView::<T>::new(
+                local_xtx_ctx.xtx_id,
+                local_xtx_ctx.local_state.clone(),
+                local_xtx_ctx.xtx.steps_cnt.clone(),
+            ))
+        }
+
+        fn on_local_trigger(origin: &OriginFor<T>, trigger: LocalTrigger<T>) -> DispatchResult {
+            log::debug!(target: "runtime::circuit", "Handling on_local_trigger xtx: {:?}, contract: {:?}, side_effects: {:?}", trigger.maybe_xtx_id, trigger.contract, trigger.submitted_side_effects);
             // Authorize: Retrieve sender of the transaction.
-            let requester = Self::authorize(origin, CircuitRole::ContractAuthor)?;
+            let requester = Self::authorize(origin.to_owned(), CircuitRole::ContractAuthor)?;
 
             let fresh_or_revoked_exec = match trigger.maybe_xtx_id {
                 Some(_xtx_id) => CircuitStatus::Ready,
@@ -423,7 +451,7 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
         pub fn on_local_trigger(origin: OriginFor<T>, trigger: Vec<u8>) -> DispatchResult {
             <Self as OnLocalTrigger<T>>::on_local_trigger(
-                origin,
+                &origin,
                 LocalTrigger::<T>::decode(&mut &trigger[..])
                     .map_err(|_| Error::<T>::InsuranceBondNotRequired)?,
             )
@@ -1325,43 +1353,45 @@ impl<T: Config> Pallet<T> {
 
         match local_ctx.xtx.status {
             CircuitStatus::RevertTimedOut | CircuitStatus::Reverted => {
-                for fse in &local_ctx.full_side_effects[(current_step) as usize] {
-                    let encoded_4b_action: [u8; 4] =
-                        Decode::decode(&mut fse.input.encoded_action.encode().as_ref())
-                            .expect("Encoded Type was already validated before saving");
+                if let Some(outer) = local_ctx.full_side_effects.get(current_step as usize) {
+                    for fse in outer {
+                        let encoded_4b_action: [u8; 4] =
+                            Decode::decode(&mut fse.input.encoded_action.encode().as_ref())
+                                .expect("Encoded Type was already validated before saving");
 
-                    let confirmed = fse.confirmed.clone().unwrap_or(ConfirmedSideEffect {
-                        err: Some(ConfirmationOutcome::TimedOut),
-                        output: None,
-                        encoded_effect: vec![0],
-                        inclusion_proof: None,
-                        executioner: Self::account_id(),
-                        received_at: <frame_system::Pallet<T>>::block_number(),
-                        cost: None,
-                    });
-                    match fse.security_lvl {
-                        SecurityLvl::Optimistic => {
-                            let _ = Self::enact_insurance(
-                                local_ctx,
-                                &fse.input,
-                                InsuranceEnact::RefundBoth,
-                            )?;
-                        },
-                        SecurityLvl::Escrowed => {
-                            if fse.input.target == T::SelfGatewayId::get() {
-                                Escrow::<T>::revert(
-                                    &encoded_4b_action,
-                                    fse.input.encoded_args.clone(),
-                                    Self::account_id(),
-                                    confirmed.executioner.clone(),
-                                )
-                                .map_err(|_| {
-                                    Error::<T>::FatalErroredRevertSideEffectConfirmationAttempt
-                                })?
-                            }
-                            escrowed_to_confirm.push(fse.clone());
-                        },
-                        SecurityLvl::Dirty => {},
+                        let confirmed = fse.confirmed.clone().unwrap_or(ConfirmedSideEffect {
+                            err: Some(ConfirmationOutcome::TimedOut),
+                            output: None,
+                            encoded_effect: vec![0],
+                            inclusion_proof: None,
+                            executioner: Self::account_id(),
+                            received_at: <frame_system::Pallet<T>>::block_number(),
+                            cost: None,
+                        });
+                        match fse.security_lvl {
+                            SecurityLvl::Optimistic => {
+                                let _ = Self::enact_insurance(
+                                    local_ctx,
+                                    &fse.input,
+                                    InsuranceEnact::RefundBoth,
+                                )?;
+                            },
+                            SecurityLvl::Escrowed => {
+                                if fse.input.target == T::SelfGatewayId::get() {
+                                    Escrow::<T>::revert(
+                                        &encoded_4b_action,
+                                        fse.input.encoded_args.clone(),
+                                        Self::account_id(),
+                                        confirmed.executioner.clone(),
+                                    )
+                                    .map_err(|_| {
+                                        Error::<T>::FatalErroredRevertSideEffectConfirmationAttempt
+                                    })?
+                                }
+                                escrowed_to_confirm.push(fse.clone());
+                            },
+                            SecurityLvl::Dirty => {},
+                        }
                     }
                 }
             },

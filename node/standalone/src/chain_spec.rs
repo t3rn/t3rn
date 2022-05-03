@@ -5,11 +5,18 @@ use circuit_standalone_runtime::{
     MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, SystemConfig, XDNSConfig,
     WASM_BINARY,
 };
-
 use jsonrpc_runtime_client::{
     create_rpc_client, get_gtwy_init_data, get_metadata, ConnectionParams,
 };
-use sp_core::Encode;
+use sc_service::ChainType;
+use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+use sp_core::{sr25519, Encode, Pair, Public};
+use sp_finality_grandpa::AuthorityId as GrandpaId;
+use sp_runtime::traits::{IdentifyAccount, Verify};
+use std::{
+    convert::TryFrom,
+    io::{Error, ErrorKind},
+};
 use t3rn_primitives::{
     abi::Type,
     bridges::{
@@ -20,18 +27,6 @@ use t3rn_primitives::{
     xdns::XdnsRecord,
     ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor, Header,
 };
-
-use log::info;
-use std::{
-    convert::TryFrom,
-    io::{Error, ErrorKind},
-};
-
-use sc_service::ChainType;
-use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{sr25519, Pair, Public};
-use sp_finality_grandpa::AuthorityId as GrandpaId;
-use sp_runtime::traits::{IdentifyAccount, Verify};
 
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
