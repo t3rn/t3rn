@@ -1,4 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+#![feature(more_qualified_paths)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
@@ -271,7 +272,7 @@ pub struct AccountManagerCurrencyAdapter<C, OU>(sp_std::marker::PhantomData<(C, 
 impl<T, C, OU> pallet_transaction_payment::OnChargeTransaction<T>
     for AccountManagerCurrencyAdapter<C, OU>
 where
-    T: pallet_transaction_payment::Config,
+    T: pallet_transaction_payment::Config + pallet_account_manager::Config<Currency = C>,
     T::TransactionByteFee: frame_support::pallet_prelude::Get<<C as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance>,
     C: frame_support::traits::Currency<<T as frame_system::Config>::AccountId>,
     C::PositiveImbalance: Imbalance<
@@ -286,7 +287,7 @@ where
 {
     type Balance =
         <C as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance;
-    type LiquidityInfo = Option<pallet_account_manager::transaction::NegativeImbalanceOf<T, C>>;
+    type LiquidityInfo = (Option<<T as frame_system::Config>::AccountId>, Option<pallet_account_manager::transaction::NegativeImbalanceOf<T, C>>); // TODO: modify this to be (Account, Imbalance)
 
     fn withdraw_fee(
         who: &T::AccountId,
@@ -295,9 +296,20 @@ where
         fee: Self::Balance,
         tip: Self::Balance,
     ) -> Result<Self::LiquidityInfo, frame_support::pallet_prelude::TransactionValidityError> {
-        <CurrencyAdapter<C, OU> as pallet_transaction_payment::OnChargeTransaction<T>>::withdraw_fee(
-            who, call, info, fee, tip,
-        )
+        // let x = !matches!(
+		// 	call,
+		// 	<T as SysConfig>::Call::Contracts(pallet_3vm_contracts::Call::call { ..})
+		// );
+        // if let Call::Contracts(x) = call {
+        //     // TODO: EXTRACT AUTHOR
+        //     <CurrencyAdapter<C, OU> as pallet_transaction_payment::OnChargeTransaction<T>>::withdraw_fee(
+        //         who, call, info, fee, tip,
+        //     ).map(|info| (Some(who.clone()), info))
+        // } else {
+            <CurrencyAdapter<C, OU> as pallet_transaction_payment::OnChargeTransaction<T>>::withdraw_fee(
+                who, call, info, fee, tip,
+            ).map(|info| (None, info))
+        // }
     }
 
     fn correct_and_deposit_fee(
@@ -308,7 +320,7 @@ where
         tip: Self::Balance,
         already_withdrawn: Self::LiquidityInfo,
     ) -> Result<(), frame_support::pallet_prelude::TransactionValidityError> {
-        if let Some(paid) = already_withdrawn {
+        if let (beneficiary, Some(paid)) = already_withdrawn {
             // Calculate how much refund we should return
             let refund_amount = paid.peek().saturating_sub(corrected_fee);
             // refund to the the account that paid the fees. If this fails, the
@@ -322,13 +334,21 @@ where
                     frame_support::pallet_prelude::InvalidTransaction::Payment,
                 )
             })?;
+
             // Call someone else to handle the imbalance (fee and tip separately)
             let (tip, fee) = adjusted_paid.split(tip);
-            // TODO: check if call is to contracts or evm
 
-            // pallet_account_manager::ImbalanceBeneficiary::on_unbalanceds(Some(fee).into_iter().chain(Some(tip)));
-            // TODO: else
-            <OU as OnUnbalanced<<C as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance>>::on_unbalanceds(Some(fee).into_iter().chain(Some(tip)));
+            // Since there is a beneficiary, account-manager handles it
+            if let Some(beneficiary) = beneficiary {
+                let fee_with_tip = Some(fee).into_iter().chain(Some(tip));
+                let as_beneficiaries = fee_with_tip
+                    .map(|i| {
+                        pallet_account_manager::transaction::ImbalanceBeneficiary::<T, C>(Some(beneficiary.clone()), i)
+                    });
+                <pallet_account_manager::transaction::ImbalanceToBeneficiary<T> as OnUnbalanced<pallet_account_manager::transaction::ImbalanceBeneficiary<T, C>>>::on_unbalanceds(as_beneficiaries);
+            } else {
+                <OU as OnUnbalanced<<C as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance>>::on_unbalanceds(Some(fee).into_iter().chain(Some(tip)));
+            }
         }
         Ok(())
     }
@@ -392,7 +412,7 @@ construct_runtime!(
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
 
         // 3VM
-        Contracts: pallet_3vm_contracts = 119,
+        Contracts: pallet_3vm_contracts::{Pallet, Call, Storage, Event<T>} = 119,
         AccountManager: pallet_account_manager = 125,
     }
 );

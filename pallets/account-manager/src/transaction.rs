@@ -1,52 +1,53 @@
-use crate::{BalanceOf, Config};
+use crate::Config;
 use frame_support::traits::{Currency, Imbalance, OnUnbalanced, SameOrOther, TryDrop};
 
 pub type NegativeImbalanceOf<T, C> =
     <C as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
 
-pub type PositiveImbalanceOf<T> = <<T as Config>::Currency as Currency<
-    <T as frame_system::Config>::AccountId,
->>::PositiveImbalance;
+pub type PositiveImbalanceOf<T, C> =
+    <C as Currency<<T as frame_system::Config>::AccountId>>::PositiveImbalance;
+
+pub type BalanceForCurrency<T, C> =
+    <C as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 pub struct ImbalanceToBeneficiary<T>(sp_std::marker::PhantomData<T>);
 
-pub struct ImbalanceBeneficiary<T: Config>(
-    Option<<T as frame_system::Config>::AccountId>,
-    NegativeImbalanceOf<T, <T as Config>::Currency>,
+pub struct ImbalanceBeneficiary<T: frame_system::Config, C: Currency<T::AccountId>>(
+    pub Option<T::AccountId>,
+    pub NegativeImbalanceOf<T, C>,
 );
 
-impl<T: Config> Default for ImbalanceBeneficiary<T> {
+impl<T: frame_system::Config, C: Currency<T::AccountId>> Default for ImbalanceBeneficiary<T, C> {
     fn default() -> Self {
         Self(None, Default::default())
     }
 }
 
-impl<T: Config> TryDrop for ImbalanceBeneficiary<T> {
+impl<T: frame_system::Config, C: Currency<T::AccountId>> TryDrop for ImbalanceBeneficiary<T, C> {
     fn try_drop(self) -> Result<(), Self> {
         self.drop_zero()
     }
 }
 
-impl<T: Config> Imbalance<BalanceOf<T>> for ImbalanceBeneficiary<T> {
-    type Opposite = PositiveImbalanceOf<T>;
+impl<T: frame_system::Config, C: Currency<T::AccountId>> Imbalance<BalanceForCurrency<T, C>>
+    for ImbalanceBeneficiary<T, C>
+{
+    type Opposite = PositiveImbalanceOf<T, C>;
 
     fn zero() -> Self {
-        Self(
-            None,
-            NegativeImbalanceOf::<T, <T as Config>::Currency>::zero(),
-        )
+        Self(None, NegativeImbalanceOf::<T, C>::zero())
     }
 
     fn drop_zero(self) -> Result<(), Self> {
         self.1.drop_zero().map_err(|e| Self(self.0, e))
     }
 
-    fn split(self, amount: BalanceOf<T>) -> (Self, Self) {
+    fn split(self, amount: BalanceForCurrency<T, C>) -> (Self, Self) {
         let (first, second) = self.1.split(amount);
         (Self(self.0.clone(), first), Self(self.0.clone(), second))
     }
 
-    fn merge(mut self, other: Self) -> Self {
+    fn merge(self, other: Self) -> Self {
         Self(self.0, self.1.merge(other.1))
     }
 
@@ -66,20 +67,21 @@ impl<T: Config> Imbalance<BalanceOf<T>> for ImbalanceBeneficiary<T> {
         }
     }
 
-    fn peek(&self) -> BalanceOf<T> {
+    fn peek(&self) -> BalanceForCurrency<T, C> {
         self.1.peek()
     }
 }
 
 // For a negative imbalance, some account decreased due to either slashing or paying for a tx
-impl<T> OnUnbalanced<ImbalanceBeneficiary<T>> for ImbalanceToBeneficiary<T>
+impl<T, C> OnUnbalanced<ImbalanceBeneficiary<T, C>> for ImbalanceToBeneficiary<T>
 where
-    T: Config,
+    T: Config<Currency = C>,
+    C: Currency<T::AccountId>,
 {
     // TODO: fix unwraps, these should never be None anyhow
     // this seems to be called for substrate-based transactions when there is a difference between pre dispatch
     // and post dispatch balances.
-    fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = ImbalanceBeneficiary<T>>) {
+    fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = ImbalanceBeneficiary<T, C>>) {
         if let Some(beneficiary) = fees_then_tips.next() {
             let (beneficiary, fees) = (beneficiary.0, beneficiary.1);
             // Balances pallet automatically burns dropped Negative Imbalances by decreasing
@@ -92,7 +94,7 @@ where
 
     // this is called from pallet_evm for Ethereum-based transactions
     // (technically, it calls on_unbalanced, which calls this when non-zero)
-    fn on_nonzero_unbalanced(amount: ImbalanceBeneficiary<T>) {
+    fn on_nonzero_unbalanced(amount: ImbalanceBeneficiary<T, C>) {
         let (beneficiary, fees) = (amount.0, amount.1);
         <T as Config>::Currency::resolve_creating(&beneficiary.unwrap(), fees);
     }
