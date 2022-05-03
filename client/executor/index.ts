@@ -6,7 +6,11 @@ import config from "./config.json"
 import { SideEffect } from "./utils/types";
 import { ExecutionManager } from "./utils/executionManager";
 import chalk from 'chalk';
-import "dotenv/config"
+// import "dotenv/config"
+
+if (!process.env.SIGNER_KEY) {
+  throw Error("missing env var SIGNER_KEY")
+}
 
 class InstanceManager {
     circuitListener: CircuitListener;
