@@ -453,22 +453,26 @@ pub mod pallet {
             let requester = Self::authorize(origin, CircuitRole::Requester)?;
             // Charge: Ensure can afford
             Self::charge(&requester, fee)?;
-            log::debug!("on_extrinsic_trigger -- finished charged");
+            log::info!("on_extrinsic_trigger -- finished charged");
 
             // Setup: new xtx context
             let mut local_xtx_ctx: LocalXtxCtx<T> =
                 Self::setup(CircuitStatus::Requested, &requester, fee, None)?;
-            log::debug!(
+            log::info!(
                 "on_extrinsic_trigger -- finished setup -- xtx id {:?}",
                 local_xtx_ctx.xtx_id
             );
             // Validate: Side Effects
-            Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential)?;
-            log::debug!("on_extrinsic_trigger -- finished validate");
+            log::info!("validate following side effects {:?}", side_effects);
+            Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential).map_err(|e| {
+                log::info!("Self::validate hit an error -- {:?}", e);
+                Error::<T>::SideEffectsValidationFailed
+            })?;
+            log::info!("on_extrinsic_trigger -- finished validate");
 
             // Apply: all necessary changes to state in 1 go
             let (_, added_full_side_effects) = Self::apply(&mut local_xtx_ctx, None, None)?;
-            log::debug!("on_extrinsic_trigger -- finished apply");
+            log::info!("on_extrinsic_trigger -- finished apply");
 
             // Emit: From Circuit events
             Self::emit(
@@ -801,6 +805,7 @@ pub mod pallet {
         ChargingTransferFailed,
         RewardTransferFailed,
         RefundTransferFailed,
+        SideEffectsValidationFailed,
         InsuranceBondNotRequired,
         InsuranceBondAlreadyDeposited,
         SetupFailed,
@@ -1308,8 +1313,7 @@ impl<T: Config> Pallet<T> {
         let available_trn_balance = EscrowCurrencyOf::<T>::free_balance(requester);
         let new_balance = available_trn_balance.saturating_sub(fee);
         let vault: T::AccountId = Self::account_id();
-        EscrowCurrencyOf::<T>::transfer(requester, &vault, fee, AllowDeath)
-            .map_err(|_| Error::<T>::ChargingTransferFailed)?; // should not fail
+        EscrowCurrencyOf::<T>::transfer(requester, &vault, fee, AllowDeath);
         Ok(new_balance)
     }
 
@@ -1545,6 +1549,7 @@ impl<T: Config> Pallet<T> {
                 >(side_effect.clone(), &mut local_ctx.local_state)?
             {
                 let (insurance, reward) = (insurance_and_reward[0], insurance_and_reward[1]);
+                log::info!("circuit -- validation passed and discovered opt insurance {:?} reward {:?}", insurance, reward);
 
                 Self::charge(requester, reward)?;
 
