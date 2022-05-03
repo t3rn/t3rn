@@ -92,12 +92,15 @@ export class ExecutionManager extends EventEmitter {
     // checks which unconfirmed SideEffects can be executed on circuit
     // ToDo: This crime needs to be refactored
     executeQueue(gatewayId: string, blockHeight: number) { 
-
+        console.log("$$$ executeQueue")
         // filter and flatten SideEffects ready to be confirmed.
         let ready = Object.keys(this.queue[gatewayId].confirming).filter(block => {
             //in node object keys are always strings
             return parseInt(block) <= blockHeight
         })
+
+        console.log("ready sfx")
+        console.dir(ready)
 
         if(ready.length > 0) {
             let res: any[] = [];
