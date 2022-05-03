@@ -14,11 +14,6 @@ export default class SubstrateRelayer extends EventEmitter {
     // color: string;
     name: string;
 
-    log(msg: string) {
-        // console.log(chalk[this.color](this.name + " - "), msg)
-        console.log(this.name + " - ", msg)
-    }
-
     async setup(rpc: string, name: string, ) {//color: string) {
         this.rpc = rpc;
         this.api = await ApiPromise.create({
@@ -59,6 +54,7 @@ export default class SubstrateRelayer extends EventEmitter {
             const event = this.getEvent(sideEffect.transactionType, result.events);
 
             // should always be last event
+            console.dir(result.events.map(e => e.toHuman()),  { depth: null })
             const success = result.events[result.events.length - 1].event.method === "ExtrinsicSuccess";
             const inclusionProof = await getEventProofs(this.api, blockHeader);
 
@@ -71,7 +67,7 @@ export default class SubstrateRelayer extends EventEmitter {
                 success
             )
 
-            this.log(`SideEffect Executed: ${success}, ${blockHeader}`)
+            console.log(`SideEffect Executed: ${success}, ${blockHeader}`)
             // console.log(`Transaction finalized at blockHash ${blockHeader}`);
 
             this.emit("SideEffectExecuted", sideEffect.getId())
