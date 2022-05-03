@@ -7,7 +7,7 @@ export default class ParachainListener extends EventEmitter {
   static debug = createDebug("parachain-listener")
 
   api: ApiPromise
-  headers: HeaderListener
+  headerListener: HeaderListener
   gatewayId: string
   parachainId: number
   argumentKey: string
@@ -20,20 +20,20 @@ export default class ParachainListener extends EventEmitter {
       provider: new WsProvider(url),
     })
 
-    this.headers = await new HeaderListener()
-    await this.headers.setup(url, false)
-    this.headers.start()
+    this.headerListener = await new HeaderListener()
+    await this.headerListener.setup(url, false)
+    this.headerListener.start()
   }
 
   async finalize(anchorIndex: number) {
-    this.headers.finalize(anchorIndex)
+    this.headerListener.finalize(anchorIndex)
   }
 
   async submitHeaderRange(anchorHash: string) {
     ParachainListener.debug("anchorHash:", anchorHash)
     const anchorIndex = await this.findAnchorIndex(anchorHash)
     ParachainListener.debug("AnchorIndex:", anchorIndex)
-    let range = this.headers.headers.slice(0, anchorIndex + 1).reverse()
+    let range = this.headerListener.headers.slice(0, anchorIndex + 1).reverse()
 
     ParachainListener.debug(range)
     const anchorHeader = range.shift()
@@ -50,6 +50,10 @@ export default class ParachainListener extends EventEmitter {
   }
 
   async findAnchorIndex(anchorHash: string) {
-    return this.headers.headers.findIndex(h => h.hash.toHuman() === anchorHash)
+    ParachainListener.debug(`looking for anchor ${anchorHash} in ${this.headerListener.headers}`)
+    return this.headerListener.headers.findIndex(h => {
+      ParachainListener.debug("header hash", h.hash.toHuman(), "anchor hash", anchorHash)
+      return h.hash.toHuman() === anchorHash
+    })
   }
 }
