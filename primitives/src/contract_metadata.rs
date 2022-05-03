@@ -214,4 +214,8 @@ impl ContractMetadata {
             license,
         }
     }
+
+    pub fn get_contract_type(&self) -> ContractType {
+        ContractType::decode(&mut self.contract_type.as_slice()).unwrap()
+    }
 }
