@@ -1,4 +1,5 @@
 import { ApiPromise, WsProvider } from "@polkadot/api"
+import { BlockHash, Header } from '@polkadot/types/interfaces'
 import { createTestPairs } from "@polkadot/keyring/testingPairs"
 import createDebug from "debug"
 import types from "./types.json"
@@ -21,7 +22,7 @@ export default class Relayer extends EventEmitter {
   submitFinalityProof(
     gatewayId: string,
     justification: any,
-    anchorHeader: any,
+    anchorHeader: Header,
     anchorIndex: number
   ) {
     const submitFinalityProof =
@@ -50,7 +51,7 @@ export default class Relayer extends EventEmitter {
   // here we pass the anchorHash, instead of anchorIndex. We can use the hash to find the index of the anchor header for the parachain.
   async submitParachainHeader(
     gatewayId: string,
-    blockHash: any,
+    blockHash: BlockHash,
     proof: any,
     anchorNumber: number
   ) {
@@ -89,8 +90,8 @@ export default class Relayer extends EventEmitter {
 
   async submitHeaderRange(
     gatewayId: string,
-    range: any[],
-    anchorHeader: any,
+    range: Header[],
+    anchorHeader: Header,
     anchorIndex: number
   ) {
     const submitHeaderRange =
