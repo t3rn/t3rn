@@ -30,7 +30,7 @@ npm i @polkadot/api @polkadot/types
 node ./register_rococo_gateway.js
 
 ## run grandpa-ranger
-npm start --prefix ../grandpa-ranger
+npm start --prefix ../grandpa-ranger &
 
 ## run executor
-npm start --prefix ../executor
+npm start --prefix ../executor &

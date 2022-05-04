@@ -191,6 +191,7 @@ async function main() {
   console.log("registered roco gateway")
   await setOperational(circuit, ROCOCO_CHAIN_ID)
   console.log("roco gateway set operational")
+  circuit.disconnect()
 }
 
 main()
