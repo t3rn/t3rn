@@ -78,6 +78,63 @@ fn on_extrinsic_trigger_works_with_empty_side_effects() {
 }
 
 #[test]
+fn on_extrinsic_trigger_works_raw_insured_side_effect() {
+    let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
+
+    let side_effects = vec![SideEffect {
+        target: [0u8, 0u8, 0u8, 0u8],
+        prize: 1,
+        ordered_at: 0,
+        encoded_action: vec![116, 114, 97, 110],
+        encoded_args: vec![
+            vec![
+                53, 71, 114, 119, 118, 97, 69, 70, 53, 122, 88, 98, 50, 54, 70, 122, 57, 114, 99,
+                81, 112, 68, 87, 83, 53, 55, 67, 116, 69, 82, 72, 112, 78, 101, 104, 88, 67, 80,
+                99, 78, 111, 72, 71, 75, 117, 116, 81, 89,
+            ],
+            vec![
+                53, 68, 51, 51, 51, 101, 66, 98, 53, 86, 117, 103, 72, 105, 111, 70, 111, 85, 53,
+                110, 71, 77, 98, 85, 97, 82, 50, 117, 89, 99, 111, 121, 107, 53, 113, 90, 106, 57,
+                116, 88, 82, 65, 53, 101, 114, 115, 55, 65,
+            ],
+            vec![1, 0, 0, 0, 0, 0, 0, 0],
+            vec![
+                3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0,
+            ],
+        ],
+        signature: vec![],
+        enforce_executioner: Some(
+            [
+                53, 68, 51, 51, 51, 101, 66, 98, 53, 86, 117, 103, 72, 105, 111, 70, 111, 85, 53,
+                110, 71, 77, 98, 85, 97, 82, 50, 117, 89, 99, 111, 121,
+            ]
+            .into(),
+        ),
+    }];
+
+    let fee = 1;
+    let sequential = true;
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+
+            System::set_block_number(1);
+
+            assert_ok!(Circuit::on_extrinsic_trigger(
+                origin,
+                side_effects,
+                fee,
+                sequential,
+            ));
+        });
+}
+
+#[test]
 fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
@@ -160,7 +217,11 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                                 ],
                                 signature: vec![],
                                 enforce_executioner: None
-                            }]
+                            }],
+                            vec![hex!(
+                                "892b77ece9a2adf9f18fc8f0525579bbf312d6674da09899a54f864311a770f0"
+                            )
+                            .into(),],
                         )),
                         topics: vec![]
                     }
@@ -330,7 +391,11 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
                                 ],
                                 signature: vec![],
                                 enforce_executioner: None
-                            }]
+                            }],
+                            vec![hex!(
+                                "a72a1bfb371d270fe1f31e48d1723f360788426ab53a0b234e6c724e055875f5"
+                            )
+                            .into(),],
                         )),
                         topics: vec![]
                     }
