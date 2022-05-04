@@ -50,9 +50,16 @@ export default class ParachainListener extends EventEmitter {
   }
 
   async findAnchorIndex(anchorHash: string) {
-    ParachainListener.debug(`looking for anchor ${anchorHash} in ${this.headerListener.headers}`)
+    ParachainListener.debug(
+      `looking for anchor ${anchorHash} in ${this.headerListener.headers}`
+    )
     return this.headerListener.headers.findIndex(h => {
-      ParachainListener.debug("header hash", h.hash.toHuman(), "anchor hash", anchorHash)
+      ParachainListener.debug(
+        "header hash",
+        h.hash.toHuman(),
+        "anchor hash",
+        anchorHash
+      )
       return h.hash.toHuman() === anchorHash
     })
   }
