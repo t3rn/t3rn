@@ -104,7 +104,10 @@ impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode> Ki
     }
 
     fn has_storage(&self) -> bool {
-        todo!()
+        match self.meta.get_contract_type() {
+            ContractType::VanillaWasm | ContractType::VanillaEvm => true,
+            _ => false,
+        }
     }
 }
 
