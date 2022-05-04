@@ -51,6 +51,7 @@ export default class CircuitListener extends EventEmitter {
                     let all_side_effects: SideEffect[] = [];
 
                     for (let index = 0; index < event.data.length; index++) {
+                        console.log("TYPES.INDEX.TYPE", types[index].type)
                         switch (types[index].type) {
                             case 'AccountId32':
                                 sideEffect.setRequester(event.data[index]);
@@ -60,6 +61,7 @@ export default class CircuitListener extends EventEmitter {
                                 break;
                             case 'Vec<T3rnPrimitivesSideEffect>':
                                 (event.data[index] as any).forEach(element => {
+                                    console.log("SFX", element.toHuman())
                                     sideEffect.setSideEffect(element);
                                     all_side_effects.push(
                                       sideEffect
@@ -68,7 +70,9 @@ export default class CircuitListener extends EventEmitter {
                                 // sideEffect.setSideEffect(event.data[index][0]);
                                 break;
                             case 'Vec<H256>':
+                                console.log("EVENT.DATA[INDEX]", event.data[index]);
                                 (event.data[index] as any).forEach((element, cnt)=> {
+                                    console.log("SFX ID", element)
                                     all_side_effects[cnt].setId(element);
                                 });
                                 break;
