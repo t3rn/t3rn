@@ -81,14 +81,16 @@ class InstanceManager {
              
         })
 
-        this.circuitListener.on('NewSideEffect', async (sideEffect: SideEffect) => {
+        this.circuitListener.on('NewSideEffect', async (sideEffects: SideEffect[]) => {
             console.log('NewSideEffect')
-            if (!this.xtxSfxMap[sideEffect.xtxId]) {
-                this.xtxSfxMap[sideEffect.xtxId] = [sideEffect]
-            } else {
-                this.xtxSfxMap[sideEffect.xtxId].push(sideEffect) 
-            }
-            await this.circuitRelayer.maybeBondInsuranceDeposit(sideEffect)
+            sideEffects.forEach(async sideEffect => {
+                if (!this.xtxSfxMap[sideEffect.xtxId]) {
+                    this.xtxSfxMap[sideEffect.xtxId] = [sideEffect]
+                } else {
+                    this.xtxSfxMap[sideEffect.xtxId].push(sideEffect) 
+                }
+                await this.circuitRelayer.maybeBondInsuranceDeposit(sideEffect)
+            })
         })
 
         

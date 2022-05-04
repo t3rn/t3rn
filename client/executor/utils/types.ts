@@ -18,6 +18,7 @@ export class SideEffect {
     requester: any;
     executor: any;
     xtxId: any;
+    id: any;
     object: T3rnPrimitivesSideEffect;
     confirmedSideEffect: object;
 
@@ -76,8 +77,13 @@ export class SideEffect {
         this.confirmBlockHeader = blockHeader;
     }
 
+    setId(id: any) {
+        this.id = id;
+    }
+
     getId() {
-        return crypto.createHash('sha256').update(JSON.stringify(this.object)).digest('hex');
+        return this.id;
+        // return crypto.createHash('sha256').update(JSON.stringify(this.object)).digest('hex');
     }
 
     /// returns xtxId as string

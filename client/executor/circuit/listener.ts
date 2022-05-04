@@ -48,6 +48,8 @@ export default class CircuitListener extends EventEmitter {
                     const { event } = notification;
                     const types = event.typeDef;
                     let sideEffect = new SideEffect()
+                    let all_side_effects: SideEffect[] = [];
+
                     for (let index = 0; index < event.data.length; index++) {
                         switch (types[index].type) {
                             case 'AccountId32':
@@ -57,14 +59,25 @@ export default class CircuitListener extends EventEmitter {
                                 sideEffect.setXtxId(event.data[index]);
                                 break;
                             case 'Vec<T3rnPrimitivesSideEffect>':
-                                sideEffect.setSideEffect(event.data[index][0]);
+                                (event.data[index] as any).forEach(element => {
+                                    sideEffect.setSideEffect(element);
+                                    all_side_effects.push(
+                                      sideEffect
+                                    )
+                                });
+                                // sideEffect.setSideEffect(event.data[index][0]);
+                                break;
+                            case 'Vec<H256>':
+                                (event.data[index] as any).forEach((element, cnt)=> {
+                                    all_side_effects[cnt].setId(element);
+                                });
                                 break;
                         }
                     }
 
                     this.emit(
                         'NewSideEffect',
-                        sideEffect
+                        all_side_effects
                     )
                 } else if (notification.event.method === 'NewHeaderRangeAvailable') {
 
