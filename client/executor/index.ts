@@ -8,6 +8,10 @@ import { ExecutionManager } from "./utils/executionManager";
 import chalk from 'chalk';
 // import "dotenv/config"
 
+if (!process.env.SIGNER_KEY) {
+  throw Error("missing env var SIGNER_KEY")
+}
+
 class InstanceManager {
     circuitListener: CircuitListener;
     circuitRelayer: CircuitRelayer;
