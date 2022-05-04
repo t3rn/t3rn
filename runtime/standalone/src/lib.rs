@@ -28,6 +28,7 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 // A few exports that help ease life for downstream crates.
+use frame_support::traits::{Contains, IsSubType};
 pub use frame_support::{
     construct_runtime, parameter_types,
     traits::{
@@ -43,6 +44,7 @@ pub use frame_support::{
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::CurrencyAdapter;
+use sp_core::crypto::UncheckedFrom;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
@@ -274,6 +276,7 @@ impl<T, C, OU> pallet_transaction_payment::OnChargeTransaction<T>
 where
     T: pallet_transaction_payment::Config + pallet_account_manager::Config<Currency = C>,
     T::TransactionByteFee: frame_support::pallet_prelude::Get<<C as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance>,
+    <T as frame_system::Config>::Call: IsSubType<pallet_3vm_contracts::Call<Runtime>>,
     C: frame_support::traits::Currency<<T as frame_system::Config>::AccountId>,
     C::PositiveImbalance: Imbalance<
         <C as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance,
@@ -291,31 +294,29 @@ where
 
     fn withdraw_fee(
         who: &T::AccountId,
-        call: &T::Call,
-        info: &sp_runtime::traits::DispatchInfoOf<T::Call>,
+        call: &<T as frame_system::Config>::Call,
+        info: &sp_runtime::traits::DispatchInfoOf<<T as frame_system::Config>::Call>,
         fee: Self::Balance,
         tip: Self::Balance,
     ) -> Result<Self::LiquidityInfo, frame_support::pallet_prelude::TransactionValidityError> {
-        // let x = !matches!(
-		// 	call,
-		// 	<T as SysConfig>::Call::Contracts(pallet_3vm_contracts::Call::call { ..})
-		// );
-        // if let Call::Contracts(x) = call {
-        //     // TODO: EXTRACT AUTHOR
-        //     <CurrencyAdapter<C, OU> as pallet_transaction_payment::OnChargeTransaction<T>>::withdraw_fee(
-        //         who, call, info, fee, tip,
-        //     ).map(|info| (Some(who.clone()), info))
-        // } else {
+        let call: &<T as frame_system::Config>::Call = call;
+
+        if let Some(inner_call) = call.is_sub_type() {
+            // TODO: EXTRACT AUTHOR
+            <CurrencyAdapter<C, OU> as pallet_transaction_payment::OnChargeTransaction<T>>::withdraw_fee(
+                who, call, info, fee, tip,
+            ).map(|info| (Some(who.clone()), info))
+        } else {
             <CurrencyAdapter<C, OU> as pallet_transaction_payment::OnChargeTransaction<T>>::withdraw_fee(
                 who, call, info, fee, tip,
             ).map(|info| (None, info))
-        // }
+        }
     }
 
     fn correct_and_deposit_fee(
         who: &T::AccountId,
-        dispatch_info: &sp_runtime::traits::DispatchInfoOf<T::Call>,
-        _post_info: &sp_runtime::traits::PostDispatchInfoOf<T::Call>,
+        _dispatch_info: &sp_runtime::traits::DispatchInfoOf<<T as frame_system::Config>::Call>,
+        _post_info: &sp_runtime::traits::PostDispatchInfoOf<<T as frame_system::Config>::Call>,
         corrected_fee: Self::Balance,
         tip: Self::Balance,
         already_withdrawn: Self::LiquidityInfo,
@@ -412,7 +413,7 @@ construct_runtime!(
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
 
         // 3VM
-        Contracts: pallet_3vm_contracts::{Pallet, Call, Storage, Event<T>} = 119,
+        Contracts: pallet_3vm_contracts = 119,
         AccountManager: pallet_account_manager = 125,
     }
 );
