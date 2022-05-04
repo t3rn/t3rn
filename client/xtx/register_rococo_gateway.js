@@ -82,7 +82,7 @@ async function triggerRegister(circuit, params) {
 
   const registerGateway = await circuit.tx.circuitPortal.registerGateway(
     url,
-    String.from(CharCode(...target)),
+    String.fromCharCode(...target),
     null,
     createGatewayABIConfig(circuit, 32, 32, 32, 12, "Sr25519", "Blake2"),
     //GatewayVendor: 'Substrate' as rococo is substrate-based
