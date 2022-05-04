@@ -1,8 +1,8 @@
 #!/bin/bash
 
-SIGNER_KEY="${SIGNER_KEY:-$1}"
-if [[ -z "$SIGNER_KEY" ]]; then
-  echo "missing env var SIGNER_KEY" >&2
+EXECUTOR_KEY="${EXECUTOR_KEY:-$1}"
+if [[ -z "$EXECUTOR_KEY" ]]; then
+  echo "missing env var EXECUTOR_KEY" >&2
   exit 1
 fi
 
@@ -43,7 +43,7 @@ npm start --prefix ../grandpa-ranger &
 grandpa_ranger_pid=$!
 
 ## run executor
-SIGNER_KEY=$SIGNER_KEY npm start --prefix ../executor &
+SIGNER_KEY=$EXECUTOR_KEY npm start --prefix ../executor &
 executor_pid=$!
 
 echo -e "circuit pid: $circuit_pid\ngrandpa ranger pid: $grandpa_ranger_pid\nexecutor_pid: $executor_pid"
