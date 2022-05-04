@@ -1,30 +1,36 @@
 #!/bin/bash
-# extravaganza script
 
-set -x
+set -xEeu
 
-## build the custom justification decoder
-cargo build --release --manifest-path ./justification-decoder/Cargo.toml
+## build the custom justification decoder and standalone circuit
+cargo build \
+  --manifest-path ./justification-decoder/Cargo.toml \
+  --release
+cargo build \
+  --manifest-path ../../node/standalone/Cargo.toml \
+  --release
+
+## killall any leftover circuits
+killall circuit-standalone
 
 ## run standalone circuit
-SKIP_WASM_BUILD=1 cargo run \
+cargo run \
   --manifest-path ../../node/standalone/Cargo.toml \
+  --release \
   -- \
   --dev \
   --ws-port 9944 \
-  -lmulti-finality-verifier=debug,circuit-portal=debug \
-  &
+> /tmp/xtx-circuit.log 2>&1 &
 
-## register rococo gateway
-wd=$(pwd)
-tmp_dir=$(mktemp -d)
-cp $wd/register_rococo_gateway.js $tmp_dir/register_rococo_gateway.js
-cd $tmp_dir
+# await circuit ws rpc available
+tail -f /tmp/xtx-circuit.log | sed '/Listening for new connections on 127.0.0.1:9944/ q'
+
+## register rococo gateway on circuit
 npm i @polkadot/api @polkadot/types
-node $tmp_dir/register_rococo_gateway.js
-cd $wd
+node ./register_rococo_gateway.js
 
 ## run grandpa-ranger
-
+npm start --prefix ../grandpa-ranger
 
 ## run executor
+npm start --prefix ../executor
