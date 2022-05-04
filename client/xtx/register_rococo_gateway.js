@@ -164,7 +164,7 @@ async function register(circuit, target) {
   })
 }
 
-async function gatewayRegistered(circuit) {
+async function registered(circuit) {
   return Promise.race([
     new Promise((resolve, _reject) => {
       circuit.query.system.events(notifications => {
@@ -187,11 +187,11 @@ async function main() {
     types,
   })
   await register(circuit, ROCOCO_CHAIN_ID)
-  await gatewayRegistered(circuit)
-  console.log("registered roco gateway")
+  await registered(circuit)
   await setOperational(circuit, ROCOCO_CHAIN_ID)
-  console.log("roco gateway set operational")
+  console.log("roco gtwy registered and operational")
   circuit.disconnect()
+  process.exit(0)
 }
 
 main()
