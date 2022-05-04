@@ -39,20 +39,22 @@ cargo run \
 > /tmp/xtx-circuit.log 2>&1 &
 circuit_pid=$!
 
-# await circuit ws rpc available
+## await circuit ws rpc available
 tail -f /tmp/xtx-circuit.log | sed '/Listening for new connections on 127.0.0.1:9944/ q'
 
-## register rococo gateway on circuit
+## pull all node modules
 npm i @polkadot/api @polkadot/types
+npm install --prefix ../grandpa-ranger
+npm install --prefix ../executor
+
+## register rococo gateway on circuit
 node ./register_rococo_gateway.js
 
 ## run grandpa-ranger
-npm install --prefix ../grandpa-ranger
 npm start --prefix ../grandpa-ranger &
 grandpa_ranger_pid=$!
 
 ## run executor
-npm install --prefix ../executor
 SIGNER_KEY=$EXECUTOR_KEY npm start --prefix ../executor &
 executor_pid=$!
 
