@@ -21,6 +21,7 @@ cargo run \
   --dev \
   --ws-port 9944 \
 > /tmp/xtx-circuit.log 2>&1 &
+circuit_pid=$!
 
 # await circuit ws rpc available
 tail -f /tmp/xtx-circuit.log | sed '/Listening for new connections on 127.0.0.1:9944/ q'
@@ -31,6 +32,10 @@ node ./register_rococo_gateway.js
 
 ## run grandpa-ranger
 npm start --prefix ../grandpa-ranger &
+grandpa_ranger_pid=$!
 
 ## run executor
 npm start --prefix ../executor &
+executor_pid=$!
+
+echo -e "circuit pid: $circuit_pid\ngrandpa ranger pid: $grandpa_ranger_pid\nexecutor_pid: $executor_pid"
