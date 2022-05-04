@@ -35,14 +35,14 @@ export default class CircuitRelayer extends EventEmitter {
 
     async maybeBondInsuranceDeposit(sideEffect: SideEffect) {
         // const args = decodeSfxArgs(sideEffect)
-        console.log("maybeBond")
+        console.log("maybeBondInsuranceDeposits")
 
         if (sideEffect.object.encodedArgs.length === 4) {
-            console.log("binanza party")
+            console.log("bonding insurance deposit...")
             await this.api.tx.circuit
-            .bondInsuranceDeposit(sideEffect.xtxId, sideEffect.getId())
+            .bondInsuranceDeposit(sideEffect.xtxId, sideEffect.getId()) 
             .signAndSend(this.signer, result => {
-                console.log("binanza afterparty",result.toHuman())
+                console.log("bond insurance deposit:", result.toHuman())
             })  
         }
     }
