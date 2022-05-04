@@ -8,6 +8,14 @@ fi
 
 set -xEeu
 
+cleanup(){
+  kill $circuit_pid
+  kill $grandpa_ranger_pid
+  kill $executor_pid
+}
+
+trap 'cleanup' EXIT
+
 ## build the custom justification decoder and standalone circuit
 cargo build \
   --manifest-path ./justification-decoder/Cargo.toml \
@@ -47,3 +55,5 @@ SIGNER_KEY=$EXECUTOR_KEY npm start --prefix ../executor &
 executor_pid=$!
 
 echo -e "circuit pid: $circuit_pid\ngrandpa ranger pid: $grandpa_ranger_pid\nexecutor_pid: $executor_pid"
+
+tail -f /tmp/xtx-circuit.log
