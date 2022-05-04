@@ -472,8 +472,9 @@ pub mod pallet {
 
             // Apply: all necessary changes to state in 1 go
             let (_, added_full_side_effects) = Self::apply(&mut local_xtx_ctx, None, None)?;
-            log::info!("on_extrinsic_trigger -- finished apply");
+            log::info!("on_extrinsic_trigger -- finished apply ");
 
+            
             // Emit: From Circuit events
             Self::emit(
                 local_xtx_ctx.xtx_id,
@@ -495,6 +496,7 @@ pub mod pallet {
             // Authorize: Retrieve sender of the transaction.
             let relayer = Self::authorize(origin, CircuitRole::Relayer)?;
 
+            log::info!("bond insurance deposit -- start -- xtx id {:?} + se id {:?}", xtx_id, side_effect_id);
             // Setup: retrieve local xtx context
             let mut local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
                 CircuitStatus::PendingInsurance,
@@ -503,6 +505,7 @@ pub mod pallet {
                 Some(xtx_id),
             )?;
 
+            log::info!("bond insurance deposit -- setup finished");
             let (maybe_xtx_changed, _) = if let Some((_id, insurance_deposit)) = local_xtx_ctx
                 .insurance_deposits
                 .iter_mut()
@@ -510,6 +513,7 @@ pub mod pallet {
             {
                 Self::charge(&relayer, insurance_deposit.insurance)?;
 
+                log::info!("bond insurance deposit -- charged");
                 insurance_deposit.bonded_relayer = Some(relayer.clone());
                 // ToDo: Consider removing status from insurance_deposit since redundant with relayer: Option<Relayer>
                 insurance_deposit.status = CircuitStatus::Bonded;
@@ -525,6 +529,7 @@ pub mod pallet {
                 Err(Error::<T>::InsuranceBondNotRequired)
             }?;
 
+            log::info!("bond insurance deposit -- applied");
             // Emit: From Circuit events
             Self::emit(
                 local_xtx_ctx.xtx_id,
@@ -1273,6 +1278,15 @@ impl<T: Config> Pallet<T> {
             >,
         >,
     ) {
+
+        if !side_effects.is_empty() {
+            Self::deposit_event(Event::NewSideEffectsAvailable(
+                subjected_account.clone(),
+                xtx_id,
+                // ToDo: Emit circuit outbound messages -> side effects
+                side_effects.to_vec(),
+            ));
+        }
         if let Some(xtx) = maybe_xtx {
             match xtx.status {
                 CircuitStatus::PendingInsurance =>
@@ -1292,14 +1306,6 @@ impl<T: Config> Pallet<T> {
                     Self::deposit_event(Event::SideEffectsConfirmed(xtx_id, full_side_effects));
                 }
             }
-        }
-        if !side_effects.is_empty() {
-            Self::deposit_event(Event::NewSideEffectsAvailable(
-                subjected_account.clone(),
-                xtx_id,
-                // ToDo: Emit circuit outbound messages -> side effects
-                side_effects.to_vec(),
-            ));
         }
     }
 
@@ -1554,6 +1560,7 @@ impl<T: Config> Pallet<T> {
                 let (insurance, reward) = (insurance_and_reward[0], insurance_and_reward[1]);
                 log::info!("circuit -- validation passed and discovered opt insurance {:?} reward {:?}", insurance, reward);
 
+                log::info!("circuit -- for side effect id {:?}", side_effect.generate_id::<SystemHashing<T>>());
                 Self::charge(requester, reward)?;
 
                 local_ctx.insurance_deposits.push((

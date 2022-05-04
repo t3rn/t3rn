@@ -19,8 +19,7 @@ cargo build \
   --manifest-path ./justification-decoder/Cargo.toml \
   --release
 cargo build \
-  --manifest-path ../../node/standalone/Cargo.toml \
-  --release
+  --manifest-path ../../node/standalone/Cargo.toml
 
 ## pull all node modules
 [ ! -O /usr/local/bin ] && SUDO_MAYBE=sudo
@@ -37,7 +36,6 @@ set -e
 ## run standalone circuit
 ttab -w -a $TERM_NAME exec cargo run \
   --manifest-path ../../node/standalone/Cargo.toml \
-  --release \
   -- \
   --dev \
   --ws-port 9944 \

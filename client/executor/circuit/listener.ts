@@ -17,7 +17,34 @@ export default class CircuitListener extends EventEmitter {
     async start() {
         this.api.query.system.events((notifications) => {
             notifications.forEach(notification => {
-                if (notification.event.method === 'NewSideEffectsAvailable') {
+
+
+                if (notification.event.method === 'XTransactionReadyForExec') {
+                    const { event } = notification;
+                    const types = event.typeDef;
+                    let sideEffect = new SideEffect()
+                    let xtxId 
+                    for (let index = 0; index < event.data.length; index++) {
+                        switch (types[index].type) {
+                            // case 'AccountId32':
+                            //     sideEffect.setRequester(event.data[index]);
+                            //     break;
+                            case 'H256':
+                                xtxId = event.data[index];
+                                break;
+                            // case 'Vec<T3rnPrimitivesSideEffect>':
+                            //     sideEffect.setSideEffect(event.data[index][0]);
+                                // break;
+                        }
+                    }
+
+                    this.emit(
+                        'XTransactionReadyForExec',
+                        xtxId,
+                    )
+                }
+
+                else if (notification.event.method === 'NewSideEffectsAvailable') {
                     const { event } = notification;
                     const types = event.typeDef;
                     let sideEffect = new SideEffect()
