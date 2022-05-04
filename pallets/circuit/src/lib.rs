@@ -464,10 +464,12 @@ pub mod pallet {
             );
             // Validate: Side Effects
             log::info!("validate following side effects {:?}", side_effects);
-            Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential).map_err(|e| {
-                log::info!("Self::validate hit an error -- {:?}", e);
-                Error::<T>::SideEffectsValidationFailed
-            })?;
+            Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential).map_err(
+                |e| {
+                    log::info!("Self::validate hit an error -- {:?}", e);
+                    Error::<T>::SideEffectsValidationFailed
+                },
+            )?;
             log::info!("on_extrinsic_trigger -- finished validate");
 
             // Apply: all necessary changes to state in 1 go
@@ -770,6 +772,7 @@ pub mod pallet {
                     EscrowedBalanceOf<T, T::Escrowed>,
                 >,
             >,
+            Vec<SideEffectId<T>>,
         ),
         // Listeners - executioners/relayers to know that certain SideEffects are no longer valid
         // ToDo: Implement Xtx timeout!
@@ -1307,6 +1310,18 @@ impl<T: Config> Pallet<T> {
                 }
             }
         }
+        if !side_effects.is_empty() {
+            Self::deposit_event(Event::NewSideEffectsAvailable(
+                subjected_account.clone(),
+                xtx_id,
+                // ToDo: Emit circuit outbound messages -> side effects
+                side_effects.to_vec(),
+                side_effects
+                    .iter()
+                    .map(|se| se.generate_id::<SystemHashing<T>>())
+                    .collect::<Vec<SideEffectId<T>>>(),
+            ));
+        }
     }
 
     fn kill(local_ctx: &mut LocalXtxCtx<T>, cause: CircuitStatus) {
@@ -1322,7 +1337,8 @@ impl<T: Config> Pallet<T> {
         let available_trn_balance = EscrowCurrencyOf::<T>::free_balance(requester);
         let new_balance = available_trn_balance.saturating_sub(fee);
         let vault: T::AccountId = Self::account_id();
-        EscrowCurrencyOf::<T>::transfer(requester, &vault, fee, AllowDeath);
+        EscrowCurrencyOf::<T>::transfer(requester, &vault, fee, AllowDeath)
+            .map_err(|_| Error::<T>::ChargingTransferFailed)?; // should not fail
         Ok(new_balance)
     }
 
@@ -1538,6 +1554,8 @@ impl<T: Config> Pallet<T> {
             let allowed_side_effects =
                 <T as Config>::Xdns::allowed_side_effects(&side_effect.target);
 
+            println!("validate -- prize decoded {:?}", side_effect.prize.clone());
+            println!("validate -- prize encode {:?}", side_effect.prize.encode());
             local_ctx
                 .use_protocol
                 .notice_gateway(side_effect.target, allowed_side_effects);
@@ -1558,7 +1576,11 @@ impl<T: Config> Pallet<T> {
                 >(side_effect.clone(), &mut local_ctx.local_state)?
             {
                 let (insurance, reward) = (insurance_and_reward[0], insurance_and_reward[1]);
-                log::info!("circuit -- validation passed and discovered opt insurance {:?} reward {:?}", insurance, reward);
+                log::info!(
+                    "circuit -- validation passed and discovered opt insurance {:?} reward {:?}",
+                    insurance,
+                    reward
+                );
 
                 log::info!("circuit -- for side effect id {:?}", side_effect.generate_id::<SystemHashing<T>>());
                 Self::charge(requester, reward)?;
