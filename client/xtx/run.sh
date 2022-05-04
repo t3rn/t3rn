@@ -47,10 +47,12 @@ npm i @polkadot/api @polkadot/types
 node ./register_rococo_gateway.js
 
 ## run grandpa-ranger
+npm install --prefix ../grandpa-ranger
 npm start --prefix ../grandpa-ranger &
 grandpa_ranger_pid=$!
 
 ## run executor
+npm install --prefix ../executor
 SIGNER_KEY=$EXECUTOR_KEY npm start --prefix ../executor &
 executor_pid=$!
 
