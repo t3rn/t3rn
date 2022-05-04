@@ -85,14 +85,14 @@ impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode> Ki
     fn can_instantiate(&self) -> bool {
         match self.meta.get_contract_type() {
             ContractType::System => false,
-            _ => false,
+            _ => true,
         }
     }
 
     fn can_generate_side_effects(&self) -> bool {
         match self.meta.get_contract_type() {
             ContractType::VanillaWasm | ContractType::VanillaEvm => false,
-            _ => false,
+            _ => true,
         }
     }
 
