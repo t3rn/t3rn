@@ -1,14 +1,12 @@
 #!/bin/bash
 
-set -xEe
-
 SIGNER_KEY="${SIGNER_KEY:-$1}"
 if [[ -z "$SIGNER_KEY" ]]; then
   echo "missing env var SIGNER_KEY" >&2
   exit 1
 fi
 
-set -u
+set -xEeu
 
 ## build the custom justification decoder and standalone circuit
 cargo build \
