@@ -6,15 +6,13 @@ if [[ -z "$EXECUTOR_KEY" ]]; then
   exit 1
 fi
 
+if [ "$(uname)" == "Darwin" ]; then
+    TERM_NAME=iTerm
+else
+    TERM_NAME=gnome-terminal
+fi
+
 set -xEeu
-
-cleanup(){
-  kill $circuit_pid
-  kill $grandpa_ranger_pid
-  kill $executor_pid
-}
-
-trap 'cleanup' EXIT
 
 ## build the custom justification decoder and standalone circuit
 cargo build \
@@ -24,40 +22,32 @@ cargo build \
   --manifest-path ../../node/standalone/Cargo.toml \
   --release
 
-## killall leftover circuits - if any
+## pull all node modules
+[ ! -O /usr/local/bin ] && SUDO_MAYBE=sudo
+$SUDO_MAYBE npm i -g ttab
+npm i @polkadot/api @polkadot/types
+npm install --prefix ../grandpa-ranger
+npm install --prefix ../executor
+
+## killall leftover circuits and nodes - if any
 set +e
-killall circuit-standalone
+killall circuit-standalone node
 set -e
 
 ## run standalone circuit
-cargo run \
+ttab -w -a $TERM_NAME exec cargo run \
   --manifest-path ../../node/standalone/Cargo.toml \
   --release \
   -- \
   --dev \
   --ws-port 9944 \
-> /tmp/xtx-circuit.log 2>&1 &
-circuit_pid=$!
-
-## await circuit ws rpc available
-tail -f /tmp/xtx-circuit.log | sed '/Listening for new connections on 127.0.0.1:9944/ q'
-
-## pull all node modules
-npm i @polkadot/api @polkadot/types
-npm install --prefix ../grandpa-ranger
-npm install --prefix ../executor
+> /tmp/xtx-circuit.log
 
 ## register rococo gateway on circuit
 node ./register_rococo_gateway.js
 
 ## run grandpa-ranger
-npm start --prefix ../grandpa-ranger &
-grandpa_ranger_pid=$!
+ttab -w -a $TERM_NAME exec npm start --prefix ../grandpa-ranger
 
 ## run executor
-SIGNER_KEY=$EXECUTOR_KEY npm start --prefix ../executor &
-executor_pid=$!
-
-echo -e "circuit pid: $circuit_pid\ngrandpa ranger pid: $grandpa_ranger_pid\nexecutor_pid: $executor_pid"
-
-tail -f /tmp/xtx-circuit.log
+SIGNER_KEY=$EXECUTOR_KEY npm start --prefix ../executor
