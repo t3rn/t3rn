@@ -10,8 +10,10 @@ cargo build \
   --manifest-path ../../node/standalone/Cargo.toml \
   --release
 
-## killall any leftover circuits
+## killall leftover circuits - if any
+set +e
 killall circuit-standalone
+set -e
 
 ## run standalone circuit
 cargo run \
