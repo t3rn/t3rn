@@ -1,0 +1,9 @@
+node_modules
+.DS_Store
+# Added by cargo
+
+/target
+
+
+rust_decode/target
+rust_decode/.idea

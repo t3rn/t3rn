@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "Node",
+    "skipLibCheck": true,
+    "target": "es2015",
+  },
+  "include": ["src/**/*.ts",]
+}

@@ -1,0 +1,19 @@
+{
+  "dependencies": {
+    "@polkadot/api": "=7.9.1",
+    "@polkadot/keyring": "^8.6.1",
+    "@polkadot/util": "^9.0.1",
+    "@polkadot/util-crypto": "^9.0.1",
+    "bn.js": "^5.2.0",
+    "dotenv": "^16.0.0",
+    "ts-node": "^10.7.0"
+  },
+  "scripts": {
+    "relay": "ts-node index.ts register_relay",
+    "transfer": "ts-node index.ts submit_transfer",
+    "transfer-optimistic": "ts-node index.ts submit_optimistic_transfer",
+    "parachain": "ts-node index.ts register_parachain",
+    "header": "ts-node index.ts submit_para_header",
+    "submit": "ts-node index.ts submit_finality_proof"
+  }
+}
