@@ -41,6 +41,8 @@ ttab -w -a $TERM_NAME exec cargo run \
   -- \
   --dev \
   --ws-port 9944 \
+  --unsafe-ws-external \
+  --rpc-cors all \
 > /tmp/xtx-circuit.log
 
 ## register rococo gateway on circuit
