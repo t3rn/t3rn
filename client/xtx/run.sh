@@ -1,6 +1,14 @@
 #!/bin/bash
 
-set -xEeu
+set -xEe
+
+SIGNER_KEY="${SIGNER_KEY:-$1}"
+if [[ -z "$SIGNER_KEY" ]]; then
+  echo "missing env var SIGNER_KEY" >&2
+  exit 1
+fi
+
+set -u
 
 ## build the custom justification decoder and standalone circuit
 cargo build \
@@ -37,7 +45,7 @@ npm start --prefix ../grandpa-ranger &
 grandpa_ranger_pid=$!
 
 ## run executor
-npm start --prefix ../executor &
+SIGNER_KEY=$SIGNER_KEY npm start --prefix ../executor &
 executor_pid=$!
 
 echo -e "circuit pid: $circuit_pid\ngrandpa ranger pid: $grandpa_ranger_pid\nexecutor_pid: $executor_pid"
