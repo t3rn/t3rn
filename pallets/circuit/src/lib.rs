@@ -1273,6 +1273,18 @@ impl<T: Config> Pallet<T> {
             >,
         >,
     ) {
+        if !side_effects.is_empty() {
+            Self::deposit_event(Event::NewSideEffectsAvailable(
+                subjected_account.clone(),
+                xtx_id,
+                // ToDo: Emit circuit outbound messages -> side effects
+                side_effects.to_vec(),
+                side_effects
+                    .iter()
+                    .map(|se| se.generate_id::<SystemHashing<T>>())
+                    .collect::<Vec<SideEffectId<T>>>(),
+            ));
+        }
         if let Some(xtx) = maybe_xtx {
             match xtx.status {
                 CircuitStatus::PendingInsurance =>
@@ -1292,18 +1304,6 @@ impl<T: Config> Pallet<T> {
                     Self::deposit_event(Event::SideEffectsConfirmed(xtx_id, full_side_effects));
                 }
             }
-        }
-        if !side_effects.is_empty() {
-            Self::deposit_event(Event::NewSideEffectsAvailable(
-                subjected_account.clone(),
-                xtx_id,
-                // ToDo: Emit circuit outbound messages -> side effects
-                side_effects.to_vec(),
-                side_effects
-                    .iter()
-                    .map(|se| se.generate_id::<SystemHashing<T>>())
-                    .collect::<Vec<SideEffectId<T>>>(),
-            ));
         }
     }
 
