@@ -221,7 +221,7 @@ impl ContractMetadata {
             Err(_) => {
                 log::debug!("Failed to decode contract type, defaulting to System");
                 ContractType::System
-            }
+            },
         }
     }
 }
