@@ -216,6 +216,12 @@ impl ContractMetadata {
     }
 
     pub fn get_contract_type(&self) -> ContractType {
-        ContractType::decode(&mut self.contract_type.as_slice()).unwrap()
+        match ContractType::decode(&mut self.contract_type.as_slice()) {
+            Ok(contract_type) => contract_type,
+            Err(_) => {
+                log::debug!("Failed to decode contract type, defaulting to System");
+                ContractType::System
+            }
+        }
     }
 }
