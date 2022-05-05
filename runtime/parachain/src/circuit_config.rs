@@ -66,8 +66,8 @@ impl pallet_circuit::Config for Runtime {
     type SelfGatewayId = SelfGatewayId;
     type WeightInfo = ();
     type Xdns = XDNS;
-    type XtxTimeoutCheckInterval = ConstU32<10>;
-    type XtxTimeoutDefault = ConstU32<100>;
+    type XtxTimeoutCheckInterval = ConstU32<50>;
+    type XtxTimeoutDefault = ConstU32<400>;
 }
 
 parameter_types! {
