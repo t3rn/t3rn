@@ -1210,14 +1210,8 @@ impl<T: Config> Pallet<T> {
                     .clone()
                     .iter()
                     .filter(|&fse| fse.confirmed.is_none())
-                    .collect::<Vec<
-                        &FullSideEffect<
-                            T::AccountId,
-                            T::BlockNumber,
-                            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-                        >,
-                    >>()
-                    .is_empty()
+                    .next()
+                    .is_none()
                 {
                     local_ctx.xtx.steps_cnt =
                         (local_ctx.xtx.steps_cnt.0 + 1, local_ctx.xtx.steps_cnt.1);
@@ -1269,10 +1263,10 @@ impl<T: Config> Pallet<T> {
                         Ok((None, Some(local_ctx.full_side_effects.to_vec())))
                     }
                 } else {
-                    return Err(Error::<T>::ApplyTriggeredWithUnexpectedStatus)
+                    Err(Error::<T>::ApplyTriggeredWithUnexpectedStatus)
                 }
             },
-            _ => return Err(Error::<T>::ApplyTriggeredWithUnexpectedStatus),
+            _ => Err(Error::<T>::ApplyTriggeredWithUnexpectedStatus),
         }
     }
 
