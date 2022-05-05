@@ -929,7 +929,6 @@ mod tests {
     use codec::Encode;
     use frame_support::{assert_err, assert_noop, assert_ok, weights::PostDispatchInfo};
     use sp_runtime::{Digest, DigestItem, DispatchError};
-    use std::alloc::System;
 
     use t3rn_primitives::{
         bridges::test_utils as bp_test_utils, GatewaySysProps, GatewayType, GatewayVendor,

@@ -20,7 +20,7 @@
 use frame_support::{construct_runtime, parameter_types, traits::Everything, weights::Weight};
 use sp_runtime::{
     testing::{Header, H256},
-    traits::{BlakeTwo256, IdentityLookup},
+    traits::{BlakeTwo256, Convert, IdentityLookup},
     Perbill,
 };
 use t3rn_primitives::bridges::runtime::Chain;
@@ -50,6 +50,7 @@ construct_runtime! {
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
+        Portal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>},
     }
 }
 
@@ -86,6 +87,36 @@ impl frame_system::Config for TestRuntime {
     type SystemWeightInfo = ();
     type Version = ();
 }
+
+// Portal start
+use t3rn_protocol::side_effects::confirm::ethereum::EthereumMockVerifier;
+
+parameter_types! {
+    pub const ExecPalletId: frame_support::PalletId = frame_support::PalletId(*b"pal/exec");
+}
+
+pub struct AccountId32Converter;
+impl Convert<AccountId, [u8; 32]> for AccountId32Converter {
+    fn convert(account_id: AccountId) -> [u8; 32] {
+        let mut acc_32b: [u8; 32] = Default::default();
+        acc_32b[0] = account_id as u8;
+        acc_32b
+    }
+}
+
+impl pallet_circuit_portal::Config for TestRuntime {
+    type AccountId32Converter = AccountId32Converter;
+    type Balances = Balances;
+    type Call = Call;
+    type Escrowed = Self;
+    type EthVerifier = EthereumMockVerifier;
+    type Event = Event;
+    type PalletId = ExecPalletId;
+    type WeightInfo = ();
+    type Xdns = XDNS;
+}
+
+// Portal end
 
 parameter_types! {
     pub const MinimumPeriod: u64 = 1;
@@ -142,6 +173,7 @@ impl pallet_xdns::Config for TestRuntime {
 
 impl multi_finality_verifier::Config for TestRuntime {
     type BridgedChain = TestCircuitLikeChain;
+    type CircuitPortal = Portal;
     type Escrowed = TestRuntime;
     type Event = Event;
     type HeadersToKeep = HeadersToKeep;
@@ -153,6 +185,7 @@ impl multi_finality_verifier::Config for TestRuntime {
 pub type PolkadotLikeFinalityVerifierInstance = multi_finality_verifier::Instance1;
 impl multi_finality_verifier::Config<PolkadotLikeFinalityVerifierInstance> for TestRuntime {
     type BridgedChain = PolkadotLike;
+    type CircuitPortal = Portal;
     type Escrowed = TestRuntime;
     type Event = Event;
     type HeadersToKeep = HeadersToKeep;

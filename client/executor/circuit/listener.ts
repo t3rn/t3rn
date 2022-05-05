@@ -3,6 +3,7 @@ import { EventEmitter } from 'events'
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { SideEffect } from '../utils/types';
 import { TextDecoder } from 'util';
+import {u8aToHex} from "@polkadot/util";
 
 export default class CircuitListener extends EventEmitter {
 
@@ -47,8 +48,8 @@ export default class CircuitListener extends EventEmitter {
                 else if (notification.event.method === 'NewSideEffectsAvailable') {
                     const { event } = notification;
                     const types = event.typeDef;
-                    let sideEffect = new SideEffect()
                     let all_side_effects: SideEffect[] = [];
+                    let sideEffect = new SideEffect()
 
                     for (let index = 0; index < event.data.length; index++) {
                         console.log("TYPES.INDEX.TYPE", types[index].type)
@@ -62,22 +63,28 @@ export default class CircuitListener extends EventEmitter {
                             case 'Vec<T3rnPrimitivesSideEffect>':
                                 (event.data[index] as any).forEach(element => {
                                     console.log("SFX", element.toHuman())
-                                    sideEffect.setSideEffect(element);
+                                    let newSideEffect = new SideEffect();
+                                    newSideEffect.setSideEffect(element);
+                                    newSideEffect.setXtxId(sideEffect.xtxId)
+                                    newSideEffect.setRequester(sideEffect.requester)
                                     all_side_effects.push(
-                                      sideEffect
+                                        newSideEffect
                                     )
                                 });
                                 // sideEffect.setSideEffect(event.data[index][0]);
                                 break;
                             case 'Vec<H256>':
-                                console.log("EVENT.DATA[INDEX]", event.data[index]);
                                 (event.data[index] as any).forEach((element, cnt)=> {
-                                    console.log("SFX ID", element)
+                                    console.log("SFX HASH ID", u8aToHex(element), cnt)
                                     all_side_effects[cnt].setId(element);
                                 });
                                 break;
                         }
                     }
+
+                    all_side_effects.forEach(e => {
+                        console.log("saved up all_side_effects before emit NewSideEffect", u8aToHex(e.getId()));
+                    });
 
                     this.emit(
                         'NewSideEffect',
