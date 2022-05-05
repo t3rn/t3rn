@@ -511,6 +511,13 @@ impl pallet_scheduler::Config for Runtime {
     type WeightInfo = ();
 }
 
+impl pallet_utility::Config for Runtime {
+    type Call = Call;
+    type Event = Event;
+    type PalletsOrigin = OriginCaller;
+    type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -527,6 +534,7 @@ construct_runtime!(
         ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
         Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 4,
         Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 5,
+        Utility: pallet_utility = 6,
 
         // Monetary stuff.
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
