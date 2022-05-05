@@ -23,6 +23,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
+
 use codec::{Decode, Encode};
 
 use frame_support::dispatch::{Dispatchable, GetDispatchInfo};
@@ -398,8 +399,16 @@ pub mod pallet {
 
             // ToDo: Align whether 3vm wants enfore side effects sequence into steps
             let sequential = false;
+
+            let mut mutable_side_effects = side_effects.clone();
+
             // Validate: Side Effects
-            Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential)?;
+            Self::validate(
+                &mut mutable_side_effects,
+                &mut local_xtx_ctx,
+                &requester,
+                sequential,
+            )?;
 
             // Apply: all necessary changes to state in 1 go
             let (_, added_full_side_effects) = Self::apply(&mut local_xtx_ctx, None, None)?;
@@ -464,12 +473,19 @@ pub mod pallet {
             );
             // Validate: Side Effects
             log::info!("validate following side effects {:?}", side_effects);
-            Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential).map_err(
-                |e| {
-                    log::info!("Self::validate hit an error -- {:?}", e);
-                    Error::<T>::SideEffectsValidationFailed
-                },
-            )?;
+
+            let mut mutable_side_effects = side_effects.clone();
+
+            Self::validate(
+                &mut mutable_side_effects,
+                &mut local_xtx_ctx,
+                &requester,
+                sequential,
+            )
+            .map_err(|e| {
+                log::info!("Self::validate hit an error -- {:?}", e);
+                Error::<T>::SideEffectsValidationFailed
+            })?;
             log::info!("on_extrinsic_trigger -- finished validate");
 
             // Apply: all necessary changes to state in 1 go
@@ -495,10 +511,20 @@ pub mod pallet {
             xtx_id: XExecSignalId<T>,
             side_effect_id: SideEffectId<T>,
         ) -> DispatchResultWithPostInfo {
+            log::info!(
+                "bond insurance deposit -- start -- xtx id {:?} + se id {:?}",
+                xtx_id,
+                side_effect_id
+            );
+
             // Authorize: Retrieve sender of the transaction.
             let relayer = Self::authorize(origin, CircuitRole::Relayer)?;
 
-            log::info!("bond insurance deposit -- start -- xtx id {:?} + se id {:?}", xtx_id, side_effect_id);
+            log::info!(
+                "bond insurance deposit -- authorized -- xtx id {:?} + se id {:?}",
+                xtx_id,
+                side_effect_id
+            );
             // Setup: retrieve local xtx context
             let mut local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
                 CircuitStatus::PendingInsurance,
@@ -870,8 +896,16 @@ impl<T: Config> Pallet<T> {
                     }
                 }
                 // ToDo: Introduce default delay
-                let (timeouts_at, delay_steps_at): (T::BlockNumber, Option<Vec<T::BlockNumber>>) =
-                    (T::XtxTimeoutDefault::get(), None);
+                let (timeouts_at, delay_steps_at): (T::BlockNumber, Option<Vec<T::BlockNumber>>) = (
+                    T::XtxTimeoutDefault::get() + frame_system::Pallet::<T>::block_number(),
+                    None,
+                );
+
+                log::info!(
+                    "New Xtx will timeout at: {:?} vs current block = {:?}",
+                    timeouts_at,
+                    frame_system::Pallet::<T>::block_number()
+                );
 
                 let (x_exec_signal_id, x_exec_signal) = XExecSignal::<
                     T::AccountId,
@@ -1527,11 +1561,9 @@ impl<T: Config> Pallet<T> {
     }
 
     fn validate(
-        side_effects: &[SideEffect<
-            T::AccountId,
-            T::BlockNumber,
-            EscrowedBalanceOf<T, T::Escrowed>,
-        >],
+        side_effects: &mut Vec<
+            SideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+        >,
         local_ctx: &mut LocalXtxCtx<T>,
         requester: &T::AccountId,
         _sequential: bool,
@@ -1540,13 +1572,21 @@ impl<T: Config> Pallet<T> {
             FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
         > = vec![];
 
-        for side_effect in side_effects.iter() {
+        for side_effect in side_effects.iter_mut() {
             let gateway_abi = <T as Config>::Xdns::get_abi(side_effect.target)?;
             let allowed_side_effects =
                 <T as Config>::Xdns::allowed_side_effects(&side_effect.target);
 
-            println!("validate -- prize decoded {:?}", side_effect.prize.clone());
-            println!("validate -- prize encode {:?}", side_effect.prize.encode());
+            log::info!("validate -- prize decoded {:?}", side_effect.prize.clone());
+            log::info!("validate -- prize encode {:?}", side_effect.prize.encode());
+
+            // side_effect.prize = Zero::zero();
+
+            log::info!(
+                "validate -- prize re-decoded {:?}",
+                side_effect.prize.encode()
+            );
+
             local_ctx
                 .use_protocol
                 .notice_gateway(side_effect.target, allowed_side_effects);
@@ -1573,7 +1613,10 @@ impl<T: Config> Pallet<T> {
                     reward
                 );
 
-                log::info!("circuit -- for side effect id {:?}", side_effect.generate_id::<SystemHashing<T>>());
+                log::info!(
+                    "circuit -- for side effect id {:?}",
+                    side_effect.generate_id::<SystemHashing<T>>()
+                );
                 Self::charge(requester, reward)?;
 
                 local_ctx.insurance_deposits.push((
