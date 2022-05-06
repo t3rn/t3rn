@@ -57,7 +57,7 @@ export default class Relayer extends EventEmitter {
   ) {
     Relayer.debug("Submitting Parachain Header")
     let submitParachainHeader =
-      this.api.tx.multiFinalityVerifierDefault.submitParachainHeader(
+      this.api.tx.circuitPortal.submitParachainHeader(
         blockHash,
         gatewayId,
         proof

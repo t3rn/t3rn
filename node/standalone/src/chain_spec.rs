@@ -134,10 +134,10 @@ fn seed_xdns_registry() -> Result<Vec<XdnsRecord<AccountId>>, Error> {
         .expect("fetching polkadot xdns info failed");
     let kusama_xdns = fetch_xdns_record_from_rpc(&kusama_connection_params, KUSAMA_CHAIN_ID)
         .expect("fetching kusama xdns info failed");
-    let rococo_xdns = fetch_xdns_record_from_rpc(&rococo_connection_params, ROCOCO_CHAIN_ID)
+    let _rococo_xdns = fetch_xdns_record_from_rpc(&rococo_connection_params, ROCOCO_CHAIN_ID)
         .expect("fetching rococo xdns info failed");
 
-    Ok(vec![polkadot_xdns, kusama_xdns, /*rococo_xdns*/])
+    Ok(vec![polkadot_xdns, kusama_xdns /*rococo_xdns*/])
 }
 
 fn standard_side_effects() -> Vec<SideEffectInterface> {

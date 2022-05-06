@@ -6554,6 +6554,7 @@ dependencies = [
  "frame-system",
  "log",
  "pallet-balances",
+ "pallet-circuit-portal",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-xdns",
@@ -6566,6 +6567,7 @@ dependencies = [
  "sp-std",
  "sp-trie",
  "t3rn-primitives",
+ "t3rn-protocol",
 ]
 
 [[package]]
