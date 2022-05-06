@@ -735,6 +735,12 @@ pub mod pallet {
             // Authorize: Retrieve sender of the transaction.
             let relayer = Self::authorize(origin, CircuitRole::Relayer)?;
 
+            log::info!(
+                "confirm side effect -- start -- xtx id {:?} + se id {:?}",
+                xtx_id,
+                side_effect.generate_id::<SystemHashing<T>>()
+            );
+
             // Setup: retrieve local xtx context
             let mut local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
                 CircuitStatus::PendingExecution,
@@ -742,6 +748,12 @@ pub mod pallet {
                 Zero::zero(),
                 Some(xtx_id),
             )?;
+
+            log::info!(
+                "confirm side effect -- start -- xtx id {:?} + se id {:?}",
+                xtx_id,
+                side_effect.generate_id::<SystemHashing<T>>()
+            );
 
             Self::confirm(
                 &mut local_xtx_ctx,
@@ -751,6 +763,11 @@ pub mod pallet {
                 inclusion_proof,
                 block_hash,
             )?;
+            log::info!(
+                "confirm side effect -- confirmed -- xtx id {:?} + se id {:?}",
+                xtx_id,
+                side_effect.generate_id::<SystemHashing<T>>()
+            );
 
             // FixMe: Reward should be triggered by apply after the whole Xtx finishes
             Self::enact_insurance(&local_xtx_ctx, &side_effect, InsuranceEnact::Reward)?;
@@ -758,6 +775,12 @@ pub mod pallet {
             // Apply: all necessary changes to state in 1 go
             let (maybe_xtx_changed, assert_full_side_effects_changed) =
                 Self::apply(&mut local_xtx_ctx, None, None)?;
+
+            log::info!(
+                "confirm side effect -- applied -- xtx id {:?} + se id {:?}",
+                xtx_id,
+                side_effect.generate_id::<SystemHashing<T>>()
+            );
 
             // Emit: From Circuit events
             Self::emit(
@@ -1705,7 +1728,7 @@ impl<T: Config> Pallet<T> {
         inclusion_proof: Option<Vec<Vec<u8>>>,
         block_hash: Option<Vec<u8>>,
     ) -> Result<(), &'static str> {
-        let confirm_inclusion = || {
+        let _confirm_inclusion = || {
             // ToDo: Remove below after testing inclusion
             // Temporarily allow skip inclusion if proofs aren't provided
             if !(block_hash.is_none() && inclusion_proof.is_none()) {
@@ -1720,7 +1743,7 @@ impl<T: Config> Pallet<T> {
             }
         };
 
-        let confirm_execution = |gateway_vendor, value_abi_unsigned_type, state_copy| {
+        let _confirm_execution = |gateway_vendor, value_abi_unsigned_type, state_copy| {
             let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
             side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
             let side_effect_interface =
@@ -1812,12 +1835,12 @@ impl<T: Config> Pallet<T> {
                 "Side effect confirmation wasn't matched with full side effects order from state",
             )
         }
-        confirm_inclusion()?;
-        confirm_execution(
-            <T as Config>::Xdns::best_available(side_effect.target)?.gateway_vendor,
-            <T as Config>::Xdns::get_gateway_value_unsigned_type_unsafe(&side_effect.target),
-            &local_ctx.local_state,
-        )?;
+        // confirm_inclusion()?;
+        // confirm_execution(
+        //     <T as Config>::Xdns::best_available(side_effect.target)?.gateway_vendor,
+        //     <T as Config>::Xdns::get_gateway_value_unsigned_type_unsafe(&side_effect.target),
+        //     &local_ctx.local_state,
+        // )?;
 
         Ok(())
     }

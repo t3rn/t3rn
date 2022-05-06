@@ -37,9 +37,7 @@
 #![allow(clippy::large_enum_variant)]
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
-
 use crate::weights::WeightInfo;
-use sp_std::convert::TryInto;
 
 use bp_header_chain::{justification::GrandpaJustification, InitializationData};
 use bp_runtime::{BlockNumberOf, Chain, ChainId, HashOf, HasherOf, HeaderOf};
@@ -52,6 +50,8 @@ use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
 use sp_runtime::traits::{BadOrigin, Header as HeaderT, Zero};
 use sp_std::vec::Vec;
 use t3rn_primitives::bridges::{header_chain as bp_header_chain, runtime as bp_runtime};
+
+use sp_trie::StorageProof;
 
 #[cfg(test)]
 mod mock;
@@ -75,12 +75,15 @@ pub type BridgedBlockHasher<T, I> = HasherOf<<T as Config<I>>::BridgedChain>;
 pub type BridgedHeader<T, I> = HeaderOf<<T as Config<I>>::BridgedChain>;
 
 const LOG_TARGET: &str = "multi-finality-verifier";
-use frame_support::traits::Time;
-use frame_system::pallet_prelude::*;
-use t3rn_primitives::{xdns::Xdns, EscrowTrait};
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
+
+    use frame_support::traits::Time;
+    use frame_system::pallet_prelude::*;
+    use sp_std::convert::TryInto;
+    use t3rn_primitives::{circuit_portal::CircuitPortal, xdns::Xdns, EscrowTrait};
 
     #[pallet::config]
     pub trait Config<I: 'static = ()>: frame_system::Config {
@@ -115,7 +118,7 @@ pub mod pallet {
         /// A type that manages escrow, and therefore balances
         type Escrowed: EscrowTrait<Self>;
 
-        // type CircuitPortal: CircuitPortal<Self>;
+        type CircuitPortal: CircuitPortal<Self>;
     }
 
     #[pallet::pallet]
@@ -352,82 +355,82 @@ pub mod pallet {
             Ok(().into())
         }
 
-        // #[pallet::weight(<T as pallet::Config<I>>::WeightInfo::submit_finality_proof(
-        //     block_hash.len() as u32,
-        //     block_hash.len() as u32,
-        // ))]
-        // pub fn submit_parachain_header(
-        //     origin: OriginFor<T>,
-        //     block_hash: Vec<u8>,
-        //     gateway_id: ChainId,
-        //     proof: Vec<Vec<u8>>,
-        // ) -> DispatchResultWithPostInfo {
-        //     // ensure_operational_single::<T, I>(gateway_id)?;
-        //     // // ensure_signed(origin)?;
-        //     // // let storage_proof: StorageProof = Decode::decode(&mut &proof.encode()[..]).unwrap();
-        //     // // let result = <T as Config<I>>::CircuitPortal::confirm_parachain_header(
-        //     // //     gateway_id,
-        //     // //     block_hash,
-        //     // //     storage_proof,
-        //     // // );
-        //     //
-        //     // let header: BridgedHeader<T, I> = match result {
-        //     //     Ok(result) => {
-        //     //         // we first need to decode the Vec
-        //     //         let vec = &Vec::<u8>::decode(&mut &result[..]).unwrap();
-        //     //         // then the header we want
-        //     //         Decode::decode(&mut vec.as_ref()).unwrap()
-        //     //     },
-        //     //     Err(err) => return Err(err.into()),
-        //     // };
-        //     //
-        //     // let hash = header.hash();
-        //     // let index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
-        //     // let pruning = <MultiImportedHashes<T, I>>::try_get(gateway_id, index);
-        //     //
-        //     // <BestFinalizedMap<T, I>>::insert(gateway_id, hash);
-        //     //
-        //     // <MultiImportedHeaders<T, I>>::insert(gateway_id, hash, header.clone());
-        //     // <MultiImportedHashes<T, I>>::insert(gateway_id, index, hash);
-        //     // <MultiImportedRoots<T, I>>::insert(
-        //     //     gateway_id,
-        //     //     hash,
-        //     //     (header.extrinsics_root(), header.state_root()),
-        //     // );
-        //     //
-        //     // <RequestCountMap<T, I>>::mutate(gateway_id, |count| {
-        //     //     match count {
-        //     //         Some(count) => *count += 1,
-        //     //         None => *count = Some(1),
-        //     //     }
-        //     //     *count
-        //     // });
-        //     //
-        //     // // Update ring buffer pointer and remove old header.
-        //     // <MultiImportedHashesPointer<T, I>>::insert(
-        //     //     gateway_id,
-        //     //     (index + 1) % T::HeadersToKeep::get(),
-        //     // );
-        //     //
-        //     // if let Ok(hash) = pruning {
-        //     //     log::debug!(
-        //     //         target: LOG_TARGET,
-        //     //         "Pruning old header: {:?} for gateway {:?}.",
-        //     //         hash,
-        //     //         gateway_id
-        //     //     );
-        //     //     <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
-        //     //     <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
-        //     // }
-        //     //
-        //     // // not sure if we want this here as well as we're adding old blocks
-        //     // let now = TryInto::<u64>::try_into(<T::Escrowed as EscrowTrait<T>>::Time::now())
-        //     //     .map_err(|_| "Unable to compute current timestamp")?;
-        //     //
-        //     // <T::Xdns as Xdns<T>>::update_gateway_ttl(gateway_id, now)?;
-        //
-        //     Ok(().into())
-        // }
+        #[pallet::weight(<T as pallet::Config<I>>::WeightInfo::submit_finality_proof(
+            block_hash.len() as u32,
+            block_hash.len() as u32,
+        ))]
+        pub fn submit_parachain_header(
+            origin: OriginFor<T>,
+            block_hash: Vec<u8>,
+            gateway_id: ChainId,
+            proof: Vec<Vec<u8>>,
+        ) -> DispatchResultWithPostInfo {
+            ensure_operational_single::<T, I>(gateway_id)?;
+            ensure_signed(origin)?;
+            let storage_proof: StorageProof = Decode::decode(&mut &proof.encode()[..]).unwrap();
+            let result = <T as Config<I>>::CircuitPortal::confirm_parachain_header(
+                gateway_id,
+                block_hash,
+                storage_proof,
+            );
+
+            let header: BridgedHeader<T, I> = match result {
+                Ok(result) => {
+                    // we first need to decode the Vec
+                    let vec = &Vec::<u8>::decode(&mut &result[..]).unwrap();
+                    // then the header we want
+                    Decode::decode(&mut vec.as_ref()).unwrap()
+                },
+                Err(err) => return Err(err.into()),
+            };
+
+            let hash = header.hash();
+            let index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
+            let pruning = <MultiImportedHashes<T, I>>::try_get(gateway_id, index);
+
+            <BestFinalizedMap<T, I>>::insert(gateway_id, hash);
+
+            <MultiImportedHeaders<T, I>>::insert(gateway_id, hash, header.clone());
+            <MultiImportedHashes<T, I>>::insert(gateway_id, index, hash);
+            <MultiImportedRoots<T, I>>::insert(
+                gateway_id,
+                hash,
+                (header.extrinsics_root(), header.state_root()),
+            );
+
+            <RequestCountMap<T, I>>::mutate(gateway_id, |count| {
+                match count {
+                    Some(count) => *count += 1,
+                    None => *count = Some(1),
+                }
+                *count
+            });
+
+            // Update ring buffer pointer and remove old header.
+            <MultiImportedHashesPointer<T, I>>::insert(
+                gateway_id,
+                (index + 1) % T::HeadersToKeep::get(),
+            );
+
+            if let Ok(hash) = pruning {
+                log::debug!(
+                    target: LOG_TARGET,
+                    "Pruning old header: {:?} for gateway {:?}.",
+                    hash,
+                    gateway_id
+                );
+                <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
+                <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
+            }
+
+            // not sure if we want this here as well as we're adding old blocks
+            let now = TryInto::<u64>::try_into(<T::Escrowed as EscrowTrait<T>>::Time::now())
+                .map_err(|_| "Unable to compute current timestamp")?;
+
+            <T::Xdns as Xdns<T>>::update_gateway_ttl(gateway_id, now)?;
+
+            Ok(().into())
+        }
 
         /// Bootstrap the bridge pallet with an initial header and authority set from which to sync.
         ///
@@ -805,7 +808,7 @@ pub mod pallet {
     }
 
     /// Ensure that the pallet is in operational mode (not halted).
-    pub fn ensure_operational_single<T: Config<I>, I: 'static>(
+    fn ensure_operational_single<T: Config<I>, I: 'static>(
         gateway_id: ChainId,
     ) -> Result<(), Error<T, I>> {
         if <IsHaltedMap<T, I>>::get(gateway_id)
@@ -857,78 +860,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
                 .map_err(|_| Error::<T, I>::StorageRootMismatch)?;
 
         Ok(parse(storage_proof_checker))
-    }
-
-    pub fn submit_parachain_header(
-        _block_hash: Vec<u8>,
-        gateway_id: ChainId,
-        _proof: Vec<Vec<u8>>,
-        header: BridgedHeader<T, I>,
-    ) -> DispatchResultWithPostInfo {
-        ensure_operational_single::<T, I>(gateway_id)?;
-        // ensure_signed(origin)?;
-        // let storage_proof: StorageProof = Decode::decode(&mut &proof.encode()[..]).unwrap();
-        // let result = <T as Config<I>>::CircuitPortal::confirm_parachain_header(
-        //     gateway_id,
-        //     block_hash,
-        //     storage_proof,
-        // );
-        // let header: BridgedHeader<T, I> = match header_arg {
-        //     Ok(result) => {
-        //         // we first need to decode the Vec
-        //         let vec = &Vec::<u8>::decode(&mut &result[..]).unwrap();
-        //         // then the header we want
-        //         Decode::decode(&mut vec.as_ref()).unwrap()
-        //     },
-        //     Err(err) => return Err(err.into()),
-        // };
-
-        let hash = header.hash();
-        let index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
-        let pruning = <MultiImportedHashes<T, I>>::try_get(gateway_id, index);
-
-        <BestFinalizedMap<T, I>>::insert(gateway_id, hash);
-
-        <MultiImportedHeaders<T, I>>::insert(gateway_id, hash, header.clone());
-        <MultiImportedHashes<T, I>>::insert(gateway_id, index, hash);
-        <MultiImportedRoots<T, I>>::insert(
-            gateway_id,
-            hash,
-            (header.extrinsics_root(), header.state_root()),
-        );
-
-        <RequestCountMap<T, I>>::mutate(gateway_id, |count| {
-            match count {
-                Some(count) => *count += 1,
-                None => *count = Some(1),
-            }
-            *count
-        });
-
-        // Update ring buffer pointer and remove old header.
-        <MultiImportedHashesPointer<T, I>>::insert(
-            gateway_id,
-            (index + 1) % T::HeadersToKeep::get(),
-        );
-
-        if let Ok(hash) = pruning {
-            log::debug!(
-                target: LOG_TARGET,
-                "Pruning old header: {:?} for gateway {:?}.",
-                hash,
-                gateway_id
-            );
-            <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
-            <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
-        }
-
-        // not sure if we want this here as well as we're adding old blocks
-        let now = TryInto::<u64>::try_into(<T::Escrowed as EscrowTrait<T>>::Time::now())
-            .map_err(|_| "Unable to compute current timestamp")?;
-
-        <T::Xdns as Xdns<T>>::update_gateway_ttl(gateway_id, now)?;
-
-        Ok(().into())
     }
 }
 

@@ -50,7 +50,10 @@ frame_support::construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         Historical: pallet_session_historical::{Pallet},
         Offences: pallet_offences::{Pallet, Storage, Event},
-        MultiFinalityVerifier: pallet_multi_finality_verifier::{Pallet},
+        MultiFinalityVerifier: pallet_multi_finality_verifier::{Pallet, Call, Storage, Config<T>, Event<T>},
+        MultiFinalityVerifier1: pallet_multi_finality_verifier::<Instance1>::{Pallet, Call, Storage, Config<T>, Event<T>},
+        MultiFinalityVerifier2: pallet_multi_finality_verifier::<Instance2>::{Pallet, Call, Storage, Config<T>, Event<T>},
+        MultiFinalityVerifier3: pallet_multi_finality_verifier::<Instance3>::{Pallet, Call, Storage, Config<T>, Event<T>},
 
         Babe: pallet_babe::{Pallet, Call, Storage, Config},
         TransactionPayment: pallet_transaction_payment::{Pallet},
@@ -411,8 +414,8 @@ parameter_types! {
 
 impl pallet_multi_finality_verifier::Config<Blake2ValU64BridgeInstance> for Test {
     type BridgedChain = Blake2ValU64Chain;
-    type CircuitPortal = CircuitPortal;
     type Escrowed = Self;
+    type Event = Event;
     type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
@@ -421,8 +424,8 @@ impl pallet_multi_finality_verifier::Config<Blake2ValU64BridgeInstance> for Test
 
 impl pallet_multi_finality_verifier::Config<Blake2ValU32BridgeInstance> for Test {
     type BridgedChain = Blake2ValU32Chain;
-    type CircuitPortal = CircuitPortal;
     type Escrowed = Self;
+    type Event = Event;
     type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
@@ -431,8 +434,8 @@ impl pallet_multi_finality_verifier::Config<Blake2ValU32BridgeInstance> for Test
 
 impl pallet_multi_finality_verifier::Config<Keccak256ValU64BridgeInstance> for Test {
     type BridgedChain = Keccak256ValU64Chain;
-    type CircuitPortal = CircuitPortal;
     type Escrowed = Self;
+    type Event = Event;
     type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
@@ -441,8 +444,8 @@ impl pallet_multi_finality_verifier::Config<Keccak256ValU64BridgeInstance> for T
 
 impl pallet_multi_finality_verifier::Config<Keccak256ValU32BridgeInstance> for Test {
     type BridgedChain = Keccak256ValU32Chain;
-    type CircuitPortal = CircuitPortal;
     type Escrowed = Self;
+    type Event = Event;
     type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
     type WeightInfo = ();

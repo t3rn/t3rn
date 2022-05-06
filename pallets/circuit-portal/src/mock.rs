@@ -15,9 +15,8 @@ use sp_core::{crypto::KeyTypeId, H256};
 use sp_runtime::traits::{BlakeTwo256, Keccak256};
 
 use t3rn_primitives::{
-    abi::Type, circuit_portal::CircuitPortal, side_effect::interface::SideEffectInterface,
-    transfers::BalanceOf, xdns::XdnsRecord, EscrowTrait, GatewaySysProps, GatewayType,
-    GatewayVendor,
+    abi::Type, side_effect::interface::SideEffectInterface, transfers::BalanceOf, xdns::XdnsRecord,
+    EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor,
 };
 use t3rn_protocol::side_effects::confirm::ethereum::EthereumMockVerifier;
 
@@ -35,12 +34,14 @@ frame_support::construct_runtime!(
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        MultiFinalityVerifier: pallet_multi_finality_verifier::{Pallet},
+        MultiFinalityVerifier: pallet_multi_finality_verifier::{Pallet, Call, Storage, Config<T>, Event<T>},
+        MultiFinalityVerifier1: pallet_multi_finality_verifier::<Instance1>::{Pallet, Call, Storage, Config<T>, Event<T>},
+        MultiFinalityVerifier2: pallet_multi_finality_verifier::<Instance2>::{Pallet, Call, Storage, Config<T>, Event<T>},
+        MultiFinalityVerifier3: pallet_multi_finality_verifier::<Instance3>::{Pallet, Call, Storage, Config<T>, Event<T>},
         Sudo: pallet_sudo::{Pallet, Call, Event<T>},
         XDNS: pallet_xdns::{Pallet, Call, Storage, Config<T>, Event<T>},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         Portal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>},
-        // BasicOutboundChannel: snowbridge_basic_channel::outbound::{Pallet, Config<T>, Storage, Event<T>},
     }
 );
 
@@ -250,10 +251,20 @@ parameter_types! {
     pub const NumValidators: u32 = 5;
 }
 
+#[derive(Debug)]
+pub struct TestCircuitLikeChain;
+
+impl bp_runtime::Chain for TestCircuitLikeChain {
+    type BlockNumber = <Test as frame_system::Config>::BlockNumber;
+    type Hash = <Test as frame_system::Config>::Hash;
+    type Hasher = <Test as frame_system::Config>::Hashing;
+    type Header = <Test as frame_system::Config>::Header;
+}
+
 impl pallet_multi_finality_verifier::Config<Blake2ValU64BridgeInstance> for Test {
     type BridgedChain = Blake2ValU64Chain;
-    type CircuitPortal = Portal;
     type Escrowed = Self;
+    type Event = Event;
     type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
@@ -262,8 +273,8 @@ impl pallet_multi_finality_verifier::Config<Blake2ValU64BridgeInstance> for Test
 
 impl pallet_multi_finality_verifier::Config<Blake2ValU32BridgeInstance> for Test {
     type BridgedChain = Blake2ValU32Chain;
-    type CircuitPortal = Portal;
     type Escrowed = Self;
+    type Event = Event;
     type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
@@ -272,8 +283,8 @@ impl pallet_multi_finality_verifier::Config<Blake2ValU32BridgeInstance> for Test
 
 impl pallet_multi_finality_verifier::Config<Keccak256ValU64BridgeInstance> for Test {
     type BridgedChain = Keccak256ValU64Chain;
-    type CircuitPortal = Portal;
     type Escrowed = Self;
+    type Event = Event;
     type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
@@ -282,8 +293,8 @@ impl pallet_multi_finality_verifier::Config<Keccak256ValU64BridgeInstance> for T
 
 impl pallet_multi_finality_verifier::Config<Keccak256ValU32BridgeInstance> for Test {
     type BridgedChain = Keccak256ValU32Chain;
-    type CircuitPortal = Portal;
     type Escrowed = Self;
+    type Event = Event;
     type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
