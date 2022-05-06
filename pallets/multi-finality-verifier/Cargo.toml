@@ -30,9 +30,11 @@ t3rn-primitives     = { path = "../../primitives", default-features = false }
 
 [dev-dependencies]
 pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
+pallet-circuit-portal         = { path = "../circuit-portal" }
 pallet-sudo      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
 sp-io            = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
+t3rn-protocol     = { path = "../../protocol" }
 
 [features]
 default = [ "std" ]
