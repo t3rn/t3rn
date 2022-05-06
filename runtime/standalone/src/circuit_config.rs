@@ -119,7 +119,6 @@ impl bp_runtime::Chain for Keccak256ValU32Chain {
 
 impl pallet_mfv::Config<Blake2ValU64BridgeInstance> for Runtime {
     type BridgedChain = Blake2ValU64Chain;
-    type CircuitPortal = CircuitPortal;
     type Escrowed = Self;
     type Event = Event;
     type HeadersToKeep = HeadersToKeep;
@@ -130,7 +129,6 @@ impl pallet_mfv::Config<Blake2ValU64BridgeInstance> for Runtime {
 
 impl pallet_mfv::Config<Blake2ValU32BridgeInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
-    type CircuitPortal = CircuitPortal;
     type Escrowed = Self;
     type Event = Event;
     type HeadersToKeep = HeadersToKeep;
@@ -141,7 +139,6 @@ impl pallet_mfv::Config<Blake2ValU32BridgeInstance> for Runtime {
 
 impl pallet_mfv::Config<Keccak256ValU64BridgeInstance> for Runtime {
     type BridgedChain = Keccak256ValU64Chain;
-    type CircuitPortal = CircuitPortal;
     type Escrowed = Self;
     type Event = Event;
     type HeadersToKeep = HeadersToKeep;
@@ -152,7 +149,6 @@ impl pallet_mfv::Config<Keccak256ValU64BridgeInstance> for Runtime {
 
 impl pallet_mfv::Config<Keccak256ValU32BridgeInstance> for Runtime {
     type BridgedChain = Keccak256ValU32Chain;
-    type CircuitPortal = CircuitPortal;
     type Escrowed = Self;
     type Event = Event;
     type HeadersToKeep = HeadersToKeep;
@@ -163,7 +159,6 @@ impl pallet_mfv::Config<Keccak256ValU32BridgeInstance> for Runtime {
 
 impl pallet_mfv::Config<DefaultPolkadotBridgeInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
-    type CircuitPortal = CircuitPortal;
     type Escrowed = Self;
     type Event = Event;
     type HeadersToKeep = HeadersToKeep;
