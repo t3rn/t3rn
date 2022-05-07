@@ -399,16 +399,8 @@ pub mod pallet {
 
             // ToDo: Align whether 3vm wants enfore side effects sequence into steps
             let sequential = false;
-
-            let mut mutable_side_effects = side_effects.clone();
-
             // Validate: Side Effects
-            Self::validate(
-                &mut mutable_side_effects,
-                &mut local_xtx_ctx,
-                &requester,
-                sequential,
-            )?;
+            Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential)?;
 
             // Apply: all necessary changes to state in 1 go
             let (_, added_full_side_effects) = Self::apply(&mut local_xtx_ctx, None, None)?;
@@ -472,20 +464,12 @@ pub mod pallet {
                 local_xtx_ctx.xtx_id
             );
             // Validate: Side Effects
-            log::info!("validate following side effects {:?}", side_effects);
-
-            let mut mutable_side_effects = side_effects.clone();
-
-            Self::validate(
-                &mut mutable_side_effects,
-                &mut local_xtx_ctx,
-                &requester,
-                sequential,
-            )
-            .map_err(|e| {
-                log::info!("Self::validate hit an error -- {:?}", e);
-                Error::<T>::SideEffectsValidationFailed
-            })?;
+            Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential).map_err(
+                |e| {
+                    log::info!("Self::validate hit an error -- {:?}", e);
+                    Error::<T>::SideEffectsValidationFailed
+                },
+            )?;
             log::info!("on_extrinsic_trigger -- finished validate");
 
             // Apply: all necessary changes to state in 1 go
@@ -1584,9 +1568,11 @@ impl<T: Config> Pallet<T> {
     }
 
     fn validate(
-        side_effects: &mut Vec<
-            SideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-        >,
+        side_effects: &[SideEffect<
+            T::AccountId,
+            T::BlockNumber,
+            EscrowedBalanceOf<T, T::Escrowed>,
+        >],
         local_ctx: &mut LocalXtxCtx<T>,
         requester: &T::AccountId,
         _sequential: bool,
@@ -1595,20 +1581,13 @@ impl<T: Config> Pallet<T> {
             FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
         > = vec![];
 
-        for side_effect in side_effects.iter_mut() {
+        for side_effect in side_effects.iter() {
             let gateway_abi = <T as Config>::Xdns::get_abi(side_effect.target)?;
             let allowed_side_effects =
                 <T as Config>::Xdns::allowed_side_effects(&side_effect.target);
 
             log::info!("validate -- prize decoded {:?}", side_effect.prize.clone());
             log::info!("validate -- prize encode {:?}", side_effect.prize.encode());
-
-            // side_effect.prize = Zero::zero();
-
-            log::info!(
-                "validate -- prize re-decoded {:?}",
-                side_effect.prize.encode()
-            );
 
             local_ctx
                 .use_protocol
@@ -1728,7 +1707,7 @@ impl<T: Config> Pallet<T> {
         inclusion_proof: Option<Vec<Vec<u8>>>,
         block_hash: Option<Vec<u8>>,
     ) -> Result<(), &'static str> {
-        let _confirm_inclusion = || {
+        let confirm_inclusion = || {
             // ToDo: Remove below after testing inclusion
             // Temporarily allow skip inclusion if proofs aren't provided
             if !(block_hash.is_none() && inclusion_proof.is_none()) {
@@ -1743,7 +1722,7 @@ impl<T: Config> Pallet<T> {
             }
         };
 
-        let _confirm_execution = |gateway_vendor, value_abi_unsigned_type, state_copy| {
+        let confirm_execution = |gateway_vendor, value_abi_unsigned_type, state_copy| {
             let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
             side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
             let side_effect_interface =
@@ -1835,12 +1814,12 @@ impl<T: Config> Pallet<T> {
                 "Side effect confirmation wasn't matched with full side effects order from state",
             )
         }
-        // confirm_inclusion()?;
-        // confirm_execution(
-        //     <T as Config>::Xdns::best_available(side_effect.target)?.gateway_vendor,
-        //     <T as Config>::Xdns::get_gateway_value_unsigned_type_unsafe(&side_effect.target),
-        //     &local_ctx.local_state,
-        // )?;
+        confirm_inclusion()?;
+        confirm_execution(
+            <T as Config>::Xdns::best_available(side_effect.target)?.gateway_vendor,
+            <T as Config>::Xdns::get_gateway_value_unsigned_type_unsafe(&side_effect.target),
+            &local_ctx.local_state,
+        )?;
 
         Ok(())
     }

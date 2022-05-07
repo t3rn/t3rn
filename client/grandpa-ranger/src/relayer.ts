@@ -34,6 +34,7 @@ export default class Relayer extends EventEmitter {
 
     // as this is event-driven now, we dont need the promises anymore
     submitFinalityProof.signAndSend(keyring.alice, async result => {
+      console.log("### submitFinalityProof events", JSON.stringify(result.events))
       // Issue #2 occures here
       if (result.isError) {
         // this doesn't work for all error in the circuit, but for some
@@ -111,6 +112,7 @@ export default class Relayer extends EventEmitter {
         nonce: nextNonce,
       },
       result => {
+        console.log("### submitHeaderRange events", JSON.stringify(result.events))
         // Issue #2 occures here
         if (result.isError) {
           // this doesn't work for all error in the circuit, but for some
