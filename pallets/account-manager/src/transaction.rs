@@ -97,6 +97,7 @@ where
     }
 }
 
+// TODO[https://github.com/t3rn/3vm/issues/54]: this will need to be integration tested since it is coupled to the runtime
 /// The purpose of this macro is to setup the currency adapter for a runtime so that it can be
 /// author-aware. This needs to be a macro since the injection site can only be at the runtime, we don't want to import
 /// pallet-balances or pallet-transaction-payment, since these traits are not available in frame_support and
