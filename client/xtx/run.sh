@@ -45,6 +45,9 @@ ttab -w -a $TERM_NAME exec cargo run \
 ## register rococo gateway on circuit
 node ./register_rococo_gateway.js
 
+## register basilisk gateway on circuit
+node ./register_basilisk_gateway.js
+
 ## run grandpa-ranger
 ttab -w -a $TERM_NAME exec npm start --prefix ../grandpa-ranger
 

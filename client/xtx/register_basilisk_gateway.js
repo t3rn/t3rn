@@ -11,7 +11,7 @@ const exec = promisify(_exec)
 
 const types = require("./types.json")
 
-const ROCOCO_CHAIN_ID = [114, 111, 99, 111]
+const BASILISK_CHAIN_ID = [ 98, 97, 115, 105 ]
 
 async function sleep(ms) {
   return new Promise(res => setTimeout(res, ms))
@@ -90,7 +90,7 @@ async function triggerRegister(circuit, params) {
     //GatewayType: we connect as a ProgrammableExternal
     circuit.createType("GatewayType", { ProgrammableExternal: 1 }),
     createGatewayGenesisConfig(metadata, genesisHash, circuit),
-    createGatewaySysProps(circuit, 42, "ROC", 12), // GatewaySysProps
+    createGatewaySysProps(circuit, 10041, "BSX", 12), // GatewaySysProps
     //Initial rococo, acts as gateway activation point
     circuit.createType("Bytes", rococoRegistrationHeader.toHex()),
     //List of current rococo authorities
@@ -126,8 +126,7 @@ async function setOperational(circuit, target) {
 }
 
 async function register(circuit, target) {
-  const url = "wss://rococo-rpc.polkadot.io"
-  const rococoProvider = new WsProvider(url)
+  const rococoProvider = new WsProvider("wss://rococo-rpc.polkadot.io")
   const api = await ApiPromise.create({ provider: rococoProvider })
 
   const [metadata, genesisHash] = await Promise.all([
@@ -148,7 +147,7 @@ async function register(circuit, target) {
 
         await triggerRegister(circuit, {
           authorities,
-          url,
+          url: "wss://rpc-01.basilisk-rococo.hydradx.io",
           authoritySetId,
           rococoRegistrationHeader,
           metadata,
@@ -158,7 +157,7 @@ async function register(circuit, target) {
         })
 
         unsub()
-        return resolve()
+        return resolve(undefined)
       }
     )
   })
@@ -170,7 +169,7 @@ async function registered(circuit) {
       circuit.query.system.events(notifications => {
         notifications.forEach(notification => {
           if (notification.event.method === "NewGatewayRegistered") {
-            resolve()
+            resolve(undefined)
           }
         })
       })
@@ -186,10 +185,10 @@ async function main() {
     provider: new WsProvider("ws://127.0.0.1:9944"),
     types,
   })
-  await register(circuit, ROCOCO_CHAIN_ID)
+  await register(circuit, BASILISK_CHAIN_ID)
   await registered(circuit)
-  await setOperational(circuit, ROCOCO_CHAIN_ID)
-  console.log("roco gtwy registered and operational")
+  await setOperational(circuit, BASILISK_CHAIN_ID)
+  console.log("basi gtwy registered and operational")
   circuit.disconnect()
   process.exit(0)
 }
