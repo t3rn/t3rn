@@ -3,6 +3,7 @@
 
 import type { ApiTypes } from "@polkadot/api-base/types";
 import type {
+  Bytes,
   Null,
   Option,
   Result,
@@ -66,17 +67,20 @@ declare module "@polkadot/api-base/types/events" {
         ApiType,
         [AccountId32, H256, Vec<T3rnPrimitivesSideEffect>]
       >;
+      EscrowTransfer: AugmentedEvent<ApiType, [AccountId32, AccountId32, u128]>;
       NewSideEffectsAvailable: AugmentedEvent<
         ApiType,
-        [AccountId32, H256, Vec<T3rnPrimitivesSideEffect>]
+        [AccountId32, H256, Vec<T3rnPrimitivesSideEffect>, Vec<H256>]
       >;
       SideEffectsConfirmed: AugmentedEvent<
         ApiType,
         [H256, Vec<Vec<T3rnPrimitivesSideEffectFullSideEffect>>]
       >;
-      XTransactionFinishedExec: AugmentedEvent<ApiType, [H256]>;
       XTransactionReadyForExec: AugmentedEvent<ApiType, [H256]>;
       XTransactionReceivedForExec: AugmentedEvent<ApiType, [H256]>;
+      XTransactionStepFinishedExec: AugmentedEvent<ApiType, [H256]>;
+      XTransactionXtxFinishedExecAllSteps: AugmentedEvent<ApiType, [H256]>;
+      XTransactionXtxRevertedAfterTimeOut: AugmentedEvent<ApiType, [H256]>;
       /** Generic event */
       [key: string]: AugmentedEvent<ApiType>;
     };
@@ -98,6 +102,29 @@ declare module "@polkadot/api-base/types/events" {
       /** Generic event */
       [key: string]: AugmentedEvent<ApiType>;
     };
+    contracts: {
+      /** A code with the specified hash was removed. */
+      CodeRemoved: AugmentedEvent<ApiType, [H256]>;
+      /** Code with the specified hash has been stored. */
+      CodeStored: AugmentedEvent<ApiType, [H256]>;
+      /** A contract's code was updated. */
+      ContractCodeUpdated: AugmentedEvent<ApiType, [AccountId32, H256, H256]>;
+      /** A custom event emitted by the contract. */
+      ContractEmitted: AugmentedEvent<ApiType, [AccountId32, Bytes]>;
+      /** Contract deployed by address at the specified address. */
+      Instantiated: AugmentedEvent<ApiType, [AccountId32, AccountId32]>;
+      /**
+       * Contract has been removed.
+       *
+       * # Note
+       *
+       * The only way for a contract to be removed and emitting this event is by
+       * calling `seal_terminate`.
+       */
+      Terminated: AugmentedEvent<ApiType, [AccountId32, AccountId32]>;
+      /** Generic event */
+      [key: string]: AugmentedEvent<ApiType>;
+    };
     contractsRegistry: {
       /** [requester, contract_id] */
       ContractPurged: AugmentedEvent<ApiType, [AccountId32, H256]>;
@@ -116,6 +143,31 @@ declare module "@polkadot/api-base/types/events" {
       Paused: AugmentedEvent<ApiType, []>;
       /** Current authority set has been resumed. */
       Resumed: AugmentedEvent<ApiType, []>;
+      /** Generic event */
+      [key: string]: AugmentedEvent<ApiType>;
+    };
+    multiFinalityVerifierDefault: {
+      NewHeaderRangeAvailable: AugmentedEvent<ApiType, [U8aFixed, u32, u32]>;
+      /** Generic event */
+      [key: string]: AugmentedEvent<ApiType>;
+    };
+    multiFinalityVerifierEthereumLike: {
+      NewHeaderRangeAvailable: AugmentedEvent<ApiType, [U8aFixed, u64, u32]>;
+      /** Generic event */
+      [key: string]: AugmentedEvent<ApiType>;
+    };
+    multiFinalityVerifierGenericLike: {
+      NewHeaderRangeAvailable: AugmentedEvent<ApiType, [U8aFixed, u32, u32]>;
+      /** Generic event */
+      [key: string]: AugmentedEvent<ApiType>;
+    };
+    multiFinalityVerifierPolkadotLike: {
+      NewHeaderRangeAvailable: AugmentedEvent<ApiType, [U8aFixed, u32, u32]>;
+      /** Generic event */
+      [key: string]: AugmentedEvent<ApiType>;
+    };
+    multiFinalityVerifierSubstrateLike: {
+      NewHeaderRangeAvailable: AugmentedEvent<ApiType, [U8aFixed, u32, u32]>;
       /** Generic event */
       [key: string]: AugmentedEvent<ApiType>;
     };
@@ -181,6 +233,24 @@ declare module "@polkadot/api-base/types/events" {
       NewAccount: AugmentedEvent<ApiType, [AccountId32]>;
       /** On on-chain remark happened. */
       Remarked: AugmentedEvent<ApiType, [AccountId32, H256]>;
+      /** Generic event */
+      [key: string]: AugmentedEvent<ApiType>;
+    };
+    utility: {
+      /** Batch of dispatches completed fully with no error. */
+      BatchCompleted: AugmentedEvent<ApiType, []>;
+      /**
+       * Batch of dispatches did not complete fully. Index of first failing
+       * dispatch given, as well as the error.
+       */
+      BatchInterrupted: AugmentedEvent<ApiType, [u32, SpRuntimeDispatchError]>;
+      /** A call was dispatched. */
+      DispatchedAs: AugmentedEvent<
+        ApiType,
+        [Result<Null, SpRuntimeDispatchError>]
+      >;
+      /** A single item within a Batch of dispatches has completed with no error. */
+      ItemCompleted: AugmentedEvent<ApiType, []>;
       /** Generic event */
       [key: string]: AugmentedEvent<ApiType>;
     };

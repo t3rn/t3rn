@@ -5,7 +5,7 @@
     "prestart": "cargo build --release --manifest-path ./justification-decoder/Cargo.toml",
     "start": "DEBUG=listener,relayer,instance-manager,header-listener,parachain-listener,relaychain-listener ts-node src/index.ts",
     "standalone": "SKIP_WASM_BUILD=1 cargo run --manifest-path ../../node/standalone/Cargo.toml -- --dev --ws-port 9944 -lmulti-finality-verifier=debug,circuit-portal=debug",
-    "fmt": "npx prettier --no-semi --arrow-parens avoid --print-width 80 --write ./src/**/*.ts"
+    "fmt": "npx prettier --no-semi --arrow-parens avoid --print-width 80 --write ./src/**/*.ts ./src/*.ts"
   },
   "author": "",
   "license": "Apache-2.0",

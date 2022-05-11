@@ -1,7 +1,7 @@
 import { EventEmitter } from "events"
 import { ApiPromise, Keyring, WsProvider } from "@polkadot/api"
 import { SideEffect, TransactionType, EventMapper } from "../../utils/types"
-import { getEventProofs, queryNonce } from "../../utils"
+import { getEventProofs, fetchNonce } from "../../utils"
 import createDebug from "debug"
 
 export default class SubstrateRelayer extends EventEmitter {
@@ -12,7 +12,6 @@ export default class SubstrateRelayer extends EventEmitter {
   rpc: string
   signer: any
   name: string
-  nonce: bigint
 
   async setup(rpc: string, name: string) {
     this.rpc = rpc
@@ -28,13 +27,11 @@ export default class SubstrateRelayer extends EventEmitter {
         : keyring.addFromMnemonic(process.env.SIGNER_KEY)
 
     this.name = name
-
-    this.nonce = await queryNonce(this.api, this.signer.address)
   }
 
   async executeTx(sideEffect: SideEffect) {
-    const nonce = this.nonce++
-    SubstrateRelayer.debug("executeTx nonce", nonce)
+    const nonce = await fetchNonce(this.api, this.signer.address)
+    SubstrateRelayer.debug("executeTx nonce", nonce.toString())
 
     switch (sideEffect.transactionType) {
       case TransactionType.Transfer: {
@@ -46,6 +43,7 @@ export default class SubstrateRelayer extends EventEmitter {
               this.handleTx(sideEffect, result)
             }
           })
+        break
       }
       case TransactionType.Swap:
       default:

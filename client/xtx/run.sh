@@ -7,9 +7,9 @@ if [[ -z "$EXECUTOR_KEY" ]]; then
 fi
 
 if [ "$(uname)" == "Darwin" ]; then
-    TERM_NAME=iTerm
+  TERM_NAME=iTerm
 else
-    TERM_NAME=gnome-terminal
+  TERM_NAME=gnome-terminal
 fi
 
 set -xEeu

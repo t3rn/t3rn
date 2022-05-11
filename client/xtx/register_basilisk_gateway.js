@@ -11,7 +11,7 @@ const exec = promisify(_exec)
 
 const types = require("./types.json")
 
-const BASILISK_CHAIN_ID = [ 98, 97, 115, 105 ]
+const BASILISK_CHAIN_ID = [98, 97, 115, 105]
 
 async function sleep(ms) {
   return new Promise(res => setTimeout(res, ms))
@@ -74,7 +74,7 @@ async function triggerRegister(circuit, params) {
     authorities,
     url,
     authoritySetId,
-    rococoRegistrationHeader,
+    basiliskRegistrationHeader,
     metadata,
     genesisHash,
     target,
@@ -83,7 +83,10 @@ async function triggerRegister(circuit, params) {
   const registerGateway = await circuit.tx.circuitPortal.registerGateway(
     url,
     String.fromCharCode(...target),
-    null,
+    {
+      id: 2090,
+      relay_chain_id: "roco",
+    },
     createGatewayABIConfig(circuit, 32, 32, 32, 12, "Sr25519", "Blake2"),
     //GatewayVendor: 'Substrate' as rococo is substrate-based
     circuit.createType("GatewayVendor", "Substrate"),
@@ -92,7 +95,7 @@ async function triggerRegister(circuit, params) {
     createGatewayGenesisConfig(metadata, genesisHash, circuit),
     createGatewaySysProps(circuit, 10041, "BSX", 12), // GatewaySysProps
     //Initial rococo, acts as gateway activation point
-    circuit.createType("Bytes", rococoRegistrationHeader.toHex()),
+    circuit.createType("Bytes", basiliskRegistrationHeader.toHex()),
     //List of current rococo authorities
     circuit.createType("Option<Vec<AccountId>>", authorities),
     circuit.createType("Option<SetId>", authoritySetId),
@@ -126,41 +129,57 @@ async function setOperational(circuit, target) {
 }
 
 async function register(circuit, target) {
-  const rococoProvider = new WsProvider("wss://rococo-rpc.polkadot.io")
-  const api = await ApiPromise.create({ provider: rococoProvider })
+  const url = "wss://rpc-01.basilisk-rococo.hydradx.io"
+  const api = await ApiPromise.create({ provider: new WsProvider(url) })
+  // const rococoApi = await ApiPromise.create({
+  //   provider: new WsProvider("wss://rococo-rpc.polkadot.io")
+  // })
 
   const [metadata, genesisHash] = await Promise.all([
     await api.runtimeMetadata,
     await api.genesisHash,
   ])
 
-  return new Promise(async (resolve, _reject) => {
-    let unsub = await api.rpc.grandpa.subscribeJustifications(
-      async justification => {
-        const { blockNumber, authorities } = await grandpaDecode(justification)
-        console.log("justification block number", blockNumber)
+  const basiliskRegistrationHeader = await api.rpc.chain.getHeader(
+    await api.rpc.chain.getFinalizedHead()
+  )
 
-        const rococoRegistrationHeader = await api.rpc.chain.getHeader(
-          await api.rpc.chain.getBlockHash(blockNumber)
-        )
-        const authoritySetId = await api.query.grandpa.currentSetId()
-
-        await triggerRegister(circuit, {
-          authorities,
-          url: "wss://rpc-01.basilisk-rococo.hydradx.io",
-          authoritySetId,
-          rococoRegistrationHeader,
-          metadata,
-          genesisHash,
-          target,
-          api,
-        })
-
-        unsub()
-        return resolve(undefined)
-      }
-    )
+  await triggerRegister(circuit, {
+    authorities: null,
+    url,
+    authoritySetId: null,
+    basiliskRegistrationHeader,
+    metadata,
+    genesisHash,
+    target,
+    api,
   })
+
+  // return new Promise(async (resolve, _reject) => {
+  //   let unsub = await rococoApi.rpc.grandpa.subscribeJustifications(
+  //     async justification => {
+  //       const { authorities } = await grandpaDecode(justification)
+  //       const basiliskRegistrationHeader = await api.rpc.chain.getHeader(
+  //         await api.rpc.chain.getFinalizedHead()
+  //       )
+  //       const authoritySetId = await rococoApi.query.grandpa.currentSetId()
+
+  //       await triggerRegister(circuit, {
+  //         authorities,
+  //         url,
+  //         authoritySetId,
+  //         basiliskRegistrationHeader,
+  //         metadata,
+  //         genesisHash,
+  //         target,
+  //         api,
+  //       })
+
+  //       unsub()
+  //       return resolve(undefined)
+  //     }
+  //   )
+  // })
 }
 
 async function registered(circuit) {

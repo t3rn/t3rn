@@ -1,6 +1,7 @@
 import { ApiPromise } from "@polkadot/api"
 import { u8aToHex } from "@polkadot/util"
 import { xxhashAsU8a } from "@polkadot/util-crypto"
+import { BN } from "@polkadot/util"
 export * from "./types"
 
 export async function getStorage(api: ApiPromise, parameters: any) {
@@ -31,7 +32,9 @@ export const getEventProofs = async (api: ApiPromise, blockHash: any) => {
   return proofs
 }
 
-export async function queryNonce(api: ApiPromise, address: any): Promise<bigint> {
-  const res = (await api.query.system.account(address)) as any
-  return BigInt(res.nonce.toString())
+export async function fetchNonce(
+  api: ApiPromise,
+  address: string
+): Promise<BN> {
+  return api.rpc.system.accountNextIndex(address)
 }

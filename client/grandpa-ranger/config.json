@@ -1,5 +1,5 @@
 {
-    "rangeSize": 7,
+    "rangeSize": 5,
     "circuit": {
         "rpc": "ws://127.0.0.1::9944"
     },

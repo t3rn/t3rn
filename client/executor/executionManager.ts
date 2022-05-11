@@ -26,6 +26,9 @@ export class ExecutionManager extends EventEmitter {
     [id: string]: SideEffect
   } = {}
 
+  // maintains order during xtx lifecycle
+  sideEffectsOrder: { [xtxId: string]: string[] } = {}
+
   // adds gateways on startup
   addGateway(id: string) {
     this.queue[id] = {
@@ -37,6 +40,11 @@ export class ExecutionManager extends EventEmitter {
   }
 
   addSideEffects(sideEffects: SideEffect[]) {
+    // store xtx sfx order to submit confirmations in sequence
+    this.sideEffectsOrder[sideEffects[0].getXtxId()] = sideEffects.map(
+      sideEffect => sideEffect.getId()
+    )
+
     // plug off-chain riks assessment here
     const acceptRisk = true
     if (acceptRisk) {
@@ -59,6 +67,7 @@ export class ExecutionManager extends EventEmitter {
   // once SideEffect has been executed on target we add it to the confirming pool
   // the transactions resides here until the circuit has received targets header range
   sideEffectExecuted(id: string) {
+    if (!this.sideEffects[id]) return
     const gatewayId = this.sideEffects[id].getTarget()
     const inclusionBlock = this.sideEffects[id].getTargetBlock()
     // this.queue[gatewayId].executing.remove(id)
@@ -75,6 +84,7 @@ export class ExecutionManager extends EventEmitter {
 
   // Once confirmed, delete from queue
   finalize(id: string) {
+    if (!this.sideEffects[id]) return
     const gatewayId = this.sideEffects[id].getTarget()
     const inclusionBlock = this.sideEffects[id].getTargetBlock()
     this.removeConfirming(id, gatewayId, inclusionBlock)
@@ -86,9 +96,10 @@ export class ExecutionManager extends EventEmitter {
   // update local params and check which SideEffects can be confirmed
   updateGatewayHeight(gatewayId: string, blockHeight: any) {
     blockHeight = parseInt(blockHeight)
-
-    this.queue[gatewayId].blockHeight = blockHeight
-    this.executeQueue(gatewayId, blockHeight)
+    if (this.queue[gatewayId]) {
+      this.queue[gatewayId].blockHeight = blockHeight
+      this.executeQueue(gatewayId, blockHeight)
+    }
   }
 
   // checks which unconfirmed SideEffects can be executed on circuit
@@ -101,15 +112,15 @@ export class ExecutionManager extends EventEmitter {
     })
 
     if (ready.length > 0) {
-      let res: any[] = []
-      for (let i = 0; i < ready.length; i++) {
-        let sideEff = this.queue[gatewayId].confirming[ready[i]]
-        res.push(sideEff)
-      }
+      // mapping to confirmable sfx ids
+      const sfxIds: string[] = ready
+        .map((_blockHeight, i) => this.queue[gatewayId].confirming[ready[i]])
+        .flat()
 
-      let sideEffectsToConfirm = res.flat().map(sideEffectId => {
-        return this.sideEffects[sideEffectId]
-      })
+      // rearrange sfx into correct order
+      const sideEffectsToConfirm: SideEffect[] = this.sideEffectsOrder[
+        this.sideEffects[sfxIds[0]].getXtxId()
+      ].map(sfxId => this.sideEffects[sfxId])
 
       ExecutionManager.debug("Ready to Submit", ready)
 

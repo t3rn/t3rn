@@ -138,6 +138,8 @@ async function register(circuit, target) {
   return new Promise(async (resolve, _reject) => {
     let unsub = await api.rpc.grandpa.subscribeJustifications(
       async justification => {
+        unsub()
+
         const { blockNumber, authorities } = await grandpaDecode(justification)
         console.log("justification block number", blockNumber)
 
@@ -157,7 +159,6 @@ async function register(circuit, target) {
           api,
         })
 
-        unsub()
         return resolve()
       }
     )

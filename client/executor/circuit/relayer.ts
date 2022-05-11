@@ -1,6 +1,6 @@
 import { EventEmitter } from "events"
 import { ApiPromise, Keyring, WsProvider } from "@polkadot/api"
-import { SideEffect, queryNonce } from "../utils"
+import { SideEffect, fetchNonce } from "../utils"
 import createDebug from "debug"
 
 export default class CircuitRelayer extends EventEmitter {
@@ -37,8 +37,8 @@ export default class CircuitRelayer extends EventEmitter {
       )
 
     if (calls.length) {
-      const nonce = await queryNonce(this.api, this.signer.address)
-      CircuitRelayer.debug("bondInsuranceDeposits nonce", nonce)
+      const nonce = await fetchNonce(this.api, this.signer.address)
+      CircuitRelayer.debug("bondInsuranceDeposits nonce", nonce.toString())
       await this.api.tx.utility
         .batchAll(calls)
         .signAndSend(this.signer, { nonce })
@@ -46,35 +46,47 @@ export default class CircuitRelayer extends EventEmitter {
   }
 
   async confirmSideEffects(sideEffects: SideEffect[]) {
-    let nonce = await queryNonce(this.api, this.signer.address)
-    await Promise.all(
-      sideEffects.map(async sideEffect =>
-        this.confirmSideEffect(sideEffect, nonce++)
-      )
-    )
-  }
+    // confirmations must be submitted sequentially
+    for (const sideEffect of sideEffects) {
+      const nonce = await fetchNonce(this.api, this.signer.address)
 
-  async confirmSideEffect(sideEffect: SideEffect, nonce: bigint) {
-    CircuitRelayer.debug("confirmSideEffect nonce", nonce)
-    await this.api.tx.circuit
-      .confirmSideEffect(
-        sideEffect.xtxId,
-        sideEffect.object,
-        sideEffect.confirmedSideEffect,
-        sideEffect.inclusionProof.toJSON().proof,
-        sideEffect.execBlockHeader.toJSON()
-      )
-      .signAndSend(this.signer, { nonce }, result => {
-        if (result.status.isFinalized) {
-          const success =
-            result.events[result.events.length - 1].event.method ===
-            "ExtrinsicSuccess"
-          CircuitRelayer.debug(
-            `SideEffect confirmed: ${success}, ${result.status.asFinalized}`
+      await new Promise((resolve, reject) => {
+        this.api.tx.circuit
+          .confirmSideEffect(
+            sideEffect.xtxId,
+            sideEffect.object,
+            sideEffect.confirmedSideEffect,
+            sideEffect.inclusionProof.toJSON().proof,
+            sideEffect.execBlockHeader.toJSON()
           )
-          sideEffect.confirm(success, result.status.asFinalized)
-          this.emit("SideEffectConfirmed", sideEffect.getId())
-        }
+          .signAndSend(this.signer, { nonce }, result => {
+            if (result.status.isFinalized) {
+              CircuitRelayer.debug(
+                "### confirmSideEffects result",
+                JSON.stringify(result, null, 2)
+              )
+
+              const success =
+                result.events[result.events.length - 1].event.method ===
+                "ExtrinsicSuccess"
+
+              sideEffects.forEach(sideEffect => {
+                sideEffect.confirm(success, result.status.asFinalized)
+                this.emit("SideEffectConfirmed", sideEffect.getId())
+              })
+
+              CircuitRelayer.debug(
+                `sfx confirmed: ${success}, ${result.status.asFinalized}`
+              )
+
+              if (success) resolve(undefined)
+              else
+                reject(
+                  Error(`sfx confirmation failed for ${sideEffect.getId()}`)
+                )
+            }
+          })
       })
+    }
   }
 }
