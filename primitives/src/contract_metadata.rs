@@ -176,7 +176,7 @@ impl Default for ContractMetadata {
         ContractMetadata {
             metadata_version: b"0.0.1".encode(),
             name: b"Default contract".encode(),
-            contract_type: ContractType::System.encode(),
+            contract_type: ContractType::VolatileWasm.encode(),
             version: b"0.0.1".encode(),
             authors: vec![b"Some author".encode()],
             description: None,
@@ -212,6 +212,21 @@ impl ContractMetadata {
             repository,
             homepage,
             license,
+        }
+    }
+
+    pub fn system_contract() -> Self {
+        ContractMetadata {
+            metadata_version: b"0.0.1".encode(),
+            name: b"Default contract".encode(),
+            contract_type: ContractType::System.encode(),
+            version: b"0.0.1".encode(),
+            authors: vec![b"Some author".encode()],
+            description: None,
+            documentation: None,
+            repository: None,
+            homepage: None,
+            license: None,
         }
     }
 
