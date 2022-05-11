@@ -3814,7 +3814,7 @@ checksum = "437f8808009c031df3c1d532c8fd7e3d73239dfe522ebf0b94b5e34d5d01044b"
 dependencies = [
  "async-channel",
  "castaway",
- "crossbeam-utils 0.8.8",
+ "crossbeam-utils 0.7.2",
  "curl",
  "curl-sys",
  "encoding_rs",
@@ -12132,8 +12132,9 @@ dependencies = [
 
 [[package]]
 name = "t3rn-sdk-primitives"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
+ "cfg-if 1.0.0",
  "parity-scale-codec 2.3.1",
  "scale-info 1.0.0",
 ]
@@ -12645,7 +12646,7 @@ dependencies = [
  "chrono",
  "lazy_static",
  "matchers",
- "parking_lot 0.11.2",
+ "parking_lot 0.9.0",
  "regex",
  "serde",
  "serde_json",
