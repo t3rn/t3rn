@@ -392,6 +392,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "backoff"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b62ddb9cb1ec0a098ad4bbf9344d0713fa193ae1a80af55febcff2627b6a00c1"
+dependencies = [
+ "futures-core",
+ "getrandom 0.2.6",
+ "instant",
+ "pin-project-lite 0.2.8",
+ "rand 0.8.5",
+ "tokio 1.17.0",
+]
+
+[[package]]
 name = "backtrace"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1141,7 +1155,9 @@ dependencies = [
  "cumulus-client-service",
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
+ "cumulus-relay-chain-inprocess-interface",
  "cumulus-relay-chain-interface",
+ "cumulus-relay-chain-rpc-interface",
  "derive_more",
  "frame-benchmarking",
  "frame-benchmarking-cli",
@@ -1242,6 +1258,7 @@ dependencies = [
  "parity-scale-codec 3.1.2",
  "polkadot-parachain",
  "polkadot-runtime-common",
+ "polkadot-runtime-constants",
  "scale-info 2.1.1",
  "serde",
  "smallvec 1.8.0",
@@ -2176,6 +2193,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "cumulus-relay-chain-inprocess-interface"
+version = "0.1.0"
+source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.19#0c779d926beeb6e1f3f2aa777d9bcec792c0bdac"
+dependencies = [
+ "async-trait",
+ "cumulus-primitives-core",
+ "cumulus-relay-chain-interface",
+ "futures 0.3.21",
+ "futures-timer",
+ "parking_lot 0.12.0",
+ "polkadot-client",
+ "polkadot-service",
+ "sc-client-api",
+ "sc-consensus-babe",
+ "sc-network",
+ "sc-service",
+ "sc-telemetry",
+ "sc-tracing",
+ "sp-api",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-core",
+ "sp-runtime",
+ "sp-state-machine",
+ "tracing",
+]
+
+[[package]]
 name = "cumulus-relay-chain-interface"
 version = "0.1.0"
 source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.19#0c779d926beeb6e1f3f2aa777d9bcec792c0bdac"
@@ -2197,6 +2242,32 @@ dependencies = [
  "sp-runtime",
  "sp-state-machine",
  "thiserror",
+]
+
+[[package]]
+name = "cumulus-relay-chain-rpc-interface"
+version = "0.1.0"
+source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.19#0c779d926beeb6e1f3f2aa777d9bcec792c0bdac"
+dependencies = [
+ "async-trait",
+ "backoff 0.4.0",
+ "cumulus-primitives-core",
+ "cumulus-relay-chain-interface",
+ "futures 0.3.21",
+ "futures-timer",
+ "jsonrpsee 0.10.1",
+ "parity-scale-codec 3.1.2",
+ "parking_lot 0.12.0",
+ "polkadot-service",
+ "sc-client-api",
+ "sc-rpc-api",
+ "sp-api",
+ "sp-core",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-storage",
+ "tracing",
+ "url 2.2.2",
 ]
 
 [[package]]
@@ -2916,7 +2987,7 @@ version = "0.1.0"
 dependencies = [
  "async-std",
  "async-trait",
- "backoff",
+ "backoff 0.2.1",
  "backtrace 0.3.64",
  "futures 0.3.21",
  "headers-relay",
@@ -3631,7 +3702,7 @@ version = "0.1.0"
 dependencies = [
  "async-std",
  "async-trait",
- "backoff",
+ "backoff 0.2.1",
  "futures 0.3.21",
  "linked-hash-map",
  "log",
@@ -3884,6 +3955,22 @@ dependencies = [
  "tokio 1.17.0",
  "tokio-rustls 0.22.0",
  "webpki 0.21.4",
+]
+
+[[package]]
+name = "hyper-rustls"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d87c48c02e0dc5e3b849a2041db3029fd066650f8f717c07bf8ed78ccb895cac"
+dependencies = [
+ "http 0.2.6",
+ "hyper 0.14.18",
+ "log",
+ "rustls 0.20.4",
+ "rustls-native-certs 0.6.1",
+ "tokio 1.17.0",
+ "tokio-rustls 0.23.3",
+ "webpki-roots 0.22.2",
 ]
 
 [[package]]
@@ -4374,6 +4461,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "91dc760c341fa81173f9a434931aaf32baad5552b0230cc6c93e8fb7eaad4c19"
 dependencies = [
  "jsonrpsee-core",
+ "jsonrpsee-http-client",
  "jsonrpsee-proc-macros 0.10.1",
  "jsonrpsee-types 0.10.1",
  "jsonrpsee-ws-client 0.10.1",
@@ -4418,6 +4506,25 @@ dependencies = [
  "serde",
  "serde_json",
  "soketto 0.7.1",
+ "thiserror",
+ "tokio 1.17.0",
+ "tracing",
+]
+
+[[package]]
+name = "jsonrpsee-http-client"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "92709e0b8255691f4df954a0176b1cbc3312f151e7ed2e643812e8bd121f1d1c"
+dependencies = [
+ "async-trait",
+ "hyper 0.14.18",
+ "hyper-rustls 0.23.0",
+ "jsonrpsee-core",
+ "jsonrpsee-types 0.10.1",
+ "rustc-hash",
+ "serde",
+ "serde_json",
  "thiserror",
  "tokio 1.17.0",
  "tracing",
@@ -9439,7 +9546,7 @@ dependencies = [
  "ansi_term",
  "async-std",
  "async-trait",
- "backoff",
+ "backoff 0.2.1",
  "env_logger 0.8.4",
  "futures 0.3.21",
  "isahc",
@@ -10411,7 +10518,7 @@ dependencies = [
  "futures-timer",
  "hex",
  "hyper 0.14.18",
- "hyper-rustls",
+ "hyper-rustls 0.22.1",
  "num_cpus",
  "once_cell",
  "parity-scale-codec 3.1.2",

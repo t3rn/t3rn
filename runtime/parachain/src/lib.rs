@@ -55,7 +55,8 @@ use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 pub use sp_runtime::BuildStorage;
 
 // Polkadot Imports
-use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
+use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
+use polkadot_runtime_constants::weights::RocksDbWeight;
 
 // XCM Imports
 use xcm::latest::prelude::BodyId;
@@ -408,6 +409,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type Event = Event;
     type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
     type VersionWrapper = ();
+    type WeightInfo = ();
     type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 

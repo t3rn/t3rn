@@ -52,12 +52,13 @@ sp-transaction-pool                        = { git = "https://github.com/parityt
 sp-version                                 = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.19" }
 
 # Polkadot
-pallet-xcm              = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.19" }
-polkadot-parachain      = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.19" }
-polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.19" }
-xcm                     = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.19" }
-xcm-builder             = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.19" }
-xcm-executor            = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.19" }
+pallet-xcm                 = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.19" }
+polkadot-parachain         = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.19" }
+polkadot-runtime-common    = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.19" }
+polkadot-runtime-constants = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.19" }
+xcm                        = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.19" }
+xcm-builder                = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.19" }
+xcm-executor               = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.19" }
 
 # Cumulus
 cumulus-pallet-aura-ext             = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.19', default-features = false }
