@@ -356,11 +356,11 @@ pub mod pallet {
         }
     }
 
-    impl<T: Config> OnLocalTrigger<T> for Pallet<T> {
+    impl<T: Config> OnLocalTrigger<T, T::Escrowed> for Pallet<T> {
         fn load_local_state(
             origin: &OriginFor<T>,
             maybe_xtx_id: Option<T::Hash>,
-        ) -> Result<LocalStateExecutionView<T>, sp_runtime::DispatchError> {
+        ) -> Result<LocalStateExecutionView<T, T::Escrowed>, sp_runtime::DispatchError> {
             let requester = Self::authorize(origin.to_owned(), CircuitRole::ContractAuthor)?;
 
             let fresh_or_revoked_exec = match maybe_xtx_id {
@@ -376,9 +376,10 @@ pub mod pallet {
             )?;
             Self::apply(&mut local_xtx_ctx, None, None)?;
 
-            Ok(LocalStateExecutionView::<T>::new(
+            Ok(LocalStateExecutionView::<T, T::Escrowed>::new(
                 local_xtx_ctx.xtx_id,
                 local_xtx_ctx.local_state.clone(),
+                local_xtx_ctx.full_side_effects.clone(),
                 local_xtx_ctx.xtx.steps_cnt.clone(),
             ))
         }
@@ -450,7 +451,7 @@ pub mod pallet {
         /// Used by other pallets that want to create the exec order
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
         pub fn on_local_trigger(origin: OriginFor<T>, trigger: Vec<u8>) -> DispatchResult {
-            <Self as OnLocalTrigger<T>>::on_local_trigger(
+            <Self as OnLocalTrigger<T, T::Escrowed>>::on_local_trigger(
                 &origin,
                 LocalTrigger::<T>::decode(&mut &trigger[..])
                     .map_err(|_| Error::<T>::InsuranceBondNotRequired)?,
