@@ -300,7 +300,7 @@ impl<C: Chain> Client<C> {
     ) -> Result<StorageProof> {
         Substrate::<C>::state_prove_storage(&*self.client, keys, Some(at_block))
             .await
-            .map(|proof| StorageProof::new(proof.proof.into_iter().map(|b| b.0).collect()))
+            .map(|proof| StorageProof::new(proof.proof.into_iter().map(|b| b.0)))
             .map_err(Into::into)
     }
 

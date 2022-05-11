@@ -8,7 +8,7 @@ repository  = 'https://github.com/substrate-developer-hub/recipes'
 version     = "3.0.0"
 
 [dependencies]
-codec         = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = [ "derive" ] }
+codec         = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive" ] }
 frame-support = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 frame-system  = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 sp-runtime    = { version = "3.0.0", default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }

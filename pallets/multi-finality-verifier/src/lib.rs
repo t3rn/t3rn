@@ -37,6 +37,7 @@
 #![allow(clippy::large_enum_variant)]
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
+
 use crate::weights::WeightInfo;
 
 use bp_header_chain::{justification::GrandpaJustification, InitializationData};

@@ -23,17 +23,24 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
-use codec::{Decode, Encode};
 
-use frame_support::dispatch::{Dispatchable, GetDispatchInfo};
+use crate::escrow::Escrow;
+use codec::{Decode, Encode};
+use frame_support::{
+    dispatch::{Dispatchable, GetDispatchInfo},
+    traits::{Currency, ExistenceRequirement::AllowDeath, Get},
+};
 use frame_system::{
     ensure_signed,
     offchain::{SignedPayload, SigningTypes},
     pallet_prelude::OriginFor,
 };
-
-use sp_runtime::RuntimeDebug;
-
+pub use pallet::*;
+use sp_runtime::{
+    traits::{AccountIdConversion, Saturating, Zero},
+    KeyTypeId, RuntimeDebug,
+};
+use sp_std::{convert::TryInto, fmt::Debug, prelude::*};
 pub use t3rn_primitives::{
     abi::{GatewayABIConfig, HasherAlgo as HA, Type},
     side_effect::{ConfirmedSideEffect, FullSideEffect, SideEffect, SideEffectId},
@@ -41,30 +48,19 @@ pub use t3rn_primitives::{
     xtx::{Xtx, XtxId},
     GatewayType, *,
 };
-
-use t3rn_protocol::side_effects::confirm::{
-    ethereum::EthereumSideEffectsParser, protocol::*, substrate::SubstrateSideEffectsParser,
-};
-
-use t3rn_protocol::side_effects::loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol};
-pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
-
-use sp_runtime::traits::{AccountIdConversion, Saturating, Zero};
-
-use sp_std::{fmt::Debug, prelude::*};
-
-use frame_support::traits::{Currency, ExistenceRequirement::AllowDeath, Get};
-
-use sp_runtime::KeyTypeId;
-
-use crate::escrow::Escrow;
-pub use pallet::*;
 use t3rn_primitives::{
     circuit_portal::CircuitPortal,
     side_effect::{ConfirmationOutcome, SecurityLvl},
     transfers::EscrowedBalanceOf,
     xdns::Xdns,
 };
+use t3rn_protocol::side_effects::{
+    confirm::{
+        ethereum::EthereumSideEffectsParser, protocol::*, substrate::SubstrateSideEffectsParser,
+    },
+    loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol},
+};
+pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 
 #[cfg(test)]
 pub mod tests;
