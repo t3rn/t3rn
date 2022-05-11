@@ -119,7 +119,6 @@ macro_rules! setup_currency_adapter {
             for AccountManagerCurrencyAdapter<C, OU>
         where
             T: pallet_transaction_payment::Config + pallet_account_manager::Config<Currency = C>,
-            T::TransactionByteFee: frame_support::pallet_prelude::Get<<C as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance>,
             <T as frame_system::Config>::Call: IsSubType<pallet_3vm_contracts::Call<Runtime>>,
             C: frame_support::traits::Currency<<T as frame_system::Config>::AccountId>,
             C::PositiveImbalance: Imbalance<
