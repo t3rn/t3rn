@@ -33,6 +33,8 @@ pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = '
 pallet-sudo      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
 sp-io            = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.17' }
+t3rn-protocol     = { path = "../../protocol" }
+pallet-circuit-portal         = { path = "../circuit-portal" }
 
 [features]
 default = [ "std" ]

@@ -37,20 +37,21 @@
 #![allow(clippy::large_enum_variant)]
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
+
 use crate::weights::WeightInfo;
+use sp_std::convert::TryInto;
 
 use bp_header_chain::{justification::GrandpaJustification, InitializationData};
 use bp_runtime::{BlockNumberOf, Chain, ChainId, HashOf, HasherOf, HeaderOf};
 
 use finality_grandpa::voter_set::VoterSet;
 use frame_support::{ensure, pallet_prelude::*};
-use t3rn_primitives::bridges::{header_chain as bp_header_chain, runtime as bp_runtime};
-
 use frame_system::{ensure_signed, RawOrigin};
 use scale_info::prelude::string::String;
 use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
 use sp_runtime::traits::{BadOrigin, Header as HeaderT, Zero};
 use sp_std::vec::Vec;
+use t3rn_primitives::bridges::{header_chain as bp_header_chain, runtime as bp_runtime};
 
 #[cfg(test)]
 mod mock;
@@ -74,21 +75,20 @@ pub type BridgedBlockHasher<T, I> = HasherOf<<T as Config<I>>::BridgedChain>;
 pub type BridgedHeader<T, I> = HeaderOf<<T as Config<I>>::BridgedChain>;
 
 const LOG_TARGET: &str = "multi-finality-verifier";
-
+use frame_support::traits::Time;
+use frame_system::pallet_prelude::*;
+use t3rn_primitives::{xdns::Xdns, EscrowTrait};
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-
-    use frame_support::traits::Time;
-    use frame_system::pallet_prelude::*;
-    use sp_std::convert::TryInto;
-    use t3rn_primitives::{xdns::Xdns, EscrowTrait};
 
     #[pallet::config]
     pub trait Config<I: 'static = ()>: frame_system::Config {
         /// The chain we are bridging to here.
         type BridgedChain: Chain;
 
+        /// The overarching event type.
+        type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
         /// The upper bound on the number of requests allowed by the pallet.
         ///
         /// A request refers to an action which writes a header to storage.
@@ -185,18 +185,15 @@ pub mod pallet {
                 <BestFinalizedMap<T, I>>::get(gateway_id)
                     .ok_or_else(|| <Error<T, I>>::NoFinalizedHeader)?,
             )
-            .ok_or_else(|| <Error<T, I>>::InvalidAnchorHeader)?;
-
+            .ok_or_else(|| <Error<T, I>>::NoFinalizedHeader)?;
             // We do a quick check here to ensure that our header chain is making progress and isn't
             // "travelling back in time" (which could be indicative of something bad, e.g a hard-fork).
             ensure!(best_finalized.number() < number, <Error<T, I>>::OldHeader);
-
             let authority_set = <CurrentAuthoritySetMap<T, I>>::get(gateway_id)
                 // Expects authorities to be set before verify_justification
                 .ok_or_else(|| <Error<T, I>>::InvalidAuthoritySet)?;
 
             let set_id = authority_set.set_id;
-
             verify_justification_single::<T, I>(
                 &justification,
                 hash,
@@ -248,7 +245,6 @@ pub mod pallet {
                 <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
                 <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
             }
-
             log::debug!(
                 target: LOG_TARGET,
                 "Successfully imported finalized header with hash {:?} for gateway {:?}!",
@@ -267,7 +263,6 @@ pub mod pallet {
                 gateway_id,
                 now.clone()
             );
-
             Ok(().into())
         }
 
@@ -296,6 +291,9 @@ pub mod pallet {
             let mut anchor_header =
                 <MultiImportedHeaders<T, I>>::try_get(gateway_id, anchor_header_hash).unwrap();
 
+            let height = anchor_header.number().clone();
+            // this is safe, u32 gives us enough space for 300 days worth of blocks.
+            let range: u32 = headers_reversed.len().clone().try_into().unwrap();
             let mut index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
 
             for header in headers_reversed {
@@ -326,8 +324,6 @@ pub mod pallet {
                         header,
                         gateway_id
                     );
-
-                    break
                 }
             }
 
@@ -349,33 +345,10 @@ pub mod pallet {
 
             <T::Xdns as Xdns<T>>::update_gateway_ttl(gateway_id, now)?;
 
+            Self::deposit_event(Event::NewHeaderRangeAvailable(gateway_id, height, range));
+
             Ok(().into())
         }
-
-        // TODO: Do we still need this? Essentially just logging stuff...
-        // #[pallet::weight(0)]
-        // pub fn submit_finality_proof_and_roots(
-        //     origin: OriginFor<T>,
-        //     finality_target: BridgedHeader<T, I>,
-        //     justification: GrandpaJustification<BridgedHeader<T, I>>,
-        //     gateway_id: ChainId,
-        //     // ToDo: Try passing Vec<u8> here and cast to appropriate header type with help of xDNS
-        // ) -> DispatchResultWithPostInfo {
-        //     Self::submit_finality_proof(
-        //         origin,
-        //         finality_target.clone(),
-        //         justification,
-        //         gateway_id,
-        //     )?;
-
-        //     log::info!(
-        //         "submit_finality_proof_and_roots, _state_root: {:?}, _extrinsics_root: {:?}",
-        //         finality_target.state_root(),
-        //         finality_target.extrinsics_root()
-        //     );
-
-        //     Ok(().into())
-        // }
 
         /// Bootstrap the bridge pallet with an initial header and authority set from which to sync.
         ///
@@ -452,6 +425,12 @@ pub mod pallet {
 
             Ok(().into())
         }
+    }
+
+    #[pallet::event]
+    #[pallet::generate_deposit(pub(super) fn deposit_event)]
+    pub enum Event<T: Config<I>, I: 'static = ()> {
+        NewHeaderRangeAvailable(ChainId, BridgedBlockNumber<T, I>, u32),
     }
 
     /// The current number of requests which have written to storage.
@@ -619,6 +598,8 @@ pub mod pallet {
         InvalidAnchorHeader,
         // No finalized header known for the corresponding gateway.
         NoFinalizedHeader,
+        // submitted gateway_id does not have the parachain field set
+        NoParachainEntryFound,
     }
 
     /// Check the given header for a GRANDPA scheduled authority set change. If a change
@@ -745,7 +726,7 @@ pub mod pallet {
     }
 
     /// Ensure that the pallet is in operational mode (not halted).
-    fn ensure_operational_single<T: Config<I>, I: 'static>(
+    pub fn ensure_operational_single<T: Config<I>, I: 'static>(
         gateway_id: ChainId,
     ) -> Result<(), Error<T, I>> {
         if <IsHaltedMap<T, I>>::get(gateway_id)
@@ -797,6 +778,62 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
                 .map_err(|_| Error::<T, I>::StorageRootMismatch)?;
 
         Ok(parse(storage_proof_checker))
+    }
+
+    pub fn submit_parachain_header(
+        _block_hash: Vec<u8>,
+        gateway_id: ChainId,
+        _proof: Vec<Vec<u8>>,
+        header: BridgedHeader<T, I>,
+    ) -> DispatchResultWithPostInfo {
+        ensure_operational_single::<T, I>(gateway_id)?;
+
+        let hash = header.hash();
+        let index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
+        let pruning = <MultiImportedHashes<T, I>>::try_get(gateway_id, index);
+
+        <BestFinalizedMap<T, I>>::insert(gateway_id, hash);
+
+        <MultiImportedHeaders<T, I>>::insert(gateway_id, hash, header.clone());
+        <MultiImportedHashes<T, I>>::insert(gateway_id, index, hash);
+        <MultiImportedRoots<T, I>>::insert(
+            gateway_id,
+            hash,
+            (header.extrinsics_root(), header.state_root()),
+        );
+
+        <RequestCountMap<T, I>>::mutate(gateway_id, |count| {
+            match count {
+                Some(count) => *count += 1,
+                None => *count = Some(1),
+            }
+            *count
+        });
+
+        // Update ring buffer pointer and remove old header.
+        <MultiImportedHashesPointer<T, I>>::insert(
+            gateway_id,
+            (index + 1) % T::HeadersToKeep::get(),
+        );
+
+        if let Ok(hash) = pruning {
+            log::debug!(
+                target: LOG_TARGET,
+                "Pruning old header: {:?} for gateway {:?}.",
+                hash,
+                gateway_id
+            );
+            <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
+            <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
+        }
+
+        // not sure if we want this here as well as we're adding old blocks
+        let now = TryInto::<u64>::try_into(<T::Escrowed as EscrowTrait<T>>::Time::now())
+            .map_err(|_| "Unable to compute current timestamp")?;
+
+        <T::Xdns as Xdns<T>>::update_gateway_ttl(gateway_id, now)?;
+
+        Ok(().into())
     }
 }
 
@@ -926,6 +963,7 @@ mod tests {
             RawOrigin::Root.into(),
             Default::default(),
             gateway_id,
+            None,
             Default::default(),
             GatewayVendor::Substrate,
             GatewayType::TxOnly(0),

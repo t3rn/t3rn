@@ -42,7 +42,8 @@ fn set_ids(
     valid_side_effect: SideEffect<AccountId32, BlockNumber, BalanceOf>,
 ) -> (sp_core::H256, sp_core::H256) {
     let xtx_id: sp_core::H256 =
-        hex!("c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6").into();
+        // hex!("c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6").into();
+        hex!("e20cbc9216614585492ffbcf73bd88f830688e2f8405d559cc940b1622471f29").into();
 
     let side_effect_a_id = valid_side_effect.generate_id::<crate::SystemHashing<Test>>();
 
@@ -75,6 +76,63 @@ fn on_extrinsic_trigger_works_with_empty_side_effects() {
             sequential,
         ));
     });
+}
+
+#[test]
+fn on_extrinsic_trigger_works_raw_insured_side_effect() {
+    let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
+
+    let side_effects = vec![SideEffect {
+        target: [0u8, 0u8, 0u8, 0u8],
+        prize: 1,
+        ordered_at: 0,
+        encoded_action: vec![116, 114, 97, 110],
+        encoded_args: vec![
+            vec![
+                53, 71, 114, 119, 118, 97, 69, 70, 53, 122, 88, 98, 50, 54, 70, 122, 57, 114, 99,
+                81, 112, 68, 87, 83, 53, 55, 67, 116, 69, 82, 72, 112, 78, 101, 104, 88, 67, 80,
+                99, 78, 111, 72, 71, 75, 117, 116, 81, 89,
+            ],
+            vec![
+                53, 68, 51, 51, 51, 101, 66, 98, 53, 86, 117, 103, 72, 105, 111, 70, 111, 85, 53,
+                110, 71, 77, 98, 85, 97, 82, 50, 117, 89, 99, 111, 121, 107, 53, 113, 90, 106, 57,
+                116, 88, 82, 65, 53, 101, 114, 115, 55, 65,
+            ],
+            vec![1, 0, 0, 0, 0, 0, 0, 0],
+            vec![
+                3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0,
+            ],
+        ],
+        signature: vec![],
+        enforce_executioner: Some(
+            [
+                53, 68, 51, 51, 51, 101, 66, 98, 53, 86, 117, 103, 72, 105, 111, 70, 111, 85, 53,
+                110, 71, 77, 98, 85, 97, 82, 50, 117, 89, 99, 111, 121,
+            ]
+            .into(),
+        ),
+    }];
+
+    let fee = 1;
+    let sequential = true;
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+
+            System::set_block_number(1);
+
+            assert_ok!(Circuit::on_extrinsic_trigger(
+                origin,
+                side_effects,
+                fee,
+                sequential,
+            ));
+        });
 }
 
 #[test]
@@ -123,22 +181,12 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                 vec![
                     EventRecord {
                         phase: Phase::Initialization,
-                        event: Event::Circuit(crate::Event::<Test>::XTransactionReadyForExec(
-                            hex!(
-                                "c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6"
-                            )
-                            .into()
-                        )),
-                        topics: vec![]
-                    },
-                    EventRecord {
-                        phase: Phase::Initialization,
                         event: Event::Circuit(crate::Event::<Test>::NewSideEffectsAvailable(
                             AccountId32::new(hex!(
                                 "0101010101010101010101010101010101010101010101010101010101010101"
                             )),
                             hex!(
-                                "c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6"
+                                "e20cbc9216614585492ffbcf73bd88f830688e2f8405d559cc940b1622471f29"
                             )
                             .into(),
                             vec![SideEffect {
@@ -160,14 +208,28 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                                 ],
                                 signature: vec![],
                                 enforce_executioner: None
-                            }]
+                            }],
+                            vec![hex!(
+                                "892b77ece9a2adf9f18fc8f0525579bbf312d6674da09899a54f864311a770f0"
+                            )
+                            .into(),],
                         )),
                         topics: vec![]
-                    }
+                    },
+                    EventRecord {
+                        phase: Phase::Initialization,
+                        event: Event::Circuit(crate::Event::<Test>::XTransactionReadyForExec(
+                            hex!(
+                                "e20cbc9216614585492ffbcf73bd88f830688e2f8405d559cc940b1622471f29"
+                            )
+                            .into()
+                        )),
+                        topics: vec![]
+                    },
                 ]
             );
             let xtx_id: sp_core::H256 =
-                hex!("c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6").into();
+                hex!("e20cbc9216614585492ffbcf73bd88f830688e2f8405d559cc940b1622471f29").into();
             let side_effect_a_id =
                 valid_transfer_side_effect.generate_id::<crate::SystemHashing<Test>>();
 
@@ -182,7 +244,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: 100u64,
+                    timeouts_at: 101u64,
                     delay_steps_at: None,
                     status: CircuitStatus::Ready,
                     total_reward: Some(fee),
@@ -289,22 +351,12 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
                 vec![
                     EventRecord {
                         phase: Phase::Initialization,
-                        event: Event::Circuit(crate::Event::<Test>::XTransactionReceivedForExec(
-                            hex!(
-                                "c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6"
-                            )
-                            .into()
-                        )),
-                        topics: vec![]
-                    },
-                    EventRecord {
-                        phase: Phase::Initialization,
                         event: Event::Circuit(crate::Event::<Test>::NewSideEffectsAvailable(
                             AccountId32::new(hex!(
                                 "0101010101010101010101010101010101010101010101010101010101010101"
                             )),
                             hex!(
-                                "c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6"
+                                "e20cbc9216614585492ffbcf73bd88f830688e2f8405d559cc940b1622471f29"
                             )
                             .into(),
                             vec![SideEffect {
@@ -330,10 +382,24 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
                                 ],
                                 signature: vec![],
                                 enforce_executioner: None
-                            }]
+                            }],
+                            vec![hex!(
+                                "a72a1bfb371d270fe1f31e48d1723f360788426ab53a0b234e6c724e055875f5"
+                            )
+                            .into(),],
                         )),
                         topics: vec![]
-                    }
+                    },
+                    EventRecord {
+                        phase: Phase::Initialization,
+                        event: Event::Circuit(crate::Event::<Test>::XTransactionReceivedForExec(
+                            hex!(
+                                "e20cbc9216614585492ffbcf73bd88f830688e2f8405d559cc940b1622471f29"
+                            )
+                            .into()
+                        )),
+                        topics: vec![]
+                    },
                 ]
             );
         });
@@ -404,7 +470,7 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: 100u64,
+                    timeouts_at: 101u64,
                     delay_steps_at: None,
                     status: CircuitStatus::PendingInsurance,
                     total_reward: Some(fee),
@@ -489,7 +555,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: 100u64,
+                    timeouts_at: 101u64,
                     delay_steps_at: None,
                     status: CircuitStatus::PendingInsurance,
                     total_reward: Some(fee),
@@ -536,7 +602,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: 100u64,
+                    timeouts_at: 101u64,
                     delay_steps_at: None,
                     status: CircuitStatus::Ready,
                     total_reward: Some(fee),
@@ -633,7 +699,7 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: 100u64,
+                    timeouts_at: 101u64,
                     delay_steps_at: None,
                     status: CircuitStatus::Ready,
                     total_reward: Some(fee),
@@ -756,7 +822,7 @@ fn circuit_handles_swap_with_insurance() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: 100u64,
+                    timeouts_at: 101u64,
                     delay_steps_at: None,
                     status: CircuitStatus::PendingInsurance,
                     total_reward: Some(fee),
@@ -803,7 +869,7 @@ fn circuit_handles_swap_with_insurance() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: 100u64,
+                    timeouts_at: 101u64,
                     delay_steps_at: None,
                     status: CircuitStatus::Ready,
                     total_reward: Some(fee),
@@ -1008,7 +1074,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: 100u64,
+                    timeouts_at: 101u64,
                     delay_steps_at: None,
                     status: CircuitStatus::PendingInsurance,
                     total_reward: Some(fee),
@@ -1055,7 +1121,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: 100u64,
+                    timeouts_at: 101u64,
                     delay_steps_at: None,
                     status: CircuitStatus::Ready,
                     total_reward: Some(fee),
@@ -1307,7 +1373,7 @@ fn two_dirty_and_three_optimistic_transfers_are_allocated_to_3_steps_and_all_5_i
             ));
 
             let xtx_id: sp_core::H256 =
-                hex!("c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6").into();
+                hex!("e20cbc9216614585492ffbcf73bd88f830688e2f8405d559cc940b1622471f29").into();
 
             // Confirmation start - 3
             successfully_bond_optimistic(
@@ -1474,7 +1540,7 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_confirmed() {
             assert_eq!(events.len(), 8);
 
             let xtx_id: sp_core::H256 =
-                hex!("c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6").into();
+                hex!("e20cbc9216614585492ffbcf73bd88f830688e2f8405d559cc940b1622471f29").into();
 
             // Confirmation start - 1
             successfully_confirm_dirty(valid_transfer_side_effect_1, xtx_id.clone(), BOB_RELAYER);
@@ -1560,7 +1626,7 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
             assert_eq!(events.len(), 9);
 
             let xtx_id: sp_core::H256 =
-                hex!("c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6").into();
+                hex!("e20cbc9216614585492ffbcf73bd88f830688e2f8405d559cc940b1622471f29").into();
 
             // Confirmation start
             let mut encoded_balance_transfer_event = pallet_balances::Event::<Test>::Transfer {
@@ -1698,10 +1764,10 @@ fn circuit_cancels_xtx_after_timeout() {
             // assert_eq!(events.len(), 8);
 
             let xtx_id: sp_core::H256 =
-                hex!("c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6").into();
+                hex!("e20cbc9216614585492ffbcf73bd88f830688e2f8405d559cc940b1622471f29").into();
 
             // The tiemout links that will be checked at on_initialize are there
-            assert_eq!(Circuit::get_active_timing_links(xtx_id), Some(100u64));
+            assert_eq!(Circuit::get_active_timing_links(xtx_id), Some(101u64)); // 100 offset + current block height 1 = 101
 
             assert_eq!(
                 Circuit::get_x_exec_signals(xtx_id),
@@ -1709,7 +1775,7 @@ fn circuit_cancels_xtx_after_timeout() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: 100u64,
+                    timeouts_at: 101u64, // 100 offset + current block height 1 = 101
                     delay_steps_at: None,
                     status: CircuitStatus::Ready,
                     total_reward: Some(fee),
@@ -1717,9 +1783,9 @@ fn circuit_cancels_xtx_after_timeout() {
                 })
             );
 
-            System::set_block_number(100);
+            System::set_block_number(110);
 
-            <Circuit as frame_support::traits::OnInitialize<u64>>::on_initialize(100);
+            <Circuit as frame_support::traits::OnInitialize<u64>>::on_initialize(110);
 
             assert_eq!(
                 Circuit::get_x_exec_signals(xtx_id),
@@ -1727,7 +1793,7 @@ fn circuit_cancels_xtx_after_timeout() {
                     requester: AccountId32::new(hex!(
                         "0101010101010101010101010101010101010101010101010101010101010101"
                     )),
-                    timeouts_at: 100u64,
+                    timeouts_at: 101u64,
                     delay_steps_at: None,
                     status: CircuitStatus::RevertTimedOut,
                     total_reward: Some(fee),
@@ -1747,7 +1813,7 @@ fn circuit_cancels_xtx_after_timeout() {
                     event: Event::Circuit(
                         crate::Event::<Test>::XTransactionXtxRevertedAfterTimeOut(
                             hex!(
-                                "c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6"
+                                "e20cbc9216614585492ffbcf73bd88f830688e2f8405d559cc940b1622471f29"
                             )
                             .into()
                         )

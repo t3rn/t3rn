@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "scripts": {
     "prestart": "cargo build --release --manifest-path ./justification-decoder/Cargo.toml",
-    "start": "DEBUG=listener,relayer ts-node src/index.ts",
-    "standalone": "SKIP_WASM_BUILD=1 cargo run --manifest-path ../../node/standalone/Cargo.toml -- --dev --ws-port 3333 -lmulti-finality-verifier=debug,circuit-portal=debug",
-    "fmt": "npx prettier --no-semi --arrow-parens avoid --print-width 80 --write ./src/**.ts"
+    "start": "DEBUG=listener,relayer,instance-manager,header-listener,parachain-listener,relaychain-listener ts-node src/index.ts",
+    "standalone": "SKIP_WASM_BUILD=1 cargo run --manifest-path ../../node/standalone/Cargo.toml -- --dev --ws-port 9944 -lmulti-finality-verifier=debug,circuit-portal=debug",
+    "fmt": "npx prettier --no-semi --arrow-parens avoid --print-width 80 --write ./src/**/*.ts"
   },
   "author": "",
   "license": "Apache-2.0",
@@ -14,7 +14,6 @@
     "@t3rn/types": "=0.1.1",
     "@types/debug": "=4.1.7",
     "debug": "=4.3.3",
-    "dotenv": "=16.0.0",
     "ts-node": "=10.7.0",
     "typescript": "=4.6.2"
   }
