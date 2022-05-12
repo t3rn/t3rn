@@ -21,6 +21,7 @@ use sp_runtime::{
     Perbill,
 };
 use sp_staking::{EraIndex, SessionIndex};
+use sp_std::convert::{TryFrom, TryInto};
 use t3rn_primitives::{
     side_effect::interface::SideEffectInterface, transfers::BalanceOf, EscrowTrait,
     GatewaySysProps, GatewayType, GatewayVendor,
@@ -125,12 +126,12 @@ parameter_types! {
 
 }
 
-use frame_support::weights::IdentityFee;
+use frame_support::weights::{ConstantMultiplier, IdentityFee};
 impl pallet_transaction_payment::Config for Test {
     type FeeMultiplierUpdate = ();
+    type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
     type OperationalFeeMultiplier = OperationalFeeMultiplier;
-    type TransactionByteFee = TransactionByteFee;
     type WeightToFee = IdentityFee<Balance>;
 }
 
@@ -252,9 +253,10 @@ parameter_types! {
     pub const StakingUnsignedPriority: u64 = u64::max_value() / 2;
 }
 
-impl onchain::Config for Test {
-    type Accuracy = Perbill;
+impl onchain::ExecutionConfig for Test {
     type DataProvider = Staking;
+    type Solver = frame_election_provider_support::SequentialPhragmen<AccountId, Perbill>;
+    type System = Test;
 }
 
 parameter_types! {
@@ -266,17 +268,17 @@ parameter_types! {
 }
 
 impl pallet_staking::Config for Test {
-    // type MaxUnlockingChunks = ConstU32<32>;
     type BenchmarkingConfig = pallet_staking::TestBenchmarkingConfig;
     type BondingDuration = BondingDuration;
     type Currency = Balances;
     type CurrencyToVote = frame_support::traits::SaturatingCurrencyToVote;
-    type ElectionProvider = onchain::OnChainSequentialPhragmen<Self>;
+    type ElectionProvider = onchain::UnboundedExecution<Self>;
     type EraPayout = pallet_staking::ConvertCurve<RewardCurve>;
     type Event = Event;
     type GenesisElectionProvider = Self::ElectionProvider;
     type MaxNominations = MaxNominations;
     type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
+    type MaxUnlockingChunks = ConstU32<32>;
     type NextNewSession = Session;
     type OffendingValidatorsThreshold = OffendingValidatorsThreshold;
     type Reward = ();
@@ -286,8 +288,8 @@ impl pallet_staking::Config for Test {
     type Slash = ();
     type SlashCancelOrigin = frame_system::EnsureRoot<Self::AccountId>;
     type SlashDeferDuration = SlashDeferDuration;
-    type SortedListProvider = pallet_staking::UseNominatorsMap<Self>;
     type UnixTime = pallet_timestamp::Pallet<Test>;
+    type VoterList = pallet_staking::UseNominatorsAndValidatorsMap<Self>;
     type WeightInfo = ();
 }
 
