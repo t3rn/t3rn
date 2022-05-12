@@ -1,4 +1,9 @@
-use crate::Bytes;
+use crate::{
+    bridges::chain_circuit::{
+        AccountId, Balance as CircuitBalance, BlockNumber as CircuitBlockNumber,
+    },
+    Bytes,
+};
 use codec::{Decode, Encode};
 
 use scale_info::TypeInfo;
@@ -93,15 +98,34 @@ pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub security_lvl: SecurityLvl,
 }
 
+#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
+pub struct HardenedSideEffect {
+    target: [u8; 4],
+    prize: CircuitBalance,
+    ordered_at: CircuitBlockNumber,
+    encoded_action: [u8; 4],
+    encoded_args: Vec<Bytes>,
+    encoded_args_abi: Vec<crate::abi::Type>,
+
+    security_lvl: SecurityLvl,
+
+    confirmation_outcome: Option<ConfirmationOutcome>,
+    confirmed_output: Option<Bytes>,
+    confirmed_executioner: Option<AccountId>,
+    confirmed_received_at: Option<CircuitBlockNumber>,
+    confirmed_cost: Option<CircuitBalance>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use hex_literal::hex;
+    use sp_core::crypto::AccountId32;
     use sp_runtime::testing::H256;
 
-    type BlockNumber = u64;
-    type BalanceOf = u64;
-    type AccountId = u64;
+    type BlockNumber = CircuitBlockNumber;
+    type BalanceOf = CircuitBalance;
+    type AccountId = AccountId32;
     type Hashing = sp_runtime::traits::BlakeTwo256;
 
     #[test]
@@ -131,6 +155,57 @@ mod tests {
     }
 
     #[test]
+    fn successfully_encodes_transfer_full_side_effect_with_confirmation() {
+        let from: AccountId32 = AccountId32::new([1u8; 32]);
+        let to: AccountId32 = AccountId32::new([2u8; 32]);
+        let value: BalanceOf = 1u128;
+        let optional_insurance = 2u128;
+        let optional_reward = 3u128;
+
+        let tsfx = SideEffect::<AccountId, BlockNumber, BalanceOf> {
+            target: [0, 0, 0, 0],
+            prize: 0,
+            ordered_at: 0,
+            encoded_action: vec![],
+            encoded_args: vec![
+                from.encode(),
+                to.encode(),
+                value.encode(),
+                [optional_insurance.encode(), optional_reward.encode()].concat(),
+            ],
+            signature: vec![],
+            enforce_executioner: None,
+        };
+
+        assert_eq!(
+            tsfx,
+            SideEffect {
+                target: [0, 0, 0, 0],
+                prize: 0,
+                ordered_at: 0,
+                encoded_action: vec![],
+                encoded_args: vec![
+                    vec![
+                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                        1, 1, 1, 1, 1, 1, 1
+                    ],
+                    vec![
+                        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                        2, 2, 2, 2, 2, 2, 2
+                    ],
+                    vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    vec![
+                        2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0
+                    ]
+                ],
+                signature: vec![],
+                enforce_executioner: None,
+            }
+        );
+    }
+
+    #[test]
     fn successfully_generates_id_for_side_empty_effect() {
         let empty_side_effect = SideEffect::<AccountId, BlockNumber, BalanceOf> {
             target: [0, 0, 0, 0],
@@ -145,14 +220,14 @@ mod tests {
         assert_eq!(
             empty_side_effect.generate_id::<Hashing>(),
             H256::from_slice(&hex!(
-                "19ea4a516c66775ea1f648d71f6b8fa227e8b0c1a0c9203f82c33b89c4e759b5"
+                "89eb0d6a8a691dae2cd15ed0369931ce0a949ecafa5c3f93f8121833646e15c3"
             ))
         );
     }
 
     #[test]
     fn successfully_defaults_side_effect_to_an_empty_one() {
-        let empty_side_effect = SideEffect::<AccountId, BlockNumber, BalanceOf> {
+        let empty_side_effect = SideEffect::<u64, BlockNumber, BalanceOf> {
             target: [0, 0, 0, 0],
             prize: 0,
             ordered_at: 0,
