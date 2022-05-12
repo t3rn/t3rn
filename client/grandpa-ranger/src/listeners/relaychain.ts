@@ -1,6 +1,10 @@
 import { EventEmitter } from "events"
 import { ApiPromise, WsProvider } from "@polkadot/api"
-import { grandpaDecode, decodeHeaderNumber } from "./../util"
+import {
+  grandpaDecode,
+  decodeHeaderNumber,
+  fetchMissingHeaders,
+} from "./../util"
 import { u8aConcat, u8aToU8a, u8aToHex } from "@polkadot/util"
 import { xxhashAsU8a } from "@polkadot/util-crypto"
 import HeaderListener from "./headers"
@@ -11,7 +15,7 @@ export default class RelaychainListener extends EventEmitter {
   static debug = createDebug("relaychain-listener")
 
   api: ApiPromise
-  headers: HeaderListener
+  headerListener: HeaderListener
   gatewayId: string
   //mapping for justifications, might be useful to store when dealing
   // with authSetChange
@@ -28,15 +32,15 @@ export default class RelaychainListener extends EventEmitter {
       provider: new WsProvider(url),
     })
 
-    this.headers = await new HeaderListener()
-    await this.headers.setup(url, true)
+    this.headerListener = await new HeaderListener()
+    await this.headerListener.setup(url, true)
 
-    this.headers.on("RangeComplete", (block: number) => {
+    this.headerListener.on("RangeComplete", (block: number) => {
       RelaychainListener.debug("Received RangeComplete:", block)
       this.rangeReadyAt = block
     })
 
-    this.headers.start()
+    this.headerListener.start()
   }
 
   async start() {
@@ -64,21 +68,30 @@ export default class RelaychainListener extends EventEmitter {
             blockNumber >= this.rangeReadyAt
           ) {
             RelaychainListener.debug("Found Justification for Anchor!!")
-            const anchorIndex = this.headers.getHeaderIndex(blockNumber)
-            const anchorHeader = this.headers.headers[anchorIndex]
-            this.emit("SubmitFinalityProof", {
-              gatewayId: this.gatewayId,
-              justification,
-              anchorHeader,
-              anchorIndex,
-            })
+
+            this.headerListener.headers = await fetchMissingHeaders(
+              this.api,
+              this.headerListener.headers,
+              blockNumber
+            )
+
+            const anchorIndex = this.headerListener.getHeaderIndex(blockNumber)
+            if (anchorIndex !== -1) {
+              const anchorHeader = this.headerListener.headers[anchorIndex]
+              this.emit("SubmitFinalityProof", {
+                gatewayId: this.gatewayId,
+                justification,
+                anchorHeader,
+                anchorIndex,
+              })
+            }
           }
         }
       )
   }
 
   async submitHeaderRange(anchorIndex: number) {
-    let range = this.headers.headers.slice(0, anchorIndex + 1).reverse()
+    let range = this.headerListener.headers.slice(0, anchorIndex + 1).reverse()
     const anchorHeader = range.shift()
 
     // we need to pass the anchorIndex around, so we can delete these
@@ -92,7 +105,7 @@ export default class RelaychainListener extends EventEmitter {
   }
 
   async finalize(anchorIndex: number) {
-    this.headers.finalize(anchorIndex)
+    this.headerListener.finalize(anchorIndex)
   }
 
   // This needs refactoring, as Paras and Heads are constants
