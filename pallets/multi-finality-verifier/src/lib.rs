@@ -114,8 +114,6 @@ pub mod pallet {
 
         /// A type that manages escrow, and therefore balances
         type Escrowed: EscrowTrait<Self>;
-
-        // type CircuitPortal: CircuitPortal<Self>;
     }
 
     #[pallet::pallet]
@@ -351,83 +349,6 @@ pub mod pallet {
 
             Ok(().into())
         }
-
-        // #[pallet::weight(<T as pallet::Config<I>>::WeightInfo::submit_finality_proof(
-        //     block_hash.len() as u32,
-        //     block_hash.len() as u32,
-        // ))]
-        // pub fn submit_parachain_header(
-        //     origin: OriginFor<T>,
-        //     block_hash: Vec<u8>,
-        //     gateway_id: ChainId,
-        //     proof: Vec<Vec<u8>>,
-        // ) -> DispatchResultWithPostInfo {
-        //     // ensure_operational_single::<T, I>(gateway_id)?;
-        //     // // ensure_signed(origin)?;
-        //     // // let storage_proof: StorageProof = Decode::decode(&mut &proof.encode()[..]).unwrap();
-        //     // // let result = <T as Config<I>>::CircuitPortal::confirm_parachain_header(
-        //     // //     gateway_id,
-        //     // //     block_hash,
-        //     // //     storage_proof,
-        //     // // );
-        //     //
-        //     // let header: BridgedHeader<T, I> = match result {
-        //     //     Ok(result) => {
-        //     //         // we first need to decode the Vec
-        //     //         let vec = &Vec::<u8>::decode(&mut &result[..]).unwrap();
-        //     //         // then the header we want
-        //     //         Decode::decode(&mut vec.as_ref()).unwrap()
-        //     //     },
-        //     //     Err(err) => return Err(err.into()),
-        //     // };
-        //     //
-        //     // let hash = header.hash();
-        //     // let index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
-        //     // let pruning = <MultiImportedHashes<T, I>>::try_get(gateway_id, index);
-        //     //
-        //     // <BestFinalizedMap<T, I>>::insert(gateway_id, hash);
-        //     //
-        //     // <MultiImportedHeaders<T, I>>::insert(gateway_id, hash, header.clone());
-        //     // <MultiImportedHashes<T, I>>::insert(gateway_id, index, hash);
-        //     // <MultiImportedRoots<T, I>>::insert(
-        //     //     gateway_id,
-        //     //     hash,
-        //     //     (header.extrinsics_root(), header.state_root()),
-        //     // );
-        //     //
-        //     // <RequestCountMap<T, I>>::mutate(gateway_id, |count| {
-        //     //     match count {
-        //     //         Some(count) => *count += 1,
-        //     //         None => *count = Some(1),
-        //     //     }
-        //     //     *count
-        //     // });
-        //     //
-        //     // // Update ring buffer pointer and remove old header.
-        //     // <MultiImportedHashesPointer<T, I>>::insert(
-        //     //     gateway_id,
-        //     //     (index + 1) % T::HeadersToKeep::get(),
-        //     // );
-        //     //
-        //     // if let Ok(hash) = pruning {
-        //     //     log::debug!(
-        //     //         target: LOG_TARGET,
-        //     //         "Pruning old header: {:?} for gateway {:?}.",
-        //     //         hash,
-        //     //         gateway_id
-        //     //     );
-        //     //     <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
-        //     //     <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
-        //     // }
-        //     //
-        //     // // not sure if we want this here as well as we're adding old blocks
-        //     // let now = TryInto::<u64>::try_into(<T::Escrowed as EscrowTrait<T>>::Time::now())
-        //     //     .map_err(|_| "Unable to compute current timestamp")?;
-        //     //
-        //     // <T::Xdns as Xdns<T>>::update_gateway_ttl(gateway_id, now)?;
-        //
-        //     Ok(().into())
-        // }
 
         /// Bootstrap the bridge pallet with an initial header and authority set from which to sync.
         ///
@@ -866,22 +787,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         header: BridgedHeader<T, I>,
     ) -> DispatchResultWithPostInfo {
         ensure_operational_single::<T, I>(gateway_id)?;
-        // ensure_signed(origin)?;
-        // let storage_proof: StorageProof = Decode::decode(&mut &proof.encode()[..]).unwrap();
-        // let result = <T as Config<I>>::CircuitPortal::confirm_parachain_header(
-        //     gateway_id,
-        //     block_hash,
-        //     storage_proof,
-        // );
-        // let header: BridgedHeader<T, I> = match header_arg {
-        //     Ok(result) => {
-        //         // we first need to decode the Vec
-        //         let vec = &Vec::<u8>::decode(&mut &result[..]).unwrap();
-        //         // then the header we want
-        //         Decode::decode(&mut vec.as_ref()).unwrap()
-        //     },
-        //     Err(err) => return Err(err.into()),
-        // };
 
         let hash = header.hash();
         let index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();

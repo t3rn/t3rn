@@ -25,7 +25,7 @@ pub type EthLikeKeccak256ValU64Gateway = pallet_multi_finality_verifier::Instanc
 pub type EthLikeKeccak256ValU32Gateway = pallet_multi_finality_verifier::Instance3;
 
 pub fn init_bridge_instance<T: pallet_multi_finality_verifier::Config<I>, I: 'static>(
-    _origin: T::Origin,
+    origin: T::Origin,
     first_header: Vec<u8>,
     authorities: Option<Vec<T::AccountId>>,
     authority_set_id: Option<SetId>,
@@ -34,7 +34,7 @@ pub fn init_bridge_instance<T: pallet_multi_finality_verifier::Config<I>, I: 'st
     let header: CurrentHeader<T, I> = Decode::decode(&mut &first_header[..])
         .map_err(|_| "Decoding error: received GenericPrimitivesHeader -> CurrentHeader<T>")?;
 
-    let _init_data = bp_header_chain::InitializationData {
+    let init_data = bp_header_chain::InitializationData {
         header,
         authority_list: authorities
             .unwrap_or_default()
@@ -47,24 +47,22 @@ pub fn init_bridge_instance<T: pallet_multi_finality_verifier::Config<I>, I: 'st
         gateway_id,
     };
 
-    // pallet_multi_finality_verifier::Pallet::<T, I>::initialize_single(origin, init_data)
-    Ok(().into())
+    pallet_multi_finality_verifier::Pallet::<T, I>::initialize_single(origin, init_data)
 }
 
 pub fn get_roots_from_bridge<T: pallet_multi_finality_verifier::Config<I>, I: 'static>(
     block_hash: Bytes,
-    _gateway_id: bp_runtime::ChainId,
+    gateway_id: bp_runtime::ChainId,
 ) -> Result<(CurrentHash<T, I>, CurrentHash<T, I>), Error<T>> {
-    let _gateway_block_hash: CurrentHash<T, I> = Decode::decode(&mut &block_hash[..])
+    let gateway_block_hash: CurrentHash<T, I> = Decode::decode(&mut &block_hash[..])
         .map_err(|_| Error::<T>::StepConfirmationDecodingError)?;
-    // let (extrinsics_root, storage_root): (CurrentHash<T, I>, CurrentHash<T, I>) =
-    //     pallet_multi_finality_verifier::Pallet::<T, I>::get_imported_roots(
-    //         gateway_id,
-    //         gateway_block_hash,
-    //     )
-    //     .ok_or(Error::<T>::StepConfirmationBlockUnrecognised)?;
-    // Ok((extrinsics_root, storage_root))
-    Ok((Default::default(), Default::default()))
+    let (extrinsics_root, storage_root): (CurrentHash<T, I>, CurrentHash<T, I>) =
+        pallet_multi_finality_verifier::Pallet::<T, I>::get_imported_roots(
+            gateway_id,
+            gateway_block_hash,
+        )
+        .ok_or(Error::<T>::StepConfirmationBlockUnrecognised)?;
+    Ok((extrinsics_root, storage_root))
 }
 
 pub fn verify_storage_proof<T: pallet_multi_finality_verifier::Config<I>, I: 'static>(

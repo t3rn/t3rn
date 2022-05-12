@@ -112,7 +112,6 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config:
         frame_system::Config
-        + pallet_multi_finality_verifier::Config
         + pallet_multi_finality_verifier::Config<DefaultPolkadotLikeGateway>
         + pallet_multi_finality_verifier::Config<PolkadotLikeValU64Gateway>
         + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU64Gateway>
@@ -266,18 +265,16 @@ pub mod pallet {
             Ok(res)
         }
 
-        // #[pallet::weight(<T as pallet::Config<I>>::WeightInfo::submit_finality_proof(
-        // block_hash.len() as u32,
-        // block_hash.len() as u32,
-        // ))]
-        #[pallet::weight(< T as Config >::WeightInfo::register_gateway_default_polka())]
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::submit_parachain_header(
+            block_hash.len() as u32,
+            block_hash.len() as u32,
+        ))]
         pub fn submit_parachain_header(
             origin: OriginFor<T>,
             block_hash: Vec<u8>,
             gateway_id: ChainId,
             proof: Vec<Vec<u8>>,
         ) -> DispatchResultWithPostInfo {
-            // ensure_operational_single::<T, I>(gateway_id)?;
             ensure_signed(origin)?;
             let storage_proof: StorageProof = Decode::decode(&mut &proof.encode()[..]).unwrap();
 
@@ -337,10 +334,9 @@ pub mod pallet {
 
                     let header: pallet_multi_finality_verifier::BridgedHeader<
                         T,
-                        DefaultPolkadotLikeGateway,
+                        PolkadotLikeValU64Gateway,
                     > = Decode::decode(&mut &header_verified[..]).unwrap();
-
-                    pallet_multi_finality_verifier::Pallet::<T, DefaultPolkadotLikeGateway>::submit_parachain_header(
+                    pallet_multi_finality_verifier::Pallet::<T, PolkadotLikeValU64Gateway>::submit_parachain_header(
                         block_hash,
                         gateway_id,
                         proof,
@@ -349,9 +345,6 @@ pub mod pallet {
                 },
                 (_, _) => unimplemented!(),
             };
-
-            // Ok(header)
-
             Ok(().into())
         }
 
@@ -433,7 +426,7 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
 
     fn confirm_event_inclusion(
         gateway_id: [u8; 4],
-        _encoded_event: Vec<u8>,
+        encoded_event: Vec<u8>,
         maybe_proof: Option<Vec<Vec<u8>>>,
         maybe_block_hash: Option<Vec<u8>>,
     ) -> Result<(), &'static str> {
@@ -460,12 +453,12 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
                 //     }
             },
             GatewayVendor::Substrate => {
-                let _block_hash = if let Some(x) = maybe_block_hash {
+                let block_hash = if let Some(x) = maybe_block_hash {
                     Ok(x)
                 } else {
                     Err("Must provide a valid read proof when proving inclusion with Substrate Bridge")
                 }?;
-                let _storage_proof: StorageProof = if let Some(x) = maybe_proof {
+                let storage_proof: StorageProof = if let Some(x) = maybe_proof {
                     Ok(Decode::decode(&mut &x.encode()[..]).unwrap())
                 } else {
                     Err("Must provide a valid read proof when proving inclusion with Substrate Bridge")
@@ -473,33 +466,33 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
 
                 // StorageKey for System_Events
 
-                let _key: Vec<u8> = [
+                let key: Vec<u8> = [
                     38, 170, 57, 78, 234, 86, 48, 224, 124, 72, 174, 12, 149, 88, 206, 247, 128,
                     212, 30, 94, 22, 5, 103, 101, 188, 132, 97, 133, 16, 114, 201, 215,
                 ]
                 .to_vec();
-                // let verified_events = match (
-                //     gateway_xdns_record.gateway_abi.hasher.clone(),
-                //     gateway_xdns_record.gateway_abi.block_number_type_size,
-                // ) {
-                //     (HasherAlgo::Blake2, 32) =>
-                //         verify_storage_proof::<T, DefaultPolkadotLikeGateway>(
-                //             block_hash,
-                //             gateway_id,
-                //             key,
-                //             storage_proof,
-                //             ProofTriePointer::State,
-                //         )?,
-                //     (HasherAlgo::Blake2, 64) =>
-                //         verify_storage_proof::<T, PolkadotLikeValU64Gateway>(
-                //             block_hash,
-                //             gateway_id,
-                //             key,
-                //             storage_proof,
-                //             ProofTriePointer::State,
-                //         )?,
-                //     (_, _) => unimplemented!(),
-                // };
+                let verified_events = match (
+                    gateway_xdns_record.gateway_abi.hasher.clone(),
+                    gateway_xdns_record.gateway_abi.block_number_type_size,
+                ) {
+                    (HasherAlgo::Blake2, 32) =>
+                        verify_storage_proof::<T, DefaultPolkadotLikeGateway>(
+                            block_hash,
+                            gateway_id,
+                            key,
+                            storage_proof,
+                            ProofTriePointer::State,
+                        )?,
+                    (HasherAlgo::Blake2, 64) =>
+                        verify_storage_proof::<T, PolkadotLikeValU64Gateway>(
+                            block_hash,
+                            gateway_id,
+                            key,
+                            storage_proof,
+                            ProofTriePointer::State,
+                        )?,
+                    (_, _) => unimplemented!(),
+                };
 
                 // Not great, but better then decoding all events and then searching
                 fn is_sub<T: PartialEq>(mut haystack: &[T], needle: &[T]) -> bool {
@@ -518,81 +511,13 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
                 // We can check if an event was in a block by checking if Vec<Event>.contains(ourHeader)
                 // Here we do this in encoded bytes form. Not pretty, but the most efficient I believe.
                 // As the event storage is currently being revamped, this is a temporary solution anyways
-                // if is_sub(&verified_events, &encoded_event) {
-                //     return Ok(().into())
-                // }
+                if is_sub(&verified_events, &encoded_event) {
+                    return Ok(().into())
+                }
                 Err(Error::<T>::SideEffectConfirmationInvalidInclusionProof.into())
             },
         }
     }
-
-    // fn confirm_parachain_header(
-    //     gateway_id: [u8; 4],
-    //     _block_hash: Vec<u8>,
-    //     _proof: StorageProof,
-    // ) -> Result<Vec<u8>, &'static str> {
-    //     // // partial StorageKey for Paras_Heads. We now need to append the parachain_id as LE-u32 to generate the parachains StorageKey
-    //     // // ToDo: This is a bit unclean, but it makes no sense to hash the StorageKey for each exec
-    //     // let mut key: Vec<u8> = [
-    //     //     205, 113, 11, 48, 189, 46, 171, 3, 82, 221, 204, 38, 65, 122, 161, 148, 27, 60, 37, 47,
-    //     //     203, 41, 216, 142, 255, 79, 61, 229, 222, 68, 118, 195,
-    //     // ]
-    //     // .to_vec();
-    //     // let parachain_xdns_record = <T as Config>::Xdns::best_available(gateway_id.clone())?;
-    //     // let _relay_chain_id: ChainId = match parachain_xdns_record.parachain {
-    //     //     Some(parachain) => {
-    //     //         // parachain_id is used as an encoded argument in the storage key
-    //     //         let mut arg = Twox64Concat::hash(parachain.id.encode().as_ref());
-    //     //         key.append(&mut arg);
-    //     //         // the relay_chain_id is set during registration and queried from storage
-    //     //         parachain.relay_chain_id
-    //     //     },
-    //     //     None => return Err(Error::<T>::NoParachainEntryFound.into()),
-    //     // };
-    //     //
-    //     // // Check inclusion relying on data in pallet-multi-verifier
-    //     // let header = match (
-    //     //     parachain_xdns_record.gateway_abi.hasher.clone(),
-    //     //     parachain_xdns_record.gateway_abi.block_number_type_size,
-    //     // ) {
-    //     //     (HasherAlgo::Blake2, 32) => {
-    //     //         let header_verified = verify_storage_proof::<T, DefaultPolkadotLikeGateway>(
-    //     //             block_hash,
-    //     //             relay_chain_id,
-    //     //             key,
-    //     //             proof,
-    //     //             ProofTriePointer::State,
-    //     //         )?;
-    //     //         let header: pallet_multi_finality_verifier::BridgedHeader<T, DefaultPolkadotLikeGateway> = match header_verified {
-    //     //             Ok(result) => {
-    //     //                 // we first need to decode the Vec
-    //     //                 let vec = &Vec::<u8>::decode(&mut &result[..]).unwrap();
-    //     //                 // then the header we want
-    //     //                 Decode::decode(&mut vec.as_ref()).unwrap()
-    //     //             },
-    //     //             Err(err) => return Err(err.into()),
-    //     //         };
-    //     //         pallet_multi_finality_verifier::Pallet::<T, DefaultPolkadotLikeGateway>::submit_parachain_header(
-    //     //             block_hash,
-    //     //             gateway_id,
-    //     //             proof,
-    //     //             header,
-    //     //         )
-    //     //     },
-    //     //     (HasherAlgo::Blake2, 64) => verify_storage_proof::<T, PolkadotLikeValU64Gateway>(
-    //     //         block_hash,
-    //     //         relay_chain_id,
-    //     //         key,
-    //     //         proof,
-    //     //         ProofTriePointer::State,
-    //     //     )?,
-    //     //     (_, _) => unimplemented!(),
-    //     // };
-    //     //
-    //     // Ok(header)
-    //
-    //     Ok(().into())
-    // }
 }
 impl<T: Config> Pallet<T> {
     pub fn account_id() -> <T as frame_system::Config>::AccountId {
