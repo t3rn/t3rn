@@ -91,10 +91,7 @@ use crate::state::*;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use crate::{
-        escrow::Escrow,
-        sdk_primitives::signal::{KillReason, SignalKind},
-    };
+    use crate::{escrow::Escrow, sdk_primitives::signal::SignalKind};
     use frame_support::{
         pallet_prelude::*,
         traits::{
@@ -444,9 +441,7 @@ pub mod pallet {
 
         fn on_signal(
             origin: &OriginFor<T>,
-            signal: t3rn_primitives::sdk_primitives::signal::ExecutionSignal<
-                frame_system::pallet::Hash,
-            >,
+            signal: t3rn_primitives::sdk_primitives::signal::ExecutionSignal<T::Hash>,
         ) -> DispatchResult {
             let requester = Self::authorize(origin.to_owned(), CircuitRole::ContractAuthor)?;
 
@@ -461,7 +456,7 @@ pub mod pallet {
                 want_circuit_status,
                 &requester,
                 Zero::zero(),
-                signal.execution_id,
+                Some(signal.execution_id),
             )?;
 
             match &signal.kind {
@@ -474,9 +469,12 @@ pub mod pallet {
                         &vec![], // We dont make new side effects for signals
                         added_full_side_effects,
                     );
+                    Ok(())
                 },
-                SignalKind::Kill(KillReason::Unhandled) =>
-                    Self::kill(&mut local_xtx_ctx, CircuitStatus::RevertKill)?,
+                SignalKind::Kill(_reason) => {
+                    Self::kill(&mut local_xtx_ctx, CircuitStatus::RevertKill);
+                    Ok(())
+                },
             }
         }
     }
