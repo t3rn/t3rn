@@ -3,6 +3,7 @@ use codec::{Decode, Encode};
 use frame_support::dispatch::DispatchResult;
 use frame_system::{pallet_prelude::OriginFor, Config};
 use sp_std::{fmt::Debug, vec::Vec};
+use t3rn_sdk_primitives::signal::ExecutionSignal;
 
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode)]
 pub struct LocalTrigger<T: Config> {
@@ -56,4 +57,6 @@ pub trait OnLocalTrigger<T: Config> {
         origin: &OriginFor<T>,
         maybe_xtx_id: Option<T::Hash>,
     ) -> Result<LocalStateExecutionView<T>, sp_runtime::DispatchError>;
+
+    fn on_signal(origin: &OriginFor<T>, signal: ExecutionSignal<T::Hash>) -> DispatchResult;
 }

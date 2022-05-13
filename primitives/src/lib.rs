@@ -57,6 +57,7 @@ pub mod xtx;
 
 pub use gateway_inbound_protocol::GatewayInboundProtocol;
 pub use orml_traits;
+pub use t3rn_sdk_primitives as sdk_primitives;
 
 pub type ChainId = [u8; 4];
 

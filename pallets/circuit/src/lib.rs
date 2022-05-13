@@ -91,7 +91,10 @@ use crate::state::*;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use crate::escrow::Escrow;
+    use crate::{
+        escrow::Escrow,
+        sdk_primitives::signal::{KillReason, SignalKind},
+    };
     use frame_support::{
         pallet_prelude::*,
         traits::{
@@ -405,8 +408,7 @@ pub mod pallet {
                 Error::<T>::ContractXtxKilledRunOutOfFunds
             })?;
 
-            // ToDo: This should be replaced with call to 3VM from the trait as a dep inj. @Don
-            // let side_effects = T::FreeVM::exec_in_xtx_ctx(
+            // ToDo: This should be converting the side effect from local trigger to FSE
             let side_effects = Self::exec_in_xtx_ctx(
                 local_xtx_ctx.xtx_id,
                 local_xtx_ctx.local_state.clone(),
@@ -438,6 +440,44 @@ pub mod pallet {
             );
 
             Ok(())
+        }
+
+        fn on_signal(
+            origin: &OriginFor<T>,
+            signal: t3rn_primitives::sdk_primitives::signal::ExecutionSignal<
+                frame_system::pallet::Hash,
+            >,
+        ) -> DispatchResult {
+            let requester = Self::authorize(origin.to_owned(), CircuitRole::ContractAuthor)?;
+
+            // TODO: make From<SignalKind> for CircuitStatus
+            let want_circuit_status = match &signal.kind {
+                SignalKind::Continue => CircuitStatus::Ready,
+                SignalKind::Complete => CircuitStatus::Finished, // TODO: validate this
+                SignalKind::Kill(_reason) => CircuitStatus::RevertKill,
+            };
+
+            let mut local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
+                want_circuit_status,
+                &requester,
+                Zero::zero(),
+                signal.execution_id,
+            )?;
+
+            match &signal.kind {
+                SignalKind::Continue | SignalKind::Complete => {
+                    let (_, added_full_side_effects) = Self::apply(&mut local_xtx_ctx, None, None)?;
+                    Self::emit(
+                        local_xtx_ctx.xtx_id,
+                        Some(local_xtx_ctx.xtx),
+                        &requester,
+                        &vec![], // We dont make new side effects for signals
+                        added_full_side_effects,
+                    );
+                },
+                SignalKind::Kill(KillReason::Unhandled) =>
+                    Self::kill(&mut local_xtx_ctx, CircuitStatus::RevertKill)?,
+            }
         }
     }
 
@@ -946,9 +986,6 @@ impl<T: Config> Pallet<T> {
             | CircuitStatus::Finished
             | CircuitStatus::RevertTimedOut => {
                 if let Some(id) = xtx_id {
-                    if !<Self as Store>::XExecSignals::contains_key(id) {
-                        return Err(Error::<T>::SetupFailedUnknownXtx)
-                    }
                     let xtx = <Self as Store>::XExecSignals::get(id)
                         .ok_or(Error::<T>::SetupFailedUnknownXtx)?;
                     // Make sure in case of commit_relay to only check finished Xtx

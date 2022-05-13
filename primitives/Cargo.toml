@@ -39,6 +39,8 @@ sp-trie             = { git = "https://github.com/paritytech/substrate", branch 
 
 snowbridge-core = { path = "src/bridges/snowfork/core", default-features = false }
 
+t3rn-sdk-primitives = { path = "../3vm/sdk/primitives", default-features = false }
+
 [dev-dependencies]
 hex         = "0.4"
 hex-literal = { version = '0.3.1' }
@@ -67,5 +69,6 @@ std = [
   "sp-state-machine/std",
   "sp-trie/std",
   "sp-finality-grandpa/std",
+  "t3rn-sdk-primitives/std",
   "finality-grandpa/std",
 ]
