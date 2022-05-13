@@ -5,18 +5,22 @@ use crate::{
     Bytes,
 };
 use codec::{Decode, Encode};
+use std::convert::TryFrom;
 
 use scale_info::TypeInfo;
 use sp_runtime::{traits::Zero, RuntimeDebug};
 use sp_std::vec::Vec;
 
+use sp_core::crypto::AccountId32;
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
 #[cfg(feature = "std")]
 use std::fmt::Debug;
 
 pub mod interface;
+use crate::abi::Type;
 pub use interface::*;
+
 pub mod parser;
 
 pub type SideEffectId<T> = <T as frame_system::Config>::Hash;
@@ -67,7 +71,7 @@ impl Default for ConfirmationOutcome {
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub err: Option<ConfirmationOutcome>,
     pub output: Option<Bytes>,
@@ -91,29 +95,161 @@ impl Default for SecurityLvl {
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub input: SideEffect<AccountId, BlockNumber, BalanceOf>,
     pub confirmed: Option<ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf>>,
     pub security_lvl: SecurityLvl,
 }
 
-#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
+impl<
+        AccountId: Encode,
+        BlockNumber: Ord + Copy + Zero + Encode,
+        BalanceOf: Copy + Zero + Encode + Decode,
+    > FullSideEffect<AccountId, BlockNumber, BalanceOf>
+{
+    pub fn harden(
+        &self,
+    ) -> Result<
+        (
+            SecurityLvl,
+            ConfirmationOutcome,
+            CircuitBalance,
+            AccountId32,
+            CircuitBlockNumber,
+            CircuitBalance,
+            [u8; 4],
+            Vec<Bytes>,
+            [u8; 4],
+        ),
+        &'static str,
+    > {
+        let confirmed = if let Some(ref confirmed) = self.confirmed {
+            Ok(confirmed.clone())
+        } else {
+            Err("At harden() expect FSX confirmation part to be there")
+        }?;
+
+        let confirmation_outcome = if let Some(outcome) = &confirmed.err {
+            outcome.clone()
+        } else {
+            ConfirmationOutcome::Success
+        };
+
+        let confirmed_cost: CircuitBalance = Decode::decode(&mut &confirmed.cost.encode()[..])
+            .map_err(|_| "harden() decoding error: confirmed_cost")?;
+
+        let confirmed_executioner: AccountId32 =
+            Decode::decode(&mut &confirmed.executioner.encode()[..])
+                .map_err(|_| "harden() decoding error: confirmed_executioner")?;
+
+        let confirmed_received_at: CircuitBlockNumber =
+            Decode::decode(&mut &confirmed.received_at.encode()[..])
+                .map_err(|_| "harden() decoding error: confirmed_received_at")?;
+
+        let prize: CircuitBalance = Decode::decode(&mut &self.input.prize.encode()[..])
+            .map_err(|_| "harden() decoding error: confirmed_cost")?;
+
+        return Ok((
+            self.security_lvl.clone(),
+            confirmation_outcome,
+            confirmed_cost,
+            confirmed_executioner,
+            confirmed_received_at,
+            prize,
+            self.input.target.clone(),
+            self.input.encoded_args.clone(),
+            <[u8; 4]>::try_from(self.input.encoded_action.clone()).unwrap_or_default(),
+        ))
+    }
+}
+
+#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct HardenedSideEffect {
     target: [u8; 4],
     prize: CircuitBalance,
-    ordered_at: CircuitBlockNumber,
     encoded_action: [u8; 4],
     encoded_args: Vec<Bytes>,
     encoded_args_abi: Vec<crate::abi::Type>,
 
     security_lvl: SecurityLvl,
 
-    confirmation_outcome: Option<ConfirmationOutcome>,
-    confirmed_output: Option<Bytes>,
-    confirmed_executioner: Option<AccountId>,
-    confirmed_received_at: Option<CircuitBlockNumber>,
-    confirmed_cost: Option<CircuitBalance>,
+    confirmation_outcome: ConfirmationOutcome,
+    confirmed_executioner: AccountId,
+    confirmed_received_at: CircuitBlockNumber,
+    confirmed_cost: CircuitBalance,
+}
+
+impl Default for HardenedSideEffect {
+    fn default() -> Self {
+        HardenedSideEffect {
+            target: [0, 0, 0, 0],
+            prize: 0u128,
+            encoded_action: [0, 0, 0, 0],
+            encoded_args: vec![],
+            encoded_args_abi: vec![],
+            security_lvl: SecurityLvl::Dirty,
+            confirmation_outcome: ConfirmationOutcome::Success,
+            confirmed_executioner: AccountId32::new([0u8; 32]),
+            confirmed_received_at: 0,
+            confirmed_cost: 0,
+        }
+    }
+}
+
+impl
+    sp_runtime::traits::Convert<
+        (
+            SecurityLvl,
+            ConfirmationOutcome,
+            CircuitBalance,
+            AccountId32,
+            CircuitBlockNumber,
+            CircuitBalance,
+            [u8; 4],
+            Vec<Bytes>,
+            [u8; 4],
+        ),
+        HardenedSideEffect,
+    > for HardenedSideEffect
+{
+    fn convert(
+        hardened_args: (
+            SecurityLvl,
+            ConfirmationOutcome,
+            CircuitBalance,
+            AccountId32,
+            CircuitBlockNumber,
+            CircuitBalance,
+            [u8; 4],
+            Vec<Bytes>,
+            [u8; 4],
+        ),
+    ) -> HardenedSideEffect {
+        let (
+            security_lvl,
+            confirmation_outcome,
+            confirmed_cost,
+            confirmed_executioner,
+            confirmed_received_at,
+            prize,
+            target,
+            encoded_args,
+            encoded_action,
+        ) = hardened_args;
+        HardenedSideEffect {
+            target,
+            prize,
+            encoded_action,
+            encoded_args,
+            encoded_args_abi: vec![],
+            security_lvl,
+            confirmation_outcome,
+            confirmed_executioner,
+            confirmed_received_at,
+            confirmed_cost,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -121,7 +257,7 @@ mod tests {
     use super::*;
     use hex_literal::hex;
     use sp_core::crypto::AccountId32;
-    use sp_runtime::testing::H256;
+    use sp_runtime::{testing::H256, traits::Convert};
 
     type BlockNumber = CircuitBlockNumber;
     type BalanceOf = CircuitBalance;
@@ -162,7 +298,7 @@ mod tests {
         let optional_insurance = 2u128;
         let optional_reward = 3u128;
 
-        let tsfx = SideEffect::<AccountId, BlockNumber, BalanceOf> {
+        let tsfx_input = SideEffect::<AccountId, BlockNumber, BalanceOf> {
             target: [0, 0, 0, 0],
             prize: 0,
             ordered_at: 0,
@@ -177,8 +313,25 @@ mod tests {
             enforce_executioner: None,
         };
 
+        let tfsfx = FullSideEffect::<AccountId, BlockNumber, BalanceOf> {
+            input: tsfx_input.clone(),
+            security_lvl: SecurityLvl::Dirty,
+            confirmed: Some(ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {
+                err: Some(ConfirmationOutcome::Success),
+                output: Some(vec![]),
+                encoded_effect: vec![],
+                inclusion_proof: None,
+                executioner: from,
+                received_at: 1u64 as BlockNumber,
+                cost: Some(2u64 as BalanceOf),
+            }),
+        };
+
+        let h = HardenedSideEffect::default();
+        let b = HardenedSideEffect::convert(tfsfx.harden().unwrap());
+
         assert_eq!(
-            tsfx,
+            tsfx_input,
             SideEffect {
                 target: [0, 0, 0, 0],
                 prize: 0,
