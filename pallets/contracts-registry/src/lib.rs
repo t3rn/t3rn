@@ -26,7 +26,7 @@
 use codec::Encode;
 use frame_support::dispatch::DispatchResult;
 use frame_system::ensure_signed;
-use sp_std::prelude::*;
+use sp_std::{convert::TryInto, prelude::*};
 use t3rn_primitives::transfers::EscrowedBalanceOf;
 
 // Re-export pallet items so that they can be accessed from the crate namespace.

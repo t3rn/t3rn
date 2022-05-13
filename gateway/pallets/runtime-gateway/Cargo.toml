@@ -14,7 +14,7 @@ targets = [ 'x86_64-unknown-linux-gnu' ]
 [dependencies]
 anyhow                            = "*"
 bitflags                          = "1.2.0"
-codec                             = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = [ "derive" ] }
+codec                             = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive" ] }
 frame-support                     = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 frame-system                      = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }
 pallet-balances                   = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.8' }

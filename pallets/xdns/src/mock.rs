@@ -27,6 +27,7 @@ use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
     KeyTypeId,
 };
+use sp_std::convert::{TryFrom, TryInto};
 // Reexport crate as its pallet name for construct_runtime.
 use crate as pallet_xdns;
 use frame_support::pallet_prelude::GenesisBuild;
