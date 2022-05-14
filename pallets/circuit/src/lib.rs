@@ -374,7 +374,9 @@ pub mod pallet {
                 Zero::zero(),
                 maybe_xtx_id,
             )?;
-            Self::apply(&mut local_xtx_ctx, None, None)?;
+
+            // There should be no apply step since no change could have happen during the state access
+            // Self::apply(&mut local_xtx_ctx, None, None)?;
 
             Ok(LocalStateExecutionView::<T, T::Escrowed>::new(
                 local_xtx_ctx.xtx_id,
