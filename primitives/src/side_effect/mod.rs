@@ -136,8 +136,12 @@ impl<
             ConfirmationOutcome::Success
         };
 
-        let confirmed_cost: CircuitBalance = Decode::decode(&mut &confirmed.cost.encode()[..])
-            .map_err(|_| "harden() decoding error: confirmed_cost")?;
+        let confirmed_cost: CircuitBalance = if let Some(cost) = &confirmed.cost {
+            Decode::decode(&mut &cost.encode()[..])
+                .map_err(|_| "harden() decoding error: confirmed_cost")
+        } else {
+            Ok(0u128)
+        }?;
 
         let confirmed_executioner: AccountId32 =
             Decode::decode(&mut &confirmed.executioner.encode()[..])
@@ -327,8 +331,40 @@ mod tests {
             }),
         };
 
-        let _h = HardenedSideEffect::default();
-        let _b = HardenedSideEffect::convert(tfsfx.harden().unwrap());
+        let hsfx = HardenedSideEffect::convert(tfsfx.harden().unwrap());
+
+        assert_eq!(
+            hsfx,
+            HardenedSideEffect {
+                target: [0, 0, 0, 0],
+                prize: 0,
+                encoded_action: [0, 0, 0, 0],
+                encoded_args: vec![
+                    vec![
+                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                        1, 1, 1, 1, 1, 1, 1
+                    ],
+                    vec![
+                        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                        2, 2, 2, 2, 2, 2, 2
+                    ],
+                    vec![1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    vec![
+                        2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0
+                    ]
+                ],
+                encoded_args_abi: vec![],
+                security_lvl: SecurityLvl::Dirty,
+                confirmation_outcome: ConfirmationOutcome::Success,
+                confirmed_executioner: hex!(
+                    "0101010101010101010101010101010101010101010101010101010101010101"
+                )
+                .into(),
+                confirmed_received_at: 1,
+                confirmed_cost: 2
+            },
+        );
 
         assert_eq!(
             tsfx_input,
