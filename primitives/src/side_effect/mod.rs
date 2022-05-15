@@ -5,11 +5,11 @@ use crate::{
     Bytes,
 };
 use codec::{Decode, Encode};
-use std::convert::TryFrom;
+use sp_std::convert::TryFrom;
 
 use scale_info::TypeInfo;
 use sp_runtime::{traits::Zero, RuntimeDebug};
-use sp_std::vec::Vec;
+use sp_std::{vec, vec::Vec};
 
 use sp_core::crypto::AccountId32;
 #[cfg(feature = "no_std")]
@@ -18,7 +18,7 @@ use sp_runtime::RuntimeDebug as Debug;
 use std::fmt::Debug;
 
 pub mod interface;
-use crate::abi::Type;
+
 pub use interface::*;
 
 pub mod parser;
@@ -327,8 +327,8 @@ mod tests {
             }),
         };
 
-        let h = HardenedSideEffect::default();
-        let b = HardenedSideEffect::convert(tfsfx.harden().unwrap());
+        let _h = HardenedSideEffect::default();
+        let _b = HardenedSideEffect::convert(tfsfx.harden().unwrap());
 
         assert_eq!(
             tsfx_input,

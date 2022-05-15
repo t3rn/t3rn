@@ -49,7 +49,7 @@ use t3rn_protocol::side_effects::confirm::{
 use t3rn_protocol::side_effects::loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol};
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 
-use sp_runtime::traits::{AccountIdConversion, Saturating, Zero};
+use sp_runtime::traits::{AccountIdConversion, Convert, Saturating, Zero};
 
 use sp_std::{fmt::Debug, prelude::*};
 
@@ -110,6 +110,7 @@ pub mod pallet {
     use t3rn_primitives::{
         circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
         circuit_portal::CircuitPortal,
+        side_effect::HardenedSideEffect,
         xdns::Xdns,
     };
 
@@ -360,7 +361,7 @@ pub mod pallet {
         fn load_local_state(
             origin: &OriginFor<T>,
             maybe_xtx_id: Option<T::Hash>,
-        ) -> Result<LocalStateExecutionView<T, T::Escrowed>, sp_runtime::DispatchError> {
+        ) -> Result<LocalStateExecutionView<T>, sp_runtime::DispatchError> {
             let requester = Self::authorize(origin.to_owned(), CircuitRole::ContractAuthor)?;
 
             let fresh_or_revoked_exec = match maybe_xtx_id {
@@ -368,7 +369,7 @@ pub mod pallet {
                 None => CircuitStatus::Requested,
             };
 
-            let mut local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
+            let local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
                 fresh_or_revoked_exec.clone(),
                 &requester,
                 Zero::zero(),
@@ -376,12 +377,24 @@ pub mod pallet {
             )?;
 
             // There should be no apply step since no change could have happen during the state access
-            // Self::apply(&mut local_xtx_ctx, None, None)?;
 
-            Ok(LocalStateExecutionView::<T, T::Escrowed>::new(
+            let hardened_side_effects = local_xtx_ctx
+                .full_side_effects
+                .clone()
+                .iter()
+                .map(|step| {
+                    step.iter()
+                        .map(|fsx|
+                            HardenedSideEffect::convert(
+                                fsx.clone().harden().expect("Harden() shouldn't fail at this point after validation has been done before.")))
+                        .collect::<Vec<HardenedSideEffect>>()
+                })
+                .collect::<Vec<Vec<HardenedSideEffect>>>();
+
+            Ok(LocalStateExecutionView::<T>::new(
                 local_xtx_ctx.xtx_id,
                 local_xtx_ctx.local_state.clone(),
-                local_xtx_ctx.full_side_effects.clone(),
+                hardened_side_effects,
                 local_xtx_ctx.xtx.steps_cnt.clone(),
             ))
         }

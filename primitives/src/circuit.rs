@@ -1,4 +1,4 @@
-use crate::{side_effect::FullSideEffect, transfers::EscrowedBalanceOf, xtx::LocalState};
+use crate::{side_effect::HardenedSideEffect, xtx::LocalState};
 use codec::{Decode, Encode};
 use frame_support::dispatch::DispatchResult;
 use frame_system::{pallet_prelude::OriginFor, Config};
@@ -29,29 +29,26 @@ impl<T: Config> LocalTrigger<T> {
 
 // TODO: provide full side effects
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode)]
-pub struct LocalStateExecutionView<T: Config, E: crate::EscrowTrait<T>> {
+pub struct LocalStateExecutionView<T: Config> {
     pub xtx_id: <T as Config>::Hash,
     pub local_state: LocalState,
-    pub completed_full_side_effects:
-        Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, E>>>>,
+    pub hardened_side_effects: Vec<Vec<HardenedSideEffect>>,
     pub steps_cnt: (u32, u32),
 }
 
 // pub struct HardenedSideEffect {}
 
-impl<T: Config, E: crate::EscrowTrait<T>> LocalStateExecutionView<T, E> {
+impl<T: Config> LocalStateExecutionView<T> {
     pub fn new(
         xtx_id: <T as Config>::Hash,
         local_state: LocalState,
-        completed_full_side_effects: Vec<
-            Vec<FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, E>>>,
-        >,
+        hardened_side_effects: Vec<Vec<HardenedSideEffect>>,
         steps_cnt: (u32, u32),
     ) -> Self {
         LocalStateExecutionView {
             xtx_id,
             local_state,
-            completed_full_side_effects,
+            hardened_side_effects,
             steps_cnt,
         }
     }
@@ -63,5 +60,5 @@ pub trait OnLocalTrigger<T: Config, E: crate::EscrowTrait<T>> {
     fn load_local_state(
         origin: &OriginFor<T>,
         maybe_xtx_id: Option<T::Hash>,
-    ) -> Result<LocalStateExecutionView<T, E>, sp_runtime::DispatchError>;
+    ) -> Result<LocalStateExecutionView<T>, sp_runtime::DispatchError>;
 }
