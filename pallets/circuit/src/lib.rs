@@ -441,8 +441,9 @@ pub mod pallet {
 
         fn on_signal(
             origin: &OriginFor<T>,
-            signal: t3rn_primitives::sdk_primitives::signal::ExecutionSignal<T::Hash>,
+            signal: sdk_primitives::signal::ExecutionSignal<T::Hash>,
         ) -> DispatchResult {
+            log::debug!(target: "runtime::circuit", "Handling on_signal {:?}", signal);
             let requester = Self::authorize(origin.to_owned(), CircuitRole::ContractAuthor)?;
 
             // TODO: make From<SignalKind> for CircuitStatus
@@ -456,11 +457,12 @@ pub mod pallet {
                 want_circuit_status,
                 &requester,
                 Zero::zero(),
-                Some(signal.execution_id),
+                signal.execution_id,
             )?;
 
             match &signal.kind {
                 SignalKind::Continue | SignalKind::Complete => {
+                    log::debug!(target: "runtime::circuit", "Continuuing on_signal {:?}", signal);
                     let (_, added_full_side_effects) = Self::apply(&mut local_xtx_ctx, None, None)?;
                     Self::emit(
                         local_xtx_ctx.xtx_id,
@@ -472,6 +474,7 @@ pub mod pallet {
                     Ok(())
                 },
                 SignalKind::Kill(_reason) => {
+                    log::debug!(target: "runtime::circuit", "Killing on_signal {:?}", signal);
                     Self::kill(&mut local_xtx_ctx, CircuitStatus::RevertKill);
                     Ok(())
                 },
