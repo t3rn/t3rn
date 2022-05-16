@@ -2,6 +2,7 @@ import { EventEmitter } from "events"
 import { ApiPromise, WsProvider } from "@polkadot/api"
 import createDebug from "debug"
 import config from "../../config.json"
+import { fetchMissingHeaders } from "../util"
 
 export default class HeaderListener extends EventEmitter {
   static debug = createDebug("header-listener")
@@ -13,6 +14,7 @@ export default class HeaderListener extends EventEmitter {
   relaychain: boolean
   grandpaSetId: number = 0
   rangeSize: number = parseInt((config as any).rangeSize)
+  lastAnchorNumber: number = 0
 
   async setup(url: string, relaychain: boolean) {
     this.api = await new ApiPromise({
@@ -34,22 +36,20 @@ export default class HeaderListener extends EventEmitter {
   async handleHeader(header: any) {
     if (
       this.headers.length === 0 ||
-      ((this.headers[this.headers.length - 1].number &&
+      (this.headers[this.headers.length - 1].number &&
         this.headers[this.headers.length - 1].number.toNumber() + 1 ===
-          header.number.toNumber()) || true)
+          header.number.toNumber())
     ) {
       this.headers.push(header)
-    }
-
-    // if dup/uncle unset the header so that we query the correct one later
-    const idx = this.headers.findIndex(
-      h => {
+    } else {
+      // if dup/uncle unset the header so that we query the correct one later
+      const idx = this.headers.findIndex(h => {
         const headerNumber = typeof h === "number" ? h : h.number.toNumber()
-        return  headerNumber === header.number.toNumber()
+        return headerNumber === header.number.toNumber()
+      })
+      if (idx !== -1) {
+        this.headers[idx] = header.number.toNumber()
       }
-    )
-    if (idx !== -1) {
-      this.headers[idx] = header.number.toNumber()
     }
 
     if (!this.relaychain) {
@@ -66,19 +66,13 @@ export default class HeaderListener extends EventEmitter {
     if (
       this.relaychain &&
       this.headers.length > 0 &&
-      this.headers.length % this.rangeSize === 0
+      header.number.toNumber() - this.lastAnchorNumber >= this.rangeSize
     ) {
-      // check for any gaps in headers and refill with finalized ones
-      this.headers.forEach(async (h, i) => {
-        if (typeof h === "number") {
-          const blockHash = await this.api.rpc.chain.getBlockHash(h)
-          const header = await this.api.rpc.chain.getHeader(blockHash)
-          this.headers[i] = header
-        }
-      })
+      this.headers = await fetchMissingHeaders(this.api, this.headers)
 
       HeaderListener.debug("Range complete at:", header.number.toNumber())
       this.emit("RangeComplete", header.number.toNumber())
+      this.lastAnchorNumber = header.number.toNumber()
     }
   }
 

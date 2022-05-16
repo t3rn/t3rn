@@ -4,6 +4,9 @@ import { writeFile } from "fs/promises"
 import { promisify } from "util"
 import { exec as _exec } from "child_process"
 import { TypeRegistry, createType } from "@polkadot/types"
+import { Header } from "@polkadot/types/interfaces"
+import { ApiPromise } from "@polkadot/api"
+
 const registry = new TypeRegistry()
 
 const type = { type: "Block::Header" }
@@ -50,4 +53,38 @@ export function decodeHeaderNumber(data: string) {
   registry.register(typeObject)
   const res: any = createType(registry, typeObject.type, data)
   return res.number.toNumber()
+}
+
+export async function queryNonce(api, address): Promise<bigint> {
+  const res = (await api.query.system.account(address)) as any
+  return BigInt(res.nonce.toString())
+}
+
+export async function fetchMissingHeaders(
+  api: ApiPromise,
+  headers: (Header | number)[],
+  until?: number
+): Promise<Header[]> {
+  let _headers
+  if (until) {
+    _headers = Array.from(headers)
+    let tail =
+      typeof headers[headers.length - 1] === "number"
+        ? (headers[headers.length - 1] as number)
+        : (headers[headers.length - 1] as Header).number.toNumber()
+    while (++tail <= until) _headers.push(tail)
+  } else {
+    _headers = headers
+  }
+  return Promise.all(
+    _headers.map(async h => {
+      // headers items are either of type Header or number.
+      if (typeof h === "number") {
+        const blockHash = await api.rpc.chain.getBlockHash(h)
+        return api.rpc.chain.getHeader(blockHash)
+      } else {
+        return h
+      }
+    })
+  )
 }
