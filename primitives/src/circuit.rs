@@ -31,9 +31,9 @@ impl<T: Config> LocalTrigger<T> {
 // TODO: provide full side effects
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode)]
 pub struct LocalStateExecutionView<T: Config> {
-    pub xtx_id: <T as Config>::Hash,
     pub local_state: LocalState,
     pub steps_cnt: (u32, u32),
+    pub xtx_id: <T as Config>::Hash,
 }
 
 impl<T: Config> LocalStateExecutionView<T> {

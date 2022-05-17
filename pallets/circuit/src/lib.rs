@@ -446,23 +446,18 @@ pub mod pallet {
             log::debug!(target: "runtime::circuit", "Handling on_signal {:?}", signal);
             let requester = Self::authorize(origin.to_owned(), CircuitRole::ContractAuthor)?;
 
-            // TODO: make From<SignalKind> for CircuitStatus
-            let want_circuit_status = match &signal.kind {
-                SignalKind::Continue => CircuitStatus::Ready,
-                SignalKind::Complete => CircuitStatus::Finished, // TODO: validate this
-                SignalKind::Kill(_reason) => CircuitStatus::RevertKill,
-            };
-
             let mut local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
-                want_circuit_status,
+                CircuitStatus::Ready,
                 &requester,
                 Zero::zero(),
-                signal.execution_id,
+                Some(signal.execution_id),
             )?;
 
+            // now we want to post these signals somewhere so it can be handled asynchronously
+
             match &signal.kind {
-                SignalKind::Continue | SignalKind::Complete => {
-                    log::debug!(target: "runtime::circuit", "Continuuing on_signal {:?}", signal);
+                SignalKind::Complete => {
+                    log::debug!(target: "runtime::circuit", "Completing on_signal {:?}", signal);
                     let (_, added_full_side_effects) = Self::apply(&mut local_xtx_ctx, None, None)?;
                     Self::emit(
                         local_xtx_ctx.xtx_id,
