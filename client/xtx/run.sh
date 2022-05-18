@@ -16,8 +16,7 @@ set -xEeu
 
 ## build the custom justification decoder and standalone circuit
 cargo build \
-  --manifest-path ./justification-decoder/Cargo.toml \
-  --release
+  --manifest-path ./justification-decoder/Cargo.toml
 cargo build \
   --manifest-path ../../node/standalone/Cargo.toml
 

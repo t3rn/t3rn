@@ -277,6 +277,13 @@ impl pallet_sudo::Config for Runtime {
     type Event = Event;
 }
 
+impl pallet_utility::Config for Runtime {
+    type Call = Call;
+    type Event = Event;
+    type PalletsOrigin = OriginCaller;
+    type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -292,6 +299,7 @@ construct_runtime!(
         Balances: pallet_balances,
         TransactionPayment: pallet_transaction_payment,
         Sudo: pallet_sudo,
+        Utility: pallet_utility,
 
         // ORML
         ORMLTokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>} = 161,

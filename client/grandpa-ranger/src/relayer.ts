@@ -97,7 +97,7 @@ export default class Relayer extends EventEmitter {
     const submitHeaderRange =
       this.api.tx.multiFinalityVerifierDefault.submitHeaderRange(
         gatewayId,
-        range,
+        range as any,
         anchorHeader.hash
       )
 
