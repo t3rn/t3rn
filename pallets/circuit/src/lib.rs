@@ -396,6 +396,11 @@ pub mod pallet {
                 trigger.maybe_xtx_id,
             )?;
 
+            // @maciej is this ok? XD
+            if local_xtx_ctx.xtx.status == CircuitStatus::FinishedAllSteps {
+                return Ok(())
+            }
+
             // Charge: Ensure can afford
             // ToDo: Charge requester for contract with gas_estimation
             Self::charge(&requester, Zero::zero()).map_err(|_e| {
@@ -458,21 +463,15 @@ pub mod pallet {
             match &signal.kind {
                 SignalKind::Complete => {
                     log::debug!(target: "runtime::circuit", "Completing on_signal {:?}", signal);
-                    let (_, added_full_side_effects) = Self::apply(&mut local_xtx_ctx, None, None)?;
-                    Self::emit(
-                        local_xtx_ctx.xtx_id,
-                        Some(local_xtx_ctx.xtx),
-                        &requester,
-                        &vec![], // We dont make new side effects for signals
-                        added_full_side_effects,
-                    );
+                    Self::kill(&mut local_xtx_ctx, CircuitStatus::Finished);
                     Ok(())
                 },
                 SignalKind::Kill(_reason) => {
                     log::debug!(target: "runtime::circuit", "Killing on_signal {:?}", signal);
-                    Self::kill(&mut local_xtx_ctx, CircuitStatus::RevertKill);
+                    Self::kill(&mut local_xtx_ctx, CircuitStatus::RevertTimedOut); // RevertKill has no impl
                     Ok(())
                 },
+                SignalKind::Continue => Ok(()),
             }
         }
     }
