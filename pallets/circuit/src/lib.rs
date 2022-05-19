@@ -24,11 +24,12 @@
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
 
-use crate::escrow::Escrow;
+use crate::{escrow::Escrow, sdk_primitives::signal::SignalKind};
 use codec::{Decode, Encode};
 use frame_support::{
     dispatch::{Dispatchable, GetDispatchInfo},
     traits::{Currency, ExistenceRequirement::AllowDeath, Get},
+    weights::Weight,
 };
 use frame_system::{
     ensure_signed,
@@ -91,7 +92,10 @@ use crate::state::*;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use crate::{escrow::Escrow, sdk_primitives::signal::SignalKind};
+    use crate::{
+        escrow::Escrow,
+        sdk_primitives::signal::{ExecutionSignal, SignalKind},
+    };
     use frame_support::{
         pallet_prelude::*,
         traits::{
@@ -230,6 +234,16 @@ pub mod pallet {
         OptionQuery,
     >;
 
+    /// Handles queued signals
+    ///
+    /// This operation is performed lazily in `on_initialize`.
+    #[pallet::storage]
+    pub(crate) type SignalQueue<T: Config> = StorageValue<
+        _,
+        BoundedVec<(T::AccountId, ExecutionSignal<T::Hash>), T::SignalQueueDepth>,
+        ValueQuery,
+    >;
+
     /// This pallet's configuration trait
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -282,6 +296,22 @@ pub mod pallet {
 
         /// A type that provides portal functionality
         type CircuitPortal: CircuitPortal<Self>;
+
+        /// The maximum number of signals that can be queued for handling.
+        ///
+        /// When a signal from 3vm is requested, we add it to the queue to be handled by on_initialize
+        ///
+        /// This allows us to process the highest priority and mitigate any race conditions from additional steps.
+        ///
+        /// The reasons for limiting the queue depth are:
+        ///
+        /// 1. The queue is in storage in order to be persistent between blocks. We want to limit
+        /// 	the amount of storage that can be consumed.
+        /// 2. The queue is stored in a vector and needs to be decoded as a whole when reading
+        ///		it at the end of each block. Longer queues take more weight to decode and hence
+        ///		limit the amount of items that can be deleted per block.
+        #[pallet::constant]
+        type SignalQueueDepth: Get<u32>;
     }
 
     #[pallet::pallet]
@@ -297,6 +327,13 @@ pub mod pallet {
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
         fn on_initialize(n: T::BlockNumber) -> Weight {
             // Check every XtxTimeoutCheckInterval blocks
+
+            /// what happens if the weight for the block is consumed, do these timeouts need to wait
+            /// for the next check interval to handle them? maybe we need an immediate queue
+            ///
+            /// Scenario 1: all the timeouts can be handled in the block space
+            /// Scenario 2: all but 5 timeouts can be handled
+            ///     - add the 5 timeouts to an immediate queue for the next block
             if n % T::XtxTimeoutCheckInterval::get() == T::BlockNumber::from(0u8) {
                 let mut deletion_counter: u32 = 0;
                 // Go over all unfinished Xtx to find those that timed out
@@ -370,7 +407,6 @@ pub mod pallet {
                 Zero::zero(),
                 maybe_xtx_id,
             )?;
-            Self::apply(&mut local_xtx_ctx, None, None)?;
 
             Ok(LocalStateExecutionView::<T>::new(
                 local_xtx_ctx.xtx_id,
@@ -395,11 +431,6 @@ pub mod pallet {
                 Zero::zero(),
                 trigger.maybe_xtx_id,
             )?;
-
-            // @maciej is this ok? XD
-            if local_xtx_ctx.xtx.status == CircuitStatus::FinishedAllSteps {
-                return Ok(())
-            }
 
             // Charge: Ensure can afford
             // ToDo: Charge requester for contract with gas_estimation
@@ -444,35 +475,15 @@ pub mod pallet {
             Ok(())
         }
 
-        fn on_signal(
-            origin: &OriginFor<T>,
-            signal: sdk_primitives::signal::ExecutionSignal<T::Hash>,
-        ) -> DispatchResult {
+        fn on_signal(origin: &OriginFor<T>, signal: ExecutionSignal<T::Hash>) -> DispatchResult {
             log::debug!(target: "runtime::circuit", "Handling on_signal {:?}", signal);
             let requester = Self::authorize(origin.to_owned(), CircuitRole::ContractAuthor)?;
 
-            let mut local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
-                CircuitStatus::Ready,
-                &requester,
-                Zero::zero(),
-                Some(signal.execution_id),
-            )?;
-
-            // now we want to post these signals somewhere so it can be handled asynchronously
-
-            match &signal.kind {
-                SignalKind::Complete => {
-                    log::debug!(target: "runtime::circuit", "Completing on_signal {:?}", signal);
-                    Self::kill(&mut local_xtx_ctx, CircuitStatus::Finished);
-                    Ok(())
-                },
-                SignalKind::Kill(_reason) => {
-                    log::debug!(target: "runtime::circuit", "Killing on_signal {:?}", signal);
-                    Self::kill(&mut local_xtx_ctx, CircuitStatus::RevertTimedOut); // RevertKill has no impl
-                    Ok(())
-                },
-                SignalKind::Continue => Ok(()),
-            }
+            <SignalQueue<T>>::mutate(|q| {
+                q.try_push((requester, signal))
+                    .map_err(|_| Error::<T>::SignalQueueFull)
+            })?;
+            Ok(())
         }
     }
 
@@ -880,10 +891,12 @@ pub mod pallet {
         LocalSideEffectExecutionNotApplicable,
         UnsupportedRole,
         InvalidLocalTrigger,
+        SignalQueueFull,
     }
 }
 
 pub fn get_xtx_status() {}
+
 /// Payload used by this example crate to hold price
 /// data required to submit a transaction.
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
@@ -987,6 +1000,11 @@ impl<T: Config> Pallet<T> {
                     if current_status == CircuitStatus::Finished
                         && xtx.status < CircuitStatus::Finished
                     {
+                        log::debug!(
+                            "Incorrect status current_status: {:?} xtx_status {:?}",
+                            current_status,
+                            xtx.status
+                        );
                         return Err(Error::<T>::SetupFailedIncorrectXtxStatus)
                     }
                     let insurance_deposits = <Self as Store>::XtxInsuranceLinks::get(id)
@@ -1821,6 +1839,61 @@ impl<T: Config> Pallet<T> {
 
     /// The account ID of the Circuit Vault.
     pub fn account_id() -> T::AccountId {
-        <T as pallet::Config>::PalletId::get().into_account()
+        <T as Config>::PalletId::get().into_account()
+    }
+
+    // TODO: we also want to save some space for timeouts, split the weight distribution 50-50
+    pub(crate) fn process_signal_queue() -> Weight {
+        let queue_len = <SignalQueue<T>>::decode_len().unwrap_or(0);
+        if queue_len == 0 {
+            return 0
+        }
+        let db_weight = T::DbWeight::get();
+
+        let mut queue = <SignalQueue<T>>::get();
+
+        // We can do an easy process and only process CONSTANT / something signals for now
+        let mut remaining_key_budget = T::SignalQueueDepth::get() / 4;
+        let mut processed_weight = 0;
+
+        while !queue.is_empty() && remaining_key_budget > 0 {
+            // Cannot panic due to loop condition
+            let (requester, signal) = &mut queue[0];
+
+            let intended_status = match signal.kind {
+                SignalKind::Complete => CircuitStatus::Finished, // Fails bc no executor tried to execute, maybe a new enum?
+                SignalKind::Kill(_) => CircuitStatus::RevertKill,
+            };
+
+            // worst case 4 from setup
+            processed_weight += db_weight.reads(4 as Weight);
+            match Self::setup(
+                CircuitStatus::Ready,
+                &requester,
+                Zero::zero(),
+                Some(signal.execution_id),
+            ) {
+                Ok(mut local_xtx_ctx) => {
+                    Self::kill(&mut local_xtx_ctx, intended_status);
+
+                    queue.swap_remove(0);
+
+                    remaining_key_budget -= 1;
+                    // apply has 2
+                    processed_weight += db_weight.reads_writes(2 as Weight, 1 as Weight);
+                },
+                Err(err) => {
+                    log::error!("Could not handle signal");
+                    // Slide the erroneous signal to the back
+                    queue.slide(0, queue.len());
+                },
+            }
+        }
+        // Initial read of queue and update
+        processed_weight += db_weight.reads_writes(1 as Weight, 1 as Weight);
+
+        <SignalQueue<T>>::put(queue);
+
+        processed_weight
     }
 }
