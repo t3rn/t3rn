@@ -84,9 +84,9 @@ pub struct ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf> {
 
 #[derive(Clone, Eq, PartialEq, PartialOrd, Ord, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum SecurityLvl {
-    Dirty = 0,
-    Optimistic = 1,
-    Escrowed = 2,
+    Dirty,
+    Optimistic,
+    Escrowed,
 }
 
 impl Default for SecurityLvl {
@@ -125,7 +125,7 @@ impl<
         &'static str,
     > {
         let confirmed = if let Some(ref confirmed) = self.confirmed {
-            Ok(confirmed.clone())
+            Ok(confirmed)
         } else {
             Err("At harden() expect FSX confirmation part to be there")
         }?;
@@ -154,7 +154,7 @@ impl<
         let prize: CircuitBalance = Decode::decode(&mut &self.input.prize.encode()[..])
             .map_err(|_| "harden() decoding error: confirmed_cost")?;
 
-        return Ok((
+        Ok((
             self.security_lvl.clone(),
             confirmation_outcome,
             confirmed_cost,
