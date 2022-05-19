@@ -62,6 +62,15 @@ const config = {
         sidebarPath: require.resolve('./sidebars.js'),
       }, 
     ],
+    [
+      '@docusaurus/plugin-content-docs',
+      {
+        id: 'rust',
+        path: 'rust',
+        routeBasePath: 'rust',
+        sidebarPath: require.resolve('./sidebars.js'),
+      }, 
+    ],
 ],
 
   themeConfig:
@@ -86,7 +95,18 @@ const config = {
             position: 'left',
             activeBaseRegex: `/concepts/`,
           },
-          {to: '/blog', label: 'Blog', position: 'left'},
+          // {to: '/blog', label: 'Blog', position: 'left'},
+          {
+            to: '/rust/intro',    // ./docs-api/Intro.md
+            label: 'Rust',
+            position: 'right',
+            activeBaseRegex: `/rust/`,
+          },
+          {
+            href: 'https://google.com',
+            label: 'TS Docs Here',
+            position: 'right',
+          },
           {
             href: 'https://github.com/t3rn/t3rn',
             label: 'GitHub',
@@ -106,11 +126,11 @@ const config = {
               },
               {
                 label: 'Tutorials',
-                to: '/explained/intro',
+                to: '/concepts/intro',
               },
               {
                 label: 'Examples',
-                to: '/explained/intro',
+                to: '/concepts/intro',
               },
             ],
           },

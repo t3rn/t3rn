@@ -12,6 +12,6 @@ The gateway is a core component of the t3rn circuit, enabling the interoperabili
 
 
 
-### [Transaction Reversibility](reversibility/reversible.md)
+### [Transaction Reversibility](category/reversibility)
 
 A core feature of t3rn is the reversibility of cross-chain transactions. In this section, we will explain how this reversibility is achieved and what different approaches exist.
