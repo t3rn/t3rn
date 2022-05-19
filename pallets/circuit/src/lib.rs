@@ -393,7 +393,7 @@ pub mod pallet {
         fn load_local_state(
             origin: &OriginFor<T>,
             maybe_xtx_id: Option<T::Hash>,
-        ) -> Result<LocalStateExecutionView<T>, sp_runtime::DispatchError> {
+        ) -> Result<LocalStateExecutionView<T>, DispatchError> {
             let requester = Self::authorize(origin.to_owned(), CircuitRole::ContractAuthor)?;
 
             let fresh_or_revoked_exec = match maybe_xtx_id {
@@ -407,6 +407,10 @@ pub mod pallet {
                 Zero::zero(),
                 maybe_xtx_id,
             )?;
+
+            if maybe_xtx_id.is_none() {
+                Self::apply(&mut local_xtx_ctx, None, None)?;
+            }
 
             Ok(LocalStateExecutionView::<T>::new(
                 local_xtx_ctx.xtx_id,
