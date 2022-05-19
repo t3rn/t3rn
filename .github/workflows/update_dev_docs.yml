@@ -1,0 +1,51 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the development branch
+  push:
+    branches: [ development ]
+  pull_request:
+    branches: [ development ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  docs:
+    runs-on: self-hosted
+    steps:
+      - name: ☁️Checkout git repo
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+          token: ${{ secrets.GH_PAT }}
+#        run: git submodule deinit --all && git submodule init && git submodule update
+      - name: Generate Docs
+        uses: actions-rs/cargo@v1
+        with:
+          command: doc
+          args: --no-deps --workspace --exclude t3rn-protocol
+      - name: Compress Files
+        run: tar -czvf docs.tar.gz target/doc
+      - name: Send to Atlas
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: ${{ secrets.PORT }}
+          source: "docs.tar.gz"
+          target: "/"
+      - name: Unpack on Atlas
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: ${{ secrets.PORT }}
+          script: tar -xzvf docs.tar.gz -C /rust_docs
