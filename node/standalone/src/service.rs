@@ -8,7 +8,6 @@ use sc_finality_grandpa::SharedVoterState;
 use sc_keystore::LocalKeystore;
 use sc_service::{error::Error as ServiceError, Configuration, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker};
-use sp_consensus::SlotData;
 use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
 use std::{sync::Arc, time::Duration};
 
@@ -115,10 +114,10 @@ pub fn new_partial(
         telemetry.as_ref().map(|x| x.handle()),
     )?;
 
-    let slot_duration = sc_consensus_aura::slot_duration(&*client)?.slot_duration();
+    let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
 
-    let import_queue =
-        sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _, _>(ImportQueueParams {
+    let import_queue = sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _, _>(
+        ImportQueueParams {
             block_import: grandpa_block_import.clone(),
             justification_import: Some(Box::new(grandpa_block_import.clone())),
             client: client.clone(),
@@ -126,7 +125,7 @@ pub fn new_partial(
                 let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
                 let slot =
-                    sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+                    sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
                         *timestamp,
                         slot_duration,
                     );
@@ -140,7 +139,8 @@ pub fn new_partial(
             registry: config.prometheus_registry(),
             check_for_equivocation: Default::default(),
             telemetry: telemetry.as_ref().map(|x| x.handle()),
-        })?;
+        },
+    )?;
 
     Ok(sc_service::PartialComponents {
         client,
@@ -154,7 +154,7 @@ pub fn new_partial(
     })
 }
 
-fn remote_keystore(_url: &String) -> Result<Arc<LocalKeystore>, &'static str> {
+fn remote_keystore(_url: &str) -> Result<Arc<LocalKeystore>, &'static str> {
     // FIXME: here would the concrete keystore be built,
     //        must return a concrete type (NOT `LocalKeystore`) that
     //        implements `CryptoStore` and `SyncCryptoStore`
@@ -273,12 +273,11 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
             sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone());
 
         let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
-        let raw_slot_duration = slot_duration.slot_duration();
 
         let aura = sc_consensus_aura::start_aura::<AuraPair, _, _, _, _, _, _, _, _, _, _, _>(
             StartAuraParams {
                 slot_duration,
-                client: client.clone(),
+                client,
                 select_chain,
                 block_import,
                 proposer_factory,
@@ -286,9 +285,9 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
                     let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
                     let slot =
-						sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+						sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
 							*timestamp,
-							raw_slot_duration,
+							slot_duration,
 						);
 
                     Ok((timestamp, slot))

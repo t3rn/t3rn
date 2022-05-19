@@ -23,17 +23,24 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
-use codec::{Decode, Encode};
 
-use frame_support::dispatch::{Dispatchable, GetDispatchInfo};
+use crate::escrow::Escrow;
+use codec::{Decode, Encode};
+use frame_support::{
+    dispatch::{Dispatchable, GetDispatchInfo},
+    traits::{Currency, ExistenceRequirement::AllowDeath, Get},
+};
 use frame_system::{
     ensure_signed,
     offchain::{SignedPayload, SigningTypes},
     pallet_prelude::OriginFor,
 };
-
-use sp_runtime::RuntimeDebug;
-
+pub use pallet::*;
+use sp_runtime::{
+    traits::{AccountIdConversion, Convert, Saturating, Zero},
+    KeyTypeId, RuntimeDebug,
+};
+use sp_std::{convert::TryInto, fmt::Debug, prelude::*};
 pub use t3rn_primitives::{
     abi::{GatewayABIConfig, HasherAlgo as HA, Type},
     side_effect::{ConfirmedSideEffect, FullSideEffect, SideEffect, SideEffectId},
@@ -41,30 +48,19 @@ pub use t3rn_primitives::{
     xtx::{Xtx, XtxId},
     GatewayType, *,
 };
-
-use t3rn_protocol::side_effects::confirm::{
-    ethereum::EthereumSideEffectsParser, protocol::*, substrate::SubstrateSideEffectsParser,
-};
-
-use t3rn_protocol::side_effects::loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol};
-pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
-
-use sp_runtime::traits::{AccountIdConversion, Convert, Saturating, Zero};
-
-use sp_std::{fmt::Debug, prelude::*};
-
-use frame_support::traits::{Currency, ExistenceRequirement::AllowDeath, Get};
-
-use sp_runtime::KeyTypeId;
-
-use crate::escrow::Escrow;
-pub use pallet::*;
 use t3rn_primitives::{
     circuit_portal::CircuitPortal,
-    side_effect::{ConfirmationOutcome, SecurityLvl},
+    side_effect::{ConfirmationOutcome, HardenedSideEffect, SecurityLvl},
     transfers::EscrowedBalanceOf,
     xdns::Xdns,
 };
+use t3rn_protocol::side_effects::{
+    confirm::{
+        ethereum::EthereumSideEffectsParser, protocol::*, substrate::SubstrateSideEffectsParser,
+    },
+    loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol},
+};
+pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 
 #[cfg(test)]
 pub mod tests;
@@ -110,7 +106,6 @@ pub mod pallet {
     use t3rn_primitives::{
         circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
         circuit_portal::CircuitPortal,
-        side_effect::HardenedSideEffect,
         xdns::Xdns,
     };
 
@@ -357,7 +352,7 @@ pub mod pallet {
         }
     }
 
-    impl<T: Config> OnLocalTrigger<T, T::Escrowed> for Pallet<T> {
+    impl<T: Config> OnLocalTrigger<T> for Pallet<T> {
         fn load_local_state(
             origin: &OriginFor<T>,
             maybe_xtx_id: Option<T::Hash>,
@@ -466,7 +461,7 @@ pub mod pallet {
         /// Used by other pallets that want to create the exec order
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
         pub fn on_local_trigger(origin: OriginFor<T>, trigger: Vec<u8>) -> DispatchResult {
-            <Self as OnLocalTrigger<T, T::Escrowed>>::on_local_trigger(
+            <Self as OnLocalTrigger<T>>::on_local_trigger(
                 &origin,
                 LocalTrigger::<T>::decode(&mut &trigger[..])
                     .map_err(|_| Error::<T>::InsuranceBondNotRequired)?,
@@ -1226,14 +1221,8 @@ impl<T: Config> Pallet<T> {
                     .clone()
                     .iter()
                     .filter(|&fse| fse.confirmed.is_none())
-                    .collect::<Vec<
-                        &FullSideEffect<
-                            T::AccountId,
-                            T::BlockNumber,
-                            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-                        >,
-                    >>()
-                    .is_empty()
+                    .next()
+                    .is_none()
                 {
                     local_ctx.xtx.steps_cnt =
                         (local_ctx.xtx.steps_cnt.0 + 1, local_ctx.xtx.steps_cnt.1);
@@ -1285,10 +1274,10 @@ impl<T: Config> Pallet<T> {
                         Ok((None, Some(local_ctx.full_side_effects.to_vec())))
                     }
                 } else {
-                    return Err(Error::<T>::ApplyTriggeredWithUnexpectedStatus)
+                    Err(Error::<T>::ApplyTriggeredWithUnexpectedStatus)
                 }
             },
-            _ => return Err(Error::<T>::ApplyTriggeredWithUnexpectedStatus),
+            _ => Err(Error::<T>::ApplyTriggeredWithUnexpectedStatus),
         }
     }
 

@@ -54,7 +54,7 @@ impl<T: Config> LocalStateExecutionView<T> {
     }
 }
 
-pub trait OnLocalTrigger<T: Config, E: crate::EscrowTrait<T>> {
+pub trait OnLocalTrigger<T: Config> {
     fn on_local_trigger(origin: &OriginFor<T>, trigger: LocalTrigger<T>) -> DispatchResult;
 
     fn load_local_state(
