@@ -1,14 +1,14 @@
 # This is a basic workflow to help you get started with Actions
 
-name: CI
+name: UPDATE_RUST_DOCS
 
 # Controls when the workflow will run
 on:
   # Triggers the workflow on push or pull request events but only for the development branch
   push:
-    branches: [ development ]
+    branches: [ add_docs ]
   pull_request:
-    branches: [ development ]
+    branches: [ add_docs ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -17,7 +17,7 @@ on:
 jobs:
   # This workflow contains a single job called "build"
   docs:
-    runs-on: self-hosted
+    runs-on: ubunutu-latest
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@v2
@@ -30,22 +30,12 @@ jobs:
         with:
           command: doc
           args: --no-deps --workspace --exclude t3rn-protocol
-      - name: Compress Files
-        run: tar -czvf docs.tar.gz target/doc
-      - name: Send to Atlas
-        uses: appleboy/scp-action@master
+      - name: Install SSH Key
+        uses: shimataro/ssh-key-action@v2
         with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          password: ${{ secrets.PASSWORD }}
-          port: ${{ secrets.PORT }}
-          source: "docs.tar.gz"
-          target: "/"
-      - name: Unpack on Atlas
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          password: ${{ secrets.PASSWORD }}
-          port: ${{ secrets.PORT }}
-          script: tar -xzvf docs.tar.gz -C /rust_docs
+          key: ${{ secrets.RUSTDOCS_SSH_SECRET }} 
+          known_hosts: 'just-a-placeholder-so-we-dont-get-errors'
+      - name: Adding Known Hosts
+        run: ssh-keyscan -H ${{ secrets.ATLAS_IP }} >> ~/.ssh/known_hosts
+      - name: Deploy with rsync
+        run: rsync -avz ./target/doc ${{ secrets.RUSTDOCS_SSH_USER }}@${{ secrets.ATLAS_IP }}:/home/${{ secrets.RUSTDOCS_SSH_USER }}/docs
