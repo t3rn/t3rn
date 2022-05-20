@@ -6,9 +6,7 @@ name: update rust docs
 on:
   # Triggers the workflow on push or pull request events but only for the development branch
   push:
-    branches: [ add_docs ]
-  pull_request:
-    branches: [ add_docs ]
+    branches: [ development ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
