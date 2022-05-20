@@ -13,6 +13,7 @@ pub mod orml_config;
 pub mod xcm_config;
 
 use codec::Decode;
+use pallet_xdns_rpc_runtime_api::{ChainId, FetchXdnsRecordsResponse, GatewayABIConfig};
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -23,7 +24,6 @@ use sp_runtime::{
     ApplyExtrinsicResult, MultiSignature,
 };
 use sp_std::{convert::TryInto, prelude::*};
-use pallet_xdns_rpc_runtime_api::{ChainId, FetchXdnsRecordsResponse, GatewayABIConfig};
 
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;

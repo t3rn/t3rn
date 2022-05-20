@@ -1,19 +1,19 @@
 [package]
-name = "justification-decoder"
-version = "0.1.0"
 edition = "2021"
+name    = "justification-decoder"
+version = "0.1.0"
 
 [workspace]
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3", default-features = true, features = ["derive"] }
-finality-grandpa = { version = "0.14.0", default-features = true }
-frame-support = { default-features = true, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
-scale-info = { version = "2", default-features = true, features = ["derive"] }
+codec               = { package = "parity-scale-codec", version = "3", default-features = true, features = [ "derive" ] }
+finality-grandpa    = { version = "0.14.0", default-features = true }
+frame-support       = { default-features = true, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
+hex                 = "0.4.3"
+scale-info          = { version = "2", default-features = true, features = [ "derive" ] }
+serde               = { version = "1.0.105", features = [ "derive" ] }
+serde_json          = "1.0.50"
+sp-core             = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19', default-features = true }
 sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = true }
-sp-std = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19', default-features = true }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = true }
-sp-core = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19', default-features = true }
-serde = { version = "1.0.105", features = ["derive"] }
-serde_json = "1.0.50"
-hex = "0.4.3"
+sp-runtime          = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = true }
+sp-std              = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19', default-features = true }

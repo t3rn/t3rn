@@ -181,6 +181,4 @@ runtime-benchmarks = [
 ]
 # Make contract callable functions marked as __unstable__ available. Do not enable
 # on live chains as those are subject to change.
-contracts-unstable-interface = [
-  "pallet-3vm-contracts/unstable-interface"
-]
+contracts-unstable-interface = [ "pallet-3vm-contracts/unstable-interface" ]
