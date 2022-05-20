@@ -1163,7 +1163,7 @@ fn successfully_confirm_dirty(
 
     assert_ok!(Circuit::confirm_side_effect(
         Origin::signed(relayer),
-        xtx_id.clone(),
+        xtx_id,
         side_effect,
         confirmation_transfer,
         None,
@@ -1202,7 +1202,7 @@ fn successfully_bond_optimistic(
             insurance: insurance as u64,
             reward: reward as u64,
             requester: Decode::decode(&mut &submitter.encode()[..]).unwrap(),
-            bonded_relayer: Some(relayer.clone()),
+            bonded_relayer: Some(relayer),
             status: CircuitStatus::Bonded,
             requested_at: 1,
         }
@@ -1270,7 +1270,7 @@ fn two_dirty_and_three_optimistic_transfers_are_allocated_to_3_steps_and_all_5_i
             (Type::OptionalInsurance, ArgVariant::B), // empty bytes instead of insurance
         ],
         &mut local_state,
-        transfer_protocol_box.clone(),
+        transfer_protocol_box,
     );
 
     let side_effects = vec![
@@ -1307,105 +1307,99 @@ fn two_dirty_and_three_optimistic_transfers_are_allocated_to_3_steps_and_all_5_i
             // Confirmation start - 3
             successfully_bond_optimistic(
                 valid_optimistic_transfer_side_effect_3.clone(),
-                xtx_id.clone(),
+                xtx_id,
                 BOB_RELAYER,
                 ALICE,
             );
             assert_eq!(
-                Circuit::get_x_exec_signals(xtx_id.clone()).unwrap().status,
+                Circuit::get_x_exec_signals(xtx_id).unwrap().status,
                 CircuitStatus::PendingInsurance
             );
 
             // Confirmation start - 4
             successfully_bond_optimistic(
                 valid_optimistic_transfer_side_effect_4.clone(),
-                xtx_id.clone(),
+                xtx_id,
                 BOB_RELAYER,
                 ALICE,
             );
             assert_eq!(
-                Circuit::get_x_exec_signals(xtx_id.clone()).unwrap().status,
+                Circuit::get_x_exec_signals(xtx_id).unwrap().status,
                 CircuitStatus::PendingInsurance
             );
 
             // Confirmation start - 5
             successfully_bond_optimistic(
                 valid_optimistic_transfer_side_effect_5.clone(),
-                xtx_id.clone(),
+                xtx_id,
                 BOB_RELAYER,
                 ALICE,
             );
             assert_eq!(
-                Circuit::get_x_exec_signals(xtx_id.clone()).unwrap().status,
+                Circuit::get_x_exec_signals(xtx_id).unwrap().status,
                 CircuitStatus::Ready
             );
 
             // Confirmation start - 3
             successfully_confirm_dirty(
                 valid_optimistic_transfer_side_effect_3,
-                xtx_id.clone(),
+                xtx_id,
                 BOB_RELAYER,
             );
 
             assert_eq!(
-                Circuit::get_x_exec_signals(xtx_id.clone()).unwrap().status,
+                Circuit::get_x_exec_signals(xtx_id).unwrap().status,
                 CircuitStatus::Bonded
             );
 
             // Confirmation start - 4
             successfully_confirm_dirty(
                 valid_optimistic_transfer_side_effect_4,
-                xtx_id.clone(),
+                xtx_id,
                 BOB_RELAYER,
             );
 
             assert_eq!(
-                Circuit::get_x_exec_signals(xtx_id.clone()).unwrap().status,
+                Circuit::get_x_exec_signals(xtx_id).unwrap().status,
                 CircuitStatus::Bonded
             );
 
             // Confirmation start - 5
             successfully_confirm_dirty(
                 valid_optimistic_transfer_side_effect_5,
-                xtx_id.clone(),
+                xtx_id,
                 BOB_RELAYER,
             );
 
             assert_eq!(
-                Circuit::get_x_exec_signals(xtx_id.clone()).unwrap().status,
+                Circuit::get_x_exec_signals(xtx_id).unwrap().status,
                 CircuitStatus::Finished
             );
             assert_eq!(
-                Circuit::get_x_exec_signals(xtx_id.clone())
-                    .unwrap()
-                    .steps_cnt,
+                Circuit::get_x_exec_signals(xtx_id).unwrap().steps_cnt,
                 (1, 3)
             );
             // Confirmation start - 1
-            successfully_confirm_dirty(valid_transfer_side_effect_1, xtx_id.clone(), BOB_RELAYER);
+            successfully_confirm_dirty(valid_transfer_side_effect_1, xtx_id, BOB_RELAYER);
 
             assert_eq!(
-                Circuit::get_x_exec_signals(xtx_id.clone()).unwrap().status,
+                Circuit::get_x_exec_signals(xtx_id).unwrap().status,
                 CircuitStatus::Finished
             );
             assert_eq!(
-                Circuit::get_x_exec_signals(xtx_id.clone())
-                    .unwrap()
-                    .steps_cnt,
+                Circuit::get_x_exec_signals(xtx_id).unwrap().steps_cnt,
                 (2, 3)
             );
 
             // Confirmation start - 2
-            successfully_confirm_dirty(valid_transfer_side_effect_2, xtx_id.clone(), BOB_RELAYER);
+            successfully_confirm_dirty(valid_transfer_side_effect_2, xtx_id, BOB_RELAYER);
 
             assert_eq!(
-                Circuit::get_x_exec_signals(xtx_id.clone()).unwrap().status,
+                Circuit::get_x_exec_signals(xtx_id).unwrap().status,
                 CircuitStatus::FinishedAllSteps
             );
             assert_eq!(
-                Circuit::get_x_exec_signals(xtx_id.clone())
-                    .unwrap()
-                    .steps_cnt,
+                Circuit::get_x_exec_signals(xtx_id).unwrap().steps_cnt,
                 (3, 3)
             );
         });
@@ -1472,10 +1466,10 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_confirmed() {
                 hex!("c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6").into();
 
             // Confirmation start - 1
-            successfully_confirm_dirty(valid_transfer_side_effect_1, xtx_id.clone(), BOB_RELAYER);
+            successfully_confirm_dirty(valid_transfer_side_effect_1, xtx_id, BOB_RELAYER);
 
             // Confirmation start - 2
-            successfully_confirm_dirty(valid_transfer_side_effect_2, xtx_id.clone(), BOB_RELAYER);
+            successfully_confirm_dirty(valid_transfer_side_effect_2, xtx_id, BOB_RELAYER);
         });
 }
 
@@ -1529,7 +1523,7 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
 
     let side_effects = vec![
         valid_transfer_side_effect_1.clone(),
-        valid_transfer_side_effect_2.clone(),
+        valid_transfer_side_effect_2,
         valid_swap_side_effect.clone(),
     ];
     let fee = 1;
@@ -1592,7 +1586,7 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
 
             assert_ok!(Circuit::confirm_side_effect(
                 origin_relayer_bob.clone(),
-                xtx_id.clone(),
+                xtx_id,
                 valid_transfer_side_effect_1,
                 confirmation_transfer,
                 None,
@@ -1669,7 +1663,7 @@ fn circuit_cancels_xtx_after_timeout() {
         transfer_protocol_box,
     );
 
-    let side_effects = vec![valid_transfer_side_effect.clone()];
+    let side_effects = vec![valid_transfer_side_effect];
     let fee = 1;
     let sequential = false;
 
@@ -1758,20 +1752,17 @@ fn circuit_cancels_xtx_after_timeout() {
 #[test]
 fn load_local_state_can_generate_and_read_state() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
-    let xtx_id: sp_core::H256 =
-        hex!("c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6").into();
     let mut ext = TestExternalities::new_empty();
 
     ext.execute_with(|| {
         let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
 
         let res = Circuit::load_local_state(&origin, None).unwrap();
-        assert_ne!(res.xtx_id, xtx_id);
-        assert_eq!(res.local_state, LocalState::new());
-        assert_eq!(res.steps_cnt, (0, 0));
 
-        let res = Circuit::load_local_state(&origin, Some(res.xtx_id)).unwrap();
-        assert_ne!(res.xtx_id, xtx_id);
+        let xtx_id_new: sp_core::H256 =
+            hex!("e7c756cb224d1b573cf88cd8e17177285ee9ebeab8a86ff5e39a56bf1413a5cc").into();
+
+        assert_eq!(res.xtx_id, xtx_id_new);
         assert_eq!(res.local_state, LocalState::new());
         assert_eq!(res.steps_cnt, (0, 0));
     });
