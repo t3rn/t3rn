@@ -34,7 +34,7 @@ const FeatureList = [
         Checkout the TS package documentation.
       </>
     ),
-    link: "google.com",
+    link: "http://google.com",
     button: "TS Docs"
   },
 ];
