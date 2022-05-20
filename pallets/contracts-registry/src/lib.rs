@@ -26,7 +26,7 @@
 use codec::Encode;
 use frame_support::dispatch::DispatchResult;
 use frame_system::ensure_signed;
-use sp_std::prelude::*;
+use sp_std::{convert::TryInto, prelude::*};
 use t3rn_primitives::transfers::EscrowedBalanceOf;
 
 // Re-export pallet items so that they can be accessed from the crate namespace.
@@ -133,7 +133,7 @@ pub mod pallet {
             let contract_id = contract.generate_id::<T>();
 
             assert!(
-                requester == contract.author,
+                requester == contract.author.account,
                 "only the first submitter of contract to registry can become the author",
             );
 
@@ -298,10 +298,10 @@ impl<T: Config> t3rn_primitives::contracts_registry::ContractsRegistry<T, T::Esc
                 >| {
                     match (author.clone(), metadata.clone()) {
                         (Some(author), Some(text)) =>
-                            contract.author == author
+                            contract.author.account == author
                                 && find_subsequence(contract.meta.encode(), text.as_slice())
                                     .is_some(),
-                        (Some(author), None) => contract.author == author,
+                        (Some(author), None) => contract.author.account == author,
                         (None, Some(text)) =>
                             find_subsequence(contract.meta.encode(), text.as_slice()).is_some(),
                         (None, None) => false,

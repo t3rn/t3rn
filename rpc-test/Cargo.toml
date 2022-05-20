@@ -20,7 +20,7 @@ jsonrpc-runtime-client = { version = "0.1.0", path = "../relayers/jsonrpc-runtim
 jsonrpsee-types        = "0.2.0"
 relay-substrate-client = { version = "0.1.0", path = "../relayers/client-substrate" }
 
-codec           = { package = "parity-scale-codec", version = "2.0.0" }
+codec           = { package = "parity-scale-codec", version = "3" }
 futures         = { version = "0.3.16", features = [ "compat" ] }
 node-primitives = { version = "2.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.13" }
 sc-client-api   = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.13" }

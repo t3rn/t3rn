@@ -16,22 +16,17 @@
 // limitations under the License.
 
 //! Test utilities
+use crate::{mock::*, state::*};
+use codec::{Decode, Encode};
 use frame_support::{assert_ok, traits::Currency};
 use frame_system::{EventRecord, Phase};
-
-use t3rn_primitives::{abi::*, side_effect::*};
-
-use t3rn_protocol::side_effects::test_utils::*;
-
-use crate::{mock::*, state::*};
-
 use sp_io::TestExternalities;
-
-use codec::{Decode, Encode};
 use sp_runtime::AccountId32;
 use sp_std::prelude::*;
-use t3rn_primitives::{volatile::LocalState, xtx::XtxId};
-// use crate::mock;
+use t3rn_primitives::{
+    abi::*, circuit::OnLocalTrigger, side_effect::*, volatile::LocalState, xtx::XtxId,
+};
+use t3rn_protocol::side_effects::test_utils::*;
 
 pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);
 pub const BOB_RELAYER: AccountId32 = AccountId32::new([2u8; 32]);
@@ -1824,4 +1819,26 @@ fn circuit_cancels_xtx_after_timeout() {
 
             // Voids all associated side effects with Xtx by setting their confirmation to Err
         });
+}
+
+#[test]
+fn load_local_state_can_generate_and_read_state() {
+    let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
+    let xtx_id: sp_core::H256 =
+        hex!("c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6").into();
+    let mut ext = TestExternalities::new_empty();
+
+    ext.execute_with(|| {
+        let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+
+        let res = Circuit::load_local_state(&origin, None).unwrap();
+        assert_ne!(res.xtx_id, xtx_id);
+        assert_eq!(res.local_state, LocalState::new());
+        assert_eq!(res.steps_cnt, (0, 0));
+
+        let res = Circuit::load_local_state(&origin, Some(res.xtx_id)).unwrap();
+        assert_ne!(res.xtx_id, xtx_id);
+        assert_eq!(res.local_state, LocalState::new());
+        assert_eq!(res.steps_cnt, (0, 0));
+    });
 }

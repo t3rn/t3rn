@@ -5,17 +5,19 @@ use circuit_parachain_runtime::{
     EXISTENTIAL_DEPOSIT,
 };
 use cumulus_primitives_core::ParaId;
-use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
-use sc_service::ChainType;
-use serde::{Deserialize, Serialize};
-use sp_core::{sr25519, Pair, Public};
-use sp_runtime::traits::{IdentifyAccount, Verify};
-
 use jsonrpc_runtime_client::{
     create_rpc_client, get_gtwy_init_data, get_metadata, ConnectionParams,
 };
-use sp_core::Encode;
-/// t3rn-pallets chain spec config -- START
+use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
+use sc_service::ChainType;
+use serde::{Deserialize, Serialize};
+use sp_core::{sr25519, Encode, Pair, Public};
+use sp_runtime::traits::{IdentifyAccount, Verify};
+use std::{
+    convert::TryFrom,
+    io::{Error, ErrorKind},
+    str::FromStr,
+};
 use t3rn_primitives::{
     abi::Type,
     bridges::{
@@ -25,12 +27,6 @@ use t3rn_primitives::{
     side_effect::interface::SideEffectInterface,
     xdns::XdnsRecord,
     ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor, Header,
-};
-
-use std::{
-    convert::TryFrom,
-    io::{Error, ErrorKind},
-    str::FromStr,
 };
 
 const PARACHAIN_ID: u32 = 3333_u32;
@@ -265,10 +261,10 @@ fn fetch_gtwy_init_data(gateway_id: &ChainId) -> Result<InitializationData<Heade
         .await
         .map_err(|error| Error::new(ErrorKind::NotConnected, error))?;
 
-        let is_relay_chain = match *gateway_id {
-            POLKADOT_CHAIN_ID | KUSAMA_CHAIN_ID | ROCOCO_CHAIN_ID => true,
-            _ => false,
-        };
+        let is_relay_chain = matches!(
+            *gateway_id,
+            POLKADOT_CHAIN_ID | KUSAMA_CHAIN_ID | ROCOCO_CHAIN_ID
+        );
 
         let (authority_set, header) = get_gtwy_init_data(&client.clone(), is_relay_chain)
             .await
@@ -651,5 +647,6 @@ fn testnet_genesis(
             init_data: Some(initial_gateways),
         },
         orml_tokens: Default::default(),
+        account_manager: Default::default(),
     }
 }

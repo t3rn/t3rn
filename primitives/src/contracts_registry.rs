@@ -34,6 +34,22 @@ where
     >;
 }
 
+#[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
+pub struct AuthorInfo<AccountId, BalanceOf> {
+    /// Original code author
+    pub account: AccountId,
+    /// Optional remuneration fee for the author
+    pub fees_per_single_use: Option<BalanceOf>,
+}
+
+impl<AccountId, BalanceOf> AuthorInfo<AccountId, BalanceOf> {
+    pub fn new(account: AccountId, fees_per_single_use: Option<BalanceOf>) -> Self {
+        Self {
+            account,
+            fees_per_single_use,
+        }
+    }
+}
 /// A preliminary representation of a contract in the onchain registry.
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct RegistryContract<Hash, AccountId, BalanceOf, BlockNumber> {
@@ -41,10 +57,8 @@ pub struct RegistryContract<Hash, AccountId, BalanceOf, BlockNumber> {
     pub code_txt: Vec<u8>,
     /// Bytecode
     pub bytes: Vec<u8>,
-    /// Original code author
-    pub author: AccountId,
-    /// Optional remuneration fee for the author
-    pub author_fees_per_single_use: Option<BalanceOf>,
+    /// Optional information for an author
+    pub author: AuthorInfo<AccountId, BalanceOf>,
     /// Optional ABI
     pub abi: Option<Vec<u8>>,
     /// Action descriptions (calls for now)
@@ -61,8 +75,7 @@ impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode>
     pub fn new(
         code_txt: Vec<u8>,
         bytes: Vec<u8>,
-        author: AccountId,
-        author_fees_per_single_use: Option<BalanceOf>,
+        author: AuthorInfo<AccountId, BalanceOf>,
         abi: Option<Vec<u8>>,
         action_descriptions: Vec<ContractActionDesc<Hash, ChainId, AccountId>>,
         info: Option<RawAliveContractInfo<Hash, BalanceOf, BlockNumber>>,
@@ -72,7 +85,6 @@ impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode>
             code_txt,
             bytes,
             author,
-            author_fees_per_single_use,
             abi,
             action_descriptions,
             info,
@@ -89,8 +101,7 @@ impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode>
     pub fn from_compose(
         compose: Compose<AccountId, BalanceOf>,
         action_descriptions: Vec<ContractActionDesc<Hash, ChainId, AccountId>>,
-        author: AccountId,
-        author_fees_per_single_use: Option<BalanceOf>,
+        author: AuthorInfo<AccountId, BalanceOf>,
         abi: Option<Vec<u8>>,
         info: Option<RawAliveContractInfo<Hash, BalanceOf, BlockNumber>>,
         meta: ContractMetadata,
@@ -99,7 +110,6 @@ impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode>
             compose.code_txt,
             compose.bytes,
             author,
-            author_fees_per_single_use,
             abi,
             action_descriptions,
             info,

@@ -27,7 +27,7 @@ use sp_core::H256;
 use sp_runtime::DispatchError;
 use t3rn_primitives::{
     contract_metadata::ContractMetadata,
-    contracts_registry::ContractsRegistry as ContractsRegistryExt,
+    contracts_registry::{AuthorInfo, ContractsRegistry as ContractsRegistryExt},
 };
 
 #[test]
@@ -35,8 +35,7 @@ fn fetch_contract_by_id_should_return_single_contract() {
     let test_contract = RegistryContract {
         code_txt: vec![],
         bytes: vec![],
-        author: 1_u64,
-        author_fees_per_single_use: None,
+        author: AuthorInfo::new(1_u64, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
@@ -69,14 +68,14 @@ fn fetch_contracts_by_metadata_should_return_all_matching_contracts() {
     let test_contract_name = RegistryContract {
         code_txt: b"some_code".to_vec(),
         bytes: vec![],
-        author: 1_u64,
-        author_fees_per_single_use: None,
+        author: AuthorInfo::new(1_u64, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
         meta: ContractMetadata::new(
             vec![],
             b"some contract".to_vec(),
+            vec![],
             vec![],
             vec![],
             None,
@@ -89,12 +88,12 @@ fn fetch_contracts_by_metadata_should_return_all_matching_contracts() {
     let test_contract_desc = RegistryContract {
         code_txt: b"some_code_2".to_vec(),
         bytes: vec![],
-        author: 1_u64,
-        author_fees_per_single_use: None,
+        author: AuthorInfo::new(1_u64, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
         meta: ContractMetadata::new(
+            vec![],
             vec![],
             vec![],
             vec![],
@@ -109,12 +108,12 @@ fn fetch_contracts_by_metadata_should_return_all_matching_contracts() {
     let test_contract_wrong = RegistryContract {
         code_txt: b"some_code_3".to_vec(),
         bytes: vec![],
-        author: 1_u64,
-        author_fees_per_single_use: None,
+        author: AuthorInfo::new(1_u64, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
         meta: ContractMetadata::new(
+            vec![],
             vec![],
             vec![],
             vec![],
@@ -152,32 +151,63 @@ fn fetch_contracts_by_author_should_return_all_matching_contracts() {
     let test_contract_author1 = RegistryContract {
         code_txt: b"some_code".to_vec(),
         bytes: vec![],
-        author: 1_u64,
-        author_fees_per_single_use: None,
+        author: AuthorInfo::new(1_u64, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
-        meta: ContractMetadata::new(vec![], vec![], vec![], vec![], None, None, None, None, None),
+        meta: ContractMetadata::new(
+            vec![],
+            vec![],
+            vec![],
+            vec![],
+            vec![],
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
     };
     let test_contract_author2 = RegistryContract {
         code_txt: b"some_code_2".to_vec(),
         bytes: vec![],
-        author: 1_u64,
-        author_fees_per_single_use: None,
+        author: AuthorInfo::new(1_u64, None),
+
         abi: None,
         action_descriptions: vec![],
         info: None,
-        meta: ContractMetadata::new(vec![], vec![], vec![], vec![], None, None, None, None, None),
+        meta: ContractMetadata::new(
+            vec![],
+            vec![],
+            vec![],
+            vec![],
+            vec![],
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
     };
     let test_contract_author3 = RegistryContract {
         code_txt: b"some_code_3".to_vec(),
         bytes: vec![],
-        author: 2_u64,
-        author_fees_per_single_use: None,
+        author: AuthorInfo::new(2_u64, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
-        meta: ContractMetadata::new(vec![], vec![], vec![], vec![], None, None, None, None, None),
+        meta: ContractMetadata::new(
+            vec![],
+            vec![],
+            vec![],
+            vec![],
+            vec![],
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
     };
     ExtBuilder::default().build().execute_with(|| {
         crate::ContractsRegistry::<Test>::insert(
@@ -205,14 +235,14 @@ fn fetch_contracts_by_author_and_metadata_should_return_all_matching_contracts()
     let test_contract_author1 = RegistryContract {
         code_txt: b"some_code".to_vec(),
         bytes: vec![],
-        author: 1_u64,
-        author_fees_per_single_use: None,
+        author: AuthorInfo::new(1_u64, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
         meta: ContractMetadata::new(
             vec![],
             b"contract 1".to_vec(),
+            vec![],
             vec![],
             vec![],
             None,
@@ -225,12 +255,12 @@ fn fetch_contracts_by_author_and_metadata_should_return_all_matching_contracts()
     let test_contract_author2 = RegistryContract {
         code_txt: b"some_code_2".to_vec(),
         bytes: vec![],
-        author: 1_u64,
-        author_fees_per_single_use: None,
+        author: AuthorInfo::new(1_u64, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
         meta: ContractMetadata::new(
+            vec![],
             vec![],
             vec![],
             vec![],
@@ -245,12 +275,22 @@ fn fetch_contracts_by_author_and_metadata_should_return_all_matching_contracts()
     let test_contract_author3 = RegistryContract {
         code_txt: b"some_code_3".to_vec(),
         bytes: vec![],
-        author: 2_u64,
-        author_fees_per_single_use: None,
+        author: AuthorInfo::new(2_u64, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
-        meta: ContractMetadata::new(vec![], vec![], vec![], vec![], None, None, None, None, None),
+        meta: ContractMetadata::new(
+            vec![],
+            vec![],
+            vec![],
+            vec![],
+            vec![],
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
     };
     ExtBuilder::default().build().execute_with(|| {
         crate::ContractsRegistry::<Test>::insert(
@@ -278,14 +318,14 @@ fn fetch_contracts_with_no_parameters_should_error() {
     let test_contract_author1 = RegistryContract {
         code_txt: b"some_code".to_vec(),
         bytes: vec![],
-        author: 1_u64,
-        author_fees_per_single_use: None,
+        author: AuthorInfo::new(1_u64, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
         meta: ContractMetadata::new(
             vec![],
             b"contract 1".to_vec(),
+            vec![],
             vec![],
             vec![],
             None,
@@ -298,12 +338,12 @@ fn fetch_contracts_with_no_parameters_should_error() {
     let test_contract_author2 = RegistryContract {
         code_txt: b"some_code_2".to_vec(),
         bytes: vec![],
-        author: 1_u64,
-        author_fees_per_single_use: None,
+        author: AuthorInfo::new(1_u64, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
         meta: ContractMetadata::new(
+            vec![],
             vec![],
             vec![],
             vec![],
@@ -318,12 +358,22 @@ fn fetch_contracts_with_no_parameters_should_error() {
     let test_contract_author3 = RegistryContract {
         code_txt: b"some_code_3".to_vec(),
         bytes: vec![],
-        author: 2_u64,
-        author_fees_per_single_use: None,
+        author: AuthorInfo::new(2_u64, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
-        meta: ContractMetadata::new(vec![], vec![], vec![], vec![], None, None, None, None, None),
+        meta: ContractMetadata::new(
+            vec![],
+            vec![],
+            vec![],
+            vec![],
+            vec![],
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
     };
     ExtBuilder::default().build().execute_with(|| {
         crate::ContractsRegistry::<Test>::insert(
@@ -349,14 +399,14 @@ fn add_new_contract_succeeds_for_default() {
     let test_contract = RegistryContract {
         code_txt: b"some_code".to_vec(),
         bytes: vec![],
-        author: 1_u64,
-        author_fees_per_single_use: None,
+        author: AuthorInfo::new(1_u64, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
         meta: ContractMetadata::new(
             vec![],
             b"contract 1".to_vec(),
+            vec![],
             vec![],
             vec![],
             None,
@@ -387,14 +437,14 @@ fn add_new_contract_fails_for_no_sudo_origin() {
     let test_contract = RegistryContract {
         code_txt: b"some_code".to_vec(),
         bytes: vec![],
-        author: 1_u64,
-        author_fees_per_single_use: None,
+        author: AuthorInfo::new(1_u64, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
         meta: ContractMetadata::new(
             vec![],
             b"contract 1".to_vec(),
+            vec![],
             vec![],
             vec![],
             None,
@@ -424,14 +474,14 @@ fn add_new_contract_fails_if_contract_already_exists() {
     let test_contract = RegistryContract {
         code_txt: b"some_code".to_vec(),
         bytes: vec![],
-        author: 1_u64,
-        author_fees_per_single_use: None,
+        author: AuthorInfo::new(1_u64, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
         meta: ContractMetadata::new(
             vec![],
             b"contract 1".to_vec(),
+            vec![],
             vec![],
             vec![],
             None,
@@ -464,14 +514,14 @@ fn purge_succeeds_for_default_contract() {
     let test_contract = RegistryContract {
         code_txt: b"some_code".to_vec(),
         bytes: vec![],
-        author: 1_u64,
-        author_fees_per_single_use: None,
+        author: AuthorInfo::new(1_u64, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
         meta: ContractMetadata::new(
             vec![],
             b"contract 1".to_vec(),
+            vec![],
             vec![],
             vec![],
             None,
@@ -505,14 +555,14 @@ fn purge_fails_if_contract_does_not_exist() {
     let test_contract = RegistryContract {
         code_txt: b"some_code".to_vec(),
         bytes: vec![],
-        author: 1_u64,
-        author_fees_per_single_use: None,
+        author: AuthorInfo::new(1_u64, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
         meta: ContractMetadata::new(
             vec![],
             b"contract 1".to_vec(),
+            vec![],
             vec![],
             vec![],
             None,
@@ -544,14 +594,14 @@ fn purge_fails_if_origin_not_root() {
     let test_contract = RegistryContract {
         code_txt: b"some_code".to_vec(),
         bytes: vec![],
-        author: 1_u64,
-        author_fees_per_single_use: None,
+        author: AuthorInfo::new(1_u64, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
         meta: ContractMetadata::new(
             vec![],
             b"contract 1".to_vec(),
+            vec![],
             vec![],
             vec![],
             None,

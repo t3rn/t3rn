@@ -34,12 +34,13 @@ use frame_system::{
     offchain::{SignedPayload, SigningTypes},
     RawOrigin,
 };
+pub use pallet::*;
 use sp_core::crypto::KeyTypeId;
 use sp_runtime::{
     traits::{AccountIdConversion, Convert},
     RuntimeDebug,
 };
-use sp_std::vec::*;
+use sp_std::{convert::TryInto, vec::*};
 use sp_trie::StorageProof;
 pub use t3rn_primitives::{
     abi::{GatewayABIConfig, HasherAlgo},
@@ -50,10 +51,8 @@ pub use t3rn_primitives::{
     xtx::{Xtx, XtxId},
     GatewayType, *,
 };
-pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
-
-pub use pallet::*;
 use t3rn_primitives::{circuit_portal::CircuitPortal, xdns::Xdns};
+pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 
 #[cfg(test)]
 pub mod tests;
