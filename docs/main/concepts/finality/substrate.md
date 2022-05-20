@@ -1,1 +1,1 @@
-# Substrate Finality
+# Substrate
