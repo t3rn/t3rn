@@ -36,8 +36,6 @@ pub struct LocalStateExecutionView<T: Config> {
     pub steps_cnt: (u32, u32),
 }
 
-// pub struct HardenedSideEffect {}
-
 impl<T: Config> LocalStateExecutionView<T> {
     pub fn new(
         xtx_id: <T as Config>::Hash,

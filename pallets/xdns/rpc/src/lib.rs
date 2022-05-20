@@ -11,8 +11,10 @@ pub use pallet_xdns_rpc_runtime_api::XdnsRuntimeApi;
 use pallet_xdns_rpc_runtime_api::{ChainId, FetchXdnsRecordsResponse, GatewayABIConfig};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::generic::BlockId;
-use sp_runtime::traits::{Block as BlockT, MaybeDisplay};
+use sp_runtime::{
+    generic::BlockId,
+    traits::{Block as BlockT, MaybeDisplay},
+};
 
 const RUNTIME_ERROR: i64 = 1;
 const NO_KNOWN_RECORDS: i64 = 2;
@@ -47,7 +49,7 @@ impl<C, Block, AccountId> XdnsApi<AccountId> for Xdns<C, Block>
 where
     AccountId: Codec + MaybeDisplay,
     Block: BlockT,
-    C: 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
+    C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
     C::Api: XdnsRuntimeApi<Block, AccountId>,
 {
     fn fetch_records(&self) -> Result<FetchXdnsRecordsResponse<AccountId>> {

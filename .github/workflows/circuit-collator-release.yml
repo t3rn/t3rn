@@ -6,8 +6,7 @@ on:
       - 'v*'
 
 env:
-  RELAY_CHAIN_NAME: rococo
-  PARA_CHAIN_NAME: t0rn
+  PARACHAIN_NAME: t0rn
   RUST_BACKTRACE: 1
   CARGO_TERM_COLOR: always
 
@@ -133,26 +132,6 @@ jobs:
           draft: false
           prerelease: true
 
-      - name: ⚡ Provide the raw parachain chain spec
-        uses: actions/upload-release-asset@v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./specs/${{ env.PARA_CHAIN_NAME }}.raw.json
-          asset_name: ${{ env.PARA_CHAIN_NAME }}.raw.json
-          asset_content_type: application/json
-
-      - name: 🎢 Provide the raw relay chain spec
-        uses: actions/upload-release-asset@v1.0.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./specs/${{ env.RELAY_CHAIN_NAME }}.raw.json
-          asset_name: ${{ env.RELAY_CHAIN_NAME }}.raw.json
-          asset_content_type: application/json
-
       - name: 🍔 Provide the sha256sum as a release asset
         uses: actions/upload-release-asset@v1.0.2
         env:
@@ -160,7 +139,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./target/release/circuit-collator.gz.sha256sum
-          asset_name: ${{ env.PARA_CHAIN_NAME }}-circuit-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz.sha256sum
+          asset_name: ${{ env.PARACHAIN_NAME }}-circuit-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz.sha256sum
           asset_content_type: text/plain
 
       - name: 📦 Upload the circuit parachain collator gball as a release asset
@@ -170,5 +149,5 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./target/release/circuit-collator.gz
-          asset_name: ${{ env.PARA_CHAIN_NAME }}-circuit-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz
+          asset_name: ${{ env.PARACHAIN_NAME }}-circuit-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz
           asset_content_type: application/gzip

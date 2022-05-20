@@ -495,22 +495,27 @@ pub mod pallet {
             let requester = Self::authorize(origin, CircuitRole::Requester)?;
             // Charge: Ensure can afford
             Self::charge(&requester, fee)?;
-            log::debug!("on_extrinsic_trigger -- finished charged");
+            log::info!("on_extrinsic_trigger -- finished charged");
 
             // Setup: new xtx context
             let mut local_xtx_ctx: LocalXtxCtx<T> =
                 Self::setup(CircuitStatus::Requested, &requester, fee, None)?;
-            log::debug!(
+            log::info!(
                 "on_extrinsic_trigger -- finished setup -- xtx id {:?}",
                 local_xtx_ctx.xtx_id
             );
             // Validate: Side Effects
-            Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential)?;
-            log::debug!("on_extrinsic_trigger -- finished validate");
+            Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential).map_err(
+                |e| {
+                    log::info!("Self::validate hit an error -- {:?}", e);
+                    Error::<T>::SideEffectsValidationFailed
+                },
+            )?;
+            log::info!("on_extrinsic_trigger -- finished validate");
 
             // Apply: all necessary changes to state in 1 go
             let (_, added_full_side_effects) = Self::apply(&mut local_xtx_ctx, None, None)?;
-            log::debug!("on_extrinsic_trigger -- finished apply");
+            log::info!("on_extrinsic_trigger -- finished apply");
 
             // Emit: From Circuit events
             Self::emit(
@@ -530,9 +535,20 @@ pub mod pallet {
             xtx_id: XExecSignalId<T>,
             side_effect_id: SideEffectId<T>,
         ) -> DispatchResultWithPostInfo {
+            log::info!(
+                "bond insurance deposit -- start -- xtx id {:?} + se id {:?}",
+                xtx_id,
+                side_effect_id
+            );
+
             // Authorize: Retrieve sender of the transaction.
             let relayer = Self::authorize(origin, CircuitRole::Relayer)?;
 
+            log::info!(
+                "bond insurance deposit -- authorized -- xtx id {:?} + se id {:?}",
+                xtx_id,
+                side_effect_id
+            );
             // Setup: retrieve local xtx context
             let mut local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
                 CircuitStatus::PendingInsurance,
@@ -541,6 +557,7 @@ pub mod pallet {
                 Some(xtx_id),
             )?;
 
+            log::info!("bond insurance deposit -- setup finished");
             let (maybe_xtx_changed, _) = if let Some((_id, insurance_deposit)) = local_xtx_ctx
                 .insurance_deposits
                 .iter_mut()
@@ -548,6 +565,7 @@ pub mod pallet {
             {
                 Self::charge(&relayer, insurance_deposit.insurance)?;
 
+                log::info!("bond insurance deposit -- charged");
                 insurance_deposit.bonded_relayer = Some(relayer.clone());
                 // ToDo: Consider removing status from insurance_deposit since redundant with relayer: Option<Relayer>
                 insurance_deposit.status = CircuitStatus::Bonded;
@@ -563,6 +581,7 @@ pub mod pallet {
                 Err(Error::<T>::InsuranceBondNotRequired)
             }?;
 
+            log::info!("bond insurance deposit -- applied");
             // Emit: From Circuit events
             Self::emit(
                 local_xtx_ctx.xtx_id,
@@ -740,6 +759,12 @@ pub mod pallet {
             // Authorize: Retrieve sender of the transaction.
             let relayer = Self::authorize(origin, CircuitRole::Relayer)?;
 
+            log::info!(
+                "confirm side effect -- start -- xtx id {:?} + se id {:?}",
+                xtx_id,
+                side_effect.generate_id::<SystemHashing<T>>()
+            );
+
             // Setup: retrieve local xtx context
             let mut local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
                 CircuitStatus::PendingExecution,
@@ -747,6 +772,12 @@ pub mod pallet {
                 Zero::zero(),
                 Some(xtx_id),
             )?;
+
+            log::info!(
+                "confirm side effect -- start -- xtx id {:?} + se id {:?}",
+                xtx_id,
+                side_effect.generate_id::<SystemHashing<T>>()
+            );
 
             Self::confirm(
                 &mut local_xtx_ctx,
@@ -756,10 +787,21 @@ pub mod pallet {
                 inclusion_proof,
                 block_hash,
             )?;
+            log::info!(
+                "confirm side effect -- confirmed -- xtx id {:?} + se id {:?}",
+                xtx_id,
+                side_effect.generate_id::<SystemHashing<T>>()
+            );
 
             // Apply: all necessary changes to state in 1 go
             let (maybe_xtx_changed, assert_full_side_effects_changed) =
                 Self::apply(&mut local_xtx_ctx, None, None)?;
+
+            log::info!(
+                "confirm side effect -- applied -- xtx id {:?} + se id {:?}",
+                xtx_id,
+                side_effect.generate_id::<SystemHashing<T>>()
+            );
 
             // Emit: From Circuit events
             Self::emit(
@@ -800,6 +842,7 @@ pub mod pallet {
                     EscrowedBalanceOf<T, T::Escrowed>,
                 >,
             >,
+            Vec<SideEffectId<T>>,
         ),
         // Listeners - executioners/relayers to know that certain SideEffects are no longer valid
         // ToDo: Implement Xtx timeout!
@@ -843,6 +886,7 @@ pub mod pallet {
         ChargingTransferFailed,
         RewardTransferFailed,
         RefundTransferFailed,
+        SideEffectsValidationFailed,
         InsuranceBondNotRequired,
         InsuranceBondAlreadyDeposited,
         SetupFailed,
@@ -897,8 +941,16 @@ impl<T: Config> Pallet<T> {
                     }
                 }
                 // ToDo: Introduce default delay
-                let (timeouts_at, delay_steps_at): (T::BlockNumber, Option<Vec<T::BlockNumber>>) =
-                    (T::XtxTimeoutDefault::get(), None);
+                let (timeouts_at, delay_steps_at): (T::BlockNumber, Option<Vec<T::BlockNumber>>) = (
+                    T::XtxTimeoutDefault::get() + frame_system::Pallet::<T>::block_number(),
+                    None,
+                );
+
+                log::info!(
+                    "New Xtx will timeout at: {:?} vs current block = {:?}",
+                    timeouts_at,
+                    frame_system::Pallet::<T>::block_number()
+                );
 
                 let (x_exec_signal_id, x_exec_signal) = XExecSignal::<
                     T::AccountId,
@@ -1221,10 +1273,12 @@ impl<T: Config> Pallet<T> {
 
                 local_ctx.xtx.status = new_status;
                 // Check whether all of the side effects in this steps are confirmed - the status now changes to CircuitStatus::Finished
-                if !local_ctx.full_side_effects[local_ctx.xtx.steps_cnt.0 as usize]
+                if local_ctx.full_side_effects[local_ctx.xtx.steps_cnt.0 as usize]
                     .clone()
                     .iter()
-                    .any(|fse| fse.confirmed.is_none())
+                    .filter(|&fse| fse.confirmed.is_none())
+                    .next()
+                    .is_none()
                 {
                     local_ctx.xtx.steps_cnt =
                         (local_ctx.xtx.steps_cnt.0 + 1, local_ctx.xtx.steps_cnt.1);
@@ -1300,6 +1354,18 @@ impl<T: Config> Pallet<T> {
             >,
         >,
     ) {
+        if !side_effects.is_empty() {
+            Self::deposit_event(Event::NewSideEffectsAvailable(
+                subjected_account.clone(),
+                xtx_id,
+                // ToDo: Emit circuit outbound messages -> side effects
+                side_effects.to_vec(),
+                side_effects
+                    .iter()
+                    .map(|se| se.generate_id::<SystemHashing<T>>())
+                    .collect::<Vec<SideEffectId<T>>>(),
+            ));
+        }
         if let Some(xtx) = maybe_xtx {
             match xtx.status {
                 CircuitStatus::PendingInsurance =>
@@ -1319,14 +1385,6 @@ impl<T: Config> Pallet<T> {
                     Self::deposit_event(Event::SideEffectsConfirmed(xtx_id, full_side_effects));
                 }
             }
-        }
-        if !side_effects.is_empty() {
-            Self::deposit_event(Event::NewSideEffectsAvailable(
-                subjected_account.clone(),
-                xtx_id,
-                // ToDo: Emit circuit outbound messages -> side effects
-                side_effects.to_vec(),
-            ));
         }
     }
 
@@ -1562,6 +1620,9 @@ impl<T: Config> Pallet<T> {
             let allowed_side_effects =
                 <T as Config>::Xdns::allowed_side_effects(&side_effect.target);
 
+            log::info!("validate -- prize decoded {:?}", side_effect.prize.clone());
+            log::info!("validate -- prize encode {:?}", side_effect.prize.encode());
+
             local_ctx
                 .use_protocol
                 .notice_gateway(side_effect.target, allowed_side_effects);
@@ -1582,7 +1643,16 @@ impl<T: Config> Pallet<T> {
                 >(side_effect.clone(), &mut local_ctx.local_state)?
             {
                 let (insurance, reward) = (insurance_and_reward[0], insurance_and_reward[1]);
+                log::info!(
+                    "circuit -- validation passed and discovered opt insurance {:?} reward {:?}",
+                    insurance,
+                    reward
+                );
 
+                log::info!(
+                    "circuit -- for side effect id {:?}",
+                    side_effect.generate_id::<SystemHashing<T>>()
+                );
                 Self::charge(requester, reward)?;
 
                 local_ctx.insurance_deposits.push((
@@ -1675,12 +1745,11 @@ impl<T: Config> Pallet<T> {
             // ToDo: Remove below after testing inclusion
             // Temporarily allow skip inclusion if proofs aren't provided
             if !(block_hash.is_none() && inclusion_proof.is_none()) {
-                <T as Config>::CircuitPortal::confirm_inclusion(
+                <T as Config>::CircuitPortal::confirm_event_inclusion(
                     side_effect.target,
                     confirmation.encoded_effect.clone(),
-                    ProofTriePointer::State,
-                    block_hash,
                     inclusion_proof,
+                    block_hash,
                 )
             } else {
                 Ok(())

@@ -34,6 +34,9 @@ pallet-sudo      = { git = "https://github.com/paritytech/substrate", branch = '
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 sp-io            = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 
+pallet-circuit-portal = { path = "../circuit-portal" }
+t3rn-protocol         = { path = "../../protocol" }
+
 [features]
 default = [ "std" ]
 runtime-benchmarks = [  ]

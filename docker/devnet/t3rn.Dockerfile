@@ -1,6 +1,6 @@
 FROM rust:buster as blacksmith
 
-ARG BRANCH=update_v0.9.17
+ARG BRANCH=update_v0.9.19
 
 WORKDIR /workshop
 
@@ -30,13 +30,7 @@ COPY . .
 # 		--branch $BRANCH \
 # 		--recurse-submodules \
 # 		https://github.com/t3rn/t3rn.git \
-#     t3rn
-
-# FIXME: tmp workaround 2 force compile the parachain runtime
-RUN sed 's/\[dev-dependencies/\# \[dev-dependencies/g' \
-    -i ./pallets/contracts-registry/Cargo.toml && \
-    sed 's/\[dev-dependencies/\# \[dev-dependencies/g' \
-    -i ./pallets/circuit/Cargo.toml
+#       .
 
 RUN --mount=type=cache,target=/usr/local/cargo/git \
     --mount=type=cache,target=/var/sccache \
@@ -44,7 +38,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/git \
 
 FROM phusion/baseimage:focal-1.1.0
 
-COPY --from=blacksmith /workshop/t3rn/target/debug/circuit-collator /usr/local/bin
+COPY --from=blacksmith /workshop/target/debug/circuit-collator /usr/local/bin
 
 RUN useradd -m -u 1000 -U -s /bin/sh -d /t3rn t3rn && \
     mkdir /t3rn/data && \

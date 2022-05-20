@@ -28,6 +28,7 @@ use codec::{Decode, Encode};
 use frame_support::{
     dispatch::DispatchResultWithPostInfo,
     traits::{EnsureOrigin, Get},
+    StorageHasher,
 };
 use frame_system::{
     offchain::{SignedPayload, SigningTypes},
@@ -40,6 +41,7 @@ use sp_runtime::{
     RuntimeDebug,
 };
 use sp_std::{convert::TryInto, vec::*};
+use sp_trie::StorageProof;
 pub use t3rn_primitives::{
     abi::{GatewayABIConfig, HasherAlgo},
     bridges::{chain_circuit as bp_circuit, runtime as bp_runtime},
@@ -66,14 +68,14 @@ pub mod weights;
 use weights::WeightInfo;
 
 pub mod xbridges;
-
 pub use xbridges::{
-    get_roots_from_bridge, init_bridge_instance, CurrentHash, CurrentHasher, CurrentHeader,
-    DefaultPolkadotLikeGateway, EthLikeKeccak256ValU32Gateway, EthLikeKeccak256ValU64Gateway,
-    PolkadotLikeValU64Gateway,
+    get_roots_from_bridge, init_bridge_instance, verify_storage_proof, CurrentHash, CurrentHasher,
+    CurrentHeader, DefaultPolkadotLikeGateway, EthLikeKeccak256ValU32Gateway,
+    EthLikeKeccak256ValU64Gateway, PolkadotLikeValU64Gateway,
 };
 
 use sp_finality_grandpa::SetId;
+
 pub type AllowedSideEffect = [u8; 4];
 
 /// Defines application identifier for crypto keys of this module.
@@ -100,7 +102,7 @@ pub mod pallet {
     };
     use frame_system::pallet_prelude::*;
     use snowbridge_core::Verifier;
-    use t3rn_primitives::xdns::Xdns;
+    use t3rn_primitives::xdns::{Parachain, Xdns};
 
     use super::*;
     use crate::WeightInfo;
@@ -113,7 +115,6 @@ pub mod pallet {
         + pallet_multi_finality_verifier::Config<PolkadotLikeValU64Gateway>
         + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU64Gateway>
         + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU32Gateway>
-    // + snowbridge_basic_channel::outbound::Config
     {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -187,6 +188,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             url: Vec<u8>,
             gateway_id: ChainId,
+            parachain: Option<Parachain>,
             gateway_abi: GatewayABIConfig,
             gateway_vendor: t3rn_primitives::GatewayVendor,
             gateway_type: t3rn_primitives::GatewayType,
@@ -202,6 +204,7 @@ pub mod pallet {
                 origin.clone(),
                 url,
                 gateway_id,
+                parachain,
                 gateway_abi.clone(),
                 gateway_vendor.clone(),
                 gateway_type.clone(),
@@ -209,6 +212,7 @@ pub mod pallet {
                 gateway_sys_props.clone(),
                 allowed_side_effects.clone(),
             )?;
+
             let res = match (gateway_abi.hasher, gateway_abi.block_number_type_size) {
                 (HasherAlgo::Blake2, 32) => init_bridge_instance::<T, DefaultPolkadotLikeGateway>(
                     origin,
@@ -258,6 +262,89 @@ pub mod pallet {
             ));
 
             Ok(res)
+        }
+
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::submit_parachain_header(
+            block_hash.len() as u32,
+            block_hash.len() as u32,
+        ))]
+        pub fn submit_parachain_header(
+            origin: OriginFor<T>,
+            block_hash: Vec<u8>,
+            gateway_id: ChainId,
+            proof: Vec<Vec<u8>>,
+        ) -> DispatchResultWithPostInfo {
+            ensure_signed(origin)?;
+            let storage_proof: StorageProof = Decode::decode(&mut &proof.encode()[..]).unwrap();
+
+            // partial StorageKey for Paras_Heads. We now need to append the parachain_id as LE-u32 to generate the parachains StorageKey
+            // ToDo: This is a bit unclean, but it makes no sense to hash the StorageKey for each exec
+            let mut key: Vec<u8> = [
+                205, 113, 11, 48, 189, 46, 171, 3, 82, 221, 204, 38, 65, 122, 161, 148, 27, 60, 37,
+                47, 203, 41, 216, 142, 255, 79, 61, 229, 222, 68, 118, 195,
+            ]
+            .to_vec();
+            let parachain_xdns_record = <T as Config>::Xdns::best_available(gateway_id.clone())?;
+            let relay_chain_id: ChainId = match parachain_xdns_record.parachain {
+                Some(parachain) => {
+                    // parachain_id is used as an encoded argument in the storage key
+                    let mut arg = Twox64Concat::hash(parachain.id.encode().as_ref());
+                    key.append(&mut arg);
+                    // the relay_chain_id is set during registration and queried from storage
+                    parachain.relay_chain_id
+                },
+                None => return Err(Error::<T>::NoParachainEntryFound.into()),
+            };
+
+            // Check inclusion relying on data in pallet-multi-verifier
+            match (
+                parachain_xdns_record.gateway_abi.hasher.clone(),
+                parachain_xdns_record.gateway_abi.block_number_type_size,
+            ) {
+                (HasherAlgo::Blake2, 32) => {
+                    let header_verified = verify_storage_proof::<T, DefaultPolkadotLikeGateway>(
+                        block_hash.clone(),
+                        relay_chain_id,
+                        key,
+                        storage_proof,
+                        ProofTriePointer::State,
+                    )?;
+
+                    let header: pallet_multi_finality_verifier::BridgedHeader<
+                        T,
+                        DefaultPolkadotLikeGateway,
+                    > = Decode::decode(&mut &header_verified[..]).unwrap();
+
+                    pallet_multi_finality_verifier::Pallet::<T, DefaultPolkadotLikeGateway>::submit_parachain_header(
+                        block_hash,
+                        gateway_id,
+                        proof,
+                        header,
+                    )?;
+                },
+                (HasherAlgo::Blake2, 64) => {
+                    let header_verified = verify_storage_proof::<T, PolkadotLikeValU64Gateway>(
+                        block_hash.clone(),
+                        relay_chain_id,
+                        key,
+                        storage_proof,
+                        ProofTriePointer::State,
+                    )?;
+
+                    let header: pallet_multi_finality_verifier::BridgedHeader<
+                        T,
+                        PolkadotLikeValU64Gateway,
+                    > = Decode::decode(&mut &header_verified[..]).unwrap();
+                    pallet_multi_finality_verifier::Pallet::<T, PolkadotLikeValU64Gateway>::submit_parachain_header(
+                        block_hash,
+                        gateway_id,
+                        proof,
+                        header,
+                    )?;
+                },
+                (_, _) => unimplemented!(),
+            };
+            Ok(().into())
         }
 
         // ToDo: Create and move higher to main Circuit pallet
@@ -314,6 +401,8 @@ pub mod pallet {
         StepConfirmationDecodingError,
         ContractDoesNotExists,
         RequesterNotEnoughBalance,
+        ParachainHeaderNotVerified,
+        NoParachainEntryFound,
     }
 }
 
@@ -334,85 +423,97 @@ impl<T: SigningTypes> SignedPayload<T> for Payload<T::Public, T::BlockNumber> {
 impl<T: Config> CircuitPortal<T> for Pallet<T> {
     type EthVerifier = T::EthVerifier;
 
-    fn confirm_inclusion(
+    fn confirm_event_inclusion(
         gateway_id: [u8; 4],
-        _encoded_message: Vec<u8>,
-        trie_type: ProofTriePointer,
-        maybe_block_hash: Option<Vec<u8>>,
+        encoded_event: Vec<u8>,
         maybe_proof: Option<Vec<Vec<u8>>>,
+        maybe_block_hash: Option<Vec<u8>>,
     ) -> Result<(), &'static str> {
         let gateway_xdns_record = <T as Config>::Xdns::best_available(gateway_id)?;
 
         match gateway_xdns_record.gateway_vendor {
             GatewayVendor::Ethereum => {
                 unimplemented!()
+                // something like this should work for eth
+                // return if let Err(computed_root) = check_merkle_proof(
+                //         expected_root,
+                //         // step_confirmation.proof.proof_data.into_iter(),
+                //         proof.into_iter(),
+                //         gateway_xdns_record.gateway_abi.hasher,
+                //     ) {
+                //         log::trace!(
+                //             target: "circuit-runtime",
+                //             "Step confirmation check failed: inclusion root mismatch. Expected: {}, computed: {}",
+                //             expected_root,
+                //             computed_root,
+                //         );
+                //
+                //         Err(Error::<T>::SideEffectConfirmationInvalidInclusionProof.into())
+                //     }
             },
             GatewayVendor::Substrate => {
-                // For Substrate bridges block hash is required
                 let block_hash = if let Some(x) = maybe_block_hash {
                     Ok(x)
                 } else {
-                    Err(
-                        "Must provide a valid read proof when proving inclusion with Substrate Bridge"
-                    )
+                    Err("Must provide a valid read proof when proving inclusion with Substrate Bridge")
                 }?;
-                let proof = if let Some(x) = maybe_proof {
-                    Ok(x)
+                let storage_proof: StorageProof = if let Some(x) = maybe_proof {
+                    Ok(Decode::decode(&mut &x.encode()[..]).unwrap())
                 } else {
-                    Err(
-                        "Must provide a valid read proof when proving inclusion with Substrate Bridge"
-                    )
+                    Err("Must provide a valid read proof when proving inclusion with Substrate Bridge")
                 }?;
-                // Check inclusion relying on data in pallet-multi-verifier
-                let (extrinsics_root_h256, storage_root_h256) = match (
+
+                // StorageKey for System_Events
+
+                let key: Vec<u8> = [
+                    38, 170, 57, 78, 234, 86, 48, 224, 124, 72, 174, 12, 149, 88, 206, 247, 128,
+                    212, 30, 94, 22, 5, 103, 101, 188, 132, 97, 133, 16, 114, 201, 215,
+                ]
+                .to_vec();
+                let verified_events = match (
                     gateway_xdns_record.gateway_abi.hasher.clone(),
                     gateway_xdns_record.gateway_abi.block_number_type_size,
                 ) {
-                    (HasherAlgo::Blake2, 32) => get_roots_from_bridge::<
-                        T,
-                        DefaultPolkadotLikeGateway,
-                    >(block_hash, gateway_id)?,
-                    (HasherAlgo::Blake2, 64) => get_roots_from_bridge::<
-                        T,
-                        PolkadotLikeValU64Gateway,
-                    >(block_hash, gateway_id)?,
-                    (HasherAlgo::Keccak256, 32) => get_roots_from_bridge::<
-                        T,
-                        EthLikeKeccak256ValU32Gateway,
-                    >(block_hash, gateway_id)?,
-                    (HasherAlgo::Keccak256, 64) => get_roots_from_bridge::<
-                        T,
-                        EthLikeKeccak256ValU64Gateway,
-                    >(block_hash, gateway_id)?,
-                    (_, _) => get_roots_from_bridge::<T, DefaultPolkadotLikeGateway>(
-                        block_hash, gateway_id,
-                    )?,
+                    (HasherAlgo::Blake2, 32) =>
+                        verify_storage_proof::<T, DefaultPolkadotLikeGateway>(
+                            block_hash,
+                            gateway_id,
+                            key,
+                            storage_proof,
+                            ProofTriePointer::State,
+                        )?,
+                    (HasherAlgo::Blake2, 64) =>
+                        verify_storage_proof::<T, PolkadotLikeValU64Gateway>(
+                            block_hash,
+                            gateway_id,
+                            key,
+                            storage_proof,
+                            ProofTriePointer::State,
+                        )?,
+                    (_, _) => unimplemented!(),
                 };
 
-                // let expected_root = match step_confirmation.proof.proof_trie_pointer {
-                let expected_root = match trie_type {
-                    ProofTriePointer::State => storage_root_h256,
-                    ProofTriePointer::Transaction => extrinsics_root_h256,
-                    ProofTriePointer::Receipts => storage_root_h256,
-                };
-
-                return if let Err(computed_root) = check_merkle_proof(
-                    expected_root,
-                    // step_confirmation.proof.proof_data.into_iter(),
-                    proof.into_iter(),
-                    gateway_xdns_record.gateway_abi.hasher,
-                ) {
-                    log::trace!(
-                        target: "circuit-runtime",
-                        "Step confirmation check failed: inclusion root mismatch. Expected: {}, computed: {}",
-                        expected_root,
-                        computed_root,
-                    );
-
-                    Err(Error::<T>::SideEffectConfirmationInvalidInclusionProof.into())
-                } else {
-                    Ok(())
+                // Not great, but better then decoding all events and then searching
+                fn is_sub<T: PartialEq>(mut haystack: &[T], needle: &[T]) -> bool {
+                    if needle.len() == 0 {
+                        return true
+                    }
+                    while !haystack.is_empty() {
+                        if haystack.starts_with(needle) {
+                            return true
+                        }
+                        haystack = &haystack[1..];
+                    }
+                    false
                 }
+
+                // We can check if an event was in a block by checking if Vec<Event>.contains(ourHeader)
+                // Here we do this in encoded bytes form. Not pretty, but the most efficient I believe.
+                // As the event storage is currently being revamped, this is a temporary solution anyways
+                if is_sub(&verified_events, &encoded_event) {
+                    return Ok(().into())
+                }
+                Err(Error::<T>::SideEffectConfirmationInvalidInclusionProof.into())
             },
         }
     }

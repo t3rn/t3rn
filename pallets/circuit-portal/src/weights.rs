@@ -33,6 +33,7 @@ pub trait WeightInfo {
     fn register_gateway_polka_u64() -> Weight;
     fn register_gateway_default_eth() -> Weight;
     fn register_gateway_eth_u64() -> Weight;
+    fn submit_parachain_header(v: u32, p: u32) -> Weight;
     fn update_gateway() -> Weight;
 }
 
@@ -66,6 +67,14 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
             .saturating_add(T::DbWeight::get().reads(4_u64))
             .saturating_add(T::DbWeight::get().writes(7_u64))
     }
+
+    fn submit_parachain_header(v: u32, p: u32) -> Weight {
+        (0 as Weight)
+            .saturating_add((160_060_000 as Weight).saturating_mul(v as Weight))
+            .saturating_add((640_223_000 as Weight).saturating_mul(p as Weight))
+            .saturating_add(T::DbWeight::get().reads(5 as Weight))
+            .saturating_add(T::DbWeight::get().writes(3 as Weight))
+    }
 }
 
 // For backwards compatibility and tests
@@ -96,5 +105,13 @@ impl WeightInfo for () {
         67_939_000_u64
             .saturating_add(RocksDbWeight::get().reads(4_u64))
             .saturating_add(RocksDbWeight::get().writes(7_u64))
+    }
+
+    fn submit_parachain_header(v: u32, p: u32) -> Weight {
+        (0 as Weight)
+            .saturating_add((160_060 as Weight).saturating_mul(v as Weight))
+            .saturating_add((640_223 as Weight).saturating_mul(p as Weight))
+            .saturating_add(RocksDbWeight::get().reads(5 as Weight))
+            .saturating_add(RocksDbWeight::get().writes(3 as Weight))
     }
 }

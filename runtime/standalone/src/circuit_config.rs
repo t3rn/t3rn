@@ -66,13 +66,13 @@ impl pallet_circuit::Config for Runtime {
     type SelfGatewayId = SelfGatewayId;
     type WeightInfo = ();
     type Xdns = XDNS;
-    type XtxTimeoutCheckInterval = ConstU32<10>;
-    type XtxTimeoutDefault = ConstU32<100>;
+    type XtxTimeoutCheckInterval = ConstU32<50>;
+    type XtxTimeoutDefault = ConstU32<400>;
 }
 
 parameter_types! {
     pub const MaxRequests: u32 = 2;
-    pub const HeadersToKeep: u32 = 5;
+    pub const HeadersToKeep: u32 = 100;
 }
 
 type DefaultPolkadotBridgeInstance = ();
@@ -120,6 +120,7 @@ impl bp_runtime::Chain for Keccak256ValU32Chain {
 impl pallet_mfv::Config<Blake2ValU64BridgeInstance> for Runtime {
     type BridgedChain = Blake2ValU64Chain;
     type Escrowed = Self;
+    type Event = Event;
     type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
@@ -129,6 +130,7 @@ impl pallet_mfv::Config<Blake2ValU64BridgeInstance> for Runtime {
 impl pallet_mfv::Config<Blake2ValU32BridgeInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
     type Escrowed = Self;
+    type Event = Event;
     type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
@@ -138,6 +140,7 @@ impl pallet_mfv::Config<Blake2ValU32BridgeInstance> for Runtime {
 impl pallet_mfv::Config<Keccak256ValU64BridgeInstance> for Runtime {
     type BridgedChain = Keccak256ValU64Chain;
     type Escrowed = Self;
+    type Event = Event;
     type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
@@ -147,6 +150,7 @@ impl pallet_mfv::Config<Keccak256ValU64BridgeInstance> for Runtime {
 impl pallet_mfv::Config<Keccak256ValU32BridgeInstance> for Runtime {
     type BridgedChain = Keccak256ValU32Chain;
     type Escrowed = Self;
+    type Event = Event;
     type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
@@ -156,6 +160,7 @@ impl pallet_mfv::Config<Keccak256ValU32BridgeInstance> for Runtime {
 impl pallet_mfv::Config<DefaultPolkadotBridgeInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
     type Escrowed = Self;
+    type Event = Event;
     type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
     type WeightInfo = ();

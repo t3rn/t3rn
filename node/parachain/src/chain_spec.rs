@@ -16,6 +16,7 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::{
     convert::TryFrom,
     io::{Error, ErrorKind},
+    str::FromStr,
 };
 use t3rn_primitives::{
     abi::Type,
@@ -27,6 +28,8 @@ use t3rn_primitives::{
     xdns::XdnsRecord,
     ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor, Header,
 };
+
+const PARACHAIN_ID: u32 = 3333_u32;
 
 /// Helper function that fetches metadata from live networks and generates an XdnsRecord
 fn fetch_xdns_record_from_rpc(
@@ -53,6 +56,7 @@ fn fetch_xdns_record_from_rpc(
         Ok(<XdnsRecord<AccountId>>::new(
             format!("wss://{}", params.host).as_bytes().to_vec(),
             chain_id,
+            None,
             Default::default(),
             GatewayVendor::Substrate,
             GatewayType::ProgrammableExternal(0),
@@ -295,13 +299,6 @@ pub type ChainSpec =
 /// The default XCM version to set in genesis config.
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
 
-/// Helper function to generate a crypto pair from seed
-pub fn get_public_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
-    TPublic::Pair::from_string(&format!("//{}", seed), None)
-        .expect("static values are valid; qed")
-        .public()
-}
-
 /// The extensions for the [`ChainSpec`].
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension)]
 #[serde(deny_unknown_fields)]
@@ -321,6 +318,13 @@ impl Extensions {
 
 type AccountPublic = <Signature as Verify>::Signer;
 
+/// Helper function to generate a crypto pair from seed.
+pub fn get_public_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
+    TPublic::Pair::from_string(&format!("//{}", seed), None)
+        .expect("static values are valid; qed")
+        .public()
+}
+
 /// Generate collator keys from seed.
 ///
 /// This function's return type must always match the session keys of the chain in tuple format.
@@ -328,12 +332,32 @@ pub fn get_collator_keys_from_seed(seed: &str) -> AuraId {
     get_public_from_seed::<AuraId>(seed)
 }
 
-/// Helper function to generate an account ID from seed
+/// Helper function to generate an account ID from seed.
 pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
 where
     AccountPublic: From<<TPublic::Pair as Pair>::Public>,
 {
     AccountPublic::from(get_public_from_seed::<TPublic>(seed)).into_account()
+}
+
+/// Helper function to derive an account ID from a SS58 address.
+pub fn get_account_id_from_adrs(adrs: &str) -> AccountId {
+    AccountId::from_str(adrs).expect("account id from SS58 address")
+}
+
+/// Helper function to derive a public key from a SS58 address.
+pub fn get_public_from_adrs<TPublic: Public>(adrs: &str) -> <TPublic::Pair as Pair>::Public {
+    TPublic::Pair::from_string(adrs, None)
+        .expect("keypair from SS58 address")
+        .public()
+}
+
+/// Derive an Aura id from a SS58 address.
+///
+/// This function's return type must always match the session keys of the chain in tuple format.
+pub fn get_aura_id_from_adrs(adrs: &str) -> AuraId {
+    use sp_core::crypto::Ss58Codec;
+    AuraId::from_string(adrs).expect("aura id from SS58 address")
 }
 
 /// Generate the session keys from individual elements.
@@ -383,7 +407,7 @@ pub fn development_config() -> ChainSpec {
                     get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
                     get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
                 ],
-                3333_u32.into(),
+                PARACHAIN_ID.into(),
                 // Sudo account
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
                 seed_xdns_registry().unwrap_or_default(),
@@ -399,7 +423,7 @@ pub fn development_config() -> ChainSpec {
         None,
         Extensions {
             relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
-            para_id: 3333_u32,                  // You MUST set this correctly!
+            para_id: PARACHAIN_ID,              // You MUST set this correctly!
         },
     )
 }
@@ -444,7 +468,7 @@ pub fn local_testnet_config() -> ChainSpec {
                     get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
                     get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
                 ],
-                3333_u32.into(),
+                PARACHAIN_ID.into(),
                 // Sudo account
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
                 seed_xdns_registry().unwrap_or_default(),
@@ -466,7 +490,76 @@ pub fn local_testnet_config() -> ChainSpec {
         // Extensions
         Extensions {
             relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
-            para_id: 3333_u32,                  // You MUST set this correctly!
+            para_id: PARACHAIN_ID,              // You MUST set this correctly!
+        },
+    )
+}
+
+pub fn rococo_config() -> ChainSpec {
+    let mut properties = sc_chain_spec::Properties::new();
+    properties.insert("tokenSymbol".into(), "T0RN".into());
+    properties.insert("tokenDecimals".into(), 12.into());
+    properties.insert("ss58Format".into(), 42.into());
+
+    ChainSpec::from_genesis(
+        // Name
+        "t0rn",
+        // Id
+        "t0rn_testnet",
+        ChainType::Live,
+        move || {
+            testnet_genesis(
+                // Invulnerable collators
+                vec![
+                    (
+                        get_account_id_from_adrs(
+                            "5FKjxoi5Yfjwa1aXesFWRXMpvs4vJMXFeG2ydFPyNwUn4qiW",
+                        ),
+                        get_aura_id_from_adrs("5FKjxoi5Yfjwa1aXesFWRXMpvs4vJMXFeG2ydFPyNwUn4qiW"),
+                    ),
+                    (
+                        get_account_id_from_adrs(
+                            "5DcyZrktqRvmpHQGLJEucnYM6qwJpG8HN8zaL8dvGUsBb67v",
+                        ),
+                        get_aura_id_from_adrs("5DcyZrktqRvmpHQGLJEucnYM6qwJpG8HN8zaL8dvGUsBb67v"),
+                    ),
+                ],
+                // Prefunded accounts
+                vec![
+                    get_account_id_from_adrs("5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A"),
+                    get_account_id_from_adrs("5CAYyLZxG4oYQP8CGTYgPPhkoT42NyMvi2J3hKPCLGyKHAC4"),
+                    get_account_id_from_adrs("5GducktTqf8KKeatpex4kwkg1PZZimY1xUDUFoBZ2s5EDfVf"),
+                    get_account_id_from_adrs("5CqRUh9fiVgzMftXmacNSNMXF4TDfkUXCTZvXfuYXA33knRC"),
+                    get_account_id_from_adrs("5DXBQResSqHCGijMH1UtpQNZzpjdCqHtad14FUnwaSA7xmRL"),
+                    get_account_id_from_adrs("5HomG74gKivcZfCLixXyZbuGg57Bc8ZR55BkAX2jus2dSYS1"),
+                    get_account_id_from_adrs("5FQpivNZCVw3LQWoQwrF44CLeP1g5j8RSAtcR4kURbZwXgXg"),
+                    get_account_id_from_adrs("5GLMuTmTvNCWkYCYc2DNPWjTMKa2nKW6yYH8xKqeiPHgcLNs"),
+                    get_account_id_from_adrs("5DWyim48gMrAhoHz9pjb6qu5Q8paDmeWhisALuV9cS8NvScG"),
+                    get_account_id_from_adrs("5FU77XnhRuBD6VSA8ZvwqB6BSjyYEGtS4HPwMMU6WwqpVmmV"),
+                ],
+                PARACHAIN_ID.into(),
+                // Sudo
+                get_account_id_from_adrs("5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A"),
+                seed_xdns_registry().unwrap_or_default(),
+                standard_side_effects(),
+                initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
+                    .expect("initial gateways"),
+            )
+        },
+        // Bootnodes
+        Vec::new(),
+        // Telemetry
+        None,
+        // Protocol ID
+        Some("t0rn"),
+        // Fork ID
+        None,
+        // Properties
+        Some(properties),
+        // Extensions
+        Extensions {
+            relay_chain: "rococo".into(), // You MUST set this to the correct network!
+            para_id: PARACHAIN_ID,        // You MUST set this correctly!
         },
     )
 }
