@@ -238,6 +238,7 @@ pub mod pallet {
     ///
     /// This operation is performed lazily in `on_initialize`.
     #[pallet::storage]
+    #[pallet::getter(fn get_signal_queue)]
     pub(crate) type SignalQueue<T: Config> = StorageValue<
         _,
         BoundedVec<(T::AccountId, ExecutionSignal<T::Hash>), T::SignalQueueDepth>,
@@ -326,6 +327,8 @@ pub mod pallet {
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
         fn on_initialize(n: T::BlockNumber) -> Weight {
+            let mut weight = Self::process_signal_queue();
+
             // Check every XtxTimeoutCheckInterval blocks
 
             /// what happens if the weight for the block is consumed, do these timeouts need to wait
@@ -369,7 +372,7 @@ pub mod pallet {
             // Anything that needs to be done at the start of the block.
             // We don't do anything here.
             // ToDo: Do active xtx signals overview and Cancel if time elapsed
-            0
+            weight
         }
 
         fn on_finalize(_n: T::BlockNumber) {
