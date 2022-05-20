@@ -7,7 +7,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 't3rn docs',
-  tagline: 'Dinosaurs are cool',
+  tagline: 'The interoperable smart contract hub',
   url: 'https://t3rn.io',
   baseUrl: '/',
   onBrokenLinks: 'throw',
@@ -164,12 +164,12 @@ const config = {
               // },
               {
                 label: 'GitHub',
-                href: 'https://github.com/facebook/docusaurus',
+                href: 'https://github.com/t3rn/t3rn',
               },
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
+        copyright: `Copyright © ${new Date().getFullYear()} t3rn, Inc. Built with Docusaurus.`,
       },
       prism: {
         theme: lightCodeTheme,
