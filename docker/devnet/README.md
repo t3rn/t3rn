@@ -28,7 +28,7 @@ Builds docker images and regenerates chain specs, and collator keys.
 
 Only necessary if any of the runtimes have changed.
 
-To actually have docker images rebuilt, prune them manually in advance, fx `docker image rm circuit-collator:update_v0.9.17 -f`.
+To actually have docker images rebuilt, prune them manually in advance, fx `docker image rm circuit-collator:update_v0.9.19 -f`.
 
 ## Topology
 
@@ -155,4 +155,4 @@ To actually have docker images rebuilt, prune them manually in advance, fx `dock
 
 The HRMP channels setup between the parachains have a maximum capacity of 8 and a maximum message size of 1024 bytes.
 
-All codebases are based on `v0.9.17` Substrate.
+All codebases are based on `v0.9.19` Substrate.

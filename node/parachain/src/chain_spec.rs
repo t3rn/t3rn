@@ -16,6 +16,7 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::{
     convert::TryFrom,
     io::{Error, ErrorKind},
+    str::FromStr,
 };
 use t3rn_primitives::{
     abi::Type,

@@ -7,7 +7,7 @@ networks:
 
 services:
   alice:
-    image: polkadot:release-v0.9.17
+    image: polkadot:release-v0.9.19
     build:
       context: .
       dockerfile: polkadot.Dockerfile
@@ -42,7 +42,7 @@ services:
       -lruntime=debug
 
   bob:
-    image: polkadot:release-v0.9.17
+    image: polkadot:release-v0.9.19
     build:
       context: .
       dockerfile: polkadot.Dockerfile
@@ -79,7 +79,7 @@ services:
       -lruntime=debug
 
   charlie:
-    image: polkadot:release-v0.9.17
+    image: polkadot:release-v0.9.19
     build:
       context: .
       dockerfile: polkadot.Dockerfile
@@ -117,7 +117,7 @@ services:
       -lruntime=debug
 
   dave:
-    image: polkadot:release-v0.9.17
+    image: polkadot:release-v0.9.19
     build:
       context: .
       dockerfile: polkadot.Dockerfile
@@ -156,7 +156,7 @@ services:
       -lruntime=debug
 
   eve:
-    image: polkadot:release-v0.9.17
+    image: polkadot:release-v0.9.19
     build:
       context: .
       dockerfile: polkadot.Dockerfile
@@ -196,7 +196,7 @@ services:
       -lruntime=debug
 
   t3rn1:
-    image: circuit-collator:update_v0.9.17
+    image: circuit-collator:update_v0.9.19
     build:
       context: ../..
       dockerfile: docker/devnet/t3rn.Dockerfile
@@ -251,7 +251,7 @@ services:
       --execution Wasm
 
   t3rn2:
-    image: circuit-collator:update_v0.9.17
+    image: circuit-collator:update_v0.9.19
     build:
       context: ../..
       dockerfile: docker/devnet/t3rn.Dockerfile
