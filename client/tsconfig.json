@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "incremental": true,
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "moduleResolution": "Node",
+    "module": "CommonJS",
+    "target": "ES2018",
+    "sourceMap": true,
+    "lib": [
+      "esnext", "es5", "es6"
+    ],
+    "esModuleInterop": true,
+    "alwaysStrict": true,
+    "strictNullChecks": true,
+    "noImplicitAny": false,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+//    "noUnusedLocals": true,
+    "resolveJsonModule": true,
+    "paths": {
+      "@t3rn/types": [
+        "types/src/definitions/index.ts"
+      ]
+    }
+  },
+  "references": [],
+  "exclude": ["node_modules", "dist", "*.d.ts"]
+}

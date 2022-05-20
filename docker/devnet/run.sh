@@ -236,6 +236,7 @@ channel() {
 case ${1:-devnet} in
 devnet|dev|net)
   mkdir -p ./data/{alice,bob,charlie,dave,eve,t3rn1,t3rn2,pchain1,pchain2}
+  build_docker_images
   docker-compose up > /dev/null &
   sleep 13s # allow node startup ~ basepath/datadir/keystore creation
   echo "⛓️ setting up collator keystores and initializing parachain onboarding..."

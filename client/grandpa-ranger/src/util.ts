@@ -1,9 +1,26 @@
-import { tmpdir } from 'os'
-import { join } from 'path'
-import { writeFile } from 'fs/promises'
-import { promisify } from 'util'
-import { exec as _exec } from 'child_process'
-import { JustificationNotification } from '@polkadot/types/interfaces'
+import { tmpdir } from "os"
+import { join } from "path"
+import { writeFile } from "fs/promises"
+import { promisify } from "util"
+import { exec as _exec } from "child_process"
+import { TypeRegistry, createType } from "@polkadot/types"
+import { Header } from "@polkadot/types/interfaces"
+import { ApiPromise } from "@polkadot/api"
+
+const registry = new TypeRegistry()
+
+const type = { type: "Block::Header" }
+let data =
+  "0xe90255cc67090a940df176ccea510ecacd85a55fd71acfaf2f1a4f409e1933d019ba4d0dc584d8d3ca18d30c9426f96f44f56cc829f16bf326b06880ed1231278a03fdb93ab69fd3c83b7cebb8f74eeebf5dbd9620ef6c2d4624212e275718303c7183840806617572612009f72e0800000000056175726101013894a477f30424aea70cc40bd246ab486f6b80bc03560dd8d6f0dc7c4c87f048d569be8958cdd4ac0d62489458891b88c3309debc71b38b40bdfd1fa3927c485"
+
+export const decodeCustomType = (type: string, data: string) => {
+  const typeObject = { type }
+  registry.register(typeObject)
+  const res = createType(registry, typeObject.type, data.trim())
+
+  // console.log(res)
+  return res
+}
 
 export const exec = promisify(_exec)
 
@@ -16,12 +33,58 @@ export function formatEvents(
   )
 }
 
-export async function grandpaDecode(justification: JustificationNotification) {
+export async function grandpaDecode(justification: any) {
   const tmpFile = join(tmpdir(), justification.toString().slice(0, 10))
 
   await writeFile(tmpFile, justification.toString())
 
   return exec(
-    './justification-decoder/target/release/justification-decoder ' + tmpFile
+    "./justification-decoder/target/release/justification-decoder " + tmpFile
   ).then(cmd => JSON.parse(cmd.stdout))
+}
+
+export function decodeHeaderNumber(data: string) {
+  // removes the Vec Decoding, bit hacky
+  if (data.slice(0, 6) === "0xe902") {
+    data = "0x" + data.split("e902")[1]
+  }
+
+  const typeObject = { type: "Block::Header" }
+  registry.register(typeObject)
+  const res: any = createType(registry, typeObject.type, data)
+  return res.number.toNumber()
+}
+
+export async function queryNonce(api, address): Promise<bigint> {
+  const res = (await api.query.system.account(address)) as any
+  return BigInt(res.nonce.toString())
+}
+
+export async function fetchMissingHeaders(
+  api: ApiPromise,
+  headers: (Header | number)[],
+  until?: number
+): Promise<Header[]> {
+  let _headers
+  if (until) {
+    _headers = Array.from(headers)
+    let tail =
+      typeof headers[headers.length - 1] === "number"
+        ? (headers[headers.length - 1] as number)
+        : (headers[headers.length - 1] as Header).number.toNumber()
+    while (++tail <= until) _headers.push(tail)
+  } else {
+    _headers = headers
+  }
+  return Promise.all(
+    _headers.map(async h => {
+      // headers items are either of type Header or number.
+      if (typeof h === "number") {
+        const blockHash = await api.rpc.chain.getBlockHash(h)
+        return api.rpc.chain.getHeader(blockHash)
+      } else {
+        return h
+      }
+    })
+  )
 }

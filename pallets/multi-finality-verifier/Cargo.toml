@@ -22,7 +22,7 @@ serde            = { version = "1.0", default-features = false, optional = true 
 frame-support       = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 frame-system        = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 pallet-xdns         = { path = "../xdns", default-features = false }
-sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-finality-grandpa  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 sp-runtime          = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 sp-std              = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 sp-trie             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
@@ -33,6 +33,9 @@ pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = '
 pallet-sudo      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 sp-io            = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
+
+t3rn-protocol           = { path = "../../protocol" }
+pallet-circuit-portal   = { path = "../circuit-portal" }
 
 [features]
 default = [ "std" ]

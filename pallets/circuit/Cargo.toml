@@ -25,6 +25,7 @@ sp-core            = { git = "https://github.com/paritytech/substrate", branch =
 sp-io              = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 sp-runtime         = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 sp-std             = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
+sp-trie            = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 t3rn-primitives    = { path = "../../primitives", default-features = false }
 t3rn-protocol      = { path = "../../protocol", default-features = false }
 

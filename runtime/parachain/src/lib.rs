@@ -23,11 +23,13 @@ use sp_runtime::{
     ApplyExtrinsicResult, MultiSignature,
 };
 use sp_std::{convert::TryInto, prelude::*};
+use pallet_xdns_rpc_runtime_api::{ChainId, FetchXdnsRecordsResponse, GatewayABIConfig};
 
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
+pub use frame_support::traits::EqualPrivilegeOnly;
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{Everything, Imbalance, OnUnbalanced},
@@ -179,10 +181,10 @@ impl_opaque_keys! {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("circuit-parachain"),
-    impl_name: create_runtime_str!("circuit-parachain"),
+    spec_name: create_runtime_str!("t0rn"),
+    impl_name: create_runtime_str!("Circuit Collator"),
     authoring_version: 1,
-    spec_version: 1,
+    spec_version: 2, // MUST: increment for runtime upgrades
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -235,6 +237,12 @@ pub fn native_version() -> NativeVersion {
         runtime_version: VERSION,
         can_author_with: Default::default(),
     }
+}
+
+/// Calculate the storage deposit based on the number of storage items and the
+/// combined byte size of those items.
+pub const fn deposit(items: u32, bytes: u32) -> Balance {
+    (items as Balance) * 56 * MILLIUNIT + (bytes as Balance) * 50 * MICROUNIT
 }
 
 parameter_types! {
@@ -474,6 +482,49 @@ impl pallet_sudo::Config for Runtime {
     type Event = Event;
 }
 
+parameter_types! {
+    pub const PreimageMaxSize: u32 = 4096 * 1024;
+    pub const PreImageBaseDeposit: Balance = deposit(2, 64);
+    pub const PreImageByteDeposit: Balance = deposit(0, 1);
+}
+
+impl pallet_preimage::Config for Runtime {
+    type BaseDeposit = PreImageBaseDeposit;
+    type ByteDeposit = PreImageByteDeposit;
+    type Currency = Balances;
+    type Event = Event;
+    type ManagerOrigin = EnsureRoot<AccountId>;
+    type MaxSize = PreimageMaxSize;
+    type WeightInfo = ();
+}
+
+parameter_types! {
+    pub MaximumSchedulerWeight: Weight = 10_000_000;
+    pub const MaxScheduledPerBlock: u32 = 50;
+    pub const NoPreimagePostponement: Option<BlockNumber> = Some(10);
+}
+
+impl pallet_scheduler::Config for Runtime {
+    type Call = Call;
+    type Event = Event;
+    type MaxScheduledPerBlock = MaxScheduledPerBlock;
+    type MaximumWeight = MaximumSchedulerWeight;
+    type NoPreimagePostponement = NoPreimagePostponement;
+    type Origin = Origin;
+    type OriginPrivilegeCmp = EqualPrivilegeOnly;
+    type PalletsOrigin = OriginCaller;
+    type PreimageProvider = Preimage;
+    type ScheduleOrigin = EnsureRoot<AccountId>;
+    type WeightInfo = ();
+}
+
+impl pallet_utility::Config for Runtime {
+    type Call = Call;
+    type Event = Event;
+    type PalletsOrigin = OriginCaller;
+    type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
@@ -488,6 +539,9 @@ construct_runtime!(
         } = 1,
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
         ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
+        Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 4,
+        Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 5,
+        Utility: pallet_utility = 6,
 
         // Monetary stuff.
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 10,
@@ -511,22 +565,22 @@ construct_runtime!(
 
         // Circuit
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 200,
-       // t3rn pallets
+        // t3rn pallets
         XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
         MultiFinalityVerifierPolkadotLike: pallet_mfv::<Instance1>::{
-            Pallet, Call, Storage, Config<T, I>
+            Pallet, Call, Storage, Config<T, I>, Event<T, I>
         } = 101,
         MultiFinalityVerifierSubstrateLike: pallet_mfv::<Instance2>::{
-            Pallet, Call, Storage, Config<T, I>
+            Pallet, Call, Storage, Config<T, I>, Event<T, I>
         } = 102,
         MultiFinalityVerifierEthereumLike: pallet_mfv::<Instance3>::{
-            Pallet, Call, Storage, Config<T, I>
+            Pallet, Call, Storage, Config<T, I>, Event<T, I>
         } = 103,
         MultiFinalityVerifierGenericLike: pallet_mfv::<Instance4>::{
-            Pallet, Call, Storage, Config<T, I>
+            Pallet, Call, Storage, Config<T, I>, Event<T, I>
         } = 104,
         MultiFinalityVerifierDefault: pallet_mfv::{
-            Pallet, Call, Storage, Config<T, I>
+            Pallet, Call, Storage, Config<T, I>, Event<T, I>
         } = 105,
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
         CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>} = 107,
@@ -699,6 +753,21 @@ impl_runtime_apis! {
             key: [u8; 32],
         ) -> pallet_3vm_contracts_primitives::GetStorageResult {
             Contracts::get_storage(address, key)
+        }
+    }
+
+    impl pallet_xdns_rpc_runtime_api::XdnsRuntimeApi<Block, AccountId> for Runtime {
+        fn fetch_records() -> FetchXdnsRecordsResponse<AccountId> {
+             FetchXdnsRecordsResponse {
+                xdns_records: <XDNS as t3rn_primitives::xdns::Xdns<Runtime>>::fetch_records()
+            }
+        }
+
+        fn fetch_abi(chain_id: ChainId) -> Option<GatewayABIConfig> {
+            match <XDNS as t3rn_primitives::xdns::Xdns<Runtime>>::get_abi(chain_id) {
+                Ok(abi) => Some(abi),
+                Err(_) => None,
+            }
         }
     }
 

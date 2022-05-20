@@ -111,6 +111,7 @@ std = [
   "orml-tokens/std",
   "orml-traits/std",
   "pallet-xdns/std",
+  "pallet-xdns-rpc-runtime-api/std",
   "pallet-circuit/std",
   #"volatile-vm/std",
   # native contracts VMs

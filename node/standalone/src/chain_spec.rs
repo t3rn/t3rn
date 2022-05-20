@@ -27,6 +27,11 @@ use t3rn_primitives::{
     xdns::XdnsRecord,
     ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor, Header,
 };
+use sc_service::ChainType;
+use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+use sp_core::{sr25519, Pair, Public};
+use sp_finality_grandpa::AuthorityId as GrandpaId;
+use sp_runtime::traits::{IdentifyAccount, Verify};
 
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
@@ -91,6 +96,7 @@ fn fetch_xdns_record_from_rpc(
         Ok(<XdnsRecord<AccountId>>::new(
             format!("wss://{}", params.host).as_bytes().to_vec(),
             chain_id,
+            None,
             Default::default(),
             GatewayVendor::Substrate,
             GatewayType::ProgrammableExternal(0),
@@ -129,10 +135,10 @@ fn seed_xdns_registry() -> Result<Vec<XdnsRecord<AccountId>>, Error> {
         .expect("fetching polkadot xdns info failed");
     let kusama_xdns = fetch_xdns_record_from_rpc(&kusama_connection_params, KUSAMA_CHAIN_ID)
         .expect("fetching kusama xdns info failed");
-    let rococo_xdns = fetch_xdns_record_from_rpc(&rococo_connection_params, ROCOCO_CHAIN_ID)
+    let _rococo_xdns = fetch_xdns_record_from_rpc(&rococo_connection_params, ROCOCO_CHAIN_ID)
         .expect("fetching rococo xdns info failed");
 
-    Ok(vec![polkadot_xdns, kusama_xdns, rococo_xdns])
+    Ok(vec![polkadot_xdns, kusama_xdns /*rococo_xdns*/])
 }
 
 fn standard_side_effects() -> Vec<SideEffectInterface> {
@@ -349,8 +355,10 @@ pub fn development_config() -> Result<ChainSpec, String> {
                 ],
                 seed_xdns_registry().unwrap_or_default(),
                 standard_side_effects(),
-                initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
-                    .expect("initial gateways"),
+                vec![],
+                // FIXME
+                // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
+                //     .expect("initial gateways"),
                 true,
             )
         },
@@ -404,8 +412,10 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
                 ],
                 seed_xdns_registry().unwrap_or_default(),
                 standard_side_effects(),
-                initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
-                    .expect("initial gateways"),
+                vec![],
+                // FIXME
+                // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
+                //     .expect("initial gateways"),
                 true,
             )
         },

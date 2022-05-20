@@ -1169,6 +1169,7 @@ dependencies = [
  "pallet-transaction-payment-rpc",
  "pallet-xdns",
  "parity-scale-codec 3.1.2",
+ "pallet-xdns-rpc",
  "polkadot-cli",
  "polkadot-parachain",
  "polkadot-primitives",
@@ -1245,15 +1246,19 @@ dependencies = [
  "pallet-contracts-registry",
  "pallet-contracts-rpc-runtime-api",
  "pallet-multi-finality-verifier",
+ "pallet-preimage",
  "pallet-randomness-collective-flip",
+ "pallet-scheduler",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-utility",
  "pallet-wasm-contracts",
  "pallet-xcm",
  "pallet-xdns",
+ "pallet-xdns-rpc-runtime-api",
  "parachain-info",
  "parity-scale-codec 3.1.2",
  "polkadot-parachain",
@@ -1297,6 +1302,7 @@ dependencies = [
  "pallet-contracts-rpc",
  "pallet-transaction-payment-rpc",
  "pallet-xdns",
+ "pallet-xdns-rpc",
  "sc-basic-authorship",
  "sc-cli",
  "sc-client-api",
@@ -6513,6 +6519,7 @@ dependencies = [
  "sp-runtime",
  "sp-staking",
  "sp-std",
+ "sp-trie",
  "t3rn-primitives",
  "t3rn-protocol",
 ]
@@ -6554,6 +6561,7 @@ dependencies = [
  "sp-runtime",
  "sp-staking",
  "sp-std",
+ "sp-trie",
  "sp-version",
  "t3rn-primitives",
  "t3rn-protocol",
@@ -6922,6 +6930,7 @@ dependencies = [
  "frame-system",
  "log",
  "pallet-balances",
+ "pallet-circuit-portal",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-xdns",
@@ -6934,6 +6943,7 @@ dependencies = [
  "sp-std",
  "sp-trie",
  "t3rn-primitives",
+ "t3rn-protocol",
 ]
 
 [[package]]
@@ -7405,6 +7415,22 @@ dependencies = [
  "sp-version",
  "t3rn-primitives",
  "t3rn-protocol",
+]
+
+[[package]]
+name = "pallet-xdns-rpc"
+version = "1.0.0-alpha.0"
+dependencies = [
+ "jsonrpc-core 18.0.0",
+ "jsonrpc-core-client 18.0.0",
+ "jsonrpc-derive",
+ "pallet-xdns-rpc-runtime-api",
+ "parity-scale-codec 2.3.1",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
 ]
 
 [[package]]
