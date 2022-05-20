@@ -25,8 +25,16 @@ jobs:
           submodules: recursive
           token: ${{ secrets.GH_PAT }}
 #        run: git submodule deinit --all && git submodule init && git submodule update
+      - name: ⚙️Get nightly rust toolchain with wasm target
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2021-11-01
+          profile: minimal
+          components: rustfmt
+          override: true
       - name: Generate Docs
         uses: actions-rs/cargo@v1
+        continue-on-error: false
         with:
           command: doc
           args: --no-deps --workspace --exclude t3rn-protocol
