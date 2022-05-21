@@ -1,41 +1,41 @@
-# This is a basic workflow to help you get started with Actions
-
-name: UPDATE_RUST_DOCS
-
-# Controls when the workflow will run
-on:
-  # Triggers the workflow on push or pull request events but only for the development branch
-  push:
-    branches: [ add_docs ]
-  pull_request:
-    branches: [ add_docs ]
-
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
-jobs:
-  # This workflow contains a single job called "build"
-  docs:
-    runs-on: ubunutu-latest
-    steps:
-      - name: ☁️Checkout git repo
-        uses: actions/checkout@v2
-        with:
-          submodules: recursive
-          token: ${{ secrets.GH_PAT }}
-#        run: git submodule deinit --all && git submodule init && git submodule update
-      - name: Generate Docs
-        uses: actions-rs/cargo@v1
-        with:
-          command: doc
-          args: --no-deps --workspace --exclude t3rn-protocol
-      - name: Install SSH Key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ secrets.RUSTDOCS_SSH_SECRET }} 
-          known_hosts: 'just-a-placeholder-so-we-dont-get-errors'
-      - name: Adding Known Hosts
-        run: ssh-keyscan -H ${{ secrets.ATLAS_IP }} >> ~/.ssh/known_hosts
-      - name: Deploy with rsync
-        run: rsync -avz ./target/doc ${{ secrets.RUSTDOCS_SSH_USER }}@${{ secrets.ATLAS_IP }}:/home/${{ secrets.RUSTDOCS_SSH_USER }}/docs
+## This is a basic workflow to help you get started with Actions
+#
+#name: UPDATE_RUST_DOCS
+#
+## Controls when the workflow will run
+#on:
+#  # Triggers the workflow on push or pull request events but only for the development branch
+#  push:
+#    branches: [ add_docs ]
+#  pull_request:
+#    branches: [ add_docs ]
+#
+#  # Allows you to run this workflow manually from the Actions tab
+#  workflow_dispatch:
+#
+## A workflow run is made up of one or more jobs that can run sequentially or in parallel
+#jobs:
+#  # This workflow contains a single job called "build"
+#  docs:
+#    runs-on: ubunutu-latest
+#    steps:
+#      - name: ☁️Checkout git repo
+#        uses: actions/checkout@v2
+#        with:
+#          submodules: recursive
+#          token: ${{ secrets.GH_PAT }}
+##        run: git submodule deinit --all && git submodule init && git submodule update
+#      - name: Generate Docs
+#        uses: actions-rs/cargo@v1
+#        with:
+#          command: doc
+#          args: --no-deps --workspace --exclude t3rn-protocol
+#      - name: Install SSH Key
+#        uses: shimataro/ssh-key-action@v2
+#        with:
+#          key: ${{ secrets.RUSTDOCS_SSH_SECRET }}
+#          known_hosts: 'just-a-placeholder-so-we-dont-get-errors'
+#      - name: Adding Known Hosts
+#        run: ssh-keyscan -H ${{ secrets.ATLAS_IP }} >> ~/.ssh/known_hosts
+#      - name: Deploy with rsync
+#        run: rsync -avz ./target/doc ${{ secrets.RUSTDOCS_SSH_USER }}@${{ secrets.ATLAS_IP }}:/home/${{ secrets.RUSTDOCS_SSH_USER }}/docs
