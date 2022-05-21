@@ -95,6 +95,15 @@ impl Default for SecurityLvl {
     }
 }
 
+// Side effects conversion error.
+#[derive(RuntimeDebug, PartialEq)]
+pub enum Error {
+    /// Failed to decode a property while hardening.
+    HardeningDecodeError,
+    /// Expected confirmation to FSX wasn't there while hardening.
+    HardeningMissingConfirmationError,
+}
+
 #[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub input: SideEffect<AccountId, BlockNumber, BalanceOf>,
@@ -122,12 +131,12 @@ impl<
             Vec<Bytes>,
             [u8; 4],
         ),
-        &'static str,
+        Error,
     > {
         let confirmed = if let Some(ref confirmed) = self.confirmed {
             Ok(confirmed)
         } else {
-            Err("At harden() expect FSX confirmation part to be there")
+            Err(Error::HardeningMissingConfirmationError)
         }?;
 
         let confirmation_outcome = if let Some(outcome) = &confirmed.err {
@@ -137,22 +146,21 @@ impl<
         };
 
         let confirmed_cost: CircuitBalance = if let Some(cost) = &confirmed.cost {
-            Decode::decode(&mut &cost.encode()[..])
-                .map_err(|_| "harden() decoding error: confirmed_cost")
+            Decode::decode(&mut &cost.encode()[..]).map_err(|_| Error::HardeningDecodeError)
         } else {
             Ok(0u128)
         }?;
 
         let confirmed_executioner: AccountId32 =
             Decode::decode(&mut &confirmed.executioner.encode()[..])
-                .map_err(|_| "harden() decoding error: confirmed_executioner")?;
+                .map_err(|_| Error::HardeningDecodeError)?;
 
         let confirmed_received_at: CircuitBlockNumber =
             Decode::decode(&mut &confirmed.received_at.encode()[..])
-                .map_err(|_| "harden() decoding error: confirmed_received_at")?;
+                .map_err(|_| Error::HardeningDecodeError)?;
 
         let prize: CircuitBalance = Decode::decode(&mut &self.input.prize.encode()[..])
-            .map_err(|_| "harden() decoding error: confirmed_cost")?;
+            .map_err(|_| Error::HardeningDecodeError)?;
 
         Ok((
             self.security_lvl.clone(),
