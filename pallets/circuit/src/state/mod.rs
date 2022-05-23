@@ -10,7 +10,9 @@ type SystemHashing<T> = <T as frame_system::Config>::Hashing;
 pub type XExecSignalId<T> = <T as frame_system::Config>::Hash;
 pub type XExecStepSideEffectId<T> = <T as frame_system::Config>::Hash;
 
+use crate::pallet::{Config, Error};
 use scale_info::TypeInfo;
+use sp_runtime::traits::Zero;
 use t3rn_primitives::transfers::EscrowedBalanceOf;
 
 /// Status of Circuit storage items:
