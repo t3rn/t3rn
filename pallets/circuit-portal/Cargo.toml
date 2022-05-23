@@ -32,6 +32,7 @@ sp-io                 = { default-features = false, git = "https://github.com/pa
 sp-keystore           = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19', optional = true }
 sp-runtime            = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
 sp-std                = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
+sp-trie               = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
 sp-version            = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
 
 pallet-multi-finality-verifier = { default-features = false, path = "../multi-finality-verifier" }
@@ -87,6 +88,7 @@ std = [
   "sp-io/std",
   "sp-runtime/std",
   "sp-std/std",
+  "sp-trie/std",
   "sp-version/std",
   "sp-application-crypto/std",
   # native contracts VMs

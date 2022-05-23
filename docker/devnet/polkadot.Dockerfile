@@ -1,6 +1,6 @@
 FROM rust:buster as blacksmith
 
-ARG BRANCH=release-v0.9.17
+ARG BRANCH=release-v0.9.19
 
 WORKDIR /workshop
 

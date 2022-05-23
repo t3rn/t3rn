@@ -1,0 +1,20 @@
+{
+    "rangeSize": 7,
+    "circuit": {
+        "rpc": "ws://127.0.0.1::9944"
+    },
+    "relaychains": [{
+        "name": "Rococo",
+        "id": "roco",
+        "rpc": "wss://rococo-rpc.polkadot.io",
+        "type": "substrate"
+    }],
+    "parachains": [{
+        "name": "Dolphin",
+        "id": "dolp",
+        "rpc": "wss://anjie.rococo.dolphin.engineering",
+        "type": "substrate",
+        "parachainId": 2084,
+        "relaychainId": "roco"
+    }]
+}

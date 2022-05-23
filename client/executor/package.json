@@ -1,0 +1,19 @@
+{
+  "name": "executor",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "DEBUG=instance-manager,execution-manager,substrate-relayer,circuit-relayer,circuit-listener ts-node ./index.ts",
+    "fmt": "npx prettier --no-semi --arrow-parens avoid --print-width 80 --write ./*.ts ./**/*.ts ./**/**/*.ts"
+  },
+  "dependencies": {
+    "@polkadot/api": "7.14.3",
+    "@polkadot/util": "8.7.1",
+    "@t3rn/types": "0.1.3",
+    "bn.js": "5.2.0",
+    "debug": "4.3.4",
+    "dotenv": "16.0.0",
+    "ts-node": "10.7.0"
+  }
+}
