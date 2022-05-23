@@ -23,18 +23,17 @@ use crate::{
         xc::{Chain, Operation},
     },
     state::*,
-    Config, SignalKind,
+    SignalKind,
 };
 use codec::{Decode, Encode};
-use frame_support::{assert_ok, traits::Currency, BoundedVec};
+use frame_support::{assert_ok, traits::Currency};
 use frame_system::{EventRecord, Phase};
 use sp_io::TestExternalities;
-use sp_runtime::{traits::CheckedConversion, AccountId32};
+use sp_runtime::AccountId32;
 use sp_std::prelude::*;
 use t3rn_primitives::{
     abi::*,
-    bridges::test_utils::BOB,
-    circuit::{LocalTrigger, OnLocalTrigger},
+    circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
     side_effect::*,
     volatile::LocalState,
     xtx::XtxId,
@@ -1857,18 +1856,14 @@ fn load_local_state_can_generate_and_read_state() {
 }
 
 #[test]
-fn sdk_with_success_signal() {
-    let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
-    let mut xtx_id = None;
+fn sdk_basic_success() {
+    let origin = Origin::signed(ALICE);
     let mut ext = TestExternalities::new_empty();
 
     ext.execute_with(|| {
-        let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+        let _ = Balances::deposit_creating(&ALICE, 50);
 
-        // first sdk reads with nothing
-        let res = Circuit::load_local_state(&origin, None).unwrap();
-        assert_ne!(Some(res.xtx_id), xtx_id);
-        xtx_id = Some(res.xtx_id);
+        let res = setup_fresh_state(&origin);
 
         // then it sets up some side effects
         let trigger = LocalTrigger::new(
@@ -1879,7 +1874,7 @@ fn sdk_with_success_signal() {
                 amount: 50,
             })
             .encode()],
-            xtx_id,
+            Some(res.xtx_id),
         );
 
         // then it submits to circuit
@@ -1891,11 +1886,7 @@ fn sdk_with_success_signal() {
         System::set_block_number(10);
 
         // submits a signal
-        let signal = crate::sdk_primitives::signal::ExecutionSignal::new(
-            &xtx_id.unwrap(),
-            Some(res.steps_cnt.0),
-            SignalKind::Complete,
-        );
+        let signal = ExecutionSignal::new(&res.xtx_id, Some(res.steps_cnt.0), SignalKind::Complete);
         assert_ok!(Circuit::on_signal(&origin, signal.clone()));
 
         // validate the state
@@ -1909,6 +1900,51 @@ fn sdk_with_success_signal() {
         check_queue(QueueValidator::Length(0));
     });
 }
+
+#[test]
+fn sdk_can_send_multiple_states() {
+    let origin = Origin::signed(ALICE);
+    let mut ext = TestExternalities::new_empty();
+
+    ext.execute_with(|| {
+        let _ = Balances::deposit_creating(&ALICE, 50);
+
+        let res = setup_fresh_state(&origin);
+
+        assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
+            &origin,
+            LocalTrigger::new(
+                DJANGO,
+                vec![Chain::<_, _, [u8; 32]>::Polkadot(Operation::Transfer {
+                    caller: ALICE,
+                    to: CHARLIE,
+                    amount: 50,
+                })
+                .encode()],
+                Some(res.xtx_id.clone()),
+            )
+        ));
+
+        System::set_block_number(10);
+
+        assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
+            &origin,
+            LocalTrigger::new(
+                DJANGO,
+                vec![Chain::<_, _, [u8; 32]>::Kusama(Operation::Transfer {
+                    caller: ALICE,
+                    to: DJANGO,
+                    amount: 1,
+                })
+                .encode()],
+                Some(res.xtx_id),
+            )
+        ));
+    });
+}
+
+#[test]
+fn post_kill_signal_updates_states() {}
 
 enum QueueValidator {
     Length(usize),
@@ -1930,4 +1966,10 @@ fn check_queue(validation: QueueValidator) {
             assert_eq!(q.into_inner(), elements);
         },
     }
+}
+
+fn setup_fresh_state(origin: &Origin) -> LocalStateExecutionView<Test> {
+    let res = Circuit::load_local_state(&origin, None).unwrap();
+    assert_ne!(Some(res.xtx_id), None);
+    res
 }

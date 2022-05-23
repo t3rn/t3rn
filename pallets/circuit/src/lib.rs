@@ -93,10 +93,7 @@ use crate::state::*;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use crate::{
-        escrow::Escrow,
-        sdk_primitives::signal::{ExecutionSignal, SignalKind},
-    };
+    use crate::{escrow::Escrow, sdk_primitives::signal::ExecutionSignal};
     use frame_support::{
         pallet_prelude::*,
         traits::{
@@ -328,7 +325,7 @@ pub mod pallet {
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
         fn on_initialize(n: T::BlockNumber) -> Weight {
-            let mut weight = Self::process_signal_queue();
+            let weight = Self::process_signal_queue();
 
             // Check every XtxTimeoutCheckInterval blocks
 
@@ -411,6 +408,11 @@ pub mod pallet {
                 Zero::zero(),
                 maybe_xtx_id,
             )?;
+            log::debug!(
+                target: "runtime::circuit",
+                "load_local_state with status: {:?}",
+                local_xtx_ctx.xtx.status
+            );
 
             if maybe_xtx_id.is_none() {
                 Self::apply(&mut local_xtx_ctx, None, None)?;
@@ -424,7 +426,13 @@ pub mod pallet {
         }
 
         fn on_local_trigger(origin: &OriginFor<T>, trigger: LocalTrigger<T>) -> DispatchResult {
-            log::debug!(target: "runtime::circuit", "Handling on_local_trigger xtx: {:?}, contract: {:?}, side_effects: {:?}", trigger.maybe_xtx_id, trigger.contract, trigger.submitted_side_effects);
+            log::debug!(
+                target: "runtime::circuit",
+                "Handling on_local_trigger xtx: {:?}, contract: {:?}, side_effects: {:?}",
+                trigger.maybe_xtx_id,
+                trigger.contract,
+                trigger.submitted_side_effects
+            );
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin.to_owned(), CircuitRole::ContractAuthor)?;
 
@@ -439,6 +447,12 @@ pub mod pallet {
                 Zero::zero(),
                 trigger.maybe_xtx_id,
             )?;
+
+            log::debug!(
+                target: "runtime::circuit",
+                "submit_side_effects xtx state with status: {:?}",
+                local_xtx_ctx.xtx.status
+            );
 
             // Charge: Ensure can afford
             // ToDo: Charge requester for contract with gas_estimation
