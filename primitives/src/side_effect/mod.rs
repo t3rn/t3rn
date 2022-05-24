@@ -266,7 +266,7 @@ mod tests {
     use super::*;
     use hex_literal::hex;
     use sp_core::crypto::AccountId32;
-    use sp_runtime::{testing::H256};
+    use sp_runtime::testing::H256;
 
     type BlockNumber = CircuitBlockNumber;
     type BalanceOf = CircuitBalance;
