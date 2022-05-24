@@ -37,7 +37,7 @@ use frame_system::{
 };
 pub use pallet::*;
 use sp_runtime::{
-    traits::{AccountIdConversion, Convert, Saturating, Zero},
+    traits::{AccountIdConversion, Saturating, Zero},
     KeyTypeId, RuntimeDebug,
 };
 use sp_std::{convert::TryInto, fmt::Debug, prelude::*};
@@ -378,11 +378,11 @@ pub mod pallet {
                 .map(|step| {
                     step.iter()
                         .map(|fsx| {
-                            Ok(HardenedSideEffect::convert(
-                                fsx.clone()
-                                    .harden()
-                                    .map_err(|_e| Error::<T>::FailedToHardenFullSideEffect)?,
-                            ))
+                            Ok(fsx
+                                .clone()
+                                .harden()
+                                .map_err(|_e| Error::<T>::FailedToHardenFullSideEffect)?
+                                .into())
                         })
                         .collect::<Result<Vec<HardenedSideEffect>, Error<T>>>()
                 })

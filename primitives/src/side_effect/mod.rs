@@ -210,22 +210,19 @@ impl Default for HardenedSideEffect {
 }
 
 impl
-    sp_runtime::traits::Convert<
-        (
-            SecurityLvl,
-            ConfirmationOutcome,
-            CircuitBalance,
-            AccountId32,
-            CircuitBlockNumber,
-            CircuitBalance,
-            [u8; 4],
-            Vec<Bytes>,
-            [u8; 4],
-        ),
-        HardenedSideEffect,
-    > for HardenedSideEffect
+    From<(
+        SecurityLvl,
+        ConfirmationOutcome,
+        CircuitBalance,
+        AccountId32,
+        CircuitBlockNumber,
+        CircuitBalance,
+        [u8; 4],
+        Vec<Bytes>,
+        [u8; 4],
+    )> for HardenedSideEffect
 {
-    fn convert(
+    fn from(
         hardened_args: (
             SecurityLvl,
             ConfirmationOutcome,
@@ -269,7 +266,7 @@ mod tests {
     use super::*;
     use hex_literal::hex;
     use sp_core::crypto::AccountId32;
-    use sp_runtime::{testing::H256, traits::Convert};
+    use sp_runtime::{testing::H256};
 
     type BlockNumber = CircuitBlockNumber;
     type BalanceOf = CircuitBalance;
@@ -339,7 +336,7 @@ mod tests {
             }),
         };
 
-        let hsfx = HardenedSideEffect::convert(tfsfx.harden().unwrap());
+        let hsfx: HardenedSideEffect = tfsfx.harden().unwrap().into();
 
         assert_eq!(
             hsfx,
