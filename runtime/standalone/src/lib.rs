@@ -84,6 +84,12 @@ impl pallet_identity::Config for Runtime {
     type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
 }
 
+pub use pallet_evm_light_clients;
+/// Configure the pallet-template in pallets/template.
+impl pallet_evm_light_clients::Config for Runtime {
+    type Event = Event;
+}
+
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -127,6 +133,9 @@ construct_runtime!(
         ThreeVm: pallet_3vm = 119,
         Contracts: pallet_3vm_contracts = 120,
         Evm: pallet_3vm_evm = 121,
+
+        // EVM Light Clients
+        EVMLightClients: pallet_evm_light_clients = 109,
 
          // Portal
         Portal: pallet_portal = 128,
