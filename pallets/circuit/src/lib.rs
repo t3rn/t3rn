@@ -50,7 +50,7 @@ pub use t3rn_primitives::{
 };
 use t3rn_primitives::{
     circuit_portal::CircuitPortal,
-    side_effect::{ConfirmationOutcome, SecurityLvl},
+    side_effect::{ConfirmationOutcome, HardenedSideEffect, SecurityLvl},
     transfers::EscrowedBalanceOf,
     xdns::Xdns,
 };
@@ -364,18 +364,36 @@ pub mod pallet {
                 None => CircuitStatus::Requested,
             };
 
-            let mut local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
-                fresh_or_revoked_exec.clone(),
+            let local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
+                fresh_or_revoked_exec,
                 &requester,
                 Zero::zero(),
                 maybe_xtx_id,
             )?;
-            Self::apply(&mut local_xtx_ctx, None, None)?;
 
+            // There should be no apply step since no change could have happen during the state access
+            let hardened_side_effects = local_xtx_ctx
+                .full_side_effects
+                .iter()
+                .map(|step| {
+                    step.iter()
+                        .map(|fsx| {
+                            Ok(fsx
+                                .clone()
+                                .harden()
+                                .map_err(|_e| Error::<T>::FailedToHardenFullSideEffect)?
+                                .into())
+                        })
+                        .collect::<Result<Vec<HardenedSideEffect>, Error<T>>>()
+                })
+                .collect::<Result<Vec<Vec<HardenedSideEffect>>, Error<T>>>()?;
+
+            // There should be no apply step since no change could have happen during the state access
             Ok(LocalStateExecutionView::<T>::new(
                 local_xtx_ctx.xtx_id,
                 local_xtx_ctx.local_state.clone(),
-                local_xtx_ctx.xtx.steps_cnt.clone(),
+                hardened_side_effects,
+                local_xtx_ctx.xtx.steps_cnt,
             ))
         }
 
@@ -607,7 +625,7 @@ pub mod pallet {
                     .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
 
             if local_xtx_ctx.xtx.steps_cnt.0 != step_no || maybe_assignee.is_some() {
-                return Err(Error::<T>::LocalSideEffectExecutionNotApplicable)?
+                return Err(Error::<T>::LocalSideEffectExecutionNotApplicable.into())
             }
 
             let encoded_4b_action: [u8; 4] =
@@ -882,6 +900,7 @@ pub mod pallet {
         FatalErroredCommitSideEffectConfirmationAttempt,
         FatalErroredRevertSideEffectConfirmationAttempt,
         SetupFailedUnknownXtx,
+        FailedToHardenFullSideEffect,
         SetupFailedDuplicatedXtx,
         SetupFailedEmptyXtx,
         ApplyFailed,

@@ -725,8 +725,8 @@ impl ExtBuilder {
         //
         // map side_effects to id, keeping lib.rs clean
         self.standard_side_effects = vec![
-            transfer_side_effect.clone(),
-            swap_side_effect.clone(),
+            transfer_side_effect,
+            swap_side_effect,
             add_liquidity_side_effect,
             call_evm_side_effect,
             get_data_side_effect,

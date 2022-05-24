@@ -1,4 +1,4 @@
-use crate::xtx::LocalState;
+use crate::{side_effect::HardenedSideEffect, xtx::LocalState};
 use codec::{Decode, Encode};
 use frame_support::dispatch::DispatchResult;
 use frame_system::{pallet_prelude::OriginFor, Config};
@@ -32,6 +32,7 @@ impl<T: Config> LocalTrigger<T> {
 pub struct LocalStateExecutionView<T: Config> {
     pub xtx_id: <T as Config>::Hash,
     pub local_state: LocalState,
+    pub hardened_side_effects: Vec<Vec<HardenedSideEffect>>,
     pub steps_cnt: (u32, u32),
 }
 
@@ -39,11 +40,13 @@ impl<T: Config> LocalStateExecutionView<T> {
     pub fn new(
         xtx_id: <T as Config>::Hash,
         local_state: LocalState,
+        hardened_side_effects: Vec<Vec<HardenedSideEffect>>,
         steps_cnt: (u32, u32),
     ) -> Self {
         LocalStateExecutionView {
             xtx_id,
             local_state,
+            hardened_side_effects,
             steps_cnt,
         }
     }
