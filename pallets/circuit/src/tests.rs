@@ -1836,20 +1836,17 @@ fn circuit_cancels_xtx_after_timeout() {
 #[test]
 fn load_local_state_can_generate_and_read_state() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
-    let xtx_id: sp_core::H256 =
-        hex!("c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6").into();
     let mut ext = TestExternalities::new_empty();
 
     ext.execute_with(|| {
         let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
 
         let res = Circuit::load_local_state(&origin, None).unwrap();
-        assert_ne!(res.xtx_id, xtx_id);
-        assert_eq!(res.local_state, LocalState::new());
-        assert_eq!(res.steps_cnt, (0, 0));
 
-        let res = Circuit::load_local_state(&origin, Some(res.xtx_id)).unwrap();
-        assert_ne!(res.xtx_id, xtx_id);
+        let xtx_id_new: sp_core::H256 =
+            hex!("e7c756cb224d1b573cf88cd8e17177285ee9ebeab8a86ff5e39a56bf1413a5cc").into();
+
+        assert_eq!(res.xtx_id, xtx_id_new);
         assert_eq!(res.local_state, LocalState::new());
         assert_eq!(res.steps_cnt, (0, 0));
     });

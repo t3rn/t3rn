@@ -1,14 +1,12 @@
 # This is a basic workflow to help you get started with Actions
 
-name: UPDATE_RUST_DOCS
+name: update rust docs
 
 # Controls when the workflow will run
 on:
   # Triggers the workflow on push or pull request events but only for the development branch
   push:
-    branches: [ add_docs ]
-  pull_request:
-    branches: [ add_docs ]
+    branches: [ development ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -17,7 +15,7 @@ on:
 jobs:
   # This workflow contains a single job called "build"
   docs:
-    runs-on: ubunutu-latest
+    runs-on: ubuntu-latest
     steps:
       - name: ☁️Checkout git repo
         uses: actions/checkout@v2
@@ -25,8 +23,25 @@ jobs:
           submodules: recursive
           token: ${{ secrets.GH_PAT }}
 #        run: git submodule deinit --all && git submodule init && git submodule update
+      - name: ⚙️ Get nightly rust toolchain with wasm target
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2021-11-01
+          target: wasm32-unknown-unknown
+          components: rustfmt, clippy
+          override: true
+      - name: 🕒 Cache Rust binaries and packages
+        uses: actions/cache@v2
+        id: cache-rust
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
       - name: Generate Docs
         uses: actions-rs/cargo@v1
+        continue-on-error: false
         with:
           command: doc
           args: --no-deps --workspace --exclude t3rn-protocol
@@ -38,4 +53,4 @@ jobs:
       - name: Adding Known Hosts
         run: ssh-keyscan -H ${{ secrets.ATLAS_IP }} >> ~/.ssh/known_hosts
       - name: Deploy with rsync
-        run: rsync -avz ./target/doc ${{ secrets.RUSTDOCS_SSH_USER }}@${{ secrets.ATLAS_IP }}:/home/${{ secrets.RUSTDOCS_SSH_USER }}/docs
+        run: rsync -avz ./target/doc ${{ secrets.RUSTDOCS_SSH_USER }}@${{ secrets.ATLAS_IP }}:/home/${{ secrets.RUSTDOCS_SSH_USER }}/

@@ -25,10 +25,7 @@ use sp_runtime::{
 };
 use sp_std::convert::{TryFrom, TryInto};
 
-use t3rn_primitives::{
-    bridges::{polkadot_core::PolkadotLike, runtime::Chain},
-    EscrowTrait,
-};
+use t3rn_primitives::{bridges::runtime::Chain, EscrowTrait};
 
 pub type AccountId = u64;
 pub type TestHeader = crate::BridgedHeader<TestRuntime, ()>;
