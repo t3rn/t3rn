@@ -1,0 +1,47 @@
+name: Circuit Collation Check
+
+on:
+  schedule:
+    - cron: '33 3 * * *'
+
+jobs:
+  collate-check:
+    runs-on: self-hosted
+    steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Up ⚡BI devnet
+        working-directory: ./docker/devnet
+        run: ./run.sh devnet
+
+      - name: 🧱 Check Circuit's collations
+        run: |
+          finalized_head(){
+            block_hash=$( \
+              curl \
+                -sSfH "content-type: application/json" \
+                -d '{"id":1,"jsonrpc":"2.0","method":"chain_getFinalizedHead","params":[]}' \
+                http://localhost:8833 \
+                | \
+                jq -r .result \
+            )
+            printf $block_hash
+          }
+          genesis=$(finalized_head)
+          block_hash=$genesis
+          i=$((0))
+          echo "genesis $genesis"
+          while [[ $block_hash -eq $genesis ]]; do
+            sleep 6s
+            block_hash=$(finalized_head)
+            echo "block_hash $block_hash"
+            i=$((i+1))
+            if (( $i == 34 )); then
+              echo "circuit not producing collations" >&2
+              exit 1
+            fi
+          done
