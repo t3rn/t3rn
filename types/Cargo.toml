@@ -15,10 +15,10 @@ codec      = { package = "parity-scale-codec", version = "3", default-features =
 scale-info = { version = "2", default-features = false, features = [ "derive" ] }
 serde      = { default-features = false, version = "1.0", optional = true, features = [ "derive" ] }
 
-primitive-types = { git = "https://github.com/paritytech/parity-common.git", default-features = false, features = [ "scale-info" ] }
-sp-core         = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19', default-features = false, optional = true }
-sp-io           = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19', default-features = false, optional = true }
-sp-runtime      = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19', default-features = false, optional = true }
+primitive-types = { version = "0.11.1", default-features = false, features = [ "scale-info" ] }
+sp-core         = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19', default-features = false, optional = true }
+sp-io           = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19', default-features = false, optional = true }
+sp-runtime      = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19', default-features = false, optional = true }
 
 [dev-dependencies]
 hex         = "0.4"
