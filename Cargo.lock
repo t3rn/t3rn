@@ -12697,7 +12697,7 @@ dependencies = [
 
 [[package]]
 name = "t3rn-types"
-version = "1.0.0-alpha.0"
+version = "0.0.1"
 dependencies = [
  "hex",
  "hex-literal 0.3.4",
