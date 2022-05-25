@@ -7352,7 +7352,7 @@ dependencies = [
  "sp-sandbox",
  "sp-std",
  "t3rn-primitives",
- "t3rn-sdk-primitives",
+ "t3rn-sdk-primitives 0.0.0-rc2",
  "wasm-instrument",
  "wasmi-validation",
 ]
@@ -12617,8 +12617,8 @@ dependencies = [
  "sp-std",
  "sp-trie",
  "sp-version",
- "t3rn-sdk-primitives",
- "t3rn-types",
+ "t3rn-sdk-primitives 0.0.0-rc2 (registry+https://github.com/t3rn/registry-index.git)",
+ "t3rn-types 0.0.1",
 ]
 
 [[package]]
@@ -12665,7 +12665,20 @@ dependencies = [
  "cfg-if 1.0.0",
  "parity-scale-codec 3.1.2",
  "scale-info 2.1.1",
- "t3rn-types",
+ "t3rn-types 0.0.1 (registry+https://github.com/t3rn/registry-index.git)",
+]
+
+[[package]]
+name = "t3rn-sdk-primitives"
+version = "0.0.0-rc2"
+source = "registry+https://github.com/t3rn/registry-index.git"
+checksum = "b4fd0b2e10f58a713f366a9d382931c207993daf44c99dd639fbe0c942d89b90"
+dependencies = [
+ "arrayvec 0.7.2",
+ "cfg-if 1.0.0",
+ "parity-scale-codec 3.1.2",
+ "scale-info 2.1.1",
+ "t3rn-types 0.0.1 (registry+https://github.com/t3rn/registry-index.git)",
 ]
 
 [[package]]
@@ -12682,6 +12695,17 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
+]
+
+[[package]]
+name = "t3rn-types"
+version = "0.0.1"
+source = "registry+https://github.com/t3rn/registry-index.git"
+checksum = "2e568f17858d50ae89815dae7bfc46758596f56ecdf5b117e10b117f94934cc3"
+dependencies = [
+ "parity-scale-codec 3.1.2",
+ "primitive-types 0.11.1",
+ "scale-info 2.1.1",
 ]
 
 [[package]]
