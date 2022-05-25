@@ -13,4 +13,5 @@ members = [
   'primitives/src/bridges/utils',
   'primitives/src/bridges/snowfork/*',
   'runtime/*',
+  'types',
 ]
