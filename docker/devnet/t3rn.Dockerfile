@@ -22,7 +22,6 @@ RUN --mount=type=cache,target=/var/cache/apt \
     apt-get dist-upgrade -y -o Dpkg::Options::="--force-confnew" && \
     apt-get install -y cmake pkg-config libssl-dev git clang libclang-dev
 
-# NOTE: workaround 4 private submodule t3rn/protocol
 COPY . .
 # RUN	git clone \
 # 		--depth 1 \
@@ -34,11 +33,11 @@ COPY . .
 
 RUN --mount=type=cache,target=/usr/local/cargo/git \
     --mount=type=cache,target=/var/sccache \
-    cargo build --manifest-path ./node/parachain/Cargo.toml
+    cargo build --manifest-path ./node/parachain/Cargo.toml --locked --release
 
 FROM phusion/baseimage:focal-1.1.0
 
-COPY --from=blacksmith /workshop/target/debug/circuit-collator /usr/local/bin
+COPY --from=blacksmith /workshop/target/release/circuit-collator /usr/local/bin
 
 RUN useradd -m -u 1000 -U -s /bin/sh -d /t3rn t3rn && \
     mkdir /t3rn/data && \

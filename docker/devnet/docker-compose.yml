@@ -306,10 +306,10 @@ services:
       --execution Wasm
 
   pchain1:
-    image: parachain-collator:polkadot-v0.9.19-keyed
+    image: circuit-collator:update_v0.9.19
     build:
       context: .
-      dockerfile: pchain.Dockerfile
+      dockerfile: t3rn.Dockerfile
     networks:
       - devnet
     ports:
@@ -322,15 +322,15 @@ services:
     volumes:
       - type: bind
         source: ./specs/rococo-local.raw.json
-        target: /para/rococo-local.raw.json
+        target: /t3rn/rococo-local.raw.json
         read_only: true
       - type: bind
         source: ./specs/pchain.raw.json
-        target: /para/pchain.raw.json
+        target: /t3rn/pchain.raw.json
         read_only: true
       - type: bind
         source: ./data/pchain1
-        target: /para/data
+        target: /t3rn/data
         read_only: false
     container_name: pchain1
     depends_on:
@@ -343,17 +343,17 @@ services:
       --port 44444
       --rpc-port 4488
       --ws-port 4499
-      --base-path /para/data
+      --base-path /t3rn/data
       --collator
       --rpc-cors all
       --unsafe-ws-external
       --unsafe-rpc-external
       --execution Wasm
       -lruntime=debug
-      --chain /para/pchain.raw.json
+      --chain /t3rn/pchain.raw.json
       --name pchain1
       --
-      --chain /para/rococo-local.raw.json
+      --chain /t3rn/rococo-local.raw.json
       --discover-local
       --port 44443
       --rpc-port 4487
@@ -361,10 +361,10 @@ services:
       --execution Wasm
 
   pchain2:
-    image: parachain-collator:polkadot-v0.9.19-keyed
+    image: circuit-collator:update_v0.9.19
     build:
       context: .
-      dockerfile: pchain.Dockerfile
+      dockerfile: t3rn.Dockerfile
     networks:
       - devnet
     ports:
@@ -377,15 +377,15 @@ services:
     volumes:
       - type: bind
         source: ./specs/rococo-local.raw.json
-        target: /para/rococo-local.raw.json
+        target: /t3rn/rococo-local.raw.json
         read_only: true
       - type: bind
         source: ./specs/pchain.raw.json
-        target: /para/pchain.raw.json
+        target: /t3rn/pchain.raw.json
         read_only: true
       - type: bind
         source: ./data/pchain2
-        target: /para/data
+        target: /t3rn/data
         read_only: false
     container_name: pchain2
     depends_on:
@@ -398,17 +398,17 @@ services:
       --port 44404
       --rpc-port 4408
       --ws-port 4409
-      --base-path /para/data
+      --base-path /t3rn/data
       --collator
       --rpc-cors all
       --unsafe-ws-external
       --unsafe-rpc-external
       --execution Wasm
       -lruntime=debug
-      --chain /para/pchain.raw.json
+      --chain /t3rn/pchain.raw.json
       --name pchain2
       --
-      --chain /para/rococo-local.raw.json
+      --chain /t3rn/rococo-local.raw.json
       --discover-local
       --port 44403
       --rpc-port 4407

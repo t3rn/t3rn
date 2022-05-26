@@ -1,8 +1,10 @@
-# ⚡*CM* devnet
+# ⚡*BI* devnet
 
-##  `./run.sh devnet`
+##  `./run.sh [devnet|dev|net]`
 
 Spins up a full-fledged rococo local devnet consisting of 5 relay chain validators and 2 collators for each parachain.
+
+To actually apply and test Circuit runtime changes the Docker image must be rebuilt, to that end trash the image manually, fx `docker image rm circuit-collator:update_v0.9.19 -f`, then just run `./run.sh`.
 
 ## `./run.sh cleanup`
 
