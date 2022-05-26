@@ -1,7 +1,7 @@
 [package]
 authors = ["t3rn <team@t3rn.io>"]
 edition = "2021"
-name = "xbi-portal"
+name = "pallet-xbi-portal"
 description = "An abstract and configurable XCM message executor."
 version = "0.9.19"
 

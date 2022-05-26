@@ -2,6 +2,7 @@ use codec::{Decode, Encode};
 use core::fmt::Debug;
 use scale_info::TypeInfo;
 use sp_runtime::AccountId32;
+use sp_std::prelude::*;
 use xcm::latest::{Junction, MultiLocation};
 
 pub type Bytes = Vec<u8>;
