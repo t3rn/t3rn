@@ -5,7 +5,7 @@ use xcm::latest::Xcm;
 pub mod xbi_format;
 
 pub mod primitives;
-use primitives::evm::Evm;
+
 
 pub use pallet::*;
 
@@ -17,10 +17,13 @@ pub use pallet::*;
 #[frame_support::pallet]
 pub mod pallet {
     use crate::{xbi_format::*, *};
-
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
     use sp_core::Hasher;
+    use sp_std::default::Default;
+    use xcm::latest::{
+        prelude::*, MultiLocation, OriginKind,
+    };
 
     #[pallet::storage]
     #[pallet::getter(fn get_xbi_checkins)]
@@ -29,9 +32,12 @@ pub mod pallet {
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
-    pub trait Config: frame_system::Config {
+    pub trait Config: frame_system::Config + pallet_xcm::Config {
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+
+        type Call: From<Call<Self>>;
+
         // type Evm: Evm<Self>;
     }
 
@@ -51,6 +57,8 @@ pub mod pallet {
     // Errors inform users that something went wrong.
     #[pallet::error]
     pub enum Error<T> {
+        EnterFailedOnXcmSend,
+        EnterFailedOnMultiLocationTransform,
         XBIInstructionNotAllowedHere,
         XBIAlreadyCheckedIn,
     }
@@ -207,6 +215,26 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
+        fn enter(xbi: XBIFormat, dest: Box<xcm::VersionedMultiLocation>) -> Result<(), Error<T>> {
+            let dest = MultiLocation::try_from(*dest)
+                .map_err(|()| Error::<T>::EnterFailedOnMultiLocationTransform)?;
+
+            let xbi_call = pallet::Call::execute_xbi::<T> { xbi };
+            let INITIAL_BALANCE = 100_000u64;
+            let xbi_format_msg = Xcm(vec![Transact {
+                origin_type: OriginKind::SovereignAccount,
+                require_weight_at_most: INITIAL_BALANCE as u64,
+                call: xbi_call.encode().into(),
+            }]);
+
+            pallet_xcm::Pallet::<T>::send_xcm(
+                xcm::prelude::Here,
+                dest.clone(),
+                xbi_format_msg.clone(),
+            )
+            .map_err(|_| Error::<T>::EnterFailedOnXcmSend)
+        }
+
         fn check_xbi_instr_allowed_here(xbi_instr: XBIInstr) -> Result<(), Error<T>> {
             // todo: Expose via pallet_xbi_executor::<T>::Config
             return match xbi_instr {
