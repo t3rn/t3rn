@@ -18,6 +18,7 @@ output_dir=$root_dir/specs
 cargo build \
   --locked \
   --release \
+  --features runtime-benchmarks \
   --manifest-path $root_dir/node/parachain/Cargo.toml
 
 # gen the collator chain spec blueprint
