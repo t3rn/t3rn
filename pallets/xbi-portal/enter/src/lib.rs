@@ -44,7 +44,7 @@ pub mod pallet {
     #[pallet::error]
     pub enum Error<T> {
         CannotTransformParaId,
-        CannotReachXBI,
+        CannotEnterXBI,
         XBIPluginUnavailable,
     }
 
@@ -68,7 +68,8 @@ pub mod pallet {
                         .map_err(|_e| Error::<T>::CannotTransformParaId)?,
                 );
 
-                T::XBIPortal::enter(xbi, versioned_multi_loc);
+                T::XBIPortal::enter(xbi, versioned_multi_loc)
+                    .map_err(|_e| Error::<T>::CannotEnterXBI)?;
             }
 
             Ok(().into())
