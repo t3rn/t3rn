@@ -1,0 +1,47 @@
+[package]
+authors = ["t3rn <team@t3rn.io>"]
+edition = "2021"
+name = "pallet-xbi-portal-enter"
+description = "Definition of calls to enter XBI Portal - lightweight (little deps to other pallets, no storage, no events) in design"
+version = "0.9.19"
+
+[dependencies]
+impl-trait-for-tuples = "0.2.2"
+codec      = { package = "parity-scale-codec", version = "3", default-features = false }
+xcm = { git = "https://github.com/paritytech/polkadot", tag = "v0.9.19", default-features = false }
+pallet-xbi-portal = { path = "..", default-features = false }
+cumulus-primitives-core             = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.19', default-features = false }
+
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", tag = "v0.9.19", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.19", default-features = false }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.19", default-features = false }
+sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.19", default-features = false }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.19", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.19", default-features = false }
+frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.19", default-features = false }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.19", default-features = false }
+log = { version = "0.4.14", default-features = false }
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.19" , default-features = false, optional = true }
+scale-info = { version = "2", default-features = false, features = ["derive"] }
+
+[features]
+default = ["std"]
+runtime-benchmarks = [
+    "frame-benchmarking/runtime-benchmarks",
+]
+std = [
+    "codec/std",
+    "scale-info/std",
+    "xcm/std",
+    "cumulus-primitives-core/std",
+    "pallet-xbi-portal/std",
+    "pallet-xcm/std",
+    "sp-std/std",
+    "sp-io/std",
+    "sp-arithmetic/std",
+    "sp-core/std",
+    "sp-runtime/std",
+    "frame-support/std",
+    "frame-system/std",
+    "log/std",
+]
