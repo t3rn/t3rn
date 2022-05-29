@@ -4,6 +4,9 @@ on:
   schedule:
     - cron: '33 3 * * *'
 
+env:
+  COLLATOR_IMAGE: circuit-collator:update_v0.9.19
+
 jobs:
   collate-check:
     runs-on: self-hosted
@@ -14,6 +17,14 @@ jobs:
           ref: development
           submodules: recursive
           token: ${{ secrets.GH_PAT }}
+
+      - name: 🐋 Rebuild fresh Circuit image
+        working-directory: ./docker/devnet
+        env:
+          DOCKER_BUILDKIT: 1
+        run: |
+          docker image rm -f ${{ env.COLLATOR_IMAGE }}
+          docker build -t ${{ env.COLLATOR_IMAGE }} -f t3rn.Dockerfile ../..
 
       - name: Up ⚡BI devnet
         working-directory: ./docker/devnet
