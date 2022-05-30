@@ -56,9 +56,9 @@ To actually have docker images rebuilt, prune them manually in advance, fx `dock
   <tr>
     <td>rococo</td>
     <td>alice</td>
-    <td>10001</td>
+    <td>90001</td>
     <td>8844</td>
-    <td>9944</td>
+    <td><b>9944</b></td>
     <td>-</td>
     <td>-</td>
     <td>-</td>
@@ -67,7 +67,7 @@ To actually have docker images rebuilt, prune them manually in advance, fx `dock
   <tr>
     <td>rococo</td>
     <td>bob</td>
-    <td>10002</td>
+    <td>90002</td>
     <td>8845</td>
     <td>9945</td>
     <td>-</td>
@@ -78,7 +78,7 @@ To actually have docker images rebuilt, prune them manually in advance, fx `dock
   <tr>
     <td>rococo</td>
     <td>charlie</td>
-    <td>10003</td>
+    <td>90003</td>
     <td>8846</td>
     <td>9946</td>
     <td>-</td>
@@ -89,7 +89,7 @@ To actually have docker images rebuilt, prune them manually in advance, fx `dock
   <tr>
     <td>rococo</td>
     <td>dave</td>
-    <td>10004</td>
+    <td>90004</td>
     <td>8847</td>
     <td>9947</td>
     <td>-</td>
@@ -100,7 +100,7 @@ To actually have docker images rebuilt, prune them manually in advance, fx `dock
   <tr>
     <td>rococo</td>
     <td>eve</td>
-    <td>10005</td>
+    <td>90005</td>
     <td>8848</td>
     <td>9948</td>
     <td>-</td>
@@ -111,23 +111,23 @@ To actually have docker images rebuilt, prune them manually in advance, fx `dock
   <tr>
     <td>t3rn</td>
     <td>t3rn1</td>
-    <td>33332</td>
-    <td>8832</td>
-    <td>9932</td>
-    <td>33333</td>
-    <td>8833</td>
-    <td>9933</td>
+    <td>13332</td>
+    <td>1832</td>
+    <td>1932</td>
+    <td>13333</td>
+    <td><b>1833</b></td>
+    <td><b>1933</b></td>
     <td>3333</td>
   </tr>
   <tr>
     <td>t3rn</td>
     <td>t3rn2</td>
-    <td>33322</td>
-    <td>8822</td>
-    <td>9922</td>
-    <td>33323</td>
-    <td>8823</td>
-    <td>9923</td>
+    <td>13322</td>
+    <td>1822</td>
+    <td>1922</td>
+    <td>13323</td>
+    <td>1823</td>
+    <td>1923</td>
     <td>3333</td>
   </tr>
   <tr>
@@ -154,6 +154,8 @@ To actually have docker images rebuilt, prune them manually in advance, fx `dock
   </tr>
 </table>
 </br>
+
+The highlighted ports are the only ones mapped from the Docker network onto the host machine. Given selection allows connecting to both the relay- and parachain and should serve all your development needs. If you want to expose more ports to your machine just uncomment them within the Docker Compose file.
 
 The HRMP channels setup between the parachains have a maximum capacity of 8 and a maximum message size of 1024 bytes.
 
