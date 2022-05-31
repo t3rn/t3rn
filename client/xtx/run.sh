@@ -21,8 +21,7 @@ cargo build \
   --manifest-path ../../node/standalone/Cargo.toml
 
 ## pull all node modules
-[ ! -O /usr/local/bin ] && SUDO_MAYBE=sudo
-$SUDO_MAYBE npm i -g ttab
+sudo npm i -g ttab
 npm i @polkadot/api @polkadot/types
 npm install --prefix ../grandpa-ranger
 npm install --prefix ../executor
