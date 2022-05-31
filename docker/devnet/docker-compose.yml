@@ -2,7 +2,6 @@ version: "3.3"
 
 networks:
   devnet:
-    name: devnet
     driver: bridge
 
 services:
@@ -14,8 +13,8 @@ services:
     networks:
       - devnet
     ports:
-      - "10001:10001"
-      - "8844:8844"
+      # - "90001:90001"
+      # - "8844:8844"
       - "9944:9944"
     volumes:
       - type: bind
@@ -28,7 +27,7 @@ services:
         read_only: false
     container_name: alice
     command: >
-      --port 10001
+      --port 90001
       --rpc-port 8844
       --ws-port 9944
       --alice
@@ -48,10 +47,10 @@ services:
       dockerfile: polkadot.Dockerfile
     networks:
       - devnet
-    ports:
-      - "10002:10002"
-      - "8845:8845"
-      - "9945:9945"
+    # ports:
+    #   - "90002:90002"
+    #   - "8845:8845"
+    #   - "9945:9945"
     volumes:
       - type: bind
         source: ./specs/rococo-local.raw.json
@@ -65,7 +64,7 @@ services:
     depends_on:
       - alice
     command: >
-      --port 10002
+      --port 90002
       --rpc-port 8845
       --ws-port 9945
       --bob
@@ -85,10 +84,10 @@ services:
       dockerfile: polkadot.Dockerfile
     networks:
       - devnet
-    ports:
-      - "10003:10003"
-      - "8846:8846"
-      - "9946:9946"
+    # ports:
+    #   - "90003:90003"
+    #   - "8846:8846"
+    #   - "9946:9946"
     volumes:
       - type: bind
         source: ./specs/rococo-local.raw.json
@@ -103,7 +102,7 @@ services:
       - alice
       - bob
     command: >
-      --port 10003
+      --port 90003
       --rpc-port 8846
       --ws-port 9946
       --charlie
@@ -123,10 +122,10 @@ services:
       dockerfile: polkadot.Dockerfile
     networks:
       - devnet
-    ports:
-      - "10004:10004"
-      - "8847:8847"
-      - "9947:9947"
+    # ports:
+    #   - "90004:90004"
+    #   - "8847:8847"
+    #   - "9947:9947"
     volumes:
       - type: bind
         source: ./specs/rococo-local.raw.json
@@ -142,7 +141,7 @@ services:
       - bob
       - charlie
     command: >
-      --port 10004
+      --port 90004
       --rpc-port 8847
       --ws-port 9947
       --dave
@@ -162,10 +161,10 @@ services:
       dockerfile: polkadot.Dockerfile
     networks:
       - devnet
-    ports:
-      - "10005:10005"
-      - "8848:8848"
-      - "9948:9948"
+    # ports:
+    #   - "90005:90005"
+    #   - "8848:8848"
+    #   - "9948:9948"
     volumes:
       - type: bind
         source: ./specs/rococo-local.raw.json
@@ -182,7 +181,7 @@ services:
       - charlie
       - dave
     command: >
-      --port 10005
+      --port 90005
       --rpc-port 8848
       --ws-port 9948
       --eve
@@ -203,12 +202,12 @@ services:
     networks:
       - devnet
     ports:
-      - "33333:33333"
-      - "8833:8833"
-      - "9933:9933"
-      - "33332:33332"
-      - "8832:8832"
-      - "9932:9932"
+      # - "13333:13333"
+      - "1833:1833"
+      - "1933:1933"
+      # - "13332:13332"
+      # - "1832:1832"
+      # - "1932:1932"
     volumes:
       - type: bind
         source: ./specs/rococo-local.raw.json
@@ -230,9 +229,9 @@ services:
       - dave
       - eve
     command: >
-      --port 33333
-      --rpc-port 8833
-      --ws-port 9933
+      --port 13333
+      --rpc-port 1833
+      --ws-port 1933
       --base-path /t3rn/data
       --collator
       --rpc-cors all
@@ -245,9 +244,9 @@ services:
       --
       --chain /t3rn/rococo-local.raw.json
       --discover-local
-      --port 33332
-      --rpc-port 8832
-      --ws-port 9932
+      --port 13332
+      --rpc-port 1832
+      --ws-port 1932
       --execution Wasm
 
   t3rn2:
@@ -257,13 +256,13 @@ services:
       dockerfile: docker/devnet/t3rn.Dockerfile
     networks:
       - devnet
-    ports:
-      - "33322:33322"
-      - "8822:8822"
-      - "9922:9922"
-      - "33323:33323"
-      - "8823:8823"
-      - "9923:9923"
+    # ports:
+    #   - "13322:13322"
+    #   - "1822:1822"
+    #   - "1922:1922"
+    #   - "13323:13323"
+    #   - "1823:1823"
+    #   - "1923:1923"
     volumes:
       - type: bind
         source: ./specs/rococo-local.raw.json
@@ -285,9 +284,9 @@ services:
       - dave
       - eve
     command: >
-      --port 33323
-      --rpc-port 8823
-      --ws-port 9923
+      --port 13323
+      --rpc-port 1823
+      --ws-port 1923
       --base-path /t3rn/data
       --collator
       --rpc-cors all
@@ -300,9 +299,9 @@ services:
       --
       --chain /t3rn/rococo-local.raw.json
       --discover-local
-      --port 33322
-      --rpc-port 8822
-      --ws-port 9922
+      --port 13322
+      --rpc-port 1822
+      --ws-port 1922
       --execution Wasm
 
   pchain1:
@@ -312,13 +311,13 @@ services:
       dockerfile: t3rn.Dockerfile
     networks:
       - devnet
-    ports:
-      - "44444:44444"
-      - "4488:4488"
-      - "4499:4499"
-      - "44443:44443"
-      - "4487:4487"
-      - "4498:4498"
+    # ports:
+    #   - "44444:44444"
+    #   - "4488:4488"
+    #   - "4499:4499"
+    #   - "44443:44443"
+    #   - "4487:4487"
+    #   - "4498:4498"
     volumes:
       - type: bind
         source: ./specs/rococo-local.raw.json
@@ -367,13 +366,13 @@ services:
       dockerfile: t3rn.Dockerfile
     networks:
       - devnet
-    ports:
-      - "44404:44404"
-      - "4408:4408"
-      - "4409:4409"
-      - "44403:44403"
-      - "4407:4407"
-      - "4418:4418"
+    # ports:
+    #   - "44404:44404"
+    #   - "4408:4408"
+    #   - "4409:4409"
+    #   - "44403:44403"
+    #   - "4407:4407"
+    #   - "4418:4418"
     volumes:
       - type: bind
         source: ./specs/rococo-local.raw.json

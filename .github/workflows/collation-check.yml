@@ -6,6 +6,7 @@ on:
 
 env:
   COLLATOR_IMAGE: circuit-collator:update_v0.9.19
+  COLLATOR_HTTP_RPC_PORT: 1833
 
 jobs:
   collate-check:
@@ -37,7 +38,7 @@ jobs:
               curl \
                 -sSfH "content-type: application/json" \
                 -d '{"id":1,"jsonrpc":"2.0","method":"chain_getFinalizedHead","params":[]}' \
-                http://localhost:8833 \
+                http://localhost:${{ env.COLLATOR_HTTP_RPC_PORT }} \
                 | \
                 jq -r .result \
             )

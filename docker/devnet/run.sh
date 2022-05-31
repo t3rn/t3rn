@@ -230,7 +230,7 @@ devnet|dev|net)
   build_docker_images
   docker-compose up > /dev/null &
   # allow node startup ~ basepath/datadir/keystore creation
-  npx --yes wait-port -t 60000 localhost:9933
+  npx --yes wait-port -t 60000 localhost:1933
   echo "⛓️ setting up collator keystores and initializing parachain onboarding..."
   set_keys
   onboard
