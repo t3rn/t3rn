@@ -56,9 +56,9 @@ To actually have docker images rebuilt, prune them manually in advance, fx `dock
   <tr>
     <td>rococo</td>
     <td>alice</td>
-    <td>90001</td>
-    <td>8844</td>
-    <td><b>9944</b></td>
+    <td>60001</td>
+    <td>1844</td>
+    <td><b>1944</b></td>
     <td>-</td>
     <td>-</td>
     <td>-</td>
@@ -67,7 +67,7 @@ To actually have docker images rebuilt, prune them manually in advance, fx `dock
   <tr>
     <td>rococo</td>
     <td>bob</td>
-    <td>90002</td>
+    <td>60002</td>
     <td>8845</td>
     <td>9945</td>
     <td>-</td>
@@ -78,7 +78,7 @@ To actually have docker images rebuilt, prune them manually in advance, fx `dock
   <tr>
     <td>rococo</td>
     <td>charlie</td>
-    <td>90003</td>
+    <td>60003</td>
     <td>8846</td>
     <td>9946</td>
     <td>-</td>
@@ -89,7 +89,7 @@ To actually have docker images rebuilt, prune them manually in advance, fx `dock
   <tr>
     <td>rococo</td>
     <td>dave</td>
-    <td>90004</td>
+    <td>60004</td>
     <td>8847</td>
     <td>9947</td>
     <td>-</td>
@@ -100,7 +100,7 @@ To actually have docker images rebuilt, prune them manually in advance, fx `dock
   <tr>
     <td>rococo</td>
     <td>eve</td>
-    <td>90005</td>
+    <td>60005</td>
     <td>8848</td>
     <td>9948</td>
     <td>-</td>
