@@ -102,7 +102,7 @@ class InstanceManager {
     })
 
     this.circuitListener.on("NewHeaderRangeAvailable", data => {
-      InstanceManager.debug("NewHeaderRangeAvailable")
+      InstanceManager.debug("NewHeaderRangeAvailable", data.gatewayId)
       this.executionManager.updateGatewayHeight(data.gatewayId, data.height)
     })
   }

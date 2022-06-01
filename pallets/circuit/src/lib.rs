@@ -1811,7 +1811,6 @@ impl<T: Config> Pallet<T> {
             // ToDo: Extract as a separate function and migrate tests from Xtx
             let input_side_effect_id = side_effect.generate_id::<SystemHashing<T>>();
             let mut unconfirmed_step_no: Option<usize> = None;
-
             for (i, step) in full_side_effects.iter_mut().enumerate() {
                 // Double check there are some side effects for that Xtx - should have been checked at API level tho already
                 if step.is_empty() {
@@ -1842,7 +1841,6 @@ impl<T: Config> Pallet<T> {
 
             Ok(false)
         }
-
         if !confirm_order::<T>(side_effect, confirmation, &mut local_ctx.full_side_effects)? {
             return Err(
                 "Side effect confirmation wasn't matched with full side effects order from state",
@@ -1854,7 +1852,6 @@ impl<T: Config> Pallet<T> {
             <T as Config>::Xdns::get_gateway_value_unsigned_type_unsafe(&side_effect.target),
             &local_ctx.local_state,
         )?;
-
         Ok(())
     }
 

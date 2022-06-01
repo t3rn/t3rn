@@ -30,17 +30,21 @@ import type {
   PalletBalancesReserveData,
   PalletCircuitStateInsuranceDeposit,
   PalletCircuitStateXExecSignal,
-  PalletContractsRegistryRegistryContract,
   PalletGrandpaStoredPendingChange,
   PalletGrandpaStoredState,
   PalletTransactionPaymentReleases,
-  PalletXdnsSideEffectInterface,
-  PalletXdnsXdnsRecord,
+  PalletWasmContractsStorageDeletedContract,
+  PalletWasmContractsStorageRawContractInfo,
+  PalletWasmContractsWasmOwnerInfo,
+  PalletWasmContractsWasmPrefabWasmModule,
   SpConsensusAuraSr25519AppSr25519Public,
   SpRuntimeDigest,
   T3rnPrimitivesBridgesHeaderChainAuthoritySet,
+  T3rnPrimitivesContractsRegistryRegistryContract,
   T3rnPrimitivesSideEffectFullSideEffect,
+  T3rnPrimitivesSideEffectInterfaceSideEffectInterface,
   T3rnPrimitivesVolatileLocalState,
+  T3rnPrimitivesXdnsXdnsRecord,
 } from "@polkadot/types/lookup";
 import type { Observable } from "@polkadot/types/types";
 
@@ -139,6 +143,25 @@ declare module "@polkadot/api-base/types/storage" {
       [key: string]: QueryableStorageEntry<ApiType>;
     };
     circuit: {
+      /** Current Circuit's context of active insurance deposits */
+      activeXExecSignalsTimingLinks: AugmentedQuery<
+        ApiType,
+        (arg: H256 | string | Uint8Array) => Observable<Option<u32>>,
+        [H256]
+      > &
+        QueryableStorageEntry<ApiType, [H256]>;
+      /**
+       * Current Circuit's context of active full side effects (requested +
+       * confirmation proofs)
+       */
+      escrowedSideEffectsPendingRelay: AugmentedQuery<
+        ApiType,
+        (
+          arg: H256 | string | Uint8Array
+        ) => Observable<Option<Vec<T3rnPrimitivesSideEffectFullSideEffect>>>,
+        [H256]
+      > &
+        QueryableStorageEntry<ApiType, [H256]>;
       /**
        * Current Circuit's context of active full side effects (requested +
        * confirmation proofs)
@@ -160,6 +183,26 @@ declare module "@polkadot/api-base/types/storage" {
           arg1: H256 | string | Uint8Array,
           arg2: H256 | string | Uint8Array
         ) => Observable<Option<PalletCircuitStateInsuranceDeposit>>,
+        [H256, H256]
+      > &
+        QueryableStorageEntry<ApiType, [H256, H256]>;
+      /** Current Circuit's context of active insurance deposits */
+      localSideEffects: AugmentedQuery<
+        ApiType,
+        (
+          arg1: H256 | string | Uint8Array,
+          arg2: H256 | string | Uint8Array
+        ) => Observable<Option<ITuple<[u32, Option<AccountId32>]>>>,
+        [H256, H256]
+      > &
+        QueryableStorageEntry<ApiType, [H256, H256]>;
+      /** Current Circuit's context of active insurance deposits */
+      localSideEffectsLinks: AugmentedQuery<
+        ApiType,
+        (
+          arg1: H256 | string | Uint8Array,
+          arg2: H256 | string | Uint8Array
+        ) => Observable<Option<H256>>,
         [H256, H256]
       > &
         QueryableStorageEntry<ApiType, [H256, H256]>;
@@ -201,13 +244,79 @@ declare module "@polkadot/api-base/types/storage" {
       /** Generic query */
       [key: string]: QueryableStorageEntry<ApiType>;
     };
+    contracts: {
+      /** The subtrie counter. */
+      accountCounter: AugmentedQuery<ApiType, () => Observable<u64>, []> &
+        QueryableStorageEntry<ApiType, []>;
+      /**
+       * A mapping between an original code hash and instrumented wasm code,
+       * ready for execution.
+       */
+      codeStorage: AugmentedQuery<
+        ApiType,
+        (
+          arg: H256 | string | Uint8Array
+        ) => Observable<Option<PalletWasmContractsWasmPrefabWasmModule>>,
+        [H256]
+      > &
+        QueryableStorageEntry<ApiType, [H256]>;
+      /**
+       * The code associated with a given account.
+       *
+       * TWOX-NOTE: SAFE since `AccountId` is a secure hash.
+       */
+      contractInfoOf: AugmentedQuery<
+        ApiType,
+        (
+          arg: AccountId32 | string | Uint8Array
+        ) => Observable<Option<PalletWasmContractsStorageRawContractInfo>>,
+        [AccountId32]
+      > &
+        QueryableStorageEntry<ApiType, [AccountId32]>;
+      /**
+       * Evicted contracts that await child trie deletion.
+       *
+       * Child trie deletion is a heavy operation depending on the amount of
+       * storage items stored in said trie. Therefore this operation is
+       * performed lazily in `on_initialize`.
+       */
+      deletionQueue: AugmentedQuery<
+        ApiType,
+        () => Observable<Vec<PalletWasmContractsStorageDeletedContract>>,
+        []
+      > &
+        QueryableStorageEntry<ApiType, []>;
+      /** A mapping between an original code hash and its owner information. */
+      ownerInfoOf: AugmentedQuery<
+        ApiType,
+        (
+          arg: H256 | string | Uint8Array
+        ) => Observable<Option<PalletWasmContractsWasmOwnerInfo>>,
+        [H256]
+      > &
+        QueryableStorageEntry<ApiType, [H256]>;
+      /**
+       * A mapping from an original code hash to the original code, untouched by
+       * instrumentation.
+       */
+      pristineCode: AugmentedQuery<
+        ApiType,
+        (arg: H256 | string | Uint8Array) => Observable<Option<Bytes>>,
+        [H256]
+      > &
+        QueryableStorageEntry<ApiType, [H256]>;
+      /** Generic query */
+      [key: string]: QueryableStorageEntry<ApiType>;
+    };
     contractsRegistry: {
       /** The pre-validated composable contracts on-chain registry. */
       contractsRegistry: AugmentedQuery<
         ApiType,
         (
           arg: H256 | string | Uint8Array
-        ) => Observable<Option<PalletContractsRegistryRegistryContract>>,
+        ) => Observable<
+          Option<T3rnPrimitivesContractsRegistryRegistryContract>
+        >,
         [H256]
       > &
         QueryableStorageEntry<ApiType, [H256]>;
@@ -1180,7 +1289,9 @@ declare module "@polkadot/api-base/types/storage" {
         ApiType,
         (
           arg: H256 | string | Uint8Array
-        ) => Observable<Option<PalletXdnsSideEffectInterface>>,
+        ) => Observable<
+          Option<T3rnPrimitivesSideEffectInterfaceSideEffectInterface>
+        >,
         [H256]
       > &
         QueryableStorageEntry<ApiType, [H256]>;
@@ -1188,7 +1299,9 @@ declare module "@polkadot/api-base/types/storage" {
         ApiType,
         (
           arg: U8aFixed | string | Uint8Array
-        ) => Observable<Option<PalletXdnsSideEffectInterface>>,
+        ) => Observable<
+          Option<T3rnPrimitivesSideEffectInterfaceSideEffectInterface>
+        >,
         [U8aFixed]
       > &
         QueryableStorageEntry<ApiType, [U8aFixed]>;
@@ -1197,7 +1310,7 @@ declare module "@polkadot/api-base/types/storage" {
         ApiType,
         (
           arg: U8aFixed | string | Uint8Array
-        ) => Observable<Option<PalletXdnsXdnsRecord>>,
+        ) => Observable<Option<T3rnPrimitivesXdnsXdnsRecord>>,
         [U8aFixed]
       > &
         QueryableStorageEntry<ApiType, [U8aFixed]>;

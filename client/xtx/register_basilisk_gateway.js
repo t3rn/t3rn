@@ -11,7 +11,7 @@ const exec = promisify(_exec)
 
 const types = require("./types.json")
 
-const ROCOCO_CHAIN_ID = [114, 111, 99, 111]
+const BASILISK_CHAIN_ID = [98, 97, 115, 105]
 
 async function sleep(ms) {
   return new Promise(res => setTimeout(res, ms))
@@ -74,7 +74,7 @@ async function triggerRegister(circuit, params) {
     authorities,
     url,
     authoritySetId,
-    rococoRegistrationHeader,
+    basiliskRegistrationHeader,
     metadata,
     genesisHash,
     target,
@@ -83,16 +83,19 @@ async function triggerRegister(circuit, params) {
   const registerGateway = await circuit.tx.circuitPortal.registerGateway(
     url,
     String.fromCharCode(...target),
-    null,
+    {
+      id: 2090,
+      relay_chain_id: "roco",
+    },
     createGatewayABIConfig(circuit, 32, 32, 32, 12, "Sr25519", "Blake2"),
     //GatewayVendor: 'Substrate' as rococo is substrate-based
     circuit.createType("GatewayVendor", "Substrate"),
     //GatewayType: we connect as a ProgrammableExternal
     circuit.createType("GatewayType", { ProgrammableExternal: 1 }),
     createGatewayGenesisConfig(metadata, genesisHash, circuit),
-    createGatewaySysProps(circuit, 42, "ROC", 12), // GatewaySysProps
+    createGatewaySysProps(circuit, 10041, "BSX", 12), // GatewaySysProps
     //Initial rococo, acts as gateway activation point
-    circuit.createType("Bytes", rococoRegistrationHeader.toHex()),
+    circuit.createType("Bytes", basiliskRegistrationHeader.toHex()),
     //List of current rococo authorities
     circuit.createType("Option<Vec<AccountId>>", authorities),
     circuit.createType("Option<SetId>", authoritySetId),
@@ -126,43 +129,57 @@ async function setOperational(circuit, target) {
 }
 
 async function register(circuit, target) {
-  const url = "wss://rococo-rpc.polkadot.io"
-  const rococoProvider = new WsProvider(url)
-  const api = await ApiPromise.create({ provider: rococoProvider })
+  const url = "wss://rpc-01.basilisk-rococo.hydradx.io"
+  const api = await ApiPromise.create({ provider: new WsProvider(url) })
+  // const rococoApi = await ApiPromise.create({
+  //   provider: new WsProvider("wss://rococo-rpc.polkadot.io")
+  // })
 
   const [metadata, genesisHash] = await Promise.all([
     await api.runtimeMetadata,
     await api.genesisHash,
   ])
 
-  return new Promise(async (resolve, _reject) => {
-    let unsub = await api.rpc.grandpa.subscribeJustifications(
-      async justification => {
-        unsub()
+  const basiliskRegistrationHeader = await api.rpc.chain.getHeader(
+    await api.rpc.chain.getFinalizedHead()
+  )
 
-        const { blockNumber, authorities } = await grandpaDecode(justification)
-        console.log("justification block number", blockNumber)
-
-        const rococoRegistrationHeader = await api.rpc.chain.getHeader(
-          await api.rpc.chain.getBlockHash(blockNumber)
-        )
-        const authoritySetId = await api.query.grandpa.currentSetId()
-
-        await triggerRegister(circuit, {
-          authorities,
-          url,
-          authoritySetId,
-          rococoRegistrationHeader,
-          metadata,
-          genesisHash,
-          target,
-          api,
-        })
-
-        return resolve()
-      }
-    )
+  await triggerRegister(circuit, {
+    authorities: null,
+    url,
+    authoritySetId: null,
+    basiliskRegistrationHeader,
+    metadata,
+    genesisHash,
+    target,
+    api,
   })
+
+  // return new Promise(async (resolve, _reject) => {
+  //   let unsub = await rococoApi.rpc.grandpa.subscribeJustifications(
+  //     async justification => {
+  //       const { authorities } = await grandpaDecode(justification)
+  //       const basiliskRegistrationHeader = await api.rpc.chain.getHeader(
+  //         await api.rpc.chain.getFinalizedHead()
+  //       )
+  //       const authoritySetId = await rococoApi.query.grandpa.currentSetId()
+
+  //       await triggerRegister(circuit, {
+  //         authorities,
+  //         url,
+  //         authoritySetId,
+  //         basiliskRegistrationHeader,
+  //         metadata,
+  //         genesisHash,
+  //         target,
+  //         api,
+  //       })
+
+  //       unsub()
+  //       return resolve(undefined)
+  //     }
+  //   )
+  // })
 }
 
 async function registered(circuit) {
@@ -171,7 +188,7 @@ async function registered(circuit) {
       circuit.query.system.events(notifications => {
         notifications.forEach(notification => {
           if (notification.event.method === "NewGatewayRegistered") {
-            resolve()
+            resolve(undefined)
           }
         })
       })
@@ -187,10 +204,10 @@ async function main() {
     provider: new WsProvider("ws://127.0.0.1:9944"),
     types,
   })
-  await register(circuit, ROCOCO_CHAIN_ID)
+  await register(circuit, BASILISK_CHAIN_ID)
   await registered(circuit)
-  await setOperational(circuit, ROCOCO_CHAIN_ID)
-  console.log("roco gtwy registered and operational")
+  await setOperational(circuit, BASILISK_CHAIN_ID)
+  console.log("basi gtwy registered and operational")
   circuit.disconnect()
   process.exit(0)
 }
