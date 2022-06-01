@@ -176,7 +176,7 @@ set_keys() {
 
 onboard() {
   npx --yes @polkadot/api-cli@beta \
-    --ws ws://localhost:9944 \
+    --ws ws://localhost:1944 \
     --seed //Alice \
     tx.registrar.reserve
   printf \
@@ -186,13 +186,13 @@ onboard() {
     $(<./specs/t3rn.wasm) \
   > /tmp/t3rn.params
   npx @polkadot/api-cli@beta \
-    --ws ws://localhost:9944 \
+    --ws ws://localhost:1944 \
     --sudo \
     --seed //Alice \
     --params /tmp/t3rn.params \
     tx.parasSudoWrapper.sudoScheduleParaInitialize
   npx @polkadot/api-cli@beta \
-    --ws ws://localhost:9944 \
+    --ws ws://localhost:1944 \
     --seed //Alice \
     tx.registrar.reserve
   printf \
@@ -202,7 +202,7 @@ onboard() {
     $(<./specs/pchain.wasm) \
   > /tmp/pchain.params
   npx @polkadot/api-cli@beta \
-    --ws ws://localhost:9944 \
+    --ws ws://localhost:1944 \
     --sudo \
     --seed //Alice \
     --params /tmp/pchain.params \
@@ -211,13 +211,13 @@ onboard() {
 
 channel() {
   npx @polkadot/api-cli@beta \
-    --ws ws://localhost:9944 \
+    --ws ws://localhost:1944 \
     --sudo \
     --seed //Alice \
     tx.parasSudoWrapper.sudoEstablishHrmpChannel \
     3333 3334 8 1024
   npx @polkadot/api-cli@beta \
-    --ws ws://localhost:9944 \
+    --ws ws://localhost:1944 \
     --sudo \
     --seed //Alice \
     tx.parasSudoWrapper.sudoEstablishHrmpChannel \
@@ -231,11 +231,12 @@ devnet|dev|net)
   docker-compose up > /dev/null &
   # allow node startup ~ basepath/datadir/keystore creation
   npx --yes wait-port -t 60000 localhost:1933
+  npx --yes wait-port -t 60000 localhost:1944
   echo "⛓️ setting up collator keystores and initializing parachain onboarding..."
   set_keys
   onboard
   channel
-  echo "👀 parachains onboarding => https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/parachains"
+  echo "👀 parachains onboarding => https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A1944#/parachains"
   rm /tmp/{pchain.params,t3rn.params}
   ;;
 setkeys|keys)

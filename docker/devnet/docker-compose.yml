@@ -13,9 +13,9 @@ services:
     networks:
       - devnet
     ports:
-      # - "90001:90001"
-      # - "8844:8844"
-      - "9944:9944"
+      # - "60001:60001"
+      # - "1844:1844"
+      - "1944:1944"
     volumes:
       - type: bind
         source: ./specs/rococo-local.raw.json
@@ -27,9 +27,9 @@ services:
         read_only: false
     container_name: alice
     command: >
-      --port 90001
-      --rpc-port 8844
-      --ws-port 9944
+      --port 60001
+      --rpc-port 1844
+      --ws-port 1944
       --alice
       -d /pdot/data
       --validator
@@ -48,7 +48,7 @@ services:
     networks:
       - devnet
     # ports:
-    #   - "90002:90002"
+    #   - "60002:60002"
     #   - "8845:8845"
     #   - "9945:9945"
     volumes:
@@ -64,7 +64,7 @@ services:
     depends_on:
       - alice
     command: >
-      --port 90002
+      --port 60002
       --rpc-port 8845
       --ws-port 9945
       --bob
@@ -85,7 +85,7 @@ services:
     networks:
       - devnet
     # ports:
-    #   - "90003:90003"
+    #   - "60003:60003"
     #   - "8846:8846"
     #   - "9946:9946"
     volumes:
@@ -102,7 +102,7 @@ services:
       - alice
       - bob
     command: >
-      --port 90003
+      --port 60003
       --rpc-port 8846
       --ws-port 9946
       --charlie
@@ -123,7 +123,7 @@ services:
     networks:
       - devnet
     # ports:
-    #   - "90004:90004"
+    #   - "60004:60004"
     #   - "8847:8847"
     #   - "9947:9947"
     volumes:
@@ -141,7 +141,7 @@ services:
       - bob
       - charlie
     command: >
-      --port 90004
+      --port 60004
       --rpc-port 8847
       --ws-port 9947
       --dave
@@ -162,7 +162,7 @@ services:
     networks:
       - devnet
     # ports:
-    #   - "90005:90005"
+    #   - "60005:60005"
     #   - "8848:8848"
     #   - "9948:9948"
     volumes:
@@ -181,7 +181,7 @@ services:
       - charlie
       - dave
     command: >
-      --port 90005
+      --port 60005
       --rpc-port 8848
       --ws-port 9948
       --eve
