@@ -24,7 +24,7 @@ build_nodes() {
     --locked
   cp \
     $root_dir/target/release/circuit-collator \
-    $root_dir/devnet/bin/circuit-collator
+    $root_dir/devnet/bin/devnet-circuit-collator
 }
 
 keygen() {
@@ -55,7 +55,7 @@ build_para_chain_specs() {
   circuitb1_adrs=$(grep -oP '(?<=\(SS58\):\s)[^\n]+' $dir/specs/circuitb1.key)
   circuitb2_adrs=$(grep -oP '(?<=\(SS58\):\s)[^\n]+' $dir/specs/circuitb2.key)
   ## gen t3rn chain spec
-  $dir/bin/circuit-collator build-spec \
+  $dir/bin/devnet-circuit-collator build-spec \
       --disable-default-bootnode \
   > $dir/specs/circuita.json
   # set parachain id(s)
@@ -77,14 +77,14 @@ build_para_chain_specs() {
   # regrant alice some balance - taking from charlie
   sed 's/5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y/5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY/' \
     -i $dir/specs/circuita.json
-  $dir/bin/circuit-collator \
+  $dir/bin/devnet-circuit-collator \
       build-spec \
       --chain $dir/specs/circuita.json \
       --disable-default-bootnode \
       --raw \
   > $dir/specs/circuita.raw.json
   ## gen pchain chain spec
-  $dir/bin/circuit-collator build-spec \
+  $dir/bin/devnet-circuit-collator build-spec \
       --disable-default-bootnode \
   > $dir/specs/circuitb.json
   # set parachain id(s)
@@ -106,7 +106,7 @@ build_para_chain_specs() {
   # regrant alice some balance - taking from charlie
   sed 's/5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y/5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY/' \
     -i $dir/specs/circuitb.json
-  $dir/bin/circuit-collator \
+  $dir/bin/devnet-circuit-collator \
       build-spec \
       --chain $dir/specs/circuitb.json \
       --disable-default-bootnode \
@@ -115,20 +115,20 @@ build_para_chain_specs() {
 }
 
 build_para_genesis_states() {
-  $dir/bin/circuit-collator \
+  $dir/bin/devnet-circuit-collator \
       export-genesis-state \
       --chain $dir/specs/circuita.raw.json \
   > $dir/specs/circuita.genesis
-  $dir/bin/circuit-collator \
+  $dir/bin/devnet-circuit-collator \
       export-genesis-state \
       --chain $dir/specs/circuitb.raw.json \
   > $dir/specs/circuitb.genesis
 }
 
 build_para_wasm_runtimes() {
-  $dir/bin/circuit-collator export-genesis-wasm \
+  $dir/bin/devnet-circuit-collator export-genesis-wasm \
   > $dir/specs/circuita.wasm
-  $dir/bin/circuit-collator export-genesis-wasm \
+  $dir/bin/devnet-circuit-collator export-genesis-wasm \
   > $dir/specs/circuitb.wasm
 }
 
@@ -137,7 +137,7 @@ set_keys() {
   circuita2_phrase="$(grep -oP '(?<=phrase:)[^\n]+' $dir/specs/circuita2.key | xargs)"
   circuitb1_phrase="$(grep -oP '(?<=phrase:)[^\n]+' $dir/specs/circuitb1.key | xargs)"
   circuitb2_phrase="$(grep -oP '(?<=phrase:)[^\n]+' $dir/specs/circuitb2.key | xargs)"
-  $dir/bin/circuit-collator \
+  $dir/bin/devnet-circuit-collator \
     key \
     insert \
     --base-path $dir/data/circuita1 \
@@ -145,7 +145,7 @@ set_keys() {
     --scheme Sr25519 \
     --suri "$circuita1_phrase" \
     --key-type aura
-  $dir/bin/circuit-collator \
+  $dir/bin/devnet-circuit-collator \
     key \
     insert \
     --base-path $dir/data/circuita2 \
@@ -153,7 +153,7 @@ set_keys() {
     --scheme Sr25519 \
     --suri "$circuita2_phrase" \
     --key-type aura
-  $dir/bin/circuit-collator \
+  $dir/bin/devnet-circuit-collator \
     key \
     insert \
     --base-path $dir/data/circuitb1 \
@@ -161,7 +161,7 @@ set_keys() {
     --scheme Sr25519 \
     --suri "$circuitb1_phrase" \
     --key-type aura
-  $dir/bin/circuit-collator \
+  $dir/bin/devnet-circuit-collator \
     key \
     insert \
     --base-path $dir/data/circuitb2 \
@@ -248,7 +248,7 @@ start_nodes() {
     --validator \
     --tmp \
     --chain $dir/specs/rococo-local.raw.json
-  ttab -w -a $term_name exec $dir/bin/circuit-collator \
+  ttab -w -a $term_name exec $dir/bin/devnet-circuit-collator \
     --port 33333 \
     --ws-port 1933 \
     --rpc-port 1833 \
@@ -258,36 +258,40 @@ start_nodes() {
     --unsafe-ws-external \
     --unsafe-rpc-external \
     --chain $dir/specs/circuita.raw.json \
+    --execution Wasm \
     -- \
     --chain $dir/specs/rococo-local.raw.json \
     --discover-local
-  ttab -w -a $term_name exec $dir/bin/circuit-collator \
+  ttab -w -a $term_name exec $dir/bin/devnet-circuit-collator \
     --port 33332 \
     --ws-port 1932 \
     --rpc-port 1832 \
     --collator \
     --base-path $dir/data/circuita2 \
     --chain $dir/specs/circuita.raw.json \
+    --execution Wasm \
     -- \
     --chain $dir/specs/rococo-local.raw.json \
     --discover-local
-  ttab -w -a $term_name exec $dir/bin/circuit-collator \
+  ttab -w -a $term_name exec $dir/bin/devnet-circuit-collator \
     --port 23333 \
     --ws-port 2933 \
     --rpc-port 2833 \
     --collator \
     --base-path $dir/data/circuitb1 \
     --chain $dir/specs/circuitb.raw.json \
+    --execution Wasm \
     -- \
     --chain $dir/specs/rococo-local.raw.json \
     --discover-local
-  ttab -w -a $term_name exec $dir/bin/circuit-collator \
+  ttab -w -a $term_name exec $dir/bin/devnet-circuit-collator \
     --port 23332 \
     --ws-port 2932 \
     --rpc-port 2832 \
     --collator \
     --base-path $dir/data/circuitb2 \
     --chain $dir/specs/circuitb.raw.json \
+    --execution Wasm \
     -- \
     --chain $dir/specs/rococo-local.raw.json \
     --discover-local
@@ -306,7 +310,7 @@ devnet() {
   rm -rf $dir/data/*
   start_nodes
   npx --yes wait-port -t 13000 localhost:1933
-  npx --yes wait-port -t 13000 localhost:1944
+  npx wait-port -t 13000 localhost:1944
   set_keys
   onboard
 }
@@ -315,7 +319,7 @@ teardown() {
   rm -rf $dir/data/*
   set +Ee
   killall polkadot
-  killall circuit-collator
+  killall devnet-circuit-collator
   set -Ee
 }
 
