@@ -2,6 +2,13 @@
 
 set -x
 
+trap 'cleanup' EXIT
+
+cleanup() {
+  rm -rf node_modules
+  rm -f package.json package-lock.json
+}
+
 if [[ -z $1 || -z "$2" || -z $3 || -z $4 || -z $5 ]]; then
   echo "usage: $0 \$relay_chain 'collator sudo secret' \$provider \$tag \$when [--dryrun]"
   # fx: ./upgrade-runtime.sh rococo 'collator sudo secret' wss://dev.net.t3rn.io v3.3.3 93337
