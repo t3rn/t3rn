@@ -74,6 +74,9 @@ build_para_chain_specs() {
   # reset alice to sudo
   sed 's/"key": \"[0-9a-zA-Z]\+\"/"key":\"5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY\"/' \
     -i $dir/specs/circuita.json
+  # regrant alice some balance - taking from charlie
+  sed 's/5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y/5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY/' \
+    -i $dir/specs/circuita.json
   $dir/bin/circuit-collator \
       build-spec \
       --chain $dir/specs/circuita.json \
@@ -99,6 +102,9 @@ build_para_chain_specs() {
       -i $dir/specs/circuitb.json
   # reset alice to sudo
   sed 's/"key": \"[0-9a-zA-Z]\+\"/"key":\"5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY\"/' \
+    -i $dir/specs/circuitb.json
+  # regrant alice some balance - taking from charlie
+  sed 's/5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y/5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY/' \
     -i $dir/specs/circuitb.json
   $dir/bin/circuit-collator \
       build-spec \
