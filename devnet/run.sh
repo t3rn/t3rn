@@ -332,7 +332,7 @@ main() {
     teardown
     ;;
   *)
-    echo "usg: $dir/run.sh [up|down]" 1>&2
+    echo "usg: $dir/run.sh [up|down]"
     exit 1
     ;;
   esac
