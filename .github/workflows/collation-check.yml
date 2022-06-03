@@ -5,12 +5,12 @@ on:
     - cron: '33 3 * * *'
 
 env:
-  COLLATOR_IMAGE: circuit-collator:update_v0.9.19
   COLLATOR_HTTP_RPC_PORT: 1833
+  NPM_CONFIG_PREFIX: "~/.npm-global"
 
 jobs:
   collate-check:
-    runs-on: self-hosted
+    runs-on: ubuntu-20.04
     steps:
       - name: ☁ Checkout git repo
         uses: actions/checkout@v3
@@ -19,17 +19,15 @@ jobs:
           submodules: recursive
           token: ${{ secrets.GH_PAT }}
 
-      - name: 🐋 Rebuild fresh Circuit image
-        working-directory: ./docker/devnet
-        env:
-          DOCKER_BUILDKIT: 1
-        run: |
-          docker image rm -f ${{ env.COLLATOR_IMAGE }}
-          docker build -t ${{ env.COLLATOR_IMAGE }} -f t3rn.Dockerfile ../..
+      - name: ⚙️ Get a nightly Rust toolchain with WASM target
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2021-11-01
+          profile: minimal
+          override: true
 
       - name: Up ⚡BI devnet
-        working-directory: ./docker/devnet
-        run: ./run.sh devnet
+        run: ./devnet/run.sh up
 
       - name: 🧱 Check Circuit's collations
         run: |
@@ -57,3 +55,6 @@ jobs:
               exit 1
             fi
           done
+
+      - name: Down ⚡BI devnet
+        run: ./devnet/run.sh down
