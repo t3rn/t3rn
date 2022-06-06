@@ -56,9 +56,6 @@ jobs:
         run: rsync -avz ./target/doc ${{ secrets.RUSTDOCS_SSH_USER }}@${{ secrets.ATLAS_IP }}:/home/${{ secrets.RUSTDOCS_SSH_USER }}/
   main:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: docs/main
     timeout-minutes: 15
     if: "!contains(github.event.head_commit.message, 'skip cd')"
     steps:
@@ -69,11 +66,14 @@ jobs:
           fetch-depth: 1
       - name: 📦 Install packages
         run: yarn
+        working-directory: docs/main
       - name: 🏗 Build
         run: yarn build
+        working-directory: docs/main
       - name: 👾 Deploy to Vercel
         uses: amondnet/vercel-action@v20
         with:
+          working-directory: docs/main
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-args: '--force'
           vercel-org-id: ${{ secrets.VERCEL_TEAM_ID}}
