@@ -11,7 +11,7 @@ cleanup() {
 
 if [[ -z "$1" || -z $2 || -z $3 || -z $4 ]]; then
   echo "usage: $0 'collator sudo secret' \$provider \$tag \$when [--dryrun]"
-  # fx: ./upgrade-runtime.sh rococo 'collator sudo secret' wss://dev.net.t3rn.io v3.3.3 93337
+  # fx: ./upgrade-runtime.sh 'collator sudo secret' wss://dev.net.t3rn.io v3.3.3 93337
   exit 1
 fi
 
@@ -44,7 +44,7 @@ echo "making sure runtime version got updated..."
 
 # fetch authoring_version, spec_version, impl_version, and transaction_version from live chain
 runtime_version="$( \
-  npx --yes @polkadot/api-cli@beta \
+  npx --yes @polkadot/api-cli@0.51.7 \
     --ws $provider \
     consts.system.version \
 )"
@@ -92,8 +92,10 @@ report="$( \
 )"
 
 report="{${report#*\{}" # left trimming nonjson
-wasm="$root_dir/$(jq -r .runtimes.compact.wasm <<<"$report")"
-hash=$(jq -r .runtimes.compact.blake2_256 <<<"$report")
+wasm="$root_dir/$(jq -r .runtimes.compressed.wasm <<<"$report")"
+hash=$( \
+  jq -r .runtimes.compressed.blake2_256 <<<"$report" \
+)
 
 read -n 1 -p "e2e-tested on rococo-local?
 runtime upgrade tested on rococo-local?
@@ -108,7 +110,7 @@ if [[ "${answer,,}" != "y" ]]; then exit 1; fi
 echo "authorizing runtime upgrade... $dryrun"
 
 if [[ -z $dryrun ]]; then
-  npx --yes @polkadot/api-cli@beta \
+  npx --yes @polkadot/api-cli@0.51.7 \
     --ws $provider \
     --sudo \
     --seed "$sudo_secret" \
@@ -116,7 +118,7 @@ if [[ -z $dryrun ]]; then
     $hash
 else
   echo "
-  npx --yes @polkadot/api-cli@beta
+  npx --yes @polkadot/api-cli@0.51.7
     --ws $provider
     --sudo
     --seed "$sudo_secret"
@@ -131,11 +133,11 @@ npm i @polkadot/api@8.6.2
 
 if [[ -z $dryrun ]]; then
   PROVIDER=$provider SUDO=$sudo_secret WASM=$wasm WHEN=$when \
-    node $root_dir/scripts/scheduleEnactAuthorizedUpgrade.js
+    node $root_dir/scripts/schedule-runtime-upgrade.js
 else
   echo "
     PROVIDER=$provider SUDO=$sudo_secret WASM=$wasm WHEN=$when \\
-      node $root_dir/scripts/scheduleEnactAuthorizedUpgrade.js
+      node $root_dir/scripts/schedule-runtime-upgrade.js
   "
-  cat $root_dir/scripts/scheduleEnactAuthorizedUpgrade.js
+  cat $root_dir/scripts/schedule-runtime-upgrade.js
 fi
