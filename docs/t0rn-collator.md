@@ -1,6 +1,7 @@
-# How 2 Run a t0rn Collator
+# Run t3rn Collator on Rococo testnet (t0rn)
 
-This guide outlines the essential minimum of steps required to run a collator in the t0rn testnet. We will be working on top our `v1.0.0-rc.2` release.
+
+This guide outlines the essential minimum of steps required to run a collator for t0rn - a release candidate of t3rn to Rococo testnet. Guide uses the `v1.0.0-rc.2` release to Rococo, please however always use the latest available version.
 
 Make sure to have your machine setup for [Rust and Substrate development](https://docs.substrate.io/v3/getting-started/installation/).
 
