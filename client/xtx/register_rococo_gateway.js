@@ -90,7 +90,7 @@ async function triggerRegister(circuit, params) {
     //GatewayType: we connect as a ProgrammableExternal
     circuit.createType("GatewayType", { ProgrammableExternal: 1 }),
     createGatewayGenesisConfig(metadata, genesisHash, circuit),
-    createGatewaySysProps(circuit, 60, "", 0), // GatewaySysProps
+    createGatewaySysProps(circuit, 42, "ROC", 12), // GatewaySysProps
     //Initial rococo, acts as gateway activation point
     circuit.createType("Bytes", rococoRegistrationHeader.toHex()),
     //List of current rococo authorities
@@ -138,6 +138,8 @@ async function register(circuit, target) {
   return new Promise(async (resolve, _reject) => {
     let unsub = await api.rpc.grandpa.subscribeJustifications(
       async justification => {
+        unsub()
+
         const { blockNumber, authorities } = await grandpaDecode(justification)
         console.log("justification block number", blockNumber)
 
@@ -157,7 +159,6 @@ async function register(circuit, target) {
           api,
         })
 
-        unsub()
         return resolve()
       }
     )

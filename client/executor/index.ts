@@ -1,124 +1,116 @@
-import CircuitListener from "./circuit/listener";
-import CircuitRelayer from "./circuit/relayer";
-import SubstrateRelayer from "./gateways/substrate/relayer";
+import CircuitListener from "./circuit/listener"
+import CircuitRelayer from "./circuit/relayer"
+import SubstrateRelayer from "./gateways/substrate/relayer"
 import config from "./config.json"
-// import { colors } from "./utils/helpers";
-import { SideEffect } from "./utils/types";
-import { ExecutionManager } from "./utils/executionManager";
-import chalk from 'chalk';
-// import "dotenv/config"
+import { SideEffect } from "./utils/types"
+import { ExecutionManager } from "./executionManager"
+import createDebug from "debug"
 
 if (!process.env.SIGNER_KEY) {
   throw Error("missing env var SIGNER_KEY")
 }
 
 class InstanceManager {
-    circuitListener: CircuitListener;
-    circuitRelayer: CircuitRelayer;
-    executionManager: ExecutionManager;
+  static debug = createDebug("instance-manager")
 
-    instances: {
-        [id: string]: SubstrateRelayer
-    } = {};
-    // color: string;
+  circuitListener: CircuitListener
+  circuitRelayer: CircuitRelayer
+  executionManager: ExecutionManager
 
-    constructor() {
-        this.circuitListener = new CircuitListener();
-        this.circuitRelayer = new CircuitRelayer();
-        this.executionManager = new ExecutionManager();
+  instances: { [key: string]: SubstrateRelayer } = {}
+  xtxSfxMap: { [key: string]: SideEffect[] } = {}
 
-        // this.color = colors[0];
+  constructor() {
+    this.circuitListener = new CircuitListener()
+    this.circuitRelayer = new CircuitRelayer()
+    this.executionManager = new ExecutionManager()
+  }
+
+  async setup() {
+    await this.circuitListener.setup(config.circuit.rpc)
+    await this.circuitRelayer.setup(config.circuit.rpc)
+    await this.circuitListener.start()
+    await this.initializeGateways()
+    await this.initializeEventListeners()
+    InstanceManager.debug("executor setup")
+  }
+
+  async initializeGateways() {
+    for (let i = 0; i < config.gateways.length; i++) {
+      const entry = config.gateways[i]
+      if (entry.type === "substrate") {
+        let instance = new SubstrateRelayer()
+        await instance.setup(entry.rpc, entry.name)
+
+        instance.on("SideEffectExecuted", (id: string) => {
+          InstanceManager.debug("SideEffectExecuted")
+          this.executionManager.sideEffectExecuted(id)
+        })
+
+        // setup in executionManager
+        this.executionManager.addGateway(entry.id)
+        // store relayer instance locally
+        this.instances[entry.id] = instance
+      }
     }
+  }
 
-    log(msg: string) {
-        // console.log(chalk[this.color]("index.ts - "), msg)
-        console.log("index.ts - ", msg)
-    }
+  async initializeEventListeners() {
+    this.circuitListener.on("XTransactionReadyForExec", async xtxId => {
+      InstanceManager.debug("XTransactionReadyForExec")
 
-    async setup() {
-        await this.circuitListener.setup(config.circuit.rpc)
-        await this.circuitRelayer.setup(config.circuit.rpc, )//colors[1])
-        await this.circuitListener.start()
-        await this.initializeGateways()
-        this.log("Components Initialzed")
-    }
+      if (this.xtxSfxMap[xtxId]) {
+        this.executionManager.addSideEffects(this.xtxSfxMap[xtxId])
+      } else {
+        InstanceManager.debug("cannot map xtx id to side effects.")
+      }
+    })
 
-    async initializeGateways() {
-        for(let i = 0; i < config.gateways.length; i++) {
-            const entry = config.gateways[i]
-            if(entry.type === "substrate") {
-                let instance = new SubstrateRelayer();
-                await instance.setup(entry.rpc, entry.name, )//colors[i + 2])
-
-
-                instance.on("SideEffectExecuted", (id: string) => {
-                    console.log("SideEffectExecuted")
-                    this.executionManager.sideEffectExecuted(id)
-                })
-
-                // setup in executionManager
-                this.executionManager.addGateway(entry.id);
-                // store relayer instance locally
-                this.instances[entry.id] = instance;
-            }
-        }
-    }
-
-
-    xtxSfxMap = {}
-
-    async initializeEventListeners() {
-        this.circuitListener.on('XTransactionReadyForExec', async (xtxId) => {
-            console.log('XTransactionReadyForExec');
-
-            if (this.xtxSfxMap[xtxId]) {
-                this.xtxSfxMap[xtxId].forEach( (se) => {
-                    this.executionManager.addSideEffect(se)
-                } )
-            } else {
-                console.log('Xtransaction ready for exec ERROR - N side effects stored to xtx id')
-            }
-             
+    this.circuitListener.on(
+      "NewSideEffects",
+      async (sideEffects: SideEffect[]) => {
+        InstanceManager.debug("NewSideEffects")
+        sideEffects.forEach(async sideEffect => {
+          if (!this.xtxSfxMap[sideEffect.xtxId]) {
+            this.xtxSfxMap[sideEffect.xtxId] = [sideEffect]
+          } else {
+            this.xtxSfxMap[sideEffect.xtxId].push(sideEffect)
+          }
         })
+        await this.circuitRelayer.bondInsuranceDeposits(sideEffects)
+      }
+    )
 
-        this.circuitListener.on('NewSideEffect', async (sideEffects: SideEffect[]) => {
-            console.log('NewSideEffect')
-            sideEffects.forEach(async sideEffect => {
-                if (!this.xtxSfxMap[sideEffect.xtxId]) {
-                    this.xtxSfxMap[sideEffect.xtxId] = [sideEffect]
-                } else {
-                    this.xtxSfxMap[sideEffect.xtxId].push(sideEffect) 
-                }
-                await this.circuitRelayer.maybeBondInsuranceDeposit(sideEffect)
-            })
-        })
+    this.executionManager.on("ExecuteSideEffects", async sideEffects => {
+      InstanceManager.debug("ExecuteSideEffects")
+      for (const sideEffect of sideEffects) {
+        await this.instances[sideEffect.getTarget()].executeTx(sideEffect)
+      }
+    })
 
-        
+    this.executionManager.on(
+      "ConfirmSideEffects",
+      (sideEffects: SideEffect[]) => {
+        InstanceManager.debug("ConfirmSideEffects")
+        this.circuitRelayer.confirmSideEffects(sideEffects)
+      }
+    )
 
-        this.executionManager.on('ExecuteSideEffect', sideEffect => {
-            console.log('ExecuteSideEffect')
-            this.instances[sideEffect.getTarget()].executeTx(sideEffect)
-        })
+    this.circuitRelayer.on("SideEffectConfirmed", (id: string) => {
+      InstanceManager.debug("SideEffectConfirmed")
+      this.executionManager.finalize(id)
+    })
 
-        this.executionManager.on("ConfirmSideEffects", (sideEffects: SideEffect[]) => {
-            console.log("ConfirmSideEffects")
-            this.circuitRelayer.confirmSideEffects(sideEffects)
-        })
-
-        this.circuitRelayer.on("SideEffectConfirmed", (id: string) => {
-            console.log("SideEffectConfirmed")
-            this.executionManager.finalize(id);
-        })
-
-        this.circuitListener.on('NewHeaderRangeAvailable', (data) => {
-            console.log('NewHeaderRangeAvailable')
-            this.executionManager.updateGatewayHeight(data.gatewayId, data.height);
-        })
-    }
+    this.circuitListener.on("NewHeaderRangeAvailable", data => {
+      InstanceManager.debug("NewHeaderRangeAvailable", data.gatewayId)
+      this.executionManager.updateGatewayHeight(data.gatewayId, data.height)
+    })
+  }
 }
 
-(async () => {
-    let exec = new InstanceManager();
-    await exec.setup()
-    exec.initializeEventListeners()
-})()
+async function main() {
+  const instanceManager = new InstanceManager()
+  await instanceManager.setup()
+}
+
+main()

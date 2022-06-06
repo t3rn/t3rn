@@ -23,9 +23,9 @@ use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
     Perbill,
 };
-use t3rn_primitives::bridges::runtime::Chain;
+use sp_std::convert::{TryFrom, TryInto};
 
-use t3rn_primitives::EscrowTrait;
+use t3rn_primitives::{bridges::runtime::Chain, EscrowTrait};
 
 pub type AccountId = u64;
 pub type TestHeader = crate::BridgedHeader<TestRuntime, ()>;

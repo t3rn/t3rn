@@ -1,22 +1,21 @@
-version: "3.9"
+version: "3.3"
 
 networks:
   devnet:
-    name: devnet
     driver: bridge
 
 services:
   alice:
-    image: polkadot:release-v0.9.17
+    image: polkadot:release-v0.9.19
     build:
       context: .
       dockerfile: polkadot.Dockerfile
     networks:
       - devnet
     ports:
-      - "10001:10001"
-      - "8844:8844"
-      - "9944:9944"
+      # - "60001:60001"
+      # - "1844:1844"
+      - "1944:1944"
     volumes:
       - type: bind
         source: ./specs/rococo-local.raw.json
@@ -28,9 +27,9 @@ services:
         read_only: false
     container_name: alice
     command: >
-      --port 10001
-      --rpc-port 8844
-      --ws-port 9944
+      --port 60001
+      --rpc-port 1844
+      --ws-port 1944
       --alice
       -d /pdot/data
       --validator
@@ -42,16 +41,16 @@ services:
       -lruntime=debug
 
   bob:
-    image: polkadot:release-v0.9.17
+    image: polkadot:release-v0.9.19
     build:
       context: .
       dockerfile: polkadot.Dockerfile
     networks:
       - devnet
-    ports:
-      - "10002:10002"
-      - "8845:8845"
-      - "9945:9945"
+    # ports:
+    #   - "60002:60002"
+    #   - "8845:8845"
+    #   - "9945:9945"
     volumes:
       - type: bind
         source: ./specs/rococo-local.raw.json
@@ -65,7 +64,7 @@ services:
     depends_on:
       - alice
     command: >
-      --port 10002
+      --port 60002
       --rpc-port 8845
       --ws-port 9945
       --bob
@@ -79,16 +78,16 @@ services:
       -lruntime=debug
 
   charlie:
-    image: polkadot:release-v0.9.17
+    image: polkadot:release-v0.9.19
     build:
       context: .
       dockerfile: polkadot.Dockerfile
     networks:
       - devnet
-    ports:
-      - "10003:10003"
-      - "8846:8846"
-      - "9946:9946"
+    # ports:
+    #   - "60003:60003"
+    #   - "8846:8846"
+    #   - "9946:9946"
     volumes:
       - type: bind
         source: ./specs/rococo-local.raw.json
@@ -103,7 +102,7 @@ services:
       - alice
       - bob
     command: >
-      --port 10003
+      --port 60003
       --rpc-port 8846
       --ws-port 9946
       --charlie
@@ -117,16 +116,16 @@ services:
       -lruntime=debug
 
   dave:
-    image: polkadot:release-v0.9.17
+    image: polkadot:release-v0.9.19
     build:
       context: .
       dockerfile: polkadot.Dockerfile
     networks:
       - devnet
-    ports:
-      - "10004:10004"
-      - "8847:8847"
-      - "9947:9947"
+    # ports:
+    #   - "60004:60004"
+    #   - "8847:8847"
+    #   - "9947:9947"
     volumes:
       - type: bind
         source: ./specs/rococo-local.raw.json
@@ -142,7 +141,7 @@ services:
       - bob
       - charlie
     command: >
-      --port 10004
+      --port 60004
       --rpc-port 8847
       --ws-port 9947
       --dave
@@ -156,16 +155,16 @@ services:
       -lruntime=debug
 
   eve:
-    image: polkadot:release-v0.9.17
+    image: polkadot:release-v0.9.19
     build:
       context: .
       dockerfile: polkadot.Dockerfile
     networks:
       - devnet
-    ports:
-      - "10005:10005"
-      - "8848:8848"
-      - "9948:9948"
+    # ports:
+    #   - "60005:60005"
+    #   - "8848:8848"
+    #   - "9948:9948"
     volumes:
       - type: bind
         source: ./specs/rococo-local.raw.json
@@ -182,7 +181,7 @@ services:
       - charlie
       - dave
     command: >
-      --port 10005
+      --port 60005
       --rpc-port 8848
       --ws-port 9948
       --eve
@@ -196,19 +195,19 @@ services:
       -lruntime=debug
 
   t3rn1:
-    image: circuit-collator:update_v0.9.17
+    image: circuit-collator:update_v0.9.19
     build:
       context: ../..
       dockerfile: docker/devnet/t3rn.Dockerfile
     networks:
       - devnet
     ports:
-      - "33333:33333"
-      - "8833:8833"
-      - "9933:9933"
-      - "33332:33332"
-      - "8832:8832"
-      - "9932:9932"
+      # - "13333:13333"
+      - "1833:1833"
+      - "1933:1933"
+      # - "13332:13332"
+      # - "1832:1832"
+      # - "1932:1932"
     volumes:
       - type: bind
         source: ./specs/rococo-local.raw.json
@@ -230,9 +229,9 @@ services:
       - dave
       - eve
     command: >
-      --port 33333
-      --rpc-port 8833
-      --ws-port 9933
+      --port 13333
+      --rpc-port 1833
+      --ws-port 1933
       --base-path /t3rn/data
       --collator
       --rpc-cors all
@@ -245,25 +244,25 @@ services:
       --
       --chain /t3rn/rococo-local.raw.json
       --discover-local
-      --port 33332
-      --rpc-port 8832
-      --ws-port 9932
+      --port 13332
+      --rpc-port 1832
+      --ws-port 1932
       --execution Wasm
 
   t3rn2:
-    image: circuit-collator:update_v0.9.17
+    image: circuit-collator:update_v0.9.19
     build:
       context: ../..
       dockerfile: docker/devnet/t3rn.Dockerfile
     networks:
       - devnet
-    ports:
-      - "33322:33322"
-      - "8822:8822"
-      - "9922:9922"
-      - "33323:33323"
-      - "8823:8823"
-      - "9923:9923"
+    # ports:
+    #   - "13322:13322"
+    #   - "1822:1822"
+    #   - "1922:1922"
+    #   - "13323:13323"
+    #   - "1823:1823"
+    #   - "1923:1923"
     volumes:
       - type: bind
         source: ./specs/rococo-local.raw.json
@@ -285,9 +284,9 @@ services:
       - dave
       - eve
     command: >
-      --port 33323
-      --rpc-port 8823
-      --ws-port 9923
+      --port 13323
+      --rpc-port 1823
+      --ws-port 1923
       --base-path /t3rn/data
       --collator
       --rpc-cors all
@@ -300,37 +299,37 @@ services:
       --
       --chain /t3rn/rococo-local.raw.json
       --discover-local
-      --port 33322
-      --rpc-port 8822
-      --ws-port 9922
+      --port 13322
+      --rpc-port 1822
+      --ws-port 1922
       --execution Wasm
 
   pchain1:
-    image: parachain-collator:polkadot-v0.9.17-keyed
+    image: circuit-collator:update_v0.9.19
     build:
       context: .
-      dockerfile: pchain.Dockerfile
+      dockerfile: t3rn.Dockerfile
     networks:
       - devnet
-    ports:
-      - "44444:44444"
-      - "4488:4488"
-      - "4499:4499"
-      - "44443:44443"
-      - "4487:4487"
-      - "4498:4498"
+    # ports:
+    #   - "44444:44444"
+    #   - "4488:4488"
+    #   - "4499:4499"
+    #   - "44443:44443"
+    #   - "4487:4487"
+    #   - "4498:4498"
     volumes:
       - type: bind
         source: ./specs/rococo-local.raw.json
-        target: /para/rococo-local.raw.json
+        target: /t3rn/rococo-local.raw.json
         read_only: true
       - type: bind
         source: ./specs/pchain.raw.json
-        target: /para/pchain.raw.json
+        target: /t3rn/pchain.raw.json
         read_only: true
       - type: bind
         source: ./data/pchain1
-        target: /para/data
+        target: /t3rn/data
         read_only: false
     container_name: pchain1
     depends_on:
@@ -343,17 +342,17 @@ services:
       --port 44444
       --rpc-port 4488
       --ws-port 4499
-      --base-path /para/data
+      --base-path /t3rn/data
       --collator
       --rpc-cors all
       --unsafe-ws-external
       --unsafe-rpc-external
       --execution Wasm
       -lruntime=debug
-      --chain /para/pchain.raw.json
+      --chain /t3rn/pchain.raw.json
       --name pchain1
       --
-      --chain /para/rococo-local.raw.json
+      --chain /t3rn/rococo-local.raw.json
       --discover-local
       --port 44443
       --rpc-port 4487
@@ -361,31 +360,31 @@ services:
       --execution Wasm
 
   pchain2:
-    image: parachain-collator:polkadot-v0.9.17-keyed
+    image: circuit-collator:update_v0.9.19
     build:
       context: .
-      dockerfile: pchain.Dockerfile
+      dockerfile: t3rn.Dockerfile
     networks:
       - devnet
-    ports:
-      - "44404:44404"
-      - "4408:4408"
-      - "4409:4409"
-      - "44403:44403"
-      - "4407:4407"
-      - "4418:4418"
+    # ports:
+    #   - "44404:44404"
+    #   - "4408:4408"
+    #   - "4409:4409"
+    #   - "44403:44403"
+    #   - "4407:4407"
+    #   - "4418:4418"
     volumes:
       - type: bind
         source: ./specs/rococo-local.raw.json
-        target: /para/rococo-local.raw.json
+        target: /t3rn/rococo-local.raw.json
         read_only: true
       - type: bind
         source: ./specs/pchain.raw.json
-        target: /para/pchain.raw.json
+        target: /t3rn/pchain.raw.json
         read_only: true
       - type: bind
         source: ./data/pchain2
-        target: /para/data
+        target: /t3rn/data
         read_only: false
     container_name: pchain2
     depends_on:
@@ -398,17 +397,17 @@ services:
       --port 44404
       --rpc-port 4408
       --ws-port 4409
-      --base-path /para/data
+      --base-path /t3rn/data
       --collator
       --rpc-cors all
       --unsafe-ws-external
       --unsafe-rpc-external
       --execution Wasm
       -lruntime=debug
-      --chain /para/pchain.raw.json
+      --chain /t3rn/pchain.raw.json
       --name pchain2
       --
-      --chain /para/rococo-local.raw.json
+      --chain /t3rn/rococo-local.raw.json
       --discover-local
       --port 44403
       --rpc-port 4407

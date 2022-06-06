@@ -86,7 +86,14 @@ export default class HeaderListener extends EventEmitter {
   // called after a range submission is completed
   // might need to add a mutex lock here, because if the we run into thw
   // situation that 2 submissions run in parallel this messes stuff up
-  finalize(index: number) {
-    this.headers = this.headers.splice(index)
+  finalize(anchorNumber: number) {
+    const i = this.headers.findIndex(h => {
+      if (typeof h === "number") {
+        return h === anchorNumber
+      } else {
+        return h.number.toNumber() === anchorNumber
+      }
+    })
+    this.headers = this.headers.splice(i)
   }
 }

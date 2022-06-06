@@ -2,35 +2,30 @@
 use crate::{self as pallet_circuit, Config};
 
 use codec::Encode;
-
-use pallet_babe::{EquivocationHandler, ExternalTrigger};
-
+use frame_election_provider_support::onchain;
 use frame_support::{
-    pallet_prelude::GenesisBuild,
+    pallet_prelude::{GenesisBuild, Weight},
     parameter_types,
     traits::{ConstU32, ConstU64, Everything, KeyOwnerProofSystem, Nothing},
+    PalletId,
 };
+use pallet_babe::{EquivocationHandler, ExternalTrigger};
+use pallet_session::historical as pallet_session_historical;
+use sp_consensus_babe::AuthorityId;
+use sp_core::{crypto::KeyTypeId, H256};
 use sp_runtime::{
     curve::PiecewiseLinear,
     impl_opaque_keys,
     testing::{Header, TestXt},
-    traits::{Convert, IdentityLookup, OpaqueKeys},
-    AccountId32, Perbill,
+    traits::{BlakeTwo256, Convert, IdentityLookup, Keccak256, OpaqueKeys},
+    Perbill,
 };
-
-use frame_election_provider_support::onchain;
-use frame_support::{weights::Weight, PalletId};
-use pallet_session::historical as pallet_session_historical;
-use sp_consensus_babe::AuthorityId;
-use sp_core::{crypto::KeyTypeId, H256};
-use sp_runtime::traits::{BlakeTwo256, Keccak256};
 use sp_staking::{EraIndex, SessionIndex};
-use t3rn_primitives::side_effect::interface::SideEffectInterface;
-
+use sp_std::convert::{TryFrom, TryInto};
 use t3rn_primitives::{
-    transfers::BalanceOf, EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor,
+    side_effect::interface::SideEffectInterface, transfers::BalanceOf, EscrowTrait,
+    GatewaySysProps, GatewayType, GatewayVendor,
 };
-
 use t3rn_protocol::side_effects::confirm::ethereum::EthereumMockVerifier;
 
 pub type AccountId = sp_runtime::AccountId32;
@@ -134,12 +129,12 @@ parameter_types! {
 
 }
 
-use frame_support::weights::IdentityFee;
+use frame_support::weights::{ConstantMultiplier, IdentityFee};
 impl pallet_transaction_payment::Config for Test {
     type FeeMultiplierUpdate = ();
+    type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
     type OperationalFeeMultiplier = OperationalFeeMultiplier;
-    type TransactionByteFee = TransactionByteFee;
     type WeightToFee = IdentityFee<Balance>;
 }
 
@@ -261,9 +256,10 @@ parameter_types! {
     pub const StakingUnsignedPriority: u64 = u64::max_value() / 2;
 }
 
-impl onchain::Config for Test {
-    type Accuracy = Perbill;
+impl onchain::ExecutionConfig for Test {
     type DataProvider = Staking;
+    type Solver = frame_election_provider_support::SequentialPhragmen<AccountId, Perbill>;
+    type System = Test;
 }
 
 parameter_types! {
@@ -275,17 +271,17 @@ parameter_types! {
 }
 
 impl pallet_staking::Config for Test {
-    // type MaxUnlockingChunks = ConstU32<32>;
     type BenchmarkingConfig = pallet_staking::TestBenchmarkingConfig;
     type BondingDuration = BondingDuration;
     type Currency = Balances;
     type CurrencyToVote = frame_support::traits::SaturatingCurrencyToVote;
-    type ElectionProvider = onchain::OnChainSequentialPhragmen<Self>;
+    type ElectionProvider = onchain::UnboundedExecution<Self>;
     type EraPayout = pallet_staking::ConvertCurve<RewardCurve>;
     type Event = Event;
     type GenesisElectionProvider = Self::ElectionProvider;
     type MaxNominations = MaxNominations;
     type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
+    type MaxUnlockingChunks = ConstU32<32>;
     type NextNewSession = Session;
     type OffendingValidatorsThreshold = OffendingValidatorsThreshold;
     type Reward = ();
@@ -295,8 +291,8 @@ impl pallet_staking::Config for Test {
     type Slash = ();
     type SlashCancelOrigin = frame_system::EnsureRoot<Self::AccountId>;
     type SlashDeferDuration = SlashDeferDuration;
-    type SortedListProvider = pallet_staking::UseNominatorsMap<Self>;
     type UnixTime = pallet_timestamp::Pallet<Test>;
+    type VoterList = pallet_staking::UseNominatorsAndValidatorsMap<Self>;
     type WeightInfo = ();
 }
 
@@ -729,8 +725,8 @@ impl ExtBuilder {
         //
         // map side_effects to id, keeping lib.rs clean
         self.standard_side_effects = vec![
-            transfer_side_effect.clone(),
-            swap_side_effect.clone(),
+            transfer_side_effect,
+            swap_side_effect,
             add_liquidity_side_effect,
             call_evm_side_effect,
             get_data_side_effect,
@@ -858,7 +854,7 @@ impl ExtBuilder {
     }
 }
 
-pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);
-pub const BOB_RELAYER: AccountId32 = AccountId32::new([2u8; 32]);
-pub const CHARLIE: AccountId32 = AccountId32::new([3u8; 32]);
-pub const DJANGO: AccountId32 = AccountId32::new([4u8; 32]);
+pub const ALICE: AccountId = AccountId::new([1u8; 32]);
+pub const BOB_RELAYER: AccountId = AccountId::new([2u8; 32]);
+pub const CHARLIE: AccountId = AccountId::new([3u8; 32]);
+pub const DJANGO: AccountId = AccountId::new([4u8; 32]);

@@ -24,17 +24,23 @@
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
 
+use crate::escrow::Escrow;
 use codec::{Decode, Encode};
-
-use frame_support::dispatch::{Dispatchable, GetDispatchInfo};
+use frame_support::{
+    dispatch::{Dispatchable, GetDispatchInfo},
+    traits::{Currency, ExistenceRequirement::AllowDeath, Get},
+};
 use frame_system::{
     ensure_signed,
     offchain::{SignedPayload, SigningTypes},
     pallet_prelude::OriginFor,
 };
-
-use sp_runtime::RuntimeDebug;
-
+pub use pallet::*;
+use sp_runtime::{
+    traits::{AccountIdConversion, Saturating, Zero},
+    KeyTypeId, RuntimeDebug,
+};
+use sp_std::{convert::TryInto, fmt::Debug, prelude::*};
 pub use t3rn_primitives::{
     abi::{GatewayABIConfig, HasherAlgo as HA, Type},
     side_effect::{ConfirmedSideEffect, FullSideEffect, SideEffect, SideEffectId},
@@ -42,30 +48,19 @@ pub use t3rn_primitives::{
     xtx::{Xtx, XtxId},
     GatewayType, *,
 };
-
-use t3rn_protocol::side_effects::confirm::{
-    ethereum::EthereumSideEffectsParser, protocol::*, substrate::SubstrateSideEffectsParser,
-};
-
-use t3rn_protocol::side_effects::loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol};
-pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
-
-use sp_runtime::traits::{AccountIdConversion, Saturating, Zero};
-
-use sp_std::{fmt::Debug, prelude::*};
-
-use frame_support::traits::{Currency, ExistenceRequirement::AllowDeath, Get};
-
-use sp_runtime::KeyTypeId;
-
-use crate::escrow::Escrow;
-pub use pallet::*;
 use t3rn_primitives::{
     circuit_portal::CircuitPortal,
-    side_effect::{ConfirmationOutcome, SecurityLvl},
+    side_effect::{ConfirmationOutcome, HardenedSideEffect, SecurityLvl},
     transfers::EscrowedBalanceOf,
     xdns::Xdns,
 };
+use t3rn_protocol::side_effects::{
+    confirm::{
+        ethereum::EthereumSideEffectsParser, protocol::*, substrate::SubstrateSideEffectsParser,
+    },
+    loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol},
+};
+pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 
 #[cfg(test)]
 pub mod tests;
@@ -107,8 +102,9 @@ pub mod pallet {
     };
     use frame_system::pallet_prelude::*;
     use orml_traits::MultiCurrency;
+    use sp_std::borrow::ToOwned;
     use t3rn_primitives::{
-        circuit::{LocalTrigger, OnLocalTrigger},
+        circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
         circuit_portal::CircuitPortal,
         xdns::Xdns,
     };
@@ -357,9 +353,54 @@ pub mod pallet {
     }
 
     impl<T: Config> OnLocalTrigger<T> for Pallet<T> {
-        fn on_local_trigger(origin: OriginFor<T>, trigger: LocalTrigger<T>) -> DispatchResult {
+        fn load_local_state(
+            origin: &OriginFor<T>,
+            maybe_xtx_id: Option<T::Hash>,
+        ) -> Result<LocalStateExecutionView<T>, sp_runtime::DispatchError> {
+            let requester = Self::authorize(origin.to_owned(), CircuitRole::ContractAuthor)?;
+
+            let fresh_or_revoked_exec = match maybe_xtx_id {
+                Some(_xtx_id) => CircuitStatus::Ready,
+                None => CircuitStatus::Requested,
+            };
+
+            let local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
+                fresh_or_revoked_exec,
+                &requester,
+                Zero::zero(),
+                maybe_xtx_id,
+            )?;
+
+            // There should be no apply step since no change could have happen during the state access
+            let hardened_side_effects = local_xtx_ctx
+                .full_side_effects
+                .iter()
+                .map(|step| {
+                    step.iter()
+                        .map(|fsx| {
+                            Ok(fsx
+                                .clone()
+                                .harden()
+                                .map_err(|_e| Error::<T>::FailedToHardenFullSideEffect)?
+                                .into())
+                        })
+                        .collect::<Result<Vec<HardenedSideEffect>, Error<T>>>()
+                })
+                .collect::<Result<Vec<Vec<HardenedSideEffect>>, Error<T>>>()?;
+
+            // There should be no apply step since no change could have happen during the state access
+            Ok(LocalStateExecutionView::<T>::new(
+                local_xtx_ctx.xtx_id,
+                local_xtx_ctx.local_state.clone(),
+                hardened_side_effects,
+                local_xtx_ctx.xtx.steps_cnt,
+            ))
+        }
+
+        fn on_local_trigger(origin: &OriginFor<T>, trigger: LocalTrigger<T>) -> DispatchResult {
+            log::debug!(target: "runtime::circuit", "Handling on_local_trigger xtx: {:?}, contract: {:?}, side_effects: {:?}", trigger.maybe_xtx_id, trigger.contract, trigger.submitted_side_effects);
             // Authorize: Retrieve sender of the transaction.
-            let requester = Self::authorize(origin, CircuitRole::ContractAuthor)?;
+            let requester = Self::authorize(origin.to_owned(), CircuitRole::ContractAuthor)?;
 
             let fresh_or_revoked_exec = match trigger.maybe_xtx_id {
                 Some(_xtx_id) => CircuitStatus::Ready,
@@ -424,7 +465,7 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
         pub fn on_local_trigger(origin: OriginFor<T>, trigger: Vec<u8>) -> DispatchResult {
             <Self as OnLocalTrigger<T>>::on_local_trigger(
-                origin,
+                &origin,
                 LocalTrigger::<T>::decode(&mut &trigger[..])
                     .map_err(|_| Error::<T>::InsuranceBondNotRequired)?,
             )
@@ -584,7 +625,7 @@ pub mod pallet {
                     .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
 
             if local_xtx_ctx.xtx.steps_cnt.0 != step_no || maybe_assignee.is_some() {
-                return Err(Error::<T>::LocalSideEffectExecutionNotApplicable)?
+                return Err(Error::<T>::LocalSideEffectExecutionNotApplicable.into())
             }
 
             let encoded_4b_action: [u8; 4] =
@@ -859,6 +900,7 @@ pub mod pallet {
         FatalErroredCommitSideEffectConfirmationAttempt,
         FatalErroredRevertSideEffectConfirmationAttempt,
         SetupFailedUnknownXtx,
+        FailedToHardenFullSideEffect,
         SetupFailedDuplicatedXtx,
         SetupFailedEmptyXtx,
         ApplyFailed,
@@ -1235,14 +1277,8 @@ impl<T: Config> Pallet<T> {
                     .clone()
                     .iter()
                     .filter(|&fse| fse.confirmed.is_none())
-                    .collect::<Vec<
-                        &FullSideEffect<
-                            T::AccountId,
-                            T::BlockNumber,
-                            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-                        >,
-                    >>()
-                    .is_empty()
+                    .next()
+                    .is_none()
                 {
                     local_ctx.xtx.steps_cnt =
                         (local_ctx.xtx.steps_cnt.0 + 1, local_ctx.xtx.steps_cnt.1);
@@ -1294,10 +1330,10 @@ impl<T: Config> Pallet<T> {
                         Ok((None, Some(local_ctx.full_side_effects.to_vec())))
                     }
                 } else {
-                    return Err(Error::<T>::ApplyTriggeredWithUnexpectedStatus)
+                    Err(Error::<T>::ApplyTriggeredWithUnexpectedStatus)
                 }
             },
-            _ => return Err(Error::<T>::ApplyTriggeredWithUnexpectedStatus),
+            _ => Err(Error::<T>::ApplyTriggeredWithUnexpectedStatus),
         }
     }
 
@@ -1382,43 +1418,45 @@ impl<T: Config> Pallet<T> {
 
         match local_ctx.xtx.status {
             CircuitStatus::RevertTimedOut | CircuitStatus::Reverted => {
-                for fse in &local_ctx.full_side_effects[(current_step) as usize] {
-                    let encoded_4b_action: [u8; 4] =
-                        Decode::decode(&mut fse.input.encoded_action.encode().as_ref())
-                            .expect("Encoded Type was already validated before saving");
+                if let Some(outer) = local_ctx.full_side_effects.get(current_step as usize) {
+                    for fse in outer {
+                        let encoded_4b_action: [u8; 4] =
+                            Decode::decode(&mut fse.input.encoded_action.encode().as_ref())
+                                .expect("Encoded Type was already validated before saving");
 
-                    let confirmed = fse.confirmed.clone().unwrap_or(ConfirmedSideEffect {
-                        err: Some(ConfirmationOutcome::TimedOut),
-                        output: None,
-                        encoded_effect: vec![0],
-                        inclusion_proof: None,
-                        executioner: Self::account_id(),
-                        received_at: <frame_system::Pallet<T>>::block_number(),
-                        cost: None,
-                    });
-                    match fse.security_lvl {
-                        SecurityLvl::Optimistic => {
-                            let _ = Self::enact_insurance(
-                                local_ctx,
-                                &fse.input,
-                                InsuranceEnact::RefundBoth,
-                            )?;
-                        },
-                        SecurityLvl::Escrowed => {
-                            if fse.input.target == T::SelfGatewayId::get() {
-                                Escrow::<T>::revert(
-                                    &encoded_4b_action,
-                                    fse.input.encoded_args.clone(),
-                                    Self::account_id(),
-                                    confirmed.executioner.clone(),
-                                )
-                                .map_err(|_| {
-                                    Error::<T>::FatalErroredRevertSideEffectConfirmationAttempt
-                                })?
-                            }
-                            escrowed_to_confirm.push(fse.clone());
-                        },
-                        SecurityLvl::Dirty => {},
+                        let confirmed = fse.confirmed.clone().unwrap_or(ConfirmedSideEffect {
+                            err: Some(ConfirmationOutcome::TimedOut),
+                            output: None,
+                            encoded_effect: vec![0],
+                            inclusion_proof: None,
+                            executioner: Self::account_id(),
+                            received_at: <frame_system::Pallet<T>>::block_number(),
+                            cost: None,
+                        });
+                        match fse.security_lvl {
+                            SecurityLvl::Optimistic => {
+                                let _ = Self::enact_insurance(
+                                    local_ctx,
+                                    &fse.input,
+                                    InsuranceEnact::RefundBoth,
+                                )?;
+                            },
+                            SecurityLvl::Escrowed => {
+                                if fse.input.target == T::SelfGatewayId::get() {
+                                    Escrow::<T>::revert(
+                                        &encoded_4b_action,
+                                        fse.input.encoded_args.clone(),
+                                        Self::account_id(),
+                                        confirmed.executioner.clone(),
+                                    )
+                                    .map_err(|_| {
+                                        Error::<T>::FatalErroredRevertSideEffectConfirmationAttempt
+                                    })?
+                                }
+                                escrowed_to_confirm.push(fse.clone());
+                            },
+                            SecurityLvl::Dirty => {},
+                        }
                     }
                 }
             },
@@ -1773,7 +1811,6 @@ impl<T: Config> Pallet<T> {
             // ToDo: Extract as a separate function and migrate tests from Xtx
             let input_side_effect_id = side_effect.generate_id::<SystemHashing<T>>();
             let mut unconfirmed_step_no: Option<usize> = None;
-
             for (i, step) in full_side_effects.iter_mut().enumerate() {
                 // Double check there are some side effects for that Xtx - should have been checked at API level tho already
                 if step.is_empty() {
@@ -1804,7 +1841,6 @@ impl<T: Config> Pallet<T> {
 
             Ok(false)
         }
-
         if !confirm_order::<T>(side_effect, confirmation, &mut local_ctx.full_side_effects)? {
             return Err(
                 "Side effect confirmation wasn't matched with full side effects order from state",
@@ -1816,7 +1852,6 @@ impl<T: Config> Pallet<T> {
             <T as Config>::Xdns::get_gateway_value_unsigned_type_unsafe(&side_effect.target),
             &local_ctx.local_state,
         )?;
-
         Ok(())
     }
 

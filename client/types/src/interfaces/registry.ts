@@ -2,16 +2,13 @@
 /* eslint-disable */
 
 import type {
+  CircuitStandaloneRuntimeOriginCaller,
   CircuitStandaloneRuntimeRuntime,
-  FinalityGrandpaCommitU32,
-  FinalityGrandpaCommitU64,
   FinalityGrandpaEquivocationPrecommit,
   FinalityGrandpaEquivocationPrevote,
-  FinalityGrandpaPrecommitU32,
-  FinalityGrandpaPrecommitU64,
+  FinalityGrandpaPrecommit,
   FinalityGrandpaPrevote,
-  FinalityGrandpaSignedPrecommitU32,
-  FinalityGrandpaSignedPrecommitU64,
+  FrameSupportDispatchRawOrigin,
   FrameSupportPalletId,
   FrameSupportTokensMiscBalanceStatus,
   FrameSupportWeightsDispatchClass,
@@ -62,7 +59,6 @@ import type {
   PalletContractsRegistryCall,
   PalletContractsRegistryError,
   PalletContractsRegistryEvent,
-  PalletContractsRegistryRegistryContract,
   PalletGrandpaCall,
   PalletGrandpaError,
   PalletGrandpaEvent,
@@ -70,17 +66,31 @@ import type {
   PalletGrandpaStoredState,
   PalletMultiFinalityVerifierCall,
   PalletMultiFinalityVerifierError,
+  PalletMultiFinalityVerifierEvent,
   PalletSudoCall,
   PalletSudoError,
   PalletSudoEvent,
   PalletTimestampCall,
   PalletTransactionPaymentChargeTransactionPayment,
   PalletTransactionPaymentReleases,
+  PalletUtilityCall,
+  PalletUtilityError,
+  PalletUtilityEvent,
+  PalletWasmContractsCall,
+  PalletWasmContractsContractKind,
+  PalletWasmContractsError,
+  PalletWasmContractsEvent,
+  PalletWasmContractsSchedule,
+  PalletWasmContractsScheduleHostFnWeights,
+  PalletWasmContractsScheduleInstructionWeights,
+  PalletWasmContractsScheduleLimits,
+  PalletWasmContractsStorageDeletedContract,
+  PalletWasmContractsStorageRawContractInfo,
+  PalletWasmContractsWasmOwnerInfo,
+  PalletWasmContractsWasmPrefabWasmModule,
   PalletXdnsCall,
   PalletXdnsError,
   PalletXdnsEvent,
-  PalletXdnsSideEffectInterface,
-  PalletXdnsXdnsRecord,
   SpConsensusAuraSr25519AppSr25519Public,
   SpCoreEcdsaSignature,
   SpCoreEd25519Public,
@@ -111,29 +121,32 @@ import type {
   T3rnPrimitivesAbiType,
   T3rnPrimitivesBridgesHeaderChainAuthoritySet,
   T3rnPrimitivesContractMetadata,
+  T3rnPrimitivesContractsRegistryRegistryContract,
   T3rnPrimitivesGatewayGenesisConfig,
   T3rnPrimitivesGatewaySysProps,
   T3rnPrimitivesGatewayType,
   T3rnPrimitivesGatewayVendor,
   T3rnPrimitivesSideEffect,
+  T3rnPrimitivesSideEffectConfirmationOutcome,
   T3rnPrimitivesSideEffectConfirmedSideEffect,
   T3rnPrimitivesSideEffectFullSideEffect,
+  T3rnPrimitivesSideEffectInterfaceSideEffectInterface,
+  T3rnPrimitivesSideEffectSecurityLvl,
   T3rnPrimitivesStorageRawAliveContractInfo,
   T3rnPrimitivesVolatileLocalState,
+  T3rnPrimitivesXdnsParachain,
+  T3rnPrimitivesXdnsXdnsRecord,
 } from "@polkadot/types/lookup";
 
 declare module "@polkadot/types/types/registry" {
   export interface InterfaceTypes {
+    CircuitStandaloneRuntimeOriginCaller: CircuitStandaloneRuntimeOriginCaller;
     CircuitStandaloneRuntimeRuntime: CircuitStandaloneRuntimeRuntime;
-    FinalityGrandpaCommitU32: FinalityGrandpaCommitU32;
-    FinalityGrandpaCommitU64: FinalityGrandpaCommitU64;
     FinalityGrandpaEquivocationPrecommit: FinalityGrandpaEquivocationPrecommit;
     FinalityGrandpaEquivocationPrevote: FinalityGrandpaEquivocationPrevote;
-    FinalityGrandpaPrecommitU32: FinalityGrandpaPrecommitU32;
-    FinalityGrandpaPrecommitU64: FinalityGrandpaPrecommitU64;
+    FinalityGrandpaPrecommit: FinalityGrandpaPrecommit;
     FinalityGrandpaPrevote: FinalityGrandpaPrevote;
-    FinalityGrandpaSignedPrecommitU32: FinalityGrandpaSignedPrecommitU32;
-    FinalityGrandpaSignedPrecommitU64: FinalityGrandpaSignedPrecommitU64;
+    FrameSupportDispatchRawOrigin: FrameSupportDispatchRawOrigin;
     FrameSupportPalletId: FrameSupportPalletId;
     FrameSupportTokensMiscBalanceStatus: FrameSupportTokensMiscBalanceStatus;
     FrameSupportWeightsDispatchClass: FrameSupportWeightsDispatchClass;
@@ -184,7 +197,6 @@ declare module "@polkadot/types/types/registry" {
     PalletContractsRegistryCall: PalletContractsRegistryCall;
     PalletContractsRegistryError: PalletContractsRegistryError;
     PalletContractsRegistryEvent: PalletContractsRegistryEvent;
-    PalletContractsRegistryRegistryContract: PalletContractsRegistryRegistryContract;
     PalletGrandpaCall: PalletGrandpaCall;
     PalletGrandpaError: PalletGrandpaError;
     PalletGrandpaEvent: PalletGrandpaEvent;
@@ -192,17 +204,31 @@ declare module "@polkadot/types/types/registry" {
     PalletGrandpaStoredState: PalletGrandpaStoredState;
     PalletMultiFinalityVerifierCall: PalletMultiFinalityVerifierCall;
     PalletMultiFinalityVerifierError: PalletMultiFinalityVerifierError;
+    PalletMultiFinalityVerifierEvent: PalletMultiFinalityVerifierEvent;
     PalletSudoCall: PalletSudoCall;
     PalletSudoError: PalletSudoError;
     PalletSudoEvent: PalletSudoEvent;
     PalletTimestampCall: PalletTimestampCall;
     PalletTransactionPaymentChargeTransactionPayment: PalletTransactionPaymentChargeTransactionPayment;
     PalletTransactionPaymentReleases: PalletTransactionPaymentReleases;
+    PalletUtilityCall: PalletUtilityCall;
+    PalletUtilityError: PalletUtilityError;
+    PalletUtilityEvent: PalletUtilityEvent;
+    PalletWasmContractsCall: PalletWasmContractsCall;
+    PalletWasmContractsContractKind: PalletWasmContractsContractKind;
+    PalletWasmContractsError: PalletWasmContractsError;
+    PalletWasmContractsEvent: PalletWasmContractsEvent;
+    PalletWasmContractsSchedule: PalletWasmContractsSchedule;
+    PalletWasmContractsScheduleHostFnWeights: PalletWasmContractsScheduleHostFnWeights;
+    PalletWasmContractsScheduleInstructionWeights: PalletWasmContractsScheduleInstructionWeights;
+    PalletWasmContractsScheduleLimits: PalletWasmContractsScheduleLimits;
+    PalletWasmContractsStorageDeletedContract: PalletWasmContractsStorageDeletedContract;
+    PalletWasmContractsStorageRawContractInfo: PalletWasmContractsStorageRawContractInfo;
+    PalletWasmContractsWasmOwnerInfo: PalletWasmContractsWasmOwnerInfo;
+    PalletWasmContractsWasmPrefabWasmModule: PalletWasmContractsWasmPrefabWasmModule;
     PalletXdnsCall: PalletXdnsCall;
     PalletXdnsError: PalletXdnsError;
     PalletXdnsEvent: PalletXdnsEvent;
-    PalletXdnsSideEffectInterface: PalletXdnsSideEffectInterface;
-    PalletXdnsXdnsRecord: PalletXdnsXdnsRecord;
     SpConsensusAuraSr25519AppSr25519Public: SpConsensusAuraSr25519AppSr25519Public;
     SpCoreEcdsaSignature: SpCoreEcdsaSignature;
     SpCoreEd25519Public: SpCoreEd25519Public;
@@ -233,14 +259,20 @@ declare module "@polkadot/types/types/registry" {
     T3rnPrimitivesAbiType: T3rnPrimitivesAbiType;
     T3rnPrimitivesBridgesHeaderChainAuthoritySet: T3rnPrimitivesBridgesHeaderChainAuthoritySet;
     T3rnPrimitivesContractMetadata: T3rnPrimitivesContractMetadata;
+    T3rnPrimitivesContractsRegistryRegistryContract: T3rnPrimitivesContractsRegistryRegistryContract;
     T3rnPrimitivesGatewayGenesisConfig: T3rnPrimitivesGatewayGenesisConfig;
     T3rnPrimitivesGatewaySysProps: T3rnPrimitivesGatewaySysProps;
     T3rnPrimitivesGatewayType: T3rnPrimitivesGatewayType;
     T3rnPrimitivesGatewayVendor: T3rnPrimitivesGatewayVendor;
     T3rnPrimitivesSideEffect: T3rnPrimitivesSideEffect;
+    T3rnPrimitivesSideEffectConfirmationOutcome: T3rnPrimitivesSideEffectConfirmationOutcome;
     T3rnPrimitivesSideEffectConfirmedSideEffect: T3rnPrimitivesSideEffectConfirmedSideEffect;
     T3rnPrimitivesSideEffectFullSideEffect: T3rnPrimitivesSideEffectFullSideEffect;
+    T3rnPrimitivesSideEffectInterfaceSideEffectInterface: T3rnPrimitivesSideEffectInterfaceSideEffectInterface;
+    T3rnPrimitivesSideEffectSecurityLvl: T3rnPrimitivesSideEffectSecurityLvl;
     T3rnPrimitivesStorageRawAliveContractInfo: T3rnPrimitivesStorageRawAliveContractInfo;
     T3rnPrimitivesVolatileLocalState: T3rnPrimitivesVolatileLocalState;
+    T3rnPrimitivesXdnsParachain: T3rnPrimitivesXdnsParachain;
+    T3rnPrimitivesXdnsXdnsRecord: T3rnPrimitivesXdnsXdnsRecord;
   } // InterfaceTypes
 } // declare module

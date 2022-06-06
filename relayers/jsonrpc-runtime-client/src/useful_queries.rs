@@ -5,8 +5,7 @@ use jsonrpsee_types::{traits::Client, v2::params::JsonRpcParams};
 use num_traits::Zero;
 use relay_substrate_client::Client as SubstrateClient;
 use sc_finality_grandpa::FinalityProof;
-use sp_core::{storage::StorageKey, Bytes};
-use sp_finality_grandpa::{AuthorityId, AuthorityList, SetId};
+use sp_core::Bytes;
 use t3rn_primitives::{
     bridges::header_chain::{justification::GrandpaJustification, AuthoritySet},
     Header,

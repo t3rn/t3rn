@@ -1,0 +1,60 @@
+name: Circuit Collation Check
+
+on:
+  schedule:
+    - cron: '33 3 * * *'
+
+env:
+  COLLATOR_HTTP_RPC_PORT: 1833
+  NPM_CONFIG_PREFIX: "~/.npm-global"
+
+jobs:
+  collate-check:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: ☁ Checkout git repo
+        uses: actions/checkout@v3
+        with:
+          ref: development
+          submodules: recursive
+          token: ${{ secrets.GH_PAT }}
+
+      - name: ⚙️ Get a nightly Rust toolchain with WASM target
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2021-11-01
+          profile: minimal
+          override: true
+
+      - name: Up ⚡BI devnet
+        run: ./devnet/run.sh up
+
+      - name: 🧱 Check Circuit's collations
+        run: |
+          finalized_head(){
+            printf $( \
+              curl \
+                -sSfH "content-type: application/json" \
+                -d '{"id":1,"jsonrpc":"2.0","method":"chain_getFinalizedHead","params":[]}' \
+                http://localhost:${{ env.COLLATOR_HTTP_RPC_PORT }} \
+                | \
+                jq -r .result \
+            )
+          }
+          start_hash=$(finalized_head)
+          block_hash=$start_hash
+          i=$((0))
+          echo "start_hash $start_hash"
+          while [[ $block_hash -eq $start_hash ]]; do
+            sleep 6s
+            block_hash=$(finalized_head)
+            echo "$i block_hash $block_hash"
+            i=$((i+1))
+            if (( $i == 34 )); then
+              echo "circuit not producing collations" >&2
+              exit 1
+            fi
+          done
+
+      - name: Down ⚡BI devnet
+        run: ./devnet/run.sh down

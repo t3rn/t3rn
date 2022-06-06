@@ -1,36 +1,62 @@
+use crate::{side_effect::HardenedSideEffect, xtx::LocalState};
 use codec::{Decode, Encode};
 use frame_support::dispatch::DispatchResult;
 use frame_system::{pallet_prelude::OriginFor, Config};
-use sp_std::vec::Vec;
+use sp_std::{fmt::Debug, vec::Vec};
 
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode)]
 pub struct LocalTrigger<T: Config> {
     /// Id of the contract which generated the side effects
-    contract: T::AccountId,
+    pub contract: T::AccountId,
     /// Side effects generated from the contract call
-    side_effects: Vec<Vec<u8>>,
-    /// Breakpoints by outbound message index
-    round_breakpoints: Vec<u32>,
-    /// Optional xtx_id if about to resume the Xtx execution
-    pub maybe_xtx_id: Option<<T as frame_system::Config>::Hash>,
+    pub submitted_side_effects: Vec<Vec<u8>>,
+    pub maybe_xtx_id: Option<T::Hash>,
 }
 
 impl<T: Config> LocalTrigger<T> {
     pub fn new(
         contract: T::AccountId,
-        side_effects: Vec<Vec<u8>>,
-        round_breakpoints: Vec<u32>,
-        maybe_xtx_id: Option<<T as frame_system::Config>::Hash>,
+        submitted_side_effects: Vec<Vec<u8>>,
+        maybe_xtx_id: Option<T::Hash>,
     ) -> Self {
         LocalTrigger {
             contract,
-            side_effects,
-            round_breakpoints,
+            submitted_side_effects,
             maybe_xtx_id,
         }
     }
 }
 
+// TODO: provide full side effects
+#[derive(Debug, Clone, Eq, PartialEq, Encode, Decode)]
+pub struct LocalStateExecutionView<T: Config> {
+    pub xtx_id: <T as Config>::Hash,
+    pub local_state: LocalState,
+    pub hardened_side_effects: Vec<Vec<HardenedSideEffect>>,
+    pub steps_cnt: (u32, u32),
+}
+
+impl<T: Config> LocalStateExecutionView<T> {
+    pub fn new(
+        xtx_id: <T as Config>::Hash,
+        local_state: LocalState,
+        hardened_side_effects: Vec<Vec<HardenedSideEffect>>,
+        steps_cnt: (u32, u32),
+    ) -> Self {
+        LocalStateExecutionView {
+            xtx_id,
+            local_state,
+            hardened_side_effects,
+            steps_cnt,
+        }
+    }
+}
+
 pub trait OnLocalTrigger<T: Config> {
-    fn on_local_trigger(origin: OriginFor<T>, trigger: LocalTrigger<T>) -> DispatchResult;
+    fn on_local_trigger(origin: &OriginFor<T>, trigger: LocalTrigger<T>) -> DispatchResult;
+
+    fn load_local_state(
+        origin: &OriginFor<T>,
+        maybe_xtx_id: Option<T::Hash>,
+    ) -> Result<LocalStateExecutionView<T>, sp_runtime::DispatchError>;
 }

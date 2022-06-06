@@ -1,5 +1,5 @@
 {
-    "rangeSize": 7,
+    "rangeSize": 5,
     "circuit": {
         "rpc": "ws://127.0.0.1::9944"
     },
@@ -10,11 +10,11 @@
         "type": "substrate"
     }],
     "parachains": [{
-        "name": "Dolphin",
-        "id": "dolp",
-        "rpc": "wss://anjie.rococo.dolphin.engineering",
+        "name": "Basilisk",
+        "id": "basi",
+        "rpc": "wss://rpc-01.basilisk-rococo.hydradx.io",
         "type": "substrate",
-        "parachainId": 2084,
+        "parachainId": 2090,
         "relaychainId": "roco"
     }]
 }

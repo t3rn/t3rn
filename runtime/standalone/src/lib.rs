@@ -1,4 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+#![feature(more_qualified_paths)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
@@ -6,6 +7,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+use codec::Decode;
 use pallet_grandpa::{
     fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
@@ -19,15 +21,23 @@ use sp_runtime::{
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, MultiSignature,
 };
-use sp_std::prelude::*;
+use sp_std::{
+    convert::{TryFrom, TryInto},
+    prelude::*,
+};
+
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 // A few exports that help ease life for downstream crates.
+use frame_support::weights::ConstantMultiplier;
 pub use frame_support::{
     construct_runtime, parameter_types,
-    traits::{ConstU128, ConstU32, ConstU8, KeyOwnerProofSystem, Randomness, StorageInfo},
+    traits::{
+        ConstU128, ConstU32, ConstU8, Imbalance, KeyOwnerProofSystem, OnUnbalanced, Randomness,
+        StorageInfo,
+    },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         IdentityFee, Weight,
@@ -36,11 +46,11 @@ pub use frame_support::{
 };
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
-use pallet_transaction_payment::CurrencyAdapter;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
+pub mod accounts_config;
 pub mod circuit_config;
 pub mod contracts_config;
 pub mod orml_config;
@@ -260,21 +270,30 @@ impl pallet_balances::Config for Runtime {
     type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 }
 
+pallet_account_manager::setup_currency_adapter!();
+
 parameter_types! {
     pub const TransactionByteFee: Balance = 1;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
     type FeeMultiplierUpdate = ();
-    type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
+    type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
+    type OnChargeTransaction = AccountManagerCurrencyAdapter<Balances, ()>;
     type OperationalFeeMultiplier = ConstU8<5>;
-    type TransactionByteFee = TransactionByteFee;
     type WeightToFee = IdentityFee<Balance>;
 }
 
 impl pallet_sudo::Config for Runtime {
     type Call = Call;
     type Event = Event;
+}
+
+impl pallet_utility::Config for Runtime {
+    type Call = Call;
+    type Event = Event;
+    type PalletsOrigin = OriginCaller;
+    type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -292,6 +311,7 @@ construct_runtime!(
         Balances: pallet_balances,
         TransactionPayment: pallet_transaction_payment,
         Sudo: pallet_sudo,
+        Utility: pallet_utility,
 
         // ORML
         ORMLTokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>} = 161,
@@ -320,6 +340,7 @@ construct_runtime!(
 
         // 3VM
         Contracts: pallet_3vm_contracts = 119,
+        AccountManager: pallet_account_manager = 125,
     }
 );
 
@@ -354,16 +375,6 @@ pub type Executive = frame_executive::Executive<
 #[cfg(feature = "runtime-benchmarks")]
 #[macro_use]
 extern crate frame_benchmarking;
-
-#[cfg(feature = "runtime-benchmarks")]
-mod benches {
-    define_benchmarks!(
-        [frame_benchmarking, BaselineBench::<Runtime>]
-        [frame_system, SystemBench::<Runtime>]
-        [pallet_balances, Balances]
-        [pallet_timestamp, Timestamp]
-    );
-}
 
 impl_runtime_apis! {
     impl sp_api::Core<Block> for Runtime {
@@ -605,4 +616,15 @@ impl_runtime_apis! {
             Ok(batches)
         }
     }
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benches {
+    define_benchmarks!(
+        [frame_benchmarking, BaselineBench::<Runtime>]
+        [frame_system, SystemBench::<Runtime>]
+        [pallet_balances, Balances]
+        [pallet_timestamp, Timestamp]
+        [pallet_account_manager, AccountManager]
+    );
 }

@@ -7,23 +7,21 @@ if [[ -z "$EXECUTOR_KEY" ]]; then
 fi
 
 if [ "$(uname)" == "Darwin" ]; then
-    TERM_NAME=iTerm
+  TERM_NAME=iTerm
 else
-    TERM_NAME=gnome-terminal
+  TERM_NAME=gnome-terminal
 fi
 
 set -xEeu
 
 ## build the custom justification decoder and standalone circuit
 cargo build \
-  --manifest-path ./justification-decoder/Cargo.toml \
-  --release
+  --manifest-path ./justification-decoder/Cargo.toml
 cargo build \
   --manifest-path ../../node/standalone/Cargo.toml
 
 ## pull all node modules
-[ ! -O /usr/local/bin ] && SUDO_MAYBE=sudo
-$SUDO_MAYBE npm i -g ttab
+sudo npm i -g ttab
 npm i @polkadot/api @polkadot/types
 npm install --prefix ../grandpa-ranger
 npm install --prefix ../executor
@@ -45,6 +43,9 @@ ttab -w -a $TERM_NAME exec cargo run \
 
 ## register rococo gateway on circuit
 node ./register_rococo_gateway.js
+
+## register basilisk gateway on circuit
+node ./register_basilisk_gateway.js
 
 ## run grandpa-ranger
 ttab -w -a $TERM_NAME exec npm start --prefix ../grandpa-ranger
