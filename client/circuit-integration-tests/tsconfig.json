@@ -5,5 +5,5 @@
     "baseUrl": ".",
     "skipLibCheck": true
   },
-  "include": ["src/**/*.ts","test/**/*.test.ts"]
+  "include": ["gateway_preregistration.test.ts"]
 }

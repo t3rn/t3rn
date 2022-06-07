@@ -52,23 +52,11 @@ Once a transaction is applied on a blockchians it's non-reversible, which consti
 ### Complexity
 Designing interoperable solutions is complex and requires developers and users to operate on multiple blockchains, possibly creating multiple different accounts, acquiring multiple currencies, providing a way for different blockchains to communicate. t3rn brings that complexity down and offers services and packages that facilitate interoperable execution securely.
 
-
-### Repository setup
-Follow the steps below if you're interested building and running the Circuit on your local machine:
-
-```bash
-git clone https://github.com/t3rn/t3rn
-git checkout origin/development
-git submodule init
-git submodule update
-cargo build --release --features with-standalone-runtime
-cargo run --bin circuit-collator --features with-standalone-runtime
-```
 #### Running benchmarks
 
 1. Build the circuit node with ```runtime-benchmarks``` feature:
 ```bash
-cargo build --release --features with-standalone-runtime,runtime-benchmarks
+cargo build --manifest-path ./node/parachain/Cargo.toml --release --features runtime-benchmarks
 ```
 2. Run the command to execute the benchmarks for desirable pallet:
 ```bash
