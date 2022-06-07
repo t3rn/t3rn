@@ -23,6 +23,8 @@ use codec::{Decode, Encode};
 use frame_support::traits::{ReservableCurrency, Time};
 use scale_info::TypeInfo;
 
+pub use t3rn_types::{abi, Bytes};
+
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "no_std")]
@@ -32,11 +34,14 @@ use sp_runtime::{
     MultiSignature,
 };
 
+pub use gateway_inbound_protocol::GatewayInboundProtocol;
+pub use orml_traits;
+pub use t3rn_sdk_primitives as sdk_primitives;
+
 use sp_std::{convert::TryFrom, prelude::*, vec};
 #[cfg(feature = "std")]
 use std::fmt::Debug;
 
-pub mod abi;
 pub mod account_manager;
 pub mod bridges;
 pub mod circuit;
@@ -54,9 +59,6 @@ pub mod transfers;
 pub mod volatile;
 pub mod xdns;
 pub mod xtx;
-
-pub use gateway_inbound_protocol::GatewayInboundProtocol;
-pub use orml_traits;
 
 pub type ChainId = [u8; 4];
 
@@ -260,10 +262,6 @@ pub trait EscrowTrait<T: frame_system::Config> {
     type Currency: ReservableCurrency<T::AccountId>;
     type Time: Time;
 }
-
-// When to use this over `abi::Bytes`, that comes from `sp-core` and has encode etc shimmed already.
-// only issue using that might be that it probably has the length prefixed so leaving this here for now.
-pub type Bytes = Vec<u8>;
 
 /// Outbound Step that specifies expected transmission medium for relayers connecting with that gateway.
 /// Request message format that derivative of could be compatible with JSON-RPC API

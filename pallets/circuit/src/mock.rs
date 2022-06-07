@@ -495,6 +495,7 @@ impl Config for Test {
     type MultiCurrency = ORMLTokens;
     type PalletId = CircuitPalletId;
     type SelfGatewayId = SelfGatewayId;
+    type SignalQueueDepth = ConstU32<5>;
     type WeightInfo = ();
     type Xdns = XDNS;
     type XtxTimeoutCheckInterval = ConstU64<10>;

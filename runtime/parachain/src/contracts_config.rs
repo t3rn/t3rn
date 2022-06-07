@@ -3,7 +3,7 @@ use crate::{
     accounts_config::EscrowAccount, AccountManager, Call, Circuit, ContractsRegistry, Event,
     RandomnessCollectiveFlip, Runtime, Timestamp,
 };
-use frame_support::parameter_types;
+use frame_support::{pallet_prelude::ConstU32, parameter_types};
 use pallet_3vm_contracts::weights::WeightInfo;
 
 // Unit = the base number of indivisible units for balances
@@ -44,6 +44,7 @@ parameter_types! {
     pub const MaxCodeSize: u32 = 2 * 1024;
     pub const DepositPerItem: Balance = deposit(1, 0);
     pub const DepositPerByte: Balance = deposit(0, 1);
+    pub SignalBounceThreshold: u32 = 5;
 }
 
 impl pallet_3vm_contracts::Config for Runtime {
@@ -72,6 +73,7 @@ impl pallet_3vm_contracts::Config for Runtime {
     type OnLocalTrigger = Circuit;
     type Randomness = RandomnessCollectiveFlip;
     type Schedule = Schedule;
+    type SignalBounceThreshold = ConstU32<5>;
     type Time = Timestamp;
     type WeightInfo = pallet_3vm_contracts::weights::SubstrateWeight<Self>;
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;

@@ -64,6 +64,7 @@ impl pallet_circuit::Config for Runtime {
     type MultiCurrency = ORMLTokens;
     type PalletId = CircuitPalletId;
     type SelfGatewayId = SelfGatewayId;
+    type SignalQueueDepth = ConstU32<64>;
     type WeightInfo = ();
     type Xdns = XDNS;
     type XtxTimeoutCheckInterval = ConstU32<50>;

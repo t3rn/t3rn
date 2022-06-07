@@ -16,7 +16,15 @@
 // limitations under the License.
 
 //! Test utilities
-use crate::{mock::*, state::*};
+use crate::{
+    mock::*,
+    sdk_primitives::{
+        signal::ExecutionSignal,
+        xc::{Chain, Operation},
+    },
+    state::*,
+    SignalKind,
+};
 use codec::{Decode, Encode};
 use frame_support::{assert_ok, traits::Currency};
 use frame_system::{EventRecord, Phase};
@@ -24,7 +32,11 @@ use sp_io::TestExternalities;
 use sp_runtime::AccountId32;
 use sp_std::prelude::*;
 use t3rn_primitives::{
-    abi::*, circuit::OnLocalTrigger, side_effect::*, volatile::LocalState, xtx::XtxId,
+    abi::*,
+    circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
+    side_effect::*,
+    volatile::LocalState,
+    xtx::XtxId,
 };
 use t3rn_protocol::side_effects::test_utils::*;
 
@@ -1838,4 +1850,123 @@ fn load_local_state_can_generate_and_read_state() {
         assert_eq!(res.local_state, LocalState::new());
         assert_eq!(res.steps_cnt, (0, 0));
     });
+}
+
+#[test]
+fn sdk_basic_success() {
+    let origin = Origin::signed(ALICE);
+    let mut ext = TestExternalities::new_empty();
+
+    ext.execute_with(|| {
+        let _ = Balances::deposit_creating(&ALICE, 50);
+
+        let res = setup_fresh_state(&origin);
+
+        // then it sets up some side effects
+        let trigger = LocalTrigger::new(
+            DJANGO,
+            vec![Chain::<_, _, [u8; 32]>::Polkadot(Operation::Transfer {
+                caller: ALICE,
+                to: CHARLIE,
+                amount: 50,
+            })
+            .encode()],
+            Some(res.xtx_id),
+        );
+
+        // then it submits to circuit
+        assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
+            &origin,
+            trigger.clone()
+        ));
+
+        System::set_block_number(10);
+
+        // submits a signal
+        let signal = ExecutionSignal::new(&res.xtx_id, Some(res.steps_cnt.0), SignalKind::Complete);
+        assert_ok!(Circuit::on_signal(&origin, signal.clone()));
+
+        // validate the state
+        check_queue(QueueValidator::Elements(vec![(ALICE, signal)].into()));
+
+        // async process the signal
+        <Circuit as frame_support::traits::OnInitialize<u64>>::on_initialize(100);
+        System::set_block_number(100);
+
+        // no signal left
+        check_queue(QueueValidator::Length(0));
+    });
+}
+
+#[test]
+fn sdk_can_send_multiple_states() {
+    let origin = Origin::signed(ALICE);
+    let mut ext = TestExternalities::new_empty();
+
+    ext.execute_with(|| {
+        let _ = Balances::deposit_creating(&ALICE, 50);
+
+        let res = setup_fresh_state(&origin);
+
+        assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
+            &origin,
+            LocalTrigger::new(
+                DJANGO,
+                vec![Chain::<_, _, [u8; 32]>::Polkadot(Operation::Transfer {
+                    caller: ALICE,
+                    to: CHARLIE,
+                    amount: 50,
+                })
+                .encode()],
+                Some(res.xtx_id.clone()),
+            )
+        ));
+
+        System::set_block_number(10);
+
+        assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
+            &origin,
+            LocalTrigger::new(
+                DJANGO,
+                vec![Chain::<_, _, [u8; 32]>::Kusama(Operation::Transfer {
+                    caller: ALICE,
+                    to: DJANGO,
+                    amount: 1,
+                })
+                .encode()],
+                Some(res.xtx_id),
+            )
+        ));
+    });
+}
+
+#[test]
+fn post_kill_signal_updates_states() {}
+
+enum QueueValidator {
+    Length(usize),
+    Elements(
+        Vec<(
+            AccountId32,
+            ExecutionSignal<<Test as frame_system::Config>::Hash>,
+        )>,
+    ),
+}
+fn check_queue(validation: QueueValidator) {
+    let q = Circuit::get_signal_queue();
+
+    match validation {
+        QueueValidator::Length(len) => {
+            assert_eq!(q.len(), len);
+        },
+        QueueValidator::Elements(elements) => {
+            assert_eq!(q.into_inner(), elements);
+        },
+    }
+}
+
+fn setup_fresh_state(origin: &Origin) -> LocalStateExecutionView<Test> {
+    let res = Circuit::load_local_state(&origin, None).unwrap();
+    assert_ne!(Some(res.xtx_id), None);
+    res
 }
