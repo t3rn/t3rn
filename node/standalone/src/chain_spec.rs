@@ -21,7 +21,14 @@ use t3rn_primitives::{
     abi::Type,
     bridges::{
         header_chain::InitializationData,
-        runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID, ROCOCO_CHAIN_ID},
+        runtime::{
+            BASILISK_CHAIN_ID, BITGREEN_CHAIN_ID, CATALYST_CHAIN_ID, DALI_CHAIN_ID,
+            DOLPHIN_CHAIN_ID, GENSHIRO_CHAIN_ID, KUSAMA_CHAIN_ID, PANGOLIN_CHAIN_ID,
+            POLKADOT_CHAIN_ID, ROBONOMICS_CHAIN_ID, ROCFINITY_CHAIN_ID, ROCOCO_CHAIN_ID,
+            ROCOCO_ENCOINTER_CHAIN_ID, ROCOCO_IMBUE_CHAIN_ID, ROCOCO_INTEGRITEE_CHAIN_ID,
+            ROCOCO_LITENTRY_CHAIN_ID, ROCOCO_NODLE_CHAIN_ID, ROCOCO_ORIGINTRAIL_CHAIN_ID,
+            ROCOCO_TURING_CHAIN_ID, ROCOCO_VIRTO_CHAIN_ID, SNOWBLINK_CHAIN_ID, SOONSOCIAL_CHAIN_ID,
+        },
     },
     side_effect::interface::SideEffectInterface,
     xdns::XdnsRecord,
@@ -66,15 +73,20 @@ pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId) {
 // 	)
 // }
 
-/// Helper function that fetches metadata from live networks and generates an XdnsRecord
+/// Helper function that fetches metadata from live networks and generates a XdnsRecord.
 fn fetch_xdns_record_from_rpc(
-    params: &ConnectionParams,
+    provider_host: &str,
     chain_id: t3rn_primitives::ChainId,
 ) -> Result<XdnsRecord<AccountId>, Error> {
     async_std::task::block_on(async move {
-        let client = create_rpc_client(params).await.unwrap();
+        let params = ConnectionParams {
+            host: String::from(provider_host),
+            port: 443,
+            secure: true,
+        };
 
-        let _runtime_version = client.clone().runtime_version().await.unwrap();
+        let client = create_rpc_client(&params).await.unwrap();
+
         let metadata = get_metadata(&client.clone()).await.unwrap();
 
         let gateway_sys_props = GatewaySysProps::try_from(&chain_id)
@@ -106,34 +118,104 @@ fn fetch_xdns_record_from_rpc(
     })
 }
 
-/// Helper function to generate Polkadot and Kusama XdnsRecords from RPC
+/// Helper function to generate XdnsRecords from RPC.
 fn seed_xdns_registry() -> Result<Vec<XdnsRecord<AccountId>>, Error> {
-    let polkadot_connection_params: ConnectionParams = ConnectionParams {
-        host: String::from("rpc.polkadot.io"),
-        port: 443,
-        secure: true,
-    };
-
-    let kusama_connection_params: ConnectionParams = ConnectionParams {
-        host: String::from("kusama-rpc.polkadot.io"),
-        port: 443,
-        secure: true,
-    };
-
-    let rococo_connection_params: ConnectionParams = ConnectionParams {
-        host: String::from("rococo-rpc.polkadot.io"),
-        port: 443,
-        secure: true,
-    };
-
-    let polkadot_xdns = fetch_xdns_record_from_rpc(&polkadot_connection_params, POLKADOT_CHAIN_ID)
+    // Relaychains
+    let polkadot_xdns = fetch_xdns_record_from_rpc("rpc.polkadot.io", POLKADOT_CHAIN_ID)
         .expect("fetching polkadot xdns info failed");
-    let kusama_xdns = fetch_xdns_record_from_rpc(&kusama_connection_params, KUSAMA_CHAIN_ID)
+    let kusama_xdns = fetch_xdns_record_from_rpc("kusama-rpc.polkadot.io", KUSAMA_CHAIN_ID)
         .expect("fetching kusama xdns info failed");
-    let _rococo_xdns = fetch_xdns_record_from_rpc(&rococo_connection_params, ROCOCO_CHAIN_ID)
+    let rococo_xdns = fetch_xdns_record_from_rpc("rococo-rpc.polkadot.io", ROCOCO_CHAIN_ID)
         .expect("fetching rococo xdns info failed");
 
-    Ok(vec![polkadot_xdns, kusama_xdns /*rococo_xdns*/])
+    // Rococo parachains...
+    let encointer_xdns =
+        fetch_xdns_record_from_rpc("rococo.api.encointer.org", ROCOCO_ENCOINTER_CHAIN_ID)
+            .expect("fetching encointer xdns info failed");
+    let basilisk_xdns =
+        fetch_xdns_record_from_rpc("rpc-01.basilisk-rococo.hydradx.io", BASILISK_CHAIN_ID)
+            .expect("fetching basilisk xdns info failed");
+    let bitgreen_xdns =
+        fetch_xdns_record_from_rpc("rococobitgreen.abhath-labs.com", BITGREEN_CHAIN_ID)
+            .expect("fetching bitgreen xdns info failed");
+    let catalyst_xdns =
+        fetch_xdns_record_from_rpc("fullnode.catalyst.cntrfg.com", CATALYST_CHAIN_ID)
+            .expect("fetching catalyst xdns info failed");
+    let dali_xdns = fetch_xdns_record_from_rpc("rpc.composablefinance.ninja", DALI_CHAIN_ID)
+        .expect("fetching dali xdns info failed");
+    let dolphin_xdns =
+        fetch_xdns_record_from_rpc("ws.rococo.dolphin.engineering", DOLPHIN_CHAIN_ID)
+            .expect("fetching dolphin xdns info failed");
+    let rocfinity_xdns = fetch_xdns_record_from_rpc("rpc.rococo.efinity.io", ROCFINITY_CHAIN_ID)
+        .expect("fetching rocfinity xdns info failed");
+    let genshiro_xdns = fetch_xdns_record_from_rpc(
+        "parachain-testnet.equilab.io/rococo/collator/node1/wss",
+        GENSHIRO_CHAIN_ID,
+    )
+    .expect("fetching genshiro xdns info failed");
+    let imbue_xdns = fetch_xdns_record_from_rpc("rococo.imbue.network", ROCOCO_IMBUE_CHAIN_ID)
+        .expect("fetching imbue xdns info failed");
+    let integritee_xdns =
+        fetch_xdns_record_from_rpc("rococo.api.integritee.network", ROCOCO_INTEGRITEE_CHAIN_ID)
+            .expect("fetching integritee xdns info failed");
+    let litentry_xdns = fetch_xdns_record_from_rpc(
+        "rpc.rococo-parachain-sg.litentry.io",
+        ROCOCO_LITENTRY_CHAIN_ID,
+    )
+    .expect("fetching litentry xdns info failed");
+    let nodle_xdns = fetch_xdns_record_from_rpc(
+        "node-6913072722034561024.lh.onfinality.io/ws?apikey=84d77e2e-3793-4785-8908-5096cffea77a",
+        ROCOCO_NODLE_CHAIN_ID,
+    )
+    .expect("fetching nodle xdns info failed");
+    let origintrail_xdns = fetch_xdns_record_from_rpc(
+        "parachain-testnet-rpc.origin-trail.network",
+        ROCOCO_ORIGINTRAIL_CHAIN_ID,
+    )
+    .expect("fetching origintrail xdns info failed");
+    let pangolin_xdns =
+        fetch_xdns_record_from_rpc("pangolin-parachain-rpc.darwinia.network", PANGOLIN_CHAIN_ID)
+            .expect("fetching pangolin xdns info failed");
+    let robonomics_xdns =
+        fetch_xdns_record_from_rpc("rococo.rpc.robonomics.network", ROBONOMICS_CHAIN_ID)
+            .expect("fetching robonomics xdns info failed");
+    let snowblink_xdns =
+        fetch_xdns_record_from_rpc("rococo-rpc.snowbridge.network", SNOWBLINK_CHAIN_ID)
+            .expect("fetching snowbridge xdns info failed");
+    let soonsocial_xdns =
+        fetch_xdns_record_from_rpc("rco-para.subsocial.network", SOONSOCIAL_CHAIN_ID)
+            .expect("fetching soonsocial xdns info failed");
+    let turing_xdns =
+        fetch_xdns_record_from_rpc("rpc.turing-staging.oak.tech", ROCOCO_TURING_CHAIN_ID)
+            .expect("fetching turing xdns info failed");
+    let virto_xdns = fetch_xdns_record_from_rpc("rococo.virtonetwork.xyz", ROCOCO_VIRTO_CHAIN_ID)
+        .expect("fetching virto xdns info failed");
+    // ...Rococo parachains
+
+    Ok(vec![
+        polkadot_xdns,
+        kusama_xdns,
+        rococo_xdns,
+        encointer_xdns,
+        basilisk_xdns,
+        bitgreen_xdns,
+        catalyst_xdns,
+        dali_xdns,
+        dolphin_xdns,
+        rocfinity_xdns,
+        genshiro_xdns,
+        imbue_xdns,
+        integritee_xdns,
+        litentry_xdns,
+        nodle_xdns,
+        origintrail_xdns,
+        pangolin_xdns,
+        robonomics_xdns,
+        snowblink_xdns,
+        soonsocial_xdns,
+        turing_xdns,
+        virto_xdns,
+    ])
 }
 
 fn standard_side_effects() -> Vec<SideEffectInterface> {
@@ -351,7 +433,6 @@ pub fn development_config() -> Result<ChainSpec, String> {
                 seed_xdns_registry().unwrap_or_default(),
                 standard_side_effects(),
                 vec![],
-                // FIXME
                 // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
                 //     .expect("initial gateways"),
                 true,
@@ -408,7 +489,6 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
                 seed_xdns_registry().unwrap_or_default(),
                 standard_side_effects(),
                 vec![],
-                // FIXME
                 // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
                 //     .expect("initial gateways"),
                 true,

@@ -120,6 +120,7 @@ pub mod pallet {
             gateway_genesis: GatewayGenesisConfig,
             gateway_sys_props: GatewaySysProps,
             allowed_side_effects: Vec<AllowedSideEffect>,
+            force: bool,
         ) -> DispatchResultWithPostInfo {
             <Self as Xdns<T>>::add_new_xdns_record(
                 origin,
@@ -132,6 +133,7 @@ pub mod pallet {
                 gateway_genesis,
                 gateway_sys_props,
                 allowed_side_effects,
+                force,
             )?;
             Ok(().into())
         }
@@ -321,11 +323,12 @@ pub mod pallet {
             gateway_genesis: GatewayGenesisConfig,
             gateway_sys_props: GatewaySysProps,
             allowed_side_effects: Vec<AllowedSideEffect>,
+            force: bool,
         ) -> DispatchResult {
             ensure_root(origin)?;
 
             // early exit if record already exists in storage
-            if <XDNSRegistry<T>>::contains_key(&gateway_id) {
+            if <XDNSRegistry<T>>::contains_key(&gateway_id) && !force {
                 return Err(Error::<T>::XdnsRecordAlreadyExists.into())
             }
 

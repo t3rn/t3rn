@@ -18,7 +18,14 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use crate::bridges::runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID, ROCOCO_CHAIN_ID};
+use crate::bridges::runtime::{
+    BASILISK_CHAIN_ID, BITGREEN_CHAIN_ID, CATALYST_CHAIN_ID, DALI_CHAIN_ID, DOLPHIN_CHAIN_ID,
+    GENSHIRO_CHAIN_ID, KUSAMA_CHAIN_ID, PANGOLIN_CHAIN_ID, POLKADOT_CHAIN_ID, ROBONOMICS_CHAIN_ID,
+    ROCFINITY_CHAIN_ID, ROCOCO_CHAIN_ID, ROCOCO_ENCOINTER_CHAIN_ID, ROCOCO_IMBUE_CHAIN_ID,
+    ROCOCO_INTEGRITEE_CHAIN_ID, ROCOCO_LITENTRY_CHAIN_ID, ROCOCO_NODLE_CHAIN_ID,
+    ROCOCO_ORIGINTRAIL_CHAIN_ID, ROCOCO_TURING_CHAIN_ID, ROCOCO_VIRTO_CHAIN_ID, SNOWBLINK_CHAIN_ID,
+    SOONSOCIAL_CHAIN_ID,
+};
 use codec::{Decode, Encode};
 use frame_support::traits::{ReservableCurrency, Time};
 use scale_info::TypeInfo;
@@ -144,7 +151,9 @@ impl TryFrom<&ChainId> for GatewaySysProps {
 
     /// Maps a chain id to its system properties.
     ///
-    /// Based on https://wiki.polkadot.network/docs/build-ss58-registry.
+    /// Source of truth for Substrate parachains system properties is the
+    /// corresponding chain's metadata tab in the polkadot apps browser ui:
+    /// https://polkadot.js.org/apps/?rpc=${PROVIDER}#/settings/metadata.
     fn try_from(chain_id: &ChainId) -> Result<Self, Self::Error> {
         match chain_id {
             b"circ" => Ok(GatewaySysProps {
@@ -170,6 +179,101 @@ impl TryFrom<&ChainId> for GatewaySysProps {
             &ROCOCO_CHAIN_ID => Ok(GatewaySysProps {
                 ss58_format: 42,
                 token_symbol: Encode::encode("ROC"),
+                token_decimals: 12,
+            }),
+            &ROCOCO_ENCOINTER_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 2,
+                token_symbol: Encode::encode("ROC"), // notatypo
+                token_decimals: 12,
+            }),
+            &BASILISK_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 10041,
+                token_symbol: Encode::encode("BSX"),
+                token_decimals: 12,
+            }),
+            &BITGREEN_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 42,
+                token_symbol: Encode::encode("BBB"),
+                token_decimals: 18,
+            }),
+            &CATALYST_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 36,
+                token_symbol: Encode::encode("NCFG"),
+                token_decimals: 18,
+            }),
+            &DALI_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 49,
+                token_symbol: Encode::encode("DALI"),
+                token_decimals: 12,
+            }),
+            &DOLPHIN_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 78,
+                token_symbol: Encode::encode("DOL"),
+                token_decimals: 18,
+            }),
+            &ROCFINITY_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 195,
+                token_symbol: Encode::encode("RFI"),
+                token_decimals: 18,
+            }),
+            &GENSHIRO_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 67,
+                token_symbol: Encode::encode("Token"),
+                token_decimals: 9,
+            }),
+            &ROCOCO_IMBUE_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 42,
+                token_symbol: Encode::encode("IMBU"),
+                token_decimals: 12,
+            }),
+            &ROCOCO_INTEGRITEE_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 13,
+                token_symbol: Encode::encode("TEER"),
+                token_decimals: 12,
+            }),
+            &ROCOCO_LITENTRY_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 131,
+                token_symbol: Encode::encode("LIT"),
+                token_decimals: 12,
+            }),
+            &ROCOCO_NODLE_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 37,
+                token_symbol: Encode::encode("notNODL"),
+                token_decimals: 11,
+            }),
+            &ROCOCO_ORIGINTRAIL_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 101,
+                token_symbol: Encode::encode("OTP"),
+                token_decimals: 12,
+            }),
+            &PANGOLIN_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 42,
+                token_symbol: Encode::encode("PRING"),
+                token_decimals: 18,
+            }),
+            &ROBONOMICS_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 32,
+                token_symbol: Encode::encode("XRT"),
+                token_decimals: 9,
+            }),
+            &SNOWBLINK_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 42,
+                token_symbol: Encode::encode("SNO"),
+                token_decimals: 12,
+            }),
+            &SOONSOCIAL_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 28,
+                token_symbol: Encode::encode("SUB"),
+                token_decimals: 10,
+            }),
+            &ROCOCO_TURING_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 51,
+                token_symbol: Encode::encode("TUR"),
+                token_decimals: 10,
+            }),
+            &ROCOCO_VIRTO_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 42,
+                token_symbol: Encode::encode("Unit"),
                 token_decimals: 12,
             }),
             _ => Err("unknown chain id"),
