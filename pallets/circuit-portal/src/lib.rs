@@ -217,6 +217,7 @@ pub mod pallet {
                 gateway_genesis,
                 gateway_sys_props.clone(),
                 allowed_side_effects.clone(),
+                true, // force ~ overwrite existing XDNS record
             )?;
 
             let res = match (gateway_abi.hasher, gateway_abi.block_number_type_size) {

@@ -52,6 +52,7 @@ fn should_add_a_new_xdns_record_if_it_doesnt_exist() {
             Default::default(),
             Default::default(),
             vec![],
+            false
         ));
         assert_eq!(XDNSRegistry::<Test>::iter().count(), 1);
         assert!(XDNSRegistry::<Test>::get(b"test").is_some());
@@ -191,6 +192,7 @@ fn should_not_add_a_new_xdns_record_if_it_already_exists() {
                     Default::default(),
                     Default::default(),
                     vec![],
+                    false
                 ),
                 crate::pallet::Error::<Test>::XdnsRecordAlreadyExists
             );

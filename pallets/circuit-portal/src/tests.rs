@@ -27,7 +27,7 @@ use sp_version::{create_runtime_str, RuntimeVersion};
 
 use t3rn_primitives::{abi::GatewayABIConfig, xdns::Parachain, *};
 
-use crate::{mock::*, CurrentHeader, DefaultPolkadotLikeGateway};
+use crate::{mock::*, Config, CurrentHeader, DefaultPolkadotLikeGateway};
 pub fn new_test_ext() -> TestExternalities {
     let t = frame_system::GenesisConfig::default()
         .build_storage::<Test>()
@@ -158,6 +158,73 @@ fn test_register_parachain() {
         ));
     });
 }
+
+#[test]
+fn test_register_gateway_overwrites_xdns_records() {
+    let origin = Origin::root(); // only sudo access to register new gateways for now
+    let url = b"ws://localhost:9944".to_vec();
+    let gateway_id = [0; 4];
+    let gateway_abi: GatewayABIConfig = Default::default();
+
+    let gateway_vendor = GatewayVendor::Substrate;
+    let gateway_type = GatewayType::ProgrammableInternal(0);
+
+    let gateway_genesis = GatewayGenesisConfig {
+        modules_encoded: None,
+        genesis_hash: Default::default(),
+        extrinsics_version: 0u8,
+    };
+
+    let gateway_sys_props = GatewaySysProps {
+        ss58_format: 0,
+        token_symbol: Encode::encode(""),
+        token_decimals: 0,
+    };
+
+    let parachain = Some(Parachain {
+        relay_chain_id: [1, 3, 3, 7],
+        id: 2015,
+    });
+
+    let first_header: CurrentHeader<Test, DefaultPolkadotLikeGateway> = test_header(0);
+
+    let authorities = Some(vec![]);
+    let authority_set_id = None;
+    let allowed_side_effects = vec![];
+
+    let mut ext = TestExternalities::new_empty();
+    ext.execute_with(|| {
+        assert_ok!(<Test as Config>::Xdns::add_new_xdns_record(
+            origin.clone(),
+            url.clone(),
+            gateway_id.clone(),
+            parachain.clone(),
+            gateway_abi.clone(),
+            gateway_vendor.clone(),
+            gateway_type.clone(),
+            gateway_genesis.clone(),
+            gateway_sys_props.clone(),
+            allowed_side_effects.clone(),
+            false,
+        ));
+        assert_ok!(Portal::register_gateway(
+            origin,
+            url,
+            gateway_id,
+            parachain,
+            gateway_abi,
+            gateway_vendor,
+            gateway_type,
+            gateway_genesis,
+            gateway_sys_props,
+            first_header.encode(),
+            authorities,
+            authority_set_id,
+            allowed_side_effects,
+        ));
+    });
+}
+
 //
 // #[test]
 // fn test_register_gateway_with_u64_substrate_header() {
