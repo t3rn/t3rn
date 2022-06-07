@@ -1,0 +1,8 @@
+{
+  "label": "The Gateway",
+  "position": 2,
+  "link": {
+    "type": "generated-index",
+    "description": "The gateway is a core component of the t3rn circuit, enabling the interoperability provided by t3rn. The articles of this section will cover the different aspects of the gateway, explaining the functionality it enables and the cryptographic proofs it relies on to remain trustless and decentralized."
+  }
+}
