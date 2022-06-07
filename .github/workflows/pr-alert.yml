@@ -1,14 +1,20 @@
 name: Circuit PR Alerting
 
-on: pull_request
+on:
+  pull_request:
+    paths:
+      - '**/*.rs'
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
+      - .github/workflows/circuit.yml
 
 jobs:
   alert:
     runs-on: ubuntu-20.04
-    if: ! github.event.pull_request.draft
+    if: ${{ !github.event.pull_request.draft }}
     steps:
       - name: Await checks
-        uses: fountainhead/action-wait-for-check@v1
+        uses: fountainhead/action-wait-for-check
         id: wait-for-build-test
         with:
           token: ${{ secrets.GH_PAT }}
@@ -17,7 +23,7 @@ jobs:
           timeoutSeconds: 3600
 
       - name: Alert the team
-        if: steps.wait-for-build-test.outputs.conclusion == 'success' 
+        if: ${{ steps.wait-for-build-test.outputs.conclusion == 'success' }}
         uses: appleboy/telegram-action@v0.1.1
         with:
           to: ${{ secrets.TELEGRAM_TO }}
