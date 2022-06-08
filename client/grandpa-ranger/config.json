@@ -1,20 +1,96 @@
 {
-    "rangeSize": 5,
-    "circuit": {
-        "rpc": "ws://127.0.0.1::9944"
+  "rangeSize": 5,
+  "circuit": {
+    "rpc": "ws://127.0.0.1::9944"
+  },
+  "relaychains": [
+    {
+      "name": "Rococo",
+      "id": "roco",
+      "rpc": "wss://rococo-rpc.polkadot.io",
+      "type": "substrate"
+    }
+  ],
+  "parachains": [
+    {
+      "name": "Encointer on Rococo",
+      "id": "renc",
+      "rpc": "wss://rococo.api.encointer.org",
+      "type": "substrate",
+      "parachainId": 1003,
+      "relaychainId": "roco"
     },
-    "relaychains": [{
-        "name": "Rococo",
-        "id": "roco",
-        "rpc": "wss://rococo-rpc.polkadot.io",
-        "type": "substrate"
-    }],
-    "parachains": [{
-        "name": "Basilisk",
-        "id": "basi",
-        "rpc": "wss://rpc-01.basilisk-rococo.hydradx.io",
-        "type": "substrate",
-        "parachainId": 2090,
-        "relaychainId": "roco"
-    }]
+    {
+      "name": "Basilisk",
+      "id": "basi",
+      "rpc": "wss://rpc-01.basilisk-rococo.hydradx.io",
+      "type": "substrate",
+      "parachainId": 2090,
+      "relaychainId": "roco"
+    },
+    {
+      "name": "Catalyst",
+      "id": "cata",
+      "rpc": "wss://fullnode.catalyst.cntrfg.com",
+      "type": "substrate",
+      "parachainId": 2031,
+      "relaychainId": "roco"
+    },
+    {
+      "name": "Dali",
+      "id": "dali",
+      "rpc": "wss://rpc.composablefinance.ninja",
+      "type": "substrate",
+      "parachainId": 2087,
+      "relaychainId": "roco"
+    },
+    {
+      "name": "Dolphin",
+      "id": "dolp",
+      "rpc": "wss://ws.rococo.dolphin.engineering",
+      "type": "substrate",
+      "parachainId": 2084,
+      "relaychainId": "roco"
+    },
+    {
+      "name": "Genshiro",
+      "id": "gens",
+      "rpc": "wss://parachain-testnet.equilab.io/rococo/collator/node1/wss",
+      "type": "substrate",
+      "parachainId": 2024,
+      "relaychainId": "roco"
+    },
+    {
+      "name": "Rocfinity",
+      "id": "rocf",
+      "rpc": "wss://rpc.rococo.efinity.io",
+      "type": "substrate",
+      "parachainId": 2021,
+      "relaychainId": "roco"
+    },
+    {
+      "name": "Pangolin",
+      "id": "pang",
+      "rpc": "wss://pangolin-parachain-rpc.darwinia.network#/explorer",
+      "type": "substrate",
+      "parachainId": 2105,
+      "relaychainId": "roco"
+    },
+    {
+      "name": "Snowblink",
+      "id": "snwb",
+      "rpc": "rococo-rpc.snowbridge.network",
+      "type": "substrate",
+      "parachainId": 3016,
+      "relaychainId": "roco"
+    },
+    {
+      "name": "SoonSocial",
+      "id": "soon",
+      "rpc": "wss://rco-para.subsocial.network",
+      "type": "substrate",
+      "parachainId": 2100,
+      "relaychainId": "roco"
+    }
+  ]
 }

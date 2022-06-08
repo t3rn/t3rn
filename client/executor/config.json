@@ -1,11 +1,73 @@
 {
-    "circuit": {
-        "rpc": "ws://127.0.0.1::9944"
+  "circuit": {
+    "rpc": "ws://127.0.0.1::9944"
+  },
+  "gateways": [
+    {
+      "name": "Rococo",
+      "id": "roco",
+      "rpc": "wss://rococo-rpc.polkadot.io",
+      "type": "substrate"
     },
-    "gateways": [{
-        "name": "Rococo",
-        "id": "roco",
-        "rpc": "wss://rococo-rpc.polkadot.io",
-        "type": "substrate"
-    }]
+    {
+      "name": "Encointer",
+      "id": "renc",
+      "rpc": "wss://rococo.api.encointer.org",
+      "type": "substrate"
+    },
+    {
+      "name": "Basilisk",
+      "id": "basi",
+      "rpc": "wss://rpc-01.basilisk-rococo.hydradx.io",
+      "type": "substrate"
+    },
+    {
+      "name": "Catalyst",
+      "id": "cata",
+      "rpc": "wss://fullnode.catalyst.cntrfg.com",
+      "type": "substrate"
+    },
+    {
+      "name": "Dali",
+      "id": "dali",
+      "rpc": "wss://rpc.composablefinance.ninja",
+      "type": "substrate"
+    },
+    {
+      "name": "Dolphin",
+      "id": "dolp",
+      "rpc": "wss://ws.rococo.dolphin.engineering",
+      "type": "substrate"
+    },
+    {
+      "name": "Genshiro",
+      "id": "gens",
+      "rpc": "wss://parachain-testnet.equilab.io/rococo/collator/node1/wss",
+      "type": "substrate"
+    },
+    {
+      "name": "Rocfinity",
+      "id": "rocf",
+      "rpc": "wss://rpc.rococo.efinity.io",
+      "type": "substrate"
+    },
+    {
+      "name": "Pangolin",
+      "id": "pang",
+      "rpc": "wss://pangolin-parachain-rpc.darwinia.network#/explorer",
+      "type": "substrate"
+    },
+    {
+      "name": "Snowblink",
+      "id": "snwb",
+      "rpc": "rococo-rpc.snowbridge.network",
+      "type": "substrate"
+    },
+    {
+      "name": "SoonSocial",
+      "id": "soon",
+      "rpc": "wss://rco-para.subsocial.network",
+      "type": "substrate"
+    }
+  ]
 }
