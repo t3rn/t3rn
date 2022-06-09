@@ -3,14 +3,15 @@ pub use ethereum_types::{H256, H160, U256};
 pub use rlp::{RlpStream, Rlp, Encodable, Decodable, DecoderError};
 pub use keccak_hash::{keccak};
 use sp_std::convert::TryFrom;
+use frame_support::pallet_prelude::TypeInfo;
 // pub use ethers_core::types::{H256 as Hash, Signature, SignatureError};
-use codec::{Decode};
+use codec::{Encode, Decode};
 use sp_std::vec::Vec;
 use crate::Error;
 
 use crate::crypto::Signature;
 
-#[derive(Debug, Clone, Eq, PartialEq, Decode)]
+#[derive(Debug, Clone, Eq, PartialEq, Encode, Decode, TypeInfo)]
 pub struct Header {
     pub chain_id: u64,
     pub parent_hash: H256,
@@ -32,7 +33,7 @@ pub struct Header {
     pub nonce: [u8; 8],
 }
 
-#[derive(Debug)]
+#[derive(Debug, Encode, Decode, TypeInfo)]
 pub struct ValidatorSet {
     pub last_update: u64,
     pub validators: [H160; 21]
@@ -50,7 +51,7 @@ pub struct Proof {
 
 impl Header {
 
-    fn hash(&self) -> H256 {
+    pub fn hash(&self) -> H256 {
         let res = rlp::encode(self);
         // println!("Header Hash: {:?}", keccak(res.as_ref()));
         H256::from(keccak(res.as_ref()).as_fixed_bytes())
@@ -176,7 +177,7 @@ impl Encodable for Header {
 //     }
 // }
 
-#[derive(Debug, Clone, Decode, PartialEq, Eq)]
+#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 pub struct LogsBloom(pub [u8; 256]);
 
 impl Encodable for LogsBloom {
