@@ -1,6 +1,9 @@
 use crate::{
-    abi::ContractActionDesc, contract_metadata::{ContractMetadata, ContractType}, storage::RawAliveContractInfo,
-    transfers::EscrowedBalanceOf, ChainId, Compose, EscrowTrait,
+    abi::ContractActionDesc,
+    contract_metadata::{ContractMetadata, ContractType},
+    storage::RawAliveContractInfo,
+    transfers::EscrowedBalanceOf,
+    ChainId, Compose, EscrowTrait,
 };
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
@@ -126,7 +129,7 @@ pub trait KindValidator {
 }
 
 impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode> KindValidator
-for RegistryContract<Hash, AccountId, BalanceOf, BlockNumber>
+    for RegistryContract<Hash, AccountId, BalanceOf, BlockNumber>
 {
     fn can_instantiate(&self) -> bool {
         match self.meta.get_contract_type() {

@@ -59,8 +59,8 @@ impl SourceLanguage {
 #[cfg(feature = "std")]
 impl Serialize for SourceLanguage {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
+    where
+        S: Serializer,
     {
         serializer.serialize_str(&self.to_string())
     }
@@ -109,8 +109,8 @@ impl Display for SourceCompiler {
 #[cfg(feature = "std")]
 impl Serialize for SourceCompiler {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
+    where
+        S: Serializer,
     {
         serializer.serialize_str(&self.to_string())
     }
