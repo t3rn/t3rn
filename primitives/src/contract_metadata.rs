@@ -59,8 +59,8 @@ impl SourceLanguage {
 #[cfg(feature = "std")]
 impl Serialize for SourceLanguage {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+        where
+            S: Serializer,
     {
         serializer.serialize_str(&self.to_string())
     }
@@ -109,8 +109,8 @@ impl Display for SourceCompiler {
 #[cfg(feature = "std")]
 impl Serialize for SourceCompiler {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+        where
+            S: Serializer,
     {
         serializer.serialize_str(&self.to_string())
     }
@@ -176,7 +176,7 @@ impl Default for ContractMetadata {
         ContractMetadata {
             metadata_version: b"0.0.1".encode(),
             name: b"Default contract".encode(),
-            contract_type: ContractType::System.encode(),
+            contract_type: ContractType::VolatileWasm.encode(),
             version: b"0.0.1".encode(),
             authors: vec![b"Some author".encode()],
             description: None,
@@ -212,6 +212,31 @@ impl ContractMetadata {
             repository,
             homepage,
             license,
+        }
+    }
+
+    pub fn system_contract() -> Self {
+        ContractMetadata {
+            metadata_version: b"0.0.1".encode(),
+            name: b"Default contract".encode(),
+            contract_type: ContractType::System.encode(),
+            version: b"0.0.1".encode(),
+            authors: vec![b"Some author".encode()],
+            description: None,
+            documentation: None,
+            repository: None,
+            homepage: None,
+            license: None,
+        }
+    }
+
+    pub fn get_contract_type(&self) -> ContractType {
+        match ContractType::decode(&mut self.contract_type.as_slice()) {
+            Ok(contract_type) => contract_type,
+            Err(_) => {
+                log::debug!("Failed to decode contract type, defaulting to System");
+                ContractType::System
+            },
         }
     }
 }
