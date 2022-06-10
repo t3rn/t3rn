@@ -45,6 +45,12 @@ impl MaxEncodedLen for ValidatorSet {
     }
 }
 
+impl MaxEncodedLen for Header {
+    fn max_encoded_len() -> usize {
+        1089 // 256 + 65 + 9 * 32 + 22 * 20 + 5 * 8 = (1089)
+    }
+}
+
 #[derive(Debug, Clone, Decode, PartialEq, Eq)]
 pub struct Topics(pub Vec<H256>);
 
