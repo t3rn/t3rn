@@ -77,10 +77,14 @@ pub mod pallet {
 		InvalidHeader,
 		/// Header Signer not validator
 		InvalidSigner,
+		/// Hash couldn't be decoded
+		InvalidHash,
 		/// Header can't be finalized by current ValidatorSet
 		ValidatorsUnauthorized,
 		/// Header already present in storage
-		DuplicateHeader
+		DuplicateHeader,
+		/// Header was not found in storage
+		HeaderNotFound,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -88,23 +92,6 @@ pub mod pallet {
 	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// An example dispatchable that takes a singles value as a parameter, writes the value to
-		/// storage and emits an event. This function must be dispatched by a signed extrinsic.
-		// #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-		// pub fn do_something(origin: OriginFor<T>, something: u32) -> DispatchResult {
-		// 	// Check that the extrinsic was signed and get the signer.
-		// 	// This function will return an error if the extrinsic is not signed.
-		// 	// https://docs.substrate.io/v3/runtime/origins
-		// 	let who = ensure_signed(origin)?;
-		//
-		// 	// Update storage.
-		// 	<Something<T>>::put(something);
-		//
-		// 	// Emit an event.
-		// 	Self::deposit_event(Event::SomethingStored(something, who));
-		// 	// Return a successful DispatchResultWithPostInfo
-		// 	Ok(())
-		// }
 
 		/// An example dispatchable that takes a singles value as a parameter, writes the value to
 		/// storage and emits an event. This function must be dispatched by a signed extrinsic.
@@ -193,30 +180,51 @@ pub mod pallet {
 			<Headers<T>>::insert(
 				&header.hash(),
 				&header,
-        	);
+			);
 
 			Self::deposit_event(Event::HeaderSubmitted(header.hash().into()));
 
 			Ok(())
 		}
 
-		// /// An example dispatchable that may throw a custom error.
-		// #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1,1))]
-		// pub fn cause_error(origin: OriginFor<T>) -> DispatchResult {
-		// 	let _who = ensure_signed(origin)?;
-		//
-		// 	// Read a value from storage.
-		// 	match <Something<T>>::get() {
-		// 		// Return an error if the value has not been set.
-		// 		None => return Err(Error::<T>::NoneValue.into()),
-		// 		Some(old) => {
-		// 			// Increment the value read from storage; will error in the event of overflow.
-		// 			let new = old.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
-		// 			// Update the value in storage with the incremented result.
-		// 			<Something<T>>::put(new);
-		// 			Ok(())
-		// 		},
-		// 	}
-		// }
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		pub fn submit_header_range(
+			origin: OriginFor<T>,
+			encoded_headers_reversed: Vec<Vec<u8>>,
+			anchor_header_hash: Vec<u8>, // in preparation of LVL3, all parameters should be passed as Vec<u8>. This will allow routing of the FinalityVerifiers through the same pallet
+		) -> DispatchResult {
+			info!("here");
+
+			let anchor_hash: H256 = match Decode::decode(&mut &*anchor_header_hash) {
+				Ok(res) => res,
+				Err(_) => return Err(Error::<T>::InvalidHash.into())
+			};
+
+			let mut anchor = match <Headers<T>>::try_get(anchor_hash) {
+				Ok(res) => res,
+				Err(_) => return Err(Error::<T>::HeaderNotFound.into())
+			};
+
+			// ToDo: this design allows header to be overwritten. While the consensus checks should ensure only valid headers are added, it feels a bit wrong, that there is no range limit in place
+			// ToDo - 2: this design ensures only parent headers are added, but it doesn't throw an error if they are incorrect.
+			for encoded_header in encoded_headers_reversed {
+				let decoded: Header = match Decode::decode(&mut &*encoded_header) {
+					Ok(res) => res,
+					Err(_) => return Err(Error::<T>::InvalidEncoding.into())
+				};
+
+				if decoded.hash() == anchor.parent_hash {
+					<Headers<T>>::insert(
+						&decoded.hash(),
+						decoded,
+					);
+				} else {
+					info!("Not valid!");
+					break;
+				}
+			}
+
+			Ok(())
+		}
 	}
 }
