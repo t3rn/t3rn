@@ -46,7 +46,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn validators)]
 	pub type Validators<T> = StorageValue<_, ValidatorSet>;
-	//
+
 	#[pallet::storage]
 	#[pallet::getter(fn headers)]
 	pub type Headers<T> = StorageMap<
@@ -63,18 +63,24 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		/// Event documentation should end with an array that provides descriptive names for event
 		/// parameters. [something, who]
-		SomethingStored(u32, T::AccountId),
+		HeaderSubmitted([u8; 32]),
 	}
 
 	// Errors inform users that something went wrong.
 	#[pallet::error]
 	pub enum Error<T> {
+		/// The pallet has not been initialized
+		NotInitialized,
 		/// Unable to decode the submitted header
 		InvalidEncoding,
 		/// Invalid header signature detected
 		InvalidHeader,
 		/// Header Signer not validator
 		InvalidSigner,
+		/// Header can't be finalized by current ValidatorSet
+		ValidatorsUnauthorized,
+		/// Header already present in storage
+		DuplicateHeader
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -130,7 +136,68 @@ pub mod pallet {
         	);
 
 			Ok(())
+		}
 
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		pub fn submit_header (
+			origin: OriginFor<T>,
+			encoded_header: Vec<u8>
+		) -> DispatchResult {
+			let header: Header = match Decode::decode(&mut &*encoded_header) {
+				Ok(header) => header,
+				Err(_) => return Err(Error::<T>::InvalidEncoding.into())
+			};
+			// __________________________________________
+			// |	Begin: Header Validity Guards		 |
+			// __________________________________________
+
+			// Check: Signature in header is valid
+			if let Err(None) = header.signature_valid() {
+				return Err(Error::<T>::InvalidHeader.into())
+			}
+
+			// Check (Impl): pallet is initialized
+			let validators = Validators::<T>::get()
+				.ok_or_else(|| <Error<T>>::NotInitialized)?;
+
+			// Check: signer is validator
+			if let Err(None) = header.signer_valid(&validators) {
+				return Err(Error::<T>::InvalidSigner.into())
+			}
+
+			// Check: validators are authorized
+			if let Err(None) = header.validator_set_authorized(validators) {
+				return Err(Error::<T>::ValidatorsUnauthorized.into())
+			}
+
+			// ToDo Check: its the signers turn
+
+			// __________________________________________
+			// |	End: Header Validity Guards	         |
+			// |   Header is safe to use from here on	 |
+			// __________________________________________
+
+			// if header is epoch block, update ValidatorSet
+			if header.number % 200 == 0 {
+				<Validators<T>>::put(ValidatorSet {
+					last_update: header.number,
+					validators: header.validators.unwrap() // this is safe, as this is part of the signature
+				});
+			}
+
+			// write header to storage.
+			if let Ok(_) = <Headers<T>>::try_get(&header.hash()) {
+				return Err(Error::<T>::DuplicateHeader.into())
+			}
+
+			<Headers<T>>::insert(
+				&header.hash(),
+				&header,
+        	);
+
+			Self::deposit_event(Event::HeaderSubmitted(header.hash().into()));
+
+			Ok(())
 		}
 
 		// /// An example dispatchable that may throw a custom error.
