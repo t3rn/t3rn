@@ -132,30 +132,27 @@ impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode> Ki
     for RegistryContract<Hash, AccountId, BalanceOf, BlockNumber>
 {
     fn can_instantiate(&self) -> bool {
-        match self.meta.get_contract_type() {
-            ContractType::System => false,
-            _ => true,
-        }
+        !matches!(self.meta.get_contract_type(), ContractType::System)
     }
 
     fn can_generate_side_effects(&self) -> bool {
-        match self.meta.get_contract_type() {
-            ContractType::VanillaWasm | ContractType::VanillaEvm => false,
-            _ => true,
-        }
+        !matches!(
+            self.meta.get_contract_type(),
+            ContractType::VanillaWasm | ContractType::VanillaEvm
+        )
     }
 
     fn can_remunerate(&self) -> bool {
-        match self.meta.get_contract_type() {
-            ContractType::VanillaWasm | ContractType::VanillaEvm => false,
-            _ => true,
-        }
+        !matches!(
+            self.meta.get_contract_type(),
+            ContractType::VanillaWasm | ContractType::VanillaEvm
+        )
     }
 
     fn has_storage(&self) -> bool {
-        match self.meta.get_contract_type() {
-            ContractType::VanillaWasm | ContractType::VanillaEvm => true,
-            _ => false,
-        }
+        matches!(
+            self.meta.get_contract_type(),
+            ContractType::VanillaWasm | ContractType::VanillaEvm
+        )
     }
 }
