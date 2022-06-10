@@ -5,7 +5,7 @@ pub use keccak_hash::{keccak};
 use sp_std::convert::TryFrom;
 use frame_support::pallet_prelude::TypeInfo;
 // pub use ethers_core::types::{H256 as Hash, Signature, SignatureError};
-use codec::{Encode, Decode};
+use codec::{Encode, Decode, MaxEncodedLen};
 use sp_std::vec::Vec;
 use crate::Error;
 
@@ -37,6 +37,12 @@ pub struct Header {
 pub struct ValidatorSet {
     pub last_update: u64,
     pub validators: [H160; 21]
+}
+
+impl MaxEncodedLen for ValidatorSet {
+    fn max_encoded_len() -> usize {
+        428 // 20 * 21 + 8 bytes
+    }
 }
 
 #[derive(Debug, Clone, Decode, PartialEq, Eq)]

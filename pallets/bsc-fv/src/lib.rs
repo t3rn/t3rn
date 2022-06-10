@@ -23,7 +23,12 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 	use core::convert::TryInto;
-	use log;
+
+	#[cfg(not(test))]
+	use log::{info, warn};
+
+	#[cfg(test)]
+	use std::{println as info, println as warn};
 
 	use crate::types::{Header, ValidatorSet, H256};
 
@@ -40,11 +45,11 @@ pub mod pallet {
 
 	// // The pallet's runtime storage items.
 	// // https://docs.substrate.io/v3/runtime/storage
-	// #[pallet::storage]
-	// #[pallet::getter(fn validators)]
-	// // Learn more about declaring storage items:
-	// // https://docs.substrate.io/v3/runtime/storage#declaring-storage-items
-	// pub type Validators<T> = StorageValue<_, ValidatorSet>;
+	#[pallet::storage]
+	#[pallet::getter(fn validators)]
+	// Learn more about declaring storage items:
+	// https://docs.substrate.io/v3/runtime/storage#declaring-storage-items
+	pub type Validators<T> = StorageValue<_, ValidatorSet>;
 	//
 	// #[pallet::storage]
 	// #[pallet::getter(fn headers)]
@@ -114,23 +119,25 @@ pub mod pallet {
 				Err(_) => return Err(Error::<T>::InvalidEncoding.into())
 			};
 
-			log::info!("Header: {:?}", header);
+			info!("Header: {:?}", header);
+
+			info!("Hash: {:?}", header.hash());
 
 			// header is invalid. returning error
 			if let Err(None) = header.signature_valid() {
 				return Err(Error::<T>::InvalidHeader.into())
 			}
 
-			log::info!("Header valid!");
+			info!("Header valid!");
 			let validators = ValidatorSet {
 				last_update: header.number,
 				validators: header.validators.unwrap()
 			};
 
-			log::info!("Validators: {:?}", validators);
+			info!("Validators: {:?}", validators);
 
-			// // writes validators to storage
-			// <Validators<T>>::put(validators);
+			// writes validators to storage
+			<Validators<T>>::put(validators);
 			//
 			// <Headers<T>>::insert(
 			// 	header.hash(),

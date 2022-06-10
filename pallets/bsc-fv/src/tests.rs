@@ -1,4 +1,4 @@
-use crate::{mock::*, Error};
+use crate::{mock::*, Error, Validators};
 use frame_support::{assert_noop, assert_ok};
 use sp_std::vec;
 use sp_std::vec::Vec;
@@ -12,6 +12,15 @@ fn works_with_valid_header() {
 	new_test_ext().execute_with(|| {
 		// Dispatch a signed extrinsic.
 		assert_ok!(BinanceFv::init_bridge_instance(Origin::signed(1), VALID_EPOCH.to_vec()));
+
+		// checks validator writes
+		if let Some(val_set) = Validators::<Test>::get() {
+			assert_eq!(val_set.last_update, 18280400);
+			assert_eq!(val_set.validators.len(), 21);
+		} else {
+			assert!(false);
+		}
+
 	});
 }
 
@@ -22,9 +31,10 @@ fn fails_with_corrupt_header() {
 		match BinanceFv::init_bridge_instance(Origin::signed(1), CORRUPT_EPOCH.to_vec()) {
 			Ok(_) => assert!(false),
 			Err(err) => assert!(true) // WIP. Want to detect error type also
-
 				// assert_eq!(err, crate::Error::<T>::InvalidEncoding.into())
 		}
+
+
 	});
 }
 
