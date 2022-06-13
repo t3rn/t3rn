@@ -7,6 +7,45 @@ use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
 };
 
+pub(crate) fn last_event() -> Event {
+    System::events().pop().expect("Event expected").event
+}
+
+pub(crate) fn events() -> Vec<pallet_inflation::Event<Test>> {
+    System::events()
+        .into_iter()
+        .map(|r| r.event)
+        .filter_map(|e| {
+            if let Event::Inflation(inner) = e {
+                Some(inner)
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<_>>()
+}
+
+/// Assert input equal to the last event emitted
+#[macro_export]
+macro_rules! assert_last_event {
+    ($event:expr) => {
+        match &$event {
+            e => assert_eq!(*e, crate::mock::last_event()),
+        }
+    };
+}
+
+/// Compares the system events with passed in events
+/// Prints highlighted diff iff assert_eq fails
+#[macro_export]
+macro_rules! assert_eq_events {
+    ($events:expr) => {
+        match &$events {
+            e => similar_asserts::assert_eq!(*e, crate::mock::events()),
+        }
+    };
+}
+
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 type Balance = u64;
@@ -57,7 +96,7 @@ impl system::Config for Test {
 }
 
 parameter_types! {
-    pub const ExistentialDeposit: u128 = 1u128;
+    pub const ExistentialDeposit: u64 = 1u64;
     pub const MaxLocks: u32 = 50;
     pub const MaxReserves: u32 = 50;
 }
@@ -78,15 +117,14 @@ impl pallet_balances::Config for Test {
 
 parameter_types! {
     pub const TreasuryAccount: u32 = 1;
-    pub const DefaultBlocksPerRound: u32 = 1;
+    pub const MinBlocksPerRound: u32 = 5;
     pub const TokenCirculationAtGenesis: u32 = 100;
 }
 
 impl pallet_inflation::Config for Test {
-    type Balance = u32;
     type Currency = Balances;
-    type DefaultBlocksPerRound = DefaultBlocksPerRound;
     type Event = Event;
+    type MinBlocksPerRound = MinBlocksPerRound;
     type TokenCirculationAtGenesis = TokenCirculationAtGenesis;
     type TreasuryAccount = TreasuryAccount;
     type WeightInfo = ();
