@@ -27,6 +27,7 @@ sp-io                 = { git = "https://github.com/paritytech/substrate.git", b
 sp-runtime            = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19', default-features = false }
 sp-std                = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19', default-features = false }
 sp-version            = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19', default-features = false }
+log                   = { version = "0.4", default-features = false }
 
 #bridges
 finality-grandpa    = { version = "0.15", default-features = false }

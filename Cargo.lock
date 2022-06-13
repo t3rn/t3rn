@@ -12601,6 +12601,7 @@ dependencies = [
  "hash-db",
  "hex",
  "hex-literal 0.3.4",
+ "log",
  "num-traits",
  "orml-traits",
  "pallet-sudo",
