@@ -68,6 +68,18 @@ fn init_bridge_instance_fails_with_invalid_sig() {
 }
 
 #[test]
+fn init_bridge_instance_fails_non_epoch_block() {
+	new_test_ext().execute_with(|| {
+		// Dispatch a signed extrinsic.
+		match BinanceFv::init_bridge_instance(Origin::signed(1), BLOCK_201.to_vec()) {
+			Ok(_) => assert!(false),
+			Err(err) => assert!(true) // WIP. Want to detect error type also
+				// assert_eq!(err, crate::Error::<T>::InvalidEncoding.into())
+		}
+	});
+}
+
+#[test]
 fn submit_header_works_with_correct_header() {
 	new_test_ext().execute_with(|| {
 		// init pallet
@@ -175,10 +187,10 @@ fn submit_header_prevents_fails_with_invalid_sig() {
 fn submit_header_range_with_valid_data() {
 	new_test_ext().execute_with(|| {
 		// init pallet
-		BinanceFv::init_bridge_instance(Origin::signed(1), BLOCK_200.to_vec());
+		BinanceFv::init_bridge_instance(Origin::signed(1), BLOCK_205.to_vec());
 		// This checks validator_set_authorized
-		let header: Header = Decode::decode(&mut &*BLOCK_200.to_vec()).unwrap();
-		let mut range: Vec<Vec<u8>> = vec![BLOCK_201.to_vec(), BLOCK_202.to_vec(), BLOCK_203.to_vec(), BLOCK_204.to_vec(), BLOCK_205.to_vec()];
+		let header: Header = Decode::decode(&mut &*BLOCK_205.to_vec()).unwrap();
+		let mut range: Vec<Vec<u8>> = vec![BLOCK_200.to_vec(), BLOCK_201.to_vec(), BLOCK_202.to_vec(), BLOCK_203.to_vec(), BLOCK_204.to_vec()];
 
 		range.reverse();
 		match BinanceFv::submit_header_range(Origin::signed(1), range, header.hash().as_bytes().to_vec()) {
@@ -186,9 +198,7 @@ fn submit_header_range_with_valid_data() {
 			Err(err) => assert!(false) // check for correct error here
 		}
 
-		assert_eq!(Headers::
-
-				   ::iter().count(), 6);
+		assert_eq!(Headers::<Test>::iter().count(), 6);
 
 
 	});

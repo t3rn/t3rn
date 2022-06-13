@@ -51,7 +51,7 @@ pub mod pallet {
 	#[pallet::getter(fn headers)]
 	pub type Headers<T> = StorageMap<
         _,
-        Blake2_256,
+        Identity,
         H256,
         Header,
     >;
@@ -71,6 +71,8 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// The pallet has not been initialized
 		NotInitialized,
+		/// Non-Epoch block submitted, which is required to this operation
+		NonEpochBlock,
 		/// Unable to decode the submitted header
 		InvalidEncoding,
 		/// Invalid header signature detected
@@ -105,6 +107,10 @@ pub mod pallet {
 				Ok(header) => header,
 				Err(_) => return Err(Error::<T>::InvalidEncoding.into())
 			};
+
+			if header.number % 200 != 0 {
+				return Err(Error::<T>::NonEpochBlock.into())
+			}
 
 			// header is invalid. returning error
 			if let Err(None) = header.signature_valid() {
@@ -213,7 +219,11 @@ pub mod pallet {
 					Err(_) => return Err(Error::<T>::InvalidEncoding.into())
 				};
 
+				info!("Decoded: {:?}", decoded.hash());
+				info!("anchor: {:?}", anchor.parent_hash);
+
 				if decoded.hash() == anchor.parent_hash {
+					info!("writing");
 					<Headers<T>>::insert(
 						&decoded.hash(),
 						decoded,
