@@ -63,16 +63,38 @@ pub struct Proof {
 
 impl Header {
 
-    pub fn hash(&self) -> H256 {
+    pub fn consensus_hash(&self) -> H256 {
         let res = rlp::encode(self);
         // println!("Header Hash: {:?}", keccak(res.as_ref()));
         H256::from(keccak(res.as_ref()).as_fixed_bytes())
     }
 
+    pub fn hash(&self) -> H256 {
+        let mut s = RlpStream::new();
+        s.begin_list(15);
+        s.append(&self.parent_hash);
+        s.append(&self.sha3_uncles);
+        s.append(&self.miner);
+        s.append(&self.state_root);
+        s.append(&self.transactions_root);
+        s.append(&self.receipts_root);
+        s.append(&self.logs_bloom);
+        s.append(&self.difficulty);
+        s.append(&self.number);
+        s.append(&self.gas_limit);
+        s.append(&self.gas_used);
+        s.append(&self.timestamp);
+        s.append(&self.construct_extra_field(false));
+        s.append(&self.mix_hash);
+        s.append(&self.nonce.to_vec());
+        // let bla = s;
+        H256::from(keccak(s.as_raw()).as_fixed_bytes())
+    }
+
     /// Checks if the signed msg was the headers hash
     pub fn signature_valid(&self) -> Result<(), Option<&'static str>> {
         let sig = &Signature::try_from(self.signature.as_ref()).unwrap();
-        match sig.verify(self.hash(), self.miner) {
+        match sig.verify(self.consensus_hash(), self.miner) {
             Ok(_) => Ok(()),
             Err(_) => Err(None)
         }
@@ -97,13 +119,17 @@ impl Header {
         }
     }
 
-    fn construct_extra_field(&self) -> Vec<u8> {
+    fn construct_extra_field(&self, consensus: bool) -> Vec<u8> {
         let mut field: Vec<u8> = self.extra.to_vec();
 
         if &self.number % 200 == 0 {
             for validator in self.validators.unwrap() {
                 field.append(&mut validator.as_bytes().to_vec())
             }
+        }
+
+        if !consensus {
+            field.append(&mut self.signature.to_vec())
         }
 
         return field
@@ -128,7 +154,7 @@ impl Encodable for Header {
         s.append(&self.gas_limit);
         s.append(&self.gas_used);
         s.append(&self.timestamp);
-        s.append(&self.construct_extra_field());
+        s.append(&self.construct_extra_field(true));
         s.append(&self.mix_hash);
         s.append(&self.nonce.to_vec());
     }
@@ -277,7 +303,7 @@ mod tests {
     fn hash_header_correctly() {
         let header: Header = Decode::decode(&mut &*BLOCK_400.to_vec()).unwrap();
         let expected: [u8; 32] = [247,52,9,170,125,59,101,76,55,212,188,151,200,195,161,96,11,149,197,225,205,17,2,167,158,55,78,93,142,77,144,38];
-        assert_eq!(header.hash(), expected.into())
+        assert_eq!(header.consensus_hash(), expected.into())
     }
 
     #[test]

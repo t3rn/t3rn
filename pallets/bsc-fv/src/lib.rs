@@ -184,7 +184,7 @@ pub mod pallet {
 			}
 
 			<Headers<T>>::insert(
-				&header.hash(),
+				&header.hash(), // We use the "wrong" hash here (clique instead of PoSA), as this is used for everything except signature checks
 				&header,
 			);
 
@@ -199,7 +199,6 @@ pub mod pallet {
 			encoded_headers_reversed: Vec<Vec<u8>>,
 			anchor_header_hash: Vec<u8>, // in preparation of LVL3, all parameters should be passed as Vec<u8>. This will allow routing of the FinalityVerifiers through the same pallet
 		) -> DispatchResult {
-			info!("here");
 
 			let anchor_hash: H256 = match Decode::decode(&mut &*anchor_header_hash) {
 				Ok(res) => res,
@@ -219,21 +218,16 @@ pub mod pallet {
 					Err(_) => return Err(Error::<T>::InvalidEncoding.into())
 				};
 
-				info!("decoded: {:?}", decoded);
-
-				info!("Decoded: {:?}", decoded.hash());
-				info!("anchor: {:?}", anchor.parent_hash);
-
 				if decoded.hash() == anchor.parent_hash {
-					info!("writing");
+					// We can ignore updating the ValidatorSet here, as we're going backwards
 					<Headers<T>>::insert(
 						&decoded.hash(),
-						decoded,
+						&decoded,
 					);
 				} else {
-					info!("Not valid!");
 					break;
 				}
+				anchor = decoded;
 			}
 
 			Ok(())
