@@ -219,6 +219,8 @@ pub mod pallet {
 					Err(_) => return Err(Error::<T>::InvalidEncoding.into())
 				};
 
+				info!("decoded: {:?}", decoded);
+
 				info!("Decoded: {:?}", decoded.hash());
 				info!("anchor: {:?}", anchor.parent_hash);
 
