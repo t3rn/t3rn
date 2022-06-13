@@ -159,66 +159,66 @@ impl Encodable for Header {
         s.append(&self.nonce.to_vec());
     }
 }
-//
-// #[derive(Debug, Clone, Eq, PartialEq, Decode)]
-// pub struct Receipt {
-//     pub status: bool,
-//     pub cumulative_gas_used: U256,
-//     pub logs_bloom: LogsBloom,
-//     pub logs: Vec<Event>,
-// }
-//
-// impl Encodable for Receipt {
-//     // this contains all fields needed to reproduce the hash used for consensus. THIS IS NOT THE HASH RETURNED FROM RPC
-//     fn rlp_append(&self, s: &mut RlpStream) {
-//         s.begin_list(4);
-//         s.append(&self.status);
-//         s.append(&self.cumulative_gas_used);
-//         s.append(&self.logs_bloom);
-//         s.append_list::<Event, Event>(&self.logs);
-//     }
-// }
-//
-// impl Decodable for Receipt {
-//     fn decode(rlp: &Rlp) -> Result<Self, DecoderError> {
-//
-//         Ok(Receipt {
-//             status: rlp.val_at(0)?,
-//             cumulative_gas_used: rlp.val_at(1)?,
-//             logs_bloom: rlp.val_at(2)?,
-//             logs: rlp.list_at(3)?,
-//         })
-//     }
-// }
-//
-// #[derive(Debug, Clone, Eq, PartialEq, Decode)]
-// pub struct Event {
-//     pub address: H160,
-//     pub topics: Topics,
-//     pub data: Vec<u8>,
-// }
-//
-// impl Encodable for Event {
-//     // this contains all fields needed to reproduce the hash used for consensus. THIS IS NOT THE HASH RETURNED FROM RPC
-//     fn rlp_append(&self, s: &mut RlpStream) {
-//         s.begin_list(3);
-//         s.append(&self.address);
-//         s.append_list(&self.topics.0);
-//         s.append(&self.data);
-//     }
-// }
 
-//
-// impl Decodable for Event {
-//     fn decode(rlp: &Rlp) -> Result<Self, DecoderError> {
-//
-//         Ok(Event {
-//             address: rlp.val_at(0)?,
-//             topics: Topics(rlp.list_at(1)?),
-//             data: rlp.val_at(2)?,
-//         })
-//     }
-// }
+#[derive(Debug, Clone, Eq, PartialEq, Decode)]
+pub struct Receipt {
+    pub status: bool,
+    pub cumulative_gas_used: U256,
+    pub logs_bloom: LogsBloom,
+    pub logs: Vec<Event>,
+}
+
+impl Encodable for Receipt {
+    // this contains all fields needed to reproduce the hash used for consensus. THIS IS NOT THE HASH RETURNED FROM RPC
+    fn rlp_append(&self, s: &mut RlpStream) {
+        s.begin_list(4);
+        s.append(&self.status);
+        s.append(&self.cumulative_gas_used);
+        s.append(&self.logs_bloom);
+        s.append_list::<Event, Event>(&self.logs);
+    }
+}
+
+impl Decodable for Receipt {
+    fn decode(rlp: &Rlp) -> Result<Self, DecoderError> {
+
+        Ok(Receipt {
+            status: rlp.val_at(0)?,
+            cumulative_gas_used: rlp.val_at(1)?,
+            logs_bloom: rlp.val_at(2)?,
+            logs: rlp.list_at(3)?,
+        })
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Decode)]
+pub struct Event {
+    pub address: H160,
+    pub topics: Topics,
+    pub data: Vec<u8>,
+}
+
+impl Encodable for Event {
+    // this contains all fields needed to reproduce the hash used for consensus. THIS IS NOT THE HASH RETURNED FROM RPC
+    fn rlp_append(&self, s: &mut RlpStream) {
+        s.begin_list(3);
+        s.append(&self.address);
+        s.append_list(&self.topics.0);
+        s.append(&self.data);
+    }
+}
+
+
+impl Decodable for Event {
+    fn decode(rlp: &Rlp) -> Result<Self, DecoderError> {
+
+        Ok(Event {
+            address: rlp.val_at(0)?,
+            topics: Topics(rlp.list_at(1)?),
+            data: rlp.val_at(2)?,
+        })
+    }
+}
 
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 pub struct LogsBloom(pub [u8; 256]);
@@ -235,8 +235,13 @@ impl Decodable for LogsBloom {
         let res = rlp.decoder().decode_value(|bytes| Ok(bytes.to_vec()));
 
         match res {
-            Ok(val) => return Ok(LogsBloom::from(val)),
-            Err(err) => panic!("{:?}", err)
+            Ok(val) =>  {
+                match LogsBloom::try_from(val).into() {
+                    Ok(res) => Ok(res),
+                    Err(_) => Err(DecoderError::Custom("Invalid Bloom Length"))
+                }
+            },
+            Err(err) => Err(err)
         }
     }
 }
@@ -247,13 +252,14 @@ impl LogsBloom {
     }
 }
 
-impl From<Vec<u8>> for LogsBloom {
-    fn from(item: Vec<u8>) -> Self {
-        let bloom: Result<[u8; 256], _> = item.try_into();
+impl TryFrom<Vec<u8>> for LogsBloom {
+    type Error = ();
 
-        match bloom {
-            Ok(log) => return LogsBloom(log),
-            Err(error)=> panic!("{:?}", error)
+    fn try_from(item: Vec<u8>) -> Result<Self, Self::Error>{
+        let res: Result<[u8; 256], _> = item.try_into();
+        match res {
+            Ok(val) => Ok(LogsBloom(val)),
+            Err(_) => Err(())
         }
     }
 }
