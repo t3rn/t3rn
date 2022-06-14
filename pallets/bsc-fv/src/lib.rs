@@ -30,7 +30,7 @@ pub mod pallet {
 	#[cfg(test)]
 	use std::{println as info, println as warn};
 
-	use crate::types::{Header, ValidatorSet, H256};
+	use crate::types::{Header, ValidatorSet, H256, Receipt, Proof};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -87,6 +87,8 @@ pub mod pallet {
 		DuplicateHeader,
 		/// Header was not found in storage
 		HeaderNotFound,
+		/// The submitted inclusion proof does not verify the submitted receipt
+		InvalidInclusionProof,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -231,6 +233,39 @@ pub mod pallet {
 			}
 
 			Ok(())
+		}
+
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		pub fn check_inclusion(
+			origin: OriginFor<T>,
+			enc_receipt: Vec<u8>,
+			enc_proof: Vec<u8>,
+			enc_block_hash: Vec<u8>
+		) -> DispatchResult {
+			let block_hash: H256 = match Decode::decode(&mut &*enc_block_hash) {
+				Ok(res) => res,
+				Err(_) => return Err(Error::<T>::InvalidHash.into())
+			};
+
+			let receipt_root: H256 = match <Headers<T>>::try_get(block_hash) {
+				Ok(res) => res.receipts_root,
+				Err(_) => return Err(Error::<T>::HeaderNotFound.into())
+			};
+
+			let receipt: Receipt = match Decode::decode(&mut &*enc_receipt) {
+				Ok(res) => res,
+				Err(_) => return Err(Error::<T>::InvalidEncoding.into())
+			};
+
+			let proof: Proof = match Decode::decode(&mut &*enc_proof) {
+				Ok(res) => res,
+				Err(_) => return Err(Error::<T>::InvalidEncoding.into())
+			};
+
+			match receipt.in_block(receipt_root.as_fixed_bytes(), proof) {
+				Ok(_) => return Ok(()),
+				Err(_) => return Err(Error::<T>::InvalidInclusionProof.into())
+			}
 		}
 	}
 }

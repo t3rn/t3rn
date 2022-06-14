@@ -178,8 +178,8 @@ pub struct Receipt {
 }
 
 impl Receipt {
-
-    fn in_block(
+    /// Checks if the submitted inclusion proof is valid for &self and the passed root
+    pub fn in_block(
         &self,
         root: &[u8; 32],
         proof: Proof
