@@ -2,7 +2,7 @@ use frame_support::weights::Weight;
 use std::marker::PhantomData;
 
 pub trait WeightInfo {
-    fn update_round_on_initialize() -> Weight;
+    fn on_initialize() -> Weight;
     fn mint_for_round() -> Weight;
     fn claim_rewards() -> Weight;
     fn set_inflation() -> Weight;
@@ -14,7 +14,7 @@ pub struct InflationWeight<T>(PhantomData<T>);
 
 // TODO
 impl<T: frame_system::Config> WeightInfo for InflationWeight<T> {
-    fn update_round_on_initialize() -> Weight {
+    fn on_initialize() -> Weight {
         0_u64
     }
 
@@ -41,7 +41,7 @@ impl<T: frame_system::Config> WeightInfo for InflationWeight<T> {
 
 // TODO
 impl WeightInfo for () {
-    fn update_round_on_initialize() -> Weight {
+    fn on_initialize() -> Weight {
         0_u64
     }
 

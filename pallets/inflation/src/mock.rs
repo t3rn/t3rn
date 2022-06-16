@@ -1,14 +1,34 @@
-use crate as pallet_inflation;
+use crate::{
+    self as pallet_inflation,
+    inflation::{Range, RewardsAllocationConfig},
+    mock::sp_api_hidden_includes_construct_runtime::hidden_include::traits::GenesisBuild,
+};
 use frame_support::parameter_types;
-use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
+    Perbill,
 };
 
 pub(crate) fn last_event() -> Event {
-    System::events().pop().expect("Event expected").event
+    System::events().pop().expect("event expected").event
+}
+
+pub(crate) fn last_n_events(n: usize) -> Vec<pallet_inflation::Event<Test>> {
+    let events = System::events();
+    let len = events.len();
+    events[len - n..]
+        .into_iter()
+        .map(|r| r.event.clone())
+        .filter_map(|e| {
+            if let Event::Inflation(inner) = e {
+                Some(inner)
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<_>>()
 }
 
 pub(crate) fn events() -> Vec<pallet_inflation::Event<Test>> {
@@ -35,13 +55,12 @@ macro_rules! assert_last_event {
     };
 }
 
-/// Compares the system events with passed in events
-/// Prints highlighted diff iff assert_eq fails
+/// Assert input equal to the last n events emitted
 #[macro_export]
-macro_rules! assert_eq_events {
-    ($events:expr) => {
-        match &$events {
-            e => similar_asserts::assert_eq!(*e, crate::mock::events()),
+macro_rules! assert_last_n_events {
+    ($n:expr, $event:expr) => {
+        match &$event {
+            e => similar_asserts::assert_eq!(*e, crate::mock::last_n_events($n)),
         }
     };
 }
@@ -68,9 +87,9 @@ parameter_types! {
     pub const SS58Prefix: u8 = 42;
 }
 
-impl system::Config for Test {
+impl frame_system::Config for Test {
     type AccountData = pallet_balances::AccountData<u64>;
-    type AccountId = u64;
+    type AccountId = u32;
     type BaseCallFilter = frame_support::traits::Everything;
     type BlockHashCount = BlockHashCount;
     type BlockLength = ();
@@ -116,8 +135,8 @@ impl pallet_balances::Config for Test {
 }
 
 parameter_types! {
-    pub const TreasuryAccount: u32 = 1;
-    pub const MinBlocksPerRound: u32 = 5;
+    pub const TreasuryAccount: u32 = 0;
+    pub const MinBlocksPerRound: u32 = 20;
     pub const TokenCirculationAtGenesis: u32 = 100;
 }
 
@@ -132,8 +151,27 @@ impl pallet_inflation::Config for Test {
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-    system::GenesisConfig::default()
+    let mut t = frame_system::GenesisConfig::default()
         .build_storage::<Test>()
-        .unwrap()
-        .into()
+        .expect("mock pallet-inflation genesis storage");
+
+    pallet_inflation::GenesisConfig::<Test> {
+        candidates: vec![],
+        annual_inflation: Range {
+            min: Perbill::from_parts(3),
+            ideal: Perbill::from_parts(4),
+            max: Perbill::from_parts(5),
+        },
+        rewards_alloc: RewardsAllocationConfig {
+            developer: Perbill::from_parts(500_000_000),
+            executor: Perbill::from_parts(500_000_000),
+        },
+        round_term: 20,
+    }
+    .assimilate_storage(&mut t)
+    .expect("mock pallet-inflation genesis storage assimilation");
+
+    let mut ext = sp_io::TestExternalities::new(t);
+    ext.execute_with(|| System::set_block_number(1));
+    ext
 }
