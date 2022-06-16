@@ -1160,6 +1160,7 @@ dependencies = [
  "log",
  "pallet-contracts-rpc",
  "pallet-transaction-payment-rpc",
+ "pallet-treasury 0.0.0",
  "pallet-xdns",
  "pallet-xdns-rpc",
  "parity-scale-codec 3.1.5",
@@ -1247,6 +1248,7 @@ dependencies = [
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-treasury 0.0.0",
  "pallet-utility",
  "pallet-wasm-contracts",
  "pallet-xcm",
@@ -1294,8 +1296,8 @@ dependencies = [
  "jsonrpc-runtime-client",
  "log",
  "pallet-contracts-rpc",
- "pallet-inflation",
  "pallet-transaction-payment-rpc",
+ "pallet-treasury 0.0.0",
  "pallet-xdns",
  "pallet-xdns-rpc",
  "sc-basic-authorship",
@@ -1363,6 +1365,7 @@ dependencies = [
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-treasury 0.0.0",
  "pallet-utility",
  "pallet-wasm-contracts",
  "pallet-xdns",
@@ -4698,7 +4701,7 @@ dependencies = [
  "pallet-tips",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
- "pallet-treasury",
+ "pallet-treasury 4.0.0-dev",
  "pallet-utility",
  "pallet-vesting",
  "pallet-xcm",
@@ -6377,7 +6380,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
- "pallet-treasury",
+ "pallet-treasury 4.0.0-dev",
  "parity-scale-codec 3.1.5",
  "scale-info 2.1.2",
  "sp-core",
@@ -6456,7 +6459,7 @@ dependencies = [
  "frame-system",
  "log",
  "pallet-bounties",
- "pallet-treasury",
+ "pallet-treasury 4.0.0-dev",
  "parity-scale-codec 3.1.5",
  "scale-info 2.1.2",
  "sp-core",
@@ -6837,27 +6840,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-inflation"
-version = "4.0.0-dev"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "log",
- "pallet-balances",
- "pallet-staking",
- "parity-scale-codec 3.1.5",
- "scale-info 2.1.2",
- "serde",
- "similar-asserts",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "substrate-fixed",
-]
-
-[[package]]
 name = "pallet-membership"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.19#174735ea1bb5fc4513519c45181d8df63d86f613"
@@ -7229,7 +7211,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
- "pallet-treasury",
+ "pallet-treasury 4.0.0-dev",
  "parity-scale-codec 3.1.5",
  "scale-info 2.1.2",
  "serde",
@@ -7282,6 +7264,27 @@ dependencies = [
  "parity-scale-codec 3.1.5",
  "sp-api",
  "sp-runtime",
+]
+
+[[package]]
+name = "pallet-treasury"
+version = "0.0.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-balances",
+ "pallet-staking",
+ "parity-scale-codec 3.1.5",
+ "scale-info 2.1.2",
+ "serde",
+ "similar-asserts",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "substrate-fixed",
 ]
 
 [[package]]
@@ -8769,7 +8772,7 @@ dependencies = [
  "pallet-tips",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
- "pallet-treasury",
+ "pallet-treasury 4.0.0-dev",
  "pallet-utility",
  "pallet-vesting",
  "pallet-xcm",
@@ -8829,7 +8832,7 @@ dependencies = [
  "pallet-staking",
  "pallet-timestamp",
  "pallet-transaction-payment",
- "pallet-treasury",
+ "pallet-treasury 4.0.0-dev",
  "pallet-vesting",
  "parity-scale-codec 3.1.5",
  "polkadot-primitives",
@@ -14093,7 +14096,7 @@ dependencies = [
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
- "pallet-treasury",
+ "pallet-treasury 4.0.0-dev",
  "pallet-utility",
  "pallet-vesting",
  "pallet-xcm",

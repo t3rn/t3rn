@@ -24,11 +24,7 @@ import type {
   Perbill,
 } from "@polkadot/types/interfaces/runtime";
 import type {
-<<<<<<< HEAD
   CircuitStandaloneRuntimeOriginCaller,
-=======
-  PalletInflationInflationRange,
->>>>>>> df7a772d... Add pallet-inflation types
   SpCoreVoid,
   SpFinalityGrandpaAppPublic,
   SpFinalityGrandpaEquivocationProof,
@@ -804,31 +800,6 @@ declare module "@polkadot/api-base/types/submittable" {
           keyOwnerProof: SpCoreVoid | null
         ) => SubmittableExtrinsic<ApiType>,
         [SpFinalityGrandpaEquivocationProof, SpCoreVoid]
-      >;
-      /** Generic tx */
-      [key: string]: SubmittableExtrinsicFunction<ApiType>;
-    };
-    inflation: {
-      claimRewards: AugmentedSubmittable<
-        () => SubmittableExtrinsic<ApiType>,
-        []
-      >;
-      mintForRound: AugmentedSubmittable<
-        (
-          amount: Compact<u128> | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Compact<u128>]
-      >;
-      /** Sets the annual inflation rate to derive per-round inflation */
-      setInflation: AugmentedSubmittable<
-        (
-          annualInflationSchedule:
-            | PalletInflationInflationRange
-            | { min?: any; ideal?: any; max?: any }
-            | string
-            | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [PalletInflationInflationRange]
       >;
       /** Generic tx */
       [key: string]: SubmittableExtrinsicFunction<ApiType>;

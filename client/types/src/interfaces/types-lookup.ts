@@ -534,7 +534,6 @@ declare module "@polkadot/types/lookup" {
     readonly cost: Option<u128>;
   }
 
-<<<<<<< HEAD
   /** @name T3rnPrimitivesSideEffectConfirmationOutcome (64) */
   export interface T3rnPrimitivesSideEffectConfirmationOutcome extends Enum {
     readonly isSuccess: boolean;
@@ -557,39 +556,6 @@ declare module "@polkadot/types/lookup" {
   }
 
   /** @name PalletWasmContractsEvent (68) */
-=======
-  /** @name PalletInflationEvent (58) */
-  export interface PalletInflationEvent extends Enum {
-    readonly isMintedTokensForRound: boolean;
-    readonly asMintedTokensForRound: ITuple<[AccountId32, u128]>;
-    readonly isMintedTokensExactly: boolean;
-    readonly asMintedTokensExactly: ITuple<[AccountId32, u128]>;
-    readonly isInflationSet: boolean;
-    readonly asInflationSet: {
-      readonly annualMin: Perbill;
-      readonly annualIdeal: Perbill;
-      readonly annualMax: Perbill;
-      readonly roundMin: Perbill;
-      readonly roundIdeal: Perbill;
-      readonly roundMax: Perbill;
-    } & Struct;
-    readonly isRoundStarted: boolean;
-    readonly asRoundStarted: {
-      readonly startingBlock: u32;
-      readonly round: u32;
-    } & Struct;
-    readonly isClaimedRewards: boolean;
-    readonly asClaimedRewards: ITuple<[AccountId32, u128]>;
-    readonly type:
-      | "MintedTokensForRound"
-      | "MintedTokensExactly"
-      | "InflationSet"
-      | "RoundStarted"
-      | "ClaimedRewards";
-  }
-
-  /** @name PalletWasmContractsEvent (60) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletWasmContractsEvent extends Enum {
     readonly isInstantiated: boolean;
     readonly asInstantiated: {
@@ -629,11 +595,7 @@ declare module "@polkadot/types/lookup" {
       | "ContractCodeUpdated";
   }
 
-<<<<<<< HEAD
   /** @name FrameSystemPhase (69) */
-=======
-  /** @name FrameSystemPhase (61) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface FrameSystemPhase extends Enum {
     readonly isApplyExtrinsic: boolean;
     readonly asApplyExtrinsic: u32;
@@ -642,21 +604,13 @@ declare module "@polkadot/types/lookup" {
     readonly type: "ApplyExtrinsic" | "Finalization" | "Initialization";
   }
 
-<<<<<<< HEAD
   /** @name FrameSystemLastRuntimeUpgradeInfo (72) */
-=======
-  /** @name FrameSystemLastRuntimeUpgradeInfo (65) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface FrameSystemLastRuntimeUpgradeInfo extends Struct {
     readonly specVersion: Compact<u32>;
     readonly specName: Text;
   }
 
-<<<<<<< HEAD
   /** @name FrameSystemCall (76) */
-=======
-  /** @name FrameSystemCall (69) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface FrameSystemCall extends Enum {
     readonly isFillBlock: boolean;
     readonly asFillBlock: {
@@ -707,22 +661,14 @@ declare module "@polkadot/types/lookup" {
       | "RemarkWithEvent";
   }
 
-<<<<<<< HEAD
   /** @name FrameSystemLimitsBlockWeights (80) */
-=======
-  /** @name FrameSystemLimitsBlockWeights (72) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface FrameSystemLimitsBlockWeights extends Struct {
     readonly baseBlock: u64;
     readonly maxBlock: u64;
     readonly perClass: FrameSupportWeightsPerDispatchClassWeightsPerClass;
   }
 
-<<<<<<< HEAD
   /** @name FrameSupportWeightsPerDispatchClassWeightsPerClass (81) */
-=======
-  /** @name FrameSupportWeightsPerDispatchClassWeightsPerClass (73) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface FrameSupportWeightsPerDispatchClassWeightsPerClass
     extends Struct {
     readonly normal: FrameSystemLimitsWeightsPerClass;
@@ -730,11 +676,7 @@ declare module "@polkadot/types/lookup" {
     readonly mandatory: FrameSystemLimitsWeightsPerClass;
   }
 
-<<<<<<< HEAD
   /** @name FrameSystemLimitsWeightsPerClass (82) */
-=======
-  /** @name FrameSystemLimitsWeightsPerClass (74) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface FrameSystemLimitsWeightsPerClass extends Struct {
     readonly baseExtrinsic: u64;
     readonly maxExtrinsic: Option<u64>;
@@ -742,41 +684,25 @@ declare module "@polkadot/types/lookup" {
     readonly reserved: Option<u64>;
   }
 
-<<<<<<< HEAD
   /** @name FrameSystemLimitsBlockLength (84) */
-=======
-  /** @name FrameSystemLimitsBlockLength (76) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface FrameSystemLimitsBlockLength extends Struct {
     readonly max: FrameSupportWeightsPerDispatchClassU32;
   }
 
-<<<<<<< HEAD
   /** @name FrameSupportWeightsPerDispatchClassU32 (85) */
-=======
-  /** @name FrameSupportWeightsPerDispatchClassU32 (77) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface FrameSupportWeightsPerDispatchClassU32 extends Struct {
     readonly normal: u32;
     readonly operational: u32;
     readonly mandatory: u32;
   }
 
-<<<<<<< HEAD
   /** @name FrameSupportWeightsRuntimeDbWeight (86) */
-=======
-  /** @name FrameSupportWeightsRuntimeDbWeight (78) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface FrameSupportWeightsRuntimeDbWeight extends Struct {
     readonly read: u64;
     readonly write: u64;
   }
 
-<<<<<<< HEAD
   /** @name SpVersionRuntimeVersion (87) */
-=======
-  /** @name SpVersionRuntimeVersion (79) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface SpVersionRuntimeVersion extends Struct {
     readonly specName: Text;
     readonly implName: Text;
@@ -788,11 +714,7 @@ declare module "@polkadot/types/lookup" {
     readonly stateVersion: u8;
   }
 
-<<<<<<< HEAD
   /** @name FrameSystemError (92) */
-=======
-  /** @name FrameSystemError (84) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface FrameSystemError extends Enum {
     readonly isInvalidSpecName: boolean;
     readonly isSpecVersionNeedsToIncrease: boolean;
@@ -809,11 +731,7 @@ declare module "@polkadot/types/lookup" {
       | "CallFiltered";
   }
 
-<<<<<<< HEAD
   /** @name PalletTimestampCall (94) */
-=======
-  /** @name PalletTimestampCall (86) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletTimestampCall extends Enum {
     readonly isSet: boolean;
     readonly asSet: {
@@ -822,7 +740,6 @@ declare module "@polkadot/types/lookup" {
     readonly type: "Set";
   }
 
-<<<<<<< HEAD
   /** @name SpConsensusAuraSr25519AppSr25519Public (97) */
   export interface SpConsensusAuraSr25519AppSr25519Public
     extends SpCoreSr25519Public {}
@@ -831,16 +748,6 @@ declare module "@polkadot/types/lookup" {
   export interface SpCoreSr25519Public extends U8aFixed {}
 
   /** @name PalletGrandpaStoredState (101) */
-=======
-  /** @name SpConsensusAuraSr25519AppSr25519Public (89) */
-  export interface SpConsensusAuraSr25519AppSr25519Public
-    extends SpCoreSr25519Public {}
-
-  /** @name SpCoreSr25519Public (90) */
-  export interface SpCoreSr25519Public extends U8aFixed {}
-
-  /** @name PalletGrandpaStoredState (93) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletGrandpaStoredState extends Enum {
     readonly isLive: boolean;
     readonly isPendingPause: boolean;
@@ -857,11 +764,7 @@ declare module "@polkadot/types/lookup" {
     readonly type: "Live" | "PendingPause" | "Paused" | "PendingResume";
   }
 
-<<<<<<< HEAD
   /** @name PalletGrandpaStoredPendingChange (102) */
-=======
-  /** @name PalletGrandpaStoredPendingChange (94) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletGrandpaStoredPendingChange extends Struct {
     readonly scheduledAt: u32;
     readonly delay: u32;
@@ -869,11 +772,7 @@ declare module "@polkadot/types/lookup" {
     readonly forced: Option<u32>;
   }
 
-<<<<<<< HEAD
   /** @name PalletGrandpaCall (105) */
-=======
-  /** @name PalletGrandpaCall (97) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletGrandpaCall extends Enum {
     readonly isReportEquivocation: boolean;
     readonly asReportEquivocation: {
@@ -896,21 +795,13 @@ declare module "@polkadot/types/lookup" {
       | "NoteStalled";
   }
 
-<<<<<<< HEAD
   /** @name SpFinalityGrandpaEquivocationProof (106) */
-=======
-  /** @name SpFinalityGrandpaEquivocationProof (98) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface SpFinalityGrandpaEquivocationProof extends Struct {
     readonly setId: u64;
     readonly equivocation: SpFinalityGrandpaEquivocation;
   }
 
-<<<<<<< HEAD
   /** @name SpFinalityGrandpaEquivocation (107) */
-=======
-  /** @name SpFinalityGrandpaEquivocation (99) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface SpFinalityGrandpaEquivocation extends Enum {
     readonly isPrevote: boolean;
     readonly asPrevote: FinalityGrandpaEquivocationPrevote;
@@ -919,11 +810,7 @@ declare module "@polkadot/types/lookup" {
     readonly type: "Prevote" | "Precommit";
   }
 
-<<<<<<< HEAD
   /** @name FinalityGrandpaEquivocationPrevote (108) */
-=======
-  /** @name FinalityGrandpaEquivocationPrevote (100) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface FinalityGrandpaEquivocationPrevote extends Struct {
     readonly roundNumber: u64;
     readonly identity: SpFinalityGrandpaAppPublic;
@@ -935,17 +822,12 @@ declare module "@polkadot/types/lookup" {
     >;
   }
 
-<<<<<<< HEAD
   /** @name FinalityGrandpaPrevote (109) */
-=======
-  /** @name FinalityGrandpaPrevote (101) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface FinalityGrandpaPrevote extends Struct {
     readonly targetHash: H256;
     readonly targetNumber: u32;
   }
 
-<<<<<<< HEAD
   /** @name SpFinalityGrandpaAppSignature (110) */
   export interface SpFinalityGrandpaAppSignature
     extends SpCoreEd25519Signature {}
@@ -954,16 +836,6 @@ declare module "@polkadot/types/lookup" {
   export interface SpCoreEd25519Signature extends U8aFixed {}
 
   /** @name FinalityGrandpaEquivocationPrecommit (114) */
-=======
-  /** @name SpFinalityGrandpaAppSignature (102) */
-  export interface SpFinalityGrandpaAppSignature
-    extends SpCoreEd25519Signature {}
-
-  /** @name SpCoreEd25519Signature (103) */
-  export interface SpCoreEd25519Signature extends U8aFixed {}
-
-  /** @name FinalityGrandpaEquivocationPrecommit (106) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface FinalityGrandpaEquivocationPrecommit extends Struct {
     readonly roundNumber: u64;
     readonly identity: SpFinalityGrandpaAppPublic;
@@ -975,27 +847,16 @@ declare module "@polkadot/types/lookup" {
     >;
   }
 
-<<<<<<< HEAD
   /** @name FinalityGrandpaPrecommit (115) */
-=======
-  /** @name FinalityGrandpaPrecommit (107) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface FinalityGrandpaPrecommit extends Struct {
     readonly targetHash: H256;
     readonly targetNumber: u32;
   }
 
-<<<<<<< HEAD
   /** @name SpCoreVoid (117) */
   export type SpCoreVoid = Null;
 
   /** @name PalletGrandpaError (118) */
-=======
-  /** @name SpCoreVoid (109) */
-  export type SpCoreVoid = Null;
-
-  /** @name PalletGrandpaError (110) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletGrandpaError extends Enum {
     readonly isPauseFailed: boolean;
     readonly isResumeFailed: boolean;
@@ -1014,22 +875,14 @@ declare module "@polkadot/types/lookup" {
       | "DuplicateOffenceReport";
   }
 
-<<<<<<< HEAD
   /** @name PalletBalancesBalanceLock (120) */
-=======
-  /** @name PalletBalancesBalanceLock (112) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletBalancesBalanceLock extends Struct {
     readonly id: U8aFixed;
     readonly amount: u128;
     readonly reasons: PalletBalancesReasons;
   }
 
-<<<<<<< HEAD
   /** @name PalletBalancesReasons (121) */
-=======
-  /** @name PalletBalancesReasons (113) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletBalancesReasons extends Enum {
     readonly isFee: boolean;
     readonly isMisc: boolean;
@@ -1037,32 +890,20 @@ declare module "@polkadot/types/lookup" {
     readonly type: "Fee" | "Misc" | "All";
   }
 
-<<<<<<< HEAD
   /** @name PalletBalancesReserveData (124) */
-=======
-  /** @name PalletBalancesReserveData (116) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletBalancesReserveData extends Struct {
     readonly id: U8aFixed;
     readonly amount: u128;
   }
 
-<<<<<<< HEAD
   /** @name PalletBalancesReleases (126) */
-=======
-  /** @name PalletBalancesReleases (118) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletBalancesReleases extends Enum {
     readonly isV100: boolean;
     readonly isV200: boolean;
     readonly type: "V100" | "V200";
   }
 
-<<<<<<< HEAD
   /** @name PalletBalancesCall (127) */
-=======
-  /** @name PalletBalancesCall (119) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletBalancesCall extends Enum {
     readonly isTransfer: boolean;
     readonly asTransfer: {
@@ -1105,11 +946,7 @@ declare module "@polkadot/types/lookup" {
       | "ForceUnreserve";
   }
 
-<<<<<<< HEAD
   /** @name PalletBalancesError (132) */
-=======
-  /** @name PalletBalancesError (124) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletBalancesError extends Enum {
     readonly isVestingBalance: boolean;
     readonly isLiquidityRestrictions: boolean;
@@ -1130,22 +967,14 @@ declare module "@polkadot/types/lookup" {
       | "TooManyReserves";
   }
 
-<<<<<<< HEAD
   /** @name PalletTransactionPaymentReleases (134) */
-=======
-  /** @name PalletTransactionPaymentReleases (126) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletTransactionPaymentReleases extends Enum {
     readonly isV1Ancient: boolean;
     readonly isV2: boolean;
     readonly type: "V1Ancient" | "V2";
   }
 
-<<<<<<< HEAD
   /** @name FrameSupportWeightsWeightToFeeCoefficient (136) */
-=======
-  /** @name FrameSupportWeightsWeightToFeeCoefficient (128) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface FrameSupportWeightsWeightToFeeCoefficient extends Struct {
     readonly coeffInteger: u128;
     readonly coeffFrac: Perbill;
@@ -1153,11 +982,7 @@ declare module "@polkadot/types/lookup" {
     readonly degree: u8;
   }
 
-<<<<<<< HEAD
   /** @name PalletSudoCall (137) */
-=======
-  /** @name PalletSudoCall (129) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletSudoCall extends Enum {
     readonly isSudo: boolean;
     readonly asSudo: {
@@ -1180,7 +1005,6 @@ declare module "@polkadot/types/lookup" {
     readonly type: "Sudo" | "SudoUncheckedWeight" | "SetKey" | "SudoAs";
   }
 
-<<<<<<< HEAD
   /** @name PalletUtilityCall (139) */
   export interface PalletUtilityCall extends Enum {
     readonly isBatch: boolean;
@@ -1222,9 +1046,6 @@ declare module "@polkadot/types/lookup" {
   }
 
   /** @name PalletXdnsCall (143) */
-=======
-  /** @name PalletXdnsCall (131) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletXdnsCall extends Enum {
     readonly isAddNewXdnsRecord: boolean;
     readonly asAddNewXdnsRecord: {
@@ -1266,7 +1087,6 @@ declare module "@polkadot/types/lookup" {
       | "PurgeXdnsRecord";
   }
 
-<<<<<<< HEAD
   /** @name T3rnPrimitivesXdnsParachain (145) */
   export interface T3rnPrimitivesXdnsParachain extends Struct {
     readonly relayChainId: U8aFixed;
@@ -1274,9 +1094,6 @@ declare module "@polkadot/types/lookup" {
   }
 
   /** @name T3rnPrimitivesAbiGatewayABIConfig (146) */
-=======
-  /** @name T3rnPrimitivesAbiGatewayABIConfig (132) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface T3rnPrimitivesAbiGatewayABIConfig extends Struct {
     readonly blockNumberTypeSize: u16;
     readonly hashSize: u16;
@@ -1288,22 +1105,14 @@ declare module "@polkadot/types/lookup" {
     readonly structs: Vec<T3rnPrimitivesAbiStructDecl>;
   }
 
-<<<<<<< HEAD
   /** @name T3rnPrimitivesAbiHasherAlgo (147) */
-=======
-  /** @name T3rnPrimitivesAbiHasherAlgo (133) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface T3rnPrimitivesAbiHasherAlgo extends Enum {
     readonly isBlake2: boolean;
     readonly isKeccak256: boolean;
     readonly type: "Blake2" | "Keccak256";
   }
 
-<<<<<<< HEAD
   /** @name T3rnPrimitivesAbiCryptoAlgo (148) */
-=======
-  /** @name T3rnPrimitivesAbiCryptoAlgo (134) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface T3rnPrimitivesAbiCryptoAlgo extends Enum {
     readonly isEd25519: boolean;
     readonly isSr25519: boolean;
@@ -1311,22 +1120,14 @@ declare module "@polkadot/types/lookup" {
     readonly type: "Ed25519" | "Sr25519" | "Ecdsa";
   }
 
-<<<<<<< HEAD
   /** @name T3rnPrimitivesAbiStructDecl (150) */
-=======
-  /** @name T3rnPrimitivesAbiStructDecl (136) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface T3rnPrimitivesAbiStructDecl extends Struct {
     readonly name: T3rnPrimitivesAbiType;
     readonly fields: Vec<T3rnPrimitivesAbiParameter>;
     readonly offsets: Vec<u16>;
   }
 
-<<<<<<< HEAD
   /** @name T3rnPrimitivesAbiType (151) */
-=======
-  /** @name T3rnPrimitivesAbiType (137) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface T3rnPrimitivesAbiType extends Enum {
     readonly isAddress: boolean;
     readonly asAddress: u16;
@@ -1385,11 +1186,7 @@ declare module "@polkadot/types/lookup" {
       | "Crypto";
   }
 
-<<<<<<< HEAD
   /** @name T3rnPrimitivesAbiParameter (153) */
-=======
-  /** @name T3rnPrimitivesAbiParameter (139) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface T3rnPrimitivesAbiParameter extends Struct {
     readonly name: Option<Bytes>;
     readonly ty: T3rnPrimitivesAbiType;
@@ -1397,22 +1194,14 @@ declare module "@polkadot/types/lookup" {
     readonly indexed: Option<bool>;
   }
 
-<<<<<<< HEAD
   /** @name T3rnPrimitivesGatewayGenesisConfig (156) */
-=======
-  /** @name T3rnPrimitivesGatewayGenesisConfig (142) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface T3rnPrimitivesGatewayGenesisConfig extends Struct {
     readonly modulesEncoded: Option<Bytes>;
     readonly extrinsicsVersion: u8;
     readonly genesisHash: Bytes;
   }
 
-<<<<<<< HEAD
   /** @name PalletMultiFinalityVerifierCall (158) */
-=======
-  /** @name PalletMultiFinalityVerifierCall (144) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletMultiFinalityVerifierCall extends Enum {
     readonly isSubmitFinalityProof: boolean;
     readonly asSubmitFinalityProof: {
@@ -1481,7 +1270,6 @@ declare module "@polkadot/types/lookup" {
       | "SetOperational";
   }
 
-<<<<<<< HEAD
   /** @name SpRuntimeBlakeTwo256 (160) */
   export type SpRuntimeBlakeTwo256 = Null;
 
@@ -1489,15 +1277,6 @@ declare module "@polkadot/types/lookup" {
   export type SpRuntimeKeccak256 = Null;
 
   /** @name PalletContractsRegistryCall (174) */
-=======
-  /** @name SpRuntimeBlakeTwo256 (146) */
-  export type SpRuntimeBlakeTwo256 = Null;
-
-  /** @name SpRuntimeKeccak256 (152) */
-  export type SpRuntimeKeccak256 = Null;
-
-  /** @name PalletContractsRegistryCall (160) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletContractsRegistryCall extends Enum {
     readonly isAddNewContract: boolean;
     readonly asAddNewContract: {
@@ -1512,11 +1291,7 @@ declare module "@polkadot/types/lookup" {
     readonly type: "AddNewContract" | "Purge";
   }
 
-<<<<<<< HEAD
   /** @name T3rnPrimitivesContractsRegistryRegistryContract (175) */
-=======
-  /** @name T3rnPrimitivesContractsRegistryRegistryContract (161) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface T3rnPrimitivesContractsRegistryRegistryContract
     extends Struct {
     readonly codeTxt: Bytes;
@@ -1529,22 +1304,14 @@ declare module "@polkadot/types/lookup" {
     readonly meta: T3rnPrimitivesContractMetadata;
   }
 
-<<<<<<< HEAD
   /** @name T3rnPrimitivesAbiContractActionDesc (177) */
-=======
-  /** @name T3rnPrimitivesAbiContractActionDesc (163) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface T3rnPrimitivesAbiContractActionDesc extends Struct {
     readonly actionId: H256;
     readonly targetId: Option<U8aFixed>;
     readonly to: Option<AccountId32>;
   }
 
-<<<<<<< HEAD
   /** @name T3rnPrimitivesStorageRawAliveContractInfo (180) */
-=======
-  /** @name T3rnPrimitivesStorageRawAliveContractInfo (166) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface T3rnPrimitivesStorageRawAliveContractInfo extends Struct {
     readonly trieId: Bytes;
     readonly storageSize: u32;
@@ -1557,11 +1324,7 @@ declare module "@polkadot/types/lookup" {
     readonly reserved: Option<Null>;
   }
 
-<<<<<<< HEAD
   /** @name T3rnPrimitivesContractMetadata (182) */
-=======
-  /** @name T3rnPrimitivesContractMetadata (168) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface T3rnPrimitivesContractMetadata extends Struct {
     readonly metadataVersion: Bytes;
     readonly name: Bytes;
@@ -1574,11 +1337,7 @@ declare module "@polkadot/types/lookup" {
     readonly license: Option<Bytes>;
   }
 
-<<<<<<< HEAD
   /** @name PalletCircuitPortalCall (183) */
-=======
-  /** @name PalletCircuitPortalCall (169) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletCircuitPortalCall extends Enum {
     readonly isRegisterGateway: boolean;
     readonly asRegisterGateway: {
@@ -1607,11 +1366,7 @@ declare module "@polkadot/types/lookup" {
     readonly type: "RegisterGateway" | "UpdateGateway";
   }
 
-<<<<<<< HEAD
   /** @name PalletCircuitCall (188) */
-=======
-  /** @name PalletCircuitCall (174) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletCircuitCall extends Enum {
     readonly isOnLocalTrigger: boolean;
     readonly asOnLocalTrigger: {
@@ -1635,7 +1390,6 @@ declare module "@polkadot/types/lookup" {
       readonly xtxId: H256;
       readonly sideEffect: T3rnPrimitivesSideEffect;
     } & Struct;
-<<<<<<< HEAD
     readonly isConfirmCommitRevertRelay: boolean;
     readonly asConfirmCommitRevertRelay: {
       readonly xtxId: H256;
@@ -1644,8 +1398,6 @@ declare module "@polkadot/types/lookup" {
       readonly inclusionProof: Option<Vec<Bytes>>;
       readonly blockHash: Option<Bytes>;
     } & Struct;
-=======
->>>>>>> df7a772d... Add pallet-inflation types
     readonly isConfirmSideEffect: boolean;
     readonly asConfirmSideEffect: {
       readonly xtxId: H256;
@@ -1661,39 +1413,11 @@ declare module "@polkadot/types/lookup" {
       | "OnExtrinsicTrigger"
       | "BondInsuranceDeposit"
       | "ExecuteSideEffectsViaCircuit"
-<<<<<<< HEAD
       | "ConfirmCommitRevertRelay"
       | "ConfirmSideEffect";
   }
 
   /** @name PalletWasmContractsCall (190) */
-=======
-      | "ConfirmSideEffect";
-  }
-
-  /** @name PalletInflationCall (176) */
-  export interface PalletInflationCall extends Enum {
-    readonly isMintForRound: boolean;
-    readonly asMintForRound: {
-      readonly amount: Compact<u128>;
-    } & Struct;
-    readonly isClaimRewards: boolean;
-    readonly isSetInflation: boolean;
-    readonly asSetInflation: {
-      readonly annualInflationSchedule: PalletInflationInflationRange;
-    } & Struct;
-    readonly type: "MintForRound" | "ClaimRewards" | "SetInflation";
-  }
-
-  /** @name PalletInflationInflationRange (177) */
-  export interface PalletInflationInflationRange extends Struct {
-    readonly min: Perbill;
-    readonly ideal: Perbill;
-    readonly max: Perbill;
-  }
-
-  /** @name PalletWasmContractsCall (178) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletWasmContractsCall extends Enum {
     readonly isCall: boolean;
     readonly asCall: {
@@ -1747,17 +1471,12 @@ declare module "@polkadot/types/lookup" {
       | "RemoveCode";
   }
 
-<<<<<<< HEAD
   /** @name PalletSudoError (192) */
-=======
-  /** @name PalletSudoError (180) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletSudoError extends Enum {
     readonly isRequireSudo: boolean;
     readonly type: "RequireSudo";
   }
 
-<<<<<<< HEAD
   /** @name PalletUtilityError (193) */
   export interface PalletUtilityError extends Enum {
     readonly isTooManyCalls: boolean;
@@ -1765,30 +1484,19 @@ declare module "@polkadot/types/lookup" {
   }
 
   /** @name OrmlTokensBalanceLock (196) */
-=======
-  /** @name OrmlTokensBalanceLock (183) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface OrmlTokensBalanceLock extends Struct {
     readonly id: U8aFixed;
     readonly amount: u128;
   }
 
-<<<<<<< HEAD
   /** @name OrmlTokensAccountData (198) */
-=======
-  /** @name OrmlTokensAccountData (185) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface OrmlTokensAccountData extends Struct {
     readonly free: u128;
     readonly reserved: u128;
     readonly frozen: u128;
   }
 
-<<<<<<< HEAD
   /** @name OrmlTokensModuleError (199) */
-=======
-  /** @name OrmlTokensModuleError (186) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface OrmlTokensModuleError extends Enum {
     readonly isBalanceTooLow: boolean;
     readonly isAmountIntoBalanceFailed: boolean;
@@ -1807,11 +1515,7 @@ declare module "@polkadot/types/lookup" {
       | "DeadAccount";
   }
 
-<<<<<<< HEAD
   /** @name T3rnPrimitivesSideEffectInterfaceSideEffectInterface (200) */
-=======
-  /** @name T3rnPrimitivesSideEffectInterfaceSideEffectInterface (187) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface T3rnPrimitivesSideEffectInterfaceSideEffectInterface
     extends Struct {
     readonly id: U8aFixed;
@@ -1824,11 +1528,7 @@ declare module "@polkadot/types/lookup" {
     readonly revertEvents: Vec<Bytes>;
   }
 
-<<<<<<< HEAD
   /** @name T3rnPrimitivesXdnsXdnsRecord (201) */
-=======
-  /** @name T3rnPrimitivesXdnsXdnsRecord (188) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface T3rnPrimitivesXdnsXdnsRecord extends Struct {
     readonly url: Bytes;
     readonly gatewayAbi: T3rnPrimitivesAbiGatewayABIConfig;
@@ -1843,11 +1543,7 @@ declare module "@polkadot/types/lookup" {
     readonly allowedSideEffects: Vec<U8aFixed>;
   }
 
-<<<<<<< HEAD
   /** @name PalletXdnsError (202) */
-=======
-  /** @name PalletXdnsError (189) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletXdnsError extends Enum {
     readonly isXdnsRecordAlreadyExists: boolean;
     readonly isUnknownXdnsRecord: boolean;
@@ -1860,21 +1556,13 @@ declare module "@polkadot/types/lookup" {
       | "SideEffectInterfaceAlreadyExists";
   }
 
-<<<<<<< HEAD
   /** @name T3rnPrimitivesBridgesHeaderChainAuthoritySet (206) */
-=======
-  /** @name T3rnPrimitivesBridgesHeaderChainAuthoritySet (193) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface T3rnPrimitivesBridgesHeaderChainAuthoritySet extends Struct {
     readonly authorities: Vec<ITuple<[SpFinalityGrandpaAppPublic, u64]>>;
     readonly setId: u64;
   }
 
-<<<<<<< HEAD
   /** @name PalletMultiFinalityVerifierError (207) */
-=======
-  /** @name PalletMultiFinalityVerifierError (194) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletMultiFinalityVerifierError extends Enum {
     readonly isInvalidJustification: boolean;
     readonly isInvalidAuthoritySet: boolean;
@@ -1903,22 +1591,14 @@ declare module "@polkadot/types/lookup" {
       | "NoParachainEntryFound";
   }
 
-<<<<<<< HEAD
   /** @name PalletContractsRegistryError (212) */
-=======
-  /** @name PalletContractsRegistryError (199) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletContractsRegistryError extends Enum {
     readonly isContractAlreadyExists: boolean;
     readonly isUnknownContract: boolean;
     readonly type: "ContractAlreadyExists" | "UnknownContract";
   }
 
-<<<<<<< HEAD
   /** @name PalletCircuitPortalError (213) */
-=======
-  /** @name PalletCircuitPortalError (200) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletCircuitPortalError extends Enum {
     readonly isInvalidKey: boolean;
     readonly isIoScheduleNoEndingSemicolon: boolean;
@@ -1953,11 +1633,7 @@ declare module "@polkadot/types/lookup" {
       | "NoParachainEntryFound";
   }
 
-<<<<<<< HEAD
   /** @name PalletCircuitStateInsuranceDeposit (214) */
-=======
-  /** @name PalletCircuitStateInsuranceDeposit (201) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletCircuitStateInsuranceDeposit extends Struct {
     readonly insurance: u128;
     readonly reward: u128;
@@ -1967,11 +1643,7 @@ declare module "@polkadot/types/lookup" {
     readonly requestedAt: u32;
   }
 
-<<<<<<< HEAD
   /** @name PalletCircuitStateCircuitStatus (215) */
-=======
-  /** @name PalletCircuitStateCircuitStatus (202) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletCircuitStateCircuitStatus extends Enum {
     readonly isRequested: boolean;
     readonly isPendingInsurance: boolean;
@@ -1998,11 +1670,7 @@ declare module "@polkadot/types/lookup" {
       | "Reverted";
   }
 
-<<<<<<< HEAD
   /** @name PalletCircuitStateXExecSignal (217) */
-=======
-  /** @name PalletCircuitStateXExecSignal (204) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletCircuitStateXExecSignal extends Struct {
     readonly requester: AccountId32;
     readonly timeoutsAt: u32;
@@ -2012,26 +1680,15 @@ declare module "@polkadot/types/lookup" {
     readonly totalReward: Option<u128>;
   }
 
-<<<<<<< HEAD
   /** @name T3rnPrimitivesVolatileLocalState (220) */
-=======
-  /** @name T3rnPrimitivesVolatileLocalState (207) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface T3rnPrimitivesVolatileLocalState extends Struct {
     readonly state: BTreeMap<U8aFixed, Bytes>;
   }
 
-<<<<<<< HEAD
   /** @name FrameSupportPalletId (224) */
   export interface FrameSupportPalletId extends U8aFixed {}
 
   /** @name PalletCircuitError (225) */
-=======
-  /** @name FrameSupportPalletId (211) */
-  export interface FrameSupportPalletId extends U8aFixed {}
-
-  /** @name PalletCircuitError (212) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletCircuitError extends Enum {
     readonly isApplyTriggeredWithUnexpectedStatus: boolean;
     readonly isRequesterNotEnoughBalance: boolean;
@@ -2088,43 +1745,9 @@ declare module "@polkadot/types/lookup" {
       | "LocalSideEffectExecutionNotApplicable"
       | "UnsupportedRole"
       | "InvalidLocalTrigger";
-<<<<<<< HEAD
   }
 
   /** @name PalletWasmContractsWasmPrefabWasmModule (226) */
-=======
-  }
-
-  /** @name PalletInflationInflationInflationInfo (213) */
-  export interface PalletInflationInflationInflationInfo extends Struct {
-    readonly annual: PalletInflationInflationRange;
-    readonly perRound: PalletInflationInflationRange;
-  }
-
-  /** @name PalletInflationInflationRoundInfo (214) */
-  export interface PalletInflationInflationRoundInfo extends Struct {
-    readonly current: u32;
-    readonly firstBlock: u32;
-    readonly length: u32;
-  }
-
-  /** @name PalletInflationError (215) */
-  export interface PalletInflationError extends Enum {
-    readonly isInvalidInflationSchedule: boolean;
-    readonly isMintingFailed: boolean;
-    readonly isNotEnoughFunds: boolean;
-    readonly isNotCandidate: boolean;
-    readonly isNoWritingSameValue: boolean;
-    readonly type:
-      | "InvalidInflationSchedule"
-      | "MintingFailed"
-      | "NotEnoughFunds"
-      | "NotCandidate"
-      | "NoWritingSameValue";
-  }
-
-  /** @name PalletWasmContractsWasmPrefabWasmModule (216) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletWasmContractsWasmPrefabWasmModule extends Struct {
     readonly instructionWeightsVersion: Compact<u32>;
     readonly initial: Compact<u32>;
@@ -2132,22 +1755,14 @@ declare module "@polkadot/types/lookup" {
     readonly code: Bytes;
   }
 
-<<<<<<< HEAD
   /** @name PalletWasmContractsWasmOwnerInfo (227) */
-=======
-  /** @name PalletWasmContractsWasmOwnerInfo (217) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletWasmContractsWasmOwnerInfo extends Struct {
     readonly owner: AccountId32;
     readonly deposit: Compact<u128>;
     readonly refcount: Compact<u64>;
   }
 
-<<<<<<< HEAD
   /** @name PalletWasmContractsStorageRawContractInfo (228) */
-=======
-  /** @name PalletWasmContractsStorageRawContractInfo (218) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletWasmContractsStorageRawContractInfo extends Struct {
     readonly kind: PalletWasmContractsContractKind;
     readonly trieId: Bytes;
@@ -2155,11 +1770,7 @@ declare module "@polkadot/types/lookup" {
     readonly storageDeposit: u128;
   }
 
-<<<<<<< HEAD
   /** @name PalletWasmContractsContractKind (229) */
-=======
-  /** @name PalletWasmContractsContractKind (219) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletWasmContractsContractKind extends Enum {
     readonly isPallet: boolean;
     readonly isSystem: boolean;
@@ -2167,31 +1778,19 @@ declare module "@polkadot/types/lookup" {
     readonly type: "Pallet" | "System" | "Registry";
   }
 
-<<<<<<< HEAD
   /** @name PalletWasmContractsStorageDeletedContract (231) */
-=======
-  /** @name PalletWasmContractsStorageDeletedContract (221) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletWasmContractsStorageDeletedContract extends Struct {
     readonly trieId: Bytes;
   }
 
-<<<<<<< HEAD
   /** @name PalletWasmContractsSchedule (232) */
-=======
-  /** @name PalletWasmContractsSchedule (222) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletWasmContractsSchedule extends Struct {
     readonly limits: PalletWasmContractsScheduleLimits;
     readonly instructionWeights: PalletWasmContractsScheduleInstructionWeights;
     readonly hostFnWeights: PalletWasmContractsScheduleHostFnWeights;
   }
 
-<<<<<<< HEAD
   /** @name PalletWasmContractsScheduleLimits (233) */
-=======
-  /** @name PalletWasmContractsScheduleLimits (223) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletWasmContractsScheduleLimits extends Struct {
     readonly eventTopics: u32;
     readonly stackHeight: u32;
@@ -2206,11 +1805,7 @@ declare module "@polkadot/types/lookup" {
     readonly codeLen: u32;
   }
 
-<<<<<<< HEAD
   /** @name PalletWasmContractsScheduleInstructionWeights (234) */
-=======
-  /** @name PalletWasmContractsScheduleInstructionWeights (224) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletWasmContractsScheduleInstructionWeights
     extends Struct {
     readonly version: u32;
@@ -2267,11 +1862,7 @@ declare module "@polkadot/types/lookup" {
     readonly i64rotr: u32;
   }
 
-<<<<<<< HEAD
   /** @name PalletWasmContractsScheduleHostFnWeights (235) */
-=======
-  /** @name PalletWasmContractsScheduleHostFnWeights (225) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletWasmContractsScheduleHostFnWeights extends Struct {
     readonly caller: u64;
     readonly isContract: u64;
@@ -2326,11 +1917,7 @@ declare module "@polkadot/types/lookup" {
     readonly ecdsaRecover: u64;
   }
 
-<<<<<<< HEAD
   /** @name PalletWasmContractsError (236) */
-=======
-  /** @name PalletWasmContractsError (226) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface PalletWasmContractsError extends Enum {
     readonly isInvalidScheduleVersion: boolean;
     readonly isInvalidCallFlags: boolean;
@@ -2397,11 +1984,7 @@ declare module "@polkadot/types/lookup" {
       | "InvalidSideEffect";
   }
 
-<<<<<<< HEAD
   /** @name SpRuntimeMultiSignature (238) */
-=======
-  /** @name SpRuntimeMultiSignature (228) */
->>>>>>> df7a772d... Add pallet-inflation types
   export interface SpRuntimeMultiSignature extends Enum {
     readonly isEd25519: boolean;
     readonly asEd25519: SpCoreEd25519Signature;
@@ -2412,7 +1995,6 @@ declare module "@polkadot/types/lookup" {
     readonly type: "Ed25519" | "Sr25519" | "Ecdsa";
   }
 
-<<<<<<< HEAD
   /** @name SpCoreSr25519Signature (239) */
   export interface SpCoreSr25519Signature extends U8aFixed {}
 
@@ -2442,36 +2024,5 @@ declare module "@polkadot/types/lookup" {
     extends Compact<u128> {}
 
   /** @name CircuitStandaloneRuntimeRuntime (252) */
-=======
-  /** @name SpCoreSr25519Signature (229) */
-  export interface SpCoreSr25519Signature extends U8aFixed {}
-
-  /** @name SpCoreEcdsaSignature (230) */
-  export interface SpCoreEcdsaSignature extends U8aFixed {}
-
-  /** @name FrameSystemExtensionsCheckNonZeroSender (233) */
-  export type FrameSystemExtensionsCheckNonZeroSender = Null;
-
-  /** @name FrameSystemExtensionsCheckSpecVersion (234) */
-  export type FrameSystemExtensionsCheckSpecVersion = Null;
-
-  /** @name FrameSystemExtensionsCheckTxVersion (235) */
-  export type FrameSystemExtensionsCheckTxVersion = Null;
-
-  /** @name FrameSystemExtensionsCheckGenesis (236) */
-  export type FrameSystemExtensionsCheckGenesis = Null;
-
-  /** @name FrameSystemExtensionsCheckNonce (239) */
-  export interface FrameSystemExtensionsCheckNonce extends Compact<u32> {}
-
-  /** @name FrameSystemExtensionsCheckWeight (240) */
-  export type FrameSystemExtensionsCheckWeight = Null;
-
-  /** @name PalletTransactionPaymentChargeTransactionPayment (241) */
-  export interface PalletTransactionPaymentChargeTransactionPayment
-    extends Compact<u128> {}
-
-  /** @name CircuitStandaloneRuntimeRuntime (242) */
->>>>>>> df7a772d... Add pallet-inflation types
   export type CircuitStandaloneRuntimeRuntime = Null;
 } // declare module
