@@ -13,34 +13,37 @@ version     = "1.0.0-alpha.0"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-scale-info = { version = "2.0.1", default-features = false, features = ["derive"] }
-frame-support = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.19"}
-frame-system = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.19" }
-frame-benchmarking = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.19", optional = true }
-ethereum-types      = { version = "0.13.1", features = ["rlp", "codec"], default-features = false }
-codec               = { package = "parity-scale-codec", version = "3", features = [ "derive" ], default-features = false }
-rlp                 = { version = "0.5.1", default-features = false }
-keccak-hash         = { version = "0.5.1", default-features = false }
-eth_trie            = { git = "https://github.com/petscheit/eth-trie.rs", default-features = false }
-k256                = { version = "0.10.4", default-features = false, features = ["ecdsa"] }
-elliptic-curve = { version = "0.11.12", default-features = false }
-generic-array = { version = "0.14.5", default-features = false }
-sp-std = "4.0.0"
-log          = { version = "0.4.14", default-features = false }
+scale-info 					= { default-features = false, version = "2.0.1", features = ["derive"] }
+frame-support 				= { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.19"}
+frame-system 				= { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.19" }
+frame-benchmarking 			= { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.19", optional = true }
+sp-std     					= { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
+codec               		= { default-features = false, package = "parity-scale-codec", version = "3", features = [ "derive" ] }
+ethereum-types      		= { default-features = false, version = "0.13.1", features = ["rlp", "codec"] }
+rlp                 		= { default-features = false, version = "0.5.1" }
+keccak-hash         		= { default-features = false, version = "0.5.1" }
+eth_trie            		= { default-features = false, git = "https://github.com/petscheit/eth-trie.rs" }
+k256                		= { default-features = false, version = "0.10.4", features = ["ecdsa"] }
+elliptic-curve 				= { default-features = false, version = "0.11.12" }
+generic-array 				= { default-features = false, version = "0.14.5" }
+log          				= { default-features = false, version = "0.4.14" }
+t3rn-primitives				= { default-features = false, version = "1.0.0-alpha.0", path = "../../primitives" }
 
 [dev-dependencies]
-sp-core = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.19" }
-sp-io = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.19" }
-sp-runtime = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.19" }
+sp-core 					= { default-features = false,version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.19" }
+sp-io 						= { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.19" }
+sp-runtime 					= { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.19" }
 
 [features]
 default = ["std"]
 std = [
-	"codec/std",
 	"scale-info/std",
 	"frame-support/std",
 	"frame-system/std",
 	"frame-benchmarking/std",
+	"sp-std/std",
+	"codec/std",
+	"t3rn-primitives/std"
 ]
 
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]

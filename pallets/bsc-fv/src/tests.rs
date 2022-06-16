@@ -4,6 +4,7 @@ use sp_std::vec;
 use sp_std::vec::Vec;
 use codec::{Decode};
 use sp_runtime::DispatchError;
+use t3rn_primitives::bsc_finality_verifier::BinanceFV;
 
 // Headers for testing
 const BLOCK_195:[u8; 670] = [56,0,0,0,0,0,0,0,8,245,189,178,135,183,160,240,75,119,206,227,177,196,173,138,70,29,93,122,231,87,151,214,8,147,49,240,23,67,255,153,29,204,77,232,222,199,93,122,171,133,181,103,182,204,212,26,211,18,69,27,148,138,116,19,240,161,66,253,64,212,147,71,159,140,205,175,204,57,243,199,214,235,246,55,201,21,22,115,203,195,107,136,111,240,218,60,133,170,217,157,109,132,160,18,228,30,128,218,223,144,100,94,157,177,196,216,140,16,68,67,178,186,200,209,78,37,134,20,4,198,49,191,173,72,14,124,97,33,97,34,181,178,107,92,78,56,61,109,64,180,182,55,40,213,59,1,218,27,141,140,64,9,218,151,249,214,150,198,184,215,206,104,56,102,106,0,23,83,12,173,30,218,237,22,5,167,167,149,44,244,118,130,8,213,30,29,194,91,2,119,203,146,13,238,106,4,198,222,237,98,149,157,53,83,27,51,88,99,20,118,33,173,86,123,229,245,30,2,199,135,34,124,33,101,25,143,74,154,1,204,118,137,136,171,81,224,176,165,111,180,23,218,36,66,7,180,165,236,40,178,203,113,202,126,192,151,243,238,111,154,88,33,188,198,12,91,140,141,0,50,156,11,143,113,76,93,114,167,94,214,199,103,7,73,106,29,147,201,223,219,201,8,175,89,177,104,76,134,212,62,40,189,193,197,28,11,154,36,104,113,94,15,157,135,93,172,141,196,62,240,14,164,226,239,7,69,240,2,195,40,101,184,93,71,42,74,31,115,198,91,112,58,195,40,56,121,229,114,106,140,203,90,44,141,34,38,188,154,170,216,209,27,210,54,247,118,236,70,214,122,108,1,101,31,197,187,114,74,231,217,118,177,20,34,214,88,35,65,172,179,179,38,128,219,60,55,141,175,145,158,224,254,51,181,230,123,104,5,71,231,39,114,246,51,197,105,146,138,211,143,63,254,106,102,222,123,251,202,231,19,160,35,5,118,2,0,0,0,0,0,0,0,3,239,22,1,0,0,0,0,30,129,156,5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,132,93,54,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,195,3,150,98,0,0,0,0,217,131,1,1,10,132,103,101,116,104,137,103,111,49,46,49,54,46,49,53,133,108,105,110,117,120,0,0,195,22,123,223,0,113,2,4,171,47,146,134,24,75,20,143,224,95,58,179,68,247,199,198,102,145,133,205,244,47,171,48,16,67,155,225,14,21,102,23,76,179,122,116,58,252,224,105,205,244,53,151,218,113,124,121,119,137,0,228,211,20,129,167,144,238,236,184,99,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
@@ -34,7 +35,7 @@ const PROOF_997: [u8; 1878] = [24,209,4,249,1,49,160,23,191,207,50,147,157,184,1
 fn init_bridge_instance_works_with_valid_header() {
 	new_test_ext().execute_with(|| {
 		// Dispatch a signed extrinsic.
-		assert_ok!(BinanceFv::init_bridge_instance(Origin::signed(1), BLOCK_200.to_vec()));
+		assert_ok!(BinanceFv::init_bridge_instance(BLOCK_200.to_vec()));
 
 		// checks validator writes
 		if let Some(val_set) = Validators::<Test>::get() {
@@ -59,7 +60,7 @@ fn init_bridge_instance_works_with_valid_header() {
 fn init_bridge_instance_fails_with_corrupt_header() {
 	new_test_ext().execute_with(|| {
 		// Dispatch a signed extrinsic.
-		match BinanceFv::init_bridge_instance(Origin::signed(1), CORRUPT_HEADER.to_vec()) {
+		match BinanceFv::init_bridge_instance(CORRUPT_HEADER.to_vec()) {
 			Ok(_) => assert!(false),
 			Err(err) => assert!(true)
 				// assert_eq!(err, crate::Error::<T>::InvalidEncoding.into())
@@ -71,7 +72,7 @@ fn init_bridge_instance_fails_with_corrupt_header() {
 fn init_bridge_instance_fails_with_invalid_sig() {
 	new_test_ext().execute_with(|| {
 		// Dispatch a signed extrinsic.
-		match BinanceFv::init_bridge_instance(Origin::signed(1), INVALID_SIG.to_vec()) {
+		match BinanceFv::init_bridge_instance(INVALID_SIG.to_vec()) {
 			Ok(_) => assert!(false),
 			Err(err) => assert!(true) // WIP. Want to detect error type also
 				// assert_eq!(err, crate::Error::<T>::InvalidEncoding.into())
@@ -83,7 +84,7 @@ fn init_bridge_instance_fails_with_invalid_sig() {
 fn init_bridge_instance_fails_non_epoch_block() {
 	new_test_ext().execute_with(|| {
 		// Dispatch a signed extrinsic.
-		match BinanceFv::init_bridge_instance(Origin::signed(1), BLOCK_201.to_vec()) {
+		match BinanceFv::init_bridge_instance(BLOCK_201.to_vec()) {
 			Ok(_) => assert!(false),
 			Err(err) => assert!(true) // WIP. Want to detect error type also
 				// assert_eq!(err, crate::Error::<T>::InvalidEncoding.into())
@@ -95,7 +96,7 @@ fn init_bridge_instance_fails_non_epoch_block() {
 fn submit_header_works_with_correct_header() {
 	new_test_ext().execute_with(|| {
 		// init pallet
-		BinanceFv::init_bridge_instance(Origin::signed(1), BLOCK_200.to_vec());
+		BinanceFv::init_bridge_instance(BLOCK_200.to_vec());
 		let validator_set_old = Validators::<Test>::get().unwrap();
 
 		match BinanceFv::submit_header(Origin::signed(1), BLOCK_300.to_vec()) {
@@ -145,7 +146,7 @@ fn submit_header_works_with_correct_header() {
 fn submit_header_fails_on_out_of_range() {
 	new_test_ext().execute_with(|| {
 		// init pallet
-		BinanceFv::init_bridge_instance(Origin::signed(1), BLOCK_200.to_vec());
+		BinanceFv::init_bridge_instance(BLOCK_200.to_vec());
 
 		// this block can't be verified with the current ValidatorSet because its to far ahead
 		// This checks validator_set_authorized
@@ -160,7 +161,7 @@ fn submit_header_fails_on_out_of_range() {
 fn submit_header_fails_on_backwards_submission() {
 	new_test_ext().execute_with(|| {
 		// init pallet
-		BinanceFv::init_bridge_instance(Origin::signed(1), BLOCK_400.to_vec());
+		BinanceFv::init_bridge_instance(BLOCK_400.to_vec());
 		// This checks validator_set_authorized
 		match BinanceFv::submit_header(Origin::signed(1), BLOCK_200.to_vec()) {
 			Ok(()) => assert!(false),
@@ -173,7 +174,7 @@ fn submit_header_fails_on_backwards_submission() {
 fn submit_header_prevents_fails_with_corrupt_header() {
 	new_test_ext().execute_with(|| {
 		// init pallet
-		BinanceFv::init_bridge_instance(Origin::signed(1), BLOCK_400.to_vec());
+		BinanceFv::init_bridge_instance(BLOCK_400.to_vec());
 		let validator_set_old = Validators::<Test>::get().unwrap();
 		match BinanceFv::submit_header(Origin::signed(1), CORRUPT_HEADER.to_vec()) {
 			Ok(()) => assert!(false),
@@ -186,7 +187,7 @@ fn submit_header_prevents_fails_with_corrupt_header() {
 fn submit_header_prevents_fails_with_invalid_sig() {
 	new_test_ext().execute_with(|| {
 		// init pallet
-		BinanceFv::init_bridge_instance(Origin::signed(1), BLOCK_400.to_vec());
+		BinanceFv::init_bridge_instance(BLOCK_400.to_vec());
 		// This checks validator_set_authorized
 		match BinanceFv::submit_header(Origin::signed(1), INVALID_SIG.to_vec()) {
 			Ok(()) => assert!(false),
@@ -199,7 +200,7 @@ fn submit_header_prevents_fails_with_invalid_sig() {
 fn submit_header_range_with_valid_data() {
 	new_test_ext().execute_with(|| {
 		// init pallet
-		BinanceFv::init_bridge_instance(Origin::signed(1), BLOCK_200.to_vec());
+		BinanceFv::init_bridge_instance(BLOCK_200.to_vec());
 		// This checks validator_set_authorized
 		let header: Header = Decode::decode(&mut &*BLOCK_200.to_vec()).unwrap();
 		let mut range: Vec<Vec<u8>> = vec![BLOCK_195.to_vec(), BLOCK_196.to_vec(), BLOCK_197.to_vec(), BLOCK_198.to_vec(), BLOCK_199.to_vec()];
@@ -230,7 +231,7 @@ fn submit_header_range_with_valid_data() {
 fn submit_header_range_fails_with_anchor_not_found() {
 	new_test_ext().execute_with(|| {
 		// init pallet
-		BinanceFv::init_bridge_instance(Origin::signed(1), BLOCK_200.to_vec());
+		BinanceFv::init_bridge_instance(BLOCK_200.to_vec());
 		// This checks validator_set_authorized
 		let header: Header = Decode::decode(&mut &*BLOCK_201.to_vec()).unwrap();
 		let mut range: Vec<Vec<u8>> = vec![BLOCK_195.to_vec(), BLOCK_196.to_vec(), BLOCK_197.to_vec(), BLOCK_198.to_vec(), BLOCK_199.to_vec()];
@@ -247,7 +248,7 @@ fn submit_header_range_fails_with_anchor_not_found() {
 fn submit_header_range_fails_with_invalid_first_header() {
 	new_test_ext().execute_with(|| {
 		// init pallet
-		BinanceFv::init_bridge_instance(Origin::signed(1), BLOCK_200.to_vec());
+		BinanceFv::init_bridge_instance(BLOCK_200.to_vec());
 		// This checks validator_set_authorized
 		let header: Header = Decode::decode(&mut &*BLOCK_200.to_vec()).unwrap();
 		let mut range: Vec<Vec<u8>> = vec![BLOCK_195.to_vec(), BLOCK_196.to_vec(), BLOCK_197.to_vec(), BLOCK_198.to_vec()];
@@ -266,7 +267,7 @@ fn submit_header_range_fails_with_invalid_first_header() {
 fn submit_header_range_writes_partial () {
 	new_test_ext().execute_with(|| {
 		// init pallet
-		BinanceFv::init_bridge_instance(Origin::signed(1), BLOCK_200.to_vec());
+		BinanceFv::init_bridge_instance(BLOCK_200.to_vec());
 		// This checks validator_set_authorized
 		let header: Header = Decode::decode(&mut &*BLOCK_200.to_vec()).unwrap();
 		let mut range: Vec<Vec<u8>> = vec![BLOCK_195.to_vec(), BLOCK_196.to_vec(), BLOCK_198.to_vec(), BLOCK_199.to_vec()];
@@ -292,11 +293,11 @@ fn submit_header_range_writes_partial () {
 fn check_inclusion_with_valid_data() {
 	new_test_ext().execute_with(|| {
 		// init pallet
-		BinanceFv::init_bridge_instance(Origin::signed(1), BLOCK_400.to_vec());
+		BinanceFv::init_bridge_instance(BLOCK_400.to_vec());
 		// This checks validator_set_authorized
 		let header: Header = Decode::decode(&mut &*BLOCK_400.to_vec()).unwrap();
 
-		match BinanceFv::check_inclusion(Origin::signed(1), RECEIPT_400.to_vec(), PROOF_400.to_vec(), header.hash().to_fixed_bytes().to_vec()) {
+		match BinanceFv::check_inclusion(RECEIPT_400.to_vec(), PROOF_400.to_vec(), header.hash().to_fixed_bytes().to_vec()) {
 			Ok(()) => (),
 			Err(err) => assert!(false) // check for correct error here
 		}
@@ -307,11 +308,11 @@ fn check_inclusion_with_valid_data() {
 fn check_inclusion_fails_with_missing_header() {
 	new_test_ext().execute_with(|| {
 		// init pallet
-		BinanceFv::init_bridge_instance(Origin::signed(1), BLOCK_200.to_vec());
+		BinanceFv::init_bridge_instance(BLOCK_200.to_vec());
 		// This checks validator_set_authorized
 		let header: Header = Decode::decode(&mut &*BLOCK_400.to_vec()).unwrap();
 
-		match BinanceFv::check_inclusion(Origin::signed(1), RECEIPT_400.to_vec(), PROOF_400.to_vec(), header.hash().to_fixed_bytes().to_vec()) {
+		match BinanceFv::check_inclusion(RECEIPT_400.to_vec(), PROOF_400.to_vec(), header.hash().to_fixed_bytes().to_vec()) {
 			Ok(()) => assert!(false), // check for correct error here,
 			Err(err) => ()
 		}
@@ -322,11 +323,11 @@ fn check_inclusion_fails_with_missing_header() {
 fn check_inclusion_fails_with_wrong_proof_index() {
 	new_test_ext().execute_with(|| {
 		// init pallet
-		BinanceFv::init_bridge_instance(Origin::signed(1), BLOCK_400.to_vec());
+		BinanceFv::init_bridge_instance(BLOCK_400.to_vec());
 		// This checks validator_set_authorized
 		let header: Header = Decode::decode(&mut &*BLOCK_400.to_vec()).unwrap();
 
-		match BinanceFv::check_inclusion(Origin::signed(1), RECEIPT_400.to_vec(), PROOF_INVALID_INDEX.to_vec(), header.hash().to_fixed_bytes().to_vec()) {
+		match BinanceFv::check_inclusion(RECEIPT_400.to_vec(), PROOF_INVALID_INDEX.to_vec(), header.hash().to_fixed_bytes().to_vec()) {
 			Ok(()) => assert!(false), // check for correct error here,
 			Err(err) => ()
 		}
@@ -337,11 +338,11 @@ fn check_inclusion_fails_with_wrong_proof_index() {
 fn check_inclusion_fails_with_wrong_proof_path() {
 	new_test_ext().execute_with(|| {
 		// init pallet
-		BinanceFv::init_bridge_instance(Origin::signed(1), BLOCK_400.to_vec());
+		BinanceFv::init_bridge_instance(BLOCK_400.to_vec());
 		// This checks validator_set_authorized
 		let header: Header = Decode::decode(&mut &*BLOCK_400.to_vec()).unwrap();
 
-		match BinanceFv::check_inclusion(Origin::signed(1), RECEIPT_400.to_vec(), PROOF_INVALID_PATH.to_vec(), header.hash().to_fixed_bytes().to_vec()) {
+		match BinanceFv::check_inclusion(RECEIPT_400.to_vec(), PROOF_INVALID_PATH.to_vec(), header.hash().to_fixed_bytes().to_vec()) {
 			Ok(()) => assert!(false), // check for correct error here,
 			Err(err) => ()
 		}
@@ -352,13 +353,13 @@ fn check_inclusion_fails_with_wrong_proof_path() {
 fn check_inclusion_passes_with_high_receipt_index() {
 	new_test_ext().execute_with(|| {
 		// init pallet
-		BinanceFv::init_bridge_instance(Origin::signed(1), BLOCK_800.to_vec());
+		BinanceFv::init_bridge_instance(BLOCK_800.to_vec());
 		BinanceFv::submit_header(Origin::signed(1), BLOCK_997.to_vec());
 
 		// This checks validator_set_authorized
 		let header: Header = Decode::decode(&mut &*BLOCK_997.to_vec()).unwrap();
 
-		match BinanceFv::check_inclusion(Origin::signed(1), RECEIPT_HIGH_INDEX_997.to_vec(), PROOF_997.to_vec(), header.hash().to_fixed_bytes().to_vec()) {
+		match BinanceFv::check_inclusion(RECEIPT_HIGH_INDEX_997.to_vec(), PROOF_997.to_vec(), header.hash().to_fixed_bytes().to_vec()) {
 			Ok(()) => (),
 			Err(err) => assert!(false), // check for correct error here,
 		}

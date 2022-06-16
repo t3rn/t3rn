@@ -14,15 +14,18 @@ mod tests;
 mod types;
 mod crypto;
 
-
-// #[cfg(feature = "runtime-benchmarks")]
-// mod benchmarking;
+use crate::types::{Header, ValidatorSet, H256, Proof, Receipt};
+use t3rn_primitives::{bsc_finality_verifier::BinanceFV};
+use codec::Decode;
 
 #[frame_support::pallet]
 pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 	use core::convert::TryInto;
+	use sp_std::vec::Vec;
+	use crate::types::{Header, ValidatorSet, H256, Proof, Receipt};
+	use codec::Decode;
 
 	#[cfg(not(test))]
 	use log::{info, warn};
@@ -97,42 +100,6 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 
-		/// An example dispatchable that takes a singles value as a parameter, writes the value to
-		/// storage and emits an event. This function must be dispatched by a signed extrinsic.
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-		pub fn init_bridge_instance (
-			origin: OriginFor<T>,
-			encoded_header: Vec<u8>
-		) -> DispatchResult {
-
-			let header: Header = match Decode::decode(&mut &*encoded_header) {
-				Ok(header) => header,
-				Err(_) => return Err(Error::<T>::InvalidEncoding.into())
-			};
-
-			if header.number % 200 != 0 {
-				return Err(Error::<T>::NonEpochBlock.into())
-			}
-
-			// header is invalid. returning error
-			if let Err(None) = header.signature_valid() {
-				return Err(Error::<T>::InvalidHeader.into())
-			}
-
-			let validators = ValidatorSet {
-				last_update: header.number,
-				validators: header.validators.unwrap()
-			};
-
-			<Validators<T>>::put(validators);
-			<Headers<T>>::insert(
-				header.hash(),
-				header,
-        	);
-
-			Ok(())
-		}
-
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
 		pub fn submit_header (
 			origin: OriginFor<T>,
@@ -201,7 +168,6 @@ pub mod pallet {
 			encoded_headers_reversed: Vec<Vec<u8>>,
 			anchor_header_hash: Vec<u8>, // in preparation of LVL3, all parameters should be passed as Vec<u8>. This will allow routing of the FinalityVerifiers through the same pallet
 		) -> DispatchResult {
-
 			let anchor_hash: H256 = match Decode::decode(&mut &*anchor_header_hash) {
 				Ok(res) => res,
 				Err(_) => return Err(Error::<T>::InvalidHash.into())
@@ -234,38 +200,70 @@ pub mod pallet {
 
 			Ok(())
 		}
+	}
+}
 
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-		pub fn check_inclusion(
-			origin: OriginFor<T>,
-			enc_receipt: Vec<u8>,
-			enc_proof: Vec<u8>,
-			enc_block_hash: Vec<u8>
-		) -> DispatchResult {
-			let block_hash: H256 = match Decode::decode(&mut &*enc_block_hash) {
-				Ok(res) => res,
-				Err(_) => return Err(Error::<T>::InvalidHash.into())
-			};
+impl<T: Config> BinanceFV<T> for Pallet<T> {
+	fn init_bridge_instance (
+		encoded_header: Vec<u8>
+	) -> Result<(), &'static str> {
 
-			let receipt_root: H256 = match <Headers<T>>::try_get(block_hash) {
-				Ok(res) => res.receipts_root,
-				Err(_) => return Err(Error::<T>::HeaderNotFound.into())
-			};
+		let header: Header = match Decode::decode(&mut &*encoded_header) {
+			Ok(header) => header,
+			Err(_) => return Err(Error::<T>::InvalidEncoding.into())
+		};
 
-			let receipt: Receipt = match Decode::decode(&mut &*enc_receipt) {
-				Ok(res) => res,
-				Err(_) => return Err(Error::<T>::InvalidEncoding.into())
-			};
+		if header.number % 200 != 0 {
+			return Err(Error::<T>::NonEpochBlock.into())
+		}
 
-			let proof: Proof = match Decode::decode(&mut &*enc_proof) {
-				Ok(res) => res,
-				Err(_) => return Err(Error::<T>::InvalidEncoding.into())
-			};
+		// header is invalid. returning error
+		if let Err(None) = header.signature_valid() {
+			return Err(Error::<T>::InvalidHeader.into())
+		}
 
-			match receipt.in_block(receipt_root.as_fixed_bytes(), proof) {
-				Ok(_) => return Ok(()),
-				Err(_) => return Err(Error::<T>::InvalidInclusionProof.into())
-			}
+		let validators = ValidatorSet {
+			last_update: header.number,
+			validators: header.validators.unwrap()
+		};
+
+		<Validators<T>>::put(validators);
+		<Headers<T>>::insert(
+			header.hash(),
+			header,
+		);
+
+		Ok(())
+	}
+
+	fn check_inclusion(
+		enc_receipt: Vec<u8>,
+		enc_proof: Vec<u8>,
+		enc_block_hash: Vec<u8>
+	) -> Result<(), &'static str> {
+		let block_hash: H256 = match Decode::decode(&mut &*enc_block_hash) {
+			Ok(res) => res,
+			Err(_) => return Err(Error::<T>::InvalidHash.into())
+		};
+
+		let receipt_root: H256 = match <Headers<T>>::try_get(block_hash) {
+			Ok(res) => res.receipts_root,
+			Err(_) => return Err(Error::<T>::HeaderNotFound.into())
+		};
+
+		let receipt: Receipt = match Decode::decode(&mut &*enc_receipt) {
+			Ok(res) => res,
+			Err(_) => return Err(Error::<T>::InvalidEncoding.into())
+		};
+
+		let proof: Proof = match Decode::decode(&mut &*enc_proof) {
+			Ok(res) => res,
+			Err(_) => return Err(Error::<T>::InvalidEncoding.into())
+		};
+
+		match receipt.in_block(receipt_root.as_fixed_bytes(), proof) {
+			Ok(_) => return Ok(()),
+			Err(_) => return Err(Error::<T>::InvalidInclusionProof.into())
 		}
 	}
 }
