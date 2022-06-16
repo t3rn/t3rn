@@ -1,7 +1,7 @@
 use circuit_parachain_runtime::{
     AccountId, AuraId, MultiFinalityVerifierDefaultConfig, MultiFinalityVerifierEthereumLikeConfig,
     MultiFinalityVerifierGenericLikeConfig, MultiFinalityVerifierPolkadotLikeConfig,
-    MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, XDNSConfig,
+    MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, TreasuryConfig, XDNSConfig,
     EXISTENTIAL_DEPOSIT,
 };
 use cumulus_primitives_core::ParaId;
@@ -555,5 +555,6 @@ fn testnet_genesis(
         },
         orml_tokens: Default::default(),
         account_manager: Default::default(),
+        treasury: Default::default(),
     }
 }
