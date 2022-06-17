@@ -1,5 +1,5 @@
 use frame_support::weights::Weight;
-use std::marker::PhantomData;
+use sp_std::marker::PhantomData;
 
 pub trait WeightInfo {
     fn on_initialize() -> Weight;
@@ -8,12 +8,14 @@ pub trait WeightInfo {
     fn set_inflation() -> Weight;
     fn set_rewards_alloc() -> Weight;
     fn set_blocks_per_round() -> Weight;
+    fn add_beneficiary() -> Weight;
+    fn remove_beneficiary() -> Weight;
 }
 
-pub struct InflationWeight<T>(PhantomData<T>);
+pub struct TreasuryWeight<T>(PhantomData<T>);
 
 // TODO
-impl<T: frame_system::Config> WeightInfo for InflationWeight<T> {
+impl<T: frame_system::Config> WeightInfo for TreasuryWeight<T> {
     fn on_initialize() -> Weight {
         0_u64
     }
@@ -35,6 +37,14 @@ impl<T: frame_system::Config> WeightInfo for InflationWeight<T> {
     }
 
     fn set_blocks_per_round() -> Weight {
+        0_u64
+    }
+
+    fn add_beneficiary() -> Weight {
+        0_u64
+    }
+
+    fn remove_beneficiary() -> Weight {
         0_u64
     }
 }
@@ -62,6 +72,14 @@ impl WeightInfo for () {
     }
 
     fn set_blocks_per_round() -> Weight {
+        0_u64
+    }
+
+    fn add_beneficiary() -> Weight {
+        0_u64
+    }
+
+    fn remove_beneficiary() -> Weight {
         0_u64
     }
 }

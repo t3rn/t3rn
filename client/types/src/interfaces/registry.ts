@@ -8,10 +8,7 @@ import type {
   FinalityGrandpaEquivocationPrevote,
   FinalityGrandpaPrecommit,
   FinalityGrandpaPrevote,
-<<<<<<< HEAD
   FrameSupportDispatchRawOrigin,
-=======
->>>>>>> df7a772d... Add pallet-inflation types
   FrameSupportPalletId,
   FrameSupportTokensMiscBalanceStatus,
   FrameSupportWeightsDispatchClass,
@@ -67,12 +64,6 @@ import type {
   PalletGrandpaEvent,
   PalletGrandpaStoredPendingChange,
   PalletGrandpaStoredState,
-  PalletInflationCall,
-  PalletInflationError,
-  PalletInflationEvent,
-  PalletInflationInflationInflationInfo,
-  PalletInflationInflationRange,
-  PalletInflationInflationRoundInfo,
   PalletMultiFinalityVerifierCall,
   PalletMultiFinalityVerifierError,
   PalletMultiFinalityVerifierEvent,
@@ -82,12 +73,9 @@ import type {
   PalletTimestampCall,
   PalletTransactionPaymentChargeTransactionPayment,
   PalletTransactionPaymentReleases,
-<<<<<<< HEAD
   PalletUtilityCall,
   PalletUtilityError,
   PalletUtilityEvent,
-=======
->>>>>>> df7a772d... Add pallet-inflation types
   PalletWasmContractsCall,
   PalletWasmContractsContractKind,
   PalletWasmContractsError,
@@ -143,15 +131,10 @@ import type {
   T3rnPrimitivesSideEffectConfirmedSideEffect,
   T3rnPrimitivesSideEffectFullSideEffect,
   T3rnPrimitivesSideEffectInterfaceSideEffectInterface,
-<<<<<<< HEAD
   T3rnPrimitivesSideEffectSecurityLvl,
   T3rnPrimitivesStorageRawAliveContractInfo,
   T3rnPrimitivesVolatileLocalState,
   T3rnPrimitivesXdnsParachain,
-=======
-  T3rnPrimitivesStorageRawAliveContractInfo,
-  T3rnPrimitivesVolatileLocalState,
->>>>>>> df7a772d... Add pallet-inflation types
   T3rnPrimitivesXdnsXdnsRecord,
 } from "@polkadot/types/lookup";
 
@@ -163,10 +146,7 @@ declare module "@polkadot/types/types/registry" {
     FinalityGrandpaEquivocationPrevote: FinalityGrandpaEquivocationPrevote;
     FinalityGrandpaPrecommit: FinalityGrandpaPrecommit;
     FinalityGrandpaPrevote: FinalityGrandpaPrevote;
-<<<<<<< HEAD
     FrameSupportDispatchRawOrigin: FrameSupportDispatchRawOrigin;
-=======
->>>>>>> df7a772d... Add pallet-inflation types
     FrameSupportPalletId: FrameSupportPalletId;
     FrameSupportTokensMiscBalanceStatus: FrameSupportTokensMiscBalanceStatus;
     FrameSupportWeightsDispatchClass: FrameSupportWeightsDispatchClass;
@@ -222,12 +202,6 @@ declare module "@polkadot/types/types/registry" {
     PalletGrandpaEvent: PalletGrandpaEvent;
     PalletGrandpaStoredPendingChange: PalletGrandpaStoredPendingChange;
     PalletGrandpaStoredState: PalletGrandpaStoredState;
-    PalletInflationCall: PalletInflationCall;
-    PalletInflationError: PalletInflationError;
-    PalletInflationEvent: PalletInflationEvent;
-    PalletInflationInflationInflationInfo: PalletInflationInflationInflationInfo;
-    PalletInflationInflationRange: PalletInflationInflationRange;
-    PalletInflationInflationRoundInfo: PalletInflationInflationRoundInfo;
     PalletMultiFinalityVerifierCall: PalletMultiFinalityVerifierCall;
     PalletMultiFinalityVerifierError: PalletMultiFinalityVerifierError;
     PalletMultiFinalityVerifierEvent: PalletMultiFinalityVerifierEvent;
@@ -237,12 +211,9 @@ declare module "@polkadot/types/types/registry" {
     PalletTimestampCall: PalletTimestampCall;
     PalletTransactionPaymentChargeTransactionPayment: PalletTransactionPaymentChargeTransactionPayment;
     PalletTransactionPaymentReleases: PalletTransactionPaymentReleases;
-<<<<<<< HEAD
     PalletUtilityCall: PalletUtilityCall;
     PalletUtilityError: PalletUtilityError;
     PalletUtilityEvent: PalletUtilityEvent;
-=======
->>>>>>> df7a772d... Add pallet-inflation types
     PalletWasmContractsCall: PalletWasmContractsCall;
     PalletWasmContractsContractKind: PalletWasmContractsContractKind;
     PalletWasmContractsError: PalletWasmContractsError;
@@ -298,15 +269,10 @@ declare module "@polkadot/types/types/registry" {
     T3rnPrimitivesSideEffectConfirmedSideEffect: T3rnPrimitivesSideEffectConfirmedSideEffect;
     T3rnPrimitivesSideEffectFullSideEffect: T3rnPrimitivesSideEffectFullSideEffect;
     T3rnPrimitivesSideEffectInterfaceSideEffectInterface: T3rnPrimitivesSideEffectInterfaceSideEffectInterface;
-<<<<<<< HEAD
     T3rnPrimitivesSideEffectSecurityLvl: T3rnPrimitivesSideEffectSecurityLvl;
     T3rnPrimitivesStorageRawAliveContractInfo: T3rnPrimitivesStorageRawAliveContractInfo;
     T3rnPrimitivesVolatileLocalState: T3rnPrimitivesVolatileLocalState;
     T3rnPrimitivesXdnsParachain: T3rnPrimitivesXdnsParachain;
-=======
-    T3rnPrimitivesStorageRawAliveContractInfo: T3rnPrimitivesStorageRawAliveContractInfo;
-    T3rnPrimitivesVolatileLocalState: T3rnPrimitivesVolatileLocalState;
->>>>>>> df7a772d... Add pallet-inflation types
     T3rnPrimitivesXdnsXdnsRecord: T3rnPrimitivesXdnsXdnsRecord;
   } // InterfaceTypes
 } // declare module

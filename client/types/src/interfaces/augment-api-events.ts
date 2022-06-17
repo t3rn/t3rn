@@ -14,11 +14,7 @@ import type {
   u64,
 } from "@polkadot/types-codec";
 import type { ITuple } from "@polkadot/types-codec/types";
-import type {
-  AccountId32,
-  H256,
-  Perbill,
-} from "@polkadot/types/interfaces/runtime";
+import type { AccountId32, H256 } from "@polkadot/types/interfaces/runtime";
 import type {
   FrameSupportTokensMiscBalanceStatus,
   FrameSupportWeightsDispatchInfo,
@@ -150,7 +146,6 @@ declare module "@polkadot/api-base/types/events" {
       /** Generic event */
       [key: string]: AugmentedEvent<ApiType>;
     };
-<<<<<<< HEAD
     multiFinalityVerifierDefault: {
       NewHeaderRangeAvailable: AugmentedEvent<ApiType, [U8aFixed, u32, u32]>;
       /** Generic event */
@@ -173,17 +168,6 @@ declare module "@polkadot/api-base/types/events" {
     };
     multiFinalityVerifierSubstrateLike: {
       NewHeaderRangeAvailable: AugmentedEvent<ApiType, [U8aFixed, u32, u32]>;
-=======
-    inflation: {
-      ClaimedRewards: AugmentedEvent<ApiType, [AccountId32, u128]>;
-      InflationSet: AugmentedEvent<
-        ApiType,
-        [Perbill, Perbill, Perbill, Perbill, Perbill, Perbill]
-      >;
-      MintedTokensExactly: AugmentedEvent<ApiType, [AccountId32, u128]>;
-      MintedTokensForRound: AugmentedEvent<ApiType, [AccountId32, u128]>;
-      RoundStarted: AugmentedEvent<ApiType, [u32, u32]>;
->>>>>>> df7a772d... Add pallet-inflation types
       /** Generic event */
       [key: string]: AugmentedEvent<ApiType>;
     };

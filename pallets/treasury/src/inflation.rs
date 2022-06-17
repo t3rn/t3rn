@@ -24,7 +24,7 @@ pub struct Range<T> {
 
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Encode, Decode, TypeInfo, MaxEncodedLen)]
-pub enum CandidateRole {
+pub enum BeneficiaryRole {
     Developer,
     Executor,
 }

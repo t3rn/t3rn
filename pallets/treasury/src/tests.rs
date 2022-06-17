@@ -1,8 +1,8 @@
 use crate::{
     assert_last_event, assert_last_n_events,
-    inflation::{CandidateRole, InflationInfo, Range, RewardsAllocationConfig, RoundInfo},
+    inflation::{BeneficiaryRole, InflationInfo, Range, RewardsAllocationConfig},
     mock::{Event as MockEvent, *},
-    CandidatesForRewards, CurrentRound, Error, Event, InflationConfig, RewardsPerCandidatePerRound,
+    Beneficiaries, BeneficiaryRoundRewards, Error, Event,
 };
 use frame_support::{assert_err, assert_noop, assert_ok};
 use sp_runtime::Perbill;
@@ -11,13 +11,13 @@ use sp_runtime::Perbill;
 fn mint_for_round_requires_root() {
     new_test_ext().execute_with(|| {
         assert_noop!(
-            Inflation::mint_for_round(Origin::signed(419), 1, 1_000_000_000),
+            Treasury::mint_for_round(Origin::signed(419), 1, 1_000_000_000),
             sp_runtime::DispatchError::BadOrigin
         );
     })
 }
 
-// TODO refactor expects wen connected to acct mngr
+// TODO refactor expects wen increment
 #[test]
 fn mint_for_round_splits_total_rewards_correctly_amongst_actors() {
     new_test_ext().execute_with(|| {
@@ -25,10 +25,10 @@ fn mint_for_round_splits_total_rewards_correctly_amongst_actors() {
         let exec = 2;
         let total_round_rewards = 10;
 
-        <CandidatesForRewards<Test>>::insert(dev, CandidateRole::Developer, 0);
-        <CandidatesForRewards<Test>>::insert(exec, CandidateRole::Executor, 0);
+        <Beneficiaries<Test>>::insert(dev, BeneficiaryRole::Developer, 0);
+        <Beneficiaries<Test>>::insert(exec, BeneficiaryRole::Executor, 0);
 
-        assert_ok!(Inflation::mint_for_round(
+        assert_ok!(Treasury::mint_for_round(
             Origin::root(),
             1,
             total_round_rewards
@@ -37,9 +37,9 @@ fn mint_for_round_splits_total_rewards_correctly_amongst_actors() {
         assert_last_n_events!(
             3,
             vec![
-                Event::MintedTokensForCandidate(dev, 5),
-                Event::MintedTokensForCandidate(exec, 5),
-                Event::MintedTokensForRound(<TreasuryAccount>::get(), total_round_rewards)
+                Event::BeneficiaryTokensIssued(dev, 5),
+                Event::BeneficiaryTokensIssued(exec, 5),
+                Event::RoundTokensIssued(<TreasuryAccount>::get(), total_round_rewards)
             ]
         );
     })
@@ -48,10 +48,10 @@ fn mint_for_round_splits_total_rewards_correctly_amongst_actors() {
 #[test]
 fn claim_rewards_fails_if_none_available() {
     new_test_ext().execute_with(|| {
-        <CandidatesForRewards<Test>>::insert(1, CandidateRole::Developer, 0);
+        <Beneficiaries<Test>>::insert(1, BeneficiaryRole::Developer, 0);
 
         assert_err!(
-            Inflation::claim_rewards(Origin::signed(1)),
+            Treasury::claim_rewards(Origin::signed(1)),
             Error::<Test>::NoRewardsAvailable
         );
     })
@@ -65,17 +65,17 @@ fn claim_rewards_accumulates_all_past_rounds_rewards() {
         Balances::set_balance(Origin::root(), claimer, 100, 0).expect("claimer account");
 
         // configure pallet storage to reward our claimer
-        <CandidatesForRewards<Test>>::insert(claimer, CandidateRole::Executor, 0);
-        <RewardsPerCandidatePerRound<Test>>::insert(claimer, 1, 1);
-        <RewardsPerCandidatePerRound<Test>>::insert(claimer, 2, 1);
+        <Beneficiaries<Test>>::insert(claimer, BeneficiaryRole::Executor, 0);
+        <BeneficiaryRoundRewards<Test>>::insert(claimer, 1, 1);
+        <BeneficiaryRoundRewards<Test>>::insert(claimer, 2, 1);
 
-        assert_ok!(Inflation::claim_rewards(Origin::signed(claimer)));
+        assert_ok!(Treasury::claim_rewards(Origin::signed(claimer)));
 
         // assert balance allocated
         assert_eq!(Balances::free_balance(&claimer), 102);
 
         // assert storage is empty for candidate
-        let remaining_storage = <RewardsPerCandidatePerRound<Test>>::iter_key_prefix(&1).count();
+        let remaining_storage = <BeneficiaryRoundRewards<Test>>::iter_key_prefix(&1).count();
         assert_eq!(remaining_storage, 0);
     })
 }
@@ -90,7 +90,7 @@ fn set_inflation_requires_root() {
         };
 
         assert_noop!(
-            Inflation::set_inflation(Origin::signed(419), new_inflation),
+            Treasury::set_inflation(Origin::signed(419), new_inflation),
             sp_runtime::DispatchError::BadOrigin
         );
     })
@@ -106,8 +106,8 @@ fn set_inflation_fails_given_an_invalid_inflation_range() {
         };
 
         assert_err!(
-            Inflation::set_inflation(Origin::root(), new_inflation),
-            Error::<Test>::InvalidInflationRange
+            Treasury::set_inflation(Origin::root(), new_inflation),
+            Error::<Test>::InvalidInflationConfig
         );
     })
 }
@@ -122,7 +122,7 @@ fn set_inflation_fails_given_the_existing_inflation_range() {
         };
 
         assert_err!(
-            Inflation::set_inflation(Origin::root(), existing_inflation),
+            Treasury::set_inflation(Origin::root(), existing_inflation),
             Error::<Test>::ValueNotChanged
         );
     })
@@ -139,7 +139,7 @@ fn setting_annual_inflation_derives_round_inflation() {
         };
 
         // what we expect to get auto derived as round config
-        // derivation also depends upon Inflation::current_round().term = 20
+        // derivation also depends upon Treasury::current_round().term = 20
         // which must be at least as big as the active colator set
         let expected_round_inflation = Range {
             min: Perbill::from_parts(225),
@@ -147,14 +147,14 @@ fn setting_annual_inflation_derives_round_inflation() {
             max: Perbill::from_parts(372),
         };
 
-        assert_ok!(Inflation::set_inflation(
+        assert_ok!(Treasury::set_inflation(
             Origin::root(),
             actual_annual_inflation
         ));
 
         // assert new inflation config got stored
         assert_eq!(
-            Inflation::inflation_config(),
+            Treasury::inflation_config(),
             InflationInfo {
                 annual: actual_annual_inflation,
                 round: expected_round_inflation,
@@ -166,7 +166,7 @@ fn setting_annual_inflation_derives_round_inflation() {
         );
 
         // assert new inflation config was emitted
-        assert_last_event!(MockEvent::Inflation(Event::InflationConfigChanged {
+        assert_last_event!(MockEvent::Treasury(Event::InflationConfigChanged {
             annual_min: actual_annual_inflation.min,
             annual_ideal: actual_annual_inflation.ideal,
             annual_max: actual_annual_inflation.max,

@@ -1,5 +1,5 @@
 use crate::{
-    self as pallet_inflation,
+    self as pallet_treasury,
     inflation::{Range, RewardsAllocationConfig},
     mock::sp_api_hidden_includes_construct_runtime::hidden_include::traits::GenesisBuild,
 };
@@ -15,28 +15,14 @@ pub(crate) fn last_event() -> Event {
     System::events().pop().expect("event expected").event
 }
 
-pub(crate) fn last_n_events(n: usize) -> Vec<pallet_inflation::Event<Test>> {
+pub(crate) fn last_n_events(n: usize) -> Vec<pallet_treasury::Event<Test>> {
     let events = System::events();
     let len = events.len();
     events[len - n..]
         .into_iter()
         .map(|r| r.event.clone())
         .filter_map(|e| {
-            if let Event::Inflation(inner) = e {
-                Some(inner)
-            } else {
-                None
-            }
-        })
-        .collect::<Vec<_>>()
-}
-
-pub(crate) fn events() -> Vec<pallet_inflation::Event<Test>> {
-    System::events()
-        .into_iter()
-        .map(|r| r.event)
-        .filter_map(|e| {
-            if let Event::Inflation(inner) = e {
+            if let Event::Treasury(inner) = e {
                 Some(inner)
             } else {
                 None
@@ -78,7 +64,7 @@ frame_support::construct_runtime!(
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Config<T>, Storage, Event<T>},
-        Inflation: pallet_inflation::{Pallet, Call, Storage, Event<T>},
+        Treasury: pallet_treasury::{Pallet, Call, Storage, Event<T>},
     }
 );
 
@@ -137,14 +123,14 @@ impl pallet_balances::Config for Test {
 parameter_types! {
     pub const TreasuryAccount: u32 = 0;
     pub const MinBlocksPerRound: u32 = 20;
-    pub const TokenCirculationAtGenesis: u32 = 100;
+    pub const GenesisIssuance: u32 = 100;
 }
 
-impl pallet_inflation::Config for Test {
+impl pallet_treasury::Config for Test {
     type Currency = Balances;
     type Event = Event;
+    type GenesisIssuance = GenesisIssuance;
     type MinBlocksPerRound = MinBlocksPerRound;
-    type TokenCirculationAtGenesis = TokenCirculationAtGenesis;
     type TreasuryAccount = TreasuryAccount;
     type WeightInfo = ();
 }
@@ -153,9 +139,9 @@ impl pallet_inflation::Config for Test {
 pub fn new_test_ext() -> sp_io::TestExternalities {
     let mut t = frame_system::GenesisConfig::default()
         .build_storage::<Test>()
-        .expect("mock pallet-inflation genesis storage");
+        .expect("mock pallet-treasury genesis storage");
 
-    pallet_inflation::GenesisConfig::<Test> {
+    pallet_treasury::GenesisConfig::<Test> {
         candidates: vec![],
         annual_inflation: Range {
             min: Perbill::from_parts(3),
@@ -169,7 +155,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         round_term: 20,
     }
     .assimilate_storage(&mut t)
-    .expect("mock pallet-inflation genesis storage assimilation");
+    .expect("mock pallet-treasury genesis storage assimilation");
 
     let mut ext = sp_io::TestExternalities::new(t);
     ext.execute_with(|| System::set_block_number(1));
