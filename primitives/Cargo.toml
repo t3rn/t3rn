@@ -40,7 +40,7 @@ sp-trie             = { git = "https://github.com/paritytech/substrate", branch 
 
 snowbridge-core = { path = "src/bridges/snowfork/core", default-features = false }
 
-t3rn-sdk-primitives = { path = "../3vm/sdk/primitives", default-features = false }
+t3rn-sdk-primitives = { version = "0.0.1-rc8", default-features = false, registry = "t3rn" }
 t3rn-types          = { path = "../types", default-features = false, features = [ "runtime" ] }
 
 [dev-dependencies]
