@@ -1,25 +1,30 @@
-use std::fmt::Debug;
 use codec::{Decode, Encode};
 use sp_std::vec::Vec;
+use std::fmt::Debug;
 use t3rn_sdk_primitives::signal::Signaller;
 
-// TODO: genesis
-// TODO: storage
-trait Precompile<Hash> {
+pub trait Precompile<T>
+where
+    T: frame_system::Config,
+{
     /// Looks up a precompile function pointer
-    fn lookup(dest: &Hash) -> Option<u8>;
+    fn lookup(dest: &T::Hash) -> Option<u8>;
 
     /// Invoke a precompile
     fn invoke(precompile: &u8);
 }
 
-trait LocalStateAccess {}
-
-trait Remuneration<Hash, AccountId, Balance> {
-    fn remunerate(xtx_id: &Hash, author: &AccountId, amount: Balance);
+pub trait LocalStateAccess<T>
+where
+    T: frame_system::Config,
+{
 }
 
-enum Characteristic {
+pub trait Remuneration<T: frame_system::Config, Balance> {
+    fn remunerate(xtx_id: &T::Hash, author: &T::AccountId, amount: Balance);
+}
+
+pub enum Characteristic {
     Storage,
     Instantiate,
     Remuneration,
@@ -27,22 +32,21 @@ enum Characteristic {
 }
 
 /// Passthrough to validator
-trait CharacteristicValidator {
+pub trait CharacteristicValidator {
     fn validate(characteristic: &Characteristic) -> Result<(), ()>; // TODO: handle error
 }
 
-trait ThreeVm<Hash, AccountId, Balance, R>:
-Precompile<Hash> +
-Signaller<Hash, (), R> +
-Remuneration<Hash, AccountId, Balance>
-    where
-        Hash: Encode + Decode + Debug + Clone + Eq + PartialEq,
-        R: Encode + Decode + Debug + Clone + Eq + PartialEq
-{ //TODO: R from 3vm current impl
+pub trait ThreeVm<T, Balance, R>:
+    Precompile<T> + Signaller<T::Hash, (), R> + Remuneration<T, Balance>
+where
+    T: frame_system::Config,
+    R: Encode + Decode + Debug + Clone + Eq + PartialEq,
+{
+    //TODO: R from 3vm current impl
 
     /// Allows creating a `Module` from a binary blob from the contracts registry
-    fn from_registry_blob<T>(blob: Vec<u8>) -> T;
+    fn from_registry_blob<Module>(blob: Vec<u8>) -> Module;
 
     /// Lookup the author for a contract
-    fn lookup_author(contract: &Hash);
+    fn lookup_author(contract: &T::Hash);
 }
