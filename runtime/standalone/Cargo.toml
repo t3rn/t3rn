@@ -20,8 +20,8 @@ serde       = { version = "1.0", default-features = false, optional = true, feat
 
 # Circuit dependencies
 pallet-3vm-contracts                      = { path = "../../3vm/pallets/wasm-contracts", default-features = false, package = "pallet-wasm-contracts" }
-pallet-3vm-contracts-primitives           = { path = "../../3vm/pallets/wasm-contracts/common", default-features = false, package = "pallet-contracts-primitives" }
-pallet-3vm-contracts-rpc-runtime-api      = { path = "../../3vm/pallets/wasm-contracts/rpc/runtime-api", default-features = false, package = "pallet-contracts-rpc-runtime-api" }
+pallet-3vm-contracts-primitives           = { path = "../../3vm/primitives/contracts", default-features = false, package = "pallet-contracts-primitives" }
+pallet-3vm-contracts-rpc-runtime-api      = { path = "../../3vm/rpc/contracts/runtime-api", default-features = false, package = "pallet-contracts-rpc-runtime-api" }
 pallet-account-manager                    = { path = "../../pallets/account-manager", default-features = false }
 pallet-circuit                            = { path = "../../pallets/circuit", default-features = false }
 pallet-circuit-portal                     = { path = "../../pallets/circuit-portal", default-features = false }
