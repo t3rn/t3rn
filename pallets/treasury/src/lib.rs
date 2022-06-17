@@ -162,8 +162,8 @@ pub mod pallet {
 
                 // issue tokens for the past round
                 // TODO: revisit how2 handle round totals?
-                // let round_issuance = 10;
-                // Self::mint_for_round(T::Origin::root(), round.index - 1, round_issuance);
+                let round_total: BalanceOf<T> = BalanceOf::<T>::from(10_u32);
+                Self::mint_for_round(T::Origin::root(), round.index - 1, round_total);
             }
 
             T::WeightInfo::on_initialize()
@@ -230,6 +230,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// Mints a dynamic (FIXME) amount of tokens for given round.
         /// TODO: maybe ensure can only be called once per round
+        /// TODO: actually consider executions
         #[pallet::weight(10_000)]
         pub fn mint_for_round(
             origin: OriginFor<T>,
