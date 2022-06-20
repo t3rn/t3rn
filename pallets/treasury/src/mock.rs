@@ -142,10 +142,7 @@ impl pallet_treasury::Config for Test {
 }
 
 pub(crate) fn roll_to(n: u64) {
-    println!("roll_to {:?}", n);
-    println!("sys blk {:?}", System::block_number());
     while System::block_number() < n {
-        println!("sys blk {:?}", System::block_number());
         Treasury::on_finalize(System::block_number());
         Balances::on_finalize(System::block_number());
         System::on_finalize(System::block_number());
@@ -154,12 +151,11 @@ pub(crate) fn roll_to(n: u64) {
         Balances::on_initialize(System::block_number());
         Treasury::on_initialize(System::block_number());
     }
-    println!("sys blk {:?}", System::block_number());
 }
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-    let mut t = frame_system::GenesisConfig::default()
+    let mut storage = frame_system::GenesisConfig::default()
         .build_storage::<Test>()
         .expect("mock pallet-treasury genesis storage");
 
@@ -176,10 +172,10 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         },
         round_term: 20,
     }
-    .assimilate_storage(&mut t)
+    .assimilate_storage(&mut storage)
     .expect("mock pallet-treasury genesis storage assimilation");
 
-    let mut ext = sp_io::TestExternalities::new(t);
+    let mut ext = sp_io::TestExternalities::from(storage);
     ext.execute_with(|| System::set_block_number(1));
     ext
 }

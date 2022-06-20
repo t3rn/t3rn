@@ -57,7 +57,6 @@ impl RewardsAllocation {
 pub struct InflationInfo {
     pub(crate) annual: Range<Perbill>,
     pub(crate) round: Range<Perbill>,
-    pub(crate) rewards_alloc: RewardsAllocation,
 }
 
 impl InflationInfo {

@@ -1,6 +1,6 @@
 use crate::{
     assert_last_event, assert_last_n_events,
-    inflation::{BeneficiaryRole, InflationInfo, Range, RewardsAllocation},
+    inflation::{BeneficiaryRole, InflationInfo, Range, RewardsAllocation, RoundIndex, RoundInfo},
     mock::{Event as MockEvent, *},
     Beneficiaries, BeneficiaryRoundRewards, Error, Event,
 };
@@ -20,7 +20,39 @@ fn mint_for_round_requires_root() {
 #[test]
 fn genesis_inflation_config() {
     new_test_ext().execute_with(|| {
-        todo!();
+        roll_to(3);
+
+        assert_eq!(
+            Treasury::current_round(),
+            RoundInfo {
+                index: 1 as RoundIndex,
+                head: 0,
+                term: <MinBlocksPerRound>::get()
+            }
+        );
+        // TODO
+        assert_eq!(
+            Treasury::inflation_config(),
+            InflationInfo {
+                annual: Range {
+                    min: Perbill::from_parts(3),   // TODO
+                    ideal: Perbill::from_parts(4), // TODO
+                    max: Perbill::from_parts(5),   // TODO
+                },
+                round: Range {
+                    min: Perbill::from_parts(225),   // TODO
+                    ideal: Perbill::from_parts(299), // TODO
+                    max: Perbill::from_parts(372),   // TODO
+                },
+            }
+        );
+        assert_eq!(
+            Treasury::rewards_alloc(),
+            RewardsAllocation {
+                executor: Perbill::from_parts(500_000_000),  // TODO
+                developer: Perbill::from_parts(500_000_000), // TODO
+            },
+        )
     })
 }
 
@@ -208,10 +240,6 @@ fn set_inflation_derives_round_from_annual_inflation() {
             InflationInfo {
                 annual: actual_annual_inflation,
                 round: expected_round_inflation,
-                rewards_alloc: RewardsAllocation {
-                    developer: Perbill::from_parts(500_000_000),
-                    executor: Perbill::from_parts(500_000_000),
-                }
             }
         );
 
@@ -230,69 +258,129 @@ fn set_inflation_derives_round_from_annual_inflation() {
 #[test]
 fn set_rewards_alloc_requires_root() {
     new_test_ext().execute_with(|| {
-        todo!();
+        let rewards_alloc = RewardsAllocation {
+            developer: Perbill::from_parts(500_000_000),
+            executor: Perbill::from_parts(500_000_000),
+        };
+
+        assert_noop!(
+            Treasury::set_rewards_alloc(Origin::signed(419), rewards_alloc),
+            sp_runtime::DispatchError::BadOrigin
+        );
     })
 }
 
 #[test]
 fn set_rewards_alloc_fails_if_invalid() {
     new_test_ext().execute_with(|| {
-        todo!();
+        let rewards_alloc = RewardsAllocation {
+            developer: Perbill::from_parts(500_000_000),
+            executor: Perbill::from_parts(600_000_000),
+        };
+
+        assert_noop!(
+            Treasury::set_rewards_alloc(Origin::root(), rewards_alloc),
+            Error::<Test>::InvalidRewardsAllocation
+        );
     })
 }
 
 #[test]
 fn set_rewards_alloc_fails_if_not_changed() {
     new_test_ext().execute_with(|| {
-        todo!();
+        let rewards_alloc = RewardsAllocation {
+            developer: Perbill::from_parts(500_000_000),
+            executor: Perbill::from_parts(500_000_000),
+        };
+
+        assert_noop!(
+            Treasury::set_rewards_alloc(Origin::root(), rewards_alloc),
+            Error::<Test>::ValueNotChanged
+        );
     })
 }
 
 #[test]
 fn set_rewards_alloc_amongst_actors() {
     new_test_ext().execute_with(|| {
-        todo!();
+        let rewards_alloc = RewardsAllocation {
+            developer: Perbill::from_parts(501_000_000),
+            executor: Perbill::from_parts(499_000_000),
+        };
+
+        assert_ok!(Treasury::set_rewards_alloc(
+            Origin::root(),
+            rewards_alloc.clone()
+        ));
+
+        assert_eq!(Treasury::rewards_alloc(), rewards_alloc)
     })
 }
 
 #[test]
 fn set_round_term_requires_root() {
     new_test_ext().execute_with(|| {
-        todo!();
+        assert_noop!(
+            Treasury::set_round_term(Origin::signed(419), 419),
+            sp_runtime::DispatchError::BadOrigin
+        );
     })
 }
 
 #[test]
 fn set_round_term_fails_if_not_changed() {
     new_test_ext().execute_with(|| {
-        todo!();
+        assert_noop!(
+            Treasury::set_round_term(Origin::root(), <MinBlocksPerRound>::get()),
+            Error::<Test>::ValueNotChanged
+        );
     })
 }
 
 #[test]
 fn set_round_term_fails_if_lower_than_min() {
     new_test_ext().execute_with(|| {
-        todo!();
+        new_test_ext().execute_with(|| {
+            assert_noop!(
+                Treasury::set_round_term(Origin::root(), 7),
+                Error::<Test>::RoundTermTooShort
+            );
+        })
     })
 }
 
 #[test]
 fn set_round_term_derives_round_inflation() {
     new_test_ext().execute_with(|| {
-        todo!();
+        assert_ok!(Treasury::set_round_term(Origin::root(), 22));
+        // TODO
+        assert_eq!(
+            Treasury::inflation_config().round,
+            Range {
+                min: Perbill::from_parts(0),
+                ideal: Perbill::from_parts(0),
+                max: Perbill::from_parts(0)
+            }
+        )
     })
 }
 
 #[test]
 fn add_beneficiary_requires_root() {
     new_test_ext().execute_with(|| {
-        todo!();
+        assert_noop!(
+            Treasury::add_beneficiary(Origin::signed(419), 419, BeneficiaryRole::Developer),
+            sp_runtime::DispatchError::BadOrigin
+        );
     })
 }
 
 #[test]
 fn remove_beneficiary_requires_root() {
     new_test_ext().execute_with(|| {
-        todo!();
+        assert_noop!(
+            Treasury::remove_beneficiary(Origin::signed(419), 419),
+            sp_runtime::DispatchError::BadOrigin
+        );
     })
 }

@@ -57,6 +57,11 @@ pub mod pallet {
     }
 
     #[pallet::storage]
+    #[pallet::getter(fn rewards_alloc)]
+    // The pallet's rewards allocation config.
+    pub type RewardsAlloc<T: Config> = StorageValue<_, RewardsAllocation, ValueQuery>;
+
+    #[pallet::storage]
     #[pallet::getter(fn inflation_config)]
     // The pallet's inflation mechanism configuration.
     pub type InflationConfig<T: Config> = StorageValue<_, InflationInfo, ValueQuery>;
@@ -183,7 +188,7 @@ pub mod pallet {
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {
-                candidates: Default::default(),
+                candidates: Default::default(), // TODO blacklist
                 annual_inflation: Range {
                     min: Perbill::from_parts(3),   // TODO
                     ideal: Perbill::from_parts(4), // TODO
@@ -227,7 +232,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// Mints tokens for given round.
         /// TODO: maybe ensure can only be called once per round
-        /// TODO: actually consider executions
+        /// TODO: exec, infl
         #[pallet::weight(10_000)] // TODO
         pub fn mint_for_round(
             origin: OriginFor<T>,
@@ -237,7 +242,7 @@ pub mod pallet {
             ensure_root(origin)?;
 
             let treasury = T::TreasuryAccount::get();
-            let inflation_info = <InflationConfig<T>>::get();
+            let rewards_alloc = <RewardsAlloc<T>>::get();
 
             // count actors
             let (count_devs, count_execs) =
@@ -254,10 +259,10 @@ pub mod pallet {
                 });
 
             // calculate relative rewards per actor
-            let relative_per_dev = Perbill::from_rational(1, count_devs as u32)
-                * inflation_info.rewards_alloc.developer;
-            let relative_per_exec = Perbill::from_rational(1, count_execs as u32)
-                * inflation_info.rewards_alloc.executor;
+            let relative_per_dev =
+                Perbill::from_rational(1, count_devs as u32) * rewards_alloc.developer;
+            let relative_per_exec =
+                Perbill::from_rational(1, count_execs as u32) * rewards_alloc.executor;
 
             // calculate absoute rewards per actor
             let absolute_per_dev = relative_per_dev * amount;
@@ -359,17 +364,14 @@ pub mod pallet {
                 rewards_alloc.is_valid(),
                 Error::<T>::InvalidRewardsAllocation
             );
-
-            let mut config = <InflationConfig<T>>::get();
             ensure!(
-                config.rewards_alloc != rewards_alloc,
+                rewards_alloc != <RewardsAlloc<T>>::get(),
                 Error::<T>::ValueNotChanged
             );
 
             // update rewards config
             let (developer, executor) = (rewards_alloc.developer, rewards_alloc.executor);
-            config.rewards_alloc = rewards_alloc;
-            <InflationConfig<T>>::put(config);
+            <RewardsAlloc<T>>::put(rewards_alloc);
 
             Self::deposit_event(Event::RewardsAllocationChanged {
                 developer,
