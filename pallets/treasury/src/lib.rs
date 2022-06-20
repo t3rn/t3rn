@@ -73,7 +73,7 @@ pub mod pallet {
     // TODO: eventual cap, circulating, remaining
 
     #[pallet::storage]
-    #[pallet::getter(fn candidates)]
+    #[pallet::getter(fn beneficiaries)]
     pub type Beneficiaries<T: Config> = StorageDoubleMap<
         _,
         Twox64Concat,
@@ -164,15 +164,11 @@ pub mod pallet {
                 Self::mint_for_round(T::Origin::root(), round.index - 1, round_total)
                     .expect("mint for round");
             }
-            todo!(); // + tests
+            // todo!(); // + tests
             T::WeightInfo::on_initialize()
         }
 
-        fn on_finalize(_n: BlockNumberFor<T>) {
-            // check if round finished in current block
-            // if so, update storage reward objects and create a new empty one
-            todo!();
-        }
+        fn on_finalize(_n: BlockNumberFor<T>) {}
     }
 
     #[pallet::genesis_config]
@@ -295,18 +291,20 @@ pub mod pallet {
             let who = ensure_signed(origin)?;
             <Pallet<T>>::ensure_beneficiary(&who)?;
 
-            // accumulate rewards
+            // accumulate claimer's round rewards up till now
             let total_rewards = <BeneficiaryRoundRewards<T>>::iter_prefix(&who)
                 .drain()
-                .map(|key2_value| key2_value.1)
-                .fold(BalanceOf::<T>::zero(), |acc, item| acc.saturating_add(item));
+                .map(|kv| kv.1)
+                .fold(BalanceOf::<T>::zero(), |acc, round_rewards| {
+                    acc.saturating_add(round_rewards)
+                });
 
             ensure!(
                 total_rewards > BalanceOf::<T>::zero(),
                 Error::<T>::NoRewardsAvailable
             );
 
-            // allocate to candidate
+            // allocate to beneficiary
             T::Currency::deposit_into_existing(&who, BalanceOf::<T>::from(total_rewards))
                 .expect("Should deposit balance to account");
 
@@ -420,7 +418,11 @@ pub mod pallet {
         }
 
         #[pallet::weight(10_000)] // TODO
-        pub fn add_beneficiary(origin: OriginFor<T>, _beneficiary: T::AccountId) -> DispatchResult {
+        pub fn add_beneficiary(
+            origin: OriginFor<T>,
+            _beneficiary: T::AccountId,
+            _role: BeneficiaryRole,
+        ) -> DispatchResult {
             ensure_root(origin)?;
             todo!();
         }

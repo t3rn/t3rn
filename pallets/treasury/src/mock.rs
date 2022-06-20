@@ -1,9 +1,11 @@
 use crate::{
     self as pallet_treasury,
     inflation::{Range, RewardsAllocation},
-    mock::sp_api_hidden_includes_construct_runtime::hidden_include::traits::GenesisBuild,
 };
-use frame_support::parameter_types;
+use frame_support::{
+    parameter_types,
+    traits::{GenesisBuild, OnFinalize, OnInitialize},
+};
 use sp_core::H256;
 use sp_runtime::{
     testing::Header,
@@ -18,17 +20,21 @@ pub(crate) fn last_event() -> Event {
 pub(crate) fn last_n_events(n: usize) -> Vec<pallet_treasury::Event<Test>> {
     let events = System::events();
     let len = events.len();
-    events[len - n..]
-        .into_iter()
-        .map(|r| r.event.clone())
-        .filter_map(|e| {
-            if let Event::Treasury(inner) = e {
-                Some(inner)
-            } else {
-                None
-            }
-        })
-        .collect::<Vec<_>>()
+    if len > 0 {
+        events[len - n..]
+            .into_iter()
+            .map(|r| r.event.clone())
+            .filter_map(|e| {
+                if let Event::Treasury(inner) = e {
+                    Some(inner)
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>()
+    } else {
+        vec![]
+    }
 }
 
 /// Assert input equal to the last event emitted
@@ -36,7 +42,7 @@ pub(crate) fn last_n_events(n: usize) -> Vec<pallet_treasury::Event<Test>> {
 macro_rules! assert_last_event {
     ($event:expr) => {
         match &$event {
-            e => assert_eq!(*e, crate::mock::last_event()),
+            e => assert_eq!(crate::mock::last_event(), *e),
         }
     };
 }
@@ -46,7 +52,7 @@ macro_rules! assert_last_event {
 macro_rules! assert_last_n_events {
     ($n:expr, $event:expr) => {
         match &$event {
-            e => similar_asserts::assert_eq!(*e, crate::mock::last_n_events($n)),
+            e => similar_asserts::assert_eq!(crate::mock::last_n_events($n), *e),
         }
     };
 }
@@ -133,6 +139,22 @@ impl pallet_treasury::Config for Test {
     type MinBlocksPerRound = MinBlocksPerRound;
     type TreasuryAccount = TreasuryAccount;
     type WeightInfo = ();
+}
+
+pub(crate) fn roll_to(n: u64) {
+    println!("roll_to {:?}", n);
+    println!("sys blk {:?}", System::block_number());
+    while System::block_number() < n {
+        println!("sys blk {:?}", System::block_number());
+        Treasury::on_finalize(System::block_number());
+        Balances::on_finalize(System::block_number());
+        System::on_finalize(System::block_number());
+        System::set_block_number(System::block_number() + 1);
+        System::on_initialize(System::block_number());
+        Balances::on_initialize(System::block_number());
+        Treasury::on_initialize(System::block_number());
+    }
+    println!("sys blk {:?}", System::block_number());
 }
 
 // Build genesis storage according to the mock runtime.

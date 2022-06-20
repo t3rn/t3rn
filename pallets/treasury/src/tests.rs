@@ -17,7 +17,45 @@ fn mint_for_round_requires_root() {
     })
 }
 
-// TODO refactor expects wen increment
+#[test]
+fn genesis_inflation_config() {
+    new_test_ext().execute_with(|| {
+        todo!();
+    })
+}
+
+#[test]
+fn hook_mints_for_each_past_round() {
+    new_test_ext().execute_with(|| {
+        let dev = 1;
+        let total_round_rewards = 10; // TODO unfix, also 50/50 split
+
+        <Beneficiaries<Test>>::insert(dev, BeneficiaryRole::Developer, 0);
+
+        // fast forward two round begins
+        roll_to(41);
+
+        assert_last_n_events!(
+            6,
+            vec![
+                Event::NewRound {
+                    round: 2,
+                    head: <MinBlocksPerRound>::get() as u64,
+                },
+                Event::BeneficiaryTokensIssued(dev, 5),
+                Event::RoundTokensIssued(<TreasuryAccount>::get(), total_round_rewards),
+                Event::NewRound {
+                    round: 3,
+                    head: (<MinBlocksPerRound>::get() * 2) as u64,
+                },
+                Event::BeneficiaryTokensIssued(dev, 5),
+                Event::RoundTokensIssued(<TreasuryAccount>::get(), total_round_rewards)
+            ]
+        );
+    })
+}
+
+// TODO refactor wen increment
 #[test]
 fn mint_for_round_splits_total_rewards_correctly_amongst_actors() {
     new_test_ext().execute_with(|| {
@@ -41,6 +79,18 @@ fn mint_for_round_splits_total_rewards_correctly_amongst_actors() {
                 Event::BeneficiaryTokensIssued(exec, 5),
                 Event::RoundTokensIssued(<TreasuryAccount>::get(), total_round_rewards)
             ]
+        );
+    })
+}
+
+#[test]
+fn claim_rewards_fails_if_not_beneficiary() {
+    new_test_ext().execute_with(|| {
+        <Beneficiaries<Test>>::insert(1, BeneficiaryRole::Developer, 0);
+
+        assert_err!(
+            Treasury::claim_rewards(Origin::signed(1)),
+            Error::<Test>::NoRewardsAvailable
         );
     })
 }
@@ -97,7 +147,7 @@ fn set_inflation_requires_root() {
 }
 
 #[test]
-fn set_inflation_fails_given_an_invalid_inflation_range() {
+fn set_inflation_fails_if_invalid() {
     new_test_ext().execute_with(|| {
         let new_inflation = Range {
             min: Perbill::from_percent(0),
@@ -113,7 +163,7 @@ fn set_inflation_fails_given_an_invalid_inflation_range() {
 }
 
 #[test]
-fn set_inflation_fails_given_the_existing_inflation_range() {
+fn set_inflation_fails_if_not_changed() {
     new_test_ext().execute_with(|| {
         let existing_inflation = Range {
             min: Perbill::from_parts(3),
@@ -129,7 +179,7 @@ fn set_inflation_fails_given_the_existing_inflation_range() {
 }
 
 #[test]
-fn setting_annual_inflation_derives_round_inflation() {
+fn set_inflation_derives_round_from_annual_inflation() {
     new_test_ext().execute_with(|| {
         // input annual inflation config
         let actual_annual_inflation = Range {
@@ -174,5 +224,75 @@ fn setting_annual_inflation_derives_round_inflation() {
             round_ideal: expected_round_inflation.ideal,
             round_max: expected_round_inflation.max,
         }));
+    })
+}
+
+#[test]
+fn set_rewards_alloc_requires_root() {
+    new_test_ext().execute_with(|| {
+        todo!();
+    })
+}
+
+#[test]
+fn set_rewards_alloc_fails_if_invalid() {
+    new_test_ext().execute_with(|| {
+        todo!();
+    })
+}
+
+#[test]
+fn set_rewards_alloc_fails_if_not_changed() {
+    new_test_ext().execute_with(|| {
+        todo!();
+    })
+}
+
+#[test]
+fn set_rewards_alloc_amongst_actors() {
+    new_test_ext().execute_with(|| {
+        todo!();
+    })
+}
+
+#[test]
+fn set_round_term_requires_root() {
+    new_test_ext().execute_with(|| {
+        todo!();
+    })
+}
+
+#[test]
+fn set_round_term_fails_if_not_changed() {
+    new_test_ext().execute_with(|| {
+        todo!();
+    })
+}
+
+#[test]
+fn set_round_term_fails_if_lower_than_min() {
+    new_test_ext().execute_with(|| {
+        todo!();
+    })
+}
+
+#[test]
+fn set_round_term_derives_round_inflation() {
+    new_test_ext().execute_with(|| {
+        todo!();
+    })
+}
+
+#[test]
+fn add_beneficiary_requires_root() {
+    new_test_ext().execute_with(|| {
+        todo!();
+    })
+}
+
+#[test]
+fn remove_beneficiary_requires_root() {
+    new_test_ext().execute_with(|| {
+        todo!();
     })
 }
