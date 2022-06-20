@@ -15,7 +15,7 @@ mod types;
 mod crypto;
 
 use crate::types::{Header, ValidatorSet, H256, Proof, Receipt};
-use t3rn_primitives::{bsc_finality_verifier::BinanceFV};
+use t3rn_primitives::bsc_finality_verifier::{BinanceFV};
 use codec::Decode;
 
 #[frame_support::pallet]
