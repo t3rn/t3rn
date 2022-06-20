@@ -1,6 +1,6 @@
 use crate::{
     assert_last_event, assert_last_n_events,
-    inflation::{BeneficiaryRole, InflationInfo, Range, RewardsAllocationConfig},
+    inflation::{BeneficiaryRole, InflationInfo, Range, RewardsAllocation},
     mock::{Event as MockEvent, *},
     Beneficiaries, BeneficiaryRoundRewards, Error, Event,
 };
@@ -158,7 +158,7 @@ fn setting_annual_inflation_derives_round_inflation() {
             InflationInfo {
                 annual: actual_annual_inflation,
                 round: expected_round_inflation,
-                rewards_alloc: RewardsAllocationConfig {
+                rewards_alloc: RewardsAllocation {
                     developer: Perbill::from_parts(500_000_000),
                     executor: Perbill::from_parts(500_000_000),
                 }

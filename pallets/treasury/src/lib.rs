@@ -19,7 +19,7 @@ pub mod weights;
 pub mod pallet {
     use crate::{
         inflation::{
-            BeneficiaryRole, InflationInfo, Range, RewardsAllocationConfig, RoundIndex, RoundInfo,
+            BeneficiaryRole, InflationInfo, Range, RewardsAllocation, RoundIndex, RoundInfo,
         },
         weights::WeightInfo,
     };
@@ -70,8 +70,7 @@ pub mod pallet {
     // #[pallet::getter(fn available_to_mint)]
     // // Remaining tokens to be minted | cap?
     // pub type AvailableTokensToBeMinted<T: Config> = StorageValue<_, BalanceOf<T>>;
-
-    // TODO: eventual cap? circulating, remaining
+    // TODO: eventual cap, circulating, remaining
 
     #[pallet::storage]
     #[pallet::getter(fn candidates)]
@@ -104,25 +103,10 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        RoundTokensIssued(T::AccountId, BalanceOf<T>),
-        BeneficiaryTokensIssued(T::AccountId, BalanceOf<T>),
-        InflationConfigChanged {
-            annual_min: Perbill,
-            annual_ideal: Perbill,
-            annual_max: Perbill,
-            round_min: Perbill,
-            round_ideal: Perbill,
-            round_max: Perbill,
-        },
-        RewardsConfigChanged {
-            dev_reward: Perbill,
-            exec_reward: Perbill,
-        },
         NewRound {
             round: RoundIndex,
             head: T::BlockNumber,
         },
-        RewardsClaimed(T::AccountId, BalanceOf<T>),
         RoundTermChanged {
             round: RoundIndex,
             head: T::BlockNumber,
@@ -132,21 +116,35 @@ pub mod pallet {
             new_per_round_inflation_ideal: Perbill,
             new_per_round_inflation_max: Perbill,
         },
+        InflationConfigChanged {
+            annual_min: Perbill,
+            annual_ideal: Perbill,
+            annual_max: Perbill,
+            round_min: Perbill,
+            round_ideal: Perbill,
+            round_max: Perbill,
+        },
+        RewardsAllocationChanged {
+            developer: Perbill,
+            executor: Perbill,
+        },
+        RoundTokensIssued(T::AccountId, BalanceOf<T>),
+        BeneficiaryTokensIssued(T::AccountId, BalanceOf<T>),
+        RewardsClaimed(T::AccountId, BalanceOf<T>),
     }
 
     #[pallet::error]
     pub enum Error<T> {
         InvalidInflationConfig,
-        InvalidRewardsConfig,
-        NotBeneficiary,
+        InvalidRewardsAllocation,
         ValueNotChanged,
-        TooFewBlocksPerRound,
+        RoundTermTooShort,
+        NotBeneficiary,
         NoRewardsAvailable,
     }
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        // TODO: test this hook
         fn on_initialize(n: BlockNumberFor<T>) -> Weight {
             let mut round = <CurrentRound<T>>::get();
 
@@ -163,9 +161,10 @@ pub mod pallet {
                 // issue tokens for the past round
                 // TODO: revisit how2 handle round totals?
                 let round_total: BalanceOf<T> = BalanceOf::<T>::from(10_u32);
-                Self::mint_for_round(T::Origin::root(), round.index - 1, round_total);
+                Self::mint_for_round(T::Origin::root(), round.index - 1, round_total)
+                    .expect("mint for round");
             }
-
+            todo!(); // + tests
             T::WeightInfo::on_initialize()
         }
 
@@ -180,7 +179,7 @@ pub mod pallet {
     pub struct GenesisConfig<T: Config> {
         pub candidates: Vec<T::AccountId>,
         pub annual_inflation: Range<Perbill>,
-        pub rewards_alloc: RewardsAllocationConfig,
+        pub rewards_alloc: RewardsAllocation,
         pub round_term: u32,
     }
 
@@ -190,15 +189,15 @@ pub mod pallet {
             Self {
                 candidates: Default::default(),
                 annual_inflation: Range {
-                    min: Perbill::from_parts(3),   //TODO
+                    min: Perbill::from_parts(3),   // TODO
                     ideal: Perbill::from_parts(4), // TODO
                     max: Perbill::from_parts(5),   // TODO
                 },
-                rewards_alloc: RewardsAllocationConfig {
+                rewards_alloc: RewardsAllocation {
                     executor: Perbill::from_parts(500_000_000),
                     developer: Perbill::from_parts(500_000_000),
                 },
-                round_term: 5,
+                round_term: T::MinBlocksPerRound::get(),
             }
         }
     }
@@ -211,11 +210,13 @@ pub mod pallet {
                 RoundInfo::new(1_u32, T::BlockNumber::zero(), self.round_term);
             <CurrentRound<T>>::put(round);
 
-            // set inflation config TODO: error handling
-            <Pallet<T>>::set_inflation(T::Origin::root(), self.annual_inflation);
+            // set inflation config
+            <Pallet<T>>::set_inflation(T::Origin::root(), self.annual_inflation)
+                .expect("genesis build set inflation");
 
-            // set rewards allocation amongst t3rn actors TODO: error handling
-            <Pallet<T>>::set_rewards_alloc(T::Origin::root(), self.rewards_alloc.clone());
+            // set rewards allocation amongst t3rn actors
+            <Pallet<T>>::set_rewards_alloc(T::Origin::root(), self.rewards_alloc.clone())
+                .expect("genesis build set rewards alloc");
 
             // TODO: genesis tokens issuance
 
@@ -228,10 +229,10 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Mints a dynamic (FIXME) amount of tokens for given round.
+        /// Mints tokens for given round.
         /// TODO: maybe ensure can only be called once per round
         /// TODO: actually consider executions
-        #[pallet::weight(10_000)]
+        #[pallet::weight(10_000)] // TODO
         pub fn mint_for_round(
             origin: OriginFor<T>,
             round_index: RoundIndex,
@@ -240,7 +241,6 @@ pub mod pallet {
             ensure_root(origin)?;
 
             let treasury = T::TreasuryAccount::get();
-            // let round = <CurrentRound<T>>::get();
             let inflation_info = <InflationConfig<T>>::get();
 
             // count actors
@@ -290,7 +290,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(10_000)]
+        #[pallet::weight(10_000)] // TODO
         pub fn claim_rewards(origin: OriginFor<T>) -> DispatchResult {
             let who = ensure_signed(origin)?;
             <Pallet<T>>::ensure_beneficiary(&who)?;
@@ -316,7 +316,7 @@ pub mod pallet {
         }
 
         /// Sets the annual inflation rate to derive per-round inflation
-        #[pallet::weight(10_000)]
+        #[pallet::weight(10_000)] // TODO
         pub fn set_inflation(
             origin: OriginFor<T>,
             annual_inflation_config: Range<Perbill>,
@@ -334,7 +334,7 @@ pub mod pallet {
             );
 
             // update annual and round inflation config
-            inflation_info.update_from_annual::<T>(annual_inflation_config);
+            inflation_info.update_from_annual::<T>(annual_inflation_config)?;
             let round_inflation_info = inflation_info.round;
             <InflationConfig<T>>::put(inflation_info);
 
@@ -350,29 +350,32 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// Sets the reward percentage to be allocated between developers and executors
-        #[pallet::weight(10_000)]
+        /// Sets the reward percentage to be allocated amongst t3rn actors
+        #[pallet::weight(10_000)] // TODO
         pub fn set_rewards_alloc(
             origin: OriginFor<T>,
-            rewards_config: RewardsAllocationConfig,
+            rewards_alloc: RewardsAllocation,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
-            ensure!(rewards_config.validate(), Error::<T>::InvalidRewardsConfig);
+            ensure!(
+                rewards_alloc.is_valid(),
+                Error::<T>::InvalidRewardsAllocation
+            );
 
             let mut config = <InflationConfig<T>>::get();
             ensure!(
-                config.rewards_alloc != rewards_config,
+                config.rewards_alloc != rewards_alloc,
                 Error::<T>::ValueNotChanged
             );
 
             // update rewards config
-            let (dev_reward, exec_reward) = (rewards_config.developer, rewards_config.executor);
-            config.rewards_alloc = rewards_config;
+            let (developer, executor) = (rewards_alloc.developer, rewards_alloc.executor);
+            config.rewards_alloc = rewards_alloc;
             <InflationConfig<T>>::put(config);
 
-            Self::deposit_event(Event::RewardsConfigChanged {
-                dev_reward,
-                exec_reward,
+            Self::deposit_event(Event::RewardsAllocationChanged {
+                developer,
+                executor,
             });
 
             Ok(().into())
@@ -382,12 +385,12 @@ pub mod pallet {
         /// - if called with `new` less than term of current round, will transition immediately
         /// in the next block
         /// - also updates per-round inflation config
-        #[pallet::weight(10_000)]
-        pub fn set_blocks_per_round(origin: OriginFor<T>, new: u32) -> DispatchResultWithPostInfo {
+        #[pallet::weight(10_000)] // TODO
+        pub fn set_round_term(origin: OriginFor<T>, new: u32) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
             ensure!(
                 new >= T::MinBlocksPerRound::get(),
-                Error::<T>::TooFewBlocksPerRound
+                Error::<T>::RoundTermTooShort
             );
 
             let mut round = <CurrentRound<T>>::get();
@@ -399,7 +402,7 @@ pub mod pallet {
 
             // update per-round inflation given the new number of rounds per year
             let mut inflation_info = <InflationConfig<T>>::get();
-            inflation_info.update_round_term(new);
+            inflation_info.update_from_round_term::<T>(new)?;
             let round_inflation_info = inflation_info.round;
             <InflationConfig<T>>::put(inflation_info);
 
@@ -416,13 +419,13 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(10_000)]
+        #[pallet::weight(10_000)] // TODO
         pub fn add_beneficiary(origin: OriginFor<T>, _beneficiary: T::AccountId) -> DispatchResult {
             ensure_root(origin)?;
             todo!();
         }
 
-        #[pallet::weight(10_000)]
+        #[pallet::weight(10_000)] // TODO
         pub fn remove_beneficiary(
             origin: OriginFor<T>,
             _beneficiary: T::AccountId,

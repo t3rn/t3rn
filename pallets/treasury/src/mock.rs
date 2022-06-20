@@ -1,6 +1,6 @@
 use crate::{
     self as pallet_treasury,
-    inflation::{Range, RewardsAllocationConfig},
+    inflation::{Range, RewardsAllocation},
     mock::sp_api_hidden_includes_construct_runtime::hidden_include::traits::GenesisBuild,
 };
 use frame_support::parameter_types;
@@ -148,7 +148,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
             ideal: Perbill::from_parts(4),
             max: Perbill::from_parts(5),
         },
-        rewards_alloc: RewardsAllocationConfig {
+        rewards_alloc: RewardsAllocation {
             developer: Perbill::from_parts(500_000_000),
             executor: Perbill::from_parts(500_000_000),
         },
