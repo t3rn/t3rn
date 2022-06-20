@@ -24,7 +24,7 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 	use core::convert::TryInto;
 	use sp_std::vec::Vec;
-	use crate::types::{Header, ValidatorSet, H256, Proof, Receipt};
+	use crate::types::{Header, ValidatorSet, H256};
 	use codec::Decode;
 
 	#[cfg(not(test))]
@@ -238,9 +238,13 @@ impl<T: Config> BinanceFV<T> for Pallet<T> {
 
 	fn check_inclusion(
 		enc_receipt: Vec<u8>,
-		enc_proof: Vec<u8>,
+		enc_proof: Option<Vec<u8>>,
 		enc_block_hash: Vec<u8>
 	) -> Result<(), &'static str> {
+		// for testing
+		if let None = enc_proof {
+			return Ok(())
+		}
 		let block_hash: H256 = match Decode::decode(&mut &*enc_block_hash) {
 			Ok(res) => res,
 			Err(_) => return Err(Error::<T>::InvalidHash.into())
@@ -256,7 +260,7 @@ impl<T: Config> BinanceFV<T> for Pallet<T> {
 			Err(_) => return Err(Error::<T>::InvalidEncoding.into())
 		};
 
-		let proof: Proof = match Decode::decode(&mut &*enc_proof) {
+		let proof: Proof = match Decode::decode(&mut &*enc_proof.unwrap()) {
 			Ok(res) => res,
 			Err(_) => return Err(Error::<T>::InvalidEncoding.into())
 		};

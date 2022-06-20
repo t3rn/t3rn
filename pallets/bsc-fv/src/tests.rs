@@ -297,7 +297,7 @@ fn check_inclusion_with_valid_data() {
 		// This checks validator_set_authorized
 		let header: Header = Decode::decode(&mut &*BLOCK_400.to_vec()).unwrap();
 
-		match BinanceFv::check_inclusion(RECEIPT_400.to_vec(), PROOF_400.to_vec(), header.hash().to_fixed_bytes().to_vec()) {
+		match BinanceFv::check_inclusion(RECEIPT_400.to_vec(), Some(PROOF_400.to_vec()), header.hash().to_fixed_bytes().to_vec()) {
 			Ok(()) => (),
 			Err(err) => assert!(false) // check for correct error here
 		}
@@ -312,7 +312,7 @@ fn check_inclusion_fails_with_missing_header() {
 		// This checks validator_set_authorized
 		let header: Header = Decode::decode(&mut &*BLOCK_400.to_vec()).unwrap();
 
-		match BinanceFv::check_inclusion(RECEIPT_400.to_vec(), PROOF_400.to_vec(), header.hash().to_fixed_bytes().to_vec()) {
+		match BinanceFv::check_inclusion(RECEIPT_400.to_vec(), Some(PROOF_400.to_vec()), header.hash().to_fixed_bytes().to_vec()) {
 			Ok(()) => assert!(false), // check for correct error here,
 			Err(err) => ()
 		}
@@ -327,7 +327,7 @@ fn check_inclusion_fails_with_wrong_proof_index() {
 		// This checks validator_set_authorized
 		let header: Header = Decode::decode(&mut &*BLOCK_400.to_vec()).unwrap();
 
-		match BinanceFv::check_inclusion(RECEIPT_400.to_vec(), PROOF_INVALID_INDEX.to_vec(), header.hash().to_fixed_bytes().to_vec()) {
+		match BinanceFv::check_inclusion(RECEIPT_400.to_vec(), Some(PROOF_INVALID_INDEX.to_vec()), header.hash().to_fixed_bytes().to_vec()) {
 			Ok(()) => assert!(false), // check for correct error here,
 			Err(err) => ()
 		}
@@ -342,7 +342,7 @@ fn check_inclusion_fails_with_wrong_proof_path() {
 		// This checks validator_set_authorized
 		let header: Header = Decode::decode(&mut &*BLOCK_400.to_vec()).unwrap();
 
-		match BinanceFv::check_inclusion(RECEIPT_400.to_vec(), PROOF_INVALID_PATH.to_vec(), header.hash().to_fixed_bytes().to_vec()) {
+		match BinanceFv::check_inclusion(RECEIPT_400.to_vec(), Some(PROOF_INVALID_PATH.to_vec()), header.hash().to_fixed_bytes().to_vec()) {
 			Ok(()) => assert!(false), // check for correct error here,
 			Err(err) => ()
 		}
@@ -359,7 +359,7 @@ fn check_inclusion_passes_with_high_receipt_index() {
 		// This checks validator_set_authorized
 		let header: Header = Decode::decode(&mut &*BLOCK_997.to_vec()).unwrap();
 
-		match BinanceFv::check_inclusion(RECEIPT_HIGH_INDEX_997.to_vec(), PROOF_997.to_vec(), header.hash().to_fixed_bytes().to_vec()) {
+		match BinanceFv::check_inclusion(RECEIPT_HIGH_INDEX_997.to_vec(), Some(PROOF_997.to_vec()), header.hash().to_fixed_bytes().to_vec()) {
 			Ok(()) => (),
 			Err(err) => assert!(false), // check for correct error here,
 		}

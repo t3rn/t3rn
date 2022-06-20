@@ -8,7 +8,7 @@ pub trait BinanceFV<T: frame_system::Config> {
 
     fn check_inclusion(
         enc_receipt: Vec<u8>,
-        enc_proof: Vec<u8>,
+        enc_proof: Option<Vec<u8>>,
         enc_block_hash: Vec<u8>
     ) -> Result<(), &'static str>;
 }
