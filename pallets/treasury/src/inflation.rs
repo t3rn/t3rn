@@ -1,10 +1,10 @@
-use crate::pallet::{Config, Error, Pallet};
+use crate::{BalanceOf, pallet::{Config, Error, Pallet}};
 use codec::{Decode, Encode, MaxEncodedLen};
 use fixed::{
     transcendental::pow,
     types::{I32F32, I64F64},
 };
-use frame_support::{ensure, traits::Get};
+use frame_support::{ensure, traits::{Get, Currency}};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_runtime::{traits::CheckedAdd, PerThing, Perbill, RuntimeDebug};
@@ -102,6 +102,7 @@ pub fn annual_to_round_inflation<T: Config>(
     Ok(round_inflation)
 }
 
+/// Computes the number of rounds per year given a fixed bock time of 12s.
 fn rounds_per_year<T: Config>() -> Result<u32, Error<T>> {
     let round_term = <Pallet<T>>::current_round().term;
 
@@ -111,6 +112,16 @@ fn rounds_per_year<T: Config>() -> Result<u32, Error<T>> {
     );
 
     Ok(BLOCKS_PER_YEAR / round_term)
+}
+
+/// Compute round issuance range from round inflation range and current total issuance
+pub fn round_issuance_range<T: Config>(round_inflation: Range<Perbill>) -> Range<BalanceOf<T>> {
+	let circulating = T::Currency::total_issuance();
+	Range {
+		min: round_inflation.min * circulating,
+		ideal: round_inflation.ideal * circulating,
+		max: round_inflation.max * circulating,
+	}
 }
 
 /// Convert an annual inflation to a round inflation

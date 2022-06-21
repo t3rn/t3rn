@@ -81,8 +81,13 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn current_round)]
-    // Information on the current epoch.
+    // Information on the current treasury round.
     pub type CurrentRound<T: Config> = StorageValue<_, RoundInfo<T::BlockNumber>, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn total_stake_expectation)]
+    // Expected total stake sum of executorsand collators.
+    pub type TotalStakeExpectation<T: Config> =  StorageValue<_, Range<BalanceOf<T>>, ValueQuery>;
 
     // #[pallet::storage]
     // #[pallet::getter(fn available_to_mint)]
@@ -165,7 +170,7 @@ pub mod pallet {
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(n: BlockNumberFor<T>) -> Weight {
             let mut round = <CurrentRound<T>>::get();
-
+            log::debug!("SHOULD ROUND UPDATE AT BLOCK NUMBER {:?}? {:?}", n, round.should_update(n));
             if round.should_update(n) {
                 // update round
                 round.update(n);
@@ -177,12 +182,16 @@ pub mod pallet {
                 });
 
                 // issue tokens for the past round
-                // TODO: revisit how2 handle round totals?
-                let round_total: BalanceOf<T> = BalanceOf::<T>::from(10_u32);
-                Self::mint_for_round(T::Origin::root(), round.index - 1, round_total)
+                // TODO impl delay
+                // TODO sum executors + collators stake
+                let total_stake: BalanceOf<T> = Self::u32_to_balance(50_u32);
+                log::debug!("CIRCULATING CIRCULATING CIRCULATING {:?}", T::Currency::total_issuance());
+                let round_issuance = Self::compute_round_issuance(total_stake);
+                // let round_issuance = Self::u32_to_balance(10_u32);
+                Self::mint_for_round(T::Origin::root(), round.index - 1, round_issuance)
                     .expect("mint for round");
             }
-            // todo!(); // + tests
+
             T::WeightInfo::on_initialize()
         }
 
@@ -195,6 +204,7 @@ pub mod pallet {
         pub annual_inflation: Range<Perbill>,
         pub rewards_alloc: RewardsAllocation,
         pub round_term: u32,
+        pub total_stake_expectation: Range<BalanceOf<T>>
     }
 
     #[cfg(feature = "std")]
@@ -212,6 +222,11 @@ pub mod pallet {
                     developer: Perbill::from_parts(500_000_000),
                 },
                 round_term: T::MinBlocksPerRound::get(),
+                total_stake_expectation: Range {
+                    min: <Pallet<T>>::u32_to_balance(0_u32), // TODO
+                    ideal: <Pallet<T>>::u32_to_balance(1000_u32), //TODO
+                    max: <Pallet<T>>::u32_to_balance(1_000_000_u32) //TODO
+                }
             }
         }
     }
@@ -232,7 +247,9 @@ pub mod pallet {
             <Pallet<T>>::set_rewards_alloc(T::Origin::root(), self.rewards_alloc.clone())
                 .expect("genesis build set rewards alloc");
 
+            <TotalStakeExpectation<T>>::put(self.total_stake_expectation);
             // TODO: genesis tokens issuance
+
 
             <Pallet<T>>::deposit_event(Event::NewRound {
                 round: round.index,
@@ -449,9 +466,39 @@ pub mod pallet {
             ensure_root(origin)?;
             todo!();
         }
+
+        /// Set the expectations for total staked. These expectations determine the issuance for
+		/// the round according to logic in `fn compute_round_issuance`.
+        #[pallet::weight(10_000)] // TODO
+		pub fn set_total_stake_expectation(
+			_origin: OriginFor<T>,
+			_expectations: Range<BalanceOf<T>>,
+		) -> DispatchResultWithPostInfo {
+            todo!();
+			// T::MonetaryGovernanceOrigin::ensure_origin(origin)?;
+			// ensure!(expectations.is_valid(), Error::<T>::InvalidSchedule);
+			// let mut config = <InflationConfig<T>>::get();
+			// ensure!(
+			// 	config.expect != expectations,
+			// 	Error::<T>::NoWritingSameValue
+			// );
+			// config.set_expectations(expectations);
+			// Self::deposit_event(Event::StakeExpectationsSet {
+			// 	expect_min: config.expect.min,
+			// 	expect_ideal: config.expect.ideal,
+			// 	expect_max: config.expect.max,
+			// });
+			// <InflationConfig<T>>::put(config);
+			// Ok(().into())
+		}
     }
 
     impl<T: Config> Pallet<T> {
+        // Casts a u32 to our runtime's balance.
+        fn u32_to_balance(input: u32) -> <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance {
+            input.into()
+        }
+
         /// Helper function to check if the origin belongs to the candidate list
         pub fn ensure_beneficiary(who: &T::AccountId) -> Result<(), DispatchError> {
             ensure!(
@@ -460,5 +507,21 @@ pub mod pallet {
             );
             Ok(())
         }
+
+        /// Computes round issuance based on total staked for the given round
+        /// Total stake consists of executors' and collators' total stake.
+		fn compute_round_issuance( total_stake: BalanceOf<T>) -> BalanceOf<T> {
+			let expect = <TotalStakeExpectation<T>>::get();
+            let round_inflation = <InflationConfig<T>>::get().round;
+			let round_issuance = crate::inflation::round_issuance_range::<T>(round_inflation);
+
+			if total_stake < expect.min {
+				round_issuance.min
+			} else if total_stake >  expect.max {
+				round_issuance.max
+			} else {
+				round_issuance.ideal
+			}
+		}
     }
 }

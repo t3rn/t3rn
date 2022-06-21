@@ -177,6 +177,11 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
             executor: Perbill::from_parts(500_000_000),
         },
         round_term: 20,
+        total_stake_expectation: Range {
+            min: 0,
+            ideal: 1000, 
+            max: 1_000_000
+        } 
     }
     .assimilate_storage(&mut storage)
     .expect("mock pallet-treasury genesis storage assimilation");
