@@ -1,6 +1,8 @@
 use crate::{
     assert_last_event, assert_last_n_events,
-    inflation::{BeneficiaryRole, InflationInfo, Range, RewardsAllocation, RoundIndex, RoundInfo},
+    inflation::{
+        BeneficiaryRole, InflationInfo, InflationAllocation, Range, RoundIndex, RoundInfo,
+    },
     mock::{Event as MockEvent, *},
     Beneficiaries, BeneficiaryRoundRewards, Error, Event,
 };
@@ -47,8 +49,8 @@ fn genesis_inflation_config() {
             }
         );
         assert_eq!(
-            Treasury::rewards_alloc(),
-            RewardsAllocation {
+            Treasury::inflation_alloc(),
+            InflationAllocation {
                 executor: Perbill::from_parts(500_000_000),  // TODO
                 developer: Perbill::from_parts(500_000_000), // TODO
             },
@@ -56,14 +58,14 @@ fn genesis_inflation_config() {
     })
 }
 
-#[test]
+#[test] //FIXME
 fn hook_mints_for_each_past_round() {
     new_test_ext().execute_with(|| {
         let dev = 1;
         let total_round_rewards = 10; // TODO unfix, also 50/50 split
 
         <Beneficiaries<Test>>::insert(dev, BeneficiaryRole::Developer, 0);
-
+        // <Test as mock::Config>::Currency::issue(100);
         // fast forward two round begins
         roll_to(41);
 
@@ -75,13 +77,13 @@ fn hook_mints_for_each_past_round() {
                     head: <MinBlocksPerRound>::get() as u64,
                 },
                 Event::BeneficiaryTokensIssued(dev, 5),
-                Event::RoundTokensIssued(<TreasuryAccount>::get(), total_round_rewards),
+                Event::RoundTokensIssued(1, total_round_rewards),
                 Event::NewRound {
                     round: 3,
                     head: (<MinBlocksPerRound>::get() * 2) as u64,
                 },
                 Event::BeneficiaryTokensIssued(dev, 5),
-                Event::RoundTokensIssued(<TreasuryAccount>::get(), total_round_rewards)
+                Event::RoundTokensIssued(2, total_round_rewards)
             ]
         );
     })
@@ -109,7 +111,7 @@ fn mint_for_round_splits_total_rewards_correctly_amongst_actors() {
             vec![
                 Event::BeneficiaryTokensIssued(dev, 5),
                 Event::BeneficiaryTokensIssued(exec, 5),
-                Event::RoundTokensIssued(<TreasuryAccount>::get(), total_round_rewards)
+                Event::RoundTokensIssued(1, total_round_rewards)
             ]
         );
     })
@@ -210,7 +212,7 @@ fn set_inflation_fails_if_not_changed() {
     })
 }
 
-#[test]
+#[test] //FIXME
 fn set_inflation_derives_round_from_annual_inflation() {
     new_test_ext().execute_with(|| {
         // input annual inflation config
@@ -256,64 +258,64 @@ fn set_inflation_derives_round_from_annual_inflation() {
 }
 
 #[test]
-fn set_rewards_alloc_requires_root() {
+fn set_inflation_alloc_requires_root() {
     new_test_ext().execute_with(|| {
-        let rewards_alloc = RewardsAllocation {
+        let inflation_alloc = InflationAllocation {
             developer: Perbill::from_parts(500_000_000),
             executor: Perbill::from_parts(500_000_000),
         };
 
         assert_noop!(
-            Treasury::set_rewards_alloc(Origin::signed(419), rewards_alloc),
+            Treasury::set_inflation_alloc(Origin::signed(419), inflation_alloc),
             sp_runtime::DispatchError::BadOrigin
         );
     })
 }
 
 #[test]
-fn set_rewards_alloc_fails_if_invalid() {
+fn set_inflation_alloc_fails_if_invalid() {
     new_test_ext().execute_with(|| {
-        let rewards_alloc = RewardsAllocation {
+        let inflation_alloc = InflationAllocation {
             developer: Perbill::from_parts(500_000_000),
             executor: Perbill::from_parts(600_000_000),
         };
 
         assert_noop!(
-            Treasury::set_rewards_alloc(Origin::root(), rewards_alloc),
-            Error::<Test>::InvalidRewardsAllocation
+            Treasury::set_inflation_alloc(Origin::root(), inflation_alloc),
+            Error::<Test>::InvalidInflationAllocation
         );
     })
 }
 
 #[test]
-fn set_rewards_alloc_fails_if_not_changed() {
+fn set_inflation_alloc_fails_if_not_changed() {
     new_test_ext().execute_with(|| {
-        let rewards_alloc = RewardsAllocation {
+        let inflation_alloc = InflationAllocation {
             developer: Perbill::from_parts(500_000_000),
             executor: Perbill::from_parts(500_000_000),
         };
 
         assert_noop!(
-            Treasury::set_rewards_alloc(Origin::root(), rewards_alloc),
+            Treasury::set_inflation_alloc(Origin::root(), inflation_alloc),
             Error::<Test>::ValueNotChanged
         );
     })
 }
 
 #[test]
-fn set_rewards_alloc_amongst_actors() {
+fn set_inflation_alloc_amongst_actors() {
     new_test_ext().execute_with(|| {
-        let rewards_alloc = RewardsAllocation {
+        let inflation_alloc = InflationAllocation {
             developer: Perbill::from_parts(501_000_000),
             executor: Perbill::from_parts(499_000_000),
         };
 
-        assert_ok!(Treasury::set_rewards_alloc(
+        assert_ok!(Treasury::set_inflation_alloc(
             Origin::root(),
-            rewards_alloc.clone()
+            inflation_alloc.clone()
         ));
 
-        assert_eq!(Treasury::rewards_alloc(), rewards_alloc)
+        assert_eq!(Treasury::inflation_alloc(), inflation_alloc)
     })
 }
 
@@ -349,11 +351,18 @@ fn set_round_term_fails_if_lower_than_min() {
     })
 }
 
-#[test]
+#[test] //FIXME
 fn set_round_term_derives_round_inflation() {
     new_test_ext().execute_with(|| {
-        assert_ok!(Treasury::set_round_term(Origin::root(), 22));
-        // TODO
+        let new = 500;
+        assert_ok!(Treasury::set_round_term(Origin::root(), new));
+        assert_last_event!(MockEvent::Treasury(Event::RoundTermChanged {
+            old: 20,
+            new,
+            round_min:  Perbill::from_parts(0),
+            round_ideal:  Perbill::from_parts(0),
+            round_max:  Perbill::from_parts(0)
+        }));
         assert_eq!(
             Treasury::inflation_config().round,
             Range {

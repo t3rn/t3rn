@@ -1,6 +1,6 @@
 use crate::{
     self as pallet_treasury,
-    inflation::{Range, RewardsAllocation},
+    inflation::{InflationAllocation, Range},
 };
 use frame_support::{
     parameter_types,
@@ -128,15 +128,21 @@ impl pallet_balances::Config for Test {
 
 parameter_types! {
     pub const TreasuryAccount: u32 = 0;
+    pub const ReserveAccount: u32 = 1;
+    pub const AuctionFund: u32 = 2;
+    pub const ContractFund: u32 = 3;
     pub const MinBlocksPerRound: u32 = 20;
     pub const GenesisIssuance: u32 = 100;
 }
 
 impl pallet_treasury::Config for Test {
+    type AuctionFund = AuctionFund;
+    type ContractFund = ContractFund;
     type Currency = Balances;
     type Event = Event;
     type GenesisIssuance = GenesisIssuance;
     type MinBlocksPerRound = MinBlocksPerRound;
+    type ReserveAccount = ReserveAccount;
     type TreasuryAccount = TreasuryAccount;
     type WeightInfo = ();
 }
@@ -166,11 +172,16 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
             ideal: Perbill::from_parts(4),
             max: Perbill::from_parts(5),
         },
-        rewards_alloc: RewardsAllocation {
+        inflation_alloc: InflationAllocation {
             developer: Perbill::from_parts(500_000_000),
             executor: Perbill::from_parts(500_000_000),
         },
         round_term: 20,
+        total_stake_expectation: Range {
+            min: 0,
+            ideal: 1000,
+            max: 1_000_000,
+        },
     }
     .assimilate_storage(&mut storage)
     .expect("mock pallet-treasury genesis storage assimilation");
