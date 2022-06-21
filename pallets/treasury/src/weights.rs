@@ -6,7 +6,7 @@ pub trait WeightInfo {
     fn mint_for_round() -> Weight;
     fn claim_rewards() -> Weight;
     fn set_inflation() -> Weight;
-    fn set_rewards_alloc() -> Weight;
+    fn set_inflation_alloc() -> Weight;
     fn set_round_term() -> Weight;
     fn add_beneficiary() -> Weight;
     fn remove_beneficiary() -> Weight;
@@ -32,7 +32,7 @@ impl<T: frame_system::Config> WeightInfo for TreasuryWeight<T> {
         0_u64
     }
 
-    fn set_rewards_alloc() -> Weight {
+    fn set_inflation_alloc() -> Weight {
         0_u64
     }
 
@@ -67,7 +67,7 @@ impl WeightInfo for () {
         0_u64
     }
 
-    fn set_rewards_alloc() -> Weight {
+    fn set_inflation_alloc() -> Weight {
         0_u64
     }
 
