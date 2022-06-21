@@ -359,6 +359,9 @@ pub mod pallet {
         /// This function is only allowed to be called from a trusted origin and writes to storage
         /// with practically no checks in terms of the validity of the data. It is important that
         /// you ensure that valid data is being passed in.
+        /// #ToDo: Portal3#1 Is grandpa-fv for relaychains vs parachains
+        ///     For different Relay chain instances - Polkadot & Kusama & Rococo
+        /// Instantia
         #[pallet::weight((T::DbWeight::get().reads_writes(2, 5), DispatchClass::Operational))]
         pub fn initialize_single(
             origin: OriginFor<T>,

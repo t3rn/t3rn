@@ -1,0 +1,56 @@
+
+[package]
+authors    = [ "t3rn ltd. <team@t3rn.io>" ]
+edition    = "2018"
+homepage   = "https://t3rn.io"
+license    = "Apache 2.0"
+name       = "pallet-multi-finality-verifier"
+repository = "https://github.com/t3rn/t3rn/"
+version    = "1.0.0-alpha.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+codec            = { package = "parity-scale-codec", version = "3", default-features = false }
+finality-grandpa = { version = "0.15", default-features = false }
+log              = { version = "0.4.14", default-features = false }
+scale-info       = { version = "2", default-features = false, features = [ "derive" ] }
+serde            = { version = "1.0", default-features = false, optional = true }
+
+# Substrate Dependencies
+
+frame-support       = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+frame-system        = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+pallet-xdns         = { path = "../xdns", default-features = false }
+sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-runtime          = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-std              = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-trie             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+t3rn-primitives     = { path = "../../primitives", default-features = false }
+
+[dev-dependencies]
+pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
+pallet-sudo      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
+sp-io            = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
+
+pallet-circuit-portal = { path = "../circuit-portal" }
+t3rn-protocol         = { path = "../../protocol" }
+
+[features]
+default = [ "std" ]
+runtime-benchmarks = [  ]
+std = [
+  "codec/std",
+  "finality-grandpa/std",
+  "frame-support/std",
+  "frame-system/std",
+  "log/std",
+  "serde/std",
+  "sp-finality-grandpa/std",
+  "sp-runtime/std",
+  "sp-std/std",
+  "sp-trie/std",
+  "pallet-xdns/std",
+  "t3rn-primitives/std",
+]

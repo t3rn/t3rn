@@ -118,10 +118,6 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config:
         frame_system::Config
-        + pallet_multi_finality_verifier::Config<DefaultPolkadotLikeGateway>
-        + pallet_multi_finality_verifier::Config<PolkadotLikeValU64Gateway>
-        + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU64Gateway>
-        + pallet_multi_finality_verifier::Config<EthLikeKeccak256ValU32Gateway>
     {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -142,6 +138,13 @@ pub mod pallet {
         type PalletId: Get<PalletId>;
 
         type EthVerifier: Verifier;
+
+        // option 2
+        // type PolkadotFV: FinalityVerifier;
+        // type KusamaFV: FinalityVerifier;
+        // type BSCFV: FinalityVerifier;
+        // type EthereumFV: FinalityVerifier;
+        // type BTCFV: FinalityVerifier;
 
         /// A type that provides inspection and mutation to some fungible assets
         type Balances: Inspect<Self::AccountId> + Mutate<Self::AccountId>;
@@ -446,8 +449,36 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
     ) -> Result<(), &'static str> {
         let gateway_xdns_record = <T as Config>::Xdns::best_available(gateway_id)?;
 
+                 /**
+                    /// My problem is that to add new chains we'd have to do a runtime upgrade with the below
+                    /// match extended.
+                    /// The final solution could introduce the below implementation as a smart contract.
+                    ///
+                    let gateway_xdns_record = <T as Config>::Xdns::best_available(gateway_id)?;
+                    gateway_xdns_record.gateway_vendor {
+                        GatewayVendor::Polkadot {
+                            T::PolkadotFinalityVerifier::verify_event_inclusion(decoded_arguments)?;
+                        }
+                        GatewayVendor::Kusama {
+                            T::PolkadotFinalityVerifier::verify_event_inclusion(decoded_arguments)?;
+                        }
+                        GatewayVendor::BSC {
+                            T::BSCFinalityVerifier::verify_event_inclusion(decoded_arguments)?;
+                        }
+                        GatewayVendor::Ethereum {
+                            T::EthereumFinalityVerifier::verify_event_inclusion(decoded_arguments)?;
+                        }
+                        GatewayVendor::Gatechain {
+                            T::EthereumFinalityVerifier::verify_event_inclusion(decoded_arguments)?;
+                        }
+                    }
+                }
+                **/
+
         match gateway_xdns_record.gateway_vendor {
             GatewayVendor::Ethereum => {
+
+                T::PoWFV::
                 unimplemented!()
                 // something like this should work for eth
                 // return if let Err(computed_root) = check_merkle_proof(
