@@ -1,0 +1,16 @@
+{
+  "name": "bsc_ranger",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "@polkadot/api": "^8.9.1",
+    "@polkadot/keyring": "^9.5.1",
+    "@polkadot/types": "^8.9.1",
+    "debug": "^4.3.4",
+    "eth-lib": "^0.1.29",
+    "rlp": "^3.0.0",
+    "web3": "^1.7.3",
+    "web3-utils": "^1.7.3"
+  }
+}
