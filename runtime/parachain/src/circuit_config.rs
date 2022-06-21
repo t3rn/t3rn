@@ -169,16 +169,22 @@ impl pallet_mfv::Config<DefaultPolkadotBridgeInstance> for Runtime {
 }
 
 parameter_types! {
+    pub const TreasuryAccount: AccountId = AccountId::new([0u8; 32]); // TODO
+    pub const ReserveAccount: AccountId = AccountId::new([1u8; 32]); // TODO
+    pub const AuctionFund: AccountId = AccountId::new([2u8; 32]); // TODO
+    pub const ContractFund: AccountId = AccountId::new([3u8; 32]); // TODO
     pub const MinBlocksPerRound: u32 = 20; // TODO
     pub const GenesisIssuance: u32 = 1_000_000; // TODO
-    pub const TreasuryAccount: AccountId = AccountId::new([0u8; 32]); // TODO
 }
 
 impl pallet_treasury::Config for Runtime {
+    type AuctionFund = AuctionFund;
+    type ContractFund = ContractFund;
     type Currency = Balances;
     type Event = Event;
     type GenesisIssuance = GenesisIssuance;
     type MinBlocksPerRound = MinBlocksPerRound;
+    type ReserveAccount = ReserveAccount;
     type TreasuryAccount = TreasuryAccount;
     type WeightInfo = pallet_treasury::weights::TreasuryWeight<Runtime>;
 }

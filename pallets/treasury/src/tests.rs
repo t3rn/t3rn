@@ -75,13 +75,13 @@ fn hook_mints_for_each_past_round() {
                     head: <MinBlocksPerRound>::get() as u64,
                 },
                 Event::BeneficiaryTokensIssued(dev, 5),
-                Event::RoundTokensIssued(<TreasuryAccount>::get(), total_round_rewards),
+                Event::RoundTokensIssued(1, total_round_rewards),
                 Event::NewRound {
                     round: 3,
                     head: (<MinBlocksPerRound>::get() * 2) as u64,
                 },
                 Event::BeneficiaryTokensIssued(dev, 5),
-                Event::RoundTokensIssued(<TreasuryAccount>::get(), total_round_rewards)
+                Event::RoundTokensIssued(2, total_round_rewards)
             ]
         );
     })
@@ -109,7 +109,7 @@ fn mint_for_round_splits_total_rewards_correctly_amongst_actors() {
             vec![
                 Event::BeneficiaryTokensIssued(dev, 5),
                 Event::BeneficiaryTokensIssued(exec, 5),
-                Event::RoundTokensIssued(<TreasuryAccount>::get(), total_round_rewards)
+                Event::RoundTokensIssued(1, total_round_rewards)
             ]
         );
     })

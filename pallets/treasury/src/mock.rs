@@ -128,15 +128,21 @@ impl pallet_balances::Config for Test {
 
 parameter_types! {
     pub const TreasuryAccount: u32 = 0;
+    pub const ReserveAccount: u32 = 1;
+    pub const AuctionFund: u32 = 2;
+    pub const ContractFund: u32 = 3;
     pub const MinBlocksPerRound: u32 = 20;
     pub const GenesisIssuance: u32 = 100;
 }
 
 impl pallet_treasury::Config for Test {
+    type AuctionFund = AuctionFund;
+    type ContractFund = ContractFund;
     type Currency = Balances;
     type Event = Event;
     type GenesisIssuance = GenesisIssuance;
     type MinBlocksPerRound = MinBlocksPerRound;
+    type ReserveAccount = ReserveAccount;
     type TreasuryAccount = TreasuryAccount;
     type WeightInfo = ();
 }

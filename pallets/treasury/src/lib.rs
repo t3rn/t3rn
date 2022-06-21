@@ -41,17 +41,30 @@ pub mod pallet {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         type Currency: Currency<Self::AccountId> + ReservableCurrency<Self::AccountId>;
 
+        #[pallet::constant]
+        type GenesisIssuance: Get<u32>;
+
         /// Minimum number of blocks per round.
         /// Serves as the default round term being applied in pallet genesis.
         /// NOTE: Must be at least the size of the active collator set.
         #[pallet::constant]
         type MinBlocksPerRound: Get<u32>;
 
-        #[pallet::constant]
-        type GenesisIssuance: Get<u32>;
-
+        /// The parachain treasury account. 5%.
         #[pallet::constant]
         type TreasuryAccount: Get<Self::AccountId>;
+
+        /// The vault reserve account. 9%.
+        #[pallet::constant]
+        type ReserveAccount: Get<Self::AccountId>;
+
+        /// The parachain auction fund account. 30%.
+        #[pallet::constant]
+        type AuctionFund: Get<Self::AccountId>;
+
+        /// The contracts fund account for additional builder rewards. 3%.
+        #[pallet::constant]
+        type ContractFund: Get<Self::AccountId>;
 
         type WeightInfo: WeightInfo;
     }
@@ -133,7 +146,7 @@ pub mod pallet {
             developer: Perbill,
             executor: Perbill,
         },
-        RoundTokensIssued(T::AccountId, BalanceOf<T>),
+        RoundTokensIssued(RoundIndex, BalanceOf<T>),
         BeneficiaryTokensIssued(T::AccountId, BalanceOf<T>),
         RewardsClaimed(T::AccountId, BalanceOf<T>),
     }
@@ -241,7 +254,6 @@ pub mod pallet {
         ) -> DispatchResult {
             ensure_root(origin)?;
 
-            let treasury = T::TreasuryAccount::get();
             let rewards_alloc = <RewardsAlloc<T>>::get();
 
             // count actors
@@ -286,7 +298,7 @@ pub mod pallet {
                 Self::deposit_event(Event::BeneficiaryTokensIssued(candidate, issued));
             }
 
-            Self::deposit_event(Event::RoundTokensIssued(treasury, amount));
+            Self::deposit_event(Event::RoundTokensIssued(round_index, amount));
 
             Ok(())
         }
