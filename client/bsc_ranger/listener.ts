@@ -54,23 +54,23 @@ export default class BSCListener extends EventEmitter {
 
         if(header.number % 200 == 0) {
             console.log("Detected Epoch Block!")
+            this.submitHeader(header); // Epoch blocks contain validator set update, so we must 'triage it'
         }
     }
 
     submitHeader(header: any) {
         let index = this.headers.indexOf(header)
         console.log("Submitting Header:", header.hash);
-        console.log(this.headers[index].hash)
+        const headerToAdd = this.headers[index];
         this.emit("SubmitHeader", {
             headerIndex: index, // important for submitting range
-            header: header,
+            header: headerToAdd,
         })
     }
 
     getHeaderRange(index: number) {
-        console.log(index)
         const anchorHeader = this.headers[index]
-        console.log("Anchor Hash:", anchorHeader);
+        console.log("InQueue:", this.headers.length)
         const range = this.headers.splice(0, index).reverse()
         return {anchorHeader, range} 
     }

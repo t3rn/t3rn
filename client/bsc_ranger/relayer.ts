@@ -4,7 +4,7 @@ import { createTestPairs } from "@polkadot/keyring/testingPairs"
 import createDebug from "debug"
 import types from "./types.json"
 import { EventEmitter } from "events"
-import { scaleEncodeHeader, scaleEncodeHash, scaleEncodeHeaderRange, computeHash } from "./encoder"
+import { scaleEncodeHeader, scaleEncodeHash, scaleEncodeHeaderRange, computeHash, computeLookupHash } from "./encoder"
 
 const keyring = createTestPairs({ type: "sr25519" })
 
@@ -45,9 +45,7 @@ export default class Relayer extends EventEmitter {
         anchorHeader: any,
     ) {
         const encodedRange = await scaleEncodeHeaderRange(range, this.circuit)
-        const anchorHash = await computeHash(anchorHeader, this.circuit);
-        // console.log(encodedRange[0])
-        console.log(anchorHash)
+        const anchorHash = await computeLookupHash(anchorHeader, this.circuit);
         const submitHeaderRange =
             this.circuit.tx.bscfv.submitHeaderRange(
                 encodedRange,

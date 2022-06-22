@@ -64,6 +64,26 @@ export const byteEncodeHeader = (header: any) => {
     ]
 }
 
+export const byteEncodeLookup = ((header: any) => {
+    return [
+        header.parentHash,
+        header.sha3Uncles,
+        header.miner,
+        header.stateRoot,
+        header.transactionsRoot,
+        header.receiptsRoot,
+        header.logsBloom,
+        utils.toHex(header.difficulty),
+        utils.toHex(header.number),
+        utils.toHex(header.gasLimit),
+        utils.toHex(header.gasUsed),
+        utils.toHex(header.timestamp),
+        header.extraData, // => removes last 65 bytes
+        header.mixHash,
+        header.nonce
+    ]
+})
+
 export const hash = (encodedMsg: any) => {
     return Hash.keccak256(encodedMsg);
 }
@@ -71,10 +91,15 @@ export const hash = (encodedMsg: any) => {
 export const computeHash = (header: any, circuit: any) => {
     const byteEncoded = byteEncodeHeader(header);
     const encoded = RLP.encode(byteEncoded)
-    console.log("Encoded:", Buffer.from(encoded).toString('hex'))
     const blockHash = hash("0x" + Buffer.from(encoded).toString('hex'))
-    // console.log("Hash", blockHash)
-    return scaleEncodeHash(blockHash, circuit)
+    return blockHash
+}
+
+export const computeLookupHash = (header: any, circuit: any) => {
+    const byteEncoded = byteEncodeLookup(header);
+    const encoded = RLP.encode(byteEncoded)
+    const blockHash = hash("0x" + Buffer.from(encoded).toString('hex'))
+    return blockHash
 }
 
 export const processExtraData = (data: string) => {
