@@ -1,7 +1,8 @@
 use crate::{
     assert_last_event, assert_last_n_events,
     inflation::{
-        BeneficiaryRole, InflationInfo, InflationAllocation, Range, RoundIndex, RoundInfo,
+        BeneficiaryRole, InflationAllocation, InflationInfo, Range, RoundIndex, RoundInfo,
+        BLOCKS_PER_YEAR,
     },
     mock::{Event as MockEvent, *},
     Beneficiaries, BeneficiaryRoundRewards, Error, Event,
@@ -51,8 +52,8 @@ fn genesis_inflation_config() {
         assert_eq!(
             Treasury::inflation_alloc(),
             InflationAllocation {
-                executor: Perbill::from_parts(500_000_000),  // TODO
-                developer: Perbill::from_parts(500_000_000), // TODO
+                executor: Perbill::from_percent(50),  // TODO
+                developer: Perbill::from_percent(50), // TODO
             },
         )
     })
@@ -261,8 +262,8 @@ fn set_inflation_derives_round_from_annual_inflation() {
 fn set_inflation_alloc_requires_root() {
     new_test_ext().execute_with(|| {
         let inflation_alloc = InflationAllocation {
-            developer: Perbill::from_parts(500_000_000),
-            executor: Perbill::from_parts(500_000_000),
+            developer: Perbill::from_percent(50),
+            executor: Perbill::from_percent(50),
         };
 
         assert_noop!(
@@ -276,8 +277,8 @@ fn set_inflation_alloc_requires_root() {
 fn set_inflation_alloc_fails_if_invalid() {
     new_test_ext().execute_with(|| {
         let inflation_alloc = InflationAllocation {
-            developer: Perbill::from_parts(500_000_000),
-            executor: Perbill::from_parts(600_000_000),
+            developer: Perbill::from_percent(50),
+            executor: Perbill::from_percent(60),
         };
 
         assert_noop!(
@@ -291,8 +292,8 @@ fn set_inflation_alloc_fails_if_invalid() {
 fn set_inflation_alloc_fails_if_not_changed() {
     new_test_ext().execute_with(|| {
         let inflation_alloc = InflationAllocation {
-            developer: Perbill::from_parts(500_000_000),
-            executor: Perbill::from_parts(500_000_000),
+            developer: Perbill::from_percent(50),
+            executor: Perbill::from_percent(50),
         };
 
         assert_noop!(
@@ -306,8 +307,8 @@ fn set_inflation_alloc_fails_if_not_changed() {
 fn set_inflation_alloc_amongst_actors() {
     new_test_ext().execute_with(|| {
         let inflation_alloc = InflationAllocation {
-            developer: Perbill::from_parts(501_000_000),
-            executor: Perbill::from_parts(499_000_000),
+            developer: Perbill::from_percent(49),
+            executor: Perbill::from_percent(51),
         };
 
         assert_ok!(Treasury::set_inflation_alloc(
@@ -359,9 +360,9 @@ fn set_round_term_derives_round_inflation() {
         assert_last_event!(MockEvent::Treasury(Event::RoundTermChanged {
             old: 20,
             new,
-            round_min:  Perbill::from_parts(0),
-            round_ideal:  Perbill::from_parts(0),
-            round_max:  Perbill::from_parts(0)
+            round_min: Perbill::from_parts(0),
+            round_ideal: Perbill::from_parts(0),
+            round_max: Perbill::from_parts(0)
         }));
         assert_eq!(
             Treasury::inflation_config().round,
@@ -391,5 +392,24 @@ fn remove_beneficiary_requires_root() {
             Treasury::remove_beneficiary(Origin::signed(419), 419),
             sp_runtime::DispatchError::BadOrigin
         );
+    })
+}
+
+#[test]
+fn gradually_decreasing_to_perpetual_inflation() {
+    new_test_ext().execute_with(|| {
+        // at genesis
+        let mut ideal_annual_inflation = Treasury::inflation_config().annual.ideal;
+        assert_eq!(ideal_annual_inflation, Perbill::from_percent(8));
+
+        // after 3 yrs
+        roll_to((BLOCKS_PER_YEAR * 3) as u64);
+        ideal_annual_inflation = Treasury::inflation_config().annual.ideal;
+        assert_eq!(ideal_annual_inflation, Perbill::from_percent(4));
+
+        // after 6 yrs
+        roll_to((BLOCKS_PER_YEAR * 6) as u64);
+        ideal_annual_inflation = Treasury::inflation_config().annual.ideal;
+        assert_eq!(ideal_annual_inflation, Perbill::from_percent(1));
     })
 }

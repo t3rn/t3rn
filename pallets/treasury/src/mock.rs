@@ -133,6 +133,7 @@ parameter_types! {
     pub const ContractFund: u32 = 3;
     pub const MinBlocksPerRound: u32 = 20;
     pub const GenesisIssuance: u32 = 100;
+    pub const IdealPerpetualInflation: Perbill = Perbill::from_percent(1);
 }
 
 impl pallet_treasury::Config for Test {
@@ -141,6 +142,7 @@ impl pallet_treasury::Config for Test {
     type Currency = Balances;
     type Event = Event;
     type GenesisIssuance = GenesisIssuance;
+    type IdealPerpetualInflation = IdealPerpetualInflation;
     type MinBlocksPerRound = MinBlocksPerRound;
     type ReserveAccount = ReserveAccount;
     type TreasuryAccount = TreasuryAccount;
@@ -168,13 +170,13 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
     pallet_treasury::GenesisConfig::<Test> {
         candidates: vec![],
         annual_inflation: Range {
-            min: Perbill::from_parts(3),
-            ideal: Perbill::from_parts(4),
-            max: Perbill::from_parts(5),
+            min: Perbill::from_parts(75_000_000),   // TODO
+            ideal: Perbill::from_parts(80_000_000), // TODO
+            max: Perbill::from_parts(85_000_000),   // TODO
         },
         inflation_alloc: InflationAllocation {
-            developer: Perbill::from_parts(500_000_000),
-            executor: Perbill::from_parts(500_000_000),
+            developer: Perbill::from_percent(50),
+            executor: Perbill::from_percent(50),
         },
         round_term: 20,
         total_stake_expectation: Range {
