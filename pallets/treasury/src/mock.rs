@@ -1,6 +1,6 @@
 use crate::{
     self as pallet_treasury,
-    inflation::{Range, RewardsAllocation},
+    inflation::{InflationRewardsAllocation, Range},
 };
 use frame_support::{
     parameter_types,
@@ -172,16 +172,16 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
             ideal: Perbill::from_parts(4),
             max: Perbill::from_parts(5),
         },
-        rewards_alloc: RewardsAllocation {
+        inflation_rewards_alloc: InflationRewardsAllocation {
             developer: Perbill::from_parts(500_000_000),
             executor: Perbill::from_parts(500_000_000),
         },
         round_term: 20,
         total_stake_expectation: Range {
             min: 0,
-            ideal: 1000, 
-            max: 1_000_000
-        } 
+            ideal: 1000,
+            max: 1_000_000,
+        },
     }
     .assimilate_storage(&mut storage)
     .expect("mock pallet-treasury genesis storage assimilation");

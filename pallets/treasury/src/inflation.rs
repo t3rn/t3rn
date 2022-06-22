@@ -1,16 +1,22 @@
-use crate::{BalanceOf, pallet::{Config, Error, Pallet}};
+use crate::{
+    pallet::{Config, Error, Pallet},
+    BalanceOf,
+};
 use codec::{Decode, Encode, MaxEncodedLen};
 use fixed::{
     transcendental::pow,
     types::{I32F32, I64F64},
 };
-use frame_support::{ensure, traits::{Get, Currency}};
+use frame_support::{
+    ensure,
+    traits::{Currency, Get},
+};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_runtime::{traits::CheckedAdd, PerThing, Perbill, RuntimeDebug};
 
 const SECONDS_PER_YEAR: u32 = 31557600;
-const SECONDS_PER_BLOCK: u32 = 12;
+pub const SECONDS_PER_BLOCK: u32 = 12;
 pub const BLOCKS_PER_YEAR: u32 = SECONDS_PER_YEAR / SECONDS_PER_BLOCK;
 
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -38,12 +44,12 @@ impl<T: Ord> Range<T> {
 
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Eq, PartialEq, Clone, Encode, Decode, MaxEncodedLen, Default, RuntimeDebug, TypeInfo)]
-pub struct RewardsAllocation {
+pub struct InflationRewardsAllocation {
     pub(crate) developer: Perbill,
     pub(crate) executor: Perbill,
 }
 
-impl RewardsAllocation {
+impl InflationRewardsAllocation {
     pub fn is_valid(&self) -> bool {
         match self.developer.checked_add(&self.executor) {
             Some(perbill) => perbill == Perbill::one(),
@@ -58,6 +64,23 @@ pub struct InflationInfo {
     pub(crate) annual: Range<Perbill>,
     pub(crate) round: Range<Perbill>,
 }
+
+// impl Default for InflationInfo {
+//     fn default() -> Self {
+//         InflationInfo {
+//             annual: {
+//                 min: Perbill::from_parts(0),
+//                 ideal: Perbill::from_parts(0),
+//                 max: Perbill::from_parts(0)
+//             },
+//             round: Range {
+//                 min: Perbill::from_parts(0),
+//                 ideal: Perbill::from_parts(0),
+//                 max: Perbill::from_parts(0)
+//             }
+//         }
+//     }
+// }
 
 impl InflationInfo {
     /// Reset round inflation rate based on changes to round term.
@@ -116,12 +139,12 @@ fn rounds_per_year<T: Config>() -> Result<u32, Error<T>> {
 
 /// Compute round issuance range from round inflation range and current total issuance
 pub fn round_issuance_range<T: Config>(round_inflation: Range<Perbill>) -> Range<BalanceOf<T>> {
-	let circulating = T::Currency::total_issuance();
-	Range {
-		min: round_inflation.min * circulating,
-		ideal: round_inflation.ideal * circulating,
-		max: round_inflation.max * circulating,
-	}
+    let circulating = T::Currency::total_issuance();
+    Range {
+        min: round_inflation.min * circulating,
+        ideal: round_inflation.ideal * circulating,
+        max: round_inflation.max * circulating,
+    }
 }
 
 /// Convert an annual inflation to a round inflation
