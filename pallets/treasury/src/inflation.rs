@@ -126,7 +126,7 @@ pub fn annual_to_round_inflation<T: Config>(
 }
 
 /// Computes the number of rounds per year given a fixed bock time of 12s.
-fn rounds_per_year<T: Config>() -> Result<u32, Error<T>> {
+pub fn rounds_per_year<T: Config>() -> Result<u32, Error<T>> {
     let round_term = <Pallet<T>>::current_round().term;
 
     ensure!(
