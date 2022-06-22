@@ -7383,7 +7383,7 @@ dependencies = [
  "sp-std",
  "syn",
  "t3rn-primitives",
- "t3rn-sdk-primitives",
+ "t3rn-sdk-primitives 0.0.1-rc8 (registry+https://github.com/t3rn/registry-index.git)",
  "wasm-instrument",
  "wasmi-validation",
 ]
@@ -12650,7 +12650,7 @@ dependencies = [
  "sp-std",
  "sp-trie",
  "sp-version",
- "t3rn-sdk-primitives",
+ "t3rn-sdk-primitives 0.0.1-rc8",
  "t3rn-types 0.0.1",
 ]
 
