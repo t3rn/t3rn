@@ -1,6 +1,6 @@
 use crate::{
     self as pallet_treasury,
-    inflation::{InflationRewardsAllocation, Range},
+    inflation::{InflationAllocation, Range},
 };
 use frame_support::{
     parameter_types,
@@ -172,7 +172,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
             ideal: Perbill::from_parts(4),
             max: Perbill::from_parts(5),
         },
-        inflation_rewards_alloc: InflationRewardsAllocation {
+        inflation_alloc: InflationAllocation {
             developer: Perbill::from_parts(500_000_000),
             executor: Perbill::from_parts(500_000_000),
         },

@@ -1,7 +1,7 @@
 use crate::{
     assert_last_event, assert_last_n_events,
     inflation::{
-        BeneficiaryRole, InflationInfo, InflationRewardsAllocation, Range, RoundIndex, RoundInfo,
+        BeneficiaryRole, InflationInfo, InflationAllocation, Range, RoundIndex, RoundInfo,
     },
     mock::{Event as MockEvent, *},
     Beneficiaries, BeneficiaryRoundRewards, Error, Event,
@@ -49,8 +49,8 @@ fn genesis_inflation_config() {
             }
         );
         assert_eq!(
-            Treasury::inflation_rewards_alloc(),
-            InflationRewardsAllocation {
+            Treasury::inflation_alloc(),
+            InflationAllocation {
                 executor: Perbill::from_parts(500_000_000),  // TODO
                 developer: Perbill::from_parts(500_000_000), // TODO
             },
@@ -258,64 +258,64 @@ fn set_inflation_derives_round_from_annual_inflation() {
 }
 
 #[test]
-fn set_inflation_rewards_alloc_requires_root() {
+fn set_inflation_alloc_requires_root() {
     new_test_ext().execute_with(|| {
-        let inflation_rewards_alloc = InflationRewardsAllocation {
+        let inflation_alloc = InflationAllocation {
             developer: Perbill::from_parts(500_000_000),
             executor: Perbill::from_parts(500_000_000),
         };
 
         assert_noop!(
-            Treasury::set_inflation_rewards_alloc(Origin::signed(419), inflation_rewards_alloc),
+            Treasury::set_inflation_alloc(Origin::signed(419), inflation_alloc),
             sp_runtime::DispatchError::BadOrigin
         );
     })
 }
 
 #[test]
-fn set_inflation_rewards_alloc_fails_if_invalid() {
+fn set_inflation_alloc_fails_if_invalid() {
     new_test_ext().execute_with(|| {
-        let inflation_rewards_alloc = InflationRewardsAllocation {
+        let inflation_alloc = InflationAllocation {
             developer: Perbill::from_parts(500_000_000),
             executor: Perbill::from_parts(600_000_000),
         };
 
         assert_noop!(
-            Treasury::set_inflation_rewards_alloc(Origin::root(), inflation_rewards_alloc),
-            Error::<Test>::InvalidInflationRewardsAllocation
+            Treasury::set_inflation_alloc(Origin::root(), inflation_alloc),
+            Error::<Test>::InvalidInflationAllocation
         );
     })
 }
 
 #[test]
-fn set_inflation_rewards_alloc_fails_if_not_changed() {
+fn set_inflation_alloc_fails_if_not_changed() {
     new_test_ext().execute_with(|| {
-        let inflation_rewards_alloc = InflationRewardsAllocation {
+        let inflation_alloc = InflationAllocation {
             developer: Perbill::from_parts(500_000_000),
             executor: Perbill::from_parts(500_000_000),
         };
 
         assert_noop!(
-            Treasury::set_inflation_rewards_alloc(Origin::root(), inflation_rewards_alloc),
+            Treasury::set_inflation_alloc(Origin::root(), inflation_alloc),
             Error::<Test>::ValueNotChanged
         );
     })
 }
 
 #[test]
-fn set_inflation_rewards_alloc_amongst_actors() {
+fn set_inflation_alloc_amongst_actors() {
     new_test_ext().execute_with(|| {
-        let inflation_rewards_alloc = InflationRewardsAllocation {
+        let inflation_alloc = InflationAllocation {
             developer: Perbill::from_parts(501_000_000),
             executor: Perbill::from_parts(499_000_000),
         };
 
-        assert_ok!(Treasury::set_inflation_rewards_alloc(
+        assert_ok!(Treasury::set_inflation_alloc(
             Origin::root(),
-            inflation_rewards_alloc.clone()
+            inflation_alloc.clone()
         ));
 
-        assert_eq!(Treasury::inflation_rewards_alloc(), inflation_rewards_alloc)
+        assert_eq!(Treasury::inflation_alloc(), inflation_alloc)
     })
 }
 

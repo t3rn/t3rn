@@ -44,12 +44,12 @@ impl<T: Ord> Range<T> {
 
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Eq, PartialEq, Clone, Encode, Decode, MaxEncodedLen, Default, RuntimeDebug, TypeInfo)]
-pub struct InflationRewardsAllocation {
+pub struct InflationAllocation {
     pub(crate) developer: Perbill,
     pub(crate) executor: Perbill,
 }
 
-impl InflationRewardsAllocation {
+impl InflationAllocation {
     pub fn is_valid(&self) -> bool {
         match self.developer.checked_add(&self.executor) {
             Some(perbill) => perbill == Perbill::one(),

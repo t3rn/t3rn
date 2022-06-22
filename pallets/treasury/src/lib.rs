@@ -19,7 +19,7 @@ pub mod weights;
 pub mod pallet {
     use crate::{
         inflation::{
-            BeneficiaryRole, InflationInfo, InflationRewardsAllocation, Range, RoundIndex,
+            BeneficiaryRole, InflationInfo, InflationAllocation, Range, RoundIndex,
             RoundInfo, perbill_annual_to_perbill_round, BLOCKS_PER_YEAR
         },
         weights::WeightInfo,
@@ -72,10 +72,10 @@ pub mod pallet {
     }
 
     #[pallet::storage]
-    #[pallet::getter(fn inflation_rewards_alloc)]
+    #[pallet::getter(fn inflation_alloc)]
     /// The pallet's rewards allocation config.
-    pub type InflationRewardsAlloc<T: Config> =
-        StorageValue<_, InflationRewardsAllocation, ValueQuery>;
+    pub type InflationAlloc<T: Config> =
+        StorageValue<_, InflationAllocation, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn inflation_config)]
@@ -149,7 +149,7 @@ pub mod pallet {
             round_ideal: Perbill,
             round_max: Perbill,
         },
-        InflationRewardsAllocationChanged {
+        InflationAllocationChanged {
             developer: Perbill,
             executor: Perbill,
         },
@@ -161,7 +161,7 @@ pub mod pallet {
     #[pallet::error]
     pub enum Error<T> {
         InvalidInflationConfig,
-        InvalidInflationRewardsAllocation,
+        InvalidInflationAllocation,
         ValueNotChanged,
         RoundTermTooShort,
         NotBeneficiary,
@@ -210,7 +210,7 @@ pub mod pallet {
     pub struct GenesisConfig<T: Config> {
         pub candidates: Vec<T::AccountId>,
         pub annual_inflation: Range<Perbill>,
-        pub inflation_rewards_alloc: InflationRewardsAllocation,
+        pub inflation_alloc: InflationAllocation,
         pub round_term: u32,
         pub total_stake_expectation: Range<BalanceOf<T>>,
     }
@@ -225,7 +225,7 @@ pub mod pallet {
                     ideal: Perbill::from_parts(4), // TODO
                     max: Perbill::from_parts(5),   // TODO
                 },
-                inflation_rewards_alloc: InflationRewardsAllocation {
+                inflation_alloc: InflationAllocation {
                     executor: Perbill::from_parts(500_000_000),// TODO
                     developer: Perbill::from_parts(500_000_000),// TODO
                 },
@@ -255,7 +255,7 @@ pub mod pallet {
                      <InflationConfig<T>>::put(inflation_info);
 
             // set rewards allocation amongst t3rn actors
-            <InflationRewardsAlloc<T>>::put(self.inflation_rewards_alloc.clone());
+            <InflationAlloc<T>>::put(self.inflation_alloc.clone());
 
             // set total stake expectation
             <TotalStakeExpectation<T>>::put(self.total_stake_expectation);
@@ -283,7 +283,7 @@ pub mod pallet {
         ) -> DispatchResult {
             ensure_root(origin)?;
 
-            let inflation_rewards_alloc = <InflationRewardsAlloc<T>>::get();
+            let inflation_alloc = <InflationAlloc<T>>::get();
 
             // count actors
             let (count_devs, count_execs) =
@@ -301,9 +301,9 @@ pub mod pallet {
 
             // calculate relative rewards per actor
             let relative_per_dev =
-                Perbill::from_rational(1, count_devs as u32) * inflation_rewards_alloc.developer;
+                Perbill::from_rational(1, count_devs as u32) * inflation_alloc.developer;
             let relative_per_exec =
-                Perbill::from_rational(1, count_execs as u32) * inflation_rewards_alloc.executor;
+                Perbill::from_rational(1, count_execs as u32) * inflation_alloc.executor;
 
             // calculate absoute rewards per actor
             let absolute_per_dev = relative_per_dev * amount;
@@ -396,28 +396,28 @@ pub mod pallet {
 
         /// Sets the reward percentage to be allocated amongst t3rn actors
         #[pallet::weight(10_000)] // TODO
-        pub fn set_inflation_rewards_alloc(
+        pub fn set_inflation_alloc(
             origin: OriginFor<T>,
-            inflation_rewards_alloc: InflationRewardsAllocation,
+            inflation_alloc: InflationAllocation,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
             ensure!(
-                inflation_rewards_alloc.is_valid(),
-                Error::<T>::InvalidInflationRewardsAllocation
+                inflation_alloc.is_valid(),
+                Error::<T>::InvalidInflationAllocation
             );
             ensure!(
-                inflation_rewards_alloc != <InflationRewardsAlloc<T>>::get(),
+                inflation_alloc != <InflationAlloc<T>>::get(),
                 Error::<T>::ValueNotChanged
             );
 
             // update rewards config
             let (developer, executor) = (
-                inflation_rewards_alloc.developer,
-                inflation_rewards_alloc.executor,
+                inflation_alloc.developer,
+                inflation_alloc.executor,
             );
-            <InflationRewardsAlloc<T>>::put(inflation_rewards_alloc);
+            <InflationAlloc<T>>::put(inflation_alloc);
 
-            Self::deposit_event(Event::InflationRewardsAllocationChanged {
+            Self::deposit_event(Event::InflationAllocationChanged {
                 developer,
                 executor,
             });
@@ -496,7 +496,7 @@ pub mod pallet {
             // 	config.expect != expectations,
             // 	Error::<T>::NoWritingSameValue
             // );
-            // config.set_expectations(expectations);
+            // TODO:   // config.set_expectations(expectations);
             // Self::deposit_event(Event::StakeExpectationsSet {
             // 	expect_min: config.expect.min,
             // 	expect_ideal: config.expect.ideal,
