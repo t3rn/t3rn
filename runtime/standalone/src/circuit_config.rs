@@ -175,6 +175,7 @@ parameter_types! {
     pub const ContractFund: AccountId = AccountId::new([3u8; 32]); // TODO
     pub const MinBlocksPerRound: u32 = 20; // TODO
     pub const GenesisIssuance: u32 = 1_000_000; // TODO
+    pub const IdealPerpetualInflation: Perbill = ideal: Perbill::from_percent(1);
 }
 
 impl pallet_treasury::Config for Runtime {
@@ -183,6 +184,7 @@ impl pallet_treasury::Config for Runtime {
     type Currency = Balances;
     type Event = Event;
     type GenesisIssuance = GenesisIssuance;
+    type IdealPerpetualInflation = IdealPerpetualInflation;
     type MinBlocksPerRound = MinBlocksPerRound;
     type ReserveAccount = ReserveAccount;
     type TreasuryAccount = TreasuryAccount;
