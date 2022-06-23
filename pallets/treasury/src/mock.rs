@@ -134,6 +134,7 @@ parameter_types! {
     pub const MinBlocksPerRound: u32 = 20;
     pub const GenesisIssuance: u32 = 100;
     pub const IdealPerpetualInflation: Perbill = Perbill::from_percent(1);
+    pub const InflationRegressionMonths: u32 = 72;
 }
 
 impl pallet_treasury::Config for Test {
@@ -143,6 +144,7 @@ impl pallet_treasury::Config for Test {
     type Event = Event;
     type GenesisIssuance = GenesisIssuance;
     type IdealPerpetualInflation = IdealPerpetualInflation;
+    type InflationRegressionMonths = InflationRegressionMonths;
     type MinBlocksPerRound = MinBlocksPerRound;
     type ReserveAccount = ReserveAccount;
     type TreasuryAccount = TreasuryAccount;

@@ -176,6 +176,7 @@ parameter_types! {
     pub const MinBlocksPerRound: u32 = 20; // TODO
     pub const GenesisIssuance: u32 = 1_000_000; // TODO
     pub const IdealPerpetualInflation: Perbill = ideal: Perbill::from_percent(1);
+    pub const InflationRegressionMonths: u32 = 72;
 }
 
 impl pallet_treasury::Config for Runtime {
@@ -185,6 +186,7 @@ impl pallet_treasury::Config for Runtime {
     type Event = Event;
     type GenesisIssuance = GenesisIssuance;
     type IdealPerpetualInflation = IdealPerpetualInflation;
+    type InflationRegressionMonths = InflationRegressionMonths;
     type MinBlocksPerRound = MinBlocksPerRound;
     type ReserveAccount = ReserveAccount;
     type TreasuryAccount = TreasuryAccount;
