@@ -67,6 +67,7 @@ pub mod pallet {
 		/// Event documentation should end with an array that provides descriptive names for event
 		/// parameters. [something, who]
 		HeaderSubmitted([u8; 32]),
+		HeaderRangeSubmitted(u64),
 	}
 
 	// Errors inform users that something went wrong.
@@ -158,6 +159,7 @@ pub mod pallet {
 			);
 
 			Self::deposit_event(Event::HeaderSubmitted(header.hash().into()));
+			log::info!("Header added!");
 
 			Ok(())
 		}
@@ -172,12 +174,11 @@ pub mod pallet {
 				Ok(res) => res,
 				Err(_) => return Err(Error::<T>::InvalidHash.into())
 			};
-
 			let mut anchor = match <Headers<T>>::try_get(anchor_hash) {
 				Ok(res) => res,
 				Err(_) => return Err(Error::<T>::HeaderNotFound.into())
 			};
-
+			let height = anchor.number.clone();
 			// ToDo: this design allows header to be overwritten. While the consensus checks should ensure only valid headers are added, it feels a bit wrong, that there is no range limit in place
 			// ToDo - 2: this design ensures only parent headers are added, but it doesn't throw an error if they are incorrect.
 			for encoded_header in encoded_headers_reversed {
@@ -197,7 +198,7 @@ pub mod pallet {
 				}
 				anchor = decoded;
 			}
-
+			Self::deposit_event(Event::HeaderRangeSubmitted(height));
 			Ok(())
 		}
 	}
@@ -241,7 +242,7 @@ impl<T: Config> BinanceFV<T> for Pallet<T> {
 		enc_proof: Option<Vec<u8>>,
 		enc_block_hash: Vec<u8>
 	) -> Result<(), &'static str> {
-		// for testing
+		// ToDo: remove for release
 		if let None = enc_proof {
 			return Ok(())
 		}
