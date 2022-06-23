@@ -72,6 +72,10 @@ pub mod pallet {
         #[pallet::constant]
         type IdealPerpetualInflation: Get<Perbill>;
 
+        /// The inflation regression duration in months.
+        #[pallet::constant]
+        type InflationRegressionMonths: Get<u32>;
+
         type WeightInfo: WeightInfo;
     }
 
@@ -95,12 +99,6 @@ pub mod pallet {
     /// Expected total stake sum of active executors and collators.
     /// Active means member of the respective active set.
     pub type TotalStakeExpectation<T: Config> = StorageValue<_, Range<BalanceOf<T>>, ValueQuery>;
-
-    // #[pallet::storage]
-    // #[pallet::getter(fn available_to_mint)]
-    // // Remaining tokens to be minted | cap?
-    // pub type AvailableTokensToBeMinted<T: Config> = StorageValue<_, BalanceOf<T>>;
-    // TODO: eventual cap, circulating, remaining
 
     #[pallet::storage]
     #[pallet::getter(fn beneficiaries)]
@@ -191,7 +189,7 @@ pub mod pallet {
                 });
 
                 // issue tokens for the past round
-                // TODO: impl delay, sum of active executors + collators stake
+                // TODO: impl delay, pull sum of active executors + collators stake
                 let total_stake: BalanceOf<T> = Self::u32_to_balance(50_u32);
                 log::info!(
                     "CIRCULATING CIRCULATING CIRCULATING {:?}",
@@ -199,12 +197,13 @@ pub mod pallet {
                 );
                 let round_issuance = Self::compute_round_issuance(total_stake);
                 Self::mint_for_round(T::Origin::root(), round.index - 1, round_issuance)
-                    .expect("mint for round");
+                    .expect("mint for round; will not fail unless called without root");
 
-                // adjust annual inflation gradually WIP
+                // adjust annual inflation gradually
                 let mut inflation_info = <InflationConfig<T>>::get();
                 let regressed_annual_inflation = Self::compute_regressed_annual_inflation();
-                inflation_info.update_from_annual::<T>(regressed_annual_inflation);
+                inflation_info.update_from_annual::<T>(regressed_annual_inflation)
+                  .expect("update round from annual inflation; will not fail if annual inflation at genesis was valid");
                 <InflationConfig<T>>::put(inflation_info);
             }
 
@@ -553,8 +552,6 @@ pub mod pallet {
         }
 
         /// Computes the pending regressed annual inflation from the point of call time.
-        /// assuming a 72-months long inflation curve, and a 1% perpetual
-        /// inflation target.
         fn compute_regressed_annual_inflation() -> Range<Perbill> {
             // target ideal perpetual inflation
             let ideal_perpetual_inflation = T::IdealPerpetualInflation::get();
@@ -562,37 +559,36 @@ pub mod pallet {
             let current_annual_inflation = <InflationConfig<T>>::get().annual;
 
             // outstanding annual inflation regression
-            let mut pending_ideal_annual_inflation_regression = <InflationConfig<T>>::get()
+            let pending_ideal_annual_inflation_regression = <InflationConfig<T>>::get()
                 .annual
                 .ideal
                 .saturating_sub(ideal_perpetual_inflation);
 
-            // // pin inflation at T::IdealPerpetualInflation::get()
-            // if pending_ideal_annual_inflation_regression.le(&ideal_perpetual_inflation) {
-            //     pending_ideal_annual_inflation_regression = Perbill::from_percent(0);
-            // }
-
-            // remaining rounds up until the 72th month
-            let rounds_per_year =
-                rounds_per_year::<T>().unwrap_or(BLOCKS_PER_YEAR / T::MinBlocksPerRound::get());
-            let pending_inflation_regression_rounds =
-                rounds_per_year * 6 - <CurrentRound<T>>::get().index;
+            // remaining rounds until perpetual inflation
+            let rounds_per_month = rounds_per_year::<T>()
+                .unwrap_or(BLOCKS_PER_YEAR / T::MinBlocksPerRound::get())
+                / 12;
+            let pending_rounds = (rounds_per_month * T::InflationRegressionMonths::get())
+                .saturating_sub(<CurrentRound<T>>::get().index);
 
             // the substrahend with which to adjust the current annual inflation
-            let annual_inflation_round_substrahend =
-                pending_ideal_annual_inflation_regression / pending_inflation_regression_rounds;
+            let round_substrahend = if pending_rounds == 0 {
+                pending_ideal_annual_inflation_regression
+            } else {
+                pending_ideal_annual_inflation_regression / pending_rounds
+            };
 
             // calculate the regressed annual inflation
             let regressed_annual_inflation = Range {
                 min: current_annual_inflation
                     .min
-                    .saturating_sub(annual_inflation_round_substrahend),
+                    .saturating_sub(round_substrahend),
                 ideal: current_annual_inflation
                     .ideal
-                    .saturating_sub(annual_inflation_round_substrahend),
+                    .saturating_sub(round_substrahend),
                 max: current_annual_inflation
                     .max
-                    .saturating_sub(annual_inflation_round_substrahend),
+                    .saturating_sub(round_substrahend),
             };
 
             // pin inflation at T::IdealPerpetualInflation::get()

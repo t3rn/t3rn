@@ -399,17 +399,35 @@ fn remove_beneficiary_requires_root() {
 fn gradually_decreasing_to_perpetual_inflation() {
     new_test_ext().execute_with(|| {
         // at genesis
-        let mut ideal_annual_inflation = Treasury::inflation_config().annual.ideal;
-        assert_eq!(ideal_annual_inflation, Perbill::from_percent(8));
+        assert_eq!(
+            Treasury::inflation_config().annual,
+            Range {
+                min: Perbill::from_parts(75_000_000),
+                ideal: Perbill::from_parts(80_000_000),
+                max: Perbill::from_parts(85_000_000),
+            }
+        );
 
         // after 3 yrs
         roll_to((BLOCKS_PER_YEAR * 3) as u64);
-        ideal_annual_inflation = Treasury::inflation_config().annual.ideal;
-        assert_eq!(ideal_annual_inflation, Perbill::from_percent(4));
+        assert_eq!(
+            Treasury::inflation_config().annual,
+            Range {
+                min: Perbill::from_parts(40_104_448),
+                ideal: Perbill::from_parts(45_104_448),
+                max: Perbill::from_parts(50_104_448),
+            }
+        );
 
         // after 6 yrs
         roll_to((BLOCKS_PER_YEAR * 6) as u64);
-        ideal_annual_inflation = Treasury::inflation_config().annual.ideal;
-        assert_eq!(ideal_annual_inflation, Perbill::from_percent(1));
+        assert_eq!(
+            Treasury::inflation_config().annual,
+            Range {
+                min: Perbill::from_parts(5_000_000),
+                ideal: Perbill::from_parts(10_000_000),
+                max: Perbill::from_parts(15_000_000),
+            }
+        );
     })
 }
