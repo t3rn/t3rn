@@ -75,7 +75,9 @@ pub use xbridges::{
     EthLikeKeccak256ValU64Gateway, PolkadotLikeValU64Gateway,
 };
 
+use crate::xbridges::read_cmp_latest_height_from_bridge;
 use sp_finality_grandpa::SetId;
+use sp_runtime::traits::Header;
 
 pub type AllowedSideEffect = [u8; 4];
 
@@ -412,6 +414,11 @@ pub mod pallet {
         VendorUnknown,
         SideEffectTypeNotRecognized,
         StepConfirmationDecodingError,
+        ReadLatestTargetHashError,
+        ReadTargetHeightDecodeCmpHeightError,
+        ReadTargetHeightDecodeBlockHashError,
+        ReadTargetHeightReplayAttackDetected,
+        ReadTargetHeightError,
         ContractDoesNotExists,
         RequesterNotEnoughBalance,
         ParachainHeaderNotVerified,
@@ -441,6 +448,7 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
     fn confirm_event_inclusion(
         gateway_id: [u8; 4],
         encoded_event: Vec<u8>,
+        _encoded_submission_target_height: Vec<u8>,
         maybe_proof: Option<Vec<Vec<u8>>>,
         maybe_block_hash: Option<Vec<u8>>,
     ) -> Result<(), &'static str> {
@@ -529,6 +537,46 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
                     return Ok(().into())
                 }
                 Err(Error::<T>::SideEffectConfirmationInvalidInclusionProof.into())
+            },
+        }
+    }
+
+    fn read_cmp_latest_target_height(
+        gateway_id: [u8; 4],
+        gateway_block_hash: Option<Vec<u8>>,
+        maybe_cmp_height: Option<Vec<u8>>,
+    ) -> Result<Vec<u8>, &'static str> {
+        let gateway_xdns_record = <T as Config>::Xdns::best_available(gateway_id)?;
+
+        println!("read_cmp_latest_target_height gateway_xdns_record {:?}", gateway_xdns_record);
+
+        match gateway_xdns_record.gateway_vendor {
+            GatewayVendor::Ethereum => return Err("Read latest target height - unhandled vendor"),
+            GatewayVendor::Substrate => {
+                match gateway_xdns_record.gateway_abi.block_number_type_size {
+                    32 => {
+                        println!("read_cmp_latest_target_height 32");
+                        let current_height = read_cmp_latest_height_from_bridge::<
+                            T,
+                            DefaultPolkadotLikeGateway,
+                        >(
+                            gateway_id, gateway_block_hash, maybe_cmp_height
+                        )?;
+                        Ok(current_height.encode())
+                    },
+                    64 => {
+                        println!("read_cmp_latest_target_height 32");
+
+                        let current_height = read_cmp_latest_height_from_bridge::<
+                            T,
+                            DefaultPolkadotLikeGateway,
+                        >(
+                            gateway_id, gateway_block_hash, maybe_cmp_height
+                        )?;
+                        Ok(current_height.encode())
+                    },
+                    _ => Err("Read latest target height - unknown vendor"),
+                }
             },
         }
     }

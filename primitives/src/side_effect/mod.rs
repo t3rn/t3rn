@@ -29,6 +29,7 @@ pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub input: SideEffect<AccountId, BlockNumber, BalanceOf>,
     pub confirmed: Option<ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf>>,
     pub security_lvl: SecurityLvl,
+    pub submission_target_height: Bytes,
 }
 
 impl<
