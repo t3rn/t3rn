@@ -2,7 +2,7 @@ use super::*;
 use frame_support::{parameter_types, traits::ConstU32};
 use sp_core::H256;
 use sp_runtime::traits::*;
-use t3rn_primitives::bridges::runtime as bp_runtime;
+use t3rn_primitives::{bridges::runtime as bp_runtime, common::BLOCKS_PER_HOUR};
 
 impl pallet_randomness_collective_flip::Config for Runtime {}
 
@@ -168,13 +168,17 @@ impl pallet_mfv::Config<DefaultPolkadotBridgeInstance> for Runtime {
     type Xdns = XDNS;
 }
 
+// MinBlocksPerRound plays a crucial role:
+//  + must at least be the size of the active collator set
+//  + is applied as default round term during genesis
+//  + codetermines executor staking delays as they are measured in rounds
 parameter_types! {
     pub const TreasuryAccount: AccountId = AccountId::new([0u8; 32]); // TODO
     pub const ReserveAccount: AccountId = AccountId::new([1u8; 32]); // TODO
     pub const AuctionFund: AccountId = AccountId::new([2u8; 32]); // TODO
     pub const ContractFund: AccountId = AccountId::new([3u8; 32]); // TODO
-    pub const MinBlocksPerRound: u32 = 20; // TODO
-    pub const GenesisIssuance: u32 = 1_000_000; // TODO
+    pub const MinBlocksPerRound: u32 =  6 * BLOCKS_PER_HOUR; // TODO
+    pub const GenesisIssuance: u32 = 20_000_000; // TODO
     pub const IdealPerpetualInflation: Perbill = ideal: Perbill::from_percent(1);
     pub const InflationRegressionMonths: u32 = 72;
 }
