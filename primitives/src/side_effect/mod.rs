@@ -246,6 +246,7 @@ mod tests {
         let tfsfx = FullSideEffect::<AccountId, BlockNumber, BalanceOf> {
             input: tsfx_input.clone(),
             security_lvl: SecurityLvl::Dirty,
+            submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
             confirmed: Some(ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {
                 err: Some(ConfirmationOutcome::Success),
                 output: Some(vec![]),

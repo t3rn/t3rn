@@ -213,6 +213,7 @@ mod tests {
                 input: input_side_effect_1.clone(),
                 confirmed: None,
                 security_lvl: SecurityLvl::Dirty,
+                submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
             }]],
         );
 
@@ -233,6 +234,7 @@ mod tests {
                 input: input_side_effect_1,
                 confirmed: Some(completing_side_effect_1),
                 security_lvl: SecurityLvl::Dirty,
+                submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
             }
         );
 
@@ -293,11 +295,13 @@ mod tests {
                     input: input_side_effect_1.clone(),
                     confirmed: None,
                     security_lvl: SecurityLvl::Dirty,
+                    submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                 },
                 FullSideEffect {
                     input: input_side_effect_2.clone(),
                     confirmed: None,
                     security_lvl: SecurityLvl::Dirty,
+                    submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                 },
             ]],
         );
@@ -317,6 +321,7 @@ mod tests {
                 input: input_side_effect_1,
                 confirmed: Some(completing_side_effect_1),
                 security_lvl: SecurityLvl::Dirty,
+                submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
             }
         );
 
@@ -327,6 +332,7 @@ mod tests {
                 input: input_side_effect_2.clone(),
                 confirmed: None,
                 security_lvl: SecurityLvl::Dirty,
+                submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
             }
         );
 
@@ -348,6 +354,7 @@ mod tests {
                 input: input_side_effect_2,
                 confirmed: Some(completing_side_effect_2),
                 security_lvl: SecurityLvl::Dirty,
+                submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
             }
         );
         assert_eq!(xtx.is_completed(), true);
@@ -408,11 +415,13 @@ mod tests {
                     input: input_side_effect_1.clone(),
                     confirmed: None,
                     security_lvl: SecurityLvl::Dirty,
+                    submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                 }],
                 vec![FullSideEffect {
                     input: input_side_effect_2.clone(),
                     confirmed: None,
                     security_lvl: SecurityLvl::Dirty,
+                    submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                 }],
             ],
         );
@@ -432,6 +441,7 @@ mod tests {
                 input: input_side_effect_1,
                 confirmed: Some(completing_side_effect_1),
                 security_lvl: SecurityLvl::Dirty,
+                submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
             }
         );
 
@@ -442,6 +452,7 @@ mod tests {
                 input: input_side_effect_2.clone(),
                 confirmed: None,
                 security_lvl: SecurityLvl::Dirty,
+                submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
             }
         );
 
@@ -461,6 +472,7 @@ mod tests {
                 input: input_side_effect_2,
                 confirmed: Some(completing_side_effect_2),
                 security_lvl: SecurityLvl::Dirty,
+                submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
             }
         );
         assert_eq!(xtx.is_completed(), true);
@@ -521,11 +533,13 @@ mod tests {
                     input: input_side_effect_1.clone(),
                     confirmed: None,
                     security_lvl: SecurityLvl::Dirty,
+                    submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                 }],
                 vec![FullSideEffect {
                     input: input_side_effect_2.clone(),
                     confirmed: None,
                     security_lvl: SecurityLvl::Dirty,
+                    submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                 }],
             ],
         );
@@ -542,6 +556,7 @@ mod tests {
                 input: input_side_effect_1,
                 confirmed: None,
                 security_lvl: SecurityLvl::Dirty,
+                submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
             }
         );
 
@@ -551,6 +566,7 @@ mod tests {
                 input: input_side_effect_2,
                 confirmed: None,
                 security_lvl: SecurityLvl::Dirty,
+                submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
             }
         );
 
