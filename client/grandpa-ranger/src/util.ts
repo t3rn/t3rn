@@ -18,6 +18,15 @@ export const decodeCustomType = (type: string, data: string) => {
 
 export const exec = promisify(_exec)
 
+const type = { type: 'GrandpaJustification<Header>' }
+export const decodeJustification = (data: any) => {
+        // const typeObject = { type }
+        registry.register(type);
+        const res = createType(registry, type.type as any, data)
+
+        return res.commit.targetNumber.toNumber()
+    }
+
 export function formatEvents(
   events: { event: { section: string; method: string; data: any } }[]
 ): string[] {
@@ -27,15 +36,15 @@ export function formatEvents(
   )
 }
 
-export async function grandpaDecode(justification: any) {
-  const tmpFile = join(tmpdir(), justification.toString().slice(0, 10))
-
-  await writeFile(tmpFile, justification.toString())
-
-  return exec(
-    "./justification-decoder/target/release/justification-decoder " + tmpFile
-  ).then(cmd => JSON.parse(cmd.stdout))
-}
+// export async function grandpaDecode(justification: any) {
+//   const tmpFile = join(tmpdir(), justification.toString().slice(0, 10))
+//
+//   await writeFile(tmpFile, justification.toString())
+//
+//   return exec(
+//     "./justification-decoder/target/release/justification-decoder " + tmpFile
+//   ).then(cmd => JSON.parse(cmd.stdout))
+// }
 
 export function decodeHeaderNumber(data: string) {
   // removes the Vec Decoding, bit hacky
