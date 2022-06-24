@@ -82,13 +82,9 @@ pub fn read_cmp_latest_height_from_bridge<
         Decode::decode(&mut &encoded_block_hash[..])
             .map_err(|_| Error::<T>::ReadTargetHeightDecodeBlockHashError)
     } else {
-        println!("read_cmp_latest_height_from_bridge before get_bridged_block_hash for {:?}", gateway_id);
-
         pallet_multi_finality_verifier::Pallet::<T, I>::get_bridged_block_hash(gateway_id)
             .ok_or(Error::<T>::ReadLatestTargetHashError)
     }?;
-
-    println!("read_cmp_latest_height_from_bridge before decoded_block_hash {:?}", decoded_block_hash);
 
     let header: CurrentHeader<T, I> =
         pallet_multi_finality_verifier::Pallet::<T, I>::get_multi_imported_headers(
@@ -97,18 +93,13 @@ pub fn read_cmp_latest_height_from_bridge<
         )
         .ok_or(Error::<T>::ReadTargetHeightDecodeCmpHeightError)?;
 
-    println!("read_cmp_latest_height_from_bridge before header {:?}", header);
-
     if let Some(encoded_cmp_height) = maybe_cmp_height {
-        println!("read_cmp_latest_height_from_bridge encoded_cmp_height {:?}", encoded_cmp_height);
         let cmp_height: CurrentBlockNumber<T, I> = Decode::decode(&mut &encoded_cmp_height[..])
             .map_err(|_e| Error::<T>::ReadTargetHeightDecodeCmpHeightError)?;
         if *header.number() < cmp_height {
             return Err(Error::<T>::ReadTargetHeightReplayAttackDetected.into())
         }
     }
-
-    println!("read_cmp_latest_height_from_bridge return {:?}", *header.number());
 
     Ok(*header.number())
 }

@@ -553,14 +553,11 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
     ) -> Result<Vec<u8>, &'static str> {
         let gateway_xdns_record = <T as Config>::Xdns::best_available(gateway_id)?;
 
-        println!("read_cmp_latest_target_height gateway_xdns_record {:?}", gateway_xdns_record);
-
         match gateway_xdns_record.gateway_vendor {
             GatewayVendor::Ethereum => return Err("Read latest target height - unhandled vendor"),
             GatewayVendor::Substrate => {
                 match gateway_xdns_record.gateway_abi.block_number_type_size {
                     32 => {
-                        println!("read_cmp_latest_target_height 32");
                         let current_height = read_cmp_latest_height_from_bridge::<
                             T,
                             DefaultPolkadotLikeGateway,
@@ -570,8 +567,6 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
                         Ok(current_height.encode())
                     },
                     64 => {
-                        println!("read_cmp_latest_target_height 32");
-
                         let current_height = read_cmp_latest_height_from_bridge::<
                             T,
                             DefaultPolkadotLikeGateway,

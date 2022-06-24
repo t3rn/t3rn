@@ -179,8 +179,7 @@ pub mod test {
 
     use t3rn_protocol::side_effects::test_utils::*;
 
-    use crate::mock::*;
-    use crate::tests::brute_seed_block_1_to_grandpa_mfv;
+    use crate::{mock::*, tests::brute_seed_block_1_to_grandpa_mfv};
 
     #[test]
     fn escrow_transfer_execute_and_commit_work() {

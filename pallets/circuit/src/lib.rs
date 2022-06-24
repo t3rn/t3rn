@@ -1737,16 +1737,11 @@ impl<T: Config> Pallet<T> {
                         <frame_system::Pallet<T>>::block_number(),
                     ),
                 ));
-
-                println!(" IF BEFORE submission_target_height ");
-
                 let submission_target_height = T::CircuitPortal::read_cmp_latest_target_height(
                     side_effect.target,
                     None,
                     None,
                 )?;
-
-                println!("submission_target_height = {:?}", submission_target_height);
 
                 full_side_effects.push(FullSideEffect {
                     input: side_effect.clone(),
@@ -1772,19 +1767,11 @@ impl<T: Config> Pallet<T> {
                     }
                     SecurityLvl::Dirty
                 }
-
-                println!(" ELSE BEFORE submission_target_height ");
-
                 let submission_target_height = T::CircuitPortal::read_cmp_latest_target_height(
                     side_effect.target,
                     None,
                     None,
                 )?;
-
-                println!(
-                    " ELSE submission_target_height = {:?}",
-                    submission_target_height
-                );
 
                 full_side_effects.push(FullSideEffect {
                     input: side_effect.clone(),
