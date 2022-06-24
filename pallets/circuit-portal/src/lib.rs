@@ -448,10 +448,16 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
     fn confirm_event_inclusion(
         gateway_id: [u8; 4],
         encoded_event: Vec<u8>,
-        _encoded_submission_target_height: Vec<u8>,
+        encoded_submission_target_height: Vec<u8>,
         maybe_proof: Option<Vec<Vec<u8>>>,
         maybe_block_hash: Option<Vec<u8>>,
     ) -> Result<(), &'static str> {
+        Self::read_cmp_latest_target_height(
+            gateway_id,
+            None,
+            Some(encoded_submission_target_height),
+        )?;
+
         let gateway_xdns_record = <T as Config>::Xdns::best_available(gateway_id)?;
 
         match gateway_xdns_record.gateway_vendor {
@@ -487,7 +493,6 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
                 }?;
 
                 // StorageKey for System_Events
-
                 let key: Vec<u8> = [
                     38, 170, 57, 78, 234, 86, 48, 224, 124, 72, 174, 12, 149, 88, 206, 247, 128,
                     212, 30, 94, 22, 5, 103, 101, 188, 132, 97, 133, 16, 114, 201, 215,
