@@ -2,7 +2,7 @@
 
 set -xEeo pipefail
 
-PDOT_BRANCH=release-v0.9.19
+PDOT_BRANCH=${PDOT_BRANCH:-release-v0.9.19}
 
 dir=$(git rev-parse --show-toplevel)/devnet
 
@@ -28,6 +28,13 @@ build_nodes() {
 }
 
 keygen() {
+  if ! cargo install --list | grep -Fq 'subkey v2.0.1'; then
+    echo "installing subkey v2.0.1..."
+    cargo install subkey \
+      --git https://github.com/paritytech/substrate \
+      --version 2.0.1 \
+      --force
+  fi
   ## gen custom node keys 4 the 2 parachains
   subkey generate --scheme Sr25519 > $dir/specs/circuita1.key
   subkey generate --scheme Sr25519 > $dir/specs/circuita2.key
