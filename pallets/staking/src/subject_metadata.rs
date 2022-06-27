@@ -16,10 +16,10 @@ use crate::{
 use codec::{Decode, Encode};
 use frame_support::{pallet_prelude::*, traits::ReservableCurrency};
 use sp_runtime::{
-    traits::{AtLeast32BitUnsigned, Saturating, Zero},
-    Perbill, Percent, RuntimeDebug,
+    traits::{Saturating, Zero},
+    RuntimeDebug,
 };
-use sp_std::{cmp::Ordering, collections::btree_map::BTreeMap, prelude::*};
+use sp_std::prelude::*;
 use t3rn_primitives::{
     common::{OrderedSet, RoundIndex},
     staking::{
@@ -28,7 +28,7 @@ use t3rn_primitives::{
     treasury::Treasury,
 };
 
-#[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq)]
 /// Staker state
 pub struct StakerMetadata<AccountId, Balance> {
     /// Staker account

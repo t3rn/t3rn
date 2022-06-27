@@ -5,7 +5,7 @@ use crate::Pallet as Treasury;
 use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_system::RawOrigin;
 
-// TODO
+//TODO
 benchmarks! {
     mint {
         let s in 0 .. 100;

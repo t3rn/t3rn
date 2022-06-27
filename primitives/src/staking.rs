@@ -1,11 +1,8 @@
-use crate::common::{OrderedSet, RoundIndex, RoundInfo};
+use crate::common::RoundIndex;
 use codec::{Decode, Encode};
-use frame_support::{pallet_prelude::*, traits::ReservableCurrency};
-use sp_runtime::{
-    traits::{AtLeast32BitUnsigned, Saturating, Zero},
-    Perbill, Percent, RuntimeDebug,
-};
-use sp_std::{cmp::Ordering, collections::btree_map::BTreeMap, prelude::*};
+use frame_support::pallet_prelude::*;
+use sp_runtime::RuntimeDebug;
+use sp_std::{cmp::Ordering, prelude::*};
 
 /// Convey relevant information describing if a delegator was added to the top or bottom
 /// Stakes added to the top yield a new total
@@ -67,7 +64,7 @@ impl<A, B: Default> Default for ExecutorSnapshot<A, B> {
 }
 
 /// Generic type describing either an executor's self-bond or a staker's bond.
-#[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq)]
 pub struct Bond<AccountId, Balance> {
     pub owner: AccountId,
     pub amount: Balance,
@@ -92,25 +89,25 @@ impl<A, B: Default> Bond<A, B> {
     }
 }
 
-impl<AccountId: Ord, Balance> Eq for Bond<AccountId, Balance> {}
+impl<AccountId: Ord, Balance: PartialEq> Eq for Bond<AccountId, Balance> {}
 
-impl<AccountId: Ord, Balance> Ord for Bond<AccountId, Balance> {
+impl<AccountId: Ord, Balance: PartialEq> Ord for Bond<AccountId, Balance> {
     fn cmp(&self, other: &Self) -> Ordering {
         self.owner.cmp(&other.owner)
     }
 }
 
-impl<AccountId: Ord, Balance> PartialOrd for Bond<AccountId, Balance> {
+impl<AccountId: Ord, Balance: PartialEq> PartialOrd for Bond<AccountId, Balance> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl<AccountId: Ord, Balance> PartialEq for Bond<AccountId, Balance> {
-    fn eq(&self, other: &Self) -> bool {
-        self.owner == other.owner
-    }
-}
+// impl<AccountId: Ord, Balance> PartialEq for Bond<AccountId, Balance> {
+//     fn eq(&self, other: &Self) -> bool {
+//         self.owner == other.owner
+//     }
+// }
 
 /// The activity status of the staker.
 #[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]

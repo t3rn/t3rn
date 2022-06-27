@@ -1,13 +1,15 @@
 use crate::{
     assert_last_event, assert_last_n_events,
-    inflation::{ InflationInfo, 
-    },
+    inflation::InflationInfo,
     mock::{Event as MockEvent, *},
     Beneficiaries, BeneficiaryRoundRewards, CurrentRound, Error, Event,
 };
 use frame_support::{assert_err, assert_noop, assert_ok};
 use sp_runtime::Perbill;
-use t3rn_primitives::{common::{BLOCKS_PER_YEAR, BLOCKS_PER_HOUR,Range, RoundIndex, RoundInfo,},monetary::{InflationAllocation,BeneficiaryRole,}};
+use t3rn_primitives::{
+    common::{Range, RoundIndex, RoundInfo, BLOCKS_PER_HOUR, BLOCKS_PER_YEAR},
+    monetary::{BeneficiaryRole, InflationAllocation},
+};
 
 #[test]
 fn mint_for_round_requires_root() {
@@ -29,29 +31,29 @@ fn genesis_inflation_config() {
             RoundInfo {
                 index: 1 as RoundIndex,
                 head: 0,
-                term: <MinBlocksPerRound>::get()
+                term: <DefaultRoundTerm>::get()
             }
         );
         assert_eq!(
             Treasury::inflation_config(),
             InflationInfo {
                 annual: Range {
-                    min: Perbill::from_parts(75000000), // TODO
-                    ideal: Perbill::from_parts(80000000), // TODO
-                    max: Perbill::from_parts(85000000), // TODO
+                    min: Perbill::from_parts(75000000),   //TODO
+                    ideal: Perbill::from_parts(80000000), //TODO
+                    max: Perbill::from_parts(85000000),   //TODO
                 },
                 round: Range {
-                    min: Perbill::from_parts(550),   // TODO
-                    ideal: Perbill::from_parts(586), // TODO
-                    max: Perbill::from_parts(621),   // TODO
+                    min: Perbill::from_parts(49503),   //TODO
+                    ideal: Perbill::from_parts(52679), //TODO
+                    max: Perbill::from_parts(55841),   //TODO
                 },
             }
         );
         assert_eq!(
             Treasury::inflation_alloc(),
             InflationAllocation {
-                executor: Perbill::from_percent(50),  // TODO
-                developer: Perbill::from_percent(50), // TODO
+                executor: Perbill::from_percent(50),  //TODO
+                developer: Perbill::from_percent(50), //TODO
             },
         )
     })
@@ -61,43 +63,52 @@ fn genesis_inflation_config() {
 fn hook_mints_for_each_past_round() {
     new_test_ext().execute_with(|| {
         let dev = 1;
-        let total_round_rewards = 50; // TODO unfix, also 50/50 split
+        let total_active_executors_stake = 50; //TODO unfix, also 50/50 split
 
-        <CurrentRound<Test>>::put(RoundInfo {index: 1_u32, term: <DefaultBlocksPerRound>::get(), head: 1 });
+        <CurrentRound<Test>>::put(RoundInfo {
+            index: 1_u32,
+            term: <DefaultRoundTerm>::get(),
+            head: 1,
+        });
         <Beneficiaries<Test>>::insert(dev, BeneficiaryRole::Developer, 0);
         <BeneficiaryRoundRewards<Test>>::insert(dev, 1, 5);
         <BeneficiaryRoundRewards<Test>>::insert(dev, 2, 5);
 
         // fast forward two round begins
-        fast_forward_to((2 * <DefaultBlocksPerRound>::get() + 1) as u64);
+        fast_forward_to(<DefaultRoundTerm>::get() as u64);
+        let first_round_issuance = Treasury::compute_round_issuance(total_active_executors_stake);
+        fast_forward_to((2 * <DefaultRoundTerm>::get() + 1) as u64);
 
         assert_last_n_events!(
             6,
             vec![
                 Event::NewRound {
                     round: 2,
-                    head: (<DefaultBlocksPerRound>::get() +1) as u64,
+                    head: (<DefaultRoundTerm>::get() + 1) as u64,
                 },
-                Event::BeneficiaryTokensIssued(dev, 3),
-                Event::RoundTokensIssued(1, total_round_rewards),
+                Event::BeneficiaryTokensIssued(dev, 527), //TODO
+                Event::RoundTokensIssued(1, first_round_issuance),
                 Event::NewRound {
                     round: 3,
-                    head: (2 * <DefaultBlocksPerRound>::get() + 1) as u64,
+                    head: (2 * <DefaultRoundTerm>::get() + 1) as u64,
                 },
-                Event::BeneficiaryTokensIssued(dev, 5),
-                Event::RoundTokensIssued(2, total_round_rewards)
+                Event::BeneficiaryTokensIssued(dev, 526), //TODO
+                Event::RoundTokensIssued(
+                    2,
+                    Treasury::compute_round_issuance(total_active_executors_stake)
+                )
             ]
         );
     })
 }
 
-// TODO refactor wen increment
+//TODO refactor wen increment
 #[test]
 fn mint_for_round_splits_total_rewards_correctly_amongst_actors() {
     new_test_ext().execute_with(|| {
         let dev = 1;
         let exec = 2;
-        let total_round_rewards = 10;
+        let total_active_executors_stake = 10;
 
         <Beneficiaries<Test>>::insert(dev, BeneficiaryRole::Developer, 0);
         <Beneficiaries<Test>>::insert(exec, BeneficiaryRole::Executor, 0);
@@ -105,7 +116,7 @@ fn mint_for_round_splits_total_rewards_correctly_amongst_actors() {
         assert_ok!(Treasury::mint_for_round(
             Origin::root(),
             1,
-            total_round_rewards
+            total_active_executors_stake
         ));
 
         assert_last_n_events!(
@@ -113,7 +124,7 @@ fn mint_for_round_splits_total_rewards_correctly_amongst_actors() {
             vec![
                 Event::BeneficiaryTokensIssued(dev, 5),
                 Event::BeneficiaryTokensIssued(exec, 5),
-                Event::RoundTokensIssued(1, total_round_rewards)
+                Event::RoundTokensIssued(1, total_active_executors_stake)
             ]
         );
     })
@@ -215,18 +226,18 @@ fn set_inflation_derives_round_from_annual_inflation() {
     new_test_ext().execute_with(|| {
         // input annual inflation config
         let actual_annual_inflation = Range {
-            min: Perbill::from_percent(3),
-            ideal: Perbill::from_percent(4),
-            max: Perbill::from_percent(5),
+            min: Perbill::from_parts(80000000),   //TODO
+            ideal: Perbill::from_parts(80000000), //TODO
+            max: Perbill::from_parts(80000000),   //TODO
         };
 
         // what we expect to get auto derived as round config
         // derivation also depends upon Treasury::current_round().term = 20
         // which must be at least as big as the active colator set
         let expected_round_inflation = Range {
-            min: Perbill::from_parts(225),
-            ideal: Perbill::from_parts(299),
-            max: Perbill::from_parts(372),
+            min: Perbill::from_parts(52679),   //TODO
+            ideal: Perbill::from_parts(52679), //TODO
+            max: Perbill::from_parts(52679),   //TODO
         };
 
         assert_ok!(Treasury::set_inflation(
@@ -355,7 +366,7 @@ fn set_round_term_derives_round_inflation() {
         let new = 500;
         assert_ok!(Treasury::set_round_term(Origin::root(), new));
         assert_last_event!(MockEvent::Treasury(Event::RoundTermChanged {
-            old: 20,
+            old: <DefaultRoundTerm>::get(),
             new,
             round_min: Perbill::from_parts(13752),
             round_ideal: Perbill::from_parts(14635),

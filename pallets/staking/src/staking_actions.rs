@@ -5,25 +5,15 @@ use crate::{
     },
     subject_metadata::StakerMetadata,
 };
-// use crate::Delegator;
-// use frame_support::ensure;
 use frame_support::{
     dispatch::DispatchResultWithPostInfo,
     ensure,
     traits::{Get, ReservableCurrency},
-    RuntimeDebug,
 };
-// use frame_support::{dispatch::DispatchResultWithPostInfo, RuntimeDebug};
-use codec::{Decode, Encode};
-use scale_info::TypeInfo;
 use sp_runtime::traits::Saturating;
 use sp_std::{vec, vec::Vec};
 use t3rn_primitives::{
-    common::RoundIndex,
-    staking::{
-        Bond, CancelledScheduledRequest, CandidateBondLessRequest, CapacityStatus, ExecutorStatus,
-        ScheduledRequest, StakerAdded, StakerStatus, StakingAction,
-    },
+    staking::{ScheduledRequest, StakerStatus, StakingAction},
     treasury::Treasury,
 };
 

@@ -1,29 +1,12 @@
-use crate::pallet::{
-    BalanceOf,     // ✔️
-    BottomStakes,  // ✔️
-    CandidateInfo, // ✔️
-    Config,        // ✔️
-    Error,         // ✔️
-    Event,         // ✔️
-    Pallet,        // ✔️
-    StakerInfo,    // ✔️
-    TopStakes,     // ✔️
-    Total,         // ✔️
-};
+use crate::pallet::Config;
 use codec::{Decode, Encode};
-use frame_support::{pallet_prelude::*, traits::ReservableCurrency};
+use frame_support::pallet_prelude::*;
 use sp_runtime::{
-    traits::{AtLeast32BitUnsigned, Saturating, Zero},
-    Perbill, Percent, RuntimeDebug,
+    traits::{Saturating, Zero},
+    RuntimeDebug,
 };
-use sp_std::{cmp::Ordering, collections::btree_map::BTreeMap, prelude::*};
-use t3rn_primitives::{
-    common::{OrderedSet, RoundIndex},
-    staking::{
-        Bond, CandidateBondLessRequest, CapacityStatus, ExecutorStatus, StakerAdded, StakerStatus,
-    },
-    treasury::Treasury,
-};
+use sp_std::prelude::*;
+use t3rn_primitives::staking::{Bond, CapacityStatus};
 
 #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 /// Type for top and bottom stake storage item

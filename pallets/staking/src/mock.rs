@@ -1,7 +1,7 @@
 use crate::pallet as pallet_staking;
 use frame_support::{
     parameter_types,
-    traits::{ConstU128, ConstU32, GenesisBuild, OnFinalize, OnInitialize},
+    traits::{GenesisBuild, OnFinalize, OnInitialize},
 };
 use sp_core::H256;
 use sp_runtime::{
@@ -10,9 +10,8 @@ use sp_runtime::{
     Perbill, Percent,
 };
 use t3rn_primitives::{
-    common::{Range,BLOCKS_PER_HOUR},
-    monetary::{MILLIT3RN, T3RN},
-    treasury::Treasury as TreasuryT,
+    common::{Range, BLOCKS_PER_HOUR},
+    monetary::T3RN,
 };
 
 pub(crate) fn last_event() -> Event {
@@ -71,8 +70,8 @@ frame_support::construct_runtime!(
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Config<T>, Storage, Event<T>},
-        Treasury: pallet_treasury::{Pallet, Call, Storage, Event<T>},
-        Staking: pallet_staking::{Pallet, Call, Storage, Event<T>},
+        Treasury: pallet_treasury::{Pallet, Call,Config<T>, Storage, Event<T>},
+        Staking: pallet_staking::{Pallet, Call, Config<T>, Storage, Event<T>},
     }
 );
 
@@ -131,8 +130,8 @@ parameter_types! {
     pub const ReserveAccount: u32 = 1;
     pub const AuctionFund: u32 = 2;
     pub const ContractFund: u32 = 3;
-    pub const MinBlocksPerRound: u32 = 20; // TODO
-    pub const DefaultBlocksPerRound: u32 = 6 * BLOCKS_PER_HOUR; // TODO
+    pub const MinRoundTerm: u32 = 20; // TODO
+    pub const DefaultRoundTerm: u32 = 6 * BLOCKS_PER_HOUR; // TODO
     pub const GenesisIssuance: u32 = 20_000_000; // TODO
     pub const IdealPerpetualInflation: Perbill = Perbill::from_percent(1);
     pub const InflationRegressionMonths: u32 = 72;
@@ -142,12 +141,12 @@ impl pallet_treasury::Config for Test {
     type AuctionFund = AuctionFund;
     type ContractFund = ContractFund;
     type Currency = Balances;
+    type DefaultRoundTerm = DefaultRoundTerm;
     type Event = Event;
     type GenesisIssuance = GenesisIssuance;
     type IdealPerpetualInflation = IdealPerpetualInflation;
     type InflationRegressionMonths = InflationRegressionMonths;
-    type MinBlocksPerRound = MinBlocksPerRound;
-    type DefaultBlocksPerRound = DefaultBlocksPerRound;
+    type MinRoundTerm = MinRoundTerm;
     type ReserveAccount = ReserveAccount;
     type TreasuryAccount = TreasuryAccount;
     type WeightInfo = ();

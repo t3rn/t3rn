@@ -1,6 +1,4 @@
-use crate::{
-    self as pallet_treasury,
-};
+use crate::{self as pallet_treasury};
 use frame_support::{
     parameter_types,
     traits::{GenesisBuild, OnFinalize, OnInitialize},
@@ -11,7 +9,10 @@ use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
     Perbill,
 };
-use t3rn_primitives::{common::{DEFAULT_ROUND_TERM, Range, },monetary::InflationAllocation};
+use t3rn_primitives::{
+    common::{Range, DEFAULT_ROUND_TERM},
+    monetary::InflationAllocation,
+};
 
 pub(crate) fn last_event() -> Event {
     System::events().pop().expect("event expected").event
@@ -24,16 +25,16 @@ pub(crate) fn last_n_events(n: usize) -> Vec<pallet_treasury::Event<Test>> {
         panic!("not {:?} events available, only {:?}", n, len);
     }
     events[len - n..]
-    .into_iter()
-    .map(|r| r.event.clone())
-    .filter_map(|e| {
-        if let Event::Treasury(inner) = e {
-            Some(inner)
-        } else {
-            None
-        }
-    })
-    .collect::<Vec<_>>()
+        .into_iter()
+        .map(|r| r.event.clone())
+        .filter_map(|e| {
+            if let Event::Treasury(inner) = e {
+                Some(inner)
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<_>>()
 }
 
 /// Assert input equal to the last event emitted
@@ -130,9 +131,9 @@ parameter_types! {
     pub const ReserveAccount: u32 = 1;
     pub const AuctionFund: u32 = 2;
     pub const ContractFund: u32 = 3;
-    pub const MinBlocksPerRound: u32 = 20; // TODO
-    pub const DefaultBlocksPerRound: u32 = DEFAULT_ROUND_TERM; // TODO
-    pub const GenesisIssuance: u32 = 20_000_000; // TODO
+    pub const MinRoundTerm: u32 = 20; //TODO
+    pub const DefaultRoundTerm: u32 = DEFAULT_ROUND_TERM; //TODO
+    pub const GenesisIssuance: u32 = 20_000_000; //TODO
     pub const IdealPerpetualInflation: Perbill =  Perbill::from_percent(1);
     pub const InflationRegressionMonths: u32 = 72;
 }
@@ -141,12 +142,12 @@ impl pallet_treasury::Config for Test {
     type AuctionFund = AuctionFund;
     type ContractFund = ContractFund;
     type Currency = Balances;
+    type DefaultRoundTerm = DefaultRoundTerm;
     type Event = Event;
     type GenesisIssuance = GenesisIssuance;
     type IdealPerpetualInflation = IdealPerpetualInflation;
     type InflationRegressionMonths = InflationRegressionMonths;
-    type MinBlocksPerRound = MinBlocksPerRound;
-    type DefaultBlocksPerRound = DefaultBlocksPerRound;
+    type MinRoundTerm = MinRoundTerm;
     type ReserveAccount = ReserveAccount;
     type TreasuryAccount = TreasuryAccount;
     type WeightInfo = ();
@@ -173,19 +174,19 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
     pallet_treasury::GenesisConfig::<Test> {
         candidates: vec![],
         annual_inflation: Range {
-            min: Perbill::from_parts(75_000_000),   // TODO
-            ideal: Perbill::from_parts(80_000_000), // TODO
-            max: Perbill::from_parts(85_000_000),   // TODO
+            min: Perbill::from_parts(75_000_000),   //TODO
+            ideal: Perbill::from_parts(80_000_000), //TODO
+            max: Perbill::from_parts(85_000_000),   //TODO
         },
         inflation_alloc: InflationAllocation {
-            developer: Perbill::from_percent(50), // TODO
-            executor: Perbill::from_percent(50),  // TODO
+            developer: Perbill::from_percent(50), //TODO
+            executor: Perbill::from_percent(50),  //TODO
         },
         round_term: DEFAULT_ROUND_TERM,
         total_stake_expectation: Range {
-            min: 0, // TODO
-            ideal: 1000, // TODO
-            max: 1_000_000, // TODOs
+            min: 0,         //TODO
+            ideal: 1000,    //TODO
+            max: 1_000_000, //TODOs
         },
     }
     .assimilate_storage(&mut storage)

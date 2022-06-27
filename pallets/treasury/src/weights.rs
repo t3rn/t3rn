@@ -14,7 +14,7 @@ pub trait WeightInfo {
 
 pub struct TreasuryWeight<T>(PhantomData<T>);
 
-// TODO
+//TODO
 impl<T: frame_system::Config> WeightInfo for TreasuryWeight<T> {
     fn on_initialize() -> Weight {
         0_u64
@@ -49,7 +49,7 @@ impl<T: frame_system::Config> WeightInfo for TreasuryWeight<T> {
     }
 }
 
-// TODO
+//TODO
 impl WeightInfo for () {
     fn on_initialize() -> Weight {
         0_u64
