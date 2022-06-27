@@ -2,13 +2,13 @@ use crate::{
     assert_last_event, assert_last_n_events,
     inflation::{
         BeneficiaryRole, InflationAllocation, InflationInfo, Range, RoundIndex, RoundInfo,
-        BLOCKS_PER_YEAR,
     },
     mock::{Event as MockEvent, *},
-    Beneficiaries, BeneficiaryRoundRewards, Error, Event,
+    Beneficiaries, BeneficiaryRoundRewards, CurrentRound, Error, Event,
 };
 use frame_support::{assert_err, assert_noop, assert_ok};
 use sp_runtime::Perbill;
+use t3rn_primitives::common::BLOCKS_PER_YEAR;
 
 #[test]
 fn mint_for_round_requires_root() {
@@ -23,7 +23,7 @@ fn mint_for_round_requires_root() {
 #[test]
 fn genesis_inflation_config() {
     new_test_ext().execute_with(|| {
-        roll_to(3);
+        fast_forward_to(3);
 
         assert_eq!(
             Treasury::current_round(),
@@ -68,7 +68,7 @@ fn hook_mints_for_each_past_round() {
         <Beneficiaries<Test>>::insert(dev, BeneficiaryRole::Developer, 0);
         // <Test as mock::Config>::Currency::issue(100);
         // fast forward two round begins
-        roll_to(41);
+        fast_forward_to(41);
 
         assert_last_n_events!(
             6,
@@ -334,7 +334,7 @@ fn set_round_term_requires_root() {
 fn set_round_term_fails_if_not_changed() {
     new_test_ext().execute_with(|| {
         assert_noop!(
-            Treasury::set_round_term(Origin::root(), <MinBlocksPerRound>::get()),
+            Treasury::set_round_term(Origin::root(), <CurrentRound<Test>>::get().term),
             Error::<Test>::ValueNotChanged
         );
     })
@@ -409,7 +409,7 @@ fn gradually_decreasing_to_perpetual_inflation() {
         );
 
         // after 3 yrs
-        roll_to((BLOCKS_PER_YEAR * 3) as u64);
+        fast_forward_to((BLOCKS_PER_YEAR * 3) as u64);
         assert_eq!(
             Treasury::inflation_config().annual,
             Range {
@@ -420,7 +420,7 @@ fn gradually_decreasing_to_perpetual_inflation() {
         );
 
         // after 6 yrs
-        roll_to((BLOCKS_PER_YEAR * 6) as u64);
+        fast_forward_to((BLOCKS_PER_YEAR * 6) as u64);
         assert_eq!(
             Treasury::inflation_config().annual,
             Range {

@@ -20,7 +20,7 @@ pub mod pallet {
     use crate::{
         inflation::{
             perbill_annual_to_perbill_round, rounds_per_year, BeneficiaryRole, InflationAllocation,
-            InflationInfo, Range, RoundIndex, RoundInfo, BLOCKS_PER_YEAR,
+            InflationInfo, Range, RoundIndex, RoundInfo,
         },
         weights::WeightInfo,
     };
@@ -33,6 +33,7 @@ pub mod pallet {
         traits::{Saturating, Zero},
         Perbill,
     };
+    use t3rn_primitives::common::BLOCKS_PER_YEAR;
 
     pub type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -51,6 +52,10 @@ pub mod pallet {
         /// NOTE: Must be at least the size of the active collator set.
         #[pallet::constant]
         type MinBlocksPerRound: Get<u32>;
+
+        /// Default number of blocks per round being applied in pallet genesis.
+        #[pallet::constant]
+        type DefaultBlocksPerRound: Get<u32>;
 
         /// The parachain treasury account. 5%.
         #[pallet::constant]
