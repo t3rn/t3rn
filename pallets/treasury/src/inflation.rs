@@ -13,47 +13,8 @@ use frame_support::{
 };
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
-use sp_runtime::{traits::CheckedAdd, PerThing, Perbill, RuntimeDebug};
-use t3rn_primitives::{common::{BLOCKS_PER_YEAR, Range}, monetary::{InflationAllocation, BeneficiaryRole}};
-
-// #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-// #[derive(
-//     Eq, PartialEq, Clone, Copy, Encode, Decode, Default, RuntimeDebug, MaxEncodedLen, TypeInfo,
-// )]
-// pub struct Range<T> {
-//     pub(crate) min: T,
-//     pub(crate) ideal: T,
-//     pub(crate) max: T,
-// }
-
-// #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-// #[derive(Clone, Copy, Debug, PartialEq, Eq, Encode, Decode, TypeInfo, MaxEncodedLen)]
-// pub enum BeneficiaryRole {
-//     Developer,
-//     Executor,
-// }
-
-// impl<T: Ord> Range<T> {
-//     pub fn is_valid(&self) -> bool {
-//         self.min <= self.ideal && self.ideal <= self.max
-//     }
-// }
-
-// #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-// #[derive(Eq, PartialEq, Clone, Encode, Decode, MaxEncodedLen, Default, RuntimeDebug, TypeInfo)]
-// pub struct InflationAllocation {
-//     pub(crate) developer: Perbill,
-//     pub(crate) executor: Perbill,
-// }
-
-// impl InflationAllocation {
-//     pub fn is_valid(&self) -> bool {
-//         match self.developer.checked_add(&self.executor) {
-//             Some(perbill) => perbill == Perbill::one(),
-//             None => false,
-//         }
-//     }
-// }
+use sp_runtime::{PerThing, Perbill, RuntimeDebug};
+use t3rn_primitives::common::{Range, BLOCKS_PER_YEAR};
 
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Eq, PartialEq, Clone, Encode, Decode, MaxEncodedLen, Default, RuntimeDebug, TypeInfo)]
@@ -62,23 +23,6 @@ pub struct InflationInfo {
     pub round: Range<Perbill>,
 }
 
-// impl Default for InflationInfo {
-//     fn default() -> Self {
-//         InflationInfo {
-//             annual: {
-//                 min: Perbill::from_parts(0),
-//                 ideal: Perbill::from_parts(0),
-//                 max: Perbill::from_parts(0)
-//             },
-//             round: Range {
-//                 min: Perbill::from_parts(0),
-//                 ideal: Perbill::from_parts(0),
-//                 max: Perbill::from_parts(0)
-//             }
-//         }
-//     }
-// }
-
 impl InflationInfo {
     /// Reset round inflation rate based on changes to round term.
     pub fn update_from_round_term<T: Config>(
@@ -86,7 +30,7 @@ impl InflationInfo {
         new_round_term: u32,
     ) -> Result<(), Error<T>> {
         ensure!(
-            new_round_term > 0 && new_round_term >= T::MinBlocksPerRound::get(),
+            new_round_term > 0 && new_round_term >= T::MinRoundTerm::get(),
             <Error<T>>::RoundTermTooShort
         );
 
@@ -122,28 +66,6 @@ pub fn annual_to_round_inflation<T: Config>(
     Ok(round_inflation)
 }
 
-/// Computes the number of rounds per year given a fixed bock time of 12s.
-pub fn rounds_per_year<T: Config>() -> Result<u32, Error<T>> {
-    let round_term = <Pallet<T>>::current_round().term;
-
-    ensure!(
-        round_term > 0 && round_term >= T::MinBlocksPerRound::get(),
-        <Error<T>>::RoundTermTooShort
-    );
-
-    Ok(BLOCKS_PER_YEAR / round_term)
-}
-
-/// Compute round issuance range from round inflation range and current total issuance
-pub fn round_issuance_range<T: Config>(round_inflation: Range<Perbill>) -> Range<BalanceOf<T>> {
-    let circulating = T::Currency::total_issuance();
-    Range {
-        min: round_inflation.min * circulating,
-        ideal: round_inflation.ideal * circulating,
-        max: round_inflation.max * circulating,
-    }
-}
-
 /// Convert an annual inflation to a round inflation
 /// round = (1+annual)^(1/rounds_per_year) - 1
 pub fn perbill_annual_to_perbill_round(
@@ -171,44 +93,24 @@ pub fn perbill_annual_to_perbill_round(
     }
 }
 
-// pub(crate) type RoundIndex = u32;
+/// Computes the number of rounds per year given a fixed bock time of 12s.
+pub fn rounds_per_year<T: Config>() -> Result<u32, Error<T>> {
+    let round_term = <Pallet<T>>::current_round().term;
 
-// #[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-// /// The current round index and transition information
-// pub struct RoundInfo<BlockNumber> {
-//     /// Current round index.
-//     pub index: RoundIndex,
-//     /// The first block of the current round.
-//     pub head: BlockNumber,
-//     /// The length of the current round in number of blocks.
-//     pub term: u32,
-// }
+    ensure!(
+        round_term > 0 && round_term >= T::MinRoundTerm::get(),
+        <Error<T>>::RoundTermTooShort
+    );
 
-// impl<
-//         B: Copy + sp_std::ops::Add<Output = B> + sp_std::ops::Sub<Output = B> + From<u32> + PartialOrd,
-//     > RoundInfo<B>
-// {
-//     pub fn new(index: RoundIndex, head: B, term: u32) -> RoundInfo<B> {
-//         RoundInfo { index, head, term }
-//     }
+    Ok(BLOCKS_PER_YEAR / round_term)
+}
 
-//     /// Check if the round should be updated
-//     pub fn should_update(&self, now: B) -> bool {
-//         now - self.head >= self.term.into()
-//     }
-
-//     /// New round
-//     pub fn update(&mut self, now: B) {
-//         self.index = self.index.saturating_add(1u32);
-//         self.head = now;
-//     }
-// }
-
-// impl<
-//         B: Copy + sp_std::ops::Add<Output = B> + sp_std::ops::Sub<Output = B> + From<u32> + PartialOrd,
-//     > Default for RoundInfo<B>
-// {
-//     fn default() -> RoundInfo<B> {
-//         RoundInfo::new(1u32, 1u32.into(), 20u32)
-//     }
-// }
+/// Compute round issuance range from round inflation range and current total issuance
+pub fn round_issuance_range<T: Config>(round_inflation: Range<Perbill>) -> Range<BalanceOf<T>> {
+    let circulating = T::Currency::total_issuance();
+    Range {
+        min: round_inflation.min * circulating,
+        ideal: round_inflation.ideal * circulating,
+        max: round_inflation.max * circulating,
+    }
+}

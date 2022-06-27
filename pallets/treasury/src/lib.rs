@@ -18,22 +18,23 @@ pub mod weights;
 #[pallet]
 pub mod pallet {
     use crate::{
-        inflation::{
-            perbill_annual_to_perbill_round, rounds_per_year,
-            InflationInfo, 
-        },
+        inflation::{perbill_annual_to_perbill_round, rounds_per_year, InflationInfo},
         weights::WeightInfo,
     };
     use frame_support::{
         pallet_prelude::*,
-        traits::{Currency, OriginTrait, ReservableCurrency},
+        traits::{Currency, Imbalance, OriginTrait, ReservableCurrency},
     };
     use frame_system::{ensure_root, pallet_prelude::*};
     use sp_runtime::{
         traits::{Saturating, Zero},
         Perbill,
     };
-    use t3rn_primitives::{common::{BLOCKS_PER_YEAR, RoundIndex,Range, RoundInfo},monetary::{BeneficiaryRole,InflationAllocation,} };
+    use t3rn_primitives::{
+        common::{Range, RoundIndex, RoundInfo, BLOCKS_PER_YEAR},
+        monetary::{BeneficiaryRole, InflationAllocation},
+        treasury::Treasury as TTreasury,
+    };
 
     pub type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -51,11 +52,11 @@ pub mod pallet {
         /// Serves as the default round term being applied in pallet genesis.
         /// NOTE: Must be at least the size of the active collator set.
         #[pallet::constant]
-        type MinBlocksPerRound: Get<u32>;
+        type MinRoundTerm: Get<u32>;
 
         /// Default number of blocks per round being applied in pallet genesis.
         #[pallet::constant]
-        type DefaultBlocksPerRound: Get<u32>;
+        type DefaultRoundTerm: Get<u32>;
 
         /// The parachain treasury account. 5%.
         #[pallet::constant]
@@ -190,18 +191,19 @@ pub mod pallet {
                 });
 
                 // issue tokens for the past round
-                // TODO: pull sum of active executors + collators stake
+                //TODO: pull sum of active executors + collators stake
                 let total_stake: BalanceOf<T> = Self::u32_to_balance(50_u32);
                 let round_issuance = Self::compute_round_issuance(total_stake);
+                sp_std::if_std! { println!("round_issuance {:?}", round_issuance); }
                 Self::mint_for_round(T::Origin::root(), round.index - 1, round_issuance)
-                    // TODO: panic possibility
+                    //TODO: panic possibility
                     .expect("mint for round; will not fail unless called without root");
 
                 // adjust annual inflation gradually
                 let mut inflation_info = <InflationConfig<T>>::get();
                 let regressed_annual_inflation = Self::compute_regressed_annual_inflation();
                 inflation_info.update_from_annual::<T>(regressed_annual_inflation)
-                  // TODO: panic possibility
+                  //TODO: panic possibility
                   .expect("update round from annual inflation; will not fail if annual inflation at genesis was valid");
                 <InflationConfig<T>>::put(inflation_info);
             }
@@ -225,24 +227,24 @@ pub mod pallet {
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {
-                candidates: Default::default(), // TODO blacklist
+                candidates: Default::default(), //TODO blacklist
                 // NOTE: the annual inflation rate's min and max must be
                 // less than one percent different from the ideal. Thereby we
                 // ensure a positive inflation rate given our ideal perpetual
                 // inflation rate of 1 percent while gradually decreasing the
                 // inflation rate within the first six years.
                 annual_inflation: Range {
-                    min: Perbill::from_parts(75_000_000),   // TODO
-                    ideal: Perbill::from_parts(80_000_000), // TODO
-                    max: Perbill::from_parts(85_000_000),   // TODO
+                    min: Perbill::from_parts(75_000_000),   //TODO
+                    ideal: Perbill::from_parts(80_000_000), //TODO
+                    max: Perbill::from_parts(85_000_000),   //TODO
                 },
                 inflation_alloc: InflationAllocation {
-                    executor: Perbill::from_percent(50),  // TODO
-                    developer: Perbill::from_percent(50), // TODO
+                    executor: Perbill::from_percent(50),  //TODO
+                    developer: Perbill::from_percent(50), //TODO
                 },
-                round_term: T::DefaultBlocksPerRound::get(),
+                round_term: T::DefaultRoundTerm::get(),
                 total_stake_expectation: Range {
-                    min: <Pallet<T>>::u32_to_balance(0_u32),         // TODO
+                    min: <Pallet<T>>::u32_to_balance(0_u32),         //TODO
                     ideal: <Pallet<T>>::u32_to_balance(1000_u32),    //TODO
                     max: <Pallet<T>>::u32_to_balance(1_000_000_u32), //TODO
                 },
@@ -273,8 +275,11 @@ pub mod pallet {
             <TotalStakeExpectation<T>>::put(self.total_stake_expectation);
 
             // issue genesis tokens
-            T::Currency::issue(<Pallet<T>>::u32_to_balance(T::GenesisIssuance::get()));
-
+            let neg_imb =
+                T::Currency::issue(<Pallet<T>>::u32_to_balance(T::GenesisIssuance::get()));
+            //TODO: deposit to treasury
+            T::Currency::deposit_creating(&T::TreasuryAccount::get(), neg_imb.peek());
+            sp_std::if_std! { println!("total issuance {:?}", T::Currency::total_issuance()); }
             <Pallet<T>>::deposit_event(Event::NewRound {
                 round: round.index,
                 head: round.head,
@@ -285,13 +290,13 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Mints tokens for given round.
-        /// TODO: maybe ensure can only be called once per round
-        /// TODO: exec, infl
-        #[pallet::weight(10_000)] // TODO
+        ///TODO: maybe ensure can only be called once per round
+        ///TODO: exec, infl
+        #[pallet::weight(10_000)] //TODO
         pub fn mint_for_round(
             origin: OriginFor<T>,
             round_index: RoundIndex,
-            #[pallet::compact] amount: BalanceOf<T>, // TODO: revisit
+            #[pallet::compact] amount: BalanceOf<T>, //TODO: revisit
         ) -> DispatchResult {
             ensure_root(origin)?;
 
@@ -316,24 +321,29 @@ pub mod pallet {
                 Perbill::from_rational(1, count_devs as u32) * inflation_alloc.developer;
             let relative_per_exec =
                 Perbill::from_rational(1, count_execs as u32) * inflation_alloc.executor;
-
+            sp_std::if_std! { println!("relative_per_dev {:?}", relative_per_dev); }
+            sp_std::if_std! { println!("relative_per_exec {:?}", relative_per_exec); }
+            sp_std::if_std! { println!("amount {:?}", amount); }
             // calculate absoute rewards per actor
             let absolute_per_dev = relative_per_dev * amount;
             let absolute_per_exec = relative_per_exec * amount;
-
+            sp_std::if_std! { println!("absolute_per_dev {:?}", absolute_per_dev); }
+            sp_std::if_std! { println!("absolute_per_exec {:?}", absolute_per_exec); }
             // for each candidate in the round issue rewards
             for (candidate, role) in <Beneficiaries<T>>::iter_keys() {
                 let issued = match role {
                     BeneficiaryRole::Developer => {
-                        T::Currency::issue(absolute_per_dev);
-                        absolute_per_dev
+                        let neg_imb = T::Currency::issue(absolute_per_dev);
+                        neg_imb.peek()
+                        // absolute_per_dev
                     },
                     BeneficiaryRole::Executor => {
-                        T::Currency::issue(absolute_per_exec);
-                        absolute_per_exec
+                        let neg_imb = T::Currency::issue(absolute_per_exec);
+                        neg_imb.peek()
+                        // absolute_per_exec
                     },
                 };
-
+                sp_std::if_std! { println!("issued {:?}", issued); }
                 <BeneficiaryRoundRewards<T>>::insert(candidate.clone(), round_index, issued);
 
                 Self::deposit_event(Event::BeneficiaryTokensIssued(candidate, issued));
@@ -344,7 +354,7 @@ pub mod pallet {
             Ok(())
         }
 
-        #[pallet::weight(10_000)] // TODO
+        #[pallet::weight(10_000)] //TODO
         pub fn claim_rewards(origin: OriginFor<T>) -> DispatchResult {
             let who = ensure_signed(origin)?;
             <Pallet<T>>::ensure_beneficiary(&who)?;
@@ -364,7 +374,7 @@ pub mod pallet {
 
             // allocate to beneficiary
             T::Currency::deposit_into_existing(&who, BalanceOf::<T>::from(total_rewards))
-                .expect("Should deposit balance to account"); // TODO
+                .expect("Should deposit balance to account"); //TODO
 
             Self::deposit_event(Event::RewardsClaimed(who, total_rewards));
 
@@ -372,7 +382,7 @@ pub mod pallet {
         }
 
         /// Sets the annual inflation rate to derive per-round inflation
-        #[pallet::weight(10_000)] // TODO
+        #[pallet::weight(10_000)] //TODO
         pub fn set_inflation(
             origin: OriginFor<T>,
             annual_inflation_config: Range<Perbill>,
@@ -407,7 +417,7 @@ pub mod pallet {
         }
 
         /// Sets the reward percentage to be allocated amongst t3rn actors
-        #[pallet::weight(10_000)] // TODO
+        #[pallet::weight(10_000)] //TODO
         pub fn set_inflation_alloc(
             origin: OriginFor<T>,
             inflation_alloc: InflationAllocation,
@@ -438,13 +448,10 @@ pub mod pallet {
         /// - if called with `new` less than term of current round, will transition immediately
         /// in the next block
         /// - also updates per-round inflation config
-        #[pallet::weight(10_000)] // TODO
+        #[pallet::weight(10_000)] //TODO
         pub fn set_round_term(origin: OriginFor<T>, new: u32) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
-            ensure!(
-                new >= T::MinBlocksPerRound::get(),
-                Error::<T>::RoundTermTooShort
-            );
+            ensure!(new >= T::MinRoundTerm::get(), Error::<T>::RoundTermTooShort);
 
             let mut round = <CurrentRound<T>>::get();
             ensure!(round.term != new, Error::<T>::ValueNotChanged);
@@ -471,7 +478,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(10_000)] // TODO
+        #[pallet::weight(10_000)] //TODO
         pub fn add_beneficiary(
             origin: OriginFor<T>,
             _beneficiary: T::AccountId,
@@ -481,7 +488,7 @@ pub mod pallet {
             todo!();
         }
 
-        #[pallet::weight(10_000)] // TODO
+        #[pallet::weight(10_000)] //TODO
         pub fn remove_beneficiary(
             origin: OriginFor<T>,
             _beneficiary: T::AccountId,
@@ -492,7 +499,7 @@ pub mod pallet {
 
         /// Set the expectations for total staked. These expectations determine the issuance for
         /// the round according to logic in `fn compute_round_issuance`.
-        #[pallet::weight(10_000)] // TODO
+        #[pallet::weight(10_000)] //TODO
         pub fn set_total_stake_expectation(
             _origin: OriginFor<T>,
             _expectations: Range<BalanceOf<T>>,
@@ -505,7 +512,7 @@ pub mod pallet {
             // 	config.expect != expectations,
             // 	Error::<T>::NoWritingSameValue
             // );
-            // TODO:   // config.set_expectations(expectations);
+            //TODO:   // config.set_expectations(expectations);
             // Self::deposit_event(Event::StakeExpectationsSet {
             // 	expect_min: config.expect.min,
             // 	expect_ideal: config.expect.ideal,
@@ -536,7 +543,7 @@ pub mod pallet {
 
         /// Computes round issuance based on total staked for the given round
         /// Total stake consists of executors' and collators' total stake.
-        fn compute_round_issuance(total_stake: BalanceOf<T>) -> BalanceOf<T> {
+        pub(crate) fn compute_round_issuance(total_stake: BalanceOf<T>) -> BalanceOf<T> {
             let expect = <TotalStakeExpectation<T>>::get();
             let round_inflation = <InflationConfig<T>>::get().round;
             let round_issuance = crate::inflation::round_issuance_range::<T>(round_inflation);
@@ -564,9 +571,8 @@ pub mod pallet {
                 .saturating_sub(ideal_perpetual_inflation);
 
             // remaining rounds until perpetual inflation
-            let rounds_per_month = rounds_per_year::<T>()
-                .unwrap_or(BLOCKS_PER_YEAR / T::MinBlocksPerRound::get())
-                / 12;
+            let rounds_per_month =
+                rounds_per_year::<T>().unwrap_or(BLOCKS_PER_YEAR / T::MinRoundTerm::get()) / 12;
             let pending_rounds = (rounds_per_month * T::InflationRegressionMonths::get())
                 .saturating_sub(<CurrentRound<T>>::get().index);
 
@@ -603,6 +609,12 @@ pub mod pallet {
             } else {
                 regressed_annual_inflation
             }
+        }
+    }
+
+    impl<T: Config> TTreasury<T> for Pallet<T> {
+        fn current_round() -> RoundInfo<T::BlockNumber> {
+            Self::current_round()
         }
     }
 }

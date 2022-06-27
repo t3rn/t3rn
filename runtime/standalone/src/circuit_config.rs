@@ -168,7 +168,7 @@ impl pallet_mfv::Config<DefaultPolkadotBridgeInstance> for Runtime {
     type Xdns = XDNS;
 }
 
-// MinBlocksPerRound plays a crucial role:
+// MinRoundTerm plays a crucial role:
 //  + must at least be the size of the active collator set
 //  + is applied as default round term during genesis
 //  + codetermines staking delays as they are measured in rounds
@@ -177,8 +177,8 @@ parameter_types! {
     pub const ReserveAccount: AccountId = AccountId::new([1u8; 32]); // TODO
     pub const AuctionFund: AccountId = AccountId::new([2u8; 32]); // TODO
     pub const ContractFund: AccountId = AccountId::new([3u8; 32]); // TODO
-    pub const MinBlocksPerRound: u32 = 20; // TODO
-    pub const DefaultBlocksPerRound: u32 = DEFAULT_ROUND_TERM; // TODO
+    pub const MinRoundTerm: u32 = 20; // TODO
+    pub const DefaultRoundTerm: u32 = DEFAULT_ROUND_TERM; // TODO
     pub const GenesisIssuance: u32 = 20_000_000; // TODO
     pub const IdealPerpetualInflation: Perbill =Perbill::from_percent(1);
     pub const InflationRegressionMonths: u32 = 72;
@@ -188,12 +188,12 @@ impl pallet_treasury::Config for Runtime {
     type AuctionFund = AuctionFund;
     type ContractFund = ContractFund;
     type Currency = Balances;
+    type DefaultRoundTerm = DefaultRoundTerm;
     type Event = Event;
     type GenesisIssuance = GenesisIssuance;
     type IdealPerpetualInflation = IdealPerpetualInflation;
     type InflationRegressionMonths = InflationRegressionMonths;
-    type MinBlocksPerRound = MinBlocksPerRound;
-    type DefaultBlocksPerRound = DefaultBlocksPerRound;
+    type MinRoundTerm = MinRoundTerm;
     type ReserveAccount = ReserveAccount;
     type TreasuryAccount = TreasuryAccount;
     type WeightInfo = pallet_treasury::weights::TreasuryWeight<Runtime>;
