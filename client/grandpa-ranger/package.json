@@ -10,7 +10,6 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@polkadot/api": "=7.14.3",
-    "@t3rn/types": "=0.1.1",
     "@types/debug": "=4.1.7",
     "debug": "=4.3.3",
     "ts-node": "=10.7.0",
