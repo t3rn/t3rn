@@ -261,25 +261,11 @@ pub struct Compose<Account, Balance> {
 /// A result type of a get storage call.
 pub type FetchContractsResult = Result<Vec<u8>, ContractAccessError>;
 
-/// A result of execution of a contract.
+/// Read latest height of gateway known to a light client
 #[derive(Eq, PartialEq, Encode, Decode, Debug, Clone)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub enum ComposableExecResult {
-    /// The contract returned successfully.
-    ///
-    /// There is a status code and, optionally, some data returned by the contract.
-    Success {
-        /// Flags that the contract passed along on returning to alter its exit behaviour.
-        /// Described in `pallet_contracts::exec::ReturnFlags`.
-        flags: u32,
-        /// Output data returned by the contract.
-        ///
-        /// Can be empty.
-        data: Vec<u8>,
-        /// How much gas was consumed by the call.
-        gas_consumed: u64,
-    },
-    /// The contract execution either trapped or returned an error.
+pub enum ReadLatestGatewayHeight {
+    Success { encoded_height: Vec<u8> },
     Error,
 }
 
@@ -293,26 +279,7 @@ pub enum ContractAccessError {
     IsTombstone,
 }
 
-/// Exec phase consists out of many parallel steps
-#[derive(Eq, PartialEq, Encode, Decode, Debug, Clone, Default)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub struct ExecPhase<Account, Balance> {
-    pub steps: Vec<ExecStep<Account, Balance>>,
-}
-
-#[derive(Eq, PartialEq, Encode, Decode, Debug, Clone, Default)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub struct ExecStep<Account, Balance> {
-    pub compose: Compose<Account, Balance>,
-}
-
 pub type GenericAddress = sp_runtime::MultiAddress<sp_runtime::AccountId32, ()>;
-
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub struct InterExecSchedule<Account, Balance> {
-    pub phases: Vec<ExecPhase<Account, Balance>>,
-}
 
 pub trait EscrowTrait<T: frame_system::Config> {
     type Currency: ReservableCurrency<T::AccountId>;

@@ -89,9 +89,8 @@ pub enum Error {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use hex_literal::hex;
+
     use sp_core::crypto::AccountId32;
-    use sp_runtime::testing::H256;
 
     type BlockNumber = u64;
     type BalanceOf = u128;

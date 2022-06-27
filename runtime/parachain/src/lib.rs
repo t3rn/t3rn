@@ -47,10 +47,10 @@ use frame_system::{
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 
-use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
-
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
+use t3rn_primitives::ReadLatestGatewayHeight;
+use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
 // Polkadot Imports
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
@@ -753,6 +753,20 @@ impl_runtime_apis! {
             key: [u8; 32],
         ) -> pallet_3vm_contracts_primitives::GetStorageResult {
             Contracts::get_storage(address, key)
+        }
+    }
+
+    impl pallet_circuit_portal_rpc_runtime_api::CircuitPortalRuntimeApi<Block, AccountId, Balance, BlockNumber> for Runtime {
+        fn read_latest_gateway_height(
+            gateway_id: [u8; 4],
+        ) -> ReadLatestGatewayHeight {
+            match <CircuitPortal as t3rn_primitives::circuit_portal::CircuitPortal<Runtime>>::read_cmp_latest_target_height(gateway_id, None, None) {
+                Ok(encoded_height) =>
+                    ReadLatestGatewayHeight::Success {
+                        encoded_height,
+                    },
+                Err(_err) => ReadLatestGatewayHeight::Error
+            }
         }
     }
 
