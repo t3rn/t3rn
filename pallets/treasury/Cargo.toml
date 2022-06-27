@@ -27,6 +27,7 @@ sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "po
 sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.19", default-features = false }
 pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.19", default-features = false }
 pallet-staking = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.19", default-features = false }
+t3rn-primitives = { path = "../../primitives", default-features = false }
 
 fixed = { tag= "v0.5.9", git = "https://github.com/encointer/substrate-fixed", package = "substrate-fixed", default-features = false }
 

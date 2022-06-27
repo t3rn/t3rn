@@ -171,7 +171,7 @@ impl pallet_mfv::Config<DefaultPolkadotBridgeInstance> for Runtime {
 // MinBlocksPerRound plays a crucial role:
 //  + must at least be the size of the active collator set
 //  + is applied as default round term during genesis
-//  + codetermines executor staking delays as they are measured in rounds
+//  + codetermines staking delays as they are measured in rounds
 parameter_types! {
     pub const TreasuryAccount: AccountId = AccountId::new([0u8; 32]); // TODO
     pub const ReserveAccount: AccountId = AccountId::new([1u8; 32]); // TODO
@@ -179,7 +179,7 @@ parameter_types! {
     pub const ContractFund: AccountId = AccountId::new([3u8; 32]); // TODO
     pub const MinBlocksPerRound: u32 =  6 * BLOCKS_PER_HOUR; // TODO
     pub const GenesisIssuance: u32 = 20_000_000; // TODO
-    pub const IdealPerpetualInflation: Perbill = ideal: Perbill::from_percent(1);
+    pub const IdealPerpetualInflation: Perbill =Perbill::from_percent(1);
     pub const InflationRegressionMonths: u32 = 72;
 }
 
