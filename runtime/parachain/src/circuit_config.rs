@@ -2,7 +2,7 @@ use super::*;
 use frame_support::{parameter_types, traits::ConstU32};
 use sp_core::H256;
 use sp_runtime::traits::*;
-use t3rn_primitives::{bridges::runtime as bp_runtime, common::BLOCKS_PER_HOUR};
+use t3rn_primitives::{bridges::runtime as bp_runtime, common::DEFAULT_ROUND_TERM};
 
 impl pallet_randomness_collective_flip::Config for Runtime {}
 
@@ -178,7 +178,7 @@ parameter_types! {
     pub const AuctionFund: AccountId = AccountId::new([2u8; 32]); // TODO
     pub const ContractFund: AccountId = AccountId::new([3u8; 32]); // TODO
     pub const MinBlocksPerRound: u32 = 20; // TODO
-    pub const DefaultBlocksPerRound: u32 = 6 * BLOCKS_PER_HOUR; // TODO
+    pub const DefaultBlocksPerRound: u32 = DEFAULT_ROUND_TERM; // TODO
     pub const GenesisIssuance: u32 = 20_000_000; // TODO
     pub const IdealPerpetualInflation: Perbill = Perbill::from_percent(1);
     pub const InflationRegressionMonths: u32 = 72;

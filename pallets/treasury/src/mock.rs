@@ -1,6 +1,5 @@
 use crate::{
     self as pallet_treasury,
-    inflation::{InflationAllocation, Range},
 };
 use frame_support::{
     parameter_types,
@@ -12,7 +11,7 @@ use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
     Perbill,
 };
-use t3rn_primitives::common::BLOCKS_PER_HOUR;
+use t3rn_primitives::{common::{DEFAULT_ROUND_TERM, Range, },monetary::InflationAllocation};
 
 pub(crate) fn last_event() -> Event {
     System::events().pop().expect("event expected").event
@@ -21,21 +20,20 @@ pub(crate) fn last_event() -> Event {
 pub(crate) fn last_n_events(n: usize) -> Vec<pallet_treasury::Event<Test>> {
     let events = System::events();
     let len = events.len();
-    if len > 0 {
-        events[len - n..]
-            .into_iter()
-            .map(|r| r.event.clone())
-            .filter_map(|e| {
-                if let Event::Treasury(inner) = e {
-                    Some(inner)
-                } else {
-                    None
-                }
-            })
-            .collect::<Vec<_>>()
-    } else {
-        vec![]
+    if events.len() < n {
+        panic!("not {:?} events available, only {:?}", n, len);
     }
+    events[len - n..]
+    .into_iter()
+    .map(|r| r.event.clone())
+    .filter_map(|e| {
+        if let Event::Treasury(inner) = e {
+            Some(inner)
+        } else {
+            None
+        }
+    })
+    .collect::<Vec<_>>()
 }
 
 /// Assert input equal to the last event emitted
@@ -133,7 +131,7 @@ parameter_types! {
     pub const AuctionFund: u32 = 2;
     pub const ContractFund: u32 = 3;
     pub const MinBlocksPerRound: u32 = 20; // TODO
-    pub const DefaultBlocksPerRound: u32 = 6 * BLOCKS_PER_HOUR; // TODO
+    pub const DefaultBlocksPerRound: u32 = DEFAULT_ROUND_TERM; // TODO
     pub const GenesisIssuance: u32 = 20_000_000; // TODO
     pub const IdealPerpetualInflation: Perbill =  Perbill::from_percent(1);
     pub const InflationRegressionMonths: u32 = 72;
@@ -180,14 +178,14 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
             max: Perbill::from_parts(85_000_000),   // TODO
         },
         inflation_alloc: InflationAllocation {
-            developer: Perbill::from_percent(50),
-            executor: Perbill::from_percent(50),
+            developer: Perbill::from_percent(50), // TODO
+            executor: Perbill::from_percent(50),  // TODO
         },
-        round_term: 20,
+        round_term: DEFAULT_ROUND_TERM,
         total_stake_expectation: Range {
-            min: 0,
-            ideal: 1000,
-            max: 1_000_000,
+            min: 0, // TODO
+            ideal: 1000, // TODO
+            max: 1_000_000, // TODOs
         },
     }
     .assimilate_storage(&mut storage)
