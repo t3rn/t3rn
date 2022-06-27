@@ -14,10 +14,7 @@ use frame_support::{
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_runtime::{traits::CheckedAdd, PerThing, Perbill, RuntimeDebug};
-
-const SECONDS_PER_YEAR: u32 = 31557600;
-pub const SECONDS_PER_BLOCK: u32 = 12;
-pub const BLOCKS_PER_YEAR: u32 = SECONDS_PER_YEAR / SECONDS_PER_BLOCK;
+use t3rn_primitives::common::BLOCKS_PER_YEAR;
 
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(

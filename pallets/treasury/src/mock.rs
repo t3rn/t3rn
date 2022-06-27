@@ -132,7 +132,8 @@ parameter_types! {
     pub const ReserveAccount: u32 = 1;
     pub const AuctionFund: u32 = 2;
     pub const ContractFund: u32 = 3;
-    pub const MinBlocksPerRound: u32 =  6 * BLOCKS_PER_HOUR; // TODO
+    pub const MinBlocksPerRound: u32 = 20; // TODO
+    pub const DefaultBlocksPerRound: u32 = 6 * BLOCKS_PER_HOUR; // TODO
     pub const GenesisIssuance: u32 = 20_000_000; // TODO
     pub const IdealPerpetualInflation: Perbill =  Perbill::from_percent(1);
     pub const InflationRegressionMonths: u32 = 72;
@@ -147,12 +148,13 @@ impl pallet_treasury::Config for Test {
     type IdealPerpetualInflation = IdealPerpetualInflation;
     type InflationRegressionMonths = InflationRegressionMonths;
     type MinBlocksPerRound = MinBlocksPerRound;
+    type DefaultBlocksPerRound = DefaultBlocksPerRound;
     type ReserveAccount = ReserveAccount;
     type TreasuryAccount = TreasuryAccount;
     type WeightInfo = ();
 }
 
-pub(crate) fn roll_to(n: u64) {
+pub(crate) fn fast_forward_to(n: u64) {
     while System::block_number() < n {
         Treasury::on_finalize(System::block_number());
         Balances::on_finalize(System::block_number());

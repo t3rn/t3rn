@@ -46,7 +46,8 @@ std = [
     "frame-system/std",
     "frame-benchmarking/std",
     "pallet-balances/std",
-    "pallet-staking/std"
+    "pallet-staking/std",
+    "t3rn-primitives/std",
 ]
 
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
