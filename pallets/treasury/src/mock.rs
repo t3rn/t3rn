@@ -12,6 +12,7 @@ use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
     Perbill,
 };
+use t3rn_primitives::common::BLOCKS_PER_HOUR;
 
 pub(crate) fn last_event() -> Event {
     System::events().pop().expect("event expected").event
@@ -131,9 +132,9 @@ parameter_types! {
     pub const ReserveAccount: u32 = 1;
     pub const AuctionFund: u32 = 2;
     pub const ContractFund: u32 = 3;
-    pub const MinBlocksPerRound: u32 = 20;
-    pub const GenesisIssuance: u32 = 100;
-    pub const IdealPerpetualInflation: Perbill = Perbill::from_percent(1);
+    pub const MinBlocksPerRound: u32 =  6 * BLOCKS_PER_HOUR; // TODO
+    pub const GenesisIssuance: u32 = 20_000_000; // TODO
+    pub const IdealPerpetualInflation: Perbill =  Perbill::from_percent(1);
     pub const InflationRegressionMonths: u32 = 72;
 }
 

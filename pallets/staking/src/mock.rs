@@ -1,4 +1,4 @@
-use crate::pallet as pallet_executor_staking;
+use crate::pallet as pallet_staking;
 use frame_support::{
     parameter_types,
     traits::{ConstU128, ConstU32, GenesisBuild, OnFinalize, OnInitialize},
@@ -10,7 +10,7 @@ use sp_runtime::{
     Perbill, Percent,
 };
 use t3rn_primitives::{
-    common::Range,
+    common::{Range,BLOCKS_PER_HOUR},
     monetary::{MILLIT3RN, T3RN},
     treasury::Treasury as TreasuryT,
 };
@@ -19,7 +19,7 @@ pub(crate) fn last_event() -> Event {
     System::events().pop().expect("event expected").event
 }
 
-pub(crate) fn last_n_events(n: usize) -> Vec<pallet_executor_staking::Event<Test>> {
+pub(crate) fn last_n_events(n: usize) -> Vec<pallet_staking::Event<Test>> {
     let events = System::events();
     let len = events.len();
     if len > 0 {
@@ -27,7 +27,7 @@ pub(crate) fn last_n_events(n: usize) -> Vec<pallet_executor_staking::Event<Test
             .into_iter()
             .map(|r| r.event.clone())
             .filter_map(|e| {
-                if let Event::ExecutorStaking(inner) = e {
+                if let Event::Staking(inner) = e {
                     Some(inner)
                 } else {
                     None
@@ -72,7 +72,7 @@ frame_support::construct_runtime!(
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Config<T>, Storage, Event<T>},
         Treasury: pallet_treasury::{Pallet, Call, Storage, Event<T>},
-        ExecutorStaking: pallet_executor_staking::{Pallet, Call, Storage, Event<T>},
+        Staking: pallet_staking::{Pallet, Call, Storage, Event<T>},
     }
 );
 
@@ -126,6 +126,31 @@ impl pallet_balances::Config for Test {
     type WeightInfo = ();
 }
 
+parameter_types! {
+    pub const TreasuryAccount: u32 = 0;
+    pub const ReserveAccount: u32 = 1;
+    pub const AuctionFund: u32 = 2;
+    pub const ContractFund: u32 = 3;
+    pub const MinBlocksPerRound: u32 =  6 * BLOCKS_PER_HOUR; // TODO
+    pub const GenesisIssuance: u32 = 20_000_000; // TODO
+    pub const IdealPerpetualInflation: Perbill = Perbill::from_percent(1);
+    pub const InflationRegressionMonths: u32 = 72;
+}
+
+impl pallet_treasury::Config for Test {
+    type AuctionFund = AuctionFund;
+    type ContractFund = ContractFund;
+    type Currency = Balances;
+    type Event = Event;
+    type GenesisIssuance = GenesisIssuance;
+    type IdealPerpetualInflation = IdealPerpetualInflation;
+    type InflationRegressionMonths = InflationRegressionMonths;
+    type MinBlocksPerRound = MinBlocksPerRound;
+    type ReserveAccount = ReserveAccount;
+    type TreasuryAccount = TreasuryAccount;
+    type WeightInfo = ();
+}
+
 // LeaveCandidatesDelay=28 (=14d) assuming round_term=6h
 parameter_types! {
     pub const ActiveSetSize: Range<u32> = Range {
@@ -147,7 +172,7 @@ parameter_types! {
     pub const RevokeStakeDelay: u32 = 28;
 }
 
-impl pallet_executor_staking::Config for Test {
+impl pallet_staking::Config for Test {
     type ActiveSetSize = ActiveSetSize;
     type CandidateBondLessDelay = CandidateBondLessDelay;
     type Currency = Balances;
@@ -163,19 +188,19 @@ impl pallet_executor_staking::Config for Test {
     type MinStake = MinStake;
     type MinStakerStake = MinStakerStake;
     type RevokeStakeDelay = RevokeStakeDelay;
-    type Treasury = TreasuryT<Self>;
+    type Treasury = Treasury;
     type WeightInfo = ();
 }
 
 pub(crate) fn fast_forward_to(n: u64) {
     while System::block_number() < n {
-        ExecutorStaking::on_finalize(System::block_number());
+        Staking::on_finalize(System::block_number());
         Balances::on_finalize(System::block_number());
         System::on_finalize(System::block_number());
         System::set_block_number(System::block_number() + 1);
         System::on_initialize(System::block_number());
         Balances::on_initialize(System::block_number());
-        ExecutorStaking::on_initialize(System::block_number());
+        Staking::on_initialize(System::block_number());
     }
 }
 
@@ -183,11 +208,11 @@ pub(crate) fn fast_forward_to(n: u64) {
 pub fn new_test_ext() -> sp_io::TestExternalities {
     let mut storage = frame_system::GenesisConfig::default()
         .build_storage::<Test>()
-        .expect("mock pallet-executor-staking genesis storage");
+        .expect("mock pallet-staking genesis storage");
 
-    pallet_executor_staking::GenesisConfig::<Test>::default()
+    pallet_staking::GenesisConfig::<Test>::default()
         .assimilate_storage(&mut storage)
-        .expect("mock pallet-executor-staking genesis storage assimilation");
+        .expect("mock pallet-staking genesis storage assimilation");
 
     let mut ext = sp_io::TestExternalities::from(storage);
     ext.execute_with(|| System::set_block_number(1));
