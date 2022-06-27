@@ -19,8 +19,8 @@ pub mod weights;
 pub mod pallet {
     use crate::{
         inflation::{
-            perbill_annual_to_perbill_round, rounds_per_year, BeneficiaryRole, InflationAllocation,
-            InflationInfo, Range, RoundIndex, RoundInfo,
+            perbill_annual_to_perbill_round, rounds_per_year,
+            InflationInfo, 
         },
         weights::WeightInfo,
     };
@@ -33,7 +33,7 @@ pub mod pallet {
         traits::{Saturating, Zero},
         Perbill,
     };
-    use t3rn_primitives::common::BLOCKS_PER_YEAR;
+    use t3rn_primitives::{common::{BLOCKS_PER_YEAR, RoundIndex,Range, RoundInfo},monetary::{BeneficiaryRole,InflationAllocation,} };
 
     pub type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -178,11 +178,7 @@ pub mod pallet {
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(n: BlockNumberFor<T>) -> Weight {
             let mut round = <CurrentRound<T>>::get();
-            log::info!(
-                "SHOULD ROUND UPDATE AT BLOCK NUMBER {:?}? {:?}",
-                n,
-                round.should_update(n)
-            );
+
             if round.should_update(n) {
                 // update round
                 round.update(n);
@@ -194,20 +190,18 @@ pub mod pallet {
                 });
 
                 // issue tokens for the past round
-                // TODO: impl delay, pull sum of active executors + collators stake
+                // TODO: pull sum of active executors + collators stake
                 let total_stake: BalanceOf<T> = Self::u32_to_balance(50_u32);
-                log::info!(
-                    "CIRCULATING CIRCULATING CIRCULATING {:?}",
-                    T::Currency::total_issuance()
-                );
                 let round_issuance = Self::compute_round_issuance(total_stake);
                 Self::mint_for_round(T::Origin::root(), round.index - 1, round_issuance)
+                    // TODO: panic possibility
                     .expect("mint for round; will not fail unless called without root");
 
                 // adjust annual inflation gradually
                 let mut inflation_info = <InflationConfig<T>>::get();
                 let regressed_annual_inflation = Self::compute_regressed_annual_inflation();
                 inflation_info.update_from_annual::<T>(regressed_annual_inflation)
+                  // TODO: panic possibility
                   .expect("update round from annual inflation; will not fail if annual inflation at genesis was valid");
                 <InflationConfig<T>>::put(inflation_info);
             }
@@ -246,7 +240,7 @@ pub mod pallet {
                     executor: Perbill::from_percent(50),  // TODO
                     developer: Perbill::from_percent(50), // TODO
                 },
-                round_term: T::MinBlocksPerRound::get(),
+                round_term: T::DefaultBlocksPerRound::get(),
                 total_stake_expectation: Range {
                     min: <Pallet<T>>::u32_to_balance(0_u32),         // TODO
                     ideal: <Pallet<T>>::u32_to_balance(1000_u32),    //TODO

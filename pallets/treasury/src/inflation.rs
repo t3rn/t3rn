@@ -14,52 +14,52 @@ use frame_support::{
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_runtime::{traits::CheckedAdd, PerThing, Perbill, RuntimeDebug};
-use t3rn_primitives::common::BLOCKS_PER_YEAR;
+use t3rn_primitives::{common::{BLOCKS_PER_YEAR, Range}, monetary::{InflationAllocation, BeneficiaryRole}};
 
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(
-    Eq, PartialEq, Clone, Copy, Encode, Decode, Default, RuntimeDebug, MaxEncodedLen, TypeInfo,
-)]
-pub struct Range<T> {
-    pub(crate) min: T,
-    pub(crate) ideal: T,
-    pub(crate) max: T,
-}
+// #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+// #[derive(
+//     Eq, PartialEq, Clone, Copy, Encode, Decode, Default, RuntimeDebug, MaxEncodedLen, TypeInfo,
+// )]
+// pub struct Range<T> {
+//     pub(crate) min: T,
+//     pub(crate) ideal: T,
+//     pub(crate) max: T,
+// }
 
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Encode, Decode, TypeInfo, MaxEncodedLen)]
-pub enum BeneficiaryRole {
-    Developer,
-    Executor,
-}
+// #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+// #[derive(Clone, Copy, Debug, PartialEq, Eq, Encode, Decode, TypeInfo, MaxEncodedLen)]
+// pub enum BeneficiaryRole {
+//     Developer,
+//     Executor,
+// }
 
-impl<T: Ord> Range<T> {
-    pub fn is_valid(&self) -> bool {
-        self.min <= self.ideal && self.ideal <= self.max
-    }
-}
+// impl<T: Ord> Range<T> {
+//     pub fn is_valid(&self) -> bool {
+//         self.min <= self.ideal && self.ideal <= self.max
+//     }
+// }
 
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(Eq, PartialEq, Clone, Encode, Decode, MaxEncodedLen, Default, RuntimeDebug, TypeInfo)]
-pub struct InflationAllocation {
-    pub(crate) developer: Perbill,
-    pub(crate) executor: Perbill,
-}
+// #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+// #[derive(Eq, PartialEq, Clone, Encode, Decode, MaxEncodedLen, Default, RuntimeDebug, TypeInfo)]
+// pub struct InflationAllocation {
+//     pub(crate) developer: Perbill,
+//     pub(crate) executor: Perbill,
+// }
 
-impl InflationAllocation {
-    pub fn is_valid(&self) -> bool {
-        match self.developer.checked_add(&self.executor) {
-            Some(perbill) => perbill == Perbill::one(),
-            None => false,
-        }
-    }
-}
+// impl InflationAllocation {
+//     pub fn is_valid(&self) -> bool {
+//         match self.developer.checked_add(&self.executor) {
+//             Some(perbill) => perbill == Perbill::one(),
+//             None => false,
+//         }
+//     }
+// }
 
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Eq, PartialEq, Clone, Encode, Decode, MaxEncodedLen, Default, RuntimeDebug, TypeInfo)]
 pub struct InflationInfo {
-    pub(crate) annual: Range<Perbill>,
-    pub(crate) round: Range<Perbill>,
+    pub annual: Range<Perbill>,
+    pub round: Range<Perbill>,
 }
 
 // impl Default for InflationInfo {
@@ -171,44 +171,44 @@ pub fn perbill_annual_to_perbill_round(
     }
 }
 
-pub(crate) type RoundIndex = u32;
+// pub(crate) type RoundIndex = u32;
 
-#[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-/// The current round index and transition information
-pub struct RoundInfo<BlockNumber> {
-    /// Current round index.
-    pub index: RoundIndex,
-    /// The first block of the current round.
-    pub head: BlockNumber,
-    /// The length of the current round in number of blocks.
-    pub term: u32,
-}
+// #[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+// /// The current round index and transition information
+// pub struct RoundInfo<BlockNumber> {
+//     /// Current round index.
+//     pub index: RoundIndex,
+//     /// The first block of the current round.
+//     pub head: BlockNumber,
+//     /// The length of the current round in number of blocks.
+//     pub term: u32,
+// }
 
-impl<
-        B: Copy + sp_std::ops::Add<Output = B> + sp_std::ops::Sub<Output = B> + From<u32> + PartialOrd,
-    > RoundInfo<B>
-{
-    pub fn new(index: RoundIndex, head: B, term: u32) -> RoundInfo<B> {
-        RoundInfo { index, head, term }
-    }
+// impl<
+//         B: Copy + sp_std::ops::Add<Output = B> + sp_std::ops::Sub<Output = B> + From<u32> + PartialOrd,
+//     > RoundInfo<B>
+// {
+//     pub fn new(index: RoundIndex, head: B, term: u32) -> RoundInfo<B> {
+//         RoundInfo { index, head, term }
+//     }
 
-    /// Check if the round should be updated
-    pub fn should_update(&self, now: B) -> bool {
-        now - self.head >= self.term.into()
-    }
+//     /// Check if the round should be updated
+//     pub fn should_update(&self, now: B) -> bool {
+//         now - self.head >= self.term.into()
+//     }
 
-    /// New round
-    pub fn update(&mut self, now: B) {
-        self.index = self.index.saturating_add(1u32);
-        self.head = now;
-    }
-}
+//     /// New round
+//     pub fn update(&mut self, now: B) {
+//         self.index = self.index.saturating_add(1u32);
+//         self.head = now;
+//     }
+// }
 
-impl<
-        B: Copy + sp_std::ops::Add<Output = B> + sp_std::ops::Sub<Output = B> + From<u32> + PartialOrd,
-    > Default for RoundInfo<B>
-{
-    fn default() -> RoundInfo<B> {
-        RoundInfo::new(1u32, 1u32.into(), 20u32)
-    }
-}
+// impl<
+//         B: Copy + sp_std::ops::Add<Output = B> + sp_std::ops::Sub<Output = B> + From<u32> + PartialOrd,
+//     > Default for RoundInfo<B>
+// {
+//     fn default() -> RoundInfo<B> {
+//         RoundInfo::new(1u32, 1u32.into(), 20u32)
+//     }
+// }

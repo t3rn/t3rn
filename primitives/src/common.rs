@@ -10,6 +10,7 @@ pub const SECONDS_PER_YEAR: u32 = 31557600;
 pub const SECONDS_PER_BLOCK: u32 = 12;
 pub const BLOCKS_PER_HOUR: u32 = SECONDS_PER_HOUR / SECONDS_PER_BLOCK;
 pub const BLOCKS_PER_YEAR: u32 = SECONDS_PER_YEAR / SECONDS_PER_BLOCK;
+pub const DEFAULT_ROUND_TERM: u32 = 6 * BLOCKS_PER_HOUR;
 
 /// A range consisting of min, ideal, and max.
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]

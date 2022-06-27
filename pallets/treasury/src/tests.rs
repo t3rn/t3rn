@@ -1,14 +1,13 @@
 use crate::{
     assert_last_event, assert_last_n_events,
-    inflation::{
-        BeneficiaryRole, InflationAllocation, InflationInfo, Range, RoundIndex, RoundInfo,
+    inflation::{ InflationInfo, 
     },
     mock::{Event as MockEvent, *},
     Beneficiaries, BeneficiaryRoundRewards, CurrentRound, Error, Event,
 };
 use frame_support::{assert_err, assert_noop, assert_ok};
 use sp_runtime::Perbill;
-use t3rn_primitives::common::BLOCKS_PER_YEAR;
+use t3rn_primitives::{common::{BLOCKS_PER_YEAR, BLOCKS_PER_HOUR,Range, RoundIndex, RoundInfo,},monetary::{InflationAllocation,BeneficiaryRole,}};
 
 #[test]
 fn mint_for_round_requires_root() {
@@ -33,19 +32,18 @@ fn genesis_inflation_config() {
                 term: <MinBlocksPerRound>::get()
             }
         );
-        // TODO
         assert_eq!(
             Treasury::inflation_config(),
             InflationInfo {
                 annual: Range {
-                    min: Perbill::from_parts(3),   // TODO
-                    ideal: Perbill::from_parts(4), // TODO
-                    max: Perbill::from_parts(5),   // TODO
+                    min: Perbill::from_parts(75000000), // TODO
+                    ideal: Perbill::from_parts(80000000), // TODO
+                    max: Perbill::from_parts(85000000), // TODO
                 },
                 round: Range {
-                    min: Perbill::from_parts(225),   // TODO
-                    ideal: Perbill::from_parts(299), // TODO
-                    max: Perbill::from_parts(372),   // TODO
+                    min: Perbill::from_parts(550),   // TODO
+                    ideal: Perbill::from_parts(586), // TODO
+                    max: Perbill::from_parts(621),   // TODO
                 },
             }
         );
@@ -63,25 +61,28 @@ fn genesis_inflation_config() {
 fn hook_mints_for_each_past_round() {
     new_test_ext().execute_with(|| {
         let dev = 1;
-        let total_round_rewards = 10; // TODO unfix, also 50/50 split
+        let total_round_rewards = 50; // TODO unfix, also 50/50 split
 
+        <CurrentRound<Test>>::put(RoundInfo {index: 1_u32, term: <DefaultBlocksPerRound>::get(), head: 1 });
         <Beneficiaries<Test>>::insert(dev, BeneficiaryRole::Developer, 0);
-        // <Test as mock::Config>::Currency::issue(100);
+        <BeneficiaryRoundRewards<Test>>::insert(dev, 1, 5);
+        <BeneficiaryRoundRewards<Test>>::insert(dev, 2, 5);
+
         // fast forward two round begins
-        fast_forward_to(41);
+        fast_forward_to((2 * <DefaultBlocksPerRound>::get() + 1) as u64);
 
         assert_last_n_events!(
             6,
             vec![
                 Event::NewRound {
                     round: 2,
-                    head: <MinBlocksPerRound>::get() as u64,
+                    head: (<DefaultBlocksPerRound>::get() +1) as u64,
                 },
-                Event::BeneficiaryTokensIssued(dev, 5),
+                Event::BeneficiaryTokensIssued(dev, 3),
                 Event::RoundTokensIssued(1, total_round_rewards),
                 Event::NewRound {
                     round: 3,
-                    head: (<MinBlocksPerRound>::get() * 2) as u64,
+                    head: (2 * <DefaultBlocksPerRound>::get() + 1) as u64,
                 },
                 Event::BeneficiaryTokensIssued(dev, 5),
                 Event::RoundTokensIssued(2, total_round_rewards)
@@ -200,11 +201,7 @@ fn set_inflation_fails_if_invalid() {
 #[test]
 fn set_inflation_fails_if_not_changed() {
     new_test_ext().execute_with(|| {
-        let existing_inflation = Range {
-            min: Perbill::from_parts(3),
-            ideal: Perbill::from_parts(4),
-            max: Perbill::from_parts(5),
-        };
+        let existing_inflation = Treasury::inflation_config().annual;
 
         assert_err!(
             Treasury::set_inflation(Origin::root(), existing_inflation),
@@ -213,7 +210,7 @@ fn set_inflation_fails_if_not_changed() {
     })
 }
 
-#[test] //FIXME
+#[test]
 fn set_inflation_derives_round_from_annual_inflation() {
     new_test_ext().execute_with(|| {
         // input annual inflation config
@@ -352,7 +349,7 @@ fn set_round_term_fails_if_lower_than_min() {
     })
 }
 
-#[test] //FIXME
+#[test]
 fn set_round_term_derives_round_inflation() {
     new_test_ext().execute_with(|| {
         let new = 500;
@@ -360,16 +357,16 @@ fn set_round_term_derives_round_inflation() {
         assert_last_event!(MockEvent::Treasury(Event::RoundTermChanged {
             old: 20,
             new,
-            round_min: Perbill::from_parts(0),
-            round_ideal: Perbill::from_parts(0),
-            round_max: Perbill::from_parts(0)
+            round_min: Perbill::from_parts(13752),
+            round_ideal: Perbill::from_parts(14635),
+            round_max: Perbill::from_parts(15513)
         }));
         assert_eq!(
             Treasury::inflation_config().round,
             Range {
-                min: Perbill::from_parts(0),
-                ideal: Perbill::from_parts(0),
-                max: Perbill::from_parts(0)
+                min: Perbill::from_parts(13752),
+                ideal: Perbill::from_parts(14635),
+                max: Perbill::from_parts(15513)
             }
         )
     })
