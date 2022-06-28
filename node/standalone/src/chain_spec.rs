@@ -5,7 +5,7 @@ use circuit_standalone_runtime::{
     MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, SystemConfig, XDNSConfig,
     WASM_BINARY,
 };
-use futures::future::join_all;
+
 use jsonrpc_runtime_client::{
     create_rpc_client, get_gtwy_init_data, get_metadata, get_parachain_id, ConnectionParams,
 };

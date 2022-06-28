@@ -13,7 +13,7 @@
 use serde::{Deserialize, Serialize};
 use sp_core::Bytes;
 use sp_rpc::number;
-use t3rn_primitives::{ChainId, ComposableExecResult};
+use t3rn_primitives::{ChainId};
 
 pub const RUNTIME_ERROR: i64 = 1;
 
@@ -69,33 +69,12 @@ pub struct CallRequest<AccountId, Balance> {
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
-pub enum RpcComposableExecResult {
+pub enum RpcReadLatestGatewayHeight {
     /// Successful execution
     Success {
-        /// The return flags
-        flags: u32,
         /// Output data
-        data: Bytes,
-        /// How much gas was consumed by the call.
-        gas_consumed: u64,
+        encoded_height: Bytes,
     },
     /// Error execution
     Error(()),
-}
-
-impl From<ComposableExecResult> for RpcComposableExecResult {
-    fn from(r: ComposableExecResult) -> Self {
-        match r {
-            ComposableExecResult::Success {
-                flags,
-                data,
-                gas_consumed,
-            } => RpcComposableExecResult::Success {
-                flags,
-                data: data.into(),
-                gas_consumed,
-            },
-            ComposableExecResult::Error => RpcComposableExecResult::Error(()),
-        }
-    }
 }

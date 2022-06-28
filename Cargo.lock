@@ -1242,6 +1242,7 @@ dependencies = [
  "pallet-balances",
  "pallet-circuit",
  "pallet-circuit-portal",
+ "pallet-circuit-portal-rpc-runtime-api",
  "pallet-collator-selection",
  "pallet-contracts-primitives",
  "pallet-contracts-registry",

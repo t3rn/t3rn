@@ -1737,11 +1737,17 @@ impl<T: Config> Pallet<T> {
                         <frame_system::Pallet<T>>::block_number(),
                     ),
                 ));
+                let submission_target_height = T::CircuitPortal::read_cmp_latest_target_height(
+                    side_effect.target,
+                    None,
+                    None,
+                )?;
 
                 full_side_effects.push(FullSideEffect {
                     input: side_effect.clone(),
                     confirmed: None,
                     security_lvl: SecurityLvl::Optimistic,
+                    submission_target_height,
                 })
             } else {
                 fn determine_dirty_vs_escrowed_lvl<T: Config>(
@@ -1761,10 +1767,17 @@ impl<T: Config> Pallet<T> {
                     }
                     SecurityLvl::Dirty
                 }
+                let submission_target_height = T::CircuitPortal::read_cmp_latest_target_height(
+                    side_effect.target,
+                    None,
+                    None,
+                )?;
+
                 full_side_effects.push(FullSideEffect {
                     input: side_effect.clone(),
                     confirmed: None,
                     security_lvl: determine_dirty_vs_escrowed_lvl::<T>(side_effect),
+                    submission_target_height,
                 });
             }
         }
@@ -1814,13 +1827,18 @@ impl<T: Config> Pallet<T> {
         inclusion_proof: Option<Vec<Vec<u8>>>,
         block_hash: Option<Vec<u8>>,
     ) -> Result<(), &'static str> {
-        let confirm_inclusion = || {
+        let confirm_inclusion = |fsfx: FullSideEffect<
+            <T as frame_system::Config>::AccountId,
+            <T as frame_system::Config>::BlockNumber,
+            EscrowedBalanceOf<T, T::Escrowed>,
+        >| {
             // ToDo: Remove below after testing inclusion
             // Temporarily allow skip inclusion if proofs aren't provided
             if !(block_hash.is_none() && inclusion_proof.is_none()) {
                 <T as Config>::CircuitPortal::confirm_event_inclusion(
                     side_effect.target,
                     confirmation.encoded_effect.clone(),
+                    fsfx.submission_target_height,
                     inclusion_proof,
                     block_hash,
                 )
@@ -1880,10 +1898,18 @@ impl<T: Config> Pallet<T> {
                     EscrowedBalanceOf<T, T::Escrowed>,
                 >,
             >],
-        ) -> Result<bool, &'static str> {
+        ) -> Result<
+            FullSideEffect<
+                <T as frame_system::Config>::AccountId,
+                <T as frame_system::Config>::BlockNumber,
+                EscrowedBalanceOf<T, T::Escrowed>,
+            >,
+            &'static str,
+        > {
             // ToDo: Extract as a separate function and migrate tests from Xtx
             let input_side_effect_id = side_effect.generate_id::<SystemHashing<T>>();
             let mut unconfirmed_step_no: Option<usize> = None;
+
             for (i, step) in full_side_effects.iter_mut().enumerate() {
                 // Double check there are some side effects for that Xtx - should have been checked at API level tho already
                 if step.is_empty() {
@@ -1903,7 +1929,7 @@ impl<T: Config> Pallet<T> {
                         {
                             // We found the side effect to confirm from inside the unconfirmed step.
                             full_side_effect.confirmed = Some(confirmation.clone());
-                            Ok(true)
+                            Ok(full_side_effect.clone())
                         } else {
                             Err("Attempt to confirm side effect from the next step, \
                                     but there still is at least one unfinished step")
@@ -1911,15 +1937,11 @@ impl<T: Config> Pallet<T> {
                     }
                 }
             }
+            Err("Unable to find matching Side Effect in given Xtx to confirm")
+        }
 
-            Ok(false)
-        }
-        if !confirm_order::<T>(side_effect, confirmation, &mut local_ctx.full_side_effects)? {
-            return Err(
-                "Side effect confirmation wasn't matched with full side effects order from state",
-            )
-        }
-        confirm_inclusion()?;
+        let fsfx = confirm_order::<T>(side_effect, confirmation, &mut local_ctx.full_side_effects)?;
+        confirm_inclusion(fsfx)?;
         confirm_execution(
             <T as Config>::Xdns::best_available(side_effect.target)?.gateway_vendor,
             <T as Config>::Xdns::get_gateway_value_unsigned_type_unsafe(&side_effect.target),
@@ -1988,7 +2010,7 @@ impl<T: Config> Pallet<T> {
                     // apply has 2
                     processed_weight += db_weight.reads_writes(2 as Weight, 1 as Weight);
                 },
-                Err(err) => {
+                Err(_err) => {
                     log::error!("Could not handle signal");
                     // Slide the erroneous signal to the back
                     queue.slide(0, queue.len());

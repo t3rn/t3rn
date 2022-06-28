@@ -179,7 +179,7 @@ pub mod test {
 
     use t3rn_protocol::side_effects::test_utils::*;
 
-    use crate::mock::*;
+    use crate::{mock::*, tests::brute_seed_block_1_to_grandpa_mfv};
 
     #[test]
     fn escrow_transfer_execute_and_commit_work() {
@@ -212,7 +212,7 @@ pub mod test {
             .execute_with(|| {
                 let _ = Balances::deposit_creating(&ALICE, 1 + 2 + 1); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
                 System::set_block_number(1);
-
+                brute_seed_block_1_to_grandpa_mfv([3, 3, 3, 3]);
                 // Submit for execution first
                 assert_ok!(Circuit::on_extrinsic_trigger(
                     origin,
@@ -292,6 +292,7 @@ pub mod test {
             .execute_with(|| {
                 let _ = Balances::deposit_creating(&ALICE, 1 + 2 + 1); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
                 System::set_block_number(1);
+                brute_seed_block_1_to_grandpa_mfv([3, 3, 3, 3]);
 
                 // Submit for execution first
                 assert_ok!(Circuit::on_extrinsic_trigger(

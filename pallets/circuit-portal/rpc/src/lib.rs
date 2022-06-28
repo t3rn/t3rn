@@ -21,19 +21,11 @@ use types::*;
 
 #[rpc]
 pub trait CircuitPortalApi<BlockHash, BlockNumber, AccountId, Balance> {
-    /// Executes all attached or appointed by ID composable contracts on appointed gateways.
-    ///
-    /// IO flow between components on different chains can be described using Input-Output schedule.
-    ///
-    /// Circuit queues the request and awaits for an execution agent to volounteer to facilitate the execution
-    /// across connected chains via gateways - acts as an escrow account and is accountable
-    /// with her stake for proven misbehaviour.
-    #[rpc(name = "circuitPortal_composableExec")]
-    fn composable_exec(
+    #[rpc(name = "circuitPortal_readLatestGatewayHeight")]
+    fn read_latest_gateway_height(
         &self,
-        call_request: InterExecRequest<AccountId, Balance>,
-        at: Option<BlockHash>,
-    ) -> Result<RpcComposableExecResult>;
+        gateway_id: [u8; 4],
+    ) -> Result<RpcReadLatestGatewayHeight>;
 }
 
 /// A struct that implements the [CircuitPortalApi].
@@ -71,69 +63,19 @@ where
     >,
     Balance: Codec,
 {
-    fn composable_exec(
+    fn read_latest_gateway_height(
         &self,
-        inter_exec_request: InterExecRequest<AccountId, Balance>,
-        at: Option<<Block as BlockT>::Hash>,
-    ) -> Result<RpcComposableExecResult> {
+        gateway_id: [u8; 4],
+    ) -> Result<RpcReadLatestTargetHeight> {
         let api = self.client.runtime_api();
-        let at = BlockId::hash(at.unwrap_or_else(||
-			// If the block hash is not supplied assume the best block.
-			self.client.info().best_hash));
 
-        let InterExecRequest {
-            origin,
-            components,
-            io,
-            gas_limit,
-            input_data,
-        } = inter_exec_request;
-
-        // Make sure that gas_limit fits into 64 bits.
-        let gas_limit: u64 = gas_limit.try_into().map_err(|_| Error {
-            code: ErrorCode::InvalidParams,
-            message: format!("{:?} doesn't fit in 64 bit unsigned value", gas_limit),
-            data: None,
-        })?;
-
-        let max_gas_limit = 5 * GAS_PER_SECOND;
-        if gas_limit > max_gas_limit {
-            return Err(Error {
-                code: ErrorCode::InvalidParams,
-                message: format!(
-                    "Requested gas limit is greater than maximum allowed: {} > {}",
-                    gas_limit, max_gas_limit
-                ),
-                data: None,
-            });
-        }
-
-        let mut components_runtime: Vec<Compose<AccountId, Balance>> = vec![];
-
-        for component_rpc in components.into_iter() {
-            components_runtime.push(Compose {
-                name: component_rpc.name.into_boxed_bytes().to_vec(),
-                code_txt: component_rpc.code_txt.into_boxed_bytes().to_vec(),
-                exec_type: component_rpc.exec_type.into_boxed_bytes().to_vec(),
-                dest: component_rpc.dest,
-                value: component_rpc.value,
-                bytes: component_rpc.bytes.to_vec(),
-                input_data: component_rpc.input_data.to_vec(),
-            });
-        }
-
-        let exec_result = api
-            .composable_exec(
-                &at,
-                origin,
-                components_runtime,
-                io.into_boxed_bytes().to_vec(),
-                gas_limit,
-                input_data.to_vec(),
+        let result = api
+            .read_latest_gateway_height(
+                gateway_id,
             )
             .map_err(|e| runtime_error_into_rpc_err(e))?;
 
-        Ok(exec_result.into())
+        Ok(result.into())
     }
 }
 
