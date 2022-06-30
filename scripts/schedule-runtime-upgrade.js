@@ -36,10 +36,10 @@ async function getBestHead(circuit) {
 
 async function scheduleRuntimeUpgrade(circuit, sudo, code, when) {
   const maybePeriodic = null
-  const schedulePriority = 3
+  const schedulePriority = 0
 
   const enactAuthorizedUpgradeCall =
-    circuit.tx.parachainSystem.enactAuthorizedUpgrade(code)
+    circuit.tx.parachainSystem.enactAuthorizedUpgrade(Array.from(code))
 
   const scheduleCall = circuit.tx.scheduler.schedule(
     when,
@@ -64,7 +64,7 @@ async function main() {
   const when = BigInt(process.env.WHEN)
   const head = await getBestHead(circuit)
 
-  if (when < head + 3n) {
+  if (when < head + 5n) { // ~1m assuming 12s block time
     throw Error(`when too low => reschedule at a later block`)
   }
 
