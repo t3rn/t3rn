@@ -12,8 +12,8 @@ use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 pub use t3rn_primitives::{
     abi::{GatewayABIConfig, Type},
     protocol::SideEffectProtocol,
+    side_effect::{EventSignature, SideEffectId, SideEffectName},
     ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor,
-    side_effect::{EventSignature, SideEffectId, SideEffectName}
 };
 // Re-export pallet items so that they can be accessed from the crate namespace.
 pub use crate::pallet::*;
