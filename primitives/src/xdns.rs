@@ -26,6 +26,13 @@ pub struct Parachain {
     pub id: u32,
 }
 
+/// The object with XdnsRecords as returned by the RPC endpoint
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+pub struct FetchXdnsRecordsResponse<AccountId> {
+    pub xdns_records: Vec<XdnsRecord<AccountId>>,
+}
+
 /// A preliminary representation of a xdns_record in the onchain registry.
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
