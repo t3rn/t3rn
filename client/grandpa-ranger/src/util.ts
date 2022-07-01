@@ -21,8 +21,15 @@ export const containsAuthoritySetUpdate= async (api: any, blockNumber: number) =
 
 export const decodeJustification = (data: any) => {
     registry.register(justification);
-    const res = createType(registry, justification.type as any, data)
-    return res
+    return createType(registry, justification.type as any, data)
+}
+
+const finalityProof = { proof: "(Header::Hash, Vec<u8>, Vec<Header>)" }
+export const decodeFinalityProof = (data: any) => {
+    registry.register(finalityProof);
+
+    const res = createType(registry, finalityProof.proof, data.toJSON()) // toJSON works, toHEX() not
+    return {blockHash: res[0], justification: res[1]}
 }
 
 // not ideal, but I'm unable to use the "NewAuthorites" event, because I'm unable to figure out in which block the event was emitted
@@ -30,6 +37,11 @@ export const decodeAuthoritySet = (data: any) => {
     const justification = decodeJustification((data))
     return justification.commit.precommits.map(entry => entry.id.toHex()).sort();
 }
+
+export const fetchGatewayHeight = (gatewayId: any, circuit: any) => {
+    return 798779
+}
+
 
 export function formatEvents(
     events: { event: { section: string; method: string; data: any } }[]

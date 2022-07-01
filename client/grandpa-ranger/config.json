@@ -4,10 +4,11 @@
         "rpc": "ws://127.0.0.1::9944"
     },
     "relaychains": [{
-        "name": "Rococo",
-        "id": "roco",
-        "rpc": "wss://rococo-rpc.polkadot.io",
-        "type": "substrate"
+        "name": "Polkadot",
+        "id": "polk",
+        "rpc": "wss://rpc.polkadot.io",
+        "type": "substrate",
+        "subscanEndpoint": "https://api.subscan.io"
     }],
     "parachains": []
 }
