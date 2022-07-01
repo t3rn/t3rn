@@ -590,6 +590,7 @@ construct_runtime!(
         // 3VM
         ThreeVm: pallet_3vm = 119,
         Contracts: pallet_3vm_contracts = 120,
+        Evm: pallet_3vm_evm = 121,
         AccountManager: pallet_account_manager = 125,
 
         // admin

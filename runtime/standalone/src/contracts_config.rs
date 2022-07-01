@@ -1,10 +1,17 @@
 use super::{AccountId, Balance, BlockWeights, Weight, AVERAGE_ON_INITIALIZE_RATIO};
 use crate::{
-    accounts_config::EscrowAccount, AccountManager, Balances, Call, Circuit, ContractsRegistry,
-    Event, RandomnessCollectiveFlip, Runtime, ThreeVm, Timestamp,
+    accounts_config::EscrowAccount, AccountManager, Aura, Balances, Call, Circuit,
+    ContractsRegistry, Event, RandomnessCollectiveFlip, Runtime, ThreeVm, Timestamp,
 };
-use frame_support::{pallet_prelude::ConstU32, parameter_types};
+use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::FindAuthor};
 use pallet_3vm_contracts::weights::WeightInfo;
+use pallet_3vm_evm::{
+    EnsureAddressNever, EnsureAddressRoot, EnsureAddressTruncated, HashedAddressMapping,
+    SubstrateBlockHashMapping, ThreeVMCurrencyAdapter,
+};
+use pallet_3vm_evm_primitives::FeeCalculator;
+use sp_core::{H160, U256};
+use sp_runtime::{traits::BlakeTwo256, ConsensusEngineId, RuntimeAppPublic};
 
 // Unit = the base number of indivisible units for balances
 const UNIT: Balance = 1_000_000_000_000;
@@ -82,4 +89,111 @@ impl pallet_3vm_contracts::Config for Runtime {
     type Time = Timestamp;
     type WeightInfo = pallet_3vm_contracts::weights::SubstrateWeight<Self>;
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
+}
+
+// impl pallet_evm::Config for Runtime {
+//     type FeeCalculator = FixedGasPrice;
+//     type GasWeightMapping = MoonbeamGasWeightMapping;
+//     type AddressMapping = moonbeam_runtime_common::IntoAddressMapping;
+//     type PrecompilesType = MoonbeamPrecompiles<Self>;
+//     type PrecompilesValue = PrecompilesValue;
+//     type ChainId = EthereumChainId;
+//     type FindAuthor = FindAuthorAdapter<AuthorInherent>;
+//     type WeightInfo = pallet_evm::weights::SubstrateWeight<Self>;
+// }
+
+// impl module_evm::Config for Runtime {
+//     type Currency = Balances;
+//     type TransferAll = Currencies;
+//     type NewContractExtraBytes = NewContractExtraBytes;
+//     type StorageDepositPerByte = StorageDepositPerByte;
+//     type TxFeePerGas = TxFeePerGas;
+//     type Event = Event;
+//     type PrecompilesType = AllPrecompiles<Self>;
+//     type PrecompilesValue = PrecompilesValue;
+//     type GasToWeight = GasToWeight;
+//     type ChargeTransactionPayment = module_transaction_payment::ChargeTransactionPayment<Runtime>;
+//     type NetworkContractOrigin = EnsureRootOrTwoThirdsTechnicalCommittee;
+//     type NetworkContractSource = NetworkContractSource;
+//     type DeveloperDeposit = DeveloperDeposit;
+//     type PublicationFee = PublicationFee;
+//     type TreasuryAccount = AcalaTreasuryAccount;
+//     type FreePublicationOrigin = EnsureRootOrHalfGeneralCouncil;
+//     type Runner = module_evm::runner::stack::Runner<Self>;
+//     type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
+//     type Task = ScheduledTasks;
+//     type IdleScheduler = IdleScheduler;
+//     type WeightInfo = weights::module_evm::WeightInfo<Runtime>;
+// }
+
+// parameter_types! {
+// 	pub const ChainId: u64 = 42;
+// 	pub BlockGasLimit: U256 = U256::from(u32::max_value());
+// 	pub PrecompilesValue: FrontierPrecompiles<Runtime> = FrontierPrecompiles::<_>::new();
+// }
+//
+// impl pallet_evm::Config for Runtime {
+//     type FeeCalculator = BaseFee;
+//     type GasWeightMapping = ();
+//     type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Self>;
+//     type CallOrigin = EnsureAddressTruncated;
+//     type WithdrawOrigin = EnsureAddressTruncated;
+//     type AddressMapping = HashedAddressMapping<BlakeTwo256>;
+//     type Currency = Balances;
+//     type Event = Event;
+//     type Runner = pallet_evm::runner::stack::Runner<Self>;
+//     type PrecompilesType = FrontierPrecompiles<Self>;
+//     type PrecompilesValue = PrecompilesValue;
+//     type ChainId = ChainId;
+//     type BlockGasLimit = BlockGasLimit;
+//     type OnChargeTransaction = ();
+//     type FindAuthor = FindAuthorTruncated<Aura>;
+// }
+
+pub struct FindAuthorTruncated<F>(sp_std::marker::PhantomData<F>);
+impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
+    fn find_author<'a, I>(digests: I) -> Option<H160>
+    where
+        I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
+    {
+        if let Some(author_index) = F::find_author(digests) {
+            let authority_id = Aura::authorities()[author_index as usize].clone();
+            return Some(H160::from_slice(&authority_id.to_raw_vec()[4..24]))
+        }
+        None
+    }
+}
+
+pub struct FixedGasPrice;
+impl FeeCalculator for FixedGasPrice {
+    fn min_gas_price() -> U256 {
+        1.into() // TODO: do this right
+    }
+}
+
+parameter_types! {
+    pub const ChainId: u64 = 42;
+    pub BlockGasLimit: U256 = U256::from(u32::max_value());
+}
+
+impl pallet_3vm_evm::Config for Runtime {
+    type AddressMapping = HashedAddressMapping<BlakeTwo256>;
+    type BlockGasLimit = BlockGasLimit;
+    type BlockHashMapping = SubstrateBlockHashMapping<Self>;
+    type CallOrigin = EnsureAddressTruncated;
+    type ChainId = ChainId;
+    type Currency = Balances;
+    type Escrowed = AccountManager;
+    type Event = Event;
+    type FeeCalculator = FixedGasPrice;
+    type FindAuthor = FindAuthorTruncated<Aura>;
+    // TODO: this probably screws up something
+    type GasWeightMapping = ();
+    type OnChargeTransaction = ThreeVMCurrencyAdapter<Balances, ()>;
+    type PrecompilesType = ();
+    // TODO: add precompiles
+    type PrecompilesValue = ();
+    type Runner = pallet_3vm_evm::runner::stack::Runner<Self>;
+    type ThreeVm = ThreeVm;
+    type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
 }

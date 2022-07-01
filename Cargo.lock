@@ -376,6 +376,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "auto_impl"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7862e21c893d65a1650125d157eaeec691439379a1cee17ee49031b79236ada4"
+dependencies = [
+ "proc-macro-error",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1226,6 +1238,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
+ "fp-evm",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -1250,6 +1263,7 @@ dependencies = [
  "pallet-contracts-primitives",
  "pallet-contracts-registry",
  "pallet-contracts-rpc-runtime-api",
+ "pallet-evm",
  "pallet-multi-finality-verifier",
  "pallet-preimage",
  "pallet-randomness-collective-flip",
@@ -1342,6 +1356,7 @@ name = "circuit-standalone-runtime"
 version = "1.0.0-alpha.0"
 dependencies = [
  "beefy-primitives",
+ "fp-evm",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -1367,6 +1382,7 @@ dependencies = [
  "pallet-contracts-registry",
  "pallet-contracts-registry-rpc-runtime-api",
  "pallet-contracts-rpc-runtime-api",
+ "pallet-evm",
  "pallet-grandpa",
  "pallet-mmr",
  "pallet-mmr-primitives",
@@ -2814,6 +2830,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "ethereum"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "23750149fe8834c0e24bb9adcbacbe06c45b9861f15df53e09f26cb7c4ab91ef"
+dependencies = [
+ "bytes 1.1.0",
+ "ethereum-types 0.13.1",
+ "hash-db",
+ "hash256-std-hasher",
+ "parity-scale-codec 3.1.2",
+ "rlp",
+ "rlp-derive",
+ "scale-info 2.1.1",
+ "serde",
+ "sha3 0.10.1",
+ "triehash",
+]
+
+[[package]]
 name = "ethereum-types"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2846,6 +2881,64 @@ name = "event-listener"
 version = "2.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77f3309417938f28bf8228fcff79a4a37103981e3e186d2ccd19c74b38f4eb71"
+
+[[package]]
+name = "evm"
+version = "0.35.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "be8ff320c1e25e7f6d676858f16ffd9b0493d2cc67c3d900c6f2ed027b747f43"
+dependencies = [
+ "auto_impl",
+ "environmental",
+ "ethereum",
+ "evm-core",
+ "evm-gasometer",
+ "evm-runtime",
+ "log",
+ "parity-scale-codec 3.1.2",
+ "primitive-types 0.11.1",
+ "rlp",
+ "scale-info 2.1.1",
+ "serde",
+ "sha3 0.10.1",
+]
+
+[[package]]
+name = "evm-core"
+version = "0.35.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9d4537041d3a3438d59b2d01bd950ce89fb1ccb3cf21d9331193c10be12e849f"
+dependencies = [
+ "parity-scale-codec 3.1.2",
+ "primitive-types 0.11.1",
+ "scale-info 2.1.1",
+ "serde",
+]
+
+[[package]]
+name = "evm-gasometer"
+version = "0.35.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6181da8734c86873ac9b3f9886d4e00105361039dcfb9f621be9a0ddb8f43961"
+dependencies = [
+ "environmental",
+ "evm-core",
+ "evm-runtime",
+ "primitive-types 0.11.1",
+]
+
+[[package]]
+name = "evm-runtime"
+version = "0.35.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f6157af91ca70fcf3581afaea1fa25974a71b9ef63d454c08dfba93ab0c7715d"
+dependencies = [
+ "auto_impl",
+ "environmental",
+ "evm-core",
+ "primitive-types 0.11.1",
+ "sha3 0.10.1",
+]
 
 [[package]]
 name = "exit-future"
@@ -3065,6 +3158,17 @@ checksum = "5fc25a87fa4fd2094bffb06925852034d90a17f0d1e05197d4956d3555752191"
 dependencies = [
  "matches",
  "percent-encoding 2.1.0",
+]
+
+[[package]]
+name = "fp-evm"
+version = "3.0.0-dev"
+dependencies = [
+ "evm",
+ "parity-scale-codec 3.1.2",
+ "serde",
+ "sp-core",
+ "sp-std",
 ]
 
 [[package]]
@@ -6839,6 +6943,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-evm"
+version = "6.0.0-dev"
+dependencies = [
+ "evm",
+ "fp-evm",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "log",
+ "pallet-balances",
+ "pallet-timestamp",
+ "parity-scale-codec 3.1.2",
+ "primitive-types 0.11.1",
+ "rlp",
+ "scale-info 2.1.1",
+ "serde",
+ "sha3 0.10.1",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "syn",
+ "t3rn-primitives",
+]
+
+[[package]]
 name = "pallet-gilt"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.19#174735ea1bb5fc4513519c45181d8df63d86f613"
@@ -9698,6 +9829,17 @@ checksum = "999508abb0ae792aabed2460c45b89106d97fe4adac593bdaef433c2605847b5"
 dependencies = [
  "bytes 1.2.1",
  "rustc-hex",
+]
+
+[[package]]
+name = "rlp-derive"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e33d7b2abe0c340d8797fe2907d3f20d3b5ea5908683618bfe80df7f621f672a"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
