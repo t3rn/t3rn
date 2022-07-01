@@ -11,7 +11,7 @@ cleanup() {
 
 if [[ -z "$1" || -z $2 || -z $3 || -z $4 ]]; then
   echo "usage: $0 'collator sudo secret' \$provider \$tag \$when [--dryrun]"
-  # fx: ./upgrade-runtime.sh 'collator sudo secret' wss://dev.net.t3rn.io v3.3.3 93337
+  # fx: $0 'collator sudo secret' wss://dev.net.t3rn.io v3.3.3 93337
   exit 1
 fi
 
@@ -109,35 +109,34 @@ if [[ "${answer,,}" != "y" ]]; then exit 1; fi
 
 echo "authorizing runtime upgrade... $dryrun"
 
-if [[ -z $dryrun ]]; then
-  npx --yes @polkadot/api-cli@0.51.7 \
-    --ws $provider \
-    --sudo \
-    --seed "$sudo_secret" \
-    tx.parachainSystem.authorizeUpgrade \
-    $hash
-else
-  echo "
-  npx --yes @polkadot/api-cli@0.51.7
-    --ws $provider
-    --sudo
-    --seed "$sudo_secret"
-    tx.parachainSystem.authorizeUpgrade
-    $hash
-  "
-fi
-
-echo "enacting runtime upgrade... $dryrun"
-
 npm i @polkadot/api@8.6.2
 
 if [[ -z $dryrun ]]; then
-  PROVIDER=$provider SUDO=$sudo_secret WASM=$wasm WHEN=$when \
-    node $root_dir/scripts/schedule-runtime-upgrade.js
+  # npx --yes @polkadot/api-cli@0.51.7 \
+  #   --ws $provider \
+  #   --sudo \
+  #   --seed "$sudo_secret" \
+  #   tx.parachainSystem.authorizeUpgrade \
+  #   $hash
+  PROVIDER=$provider SUDO=$sudo_secret HASH=$hash WHEN=$when \
+    node $root_dir/scripts/schedule-authorize-upgrade.js
+
+  echo "scheduled runtime upgrade authorization at block $when"
 else
+  # echo "
+  # npx --yes @polkadot/api-cli@0.51.7
+  #   --ws $provider
+  #   --sudo
+  #   --seed "$sudo_secret"
+  #   tx.parachainSystem.authorizeUpgrade
+  #   $hash
+  # "
   echo "
-    PROVIDER=$provider SUDO=$sudo_secret WASM=$wasm WHEN=$when \\
-      node $root_dir/scripts/schedule-runtime-upgrade.js
+    PROVIDER=$provider SUDO=$sudo_secret HASH=$hash WHEN=$when \
+      node $root_dir/scripts/schedule-authorize-upgrade.js
   "
-  cat $root_dir/scripts/schedule-runtime-upgrade.js
+  cat $root_dir/scripts/schedule-authorize-upgrade.js
 fi
+
+echo "NOTE: pass this wasm to parachain_system::enact_authorized_upgrade(..)"
+echo $wasm
