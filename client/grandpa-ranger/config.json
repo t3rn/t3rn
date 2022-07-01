@@ -92,5 +92,6 @@
       "parachainId": 2100,
       "relaychainId": "roco"
     }
-  ]
+  ],
+  "parachains": []
 }

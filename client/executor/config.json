@@ -69,5 +69,13 @@
       "rpc": "wss://rco-para.subsocial.network",
       "type": "substrate"
     }
+  ],
+  "gateways": [
+    {
+      "name": "Rococo",
+      "id": "roco",
+      "rpc": "wss://rococo-rpc.polkadot.io",
+      "type": "substrate"
+    }
   ]
 }
