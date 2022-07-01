@@ -1,58 +1,57 @@
 #!/bin/bash
 
+# NOTE: Usually this script should not be necessary for a runtime upgrade
+# as ./upgrade-runtime.sh covers the entire authorize-enact upgrade flow.
+# Nonetheless, in case the twofold upgrade process gets interrupted somehow
+# this script can complete the enactment of a previously authorized upgrade.
+
 set -x
 
-trap 'cleanup' EXIT
-
-cleanup() {
-  rm -rf node_modules
-  rm -f package.json package-lock.json
-}
-
 if [[ -z "$1" || -z $2 || -z $3 ]]; then
-  echo "usage: $0 'collator sudo secret' \$provider \$wasm"
+  echo "usage: $0 'collator sudo secret' \$ws_provider \$wasm"
   # fx: $0 'collator sudo secret' wss://dev.net.t3rn.io /tmp/wasm
   exit 1
 fi
 
 sudo_secret="$1"
-provider=$2
+ws_provider=$2
 wasm=$3
+used_wasm=$HOME/.runtime-upgrade.wasm
 root_dir=$(git rev-parse --show-toplevel)
 dryrun=$(echo "$@" | grep -o dry)
 
-echo "enacting runtime upgrade... $dryrun"
+cp $wasm $used_wasm
+
+echo "⚙️ enacting runtime upgrade... $dryrun"
 
 if [[ -z $dryrun ]]; then
-  # PROVIDER=$provider SUDO=$sudo_secret WASM=$wasm WHEN=$when \
-  #   node $root_dir/scripts/schedule-runtime-upgrade.js
-
   node <<<"
     var fs = require('fs')
-    var buf = fs.readFileSync('$wasm')
-    buf = buf.toString('hex')
-    buf = '0x' + buf
-    fs.writeFileSync('$wasm', buf)
+    fs.writeFileSync(
+      '$used_wasm',
+      '0x' + fs.readFileSync('$used_wasm').toString('hex')
+    )
   "
-
   npx --yes @polkadot/api-cli@0.51.7 \
-    --ws $provider \
+    --ws $ws_provider \
     --sudo \
     --seed "$sudo_secret" \
-    --params $wasm \
+    --params $used_wasm \
     tx.parachainSystem.enactAuthorizedUpgrade
 else
-  # echo "
-  #   PROVIDER=$provider SUDO=$sudo_secret WASM=$wasm WHEN=$when \\
-  #     node $root_dir/scripts/schedule-runtime-upgrade.js
-  # "
-  # cat $root_dir/scripts/schedule-runtime-upgrade.js
   echo "
+  node <<<\"
+    var fs = require('fs')
+    fs.writeFileSync(
+      '$used_wasm',
+      '0x' + fs.readFileSync('$used_wasm').toString('hex')
+    )
+  \"
   npx --yes @polkadot/api-cli@0.51.7 
-    --ws $provider 
+    --ws $ws_provider 
     --sudo 
     --seed "$sudo_secret" 
-    --params $wasm 
+    --params $used_wasm 
     tx.parachainSystem.enactAuthorizedUpgrade
   "
 fi
