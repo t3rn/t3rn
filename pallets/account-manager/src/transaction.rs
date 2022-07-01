@@ -87,13 +87,17 @@ where
             // TODO[Feature]: at some point these may want to be configured by the pallet
             <T as Config>::Currency::resolve_creating(&beneficiary, fees);
         }
+        // Otherwise drop scope
     }
 
     // this is called from pallet_evm for Ethereum-based transactions
     // (technically, it calls on_unbalanced, which calls this when non-zero)
     fn on_nonzero_unbalanced(amount: ImbalanceBeneficiary<T, C>) {
         let (beneficiary, fees) = (amount.0, amount.1);
-        <T as Config>::Currency::resolve_creating(&beneficiary.unwrap(), fees);
+        if let Some(beneficiary) = beneficiary {
+            <T as Config>::Currency::resolve_creating(&beneficiary, fees);
+        }
+        // Otherwise drop scope
     }
 }
 

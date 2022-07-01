@@ -20,7 +20,7 @@ hex-literal = { version = "0.3.4", optional = true }
 log         = { version = "0.4.14", default-features = false }
 scale-info  = { version = "2", default-features = false, features = [ "derive" ] }
 serde       = { version = "1.0", default-features = false, optional = true, features = [ "derive" ] }
-smallvec    = "1.6.1"
+smallvec    = { version = "1.6.1", default-features = false }
 
 # Substrate
 frame-benchmarking                         = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.19" }
@@ -86,18 +86,19 @@ t3rn-primitives                   = { default-features = false, path = "../../pr
 t3rn-protocol                     = { default-features = false, path = "../../protocol" }
 
 # t3rn pallets
-pallet-3vm-contracts                  = { path = "../../3vm/pallets/wasm-contracts", default-features = false, package = "pallet-wasm-contracts" }
-pallet-3vm-contracts-primitives       = { path = "../../3vm/pallets/wasm-contracts/common", default-features = false, package = "pallet-contracts-primitives" }
-pallet-3vm-contracts-rpc-runtime-api  = { path = "../../3vm/pallets/wasm-contracts/rpc/runtime-api", default-features = false, package = "pallet-contracts-rpc-runtime-api" }
+pallet-account-manager                = { path = "../../pallets/account-manager", default-features = false }
+pallet-circuit                        = { path = "../../pallets/circuit", package = "pallet-circuit", default-features = false }
+pallet-circuit-portal                 = { path = "../../pallets/circuit-portal", package = "pallet-circuit-portal", default-features = false }
 pallet-circuit-portal-rpc-runtime-api = { path = "../../pallets/circuit-portal/rpc/runtime-api", default-features = false }
+pallet-contracts-registry             = { path = "../../pallets/contracts-registry", default-features = false }
+pallet-mfv                            = { path = "../../pallets/multi-finality-verifier", package = "pallet-multi-finality-verifier", default-features = false }
+pallet-xdns                           = { path = "../../pallets/xdns", default-features = false }
+pallet-xdns-rpc-runtime-api           = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
 
-pallet-account-manager      = { path = "../../pallets/account-manager", default-features = false }
-pallet-circuit              = { path = "../../pallets/circuit", package = "pallet-circuit", default-features = false }
-pallet-circuit-portal       = { path = "../../pallets/circuit-portal", package = "pallet-circuit-portal", default-features = false }
-pallet-contracts-registry   = { path = "../../pallets/contracts-registry", default-features = false }
-pallet-mfv                  = { path = "../../pallets/multi-finality-verifier", package = "pallet-multi-finality-verifier", default-features = false }
-pallet-xdns                 = { path = "../../pallets/xdns", default-features = false }
-pallet-xdns-rpc-runtime-api = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
+# Smart contracts VMs
+pallet-3vm-contracts                      = { path = "../../3vm/pallets/contracts", default-features = false, package = "pallet-contracts" }
+pallet-3vm-contracts-primitives           = { path = "../../3vm/primitives/contracts", default-features = false, package = "pallet-contracts-primitives" }
+pallet-3vm-contracts-rpc-runtime-api      = { path = "../../3vm/rpc/contracts/runtime-api", default-features = false, package = "pallet-contracts-rpc-runtime-api" }
 
 [features]
 default = [ "std" ]
@@ -137,6 +138,7 @@ std = [
   "parachain-info/std",
   "polkadot-parachain/std",
   "polkadot-runtime-common/std",
+  "smallvec/write",
   "sp-api/std",
   "sp-block-builder/std",
   "sp-consensus-aura/std",

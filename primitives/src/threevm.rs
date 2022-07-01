@@ -1,12 +1,11 @@
 use crate::{
     circuit::LocalStateExecutionView,
     contract_metadata::ContractType,
-    contracts_registry::{AuthorInfo, KindValidator},
+    contracts_registry::{AuthorInfo, RegistryContract},
 };
 use codec::{Decode, Encode};
 use sp_runtime::{DispatchError, DispatchResult};
 use sp_std::{result::Result, vec::Vec};
-use std::fmt::Debug;
 use t3rn_sdk_primitives::{
     signal::{ExecutionSignal, Signaller},
     state::SideEffects,
@@ -20,7 +19,7 @@ pub struct GetState<T: frame_system::Config> {
 #[derive(Encode, Decode)]
 pub enum PrecompileArgs<T: frame_system::Config> {
     GetState(T::Origin, GetState<T>),
-    SubmitSideEffects(T::Origin, SideEffects<T::AccountId, u128, T::Hash>), // FIXME: u128 for now
+    SubmitSideEffects(T::Origin, SideEffects<T::AccountId, u128, T::Hash>),
     Signal(T::Origin, ExecutionSignal<T::Hash>),
 }
 
@@ -65,7 +64,14 @@ where
 }
 
 pub trait Remuneration<T: frame_system::Config, Balance> {
+    /// Try to remunerate the fees from the given module
     fn try_remunerate<Module: ModuleOperations<T, Balance>>(
+        payee: &T::AccountId,
+        module: &Module,
+    ) -> DispatchResult;
+
+    /// Try to remunerate the fees from the given module with a custom balance
+    fn try_remunerate_exact<Module: ModuleOperations<T, Balance>>(
         payee: &T::AccountId,
         amount: Balance,
         module: &Module,
@@ -97,6 +103,10 @@ pub trait ThreeVm<T, Balance>:
 where
     T: frame_system::Config,
 {
+    fn peek_registry(
+        id: &T::Hash,
+    ) -> Result<RegistryContract<T::Hash, T::AccountId, Balance, T::BlockNumber>, DispatchError>;
+
     /// Allows creating a `Module` from a binary blob from the contracts registry
     fn from_registry<Module, ModuleGen>(
         id: &T::Hash,
@@ -109,11 +119,15 @@ where
     fn instantiate_check(kind: &ContractType) -> Result<(), DispatchError>;
 
     fn storage_check(kind: &ContractType) -> Result<(), DispatchError>;
+
+    fn volatile_check(kind: &ContractType) -> Result<(), DispatchError>;
+
+    fn remunerable_check(kind: &ContractType) -> Result<(), DispatchError>;
 }
 
 pub trait ModuleOperations<T: frame_system::Config, Balance> {
     fn get_bytecode(&self) -> &Vec<u8>;
-    fn get_author(&self) -> &Option<AuthorInfo<T::AccountId, Balance>>;
+    fn get_author(&self) -> Option<&AuthorInfo<T::AccountId, Balance>>;
     fn set_author(&mut self, author: AuthorInfo<T::AccountId, Balance>);
     fn get_type(&self) -> &ContractType;
     fn set_type(&mut self, kind: ContractType);

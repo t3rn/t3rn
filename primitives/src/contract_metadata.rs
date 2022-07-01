@@ -141,7 +141,7 @@ impl Display for Compiler {
 }
 
 /// Type of the contract.
-#[derive(Clone, Debug, Eq, PartialEq, Encode, Decode, TypeInfo)]
+#[derive(Clone, Debug, Eq, PartialEq, Encode, Decode, TypeInfo, Copy)]
 pub enum ContractType {
     System,
     VanillaEvm,

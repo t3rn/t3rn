@@ -1245,6 +1245,7 @@ dependencies = [
  "pallet-circuit-portal",
  "pallet-circuit-portal-rpc-runtime-api",
  "pallet-collator-selection",
+ "pallet-contracts",
  "pallet-contracts-primitives",
  "pallet-contracts-registry",
  "pallet-contracts-rpc-runtime-api",
@@ -1258,7 +1259,6 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-utility",
- "pallet-wasm-contracts",
  "pallet-xcm",
  "pallet-xdns",
  "pallet-xdns-rpc-runtime-api",
@@ -1360,6 +1360,7 @@ dependencies = [
  "pallet-circuit",
  "pallet-circuit-portal",
  "pallet-circuit-portal-rpc-runtime-api",
+ "pallet-contracts",
  "pallet-contracts-primitives",
  "pallet-contracts-registry",
  "pallet-contracts-registry-rpc-runtime-api",
@@ -1374,7 +1375,6 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-utility",
- "pallet-wasm-contracts",
  "pallet-xdns",
  "pallet-xdns-rpc-runtime-api",
  "parity-scale-codec 3.1.2",
@@ -6650,6 +6650,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-contracts"
+version = "4.0.0-dev"
+dependencies = [
+ "bitflags",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "log",
+ "pallet-contracts-primitives",
+ "pallet-contracts-proc-macro",
+ "parity-scale-codec 3.1.2",
+ "rand 0.8.5",
+ "scale-info 2.1.1",
+ "serde",
+ "smallvec 1.8.0",
+ "sp-core",
+ "sp-io",
+ "sp-keystore",
+ "sp-runtime",
+ "sp-sandbox",
+ "sp-std",
+ "t3rn-primitives",
+ "wasm-instrument",
+ "wasmi-validation",
+]
+
+[[package]]
 name = "pallet-contracts-primitives"
 version = "5.0.0"
 dependencies = [
@@ -7356,36 +7384,6 @@ dependencies = [
  "scale-info 2.1.1",
  "sp-runtime",
  "sp-std",
-]
-
-[[package]]
-name = "pallet-wasm-contracts"
-version = "1.0.0-alpha.0"
-dependencies = [
- "bitflags",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "hex",
- "libsecp256k1 0.7.0",
- "log",
- "pallet-contracts-primitives",
- "pallet-contracts-proc-macro",
- "parity-scale-codec 3.1.2",
- "rand 0.8.5",
- "scale-info 2.1.1",
- "serde",
- "smallvec 1.8.0",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-sandbox",
- "sp-std",
- "syn",
- "t3rn-primitives",
- "t3rn-sdk-primitives 0.0.1-rc8 (registry+https://github.com/t3rn/registry-index.git)",
- "wasm-instrument",
- "wasmi-validation",
 ]
 
 [[package]]
@@ -12650,7 +12648,7 @@ dependencies = [
  "sp-std",
  "sp-trie",
  "sp-version",
- "t3rn-sdk-primitives 0.0.1-rc8",
+ "t3rn-sdk-primitives",
  "t3rn-types 0.0.1",
 ]
 

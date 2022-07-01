@@ -19,9 +19,6 @@ scale-info  = { version = "2", default-features = false, features = [ "derive" ]
 serde       = { version = "1.0", default-features = false, optional = true, features = [ "derive" ] }
 
 # Circuit dependencies
-pallet-3vm-contracts                      = { path = "../../3vm/pallets/wasm-contracts", default-features = false, package = "pallet-wasm-contracts" }
-pallet-3vm-contracts-primitives           = { path = "../../3vm/primitives/contracts", default-features = false, package = "pallet-contracts-primitives" }
-pallet-3vm-contracts-rpc-runtime-api      = { path = "../../3vm/rpc/contracts/runtime-api", default-features = false, package = "pallet-contracts-rpc-runtime-api" }
 pallet-account-manager                    = { path = "../../pallets/account-manager", default-features = false }
 pallet-circuit                            = { path = "../../pallets/circuit", default-features = false }
 pallet-circuit-portal                     = { path = "../../pallets/circuit-portal", default-features = false }
@@ -31,14 +28,16 @@ pallet-contracts-registry-rpc-runtime-api = { path = "../../pallets/contracts-re
 pallet-mfv                                = { package = "pallet-multi-finality-verifier", path = "../../pallets/multi-finality-verifier", version = "1.0.0-alpha.0", default-features = false }
 pallet-xdns                               = { path = "../../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api               = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
-#volatile-vm = { path = "../../vm/volatile-vm", default-features = false }
+
 t3rn-primitives = { default-features = false, path = "../../primitives" }
 t3rn-protocol   = { path = "../../protocol", default-features = false }
 
 # Smart contracts VMs
+pallet-3vm-contracts                      = { path = "../../3vm/pallets/contracts", default-features = false, package = "pallet-contracts" }
+pallet-3vm-contracts-primitives           = { path = "../../3vm/primitives/contracts", default-features = false, package = "pallet-contracts-primitives" }
+pallet-3vm-contracts-rpc-runtime-api      = { path = "../../3vm/rpc/contracts/runtime-api", default-features = false, package = "pallet-contracts-rpc-runtime-api" }
+
 # branch frontier-para uses polkadot-v0.9.19
-#pallet-evm = { git = "https://github.com/t3rn/frontier", branch = "polkadot-v0.9.19", default-features = false }
-#pallet-ethereum = { git = "https://github.com/t3rn/frontier", branch = "polkadot-v0.9.19", default-features = false }
 #pallet-evm-precompile-simple = { git = "https://github.com/t3rn/frontier", branch = "polkadot-v0.9.19", default-features = false }
 
 # Substrate Dependencies
@@ -57,6 +56,7 @@ pallet-timestamp                           = { git = "https://github.com/parityt
 pallet-transaction-payment                 = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 pallet-utility                             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+
 sp-api                                     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 sp-block-builder                           = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 sp-consensus-aura                          = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
@@ -113,15 +113,14 @@ std = [
   "pallet-xdns/std",
   "pallet-xdns-rpc-runtime-api/std",
   "pallet-circuit/std",
-  #"volatile-vm/std",
   # native contracts VMs
   "pallet-3vm-contracts/std",
   "pallet-3vm-contracts-primitives/std",
   "pallet-3vm-contracts-rpc-runtime-api/std",
-  "pallet-account-manager/std",
   #	"pallet-evm/std",
   #	"pallet-ethereum/std",
   #	"pallet-evm-precompile-simple/std",
+  "pallet-account-manager/std",
   "pallet-contracts-registry/std",
   "pallet-circuit-portal/std",
   "pallet-circuit-portal-rpc-runtime-api/std",
