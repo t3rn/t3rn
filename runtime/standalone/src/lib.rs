@@ -341,7 +341,8 @@ construct_runtime!(
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
 
         // 3VM
-        Contracts: pallet_3vm_contracts = 119,
+        ThreeVm: pallet_3vm = 119,
+        Contracts: pallet_3vm_contracts = 120,
         AccountManager: pallet_account_manager = 125,
     }
 );

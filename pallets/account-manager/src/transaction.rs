@@ -153,7 +153,7 @@ macro_rules! setup_currency_adapter {
                 );
 
                 if let Some(pallet_3vm_contracts::Call::call { dest, .. }) = call.is_sub_type() {
-                    if let Some(author) = Contracts::get_author(dest) {
+                    if let Some(author) = ThreeVm::get_author(dest) {
                         return result.map(|info| {
                             let opaque_author = T::AccountId::decode(&mut author.as_ref()).ok();
                             (opaque_author, info)

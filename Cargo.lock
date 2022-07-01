@@ -1237,6 +1237,7 @@ dependencies = [
  "log",
  "orml-tokens",
  "orml-traits",
+ "pallet-3vm",
  "pallet-account-manager",
  "pallet-aura",
  "pallet-authorship",
@@ -1352,6 +1353,7 @@ dependencies = [
  "node-primitives",
  "orml-tokens",
  "orml-traits",
+ "pallet-3vm",
  "pallet-account-manager",
  "pallet-aura",
  "pallet-balances",
@@ -6244,6 +6246,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-3vm"
+version = "1.0.0-alpha.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec 3.1.2",
+ "scale-info 2.1.1",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "t3rn-primitives",
+]
+
+[[package]]
 name = "pallet-account-manager"
 version = "1.0.0-alpha.0"
 dependencies = [
@@ -6651,7 +6670,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-contracts"
-version = "4.0.0-dev"
+version = "1.0.0-alpha.0"
 dependencies = [
  "bitflags",
  "frame-benchmarking",
@@ -6668,7 +6687,6 @@ dependencies = [
  "smallvec 1.8.0",
  "sp-core",
  "sp-io",
- "sp-keystore",
  "sp-runtime",
  "sp-sandbox",
  "sp-std",

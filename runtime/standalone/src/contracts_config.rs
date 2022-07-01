@@ -1,7 +1,7 @@
 use super::{AccountId, Balance, BlockWeights, Weight, AVERAGE_ON_INITIALIZE_RATIO};
 use crate::{
-    accounts_config::EscrowAccount, AccountManager, Call, Circuit, ContractsRegistry, Event,
-    RandomnessCollectiveFlip, Runtime, Timestamp,
+    accounts_config::EscrowAccount, AccountManager, Balances, Call, Circuit, ContractsRegistry,
+    Event, RandomnessCollectiveFlip, Runtime, ThreeVm, Timestamp,
 };
 use frame_support::{pallet_prelude::ConstU32, parameter_types};
 use pallet_3vm_contracts::weights::WeightInfo;
@@ -46,8 +46,18 @@ parameter_types! {
     pub const DepositPerByte: Balance = deposit(0, 1);
 }
 
-impl pallet_3vm_contracts::Config for Runtime {
+impl pallet_3vm::Config for Runtime {
     type AccountManager = AccountManager;
+    type CircuitTargetId = CircuitTargetId;
+    type ContractsRegistry = ContractsRegistry;
+    type EscrowAccount = EscrowAccount;
+    type Escrowed = AccountManager;
+    type Event = Event;
+    type OnLocalTrigger = Circuit;
+    type SignalBounceThreshold = ConstU32<2>;
+}
+
+impl pallet_3vm_contracts::Config for Runtime {
     type AddressGenerator = pallet_3vm_contracts::DefaultAddressGenerator;
     type Call = Call;
     /// The safest default is to allow no calls at all.
@@ -59,20 +69,16 @@ impl pallet_3vm_contracts::Config for Runtime {
     type CallFilter = frame_support::traits::Nothing;
     type CallStack = [pallet_3vm_contracts::Frame<Self>; 31];
     type ChainExtension = ();
-    type CircuitTargetId = CircuitTargetId;
-    type ContractsRegistry = ContractsRegistry;
-    type CreateSideEffectsPrecompileDest = CreateSideEffectsPrecompileDest;
+    type Currency = Balances;
     type DeletionQueueDepth = DeletionQueueDepth;
     type DeletionWeightLimit = DeletionWeightLimit;
     type DepositPerByte = DepositPerByte;
     type DepositPerItem = DepositPerItem;
-    type EscrowAccount = EscrowAccount;
-    type Escrowed = Self;
+    type Escrowed = AccountManager;
     type Event = Event;
-    type OnLocalTrigger = Circuit;
     type Randomness = RandomnessCollectiveFlip;
     type Schedule = Schedule;
-    type SignalBounceThreshold = ConstU32<5>;
+    type ThreeVm = ThreeVm;
     type Time = Timestamp;
     type WeightInfo = pallet_3vm_contracts::weights::SubstrateWeight<Self>;
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;

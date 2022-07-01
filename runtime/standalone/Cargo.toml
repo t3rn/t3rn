@@ -33,9 +33,10 @@ t3rn-primitives = { default-features = false, path = "../../primitives" }
 t3rn-protocol   = { path = "../../protocol", default-features = false }
 
 # Smart contracts VMs
-pallet-3vm-contracts                      = { path = "../../3vm/pallets/contracts", default-features = false, package = "pallet-contracts" }
-pallet-3vm-contracts-primitives           = { path = "../../3vm/primitives/contracts", default-features = false, package = "pallet-contracts-primitives" }
-pallet-3vm-contracts-rpc-runtime-api      = { path = "../../3vm/rpc/contracts/runtime-api", default-features = false, package = "pallet-contracts-rpc-runtime-api" }
+pallet-3vm                           = { path = "../../3vm/pallets/3vm", default-features = false }
+pallet-3vm-contracts                 = { path = "../../3vm/pallets/contracts", default-features = false, package = "pallet-contracts" }
+pallet-3vm-contracts-primitives      = { path = "../../3vm/primitives/contracts", default-features = false, package = "pallet-contracts-primitives" }
+pallet-3vm-contracts-rpc-runtime-api = { path = "../../3vm/rpc/contracts/runtime-api", default-features = false, package = "pallet-contracts-rpc-runtime-api" }
 
 # branch frontier-para uses polkadot-v0.9.19
 #pallet-evm-precompile-simple = { git = "https://github.com/t3rn/frontier", branch = "polkadot-v0.9.19", default-features = false }
@@ -57,19 +58,19 @@ pallet-transaction-payment                 = { git = "https://github.com/parityt
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 pallet-utility                             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 
-sp-api                                     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-sp-block-builder                           = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-sp-consensus-aura                          = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-sp-core                                    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-sp-finality-grandpa                        = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-sp-inherents                               = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-sp-offchain                                = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-sp-runtime                                 = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-sp-session                                 = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-sp-std                                     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-sp-transaction-pool                        = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-sp-trie                                    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-sp-version                                 = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-api              = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-block-builder    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-consensus-aura   = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-core             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-inherents        = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-offchain         = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-runtime          = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-session          = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-std              = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-trie             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-version          = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 
 # Beefy dependencies
 beefy-primitives      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
@@ -114,6 +115,7 @@ std = [
   "pallet-xdns-rpc-runtime-api/std",
   "pallet-circuit/std",
   # native contracts VMs
+  "pallet-3vm/std",
   "pallet-3vm-contracts/std",
   "pallet-3vm-contracts-primitives/std",
   "pallet-3vm-contracts-rpc-runtime-api/std",

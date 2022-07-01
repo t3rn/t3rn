@@ -555,5 +555,6 @@ fn testnet_genesis(
         },
         orml_tokens: Default::default(),
         account_manager: Default::default(),
+        three_vm: Default::default(), // TODO: genesis for this needs to be setup for the function pointers
     }
 }
