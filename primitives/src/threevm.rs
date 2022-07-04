@@ -123,6 +123,11 @@ where
     fn volatile_check(kind: &ContractType) -> Result<(), DispatchError>;
 
     fn remunerable_check(kind: &ContractType) -> Result<(), DispatchError>;
+
+    fn try_persist_author<Module: ModuleOperations<T, Balance>>(
+        contract: &T::AccountId,
+        module: &Module,
+    ) -> Result<(), DispatchError>;
 }
 
 pub trait ModuleOperations<T: frame_system::Config, Balance> {
