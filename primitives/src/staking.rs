@@ -1,7 +1,7 @@
 use crate::common::RoundIndex;
 use codec::{Decode, Encode};
 use frame_support::pallet_prelude::*;
-use sp_runtime::RuntimeDebug;
+use sp_runtime::{RuntimeDebug, Percent};
 use sp_std::{cmp::Ordering, prelude::*};
 
 /// Convey relevant information describing if a delegator was added to the top or bottom
@@ -171,7 +171,7 @@ impl<Balance: Copy> StakingAction<Balance> {
 /// Represents a scheduled request that define a [StakingAction]. The request is executable
 /// iff the provided [RoundIndex] is achieved.
 #[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo, PartialOrd, Ord)]
-pub struct ScheduledRequest<AccountId, Balance> {
+pub struct ScheduledStakingRequest<AccountId, Balance> {
     pub staker: AccountId,
     pub when_executable: RoundIndex,
     pub action: StakingAction<Balance>,
@@ -179,16 +179,32 @@ pub struct ScheduledRequest<AccountId, Balance> {
 
 /// Represents a cancelled scheduled request for emitting an event.
 #[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
-pub struct CancelledScheduledRequest<Balance> {
+pub struct CancelledScheduledStakingRequest<Balance> {
     pub when_executable: RoundIndex,
     pub action: StakingAction<Balance>,
 }
 
-impl<A, B> From<ScheduledRequest<A, B>> for CancelledScheduledRequest<B> {
-    fn from(request: ScheduledRequest<A, B>) -> Self {
-        CancelledScheduledRequest {
+impl<A, B> From<ScheduledStakingRequest<A, B>> for CancelledScheduledStakingRequest<B> {
+    fn from(request: ScheduledStakingRequest<A, B>) -> Self {
+        CancelledScheduledStakingRequest {
             when_executable: request.when_executable,
             action: request.action,
         }
     }
+}
+
+/// Executor configuration information.
+#[derive(Clone, Copy, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
+pub enum ExecutorInfo<B> {
+    pub commission: Percent,
+    pub risk: Percent
+}
+
+/// Represents a scheduled request for an executor configuration change.
+/// The request is executable if the provided [RoundIndex] is achieved.
+#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo, PartialOrd, Ord)]
+pub struct ScheduledConfigurationRequest {
+    pub when_executable: RoundIndex,
+    pub commission: Percent,
+    pub risk: Percent,
 }

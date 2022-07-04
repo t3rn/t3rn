@@ -10,7 +10,7 @@ use sp_runtime::{
     Perbill, Percent,
 };
 use t3rn_primitives::{
-    common::{Range, BLOCKS_PER_HOUR},
+    common::{Range, BLOCKS_PER_HOUR, BLOCKS_PER_DAY},
     monetary::T3RN,
 };
 
@@ -160,13 +160,14 @@ parameter_types! {
         max: 128_u32,
     };
     pub const MaxCommission: Percent =Percent::from_percent(50);
-    pub const MinExecutorStake: u64 = 1000 * T3RN;
-    pub const MinCandidateStake: u64 = 1000 * T3RN;
-    pub const MinStake:u64 = 500 * T3RN;
-    pub const MinStakerStake: u64 = 500 * T3RN;
+    pub const MinExecutorBond: u64 = 1000 * T3RN;
+    pub const MinCandidateBond: u64 = 1000 * T3RN;
+    pub const MinAtomicStake:u64 = 500 * T3RN;
+    pub const MinTotalStake: u64 = 500 * T3RN;
     pub const MaxTopStakesPerCandidate: u32 = 300;
     pub const MaxBottomStakesPerCandidate: u32 = 50;
     pub const MaxStakesPerStaker: u32 = 100;
+    pub const ConfigureExecutorDelay: u32 = 14 * BLOCKS_PER_DAY;
     pub const LeaveCandidatesDelay: u32 = 28;
     pub const LeaveStakersDelay: u32 = 28;
     pub const CandidateBondLessDelay: u32 =28;
@@ -178,16 +179,17 @@ impl pallet_staking::Config for Test {
     type CandidateBondLessDelay = CandidateBondLessDelay;
     type Currency = Balances;
     type Event = Event;
+    type ConfigureExecutorDelay = ConfigureExecutorDelay;
     type LeaveCandidatesDelay = LeaveCandidatesDelay;
     type LeaveStakersDelay = LeaveStakersDelay;
     type MaxBottomStakesPerCandidate = MaxBottomStakesPerCandidate;
     type MaxCommission = MaxCommission;
     type MaxStakesPerStaker = MaxStakesPerStaker;
     type MaxTopStakesPerCandidate = MaxTopStakesPerCandidate;
-    type MinCandidateStake = MinCandidateStake;
-    type MinExecutorStake = MinExecutorStake;
-    type MinStake = MinStake;
-    type MinStakerStake = MinStakerStake;
+    type MinCandidateBond = MinCandidateBond;
+    type MinExecutorBond = MinExecutorBond;
+    type MinAtomicStake = MinAtomicStake;
+    type MinTotalStake = MinTotalStake;
     type RevokeStakeDelay = RevokeStakeDelay;
     type Treasury = Treasury;
     type WeightInfo = ();

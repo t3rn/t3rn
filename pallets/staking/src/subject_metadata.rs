@@ -83,7 +83,7 @@ impl<
         }
     }
 
-    // Return Some(remaining balance), must be more than MinStakerStake
+    // Return Some(remaining balance), must be more than MinTotalStake
     // Return None if stake not found
     pub fn rm_stake(&mut self, collator: &AccountId) -> Option<Balance> {
         let mut amt: Option<Balance> = None;
@@ -292,7 +292,7 @@ impl<
         // ensure bond above min after decrease
         ensure!(self.bond > less, Error::<T>::CandidateBondBelowMin);
         ensure!(
-            self.bond - less >= T::MinCandidateStake::get().into(),
+            self.bond - less >= T::MinCandidateBond::get().into(),
             Error::<T>::CandidateBondBelowMin
         );
         let when_executable = T::Treasury::current_round().index + T::CandidateBondLessDelay::get();
@@ -522,13 +522,13 @@ impl<
                 Pallet::<T>::deposit_event(Event::StakeKicked {
                     staker: lowest_bottom_to_be_kicked.owner.clone(),
                     candidate: candidate.clone(),
-                    unstaked_amount: lowest_bottom_to_be_kicked.amount,
+                    unstaked: lowest_bottom_to_be_kicked.amount,
                 });
                 if leaving {
                     <StakerInfo<T>>::remove(&lowest_bottom_to_be_kicked.owner);
                     Pallet::<T>::deposit_event(Event::StakerLeft {
                         staker: lowest_bottom_to_be_kicked.owner,
-                        unstaked_amount: lowest_bottom_to_be_kicked.amount,
+                        unstaked: lowest_bottom_to_be_kicked.amount,
                     });
                 } else {
                     <StakerInfo<T>>::insert(&lowest_bottom_to_be_kicked.owner, staker_state);
