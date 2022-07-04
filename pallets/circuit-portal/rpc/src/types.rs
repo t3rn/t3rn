@@ -13,7 +13,7 @@
 use serde::{Deserialize, Serialize};
 use sp_core::Bytes;
 use sp_rpc::number;
-use t3rn_primitives::{ChainId};
+use t3rn_primitives::ChainId;
 
 pub const RUNTIME_ERROR: i64 = 1;
 
@@ -25,7 +25,6 @@ pub const RUNTIME_ERROR: i64 = 1;
 /// As 1 gas is equal to 1 weight we base this on the conducted benchmarks which
 /// determined runtime weights:
 /// https://github.com/paritytech/substrate/pull/5446
-pub const GAS_PER_SECOND: u64 = 1_000_000_000_000;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -64,7 +63,6 @@ pub struct CallRequest<AccountId, Balance> {
     pub gas_limit: number::NumberOrHex,
     pub input_data: Bytes,
 }
-
 
 // ToDo: the types where not implemented consistently. We need to figure out how to handle RPC in general, currently its handled differently in contracts and RPC.
 // /// An RPC serializable result of contract execution

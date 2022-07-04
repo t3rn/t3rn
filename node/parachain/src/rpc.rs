@@ -48,7 +48,8 @@ where
     C::Api: pallet_xdns_rpc::XdnsRuntimeApi<Block, AccountId>,
     C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
     C::Api: pallet_xdns_rpc::XdnsRuntimeApi<Block, AccountId>,
-    C::Api: pallet_circuit_portal_rpc::CircuitPortalRuntimeApi<Block, AccountId, Balance, BlockNumber>,
+    C::Api:
+        pallet_circuit_portal_rpc::CircuitPortalRuntimeApi<Block, AccountId, Balance, BlockNumber>,
     C::Api: BlockBuilder<Block>,
     P: TransactionPool + Sync + Send + 'static,
 {
@@ -72,7 +73,9 @@ where
     )));
     io.extend_with(XdnsApi::to_delegate(Xdns::new(client.clone())));
     io.extend_with(ContractsApi::to_delegate(Contracts::new(client)));
-    io.extend_with(CircuitPortalApi::to_delegate(CircuitPortal::new(client.clone())));
+    io.extend_with(CircuitPortalApi::to_delegate(CircuitPortal::new(
+        client.clone(),
+    )));
 
     io
 }
