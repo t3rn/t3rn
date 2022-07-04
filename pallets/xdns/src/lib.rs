@@ -6,13 +6,13 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
-pub use crate::types::{EventSignature, SideEffectId, SideEffectName};
 use codec::Encode;
 use sp_runtime::traits::Hash;
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 pub use t3rn_primitives::{
     abi::{GatewayABIConfig, Type},
     protocol::SideEffectProtocol,
+    side_effect::{EventSignature, SideEffectId, SideEffectName},
     ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor,
 };
 // Re-export pallet items so that they can be accessed from the crate namespace.
@@ -26,7 +26,6 @@ mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
-pub mod types;
 pub mod weights;
 
 use weights::WeightInfo;
