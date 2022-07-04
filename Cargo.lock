@@ -1166,6 +1166,7 @@ dependencies = [
  "jsonrpc-core 18.0.0",
  "jsonrpc-runtime-client",
  "log",
+ "pallet-circuit-portal-rpc",
  "pallet-contracts-rpc",
  "pallet-transaction-payment-rpc",
  "pallet-xdns",
@@ -1242,6 +1243,7 @@ dependencies = [
  "pallet-balances",
  "pallet-circuit",
  "pallet-circuit-portal",
+ "pallet-circuit-portal-rpc",
  "pallet-circuit-portal-rpc-runtime-api",
  "pallet-collator-selection",
  "pallet-contracts-primitives",
@@ -1302,6 +1304,7 @@ dependencies = [
  "jsonrpc-core 18.0.0",
  "jsonrpc-runtime-client",
  "log",
+ "pallet-circuit-portal-rpc",
  "pallet-contracts-rpc",
  "pallet-transaction-payment-rpc",
  "pallet-xdns",
@@ -4173,7 +4176,7 @@ checksum = "437f8808009c031df3c1d532c8fd7e3d73239dfe522ebf0b94b5e34d5d01044b"
 dependencies = [
  "async-channel",
  "castaway",
- "crossbeam-utils 0.7.2",
+ "crossbeam-utils 0.8.8",
  "curl",
  "curl-sys",
  "encoding_rs",
@@ -6570,6 +6573,25 @@ dependencies = [
  "t3rn-protocol",
  "triehash",
  "wat",
+]
+
+[[package]]
+name = "pallet-circuit-portal-rpc"
+version = "1.0.0-alpha.0"
+dependencies = [
+ "jsonrpc-core 18.0.0",
+ "jsonrpc-core-client 18.0.0",
+ "jsonrpc-derive",
+ "pallet-circuit-portal-rpc-runtime-api",
+ "parity-scale-codec 3.1.2",
+ "serde",
+ "serde_json",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+ "t3rn-primitives",
 ]
 
 [[package]]
@@ -13250,7 +13272,7 @@ dependencies = [
  "chrono",
  "lazy_static",
  "matchers",
- "parking_lot 0.9.0",
+ "parking_lot 0.11.2",
  "regex",
  "serde",
  "serde_json",
@@ -13381,7 +13403,7 @@ version = "1.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4ee73e6e4924fe940354b8d4d98cad5231175d615cd855b758adc658c0aac6a0"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "digest 0.10.3",
  "rand 0.8.5",
  "static_assertions",

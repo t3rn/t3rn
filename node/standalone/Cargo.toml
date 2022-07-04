@@ -57,11 +57,12 @@ frame-benchmarking     = { git = "https://github.com/paritytech/substrate.git", 
 frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.19" }
 
 # Local Dependencies
-circuit-standalone-runtime = { path = "../../runtime/standalone" }
-pallet-3vm-contracts-rpc   = { path = "../../3vm/pallets/wasm-contracts/rpc", package = "pallet-contracts-rpc" }
-pallet-xdns                = { path = "../../pallets/xdns" }
-pallet-xdns-rpc            = { path = "../../pallets/xdns/rpc" }
-t3rn-primitives            = { path = "../../primitives" }
+circuit-standalone-runtime      = { path = "../../runtime/standalone" }
+pallet-3vm-contracts-rpc        = { path = "../../3vm/pallets/wasm-contracts/rpc", package = "pallet-contracts-rpc" }
+pallet-xdns                     = { path = "../../pallets/xdns" }
+pallet-xdns-rpc                 = { path = "../../pallets/xdns/rpc" }
+pallet-circuit-portal-rpc       = { path = "../../pallets/circuit-portal/rpc" }
+t3rn-primitives                 = { path = "../../primitives" }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.19" }
