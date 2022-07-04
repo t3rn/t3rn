@@ -159,7 +159,8 @@ parameter_types! {
         ideal: 32_u32,
         max: 128_u32,
     };
-    pub const MaxCommission: Percent =Percent::from_percent(50);
+    pub const MaxCommission: Percent = Percent::from_percent(50);
+    pub const MaxRisk: Percent = Percent::from_percent(50);
     pub const MinExecutorBond: u64 = 1000 * T3RN;
     pub const MinCandidateBond: u64 = 1000 * T3RN;
     pub const MinAtomicStake:u64 = 500 * T3RN;
@@ -184,6 +185,7 @@ impl pallet_staking::Config for Test {
     type LeaveStakersDelay = LeaveStakersDelay;
     type MaxBottomStakesPerCandidate = MaxBottomStakesPerCandidate;
     type MaxCommission = MaxCommission;
+    type MaxRisk = MaxRisk;
     type MaxStakesPerStaker = MaxStakesPerStaker;
     type MaxTopStakesPerCandidate = MaxTopStakesPerCandidate;
     type MinCandidateBond = MinCandidateBond;

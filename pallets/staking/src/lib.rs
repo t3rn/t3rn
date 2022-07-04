@@ -62,6 +62,10 @@ pub mod pallet {
         #[pallet::constant]
         type MaxCommission: Get<Percent>;
 
+        /// Protocol enforced maximum executor risk reward ratio.
+        #[pallet::constant]
+        type MaxRisk: Get<Percent>;
+
         /// Minimum stake required for any candidate to be considered for the active set.
         #[pallet::constant]
         type MinExecutorBond: Get<BalanceOf<Self>>;
@@ -269,17 +273,19 @@ pub mod pallet {
             todo!();
         }
 
-        /// Configures an executor's economics.
-        pub fn setup_executor(origin: OriginFor<T>, commission: Percent, risk: Percent) {
+        /// Configures an executor's economics. TODO: execute scheduled reqs mechanism potentially triggered during `on_finalize`
+        pub fn configure_executor(origin: OriginFor<T>, commission: Percent, risk: Percent) {
             let executor = ensure_signed(origin);
 
-            // TODO : assert commission lte max commission
-            // TODO : assert commission lte max risk
+            ensure!(commmission.lte(<MaxCommission<T>>::get()), <Error<T>>::TooMuchCommission);
+
+            ensure!(risk.lte(<MaxRisk<T>>::get()), <Error<T>>::TooMuchRisk);
 
             if <ExecutorConfig<T>>::contains_key(executor) {
-                // map schedule setup for in 14 days T::ScheduleDelay
+                let when_executable = <ConfigureExecutorDelay<T>>::get().saturating_add(<frame_system::Pallet<T>>::block_number().into());
+
                 <ScheduledConfigurationRequests<T>>::insert(executor, ScheduledConfigurationRequest {
-                    when_executable: "TODO",
+                    when_executable,
                     commission,
                     risk,
                 })
@@ -474,18 +480,24 @@ pub mod pallet {
         PendingCandidateRequestNotDueYet,
         TooLowStakeCountToLeaveStakers,
         CannotDelegateLessThanOrEqualToLowestBottomWhenFull,
+        TooMuchCommission,
+        TooMuchRisk
     }
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        phantom: PhantomData<T>,
+        pub active_set_size: u32,
+        pub max_commission: Percent,
+        pub max_risk: Percent,
     }
 
     #[cfg(feature = "std")]
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {
-                phantom: Default::default(),
+                active_set_size: 1, // TODO
+                max_commission: Percent::from_percent(50), // TODO
+                max_risk: Percent::from_percent(50), // TODO
             }
         }
     }
@@ -493,11 +505,9 @@ pub mod pallet {
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
-            //TODO: set active set size
-
-            //TODO: set max commission rate (protocol enforced)
-
-            //TODO: 
+            <ActiveSetSize<T>>::put(self.active_set_size);
+            <MaxCommission<T>>::put(self.max_commission);
+            <MaxRisk<T>>::put(self.max_risk);
         }
     }
 
