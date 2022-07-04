@@ -39,8 +39,8 @@ pub mod pallet {
     use t3rn_primitives::{
         common::{OrderedSet, Range, RoundIndex},
         staking::{
-            Bond, CancelledScheduledRequest, ExecutorSnapshot, ScheduledRequest, StakerAdded,
-            StakingAction,
+            Bond, CancelledScheduledStakingRequest, ExecutorSnapshot, ScheduledStakingRequest, StakerAdded,
+            StakingAction, ExecutorInfo
         },
         treasury::Treasury as TTreasury,
     };
@@ -64,21 +64,21 @@ pub mod pallet {
 
         /// Minimum stake required for any candidate to be considered for the active set.
         #[pallet::constant]
-        type MinExecutorStake: Get<BalanceOf<Self>>;
+        type MinExecutorBond: Get<BalanceOf<Self>>;
 
         /// Minimum stake required for any candidate to be considered as candidate.
         #[pallet::constant]
-        type MinCandidateStake: Get<BalanceOf<Self>>;
+        type MinCandidateBond: Get<BalanceOf<Self>>;
 
         /// Minimum stake for any registered on-chain account to stake.
         /// Requirement is checked on every staking action after the first.
         #[pallet::constant]
-        type MinStake: Get<BalanceOf<Self>>;
+        type MinAtomicStake: Get<BalanceOf<Self>>;
 
         /// Minimum stake for any registered on-chain account to be a staker.
         /// Requirement checked at first staking action.
         #[pallet::constant]
-        type MinStakerStake: Get<BalanceOf<Self>>;
+        type MinTotalStake: Get<BalanceOf<Self>>;
 
         /// Maximum top stakes per candidate.
         #[pallet::constant]
@@ -91,6 +91,10 @@ pub mod pallet {
         /// Maximum stakings per staker.
         #[pallet::constant]
         type MaxStakesPerStaker: Get<u32>;
+
+        /// Delay applied when changing an executor's configuration.
+        #[pallet::constant]
+        type ConfigureExecutorDelay: Get<u32>;
 
         /// Leave candidates delay.
         #[pallet::constant]
@@ -134,8 +138,8 @@ pub mod pallet {
 
     /// Executors' commissions.
     #[pallet::storage]
-    #[pallet::getter(fn commissions)]
-    pub type Commissions<T: Config> = StorageMap<_, Identity, T::AccountId, Percent, OptionQuery>;
+    #[pallet::getter(fn executor_config)]
+    pub type ExecutorConfig<T: Config> = StorageMap<_, Identity, T::AccountId, ExecutorInfo, OptionQuery>;
 
     /// The pool of executor candidates, each with their total backing stake.
     #[pallet::storage]
@@ -186,11 +190,22 @@ pub mod pallet {
     /// Outstanding staking requests per executor.
     #[pallet::storage]
     #[pallet::getter(fn stake_scheduled_requests)]
-    pub(crate) type StakeScheduledRequests<T: Config> = StorageMap<
+    pub(crate) type ScheduledStakingRequests<T: Config> = StorageMap<
         _,
         Blake2_128Concat,
         T::AccountId,
-        Vec<ScheduledRequest<T::AccountId, BalanceOf<T>>>,
+        Vec<ScheduledStakingRequest<T::AccountId, BalanceOf<T>>>,
+        ValueQuery,
+    >;
+
+    /// Outstanding configuration change per executor.
+    #[pallet::storage]
+    #[pallet::getter(fn stake_scheduled_requests)]
+    pub(crate) type ScheduledConfigurationRequests<T: Config> = StorageMap<
+        _,
+        Blake2_128Concat,
+        T::AccountId,
+        ScheduledConfigurationRequest,
         ValueQuery,
     >;
 
@@ -215,9 +230,66 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// Sets the executor active set's size.
         #[pallet::weight(10_000)] //TODO
-        pub fn set_active_set_size(origin: OriginFor<T>, _size: u32) -> DispatchResult {
+        pub fn set_active_set_size(origin: OriginFor<T>, size: u32) -> DispatchResult {
             ensure_root(origin)?;
+
+            let old = <ActiveSetSize<T>>::get();
+
+            <ActiveSetSize<T>>::put(size);
+
+            Self::deposit_event(Event::ActiveSetSizeSet { old, new: size, });
+
+            Ok(())
+        }
+        
+        ///////////////////////////////////////////////////////////////////////
+        // ExposesT::MinBond via pallet-executor-staking Config trait ✅
+        // implements call fn bond(...) & fn unbond(...) 
+        // implements call fn setup_executor( params: { commission_rate, !maybe! nominators_risk_ratio })
+        // if executor already registered schedule update for T::ScheduleDelay time (by default 14 days)
+        // implements updates call fn schedule_params_update( params ) ->
+        // implements fn join_candidate() which makes executor being consider for an active set
+        // implements fn schedule_leave_candidate() which makes executor not being consider for an active set anymore after T::ScheduleDelay (14 days)
+        // implements fn self::active_set() that selects the top T::ActiveExecutors (make it 128)
+        // Stakers for Executors
+        // implements call fn stake(executor: AccountId, stake: Balance)
+        // implements call fn schedule_unstake(executor: AccountId, stake: Balance) after T::ScheduleDelay (14 days)
+        ///////////////////////////////////////////////////////////////////////
+
+
+        /// Increases an executor's bond.
+        #[pallet::weight(10_000)] //TODO
+        pub fn bond(origin: OriginFor<T>, amount:  BalanceOf<T>,) -> DispatchResult {
             todo!();
+        }
+
+        /// Decreases an executor's bond.
+        #[pallet::weight(10_000)] //TODO
+        pub fn unbond(origin: OriginFor<T>, amount: BalanceOf<T>,) -> DispatchResult {
+            todo!();
+        }
+
+        /// Configures an executor's economics.
+        pub fn setup_executor(origin: OriginFor<T>, commission: Percent, risk: Percent) {
+            let executor = ensure_signed(origin);
+
+            // TODO : assert commission lte max commission
+            // TODO : assert commission lte max risk
+
+            if <ExecutorConfig<T>>::contains_key(executor) {
+                // map schedule setup for in 14 days T::ScheduleDelay
+                <ScheduledConfigurationRequests<T>>::insert(executor, ScheduledConfigurationRequest {
+                    when_executable: "TODO",
+                    commission,
+                    risk,
+                })
+            } else {
+                <ExecutorConfig<T>>::insert(ExecutorInfo { commission, risk });
+
+                Self::deposit_event(Event::ExecutorConfigured {executor, commission, risk });
+            }
+
+            Ok(())
         }
     }
 
@@ -329,26 +401,26 @@ pub mod pallet {
         /// Delegator has left the set of stakers.
         StakerLeft {
             staker: T::AccountId,
-            unstaked_amount: BalanceOf<T>,
+            unstaked: BalanceOf<T>,
         },
         /// Delegation revoked.
         StakeRevoked {
             staker: T::AccountId,
             candidate: T::AccountId,
-            unstaked_amount: BalanceOf<T>,
+            unstaked: BalanceOf<T>,
         },
         /// Delegation kicked.
         StakeKicked {
             staker: T::AccountId,
             candidate: T::AccountId,
-            unstaked_amount: BalanceOf<T>,
+            unstaked: BalanceOf<T>,
         },
         /// Cancelled a pending request to exit the set of stakers.
         StakerExitCancelled { staker: T::AccountId },
         /// Cancelled request to change an existing stake.
         StakeRequestCancelled {
             staker: T::AccountId,
-            cancelled_request: CancelledScheduledRequest<BalanceOf<T>>,
+            cancelled_request: CancelledScheduledStakingRequest<BalanceOf<T>>,
             executor: T::AccountId,
         },
         /// New stake (increase of the existing one).
@@ -362,7 +434,7 @@ pub mod pallet {
         StakerLeftCandidate {
             staker: T::AccountId,
             candidate: T::AccountId,
-            unstaked_amount: BalanceOf<T>,
+            unstaked: BalanceOf<T>,
             total_candidate_staked: BalanceOf<T>,
         },
         /// Paid the account (staker or executor) the balance as liquid rewards.
@@ -376,7 +448,7 @@ pub mod pallet {
         ExecutorConfigured {
             executor: T::AccountId,
             commission: Percent,
-            risk_stake: Percent,
+            risk_ratio: Percent,
         },
     }
 
@@ -420,7 +492,13 @@ pub mod pallet {
 
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
-        fn build(&self) {}
+        fn build(&self) {
+            //TODO: set active set size
+
+            //TODO: set max commission rate (protocol enforced)
+
+            //TODO: 
+        }
     }
 
     impl<T: Config> Pallet<T> {
@@ -436,7 +514,7 @@ pub mod pallet {
         // 		.into_iter()
         // 		.rev()
         // 		.take(top_n)
-        // 		.filter(|x| x.amount >= T::MinExecutorStake::get())
+        // 		.filter(|x| x.amount >= T::MinExecutorBond::get())
         // 		.map(|x| x.owner)
         // 		.collect::<Vec<T::AccountId>>();
 
@@ -481,18 +559,18 @@ pub mod pallet {
             staker: T::AccountId,
             amount: BalanceOf<T>,
         ) -> DispatchResult {
-            let mut state =
+            let mut candidate_info =
                 <CandidateInfo<T>>::get(&candidate).ok_or(Error::<T>::NoSuchCandidate)?;
-            state.rm_stake_if_exists::<T>(&candidate, staker.clone(), amount)?;
+            candidate_info.rm_stake_if_exists::<T>(&candidate, staker.clone(), amount)?;
             T::Currency::unreserve(&staker, amount);
             let new_total_locked = <Total<T>>::get().saturating_sub(amount);
             <Total<T>>::put(new_total_locked);
-            let new_total = state.total_counted;
-            <CandidateInfo<T>>::insert(&candidate, state);
+            let new_total = candidate_info.total_counted;
+            <CandidateInfo<T>>::insert(&candidate, candidate_info);
             Self::deposit_event(Event::StakerLeftCandidate {
                 staker,
                 candidate,
-                unstaked_amount: amount,
+                unstaked: amount,
                 total_candidate_staked: new_total,
             });
             Ok(())
@@ -659,7 +737,7 @@ pub mod pallet {
                 .into_iter()
                 .rev()
                 .take(top_n)
-                .filter(|x| x.amount >= T::MinExecutorStake::get())
+                .filter(|x| x.amount >= T::MinExecutorBond::get())
                 .map(|x| x.owner)
                 .collect::<Vec<T::AccountId>>();
             executors.sort();
@@ -740,7 +818,7 @@ pub mod pallet {
         fn get_rewardable_stakers(
             executor: &T::AccountId,
         ) -> Vec<Bond<T::AccountId, BalanceOf<T>>> {
-            let requests = <StakeScheduledRequests<T>>::get(executor)
+            let requests = <ScheduledStakingRequests<T>>::get(executor)
                 .into_iter()
                 .map(|x| (x.staker, x.action))
                 .collect::<BTreeMap<_, _>>();
