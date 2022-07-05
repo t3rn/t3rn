@@ -33,7 +33,7 @@ class InstanceManager {
     async initializeRelaychainListeners() {
         for (let i = 0; i < config.relaychains.length; i++) {
             const entry = config.relaychains[i]
-            const height = fetchGatewayHeight(entry.id, this.relayer.api);
+            const height = await fetchGatewayHeight(entry.id, this.relayer.api);
             let instance = new RelaychainListener()
             instance.on("RestoreMissingHeaders", (entries: any) => {
                 InstanceManager.debug("Received RestoreMissingHeaders")

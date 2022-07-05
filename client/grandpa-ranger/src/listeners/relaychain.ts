@@ -51,9 +51,11 @@ export default class RelaychainListener extends EventEmitter {
     }
 
     async fetchMissingHeaders(gatewayHeight: number, subscanEndpoint: string) {
+        RelaychainListener.debug("Checking for missing AuthoritySetUpdates")
         return new Promise((res: any, rej: any) => {
             fetchMissingAuthorityUpdateJustifications(gatewayHeight, this.api, subscanEndpoint)
                 .then(data => {
+                    RelaychainListener.debug("Found AuthoritySetUpdates:", data.length)
                     if(data.length > 0) {
                         this.emit("RestoreMissingHeaders", {
                             gatewayId: this.gatewayId,

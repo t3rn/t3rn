@@ -20,7 +20,6 @@ export default class Relayer extends EventEmitter {
             rpc: rpc as any,
         })
         const keyring = new Keyring({ type: "sr25519" })
-
         this.signer =
             process.env.CIRCUIT_KEY === undefined
                 ? keyring.addFromUri("//Alice")

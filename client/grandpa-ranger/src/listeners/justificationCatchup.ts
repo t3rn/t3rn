@@ -4,7 +4,7 @@ import { decodeFinalityProof } from "../util";
 export const fetchMissingAuthorityUpdateJustifications = async (gatewayBlock: number, api: any, endpoint: string) => {
     const authorityUpdateBlocks: number[] = await fetchAuthorityUpdateBlocks(endpoint);
     const missingAuthBlocks = authorityUpdateBlocks.filter(block => block >= gatewayBlock)
-    console.log("Missing Blocks:", missingAuthBlocks.sort());
+    missingAuthBlocks.sort(); // need to be asc order
     return collectProofData(missingAuthBlocks, api)
 }
 

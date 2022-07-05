@@ -38,10 +38,12 @@ export const decodeAuthoritySet = (data: any) => {
     return justification.commit.precommits.map(entry => entry.id.toHex()).sort();
 }
 
-export const fetchGatewayHeight = (gatewayId: any, circuit: any) => {
-    return 798779
+// ToDo this should be replaced for RPC call once #380 is closed
+export const fetchGatewayHeight = async (gatewayId: any, circuit: any) =>  {
+    const hash = await circuit.query.multiFinalityVerifierDefault.bestFinalizedMap(gatewayId);
+    const height = await circuit.query.multiFinalityVerifierDefault.multiImportedHeaders(gatewayId, hash.toJSON());
+    return height.toJSON().number
 }
-
 
 export function formatEvents(
     events: { event: { section: string; method: string; data: any } }[]
