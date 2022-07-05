@@ -4,6 +4,7 @@ import RelaychainListener from "./listeners/relaychain"
 import ParachainListener from "./listeners/parachain"
 import createDebug from "debug"
 import types from "./types.json"
+import rpc from "./rpc.json"
 import { EventEmitter } from "events"
 import { fetchNonce } from "./util"
 
@@ -16,8 +17,8 @@ export default class Relayer extends EventEmitter {
         this.api = await ApiPromise.create({
             provider: new WsProvider(url),
             types: types as any,
+            rpc: rpc as any,
         })
-
         const keyring = new Keyring({ type: "sr25519" })
 
         this.signer =

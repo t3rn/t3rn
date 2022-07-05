@@ -8,7 +8,7 @@
         "id": "polk",
         "rpc": "wss://rpc.polkadot.io",
         "type": "substrate",
-        "subscanEndpoint": "https://api.subscan.io"
+        "subscanEndpoint": "https://polkadot.api.subscan.io"
     }],
     "parachains": []
 }
