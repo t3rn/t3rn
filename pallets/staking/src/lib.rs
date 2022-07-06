@@ -37,12 +37,13 @@ pub mod pallet {
     };
     use sp_std::collections::btree_map::BTreeMap;
     use t3rn_primitives::{
-        common::{OrderedSet, Range, RoundIndex},
+        common::{OrderedSet, Range, RoundIndex, BLOCKS_PER_DAY},
         staking::{
             Bond, CancelledScheduledStakingRequest, ExecutorSnapshot, ScheduledStakingRequest, StakerAdded,
-            StakingAction, ExecutorInfo
+            StakingAction, ExecutorInfo,   ScheduledConfigurationRequest, Fixtures as StakingFixtures
         },
         treasury::Treasury as TTreasury,
+        monetary::T3RN,
     };
 
     pub type BalanceOf<T> =
@@ -53,68 +54,69 @@ pub mod pallet {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         type Currency: Currency<Self::AccountId> + ReservableCurrency<Self::AccountId>;
 
-        /// Range for the target executor active set size.
-        /// The ideal is applied during genesis as default.
-        #[pallet::constant]
-        type ActiveSetSize: Get<Range<u32>>;
+        // WIP
+        // // /// Range for the target executor active set size.
+        // // /// The ideal is applied during genesis as default.
+        // // #[pallet::constant]
+        // // type ActiveSetSize: Get<Range<u32>>;
 
-        /// Protocol enforced maximum executor commission.
-        #[pallet::constant]
-        type MaxCommission: Get<Percent>;
+        // // /// Protocol enforced maximum executor commission.
+        // // #[pallet::constant]
+        // // type MaxCommission: Get<Percent>;
 
-        /// Protocol enforced maximum executor risk reward ratio.
-        #[pallet::constant]
-        type MaxRisk: Get<Percent>;
+        // // /// Protocol enforced maximum executor risk reward ratio.
+        // // #[pallet::constant]
+        // // type MaxRisk: Get<Percent>;
 
-        /// Minimum stake required for any candidate to be considered for the active set.
-        #[pallet::constant]
-        type MinExecutorBond: Get<BalanceOf<Self>>;
+        // /// Minimum stake required for any candidate to be considered for the active set.
+        // #[pallet::constant]
+        // type MinExecutorBond: Get<BalanceOf<Self>>;
 
-        /// Minimum stake required for any candidate to be considered as candidate.
-        #[pallet::constant]
-        type MinCandidateBond: Get<BalanceOf<Self>>;
+        // /// Minimum stake required for any candidate to be considered as candidate.
+        // #[pallet::constant]
+        // type MinCandidateBond: Get<BalanceOf<Self>>;
 
-        /// Minimum stake for any registered on-chain account to stake.
-        /// Requirement is checked on every staking action after the first.
-        #[pallet::constant]
-        type MinAtomicStake: Get<BalanceOf<Self>>;
+        // /// Minimum stake for any registered on-chain account to stake.
+        // /// Requirement is checked on every staking action after the first.
+        // #[pallet::constant]
+        // type MinAtomicStake: Get<BalanceOf<Self>>;
 
-        /// Minimum stake for any registered on-chain account to be a staker.
-        /// Requirement checked at first staking action.
-        #[pallet::constant]
-        type MinTotalStake: Get<BalanceOf<Self>>;
+        // /// Minimum stake for any registered on-chain account to be a staker.
+        // /// Requirement checked at first staking action.
+        // #[pallet::constant]
+        // type MinTotalStake: Get<BalanceOf<Self>>;
 
-        /// Maximum top stakes per candidate.
-        #[pallet::constant]
-        type MaxTopStakesPerCandidate: Get<u32>;
+        // /// Maximum top stakes per candidate.
+        // #[pallet::constant]
+        // type MaxTopStakesPerCandidate: Get<u32>;
 
-        /// Maximum bottom stakes per candidate.
-        #[pallet::constant]
-        type MaxBottomStakesPerCandidate: Get<u32>;
+        // /// Maximum bottom stakes per candidate.
+        // #[pallet::constant]
+        // type MaxBottomStakesPerCandidate: Get<u32>;
 
-        /// Maximum stakings per staker.
-        #[pallet::constant]
-        type MaxStakesPerStaker: Get<u32>;
+        // /// Maximum stakings per staker.
+        // #[pallet::constant]
+        // type MaxStakesPerStaker: Get<u32>;
 
-        /// Delay applied when changing an executor's configuration.
-        #[pallet::constant]
-        type ConfigureExecutorDelay: Get<u32>;
+        // /// Delay applied when changing an executor's configuration.
+        // #[pallet::constant]
+        // type ConfigureExecutorDelay: Get<u32>;
 
-        /// Leave candidates delay.
-        #[pallet::constant]
-        type LeaveCandidatesDelay: Get<u32>;
+        // /// Leave candidates delay.
+        // #[pallet::constant]
+        // type LeaveCandidatesDelay: Get<u32>;
 
-        /// Leave stakers delay.
-        #[pallet::constant]
-        type LeaveStakersDelay: Get<u32>;
+        // /// Leave stakers delay.
+        // #[pallet::constant]
+        // type LeaveStakersDelay: Get<u32>;
 
-        /// Candidate lower self bond delay.
-        #[pallet::constant]
-        type CandidateBondLessDelay: Get<u32>;
+        // /// Candidate lower self bond delay.
+        // #[pallet::constant]
+        // type CandidateBondLessDelay: Get<u32>;
 
-        /// Revoke stake delay.
-        #[pallet::constant]
-        type RevokeStakeDelay: Get<u32>;
+        // /// Revoke stake delay.
+        // #[pallet::constant]
+        // type RevokeStakeDelay: Get<u32>;
 
         /// Treasury round proveider.
         type Treasury: TTreasury<Self>;
@@ -140,7 +142,12 @@ pub mod pallet {
         OptionQuery,
     >;
 
-    /// Executors' commissions.
+    /// Protocol enforced staking fixtures.
+    #[pallet::storage]
+    #[pallet::getter(fn fixtures)]
+    pub type Fixtures<T: Config> = StorageValue<_, StakingFixtures<BalanceOf<T>>, ValueQuery>;
+
+    /// Executors' commission and risk rates.
     #[pallet::storage]
     #[pallet::getter(fn executor_config)]
     pub type ExecutorConfig<T: Config> = StorageMap<_, Identity, T::AccountId, ExecutorInfo, OptionQuery>;
@@ -156,11 +163,6 @@ pub mod pallet {
     #[pallet::getter(fn candidate_info)]
     pub(crate) type CandidateInfo<T: Config> =
         StorageMap<_, Twox64Concat, T::AccountId, CandidateMetadata<BalanceOf<T>>, OptionQuery>;
-
-    /// Effective size of the executor active set.
-    #[pallet::storage]
-    #[pallet::getter(fn active_set_size)]
-    pub type ActiveSetSize<T: Config> = StorageValue<_, Range<u32>, ValueQuery>;
 
     /// Active set of executors.
     #[pallet::storage]
@@ -193,7 +195,7 @@ pub mod pallet {
 
     /// Outstanding staking requests per executor.
     #[pallet::storage]
-    #[pallet::getter(fn stake_scheduled_requests)]
+    #[pallet::getter(fn scheduled_staking_requests)]
     pub(crate) type ScheduledStakingRequests<T: Config> = StorageMap<
         _,
         Blake2_128Concat,
@@ -204,13 +206,13 @@ pub mod pallet {
 
     /// Outstanding configuration change per executor.
     #[pallet::storage]
-    #[pallet::getter(fn stake_scheduled_requests)]
+    #[pallet::getter(fn scheduled_configration_requests)]
     pub(crate) type ScheduledConfigurationRequests<T: Config> = StorageMap<
         _,
         Blake2_128Concat,
         T::AccountId,
         ScheduledConfigurationRequest,
-        ValueQuery,
+        OptionQuery,
     >;
 
     /// Top stakes by executor candidate.
@@ -237,16 +239,32 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Sets the executor active set's size.
+        /// Sets all protocol enforced staking fixtures.
         #[pallet::weight(10_000)] //TODO
-        pub fn set_active_set_size(origin: OriginFor<T>, size: u32) -> DispatchResult {
+        pub fn set_fixtures(origin: OriginFor<T>, fixtures: StakingFixtures<BalanceOf<T>>) -> DispatchResult {
             ensure_root(origin)?;
 
-            let old = <ActiveSetSize<T>>::get();
+            ensure!(fixtures.are_valid(), <Error<T>>::FixturesCannotBeZero);
+        
+            <Fixtures<T>>::put(fixtures);
 
-            <ActiveSetSize<T>>::put(size);
-
-            Self::deposit_event(Event::ActiveSetSizeSet { old, new: size, });
+            Self::deposit_event(Event::FixturesConfigured {
+                active_set_size: fixtures.active_set_size,
+                max_commission: fixtures.max_commission,
+              max_risk: fixtures.max_risk,
+              min_executor_bond: fixtures.min_executor_bond,
+              min_candidate_bond: fixtures.min_candidate_bond,
+              min_atomic_stake: fixtures.min_atomic_stake,
+              min_total_stake: fixtures.min_total_stake,
+              max_top_stakes_per_candidate: fixtures.max_top_stakes_per_candidate,
+               max_bottom_stakes_per_candidate: fixtures.max_bottom_stakes_per_candidate,
+              max_stakes_per_staker: fixtures.max_stakes_per_staker,
+              configure_executor_delay: fixtures.configure_executor_delay,
+              leave_candidates_delay: fixtures.leave_candidates_delay,
+              leave_stakers_delay: fixtures.leave_stakers_delay,
+              candidate_bond_less_delay: fixtures.candidate_bond_less_delay,
+              revoke_stake_delay: fixtures.revoke_stake_delay,
+             });
 
             Ok(())
         }
@@ -282,17 +300,17 @@ pub mod pallet {
         /// The parameters must adhere to `T::MaxCommission` and `T::MaxRisk`.
         /// If this applies to an already configured executor `T::ConfigureExecutorDelay` is enforced.
         #[pallet::weight(10_000)] //TODO
-        pub fn configure_executor(origin: OriginFor<T>, commission: Percent, risk: Percent) {
-            let executor = ensure_signed(origin);
+        pub fn configure_executor(origin: OriginFor<T>, commission: Percent, risk: Percent)  -> DispatchResult  {
+            let executor = ensure_signed(origin)?;
+            let fixtures = <Fixtures<T>>::get();
 
-            ensure!(commmission.lte(<MaxCommission<T>>::get()), <Error<T>>::TooMuchCommission);
-
-            ensure!(risk.lte(<MaxRisk<T>>::get()), <Error<T>>::TooMuchRisk);
+            ensure!(!commission.gt(&fixtures.max_commission), <Error<T>>::TooMuchCommission);
+            ensure!(!risk.gt(&fixtures.max_risk), <Error<T>>::TooMuchRisk);
 
             // enforcing an executor config change delay to accomodate 
             // a grace period allowing stakers to be notified and react
             if <ExecutorConfig<T>>::contains_key(executor) {
-                let when_executable = <ConfigureExecutorDelay<T>>::get().saturating_add(<frame_system::Pallet<T>>::block_number().into());
+                let when_executable = T::Treasury::current_round().index.saturating_add(fixtures.configure_executor_delay);
 
                 <ScheduledConfigurationRequests<T>>::insert(executor, ScheduledConfigurationRequest {
                     when_executable,
@@ -315,17 +333,18 @@ pub mod pallet {
         // dispatched.
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
-        fn on_initialize(_n: T::BlockNumber) -> Weight {
-            let executable_requests = <ScheduledConfigurationRequests<T>>::iter()
-            .filter(|executor,req| req.when_executable == n)
-
+        fn on_initialize(n: T::BlockNumber) -> Weight {
+            // FIXME: hook this logic onto treasury's newround event and cmp round indices not blocknums!
             // scheduled configuration request have been validated when persisted
-            for (executor, req) in executable_requests {
+            for (executor, req) in 
+                <ScheduledConfigurationRequests<T>>::iter()
+                .filter(|(executor,req)| req.when_executable == n)
+            {
                 <ScheduledConfigurationRequests<T>>::remove(executor);
 
                 <ExecutorConfig<T>>::insert(executor, ExecutorInfo { commission: req.commission, risk: req.risk });
 
-                Self::deposit_event(Event::ExecutorConfigured {executor, commission, risk });
+                Self::deposit_event(Event::ExecutorConfigured {executor, commission: req.commission, risk: req.risk });
             }
 
             419 // TODO
@@ -470,13 +489,28 @@ pub mod pallet {
             account: T::AccountId,
             rewards: BalanceOf<T>,
         },
-        /// Set total selected candidates to this value.
-        ActiveSetSizeSet { old: u32, new: u32 },
         /// An executor configured its terms of operations.
         ExecutorConfigured {
             executor: T::AccountId,
             commission: Percent,
-            risk_ratio: Percent,
+            risk: Percent,
+        },
+        FixturesConfigured {
+             active_set_size: Range<u32>,
+               max_commission: Percent,
+             max_risk: Percent,
+             min_executor_bond: BalanceOf<T>,
+             min_candidate_bond: BalanceOf<T>,
+             min_atomic_stake: BalanceOf<T>,
+             min_total_stake: BalanceOf<T>,
+             max_top_stakes_per_candidate: u32,
+              max_bottom_stakes_per_candidate: u32,
+             max_stakes_per_staker: u32,
+             configure_executor_delay: u32,
+             leave_candidates_delay: u32,
+             leave_stakers_delay: u32,
+             candidate_bond_less_delay: u32,
+             revoke_stake_delay: u32,
         },
     }
 
@@ -503,23 +537,41 @@ pub mod pallet {
         TooLowStakeCountToLeaveStakers,
         CannotDelegateLessThanOrEqualToLowestBottomWhenFull,
         TooMuchCommission,
-        TooMuchRisk
+        TooMuchRisk,
+        FixturesCannotBeZero,
     }
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        pub active_set_size: u32,
-        pub max_commission: Percent,
-        pub max_risk: Percent,
+        pub fixtures: StakingFixtures<BalanceOf<T>>
     }
 
     #[cfg(feature = "std")]
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {
-                active_set_size: 3, // TODO
-                max_commission: Percent::from_percent(50), // TODO
-                max_risk: Percent::from_percent(50), // TODO
+                fixtures: StakingFixtures {
+                     active_set_size: Range {
+                        min: 1, //TODO
+                        ideal:3, //TODO
+                        max: 128 //TODO
+                     },
+                       max_commission: Percent::from_percent(50),//TODO
+                     max_risk: Percent::from_percent(50),//TODO
+                     min_executor_bond: 1000 * T3RN,//TODO
+                     min_candidate_bond: 1000 * T3RN,//TODO
+                     min_atomic_stake: 500 * T3RN,//TODO
+                     min_total_stake: 500 * T3RN,//TODO
+                     max_top_stakes_per_candidate: 300,//TODO
+                      max_bottom_stakes_per_candidate:50,//TODO
+                     max_stakes_per_staker: 100,//TODO
+                     // delays target a 14d term assuming a 6h round term
+                     configure_executor_delay: 56,//TODO
+                     leave_candidates_delay: 56,//TODO
+                     leave_stakers_delay: 56,//TODO
+                     candidate_bond_less_delay: 56,//TODO
+                     revoke_stake_delay: 56,//TODO
+                }
             }
         }
     }
@@ -527,9 +579,8 @@ pub mod pallet {
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
-            <ActiveSetSize<T>>::put(self.active_set_size);
-            <MaxCommission<T>>::put(self.max_commission);
-            <MaxRisk<T>>::put(self.max_risk);
+            <Fixtures<T>>::put(self.fixtures);
+            //TBC
         }
     }
 
@@ -764,7 +815,7 @@ pub mod pallet {
         	let mut candidates = <CandidatePool<T>>::get().0;
         	// order candidates by stake (least to greatest so requires `rev()`)
         	candidates.sort_by(|a, b| a.amount.cmp(&b.amount));
-        	let top_n = <ActiveSetSize<T>>::get().ideal as usize;
+        	let top_n = <Fixtures<T>>::get().active_set_size.ideal as usize;
         	// choose the top qualified candidates, ordered by stake
         	let mut executors = candidates
         		.into_iter()
@@ -783,7 +834,7 @@ pub mod pallet {
             let (mut executor_count, mut stake_count, mut total) =
             (0u32, 0u32, BalanceOf::<T>::zero());
 
-        if executors.is_empty() || executors.len() < <ActiveSetSize<T>>::get().min as usize {
+        if executors.is_empty() || executors.len() < <Fixtures<T>>::get().active_set_size.min as usize {
             // failed to select the minimum number of executors
             // => select executors from previous round
             let last_round = current_round.saturating_sub(1u32);
@@ -822,14 +873,14 @@ pub mod pallet {
             total = total.saturating_add(state.total_counted);
             let top_rewardable_stakes = Self::get_rewardable_stakers(&account);
 
-            <AtStake<T>>::insert(now, account, ExecutorSnapshot {
+            <AtStake<T>>::insert(current_round, account, ExecutorSnapshot {
                 bond: state.bond,
                 stakes: top_rewardable_stakes,
                 total: state.total_counted,
             });
 
             Self::deposit_event(Event::ExecutorChosen {
-                round: now,
+                round: current_round,
                 executor: account.clone(),
                 total_counted: state.total_counted,
             });
