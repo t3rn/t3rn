@@ -348,7 +348,7 @@ pub mod pallet {
         ExecutorChosen {
             executor: T::AccountId,
             round: RoundIndex,
-            total_stake: BalanceOf<T>,
+            total_counted: BalanceOf<T>,
         },
         /// Candidate requested to decrease a self bond.
         CandidateBondLessRequested {
@@ -517,7 +517,7 @@ pub mod pallet {
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
             Self {
-                active_set_size: 1, // TODO
+                active_set_size: 3, // TODO
                 max_commission: Percent::from_percent(50), // TODO
                 max_risk: Percent::from_percent(50), // TODO
             }
@@ -757,85 +757,88 @@ pub mod pallet {
         // 	}
         // }
 
-        /// Compute the top `TotalSelected` candidates in the CandidatePool and return
-        /// a vec of their AccountIds (in the order of selection)
-        pub fn compute_top_candidates() -> Vec<T::AccountId> {
-            let mut candidates = <CandidatePool<T>>::get().0;
-            // order candidates by stake (least to greatest so requires `rev()`)
-            candidates.sort_by(|a, b| a.amount.cmp(&b.amount));
-            let top_n = <ActiveSetSize<T>>::get().ideal as usize;
-            // choose the top TotalSelected qualified candidates, ordered by stake
-            let mut executors = candidates
-                .into_iter()
-                .rev()
-                .take(top_n)
-                .filter(|x| x.amount >= T::MinExecutorBond::get())
-                .map(|x| x.owner)
-                .collect::<Vec<T::AccountId>>();
-            executors.sort();
-            executors
+        /// Selects executors into the active set.
+        /// Best as in most cumulatively supported in terms of stake.
+        /// Returns [executor_count, stake_count, total staked].
+        pub fn select_active_set(current_round: RoundIndex) -> (u32, u32, BalanceOf<T>) {
+        	let mut candidates = <CandidatePool<T>>::get().0;
+        	// order candidates by stake (least to greatest so requires `rev()`)
+        	candidates.sort_by(|a, b| a.amount.cmp(&b.amount));
+        	let top_n = <ActiveSetSize<T>>::get().ideal as usize;
+        	// choose the top qualified candidates, ordered by stake
+        	let mut executors = candidates
+        		.into_iter()
+        		.rev()
+        		.take(top_n)
+        		.filter(|x| x.amount >= T::MinExecutorBond::get())
+        		.map(|x| x.owner)
+        		.collect::<Vec<T::AccountId>>();
+
+        	executors.sort();
+        	// executors
+
+
+            ////////// TBC
+
+            let (mut executor_count, mut stake_count, mut total) =
+            (0u32, 0u32, BalanceOf::<T>::zero());
+
+        if executors.is_empty() || executors.len() < <ActiveSetSize<T>>::get().min as usize {
+            // failed to select the minimum number of executors
+            // => select executors from previous round
+            let last_round = current_round.saturating_sub(1u32);
+            let mut total_per_candidate: BTreeMap<T::AccountId, BalanceOf<T>> = BTreeMap::new();
+            // set this round AtStake to last round AtStake
+            for (account, snapshot) in <AtStake<T>>::iter_prefix(last_round) {
+                executor_count = executor_count.saturating_add(1u32);
+                stake_count = stake_count.saturating_add(snapshot.stakes.len() as u32);
+                total = total.saturating_add(snapshot.total);
+                total_per_candidate.insert(account.clone(), snapshot.total);
+                <AtStake<T>>::insert(current_round, account, snapshot);
+            }
+            // `ActiveSet` remains unchanged from last round
+            // emit ExecutorChosen event for tools that use this event
+            for candidate in <ActiveSet<T>>::get() {
+                let snapshot_total = total_per_candidate
+                    .get(&candidate)
+                    .expect("all selected candidates have snapshots");
+            
+                Self::deposit_event(Event::ExecutorChosen {
+                    round: current_round,
+                    executor: candidate,
+                    total_counted: *snapshot_total,
+                })
+            }
+            return (executor_count, stake_count, total)
         }
 
-        /// Best as in most cumulatively supported in terms of stake
-        /// Returns [executor_count, stake_count, total staked]
-        fn select_top_candidates(now: RoundIndex) -> (u32, u32, BalanceOf<T>) {
-            let (mut executor_count, mut stake_count, mut total) =
-                (0u32, 0u32, BalanceOf::<T>::zero());
-            // choose the top TotalSelected qualified candidates, ordered by stake
-            let executors = Self::compute_top_candidates();
-            if executors.is_empty() {
-                // SELECTION FAILED TO SELECT >=1 COLLATOR => select executors from previous round
-                let last_round = now.saturating_sub(1u32);
-                let mut total_per_candidate: BTreeMap<T::AccountId, BalanceOf<T>> = BTreeMap::new();
-                // set this round AtStake to last round AtStake
-                for (account, snapshot) in <AtStake<T>>::iter_prefix(last_round) {
-                    executor_count = executor_count.saturating_add(1u32);
-                    stake_count = stake_count.saturating_add(snapshot.stakes.len() as u32);
-                    total = total.saturating_add(snapshot.total);
-                    total_per_candidate.insert(account.clone(), snapshot.total);
-                    <AtStake<T>>::insert(now, account, snapshot);
-                }
-                // `ActiveSet` remains unchanged from last round
-                // emit ExecutorChosen event for tools that use this event
-                for candidate in <ActiveSet<T>>::get() {
-                    let snapshot_total = total_per_candidate
-                        .get(&candidate)
-                        .expect("all selected candidates have snapshots");
-                    Self::deposit_event(Event::ExecutorChosen {
-                        round: now,
-                        executor: candidate,
-                        total_stake: *snapshot_total,
-                    })
-                }
-                return (executor_count, stake_count, total)
-            }
+        // snapshot exposure for round for weighting reward distribution
+        for account in executors.iter() {
+            let state = <CandidateInfo<T>>::get(account)
+                .expect("all candidates must have info");
 
-            // snapshot exposure for round for weighting reward distribution
-            for account in executors.iter() {
-                let state = <CandidateInfo<T>>::get(account)
-                    .expect("all members of CandidateQ must be candidates");
+            executor_count = executor_count.saturating_add(1u32);
+            stake_count = stake_count.saturating_add(state.stake_count);
+            total = total.saturating_add(state.total_counted);
+            let top_rewardable_stakes = Self::get_rewardable_stakers(&account);
 
-                executor_count = executor_count.saturating_add(1u32);
-                stake_count = stake_count.saturating_add(state.stake_count);
-                total = total.saturating_add(state.total_counted);
-                let snapshot_total = state.total_counted;
-                let top_rewardable_stakes = Self::get_rewardable_stakers(&account);
+            <AtStake<T>>::insert(now, account, ExecutorSnapshot {
+                bond: state.bond,
+                stakes: top_rewardable_stakes,
+                total: state.total_counted,
+            });
 
-                let snapshot = ExecutorSnapshot {
-                    bond: state.bond,
-                    stakes: top_rewardable_stakes,
-                    total: state.total_counted,
-                };
-                <AtStake<T>>::insert(now, account, snapshot);
-                Self::deposit_event(Event::ExecutorChosen {
-                    round: now,
-                    executor: account.clone(),
-                    total_stake: snapshot_total,
-                });
-            }
-            // insert canonical executor set
-            <ActiveSet<T>>::put(executors);
-            (executor_count, stake_count, total)
+            Self::deposit_event(Event::ExecutorChosen {
+                round: now,
+                executor: account.clone(),
+                total_counted: state.total_counted,
+            });
+        }
+
+        // insert canonical executor set
+        <ActiveSet<T>>::put(executors);
+
+        (executor_count, stake_count, total)
         }
 
         /// Apply the staker intent for revoke and decrease in order to build the
