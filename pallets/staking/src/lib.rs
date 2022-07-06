@@ -230,6 +230,11 @@ pub mod pallet {
     #[pallet::getter(fn tvl)]
     pub(crate) type Total<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
+    /// Total staked of a round's active set of executors.
+	#[pallet::storage]
+	#[pallet::getter(fn staked)]
+	pub type Staked<T: Config> = StorageMap<_, Twox64Concat, RoundIndex, BalanceOf<T>, ValueQuery>;
+
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Sets the executor active set's size.
