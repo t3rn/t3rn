@@ -1,4 +1,4 @@
-use crate::pallet::Config;
+use crate::pallet::{Config, Fixtures};
 use codec::{Decode, Encode};
 use frame_support::pallet_prelude::*;
 use sp_runtime::{
@@ -71,7 +71,7 @@ impl<AccountId, Balance: Copy + Ord + sp_std::ops::AddAssign + Zero + Saturating
     /// Return the capacity status for top stakes
     pub fn top_capacity<T: Config>(&self) -> CapacityStatus {
         match &self.stakes {
-            x if x.len() >= T::MaxTopStakesPerCandidate::get() as usize => CapacityStatus::Full,
+            x if x.len() >= <Fixtures<T>>::get().max_top_stakes_per_candidate as usize => CapacityStatus::Full,
             x if x.is_empty() => CapacityStatus::Empty,
             _ => CapacityStatus::Partial,
         }
@@ -80,7 +80,7 @@ impl<AccountId, Balance: Copy + Ord + sp_std::ops::AddAssign + Zero + Saturating
     /// Return the capacity status for bottom stakes
     pub fn bottom_capacity<T: Config>(&self) -> CapacityStatus {
         match &self.stakes {
-            x if x.len() >= T::MaxBottomStakesPerCandidate::get() as usize => CapacityStatus::Full,
+            x if x.len() >= <Fixtures<T>>::get().max_bottom_stakes_per_candidate  as usize => CapacityStatus::Full,
             x if x.is_empty() => CapacityStatus::Empty,
             _ => CapacityStatus::Partial,
         }

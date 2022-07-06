@@ -1,15 +1,16 @@
 use crate::{
     pallet::{
-        BalanceOf,     // ✔️
-        BottomStakes,  // ✔️
-        CandidateInfo, // ✔️
-        Config,        // ✔️
-        Error,         // ✔️
-        Event,         // ✔️
-        Pallet,        // ✔️
-        StakerInfo,    // ✔️
-        TopStakes,     // ✔️
-        Total,         // ✔️
+        BalanceOf,     
+        BottomStakes,  
+        CandidateInfo, 
+        Config,        
+        Error,         
+        Event,         
+        Pallet,        
+        StakerInfo,    
+        TopStakes,     
+        Total,         
+        Fixtures,
     },
     stakes::Stakes,
 };
@@ -233,7 +234,7 @@ impl<
     pub fn schedule_leave<T: Config>(&mut self) -> Result<(RoundIndex, RoundIndex), DispatchError> {
         ensure!(!self.is_leaving(), Error::<T>::CandidateAlreadyLeaving);
         let now = T::Treasury::current_round().index;
-        let when = now + T::LeaveCandidatesDelay::get();
+        let when = now + <Fixtures<T>>::get().leave_candidates_delay;
         self.status = ExecutorStatus::Leaving(when);
         Ok((now, when))
     }
@@ -289,17 +290,24 @@ impl<
             self.request.is_none(),
             Error::<T>::PendingCandidateRequestAlreadyExists
         );
+
         // ensure bond above min after decrease
         ensure!(self.bond > less, Error::<T>::CandidateBondBelowMin);
+
+        let fixtures = <Fixtures<T>>::get();
+
         ensure!(
-            self.bond - less >= T::MinCandidateBond::get().into(),
+            self.bond - less >= fixtures.min_candidate_bond.into(),
             Error::<T>::CandidateBondBelowMin
         );
-        let when_executable = T::Treasury::current_round().index + T::CandidateBondLessDelay::get();
+
+        let when_executable = T::Treasury::current_round().index + fixtures.candidate_bond_less_delay;
+
         self.request = Some(CandidateBondLessRequest {
             amount: less,
             when_executable,
         });
+
         Ok(when_executable)
     }
 
@@ -451,8 +459,7 @@ impl<
         let mut less_total_staked = None;
         let mut top_stakes =
             <TopStakes<T>>::get(candidate).expect("CandidateInfo existence => TopStakes existence");
-        let max_top_stakes_per_candidate = T::MaxTopStakesPerCandidate::get();
-        if top_stakes.stakes.len() as u32 == max_top_stakes_per_candidate {
+        if top_stakes.stakes.len() as u32 == <Fixtures<T>>::get().max_top_stakes_per_candidate {
             // pop lowest top stake
             let new_bottom_stake = top_stakes.stakes.pop().expect("");
             top_stakes.total = top_stakes.total.saturating_sub(new_bottom_stake.amount);
@@ -490,7 +497,7 @@ impl<
         // if bottom is full, kick the lowest bottom (which is expected to be lower than input
         // as per check)
         let increase_stake_count =
-            if bottom_stakes.stakes.len() as u32 == T::MaxBottomStakesPerCandidate::get() {
+            if bottom_stakes.stakes.len() as u32 == <Fixtures<T>>::get().max_bottom_stakes_per_candidate {
                 let lowest_bottom_to_be_kicked = bottom_stakes
                     .stakes
                     .pop()

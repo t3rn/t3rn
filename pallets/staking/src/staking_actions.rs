@@ -1,7 +1,7 @@
 use crate::{
     pallet::{
         BalanceOf, CandidateInfo, Config, Error, Event, Pallet, ScheduledStakingRequests, StakerInfo,
-        Total,
+        Total, Fixtures
     },
     subject_metadata::StakerMetadata,
 };
@@ -35,7 +35,7 @@ impl<T: Config> Pallet<T> {
             .get_bond_amount(&executor)
             .ok_or(<Error<T>>::NoSuchStake)?;
         let now = T::Treasury::current_round().index;
-        let when = now.saturating_add(T::RevokeStakeDelay::get());
+        let when = now.saturating_add(<Fixtures<T>>::get().revoke_stake_delay);
         scheduled_requests.push(ScheduledStakingRequest {
             staker: staker.clone(),
             action: StakingAction::Revoke(bonded_amount),
@@ -76,19 +76,20 @@ impl<T: Config> Pallet<T> {
             <Error<T>>::StakerBondBelowMin
         );
         let new_amount: BalanceOf<T> = (bonded_amount - decrease_amount).into();
-        ensure!(new_amount >= T::MinAtomicStake::get(), <Error<T>>::StakeBelowMin);
+        let fixtures = <Fixtures<T>>::get();
+        ensure!(new_amount >= fixtures.min_atomic_stake, <Error<T>>::StakeBelowMin);
 
         // Net Total is total after pending orders are executed
         let net_total = state.total.saturating_sub(state.less_total);
         // Net Total is always >= MinTotalStake
-        let max_subtracted_amount = net_total.saturating_sub(T::MinTotalStake::get().into());
+        let max_subtracted_amount = net_total.saturating_sub(<Fixtures<T>>::get().min_total_stake.into());
         ensure!(
             decrease_amount <= max_subtracted_amount,
             <Error<T>>::StakerBondBelowMin
         );
 
         let now = T::Treasury::current_round().index;
-        let when = now.saturating_add(T::RevokeStakeDelay::get());
+        let when = now.saturating_add(fixtures.revoke_stake_delay);
         scheduled_requests.push(ScheduledStakingRequest {
             staker: staker.clone(),
             action: StakingAction::Decrease(decrease_amount),
@@ -157,6 +158,8 @@ impl<T: Config> Pallet<T> {
             .ok_or(<Error<T>>::NoSuchPendingStakeRequest)?;
         let request = &scheduled_requests[request_idx];
 
+        let fixtures = <Fixtures<T>>::get();
+
         let now = T::Treasury::current_round().index;
         ensure!(
             request.when_executable <= now,
@@ -170,7 +173,7 @@ impl<T: Config> Pallet<T> {
                     true
                 } else {
                     ensure!(
-                        state.total.saturating_sub(T::MinTotalStake::get().into()) >= amount,
+                        state.total.saturating_sub(fixtures.min_total_stake.into()) >= amount,
                         <Error<T>>::StakerBondBelowMin
                     );
                     false
@@ -216,9 +219,9 @@ impl<T: Config> Pallet<T> {
                             bond.amount = bond.amount.saturating_sub(amount);
                             state.total = state.total.saturating_sub(amount);
                             let new_total: BalanceOf<T> = state.total.into();
-                            ensure!(new_total >= T::MinAtomicStake::get(), <Error<T>>::StakeBelowMin);
+                            ensure!(new_total >= fixtures.min_atomic_stake, <Error<T>>::StakeBelowMin);
                             ensure!(
-                                new_total >= T::MinTotalStake::get(),
+                                new_total >= fixtures.min_total_stake,
                                 <Error<T>>::StakerBondBelowMin
                             );
                             let mut executor_info = <CandidateInfo<T>>::get(&executor)
@@ -264,7 +267,7 @@ impl<T: Config> Pallet<T> {
         let mut state = <StakerInfo<T>>::get(&staker).ok_or(<Error<T>>::NoSuchStaker)?;
         let mut updated_scheduled_requests = vec![];
         let now = T::Treasury::current_round().index;
-        let when = now.saturating_add(T::LeaveStakersDelay::get());
+        let when = now.saturating_add(<Fixtures<T>>::get().leave_stakers_delay);
 
         // it is assumed that a multiple stakes to the same executor does not exist, else this
         // will cause a bug - the last duplicate stake update will be the only one applied.
