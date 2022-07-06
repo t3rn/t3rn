@@ -72,10 +72,8 @@ where
         client.clone(),
     )));
     io.extend_with(XdnsApi::to_delegate(Xdns::new(client.clone())));
-    io.extend_with(ContractsApi::to_delegate(Contracts::new(client)));
-    io.extend_with(CircuitPortalApi::to_delegate(CircuitPortal::new(
-        client.clone(),
-    )));
+    io.extend_with(ContractsApi::to_delegate(Contracts::new(client.clone())));
+    io.extend_with(CircuitPortalApi::to_delegate(CircuitPortal::new(client)));
 
     io
 }
