@@ -113,13 +113,21 @@ image_id=$( \
   awk '{ print $3 }' \
 )
 
-docker tag $image_id t3rn/srtool:1.60.0
+srtool_latest=$( \
+  curl -sSfL \
+  https://hub.docker.com/v2/repositories/paritytech/srtool/tags/?page_size=1000 \
+  | \
+  jq -r '.results | .[] | .name' \
+  | head -n1 \
+)
+
+docker tag $image_id t3rn/srtool:$srtool_latest
 
 echo "🏭 compiling runtime wasm..."
 
 report="$( \
   srtool build \
-    --image t3rn/srtool:1.60.0 \
+    --image t3rn/srtool \
     --profile release \
     --runtime-dir runtime/parachain \
     --package circuit-parachain-runtime \
