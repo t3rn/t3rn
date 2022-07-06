@@ -101,10 +101,25 @@ if [[ $new_author_version != $((old_author_version + 1)) ]]; then
   exit 1
 fi
 
+echo "🐳 monkey patching srtool-cli..."
+
+docker pull paritytech/srtool:1.57.0
+
+image_id=$( \
+  docker image ls \
+  | \
+  grep -P 'paritytech/srtool\s+1\.57\.0' \
+  | \
+  awk '{ print $3 }' \
+)
+
+docker tag $image_id t3rn/srtool:1.60.0
+
 echo "🏭 compiling runtime wasm..."
 
 report="$( \
   srtool build \
+    --image t3rn/srtool:1.60.0 \
     --profile release \
     --runtime-dir runtime/parachain \
     --package circuit-parachain-runtime \
