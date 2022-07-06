@@ -6,7 +6,7 @@ use crate::{
 use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::FindAuthor};
 use pallet_3vm_contracts::weights::WeightInfo;
 use pallet_3vm_evm::{
-    EnsureAddressNever, EnsureAddressRoot, EnsureAddressTruncated, HashedAddressMapping,
+    EnsureAddressNever, EnsureAddressRoot, EnsureAddressTruncated, StoredHashAddressMapping,
     SubstrateBlockHashMapping, ThreeVMCurrencyAdapter,
 };
 use pallet_3vm_evm_primitives::FeeCalculator;
@@ -177,7 +177,7 @@ parameter_types! {
 }
 
 impl pallet_3vm_evm::Config for Runtime {
-    type AddressMapping = HashedAddressMapping<BlakeTwo256>;
+    type AddressMapping = StoredHashAddressMapping<BlakeTwo256>;
     type BlockGasLimit = BlockGasLimit;
     type BlockHashMapping = SubstrateBlockHashMapping<Self>;
     type CallOrigin = EnsureAddressTruncated;
