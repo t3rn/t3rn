@@ -273,7 +273,10 @@ pub mod pallet {
             todo!();
         }
 
-        /// Configures an executor's economics. TODO: execute scheduled reqs mechanism potentially triggered during `on_finalize`
+        /// Configures an executor's economics.
+        /// The parameters must adhere to `T::MaxCommission` and `T::MaxRisk`.
+        /// If this applies to an already configured executor `T::ConfigureExecutorDelay` is enforced.
+        #[pallet::weight(10_000)] //TODO
         pub fn configure_executor(origin: OriginFor<T>, commission: Percent, risk: Percent) {
             let executor = ensure_signed(origin);
 
@@ -281,6 +284,8 @@ pub mod pallet {
 
             ensure!(risk.lte(<MaxRisk<T>>::get()), <Error<T>>::TooMuchRisk);
 
+            // enforcing an executor config change delay to accomodate 
+            // a grace period allowing stakers to be notified and react
             if <ExecutorConfig<T>>::contains_key(executor) {
                 let when_executable = <ConfigureExecutorDelay<T>>::get().saturating_add(<frame_system::Pallet<T>>::block_number().into());
 
@@ -290,7 +295,7 @@ pub mod pallet {
                     risk,
                 })
             } else {
-                <ExecutorConfig<T>>::insert(ExecutorInfo { commission, risk });
+                <ExecutorConfig<T>>::insert(executor, ExecutorInfo { commission, risk });
 
                 Self::deposit_event(Event::ExecutorConfigured {executor, commission, risk });
             }
@@ -306,7 +311,19 @@ pub mod pallet {
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
         fn on_initialize(_n: T::BlockNumber) -> Weight {
-            0
+            let executable_requests = <ScheduledConfigurationRequests<T>>::iter()
+            .filter(|executor,req| req.when_executable == n)
+
+            // scheduled configuration request have been validated when persisted
+            for (executor, req) in executable_requests {
+                <ScheduledConfigurationRequests<T>>::remove(executor);
+
+                <ExecutorConfig<T>>::insert(executor, ExecutorInfo { commission: req.commission, risk: req.risk });
+
+                Self::deposit_event(Event::ExecutorConfigured {executor, commission, risk });
+            }
+
+            419 // TODO
         }
 
         // `on_finalize` is executed at the end of block after all extrinsic are dispatched.
