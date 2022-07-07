@@ -37,10 +37,19 @@ pallet-3vm                           = { path = "../../3vm/pallets/3vm", default
 pallet-3vm-contracts                 = { path = "../../3vm/pallets/contracts", default-features = false, package = "pallet-contracts" }
 pallet-3vm-contracts-primitives      = { path = "../../3vm/primitives/contracts", default-features = false, package = "pallet-contracts-primitives" }
 pallet-3vm-contracts-rpc-runtime-api = { path = "../../3vm/rpc/contracts/runtime-api", default-features = false, package = "pallet-contracts-rpc-runtime-api" }
-pallet-3vm-evm                 = { path = "../../3vm/pallets/evm", default-features = false, package = "pallet-evm" }
-pallet-3vm-evm-primitives      = { path = "../../3vm/primitives/evm", default-features = false, package = "fp-evm" }
-#pallet-3vm-evm-rpc-runtime-api = { path = "../../3vm/rpc/evm/runtime-api", default-features = false, package = "pallet-contracts-rpc-runtime-api" } TODO
 
+pallet-3vm-evm                     = { path = "../../3vm/pallets/evm", default-features = false, package = "pallet-evm" }
+pallet-3vm-evm-primitives          = { path = "../../3vm/primitives/evm", default-features = false, package = "fp-evm" }
+pallet-evm-precompile-3vm-dispatch = { path = "../../3vm/pallets/evm/precompile/3vm-dispatch", default-features = false }
+pallet-evm-precompile-blake2       = { path = "../../3vm/pallets/evm/precompile/blake2", default-features = false }
+pallet-evm-precompile-bn128        = { path = "../../3vm/pallets/evm/precompile/bn128", default-features = false }
+pallet-evm-precompile-curve25519   = { path = "../../3vm/pallets/evm/precompile/curve25519", default-features = false }
+pallet-evm-precompile-dispatch     = { path = "../../3vm/pallets/evm/precompile/dispatch", default-features = false }
+pallet-evm-precompile-ed25519      = { path = "../../3vm/pallets/evm/precompile/ed25519", default-features = false }
+pallet-evm-precompile-modexp       = { path = "../../3vm/pallets/evm/precompile/modexp", default-features = false }
+pallet-evm-precompile-sha3fips     = { path = "../../3vm/pallets/evm/precompile/sha3fips", default-features = false }
+pallet-evm-precompile-simple       = { path = "../../3vm/pallets/evm/precompile/simple", default-features = false }
+#pallet-3vm-evm-rpc-runtime-api = { path = "../../3vm/rpc/evm/runtime-api", default-features = false, package = "pallet-contracts-rpc-runtime-api" } TODO
 
 # branch frontier-para uses polkadot-v0.9.19
 #pallet-evm-precompile-simple = { git = "https://github.com/t3rn/frontier", branch = "polkadot-v0.9.19", default-features = false }

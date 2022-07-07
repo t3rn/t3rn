@@ -6,12 +6,12 @@ use crate::{
 use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::FindAuthor};
 use pallet_3vm_contracts::weights::WeightInfo;
 use pallet_3vm_evm::{
-    EnsureAddressNever, EnsureAddressRoot, EnsureAddressTruncated, StoredHashAddressMapping,
+    EnsureAddressNever, EnsureAddressTruncated, GasWeightMapping, StoredHashAddressMapping,
     SubstrateBlockHashMapping, ThreeVMCurrencyAdapter,
 };
 use pallet_3vm_evm_primitives::FeeCalculator;
 use sp_core::{H160, U256};
-use sp_runtime::{traits::BlakeTwo256, ConsensusEngineId, RuntimeAppPublic};
+use sp_runtime::{ConsensusEngineId, RuntimeAppPublic};
 
 // Unit = the base number of indivisible units for balances
 const UNIT: Balance = 1_000_000_000_000;
@@ -164,10 +164,93 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
     }
 }
 
+const WEIGHT_PER_GAS: u64 = 20_000;
+
+pub struct FixedGasWeightMapping;
+impl GasWeightMapping for FixedGasWeightMapping {
+    fn gas_to_weight(gas: u64) -> Weight {
+        gas.saturating_mul(WEIGHT_PER_GAS)
+    }
+
+    fn weight_to_gas(weight: Weight) -> u64 {
+        weight.wrapping_div(WEIGHT_PER_GAS)
+    }
+}
+
 pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
     fn min_gas_price() -> U256 {
-        1.into() // TODO: do this right
+        100.into() // TODO: do this right, this is about what pallet-contracts costs
+    }
+}
+
+mod precompiles {
+    use pallet_3vm_evm::Precompile;
+    use pallet_3vm_evm_primitives::{Context, PrecompileResult, PrecompileSet};
+    use pallet_evm_precompile_modexp::Modexp;
+    use pallet_evm_precompile_sha3fips::Sha3FIPS256;
+    use pallet_evm_precompile_simple::{
+        ECRecover, ECRecoverPublicKey, Identity, Ripemd160, Sha256,
+    };
+    use sp_core::H160;
+    use sp_std::vec::Vec;
+
+    pub struct Precompiles<I: IntoIterator> {
+        inner: I,
+    }
+
+    impl<I> Precompiles<I>
+    where
+        I: IntoIterator<Item = u64>,
+        I: Copy,
+    {
+        pub fn new(inner: I) -> Self {
+            Self { inner }
+        }
+
+        pub fn used_addresses(&self) -> Vec<H160> {
+            self.inner.into_iter().map(|x| hash(x)).collect()
+        }
+    }
+    impl<I> PrecompileSet for Precompiles<I>
+    where
+        I: IntoIterator<Item = u64>,
+        I: Copy,
+    {
+        fn execute(
+            &self,
+            address: H160,
+            input: &[u8],
+            target_gas: Option<u64>,
+            context: &Context,
+            is_static: bool,
+        ) -> Option<PrecompileResult> {
+            match address {
+                // Ethereum precompiles :
+                a if a == hash(1) =>
+                    Some(ECRecover::execute(input, target_gas, context, is_static)),
+                a if a == hash(2) => Some(Sha256::execute(input, target_gas, context, is_static)),
+                a if a == hash(3) =>
+                    Some(Ripemd160::execute(input, target_gas, context, is_static)),
+                a if a == hash(4) => Some(Identity::execute(input, target_gas, context, is_static)),
+                a if a == hash(5) => Some(Modexp::execute(input, target_gas, context, is_static)),
+                // Non-Frontier specific nor Ethereum precompiles :
+                a if a == hash(1024) =>
+                    Some(Sha3FIPS256::execute(input, target_gas, context, is_static)),
+                a if a == hash(1025) => Some(ECRecoverPublicKey::execute(
+                    input, target_gas, context, is_static,
+                )),
+                _ => None,
+            }
+        }
+
+        fn is_precompile(&self, address: H160) -> bool {
+            self.used_addresses().contains(&address)
+        }
+    }
+
+    fn hash(a: u64) -> H160 {
+        H160::from_low_u64_be(a)
     }
 }
 
@@ -177,7 +260,7 @@ parameter_types! {
 }
 
 impl pallet_3vm_evm::Config for Runtime {
-    type AddressMapping = StoredHashAddressMapping<BlakeTwo256>;
+    type AddressMapping = StoredHashAddressMapping<Self>;
     type BlockGasLimit = BlockGasLimit;
     type BlockHashMapping = SubstrateBlockHashMapping<Self>;
     type CallOrigin = EnsureAddressTruncated;
@@ -186,12 +269,14 @@ impl pallet_3vm_evm::Config for Runtime {
     type Escrowed = AccountManager;
     type Event = Event;
     type FeeCalculator = FixedGasPrice;
+    // BaseFee pallet may be better from frontier TODO
     type FindAuthor = FindAuthorTruncated<Aura>;
     // TODO: this probably screws up something
-    type GasWeightMapping = ();
+    type GasWeightMapping = FixedGasWeightMapping;
     type OnChargeTransaction = ThreeVMCurrencyAdapter<Balances, ()>;
+    // type PrecompilesType = Precompiles<Runtime>;
+    // type PrecompilesValue = PrecompilesValue;
     type PrecompilesType = ();
-    // TODO: add precompiles
     type PrecompilesValue = ();
     type Runner = pallet_3vm_evm::runner::stack::Runner<Self>;
     type ThreeVm = ThreeVm;
