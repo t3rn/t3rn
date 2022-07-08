@@ -1,8 +1,8 @@
 use circuit_parachain_runtime::{
-    AccountId, AuraId, MultiFinalityVerifierDefaultConfig, MultiFinalityVerifierEthereumLikeConfig,
-    MultiFinalityVerifierGenericLikeConfig, MultiFinalityVerifierPolkadotLikeConfig,
-    MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, XDNSConfig,
-    EXISTENTIAL_DEPOSIT,
+    AccountId, AuraId, EvmConfig, MultiFinalityVerifierDefaultConfig,
+    MultiFinalityVerifierEthereumLikeConfig, MultiFinalityVerifierGenericLikeConfig,
+    MultiFinalityVerifierPolkadotLikeConfig, MultiFinalityVerifierSubstrateLikeConfig, Signature,
+    SudoConfig, XDNSConfig, EXISTENTIAL_DEPOSIT,
 };
 use cumulus_primitives_core::ParaId;
 use jsonrpc_runtime_client::{
@@ -471,6 +471,12 @@ pub fn rococo_config() -> ChainSpec {
     )
 }
 
+// This is the simplest bytecode to revert without returning any data.
+// We will pre-deploy it under all of our precompiles to ensure they can be called from
+// within contracts.
+// (PUSH1 0x00 PUSH1 0x00 REVERT)
+const REVERT_BYTECODE: [u8; 5] = [0x60, 0x00, 0x60, 0x00, 0xFD];
+
 fn testnet_genesis(
     invulnerables: Vec<(AccountId, AuraId)>,
     endowed_accounts: Vec<AccountId>,
@@ -556,5 +562,24 @@ fn testnet_genesis(
         orml_tokens: Default::default(),
         account_manager: Default::default(),
         three_vm: Default::default(), // TODO: genesis for this needs to be setup for the function pointers
+        evm: EvmConfig {
+            // We need _some_ code inserted at the precompile address so that
+            // the evm will actually call the address.
+            accounts: circuit_parachain_runtime::contracts_config::PrecompilesValue::get()
+                .used_addresses()
+                .into_iter()
+                .map(|addr| {
+                    (
+                        addr.into(),
+                        circuit_parachain_runtime::contracts_config::EvmGenesisAccount {
+                            nonce: Default::default(),
+                            balance: Default::default(),
+                            storage: Default::default(),
+                            code: REVERT_BYTECODE.into(),
+                        },
+                    )
+                })
+                .collect(),
+        },
     }
 }

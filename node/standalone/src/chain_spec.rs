@@ -1,5 +1,5 @@
 use circuit_standalone_runtime::{
-    AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig,
+    AccountId, AuraConfig, BalancesConfig, EvmConfig, GenesisConfig, GrandpaConfig,
     MultiFinalityVerifierDefaultConfig, MultiFinalityVerifierEthereumLikeConfig,
     MultiFinalityVerifierGenericLikeConfig, MultiFinalityVerifierPolkadotLikeConfig,
     MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, SystemConfig, XDNSConfig,
@@ -317,6 +317,12 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
     ))
 }
 
+// This is the simplest bytecode to revert without returning any data.
+// We will pre-deploy it under all of our precompiles to ensure they can be called from
+// within contracts.
+// (PUSH1 0x00 PUSH1 0x00 REVERT)
+const REVERT_BYTECODE: [u8; 5] = [0x60, 0x00, 0x60, 0x00, 0xFD];
+
 /// Configure initial storage state for FRAME modules.
 fn testnet_genesis(
     wasm_binary: &[u8],
@@ -387,6 +393,24 @@ fn testnet_genesis(
         orml_tokens: Default::default(),
         account_manager: Default::default(),
         three_vm: Default::default(), // TODO: genesis for this needs to be setup for the function pointers\
-        evm: Default::default(),      // TODO: genesis for me
+        evm: EvmConfig {
+            // We need _some_ code inserted at the precompile address so that
+            // the evm will actually call the address.
+            accounts: circuit_standalone_runtime::contracts_config::PrecompilesValue::get()
+                .used_addresses()
+                .into_iter()
+                .map(|addr| {
+                    (
+                        addr.into(),
+                        circuit_standalone_runtime::contracts_config::EvmGenesisAccount {
+                            nonce: Default::default(),
+                            balance: Default::default(),
+                            storage: Default::default(),
+                            code: REVERT_BYTECODE.into(),
+                        },
+                    )
+                })
+                .collect(),
+        },
     }
 }

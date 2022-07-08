@@ -13,6 +13,9 @@ use pallet_3vm_evm_primitives::FeeCalculator;
 use sp_core::{H160, U256};
 use sp_runtime::{ConsensusEngineId, RuntimeAppPublic};
 
+#[cfg(feature = "std")]
+pub use pallet_3vm_evm_primitives::GenesisAccount as EvmGenesisAccount;
+
 // Unit = the base number of indivisible units for balances
 const UNIT: Balance = 1_000_000_000_000;
 const MILLIUNIT: Balance = 1_000_000_000;
@@ -184,79 +187,19 @@ impl FeeCalculator for FixedGasPrice {
     }
 }
 
-mod precompiles {
-    use pallet_3vm_evm::Precompile;
-    use pallet_3vm_evm_primitives::{Context, PrecompileResult, PrecompileSet};
-    use pallet_evm_precompile_modexp::Modexp;
-    use pallet_evm_precompile_sha3fips::Sha3FIPS256;
-    use pallet_evm_precompile_simple::{
-        ECRecover, ECRecoverPublicKey, Identity, Ripemd160, Sha256,
-    };
-    use sp_core::H160;
-    use sp_std::vec::Vec;
-
-    pub struct Precompiles<I: IntoIterator> {
-        inner: I,
-    }
-
-    impl<I> Precompiles<I>
-    where
-        I: IntoIterator<Item = u64>,
-        I: Copy,
-    {
-        pub fn new(inner: I) -> Self {
-            Self { inner }
-        }
-
-        pub fn used_addresses(&self) -> Vec<H160> {
-            self.inner.into_iter().map(|x| hash(x)).collect()
-        }
-    }
-    impl<I> PrecompileSet for Precompiles<I>
-    where
-        I: IntoIterator<Item = u64>,
-        I: Copy,
-    {
-        fn execute(
-            &self,
-            address: H160,
-            input: &[u8],
-            target_gas: Option<u64>,
-            context: &Context,
-            is_static: bool,
-        ) -> Option<PrecompileResult> {
-            match address {
-                // Ethereum precompiles :
-                a if a == hash(1) =>
-                    Some(ECRecover::execute(input, target_gas, context, is_static)),
-                a if a == hash(2) => Some(Sha256::execute(input, target_gas, context, is_static)),
-                a if a == hash(3) =>
-                    Some(Ripemd160::execute(input, target_gas, context, is_static)),
-                a if a == hash(4) => Some(Identity::execute(input, target_gas, context, is_static)),
-                a if a == hash(5) => Some(Modexp::execute(input, target_gas, context, is_static)),
-                // Non-Frontier specific nor Ethereum precompiles :
-                a if a == hash(1024) =>
-                    Some(Sha3FIPS256::execute(input, target_gas, context, is_static)),
-                a if a == hash(1025) => Some(ECRecoverPublicKey::execute(
-                    input, target_gas, context, is_static,
-                )),
-                _ => None,
-            }
-        }
-
-        fn is_precompile(&self, address: H160) -> bool {
-            self.used_addresses().contains(&address)
-        }
-    }
-
-    fn hash(a: u64) -> H160 {
-        H160::from_low_u64_be(a)
-    }
-}
-
 parameter_types! {
     pub const ChainId: u64 = 42;
     pub BlockGasLimit: U256 = U256::from(u32::max_value());
+    pub PrecompilesValue: evm_precompile_util::Precompiles = evm_precompile_util::Precompiles::new(sp_std::vec![
+        (0_u64, evm_precompile_util::KnownPrecompile::ECRecover),
+        (1_u64, evm_precompile_util::KnownPrecompile::Sha256),
+        (2_u64, evm_precompile_util::KnownPrecompile::Ripemd160),
+        (3_u64, evm_precompile_util::KnownPrecompile::Identity),
+        (4_u64, evm_precompile_util::KnownPrecompile::Modexp),
+        (5_u64, evm_precompile_util::KnownPrecompile::Sha3FIPS256),
+        (6_u64, evm_precompile_util::KnownPrecompile::Sha3FIPS512),
+        (7_u64, evm_precompile_util::KnownPrecompile::ECRecoverPublicKey),
+    ].into_iter().collect());
 }
 
 impl pallet_3vm_evm::Config for Runtime {
@@ -271,14 +214,11 @@ impl pallet_3vm_evm::Config for Runtime {
     type FeeCalculator = FixedGasPrice;
     // BaseFee pallet may be better from frontier TODO
     type FindAuthor = FindAuthorTruncated<Aura>;
-    // TODO: this probably screws up something
     type GasWeightMapping = FixedGasWeightMapping;
     type OnChargeTransaction = ThreeVMCurrencyAdapter<Balances, ()>;
-    // type PrecompilesType = Precompiles<Runtime>;
-    // type PrecompilesValue = PrecompilesValue;
-    type PrecompilesType = ();
-    type PrecompilesValue = ();
+    type PrecompilesType = evm_precompile_util::Precompiles;
+    type PrecompilesValue = PrecompilesValue;
     type Runner = pallet_3vm_evm::runner::stack::Runner<Self>;
     type ThreeVm = ThreeVm;
-    type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
+    type WithdrawOrigin = EnsureAddressTruncated;
 }

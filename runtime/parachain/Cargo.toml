@@ -102,6 +102,8 @@ pallet-3vm-contracts-primitives      = { path = "../../3vm/primitives/contracts"
 pallet-3vm-contracts-rpc-runtime-api = { path = "../../3vm/rpc/contracts/runtime-api", default-features = false, package = "pallet-contracts-rpc-runtime-api" }
 pallet-3vm-evm                       = { path = "../../3vm/pallets/evm", default-features = false, package = "pallet-evm" }
 pallet-3vm-evm-primitives            = { path = "../../3vm/primitives/evm", default-features = false, package = "fp-evm" }
+evm-precompile-util          = { path = "../../3vm/pallets/evm/precompile/util", default-features = false, package = "precompile-util" }
+
 #pallet-3vm-evm-rpc-runtime-api = { path = "../../3vm/rpc/evm/runtime-api", default-features = false, package = "pallet-contracts-rpc-runtime-api" } TODO
 
 [features]
@@ -131,6 +133,9 @@ std = [
   "pallet-3vm-contracts/std",
   "pallet-3vm-contracts-primitives/std",
   "pallet-3vm-contracts-rpc-runtime-api/std",
+  "pallet-3vm-evm/std",
+  "pallet-3vm-evm-primitives/std",
+  "evm-precompile-util/std",
   "pallet-account-manager/std",
   "pallet-preimage/std",
   'pallet-scheduler/std',
