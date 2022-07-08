@@ -162,7 +162,6 @@ pub trait Xdns<T: frame_system::Config> {
         gateway_genesis: GatewayGenesisConfig,
         gateway_sys_props: GatewaySysProps,
         allowed_side_effects: Vec<AllowedSideEffect>,
-        force: bool,
     ) -> DispatchResult;
 
     fn allowed_side_effects(gateway_id: &ChainId)
