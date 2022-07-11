@@ -10,7 +10,7 @@ export default {
             subscan: "https://rococo.api.subscan.io",
             transferData: {
                 receiver: "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
-                fee: 1,
+                fee: 0,
             },
             registrationData: {
                 relaychain: null,

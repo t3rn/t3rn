@@ -18,7 +18,6 @@ export const parseTransferArgs = (args: string[], gatewayData: any) => {
     }
 
     const amount = transferAmount(parseFloat(args[4]), gatewayData.registrationData.gatewayConfig.decimals, gatewayData.registrationData.gatewayConfig.valueTypeSize);
-    console.log(signer.addressRaw)
     const sender = signer.address
     const receiver = args[5] ? args[5] :gatewayData.transferData.receiver ;
     const fee = args[6] ? args[6] :gatewayData.transferData.fee;

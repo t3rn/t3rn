@@ -1,6 +1,6 @@
 import{ ApiPromise, Keyring }from'@polkadot/api';
 
-export class CircuitRelayer {
+export class Sudo {
     circuit: ApiPromise;
     signer: any;
 
@@ -16,18 +16,6 @@ export class CircuitRelayer {
     sudoSignAndSend(transaction: any) {
         return new Promise((res, rej) => {
             return this.circuit.tx.sudo.sudo(transaction).signAndSend(this.signer, async result => {
-                if (result.toHuman().dispatchError !== undefined) { // The pallet doesn't return a proper error
-                    rej(result.toHuman().dispatchError)
-                } else if (result.isInBlock) {
-                    res(true)
-                }
-            })
-        })
-    }
-
-    signAndSend(transaction: any) {
-        return new Promise((res, rej) => {
-            return this.circuit.tx(transaction).signAndSend(this.signer, async result => {
                 if (result.toHuman().dispatchError !== undefined) { // The pallet doesn't return a proper error
                     rej(result.toHuman().dispatchError)
                 } else if (result.isInBlock) {
