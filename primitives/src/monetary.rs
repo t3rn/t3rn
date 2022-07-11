@@ -3,6 +3,7 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_runtime::{traits::CheckedAdd, Perbill, RuntimeDebug};
 
+pub const DECIMALS: u8 = 12;
 pub const MILLIT3RN: u64 = 1_000_000_000;
 pub const T3RN: u64 = 1_000_000_000_000;
 
