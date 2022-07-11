@@ -259,18 +259,18 @@ impl<
         self.status = ExecutorStatus::Active;
     }
 
-    pub fn bond_more<T: Config>(&mut self, who: T::AccountId, more: Balance) -> DispatchResult
+    pub fn bond_more<T: Config>(&mut self, who: T::AccountId, amount: Balance) -> DispatchResult
     where
         BalanceOf<T>: From<Balance>,
     {
-        T::Currency::reserve(&who, more.into())?;
-        let new_total = <Total<T>>::get().saturating_add(more.into());
+        T::Currency::reserve(&who, amount.into())?;
+        let new_total = <Total<T>>::get().saturating_add(amount.into());
         <Total<T>>::put(new_total);
-        self.bond = self.bond.saturating_add(more);
-        self.total_counted = self.total_counted.saturating_add(more);
+        self.bond = self.bond.saturating_add(amount);
+        self.total_counted = self.total_counted.saturating_add(amount);
         <Pallet<T>>::deposit_event(Event::CandidateBondedMore {
-            candidate: who.clone(),
-            amount: more.into(),
+            candidate: who,
+            amount: amount.into(),
             total_bond: self.bond.into(),
         });
         Ok(())
