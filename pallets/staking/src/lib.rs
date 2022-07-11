@@ -183,7 +183,7 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn at_stake)]
-    /// Snapshot of collator delegation stake at the start of the round
+    /// Snapshot of executor delegation stake at the start of the round
     pub type AtStake<T: Config> = StorageDoubleMap<
         _,
         Twox64Concat,
@@ -272,9 +272,10 @@ pub mod pallet {
         
         ///////////////////////////////////////////////////////////////////////
         // ExposesT::MinBond via pallet-executor-staking Config trait ✅
-        // implements call fn bond(...) & fn unbond(...) 
-        // implements call fn setup_executor( params: { commission_rate, !maybe! nominators_risk_ratio })
-        // if executor already registered schedule update for T::ScheduleDelay time (by default 14 days)
+        // implements call fn bond(...)  ✅
+        // & fn schedule_unbond(...) ✅
+        // implements call fn setup_executor( params: { commission_rate, !maybe! nominators_risk_ratio }) ✅
+        // if executor already registered schedule update for T::ScheduleDelay time (by default 14 days) ✅
         // implements updates call fn schedule_params_update( params ) ->
         // implements fn join_candidate() which makes executor being consider for an active set
         // implements fn schedule_leave_candidate() which makes executor not being consider for an active set anymore after T::ScheduleDelay (14 days)
@@ -284,24 +285,12 @@ pub mod pallet {
         // implements call fn schedule_unstake(executor: AccountId, stake: Balance) after T::ScheduleDelay (14 days)
         ///////////////////////////////////////////////////////////////////////
 
-
-        /// Increases an executor's bond.
-        #[pallet::weight(10_000)] //TODO
-        pub fn bond(origin: OriginFor<T>, amount:  BalanceOf<T>,) -> DispatchResult {
-            todo!();
-        }
-
-        /// Decreases an executor's bond.
-        #[pallet::weight(10_000)] //TODO
-        pub fn unbond(origin: OriginFor<T>, amount: BalanceOf<T>,) -> DispatchResult {
-            todo!();
-        }
-
         /// Configures an executor's economics.
         /// The parameters must adhere to `T::MaxCommission` and `T::MaxRisk`.
-        /// If this applies to an already configured executor `T::ConfigureExecutorDelay` is enforced.
+        /// If this applies to an already configured executor `T::ConfigureExecutorDelay` is enforced, 
+        /// in case of first time configuration it will be effective immediately.
         #[pallet::weight(10_000)] //TODO
-        pub fn configure_executor(origin: OriginFor<T>, commission: Percent, risk: Percent)  -> DispatchResult  {
+        pub fn schedule_configure_executor(origin: OriginFor<T>, commission: Percent, risk: Percent)  -> DispatchResult  {
             let executor = ensure_signed(origin)?;
             let fixtures = <Fixtures<T>>::get();
 
@@ -325,7 +314,96 @@ pub mod pallet {
             }
 
             Ok(())
+       }
+
+    /// Executes a scheduled excutor configuration request if due yet.
+    #[pallet::weight(10_000)] //TODO
+    pub fn execute_configure_executor(origin: OriginFor<T>)  -> DispatchResult {
+        let executor = ensure_signed(origin)?;
+        let current_round_index = T::Treasury::current_round().index;
+           let req = <ScheduledConfigurationRequests<T>>::get(&executor).ok_or(<Error<T>>::NoSuchConfigurationRequest)?;7
+           
+           ensure!(req.when_executable == current_round_index, <Error<T>>::ConfigurationRequestNotDueYet);
+
+           <ScheduledConfigurationRequests<T>>::remove(&executor);
+            // scheduled configuration request have been validated when persisted
+            <ExecutorConfig<T>>::insert(&executor, ExecutorInfo { commission: req.commission, risk: req.risk });
+
+            Self::deposit_event(Event::ExecutorConfigured {executor, commission: req.commission, risk: req.risk });
+
+        Ok(())
+    }
+
+        /// Increases an executor's self bond after having joined the candidate pool.
+        #[pallet::weight(10_000)] //TODO
+        pub fn bond(origin: OriginFor<T>, amount:  BalanceOf<T>,) -> DispatchResult {
+            let executor = ensure_signed(origin)?;
+
+			let mut state = <CandidateInfo<T>>::get(&executor).ok_or(Error::<T>::NoSuchCandidate)?;
+
+			state.bond_more::<T>(executor.clone(), amount)?;7
+
+			let (is_active, total_counted) = (state.is_active(), state.total_counted);
+
+			<CandidateInfo<T>>::insert(&executor, state);
+
+			if is_active {
+				Self::update_active(executor, total_counted);
+			}
+
+			Ok(().into())
         }
+
+        /// Request by an executor candidate to decrease its self bond.
+        #[pallet::weight(10_000)] //TODO
+		pub fn schedule_bond_less(
+			origin: OriginFor<T>,
+			amount: BalanceOf<T>,
+		) -> DispatchResultWithPostInfo {
+			let executor = ensure_signed(origin)?;
+
+			let mut state = <CandidateInfo<T>>::get(&executor).ok_or(Error::<T>::NoSuchCandidate)?;
+
+			let when = state.schedule_bond_less::<T>(amount)?;
+
+			<CandidateInfo<T>>::insert(&executor, state);
+
+			Self::deposit_event(Event::CandidateBondLessRequested {
+				candidate: executor,
+				amount:amount,
+				execute_round: when,
+			});
+
+			Ok(().into())
+		}
+
+        /// Executes a pending request to adjust an executor's candidate self bond.
+        #[pallet::weight(10_000)] //TODO
+		pub fn execute_bond_less(origin: OriginFor<T>, candidate: T::AccountId) -> DispatchResultWithPostInfo {
+			 ensure_signed(origin)?; // could reward if not candidate self
+        
+			let mut state = <CandidateInfo<T>>::get(&candidate).ok_or(Error::<T>::NoSuchCandidate)?;
+
+			state.execute_bond_less::<T>(candidate.clone())?;
+
+			<CandidateInfo<T>>::insert(&candidate, state);
+        
+			Ok(().into())
+		}
+
+        /// Cancel pending request to adjust the executor candidate self bond WIP
+        #[pallet::weight(10_000)] //TODO
+		pub fn cancel_candidate_bond_less(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+			let executor = ensure_signed(origin)?;
+
+			let mut state = <CandidateInfo<T>>::get(&executor).ok_or(Error::<T>::NoSuchCandidate)?;
+
+			state.cancel_bond_less::<T>(executor.clone())?;
+
+			<CandidateInfo<T>>::insert(&executor, state);
+
+			Ok(().into())
+		}
     }
 
     #[pallet::hooks]
@@ -334,21 +412,7 @@ pub mod pallet {
         // dispatched.
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
-        fn on_initialize(_n: T::BlockNumber) -> Weight {
-            let current_round_index = T::Treasury::current_round().index;
-            let executables = <ScheduledConfigurationRequests<T>>::iter()
-               .filter(|(_executor,req)| req.when_executable == current_round_index);
-
-            for (executor, req) in executables {
-                <ScheduledConfigurationRequests<T>>::remove(&executor);
-                // scheduled configuration request have been validated when persisted
-                <ExecutorConfig<T>>::insert(&executor, ExecutorInfo { commission: req.commission, risk: req.risk });
-
-                Self::deposit_event(Event::ExecutorConfigured {executor, commission: req.commission, risk: req.risk });
-            }
-
-            419 // TODO
-        }
+        fn on_initialize(_n: T::BlockNumber) -> Weight {}
 
         // `on_finalize` is executed at the end of block after all extrinsic are dispatched.
         fn on_finalize(_n: T::BlockNumber) {}
@@ -520,10 +584,12 @@ pub mod pallet {
         NoSuchStake,
         NoSuchPendingStakeRequest,
         NoSuchPendingCandidateRequest,
+        NoSuchConfigurationRequest,
         CandidateAlreadyLeaving,
         CandidateCannotLeaveYet,
         PendingStakeRequestAlreadyExists,
         PendingStakeRequestNotDueYet,
+        ConfigurationRequestNotDueYet,
         NoSuchStaker,
         StakeBelowMin,
         StakerBondBelowMin,
