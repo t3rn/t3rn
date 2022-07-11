@@ -28,11 +28,11 @@ pub mod pallet {
     };
     use frame_support::{
         pallet_prelude::*,
-        traits::{Currency, ReservableCurrency},
+        traits::{Currency, ReservableCurrency, ConstU128},
     };
     use frame_system::{ensure_root, pallet_prelude::*};
     use sp_runtime::{
-        traits::{Saturating, Zero},
+        traits::{Saturating, Zero, One},
         Percent,
     };
     use sp_std::collections::btree_map::BTreeMap;
@@ -43,8 +43,9 @@ pub mod pallet {
             StakingAction, ExecutorInfo,   ScheduledConfigurationRequest, Fixtures as StakingFixtures
         },
         treasury::Treasury as TTreasury,
-        monetary::T3RN,
+        monetary::DECIMALS,
     };
+    use core::ops::Mul;
 
     pub type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -246,7 +247,7 @@ pub mod pallet {
 
             ensure!(fixtures.are_valid(), <Error<T>>::FixturesCannotBeZero);
         
-            <Fixtures<T>>::put(fixtures);
+            <Fixtures<T>>::put(&fixtures);
 
             Self::deposit_event(Event::FixturesConfigured {
                 active_set_size: fixtures.active_set_size,
@@ -309,7 +310,7 @@ pub mod pallet {
 
             // enforcing an executor config change delay to accomodate 
             // a grace period allowing stakers to be notified and react
-            if <ExecutorConfig<T>>::contains_key(executor) {
+            if <ExecutorConfig<T>>::contains_key(&executor) {
                 let when_executable = T::Treasury::current_round().index.saturating_add(fixtures.configure_executor_delay);
 
                 <ScheduledConfigurationRequests<T>>::insert(executor, ScheduledConfigurationRequest {
@@ -318,7 +319,7 @@ pub mod pallet {
                     risk,
                 })
             } else {
-                <ExecutorConfig<T>>::insert(executor, ExecutorInfo { commission, risk });
+                <ExecutorConfig<T>>::insert(&executor, ExecutorInfo { commission, risk });
 
                 Self::deposit_event(Event::ExecutorConfigured {executor, commission, risk });
             }
@@ -334,14 +335,14 @@ pub mod pallet {
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
         fn on_initialize(_n: T::BlockNumber) -> Weight {
-            let r = T::Treasury::current_round().index;
+            let current_round_index = T::Treasury::current_round().index;
             let executables = <ScheduledConfigurationRequests<T>>::iter()
-               .filter(|(_executor,req)| req.when_executable == r);
+               .filter(|(_executor,req)| req.when_executable == current_round_index);
 
             for (executor, req) in executables {
-                <ScheduledConfigurationRequests<T>>::remove(executor);
+                <ScheduledConfigurationRequests<T>>::remove(&executor);
                 // scheduled configuration request have been validated when persisted
-                <ExecutorConfig<T>>::insert(executor, ExecutorInfo { commission: req.commission, risk: req.risk });
+                <ExecutorConfig<T>>::insert(&executor, ExecutorInfo { commission: req.commission, risk: req.risk });
 
                 Self::deposit_event(Event::ExecutorConfigured {executor, commission: req.commission, risk: req.risk });
             }
@@ -548,6 +549,8 @@ pub mod pallet {
     #[cfg(feature = "std")]
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
+            // let onethousand = ConstU128<{ 1000 * T3RN }>;
+            // let fivehundred = ConstU128<{ 500 * T3RN }>;
             Self {
                 fixtures: StakingFixtures {
                      active_set_size: Range {
@@ -557,10 +560,10 @@ pub mod pallet {
                      },
                        max_commission: Percent::from_percent(50),//TODO
                      max_risk: Percent::from_percent(50),//TODO
-                     min_executor_bond: 1000 * T3RN,//TODO
-                     min_candidate_bond: 1000 * T3RN,//TODO
-                     min_atomic_stake: 500 * T3RN,//TODO
-                     min_total_stake: 500 * T3RN,//TODO
+                    min_executor_bond: BalanceOf::<T>::one().mul((10 ^ DECIMALS).into()).mul(1000_u32.into()),//TODO
+                     min_candidate_bond: BalanceOf::<T>::one().mul((10 ^ DECIMALS).into()).mul(1000_u32.into()),//TODO
+                     min_atomic_stake: BalanceOf::<T>::one().mul((10 ^ DECIMALS).into()).mul(500_u32.into()),//TODO
+                     min_total_stake: BalanceOf::<T>::one().mul((10 ^ DECIMALS).into()).mul(500_u32.into()),//TODO
                      max_top_stakes_per_candidate: 300,//TODO
                       max_bottom_stakes_per_candidate:50,//TODO
                      max_stakes_per_staker: 100,//TODO
@@ -578,7 +581,7 @@ pub mod pallet {
     #[pallet::genesis_build]
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {
-            <Fixtures<T>>::put(self.fixtures);
+            <Fixtures<T>>::put(&self.fixtures);
             //TBC
         }
     }
@@ -607,6 +610,9 @@ pub mod pallet {
         // 	executors.sort();
         // 	executors
         // }
+
+        // /// Converts a u64 to a runtime's balance.
+        // fn u64_to_balance(input: u64) -> BalanceOf<T> { input.into() }
 
         /// Whether given identity is a staker.
         pub fn is_staker(acc: &T::AccountId) -> bool {
@@ -811,16 +817,17 @@ pub mod pallet {
         /// Best as in most cumulatively supported in terms of stake.
         /// Returns [executor_count, stake_count, total staked].
         pub fn select_active_set(current_round: RoundIndex) -> (u32, u32, BalanceOf<T>) {
+            let fixtures = <Fixtures<T>>::get();
         	let mut candidates = <CandidatePool<T>>::get().0;
         	// order candidates by stake (least to greatest so requires `rev()`)
         	candidates.sort_by(|a, b| a.amount.cmp(&b.amount));
-        	let top_n = <Fixtures<T>>::get().active_set_size.ideal as usize;
+        	let top_n = fixtures.active_set_size.ideal as usize;
         	// choose the top qualified candidates, ordered by stake
         	let mut executors = candidates
         		.into_iter()
         		.rev()
         		.take(top_n)
-        		.filter(|x| x.amount >= T::MinExecutorBond::get())
+        		.filter(|x| x.amount >= fixtures.min_executor_bond)
         		.map(|x| x.owner)
         		.collect::<Vec<T::AccountId>>();
 

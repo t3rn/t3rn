@@ -1,5 +1,6 @@
 use crate::common::{Range, RoundIndex};
 use codec::{Decode, Encode};
+use serde::{Deserialize, Serialize};
 use frame_support::pallet_prelude::*;
 use sp_runtime::{RuntimeDebug, Percent, traits::Zero};
 use sp_std::{cmp::{Ordering, PartialOrd}, prelude::*};
@@ -210,6 +211,7 @@ pub struct ScheduledConfigurationRequest {
 }
 
 /// Protocol enforced thresholds and delays for staking.
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo, PartialOrd, Ord, Default)]
 pub struct Fixtures<Balance> {
     pub active_set_size: Range<u32>,
