@@ -13,11 +13,11 @@ export class CircuitRelayer {
                 : keyring.addFromMnemonic(process.env.CIRCUIT_KEY)
     }
 
-    signAndSend(transaction: any) {
+    sudoSignAndSend(transaction: any) {
         return new Promise((res, rej) => {
             return this.circuit.tx.sudo.sudo(transaction).signAndSend(this.signer, async result => {
-                if (result.isError) {
-                    rej(JSON.stringify(result)) // this doesnt work yet!
+                if (result.isError) { // The pallet doesn't return a proper error
+                    rej(JSON.stringify(result))
                 } else if (result.isInBlock) {
                     res(true)
                 }

@@ -3,6 +3,7 @@ import types from "./types.json"
 import{ ApiPromise, Keyring, WsProvider }from'@polkadot/api';
 import { CircuitRelayer } from "./circuit";
 import { register } from "./register/register";
+import { setOperational } from "./operational";
 
 class CircuitCLI {
     circuit: ApiPromise;
@@ -34,8 +35,8 @@ class CircuitCLI {
                 const data = config.gateways.find(elem => elem.id === process.argv[3])
                 if(data) {
                     const tx = await register(this.circuit, data)
-                    this.circuitRelayer.signAndSend(tx)
-                        .then(() => console.log("Registration Success!"))
+                    this.circuitRelayer.sudoSignAndSend(tx)
+                        .then(() => console.log("Registered and Activated!"))
                         .catch(err => {
                             console.log(err)
                             console.log("Registration Failed!")
@@ -43,9 +44,25 @@ class CircuitCLI {
                 } else {
                     console.log(`Config for ${process.argv[3]} not found!`)
                 }
-
+                break;
             }
-
+            case "setOperational": {
+                const data = config.gateways.find(elem => elem.id === process.argv[3])
+                const hasArgument = !!process.argv[4];
+                if (data && hasArgument) {
+                    const argument = JSON.parse(process.argv[4]);
+                    const tx = await setOperational(this.circuit, data, argument)
+                    this.circuitRelayer.sudoSignAndSend(tx)
+                        .then(() => console.log("setOperational Completed!"))
+                        .catch(err => {
+                            console.log(err)
+                            console.log("setOperational Failed!")
+                        })
+                } else {
+                    console.log(`Config or argument for ${process.argv[3]} not found!`)
+                }
+                break
+            }
         }
     }
 }
