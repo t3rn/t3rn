@@ -8,6 +8,10 @@ export default {
             id: "roco",
             rpc: "wss://rococo-rpc.polkadot.io",
             subscan: "https://rococo.api.subscan.io",
+            transferData: {
+                receiver: "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+                fee: 1,
+            },
             registrationData: {
                 relaychain: null,
                 gatewayConfig: {

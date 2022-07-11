@@ -1,5 +1,5 @@
 import{ ApiPromise, Keyring, WsProvider } from'@polkadot/api';
-import { extractAuthoritySetFromFinalityProof } from "../utils/decoder";
+import { extractAuthoritySetFromFinalityProof } from "../../utils/decoder";
 
 const axios = require('axios').default;
 

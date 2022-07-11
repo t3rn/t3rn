@@ -16,8 +16,20 @@ export class CircuitRelayer {
     sudoSignAndSend(transaction: any) {
         return new Promise((res, rej) => {
             return this.circuit.tx.sudo.sudo(transaction).signAndSend(this.signer, async result => {
-                if (result.isError) { // The pallet doesn't return a proper error
-                    rej(JSON.stringify(result))
+                if (result.toHuman().dispatchError !== undefined) { // The pallet doesn't return a proper error
+                    rej(result.toHuman().dispatchError)
+                } else if (result.isInBlock) {
+                    res(true)
+                }
+            })
+        })
+    }
+
+    signAndSend(transaction: any) {
+        return new Promise((res, rej) => {
+            return this.circuit.tx(transaction).signAndSend(this.signer, async result => {
+                if (result.toHuman().dispatchError !== undefined) { // The pallet doesn't return a proper error
+                    rej(result.toHuman().dispatchError)
                 } else if (result.isInBlock) {
                     res(true)
                 }
