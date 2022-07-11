@@ -333,15 +333,14 @@ pub mod pallet {
         // dispatched.
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
-        fn on_initialize(n: T::BlockNumber) -> Weight {
-            // FIXME: hook this logic onto treasury's newround event and cmp round indices not blocknums!
-            // scheduled configuration request have been validated when persisted
-            for (executor, req) in 
-                <ScheduledConfigurationRequests<T>>::iter()
-                .filter(|(executor,req)| req.when_executable == n)
-            {
-                <ScheduledConfigurationRequests<T>>::remove(executor);
+        fn on_initialize(_n: T::BlockNumber) -> Weight {
+            let r = T::Treasury::current_round().index;
+            let executables = <ScheduledConfigurationRequests<T>>::iter()
+               .filter(|(_executor,req)| req.when_executable == r);
 
+            for (executor, req) in executables {
+                <ScheduledConfigurationRequests<T>>::remove(executor);
+                // scheduled configuration request have been validated when persisted
                 <ExecutorConfig<T>>::insert(executor, ExecutorInfo { commission: req.commission, risk: req.risk });
 
                 Self::deposit_event(Event::ExecutorConfigured {executor, commission: req.commission, risk: req.risk });
