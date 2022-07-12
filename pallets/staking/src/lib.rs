@@ -28,7 +28,7 @@ pub mod pallet {
     };
     use frame_support::{
         pallet_prelude::*,
-        traits::{Currency, ReservableCurrency, ConstU128},
+        traits::{Currency, ReservableCurrency,  LockIdentifier, LockableCurrency,tokens::WithdrawReasons},
     };
     use frame_system::{ensure_root, pallet_prelude::*};
     use sp_runtime::{
@@ -49,6 +49,9 @@ pub mod pallet {
 
     pub type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+
+        pub const EXECUTOR_LOCK_ID: LockIdentifier = *b"execstkl";
+        pub const STAKER_LOCK_ID: LockIdentifier = *b"stkrstkl";
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -276,7 +279,9 @@ pub mod pallet {
         // & fn schedule_unbond(...) ✅
         // implements call fn setup_executor( params: { commission_rate, !maybe! nominators_risk_ratio }) ✅
         // if executor already registered schedule update for T::ScheduleDelay time (by default 14 days) ✅
-        // implements updates call fn schedule_params_update( params ) ->
+        // implements updates call fn schedule_params_update( params ) -> ✅
+        // implements go_offline ✅
+        // implements go_online ✅
         // implements fn join_candidate() which makes executor being consider for an active set
         // implements fn schedule_leave_candidate() which makes executor not being consider for an active set anymore after T::ScheduleDelay (14 days)
         // implements fn self::active_set() that selects the top T::ActiveExecutors (make it 128)
@@ -336,7 +341,7 @@ pub mod pallet {
 
         /// Increases an executor's self bond after having joined the candidate pool.
         #[pallet::weight(10_000)] //TODO
-        pub fn bond(origin: OriginFor<T>, amount:  BalanceOf<T>,) -> DispatchResult {
+        pub fn bond_more(origin: OriginFor<T>, amount:  BalanceOf<T>,) -> DispatchResult {
             let executor = ensure_signed(origin)?;
 
 			let mut state = <CandidateInfo<T>>::get(&executor).ok_or(Error::<T>::NoSuchCandidate)?;
@@ -378,6 +383,7 @@ pub mod pallet {
 		}
 
         /// Executes a pending request to adjust an executor's candidate self bond.
+        /// Executable by anyone.
         #[pallet::weight(10_000)] //TODO
 		pub fn execute_bond_less(origin: OriginFor<T>, candidate: T::AccountId) -> DispatchResultWithPostInfo {
 			 ensure_signed(origin)?; // could reward if not candidate self
@@ -401,6 +407,286 @@ pub mod pallet {
 			state.cancel_bond_less::<T>(executor.clone())?;
 
 			<CandidateInfo<T>>::insert(&executor, state);
+
+			Ok(().into())
+		}
+
+        //
+        /// Join the set of collator candidates.
+        /// `candidate_count` must at least be the sie of the candidate pool.
+		// #[pallet::weight(<T as Config>::WeightInfo::join_candidates(*candidate_count))]
+        #[pallet::weight(10_000)] //TODO
+		pub fn join_candidates(
+			origin: OriginFor<T>,
+			bond: BalanceOf<T>,
+			candidate_count: u32,
+		) -> DispatchResultWithPostInfo {
+			let acc = ensure_signed(origin)?;
+
+			ensure!(!Self::is_candidate(&acc), Error::<T>::CandidateExists);
+			ensure!(!Self::is_staker(&acc), Error::<T>::StakerExists);
+
+            let fixtures = <Fixtures<T>>::get();
+
+			ensure!(
+				bond >= fixtures.min_candidate_bond,
+				Error::<T>::CandidateBondBelowMin
+			);
+
+			let mut candidates = <CandidatePool<T>>::get();
+			let old_count = candidates.0.len() as u32;
+
+			ensure!(
+				candidate_count >= old_count,
+				Error::<T>::TooLowCandidateCountWeightHintJoinCandidates
+			);
+			ensure!(
+				candidates.insert(Bond {
+					owner: acc.clone(),
+					amount: bond
+				}),
+				Error::<T>::CandidateExists
+			);
+			ensure!(
+				Self::get_executor_stakable_free_balance(&acc) >= bond,
+				Error::<T>::InsufficientBalance,
+			);
+
+			T::Currency::set_lock(COLLATOR_LOCK_ID, &acc, bond, WithdrawReasons::all());
+
+			let candidate = CandidateMetadata::new(bond);
+
+			<CandidateInfo<T>>::insert(&acc, candidate);
+
+            let empty_stakes: Stakes<T::AccountId, BalanceOf<T>> = Default::default();
+			
+            // insert empty top delegations
+			<TopStakes<T>>::insert(&acc, empty_stakes.clone());
+
+			// insert empty bottom delegations
+			<BottomStakes<T>>::insert(&acc, empty_stakes);
+
+			<CandidatePool<T>>::put(candidates);
+
+			let new_total = <Total<T>>::get().saturating_add(bond);
+
+			<Total<T>>::put(new_total);
+
+			Self::deposit_event(Event::CandidateJoined {
+				account: acc,
+				amount_locked: bond,
+				total_locked: new_total,
+			});
+
+			Ok(().into())
+		}
+
+		// #[pallet::weight(<T as Config>::WeightInfo::schedule_leave_candidates(*candidate_count))]
+		/// Request to leave the set of candidates. If successful, the account is immediately
+		/// removed from the candidate pool to prevent selection as a executor.
+        /// `candidate_count` must at least be the sie of the candidate pool.
+        #[pallet::weight(10_000)] //TODO
+		pub fn schedule_leave_candidates(
+			origin: OriginFor<T>,
+			candidate_count: u32,
+		) -> DispatchResultWithPostInfo {
+			let executor = ensure_signed(origin)?;
+
+			let mut state = <CandidateInfo<T>>::get(&executor).ok_or(Error::<T>::NoSuchCandidate)?;
+
+			let (now, when) = state.schedule_leave::<T>()?;
+
+			let mut candidates = <CandidatePool<T>>::get();
+
+			ensure!(
+				candidate_count >= candidates.0.len() as u32,
+				Error::<T>::TooLowCandidateCountToLeaveCandidates
+			);
+
+			if candidates.remove(&Bond::from_owner(executor.clone())) {
+				<CandidatePool<T>>::put(candidates);
+			}
+
+			<CandidateInfo<T>>::insert(&executor, state);
+
+			Self::deposit_event(Event::CandidateExitScheduled {
+				exit_allowed_round: now,
+				candidate: executor,
+				scheduled_exit: when,
+			});
+
+			Ok(().into())
+		}
+
+		// #[pallet::weight(
+		// 	<T as Config>::WeightInfo::execute_leave_candidates(*candidate_delegation_count)
+		// )]
+		/// Execute leave candidates request. Executable by anyone. WIP WIP WIP
+        #[pallet::weight(10_000)] //TODO
+		pub fn execute_leave_candidates(
+			origin: OriginFor<T>,
+			candidate: T::AccountId,
+			candidate_delegation_count: u32,
+		) -> DispatchResultWithPostInfo {
+			ensure_signed(origin)?;
+			let state = <CandidateInfo<T>>::get(&candidate).ok_or(Error::<T>::CandidateDNE)?;
+			ensure!(
+				state.delegation_count <= candidate_delegation_count,
+				Error::<T>::TooLowCandidateDelegationCountToLeaveCandidates
+			);
+			state.can_leave::<T>()?;
+			let return_stake = |bond: Bond<T::AccountId, BalanceOf<T>>| -> DispatchResult {
+				// remove delegation from delegator state
+				let mut delegator = DelegatorState::<T>::get(&bond.owner).expect(
+					"Collator state and delegator state are consistent. 
+						Collator state has a record of this delegation. Therefore, 
+						Delegator state also has a record. qed.",
+				);
+
+				if let Some(remaining) = delegator.rm_delegation::<T>(&candidate) {
+					Self::delegation_remove_request_with_state(
+						&candidate,
+						&bond.owner,
+						&mut delegator,
+					);
+
+					if remaining.is_zero() {
+						// we do not remove the scheduled delegation requests from other collators
+						// since it is assumed that they were removed incrementally before only the
+						// last delegation was left.
+						<DelegatorState<T>>::remove(&bond.owner);
+						T::Currency::remove_lock(DELEGATOR_LOCK_ID, &bond.owner);
+					} else {
+						<DelegatorState<T>>::insert(&bond.owner, delegator);
+					}
+				} else {
+					// TODO: review. we assume here that this delegator has no remaining staked
+					// balance, so we ensure the lock is cleared
+					T::Currency::remove_lock(DELEGATOR_LOCK_ID, &bond.owner);
+				}
+				Ok(())
+			};
+			// total backing stake is at least the candidate self bond
+			let mut total_backing = state.bond;
+			// return all top delegations
+			let top_delegations =
+				<TopStakes<T>>::take(&candidate).expect("CandidateInfo existence checked");
+			for bond in top_delegations.delegations {
+				return_stake(bond)?;
+			}
+			total_backing = total_backing.saturating_add(top_delegations.total);
+			// return all bottom delegations
+			let bottom_delegations =
+				<BottomStakes<T>>::take(&candidate).expect("CandidateInfo existence checked");
+			for bond in bottom_delegations.delegations {
+				return_stake(bond)?;
+			}
+			total_backing = total_backing.saturating_add(bottom_delegations.total);
+			// return stake to collator
+			Self::jit_ensure_collator_reserve_migrated(&candidate)?;
+			T::Currency::remove_lock(COLLATOR_LOCK_ID, &candidate);
+			<CandidateInfo<T>>::remove(&candidate);
+			<DelegationScheduledRequests<T>>::remove(&candidate);
+			<TopStakes<T>>::remove(&candidate);
+			<BottomStakes<T>>::remove(&candidate);
+			let new_total_staked = <Total<T>>::get().saturating_sub(total_backing);
+			<Total<T>>::put(new_total_staked);
+			Self::deposit_event(Event::CandidateLeft {
+				ex_candidate: candidate,
+				unlocked_amount: total_backing,
+				new_total_amt_locked: new_total_staked,
+			});
+			Ok(().into())
+		}
+		#[pallet::weight(<T as Config>::WeightInfo::cancel_leave_candidates(*candidate_count))]
+		/// Cancel open request to leave candidates
+		/// - only callable by collator account
+		/// - result upon successful call is the candidate is active in the candidate pool
+		pub fn cancel_leave_candidates(
+			origin: OriginFor<T>,
+			candidate_count: u32,
+		) -> DispatchResultWithPostInfo {
+			let collator = ensure_signed(origin)?;
+			let mut state = <CandidateInfo<T>>::get(&collator).ok_or(Error::<T>::CandidateDNE)?;
+			ensure!(state.is_leaving(), Error::<T>::CandidateNotLeaving);
+			state.go_online();
+			let mut candidates = <CandidatePool<T>>::get();
+			ensure!(
+				candidates.0.len() as u32 <= candidate_count,
+				Error::<T>::TooLowCandidateCountWeightHintCancelLeaveCandidates
+			);
+			ensure!(
+				candidates.insert(Bond {
+					owner: collator.clone(),
+					amount: state.total_counted
+				}),
+				Error::<T>::AlreadyActive
+			);
+			<CandidatePool<T>>::put(candidates);
+			<CandidateInfo<T>>::insert(&collator, state);
+			Self::deposit_event(Event::CancelledCandidateExit {
+				candidate: collator,
+			});
+			Ok(().into())
+		}
+        //
+
+        		/// Temporarily leave the set of executor candidates without unbonding.
+                #[pallet::weight(10_000)] //TODO
+		pub fn go_offline(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+			let executor = ensure_signed(origin)?;
+
+			let mut state = <CandidateInfo<T>>::get(&executor).ok_orgo_offl(Error::<T>::NoSuchCandidate)?;
+
+			ensure!(state.is_active(), Error::<T>::AlreadyOffline);
+
+			state.go_offline();
+
+			let mut candidates = <CandidatePool<T>>::get();
+
+			if candidates.remove(&Bond::from_owner(executor.clone())) {
+				<CandidatePool<T>>::put(candidates);
+			}
+
+			<CandidateInfo<T>>::insert(&executor, state);
+
+			Self::deposit_event(Event::CandidateWentOffline {
+				candidate: executor,
+			});
+
+			Ok(().into())
+		}
+
+		/// Rejoin the set of executor candidates if previously had called `go_offline`.
+        #[pallet::weight(10_000)] //TODO
+		pub fn go_online(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+			let executor = ensure_signed(origin)?;
+
+			let mut state = <CandidateInfo<T>>::get(&executor).ok_or(Error::<T>::NoSuchCandidate)?;
+
+			ensure!(!state.is_active(), Error::<T>::AlreadyActive);
+
+			ensure!(!state.is_leaving(), Error::<T>::CannotGoOnlineIfLeaving);
+
+			state.go_online();
+
+			let mut candidates = <CandidatePool<T>>::get();
+
+			ensure!(
+				candidates.insert(Bond {
+					owner: executor.clone(),
+					amount: state.total_counted
+				}),
+				Error::<T>::AlreadyActive
+			);
+
+			<CandidatePool<T>>::put(candidates);
+
+			<CandidateInfo<T>>::insert(&executor, state);
+
+			Self::deposit_event(Event::CandidateBackOnline {
+				candidate: executor,
+			});
 
 			Ok(().into())
 		}
@@ -553,6 +839,12 @@ pub mod pallet {
             account: T::AccountId,
             rewards: BalanceOf<T>,
         },
+        /// Executor joined candidate pool.
+        CandidateJoined {
+            account: T::AccountId,
+            amount_locked: BalanceOf<T>,
+            total_locked: BalanceOf<T>,
+        },
         /// An executor configured its terms of operations.
         ExecutorConfigured {
             executor: T::AccountId,
@@ -605,6 +897,14 @@ pub mod pallet {
         TooMuchCommission,
         TooMuchRisk,
         FixturesCannotBeZero,
+        AlreadyOffline,
+        AlreadyActive,
+        CannotGoOnlineIfLeaving,
+        CandidateExists,
+        StakerExists,
+        TooLowCandidateCountWeightHintJoinCandidates,
+        TooLowCandidateCountToLeaveCandidates,
+        InsufficientBalance,
     }
 
     #[pallet::genesis_config]
@@ -705,6 +1005,15 @@ pub mod pallet {
             });
             <CandidatePool<T>>::put(candidates);
         }
+
+		/// Returns an account's free balance which is not locked in executor staking.
+		pub fn get_executor_stakable_free_balance(acc: &T::AccountId) -> BalanceOf<T> {
+			let mut balance = T::Currency::free_balance(acc);
+			if let Some(info) = <CandidateInfo<T>>::get(acc) {
+				balance = balance.saturating_sub(info.bond);
+			}
+			balance
+		}
 
         /// Remove stake from candidate state
         /// Amount input should be retrieved from staker and it informs the storage lookups
