@@ -1,4 +1,4 @@
-import config from "./config"
+import config from "./config/setup"
 import types from "./config/types.json"
 import rpc from "./config/rpc.json"
 import{ ApiPromise, Keyring, WsProvider }from'@polkadot/api';
@@ -19,6 +19,8 @@ class CircuitCLI {
             types: types as any,
             rpc: rpc as any
         })
+        // @ts-ignore
+        console.log((await this.circuit.rpc.xdns.fetchRecords()).toHuman().xdns_records[0])
         this.sudo = new Sudo(this.circuit)
         const keyring = new Keyring({ type: "sr25519" })
         this.signer =

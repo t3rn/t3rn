@@ -122,8 +122,10 @@
         "gateway_id": "ChainId",
         "gateway_sys_props": "GatewaySysProps",
         "registrant": "Option<AccountId>",
-        "last_finalized": "Option<u64>"
+        "last_finalized": "Option<u64>",
+        "allowed_side_effects": "Vec<AllowedSideEffect>"
     },
+    "AllowedSideEffect": "[u8; 4]",
     "FetchXdnsRecordsResponse": {
         "xdns_records": "Vec<XdnsRecord<AccountId>>"
     },
