@@ -328,6 +328,7 @@ impl ExtBuilder {
                 token_decimals: 12,
             },
             vec![],
+            vec![],
         );
         let zero_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -342,6 +343,7 @@ impl ExtBuilder {
                 token_symbol: Encode::encode("ZERO"),
                 token_decimals: 0,
             },
+            vec![],
             vec![],
         );
         let gateway_xdns_record = <XdnsRecord<AccountId>>::new(
@@ -358,6 +360,7 @@ impl ExtBuilder {
                 token_decimals: 12,
             },
             vec![],
+            vec![],
         );
         let polkadot_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -373,6 +376,7 @@ impl ExtBuilder {
                 token_decimals: 10,
             },
             vec![],
+            vec![],
         );
         let kusama_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -387,6 +391,7 @@ impl ExtBuilder {
                 token_symbol: Encode::encode("KSM"),
                 token_decimals: 12,
             },
+            vec![],
             vec![],
         );
         self.known_xdns_records = vec![

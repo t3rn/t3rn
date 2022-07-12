@@ -79,6 +79,7 @@ fn test_register_gateway_with_default_polka_like_header() {
     let authorities = Some(vec![]);
     let authority_set_id = None;
     let allowed_side_effects = vec![];
+    let security_coordinates = vec![];
 
     let mut ext = TestExternalities::new_empty();
     ext.execute_with(|| {
@@ -95,6 +96,7 @@ fn test_register_gateway_with_default_polka_like_header() {
             first_header.encode(),
             authorities,
             authority_set_id,
+            security_coordinates,
             allowed_side_effects,
         ));
     });
@@ -138,6 +140,7 @@ fn test_register_parachain() {
     let authorities = Some(vec![]);
     let authority_set_id = None;
     let allowed_side_effects = vec![];
+    let security_coordinates = vec![];
 
     let mut ext = TestExternalities::new_empty();
     ext.execute_with(|| {
@@ -154,6 +157,7 @@ fn test_register_parachain() {
             first_header.encode(),
             authorities,
             authority_set_id,
+            security_coordinates,
             allowed_side_effects,
         ));
     });
@@ -191,6 +195,7 @@ fn test_register_gateway_overwrites_xdns_records() {
     let authorities = Some(vec![]);
     let authority_set_id = None;
     let allowed_side_effects = vec![];
+    let security_coordinates = vec![];
 
     let mut ext = TestExternalities::new_empty();
     ext.execute_with(|| {
@@ -204,6 +209,7 @@ fn test_register_gateway_overwrites_xdns_records() {
             gateway_type.clone(),
             gateway_genesis.clone(),
             gateway_sys_props.clone(),
+            security_coordinates.clone(),
             allowed_side_effects.clone(),
             false,
         ));
@@ -220,6 +226,7 @@ fn test_register_gateway_overwrites_xdns_records() {
             first_header.encode(),
             authorities,
             authority_set_id,
+            security_coordinates,
             allowed_side_effects,
         ));
     });

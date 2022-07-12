@@ -970,6 +970,7 @@ mod tests {
             Default::default(),
             gateway_sys_props,
             vec![],
+            vec![],
             false,
         );
 

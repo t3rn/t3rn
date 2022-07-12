@@ -77,7 +77,6 @@ pub use xbridges::{
 
 use crate::xbridges::read_cmp_latest_height_from_bridge;
 use sp_finality_grandpa::SetId;
-use sp_runtime::traits::Header;
 
 pub type AllowedSideEffect = [u8; 4];
 
@@ -206,9 +205,9 @@ pub mod pallet {
             first_header: Vec<u8>,
             authorities: Option<Vec<<T as frame_system::Config>::AccountId>>,
             authority_set_id: Option<SetId>,
+            security_coordinates: Vec<u8>,
             allowed_side_effects: Vec<AllowedSideEffect>,
         ) -> DispatchResultWithPostInfo {
-            // Retrieve sender of the transaction.
             <T as Config>::Xdns::add_new_xdns_record(
                 origin.clone(),
                 url,
@@ -219,9 +218,11 @@ pub mod pallet {
                 gateway_type.clone(),
                 gateway_genesis,
                 gateway_sys_props.clone(),
+                security_coordinates.clone(),
                 allowed_side_effects.clone(),
                 true, // force ~ overwrite existing XDNS record
             )?;
+            // Retrieve sender of the transaction.
 
             let res = match (gateway_abi.hasher, gateway_abi.block_number_type_size) {
                 (HasherAlgo::Blake2, 32) => init_bridge_instance::<T, DefaultPolkadotLikeGateway>(

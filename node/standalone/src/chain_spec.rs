@@ -121,6 +121,7 @@ async fn fetch_xdns_record_from_rpc(
             genesis_hash: client.genesis_hash.0.to_vec(),
         },
         gateway_sys_props,
+        vec![],
         vec![*b"tran"],
     ))
 }
