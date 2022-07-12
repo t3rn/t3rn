@@ -1366,6 +1366,7 @@ dependencies = [
  "pallet-mmr",
  "pallet-mmr-primitives",
  "pallet-multi-finality-verifier",
+ "pallet-portal",
  "pallet-randomness-collective-flip",
  "pallet-sudo",
  "pallet-timestamp",
@@ -7016,6 +7017,19 @@ dependencies = [
  "sp-runtime",
  "sp-staking",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-portal"
+version = "1.0.0-alpha.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "hash-db",
+ "parity-scale-codec 3.1.2",
+ "scale-info 2.1.1",
+ "sp-std",
+ "t3rn-primitives",
 ]
 
 [[package]]

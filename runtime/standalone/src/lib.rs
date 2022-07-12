@@ -339,6 +339,7 @@ construct_runtime!(
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
         CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>} = 107,
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
+        Portal: pallet_portal::{Pallet, Call, Storage, Event<T>} = 109,
 
         // 3VM
         Contracts: pallet_3vm_contracts = 119,

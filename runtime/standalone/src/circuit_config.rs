@@ -26,6 +26,11 @@ impl pallet_contracts_registry::Config for Runtime {
     type WeightInfo = pallet_contracts_registry::weights::SubstrateWeight<Runtime>;
 }
 
+impl pallet_portal::Config for Runtime {
+    type Event = Event;
+    type Xdns = XDNS;
+}
+
 parameter_types! {
     pub const PortalPalletId: PalletId = PalletId(*b"pal/port");
 }
