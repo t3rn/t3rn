@@ -66,9 +66,9 @@ const createAbiConfig = (circuiApi: ApiPromise, gatewayConfig: any) => {
 
 const createGatewaySysProps = (circuiApi: ApiPromise, gatewaySysProps: any) => {
     return circuiApi.createType('GatewaySysProps', [
-    circuiApi.createType('Bytes', gatewaySysProps.tokenSymbol),
-    circuiApi.createType('u8', gatewaySysProps.tokenDecimals),
     circuiApi.createType('u16', gatewaySysProps.ss58Format),
+    circuiApi.createType('Vec<u8>', gatewaySysProps.tokenSymbol),
+    circuiApi.createType('u8', gatewaySysProps.tokenDecimals),
   ]);
 }
 
