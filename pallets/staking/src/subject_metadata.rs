@@ -70,6 +70,82 @@ impl<
         }
     }
 
+    //
+    pub fn default_with_total(id: AccountId, amount: Balance) -> Self {
+		StakerMetadata {
+			id,
+			total: amount,
+			stakes: OrderedSet::from(vec![]),
+			less_total: Balance::zero(),
+			status: StakerStatus::Active,
+		}
+	}
+
+	pub fn total(&self) -> Balance {
+		self.total
+	}
+
+	pub fn total_add_if<T, F>(&mut self, amount: Balance, check: F) -> DispatchResult
+	where
+		T: Config,
+		T::AccountId: From<AccountId>,
+		BalanceOf<T>: From<Balance>,
+		F: Fn(Balance) -> DispatchResult,
+	{
+		let total = self.total.saturating_add(amount);
+
+		check(total)?;
+		
+        self.total = total;
+		
+        self.adjust_bond_lock::<T>(BondAdjust::Increase(amount))
+	}
+
+	pub fn total_sub_if<T, F>(&mut self, amount: Balance, check: F) -> DispatchResult
+	where
+		T: Config,
+		T::AccountId: From<AccountId>,
+		BalanceOf<T>: From<Balance>,
+		F: Fn(Balance) -> DispatchResult,
+	{
+		let total = self.total.saturating_sub(amount);
+		
+        check(total)?;
+		
+        self.total = total;
+		
+        self.adjust_bond_lock::<T>(BondAdjust::Decrease)?;
+		
+        Ok(())
+	}
+
+	pub fn total_add<T, F>(&mut self, amount: Balance) -> DispatchResult
+	where
+		T: Config,
+		T::AccountId: From<AccountId>,
+		BalanceOf<T>: From<Balance>,
+	{
+		self.total = self.total.saturating_add(amount);
+		
+        self.adjust_bond_lock::<T>(BondAdjust::Increase(amount))?;
+		
+        Ok(())
+	}
+
+	pub fn total_sub<T>(&mut self, amount: Balance) -> DispatchResult
+	where
+		T: Config,
+		T::AccountId: From<AccountId>,
+		BalanceOf<T>: From<Balance>,
+	{
+		self.total = self.total.saturating_sub(amount);
+		
+        self.adjust_bond_lock::<T>(BondAdjust::Decrease)?;
+		
+        Ok(())
+	}
+    //
+
     pub fn is_active(&self) -> bool {
         matches!(self.status, StakerStatus::Active)
     }
