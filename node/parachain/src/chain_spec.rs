@@ -452,7 +452,7 @@ pub fn development_config() -> ChainSpec {
                 PARACHAIN_ID.into(),
                 // Sudo account
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
-                seed_xdns_registry().unwrap_or_default(),
+                vec![],
                 standard_side_effects(),
                 vec![],
                 // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
@@ -584,7 +584,7 @@ pub fn rococo_config() -> ChainSpec {
                 PARACHAIN_ID.into(),
                 // Sudo
                 get_account_id_from_adrs("5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A"),
-                seed_xdns_registry().unwrap_or_default(),
+                vec![],
                 standard_side_effects(),
                 vec![],
                 // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])

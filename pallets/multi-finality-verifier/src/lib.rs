@@ -970,7 +970,6 @@ mod tests {
             Default::default(),
             gateway_sys_props,
             vec![],
-            false,
         );
 
         Pallet::<TestRuntime>::initialize_single(origin, init_data.clone()).map(|_| init_data)
