@@ -1,14 +1,8 @@
 const { ApiPromise, Keyring, WsProvider } = require("@polkadot/api")
 const { Bytes } = require("@polkadot/types")
-
-const { tmpdir } = require("os")
-const { join } = require("path")
-const { writeFile } = require("fs/promises")
+const { TypeRegistry, createType } = require('@polkadot/types');
 const { promisify } = require("util")
 const { exec: _exec } = require("child_process")
-
-const exec = promisify(_exec)
-
 const types = require("./types.json")
 
 const ROCOCO_CHAIN_ID = [114, 111, 99, 111]
@@ -17,19 +11,22 @@ async function sleep(ms) {
   return new Promise(res => setTimeout(res, ms))
 }
 
-async function grandpaDecode(justification) {
-  const tmpFile = join(tmpdir(), justification.toString().slice(0, 10))
+const registry = new TypeRegistry();
+const type = { type: 'GrandpaJustification<Header>' }
+const grandpaDecode = (data) => {
+    registry.register(type);
+    const res = createType(registry, type.type, data.toHex())
 
-  await writeFile(tmpFile, justification.toString())
 
-  return exec(
-    join(
-      __dirname,
-      "justification-decoder/target/release/justification-decoder"
-    ) +
-      " " +
-      tmpFile
-  ).then(cmd => JSON.parse(cmd.stdout))
+    return [res.commit.targetNumber.toNumber(), getAuthorities(res.commit.precommits)]
+}
+
+const getAuthorities = (precommits) => {
+    let res = [];
+    for(let i = 0; i < precommits.length; i++) {
+        res.push(precommits[i].id)
+    }
+    return res
 }
 
 function createGatewayABIConfig(
@@ -140,7 +137,7 @@ async function register(circuit, target) {
       async justification => {
         unsub()
 
-        const { blockNumber, authorities } = await grandpaDecode(justification)
+        const [ blockNumber, authorities ] = grandpaDecode(justification)
         console.log("justification block number", blockNumber)
 
         const rococoRegistrationHeader = await api.rpc.chain.getHeader(

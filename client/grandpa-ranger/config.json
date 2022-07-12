@@ -9,12 +9,5 @@
         "rpc": "wss://rococo-rpc.polkadot.io",
         "type": "substrate"
     }],
-    "parachains": [{
-        "name": "Basilisk",
-        "id": "basi",
-        "rpc": "wss://rpc-01.basilisk-rococo.hydradx.io",
-        "type": "substrate",
-        "parachainId": 2090,
-        "relaychainId": "roco"
-    }]
+    "parachains": []
 }
