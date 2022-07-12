@@ -282,12 +282,12 @@ pub mod pallet {
         // implements updates call fn schedule_params_update( params ) -> ✅
         // implements go_offline ✅
         // implements go_online ✅
-        // implements fn join_candidate() which makes executor being consider for an active set
-        // implements fn schedule_leave_candidate() which makes executor not being consider for an active set anymore after T::ScheduleDelay (14 days)
-        // implements fn self::active_set() that selects the top T::ActiveExecutors (make it 128)
+        // implements fn join_candidate() which makes executor being consider for an active set ✅
+        // implements fn schedule_leave_candidate() which makes executor not being consider for an active set anymore after T::ScheduleDelay (14 days) ✅
+        // implements fn self::active_set() that selects the top T::ActiveExecutors (make it 128) ✅
         // Stakers for Executors
-        // implements call fn stake(executor: AccountId, stake: Balance)
-        // implements call fn schedule_unstake(executor: AccountId, stake: Balance) after T::ScheduleDelay (14 days)
+        // implements call fn stake(executor: AccountId, stake: Balance) TODO
+        // implements call fn schedule_unstake(executor: AccountId, stake: Balance) after T::ScheduleDelay (14 days) TODO
         ///////////////////////////////////////////////////////////////////////
 
         /// Configures an executor's economics.
@@ -341,7 +341,7 @@ pub mod pallet {
 
         /// Increases an executor's self bond after having joined the candidate pool.
         #[pallet::weight(10_000)] //TODO
-        pub fn bond_more(origin: OriginFor<T>, amount:  BalanceOf<T>,) -> DispatchResult {
+        pub fn candidate_bond_more(origin: OriginFor<T>, amount:  BalanceOf<T>,) -> DispatchResult {
             let executor = ensure_signed(origin)?;
 
 			let mut state = <CandidateInfo<T>>::get(&executor).ok_or(Error::<T>::NoSuchCandidate)?;
@@ -361,7 +361,7 @@ pub mod pallet {
 
         /// Request by an executor candidate to decrease its self bond.
         #[pallet::weight(10_000)] //TODO
-		pub fn schedule_bond_less(
+		pub fn schedule_candidate_bond_less(
 			origin: OriginFor<T>,
 			amount: BalanceOf<T>,
 		) -> DispatchResultWithPostInfo {
@@ -385,7 +385,7 @@ pub mod pallet {
         /// Executes a pending request to adjust an executor's candidate self bond.
         /// Executable by anyone.
         #[pallet::weight(10_000)] //TODO
-		pub fn execute_bond_less(origin: OriginFor<T>, candidate: T::AccountId) -> DispatchResultWithPostInfo {
+		pub fn execute_candidate_bond_less(origin: OriginFor<T>, candidate: T::AccountId) -> DispatchResultWithPostInfo {
 			 ensure_signed(origin)?; // could reward if not candidate self
         
 			let mut state = <CandidateInfo<T>>::get(&candidate).ok_or(Error::<T>::NoSuchCandidate)?;
@@ -459,10 +459,10 @@ pub mod pallet {
 
             let empty_stakes: Stakes<T::AccountId, BalanceOf<T>> = Default::default();
 			
-            // insert empty top delegations
+            // insert empty top stakes
 			<TopStakes<T>>::insert(&acc, empty_stakes.clone());
 
-			// insert empty bottom delegations
+			// insert empty bottom stakes
 			<BottomStakes<T>>::insert(&acc, empty_stakes);
 
 			<CandidatePool<T>>::put(candidates);
@@ -540,7 +540,7 @@ pub mod pallet {
 			state.can_leave::<T>()?;
 
 			let return_stake = |bond: Bond<T::AccountId, BalanceOf<T>>| -> DispatchResult {
-				// remove delegation from staker state
+				// remove stake from staker state
 				let mut state = StakerInfo::<T>::get(&bond.owner).expect(
 					"Executor state and staker state are consistent. 
 						Executor state has a record of this stake. Therefore, 
@@ -576,7 +576,7 @@ pub mod pallet {
 			// total backing stake is at least the candidate self bond
 			let mut total_backing = state.bond;
 
-			// return all top delegations
+			// return all top stakes
 			let top_stakes =
 				<TopStakes<T>>::take(&candidate).expect("CandidateInfo existence checked");
 
@@ -586,7 +586,7 @@ pub mod pallet {
 
 			total_backing = total_backing.saturating_add(top_stakes.total);
 
-			// return all bottom delegations
+			// return all bottom stakes
 			let bottom_stakes =
 				<BottomStakes<T>>::take(&candidate).expect("CandidateInfo existence checked");
         
@@ -721,6 +721,216 @@ pub mod pallet {
 
 			Ok(().into())
 		}
+
+        /////
+	    /// If caller is not a staker and not a cexecutor, then join the set of stakers.
+		/// If caller is a staker, then makes stake to change their stake state.
+        // #[pallet::weight(
+		// 	<T as Config>::WeightInfo::delegate(
+		// 		*candidate_stake_count,
+		// 		*stake_count
+		// 	)
+		// )]
+        #[pallet::weight(10_000)] //TODO
+		pub fn stake(
+			origin: OriginFor<T>,
+			candidate: T::AccountId,
+			amount: BalanceOf<T>,
+			candidate_stake_count: u32,
+			stake_count: u32,
+		) -> DispatchResultWithPostInfo {
+			let staker = ensure_signed(origin)?;
+
+			// check that caller can reserve the amount before any changes to storage
+			ensure!(
+				Self::get_staker_stakable_free_balance(&staker) >= amount,
+				Error::<T>::InsufficientBalance
+			);
+
+            let fixtures = <Fixtures<T>>::get();
+
+			let mut staker_state = if let Some(mut state) = <StakerInfo<T>>::get(&staker)
+			{
+				// stake after first
+				ensure!(
+					amount >= fixtures.min_atomic_stake,
+					Error::<T>::StakeBelowMin
+				);
+				ensure!(
+					stake_count >= state.stakes.0.len() as u32,
+					Error::<T>::TooLowStakeCountToStake
+				);
+
+				ensure!(
+					(state.stakes.0.len() as u32) < fixtures.max_stakes_per_staker,
+					Error::<T>::MaxStakesExceeded
+				);
+
+				ensure!(
+					state.add_stake(Bond {
+						owner: candidate.clone(),
+						amount
+					}),
+					Error::<T>::AlreadyStakedCandidate
+				);
+
+				// Self::jit_ensure_staker_reserve_migrated(&staker)?;
+				state
+			} else {
+				// first stake
+				ensure!(
+					amount >= fixtures.min_atomic_stake,
+					Error::<T>::StakerBondBelowMin
+				);
+
+				ensure!(!Self::is_candidate(&staker), Error::<T>::CandidateExists);
+
+				StakerMetadata::new(staker.clone(), candidate.clone(), amount)
+			};
+            
+			let mut state = <CandidateInfo<T>>::get(&candidate).ok_or(Error::<T>::NoSuchCandidate)?;
+
+			ensure!(
+				candidate_stake_count >= state.stake_count,
+				Error::<T>::TooLowCandidateStakeCountToStake
+			);
+
+			let (staker_position, less_total_staked) = state.add_stake::<T>(
+				&candidate,
+				Bond {
+					owner: staker.clone(),
+					amount,
+				},
+			)?;
+
+			// TODO: causes redundant free_balance check
+			staker_state.adjust_bond_lock::<T>(BondAdjust::Increase(amount))?;
+
+			// only is_some if kicked the lowest bottom as a consequence of this new stake
+			let net_total_increase = if let Some(less) = less_total_staked {
+				amount.saturating_sub(less)
+			} else {
+				amount
+			};
+
+			let new_total_locked = <Total<T>>::get().saturating_add(net_total_increase);
+
+			<Total<T>>::put(new_total_locked);
+
+			<CandidateInfo<T>>::insert(&candidate, state);
+
+			<StakerInfo<T>>::insert(&staker, staker_state);
+
+			// <DelegatorReserveToLockMigrations<T>>::insert(&staker, true);
+
+			Self::deposit_event(Event::StakeAdded {
+				staker: staker,
+				amount_locked: amount,
+				candidate: candidate,
+				staker_position: staker_position,
+			});
+
+			Ok(().into())
+		}
+
+		/// Request to leave the set of stakers. If successful, the caller is scheduled to be
+		/// allowed to exit via a [DelegationAction::Revoke] towards all existing stakes.
+		/// Success forbids future stake requests until the request is invoked or cancelled. WIP WIP WIP
+        // #[pallet::weight(<T as Config>::WeightInfo::schedule_leave_stakers())]
+        #[pallet::weight(10_000)] //TODO
+		pub fn schedule_leave_stakers(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+			let staker = ensure_signed(origin)?;
+			Self::staker_schedule_revoke_all(staker)
+		}
+
+		// #[pallet::weight(<T as Config>::WeightInfo::execute_leave_stakers(*stake_count))]
+		/// Execute the right to exit the set of stakers and revoke all ongoing stakes.
+        #[pallet::weight(10_000)] //TODO
+		pub fn execute_leave_stakers(
+			origin: OriginFor<T>,
+			staker: T::AccountId,
+			stake_count: u32,
+		) -> DispatchResultWithPostInfo {
+			ensure_signed(origin)?;
+			Self::staker_execute_scheduled_revoke_all(staker, stake_count)
+		}
+		// #[pallet::weight(<T as Config>::WeightInfo::cancel_leave_stakers())]
+		/// Cancel a pending request to exit the set of stakers. Success clears the pending exit
+		/// request (thereby resetting the delay upon another `leave_stakers` call).
+        #[pallet::weight(10_000)] //TODO
+		pub fn cancel_leave_stakers(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+			let staker = ensure_signed(origin)?;
+			Self::staker_cancel_scheduled_revoke_all(staker)
+		}
+
+		// #[pallet::weight(<T as Config>::WeightInfo::schedule_revoke_stake())]
+		/// Request to revoke an existing stake. If successful, the stake is scheduled
+		/// to be allowed to be revoked via the `execute_stake_request` extrinsic.
+        #[pallet::weight(10_000)] //TODO
+		pub fn schedule_revoke_stake(
+			origin: OriginFor<T>,
+			collator: T::AccountId,
+		) -> DispatchResultWithPostInfo {
+			let staker = ensure_signed(origin)?;
+			Self::stake_schedule_revoke(collator, staker)
+		}
+
+		// #[pallet::weight(<T as Config>::WeightInfo::staker_bond_more())]
+		/// Bond more for stakers wrt a specific collator candidate.
+        #[pallet::weight(10_000)] //TODO
+		pub fn staker_bond_more(
+			origin: OriginFor<T>,
+			candidate: T::AccountId,
+			more: BalanceOf<T>,
+		) -> DispatchResultWithPostInfo {
+			let staker = ensure_signed(origin)?;
+
+			ensure!(
+				!Self::stake_request_revoke_exists(&candidate, &staker),
+				Error::<T>::PendingStakeRevoke
+			);
+
+			let mut state = <StakerInfo<T>>::get(&staker).ok_or(Error::<T>::NoSuchStaker)?;
+
+			state.increase_stake::<T>(candidate.clone(), more)?;
+            
+			Ok(().into())
+		}
+
+		// #[pallet::weight(<T as Config>::WeightInfo::schedule_staker_bond_less())]
+		/// Request bond less for stakers wrt a specific collator candidate.
+        #[pallet::weight(10_000)] //TODO
+		pub fn schedule_staker_bond_less(
+			origin: OriginFor<T>,
+			candidate: T::AccountId,
+			less: BalanceOf<T>,
+		) -> DispatchResultWithPostInfo {
+			let staker = ensure_signed(origin)?;
+			Self::stake_schedule_bond_decrease(candidate, staker, less)
+		}
+
+		// #[pallet::weight(<T as Config>::WeightInfo::execute_staker_bond_less())]
+		/// Execute pending request to change an existing stake
+        #[pallet::weight(10_000)] //TODO
+		pub fn execute_stake_request(
+			origin: OriginFor<T>,
+			staker: T::AccountId,
+			candidate: T::AccountId,
+		) -> DispatchResultWithPostInfo {
+			ensure_signed(origin)?; // we may want to reward caller if caller != staker
+			Self::stake_execute_scheduled_request(candidate, staker)
+		}
+
+		// #[pallet::weight(<T as Config>::WeightInfo::cancel_staker_bond_less())]
+		/// Cancel request to change an existing stake.
+        #[pallet::weight(10_000)] //TODO
+		pub fn cancel_stake_request(
+			origin: OriginFor<T>,
+			candidate: T::AccountId,
+		) -> DispatchResultWithPostInfo {
+			let staker = ensure_signed(origin)?;
+			Self::stake_cancel_request(candidate, staker)
+		}
     }
 
     #[pallet::hooks]
@@ -833,6 +1043,12 @@ pub mod pallet {
             staker: T::AccountId,
             unstaked: BalanceOf<T>,
         },
+        StakeAdded {
+            staker: T::AccountId,
+            amount_locked:BalanceOf<T>,
+            candidate: T::AccountId,
+            staker_position: StakerAdded<BalanceOf<T>>,
+        },
         /// Delegation revoked.
         StakeRevoked {
             staker: T::AccountId,
@@ -923,6 +1139,7 @@ pub mod pallet {
         CandidateNotLeaving,
         StakerCannotLeaveYet,
         PendingCandidateRequestAlreadyExists,
+        PendingStakeRevoke,
         CandidateBondBelowMin,
         PendingCandidateRequestNotDueYet,
         TooLowStakeCountToLeaveStakers,
@@ -939,7 +1156,11 @@ pub mod pallet {
         TooLowCandidateCountToLeaveCandidates,
         TooLowCandidateStakeCountToLeaveCandidates,
         TooLowCandidateCountWeightHintCancelLeaveCandidates,
+        TooLowStakeCountToStake,
+        TooLowCandidateStakeCountToStake,
         InsufficientBalance,
+        MaxStakesExceeded,
+        AlreadyStakedCandidate
     }
 
     #[pallet::genesis_config]
@@ -1047,6 +1268,17 @@ pub mod pallet {
 			if let Some(info) = <CandidateInfo<T>>::get(acc) {
 				balance = balance.saturating_sub(info.bond);
 			}
+			balance
+		}
+
+        /// Returns an account's free balance which is not locked in executor staking
+		pub fn get_staker_stakable_free_balance(acc: &T::AccountId) -> BalanceOf<T> {
+			let mut balance = T::Currency::free_balance(acc);
+
+			if let Some(state) = <StakerInfo<T>>::get(acc) {
+				balance = balance.saturating_sub(state.total());
+			}
+
 			balance
 		}
 
