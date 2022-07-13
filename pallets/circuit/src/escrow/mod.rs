@@ -185,7 +185,8 @@ pub mod test {
     fn escrow_transfer_execute_and_commit_work() {
         let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-        let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
+        let transfer_protocol_box =
+            Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
 
         let mut local_state = LocalState::new();
 
@@ -265,7 +266,8 @@ pub mod test {
     fn escrow_transfer_execute_and_revert_work() {
         let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-        let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
+        let transfer_protocol_box =
+            Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
 
         let mut local_state = LocalState::new();
 

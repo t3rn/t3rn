@@ -172,7 +172,8 @@ fn on_extrinsic_trigger_works_raw_insured_side_effect() {
 fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
+    let transfer_protocol_box =
+        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
 
     let mut local_state = LocalState::new();
     let valid_transfer_side_effect = produce_and_validate_side_effect(
@@ -302,7 +303,8 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
 fn on_extrinsic_trigger_validation_works_with_single_transfer_insured() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
+    let transfer_protocol_box =
+        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
 
     let mut local_state = LocalState::new();
 
@@ -344,7 +346,8 @@ fn on_extrinsic_trigger_validation_works_with_single_transfer_insured() {
 fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
+    let transfer_protocol_box =
+        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
 
     let mut local_state = LocalState::new();
 
@@ -446,7 +449,8 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
 fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
+    let transfer_protocol_box =
+        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
 
     let mut local_state = LocalState::new();
 
@@ -532,7 +536,8 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
 fn circuit_handles_insurance_deposit_for_transfers() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
+    let transfer_protocol_box =
+        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
 
     let mut local_state = LocalState::new();
 
@@ -694,7 +699,7 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
     let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
 
-    let swap_protocol_box = ExtBuilder::get_swap_protocol_box();
+    let swap_protocol_box = Box::new(t3rn_protocol::side_effects::standards::get_swap_interface());
 
     let mut local_state = LocalState::new();
 
@@ -805,7 +810,7 @@ fn circuit_handles_swap_with_insurance() {
     let ext = ExtBuilder::default();
 
     let mut local_state = LocalState::new();
-    let swap_protocol_box = ExtBuilder::get_swap_protocol_box();
+    let swap_protocol_box = Box::new(t3rn_protocol::side_effects::standards::get_swap_interface());
     let valid_swap_side_effect = produce_and_validate_side_effect(
         vec![
             (Type::Address(32), ArgVariant::A),       // caller
@@ -967,7 +972,8 @@ fn circuit_handles_add_liquidity_without_insurance() {
     let ext = ExtBuilder::default();
     let mut local_state = LocalState::new();
 
-    let add_liquidity_protocol_box = ExtBuilder::get_add_liquidity_protocol_box();
+    let add_liquidity_protocol_box =
+        Box::new(t3rn_protocol::side_effects::standards::get_add_liquidity_interface());
 
     let valid_add_liquidity_side_effect = produce_and_validate_side_effect(
         vec![
@@ -1058,7 +1064,8 @@ fn circuit_handles_add_liquidity_with_insurance() {
     let ext = ExtBuilder::default();
     let mut local_state = LocalState::new();
 
-    let add_liquidity_protocol_box = ExtBuilder::get_add_liquidity_protocol_box();
+    let add_liquidity_protocol_box =
+        Box::new(t3rn_protocol::side_effects::standards::get_add_liquidity_interface());
 
     let valid_add_liquidity_side_effect = produce_and_validate_side_effect(
         vec![
@@ -1335,7 +1342,8 @@ fn two_dirty_and_three_optimistic_transfers_are_allocated_to_3_steps_and_all_5_i
 
     let _origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
 
-    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
+    let transfer_protocol_box =
+        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
 
     let mut local_state = LocalState::new();
     let valid_transfer_side_effect_1 = produce_and_validate_side_effect(
@@ -1538,7 +1546,8 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_confirmed() {
 
     let _origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
 
-    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
+    let transfer_protocol_box =
+        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
 
     let mut local_state = LocalState::new();
     let valid_transfer_side_effect_1 = produce_and_validate_side_effect(
@@ -1560,7 +1569,7 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_confirmed() {
             (Type::Bytes(0), ArgVariant::A), // empty bytes instead of insurance
         ],
         &mut local_state,
-        transfer_protocol_box,
+        transfer_protocol_box.clone(),
     );
 
     let side_effects = vec![
@@ -1609,8 +1618,9 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
 
     let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
 
-    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
-    let swap_protocol_box = ExtBuilder::get_swap_protocol_box();
+    let transfer_protocol_box =
+        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
+    let swap_protocol_box = Box::new(t3rn_protocol::side_effects::standards::get_swap_interface());
 
     let mut local_state = LocalState::new();
     let valid_transfer_side_effect_1 = produce_and_validate_side_effect(
@@ -1632,7 +1642,7 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
             (Type::OptionalInsurance, ArgVariant::A),
         ],
         &mut local_state,
-        transfer_protocol_box,
+        transfer_protocol_box.clone(),
     );
 
     let valid_swap_side_effect = produce_and_validate_side_effect(
@@ -1777,8 +1787,9 @@ fn circuit_cancels_xtx_after_timeout() {
 
     let _origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
 
-    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
-    let _swap_protocol_box = ExtBuilder::get_swap_protocol_box();
+    let transfer_protocol_box =
+        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
+    let _swap_protocol_box = Box::new(t3rn_protocol::side_effects::standards::get_swap_interface());
 
     let mut local_state = LocalState::new();
     let valid_transfer_side_effect = produce_and_validate_side_effect(
