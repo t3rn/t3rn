@@ -52,12 +52,8 @@ if ! git tag --list | grep -Fq $tag; then
   exit 1
 fi
 
-if ! cargo install --list | grep -Fq 'srtool-cli v0.8.0'; then
-  echo "installing srtool-cli..."
-  cargo install \
-    --git https://github.com/chevdor/srtool-cli \
-    --tag v0.8.0
-fi
+echo "🏭 installing chevdor/subwasm v0.16.1 a tool to calculate blake2 of runtime blob runtime wasm..."
+cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.16.1
 
 set -Ee
 
@@ -103,24 +99,12 @@ if [[ $new_author_version != $((old_author_version + 1)) ]]; then
   exit 1
 fi
 
-echo "🏭 compiling runtime wasm..."
 
-report="$( \
-  srtool build \
-    --profile release \
-    --runtime-dir runtime/parachain \
-    --package circuit-parachain-runtime \
-    --app \
-    $root_dir \
-)"
-
-report="{${report#*\{}" # left trimming nonjson
-wasm="$root_dir/$(jq -r .runtimes.compressed.wasm <<<"$report")"
-hash=$( \
-  jq -r .runtimes.compressed.blake2_256 <<<"$report" \
-)
-
-cp $wasm $used_wasm
+echo "🏭 building runtime wasm..."
+cargo build --locked  --profile release --target-dir target/ --out-dir $(pwd)/out -Z unstable-options
+echo "🏭 calculating blake2 of runtime circuit_parachain_runtime.compact.compressed.wasm..."
+hash=$(subwasm -j info ./target/release/wbuild/circuit-parachain-runtime/circuit_parachain_runtime.compact.compressed.wasm  | jq -r .blake2_256)
+echo $hash
 
 read -n 1 -p "e2e-tested on rococo-local?
 runtime upgrade tested on rococo-local?
