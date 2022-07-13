@@ -14,7 +14,7 @@ jobs:
     if: ${{ !github.event.pull_request.draft }}
     steps:
       - name: Await checks
-        uses: fountainhead/action-wait-for-check
+        uses: fountainhead/action-wait-for-check@v1.0.0
         id: wait-for-build-test
         with:
           token: ${{ secrets.GH_PAT }}
