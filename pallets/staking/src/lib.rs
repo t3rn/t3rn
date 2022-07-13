@@ -233,7 +233,7 @@ pub mod pallet {
 
     /// Total capital locked by this staking pallet.
     #[pallet::storage]
-    #[pallet::getter(fn tvl)]
+    #[pallet::getter(fn total_value_locked)]
     pub(crate) type Total<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
     /// Total staked of a round's active set of executors.
