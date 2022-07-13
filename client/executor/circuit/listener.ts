@@ -1,4 +1,3 @@
-// import "@t3rn/types"
 import { EventEmitter } from "events"
 import { ApiPromise, WsProvider } from "@polkadot/api"
 import { SideEffect } from "../utils/types"
