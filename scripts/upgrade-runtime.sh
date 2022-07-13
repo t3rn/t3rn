@@ -11,9 +11,11 @@ fi
 trap 'cleanup' EXIT
 
 cleanup() {
-  rm -rf node_modules
-  rm -f package.json package-lock.json
-  rm $used_wasm
+  rm -rf $root_dir/scripts/node_modules
+  rm -f \
+    $root_dir/scripts/package.json \
+    $root_dir/scripts/package-lock.json \
+    $used_wasm
 }
 
 get_finalized_head(){
@@ -108,7 +110,7 @@ report="$( \
     --profile release \
     --runtime-dir runtime/parachain \
     --package circuit-parachain-runtime \
-    --json \
+    --app \
     $root_dir \
 )"
 
