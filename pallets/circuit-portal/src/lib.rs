@@ -220,7 +220,6 @@ pub mod pallet {
                 gateway_genesis,
                 gateway_sys_props.clone(),
                 allowed_side_effects.clone(),
-                true, // force ~ overwrite existing XDNS record
             )?;
 
             let res = match (gateway_abi.hasher, gateway_abi.block_number_type_size) {
@@ -556,6 +555,7 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
         match gateway_xdns_record.gateway_vendor {
             GatewayVendor::Ethereum => return Err("Read latest target height - unhandled vendor"),
             GatewayVendor::Substrate => {
+                log::info!("gateway_id: {:?}", gateway_id);
                 match gateway_xdns_record.gateway_abi.block_number_type_size {
                     32 => {
                         let current_height = read_cmp_latest_height_from_bridge::<

@@ -7465,6 +7465,7 @@ dependencies = [
  "parity-scale-codec 3.1.2",
  "sp-api",
  "sp-runtime",
+ "t3rn-primitives",
 ]
 
 [[package]]

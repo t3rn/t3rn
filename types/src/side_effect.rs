@@ -95,7 +95,6 @@ mod tests {
     type BlockNumber = u64;
     type BalanceOf = u128;
     type AccountId = AccountId32;
-    type Hashing = sp_runtime::traits::BlakeTwo256;
 
     #[test]
     fn successfully_creates_empty_side_effect() {
