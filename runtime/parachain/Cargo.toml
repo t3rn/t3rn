@@ -86,9 +86,9 @@ t3rn-primitives                   = { default-features = false, path = "../../pr
 t3rn-protocol                     = { default-features = false, path = "../../protocol" }
 
 # t3rn pallets
-pallet-3vm-contracts                 = { path = "../../3vm/pallets/wasm-contracts", default-features = false, package = "pallet-wasm-contracts" }
-pallet-3vm-contracts-primitives      = { path = "../../3vm/pallets/wasm-contracts/common", default-features = false, package = "pallet-contracts-primitives" }
-pallet-3vm-contracts-rpc-runtime-api = { path = "../../3vm/pallets/wasm-contracts/rpc/runtime-api", default-features = false, package = "pallet-contracts-rpc-runtime-api" }
+pallet-3vm-contracts                 = { git = "https://github.com/t3rn/3vm.git", rev = "ac1f77a061e941c0e398fc61854aa6a0d19d26db", default-features = false, package = "pallet-wasm-contracts" }
+pallet-3vm-contracts-primitives      = { git = "https://github.com/t3rn/3vm.git", rev = "ac1f77a061e941c0e398fc61854aa6a0d19d26db", default-features = false, package = "pallet-contracts-primitives" }
+pallet-3vm-contracts-rpc-runtime-api = { git = "https://github.com/t3rn/3vm.git", rev = "ac1f77a061e941c0e398fc61854aa6a0d19d26db", default-features = false, package = "pallet-contracts-rpc-runtime-api" }
 pallet-circuit-portal-rpc-runtime-api     = { path = "../../pallets/circuit-portal/rpc/runtime-api", default-features = false }
 
 pallet-account-manager               = { path = "../../pallets/account-manager", default-features = false }
