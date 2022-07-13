@@ -319,7 +319,7 @@ impl ExtBuilder {
             *b"circ",
             None,
             Default::default(),
-            GatewayVendor::Substrate,
+            GatewayVendor::PolkadotLike,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
             GatewaySysProps {
@@ -335,7 +335,7 @@ impl ExtBuilder {
             [0u8, 0u8, 0u8, 0u8],
             None,
             Default::default(),
-            GatewayVendor::Substrate,
+            GatewayVendor::PolkadotLike,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
             GatewaySysProps {
@@ -351,7 +351,7 @@ impl ExtBuilder {
             *b"gate",
             None,
             Default::default(),
-            GatewayVendor::Substrate,
+            GatewayVendor::PolkadotLike,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
             GatewaySysProps {
@@ -367,7 +367,7 @@ impl ExtBuilder {
             *b"pdot",
             None,
             Default::default(),
-            GatewayVendor::Substrate,
+            GatewayVendor::PolkadotLike,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
             GatewaySysProps {
@@ -383,7 +383,7 @@ impl ExtBuilder {
             *b"ksma",
             None,
             Default::default(),
-            GatewayVendor::Substrate,
+            GatewayVendor::PolkadotLike,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
             GatewaySysProps {

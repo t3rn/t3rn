@@ -113,7 +113,7 @@ async fn fetch_xdns_record_from_rpc(
         chain_id,
         parachain_info,
         Default::default(),
-        GatewayVendor::Substrate,
+        GatewayVendor::PolkadotLike,
         GatewayType::ProgrammableExternal(0),
         GatewayGenesisConfig {
             modules_encoded: Some(modules_vec),

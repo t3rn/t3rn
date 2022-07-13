@@ -95,13 +95,14 @@ impl GatewayType {
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum GatewayVendor {
-    Substrate,
-    Ethereum,
+    InternalXBI,
+    PolkadotLike,
+    EvmBased,
 }
 
 impl Default for GatewayVendor {
     fn default() -> Self {
-        GatewayVendor::Substrate
+        GatewayVendor::PolkadotLike
     }
 }
 
@@ -430,7 +431,7 @@ pub fn retrieve_gateway_pointers(gateway_id: ChainId) -> Result<Vec<GatewayPoint
     Ok(vec![GatewayPointer {
         id: gateway_id,
         gateway_type: GatewayType::ProgrammableExternal(0),
-        vendor: GatewayVendor::Substrate,
+        vendor: GatewayVendor::PolkadotLike,
     }])
 }
 

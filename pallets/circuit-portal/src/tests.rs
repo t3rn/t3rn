@@ -53,12 +53,12 @@ fn test_register_gateway_with_default_polka_like_header() {
     let gateway_id = [0; 4];
     let gateway_abi: GatewayABIConfig = Default::default();
 
-    let gateway_vendor = GatewayVendor::Substrate;
+    let gateway_vendor = GatewayVendor::PolkadotLike;
     let gateway_type = GatewayType::ProgrammableInternal(0);
 
     let _gateway_pointer = GatewayPointer {
         id: [0; 4],
-        vendor: GatewayVendor::Substrate,
+        vendor: GatewayVendor::PolkadotLike,
         gateway_type: GatewayType::ProgrammableInternal(0),
     };
 
@@ -109,12 +109,12 @@ fn test_register_parachain() {
     let gateway_id = [0; 4];
     let gateway_abi: GatewayABIConfig = Default::default();
 
-    let gateway_vendor = GatewayVendor::Substrate;
+    let gateway_vendor = GatewayVendor::PolkadotLike;
     let gateway_type = GatewayType::ProgrammableInternal(0);
 
     let _gateway_pointer = GatewayPointer {
         id: [0; 4],
-        vendor: GatewayVendor::Substrate,
+        vendor: GatewayVendor::PolkadotLike,
         gateway_type: GatewayType::ProgrammableInternal(0),
     };
 
@@ -170,7 +170,7 @@ fn test_register_gateway_overwrites_xdns_records() {
     let gateway_id = [0; 4];
     let gateway_abi: GatewayABIConfig = Default::default();
 
-    let gateway_vendor = GatewayVendor::Substrate;
+    let gateway_vendor = GatewayVendor::PolkadotLike;
     let gateway_type = GatewayType::ProgrammableInternal(0);
 
     let gateway_genesis = GatewayGenesisConfig {
@@ -240,12 +240,12 @@ fn test_register_gateway_overwrites_xdns_records() {
 //     let gateway_id = [0; 4];
 //     let gateway_abi: GatewayABIConfig = Default::default();
 //
-//     let gateway_vendor = GatewayVendor::Substrate;
+//     let gateway_vendor = GatewayVendor::PolkadotLike;
 //     let gateway_type = GatewayType::ProgrammableInternal(0);
 //
 //     let _gateway_pointer = GatewayPointer {
 //         id: [0; 4],
-//         vendor: GatewayVendor::Substrate,
+//         vendor: GatewayVendor::PolkadotLike,
 //         gateway_type: GatewayType::ProgrammableInternal(0),
 //     };
 //
@@ -294,12 +294,12 @@ fn test_register_gateway_overwrites_xdns_records() {
 //     let gateway_id = [0; 4];
 //     let gateway_abi: GatewayABIConfig = Default::default();
 //
-//     let gateway_vendor = GatewayVendor::Substrate;
+//     let gateway_vendor = GatewayVendor::PolkadotLike;
 //     let gateway_type = GatewayType::ProgrammableInternal(0);
 //
 //     let _gateway_pointer = GatewayPointer {
 //         id: [0; 4],
-//         vendor: GatewayVendor::Substrate,
+//         vendor: GatewayVendor::PolkadotLike,
 //         gateway_type: GatewayType::ProgrammableInternal(0),
 //     };
 //
@@ -348,12 +348,12 @@ fn test_register_gateway_overwrites_xdns_records() {
 //     let gateway_id = [0; 4];
 //     let gateway_abi: GatewayABIConfig = Default::default();
 //
-//     let gateway_vendor = GatewayVendor::Substrate;
+//     let gateway_vendor = GatewayVendor::PolkadotLike;
 //     let gateway_type = GatewayType::ProgrammableInternal(0);
 //
 //     let _gateway_pointer = GatewayPointer {
 //         id: [0; 4],
-//         vendor: GatewayVendor::Substrate,
+//         vendor: GatewayVendor::PolkadotLike,
 //         gateway_type: GatewayType::ProgrammableInternal(0),
 //     };
 //
@@ -402,12 +402,12 @@ fn test_register_gateway_overwrites_xdns_records() {
 //     let gateway_id = [0; 4];
 //     let gateway_abi: GatewayABIConfig = Default::default();
 //
-//     let gateway_vendor = GatewayVendor::Substrate;
+//     let gateway_vendor = GatewayVendor::PolkadotLike;
 //     let gateway_type = GatewayType::ProgrammableInternal(0);
 //
 //     let _gateway_pointer = GatewayPointer {
 //         id: [0; 4],
-//         vendor: GatewayVendor::Substrate,
+//         vendor: GatewayVendor::PolkadotLike,
 //         gateway_type: GatewayType::ProgrammableInternal(0),
 //     };
 //

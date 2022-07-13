@@ -33,7 +33,7 @@ fn insert_default_xdns_record<T: pallet_xdns::Config>() {
     let url = b"some_url".to_vec();
 
     let gateway_abi: GatewayABIConfig = Default::default();
-    let gateway_vendor = GatewayVendor::Substrate;
+    let gateway_vendor = GatewayVendor::PolkadotLike;
     let gateway_type = GatewayType::TxOnly(0);
 
     let gateway_genesis = GatewayGenesisConfig {
@@ -67,12 +67,12 @@ benchmarks! {
         let gateway_id = [0; 4];
         let gateway_abi: GatewayABIConfig = Default::default();
 
-        let gateway_vendor = GatewayVendor::Substrate;
+        let gateway_vendor = GatewayVendor::PolkadotLike;
         let gateway_type = GatewayType::ProgrammableInternal(0);
 
         let _gateway_pointer = GatewayPointer {
             id: [0; 4],
-            vendor: GatewayVendor::Substrate,
+            vendor: GatewayVendor::PolkadotLike,
             gateway_type: GatewayType::ProgrammableInternal(0),
         };
 
@@ -99,12 +99,12 @@ benchmarks! {
         let gateway_id = [0; 4];
         let gateway_abi: GatewayABIConfig = Default::default();
 
-        let gateway_vendor = GatewayVendor::Substrate;
+        let gateway_vendor = GatewayVendor::PolkadotLike;
         let gateway_type = GatewayType::ProgrammableInternal(0);
 
         let _gateway_pointer = GatewayPointer {
             id: [0; 4],
-            vendor: GatewayVendor::Substrate,
+            vendor: GatewayVendor::PolkadotLike,
             gateway_type: GatewayType::ProgrammableInternal(0),
         };
 
@@ -131,12 +131,12 @@ benchmarks! {
         let gateway_id = [0; 4];
         let gateway_abi: GatewayABIConfig = Default::default();
 
-        let gateway_vendor = GatewayVendor::Substrate;
+        let gateway_vendor = GatewayVendor::PolkadotLike;
         let gateway_type = GatewayType::ProgrammableInternal(0);
 
         let _gateway_pointer = GatewayPointer {
             id: [0; 4],
-            vendor: GatewayVendor::Substrate,
+            vendor: GatewayVendor::PolkadotLike,
             gateway_type: GatewayType::ProgrammableInternal(0),
         };
 
@@ -163,12 +163,12 @@ benchmarks! {
         let gateway_id = [0; 4];
         let gateway_abi: GatewayABIConfig = Default::default();
 
-        let gateway_vendor = GatewayVendor::Substrate;
+        let gateway_vendor = GatewayVendor::PolkadotLike;
         let gateway_type = GatewayType::ProgrammableInternal(0);
 
         let _gateway_pointer = GatewayPointer {
             id: [0; 4],
-            vendor: GatewayVendor::Substrate,
+            vendor: GatewayVendor::PolkadotLike,
             gateway_type: GatewayType::ProgrammableInternal(0),
         };
 

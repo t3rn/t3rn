@@ -462,7 +462,7 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
         let gateway_xdns_record = <T as Config>::Xdns::best_available(gateway_id)?;
 
         match gateway_xdns_record.gateway_vendor {
-            GatewayVendor::Ethereum => {
+            GatewayVendor::EvmBased | GatewayVendor::InternalXBI => {
                 unimplemented!()
                 // something like this should work for eth
                 // return if let Err(computed_root) = check_merkle_proof(
@@ -481,7 +481,7 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
                 //         Err(Error::<T>::SideEffectConfirmationInvalidInclusionProof.into())
                 //     }
             },
-            GatewayVendor::Substrate => {
+            GatewayVendor::PolkadotLike => {
                 let block_hash = if let Some(x) = maybe_block_hash {
                     Ok(x)
                 } else {
@@ -555,8 +555,10 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
         let gateway_xdns_record = <T as Config>::Xdns::best_available(gateway_id)?;
 
         match gateway_xdns_record.gateway_vendor {
-            GatewayVendor::Ethereum => return Err("Read latest target height - unhandled vendor"),
-            GatewayVendor::Substrate => {
+            GatewayVendor::EvmBased => return Err("Read latest target height - unhandled vendor"),
+            GatewayVendor::InternalXBI =>
+                return Err("Read latest target height - unhandled vendor"),
+            GatewayVendor::PolkadotLike => {
                 match gateway_xdns_record.gateway_abi.block_number_type_size {
                     32 => {
                         let current_height = read_cmp_latest_height_from_bridge::<
