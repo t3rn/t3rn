@@ -41,8 +41,12 @@
 use crate::weights::WeightInfo;
 use sp_std::convert::TryInto;
 
+// this doesnt work
 // pub mod bridges;
 // use bridges::{header_chain as bp_header_chain, runtime as bp_runtime};
+
+// this does work
+use t3rn_primitives::bridges::{header_chain as bp_header_chain, runtime as bp_runtime};
 use bp_header_chain::{justification::GrandpaJustification, InitializationData};
 use bp_runtime::{BlockNumberOf, Chain, ChainId, HashOf, HasherOf, HeaderOf};
 
@@ -53,7 +57,6 @@ use scale_info::prelude::string::String;
 use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
 use sp_runtime::traits::{BadOrigin, Header as HeaderT, Zero};
 use sp_std::vec::Vec;
-use t3rn_primitives::bridges::{header_chain as bp_header_chain, runtime as bp_runtime};
 
 #[cfg(test)]
 mod mock;
@@ -79,7 +82,7 @@ pub type BridgedHeader<T, I> = HeaderOf<<T as Config<I>>::BridgedChain>;
 const LOG_TARGET: &str = "multi-finality-verifier";
 use frame_support::traits::Time;
 use frame_system::pallet_prelude::*;
-use t3rn_primitives::{xdns::Xdns, EscrowTrait};
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -110,12 +113,6 @@ pub mod pallet {
 
         /// Weights gathered through benchmarking.
         type WeightInfo: WeightInfo;
-
-        /// A type that provides access to Xdns
-        type Xdns: Xdns<Self>;
-
-        /// A type that manages escrow, and therefore balances
-        type Escrowed: EscrowTrait<Self>;
     }
 
     #[pallet::pallet]
@@ -254,16 +251,10 @@ pub mod pallet {
                 gateway_id
             );
 
-            let now = TryInto::<u64>::try_into(<T::Escrowed as EscrowTrait<T>>::Time::now())
-                .map_err(|_| "Unable to compute current timestamp")?;
-
-            <T::Xdns as Xdns<T>>::update_gateway_ttl(gateway_id, now)?;
-
             log::debug!(
                 target: LOG_TARGET,
-                "Successfully updated gateway {:?} with finalized timestamp {:?}!",
+                "Successfully updated gateway {:?}!",
                 gateway_id,
-                now.clone()
             );
             Ok(().into())
         }
@@ -340,12 +331,6 @@ pub mod pallet {
                 }
                 *count
             });
-
-            // not sure if we want this here as well as we're adding old blocks
-            let now = TryInto::<u64>::try_into(<T::Escrowed as EscrowTrait<T>>::Time::now())
-                .map_err(|_| "Unable to compute current timestamp")?;
-
-            <T::Xdns as Xdns<T>>::update_gateway_ttl(gateway_id, now)?;
 
             Self::deposit_event(Event::NewHeaderRangeAvailable(gateway_id, height, range));
 
@@ -828,12 +813,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
             <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
             <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
         }
-
-        // not sure if we want this here as well as we're adding old blocks
-        let now = TryInto::<u64>::try_into(<T::Escrowed as EscrowTrait<T>>::Time::now())
-            .map_err(|_| "Unable to compute current timestamp")?;
-
-        <T::Xdns as Xdns<T>>::update_gateway_ttl(gateway_id, now)?;
 
         Ok(().into())
     }

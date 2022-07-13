@@ -180,6 +180,4 @@ impl pallet_grandpa_finality_verifier::Config<RococoBridgeInstance> for Runtime 
     type MaxRequests = MaxRequests;
     type HeadersToKeep = HeadersToKeep;
     type WeightInfo = ();
-    type Xdns = XDNS;
-    type Escrowed = Self;
 }
