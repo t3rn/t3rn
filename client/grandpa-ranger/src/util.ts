@@ -42,7 +42,12 @@ export const decodeAuthoritySet = (data: any) => {
 export const fetchGatewayHeight = async (gatewayId: any, circuit: any) =>  {
     const hash = await circuit.query.multiFinalityVerifierDefault.bestFinalizedMap(gatewayId);
     const height = await circuit.query.multiFinalityVerifierDefault.multiImportedHeaders(gatewayId, hash.toJSON());
-    return height.toJSON().number
+    if (height.toJSON()) {
+        return height.toJSON().number
+    } else {
+        console.log("Gateway not Registered!")
+        process.exit(1)
+    }
 }
 
 export function formatEvents(
