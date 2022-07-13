@@ -542,6 +542,7 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
                 }
                 Err(Error::<T>::SideEffectConfirmationInvalidInclusionProof.into())
             },
+             _ => unimplemented!()
         }
     }
 
@@ -578,6 +579,7 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
                     _ => Err("Read latest target height - unknown vendor"),
                 }
             },
+            _ => unimplemented!()
         }
     }
 }

@@ -2,6 +2,7 @@ use super::*;
 use frame_support::{parameter_types, traits::ConstU32, PalletId};
 use sp_core::H256;
 use sp_runtime::traits::*;
+use pallet_portal::RococoBridge;
 use t3rn_primitives::bridges::runtime as bp_runtime;
 
 // impl pallet_randomness_collective_flip::Config for Runtime {}
@@ -29,6 +30,7 @@ impl pallet_contracts_registry::Config for Runtime {
 impl pallet_portal::Config for Runtime {
     type Event = Event;
     type Xdns = XDNS;
+
 }
 
 parameter_types! {

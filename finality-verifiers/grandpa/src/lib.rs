@@ -57,6 +57,9 @@ use scale_info::prelude::string::String;
 use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
 use sp_runtime::traits::{BadOrigin, Header as HeaderT, Zero};
 use sp_std::vec::Vec;
+use sp_core::crypto::ByteArray;
+mod types;
+use types::{RegistrationData};
 
 #[cfg(test)]
 mod mock;
@@ -727,95 +730,124 @@ pub mod pallet {
 }
 
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
-    /// Get the best finalized header the pallet knows of.
-    ///
-    /// Returns a dummy header if there is no best header. This can only happen
-    /// if the pallet has not been initialized yet.
-    pub fn best_finalized_map(gateway_id: ChainId) -> BridgedHeader<T, I> {
-        let hash = <BestFinalizedMap<T, I>>::get(gateway_id).unwrap_or_default();
-        <MultiImportedHeaders<T, I>>::get(gateway_id, hash).unwrap_or_else(|| {
-            <BridgedHeader<T, I>>::new(
-                Default::default(),
-                Default::default(),
-                Default::default(),
-                Default::default(),
-                Default::default(),
-            )
-        })
+    // /// Get the best finalized header the pallet knows of.
+    // ///
+    // /// Returns a dummy header if there is no best header. This can only happen
+    // /// if the pallet has not been initialized yet.
+    // pub fn best_finalized_map(gateway_id: ChainId) -> BridgedHeader<T, I> {
+    //     let hash = <BestFinalizedMap<T, I>>::get(gateway_id).unwrap_or_default();
+    //     <MultiImportedHeaders<T, I>>::get(gateway_id, hash).unwrap_or_else(|| {
+    //         <BridgedHeader<T, I>>::new(
+    //             Default::default(),
+    //             Default::default(),
+    //             Default::default(),
+    //             Default::default(),
+    //             Default::default(),
+    //         )
+    //     })
+    // }
+
+    // /// Check if a particular header is known to the bridge pallet.
+    // pub fn is_known_header(hash: BridgedBlockHash<T, I>, gateway_id: ChainId) -> bool {
+    //     <MultiImportedHeaders<T, I>>::contains_key(gateway_id, hash)
+    // }
+
+    // /// Verify that the passed storage proof is valid, given it is crafted using
+    // /// known finalized header. If the proof is valid, then the `parse` callback
+    // /// is called and the function returns its result.
+    // pub fn parse_finalized_storage_proof<R>(
+    //     hash: BridgedBlockHash<T, I>,
+    //     storage_proof: sp_trie::StorageProof,
+    //     parse: impl FnOnce(bp_runtime::StorageProofChecker<BridgedBlockHasher<T, I>>) -> R,
+    //     gateway_id: ChainId,
+    // ) -> Result<R, sp_runtime::DispatchError> {
+    //     let header = <MultiImportedHeaders<T, I>>::get(gateway_id, hash)
+    //         .ok_or(Error::<T, I>::UnknownHeader)?;
+    //     let storage_proof_checker =
+    //         bp_runtime::StorageProofChecker::new(*header.state_root(), storage_proof)
+    //             .map_err(|_| Error::<T, I>::StorageRootMismatch)?;
+    //
+    //     Ok(parse(storage_proof_checker))
+    // }
+
+    // pub fn submit_parachain_header(
+    //     _block_hash: Vec<u8>,
+    //     gateway_id: ChainId,
+    //     _proof: Vec<Vec<u8>>,
+    //     header: BridgedHeader<T, I>,
+    // ) -> DispatchResultWithPostInfo {
+    //     ensure_operational_single::<T, I>(gateway_id)?;
+    //
+    //     let hash = header.hash();
+    //     let index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
+    //     let pruning = <MultiImportedHashes<T, I>>::try_get(gateway_id, index);
+    //
+    //     <BestFinalizedMap<T, I>>::insert(gateway_id, hash);
+    //
+    //     <MultiImportedHeaders<T, I>>::insert(gateway_id, hash, header.clone());
+    //     <MultiImportedHashes<T, I>>::insert(gateway_id, index, hash);
+    //     <MultiImportedRoots<T, I>>::insert(
+    //         gateway_id,
+    //         hash,
+    //         (header.extrinsics_root(), header.state_root()),
+    //     );
+    //
+    //     <RequestCountMap<T, I>>::mutate(gateway_id, |count| {
+    //         match count {
+    //             Some(count) => *count += 1,
+    //             None => *count = Some(1),
+    //         }
+    //         *count
+    //     });
+    //
+    //     // Update ring buffer pointer and remove old header.
+    //     <MultiImportedHashesPointer<T, I>>::insert(
+    //         gateway_id,
+    //         (index + 1) % T::HeadersToKeep::get(),
+    //     );
+    //
+    //     if let Ok(hash) = pruning {
+    //         log::debug!(
+    //             target: LOG_TARGET,
+    //             "Pruning old header: {:?} for gateway {:?}.",
+    //             hash,
+    //             gateway_id
+    //         );
+    //         <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
+    //         <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
+    //     }
+    //
+    //     Ok(().into())
+    // }
+
+    pub fn initialize(
+        origin: T::Origin,
+        encoded_registration_data: Vec<u8>,
+    ) -> Result<(), &'static str> {
+        let registration_data: RegistrationData<T::AccountId> = Decode::decode(&mut &*encoded_registration_data).unwrap();
+
+        log::info!("RD: {:?}", registration_data);
+            // .map_err(|_| -> )
+
+        let header: BridgedHeader<T, I> = Decode::decode(&mut &registration_data.first_header[..])
+        .map_err(|_| "Decoding error: received GenericPrimitivesHeader -> CurrentHeader<T>")?;
+
+        let init_data = bp_header_chain::InitializationData {
+            header,
+            authority_list: registration_data.authorities
+                .iter()
+                .map(|id| sp_finality_grandpa::AuthorityId::from_slice(&id.encode()).unwrap())
+                .map(|authority| (authority, 1))
+                .collect::<Vec<_>>(),
+            set_id: registration_data.authority_set_id,
+            is_halted: false,
+            gateway_id: registration_data.gateway_id,
+        };
+
+        Pallet::<T, I>::initialize_single(origin, init_data);
+        Ok(())
     }
 
-    /// Check if a particular header is known to the bridge pallet.
-    pub fn is_known_header(hash: BridgedBlockHash<T, I>, gateway_id: ChainId) -> bool {
-        <MultiImportedHeaders<T, I>>::contains_key(gateway_id, hash)
-    }
-
-    /// Verify that the passed storage proof is valid, given it is crafted using
-    /// known finalized header. If the proof is valid, then the `parse` callback
-    /// is called and the function returns its result.
-    pub fn parse_finalized_storage_proof<R>(
-        hash: BridgedBlockHash<T, I>,
-        storage_proof: sp_trie::StorageProof,
-        parse: impl FnOnce(bp_runtime::StorageProofChecker<BridgedBlockHasher<T, I>>) -> R,
-        gateway_id: ChainId,
-    ) -> Result<R, sp_runtime::DispatchError> {
-        let header = <MultiImportedHeaders<T, I>>::get(gateway_id, hash)
-            .ok_or(Error::<T, I>::UnknownHeader)?;
-        let storage_proof_checker =
-            bp_runtime::StorageProofChecker::new(*header.state_root(), storage_proof)
-                .map_err(|_| Error::<T, I>::StorageRootMismatch)?;
-
-        Ok(parse(storage_proof_checker))
-    }
-
-    pub fn submit_parachain_header(
-        _block_hash: Vec<u8>,
-        gateway_id: ChainId,
-        _proof: Vec<Vec<u8>>,
-        header: BridgedHeader<T, I>,
-    ) -> DispatchResultWithPostInfo {
-        ensure_operational_single::<T, I>(gateway_id)?;
-
-        let hash = header.hash();
-        let index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
-        let pruning = <MultiImportedHashes<T, I>>::try_get(gateway_id, index);
-
-        <BestFinalizedMap<T, I>>::insert(gateway_id, hash);
-
-        <MultiImportedHeaders<T, I>>::insert(gateway_id, hash, header.clone());
-        <MultiImportedHashes<T, I>>::insert(gateway_id, index, hash);
-        <MultiImportedRoots<T, I>>::insert(
-            gateway_id,
-            hash,
-            (header.extrinsics_root(), header.state_root()),
-        );
-
-        <RequestCountMap<T, I>>::mutate(gateway_id, |count| {
-            match count {
-                Some(count) => *count += 1,
-                None => *count = Some(1),
-            }
-            *count
-        });
-
-        // Update ring buffer pointer and remove old header.
-        <MultiImportedHashesPointer<T, I>>::insert(
-            gateway_id,
-            (index + 1) % T::HeadersToKeep::get(),
-        );
-
-        if let Ok(hash) = pruning {
-            log::debug!(
-                target: LOG_TARGET,
-                "Pruning old header: {:?} for gateway {:?}.",
-                hash,
-                gateway_id
-            );
-            <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
-            <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
-        }
-
-        Ok(().into())
-    }
 }
 
 pub(crate) fn find_scheduled_change<H: HeaderT>(

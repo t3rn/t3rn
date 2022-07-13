@@ -97,6 +97,7 @@ impl GatewayType {
 pub enum GatewayVendor {
     Substrate,
     Ethereum,
+    Rococo,
 }
 
 impl Default for GatewayVendor {

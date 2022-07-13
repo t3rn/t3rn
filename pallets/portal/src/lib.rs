@@ -19,6 +19,7 @@ pub use pallet::*;
 // use codec::Decode;
 // use sp_std::vec::Vec;
 
+
 #[frame_support::pallet]
 pub mod pallet {
 	use frame_support::pallet_prelude::*;
@@ -34,15 +35,19 @@ pub mod pallet {
         abi::{GatewayABIConfig},
         ChainId, EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor, GatewayGenesisConfig,
     };
+    pub type RococoBridge = ();
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
-	pub trait Config: frame_system::Config {
-		/// Because this pallet emits events, it depends on the runtime's definition of an event.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+	pub trait Config:
+        frame_system::Config
+        + pallet_grandpa_finality_verifier::Config<RococoBridge>
+        {
+            /// Because this pallet emits events, it depends on the runtime's definition of an event.
+            type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
-        type Xdns: Xdns<Self>;
-	}
+            type Xdns: Xdns<Self>;
+        }
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -95,7 +100,7 @@ pub mod pallet {
             gateway_genesis: GatewayGenesisConfig,
             gateway_sys_props: GatewaySysProps,
             allowed_side_effects: Vec<AllowedSideEffect>,
-            registration_data: Vec<u8>
+            encoded_registration_data: Vec<u8>
          ) -> DispatchResultWithPostInfo {
              <T as Config>::Xdns::add_new_xdns_record(
                 origin.clone(),
@@ -110,11 +115,10 @@ pub mod pallet {
                 allowed_side_effects.clone(),
             )?;
 
-             // match gateway_vendor {
-             //     GatewayVendor::Rococo =>
-             // }
-
-
+            match gateway_vendor {
+                GatewayVendor::Rococo =>  pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::initialize(origin, encoded_registration_data)?,
+                _ => unimplemented!()
+            }
 
              Ok(().into())
          }
