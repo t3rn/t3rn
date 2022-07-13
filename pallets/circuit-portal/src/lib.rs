@@ -208,6 +208,7 @@ pub mod pallet {
             security_coordinates: Vec<u8>,
             allowed_side_effects: Vec<AllowedSideEffect>,
         ) -> DispatchResultWithPostInfo {
+            // Retrieve sender of the transaction.
             <T as Config>::Xdns::add_new_xdns_record(
                 origin.clone(),
                 url,
@@ -222,7 +223,6 @@ pub mod pallet {
                 allowed_side_effects.clone(),
                 true, // force ~ overwrite existing XDNS record
             )?;
-            // Retrieve sender of the transaction.
 
             let res = match (gateway_abi.hasher, gateway_abi.block_number_type_size) {
                 (HasherAlgo::Blake2, 32) => init_bridge_instance::<T, DefaultPolkadotLikeGateway>(
@@ -559,6 +559,7 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
             GatewayVendor::InternalXBI =>
                 return Err("Read latest target height - unhandled vendor"),
             GatewayVendor::PolkadotLike => {
+                log::info!("gateway_id: {:?}", gateway_id);
                 match gateway_xdns_record.gateway_abi.block_number_type_size {
                     32 => {
                         let current_height = read_cmp_latest_height_from_bridge::<

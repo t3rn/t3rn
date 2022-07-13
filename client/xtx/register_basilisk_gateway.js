@@ -1,9 +1,6 @@
 const { ApiPromise, Keyring, WsProvider } = require("@polkadot/api")
 const { Bytes } = require("@polkadot/types")
 
-const { tmpdir } = require("os")
-const { join } = require("path")
-const { writeFile } = require("fs/promises")
 const { promisify } = require("util")
 const { exec: _exec } = require("child_process")
 
@@ -15,21 +12,6 @@ const BASILISK_CHAIN_ID = [98, 97, 115, 105]
 
 async function sleep(ms) {
   return new Promise(res => setTimeout(res, ms))
-}
-
-async function grandpaDecode(justification) {
-  const tmpFile = join(tmpdir(), justification.toString().slice(0, 10))
-
-  await writeFile(tmpFile, justification.toString())
-
-  return exec(
-    join(
-      __dirname,
-      "justification-decoder/target/release/justification-decoder"
-    ) +
-      " " +
-      tmpFile
-  ).then(cmd => JSON.parse(cmd.stdout))
 }
 
 function createGatewayABIConfig(
@@ -154,32 +136,6 @@ async function register(circuit, target) {
     target,
     api,
   })
-
-  // return new Promise(async (resolve, _reject) => {
-  //   let unsub = await rococoApi.rpc.grandpa.subscribeJustifications(
-  //     async justification => {
-  //       const { authorities } = await grandpaDecode(justification)
-  //       const basiliskRegistrationHeader = await api.rpc.chain.getHeader(
-  //         await api.rpc.chain.getFinalizedHead()
-  //       )
-  //       const authoritySetId = await rococoApi.query.grandpa.currentSetId()
-
-  //       await triggerRegister(circuit, {
-  //         authorities,
-  //         url,
-  //         authoritySetId,
-  //         basiliskRegistrationHeader,
-  //         metadata,
-  //         genesisHash,
-  //         target,
-  //         api,
-  //       })
-
-  //       unsub()
-  //       return resolve(undefined)
-  //     }
-  //   )
-  // })
 }
 
 async function registered(circuit) {

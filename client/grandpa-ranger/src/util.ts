@@ -1,22 +1,16 @@
-import { tmpdir } from "os"
-import { join } from "path"
-import { writeFile } from "fs/promises"
-import { promisify } from "util"
-import { exec as _exec } from "child_process"
 import { TypeRegistry, createType } from "@polkadot/types"
 import { Header } from "@polkadot/types/interfaces"
 import { ApiPromise } from "@polkadot/api"
 import { BN } from "@polkadot/util"
 
 const registry = new TypeRegistry()
+const type = { type: 'GrandpaJustification<Header>' }
+export const decodeJustification = (data: any) => {
+        registry.register(type);
+        const res = createType(registry, type.type as any, data)
 
-export const decodeCustomType = (type: string, data: string) => {
-  const typeObject = { type }
-  registry.register(typeObject)
-  return createType(registry, typeObject.type, data.trim())
-}
-
-export const exec = promisify(_exec)
+        return res.commit.targetNumber.toNumber()
+    }
 
 export function formatEvents(
   events: { event: { section: string; method: string; data: any } }[]
@@ -25,16 +19,6 @@ export function formatEvents(
     ({ event: { data, method, section } }) =>
       `${section}.${method} ${data.toString()}`
   )
-}
-
-export async function grandpaDecode(justification: any) {
-  const tmpFile = join(tmpdir(), justification.toString().slice(0, 10))
-
-  await writeFile(tmpFile, justification.toString())
-
-  return exec(
-    "./justification-decoder/target/release/justification-decoder " + tmpFile
-  ).then(cmd => JSON.parse(cmd.stdout))
 }
 
 export function decodeHeaderNumber(data: string) {
