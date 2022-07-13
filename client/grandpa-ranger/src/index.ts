@@ -93,7 +93,7 @@ class InstanceManager {
         this.relayer.on("FinalityProofSubmitted", async (data: any) => {
             InstanceManager.debug("FinalityProofSubmitted")
 
-            const _relaychainParams: {
+            const params: {
                 gatewayId: string
                 range: Header[]
                 anchorHeader: Header
@@ -106,9 +106,9 @@ class InstanceManager {
                 gatewayId: string
                 anchorNumber: number
             } = {
-                gateway: this.gateways[_relaychainParams.gatewayId],
-                gatewayId: _relaychainParams.gatewayId,
-                anchorNumber: _relaychainParams.anchorHeader.number.toNumber(),
+                gateway: this.gateways[params.gatewayId],
+                gatewayId: params.gatewayId,
+                anchorNumber: params.anchorHeader.number.toNumber(),
             }
 
             const parachainParams: {
@@ -120,7 +120,7 @@ class InstanceManager {
                     params.map(p => ({ ...p, gateway: this.gateways[p.gatewayId] }))
             )
 
-            const params: {
+            const txParams: {
                 gateway: RelaychainListener | ParachainListener
                 gatewayId: string
                 anchorNumber: number
@@ -129,7 +129,7 @@ class InstanceManager {
                 gateway: this.gateways[p.gatewayId],
             }))
 
-            await this.relayer.submitHeaderRanges(params)
+            await this.relayer.submitHeaderRanges(txParams)
         })
 
         // once the headerRange has been submitted, we remove the header from the respective instance

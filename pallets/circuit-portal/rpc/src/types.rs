@@ -63,18 +63,3 @@ pub struct CallRequest<AccountId, Balance> {
     pub gas_limit: number::NumberOrHex,
     pub input_data: Bytes,
 }
-
-// ToDo: the types where not implemented consistently. We need to figure out how to handle RPC in general, currently its handled differently in contracts and RPC.
-// /// An RPC serializable result of contract execution
-// #[derive(Serialize, Deserialize)]
-// #[serde(deny_unknown_fields)]
-// #[serde(rename_all = "camelCase")]
-// pub enum RpcReadLatestGatewayHeight {
-//     /// Successful execution
-//     Success {
-//         /// Output data
-//         encoded_height: Bytes,
-//     },
-//     /// Error execution
-//     Error(()),
-// }
