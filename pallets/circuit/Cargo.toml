@@ -26,9 +26,10 @@ sp-io              = { default-features = false, git = "https://github.com/parit
 sp-runtime         = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 sp-std             = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 sp-trie            = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
+
 t3rn-primitives    = { path = "../../primitives", default-features = false }
 t3rn-protocol      = { path = "../../protocol", default-features = false }
-
+t3rn-sdk-primitives = { version = "0.0.1-rc8", default-features = false }
 orml-traits = { git = "https://github.com/t3rn/open-runtime-module-library", branch = "polkadot-v0.9.19", default-features = false }
 
 [dev-dependencies]
@@ -75,6 +76,7 @@ std = [
   "sp-runtime/std",
   "sp-std/std",
   "t3rn-primitives/std",
+  "t3rn-sdk-primitives/std",
   "t3rn-protocol/std",
   "orml-traits/std",
 ]

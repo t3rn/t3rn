@@ -6545,6 +6545,7 @@ dependencies = [
  "sp-trie",
  "t3rn-primitives 1.0.0-alpha.0",
  "t3rn-protocol",
+ "t3rn-sdk-primitives 0.0.1-rc8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
