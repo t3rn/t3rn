@@ -50,6 +50,8 @@ pub use t3rn_primitives::{
     xtx::{Xtx, XtxId},
     GatewayType, *,
 };
+pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
+
 use t3rn_primitives::{
     circuit_portal::CircuitPortal,
     side_effect::{ConfirmationOutcome, HardenedSideEffect, SecurityLvl},
@@ -63,7 +65,6 @@ use t3rn_protocol::side_effects::{
     loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol},
 };
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
-use t3rn_sdk_primitives::signal::SignalKind;
 
 #[cfg(test)]
 pub mod tests;
@@ -111,7 +112,6 @@ pub mod pallet {
         circuit_portal::CircuitPortal,
         xdns::Xdns,
     };
-    use t3rn_sdk_primitives::signal::ExecutionSignal;
 
     pub use crate::weights::WeightInfo;
 

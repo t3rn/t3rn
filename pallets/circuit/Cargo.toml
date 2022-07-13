@@ -79,6 +79,7 @@ std = [
   "sp-runtime/std",
   "sp-std/std",
   "t3rn-primitives/std",
+  "t3rn-sdk-primitives/std",
   "t3rn-protocol/std",
   "orml-traits/std",
 ]
