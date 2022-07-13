@@ -675,7 +675,8 @@ pub mod pallet {
     /// were called by a trusted origin.
     pub(crate) fn initialize_single_bridge<T: Config<I>, I: 'static>(
         init_params: super::InitializationData<BridgedHeader<T, I>>,
-    ) {
+    ) -> Result<(), &'static str> {
+        log::info!("Here");
         let super::InitializationData {
             header,
             authority_list,
@@ -684,34 +685,38 @@ pub mod pallet {
             gateway_id,
         } = init_params;
 
+        log::info!("params unpacked");
         let initial_hash = header.hash();
         <InitialHashMap<T, I>>::insert(gateway_id, initial_hash);
         <BestFinalizedMap<T, I>>::insert(gateway_id, initial_hash);
         <MultiImportedHeaders<T, I>>::insert(gateway_id, initial_hash, header);
-
+        log::info!("written to storage");
         // might get problematic
         let authority_set = bp_header_chain::AuthoritySet::new(authority_list, set_id);
         <CurrentAuthoritySetMap<T, I>>::insert(gateway_id, authority_set);
         <IsHaltedMap<T, I>>::insert(gateway_id, is_halted);
-
+        log::info!("auth set ok");
         <InstantiatedGatewaysMap<T, I>>::mutate(|gateways| {
             gateways.push(gateway_id);
             gateways.len() + 1
         });
+
+        log::info!("done!");
+        Ok(())
     }
 
     /// Ensure that the origin is either root, or `PalletOwner`.
     fn ensure_owner_or_root_single<T: Config<I>, I: 'static>(
         origin: T::Origin,
         gateway_id: ChainId,
-    ) -> Result<(), BadOrigin> {
+    ) -> Result<(), &'static str> {
         match origin.into() {
             Ok(RawOrigin::Root) => Ok(()),
             Ok(RawOrigin::Signed(ref signer))
                 if <PalletOwnerMap<T, I>>::contains_key(gateway_id)
                     && Some(signer) == <PalletOwnerMap<T, I>>::get(gateway_id).as_ref() =>
                 Ok(()),
-            _ => Err(BadOrigin),
+            _ => Err(BadOrigin.into()),
         }
     }
 
@@ -826,11 +831,13 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     ) -> Result<(), &'static str> {
         let registration_data: RegistrationData<T::AccountId> = Decode::decode(&mut &*encoded_registration_data).unwrap();
 
-        log::info!("RD: {:?}", registration_data);
+        // log::info!("RD: {:?}", registration_data);
             // .map_err(|_| -> )
 
-        let header: BridgedHeader<T, I> = Decode::decode(&mut &registration_data.first_header[..])
-        .map_err(|_| "Decoding error: received GenericPrimitivesHeader -> CurrentHeader<T>")?;
+        let header: BridgedHeader<T, I> = Decode::decode(&mut &registration_data.first_header[..]).unwrap();
+        // .map_err(|_| "Decoding error: received GenericPrimitivesHeader -> CurrentHeader<T>")?;
+
+        log::info!("Header: {:?}", header);
 
         let init_data = bp_header_chain::InitializationData {
             header,
@@ -844,8 +851,13 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
             gateway_id: registration_data.gateway_id,
         };
 
-        Pallet::<T, I>::initialize_single(origin, init_data);
-        Ok(())
+        let init_allowed = !<BestFinalizedMap<T, I>>::contains_key(init_data.gateway_id);
+        ensure!(init_allowed, "Already initialzed");
+        initialize_single_bridge::<T, I>(init_data.clone())
+
+        // log::info!("innit data created");
+        // Pallet::<T, I>::initialize_single(origin, init_data)
+        // Ok(())
     }
 
 }

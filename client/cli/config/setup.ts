@@ -24,7 +24,7 @@ export default {
                     decimals: 12,
                     structs: []
                 },
-                gatewayVendor: "Substrate",
+                gatewayVendor: "Rococo",
                 gatewayType: { ProgrammableExternal: 1 },
                 gatewaySysProps: {
                     tokenSymbol: "ROC",

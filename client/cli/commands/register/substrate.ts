@@ -17,6 +17,45 @@ export const registerSubstrate = async (circuit: ApiPromise, gatewayData: any) =
     }
 }
 
+export const registerPortalSubstrate = async (circuit: ApiPromise, gatewayData: any) => {
+    const target = await ApiPromise.create({
+        provider: new WsProvider(gatewayData.rpc),
+    })
+
+    if(gatewayData.registrationData.relaychain === null) { // relaychain
+        return registerPortalRelaychain(circuit, target, gatewayData)
+    } else {
+        console.log("Not implemented!")
+        return
+        // registerParachain(target, gatewayData)
+    }
+}
+
+const registerPortalRelaychain = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any) => {
+    const abiConfig = createAbiConfig(circuit, gatewayData.registrationData.gatewayConfig)
+    const gatewayGenesis = createGatewayGenesis(circuit, target);
+    const gatewaySysProps = createGatewaySysProps(circuit, gatewayData.registrationData.gatewaySysProps)
+    const { registrationHeader, authorities, authoritySetId } = await fetchPortalConsensusData(circuit, target, gatewayData)
+    const allowedSideEffects = circuit.createType('Vec<AllowedSideEffect>', gatewayData.registrationData.allowedSideEffects)
+    return circuit.tx.portal.registerGateway(
+        gatewayData.rpc,
+        gatewayData.id,
+        abiConfig,
+        circuit.createType('GatewayVendor', 'Rococo'),
+        circuit.createType('GatewayType', { ProgrammableExternal: 1 }),
+        gatewayGenesis,
+        gatewaySysProps,
+        allowedSideEffects,
+        circuit.createType('RegistrationData', [
+            registrationHeader.toHex(),
+            Array.from(authorities),
+            authoritySetId,
+            gatewayData.id,
+            null
+        ]).toHex()
+    );
+}
+
 const registerRelaychain = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any) => {
     const abiConfig = createAbiConfig(circuit, gatewayData.registrationData.gatewayConfig)
     const gatewayGenesis = createGatewayGenesis(circuit, target);
@@ -70,6 +109,27 @@ const createGatewaySysProps = (circuiApi: ApiPromise, gatewaySysProps: any) => {
     circuiApi.createType('u8', gatewaySysProps.tokenDecimals),
     circuiApi.createType('u16', gatewaySysProps.ss58Format),
   ]);
+}
+
+const fetchPortalConsensusData = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any) => {
+    const registrationHeight = await fetchLatestAuthoritySetUpdateBlock(gatewayData)
+    console.log("Latest AuthoritySetUpdate:", registrationHeight)
+
+    const registrationHeader = await target.rpc.chain.getHeader(
+        await target.rpc.chain.getBlockHash(registrationHeight)
+    )
+
+    // console.log(registrationHeader.toHex())
+
+    const finalityProof = await target.rpc.grandpa.proveFinality(registrationHeight);
+    const authorities= extractAuthoritySetFromFinalityProof(finalityProof)
+    const authoritySetId = await target.query.grandpa.currentSetId()
+    return {
+        // registrationHeader: circuit.createType('Bytes', registrationHeader.toHex()),
+        registrationHeader,
+        authorities:  circuit.createType('Vec<AccountId>', authorities),
+        authoritySetId: circuit.createType('SetId', authoritySetId),
+    }
 }
 
 const fetchConsensusData = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any) => {
