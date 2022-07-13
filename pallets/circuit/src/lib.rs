@@ -24,8 +24,8 @@
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
 
+use crate::escrow::Escrow;
 pub use crate::pallet::*;
-use crate::{escrow::Escrow, sdk_primitives::signal::SignalKind};
 use codec::{Decode, Encode};
 use frame_support::{
     dispatch::{Dispatchable, GetDispatchInfo},
@@ -63,6 +63,7 @@ use t3rn_protocol::side_effects::{
     loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol},
 };
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
+use t3rn_sdk_primitives::signal::SignalKind;
 
 #[cfg(test)]
 pub mod tests;
@@ -93,7 +94,7 @@ use crate::state::*;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use crate::{escrow::Escrow, sdk_primitives::signal::ExecutionSignal};
+    use crate::escrow::Escrow;
     use frame_support::{
         pallet_prelude::*,
         traits::{
@@ -110,6 +111,7 @@ pub mod pallet {
         circuit_portal::CircuitPortal,
         xdns::Xdns,
     };
+    use t3rn_sdk_primitives::signal::ExecutionSignal;
 
     pub use crate::weights::WeightInfo;
 
