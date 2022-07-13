@@ -4,7 +4,7 @@ authors    = [ "t3rn ltd. <team@t3rn.io>" ]
 edition    = "2018"
 homepage   = "https://t3rn.io"
 license    = "Apache 2.0"
-name       = "grandpa-finality-verifier"
+name       = "pallet-grandpa-finality-verifier"
 repository = "https://github.com/t3rn/t3rn/"
 version    = "1.0.0-alpha.0"
 
@@ -23,19 +23,20 @@ frame-support       = { git = "https://github.com/paritytech/substrate", branch 
 frame-system        = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 #pallet-xdns         = { path = "../xdns", default-features = false }
 sp-core             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-state-machine    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 sp-runtime          = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 sp-std              = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 num-traits          = { version = "0.2", default-features = false }
 hash-db             = { version = "0.15.2", default-features = false }
 sp-trie             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-#t3rn-primitives     = { path = "../../primitives", default-features = false }
+sp-io               = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+t3rn-primitives     = { path = "../../primitives", default-features = false }
 #
 #[dev-dependencies]
 #pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 #pallet-sudo      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 #pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
-sp-io            = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 #
 #pallet-circuit-portal = { path = "../circuit-portal" }
 #t3rn-protocol         = { path = "../../protocol" }

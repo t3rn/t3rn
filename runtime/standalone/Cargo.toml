@@ -32,6 +32,8 @@ pallet-mfv                                = { package = "pallet-multi-finality-v
 pallet-xdns                               = { path = "../../pallets/xdns", default-features = false }
 pallet-portal                               = { path = "../../pallets/portal", default-features = false }
 pallet-xdns-rpc-runtime-api               = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
+pallet-grandpa-finality-verifier          = { path = "../../finality-verifiers/grandpa", default-features = false }
+
 #volatile-vm = { path = "../../vm/volatile-vm", default-features = false }
 t3rn-primitives = { default-features = false, path = "../../primitives" }
 t3rn-protocol   = { path = "../../protocol", default-features = false }
@@ -120,6 +122,7 @@ std = [
   "pallet-3vm-contracts-primitives/std",
   "pallet-3vm-contracts-rpc-runtime-api/std",
   "pallet-account-manager/std",
+  "pallet-grandpa-finality-verifier/std",
   #	"pallet-evm/std",
   #	"pallet-ethereum/std",
   #	"pallet-evm-precompile-simple/std",

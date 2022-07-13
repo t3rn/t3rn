@@ -82,6 +82,7 @@ parameter_types! {
 }
 
 type DefaultPolkadotBridgeInstance = ();
+type RococoBridgeInstance = ();
 type Blake2ValU32BridgeInstance = pallet_mfv::Instance1;
 type Blake2ValU64BridgeInstance = pallet_mfv::Instance2;
 type Keccak256ValU64BridgeInstance = pallet_mfv::Instance3;
@@ -125,50 +126,60 @@ impl bp_runtime::Chain for Keccak256ValU32Chain {
 
 impl pallet_mfv::Config<Blake2ValU64BridgeInstance> for Runtime {
     type BridgedChain = Blake2ValU64Chain;
-    type Escrowed = Self;
     type Event = Event;
-    type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
+    type HeadersToKeep = HeadersToKeep;
     type WeightInfo = ();
     type Xdns = XDNS;
+    type Escrowed = Self;
 }
 
 impl pallet_mfv::Config<Blake2ValU32BridgeInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
-    type Escrowed = Self;
     type Event = Event;
-    type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
+    type HeadersToKeep = HeadersToKeep;
     type WeightInfo = ();
     type Xdns = XDNS;
+    type Escrowed = Self;
 }
 
 impl pallet_mfv::Config<Keccak256ValU64BridgeInstance> for Runtime {
     type BridgedChain = Keccak256ValU64Chain;
     type Escrowed = Self;
     type Event = Event;
-    type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
+    type HeadersToKeep = HeadersToKeep;
     type WeightInfo = ();
     type Xdns = XDNS;
 }
 
 impl pallet_mfv::Config<Keccak256ValU32BridgeInstance> for Runtime {
     type BridgedChain = Keccak256ValU32Chain;
-    type Escrowed = Self;
     type Event = Event;
-    type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
+    type HeadersToKeep = HeadersToKeep;
     type WeightInfo = ();
     type Xdns = XDNS;
+    type Escrowed = Self;
 }
 
 impl pallet_mfv::Config<DefaultPolkadotBridgeInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
-    type Escrowed = Self;
     type Event = Event;
-    type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
+    type HeadersToKeep = HeadersToKeep;
     type WeightInfo = ();
     type Xdns = XDNS;
+    type Escrowed = Self;
+}
+
+impl pallet_grandpa_finality_verifier::Config<RococoBridgeInstance> for Runtime {
+    type BridgedChain = Blake2ValU32Chain;
+    type Event = Event;
+    type MaxRequests = MaxRequests;
+    type HeadersToKeep = HeadersToKeep;
+    type WeightInfo = ();
+    type Xdns = XDNS;
+    type Escrowed = Self;
 }

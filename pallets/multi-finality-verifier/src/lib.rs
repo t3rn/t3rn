@@ -43,6 +43,7 @@ use sp_std::convert::TryInto;
 
 use bp_header_chain::{justification::GrandpaJustification, InitializationData};
 use bp_runtime::{BlockNumberOf, Chain, ChainId, HashOf, HasherOf, HeaderOf};
+use t3rn_primitives::bridges::{header_chain as bp_header_chain, runtime as bp_runtime};
 
 use finality_grandpa::voter_set::VoterSet;
 use frame_support::{ensure, pallet_prelude::*};
@@ -51,7 +52,6 @@ use scale_info::prelude::string::String;
 use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
 use sp_runtime::traits::{BadOrigin, Header as HeaderT, Zero};
 use sp_std::vec::Vec;
-use t3rn_primitives::bridges::{header_chain as bp_header_chain, runtime as bp_runtime};
 
 #[cfg(test)]
 mod mock;

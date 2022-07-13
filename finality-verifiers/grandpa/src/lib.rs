@@ -40,10 +40,11 @@
 
 use crate::weights::WeightInfo;
 use sp_std::convert::TryInto;
-mod bridges;
 
-use bridges::header_chain::{justification::{GrandpaJustification, verify_justification}, InitializationData, AuthoritySet};
-use bridges::runtime::{BlockNumberOf, Chain, ChainId, HashOf, HasherOf, HeaderOf};
+// pub mod bridges;
+// use bridges::{header_chain as bp_header_chain, runtime as bp_runtime};
+use bp_header_chain::{justification::GrandpaJustification, InitializationData};
+use bp_runtime::{BlockNumberOf, Chain, ChainId, HashOf, HasherOf, HeaderOf};
 
 use finality_grandpa::voter_set::VoterSet;
 use frame_support::{ensure, pallet_prelude::*};
@@ -52,7 +53,7 @@ use scale_info::prelude::string::String;
 use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
 use sp_runtime::traits::{BadOrigin, Header as HeaderT, Zero};
 use sp_std::vec::Vec;
-// use crate::bridges::{header_chain, runtime};
+use t3rn_primitives::bridges::{header_chain as bp_header_chain, runtime as bp_runtime};
 
 #[cfg(test)]
 mod mock;
@@ -78,7 +79,7 @@ pub type BridgedHeader<T, I> = HeaderOf<<T as Config<I>>::BridgedChain>;
 const LOG_TARGET: &str = "multi-finality-verifier";
 use frame_support::traits::Time;
 use frame_system::pallet_prelude::*;
-// use t3rn_primitives::{xdns::Xdns, EscrowTrait};
+use t3rn_primitives::{xdns::Xdns, EscrowTrait};
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -109,12 +110,12 @@ pub mod pallet {
 
         /// Weights gathered through benchmarking.
         type WeightInfo: WeightInfo;
-        //
-        // A type that provides access to Xdns
-        // type Xdns: Xdns<Self>;
-        //
-        // A type that manages escrow, and therefore balances
-        // type Escrowed: EscrowTrait<Self>;
+
+        /// A type that provides access to Xdns
+        type Xdns: Xdns<Self>;
+
+        /// A type that manages escrow, and therefore balances
+        type Escrowed: EscrowTrait<Self>;
     }
 
     #[pallet::pallet]
@@ -253,16 +254,16 @@ pub mod pallet {
                 gateway_id
             );
 
-            // let now = TryInto::<u64>::try_into(<T::Escrowed as EscrowTrait<T>>::Time::now())
-            //     .map_err(|_| "Unable to compute current timestamp")?;
+            let now = TryInto::<u64>::try_into(<T::Escrowed as EscrowTrait<T>>::Time::now())
+                .map_err(|_| "Unable to compute current timestamp")?;
 
-            // <T::Xdns as Xdns<T>>::update_gateway_ttl(gateway_id, now)?;
+            <T::Xdns as Xdns<T>>::update_gateway_ttl(gateway_id, now)?;
 
             log::debug!(
                 target: LOG_TARGET,
-                "Successfully updated gateway {:?} with finalized timestamp!",
+                "Successfully updated gateway {:?} with finalized timestamp {:?}!",
                 gateway_id,
-                // now.clone()
+                now.clone()
             );
             Ok(().into())
         }
@@ -341,10 +342,10 @@ pub mod pallet {
             });
 
             // not sure if we want this here as well as we're adding old blocks
-            // let now = TryInto::<u64>::try_into(<T::Escrowed as EscrowTrait<T>>::Time::now())
-            //     .map_err(|_| "Unable to compute current timestamp")?;
+            let now = TryInto::<u64>::try_into(<T::Escrowed as EscrowTrait<T>>::Time::now())
+                .map_err(|_| "Unable to compute current timestamp")?;
 
-            // <T::Xdns as Xdns<T>>::update_gateway_ttl(gateway_id, now)?;
+            <T::Xdns as Xdns<T>>::update_gateway_ttl(gateway_id, now)?;
 
             Self::deposit_event(Event::NewHeaderRangeAvailable(gateway_id, height, range));
 
@@ -497,7 +498,7 @@ pub mod pallet {
     /// The current GRANDPA Authority set map.
     #[pallet::storage]
     pub(super) type CurrentAuthoritySetMap<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Blake2_256, ChainId, AuthoritySet>;
+        StorageMap<_, Blake2_256, ChainId, bp_header_chain::AuthoritySet>;
 
     /// Optional pallet owner.
     ///
@@ -629,7 +630,7 @@ pub mod pallet {
             );
 
             // TODO [#788]: Stop manually increasing the `set_id` here.
-            let next_authorities = AuthoritySet {
+            let next_authorities = bp_header_chain::AuthoritySet {
                 authorities: change.next_authorities,
                 set_id: current_set_id + 1,
             };
@@ -661,10 +662,10 @@ pub mod pallet {
         justification: &GrandpaJustification<BridgedHeader<T, I>>,
         hash: BridgedBlockHash<T, I>,
         number: BridgedBlockNumber<T, I>,
-        authority_set: AuthoritySet,
+        authority_set: bp_header_chain::AuthoritySet,
         _gateway_id: ChainId,
     ) -> Result<(), sp_runtime::DispatchError> {
-        use bridges::header_chain::justification::verify_justification;
+        use bp_header_chain::justification::verify_justification;
 
         let voter_set =
             VoterSet::new(authority_set.authorities).ok_or(<Error<T, I>>::InvalidAuthoritySet)?;
@@ -701,7 +702,7 @@ pub mod pallet {
         <MultiImportedHeaders<T, I>>::insert(gateway_id, initial_hash, header);
 
         // might get problematic
-        let authority_set = AuthoritySet::new(authority_list, set_id);
+        let authority_set = bp_header_chain::AuthoritySet::new(authority_list, set_id);
         <CurrentAuthoritySetMap<T, I>>::insert(gateway_id, authority_set);
         <IsHaltedMap<T, I>>::insert(gateway_id, is_halted);
 
@@ -769,13 +770,13 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     pub fn parse_finalized_storage_proof<R>(
         hash: BridgedBlockHash<T, I>,
         storage_proof: sp_trie::StorageProof,
-        parse: impl FnOnce(bridges::runtime::StorageProofChecker<BridgedBlockHasher<T, I>>) -> R,
+        parse: impl FnOnce(bp_runtime::StorageProofChecker<BridgedBlockHasher<T, I>>) -> R,
         gateway_id: ChainId,
     ) -> Result<R, sp_runtime::DispatchError> {
         let header = <MultiImportedHeaders<T, I>>::get(gateway_id, hash)
             .ok_or(Error::<T, I>::UnknownHeader)?;
         let storage_proof_checker =
-            bridges::runtime::StorageProofChecker::new(*header.state_root(), storage_proof)
+            bp_runtime::StorageProofChecker::new(*header.state_root(), storage_proof)
                 .map_err(|_| Error::<T, I>::StorageRootMismatch)?;
 
         Ok(parse(storage_proof_checker))
@@ -829,10 +830,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         }
 
         // not sure if we want this here as well as we're adding old blocks
-        // let now = TryInto::<u64>::try_into(<T::Escrowed as EscrowTrait<T>>::Time::now())
-        //     .map_err(|_| "Unable to compute current timestamp")?;
+        let now = TryInto::<u64>::try_into(<T::Escrowed as EscrowTrait<T>>::Time::now())
+            .map_err(|_| "Unable to compute current timestamp")?;
 
-        // <T::Xdns as Xdns<T>>::update_gateway_ttl(gateway_id, now)?;
+        <T::Xdns as Xdns<T>>::update_gateway_ttl(gateway_id, now)?;
 
         Ok(().into())
     }
@@ -971,7 +972,6 @@ mod tests {
             Default::default(),
             gateway_sys_props,
             vec![],
-            false,
         );
 
         Pallet::<TestRuntime>::initialize_single(origin, init_data.clone()).map(|_| init_data)
@@ -1667,7 +1667,7 @@ mod tests {
             // Make sure that the authority set actually changed upon importing our header
             assert_eq!(
                 <CurrentAuthoritySetMap<TestRuntime>>::get(default_gateway),
-                Some(header_chain::AuthoritySet::new(
+                Some(bp_header_chain::AuthoritySet::new(
                     next_authorities,
                     next_set_id
                 )),
@@ -1751,7 +1751,7 @@ mod tests {
         let default_gateway: ChainId = *b"gate";
 
         run_test(|| {
-            let (state_root, storage_proof) = runtime::craft_valid_storage_proof();
+            let (state_root, storage_proof) = bp_runtime::craft_valid_storage_proof();
 
             let mut header = test_header(2);
             header.set_state_root(state_root);

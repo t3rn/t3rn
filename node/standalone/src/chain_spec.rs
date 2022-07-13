@@ -3,7 +3,7 @@ use circuit_standalone_runtime::{
     MultiFinalityVerifierDefaultConfig, MultiFinalityVerifierEthereumLikeConfig,
     MultiFinalityVerifierGenericLikeConfig, MultiFinalityVerifierPolkadotLikeConfig,
     MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, SystemConfig, XDNSConfig,
-    WASM_BINARY,
+    WASM_BINARY, RococoBridgeConfig
 };
 
 use jsonrpc_runtime_client::{
@@ -493,10 +493,6 @@ fn testnet_genesis(
             key: Some(root_key),
         },
         transaction_payment: Default::default(),
-        // beefy: BeefyConfig {
-        //     // authorities: initial_authorities.iter().map(|x| (x.1.clone())).collect(),
-        //     authorities: Vec::new(),
-        // },
         xdns: XDNSConfig {
             known_xdns_records: xdns_records,
             standard_side_effects,
@@ -521,6 +517,10 @@ fn testnet_genesis(
         multi_finality_verifier_default: MultiFinalityVerifierDefaultConfig {
             owner: None,
             init_data: Some(initial_gateways),
+        },
+        rococo_bridge: RococoBridgeConfig {
+            owner: None,
+            init_data: None,
         },
         orml_tokens: Default::default(),
         account_manager: Default::default(),
