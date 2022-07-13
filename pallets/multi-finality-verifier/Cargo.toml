@@ -3,7 +3,7 @@
 authors    = [ "t3rn ltd. <team@t3rn.io>" ]
 edition    = "2018"
 homepage   = "https://t3rn.io"
-license    = "Apache 2.0"
+license    = "Apache-2.0"
 name       = "pallet-multi-finality-verifier"
 repository = "https://github.com/t3rn/t3rn/"
 version    = "1.0.0-alpha.0"
