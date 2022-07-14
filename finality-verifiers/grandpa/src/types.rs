@@ -20,6 +20,6 @@ pub struct RegistrationData<T> {
     pub first_header: Vec<u8>,
     pub authorities: Vec<T>,
     pub authority_set_id: SetId,
-    pub gateway_id: ChainId,
+    pub owner: T,
     pub parachain: Option<Parachain>
 }

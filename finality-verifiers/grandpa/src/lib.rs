@@ -369,30 +369,6 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// Change `PalletOwner`.
-        ///
-        /// May only be called either by root, or by `PalletOwner`.
-        #[pallet::weight((T::DbWeight::get().reads_writes(1, 1), DispatchClass::Operational))]
-        pub fn set_owner(
-            origin: OriginFor<T>,
-            new_owner: Option<T::AccountId>,
-            gateway_id: ChainId,
-        ) -> DispatchResultWithPostInfo {
-            ensure_owner_or_root_single::<T, I>(origin, gateway_id)?;
-            match new_owner {
-                Some(new_owner) => {
-                    PalletOwnerMap::<T, I>::insert(gateway_id, &new_owner);
-                    log::info!("Setting pallet Owner to: {:?}", new_owner);
-                },
-                None => {
-                    PalletOwnerMap::<T, I>::remove(gateway_id);
-                    log::info!("Removed Owner of pallet.");
-                },
-            }
-
-            Ok(().into())
-        }
-
         /// Halt or resume all pallet operations.
         ///
         /// May only be called either by root, or by `PalletOwner`.
@@ -676,7 +652,6 @@ pub mod pallet {
     pub(crate) fn initialize_single_bridge<T: Config<I>, I: 'static>(
         init_params: super::InitializationData<BridgedHeader<T, I>>,
     ) -> Result<(), &'static str> {
-        log::info!("Here");
         let super::InitializationData {
             header,
             authority_list,
@@ -685,23 +660,19 @@ pub mod pallet {
             gateway_id,
         } = init_params;
 
-        log::info!("params unpacked");
         let initial_hash = header.hash();
         <InitialHashMap<T, I>>::insert(gateway_id, initial_hash);
         <BestFinalizedMap<T, I>>::insert(gateway_id, initial_hash);
         <MultiImportedHeaders<T, I>>::insert(gateway_id, initial_hash, header);
-        log::info!("written to storage");
         // might get problematic
         let authority_set = bp_header_chain::AuthoritySet::new(authority_list, set_id);
         <CurrentAuthoritySetMap<T, I>>::insert(gateway_id, authority_set);
         <IsHaltedMap<T, I>>::insert(gateway_id, is_halted);
-        log::info!("auth set ok");
         <InstantiatedGatewaysMap<T, I>>::mutate(|gateways| {
             gateways.push(gateway_id);
             gateways.len() + 1
         });
 
-        log::info!("done!");
         Ok(())
     }
 
@@ -827,17 +798,16 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
     pub fn initialize(
         origin: T::Origin,
+        gateway_id: ChainId,
         encoded_registration_data: Vec<u8>,
     ) -> Result<(), &'static str> {
+        ensure_owner_or_root_single(origin.clone(), gateway_id)?;
+
         let registration_data: RegistrationData<T::AccountId> = Decode::decode(&mut &*encoded_registration_data).unwrap();
+        set_owner::<T, I>(origin, registration_data.owner, gateway_id)?;
 
-        // log::info!("RD: {:?}", registration_data);
-            // .map_err(|_| -> )
-
-        let header: BridgedHeader<T, I> = Decode::decode(&mut &registration_data.first_header[..]).unwrap();
-        // .map_err(|_| "Decoding error: received GenericPrimitivesHeader -> CurrentHeader<T>")?;
-
-        log::info!("Header: {:?}", header);
+        let header: BridgedHeader<T, I> = Decode::decode(&mut &registration_data.first_header[..])
+            .map_err(|_| "Decoding error: received GenericPrimitivesHeader -> CurrentHeader<T>")?;
 
         let init_data = bp_header_chain::InitializationData {
             header,
@@ -855,9 +825,29 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         ensure!(init_allowed, "Already initialzed");
         initialize_single_bridge::<T, I>(init_data.clone())
 
-        // log::info!("innit data created");
-        // Pallet::<T, I>::initialize_single(origin, init_data)
-        // Ok(())
+    }
+
+    /// Change `PalletOwner`.
+    ///
+    /// May only be called either by root, or by `PalletOwner`.
+    pub fn set_owner(
+        origin: T::Origin,
+        new_owner: Option<T::AccountId>,
+        gateway_id: ChainId,
+    ) -> Result<(), &'static str> {
+        ensure_owner_or_root_single::<T, I>(origin, gateway_id)?;
+        match new_owner {
+            Some(new_owner) => {
+                PalletOwnerMap::<T, I>::insert(gateway_id, &new_owner);
+                log::info!("Setting pallet Owner to: {:?}", new_owner);
+            },
+            None => {
+                PalletOwnerMap::<T, I>::remove(gateway_id);
+                log::info!("Removed Owner of pallet.");
+            },
+        }
+
+        Ok(())
     }
 
 }
