@@ -7,12 +7,9 @@ use sp_core::H256;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
-    Perbill, Percent,
+    Perbill,
 };
-use t3rn_primitives::{
-    common::{Range, BLOCKS_PER_DAY, BLOCKS_PER_HOUR},
-    monetary::T3RN,
-};
+use t3rn_primitives::common::BLOCKS_PER_HOUR;
 
 pub(crate) fn last_event() -> Event {
     System::events().pop().expect("event expected").event
@@ -60,7 +57,7 @@ macro_rules! assert_last_n_events {
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
-type Balance = u64;
+pub type Balance = u64;
 
 frame_support::construct_runtime!(
     pub enum Test where

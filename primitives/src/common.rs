@@ -16,7 +16,18 @@ pub const DEFAULT_ROUND_TERM: u32 = 6 * BLOCKS_PER_HOUR;
 /// A range consisting of min, ideal, and max.
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(
-    Eq, PartialEq, Clone, Copy, Encode, Decode, Default, RuntimeDebug, MaxEncodedLen, TypeInfo, PartialOrd, Ord
+    Eq,
+    PartialEq,
+    Clone,
+    Copy,
+    Encode,
+    Decode,
+    Default,
+    RuntimeDebug,
+    MaxEncodedLen,
+    TypeInfo,
+    PartialOrd,
+    Ord,
 )]
 pub struct Range<T> {
     pub min: T,

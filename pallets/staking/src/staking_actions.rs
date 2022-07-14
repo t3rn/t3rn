@@ -5,15 +5,11 @@ use crate::{
     },
     subject_metadata::StakerMetadata,
 };
-use frame_support::{
-    dispatch::DispatchResultWithPostInfo,
-    ensure,
-    traits::{Get, ReservableCurrency},
-};
+use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, traits::ReservableCurrency};
 use sp_runtime::traits::Saturating;
 use sp_std::{vec, vec::Vec};
 use t3rn_primitives::{
-    staking::{ScheduledStakingRequest, StakerStatus, StakingAction},
+    staking::{ScheduledStakingRequest, StakingAction},
     treasury::Treasury,
 };
 
@@ -471,7 +467,10 @@ impl<T: Config> Pallet<T> {
 mod tests {
     use super::*;
     use crate::mock::Test;
-    use t3rn_primitives::{common::OrderedSet, staking::Bond};
+    use t3rn_primitives::{
+        common::OrderedSet,
+        staking::{Bond, StakerStatus},
+    };
 
     #[test]
     fn test_cancel_request_with_state_removes_request_for_correct_staker_and_updates_state() {

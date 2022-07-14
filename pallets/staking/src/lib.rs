@@ -38,7 +38,7 @@ pub mod pallet {
     };
     use sp_std::collections::btree_map::BTreeMap;
     use t3rn_primitives::{
-        common::{OrderedSet, Range, RoundIndex, BLOCKS_PER_DAY},
+        common::{OrderedSet, Range, RoundIndex},
         monetary::DECIMALS,
         staking::{
             Bond, CancelledScheduledStakingRequest, ExecutorInfo, ExecutorSnapshot,
@@ -1227,8 +1227,13 @@ pub mod pallet {
     #[cfg(feature = "std")]
     impl<T: Config> Default for GenesisConfig<T> {
         fn default() -> Self {
-            // let onethousand = ConstU128<{ 1000 * T3RN }>;
-            // let fivehundred = ConstU128<{ 500 * T3RN }>;
+            let onethousand = BalanceOf::<T>::one()
+                .mul((10 ^ DECIMALS).into())
+                .mul(1000_u32.into());
+            let fivehundred = BalanceOf::<T>::one()
+                .mul((10 ^ DECIMALS).into())
+                .mul(500_u32.into());
+
             Self {
                 fixtures: StakingFixtures {
                     active_set_size: Range {
@@ -1238,18 +1243,10 @@ pub mod pallet {
                     },
                     max_commission: Percent::from_percent(50), //TODO
                     max_risk: Percent::from_percent(50),       //TODO
-                    min_executor_bond: BalanceOf::<T>::one()
-                        .mul((10 ^ DECIMALS).into())
-                        .mul(1000_u32.into()), //TODO
-                    min_candidate_bond: BalanceOf::<T>::one()
-                        .mul((10 ^ DECIMALS).into())
-                        .mul(1000_u32.into()), //TODO
-                    min_atomic_stake: BalanceOf::<T>::one()
-                        .mul((10 ^ DECIMALS).into())
-                        .mul(500_u32.into()), //TODO
-                    min_total_stake: BalanceOf::<T>::one()
-                        .mul((10 ^ DECIMALS).into())
-                        .mul(500_u32.into()), //TODO
+                    min_executor_bond: onethousand,            //TODO
+                    min_candidate_bond: onethousand,           //TODO
+                    min_atomic_stake: fivehundred,             //TODO
+                    min_total_stake: fivehundred,              //TODO
                     max_top_stakes_per_candidate: 300,         //TODO
                     max_bottom_stakes_per_candidate: 50,       //TODO
                     max_stakes_per_staker: 100,                //TODO
