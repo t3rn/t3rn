@@ -52,7 +52,7 @@ if ! git tag --list | grep -Fq $tag; then
   exit 1
 fi
 
-echo "🏭 installing chevdor/subwasm v0.16.1 a tool to calculate blake2 of runtime blob runtime wasm..."
+echo "🏭 installing chevdor/subwasm v0.16.1..."
 cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.16.1
 
 set -Ee
@@ -99,12 +99,20 @@ if [[ $new_author_version != $((old_author_version + 1)) ]]; then
   exit 1
 fi
 
-
 echo "🏭 building runtime wasm..."
-cargo build --locked  --profile release --target-dir target/ --out-dir $(pwd)/out -Z unstable-options
-echo "🏭 calculating blake2 of runtime circuit_parachain_runtime.compact.compressed.wasm..."
-hash=$(subwasm -j info ./target/release/wbuild/circuit-parachain-runtime/circuit_parachain_runtime.compact.compressed.wasm  | jq -r .blake2_256)
-echo $hash
+
+cargo build \
+  --locked \
+  --profile release \
+  --package circuit-parachain-runtime \
+  --target-dir $root_dir/target/ \
+  -Z unstable-options
+
+used_wasm=$root_dir/target/release/wbuild/circuit-parachain-runtime/circuit_parachain_runtime.compact.compressed.wasm
+
+echo "🔢 hashing circuit_parachain_runtime.compact.compressed.wasm..."
+
+hash=$(subwasm info --json $used_wasm | jq -r .blake2_256)
 
 read -n 1 -p "e2e-tested on rococo-local?
 runtime upgrade tested on rococo-local?
