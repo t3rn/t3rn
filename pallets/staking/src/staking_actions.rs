@@ -1,7 +1,7 @@
 use crate::{
     pallet::{
-        BalanceOf, CandidateInfo, Config, Error, Event, Pallet, ScheduledStakingRequests, StakerInfo,
-        Total, Fixtures
+        BalanceOf, CandidateInfo, Config, Error, Event, Fixtures, Pallet, ScheduledStakingRequests,
+        StakerInfo, Total,
     },
     subject_metadata::StakerMetadata,
 };
@@ -77,12 +77,16 @@ impl<T: Config> Pallet<T> {
         );
         let new_amount: BalanceOf<T> = (bonded_amount - decrease_amount).into();
         let fixtures = <Fixtures<T>>::get();
-        ensure!(new_amount >= fixtures.min_atomic_stake, <Error<T>>::StakeBelowMin);
+        ensure!(
+            new_amount >= fixtures.min_atomic_stake,
+            <Error<T>>::StakeBelowMin
+        );
 
         // Net Total is total after pending orders are executed
         let net_total = state.total.saturating_sub(state.less_total);
         // Net Total is always >= MinTotalStake
-        let max_subtracted_amount = net_total.saturating_sub(<Fixtures<T>>::get().min_total_stake.into());
+        let max_subtracted_amount =
+            net_total.saturating_sub(<Fixtures<T>>::get().min_total_stake.into());
         ensure!(
             decrease_amount <= max_subtracted_amount,
             <Error<T>>::StakerBondBelowMin
@@ -219,7 +223,10 @@ impl<T: Config> Pallet<T> {
                             bond.amount = bond.amount.saturating_sub(amount);
                             state.total = state.total.saturating_sub(amount);
                             let new_total: BalanceOf<T> = state.total.into();
-                            ensure!(new_total >= fixtures.min_atomic_stake, <Error<T>>::StakeBelowMin);
+                            ensure!(
+                                new_total >= fixtures.min_atomic_stake,
+                                <Error<T>>::StakeBelowMin
+                            );
                             ensure!(
                                 new_total >= fixtures.min_total_stake,
                                 <Error<T>>::StakerBondBelowMin
