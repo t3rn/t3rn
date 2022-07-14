@@ -17,7 +17,6 @@ use sp_runtime::{
 };
 
 const RUNTIME_ERROR: i64 = 1;
-const NO_KNOWN_RECORDS: i64 = 2;
 
 #[rpc]
 pub trait XdnsApi<AccountId> {

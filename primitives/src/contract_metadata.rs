@@ -156,6 +156,18 @@ impl Default for ContractType {
     }
 }
 
+impl From<ContractType> for u8 {
+    fn from(value: ContractType) -> Self {
+        match value {
+            ContractType::System => 0,
+            ContractType::VanillaEvm => 1,
+            ContractType::VanillaWasm => 2,
+            ContractType::VolatileEvm => 3,
+            ContractType::VolatileWasm => 4,
+        }
+    }
+}
+
 /// Metadata about a smart contract.
 #[derive(Clone, Debug, Eq, PartialEq, Encode, Decode, TypeInfo)]
 pub struct ContractMetadata {

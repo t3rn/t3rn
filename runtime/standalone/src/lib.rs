@@ -8,13 +8,14 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use codec::Decode;
+use pallet_3vm_evm::AddressMapping;
 use pallet_grandpa::{
     fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
 use pallet_xdns_rpc_runtime_api::{ChainId, FetchXdnsRecordsResponse, GatewayABIConfig};
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, NumberFor, Verify},
@@ -552,6 +553,38 @@ impl_runtime_apis! {
             key: [u8; 32],
         ) -> pallet_3vm_contracts_primitives::GetStorageResult {
             Contracts::get_storage(address, key)
+        }
+    }
+
+    impl pallet_3vm_evm_rpc::EvmRuntimeRPCApi<Block, AccountId, Balance> for Runtime {
+        fn get_evm_address(
+            account_id: AccountId,
+        ) -> Option<H160> {
+            <Runtime as pallet_3vm_evm::Config>::AddressMapping::get_evm_address(&account_id)
+        }
+        fn get_or_into_account_id(
+            address: H160,
+        ) -> AccountId {
+            <Runtime as pallet_3vm_evm::Config>::AddressMapping::get_or_into_account_id(&address)
+        }
+
+        fn get_threevm_info(
+            address: H160,
+        ) -> Option<(AccountId, Balance, u8)> {
+            Evm::get_threevm_info(&address)
+        }
+
+        fn account_info(address: H160) -> (U256, U256, Vec<u8>) {
+            let account = Evm::account_basic(&address);
+            let code = Evm::get_account_code(&address);
+
+            (account.balance, account.nonce, code)
+        }
+
+        fn storage_at(address: H160, index: U256) -> H256 {
+            let mut tmp = [0u8; 32];
+            index.to_big_endian(&mut tmp);
+            Evm::account_storages(address, H256::from_slice(&tmp[..]))
         }
     }
 

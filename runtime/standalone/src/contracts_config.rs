@@ -6,8 +6,8 @@ use crate::{
 use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::FindAuthor};
 use pallet_3vm_contracts::weights::WeightInfo;
 use pallet_3vm_evm::{
-    EnsureAddressNever, EnsureAddressTruncated, GasWeightMapping, StoredHashAddressMapping,
-    SubstrateBlockHashMapping, ThreeVMCurrencyAdapter,
+    EnsureAddressTruncated, GasWeightMapping, StoredHashAddressMapping, SubstrateBlockHashMapping,
+    ThreeVMCurrencyAdapter,
 };
 use pallet_3vm_evm_primitives::FeeCalculator;
 use sp_core::{H160, U256};
