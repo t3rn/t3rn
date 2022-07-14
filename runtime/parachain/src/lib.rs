@@ -760,7 +760,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl pallet_3vm_evm_rpc::EvmRuntimeRPCApi<Block, AccountId, Balance> for Runtime {
+    impl pallet_evm_rpc_runtime_api::EvmRuntimeRPCApi<Block, AccountId, Balance> for Runtime {
         fn get_evm_address(
             account_id: AccountId,
         ) -> Option<H160> {
