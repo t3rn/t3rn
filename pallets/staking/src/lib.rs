@@ -8,8 +8,8 @@
 
 #[cfg(test)]
 mod mock;
-// #[cfg(test)]
-// mod tests;
+#[cfg(test)]
+mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -341,8 +341,12 @@ pub mod pallet {
 
         /// Executes a scheduled excutor configuration request if due yet.
         #[pallet::weight(10_000)] //TODO
-        pub fn execute_configure_executor(origin: OriginFor<T>) -> DispatchResult {
-            let executor = ensure_signed(origin)?;
+        pub fn execute_configure_executor(
+            origin: OriginFor<T>,
+            executor: T::AccountId,
+        ) -> DispatchResult {
+            ensure_signed(origin)?;
+
             let current_round_index = T::Treasury::current_round().index;
             let req = <ScheduledConfigurationRequests<T>>::get(&executor)
                 .ok_or(<Error<T>>::NoSuchConfigurationRequest)?;
@@ -353,6 +357,7 @@ pub mod pallet {
             );
 
             <ScheduledConfigurationRequests<T>>::remove(&executor);
+
             // scheduled configuration request have been validated when persisted
             <ExecutorConfig<T>>::insert(
                 &executor,
@@ -369,6 +374,17 @@ pub mod pallet {
             });
 
             Ok(())
+        }
+
+        /// Cancels a scheduled executor configuration request if not due yet.
+        /// The extrinsic must be signed by the executor itself.
+        #[pallet::weight(10_000)] //TODO
+        pub fn cancel_configure_executor(origin: OriginFor<T>) -> DispatchResult {
+            let executor = ensure_signed(origin)?;
+
+            <ScheduledConfigurationRequests<T>>::remove(executor);
+
+            Ok(().into())
         }
 
         /// Increases an executor's self bond after having joined the candidate pool.
