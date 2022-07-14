@@ -19,7 +19,7 @@ use t3rn_primitives::{
     common::{OrderedSet, RoundIndex},
     staking::{
         Bond, CandidateBondLessRequest, CapacityStatus, ExecutorStatus, StakeAdjust, StakerAdded,
-        StakerStatus, EXECUTOR_LOCK_ID, STAKER_LOCK_ID,
+        StakerStatus, STAKER_LOCK_ID,
     },
     treasury::Treasury,
 };

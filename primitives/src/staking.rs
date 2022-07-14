@@ -1,9 +1,12 @@
 use crate::common::{Range, RoundIndex};
 use codec::{Decode, Encode};
-use serde::{Deserialize, Serialize};
 use frame_support::{pallet_prelude::*, traits::LockIdentifier};
-use sp_runtime::{RuntimeDebug, Percent, traits::Zero};
-use sp_std::{cmp::{Ordering, PartialOrd}, prelude::*};
+use serde::{Deserialize, Serialize};
+use sp_runtime::{traits::Zero, Percent, RuntimeDebug};
+use sp_std::{
+    cmp::{Ordering, PartialOrd},
+    prelude::*,
+};
 
 pub const EXECUTOR_LOCK_ID: LockIdentifier = *b"execstkl";
 pub const STAKER_LOCK_ID: LockIdentifier = *b"stkrstkl";
@@ -222,17 +225,19 @@ pub struct ScheduledConfigurationRequest {
 
 /// Protocol enforced thresholds and delays for staking.
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo, PartialOrd, Ord, Default)]
+#[derive(
+    Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo, PartialOrd, Ord, Default,
+)]
 pub struct Fixtures<Balance> {
     pub active_set_size: Range<u32>,
-    pub   max_commission: Percent,
+    pub max_commission: Percent,
     pub max_risk: Percent,
     pub min_executor_bond: Balance,
     pub min_candidate_bond: Balance,
     pub min_atomic_stake: Balance,
     pub min_total_stake: Balance,
     pub max_top_stakes_per_candidate: u32,
-    pub  max_bottom_stakes_per_candidate: u32,
+    pub max_bottom_stakes_per_candidate: u32,
     pub max_stakes_per_staker: u32,
     pub configure_executor_delay: u32,
     pub leave_candidates_delay: u32,
@@ -241,25 +246,25 @@ pub struct Fixtures<Balance> {
     pub revoke_stake_delay: u32,
 }
 
-impl<Balance: PartialEq + Zero + PartialOrd>  Fixtures<Balance> {
+impl<Balance: PartialEq + Zero + PartialOrd> Fixtures<Balance> {
     /// Asserts that all included fixtures are greater than zero.
     pub fn are_valid(&self) -> bool {
-        self.active_set_size.min > 0 &&
-        self.active_set_size.ideal > 0 &&
-        self.active_set_size.max > 0 &&
-        self.max_commission > Percent::from_percent(0) &&
-        self.max_risk > Percent::from_percent(0) &&
-        self.min_executor_bond > Balance::zero() &&
-        self.min_candidate_bond > Balance::zero() &&
-        self.min_atomic_stake > Balance::zero() &&
-        self.min_total_stake > Balance::zero() &&
-        self.max_top_stakes_per_candidate > 0 &&
-        self.max_bottom_stakes_per_candidate > 0 &&
-        self.max_stakes_per_staker > 0 &&
-        self.configure_executor_delay > 0 &&
-        self.leave_candidates_delay > 0 &&
-        self.leave_stakers_delay > 0 &&
-        self.candidate_bond_less_delay > 0 &&
-        self.revoke_stake_delay > 0
+        self.active_set_size.min > 0
+            && self.active_set_size.ideal > 0
+            && self.active_set_size.max > 0
+            && self.max_commission > Percent::from_percent(0)
+            && self.max_risk > Percent::from_percent(0)
+            && self.min_executor_bond > Balance::zero()
+            && self.min_candidate_bond > Balance::zero()
+            && self.min_atomic_stake > Balance::zero()
+            && self.min_total_stake > Balance::zero()
+            && self.max_top_stakes_per_candidate > 0
+            && self.max_bottom_stakes_per_candidate > 0
+            && self.max_stakes_per_staker > 0
+            && self.configure_executor_delay > 0
+            && self.leave_candidates_delay > 0
+            && self.leave_stakers_delay > 0
+            && self.candidate_bond_less_delay > 0
+            && self.revoke_stake_delay > 0
     }
 }
