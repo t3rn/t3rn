@@ -1,21 +1,15 @@
 use crate::{
     pallet::{
-        BalanceOf,     
-        BottomStakes,  
-        CandidateInfo, 
-        Config,        
-        Error,         
-        Event,         
-        Pallet,        
-        StakerInfo,    
-        TopStakes,     
-        Total,         
-        Fixtures,
+        BalanceOf, BottomStakes, CandidateInfo, Config, Error, Event, Fixtures, Pallet, StakerInfo,
+        TopStakes, Total,
     },
     stakes::Stakes,
 };
 use codec::{Decode, Encode};
-use frame_support::{pallet_prelude::*, traits::ReservableCurrency};
+use frame_support::{
+    pallet_prelude::*,
+    traits::{tokens::WithdrawReasons, LockableCurrency, ReservableCurrency},
+};
 use sp_runtime::{
     traits::{Saturating, Zero},
     RuntimeDebug,
@@ -24,7 +18,8 @@ use sp_std::prelude::*;
 use t3rn_primitives::{
     common::{OrderedSet, RoundIndex},
     staking::{
-        Bond, CandidateBondLessRequest, CapacityStatus, ExecutorStatus, StakerAdded, StakerStatus,
+        Bond, CandidateBondLessRequest, CapacityStatus, ExecutorStatus, StakeAdjust, StakerAdded,
+        StakerStatus, EXECUTOR_LOCK_ID, STAKER_LOCK_ID,
     },
     treasury::Treasury,
 };
@@ -72,78 +67,79 @@ impl<
 
     //
     pub fn default_with_total(id: AccountId, amount: Balance) -> Self {
-		StakerMetadata {
-			id,
-			total: amount,
-			stakes: OrderedSet::from(vec![]),
-			less_total: Balance::zero(),
-			status: StakerStatus::Active,
-		}
-	}
+        StakerMetadata {
+            id,
+            total: amount,
+            stakes: OrderedSet::from(vec![]),
+            less_total: Balance::zero(),
+            status: StakerStatus::Active,
+        }
+    }
 
-	pub fn total(&self) -> Balance {
-		self.total
-	}
+    pub fn total(&self) -> Balance {
+        self.total
+    }
 
-	pub fn total_add_if<T, F>(&mut self, amount: Balance, check: F) -> DispatchResult
-	where
-		T: Config,
-		T::AccountId: From<AccountId>,
-		BalanceOf<T>: From<Balance>,
-		F: Fn(Balance) -> DispatchResult,
-	{
-		let total = self.total.saturating_add(amount);
+    pub fn total_add_if<T, F>(&mut self, amount: Balance, check: F) -> DispatchResult
+    where
+        T: Config,
+        T::AccountId: From<AccountId>,
+        BalanceOf<T>: From<Balance>,
+        F: Fn(Balance) -> DispatchResult,
+    {
+        let total = self.total.saturating_add(amount);
 
-		check(total)?;
-		
-        self.total = total;
-		
-        self.adjust_bond_lock::<T>(BondAdjust::Increase(amount))
-	}
-
-	pub fn total_sub_if<T, F>(&mut self, amount: Balance, check: F) -> DispatchResult
-	where
-		T: Config,
-		T::AccountId: From<AccountId>,
-		BalanceOf<T>: From<Balance>,
-		F: Fn(Balance) -> DispatchResult,
-	{
-		let total = self.total.saturating_sub(amount);
-		
         check(total)?;
-		
+
         self.total = total;
-		
-        self.adjust_bond_lock::<T>(BondAdjust::Decrease)?;
-		
-        Ok(())
-	}
 
-	pub fn total_add<T, F>(&mut self, amount: Balance) -> DispatchResult
-	where
-		T: Config,
-		T::AccountId: From<AccountId>,
-		BalanceOf<T>: From<Balance>,
-	{
-		self.total = self.total.saturating_add(amount);
-		
-        self.adjust_bond_lock::<T>(BondAdjust::Increase(amount))?;
-		
-        Ok(())
-	}
+        self.adjust_bond_lock::<T>(StakeAdjust::Increase(amount))
+    }
 
-	pub fn total_sub<T>(&mut self, amount: Balance) -> DispatchResult
-	where
-		T: Config,
-		T::AccountId: From<AccountId>,
-		BalanceOf<T>: From<Balance>,
-	{
-		self.total = self.total.saturating_sub(amount);
-		
-        self.adjust_bond_lock::<T>(BondAdjust::Decrease)?;
-		
+    pub fn total_sub_if<T, F>(&mut self, amount: Balance, check: F) -> DispatchResult
+    where
+        T: Config,
+        T::AccountId: From<AccountId>,
+        BalanceOf<T>: From<Balance>,
+        F: Fn(Balance) -> DispatchResult,
+    {
+        let total = self.total.saturating_sub(amount);
+
+        check(total)?;
+
+        self.total = total;
+
+        self.adjust_bond_lock::<T>(StakeAdjust::Decrease)?;
+
         Ok(())
-	}
+    }
+
+    pub fn total_add<T, F>(&mut self, amount: Balance) -> DispatchResult
+    where
+        T: Config,
+        T::AccountId: From<AccountId>,
+        BalanceOf<T>: From<Balance>,
+    {
+        self.total = self.total.saturating_add(amount);
+
+        self.adjust_bond_lock::<T>(StakeAdjust::Increase(amount))?;
+
+        Ok(())
+    }
+
+    pub fn total_sub<T>(&mut self, amount: Balance) -> DispatchResult
+    where
+        T: Config,
+        T::AccountId: From<AccountId>,
+        BalanceOf<T>: From<Balance>,
+    {
+        self.total = self.total.saturating_sub(amount);
+
+        self.adjust_bond_lock::<T>(StakeAdjust::Decrease)?;
+
+        Ok(())
+    }
+
     //
 
     pub fn is_active(&self) -> bool {
@@ -235,6 +231,53 @@ impl<
             }
         }
         Err(Error::<T>::NoSuchStake.into())
+    }
+
+    /// Updates the bond locks for this staker.
+    ///
+    /// This will take the current self.total and ensure that a lock of the same amount is applied
+    /// and when increasing the bond lock will also ensure that the account has enough free balance.
+    ///
+    /// `additional_required_balance` should reflect the change to the amount that should be locked if
+    /// positive, 0 otherwise (e.g. `min(0, change_in_total_bond)`). This is necessary because it is
+    /// not possible to query the amount that is locked for a given lock id.
+    pub fn adjust_bond_lock<T: Config>(
+        &mut self,
+        additional_required_balance: StakeAdjust<Balance>,
+    ) -> DispatchResult
+    where
+        BalanceOf<T>: From<Balance>,
+        T::AccountId: From<AccountId>,
+    {
+        match additional_required_balance {
+            StakeAdjust::Increase(amount) => {
+                ensure!(
+                    <Pallet<T>>::get_staker_stakable_free_balance(&self.id.clone().into())
+                        >= amount.into(),
+                    Error::<T>::InsufficientBalance,
+                );
+
+                // additional sanity check: shouldn't ever want to lock more than total
+                if amount > self.total {
+                    log::warn!("LOGIC ERROR: request to reserve more than bond total");
+                    return Err(DispatchError::Other("Invalid additional_required_balance"))
+                }
+            },
+            StakeAdjust::Decrease => (), // do nothing on decrease
+        };
+
+        if self.total.is_zero() {
+            T::Currency::remove_lock(STAKER_LOCK_ID, &self.id.clone().into());
+        } else {
+            T::Currency::set_lock(
+                STAKER_LOCK_ID,
+                &self.id.clone().into(),
+                self.total.into(),
+                WithdrawReasons::all(),
+            );
+        }
+
+        Ok(())
     }
 
     /// Retrieves the bond amount that a staker has provided towards a collator.
@@ -377,7 +420,8 @@ impl<
             Error::<T>::CandidateBondBelowMin
         );
 
-        let when_executable = T::Treasury::current_round().index + fixtures.candidate_bond_less_delay;
+        let when_executable =
+            T::Treasury::current_round().index + fixtures.candidate_bond_less_delay;
 
         self.request = Some(CandidateBondLessRequest {
             amount: less,
@@ -572,54 +616,55 @@ impl<
             .expect("CandidateInfo existence => BottomStakes existence");
         // if bottom is full, kick the lowest bottom (which is expected to be lower than input
         // as per check)
-        let increase_stake_count =
-            if bottom_stakes.stakes.len() as u32 == <Fixtures<T>>::get().max_bottom_stakes_per_candidate {
-                let lowest_bottom_to_be_kicked = bottom_stakes
-                    .stakes
-                    .pop()
-                    .expect("if at full capacity (>0), then >0 bottom stakes exist; qed");
-                // EXPECT lowest_bottom_to_be_kicked.amount < stake.amount enforced by caller
-                // if lowest_bottom_to_be_kicked.amount == stake.amount, we will still kick
-                // the lowest bottom to enforce first come first served
-                bottom_stakes.total = bottom_stakes
-                    .total
-                    .saturating_sub(lowest_bottom_to_be_kicked.amount);
-                // update staker state
-                // unreserve kicked bottom
-                T::Currency::unreserve(
-                    &lowest_bottom_to_be_kicked.owner,
-                    lowest_bottom_to_be_kicked.amount,
-                );
-                // total staked is updated via propagation of lowest bottom stake amount prior
-                // to call
-                let mut staker_state = <StakerInfo<T>>::get(&lowest_bottom_to_be_kicked.owner)
-                    .expect("Delegation existence => StakerInfo existence");
-                let leaving = staker_state.stakes.0.len() == 1usize;
-                staker_state.rm_stake(candidate);
-                <Pallet<T>>::stake_remove_request_with_state(
-                    &candidate,
-                    &lowest_bottom_to_be_kicked.owner,
-                    &mut staker_state,
-                );
+        let increase_stake_count = if bottom_stakes.stakes.len() as u32
+            == <Fixtures<T>>::get().max_bottom_stakes_per_candidate
+        {
+            let lowest_bottom_to_be_kicked = bottom_stakes
+                .stakes
+                .pop()
+                .expect("if at full capacity (>0), then >0 bottom stakes exist; qed");
+            // EXPECT lowest_bottom_to_be_kicked.amount < stake.amount enforced by caller
+            // if lowest_bottom_to_be_kicked.amount == stake.amount, we will still kick
+            // the lowest bottom to enforce first come first served
+            bottom_stakes.total = bottom_stakes
+                .total
+                .saturating_sub(lowest_bottom_to_be_kicked.amount);
+            // update staker state
+            // unreserve kicked bottom
+            T::Currency::unreserve(
+                &lowest_bottom_to_be_kicked.owner,
+                lowest_bottom_to_be_kicked.amount,
+            );
+            // total staked is updated via propagation of lowest bottom stake amount prior
+            // to call
+            let mut staker_state = <StakerInfo<T>>::get(&lowest_bottom_to_be_kicked.owner)
+                .expect("Delegation existence => StakerInfo existence");
+            let leaving = staker_state.stakes.0.len() == 1usize;
+            staker_state.rm_stake(candidate);
+            <Pallet<T>>::stake_remove_request_with_state(
+                &candidate,
+                &lowest_bottom_to_be_kicked.owner,
+                &mut staker_state,
+            );
 
-                Pallet::<T>::deposit_event(Event::StakeKicked {
-                    staker: lowest_bottom_to_be_kicked.owner.clone(),
-                    candidate: candidate.clone(),
+            Pallet::<T>::deposit_event(Event::StakeKicked {
+                staker: lowest_bottom_to_be_kicked.owner.clone(),
+                candidate: candidate.clone(),
+                unstaked: lowest_bottom_to_be_kicked.amount,
+            });
+            if leaving {
+                <StakerInfo<T>>::remove(&lowest_bottom_to_be_kicked.owner);
+                Pallet::<T>::deposit_event(Event::StakerLeft {
+                    staker: lowest_bottom_to_be_kicked.owner,
                     unstaked: lowest_bottom_to_be_kicked.amount,
                 });
-                if leaving {
-                    <StakerInfo<T>>::remove(&lowest_bottom_to_be_kicked.owner);
-                    Pallet::<T>::deposit_event(Event::StakerLeft {
-                        staker: lowest_bottom_to_be_kicked.owner,
-                        unstaked: lowest_bottom_to_be_kicked.amount,
-                    });
-                } else {
-                    <StakerInfo<T>>::insert(&lowest_bottom_to_be_kicked.owner, staker_state);
-                }
-                false
             } else {
-                !bumped_from_top
-            };
+                <StakerInfo<T>>::insert(&lowest_bottom_to_be_kicked.owner, staker_state);
+            }
+            false
+        } else {
+            !bumped_from_top
+        };
         // only increase stake count if new bottom stake (1) doesn't come from top &&
         // (2) doesn't pop the lowest stake from the bottom
         if increase_stake_count {

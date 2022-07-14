@@ -1,15 +1,25 @@
 use crate::common::{Range, RoundIndex};
 use codec::{Decode, Encode};
 use serde::{Deserialize, Serialize};
-use frame_support::pallet_prelude::*;
+use frame_support::{pallet_prelude::*, traits::LockIdentifier};
 use sp_runtime::{RuntimeDebug, Percent, traits::Zero};
 use sp_std::{cmp::{Ordering, PartialOrd}, prelude::*};
+
+pub const EXECUTOR_LOCK_ID: LockIdentifier = *b"execstkl";
+pub const STAKER_LOCK_ID: LockIdentifier = *b"stkrstkl";
+
+/// Staker's bond adjustment - used with locks.
+#[derive(Clone, Copy, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
+pub enum StakeAdjust<Balance> {
+    Increase(Balance),
+    Decrease,
+}
 
 /// Convey relevant information describing if a delegator was added to the top or bottom
 /// Stakes added to the top yield a new total
 #[derive(Clone, Copy, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
-pub enum StakerAdded<B> {
-    ToTop { new_total: B },
+pub enum StakerAdded<Balance> {
+    ToTop { new_total: Balance },
     ToBottom,
 }
 

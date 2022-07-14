@@ -26,37 +26,40 @@ pub mod pallet {
         subject_metadata::{CandidateMetadata, StakerMetadata},
         weights,
     };
+    use core::ops::Mul;
     use frame_support::{
         pallet_prelude::*,
-        traits::{Currency, ReservableCurrency,  LockIdentifier, LockableCurrency,tokens::WithdrawReasons},
+        traits::{tokens::WithdrawReasons, Currency, LockableCurrency, ReservableCurrency},
     };
     use frame_system::{ensure_root, pallet_prelude::*};
     use sp_runtime::{
-        traits::{Saturating, Zero, One},
+        traits::{One, Saturating, Zero},
         Percent,
     };
     use sp_std::collections::btree_map::BTreeMap;
     use t3rn_primitives::{
         common::{OrderedSet, Range, RoundIndex, BLOCKS_PER_DAY},
+        monetary::DECIMALS,
         staking::{
-            Bond, CancelledScheduledStakingRequest, ExecutorSnapshot, ScheduledStakingRequest, StakerAdded,
-            StakingAction, ExecutorInfo,   ScheduledConfigurationRequest, Fixtures as StakingFixtures
+            Bond, CancelledScheduledStakingRequest, ExecutorInfo, ExecutorSnapshot,
+            Fixtures as StakingFixtures, ScheduledConfigurationRequest, ScheduledStakingRequest,
+            StakeAdjust, StakerAdded, StakingAction, EXECUTOR_LOCK_ID, STAKER_LOCK_ID,
         },
         treasury::Treasury as TTreasury,
-        monetary::DECIMALS,
     };
-    use core::ops::Mul;
 
     pub type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
-        pub const EXECUTOR_LOCK_ID: LockIdentifier = *b"execstkl";
-        pub const STAKER_LOCK_ID: LockIdentifier = *b"stkrstkl";
+    // pub const EXECUTOR_LOCK_ID: LockIdentifier = *b"execstkl";
+    // pub const STAKER_LOCK_ID: LockIdentifier = *b"stkrstkl";
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
-        type Currency: Currency<Self::AccountId> + ReservableCurrency<Self::AccountId> + LockableCurrency<Self::AccountId>;
+        type Currency: Currency<Self::AccountId>
+            + ReservableCurrency<Self::AccountId>
+            + LockableCurrency<Self::AccountId>;
 
         // WIP
         // // /// Range for the target executor active set size.
@@ -154,7 +157,8 @@ pub mod pallet {
     /// Executors' commission and risk rates.
     #[pallet::storage]
     #[pallet::getter(fn executor_config)]
-    pub type ExecutorConfig<T: Config> = StorageMap<_, Identity, T::AccountId, ExecutorInfo, OptionQuery>;
+    pub type ExecutorConfig<T: Config> =
+        StorageMap<_, Identity, T::AccountId, ExecutorInfo, OptionQuery>;
 
     /// The pool of executor candidates, each with their total backing stake.
     #[pallet::storage]
@@ -211,13 +215,8 @@ pub mod pallet {
     /// Outstanding configuration change per executor.
     #[pallet::storage]
     #[pallet::getter(fn scheduled_configration_requests)]
-    pub(crate) type ScheduledConfigurationRequests<T: Config> = StorageMap<
-        _,
-        Blake2_128Concat,
-        T::AccountId,
-        ScheduledConfigurationRequest,
-        OptionQuery,
-    >;
+    pub(crate) type ScheduledConfigurationRequests<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::AccountId, ScheduledConfigurationRequest, OptionQuery>;
 
     /// Top stakes by executor candidate.
     #[pallet::storage]
@@ -237,42 +236,45 @@ pub mod pallet {
     pub(crate) type Total<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
     /// Total staked of a round's active set of executors.
-	#[pallet::storage]
-	#[pallet::getter(fn staked)]
-	pub type Staked<T: Config> = StorageMap<_, Twox64Concat, RoundIndex, BalanceOf<T>, ValueQuery>;
+    #[pallet::storage]
+    #[pallet::getter(fn staked)]
+    pub type Staked<T: Config> = StorageMap<_, Twox64Concat, RoundIndex, BalanceOf<T>, ValueQuery>;
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Sets all protocol enforced staking fixtures.
         #[pallet::weight(10_000)] //TODO
-        pub fn set_fixtures(origin: OriginFor<T>, fixtures: StakingFixtures<BalanceOf<T>>) -> DispatchResult {
+        pub fn set_fixtures(
+            origin: OriginFor<T>,
+            fixtures: StakingFixtures<BalanceOf<T>>,
+        ) -> DispatchResult {
             ensure_root(origin)?;
 
             ensure!(fixtures.are_valid(), <Error<T>>::FixturesCannotBeZero);
-        
+
             <Fixtures<T>>::put(&fixtures);
 
             Self::deposit_event(Event::FixturesConfigured {
                 active_set_size: fixtures.active_set_size,
                 max_commission: fixtures.max_commission,
-              max_risk: fixtures.max_risk,
-              min_executor_bond: fixtures.min_executor_bond,
-              min_candidate_bond: fixtures.min_candidate_bond,
-              min_atomic_stake: fixtures.min_atomic_stake,
-              min_total_stake: fixtures.min_total_stake,
-              max_top_stakes_per_candidate: fixtures.max_top_stakes_per_candidate,
-               max_bottom_stakes_per_candidate: fixtures.max_bottom_stakes_per_candidate,
-              max_stakes_per_staker: fixtures.max_stakes_per_staker,
-              configure_executor_delay: fixtures.configure_executor_delay,
-              leave_candidates_delay: fixtures.leave_candidates_delay,
-              leave_stakers_delay: fixtures.leave_stakers_delay,
-              candidate_bond_less_delay: fixtures.candidate_bond_less_delay,
-              revoke_stake_delay: fixtures.revoke_stake_delay,
-             });
+                max_risk: fixtures.max_risk,
+                min_executor_bond: fixtures.min_executor_bond,
+                min_candidate_bond: fixtures.min_candidate_bond,
+                min_atomic_stake: fixtures.min_atomic_stake,
+                min_total_stake: fixtures.min_total_stake,
+                max_top_stakes_per_candidate: fixtures.max_top_stakes_per_candidate,
+                max_bottom_stakes_per_candidate: fixtures.max_bottom_stakes_per_candidate,
+                max_stakes_per_staker: fixtures.max_stakes_per_staker,
+                configure_executor_delay: fixtures.configure_executor_delay,
+                leave_candidates_delay: fixtures.leave_candidates_delay,
+                leave_stakers_delay: fixtures.leave_stakers_delay,
+                candidate_bond_less_delay: fixtures.candidate_bond_less_delay,
+                revoke_stake_delay: fixtures.revoke_stake_delay,
+            });
 
             Ok(())
         }
-        
+
         ///////////////////////////////////////////////////////////////////////
         // ExposesT::MinBond via pallet-executor-staking Config trait ✅
         // implements call fn bond(...)  ✅
@@ -292,645 +294,683 @@ pub mod pallet {
 
         /// Configures an executor's economics.
         /// The parameters must adhere to `T::MaxCommission` and `T::MaxRisk`.
-        /// If this applies to an already configured executor `T::ConfigureExecutorDelay` is enforced, 
+        /// If this applies to an already configured executor `T::ConfigureExecutorDelay` is enforced,
         /// in case of first time configuration it will be effective immediately.
         #[pallet::weight(10_000)] //TODO
-        pub fn schedule_configure_executor(origin: OriginFor<T>, commission: Percent, risk: Percent)  -> DispatchResult  {
+        pub fn schedule_configure_executor(
+            origin: OriginFor<T>,
+            commission: Percent,
+            risk: Percent,
+        ) -> DispatchResult {
             let executor = ensure_signed(origin)?;
             let fixtures = <Fixtures<T>>::get();
 
-            ensure!(!commission.gt(&fixtures.max_commission), <Error<T>>::TooMuchCommission);
+            ensure!(
+                !commission.gt(&fixtures.max_commission),
+                <Error<T>>::TooMuchCommission
+            );
             ensure!(!risk.gt(&fixtures.max_risk), <Error<T>>::TooMuchRisk);
 
-            // enforcing an executor config change delay to accomodate 
+            // enforcing an executor config change delay to accomodate
             // a grace period allowing stakers to be notified and react
             if <ExecutorConfig<T>>::contains_key(&executor) {
-                let when_executable = T::Treasury::current_round().index.saturating_add(fixtures.configure_executor_delay);
+                let when_executable = T::Treasury::current_round()
+                    .index
+                    .saturating_add(fixtures.configure_executor_delay);
 
-                <ScheduledConfigurationRequests<T>>::insert(executor, ScheduledConfigurationRequest {
-                    when_executable,
-                    commission,
-                    risk,
-                })
+                <ScheduledConfigurationRequests<T>>::insert(
+                    executor,
+                    ScheduledConfigurationRequest {
+                        when_executable,
+                        commission,
+                        risk,
+                    },
+                )
             } else {
                 <ExecutorConfig<T>>::insert(&executor, ExecutorInfo { commission, risk });
 
-                Self::deposit_event(Event::ExecutorConfigured {executor, commission, risk });
+                Self::deposit_event(Event::ExecutorConfigured {
+                    executor,
+                    commission,
+                    risk,
+                });
             }
 
             Ok(())
-       }
+        }
 
-    /// Executes a scheduled excutor configuration request if due yet.
-    #[pallet::weight(10_000)] //TODO
-    pub fn execute_configure_executor(origin: OriginFor<T>)  -> DispatchResult {
-        let executor = ensure_signed(origin)?;
-        let current_round_index = T::Treasury::current_round().index;
-           let req = <ScheduledConfigurationRequests<T>>::get(&executor).ok_or(<Error<T>>::NoSuchConfigurationRequest)?;
-           
-           ensure!(req.when_executable == current_round_index, <Error<T>>::ConfigurationRequestNotDueYet);
+        /// Executes a scheduled excutor configuration request if due yet.
+        #[pallet::weight(10_000)] //TODO
+        pub fn execute_configure_executor(origin: OriginFor<T>) -> DispatchResult {
+            let executor = ensure_signed(origin)?;
+            let current_round_index = T::Treasury::current_round().index;
+            let req = <ScheduledConfigurationRequests<T>>::get(&executor)
+                .ok_or(<Error<T>>::NoSuchConfigurationRequest)?;
 
-           <ScheduledConfigurationRequests<T>>::remove(&executor);
+            ensure!(
+                req.when_executable == current_round_index,
+                <Error<T>>::ConfigurationRequestNotDueYet
+            );
+
+            <ScheduledConfigurationRequests<T>>::remove(&executor);
             // scheduled configuration request have been validated when persisted
-            <ExecutorConfig<T>>::insert(&executor, ExecutorInfo { commission: req.commission, risk: req.risk });
+            <ExecutorConfig<T>>::insert(
+                &executor,
+                ExecutorInfo {
+                    commission: req.commission,
+                    risk: req.risk,
+                },
+            );
 
-            Self::deposit_event(Event::ExecutorConfigured {executor, commission: req.commission, risk: req.risk });
+            Self::deposit_event(Event::ExecutorConfigured {
+                executor,
+                commission: req.commission,
+                risk: req.risk,
+            });
 
-        Ok(())
-    }
+            Ok(())
+        }
 
         /// Increases an executor's self bond after having joined the candidate pool.
         #[pallet::weight(10_000)] //TODO
-        pub fn candidate_bond_more(origin: OriginFor<T>, amount:  BalanceOf<T>,) -> DispatchResult {
+        pub fn candidate_bond_more(origin: OriginFor<T>, amount: BalanceOf<T>) -> DispatchResult {
             let executor = ensure_signed(origin)?;
 
-			let mut state = <CandidateInfo<T>>::get(&executor).ok_or(Error::<T>::NoSuchCandidate)?;
+            let mut state =
+                <CandidateInfo<T>>::get(&executor).ok_or(Error::<T>::NoSuchCandidate)?;
 
-			state.bond_more::<T>(executor.clone(), amount)?;
+            state.bond_more::<T>(executor.clone(), amount)?;
 
-			let (is_active, total_counted) = (state.is_active(), state.total_counted);
+            let (is_active, total_counted) = (state.is_active(), state.total_counted);
 
-			<CandidateInfo<T>>::insert(&executor, state);
+            <CandidateInfo<T>>::insert(&executor, state);
 
-			if is_active {
-				Self::update_active(executor, total_counted);
-			}
+            if is_active {
+                Self::update_active(executor, total_counted);
+            }
 
-			Ok(().into())
+            Ok(().into())
         }
 
         /// Request by an executor candidate to decrease its self bond.
         #[pallet::weight(10_000)] //TODO
-		pub fn schedule_candidate_bond_less(
-			origin: OriginFor<T>,
-			amount: BalanceOf<T>,
-		) -> DispatchResultWithPostInfo {
-			let executor = ensure_signed(origin)?;
+        pub fn schedule_candidate_bond_less(
+            origin: OriginFor<T>,
+            amount: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
+            let executor = ensure_signed(origin)?;
 
-			let mut state = <CandidateInfo<T>>::get(&executor).ok_or(Error::<T>::NoSuchCandidate)?;
+            let mut state =
+                <CandidateInfo<T>>::get(&executor).ok_or(Error::<T>::NoSuchCandidate)?;
 
-			let when = state.schedule_bond_less::<T>(amount)?;
+            let when = state.schedule_bond_less::<T>(amount)?;
 
-			<CandidateInfo<T>>::insert(&executor, state);
+            <CandidateInfo<T>>::insert(&executor, state);
 
-			Self::deposit_event(Event::CandidateBondLessRequested {
-				candidate: executor,
-				amount:amount,
-				execute_round: when,
-			});
+            Self::deposit_event(Event::CandidateBondLessRequested {
+                candidate: executor,
+                amount,
+                execute_round: when,
+            });
 
-			Ok(().into())
-		}
+            Ok(().into())
+        }
 
         /// Executes a pending request to adjust an executor's candidate self bond.
         /// Executable by anyone.
         #[pallet::weight(10_000)] //TODO
-		pub fn execute_candidate_bond_less(origin: OriginFor<T>, candidate: T::AccountId) -> DispatchResultWithPostInfo {
-			 ensure_signed(origin)?; // could reward if not candidate self
-        
-			let mut state = <CandidateInfo<T>>::get(&candidate).ok_or(Error::<T>::NoSuchCandidate)?;
+        pub fn execute_candidate_bond_less(
+            origin: OriginFor<T>,
+            candidate: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+            ensure_signed(origin)?; // could reward if not candidate self
 
-			state.execute_bond_less::<T>(candidate.clone())?;
+            let mut state =
+                <CandidateInfo<T>>::get(&candidate).ok_or(Error::<T>::NoSuchCandidate)?;
 
-			<CandidateInfo<T>>::insert(&candidate, state);
-        
-			Ok(().into())
-		}
+            state.execute_bond_less::<T>(candidate.clone())?;
+
+            <CandidateInfo<T>>::insert(&candidate, state);
+
+            Ok(().into())
+        }
 
         /// Cancel pending request to adjust the executor candidate self bond WIP
         #[pallet::weight(10_000)] //TODO
-		pub fn cancel_candidate_bond_less(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-			let executor = ensure_signed(origin)?;
+        pub fn cancel_candidate_bond_less(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            let executor = ensure_signed(origin)?;
 
-			let mut state = <CandidateInfo<T>>::get(&executor).ok_or(Error::<T>::NoSuchCandidate)?;
+            let mut state =
+                <CandidateInfo<T>>::get(&executor).ok_or(Error::<T>::NoSuchCandidate)?;
 
-			state.cancel_bond_less::<T>(executor.clone())?;
+            state.cancel_bond_less::<T>(executor.clone())?;
 
-			<CandidateInfo<T>>::insert(&executor, state);
+            <CandidateInfo<T>>::insert(&executor, state);
 
-			Ok(().into())
-		}
+            Ok(().into())
+        }
 
         /// Join the set of executor candidates.
         /// `candidate_count` must at least be the sie of the candidate pool.
-		// #[pallet::weight(<T as Config>::WeightInfo::join_candidates(*candidate_count))]
+        // #[pallet::weight(<T as Config>::WeightInfo::join_candidates(*candidate_count))]
         #[pallet::weight(10_000)] //TODO
-		pub fn join_candidates(
-			origin: OriginFor<T>,
-			bond: BalanceOf<T>,
-			candidate_count: u32,
-		) -> DispatchResultWithPostInfo {
-			let acc = ensure_signed(origin)?;
+        pub fn join_candidates(
+            origin: OriginFor<T>,
+            bond: BalanceOf<T>,
+            candidate_count: u32,
+        ) -> DispatchResultWithPostInfo {
+            let acc = ensure_signed(origin)?;
 
-			ensure!(!Self::is_candidate(&acc), Error::<T>::CandidateExists);
-			ensure!(!Self::is_staker(&acc), Error::<T>::StakerExists);
+            ensure!(!Self::is_candidate(&acc), Error::<T>::CandidateExists);
+            ensure!(!Self::is_staker(&acc), Error::<T>::StakerExists);
 
             let fixtures = <Fixtures<T>>::get();
 
-			ensure!(
-				bond >= fixtures.min_candidate_bond,
-				Error::<T>::CandidateBondBelowMin
-			);
+            ensure!(
+                bond >= fixtures.min_candidate_bond,
+                Error::<T>::CandidateBondBelowMin
+            );
 
-			let mut candidates = <CandidatePool<T>>::get();
-			let old_count = candidates.0.len() as u32;
+            let mut candidates = <CandidatePool<T>>::get();
+            let old_count = candidates.0.len() as u32;
 
-			ensure!(
-				candidate_count >= old_count,
-				Error::<T>::TooLowCandidateCountWeightHintJoinCandidates
-			);
-			ensure!(
-				candidates.insert(Bond {
-					owner: acc.clone(),
-					amount: bond
-				}),
-				Error::<T>::CandidateExists
-			);
-			ensure!(
-				Self::get_executor_stakable_free_balance(&acc) >= bond,
-				Error::<T>::InsufficientBalance,
-			);
+            ensure!(
+                candidate_count >= old_count,
+                Error::<T>::TooLowCandidateCountWeightHintJoinCandidates
+            );
+            ensure!(
+                candidates.insert(Bond {
+                    owner: acc.clone(),
+                    amount: bond
+                }),
+                Error::<T>::CandidateExists
+            );
+            ensure!(
+                Self::get_executor_stakable_free_balance(&acc) >= bond,
+                Error::<T>::InsufficientBalance,
+            );
 
-			T::Currency::set_lock(EXECUTOR_LOCK_ID, &acc, bond, WithdrawReasons::all());
+            T::Currency::set_lock(EXECUTOR_LOCK_ID, &acc, bond, WithdrawReasons::all());
 
-			let candidate = CandidateMetadata::new(bond);
+            let candidate = CandidateMetadata::new(bond);
 
-			<CandidateInfo<T>>::insert(&acc, candidate);
+            <CandidateInfo<T>>::insert(&acc, candidate);
 
             let empty_stakes: Stakes<T::AccountId, BalanceOf<T>> = Default::default();
-			
+
             // insert empty top stakes
-			<TopStakes<T>>::insert(&acc, empty_stakes.clone());
+            <TopStakes<T>>::insert(&acc, empty_stakes.clone());
 
-			// insert empty bottom stakes
-			<BottomStakes<T>>::insert(&acc, empty_stakes);
+            // insert empty bottom stakes
+            <BottomStakes<T>>::insert(&acc, empty_stakes);
 
-			<CandidatePool<T>>::put(candidates);
+            <CandidatePool<T>>::put(candidates);
 
-			let new_total = <Total<T>>::get().saturating_add(bond);
+            let new_total = <Total<T>>::get().saturating_add(bond);
 
-			<Total<T>>::put(new_total);
+            <Total<T>>::put(new_total);
 
-			Self::deposit_event(Event::CandidateJoined {
-				account: acc,
-				amount_locked: bond,
-				total_locked: new_total,
-			});
+            Self::deposit_event(Event::CandidateJoined {
+                account: acc,
+                amount_locked: bond,
+                total_locked: new_total,
+            });
 
-			Ok(().into())
-		}
+            Ok(().into())
+        }
 
-		// #[pallet::weight(<T as Config>::WeightInfo::schedule_leave_candidates(*candidate_count))]
-		/// Request to leave the set of candidates. If successful, the account is immediately
-		/// removed from the candidate pool to prevent selection as a executor.
+        // #[pallet::weight(<T as Config>::WeightInfo::schedule_leave_candidates(*candidate_count))]
+        /// Request to leave the set of candidates. If successful, the account is immediately
+        /// removed from the candidate pool to prevent selection as a executor.
         /// `candidate_count` must at least be the sie of the candidate pool.
         #[pallet::weight(10_000)] //TODO
-		pub fn schedule_leave_candidates(
-			origin: OriginFor<T>,
-			candidate_count: u32,
-		) -> DispatchResultWithPostInfo {
-			let executor = ensure_signed(origin)?;
+        pub fn schedule_leave_candidates(
+            origin: OriginFor<T>,
+            candidate_count: u32,
+        ) -> DispatchResultWithPostInfo {
+            let executor = ensure_signed(origin)?;
 
-			let mut state = <CandidateInfo<T>>::get(&executor).ok_or(Error::<T>::NoSuchCandidate)?;
+            let mut state =
+                <CandidateInfo<T>>::get(&executor).ok_or(Error::<T>::NoSuchCandidate)?;
 
-			let (now, when) = state.schedule_leave::<T>()?;
+            let (now, when) = state.schedule_leave::<T>()?;
 
-			let mut candidates = <CandidatePool<T>>::get();
+            let mut candidates = <CandidatePool<T>>::get();
 
-			ensure!(
-				candidate_count >= candidates.0.len() as u32,
-				Error::<T>::TooLowCandidateCountToLeaveCandidates
-			);
+            ensure!(
+                candidate_count >= candidates.0.len() as u32,
+                Error::<T>::TooLowCandidateCountToLeaveCandidates
+            );
 
-			if candidates.remove(&Bond::from_owner(executor.clone())) {
-				<CandidatePool<T>>::put(candidates);
-			}
+            if candidates.remove(&Bond::from_owner(executor.clone())) {
+                <CandidatePool<T>>::put(candidates);
+            }
 
-			<CandidateInfo<T>>::insert(&executor, state);
+            <CandidateInfo<T>>::insert(&executor, state);
 
-			Self::deposit_event(Event::CandidateExitScheduled {
-				exit_allowed_round: now,
-				candidate: executor,
-				scheduled_exit: when,
-			});
+            Self::deposit_event(Event::CandidateExitScheduled {
+                exit_allowed_round: now,
+                candidate: executor,
+                scheduled_exit: when,
+            });
 
-			Ok(().into())
-		}
+            Ok(().into())
+        }
 
-		// #[pallet::weight(
-		// 	<T as Config>::WeightInfo::execute_leave_candidates(*candidate_stake_count)
-		// )]
-		/// Execute leave candidates request.
+        // #[pallet::weight(
+        // 	<T as Config>::WeightInfo::execute_leave_candidates(*candidate_stake_count)
+        // )]
+        /// Execute leave candidates request.
         /// Executable by anyone.
         #[pallet::weight(10_000)] //TODO
-		pub fn execute_leave_candidates(
-			origin: OriginFor<T>,
-			candidate: T::AccountId,
-			candidate_stake_count: u32,
-		) -> DispatchResultWithPostInfo {
-			ensure_signed(origin)?;
+        pub fn execute_leave_candidates(
+            origin: OriginFor<T>,
+            candidate: T::AccountId,
+            candidate_stake_count: u32,
+        ) -> DispatchResultWithPostInfo {
+            ensure_signed(origin)?;
 
-			let state = <CandidateInfo<T>>::get(&candidate).ok_or(Error::<T>::NoSuchCandidate)?;
+            let state = <CandidateInfo<T>>::get(&candidate).ok_or(Error::<T>::NoSuchCandidate)?;
 
-			ensure!(
-				state.stake_count <= candidate_stake_count,
-				Error::<T>::TooLowCandidateStakeCountToLeaveCandidates
-			);
+            ensure!(
+                state.stake_count <= candidate_stake_count,
+                Error::<T>::TooLowCandidateStakeCountToLeaveCandidates
+            );
 
-			state.can_leave::<T>()?;
+            state.can_leave::<T>()?;
 
-			let return_stake = |bond: Bond<T::AccountId, BalanceOf<T>>| -> DispatchResult {
-				// remove stake from staker state
-				let mut state = StakerInfo::<T>::get(&bond.owner).expect(
-					"Executor state and staker state are consistent. 
+            let return_stake = |bond: Bond<T::AccountId, BalanceOf<T>>| -> DispatchResult {
+                // remove stake from staker state
+                let mut state = StakerInfo::<T>::get(&bond.owner).expect(
+                    "Executor state and staker state are consistent. 
 						Executor state has a record of this stake. Therefore, 
 						staker state also has a record. qed.",
-				);
+                );
 
-				if let Some(remaining) = state.rm_stake(&candidate) {
-					Self::stake_remove_request_with_state(
-						&candidate,
-						&bond.owner,
-						&mut state,
-					);
+                if let Some(remaining) = state.rm_stake(&candidate) {
+                    Self::stake_remove_request_with_state(&candidate, &bond.owner, &mut state);
 
-					if remaining.is_zero() {
-						// we do not remove the scheduled stake requests from other executors
-						// since it is assumed that they were removed incrementally before only the
-						// last stake was left.
-						<StakerInfo<T>>::remove(&bond.owner);
+                    if remaining.is_zero() {
+                        // we do not remove the scheduled stake requests from other executors
+                        // since it is assumed that they were removed incrementally before only the
+                        // last stake was left.
+                        <StakerInfo<T>>::remove(&bond.owner);
 
-						T::Currency::remove_lock(STAKER_LOCK_ID, &bond.owner);
-					} else {
-						<StakerInfo<T>>::insert(&bond.owner, state);
-					}
-				} else {
-					// TODO: review. we assume here that this staker has no remaining staked
-					// balance, so we ensure the lock is cleared
-					T::Currency::remove_lock(STAKER_LOCK_ID, &bond.owner);
-				}
+                        T::Currency::remove_lock(STAKER_LOCK_ID, &bond.owner);
+                    } else {
+                        <StakerInfo<T>>::insert(&bond.owner, state);
+                    }
+                } else {
+                    // TODO: review. we assume here that this staker has no remaining staked
+                    // balance, so we ensure the lock is cleared
+                    T::Currency::remove_lock(STAKER_LOCK_ID, &bond.owner);
+                }
 
-				Ok(())
-			};
+                Ok(())
+            };
 
-			// total backing stake is at least the candidate self bond
-			let mut total_backing = state.bond;
+            // total backing stake is at least the candidate self bond
+            let mut total_backing = state.bond;
 
-			// return all top stakes
-			let top_stakes =
-				<TopStakes<T>>::take(&candidate).expect("CandidateInfo existence checked");
+            // return all top stakes
+            let top_stakes =
+                <TopStakes<T>>::take(&candidate).expect("CandidateInfo existence checked");
 
-			for bond in top_stakes.stakes {
-				return_stake(bond)?;
-			}
+            for bond in top_stakes.stakes {
+                return_stake(bond)?;
+            }
 
-			total_backing = total_backing.saturating_add(top_stakes.total);
+            total_backing = total_backing.saturating_add(top_stakes.total);
 
-			// return all bottom stakes
-			let bottom_stakes =
-				<BottomStakes<T>>::take(&candidate).expect("CandidateInfo existence checked");
-        
-			for bond in bottom_stakes.stakes {
-				return_stake(bond)?;
-			}
+            // return all bottom stakes
+            let bottom_stakes =
+                <BottomStakes<T>>::take(&candidate).expect("CandidateInfo existence checked");
 
-			total_backing = total_backing.saturating_add(bottom_stakes.total);
+            for bond in bottom_stakes.stakes {
+                return_stake(bond)?;
+            }
 
-			T::Currency::remove_lock(EXECUTOR_LOCK_ID, &candidate);
-			
+            total_backing = total_backing.saturating_add(bottom_stakes.total);
+
+            T::Currency::remove_lock(EXECUTOR_LOCK_ID, &candidate);
+
             <CandidateInfo<T>>::remove(&candidate);
-			
+
             <ScheduledStakingRequests<T>>::remove(&candidate);
-			
+
             <TopStakes<T>>::remove(&candidate);
-			
+
             <BottomStakes<T>>::remove(&candidate);
-			
+
             let new_total_staked = <Total<T>>::get().saturating_sub(total_backing);
 
-			<Total<T>>::put(new_total_staked);
+            <Total<T>>::put(new_total_staked);
 
-			Self::deposit_event(Event::CandidateLeft {
-				candidate: candidate,
-				amount_unlocked: total_backing,
-				total_locked: new_total_staked,
-			});
+            Self::deposit_event(Event::CandidateLeft {
+                candidate,
+                amount_unlocked: total_backing,
+                total_locked: new_total_staked,
+            });
 
-			Ok(().into())
-		}
+            Ok(().into())
+        }
 
-		// #[pallet::weight(<T as Config>::WeightInfo::cancel_leave_candidates(*candidate_count))]
-		/// Cancel open request to leave candidates.  WIP WIP WIP
-		/// - only callable by executor account
-		/// - result upon successful call is the candidate is active in the candidate pool
+        // #[pallet::weight(<T as Config>::WeightInfo::cancel_leave_candidates(*candidate_count))]
+        /// Cancel open request to leave candidates.  WIP WIP WIP
+        /// - only callable by executor account
+        /// - result upon successful call is the candidate is active in the candidate pool
         #[pallet::weight(10_000)] //TODO
-		pub fn cancel_leave_candidates(
-			origin: OriginFor<T>,
-			candidate_count: u32,
-		) -> DispatchResultWithPostInfo {
-			let executor = ensure_signed(origin)?;
+        pub fn cancel_leave_candidates(
+            origin: OriginFor<T>,
+            candidate_count: u32,
+        ) -> DispatchResultWithPostInfo {
+            let executor = ensure_signed(origin)?;
 
-			let mut state = <CandidateInfo<T>>::get(&executor).ok_or(Error::<T>::NoSuchCandidate)?;
+            let mut state =
+                <CandidateInfo<T>>::get(&executor).ok_or(Error::<T>::NoSuchCandidate)?;
 
-			ensure!(state.is_leaving(), Error::<T>::CandidateNotLeaving);
+            ensure!(state.is_leaving(), Error::<T>::CandidateNotLeaving);
 
-			state.go_online();
+            state.go_online();
 
-			let mut candidates = <CandidatePool<T>>::get();
+            let mut candidates = <CandidatePool<T>>::get();
 
-			ensure!(
-				candidates.0.len() as u32 <= candidate_count,
-				Error::<T>::TooLowCandidateCountWeightHintCancelLeaveCandidates
-			);
+            ensure!(
+                candidates.0.len() as u32 <= candidate_count,
+                Error::<T>::TooLowCandidateCountWeightHintCancelLeaveCandidates
+            );
 
-			ensure!(
-				candidates.insert(Bond {
-					owner: executor.clone(),
-					amount: state.total_counted
-				}),
-				Error::<T>::AlreadyActive
-			);
+            ensure!(
+                candidates.insert(Bond {
+                    owner: executor.clone(),
+                    amount: state.total_counted
+                }),
+                Error::<T>::AlreadyActive
+            );
 
-			<CandidatePool<T>>::put(candidates);
+            <CandidatePool<T>>::put(candidates);
 
-			<CandidateInfo<T>>::insert(&executor, state);
+            <CandidateInfo<T>>::insert(&executor, state);
 
-			Self::deposit_event(Event::CandidateExitCancelled {
-				candidate: executor,
-			});
+            Self::deposit_event(Event::CandidateExitCancelled {
+                candidate: executor,
+            });
 
-			Ok(().into())
-		}
+            Ok(().into())
+        }
 
         /// Temporarily leave the set of executor candidates without unbonding.
         #[pallet::weight(10_000)] //TODO
-		pub fn go_offline(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-			let executor = ensure_signed(origin)?;
+        pub fn go_offline(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            let executor = ensure_signed(origin)?;
 
-			let mut state = <CandidateInfo<T>>::get(&executor).ok_or(Error::<T>::NoSuchCandidate)?;
+            let mut state =
+                <CandidateInfo<T>>::get(&executor).ok_or(Error::<T>::NoSuchCandidate)?;
 
-			ensure!(state.is_active(), Error::<T>::AlreadyOffline);
+            ensure!(state.is_active(), Error::<T>::AlreadyOffline);
 
-			state.go_offline();
+            state.go_offline();
 
-			let mut candidates = <CandidatePool<T>>::get();
+            let mut candidates = <CandidatePool<T>>::get();
 
-			if candidates.remove(&Bond::from_owner(executor.clone())) {
-				<CandidatePool<T>>::put(candidates);
-			}
+            if candidates.remove(&Bond::from_owner(executor.clone())) {
+                <CandidatePool<T>>::put(candidates);
+            }
 
-			<CandidateInfo<T>>::insert(&executor, state);
+            <CandidateInfo<T>>::insert(&executor, state);
 
-			Self::deposit_event(Event::CandidateWentOffline {
-				candidate: executor,
-			});
+            Self::deposit_event(Event::CandidateWentOffline {
+                candidate: executor,
+            });
 
-			Ok(().into())
-		}
+            Ok(().into())
+        }
 
-		/// Rejoin the set of executor candidates if previously had called `go_offline`.
+        /// Rejoin the set of executor candidates if previously had called `go_offline`.
         #[pallet::weight(10_000)] //TODO
-		pub fn go_online(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-			let executor = ensure_signed(origin)?;
+        pub fn go_online(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            let executor = ensure_signed(origin)?;
 
-			let mut state = <CandidateInfo<T>>::get(&executor).ok_or(Error::<T>::NoSuchCandidate)?;
+            let mut state =
+                <CandidateInfo<T>>::get(&executor).ok_or(Error::<T>::NoSuchCandidate)?;
 
-			ensure!(!state.is_active(), Error::<T>::AlreadyActive);
+            ensure!(!state.is_active(), Error::<T>::AlreadyActive);
 
-			ensure!(!state.is_leaving(), Error::<T>::CannotGoOnlineIfLeaving);
+            ensure!(!state.is_leaving(), Error::<T>::CannotGoOnlineIfLeaving);
 
-			state.go_online();
+            state.go_online();
 
-			let mut candidates = <CandidatePool<T>>::get();
+            let mut candidates = <CandidatePool<T>>::get();
 
-			ensure!(
-				candidates.insert(Bond {
-					owner: executor.clone(),
-					amount: state.total_counted
-				}),
-				Error::<T>::AlreadyActive
-			);
+            ensure!(
+                candidates.insert(Bond {
+                    owner: executor.clone(),
+                    amount: state.total_counted
+                }),
+                Error::<T>::AlreadyActive
+            );
 
-			<CandidatePool<T>>::put(candidates);
+            <CandidatePool<T>>::put(candidates);
 
-			<CandidateInfo<T>>::insert(&executor, state);
+            <CandidateInfo<T>>::insert(&executor, state);
 
-			Self::deposit_event(Event::CandidateBackOnline {
-				candidate: executor,
-			});
+            Self::deposit_event(Event::CandidateBackOnline {
+                candidate: executor,
+            });
 
-			Ok(().into())
-		}
+            Ok(().into())
+        }
 
         /////
-	    /// If caller is not a staker and not a cexecutor, then join the set of stakers.
-		/// If caller is a staker, then makes stake to change their stake state.
+        /// If caller is not a staker and not a cexecutor, then join the set of stakers.
+        /// If caller is a staker, then makes stake to change their stake state.
         // #[pallet::weight(
-		// 	<T as Config>::WeightInfo::delegate(
-		// 		*candidate_stake_count,
-		// 		*stake_count
-		// 	)
-		// )]
+        // 	<T as Config>::WeightInfo::delegate(
+        // 		*candidate_stake_count,
+        // 		*stake_count
+        // 	)
+        // )]
         #[pallet::weight(10_000)] //TODO
-		pub fn stake(
-			origin: OriginFor<T>,
-			candidate: T::AccountId,
-			amount: BalanceOf<T>,
-			candidate_stake_count: u32,
-			stake_count: u32,
-		) -> DispatchResultWithPostInfo {
-			let staker = ensure_signed(origin)?;
+        pub fn stake(
+            origin: OriginFor<T>,
+            candidate: T::AccountId,
+            amount: BalanceOf<T>,
+            candidate_stake_count: u32,
+            stake_count: u32,
+        ) -> DispatchResultWithPostInfo {
+            let staker = ensure_signed(origin)?;
 
-			// check that caller can reserve the amount before any changes to storage
-			ensure!(
-				Self::get_staker_stakable_free_balance(&staker) >= amount,
-				Error::<T>::InsufficientBalance
-			);
+            // check that caller can reserve the amount before any changes to storage
+            ensure!(
+                Self::get_staker_stakable_free_balance(&staker) >= amount,
+                Error::<T>::InsufficientBalance
+            );
 
             let fixtures = <Fixtures<T>>::get();
 
-			let mut staker_state = if let Some(mut state) = <StakerInfo<T>>::get(&staker)
-			{
-				// stake after first
-				ensure!(
-					amount >= fixtures.min_atomic_stake,
-					Error::<T>::StakeBelowMin
-				);
-				ensure!(
-					stake_count >= state.stakes.0.len() as u32,
-					Error::<T>::TooLowStakeCountToStake
-				);
+            let mut staker_state = if let Some(mut state) = <StakerInfo<T>>::get(&staker) {
+                // stake after first
+                ensure!(
+                    amount >= fixtures.min_atomic_stake,
+                    Error::<T>::StakeBelowMin
+                );
+                ensure!(
+                    stake_count >= state.stakes.0.len() as u32,
+                    Error::<T>::TooLowStakeCountToStake
+                );
 
-				ensure!(
-					(state.stakes.0.len() as u32) < fixtures.max_stakes_per_staker,
-					Error::<T>::MaxStakesExceeded
-				);
+                ensure!(
+                    (state.stakes.0.len() as u32) < fixtures.max_stakes_per_staker,
+                    Error::<T>::MaxStakesExceeded
+                );
 
-				ensure!(
-					state.add_stake(Bond {
-						owner: candidate.clone(),
-						amount
-					}),
-					Error::<T>::AlreadyStakedCandidate
-				);
+                ensure!(
+                    state.add_stake(Bond {
+                        owner: candidate.clone(),
+                        amount
+                    }),
+                    Error::<T>::AlreadyStakedCandidate
+                );
 
-				// Self::jit_ensure_staker_reserve_migrated(&staker)?;
-				state
-			} else {
-				// first stake
-				ensure!(
-					amount >= fixtures.min_atomic_stake,
-					Error::<T>::StakerBondBelowMin
-				);
+                // Self::jit_ensure_staker_reserve_migrated(&staker)?;
+                state
+            } else {
+                // first stake
+                ensure!(
+                    amount >= fixtures.min_atomic_stake,
+                    Error::<T>::StakerBondBelowMin
+                );
 
-				ensure!(!Self::is_candidate(&staker), Error::<T>::CandidateExists);
+                ensure!(!Self::is_candidate(&staker), Error::<T>::CandidateExists);
 
-				StakerMetadata::new(staker.clone(), candidate.clone(), amount)
-			};
-            
-			let mut state = <CandidateInfo<T>>::get(&candidate).ok_or(Error::<T>::NoSuchCandidate)?;
+                StakerMetadata::new(staker.clone(), candidate.clone(), amount)
+            };
 
-			ensure!(
-				candidate_stake_count >= state.stake_count,
-				Error::<T>::TooLowCandidateStakeCountToStake
-			);
+            let mut state =
+                <CandidateInfo<T>>::get(&candidate).ok_or(Error::<T>::NoSuchCandidate)?;
 
-			let (staker_position, less_total_staked) = state.add_stake::<T>(
-				&candidate,
-				Bond {
-					owner: staker.clone(),
-					amount,
-				},
-			)?;
+            ensure!(
+                candidate_stake_count >= state.stake_count,
+                Error::<T>::TooLowCandidateStakeCountToStake
+            );
 
-			// TODO: causes redundant free_balance check
-			staker_state.adjust_bond_lock::<T>(BondAdjust::Increase(amount))?;
+            let (staker_position, less_total_staked) = state.add_stake::<T>(
+                &candidate,
+                Bond {
+                    owner: staker.clone(),
+                    amount,
+                },
+            )?;
 
-			// only is_some if kicked the lowest bottom as a consequence of this new stake
-			let net_total_increase = if let Some(less) = less_total_staked {
-				amount.saturating_sub(less)
-			} else {
-				amount
-			};
+            // TODO: causes redundant free_balance check
+            staker_state.adjust_bond_lock::<T>(StakeAdjust::Increase(amount))?;
 
-			let new_total_locked = <Total<T>>::get().saturating_add(net_total_increase);
+            // only is_some if kicked the lowest bottom as a consequence of this new stake
+            let net_total_increase = if let Some(less) = less_total_staked {
+                amount.saturating_sub(less)
+            } else {
+                amount
+            };
 
-			<Total<T>>::put(new_total_locked);
+            let new_total_locked = <Total<T>>::get().saturating_add(net_total_increase);
 
-			<CandidateInfo<T>>::insert(&candidate, state);
+            <Total<T>>::put(new_total_locked);
 
-			<StakerInfo<T>>::insert(&staker, staker_state);
+            <CandidateInfo<T>>::insert(&candidate, state);
 
-			// <DelegatorReserveToLockMigrations<T>>::insert(&staker, true);
+            <StakerInfo<T>>::insert(&staker, staker_state);
 
-			Self::deposit_event(Event::StakeAdded {
-				staker: staker,
-				amount_locked: amount,
-				candidate: candidate,
-				staker_position: staker_position,
-			});
+            // <DelegatorReserveToLockMigrations<T>>::insert(&staker, true);
 
-			Ok(().into())
-		}
+            Self::deposit_event(Event::StakeAdded {
+                staker,
+                amount_locked: amount,
+                candidate,
+                staker_position,
+            });
 
-		/// Request to leave the set of stakers. If successful, the caller is scheduled to be
-		/// allowed to exit via a [DelegationAction::Revoke] towards all existing stakes.
-		/// Success forbids future stake requests until the request is invoked or cancelled. WIP WIP WIP
+            Ok(().into())
+        }
+
+        /// Request to leave the set of stakers. If successful, the caller is scheduled to be
+        /// allowed to exit via a [DelegationAction::Revoke] towards all existing stakes.
+        /// Success forbids future stake requests until the request is invoked or cancelled. WIP WIP WIP
         // #[pallet::weight(<T as Config>::WeightInfo::schedule_leave_stakers())]
         #[pallet::weight(10_000)] //TODO
-		pub fn schedule_leave_stakers(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-			let staker = ensure_signed(origin)?;
-			Self::staker_schedule_revoke_all(staker)
-		}
+        pub fn schedule_leave_stakers(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            let staker = ensure_signed(origin)?;
+            Self::staker_schedule_revoke_all(staker)
+        }
 
-		// #[pallet::weight(<T as Config>::WeightInfo::execute_leave_stakers(*stake_count))]
-		/// Execute the right to exit the set of stakers and revoke all ongoing stakes.
+        // #[pallet::weight(<T as Config>::WeightInfo::execute_leave_stakers(*stake_count))]
+        /// Execute the right to exit the set of stakers and revoke all ongoing stakes.
         #[pallet::weight(10_000)] //TODO
-		pub fn execute_leave_stakers(
-			origin: OriginFor<T>,
-			staker: T::AccountId,
-			stake_count: u32,
-		) -> DispatchResultWithPostInfo {
-			ensure_signed(origin)?;
-			Self::staker_execute_scheduled_revoke_all(staker, stake_count)
-		}
-		// #[pallet::weight(<T as Config>::WeightInfo::cancel_leave_stakers())]
-		/// Cancel a pending request to exit the set of stakers. Success clears the pending exit
-		/// request (thereby resetting the delay upon another `leave_stakers` call).
+        pub fn execute_leave_stakers(
+            origin: OriginFor<T>,
+            staker: T::AccountId,
+            stake_count: u32,
+        ) -> DispatchResultWithPostInfo {
+            ensure_signed(origin)?;
+            Self::staker_execute_scheduled_revoke_all(staker, stake_count)
+        }
+
+        // #[pallet::weight(<T as Config>::WeightInfo::cancel_leave_stakers())]
+        /// Cancel a pending request to exit the set of stakers. Success clears the pending exit
+        /// request (thereby resetting the delay upon another `leave_stakers` call).
         #[pallet::weight(10_000)] //TODO
-		pub fn cancel_leave_stakers(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-			let staker = ensure_signed(origin)?;
-			Self::staker_cancel_scheduled_revoke_all(staker)
-		}
+        pub fn cancel_leave_stakers(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            let staker = ensure_signed(origin)?;
+            Self::staker_cancel_scheduled_revoke_all(staker)
+        }
 
-		// #[pallet::weight(<T as Config>::WeightInfo::schedule_revoke_stake())]
-		/// Request to revoke an existing stake. If successful, the stake is scheduled
-		/// to be allowed to be revoked via the `execute_stake_request` extrinsic.
+        // #[pallet::weight(<T as Config>::WeightInfo::schedule_revoke_stake())]
+        /// Request to revoke an existing stake. If successful, the stake is scheduled
+        /// to be allowed to be revoked via the `execute_stake_request` extrinsic.
         #[pallet::weight(10_000)] //TODO
-		pub fn schedule_revoke_stake(
-			origin: OriginFor<T>,
-			collator: T::AccountId,
-		) -> DispatchResultWithPostInfo {
-			let staker = ensure_signed(origin)?;
-			Self::stake_schedule_revoke(collator, staker)
-		}
+        pub fn schedule_revoke_stake(
+            origin: OriginFor<T>,
+            collator: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+            let staker = ensure_signed(origin)?;
+            Self::stake_schedule_revoke(collator, staker)
+        }
 
-		// #[pallet::weight(<T as Config>::WeightInfo::staker_bond_more())]
-		/// Bond more for stakers wrt a specific collator candidate.
+        // #[pallet::weight(<T as Config>::WeightInfo::staker_bond_more())]
+        /// Bond more for stakers wrt a specific collator candidate.
         #[pallet::weight(10_000)] //TODO
-		pub fn staker_bond_more(
-			origin: OriginFor<T>,
-			candidate: T::AccountId,
-			more: BalanceOf<T>,
-		) -> DispatchResultWithPostInfo {
-			let staker = ensure_signed(origin)?;
+        pub fn staker_bond_more(
+            origin: OriginFor<T>,
+            candidate: T::AccountId,
+            more: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
+            let staker = ensure_signed(origin)?;
 
-			ensure!(
-				!Self::stake_request_revoke_exists(&candidate, &staker),
-				Error::<T>::PendingStakeRevoke
-			);
+            ensure!(
+                !Self::stake_request_revoke_exists(&candidate, &staker),
+                Error::<T>::PendingStakeRevoke
+            );
 
-			let mut state = <StakerInfo<T>>::get(&staker).ok_or(Error::<T>::NoSuchStaker)?;
+            let mut state = <StakerInfo<T>>::get(&staker).ok_or(Error::<T>::NoSuchStaker)?;
 
-			state.increase_stake::<T>(candidate.clone(), more)?;
-            
-			Ok(().into())
-		}
+            state.increase_stake::<T>(candidate.clone(), more)?;
 
-		// #[pallet::weight(<T as Config>::WeightInfo::schedule_staker_bond_less())]
-		/// Request bond less for stakers wrt a specific collator candidate.
+            Ok(().into())
+        }
+
+        // #[pallet::weight(<T as Config>::WeightInfo::schedule_staker_bond_less())]
+        /// Request bond less for stakers wrt a specific collator candidate.
         #[pallet::weight(10_000)] //TODO
-		pub fn schedule_staker_bond_less(
-			origin: OriginFor<T>,
-			candidate: T::AccountId,
-			less: BalanceOf<T>,
-		) -> DispatchResultWithPostInfo {
-			let staker = ensure_signed(origin)?;
-			Self::stake_schedule_bond_decrease(candidate, staker, less)
-		}
+        pub fn schedule_staker_bond_less(
+            origin: OriginFor<T>,
+            candidate: T::AccountId,
+            less: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
+            let staker = ensure_signed(origin)?;
+            Self::stake_schedule_bond_decrease(candidate, staker, less)
+        }
 
-		// #[pallet::weight(<T as Config>::WeightInfo::execute_staker_bond_less())]
-		/// Execute pending request to change an existing stake
+        // #[pallet::weight(<T as Config>::WeightInfo::execute_staker_bond_less())]
+        /// Execute pending request to change an existing stake
         #[pallet::weight(10_000)] //TODO
-		pub fn execute_stake_request(
-			origin: OriginFor<T>,
-			staker: T::AccountId,
-			candidate: T::AccountId,
-		) -> DispatchResultWithPostInfo {
-			ensure_signed(origin)?; // we may want to reward caller if caller != staker
-			Self::stake_execute_scheduled_request(candidate, staker)
-		}
+        pub fn execute_stake_request(
+            origin: OriginFor<T>,
+            staker: T::AccountId,
+            candidate: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+            ensure_signed(origin)?; // we may want to reward caller if caller != staker
+            Self::stake_execute_scheduled_request(candidate, staker)
+        }
 
-		// #[pallet::weight(<T as Config>::WeightInfo::cancel_staker_bond_less())]
-		/// Cancel request to change an existing stake.
+        // #[pallet::weight(<T as Config>::WeightInfo::cancel_staker_bond_less())]
+        /// Cancel request to change an existing stake.
         #[pallet::weight(10_000)] //TODO
-		pub fn cancel_stake_request(
-			origin: OriginFor<T>,
-			candidate: T::AccountId,
-		) -> DispatchResultWithPostInfo {
-			let staker = ensure_signed(origin)?;
-			Self::stake_cancel_request(candidate, staker)
-		}
+        pub fn cancel_stake_request(
+            origin: OriginFor<T>,
+            candidate: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+            let staker = ensure_signed(origin)?;
+            Self::stake_cancel_request(candidate, staker)
+        }
     }
 
     #[pallet::hooks]
@@ -1045,7 +1085,7 @@ pub mod pallet {
         },
         StakeAdded {
             staker: T::AccountId,
-            amount_locked:BalanceOf<T>,
+            amount_locked: BalanceOf<T>,
             candidate: T::AccountId,
             staker_position: StakerAdded<BalanceOf<T>>,
         },
@@ -1101,21 +1141,21 @@ pub mod pallet {
             risk: Percent,
         },
         FixturesConfigured {
-             active_set_size: Range<u32>,
-               max_commission: Percent,
-             max_risk: Percent,
-             min_executor_bond: BalanceOf<T>,
-             min_candidate_bond: BalanceOf<T>,
-             min_atomic_stake: BalanceOf<T>,
-             min_total_stake: BalanceOf<T>,
-             max_top_stakes_per_candidate: u32,
-              max_bottom_stakes_per_candidate: u32,
-             max_stakes_per_staker: u32,
-             configure_executor_delay: u32,
-             leave_candidates_delay: u32,
-             leave_stakers_delay: u32,
-             candidate_bond_less_delay: u32,
-             revoke_stake_delay: u32,
+            active_set_size: Range<u32>,
+            max_commission: Percent,
+            max_risk: Percent,
+            min_executor_bond: BalanceOf<T>,
+            min_candidate_bond: BalanceOf<T>,
+            min_atomic_stake: BalanceOf<T>,
+            min_total_stake: BalanceOf<T>,
+            max_top_stakes_per_candidate: u32,
+            max_bottom_stakes_per_candidate: u32,
+            max_stakes_per_staker: u32,
+            configure_executor_delay: u32,
+            leave_candidates_delay: u32,
+            leave_stakers_delay: u32,
+            candidate_bond_less_delay: u32,
+            revoke_stake_delay: u32,
         },
     }
 
@@ -1160,12 +1200,12 @@ pub mod pallet {
         TooLowCandidateStakeCountToStake,
         InsufficientBalance,
         MaxStakesExceeded,
-        AlreadyStakedCandidate
+        AlreadyStakedCandidate,
     }
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
-        pub fixtures: StakingFixtures<BalanceOf<T>>
+        pub fixtures: StakingFixtures<BalanceOf<T>>,
     }
 
     #[cfg(feature = "std")]
@@ -1175,27 +1215,35 @@ pub mod pallet {
             // let fivehundred = ConstU128<{ 500 * T3RN }>;
             Self {
                 fixtures: StakingFixtures {
-                     active_set_size: Range {
-                        min: 1, //TODO
-                        ideal:3, //TODO
-                        max: 128 //TODO
-                     },
-                       max_commission: Percent::from_percent(50),//TODO
-                     max_risk: Percent::from_percent(50),//TODO
-                    min_executor_bond: BalanceOf::<T>::one().mul((10 ^ DECIMALS).into()).mul(1000_u32.into()),//TODO
-                     min_candidate_bond: BalanceOf::<T>::one().mul((10 ^ DECIMALS).into()).mul(1000_u32.into()),//TODO
-                     min_atomic_stake: BalanceOf::<T>::one().mul((10 ^ DECIMALS).into()).mul(500_u32.into()),//TODO
-                     min_total_stake: BalanceOf::<T>::one().mul((10 ^ DECIMALS).into()).mul(500_u32.into()),//TODO
-                     max_top_stakes_per_candidate: 300,//TODO
-                      max_bottom_stakes_per_candidate:50,//TODO
-                     max_stakes_per_staker: 100,//TODO
-                     // delays target a 14d term assuming a 6h round term
-                     configure_executor_delay: 56,//TODO
-                     leave_candidates_delay: 56,//TODO
-                     leave_stakers_delay: 56,//TODO
-                     candidate_bond_less_delay: 56,//TODO
-                     revoke_stake_delay: 56,//TODO
-                }
+                    active_set_size: Range {
+                        min: 1,   //TODO
+                        ideal: 3, //TODO
+                        max: 128, //TODO
+                    },
+                    max_commission: Percent::from_percent(50), //TODO
+                    max_risk: Percent::from_percent(50),       //TODO
+                    min_executor_bond: BalanceOf::<T>::one()
+                        .mul((10 ^ DECIMALS).into())
+                        .mul(1000_u32.into()), //TODO
+                    min_candidate_bond: BalanceOf::<T>::one()
+                        .mul((10 ^ DECIMALS).into())
+                        .mul(1000_u32.into()), //TODO
+                    min_atomic_stake: BalanceOf::<T>::one()
+                        .mul((10 ^ DECIMALS).into())
+                        .mul(500_u32.into()), //TODO
+                    min_total_stake: BalanceOf::<T>::one()
+                        .mul((10 ^ DECIMALS).into())
+                        .mul(500_u32.into()), //TODO
+                    max_top_stakes_per_candidate: 300,         //TODO
+                    max_bottom_stakes_per_candidate: 50,       //TODO
+                    max_stakes_per_staker: 100,                //TODO
+                    // delays target a 14d term assuming a 6h round term
+                    configure_executor_delay: 56,  //TODO
+                    leave_candidates_delay: 56,    //TODO
+                    leave_stakers_delay: 56,       //TODO
+                    candidate_bond_less_delay: 56, //TODO
+                    revoke_stake_delay: 56,        //TODO
+                },
             }
         }
     }
@@ -1262,25 +1310,25 @@ pub mod pallet {
             <CandidatePool<T>>::put(candidates);
         }
 
-		/// Returns an account's free balance which is not locked in executor staking.
-		pub fn get_executor_stakable_free_balance(acc: &T::AccountId) -> BalanceOf<T> {
-			let mut balance = T::Currency::free_balance(acc);
-			if let Some(info) = <CandidateInfo<T>>::get(acc) {
-				balance = balance.saturating_sub(info.bond);
-			}
-			balance
-		}
+        /// Returns an account's free balance which is not locked in executor staking.
+        pub fn get_executor_stakable_free_balance(acc: &T::AccountId) -> BalanceOf<T> {
+            let mut balance = T::Currency::free_balance(acc);
+            if let Some(info) = <CandidateInfo<T>>::get(acc) {
+                balance = balance.saturating_sub(info.bond);
+            }
+            balance
+        }
 
         /// Returns an account's free balance which is not locked in executor staking
-		pub fn get_staker_stakable_free_balance(acc: &T::AccountId) -> BalanceOf<T> {
-			let mut balance = T::Currency::free_balance(acc);
+        pub fn get_staker_stakable_free_balance(acc: &T::AccountId) -> BalanceOf<T> {
+            let mut balance = T::Currency::free_balance(acc);
 
-			if let Some(state) = <StakerInfo<T>>::get(acc) {
-				balance = balance.saturating_sub(state.total());
-			}
+            if let Some(state) = <StakerInfo<T>>::get(acc) {
+                balance = balance.saturating_sub(state.total());
+            }
 
-			balance
-		}
+            balance
+        }
 
         /// Remove stake from candidate state
         /// Amount input should be retrieved from staker and it informs the storage lookups
@@ -1460,84 +1508,89 @@ pub mod pallet {
         /// Returns [executor_count, stake_count, total staked].
         pub fn select_active_set(current_round: RoundIndex) -> (u32, u32, BalanceOf<T>) {
             let fixtures = <Fixtures<T>>::get();
-        	let mut candidates = <CandidatePool<T>>::get().0;
-        	// order candidates by stake (least to greatest so requires `rev()`)
-        	candidates.sort_by(|a, b| a.amount.cmp(&b.amount));
-        	let top_n = fixtures.active_set_size.ideal as usize;
-        	// choose the top qualified candidates, ordered by stake
-        	let mut executors = candidates
-        		.into_iter()
-        		.rev()
-        		.take(top_n)
-        		.filter(|x| x.amount >= fixtures.min_executor_bond)
-        		.map(|x| x.owner)
-        		.collect::<Vec<T::AccountId>>();
+            let mut candidates = <CandidatePool<T>>::get().0;
+            // order candidates by stake (least to greatest so requires `rev()`)
+            candidates.sort_by(|a, b| a.amount.cmp(&b.amount));
+            let top_n = fixtures.active_set_size.ideal as usize;
+            // choose the top qualified candidates, ordered by stake
+            let mut executors = candidates
+                .into_iter()
+                .rev()
+                .take(top_n)
+                .filter(|x| x.amount >= fixtures.min_executor_bond)
+                .map(|x| x.owner)
+                .collect::<Vec<T::AccountId>>();
 
-        	executors.sort();
-        	// executors
-
+            executors.sort();
+            // executors
 
             ////////// TBC
 
             let (mut executor_count, mut stake_count, mut total) =
-            (0u32, 0u32, BalanceOf::<T>::zero());
+                (0u32, 0u32, BalanceOf::<T>::zero());
 
-        if executors.is_empty() || executors.len() < <Fixtures<T>>::get().active_set_size.min as usize {
-            // failed to select the minimum number of executors
-            // => select executors from previous round
-            let last_round = current_round.saturating_sub(1u32);
-            let mut total_per_candidate: BTreeMap<T::AccountId, BalanceOf<T>> = BTreeMap::new();
-            // set this round AtStake to last round AtStake
-            for (account, snapshot) in <AtStake<T>>::iter_prefix(last_round) {
-                executor_count = executor_count.saturating_add(1u32);
-                stake_count = stake_count.saturating_add(snapshot.stakes.len() as u32);
-                total = total.saturating_add(snapshot.total);
-                total_per_candidate.insert(account.clone(), snapshot.total);
-                <AtStake<T>>::insert(current_round, account, snapshot);
+            if executors.is_empty()
+                || executors.len() < <Fixtures<T>>::get().active_set_size.min as usize
+            {
+                // failed to select the minimum number of executors
+                // => select executors from previous round
+                let last_round = current_round.saturating_sub(1u32);
+                let mut total_per_candidate: BTreeMap<T::AccountId, BalanceOf<T>> = BTreeMap::new();
+                // set this round AtStake to last round AtStake
+                for (account, snapshot) in <AtStake<T>>::iter_prefix(last_round) {
+                    executor_count = executor_count.saturating_add(1u32);
+                    stake_count = stake_count.saturating_add(snapshot.stakes.len() as u32);
+                    total = total.saturating_add(snapshot.total);
+                    total_per_candidate.insert(account.clone(), snapshot.total);
+                    <AtStake<T>>::insert(current_round, account, snapshot);
+                }
+                // `ActiveSet` remains unchanged from last round
+                // emit ExecutorChosen event for tools that use this event
+                for candidate in <ActiveSet<T>>::get() {
+                    let snapshot_total = total_per_candidate
+                        .get(&candidate)
+                        .expect("all selected candidates have snapshots");
+
+                    Self::deposit_event(Event::ExecutorChosen {
+                        round: current_round,
+                        executor: candidate,
+                        total_counted: *snapshot_total,
+                    })
+                }
+                return (executor_count, stake_count, total)
             }
-            // `ActiveSet` remains unchanged from last round
-            // emit ExecutorChosen event for tools that use this event
-            for candidate in <ActiveSet<T>>::get() {
-                let snapshot_total = total_per_candidate
-                    .get(&candidate)
-                    .expect("all selected candidates have snapshots");
-            
+
+            // snapshot exposure for round for weighting reward distribution
+            for account in executors.iter() {
+                let state =
+                    <CandidateInfo<T>>::get(account).expect("all candidates must have info");
+
+                executor_count = executor_count.saturating_add(1u32);
+                stake_count = stake_count.saturating_add(state.stake_count);
+                total = total.saturating_add(state.total_counted);
+                let top_rewardable_stakes = Self::get_rewardable_stakers(&account);
+
+                <AtStake<T>>::insert(
+                    current_round,
+                    account,
+                    ExecutorSnapshot {
+                        bond: state.bond,
+                        stakes: top_rewardable_stakes,
+                        total: state.total_counted,
+                    },
+                );
+
                 Self::deposit_event(Event::ExecutorChosen {
                     round: current_round,
-                    executor: candidate,
-                    total_counted: *snapshot_total,
-                })
+                    executor: account.clone(),
+                    total_counted: state.total_counted,
+                });
             }
-            return (executor_count, stake_count, total)
-        }
 
-        // snapshot exposure for round for weighting reward distribution
-        for account in executors.iter() {
-            let state = <CandidateInfo<T>>::get(account)
-                .expect("all candidates must have info");
+            // insert canonical executor set
+            <ActiveSet<T>>::put(executors);
 
-            executor_count = executor_count.saturating_add(1u32);
-            stake_count = stake_count.saturating_add(state.stake_count);
-            total = total.saturating_add(state.total_counted);
-            let top_rewardable_stakes = Self::get_rewardable_stakers(&account);
-
-            <AtStake<T>>::insert(current_round, account, ExecutorSnapshot {
-                bond: state.bond,
-                stakes: top_rewardable_stakes,
-                total: state.total_counted,
-            });
-
-            Self::deposit_event(Event::ExecutorChosen {
-                round: current_round,
-                executor: account.clone(),
-                total_counted: state.total_counted,
-            });
-        }
-
-        // insert canonical executor set
-        <ActiveSet<T>>::put(executors);
-
-        (executor_count, stake_count, total)
+            (executor_count, stake_count, total)
         }
 
         /// Apply the staker intent for revoke and decrease in order to build the
