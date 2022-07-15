@@ -1,5 +1,6 @@
 import{ Keyring }from'@polkadot/api';
 import {transferAmount} from "./encoder";
+import {addressStringToPubKey} from "./decoder";
 
 export const parseTransferArgs = (args: string[], gatewayData: any) => {
     const keyring = new Keyring({ type: "sr25519" })
@@ -18,8 +19,8 @@ export const parseTransferArgs = (args: string[], gatewayData: any) => {
     }
 
     const amount = transferAmount(parseFloat(args[4]), gatewayData.registrationData.gatewayConfig.decimals, gatewayData.registrationData.gatewayConfig.valueTypeSize);
-    const sender = signer.address
-    const receiver = args[5] ? args[5] :gatewayData.transferData.receiver ;
+    const sender = "0x" + Buffer.from(signer.publicKey).toString('hex')
+    const receiver = args[5] ? addressStringToPubKey(args[5]) : addressStringToPubKey(gatewayData.transferData.receiver);
     const fee = args[6] ? args[6] :gatewayData.transferData.fee;
     return [amount, sender, receiver, fee]
 }

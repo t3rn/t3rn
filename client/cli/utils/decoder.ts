@@ -1,4 +1,6 @@
 import { TypeRegistry, createType } from "@polkadot/types"
+import{ Keyring }from'@polkadot/api';
+const keyring = new Keyring({ type: "sr25519" })
 
 const registry = new TypeRegistry()
 const justification = { type: 'GrandpaJustification<Header>' }
@@ -25,4 +27,8 @@ export const decodeAuthoritySet = (data: any) => {
 export const extractAuthoritySetFromFinalityProof = (finalityProof: any) => {
     const rawJust = decodeFinalityProof((finalityProof))
     return decodeAuthoritySet(rawJust)
+}
+
+export const addressStringToPubKey = (address: string) => {
+    return "0x" + Buffer.from(keyring.decodeAddress(address)).toString('hex')
 }
