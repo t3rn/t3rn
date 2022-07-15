@@ -1201,6 +1201,7 @@ dependencies = [
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.19)",
  "t3rn-primitives",
+ "t3rn-protocol",
  "try-runtime-cli",
  "xcm",
 ]
@@ -1235,6 +1236,7 @@ dependencies = [
  "pallet-balances",
  "pallet-circuit",
  "pallet-circuit-portal",
+ "pallet-circuit-portal-rpc-runtime-api",
  "pallet-collator-selection",
  "pallet-contracts-primitives",
  "pallet-contracts-registry",
@@ -1326,6 +1328,7 @@ dependencies = [
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
  "t3rn-primitives",
+ "t3rn-protocol",
 ]
 
 [[package]]
@@ -6508,6 +6511,7 @@ dependencies = [
  "sp-trie",
  "t3rn-primitives",
  "t3rn-protocol",
+ "t3rn-sdk-primitives",
 ]
 
 [[package]]
@@ -7140,6 +7144,7 @@ dependencies = [
  "parity-scale-codec 3.1.5",
  "scale-info 2.1.2",
  "serde",
+ "similar-asserts",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -7469,6 +7474,7 @@ dependencies = [
  "parity-scale-codec 3.1.5",
  "sp-api",
  "sp-runtime",
+ "t3rn-primitives",
 ]
 
 [[package]]
@@ -12639,6 +12645,7 @@ dependencies = [
  "hash-db",
  "hex",
  "hex-literal 0.3.4",
+ "log",
  "num-traits",
  "orml-traits",
  "pallet-sudo",
@@ -12658,7 +12665,7 @@ dependencies = [
  "sp-trie",
  "sp-version",
  "t3rn-sdk-primitives",
- "t3rn-types",
+ "t3rn-types 0.0.1",
 ]
 
 [[package]]
@@ -12699,13 +12706,15 @@ dependencies = [
 
 [[package]]
 name = "t3rn-sdk-primitives"
-version = "0.0.0-rc2"
+version = "0.0.1-rc8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f757594f92c1f5e8aa7578d7326dcc297ad4ee3920cb8ebf81c4fdbbe1ae2c8f"
 dependencies = [
  "arrayvec 0.7.2",
  "cfg-if 1.0.0",
  "parity-scale-codec 3.1.5",
  "scale-info 2.1.2",
- "t3rn-types",
+ "t3rn-types 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -12722,6 +12731,17 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
+]
+
+[[package]]
+name = "t3rn-types"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c1717308e10e053e3db5909651fd3dda4264406e9c78511113b905acd0cd5c37"
+dependencies = [
+ "parity-scale-codec 3.1.5",
+ "primitive-types",
+ "scale-info 2.1.2",
 ]
 
 [[package]]

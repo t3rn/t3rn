@@ -149,45 +149,6 @@ impl pallet_treasury::Config for Test {
     type WeightInfo = ();
 }
 
-// // LeaveCandidatesDelay=28 (=14d) assuming round_term=6h
-// parameter_types! {
-//     pub const ActiveSetSize: Range<u32> = Range {
-//         min: 1_u32,
-//         ideal: 32_u32,
-//         max: 128_u32,
-//     };
-//     pub const MaxCommission: Percent = Percent::from_percent(50);
-//     pub const MaxRisk: Percent = Percent::from_percent(50);
-//     pub const MinExecutorBond: u64 = 1000 * T3RN;
-//     pub const MinCandidateBond: u64 = 1000 * T3RN;
-//     pub const MinAtomicStake:u64 = 500 * T3RN;
-//     pub const MinTotalStake: u64 = 500 * T3RN;
-//     pub const MaxTopStakesPerCandidate: u32 = 300;
-//     pub const MaxBottomStakesPerCandidate: u32 = 50;
-//     pub const MaxStakesPerStaker: u32 = 100;
-//     pub const ConfigureExecutorDelay: u32 = 14 * BLOCKS_PER_DAY;
-//     pub const LeaveCandidatesDelay: u32 = 28;
-//     pub const LeaveStakersDelay: u32 = 28;
-//     pub const CandidateBondLessDelay: u32 =28;
-//     pub const RevokeStakeDelay: u32 = 28;
-// }
-
-// type ActiveSetSize = ActiveSetSize;
-// type CandidateBondLessDelay = CandidateBondLessDelay;
-// type ConfigureExecutorDelay = ConfigureExecutorDelay;
-// type LeaveCandidatesDelay = LeaveCandidatesDelay;
-// type LeaveStakersDelay = LeaveStakersDelay;
-// type MaxBottomStakesPerCandidate = MaxBottomStakesPerCandidate;
-// type MaxCommission = MaxCommission;
-// type MaxRisk = MaxRisk;
-// type MaxStakesPerStaker = MaxStakesPerStaker;
-// type MaxTopStakesPerCandidate = MaxTopStakesPerCandidate;
-// type MinCandidateBond = MinCandidateBond;
-// type MinExecutorBond = MinExecutorBond;
-// type MinAtomicStake = MinAtomicStake;
-// type MinTotalStake = MinTotalStake;
-// type RevokeStakeDelay = RevokeStakeDelay;
-
 impl pallet_staking::Config for Test {
     type Currency = Balances;
     type Event = Event;
