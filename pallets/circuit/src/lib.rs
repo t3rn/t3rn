@@ -1827,7 +1827,7 @@ impl<T: Config> Pallet<T> {
         inclusion_proof: Option<Vec<Vec<u8>>>,
         block_hash: Option<Vec<u8>>,
     ) -> Result<(), &'static str> {
-        let confirm_inclusion = |fsfx: FullSideEffect<
+        let confirm_inclusion = |fsx: &FullSideEffect<
             <T as frame_system::Config>::AccountId,
             <T as frame_system::Config>::BlockNumber,
             EscrowedBalanceOf<T, T::Escrowed>,
@@ -1838,7 +1838,7 @@ impl<T: Config> Pallet<T> {
                 <T as Config>::CircuitPortal::confirm_event_inclusion(
                     side_effect.target,
                     confirmation.encoded_effect.clone(),
-                    fsfx.submission_target_height,
+                    fsx.submission_target_height.clone(),
                     inclusion_proof,
                     block_hash,
                 )
@@ -1948,7 +1948,7 @@ impl<T: Config> Pallet<T> {
         }
 
         let fsx = confirm_order::<T>(side_effect, confirmation, &mut local_ctx.full_side_effects)?;
-        confirm_inclusion(fsx.clone())?;
+        confirm_inclusion(&fsx)?;
         confirm_execution(
             <T as Config>::Xdns::best_available(side_effect.target)?.gateway_vendor,
             <T as Config>::Xdns::get_gateway_value_unsigned_type_unsafe(&side_effect.target),
