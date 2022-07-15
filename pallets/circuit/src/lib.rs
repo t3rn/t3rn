@@ -1829,7 +1829,7 @@ impl<T: Config> Pallet<T> {
         inclusion_proof: Option<Vec<Vec<u8>>>,
         block_hash: Option<Vec<u8>>,
     ) -> Result<(), &'static str> {
-        let confirm_inclusion = |fsfx: FullSideEffect<
+        let confirm_inclusion = |fsx: &FullSideEffect<
             <T as frame_system::Config>::AccountId,
             <T as frame_system::Config>::BlockNumber,
             EscrowedBalanceOf<T, T::Escrowed>,
@@ -1840,7 +1840,7 @@ impl<T: Config> Pallet<T> {
                 <T as Config>::CircuitPortal::confirm_event_inclusion(
                     side_effect.target,
                     confirmation.encoded_effect.clone(),
-                    fsfx.submission_target_height,
+                    fsx.submission_target_height.clone(),
                     inclusion_proof,
                     block_hash,
                 )
@@ -1849,7 +1849,11 @@ impl<T: Config> Pallet<T> {
             }
         };
 
-        let confirm_execution = |gateway_vendor, value_abi_unsigned_type, state_copy| {
+        let confirm_execution = |gateway_vendor,
+                                 value_abi_unsigned_type,
+                                 state_copy,
+                                 security_lvl,
+                                 security_coordinates| {
             let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
             side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
             let side_effect_interface =
@@ -1866,6 +1870,7 @@ impl<T: Config> Pallet<T> {
                 EthereumSideEffectsParser<
                     <<T as Config>::CircuitPortal as CircuitPortal<T>>::EthVerifier,
                 >,
+                SubstrateSideEffectsParser,
             >(
                 gateway_vendor,
                 value_abi_unsigned_type,
@@ -1879,6 +1884,8 @@ impl<T: Config> Pallet<T> {
                         .to_vec()
                         .into(),
                 ),
+                security_lvl,
+                security_coordinates,
             )
         };
 
@@ -1942,12 +1949,14 @@ impl<T: Config> Pallet<T> {
             Err("Unable to find matching Side Effect in given Xtx to confirm")
         }
 
-        let fsfx = confirm_order::<T>(side_effect, confirmation, &mut local_ctx.full_side_effects)?;
-        confirm_inclusion(fsfx)?;
+        let fsx = confirm_order::<T>(side_effect, confirmation, &mut local_ctx.full_side_effects)?;
+        confirm_inclusion(&fsx)?;
         confirm_execution(
             <T as Config>::Xdns::best_available(side_effect.target)?.gateway_vendor,
             <T as Config>::Xdns::get_gateway_value_unsigned_type_unsafe(&side_effect.target),
             &local_ctx.local_state,
+            fsx.security_lvl,
+            <T as Config>::Xdns::get_gateway_security_coordinates(&side_effect.target)?,
         )?;
         Ok(())
     }

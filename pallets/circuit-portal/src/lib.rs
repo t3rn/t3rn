@@ -77,7 +77,6 @@ pub use xbridges::{
 
 use crate::xbridges::read_cmp_latest_height_from_bridge;
 use sp_finality_grandpa::SetId;
-use sp_runtime::traits::Header;
 
 pub type AllowedSideEffect = [u8; 4];
 
@@ -206,6 +205,7 @@ pub mod pallet {
             first_header: Vec<u8>,
             authorities: Option<Vec<<T as frame_system::Config>::AccountId>>,
             authority_set_id: Option<SetId>,
+            security_coordinates: Vec<u8>,
             allowed_side_effects: Vec<AllowedSideEffect>,
         ) -> DispatchResultWithPostInfo {
             // Retrieve sender of the transaction.
@@ -219,7 +219,9 @@ pub mod pallet {
                 gateway_type.clone(),
                 gateway_genesis,
                 gateway_sys_props.clone(),
+                security_coordinates.clone(),
                 allowed_side_effects.clone(),
+                true, // force ~ overwrite existing XDNS record
             )?;
 
             let res = match (gateway_abi.hasher, gateway_abi.block_number_type_size) {
@@ -460,7 +462,7 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
         let gateway_xdns_record = <T as Config>::Xdns::best_available(gateway_id)?;
 
         match gateway_xdns_record.gateway_vendor {
-            GatewayVendor::Ethereum => {
+            GatewayVendor::EvmBased | GatewayVendor::InternalXBI => {
                 unimplemented!()
                 // something like this should work for eth
                 // return if let Err(computed_root) = check_merkle_proof(
@@ -479,7 +481,7 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
                 //         Err(Error::<T>::SideEffectConfirmationInvalidInclusionProof.into())
                 //     }
             },
-            GatewayVendor::Substrate => {
+            GatewayVendor::PolkadotLike => {
                 let block_hash = if let Some(x) = maybe_block_hash {
                     Ok(x)
                 } else {
@@ -553,8 +555,10 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
         let gateway_xdns_record = <T as Config>::Xdns::best_available(gateway_id)?;
 
         match gateway_xdns_record.gateway_vendor {
-            GatewayVendor::Ethereum => return Err("Read latest target height - unhandled vendor"),
-            GatewayVendor::Substrate => {
+            GatewayVendor::EvmBased => return Err("Read latest target height - unhandled vendor"),
+            GatewayVendor::InternalXBI =>
+                return Err("Read latest target height - unhandled vendor"),
+            GatewayVendor::PolkadotLike => {
                 log::info!("gateway_id: {:?}", gateway_id);
                 match gateway_xdns_record.gateway_abi.block_number_type_size {
                     32 => {

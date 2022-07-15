@@ -62,6 +62,7 @@ pallet-3vm-contracts-rpc   = { path = "../../3vm/pallets/wasm-contracts/rpc", pa
 pallet-xdns                = { path = "../../pallets/xdns" }
 pallet-xdns-rpc            = { path = "../../pallets/xdns/rpc" }
 t3rn-primitives            = { path = "../../primitives" }
+t3rn-protocol              = { path = "../../protocol" }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.19" }

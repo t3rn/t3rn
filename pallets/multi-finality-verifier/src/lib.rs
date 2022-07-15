@@ -965,11 +965,13 @@ mod tests {
             gateway_id,
             None,
             Default::default(),
-            GatewayVendor::Substrate,
+            GatewayVendor::PolkadotLike,
             GatewayType::TxOnly(0),
             Default::default(),
             gateway_sys_props,
             vec![],
+            vec![],
+            false,
         );
 
         Pallet::<TestRuntime>::initialize_single(origin, init_data.clone()).map(|_| init_data)

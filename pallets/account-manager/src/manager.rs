@@ -4,7 +4,7 @@ use crate::{
 };
 use frame_support::{
     dispatch::DispatchResult,
-    traits::{BalanceStatus, Currency, ExistenceRequirement, Get, ReservableCurrency},
+    traits::{Currency, ExistenceRequirement, Get, ReservableCurrency},
 };
 use sp_runtime::{traits::Zero, Percent};
 use sp_std::borrow::ToOwned;

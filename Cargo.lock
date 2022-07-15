@@ -1208,6 +1208,7 @@ dependencies = [
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.19)",
  "t3rn-primitives",
+ "t3rn-protocol",
  "try-runtime-cli",
  "xcm",
 ]
@@ -1332,6 +1333,7 @@ dependencies = [
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
  "t3rn-primitives",
+ "t3rn-protocol",
 ]
 
 [[package]]
