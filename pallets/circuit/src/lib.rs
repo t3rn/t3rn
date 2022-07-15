@@ -66,6 +66,8 @@ use t3rn_protocol::side_effects::{
 };
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 
+use pallet_xbi_portal::primitives::xbi::XBIPortal;
+
 #[cfg(test)]
 pub mod tests;
 
@@ -95,7 +97,7 @@ use crate::state::*;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use crate::escrow::Escrow;
+
     use frame_support::{
         pallet_prelude::*,
         traits::{
@@ -106,7 +108,10 @@ pub mod pallet {
     };
     use frame_system::pallet_prelude::*;
     use orml_traits::MultiCurrency;
+    use pallet_xbi_portal::xbi_codec::XBIMetadata;
+    use pallet_xbi_portal_enter::t3rn_sfx::sfx_2_xbi;
     use sp_std::borrow::ToOwned;
+
     use t3rn_primitives::{
         circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
         circuit_portal::CircuitPortal,
@@ -256,6 +261,10 @@ pub mod pallet {
         #[pallet::constant]
         type SelfGatewayId: Get<[u8; 4]>;
 
+        /// The Circuit's self parachain id
+        #[pallet::constant]
+        type SelfParaId: Get<u32>;
+
         /// The Circuit's Default Xtx timeout
         #[pallet::constant]
         type XtxTimeoutDefault: Get<Self::BlockNumber>;
@@ -289,6 +298,8 @@ pub mod pallet {
 
         /// A type that provides access to Xdns
         type Xdns: Xdns<Self>;
+
+        type XBIPortal: XBIPortal<Self>;
 
         // type FreeVM: FreeVM<Self>;
 
@@ -699,16 +710,25 @@ pub mod pallet {
                 return Err(Error::<T>::LocalSideEffectExecutionNotApplicable.into())
             }
 
-            let encoded_4b_action: [u8; 4] =
+            let _encoded_4b_action: [u8; 4] =
                 Decode::decode(&mut side_effect.encoded_action.encode().as_ref())
                     .expect("Encoded Type was already validated before saving");
 
-            Escrow::<T>::exec(
-                &encoded_4b_action,
-                side_effect.encoded_args,
-                Self::account_id(),
-                relayer,
-            )?;
+            let _xbi = sfx_2_xbi::<T, T::Escrowed>(
+                &side_effect,
+                XBIMetadata {
+                    id: Decode::decode(&mut &side_effect_id.encode()[..])
+                        .expect("SFX ID at XBI conversion should always decode to H256"),
+                    dest_para_id: <T as Config>::Xdns::get_gateway_para_id(&side_effect.target)?,
+                    src_para_id: T::SelfParaId::get(),
+                    sent: Default::default(),
+                    delivered: Default::default(),
+                    executed: Default::default(),
+                    max_exec_cost: Default::default(),
+                    max_notifications_cost: Default::default(),
+                },
+            )
+            .map_err(|_| Error::<T>::ChargingTransferFailed)?;
 
             Ok(().into())
         }

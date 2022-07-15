@@ -495,8 +495,10 @@ impl Config for Test {
     type MultiCurrency = ORMLTokens;
     type PalletId = CircuitPalletId;
     type SelfGatewayId = SelfGatewayId;
+    type SelfParaId = ConstU32<3333>;
     type SignalQueueDepth = ConstU32<5>;
     type WeightInfo = ();
+    type XBIPortal = pallet_xbi_portal::primitives::xbi::XBIPortalMock<Test>;
     type Xdns = XDNS;
     type XtxTimeoutCheckInterval = ConstU64<10>;
     type XtxTimeoutDefault = ConstU64<100>;
