@@ -194,7 +194,7 @@ pub mod pallet {
                 //TODO: pull sum of active executors + collators stake
                 let total_stake: BalanceOf<T> = Self::u32_to_balance(50_u32);
                 let round_issuance = Self::compute_round_issuance(total_stake);
-                sp_std::if_std! { println!("round_issuance {:?}", round_issuance); }
+
                 Self::mint_for_round(T::Origin::root(), round.index - 1, round_issuance)
                     //TODO: panic possibility
                     .expect("mint for round; will not fail unless called without root");
@@ -279,7 +279,7 @@ pub mod pallet {
                 T::Currency::issue(<Pallet<T>>::u32_to_balance(T::GenesisIssuance::get()));
             //TODO: deposit to treasury
             T::Currency::deposit_creating(&T::TreasuryAccount::get(), neg_imb.peek());
-            sp_std::if_std! { println!("total issuance {:?}", T::Currency::total_issuance()); }
+
             <Pallet<T>>::deposit_event(Event::NewRound {
                 round: round.index,
                 head: round.head,
@@ -321,14 +321,11 @@ pub mod pallet {
                 Perbill::from_rational(1, count_devs as u32) * inflation_alloc.developer;
             let relative_per_exec =
                 Perbill::from_rational(1, count_execs as u32) * inflation_alloc.executor;
-            sp_std::if_std! { println!("relative_per_dev {:?}", relative_per_dev); }
-            sp_std::if_std! { println!("relative_per_exec {:?}", relative_per_exec); }
-            sp_std::if_std! { println!("amount {:?}", amount); }
+
             // calculate absoute rewards per actor
             let absolute_per_dev = relative_per_dev * amount;
             let absolute_per_exec = relative_per_exec * amount;
-            sp_std::if_std! { println!("absolute_per_dev {:?}", absolute_per_dev); }
-            sp_std::if_std! { println!("absolute_per_exec {:?}", absolute_per_exec); }
+
             // for each candidate in the round issue rewards
             for (candidate, role) in <Beneficiaries<T>>::iter_keys() {
                 let issued = match role {
@@ -343,7 +340,7 @@ pub mod pallet {
                         // absolute_per_exec
                     },
                 };
-                sp_std::if_std! { println!("issued {:?}", issued); }
+
                 <BeneficiaryRoundRewards<T>>::insert(candidate.clone(), round_index, issued);
 
                 Self::deposit_event(Event::BeneficiaryTokensIssued(candidate, issued));

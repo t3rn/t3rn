@@ -1,6 +1,7 @@
 use crate::common::{Range, RoundIndex};
 use codec::{Decode, Encode};
 use frame_support::{pallet_prelude::*, traits::LockIdentifier};
+#[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::{traits::Zero, Percent, RuntimeDebug};
 use sp_std::{
@@ -78,6 +79,7 @@ impl<A, B: Default> Default for ExecutorSnapshot<A, B> {
 }
 
 /// Generic type describing either an executor's self-bond or a staker's bond.
+// #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq)]
 pub struct Bond<AccountId, Balance> {
     pub owner: AccountId,
@@ -148,7 +150,7 @@ impl Default for ExecutorStatus {
 }
 
 /// Capacity status for top or bottom stakes.
-#[derive(PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(Clone, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum CapacityStatus {
     /// Reached capacity
     Full,
