@@ -685,6 +685,8 @@ pub mod pallet {
                 <T as frame_system::Config>::BlockNumber,
                 EscrowedBalanceOf<T, <T as Config>::Escrowed>,
             >,
+            max_exec_cost: u128,
+            max_notifications_cost: u128,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
             let relayer = Self::authorize(origin, CircuitRole::Relayer)?;
@@ -714,21 +716,20 @@ pub mod pallet {
                 Decode::decode(&mut side_effect.encoded_action.encode().as_ref())
                     .expect("Encoded Type was already validated before saving");
 
-            let _xbi = sfx_2_xbi::<T, T::Escrowed>(
+            let xbi = sfx_2_xbi::<T, T::Escrowed>(
                 &side_effect,
-                XBIMetadata {
-                    id: Decode::decode(&mut &side_effect_id.encode()[..])
+                XBIMetadata::new_with_default_timeouts(
+                    Decode::decode(&mut &side_effect_id.encode()[..])
                         .expect("SFX ID at XBI conversion should always decode to H256"),
-                    dest_para_id: <T as Config>::Xdns::get_gateway_para_id(&side_effect.target)?,
-                    src_para_id: T::SelfParaId::get(),
-                    sent: Default::default(),
-                    delivered: Default::default(),
-                    executed: Default::default(),
-                    max_exec_cost: Default::default(),
-                    max_notifications_cost: Default::default(),
-                },
+                    <T as Config>::Xdns::get_gateway_para_id(&side_effect.target)?,
+                    T::SelfParaId::get(),
+                    max_exec_cost,
+                    max_notifications_cost,
+                ),
             )
-            .map_err(|_| Error::<T>::ChargingTransferFailed)?;
+            .map_err(|_| Error::<T>::FailedToConvertSFX2XBI)?;
+
+            T::XBIPortal::do_check_in_xbi(xbi).map_err(|_| Error::<T>::FailedToConvertSFX2XBI)?;
 
             Ok(().into())
         }
@@ -997,6 +998,10 @@ pub mod pallet {
         ApplyFailed,
         DeterminedForbiddenXtxStatus,
         LocalSideEffectExecutionNotApplicable,
+        FailedToConvertSFX2XBI,
+        FailedToConvertXBI2SFX,
+        FailedToEnterXBIPortal,
+        FailedToExitXBIPortal,
         UnsupportedRole,
         InvalidLocalTrigger,
         SignalQueueFull,
