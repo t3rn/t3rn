@@ -60,7 +60,7 @@ use t3rn_primitives::{
 };
 use t3rn_protocol::side_effects::{
     confirm::{
-        ethereum::EthereumSideEffectsParser, protocol::*, substrate::SubstrateSideEffectsParser,
+        evmBased::EthereumSideEffectsParser, protocol::*, substrate::SubstrateSideEffectsParser,
     },
     loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol},
 };

@@ -15,7 +15,7 @@ use t3rn_primitives::{
     abi::Type, side_effect::interface::SideEffectInterface, transfers::BalanceOf, xdns::XdnsRecord,
     EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor,
 };
-use t3rn_protocol::side_effects::confirm::ethereum::EthereumMockVerifier;
+use t3rn_protocol::side_effects::confirm::evmBased::EthereumMockVerifier;
 
 pub type AccountId = sp_runtime::AccountId32;
 pub type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;

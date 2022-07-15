@@ -42,7 +42,7 @@ impl pallet_circuit_portal::Config for Runtime {
     type Call = Call;
     type Escrowed = Self;
     // type EthVerifier = ethereum_light_client::Pallet<Runtime>;
-    type EthVerifier = t3rn_protocol::side_effects::confirm::ethereum::EthereumMockVerifier;
+    type EthVerifier = t3rn_protocol::side_effects::confirm::evmBased::EthereumMockVerifier;
     type Event = Event;
     type PalletId = PortalPalletId;
     type WeightInfo = pallet_circuit_portal::weights::SubstrateWeight<Runtime>;
