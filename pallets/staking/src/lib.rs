@@ -275,23 +275,6 @@ pub mod pallet {
             Ok(())
         }
 
-        ///////////////////////////////////////////////////////////////////////
-        // ExposesT::MinBond via pallet-executor-staking Config trait ✅
-        // implements call fn bond(...)  ✅
-        // & fn schedule_unbond(...) ✅
-        // implements call fn setup_executor( params: { commission_rate, !maybe! nominators_risk_ratio }) ✅
-        // if executor already registered schedule update for T::ScheduleDelay time (by default 14 days) ✅
-        // implements updates call fn schedule_params_update( params ) -> ✅
-        // implements go_offline ✅
-        // implements go_online ✅
-        // implements fn join_candidate() which makes executor being consider for an active set ✅
-        // implements fn schedule_leave_candidate() which makes executor not being consider for an active set anymore after T::ScheduleDelay (14 days) ✅
-        // implements fn self::active_set() that selects the top T::ActiveExecutors (make it 128) ✅
-        // Stakers for Executors
-        // implements call fn stake(executor: AccountId, stake: Balance) TODO
-        // implements call fn schedule_unstake(executor: AccountId, stake: Balance) after T::ScheduleDelay (14 days) TODO
-        ///////////////////////////////////////////////////////////////////////
-
         /// Configures an executor's economics.
         /// The parameters must adhere to `T::MaxCommission` and `T::MaxRisk`.
         /// If this applies to an already configured executor `T::ConfigureExecutorDelay` is enforced,
@@ -479,10 +462,10 @@ pub mod pallet {
             bond: BalanceOf<T>,
             candidate_count: u32,
         ) -> DispatchResultWithPostInfo {
-            let acc = ensure_signed(origin)?;
+            let executor = ensure_signed(origin)?;
 
-            ensure!(!Self::is_candidate(&acc), Error::<T>::CandidateExists);
-            ensure!(!Self::is_staker(&acc), Error::<T>::StakerExists);
+            ensure!(!Self::is_candidate(&executor), Error::<T>::CandidateExists);
+            ensure!(!Self::is_staker(&executor), Error::<T>::StakerExists);
 
             let fixtures = <Fixtures<T>>::get();
 
@@ -500,29 +483,29 @@ pub mod pallet {
             );
             ensure!(
                 candidates.insert(Bond {
-                    owner: acc.clone(),
+                    owner: executor.clone(),
                     amount: bond
                 }),
                 Error::<T>::CandidateExists
             );
             ensure!(
-                Self::get_executor_stakable_free_balance(&acc) >= bond,
+                Self::get_executor_stakable_free_balance(&executor) >= bond,
                 Error::<T>::InsufficientBalance,
             );
 
-            T::Currency::set_lock(EXECUTOR_LOCK_ID, &acc, bond, WithdrawReasons::all());
+            T::Currency::set_lock(EXECUTOR_LOCK_ID, &executor, bond, WithdrawReasons::all());
 
             let candidate = CandidateMetadata::new(bond);
 
-            <CandidateInfo<T>>::insert(&acc, candidate);
+            <CandidateInfo<T>>::insert(&executor, candidate);
 
             let empty_stakes: Stakes<T::AccountId, BalanceOf<T>> = Default::default();
 
             // insert empty top stakes
-            <TopStakes<T>>::insert(&acc, empty_stakes.clone());
+            <TopStakes<T>>::insert(&executor, empty_stakes.clone());
 
             // insert empty bottom stakes
-            <BottomStakes<T>>::insert(&acc, empty_stakes);
+            <BottomStakes<T>>::insert(&executor, empty_stakes);
 
             <CandidatePool<T>>::put(candidates);
 
@@ -531,7 +514,7 @@ pub mod pallet {
             <Total<T>>::put(new_total);
 
             Self::deposit_event(Event::CandidateJoined {
-                account: acc,
+                account: executor,
                 amount_locked: bond,
                 total_locked: new_total,
             });
@@ -929,14 +912,14 @@ pub mod pallet {
         #[pallet::weight(10_000)] //TODO
         pub fn schedule_revoke_stake(
             origin: OriginFor<T>,
-            collator: T::AccountId,
+            executor: T::AccountId,
         ) -> DispatchResultWithPostInfo {
             let staker = ensure_signed(origin)?;
-            Self::stake_schedule_revoke(collator, staker)
+            Self::stake_schedule_revoke(executor, staker)
         }
 
         // #[pallet::weight(<T as Config>::WeightInfo::staker_bond_more())]
-        /// Bond more for stakers wrt a specific collator candidate.
+        /// Bond more for stakers wrt a specific executor candidate.
         #[pallet::weight(10_000)] //TODO
         pub fn staker_bond_more(
             origin: OriginFor<T>,
@@ -958,7 +941,7 @@ pub mod pallet {
         }
 
         // #[pallet::weight(<T as Config>::WeightInfo::schedule_staker_bond_less())]
-        /// Request bond less for stakers wrt a specific collator candidate.
+        /// Request bond less for stakers wrt a specific executor candidate.
         #[pallet::weight(10_000)] //TODO
         pub fn schedule_staker_bond_less(
             origin: OriginFor<T>,
@@ -1002,9 +985,6 @@ pub mod pallet {
         fn on_initialize(_n: T::BlockNumber) -> Weight {
             419 //TODO
         }
-
-        // `on_finalize` is executed at the end of block after all extrinsic are dispatched.
-        fn on_finalize(_n: T::BlockNumber) {}
     }
 
     #[pallet::event]
@@ -1259,7 +1239,8 @@ pub mod pallet {
                     leave_candidates_delay: 56,    //TODO
                     leave_stakers_delay: 56,       //TODO
                     candidate_bond_less_delay: 56, //TODO
-                    revoke_stake_delay: 56,        //TODO
+                    // revoke_stake_delay also used as decrease_stake_delay
+                    revoke_stake_delay: 56, //TODO
                 },
             }
         }
@@ -1274,46 +1255,19 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
-        // /// Select the top `active_set_size()` candidates from the pool.
-        // /// a vec of their AccountIds (in the order of selection)
-        // pub fn select_active_set() -> Vec<T::AccountId> {
-        // 	let mut candidates = <CandidatePool<T>>::get().0;
-        // 	// order candidates by stake (least to greatest so requires `rev()`)
-        // 	candidates.sort_by(|a, b| a.amount.cmp(&b.amount));
-        // 	let top_n = <ActiveSetSize<T>>::get().ideal as usize;
-        // 	// choose the top `active_set_size()` qualified candidates, ordered by stake
-        // 	let mut executors = candidates
-        // 		.into_iter()
-        // 		.rev()
-        // 		.take(top_n)
-        // 		.filter(|x| x.amount >= T::MinExecutorBond::get())
-        // 		.map(|x| x.owner)
-        // 		.collect::<Vec<T::AccountId>>();
-
-        //     if executors.len() < <ActiveSetSize<T>>::get().min as usize {
-        //         //TODO handle to few eligible candidates for active set
-        //     }
-
-        // 	executors.sort();
-        // 	executors
-        // }
-
-        // /// Converts a u64 to a runtime's balance.
-        // fn u64_to_balance(input: u64) -> BalanceOf<T> { input.into() }
-
         /// Whether given identity is a staker.
-        pub fn is_staker(acc: &T::AccountId) -> bool {
-            <StakerInfo<T>>::get(acc).is_some()
+        pub fn is_staker(staker: &T::AccountId) -> bool {
+            <StakerInfo<T>>::get(staker).is_some()
         }
 
         /// Whether given identity is an executor candidate.
-        pub fn is_candidate(acc: &T::AccountId) -> bool {
-            <CandidateInfo<T>>::get(acc).is_some()
+        pub fn is_candidate(executor: &T::AccountId) -> bool {
+            <CandidateInfo<T>>::get(executor).is_some()
         }
 
         /// Whether given identity is part of the eurrents executor active set.
-        pub fn is_active(acc: &T::AccountId) -> bool {
-            <ActiveSet<T>>::get().binary_search(acc).is_ok()
+        pub fn is_active(executor: &T::AccountId) -> bool {
+            <ActiveSet<T>>::get().binary_search(executor).is_ok()
         }
 
         /// Caller must ensure candidate is active before calling.
@@ -1328,19 +1282,19 @@ pub mod pallet {
         }
 
         /// Returns an account's free balance which is not locked in executor staking.
-        pub fn get_executor_stakable_free_balance(acc: &T::AccountId) -> BalanceOf<T> {
-            let mut balance = T::Currency::free_balance(acc);
-            if let Some(info) = <CandidateInfo<T>>::get(acc) {
+        pub fn get_executor_stakable_free_balance(executor: &T::AccountId) -> BalanceOf<T> {
+            let mut balance = T::Currency::free_balance(executor);
+            if let Some(info) = <CandidateInfo<T>>::get(executor) {
                 balance = balance.saturating_sub(info.bond);
             }
             balance
         }
 
         /// Returns an account's free balance which is not locked in executor staking
-        pub fn get_staker_stakable_free_balance(acc: &T::AccountId) -> BalanceOf<T> {
-            let mut balance = T::Currency::free_balance(acc);
+        pub fn get_staker_stakable_free_balance(executor: &T::AccountId) -> BalanceOf<T> {
+            let mut balance = T::Currency::free_balance(executor);
 
-            if let Some(state) = <StakerInfo<T>>::get(acc) {
+            if let Some(state) = <StakerInfo<T>>::get(executor) {
                 balance = balance.saturating_sub(state.total());
             }
 
@@ -1539,9 +1493,6 @@ pub mod pallet {
                 .collect::<Vec<T::AccountId>>();
 
             executors.sort();
-            // executors
-
-            ////////// TBC
 
             let (mut executor_count, mut stake_count, mut total) =
                 (0u32, 0u32, BalanceOf::<T>::zero());

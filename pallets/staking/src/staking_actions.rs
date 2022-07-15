@@ -30,14 +30,18 @@ impl<T: Config> Pallet<T> {
         let bonded_amount = state
             .get_bond_amount(&executor)
             .ok_or(<Error<T>>::NoSuchStake)?;
+
         let now = T::Treasury::current_round().index;
         let when = now.saturating_add(<Fixtures<T>>::get().revoke_stake_delay);
+
         scheduled_requests.push(ScheduledStakingRequest {
             staker: staker.clone(),
             action: StakingAction::Revoke(bonded_amount),
             when_executable: when,
         });
+
         state.less_total = state.less_total.saturating_add(bonded_amount);
+
         <ScheduledStakingRequests<T>>::insert(executor.clone(), scheduled_requests);
         <StakerInfo<T>>::insert(staker.clone(), state);
 
@@ -47,6 +51,7 @@ impl<T: Config> Pallet<T> {
             candidate: executor,
             scheduled_exit: when,
         });
+
         Ok(().into())
     }
 
@@ -67,12 +72,15 @@ impl<T: Config> Pallet<T> {
         let bonded_amount = state
             .get_bond_amount(&executor)
             .ok_or(<Error<T>>::NoSuchStake)?;
+
         ensure!(
             bonded_amount > decrease_amount,
             <Error<T>>::StakerBondBelowMin
         );
+
         let new_amount: BalanceOf<T> = (bonded_amount - decrease_amount).into();
         let fixtures = <Fixtures<T>>::get();
+
         ensure!(
             new_amount >= fixtures.min_atomic_stake,
             <Error<T>>::StakeBelowMin
@@ -80,9 +88,11 @@ impl<T: Config> Pallet<T> {
 
         // Net Total is total after pending orders are executed
         let net_total = state.total.saturating_sub(state.less_total);
+
         // Net Total is always >= MinTotalStake
         let max_subtracted_amount =
             net_total.saturating_sub(<Fixtures<T>>::get().min_total_stake.into());
+
         ensure!(
             decrease_amount <= max_subtracted_amount,
             <Error<T>>::StakerBondBelowMin
@@ -90,12 +100,15 @@ impl<T: Config> Pallet<T> {
 
         let now = T::Treasury::current_round().index;
         let when = now.saturating_add(fixtures.revoke_stake_delay);
+
         scheduled_requests.push(ScheduledStakingRequest {
             staker: staker.clone(),
             action: StakingAction::Decrease(decrease_amount),
             when_executable: when,
         });
+
         state.less_total = state.less_total.saturating_add(decrease_amount);
+
         <ScheduledStakingRequests<T>>::insert(executor.clone(), scheduled_requests);
         <StakerInfo<T>>::insert(staker.clone(), state);
 
@@ -105,6 +118,7 @@ impl<T: Config> Pallet<T> {
             amount: decrease_amount,
             execute_round: when,
         });
+
         Ok(().into())
     }
 
@@ -127,6 +141,7 @@ impl<T: Config> Pallet<T> {
             executor,
             cancelled_request: request.into(),
         });
+
         Ok(().into())
     }
 
@@ -141,7 +156,9 @@ impl<T: Config> Pallet<T> {
 
         let request = scheduled_requests.remove(request_idx);
         let amount = request.action.amount();
+
         state.less_total = state.less_total.saturating_sub(amount);
+
         Some(request)
     }
 
@@ -152,15 +169,16 @@ impl<T: Config> Pallet<T> {
     ) -> DispatchResultWithPostInfo {
         let mut state = <StakerInfo<T>>::get(&staker).ok_or(<Error<T>>::NoSuchStaker)?;
         let mut scheduled_requests = <ScheduledStakingRequests<T>>::get(&executor);
+
         let request_idx = scheduled_requests
             .iter()
             .position(|req| req.staker == staker)
             .ok_or(<Error<T>>::NoSuchPendingStakeRequest)?;
+
         let request = &scheduled_requests[request_idx];
-
         let fixtures = <Fixtures<T>>::get();
-
         let now = T::Treasury::current_round().index;
+
         ensure!(
             request.when_executable <= now,
             <Error<T>>::PendingStakeRequestNotDueYet
@@ -188,6 +206,7 @@ impl<T: Config> Pallet<T> {
 
                 // remove stake from executor state stakes
                 Self::staker_leaves_candidate(executor.clone(), staker.clone(), amount)?;
+
                 Self::deposit_event(Event::StakeRevoked {
                     staker: staker.clone(),
                     candidate: executor.clone(),
@@ -195,6 +214,7 @@ impl<T: Config> Pallet<T> {
                 });
 
                 <ScheduledStakingRequests<T>>::insert(executor, scheduled_requests);
+
                 if leaving {
                     <StakerInfo<T>>::remove(&staker);
                     Self::deposit_event(Event::StakerLeft {
@@ -204,21 +224,24 @@ impl<T: Config> Pallet<T> {
                 } else {
                     <StakerInfo<T>>::insert(&staker, state);
                 }
+
                 Ok(().into())
             },
             StakingAction::Decrease(_) => {
                 // remove from pending requests
                 let amount = scheduled_requests.remove(request_idx).action.amount();
                 state.less_total = state.less_total.saturating_sub(amount);
-
+                sp_std::if_std! { println!("StakingAction::Decrease"); }
                 // decrease stake
                 for bond in &mut state.stakes.0 {
                     if bond.owner == executor {
                         return if bond.amount > amount {
                             let amount_before: BalanceOf<T> = bond.amount.into();
                             bond.amount = bond.amount.saturating_sub(amount);
+
                             state.total = state.total.saturating_sub(amount);
                             let new_total: BalanceOf<T> = state.total.into();
+
                             ensure!(
                                 new_total >= fixtures.min_atomic_stake,
                                 <Error<T>>::StakeBelowMin
@@ -227,9 +250,12 @@ impl<T: Config> Pallet<T> {
                                 new_total >= fixtures.min_total_stake,
                                 <Error<T>>::StakerBondBelowMin
                             );
+
                             let mut executor_info = <CandidateInfo<T>>::get(&executor)
                                 .ok_or(<Error<T>>::NoSuchCandidate)?;
+
                             T::Currency::unreserve(&staker, amount);
+
                             // need to go into decrease_stake
                             let in_top = executor_info.decrease_stake::<T>(
                                 &executor,
@@ -237,21 +263,27 @@ impl<T: Config> Pallet<T> {
                                 amount_before,
                                 amount,
                             )?;
+
                             <CandidateInfo<T>>::insert(&executor, executor_info);
+
                             let new_total_staked = <Total<T>>::get().saturating_sub(amount);
+
                             <Total<T>>::put(new_total_staked);
 
                             <ScheduledStakingRequests<T>>::insert(
                                 executor.clone(),
                                 scheduled_requests,
                             );
+
                             <StakerInfo<T>>::insert(staker.clone(), state);
+
                             Self::deposit_event(Event::StakeDecreased {
                                 staker,
                                 candidate: executor.clone(),
                                 amount,
                                 in_top,
                             });
+
                             Ok(().into())
                         } else {
                             // must rm entire stake if bond.amount <= less or cancel request
@@ -316,6 +348,7 @@ impl<T: Config> Pallet<T> {
             staker,
             scheduled_exit: when,
         });
+
         Ok(().into())
     }
 
@@ -366,22 +399,27 @@ impl<T: Config> Pallet<T> {
         stake_count: u32,
     ) -> DispatchResultWithPostInfo {
         let state = <StakerInfo<T>>::get(&staker).ok_or(<Error<T>>::NoSuchStaker)?;
+
         ensure!(
             stake_count >= (state.stakes.0.len() as u32),
             Error::<T>::TooLowStakeCountToLeaveStakers
         );
+
         let now = T::Treasury::current_round().index;
 
         let mut validated_scheduled_requests = vec![];
+
         // pre-validate that all stakes have a Revoke request that can be executed now.
         for bond in &state.stakes.0 {
             let scheduled_requests = <ScheduledStakingRequests<T>>::get(&bond.owner);
+
             let request_idx = scheduled_requests
                 .iter()
                 .position(|req| {
                     req.staker == staker && matches!(req.action, StakingAction::Revoke(_))
                 })
                 .ok_or(<Error<T>>::StakerNotLeaving)?;
+
             let request = &scheduled_requests[request_idx];
 
             ensure!(
@@ -393,6 +431,7 @@ impl<T: Config> Pallet<T> {
         }
 
         let mut updated_scheduled_requests = vec![];
+
         // we do not update the staker state, since the it will be completely removed
         for (bond, mut scheduled_requests, request_idx) in validated_scheduled_requests {
             let executor = bond.owner;
@@ -422,6 +461,7 @@ impl<T: Config> Pallet<T> {
             staker: staker.clone(),
             unstaked: state.total,
         });
+
         <StakerInfo<T>>::remove(&staker);
 
         Ok(().into())

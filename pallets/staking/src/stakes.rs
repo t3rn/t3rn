@@ -8,7 +8,7 @@ use sp_runtime::{
 use sp_std::prelude::*;
 use t3rn_primitives::staking::{Bond, CapacityStatus};
 
-#[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq)]
 /// Type for top and bottom stake storage item
 pub struct Stakes<AccountId, Balance> {
     pub stakes: Vec<Bond<AccountId, Balance>>,
