@@ -53,32 +53,6 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  push-to-docker:
-    runs-on: ubuntu-20.04
-    needs: build-release
-    steps:
-      - name: ☁ Checkout git repo
-        uses: actions/checkout@v3
-
-      - name: 📥 Download circuit
-        uses: actions/download-artifact@v2
-        with:
-          name: ${{ github.sha }}-collator-release-artifacts
-          path: ./target/release/
-
-      - name: 🐋 Login to Docker Hub
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: 🐳 Build & publish Docker image
-        env:
-          DOCKER_BUILDKIT: 1
-        run: |
-          docker build -f docker/circuit-collator.Dockerfile -t t3rn/circuit-collator:latest .
-          docker push t3rn/circuit-collator:latest
-
   release-on-github:
     runs-on: ubuntu-20.04
     needs: build-release

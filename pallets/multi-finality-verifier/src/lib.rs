@@ -454,7 +454,7 @@ pub mod pallet {
     /// Map of hashes of the best finalized header.
     #[pallet::storage]
     #[pallet::getter(fn get_bridged_block_hash)]
-    pub(super) type BestFinalizedMap<T: Config<I>, I: 'static = ()> =
+    pub type BestFinalizedMap<T: Config<I>, I: 'static = ()> =
         StorageMap<_, Blake2_256, ChainId, BridgedBlockHash<T, I>>;
 
     /// A ring buffer of imported hashes. Ordered by the insertion time.

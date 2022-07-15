@@ -26,6 +26,8 @@ use sp_std::{
     prelude::*,
 };
 
+use t3rn_primitives::ReadLatestGatewayHeight;
+
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -117,8 +119,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     //   `spec_version`, and `authoring_version` are the same between Wasm and native.
     // This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
     //   the compatible custom types.
-    spec_version: 100,
-    impl_version: 1,
+    spec_version: 2,
+    impl_version: 2,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
     state_version: 1,
@@ -548,6 +550,20 @@ impl_runtime_apis! {
             key: [u8; 32],
         ) -> pallet_3vm_contracts_primitives::GetStorageResult {
             Contracts::get_storage(address, key)
+        }
+    }
+
+    impl pallet_circuit_portal_rpc_runtime_api::CircuitPortalRuntimeApi<Block, AccountId, Balance, BlockNumber> for Runtime {
+        fn read_latest_gateway_height(
+            gateway_id: [u8; 4],
+        ) -> ReadLatestGatewayHeight {
+            match <CircuitPortal as t3rn_primitives::circuit_portal::CircuitPortal<Runtime>>::read_cmp_latest_target_height(gateway_id, None, None) {
+                Ok(encoded_height) =>
+                    ReadLatestGatewayHeight::Success {
+                        encoded_height,
+                    },
+                Err(_err) => ReadLatestGatewayHeight::Error
+            }
         }
     }
 

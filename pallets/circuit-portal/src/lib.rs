@@ -42,6 +42,7 @@ use sp_runtime::{
 };
 use sp_std::{convert::TryInto, vec::*};
 use sp_trie::StorageProof;
+
 pub use t3rn_primitives::{
     abi::{GatewayABIConfig, HasherAlgo},
     bridges::{chain_circuit as bp_circuit, runtime as bp_runtime},
@@ -74,7 +75,9 @@ pub use xbridges::{
     EthLikeKeccak256ValU64Gateway, PolkadotLikeValU64Gateway,
 };
 
+use crate::xbridges::read_cmp_latest_height_from_bridge;
 use sp_finality_grandpa::SetId;
+use sp_runtime::traits::Header;
 
 pub type AllowedSideEffect = [u8; 4];
 
@@ -85,6 +88,12 @@ pub type AllowedSideEffect = [u8; 4];
 /// `KeyTypeId` from the keystore and use the ones it finds to sign the transaction.
 /// The keys can be inserted manually via RPC (see `author_insertKey`).
 pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"circ");
+
+/// Prehashed storage key prefix for Paras_Heads.
+const PARAS_HEADS_STORAGE_KEY_PREFIX: [u8; 32] = [
+    205, 113, 11, 48, 189, 46, 171, 3, 82, 221, 204, 38, 65, 122, 161, 148, 27, 60, 37, 47, 203,
+    41, 216, 142, 255, 79, 61, 229, 222, 68, 118, 195,
+];
 
 // todo: Implement and move as independent submodule
 pub type SideEffectsDFD = Vec<u8>;
@@ -275,22 +284,18 @@ pub mod pallet {
             proof: Vec<Vec<u8>>,
         ) -> DispatchResultWithPostInfo {
             ensure_signed(origin)?;
-            let storage_proof: StorageProof = Decode::decode(&mut &proof.encode()[..]).unwrap();
 
-            // partial StorageKey for Paras_Heads. We now need to append the parachain_id as LE-u32 to generate the parachains StorageKey
-            // ToDo: This is a bit unclean, but it makes no sense to hash the StorageKey for each exec
-            let mut key: Vec<u8> = [
-                205, 113, 11, 48, 189, 46, 171, 3, 82, 221, 204, 38, 65, 122, 161, 148, 27, 60, 37,
-                47, 203, 41, 216, 142, 255, 79, 61, 229, 222, 68, 118, 195,
-            ]
-            .to_vec();
+            let storage_proof: StorageProof = Decode::decode(&mut &proof.encode()[..])
+                .map_err(|_| Error::<T>::StorageProofDecodingError)?;
+
+            let mut storage_key: Vec<u8> = PARAS_HEADS_STORAGE_KEY_PREFIX.to_vec();
+
             let parachain_xdns_record = <T as Config>::Xdns::best_available(gateway_id.clone())?;
+
             let relay_chain_id: ChainId = match parachain_xdns_record.parachain {
                 Some(parachain) => {
-                    // parachain_id is used as an encoded argument in the storage key
-                    let mut arg = Twox64Concat::hash(parachain.id.encode().as_ref());
-                    key.append(&mut arg);
-                    // the relay_chain_id is set during registration and queried from storage
+                    let mut parachain_id = Twox64Concat::hash(parachain.id.encode().as_ref());
+                    storage_key.append(&mut parachain_id);
                     parachain.relay_chain_id
                 },
                 None => return Err(Error::<T>::NoParachainEntryFound.into()),
@@ -305,7 +310,7 @@ pub mod pallet {
                     let header_verified = verify_storage_proof::<T, DefaultPolkadotLikeGateway>(
                         block_hash.clone(),
                         relay_chain_id,
-                        key,
+                        storage_key,
                         storage_proof,
                         ProofTriePointer::State,
                     )?;
@@ -313,7 +318,13 @@ pub mod pallet {
                     let header: pallet_multi_finality_verifier::BridgedHeader<
                         T,
                         DefaultPolkadotLikeGateway,
-                    > = Decode::decode(&mut &header_verified[..]).unwrap();
+                    > = {
+                        // Handling weird double encoding
+                        let vec = Vec::<u8>::decode(&mut &header_verified[..])
+                            .map_err(|_| Error::<T>::BridgedHeaderDecodingError)?;
+                        Decode::decode(&mut vec.as_ref())
+                            .map_err(|_| Error::<T>::BridgedHeaderDecodingError)?
+                    };
 
                     pallet_multi_finality_verifier::Pallet::<T, DefaultPolkadotLikeGateway>::submit_parachain_header(
                         block_hash,
@@ -326,7 +337,7 @@ pub mod pallet {
                     let header_verified = verify_storage_proof::<T, PolkadotLikeValU64Gateway>(
                         block_hash.clone(),
                         relay_chain_id,
-                        key,
+                        storage_key,
                         storage_proof,
                         ProofTriePointer::State,
                     )?;
@@ -334,7 +345,9 @@ pub mod pallet {
                     let header: pallet_multi_finality_verifier::BridgedHeader<
                         T,
                         PolkadotLikeValU64Gateway,
-                    > = Decode::decode(&mut &header_verified[..]).unwrap();
+                    > = Decode::decode(&mut &header_verified[..])
+                        .map_err(|_| Error::<T>::BridgedHeaderDecodingError)?;
+
                     pallet_multi_finality_verifier::Pallet::<T, PolkadotLikeValU64Gateway>::submit_parachain_header(
                         block_hash,
                         gateway_id,
@@ -344,6 +357,7 @@ pub mod pallet {
                 },
                 (_, _) => unimplemented!(),
             };
+
             Ok(().into())
         }
 
@@ -399,10 +413,17 @@ pub mod pallet {
         VendorUnknown,
         SideEffectTypeNotRecognized,
         StepConfirmationDecodingError,
+        ReadLatestTargetHashError,
+        ReadTargetHeightDecodeCmpHeightError,
+        ReadTargetHeightDecodeBlockHashError,
+        ReadTargetHeightReplayAttackDetected,
+        ReadTargetHeightError,
         ContractDoesNotExists,
         RequesterNotEnoughBalance,
         ParachainHeaderNotVerified,
         NoParachainEntryFound,
+        StorageProofDecodingError,
+        BridgedHeaderDecodingError,
     }
 }
 
@@ -426,9 +447,16 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
     fn confirm_event_inclusion(
         gateway_id: [u8; 4],
         encoded_event: Vec<u8>,
+        encoded_submission_target_height: Vec<u8>,
         maybe_proof: Option<Vec<Vec<u8>>>,
         maybe_block_hash: Option<Vec<u8>>,
     ) -> Result<(), &'static str> {
+        Self::read_cmp_latest_target_height(
+            gateway_id,
+            None,
+            Some(encoded_submission_target_height),
+        )?;
+
         let gateway_xdns_record = <T as Config>::Xdns::best_available(gateway_id)?;
 
         match gateway_xdns_record.gateway_vendor {
@@ -464,7 +492,6 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
                 }?;
 
                 // StorageKey for System_Events
-
                 let key: Vec<u8> = [
                     38, 170, 57, 78, 234, 86, 48, 224, 124, 72, 174, 12, 149, 88, 206, 247, 128,
                     212, 30, 94, 22, 5, 103, 101, 188, 132, 97, 133, 16, 114, 201, 215,
@@ -514,6 +541,42 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
                     return Ok(().into())
                 }
                 Err(Error::<T>::SideEffectConfirmationInvalidInclusionProof.into())
+            },
+        }
+    }
+
+    fn read_cmp_latest_target_height(
+        gateway_id: [u8; 4],
+        gateway_block_hash: Option<Vec<u8>>,
+        maybe_cmp_height: Option<Vec<u8>>,
+    ) -> Result<Vec<u8>, &'static str> {
+        let gateway_xdns_record = <T as Config>::Xdns::best_available(gateway_id)?;
+
+        match gateway_xdns_record.gateway_vendor {
+            GatewayVendor::Ethereum => return Err("Read latest target height - unhandled vendor"),
+            GatewayVendor::Substrate => {
+                log::info!("gateway_id: {:?}", gateway_id);
+                match gateway_xdns_record.gateway_abi.block_number_type_size {
+                    32 => {
+                        let current_height = read_cmp_latest_height_from_bridge::<
+                            T,
+                            DefaultPolkadotLikeGateway,
+                        >(
+                            gateway_id, gateway_block_hash, maybe_cmp_height
+                        )?;
+                        Ok(current_height.encode())
+                    },
+                    64 => {
+                        let current_height = read_cmp_latest_height_from_bridge::<
+                            T,
+                            DefaultPolkadotLikeGateway,
+                        >(
+                            gateway_id, gateway_block_hash, maybe_cmp_height
+                        )?;
+                        Ok(current_height.encode())
+                    },
+                    _ => Err("Read latest target height - unknown vendor"),
+                }
             },
         }
     }

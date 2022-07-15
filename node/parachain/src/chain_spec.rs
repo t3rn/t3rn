@@ -6,7 +6,7 @@ use circuit_parachain_runtime::{
 };
 use cumulus_primitives_core::ParaId;
 use jsonrpc_runtime_client::{
-    create_rpc_client, get_gtwy_init_data, get_metadata, ConnectionParams,
+    create_rpc_client, get_gtwy_init_data, get_metadata, get_parachain_id, ConnectionParams,
 };
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
@@ -17,88 +17,130 @@ use std::{
     convert::TryFrom,
     io::{Error, ErrorKind},
     str::FromStr,
+    time::Duration,
 };
 use t3rn_primitives::{
     abi::Type,
     bridges::{
         header_chain::InitializationData,
-        runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID, ROCOCO_CHAIN_ID},
+        runtime::{
+            BASILISK_CHAIN_ID, CATALYST_CHAIN_ID, DALI_CHAIN_ID, DOLPHIN_CHAIN_ID,
+            GENSHIRO_CHAIN_ID, KUSAMA_CHAIN_ID, PANGOLIN_CHAIN_ID, POLKADOT_CHAIN_ID,
+            ROCFINITY_CHAIN_ID, ROCOCO_CHAIN_ID, ROCOCO_ENCOINTER_CHAIN_ID, SNOWBLINK_CHAIN_ID,
+            SOONSOCIAL_CHAIN_ID,
+        },
     },
     side_effect::interface::SideEffectInterface,
-    xdns::XdnsRecord,
+    xdns::{Parachain, XdnsRecord},
     ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor, Header,
 };
 
 const PARACHAIN_ID: u32 = 3333_u32;
 
-/// Helper function that fetches metadata from live networks and generates an XdnsRecord
-fn fetch_xdns_record_from_rpc(
-    params: &ConnectionParams,
-    chain_id: t3rn_primitives::ChainId,
-) -> Result<XdnsRecord<AccountId>, Error> {
-    async_std::task::block_on(async move {
-        let client = create_rpc_client(params).await.unwrap();
-
-        let _runtime_version = client.clone().runtime_version().await.unwrap();
-        let metadata = get_metadata(&client.clone()).await.unwrap();
-
-        let gateway_sys_props = GatewaySysProps::try_from(&chain_id)
-            .map_err(|err| Error::new(ErrorKind::InvalidInput, err))?;
-
-        let mut modules_vec = vec![];
-        let mut extension_vec = vec![];
-        metadata.pallets.encode_to(&mut modules_vec);
-        metadata
-            .extrinsic
-            .signed_extensions
-            .encode_to(&mut extension_vec);
-
-        Ok(<XdnsRecord<AccountId>>::new(
-            format!("wss://{}", params.host).as_bytes().to_vec(),
-            chain_id,
-            None,
-            Default::default(),
-            GatewayVendor::Substrate,
-            GatewayType::ProgrammableExternal(0),
-            GatewayGenesisConfig {
-                modules_encoded: Some(modules_vec),
-                extrinsics_version: metadata.extrinsic.version,
-                genesis_hash: client.genesis_hash.0.to_vec(),
-            },
-            gateway_sys_props,
-            vec![],
-        ))
-    })
+fn is_relaychain(chain_id: &ChainId) -> bool {
+    match *chain_id {
+        POLKADOT_CHAIN_ID | KUSAMA_CHAIN_ID | ROCOCO_CHAIN_ID => true,
+        _ => false,
+    }
 }
 
-/// Helper function to generate Polkadot and Kusama XdnsRecords from RPC
+/// Helper function that fetches metadata from live networks and generates a XdnsRecord.
+async fn fetch_xdns_record_from_rpc(
+    provider: &str,
+    chain_id: t3rn_primitives::ChainId,
+) -> Result<XdnsRecord<AccountId>, Error> {
+    let params = ConnectionParams {
+        host: String::from(provider),
+        port: 443,
+        secure: true,
+    };
+
+    let client = async_std::future::timeout(Duration::from_secs(12), create_rpc_client(&params))
+        .await
+        .map_err(|_| Error::new(ErrorKind::TimedOut, provider))?
+        .map_err(|err| Error::new(ErrorKind::NotConnected, err))?;
+
+    let metadata = get_metadata(&client.clone())
+        .await
+        .map_err(|err| Error::new(ErrorKind::Other, err))?;
+
+    let gateway_sys_props = GatewaySysProps::try_from(&chain_id)
+        .map_err(|err| Error::new(ErrorKind::InvalidInput, err))?;
+
+    let mut modules_vec = vec![];
+    metadata.pallets.encode_to(&mut modules_vec);
+
+    let parachain_info = if is_relaychain(&chain_id) {
+        None
+    } else {
+        let parachain_id = get_parachain_id(&client.clone())
+            .await
+            .map_err(|err| Error::new(ErrorKind::Other, err))?;
+        Some(Parachain {
+            relay_chain_id: chain_id,
+            id: parachain_id,
+        })
+    };
+
+    Ok(<XdnsRecord<AccountId>>::new(
+        format!("wss://{}", params.host).as_bytes().to_vec(),
+        chain_id,
+        parachain_info,
+        Default::default(),
+        GatewayVendor::Substrate,
+        GatewayType::ProgrammableExternal(0),
+        GatewayGenesisConfig {
+            modules_encoded: Some(modules_vec),
+            extrinsics_version: metadata.extrinsic.version,
+            genesis_hash: client.genesis_hash.0.to_vec(),
+        },
+        gateway_sys_props,
+        vec![*b"tran"],
+    ))
+}
+
+/// Helper function to generate XdnsRecords from RPC.
 fn seed_xdns_registry() -> Result<Vec<XdnsRecord<AccountId>>, Error> {
-    let polkadot_connection_params: ConnectionParams = ConnectionParams {
-        host: String::from("rpc.polkadot.io"),
-        port: 443,
-        secure: true,
-    };
+    async_std::task::block_on(async {
+        let chains = vec![
+            // Relaychains...
+            ("rpc.polkadot.io", POLKADOT_CHAIN_ID),
+            ("kusama-rpc.polkadot.io", KUSAMA_CHAIN_ID),
+            ("rococo-rpc.polkadot.io", ROCOCO_CHAIN_ID),
+            // Rococo parachains...
+            ("rococo.api.encointer.org", ROCOCO_ENCOINTER_CHAIN_ID),
+            ("rpc-01.basilisk-rococo.hydradx.io", BASILISK_CHAIN_ID),
+            ("fullnode.catalyst.cntrfg.com", CATALYST_CHAIN_ID),
+            ("rpc.composablefinance.ninja", DALI_CHAIN_ID),
+            ("ws.rococo.dolphin.engineering", DOLPHIN_CHAIN_ID),
+            ("rpc.rococo.efinity.io", ROCFINITY_CHAIN_ID),
+            (
+                "parachain-testnet.equilab.io/rococo/collator/node1/wss",
+                GENSHIRO_CHAIN_ID,
+            ),
+            ("pangolin-parachain-rpc.darwinia.network", PANGOLIN_CHAIN_ID),
+            ("rococo-rpc.snowbridge.network", SNOWBLINK_CHAIN_ID),
+            ("rco-para.subsocial.network", SOONSOCIAL_CHAIN_ID),
+        ];
 
-    let kusama_connection_params: ConnectionParams = ConnectionParams {
-        host: String::from("kusama-rpc.polkadot.io"),
-        port: 443,
-        secure: true,
-    };
+        let mut records = Vec::with_capacity(chains.len());
 
-    let rococo_connection_params: ConnectionParams = ConnectionParams {
-        host: String::from("rococo-rpc.polkadot.io"),
-        port: 443,
-        secure: true,
-    };
+        for (provider, chain_id) in chains.into_iter() {
+            let r = fetch_xdns_record_from_rpc(provider, chain_id).await;
+            if r.is_ok() {
+                records.push(r.unwrap());
+                log::info!("🧭 fetched XDNS info from wss://{}", provider);
+            } else {
+                log::warn!(
+                    "⚠️  unable to fetch XDNS info from wss://{} {:?}",
+                    provider,
+                    r.unwrap_err()
+                );
+            }
+        }
 
-    let polkadot_xdns = fetch_xdns_record_from_rpc(&polkadot_connection_params, POLKADOT_CHAIN_ID)
-        .expect("fetching polkadot xdns info failed");
-    let kusama_xdns = fetch_xdns_record_from_rpc(&kusama_connection_params, KUSAMA_CHAIN_ID)
-        .expect("fetching kusama xdns info failed");
-    let rococo_xdns = fetch_xdns_record_from_rpc(&rococo_connection_params, ROCOCO_CHAIN_ID)
-        .expect("fetching rococo xdns info failed");
-
-    Ok(vec![polkadot_xdns, kusama_xdns, rococo_xdns])
+        Ok(records)
+    })
 }
 
 fn standard_side_effects() -> Vec<SideEffectInterface> {
@@ -410,10 +452,11 @@ pub fn development_config() -> ChainSpec {
                 PARACHAIN_ID.into(),
                 // Sudo account
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
-                seed_xdns_registry().unwrap_or_default(),
+                vec![],
                 standard_side_effects(),
-                initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
-                    .expect("initial gateways"),
+                vec![],
+                // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
+                //     .expect("initial gateways"),
             )
         },
         Vec::new(),
@@ -471,10 +514,11 @@ pub fn local_testnet_config() -> ChainSpec {
                 PARACHAIN_ID.into(),
                 // Sudo account
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
-                seed_xdns_registry().unwrap_or_default(),
+                vec![],
                 standard_side_effects(),
-                initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
-                    .expect("initial gateways"),
+                vec![],
+                // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
+                //     .expect("initial gateways"),
             )
         },
         // Bootnodes
@@ -540,10 +584,11 @@ pub fn rococo_config() -> ChainSpec {
                 PARACHAIN_ID.into(),
                 // Sudo
                 get_account_id_from_adrs("5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A"),
-                seed_xdns_registry().unwrap_or_default(),
+                vec![],
                 standard_side_effects(),
-                initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
-                    .expect("initial gateways"),
+                vec![],
+                // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
+                //     .expect("initial gateways"),
             )
         },
         // Bootnodes

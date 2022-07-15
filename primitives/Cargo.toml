@@ -3,7 +3,7 @@ authors     = [ "t3rn ltd. <team@t3rn.io>" ]
 description = "A crate that hosts a common definitions that are relevant for the all t3rn pallets."
 edition     = "2018"
 homepage    = "https://t3rn.io"
-license     = "Apache 2.0"
+license     = "Apache-2.0"
 name        = "t3rn-primitives"
 repository  = "https://github.com/t3rn/t3rn/"
 version     = "1.0.0-alpha.0"
@@ -17,6 +17,7 @@ codec                 = { package = "parity-scale-codec", version = "3", default
 ed25519-dalek         = { version = "1.0", default-features = false, features = [ "u64_backend" ] }
 frame-support         = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
 frame-system          = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
+log                   = { version = "0.4", default-features = false }
 orml-traits           = { git = "https://github.com/t3rn/open-runtime-module-library", branch = "polkadot-v0.9.19", default-features = false }
 pallet-sudo           = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
 scale-info            = { version = "2", default-features = false, features = [ "derive" ] }
@@ -38,6 +39,9 @@ sp-state-machine    = { git = "https://github.com/paritytech/substrate", branch 
 sp-trie             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 
 snowbridge-core = { path = "src/bridges/snowfork/core", default-features = false }
+
+t3rn-sdk-primitives = { version = "0.0.1-rc8", default-features = false }
+t3rn-types          = { path = "../types", default-features = false, features = [ "runtime" ] }
 
 [dev-dependencies]
 hex         = "0.4"
@@ -67,5 +71,7 @@ std = [
   "sp-state-machine/std",
   "sp-trie/std",
   "sp-finality-grandpa/std",
+  "t3rn-sdk-primitives/std",
+  "t3rn-types/std",
   "finality-grandpa/std",
 ]

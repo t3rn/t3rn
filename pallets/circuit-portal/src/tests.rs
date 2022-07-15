@@ -27,7 +27,7 @@ use sp_version::{create_runtime_str, RuntimeVersion};
 
 use t3rn_primitives::{abi::GatewayABIConfig, xdns::Parachain, *};
 
-use crate::{mock::*, CurrentHeader, DefaultPolkadotLikeGateway};
+use crate::{mock::*, Config, CurrentHeader, DefaultPolkadotLikeGateway};
 pub fn new_test_ext() -> TestExternalities {
     let t = frame_system::GenesisConfig::default()
         .build_storage::<Test>()
@@ -158,6 +158,7 @@ fn test_register_parachain() {
         ));
     });
 }
+
 //
 // #[test]
 // fn test_register_gateway_with_u64_substrate_header() {

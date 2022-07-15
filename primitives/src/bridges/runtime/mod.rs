@@ -63,6 +63,36 @@ pub const GATEWAY_CHAIN_ID: ChainId = *b"gate";
 /// Bridge-with-Wococo instance id.
 pub const CIRCUIT_CHAIN_ID: ChainId = *b"circ";
 
+/// Encointer
+pub const ROCOCO_ENCOINTER_CHAIN_ID: ChainId = *b"renc";
+
+/// Basilisk
+pub const BASILISK_CHAIN_ID: ChainId = *b"basi";
+
+/// Catalyst
+pub const CATALYST_CHAIN_ID: ChainId = *b"cata";
+
+/// Dali
+pub const DALI_CHAIN_ID: ChainId = *b"dali";
+
+/// Dolphin
+pub const DOLPHIN_CHAIN_ID: ChainId = *b"dolp";
+
+/// Genshiro
+pub const GENSHIRO_CHAIN_ID: ChainId = *b"gens";
+
+/// Pangolin
+pub const PANGOLIN_CHAIN_ID: ChainId = *b"pang";
+
+/// Rocfinity
+pub const ROCFINITY_CHAIN_ID: ChainId = *b"rocf";
+
+/// Snowbridge
+pub const SNOWBLINK_CHAIN_ID: ChainId = *b"snwb";
+
+/// SoonSocial
+pub const SOONSOCIAL_CHAIN_ID: ChainId = *b"soon";
+
 /// Call-dispatch module prefix.
 pub const CALL_DISPATCH_MODULE_PREFIX: &[u8] = b"pallet-bridge/dispatch";
 

@@ -18,10 +18,16 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use crate::bridges::runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID, ROCOCO_CHAIN_ID};
+use crate::bridges::runtime::{
+    BASILISK_CHAIN_ID, CATALYST_CHAIN_ID, DALI_CHAIN_ID, DOLPHIN_CHAIN_ID, GENSHIRO_CHAIN_ID,
+    KUSAMA_CHAIN_ID, PANGOLIN_CHAIN_ID, POLKADOT_CHAIN_ID, ROCFINITY_CHAIN_ID, ROCOCO_CHAIN_ID,
+    ROCOCO_ENCOINTER_CHAIN_ID, SNOWBLINK_CHAIN_ID, SOONSOCIAL_CHAIN_ID,
+};
 use codec::{Decode, Encode};
 use frame_support::traits::{ReservableCurrency, Time};
 use scale_info::TypeInfo;
+
+pub use t3rn_types::{abi, Bytes};
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -32,11 +38,13 @@ use sp_runtime::{
     MultiSignature,
 };
 
+pub use gateway_inbound_protocol::GatewayInboundProtocol;
+pub use orml_traits;
+
 use sp_std::{convert::TryFrom, prelude::*, vec};
 #[cfg(feature = "std")]
 use std::fmt::Debug;
 
-pub mod abi;
 pub mod account_manager;
 pub mod bridges;
 pub mod circuit;
@@ -54,9 +62,6 @@ pub mod transfers;
 pub mod volatile;
 pub mod xdns;
 pub mod xtx;
-
-pub use gateway_inbound_protocol::GatewayInboundProtocol;
-pub use orml_traits;
 
 pub type ChainId = [u8; 4];
 
@@ -144,7 +149,9 @@ impl TryFrom<&ChainId> for GatewaySysProps {
 
     /// Maps a chain id to its system properties.
     ///
-    /// Based on https://wiki.polkadot.network/docs/build-ss58-registry.
+    /// Source of truth for Substrate parachains system properties is the
+    /// corresponding chain's metadata tab in the polkadot apps browser ui:
+    /// https://polkadot.js.org/apps/?rpc=${PROVIDER}#/settings/metadata.
     fn try_from(chain_id: &ChainId) -> Result<Self, Self::Error> {
         match chain_id {
             b"circ" => Ok(GatewaySysProps {
@@ -171,6 +178,56 @@ impl TryFrom<&ChainId> for GatewaySysProps {
                 ss58_format: 42,
                 token_symbol: Encode::encode("ROC"),
                 token_decimals: 12,
+            }),
+            &ROCOCO_ENCOINTER_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 2,
+                token_symbol: Encode::encode("ROC"), // notatypo
+                token_decimals: 12,
+            }),
+            &BASILISK_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 10041,
+                token_symbol: Encode::encode("BSX"),
+                token_decimals: 12,
+            }),
+            &CATALYST_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 36,
+                token_symbol: Encode::encode("NCFG"),
+                token_decimals: 18,
+            }),
+            &DALI_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 49,
+                token_symbol: Encode::encode("DALI"),
+                token_decimals: 12,
+            }),
+            &DOLPHIN_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 78,
+                token_symbol: Encode::encode("DOL"),
+                token_decimals: 18,
+            }),
+            &ROCFINITY_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 195,
+                token_symbol: Encode::encode("RFI"),
+                token_decimals: 18,
+            }),
+            &GENSHIRO_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 67,
+                token_symbol: Encode::encode("Token"),
+                token_decimals: 9,
+            }),
+            &PANGOLIN_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 42,
+                token_symbol: Encode::encode("PRING"),
+                token_decimals: 18,
+            }),
+            &SNOWBLINK_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 42,
+                token_symbol: Encode::encode("SNO"),
+                token_decimals: 12,
+            }),
+            &SOONSOCIAL_CHAIN_ID => Ok(GatewaySysProps {
+                ss58_format: 28,
+                token_symbol: Encode::encode("SUB"),
+                token_decimals: 10,
             }),
             _ => Err("unknown chain id"),
         }
@@ -203,25 +260,11 @@ pub struct Compose<Account, Balance> {
 /// A result type of a get storage call.
 pub type FetchContractsResult = Result<Vec<u8>, ContractAccessError>;
 
-/// A result of execution of a contract.
+/// Read latest height of gateway known to a light client
 #[derive(Eq, PartialEq, Encode, Decode, Debug, Clone)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub enum ComposableExecResult {
-    /// The contract returned successfully.
-    ///
-    /// There is a status code and, optionally, some data returned by the contract.
-    Success {
-        /// Flags that the contract passed along on returning to alter its exit behaviour.
-        /// Described in `pallet_contracts::exec::ReturnFlags`.
-        flags: u32,
-        /// Output data returned by the contract.
-        ///
-        /// Can be empty.
-        data: Vec<u8>,
-        /// How much gas was consumed by the call.
-        gas_consumed: u64,
-    },
-    /// The contract execution either trapped or returned an error.
+pub enum ReadLatestGatewayHeight {
+    Success { encoded_height: Vec<u8> },
     Error,
 }
 
@@ -235,35 +278,12 @@ pub enum ContractAccessError {
     IsTombstone,
 }
 
-/// Exec phase consists out of many parallel steps
-#[derive(Eq, PartialEq, Encode, Decode, Debug, Clone, Default)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub struct ExecPhase<Account, Balance> {
-    pub steps: Vec<ExecStep<Account, Balance>>,
-}
-
-#[derive(Eq, PartialEq, Encode, Decode, Debug, Clone, Default)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub struct ExecStep<Account, Balance> {
-    pub compose: Compose<Account, Balance>,
-}
-
 pub type GenericAddress = sp_runtime::MultiAddress<sp_runtime::AccountId32, ()>;
-
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub struct InterExecSchedule<Account, Balance> {
-    pub phases: Vec<ExecPhase<Account, Balance>>,
-}
 
 pub trait EscrowTrait<T: frame_system::Config> {
     type Currency: ReservableCurrency<T::AccountId>;
     type Time: Time;
 }
-
-// When to use this over `abi::Bytes`, that comes from `sp-core` and has encode etc shimmed already.
-// only issue using that might be that it probably has the length prefixed so leaving this here for now.
-pub type Bytes = Vec<u8>;
 
 /// Outbound Step that specifies expected transmission medium for relayers connecting with that gateway.
 /// Request message format that derivative of could be compatible with JSON-RPC API

@@ -10,7 +10,7 @@
 
 use sp_runtime::codec::Codec;
 use sp_std::vec::Vec;
-use t3rn_primitives::{ComposableExecResult, Compose};
+use t3rn_primitives::ReadLatestGatewayHeight;
 
 sp_api::decl_runtime_apis! {
     /// The API to interact with circuit portal
@@ -19,15 +19,8 @@ sp_api::decl_runtime_apis! {
         Balance: Codec,
         BlockNumber: Codec,
     {
-        /// Perform a composable execution from a specified account to a appointed gateways.
-        ///
-        /// See the contracts' `call` dispatchable function for more details.
-        fn composable_exec(
-            origin: AccountId,
-            components: Vec<Compose<AccountId, Balance>>,
-            io: Vec<u8>,
-            gas_limit: u64,
-            input_data: Vec<u8>,
-        ) -> ComposableExecResult;
+        fn read_latest_gateway_height(
+            gateway_id: [u8; 4],
+        ) -> ReadLatestGatewayHeight;
     }
 }

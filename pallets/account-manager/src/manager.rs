@@ -57,12 +57,13 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
     }
 
     fn issue(recipient: &T::AccountId, amount: BalanceOf<T>) -> DispatchResult {
-        T::Currency::repatriate_reserved(
-            &T::EscrowAccount::get(),
-            recipient,
-            amount,
-            BalanceStatus::Free,
-        )?;
+        let (slashed, actionable_unslashed) =
+            T::Currency::slash_reserved(&T::EscrowAccount::get(), amount);
+        assert!(
+            actionable_unslashed == Zero::zero(),
+            "The account manager didn't have enough funds to issue the requested amount"
+        );
+        T::Currency::resolve_creating(recipient, slashed);
 
         Self::deposit_event(Event::Issued {
             recipient: recipient.to_owned(),
@@ -76,11 +77,11 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
         item: ExecutionRegistryItem<T::AccountId, BalanceOf<T>>,
         reason: Option<Reason>,
     ) -> DispatchResult {
-        // Simple rules for splitting, for now
+        // Simple rules for splitting, for now, we take 1% to keep the account manager alive
         let (payee_split, recipient_split): (u8, u8) = match reason {
-            None => (0, 100),
-            Some(Reason::ContractReverted) => (90, 10),
-            Some(Reason::UnexpectedFailure) => (50, 50),
+            None => (0, 99),
+            Some(Reason::ContractReverted) => (89, 10),
+            Some(Reason::UnexpectedFailure) => (49, 49),
         };
 
         let pay_split = |split: u8, recipient: &T::AccountId| -> DispatchResult {
@@ -175,11 +176,15 @@ mod tests {
                 AccountId,
                 BalanceOf<Test>,
             >>::finalize(EXECUTION_ID, None));
+            let one_percent_tx_amt = DEFAULT_BALANCE / 1000;
             assert_eq!(
                 Balances::reserved_balance(&<Test as Config>::EscrowAccount::get()),
-                0
+                one_percent_tx_amt // 1% left now
             );
-            assert_eq!(Balances::free_balance(&BOB), DEFAULT_BALANCE + tx_amt);
+            assert_eq!(
+                Balances::free_balance(&BOB),
+                DEFAULT_BALANCE + (tx_amt - one_percent_tx_amt)
+            );
             assert_eq!(Balances::free_balance(&ALICE), DEFAULT_BALANCE - tx_amt);
             assert_eq!(AccountManager::execution_registry(EXECUTION_ID), None);
         });
@@ -217,8 +222,8 @@ mod tests {
             assert_eq!(Balances::free_balance(&BOB), DEFAULT_BALANCE + 10_000); // 10% of the original balance
             assert_eq!(
                 Balances::free_balance(&ALICE),
-                (DEFAULT_BALANCE - tx_amt) + 90_000
-            ); // (DEFAULT - tx_amt) + 90% of tx_amt
+                (DEFAULT_BALANCE - tx_amt) + 89_000
+            ); // (DEFAULT - tx_amt) + 89% of tx_amt
             assert_eq!(AccountManager::execution_registry(EXECUTION_ID), None);
         });
     }
@@ -252,11 +257,11 @@ mod tests {
                 Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
                 DEFAULT_BALANCE
             );
-            assert_eq!(Balances::free_balance(&BOB), DEFAULT_BALANCE + 50_000); // 50% of the original balance
+            assert_eq!(Balances::free_balance(&BOB), DEFAULT_BALANCE + 49_000); // 49% of the original balance
             assert_eq!(
                 Balances::free_balance(&ALICE),
-                (DEFAULT_BALANCE - tx_amt) + 50_000
-            ); // (DEFAULT - tx_amt) + 50% of tx_amt
+                (DEFAULT_BALANCE - tx_amt) + 49_000
+            ); // (DEFAULT - tx_amt) + 49% of tx_amt
             assert_eq!(AccountManager::execution_registry(EXECUTION_ID), None);
         });
     }

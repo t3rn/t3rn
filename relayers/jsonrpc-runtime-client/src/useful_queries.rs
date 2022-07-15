@@ -87,3 +87,21 @@ pub async fn get_gtwy_init_data(
         Err("parachain gateway preregistration is not supported yet".to_string())
     }
 }
+
+pub async fn get_parachain_id(sub_client: &SubstrateClient<PolkadotLike>) -> Result<u32, String> {
+    let bytes: Bytes = sub_client
+        .client
+        .request(
+            "state_getStorage",
+            JsonRpcParams::Array(vec![
+                "0x0d715f2646c8f85767b5d2764bb2782604a74d81251e398fd8a0a4d55023bb3f".into(),
+            ]),
+        )
+        .await
+        .map_err(|err| format!("state_getStorage failed: {:?}", err))?;
+
+    let parachain_id: u32 = Decode::decode(&mut &bytes[..])
+        .map_err(|err| format!("parachain id decoding failed: {:?}", err))?;
+
+    Ok(parachain_id)
+}

@@ -1,0 +1,8 @@
+{
+  "label": "Reversibility",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "description": "A core feature of t3rn is the reversibility of cross-chain transactions. In this section, we will explain how this reversibility is achieved and what different approaches exist."
+  }
+}

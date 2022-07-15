@@ -1,6 +1,9 @@
 use crate::{
-    abi::ContractActionDesc, contract_metadata::ContractMetadata, storage::RawAliveContractInfo,
-    transfers::EscrowedBalanceOf, ChainId, Compose, EscrowTrait,
+    abi::ContractActionDesc,
+    contract_metadata::{ContractMetadata, ContractType},
+    storage::RawAliveContractInfo,
+    transfers::EscrowedBalanceOf,
+    ChainId, Compose, EscrowTrait,
 };
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
@@ -114,6 +117,42 @@ impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode>
             action_descriptions,
             info,
             meta,
+        )
+    }
+}
+
+pub trait KindValidator {
+    fn can_instantiate(&self) -> bool;
+    fn can_generate_side_effects(&self) -> bool;
+    fn can_remunerate(&self) -> bool;
+    fn has_storage(&self) -> bool;
+}
+
+impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode> KindValidator
+    for RegistryContract<Hash, AccountId, BalanceOf, BlockNumber>
+{
+    fn can_instantiate(&self) -> bool {
+        !matches!(self.meta.get_contract_type(), ContractType::System)
+    }
+
+    fn can_generate_side_effects(&self) -> bool {
+        !matches!(
+            self.meta.get_contract_type(),
+            ContractType::VanillaWasm | ContractType::VanillaEvm
+        )
+    }
+
+    fn can_remunerate(&self) -> bool {
+        !matches!(
+            self.meta.get_contract_type(),
+            ContractType::VanillaWasm | ContractType::VanillaEvm
+        )
+    }
+
+    fn has_storage(&self) -> bool {
+        matches!(
+            self.meta.get_contract_type(),
+            ContractType::VanillaWasm | ContractType::VanillaEvm
         )
     }
 }

@@ -17,14 +17,26 @@
 
 //! Test utilities
 use crate::{mock::*, state::*};
+
+use t3rn_sdk_primitives::{
+    signal::{ExecutionSignal, SignalKind},
+    xc::{Chain, Operation},
+};
+
 use codec::{Decode, Encode};
 use frame_support::{assert_ok, traits::Currency};
+
 use frame_system::{EventRecord, Phase};
+use pallet_circuit_portal::bp_circuit;
 use sp_io::TestExternalities;
-use sp_runtime::AccountId32;
+use sp_runtime::{traits::Header, AccountId32};
 use sp_std::prelude::*;
 use t3rn_primitives::{
-    abi::*, circuit::OnLocalTrigger, side_effect::*, volatile::LocalState, xtx::XtxId,
+    abi::*,
+    circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
+    side_effect::*,
+    volatile::LocalState,
+    xtx::XtxId,
 };
 use t3rn_protocol::side_effects::test_utils::*;
 
@@ -50,6 +62,29 @@ fn as_u32_le(array: &[u8; 4]) -> u32 {
         + ((array[1] as u32) << 8)
         + ((array[2] as u32) << 16)
         + ((array[3] as u32) << 24)
+}
+
+pub fn brute_seed_block_1_to_grandpa_mfv(gateway_id: [u8; 4]) {
+    // Brute update storage of MFV::MultiImportedHeaders to blockA = 1 and BestAvailable -> blockA
+    let block_hash_1 = sp_core::H256::repeat_byte(1);
+    let header_1: bp_circuit::Header = bp_circuit::Header::new(
+        1,
+        Default::default(),
+        Default::default(),
+        Default::default(),
+        Default::default(),
+    );
+
+    <pallet_multi_finality_verifier::MultiImportedHeaders<Test>>::insert::<
+        [u8; 4],
+        sp_core::H256,
+        bp_circuit::Header,
+    >(gateway_id, block_hash_1, header_1);
+
+    <pallet_multi_finality_verifier::BestFinalizedMap<Test>>::insert::<[u8; 4], sp_core::H256>(
+        gateway_id,
+        block_hash_1,
+    );
 }
 
 #[test]
@@ -120,6 +155,7 @@ fn on_extrinsic_trigger_works_raw_insured_side_effect() {
             let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
 
             System::set_block_number(1);
+            brute_seed_block_1_to_grandpa_mfv([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
@@ -160,6 +196,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
             let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
 
             System::set_block_number(1);
+            brute_seed_block_1_to_grandpa_mfv([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
@@ -253,6 +290,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                     input: valid_transfer_side_effect,
                     confirmed: None,
                     security_lvl: SecurityLvl::Dirty,
+                    submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                 }]]
             );
         });
@@ -289,6 +327,7 @@ fn on_extrinsic_trigger_validation_works_with_single_transfer_insured() {
             let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
 
             System::set_block_number(1);
+            brute_seed_block_1_to_grandpa_mfv([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
@@ -330,6 +369,7 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
             let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
 
             System::set_block_number(1);
+            brute_seed_block_1_to_grandpa_mfv([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
@@ -431,6 +471,7 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
             let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
 
             System::set_block_number(1);
+            brute_seed_block_1_to_grandpa_mfv([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
@@ -479,6 +520,7 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
                     input: valid_transfer_side_effect,
                     confirmed: None,
                     security_lvl: SecurityLvl::Optimistic,
+                    submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                 }]]
             );
         });
@@ -516,6 +558,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
             let _ = Balances::deposit_creating(&BOB_RELAYER, 1); // Bob should have at least: insurance deposit (1)(for VariantA)
 
             System::set_block_number(1);
+            brute_seed_block_1_to_grandpa_mfv([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
@@ -564,6 +607,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
                     input: valid_transfer_side_effect.clone(),
                     confirmed: None,
                     security_lvl: SecurityLvl::Optimistic,
+                    submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                 }]]
             );
 
@@ -628,6 +672,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
                 cost: None,
             };
 
+            // Update MFV::MultiImportedHeaders
             assert_ok!(Circuit::confirm_side_effect(
                 origin_relayer_bob,
                 xtx_id,
@@ -678,6 +723,7 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
             let _ = Balances::deposit_creating(&BOB_RELAYER, 1); // Bob should have at least: insurance deposit (1)(for VariantA)
 
             System::set_block_number(1);
+            brute_seed_block_1_to_grandpa_mfv([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
@@ -708,6 +754,7 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
                     input: valid_swap_side_effect.clone(),
                     confirmed: None,
                     security_lvl: SecurityLvl::Dirty,
+                    submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                 }]]
             );
 
@@ -783,6 +830,7 @@ fn circuit_handles_swap_with_insurance() {
             let _ = Balances::deposit_creating(&BOB_RELAYER, 1); // Bob should have at least: insurance deposit (1)(for VariantA)
 
             System::set_block_number(1);
+            brute_seed_block_1_to_grandpa_mfv([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
@@ -831,6 +879,7 @@ fn circuit_handles_swap_with_insurance() {
                     input: valid_swap_side_effect.clone(),
                     confirmed: None,
                     security_lvl: SecurityLvl::Optimistic,
+                    submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                 }]]
             );
 
@@ -946,6 +995,7 @@ fn circuit_handles_add_liquidity_without_insurance() {
             let _ = Balances::deposit_creating(&BOB_RELAYER, 1);
 
             System::set_block_number(1);
+            brute_seed_block_1_to_grandpa_mfv([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
@@ -1036,6 +1086,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
             let _ = Balances::deposit_creating(&BOB_RELAYER, 1); // Bob should have at least: insurance deposit (1)(for VariantA)
 
             System::set_block_number(1);
+            brute_seed_block_1_to_grandpa_mfv([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
@@ -1083,6 +1134,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
                     input: valid_add_liquidity_side_effect.clone(),
                     confirmed: None,
                     security_lvl: SecurityLvl::Optimistic,
+                    submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
                 }]]
             );
 
@@ -1359,6 +1411,7 @@ fn two_dirty_and_three_optimistic_transfers_are_allocated_to_3_steps_and_all_5_i
             let _ = Balances::deposit_creating(&BOB_RELAYER, 50);
 
             System::set_block_number(1);
+            brute_seed_block_1_to_grandpa_mfv([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
@@ -1523,6 +1576,7 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_confirmed() {
             let _ = Balances::deposit_creating(&ALICE, 10);
 
             System::set_block_number(1);
+            brute_seed_block_1_to_grandpa_mfv([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
@@ -1609,6 +1663,7 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
             let _ = Balances::deposit_creating(&ALICE, 10);
 
             System::set_block_number(1);
+            brute_seed_block_1_to_grandpa_mfv([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
@@ -1747,6 +1802,7 @@ fn circuit_cancels_xtx_after_timeout() {
             let _ = Balances::deposit_creating(&ALICE, 10);
 
             System::set_block_number(1);
+            brute_seed_block_1_to_grandpa_mfv([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
@@ -1838,4 +1894,123 @@ fn load_local_state_can_generate_and_read_state() {
         assert_eq!(res.local_state, LocalState::new());
         assert_eq!(res.steps_cnt, (0, 0));
     });
+}
+
+#[test]
+fn sdk_basic_success() {
+    let origin = Origin::signed(ALICE);
+    let mut ext = TestExternalities::new_empty();
+
+    ext.execute_with(|| {
+        let _ = Balances::deposit_creating(&ALICE, 50);
+
+        let res = setup_fresh_state(&origin);
+
+        // then it sets up some side effects
+        let trigger = LocalTrigger::new(
+            DJANGO,
+            vec![Chain::<_, _, [u8; 32]>::Polkadot(Operation::Transfer {
+                caller: ALICE,
+                to: CHARLIE,
+                amount: 50,
+            })
+            .encode()],
+            Some(res.xtx_id),
+        );
+
+        // then it submits to circuit
+        assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
+            &origin,
+            trigger.clone()
+        ));
+
+        System::set_block_number(10);
+
+        // submits a signal
+        let signal = ExecutionSignal::new(&res.xtx_id, Some(res.steps_cnt.0), SignalKind::Complete);
+        assert_ok!(Circuit::on_signal(&origin, signal.clone()));
+
+        // validate the state
+        check_queue(QueueValidator::Elements(vec![(ALICE, signal)].into()));
+
+        // async process the signal
+        <Circuit as frame_support::traits::OnInitialize<u64>>::on_initialize(100);
+        System::set_block_number(100);
+
+        // no signal left
+        check_queue(QueueValidator::Length(0));
+    });
+}
+
+#[test]
+fn sdk_can_send_multiple_states() {
+    let origin = Origin::signed(ALICE);
+    let mut ext = TestExternalities::new_empty();
+
+    ext.execute_with(|| {
+        let _ = Balances::deposit_creating(&ALICE, 50);
+
+        let res = setup_fresh_state(&origin);
+
+        assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
+            &origin,
+            LocalTrigger::new(
+                DJANGO,
+                vec![Chain::<_, _, [u8; 32]>::Polkadot(Operation::Transfer {
+                    caller: ALICE,
+                    to: CHARLIE,
+                    amount: 50,
+                })
+                .encode()],
+                Some(res.xtx_id.clone()),
+            )
+        ));
+
+        System::set_block_number(10);
+
+        assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
+            &origin,
+            LocalTrigger::new(
+                DJANGO,
+                vec![Chain::<_, _, [u8; 32]>::Kusama(Operation::Transfer {
+                    caller: ALICE,
+                    to: DJANGO,
+                    amount: 1,
+                })
+                .encode()],
+                Some(res.xtx_id),
+            )
+        ));
+    });
+}
+
+#[test]
+fn post_kill_signal_updates_states() {}
+
+enum QueueValidator {
+    Length(usize),
+    Elements(
+        Vec<(
+            AccountId32,
+            ExecutionSignal<<Test as frame_system::Config>::Hash>,
+        )>,
+    ),
+}
+fn check_queue(validation: QueueValidator) {
+    let q = Circuit::get_signal_queue();
+
+    match validation {
+        QueueValidator::Length(len) => {
+            assert_eq!(q.len(), len);
+        },
+        QueueValidator::Elements(elements) => {
+            assert_eq!(q.into_inner(), elements);
+        },
+    }
+}
+
+fn setup_fresh_state(origin: &Origin) -> LocalStateExecutionView<Test> {
+    let res = Circuit::load_local_state(&origin, None).unwrap();
+    assert_ne!(Some(res.xtx_id), None);
+    res
 }

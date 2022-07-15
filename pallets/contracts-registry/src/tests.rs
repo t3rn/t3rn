@@ -27,7 +27,7 @@ use sp_core::H256;
 use sp_runtime::DispatchError;
 use t3rn_primitives::{
     contract_metadata::ContractMetadata,
-    contracts_registry::{AuthorInfo, ContractsRegistry as ContractsRegistryExt},
+    contracts_registry::{AuthorInfo, ContractsRegistry as ContractsRegistryExt, KindValidator},
 };
 
 #[test]
@@ -627,4 +627,38 @@ fn purge_fails_if_origin_not_root() {
                 DispatchError::BadOrigin
             );
         })
+}
+
+#[test]
+fn test_kind_validator() {
+    let test_contract = RegistryContract {
+        code_txt: b"some_code".to_vec(),
+        bytes: vec![],
+        author: AuthorInfo::new(1_u64, None),
+        abi: None,
+        action_descriptions: vec![],
+        info: None,
+        meta: ContractMetadata::new(
+            vec![],
+            b"contract 1".to_vec(),
+            vec![0],
+            vec![],
+            vec![],
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
+    };
+
+    ExtBuilder::default()
+        .with_contracts(vec![test_contract.clone()])
+        .build()
+        .execute_with(|| {
+            assert_eq!(test_contract.can_instantiate(), false);
+            assert_eq!(test_contract.can_generate_side_effects(), true);
+            assert_eq!(test_contract.can_remunerate(), true);
+            assert_eq!(test_contract.has_storage(), false);
+        });
 }

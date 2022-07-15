@@ -14,101 +14,22 @@ use sp_std::{vec, vec::Vec};
 use sp_core::crypto::AccountId32;
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
-#[cfg(feature = "std")]
-use std::fmt::Debug;
 
 pub mod interface;
 
 pub use interface::*;
+pub use t3rn_types::side_effect::*;
 
 pub mod parser;
 
 pub type SideEffectId<T> = <T as frame_system::Config>::Hash;
-pub type TargetId = [u8; 4];
-pub type EventSignature = Vec<u8>;
-pub type SideEffectName = Vec<u8>;
-
-#[derive(Clone, Eq, PartialEq, Encode, Default, Decode, Debug, TypeInfo)]
-pub struct SideEffect<AccountId, BlockNumber, BalanceOf> {
-    pub target: TargetId,
-    pub prize: BalanceOf,
-    pub ordered_at: BlockNumber,
-    pub encoded_action: Bytes,
-    pub encoded_args: Vec<Bytes>,
-    pub signature: Bytes,
-    pub enforce_executioner: Option<AccountId>,
-}
-
-impl<
-        AccountId: Encode,
-        BlockNumber: Ord + Copy + Zero + Encode,
-        BalanceOf: Copy + Zero + Encode + Decode,
-    > SideEffect<AccountId, BlockNumber, BalanceOf>
-{
-    pub fn generate_id<Hasher: sp_core::Hasher>(&self) -> <Hasher as sp_core::Hasher>::Out {
-        Hasher::hash(Encode::encode(self).as_ref())
-    }
-
-    pub fn id_as_bytes<Hasher: sp_core::Hasher>(id: <Hasher as sp_core::Hasher>::Out) -> Bytes {
-        id.as_ref().to_vec()
-    }
-}
-
-#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
-pub enum ConfirmationOutcome {
-    Success,
-    MisbehaviourMalformedValues {
-        key: Bytes,
-        expected: Bytes,
-        received: Bytes,
-    },
-    TimedOut,
-}
-
-impl Default for ConfirmationOutcome {
-    fn default() -> Self {
-        ConfirmationOutcome::Success
-    }
-}
-
-#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
-pub struct ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf> {
-    pub err: Option<ConfirmationOutcome>,
-    pub output: Option<Bytes>,
-    pub encoded_effect: Bytes,
-    pub inclusion_proof: Option<Bytes>,
-    pub executioner: AccountId,
-    pub received_at: BlockNumber,
-    pub cost: Option<BalanceOf>,
-}
-
-#[derive(Clone, Eq, PartialEq, PartialOrd, Ord, Encode, Decode, RuntimeDebug, TypeInfo)]
-pub enum SecurityLvl {
-    Dirty,
-    Optimistic,
-    Escrowed,
-}
-
-impl Default for SecurityLvl {
-    fn default() -> Self {
-        SecurityLvl::Dirty
-    }
-}
-
-// Side effects conversion error.
-#[derive(RuntimeDebug, PartialEq)]
-pub enum Error {
-    /// Failed to decode a property while hardening.
-    HardeningDecodeError,
-    /// Expected confirmation to FSX wasn't there while hardening.
-    HardeningMissingConfirmationError,
-}
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub input: SideEffect<AccountId, BlockNumber, BalanceOf>,
     pub confirmed: Option<ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf>>,
     pub security_lvl: SecurityLvl,
+    pub submission_target_height: Bytes,
 }
 
 impl<
@@ -325,6 +246,7 @@ mod tests {
         let tfsfx = FullSideEffect::<AccountId, BlockNumber, BalanceOf> {
             input: tsfx_input.clone(),
             security_lvl: SecurityLvl::Dirty,
+            submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
             confirmed: Some(ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {
                 err: Some(ConfirmationOutcome::Success),
                 output: Some(vec![]),

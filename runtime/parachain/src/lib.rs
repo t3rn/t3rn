@@ -47,10 +47,10 @@ use frame_system::{
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 
-use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
-
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
+use t3rn_primitives::ReadLatestGatewayHeight;
+use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
 // Polkadot Imports
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
@@ -181,11 +181,12 @@ impl_opaque_keys! {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
+    // https://docs.rs/sp-version/latest/sp_version/struct.RuntimeVersion.html
     spec_name: create_runtime_str!("t0rn"),
     impl_name: create_runtime_str!("Circuit Collator"),
     authoring_version: 1,
-    spec_version: 2, // MUST: increment for runtime upgrades
-    impl_version: 0,
+    spec_version: 2,
+    impl_version: 2,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
     // https://github.com/paritytech/cumulus/issues/998
@@ -495,7 +496,7 @@ impl pallet_preimage::Config for Runtime {
     type Event = Event;
     type ManagerOrigin = EnsureRoot<AccountId>;
     type MaxSize = PreimageMaxSize;
-    type WeightInfo = ();
+    type WeightInfo = pallet_preimage::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -515,7 +516,7 @@ impl pallet_scheduler::Config for Runtime {
     type PalletsOrigin = OriginCaller;
     type PreimageProvider = Preimage;
     type ScheduleOrigin = EnsureRoot<AccountId>;
-    type WeightInfo = ();
+    type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_utility::Config for Runtime {
@@ -539,8 +540,8 @@ construct_runtime!(
         } = 1,
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
         ParachainInfo: parachain_info::{Pallet, Storage, Config} = 3,
-        Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 4,
-        Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 5,
+        Preimage: pallet_preimage = 4,
+        Scheduler: pallet_scheduler = 5,
         Utility: pallet_utility = 6,
 
         // Monetary stuff.
@@ -754,6 +755,20 @@ impl_runtime_apis! {
             key: [u8; 32],
         ) -> pallet_3vm_contracts_primitives::GetStorageResult {
             Contracts::get_storage(address, key)
+        }
+    }
+
+    impl pallet_circuit_portal_rpc_runtime_api::CircuitPortalRuntimeApi<Block, AccountId, Balance, BlockNumber> for Runtime {
+        fn read_latest_gateway_height(
+            gateway_id: [u8; 4],
+        ) -> ReadLatestGatewayHeight {
+            match <CircuitPortal as t3rn_primitives::circuit_portal::CircuitPortal<Runtime>>::read_cmp_latest_target_height(gateway_id, None, None) {
+                Ok(encoded_height) =>
+                    ReadLatestGatewayHeight::Success {
+                        encoded_height,
+                    },
+                Err(_err) => ReadLatestGatewayHeight::Error
+            }
         }
     }
 
