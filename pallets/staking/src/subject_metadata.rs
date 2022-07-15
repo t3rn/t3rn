@@ -291,7 +291,7 @@ impl<
     }
 }
 
-#[derive(Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq)]
 /// All candidate info except the top and bottom stakes
 pub struct CandidateMetadata<Balance> {
     /// This candidate's self bond amount

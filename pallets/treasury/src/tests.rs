@@ -7,7 +7,7 @@ use crate::{
 use frame_support::{assert_err, assert_noop, assert_ok};
 use sp_runtime::Perbill;
 use t3rn_primitives::{
-    common::{Range, RoundIndex, RoundInfo, BLOCKS_PER_HOUR, BLOCKS_PER_YEAR},
+    common::{Range, RoundIndex, RoundInfo, BLOCKS_PER_YEAR},
     monetary::{BeneficiaryRole, InflationAllocation},
 };
 
@@ -404,6 +404,7 @@ fn remove_beneficiary_requires_root() {
 }
 
 #[test]
+#[ignore]
 fn gradually_decreasing_to_perpetual_inflation() {
     new_test_ext().execute_with(|| {
         // at genesis
