@@ -2,15 +2,16 @@ use crate::{
     assert_last_event, assert_last_n_events,
     mock::{
         fast_forward_to, new_test_ext, Balance, Event as MockEvent, Origin, Staking, System, Test,
+        Treasury,
     },
-    pallet::{Error, Event, ExecutorConfig, Fixtures},
+    pallet::{Error, Event, ExecutorConfig, Fixtures, ScheduledConfigurationRequests},
 };
 
 use frame_support::{assert_err, assert_noop, assert_ok};
 use sp_runtime::Percent;
 use t3rn_primitives::{
-    common::Range,
-    staking::{ExecutorInfo, Fixtures as StakingFixtures},
+    common::{Range, DEFAULT_ROUND_TERM},
+    staking::{ExecutorInfo, Fixtures as StakingFixtures, ScheduledConfigurationRequest},
 };
 
 /*
@@ -173,8 +174,9 @@ fn initial_executor_configuration_is_effective_immediately() {
 }
 
 #[test]
-fn subsequent_executor_configuration_gets_scheduled() {
+fn executor_reconfiguration_gets_scheduled() {
     new_test_ext().execute_with(|| {
+        let fixtures = <Fixtures<Test>>::get();
         let executor = 14;
 
         assert_ok!(Staking::schedule_configure_executor(
@@ -204,6 +206,39 @@ fn subsequent_executor_configuration_gets_scheduled() {
         }));
 
         assert_eq!(
+            <ScheduledConfigurationRequests<Test>>::get(executor).unwrap(),
+            ScheduledConfigurationRequest {
+                when_executable: Treasury::current_round()
+                    .index
+                    .saturating_add(fixtures.configure_executor_delay),
+                commission: Percent::from_percent(20),
+                risk: Percent::from_percent(32),
+            }
+        );
+    });
+}
+
+//
+#[test]
+fn anyone_can_execute_scheduled_reconfiguration() {
+    new_test_ext().execute_with(|| {
+        let fixtures = <Fixtures<Test>>::get();
+        let executor = 14;
+        let other_user = 15;
+
+        assert_ok!(Staking::schedule_configure_executor(
+            Origin::signed(executor),
+            Percent::from_percent(10),
+            Percent::from_percent(42),
+        ));
+
+        assert_ok!(Staking::schedule_configure_executor(
+            Origin::signed(executor),
+            Percent::from_percent(20),
+            Percent::from_percent(32),
+        ));
+
+        assert_eq!(
             <ExecutorConfig<Test>>::get(executor).unwrap(),
             ExecutorInfo {
                 commission: Percent::from_percent(10),
@@ -211,13 +246,91 @@ fn subsequent_executor_configuration_gets_scheduled() {
             }
         );
 
-        fast_forward_to(System::block_number() + <Fixtures<Test>>::get().configure_executor_delay);
+        assert_last_event!(MockEvent::Staking(Event::ExecutorConfigured {
+            executor,
+            commission: Percent::from_percent(10),
+            risk: Percent::from_percent(42),
+        }));
+
+        assert_eq!(
+            <ScheduledConfigurationRequests<Test>>::get(executor).unwrap(),
+            ScheduledConfigurationRequest {
+                when_executable: Treasury::current_round()
+                    .index
+                    .saturating_add(fixtures.configure_executor_delay),
+                commission: Percent::from_percent(20),
+                risk: Percent::from_percent(32),
+            }
+        );
+
+        fast_forward_to(
+            System::block_number()
+                + (DEFAULT_ROUND_TERM * fixtures.configure_executor_delay) as u64,
+        );
+
+        assert_ok!(Staking::execute_configure_executor(
+            Origin::signed(other_user),
+            executor,
+        ));
+
+        assert_last_event!(MockEvent::Staking(Event::ExecutorConfigured {
+            executor,
+            commission: Percent::from_percent(20),
+            risk: Percent::from_percent(32),
+        }));
 
         assert_eq!(
             <ExecutorConfig<Test>>::get(executor).unwrap(),
             ExecutorInfo {
                 commission: Percent::from_percent(20),
                 risk: Percent::from_percent(32),
+            }
+        );
+    });
+}
+
+#[test]
+fn only_executor_can_cancel_scheduled_configuration() {
+    new_test_ext().execute_with(|| {
+        let fixtures = <Fixtures<Test>>::get();
+        let executor = 14;
+        let other_user = 15;
+
+        assert_ok!(Staking::schedule_configure_executor(
+            Origin::signed(executor),
+            Percent::from_percent(10),
+            Percent::from_percent(42),
+        ));
+
+        assert_ok!(Staking::schedule_configure_executor(
+            Origin::signed(executor),
+            Percent::from_percent(20),
+            Percent::from_percent(32),
+        ));
+
+        assert_eq!(
+            <ScheduledConfigurationRequests<Test>>::get(executor).unwrap(),
+            ScheduledConfigurationRequest {
+                when_executable: Treasury::current_round()
+                    .index
+                    .saturating_add(fixtures.configure_executor_delay),
+                commission: Percent::from_percent(20),
+                risk: Percent::from_percent(32),
+            }
+        );
+
+        assert_noop!(
+            Staking::cancel_configure_executor(Origin::signed(other_user)),
+            Error::<Test>::NoSuchConfigurationRequest
+        );
+
+        assert_ok!(Staking::cancel_configure_executor(Origin::signed(executor)));
+
+        assert_eq!(
+            <ExecutorConfig<Test>>::get(executor).unwrap(),
+            ExecutorInfo {
+                commission: Percent::from_percent(10),
+                risk: Percent::from_percent(42),
             }
         );
     });

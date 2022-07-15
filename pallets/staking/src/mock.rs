@@ -198,12 +198,14 @@ impl pallet_staking::Config for Test {
 pub(crate) fn fast_forward_to(n: u64) {
     while System::block_number() < n {
         Staking::on_finalize(System::block_number());
+        Treasury::on_finalize(System::block_number());
         Balances::on_finalize(System::block_number());
         System::on_finalize(System::block_number());
         System::set_block_number(System::block_number() + 1);
         System::on_initialize(System::block_number());
         Balances::on_initialize(System::block_number());
         Staking::on_initialize(System::block_number());
+        Treasury::on_initialize(System::block_number());
     }
 }
 
