@@ -352,7 +352,7 @@ pub mod pallet {
                 .ok_or(<Error<T>>::NoSuchConfigurationRequest)?;
 
             ensure!(
-                req.when_executable == current_round_index,
+                req.when_executable <= current_round_index,
                 <Error<T>>::ConfigurationRequestNotDueYet
             );
 
@@ -382,9 +382,13 @@ pub mod pallet {
         pub fn cancel_configure_executor(origin: OriginFor<T>) -> DispatchResult {
             let executor = ensure_signed(origin)?;
 
-            <ScheduledConfigurationRequests<T>>::remove(executor);
+            if !<ScheduledConfigurationRequests<T>>::contains_key(&executor) {
+                return Err(Error::<T>::NoSuchConfigurationRequest.into())
+            }
 
-            Ok(().into())
+            <ScheduledConfigurationRequests<T>>::remove(&executor);
+
+            Ok(())
         }
 
         /// Increases an executor's self bond after having joined the candidate pool.
