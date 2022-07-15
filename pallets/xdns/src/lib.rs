@@ -420,9 +420,8 @@ pub mod pallet {
             if !<XDNSRegistry<T>>::contains_key(chain_id) {
                 return Err("Xdns record not found")
             }
-
             Ok(<XDNSRegistry<T>>::get(chain_id)
-                .expect("Ensured the XDNSRegistry contains given chain id")
+                .ok_or_else(|| "XDNSRegistry does not contain given chain id")?
                 .gateway_abi)
         }
 
@@ -441,7 +440,7 @@ pub mod pallet {
                 return Err("Xdns record not found while accessing security coordinates")
             }
             Ok(<XDNSRegistry<T>>::get(chain_id)
-                .expect("Ensured the XDNSRegistry contains given chain id")
+                .ok_or_else(|| "XDNSRegistry does not contain given chain id")?
                 .security_coordinates)
         }
 
