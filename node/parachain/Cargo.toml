@@ -26,6 +26,7 @@ pallet-3vm-contracts-rpc  = { path = "../../3vm/pallets/wasm-contracts/rpc", pac
 pallet-xdns               = { path = "../../pallets/xdns" }
 pallet-xdns-rpc           = { path = "../../pallets/xdns/rpc" }
 t3rn-primitives           = { path = "../../primitives" }
+t3rn-protocol              = { path = "../../protocol" }
 
 # Extras
 async-std              = { version = "1.10.0" }
