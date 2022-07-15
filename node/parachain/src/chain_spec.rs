@@ -376,7 +376,7 @@ pub fn local_testnet_config() -> ChainSpec {
                 PARACHAIN_ID.into(),
                 // Sudo account
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
-                seed_xdns_registry().unwrap_or_default(),
+                vec![],
                 standard_side_effects(),
                 vec![],
                 // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])

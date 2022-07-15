@@ -16,15 +16,13 @@
 // limitations under the License.
 
 //! Test utilities
-use crate::{
-    mock::*,
-    sdk_primitives::{
-        signal::ExecutionSignal,
-        xc::{Chain, Operation},
-    },
-    state::*,
-    SignalKind,
+use crate::{mock::*, state::*};
+
+use t3rn_sdk_primitives::{
+    signal::{ExecutionSignal, SignalKind},
+    xc::{Chain, Operation},
 };
+
 use codec::{Decode, Encode};
 use frame_support::{assert_ok, traits::Currency};
 

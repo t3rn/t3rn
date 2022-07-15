@@ -16,7 +16,4 @@ compact_arrays = false
 # Alphabetically reorder keys that are not separated by empty lines.
 reorder_keys = true
 
-exclude = [
-    "vendor/*",
-    "build/*"
-]
+exclude = [ "vendor/*", "build/*" ]

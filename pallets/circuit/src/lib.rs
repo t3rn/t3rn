@@ -24,8 +24,8 @@
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
 
+use crate::escrow::Escrow;
 pub use crate::pallet::*;
-use crate::{escrow::Escrow, sdk_primitives::signal::SignalKind};
 use codec::{Decode, Encode};
 use frame_support::{
     dispatch::{Dispatchable, GetDispatchInfo},
@@ -50,6 +50,8 @@ pub use t3rn_primitives::{
     xtx::{Xtx, XtxId},
     GatewayType, *,
 };
+pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
+
 use t3rn_primitives::{
     circuit_portal::CircuitPortal,
     side_effect::{ConfirmationOutcome, HardenedSideEffect, SecurityLvl},
@@ -93,7 +95,7 @@ use crate::state::*;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use crate::{escrow::Escrow, sdk_primitives::signal::ExecutionSignal};
+    use crate::escrow::Escrow;
     use frame_support::{
         pallet_prelude::*,
         traits::{
