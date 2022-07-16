@@ -66,7 +66,7 @@ use t3rn_protocol::side_effects::{
 };
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 
-use pallet_xbi_portal::primitives::xbi::XBIPortal;
+use pallet_xbi_portal::{primitives::xbi::XBIPortal, xbi_format::XBIInstr};
 
 #[cfg(test)]
 pub mod tests;
@@ -108,7 +108,7 @@ pub mod pallet {
     };
     use frame_system::pallet_prelude::*;
     use orml_traits::MultiCurrency;
-    use pallet_xbi_portal::xbi_codec::XBIMetadata;
+    use pallet_xbi_portal::xbi_codec::{XBICheckOutStatus, XBIMetadata, XBINotificationKind};
     use pallet_xbi_portal_enter::t3rn_sfx::sfx_2_xbi;
     use sp_std::borrow::ToOwned;
 
@@ -676,8 +676,8 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::execute_side_effects_via_circuit())]
-        pub fn execute_side_effects_via_circuit(
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::execute_side_effects_with_xbi())]
+        pub fn execute_side_effects_with_xbi(
             origin: OriginFor<T>, // Active relayer
             xtx_id: XExecSignalId<T>,
             side_effect: SideEffect<
@@ -689,12 +689,12 @@ pub mod pallet {
             max_notifications_cost: u128,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
-            let relayer = Self::authorize(origin, CircuitRole::Relayer)?;
+            let executor = Self::authorize(origin, CircuitRole::Relayer)?;
 
             // Setup: retrieve local xtx context
             let local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
                 CircuitStatus::PendingExecution,
-                &relayer,
+                &executor,
                 Zero::zero(),
                 Some(xtx_id),
             )?;
@@ -716,18 +716,22 @@ pub mod pallet {
                 Decode::decode(&mut side_effect.encoded_action.encode().as_ref())
                     .expect("Encoded Type was already validated before saving");
 
-            let xbi = sfx_2_xbi::<T, T::Escrowed>(
-                &side_effect,
-                XBIMetadata::new_with_default_timeouts(
-                    Decode::decode(&mut &side_effect_id.encode()[..])
-                        .expect("SFX ID at XBI conversion should always decode to H256"),
-                    <T as Config>::Xdns::get_gateway_para_id(&side_effect.target)?,
-                    T::SelfParaId::get(),
-                    max_exec_cost,
-                    max_notifications_cost,
-                ),
-            )
-            .map_err(|_| Error::<T>::FailedToConvertSFX2XBI)?;
+            let xbi =
+                sfx_2_xbi::<T, T::Escrowed>(
+                    &side_effect,
+                    XBIMetadata::new_with_default_timeouts(
+                        Decode::decode(&mut &side_effect_id.encode()[..])
+                            .expect("SFX ID at XBI conversion should always decode to H256"),
+                        <T as Config>::Xdns::get_gateway_para_id(&side_effect.target)?,
+                        T::SelfParaId::get(),
+                        max_exec_cost,
+                        max_notifications_cost,
+                        Some(Decode::decode(&mut &executor.encode()[..]).expect(
+                            "Executor at XBI conversion should always decode to AccountId32",
+                        )),
+                    ),
+                )
+                .map_err(|_| Error::<T>::FailedToConvertSFX2XBI)?;
 
             T::XBIPortal::do_check_in_xbi(xbi).map_err(|_| Error::<T>::FailedToConvertSFX2XBI)?;
 
@@ -908,10 +912,45 @@ pub mod pallet {
         }
     }
 
+    use pallet_xbi_portal::xbi_abi::{
+        AccountId20, AccountId32, AssetId, Data, Gas, Value, ValueEvm,
+    };
+
     /// Events for the pallet.
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
+        // XBI Exit events - consider moving to separate XBIPortalExit pallet.
+        Transfer(T::AccountId, AccountId32, AccountId32, Value),
+        TransferAssets(T::AccountId, AssetId, AccountId32, AccountId32, Value),
+        TransferORML(T::AccountId, AssetId, AccountId32, AccountId32, Value),
+        AddLiquidity(T::AccountId, AssetId, AssetId, Value, Value, Value),
+        Swap(T::AccountId, AssetId, AssetId, Value, Value, Value),
+        CallNative(T::AccountId, Data),
+        CallEvm(
+            T::AccountId,
+            AccountId20,
+            AccountId20,
+            Value,
+            Data,
+            Gas,
+            ValueEvm,
+            Option<ValueEvm>,
+            Option<ValueEvm>,
+            Vec<(AccountId20, Vec<sp_core::H256>)>,
+        ),
+        CallWasm(T::AccountId, AccountId32, Value, Gas, Option<Value>, Data),
+        CallCustom(
+            T::AccountId,
+            AccountId32,
+            AccountId32,
+            Value,
+            Data,
+            Gas,
+            Data,
+        ),
+        Notification(T::AccountId, AccountId32, XBINotificationKind, Data, Data),
+        Result(T::AccountId, AccountId32, XBICheckOutStatus, Data, Data),
         // Listeners - users + SDK + UI to know whether their request is accepted for exec and pending
         XTransactionReceivedForExec(XExecSignalId<T>),
         // Listeners - users + SDK + UI to know whether their request is accepted for exec and ready
@@ -2059,5 +2098,128 @@ impl<T: Config> Pallet<T> {
         <SignalQueue<T>>::put(queue);
 
         processed_weight
+    }
+
+    pub fn do_xbi_exit(
+        xbi_checkin: pallet_xbi_portal::xbi_format::XBICheckIn<T::BlockNumber>,
+        _xbi_checkout: pallet_xbi_portal::xbi_format::XBICheckOut,
+    ) -> Result<(), Error<T>> {
+        // todo#1: recover xtx_id by sfx_id
+
+        // todo#2: local fail Xtx if xbi_checkout::result errored
+
+        // todo#3: load local_ctx with self::setup if xtx available
+        let escrow_source = Self::account_id();
+        let executor = if let Some(known_origin) = xbi_checkin.xbi.metadata.maybe_known_origin {
+            known_origin
+        } else {
+            return Err(Error::<T>::FailedToExitXBIPortal)
+        };
+        let xbi_exit_event = match xbi_checkin.xbi.instr {
+            XBIInstr::CallNative { payload } => Ok(Event::<T>::CallNative(escrow_source, payload)),
+            XBIInstr::CallEvm {
+                source,
+                dest,
+                value,
+                input,
+                gas_limit,
+                max_fee_per_gas,
+                max_priority_fee_per_gas,
+                nonce,
+                access_list,
+            } => Ok(Event::<T>::CallEvm(
+                escrow_source,
+                source,
+                dest,
+                value,
+                input,
+                gas_limit,
+                max_fee_per_gas,
+                max_priority_fee_per_gas,
+                nonce,
+                access_list,
+            )),
+            XBIInstr::CallWasm {
+                dest,
+                value,
+                gas_limit,
+                storage_deposit_limit,
+                data,
+            } => Ok(Event::<T>::CallWasm(
+                escrow_source,
+                dest,
+                value,
+                gas_limit,
+                storage_deposit_limit,
+                data,
+            )),
+            XBIInstr::CallCustom {
+                caller,
+                dest,
+                value,
+                input,
+                limit,
+                additional_params,
+            } => Ok(Event::<T>::CallCustom(
+                escrow_source,
+                caller,
+                dest,
+                value,
+                input,
+                limit,
+                additional_params,
+            )),
+            XBIInstr::Transfer { dest, value } =>
+                Ok(Event::<T>::Transfer(escrow_source, executor, dest, value)),
+            XBIInstr::TransferORML {
+                currency_id,
+                dest,
+                value,
+            } => Ok(Event::<T>::TransferORML(
+                escrow_source,
+                currency_id,
+                executor,
+                dest,
+                value,
+            )),
+            XBIInstr::TransferAssets {
+                currency_id,
+                dest,
+                value,
+            } => Ok(Event::<T>::TransferAssets(
+                escrow_source,
+                currency_id,
+                executor,
+                dest,
+                value,
+            )),
+            XBIInstr::Result {
+                outcome,
+                output,
+                witness,
+            } => Ok(Event::<T>::Result(
+                escrow_source,
+                executor,
+                outcome,
+                output,
+                witness,
+            )),
+            XBIInstr::Notification {
+                kind,
+                instruction_id,
+                extra,
+            } => Ok(Event::<T>::Notification(
+                escrow_source,
+                executor,
+                kind,
+                instruction_id,
+                extra,
+            )),
+            _ => Err(Error::<T>::FailedToExitXBIPortal),
+        }?;
+
+        Self::deposit_event(xbi_exit_event);
+
+        Ok(())
     }
 }
