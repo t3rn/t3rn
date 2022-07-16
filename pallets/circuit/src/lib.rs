@@ -66,6 +66,7 @@ use t3rn_protocol::side_effects::{
 };
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 
+
 use pallet_xbi_portal::{primitives::xbi::XBIPortal, xbi_format::XBIInstr};
 
 #[cfg(test)]
@@ -176,6 +177,13 @@ pub mod pallet {
         XExecStepSideEffectId<T>,
         OptionQuery,
     >;
+
+    /// Current Circuit's context of active insurance deposits
+    ///
+    #[pallet::storage]
+    #[pallet::getter(fn local_side_effect_to_xtx_id_links)]
+    pub type LocalSideEffectToXtxIdLinks<T> =
+        StorageMap<_, Identity, SideEffectId<T>, XExecSignalId<T>, OptionQuery>;
     /// Current Circuit's context of active transactions
     ///
     #[pallet::storage]
@@ -689,7 +697,7 @@ pub mod pallet {
             max_notifications_cost: u128,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
-            let executor = Self::authorize(origin, CircuitRole::Relayer)?;
+            let executor = Self::authorize(origin, CircuitRole::Executor)?;
 
             // Setup: retrieve local xtx context
             let local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
@@ -704,17 +712,20 @@ pub mod pallet {
             let side_effect_link =
                 <Self as Store>::LocalSideEffectsLinks::get(local_xtx_ctx.xtx_id, side_effect_id)
                     .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
+
             let (step_no, maybe_assignee) =
                 <Self as Store>::LocalSideEffects::get(local_xtx_ctx.xtx_id, side_effect_link)
                     .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
 
-            if local_xtx_ctx.xtx.steps_cnt.0 != step_no || maybe_assignee.is_some() {
-                return Err(Error::<T>::LocalSideEffectExecutionNotApplicable.into())
+            if let Some(assignee) = maybe_assignee {
+                if assignee != executor {
+                    return Err(Error::<T>::LocalExecutionUnauthorized.into())
+                }
             }
 
-            let _encoded_4b_action: [u8; 4] =
-                Decode::decode(&mut side_effect.encoded_action.encode().as_ref())
-                    .expect("Encoded Type was already validated before saving");
+            if local_xtx_ctx.xtx.steps_cnt.0 != step_no {
+                return Err(Error::<T>::LocalSideEffectExecutionNotApplicable.into())
+            }
 
             let xbi =
                 sfx_2_xbi::<T, T::Escrowed>(
@@ -1037,6 +1048,7 @@ pub mod pallet {
         ApplyFailed,
         DeterminedForbiddenXtxStatus,
         LocalSideEffectExecutionNotApplicable,
+        LocalExecutionUnauthorized,
         FailedToConvertSFX2XBI,
         FailedToConvertXBI2SFX,
         FailedToEnterXBIPortal,
@@ -1311,6 +1323,10 @@ impl<T: Config> Pallet<T> {
                         SideEffectId<T>,
                         XExecStepSideEffectId<T>,
                     >(local_ctx.xtx_id, side_effect_id, step_side_effect_id);
+                    <LocalSideEffectToXtxIdLinks<T>>::insert::<SideEffectId<T>, XExecSignalId<T>>(
+                        side_effect_id,
+                        local_ctx.xtx_id,
+                    );
                 }
 
                 let mut ids_with_insurance: Vec<SideEffectId<T>> = vec![];
@@ -1431,6 +1447,8 @@ impl<T: Config> Pallet<T> {
                         Self::enact_step_side_effects(local_ctx)?
                     }
                 }
+
+                // todo: cleanup all of the local sttorage
                 <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
                     *x = Some(local_ctx.xtx.clone())
                 });
@@ -2104,11 +2122,24 @@ impl<T: Config> Pallet<T> {
         xbi_checkin: pallet_xbi_portal::xbi_format::XBICheckIn<T::BlockNumber>,
         _xbi_checkout: pallet_xbi_portal::xbi_format::XBICheckOut,
     ) -> Result<(), Error<T>> {
-        // todo#1: recover xtx_id by sfx_id
+        // Recover SFX ID from XBI Metadata
+        let sfx_id: SideEffectId<T> =
+            Decode::decode(&mut &xbi_checkin.xbi.metadata.id.encode()[..])
+                .expect("XBI metadata id conversion should always decode to Sfx ID");
+
+        let xtx_id = <Self as Store>::LocalSideEffectToXtxIdLinks::get(sfx_id)
+            .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
+
+        // Load local_ctx with self::setup if xtx available
+        let _local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
+            CircuitStatus::PendingExecution,
+            &Self::account_id(),
+            Zero::zero(),
+            Some(xtx_id),
+        )?;
 
         // todo#2: local fail Xtx if xbi_checkout::result errored
 
-        // todo#3: load local_ctx with self::setup if xtx available
         let escrow_source = Self::account_id();
         let executor = if let Some(known_origin) = xbi_checkin.xbi.metadata.maybe_known_origin {
             known_origin
