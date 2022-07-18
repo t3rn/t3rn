@@ -35,6 +35,8 @@ pub mod pallet {
         abi::{GatewayABIConfig},
         ChainId, EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor, GatewayGenesisConfig,
     };
+    use t3rn_primitives::bridges::runtime::Chain;
+
     pub type RococoBridge = ();
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
@@ -74,6 +76,7 @@ pub mod pallet {
         /// Event documentation should end with an array that provides descriptive names for event
         /// parameters. [something, who]
         GatewayRegistered(ChainId),
+        SetOwner(ChainId, Vec<u8>),
         // RegistrationError(String),
         // HeaderRangeSubmitted(u64),
     }
@@ -83,7 +86,9 @@ pub mod pallet {
     pub enum Error<T> {
         /// The creation of the XDNS record was not successful
         XdnsRecordCreationFailed,
-        RegistrationError
+        RegistrationError,
+        GatewayVendorNotFound,
+        SetOwnerError
     }
 
     // Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -118,7 +123,7 @@ pub mod pallet {
             )?;
 
             let res = match gateway_vendor {
-                GatewayVendor::Rococo =>  pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::initialize(origin, encoded_registration_data),
+                GatewayVendor::Rococo =>  pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::initialize(origin, gateway_id, encoded_registration_data),
                 _ => unimplemented!()
             };
 
@@ -132,10 +137,40 @@ pub mod pallet {
                     return Err(Error::<T>::RegistrationError.into())
                 }
             }
-
-
         }
 
+        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+        pub fn set_owner(
+            origin: OriginFor<T>,
+            gateway_id: ChainId,
+            encoded_new_owner: Vec<u8>
+        ) -> DispatchResultWithPostInfo {
+            let vendor_result = <T as Config>::Xdns::get_gateway_vendor(&gateway_id);
+
+            let vendor = match vendor_result {
+                Ok(vendor) => vendor,
+                Err(_msg) => {
+                    // emit error msg as event here
+                    return Err(Error::<T>::GatewayVendorNotFound.into())
+                }
+            };
+
+            let res = match vendor {
+                GatewayVendor::Rococo =>  pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::set_owner(origin, gateway_id, encoded_new_owner.clone()),
+                _ => unimplemented!()
+            };
+
+            match res {
+                Ok(_) => {
+                     Self::deposit_event(Event::SetOwner(gateway_id, encoded_new_owner));
+                     return Ok(().into())
+                },
+                Err(err) => {
+                    // Self::deposit_event(Event::RegistrationError(err.into()));
+                    return Err(Error::<T>::SetOwnerError.into())
+                }
+            }
+        }
 
     }
 }

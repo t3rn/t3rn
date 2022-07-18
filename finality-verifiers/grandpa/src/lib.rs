@@ -676,20 +676,7 @@ pub mod pallet {
         Ok(())
     }
 
-    /// Ensure that the origin is either root, or `PalletOwner`.
-    fn ensure_owner_or_root_single<T: Config<I>, I: 'static>(
-        origin: T::Origin,
-        gateway_id: ChainId,
-    ) -> Result<(), &'static str> {
-        match origin.into() {
-            Ok(RawOrigin::Root) => Ok(()),
-            Ok(RawOrigin::Signed(ref signer))
-                if <PalletOwnerMap<T, I>>::contains_key(gateway_id)
-                    && Some(signer) == <PalletOwnerMap<T, I>>::get(gateway_id).as_ref() =>
-                Ok(()),
-            _ => Err(BadOrigin.into()),
-        }
-    }
+
 
     /// Ensure that the pallet is in operational mode (not halted).
     pub fn ensure_operational_single<T: Config<I>, I: 'static>(
@@ -801,10 +788,12 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         gateway_id: ChainId,
         encoded_registration_data: Vec<u8>,
     ) -> Result<(), &'static str> {
-        ensure_owner_or_root_single(origin.clone(), gateway_id)?;
+        ensure_owner_or_root_single::<T, I>(origin.clone(), gateway_id)?;
 
-        let registration_data: RegistrationData<T::AccountId> = Decode::decode(&mut &*encoded_registration_data).unwrap();
-        set_owner::<T, I>(origin, registration_data.owner, gateway_id)?;
+        let registration_data: RegistrationData<T::AccountId> = Decode::decode(&mut &*encoded_registration_data)
+            .map_err(|_| "Registration data decoding error!")?;
+
+        PalletOwnerMap::<T, I>::insert(gateway_id, &registration_data.owner);
 
         let header: BridgedHeader<T, I> = Decode::decode(&mut &registration_data.first_header[..])
             .map_err(|_| "Decoding error: received GenericPrimitivesHeader -> CurrentHeader<T>")?;
@@ -818,7 +807,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
                 .collect::<Vec<_>>(),
             set_id: registration_data.authority_set_id,
             is_halted: false,
-            gateway_id: registration_data.gateway_id,
+            gateway_id
         };
 
         let init_allowed = !<BestFinalizedMap<T, I>>::contains_key(init_data.gateway_id);
@@ -832,10 +821,13 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     /// May only be called either by root, or by `PalletOwner`.
     pub fn set_owner(
         origin: T::Origin,
-        new_owner: Option<T::AccountId>,
         gateway_id: ChainId,
+        encoded_new_owner: Vec<u8>,
     ) -> Result<(), &'static str> {
         ensure_owner_or_root_single::<T, I>(origin, gateway_id)?;
+        let new_owner: Option<T::AccountId> = Decode::decode(&mut &*encoded_new_owner)
+            .map_err(|_| "New Owner decoding error")?;
+
         match new_owner {
             Some(new_owner) => {
                 PalletOwnerMap::<T, I>::insert(gateway_id, &new_owner);
@@ -869,6 +861,21 @@ pub(crate) fn find_scheduled_change<H: HeaderT>(
     header
         .digest()
         .convert_first(|l| l.try_to(id).and_then(filter_log))
+}
+
+/// Ensure that the origin is either root, or `PalletOwner`.
+fn ensure_owner_or_root_single<T: Config<I>, I: 'static>(
+    origin: T::Origin,
+    gateway_id: ChainId,
+) -> Result<(), &'static str> {
+    match origin.into() {
+        Ok(RawOrigin::Root) => Ok(()),
+        Ok(RawOrigin::Signed(ref signer))
+            if <PalletOwnerMap<T, I>>::contains_key(gateway_id)
+                && Some(signer) == <PalletOwnerMap<T, I>>::get(gateway_id).as_ref() =>
+            Ok(()),
+        _ => Err(BadOrigin.into()),
+    }
 }
 
 /// Checks the given header for a consensus digest signalling a **forced** scheduled change and
