@@ -334,3 +334,25 @@ fn fetch_abi_should_error_for_unknown_xdns_record() {
             assert_err!(actual, "Xdns record not found");
         });
 }
+
+#[test]
+fn gate_gateway_vendor_returns_error_for_unknown_record() {
+    ExtBuilder::default()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let actual = XDNS::get_gateway_vendor(b"rand");
+            assert_err!(actual, "GatewayVendor not available. Xdns record not found!");
+        });
+}
+
+#[test]
+fn gate_gateway_vendor_returns_vendor_for_known_record() {
+    ExtBuilder::default()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let actual = XDNS::get_gateway_vendor(b"pdot");
+            assert_ok!(actual, GatewayVendor::Substrate);
+        });
+}

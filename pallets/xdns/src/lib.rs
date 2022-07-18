@@ -427,6 +427,16 @@ pub mod pallet {
             )
         }
 
+        /// returns the gateway vendor of a gateway if its available
+        fn get_gateway_vendor(chain_id: &ChainId) -> Result<GatewayVendor, &'static str> {
+            let record = <XDNSRegistry<T>>::get(&chain_id);
+
+            match record {
+                Some(rec) => Ok(rec.gateway_vendor),
+                None => Err("GatewayVendor not available. Xdns record not found!"),
+            }
+        }
+
         fn get_gateway_type_unsafe(chain_id: &ChainId) -> GatewayType {
             <XDNSRegistry<T>>::get(chain_id).unwrap().gateway_type
         }

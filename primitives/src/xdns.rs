@@ -178,4 +178,6 @@ pub trait Xdns<T: frame_system::Config> {
     fn get_gateway_value_unsigned_type_unsafe(chain_id: &ChainId) -> Type;
 
     fn get_gateway_type_unsafe(chain_id: &ChainId) -> GatewayType;
+
+    fn get_gateway_vendor(chain_id: &ChainId) -> Result<GatewayVendor, &'static str>;
 }
