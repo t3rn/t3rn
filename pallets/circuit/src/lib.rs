@@ -66,8 +66,8 @@ use t3rn_protocol::side_effects::{
 };
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 
-
 use pallet_xbi_portal::{primitives::xbi::XBIPortal, xbi_format::XBIInstr};
+use pallet_xbi_portal_enter::t3rn_sfx::xbi_result_2_sfx_confirmation;
 
 #[cfg(test)]
 pub mod tests;
@@ -1050,9 +1050,10 @@ pub mod pallet {
         LocalSideEffectExecutionNotApplicable,
         LocalExecutionUnauthorized,
         FailedToConvertSFX2XBI,
-        FailedToConvertXBI2SFX,
+        FailedToConvertXBIResult2SFXConfirmation,
         FailedToEnterXBIPortal,
         FailedToExitXBIPortal,
+        XBIExitFailedOnSFXConfirmation,
         UnsupportedRole,
         InvalidLocalTrigger,
         SignalQueueFull,
@@ -2118,6 +2119,43 @@ impl<T: Config> Pallet<T> {
         processed_weight
     }
 
+    pub(self) fn recover_fsx_by_id(
+        sfx_id: SideEffectId<T>,
+        local_ctx: &LocalXtxCtx<T>,
+    ) -> Result<
+        FullSideEffect<
+            <T as frame_system::Config>::AccountId,
+            <T as frame_system::Config>::BlockNumber,
+            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+        >,
+        Error<T>,
+    > {
+        let current_step = local_ctx.xtx.steps_cnt.0;
+        let maybe_fsx = local_ctx.full_side_effects[current_step as usize]
+            .iter()
+            .filter(|&fse| fse.confirmed.is_none())
+            .find(|&fse| fse.input.generate_id::<SystemHashing<T>>() == sfx_id);
+
+        if let Some(fsx) = maybe_fsx {
+            Ok(fsx.clone())
+        } else {
+            Err(Error::<T>::LocalSideEffectExecutionNotApplicable)
+        }
+    }
+
+    pub(self) fn recover_local_ctx_by_sfx_id(
+        sfx_id: SideEffectId<T>,
+    ) -> Result<LocalXtxCtx<T>, Error<T>> {
+        let xtx_id = <Self as Store>::LocalSideEffectToXtxIdLinks::get(sfx_id)
+            .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
+        Self::setup(
+            CircuitStatus::PendingExecution,
+            &Self::account_id(),
+            Zero::zero(),
+            Some(xtx_id),
+        )
+    }
+
     pub fn do_xbi_exit(
         xbi_checkin: pallet_xbi_portal::xbi_format::XBICheckIn<T::BlockNumber>,
         _xbi_checkout: pallet_xbi_portal::xbi_format::XBICheckOut,
@@ -2127,26 +2165,22 @@ impl<T: Config> Pallet<T> {
             Decode::decode(&mut &xbi_checkin.xbi.metadata.id.encode()[..])
                 .expect("XBI metadata id conversion should always decode to Sfx ID");
 
-        let xtx_id = <Self as Store>::LocalSideEffectToXtxIdLinks::get(sfx_id)
-            .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
+        let mut local_xtx_ctx: LocalXtxCtx<T> = Self::recover_local_ctx_by_sfx_id(sfx_id)?;
 
-        // Load local_ctx with self::setup if xtx available
-        let _local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
-            CircuitStatus::PendingExecution,
-            &Self::account_id(),
-            Zero::zero(),
-            Some(xtx_id),
-        )?;
+        let fsx = Self::recover_fsx_by_id(sfx_id, &local_xtx_ctx)?;
 
         // todo#2: local fail Xtx if xbi_checkout::result errored
 
         let escrow_source = Self::account_id();
-        let executor = if let Some(known_origin) = xbi_checkin.xbi.metadata.maybe_known_origin {
-            known_origin
+        let executor = if let Some(ref known_origin) = xbi_checkin.xbi.metadata.maybe_known_origin {
+            known_origin.clone()
         } else {
             return Err(Error::<T>::FailedToExitXBIPortal)
         };
-        let xbi_exit_event = match xbi_checkin.xbi.instr {
+        let executor_decoded = Decode::decode(&mut &executor.encode()[..])
+            .expect("XBI metadata executor conversion should always decode to local Account ID");
+
+        let xbi_exit_event = match xbi_checkin.clone().xbi.instr {
             XBIInstr::CallNative { payload } => Ok(Event::<T>::CallNative(escrow_source, payload)),
             XBIInstr::CallEvm {
                 source,
@@ -2249,8 +2283,24 @@ impl<T: Config> Pallet<T> {
             _ => Err(Error::<T>::FailedToExitXBIPortal),
         }?;
 
-        Self::deposit_event(xbi_exit_event);
+        Self::deposit_event(xbi_exit_event.clone());
 
+        let confirmation = xbi_result_2_sfx_confirmation::<T, T::Escrowed>(
+            xbi_checkin.xbi,
+            xbi_exit_event.encode(),
+            executor_decoded,
+        )
+        .map_err(|_| Error::<T>::FailedToConvertXBIResult2SFXConfirmation)?;
+
+        Self::confirm(
+            &mut local_xtx_ctx,
+            &Self::account_id(),
+            &fsx.input,
+            &confirmation,
+            None,
+            None,
+        )
+        .map_err(|_e| Error::<T>::XBIExitFailedOnSFXConfirmation)?;
         Ok(())
     }
 }
