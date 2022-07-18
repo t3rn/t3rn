@@ -39,6 +39,8 @@ pub mod pallet {
 
     pub type RococoBridge = ();
 
+    // pub
+
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
     pub trait Config:
@@ -49,6 +51,8 @@ pub mod pallet {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
         type Xdns: Xdns<Self>;
+
+
     }
 
     #[pallet::pallet]
@@ -74,11 +78,12 @@ pub mod pallet {
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         /// Event documentation should end with an array that provides descriptive names for event
-        /// parameters. [something, who]
+        /// Gateway was registered successsfully. [ChainId]
         GatewayRegistered(ChainId),
+        /// Gateway owner was set successfully. [ChainId, Vec<u8>]
         SetOwner(ChainId, Vec<u8>),
-        // RegistrationError(String),
-        // HeaderRangeSubmitted(u64),
+        /// Gateway was set operational. [ChainId, bool]
+        SetOperational(ChainId, bool),
     }
 
     // Errors inform users that something went wrong.
@@ -86,9 +91,14 @@ pub mod pallet {
     pub enum Error<T> {
         /// The creation of the XDNS record was not successful
         XdnsRecordCreationFailed,
+        /// Gateway registration failed
         RegistrationError,
+        /// The gateways vendor is not available, which is a result of a missing XDNS record.
         GatewayVendorNotFound,
-        SetOwnerError
+        /// Finality Verifier owner can't be set.
+        SetOwnerError,
+        /// Finality Verifiers operational status can't be updated
+        SetOperationalError
     }
 
     // Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -132,7 +142,7 @@ pub mod pallet {
                      Self::deposit_event(Event::GatewayRegistered(gateway_id));
                      return Ok(().into())
                 },
-                Err(err) => {
+                Err(_err) => {
                     // Self::deposit_event(Event::RegistrationError(err.into()));
                     return Err(Error::<T>::RegistrationError.into())
                 }
@@ -165,13 +175,45 @@ pub mod pallet {
                      Self::deposit_event(Event::SetOwner(gateway_id, encoded_new_owner));
                      return Ok(().into())
                 },
-                Err(err) => {
+                Err(_err) => {
                     // Self::deposit_event(Event::RegistrationError(err.into()));
                     return Err(Error::<T>::SetOwnerError.into())
                 }
             }
         }
 
+        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+        pub fn set_operational(
+            origin: OriginFor<T>,
+            gateway_id: ChainId,
+            operational: bool
+        ) -> DispatchResultWithPostInfo {
+            let vendor_result = <T as Config>::Xdns::get_gateway_vendor(&gateway_id);
+
+            let vendor = match vendor_result {
+                Ok(vendor) => vendor,
+                Err(_msg) => {
+                    // emit error msg as event here
+                    return Err(Error::<T>::GatewayVendorNotFound.into())
+                }
+            };
+
+            let res = match vendor {
+                GatewayVendor::Rococo =>  pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::set_operational(origin, operational, gateway_id),
+                _ => unimplemented!()
+            };
+
+            match res {
+                Ok(_) => {
+                     Self::deposit_event(Event::SetOperational(gateway_id, operational));
+                     return Ok(().into())
+                },
+                Err(_err) => {
+                    // Self::deposit_event(Event::RegistrationError(err.into()));
+                    return Err(Error::<T>::SetOperationalError.into())
+                }
+            }
+        }
     }
 }
 

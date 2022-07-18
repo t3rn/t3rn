@@ -369,28 +369,6 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// Halt or resume all pallet operations.
-        ///
-        /// May only be called either by root, or by `PalletOwner`.
-        #[pallet::weight((T::DbWeight::get().reads_writes(1, 1), DispatchClass::Operational))]
-        pub fn set_operational(
-            origin: OriginFor<T>,
-            operational: bool,
-            gateway_id: ChainId,
-        ) -> DispatchResultWithPostInfo {
-            ensure_owner_or_root_single::<T, I>(origin, gateway_id)?;
-            <IsHaltedMap<T, I>>::insert(gateway_id, !operational);
-
-            if operational {
-                // If a gateway shall be operational the pallet must be too.
-                <IsHalted<T, I>>::put(false);
-                log::info!("Resuming pallet operations.");
-            } else {
-                log::warn!("Stopping pallet operations.");
-            }
-
-            Ok(().into())
-        }
     }
 
     #[pallet::event]
@@ -837,6 +815,28 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
                 PalletOwnerMap::<T, I>::remove(gateway_id);
                 log::info!("Removed Owner of pallet.");
             },
+        }
+
+        Ok(())
+    }
+
+    /// Halt or resume all pallet operations.
+    ///
+    /// May only be called either by root, or by `PalletOwner`.
+    pub fn set_operational(
+        origin: OriginFor<T>,
+        operational: bool,
+        gateway_id: ChainId,
+    ) -> Result<(), &'static str> {
+        ensure_owner_or_root_single::<T, I>(origin, gateway_id)?;
+        <IsHaltedMap<T, I>>::insert(gateway_id, !operational);
+
+        if operational {
+            // If a gateway shall be operational the pallet must be too.
+            <IsHalted<T, I>>::put(false);
+            log::info!("Resuming pallet operations.");
+        } else {
+            log::info!("Stopping pallet operations.");
         }
 
         Ok(())
