@@ -63,6 +63,7 @@ pub mod transfers;
 pub mod volatile;
 pub mod xdns;
 pub mod xtx;
+pub mod portal;
 
 pub type ChainId = [u8; 4];
 

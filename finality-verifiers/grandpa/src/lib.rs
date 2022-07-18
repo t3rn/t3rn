@@ -675,41 +675,41 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     // ///
     // /// Returns a dummy header if there is no best header. This can only happen
     // /// if the pallet has not been initialized yet.
-    // pub fn best_finalized_map(gateway_id: ChainId) -> BridgedHeader<T, I> {
-    //     let hash = <BestFinalizedMap<T, I>>::get(gateway_id).unwrap_or_default();
-    //     <MultiImportedHeaders<T, I>>::get(gateway_id, hash).unwrap_or_else(|| {
-    //         <BridgedHeader<T, I>>::new(
-    //             Default::default(),
-    //             Default::default(),
-    //             Default::default(),
-    //             Default::default(),
-    //             Default::default(),
-    //         )
-    //     })
-    // }
+    pub fn best_finalized_map(gateway_id: ChainId) -> BridgedHeader<T, I> {
+        let hash = <BestFinalizedMap<T, I>>::get(gateway_id).unwrap_or_default();
+        <MultiImportedHeaders<T, I>>::get(gateway_id, hash).unwrap_or_else(|| {
+            <BridgedHeader<T, I>>::new(
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(),
+                Default::default(),
+            )
+        })
+    }
 
-    // /// Check if a particular header is known to the bridge pallet.
-    // pub fn is_known_header(hash: BridgedBlockHash<T, I>, gateway_id: ChainId) -> bool {
-    //     <MultiImportedHeaders<T, I>>::contains_key(gateway_id, hash)
-    // }
+    /// Check if a particular header is known to the bridge pallet.
+    pub fn is_known_header(hash: BridgedBlockHash<T, I>, gateway_id: ChainId) -> bool {
+        <MultiImportedHeaders<T, I>>::contains_key(gateway_id, hash)
+    }
 
-    // /// Verify that the passed storage proof is valid, given it is crafted using
-    // /// known finalized header. If the proof is valid, then the `parse` callback
-    // /// is called and the function returns its result.
-    // pub fn parse_finalized_storage_proof<R>(
-    //     hash: BridgedBlockHash<T, I>,
-    //     storage_proof: sp_trie::StorageProof,
-    //     parse: impl FnOnce(bp_runtime::StorageProofChecker<BridgedBlockHasher<T, I>>) -> R,
-    //     gateway_id: ChainId,
-    // ) -> Result<R, sp_runtime::DispatchError> {
-    //     let header = <MultiImportedHeaders<T, I>>::get(gateway_id, hash)
-    //         .ok_or(Error::<T, I>::UnknownHeader)?;
-    //     let storage_proof_checker =
-    //         bp_runtime::StorageProofChecker::new(*header.state_root(), storage_proof)
-    //             .map_err(|_| Error::<T, I>::StorageRootMismatch)?;
-    //
-    //     Ok(parse(storage_proof_checker))
-    // }
+    /// Verify that the passed storage proof is valid, given it is crafted using
+    /// known finalized header. If the proof is valid, then the `parse` callback
+    /// is called and the function returns its result.
+    pub fn parse_finalized_storage_proof<R>(
+        hash: BridgedBlockHash<T, I>,
+        storage_proof: sp_trie::StorageProof,
+        parse: impl FnOnce(bp_runtime::StorageProofChecker<BridgedBlockHasher<T, I>>) -> R,
+        gateway_id: ChainId,
+    ) -> Result<R, sp_runtime::DispatchError> {
+        let header = <MultiImportedHeaders<T, I>>::get(gateway_id, hash)
+            .ok_or(Error::<T, I>::UnknownHeader)?;
+        let storage_proof_checker =
+            bp_runtime::StorageProofChecker::new(*header.state_root(), storage_proof)
+                .map_err(|_| Error::<T, I>::StorageRootMismatch)?;
+
+        Ok(parse(storage_proof_checker))
+    }
 
     // pub fn submit_parachain_header(
     //     _block_hash: Vec<u8>,
@@ -780,7 +780,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
             header,
             authority_list: registration_data.authorities
                 .iter()
-                .map(|id| sp_finality_grandpa::AuthorityId::from_slice(&id.encode()).unwrap())
+                .map(|id| sp_finality_grandpa::AuthorityId::from_slice(&id.encode()).unwrap())// not sure why this is still needed
                 .map(|authority| (authority, 1))
                 .collect::<Vec<_>>(),
             set_id: registration_data.authority_set_id,
@@ -824,7 +824,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     ///
     /// May only be called either by root, or by `PalletOwner`.
     pub fn set_operational(
-        origin: OriginFor<T>,
+        origin: T::Origin,
         operational: bool,
         gateway_id: ChainId,
     ) -> Result<(), &'static str> {
@@ -916,7 +916,7 @@ mod tests {
     use super::*;
     use crate::mock::{
         run_test, test_header, test_header_range, Origin, TestHash, TestHeader, TestNumber,
-        TestRuntime,
+        TestRuntime, AccountId
     };
     use bp_test_utils::{
         authority_list, make_default_justification, make_justification_for_header,
@@ -947,73 +947,44 @@ mod tests {
 
     fn initialize_substrate_bridge() {
         teardown_substrate_bridge();
-        let default_gateway: ChainId = *b"gate";
-        assert_ok!(init_single_gateway_with_origin(
+        assert_ok!(initialize(
             Origin::root(),
-            default_gateway
         ));
     }
 
     fn initialize_substrate_bridge_for_gateway(gateway_id: ChainId) {
-        assert_ok!(init_single_gateway_with_origin(Origin::root(), gateway_id));
+        assert_ok!(initialize_custom(Origin::root(), gateway_id));
     }
 
-    fn init_single_gateway_with_origin(
+    fn initialize_custom(
         origin: Origin,
-        gateway_id: ChainId,
-    ) -> Result<
-        InitializationData<TestHeader>,
-        sp_runtime::DispatchErrorWithPostInfo<PostDispatchInfo>,
-    > {
+        gateway_id: ChainId
+    ) -> Result<RegistrationData::<AccountId>, &'static str> {
         let genesis = test_header(0);
-
-        let init_data = InitializationData {
-            header: genesis,
-            authority_list: authority_list(),
-            set_id: 1,
-            is_halted: false,
-            gateway_id,
+        let init_data = RegistrationData::<AccountId> {
+            authorities: t3rn_primitives::bridges::test_utils::authorities(),
+            first_header: genesis.encode(),
+            authority_set_id: 1,
+            owner: 1,
+            parachain: None
         };
 
-        let gateway_sys_props = GatewaySysProps {
-            ss58_format: 0,
-            token_symbol: Encode::encode(""),
-            token_decimals: 0,
-        };
-
-        let _ = pallet_xdns::Pallet::<TestRuntime>::add_new_xdns_record(
-            RawOrigin::Root.into(),
-            Default::default(),
-            gateway_id,
-            None,
-            Default::default(),
-            GatewayVendor::Substrate,
-            GatewayType::TxOnly(0),
-            Default::default(),
-            gateway_sys_props,
-            vec![],
-        );
-
-        Pallet::<TestRuntime>::initialize_single(origin, init_data.clone()).map(|_| init_data)
+        Pallet::<TestRuntime>::initialize(origin,  gateway_id, init_data.encode()).map(|_| init_data)
     }
 
-    fn init_with_origin(
+    fn initialize(
         origin: Origin,
-    ) -> Result<
-        InitializationData<TestHeader>,
-        sp_runtime::DispatchErrorWithPostInfo<PostDispatchInfo>,
-    > {
+    ) -> Result<RegistrationData::<AccountId>, &'static str> {
         let genesis = test_header(0);
-
-        let init_data = InitializationData {
-            header: genesis,
-            authority_list: authority_list(),
-            set_id: 1,
-            is_halted: false,
-            gateway_id: *b"gate",
+        let init_data = RegistrationData::<AccountId> {
+            authorities: t3rn_primitives::bridges::test_utils::authorities(),
+            first_header: genesis.encode(),
+            authority_set_id: 1,
+            owner: 1,
+            parachain: None
         };
 
-        Pallet::<TestRuntime>::initialize_single(origin, init_data.clone()).map(|_| init_data)
+        Pallet::<TestRuntime>::initialize(origin,  *b"gate", init_data.encode()).map(|_| init_data)
     }
 
     fn submit_finality_proof(header: u8) -> frame_support::dispatch::DispatchResultWithPostInfo {
@@ -1059,24 +1030,6 @@ mod tests {
             anchor_header_hash,
         )
     }
-
-    // TODO: Do we still need this?
-    // fn submit_finality_proof_and_roots(
-    //     header: u8,
-    // ) -> frame_support::dispatch::DispatchResultWithPostInfo {
-    //     let header = test_header(header.into());
-
-    //     let justification = make_default_justification(&header);
-
-    //     let default_gateway: ChainId = *b"gate";
-
-    //     Pallet::<TestRuntime>::submit_finality_proof_and_roots(
-    //         Origin::signed(1),
-    //         header,
-    //         justification,
-    //         default_gateway,
-    //     )
-    // }
 
     fn next_block() {
         use frame_support::traits::OnInitialize;
@@ -1126,22 +1079,52 @@ mod tests {
 
         run_test(|| {
             assert_noop!(
-                init_with_origin(Origin::signed(1)),
-                DispatchError::BadOrigin
+                initialize(Origin::signed(1)),
+                "Bad origin"
             );
-            assert_ok!(init_with_origin(Origin::root()));
+            assert_ok!(initialize(Origin::root()));
 
             // Reset storage so we can initialize the pallet again
             BestFinalizedMap::<TestRuntime>::remove(default_gateway);
             PalletOwnerMap::<TestRuntime>::insert(default_gateway, 2);
-            assert_ok!(init_with_origin(Origin::signed(2)));
+            assert_ok!(initialize(Origin::signed(2)));
         })
+    }
+
+    #[test]
+    fn can_register_with_valid_data() {
+        let default_gateway: ChainId = *b"gate";
+         run_test(|| {
+            assert_ok!(initialize(Origin::root()));
+         })
+    }
+
+     #[test]
+    fn cant_register_twice() {
+        let default_gateway: ChainId = *b"gate";
+        // let registration_data = test_registration_data(1, true);
+         run_test(|| {
+            assert_ok!(initialize(Origin::root()));
+            assert_err!(initialize(Origin::root()), "Already initialzed");
+         })
+    }
+
+    #[test]
+    fn cant_register_as_non_root() {
+        let default_gateway: ChainId = *b"pdot";
+        // let registration_data = test_registration_data(1, true);
+         run_test(|| {
+            assert_err!(
+                initialize(Origin::signed(1)),
+                "Bad origin"
+            );
+         })
     }
 
     #[test]
     fn init_storage_entries_are_correctly_initialized() {
         let default_gateway: ChainId = *b"gate";
-
+        let header = test_header(0);
         run_test(|| {
             assert_eq!(BestFinalizedMap::<TestRuntime>::get(default_gateway), None,);
             assert_eq!(
@@ -1149,21 +1132,21 @@ mod tests {
                 test_header(0)
             );
 
-            let init_data = init_with_origin(Origin::root()).unwrap();
+            let init_data = initialize(Origin::root()).unwrap();
 
             assert!(<MultiImportedHeaders<TestRuntime>>::contains_key(
                 default_gateway,
-                init_data.header.hash()
+                header.hash()
             ));
             assert_eq!(
                 BestFinalizedMap::<TestRuntime>::get(default_gateway),
-                Some(init_data.header.hash())
+                Some(header.hash())
             );
             assert_eq!(
                 CurrentAuthoritySetMap::<TestRuntime>::get(default_gateway)
                     .unwrap()
                     .authorities,
-                init_data.authority_list
+                authority_list()
             );
             assert_eq!(
                 IsHaltedMap::<TestRuntime>::get(default_gateway),
@@ -1177,8 +1160,8 @@ mod tests {
         run_test(|| {
             initialize_substrate_bridge();
             assert_noop!(
-                init_with_origin(Origin::root()),
-                <Error<TestRuntime>>::AlreadyInitialized
+                initialize(Origin::root()),
+                "Already initialzed"
             );
         })
     }
@@ -1192,39 +1175,12 @@ mod tests {
             initialize_substrate_bridge_for_gateway(gateway_a);
             initialize_substrate_bridge_for_gateway(gateway_b);
             assert_noop!(
-                init_single_gateway_with_origin(Origin::root(), gateway_a),
-                <Error<TestRuntime>>::AlreadyInitialized
+                initialize_custom(Origin::root(), gateway_a),
+                "Already initialzed"
             );
         })
     }
 
-    // #[test]
-    // fn can_initialize_new_polka_like_bridge_with_separate_vefifier_instance() {
-    //     run_test(|| {
-    //         let gateway_a: ChainId = *b"rlta";
-    //
-    //         let rh: bp_circuit::Header = bp_circuit::Header::new(
-    //             1,
-    //             Default::default(),
-    //             Default::default(),
-    //             Default::default(),
-    //             Default::default(),
-    //         );
-    //         let init_data = InitializationData {
-    //             header: rh,
-    //             authority_list: authority_list(),
-    //             set_id: 1,
-    //             is_halted: false,
-    //         };
-    //
-    //         assert_ok!(mock::MultiFinalityVerifierPolkadotLike::initialize_single(
-    //             Origin::root(),
-    //             init_data.clone(),
-    //             gateway_a
-    //         )
-    //         .map(|_| init_data));
-    //     })
-    // }
 
     #[test]
     fn pallet_owner_may_change_owner() {
@@ -1234,8 +1190,8 @@ mod tests {
 
             assert_ok!(Pallet::<TestRuntime>::set_owner(
                 Origin::root(),
-                Some(1),
-                default_gateway
+                default_gateway,
+                Some(1u64).encode(),
             ));
             assert_noop!(
                 Pallet::<TestRuntime>::set_operational(Origin::signed(2), false, default_gateway),
@@ -1247,10 +1203,11 @@ mod tests {
                 default_gateway
             ));
 
+            let owner: Option<AccountId> = None;
             assert_ok!(Pallet::<TestRuntime>::set_owner(
                 Origin::signed(1),
-                None,
-                default_gateway
+                default_gateway,
+                owner.encode(),
             ));
             assert_noop!(
                 Pallet::<TestRuntime>::set_operational(Origin::signed(1), true, default_gateway),
@@ -1278,6 +1235,10 @@ mod tests {
                 false,
                 default_gateway
             ));
+            // assert_noop!(
+            //     submit_finality_proof(2),
+            //     "Halted"
+            // ); ToDo
             assert_ok!(Pallet::<TestRuntime>::set_operational(
                 Origin::root(),
                 true,

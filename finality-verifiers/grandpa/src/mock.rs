@@ -21,12 +21,11 @@ use frame_support::{construct_runtime, parameter_types, traits::Everything, weig
 use sp_runtime::{
     testing::{Header, H256},
     traits::{BlakeTwo256, IdentityLookup},
-    Perbill,
+    Perbill
 };
 use sp_std::convert::{TryFrom, TryInto};
 
 use t3rn_primitives::{bridges::runtime::Chain, EscrowTrait};
-
 pub type AccountId = u64;
 pub type TestHeader = crate::BridgedHeader<TestRuntime, ()>;
 pub type TestNumber = crate::BridgedBlockNumber<TestRuntime, ()>;
@@ -35,7 +34,7 @@ pub type TestHash = crate::BridgedBlockHash<TestRuntime, ()>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 
-use crate::Config;
+use crate::{Config};
 
 construct_runtime! {
     pub enum TestRuntime where
@@ -44,14 +43,10 @@ construct_runtime! {
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        MultiFinalityVerifier: crate::{Pallet, Call, Storage, Config<T>, Event<T>},
-        // MultiFinalityVerifierPolkadotLike: multi_finality_verifier::<Instance1>::{Pallet, Call, Storage, Config<T, I>, Event<T, I>},
-        // MultiFinalityVerifierPolkadotLike: multi_finality_verifier::<Instance1>::{Pallet, Call, Storage, Config<T>, Event<T>},
-        XDNS: pallet_xdns::{Pallet, Call, Storage, Config<T>, Event<T>},
+        GrandpaFainlityVerifier: crate::{Pallet, Call, Storage, Config<T>, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
-        // Portal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>},
     }
 }
 
@@ -89,36 +84,6 @@ impl frame_system::Config for TestRuntime {
     type Version = ();
 }
 
-// // Portal start
-// use t3rn_protocol::side_effects::confirm::ethereum::EthereumMockVerifier;
-//
-// parameter_types! {
-//     pub const ExecPalletId: frame_support::PalletId = frame_support::PalletId(*b"pal/exec");
-// }
-//
-// pub struct AccountId32Converter;
-// impl Convert<AccountId, [u8; 32]> for AccountId32Converter {
-//     fn convert(account_id: AccountId) -> [u8; 32] {
-//         let mut acc_32b: [u8; 32] = Default::default();
-//         acc_32b[0] = account_id as u8;
-//         acc_32b
-//     }
-// }
-//
-// impl pallet_circuit_portal::Config for TestRuntime {
-//     type AccountId32Converter = AccountId32Converter;
-//     type Balances = Balances;
-//     type Call = Call;
-//     type Escrowed = Self;
-//     type EthVerifier = EthereumMockVerifier;
-//     type Event = Event;
-//     type PalletId = ExecPalletId;
-//     type WeightInfo = ();
-//     type Xdns = XDNS;
-// }
-//
-// // Portal end
-
 parameter_types! {
     pub const MinimumPeriod: u64 = 1;
     pub const TransactionByteFee: u64 = 1;
@@ -134,11 +99,6 @@ impl pallet_timestamp::Config for TestRuntime {
 impl pallet_sudo::Config for TestRuntime {
     type Call = Call;
     type Event = Event;
-}
-
-impl EscrowTrait<TestRuntime> for TestRuntime {
-    type Currency = Balances;
-    type Time = Timestamp;
 }
 
 parameter_types! {
@@ -165,35 +125,14 @@ impl pallet_balances::Config for TestRuntime {
     type WeightInfo = ();
 }
 
-impl pallet_xdns::Config for TestRuntime {
-    type Balances = Balances;
-    type Escrowed = TestRuntime;
-    type Event = Event;
-    type WeightInfo = ();
-}
-
 impl Config for TestRuntime {
     type BridgedChain = TestCircuitLikeChain;
     // type CircuitPortal = Portal;
-    type Escrowed = TestRuntime;
     type Event = Event;
     type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
-    type Xdns = XDNS;
 }
-//
-// pub type PolkadotLikeFinalityVerifierInstance = multi_finality_verifier::Instance1;
-// impl multi_finality_verifier::Config<PolkadotLikeFinalityVerifierInstance> for TestRuntime {
-//     type BridgedChain = PolkadotLike;
-//     type CircuitPortal = Portal;
-//     type Escrowed = TestRuntime;
-//     type Event = Event;
-//     type HeadersToKeep = HeadersToKeep;
-//     type MaxRequests = MaxRequests;
-//     type WeightInfo = ();
-//     type Xdns = XDNS;
-// }
 
 #[derive(Debug)]
 pub struct TestCircuitLikeChain;

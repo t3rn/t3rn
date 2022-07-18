@@ -39,7 +39,6 @@ impl Account {
     pub fn public(&self) -> PublicKey {
         (&self.secret()).into()
     }
-
     pub fn secret(&self) -> SecretKey {
         let data = self.0.encode();
         let mut bytes = [0_u8; 32];
@@ -83,6 +82,14 @@ pub fn authority_list() -> AuthorityList {
     test_keyring()
         .iter()
         .map(|(id, w)| (AuthorityId::from(*id), *w))
+        .collect()
+}
+
+/// Convenience function to get a list of Grandpa authority addresses.
+pub fn authorities() -> Vec<AuthorityId> {
+    test_keyring()
+        .iter()
+        .map(|(id, w)| AuthorityId::from(*id))
         .collect()
 }
 

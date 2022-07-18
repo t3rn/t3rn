@@ -1,4 +1,4 @@
-use sp_finality_grandpa::SetId;
+use sp_finality_grandpa::{AuthorityId, SetId};
 use sp_std::{vec::Vec};
 use codec::{Encode, Decode};
 use crate::TypeInfo;
@@ -18,7 +18,7 @@ pub struct Parachain {
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct RegistrationData<T> {
     pub first_header: Vec<u8>,
-    pub authorities: Vec<T>,
+    pub authorities: Vec<AuthorityId>,
     pub authority_set_id: SetId,
     pub owner: T,
     pub parachain: Option<Parachain>
