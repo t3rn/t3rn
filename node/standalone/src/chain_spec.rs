@@ -3,7 +3,7 @@ use circuit_standalone_runtime::{
     MultiFinalityVerifierDefaultConfig, MultiFinalityVerifierEthereumLikeConfig,
     MultiFinalityVerifierGenericLikeConfig, MultiFinalityVerifierPolkadotLikeConfig,
     MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, SystemConfig, XDNSConfig,
-    WASM_BINARY, RococoBridgeConfig
+    WASM_BINARY
 };
 
 use jsonrpc_runtime_client::{
@@ -517,10 +517,6 @@ fn testnet_genesis(
         multi_finality_verifier_default: MultiFinalityVerifierDefaultConfig {
             owner: None,
             init_data: Some(initial_gateways),
-        },
-        rococo_bridge: RococoBridgeConfig {
-            owner: None,
-            init_data: None,
         },
         orml_tokens: Default::default(),
         account_manager: Default::default(),

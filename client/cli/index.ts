@@ -41,13 +41,14 @@ class CircuitCLI {
             case "register": {
                 const data = config.gateways.find(elem => elem.id === process.argv[3])
                 if(data) {
-                    const registrationArguments = await register(this.circuit, data)
+                    const registrationData = await register(this.circuit, data)
                     if (process.argv[4] && process.argv[4] == "--export") {
                         const fileName = './exports/register-' + process.argv[3] + '.json';
-                        this.exportData(registrationArguments, fileName)
+                        // @ts-ignore
+                        this.exportData(registrationData, fileName)
                     } else {
                         // @ts-ignore
-                        this.sudo.sudoSignAndSend(this.circuit.tx.portal.registerGateway(...Object.values(registrationArguments)))
+                        this.sudo.sudoSignAndSend(this.circuit.tx.portal.registerGateway(registrationData))
                             .then(() => {
                                 console.log("Registered and Activated!")
                                 this.close()
@@ -110,7 +111,9 @@ class CircuitCLI {
     }
 
     exportData(data: any, fileName: string) {
-        fs.writeFile(fileName, JSON.stringify(data, null, 4), (err) => {
+        let res = data.toHuman();
+        res["encoded"] = data.toHex().substring(2)
+        fs.writeFile(fileName, JSON.stringify(res, null, 4), (err) => {
             if(err) {
               console.log(err);
             } else {

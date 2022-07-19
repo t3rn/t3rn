@@ -264,11 +264,22 @@
         "relay_chain_id": "ChainId",
         "id": "u32"
     },
-    "RegistrationData": {
+    "GrandpaRegistrationData": {
         "first_header": "Vec<u8>",
         "authorities": "Vec<AuthorityId>",
         "authority_set_id": "SetId",
         "owner": "AccountId",
         "parachain": "Option<Parachain>"
+    },
+    "RegistrationData": {
+        "url": "Vec<u8>",
+        "gateway_id": "ChainId",
+        "gateway_abi": "GatewayABIConfig",
+        "gateway_vendor": "GatewayVendor",
+        "gateway_type": "GatewayType",
+        "gateway_genesis": "GatewayGenesisConfig",
+        "gateway_sys_props": "GatewaySysProps",
+        "allowed_side_effects": "Vec<AllowedSideEffect>",
+        "encoded_registration_data": "Vec<u8>"
     }
 }

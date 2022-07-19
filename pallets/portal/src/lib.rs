@@ -1,4 +1,4 @@
-// #![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(not(feature = "std"), no_std)]
 
 /// Edit this file to define custom logic or remove it if it is not needed.
 /// Learn more about FRAME and the core library of Substrate FRAME pallets:
@@ -91,6 +91,8 @@ pub mod pallet {
     pub enum Error<T> {
         /// The creation of the XDNS record was not successful
         XdnsRecordCreationFailed,
+        ///Specified Vendor is not implemented
+        UnimplementedGatewayVendor,
         /// Gateway registration failed
         RegistrationError,
         /// The gateways vendor is not available, which is a result of a missing XDNS record.
@@ -126,7 +128,7 @@ pub mod pallet {
 
             let res = match registration_data.gateway_vendor {
                 GatewayVendor::Rococo =>  pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::initialize(origin, registration_data.gateway_id, registration_data.encoded_registration_data),
-                _ => unimplemented!()
+                _ => return Err(Error::<T>::UnimplementedGatewayVendor.into())
             };
 
             match res {
@@ -135,6 +137,7 @@ pub mod pallet {
                      return Ok(().into())
                 },
                 Err(_err) => {
+
                     return Err(Error::<T>::RegistrationError.into())
                 }
             }

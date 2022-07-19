@@ -16,17 +16,20 @@
 // limitations under the License.
 
 //! Test utilities
+use std::alloc::System;
 use bp_test_utils::test_header;
-use codec::Encode;
-use frame_support::assert_ok;
-
+use codec::{Decode, Encode};
+use frame_support::{assert_err, assert_noop, assert_ok};
 use t3rn_primitives::bridges::test_utils as bp_test_utils;
-
+use hex;
 use sp_io::TestExternalities;
 use sp_version::{create_runtime_str, RuntimeVersion};
-
-use t3rn_primitives::{abi::GatewayABIConfig, xdns::Parachain, *};
-
+use serde_json::{Result, Value};
+use t3rn_primitives::{abi::GatewayABIConfig, xdns::Parachain, GatewayVendor, GatewayType, GatewayGenesisConfig, GatewaySysProps};
+use t3rn_primitives::xdns::AllowedSideEffect;
+use t3rn_primitives::portal::RegistrationData;
+use std::fs;
+use sp_runtime::{DispatchErrorWithPostInfo, DispatchError};
 use crate::{mock::*, Config};
 pub fn new_test_ext() -> TestExternalities {
     let t = frame_system::GenesisConfig::default()
@@ -46,62 +49,75 @@ pub const TEST_RUNTIME_VERSION: RuntimeVersion = RuntimeVersion {
     state_version: 1,
 };
 
+#[test]
+fn register_rococo_successfully() {
+    // imports encoded RegistrationData from mock-data created by CLI
+    let raw_data = fs::read_to_string("./src/mock-data/register-roco.json").unwrap();
+    let json: Value = serde_json::from_str(raw_data.as_str()).unwrap();
+    let bytes = hex::decode(json["encoded"].as_str().unwrap()).unwrap();
+    let registration_data: RegistrationData = Decode::decode(&mut &*bytes).unwrap();
+
+    let mut ext = TestExternalities::new_empty();
+    let origin = Origin::root(); // only sudo access to register new gateways for now
+    ext.execute_with(|| {
+        assert_ok!(Portal::register_gateway(
+            origin,
+            registration_data.clone()
+        ));
+
+        let xdns_record = pallet_xdns::XDNSRegistry::<Test>::get(registration_data.gateway_id).unwrap();
+        let stored_side_effects = xdns_record.allowed_side_effects;
+
+        // ensure XDNS writes are correct
+        assert_eq!(stored_side_effects, registration_data.allowed_side_effects);
+        assert_eq!(xdns_record.gateway_vendor, registration_data.gateway_vendor);
+        assert_eq!(xdns_record.gateway_abi, registration_data.gateway_abi);
+        assert_eq!(xdns_record.gateway_type, registration_data.gateway_type);
+        assert_eq!(xdns_record.gateway_sys_props, registration_data.gateway_sys_props);
+        assert_eq!(xdns_record.gateway_genesis, registration_data.gateway_genesis);
+    });
+}
+
+#[test]
+fn fails_registration_with_invalid_signer() {
+    // imports encoded RegistrationData from mock-data created by CLI
+    let raw_data = fs::read_to_string("./src/mock-data/register-roco.json").unwrap();
+    let json: Value = serde_json::from_str(raw_data.as_str()).unwrap();
+    let bytes = hex::decode(json["encoded"].as_str().unwrap()).unwrap();
+    let registration_data: RegistrationData = Decode::decode(&mut &*bytes).unwrap();
+
+    let mut ext = TestExternalities::new_empty();
+    let origin = Origin::signed([0u8; 32].into()); // only sudo access to register new gateways for now
+    ext.execute_with(|| {
+        assert_noop!(
+            Portal::register_gateway(origin, registration_data.clone()),
+            DispatchError::BadOrigin
+        );
+    });
+}
+
+// ToDo: Update return type of XDNS to enable correct error handling
 // #[test]
-// fn test_register_gateway_with_default_polka_like_header() {
-//     let origin = Origin::root(); // only sudo access to register new gateways for now
-//     let url = b"ws://localhost:9944".to_vec();
-//     let gateway_id = [0; 4];
-//     let gateway_abi: GatewayABIConfig = Default::default();
-//
-//     let gateway_vendor = GatewayVendor::Substrate;
-//     let gateway_type = GatewayType::ProgrammableInternal(0);
-//
-//     let _gateway_pointer = GatewayPointer {
-//         id: [0; 4],
-//         vendor: GatewayVendor::Substrate,
-//         gateway_type: GatewayType::ProgrammableInternal(0),
-//     };
-//
-//     let gateway_genesis = GatewayGenesisConfig {
-//         modules_encoded: None,
-//         genesis_hash: Default::default(),
-//         extrinsics_version: 0u8,
-//     };
-//
-//     let gateway_sys_props = GatewaySysProps {
-//         ss58_format: 0,
-//         token_symbol: Encode::encode(""),
-//         token_decimals: 0,
-//     };
-//
-//     let first_header: CurrentHeader<Test, DefaultPolkadotLikeGateway> = test_header(0);
-//
-//     let authorities = Some(vec![]);
-//     let authority_set_id = None;
-//     let allowed_side_effects = vec![];
+// fn gateway_can_only_be_registered_once() {
+//     // imports encoded RegistrationData from mock-data created by CLI
+//     let raw_data = fs::read_to_string("./src/mock-data/register-roco.json").unwrap();
+//     let json: Value = serde_json::from_str(raw_data.as_str()).unwrap();
+//     let bytes = hex::decode(json["encoded"].as_str().unwrap()).unwrap();
+//     let registration_data: RegistrationData = Decode::decode(&mut &*bytes).unwrap();
 //
 //     let mut ext = TestExternalities::new_empty();
+//     let origin = Origin::root(); // only sudo access to register new gateways for now
 //     ext.execute_with(|| {
 //         assert_ok!(Portal::register_gateway(
-//             origin,
-//             url,
-//             gateway_id,
-//             None,
-//             gateway_abi,
-//             gateway_vendor,
-//             gateway_type,
-//             gateway_genesis,
-//             gateway_sys_props,
-//             first_header.encode(),
-//             authorities,
-//             authority_set_id,
-//             allowed_side_effects,
+//             origin.clone(),
+//             registration_data.clone()
 //         ));
+//         assert_ok!(Portal::register_gateway(origin, registration_data).is_err());
 //     });
 // }
 
 #[test]
-fn test_register_parachain() {
+// fn test_register_parachain() {
     // let origin = Origin::root(); // only sudo access to register new gateways for now
     // let url = b"ws://localhost:9944".to_vec();
     // let gateway_id = [0; 4];
@@ -157,7 +173,7 @@ fn test_register_parachain() {
     //         allowed_side_effects,
     //     ));
     // });
-}
+// }
 
 //
 // #[test]

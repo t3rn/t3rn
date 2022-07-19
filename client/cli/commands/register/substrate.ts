@@ -30,29 +30,24 @@ export const registerPortalSubstrate = async (circuit: ApiPromise, gatewayData: 
 }
 
 const registerPortalRelaychain = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any) => {
-    const abiConfig = await createAbiConfig(circuit, gatewayData.registrationData.gatewayConfig)
-    const gatewayGenesis = await createGatewayGenesis(circuit, target);
-    const gatewaySysProps = await createGatewaySysProps(circuit, gatewayData.registrationData.gatewaySysProps)
     const { registrationHeader, authorities, authoritySetId } = await fetchPortalConsensusData(circuit, target, gatewayData)
-    const allowedSideEffects = circuit.createType('Vec<AllowedSideEffect>', gatewayData.registrationData.allowedSideEffects)
-    return {
-        rpc: gatewayData.rpc,
-        id: gatewayData.id,
-        abiConfig,
-        vendor: circuit.createType('GatewayVendor', 'Rococo'),
-        type: circuit.createType('GatewayType', { ProgrammableExternal: 1 }),
-        genesis: gatewayGenesis.toHuman(),
-        sysProps: gatewaySysProps,
-        allowedSideEffects,
-        registrationData: circuit.createType('RegistrationData', [
+    return circuit.createType("RegistrationData", {
+        url: gatewayData.rpc,
+        gateway_id: gatewayData.id,
+        gateway_abi: createAbiConfig(circuit, gatewayData.registrationData.gatewayConfig),
+        gateway_vendor: circuit.createType('GatewayVendor', 'Rococo'),
+        gateway_type: circuit.createType('GatewayType', { ProgrammableExternal: 1 }),
+        gateway_genesis: await createGatewayGenesis(circuit, target),
+        gateway_sys_props: createGatewaySysProps(circuit, gatewayData.registrationData.gatewaySysProps),
+        allowed_side_effects: circuit.createType('Vec<AllowedSideEffect>', gatewayData.registrationData.allowedSideEffects),
+        encoded_registration_data: circuit.createType('GrandpaRegistrationData', [
             registrationHeader.toHex(),
             Array.from(authorities),
             authoritySetId,
             gatewayData.registrationData.owner,
             null
         ]).toHex()
-
-    }
+    })
 }
 
 const registerRelaychain = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any) => {

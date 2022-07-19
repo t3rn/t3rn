@@ -341,7 +341,7 @@ construct_runtime!(
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
         Portal: pallet_portal::{Pallet, Call, Storage, Event<T>} = 109,
         RococoBridge: pallet_grandpa_finality_verifier::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
+            Pallet, Call, Storage, Event<T, I>
         } = 110,
 
         // 3VM

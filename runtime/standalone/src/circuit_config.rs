@@ -30,7 +30,6 @@ impl pallet_contracts_registry::Config for Runtime {
 impl pallet_portal::Config for Runtime {
     type Event = Event;
     type Xdns = XDNS;
-
 }
 
 parameter_types! {
