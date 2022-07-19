@@ -1,20 +1,20 @@
-#![cfg_attr(not(feature = "std"), no_std)]
+// #![cfg_attr(not(feature = "std"), no_std)]
 
 /// Edit this file to define custom logic or remove it if it is not needed.
 /// Learn more about FRAME and the core library of Substrate FRAME pallets:
 /// <https://docs.substrate.io/v3/runtime/frame>
 pub use pallet::*;
-// #[cfg(test)]
-// mod mock;
-//
-// #[cfg(test)]
-// mod tests;
+#[cfg(test)]
+mod mock;
+
+#[cfg(test)]
+mod tests;
 //
 // mod types;
 // mod crypto;
 
 // use crate::types::{Header, ValidatorSet, H256, Proof, Receipt};
-// use t3rn_primitives::bsc_finality_verifier::{BinanceFV};
+use t3rn_primitives::portal::ErrorMsg;
 // use codec::Decode;
 // use sp_std::vec::Vec;
 
@@ -28,18 +28,16 @@ pub mod pallet {
     use sp_std::vec::Vec;
     use t3rn_primitives::{xdns::Xdns};
     use codec::Decode;
-    // use grandpa_finality_verifier::Event;
     use t3rn_primitives::{
         side_effect::interface::SideEffectInterface,
         xdns::{AllowedSideEffect, XdnsRecord},
         abi::{GatewayABIConfig},
+        portal::{ErrorMsg, RococoBridge},
         ChainId, EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor, GatewayGenesisConfig,
     };
     use t3rn_primitives::bridges::runtime::Chain;
 
-    pub type RococoBridge = ();
 
-    // pub
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
@@ -84,6 +82,8 @@ pub mod pallet {
         SetOwner(ChainId, Vec<u8>),
         /// Gateway was set operational. [ChainId, bool]
         SetOperational(ChainId, bool),
+        // Emits error msg of function call
+        // Error(ErrorMsg),
     }
 
     // Errors inform users that something went wrong.
@@ -143,7 +143,6 @@ pub mod pallet {
                      return Ok(().into())
                 },
                 Err(_err) => {
-                    // Self::deposit_event(Event::RegistrationError(err.into()));
                     return Err(Error::<T>::RegistrationError.into())
                 }
             }
@@ -160,7 +159,6 @@ pub mod pallet {
             let vendor = match vendor_result {
                 Ok(vendor) => vendor,
                 Err(_msg) => {
-                    // emit error msg as event here
                     return Err(Error::<T>::GatewayVendorNotFound.into())
                 }
             };
@@ -175,8 +173,7 @@ pub mod pallet {
                      Self::deposit_event(Event::SetOwner(gateway_id, encoded_new_owner));
                      return Ok(().into())
                 },
-                Err(_err) => {
-                    // Self::deposit_event(Event::RegistrationError(err.into()));
+                Err(_msg) => {
                     return Err(Error::<T>::SetOwnerError.into())
                 }
             }
@@ -193,7 +190,6 @@ pub mod pallet {
             let vendor = match vendor_result {
                 Ok(vendor) => vendor,
                 Err(_msg) => {
-                    // emit error msg as event here
                     return Err(Error::<T>::GatewayVendorNotFound.into())
                 }
             };
@@ -208,8 +204,7 @@ pub mod pallet {
                      Self::deposit_event(Event::SetOperational(gateway_id, operational));
                      return Ok(().into())
                 },
-                Err(_err) => {
-                    // Self::deposit_event(Event::RegistrationError(err.into()));
+                Err(_msg) => {
                     return Err(Error::<T>::SetOperationalError.into())
                 }
             }

@@ -21,7 +21,6 @@ serde            = { version = "1.0", default-features = false, optional = true 
 
 frame-support       = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 frame-system        = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-#pallet-xdns         = { path = "../xdns", default-features = false }
 sp-core             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 sp-state-machine    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
@@ -31,13 +30,14 @@ num-traits          = { version = "0.2", default-features = false }
 hash-db             = { version = "0.15.2", default-features = false }
 sp-trie             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 sp-io               = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-t3rn-primitives     = { path = "../../primitives", default-features = false }
+t3rn-primitives     = { path = "../../primitives" }
 #
-#[dev-dependencies]
-#pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
-#pallet-sudo      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
-#pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
-#
+[dev-dependencies]
+pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
+pallet-sudo      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
+hex              = { package = "rustc-hex", version = "2.1.0", default-features = false }
+hex-literal      = { version = "0.3.1", default-features = false }
 #pallet-circuit-portal = { path = "../circuit-portal" }
 #t3rn-protocol         = { path = "../../protocol" }
 

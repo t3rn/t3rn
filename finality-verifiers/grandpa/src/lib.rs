@@ -476,45 +476,6 @@ pub mod pallet {
     pub(super) type InstantiatedGatewaysMap<T: Config<I>, I: 'static = ()> =
         StorageValue<_, Vec<ChainId>, ValueQuery>;
 
-    #[pallet::genesis_config]
-    pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
-        /// Optional module owner account.
-        pub owner: Option<T::AccountId>,
-        /// Optional initialization data list for pregregistering gateways.
-        pub init_data: Option<Vec<super::InitializationData<BridgedHeader<T, I>>>>,
-    }
-
-    #[cfg(feature = "std")]
-    impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
-        fn default() -> Self {
-            Self {
-                owner: None,
-                init_data: None,
-            }
-        }
-    }
-
-    #[pallet::genesis_build]
-    impl<T: Config<I>, I: 'static> GenesisBuild<T, I> for GenesisConfig<T, I> {
-        fn build(&self) {
-            if let Some(ref owner) = self.owner {
-                <PalletOwner<T, I>>::put(owner);
-            }
-
-            if let Some(init_data) = self.init_data.clone() {
-                for gateway in init_data {
-                    let gateway_id = gateway.gateway_id;
-                    initialize_single_bridge::<T, I>(gateway);
-                    <IsHaltedMap<T, I>>::insert(gateway_id, false);
-                }
-                <IsHalted<T, I>>::put(false);
-            } else {
-                // Since the bridge hasn't been initialized we shouldn't allow anyone to perform
-                // transactions.
-                <IsHalted<T, I>>::put(true);
-            }
-        }
-    }
 
     #[pallet::error]
     pub enum Error<T, I = ()> {

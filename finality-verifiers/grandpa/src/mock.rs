@@ -43,7 +43,7 @@ construct_runtime! {
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        GrandpaFainlityVerifier: crate::{Pallet, Call, Storage, Config<T>, Event<T>},
+        GrandpaFinalityVerifier: crate::{Pallet, Call, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
@@ -127,7 +127,6 @@ impl pallet_balances::Config for TestRuntime {
 
 impl Config for TestRuntime {
     type BridgedChain = TestCircuitLikeChain;
-    // type CircuitPortal = Portal;
     type Event = Event;
     type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
@@ -138,16 +137,6 @@ impl Config for TestRuntime {
 pub struct TestCircuitLikeChain;
 
 impl Chain for TestCircuitLikeChain {
-    type BlockNumber = <TestRuntime as frame_system::Config>::BlockNumber;
-    type Hash = <TestRuntime as frame_system::Config>::Hash;
-    type Hasher = <TestRuntime as frame_system::Config>::Hashing;
-    type Header = <TestRuntime as frame_system::Config>::Header;
-}
-
-#[derive(Debug)]
-pub struct TestKeccak256U64Chain;
-
-impl Chain for TestKeccak256U64Chain {
     type BlockNumber = <TestRuntime as frame_system::Config>::BlockNumber;
     type Hash = <TestRuntime as frame_system::Config>::Hash;
     type Hasher = <TestRuntime as frame_system::Config>::Hashing;
