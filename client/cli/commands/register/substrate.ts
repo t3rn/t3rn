@@ -13,7 +13,6 @@ export const registerSubstrate = async (circuit: ApiPromise, gatewayData: any) =
     } else {
         console.log("Not implemented!")
         return
-        // registerParachain(target, gatewayData)
     }
 }
 
@@ -27,33 +26,33 @@ export const registerPortalSubstrate = async (circuit: ApiPromise, gatewayData: 
     } else {
         console.log("Not implemented!")
         return
-        // registerParachain(target, gatewayData)
     }
 }
 
 const registerPortalRelaychain = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any) => {
-    const abiConfig = createAbiConfig(circuit, gatewayData.registrationData.gatewayConfig)
-    const gatewayGenesis = createGatewayGenesis(circuit, target);
-    const gatewaySysProps = createGatewaySysProps(circuit, gatewayData.registrationData.gatewaySysProps)
+    const abiConfig = await createAbiConfig(circuit, gatewayData.registrationData.gatewayConfig)
+    const gatewayGenesis = await createGatewayGenesis(circuit, target);
+    const gatewaySysProps = await createGatewaySysProps(circuit, gatewayData.registrationData.gatewaySysProps)
     const { registrationHeader, authorities, authoritySetId } = await fetchPortalConsensusData(circuit, target, gatewayData)
     const allowedSideEffects = circuit.createType('Vec<AllowedSideEffect>', gatewayData.registrationData.allowedSideEffects)
-    return circuit.tx.portal.registerGateway(
-        gatewayData.rpc,
-        gatewayData.id,
+    return {
+        rpc: gatewayData.rpc,
+        id: gatewayData.id,
         abiConfig,
-        circuit.createType('GatewayVendor', 'Rococo'),
-        circuit.createType('GatewayType', { ProgrammableExternal: 1 }),
-        gatewayGenesis,
-        gatewaySysProps,
+        vendor: circuit.createType('GatewayVendor', 'Rococo'),
+        type: circuit.createType('GatewayType', { ProgrammableExternal: 1 }),
+        genesis: gatewayGenesis.toHuman(),
+        sysProps: gatewaySysProps,
         allowedSideEffects,
-        circuit.createType('RegistrationData', [
+        registrationData: circuit.createType('RegistrationData', [
             registrationHeader.toHex(),
             Array.from(authorities),
             authoritySetId,
-            gatewayData.id,
+            gatewayData.registrationData.owner,
             null
         ]).toHex()
-    );
+
+    }
 }
 
 const registerRelaychain = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any) => {
@@ -104,28 +103,24 @@ const createAbiConfig = (circuiApi: ApiPromise, gatewayConfig: any) => {
 }
 
 const createGatewaySysProps = (circuiApi: ApiPromise, gatewaySysProps: any) => {
-    return circuiApi.createType('GatewaySysProps', [
-    circuiApi.createType('Bytes', gatewaySysProps.tokenSymbol),
-    circuiApi.createType('u8', gatewaySysProps.tokenDecimals),
-    circuiApi.createType('u16', gatewaySysProps.ss58Format),
-  ]);
+   return circuiApi.createType('GatewaySysProps', [
+        circuiApi.createType('u16', gatewaySysProps.ss58Format),
+        circuiApi.createType('Vec<u8>', gatewaySysProps.tokenSymbol),
+        circuiApi.createType('u8', gatewaySysProps.tokenDecimals),
+   ]);
 }
 
 const fetchPortalConsensusData = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any) => {
     const registrationHeight = await fetchLatestAuthoritySetUpdateBlock(gatewayData)
-    console.log("Latest AuthoritySetUpdate:", registrationHeight)
 
     const registrationHeader = await target.rpc.chain.getHeader(
         await target.rpc.chain.getBlockHash(registrationHeight)
     )
 
-    // console.log(registrationHeader.toHex())
-
     const finalityProof = await target.rpc.grandpa.proveFinality(registrationHeight);
     const authorities= extractAuthoritySetFromFinalityProof(finalityProof)
     const authoritySetId = await target.query.grandpa.currentSetId()
     return {
-        // registrationHeader: circuit.createType('Bytes', registrationHeader.toHex()),
         registrationHeader,
         authorities:  circuit.createType('Vec<AccountId>', authorities),
         authoritySetId: circuit.createType('SetId', authoritySetId),

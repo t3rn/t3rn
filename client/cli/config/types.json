@@ -266,9 +266,9 @@
     },
     "RegistrationData": {
         "first_header": "Vec<u8>",
-        "authorities": "Vec<T::AccountId>",
+        "authorities": "Vec<AuthorityId>",
         "authority_set_id": "SetId",
-        "gateway_id": "ChainId",
+        "owner": "AccountId",
         "parachain": "Option<Parachain>"
     }
 }

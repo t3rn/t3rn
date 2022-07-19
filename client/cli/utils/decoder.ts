@@ -8,7 +8,6 @@ export const decodeFinalityProof = (data: any) => {
     registry.register(finalityProof);
 
     const res = createType(registry, finalityProof.proof, data.toJSON()) // toJSON works, toHEX() not
-    console.log(res[0].toHuman())
     return res[1]
 }
 

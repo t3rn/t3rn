@@ -7,6 +7,7 @@ import { register } from "./commands/register/register";
 import { setOperational } from "./commands/operational";
 import {parseTransferArgs} from "./utils/parseArgs";
 import {transfer} from "./commands/transfer";
+import * as fs from "fs";
 
 class CircuitCLI {
     circuit: ApiPromise;
@@ -19,8 +20,6 @@ class CircuitCLI {
             types: types as any,
             rpc: rpc as any
         })
-        // @ts-ignore
-        console.log((await this.circuit.rpc.xdns.fetchRecords()).toHuman().xdns_records[0])
         this.sudo = new Sudo(this.circuit)
         const keyring = new Keyring({ type: "sr25519" })
         this.signer =
@@ -42,17 +41,23 @@ class CircuitCLI {
             case "register": {
                 const data = config.gateways.find(elem => elem.id === process.argv[3])
                 if(data) {
-                    const tx = await register(this.circuit, data)
-                    this.sudo.sudoSignAndSend(tx)
-                        .then(() => {
-                            console.log("Registered and Activated!")
-                            this.close()
-                        })
-                        .catch(err => {
-                            console.log(err)
-                            console.log("Registration Failed!")
-                            this.close()
-                        })
+                    const registrationArguments = await register(this.circuit, data)
+                    if (process.argv[4] && process.argv[4] == "--export") {
+                        const fileName = './exports/register-' + process.argv[3] + '.json';
+                        this.exportData(registrationArguments, fileName)
+                    } else {
+                        // @ts-ignore
+                        this.sudo.sudoSignAndSend(this.circuit.tx.portal.registerGateway(...Object.values(registrationArguments)))
+                            .then(() => {
+                                console.log("Registered and Activated!")
+                                this.close()
+                            })
+                            .catch(err => {
+                                console.log(err)
+                                console.log("Registration Failed!")
+                                this.close()
+                            })
+                    }
                 } else {
                     console.log(`Config for ${process.argv[3]} not found!`)
                     this.close();
@@ -102,6 +107,17 @@ class CircuitCLI {
                 break
             }
         }
+    }
+
+    exportData(data: any, fileName: string) {
+        fs.writeFile(fileName, JSON.stringify(data, null, 4), (err) => {
+            if(err) {
+              console.log(err);
+            } else {
+              console.log("JSON saved to " + fileName);
+              this.close()
+            }
+        });
     }
 }
 

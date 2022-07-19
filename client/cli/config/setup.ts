@@ -13,6 +13,7 @@ export default {
                 fee: 0,
             },
             registrationData: {
+                owner: "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
                 relaychain: null,
                 gatewayConfig: {
                     blockNumberTypeSize: 32,

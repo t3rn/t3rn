@@ -1,6 +1,6 @@
 import {registerPortalSubstrate, registerSubstrate} from "./substrate";
 
-export const register = async (circuitApi: any, gatewayData: any) => {
+export const register = async (circuitApi: any, gatewayData: any, print?: boolean) => {
     switch(gatewayData.registrationData.gatewayVendor) {
         case "Substrate": {
             return registerSubstrate(circuitApi, gatewayData)
