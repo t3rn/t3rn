@@ -25,7 +25,7 @@ use sp_runtime::{
 };
 use sp_std::convert::{TryFrom, TryInto};
 
-use t3rn_primitives::{bridges::runtime::Chain, EscrowTrait};
+use t3rn_primitives::{bridges::runtime::Chain,};
 pub type AccountId = u64;
 pub type TestHeader = crate::BridgedHeader<TestRuntime, ()>;
 pub type TestNumber = crate::BridgedBlockNumber<TestRuntime, ()>;

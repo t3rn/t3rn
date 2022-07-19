@@ -89,7 +89,7 @@ pub fn authority_list() -> AuthorityList {
 pub fn authorities() -> Vec<AuthorityId> {
     test_keyring()
         .iter()
-        .map(|(id, w)| AuthorityId::from(*id))
+        .map(|(id, _w)| AuthorityId::from(*id))
         .collect()
 }
 

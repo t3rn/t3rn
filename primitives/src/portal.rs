@@ -1,10 +1,8 @@
 use scale_info::prelude::string::String;
 use codec::{Decode, Encode};
-use frame_system::pallet_prelude::OriginFor;
 use scale_info::TypeInfo;
 use sp_std::vec::Vec;
 use crate::{
-    side_effect::interface::SideEffectInterface,
     xdns::AllowedSideEffect,
     abi::GatewayABIConfig,
     ChainId, GatewaySysProps, GatewayType, GatewayVendor, GatewayGenesisConfig,

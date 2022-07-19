@@ -16,21 +16,16 @@
 // limitations under the License.
 
 //! Test utilities
-use std::alloc::System;
-use bp_test_utils::test_header;
-use codec::{Decode, Encode};
-use frame_support::{assert_err, assert_noop, assert_ok};
-use t3rn_primitives::bridges::test_utils as bp_test_utils;
+use codec::{Decode};
+use frame_support::{assert_noop, assert_ok};
 use hex;
 use sp_io::TestExternalities;
 use sp_version::{create_runtime_str, RuntimeVersion};
-use serde_json::{Result, Value};
-use t3rn_primitives::{abi::GatewayABIConfig, xdns::Parachain, GatewayVendor, GatewayType, GatewayGenesisConfig, GatewaySysProps};
-use t3rn_primitives::xdns::AllowedSideEffect;
+use serde_json::{Value};
 use t3rn_primitives::portal::RegistrationData;
 use std::fs;
-use sp_runtime::{DispatchErrorWithPostInfo, DispatchError};
-use crate::{mock::*, Config};
+use sp_runtime::{DispatchError};
+use crate::{mock::*};
 pub fn new_test_ext() -> TestExternalities {
     let t = frame_system::GenesisConfig::default()
         .build_storage::<Test>()
@@ -116,7 +111,7 @@ fn fails_registration_with_invalid_signer() {
 //     });
 // }
 
-#[test]
+// #[test]
 // fn test_register_parachain() {
     // let origin = Origin::root(); // only sudo access to register new gateways for now
     // let url = b"ws://localhost:9944".to_vec();

@@ -9,35 +9,19 @@ mod mock;
 
 #[cfg(test)]
 mod tests;
-//
-// mod types;
-// mod crypto;
-
-// use crate::types::{Header, ValidatorSet, H256, Proof, Receipt};
-use t3rn_primitives::portal::ErrorMsg;
-// use codec::Decode;
-// use sp_std::vec::Vec;
-
 
 #[frame_support::pallet]
 pub mod pallet {
-    use scale_info::prelude::string::String;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
     use core::convert::TryInto;
     use sp_std::vec::Vec;
     use t3rn_primitives::{xdns::Xdns};
-    use codec::Decode;
     use t3rn_primitives::{
-        side_effect::interface::SideEffectInterface,
-        xdns::{AllowedSideEffect, XdnsRecord},
-        abi::{GatewayABIConfig},
-        portal::{ErrorMsg, RococoBridge},
-        ChainId, EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor, GatewayGenesisConfig,
+        portal::{RococoBridge},
+        ChainId, GatewayVendor,
     };
-    use t3rn_primitives::bridges::runtime::Chain;
     use t3rn_primitives::portal::RegistrationData;
-
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]

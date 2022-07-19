@@ -4,23 +4,21 @@ use codec::Encode;
 use frame_support::{
     pallet_prelude::GenesisBuild, parameter_types, traits::Everything, weights::Weight, PalletId,
 };
-use sp_core::{crypto::KeyTypeId, H256};
+use sp_core::{H256};
 use sp_runtime::{
     testing::{Header, TestXt},
-    traits::{BlakeTwo256, Convert, IdentityLookup, Keccak256, OpaqueKeys},
+    traits::{BlakeTwo256, Convert, IdentityLookup},
     Perbill,
 };
 use sp_std::convert::{TryFrom, TryInto};
 use t3rn_primitives::{
-    bridges::{chain_circuit as bp_circuit, runtime as bp_runtime},
+    bridges::{runtime as bp_runtime},
     abi::Type, side_effect::interface::SideEffectInterface, transfers::BalanceOf, xdns::XdnsRecord,
     EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor,
 };
 pub type AccountId = sp_runtime::AccountId32;
 pub type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 pub type Block = frame_system::mocking::MockBlock<Test>;
-
-pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"circ");
 
 frame_support::construct_runtime!(
     pub enum Test where
@@ -43,9 +41,6 @@ parameter_types! {
     pub BlockWeights: frame_system::limits::BlockWeights =
         frame_system::limits::BlockWeights::simple_max(1024);
 }
-
-/// The hashing algorithm used.
-pub type Hashing = BlakeTwo256;
 
 impl frame_system::Config for Test {
     type AccountData = pallet_balances::AccountData<Balance>;
@@ -174,7 +169,6 @@ impl Convert<Weight, BalanceOf<Self>> for Test {
     }
 }
 
-pub const INDEXING_PREFIX: &[u8] = b"commitment";
 parameter_types! {
     pub const MaxMessagePayloadSize: u64 = 256;
     pub const MaxMessagesPerCommit: u64 = 20;

@@ -83,7 +83,6 @@ pub type BridgedBlockHasher<T, I> = HasherOf<<T as Config<I>>::BridgedChain>;
 pub type BridgedHeader<T, I> = HeaderOf<<T as Config<I>>::BridgedChain>;
 
 const LOG_TARGET: &str = "multi-finality-verifier";
-use frame_support::traits::Time;
 use frame_system::pallet_prelude::*;
 
 #[frame_support::pallet]
@@ -339,36 +338,6 @@ pub mod pallet {
 
             Ok(().into())
         }
-
-        /// Bootstrap the bridge pallet with an initial header and authority set from which to sync.
-        ///
-        /// The initial configuration provided does not need to be the genesis header of the bridged
-        /// chain, it can be any arbirary header. You can also provide the next scheduled set change
-        /// if it is already know.
-        ///
-        /// This function is only allowed to be called from a trusted origin and writes to storage
-        /// with practically no checks in terms of the validity of the data. It is important that
-        /// you ensure that valid data is being passed in.
-        #[pallet::weight((T::DbWeight::get().reads_writes(2, 5), DispatchClass::Operational))]
-        pub fn initialize_single(
-            origin: OriginFor<T>,
-            init_data: super::InitializationData<BridgedHeader<T, I>>,
-        ) -> DispatchResultWithPostInfo {
-            ensure_owner_or_root_single::<T, I>(origin, init_data.gateway_id)?;
-
-            let init_allowed = !<BestFinalizedMap<T, I>>::contains_key(init_data.gateway_id);
-            ensure!(init_allowed, <Error<T, I>>::AlreadyInitialized);
-            initialize_single_bridge::<T, I>(init_data.clone());
-
-            log::debug!(
-                target: LOG_TARGET,
-                "Pallet has been initialized with the following parameters: {:?}",
-                init_data
-            );
-
-            Ok(().into())
-        }
-
     }
 
     #[pallet::event]
@@ -614,8 +583,6 @@ pub mod pallet {
 
         Ok(())
     }
-
-
 
     /// Ensure that the pallet is in operational mode (not halted).
     pub fn ensure_operational_single<T: Config<I>, I: 'static>(
@@ -884,12 +851,14 @@ mod tests {
         JustificationGeneratorParams, ALICE, BOB,
     };
     use codec::Encode;
-    use frame_support::{assert_err, assert_noop, assert_ok, weights::PostDispatchInfo};
+    use frame_support::{assert_err, assert_noop, assert_ok};
+    use sp_finality_grandpa::AuthorityId;
     use sp_runtime::{Digest, DigestItem, DispatchError};
 
     use t3rn_primitives::{
-        bridges::test_utils as bp_test_utils, GatewaySysProps, GatewayType, GatewayVendor,
+        bridges::test_utils as bp_test_utils,
     };
+    use t3rn_primitives::bridges::test_utils::{DAVE};
 
     fn teardown_substrate_bridge() {
         let default_gateway: ChainId = *b"gate";
@@ -914,12 +883,12 @@ mod tests {
     }
 
     fn initialize_substrate_bridge_for_gateway(gateway_id: ChainId) {
-        assert_ok!(initialize_custom(Origin::root(), gateway_id));
+        assert_ok!(initialize_custom_id(Origin::root(), gateway_id));
     }
 
-    fn initialize_custom(
+    fn initialize_custom_id(
         origin: Origin,
-        gateway_id: ChainId
+        gateway_id: ChainId,
     ) -> Result<GrandpaRegistrationData::<AccountId>, &'static str> {
         let genesis = test_header(0);
         let init_data = GrandpaRegistrationData::<AccountId> {
@@ -946,6 +915,14 @@ mod tests {
         };
 
         Pallet::<TestRuntime>::initialize(origin,  *b"gate", init_data.encode()).map(|_| init_data)
+    }
+
+    fn initialize_custom(
+        origin: Origin,
+        gateway_id: ChainId,
+        init_data: GrandpaRegistrationData::<AccountId>
+    ) -> Result<GrandpaRegistrationData::<AccountId>, &'static str> {
+        Pallet::<TestRuntime>::initialize(origin,  gateway_id, init_data.encode()).map(|_| init_data)
     }
 
     fn submit_finality_proof(header: u8) -> frame_support::dispatch::DispatchResultWithPostInfo {
@@ -1054,7 +1031,6 @@ mod tests {
 
     #[test]
     fn can_register_with_valid_data() {
-        let default_gateway: ChainId = *b"gate";
          run_test(|| {
             assert_ok!(initialize(Origin::root()));
          })
@@ -1062,8 +1038,6 @@ mod tests {
 
      #[test]
     fn cant_register_twice() {
-        let default_gateway: ChainId = *b"gate";
-        // let registration_data = test_registration_data(1, true);
          run_test(|| {
             assert_ok!(initialize(Origin::root()));
             assert_err!(initialize(Origin::root()), "Already initialzed");
@@ -1072,8 +1046,6 @@ mod tests {
 
     #[test]
     fn cant_register_as_non_root() {
-        let default_gateway: ChainId = *b"pdot";
-        // let registration_data = test_registration_data(1, true);
          run_test(|| {
             assert_err!(
                 initialize(Origin::signed(1)),
@@ -1093,7 +1065,7 @@ mod tests {
                 test_header(0)
             );
 
-            let init_data = initialize(Origin::root()).unwrap();
+            let _init_data = initialize(Origin::root()).unwrap();
 
             assert!(<MultiImportedHeaders<TestRuntime>>::contains_key(
                 default_gateway,
@@ -1136,7 +1108,7 @@ mod tests {
             initialize_substrate_bridge_for_gateway(gateway_a);
             initialize_substrate_bridge_for_gateway(gateway_b);
             assert_noop!(
-                initialize_custom(Origin::root(), gateway_a),
+                initialize_custom_id(Origin::root(), gateway_a),
                 "Already initialzed"
             );
         })
@@ -1527,25 +1499,27 @@ mod tests {
     }
 
     #[test]
-    fn disallows_invalid_authority_set() {
+    fn disallows_invalid_justification() {
         run_test(|| {
             let genesis = test_header(0);
             let default_gateway: ChainId = *b"gate";
-            let invalid_authority_list = vec![(ALICE.into(), u64::MAX), (BOB.into(), u64::MAX)];
-            let init_data = InitializationData {
-                header: genesis,
-                authority_list: invalid_authority_list,
-                set_id: 1,
-                is_halted: false,
-                gateway_id: default_gateway,
+            let different_authorities: Vec<AuthorityId> = vec![ALICE.into(), DAVE.into()];
+            let init_data = GrandpaRegistrationData::<AccountId> {
+                authorities: different_authorities,
+                first_header: genesis.encode(),
+                authority_set_id: 1,
+                owner: 1,
+                parachain: None
             };
 
-            assert_ok!(Pallet::<TestRuntime>::initialize_single(
+            assert_ok!(initialize_custom(
                 Origin::root(),
+                default_gateway,
                 init_data,
             ));
 
-            let header = test_header(1);
+            let header = test_header(2);
+            // this justification contains ALICE, BOB and CHARLIE, to it will be invalid
             let encoded_justification = make_default_justification(&header).encode();
 
             assert_err!(
@@ -1555,7 +1529,7 @@ mod tests {
                     encoded_justification,
                     default_gateway,
                 ),
-                <Error<TestRuntime>>::InvalidAuthoritySet
+                <Error<TestRuntime>>::InvalidJustification
             );
         })
     }
