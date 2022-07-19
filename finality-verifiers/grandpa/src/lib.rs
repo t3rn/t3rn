@@ -59,7 +59,7 @@ use sp_runtime::traits::{BadOrigin, Header as HeaderT, Zero};
 use sp_std::vec::Vec;
 use sp_core::crypto::ByteArray;
 mod types;
-use types::{RegistrationData};
+use types::{GrandpaRegistrationData};
 
 #[cfg(test)]
 mod mock;
@@ -729,7 +729,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     ) -> Result<(), &'static str> {
         ensure_owner_or_root_single::<T, I>(origin.clone(), gateway_id)?;
 
-        let registration_data: RegistrationData<T::AccountId> = Decode::decode(&mut &*encoded_registration_data)
+        let registration_data: GrandpaRegistrationData<T::AccountId> = Decode::decode(&mut &*encoded_registration_data)
             .map_err(|_| "Registration data decoding error!")?;
 
         PalletOwnerMap::<T, I>::insert(gateway_id, &registration_data.owner);
@@ -920,9 +920,9 @@ mod tests {
     fn initialize_custom(
         origin: Origin,
         gateway_id: ChainId
-    ) -> Result<RegistrationData::<AccountId>, &'static str> {
+    ) -> Result<GrandpaRegistrationData::<AccountId>, &'static str> {
         let genesis = test_header(0);
-        let init_data = RegistrationData::<AccountId> {
+        let init_data = GrandpaRegistrationData::<AccountId> {
             authorities: t3rn_primitives::bridges::test_utils::authorities(),
             first_header: genesis.encode(),
             authority_set_id: 1,
@@ -935,9 +935,9 @@ mod tests {
 
     fn initialize(
         origin: Origin,
-    ) -> Result<RegistrationData::<AccountId>, &'static str> {
+    ) -> Result<GrandpaRegistrationData::<AccountId>, &'static str> {
         let genesis = test_header(0);
-        let init_data = RegistrationData::<AccountId> {
+        let init_data = GrandpaRegistrationData::<AccountId> {
             authorities: t3rn_primitives::bridges::test_utils::authorities(),
             first_header: genesis.encode(),
             authority_set_id: 1,

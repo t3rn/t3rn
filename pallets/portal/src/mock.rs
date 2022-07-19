@@ -34,7 +34,7 @@ frame_support::construct_runtime!(
         XDNS: pallet_xdns::{Pallet, Call, Storage, Config<T>, Event<T>},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         RococoBridge: pallet_grandpa_finality_verifier::{Pallet, Call, Storage, Event<T>},
-        Portal: crate::{Pallet, Call, Storage, Event<T>}
+        Portal: pallet_portal::{Pallet, Call, Storage, Event<T>}
     }
 );
 

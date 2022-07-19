@@ -36,7 +36,7 @@ pub mod pallet {
         ChainId, EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor, GatewayGenesisConfig,
     };
     use t3rn_primitives::bridges::runtime::Chain;
-
+    use t3rn_primitives::portal::RegistrationData;
 
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
@@ -109,37 +109,29 @@ pub mod pallet {
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
         pub fn register_gateway(
             origin: OriginFor<T>,
-            url: Vec<u8>,
-            gateway_id: ChainId,
-            gateway_abi: GatewayABIConfig,
-            gateway_vendor: GatewayVendor, // Maps to FV
-            gateway_type: GatewayType,
-            gateway_genesis: GatewayGenesisConfig,
-            gateway_sys_props: GatewaySysProps,
-            allowed_side_effects: Vec<AllowedSideEffect>,
-            encoded_registration_data: Vec<u8>
+            registration_data: RegistrationData
         ) -> DispatchResultWithPostInfo {
             <T as Config>::Xdns::add_new_xdns_record(
                 origin.clone(),
-                url,
-                gateway_id,
+                registration_data.url,
+                registration_data.gateway_id,
                 None,
-                gateway_abi.clone(),
-                gateway_vendor.clone(),
-                gateway_type.clone(),
-                gateway_genesis,
-                gateway_sys_props.clone(),
-                allowed_side_effects.clone(),
+                registration_data.gateway_abi.clone(),
+                registration_data.gateway_vendor.clone(),
+                registration_data.gateway_type.clone(),
+                registration_data.gateway_genesis,
+                registration_data.gateway_sys_props.clone(),
+                registration_data.allowed_side_effects.clone(),
             )?;
 
-            let res = match gateway_vendor {
-                GatewayVendor::Rococo =>  pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::initialize(origin, gateway_id, encoded_registration_data),
+            let res = match registration_data.gateway_vendor {
+                GatewayVendor::Rococo =>  pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::initialize(origin, registration_data.gateway_id, registration_data.encoded_registration_data),
                 _ => unimplemented!()
             };
 
             match res {
                 Ok(_) => {
-                     Self::deposit_event(Event::GatewayRegistered(gateway_id));
+                     Self::deposit_event(Event::GatewayRegistered(registration_data.gateway_id));
                      return Ok(().into())
                 },
                 Err(_err) => {

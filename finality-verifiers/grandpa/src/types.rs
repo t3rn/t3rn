@@ -16,7 +16,7 @@ pub struct Parachain {
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
-pub struct RegistrationData<T> {
+pub struct GrandpaRegistrationData<T> {
     pub first_header: Vec<u8>,
     pub authorities: Vec<AuthorityId>,
     pub authority_set_id: SetId,
