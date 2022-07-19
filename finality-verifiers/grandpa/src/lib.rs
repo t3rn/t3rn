@@ -142,125 +142,6 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config<I>, I: 'static> Pallet<T, I> {
-        /// Verify a target header is finalized according to the given finality proof.
-        ///
-        /// It will use the underlying storage pallet to fetch information about the current
-        /// authorities and best finalized header in order to verify that the header is finalized.
-        ///
-        /// If successful in verification, it will write the target header to the underlying storage
-        /// pallet.
-        #[pallet::weight(<T as pallet::Config<I>>::WeightInfo::submit_finality_proof(
-            encoded_justification.len() as u32,
-            encoded_justification.len() as u32,
-		))]
-        pub fn submit_finality_proof(
-            origin: OriginFor<T>,
-            finality_target: BridgedHeader<T, I>,
-            encoded_justification: Vec<u8>,
-            gateway_id: ChainId,
-        ) -> DispatchResultWithPostInfo {
-            ensure_operational_single::<T, I>(gateway_id)?;
-            ensure_signed(origin)?;
-            ensure!(
-                Self::request_count_map(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
-                <Error<T, I>>::TooManyRequests
-            );
-            let justification =
-                GrandpaJustification::<BridgedHeader<T, I>>::decode(&mut &*encoded_justification)
-                    .map_err(|_| "Decode Error")?;
-
-            log::debug!(
-                target: LOG_TARGET,
-                "Going to try and finalize header {:?} gateway {:?}",
-                finality_target,
-                String::from_utf8_lossy(gateway_id.as_ref()).into_owned()
-            );
-
-            let (hash, number) = (finality_target.hash(), finality_target.number());
-
-            // In order to reach this point the bridge must have been initialized for given gateway.
-            let best_finalized = <MultiImportedHeaders<T, I>>::get(
-                gateway_id,
-                // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
-                // `ImportedHeaders` must contain an entry for `BestFinalized`.
-                <BestFinalizedMap<T, I>>::get(gateway_id)
-                    .ok_or_else(|| <Error<T, I>>::NoFinalizedHeader)?,
-            )
-            .ok_or_else(|| <Error<T, I>>::NoFinalizedHeader)?;
-            // We do a quick check here to ensure that our header chain is making progress and isn't
-            // "travelling back in time" (which could be indicative of something bad, e.g a hard-fork).
-            ensure!(best_finalized.number() < number, <Error<T, I>>::OldHeader);
-            let authority_set = <CurrentAuthoritySetMap<T, I>>::get(gateway_id)
-                // Expects authorities to be set before verify_justification
-                .ok_or_else(|| <Error<T, I>>::InvalidAuthoritySet)?;
-
-            let set_id = authority_set.set_id;
-            verify_justification_single::<T, I>(
-                &justification,
-                hash,
-                *number,
-                authority_set,
-                gateway_id,
-            )?;
-
-            // We have to incentivise authority_set update submissions in some way. Important to receive proofs of changing set, even when no transaction is included
-            let _enacted =
-                try_enact_authority_change_single::<T, I>(&finality_target, set_id, gateway_id)?;
-
-            let index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
-
-            let pruning = <MultiImportedHashes<T, I>>::try_get(gateway_id, index);
-
-            <BestFinalizedMap<T, I>>::insert(gateway_id, hash);
-            <MultiImportedHeaders<T, I>>::insert(gateway_id, hash, finality_target.clone());
-            <MultiImportedHashes<T, I>>::insert(gateway_id, index, hash);
-            <MultiImportedRoots<T, I>>::insert(
-                gateway_id,
-                hash,
-                (
-                    finality_target.extrinsics_root(),
-                    finality_target.state_root(),
-                ),
-            );
-            <RequestCountMap<T, I>>::mutate(gateway_id, |count| {
-                match count {
-                    Some(count) => *count += 1,
-                    None => *count = Some(1),
-                }
-                *count
-            });
-
-            // Update ring buffer pointer and remove old header.
-            <MultiImportedHashesPointer<T, I>>::insert(
-                gateway_id,
-                (index + 1) % T::HeadersToKeep::get(),
-            );
-
-            if let Ok(hash) = pruning {
-                log::debug!(
-                    target: LOG_TARGET,
-                    "Pruning old header: {:?} for gateway {:?}.",
-                    hash,
-                    gateway_id
-                );
-                <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
-                <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
-            }
-            log::debug!(
-                target: LOG_TARGET,
-                "Successfully imported finalized header with hash {:?} for gateway {:?}!",
-                hash,
-                gateway_id
-            );
-
-            log::debug!(
-                target: LOG_TARGET,
-                "Successfully updated gateway {:?}!",
-                gateway_id,
-            );
-            Ok(().into())
-        }
-
         #[pallet::weight(<T as pallet::Config<I>>::WeightInfo::submit_finality_proof_on_single_fork(
             headers_reversed.len() as u32,
 		))]
@@ -406,6 +287,10 @@ pub mod pallet {
         (BridgedBlockHash<T, I>, BridgedBlockHash<T, I>),
     >;
 
+     #[pallet::storage]
+    pub(super) type RelayChainId<T: Config<I>, I: 'static = ()> =
+        StorageValue<_, ChainId, OptionQuery>;
+
     /// The current GRANDPA Authority set map.
     #[pallet::storage]
     pub(super) type CurrentAuthoritySetMap<T: Config<I>, I: 'static = ()> =
@@ -476,6 +361,121 @@ pub mod pallet {
         NoParachainEntryFound,
     }
 
+    /// Verify a target header is finalized according to the given finality proof.
+    ///
+    /// It will use the underlying storage pallet to fetch information about the current
+    /// authorities and best finalized header in order to verify that the header is finalized.
+    ///
+    /// If successful in verification, it will write the target header to the underlying storage
+    /// pallet.
+    pub(crate) fn submit_relaychain_header<T: pallet::Config<I>, I>(
+        origin: OriginFor<T>,
+        finality_target: BridgedHeader<T, I>,
+        encoded_justification: Vec<u8>,
+        gateway_id: ChainId,
+    ) -> Result<(), &'static str> {
+        ensure_operational_single::<T, I>(gateway_id)?;
+        ensure_signed(origin)?;
+        ensure!(
+            <RequestCountMap<T,I>>::get(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
+            "Too many Requests"
+        );
+        let justification =
+            GrandpaJustification::<BridgedHeader<T, I>>::decode(&mut &*encoded_justification)
+                .map_err(|_| "Decode Error")?;
+
+        log::debug!(
+            target: LOG_TARGET,
+            "Going to try and finalize header {:?} gateway {:?}",
+            finality_target,
+            String::from_utf8_lossy(gateway_id.as_ref()).into_owned()
+        );
+
+        let (hash, number) = (finality_target.hash(), finality_target.number());
+
+        // In order to reach this point the bridge must have been initialized for given gateway.
+        let best_finalized = <MultiImportedHeaders<T, I>>::get(
+            gateway_id,
+            // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
+            // `ImportedHeaders` must contain an entry for `BestFinalized`.
+            <BestFinalizedMap<T, I>>::get(gateway_id)
+                .ok_or_else(|| "NoFinalizedHeader")?,
+        )
+        .ok_or_else(|| "NoFinalizedHeader")?;
+        // We do a quick check here to ensure that our header chain is making progress and isn't
+        // "travelling back in time" (which could be indicative of something bad, e.g a hard-fork).
+        ensure!(best_finalized.number() < number, <Error<T, I>>::OldHeader);
+        let authority_set = <CurrentAuthoritySetMap<T, I>>::get(gateway_id)
+            // Expects authorities to be set before verify_justification
+            .ok_or_else(|| "InvalidAuthoritySet")?;
+
+        let set_id = authority_set.set_id;
+        verify_justification_single::<T, I>(
+            &justification,
+            hash,
+            *number,
+            authority_set,
+            gateway_id,
+        )?;
+
+        // We have to incentivise authority_set update submissions in some way. Important to receive proofs of changing set, even when no transaction is included
+        let _enacted =
+            try_enact_authority_change_single::<T, I>(&finality_target, set_id, gateway_id)?;
+
+        let index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
+
+        let pruning = <MultiImportedHashes<T, I>>::try_get(gateway_id, index);
+
+        <BestFinalizedMap<T, I>>::insert(gateway_id, hash);
+        <MultiImportedHeaders<T, I>>::insert(gateway_id, hash, finality_target.clone());
+        <MultiImportedHashes<T, I>>::insert(gateway_id, index, hash);
+        <MultiImportedRoots<T, I>>::insert(
+            gateway_id,
+            hash,
+            (
+                finality_target.extrinsics_root(),
+                finality_target.state_root(),
+            ),
+        );
+        <RequestCountMap<T, I>>::mutate(gateway_id, |count| {
+            match count {
+                Some(count) => *count += 1,
+                None => *count = Some(1),
+            }
+            *count
+        });
+
+        // Update ring buffer pointer and remove old header.
+        <MultiImportedHashesPointer<T, I>>::insert(
+            gateway_id,
+            (index + 1) % T::HeadersToKeep::get(),
+        );
+
+        if let Ok(hash) = pruning {
+            log::debug!(
+                target: LOG_TARGET,
+                "Pruning old header: {:?} for gateway {:?}.",
+                hash,
+                gateway_id
+            );
+            <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
+            <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
+        }
+        log::debug!(
+            target: LOG_TARGET,
+            "Successfully imported finalized header with hash {:?} for gateway {:?}!",
+            hash,
+            gateway_id
+        );
+
+        log::debug!(
+            target: LOG_TARGET,
+            "Successfully updated gateway {:?}!",
+            gateway_id,
+        );
+        Ok(().into())
+    }
+
     /// Check the given header for a GRANDPA scheduled authority set change. If a change
     /// is found it will be enacted immediately.
     ///
@@ -536,11 +536,11 @@ pub mod pallet {
         number: BridgedBlockNumber<T, I>,
         authority_set: bp_header_chain::AuthoritySet,
         _gateway_id: ChainId,
-    ) -> Result<(), sp_runtime::DispatchError> {
+    ) -> Result<(), &'static str> {
         use bp_header_chain::justification::verify_justification;
 
         let voter_set =
-            VoterSet::new(authority_set.authorities).ok_or(<Error<T, I>>::InvalidAuthoritySet)?;
+            VoterSet::new(authority_set.authorities).ok_or("InvalidAuthoritySet")?;
         let set_id = authority_set.set_id;
 
         Ok(verify_justification::<BridgedHeader<T, I>>(
@@ -551,7 +551,7 @@ pub mod pallet {
         )
         .map_err(|e| {
             log::error!("Received invalid justification for {:?}: {:?}", hash, e);
-            <Error<T, I>>::InvalidJustification
+            "InvalidJustification"
         })?)
     }
 
@@ -699,6 +699,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         let registration_data: GrandpaRegistrationData<T::AccountId> = Decode::decode(&mut &*encoded_registration_data)
             .map_err(|_| "Registration data decoding error!")?;
 
+        if registration_data.parachain == None && !<RelayChainId<T, I>>::exists() {
+            <RelayChainId<T, I>>::set(Some(gateway_id));
+        }
+
         PalletOwnerMap::<T, I>::insert(gateway_id, &registration_data.owner);
 
         let header: BridgedHeader<T, I> = Decode::decode(&mut &registration_data.first_header[..])
@@ -765,6 +769,26 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
             log::info!("Resuming pallet operations.");
         } else {
             log::info!("Stopping pallet operations.");
+        }
+
+        Ok(())
+    }
+
+    pub fn submit_header(
+        origin: OriginFor<T>,
+        finality_target: BridgedHeader<T, I>,
+        encoded_justification: Vec<u8>,
+        gateway_id: ChainId,
+    ) -> Result<(), &'static str> {
+        if Some(gateway_id) == <RelayChainId<T, I>>::get() {
+            submit_relaychain_header::<T, I>(
+                origin,
+                finality_target,
+                encoded_justification,
+                gateway_id
+            )?;
+        } else {
+            unimplemented!()
         }
 
         Ok(())
@@ -925,14 +949,14 @@ mod tests {
         Pallet::<TestRuntime>::initialize(origin,  gateway_id, init_data.encode()).map(|_| init_data)
     }
 
-    fn submit_finality_proof(header: u8) -> frame_support::dispatch::DispatchResultWithPostInfo {
+    fn submit_finality_proof(header: u8) -> Result<(), &'static str> {
         let header = test_header(header.into());
 
         let encoded_justification = make_default_justification(&header).encode();
 
         let default_gateway: ChainId = *b"gate";
 
-        Pallet::<TestRuntime>::submit_finality_proof(
+        Pallet::<TestRuntime>::submit_header(
             Origin::signed(1),
             header,
             encoded_justification,
@@ -942,12 +966,12 @@ mod tests {
 
     fn submit_finality_proof_with_header(
         header: TestHeader,
-    ) -> frame_support::dispatch::DispatchResultWithPostInfo {
+    ) -> Result<(), &'static str> {
         let encoded_justification = make_default_justification(&header).encode();
 
         let default_gateway: ChainId = *b"gate";
 
-        Pallet::<TestRuntime>::submit_finality_proof(
+        Pallet::<TestRuntime>::submit_header(
             Origin::signed(1),
             header,
             encoded_justification,
@@ -1223,13 +1247,14 @@ mod tests {
     fn pallet_rejects_transactions_if_halted() {
         run_test(|| {
             let gateway_a: ChainId = *b"gate";
+            let _ = initialize(Origin::root());
             <IsHaltedMap<TestRuntime>>::insert(gateway_a, true);
 
             let header = test_header(1);
             let encoded_justification = make_default_justification(&header).encode();
 
             assert_noop!(
-                Pallet::<TestRuntime>::submit_finality_proof(
+                Pallet::<TestRuntime>::submit_header(
                     Origin::signed(1),
                     header,
                     encoded_justification,
@@ -1464,13 +1489,13 @@ mod tests {
             let default_gateway: ChainId = *b"gate";
 
             assert_err!(
-                Pallet::<TestRuntime>::submit_finality_proof(
+                Pallet::<TestRuntime>::submit_header(
                     Origin::signed(1),
                     header,
                     encoded_justification,
                     default_gateway,
                 ),
-                <Error<TestRuntime>>::InvalidJustification
+                "InvalidJustification"
             );
         })
     }
@@ -1487,13 +1512,13 @@ mod tests {
             let default_gateway: ChainId = *b"gate";
 
             assert_err!(
-                Pallet::<TestRuntime>::submit_finality_proof(
+                Pallet::<TestRuntime>::submit_header(
                     Origin::signed(1),
                     header,
                     encoded_justification,
                     default_gateway,
                 ),
-                <Error<TestRuntime>>::InvalidJustification
+                "InvalidJustification"
             );
         })
     }
@@ -1523,13 +1548,13 @@ mod tests {
             let encoded_justification = make_default_justification(&header).encode();
 
             assert_err!(
-                Pallet::<TestRuntime>::submit_finality_proof(
+                Pallet::<TestRuntime>::submit_header(
                     Origin::signed(1),
                     header,
                     encoded_justification,
                     default_gateway,
                 ),
-                <Error<TestRuntime>>::InvalidJustification
+                "InvalidJustification"
             );
         })
     }
@@ -1563,7 +1588,7 @@ mod tests {
             let default_gateway: ChainId = *b"gate";
 
             // Let's import our test header
-            assert_ok!(Pallet::<TestRuntime>::submit_finality_proof(
+            assert_ok!(Pallet::<TestRuntime>::submit_header(
                 Origin::signed(1),
                 header.clone(),
                 encoded_justification,
@@ -1607,7 +1632,7 @@ mod tests {
 
             // Should not be allowed to import this header
             assert_err!(
-                Pallet::<TestRuntime>::submit_finality_proof(
+                Pallet::<TestRuntime>::submit_header(
                     Origin::signed(1),
                     header,
                     encoded_justification,
@@ -1634,7 +1659,7 @@ mod tests {
 
             // Should not be allowed to import this header
             assert_err!(
-                Pallet::<TestRuntime>::submit_finality_proof(
+                Pallet::<TestRuntime>::submit_header(
                     Origin::signed(1),
                     header,
                     encoded_justification,
@@ -1691,13 +1716,13 @@ mod tests {
     #[test]
     fn rate_limiter_disallows_imports_once_limit_is_hit_in_single_block() {
         run_test(|| {
-            initialize_substrate_bridge();
+            initialize(Origin::root());
 
             assert_ok!(submit_finality_proof(1));
             assert_ok!(submit_finality_proof(2));
             assert_err!(
                 submit_finality_proof(3),
-                <Error<TestRuntime>>::TooManyRequests
+                "Too many Requests"
             );
         })
     }
@@ -1712,7 +1737,7 @@ mod tests {
                 invalid_justification.round = 42;
                 let encoded_justification = invalid_justification.encode();
 
-                Pallet::<TestRuntime>::submit_finality_proof(
+                Pallet::<TestRuntime>::submit_header(
                     Origin::signed(1),
                     header,
                     encoded_justification,
@@ -1726,7 +1751,7 @@ mod tests {
                 // Notice that the error here *isn't* `TooManyRequests`
                 assert_err!(
                     submit_invalid_request(),
-                    <Error<TestRuntime>>::InvalidJustification
+                    "InvalidJustification"
                 );
             }
 
@@ -1735,7 +1760,7 @@ mod tests {
             assert_ok!(submit_finality_proof(2));
             assert_err!(
                 submit_finality_proof(3),
-                <Error<TestRuntime>>::TooManyRequests
+                "Too many Requests"
             );
         })
     }
@@ -1755,7 +1780,7 @@ mod tests {
     #[test]
     fn rate_limiter_disallows_imports_once_limit_is_hit_across_different_blocks() {
         run_test(|| {
-            initialize_substrate_bridge();
+            initialize(Origin::root());
             assert_ok!(submit_finality_proof(1));
             assert_ok!(submit_finality_proof(2));
 
@@ -1763,7 +1788,7 @@ mod tests {
             assert_ok!(submit_finality_proof(3));
             assert_err!(
                 submit_finality_proof(4),
-                <Error<TestRuntime>>::TooManyRequests
+                "Too many Requests"
             );
         })
     }
