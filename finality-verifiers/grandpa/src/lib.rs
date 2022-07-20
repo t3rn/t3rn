@@ -823,18 +823,16 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         encoded_justification: Vec<u8>,
         gateway_id: ChainId,
     ) -> Result<(), &'static str> {
-        // if Some(gateway_id) == <RelayChainId<T, I>>::get() {
+        if Some(gateway_id) == <RelayChainId<T, I>>::get() {
             submit_relaychain_header::<T, I>(
                 origin,
                 finality_target,
                 encoded_justification,
                 gateway_id
             )
-        // } else {
-        //     unimplemented!()
-        // }
-
-        // Ok(())
+        } else {
+            unimplemented!()
+        }
     }
 
 }
@@ -950,20 +948,20 @@ mod tests {
     };
     use t3rn_primitives::bridges::test_utils::{DAVE};
 
-    fn teardown_substrate_bridge() {
-        let default_gateway: ChainId = *b"pdot";
-        // Reset storage so we can initialize the pallet again
-        BestFinalizedMap::<TestRuntime>::remove(default_gateway);
-        PalletOwnerMap::<TestRuntime>::remove(default_gateway);
-        MultiImportedRoots::<TestRuntime>::remove_prefix(default_gateway, None);
-        BestFinalizedMap::<TestRuntime>::remove(default_gateway);
-        MultiImportedHashesPointer::<TestRuntime>::remove(default_gateway);
-        MultiImportedHashes::<TestRuntime>::remove_prefix(default_gateway, None);
-        MultiImportedHeaders::<TestRuntime>::remove_prefix(default_gateway, None);
-        MultiImportedRoots::<TestRuntime>::remove_prefix(default_gateway, None);
-        RequestCountMap::<TestRuntime>::remove(default_gateway);
-        InstantiatedGatewaysMap::<TestRuntime>::kill();
-    }
+    // fn teardown_substrate_bridge() {
+    //     let default_gateway: ChainId = *b"pdot";
+    //     // Reset storage so we can initialize the pallet again
+    //     BestFinalizedMap::<TestRuntime>::remove(default_gateway);
+    //     PalletOwnerMap::<TestRuntime>::remove(default_gateway);
+    //     MultiImportedRoots::<TestRuntime>::remove_prefix(default_gateway, None);
+    //     BestFinalizedMap::<TestRuntime>::remove(default_gateway);
+    //     MultiImportedHashesPointer::<TestRuntime>::remove(default_gateway);
+    //     MultiImportedHashes::<TestRuntime>::remove_prefix(default_gateway, None);
+    //     MultiImportedHeaders::<TestRuntime>::remove_prefix(default_gateway, None);
+    //     MultiImportedRoots::<TestRuntime>::remove_prefix(default_gateway, None);
+    //     RequestCountMap::<TestRuntime>::remove(default_gateway);
+    //     InstantiatedGatewaysMap::<TestRuntime>::kill();
+    // }
 
     fn initialize_relaychain(
         origin: Origin,
@@ -1297,7 +1295,7 @@ mod tests {
     #[test]
     fn init_can_only_initialize_pallet_once() {
         run_test(|| {
-            initialize_relaychain(Origin::root());
+            let _ =initialize_relaychain(Origin::root());
             assert_noop!(
                 initialize_relaychain(Origin::root()),
                 "Already initialized"
@@ -1411,8 +1409,8 @@ mod tests {
     #[test]
     fn pallet_rejects_transactions_if_halted() {
         run_test(|| {
-            let gateway_a: ChainId = *b"gate";
-            let _ = initialize_relaychain(Origin::root());
+            let gateway_a: ChainId = *b"pdot";
+            let _ =initialize_relaychain(Origin::root());
             <IsHaltedMap<TestRuntime>>::insert(gateway_a, true);
 
             let header = test_header(1);
@@ -1434,7 +1432,7 @@ mod tests {
     fn succesfully_imports_header_with_valid_finality() {
         let default_gateway: ChainId = *b"pdot";
         run_test(|| {
-            initialize_relaychain(Origin::root());
+            let _ =initialize_relaychain(Origin::root());
             assert_ok!(submit_finality_proof(1));
 
             let header = test_header(1);
@@ -1453,7 +1451,7 @@ mod tests {
     fn succesfully_imports_header_ranges() {
         let default_gateway: ChainId = *b"pdot";
         run_test(|| {
-            initialize_relaychain(Origin::root());
+            let _ =initialize_relaychain(Origin::root());
             // generate valid headers
             let mut headers = test_header_range(0, 10, None);
 
@@ -1512,7 +1510,7 @@ mod tests {
     fn succesfully_imports_partial_header_ranges() {
         let default_gateway: ChainId = *b"pdot";
         run_test(|| {
-            initialize_relaychain(Origin::root());
+            let _ =initialize_relaychain(Origin::root());
             // generate valid headers
             let mut headers = test_header_range(0, 10, None);
             assert_ok!(submit_finality_proof_with_header(headers[1].clone()));
@@ -1564,7 +1562,7 @@ mod tests {
     fn reject_invalid_header_ranges() {
         let default_gateway: ChainId = *b"pdot";
         run_test(|| {
-            initialize_relaychain(Origin::root());
+            let _ =initialize_relaychain(Origin::root());
             // generate valid headers
             let mut headers = test_header_range(0, 10, None);
             assert_ok!(submit_finality_proof_with_header(headers[1].clone()));
@@ -1601,7 +1599,7 @@ mod tests {
     fn reject_invalid_anchor() {
         let default_gateway: ChainId = *b"pdot";
         run_test(|| {
-            initialize_relaychain(Origin::root());
+            let _ =initialize_relaychain(Origin::root());
             // generate valid headers
             let mut headers = test_header_range(0, 10, None);
             assert_ok!(submit_finality_proof_with_header(headers[1].clone()));
@@ -1641,7 +1639,7 @@ mod tests {
     #[test]
     fn rejects_justification_that_skips_authority_set_transition() {
         run_test(|| {
-            initialize_relaychain(Origin::root());
+            let _ =initialize_relaychain(Origin::root());
 
             let header = test_header(1);
 
@@ -1668,7 +1666,7 @@ mod tests {
     #[test]
     fn does_not_import_header_with_invalid_finality_proof() {
         run_test(|| {
-            initialize_relaychain(Origin::root());
+            let _ =initialize_relaychain(Origin::root());
 
             let header = test_header(1);
             let mut justification = make_default_justification(&header);
@@ -1727,7 +1725,7 @@ mod tests {
     #[test]
     fn importing_header_ensures_that_chain_is_extended() {
         run_test(|| {
-            initialize_relaychain(Origin::root());
+            let _ =initialize_relaychain(Origin::root());
 
             assert_ok!(submit_finality_proof(4));
             assert_err!(submit_finality_proof(3), Error::<TestRuntime>::OldHeader);
@@ -1738,7 +1736,7 @@ mod tests {
     #[test]
     fn importing_header_enacts_new_authority_set() {
         run_test(|| {
-            initialize_relaychain(Origin::root());
+            let _ =initialize_relaychain(Origin::root());
 
             let next_set_id = 2;
             let next_authorities = vec![(ALICE.into(), 1), (BOB.into(), 1)];
@@ -1784,7 +1782,7 @@ mod tests {
     #[test]
     fn importing_header_rejects_header_with_scheduled_change_delay() {
         run_test(|| {
-            initialize_relaychain(Origin::root());
+            let _ =initialize_relaychain(Origin::root());
 
             // Need to update the header digest to indicate that our header signals an authority set
             // change. However, the change doesn't happen until the next block.
@@ -1811,7 +1809,7 @@ mod tests {
     #[test]
     fn importing_header_rejects_header_with_forced_changes() {
         run_test(|| {
-            initialize_relaychain(Origin::root());
+            let _ =initialize_relaychain(Origin::root());
 
             // Need to update the header digest to indicate that it signals a forced authority set
             // change.
@@ -1881,7 +1879,7 @@ mod tests {
     #[test]
     fn rate_limiter_disallows_imports_once_limit_is_hit_in_single_block() {
         run_test(|| {
-            initialize_relaychain(Origin::root());
+            let _ =initialize_relaychain(Origin::root());
 
             assert_ok!(submit_finality_proof(1));
             assert_ok!(submit_finality_proof(2));
@@ -1910,7 +1908,7 @@ mod tests {
                 )
             };
 
-            initialize_relaychain(Origin::root());
+            let _ =initialize_relaychain(Origin::root());
 
             for _ in 0..<TestRuntime as Config>::MaxRequests::get() + 1 {
                 // Notice that the error here *isn't* `TooManyRequests`
@@ -1933,7 +1931,7 @@ mod tests {
     #[test]
     fn rate_limiter_allows_request_after_new_block_has_started() {
         run_test(|| {
-            initialize_relaychain(Origin::root());
+            let _ =initialize_relaychain(Origin::root());
             assert_ok!(submit_finality_proof(1));
             assert_ok!(submit_finality_proof(2));
 
@@ -1945,7 +1943,7 @@ mod tests {
     #[test]
     fn rate_limiter_disallows_imports_once_limit_is_hit_across_different_blocks() {
         run_test(|| {
-            initialize_relaychain(Origin::root());
+            let _ =initialize_relaychain(Origin::root());
             assert_ok!(submit_finality_proof(1));
             assert_ok!(submit_finality_proof(2));
 
@@ -1961,7 +1959,7 @@ mod tests {
     #[test]
     fn rate_limiter_allows_max_requests_after_long_time_with_no_activity() {
         run_test(|| {
-            initialize_relaychain(Origin::root());
+            let _ =initialize_relaychain(Origin::root());
             assert_ok!(submit_finality_proof(1));
             assert_ok!(submit_finality_proof(2));
 
@@ -1979,7 +1977,7 @@ mod tests {
         let default_gateway: ChainId = *b"pdot";
 
         run_test(|| {
-            initialize_relaychain(Origin::root());
+            let _ =initialize_relaychain(Origin::root());
             assert_ok!(submit_finality_proof(1));
             let first_header = Pallet::<TestRuntime>::best_finalized_map(default_gateway);
             next_block();
