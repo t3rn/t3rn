@@ -1006,7 +1006,6 @@ mod tests {
 
     fn initialize_parachain(
         origin: Origin,
-        chain_id: ChainId
     ) -> Result<GrandpaRegistrationData::<AccountId>, &'static str> {
         let genesis = test_header(0);
         let init_data = GrandpaRegistrationData::<AccountId> {
@@ -1156,13 +1155,14 @@ mod tests {
     }
 
     #[test]
-    fn relay_can_register_relay_with_valid_data() {
-         run_test(|| {
+    fn can_register_with_valid_data_and_signer() {
+        run_test(|| {
             assert_ok!(initialize_relaychain(Origin::root()));
-         })
+            assert_ok!(initialize_parachain(Origin::root()));
+        })
     }
 
-     #[test]
+    #[test]
     fn cant_register_duplicate_gateway_ids() {
          run_test(|| {
             assert_ok!(initialize_relaychain(Origin::root()));
@@ -1172,13 +1172,92 @@ mod tests {
     }
 
     #[test]
-    fn cant_register_as_non_root() {
+    fn cant_register_duplicate_parachain() {
+         run_test(|| {
+            assert_ok!(initialize_relaychain(Origin::root()));
+            assert_noop!(initialize_named_relaychain(Origin::root(), *b"roco"), "Duplicate relaychain");
+         })
+    }
+
+    #[test]
+    fn cant_register_parachain_without_relaychain() {
+         run_test(|| {
+            assert_noop!(initialize_parachain(Origin::root()), "No relaychain");
+         })
+    }
+
+    #[test]
+    fn cant_register_parachain_without_wrong_relaychain_id() {
+        run_test(|| {
+            assert_ok!(initialize_relaychain(Origin::root()));
+
+            let genesis = test_header(0);
+            let init_data = GrandpaRegistrationData::<AccountId> {
+                authorities: None,
+                first_header: genesis.encode(),
+                authority_set_id: None,
+                owner: 1,
+                parachain: Some(Parachain{
+                    relay_chain_id: *b"roco",
+                    id: 0
+                })
+            };
+            assert_noop!(initialize_custom_parachain(Origin::root(), *b"moon", init_data), "Invalid relaychainId");
+         })
+    }
+
+    #[test]
+    fn cant_register_relaychain_as_non_root() {
          run_test(|| {
             assert_err!(
                 initialize_relaychain(Origin::signed(1)),
                 "Bad origin"
             );
          })
+    }
+
+    #[test]
+    fn cant_register_relaychain_with_missing_authorities() {
+        run_test(|| {
+            let genesis = test_header(0);
+            let init_data = GrandpaRegistrationData::<AccountId> {
+                authorities: None,
+                first_header: genesis.encode(),
+                authority_set_id: Some(1),
+                owner: 1,
+                parachain: None
+            };
+            assert_noop!(
+                initialize_custom_relaychain(Origin::root(), *b"pdot", init_data),
+                "Relaychain parameters missing"
+            );
+         })
+    }
+
+    #[test]
+    fn cant_register_relaychain_with_missing_authority_set_id() {
+        run_test(|| {
+            let genesis = test_header(0);
+            let init_data = GrandpaRegistrationData::<AccountId> {
+                authorities: Some(t3rn_primitives::bridges::test_utils::authorities()),
+                first_header: genesis.encode(),
+                authority_set_id: None,
+                owner: 1,
+                parachain: None
+            };
+            assert_noop!(
+                initialize_custom_relaychain(Origin::root(), *b"pdot", init_data),
+                "Relaychain parameters missing"
+            );
+         })
+    }
+
+    #[test]
+    fn cant_register_parachain_as_non_root() {
+        run_test(|| {
+            assert_ok!(initialize_relaychain(Origin::root()));
+            assert_noop!(initialize_parachain(Origin::signed(1)), "Bad origin");
+        })
     }
 
     #[test]
@@ -1369,19 +1448,6 @@ mod tests {
             ));
         })
     }
-
-    // #[test]
-    // fn cant_add_two_relaychains() {
-    //     let default_gateway: ChainId = *b"pdot";
-    //     run_test(|| {
-    //         initialize_relaychain(Origin::root();
-    //         assert_ok!(submit_finality_proof(1));
-    //         assert_noop!(
-    //             initialize_custom_id(Origin::root(), *b"pdot"),
-    //             "err"
-    //         );
-    //     })
-    // }
 
     #[test]
     fn succesfully_imports_header_ranges() {
