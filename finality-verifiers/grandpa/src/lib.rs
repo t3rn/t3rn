@@ -84,6 +84,7 @@ pub type BridgedHeader<T, I> = HeaderOf<<T as Config<I>>::BridgedChain>;
 
 const LOG_TARGET: &str = "multi-finality-verifier";
 use frame_system::pallet_prelude::*;
+use crate::types::Parachain;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -291,10 +292,10 @@ pub mod pallet {
     pub(super) type RelayChainId<T: Config<I>, I: 'static = ()> =
         StorageValue<_, ChainId, OptionQuery>;
 
-    /// The current GRANDPA Authority set map.
+    /// The current GRANDPA Authority set.
     #[pallet::storage]
-    pub(super) type CurrentAuthoritySetMap<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Blake2_256, ChainId, bp_header_chain::AuthoritySet>;
+    pub(super) type CurrentAuthoritySet<T: Config<I>, I: 'static = ()> =
+        StorageValue<_, bp_header_chain::AuthoritySet, OptionQuery>;
 
     /// Optional pallet owner.
     ///
@@ -405,7 +406,7 @@ pub mod pallet {
         // We do a quick check here to ensure that our header chain is making progress and isn't
         // "travelling back in time" (which could be indicative of something bad, e.g a hard-fork).
         ensure!(best_finalized.number() < number, <Error<T, I>>::OldHeader);
-        let authority_set = <CurrentAuthoritySetMap<T, I>>::get(gateway_id)
+        let authority_set = <CurrentAuthoritySet<T, I>>::get()
             // Expects authorities to be set before verify_justification
             .ok_or_else(|| "InvalidAuthoritySet")?;
 
@@ -509,7 +510,7 @@ pub mod pallet {
 
             // Since our header schedules a change and we know the delay is 0, it must also enact
             // the change.
-            <CurrentAuthoritySetMap<T, I>>::insert(gateway_id, &next_authorities);
+            <CurrentAuthoritySet<T, I>>::put(&next_authorities);
             change_enacted = true;
 
             log::info!(
@@ -574,7 +575,7 @@ pub mod pallet {
         <MultiImportedHeaders<T, I>>::insert(gateway_id, initial_hash, header);
         // might get problematic
         let authority_set = bp_header_chain::AuthoritySet::new(authority_list, set_id);
-        <CurrentAuthoritySetMap<T, I>>::insert(gateway_id, authority_set);
+        <CurrentAuthoritySet<T, I>>::put(authority_set);
         <IsHaltedMap<T, I>>::insert(gateway_id, is_halted);
         <InstantiatedGatewaysMap<T, I>>::mutate(|gateways| {
             gateways.push(gateway_id);
@@ -699,10 +700,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         let registration_data: GrandpaRegistrationData<T::AccountId> = Decode::decode(&mut &*encoded_registration_data)
             .map_err(|_| "Registration data decoding error!")?;
 
-        if registration_data.parachain == None && !<RelayChainId<T, I>>::exists() {
-            <RelayChainId<T, I>>::set(Some(gateway_id));
-        }
-
         PalletOwnerMap::<T, I>::insert(gateway_id, &registration_data.owner);
 
         let header: BridgedHeader<T, I> = Decode::decode(&mut &registration_data.first_header[..])
@@ -780,18 +777,18 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         encoded_justification: Vec<u8>,
         gateway_id: ChainId,
     ) -> Result<(), &'static str> {
-        if Some(gateway_id) == <RelayChainId<T, I>>::get() {
+        // if Some(gateway_id) == <RelayChainId<T, I>>::get() {
             submit_relaychain_header::<T, I>(
                 origin,
                 finality_target,
                 encoded_justification,
                 gateway_id
-            )?;
-        } else {
-            unimplemented!()
-        }
+            )
+        // } else {
+        //     unimplemented!()
+        // }
 
-        Ok(())
+        // Ok(())
     }
 
 }
@@ -1100,7 +1097,7 @@ mod tests {
                 Some(header.hash())
             );
             assert_eq!(
-                CurrentAuthoritySetMap::<TestRuntime>::get(default_gateway)
+                CurrentAuthoritySet::<TestRuntime>::get()
                     .unwrap()
                     .authorities,
                 authority_list()
@@ -1142,7 +1139,6 @@ mod tests {
     #[test]
     fn pallet_owner_may_change_owner() {
         run_test(|| {
-            PalletOwner::<TestRuntime>::put(2);
             let default_gateway: ChainId = *b"gate";
 
             assert_ok!(Pallet::<TestRuntime>::set_owner(
@@ -1283,6 +1279,19 @@ mod tests {
             ));
         })
     }
+
+    // #[test]
+    // fn cant_add_two_relaychains() {
+    //     let default_gateway: ChainId = *b"gate";
+    //     run_test(|| {
+    //         initialize_substrate_bridge();
+    //         assert_ok!(submit_finality_proof(1));
+    //         assert_noop!(
+    //             initialize_custom_id(Origin::root(), *b"pdot"),
+    //             "err"
+    //         );
+    //     })
+    // }
 
     #[test]
     fn succesfully_imports_header_ranges() {
@@ -1607,7 +1616,7 @@ mod tests {
 
             // Make sure that the authority set actually changed upon importing our header
             assert_eq!(
-                <CurrentAuthoritySetMap<TestRuntime>>::get(default_gateway),
+                <CurrentAuthoritySet<TestRuntime>>::get(),
                 Some(bp_header_chain::AuthoritySet::new(
                     next_authorities,
                     next_set_id
