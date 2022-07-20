@@ -51,7 +51,7 @@ use bp_header_chain::{justification::GrandpaJustification, InitializationData};
 use bp_runtime::{BlockNumberOf, Chain, ChainId, HashOf, HasherOf, HeaderOf};
 
 use finality_grandpa::voter_set::VoterSet;
-use frame_support::{ensure, pallet_prelude::*};
+use frame_support::{ensure, pallet_prelude::*, StorageHasher};
 use frame_system::{ensure_signed, RawOrigin};
 use scale_info::prelude::string::String;
 use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
@@ -60,6 +60,7 @@ use sp_std::vec::Vec;
 use sp_core::crypto::ByteArray;
 mod types;
 use types::{GrandpaRegistrationData};
+use sp_trie::{read_trie_value, LayoutV1, StorageProof};
 
 #[cfg(test)]
 mod mock;
@@ -84,7 +85,7 @@ pub type BridgedHeader<T, I> = HeaderOf<<T as Config<I>>::BridgedChain>;
 
 const LOG_TARGET: &str = "multi-finality-verifier";
 use frame_system::pallet_prelude::*;
-use crate::types::Parachain;
+use crate::types::{Parachain, RelaychainHeaderData, ParachainHeaderData};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -375,29 +376,23 @@ pub mod pallet {
     /// If successful in verification, it will write the target header to the underlying storage
     /// pallet.
     pub(crate) fn submit_relaychain_header<T: pallet::Config<I>, I>(
-        origin: OriginFor<T>,
-        finality_target: BridgedHeader<T, I>,
-        encoded_justification: Vec<u8>,
         gateway_id: ChainId,
+        header: BridgedHeader<T, I>,
+        justification: GrandpaJustification::<BridgedHeader<T, I>>
     ) -> Result<(), &'static str> {
-        ensure_operational_single::<T, I>(gateway_id)?;
-        ensure_signed(origin)?;
         ensure!(
             <RequestCountMap<T,I>>::get(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
             "Too many Requests"
         );
-        let justification =
-            GrandpaJustification::<BridgedHeader<T, I>>::decode(&mut &*encoded_justification)
-                .map_err(|_| "Decode Error")?;
 
         log::debug!(
             target: LOG_TARGET,
             "Going to try and finalize header {:?} gateway {:?}",
-            finality_target,
+            header,
             String::from_utf8_lossy(gateway_id.as_ref()).into_owned()
         );
 
-        let (hash, number) = (finality_target.hash(), finality_target.number());
+        let (hash, number) = (header.hash(), header.number());
 
         // In order to reach this point the bridge must have been initialized for given gateway.
         let best_finalized = <MultiImportedHeaders<T, I>>::get(
@@ -426,21 +421,21 @@ pub mod pallet {
 
         // We have to incentivise authority_set update submissions in some way. Important to receive proofs of changing set, even when no transaction is included
         let _enacted =
-            try_enact_authority_change_single::<T, I>(&finality_target, set_id, gateway_id)?;
+            try_enact_authority_change_single::<T, I>(&header, set_id, gateway_id)?;
 
         let index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
 
         let pruning = <MultiImportedHashes<T, I>>::try_get(gateway_id, index);
 
         <BestFinalizedMap<T, I>>::insert(gateway_id, hash);
-        <MultiImportedHeaders<T, I>>::insert(gateway_id, hash, finality_target.clone());
+        <MultiImportedHeaders<T, I>>::insert(gateway_id, hash, header.clone());
         <MultiImportedHashes<T, I>>::insert(gateway_id, index, hash);
         <MultiImportedRoots<T, I>>::insert(
             gateway_id,
             hash,
             (
-                finality_target.extrinsics_root(),
-                finality_target.state_root(),
+                header.extrinsics_root(),
+                header.state_root(),
             ),
         );
         <RequestCountMap<T, I>>::mutate(gateway_id, |count| {
@@ -479,6 +474,69 @@ pub mod pallet {
             "Successfully updated gateway {:?}!",
             gateway_id,
         );
+        Ok(().into())
+    }
+
+    /// Verify a target parachain header can be verified with its relaychains storage_proof
+    ///
+    /// It will use the underlying storage pallet to fetch the relaychains header, which is then used to verify the storage_proof
+    ///
+    /// If successful in verification, it will write the target header to the underlying storage
+    /// pallet.
+    ///
+    pub(crate) fn submit_parachain_header<T: pallet::Config<I>, I>(
+        gateway_id: ChainId,
+        proof: StorageProof,
+        relay_block_hash: BridgedBlockHash<T, I>
+    ) -> Result<(), &'static str> {
+        let parachain = <ParachainIdMap<T, I>>::try_get(gateway_id)
+            .map_err(|_| "Parachain not registered")?;
+
+        let header: BridgedHeader<T, I> = verify_storage_proof::<T, I>(
+            relay_block_hash,
+            proof,
+            parachain
+        )?;
+
+        let hash = header.hash();
+        let index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
+        let pruning = <MultiImportedHashes<T, I>>::try_get(gateway_id, index);
+
+        <BestFinalizedMap<T, I>>::insert(gateway_id, hash);
+
+        <MultiImportedHeaders<T, I>>::insert(gateway_id, hash, header.clone());
+        <MultiImportedHashes<T, I>>::insert(gateway_id, index, hash);
+        <MultiImportedRoots<T, I>>::insert(
+            gateway_id,
+            hash,
+            (header.extrinsics_root(), header.state_root()),
+        );
+
+        <RequestCountMap<T, I>>::mutate(gateway_id, |count| {
+            match count {
+                Some(count) => *count += 1,
+                None => *count = Some(1),
+            }
+            *count
+        });
+
+        // Update ring buffer pointer and remove old header.
+        <MultiImportedHashesPointer<T, I>>::insert(
+            gateway_id,
+            (index + 1) % T::HeadersToKeep::get(),
+        );
+
+        if let Ok(hash) = pruning {
+            log::debug!(
+                target: LOG_TARGET,
+                "Pruning old header: {:?} for gateway {:?}.",
+                hash,
+                gateway_id
+            );
+            <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
+            <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
+        }
+
         Ok(().into())
     }
 
@@ -675,56 +733,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         Ok(parse(storage_proof_checker))
     }
 
-    // pub fn submit_parachain_header(
-    //     _block_hash: Vec<u8>,
-    //     gateway_id: ChainId,
-    //     _proof: Vec<Vec<u8>>,
-    //     header: BridgedHeader<T, I>,
-    // ) -> DispatchResultWithPostInfo {
-    //     ensure_operational_single::<T, I>(gateway_id)?;
-    //
-    //     let hash = header.hash();
-    //     let index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
-    //     let pruning = <MultiImportedHashes<T, I>>::try_get(gateway_id, index);
-    //
-    //     <BestFinalizedMap<T, I>>::insert(gateway_id, hash);
-    //
-    //     <MultiImportedHeaders<T, I>>::insert(gateway_id, hash, header.clone());
-    //     <MultiImportedHashes<T, I>>::insert(gateway_id, index, hash);
-    //     <MultiImportedRoots<T, I>>::insert(
-    //         gateway_id,
-    //         hash,
-    //         (header.extrinsics_root(), header.state_root()),
-    //     );
-    //
-    //     <RequestCountMap<T, I>>::mutate(gateway_id, |count| {
-    //         match count {
-    //             Some(count) => *count += 1,
-    //             None => *count = Some(1),
-    //         }
-    //         *count
-    //     });
-    //
-    //     // Update ring buffer pointer and remove old header.
-    //     <MultiImportedHashesPointer<T, I>>::insert(
-    //         gateway_id,
-    //         (index + 1) % T::HeadersToKeep::get(),
-    //     );
-    //
-    //     if let Ok(hash) = pruning {
-    //         log::debug!(
-    //             target: LOG_TARGET,
-    //             "Pruning old header: {:?} for gateway {:?}.",
-    //             hash,
-    //             gateway_id
-    //         );
-    //         <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
-    //         <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
-    //     }
-    //
-    //     Ok(().into())
-    // }
-
     pub fn initialize(
         origin: T::Origin,
         gateway_id: ChainId,
@@ -819,19 +827,29 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
     pub fn submit_header(
         origin: OriginFor<T>,
-        finality_target: BridgedHeader<T, I>,
-        encoded_justification: Vec<u8>,
         gateway_id: ChainId,
+        encoded_header_data: Vec<u8>
     ) -> Result<(), &'static str> {
+        ensure_operational_single::<T, I>(gateway_id)?;
+        ensure_signed(origin)?;
         if Some(gateway_id) == <RelayChainId<T, I>>::get() {
+            let data: RelaychainHeaderData<BridgedHeader<T, I>> = Decode::decode(&mut &*encoded_header_data)
+                .map_err(|_| "Error decoding relaychain header data")?;
+
             submit_relaychain_header::<T, I>(
-                origin,
-                finality_target,
-                encoded_justification,
-                gateway_id
+                gateway_id,
+                data.header,
+                data.justification
             )
         } else {
-            unimplemented!()
+            let data: ParachainHeaderData<BridgedBlockHash<T, I>> = Decode::decode(&mut &*encoded_header_data)
+                .map_err(|_| "Error decoding parachain header data")?;
+
+            submit_parachain_header::<T, I>(
+                gateway_id,
+                data.proof,
+                data.relay_block_hash
+            )
         }
     }
 
@@ -915,6 +933,36 @@ pub(crate) fn find_forced_change<H: HeaderT>(
         .convert_first(|l| l.try_to(id).and_then(filter_log))
 }
 
+pub(crate) fn verify_storage_proof<T: Config<I>, I: 'static>(
+    relay_block_hash: BridgedBlockHash<T, I>,
+    proof: StorageProof,
+    parachain: Parachain
+) -> Result<BridgedHeader<T, I>, &'static str> {
+    // partial StorageKey for Paras_Heads. We now need to append the parachain_id as LE-u32 to generate the parachains StorageKey
+    // This is a bit unclean, but it makes no sense to hash the StorageKey for each exec
+    let mut key: Vec<u8> = vec![205,113,11,48,189,46,171,3,82,221,204,38,65,122,161,148,27,60,37,47,203,41,216,142,255,79,61,229,222,68,118,195];
+    let mut arg = Twox64Concat::hash(parachain.id.encode().as_ref());
+    key.append(&mut arg); // complete storage key
+
+    let (_, storage_root) = <MultiImportedRoots<T, I>>::get(parachain.relay_chain_id, relay_block_hash)
+        .ok_or("Relaychain storage root not available")?;
+
+    let db = proof.into_memory_db::<BridgedBlockHasher<T, I>>();
+    let res = read_trie_value::<LayoutV1<BridgedBlockHasher<T, I>>, _>(&db, &storage_root, key.as_ref());
+
+    return match res {
+        Ok(Some(data)) => {
+            // Not ideal, but can't come up with something more concise
+            let encoded_header: Vec<u8> = Decode::decode(&mut &data[..]).map_err(|_| "Header decoding error")?;
+            let header: BridgedHeader<T, I> = Decode::decode(&mut &*encoded_header).map_err(|_| "Header decoding error")?;
+            Ok(header)
+        },
+        _ => {
+            Err("Parachain header verification error")
+        }
+    }
+}
+
 /// (Re)initialize bridge with given header for using it in `pallet-bridge-messages` benchmarks.
 #[cfg(feature = "runtime-benchmarks")]
 pub fn initialize_for_benchmarks<T: Config<I>, I: 'static>(header: BridgedHeader<T, I>) {
@@ -948,6 +996,7 @@ mod tests {
     };
     use t3rn_primitives::bridges::test_utils::{DAVE};
 
+    use crate::types::{RelaychainHeaderData, ParachainHeaderData};
     // fn teardown_substrate_bridge() {
     //     let default_gateway: ChainId = *b"pdot";
     //     // Reset storage so we can initialize the pallet again
@@ -1050,30 +1099,36 @@ mod tests {
     fn submit_finality_proof(header: u8) -> Result<(), &'static str> {
         let header = test_header(header.into());
 
-        let encoded_justification = make_default_justification(&header).encode();
+        let justification = make_default_justification(&header);
 
         let default_gateway: ChainId = *b"pdot";
+        let data = RelaychainHeaderData::<TestHeader> {
+            header,
+            justification
+        };
 
         Pallet::<TestRuntime>::submit_header(
             Origin::signed(1),
-            header,
-            encoded_justification,
             default_gateway,
+            data.encode()
         )
     }
 
     fn submit_finality_proof_with_header(
         header: TestHeader,
     ) -> Result<(), &'static str> {
-        let encoded_justification = make_default_justification(&header).encode();
-
+        let justification = make_default_justification(&header);
         let default_gateway: ChainId = *b"pdot";
+
+        let data = RelaychainHeaderData::<TestHeader> {
+            header,
+            justification
+        };
 
         Pallet::<TestRuntime>::submit_header(
             Origin::signed(1),
-            header,
-            encoded_justification,
             default_gateway,
+            data.encode()
         )
     }
 
@@ -1414,14 +1469,18 @@ mod tests {
             <IsHaltedMap<TestRuntime>>::insert(gateway_a, true);
 
             let header = test_header(1);
-            let encoded_justification = make_default_justification(&header).encode();
+            let justification = make_default_justification(&header);
+
+            let data = RelaychainHeaderData::<TestHeader> {
+                header,
+                justification
+            };
 
             assert_noop!(
                 Pallet::<TestRuntime>::submit_header(
                     Origin::signed(1),
-                    header,
-                    encoded_justification,
                     gateway_a,
+                    data.encode(),
                 ),
                 Error::<TestRuntime>::Halted,
             );
@@ -1647,16 +1706,20 @@ mod tests {
                 set_id: 2,
                 ..Default::default()
             };
-            let encoded_justification = make_justification_for_header(params).encode();
+            let justification = make_justification_for_header(params);
+
+            let data = RelaychainHeaderData::<TestHeader> {
+                header,
+                justification
+            };
 
             let default_gateway: ChainId = *b"pdot";
 
             assert_err!(
                 Pallet::<TestRuntime>::submit_header(
                     Origin::signed(1),
-                    header,
-                    encoded_justification,
                     default_gateway,
+                    data.encode()
                 ),
                 "InvalidJustification"
             );
@@ -1671,15 +1734,19 @@ mod tests {
             let header = test_header(1);
             let mut justification = make_default_justification(&header);
             justification.round = 42;
-            let encoded_justification = justification.encode();
+            let justification = justification;
+
+            let data = RelaychainHeaderData::<TestHeader> {
+                header,
+                justification
+            };
             let default_gateway: ChainId = *b"pdot";
 
             assert_err!(
                 Pallet::<TestRuntime>::submit_header(
                     Origin::signed(1),
-                    header,
-                    encoded_justification,
                     default_gateway,
+                    data.encode()
                 ),
                 "InvalidJustification"
             );
@@ -1708,14 +1775,18 @@ mod tests {
 
             let header = test_header(2);
             // this justification contains ALICE, BOB and CHARLIE, to it will be invalid
-            let encoded_justification = make_default_justification(&header).encode();
+            let justification = make_default_justification(&header);
+
+            let data = RelaychainHeaderData::<TestHeader> {
+                header,
+                justification
+            };
 
             assert_err!(
                 Pallet::<TestRuntime>::submit_header(
                     Origin::signed(1),
-                    header,
-                    encoded_justification,
                     default_gateway,
+                    data.encode()
                 ),
                 "InvalidJustification"
             );
@@ -1746,16 +1817,19 @@ mod tests {
             let mut header = test_header(2);
             header.digest = change_log(0);
 
-            let encoded_justification = make_default_justification(&header).encode();
+            let justification = make_default_justification(&header);
+            let data = RelaychainHeaderData::<TestHeader> {
+                header: header.clone(),
+                justification
+            };
 
             let default_gateway: ChainId = *b"pdot";
 
             // Let's import our test header
             assert_ok!(Pallet::<TestRuntime>::submit_header(
                 Origin::signed(1),
-                header.clone(),
-                encoded_justification,
                 default_gateway,
+                data.encode()
             ));
 
             // Make sure that our header is the best finalized
@@ -1789,7 +1863,11 @@ mod tests {
             let mut header = test_header(2);
             header.digest = change_log(1);
 
-            let encoded_justification = make_default_justification(&header).encode();
+            let justification = make_default_justification(&header);
+            let data = RelaychainHeaderData::<TestHeader> {
+                header,
+                justification
+            };
 
             let default_gateway: ChainId = *b"pdot";
 
@@ -1797,9 +1875,8 @@ mod tests {
             assert_err!(
                 Pallet::<TestRuntime>::submit_header(
                     Origin::signed(1),
-                    header,
-                    encoded_justification,
                     default_gateway,
+                    data.encode()
                 ),
                 <Error<TestRuntime>>::UnsupportedScheduledChange
             );
@@ -1816,7 +1893,12 @@ mod tests {
             let mut header = test_header(2);
             header.digest = forced_change_log(0);
 
-            let encoded_justification = make_default_justification(&header).encode();
+            let justification = make_default_justification(&header);
+
+            let data = RelaychainHeaderData::<TestHeader> {
+                header,
+                justification
+            };
 
             let default_gateway: ChainId = *b"pdot";
 
@@ -1824,9 +1906,8 @@ mod tests {
             assert_err!(
                 Pallet::<TestRuntime>::submit_header(
                     Origin::signed(1),
-                    header,
-                    encoded_justification,
                     default_gateway,
+                    data.encode()
                 ),
                 <Error<TestRuntime>>::UnsupportedScheduledChange
             );
@@ -1898,13 +1979,16 @@ mod tests {
                 let header = test_header(1);
                 let mut invalid_justification = make_default_justification(&header);
                 invalid_justification.round = 42;
-                let encoded_justification = invalid_justification.encode();
+                let justification = invalid_justification;
+                let data = RelaychainHeaderData::<TestHeader> {
+                    header,
+                    justification
+                };
 
                 Pallet::<TestRuntime>::submit_header(
                     Origin::signed(1),
-                    header,
-                    encoded_justification,
                     default_gateway,
+                    data.encode()
                 )
             };
 

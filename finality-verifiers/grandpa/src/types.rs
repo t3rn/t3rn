@@ -1,7 +1,9 @@
 use sp_finality_grandpa::{AuthorityId, SetId};
 use sp_std::{vec::Vec};
 use codec::{Encode, Decode};
-use crate::TypeInfo;
+use sp_trie::StorageProof;
+use t3rn_primitives::bridges::header_chain::justification::GrandpaJustification;
+use crate::{TypeInfo};
 
 pub type ChainId = [u8; 4];
 
@@ -22,4 +24,16 @@ pub struct GrandpaRegistrationData<T> {
     pub authority_set_id: Option<SetId>,
     pub owner: T,
     pub parachain: Option<Parachain>
+}
+
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug)]
+pub struct RelaychainHeaderData<Header: sp_runtime::traits::Header> {
+    pub header: Header,
+    pub justification: GrandpaJustification::<Header>
+}
+
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug)]
+pub struct ParachainHeaderData<Hash> {
+    pub relay_block_hash: Hash, // relaychain header hash that contains the parachains header
+    pub proof: StorageProof,
 }
