@@ -18,8 +18,8 @@ pub struct Parachain {
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub struct GrandpaRegistrationData<T> {
     pub first_header: Vec<u8>,
-    pub authorities: Vec<AuthorityId>,
-    pub authority_set_id: SetId,
+    pub authorities: Option<Vec<AuthorityId>>,
+    pub authority_set_id: Option<SetId>,
     pub owner: T,
     pub parachain: Option<Parachain>
 }

@@ -266,8 +266,8 @@
     },
     "GrandpaRegistrationData": {
         "first_header": "Vec<u8>",
-        "authorities": "Vec<AuthorityId>",
-        "authority_set_id": "SetId",
+        "authorities": "Option<Vec<AuthorityId>>",
+        "authority_set_id": "Option<SetId>",
         "owner": "AccountId",
         "parachain": "Option<Parachain>"
     },
