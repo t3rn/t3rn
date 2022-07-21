@@ -739,16 +739,12 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         encoded_registration_data: Vec<u8>,
     ) -> Result<(), &'static str> {
         ensure_owner_or_root_single::<T, I>(origin.clone(), gateway_id)?;
-
         let init_allowed = !<BestFinalizedMap<T, I>>::contains_key(gateway_id);
         ensure!(init_allowed, "Already initialized");
-
         let registration_data: GrandpaRegistrationData<T::AccountId> = Decode::decode(&mut &*encoded_registration_data)
             .map_err(|_| "Registration data decoding error!")?;
-
         let header: BridgedHeader<T, I> = Decode::decode(&mut &registration_data.first_header[..])
             .map_err(|_| "Decoding error: received GenericPrimitivesHeader -> CurrentHeader<T>")?;
-
         match registration_data.parachain {
             Some(parachain) => initialize_para_chain::<T, I>(header, false, gateway_id, registration_data.owner, parachain),
             None => {
@@ -940,7 +936,7 @@ pub(crate) fn verify_storage_proof<T: Config<I>, I: 'static>(
 ) -> Result<BridgedHeader<T, I>, &'static str> {
     // partial StorageKey for Paras_Heads. We now need to append the parachain_id as LE-u32 to generate the parachains StorageKey
     // This is a bit unclean, but it makes no sense to hash the StorageKey for each exec
-    let mut key: Vec<u8> = vec![205,113,11,48,189,46,171,3,82,221,204,38,65,122,161,148,27,60,37,47,203,41,216,142,255,79,61,229,222,68,118,195];
+    let mut key: Vec<u8> = [205,113,11,48,189,46,171,3,82,221,204,38,65,122,161,148,27,60,37,47,203,41,216,142,255,79,61,229,222,68,118,195].to_vec();
     let mut arg = Twox64Concat::hash(parachain.id.encode().as_ref());
     key.append(&mut arg); // complete storage key
 

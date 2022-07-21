@@ -126,6 +126,8 @@ class CircuitCLI {
                         this.exportData(transactionArgs, fileName)
                     } else {
                         // @ts-ignore
+                        transactionArgs.relaychainHeaderData = transactionArgs.relaychainHeaderData.toHex() // We submit these encoded. Cleaner solution needed
+                        // @ts-ignore
                         this.circuitRelayer.submitHeader(Object.values(transactionArgs))
                             .then(() => {
                                 console.log("Registered and Activated!")

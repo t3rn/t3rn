@@ -30,7 +30,7 @@ num-traits          = { version = "0.2", default-features = false }
 hash-db             = { version = "0.15.2", default-features = false }
 sp-trie             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 sp-io               = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-t3rn-primitives     = { path = "../../primitives" }
+t3rn-primitives     = { path = "../../primitives", default-features = false }
 #
 [dev-dependencies]
 pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }

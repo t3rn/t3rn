@@ -68,8 +68,8 @@ pub mod pallet {
         SetOwner(ChainId, Vec<u8>),
         /// Gateway was set operational. [ChainId, bool]
         SetOperational(ChainId, bool),
-        // Emits error msg of function call
-        // Error(ErrorMsg),
+        /// Header was successfully added
+        HeaderSubmitted(ChainId),
     }
 
     // Errors inform users that something went wrong.
@@ -109,6 +109,7 @@ pub mod pallet {
             allowed_side_effects: Vec<AllowedSideEffect>,
             encoded_registration_data: Vec<u8>
         ) -> DispatchResultWithPostInfo {
+            // ToDo xdns record is written also when the calls after this fail!!!
             <T as Config>::Xdns::add_new_xdns_record(
                 origin.clone(),
                 url,
@@ -196,11 +197,46 @@ pub mod pallet {
                      Self::deposit_event(Event::SetOperational(gateway_id, operational));
                      return Ok(().into())
                 },
-                Err(_msg) => {
+                Err(msg) => {
+                    log::info!("{:?}", msg);
                     return Err(Error::<T>::SetOperationalError.into())
                 }
             }
         }
+
+        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+        pub fn submit_header(
+            origin: OriginFor<T>,
+            gateway_id: ChainId,
+            encoded_header_data: Vec<u8>
+        ) -> DispatchResultWithPostInfo {
+            let vendor_result = <T as Config>::Xdns::get_gateway_vendor(&gateway_id);
+
+            let vendor = match vendor_result {
+                Ok(vendor) => vendor,
+                Err(_msg) => {
+                    log::info!("GatewayVendorNotFound");
+                    return Err(Error::<T>::GatewayVendorNotFound.into())
+                }
+            };
+
+            let res = match vendor {
+                GatewayVendor::Rococo =>  pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::submit_header(origin, gateway_id, encoded_header_data),
+                _ => unimplemented!()
+            };
+
+            match res {
+                Ok(_) => {
+                    Self::deposit_event(Event::HeaderSubmitted(gateway_id));
+                    return Ok(().into())
+                 },
+                Err(msg) => {
+                    log::info!("{:?}", msg);
+                    return Err(Error::<T>::SubmitHeaderError.into())
+                }
+            }
+        }
+
     }
 }
 

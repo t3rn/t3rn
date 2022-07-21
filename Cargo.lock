@@ -7056,6 +7056,8 @@ dependencies = [
  "frame-system",
  "hash-db",
  "hex",
+ "hex-literal 0.2.2",
+ "log",
  "pallet-balances",
  "pallet-grandpa-finality-verifier",
  "pallet-sudo",

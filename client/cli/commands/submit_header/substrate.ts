@@ -6,7 +6,6 @@ export const submitParachainHeader = async () => {
 }
 
 export const fetchRelaychainArgs = async (circuitApi: any, targetApi: any, gatewayId: string, blockNumber: number) => {
-    console.log(blockNumber)
     const finalityProof = await targetApi.rpc.grandpa.proveFinality(blockNumber);
     const {blockHash, justification} = decodeFinalityProof(finalityProof, circuitApi)
     const header = await targetApi.rpc.chain.getHeader(blockHash);
