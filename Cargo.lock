@@ -4172,7 +4172,7 @@ checksum = "437f8808009c031df3c1d532c8fd7e3d73239dfe522ebf0b94b5e34d5d01044b"
 dependencies = [
  "async-channel",
  "castaway",
- "crossbeam-utils 0.7.2",
+ "crossbeam-utils 0.8.8",
  "curl",
  "curl-sys",
  "encoding_rs",
@@ -5980,6 +5980,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "num"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "43db66d1170d347f9a065114077f7dccb00c1b9478c89384490a3425279a4606"
+dependencies = [
+ "num-complex",
+ "num-integer",
+ "num-iter",
+ "num-rational 0.4.0",
+ "num-traits",
+]
+
+[[package]]
 name = "num-bigint"
 version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6016,6 +6029,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2cc698a63b549a70bc047073d2949cce27cd1c7b0a4a862d08a8031bc2801db"
 dependencies = [
  "autocfg",
+ "num-traits",
+]
+
+[[package]]
+name = "num-iter"
+version = "0.1.43"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7d03e6c028c5dc5cac6e2dec0efda81fc887605bb3d884578bb6d6bf7514e252"
+dependencies = [
+ "autocfg",
+ "num-integer",
  "num-traits",
 ]
 
@@ -7354,7 +7378,7 @@ dependencies = [
  "sp-sandbox",
  "sp-std",
  "t3rn-primitives",
- "t3rn-sdk-primitives",
+ "t3rn-sdk-primitives 0.0.1-rc8",
  "wasm-instrument",
  "wasmi-validation",
 ]
@@ -12620,7 +12644,7 @@ dependencies = [
  "sp-std",
  "sp-trie",
  "sp-version",
- "t3rn-sdk-primitives",
+ "t3rn-sdk-primitives 0.0.1-rc8 (registry+https://github.com/rust-lang/crates.io-index)",
  "t3rn-types 0.0.1",
 ]
 
@@ -12663,14 +12687,26 @@ dependencies = [
 [[package]]
 name = "t3rn-sdk-primitives"
 version = "0.0.1-rc8"
-source = "registry+https://github.com/t3rn/registry-index.git"
-checksum = "4e4b381cbdb82fd7504853514b35d8ad2da6d371948f2662943d73c93f37f771"
+dependencies = [
+ "arrayvec 0.7.2",
+ "cfg-if 1.0.0",
+ "num",
+ "parity-scale-codec 3.1.2",
+ "scale-info 2.1.1",
+ "t3rn-types 0.0.1 (registry+https://github.com/t3rn/registry-index.git)",
+]
+
+[[package]]
+name = "t3rn-sdk-primitives"
+version = "0.0.1-rc8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f757594f92c1f5e8aa7578d7326dcc297ad4ee3920cb8ebf81c4fdbbe1ae2c8f"
 dependencies = [
  "arrayvec 0.7.2",
  "cfg-if 1.0.0",
  "parity-scale-codec 3.1.2",
  "scale-info 2.1.1",
- "t3rn-types 0.0.1 (registry+https://github.com/t3rn/registry-index.git)",
+ "t3rn-types 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -12679,6 +12715,7 @@ version = "0.0.1"
 dependencies = [
  "hex",
  "hex-literal 0.3.4",
+ "num",
  "parity-scale-codec 3.1.2",
  "primitive-types 0.11.1",
  "scale-info 2.1.1",
@@ -12687,6 +12724,17 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
+]
+
+[[package]]
+name = "t3rn-types"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c1717308e10e053e3db5909651fd3dda4264406e9c78511113b905acd0cd5c37"
+dependencies = [
+ "parity-scale-codec 3.1.2",
+ "primitive-types 0.11.1",
+ "scale-info 2.1.1",
 ]
 
 [[package]]
@@ -13249,7 +13297,7 @@ dependencies = [
  "chrono",
  "lazy_static",
  "matchers",
- "parking_lot 0.9.0",
+ "parking_lot 0.11.2",
  "regex",
  "serde",
  "serde_json",
