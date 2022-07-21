@@ -19,9 +19,11 @@ pub mod pallet {
     use t3rn_primitives::{xdns::Xdns};
     use t3rn_primitives::{
         portal::{RococoBridge},
-        ChainId, GatewayVendor,
+        abi::{GatewayABIConfig},
+        ChainId, EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor, GatewayGenesisConfig,
     };
     use t3rn_primitives::portal::RegistrationData;
+    use t3rn_primitives::xdns::AllowedSideEffect;
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
@@ -84,7 +86,9 @@ pub mod pallet {
         /// Finality Verifier owner can't be set.
         SetOwnerError,
         /// Finality Verifiers operational status can't be updated
-        SetOperationalError
+        SetOperationalError,
+        /// The header could not be added
+        SubmitHeaderError
     }
 
     // Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -95,29 +99,37 @@ pub mod pallet {
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
         pub fn register_gateway(
             origin: OriginFor<T>,
-            registration_data: RegistrationData
+            url: Vec<u8>,
+            gateway_id: ChainId,
+            gateway_abi: GatewayABIConfig,
+            gateway_vendor: GatewayVendor, // Maps to FV
+            gateway_type: GatewayType,
+            gateway_genesis: GatewayGenesisConfig,
+            gateway_sys_props: GatewaySysProps,
+            allowed_side_effects: Vec<AllowedSideEffect>,
+            encoded_registration_data: Vec<u8>
         ) -> DispatchResultWithPostInfo {
             <T as Config>::Xdns::add_new_xdns_record(
                 origin.clone(),
-                registration_data.url,
-                registration_data.gateway_id,
+                url,
+                gateway_id,
                 None,
-                registration_data.gateway_abi.clone(),
-                registration_data.gateway_vendor.clone(),
-                registration_data.gateway_type.clone(),
-                registration_data.gateway_genesis,
-                registration_data.gateway_sys_props.clone(),
-                registration_data.allowed_side_effects.clone(),
+                gateway_abi.clone(),
+                gateway_vendor.clone(),
+                gateway_type.clone(),
+                gateway_genesis,
+                gateway_sys_props.clone(),
+                allowed_side_effects.clone(),
             )?;
 
-            let res = match registration_data.gateway_vendor {
-                GatewayVendor::Rococo =>  pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::initialize(origin, registration_data.gateway_id, registration_data.encoded_registration_data),
+            let res = match gateway_vendor {
+                GatewayVendor::Rococo =>  pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::initialize(origin, gateway_id, encoded_registration_data),
                 _ => return Err(Error::<T>::UnimplementedGatewayVendor.into())
             };
 
             match res {
                 Ok(_) => {
-                     Self::deposit_event(Event::GatewayRegistered(registration_data.gateway_id));
+                     Self::deposit_event(Event::GatewayRegistered(gateway_id));
                      return Ok(().into())
                 },
                 Err(_err) => {
@@ -164,6 +176,7 @@ pub mod pallet {
             gateway_id: ChainId,
             operational: bool
         ) -> DispatchResultWithPostInfo {
+            // ToDo find more concise way of doing this
             let vendor_result = <T as Config>::Xdns::get_gateway_vendor(&gateway_id);
 
             let vendor = match vendor_result {

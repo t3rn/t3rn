@@ -19,12 +19,19 @@
 use codec::{Decode};
 use frame_support::{assert_noop, assert_ok};
 use hex;
+use hex_literal::hex as hexx;
 use sp_io::TestExternalities;
 use sp_version::{create_runtime_str, RuntimeVersion};
 use serde_json::{Value};
 use t3rn_primitives::portal::RegistrationData;
 use std::fs;
 use sp_runtime::{DispatchError};
+    use t3rn_primitives::{
+        portal::{RococoBridge},
+        abi::{GatewayABIConfig},
+        ChainId, EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor, GatewayGenesisConfig,
+    };
+use t3rn_primitives::xdns::AllowedSideEffect;
 use crate::{mock::*};
 pub fn new_test_ext() -> TestExternalities {
     let t = frame_system::GenesisConfig::default()
@@ -49,27 +56,42 @@ fn register_rococo_successfully() {
     // imports encoded RegistrationData from mock-data created by CLI
     let raw_data = fs::read_to_string("./src/mock-data/register-roco.json").unwrap();
     let json: Value = serde_json::from_str(raw_data.as_str()).unwrap();
-    let bytes = hex::decode(json["encoded"].as_str().unwrap()).unwrap();
-    let registration_data: RegistrationData = Decode::decode(&mut &*bytes).unwrap();
+    let url: Vec<u8> =  hex::decode(json["encoded_url"].as_str().unwrap()).unwrap();
+    let gateway_id: ChainId = Decode::decode(&mut &*hex::decode(json["encoded_gateway_id"].as_str().unwrap()).unwrap()).unwrap();
+    let gateway_abi: GatewayABIConfig = Decode::decode(&mut &*hex::decode(json["encoded_gateway_abi"].as_str().unwrap()).unwrap()).unwrap();
+    let gateway_vendor: GatewayVendor = Decode::decode(&mut &*hex::decode(json["encoded_gateway_vendor"].as_str().unwrap()).unwrap()).unwrap();
+    let gateway_type: GatewayType = Decode::decode(&mut &*hex::decode(json["encoded_gateway_type"].as_str().unwrap()).unwrap()).unwrap();
+    let gateway_genesis: GatewayGenesisConfig = Decode::decode(&mut &*hex::decode(json["encoded_gateway_genesis"].as_str().unwrap()).unwrap()).unwrap();
+    let gateway_sys_props: GatewaySysProps = Decode::decode(&mut &*hex::decode(json["encoded_gateway_sys_props"].as_str().unwrap()).unwrap()).unwrap();
+    let allowed_side_effects: Vec<AllowedSideEffect> = Decode::decode(&mut &*hex::decode(json["encoded_allowed_side_effects"].as_str().unwrap()).unwrap()).unwrap();
+    let encoded_registration_data: Vec<u8> = hex::decode(json["encoded_registration_data"].as_str().unwrap()).unwrap();
 
     let mut ext = TestExternalities::new_empty();
     let origin = Origin::root(); // only sudo access to register new gateways for now
     ext.execute_with(|| {
         assert_ok!(Portal::register_gateway(
             origin,
-            registration_data.clone()
+            url.clone(),
+            gateway_id.clone(),
+            gateway_abi.clone(),
+            gateway_vendor.clone(),
+            gateway_type.clone(),
+            gateway_genesis.clone(),
+            gateway_sys_props.clone(),
+            allowed_side_effects.clone(),
+            encoded_registration_data.clone()
         ));
 
-        let xdns_record = pallet_xdns::XDNSRegistry::<Test>::get(registration_data.gateway_id).unwrap();
+        let xdns_record = pallet_xdns::XDNSRegistry::<Test>::get(gateway_id).unwrap();
         let stored_side_effects = xdns_record.allowed_side_effects;
 
         // ensure XDNS writes are correct
-        assert_eq!(stored_side_effects, registration_data.allowed_side_effects);
-        assert_eq!(xdns_record.gateway_vendor, registration_data.gateway_vendor);
-        assert_eq!(xdns_record.gateway_abi, registration_data.gateway_abi);
-        assert_eq!(xdns_record.gateway_type, registration_data.gateway_type);
-        assert_eq!(xdns_record.gateway_sys_props, registration_data.gateway_sys_props);
-        assert_eq!(xdns_record.gateway_genesis, registration_data.gateway_genesis);
+        assert_eq!(stored_side_effects, allowed_side_effects);
+        assert_eq!(xdns_record.gateway_vendor, gateway_vendor);
+        assert_eq!(xdns_record.gateway_abi, gateway_abi);
+        assert_eq!(xdns_record.gateway_type, gateway_type);
+        assert_eq!(xdns_record.gateway_sys_props, gateway_sys_props);
+        assert_eq!(xdns_record.gateway_genesis, gateway_genesis);
     });
 }
 
@@ -78,14 +100,33 @@ fn fails_registration_with_invalid_signer() {
     // imports encoded RegistrationData from mock-data created by CLI
     let raw_data = fs::read_to_string("./src/mock-data/register-roco.json").unwrap();
     let json: Value = serde_json::from_str(raw_data.as_str()).unwrap();
-    let bytes = hex::decode(json["encoded"].as_str().unwrap()).unwrap();
-    let registration_data: RegistrationData = Decode::decode(&mut &*bytes).unwrap();
+    let url: Vec<u8> =  hex::decode(json["encoded_url"].as_str().unwrap()).unwrap();
+    let gateway_id: ChainId = Decode::decode(&mut &*hex::decode(json["encoded_gateway_id"].as_str().unwrap()).unwrap()).unwrap();
+    let gateway_abi: GatewayABIConfig = Decode::decode(&mut &*hex::decode(json["encoded_gateway_abi"].as_str().unwrap()).unwrap()).unwrap();
+    let gateway_vendor: GatewayVendor = Decode::decode(&mut &*hex::decode(json["encoded_gateway_vendor"].as_str().unwrap()).unwrap()).unwrap();
+    let gateway_type: GatewayType = Decode::decode(&mut &*hex::decode(json["encoded_gateway_type"].as_str().unwrap()).unwrap()).unwrap();
+    let gateway_genesis: GatewayGenesisConfig = Decode::decode(&mut &*hex::decode(json["encoded_gateway_genesis"].as_str().unwrap()).unwrap()).unwrap();
+    let gateway_sys_props: GatewaySysProps = Decode::decode(&mut &*hex::decode(json["encoded_gateway_sys_props"].as_str().unwrap()).unwrap()).unwrap();
+    let allowed_side_effects: Vec<AllowedSideEffect> = Decode::decode(&mut &*hex::decode(json["encoded_allowed_side_effects"].as_str().unwrap()).unwrap()).unwrap();
+    let encoded_registration_data: Vec<u8> = hex::decode(json["encoded_registration_data"].as_str().unwrap()).unwrap();
+
 
     let mut ext = TestExternalities::new_empty();
     let origin = Origin::signed([0u8; 32].into()); // only sudo access to register new gateways for now
     ext.execute_with(|| {
         assert_noop!(
-            Portal::register_gateway(origin, registration_data.clone()),
+            Portal::register_gateway(
+                origin,
+                url,
+                gateway_id,
+                gateway_abi,
+                gateway_vendor,
+                gateway_type,
+                gateway_genesis,
+                gateway_sys_props,
+                allowed_side_effects,
+                encoded_registration_data
+            ),
             DispatchError::BadOrigin
         );
     });
