@@ -30,7 +30,7 @@ export default {
                 gatewaySysProps: {
                     tokenSymbol: "ROC",
                     tokenDecimals: 12,
-                    ss58Format: 60
+                    ss58Format: 42
                 },
                 allowedSideEffects: ["tran"],
                 parachain: null

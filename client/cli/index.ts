@@ -50,6 +50,8 @@ class CircuitCLI {
                         this.exportData(registrationData, fileName)
                     } else {
                         // @ts-ignore
+                        registrationData.registration_data = registrationData.registration_data.toHex()
+                        // @ts-ignore
                         this.circuitRelayer.sudoSignAndSend(this.circuit.tx.portal.registerGateway(...Object.values(registrationData)))
                             .then(() => {
                                 console.log("Registered and Activated!")
