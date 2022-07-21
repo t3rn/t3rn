@@ -281,5 +281,9 @@
         "gateway_sys_props": "GatewaySysProps",
         "allowed_side_effects": "Vec<AllowedSideEffect>",
         "encoded_registration_data": "Vec<u8>"
+    },
+    "RelaychainHeaderData": {
+        "header": "Header",
+        "justification": "GrandpaJustification<Header>"
     }
 }

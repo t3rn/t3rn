@@ -12,5 +12,5 @@ export const register = async (circuitApi: any, gatewayData: any, print?: boolea
             console.log(`Registration not available for Vendor ${gatewayData.registrationData.gatewayVendor}`)
             return
         }
-     }
+    }
 }

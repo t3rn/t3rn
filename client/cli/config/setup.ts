@@ -32,7 +32,8 @@ export default {
                     tokenDecimals: 12,
                     ss58Format: 60
                 },
-                allowedSideEffects: ["tran"]
+                allowedSideEffects: ["tran"],
+                parachain: null
             }
         }
     ]

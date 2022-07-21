@@ -31,23 +31,23 @@ export const registerPortalSubstrate = async (circuit: ApiPromise, gatewayData: 
 
 const registerPortalRelaychain = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any) => {
     const { registrationHeader, authorities, authoritySetId } = await fetchPortalConsensusData(circuit, target, gatewayData)
-    return circuit.createType("RegistrationData", {
-        url: gatewayData.rpc,
-        gateway_id: gatewayData.id,
+    return {
+        url: circuit.createType("Vec<u8>", gatewayData.rpc),
+        gateway_id: circuit.createType("ChainId", gatewayData.id),
         gateway_abi: createAbiConfig(circuit, gatewayData.registrationData.gatewayConfig),
         gateway_vendor: circuit.createType('GatewayVendor', 'Rococo'),
         gateway_type: circuit.createType('GatewayType', { ProgrammableExternal: 1 }),
         gateway_genesis: await createGatewayGenesis(circuit, target),
         gateway_sys_props: createGatewaySysProps(circuit, gatewayData.registrationData.gatewaySysProps),
         allowed_side_effects: circuit.createType('Vec<AllowedSideEffect>', gatewayData.registrationData.allowedSideEffects),
-        encoded_registration_data: circuit.createType('GrandpaRegistrationData', [
+        registration_data: circuit.createType('GrandpaRegistrationData', [
             registrationHeader.toHex(),
             Array.from(authorities),
             authoritySetId,
             gatewayData.registrationData.owner,
             null
-        ]).toHex()
-    })
+        ])
+    }
 }
 
 const registerRelaychain = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any) => {
