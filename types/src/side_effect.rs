@@ -272,4 +272,37 @@ mod tests {
 
         assert_eq!(empty_side_effect, SideEffect::default(),);
     }
+
+    #[test]
+    fn from_encoded_chain_to_side_effect() {
+        let v: Vec<u8> = vec![
+            1, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+            5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+            6, 6, 6, 6, 6, 6, 6, 6, 100, 0, 0, 0,
+        ];
+        let s = SideEffect::<[u8; 2], u32, u32>::from(&v);
+
+        assert_eq!(
+            s,
+            SideEffect {
+                target: [112, 100, 111, 116],
+                prize: 0,
+                ordered_at: 0,
+                encoded_action: vec![116, 114, 97, 110],
+                encoded_args: vec![
+                    vec![
+                        5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+                        5, 5, 5, 5, 5, 5, 5
+                    ],
+                    vec![
+                        6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+                        6, 6, 6, 6, 6, 6, 6
+                    ],
+                    vec![100, 0, 0, 0]
+                ],
+                signature: vec![],
+                enforce_executioner: None,
+            }
+        );
+    }
 }
