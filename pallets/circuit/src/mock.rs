@@ -562,7 +562,7 @@ impl ExtBuilder {
                 token_symbol: Encode::encode("DOT"),
                 token_decimals: 10,
             },
-            vec![*b"tran", *b"swap", *b"aliq"],
+            vec![*b"tran", *b"swap", *b"aliq", *b"mult", *b"call"],
         );
         let kusama_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -678,6 +678,29 @@ impl ExtBuilder {
             ],
         };
 
+        let transfer_multi_side_effect = SideEffectInterface {
+            id: *b"mult",
+            name: b"transfer_multi".to_vec(),
+            argument_abi: vec![
+                Type::DynamicAddress,    // argument_0: from
+                Type::DynamicAddress,    // argument_1: to
+                Type::Value,             // argument_2: value
+                Type::DynamicBytes,      // argument_3: asset
+                Type::OptionalInsurance, // argument_3: insurance
+            ],
+            argument_to_state_mapper: vec![
+                b"from".to_vec(),
+                b"to".to_vec(),
+                b"value".to_vec(),
+                b"asset".to_vec(),
+                b"insurance".to_vec(),
+            ],
+            confirm_events: vec![b"TransferMulti(from,to,value,asset)".to_vec()],
+            escrowed_events: vec![b"EscrowTransfer(from,to,value)".to_vec()],
+            commit_events: vec![b"TransferMulti(executor,to,value,asset)".to_vec()],
+            revert_events: vec![b"TransferMulti(executor,from,value,asset)".to_vec()],
+        };
+
         let call_evm_side_effect = SideEffectInterface {
             id: *b"call",
             name: b"call:generic".to_vec(),
@@ -731,6 +754,7 @@ impl ExtBuilder {
             add_liquidity_side_effect,
             call_evm_side_effect,
             get_data_side_effect,
+            transfer_multi_side_effect,
         ];
 
         self
