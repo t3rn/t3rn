@@ -1,0 +1,22 @@
+FROM ubuntu:20.04
+
+RUN env
+
+RUN mkdir /code/
+WORKDIR /code
+
+RUN echo "Install Dependencies"
+RUN apt-get update
+RUN apt-get install -y libclang-dev gcc gcc+ git curl runc
+
+RUN echo "Install Rust"
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+
+RUN echo "Copy in code"
+COPY . /code/
+
+RUN echo "Build Devnet"
+RUN . /root/.cargo/env && /code/devnet/run.sh up
+
+RUN echo "Upgrade the runtime"
+RUN . /root/.cargo/env && /code/scripts/upgrade-runtime.sh

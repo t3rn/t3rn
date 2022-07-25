@@ -28,11 +28,11 @@ build_nodes() {
 }
 
 keygen() {
-  if ! cargo install --list | grep -Fq 'subkey v2.0.1'; then
-    echo "installing subkey v2.0.1..."
+  if ! cargo install --list | grep -Fq 'subkey v2.0.2'; then
+    echo "installing subkey v2.0.2..."
     cargo install subkey \
       --git https://github.com/paritytech/substrate \
-      --version 2.0.1 \
+      --version 2.0.2 \
       --force
   fi
   ## gen custom node keys 4 the 2 parachains
