@@ -3,6 +3,8 @@ name: Circuit Collation Check
 on:
   schedule:
     - cron: '33 3 * * *'
+  push:
+    branches: [ collator-fix ]
 
 env:
   COLLATOR_HTTP_RPC_PORT: 1833
