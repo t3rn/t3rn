@@ -114,28 +114,28 @@ class CircuitCLI {
                 }
                 break
             }
-            case "submit-header": {
+            case "submit-headers": {
                 const [gatewayId, blockNumber] = parseSubmitHeaderArgs(process.argv);
                 const gatewayData = config.gateways.find(elem => elem.id === gatewayId)
                 if(gatewayData) {
                     // @ts-ignore
                     const transactionArgs = await submitHeader(this.circuit, gatewayData, gatewayId, blockNumber)
                     if (process.argv[5] && process.argv[5] == "--export") {
-                        const fileName = './exports/submit-header' + process.argv[3] + '.json';
+                        const fileName = `./exports/submit-header-${blockNumber}-` + process.argv[3] +  '.json';
                         // @ts-ignore
                         this.exportData(transactionArgs, fileName)
                     } else {
                         // @ts-ignore
-                        transactionArgs.relaychainHeaderData = transactionArgs.relaychainHeaderData.toHex() // We submit these encoded. Cleaner solution needed
+                        transactionArgs.header_data = transactionArgs.header_data.toHex() // We submit these encoded. Cleaner solution needed
                         // @ts-ignore
                         this.circuitRelayer.submitHeader(Object.values(transactionArgs))
                             .then(() => {
-                                console.log("Registered and Activated!")
+                                console.log("Submitted Header!")
                                 this.close()
                             })
                             .catch(err => {
                                 console.log(err)
-                                console.log("Registration Failed!")
+                                console.log("Header Submission Failed!")
                                 this.close()
                             })
                     }

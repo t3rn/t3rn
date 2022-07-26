@@ -283,7 +283,8 @@
         "encoded_registration_data": "Vec<u8>"
     },
     "RelaychainHeaderData": {
-        "header": "Header",
+        "signed_header": "Header",
+        "range": "Vec<Header>",
         "justification": "GrandpaJustification<Header>"
     }
 }

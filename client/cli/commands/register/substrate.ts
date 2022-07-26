@@ -31,6 +31,7 @@ export const registerPortalSubstrate = async (circuit: ApiPromise, gatewayData: 
 
 const registerPortalRelaychain = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any) => {
     const { registrationHeader, authorities, authoritySetId } = await fetchPortalConsensusData(circuit, target, gatewayData)
+    console.log("Registering Block #", registrationHeader.number.toNumber());
     return {
         url: circuit.createType("Vec<u8>", gatewayData.rpc),
         gateway_id: circuit.createType("ChainId", gatewayData.id),
@@ -144,7 +145,7 @@ const fetchConsensusData = async (circuit: ApiPromise, target: ApiPromise, gatew
 const fetchLatestAuthoritySetUpdateBlock = async (gatewayData: any) => {
     return axios.post(gatewayData.subscan + '/api/scan/events', {
             row: 1,
-            page: 1,
+            page: 0,
             module: "grandpa",
             call: "newauthorities"
         },
@@ -155,6 +156,7 @@ const fetchLatestAuthoritySetUpdateBlock = async (gatewayData: any) => {
         }
     )
     .then(function (response) {
+        console.log(response.data.data.events)
         return response.data.data.events.map(entry => entry.block_num)[0]
     })
 }
