@@ -983,7 +983,10 @@ pub mod pallet {
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
         fn on_initialize(_n: T::BlockNumber) -> Weight {
-            419 //TODO
+            //TODO listen2round updates then reselect active set + prep payouts
+            //TODO//TODO//TODO//TODO//TODO//TODO//TODO//TODO//TODO//TODO//TODO
+
+            419
         }
     }
 
