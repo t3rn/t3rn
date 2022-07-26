@@ -29,7 +29,6 @@ use t3rn_primitives::{bridges::runtime::Chain,};
 pub type AccountId = u64;
 pub type TestHeader = crate::BridgedHeader<TestRuntime, ()>;
 pub type TestNumber = crate::BridgedBlockNumber<TestRuntime, ()>;
-pub type TestHash = crate::BridgedBlockHash<TestRuntime, ()>;
 
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
@@ -43,7 +42,7 @@ construct_runtime! {
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        GrandpaFinalityVerifier: crate::{Pallet, Call, Storage, Event<T>},
+        GrandpaFinalityVerifier: crate::{Pallet, Storage},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
@@ -127,7 +126,7 @@ impl pallet_balances::Config for TestRuntime {
 
 impl Config for TestRuntime {
     type BridgedChain = TestCircuitLikeChain;
-    type Event = Event;
+    // type Event = Event;
     type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
@@ -156,12 +155,32 @@ pub fn test_header_with_correct_parent(num: TestNumber, parent_hash: Option<H256
     t3rn_primitives::bridges::test_utils::test_header_with_correct_parent(num, parent_hash)
 }
 
-pub fn test_header_range(from: u64, to: u64, mut parent_hash: Option<H256>) -> Vec<TestHeader> {
+pub fn test_header_range(to: u64) -> Vec<TestHeader> {
     let mut headers: Vec<TestHeader> = vec![];
-    for (i, block) in (from..=to).enumerate() {
+    let mut parent_hash = None;
+    for (i, block) in (0..=to).enumerate() {
         let header = test_header_with_correct_parent(block.into(), parent_hash);
         headers.push(header);
         parent_hash = Some(headers[i].hash());
     }
     return headers
 }
+
+// pub fn generate_header_data(header: u64, range_size: u64, init_parant_hash: Option<H256>) -> (TestHeader, Vec<TestHeader>) {
+//     let from = header - range_size;
+//     let mut range: Vec<TestHeader> = vec![];
+//     let mut parent_hash = Some(test_header_with_correct_parent(from - 1, init_parant_hash).hash());
+//     let mut signed_header = test_header(header);
+//
+//     for (i, block) in (from..=header).enumerate() {
+//         if block != header {
+//             let header = test_header_with_correct_parent(block.into(), parent_hash);
+//             parent_hash = Some(header.hash().clone());
+//             range.push(header);
+//         } else {
+//             signed_header = test_header_with_correct_parent(block.into(), parent_hash);
+//         }
+//     }
+//     range.reverse();
+//     return (signed_header, range)
+// }

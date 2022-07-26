@@ -205,7 +205,7 @@ pub mod pallet {
         }
 
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-        pub fn submit_header(
+        pub fn submit_headers(
             origin: OriginFor<T>,
             gateway_id: ChainId,
             encoded_header_data: Vec<u8>
@@ -221,7 +221,7 @@ pub mod pallet {
             };
 
             let res = match vendor {
-                GatewayVendor::Rococo =>  pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::submit_header(origin, gateway_id, encoded_header_data),
+                GatewayVendor::Rococo =>  pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::submit_headers(origin, gateway_id, encoded_header_data),
                 _ => unimplemented!()
             };
 

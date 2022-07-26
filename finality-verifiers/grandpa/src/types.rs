@@ -28,7 +28,8 @@ pub struct GrandpaRegistrationData<T> {
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug)]
 pub struct RelaychainHeaderData<Header: sp_runtime::traits::Header> {
-    pub header: Header,
+    pub signed_header: Header,
+    pub range: Vec<Header>,
     pub justification: GrandpaJustification::<Header>
 }
 

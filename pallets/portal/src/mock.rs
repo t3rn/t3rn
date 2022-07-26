@@ -31,7 +31,7 @@ frame_support::construct_runtime!(
         Sudo: pallet_sudo::{Pallet, Call, Event<T>},
         XDNS: pallet_xdns::{Pallet, Call, Storage, Config<T>, Event<T>},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-        RococoBridge: pallet_grandpa_finality_verifier::{Pallet, Call, Storage, Event<T>},
+        RococoBridge: pallet_grandpa_finality_verifier::{Pallet, Storage},
         Portal: pallet_portal::{Pallet, Call, Storage, Event<T>}
     }
 );
@@ -187,7 +187,6 @@ type RococoBridgeInstance = ();
 
 impl pallet_grandpa_finality_verifier::Config<RococoBridgeInstance> for Test {
     type BridgedChain = Blake2ValU32Chain;
-    type Event = Event;
     type MaxRequests = MaxRequests;
     type HeadersToKeep = HeadersToKeep;
     type WeightInfo = ();

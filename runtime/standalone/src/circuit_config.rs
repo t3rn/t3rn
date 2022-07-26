@@ -177,7 +177,6 @@ impl pallet_mfv::Config<DefaultPolkadotBridgeInstance> for Runtime {
 
 impl pallet_grandpa_finality_verifier::Config<RococoBridgeInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
-    type Event = Event;
     type MaxRequests = MaxRequests;
     type HeadersToKeep = HeadersToKeep;
     type WeightInfo = ();
