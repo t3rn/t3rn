@@ -1513,9 +1513,6 @@ pub mod pallet {
                 .collect::<Vec<T::AccountId>>();
 
             executors.sort();
-            // executors
-
-            ////////// TBC
 
             let (mut executor_count, mut stake_count, mut total) =
                 (0u32, 0u32, BalanceOf::<T>::zero());
