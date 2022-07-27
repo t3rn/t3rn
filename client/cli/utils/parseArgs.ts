@@ -34,3 +34,23 @@ export const parseSubmitHeaderArgs = (args: string[]): [string] => {
 
     return [gatewayId]
 }
+
+export const parseRegisterArgs = (args: string[]): [string, number] => {
+    const gatewayId = process.argv[3]
+
+    if(!gatewayId) {
+        console.log("GatewayId not Specified!")
+        process.exit(1);
+    }
+
+    let epochsAgo = 0
+    if(args[4]) {
+        let parsed = parseInt(args[4])
+        if(isNaN(parsed)) {
+            console.log("Can't parse epochsAgo argument! Using latest epoch for registration!")
+        } else {
+            epochsAgo = parsed;
+        }
+    }
+    return [gatewayId, epochsAgo]
+}

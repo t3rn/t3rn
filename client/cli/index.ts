@@ -5,7 +5,7 @@ import{ ApiPromise, Keyring, WsProvider }from'@polkadot/api';
 import { CircuitRelayer } from "./circuitRelayer";
 import { register } from "./commands/register/register";
 import { setOperational } from "./commands/operational";
-import {parseSubmitHeaderArgs, parseTransferArgs} from "./utils/parseArgs";
+import {parseRegisterArgs, parseSubmitHeaderArgs, parseTransferArgs} from "./utils/parseArgs";
 import {transfer} from "./commands/transfer";
 import * as fs from "fs";
 import {submitHeader} from "./commands/submit_header/submit_header";
@@ -41,11 +41,12 @@ class CircuitCLI {
         const args = process.argv[2]
         switch(args) {
             case "register": {
-                const data = config.gateways.find(elem => elem.id === process.argv[3])
+                const [gatewayId, epochsAgo] = parseRegisterArgs(process.argv);
+                const data = config.gateways.find(elem => elem.id === gatewayId)
                 if(data) {
-                    const registrationData = await register(this.circuit, data)
-                    if (process.argv[4] && process.argv[4] == "--export") {
-                        const fileName = './exports/register-' + process.argv[3] + '.json';
+                    const registrationData = await register(this.circuit, data, epochsAgo)
+                    if (process.argv[5] && process.argv[5] == "--export") {
+                        const fileName = './exports/register-' + gatewayId + '.json';
                         // @ts-ignore
                         this.exportData(registrationData, fileName)
                     } else {
