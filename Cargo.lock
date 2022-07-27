@@ -1303,6 +1303,7 @@ dependencies = [
  "jsonrpc-runtime-client",
  "log",
  "pallet-contracts-rpc",
+ "pallet-portal-rpc",
  "pallet-transaction-payment-rpc",
  "pallet-xdns",
  "pallet-xdns-rpc",
@@ -1368,6 +1369,7 @@ dependencies = [
  "pallet-mmr-primitives",
  "pallet-multi-finality-verifier",
  "pallet-portal",
+ "pallet-portal-rpc-runtime-api",
  "pallet-randomness-collective-flip",
  "pallet-sudo",
  "pallet-timestamp",
@@ -7071,6 +7073,33 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-version",
+ "t3rn-primitives",
+]
+
+[[package]]
+name = "pallet-portal-rpc"
+version = "1.0.0-alpha.0"
+dependencies = [
+ "jsonrpc-core 18.0.0",
+ "jsonrpc-core-client 18.0.0",
+ "jsonrpc-derive",
+ "pallet-portal-rpc-runtime-api",
+ "parity-scale-codec 3.1.2",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-portal-rpc-runtime-api"
+version = "1.0.0-alpha.0"
+dependencies = [
+ "pallet-portal",
+ "parity-scale-codec 3.1.2",
+ "sp-api",
+ "sp-runtime",
  "t3rn-primitives",
 ]
 

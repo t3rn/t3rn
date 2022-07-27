@@ -8,6 +8,7 @@
 use circuit_standalone_runtime::{opaque::Block, AccountId, Balance, BlockNumber, Hash, Index};
 use pallet_3vm_contracts_rpc::{Contracts, ContractsApi};
 use pallet_xdns_rpc::{Xdns, XdnsApi};
+use pallet_portal_rpc::{Portal, PortalApi};
 pub use sc_rpc_api::DenyUnsafe;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
@@ -36,6 +37,7 @@ where
     C::Api:
         pallet_3vm_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber, Hash>,
     C::Api: pallet_xdns_rpc::XdnsRuntimeApi<Block, AccountId>,
+    C::Api: pallet_portal_rpc::PortalRuntimeApi<Block, AccountId>,
     C::Api: BlockBuilder<Block>,
     P: TransactionPool + 'static,
 {
@@ -59,6 +61,7 @@ where
     )));
     io.extend_with(ContractsApi::to_delegate(Contracts::new(client.clone())));
     io.extend_with(XdnsApi::to_delegate(Xdns::new(client.clone())));
+    io.extend_with(PortalApi::to_delegate(Portal::new(client.clone())));
 
     io
 }

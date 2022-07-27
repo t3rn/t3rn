@@ -10,6 +10,13 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+use t3rn_primitives::{
+    portal::{Portal, RococoBridge},
+    xdns::Xdns,
+    ChainId, GatewayVendor
+};
+use sp_std::vec::Vec;
+
 #[frame_support::pallet]
 pub mod pallet {
     use frame_support::pallet_prelude::*;
@@ -240,71 +247,23 @@ pub mod pallet {
     }
 }
 
-// impl<T: Config> Portal<T> for Pallet<T> {
-// fn init_bridge_instance (
-// 	encoded_header: Vec<u8>
-// ) -> Result<(), &'static str> {
-//
-// 	let header: Header = match Decode::decode(&mut &*encoded_header) {
-// 		Ok(header) => header,
-// 		Err(_) => return Err(Error::<T>::InvalidEncoding.into())
-// 	};
-//
-// 	if header.number % 200 != 0 {
-// 		return Err(Error::<T>::NonEpochBlock.into())
-// 	}
-//
-// 	// header is invalid. returning error
-// 	if let Err(None) = header.signature_valid() {
-// 		return Err(Error::<T>::InvalidHeader.into())
-// 	}
-//
-// 	let validators = ValidatorSet {
-// 		last_update: header.number,
-// 		validators: header.validators.unwrap()
-// 	};
-//
-// 	<Validators<T>>::put(validators);
-// 	<Headers<T>>::insert(
-// 		header.hash(),
-// 		header,
-// 	);
-//
-// 	Ok(())
-// }
+impl<T: Config> Portal<T> for Pallet<T> {
 
-// fn check_inclusion(
-// 	enc_receipt: Vec<u8>,
-// 	enc_proof: Option<Vec<u8>>,
-// 	enc_block_hash: Vec<u8>
-// ) -> Result<(), &'static str> {
-// 	// ToDo: remove for release
-// 	if let None = enc_proof {
-// 		return Ok(())
-// 	}
-// 	let block_hash: H256 = match Decode::decode(&mut &*enc_block_hash) {
-// 		Ok(res) => res,
-// 		Err(_) => return Err(Error::<T>::InvalidHash.into())
-// 	};
-//
-// 	let receipt_root: H256 = match <Headers<T>>::try_get(block_hash) {
-// 		Ok(res) => res.receipts_root,
-// 		Err(_) => return Err(Error::<T>::HeaderNotFound.into())
-// 	};
-//
-// 	let receipt: Receipt = match Decode::decode(&mut &*enc_receipt) {
-// 		Ok(res) => res,
-// 		Err(_) => return Err(Error::<T>::InvalidEncoding.into())
-// 	};
-//
-// 	let proof: Proof = match Decode::decode(&mut &*enc_proof.unwrap()) {
-// 		Ok(res) => res,
-// 		Err(_) => return Err(Error::<T>::InvalidEncoding.into())
-// 	};
-//
-// 	match receipt.in_block(receipt_root.as_fixed_bytes(), proof) {
-// 		Ok(_) => return Ok(()),
-// 		Err(_) => return Err(Error::<T>::InvalidInclusionProof.into())
-// 	}
-// }
-// }
+    fn get_latest_finalized_header(
+        gateway_id: ChainId
+    ) -> Option<Vec<u8>> {
+        let vendor_result = <T as Config>::Xdns::get_gateway_vendor(&gateway_id);
+
+        let vendor = match vendor_result {
+            Ok(vendor) => vendor,
+            Err(_msg) => {
+                return None
+            }
+        };
+
+        match vendor {
+            GatewayVendor::Rococo =>  return pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::get_latest_finalized_header(gateway_id),
+            _ => unimplemented!()
+        };
+    }
+}

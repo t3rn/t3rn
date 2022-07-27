@@ -30,3 +30,7 @@ pub struct RegistrationData {
 }
 
 pub type RococoBridge = ();
+
+pub trait Portal<T: frame_system::Config> {
+     fn get_latest_finalized_header(chain_id: ChainId) -> Option<Vec<u8>>;
+}

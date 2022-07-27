@@ -785,6 +785,14 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         }
     }
 
+    pub fn get_latest_finalized_header(
+        gateway_id: ChainId
+    ) -> Option<Vec<u8>> {
+        if let Some(header_hash) = <BestFinalizedMap<T, I>>::get(gateway_id) {
+            return Some(header_hash.encode())
+        }
+        None
+    }
 }
 
 pub(crate) fn find_scheduled_change<H: HeaderT>(
