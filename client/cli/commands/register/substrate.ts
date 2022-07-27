@@ -21,7 +21,7 @@ export const registerPortalSubstrate = async (circuit: ApiPromise, gatewayData: 
         provider: new WsProvider(gatewayData.rpc),
     })
 
-    if(gatewayData.registrationData.relaychain === null) { // relaychain
+    if(gatewayData.registrationData.parachain === null) { // relaychain
         return registerPortalRelaychain(circuit, target, gatewayData)
     } else {
         console.log("Not implemented!")
@@ -30,6 +30,28 @@ export const registerPortalSubstrate = async (circuit: ApiPromise, gatewayData: 
 }
 
 const registerPortalRelaychain = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any) => {
+    const { registrationHeader, authorities, authoritySetId } = await fetchPortalConsensusData(circuit, target, gatewayData)
+    console.log("Registering Block #", registrationHeader.number.toNumber());
+    return {
+        url: circuit.createType("Vec<u8>", gatewayData.rpc),
+        gateway_id: circuit.createType("ChainId", gatewayData.id),
+        gateway_abi: createAbiConfig(circuit, gatewayData.registrationData.gatewayConfig),
+        gateway_vendor: circuit.createType('GatewayVendor', 'Rococo'),
+        gateway_type: circuit.createType('GatewayType', { ProgrammableExternal: 1 }),
+        gateway_genesis: await createGatewayGenesis(circuit, target),
+        gateway_sys_props: createGatewaySysProps(circuit, gatewayData.registrationData.gatewaySysProps),
+        allowed_side_effects: circuit.createType('Vec<AllowedSideEffect>', gatewayData.registrationData.allowedSideEffects),
+        registration_data: circuit.createType('GrandpaRegistrationData', [
+            registrationHeader.toHex(),
+            Array.from(authorities),
+            authoritySetId,
+            gatewayData.registrationData.owner,
+            null
+        ])
+    }
+}
+
+const registerPortalParachain = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any) => {
     const { registrationHeader, authorities, authoritySetId } = await fetchPortalConsensusData(circuit, target, gatewayData)
     console.log("Registering Block #", registrationHeader.number.toNumber());
     return {
@@ -156,7 +178,6 @@ const fetchLatestAuthoritySetUpdateBlock = async (gatewayData: any) => {
         }
     )
     .then(function (response) {
-        console.log(response.data.data.events)
         return response.data.data.events.map(entry => entry.block_num)[0]
     })
 }

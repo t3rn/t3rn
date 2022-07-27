@@ -24,19 +24,13 @@ export const parseTransferArgs = (args: string[], gatewayData: any) => {
     return [amount, sender, receiver, fee]
 }
 
-export const parseSubmitHeaderArgs = (args: string[]): [string, number] => {
+export const parseSubmitHeaderArgs = (args: string[]): [string] => {
     const gatewayId = process.argv[3]
 
     if(!gatewayId) {
         console.log("GatewayId not Specified!")
         process.exit(1);
     }
-    const blockNumber = process.argv[4];
 
-    if(!blockNumber) {
-        console.log("GatewayId not Specified!")
-        process.exit(1);
-    }
-
-    return [gatewayId, parseInt(blockNumber)]
+    return [gatewayId]
 }

@@ -115,20 +115,18 @@ class CircuitCLI {
                 break
             }
             case "submit-headers": {
-                const [gatewayId, blockNumber] = parseSubmitHeaderArgs(process.argv);
+                const [gatewayId] = parseSubmitHeaderArgs(process.argv);
                 const gatewayData = config.gateways.find(elem => elem.id === gatewayId)
                 if(gatewayData) {
                     // @ts-ignore
-                    const transactionArgs = await submitHeader(this.circuit, gatewayData, gatewayId, blockNumber)
-                    if (process.argv[5] && process.argv[5] == "--export") {
-                        const fileName = `./exports/submit-header-${blockNumber}-` + process.argv[3] +  '.json';
+                    const transactionArgs = await submitHeader(this.circuit, gatewayData, gatewayId)
+                    if (process.argv[4] && process.argv[4] == "--export") {
+                        const fileName = `./exports/submit-header-` + process.argv[3] +  '.json';
                         // @ts-ignore
                         this.exportData(transactionArgs, fileName)
                     } else {
                         // @ts-ignore
-                        transactionArgs.header_data = transactionArgs.header_data.toHex() // We submit these encoded. Cleaner solution needed
-                        // @ts-ignore
-                        this.circuitRelayer.submitHeader(Object.values(transactionArgs))
+                        this.circuitRelayer.submitHeaders(gatewayId, transactionArgs)
                             .then(() => {
                                 console.log("Submitted Header!")
                                 this.close()
@@ -138,6 +136,7 @@ class CircuitCLI {
                                 console.log("Header Submission Failed!")
                                 this.close()
                             })
+
                     }
                 } else {
                     console.log(`Config for ${process.argv[3]} not found!`)
