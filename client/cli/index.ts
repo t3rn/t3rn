@@ -10,7 +10,6 @@ import {transfer} from "./commands/transfer";
 import * as fs from "fs";
 import {submitHeader} from "./commands/submit_header/submit_header";
 import {encodeExport} from "./utils/encoder";
-
 class CircuitCLI {
     circuit: ApiPromise;
     circuitRelayer: CircuitRelayer;
@@ -44,26 +43,25 @@ class CircuitCLI {
                 const [gatewayId, epochsAgo] = parseRegisterArgs(process.argv);
                 const data = config.gateways.find(elem => elem.id === gatewayId)
                 if(data) {
-                    const registrationData = await register(this.circuit, data, epochsAgo)
+                    const registrationData: any = await register(this.circuit, data, epochsAgo)
                     if (process.argv[5] && process.argv[5] == "--export") {
                         const fileName = './exports/register-' + gatewayId + '.json';
-                        // @ts-ignore
                         this.exportData(registrationData, fileName)
-                    } else {
-                        // @ts-ignore
-                        registrationData.registration_data = registrationData.registration_data.toHex()
-                        // @ts-ignore
-                        this.circuitRelayer.sudoSignAndSend(this.circuit.tx.portal.registerGateway(...Object.values(registrationData)))
-                            .then(() => {
-                                console.log("Registered and Activated!")
-                                this.close()
-                            })
-                            .catch(err => {
-                                console.log(err)
-                                console.log("Registration Failed!")
-                                this.close()
-                            })
                     }
+                    console.log(registrationData.registration_data)
+                    registrationData.registration_data = registrationData.registration_data.toHex()
+                    this.circuitRelayer.sudoSignAndSend(this.circuit.tx.portal.registerGateway(...Object.values(registrationData)))
+                        .then(() => {
+                            console.log("Registered and Activated!")
+                            this.close()
+                        })
+                        .catch(err => {
+                            console.log(err)
+                            console.log("Registration Failed!")
+                            this.close()
+                        })
+
+
                 } else {
                     console.log(`Config for ${process.argv[3]} not found!`)
                     this.close();
@@ -97,7 +95,7 @@ class CircuitCLI {
                 if(data) {
                     const cliArgs = parseTransferArgs(process.argv, data)
                     // @ts-ignore
-                    const transactionArgs = transfer(...cliArgs)
+                    const transactionArgs: any = transfer(...cliArgs)
                     // @ts-ignore
                     this.circuitRelayer.onExtrinsicTrigger(...transactionArgs)
                         .then(() => {
@@ -119,26 +117,22 @@ class CircuitCLI {
                 const [gatewayId] = parseSubmitHeaderArgs(process.argv);
                 const gatewayData = config.gateways.find(elem => elem.id === gatewayId)
                 if(gatewayData) {
-                    // @ts-ignore
-                    const transactionArgs = await submitHeader(this.circuit, gatewayData, gatewayId)
+                    const transactionArgs: any[] = await submitHeader(this.circuit, gatewayData, gatewayId)
                     if (process.argv[4] && process.argv[4] == "--export") {
-                        const fileName = `./exports/submit-header-` + process.argv[3] +  '.json';
-                        // @ts-ignore
+                        const fileName = `./exports/submit-header-` + process.argv[3] + '.json';
                         this.exportData(transactionArgs, fileName)
-                    } else {
-                        // @ts-ignore
-                        this.circuitRelayer.submitHeaders(gatewayId, transactionArgs)
-                            .then(() => {
-                                console.log("Submitted Header!")
-                                this.close()
-                            })
-                            .catch(err => {
-                                console.log(err)
-                                console.log("Header Submission Failed!")
-                                this.close()
-                            })
-
                     }
+                    this.circuitRelayer.submitHeaders(gatewayId, transactionArgs)
+                        .then(() => {
+                            console.log("Submitted Header!")
+                            this.close()
+                        })
+                        .catch(err => {
+                            console.log(err)
+                            console.log("Header Submission Failed!")
+                            this.close()
+                        })
+
                 } else {
                     console.log(`Config for ${process.argv[3]} not found!`)
                     this.close();
@@ -153,13 +147,19 @@ class CircuitCLI {
     }
 
     exportData(data: any, fileName: string) {
-        data = encodeExport(data);
-        fs.writeFile(fileName, JSON.stringify(data, null, 4), (err) => {
+        let deepCopy;
+        // since its pass-by-reference
+        if(Array.isArray(data)) {
+            deepCopy = [...data];
+        } else {
+            deepCopy = {...data};
+        }
+        let encoded = encodeExport(deepCopy);
+        fs.writeFile(fileName, JSON.stringify(encoded, null, 4), (err) => {
             if(err) {
               console.log(err);
             } else {
               console.log("JSON saved to " + fileName);
-              this.close()
             }
         });
     }

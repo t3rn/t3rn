@@ -17,19 +17,15 @@ export const encodeExport = (data: any) => {
 }
 
 const iterateEncode = (data: any) => {
-    console.log(data["initialU8aLength"])
     let keys = Object.keys(data);
     if(keys.includes("initialU8aLength")) { // this is a polkadot/apiPromise object
         return {
             data: data.toHuman(),
-            encoded_data: data.toHex()
+            encoded_data: data.toHex().substring(2)
         }
     } else {
 
         for(let i = 0; i < keys.length; i++) {
-            // console.log(data.toHuman())
-            console.log(keys[i])
-            // console.log( data[keys[i]])
             data['encoded_' + keys[i]] = data[keys[i]].toHex().substring(2)
             data[keys[i]] = data[keys[i]].toHuman()
         }
