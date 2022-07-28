@@ -25,14 +25,16 @@ use sp_version::{create_runtime_str, RuntimeVersion};
 use serde_json::{Value};
 use t3rn_primitives::portal::RegistrationData;
 use std::fs;
-use sp_runtime::{DispatchError};
+use frame_support::dispatch::PostDispatchInfo;
+use frame_system::pallet_prelude::OriginFor;
+use sp_runtime::{DispatchError, DispatchErrorWithPostInfo};
     use t3rn_primitives::{
         portal::{RococoBridge},
         abi::{GatewayABIConfig},
         ChainId, EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor, GatewayGenesisConfig,
     };
 use t3rn_primitives::xdns::AllowedSideEffect;
-use crate::{mock::*};
+use crate::{mock::*, Error};
 pub fn new_test_ext() -> TestExternalities {
     let t = frame_system::GenesisConfig::default()
         .build_storage::<Test>()
@@ -51,10 +53,12 @@ pub const TEST_RUNTIME_VERSION: RuntimeVersion = RuntimeVersion {
     state_version: 1,
 };
 
-#[test]
-fn register_rococo_successfully() {
-    // imports encoded RegistrationData from mock-data created by CLI
-    let raw_data = fs::read_to_string("./src/mock-data/register-roco.json").unwrap();
+fn register(
+    origin: OriginFor<Test>,
+    file: &str,
+    valid: bool,
+) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
+    let raw_data = fs::read_to_string("./src/mock-data/".to_owned() + file).unwrap();
     let json: Value = serde_json::from_str(raw_data.as_str()).unwrap();
     let url: Vec<u8> =  hex::decode(json["encoded_url"].as_str().unwrap()).unwrap();
     let gateway_id: ChainId = Decode::decode(&mut &*hex::decode(json["encoded_gateway_id"].as_str().unwrap()).unwrap()).unwrap();
@@ -66,22 +70,20 @@ fn register_rococo_successfully() {
     let allowed_side_effects: Vec<AllowedSideEffect> = Decode::decode(&mut &*hex::decode(json["encoded_allowed_side_effects"].as_str().unwrap()).unwrap()).unwrap();
     let encoded_registration_data: Vec<u8> = hex::decode(json["encoded_registration_data"].as_str().unwrap()).unwrap();
 
-    let mut ext = TestExternalities::new_empty();
-    let origin = Origin::root(); // only sudo access to register new gateways for now
-    ext.execute_with(|| {
-        assert_ok!(Portal::register_gateway(
-            origin,
-            url.clone(),
-            gateway_id.clone(),
-            gateway_abi.clone(),
-            gateway_vendor.clone(),
-            gateway_type.clone(),
-            gateway_genesis.clone(),
-            gateway_sys_props.clone(),
-            allowed_side_effects.clone(),
-            encoded_registration_data.clone()
-        ));
+    let res = Portal::register_gateway(
+        origin,
+        url.clone(),
+        gateway_id.clone(),
+        gateway_abi.clone(),
+        gateway_vendor.clone(),
+        gateway_type.clone(),
+        gateway_genesis.clone(),
+        gateway_sys_props.clone(),
+        allowed_side_effects.clone(),
+        encoded_registration_data.clone()
+    );
 
+    if valid {
         let xdns_record = pallet_xdns::XDNSRegistry::<Test>::get(gateway_id).unwrap();
         let stored_side_effects = xdns_record.allowed_side_effects;
 
@@ -92,41 +94,27 @@ fn register_rococo_successfully() {
         assert_eq!(xdns_record.gateway_type, gateway_type);
         assert_eq!(xdns_record.gateway_sys_props, gateway_sys_props);
         assert_eq!(xdns_record.gateway_genesis, gateway_genesis);
+    }
+
+    return res
+}
+
+#[test]
+fn register_rococo_successfully() {
+    let mut ext = TestExternalities::new_empty();
+    let origin = Origin::root(); // only sudo access to register new gateways for now
+    ext.execute_with(|| {
+        assert_ok!(register(origin, "register-roco.json", true));
     });
 }
 
 #[test]
 fn fails_registration_with_invalid_signer() {
-    // imports encoded RegistrationData from mock-data created by CLI
-    let raw_data = fs::read_to_string("./src/mock-data/register-roco.json").unwrap();
-    let json: Value = serde_json::from_str(raw_data.as_str()).unwrap();
-    let url: Vec<u8> =  hex::decode(json["encoded_url"].as_str().unwrap()).unwrap();
-    let gateway_id: ChainId = Decode::decode(&mut &*hex::decode(json["encoded_gateway_id"].as_str().unwrap()).unwrap()).unwrap();
-    let gateway_abi: GatewayABIConfig = Decode::decode(&mut &*hex::decode(json["encoded_gateway_abi"].as_str().unwrap()).unwrap()).unwrap();
-    let gateway_vendor: GatewayVendor = Decode::decode(&mut &*hex::decode(json["encoded_gateway_vendor"].as_str().unwrap()).unwrap()).unwrap();
-    let gateway_type: GatewayType = Decode::decode(&mut &*hex::decode(json["encoded_gateway_type"].as_str().unwrap()).unwrap()).unwrap();
-    let gateway_genesis: GatewayGenesisConfig = Decode::decode(&mut &*hex::decode(json["encoded_gateway_genesis"].as_str().unwrap()).unwrap()).unwrap();
-    let gateway_sys_props: GatewaySysProps = Decode::decode(&mut &*hex::decode(json["encoded_gateway_sys_props"].as_str().unwrap()).unwrap()).unwrap();
-    let allowed_side_effects: Vec<AllowedSideEffect> = Decode::decode(&mut &*hex::decode(json["encoded_allowed_side_effects"].as_str().unwrap()).unwrap()).unwrap();
-    let encoded_registration_data: Vec<u8> = hex::decode(json["encoded_registration_data"].as_str().unwrap()).unwrap();
-
-
     let mut ext = TestExternalities::new_empty();
     let origin = Origin::signed([0u8; 32].into()); // only sudo access to register new gateways for now
     ext.execute_with(|| {
         assert_noop!(
-            Portal::register_gateway(
-                origin,
-                url,
-                gateway_id,
-                gateway_abi,
-                gateway_vendor,
-                gateway_type,
-                gateway_genesis,
-                gateway_sys_props,
-                allowed_side_effects,
-                encoded_registration_data
-            ),
+            register(origin, "register-roco.json", false),
             DispatchError::BadOrigin
         );
     });
@@ -151,6 +139,73 @@ fn fails_registration_with_invalid_signer() {
 //         assert_ok!(Portal::register_gateway(origin, registration_data).is_err());
 //     });
 // }
+
+#[test]
+fn cant_submit_without_registering() {
+    // imports encoded RegistrationData from mock-data created by CLI
+    let raw_data = fs::read_to_string("./src/mock-data/submit-header-roco-1237705-1238699-epoch.json").unwrap();
+    let json: Value = serde_json::from_str(raw_data.as_str()).unwrap();
+    let encoded_header_data: Vec<u8> =  hex::decode(json[0]["encoded_data"].as_str().unwrap()).unwrap();
+
+    let mut ext = TestExternalities::new_empty();
+    let origin = Origin::root();
+    ext.execute_with(|| {
+        assert_noop!(
+            Portal::submit_headers(
+                origin,
+                *b"roco",
+                encoded_header_data
+            ),
+            Error::<Test>::GatewayVendorNotFound
+        );
+    });
+}
+
+#[test]
+fn can_submit_valid_header_data_with_auth_update() {
+    // imports encoded RegistrationData from mock-data created by CLI
+    let raw_data = fs::read_to_string("./src/mock-data/submit-header-roco-1237705-1238699-epoch.json").unwrap();
+    let json: Value = serde_json::from_str(raw_data.as_str()).unwrap();
+    let encoded_header_data_0: Vec<u8> =  hex::decode(json[0]["encoded_data"].as_str().unwrap()).unwrap();
+    let encoded_header_data_1: Vec<u8> =  hex::decode(json[1]["encoded_data"].as_str().unwrap()).unwrap();
+
+    let mut ext = TestExternalities::new_empty();
+    let root = Origin::root();
+    let origin = Origin::signed([0u8; 32].into());
+    ext.execute_with(|| {
+        assert_ok!(register(root, "register-roco.json", true));
+        assert_noop!( // can't pass early headers
+            Portal::submit_headers(
+                origin.clone(),
+                *b"roco",
+                encoded_header_data_1.clone()
+            ),
+            Error::<Test>::SubmitHeaderError
+        );
+        assert_ok!( // can update auth set
+            Portal::submit_headers(
+                origin.clone(),
+                *b"roco",
+                encoded_header_data_0.clone()
+            )
+        );
+        assert_noop!( // can't submit twice
+            Portal::submit_headers(
+                origin.clone(),
+                *b"roco",
+                encoded_header_data_0.clone()
+            ),
+            Error::<Test>::SubmitHeaderError
+        );
+        assert_ok!( //can validate headers in new auth set
+            Portal::submit_headers(
+                origin,
+                *b"roco",
+                encoded_header_data_1
+            )
+        );
+    });
+}
 
 // #[test]
 // fn test_register_parachain() {
