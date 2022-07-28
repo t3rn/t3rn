@@ -41,14 +41,17 @@ class CircuitCLI {
         switch(args) {
             case "register": {
                 const [gatewayId, epochsAgo] = parseRegisterArgs(process.argv);
-                const data = config.gateways.find(elem => elem.id === gatewayId)
+                let data: any = config.gateways.find(elem => elem.id === gatewayId)
                 if(data) {
+                    if(data.registrationData?.parachain !== null) {
+                        // @ts-ignore
+                        data.relaychainRpc = config.gateways.find(elem => elem.id === data.registrationData.parachain.relayChainId).rpc
+                    }
                     const registrationData: any = await register(this.circuit, data, epochsAgo)
                     if (process.argv[5] && process.argv[5] == "--export") {
                         const fileName = './exports/register-' + gatewayId + '.json';
                         this.exportData(registrationData, fileName)
                     }
-                    console.log(registrationData.registration_data)
                     registrationData.registration_data = registrationData.registration_data.toHex()
                     this.circuitRelayer.sudoSignAndSend(this.circuit.tx.portal.registerGateway(...Object.values(registrationData)))
                         .then(() => {

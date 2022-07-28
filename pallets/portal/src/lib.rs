@@ -140,8 +140,8 @@ pub mod pallet {
                      Self::deposit_event(Event::GatewayRegistered(gateway_id));
                      return Ok(().into())
                 },
-                Err(_err) => {
-
+                Err(msg) => {
+                    log::info!("{:?}", msg);
                     return Err(Error::<T>::RegistrationError.into())
                 }
             }

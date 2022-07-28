@@ -24,8 +24,7 @@ export const registerPortalSubstrate = async (circuit: ApiPromise, gatewayData: 
     if(gatewayData.registrationData.parachain === null) { // relaychain
         return registerPortalRelaychain(circuit, target, gatewayData, epochsAgo)
     } else {
-        console.log("Not implemented!")
-        return
+        return registerPortalParachain(circuit, target, gatewayData)
     }
 }
 
@@ -51,9 +50,9 @@ const registerPortalRelaychain = async (circuit: ApiPromise, target: ApiPromise,
     }
 }
 
-const registerPortalParachain = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any, epochsAgo: number) => {
-    const { registrationHeader, authorities, authoritySetId } = await fetchPortalConsensusData(circuit, target, gatewayData, epochsAgo)
-    console.log("Registering Block #", registrationHeader.number.toNumber());
+const registerPortalParachain = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any) => {
+    const registrationHeader = await fetchParachainHeader(circuit, gatewayData)
+
     return {
         url: circuit.createType("Vec<u8>", gatewayData.rpc),
         gateway_id: circuit.createType("ChainId", gatewayData.id),
@@ -64,11 +63,11 @@ const registerPortalParachain = async (circuit: ApiPromise, target: ApiPromise, 
         gateway_sys_props: createGatewaySysProps(circuit, gatewayData.registrationData.gatewaySysProps),
         allowed_side_effects: circuit.createType('Vec<AllowedSideEffect>', gatewayData.registrationData.allowedSideEffects),
         registration_data: circuit.createType('GrandpaRegistrationData', [
-            registrationHeader.toHex(),
-            Array.from(authorities),
-            authoritySetId,
+            registrationHeader.toJSON(),
+            null,
+            null,
             gatewayData.registrationData.owner,
-            null
+            circuit.createType("Parachain", [gatewayData.registrationData.parachain.relayChainId, gatewayData.registrationData.parachain.id])
         ])
     }
 }
@@ -163,6 +162,16 @@ const fetchConsensusData = async (circuit: ApiPromise, target: ApiPromise, gatew
         authorities:  circuit.createType('Option<Vec<AccountId>>', authorities),
         authoritySetId: circuit.createType('Option<SetId>', authoritySetId),
     }
+}
+
+const fetchParachainHeader = async (circuit: any, gatewayData: any) => {
+    let relaychainHeaderHash = await circuit.query.rococoBridge.bestFinalizedMap(gatewayData.registrationData.parachain.relayChainId);
+    const relaychain = await ApiPromise.create({
+        provider: new WsProvider(gatewayData.relaychainRpc),
+    })
+    const relayAt = await relaychain.at(relaychainHeaderHash.toHuman());
+    let parachainHeaderHash = await relayAt.query.paras.heads(gatewayData.registrationData.parachain.id)
+    return parachainHeaderHash
 }
 
 //for registrations we want to get the justification cotaining the latest authoritySetUpdate, as we can be sure that all authorties are included.
