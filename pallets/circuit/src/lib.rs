@@ -484,19 +484,13 @@ pub mod pallet {
                 Error::<T>::ContractXtxKilledRunOutOfFunds
             })?;
 
-            // ToDo: This should be converting the side effect from local trigger to FSE
-            let side_effects = Self::exec_in_xtx_ctx(
-                local_xtx_ctx.xtx_id,
-                local_xtx_ctx.local_state.clone(),
-                local_xtx_ctx.full_side_effects.clone(),
-                local_xtx_ctx.xtx.steps_cnt,
-            )
-            .map_err(|_e| {
-                if fresh_or_revoked_exec == CircuitStatus::Ready {
-                    Self::kill(&mut local_xtx_ctx, CircuitStatus::RevertKill)
-                }
-                Error::<T>::ContractXtxKilledRunOutOfFunds
-            })?;
+            let side_effects =
+                Self::convert_side_effects(trigger.submitted_side_effects).map_err(|_e| {
+                    if fresh_or_revoked_exec == CircuitStatus::Ready {
+                        Self::kill(&mut local_xtx_ctx, CircuitStatus::RevertKill)
+                    }
+                    Error::<T>::ContractXtxKilledRunOutOfFunds
+                })?;
 
             // ToDo: Align whether 3vm wants enfore side effects sequence into steps
             let sequential = false;
@@ -1961,19 +1955,18 @@ impl<T: Config> Pallet<T> {
         Ok(())
     }
 
-    // ToDo: This should be called as a 3vm trait injection @Don
-    pub fn exec_in_xtx_ctx(
-        _xtx_id: T::Hash,
-        _local_state: LocalState,
-        _full_side_effects: Vec<
-            Vec<FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
-        >,
-        _steps_cnt: (u32, u32),
+    pub fn convert_side_effects(
+        side_effects: Vec<Vec<u8>>,
     ) -> Result<
         Vec<SideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
         &'static str,
     > {
-        Ok(vec![])
+        let mut side_effects_converted = Vec::new();
+        for step in side_effects.iter() {
+            side_effects_converted.push(step.into());
+        }
+
+        Ok(side_effects_converted)
     }
 
     /// The account ID of the Circuit Vault.
