@@ -1,3 +1,4 @@
+require('dotenv').config()
 import CircuitListener from "./circuit/listener"
 import CircuitRelayer from "./circuit/relayer"
 import SubstrateRelayer from "./gateways/substrate/relayer"
