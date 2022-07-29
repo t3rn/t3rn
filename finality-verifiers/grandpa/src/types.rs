@@ -34,7 +34,8 @@ pub struct RelaychainHeaderData<Header: sp_runtime::traits::Header> {
 }
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug)]
-pub struct ParachainHeaderData<Hash> {
-    pub relay_block_hash: Hash, // relaychain header hash that contains the parachains header
+pub struct ParachainHeaderData<Header: sp_runtime::traits::Header> {
+    pub relay_block_hash: Header::Hash, // relaychain header hash that contains the parachains header
+    pub range: Vec<Header>,
     pub proof: StorageProof,
 }

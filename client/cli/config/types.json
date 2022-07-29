@@ -286,5 +286,10 @@
         "signed_header": "Header",
         "range": "Vec<Header>",
         "justification": "GrandpaJustification<Header>"
+    },
+    "ParachainHeaderData": {
+        "relay_block_hash": "H256",
+        "range": "Vec<Header>",
+        "proof": "StorageProof"
     }
 }

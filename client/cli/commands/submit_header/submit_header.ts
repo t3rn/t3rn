@@ -1,4 +1,4 @@
-import { submitRelaychainHeaders } from "./substrate";
+import { submitRelaychainHeaders, submitParachainHeaders } from "./substrate";
 import{ ApiPromise, WsProvider } from'@polkadot/api';
 
 export const submitHeader = async (circuitApi: any, gatewayData: any, gatewayId: string) => {
@@ -11,8 +11,7 @@ export const submitHeader = async (circuitApi: any, gatewayData: any, gatewayId:
                 return submitRelaychainHeaders(circuitApi, targetApi, gatewayId)
             }
             else {
-                console.log("Parachains not implemented yet!")
-                process.exit(1)
+                return submitParachainHeaders(circuitApi, targetApi, gatewayData)
             }
             break;
         }

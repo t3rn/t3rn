@@ -2,10 +2,10 @@ import { TypeRegistry, createType } from "@polkadot/types"
 
 const registry = new TypeRegistry()
 const justification = { type: 'GrandpaJustification<Header>' }
-
 const finalityProof = { proof: "(Header::Hash, Vec<u8>, Vec<Header>)" }
+const header = { type: 'Header' }
+
 export const decodeFinalityProof = (data: any) => {
-    const registry = new TypeRegistry()
     registry.register(finalityProof);
 
     const res = createType(registry, finalityProof.proof, data.toJSON()) // toJSON works, toHEX() not
@@ -25,4 +25,9 @@ export const decodeAuthoritySet = (data: any) => {
 export const extractAuthoritySetFromFinalityProof = (finalityProof: any) => {
     const rawJust = decodeFinalityProof(finalityProof).justification
     return decodeAuthoritySet(rawJust)
+}
+
+export const decodeHeader = (data: string) => {
+    registry.register(header);
+    return createType(registry, header.type as any, data)
 }

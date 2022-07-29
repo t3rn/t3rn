@@ -1,5 +1,6 @@
 import{ ApiPromise, Keyring, WsProvider } from'@polkadot/api';
 import { extractAuthoritySetFromFinalityProof, decodeFinalityProof } from "../../utils/decoder";
+import { fetchBestFinalizedHash, fetchLatestPossibleParachainHeader } from "../../utils/substrate";
 
 const axios = require('axios').default;
 
@@ -51,7 +52,12 @@ const registerPortalRelaychain = async (circuit: ApiPromise, target: ApiPromise,
 }
 
 const registerPortalParachain = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any) => {
-    const registrationHeader = await fetchParachainHeader(circuit, gatewayData)
+    const latestRelayChainHeader = await fetchBestFinalizedHash(circuit, gatewayData.registrationData.parachain.relayChainId)
+    const parachainHeader: any = await fetchLatestPossibleParachainHeader(
+        gatewayData.relaychainRpc,
+        latestRelayChainHeader.toJSON(),
+        gatewayData.registrationData.parachain.id
+    )
 
     return {
         url: circuit.createType("Vec<u8>", gatewayData.rpc),
@@ -63,7 +69,7 @@ const registerPortalParachain = async (circuit: ApiPromise, target: ApiPromise, 
         gateway_sys_props: createGatewaySysProps(circuit, gatewayData.registrationData.gatewaySysProps),
         allowed_side_effects: circuit.createType('Vec<AllowedSideEffect>', gatewayData.registrationData.allowedSideEffects),
         registration_data: circuit.createType('GrandpaRegistrationData', [
-            registrationHeader.toJSON(),
+            parachainHeader.toJSON(),
             null,
             null,
             gatewayData.registrationData.owner,
@@ -162,16 +168,6 @@ const fetchConsensusData = async (circuit: ApiPromise, target: ApiPromise, gatew
         authorities:  circuit.createType('Option<Vec<AccountId>>', authorities),
         authoritySetId: circuit.createType('Option<SetId>', authoritySetId),
     }
-}
-
-const fetchParachainHeader = async (circuit: any, gatewayData: any) => {
-    let relaychainHeaderHash = await circuit.query.rococoBridge.bestFinalizedMap(gatewayData.registrationData.parachain.relayChainId);
-    const relaychain = await ApiPromise.create({
-        provider: new WsProvider(gatewayData.relaychainRpc),
-    })
-    const relayAt = await relaychain.at(relaychainHeaderHash.toHuman());
-    let parachainHeaderHash = await relayAt.query.paras.heads(gatewayData.registrationData.parachain.id)
-    return parachainHeaderHash
 }
 
 //for registrations we want to get the justification cotaining the latest authoritySetUpdate, as we can be sure that all authorties are included.

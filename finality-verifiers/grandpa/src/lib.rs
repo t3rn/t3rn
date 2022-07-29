@@ -421,8 +421,9 @@ pub mod pallet {
     ///
     pub(crate) fn submit_parachain_header<T: pallet::Config<I>, I>(
         gateway_id: ChainId,
+        relay_block_hash: BridgedBlockHash<T, I>,
+        range: Vec<BridgedHeader<T, I>>,
         proof: StorageProof,
-        relay_block_hash: BridgedBlockHash<T, I>
     ) -> Result<(), &'static str> {
         let parachain = <ParachainIdMap<T, I>>::try_get(gateway_id)
             .map_err(|_| "Parachain not registered")?;
@@ -433,9 +434,18 @@ pub mod pallet {
             parachain
         )?;
 
+        let best_finalized = <MultiImportedHeaders<T, I>>::get(
+            gateway_id,
+            // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
+            // `ImportedHeaders` must contain an entry for `BestFinalized`.
+            <BestFinalizedMap<T, I>>::get(gateway_id)
+                .ok_or_else(|| "NoFinalizedHeader")?,
+        )
+        .ok_or_else(|| "NoFinalizedHeader")?;
+
         let hash = header.hash();
         let index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
-        let pruning = <MultiImportedHashes<T, I>>::try_get(gateway_id, index);
+        // let pruning = <MultiImportedHashes<T, I>>::try_get(gateway_id, index);
 
         <BestFinalizedMap<T, I>>::insert(gateway_id, hash);
 
@@ -447,6 +457,28 @@ pub mod pallet {
             (header.extrinsics_root(), header.state_root()),
         );
 
+        let mut anchor = header;
+
+        for header in range {
+            if header.number() <= best_finalized.number() {
+                break; // We're going back in time and dont want to overwrite
+            }
+
+            if *anchor.parent_hash() == header.hash()  {
+                <MultiImportedHeaders<T, I>>::insert(gateway_id, header.hash(), header.clone());
+                <MultiImportedHashes<T, I>>::insert(gateway_id, index, header.hash());
+                <MultiImportedRoots<T, I>>::insert(
+                    gateway_id,
+                    header.hash(),
+                    (header.extrinsics_root(), header.state_root()),
+                );
+
+                anchor = header;
+            } else {
+                return Err("Invalid header linkage");
+            }
+        }
+
         <RequestCountMap<T, I>>::mutate(gateway_id, |count| {
             match count {
                 Some(count) => *count += 1,
@@ -454,23 +486,23 @@ pub mod pallet {
             }
             *count
         });
-
-        // Update ring buffer pointer and remove old header.
-        <MultiImportedHashesPointer<T, I>>::insert(
-            gateway_id,
-            (index + 1) % T::HeadersToKeep::get(),
-        );
-
-        if let Ok(hash) = pruning {
-            log::debug!(
-                target: LOG_TARGET,
-                "Pruning old header: {:?} for gateway {:?}.",
-                hash,
-                gateway_id
-            );
-            <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
-            <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
-        }
+        //
+        // // Update ring buffer pointer and remove old header.
+        // <MultiImportedHashesPointer<T, I>>::insert(
+        //     gateway_id,
+        //     (index + 1) % T::HeadersToKeep::get(),
+        // );
+        //
+        // if let Ok(hash) = pruning {
+        //     log::debug!(
+        //         target: LOG_TARGET,
+        //         "Pruning old header: {:?} for gateway {:?}.",
+        //         hash,
+        //         gateway_id
+        //     );
+        //     <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
+        //     <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
+        // }
 
         Ok(().into())
     }
@@ -774,13 +806,14 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
                 data.justification
             )
         } else {
-            let data: ParachainHeaderData<BridgedBlockHash<T, I>> = Decode::decode(&mut &*encoded_header_data)
+            let data: ParachainHeaderData<BridgedHeader<T, I>> = Decode::decode(&mut &*encoded_header_data)
                 .map_err(|_| "Error decoding parachain header data")?;
 
             submit_parachain_header::<T, I>(
                 gateway_id,
+                data.relay_block_hash,
+                data.range,
                 data.proof,
-                data.relay_block_hash
             )
         }
     }

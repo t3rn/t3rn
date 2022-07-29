@@ -120,6 +120,10 @@ class CircuitCLI {
                 const [gatewayId] = parseSubmitHeaderArgs(process.argv);
                 const gatewayData = config.gateways.find(elem => elem.id === gatewayId)
                 if(gatewayData) {
+                     if(gatewayData.registrationData?.parachain !== null) {
+                        // @ts-ignore
+                        gatewayData.relaychainRpc = config.gateways.find(elem => elem.id === gatewayData.registrationData.parachain.relayChainId).rpc
+                    }
                     const transactionArgs: any[] = await submitHeader(this.circuit, gatewayData, gatewayId)
                     if (process.argv[4] && process.argv[4] == "--export") {
                         const fileName = `./exports/submit-header-` + process.argv[3] + '.json';
