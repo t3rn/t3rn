@@ -1,7 +1,7 @@
-# Run t3rn Collator on Rococo testnet (t0rn)
+# Run a t0rn Testnet Collator
 
 
-This guide outlines the essential minimum of steps required to run a collator for t0rn - a release candidate of t3rn to Rococo testnet. Guide uses the `v1.1.0-rc.0` release to Rococo, please however always use the latest available version.
+This guide outlines the essential minimum of steps required to run a collator for t0rn - a release candidate of t3rn on the Rococo testnet. This guide uses the `v1.1.0-rc.0` release, however always use the latest available version.
 
 Make sure to have your machine setup for [Rust and Substrate development](https://docs.substrate.io/v3/getting-started/installation/).
 
@@ -113,32 +113,32 @@ The Aura key must be inserted into the keystore *after* startup:
   --key-type aura
 ```
 
-## Get some t0rn from faucet 
+## Get Some T0RN Balance
 
 Your Collator needs some funds to register on testnet.
 
-Go to the [t0rn testnet faucet](https://dev.net.t3rn.io/faucet/), insert your substrate address and get some t0rn to cover transaction costs.
+Go to the [t0rn testnet faucet](https://dev.net.t3rn.io/faucet/), insert your substrate address and get some T0RN to cover transaction costs.
 
 ## Register as a candidate
 
-1. Go to [polkadot.js](https://polkadot.js.org/apps/#/explorer), switch to t0rn and connect your collator account using polkadot.js
+1. Go to the [polkadot.js app](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fdev.net.t3rn.io#/accounts) and connect your collator account by clicking "Add account", then inserting your previously generated secret phrase aka mnemonic.
 
-2. Set your session keys with your connected collator account under
-
-```
-Developer/RPC calls/author --> rotateKeys
-```
-
-3. Set the Session Key for your collator under
+2. Generate a new session key pair and obtain the corresponding public key. Copy it as it is needed in the next step.
 
 ```
-Developer/Extrinsics --> session -> setKeys(sr25519_pubkey, 0x1234)
+Developer --> RPC calls --> author --> rotateKeys()
+```
+
+3. Set the session key for your collator under
+
+```
+Developer --> Extrinsics --> session -> setKeys(sr25519_pubkey, 0x1234)
 ```
 
 4. Now finally register your collator as candidate.
 
 ```
-Developer/Extrinsics --> collatorSelection -> registerAsCandidate
+Developer --> Extrinsics --> collatorSelection -> registerAsCandidate()
 ```
 
 After some time your collator should be included and producing blocks!
