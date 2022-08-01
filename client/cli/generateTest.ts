@@ -19,10 +19,8 @@ const execute = async (command: string, waitInSec: number) => {
     })
 }
 
-
-
 const generateTestingData = async () => {
-    await execute("register roco --export -o 1-register-roco", 20)
+    await execute("register roco --export -o 1-register-roco", 10)
     await execute("submit-headers roco --export -o 2-headers-roco", 10);
     await execute("register pang --export -o 3-register-pang", 10);
     await execute("submit-headers roco --export -o 4-headers-roco", 10);

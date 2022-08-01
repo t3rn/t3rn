@@ -37,17 +37,17 @@ export class CircuitRelayer {
         })
     }
 
-    async submitHeaders(gatewayId: string, args: any[]) {
+    async submitHeaders(args: any[]) {
         const nonce = await this.fetchNonce(this.signer.address)
         return new Promise(async (res, rej) => {
             await this.circuit.tx.utility
                 .batch(
-                    args.map((arg: any) =>
-                        this.circuit.tx.portal.submitHeaders(
-                            gatewayId,
-                            arg.toHex() // we submit in encoded form to portal
+                    args.map((arg: any) => {
+                        return this.circuit.tx.portal.submitHeaders(
+                            arg.gatewayId,
+                            arg.data.toHex() // we submit in encoded form to portal
                         )
-                    )
+                    })
                 )
                 .signAndSend(this.signer, { nonce }, result => {
                     // @ts-ignore

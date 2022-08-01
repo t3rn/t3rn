@@ -18,6 +18,7 @@ export const encodeExport = (data: any, transactionType: string) => {
 
 const iterateEncode = (data: any, transactionType: string) => {
     let keys = Object.keys(data);
+    let result = {};
     if(keys.includes("initialU8aLength")) { // this is a polkadot/apiPromise object
         return {
             data: data.toHuman(),
@@ -26,10 +27,10 @@ const iterateEncode = (data: any, transactionType: string) => {
         }
     } else {
         for(let i = 0; i < keys.length; i++) {
-            data['encoded_' + keys[i]] = data[keys[i]].toHex().substring(2)
-            data[keys[i]] = data[keys[i]].toHuman()
+            result['encoded_' + keys[i]] = data[keys[i]].toHex().substring(2)
+            result[keys[i]] = data[keys[i]].toHuman()
         }
-        data['transactionType'] = transactionType;
-        return data;
+        result['transactionType'] = transactionType;
+        return result;
     }
 }

@@ -33,7 +33,7 @@ const generateBatchProof = async (circuit: any, target: any, gatewayId: string, 
             range,
             justification: decodeJustification(justification)
         })
-        transactionArguments.push(relaychainHeaderData)
+        transactionArguments.push({gatewayId: circuit.createType("ChainId", gatewayId), data: relaychainHeaderData})
         from = parseInt(signed_header.number.toJSON()) + 1
     }
     return transactionArguments;
@@ -54,13 +54,14 @@ const generateParachainProof = async (circuit: any, target: any, gatewayData: an
 
     const proof = await getStorageProof(gatewayData.relaychainRpc, latestRelayChainHeader.toJSON(), gatewayData.registrationData.parachain.id)
 
-    return [circuit.createType("ParachainHeaderData<Header>", {
+    const parachainHeaderData = circuit.createType("ParachainHeaderData<Header>", {
         relay_block_hash: latestRelayChainHeader.toJSON(),
         range: headers.reverse(),
         proof: {
             trieNodes: proof.toJSON().proof
         }
-    })]
+    })
+    return [{gatewayId: circuit.createType("ChainId", gatewayData.id), data: parachainHeaderData}]
 }
 
 const collectHeaderRange = async (target: any, from: number, to: number) => {

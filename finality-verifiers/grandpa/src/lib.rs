@@ -425,6 +425,30 @@ pub mod pallet {
         range: Vec<BridgedHeader<T, I>>,
         proof: StorageProof,
     ) -> Result<(), &'static str> {
+        ensure!(
+            <RequestCountMap<T,I>>::get(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
+            "Too many Requests"
+        );
+
+        ensure!(
+            range.len() > 0,
+            "empty range submitted"
+        );
+
+        let best_finalized = <MultiImportedHeaders<T, I>>::get(
+            gateway_id,
+            // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
+            // `ImportedHeaders` must contain an entry for `BestFinalized`.
+            <BestFinalizedMap<T, I>>::get(gateway_id)
+                .ok_or_else(|| "NoFinalizedHeader")?,
+            )
+        .ok_or_else(|| "NoFinalizedHeader")?;
+
+        ensure!( // enforce gap-free range submission
+            best_finalized.hash() == *range.last().unwrap().parent_hash(), // we have checked for empty vec already
+            "Invalid Header Linkage"
+        );
+
         let parachain = <ParachainIdMap<T, I>>::try_get(gateway_id)
             .map_err(|_| "Parachain not registered")?;
 
@@ -433,15 +457,6 @@ pub mod pallet {
             proof,
             parachain
         )?;
-
-        let best_finalized = <MultiImportedHeaders<T, I>>::get(
-            gateway_id,
-            // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
-            // `ImportedHeaders` must contain an entry for `BestFinalized`.
-            <BestFinalizedMap<T, I>>::get(gateway_id)
-                .ok_or_else(|| "NoFinalizedHeader")?,
-        )
-        .ok_or_else(|| "NoFinalizedHeader")?;
 
         let hash = header.hash();
         let index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();

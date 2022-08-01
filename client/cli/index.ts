@@ -61,8 +61,8 @@ class CircuitCLI {
                 const fileName = './exports/' + exportName + '.json';
                 this.exportData(registrationData, fileName, "register")
             }
-            registrationData.registration_data = registrationData.registration_data.toHex()
-            this.circuitRelayer.sudoSignAndSend(this.circuit.tx.portal.registerGateway(...Object.values(registrationData)))
+            registrationData[0].registration_data = registrationData[0].registration_data.toHex()
+            this.circuitRelayer.sudoSignAndSend(this.circuit.tx.portal.registerGateway(...Object.values(registrationData[0])))
                 .then(() => {
                     console.log("Registered and Activated!")
                     this.close()
@@ -114,9 +114,9 @@ class CircuitCLI {
             const transactionArgs: any[] = await submitHeader(this.circuit, gatewayData, id)
             if (exportArgs) {
                 const fileName = `./exports/` + exportName + '.json';
-                this.exportData(transactionArgs, fileName, "submit-headers")
+                this.exportData(transactionArgs, fileName, "submit-headers") // does formatting for export
             }
-            this.circuitRelayer.submitHeaders(id, transactionArgs)
+            this.circuitRelayer.submitHeaders(transactionArgs)
                 .then(() => {
                     console.log("Submitted Header!")
                     this.close()
@@ -170,7 +170,6 @@ class CircuitCLI {
             deepCopy = {...data};
         }
         let encoded = encodeExport(deepCopy, transactionType);
-        console.log(encoded.transactionType)
         fs.writeFile(fileName, JSON.stringify(encoded, null, 4), (err) => {
             if(err) {
               console.log(err);

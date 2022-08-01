@@ -32,7 +32,7 @@ export const registerPortalSubstrate = async (circuit: ApiPromise, gatewayData: 
 const registerPortalRelaychain = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any, epochsAgo: number) => {
     const { registrationHeader, authorities, authoritySetId } = await fetchPortalConsensusData(circuit, target, gatewayData, epochsAgo)
     console.log("Registering Block #", registrationHeader.number.toNumber());
-    return {
+    return [{
         url: circuit.createType("Vec<u8>", gatewayData.rpc),
         gateway_id: circuit.createType("ChainId", gatewayData.id),
         gateway_abi: createAbiConfig(circuit, gatewayData.registrationData.gatewayConfig),
@@ -48,7 +48,7 @@ const registerPortalRelaychain = async (circuit: ApiPromise, target: ApiPromise,
             gatewayData.registrationData.owner,
             null
         ])
-    }
+    }]
 }
 
 const registerPortalParachain = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any) => {
@@ -59,7 +59,7 @@ const registerPortalParachain = async (circuit: ApiPromise, target: ApiPromise, 
         gatewayData.registrationData.parachain.id
     )
 
-    return {
+    return [{
         url: circuit.createType("Vec<u8>", gatewayData.rpc),
         gateway_id: circuit.createType("ChainId", gatewayData.id),
         gateway_abi: createAbiConfig(circuit, gatewayData.registrationData.gatewayConfig),
@@ -75,7 +75,7 @@ const registerPortalParachain = async (circuit: ApiPromise, target: ApiPromise, 
             gatewayData.registrationData.owner,
             circuit.createType("Parachain", [gatewayData.registrationData.parachain.relayChainId, gatewayData.registrationData.parachain.id])
         ])
-    }
+    }]
 }
 
 const registerRelaychain = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any) => {
