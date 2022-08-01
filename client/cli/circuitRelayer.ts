@@ -1,16 +1,12 @@
-import{ ApiPromise, Keyring }from'@polkadot/api';
+import{ ApiPromise }from'@polkadot/api';
 
 export class CircuitRelayer {
     circuit: ApiPromise;
     signer: any;
 
-    constructor(circuit: ApiPromise) {
+    constructor(circuit: ApiPromise, signer: any) {
         this.circuit = circuit;
-        const keyring = new Keyring({ type: "sr25519" })
-        this.signer =
-            process.env.CIRCUIT_KEY === undefined
-                ? keyring.addFromUri("//Alice")
-                : keyring.addFromMnemonic(process.env.CIRCUIT_KEY)
+        this.signer = signer;
     }
 
     sudoSignAndSend(transaction: any) {

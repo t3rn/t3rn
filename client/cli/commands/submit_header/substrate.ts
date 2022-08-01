@@ -47,8 +47,6 @@ const generateParachainProof = async (circuit: any, target: any, gatewayData: an
         gatewayData.registrationData.parachain.id
     )
     const decodedParachainHeader = decodeHeader(parachainHeader.toJSON())
-    console.log(decodedParachainHeader.hash.toHex())
-
     const parachainHeightCircuit = await fetchGatewayHeight(gatewayData.id, circuit)
     console.log("Latest Para Finalized Height:", parachainHeightCircuit)
     console.log("Newest potential header:", decodedParachainHeader.number.toNumber())
@@ -56,8 +54,6 @@ const generateParachainProof = async (circuit: any, target: any, gatewayData: an
 
     const proof = await getStorageProof(gatewayData.relaychainRpc, latestRelayChainHeader.toJSON(), gatewayData.registrationData.parachain.id)
 
-    console.log(proof.toHuman())
-    //
     return [circuit.createType("ParachainHeaderData<Header>", {
         relay_block_hash: latestRelayChainHeader.toJSON(),
         range: headers.reverse(),
@@ -65,17 +61,6 @@ const generateParachainProof = async (circuit: any, target: any, gatewayData: an
             trieNodes: proof.toJSON().proof
         }
     })]
-    // return []
-
-
-    // get relaychain latest finalized from circuit -> DONE
-    // get parachain header at that block from relaychain -> signed_block
-    // get parachain latest finalized from circuit
-    // gather header range somehow
-    // generate read proof for signed_header
-
-
-
 }
 
 const collectHeaderRange = async (target: any, from: number, to: number) => {

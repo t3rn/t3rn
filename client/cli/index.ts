@@ -9,7 +9,16 @@ import {parseRegisterArgs, parseSubmitHeaderArgs, parseTransferArgs} from "./uti
 import {transfer} from "./commands/transfer";
 import * as fs from "fs";
 import {submitHeader} from "./commands/submit_header/submit_header";
-import {encodeExport} from "./utils/encoder";
+import {encodeExport, transferAmount} from "./utils/encoder";
+
+import { Command } from 'commander';
+const program = new Command();
+
+program
+  .name('t3rn CLI')
+  .description('CLI for interacting with the t3rn circuit')
+  .version('0.1.0');
+
 class CircuitCLI {
     circuit: ApiPromise;
     circuitRelayer: CircuitRelayer;
@@ -21,12 +30,12 @@ class CircuitCLI {
             types: types as any,
             rpc: rpc as any
         })
-        this.circuitRelayer = new CircuitRelayer(this.circuit)
         const keyring = new Keyring({ type: "sr25519" })
         this.signer =
             process.env.CIRCUIT_KEY === undefined
                 ? keyring.addFromUri("//Alice")
                 : keyring.addFromMnemonic(process.env.CIRCUIT_KEY)
+        this.circuitRelayer = new CircuitRelayer(this.circuit, this.signer)
 
     }
 
@@ -35,125 +44,119 @@ class CircuitCLI {
         process.exit(128);
     }
 
-    async run() {
-        await this.setup();
-        const args = process.argv[2]
-        switch(args) {
-            case "register": {
-                const [gatewayId, epochsAgo] = parseRegisterArgs(process.argv);
-                let data: any = config.gateways.find(elem => elem.id === gatewayId)
-                if(data) {
-                    if(data.registrationData?.parachain !== null) {
-                        // @ts-ignore
-                        data.relaychainRpc = config.gateways.find(elem => elem.id === data.registrationData.parachain.relayChainId).rpc
-                    }
-                    const registrationData: any = await register(this.circuit, data, epochsAgo)
-                    if (process.argv[5] && process.argv[5] == "--export") {
-                        const fileName = './exports/register-' + gatewayId + '.json';
-                        this.exportData(registrationData, fileName)
-                    }
-                    registrationData.registration_data = registrationData.registration_data.toHex()
-                    this.circuitRelayer.sudoSignAndSend(this.circuit.tx.portal.registerGateway(...Object.values(registrationData)))
-                        .then(() => {
-                            console.log("Registered and Activated!")
-                            this.close()
-                        })
-                        .catch(err => {
-                            console.log(err)
-                            console.log("Registration Failed!")
-                            this.close()
-                        })
+    async register(id: string, teleport: number, exportArgs: boolean, exportName: string) {
+        let data: any = config.gateways.find(elem => elem.id === id)
+        if(data) {
+            if(data.registrationData?.parachain !== null) {
+                // @ts-ignore
+                data.relaychainRpc = config.gateways.find(elem => elem.id === data.registrationData.parachain.relayChainId).rpc
+            }
+            const registrationData: any = await register(this.circuit, data, teleport)
+            if (exportArgs) {
+                const fileName = './exports/' + exportName + '.json';
+                this.exportData(registrationData, fileName, "register")
+            }
+            registrationData.registration_data = registrationData.registration_data.toHex()
+            this.circuitRelayer.sudoSignAndSend(this.circuit.tx.portal.registerGateway(...Object.values(registrationData)))
+                .then(() => {
+                    console.log("Registered and Activated!")
+                    this.close()
+                })
+                .catch(err => {
+                    console.log(err)
+                    console.log("Registration Failed!")
+                    this.close()
+                })
 
 
-                } else {
-                    console.log(`Config for ${process.argv[3]} not found!`)
-                    this.close();
-                }
-                break;
-            }
-            case "set-operational": {
-                const data = config.gateways.find(elem => elem.id === process.argv[3])
-                const hasArgument = !!process.argv[4];
-                if (data && hasArgument) {
-                    const argument = JSON.parse(process.argv[4]);
-                    const tx = await setOperational(this.circuit, data, argument)
-                    this.circuitRelayer.sudoSignAndSend(tx)
-                        .then(() => {
-                            console.log("setOperational Completed!");
-                            this.close();
-                        })
-                        .catch(err => {
-                            console.log(err);
-                            console.log("setOperational Failed!");
-                            this.close()
-                        })
-                } else {
-                    console.log(`Config or argument for ${process.argv[3]} not found!`)
-                    this.close();
-                }
-                break
-            }
-            case "transfer": {
-                const data = config.gateways.find(elem => elem.id === process.argv[3])
-                if(data) {
-                    const cliArgs = parseTransferArgs(process.argv, data)
-                    // @ts-ignore
-                    const transactionArgs: any = transfer(...cliArgs)
-                    // @ts-ignore
-                    this.circuitRelayer.onExtrinsicTrigger(...transactionArgs)
-                        .then(() => {
-                            console.log("Transfer Completed!");
-                            this.close();
-                        })
-                        .catch(err => {
-                            console.log("Transfer Failed! Error:", err);
-                            this.close()
-                        })
-
-                } else {
-                    console.log(`Config or argument for ${process.argv[3]} not found!`)
-                    this.close();
-                }
-                break
-            }
-            case "submit-headers": {
-                const [gatewayId] = parseSubmitHeaderArgs(process.argv);
-                const gatewayData = config.gateways.find(elem => elem.id === gatewayId)
-                if(gatewayData) {
-                     if(gatewayData.registrationData?.parachain !== null) {
-                        // @ts-ignore
-                        gatewayData.relaychainRpc = config.gateways.find(elem => elem.id === gatewayData.registrationData.parachain.relayChainId).rpc
-                    }
-                    const transactionArgs: any[] = await submitHeader(this.circuit, gatewayData, gatewayId)
-                    if (process.argv[4] && process.argv[4] == "--export") {
-                        const fileName = `./exports/submit-header-` + process.argv[3] + '.json';
-                        this.exportData(transactionArgs, fileName)
-                    }
-                    this.circuitRelayer.submitHeaders(gatewayId, transactionArgs)
-                        .then(() => {
-                            console.log("Submitted Header!")
-                            this.close()
-                        })
-                        .catch(err => {
-                            console.log(err)
-                            console.log("Header Submission Failed!")
-                            this.close()
-                        })
-
-                } else {
-                    console.log(`Config for ${process.argv[3]} not found!`)
-                    this.close();
-                }
-                break;
-            }
-            default: {
-                console.log("Command not found!")
-                this.close()
-            }
+        } else {
+            console.log(`Config for ${process.argv[3]} not found!`)
+            this.close();
         }
     }
 
-    exportData(data: any, fileName: string) {
+    async setOperational(id: string, operational: boolean, exportArgs: boolean, exportName: string) {
+        const data = config.gateways.find(elem => elem.id === id)
+        if (data) {
+            const transactionArguments = await setOperational(this.circuit, data, operational)
+            if (exportArgs) {
+                const fileName = './exports/' + exportName + '.json';
+                this.exportData(transactionArguments, fileName, "set-operational")
+            }
+            this.circuitRelayer.sudoSignAndSend(this.circuit.tx.portal.setOperational(transactionArguments?.gatewayId, transactionArguments?.operational))
+                .then(() => {
+                    console.log("setOperational Completed!");
+                    this.close();
+                })
+                .catch(err => {
+                    console.log(err);
+                    console.log("setOperational Failed!");
+                    this.close()
+                })
+        } else {
+            console.log(`Config or argument for ${process.argv[3]} not found!`)
+            this.close();
+        }
+    }
+
+    async submitHeaders(id: string, exportArgs: boolean, exportName: string) {
+        const gatewayData = config.gateways.find(elem => elem.id === id)
+        if(gatewayData) {
+            if(gatewayData.registrationData?.parachain !== null) {
+                // @ts-ignore
+                gatewayData.relaychainRpc = config.gateways.find(elem => elem.id === gatewayData.registrationData.parachain.relayChainId).rpc
+            }
+            const transactionArgs: any[] = await submitHeader(this.circuit, gatewayData, id)
+            if (exportArgs) {
+                const fileName = `./exports/` + exportName + '.json';
+                this.exportData(transactionArgs, fileName, "submit-headers")
+            }
+            this.circuitRelayer.submitHeaders(id, transactionArgs)
+                .then(() => {
+                    console.log("Submitted Header!")
+                    this.close()
+                })
+                .catch(err => {
+                    console.log(err)
+                    console.log("Header Submission Failed!")
+                    this.close()
+                })
+
+        } else {
+            console.log(`Config for ${process.argv[3]} not found!`)
+            this.close();
+        }
+    }
+
+    async transfer(id: string, exportArgs: boolean, exportName: string, amount: number, fee: number, receiver?: string) {
+        const gatewayData = config.gateways.find(elem => elem.id === id)
+
+        if(gatewayData) {
+            let encodedAmount = transferAmount(amount, gatewayData.registrationData.gatewayConfig.decimals, gatewayData.registrationData.gatewayConfig.valueTypeSize);
+            if(!receiver) receiver = gatewayData.transferData.receiver;
+            const transactionArgs: any = transfer(gatewayData, encodedAmount, this.signer.address, receiver, fee)
+            // console.log(transactionArgs)
+            // if (exportArgs) {
+            //     const fileName = `./exports/` + exportName + '.json';
+            //     this.exportData(transactionArgs, fileName)
+            // }
+            this.circuitRelayer.onExtrinsicTrigger(Object.values(transactionArgs))
+                .then(() => {
+                    console.log("Transfer Completed!");
+                    this.close();
+                })
+                .catch(err => {
+                    console.log("Transfer Failed! Error:", err);
+                    this.close()
+                })
+
+        } else {
+            console.log(`Config or argument for ${process.argv[3]} not found!`)
+            this.close();
+        }
+    }
+
+    exportData(data: any, fileName: string, transactionType: string) {
         let deepCopy;
         // since its pass-by-reference
         if(Array.isArray(data)) {
@@ -162,6 +165,7 @@ class CircuitCLI {
             deepCopy = {...data};
         }
         let encoded = encodeExport(deepCopy);
+        encoded.transactionType = transactionType
         fs.writeFile(fileName, JSON.stringify(encoded, null, 4), (err) => {
             if(err) {
               console.log(err);
@@ -172,8 +176,54 @@ class CircuitCLI {
     }
 }
 
-(async () => {
-    let cli = new CircuitCLI();
-    await cli.setup()
-    await cli.run()
-})()
+program.command('register')
+      .description('Register a gateway on the t3rn blockchain')
+      .argument('gateway_id <string>', 'gateway_id as specified in setup.ts')
+      .option('-t, --teleport <number>', 'how many epochs the registration should go back.', "0")
+      .option('-e, --export', 'export the transaction arguments as JSON', false)
+      .option('-o, --output <string>', 'specify the filename of the export', "export")
+      .action(async (id, options) => {
+          let cli = new CircuitCLI();
+          await cli.setup()
+          cli.register(id, parseInt(options.teleport), options.export, options.output)
+      });
+
+program.command('set-operational')
+      .description('Activate/deactivate a gateway')
+      .argument('gateway_id <string>', 'gateway_id as specified in setup.ts')
+      .argument('operational <bool>', 'gateway_id as specified in setup.ts')
+      .option('-e, --export', 'export the transaction arguments as JSON', false)
+      .option('-o, --output <string>', 'specify the filename of the export', "export")
+      .action(async (id, operational, options) => {
+          let cli = new CircuitCLI();
+          await cli.setup()
+          operational = operational === "true" ? true : false;
+          cli.setOperational(id, operational, options.export, options.output)
+      });
+
+program.command('submit-headers')
+      .description('Submit the latest headers of a gateway to portal. All available finalized headers will be added.')
+      .argument('gateway_id <string>', 'gateway_id as specified in setup.ts')
+      .option('-e, --export', 'export the transaction arguments as JSON', false)
+      .option('-o, --output <string>', 'specify the filename of the export', "export")
+      .action(async (id, options) => {
+          let cli = new CircuitCLI();
+          await cli.setup()
+          cli.submitHeaders(id, options.export, options.output)
+      });
+
+program.command('transfer')
+      .description('Triggers a transfer SideEffect, sending the targets nativ asset')
+      .argument('gateway_id <string>', 'gateway_id as specified in setup.ts')
+      .option('-a --amount <float>', 'transfer amount', '1')
+      .option('-r --receiver <string>', 'receiver address')
+      .option('-f --fee <float>', 't3rn fee', '0')
+      .option('-e, --export', 'export the transaction arguments as JSON', false)
+      .option('-o, --output <string>', 'specify the filename of the export', "export")
+      .action(async (id, options) => {
+          let cli = new CircuitCLI();
+          await cli.setup()
+          cli.transfer(id, options.export, options.output, parseFloat(options.amount), parseFloat(options.fee), options.receiver)
+      });
+
+program.parse();
