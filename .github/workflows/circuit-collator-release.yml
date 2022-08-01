@@ -7,15 +7,15 @@ on:
 
 env:
   PARACHAIN_NAME: t0rn
-  RUST_BACKTRACE: 1
+  RUST_BACKTRACE: full
   CARGO_TERM_COLOR: always
 
 jobs:
   build-release:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: ☁ Checkout git repo
-        uses: actions/checkout@master
+        uses: actions/checkout@v3
         with:
           submodules: recursive
           token: ${{ secrets.GH_PAT }}
@@ -23,7 +23,7 @@ jobs:
       - name: ⚙️ Get nightly rust toolchain with wasm target
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2021-11-01
+          toolchain: nightly-2022-06-16
           target: wasm32-unknown-unknown
           components: rustfmt, clippy
           override: true
@@ -64,13 +64,13 @@ jobs:
       - name: 🏷️ Get the version tag
         run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
 
-      - name: Login to Docker Hub
+      - name: 🐋 Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and publish the Docker image
+      - name: 🐳 Build and publish the Docker image
         uses: docker/build-push-action@v3
         with:
           context: .
@@ -82,7 +82,7 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache
 
   release-on-github:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: build-release
     steps:
       - name: ☁ Checkout git repo
