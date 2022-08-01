@@ -153,3 +153,19 @@ jobs:
           asset_path: ./target/release/circuit-collator.gz
           asset_name: ${{ env.PARACHAIN_NAME }}-circuit-collator-${{ env.PUSHED_TAG }}-x86_64-unknown-linux-gnu.gz
           asset_content_type: application/gzip
+
+  trigger-downstream:
+    runs-on: ubuntu-22.04
+    needs: release-on-github
+    steps:
+      - name: 🏷️ Get the version tag
+        run: echo "PUSHED_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+
+      - name: 🔫 Trigger chainops downstream
+        run: |
+          curl -XPOST /
+            -u ${{ secrets.GH_PAT }} /
+            -H "Accept:application/vnd.github" /
+            -H "Content-Type:application/json" /
+            https://api.github.com/repos/t3rn/chainops/cd.yml/dispatches /
+            --data "{\"action\":\"xtrigger\",\"tag\":\"${{ env.PUSHED_TAG }}\"}"
