@@ -41,7 +41,12 @@ class CircuitCLI {
 
     async close() {
         this.circuit.disconnect()
-        process.exit(128);
+        process.exit();
+    }
+
+    async error() {
+        this.circuit.disconnect()
+        process.exit(1);
     }
 
     async register(id: string, teleport: number, exportArgs: boolean, exportName: string) {
@@ -65,13 +70,13 @@ class CircuitCLI {
                 .catch(err => {
                     console.log(err)
                     console.log("Registration Failed!")
-                    this.close()
+                    this.error()
                 })
 
 
         } else {
             console.log(`Config for ${process.argv[3]} not found!`)
-            this.close();
+            this.error();
         }
     }
 
@@ -91,11 +96,11 @@ class CircuitCLI {
                 .catch(err => {
                     console.log(err);
                     console.log("setOperational Failed!");
-                    this.close()
+                    this.error()
                 })
         } else {
             console.log(`Config or argument for ${process.argv[3]} not found!`)
-            this.close();
+            this.error();
         }
     }
 
@@ -119,12 +124,12 @@ class CircuitCLI {
                 .catch(err => {
                     console.log(err)
                     console.log("Header Submission Failed!")
-                    this.close()
+                    this.error()
                 })
 
         } else {
             console.log(`Config for ${process.argv[3]} not found!`)
-            this.close();
+            this.error();
         }
     }
 
@@ -147,12 +152,12 @@ class CircuitCLI {
                 })
                 .catch(err => {
                     console.log("Transfer Failed! Error:", err);
-                    this.close()
+                    this.error()
                 })
 
         } else {
             console.log(`Config or argument for ${process.argv[3]} not found!`)
-            this.close();
+            this.error();
         }
     }
 
@@ -164,8 +169,8 @@ class CircuitCLI {
         } else {
             deepCopy = {...data};
         }
-        let encoded = encodeExport(deepCopy);
-        encoded.transactionType = transactionType
+        let encoded = encodeExport(deepCopy, transactionType);
+        console.log(encoded.transactionType)
         fs.writeFile(fileName, JSON.stringify(encoded, null, 4), (err) => {
             if(err) {
               console.log(err);
