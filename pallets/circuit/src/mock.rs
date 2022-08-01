@@ -160,7 +160,7 @@ use pallet_xbi_portal::{
     xbi_format::{XBICheckIn, XBICheckOut},
     Error,
 };
-use t3rn_primitives::xdns::XdnsRecord;
+use t3rn_primitives::xdns::{Parachain, XdnsRecord};
 
 pub type CurrencyId = u32;
 parameter_type_with_key! {
@@ -564,10 +564,13 @@ impl ExtBuilder {
         let circuit_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
             [3u8, 3u8, 3u8, 3u8],
-            None,
+            Some(Parachain {
+                relay_chain_id: *b"pdot",
+                id: 3333,
+            }),
             Default::default(),
             GatewayVendor::PolkadotLike,
-            GatewayType::ProgrammableExternal(0),
+            GatewayType::OnCircuit(0),
             Default::default(),
             GatewaySysProps {
                 ss58_format: 1333,
@@ -575,7 +578,7 @@ impl ExtBuilder {
                 token_decimals: 12,
             },
             vec![],
-            vec![*b"tran"],
+            t3rn_protocol::side_effects::standards::standard_side_effects_ids(),
         );
         let zero_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],

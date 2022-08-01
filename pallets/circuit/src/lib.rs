@@ -942,7 +942,7 @@ pub mod pallet {
             T::AccountId,
             AccountId20,
             AccountId20,
-            Value,
+            ValueEvm,
             Data,
             Gas,
             ValueEvm,
@@ -1754,6 +1754,8 @@ impl<T: Config> Pallet<T> {
             CircuitRole::Requester | CircuitRole::ContractAuthor => ensure_signed(origin),
             // ToDo: Handle active Relayer authorisation
             CircuitRole::Relayer => ensure_signed(origin),
+            // ToDo: Handle bonded Executor authorisation
+            CircuitRole::Executor => ensure_signed(origin),
             // ToDo: Handle other CircuitRoles
             _ => unimplemented!(),
         }
@@ -2184,7 +2186,7 @@ impl<T: Config> Pallet<T> {
             XBIInstr::CallNative { payload } => Ok(Event::<T>::CallNative(escrow_source, payload)),
             XBIInstr::CallEvm {
                 source,
-                dest,
+                target,
                 value,
                 input,
                 gas_limit,
@@ -2195,7 +2197,7 @@ impl<T: Config> Pallet<T> {
             } => Ok(Event::<T>::CallEvm(
                 escrow_source,
                 source,
-                dest,
+                target,
                 value,
                 input,
                 gas_limit,
