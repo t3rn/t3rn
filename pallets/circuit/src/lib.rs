@@ -1961,12 +1961,17 @@ impl<T: Config> Pallet<T> {
         Vec<SideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
         &'static str,
     > {
-        let mut side_effects_converted = Vec::new();
-        for step in side_effects.iter() {
-            side_effects_converted.push(step.into());
+        let side_effects: Vec<
+            SideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+        > = side_effects
+            .into_iter()
+            .filter_map(|se| se.try_into().ok()) // TODO: maybe not
+            .collect();
+        if side_effects.is_empty() {
+            Err("No side effects provided")
+        } else {
+            Ok(side_effects)
         }
-
-        Ok(side_effects_converted)
     }
 
     /// The account ID of the Circuit Vault.

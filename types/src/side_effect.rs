@@ -1,9 +1,11 @@
-use codec::{Decode, Encode};
-use num::Zero;
+use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::{
-    prelude::{fmt::Debug, vec, vec::Vec},
+    prelude::{collections::VecDeque, fmt::Debug, vec, vec::Vec},
     TypeInfo,
 };
+
+#[cfg(feature = "runtime")]
+use num::Zero;
 
 pub type TargetId = [u8; 4];
 pub type EventSignature = Vec<u8>;
@@ -22,11 +24,11 @@ pub struct SideEffect<AccountId, BlockNumber, BalanceOf> {
 }
 
 #[cfg(feature = "runtime")]
-impl<
-        AccountId: Encode,
-        BlockNumber: Ord + Copy + sp_runtime::traits::Zero + Encode,
-        BalanceOf: Copy + sp_runtime::traits::Zero + Encode + Decode,
-    > SideEffect<AccountId, BlockNumber, BalanceOf>
+impl<AccountId, BlockNumber, BalanceOf> SideEffect<AccountId, BlockNumber, BalanceOf>
+where
+    AccountId: Encode,
+    BlockNumber: Ord + Copy + sp_runtime::traits::Zero + Encode,
+    BalanceOf: Copy + sp_runtime::traits::Zero + Encode + Decode,
 {
     pub fn generate_id<Hasher: sp_core::Hasher>(&self) -> <Hasher as sp_core::Hasher>::Out {
         Hasher::hash(Encode::encode(self).as_ref())
@@ -37,86 +39,142 @@ impl<
     }
 }
 
-// Decode the side effect from encoded Chain.
-impl<
-        AccountId: Encode,
-        BlockNumber: Ord + Copy + Zero + Encode,
-        BalanceOf: Copy + Zero + Encode + Decode,
-    > From<&Vec<u8>> for SideEffect<AccountId, BlockNumber, BalanceOf>
+#[cfg(feature = "runtime")]
+/// Decode the side effect from encoded Chain.
+impl<AccountId, BlockNumber, BalanceOf> TryFrom<Vec<u8>>
+    for SideEffect<AccountId, BlockNumber, BalanceOf>
+where
+    AccountId: Encode + MaxEncodedLen,
+    BlockNumber: Ord + Copy + Zero + Encode,
+    BalanceOf: Copy + Zero + Encode + Decode + MaxEncodedLen,
 {
-    fn from(bytes: &Vec<u8>) -> Self {
-        let (action, args) = match_action(bytes[1], &bytes[2..]).unwrap();
-        SideEffect::<AccountId, BlockNumber, BalanceOf> {
-            target: match_target(bytes[0]).unwrap(),
+    type Error = &'static str;
+
+    fn try_from(bytes: Vec<u8>) -> Result<Self, Self::Error> {
+        let mut bytes: VecDeque<u8> = bytes.into();
+        let mut take_next = || bytes.pop_front().ok_or("no more bytes");
+
+        let target: TargetId = TargetByte(take_next()?).try_into()?;
+        let action = Action::try_from(take_next()?)?;
+
+        let bytes: Vec<u8> = bytes.into();
+        let args = extract_args::<AccountId, BalanceOf, [u8; 32]>(
+            &action,
+            &mut bytes::Bytes::from(bytes),
+        )?;
+        let action_bytes: [u8; 4] = action.into();
+        let action_bytes = action_bytes.encode();
+
+        Ok(SideEffect::<AccountId, BlockNumber, BalanceOf> {
+            target,
             prize: Zero::zero(),
             ordered_at: Zero::zero(),
-            encoded_action: action.into(),
+            encoded_action: action_bytes.into(),
             encoded_args: args,
             signature: vec![],
             enforce_executioner: None,
+        })
+    }
+}
+
+struct TargetByte(u8);
+
+impl TryInto<TargetId> for TargetByte {
+    type Error = &'static str;
+
+    fn try_into(self) -> Result<TargetId, Self::Error> {
+        match self.0 {
+            0 => Ok(*b"ksma"),
+            1 => Ok(*b"pdot"),
+            2 => Ok(*b"karu"),
+            3 => Ok(*b"t3rn"),
+            _ => Err("Invalid target Id"),
         }
     }
 }
 
-fn match_target(id: u8) -> Result<[u8; 4], &'static str> {
-    match id {
-        0 => Ok(*b"ksma"),
-        1 => Ok(*b"pdot"),
-        2 => Ok(*b"karu"),
-        3 => Ok(*b"t3rn"),
-        _ => Err("Invalid target Id"),
+enum Action {
+    Transfer,
+    MultiTransfer,
+    AddLiquidity,
+    Swap,
+    Call,
+}
+
+impl TryFrom<u8> for Action {
+    type Error = &'static str;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Action::Transfer),
+            1 => Ok(Action::MultiTransfer),
+            2 => Ok(Action::AddLiquidity),
+            3 => Ok(Action::Swap),
+            4 => Ok(Action::Call),
+            _ => Err("Invalid action id"),
+        }
     }
 }
 
-fn match_action(id: u8, bytes: &[u8]) -> Result<(Bytes, Vec<Bytes>), &'static str> {
-    match id {
-        0 => {
-            let mut args: Vec<Bytes> = bytes[0..64]
-                .chunks(32)
-                .map(|chunk| chunk.to_vec())
-                .collect(); //from, to
-            args.push(bytes[64..].to_vec()); //amount
-            Ok((b"tran".encode(), args))
-        },
-        1 => {
-            let mut args: Vec<Bytes> = bytes[0..64]
-                .chunks(32)
-                .map(|chunk| chunk.to_vec())
-                .collect(); //from, to
-            args.push(bytes[64..80].to_vec()); //amount
-            args.push(bytes[80..].to_vec()); //asset; not sure maybe 2 bytes, maybe 4
+impl Into<[u8; 4]> for Action {
+    fn into(self) -> [u8; 4] {
+        match self {
+            Action::Transfer => *b"tran",
+            Action::MultiTransfer => *b"mult",
+            Action::AddLiquidity => *b"aliq",
+            Action::Swap => *b"swap",
+            Action::Call => *b"call",
+        }
+    }
+}
 
-            Ok((b"mult".encode(), args))
-        },
-        2 => {
-            let mut args: Vec<Bytes> = bytes[0..160]
-                .chunks(32)
-                .map(|chunk| chunk.to_vec())
-                .collect(); //from, to, asset_lef, asset_right
-            args.push(bytes[160..176].to_vec()); //amount_left
-            args.push(bytes[176..192].to_vec()); //amount_right
-            args.push(bytes[192..].to_vec()); //amount liquidity token
+fn extract_args<AccountId: MaxEncodedLen, BalanceOf: MaxEncodedLen, Hash: MaxEncodedLen>(
+    action: &Action,
+    bytes: &mut bytes::Bytes,
+) -> Result<Vec<Bytes>, &'static str> {
+    let mut args = Vec::new();
 
-            Ok((b"aliq".encode(), args))
+    match *action {
+        Action::Transfer => {
+            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // from
+            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // to
+            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt
+            Ok(args)
         },
-        3 => {
-            let mut args: Vec<Bytes> = bytes[0..64]
-                .chunks(32)
-                .map(|chunk| chunk.to_vec())
-                .collect(); //from, to
-            args.push(bytes[64..80].to_vec()); //amount_from
-            args.push(bytes[80..96].to_vec()); //amount_to
-            args.push(bytes[96..128].to_vec()); //asset_from
-            args.push(bytes[128..].to_vec()); //asset_to
+        Action::MultiTransfer => {
+            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // from
+            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // to
+            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt
+            args.push(bytes.to_vec()); //asset; not sure maybe 2 bytes, maybe 4 TODO: wat
 
-            Ok((b"swap".encode(), args))
+            Ok(args)
         },
-        4 => {
-            let mut args: Vec<Bytes> = Vec::new();
-            args.push(bytes[0..32].to_vec()); //caller
-            args.push(bytes[32..].to_vec()); //vm
+        Action::AddLiquidity => {
+            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // from
+            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // to
+            args.push(bytes.split_to(Hash::max_encoded_len()).to_vec()); // asset_left
+            args.push(bytes.split_to(Hash::max_encoded_len()).to_vec()); // asset_right
+            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt_left
+            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt_right
+            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt_liquidity_token TODO: why no token hash?
 
-            Ok((b"call".encode(), args))
+            Ok(args)
+        },
+        Action::Swap => {
+            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // from
+            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // to
+            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt_left
+            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt_right
+            args.push(bytes.split_to(Hash::max_encoded_len()).to_vec()); // asset_left
+            args.push(bytes.split_to(Hash::max_encoded_len()).to_vec()); // asset_right
+
+            Ok(args)
+        },
+        Action::Call => {
+            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // caller
+            args.push(bytes.to_vec()); // args
+
+            Ok(args)
         },
         _ => Err("Invalid action Id"),
     }
@@ -176,6 +234,7 @@ pub enum Error {
 mod tests {
     use super::*;
 
+    use scale_info::prelude::vec::Vec;
     use sp_core::crypto::AccountId32;
 
     type BlockNumber = u64;
@@ -281,7 +340,7 @@ mod tests {
             5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
             6, 6, 6, 6, 6, 6, 6, 6, 100, 0, 0, 0,
         ];
-        let s = SideEffect::<[u8; 2], u32, u32>::from(&v);
+        let s = SideEffect::<[u8; 32], u32, u32>::try_from(v).unwrap();
 
         assert_eq!(
             s,
