@@ -61,6 +61,8 @@ frame_support::construct_runtime!(
         XDNS: pallet_xdns::{Pallet, Call, Storage, Config<T>, Event<T>},
         CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>},
         // BasicOutboundChannel: snowbridge_basic_channel::outbound::{Pallet, Config<T>, Storage, Event<T>},
+        RococoBridge: pallet_grandpa_finality_verifier::{Pallet, Storage},
+        Portal: pallet_portal::{Pallet, Call, Storage, Event<T>},
 
         ORMLTokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>},
 
@@ -332,6 +334,20 @@ impl pallet_circuit_portal::Config for Test {
     type Xdns = XDNS;
 }
 
+type RococoBridgeInstance = ();
+
+impl pallet_grandpa_finality_verifier::Config<RococoBridgeInstance> for Test {
+    type BridgedChain = Blake2ValU32Chain;
+    type MaxRequests = MaxRequests;
+    type HeadersToKeep = HeadersToKeep;
+    type WeightInfo = ();
+}
+
+impl pallet_portal::Config for Test {
+    type Event = Event;
+    type Xdns = XDNS;
+}
+
 parameter_types! {
     pub const UnsignedPriority: u64 = 1 << 20;
 }
@@ -500,6 +516,7 @@ impl Config for Test {
     type Xdns = XDNS;
     type XtxTimeoutCheckInterval = ConstU64<10>;
     type XtxTimeoutDefault = ConstU64<100>;
+    type Portal = Portal;
 }
 
 impl ExtBuilder {

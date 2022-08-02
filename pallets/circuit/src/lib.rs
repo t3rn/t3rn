@@ -56,6 +56,7 @@ use t3rn_primitives::{
     transfers::EscrowedBalanceOf,
     xdns::Xdns,
 };
+use t3rn_primitives::portal::Portal;
 use t3rn_protocol::side_effects::{
     confirm::{
         ethereum::EthereumSideEffectsParser, protocol::*, substrate::SubstrateSideEffectsParser,
@@ -108,6 +109,7 @@ pub mod pallet {
     use t3rn_primitives::{
         circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
         circuit_portal::CircuitPortal,
+        portal::Portal,
         xdns::Xdns,
     };
 
@@ -295,6 +297,9 @@ pub mod pallet {
 
         /// A type that provides portal functionality
         type CircuitPortal: CircuitPortal<Self>;
+
+        /// A type that gives access to the new portal functionality
+        type Portal: Portal<Self>;
 
         /// The maximum number of signals that can be queued for handling.
         ///
@@ -1737,11 +1742,12 @@ impl<T: Config> Pallet<T> {
                         <frame_system::Pallet<T>>::block_number(),
                     ),
                 ));
-                let submission_target_height = T::CircuitPortal::read_cmp_latest_target_height(
-                    side_effect.target,
-                    None,
-                    None,
-                )?;
+                let submission_target_height = T::Portal::get_latest_finalized_height(side_effect.target)?;
+                // let submission_target_height = T::CircuitPortal::read_cmp_latest_target_height(
+                //     side_effect.target,
+                //     None,
+                //     None,
+                // )?;
 
                 full_side_effects.push(FullSideEffect {
                     input: side_effect.clone(),

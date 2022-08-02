@@ -75,6 +75,7 @@ impl pallet_circuit::Config for Runtime {
     type Xdns = XDNS;
     type XtxTimeoutCheckInterval = ConstU32<50>;
     type XtxTimeoutDefault = ConstU32<400>;
+    type Portal = Portal;
 }
 
 parameter_types! {

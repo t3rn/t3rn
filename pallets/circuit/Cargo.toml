@@ -53,8 +53,10 @@ pallet-balances = { git = "https://github.com/paritytech/substrate", branch = 'p
 pallet-sudo     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 
 pallet-circuit-portal     = { path = "../circuit-portal" }
+pallet-portal             = { path = "../portal" }
 pallet-contracts-registry = { path = "../../pallets/contracts-registry" }
 pallet-xdns               = { path = "../../pallets/xdns" }
+pallet-grandpa-finality-verifier = { default-features = false, path = "../../finality-verifiers/grandpa" }
 
 #snowbridge-basic-channel = { git = "https://github.com/t3rn/snowbridge", branch = "polkadot-v0.9.19", default-features = false }
 
