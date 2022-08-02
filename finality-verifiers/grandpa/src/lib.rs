@@ -841,6 +841,20 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         }
         None
     }
+
+    pub fn get_latest_finalized_height(
+        gateway_id: ChainId
+    ) -> Option<Vec<u8>> {
+        if let Some(header_hash) = <BestFinalizedMap<T, I>>::get(gateway_id) {
+            if let Some(header) = <MultiImportedHeaders<T, I>>::get(gateway_id, header_hash) {
+                return Some(header.number().encode())
+            } else {
+                return None
+            }
+        } else {
+            return None
+        }
+    }
 }
 
 pub(crate) fn find_scheduled_change<H: HeaderT>(

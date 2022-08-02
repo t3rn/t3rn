@@ -1,5 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use frame_support::sp_runtime::DispatchError;
 /// Edit this file to define custom logic or remove it if it is not needed.
 /// Learn more about FRAME and the core library of Substrate FRAME pallets:
 /// <https://docs.substrate.io/v3/runtime/frame>
@@ -95,7 +96,9 @@ pub mod pallet {
         /// Finality Verifiers operational status can't be updated
         SetOperationalError,
         /// The header could not be added
-        SubmitHeaderError
+        SubmitHeaderError,
+        /// No gateway height could be found
+        NoGatewayHeightAvailable
     }
 
     // Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -109,7 +112,7 @@ pub mod pallet {
             url: Vec<u8>,
             gateway_id: ChainId,
             gateway_abi: GatewayABIConfig,
-            gateway_vendor: GatewayVendor, // Maps to FV
+            gateway_vendor: GatewayVendor,
             gateway_type: GatewayType,
             gateway_genesis: GatewayGenesisConfig,
             gateway_sys_props: GatewaySysProps,
@@ -265,5 +268,25 @@ impl<T: Config> Portal<T> for Pallet<T> {
             GatewayVendor::Rococo =>  return pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::get_latest_finalized_header(gateway_id),
             _ => unimplemented!()
         };
+    }
+
+    fn get_latest_finalized_height(
+        gateway_id: ChainId
+    ) -> Result<Vec<u8>, DispatchError> {
+        let vendor_result = <T as Config>::Xdns::get_gateway_vendor(&gateway_id);
+
+        let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
+            .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
+
+
+        let res = match vendor {
+            GatewayVendor::Rococo =>  pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::get_latest_finalized_height(gateway_id),
+            _ => unimplemented!()
+        };
+
+        match res {
+            Some(height) => Ok(height),
+            None => Err(Error::<T>::NoGatewayHeightAvailable.into())
+        }
     }
 }
