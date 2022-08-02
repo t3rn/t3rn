@@ -1,4 +1,5 @@
 use crate::{
+    account_manager::Reason,
     circuit::LocalStateExecutionView,
     contract_metadata::ContractType,
     contracts_registry::{AuthorInfo, RegistryContract},
@@ -17,9 +18,13 @@ pub struct GetState<T: frame_system::Config> {
 }
 
 #[derive(Encode, Decode)]
-pub enum PrecompileArgs<T: frame_system::Config> {
+pub enum PrecompileArgs<T, Balance>
+where
+    T: frame_system::Config,
+    Balance: Encode + Decode,
+{
     GetState(T::Origin, GetState<T>),
-    SubmitSideEffects(T::Origin, SideEffects<T::AccountId, u128, T::Hash>),
+    SubmitSideEffects(T::Origin, SideEffects<T::AccountId, Balance, T::Hash>),
     Signal(T::Origin, ExecutionSignal<T::Hash>),
 }
 
@@ -39,9 +44,10 @@ impl<T: frame_system::Config> PrecompileInvocation<T> {
     }
 }
 
-pub trait Precompile<T>
+pub trait Precompile<T, Balance>
 where
     T: frame_system::Config,
+    Balance: Encode + Decode,
 {
     /// Looks up a precompile function pointer
     fn lookup(dest: &T::Hash) -> Option<u8>;
@@ -50,7 +56,7 @@ where
     fn invoke_raw(precompile: &u8, args: &[u8], output: &mut Vec<u8>);
 
     /// Invoke a precompile
-    fn invoke(args: PrecompileArgs<T>) -> Result<PrecompileInvocation<T>, DispatchError>;
+    fn invoke(args: PrecompileArgs<T, Balance>) -> Result<PrecompileInvocation<T>, DispatchError>;
 }
 
 pub trait LocalStateAccess<T>
@@ -68,14 +74,17 @@ pub trait Remuneration<T: frame_system::Config, Balance> {
     fn try_remunerate<Module: ModuleOperations<T, Balance>>(
         payee: &T::AccountId,
         module: &Module,
-    ) -> DispatchResult;
+    ) -> Result<u64, sp_runtime::DispatchError>;
 
     /// Try to remunerate the fees from the given module with a custom balance
     fn try_remunerate_exact<Module: ModuleOperations<T, Balance>>(
         payee: &T::AccountId,
         amount: Balance,
         module: &Module,
-    ) -> DispatchResult;
+    ) -> Result<u64, sp_runtime::DispatchError>;
+
+    /// Try to finalize a ledger item with an reason
+    fn try_finalize(ledger_id: u64, reason: Reason) -> DispatchResult;
 }
 
 pub enum Characteristic {
@@ -97,11 +106,12 @@ pub enum SignalOpcode {
 }
 
 pub trait ThreeVm<T, Balance>:
-    Precompile<T>
+    Precompile<T, Balance>
     + Signaller<T::Hash, Result = Result<SignalOpcode, DispatchError>>
     + Remuneration<T, Balance>
 where
     T: frame_system::Config,
+    Balance: Encode + Decode,
 {
     fn peek_registry(
         id: &T::Hash,
@@ -124,10 +134,12 @@ where
 
     fn remunerable_check(kind: &ContractType) -> Result<(), DispatchError>;
 
-    fn try_persist_author<Module: ModuleOperations<T, Balance>>(
+    fn try_persist_author(
         contract: &T::AccountId,
-        module: &Module,
+        author: Option<&AuthorInfo<T::AccountId, Balance>>,
     ) -> Result<(), DispatchError>;
+
+    fn try_remove_author(contract: &T::AccountId) -> Result<(), DispatchError>;
 }
 
 pub trait ModuleOperations<T: frame_system::Config, Balance> {

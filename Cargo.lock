@@ -6385,7 +6385,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-3vm"
-version = "1.0.0-alpha.0"
+version = "0.1.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6978,7 +6978,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm"
-version = "6.0.0-dev"
+version = "0.1.0"
 dependencies = [
  "evm",
  "fp-evm",
@@ -6987,7 +6987,6 @@ dependencies = [
  "frame-system",
  "hex",
  "log",
- "pallet-balances",
  "pallet-timestamp",
  "parity-scale-codec 3.1.2",
  "primitive-types 0.11.1",
@@ -6999,7 +6998,6 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "syn",
  "t3rn-primitives",
 ]
 
