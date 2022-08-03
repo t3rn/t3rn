@@ -38,6 +38,10 @@ pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = '
 pallet-sudo      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 
+pallet-executors               = { path = "../../pallets/executors" }
+pallet-treasury               = { path = "../../pallets/treasury" }
+pallet-account-manager               = { path = "../../pallets/account-manager" }
+
 [features]
 default = [ "std" ]
 runtime-benchmarks = [ "frame-benchmarking/runtime-benchmarks" ]

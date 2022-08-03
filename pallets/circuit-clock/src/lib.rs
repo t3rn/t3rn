@@ -1,3 +1,4 @@
+#![feature(associated_type_defaults)]
 //! <!-- markdown-link-check-disable -->
 //! # Account Manager pallet
 //! </pre></p></details>
@@ -12,7 +13,7 @@ use frame_support::{
     pallet_prelude::Weight,
     traits::{Currency, Get},
 };
-use sp_runtime::traits::Convert;
+
 pub use t3rn_primitives::{
     abi::{GatewayABIConfig, Type},
     common::RoundInfo,
@@ -20,11 +21,7 @@ pub use t3rn_primitives::{
     ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor,
 };
 use t3rn_primitives::{
-    account_manager::{AccountManager, ExecutionRegistryItem, Reason, SfxSettlement},
-    executors::Executors,
-    transfers::EscrowedBalanceOf,
-    treasury::Treasury,
-    EscrowTrait,
+    account_manager::AccountManager, executors::Executors, treasury::Treasury, EscrowTrait,
 };
 
 #[cfg(test)]
@@ -35,9 +32,7 @@ mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
-pub mod manager;
-pub mod transaction;
-pub mod weights;
+mod weights;
 
 pub type BalanceOf<T> =
     <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -48,22 +43,22 @@ pub type BalanceOf<T> =
 pub mod pallet {
     // Import various types used to declare pallet in scope.
     use super::*;
-    use frame_support::{
-        pallet_prelude::*,
-        traits::{Currency, ExistenceRequirement, ReservableCurrency},
-    };
+    use frame_support::{pallet_prelude::*, traits::ReservableCurrency};
     use frame_system::pallet_prelude::*;
-    use t3rn_primitives::{account_manager::ExecutionId, monetary::BeneficiaryRole};
+    use sp_runtime::traits::Zero;
+    use t3rn_primitives::{
+        circuit_clock::{CircuitClock, ClaimableArtifacts},
+        transfers::EscrowedBalanceOf,
+    };
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
-        /// Type representing the weight of this pallet
-        type WeightInfo: weights::WeightInfo;
-
         type Currency: ReservableCurrency<Self::AccountId>;
+
+        type WeightInfo: weights::WeightInfo;
 
         /// Type providing some time handler
         type Time: frame_support::traits::Time;
@@ -74,6 +69,9 @@ pub mod pallet {
         /// A type that manages escrow, and therefore balances
         type Escrowed: EscrowTrait<Self>;
 
+        #[pallet::constant]
+        type RoundDuration: Get<Self::BlockNumber>;
+
         type Treasury: Treasury<Self>;
 
         type Executors: Executors<
@@ -81,6 +79,16 @@ pub mod pallet {
             <<Self::Escrowed as EscrowTrait<Self>>::Currency as frame_support::traits::Currency<
                 Self::AccountId,
             >>::Balance,
+        >;
+
+        /// A type that provides access to AccountManager
+        type AccountManager: AccountManager<
+            Self::AccountId,
+            <<Self::Escrowed as EscrowTrait<Self>>::Currency as frame_support::traits::Currency<
+                Self::AccountId,
+            >>::Balance,
+            Self::Hash,
+            Self::BlockNumber,
         >;
     }
 
@@ -92,138 +100,86 @@ pub mod pallet {
     pub struct Pallet<T>(PhantomData<T>);
 
     #[pallet::storage]
-    #[pallet::getter(fn execution_registry)]
-    pub type ExecutionRegistry<T: Config> = StorageMap<
-        _,
-        Blake2_128,
-        ExecutionId,
-        ExecutionRegistryItem<T::AccountId, <T::Currency as Currency<T::AccountId>>::Balance>,
-    >;
-
-    #[pallet::storage]
-    pub type ExecutionNonce<T: Config> = StorageValue<_, ExecutionId, ValueQuery>;
-
-    #[pallet::storage]
-    pub type LastClaim<T: Config> =
+    pub type LastClaims<T: Config> =
         StorageMap<_, Identity, T::AccountId, RoundInfo<T::BlockNumber>>;
 
     #[pallet::storage]
-    pub type SfxSettlementsPerRound<T: Config> = StorageDoubleMap<
+    pub type ClaimableArtifactsPerRound<T: Config> = StorageMap<
         _,
-        Blake2_128,
-        RoundInfo<T::BlockNumber>,
         Identity,
-        T::Hash, // sfx_id
-        SfxSettlement<<T::Currency as Currency<T::AccountId>>::Balance, T::AccountId>,
+        RoundInfo<T::BlockNumber>,
+        Vec<ClaimableArtifacts<T::AccountId, EscrowedBalanceOf<T, <T as Config>::Escrowed>>>,
     >;
 
     #[pallet::storage]
-    pub type TotalSfxRewardCountPerRoundPerExecutor<T: Config> = StorageDoubleMap<
+    pub type TotalRewardCountPerRound<T: Config> = StorageMap<
         _,
         Blake2_128,
         RoundInfo<T::BlockNumber>,
-        Identity,
-        T::AccountId, // executor id
-        <T::Currency as Currency<T::AccountId>>::Balance,
+        EscrowedBalanceOf<T, <T as Config>::Escrowed>,
     >;
 
-    #[pallet::storage]
-    pub type TotalSfxRewardCountPerRound<T: Config> = StorageMap<
-        _,
-        Blake2_128,
-        RoundInfo<T::BlockNumber>,
-        <T::Currency as Currency<T::AccountId>>::Balance,
-    >;
-
-    #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(10_000 + T::DbWeight::get().reads(2) + T::DbWeight::get().writes(1))]
-        pub fn deposit(
-            origin: OriginFor<T>,
-            payee: T::AccountId,
-            recipient: T::AccountId,
-            amount: BalanceOf<T>,
-        ) -> DispatchResult {
-            ensure_root(origin)?;
+        fn calculate_claimable_for_round(n: T::BlockNumber) -> DispatchResult {
+            // fixme: move current_round from treasury to circuit-clock
+            let r = T::Treasury::current_round();
+            let mut claimable_artifacts = vec![];
+            claimable_artifacts.extend(T::AccountManager::on_collect_claimable(n, r)?);
+            // claimable_artifacts.push(T::Treasury::on_collect_claimable(n, r)?);
+            // claimable_artifacts.push(T::Contracts::on_collect_claimable(n, r)?);
+            // claimable_artifacts.push(T::Ambassadors::on_collect_claimable(n, r)?);
+            // claimable_artifacts.push(T::LiquidityPools::on_collect_claimable(n, r)?);
 
-            <Self as AccountManager<T::AccountId, BalanceOf<T>, T::Hash>>::deposit(
-                &payee, &recipient, amount,
-            )
+            ClaimableArtifactsPerRound::<T>::insert(r, claimable_artifacts.clone());
+            // todo: aggregated claimable_artifacts to TotalClaimablePerRound
+            Ok(().into())
         }
 
-        #[pallet::weight(10_000 + T::DbWeight::get().reads(1) + T::DbWeight::get().writes(1))]
-        pub fn finalize(
-            origin: OriginFor<T>,
-            execution_id: ExecutionId,
-            reason: Option<Reason>,
-        ) -> DispatchResult {
-            ensure_root(origin)?;
-
-            <Self as AccountManager<T::AccountId, BalanceOf<T>, T::Hash>>::finalize(
-                execution_id,
-                reason,
-            )
-        }
-
-        #[pallet::weight(10_000 + T::DbWeight::get().reads(1) + T::DbWeight::get().writes(1))]
-        pub fn claim(origin: OriginFor<T>, role: BeneficiaryRole) -> DispatchResult {
-            let payee = ensure_signed(origin)?;
-            // todo: check if who is a legit beneficiary with pallet-executors
-
-            let start_claim_from_round = LastClaim::<T>::get(payee.clone());
-
-            match role {
-                BeneficiaryRole::Developer => {
-                    todo!()
-                },
-                BeneficiaryRole::Executor => {
-                    for settling_round in
-                        start_claim_from_round.index..T::Treasury::current_round().index
-                    {
-                        let reward_per_round = TotalSfxRewardCountPerRoundPerExecutor::<T>::get(
-                            settling_round,
-                            payee.clone(),
-                        );
-                        let total_per_round = TotalSfxRewardCountPerRound::get(settling_round);
-                        // ToDo: to safe reward per round add now inflation rate based on tokenomics:
-                        // To further prevent drastically high payouts to Executors during times when network is stale,
-                        // there is a threshold for rewards Executors  per cross-chain a single transaction.
-                        // We put the constant threshold of a maximum of 5 times of the reward amount given by inflation.
-                        // This is on top of the base reward the executor got from the original fee set be a user.
-                        //
-                        // The calculated reward per each cross-chain transaction can be approximated with the following formula:
-                        // total reward per cross-chain tx = initial reward + MIN ( 5 * initial reward, inflation shares in a given time period)
-
-                        // let inflation_rewards = T::Treasury::calc_executor_inflation_rewards(settling_round, who, total_per_round)?;
-                        let inflation_rewards = 0;
-                        let mut claimable = reward_per_round + inflation_rewards;
-                        claimable *= (T::Executors::collateral_bond(payee)
-                            / T::Executors::collateral_bond(payee)
-                            - T::Executors::total_nominated_stake(payee));
-                        T::Currency::transfer(
-                            &T::EscrowAccount::get(),
-                            payee,
-                            claimable,
-                            ExistenceRequirement::KeepAlive,
-                        )?;
-                    }
-                },
-                BeneficiaryRole::Staker => {},
-                BeneficiaryRole::Collator => {
-                    todo!()
-                },
-            }
-
-            todo!()
-        }
+        // #[pallet::weight(10_000 + T::DbWeight::get().reads(1) + T::DbWeight::get().writes(1))]
+        // pub fn claim(origin: OriginFor<T>, role: BeneficiaryRole) -> DispatchResult {
+        //     let payee = ensure_signed(origin)?;
+        //     // todo: check if who is a legit beneficiary with pallet-executors
+        //
+        //     let start_claim_from_round = LastClaim::<T>::get(payee.clone());
+        //
+        //     match role {
+        //         BeneficiaryRole::Developer => {
+        //             todo!()
+        //         },
+        //         BeneficiaryRole::Executor => {
+        //             for settling_round in
+        //                 start_claim_from_round.index..T::Treasury::current_round().index
+        //             {
+        //                 // ToDo: to safe reward per round add now inflation rate based on tokenomics:
+        //                 // To further prevent drastically high payouts to Executors during times when network is stale,
+        //                 // there is a threshold for rewards Executors  per cross-chain a single transaction.
+        //                 // We put the constant threshold of a maximum of 5 times of the reward amount given by inflation.
+        //                 // This is on top of the base reward the executor got from the original fee set be a user.
+        //                 //
+        //                 // The calculated reward per each cross-chain transaction can be approximated with the following formula:
+        //                 // total reward per cross-chain tx = initial reward + MIN ( 5 * initial reward, inflation shares in a given time period)
+        //         BeneficiaryRole::Staker => {},
+        //         BeneficiaryRole::Collator => {
+        //             todo!()
+        //         },
+        //     }
+        //
+        //     todo!()
+        // }
     }
 
     // Pallet implements [`Hooks`] trait to define some logic to execute in some context.
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         // `on_finalize` is executed at the end of block after all extrinsic are dispatched.
-        fn on_finalize(_n: T::BlockNumber) {
+        fn on_finalize(n: T::BlockNumber) {
             // Perform necessary data/state clean up here.
+
+            if n % T::RoundDuration::get() == T::BlockNumber::zero() {
+                Self::calculate_claimable_for_round(n);
+                // After the rewards has been recalculate it's safe to shuffle the executors orded and stakes
+                T::Executors::recalculate_executors_stakes();
+            }
         }
 
         // `on_initialize` is executed at the beginning of the block before any extrinsic are
@@ -251,27 +207,10 @@ pub mod pallet {
 
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
-    pub enum Event<T: Config> {
-        DepositReceived {
-            execution_id: ExecutionId,
-            payee: T::AccountId,
-            recipient: T::AccountId,
-            amount: BalanceOf<T>,
-        },
-        ExecutionFinalized {
-            execution_id: ExecutionId,
-        },
-        Issued {
-            recipient: T::AccountId,
-            amount: BalanceOf<T>,
-        },
-    }
+    pub enum Event<T: Config> {}
 
     #[pallet::error]
-    pub enum Error<T> {
-        ExecutionNotRegistered,
-        ExecutionAlreadyRegistered,
-    }
+    pub enum Error<T> {}
 
     #[pallet::genesis_config]
     pub struct GenesisConfig<T: Config> {
@@ -293,19 +232,11 @@ pub mod pallet {
     impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
         fn build(&self) {}
     }
-}
 
-impl<T: Config> EscrowTrait<T> for Pallet<T> {
-    type Currency = T::Currency;
-    type Time = T::Time;
-}
-
-impl<T: Config> Convert<Weight, BalanceOf<T>> for Pallet<T>
-where
-    <<T as pallet::Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance:
-        From<u64>,
-{
-    fn convert(w: Weight) -> EscrowedBalanceOf<T, Self> {
-        EscrowedBalanceOf::<T, Self>::from(w)
+    impl<T: Config> CircuitClock<T, EscrowedBalanceOf<T, T::Escrowed>> for Pallet<T> {
+        fn current_round() -> RoundInfo<T::BlockNumber> {
+            // todo: move current round from treasury to circui-clock
+            T::Treasury::current_round()
+        }
     }
 }
