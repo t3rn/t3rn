@@ -345,6 +345,7 @@ pub mod pallet {
                     },
                 };
 
+
                 // To further prevent drastically high payouts to Executors during times when network is stale,
                 // there is a threshold for rewards Executors  per cross-chain a single transaction.
                 // We put the constant threshold of a maximum of 5 times of the reward amount given by inflation.

@@ -275,23 +275,6 @@ pub mod pallet {
             Ok(())
         }
 
-        ///////////////////////////////////////////////////////////////////////
-        // ExposesT::MinBond via pallet-executor-staking Config trait ✅
-        // implements call fn bond(...)  ✅
-        // & fn schedule_unbond(...) ✅
-        // implements call fn setup_executor( params: { commission_rate, !maybe! nominators_risk_ratio }) ✅
-        // if executor already registered schedule update for T::ScheduleDelay time (by default 14 days) ✅
-        // implements updates call fn schedule_params_update( params ) -> ✅
-        // implements go_offline ✅
-        // implements go_online ✅
-        // implements fn join_candidate() which makes executor being consider for an active set ✅
-        // implements fn schedule_leave_candidate() which makes executor not being consider for an active set anymore after T::ScheduleDelay (14 days) ✅
-        // implements fn self::active_set() that selects the top T::ActiveExecutors (make it 128) ✅
-        // Stakers for Executors
-        // implements call fn stake(executor: AccountId, stake: Balance) TODO
-        // implements call fn schedule_unstake(executor: AccountId, stake: Balance) after T::ScheduleDelay (14 days) TODO
-        ///////////////////////////////////////////////////////////////////////
-
         /// Configures an executor's economics.
         /// The parameters must adhere to `T::MaxCommission` and `T::MaxRisk`.
         /// If this applies to an already configured executor `T::ConfigureExecutorDelay` is enforced,
@@ -1000,11 +983,11 @@ pub mod pallet {
         //
         // This function must return the weight consumed by `on_initialize` and `on_finalize`.
         fn on_initialize(_n: T::BlockNumber) -> Weight {
-            419 //TODO
-        }
+            //TODO listen2round updates then reselect active set + prep payouts
+            //TODO//TODO//TODO//TODO//TODO//TODO//TODO//TODO//TODO//TODO//TODO
 
-        // `on_finalize` is executed at the end of block after all extrinsic are dispatched.
-        fn on_finalize(_n: T::BlockNumber) {}
+            419
+        }
     }
 
     #[pallet::event]
