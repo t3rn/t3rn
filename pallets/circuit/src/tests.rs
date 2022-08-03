@@ -30,7 +30,7 @@ use frame_system::{EventRecord, Phase};
 use pallet_circuit_portal::bp_circuit;
 use sp_io::TestExternalities;
 use sp_runtime::{traits::Header, AccountId32};
-use sp_std::prelude::*;
+use sp_std::{convert::TryFrom, prelude::*};
 use t3rn_primitives::{
     abi::*,
     circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
@@ -2153,7 +2153,7 @@ fn into_se_from_chain() {
     })
     .encode();
 
-    let se = SideEffect::<[u8; 2], u128, u128>::from(&ch);
+    let se = SideEffect::<[u8; 32], u128, u128>::try_from(ch).unwrap();
 
     assert_eq!(
         se,

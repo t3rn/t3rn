@@ -176,7 +176,6 @@ fn extract_args<AccountId: MaxEncodedLen, BalanceOf: MaxEncodedLen, Hash: MaxEnc
 
             Ok(args)
         },
-        _ => Err("Invalid action Id"),
     }
 }
 
