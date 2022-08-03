@@ -12,6 +12,17 @@ pub type EventSignature = Vec<u8>;
 pub type SideEffectName = Vec<u8>;
 type Bytes = Vec<u8>;
 
+pub const COMPOSABLE_CALL_SIDE_EFFECT_ID: &[u8; 4] = b"comp";
+pub const WASM_CALL_SIDE_EFFECT_ID: &[u8; 4] = b"wasm";
+pub const EVM_CALL_SIDE_EFFECT_ID: &[u8; 4] = b"cevm";
+pub const CALL_SIDE_EFFECT_ID: &[u8; 4] = b"call";
+pub const ORML_TRANSFER_SIDE_EFFECT_ID: &[u8; 4] = b"orml";
+pub const TRANSFER_SIDE_EFFECT_ID: &[u8; 4] = b"tran";
+pub const ASSETS_TRANSFER_SIDE_EFFECT_ID: &[u8; 4] = b"tass";
+pub const ADD_LIQUIDITY_SIDE_EFFECT_ID: &[u8; 4] = b"aliq";
+pub const SWAP_SIDE_EFFECT_ID: &[u8; 4] = b"swap";
+pub const DATA_SIDE_EFFECT_ID: &[u8; 4] = b"data";
+
 #[derive(Clone, Eq, PartialEq, Encode, Default, Decode, Debug, TypeInfo)]
 pub struct SideEffect<AccountId, BlockNumber, BalanceOf> {
     pub target: TargetId,
@@ -95,10 +106,15 @@ impl TryInto<TargetId> for TargetByte {
 
 enum Action {
     Transfer,
-    MultiTransfer,
+    TransferAssets,
+    TransferOrml,
     AddLiquidity,
     Swap,
     Call,
+    CallEvm,
+    CallWasm,
+    CallComposable,
+    Data,
 }
 
 impl TryFrom<u8> for Action {
@@ -107,10 +123,15 @@ impl TryFrom<u8> for Action {
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
             0 => Ok(Action::Transfer),
-            1 => Ok(Action::MultiTransfer),
-            2 => Ok(Action::AddLiquidity),
-            3 => Ok(Action::Swap),
-            4 => Ok(Action::Call),
+            1 => Ok(Action::TransferAssets),
+            2 => Ok(Action::TransferOrml),
+            3 => Ok(Action::AddLiquidity),
+            4 => Ok(Action::Swap),
+            5 => Ok(Action::Call),
+            6 => Ok(Action::CallEvm),
+            7 => Ok(Action::CallWasm),
+            8 => Ok(Action::CallComposable),
+            9 => Ok(Action::Data),
             _ => Err("Invalid action id"),
         }
     }
@@ -119,11 +140,16 @@ impl TryFrom<u8> for Action {
 impl Into<[u8; 4]> for Action {
     fn into(self) -> [u8; 4] {
         match self {
-            Action::Transfer => *b"tran",
-            Action::MultiTransfer => *b"mult",
-            Action::AddLiquidity => *b"aliq",
-            Action::Swap => *b"swap",
-            Action::Call => *b"call",
+            Action::Transfer => *TRANSFER_SIDE_EFFECT_ID,
+            Action::AddLiquidity => *ADD_LIQUIDITY_SIDE_EFFECT_ID,
+            Action::Swap => *SWAP_SIDE_EFFECT_ID,
+            Action::Call => *CALL_SIDE_EFFECT_ID,
+            Action::CallEvm => *EVM_CALL_SIDE_EFFECT_ID,
+            Action::CallWasm => *WASM_CALL_SIDE_EFFECT_ID,
+            Action::CallComposable => *COMPOSABLE_CALL_SIDE_EFFECT_ID,
+            Action::Data => *DATA_SIDE_EFFECT_ID,
+            Action::TransferAssets => *ASSETS_TRANSFER_SIDE_EFFECT_ID,
+            Action::TransferOrml => *ORML_TRANSFER_SIDE_EFFECT_ID,
         }
     }
 }
@@ -139,13 +165,7 @@ fn extract_args<AccountId: MaxEncodedLen, BalanceOf: MaxEncodedLen, Hash: MaxEnc
             args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // from
             args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // to
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt
-            Ok(args)
-        },
-        Action::MultiTransfer => {
-            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // from
-            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // to
-            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt
-            args.push(bytes.to_vec()); //asset; not sure maybe 2 bytes, maybe 4 TODO: wat
+            args.push(bytes.to_vec()); // args
 
             Ok(args)
         },
@@ -158,6 +178,7 @@ fn extract_args<AccountId: MaxEncodedLen, BalanceOf: MaxEncodedLen, Hash: MaxEnc
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt_left
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt_right
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt_liquidity_token
+            args.push(bytes.to_vec()); // args
 
             Ok(args)
         },
@@ -168,12 +189,70 @@ fn extract_args<AccountId: MaxEncodedLen, BalanceOf: MaxEncodedLen, Hash: MaxEnc
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt_right
             args.push(bytes.split_to(Hash::max_encoded_len()).to_vec()); // asset_left
             args.push(bytes.split_to(Hash::max_encoded_len()).to_vec()); // asset_right
+            args.push(bytes.to_vec()); // args
 
             Ok(args)
         },
         Action::Call => {
             args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // caller
+            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // dest
+            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // value
+
+            // TODO: This is tricky since we define input as a dynamic size so we don't know what is next
             args.push(bytes.to_vec()); // args
+
+            Ok(args)
+        },
+        Action::CallEvm => {
+            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // caller
+            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // dest
+            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // value
+
+            // TODO: This is tricky since we define input as a dynamic size so we don't know what is next
+            args.push(bytes.to_vec()); // args
+
+            Ok(args)
+        },
+        Action::CallWasm => {
+            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // dest
+            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // value
+            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // gas
+            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // storage
+
+            args.push(bytes.to_vec()); // data
+
+            Ok(args)
+        },
+        Action::CallComposable => {
+            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // dest
+            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // value
+            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // gas
+            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // storage
+
+            args.push(bytes.to_vec()); // data
+
+            Ok(args)
+        },
+        Action::TransferAssets => {
+            args.push(bytes.split_to(Hash::max_encoded_len()).to_vec()); // asset id
+            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // from
+            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // to
+            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt
+            args.push(bytes.to_vec());
+
+            Ok(args)
+        },
+        Action::TransferOrml => {
+            args.push(bytes.split_to(Hash::max_encoded_len()).to_vec()); // asset id
+            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // from
+            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // to
+            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt
+            args.push(bytes.to_vec());
+
+            Ok(args)
+        },
+        Action::Data => {
+            args.push(bytes.to_vec()); // key
 
             Ok(args)
         },
@@ -358,7 +437,8 @@ mod tests {
                         6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
                         6, 6, 6, 6, 6, 6, 6
                     ],
-                    vec![100, 0, 0, 0]
+                    vec![100, 0, 0, 0],
+                    vec![]
                 ],
                 signature: vec![],
                 enforce_executioner: None,
