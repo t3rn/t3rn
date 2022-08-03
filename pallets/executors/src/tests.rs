@@ -1,8 +1,8 @@
 use crate::{
     assert_last_event, assert_last_n_events,
     mock::{
-        fast_forward_to, new_test_ext, Balance, Event as MockEvent, Origin, Staking, System, Test,
-        Treasury,
+        fast_forward_to, new_test_ext, Balance, Event as MockEvent, Executors, Origin, System,
+        Test, Treasury,
     },
     pallet::{
         BottomStakes, CandidateInfo, CandidatePool, Config, Error, Event, ExecutorConfig,
@@ -81,7 +81,7 @@ fn fixtures_can_only_be_set_by_sudo() {
         let fixtures: StakingFixtures<Balance> = Default::default();
 
         assert_noop!(
-            Staking::set_fixtures(Origin::signed(419), fixtures),
+            Executors::set_fixtures(Origin::signed(419), fixtures),
             sp_runtime::DispatchError::BadOrigin
         );
     });
@@ -93,7 +93,7 @@ fn fixtures_cannot_be_zero() {
         let fixtures: StakingFixtures<Balance> = Default::default();
 
         assert_noop!(
-            Staking::set_fixtures(Origin::root(), fixtures),
+            Executors::set_fixtures(Origin::root(), fixtures),
             <Error<Test>>::FixturesCannotBeZero,
         );
     });
@@ -125,9 +125,9 @@ fn fixtures_set_and_emitted() {
             revoke_stake_delay: 56,
         };
 
-        assert_ok!(Staking::set_fixtures(Origin::root(), fixtures));
+        assert_ok!(Executors::set_fixtures(Origin::root(), fixtures));
 
-        assert_last_event!(MockEvent::Staking(Event::FixturesConfigured {
+        assert_last_event!(MockEvent::Executors(Event::FixturesConfigured {
             active_set_size: Range {
                 min: 1,
                 ideal: 3,
@@ -159,7 +159,7 @@ fn schedule_configure_executor_fails_if_risk_gt_max() {
         let risk = Percent::from_percent(51);
 
         assert_noop!(
-            Staking::schedule_configure_executor(Origin::signed(3), commission, risk),
+            Executors::schedule_configure_executor(Origin::signed(3), commission, risk),
             <Error<Test>>::TooMuchRisk,
         );
     });
@@ -172,7 +172,7 @@ fn schedule_configure_executor_fails_if_commission_gt_max() {
         let risk = Percent::from_percent(1);
 
         assert_noop!(
-            Staking::schedule_configure_executor(Origin::signed(3), commission, risk),
+            Executors::schedule_configure_executor(Origin::signed(3), commission, risk),
             <Error<Test>>::TooMuchCommission,
         );
     });
@@ -185,7 +185,7 @@ fn initial_executor_configuration_is_effective_immediately() {
         let commission = Percent::from_percent(10);
         let risk = Percent::from_percent(42);
 
-        assert_ok!(Staking::schedule_configure_executor(
+        assert_ok!(Executors::schedule_configure_executor(
             Origin::signed(executor),
             commission,
             risk
@@ -196,7 +196,7 @@ fn initial_executor_configuration_is_effective_immediately() {
             ExecutorInfo { commission, risk }
         );
 
-        assert_last_event!(MockEvent::Staking(Event::ExecutorConfigured {
+        assert_last_event!(MockEvent::Executors(Event::ExecutorConfigured {
             executor,
             commission,
             risk,
@@ -207,16 +207,16 @@ fn initial_executor_configuration_is_effective_immediately() {
 #[test]
 fn executor_reconfiguration_gets_scheduled() {
     new_test_ext().execute_with(|| {
-        let fixtures = Staking::fixtures();
+        let fixtures = Executors::fixtures();
         let executor = 14;
 
-        assert_ok!(Staking::schedule_configure_executor(
+        assert_ok!(Executors::schedule_configure_executor(
             Origin::signed(executor),
             Percent::from_percent(10),
             Percent::from_percent(42),
         ));
 
-        assert_ok!(Staking::schedule_configure_executor(
+        assert_ok!(Executors::schedule_configure_executor(
             Origin::signed(executor),
             Percent::from_percent(20),
             Percent::from_percent(32),
@@ -230,7 +230,7 @@ fn executor_reconfiguration_gets_scheduled() {
             }
         );
 
-        assert_last_event!(MockEvent::Staking(Event::ExecutorConfigured {
+        assert_last_event!(MockEvent::Executors(Event::ExecutorConfigured {
             executor,
             commission: Percent::from_percent(10),
             risk: Percent::from_percent(42),
@@ -252,17 +252,17 @@ fn executor_reconfiguration_gets_scheduled() {
 #[test]
 fn anyone_can_execute_scheduled_reconfiguration() {
     new_test_ext().execute_with(|| {
-        let fixtures = Staking::fixtures();
+        let fixtures = Executors::fixtures();
         let executor = 14;
         let other_user = 15;
 
-        assert_ok!(Staking::schedule_configure_executor(
+        assert_ok!(Executors::schedule_configure_executor(
             Origin::signed(executor),
             Percent::from_percent(10),
             Percent::from_percent(42),
         ));
 
-        assert_ok!(Staking::schedule_configure_executor(
+        assert_ok!(Executors::schedule_configure_executor(
             Origin::signed(executor),
             Percent::from_percent(20),
             Percent::from_percent(32),
@@ -276,7 +276,7 @@ fn anyone_can_execute_scheduled_reconfiguration() {
             }
         );
 
-        assert_last_event!(MockEvent::Staking(Event::ExecutorConfigured {
+        assert_last_event!(MockEvent::Executors(Event::ExecutorConfigured {
             executor,
             commission: Percent::from_percent(10),
             risk: Percent::from_percent(42),
@@ -298,12 +298,12 @@ fn anyone_can_execute_scheduled_reconfiguration() {
                 + (DEFAULT_ROUND_TERM * fixtures.configure_executor_delay) as u64,
         );
 
-        assert_ok!(Staking::execute_configure_executor(
+        assert_ok!(Executors::execute_configure_executor(
             Origin::signed(other_user),
             executor,
         ));
 
-        assert_last_event!(MockEvent::Staking(Event::ExecutorConfigured {
+        assert_last_event!(MockEvent::Executors(Event::ExecutorConfigured {
             executor,
             commission: Percent::from_percent(20),
             risk: Percent::from_percent(32),
@@ -322,17 +322,17 @@ fn anyone_can_execute_scheduled_reconfiguration() {
 #[test]
 fn only_executor_can_cancel_scheduled_configuration() {
     new_test_ext().execute_with(|| {
-        let fixtures = Staking::fixtures();
+        let fixtures = Executors::fixtures();
         let executor = 14;
         let other_user = 15;
 
-        assert_ok!(Staking::schedule_configure_executor(
+        assert_ok!(Executors::schedule_configure_executor(
             Origin::signed(executor),
             Percent::from_percent(10),
             Percent::from_percent(42),
         ));
 
-        assert_ok!(Staking::schedule_configure_executor(
+        assert_ok!(Executors::schedule_configure_executor(
             Origin::signed(executor),
             Percent::from_percent(20),
             Percent::from_percent(32),
@@ -350,11 +350,13 @@ fn only_executor_can_cancel_scheduled_configuration() {
         );
 
         assert_noop!(
-            Staking::cancel_configure_executor(Origin::signed(other_user)),
+            Executors::cancel_configure_executor(Origin::signed(other_user)),
             Error::<Test>::NoSuchConfigurationRequest
         );
 
-        assert_ok!(Staking::cancel_configure_executor(Origin::signed(executor)));
+        assert_ok!(Executors::cancel_configure_executor(Origin::signed(
+            executor
+        )));
 
         assert_eq!(
             <ExecutorConfig<Test>>::get(executor).unwrap(),
@@ -377,14 +379,14 @@ fn cannot_double_join_candidates() {
             min_candidate_bond,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
         assert_noop!(
-            Staking::join_candidates(Origin::signed(executor), min_candidate_bond, 1),
+            Executors::join_candidates(Origin::signed(executor), min_candidate_bond, 1),
             <Error<Test>>::CandidateExists
         );
     });
@@ -413,7 +415,7 @@ fn cannot_join_candidates_as_staker() {
         );
 
         assert_noop!(
-            Staking::join_candidates(Origin::signed(staker), min_candidate_bond, 0),
+            Executors::join_candidates(Origin::signed(staker), min_candidate_bond, 0),
             <Error<Test>>::StakerExists
         );
     });
@@ -431,7 +433,7 @@ fn join_candidates_enforces_a_min_bond() {
         ));
 
         assert_noop!(
-            Staking::join_candidates(Origin::signed(executor), min_candidate_bond, 0),
+            Executors::join_candidates(Origin::signed(executor), min_candidate_bond, 0),
             <Error<Test>>::CandidateBondBelowMin
         );
     });
@@ -454,7 +456,7 @@ fn join_candidates_fails_on_insufficient_weight_hint() {
         }]));
 
         assert_noop!(
-            Staking::join_candidates(Origin::signed(executor), min_candidate_bond, 0),
+            Executors::join_candidates(Origin::signed(executor), min_candidate_bond, 0),
             <Error<Test>>::TooLowCandidateCountWeightHintJoinCandidates
         );
     });
@@ -467,7 +469,7 @@ fn join_candidates_fails_on_insufficient_balance() {
         let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
 
         assert_noop!(
-            Staking::join_candidates(Origin::signed(executor), min_candidate_bond, 0),
+            Executors::join_candidates(Origin::signed(executor), min_candidate_bond, 0),
             <Error<Test>>::InsufficientBalance
         );
     });
@@ -486,7 +488,7 @@ fn join_candidates_successfully() {
             min_candidate_bond,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             1
@@ -511,7 +513,7 @@ fn join_candidates_successfully() {
 
         assert_eq!(<Total<Test>>::get(), min_candidate_bond);
 
-        assert_last_event!(MockEvent::Staking(Event::CandidateJoined {
+        assert_last_event!(MockEvent::Executors(Event::CandidateJoined {
             account: executor,
             amount_locked: min_candidate_bond,
             total_locked: min_candidate_bond,
@@ -530,14 +532,14 @@ fn schedule_leave_candidates_fails_on_insufficient_weight_hint() {
             min_candidate_bond,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
         assert_noop!(
-            Staking::schedule_leave_candidates(Origin::signed(executor), 0),
+            Executors::schedule_leave_candidates(Origin::signed(executor), 0),
             <Error<Test>>::TooLowCandidateCountToLeaveCandidates
         );
     });
@@ -549,20 +551,20 @@ fn schedule_leave_candidates_successfully() {
         let executor = 14;
         let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
         let now = Treasury::current_round().index;
-        let leave_candidates_delay = Staking::fixtures().leave_candidates_delay;
+        let leave_candidates_delay = Executors::fixtures().leave_candidates_delay;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
             min_candidate_bond,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::schedule_leave_candidates(
+        assert_ok!(Executors::schedule_leave_candidates(
             Origin::signed(executor),
             1
         ),);
@@ -574,7 +576,7 @@ fn schedule_leave_candidates_successfully() {
             ExecutorStatus::Leaving(now + leave_candidates_delay)
         );
 
-        assert_last_event!(MockEvent::Staking(Event::CandidateExitScheduled {
+        assert_last_event!(MockEvent::Executors(Event::CandidateExitScheduled {
             exit_allowed_round: now,
             candidate: executor,
             scheduled_exit: now + leave_candidates_delay,
@@ -600,13 +602,13 @@ fn execute_leave_candidates_fails_on_insufficient_weight_hint() {
             min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -614,19 +616,19 @@ fn execute_leave_candidates_fails_on_insufficient_weight_hint() {
             0
         ));
 
-        assert_ok!(Staking::schedule_leave_candidates(
+        assert_ok!(Executors::schedule_leave_candidates(
             Origin::signed(executor),
             1
         ));
 
         fast_forward_to(
-            ((Treasury::current_round().index + Staking::fixtures().leave_candidates_delay)
+            ((Treasury::current_round().index + Executors::fixtures().leave_candidates_delay)
                 * DEFAULT_ROUND_TERM)
                 .into(),
         );
 
         assert_noop!(
-            Staking::execute_leave_candidates(Origin::signed(executor), executor, 0),
+            Executors::execute_leave_candidates(Origin::signed(executor), executor, 0),
             <Error<Test>>::TooLowCandidateStakeCountToLeaveCandidates
         );
     });
@@ -651,14 +653,14 @@ fn execute_leave_candidates_fails_if_not_leaving() {
             min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
         assert_noop!(
-            Staking::execute_leave_candidates(Origin::signed(executor), executor, 0),
+            Executors::execute_leave_candidates(Origin::signed(executor), executor, 0),
             <Error<Test>>::CandidateNotLeaving
         );
     });
@@ -682,13 +684,13 @@ fn execute_leave_candidates_fails_if_too_early() {
             min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -696,13 +698,13 @@ fn execute_leave_candidates_fails_if_too_early() {
             0
         ));
 
-        assert_ok!(Staking::schedule_leave_candidates(
+        assert_ok!(Executors::schedule_leave_candidates(
             Origin::signed(executor),
             1
         ));
 
         assert_noop!(
-            Staking::execute_leave_candidates(Origin::signed(executor), executor, 1),
+            Executors::execute_leave_candidates(Origin::signed(executor), executor, 1),
             <Error<Test>>::CandidateCannotLeaveYet
         );
     });
@@ -726,13 +728,13 @@ fn anyone_can_execute_leave_candidates() {
             min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -740,36 +742,36 @@ fn anyone_can_execute_leave_candidates() {
             0
         ));
 
-        assert_ok!(Staking::schedule_leave_candidates(
+        assert_ok!(Executors::schedule_leave_candidates(
             Origin::signed(executor),
             1
         ));
 
         fast_forward_to(
-            ((Treasury::current_round().index + Staking::fixtures().leave_candidates_delay)
+            ((Treasury::current_round().index + Executors::fixtures().leave_candidates_delay)
                 * DEFAULT_ROUND_TERM)
                 .into(),
         );
 
-        assert_ok!(Staking::execute_leave_candidates(
+        assert_ok!(Executors::execute_leave_candidates(
             Origin::signed(staker),
             executor,
             1
         ));
 
-        assert_eq!(Staking::staker_info(staker), None);
+        assert_eq!(Executors::staker_info(staker), None);
 
-        assert_eq!(Staking::top_stakes(executor), None);
+        assert_eq!(Executors::top_stakes(executor), None);
 
-        assert_eq!(Staking::bottom_stakes(executor), None);
+        assert_eq!(Executors::bottom_stakes(executor), None);
 
-        assert_eq!(Staking::candidate_info(executor), None);
+        assert_eq!(Executors::candidate_info(executor), None);
 
-        assert_eq!(Staking::scheduled_staking_requests(staker), vec![]);
+        assert_eq!(Executors::scheduled_staking_requests(staker), vec![]);
 
-        assert_eq!(Staking::total_value_locked(), 0);
+        assert_eq!(Executors::total_value_locked(), 0);
 
-        assert_last_event!(MockEvent::Staking(Event::CandidateLeft {
+        assert_last_event!(MockEvent::Executors(Event::CandidateLeft {
             candidate: executor,
             amount_unlocked: min_candidate_bond + min_atomic_stake,
             total_locked: 0,
@@ -789,19 +791,19 @@ fn cancel_leave_candidates_fails_if_not_executor() {
             min_candidate_bond,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::schedule_leave_candidates(
+        assert_ok!(Executors::schedule_leave_candidates(
             Origin::signed(executor),
             1
         ),);
 
         assert_noop!(
-            Staking::cancel_leave_candidates(Origin::signed(staker), 1),
+            Executors::cancel_leave_candidates(Origin::signed(staker), 1),
             <Error<Test>>::NoSuchCandidate,
         );
     });
@@ -818,14 +820,14 @@ fn cancel_leave_candidates_fails_if_not_leaving() {
             min_candidate_bond,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
         assert_noop!(
-            Staking::cancel_leave_candidates(Origin::signed(executor), 1),
+            Executors::cancel_leave_candidates(Origin::signed(executor), 1),
             <Error<Test>>::CandidateNotLeaving,
         );
     });
@@ -848,25 +850,25 @@ fn cancel_leave_candidates_fails_if_too_low_weight_hint() {
             min_candidate_bond,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor1),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor2),
             min_candidate_bond,
             1
         ));
 
-        assert_ok!(Staking::schedule_leave_candidates(
+        assert_ok!(Executors::schedule_leave_candidates(
             Origin::signed(executor1),
             2
         ),);
 
         assert_noop!(
-            Staking::cancel_leave_candidates(Origin::signed(executor1), 0),
+            Executors::cancel_leave_candidates(Origin::signed(executor1), 0),
             <Error<Test>>::TooLowCandidateCountWeightHintCancelLeaveCandidates,
         );
     });
@@ -884,13 +886,13 @@ fn cancel_leave_candidates_fails_if_already_active() {
             min_candidate_bond,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::schedule_leave_candidates(
+        assert_ok!(Executors::schedule_leave_candidates(
             Origin::signed(executor),
             2
         ),);
@@ -901,7 +903,7 @@ fn cancel_leave_candidates_fails_if_already_active() {
         }]));
 
         assert_noop!(
-            Staking::cancel_leave_candidates(Origin::signed(executor), 1),
+            Executors::cancel_leave_candidates(Origin::signed(executor), 1),
             <Error<Test>>::AlreadyActive,
         );
     });
@@ -918,33 +920,33 @@ fn cancel_leave_candidates_successfully() {
             min_candidate_bond,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::schedule_leave_candidates(
+        assert_ok!(Executors::schedule_leave_candidates(
             Origin::signed(executor),
             2
         ),);
 
-        assert_ok!(Staking::cancel_leave_candidates(
+        assert_ok!(Executors::cancel_leave_candidates(
             Origin::signed(executor),
             1
         ));
 
         assert_eq!(
-            Staking::candidate_pool().contains(&Bond {
+            Executors::candidate_pool().contains(&Bond {
                 owner: executor,
                 amount: 0, // ignored by PartialEq
             }),
             true
         );
 
-        assert_eq!(Staking::candidate_info(executor).is_some(), true);
+        assert_eq!(Executors::candidate_info(executor).is_some(), true);
 
-        assert_last_event!(MockEvent::Staking(Event::CandidateExitCancelled {
+        assert_last_event!(MockEvent::Executors(Event::CandidateExitCancelled {
             candidate: executor,
         }));
     });
@@ -956,7 +958,7 @@ fn go_offline_fails_if_not_candidate() {
         let staker = 15;
 
         assert_noop!(
-            Staking::go_offline(Origin::signed(staker)),
+            Executors::go_offline(Origin::signed(staker)),
             <Error<Test>>::NoSuchCandidate,
         );
     });
@@ -973,16 +975,16 @@ fn go_offline_successfully() {
             min_candidate_bond,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::go_offline(Origin::signed(executor)));
+        assert_ok!(Executors::go_offline(Origin::signed(executor)));
 
         assert_eq!(
-            Staking::candidate_pool().contains(&Bond {
+            Executors::candidate_pool().contains(&Bond {
                 owner: executor,
                 amount: 0, // ignored by PartialEq
             }),
@@ -990,11 +992,11 @@ fn go_offline_successfully() {
         );
 
         assert_eq!(
-            Staking::candidate_info(executor).unwrap().status,
+            Executors::candidate_info(executor).unwrap().status,
             ExecutorStatus::Idle
         );
 
-        assert_last_event!(MockEvent::Staking(Event::CandidateWentOffline {
+        assert_last_event!(MockEvent::Executors(Event::CandidateWentOffline {
             candidate: executor,
         }));
     });
@@ -1006,7 +1008,7 @@ fn go_online_fails_if_not_candidate() {
         let staker = 15;
 
         assert_noop!(
-            Staking::go_online(Origin::signed(staker)),
+            Executors::go_online(Origin::signed(staker)),
             <Error<Test>>::NoSuchCandidate,
         );
     });
@@ -1023,18 +1025,18 @@ fn go_online_successfully() {
             min_candidate_bond,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::go_offline(Origin::signed(executor)));
+        assert_ok!(Executors::go_offline(Origin::signed(executor)));
 
-        assert_ok!(Staking::go_online(Origin::signed(executor)));
+        assert_ok!(Executors::go_online(Origin::signed(executor)));
 
         assert_eq!(
-            Staking::candidate_pool().contains(&Bond {
+            Executors::candidate_pool().contains(&Bond {
                 owner: executor,
                 amount: 0, // ignored by PartialEq
             }),
@@ -1042,11 +1044,11 @@ fn go_online_successfully() {
         );
 
         assert_eq!(
-            Staking::candidate_info(executor).unwrap().status,
+            Executors::candidate_info(executor).unwrap().status,
             ExecutorStatus::Active
         );
 
-        assert_last_event!(MockEvent::Staking(Event::CandidateBackOnline {
+        assert_last_event!(MockEvent::Executors(Event::CandidateBackOnline {
             candidate: executor,
         }));
     });
@@ -1060,7 +1062,7 @@ fn stake_fails_on_insufficient_balance() {
         let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
 
         assert_noop!(
-            Staking::stake(Origin::signed(staker), executor, min_atomic_stake, 0, 0),
+            Executors::stake(Origin::signed(staker), executor, min_atomic_stake, 0, 0),
             Error::<Test>::InsufficientBalance
         );
     });
@@ -1084,14 +1086,14 @@ fn first_staking_requires_min_bond() {
             min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
         assert_noop!(
-            Staking::stake(Origin::signed(staker), executor, 419, 0, 0),
+            Executors::stake(Origin::signed(staker), executor, 419, 0, 0),
             Error::<Test>::StakerBondBelowMin
         );
     });
@@ -1115,13 +1117,13 @@ fn non_first_stakes_enforce_a_minimum() {
             2 * min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -1130,7 +1132,7 @@ fn non_first_stakes_enforce_a_minimum() {
         ));
 
         assert_noop!(
-            Staking::stake(Origin::signed(staker), executor, 419, 1, 1),
+            Executors::stake(Origin::signed(staker), executor, 419, 1, 1),
             <Error<Test>>::StakeBelowMin
         );
     });
@@ -1148,14 +1150,14 @@ fn candidates_cannot_stake() {
             min_candidate_bond,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
         assert_noop!(
-            Staking::stake(Origin::signed(executor), executor, min_atomic_stake, 0, 0),
+            Executors::stake(Origin::signed(executor), executor, min_atomic_stake, 0, 0),
             Error::<Test>::CandidateExists
         );
     });
@@ -1179,13 +1181,13 @@ fn non_first_stakes_enforce_a_stake_count_weight_hint() {
             2 * min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -1194,7 +1196,7 @@ fn non_first_stakes_enforce_a_stake_count_weight_hint() {
         ));
 
         assert_noop!(
-            Staking::stake(Origin::signed(staker), executor, min_atomic_stake, 1, 0),
+            Executors::stake(Origin::signed(staker), executor, min_atomic_stake, 1, 0),
             <Error<Test>>::TooLowStakeCountToStake
         );
     });
@@ -1223,13 +1225,13 @@ fn staker_stakings_are_capped() {
                 min_candidate_bond,
             ));
 
-            assert_ok!(Staking::join_candidates(
+            assert_ok!(Executors::join_candidates(
                 Origin::signed(exec),
                 min_candidate_bond,
                 i - 1
             ));
 
-            assert_ok!(Staking::stake(
+            assert_ok!(Executors::stake(
                 Origin::signed(staker),
                 exec,
                 min_atomic_stake,
@@ -1242,7 +1244,7 @@ fn staker_stakings_are_capped() {
         }
 
         assert_noop!(
-            Staking::stake(Origin::signed(staker), executor, min_atomic_stake, 100, 100),
+            Executors::stake(Origin::signed(staker), executor, min_atomic_stake, 100, 100),
             <Error<Test>>::MaxStakesExceeded
         );
     });
@@ -1266,13 +1268,13 @@ fn cannot_stake_twice_on_the_same_candidate() {
             2 * min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -1281,7 +1283,7 @@ fn cannot_stake_twice_on_the_same_candidate() {
         ));
 
         assert_noop!(
-            Staking::stake(Origin::signed(staker), executor, min_atomic_stake, 1, 1),
+            Executors::stake(Origin::signed(staker), executor, min_atomic_stake, 1, 1),
             <Error<Test>>::AlreadyStakedCandidate
         );
     });
@@ -1300,7 +1302,7 @@ fn cannot_stake_on_non_candidate() {
         ));
 
         assert_noop!(
-            Staking::stake(Origin::signed(staker), executor, min_atomic_stake, 0, 0),
+            Executors::stake(Origin::signed(staker), executor, min_atomic_stake, 0, 0),
             <Error<Test>>::NoSuchCandidate
         );
     });
@@ -1330,13 +1332,13 @@ fn cannot_stake_with_insufficient_candidate_stake_count() {
             min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -1345,7 +1347,7 @@ fn cannot_stake_with_insufficient_candidate_stake_count() {
         ));
 
         assert_noop!(
-            Staking::stake(
+            Executors::stake(
                 Origin::signed(other_staker),
                 executor,
                 min_atomic_stake,
@@ -1375,13 +1377,13 @@ fn stake_sets_storage_and_emits_events() {
             2 * min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -1390,18 +1392,18 @@ fn stake_sets_storage_and_emits_events() {
         ));
 
         assert_eq!(
-            Staking::total_value_locked(),
+            Executors::total_value_locked(),
             min_atomic_stake + min_candidate_bond
         );
 
-        assert_eq!(Staking::candidate_info(executor).unwrap().stake_count, 1);
+        assert_eq!(Executors::candidate_info(executor).unwrap().stake_count, 1);
 
         assert_eq!(
-            Staking::staker_info(staker).unwrap().total,
+            Executors::staker_info(staker).unwrap().total,
             min_atomic_stake
         );
 
-        assert_last_event!(MockEvent::Staking(Event::StakeAdded {
+        assert_last_event!(MockEvent::Executors(Event::StakeAdded {
             staker,
             amount_locked: min_atomic_stake,
             candidate: executor,
@@ -1430,13 +1432,13 @@ fn schedule_revoke_stake_fails_if_not_staker() {
             2 * min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -1445,7 +1447,7 @@ fn schedule_revoke_stake_fails_if_not_staker() {
         ));
 
         assert_noop!(
-            Staking::schedule_revoke_stake(Origin::signed(executor), executor),
+            Executors::schedule_revoke_stake(Origin::signed(executor), executor),
             <Error<Test>>::NoSuchStaker
         );
     });
@@ -1469,13 +1471,13 @@ fn cannot_schedule_revoke_stake_twice() {
             2 * min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -1483,13 +1485,13 @@ fn cannot_schedule_revoke_stake_twice() {
             0
         ));
 
-        assert_ok!(Staking::schedule_revoke_stake(
+        assert_ok!(Executors::schedule_revoke_stake(
             Origin::signed(staker),
             executor
         ),);
 
         assert_noop!(
-            Staking::schedule_revoke_stake(Origin::signed(staker), executor),
+            Executors::schedule_revoke_stake(Origin::signed(staker), executor),
             <Error<Test>>::PendingStakeRequestAlreadyExists
         );
     });
@@ -1513,13 +1515,13 @@ fn schedule_revoke_stake_successfully() {
             2 * min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -1527,32 +1529,32 @@ fn schedule_revoke_stake_successfully() {
             0
         ));
 
-        assert_ok!(Staking::schedule_revoke_stake(
+        assert_ok!(Executors::schedule_revoke_stake(
             Origin::signed(staker),
             executor
         ),);
 
         assert_eq!(
-            Staking::scheduled_staking_requests(executor),
+            Executors::scheduled_staking_requests(executor),
             vec![ScheduledStakingRequest {
                 staker,
                 action: StakingAction::Revoke(min_atomic_stake),
                 when_executable: Treasury::current_round().index
-                    + Staking::fixtures().revoke_stake_delay,
+                    + Executors::fixtures().revoke_stake_delay,
             }]
         );
 
         assert_eq!(
-            Staking::staker_info(staker).unwrap().less_total,
+            Executors::staker_info(staker).unwrap().less_total,
             min_atomic_stake
         );
 
-        assert_last_event!(MockEvent::Staking(Event::StakeRevocationScheduled {
+        assert_last_event!(MockEvent::Executors(Event::StakeRevocationScheduled {
             round: Treasury::current_round().index,
             staker,
             candidate: executor,
             scheduled_exit: Treasury::current_round().index
-                + Staking::fixtures().revoke_stake_delay,
+                + Executors::fixtures().revoke_stake_delay,
         }));
     });
 }
@@ -1564,7 +1566,7 @@ fn cancel_stake_request_fails_if_not_staker() {
         let executor = 14;
 
         assert_noop!(
-            Staking::cancel_stake_request(Origin::signed(staker), executor),
+            Executors::cancel_stake_request(Origin::signed(staker), executor),
             <Error<Test>>::NoSuchStaker
         );
     });
@@ -1588,13 +1590,13 @@ fn cancel_stake_request_fails_if_not_requested() {
             2 * min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -1603,7 +1605,7 @@ fn cancel_stake_request_fails_if_not_requested() {
         ));
 
         assert_noop!(
-            Staking::cancel_stake_request(Origin::signed(staker), executor),
+            Executors::cancel_stake_request(Origin::signed(staker), executor),
             <Error<Test>>::NoSuchPendingStakeRequest
         );
     });
@@ -1628,13 +1630,13 @@ fn cancel_stake_request_fails_if_origin_not_staker() {
             min_atomic_stake + 1,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake + 1,
@@ -1642,14 +1644,14 @@ fn cancel_stake_request_fails_if_origin_not_staker() {
             0
         ));
 
-        assert_ok!(Staking::schedule_staker_bond_less(
+        assert_ok!(Executors::schedule_staker_bond_less(
             Origin::signed(staker),
             executor,
             1,
         ));
 
         assert_noop!(
-            Staking::cancel_stake_request(Origin::signed(other_staker), executor,),
+            Executors::cancel_stake_request(Origin::signed(other_staker), executor,),
             <Error<Test>>::NoSuchStaker
         );
     });
@@ -1673,13 +1675,13 @@ fn cancel_stake_request_successfully() {
             2 * min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -1687,23 +1689,23 @@ fn cancel_stake_request_successfully() {
             0
         ));
 
-        assert_ok!(Staking::schedule_revoke_stake(
+        assert_ok!(Executors::schedule_revoke_stake(
             Origin::signed(staker),
             executor
         ));
 
-        let req = Staking::scheduled_staking_requests(executor)[0].clone();
+        let req = Executors::scheduled_staking_requests(executor)[0].clone();
 
-        assert_ok!(Staking::cancel_stake_request(
+        assert_ok!(Executors::cancel_stake_request(
             Origin::signed(staker),
             executor
         ));
 
-        assert_eq!(Staking::scheduled_staking_requests(executor), vec![]);
+        assert_eq!(Executors::scheduled_staking_requests(executor), vec![]);
 
-        assert_eq!(Staking::staker_info(staker).unwrap().less_total, 0);
+        assert_eq!(Executors::staker_info(staker).unwrap().less_total, 0);
 
-        assert_last_event!(MockEvent::Staking(Event::StakeRequestCancelled {
+        assert_last_event!(MockEvent::Executors(Event::StakeRequestCancelled {
             staker,
             executor,
             cancelled_request: req.into(),
@@ -1718,7 +1720,7 @@ fn staker_bond_more_fails_if_not_staker() {
         let executor = 14;
 
         assert_noop!(
-            Staking::staker_bond_more(Origin::signed(staker), executor, 1),
+            Executors::staker_bond_more(Origin::signed(staker), executor, 1),
             <Error<Test>>::NoSuchStaker
         );
     });
@@ -1742,13 +1744,13 @@ fn staker_bond_more_fails_if_pending_stake_revoke() {
             2 * min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -1756,13 +1758,13 @@ fn staker_bond_more_fails_if_pending_stake_revoke() {
             0
         ));
 
-        assert_ok!(Staking::schedule_revoke_stake(
+        assert_ok!(Executors::schedule_revoke_stake(
             Origin::signed(staker),
             executor
         ));
 
         assert_noop!(
-            Staking::staker_bond_more(Origin::signed(staker), executor, 1),
+            Executors::staker_bond_more(Origin::signed(staker), executor, 1),
             <Error<Test>>::PendingStakeRevoke
         );
     });
@@ -1787,13 +1789,13 @@ fn staker_bond_more_fails_if_no_such_stake() {
             2 * min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -1802,7 +1804,7 @@ fn staker_bond_more_fails_if_no_such_stake() {
         ));
 
         assert_noop!(
-            Staking::staker_bond_more(Origin::signed(staker), other_exec, 1),
+            Executors::staker_bond_more(Origin::signed(staker), other_exec, 1),
             <Error<Test>>::NoSuchStake
         );
     });
@@ -1826,13 +1828,13 @@ fn staker_bond_more_successfully() {
             2 * min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -1840,28 +1842,28 @@ fn staker_bond_more_successfully() {
             0
         ));
 
-        assert_ok!(Staking::staker_bond_more(
+        assert_ok!(Executors::staker_bond_more(
             Origin::signed(staker),
             executor,
             1
         ));
 
         assert_eq!(
-            Staking::candidate_info(executor).unwrap().total_counted,
+            Executors::candidate_info(executor).unwrap().total_counted,
             min_candidate_bond + min_atomic_stake + 1
         );
 
         assert_eq!(
-            Staking::total_value_locked(),
+            Executors::total_value_locked(),
             min_candidate_bond + min_atomic_stake + 1
         );
 
         assert_eq!(
-            Staking::staker_info(staker).unwrap().total,
+            Executors::staker_info(staker).unwrap().total,
             min_atomic_stake + 1
         );
 
-        assert_last_event!(MockEvent::Staking(Event::StakeIncreased {
+        assert_last_event!(MockEvent::Executors(Event::StakeIncreased {
             staker,
             candidate: executor,
             amount: 1,
@@ -1877,7 +1879,7 @@ fn schedule_staker_bond_less_fails_if_not_staker() {
         let executor = 14;
 
         assert_noop!(
-            Staking::schedule_staker_bond_less(Origin::signed(staker), executor, 1),
+            Executors::schedule_staker_bond_less(Origin::signed(staker), executor, 1),
             <Error<Test>>::NoSuchStaker
         );
     });
@@ -1901,13 +1903,13 @@ fn schedule_staker_bond_less_fails_if_pending_stake_request_exists() {
             2 * min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -1915,13 +1917,13 @@ fn schedule_staker_bond_less_fails_if_pending_stake_request_exists() {
             0
         ));
 
-        assert_ok!(Staking::schedule_revoke_stake(
+        assert_ok!(Executors::schedule_revoke_stake(
             Origin::signed(staker),
             executor
         ));
 
         assert_noop!(
-            Staking::schedule_staker_bond_less(Origin::signed(staker), executor, 1),
+            Executors::schedule_staker_bond_less(Origin::signed(staker), executor, 1),
             <Error<Test>>::PendingStakeRequestAlreadyExists
         );
     });
@@ -1946,13 +1948,13 @@ fn schedule_staker_bond_less_fails_if_no_such_stake() {
             2 * min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -1961,7 +1963,7 @@ fn schedule_staker_bond_less_fails_if_no_such_stake() {
         ));
 
         assert_noop!(
-            Staking::schedule_staker_bond_less(Origin::signed(staker), other_exec, 1),
+            Executors::schedule_staker_bond_less(Origin::signed(staker), other_exec, 1),
             <Error<Test>>::NoSuchStake
         );
     });
@@ -1985,13 +1987,13 @@ fn schedule_staker_bond_less_cannot_decrease_below_min_bond() {
             2 * min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -2000,7 +2002,11 @@ fn schedule_staker_bond_less_cannot_decrease_below_min_bond() {
         ));
 
         assert_noop!(
-            Staking::schedule_staker_bond_less(Origin::signed(staker), executor, min_atomic_stake),
+            Executors::schedule_staker_bond_less(
+                Origin::signed(staker),
+                executor,
+                min_atomic_stake
+            ),
             <Error<Test>>::StakerBondBelowMin
         );
     });
@@ -2025,13 +2031,13 @@ fn schedule_staker_bond_less_cannot_decrease_below_min_stake() {
             2 * min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -2040,7 +2046,7 @@ fn schedule_staker_bond_less_cannot_decrease_below_min_stake() {
         ));
 
         assert_noop!(
-            Staking::schedule_staker_bond_less(
+            Executors::schedule_staker_bond_less(
                 Origin::signed(staker),
                 executor,
                 min_atomic_stake / 2
@@ -2068,13 +2074,13 @@ fn schedule_staker_bond_less_successfully() {
             min_atomic_stake + 1,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake + 1,
@@ -2082,17 +2088,17 @@ fn schedule_staker_bond_less_successfully() {
             0
         ));
 
-        assert_ok!(Staking::schedule_staker_bond_less(
+        assert_ok!(Executors::schedule_staker_bond_less(
             Origin::signed(staker),
             executor,
             1
         ));
 
         let when_executable =
-            Treasury::current_round().index + Staking::fixtures().revoke_stake_delay;
+            Treasury::current_round().index + Executors::fixtures().revoke_stake_delay;
 
         assert_eq!(
-            Staking::scheduled_staking_requests(executor),
+            Executors::scheduled_staking_requests(executor),
             vec![ScheduledStakingRequest {
                 staker,
                 action: StakingAction::Decrease(1),
@@ -2100,9 +2106,9 @@ fn schedule_staker_bond_less_successfully() {
             }]
         );
 
-        assert_eq!(Staking::staker_info(staker).unwrap().less_total, 1);
+        assert_eq!(Executors::staker_info(staker).unwrap().less_total, 1);
 
-        assert_last_event!(MockEvent::Staking(Event::StakeDecreaseScheduled {
+        assert_last_event!(MockEvent::Executors(Event::StakeDecreaseScheduled {
             staker,
             candidate: executor,
             amount: 1,
@@ -2129,13 +2135,13 @@ fn execute_stake_request_fails_if_no_such_staker() {
             min_atomic_stake + 1,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake + 1,
@@ -2143,14 +2149,14 @@ fn execute_stake_request_fails_if_no_such_staker() {
             0
         ));
 
-        assert_ok!(Staking::schedule_staker_bond_less(
+        assert_ok!(Executors::schedule_staker_bond_less(
             Origin::signed(staker),
             executor,
             1
         ));
 
         assert_noop!(
-            Staking::execute_stake_request(Origin::signed(staker), 419, executor),
+            Executors::execute_stake_request(Origin::signed(staker), 419, executor),
             <Error<Test>>::NoSuchStaker
         );
     });
@@ -2174,13 +2180,13 @@ fn execute_stake_request_fails_if_no_such_request() {
             min_atomic_stake + 1,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake + 1,
@@ -2189,7 +2195,7 @@ fn execute_stake_request_fails_if_no_such_request() {
         ));
 
         assert_noop!(
-            Staking::execute_stake_request(Origin::signed(staker), staker, executor),
+            Executors::execute_stake_request(Origin::signed(staker), staker, executor),
             <Error<Test>>::NoSuchPendingStakeRequest
         );
     });
@@ -2213,13 +2219,13 @@ fn execute_stake_request_fails_if_not_due_yet() {
             min_atomic_stake + 1,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake + 1,
@@ -2227,7 +2233,7 @@ fn execute_stake_request_fails_if_not_due_yet() {
             0
         ));
 
-        assert_ok!(Staking::schedule_staker_bond_less(
+        assert_ok!(Executors::schedule_staker_bond_less(
             Origin::signed(staker),
             executor,
             1
@@ -2236,7 +2242,7 @@ fn execute_stake_request_fails_if_not_due_yet() {
         fast_forward_to(419);
 
         assert_noop!(
-            Staking::execute_stake_request(Origin::signed(staker), staker, executor),
+            Executors::execute_stake_request(Origin::signed(staker), staker, executor),
             <Error<Test>>::PendingStakeRequestNotDueYet
         );
     });
@@ -2260,13 +2266,13 @@ fn executing_staking_action_revoke_successfully_and_leaving_stakers() {
             min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -2274,22 +2280,22 @@ fn executing_staking_action_revoke_successfully_and_leaving_stakers() {
             0
         ));
 
-        assert_ok!(Staking::schedule_revoke_stake(
+        assert_ok!(Executors::schedule_revoke_stake(
             Origin::signed(staker),
             executor
         ));
 
-        fast_forward_to((Staking::fixtures().revoke_stake_delay * DEFAULT_ROUND_TERM).into());
+        fast_forward_to((Executors::fixtures().revoke_stake_delay * DEFAULT_ROUND_TERM).into());
 
-        assert_ok!(Staking::execute_stake_request(
+        assert_ok!(Executors::execute_stake_request(
             Origin::signed(staker),
             staker,
             executor
         ));
 
-        assert_eq!(Staking::scheduled_staking_requests(staker), vec![]);
+        assert_eq!(Executors::scheduled_staking_requests(staker), vec![]);
 
-        assert_eq!(Staking::staker_info(staker), None);
+        assert_eq!(Executors::staker_info(staker), None);
 
         assert_last_n_events!(
             2,
@@ -2326,13 +2332,13 @@ fn executing_staking_action_decrease_successfully() {
             min_atomic_stake + 1,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake + 1,
@@ -2340,33 +2346,33 @@ fn executing_staking_action_decrease_successfully() {
             0
         ));
 
-        assert_ok!(Staking::schedule_staker_bond_less(
+        assert_ok!(Executors::schedule_staker_bond_less(
             Origin::signed(staker),
             executor,
             1,
         ));
 
-        fast_forward_to((Staking::fixtures().revoke_stake_delay * DEFAULT_ROUND_TERM).into());
+        fast_forward_to((Executors::fixtures().revoke_stake_delay * DEFAULT_ROUND_TERM).into());
 
-        assert_ok!(Staking::execute_stake_request(
+        assert_ok!(Executors::execute_stake_request(
             Origin::signed(staker),
             staker,
             executor
         ));
 
         assert_eq!(
-            Staking::total_value_locked(),
+            Executors::total_value_locked(),
             min_candidate_bond + min_atomic_stake
         );
 
-        assert_eq!(Staking::scheduled_staking_requests(staker), vec![]);
+        assert_eq!(Executors::scheduled_staking_requests(staker), vec![]);
 
         assert_eq!(
-            Staking::staker_info(staker).unwrap().total,
+            Executors::staker_info(staker).unwrap().total,
             min_atomic_stake
         );
 
-        assert_last_event!(MockEvent::Staking(Event::StakeDecreased {
+        assert_last_event!(MockEvent::Executors(Event::StakeDecreased {
             staker,
             candidate: executor,
             amount: 1,
@@ -2393,13 +2399,13 @@ fn anyone_can_execute_staking_requests() {
             min_atomic_stake + 1,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -2407,15 +2413,15 @@ fn anyone_can_execute_staking_requests() {
             0
         ));
 
-        assert_ok!(Staking::schedule_staker_bond_less(
+        assert_ok!(Executors::schedule_staker_bond_less(
             Origin::signed(staker),
             executor,
             1,
         ));
 
-        fast_forward_to((Staking::fixtures().revoke_stake_delay * DEFAULT_ROUND_TERM).into());
+        fast_forward_to((Executors::fixtures().revoke_stake_delay * DEFAULT_ROUND_TERM).into());
 
-        assert_ok!(Staking::execute_stake_request(
+        assert_ok!(Executors::execute_stake_request(
             Origin::signed(419),
             staker,
             executor
@@ -2429,7 +2435,7 @@ fn schedule_leave_stakers_fails_if_not_staker() {
         let staker = 15;
 
         assert_noop!(
-            Staking::schedule_leave_stakers(Origin::signed(staker)),
+            Executors::schedule_leave_stakers(Origin::signed(staker)),
             <Error<Test>>::NoSuchStaker
         );
     });
@@ -2453,13 +2459,13 @@ fn schedule_leave_stakers_fails_if_already_leaving() {
             min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -2467,13 +2473,13 @@ fn schedule_leave_stakers_fails_if_already_leaving() {
             0
         ));
 
-        assert_ok!(Staking::schedule_revoke_stake(
+        assert_ok!(Executors::schedule_revoke_stake(
             Origin::signed(staker),
             executor
         ));
 
         assert_noop!(
-            Staking::schedule_leave_stakers(Origin::signed(staker)),
+            Executors::schedule_leave_stakers(Origin::signed(staker)),
             <Error<Test>>::StakerAlreadyLeaving
         );
     });
@@ -2497,13 +2503,13 @@ fn schedule_leave_stakers_successfully() {
             min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -2511,20 +2517,20 @@ fn schedule_leave_stakers_successfully() {
             0
         ));
 
-        assert_ok!(Staking::schedule_leave_stakers(Origin::signed(staker)));
+        assert_ok!(Executors::schedule_leave_stakers(Origin::signed(staker)));
 
-        assert_eq!(Staking::scheduled_staking_requests(staker), vec![]);
+        assert_eq!(Executors::scheduled_staking_requests(staker), vec![]);
 
         assert_eq!(
-            Staking::staker_info(staker).unwrap().less_total,
+            Executors::staker_info(staker).unwrap().less_total,
             min_atomic_stake
         );
 
-        assert_last_event!(MockEvent::Staking(Event::StakerExitScheduled {
+        assert_last_event!(MockEvent::Executors(Event::StakerExitScheduled {
             round: Treasury::current_round().index,
             staker,
             scheduled_exit: Treasury::current_round().index
-                + Staking::fixtures().revoke_stake_delay
+                + Executors::fixtures().revoke_stake_delay
         }));
     });
 }
@@ -2547,14 +2553,14 @@ fn execute_leave_stakers_fails_if_not_staker() {
             min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
         assert_noop!(
-            Staking::execute_leave_stakers(Origin::signed(419), staker, 1),
+            Executors::execute_leave_stakers(Origin::signed(419), staker, 1),
             <Error<Test>>::NoSuchStaker
         );
     });
@@ -2578,13 +2584,13 @@ fn execute_leave_stakers_fails_with_insufficient_weight_hint() {
             min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -2592,12 +2598,12 @@ fn execute_leave_stakers_fails_with_insufficient_weight_hint() {
             0
         ));
 
-        assert_ok!(Staking::schedule_leave_stakers(Origin::signed(staker)));
+        assert_ok!(Executors::schedule_leave_stakers(Origin::signed(staker)));
 
-        fast_forward_to((Staking::fixtures().revoke_stake_delay * DEFAULT_ROUND_TERM).into());
+        fast_forward_to((Executors::fixtures().revoke_stake_delay * DEFAULT_ROUND_TERM).into());
 
         assert_noop!(
-            Staking::execute_leave_stakers(Origin::signed(staker), staker, 0),
+            Executors::execute_leave_stakers(Origin::signed(staker), staker, 0),
             <Error<Test>>::TooLowStakeCountToLeaveStakers
         );
     });
@@ -2621,13 +2627,13 @@ fn execute_leave_stakers_fails_if_not_due_yet() {
             min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -2635,10 +2641,10 @@ fn execute_leave_stakers_fails_if_not_due_yet() {
             0
         ));
 
-        assert_ok!(Staking::schedule_leave_stakers(Origin::signed(staker)));
+        assert_ok!(Executors::schedule_leave_stakers(Origin::signed(staker)));
 
         assert_noop!(
-            Staking::execute_leave_stakers(Origin::signed(staker), staker, 1),
+            Executors::execute_leave_stakers(Origin::signed(staker), staker, 1),
             <Error<Test>>::StakerCannotLeaveYet
         );
     });
@@ -2662,13 +2668,13 @@ fn anyone_can_execute_leave_stakers() {
             min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -2676,11 +2682,11 @@ fn anyone_can_execute_leave_stakers() {
             0
         ));
 
-        assert_ok!(Staking::schedule_leave_stakers(Origin::signed(staker)));
+        assert_ok!(Executors::schedule_leave_stakers(Origin::signed(staker)));
 
-        fast_forward_to((Staking::fixtures().revoke_stake_delay * DEFAULT_ROUND_TERM).into());
+        fast_forward_to((Executors::fixtures().revoke_stake_delay * DEFAULT_ROUND_TERM).into());
 
-        assert_ok!(Staking::execute_leave_stakers(
+        assert_ok!(Executors::execute_leave_stakers(
             Origin::signed(419),
             staker,
             1
@@ -2706,13 +2712,13 @@ fn cancel_leave_stakers_fails_if_not_staker() {
             min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -2720,10 +2726,10 @@ fn cancel_leave_stakers_fails_if_not_staker() {
             0
         ));
 
-        assert_ok!(Staking::schedule_leave_stakers(Origin::signed(staker)));
+        assert_ok!(Executors::schedule_leave_stakers(Origin::signed(staker)));
 
         assert_noop!(
-            Staking::cancel_leave_stakers(Origin::signed(419)),
+            Executors::cancel_leave_stakers(Origin::signed(419)),
             <Error<Test>>::NoSuchStaker
         );
     });
@@ -2747,13 +2753,13 @@ fn cancel_leave_stakers_fails_if_not_leaving() {
             min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -2762,7 +2768,7 @@ fn cancel_leave_stakers_fails_if_not_leaving() {
         ));
 
         assert_noop!(
-            Staking::cancel_leave_stakers(Origin::signed(staker)),
+            Executors::cancel_leave_stakers(Origin::signed(staker)),
             <Error<Test>>::StakerNotLeaving
         );
     });
@@ -2786,13 +2792,13 @@ fn cancel_leave_stakers_successfully() {
             min_atomic_stake,
         ));
 
-        assert_ok!(Staking::join_candidates(
+        assert_ok!(Executors::join_candidates(
             Origin::signed(executor),
             min_candidate_bond,
             0
         ));
 
-        assert_ok!(Staking::stake(
+        assert_ok!(Executors::stake(
             Origin::signed(staker),
             executor,
             min_atomic_stake,
@@ -2800,16 +2806,16 @@ fn cancel_leave_stakers_successfully() {
             0
         ));
 
-        assert_ok!(Staking::schedule_leave_stakers(Origin::signed(staker)));
+        assert_ok!(Executors::schedule_leave_stakers(Origin::signed(staker)));
 
-        fast_forward_to((Staking::fixtures().revoke_stake_delay * DEFAULT_ROUND_TERM).into());
+        fast_forward_to((Executors::fixtures().revoke_stake_delay * DEFAULT_ROUND_TERM).into());
 
-        assert_ok!(Staking::cancel_leave_stakers(Origin::signed(staker)));
+        assert_ok!(Executors::cancel_leave_stakers(Origin::signed(staker)));
 
-        assert_eq!(Staking::scheduled_staking_requests(staker), vec![]);
+        assert_eq!(Executors::scheduled_staking_requests(staker), vec![]);
 
-        assert_eq!(Staking::staker_info(staker).is_some(), true);
+        assert_eq!(Executors::staker_info(staker).is_some(), true);
 
-        assert_last_event!(MockEvent::Staking(Event::StakerExitCancelled { staker }));
+        assert_last_event!(MockEvent::Executors(Event::StakerExitCancelled { staker }));
     });
 }
