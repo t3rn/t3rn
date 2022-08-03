@@ -39,3 +39,14 @@ pub struct ParachainHeaderData<Header: sp_runtime::traits::Header> {
     pub range: Vec<Header>,
     pub proof: StorageProof,
 }
+
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug)]
+pub struct InclusionData<Header: sp_runtime::traits::Header> {
+    /// this is the item we're proving to be included in a specfic block (e.g. event, storage entry, etc)
+    pub encoded_payload: Vec<u8>,
+    pub proof: StorageProof,
+    pub block_hash: Header::Hash,
+    pub creation_height: Header::Number,
+    /// ID of the side_effect, as stored in XDNS
+    pub side_effect_id: [u8; 4],
+}

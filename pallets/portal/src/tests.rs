@@ -276,7 +276,7 @@ fn can_register_parachain_and_add_header() {
         assert_ok!(
             submit_header_file(origin.clone(), "4-headers-roco.json", 0),
         );
-        assert_ok!( // needs relaychain header first
+        assert_ok!(
             submit_header_file(origin.clone(), "5-headers-pang.json", 0),
         );
     });

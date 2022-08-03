@@ -84,7 +84,8 @@ pub type BridgedHeader<T, I> = HeaderOf<<T as Config<I>>::BridgedChain>;
 
 const LOG_TARGET: &str = "multi-finality-verifier";
 use frame_system::pallet_prelude::*;
-use crate::types::{Parachain, RelaychainHeaderData, ParachainHeaderData};
+use t3rn_primitives::ProofTriePointer;
+use crate::types::{Parachain, RelaychainHeaderData, ParachainHeaderData, InclusionData};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -452,7 +453,7 @@ pub mod pallet {
         let parachain = <ParachainIdMap<T, I>>::try_get(gateway_id)
             .map_err(|_| "Parachain not registered")?;
 
-        let header: BridgedHeader<T, I> = verify_storage_proof::<T, I>(
+        let header: BridgedHeader<T, I> = verify_header_storage_proof::<T, I>(
             relay_block_hash,
             proof,
             parachain
@@ -833,6 +834,23 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         }
     }
 
+    fn confirm_and_decode_payload_params(
+        gateway_id: [u8; 4],
+        encoded_inclusion_data: Vec<u8>
+    ) -> Result<(), &'static str> {
+        let inclusion_data: InclusionData<BridgedHeader<T, I>> = Decode::decode(&mut &*encoded_inclusion_data)
+            .map_err(|_| "InclusionCheckDate couldn't be decoded")?;
+
+        // ensures old equal side_effects can't be replayed
+        executed_after_creation::<T, I>(gateway_id, inclusion_data.creation_height)?;
+
+        verify_event_storage_proof::<T, I>(gateway_id, inclusion_data.block_hash, inclusion_data.proof, inclusion_data.encoded_payload)
+        // match inclusion_data.side_effect_id {
+        //     b"tran" =>
+        //     _ => unimplemented!()
+        // }
+    }
+
     pub fn get_latest_finalized_header(
         gateway_id: ChainId
     ) -> Option<Vec<u8>> {
@@ -854,6 +872,52 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         } else {
             return None
         }
+    }
+}
+
+/// Verifies a given storage proof. Returns the encoded entry that is proven
+pub(crate) fn verify_storage_proof<T: Config<I>, I: 'static>(
+    gateway_id: ChainId,
+    block_hash: BridgedBlockHash<T, I>,
+    key: Vec<u8>,
+    proof: StorageProof,
+    trie_type: ProofTriePointer,
+) -> Result<Vec<u8>, &'static str> {
+
+    let root = get_header_roots::<T, I>(block_hash, gateway_id, trie_type)?;
+    let db = proof.into_memory_db::<BridgedBlockHasher<T, I>>();
+    let res = read_trie_value::<LayoutV1<BridgedBlockHasher<T, I>>, _>(
+        &db,
+        &root,
+        key.as_ref(),
+    );
+    match res {
+        Ok(Some(value)) => Ok(value),
+        _ => Err("Invalid Storage Proof"),
+    }
+}
+
+/// returns the specified header root from a specific header
+pub(crate) fn get_header_roots<T: pallet::Config<I>, I>(
+    block_hash:  BridgedBlockHash<T, I>,
+    gateway_id: ChainId,
+    trie_type: ProofTriePointer
+) -> Result<BridgedBlockHash<T, I>, &'static str> {
+    let roots = <MultiImportedRoots<T, I>>::get(
+        gateway_id,
+        block_hash,
+    );
+
+    let (extrinsics_root, storage_root): (BridgedBlockHash<T, I>, BridgedBlockHash<T, I>) =
+        <MultiImportedRoots<T, I>>::get(
+            gateway_id,
+            block_hash,
+        )
+        .ok_or("Root not found")?;
+    match trie_type {
+        ProofTriePointer::State => Ok(storage_root),
+        ProofTriePointer::Transaction => Ok(extrinsics_root),
+        ProofTriePointer::Receipts => Ok(storage_root),
     }
 }
 
@@ -914,6 +978,25 @@ fn can_init_para_chain<T: Config<I>, I: 'static>(
     }
 }
 
+/// Ensure that the SideEffect was executed after it was created.
+fn executed_after_creation<T: Config<I>, I: 'static>(
+    gateway_id: ChainId,
+    creation_height: BridgedBlockNumber<T, I>
+) -> Result<(), &'static str> {
+    if let Some(header_hash) = <BestFinalizedMap<T, I>>::get(gateway_id) {
+        if let Some(header) = <MultiImportedHeaders<T, I>>::get(gateway_id, header_hash) {
+            if creation_height < *header.number() {
+                return Ok(());
+            }
+            return Err("Transaction executed before SideEffect creation")
+        } else {
+            return Err("No gateway header found") // this shouldn't be possible tom happen
+        }
+    } else {
+        return Err("No gateway header found") // this shouldn't be possible tom happen
+    }
+}
+
 /// Checks the given header for a consensus digest signalling a **forced** scheduled change and
 /// extracts it.
 pub(crate) fn find_forced_change<H: HeaderT>(
@@ -935,7 +1018,23 @@ pub(crate) fn find_forced_change<H: HeaderT>(
         .convert_first(|l| l.try_to(id).and_then(filter_log))
 }
 
-pub(crate) fn verify_storage_proof<T: Config<I>, I: 'static>(
+pub(crate) fn verify_event_storage_proof<T: Config<I>, I: 'static>(
+    gateway_id: ChainId,
+    block_hash: BridgedBlockHash<T, I>,
+    proof: StorageProof,
+    encoded_event: Vec<u8>
+) -> Result<(), &'static str> {
+    // storage key for System_Events
+    let key: Vec<u8> = [38, 170, 57, 78, 234, 86, 48, 224, 124, 72, 174, 12, 149, 88, 206, 247, 128, 212, 30, 94, 22, 5, 103, 101, 188, 132, 97, 133, 16, 114, 201, 215, ].to_vec();
+    let verified_block_events = verify_storage_proof::<T, I>(gateway_id, block_hash, key, proof, ProofTriePointer::Receipts)?;
+    log::info!("{:?}", verified_block_events);
+
+    // the problem here is that in substrates current design its not possible to prove the inclusion of a single event, only all events of a block
+    // https://github.com/paritytech/substrate/issues/11216
+    is_sub(verified_block_events.as_slice(), encoded_event.as_slice())
+}
+
+pub(crate) fn verify_header_storage_proof<T: Config<I>, I: 'static>(
     relay_block_hash: BridgedBlockHash<T, I>,
     proof: StorageProof,
     parachain: Parachain
@@ -946,23 +1045,21 @@ pub(crate) fn verify_storage_proof<T: Config<I>, I: 'static>(
     let mut arg = Twox64Concat::hash(parachain.id.encode().as_ref());
     key.append(&mut arg); // complete storage key
 
-    let (_, storage_root) = <MultiImportedRoots<T, I>>::get(parachain.relay_chain_id, relay_block_hash)
-        .ok_or("Relaychain storage root not available")?;
+    // ToDo not very concise
+    let encoded_header_vec = verify_storage_proof::<T, I>(parachain.relay_chain_id, relay_block_hash, key, proof, ProofTriePointer::State)?;
+    let encoded_header: Vec<u8> = Decode::decode(&mut &encoded_header_vec[..]).map_err(|_| "Header decoding error")?;
+    let header: BridgedHeader<T, I> = Decode::decode(&mut &*encoded_header).map_err(|_| "Header decoding error")?;
+    Ok(header)
+}
 
-    let db = proof.into_memory_db::<BridgedBlockHasher<T, I>>();
-    let res = read_trie_value::<LayoutV1<BridgedBlockHasher<T, I>>, _>(&db, &storage_root, key.as_ref());
-
-    return match res {
-        Ok(Some(data)) => {
-            // Not ideal, but can't come up with something more concise
-            let encoded_header: Vec<u8> = Decode::decode(&mut &data[..]).map_err(|_| "Header decoding error")?;
-            let header: BridgedHeader<T, I> = Decode::decode(&mut &*encoded_header).map_err(|_| "Header decoding error")?;
-            Ok(header)
-        },
-        _ => {
-            Err("Parachain header verification error")
+ pub(crate) fn is_sub<T: PartialEq>(mut haystack: &[T], needle: &[T]) -> Result<(), &'static str> {
+    while !haystack.is_empty() {
+        if haystack.starts_with(needle) {
+            return Ok(())
         }
+        haystack = &haystack[1..];
     }
+    Err("Inclusion proof failed!")
 }
 
 /// (Re)initialize bridge with given header for using it in `pallet-bridge-messages` benchmarks.
