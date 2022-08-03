@@ -60,6 +60,10 @@ pallet-circuit-portal     = { path = "../circuit-portal" }
 pallet-contracts-registry = { path = "../../pallets/contracts-registry" }
 pallet-xdns               = { path = "../../pallets/xdns" }
 
+pallet-executors               = { path = "../../pallets/executors" }
+pallet-treasury               = { path = "../../pallets/treasury" }
+pallet-account-manager               = { path = "../../pallets/account-manager" }
+
 #snowbridge-basic-channel = { git = "https://github.com/t3rn/snowbridge", branch = "polkadot-v0.9.19", default-features = false }
 
 [features]

@@ -53,6 +53,7 @@ pub use t3rn_primitives::{
 pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
 
 use t3rn_primitives::{
+    account_manager::AccountManager,
     circuit_portal::CircuitPortal,
     side_effect::{ConfirmationOutcome, HardenedSideEffect, SecurityLvl},
     transfers::EscrowedBalanceOf,
@@ -289,6 +290,16 @@ pub mod pallet {
 
         /// A type that provides access to Xdns
         type Xdns: Xdns<Self>;
+
+        /// A type that provides access to AccountManager
+        type AccountManager: AccountManager<
+            Self::AccountId,
+            <<Self::Escrowed as EscrowTrait<Self>>::Currency as frame_support::traits::Currency<
+                Self::AccountId,
+            >>::Balance,
+            Self::Hash,
+            Self::BlockNumber,
+        >;
 
         // type FreeVM: FreeVM<Self>;
 
@@ -1728,6 +1739,7 @@ impl<T: Config> Pallet<T> {
                     "circuit -- for side effect id {:?}",
                     side_effect.generate_id::<SystemHashing<T>>()
                 );
+
                 Self::charge(requester, reward)?;
 
                 local_ctx.insurance_deposits.push((

@@ -65,6 +65,10 @@ frame_support::construct_runtime!(
         ORMLTokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>},
 
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>},
+
+        Treasury: pallet_treasury::{Pallet, Call, Config<T>, Storage, Event<T>},
+        // Executors: pallet_executors::{Pallet, Call, Config<T>, Storage, Event<T>},
+        AccountManager: pallet_account_manager,
     }
 );
 
@@ -350,6 +354,55 @@ parameter_types! {
     pub const MaxMessagesPerCommit: u64 = 20;
 }
 
+// start of treasury + executors staking
+parameter_types! {
+    pub const EscrowAccount: AccountId =  AccountId::new([0u8; 32]);
+}
+
+parameter_types! {
+    pub const TreasuryAccount:  AccountId =  AccountId::new([10u8; 32]);
+    pub const ReserveAccount:  AccountId =  AccountId::new([11u8; 32]);
+    pub const AuctionFund:  AccountId =  AccountId::new([22u8; 32]);
+    pub const ContractFund:  AccountId =  AccountId::new([33u8; 32]);
+    pub const MinRoundTerm: u32 = 20; // TODO
+    pub const DefaultRoundTerm: u32 = 6 * t3rn_primitives::common::BLOCKS_PER_HOUR; // TODO
+    pub const GenesisIssuance: u32 = 20_000_000; // TODO
+    pub const IdealPerpetualInflation: Perbill = Perbill::from_percent(1);
+    pub const InflationRegressionMonths: u32 = 72;
+}
+
+impl pallet_treasury::Config for Test {
+    type AuctionFund = AuctionFund;
+    type ContractFund = ContractFund;
+    type Currency = Balances;
+    type DefaultRoundTerm = DefaultRoundTerm;
+    type Event = Event;
+    type GenesisIssuance = GenesisIssuance;
+    type IdealPerpetualInflation = IdealPerpetualInflation;
+    type InflationRegressionMonths = InflationRegressionMonths;
+    type MinRoundTerm = MinRoundTerm;
+    type ReserveAccount = ReserveAccount;
+    type TreasuryAccount = TreasuryAccount;
+    type WeightInfo = ();
+}
+//
+// impl pallet_executors::Config for Test {
+//     type Currency = Balances;
+//     type Event = Event;
+//     type Treasury = Treasury;
+//     type WeightInfo = ();
+// }
+
+impl pallet_account_manager::Config for Test {
+    type Currency = Balances;
+    type EscrowAccount = EscrowAccount;
+    type Escrowed = Self;
+    type Event = Event;
+    type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
+    type Time = Timestamp;
+    type WeightInfo = ();
+}
+
 // impl snowbridge_basic_channel::outbound::Config for Test {
 //     type Event = Event;
 //     const INDEXING_PREFIX: &'static [u8] = INDEXING_PREFIX;
@@ -485,6 +538,7 @@ parameter_types! {
 }
 
 impl Config for Test {
+    type AccountManager = AccountManager;
     type Balances = Balances;
     type Call = Call;
     type CircuitPortal = CircuitPortal;
@@ -617,6 +671,10 @@ impl ExtBuilder {
         }
         .assimilate_storage(&mut t)
         .expect("Pallet xdns can be assimilated");
+
+        // pallet_executors::GenesisConfig::<Test>::default()
+        //     .assimilate_storage(&mut t)
+        //     .expect("mock pallet-staking genesis storage assimilation");
 
         let mut ext = sp_io::TestExternalities::new(t);
         ext.execute_with(|| System::set_block_number(1));
