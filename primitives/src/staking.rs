@@ -81,6 +81,14 @@ impl<A, B: Default> Default for ExecutorSnapshot<A, B> {
 /// Generic type describing either an executor's self-bond or a staker's bond.
 // #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq)]
+pub struct XtxReward<AccountId, Balance> {
+    pub executor: AccountId,
+    pub reward_safe: Balance,
+}
+
+/// Generic type describing either an executor's self-bond or a staker's bond.
+// #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq)]
 pub struct Bond<AccountId, Balance> {
     pub owner: AccountId,
     pub amount: Balance,
