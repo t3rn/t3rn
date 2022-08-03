@@ -21,9 +21,9 @@ pub use t3rn_primitives::{
 };
 use t3rn_primitives::{
     account_manager::{AccountManager, ExecutionRegistryItem, Reason, SfxSettlement},
-    circuit_clock::CircuitClock,
     executors::Executors,
     transfers::EscrowedBalanceOf,
+    treasury::Treasury,
     EscrowTrait,
 };
 
@@ -50,10 +50,10 @@ pub mod pallet {
     use super::*;
     use frame_support::{
         pallet_prelude::*,
-        traits::{Currency, ReservableCurrency},
+        traits::{Currency, ExistenceRequirement, ReservableCurrency},
     };
     use frame_system::pallet_prelude::*;
-    use t3rn_primitives::account_manager::{ExecutionId, SfxRequestCharge};
+    use t3rn_primitives::{account_manager::ExecutionId, monetary::BeneficiaryRole};
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -74,14 +74,9 @@ pub mod pallet {
         /// A type that manages escrow, and therefore balances
         type Escrowed: EscrowTrait<Self>;
 
-        type Executors: Executors<
-            Self,
-            <<Self::Escrowed as EscrowTrait<Self>>::Currency as frame_support::traits::Currency<
-                Self::AccountId,
-            >>::Balance,
-        >;
+        type Treasury: Treasury<Self>;
 
-        type CircuitClock: CircuitClock<
+        type Executors: Executors<
             Self,
             <<Self::Escrowed as EscrowTrait<Self>>::Currency as frame_support::traits::Currency<
                 Self::AccountId,
@@ -109,14 +104,8 @@ pub mod pallet {
     pub type ExecutionNonce<T: Config> = StorageValue<_, ExecutionId, ValueQuery>;
 
     #[pallet::storage]
-    pub type SfxPendingChargesPerRound<T: Config> = StorageDoubleMap<
-        _,
-        Blake2_128,
-        RoundInfo<T::BlockNumber>,
-        Identity,
-        T::Hash, // sfx_id
-        SfxRequestCharge<T::AccountId, <T::Currency as Currency<T::AccountId>>::Balance>,
-    >;
+    pub type LastClaim<T: Config> =
+        StorageMap<_, Identity, T::AccountId, RoundInfo<T::BlockNumber>>;
 
     #[pallet::storage]
     pub type SfxSettlementsPerRound<T: Config> = StorageDoubleMap<
@@ -125,7 +114,7 @@ pub mod pallet {
         RoundInfo<T::BlockNumber>,
         Identity,
         T::Hash, // sfx_id
-        SfxSettlement<T::AccountId, <T::Currency as Currency<T::AccountId>>::Balance>,
+        SfxSettlement<<T::Currency as Currency<T::AccountId>>::Balance, T::AccountId>,
     >;
 
     #[pallet::storage]
@@ -157,7 +146,7 @@ pub mod pallet {
         ) -> DispatchResult {
             ensure_root(origin)?;
 
-            <Self as AccountManager<T::AccountId, BalanceOf<T>, T::Hash, T::BlockNumber>>::deposit(
+            <Self as AccountManager<T::AccountId, BalanceOf<T>, T::Hash>>::deposit(
                 &payee, &recipient, amount,
             )
         }
@@ -170,10 +159,62 @@ pub mod pallet {
         ) -> DispatchResult {
             ensure_root(origin)?;
 
-            <Self as AccountManager<T::AccountId, BalanceOf<T>, T::Hash, T::BlockNumber>>::finalize(
+            <Self as AccountManager<T::AccountId, BalanceOf<T>, T::Hash>>::finalize(
                 execution_id,
                 reason,
             )
+        }
+
+        #[pallet::weight(10_000 + T::DbWeight::get().reads(1) + T::DbWeight::get().writes(1))]
+        pub fn claim(origin: OriginFor<T>, role: BeneficiaryRole) -> DispatchResult {
+            let payee = ensure_signed(origin)?;
+            // todo: check if who is a legit beneficiary with pallet-executors
+
+            let start_claim_from_round = LastClaim::<T>::get(payee.clone());
+
+            match role {
+                BeneficiaryRole::Developer => {
+                    todo!()
+                },
+                BeneficiaryRole::Executor => {
+                    for settling_round in
+                        start_claim_from_round.index..T::Treasury::current_round().index
+                    {
+                        let reward_per_round = TotalSfxRewardCountPerRoundPerExecutor::<T>::get(
+                            settling_round,
+                            payee.clone(),
+                        );
+                        let total_per_round = TotalSfxRewardCountPerRound::get(settling_round);
+                        // ToDo: to safe reward per round add now inflation rate based on tokenomics:
+                        // To further prevent drastically high payouts to Executors during times when network is stale,
+                        // there is a threshold for rewards Executors  per cross-chain a single transaction.
+                        // We put the constant threshold of a maximum of 5 times of the reward amount given by inflation.
+                        // This is on top of the base reward the executor got from the original fee set be a user.
+                        //
+                        // The calculated reward per each cross-chain transaction can be approximated with the following formula:
+                        // total reward per cross-chain tx = initial reward + MIN ( 5 * initial reward, inflation shares in a given time period)
+
+                        // let inflation_rewards = T::Treasury::calc_executor_inflation_rewards(settling_round, who, total_per_round)?;
+                        let inflation_rewards = 0;
+                        let mut claimable = reward_per_round + inflation_rewards;
+                        claimable *= (T::Executors::collateral_bond(payee)
+                            / T::Executors::collateral_bond(payee)
+                            - T::Executors::total_nominated_stake(payee));
+                        T::Currency::transfer(
+                            &T::EscrowAccount::get(),
+                            payee,
+                            claimable,
+                            ExistenceRequirement::KeepAlive,
+                        )?;
+                    }
+                },
+                BeneficiaryRole::Staker => {},
+                BeneficiaryRole::Collator => {
+                    todo!()
+                },
+            }
+
+            todo!()
         }
     }
 
@@ -228,8 +269,6 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
-        PendingChargeNotFoundAtCommit,
-        PendingChargeNotFoundAtRefund,
         ExecutionNotRegistered,
         ExecutionAlreadyRegistered,
     }

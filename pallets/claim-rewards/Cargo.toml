@@ -1,7 +1,7 @@
 [package]
-name = "pallet-staking"
-version = "0.0.0"
-description = "Implements staking mechanics."
+name = "pallet-executors"
+version = "1.0.0-rc.0"
+description = "Implements t3rn x-chain executors staking."
 authors = ["t3rn devs <team@t3rn.io"]
 homepage = "https://t3rn.io/"
 license = "Apache 2.0"
