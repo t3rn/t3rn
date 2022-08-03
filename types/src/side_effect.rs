@@ -154,9 +154,10 @@ fn extract_args<AccountId: MaxEncodedLen, BalanceOf: MaxEncodedLen, Hash: MaxEnc
             args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // to
             args.push(bytes.split_to(Hash::max_encoded_len()).to_vec()); // asset_left
             args.push(bytes.split_to(Hash::max_encoded_len()).to_vec()); // asset_right
+            args.push(bytes.split_to(Hash::max_encoded_len()).to_vec()); // liquidity_token
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt_left
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt_right
-            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt_liquidity_token TODO: why no token hash?
+            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt_liquidity_token
 
             Ok(args)
         },
