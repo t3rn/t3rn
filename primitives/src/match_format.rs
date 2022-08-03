@@ -55,17 +55,6 @@ pub fn trim_whitespace(input_string: StrLike) -> StrLike {
     result
 }
 
-pub fn match_side_effect(kind: &StrLike) -> Result<Bytes, &'static str> {
-    match &kind[..] {
-        b"Transfer" => Ok(b"tran".encode()),
-        b"Call" => Ok(b"call".encode()),
-        b"Swap" => Ok(b"swap".encode()),
-        b"MultiTransfer" => Ok(b"mult".encode()),
-        b"AddLiquidity" => Ok(b"aliq".encode()),
-        _ => Err("Unknown side effect kind"),
-    }
-}
-
 pub fn match_signature(signature: StrLike) -> Result<(StrLike, Vec<StrLike>), &'static str> {
     // Mutable variables
     let mut event_name: Option<StrLike> = None;

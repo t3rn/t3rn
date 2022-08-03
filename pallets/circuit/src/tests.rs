@@ -2172,6 +2172,7 @@ fn into_se_from_chain() {
                     3, 3, 3, 3, 3, 3
                 ],
                 vec![50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![]
             ],
             signature: vec![],
             enforce_executioner: None,
