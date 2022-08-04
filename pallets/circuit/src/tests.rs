@@ -2096,19 +2096,17 @@ fn add_liquidity_is_validated_correctly() {
                 &origin,
                 LocalTrigger::new(
                     DJANGO,
-                    vec![
-                        Chain::<_, u128, [u8; 32]>::Polkadot(Operation::AddLiquidity {
-                            caller: ALICE,
-                            to: CHARLIE,
-                            asset_left: [7_u8; 32],
-                            asset_right: [8_u8; 32],
-                            liquidity_token: [9_u8; 32],
-                            amount_left: 100,
-                            amount_right: 10,
-                            amount_liquidity_token: 100,
-                        })
-                        .encode()
-                    ],
+                    vec![Chain::<_, u128, _>::Polkadot(Operation::AddLiquidity {
+                        caller: ALICE,
+                        to: CHARLIE,
+                        asset_left: [7_u8; 32],
+                        asset_right: [8_u8; 32],
+                        liquidity_token: [9_u8; 32],
+                        amount_left: 100,
+                        amount_right: 10,
+                        amount_liquidity_token: 100,
+                    })
+                    .encode()],
                     Some(res.xtx_id.clone()),
                 )
             ));
@@ -2172,7 +2170,6 @@ fn into_se_from_chain() {
                     3, 3, 3, 3, 3, 3
                 ],
                 vec![50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                vec![]
             ],
             signature: vec![],
             enforce_executioner: None,

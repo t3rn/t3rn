@@ -120,18 +120,19 @@ enum Action {
 impl TryFrom<u8> for Action {
     type Error = &'static str;
 
+    // TODO: currently these enums are out of order since they don't fully map together yet
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
             0 => Ok(Action::Transfer),
-            1 => Ok(Action::TransferAssets),
-            2 => Ok(Action::TransferOrml),
-            3 => Ok(Action::AddLiquidity),
-            4 => Ok(Action::Swap),
-            5 => Ok(Action::Call),
-            6 => Ok(Action::CallEvm),
-            7 => Ok(Action::CallWasm),
-            8 => Ok(Action::CallComposable),
-            9 => Ok(Action::Data),
+            2 => Ok(Action::AddLiquidity),
+            3 => Ok(Action::Swap),
+            4 => Ok(Action::Call),
+            5 => Ok(Action::TransferAssets),
+            6 => Ok(Action::TransferOrml),
+            7 => Ok(Action::CallEvm),
+            8 => Ok(Action::CallWasm),
+            9 => Ok(Action::CallComposable),
+            10 => Ok(Action::Data),
             _ => Err("Invalid action id"),
         }
     }
@@ -165,7 +166,8 @@ fn extract_args<AccountId: MaxEncodedLen, BalanceOf: MaxEncodedLen, Hash: MaxEnc
             args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // from
             args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // to
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt
-            args.push(bytes.to_vec()); // args
+
+            // TODO: support insurance
 
             Ok(args)
         },
@@ -178,8 +180,9 @@ fn extract_args<AccountId: MaxEncodedLen, BalanceOf: MaxEncodedLen, Hash: MaxEnc
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt_left
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt_right
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt_liquidity_token
-            args.push(bytes.to_vec()); // args
+            args.push(bytes.split_to(0).to_vec()); // insurance
 
+            // TODO: support insurance
             Ok(args)
         },
         Action::Swap => {
@@ -189,7 +192,8 @@ fn extract_args<AccountId: MaxEncodedLen, BalanceOf: MaxEncodedLen, Hash: MaxEnc
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt_right
             args.push(bytes.split_to(Hash::max_encoded_len()).to_vec()); // asset_left
             args.push(bytes.split_to(Hash::max_encoded_len()).to_vec()); // asset_right
-            args.push(bytes.to_vec()); // args
+
+            // TODO: support insurance
 
             Ok(args)
         },
@@ -239,6 +243,7 @@ fn extract_args<AccountId: MaxEncodedLen, BalanceOf: MaxEncodedLen, Hash: MaxEnc
             args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // to
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt
             args.push(bytes.to_vec());
+            // TODO: support insurance
 
             Ok(args)
         },
@@ -248,6 +253,7 @@ fn extract_args<AccountId: MaxEncodedLen, BalanceOf: MaxEncodedLen, Hash: MaxEnc
             args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // to
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt
             args.push(bytes.to_vec());
+            // TODO: support insurance
 
             Ok(args)
         },
@@ -438,7 +444,6 @@ mod tests {
                         6, 6, 6, 6, 6, 6, 6
                     ],
                     vec![100, 0, 0, 0],
-                    vec![]
                 ],
                 signature: vec![],
                 enforce_executioner: None,

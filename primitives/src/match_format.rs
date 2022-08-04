@@ -1,6 +1,4 @@
-use codec::Encode;
 use sp_std::{vec, vec::*};
-use t3rn_types::Bytes;
 
 pub type StrLike = Vec<u8>;
 
