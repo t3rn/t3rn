@@ -98,7 +98,9 @@ pub mod pallet {
         /// The header could not be added
         SubmitHeaderError,
         /// No gateway height could be found
-        NoGatewayHeightAvailable
+        NoGatewayHeightAvailable,
+        /// SideEffect confirmation failed
+        SideEffectConfirmationFailed
     }
 
     // Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -247,6 +249,7 @@ pub mod pallet {
             }
         }
 
+
     }
 }
 
@@ -287,6 +290,32 @@ impl<T: Config> Portal<T> for Pallet<T> {
         match res {
             Some(height) => Ok(height),
             None => Err(Error::<T>::NoGatewayHeightAvailable.into())
+        }
+    }
+
+    fn confirm_and_decode_payload_params(
+        gateway_id: [u8; 4],
+        encoded_inclusion_data: Vec<u8>,
+        value_abi_unsigned_type: Option<Vec<u8>>, // might not be needed for everything
+    ) -> Result<Vec<Vec<u8>>, DispatchError> {
+        let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
+            .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
+
+
+        let res = match vendor {
+            GatewayVendor::Rococo =>  pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::confirm_and_decode_payload_params(
+                gateway_id,
+                encoded_inclusion_data,
+                value_abi_unsigned_type
+            ),
+            _ => unimplemented!()
+        };
+
+        match res {
+            Err(_msg) => {
+                Err(Error::<T>::SideEffectConfirmationFailed.into())
+            },
+            Ok(parameters) => Ok(parameters),
         }
     }
 }

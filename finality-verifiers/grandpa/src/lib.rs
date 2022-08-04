@@ -66,6 +66,7 @@ mod mock;
 
 /// Pallet containing weights for this pallet.
 pub mod weights;
+mod side_effects;
 
 // #[cfg(feature = "runtime-benchmarks")]
 // pub mod benchmarking;
@@ -85,6 +86,7 @@ pub type BridgedHeader<T, I> = HeaderOf<<T as Config<I>>::BridgedChain>;
 const LOG_TARGET: &str = "multi-finality-verifier";
 use frame_system::pallet_prelude::*;
 use t3rn_primitives::ProofTriePointer;
+use crate::side_effects::decode_event;
 use crate::types::{Parachain, RelaychainHeaderData, ParachainHeaderData, InclusionData};
 
 #[frame_support::pallet]
@@ -834,21 +836,26 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         }
     }
 
-    fn confirm_and_decode_payload_params(
-        gateway_id: [u8; 4],
-        encoded_inclusion_data: Vec<u8>
-    ) -> Result<(), &'static str> {
+    pub fn confirm_and_decode_payload_params(
+        gateway_id: ChainId,
+        encoded_inclusion_data: Vec<u8>,
+        value_abi_unsigned_type: Option<Vec<u8>>, // might not be needed for everything
+    ) -> Result<Vec<Vec<u8>>, &'static str> {
         let inclusion_data: InclusionData<BridgedHeader<T, I>> = Decode::decode(&mut &*encoded_inclusion_data)
             .map_err(|_| "InclusionCheckDate couldn't be decoded")?;
 
         // ensures old equal side_effects can't be replayed
         executed_after_creation::<T, I>(gateway_id, inclusion_data.creation_height)?;
 
-        verify_event_storage_proof::<T, I>(gateway_id, inclusion_data.block_hash, inclusion_data.proof, inclusion_data.encoded_payload)
-        // match inclusion_data.side_effect_id {
-        //     b"tran" =>
-        //     _ => unimplemented!()
-        // }
+        match &inclusion_data.side_effect_id {
+            b"tran" => {
+                if let None = value_abi_unsigned_type {
+                    return Err("value_abi_unsigned_type needed in events")
+                }
+                verify_event_storage_proof::<T, I>(gateway_id, inclusion_data, value_abi_unsigned_type.unwrap())
+            },
+            _ => unimplemented!()
+        }
     }
 
     pub fn get_latest_finalized_header(
@@ -1020,10 +1027,17 @@ pub(crate) fn find_forced_change<H: HeaderT>(
 
 pub(crate) fn verify_event_storage_proof<T: Config<I>, I: 'static>(
     gateway_id: ChainId,
-    block_hash: BridgedBlockHash<T, I>,
-    proof: StorageProof,
-    encoded_event: Vec<u8>
-) -> Result<(), &'static str> {
+    inclusion_data: InclusionData<BridgedHeader<T, I>>,
+    value_abi_unsigned_type: Vec<u8>
+) -> Result<Vec<Vec<u8>>, &'static str> {
+    let InclusionData {
+        side_effect_id,
+        encoded_payload,
+        proof,
+        block_hash,
+        ..
+    } = inclusion_data;
+
     // storage key for System_Events
     let key: Vec<u8> = [38, 170, 57, 78, 234, 86, 48, 224, 124, 72, 174, 12, 149, 88, 206, 247, 128, 212, 30, 94, 22, 5, 103, 101, 188, 132, 97, 133, 16, 114, 201, 215, ].to_vec();
     let verified_block_events = verify_storage_proof::<T, I>(gateway_id, block_hash, key, proof, ProofTriePointer::Receipts)?;
@@ -1031,7 +1045,13 @@ pub(crate) fn verify_event_storage_proof<T: Config<I>, I: 'static>(
 
     // the problem here is that in substrates current design its not possible to prove the inclusion of a single event, only all events of a block
     // https://github.com/paritytech/substrate/issues/11216
-    is_sub(verified_block_events.as_slice(), encoded_event.as_slice())
+    ensure!(is_sub(verified_block_events.as_slice(), encoded_payload.as_slice()), "Event not in block!");
+
+    decode_event::<T>(
+        &side_effect_id,
+        encoded_payload,
+        &*value_abi_unsigned_type
+    )
 }
 
 pub(crate) fn verify_header_storage_proof<T: Config<I>, I: 'static>(
@@ -1052,14 +1072,14 @@ pub(crate) fn verify_header_storage_proof<T: Config<I>, I: 'static>(
     Ok(header)
 }
 
- pub(crate) fn is_sub<T: PartialEq>(mut haystack: &[T], needle: &[T]) -> Result<(), &'static str> {
+ pub(crate) fn is_sub<T: PartialEq>(mut haystack: &[T], needle: &[T]) -> bool {
     while !haystack.is_empty() {
         if haystack.starts_with(needle) {
-            return Ok(())
+            return true
         }
         haystack = &haystack[1..];
     }
-    Err("Inclusion proof failed!")
+    false
 }
 
 /// (Re)initialize bridge with given header for using it in `pallet-bridge-messages` benchmarks.

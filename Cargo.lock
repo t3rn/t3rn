@@ -6820,6 +6820,7 @@ dependencies = [
  "hex-literal 0.3.4",
  "log",
  "num-traits",
+ "orml-tokens",
  "pallet-balances",
  "pallet-sudo",
  "pallet-timestamp",
