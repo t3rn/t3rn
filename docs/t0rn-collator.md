@@ -96,6 +96,10 @@ t0rn_boot_node=/ip4/159.69.77.34/tcp/33333/p2p/12D3KooWBqic8h4nQS2KK751rdkqYPFTW
   --execution Wasm
 ```
 
+When running the collator the first time, add the `--rpc-methods=unsafe` argument to be able to call rotateKeys later.
+Please restart your node after the registration process without the argument.
+
+
 ## Set Your Collator's Aura Key
 
 Your collator needs an [Aura](https://docs.substrate.io/v3/advanced/consensus/#aura) identity in order to produce blocks.
@@ -123,26 +127,30 @@ Go to the [t0rn testnet faucet](https://dev.net.t3rn.io/faucet/), insert your su
 
 1. Go to the [polkadot.js app](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fdev.net.t3rn.io#/accounts) and connect your collator account by clicking "Add account", then inserting your previously generated secret phrase aka mnemonic.
 
-2. Generate a new session key pair and obtain the corresponding public key. Copy it as it is needed in the next step.
+2. Generate a new session key pair and obtain the corresponding public key:
 
 ```
-Developer --> RPC calls --> author --> rotateKeys()
+curl -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "author_rotateKeys", "params":[]}' http://localhost:8833
 ```
 
-3. Set the session key for your collator under
+Your output should look similar to:
+
+``{"jsonrpc":"2.0","result":"0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef","id":1}``
+
+
+The `result` key is your public key of the newly created session key pair. Copy it as it is needed in the next step.
+
+3. Set the session key for your collator under:
 
 ```
-Developer --> Extrinsics --> session -> setKeys(sr25519_pubkey, 0x1234)
+Developer --> Extrinsics --> session -> setKeys(sr25519_pubkey, 0x00)
 ```
 
-4. Now finally register your collator as candidate.
+4. Now finally register your collator as candidate under:
 
 ```
 Developer --> Extrinsics --> collatorSelection -> registerAsCandidate()
 ```
 
 After some time your collator should be included and producing blocks!
-  
-## Troubleshooting
-
-+ Our testnet got a temporary Rococo slot, meaning `t0rn` and other parachains will be on- and offboarded to Rococo in a round-robin fashion. When offboarded collators do not produce blocks.
+You can check [here](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fdev.net.t3rn.io#/collators) if your collator has registered successfully.
