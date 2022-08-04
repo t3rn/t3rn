@@ -248,8 +248,6 @@ pub mod pallet {
                 }
             }
         }
-
-
     }
 }
 
@@ -296,17 +294,15 @@ impl<T: Config> Portal<T> for Pallet<T> {
     fn confirm_and_decode_payload_params(
         gateway_id: [u8; 4],
         encoded_inclusion_data: Vec<u8>,
-        value_abi_unsigned_type: Option<Vec<u8>>, // might not be needed for everything
-    ) -> Result<Vec<Vec<u8>>, DispatchError> {
+    ) -> Result<Vec<Vec<Vec<u8>>>, DispatchError> {
         let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
             .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
-
 
         let res = match vendor {
             GatewayVendor::Rococo =>  pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::confirm_and_decode_payload_params(
                 gateway_id,
                 encoded_inclusion_data,
-                value_abi_unsigned_type
+                <T as Config>::Xdns::get_gateway_value_unsigned_type_unsafe(&gateway_id).to_string_bytes()
             ),
             _ => unimplemented!()
         };

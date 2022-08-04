@@ -839,8 +839,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     pub fn confirm_and_decode_payload_params(
         gateway_id: ChainId,
         encoded_inclusion_data: Vec<u8>,
-        value_abi_unsigned_type: Option<Vec<u8>>, // might not be needed for everything
-    ) -> Result<Vec<Vec<u8>>, &'static str> {
+        value_abi_unsigned_type: &[u8], // might not be needed for everything
+    ) -> Result<Vec<Vec<Vec<u8>>>, &'static str> {
         let inclusion_data: InclusionData<BridgedHeader<T, I>> = Decode::decode(&mut &*encoded_inclusion_data)
             .map_err(|_| "InclusionCheckDate couldn't be decoded")?;
 
@@ -849,10 +849,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
         match &inclusion_data.side_effect_id {
             b"tran" => {
-                if let None = value_abi_unsigned_type {
-                    return Err("value_abi_unsigned_type needed in events")
-                }
-                verify_event_storage_proof::<T, I>(gateway_id, inclusion_data, value_abi_unsigned_type.unwrap())
+                verify_event_storage_proof::<T, I>(gateway_id, inclusion_data, value_abi_unsigned_type)
             },
             _ => unimplemented!()
         }
@@ -1028,8 +1025,8 @@ pub(crate) fn find_forced_change<H: HeaderT>(
 pub(crate) fn verify_event_storage_proof<T: Config<I>, I: 'static>(
     gateway_id: ChainId,
     inclusion_data: InclusionData<BridgedHeader<T, I>>,
-    value_abi_unsigned_type: Vec<u8>
-) -> Result<Vec<Vec<u8>>, &'static str> {
+    value_abi_unsigned_type: &[u8]
+) -> Result<Vec<Vec<Vec<u8>>>, &'static str> {
     let InclusionData {
         side_effect_id,
         encoded_payload,
@@ -1050,7 +1047,7 @@ pub(crate) fn verify_event_storage_proof<T: Config<I>, I: 'static>(
     decode_event::<T>(
         &side_effect_id,
         encoded_payload,
-        &*value_abi_unsigned_type
+        value_abi_unsigned_type
     )
 }
 

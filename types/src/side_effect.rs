@@ -57,8 +57,7 @@ impl Default for ConfirmationOutcome {
 pub struct ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub err: Option<ConfirmationOutcome>,
     pub output: Option<Bytes>,
-    pub encoded_effect: Bytes,
-    pub inclusion_proof: Option<Bytes>,
+    pub inclusion_data: Vec<u8>,
     pub executioner: AccountId,
     pub received_at: BlockNumber,
     pub cost: Option<BalanceOf>,

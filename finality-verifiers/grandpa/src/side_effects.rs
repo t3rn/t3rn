@@ -39,7 +39,7 @@ pub(crate) fn decode_event<T: frame_system::Config>(
     id: &[u8; 4],
     mut encoded_event: Vec<u8>,
     value_abi_unsigned_type: &[u8],
-) -> Result<Vec<Vec<u8>>, &'static str> {
+) -> Result<Vec<Vec<Vec<u8>>>, &'static str> {
     // the first byte is the pallet index, which we don't need
     let _ = encoded_event.remove(0);
     match &id {
@@ -48,7 +48,7 @@ pub(crate) fn decode_event<T: frame_system::Config>(
             match value_abi_unsigned_type {
                 b"uint32" => {
                     match Decode::decode(&mut &encoded_event[..]) {
-                        Ok(TransferEventStub::<T, u32>::Transfer { from, to, amount }) => Ok(vec![from.encode(), to.encode(), amount.encode()]),
+                        Ok(TransferEventStub::<T, u32>::Transfer { from, to, amount }) => Ok(vec![vec![from.encode(), to.encode(), amount.encode()]]),
                         Ok(TransferEventStub::<T, u32>::Endowed { .. }) => Err("Event decodes to pallet_balances::Event::Endowed, which is unsupported"),
                         Ok(TransferEventStub::<T, u32>::DustLost { .. }) => Err("Event decodes to pallet_balances::Event::Endowed, which is unsupported"),
                         Err(_) => Err("Decoded event doesn't match expected for substrate form of pallet_balances::Event::Transfer"),
@@ -56,7 +56,7 @@ pub(crate) fn decode_event<T: frame_system::Config>(
                 }
                 b"uint64" => {
                     match Decode::decode(&mut &encoded_event[..]) {
-                        Ok(TransferEventStub::<T, u64>::Transfer { from, to, amount }) => Ok(vec![from.encode(), to.encode(), amount.encode()]),
+                        Ok(TransferEventStub::<T, u64>::Transfer { from, to, amount }) => Ok(vec![vec![from.encode(), to.encode(), amount.encode()]]),
                         Ok(TransferEventStub::<T, u64>::Endowed { .. }) => Err("Event decodes to pallet_balances::Event::Endowed, which is unsupported"),
                         Ok(TransferEventStub::<T, u64>::DustLost { .. }) => Err("Event decodes to pallet_balances::Event::Endowed, which is unsupported"),
                         Err(_) => Err("Decoded event doesn't match expected for substrate form of pallet_balances::Event::Transfer"),
@@ -64,7 +64,7 @@ pub(crate) fn decode_event<T: frame_system::Config>(
                 }
                 b"uint128" => {
                     match Decode::decode(&mut &encoded_event[..]) {
-                        Ok(TransferEventStub::<T, u128>::Transfer { from, to, amount }) => Ok(vec![from.encode(), to.encode(), amount.encode()]),
+                        Ok(TransferEventStub::<T, u128>::Transfer { from, to, amount }) => Ok(vec![vec![from.encode(), to.encode(), amount.encode()]]),
                         Ok(TransferEventStub::<T, u128>::Endowed { .. }) => Err("Event decodes to pallet_balances::Event::Endowed, which is unsupported"),
                         Ok(TransferEventStub::<T, u128>::DustLost { .. }) => Err("Event decodes to pallet_balances::Event::Endowed, which is unsupported"),
                         Err(_) => Err("Decoded event doesn't match expected for substrate form of pallet_balances::Event::Transfer"),
@@ -77,7 +77,7 @@ pub(crate) fn decode_event<T: frame_system::Config>(
             match value_abi_unsigned_type {
                 b"uint32" => {
                     match Decode::decode(&mut &encoded_event[..]) {
-                        Ok(MultiTransferEventStub::<T, u32, CurrencyId>::Transfer { currency_id, from, to, amount }) => Ok(vec![from.encode(), to.encode(), currency_id.encode(), amount.encode()]),
+                        Ok(MultiTransferEventStub::<T, u32, CurrencyId>::Transfer { currency_id, from, to, amount }) => Ok(vec![vec![from.encode(), to.encode(), currency_id.encode(), amount.encode()]]),
                         Ok(MultiTransferEventStub::<T, u32, CurrencyId>::Endowed { .. }) => Err("Event decodes to pallet_balances::Event::Endowed, which is unsupported"),
                         Ok(MultiTransferEventStub::<T, u32, CurrencyId>::DustLost { .. }) => Err("Event decodes to pallet_balances::Event::Endowed, which is unsupported"),
                         Err(_) => Err("Decoded event doesn't match expected for substrate form of pallet_balances::Event::Transfer"),
@@ -85,7 +85,7 @@ pub(crate) fn decode_event<T: frame_system::Config>(
                 }
                 b"uint64" => {
                     match Decode::decode(&mut &encoded_event[..]) {
-                        Ok(MultiTransferEventStub::<T, u64, CurrencyId>::Transfer { currency_id, from, to, amount }) => Ok(vec![from.encode(), to.encode(), currency_id.encode(), amount.encode()]),
+                        Ok(MultiTransferEventStub::<T, u64, CurrencyId>::Transfer { currency_id, from, to, amount }) => Ok(vec![vec![from.encode(), to.encode(), currency_id.encode(), amount.encode()]]),
                         Ok(MultiTransferEventStub::<T, u64, CurrencyId>::Endowed { .. }) => Err("Event decodes to pallet_balances::Event::Endowed, which is unsupported"),
                         Ok(MultiTransferEventStub::<T, u64, CurrencyId>::DustLost { .. }) => Err("Event decodes to pallet_balances::Event::Endowed, which is unsupported"),
                         Err(_) => Err("Decoded event doesn't match expected for substrate form of pallet_balances::Event::Transfer"),
@@ -93,7 +93,7 @@ pub(crate) fn decode_event<T: frame_system::Config>(
                 }
                 b"uint128" => {
                     match Decode::decode(&mut &encoded_event[..]) {
-                        Ok(MultiTransferEventStub::<T, u128, CurrencyId>::Transfer { currency_id, from, to, amount }) => Ok(vec![from.encode(), to.encode(), currency_id.encode(), amount.encode()]),
+                        Ok(MultiTransferEventStub::<T, u128, CurrencyId>::Transfer { currency_id, from, to, amount }) => Ok(vec![vec![from.encode(), to.encode(), currency_id.encode(), amount.encode()]]),
                         Ok(MultiTransferEventStub::<T, u128, CurrencyId>::Endowed { .. }) => Err("Event decodes to pallet_balances::Event::Endowed, which is unsupported"),
                         Ok(MultiTransferEventStub::<T, u128, CurrencyId>::DustLost { .. }) => Err("Event decodes to pallet_balances::Event::Endowed, which is unsupported"),
                         Err(_) => Err("Decoded event doesn't match expected for substrate form of pallet_balances::Event::Transfer"),

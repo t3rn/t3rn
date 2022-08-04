@@ -40,6 +40,5 @@ pub trait Portal<T: frame_system::Config> {
     fn confirm_and_decode_payload_params(
         gateway_id: [u8; 4],
         encoded_inclusion_data: Vec<u8>,
-        value_abi_unsigned_type: Option<Vec<u8>>,
-    ) -> Result<Vec<Vec<u8>>, DispatchError>;
+    ) -> Result<Vec<Vec<Vec<u8>>>, DispatchError>;
 }
