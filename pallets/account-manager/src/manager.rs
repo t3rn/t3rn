@@ -239,7 +239,7 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
         //
         //     claimable_artifacts.push(ClaimableArtifacts {
         //         beneficiary: active_set_claimable.executor,
-        //         role: CircuitRole::Relayer,
+        //         role: CircuitRole::Executor,
         //         total_round_claim: collateral_bond_power * active_set_claimable.claimable,
         //         benefit_source: BenefitSource::ExecutorRewards,
         //     });
@@ -255,7 +255,7 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
         //         let staker_power = nominated_stake.nominated_stake / nominated_stake_power.clone();
         //         claimable_artifacts.push(ClaimableArtifacts {
         //             beneficiary: nominated_stake.staker,
-        //             role: CircuitRole::Relayer,
+        //             role: CircuitRole::Staker,
         //             total_round_claim: staker_power * claimable_by_all_stakers_of_executor,
         //             benefit_source: BenefitSource::ExecutorStakingRewards,
         //         });

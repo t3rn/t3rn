@@ -7,22 +7,21 @@ use crate::common::RoundInfo;
 
 #[derive(Clone, Eq, PartialEq, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum CircuitRole {
+    Ambassador,
+    Executor,
+    Staker,
+    Collator,
+    ContractAuthor, // Builders
     Relayer,
     Requester,
-    ContractAuthor,
     Local,
 }
 
 #[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo)]
 pub enum BenefitSource {
-    ExecutorRewards,
-    ExecutorStakingRewards,
-    LiquidityRewards,
-    ContractsStaking,
-    AmbassadorsStaking,
-    ExecutorInflation,
-    BuildersDAOInflation,
-    CollatorsInflation,
+    TrafficRewards,
+    BootstrapPool,
+    Inflation,
 }
 
 #[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo)]
@@ -34,6 +33,5 @@ pub struct ClaimableArtifacts<Account, Balance> {
 }
 
 pub trait CircuitClock<T: frame_system::Config, Balance> {
-    // fn on_collect_claimable(n: T::BlockNumber, r: RoundInfo<T::BlockNumber>) -> Vec<ClaimableArtifacts<T::AccountId, Balance>>;
     fn current_round() -> RoundInfo<T::BlockNumber>;
 }
