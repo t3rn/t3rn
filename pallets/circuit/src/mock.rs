@@ -566,7 +566,10 @@ impl ExtBuilder {
                 token_decimals: 10,
             },
             vec![],
-            vec![*b"tran", *b"swap", *b"aliq"],
+            t3rn_protocol::side_effects::standards::standard_side_effects()
+                .iter()
+                .map(|s| s.id)
+                .collect(),
         );
         let kusama_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
