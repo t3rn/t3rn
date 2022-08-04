@@ -131,8 +131,8 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
             pending_charge.charge_fee + pending_charge.offered_reward,
         );
         T::Currency::transfer(
-            &pending_charge.requester,
             &T::EscrowAccount::get(),
+            &pending_charge.requester,
             pending_charge.charge_fee,
             ExistenceRequirement::KeepAlive,
         )?;
