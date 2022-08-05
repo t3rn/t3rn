@@ -69,19 +69,39 @@ where
     ) -> Result<LocalStateExecutionView<T>, DispatchError>;
 }
 
+pub struct Remunerated {
+    pub remuneration_id: Option<u64>,
+}
+
+impl Default for Remunerated {
+    fn default() -> Self {
+        Remunerated {
+            remuneration_id: None,
+        }
+    }
+}
+
+impl Remunerated {
+    pub fn new(id: Option<u64>) -> Self {
+        Remunerated {
+            remuneration_id: id,
+        }
+    }
+}
+
 pub trait Remuneration<T: frame_system::Config, Balance> {
     /// Try to remunerate the fees from the given module
     fn try_remunerate<Module: ModuleOperations<T, Balance>>(
         payee: &T::AccountId,
         module: &Module,
-    ) -> Result<u64, sp_runtime::DispatchError>;
+    ) -> Result<Remunerated, sp_runtime::DispatchError>;
 
     /// Try to remunerate the fees from the given module with a custom balance
     fn try_remunerate_exact<Module: ModuleOperations<T, Balance>>(
         payee: &T::AccountId,
         amount: Balance,
         module: &Module,
-    ) -> Result<u64, sp_runtime::DispatchError>;
+    ) -> Result<Remunerated, sp_runtime::DispatchError>;
 
     /// Try to finalize a ledger item with an reason
     fn try_finalize(ledger_id: u64, reason: Reason) -> DispatchResult;

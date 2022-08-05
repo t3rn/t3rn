@@ -1239,7 +1239,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
- "fp-evm",
+ "fp-evm 3.0.0-dev",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -1264,7 +1264,7 @@ dependencies = [
  "pallet-contracts-primitives",
  "pallet-contracts-registry",
  "pallet-contracts-rpc-runtime-api",
- "pallet-evm",
+ "pallet-evm 0.1.0",
  "pallet-evm-rpc-runtime-api",
  "pallet-multi-finality-verifier",
  "pallet-preimage",
@@ -1360,7 +1360,7 @@ name = "circuit-standalone-runtime"
 version = "1.0.0-alpha.0"
 dependencies = [
  "beefy-primitives",
- "fp-evm",
+ "fp-evm 3.0.0-dev",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -1386,7 +1386,7 @@ dependencies = [
  "pallet-contracts-registry",
  "pallet-contracts-registry-rpc-runtime-api",
  "pallet-contracts-rpc-runtime-api",
- "pallet-evm",
+ "pallet-evm 0.1.0",
  "pallet-evm-rpc-runtime-api",
  "pallet-grandpa",
  "pallet-mmr",
@@ -3182,6 +3182,19 @@ dependencies = [
 [[package]]
 name = "fp-evm"
 version = "3.0.0-dev"
+dependencies = [
+ "evm",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19)",
+ "parity-scale-codec 3.1.2",
+ "serde",
+ "sp-core",
+ "sp-std",
+]
+
+[[package]]
+name = "fp-evm"
+version = "3.0.0-dev"
+source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
 dependencies = [
  "evm",
  "parity-scale-codec 3.1.2",
@@ -6984,7 +6997,7 @@ name = "pallet-evm"
 version = "0.1.0"
 dependencies = [
  "evm",
- "fp-evm",
+ "fp-evm 3.0.0-dev",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -7002,30 +7015,59 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "t3rn-primitives",
+ "t3rn-sdk-primitives",
+]
+
+[[package]]
+name = "pallet-evm"
+version = "6.0.0-dev"
+source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
+dependencies = [
+ "evm",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19)",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "log",
+ "pallet-balances",
+ "pallet-timestamp",
+ "parity-scale-codec 3.1.2",
+ "primitive-types 0.11.1",
+ "rlp",
+ "scale-info 2.1.1",
+ "serde",
+ "sha3 0.10.1",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
 name = "pallet-evm-precompile-3vm-dispatch"
 version = "0.0.1"
 dependencies = [
- "fp-evm",
+ "fp-evm 3.0.0-dev",
  "frame-support",
- "pallet-evm",
+ "pallet-evm 0.1.0",
  "t3rn-primitives",
 ]
 
 [[package]]
 name = "pallet-evm-precompile-blake2"
 version = "2.0.0-dev"
+source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
 dependencies = [
- "fp-evm",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19)",
 ]
 
 [[package]]
 name = "pallet-evm-precompile-bn128"
 version = "2.0.0-dev"
+source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
 dependencies = [
- "fp-evm",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19)",
  "sp-core",
  "substrate-bn",
 ]
@@ -7033,49 +7075,55 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-curve25519"
 version = "1.0.0-dev"
+source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
 dependencies = [
  "curve25519-dalek 4.0.0-pre.1",
- "fp-evm",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19)",
 ]
 
 [[package]]
 name = "pallet-evm-precompile-dispatch"
 version = "2.0.0-dev"
+source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
 dependencies = [
- "fp-evm",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19)",
  "frame-support",
- "pallet-evm",
+ "pallet-evm 6.0.0-dev",
 ]
 
 [[package]]
 name = "pallet-evm-precompile-ed25519"
 version = "2.0.0-dev"
+source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
 dependencies = [
  "ed25519-dalek",
- "fp-evm",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19)",
 ]
 
 [[package]]
 name = "pallet-evm-precompile-modexp"
 version = "2.0.0-dev"
+source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
 dependencies = [
- "fp-evm",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19)",
  "num",
 ]
 
 [[package]]
 name = "pallet-evm-precompile-sha3fips"
 version = "2.0.0-dev"
+source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
 dependencies = [
- "fp-evm",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19)",
  "tiny-keccak 2.0.2",
 ]
 
 [[package]]
 name = "pallet-evm-precompile-simple"
 version = "2.0.0-dev"
+source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
 dependencies = [
- "fp-evm",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19)",
  "ripemd",
  "sp-io",
 ]
@@ -7084,7 +7132,7 @@ dependencies = [
 name = "pallet-evm-rpc"
 version = "0.0.1"
 dependencies = [
- "fp-evm",
+ "fp-evm 3.0.0-dev",
  "jsonrpc-core 18.0.0",
  "jsonrpc-core-client 18.0.0",
  "jsonrpc-derive",
@@ -7104,7 +7152,7 @@ version = "0.1.0"
 dependencies = [
  "ethereum",
  "ethereum-types 0.13.1",
- "fp-evm",
+ "fp-evm 3.0.0-dev",
  "parity-scale-codec 3.1.2",
  "scale-info 2.1.1",
  "sp-api",
@@ -9417,7 +9465,7 @@ checksum = "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
 name = "precompile-util"
 version = "1.0.0"
 dependencies = [
- "fp-evm",
+ "fp-evm 3.0.0-dev",
  "pallet-evm-precompile-3vm-dispatch",
  "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
