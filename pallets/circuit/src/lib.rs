@@ -825,8 +825,8 @@ pub mod pallet {
                 <T as frame_system::Config>::BlockNumber,
                 EscrowedBalanceOf<T, T::Escrowed>,
             >,
-            inclusion_proof: Option<Vec<Vec<u8>>>,
-            block_hash: Option<Vec<u8>>,
+            _inclusion_proof: Option<Vec<Vec<u8>>>,
+            _block_hash: Option<Vec<u8>>,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
             let relayer = Self::authorize(origin, CircuitRole::Relayer)?;
@@ -1817,68 +1817,7 @@ impl<T: Config> Pallet<T> {
             EscrowedBalanceOf<T, <T as Config>::Escrowed>,
         >
     ) -> Result<(), &'static str> {
-        // confirm the payload is included in the specified block, and return the SideEffect params as defined in XDNS.
-        // this could be multiple events!
-        let params = <T as Config>::Portal::confirm_and_decode_payload_params(
-            side_effect.target,
-            confirmation.inclusion_data.clone()
-        )
-        .map_err(|_| "SideEffect confirmation failed!")?;
-
-        let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
-            side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
-        let side_effect_interface =
-            <T as Config>::Xdns::fetch_side_effect_interface(side_effect_id);
-
-        confirmation_plug::<T>(
-            &Box::new(side_effect_interface.unwrap()),
-            params,
-            &local_ctx.local_state,
-            Some(
-                side_effect
-                    .generate_id::<SystemHashing<T>>()
-                    .as_ref()
-                    .to_vec()
-                    .into(),
-            ),
-        )
-        .map_err(|_| "Execution can't be confirmed.")?;
-
-
-        // let confirm_execution = |gateway_vendor, value_abi_unsigned_type, state_copy| {
-        //     let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
-        //     side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
-        //     let side_effect_interface =
-        //         <T as Config>::Xdns::fetch_side_effect_interface(side_effect_id);
-        //
-        //     // I guess this could be omitted, as SE submission would prevent this?
-        //     if let Err(msg) = side_effect_interface {
-        //         return Err(msg)
-        //     }
-        //
-        //     confirm_with_vendor::<
-        //         T,
-        //         SubstrateSideEffectsParser,
-        //         EthereumSideEffectsParser<
-        //             <<T as Config>::CircuitPortal as CircuitPortal<T>>::EthVerifier,
-        //         >,
-        //     >(
-        //         gateway_vendor,
-        //         value_abi_unsigned_type,
-        //         &Box::new(side_effect_interface.unwrap()),
-        //         confirmation.encoded_effect.clone().into(),
-        //         state_copy,
-        //         Some(
-        //             side_effect
-        //                 .generate_id::<SystemHashing<T>>()
-        //                 .as_ref()
-        //                 .to_vec()
-        //                 .into(),
-        //         ),
-        //     )
-        // };
-
-        fn confirm_order<T: Config>(
+          fn confirm_order<T: Config>(
             side_effect: &SideEffect<
                 <T as frame_system::Config>::AccountId,
                 <T as frame_system::Config>::BlockNumber,
@@ -1938,13 +1877,40 @@ impl<T: Config> Pallet<T> {
             Err("Unable to find matching Side Effect in given Xtx to confirm")
         }
 
-        let _fsfx = confirm_order::<T>(side_effect, confirmation, &mut local_ctx.full_side_effects)?;
-        // confirm_inclusion(fsfx)?;
-        // confirm_execution(
-        //     <T as Config>::Xdns::best_available(side_effect.target)?.gateway_vendor,
-        //     <T as Config>::Xdns::get_gateway_value_unsigned_type_unsafe(&side_effect.target),
-        //     &local_ctx.local_state,
-        // )?;
+        let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
+            side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
+
+        let fsfx = confirm_order::<T>(side_effect, confirmation, &mut local_ctx.full_side_effects)?;
+
+        // confirm the payload is included in the specified block, and return the SideEffect params as defined in XDNS.
+        // this could be multiple events!
+        let params = <T as Config>::Portal::confirm_and_decode_payload_params(
+            side_effect.target,
+            fsfx.submission_target_height,
+            confirmation.inclusion_data.clone(),
+            side_effect_id.clone(),
+        )
+        .map_err(|_| "SideEffect confirmation failed!")?;
+
+        let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
+            side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
+        let side_effect_interface =
+            <T as Config>::Xdns::fetch_side_effect_interface(side_effect_id);
+
+        confirmation_plug::<T>(
+            &Box::new(side_effect_interface.unwrap()),
+            params,
+            &local_ctx.local_state,
+            Some(
+                side_effect
+                    .generate_id::<SystemHashing<T>>()
+                    .as_ref()
+                    .to_vec()
+                    .into(),
+            ),
+        )
+        .map_err(|_| "Execution can't be confirmed.")?;
+
         Ok(())
     }
 

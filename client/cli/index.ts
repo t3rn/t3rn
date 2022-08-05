@@ -12,6 +12,7 @@ import {submitHeader} from "./commands/submit_header/submit_header";
 import {encodeExport, transferAmount} from "./utils/encoder";
 
 import { Command } from 'commander';
+import {addressStringToPubKey} from "./utils/decoder";
 const program = new Command();
 
 program
@@ -138,8 +139,8 @@ class CircuitCLI {
 
         if(gatewayData) {
             let encodedAmount = transferAmount(amount, gatewayData.registrationData.gatewayConfig.decimals, gatewayData.registrationData.gatewayConfig.valueTypeSize);
-            if(!receiver) receiver = gatewayData.transferData.receiver;
-            const transactionArgs: any = transfer(gatewayData, encodedAmount, this.signer.address, receiver, fee)
+            if(!receiver) receiver = addressStringToPubKey(gatewayData.transferData.receiver);
+            const transactionArgs: any = transfer(gatewayData, encodedAmount, addressStringToPubKey(this.signer.address), receiver, fee)
             // console.log(transactionArgs)
             // if (exportArgs) {
             //     const fileName = `./exports/` + exportName + '.json';

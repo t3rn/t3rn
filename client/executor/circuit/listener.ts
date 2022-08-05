@@ -46,7 +46,7 @@ export default class CircuitListener extends EventEmitter {
               case "H256":
                 sideEffect.setXtxId(event.data[index])
                 break
-              case "Vec<T3rnPrimitivesSideEffect>":
+              case "Vec<T3rnTypesSideEffect>":
                 ;(event.data[index] as any).forEach(element => {
                   let newSideEffect = new SideEffect()
                   newSideEffect.setSideEffect(element)
@@ -69,13 +69,12 @@ export default class CircuitListener extends EventEmitter {
           )
 
           this.emit("NewSideEffects", all_side_effects)
-        } else if (notification.event.method === "NewHeaderRangeAvailable") {
+        } else if (notification.event.method === "HeaderSubmitted") {
           const data = {
             gatewayId: new TextDecoder().decode(
               notification.event.data[0].toU8a()
             ),
-            height: notification.event.data[1],
-            range: notification.event.data[2],
+            height: parseInt(notification.event.data[1].toString(), 16)
           }
 
           this.emit("NewHeaderRangeAvailable", data)

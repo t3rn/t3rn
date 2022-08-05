@@ -59,19 +59,26 @@ export class SideEffect {
     executioner: any,
     inclusionProof: any,
     blockHeader: any,
-    executed: boolean
+    executed: boolean,
   ) {
+    const inclusionData = { // will be encoded by circuit relayer
+      encoded_payload: encodedEffect,
+      proof: {
+            trieNodes: inclusionProof.toJSON().proof
+      },
+      block_hash: blockHeader
+    }
+
     this.confirmedSideEffect = {
       err: null,
       output: null,
-      encodedEffect: encodedEffect,
-      inclusionProof: null,
+      inclusionData,
       executioner: executioner,
       receivedAt: blockNumber,
       cost: null,
     }
 
-    this.executed = executed
+    this.executed = true
     this.executor = executioner
     this.inclusionProof = inclusionProof
     this.execBlockHeader = blockHeader

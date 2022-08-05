@@ -55,8 +55,9 @@ use frame_support::{ensure, pallet_prelude::*, StorageHasher};
 use frame_system::{ensure_signed, RawOrigin};
 use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
 use sp_runtime::traits::{BadOrigin, Header as HeaderT, Zero};
-use sp_std::vec::Vec;
+use sp_std::{vec, vec::Vec};
 use sp_core::crypto::ByteArray;
+use num_traits::cast::AsPrimitive;
 mod types;
 use types::{GrandpaRegistrationData};
 use sp_trie::{read_trie_value, LayoutV1, StorageProof};
@@ -91,6 +92,7 @@ use crate::types::{Parachain, RelaychainHeaderData, ParachainHeaderData, Inclusi
 
 #[frame_support::pallet]
 pub mod pallet {
+    use sp_core::U256;
     use super::*;
 
     #[pallet::config]
@@ -295,7 +297,7 @@ pub mod pallet {
         signed_header: BridgedHeader<T, I>,
         range: Vec<BridgedHeader<T, I>>,
         justification: GrandpaJustification::<BridgedHeader<T, I>>
-    ) -> Result<(), &'static str> {
+    ) -> Result<Vec<u8>, &'static str> {
         ensure!(
             <RequestCountMap<T,I>>::get(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
             "Too many Requests"
@@ -361,7 +363,7 @@ pub mod pallet {
             *count
         });
 
-        let mut anchor = signed_header;
+        let mut anchor = signed_header.clone();
 
         for header in range {
             if header.number() <= best_finalized.number() {
@@ -407,12 +409,16 @@ pub mod pallet {
             gateway_id
         );
 
+
         log::debug!(
             target: LOG_TARGET,
             "Successfully updated gateway {:?}!",
             gateway_id,
         );
-        Ok(().into())
+        // ToDo use unique_saturated_into() here.
+        let height: usize = number.as_();
+        let block_height: u64 = height.try_into().unwrap();
+        Ok(block_height.to_be_bytes().to_vec())
     }
 
     /// Verify a target parachain header can be verified with its relaychains storage_proof
@@ -427,7 +433,7 @@ pub mod pallet {
         relay_block_hash: BridgedBlockHash<T, I>,
         range: Vec<BridgedHeader<T, I>>,
         proof: StorageProof,
-    ) -> Result<(), &'static str> {
+    ) -> Result<Vec<u8>, &'static str> {
         ensure!(
             <RequestCountMap<T,I>>::get(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
             "Too many Requests"
@@ -475,7 +481,7 @@ pub mod pallet {
             (header.extrinsics_root(), header.state_root()),
         );
 
-        let mut anchor = header;
+        let mut anchor = header.clone();
 
         for header in range {
             if header.number() <= best_finalized.number() {
@@ -522,7 +528,10 @@ pub mod pallet {
         //     <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
         // }
 
-        Ok(().into())
+        // ToDo use unique_saturated_into() here.
+        let height: usize = header.number().as_();
+        let block_height: u64 = height.try_into().unwrap();
+        Ok(block_height.to_be_bytes().to_vec())
     }
 
     /// Check the given header for a GRANDPA scheduled authority set change. If a change
@@ -810,7 +819,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         origin: OriginFor<T>,
         gateway_id: ChainId,
         encoded_header_data: Vec<u8>
-    ) -> Result<(), &'static str> {
+    ) -> Result<Vec<u8>, &'static str> {
         ensure_operational_single::<T, I>(gateway_id)?;
         ensure_signed(origin)?;
         if Some(gateway_id) == <RelayChainId<T, I>>::get() {
@@ -839,17 +848,19 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     pub fn confirm_and_decode_payload_params(
         gateway_id: ChainId,
         encoded_inclusion_data: Vec<u8>,
-        value_abi_unsigned_type: &[u8], // might not be needed for everything
+        submission_target_height: Vec<u8>,
+        value_abi_unsigned_type: &[u8],
+        side_effect_id: [u8; 4],
     ) -> Result<Vec<Vec<Vec<u8>>>, &'static str> {
         let inclusion_data: InclusionData<BridgedHeader<T, I>> = Decode::decode(&mut &*encoded_inclusion_data)
             .map_err(|_| "InclusionCheckDate couldn't be decoded")?;
 
         // ensures old equal side_effects can't be replayed
-        executed_after_creation::<T, I>(gateway_id, inclusion_data.creation_height)?;
+        executed_after_creation::<T, I>(gateway_id, submission_target_height)?;
 
-        match &inclusion_data.side_effect_id {
+        match &side_effect_id {
             b"tran" => {
-                verify_event_storage_proof::<T, I>(gateway_id, inclusion_data, value_abi_unsigned_type)
+                verify_event_storage_proof::<T, I>(gateway_id, inclusion_data, value_abi_unsigned_type, side_effect_id)
             },
             _ => unimplemented!()
         }
@@ -985,11 +996,12 @@ fn can_init_para_chain<T: Config<I>, I: 'static>(
 /// Ensure that the SideEffect was executed after it was created.
 fn executed_after_creation<T: Config<I>, I: 'static>(
     gateway_id: ChainId,
-    creation_height: BridgedBlockNumber<T, I>
+    submission_target_height: Vec<u8>
 ) -> Result<(), &'static str> {
+    let submission_target: BridgedBlockNumber<T, I> = Decode::decode(&mut &*submission_target_height).unwrap();
     if let Some(header_hash) = <BestFinalizedMap<T, I>>::get(gateway_id) {
         if let Some(header) = <MultiImportedHeaders<T, I>>::get(gateway_id, header_hash) {
-            if creation_height < *header.number() {
+            if submission_target < *header.number() {
                 return Ok(());
             }
             return Err("Transaction executed before SideEffect creation")
@@ -1025,20 +1037,18 @@ pub(crate) fn find_forced_change<H: HeaderT>(
 pub(crate) fn verify_event_storage_proof<T: Config<I>, I: 'static>(
     gateway_id: ChainId,
     inclusion_data: InclusionData<BridgedHeader<T, I>>,
-    value_abi_unsigned_type: &[u8]
+    value_abi_unsigned_type: &[u8],
+    side_effect_id: [u8; 4]
 ) -> Result<Vec<Vec<Vec<u8>>>, &'static str> {
     let InclusionData {
-        side_effect_id,
         encoded_payload,
         proof,
         block_hash,
-        ..
     } = inclusion_data;
 
     // storage key for System_Events
     let key: Vec<u8> = [38, 170, 57, 78, 234, 86, 48, 224, 124, 72, 174, 12, 149, 88, 206, 247, 128, 212, 30, 94, 22, 5, 103, 101, 188, 132, 97, 133, 16, 114, 201, 215, ].to_vec();
     let verified_block_events = verify_storage_proof::<T, I>(gateway_id, block_hash, key, proof, ProofTriePointer::Receipts)?;
-    log::info!("{:?}", verified_block_events);
 
     // the problem here is that in substrates current design its not possible to prove the inclusion of a single event, only all events of a block
     // https://github.com/paritytech/substrate/issues/11216

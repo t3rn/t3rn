@@ -39,6 +39,8 @@ pub trait Portal<T: frame_system::Config> {
 
     fn confirm_and_decode_payload_params(
         gateway_id: [u8; 4],
+        submission_target_height: Vec<u8>,
         encoded_inclusion_data: Vec<u8>,
+        side_effect_id: [u8; 4]
     ) -> Result<Vec<Vec<Vec<u8>>>, DispatchError>;
 }

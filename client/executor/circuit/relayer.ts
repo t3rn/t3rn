@@ -2,6 +2,7 @@ import { EventEmitter } from "events"
 import { ApiPromise, Keyring, WsProvider } from "@polkadot/api"
 import { SideEffect, fetchNonce } from "../utils"
 import createDebug from "debug"
+import types from "../types.json"
 
 export default class CircuitRelayer extends EventEmitter {
   static debug = createDebug("circuit-relayer")
@@ -15,6 +16,7 @@ export default class CircuitRelayer extends EventEmitter {
     this.rpc = rpc
     this.api = await ApiPromise.create({
       provider: new WsProvider(rpc),
+      types: types as any
     })
 
     const keyring = new Keyring({ type: "sr25519" })
@@ -49,6 +51,8 @@ export default class CircuitRelayer extends EventEmitter {
     // confirmations must be submitted sequentially
     for (const sideEffect of sideEffects) {
       const nonce = await fetchNonce(this.api, this.signer.address)
+      // @ts-ignore
+      sideEffect.confirmedSideEffect.inclusionData = this.api.createType("InclusionData", sideEffect.confirmedSideEffect.inclusionData).toHex();
 
       await new Promise((resolve, reject) => {
         this.api.tx.circuit
@@ -56,8 +60,8 @@ export default class CircuitRelayer extends EventEmitter {
             sideEffect.xtxId,
             sideEffect.object,
             sideEffect.confirmedSideEffect,
-            sideEffect.inclusionProof.toJSON().proof,
-            sideEffect.execBlockHeader.toJSON()
+            null,
+            null
           )
           .signAndSend(this.signer, { nonce }, result => {
             if (result.status.isFinalized) {

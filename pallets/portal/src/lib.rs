@@ -77,7 +77,7 @@ pub mod pallet {
         /// Gateway was set operational. [ChainId, bool]
         SetOperational(ChainId, bool),
         /// Header was successfully added
-        HeaderSubmitted(ChainId),
+        HeaderSubmitted(ChainId, Vec<u8>),
     }
 
     // Errors inform users that something went wrong.
@@ -238,8 +238,8 @@ pub mod pallet {
             };
 
             match res {
-                Ok(_) => {
-                    Self::deposit_event(Event::HeaderSubmitted(gateway_id));
+                Ok(height) => {
+                    Self::deposit_event(Event::HeaderSubmitted(gateway_id, height));
                     return Ok(().into())
                  },
                 Err(msg) => {
@@ -279,7 +279,6 @@ impl<T: Config> Portal<T> for Pallet<T> {
         let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
             .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
 
-
         let res = match vendor {
             GatewayVendor::Rococo =>  pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::get_latest_finalized_height(gateway_id),
             _ => unimplemented!()
@@ -293,7 +292,9 @@ impl<T: Config> Portal<T> for Pallet<T> {
 
     fn confirm_and_decode_payload_params(
         gateway_id: [u8; 4],
+        submission_target_height: Vec<u8>,
         encoded_inclusion_data: Vec<u8>,
+        side_effect_id: [u8; 4]
     ) -> Result<Vec<Vec<Vec<u8>>>, DispatchError> {
         let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
             .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
@@ -302,7 +303,9 @@ impl<T: Config> Portal<T> for Pallet<T> {
             GatewayVendor::Rococo =>  pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::confirm_and_decode_payload_params(
                 gateway_id,
                 encoded_inclusion_data,
-                <T as Config>::Xdns::get_gateway_value_unsigned_type_unsafe(&gateway_id).to_string_bytes()
+                submission_target_height,
+                <T as Config>::Xdns::get_gateway_value_unsigned_type_unsafe(&gateway_id).to_string_bytes(),
+                side_effect_id
             ),
             _ => unimplemented!()
         };
