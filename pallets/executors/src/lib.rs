@@ -39,12 +39,12 @@ pub mod pallet {
     use sp_std::collections::btree_map::BTreeMap;
     use t3rn_primitives::{
         common::{OrderedSet, Range, RoundIndex},
-        monetary::DECIMALS,
-        staking::{
+        executors::{
             Bond, CancelledScheduledStakingRequest, ExecutorInfo, ExecutorSnapshot,
             Fixtures as StakingFixtures, ScheduledConfigurationRequest, ScheduledStakingRequest,
             StakeAdjust, StakerAdded, StakingAction, EXECUTOR_LOCK_ID, STAKER_LOCK_ID,
         },
+        monetary::DECIMALS,
         treasury::Treasury as TTreasury,
     };
 

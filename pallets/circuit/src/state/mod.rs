@@ -45,6 +45,7 @@ pub enum CircuitStatus {
 #[derive(Clone, Eq, PartialEq, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum CircuitRole {
     Relayer,
+    Executor,
     Requester,
     ContractAuthor,
     Local,

@@ -342,7 +342,7 @@ construct_runtime!(
         Treasury: pallet_treasury = 109,
 
         // 3VM
-        Contracts: pallet_3vm_contracts = 119,
+        // Contracts: pallet_3vm_contracts = 119,
         AccountManager: pallet_account_manager = 125,
     }
 );
@@ -510,63 +510,63 @@ impl_runtime_apis! {
         }
     }
 
-    impl pallet_3vm_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
-        for Runtime
-    {
-        fn call(
-            origin: AccountId,
-            dest: AccountId,
-            value: Balance,
-            gas_limit: u64,
-            storage_deposit_limit: Option<Balance>,
-            input_data: Vec<u8>,
-        ) -> pallet_3vm_contracts_primitives::ContractExecResult<Balance> {
-            Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, CONTRACTS_DEBUG_OUTPUT)
-        }
-
-        fn instantiate(
-            origin: AccountId,
-            value: Balance,
-            gas_limit: u64,
-            storage_deposit_limit: Option<Balance>,
-            code: pallet_3vm_contracts_primitives::Code<Hash>,
-            data: Vec<u8>,
-            salt: Vec<u8>,
-        ) -> pallet_3vm_contracts_primitives::ContractInstantiateResult<AccountId, Balance>
-        {
-            Contracts::bare_instantiate(origin, value, gas_limit, storage_deposit_limit, code, data, salt, CONTRACTS_DEBUG_OUTPUT)
-        }
-
-        fn upload_code(
-            origin: AccountId,
-            code: Vec<u8>,
-            storage_deposit_limit: Option<Balance>,
-        ) -> pallet_3vm_contracts_primitives::CodeUploadResult<Hash, Balance>
-        {
-            Contracts::bare_upload_code(origin, code, storage_deposit_limit)
-        }
-
-        fn get_storage(
-            address: AccountId,
-            key: [u8; 32],
-        ) -> pallet_3vm_contracts_primitives::GetStorageResult {
-            Contracts::get_storage(address, key)
-        }
-    }
-
-    impl pallet_circuit_portal_rpc_runtime_api::CircuitPortalRuntimeApi<Block, AccountId, Balance, BlockNumber> for Runtime {
-        fn read_latest_gateway_height(
-            gateway_id: [u8; 4],
-        ) -> ReadLatestGatewayHeight {
-            match <CircuitPortal as t3rn_primitives::circuit_portal::CircuitPortal<Runtime>>::read_cmp_latest_target_height(gateway_id, None, None) {
-                Ok(encoded_height) =>
-                    ReadLatestGatewayHeight::Success {
-                        encoded_height,
-                    },
-                Err(_err) => ReadLatestGatewayHeight::Error
-            }
-        }
-    }
+    // impl pallet_3vm_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
+    //     for Runtime
+    // {
+    //     fn call(
+    //         origin: AccountId,
+    //         dest: AccountId,
+    //         value: Balance,
+    //         gas_limit: u64,
+    //         storage_deposit_limit: Option<Balance>,
+    //         input_data: Vec<u8>,
+    //     ) -> pallet_3vm_contracts_primitives::ContractExecResult<Balance> {
+    //         Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, CONTRACTS_DEBUG_OUTPUT)
+    //     }
+    //
+    //     fn instantiate(
+    //         origin: AccountId,
+    //         value: Balance,
+    //         gas_limit: u64,
+    //         storage_deposit_limit: Option<Balance>,
+    //         code: pallet_3vm_contracts_primitives::Code<Hash>,
+    //         data: Vec<u8>,
+    //         salt: Vec<u8>,
+    //     ) -> pallet_3vm_contracts_primitives::ContractInstantiateResult<AccountId, Balance>
+    //     {
+    //         Contracts::bare_instantiate(origin, value, gas_limit, storage_deposit_limit, code, data, salt, CONTRACTS_DEBUG_OUTPUT)
+    //     }
+    //
+    //     fn upload_code(
+    //         origin: AccountId,
+    //         code: Vec<u8>,
+    //         storage_deposit_limit: Option<Balance>,
+    //     ) -> pallet_3vm_contracts_primitives::CodeUploadResult<Hash, Balance>
+    //     {
+    //         Contracts::bare_upload_code(origin, code, storage_deposit_limit)
+    //     }
+    //
+    //     fn get_storage(
+    //         address: AccountId,
+    //         key: [u8; 32],
+    //     ) -> pallet_3vm_contracts_primitives::GetStorageResult {
+    //         Contracts::get_storage(address, key)
+    //     }
+    // }
+    //
+    // impl pallet_circuit_portal_rpc_runtime_api::CircuitPortalRuntimeApi<Block, AccountId, Balance, BlockNumber> for Runtime {
+    //     fn read_latest_gateway_height(
+    //         gateway_id: [u8; 4],
+    //     ) -> ReadLatestGatewayHeight {
+    //         match <CircuitPortal as t3rn_primitives::circuit_portal::CircuitPortal<Runtime>>::read_cmp_latest_target_height(gateway_id, None, None) {
+    //             Ok(encoded_height) =>
+    //                 ReadLatestGatewayHeight::Success {
+    //                     encoded_height,
+    //                 },
+    //             Err(_err) => ReadLatestGatewayHeight::Error
+    //         }
+    //     }
+    // }
 
     impl pallet_xdns_rpc_runtime_api::XdnsRuntimeApi<Block, AccountId> for Runtime {
         fn fetch_records() -> FetchXdnsRecordsResponse<AccountId> {

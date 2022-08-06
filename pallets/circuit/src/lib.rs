@@ -67,6 +67,9 @@ use t3rn_protocol::side_effects::{
 };
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 
+use pallet_xbi_portal::{primitives::xbi::XBIPortal, xbi_format::XBIInstr};
+use pallet_xbi_portal_enter::t3rn_sfx::xbi_result_2_sfx_confirmation;
+
 #[cfg(test)]
 pub mod tests;
 
@@ -96,7 +99,7 @@ use crate::state::*;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use crate::escrow::Escrow;
+
     use frame_support::{
         pallet_prelude::*,
         traits::{
@@ -107,7 +110,10 @@ pub mod pallet {
     };
     use frame_system::pallet_prelude::*;
     use orml_traits::MultiCurrency;
+    use pallet_xbi_portal::xbi_codec::{XBICheckOutStatus, XBIMetadata, XBINotificationKind};
+    use pallet_xbi_portal_enter::t3rn_sfx::sfx_2_xbi;
     use sp_std::borrow::ToOwned;
+
     use t3rn_primitives::{
         circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
         circuit_portal::CircuitPortal,
@@ -172,6 +178,13 @@ pub mod pallet {
         XExecStepSideEffectId<T>,
         OptionQuery,
     >;
+
+    /// Current Circuit's context of active insurance deposits
+    ///
+    #[pallet::storage]
+    #[pallet::getter(fn local_side_effect_to_xtx_id_links)]
+    pub type LocalSideEffectToXtxIdLinks<T> =
+        StorageMap<_, Identity, SideEffectId<T>, XExecSignalId<T>, OptionQuery>;
     /// Current Circuit's context of active transactions
     ///
     #[pallet::storage]
@@ -257,6 +270,10 @@ pub mod pallet {
         #[pallet::constant]
         type SelfGatewayId: Get<[u8; 4]>;
 
+        /// The Circuit's self parachain id
+        #[pallet::constant]
+        type SelfParaId: Get<u32>;
+
         /// The Circuit's Default Xtx timeout
         #[pallet::constant]
         type XtxTimeoutDefault: Get<Self::BlockNumber>;
@@ -290,6 +307,8 @@ pub mod pallet {
 
         /// A type that provides access to Xdns
         type Xdns: Xdns<Self>;
+
+        type XBIPortal: XBIPortal<Self>;
 
         /// A type that provides access to AccountManager
         type AccountManager: AccountManager<
@@ -676,8 +695,8 @@ pub mod pallet {
             Ok(().into())
         }
 
-        #[pallet::weight(<T as pallet::Config>::WeightInfo::execute_side_effects_via_circuit())]
-        pub fn execute_side_effects_via_circuit(
+        #[pallet::weight(<T as pallet::Config>::WeightInfo::execute_side_effects_with_xbi())]
+        pub fn execute_side_effects_with_xbi(
             origin: OriginFor<T>, // Active relayer
             xtx_id: XExecSignalId<T>,
             side_effect: SideEffect<
@@ -685,14 +704,16 @@ pub mod pallet {
                 <T as frame_system::Config>::BlockNumber,
                 EscrowedBalanceOf<T, <T as Config>::Escrowed>,
             >,
+            max_exec_cost: u128,
+            max_notifications_cost: u128,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
-            let relayer = Self::authorize(origin, CircuitRole::Relayer)?;
+            let executor = Self::authorize(origin, CircuitRole::Executor)?;
 
             // Setup: retrieve local xtx context
             let local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
                 CircuitStatus::PendingExecution,
-                &relayer,
+                &executor,
                 Zero::zero(),
                 Some(xtx_id),
             )?;
@@ -702,24 +723,39 @@ pub mod pallet {
             let side_effect_link =
                 <Self as Store>::LocalSideEffectsLinks::get(local_xtx_ctx.xtx_id, side_effect_id)
                     .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
+
             let (step_no, maybe_assignee) =
                 <Self as Store>::LocalSideEffects::get(local_xtx_ctx.xtx_id, side_effect_link)
                     .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
 
-            if local_xtx_ctx.xtx.steps_cnt.0 != step_no || maybe_assignee.is_some() {
+            if let Some(assignee) = maybe_assignee {
+                if assignee != executor {
+                    return Err(Error::<T>::LocalExecutionUnauthorized.into())
+                }
+            }
+
+            if local_xtx_ctx.xtx.steps_cnt.0 != step_no {
                 return Err(Error::<T>::LocalSideEffectExecutionNotApplicable.into())
             }
 
-            let encoded_4b_action: [u8; 4] =
-                Decode::decode(&mut side_effect.encoded_action.encode().as_ref())
-                    .expect("Encoded Type was already validated before saving");
+            let xbi =
+                sfx_2_xbi::<T, T::Escrowed>(
+                    &side_effect,
+                    XBIMetadata::new_with_default_timeouts(
+                        Decode::decode(&mut &side_effect_id.encode()[..])
+                            .expect("SFX ID at XBI conversion should always decode to H256"),
+                        <T as Config>::Xdns::get_gateway_para_id(&side_effect.target)?,
+                        T::SelfParaId::get(),
+                        max_exec_cost,
+                        max_notifications_cost,
+                        Some(Decode::decode(&mut &executor.encode()[..]).expect(
+                            "Executor at XBI conversion should always decode to AccountId32",
+                        )),
+                    ),
+                )
+                .map_err(|_| Error::<T>::FailedToConvertSFX2XBI)?;
 
-            Escrow::<T>::exec(
-                &encoded_4b_action,
-                side_effect.encoded_args,
-                Self::account_id(),
-                relayer,
-            )?;
+            T::XBIPortal::do_check_in_xbi(xbi).map_err(|_| Error::<T>::FailedToConvertSFX2XBI)?;
 
             Ok(().into())
         }
@@ -898,10 +934,45 @@ pub mod pallet {
         }
     }
 
+    use pallet_xbi_portal::xbi_abi::{
+        AccountId20, AccountId32, AssetId, Data, Gas, Value, ValueEvm,
+    };
+
     /// Events for the pallet.
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
+        // XBI Exit events - consider moving to separate XBIPortalExit pallet.
+        Transfer(T::AccountId, AccountId32, AccountId32, Value),
+        TransferAssets(T::AccountId, AssetId, AccountId32, AccountId32, Value),
+        TransferORML(T::AccountId, AssetId, AccountId32, AccountId32, Value),
+        AddLiquidity(T::AccountId, AssetId, AssetId, Value, Value, Value),
+        Swap(T::AccountId, AssetId, AssetId, Value, Value, Value),
+        CallNative(T::AccountId, Data),
+        CallEvm(
+            T::AccountId,
+            AccountId20,
+            AccountId20,
+            ValueEvm,
+            Data,
+            Gas,
+            ValueEvm,
+            Option<ValueEvm>,
+            Option<ValueEvm>,
+            Vec<(AccountId20, Vec<sp_core::H256>)>,
+        ),
+        CallWasm(T::AccountId, AccountId32, Value, Gas, Option<Value>, Data),
+        CallCustom(
+            T::AccountId,
+            AccountId32,
+            AccountId32,
+            Value,
+            Data,
+            Gas,
+            Data,
+        ),
+        Notification(T::AccountId, AccountId32, XBINotificationKind, Data, Data),
+        Result(T::AccountId, AccountId32, XBICheckOutStatus, Data, Data),
         // Listeners - users + SDK + UI to know whether their request is accepted for exec and pending
         XTransactionReceivedForExec(XExecSignalId<T>),
         // Listeners - users + SDK + UI to know whether their request is accepted for exec and ready
@@ -988,6 +1059,12 @@ pub mod pallet {
         ApplyFailed,
         DeterminedForbiddenXtxStatus,
         LocalSideEffectExecutionNotApplicable,
+        LocalExecutionUnauthorized,
+        FailedToConvertSFX2XBI,
+        FailedToConvertXBIResult2SFXConfirmation,
+        FailedToEnterXBIPortal,
+        FailedToExitXBIPortal,
+        XBIExitFailedOnSFXConfirmation,
         UnsupportedRole,
         InvalidLocalTrigger,
         SignalQueueFull,
@@ -1258,6 +1335,10 @@ impl<T: Config> Pallet<T> {
                         SideEffectId<T>,
                         XExecStepSideEffectId<T>,
                     >(local_ctx.xtx_id, side_effect_id, step_side_effect_id);
+                    <LocalSideEffectToXtxIdLinks<T>>::insert::<SideEffectId<T>, XExecSignalId<T>>(
+                        side_effect_id,
+                        local_ctx.xtx_id,
+                    );
                 }
 
                 let mut ids_with_insurance: Vec<SideEffectId<T>> = vec![];
@@ -1378,6 +1459,8 @@ impl<T: Config> Pallet<T> {
                         Self::enact_step_side_effects(local_ctx)?
                     }
                 }
+
+                // todo: cleanup all of the local sttorage
                 <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
                     *x = Some(local_ctx.xtx.clone())
                 });
@@ -1682,6 +1765,8 @@ impl<T: Config> Pallet<T> {
             CircuitRole::Requester | CircuitRole::ContractAuthor => ensure_signed(origin),
             // ToDo: Handle active Relayer authorisation
             CircuitRole::Relayer => ensure_signed(origin),
+            // ToDo: Handle bonded Executor authorisation
+            CircuitRole::Executor => ensure_signed(origin),
             // ToDo: Handle other CircuitRoles
             _ => unimplemented!(),
         }
@@ -1739,7 +1824,6 @@ impl<T: Config> Pallet<T> {
                     "circuit -- for side effect id {:?}",
                     side_effect.generate_id::<SystemHashing<T>>()
                 );
-
                 Self::charge(requester, reward)?;
 
                 local_ctx.insurance_deposits.push((
@@ -2046,5 +2130,190 @@ impl<T: Config> Pallet<T> {
         <SignalQueue<T>>::put(queue);
 
         processed_weight
+    }
+
+    pub(self) fn recover_fsx_by_id(
+        sfx_id: SideEffectId<T>,
+        local_ctx: &LocalXtxCtx<T>,
+    ) -> Result<
+        FullSideEffect<
+            <T as frame_system::Config>::AccountId,
+            <T as frame_system::Config>::BlockNumber,
+            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+        >,
+        Error<T>,
+    > {
+        let current_step = local_ctx.xtx.steps_cnt.0;
+        let maybe_fsx = local_ctx.full_side_effects[current_step as usize]
+            .iter()
+            .filter(|&fse| fse.confirmed.is_none())
+            .find(|&fse| fse.input.generate_id::<SystemHashing<T>>() == sfx_id);
+
+        if let Some(fsx) = maybe_fsx {
+            Ok(fsx.clone())
+        } else {
+            Err(Error::<T>::LocalSideEffectExecutionNotApplicable)
+        }
+    }
+
+    pub(self) fn recover_local_ctx_by_sfx_id(
+        sfx_id: SideEffectId<T>,
+    ) -> Result<LocalXtxCtx<T>, Error<T>> {
+        let xtx_id = <Self as Store>::LocalSideEffectToXtxIdLinks::get(sfx_id)
+            .ok_or(Error::<T>::LocalSideEffectExecutionNotApplicable)?;
+        Self::setup(
+            CircuitStatus::PendingExecution,
+            &Self::account_id(),
+            Zero::zero(),
+            Some(xtx_id),
+        )
+    }
+
+    pub fn do_xbi_exit(
+        xbi_checkin: pallet_xbi_portal::xbi_format::XBICheckIn<T::BlockNumber>,
+        _xbi_checkout: pallet_xbi_portal::xbi_format::XBICheckOut,
+    ) -> Result<(), Error<T>> {
+        // Recover SFX ID from XBI Metadata
+        let sfx_id: SideEffectId<T> =
+            Decode::decode(&mut &xbi_checkin.xbi.metadata.id.encode()[..])
+                .expect("XBI metadata id conversion should always decode to Sfx ID");
+
+        let mut local_xtx_ctx: LocalXtxCtx<T> = Self::recover_local_ctx_by_sfx_id(sfx_id)?;
+
+        let fsx = Self::recover_fsx_by_id(sfx_id, &local_xtx_ctx)?;
+
+        // todo#2: local fail Xtx if xbi_checkout::result errored
+
+        let escrow_source = Self::account_id();
+        let executor = if let Some(ref known_origin) = xbi_checkin.xbi.metadata.maybe_known_origin {
+            known_origin.clone()
+        } else {
+            return Err(Error::<T>::FailedToExitXBIPortal)
+        };
+        let executor_decoded = Decode::decode(&mut &executor.encode()[..])
+            .expect("XBI metadata executor conversion should always decode to local Account ID");
+
+        let xbi_exit_event = match xbi_checkin.clone().xbi.instr {
+            XBIInstr::CallNative { payload } => Ok(Event::<T>::CallNative(escrow_source, payload)),
+            XBIInstr::CallEvm {
+                source,
+                target,
+                value,
+                input,
+                gas_limit,
+                max_fee_per_gas,
+                max_priority_fee_per_gas,
+                nonce,
+                access_list,
+            } => Ok(Event::<T>::CallEvm(
+                escrow_source,
+                source,
+                target,
+                value,
+                input,
+                gas_limit,
+                max_fee_per_gas,
+                max_priority_fee_per_gas,
+                nonce,
+                access_list,
+            )),
+            XBIInstr::CallWasm {
+                dest,
+                value,
+                gas_limit,
+                storage_deposit_limit,
+                data,
+            } => Ok(Event::<T>::CallWasm(
+                escrow_source,
+                dest,
+                value,
+                gas_limit,
+                storage_deposit_limit,
+                data,
+            )),
+            XBIInstr::CallCustom {
+                caller,
+                dest,
+                value,
+                input,
+                limit,
+                additional_params,
+            } => Ok(Event::<T>::CallCustom(
+                escrow_source,
+                caller,
+                dest,
+                value,
+                input,
+                limit,
+                additional_params,
+            )),
+            XBIInstr::Transfer { dest, value } =>
+                Ok(Event::<T>::Transfer(escrow_source, executor, dest, value)),
+            XBIInstr::TransferORML {
+                currency_id,
+                dest,
+                value,
+            } => Ok(Event::<T>::TransferORML(
+                escrow_source,
+                currency_id,
+                executor,
+                dest,
+                value,
+            )),
+            XBIInstr::TransferAssets {
+                currency_id,
+                dest,
+                value,
+            } => Ok(Event::<T>::TransferAssets(
+                escrow_source,
+                currency_id,
+                executor,
+                dest,
+                value,
+            )),
+            XBIInstr::Result {
+                outcome,
+                output,
+                witness,
+            } => Ok(Event::<T>::Result(
+                escrow_source,
+                executor,
+                outcome,
+                output,
+                witness,
+            )),
+            XBIInstr::Notification {
+                kind,
+                instruction_id,
+                extra,
+            } => Ok(Event::<T>::Notification(
+                escrow_source,
+                executor,
+                kind,
+                instruction_id,
+                extra,
+            )),
+            _ => Err(Error::<T>::FailedToExitXBIPortal),
+        }?;
+
+        Self::deposit_event(xbi_exit_event.clone());
+
+        let confirmation = xbi_result_2_sfx_confirmation::<T, T::Escrowed>(
+            xbi_checkin.xbi,
+            xbi_exit_event.encode(),
+            executor_decoded,
+        )
+        .map_err(|_| Error::<T>::FailedToConvertXBIResult2SFXConfirmation)?;
+
+        Self::confirm(
+            &mut local_xtx_ctx,
+            &Self::account_id(),
+            &fsx.input,
+            &confirmation,
+            None,
+            None,
+        )
+        .map_err(|_e| Error::<T>::XBIExitFailedOnSFXConfirmation)?;
+        Ok(())
     }
 }

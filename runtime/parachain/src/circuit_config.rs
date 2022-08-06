@@ -12,6 +12,10 @@ impl t3rn_primitives::EscrowTrait<Runtime> for Runtime {
     type Time = Timestamp;
 }
 
+impl pallet_xbi_portal::Config for Runtime {
+    type Event = Event;
+}
+
 impl pallet_xdns::Config for Runtime {
     type Balances = Balances;
     type Escrowed = Self;

@@ -61,7 +61,6 @@ pub mod monetary;
 pub mod protocol;
 pub mod side_effect;
 pub mod signature_caster;
-pub mod staking;
 pub mod storage;
 pub mod transfers;
 pub mod treasury;

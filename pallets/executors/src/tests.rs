@@ -16,12 +16,12 @@ use frame_support::{assert_noop, assert_ok, traits::Currency};
 use sp_runtime::Percent;
 use t3rn_primitives::{
     common::{OrderedSet, Range, DEFAULT_ROUND_TERM},
-    monetary::DECIMALS,
-    staking::{
+    executors::{
         Bond, ExecutorInfo, ExecutorStatus, Fixtures as StakingFixtures,
         ScheduledConfigurationRequest, ScheduledStakingRequest, StakerAdded, StakerStatus,
         StakingAction,
     },
+    monetary::DECIMALS,
 };
 
 /*

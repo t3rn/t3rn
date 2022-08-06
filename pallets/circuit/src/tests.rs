@@ -2025,3 +2025,90 @@ fn setup_fresh_state(origin: &Origin) -> LocalStateExecutionView<Test> {
     assert_ne!(Some(res.xtx_id), None);
     res
 }
+
+/// XBI
+
+#[test]
+fn execute_side_effects_with_xbi_works_for_transfers() {
+    let _origin = Origin::signed(ALICE);
+
+    let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
+
+    let transfer_protocol_box =
+        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
+
+    let mut local_state = LocalState::new();
+    let mut valid_transfer_side_effect = produce_and_validate_side_effect(
+        vec![
+            (Type::Address(32), ArgVariant::A),
+            (Type::Address(32), ArgVariant::B),
+            (Type::Uint(64), ArgVariant::A),
+            (Type::Bytes(0), ArgVariant::A), // empty bytes instead of insurance
+        ],
+        &mut local_state,
+        transfer_protocol_box,
+    );
+
+    valid_transfer_side_effect.target = [3, 3, 3, 3];
+
+    let side_effects = vec![valid_transfer_side_effect.clone()];
+    let fee = 1;
+    let sequential = true;
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            // XTX SETUP
+
+            let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+
+            System::set_block_number(1);
+            brute_seed_block_1_to_grandpa_mfv([3, 3, 3, 3]);
+
+            let xtx_id: sp_core::H256 =
+                hex!("e20cbc9216614585492ffbcf73bd88f830688e2f8405d559cc940b1622471f29").into();
+            let _side_effect_a_id =
+                valid_transfer_side_effect.generate_id::<crate::SystemHashing<Test>>();
+
+            assert_ok!(Circuit::on_extrinsic_trigger(
+                origin.clone(),
+                side_effects,
+                fee,
+                sequential,
+            ));
+
+            assert_eq!(
+                Circuit::get_x_exec_signals(xtx_id).unwrap(),
+                XExecSignal {
+                    requester: AccountId32::new(hex!(
+                        "0101010101010101010101010101010101010101010101010101010101010101"
+                    )),
+                    timeouts_at: 101u64,
+                    delay_steps_at: None,
+                    status: CircuitStatus::Ready,
+                    total_reward: Some(fee),
+                    steps_cnt: (0, 1),
+                }
+            );
+
+            assert_eq!(
+                Circuit::get_full_side_effects(xtx_id).unwrap(),
+                vec![vec![FullSideEffect {
+                    input: valid_transfer_side_effect.clone(),
+                    confirmed: None,
+                    security_lvl: SecurityLvl::Escrowed,
+                    submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                }]]
+            );
+
+            assert_ok!(Circuit::execute_side_effects_with_xbi(
+                origin,
+                xtx_id,
+                valid_transfer_side_effect,
+                900_000,
+                800_000,
+            ));
+        });
+}

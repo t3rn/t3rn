@@ -4,6 +4,7 @@ use crate::{self as pallet_circuit, Config};
 use codec::Encode;
 use frame_election_provider_support::onchain;
 use frame_support::{
+    dispatch::DispatchErrorWithPostInfo,
     pallet_prelude::{GenesisBuild, Weight},
     parameter_types,
     traits::{ConstU32, ConstU64, Everything, KeyOwnerProofSystem, Nothing},
@@ -31,6 +32,13 @@ use t3rn_protocol::side_effects::confirm::ethereum::EthereumMockVerifier;
 pub type AccountId = sp_runtime::AccountId32;
 pub type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 pub type Block = frame_system::mocking::MockBlock<Test>;
+
+/// An index to a block.
+// pub type BlockNumber = u64;
+
+/// Balance of an account.
+pub type Balance = u64;
+pub type Amount = i64;
 
 pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"circ");
 
@@ -60,6 +68,7 @@ frame_support::construct_runtime!(
         Randomness: pallet_randomness_collective_flip::{Pallet, Storage},
         XDNS: pallet_xdns::{Pallet, Call, Storage, Config<T>, Event<T>},
         CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>},
+        XBIPortal: pallet_xbi_portal::{Pallet, Call, Storage, Event<T>},
         // BasicOutboundChannel: snowbridge_basic_channel::outbound::{Pallet, Config<T>, Storage, Event<T>},
 
         ORMLTokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>},
@@ -134,6 +143,7 @@ parameter_types! {
 }
 
 use frame_support::weights::{ConstantMultiplier, IdentityFee};
+
 impl pallet_transaction_payment::Config for Test {
     type FeeMultiplierUpdate = ();
     type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
@@ -149,7 +159,12 @@ impl EscrowTrait<Test> for Test {
 
 // ORML Tokens
 use orml_traits::parameter_type_with_key;
-use t3rn_primitives::xdns::XdnsRecord;
+use pallet_xbi_portal::{
+    xbi_codec::XBIFormat,
+    xbi_format::{XBICheckIn, XBICheckOut},
+    Error,
+};
+use t3rn_primitives::xdns::{Parachain, XdnsRecord};
 
 pub type CurrencyId = u32;
 parameter_type_with_key! {
@@ -178,9 +193,6 @@ impl pallet_xdns::Config for Test {
 }
 
 impl pallet_randomness_collective_flip::Config for Test {}
-
-pub type Balance = u64;
-pub type Amount = i64;
 
 impl pallet_session::Config for Test {
     type Event = Event;
@@ -537,6 +549,49 @@ parameter_types! {
     pub const SelfGatewayId: [u8; 4] = [3, 3, 3, 3];
 }
 
+impl pallet_xbi_portal::Config for Test {
+    type Assets = pallet_xbi_portal::primitives::assets::AssetsMock<Test>;
+    type Call = Call;
+    type Callback = XBIPortalRuntimeEntry;
+    type CheckInLimit = ConstU32<100>;
+    type CheckInterval = ConstU64<3>;
+    type CheckOutLimit = ConstU32<100>;
+    type Event = Event;
+    type Evm = pallet_xbi_portal::primitives::evm::EvmMock<Test>;
+    type ExpectedBlockTimeMs = ConstU32<6000>;
+    type MyParachainId = ConstU32<3333>;
+    type ORML = pallet_xbi_portal::primitives::orml::ORMLMock<Test>;
+    type TimeoutChecksLimit = ConstU32<3000>;
+    type Transfers = XBIPortalRuntimeEntry;
+    type WASM = pallet_xbi_portal::primitives::wasm::WASMMock<Test>;
+    type Xcm = pallet_xbi_portal::primitives::xcm::XCMMock<Test>;
+}
+
+pub struct XBIPortalRuntimeEntry {}
+
+impl pallet_xbi_portal::primitives::xbi::XBIPortal<Test> for XBIPortalRuntimeEntry {
+    fn do_check_in_xbi(xbi: XBIFormat) -> Result<(), Error<Test>> {
+        XBIPortal::do_check_in_xbi(xbi)
+    }
+}
+
+impl pallet_xbi_portal::primitives::xbi_callback::XBICallback<Test> for XBIPortalRuntimeEntry {
+    fn callback(xbi_checkin: XBICheckIn<u64>, xbi_checkout: XBICheckOut) {
+        Circuit::do_xbi_exit(xbi_checkin, xbi_checkout);
+    }
+}
+
+impl pallet_xbi_portal::primitives::transfers::Transfers<Test> for XBIPortalRuntimeEntry {
+    fn transfer(
+        source: &AccountId,
+        dest: &AccountId,
+        amount: Balance,
+        _keep_alive: bool,
+    ) -> Result<frame_support::dispatch::PostDispatchInfo, DispatchErrorWithPostInfo> {
+        Balances::transfer(Origin::signed(source.clone()), dest.clone(), amount)
+    }
+}
+
 impl Config for Test {
     type AccountManager = AccountManager;
     type Balances = Balances;
@@ -549,8 +604,10 @@ impl Config for Test {
     type MultiCurrency = ORMLTokens;
     type PalletId = CircuitPalletId;
     type SelfGatewayId = SelfGatewayId;
+    type SelfParaId = ConstU32<3333>;
     type SignalQueueDepth = ConstU32<5>;
     type WeightInfo = ();
+    type XBIPortal = XBIPortalRuntimeEntry;
     type Xdns = XDNS;
     type XtxTimeoutCheckInterval = ConstU64<10>;
     type XtxTimeoutDefault = ConstU64<100>;
@@ -561,10 +618,13 @@ impl ExtBuilder {
         let circuit_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
             [3u8, 3u8, 3u8, 3u8],
-            None,
+            Some(Parachain {
+                relay_chain_id: *b"pdot",
+                id: 3333,
+            }),
             Default::default(),
             GatewayVendor::PolkadotLike,
-            GatewayType::ProgrammableExternal(0),
+            GatewayType::OnCircuit(0),
             Default::default(),
             GatewaySysProps {
                 ss58_format: 1333,
@@ -572,7 +632,7 @@ impl ExtBuilder {
                 token_decimals: 12,
             },
             vec![],
-            vec![*b"tran"],
+            t3rn_protocol::side_effects::standards::standard_side_effects_ids(),
         );
         let zero_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],

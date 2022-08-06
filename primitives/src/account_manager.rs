@@ -14,11 +14,8 @@ use crate::common::RoundInfo;
 #[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, TypeInfo)]
 pub struct SfxSettlement<Account, Balance> {
     pub reward: Balance,
-
     pub fee: Balance,
-
     pub payer: Account,
-
     pub executor: Account,
     // consider adding source::contract?
 }
@@ -28,6 +25,7 @@ pub struct ExecutionRegistryItem<Account, Balance> {
     pub payee: Account,
     pub recipient: Account,
     pub balance: Balance,
+    // pub role: crate::circuit_clock::CircuitRole,
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]

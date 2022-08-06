@@ -17,7 +17,7 @@ use sp_runtime::{
 use sp_std::prelude::*;
 use t3rn_primitives::{
     common::{OrderedSet, RoundIndex},
-    staking::{
+    executors::{
         Bond, CandidateBondLessRequest, CapacityStatus, ExecutorStatus, StakeAdjust, StakerAdded,
         StakerStatus, STAKER_LOCK_ID,
     },
