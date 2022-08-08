@@ -21,10 +21,11 @@ export class CircuitRelayer {
         })
     }
 
-    onExtrinsicTrigger(args: any[]) {
+    onExtrinsicTrigger(args: any) {
         return new Promise((res: any, rej: any) => {
+            // console.log(args.sideEffects.toHuman())
             return this.circuit.tx.circuit
-                .onExtrinsicTrigger(...args)
+                .onExtrinsicTrigger(args.sideEffects.toHuman(), args.fee, args.sequential)
                 .signAndSend(this.signer, async result => {
                     // @ts-ignore
                     if (result && result.toHuman().dispatchError !== undefined) { // The pallet doesn't return a proper error

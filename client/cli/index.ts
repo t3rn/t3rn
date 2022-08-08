@@ -140,13 +140,12 @@ class CircuitCLI {
         if(gatewayData) {
             let encodedAmount = transferAmount(amount, gatewayData.registrationData.gatewayConfig.decimals, gatewayData.registrationData.gatewayConfig.valueTypeSize);
             if(!receiver) receiver = addressStringToPubKey(gatewayData.transferData.receiver);
-            const transactionArgs: any = transfer(gatewayData, encodedAmount, addressStringToPubKey(this.signer.address), receiver, fee)
-            // console.log(transactionArgs)
-            // if (exportArgs) {
-            //     const fileName = `./exports/` + exportName + '.json';
-            //     this.exportData(transactionArgs, fileName)
-            // }
-            this.circuitRelayer.onExtrinsicTrigger(Object.values(transactionArgs))
+            const transactionArgs: any = transfer(this.circuit, gatewayData, encodedAmount, addressStringToPubKey(this.signer.address), receiver, fee)
+            if (exportArgs) {
+                const fileName = `./exports/` + exportName + '.json';
+                this.exportData(transactionArgs, fileName, "transfer")
+            }
+            this.circuitRelayer.onExtrinsicTrigger(transactionArgs)
                 .then(() => {
                     console.log("Transfer Completed!");
                     this.close();
