@@ -53,7 +53,7 @@ pub mod pallet {
         traits::{Currency, ReservableCurrency},
     };
     use frame_system::pallet_prelude::*;
-    use t3rn_primitives::account_manager::{ExecutionId, SfxRequestCharge};
+    use t3rn_primitives::account_manager::{ExecutionId, RequestCharge};
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -98,7 +98,7 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn execution_registry)]
-    pub type ExecutionRegistry<T: Config> = StorageMap<
+    pub type ContractsExecutionRegistry<T: Config> = StorageMap<
         _,
         Blake2_128,
         ExecutionId,
@@ -106,44 +106,26 @@ pub mod pallet {
     >;
 
     #[pallet::storage]
-    pub type ExecutionNonce<T: Config> = StorageValue<_, ExecutionId, ValueQuery>;
+    pub type ContractsRegistryExecutionNonce<T: Config> = StorageValue<_, ExecutionId, ValueQuery>;
 
     #[pallet::storage]
-    pub type SfxPendingChargesPerRound<T: Config> = StorageDoubleMap<
+    pub type PendingChargesPerRound<T: Config> = StorageDoubleMap<
         _,
         Blake2_128,
         RoundInfo<T::BlockNumber>,
         Identity,
         T::Hash, // sfx_id
-        SfxRequestCharge<T::AccountId, <T::Currency as Currency<T::AccountId>>::Balance>,
+        RequestCharge<T::AccountId, <T::Currency as Currency<T::AccountId>>::Balance>,
     >;
 
     #[pallet::storage]
-    pub type SfxSettlementsPerRound<T: Config> = StorageDoubleMap<
+    pub type SettlementsPerRound<T: Config> = StorageDoubleMap<
         _,
         Blake2_128,
         RoundInfo<T::BlockNumber>,
         Identity,
         T::Hash, // sfx_id
-        SfxSettlement<T::AccountId, <T::Currency as Currency<T::AccountId>>::Balance>,
-    >;
-
-    #[pallet::storage]
-    pub type TotalSfxRewardCountPerRoundPerExecutor<T: Config> = StorageDoubleMap<
-        _,
-        Blake2_128,
-        RoundInfo<T::BlockNumber>,
-        Identity,
-        T::AccountId, // executor id
-        <T::Currency as Currency<T::AccountId>>::Balance,
-    >;
-
-    #[pallet::storage]
-    pub type TotalSfxRewardCountPerRound<T: Config> = StorageMap<
-        _,
-        Blake2_128,
-        RoundInfo<T::BlockNumber>,
-        <T::Currency as Currency<T::AccountId>>::Balance,
+        RequestCharge<T::AccountId, <T::Currency as Currency<T::AccountId>>::Balance>,
     >;
 
     #[pallet::call]
@@ -211,13 +193,7 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
-        DepositReceived {
-            execution_id: ExecutionId,
-            payee: T::AccountId,
-            recipient: T::AccountId,
-            amount: BalanceOf<T>,
-        },
-        ExecutionFinalized {
+        ContractsRegistryExecutionFinalized {
             execution_id: ExecutionId,
         },
         Issued {
@@ -232,6 +208,7 @@ pub mod pallet {
         PendingChargeNotFoundAtRefund,
         ExecutionNotRegistered,
         ExecutionAlreadyRegistered,
+        DecodingExecutionIDFailed,
     }
 
     #[pallet::genesis_config]

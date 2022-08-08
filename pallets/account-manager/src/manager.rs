@@ -1,8 +1,9 @@
 use crate::{
-    AccountManager as AccountManagerExt, BalanceOf, Config, Error, Event, ExecutionNonce,
-    ExecutionRegistry, ExecutionRegistryItem, Pallet, Reason, SfxPendingChargesPerRound,
-    SfxSettlementsPerRound,
+    AccountManager as AccountManagerExt, BalanceOf, Config, ContractsExecutionRegistry,
+    ContractsRegistryExecutionNonce, Error, Event, ExecutionRegistryItem, Pallet,
+    PendingChargesPerRound, Reason, SettlementsPerRound,
 };
+use codec::{Decode, Encode};
 use frame_support::{
     dispatch::DispatchResult,
     traits::{Currency, ExistenceRequirement, Get, ReservableCurrency},
@@ -10,11 +11,13 @@ use frame_support::{
 use sp_runtime::{traits::Zero, Percent};
 use sp_std::borrow::ToOwned;
 use t3rn_primitives::{
-    account_manager::{ExecutionId, SfxRequestCharge, SfxSettlement},
-    circuit_clock::{BenefitSource, CircuitClock, CircuitRole, ClaimableArtifacts},
+    account_manager::{ExecutionId, RequestCharge, SfxSettlement},
+    circuit_clock::{CircuitClock, ClaimableArtifacts},
     common::RoundInfo,
     executors::Executors,
 };
+
+use pallet_xbi_portal::sabi::Sabi;
 
 pub struct ActiveSetClaimablePerRound<Account, Balance> {
     pub executor: Account,
@@ -24,89 +27,49 @@ pub struct ActiveSetClaimablePerRound<Account, Balance> {
 impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockNumber>
     for Pallet<T>
 {
+
     fn deposit(
         payee: &T::AccountId,
         recipient: &T::AccountId,
         amount: BalanceOf<T>,
     ) -> DispatchResult {
-        let execution_id = ExecutionNonce::<T>::get();
-        ExecutionNonce::<T>::mutate(|nonce| *nonce += 1);
+        let execution_id = ContractsRegistryExecutionNonce::<T>::get();
+        ContractsRegistryExecutionNonce::<T>::mutate(|nonce| *nonce += 1);
 
-        T::Currency::transfer(
-            payee,
-            &T::EscrowAccount::get(),
-            amount,
-            ExistenceRequirement::KeepAlive,
-        )?;
-        T::Currency::reserve(&T::EscrowAccount::get(), amount)?;
-
-        if ExecutionRegistry::<T>::contains_key(execution_id) {
+        if ContractsExecutionRegistry::<T>::contains_key(execution_id) {
             return Err(Error::<T>::ExecutionAlreadyRegistered.into())
         }
 
-        ExecutionRegistry::<T>::insert(
-            execution_id,
-            ExecutionRegistryItem::new(payee.clone(), recipient.clone(), amount),
-        );
+        // ContractsExecutionRegistry::<T>::insert(
+        //     execution_id,
+        //     ExecutionRegistryItem::new(payee.clone(), recipient.clone(), amount),
+        // );
 
-        Self::deposit_event(Event::DepositReceived {
-            execution_id,
-            payee: payee.clone(),
-            recipient: recipient.clone(),
-            amount,
-        });
+        let execution_id_hash: T::Hash =
+            Decode::decode(&mut &Sabi::value_64_2_value_256(execution_id).encode()[..])
+                .map_err(|_e| Error::<T>::DecodingExecutionIDFailed)?;
+
+        Self::charge_requester(
+            RequestCharge {
+                requester: payee.clone(),
+                offered_reward: Zero::zero(),
+                charge_fee: amount,
+                recipient: recipient.clone(),
+            },
+            execution_id_hash,
+        )?;
 
         Ok(())
     }
 
-    /// Reward executor for successful sfx execution - accounted after successful xtx resolution
-    fn commit_charge(executor: T::AccountId, sfx_id: T::Hash) -> DispatchResult {
-        let pending_charge: SfxRequestCharge<T::AccountId, BalanceOf<T>> =
-            if let Some(pending_charge) =
-                SfxPendingChargesPerRound::<T>::get(T::CircuitClock::current_round(), sfx_id)
-            {
-                pending_charge
-            } else {
-                return Err(Error::<T>::PendingChargeNotFoundAtCommit.into())
-            };
-
-        SfxPendingChargesPerRound::<T>::remove(T::CircuitClock::current_round(), sfx_id);
-
-        // todo: charge requester now or at the end of the round?
-        T::Currency::unreserve(
-            &pending_charge.requester,
-            pending_charge.charge_fee + pending_charge.offered_reward,
-        );
-        T::Currency::transfer(
-            &pending_charge.requester,
-            &T::EscrowAccount::get(),
-            // todo: does escrow_account hold the offered_reward until the claim?
-            pending_charge.charge_fee + pending_charge.offered_reward,
-            ExistenceRequirement::KeepAlive,
-        )?;
-
-        SfxSettlementsPerRound::<T>::insert(
-            T::CircuitClock::current_round(),
-            sfx_id,
-            SfxSettlement::<T::AccountId, BalanceOf<T>> {
-                reward: pending_charge.offered_reward,
-                fee: pending_charge.charge_fee,
-                payer: pending_charge.requester,
-                executor,
-            },
-        );
-
-        Ok(().into())
-    }
-
     /// Charge requester for SFX submission: reward + fees.
     fn charge_requester(
-        charge: SfxRequestCharge<T::AccountId, BalanceOf<T>>,
+        charge: RequestCharge<T::AccountId, BalanceOf<T>>,
         sfx_id: T::Hash,
     ) -> DispatchResult {
         T::Currency::reserve(&charge.requester, charge.charge_fee + charge.offered_reward)?;
 
-        SfxPendingChargesPerRound::<T>::insert(
+        PendingChargesPerRound::<T>::insert(
             T::CircuitClock::current_round(),
             sfx_id,
             charge.clone(),
@@ -115,84 +78,60 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
         Ok(())
     }
 
-    /// Refund the reward back to the requester. Keep the fees.
-    fn refund_charge(sfx_id: T::Hash) -> DispatchResult {
-        let pending_charge: SfxRequestCharge<T::AccountId, BalanceOf<T>> =
+    fn finalize(execution_id: ExecutionId, reason: Option<Reason>) -> DispatchResult {
+        // let item = Pallet::<T>::execution_registry(execution_id)
+        //     .ok_or(Error::<T>::ExecutionNotRegistered)?;
+
+        let charge_id: T::Hash = Decode::decode(&mut &Sabi::value_64_2_value_256(execution_id).encode()[..])
+            .map_err(|_e| Error::<T>::DecodingExecutionIDFailed)?;
+
+        let charge_request: RequestCharge<T::AccountId, BalanceOf<T>> =
             if let Some(pending_charge) =
-                SfxPendingChargesPerRound::<T>::get(T::CircuitClock::current_round(), sfx_id)
+            PendingChargesPerRound::<T>::get(T::CircuitClock::current_round(), charge_id)
             {
                 pending_charge
             } else {
-                return Err(Error::<T>::PendingChargeNotFoundAtRefund.into())
+                return Err(Error::<T>::PendingChargeNotFoundAtCommit.into())
             };
 
-        T::Currency::unreserve(
-            &pending_charge.requester,
-            pending_charge.charge_fee + pending_charge.offered_reward,
-        );
-        T::Currency::transfer(
-            &T::EscrowAccount::get(),
-            &pending_charge.requester,
-            pending_charge.charge_fee,
-            ExistenceRequirement::KeepAlive,
-        )?;
 
-        SfxPendingChargesPerRound::<T>::remove(T::CircuitClock::current_round(), sfx_id);
-
-        Ok(().into())
-    }
-
-    fn finalize(execution_id: ExecutionId, reason: Option<Reason>) -> DispatchResult {
-        let item = Pallet::<T>::execution_registry(execution_id)
-            .ok_or(Error::<T>::ExecutionNotRegistered)?;
-        Self::split(item, reason)?;
-        ExecutionRegistry::<T>::remove(execution_id);
-
-        Self::deposit_event(Event::ExecutionFinalized { execution_id });
-        Ok(())
-    }
-
-    fn issue(recipient: &T::AccountId, amount: BalanceOf<T>) -> DispatchResult {
-        let (slashed, actionable_unslashed) =
-            T::Currency::slash_reserved(&T::EscrowAccount::get(), amount);
-        assert!(
-            actionable_unslashed == Zero::zero(),
-            "The account manager didn't have enough funds to issue the requested amount"
-        );
-        T::Currency::resolve_creating(recipient, slashed);
-
-        Self::deposit_event(Event::Issued {
-            recipient: recipient.to_owned(),
-            amount,
-        });
-
-        Ok(())
-    }
-
-    fn split(
-        item: ExecutionRegistryItem<T::AccountId, BalanceOf<T>>,
-        reason: Option<Reason>,
-    ) -> DispatchResult {
         // Simple rules for splitting, for now, we take 1% to keep the account manager alive
         let (payee_split, recipient_split): (u8, u8) = match reason {
             None => (0, 99),
             Some(Reason::ContractReverted) => (89, 10),
-            Some(Reason::UnexpectedFailure) => (49, 49),
+            Some(Reason::UnexpectedFailure) => (49, 50),
         };
 
-        let pay_split = |split: u8, recipient: &T::AccountId| -> DispatchResult {
+        let pay_split = |split: u8| -> BalanceOf<T> {
             if !split.is_zero() {
                 let percent = Percent::from_percent(split);
-                let amt = percent * *item.balance();
-                Self::issue(recipient, amt)
+                percent * *charge_request.charge_fee;
             } else {
-                Ok(())
+                Zero::zero()
             }
         };
 
-        // TODO: these need to be joined or handle failure, maybe on_initialize retry a queue of failures after reserving
-        pay_split(payee_split, item.payee())?;
-        pay_split(recipient_split, item.recipient())?;
+        let requster_refund_amount = pay_split(payee_split)?;
+        T::Currency::slash_reserved(&charge_request.requester, charge_request.charge_fee + charge_request.offered_reward);
+        T::Currency::resolve_creating(&charge_request.requester, requster_refund_amount);
+
+        let recipient_amount = pay_split(recipient_split)?;
+
+        T::Currency::resolve_creating(&T::EscrowAccount::get(), recipient_amount + charge_request.offered_reward);
+        SfxSettlementsPerRound::<T>::insert(
+            T::CircuitClock::current_round(),
+            sfx_id,
+            RequestCharge::<T::AccountId, BalanceOf<T>> {
+                requester: T::EscrowAccount::get(),
+                offered_reward: recipient_amount + charge_request.offered_reward,
+                charge_fee: Zero::zero(),
+                recipient: charge_request.recipient
+            },
+        );
+
+        PendingChargesPerRound::<T>::remove(T::CircuitClock::current_round(), charge_id);
+
+        Self::deposit_event(Event::ContractsRegistryExecutionFinalized { execution_id });
 
         Ok(())
     }
@@ -202,7 +141,7 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
         _n: T::BlockNumber,
         r: RoundInfo<T::BlockNumber>,
     ) -> Result<Vec<ClaimableArtifacts<T::AccountId, BalanceOf<T>>>, &'static str> {
-        let mut claimable_artifacts: Vec<ClaimableArtifacts<T::AccountId, BalanceOf<T>>> = vec![];
+        let claimable_artifacts: Vec<ClaimableArtifacts<T::AccountId, BalanceOf<T>>> = vec![];
         let mut active_set_claimables: Vec<ActiveSetClaimablePerRound<T::AccountId, BalanceOf<T>>> =
             T::Executors::active_set()
                 .into_iter()
@@ -212,9 +151,9 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
                 })
                 .collect::<Vec<ActiveSetClaimablePerRound<T::AccountId, BalanceOf<T>>>>();
 
-        for sfx_settlement in SfxSettlementsPerRound::<T>::iter_prefix_values(r) {
+        for sfx_settlement in SettlementsPerRound::<T>::iter_prefix_values(r) {
             // fixme: test that actually updates active_set_claimables or are the references wrong
-            for mut active_set_claimable in active_set_claimables.iter_mut() {
+            for active_set_claimable in active_set_claimables.iter_mut() {
                 if active_set_claimable.executor == sfx_settlement.executor {
                     active_set_claimable.claimable += sfx_settlement.reward;
                 }
@@ -302,7 +241,7 @@ mod tests {
     fn test_deposit_when_already_exist_fails() {
         ExtBuilder::default().build().execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, DEFAULT_BALANCE);
-            ExecutionRegistry::<Test>::insert(
+            ContractsExecutionRegistry::<Test>::insert(
                 EXECUTION_ID,
                 ExecutionRegistryItem::new(ALICE.clone(), BOB.clone(), DEFAULT_BALANCE),
             );
