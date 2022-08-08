@@ -59,6 +59,7 @@ frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate.git", 
 # Local Dependencies
 circuit-standalone-runtime = { path = "../../runtime/standalone" }
 pallet-3vm-contracts-rpc   = { path = "../../3vm/pallets/wasm-contracts/rpc", package = "pallet-contracts-rpc" }
+pallet-treasury            = { path = "../../pallets/treasury" }
 pallet-xdns                = { path = "../../pallets/xdns" }
 pallet-xdns-rpc            = { path = "../../pallets/xdns/rpc" }
 t3rn-primitives            = { path = "../../primitives" }

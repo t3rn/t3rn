@@ -29,6 +29,7 @@ pallet-circuit-portal-rpc-runtime-api     = { path = "../../pallets/circuit-port
 pallet-contracts-registry                 = { path = "../../pallets/contracts-registry", default-features = false }
 pallet-contracts-registry-rpc-runtime-api = { path = "../../pallets/contracts-registry/rpc/runtime-api", default-features = false }
 pallet-mfv                                = { package = "pallet-multi-finality-verifier", path = "../../pallets/multi-finality-verifier", version = "1.0.0-alpha.0", default-features = false }
+pallet-treasury                           = { path = "../../pallets/treasury", default-features = false }
 pallet-xdns                               = { path = "../../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api               = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
 #volatile-vm = { path = "../../vm/volatile-vm", default-features = false }
@@ -129,6 +130,7 @@ std = [
   #	"pallet-bridge-dispatch/std",
   #	"pallet-bridge-grandpa/std",
   "pallet-mfv/std",
+  "pallet-treasury/std",
   #	"pallet-bridge-messages/std",
   "pallet-grandpa/std",
   "pallet-randomness-collective-flip/std",
@@ -178,6 +180,7 @@ runtime-benchmarks = [
   'sp-runtime/runtime-benchmarks',
   "orml-tokens/std",
   "orml-traits/std",
+  "pallet-treasury/runtime-benchmarks",
 ]
 # Make contract callable functions marked as __unstable__ available. Do not enable
 # on live chains as those are subject to change.

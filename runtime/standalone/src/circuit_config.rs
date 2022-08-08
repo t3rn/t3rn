@@ -2,7 +2,7 @@ use super::*;
 use frame_support::{parameter_types, traits::ConstU32, PalletId};
 use sp_core::H256;
 use sp_runtime::traits::*;
-use t3rn_primitives::bridges::runtime as bp_runtime;
+use t3rn_primitives::{bridges::runtime as bp_runtime, common::DEFAULT_ROUND_TERM};
 
 // impl pallet_randomness_collective_flip::Config for Runtime {}
 
@@ -166,4 +166,35 @@ impl pallet_mfv::Config<DefaultPolkadotBridgeInstance> for Runtime {
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
     type Xdns = XDNS;
+}
+
+// MinRoundTerm plays a crucial role:
+//  + must at least be the size of the active collator set
+//  + is applied as default round term during genesis
+//  + codetermines staking delays as they are measured in rounds
+parameter_types! {
+    pub const TreasuryAccount: AccountId = AccountId::new([0u8; 32]); // TODO
+    pub const ReserveAccount: AccountId = AccountId::new([1u8; 32]); // TODO
+    pub const AuctionFund: AccountId = AccountId::new([2u8; 32]); // TODO
+    pub const ContractFund: AccountId = AccountId::new([3u8; 32]); // TODO
+    pub const MinRoundTerm: u32 = 20; // TODO
+    pub const DefaultRoundTerm: u32 = DEFAULT_ROUND_TERM; // TODO
+    pub const GenesisIssuance: u32 = 20_000_000; // TODO
+    pub const IdealPerpetualInflation: Perbill =Perbill::from_percent(1);
+    pub const InflationRegressionMonths: u32 = 72;
+}
+
+impl pallet_treasury::Config for Runtime {
+    type AuctionFund = AuctionFund;
+    type ContractFund = ContractFund;
+    type Currency = Balances;
+    type DefaultRoundTerm = DefaultRoundTerm;
+    type Event = Event;
+    type GenesisIssuance = GenesisIssuance;
+    type IdealPerpetualInflation = IdealPerpetualInflation;
+    type InflationRegressionMonths = InflationRegressionMonths;
+    type MinRoundTerm = MinRoundTerm;
+    type ReserveAccount = ReserveAccount;
+    type TreasuryAccount = TreasuryAccount;
+    type WeightInfo = pallet_treasury::weights::TreasuryWeight<Runtime>;
 }

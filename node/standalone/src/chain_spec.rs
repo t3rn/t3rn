@@ -2,8 +2,8 @@ use circuit_standalone_runtime::{
     AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig,
     MultiFinalityVerifierDefaultConfig, MultiFinalityVerifierEthereumLikeConfig,
     MultiFinalityVerifierGenericLikeConfig, MultiFinalityVerifierPolkadotLikeConfig,
-    MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, SystemConfig, XDNSConfig,
-    WASM_BINARY,
+    MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, SystemConfig, TreasuryConfig,
+    XDNSConfig, WASM_BINARY,
 };
 
 use jsonrpc_runtime_client::{
@@ -386,5 +386,6 @@ fn testnet_genesis(
         },
         orml_tokens: Default::default(),
         account_manager: Default::default(),
+        treasury: Default::default(),
     }
 }
