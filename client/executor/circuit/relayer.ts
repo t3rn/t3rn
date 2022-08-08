@@ -3,6 +3,7 @@ import { ApiPromise, Keyring, WsProvider } from "@polkadot/api"
 import { SideEffect, fetchNonce } from "../utils"
 import createDebug from "debug"
 import types from "../types.json"
+const fs = require("fs");
 
 export default class CircuitRelayer extends EventEmitter {
   static debug = createDebug("circuit-relayer")
@@ -52,7 +53,15 @@ export default class CircuitRelayer extends EventEmitter {
     for (const sideEffect of sideEffects) {
       const nonce = await fetchNonce(this.api, this.signer.address)
       // @ts-ignore
-      sideEffect.confirmedSideEffect.inclusionData = this.api.createType("InclusionData", sideEffect.confirmedSideEffect.inclusionData).toHex();
+      sideEffect.confirmedSideEffect.inclusion_data = this.api.createType("InclusionData", sideEffect.confirmedSideEffect.inclusion_data).toHex();
+        // @ts-ignore
+      sideEffect.confirmedSideEffect.received_at = sideEffect.confirmedSideEffect.receivedAt;
+      // @ts-ignore
+      const confirmed: any = this.api.createType("ConfirmedSideEffect", sideEffect.confirmedSideEffect)
+      const sideEffectObj: any = this.api.createType("SideEffect", sideEffect.object);
+      const xtxId: any = this.api.createType("Hash", sideEffect.xtxId);
+
+      exportData({xtxId, sideEffectObj, confirmed}, "confirm-transfer-roco.json", "confirm")
 
       await new Promise((resolve, reject) => {
         this.api.tx.circuit
@@ -93,4 +102,52 @@ export default class CircuitRelayer extends EventEmitter {
       })
     }
   }
+}
+
+export const exportData = (data: any, fileName: string, transactionType: string) => {
+    let deepCopy;
+    // since its pass-by-reference
+    if(Array.isArray(data)) {
+        deepCopy = [...data];
+    } else {
+        deepCopy = {...data};
+    }
+    let encoded = encodeExport(deepCopy, transactionType);
+    fs.writeFile("exports/" + fileName, JSON.stringify(encoded, null, 4), (err) => {
+        if(err) {
+          console.log(err);
+        } else {
+          console.log("JSON saved to " + fileName);
+        }
+    });
+}
+
+// encodes data for exporting. We export in encoded and human format.
+// Encoded: We use for seeding protal rust tests
+// Human: Debugging those tests and viewing data
+export const encodeExport = (data: any, transactionType: string) => {
+    if(Array.isArray(data)) {
+        return data.map(entry => iterateEncode(entry, transactionType))
+    } else {
+        return iterateEncode(data, transactionType)
+    }
+}
+
+const iterateEncode = (data: any, transactionType: string) => {
+    let keys = Object.keys(data);
+    let result = {};
+    if(keys.includes("initialU8aLength")) { // this is a polkadot/apiPromise object
+        return {
+            data: data.toHuman(),
+            transactionType,
+            encoded_data: data.toHex().substring(2)
+        }
+    } else {
+        for(let i = 0; i < keys.length; i++) {
+            result['encoded_' + keys[i]] = data[keys[i]].toHex().substring(2)
+            result[keys[i]] = data[keys[i]].toHuman()
+        }
+        result['transactionType'] = transactionType;
+        return result;
+    }
 }

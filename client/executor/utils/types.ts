@@ -72,7 +72,7 @@ export class SideEffect {
     this.confirmedSideEffect = {
       err: null,
       output: null,
-      inclusionData,
+      inclusion_data: inclusionData,
       executioner: executioner,
       receivedAt: blockNumber,
       cost: null,
