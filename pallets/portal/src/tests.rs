@@ -27,12 +27,12 @@ use std::fs;
 use frame_support::dispatch::PostDispatchInfo;
 use frame_system::pallet_prelude::OriginFor;
 use sp_runtime::{DispatchError, DispatchErrorWithPostInfo};
-    use t3rn_primitives::{
-        portal::{RococoBridge},
-        abi::{GatewayABIConfig},
-        ChainId, EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor, GatewayGenesisConfig,
-    };
-use t3rn_primitives::xdns::AllowedSideEffect;
+use t3rn_primitives::{
+    portal::{RococoBridge},
+    abi::{GatewayABIConfig},
+    xdns::AllowedSideEffect,
+    ChainId, EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor, GatewayGenesisConfig,
+};
 use crate::{mock::*, Error};
 pub fn new_test_ext() -> TestExternalities {
     let t = frame_system::GenesisConfig::default()

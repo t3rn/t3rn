@@ -143,7 +143,7 @@ class CircuitCLI {
             const transactionArgs: any = transfer(this.circuit, gatewayData, encodedAmount, addressStringToPubKey(this.signer.address), receiver, fee)
             if (exportArgs) {
                 const fileName = `./exports/` + exportName + '.json';
-                this.exportData(transactionArgs, fileName, "transfer")
+                this.exportData([transactionArgs], fileName, "transfer")
             }
             this.circuitRelayer.onExtrinsicTrigger(transactionArgs)
                 .then(() => {

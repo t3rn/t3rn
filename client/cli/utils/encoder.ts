@@ -22,15 +22,22 @@ const iterateEncode = (data: any, transactionType: string) => {
     if(keys.includes("initialU8aLength")) { // this is a polkadot/apiPromise object
         return {
             data: data.toHuman(),
-            transactionType,
+            transaction_type: transactionType,
             encoded_data: data.toHex().substring(2)
         }
     } else {
         for(let i = 0; i < keys.length; i++) {
-            result['encoded_' + keys[i]] = data[keys[i]].toHex().substring(2)
-            result[keys[i]] = data[keys[i]].toHuman()
+            result['encoded_' + toSnakeCase(keys[i])] = data[keys[i]].toHex().substring(2)
+            result[toSnakeCase(keys[i])] = data[keys[i]].toHuman()
         }
-        result['transactionType'] = transactionType;
+        result['transaction_type'] = transactionType;
         return result;
     }
 }
+
+const toSnakeCase = str =>
+  str &&
+  str
+    .match(/[A-Z]{2,}(?=[A-Z][a-z]+[0-9]*|\b)|[A-Z]?[a-z]+[0-9]*|[A-Z]|[0-9]+/g)
+    .map(x => x.toLowerCase())
+    .join('_');

@@ -90,11 +90,11 @@
     "TargetId": "[u8; 4]",
     "SideEffect": {
         "target": "TargetId",
-        "prize": "BalanceOf",
-        "ordered_at": "BlockNumber",
-        "encoded_action": "Bytes",
-        "encoded_args": "Vec<Bytes>",
-        "signature": "Bytes",
+        "prize": "u64",
+        "ordered_at": "u64",
+        "encoded_action": "Vec<u8>",
+        "encoded_args": "Vec<Vec<u8>>",
+        "signature": "Vec<u8>",
         "enforce_executioner": "Option<AccountId>"
     },
     "SideEffectId": "Hash",

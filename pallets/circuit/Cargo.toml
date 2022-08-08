@@ -44,6 +44,9 @@ sp-consensus-babe               = { git = "https://github.com/paritytech/substra
 sp-consensus-vrf                = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
 sp-finality-grandpa             = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
 sp-staking                      = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
+hex                             = "0.4.2"
+serde_json                      = "1.0.41"
+hex-literal                     = "0.2.1"
 
 pallet-randomness-collective-flip = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
 pallet-transaction-payment        = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }

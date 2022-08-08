@@ -418,7 +418,7 @@ impl t3rn_primitives::bridges::runtime::Chain for Keccak256ValU32Chain {
 }
 
 parameter_types! {
-    pub const MaxRequests: u32 = 2;
+    pub const MaxRequests: u32 = 20;
     pub const HeadersToKeep: u32 = 5;
     pub const SessionLength: u64 = 5;
     pub const NumValidators: u32 = 5;
