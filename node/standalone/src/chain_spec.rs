@@ -2,8 +2,8 @@ use circuit_standalone_runtime::{
     AccountId, AuraConfig, BalancesConfig, EvmConfig, GenesisConfig, GrandpaConfig,
     MultiFinalityVerifierDefaultConfig, MultiFinalityVerifierEthereumLikeConfig,
     MultiFinalityVerifierGenericLikeConfig, MultiFinalityVerifierPolkadotLikeConfig,
-    MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, SystemConfig, XDNSConfig,
-    WASM_BINARY,
+    MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, SystemConfig, TreasuryConfig,
+    XDNSConfig, WASM_BINARY,
 };
 
 use jsonrpc_runtime_client::{
@@ -392,6 +392,7 @@ fn testnet_genesis(
         },
         orml_tokens: Default::default(),
         account_manager: Default::default(),
+        treasury: Default::default(),
         three_vm: Default::default(), // TODO: genesis for this needs to be setup for the function pointers\
         evm: EvmConfig {
             // We need _some_ code inserted at the precompile address so that

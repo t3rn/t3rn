@@ -1,8 +1,8 @@
 use circuit_parachain_runtime::{
-    AccountId, AuraId, EvmConfig, MultiFinalityVerifierDefaultConfig,
-    MultiFinalityVerifierEthereumLikeConfig, MultiFinalityVerifierGenericLikeConfig,
-    MultiFinalityVerifierPolkadotLikeConfig, MultiFinalityVerifierSubstrateLikeConfig, Signature,
-    SudoConfig, XDNSConfig, EXISTENTIAL_DEPOSIT,
+    AccountId, AuraId, EvmConfig, MultiFinalityVerifierDefaultConfig, MultiFinalityVerifierEthereumLikeConfig,
+    MultiFinalityVerifierGenericLikeConfig, MultiFinalityVerifierPolkadotLikeConfig,
+    MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, TreasuryConfig, XDNSConfig,
+    EXISTENTIAL_DEPOSIT,
 };
 use cumulus_primitives_core::ParaId;
 use jsonrpc_runtime_client::{
@@ -561,6 +561,7 @@ fn testnet_genesis(
         },
         orml_tokens: Default::default(),
         account_manager: Default::default(),
+        treasury: Default::default(),
         three_vm: Default::default(), // TODO: genesis for this needs to be setup for the function pointers
         evm: EvmConfig {
             // We need _some_ code inserted at the precompile address so that
