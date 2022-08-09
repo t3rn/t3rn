@@ -17,14 +17,14 @@ pub enum CircuitRole {
     Local,
 }
 
-#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
 pub enum BenefitSource {
     TrafficRewards,
     BootstrapPool,
     Inflation,
 }
 
-#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
 pub struct ClaimableArtifacts<Account, Balance> {
     pub beneficiary: Account,
     pub role: CircuitRole,

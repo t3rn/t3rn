@@ -1,7 +1,7 @@
 use crate::{
     AccountManager as AccountManagerExt, BalanceOf, Config, ContractsExecutionRegistry,
-    ContractsRegistryExecutionNonce, Error, Event, ExecutionRegistryItem, Pallet,
-    PendingChargesPerRound, Reason, SettlementsPerRound,
+    ContractsRegistryExecutionNonce, Error, Event, ExecutionRegistryItem, Outcome, Pallet,
+    PendingChargesPerRound, SettlementsPerRound,
 };
 use codec::{Decode, Encode};
 use frame_support::{
@@ -11,8 +11,8 @@ use frame_support::{
 use sp_runtime::{traits::Zero, Percent};
 use sp_std::borrow::ToOwned;
 use t3rn_primitives::{
-    account_manager::{ExecutionId, RequestCharge, SfxSettlement},
-    circuit_clock::{CircuitClock, ClaimableArtifacts},
+    account_manager::{ExecutionId, RequestCharge, Settlement},
+    circuit_clock::{BenefitSource, CircuitClock, CircuitRole, ClaimableArtifacts},
     common::RoundInfo,
     executors::Executors,
 };
@@ -27,111 +27,134 @@ pub struct ActiveSetClaimablePerRound<Account, Balance> {
 impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockNumber>
     for Pallet<T>
 {
+    fn get_charge_or_fail(
+        charge_id: T::Hash,
+    ) -> Result<RequestCharge<T::AccountId, BalanceOf<T>>, &'static str> {
+        return if let Some(pending_charge) =
+            PendingChargesPerRound::<T>::get(T::CircuitClock::current_round(), charge_id)
+        {
+            Ok(pending_charge)
+        } else {
+            Err("Error::<T>::ChargeAlreadyRegistered.into()")
+        }
+    }
 
-    fn deposit(
-        payee: &T::AccountId,
-        recipient: &T::AccountId,
-        amount: BalanceOf<T>,
-    ) -> DispatchResult {
+    fn no_charge_or_fail(charge_id: T::Hash) -> Result<(), &'static str> {
+        return if let Some(_pending_charge) =
+            PendingChargesPerRound::<T>::get(T::CircuitClock::current_round(), charge_id)
+        {
+            Err("Error::<T>::ChargeAlreadyRegistered.into()")
+        } else {
+            Ok(())
+        }
+    }
+
+    fn bump_contracts_registry_nonce() -> Result<T::Hash, &'static str> {
         let execution_id = ContractsRegistryExecutionNonce::<T>::get();
         ContractsRegistryExecutionNonce::<T>::mutate(|nonce| *nonce += 1);
 
-        if ContractsExecutionRegistry::<T>::contains_key(execution_id) {
-            return Err(Error::<T>::ExecutionAlreadyRegistered.into())
-        }
+        let charge_id = Decode::decode(&mut &Sabi::value_64_2_value_256(execution_id).encode()[..])
+            .map_err(|_e| "FailedDecodeExecutionNonce2ChargeId")?;
 
-        // ContractsExecutionRegistry::<T>::insert(
-        //     execution_id,
-        //     ExecutionRegistryItem::new(payee.clone(), recipient.clone(), amount),
-        // );
-
-        let execution_id_hash: T::Hash =
-            Decode::decode(&mut &Sabi::value_64_2_value_256(execution_id).encode()[..])
-                .map_err(|_e| Error::<T>::DecodingExecutionIDFailed)?;
-
-        Self::charge_requester(
-            RequestCharge {
-                requester: payee.clone(),
-                offered_reward: Zero::zero(),
-                charge_fee: amount,
-                recipient: recipient.clone(),
-            },
-            execution_id_hash,
-        )?;
-
-        Ok(())
+        Self::no_charge_or_fail(charge_id)?;
+        Ok(charge_id)
     }
 
-    /// Charge requester for SFX submission: reward + fees.
-    fn charge_requester(
-        charge: RequestCharge<T::AccountId, BalanceOf<T>>,
-        sfx_id: T::Hash,
+    /// If Called by 3VM as a execution deposit, expect:
+    ///     - charge = gas_fees
+    ///     - reward = 0
+    /// If Called by Circuit as charge deposit, expect:
+    ///     - charge = std SFX execution + delivery charge
+    ///     - reward = Open Market based offered by requester
+    fn deposit(
+        charge_id: T::Hash,
+        payee: &T::AccountId,
+        charge_fee: BalanceOf<T>,
+        offered_reward: BalanceOf<T>,
+        source: BenefitSource,
+        role: CircuitRole,
+        maybe_recipient: Option<T::AccountId>,
     ) -> DispatchResult {
-        T::Currency::reserve(&charge.requester, charge.charge_fee + charge.offered_reward)?;
+        Self::no_charge_or_fail(charge_id).map_err(|_e| Error::<T>::ExecutionAlreadyRegistered)?;
+
+        T::Currency::reserve(payee, charge_fee + offered_reward)?;
+
+        let recipient = if let Some(recipient) = maybe_recipient {
+            recipient.clone()
+        } else {
+            // todo: Inspect if that's a good idea
+            T::EscrowAccount::get()
+        };
 
         PendingChargesPerRound::<T>::insert(
             T::CircuitClock::current_round(),
-            sfx_id,
-            charge.clone(),
+            charge_id,
+            RequestCharge {
+                payee: payee.clone(),
+                offered_reward,
+                charge_fee,
+                recipient,
+                source,
+                role,
+            },
         );
 
         Ok(())
     }
 
-    fn finalize(execution_id: ExecutionId, reason: Option<Reason>) -> DispatchResult {
-        // let item = Pallet::<T>::execution_registry(execution_id)
-        //     .ok_or(Error::<T>::ExecutionNotRegistered)?;
+    fn finalize(
+        charge_id: T::Hash,
+        outcome: Outcome,
+        maybe_recipient: Option<T::AccountId>,
+        maybe_actual_fees: Option<BalanceOf<T>>,
+    ) -> DispatchResult {
+        let charge = Self::get_charge_or_fail(charge_id)?;
 
-        let charge_id: T::Hash = Decode::decode(&mut &Sabi::value_64_2_value_256(execution_id).encode()[..])
-            .map_err(|_e| Error::<T>::DecodingExecutionIDFailed)?;
-
-        let charge_request: RequestCharge<T::AccountId, BalanceOf<T>> =
-            if let Some(pending_charge) =
-            PendingChargesPerRound::<T>::get(T::CircuitClock::current_round(), charge_id)
-            {
-                pending_charge
-            } else {
-                return Err(Error::<T>::PendingChargeNotFoundAtCommit.into())
-            };
-
-
+        // Decide on charges split
         // Simple rules for splitting, for now, we take 1% to keep the account manager alive
-        let (payee_split, recipient_split): (u8, u8) = match reason {
-            None => (0, 99),
-            Some(Reason::ContractReverted) => (89, 10),
-            Some(Reason::UnexpectedFailure) => (49, 50),
+        let (payee_split, recipient_split): (u8, u8) = match outcome {
+            Outcome::Commit => (0, 99),
+            Outcome::Revert => (89, 10),
+            Outcome::UnexpectedFailure => (49, 50),
         };
 
-        let pay_split = |split: u8| -> BalanceOf<T> {
-            if !split.is_zero() {
-                let percent = Percent::from_percent(split);
-                percent * *charge_request.charge_fee;
-            } else {
-                Zero::zero()
-            }
+        let payee_refund: BalanceOf<T> = if let Some(actual_fees) = maybe_actual_fees {
+            (charge.charge_fee - actual_fees) * Percent::from_percent(payee_split)
+        } else {
+            charge.charge_fee * Percent::from_percent(payee_split)
+        };
+        T::Currency::slash_reserved(&charge.payee, charge.charge_fee + charge.offered_reward);
+        T::Currency::deposit_creating(&charge.payee, payee_refund.clone());
+
+        // Check if recipient has been updated
+        let recipient = if let Some(recipient) = maybe_recipient {
+            recipient
+        } else {
+            charge.recipient
         };
 
-        let requster_refund_amount = pay_split(payee_split)?;
-        T::Currency::slash_reserved(&charge_request.requester, charge_request.charge_fee + charge_request.offered_reward);
-        T::Currency::resolve_creating(&charge_request.requester, requster_refund_amount);
-
-        let recipient_amount = pay_split(recipient_split)?;
-
-        T::Currency::resolve_creating(&T::EscrowAccount::get(), recipient_amount + charge_request.offered_reward);
-        SfxSettlementsPerRound::<T>::insert(
+        let recipient_payout_async = (charge.charge_fee - payee_refund.clone()
+            + charge.offered_reward)
+            * Percent::from_percent(recipient_split);
+        // Create Settlement for the future async claim
+        SettlementsPerRound::<T>::insert(
             T::CircuitClock::current_round(),
-            sfx_id,
-            RequestCharge::<T::AccountId, BalanceOf<T>> {
-                requester: T::EscrowAccount::get(),
-                offered_reward: recipient_amount + charge_request.offered_reward,
-                charge_fee: Zero::zero(),
-                recipient: charge_request.recipient
+            charge_id,
+            Settlement::<T::AccountId, BalanceOf<T>> {
+                requester: charge.payee,
+                recipient,
+                settlement_amount: recipient_payout_async,
+                outcome,
+                source: charge.source,
+                role: charge.role,
             },
         );
 
-        PendingChargesPerRound::<T>::remove(T::CircuitClock::current_round(), charge_id);
-
-        Self::deposit_event(Event::ContractsRegistryExecutionFinalized { execution_id });
+        // Take what's left - 1% to keep the account manager alive
+        T::Currency::deposit_creating(
+            &T::EscrowAccount::get(),
+            charge.charge_fee - recipient_payout_async - payee_refund,
+        );
 
         Ok(())
     }
@@ -151,11 +174,11 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
                 })
                 .collect::<Vec<ActiveSetClaimablePerRound<T::AccountId, BalanceOf<T>>>>();
 
-        for sfx_settlement in SettlementsPerRound::<T>::iter_prefix_values(r) {
+        for settlement in SettlementsPerRound::<T>::iter_prefix_values(r) {
             // fixme: test that actually updates active_set_claimables or are the references wrong
             for active_set_claimable in active_set_claimables.iter_mut() {
-                if active_set_claimable.executor == sfx_settlement.executor {
-                    active_set_claimable.claimable += sfx_settlement.reward;
+                if active_set_claimable.executor == settlement.recipient {
+                    active_set_claimable.claimable += settlement.settlement_amount;
                 }
             }
         }
@@ -325,7 +348,7 @@ mod tests {
                 Hash,
                 BlockNumber,
             >>::finalize(
-                EXECUTION_ID, Some(Reason::ContractReverted)
+                EXECUTION_ID, Some(Outcome::ContractReverted)
             ));
             assert_eq!(
                 Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
@@ -367,7 +390,7 @@ mod tests {
                 Hash,
                 BlockNumber,
             >>::finalize(
-                EXECUTION_ID, Some(Reason::UnexpectedFailure)
+                EXECUTION_ID, Some(Outcome::UnexpectedFailure)
             ));
             assert_eq!(
                 Balances::free_balance(&<Test as Config>::EscrowAccount::get()),

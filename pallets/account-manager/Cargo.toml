@@ -30,6 +30,8 @@ sp-version = { default-features = false, git = "https://github.com/paritytech/su
 
 t3rn-primitives = { path = "../../primitives", default-features = false }
 
+pallet-xbi-portal = { path = "../xbi-portal", default-features = false }
+
 [dev-dependencies]
 sp-core     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 sp-keystore = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
@@ -58,5 +60,6 @@ std = [
   "sp-runtime/std",
   "sp-std/std",
   "t3rn-primitives/std",
+  "pallet-xbi-portal/std",
 ]
 try-runtime = [ "frame-support/try-runtime" ]
