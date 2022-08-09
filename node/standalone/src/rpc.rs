@@ -8,6 +8,7 @@
 use circuit_standalone_runtime::{opaque::Block, AccountId, Balance, BlockNumber, Hash, Index};
 use pallet_3vm_contracts_rpc::{Contracts, ContractsApi};
 use pallet_3vm_evm_rpc::{Evm, EvmApi};
+use pallet_staking_rpc::{Staking, StakingApi};
 use pallet_xdns_rpc::{Xdns, XdnsApi};
 pub use sc_rpc_api::DenyUnsafe;
 use sc_transaction_pool_api::TransactionPool;
@@ -38,6 +39,7 @@ where
         pallet_3vm_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber, Hash>,
     C::Api: pallet_xdns_rpc::XdnsRuntimeApi<Block, AccountId>,
     C::Api: pallet_3vm_evm_rpc::EvmRuntimeRPCApi<Block, AccountId, Balance>,
+    C::Api: pallet_staking_rpc::StakingRuntimeApi<Block, AccountId, Balance>,
     C::Api: BlockBuilder<Block>,
     P: TransactionPool + 'static,
 {
@@ -62,6 +64,7 @@ where
     io.extend_with(ContractsApi::to_delegate(Contracts::new(client.clone())));
     io.extend_with(XdnsApi::to_delegate(Xdns::new(client.clone())));
     io.extend_with(EvmApi::to_delegate(Evm::new(client.clone())));
+    io.extend_with(StakingApi::to_delegate(Staking::new(client.clone())));
 
     io
 }

@@ -14,16 +14,20 @@ use sp_runtime::{
     traits::{Saturating, Zero},
     RuntimeDebug,
 };
-use sp_std::prelude::*;
+use sp_std::{prelude::*, vec};
 use t3rn_primitives::{
     common::{OrderedSet, RoundIndex},
     staking::{
-        Bond, CandidateBondLessRequest, CapacityStatus, ExecutorStatus, StakeAdjust, StakerAdded,
-        StakerStatus, STAKER_LOCK_ID,
+        Bond, CandidateBondLessRequest, CandidateMetadataFormat, CapacityStatus, ExecutorStatus,
+        StakeAdjust, StakerAdded, StakerMetadataFormat, StakerStatus, STAKER_LOCK_ID,
     },
     treasury::Treasury,
 };
 
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
+
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq)]
 /// Staker state
 pub struct StakerMetadata<AccountId, Balance> {
@@ -37,6 +41,29 @@ pub struct StakerMetadata<AccountId, Balance> {
     pub less_total: Balance,
     /// Status for this staker
     pub status: StakerStatus,
+}
+
+impl<
+        AccountId: Ord + Clone,
+        Balance: Copy
+            + Zero
+            + PartialOrd
+            + sp_std::ops::AddAssign
+            + sp_std::ops::SubAssign
+            + sp_std::ops::Sub<Output = Balance>
+            + sp_std::fmt::Debug
+            + Saturating,
+    > Into<StakerMetadataFormat<AccountId, Balance>> for StakerMetadata<AccountId, Balance>
+{
+    fn into(self) -> StakerMetadataFormat<AccountId, Balance> {
+        StakerMetadataFormat {
+            id: self.id,
+            stakes: self.stakes,
+            total: self.total,
+            less_total: self.less_total,
+            status: self.status,
+        }
+    }
 }
 
 impl<
@@ -291,6 +318,7 @@ impl<
     }
 }
 
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq)]
 /// All candidate info except the top and bottom stakes
 pub struct CandidateMetadata<Balance> {
@@ -314,6 +342,33 @@ pub struct CandidateMetadata<Balance> {
     pub request: Option<CandidateBondLessRequest<Balance>>,
     /// Current status of the executor
     pub status: ExecutorStatus,
+}
+
+impl<
+        Balance: Copy
+            + Zero
+            + PartialOrd
+            + sp_std::ops::AddAssign
+            + sp_std::ops::SubAssign
+            + sp_std::ops::Sub<Output = Balance>
+            + sp_std::fmt::Debug
+            + Saturating,
+    > Into<CandidateMetadataFormat<Balance>> for CandidateMetadata<Balance>
+{
+    fn into(self) -> CandidateMetadataFormat<Balance> {
+        CandidateMetadataFormat {
+            bond: self.bond,
+            stake_count: self.stake_count,
+            total_counted: self.total_counted,
+            lowest_top_stake_amount: self.lowest_top_stake_amount,
+            highest_bottom_stake_amount: self.highest_bottom_stake_amount,
+            lowest_bottom_stake_amount: self.lowest_bottom_stake_amount,
+            top_capacity: self.top_capacity,
+            bottom_capacity: self.bottom_capacity,
+            request: self.request,
+            status: self.status,
+        }
+    }
 }
 
 impl<

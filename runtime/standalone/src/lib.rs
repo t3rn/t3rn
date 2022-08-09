@@ -27,7 +27,14 @@ use sp_std::{
     prelude::*,
 };
 
-use t3rn_primitives::ReadLatestGatewayHeight;
+use t3rn_primitives::{
+    common::{OrderedSet, RoundIndex},
+    staking::{
+        Bond, CandidateMetadataFormat, ExecutorInfo, ExecutorSnapshot, Fixtures as StakingFixtures,
+        StakerMetadataFormat,
+    },
+    ReadLatestGatewayHeight,
+};
 
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -341,6 +348,7 @@ construct_runtime!(
         CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>} = 107,
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
         Treasury: pallet_treasury = 109,
+        Staking: pallet_staking::{Pallet, Call, Storage, Event<T>} = 110,
 
         // 3VM
         ThreeVm: pallet_3vm = 119,
@@ -615,6 +623,44 @@ impl_runtime_apis! {
                 Ok(abi) => Some(abi),
                 Err(_) => None,
             }
+        }
+    }
+
+    impl pallet_staking_rpc_runtime_api::StakingRuntimeApi<Block, AccountId, Balance> for Runtime {
+        fn get_fixtures() -> StakingFixtures<Balance> {
+            <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::fixtures()
+        }
+
+        fn get_total_value_locked() -> Balance {
+            <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::total_value_locked()
+        }
+
+        fn get_active_stake(round: RoundIndex) -> Balance {
+            <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::staked(round)
+        }
+
+        fn get_executor_config(who: AccountId) -> Option<ExecutorInfo> {
+            <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::executor_config(who)
+        }
+
+        fn get_executor_snapshot(round: RoundIndex, who: AccountId) -> Option<ExecutorSnapshot<AccountId, Balance>> {
+            <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::at_stake(round, who)
+        }
+
+        fn get_candidate_info(who: AccountId) -> Option<CandidateMetadataFormat<Balance>> {
+            <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::candidate_info(who)
+        }
+
+        fn get_staker_info(who: AccountId) -> Option<StakerMetadataFormat<AccountId, Balance>> {
+            <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::staker_info(who)
+        }
+
+        fn list_candidates() -> OrderedSet<Bond<AccountId, Balance>> {
+            <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::candidate_pool()
+        }
+
+        fn list_active_set() -> Vec<AccountId> {
+            <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::active_set()
         }
     }
 

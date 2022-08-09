@@ -29,7 +29,9 @@ pallet-mfv                                = { package = "pallet-multi-finality-v
 pallet-treasury                           = { path = "../../pallets/treasury", default-features = false }
 pallet-xdns                               = { path = "../../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api               = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
-
+pallet-staking                            = { path = "../../pallets/staking", default-features = false }
+pallet-staking-rpc-runtime-api            = { path = "../../pallets/staking/rpc/runtime-api", default-features = false }
+#volatile-vm = { path = "../../vm/volatile-vm", default-features = false }
 t3rn-primitives = { default-features = false, path = "../../primitives" }
 t3rn-protocol   = { path = "../../protocol", default-features = false }
 
@@ -144,6 +146,8 @@ std = [
   #	"pallet-bridge-messages/std",
   "pallet-grandpa/std",
   "pallet-randomness-collective-flip/std",
+  "pallet-staking/std",
+  "pallet-staking-rpc-runtime-api/std",
   "pallet-sudo/std",
   "pallet-timestamp/std",
   "pallet-transaction-payment-rpc-runtime-api/std",

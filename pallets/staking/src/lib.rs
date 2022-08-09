@@ -19,6 +19,8 @@ pub mod staking_actions;
 pub mod subject_metadata;
 pub mod weights;
 
+pub use pallet::*;
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::{
@@ -36,14 +38,15 @@ pub mod pallet {
         traits::{One, Saturating, Zero},
         Percent,
     };
-    use sp_std::collections::btree_map::BTreeMap;
+    use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
     use t3rn_primitives::{
         common::{OrderedSet, Range, RoundIndex},
         monetary::DECIMALS,
         staking::{
-            Bond, CancelledScheduledStakingRequest, ExecutorInfo, ExecutorSnapshot,
-            Fixtures as StakingFixtures, ScheduledConfigurationRequest, ScheduledStakingRequest,
-            StakeAdjust, StakerAdded, StakingAction, EXECUTOR_LOCK_ID, STAKER_LOCK_ID,
+            Bond, CancelledScheduledStakingRequest, CandidateMetadataFormat, ExecutorInfo,
+            ExecutorSnapshot, Fixtures as StakingFixtures, ScheduledConfigurationRequest,
+            ScheduledStakingRequest, StakeAdjust, StakerAdded, StakerMetadataFormat,
+            Staking as TStaking, StakingAction, EXECUTOR_LOCK_ID, STAKER_LOCK_ID,
         },
         treasury::Treasury as TTreasury,
     };
@@ -134,7 +137,7 @@ pub mod pallet {
         Twox64Concat,
         T::AccountId,
         ExecutorSnapshot<T::AccountId, BalanceOf<T>>,
-        ValueQuery,
+        OptionQuery,
     >;
 
     /// Outstanding staking requests per executor.
@@ -1545,6 +1548,55 @@ pub mod pallet {
                     bond
                 })
                 .collect()
+        }
+    }
+
+    impl<T: Config> TStaking<T::AccountId, BalanceOf<T>> for Pallet<T> {
+        fn fixtures() -> StakingFixtures<BalanceOf<T>> {
+            Self::fixtures()
+        }
+
+        fn total_value_locked() -> BalanceOf<T> {
+            Self::total_value_locked()
+        }
+
+        fn staked(round: RoundIndex) -> BalanceOf<T> {
+            Self::staked(round)
+        }
+
+        fn executor_config(who: T::AccountId) -> Option<ExecutorInfo> {
+            Self::executor_config(who)
+        }
+
+        fn at_stake(
+            round: RoundIndex,
+            who: T::AccountId,
+        ) -> Option<ExecutorSnapshot<T::AccountId, BalanceOf<T>>> {
+            Self::at_stake(round, who)
+        }
+
+        fn candidate_info(who: T::AccountId) -> Option<CandidateMetadataFormat<BalanceOf<T>>> {
+            match Self::candidate_info(who) {
+                None => None,
+                Some(candidate_metadata) => Some(candidate_metadata.into()),
+            }
+        }
+
+        fn staker_info(
+            who: T::AccountId,
+        ) -> Option<StakerMetadataFormat<T::AccountId, BalanceOf<T>>> {
+            match Self::staker_info(who) {
+                None => None,
+                Some(staker_metadata) => Some(staker_metadata.into()),
+            }
+        }
+
+        fn candidate_pool() -> OrderedSet<Bond<T::AccountId, BalanceOf<T>>> {
+            Self::candidate_pool()
+        }
+
+        fn active_set() -> Vec<T::AccountId> {
+            Self::active_set()
         }
     }
 }

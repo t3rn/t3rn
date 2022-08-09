@@ -60,6 +60,7 @@ frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate.git", 
 circuit-standalone-runtime = { path = "../../runtime/standalone" }
 pallet-3vm-contracts-rpc   = { path = "../../3vm/rpc/contracts", package = "pallet-contracts-rpc" }
 pallet-3vm-evm-rpc         = { path = "../../3vm/rpc/evm", package = "pallet-evm-rpc" }
+pallet-staking-rpc         = { path = "../../pallets/staking/rpc", package = "pallet-staking-rpc" }
 pallet-treasury            = { path = "../../pallets/treasury" }
 pallet-xdns                = { path = "../../pallets/xdns" }
 pallet-xdns-rpc            = { path = "../../pallets/xdns/rpc" }

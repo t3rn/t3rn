@@ -1318,6 +1318,7 @@ dependencies = [
  "log",
  "pallet-contracts-rpc",
  "pallet-evm-rpc",
+ "pallet-staking-rpc",
  "pallet-transaction-payment-rpc",
  "pallet-treasury 0.0.0",
  "pallet-xdns",
@@ -1389,6 +1390,8 @@ dependencies = [
  "pallet-mmr-primitives",
  "pallet-multi-finality-verifier",
  "pallet-randomness-collective-flip",
+ "pallet-staking 0.0.0",
+ "pallet-staking-rpc-runtime-api",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -7585,6 +7588,37 @@ source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.1
 dependencies = [
  "log",
  "sp-arithmetic",
+]
+
+[[package]]
+name = "pallet-staking-rpc"
+version = "0.1.0"
+dependencies = [
+ "jsonrpc-core 18.0.0",
+ "jsonrpc-core-client 18.0.0",
+ "jsonrpc-derive",
+ "pallet-staking-rpc-runtime-api",
+ "parity-scale-codec 3.1.5",
+ "serde",
+ "serde_json",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+ "t3rn-primitives",
+]
+
+[[package]]
+name = "pallet-staking-rpc-runtime-api"
+version = "0.1.0"
+dependencies = [
+ "parity-scale-codec 3.1.5",
+ "sp-api",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "t3rn-primitives",
 ]
 
 [[package]]

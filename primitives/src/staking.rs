@@ -1,4 +1,4 @@
-use crate::common::{Range, RoundIndex};
+use crate::common::{OrderedSet, Range, RoundIndex};
 use codec::{Decode, Encode};
 use frame_support::{pallet_prelude::*, traits::LockIdentifier};
 #[cfg(feature = "std")]
@@ -27,6 +27,7 @@ pub enum StakerAdded<Balance> {
     ToBottom,
 }
 
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Encode, Decode, RuntimeDebug, TypeInfo)]
 /// Snapshot of collator state at the start of the round for which they are selected
 pub struct ExecutorSnapshot<AccountId, Balance> {
@@ -79,7 +80,7 @@ impl<A, B: Default> Default for ExecutorSnapshot<A, B> {
 }
 
 /// Generic type describing either an executor's self-bond or a staker's bond.
-// #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq)]
 pub struct Bond<AccountId, Balance> {
     pub owner: AccountId,
@@ -126,6 +127,7 @@ impl<AccountId: Ord, Balance: PartialEq> PartialOrd for Bond<AccountId, Balance>
 // }
 
 /// The activity status of the staker.
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum StakerStatus {
     /// Active with no scheduled exit
@@ -133,6 +135,7 @@ pub enum StakerStatus {
 }
 
 /// The activity status of the executor
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum ExecutorStatus {
     /// Committed to be online and producing valid blocks (not equivocating)
@@ -150,6 +153,7 @@ impl Default for ExecutorStatus {
 }
 
 /// Capacity status for top or bottom stakes.
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Clone, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum CapacityStatus {
     /// Reached capacity
@@ -161,6 +165,7 @@ pub enum CapacityStatus {
 }
 
 /// Request scheduled to change the executor candidate's self-bond.
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(PartialEq, Clone, Copy, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct CandidateBondLessRequest<Balance> {
     pub amount: Balance,
@@ -210,6 +215,7 @@ impl<A, B> From<ScheduledStakingRequest<A, B>> for CancelledScheduledStakingRequ
 }
 
 /// Executor configuration information.
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct ExecutorInfo {
     pub commission: Percent,
@@ -269,4 +275,58 @@ impl<Balance: PartialEq + Zero + PartialOrd> Fixtures<Balance> {
             && self.candidate_bond_less_delay > 0
             && self.revoke_stake_delay > 0
     }
+}
+
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq)]
+/// Staker state
+pub struct StakerMetadataFormat<AccountId, Balance> {
+    /// Staker account
+    pub id: AccountId,
+    /// All current stakes
+    pub stakes: OrderedSet<Bond<AccountId, Balance>>,
+    /// Total balance locked for this staker
+    pub total: Balance,
+    /// Sum of pending revocation amounts + bond less amounts
+    pub less_total: Balance,
+    /// Status for this staker
+    pub status: StakerStatus,
+}
+
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq)]
+/// All candidate info except the top and bottom stakes
+pub struct CandidateMetadataFormat<Balance> {
+    /// This candidate's self bond amount
+    pub bond: Balance,
+    /// Total number of stakes to this candidate
+    pub stake_count: u32,
+    /// Self bond + sum of top stakes
+    pub total_counted: Balance,
+    /// The smallest top stake amount
+    pub lowest_top_stake_amount: Balance,
+    /// The highest bottom stake amount
+    pub highest_bottom_stake_amount: Balance,
+    /// The smallest bottom stake amount
+    pub lowest_bottom_stake_amount: Balance,
+    /// Capacity status for top stakes
+    pub top_capacity: CapacityStatus,
+    /// Capacity status for bottom stakes
+    pub bottom_capacity: CapacityStatus,
+    /// Maximum 1 pending request to decrease candidate self bond at any given time
+    pub request: Option<CandidateBondLessRequest<Balance>>,
+    /// Current status of the executor
+    pub status: ExecutorStatus,
+}
+
+pub trait Staking<AccountId, Balance> {
+    fn fixtures() -> Fixtures<Balance>;
+    fn total_value_locked() -> Balance;
+    fn staked(round: RoundIndex) -> Balance;
+    fn executor_config(who: AccountId) -> Option<ExecutorInfo>;
+    fn at_stake(round: RoundIndex, who: AccountId) -> Option<ExecutorSnapshot<AccountId, Balance>>;
+    fn candidate_info(who: AccountId) -> Option<CandidateMetadataFormat<Balance>>;
+    fn staker_info(who: AccountId) -> Option<StakerMetadataFormat<AccountId, Balance>>;
+    fn candidate_pool() -> OrderedSet<Bond<AccountId, Balance>>;
+    fn active_set() -> Vec<AccountId>;
 }

@@ -231,7 +231,7 @@ impl<T: Config> Pallet<T> {
                 // remove from pending requests
                 let amount = scheduled_requests.remove(request_idx).action.amount();
                 state.less_total = state.less_total.saturating_sub(amount);
-                sp_std::if_std! { println!("StakingAction::Decrease"); }
+
                 // decrease stake
                 for bond in &mut state.stakes.0 {
                     if bond.owner == executor {
