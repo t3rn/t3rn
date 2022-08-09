@@ -1,8 +1,8 @@
 use circuit_parachain_runtime::{
-    AccountId, AuraId, EvmConfig, MultiFinalityVerifierDefaultConfig, MultiFinalityVerifierEthereumLikeConfig,
-    MultiFinalityVerifierGenericLikeConfig, MultiFinalityVerifierPolkadotLikeConfig,
-    MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, TreasuryConfig, XDNSConfig,
-    EXISTENTIAL_DEPOSIT,
+    AccountId, AuraId, EvmConfig, MultiFinalityVerifierDefaultConfig,
+    MultiFinalityVerifierEthereumLikeConfig, MultiFinalityVerifierGenericLikeConfig,
+    MultiFinalityVerifierPolkadotLikeConfig, MultiFinalityVerifierSubstrateLikeConfig, Signature,
+    SudoConfig, XDNSConfig, EXISTENTIAL_DEPOSIT,
 };
 use cumulus_primitives_core::ParaId;
 use jsonrpc_runtime_client::{

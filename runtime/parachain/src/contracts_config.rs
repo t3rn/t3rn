@@ -4,7 +4,6 @@ use crate::{
     ContractsRegistry, Event, RandomnessCollectiveFlip, Runtime, ThreeVm, Timestamp,
 };
 use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::FindAuthor};
-use frame_system::EnsureRoot;
 use pallet_3vm_contracts::weights::WeightInfo;
 use pallet_3vm_evm::{
     EnsureAddressNever, GasWeightMapping, StoredHashAddressMapping, SubstrateBlockHashMapping,

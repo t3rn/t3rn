@@ -2,8 +2,8 @@ use circuit_standalone_runtime::{
     AccountId, AuraConfig, BalancesConfig, EvmConfig, GenesisConfig, GrandpaConfig,
     MultiFinalityVerifierDefaultConfig, MultiFinalityVerifierEthereumLikeConfig,
     MultiFinalityVerifierGenericLikeConfig, MultiFinalityVerifierPolkadotLikeConfig,
-    MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, SystemConfig, TreasuryConfig,
-    XDNSConfig, WASM_BINARY,
+    MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, SystemConfig, XDNSConfig,
+    WASM_BINARY,
 };
 
 use jsonrpc_runtime_client::{
