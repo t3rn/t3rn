@@ -8,7 +8,7 @@ use frame_support::{
     dispatch::DispatchResult,
     traits::{Currency, ExistenceRequirement, Get, ReservableCurrency},
 };
-use sp_runtime::{traits::Zero, Percent};
+use sp_runtime::{traits::Zero, DispatchError, Percent};
 use sp_std::borrow::ToOwned;
 use t3rn_primitives::{
     account_manager::{ExecutionId, RequestCharge, Settlement},
@@ -18,10 +18,15 @@ use t3rn_primitives::{
 };
 
 use pallet_xbi_portal::sabi::Sabi;
+use t3rn_primitives::bridges::polkadot_core::Balance;
 
 pub struct ActiveSetClaimablePerRound<Account, Balance> {
     pub executor: Account,
     pub claimable: Balance,
+}
+
+fn percent_ratio<T: Config>(amt: BalanceOf<T>, percent: u8) -> BalanceOf<T> {
+    amt * (BalanceOf::<T>::from(percent) / BalanceOf::<T>::from(100u8))
 }
 
 impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockNumber>
@@ -29,32 +34,32 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
 {
     fn get_charge_or_fail(
         charge_id: T::Hash,
-    ) -> Result<RequestCharge<T::AccountId, BalanceOf<T>>, &'static str> {
+    ) -> Result<RequestCharge<T::AccountId, BalanceOf<T>>, DispatchError> {
         return if let Some(pending_charge) =
             PendingChargesPerRound::<T>::get(T::CircuitClock::current_round(), charge_id)
         {
             Ok(pending_charge)
         } else {
-            Err("Error::<T>::ChargeAlreadyRegistered.into()")
+            Err(Error::<T>::ChargeAlreadyRegistered.into())
         }
     }
 
-    fn no_charge_or_fail(charge_id: T::Hash) -> Result<(), &'static str> {
+    fn no_charge_or_fail(charge_id: T::Hash) -> Result<(), DispatchError> {
         return if let Some(_pending_charge) =
             PendingChargesPerRound::<T>::get(T::CircuitClock::current_round(), charge_id)
         {
-            Err("Error::<T>::ChargeAlreadyRegistered.into()")
+            Err(Error::<T>::ChargeAlreadyRegistered.into())
         } else {
             Ok(())
         }
     }
 
-    fn bump_contracts_registry_nonce() -> Result<T::Hash, &'static str> {
+    fn bump_contracts_registry_nonce() -> Result<T::Hash, DispatchError> {
         let execution_id = ContractsRegistryExecutionNonce::<T>::get();
         ContractsRegistryExecutionNonce::<T>::mutate(|nonce| *nonce += 1);
 
         let charge_id = Decode::decode(&mut &Sabi::value_64_2_value_256(execution_id).encode()[..])
-            .map_err(|_e| "FailedDecodeExecutionNonce2ChargeId")?;
+            .map_err(|_e| Error::<T>::DecodingExecutionIDFailed)?;
 
         Self::no_charge_or_fail(charge_id)?;
         Ok(charge_id)
@@ -119,9 +124,9 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
         };
 
         let payee_refund: BalanceOf<T> = if let Some(actual_fees) = maybe_actual_fees {
-            (charge.charge_fee - actual_fees) * Percent::from_percent(payee_split)
+            percent_ratio::<T>(charge.charge_fee - actual_fees, payee_split)
         } else {
-            charge.charge_fee * Percent::from_percent(payee_split)
+            percent_ratio::<T>(charge.charge_fee, payee_split)
         };
         T::Currency::slash_reserved(&charge.payee, charge.charge_fee + charge.offered_reward);
         T::Currency::deposit_creating(&charge.payee, payee_refund.clone());
@@ -133,9 +138,11 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
             charge.recipient
         };
 
-        let recipient_payout_async = (charge.charge_fee - payee_refund.clone()
-            + charge.offered_reward)
-            * Percent::from_percent(recipient_split);
+        let recipient_payout_async = percent_ratio::<T>(
+            charge.charge_fee - payee_refund.clone() + charge.offered_reward,
+            recipient_split,
+        );
+
         // Create Settlement for the future async claim
         SettlementsPerRound::<T>::insert(
             T::CircuitClock::current_round(),
@@ -164,7 +171,7 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
         _n: T::BlockNumber,
         r: RoundInfo<T::BlockNumber>,
     ) -> Result<Vec<ClaimableArtifacts<T::AccountId, BalanceOf<T>>>, &'static str> {
-        let claimable_artifacts: Vec<ClaimableArtifacts<T::AccountId, BalanceOf<T>>> = vec![];
+        let mut claimable_artifacts: Vec<ClaimableArtifacts<T::AccountId, BalanceOf<T>>> = vec![];
         let mut active_set_claimables: Vec<ActiveSetClaimablePerRound<T::AccountId, BalanceOf<T>>> =
             T::Executors::active_set()
                 .into_iter()
@@ -200,10 +207,10 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
         //     let collateral_bond_power = collateral_bond / total_stake_power.clone();
         //
         //     claimable_artifacts.push(ClaimableArtifacts {
-        //         beneficiary: active_set_claimable.executor,
+        //         beneficiary: active_set_claimable.executor.clone(),
         //         role: CircuitRole::Executor,
         //         total_round_claim: collateral_bond_power * active_set_claimable.claimable,
-        //         benefit_source: BenefitSource::ExecutorRewards,
+        //         benefit_source: BenefitSource::TrafficRewards,
         //     });
         //
         //     // todo: ensure it's in range <0,1)
@@ -219,7 +226,7 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
         //             beneficiary: nominated_stake.staker,
         //             role: CircuitRole::Staker,
         //             total_round_claim: staker_power * claimable_by_all_stakers_of_executor,
-        //             benefit_source: BenefitSource::ExecutorStakingRewards,
+        //             benefit_source: BenefitSource::TrafficRewards,
         //         });
         //     }
         // }
