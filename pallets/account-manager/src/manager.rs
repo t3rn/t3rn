@@ -190,46 +190,40 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
             }
         }
 
-        // fixme: Below is good for review after aligning the Currency traits we use :<
-        //error[E0308]: mismatched types
-        //    --> pallets/account-manager/src/manager.rs:253:40
-        // 253 |                     total_round_claim: staker_power * claimable_by_all_stakers_of_executor,
-        //     |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected pallet::Config::Currency, found t3rn_primitives::EscrowTrait::Currency
+        for active_set_claimable in active_set_claimables {
+            let collateral_bond = T::Executors::collateral_bond(&active_set_claimable.executor);
+            let nominated_stake =
+                T::Executors::total_nominated_stake(&active_set_claimable.executor);
+            // calculate % ratio of rewards proportionally to Executor's own Collateral to Nominated Stake
+            let total_stake_power = collateral_bond + nominated_stake;
 
-        // for active_set_claimable in active_set_claimables {
-        //     let collateral_bond = T::Executors::collateral_bond(&active_set_claimable.executor);
-        //     let nominated_stake =
-        //         T::Executors::total_nominated_stake(&active_set_claimable.executor);
-        //     // calculate % ratio of rewards proportionally to Executor's own Collateral to Nominated Stake
-        //     let total_stake_power = collateral_bond + nominated_stake;
-        //
-        //     // todo: ensure it's in range (0,1>
-        //     let collateral_bond_power = collateral_bond / total_stake_power.clone();
-        //
-        //     claimable_artifacts.push(ClaimableArtifacts {
-        //         beneficiary: active_set_claimable.executor.clone(),
-        //         role: CircuitRole::Executor,
-        //         total_round_claim: collateral_bond_power * active_set_claimable.claimable,
-        //         benefit_source: BenefitSource::TrafficRewards,
-        //     });
-        //
-        //     // todo: ensure it's in range <0,1)
-        //     let nominated_stake_power = nominated_stake / total_stake_power;
-        //
-        //     let claimable_by_all_stakers_of_executor =
-        //         nominated_stake_power.clone() * active_set_claimable.claimable;
-        //
-        //     for nominated_stake in T::Executors::stakes_per_executor(&active_set_claimable.executor)
-        //     {
-        //         let staker_power = nominated_stake.nominated_stake / nominated_stake_power.clone();
-        //         claimable_artifacts.push(ClaimableArtifacts {
-        //             beneficiary: nominated_stake.staker,
-        //             role: CircuitRole::Staker,
-        //             total_round_claim: staker_power * claimable_by_all_stakers_of_executor,
-        //             benefit_source: BenefitSource::TrafficRewards,
-        //         });
-        //     }
-        // }
+            // todo: ensure it's in range (0,1>
+            let collateral_bond_power = collateral_bond / total_stake_power.clone();
+
+            claimable_artifacts.push(ClaimableArtifacts {
+                beneficiary: active_set_claimable.executor.clone(),
+                role: CircuitRole::Executor,
+                total_round_claim: collateral_bond_power * active_set_claimable.claimable,
+                benefit_source: BenefitSource::TrafficRewards,
+            });
+
+            // todo: ensure it's in range <0,1)
+            let nominated_stake_power = nominated_stake / total_stake_power;
+
+            let claimable_by_all_stakers_of_executor =
+                nominated_stake_power.clone() * active_set_claimable.claimable;
+
+            for nominated_stake in T::Executors::stakes_per_executor(&active_set_claimable.executor)
+            {
+                let staker_power = nominated_stake.nominated_stake / nominated_stake_power.clone();
+                claimable_artifacts.push(ClaimableArtifacts {
+                    beneficiary: nominated_stake.staker,
+                    role: CircuitRole::Staker,
+                    total_round_claim: staker_power * claimable_by_all_stakers_of_executor,
+                    benefit_source: BenefitSource::TrafficRewards,
+                });
+            }
+        }
 
         Ok(claimable_artifacts)
     }

@@ -72,19 +72,9 @@ pub mod pallet {
         /// A type that manages escrow, and therefore balances
         type Escrowed: EscrowTrait<Self>;
 
-        type Executors: Executors<
-            Self,
-            <<Self::Escrowed as EscrowTrait<Self>>::Currency as frame_support::traits::Currency<
-                Self::AccountId,
-            >>::Balance,
-        >;
+        type Executors: Executors<Self, BalanceOf<Self>>;
 
-        type CircuitClock: CircuitClock<
-            Self,
-            <<Self::Escrowed as EscrowTrait<Self>>::Currency as frame_support::traits::Currency<
-                Self::AccountId,
-            >>::Balance,
-        >;
+        type CircuitClock: CircuitClock<Self, BalanceOf<Self>>;
     }
 
     // Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
