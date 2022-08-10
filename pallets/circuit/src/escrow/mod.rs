@@ -246,7 +246,7 @@ pub mod test {
                                 "6d6f646c70616c2f636972630000000000000000000000000000000000000000"
                             )
                             .into(), // circuit account
-                            1u64, // value
+                            1u128, // value
                         )),
                         topics: vec![]
                     },
@@ -324,7 +324,7 @@ pub mod test {
                                 "6d6f646c70616c2f636972630000000000000000000000000000000000000000"
                             )
                             .into(), // circuit account
-                            1u64, // value
+                            1u128, // value
                         )),
                         topics: vec![]
                     },
@@ -352,7 +352,7 @@ pub mod test {
                                 "0101010101010101010101010101010101010101010101010101010101010101"
                             )
                             .into(), // circuit account
-                            1u64, // value
+                            1u128, // value
                         )),
                         topics: vec![]
                     },

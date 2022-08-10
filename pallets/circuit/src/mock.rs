@@ -16,6 +16,7 @@ use sp_core::{crypto::KeyTypeId, H256};
 use sp_runtime::{
     curve::PiecewiseLinear,
     impl_opaque_keys,
+    generic,
     testing::{Header, TestXt},
     traits::{BlakeTwo256, Convert, IdentityLookup, Keccak256, OpaqueKeys},
     Perbill,
@@ -71,7 +72,7 @@ frame_support::construct_runtime!(
 );
 
 parameter_types! {
-    pub const BlockHashCount: u64 = 250;
+    pub const BlockHashCount: u32 = 250;
     pub BlockWeights: frame_system::limits::BlockWeights =
         frame_system::limits::BlockWeights::simple_max(1024);
 }
@@ -85,15 +86,15 @@ impl frame_system::Config for Test {
     type BaseCallFilter = Everything;
     type BlockHashCount = BlockHashCount;
     type BlockLength = ();
-    type BlockNumber = u64;
+    type BlockNumber = u32;
     type BlockWeights = ();
     type Call = Call;
     type DbWeight = ();
     type Event = Event;
     type Hash = H256;
     type Hashing = BlakeTwo256;
-    type Header = Header;
-    type Index = u64;
+    type Header = generic::Header<u32, BlakeTwo256>;
+    type Index = u32;
     type Lookup = IdentityLookup<Self::AccountId>;
     type MaxConsumers = frame_support::traits::ConstU32<16>;
     type OnKilledAccount = ();
@@ -177,8 +178,8 @@ impl pallet_xdns::Config for Test {
 
 impl pallet_randomness_collective_flip::Config for Test {}
 
-pub type Balance = u64;
-pub type Amount = i64;
+pub type Balance = u128;
+pub type Amount = i128;
 
 impl pallet_session::Config for Test {
     type Event = Event;
@@ -198,7 +199,7 @@ impl pallet_session::historical::Config for Test {
 }
 
 parameter_types! {
-    pub const UncleGenerations: u64 = 0;
+    pub const UncleGenerations: u32 = 0;
 }
 
 impl pallet_authorship::Config for Test {
@@ -356,7 +357,7 @@ parameter_types! {
 
 impl Convert<Weight, BalanceOf<Self>> for Test {
     fn convert(w: Weight) -> BalanceOf<Self> {
-        w
+        w.into()
     }
 }
 
@@ -514,8 +515,8 @@ impl Config for Test {
     type SignalQueueDepth = ConstU32<5>;
     type WeightInfo = ();
     type Xdns = XDNS;
-    type XtxTimeoutCheckInterval = ConstU64<10>;
-    type XtxTimeoutDefault = ConstU64<100>;
+    type XtxTimeoutCheckInterval = ConstU32<50>;
+    type XtxTimeoutDefault = ConstU32<400>;
     type Portal = Portal;
 }
 
