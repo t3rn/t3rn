@@ -846,7 +846,7 @@ pub mod pallet {
             )?;
 
             log::info!(
-                "confirm side effect -- start -- xtx id {:?} + se id {:?}",
+                "confirm side effect -- setup -- xtx id {:?} + se id {:?}",
                 xtx_id,
                 side_effect.generate_id::<SystemHashing<T>>()
             );
@@ -1881,7 +1881,7 @@ impl<T: Config> Pallet<T> {
             side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
 
         let fsfx = confirm_order::<T>(side_effect, confirmation, &mut local_ctx.full_side_effects)?;
-
+        log::info!("Order confirmed!");
         // confirm the payload is included in the specified block, and return the SideEffect params as defined in XDNS.
         // this could be multiple events!
         let params = <T as Config>::Portal::confirm_and_decode_payload_params(
@@ -1891,6 +1891,7 @@ impl<T: Config> Pallet<T> {
             side_effect_id.clone(),
         )
         .map_err(|_| "SideEffect confirmation failed!")?;
+        log::info!("Params: {:?}", params);
 
         let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
             side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
@@ -1989,3 +1990,4 @@ impl<T: Config> Pallet<T> {
         processed_weight
     }
 }
+

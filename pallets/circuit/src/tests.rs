@@ -196,7 +196,7 @@ fn confirm_side_effect(
     origin: OriginFor<Test>,
     json: Value
 ) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
-    let xtx_id: XtxId<Test> = Decode::decode(&mut &*hex::decode(json["encoded_xtx_id"].as_str().unwrap()).unwrap()).unwrap();
+    let xtx_id: sp_core::H256 = Decode::decode(&mut &*hex::decode(json["encoded_xtx_id"].as_str().unwrap()).unwrap()).unwrap();
     let side_effect: SideEffect<AccountId32, BlockNumber, BalanceOf> = Decode::decode(&mut &*hex::decode(json["encoded_side_effect"].as_str().unwrap()).unwrap()).unwrap();
     let confirmed_side_effect: ConfirmedSideEffect<AccountId32, BlockNumber, BalanceOf> = Decode::decode(&mut &*hex::decode(json["encoded_confirmed"].as_str().unwrap()).unwrap()).unwrap();
 
@@ -212,6 +212,7 @@ fn confirm_side_effect(
 
 // iterates sequentially though all test files in mock-data
 fn run_mock_tests() -> Result<(), DispatchErrorWithPostInfo<PostDispatchInfo>> {
+    let cli_signer = Origin::signed([212,53,147,199,21,253,211,28,97,20,26,189,4,169,159,214,130,44,133,88,133,76,205,227,154,86,132,231,165,109,162,125].into());
     let mut paths: Vec<_> = fs::read_dir("src/mock-data/").unwrap()
                                               .map(|r| r.unwrap())
                                               .collect();
@@ -232,10 +233,11 @@ fn run_mock_tests() -> Result<(), DispatchErrorWithPostInfo<PostDispatchInfo>> {
                     }
                 },
                 "transfer" => {
-                    assert_ok!(on_extrinsic_trigger(Origin::signed([0u8; 32].into()), entry.clone()));
+                    System::set_block_number(29);
+                    assert_ok!(on_extrinsic_trigger(cli_signer.clone(), entry.clone()));
                 }
                 "confirm" => {
-                    assert_ok!(confirm_side_effect(Origin::signed([0u8; 32].into()), entry.clone()));
+                    assert_ok!(confirm_side_effect(cli_signer.clone(), entry.clone()));
                 }
                 _ => unimplemented!()
             }
@@ -247,13 +249,13 @@ fn run_mock_tests() -> Result<(), DispatchErrorWithPostInfo<PostDispatchInfo>> {
 #[test]
 fn runs_mock_tests() {
     let mut ext = TestExternalities::new_empty();
-   ExtBuilder::default()
+    ExtBuilder::default()
         .with_standard_side_effects()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
-        run_mock_tests();
-    });
+            run_mock_tests();
+        });
 }
 //
 // #[test]

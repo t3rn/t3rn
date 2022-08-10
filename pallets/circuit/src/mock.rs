@@ -623,7 +623,7 @@ impl ExtBuilder {
                 b"value".to_vec(),
                 b"insurance".to_vec(),
             ],
-            confirm_events: vec![b"Transfer(from,to,value)".to_vec()],
+            confirm_events: vec![b"Transfer(_from,to,value)".to_vec()],
             escrowed_events: vec![b"EscrowTransfer(from,to,value)".to_vec()],
             commit_events: vec![b"Transfer(executor,to,value)".to_vec()],
             revert_events: vec![b"Transfer(executor,from,value)".to_vec()],

@@ -32,11 +32,15 @@ export default class CircuitRelayer extends EventEmitter {
     const calls = sideEffects
       // four args mean the call requires an insurance deposit
       .filter(sideEffect => sideEffect.object.encodedArgs.length === 4)
-      .map(sideEffect =>
-        this.api.tx.circuit.bondInsuranceDeposit(
+      .map(sideEffect => {
+        const xtxId = this.api.createType("Hash", sideEffect.xtxId);
+        const id = this.api.createType("Hash", sideEffect.getId());
+        exportData({xtxId, id}, "post-bond-roco.json", "bond");
+        return this.api.tx.circuit.bondInsuranceDeposit(
           sideEffect.xtxId,
           sideEffect.getId()
         )
+      }
       )
 
     if (calls.length) {
@@ -54,14 +58,14 @@ export default class CircuitRelayer extends EventEmitter {
       const nonce = await fetchNonce(this.api, this.signer.address)
       // @ts-ignore
       sideEffect.confirmedSideEffect.inclusion_data = this.api.createType("InclusionData", sideEffect.confirmedSideEffect.inclusion_data).toHex();
-        // @ts-ignore
+      // @ts-ignore
       sideEffect.confirmedSideEffect.received_at = sideEffect.confirmedSideEffect.receivedAt;
       // @ts-ignore
       const confirmed: any = this.api.createType("ConfirmedSideEffect", sideEffect.confirmedSideEffect)
       const sideEffectObj: any = this.api.createType("SideEffect", sideEffect.object);
-      const xtxId: any = this.api.createType("Hash", sideEffect.xtxId);
-
-      exportData({xtxId, sideEffectObj, confirmed}, "confirm-transfer-roco.json", "confirm")
+      const xtxId: any = this.api.createType("XtxId", sideEffect.xtxId);
+      console.log(sideEffect.confirmedSideEffect)
+      exportData([{xtxId, sideEffect: sideEffectObj, confirmed}], "confirm-transfer-roco.json", "confirm")
 
       await new Promise((resolve, reject) => {
         this.api.tx.circuit
@@ -139,15 +143,22 @@ const iterateEncode = (data: any, transactionType: string) => {
     if(keys.includes("initialU8aLength")) { // this is a polkadot/apiPromise object
         return {
             data: data.toHuman(),
-            transactionType,
+            transaction_type: transactionType,
             encoded_data: data.toHex().substring(2)
         }
     } else {
         for(let i = 0; i < keys.length; i++) {
-            result['encoded_' + keys[i]] = data[keys[i]].toHex().substring(2)
-            result[keys[i]] = data[keys[i]].toHuman()
+            result['encoded_' + toSnakeCase(keys[i])] = data[keys[i]].toHex().substring(2)
+            result[toSnakeCase(keys[i])] = data[keys[i]].toHuman()
         }
-        result['transactionType'] = transactionType;
+        result['transaction_type'] = transactionType;
         return result;
     }
 }
+
+const toSnakeCase = str =>
+  str &&
+  str
+    .match(/[A-Z]{2,}(?=[A-Z][a-z]+[0-9]*|\b)|[A-Z]?[a-z]+[0-9]*|[A-Z]|[0-9]+/g)
+    .map(x => x.toLowerCase())
+    .join('_');

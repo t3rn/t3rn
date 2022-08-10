@@ -274,11 +274,10 @@ impl<T: Config> Portal<T> for Pallet<T> {
     fn get_latest_finalized_height(
         gateway_id: ChainId
     ) -> Result<Vec<u8>, DispatchError> {
-        let vendor_result = <T as Config>::Xdns::get_gateway_vendor(&gateway_id);
-
         let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
             .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
 
+        // ToDo maybe we should return hex encoded height here instead of scale
         let res = match vendor {
             GatewayVendor::Rococo =>  pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::get_latest_finalized_height(gateway_id),
             _ => unimplemented!()
