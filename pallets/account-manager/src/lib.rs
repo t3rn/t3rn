@@ -15,14 +15,12 @@ use frame_support::{
 use sp_runtime::traits::Convert;
 
 use t3rn_primitives::{
-    abi::{GatewayABIConfig, Type},
-    account_manager::{AccountManager, ExecutionRegistryItem, Outcome, Settlement},
-    circuit_clock::{BenefitSource, CircuitClock, CircuitRole, ClaimableArtifacts},
+    account_manager::{AccountManager, Outcome},
+    circuit_clock::{BenefitSource, CircuitClock, CircuitRole},
     common::RoundInfo,
     executors::Executors,
-    protocol::SideEffectProtocol,
     transfers::EscrowedBalanceOf,
-    ChainId, EscrowTrait, GatewayGenesisConfig, GatewayType, GatewayVendor,
+    EscrowTrait,
 };
 
 #[cfg(test)]
@@ -85,18 +83,10 @@ pub mod pallet {
     pub struct Pallet<T>(PhantomData<T>);
 
     #[pallet::storage]
-    #[pallet::getter(fn execution_registry)]
-    pub type ContractsExecutionRegistry<T: Config> = StorageMap<
-        _,
-        Blake2_128,
-        ExecutionId,
-        ExecutionRegistryItem<T::AccountId, <T::Currency as Currency<T::AccountId>>::Balance>,
-    >;
-
-    #[pallet::storage]
     pub type ContractsRegistryExecutionNonce<T: Config> = StorageValue<_, ExecutionId, ValueQuery>;
 
     #[pallet::storage]
+    #[pallet::getter(fn pending_charges_per_round)]
     pub type PendingChargesPerRound<T: Config> = StorageDoubleMap<
         _,
         Blake2_128,
