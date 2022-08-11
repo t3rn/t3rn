@@ -1,4 +1,4 @@
-use crate::pallet as pallet_staking;
+use crate::pallet as pallet_executors;
 use frame_support::{
     parameter_types,
     traits::{GenesisBuild, OnFinalize, OnInitialize},
@@ -15,7 +15,7 @@ pub(crate) fn last_event() -> Event {
     System::events().pop().expect("event expected").event
 }
 
-pub(crate) fn last_n_events(n: usize) -> Vec<pallet_staking::Event<Test>> {
+pub(crate) fn last_n_events(n: usize) -> Vec<pallet_executors::Event<Test>> {
     let events = System::events();
     let len = events.len();
     if len > 0 {
@@ -23,7 +23,7 @@ pub(crate) fn last_n_events(n: usize) -> Vec<pallet_staking::Event<Test>> {
             .into_iter()
             .map(|r| r.event.clone())
             .filter_map(|e| {
-                if let Event::Staking(inner) = e {
+                if let Event::Executors(inner) = e {
                     Some(inner)
                 } else {
                     None
@@ -68,7 +68,7 @@ frame_support::construct_runtime!(
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Config<T>, Storage, Event<T>},
         Treasury: pallet_treasury::{Pallet, Call,Config<T>, Storage, Event<T>},
-        Staking: pallet_staking::{Pallet, Call, Config<T>, Storage, Event<T>},
+        Executors: pallet_executors::{Pallet, Call, Config<T>, Storage, Event<T>},
     }
 );
 
@@ -149,7 +149,7 @@ impl pallet_treasury::Config for Test {
     type WeightInfo = ();
 }
 
-impl pallet_staking::Config for Test {
+impl pallet_executors::Config for Test {
     type Currency = Balances;
     type Event = Event;
     type Treasury = Treasury;
@@ -158,14 +158,14 @@ impl pallet_staking::Config for Test {
 
 pub(crate) fn fast_forward_to(n: u64) {
     while System::block_number() < n {
-        Staking::on_finalize(System::block_number());
+        Executors::on_finalize(System::block_number());
         Treasury::on_finalize(System::block_number());
         Balances::on_finalize(System::block_number());
         System::on_finalize(System::block_number());
         System::set_block_number(System::block_number() + 1);
         System::on_initialize(System::block_number());
         Balances::on_initialize(System::block_number());
-        Staking::on_initialize(System::block_number());
+        Executors::on_initialize(System::block_number());
         Treasury::on_initialize(System::block_number());
     }
 }
@@ -176,7 +176,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         .build_storage::<Test>()
         .expect("mock pallet-staking genesis storage");
 
-    pallet_staking::GenesisConfig::<Test>::default()
+    pallet_executors::GenesisConfig::<Test>::default()
         .assimilate_storage(&mut storage)
         .expect("mock pallet-staking genesis storage assimilation");
 

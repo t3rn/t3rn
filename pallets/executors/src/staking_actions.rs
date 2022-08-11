@@ -9,7 +9,7 @@ use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, traits::Reserv
 use sp_runtime::traits::Saturating;
 use sp_std::{vec, vec::Vec};
 use t3rn_primitives::{
-    staking::{ScheduledStakingRequest, StakingAction},
+    executors::{ScheduledStakingRequest, StakingAction},
     treasury::Treasury,
 };
 
@@ -509,7 +509,7 @@ mod tests {
     use crate::mock::Test;
     use t3rn_primitives::{
         common::OrderedSet,
-        staking::{Bond, StakerStatus},
+        executors::{Bond, StakerStatus},
     };
 
     #[test]

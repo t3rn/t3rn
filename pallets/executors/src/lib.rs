@@ -39,12 +39,12 @@ pub mod pallet {
     use sp_std::collections::btree_map::BTreeMap;
     use t3rn_primitives::{
         common::{OrderedSet, Range, RoundIndex},
-        monetary::DECIMALS,
-        staking::{
+        executors::{
             Bond, CancelledScheduledStakingRequest, ExecutorInfo, ExecutorSnapshot,
             Fixtures as StakingFixtures, ScheduledConfigurationRequest, ScheduledStakingRequest,
             StakeAdjust, StakerAdded, StakingAction, EXECUTOR_LOCK_ID, STAKER_LOCK_ID,
         },
+        monetary::DECIMALS,
         treasury::Treasury as TTreasury,
     };
 
@@ -61,7 +61,71 @@ pub mod pallet {
             + ReservableCurrency<Self::AccountId>
             + LockableCurrency<Self::AccountId>;
 
-        /// Treasury round provider.
+        // WIP
+        // // /// Range for the target executor active set size.
+        // // /// The ideal is applied during genesis as default.
+        // // #[pallet::constant]
+        // // type ActiveSetSize: Get<Range<u32>>;
+
+        // // /// Protocol enforced maximum executor commission.
+        // // #[pallet::constant]
+        // // type MaxCommission: Get<Percent>;
+
+        // // /// Protocol enforced maximum executor risk reward ratio.
+        // // #[pallet::constant]
+        // // type MaxRisk: Get<Percent>;
+
+        // /// Minimum stake required for any candidate to be considered for the active set.
+        // #[pallet::constant]
+        // type MinExecutorBond: Get<BalanceOf<Self>>;
+
+        // /// Minimum stake required for any candidate to be considered as candidate.
+        // #[pallet::constant]
+        // type MinCandidateBond: Get<BalanceOf<Self>>;
+
+        // /// Minimum stake for any registered on-chain account to stake.
+        // /// Requirement is checked on every staking action after the first.
+        // #[pallet::constant]
+        // type MinAtomicStake: Get<BalanceOf<Self>>;
+
+        // /// Minimum stake for any registered on-chain account to be a staker.
+        // /// Requirement checked at first staking action.
+        // #[pallet::constant]
+        // type MinTotalStake: Get<BalanceOf<Self>>;
+
+        // /// Maximum top stakes per candidate.
+        // #[pallet::constant]
+        // type MaxTopStakesPerCandidate: Get<u32>;
+
+        // /// Maximum bottom stakes per candidate.
+        // #[pallet::constant]
+        // type MaxBottomStakesPerCandidate: Get<u32>;
+
+        // /// Maximum stakings per staker.
+        // #[pallet::constant]
+        // type MaxStakesPerStaker: Get<u32>;
+
+        // /// Delay applied when changing an executor's configuration.
+        // #[pallet::constant]
+        // type ConfigureExecutorDelay: Get<u32>;
+
+        // /// Leave candidates delay.
+        // #[pallet::constant]
+        // type LeaveCandidatesDelay: Get<u32>;
+
+        // /// Leave stakers delay.
+        // #[pallet::constant]
+        // type LeaveStakersDelay: Get<u32>;
+
+        // /// Candidate lower self bond delay.
+        // #[pallet::constant]
+        // type CandidateBondLessDelay: Get<u32>;
+
+        // /// Revoke stake delay.
+        // #[pallet::constant]
+        // type RevokeStakeDelay: Get<u32>;
+
+        /// Treasury round proveider.
         type Treasury: TTreasury<Self>;
 
         type WeightInfo: weights::WeightInfo;

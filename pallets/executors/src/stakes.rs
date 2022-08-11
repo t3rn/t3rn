@@ -6,7 +6,7 @@ use sp_runtime::{
     RuntimeDebug,
 };
 use sp_std::prelude::*;
-use t3rn_primitives::staking::{Bond, CapacityStatus};
+use t3rn_primitives::executors::{Bond, CapacityStatus};
 
 #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq)]
 /// Type for top and bottom stake storage item

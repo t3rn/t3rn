@@ -12,6 +12,47 @@ use sp_std::{
 pub const EXECUTOR_LOCK_ID: LockIdentifier = *b"execstkl";
 pub const STAKER_LOCK_ID: LockIdentifier = *b"stkrstkl";
 
+#[derive(Encode, Decode, RuntimeDebug, TypeInfo)]
+pub struct NominatedStake<Account, Balance> {
+    executor: Account,
+    pub staker: Account,
+    pub nominated_stake: Balance,
+}
+
+pub trait Executors<T: frame_system::Config, Balance> {
+    fn active_set() -> Vec<T::AccountId>;
+    fn collateral_bond(executor: &T::AccountId) -> Balance;
+    fn total_nominated_stake(executor: &T::AccountId) -> Balance;
+    fn stakes(staker: &T::AccountId) -> Vec<NominatedStake<T::AccountId, Balance>>;
+    fn stakes_per_executor(executor: &T::AccountId) -> Vec<NominatedStake<T::AccountId, Balance>>;
+    fn recalculate_executors_stakes();
+}
+
+pub struct ExecutorsMock<T> {
+    _phantom: PhantomData<T>,
+}
+
+impl<T: frame_system::Config, Balance: Zero> Executors<T, Balance> for ExecutorsMock<T> {
+    fn active_set() -> Vec<T::AccountId> {
+        vec![]
+    }
+    fn collateral_bond(_executor: &T::AccountId) -> Balance {
+        Zero::zero()
+    }
+
+    fn total_nominated_stake(_executor: &T::AccountId) -> Balance {
+        Zero::zero()
+    }
+
+    fn stakes(_staker: &T::AccountId) -> Vec<NominatedStake<T::AccountId, Balance>> {
+        vec![]
+    }
+    fn stakes_per_executor(_staker: &T::AccountId) -> Vec<NominatedStake<T::AccountId, Balance>> {
+        vec![]
+    }
+    fn recalculate_executors_stakes() {}
+}
+
 /// Staker's bond adjustment - used with locks.
 #[derive(Clone, Copy, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum StakeAdjust<Balance> {
