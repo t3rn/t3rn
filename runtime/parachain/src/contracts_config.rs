@@ -145,6 +145,7 @@ parameter_types! {
     ].into_iter().collect());
 }
 
+// TODO[https://github.com/t3rn/3vm/issues/102]: configure this appropriately
 impl pallet_3vm_evm::Config for Runtime {
     type AddressMapping = StoredHashAddressMapping<Self>;
     type BlockGasLimit = BlockGasLimit;

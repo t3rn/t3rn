@@ -94,65 +94,6 @@ impl pallet_3vm_contracts::Config for Runtime {
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
 }
 
-// impl pallet_evm::Config for Runtime {
-//     type FeeCalculator = FixedGasPrice;
-//     type GasWeightMapping = MoonbeamGasWeightMapping;
-//     type AddressMapping = moonbeam_runtime_common::IntoAddressMapping;
-//     type PrecompilesType = MoonbeamPrecompiles<Self>;
-//     type PrecompilesValue = PrecompilesValue;
-//     type ChainId = EthereumChainId;
-//     type FindAuthor = FindAuthorAdapter<AuthorInherent>;
-//     type WeightInfo = pallet_evm::weights::SubstrateWeight<Self>;
-// }
-
-// impl module_evm::Config for Runtime {
-//     type Currency = Balances;
-//     type TransferAll = Currencies;
-//     type NewContractExtraBytes = NewContractExtraBytes;
-//     type StorageDepositPerByte = StorageDepositPerByte;
-//     type TxFeePerGas = TxFeePerGas;
-//     type Event = Event;
-//     type PrecompilesType = AllPrecompiles<Self>;
-//     type PrecompilesValue = PrecompilesValue;
-//     type GasToWeight = GasToWeight;
-//     type ChargeTransactionPayment = module_transaction_payment::ChargeTransactionPayment<Runtime>;
-//     type NetworkContractOrigin = EnsureRootOrTwoThirdsTechnicalCommittee;
-//     type NetworkContractSource = NetworkContractSource;
-//     type DeveloperDeposit = DeveloperDeposit;
-//     type PublicationFee = PublicationFee;
-//     type TreasuryAccount = AcalaTreasuryAccount;
-//     type FreePublicationOrigin = EnsureRootOrHalfGeneralCouncil;
-//     type Runner = module_evm::runner::stack::Runner<Self>;
-//     type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
-//     type Task = ScheduledTasks;
-//     type IdleScheduler = IdleScheduler;
-//     type WeightInfo = weights::module_evm::WeightInfo<Runtime>;
-// }
-
-// parameter_types! {
-// 	pub const ChainId: u64 = 42;
-// 	pub BlockGasLimit: U256 = U256::from(u32::max_value());
-// 	pub PrecompilesValue: FrontierPrecompiles<Runtime> = FrontierPrecompiles::<_>::new();
-// }
-//
-// impl pallet_evm::Config for Runtime {
-//     type FeeCalculator = BaseFee;
-//     type GasWeightMapping = ();
-//     type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Self>;
-//     type CallOrigin = EnsureAddressTruncated;
-//     type WithdrawOrigin = EnsureAddressTruncated;
-//     type AddressMapping = HashedAddressMapping<BlakeTwo256>;
-//     type Currency = Balances;
-//     type Event = Event;
-//     type Runner = pallet_evm::runner::stack::Runner<Self>;
-//     type PrecompilesType = FrontierPrecompiles<Self>;
-//     type PrecompilesValue = PrecompilesValue;
-//     type ChainId = ChainId;
-//     type BlockGasLimit = BlockGasLimit;
-//     type OnChargeTransaction = ();
-//     type FindAuthor = FindAuthorTruncated<Aura>;
-// }
-
 pub struct FindAuthorTruncated<F>(sp_std::marker::PhantomData<F>);
 impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
     fn find_author<'a, I>(digests: I) -> Option<H160>
@@ -202,6 +143,7 @@ parameter_types! {
     ].into_iter().collect());
 }
 
+// TODO[https://github.com/t3rn/3vm/issues/102]: configure this appropriately
 impl pallet_3vm_evm::Config for Runtime {
     type AddressMapping = StoredHashAddressMapping<Self>;
     type BlockGasLimit = BlockGasLimit;
