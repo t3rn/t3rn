@@ -36,6 +36,7 @@ impl<T: frame_system::Config, Balance: Zero> Executors<T, Balance> for Executors
     fn active_set() -> Vec<T::AccountId> {
         vec![]
     }
+
     fn collateral_bond(_executor: &T::AccountId) -> Balance {
         Zero::zero()
     }
@@ -47,9 +48,11 @@ impl<T: frame_system::Config, Balance: Zero> Executors<T, Balance> for Executors
     fn stakes(_staker: &T::AccountId) -> Vec<NominatedStake<T::AccountId, Balance>> {
         vec![]
     }
+
     fn stakes_per_executor(_staker: &T::AccountId) -> Vec<NominatedStake<T::AccountId, Balance>> {
         vec![]
     }
+
     fn recalculate_executors_stakes() {}
 }
 
