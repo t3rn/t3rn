@@ -97,6 +97,7 @@ pub mod pallet {
     >;
 
     #[pallet::storage]
+    #[pallet::getter(fn settlements_per_round)]
     pub type SettlementsPerRound<T: Config> = StorageDoubleMap<
         _,
         Blake2_128,
@@ -201,6 +202,7 @@ pub mod pallet {
         ExecutionNotRegistered,
         ExecutionAlreadyRegistered,
         ChargeAlreadyRegistered,
+        ChargeOrSettlementCalculationOverflow,
         DecodingExecutionIDFailed,
     }
 
