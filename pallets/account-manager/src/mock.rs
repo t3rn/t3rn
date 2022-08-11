@@ -1,12 +1,18 @@
 use crate::{self as pallet_account_manager, Config};
-use frame_support::{parameter_types, traits::Everything};
+use frame_support::{
+    parameter_types,
+    traits::{ConstU64, Everything},
+};
 use sp_core::H256;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
+    Perbill,
 };
 
 pub type AccountId = u64;
+pub type BlockNumber = u64;
+pub type Hash = H256;
 pub type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 pub type Block = frame_system::mocking::MockBlock<Test>;
 
@@ -51,7 +57,7 @@ impl frame_system::Config for Test {
     type BaseCallFilter = Everything;
     type BlockHashCount = BlockHashCount;
     type BlockLength = ();
-    type BlockNumber = u64;
+    type BlockNumber = BlockNumber;
     type BlockWeights = ();
     type Call = Call;
     type DbWeight = ();
@@ -98,7 +104,13 @@ parameter_types! {
     pub EscrowAccount: u64 = 50;
 }
 
+impl t3rn_primitives::EscrowTrait<Test> for Test {
+    type Currency = Balances;
+    type Time = Timestamp;
+}
+
 impl Config for Test {
+    type Clock = t3rn_primitives::clock::ClockMock<Self>;
     type Currency = Balances;
     type EscrowAccount = EscrowAccount;
     type Event = Event;

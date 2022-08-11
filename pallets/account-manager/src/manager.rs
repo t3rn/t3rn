@@ -1,102 +1,172 @@
 use crate::{
-    AccountManager as AccountManagerExt, BalanceOf, Config, Error, Event, ExecutionNonce,
-    ExecutionRegistry, ExecutionRegistryItem, Pallet, Reason,
+    AccountManager as AccountManagerExt, BalanceOf, Config, ContractsRegistryExecutionNonce, Error,
+    Outcome, Pallet, PendingChargesPerRound, SettlementsPerRound,
 };
+use codec::{Decode, Encode};
 use frame_support::{
     dispatch::DispatchResult,
-    traits::{Currency, ExistenceRequirement, Get, ReservableCurrency},
+    traits::{Currency, Get, ReservableCurrency},
 };
-use sp_runtime::{traits::Zero, Percent};
-use sp_std::borrow::ToOwned;
-use t3rn_primitives::account_manager::ExecutionId;
+use sp_runtime::{traits::Zero, DispatchError};
 
-impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
-    fn deposit(
-        payee: &T::AccountId,
-        recipient: &T::AccountId,
-        amount: BalanceOf<T>,
-    ) -> DispatchResult {
-        let execution_id = ExecutionNonce::<T>::get();
-        ExecutionNonce::<T>::mutate(|nonce| *nonce += 1);
+use sp_runtime::traits::{CheckedDiv, CheckedMul};
 
-        T::Currency::transfer(
-            payee,
-            &T::EscrowAccount::get(),
-            amount,
-            ExistenceRequirement::KeepAlive,
-        )?;
-        T::Currency::reserve(&T::EscrowAccount::get(), amount)?;
+use t3rn_primitives::{
+    account_manager::{RequestCharge, Settlement},
+    claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
+    clock::Clock,
+    common::RoundInfo,
+    executors::Executors,
+};
 
-        if ExecutionRegistry::<T>::contains_key(execution_id) {
-            return Err(Error::<T>::ExecutionAlreadyRegistered.into())
+use pallet_xbi_portal::sabi::Sabi;
+
+pub struct ActiveSetClaimablePerRound<Account, Balance> {
+    pub executor: Account,
+    pub claimable: Balance,
+}
+
+fn percent_ratio<T: Config>(amt: BalanceOf<T>, percent: u8) -> Result<BalanceOf<T>, DispatchError> {
+    amt.checked_mul(&BalanceOf::<T>::from(percent))
+        .ok_or::<DispatchError>(Error::<T>::ChargeOrSettlementCalculationOverflow.into())?
+        .checked_div(&BalanceOf::<T>::from(100u8))
+        .ok_or::<DispatchError>(Error::<T>::ChargeOrSettlementCalculationOverflow.into())
+}
+
+impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockNumber>
+    for Pallet<T>
+{
+    fn get_charge_or_fail(
+        charge_id: T::Hash,
+    ) -> Result<RequestCharge<T::AccountId, BalanceOf<T>>, DispatchError> {
+        return if let Some(pending_charge) =
+            PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id)
+        {
+            Ok(pending_charge)
+        } else {
+            Err(Error::<T>::ChargeAlreadyRegistered.into())
         }
-
-        ExecutionRegistry::<T>::insert(
-            execution_id,
-            ExecutionRegistryItem::new(payee.clone(), recipient.clone(), amount),
-        );
-
-        Self::deposit_event(Event::DepositReceived {
-            execution_id,
-            payee: payee.clone(),
-            recipient: recipient.clone(),
-            amount,
-        });
-
-        Ok(())
     }
 
-    fn finalize(execution_id: ExecutionId, reason: Option<Reason>) -> DispatchResult {
-        let item = Pallet::<T>::execution_registry(execution_id)
-            .ok_or(Error::<T>::ExecutionNotRegistered)?;
-        Self::split(item, reason)?;
-        ExecutionRegistry::<T>::remove(execution_id);
-
-        Self::deposit_event(Event::ExecutionFinalized { execution_id });
-        Ok(())
+    fn no_charge_or_fail(charge_id: T::Hash) -> Result<(), DispatchError> {
+        return if let Some(_pending_charge) =
+            PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id)
+        {
+            Err(Error::<T>::ChargeAlreadyRegistered.into())
+        } else {
+            Ok(())
+        }
     }
 
-    fn issue(recipient: &T::AccountId, amount: BalanceOf<T>) -> DispatchResult {
-        let (slashed, actionable_unslashed) =
-            T::Currency::slash_reserved(&T::EscrowAccount::get(), amount);
-        assert!(
-            actionable_unslashed == Zero::zero(),
-            "The account manager didn't have enough funds to issue the requested amount"
-        );
-        T::Currency::resolve_creating(recipient, slashed);
+    fn bump_contracts_registry_nonce() -> Result<T::Hash, DispatchError> {
+        let execution_id = ContractsRegistryExecutionNonce::<T>::get();
+        ContractsRegistryExecutionNonce::<T>::mutate(|nonce| *nonce += 1);
 
-        Self::deposit_event(Event::Issued {
-            recipient: recipient.to_owned(),
-            amount,
-        });
+        let charge_id = Decode::decode(&mut &Sabi::value_64_2_value_256(execution_id).encode()[..])
+            .map_err(|_e| Error::<T>::DecodingExecutionIDFailed)?;
 
-        Ok(())
+        Self::no_charge_or_fail(charge_id)?;
+        Ok(charge_id)
     }
 
-    fn split(
-        item: ExecutionRegistryItem<T::AccountId, BalanceOf<T>>,
-        reason: Option<Reason>,
+    /// If Called by 3VM as a execution deposit, expect:
+    ///     - charge = gas_fees
+    ///     - reward = 0
+    /// If Called by Circuit as charge deposit, expect:
+    ///     - charge = std SFX execution + delivery charge
+    ///     - reward = Open Market based offered by requester
+    fn deposit(
+        charge_id: T::Hash,
+        payee: &T::AccountId,
+        charge_fee: BalanceOf<T>,
+        offered_reward: BalanceOf<T>,
+        source: BenefitSource,
+        role: CircuitRole,
+        maybe_recipient: Option<T::AccountId>,
     ) -> DispatchResult {
+        Self::no_charge_or_fail(charge_id).map_err(|_e| Error::<T>::ExecutionAlreadyRegistered)?;
+
+        T::Currency::reserve(payee, charge_fee + offered_reward)?;
+
+        let recipient = if let Some(recipient) = maybe_recipient {
+            recipient.clone()
+        } else {
+            // todo: Inspect if that's a good idea
+            T::EscrowAccount::get()
+        };
+
+        PendingChargesPerRound::<T>::insert(
+            T::Clock::current_round(),
+            charge_id,
+            RequestCharge {
+                payee: payee.clone(),
+                offered_reward,
+                charge_fee,
+                recipient,
+                source,
+                role,
+            },
+        );
+
+        Ok(())
+    }
+
+    fn finalize(
+        charge_id: T::Hash,
+        outcome: Outcome,
+        maybe_recipient: Option<T::AccountId>,
+        maybe_actual_fees: Option<BalanceOf<T>>,
+    ) -> DispatchResult {
+        let charge = Self::get_charge_or_fail(charge_id)?;
+
+        // Decide on charges split
         // Simple rules for splitting, for now, we take 1% to keep the account manager alive
-        let (payee_split, recipient_split): (u8, u8) = match reason {
-            None => (0, 99),
-            Some(Reason::ContractReverted) => (89, 10),
-            Some(Reason::UnexpectedFailure) => (49, 49),
+        let (payee_split, recipient_split, recipient_bonus): (u8, u8, BalanceOf<T>) = match outcome
+        {
+            Outcome::Commit => (0, 99, charge.offered_reward),
+            Outcome::Revert => (89, 10, Zero::zero()),
+            Outcome::UnexpectedFailure => (49, 50, Zero::zero()),
         };
 
-        let pay_split = |split: u8, recipient: &T::AccountId| -> DispatchResult {
-            if !split.is_zero() {
-                let percent = Percent::from_percent(split);
-                let amt = percent * *item.balance();
-                Self::issue(recipient, amt)
-            } else {
-                Ok(())
-            }
+        let payee_refund: BalanceOf<T> = if let Some(actual_fees) = maybe_actual_fees {
+            percent_ratio::<T>(charge.charge_fee - actual_fees, payee_split)?
+        } else {
+            percent_ratio::<T>(charge.charge_fee, payee_split)?
         };
 
-        // TODO: these need to be joined or handle failure, maybe on_initialize retry a queue of failures after reserving
-        pay_split(payee_split, item.payee())?;
-        pay_split(recipient_split, item.recipient())?;
+        T::Currency::slash_reserved(&charge.payee, charge.charge_fee + charge.offered_reward);
+        T::Currency::deposit_creating(&charge.payee, payee_refund.clone());
+
+        // Check if recipient has been updated
+        let recipient = if let Some(recipient) = maybe_recipient {
+            recipient
+        } else {
+            charge.recipient
+        };
+
+        let recipient_fee_rewards = percent_ratio::<T>(charge.charge_fee, recipient_split)?;
+
+        // Create Settlement for the future async claim
+        SettlementsPerRound::<T>::insert(
+            T::Clock::current_round(),
+            charge_id,
+            Settlement::<T::AccountId, BalanceOf<T>> {
+                requester: charge.payee,
+                recipient,
+                settlement_amount: recipient_fee_rewards + recipient_bonus,
+                outcome,
+                source: charge.source,
+                role: charge.role,
+            },
+        );
+
+        PendingChargesPerRound::<T>::remove(T::Clock::current_round(), charge_id);
+
+        // Take what's left - 1% to keep the account manager alive
+        T::Currency::deposit_creating(
+            &T::EscrowAccount::get(),
+            charge.charge_fee - recipient_fee_rewards - payee_refund,
+        );
 
         Ok(())
     }
@@ -105,32 +175,44 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{mock::*, Error};
+    use crate::mock::*;
     use frame_support::{assert_err, assert_ok};
 
+    use sp_core::H256;
+    use t3rn_primitives::common::RoundInfo;
+
     const DEFAULT_BALANCE: u64 = 1_000_000;
-    const EXECUTION_ID: u64 = 0;
 
     #[test]
     fn test_deposit_works() {
         ExtBuilder::default().build().execute_with(|| {
+            let execution_id: H256 = H256::repeat_byte(0);
             let _ = Balances::deposit_creating(&ALICE, DEFAULT_BALANCE);
-            <AccountManager as AccountManagerExt<AccountId, BalanceOf<Test>>>::deposit(
+            assert_ok!(<AccountManager as AccountManagerExt<
+                AccountId,
+                BalanceOf<Test>,
+                Hash,
+                BlockNumber,
+            >>::deposit(
+                execution_id,
                 &ALICE,
-                &BOB,
                 DEFAULT_BALANCE / 10,
+                0,
+                BenefitSource::TrafficRewards,
+                CircuitRole::ContractAuthor,
+                Some(BOB),
+            ));
+
+            assert_eq!(Balances::reserved_balance(&ALICE), DEFAULT_BALANCE / 10);
+
+            let charge_item = AccountManager::pending_charges_per_round::<RoundInfo<u64>, H256>(
+                Default::default(),
+                execution_id,
             )
             .unwrap();
-
-            assert_eq!(
-                Balances::reserved_balance(&<Test as Config>::EscrowAccount::get()),
-                DEFAULT_BALANCE / 10
-            );
-
-            let registry_item = AccountManager::execution_registry(EXECUTION_ID).unwrap();
-            assert_eq!(*registry_item.payee(), ALICE);
-            assert_eq!(*registry_item.recipient(), BOB);
-            assert_eq!(*registry_item.balance(), DEFAULT_BALANCE / 10);
+            assert_eq!(charge_item.payee, ALICE);
+            assert_eq!(charge_item.recipient, BOB);
+            assert_eq!(charge_item.charge_fee, DEFAULT_BALANCE / 10);
         });
     }
 
@@ -138,55 +220,41 @@ mod tests {
     fn test_deposit_when_already_exist_fails() {
         ExtBuilder::default().build().execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, DEFAULT_BALANCE);
-            ExecutionRegistry::<Test>::insert(
-                EXECUTION_ID,
-                ExecutionRegistryItem::new(ALICE.clone(), BOB.clone(), DEFAULT_BALANCE),
-            );
+
+            let execution_id: H256 = H256::repeat_byte(0);
+            let _ = Balances::deposit_creating(&ALICE, DEFAULT_BALANCE);
+            assert_ok!(<AccountManager as AccountManagerExt<
+                AccountId,
+                BalanceOf<Test>,
+                Hash,
+                BlockNumber,
+            >>::deposit(
+                execution_id,
+                &ALICE,
+                DEFAULT_BALANCE / 10,
+                0,
+                BenefitSource::TrafficRewards,
+                CircuitRole::ContractAuthor,
+                Some(BOB),
+            ));
+
             assert_err!(
-                <AccountManager as AccountManagerExt<AccountId, BalanceOf<Test>>>::deposit(
+                <AccountManager as AccountManagerExt<
+                    AccountId,
+                    BalanceOf<Test>,
+                    Hash,
+                    BlockNumber,
+                >>::deposit(
+                    execution_id,
                     &ALICE,
-                    &BOB,
-                    DEFAULT_BALANCE / 10
+                    DEFAULT_BALANCE / 10,
+                    0,
+                    BenefitSource::TrafficRewards,
+                    CircuitRole::ContractAuthor,
+                    Some(BOB),
                 ),
                 Error::<Test>::ExecutionAlreadyRegistered
             );
-        });
-    }
-
-    #[test]
-    fn test_finalize_no_reason_works() {
-        ExtBuilder::default().build().execute_with(|| {
-            let _ = Balances::deposit_creating(&ALICE, DEFAULT_BALANCE);
-            let _ = Balances::deposit_creating(&BOB, DEFAULT_BALANCE);
-            let _ = Balances::deposit_creating(
-                &<Test as Config>::EscrowAccount::get(),
-                DEFAULT_BALANCE,
-            );
-            let tx_amt = DEFAULT_BALANCE / 10;
-
-            assert_ok!(<AccountManager as AccountManagerExt<
-                AccountId,
-                BalanceOf<Test>,
-            >>::deposit(&ALICE, &BOB, tx_amt));
-            assert_eq!(
-                Balances::reserved_balance(&<Test as Config>::EscrowAccount::get()),
-                tx_amt
-            );
-            assert_ok!(<AccountManager as AccountManagerExt<
-                AccountId,
-                BalanceOf<Test>,
-            >>::finalize(EXECUTION_ID, None));
-            let one_percent_tx_amt = DEFAULT_BALANCE / 1000;
-            assert_eq!(
-                Balances::reserved_balance(&<Test as Config>::EscrowAccount::get()),
-                one_percent_tx_amt // 1% left now
-            );
-            assert_eq!(
-                Balances::free_balance(&BOB),
-                DEFAULT_BALANCE + (tx_amt - one_percent_tx_amt)
-            );
-            assert_eq!(Balances::free_balance(&ALICE), DEFAULT_BALANCE - tx_amt);
-            assert_eq!(AccountManager::execution_registry(EXECUTION_ID), None);
         });
     }
 
@@ -199,37 +267,70 @@ mod tests {
                 &<Test as Config>::EscrowAccount::get(),
                 DEFAULT_BALANCE,
             );
-            let tx_amt = DEFAULT_BALANCE / 10;
+            let charge_amt = 100;
+            let execution_id: H256 = H256::repeat_byte(0);
 
             assert_ok!(<AccountManager as AccountManagerExt<
                 AccountId,
                 BalanceOf<Test>,
-            >>::deposit(&ALICE, &BOB, tx_amt));
-            assert_eq!(
-                Balances::reserved_balance(&<Test as Config>::EscrowAccount::get()),
-                tx_amt
-            );
+                Hash,
+                BlockNumber,
+            >>::deposit(
+                execution_id,
+                &ALICE,
+                charge_amt,
+                0,
+                BenefitSource::TrafficRewards,
+                CircuitRole::ContractAuthor,
+                Some(BOB),
+            ));
+
+            assert_eq!(Balances::reserved_balance(&ALICE), charge_amt);
+
             assert_ok!(<AccountManager as AccountManagerExt<
                 AccountId,
                 BalanceOf<Test>,
+                Hash,
+                BlockNumber,
             >>::finalize(
-                EXECUTION_ID, Some(Reason::ContractReverted)
+                execution_id, Outcome::Revert, None, None,
             ));
+
+            let one_percent_charge_amt = charge_amt / 100;
+            let ten_percent_charge_amt = charge_amt / 10;
+
             assert_eq!(
                 Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
-                DEFAULT_BALANCE
+                one_percent_charge_amt + DEFAULT_BALANCE // 1% left now
             );
-            assert_eq!(Balances::free_balance(&BOB), DEFAULT_BALANCE + 10_000); // 10% of the original balance
+
             assert_eq!(
                 Balances::free_balance(&ALICE),
-                (DEFAULT_BALANCE - tx_amt) + 89_000
-            ); // (DEFAULT - tx_amt) + 89% of tx_amt
-            assert_eq!(AccountManager::execution_registry(EXECUTION_ID), None);
+                DEFAULT_BALANCE - ten_percent_charge_amt - one_percent_charge_amt
+            );
+
+            assert_eq!(
+                AccountManager::pending_charges_per_round::<RoundInfo<u64>, H256>(
+                    Default::default(),
+                    execution_id,
+                ),
+                None
+            );
+
+            let settlement = AccountManager::settlements_per_round::<RoundInfo<u64>, H256>(
+                Default::default(),
+                execution_id,
+            )
+            .unwrap();
+
+            assert_eq!(settlement.requester, ALICE);
+            assert_eq!(settlement.recipient, BOB);
+            assert_eq!(settlement.settlement_amount, ten_percent_charge_amt);
         });
     }
 
     #[test]
-    fn test_finalize_unexpected_works() {
+    fn test_finalize_commit_works() {
         ExtBuilder::default().build().execute_with(|| {
             let _ = Balances::deposit_creating(&ALICE, DEFAULT_BALANCE);
             let _ = Balances::deposit_creating(&BOB, DEFAULT_BALANCE);
@@ -237,32 +338,133 @@ mod tests {
                 &<Test as Config>::EscrowAccount::get(),
                 DEFAULT_BALANCE,
             );
-            let tx_amt = DEFAULT_BALANCE / 10;
+            let charge_amt = 100;
+            let execution_id: H256 = H256::repeat_byte(0);
 
             assert_ok!(<AccountManager as AccountManagerExt<
                 AccountId,
                 BalanceOf<Test>,
-            >>::deposit(&ALICE, &BOB, tx_amt));
-            assert_eq!(
-                Balances::reserved_balance(&<Test as Config>::EscrowAccount::get()),
-                tx_amt
-            );
+                Hash,
+                BlockNumber,
+            >>::deposit(
+                execution_id,
+                &ALICE,
+                charge_amt,
+                0,
+                BenefitSource::TrafficRewards,
+                CircuitRole::ContractAuthor,
+                Some(BOB),
+            ));
+
+            assert_eq!(Balances::reserved_balance(&ALICE), charge_amt);
+
             assert_ok!(<AccountManager as AccountManagerExt<
                 AccountId,
                 BalanceOf<Test>,
+                Hash,
+                BlockNumber,
             >>::finalize(
-                EXECUTION_ID, Some(Reason::UnexpectedFailure)
+                execution_id, Outcome::Commit, None, None,
             ));
+
+            let one_percent_charge_amt = charge_amt / 100;
             assert_eq!(
                 Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
-                DEFAULT_BALANCE
+                one_percent_charge_amt + DEFAULT_BALANCE // 1% left now
             );
-            assert_eq!(Balances::free_balance(&BOB), DEFAULT_BALANCE + 49_000); // 49% of the original balance
+            assert_eq!(Balances::free_balance(&ALICE), DEFAULT_BALANCE - charge_amt);
+
+            assert_eq!(
+                AccountManager::pending_charges_per_round::<RoundInfo<u64>, H256>(
+                    Default::default(),
+                    execution_id,
+                ),
+                None
+            );
+
+            let settlement = AccountManager::settlements_per_round::<RoundInfo<u64>, H256>(
+                Default::default(),
+                execution_id,
+            )
+            .unwrap();
+
+            assert_eq!(settlement.requester, ALICE);
+            assert_eq!(settlement.recipient, BOB);
+            assert_eq!(
+                settlement.settlement_amount,
+                charge_amt - one_percent_charge_amt
+            );
+        });
+    }
+
+    #[test]
+    fn test_finalize_unexpected_failure_works() {
+        ExtBuilder::default().build().execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, DEFAULT_BALANCE);
+            let _ = Balances::deposit_creating(&BOB, DEFAULT_BALANCE);
+            let _ = Balances::deposit_creating(
+                &<Test as Config>::EscrowAccount::get(),
+                DEFAULT_BALANCE,
+            );
+            let charge_amt = 100;
+            let execution_id: H256 = H256::repeat_byte(0);
+
+            assert_ok!(<AccountManager as AccountManagerExt<
+                AccountId,
+                BalanceOf<Test>,
+                Hash,
+                BlockNumber,
+            >>::deposit(
+                execution_id,
+                &ALICE,
+                charge_amt,
+                0,
+                BenefitSource::TrafficRewards,
+                CircuitRole::ContractAuthor,
+                Some(BOB),
+            ));
+
+            assert_eq!(Balances::reserved_balance(&ALICE), charge_amt);
+
+            assert_ok!(<AccountManager as AccountManagerExt<
+                AccountId,
+                BalanceOf<Test>,
+                Hash,
+                BlockNumber,
+            >>::finalize(
+                execution_id, Outcome::UnexpectedFailure, None, None,
+            ));
+
+            let one_percent_charge_amt = charge_amt / 100;
+            let fifty_percent_charge_amt = charge_amt / 100 * 50;
+
+            assert_eq!(
+                Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
+                one_percent_charge_amt + DEFAULT_BALANCE // 1% left now
+            );
+
             assert_eq!(
                 Balances::free_balance(&ALICE),
-                (DEFAULT_BALANCE - tx_amt) + 49_000
-            ); // (DEFAULT - tx_amt) + 49% of tx_amt
-            assert_eq!(AccountManager::execution_registry(EXECUTION_ID), None);
+                DEFAULT_BALANCE - fifty_percent_charge_amt - one_percent_charge_amt
+            );
+
+            assert_eq!(
+                AccountManager::pending_charges_per_round::<RoundInfo<u64>, H256>(
+                    Default::default(),
+                    execution_id,
+                ),
+                None
+            );
+
+            let settlement = AccountManager::settlements_per_round::<RoundInfo<u64>, H256>(
+                Default::default(),
+                execution_id,
+            )
+            .unwrap();
+
+            assert_eq!(settlement.requester, ALICE);
+            assert_eq!(settlement.recipient, BOB);
+            assert_eq!(settlement.settlement_amount, fifty_percent_charge_amt);
         });
     }
 }

@@ -49,6 +49,8 @@ pub mod account_manager;
 pub mod bridges;
 pub mod circuit;
 pub mod circuit_portal;
+pub mod claimable;
+pub mod clock;
 pub mod common;
 pub mod contract_metadata;
 pub mod contracts_registry;

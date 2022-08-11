@@ -13,13 +13,13 @@ use frame_support::{
     traits::{Currency, Get},
 };
 use sp_runtime::traits::Convert;
-pub use t3rn_primitives::{
-    abi::{GatewayABIConfig, Type},
-    protocol::SideEffectProtocol,
-    ChainId, GatewayGenesisConfig, GatewayType, GatewayVendor,
-};
+
 use t3rn_primitives::{
-    account_manager::{AccountManager, ExecutionRegistryItem, Reason},
+    account_manager::{AccountManager, Outcome},
+    claimable::{BenefitSource, CircuitRole},
+    clock::Clock,
+    common::RoundInfo,
+    executors::Executors,
     transfers::EscrowedBalanceOf,
     EscrowTrait,
 };
@@ -50,7 +50,7 @@ pub mod pallet {
         traits::{Currency, ReservableCurrency},
     };
     use frame_system::pallet_prelude::*;
-    use t3rn_primitives::account_manager::ExecutionId;
+    use t3rn_primitives::account_manager::{ExecutionId, RequestCharge, Settlement};
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -61,6 +61,8 @@ pub mod pallet {
         type WeightInfo: weights::WeightInfo;
 
         type Currency: ReservableCurrency<Self::AccountId>;
+
+        type Clock: Clock<Self>;
 
         /// Type providing some time handler
         type Time: frame_support::traits::Time;
@@ -77,42 +79,72 @@ pub mod pallet {
     pub struct Pallet<T>(PhantomData<T>);
 
     #[pallet::storage]
-    #[pallet::getter(fn execution_registry)]
-    pub type ExecutionRegistry<T: Config> = StorageMap<
+    pub type ContractsRegistryExecutionNonce<T: Config> = StorageValue<_, ExecutionId, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn pending_charges_per_round)]
+    pub type PendingChargesPerRound<T: Config> = StorageDoubleMap<
         _,
         Blake2_128,
-        ExecutionId,
-        ExecutionRegistryItem<T::AccountId, <T::Currency as Currency<T::AccountId>>::Balance>,
+        RoundInfo<T::BlockNumber>,
+        Identity,
+        T::Hash, // sfx_id
+        RequestCharge<T::AccountId, <T::Currency as Currency<T::AccountId>>::Balance>,
     >;
 
     #[pallet::storage]
-    pub type ExecutionNonce<T: Config> = StorageValue<_, ExecutionId, ValueQuery>;
+    #[pallet::getter(fn settlements_per_round)]
+    pub type SettlementsPerRound<T: Config> = StorageDoubleMap<
+        _,
+        Blake2_128,
+        RoundInfo<T::BlockNumber>,
+        Identity,
+        T::Hash, // sfx_id
+        Settlement<T::AccountId, <T::Currency as Currency<T::AccountId>>::Balance>,
+    >;
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::weight(10_000 + T::DbWeight::get().reads(2) + T::DbWeight::get().writes(1))]
         pub fn deposit(
             origin: OriginFor<T>,
+            charge_id: T::Hash,
             payee: T::AccountId,
-            recipient: T::AccountId,
-            amount: BalanceOf<T>,
+            charge_fee: BalanceOf<T>,
+            offered_reward: BalanceOf<T>,
+            source: BenefitSource,
+            role: CircuitRole,
+            maybe_recipient: Option<T::AccountId>,
         ) -> DispatchResult {
             ensure_root(origin)?;
 
-            <Self as AccountManager<T::AccountId, BalanceOf<T>>>::deposit(
-                &payee, &recipient, amount,
+            <Self as AccountManager<T::AccountId, BalanceOf<T>, T::Hash, T::BlockNumber>>::deposit(
+                charge_id,
+                &payee,
+                charge_fee,
+                offered_reward,
+                source,
+                role,
+                maybe_recipient,
             )
         }
 
         #[pallet::weight(10_000 + T::DbWeight::get().reads(1) + T::DbWeight::get().writes(1))]
         pub fn finalize(
             origin: OriginFor<T>,
-            execution_id: ExecutionId,
-            reason: Option<Reason>,
+            charge_id: T::Hash,
+            outcome: Outcome,
+            maybe_recipient: Option<T::AccountId>,
+            maybe_actual_fees: Option<BalanceOf<T>>,
         ) -> DispatchResult {
             ensure_root(origin)?;
 
-            <Self as AccountManager<T::AccountId, BalanceOf<T>>>::finalize(execution_id, reason)
+            <Self as AccountManager<T::AccountId, BalanceOf<T>, T::Hash, T::BlockNumber>>::finalize(
+                charge_id,
+                outcome,
+                maybe_recipient,
+                maybe_actual_fees,
+            )
         }
     }
 
@@ -150,13 +182,7 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub (super) fn deposit_event)]
     pub enum Event<T: Config> {
-        DepositReceived {
-            execution_id: ExecutionId,
-            payee: T::AccountId,
-            recipient: T::AccountId,
-            amount: BalanceOf<T>,
-        },
-        ExecutionFinalized {
+        ContractsRegistryExecutionFinalized {
             execution_id: ExecutionId,
         },
         Issued {
@@ -167,8 +193,13 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
+        PendingChargeNotFoundAtCommit,
+        PendingChargeNotFoundAtRefund,
         ExecutionNotRegistered,
         ExecutionAlreadyRegistered,
+        ChargeAlreadyRegistered,
+        ChargeOrSettlementCalculationOverflow,
+        DecodingExecutionIDFailed,
     }
 
     #[pallet::genesis_config]

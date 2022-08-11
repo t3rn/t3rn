@@ -7,3 +7,6 @@
 [submodule "3vm"]
 	path = 3vm
 	url = https://github.com/t3rn/3vm.git
+[submodule "pallets/xbi-portal"]
+	path = pallets/xbi-portal
+	url = https://github.com/t3rn/xbi
