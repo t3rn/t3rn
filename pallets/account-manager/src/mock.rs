@@ -113,6 +113,7 @@ impl Config for Test {
     type Clock = t3rn_primitives::clock::ClockMock<Self>;
     type Currency = Balances;
     type EscrowAccount = EscrowAccount;
+    type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type Event = Event;
     type Time = Timestamp;
     type WeightInfo = ();

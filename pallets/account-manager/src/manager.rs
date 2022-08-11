@@ -170,6 +170,69 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
 
         Ok(())
     }
+
+
+    /// Collect claimable (only SFX execution rewards) for Executors and Stakers submitted by Circuit at the duration of the current Round
+    fn on_collect_claimable(
+        _n: T::BlockNumber,
+        r: RoundInfo<T::BlockNumber>,
+    ) -> Result<Vec<ClaimableArtifacts<T::AccountId, BalanceOf<T>>>, &'static str> {
+        let mut claimable_artifacts: Vec<ClaimableArtifacts<T::AccountId, BalanceOf<T>>> = vec![];
+        let mut active_set_claimables: Vec<ActiveSetClaimablePerRound<T::AccountId, BalanceOf<T>>> =
+            T::Executors::active_set()
+                .into_iter()
+                .map(|executor: T::AccountId| ActiveSetClaimablePerRound {
+                    executor,
+                    claimable: Zero::zero(),
+                })
+                .collect::<Vec<ActiveSetClaimablePerRound<T::AccountId, BalanceOf<T>>>>();
+
+        for settlement in SettlementsPerRound::<T>::iter_prefix_values(r) {
+            // fixme: test that actually updates active_set_claimables or are the references wrong
+            for active_set_claimable in active_set_claimables.iter_mut() {
+                if active_set_claimable.executor == settlement.recipient {
+                    active_set_claimable.claimable += settlement.settlement_amount;
+                }
+            }
+        }
+
+        for active_set_claimable in active_set_claimables {
+            let collateral_bond = T::Executors::collateral_bond(&active_set_claimable.executor);
+            let nominated_stake =
+                T::Executors::total_nominated_stake(&active_set_claimable.executor);
+            // calculate % ratio of rewards proportionally to Executor's own Collateral to Nominated Stake
+            let total_stake_power = collateral_bond + nominated_stake;
+
+            // todo: ensure it's in range (0,1>
+            let collateral_bond_power = collateral_bond / total_stake_power.clone();
+
+            claimable_artifacts.push(ClaimableArtifacts {
+                beneficiary: active_set_claimable.executor.clone(),
+                role: CircuitRole::Executor,
+                total_round_claim: collateral_bond_power * active_set_claimable.claimable,
+                benefit_source: BenefitSource::TrafficRewards,
+            });
+
+            // todo: ensure it's in range <0,1)
+            let nominated_stake_power = nominated_stake / total_stake_power;
+
+            let claimable_by_all_stakers_of_executor =
+                nominated_stake_power.clone() * active_set_claimable.claimable;
+
+            for nominated_stake in T::Executors::stakes_per_executor(&active_set_claimable.executor)
+            {
+                let staker_power = nominated_stake.nominated_stake / nominated_stake_power.clone();
+                claimable_artifacts.push(ClaimableArtifacts {
+                    beneficiary: nominated_stake.staker,
+                    role: CircuitRole::Staker,
+                    total_round_claim: staker_power * claimable_by_all_stakers_of_executor,
+                    benefit_source: BenefitSource::TrafficRewards,
+                });
+            }
+        }
+
+        Ok(claimable_artifacts)
+    }
 }
 
 #[cfg(test)]

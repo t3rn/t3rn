@@ -64,6 +64,8 @@ pub mod pallet {
 
         type Clock: Clock<Self>;
 
+        type Executors: Executors<Self, BalanceOf<Self>>;
+
         /// Type providing some time handler
         type Time: frame_support::traits::Time;
 
