@@ -26,6 +26,7 @@ use frame_support::dispatch::PostDispatchInfo;
 use sp_runtime::{DispatchError, DispatchErrorWithPostInfo};
 use serde_json::{Value};
 use std::fs;
+use std::convert::TryInto;
 use crate::mock;
 use frame_system::{EventRecord, Phase};
 use frame_system::pallet_prelude::OriginFor;
@@ -223,6 +224,10 @@ fn run_mock_tests() -> Result<(), DispatchErrorWithPostInfo<PostDispatchInfo>> {
         let file = fs::read_to_string(&path).unwrap();
         let json: Value = serde_json::from_str(file.as_str()).unwrap();
         for entry in json.as_array().unwrap() {
+            let submission_height: u64 = entry["submission_height"].as_u64().unwrap();
+            if submission_height > 0 {
+                System::set_block_number(submission_height.try_into().unwrap());
+            }
             match entry["transaction_type"].as_str().unwrap() {
                 "register" => {
                     assert_ok!(register(Origin::root(), entry.clone(), true));
@@ -233,7 +238,6 @@ fn run_mock_tests() -> Result<(), DispatchErrorWithPostInfo<PostDispatchInfo>> {
                     }
                 },
                 "transfer" => {
-                    System::set_block_number(29);
                     assert_ok!(on_extrinsic_trigger(cli_signer.clone(), entry.clone()));
                 }
                 "confirm" => {

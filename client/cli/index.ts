@@ -58,22 +58,32 @@ class CircuitCLI {
                 data.relaychainRpc = config.gateways.find(elem => elem.id === data.registrationData.parachain.relayChainId).rpc
             }
             const registrationData: any = await register(this.circuit, data, teleport)
-            if (exportArgs) {
-                const fileName = './exports/' + exportName + '.json';
-                this.exportData(registrationData, fileName, "register")
-            }
-            registrationData[0].registration_data = registrationData[0].registration_data.toHex()
-            this.circuitRelayer.sudoSignAndSend(this.circuit.tx.portal.registerGateway(...Object.values(registrationData[0])))
-                .then(() => {
-                    console.log("Registered and Activated!")
-                    this.close()
-                })
+
+            const tx = this.circuit.tx.portal.registerGateway(
+                registrationData[0].url,
+                registrationData[0].gateway_id,
+                registrationData[0].gateway_abi,
+                registrationData[0].gateway_vendor,
+                registrationData[0].gateway_type,
+                registrationData[0].gateway_genesis,
+                registrationData[0].gateway_sys_props,
+                registrationData[0].allowed_side_effects,
+                registrationData[0].registration_data.toHex()
+            );
+            let submissionHeight = await this.circuitRelayer.sudoSignAndSend(tx)
                 .catch(err => {
                     console.log(err)
                     console.log("Registration Failed!")
                     this.error()
                 })
 
+            if (exportArgs) {
+                const fileName = `./exports/` + exportName + '.json';
+                // @ts-ignore
+                await this.exportData(registrationData, fileName, "register", submissionHeight)
+            } else {
+                this.close()
+            }
 
         } else {
             console.log(`Config for ${process.argv[3]} not found!`)
@@ -84,21 +94,22 @@ class CircuitCLI {
     async setOperational(id: string, operational: boolean, exportArgs: boolean, exportName: string) {
         const data = config.gateways.find(elem => elem.id === id)
         if (data) {
-            const transactionArguments = await setOperational(this.circuit, data, operational)
-            if (exportArgs) {
-                const fileName = './exports/' + exportName + '.json';
-                this.exportData(transactionArguments, fileName, "set-operational")
-            }
-            this.circuitRelayer.sudoSignAndSend(this.circuit.tx.portal.setOperational(transactionArguments?.gatewayId, transactionArguments?.operational))
-                .then(() => {
-                    console.log("setOperational Completed!");
-                    this.close();
-                })
+            const transactionArgs= await setOperational(this.circuit, data, operational)
+            const submissionHeight = await this.circuitRelayer.sudoSignAndSend(this.circuit.tx.portal.setOperational(transactionArgs?.gatewayId, transactionArgs?.operational))
                 .catch(err => {
                     console.log(err);
                     console.log("setOperational Failed!");
                     this.error()
                 })
+
+            if (exportArgs) {
+                const fileName = `./exports/` + exportName + '.json';
+                // @ts-ignore
+                await this.exportData([transactionArgs], fileName, "set-operational", submissionHeight)
+            } else {
+                this.close()
+            }
+
         } else {
             console.log(`Config or argument for ${process.argv[3]} not found!`)
             this.error();
@@ -113,20 +124,20 @@ class CircuitCLI {
                 gatewayData.relaychainRpc = config.gateways.find(elem => elem.id === gatewayData.registrationData.parachain.relayChainId).rpc
             }
             const transactionArgs: any[] = await submitHeader(this.circuit, gatewayData, id)
-            if (exportArgs) {
-                const fileName = `./exports/` + exportName + '.json';
-                this.exportData(transactionArgs, fileName, "submit-headers") // does formatting for export
-            }
-            this.circuitRelayer.submitHeaders(transactionArgs)
-                .then(() => {
-                    console.log("Submitted Header!")
-                    this.close()
-                })
+            const submissionHeight = await this.circuitRelayer.submitHeaders(transactionArgs)
                 .catch(err => {
                     console.log(err)
                     console.log("Header Submission Failed!")
                     this.error()
                 })
+
+            if (exportArgs) {
+                const fileName = `./exports/` + exportName + '.json';
+                // @ts-ignore
+                await this.exportData(transactionArgs, fileName, "submit-headers", submissionHeight)
+            } else {
+                this.close()
+            }
 
         } else {
             console.log(`Config for ${process.argv[3]} not found!`)
@@ -141,19 +152,19 @@ class CircuitCLI {
             let encodedAmount = transferAmount(amount, gatewayData.registrationData.gatewayConfig.decimals, gatewayData.registrationData.gatewayConfig.valueTypeSize);
             if(!receiver) receiver = addressStringToPubKey(gatewayData.transferData.receiver);
             const transactionArgs: any = transfer(this.circuit, gatewayData, encodedAmount, addressStringToPubKey(this.signer.address), receiver, fee)
-            if (exportArgs) {
-                const fileName = `./exports/` + exportName + '.json';
-                this.exportData([transactionArgs], fileName, "transfer")
-            }
-            this.circuitRelayer.onExtrinsicTrigger(transactionArgs)
-                .then(() => {
-                    console.log("Transfer Completed!");
-                    this.close();
-                })
+            // @ts-ignore
+            let submissionNumber: number = await this.circuitRelayer.onExtrinsicTrigger(transactionArgs)
                 .catch(err => {
                     console.log("Transfer Failed! Error:", err);
                     this.error()
                 })
+
+            if (exportArgs) {
+                const fileName = `./exports/` + exportName + '.json';
+                this.exportData([transactionArgs], fileName, "transfer", submissionNumber)
+            } else {
+                this.close()
+            }
 
         } else {
             console.log(`Config or argument for ${process.argv[3]} not found!`)
@@ -161,7 +172,7 @@ class CircuitCLI {
         }
     }
 
-    exportData(data: any, fileName: string, transactionType: string) {
+    exportData(data: any, fileName: string, transactionType: string, submissionHeight: number) {
         let deepCopy;
         // since its pass-by-reference
         if(Array.isArray(data)) {
@@ -169,12 +180,14 @@ class CircuitCLI {
         } else {
             deepCopy = {...data};
         }
-        let encoded = encodeExport(deepCopy, transactionType);
+        let encoded = encodeExport(deepCopy, transactionType, submissionHeight);
         fs.writeFile(fileName, JSON.stringify(encoded, null, 4), (err) => {
             if(err) {
               console.log(err);
+              this.error();
             } else {
               console.log("JSON saved to " + fileName);
+              this.close();
             }
         });
     }

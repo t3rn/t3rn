@@ -20,6 +20,7 @@
         "fee": "0",
         "encoded_sequential": "00",
         "sequential": false,
-        "transaction_type": "transfer"
+        "transaction_type": "transfer",
+        "submission_height": 31
     }
 ]

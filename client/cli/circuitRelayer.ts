@@ -15,7 +15,8 @@ export class CircuitRelayer {
                 if (result.toHuman().dispatchError !== undefined) { // The pallet doesn't return a proper error
                     rej(result.toHuman().dispatchError)
                 } else if (result.isInBlock) {
-                    res(true)
+                    const blockNumber = await this.getBlockNumber(result.status.toHuman().InBlock)
+                    res(blockNumber)
                 }
             })
         })
@@ -32,7 +33,8 @@ export class CircuitRelayer {
                         // @ts-ignore
                         rej(result.toHuman().dispatchError)
                     } else if (result.isInBlock) {
-                        res(true)
+                        const blockNumber = await this.getBlockNumber(result.status.toHuman().InBlock)
+                        res(blockNumber)
                     }
                 })
         })
@@ -50,16 +52,24 @@ export class CircuitRelayer {
                         )
                     })
                 )
-                .signAndSend(this.signer, { nonce }, result => {
+                .signAndSend(this.signer, { nonce }, async result => {
                     // @ts-ignore
                     if (result && result.toHuman().dispatchError !== undefined) { // The pallet doesn't return a proper error
                         // @ts-ignore
                         rej(result.toHuman().dispatchError)
                     } else if (result.isInBlock) {
-                        res(true)
+                        // res(true)
+                        // @ts-ignore
+                        const blockNumber = await this.getBlockNumber(result.status.toHuman().InBlock)
+                        res(blockNumber)
                     }
                 })
         })
+    }
+
+    async getBlockNumber(hash: string) {
+        let res = await this.circuit.rpc.chain.getBlock(hash)
+        return res.block.header.number.toNumber()
     }
 
     async fetchNonce (

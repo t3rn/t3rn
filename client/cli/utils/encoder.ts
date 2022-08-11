@@ -8,15 +8,15 @@ export const transferAmount = (amount: number, decimals: number, size: number) =
 // encodes data for exporting. We export in encoded and human format.
 // Encoded: We use for seeding protal rust tests
 // Human: Debugging those tests and viewing data
-export const encodeExport = (data: any, transactionType: string) => {
+export const encodeExport = (data: any, transactionType: string, submissionHeight: number) => {
     if(Array.isArray(data)) {
-        return data.map(entry => iterateEncode(entry, transactionType))
+        return data.map(entry => iterateEncode(entry, transactionType, submissionHeight))
     } else {
-        return iterateEncode(data, transactionType)
+        return iterateEncode(data, transactionType, submissionHeight)
     }
 }
 
-const iterateEncode = (data: any, transactionType: string) => {
+const iterateEncode = (data: any, transactionType: string, submissionHeight: number) => {
     let keys = Object.keys(data);
     let result = {};
     if(keys.includes("initialU8aLength")) { // this is a polkadot/apiPromise object
@@ -31,6 +31,7 @@ const iterateEncode = (data: any, transactionType: string) => {
             result[toSnakeCase(keys[i])] = data[keys[i]].toHuman()
         }
         result['transaction_type'] = transactionType;
+        result['submission_height'] = submissionHeight
         return result;
     }
 }

@@ -152,6 +152,7 @@ const iterateEncode = (data: any, transactionType: string) => {
             result[toSnakeCase(keys[i])] = data[keys[i]].toHuman()
         }
         result['transaction_type'] = transactionType;
+        result['submission_height'] = 0; // we ignore it here for now
         return result;
     }
 }
