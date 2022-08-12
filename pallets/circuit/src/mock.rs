@@ -6,7 +6,7 @@ use frame_election_provider_support::onchain;
 use frame_support::{
     pallet_prelude::{GenesisBuild, Weight},
     parameter_types,
-    traits::{ConstU32, ConstU64, Everything, KeyOwnerProofSystem, Nothing},
+    traits::{ConstU32, Everything, KeyOwnerProofSystem, Nothing},
     PalletId,
 };
 use pallet_babe::{EquivocationHandler, ExternalTrigger};
@@ -15,9 +15,8 @@ use sp_consensus_babe::AuthorityId;
 use sp_core::{crypto::KeyTypeId, H256};
 use sp_runtime::{
     curve::PiecewiseLinear,
-    impl_opaque_keys,
-    generic,
-    testing::{Header, TestXt},
+    generic, impl_opaque_keys,
+    testing::TestXt,
     traits::{BlakeTwo256, Convert, IdentityLookup, Keccak256, OpaqueKeys},
     Perbill,
 };
@@ -339,8 +338,8 @@ type RococoBridgeInstance = ();
 
 impl pallet_grandpa_finality_verifier::Config<RococoBridgeInstance> for Test {
     type BridgedChain = Blake2ValU32Chain;
-    type MaxRequests = MaxRequests;
     type HeadersToKeep = HeadersToKeep;
+    type MaxRequests = MaxRequests;
     type WeightInfo = ();
 }
 
@@ -511,13 +510,13 @@ impl Config for Test {
     // type FreeVM = FreeVM;
     type MultiCurrency = ORMLTokens;
     type PalletId = CircuitPalletId;
+    type Portal = Portal;
     type SelfGatewayId = SelfGatewayId;
     type SignalQueueDepth = ConstU32<5>;
     type WeightInfo = ();
     type Xdns = XDNS;
     type XtxTimeoutCheckInterval = ConstU32<10>;
     type XtxTimeoutDefault = ConstU32<400>;
-    type Portal = Portal;
 }
 
 impl ExtBuilder {

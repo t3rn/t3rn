@@ -51,16 +51,13 @@ pub use t3rn_primitives::{
     GatewayType, *,
 };
 use t3rn_primitives::{
-    circuit_portal::CircuitPortal,
+    portal::Portal,
     side_effect::{ConfirmationOutcome, HardenedSideEffect, SecurityLvl},
     transfers::EscrowedBalanceOf,
     xdns::Xdns,
 };
-use t3rn_primitives::portal::Portal;
 use t3rn_protocol::side_effects::{
-    confirm::{
-        ethereum::EthereumSideEffectsParser, protocol::*, substrate::SubstrateSideEffectsParser,
-    },
+    confirm::protocol::*,
     loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol},
 };
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
@@ -731,8 +728,6 @@ pub mod pallet {
                 <T as frame_system::Config>::BlockNumber,
                 EscrowedBalanceOf<T, T::Escrowed>,
             >,
-            inclusion_proof: Option<Vec<Vec<u8>>>,
-            block_hash: Option<Vec<u8>>,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
             let relayer = Self::authorize(origin, CircuitRole::Relayer)?;
@@ -779,12 +774,7 @@ pub mod pallet {
                 return Err(Error::<T>::RelayEscrowedFailedNothingToConfirm.into())
             };
 
-            let _status = Self::confirm(
-                &mut local_xtx_ctx,
-                &relayer,
-                &side_effect,
-                &confirmation,
-            )?;
+            let _status = Self::confirm(&mut local_xtx_ctx, &relayer, &side_effect, &confirmation)?;
 
             // Apply: all necessary changes to state in 1 go
             let (maybe_xtx_changed, assert_full_side_effects_changed) = Self::apply(
@@ -851,12 +841,7 @@ pub mod pallet {
                 side_effect.generate_id::<SystemHashing<T>>()
             );
 
-            Self::confirm(
-                &mut local_xtx_ctx,
-                &relayer,
-                &side_effect,
-                &confirmation,
-            )?;
+            Self::confirm(&mut local_xtx_ctx, &relayer, &side_effect, &confirmation)?;
             log::info!(
                 "confirm side effect -- confirmed -- xtx id {:?} + se id {:?}",
                 xtx_id,
@@ -1504,7 +1489,7 @@ impl<T: Config> Pallet<T> {
                             executioner: Self::account_id(),
                             received_at: <frame_system::Pallet<T>>::block_number(),
                             cost: None,
-                            inclusion_data: vec![]
+                            inclusion_data: vec![],
                         });
                         match fse.security_lvl {
                             SecurityLvl::Optimistic => {
@@ -1737,7 +1722,8 @@ impl<T: Config> Pallet<T> {
                         <frame_system::Pallet<T>>::block_number(),
                     ),
                 ));
-                let submission_target_height = T::Portal::get_latest_finalized_height(side_effect.target)?;
+                let submission_target_height =
+                    T::Portal::get_latest_finalized_height(side_effect.target)?;
 
                 full_side_effects.push(FullSideEffect {
                     input: side_effect.clone(),
@@ -1763,7 +1749,8 @@ impl<T: Config> Pallet<T> {
                     }
                     SecurityLvl::Dirty
                 }
-                let submission_target_height = T::Portal::get_latest_finalized_height(side_effect.target)?;
+                let submission_target_height =
+                    T::Portal::get_latest_finalized_height(side_effect.target)?;
 
                 full_side_effects.push(FullSideEffect {
                     input: side_effect.clone(),
@@ -1815,9 +1802,9 @@ impl<T: Config> Pallet<T> {
             <T as frame_system::Config>::AccountId,
             <T as frame_system::Config>::BlockNumber,
             EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-        >
+        >,
     ) -> Result<(), &'static str> {
-          fn confirm_order<T: Config>(
+        fn confirm_order<T: Config>(
             side_effect: &SideEffect<
                 <T as frame_system::Config>::AccountId,
                 <T as frame_system::Config>::BlockNumber,
@@ -1878,7 +1865,7 @@ impl<T: Config> Pallet<T> {
         }
 
         let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
-            side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
+        side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
 
         let fsfx = confirm_order::<T>(side_effect, confirmation, &mut local_ctx.full_side_effects)?;
         log::info!("Order confirmed!");
@@ -1894,7 +1881,7 @@ impl<T: Config> Pallet<T> {
         log::info!("Params: {:?}", params);
 
         let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
-            side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
+        side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
         let side_effect_interface =
             <T as Config>::Xdns::fetch_side_effect_interface(side_effect_id);
 
@@ -1990,4 +1977,3 @@ impl<T: Config> Pallet<T> {
         processed_weight
     }
 }
-

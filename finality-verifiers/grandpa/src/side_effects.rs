@@ -1,15 +1,6 @@
 use sp_std::{vec, vec::Vec};
 use codec::{Decode, Encode};
 
-pub type EventSignature = Vec<u8>;
-pub struct EventInterface {
-    pub id: [u8; 4],
-    pub confirm_events: Vec<EventSignature>,
-    pub escrowed_events: Vec<EventSignature>,
-    pub commit_events: Vec<EventSignature>,
-    pub revert_events: Vec<EventSignature>,
-}
-
 #[derive(Encode, Decode)]
 pub enum TransferEventStub<T: frame_system::Config, Balance> {
     Endowed(T::AccountId, Balance),

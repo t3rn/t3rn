@@ -16,35 +16,33 @@
 // limitations under the License.
 
 //! Test utilities
-use crate::{mock::*, sdk_primitives::{
-    signal::ExecutionSignal,
-    xc::{Chain, Operation},
-}, state::*, SignalKind, Escrow};
+use crate::{
+    mock::*,
+    sdk_primitives::{
+        signal::ExecutionSignal,
+        xc::{Chain, Operation},
+    },
+    state::*,
+    SignalKind,
+};
 use codec::{Decode, Encode};
-use frame_support::{assert_ok, traits::Currency};
-use frame_support::dispatch::PostDispatchInfo;
-use sp_runtime::{DispatchError, DispatchErrorWithPostInfo};
-use serde_json::{Value};
-use std::fs;
-use std::convert::TryInto;
-use crate::mock;
-use frame_system::{EventRecord, Phase};
-use frame_system::pallet_prelude::OriginFor;
+use frame_support::{assert_ok, dispatch::PostDispatchInfo, traits::Currency};
+use frame_system::{pallet_prelude::OriginFor, EventRecord, Phase};
 use pallet_circuit_portal::bp_circuit;
+use serde_json::Value;
 use sp_io::TestExternalities;
-use sp_runtime::{traits::Header, AccountId32};
+use sp_runtime::{traits::Header, AccountId32, DispatchErrorWithPostInfo};
 use sp_std::prelude::*;
+use std::{convert::TryInto, fs};
 use t3rn_primitives::{
     abi::*,
     circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
-    portal::{RococoBridge},
-    xdns::AllowedSideEffect,
-    ChainId, EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor, GatewayGenesisConfig,
     side_effect::*,
     volatile::LocalState,
+    xdns::AllowedSideEffect,
     xtx::XtxId,
+    ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
 };
-use t3rn_primitives::transfers::EscrowedBalanceOf;
 use t3rn_protocol::side_effects::test_utils::*;
 
 pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);
@@ -97,7 +95,7 @@ fn register_file(
     origin: OriginFor<Test>,
     file: &str,
     valid: bool,
-    index: usize
+    index: usize,
 ) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
     let raw_data = fs::read_to_string("./src/mock-data/".to_owned() + file).unwrap();
     let json: Value = serde_json::from_str(raw_data.as_str()).unwrap();
@@ -109,15 +107,34 @@ fn register(
     json: Value,
     valid: bool,
 ) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
-    let url: Vec<u8> =  hex::decode(json["encoded_url"].as_str().unwrap()).unwrap();
-    let gateway_id: ChainId = Decode::decode(&mut &*hex::decode(json["encoded_gateway_id"].as_str().unwrap()).unwrap()).unwrap();
-    let gateway_abi: GatewayABIConfig = Decode::decode(&mut &*hex::decode(json["encoded_gateway_abi"].as_str().unwrap()).unwrap()).unwrap();
-    let gateway_vendor: GatewayVendor = Decode::decode(&mut &*hex::decode(json["encoded_gateway_vendor"].as_str().unwrap()).unwrap()).unwrap();
-    let gateway_type: GatewayType = Decode::decode(&mut &*hex::decode(json["encoded_gateway_type"].as_str().unwrap()).unwrap()).unwrap();
-    let gateway_genesis: GatewayGenesisConfig = Decode::decode(&mut &*hex::decode(json["encoded_gateway_genesis"].as_str().unwrap()).unwrap()).unwrap();
-    let gateway_sys_props: GatewaySysProps = Decode::decode(&mut &*hex::decode(json["encoded_gateway_sys_props"].as_str().unwrap()).unwrap()).unwrap();
-    let allowed_side_effects: Vec<AllowedSideEffect> = Decode::decode(&mut &*hex::decode(json["encoded_allowed_side_effects"].as_str().unwrap()).unwrap()).unwrap();
-    let encoded_registration_data: Vec<u8> = hex::decode(json["encoded_registration_data"].as_str().unwrap()).unwrap();
+    let url: Vec<u8> = hex::decode(json["encoded_url"].as_str().unwrap()).unwrap();
+    let gateway_id: ChainId =
+        Decode::decode(&mut &*hex::decode(json["encoded_gateway_id"].as_str().unwrap()).unwrap())
+            .unwrap();
+    let gateway_abi: GatewayABIConfig =
+        Decode::decode(&mut &*hex::decode(json["encoded_gateway_abi"].as_str().unwrap()).unwrap())
+            .unwrap();
+    let gateway_vendor: GatewayVendor = Decode::decode(
+        &mut &*hex::decode(json["encoded_gateway_vendor"].as_str().unwrap()).unwrap(),
+    )
+    .unwrap();
+    let gateway_type: GatewayType =
+        Decode::decode(&mut &*hex::decode(json["encoded_gateway_type"].as_str().unwrap()).unwrap())
+            .unwrap();
+    let gateway_genesis: GatewayGenesisConfig = Decode::decode(
+        &mut &*hex::decode(json["encoded_gateway_genesis"].as_str().unwrap()).unwrap(),
+    )
+    .unwrap();
+    let gateway_sys_props: GatewaySysProps = Decode::decode(
+        &mut &*hex::decode(json["encoded_gateway_sys_props"].as_str().unwrap()).unwrap(),
+    )
+    .unwrap();
+    let allowed_side_effects: Vec<AllowedSideEffect> = Decode::decode(
+        &mut &*hex::decode(json["encoded_allowed_side_effects"].as_str().unwrap()).unwrap(),
+    )
+    .unwrap();
+    let encoded_registration_data: Vec<u8> =
+        hex::decode(json["encoded_registration_data"].as_str().unwrap()).unwrap();
 
     let res = Portal::register_gateway(
         origin,
@@ -129,7 +146,7 @@ fn register(
         gateway_genesis.clone(),
         gateway_sys_props.clone(),
         allowed_side_effects.clone(),
-        encoded_registration_data.clone()
+        encoded_registration_data.clone(),
     );
 
     if valid {
@@ -151,7 +168,7 @@ fn register(
 fn submit_header_file(
     origin: OriginFor<Test>,
     file: &str,
-    index: usize //might have an index (for relaychains)
+    index: usize, //might have an index (for relaychains)
 ) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
     let raw_data = fs::read_to_string("./src/mock-data/".to_owned() + file).unwrap();
     let json: Value = serde_json::from_str(raw_data.as_str()).unwrap();
@@ -161,44 +178,47 @@ fn submit_header_file(
 fn submit_headers(
     origin: OriginFor<Test>,
     json: Value,
-    index: usize
+    index: usize,
 ) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
-
-    let encoded_header_data: Vec<u8> =  hex::decode(json[index]["encoded_data"].as_str().unwrap()).unwrap();
-    let gateway_id: ChainId = Decode::decode(&mut &*hex::decode(json[index]["encoded_gateway_id"].as_str().unwrap()).unwrap()).unwrap();
-    Portal::submit_headers(
-        origin,
-        gateway_id,
-        encoded_header_data
+    let encoded_header_data: Vec<u8> =
+        hex::decode(json[index]["encoded_data"].as_str().unwrap()).unwrap();
+    let gateway_id: ChainId = Decode::decode(
+        &mut &*hex::decode(json[index]["encoded_gateway_id"].as_str().unwrap()).unwrap(),
     )
+    .unwrap();
+    Portal::submit_headers(origin, gateway_id, encoded_header_data)
 }
-
 
 fn on_extrinsic_trigger(
     origin: OriginFor<Test>,
     json: Value,
 ) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
-    let side_effects: Vec<SideEffect<AccountId32, BlockNumber, BalanceOf>> = Decode::decode(&mut &*hex::decode(json["encoded_side_effects"].as_str().unwrap()).unwrap()).unwrap();
+    let side_effects: Vec<SideEffect<AccountId32, BlockNumber, BalanceOf>> =
+        Decode::decode(&mut &*hex::decode(json["encoded_side_effects"].as_str().unwrap()).unwrap())
+            .unwrap();
 
-        // Decode::decode(mut &hex::decode(json["encoded_side_effects"].as_str().unwrap())).unwrap();
+    // Decode::decode(mut &hex::decode(json["encoded_side_effects"].as_str().unwrap())).unwrap();
     // let fee: EscrowedBalanceOf<Test, t3rn_primitives::EscrowTrait<mock::Test>> = Decode::decode(&mut &*hex::decode(json["encoded_fee"].as_str().unwrap()).unwrap()).unwrap();
     let fee = 0;
-    let sequential: bool = Decode::decode(&mut &*hex::decode(json["encoded_sequential"].as_str().unwrap()).unwrap()).unwrap();
-    Circuit::on_extrinsic_trigger(
-        origin,
-        side_effects,
-        fee,
-        sequential,
-    )
+    let sequential: bool =
+        Decode::decode(&mut &*hex::decode(json["encoded_sequential"].as_str().unwrap()).unwrap())
+            .unwrap();
+    Circuit::on_extrinsic_trigger(origin, side_effects, fee, sequential)
 }
 
 fn confirm_side_effect(
     origin: OriginFor<Test>,
-    json: Value
+    json: Value,
 ) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
-    let xtx_id: sp_core::H256 = Decode::decode(&mut &*hex::decode(json["encoded_xtx_id"].as_str().unwrap()).unwrap()).unwrap();
-    let side_effect: SideEffect<AccountId32, BlockNumber, BalanceOf> = Decode::decode(&mut &*hex::decode(json["encoded_side_effect"].as_str().unwrap()).unwrap()).unwrap();
-    let confirmed_side_effect: ConfirmedSideEffect<AccountId32, BlockNumber, BalanceOf> = Decode::decode(&mut &*hex::decode(json["encoded_confirmed"].as_str().unwrap()).unwrap()).unwrap();
+    let xtx_id: sp_core::H256 =
+        Decode::decode(&mut &*hex::decode(json["encoded_xtx_id"].as_str().unwrap()).unwrap())
+            .unwrap();
+    let side_effect: SideEffect<AccountId32, BlockNumber, BalanceOf> =
+        Decode::decode(&mut &*hex::decode(json["encoded_side_effect"].as_str().unwrap()).unwrap())
+            .unwrap();
+    let confirmed_side_effect: ConfirmedSideEffect<AccountId32, BlockNumber, BalanceOf> =
+        Decode::decode(&mut &*hex::decode(json["encoded_confirmed"].as_str().unwrap()).unwrap())
+            .unwrap();
 
     Circuit::confirm_side_effect(
         origin,
@@ -206,16 +226,23 @@ fn confirm_side_effect(
         side_effect,
         confirmed_side_effect,
         None,
-        None
+        None,
     )
 }
 
 // iterates sequentially though all test files in mock-data
 fn run_mock_tests() -> Result<(), DispatchErrorWithPostInfo<PostDispatchInfo>> {
-    let cli_signer = Origin::signed([212,53,147,199,21,253,211,28,97,20,26,189,4,169,159,214,130,44,133,88,133,76,205,227,154,86,132,231,165,109,162,125].into());
-    let mut paths: Vec<_> = fs::read_dir("src/mock-data/").unwrap()
-                                              .map(|r| r.unwrap())
-                                              .collect();
+    let cli_signer = Origin::signed(
+        [
+            212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133,
+            88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125,
+        ]
+        .into(),
+    );
+    let mut paths: Vec<_> = fs::read_dir("src/mock-data/")
+        .unwrap()
+        .map(|r| r.unwrap())
+        .collect();
     paths.sort_by_key(|dir| dir.path());
 
     for entry in paths {
@@ -231,33 +258,35 @@ fn run_mock_tests() -> Result<(), DispatchErrorWithPostInfo<PostDispatchInfo>> {
                 "register" => {
                     assert_ok!(register(Origin::root(), entry.clone(), true));
                 },
-                "submit-headers" => {
+                "submit-headers" =>
                     for index in 0..json.as_array().unwrap().len() {
-                        assert_ok!(submit_headers(Origin::signed([0u8; 32].into()), json.clone(), index));
-                    }
-                },
+                        assert_ok!(submit_headers(
+                            Origin::signed([0u8; 32].into()),
+                            json.clone(),
+                            index
+                        ));
+                    },
                 "transfer" => {
                     assert_ok!(on_extrinsic_trigger(cli_signer.clone(), entry.clone()));
-                }
+                },
                 "confirm" => {
                     assert_ok!(confirm_side_effect(cli_signer.clone(), entry.clone()));
-                }
-                _ => unimplemented!()
+                },
+                _ => unimplemented!(),
             }
-        };
+        }
     }
     Ok(().into())
 }
 
 #[test]
 fn runs_mock_tests() {
-    let mut ext = TestExternalities::new_empty();
     ExtBuilder::default()
         .with_standard_side_effects()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
-            run_mock_tests();
+            let _ = run_mock_tests();
         });
 }
 
@@ -864,8 +893,6 @@ fn circuit_handles_insurance_deposit_for_transfers() {
 #[test]
 fn circuit_handles_dirty_swap_with_no_insurance() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
-    let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
-
     let swap_protocol_box = ExtBuilder::get_swap_protocol_box();
 
     let mut local_state = LocalState::new();
@@ -874,8 +901,8 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
         vec![
             (Type::Address(32), ArgVariant::A), // caller
             (Type::Address(32), ArgVariant::B), // to
-            (Type::Uint(128), ArgVariant::A),    // amount_from
-            (Type::Uint(128), ArgVariant::B),    // amount_to
+            (Type::Uint(128), ArgVariant::A),   // amount_from
+            (Type::Uint(128), ArgVariant::B),   // amount_to
             (Type::Bytes(4), ArgVariant::A),    // asset_from
             (Type::Bytes(4), ArgVariant::B),    // asset_to
             (Type::Bytes(0), ArgVariant::A),    // empty bytes instead of insurance
@@ -982,8 +1009,8 @@ fn circuit_handles_swap_with_insurance() {
         vec![
             (Type::Address(32), ArgVariant::A),       // caller
             (Type::Address(32), ArgVariant::B),       // to
-            (Type::Uint(128), ArgVariant::A),          // amount_from
-            (Type::Uint(128), ArgVariant::B),          // amount_to
+            (Type::Uint(128), ArgVariant::A),         // amount_from
+            (Type::Uint(128), ArgVariant::B),         // amount_to
             (Type::Bytes(4), ArgVariant::A),          // asset_from
             (Type::Bytes(4), ArgVariant::B),          // asset_to
             (Type::OptionalInsurance, ArgVariant::A), // insurance
@@ -1134,8 +1161,6 @@ fn circuit_handles_swap_with_insurance() {
 fn circuit_handles_add_liquidity_without_insurance() {
     let origin = Origin::signed(ALICE);
 
-    let origin_relayer_bob = Origin::signed(BOB_RELAYER);
-
     let ext = ExtBuilder::default();
     let mut local_state = LocalState::new();
 
@@ -1148,9 +1173,9 @@ fn circuit_handles_add_liquidity_without_insurance() {
             (Type::Bytes(4), ArgVariant::A),    // argument_2: asset_left
             (Type::Bytes(4), ArgVariant::B),    // argument_3: asset_right
             (Type::Bytes(4), ArgVariant::C),    // argument_4: liquidity_token
-            (Type::Uint(128), ArgVariant::A),    // argument_5: amount_left
-            (Type::Uint(128), ArgVariant::B),    // argument_6: amount_right
-            (Type::Uint(128), ArgVariant::A),    // argument_7: amount_liquidity_token
+            (Type::Uint(128), ArgVariant::A),   // argument_5: amount_left
+            (Type::Uint(128), ArgVariant::B),   // argument_6: amount_right
+            (Type::Uint(128), ArgVariant::A),   // argument_7: amount_liquidity_token
             (Type::Bytes(0), ArgVariant::A),    // argument_8: no insurance, empty bytes
         ],
         &mut local_state,
@@ -1239,9 +1264,9 @@ fn circuit_handles_add_liquidity_with_insurance() {
             (Type::Bytes(4), ArgVariant::A),          // argument_2: asset_left
             (Type::Bytes(4), ArgVariant::B),          // argument_3: asset_right
             (Type::Bytes(4), ArgVariant::A),          // argument_4: liquidity_token
-            (Type::Uint(128), ArgVariant::A),          // argument_5: amount_left
-            (Type::Uint(128), ArgVariant::B),          // argument_6: amount_right
-            (Type::Uint(128), ArgVariant::A),          // argument_7: amount_liquidity_token
+            (Type::Uint(128), ArgVariant::A),         // argument_5: amount_left
+            (Type::Uint(128), ArgVariant::B),         // argument_6: amount_right
+            (Type::Uint(128), ArgVariant::A),         // argument_7: amount_liquidity_token
             (Type::OptionalInsurance, ArgVariant::A), // argument_8: no insurance, empty bytes
         ],
         &mut local_state,
@@ -1447,7 +1472,6 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_submitted() {
 
             let events = System::events();
             assert_eq!(events.len(), 8);
-
         });
 }
 
@@ -1455,8 +1479,6 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_submitted() {
 #[test]
 fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
-
-    let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
 
     let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
     let swap_protocol_box = ExtBuilder::get_swap_protocol_box();
@@ -1488,8 +1510,8 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
         vec![
             (Type::Address(32), ArgVariant::A), // caller
             (Type::Address(32), ArgVariant::B), // to
-            (Type::Uint(128), ArgVariant::A),    // amount_from
-            (Type::Uint(128), ArgVariant::B),    // amount_to
+            (Type::Uint(128), ArgVariant::A),   // amount_from
+            (Type::Uint(128), ArgVariant::B),   // amount_to
             (Type::Bytes(4), ArgVariant::A),    // asset_from
             (Type::Bytes(4), ArgVariant::B),    // asset_to
             (Type::Bytes(0), ArgVariant::A),    // no insurance
@@ -1556,15 +1578,6 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
                 "exec signals after 1st confirmation, transfer: {:?}",
                 Circuit::get_x_exec_signals(xtx_id).unwrap()
             );
-
-            // Confirmation start
-            let mut encoded_swap_transfer_event = orml_tokens::Event::<Test>::Transfer {
-                currency_id: as_u32_le(&[0, 1, 2, 3]), // currency_id as u8 bytes [0,1,2,3] -> u32
-                from: BOB_RELAYER,                     // executor - Bob
-                to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(), // variant B (dest)
-                amount: 2u128, // amount - variant B
-            }
-            .encode();
 
             println!(
                 "full side effects after confirmation: {:?}",

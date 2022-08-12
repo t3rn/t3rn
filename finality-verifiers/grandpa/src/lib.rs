@@ -92,7 +92,6 @@ use crate::types::{Parachain, RelaychainHeaderData, ParachainHeaderData, Inclusi
 
 #[frame_support::pallet]
 pub mod pallet {
-    use sp_core::U256;
     use super::*;
 
     #[pallet::config]
@@ -918,11 +917,6 @@ pub(crate) fn get_header_roots<T: pallet::Config<I>, I>(
     gateway_id: ChainId,
     trie_type: ProofTriePointer
 ) -> Result<BridgedBlockHash<T, I>, &'static str> {
-    let roots = <MultiImportedRoots<T, I>>::get(
-        gateway_id,
-        block_hash,
-    );
-
     let (extrinsics_root, storage_root): (BridgedBlockHash<T, I>, BridgedBlockHash<T, I>) =
         <MultiImportedRoots<T, I>>::get(
             gateway_id,

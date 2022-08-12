@@ -28,9 +28,8 @@ pub mod pallet {
     use t3rn_primitives::{
         portal::{RococoBridge},
         abi::{GatewayABIConfig},
-        ChainId, EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor, GatewayGenesisConfig,
+        ChainId, GatewaySysProps, GatewayType, GatewayVendor, GatewayGenesisConfig,
     };
-    use t3rn_primitives::portal::RegistrationData;
     use t3rn_primitives::xdns::AllowedSideEffect;
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
