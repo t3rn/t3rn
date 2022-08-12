@@ -1,5 +1,5 @@
 use crate::common::RoundInfo;
-use frame_support::{pallet_prelude::*};
+use frame_support::pallet_prelude::*;
 
 pub trait Clock<T: frame_system::Config> {
     fn current_round() -> RoundInfo<T::BlockNumber>;
