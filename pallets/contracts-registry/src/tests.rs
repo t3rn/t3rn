@@ -26,7 +26,7 @@ use frame_support::{assert_err, assert_ok};
 use sp_core::H256;
 use sp_runtime::DispatchError;
 use t3rn_primitives::{
-    contract_metadata::ContractMetadata,
+    contract_metadata::{ContractMetadata, ContractType},
     contracts_registry::{AuthorInfo, ContractsRegistry as ContractsRegistryExt, KindValidator},
 };
 
@@ -75,7 +75,7 @@ fn fetch_contracts_by_metadata_should_return_all_matching_contracts() {
         meta: ContractMetadata::new(
             vec![],
             b"some contract".to_vec(),
-            vec![],
+            ContractType::VanillaWasm,
             vec![],
             vec![],
             None,
@@ -95,7 +95,7 @@ fn fetch_contracts_by_metadata_should_return_all_matching_contracts() {
         meta: ContractMetadata::new(
             vec![],
             vec![],
-            vec![],
+            ContractType::VanillaWasm,
             vec![],
             vec![],
             Some(b"contract description".to_vec()),
@@ -115,7 +115,7 @@ fn fetch_contracts_by_metadata_should_return_all_matching_contracts() {
         meta: ContractMetadata::new(
             vec![],
             vec![],
-            vec![],
+            ContractType::VanillaWasm,
             vec![],
             vec![],
             Some(b"other description".to_vec()),
@@ -158,7 +158,7 @@ fn fetch_contracts_by_author_should_return_all_matching_contracts() {
         meta: ContractMetadata::new(
             vec![],
             vec![],
-            vec![],
+            ContractType::VanillaWasm,
             vec![],
             vec![],
             None,
@@ -179,7 +179,7 @@ fn fetch_contracts_by_author_should_return_all_matching_contracts() {
         meta: ContractMetadata::new(
             vec![],
             vec![],
-            vec![],
+            ContractType::VanillaWasm,
             vec![],
             vec![],
             None,
@@ -199,7 +199,7 @@ fn fetch_contracts_by_author_should_return_all_matching_contracts() {
         meta: ContractMetadata::new(
             vec![],
             vec![],
-            vec![],
+            ContractType::VanillaWasm,
             vec![],
             vec![],
             None,
@@ -242,7 +242,7 @@ fn fetch_contracts_by_author_and_metadata_should_return_all_matching_contracts()
         meta: ContractMetadata::new(
             vec![],
             b"contract 1".to_vec(),
-            vec![],
+            ContractType::VanillaWasm,
             vec![],
             vec![],
             None,
@@ -262,7 +262,7 @@ fn fetch_contracts_by_author_and_metadata_should_return_all_matching_contracts()
         meta: ContractMetadata::new(
             vec![],
             vec![],
-            vec![],
+            ContractType::VanillaWasm,
             vec![],
             vec![],
             Some(b"contract 2".to_vec()),
@@ -282,7 +282,7 @@ fn fetch_contracts_by_author_and_metadata_should_return_all_matching_contracts()
         meta: ContractMetadata::new(
             vec![],
             vec![],
-            vec![],
+            ContractType::VanillaWasm,
             vec![],
             vec![],
             None,
@@ -325,7 +325,7 @@ fn fetch_contracts_with_no_parameters_should_error() {
         meta: ContractMetadata::new(
             vec![],
             b"contract 1".to_vec(),
-            vec![],
+            ContractType::VanillaWasm,
             vec![],
             vec![],
             None,
@@ -345,7 +345,7 @@ fn fetch_contracts_with_no_parameters_should_error() {
         meta: ContractMetadata::new(
             vec![],
             vec![],
-            vec![],
+            ContractType::VanillaWasm,
             vec![],
             vec![],
             Some(b"contract 2".to_vec()),
@@ -365,7 +365,7 @@ fn fetch_contracts_with_no_parameters_should_error() {
         meta: ContractMetadata::new(
             vec![],
             vec![],
-            vec![],
+            ContractType::VanillaWasm,
             vec![],
             vec![],
             None,
@@ -406,7 +406,7 @@ fn add_new_contract_succeeds_for_default() {
         meta: ContractMetadata::new(
             vec![],
             b"contract 1".to_vec(),
-            vec![],
+            ContractType::VanillaWasm,
             vec![],
             vec![],
             None,
@@ -444,7 +444,7 @@ fn add_new_contract_fails_for_no_sudo_origin() {
         meta: ContractMetadata::new(
             vec![],
             b"contract 1".to_vec(),
-            vec![],
+            ContractType::VanillaWasm,
             vec![],
             vec![],
             None,
@@ -481,7 +481,7 @@ fn add_new_contract_fails_if_contract_already_exists() {
         meta: ContractMetadata::new(
             vec![],
             b"contract 1".to_vec(),
-            vec![],
+            ContractType::VanillaWasm,
             vec![],
             vec![],
             None,
@@ -521,7 +521,7 @@ fn purge_succeeds_for_default_contract() {
         meta: ContractMetadata::new(
             vec![],
             b"contract 1".to_vec(),
-            vec![],
+            ContractType::VanillaWasm,
             vec![],
             vec![],
             None,
@@ -562,7 +562,7 @@ fn purge_fails_if_contract_does_not_exist() {
         meta: ContractMetadata::new(
             vec![],
             b"contract 1".to_vec(),
-            vec![],
+            ContractType::VanillaWasm,
             vec![],
             vec![],
             None,
@@ -601,7 +601,7 @@ fn purge_fails_if_origin_not_root() {
         meta: ContractMetadata::new(
             vec![],
             b"contract 1".to_vec(),
-            vec![],
+            ContractType::VanillaWasm,
             vec![],
             vec![],
             None,
@@ -641,7 +641,7 @@ fn test_kind_validator() {
         meta: ContractMetadata::new(
             vec![],
             b"contract 1".to_vec(),
-            vec![0],
+            ContractType::System,
             vec![],
             vec![],
             None,
@@ -656,9 +656,21 @@ fn test_kind_validator() {
         .with_contracts(vec![test_contract.clone()])
         .build()
         .execute_with(|| {
-            assert_eq!(test_contract.can_instantiate(), false);
-            assert_eq!(test_contract.can_generate_side_effects(), true);
-            assert_eq!(test_contract.can_remunerate(), true);
-            assert_eq!(test_contract.has_storage(), false);
+            assert_eq!(
+                test_contract.meta.get_contract_type().can_instantiate(),
+                false
+            );
+            assert_eq!(
+                test_contract
+                    .meta
+                    .get_contract_type()
+                    .can_generate_side_effects(),
+                true
+            );
+            assert_eq!(
+                test_contract.meta.get_contract_type().can_remunerate(),
+                true
+            );
+            assert_eq!(test_contract.meta.get_contract_type().has_storage(), false);
         });
 }

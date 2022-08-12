@@ -127,6 +127,7 @@ pub mod pallet {
                 role,
                 maybe_recipient,
             )
+            .map(|_| ())
         }
 
         #[pallet::weight(10_000 + T::DbWeight::get().reads(1) + T::DbWeight::get().writes(1))]
