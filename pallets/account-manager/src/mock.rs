@@ -1,13 +1,12 @@
 use crate::{self as pallet_account_manager, Config};
 use frame_support::{
     parameter_types,
-    traits::{ConstU64, Everything},
+    traits::{Everything},
 };
 use sp_core::H256;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
-    Perbill,
 };
 
 pub type AccountId = u64;

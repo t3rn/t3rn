@@ -19,7 +19,6 @@ use t3rn_primitives::{
     claimable::{BenefitSource, CircuitRole},
     clock::Clock,
     common::RoundInfo,
-    executors::Executors,
     transfers::EscrowedBalanceOf,
     EscrowTrait,
 };
