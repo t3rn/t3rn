@@ -193,7 +193,7 @@ pub mod test {
             vec![
                 (Type::Address(32), ArgVariant::A),
                 (Type::Address(32), ArgVariant::B),
-                (Type::Uint(64), ArgVariant::A),
+                (Type::Uint(128), ArgVariant::A),
                 (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
             ],
             &mut local_state,
@@ -273,7 +273,7 @@ pub mod test {
             vec![
                 (Type::Address(32), ArgVariant::A),
                 (Type::Address(32), ArgVariant::B),
-                (Type::Uint(64), ArgVariant::A),
+                (Type::Uint(128), ArgVariant::A),
                 (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
             ],
             &mut local_state,

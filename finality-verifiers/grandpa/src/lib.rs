@@ -885,7 +885,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
                 return None
             }
         } else {
-            return None
+            return Some(vec![0]) // ToDo this is here more for testing.
         }
     }
 }

@@ -515,7 +515,7 @@ impl Config for Test {
     type SignalQueueDepth = ConstU32<5>;
     type WeightInfo = ();
     type Xdns = XDNS;
-    type XtxTimeoutCheckInterval = ConstU32<50>;
+    type XtxTimeoutCheckInterval = ConstU32<10>;
     type XtxTimeoutDefault = ConstU32<400>;
     type Portal = Portal;
 }
@@ -527,7 +527,7 @@ impl ExtBuilder {
             [3u8, 3u8, 3u8, 3u8],
             None,
             Default::default(),
-            GatewayVendor::Substrate,
+            GatewayVendor::Rococo,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
             GatewaySysProps {
@@ -542,7 +542,7 @@ impl ExtBuilder {
             [0u8, 0u8, 0u8, 0u8],
             None,
             Default::default(),
-            GatewayVendor::Substrate,
+            GatewayVendor::Rococo,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
             GatewaySysProps {
@@ -557,7 +557,7 @@ impl ExtBuilder {
             *b"gate",
             None,
             Default::default(),
-            GatewayVendor::Substrate,
+            GatewayVendor::Rococo,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
             GatewaySysProps {
@@ -572,7 +572,7 @@ impl ExtBuilder {
             *b"pdot",
             None,
             Default::default(),
-            GatewayVendor::Substrate,
+            GatewayVendor::Rococo,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
             GatewaySysProps {
@@ -587,7 +587,7 @@ impl ExtBuilder {
             *b"ksma",
             None,
             Default::default(),
-            GatewayVendor::Substrate,
+            GatewayVendor::Rococo,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
             GatewaySysProps {
@@ -770,7 +770,7 @@ impl ExtBuilder {
                 b"value".to_vec(),
                 b"insurance".to_vec(),
             ],
-            confirm_events: vec![b"Transfer(from,to,value)".to_vec()],
+            confirm_events: vec![b"Transfer(_from,to,value)".to_vec()],
             escrowed_events: vec![b"EscrowTransfer(from,to,value)".to_vec()],
             commit_events: vec![b"Transfer(executor,to,value)".to_vec()],
             revert_events: vec![b"Transfer(executor,from,value)".to_vec()],
