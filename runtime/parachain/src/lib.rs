@@ -13,10 +13,11 @@ pub mod orml_config;
 pub mod xcm_config;
 
 use codec::Decode;
+use pallet_3vm_evm::AddressMapping;
 use pallet_xdns_rpc_runtime_api::{ChainId, FetchXdnsRecordsResponse, GatewayABIConfig};
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, Verify},
@@ -589,7 +590,9 @@ construct_runtime!(
         Treasury: pallet_treasury = 109,
 
         // 3VM
-        Contracts: pallet_3vm_contracts = 119,
+        ThreeVm: pallet_3vm = 119,
+        Contracts: pallet_3vm_contracts = 120,
+        Evm: pallet_3vm_evm = 121,
         AccountManager: pallet_account_manager = 125,
 
         // admin
@@ -755,6 +758,38 @@ impl_runtime_apis! {
             key: [u8; 32],
         ) -> pallet_3vm_contracts_primitives::GetStorageResult {
             Contracts::get_storage(address, key)
+        }
+    }
+
+    impl pallet_evm_rpc_runtime_api::EvmRuntimeRPCApi<Block, AccountId, Balance> for Runtime {
+        fn get_evm_address(
+            account_id: AccountId,
+        ) -> Option<H160> {
+            <Runtime as pallet_3vm_evm::Config>::AddressMapping::get_evm_address(&account_id)
+        }
+        fn get_or_into_account_id(
+            address: H160,
+        ) -> AccountId {
+            <Runtime as pallet_3vm_evm::Config>::AddressMapping::get_or_into_account_id(&address)
+        }
+
+        fn get_threevm_info(
+            address: H160,
+        ) -> Option<(AccountId, Balance, u8)> {
+            Evm::get_threevm_info(&address)
+        }
+
+        fn account_info(address: H160) -> (U256, U256, Vec<u8>) {
+            let account = Evm::account_basic(&address);
+            let code = Evm::get_account_code(&address);
+
+            (account.balance, account.nonce, code)
+        }
+
+        fn storage_at(address: H160, index: U256) -> H256 {
+            let mut tmp = [0u8; 32];
+            index.to_big_endian(&mut tmp);
+            Evm::account_storages(address, H256::from_slice(&tmp[..]))
         }
     }
 

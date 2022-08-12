@@ -1345,8 +1345,7 @@ impl<T: Config> Pallet<T> {
                 if local_ctx.full_side_effects[local_ctx.xtx.steps_cnt.0 as usize]
                     .clone()
                     .iter()
-                    .filter(|&fse| fse.confirmed.is_none())
-                    .next()
+                    .find(|&fse| fse.confirmed.is_none())
                     .is_none()
                 {
                     local_ctx.xtx.steps_cnt =
@@ -1869,14 +1868,13 @@ impl<T: Config> Pallet<T> {
                 gateway_vendor,
                 value_abi_unsigned_type,
                 &Box::new(side_effect_interface.unwrap()),
-                confirmation.encoded_effect.clone().into(),
+                confirmation.encoded_effect.clone(),
                 state_copy,
                 Some(
                     side_effect
                         .generate_id::<SystemHashing<T>>()
                         .as_ref()
-                        .to_vec()
-                        .into(),
+                        .to_vec(),
                 ),
                 security_lvl,
                 security_coordinates,
@@ -2006,7 +2004,7 @@ impl<T: Config> Pallet<T> {
             processed_weight += db_weight.reads(4 as Weight);
             match Self::setup(
                 CircuitStatus::Ready,
-                &requester,
+                requester,
                 Zero::zero(),
                 Some(signal.execution_id),
             ) {
