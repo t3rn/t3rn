@@ -34,13 +34,13 @@ fn percent_ratio<T: Config>(amt: BalanceOf<T>, percent: u8) -> Result<BalanceOf<
 }
 
 impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockNumber>
-for Pallet<T>
+    for Pallet<T>
 {
     fn get_charge_or_fail(
         charge_id: T::Hash,
     ) -> Result<RequestCharge<T::AccountId, BalanceOf<T>>, DispatchError> {
         return if let Some(pending_charge) =
-        PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id)
+            PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id)
         {
             Ok(pending_charge)
         } else {
@@ -50,7 +50,7 @@ for Pallet<T>
 
     fn no_charge_or_fail(charge_id: T::Hash) -> Result<(), DispatchError> {
         return if let Some(_pending_charge) =
-        PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id)
+            PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id)
         {
             Err(Error::<T>::ChargeAlreadyRegistered.into())
         } else {
@@ -209,7 +209,7 @@ mod tests {
                 Default::default(),
                 execution_id,
             )
-                .unwrap();
+            .unwrap();
             assert_eq!(charge_item.payee, ALICE);
             assert_eq!(charge_item.recipient, BOB);
             assert_eq!(charge_item.charge_fee, DEFAULT_BALANCE / 10);
@@ -321,7 +321,7 @@ mod tests {
                 Default::default(),
                 execution_id,
             )
-                .unwrap();
+            .unwrap();
 
             assert_eq!(settlement.requester, ALICE);
             assert_eq!(settlement.recipient, BOB);
@@ -386,7 +386,7 @@ mod tests {
                 Default::default(),
                 execution_id,
             )
-                .unwrap();
+            .unwrap();
 
             assert_eq!(settlement.requester, ALICE);
             assert_eq!(settlement.recipient, BOB);
@@ -460,7 +460,7 @@ mod tests {
                 Default::default(),
                 execution_id,
             )
-                .unwrap();
+            .unwrap();
 
             assert_eq!(settlement.requester, ALICE);
             assert_eq!(settlement.recipient, BOB);
