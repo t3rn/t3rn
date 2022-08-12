@@ -141,7 +141,7 @@ impl Display for Compiler {
 }
 
 /// Type of the contract.
-#[derive(Clone, Debug, Eq, PartialEq, Encode, Decode, TypeInfo)]
+#[derive(Clone, Debug, Eq, PartialEq, Encode, Decode, TypeInfo, Copy)]
 pub enum ContractType {
     System,
     VanillaEvm,
@@ -156,12 +156,24 @@ impl Default for ContractType {
     }
 }
 
+impl From<ContractType> for u8 {
+    fn from(value: ContractType) -> Self {
+        match value {
+            ContractType::System => 0,
+            ContractType::VanillaEvm => 1,
+            ContractType::VanillaWasm => 2,
+            ContractType::VolatileEvm => 3,
+            ContractType::VolatileWasm => 4,
+        }
+    }
+}
+
 /// Metadata about a smart contract.
 #[derive(Clone, Debug, Eq, PartialEq, Encode, Decode, TypeInfo)]
 pub struct ContractMetadata {
     metadata_version: Vec<u8>,
     name: Vec<u8>,
-    contract_type: Vec<u8>,
+    contract_type: ContractType,
     version: Vec<u8>,
     authors: Vec<Vec<u8>>,
     description: Option<Vec<u8>>,
@@ -176,7 +188,7 @@ impl Default for ContractMetadata {
         ContractMetadata {
             metadata_version: b"0.0.1".encode(),
             name: b"Default contract".encode(),
-            contract_type: ContractType::VolatileWasm.encode(),
+            contract_type: ContractType::VolatileWasm,
             version: b"0.0.1".encode(),
             authors: vec![b"Some author".encode()],
             description: None,
@@ -192,7 +204,7 @@ impl ContractMetadata {
     pub fn new(
         metadata_version: Vec<u8>,
         name: Vec<u8>,
-        contract_type: Vec<u8>,
+        contract_type: ContractType,
         version: Vec<u8>,
         authors: Vec<Vec<u8>>,
         description: Option<Vec<u8>>,
@@ -219,7 +231,7 @@ impl ContractMetadata {
         ContractMetadata {
             metadata_version: b"0.0.1".encode(),
             name: b"Default contract".encode(),
-            contract_type: ContractType::System.encode(),
+            contract_type: ContractType::System,
             version: b"0.0.1".encode(),
             authors: vec![b"Some author".encode()],
             description: None,
@@ -230,13 +242,12 @@ impl ContractMetadata {
         }
     }
 
-    pub fn get_contract_type(&self) -> ContractType {
-        match ContractType::decode(&mut self.contract_type.as_slice()) {
-            Ok(contract_type) => contract_type,
-            Err(_) => {
-                log::debug!("Failed to decode contract type, defaulting to System");
-                ContractType::System
-            },
-        }
+    pub fn get_contract_type(&self) -> &ContractType {
+        &self.contract_type
+    }
+
+    pub fn with_type(mut self, kind: ContractType) -> Self {
+        self.contract_type = kind;
+        self
     }
 }
