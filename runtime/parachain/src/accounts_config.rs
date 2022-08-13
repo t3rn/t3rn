@@ -8,6 +8,7 @@ parameter_types! {
 }
 
 impl pallet_account_manager::Config for Runtime {
+    type Clock = t3rn_primitives::clock::ClockMock<Self>;
     type Currency = Balances;
     type EscrowAccount = EscrowAccount;
     type Event = Event;

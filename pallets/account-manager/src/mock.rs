@@ -1,8 +1,5 @@
 use crate::{self as pallet_account_manager, Config};
-use frame_support::{
-    parameter_types,
-    traits::{Everything},
-};
+use frame_support::{parameter_types, traits::Everything};
 use sp_core::H256;
 use sp_runtime::{
     testing::Header,
