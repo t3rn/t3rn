@@ -13,10 +13,8 @@ use sp_runtime::traits::{CheckedDiv, CheckedMul};
 
 use t3rn_primitives::{
     account_manager::{RequestCharge, Settlement},
-    claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
+    claimable::{BenefitSource, CircuitRole},
     clock::Clock,
-    common::RoundInfo,
-    executors::Executors,
 };
 
 use pallet_xbi_portal::sabi::Sabi;
@@ -34,13 +32,13 @@ fn percent_ratio<T: Config>(amt: BalanceOf<T>, percent: u8) -> Result<BalanceOf<
 }
 
 impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockNumber>
-for Pallet<T>
+    for Pallet<T>
 {
     fn get_charge_or_fail(
         charge_id: T::Hash,
     ) -> Result<RequestCharge<T::AccountId, BalanceOf<T>>, DispatchError> {
-        return if let Some(pending_charge) =
-        PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id)
+        if let Some(pending_charge) =
+            PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id)
         {
             Ok(pending_charge)
         } else {
@@ -49,8 +47,8 @@ for Pallet<T>
     }
 
     fn no_charge_or_fail(charge_id: T::Hash) -> Result<(), DispatchError> {
-        return if let Some(_pending_charge) =
-        PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id)
+        if let Some(_pending_charge) =
+            PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id)
         {
             Err(Error::<T>::ChargeAlreadyRegistered.into())
         } else {
@@ -89,7 +87,7 @@ for Pallet<T>
         T::Currency::reserve(payee, charge_fee + offered_reward)?;
 
         let recipient = if let Some(recipient) = maybe_recipient {
-            recipient.clone()
+            recipient
         } else {
             // todo: Inspect if that's a good idea
             T::EscrowAccount::get()
@@ -135,7 +133,7 @@ for Pallet<T>
         };
 
         T::Currency::slash_reserved(&charge.payee, charge.charge_fee + charge.offered_reward);
-        T::Currency::deposit_creating(&charge.payee, payee_refund.clone());
+        T::Currency::deposit_creating(&charge.payee, payee_refund);
 
         // Check if recipient has been updated
         let recipient = if let Some(recipient) = maybe_recipient {
@@ -272,7 +270,7 @@ mod tests {
                 Default::default(),
                 execution_id,
             )
-                .unwrap();
+            .unwrap();
             assert_eq!(charge_item.payee, ALICE);
             assert_eq!(charge_item.recipient, BOB);
             assert_eq!(charge_item.charge_fee, DEFAULT_BALANCE / 10);
@@ -384,7 +382,7 @@ mod tests {
                 Default::default(),
                 execution_id,
             )
-                .unwrap();
+            .unwrap();
 
             assert_eq!(settlement.requester, ALICE);
             assert_eq!(settlement.recipient, BOB);
@@ -449,7 +447,7 @@ mod tests {
                 Default::default(),
                 execution_id,
             )
-                .unwrap();
+            .unwrap();
 
             assert_eq!(settlement.requester, ALICE);
             assert_eq!(settlement.recipient, BOB);
@@ -523,7 +521,7 @@ mod tests {
                 Default::default(),
                 execution_id,
             )
-                .unwrap();
+            .unwrap();
 
             assert_eq!(settlement.requester, ALICE);
             assert_eq!(settlement.recipient, BOB);
