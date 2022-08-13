@@ -1,4 +1,7 @@
-use crate::claimable::{BenefitSource, CircuitRole};
+use crate::{
+    claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
+    common::RoundInfo,
+};
 use codec::{Decode, Encode};
 use frame_support::dispatch::DispatchResult;
 use scale_info::TypeInfo;
@@ -62,4 +65,9 @@ pub trait AccountManager<Account, Balance, Hash, BlockNumber> {
         maybe_recipient: Option<Account>,
         maybe_actual_fees: Option<Balance>,
     ) -> DispatchResult;
+
+    fn on_collect_claimable(
+        n: BlockNumber,
+        r: RoundInfo<BlockNumber>,
+    ) -> Result<Vec<ClaimableArtifacts<Account, Balance>>, DispatchError>;
 }

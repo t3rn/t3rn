@@ -7,14 +7,18 @@ use frame_support::{
     dispatch::DispatchResult,
     traits::{Currency, Get, ReservableCurrency},
 };
-use sp_runtime::{traits::Zero, DispatchError};
-
-use sp_runtime::traits::{CheckedDiv, CheckedMul};
+use sp_runtime::{
+    traits::{CheckedDiv, CheckedMul, Zero},
+    DispatchError,
+};
+use sp_std::{prelude::*, vec};
 
 use t3rn_primitives::{
     account_manager::{RequestCharge, Settlement},
-    claimable::{BenefitSource, CircuitRole},
+    claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
     clock::Clock,
+    common::RoundInfo,
+    executors::Executors,
 };
 
 use pallet_xbi_portal::sabi::Sabi;
@@ -169,12 +173,11 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
         Ok(())
     }
 
-
     /// Collect claimable (only SFX execution rewards) for Executors and Stakers submitted by Circuit at the duration of the current Round
     fn on_collect_claimable(
         _n: T::BlockNumber,
         r: RoundInfo<T::BlockNumber>,
-    ) -> Result<Vec<ClaimableArtifacts<T::AccountId, BalanceOf<T>>>, &'static str> {
+    ) -> Result<Vec<ClaimableArtifacts<T::AccountId, BalanceOf<T>>>, DispatchError> {
         let mut claimable_artifacts: Vec<ClaimableArtifacts<T::AccountId, BalanceOf<T>>> = vec![];
         let mut active_set_claimables: Vec<ActiveSetClaimablePerRound<T::AccountId, BalanceOf<T>>> =
             T::Executors::active_set()
