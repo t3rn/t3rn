@@ -6769,6 +6769,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-clock"
+version = "1.0.0-alpha.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-metadata 15.0.0",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-account-manager",
+ "pallet-balances",
+ "pallet-executors",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "pallet-treasury 0.0.0",
+ "parity-scale-codec 3.1.5",
+ "scale-info 2.1.2",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-keystore",
+ "sp-runtime",
+ "sp-std",
+ "sp-version",
+ "t3rn-primitives",
+]
+
+[[package]]
 name = "pallet-collator-selection"
 version = "3.0.0"
 source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.19#0c779d926beeb6e1f3f2aa777d9bcec792c0bdac"
