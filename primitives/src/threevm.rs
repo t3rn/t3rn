@@ -73,7 +73,7 @@ pub struct Remunerated<Hash> {
     pub remuneration_id: Option<Hash>,
 }
 
-impl <Hash> Default for Remunerated<Hash> {
+impl<Hash> Default for Remunerated<Hash> {
     fn default() -> Self {
         Remunerated {
             remuneration_id: None,
@@ -81,7 +81,7 @@ impl <Hash> Default for Remunerated<Hash> {
     }
 }
 
-impl <Hash> Remunerated<Hash> {
+impl<Hash> Remunerated<Hash> {
     pub fn new(id: Option<Hash>) -> Self {
         Remunerated {
             remuneration_id: id,

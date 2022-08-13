@@ -6409,6 +6409,8 @@ dependencies = [
  "pallet-balances",
  "pallet-sudo",
  "pallet-timestamp",
+ "pallet-treasury 0.0.0",
+ "pallet-xbi-portal",
  "parity-scale-codec 3.1.5",
  "scale-info 2.1.2",
  "serde",

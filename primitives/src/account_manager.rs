@@ -1,7 +1,4 @@
-use crate::{
-    bridges::polkadot_core::BlockNumber,
-    claimable::{BenefitSource, CircuitRole},
-};
+use crate::claimable::{BenefitSource, CircuitRole};
 use codec::{Decode, Encode};
 use frame_support::dispatch::DispatchResult;
 use scale_info::TypeInfo;
@@ -9,7 +6,6 @@ use sp_runtime::DispatchError;
 use sp_std::{fmt::Debug, prelude::*};
 
 pub type ExecutionId = u64;
-use crate::common::RoundInfo;
 
 /// General round information consisting ofindex (one-based), head
 /// (beginning block number), and term (round length in number of blocks).
