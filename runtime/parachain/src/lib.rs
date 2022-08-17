@@ -346,7 +346,7 @@ parameter_types! {
 }
 
 impl pallet_authorship::Config for Runtime {
-    type EventHandler = (CollatorSelection,);
+    type EventHandler = CollatorSelection;
     type FilterUncle = ();
     type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
     type UncleGenerations = UncleGenerations;
