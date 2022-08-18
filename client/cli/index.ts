@@ -6,7 +6,7 @@ import { CircuitRelayer } from "./circuitRelayer";
 import { register } from "./commands/register/register";
 import { setOperational } from "./commands/operational";
 import {parseRegisterArgs, parseSubmitHeaderArgs, parseTransferArgs} from "./utils/parseArgs";
-import {transfer} from "./commands/transfer";
+import {onExtrinsicTrigger} from "./commands/onExtrinsicTrigger";
 import * as fs from "fs";
 import {submitHeader} from "./commands/submit_header/submit_header";
 import { amountLeArr, encodeExport, optionalInsurance } from "./utils/encoder";
@@ -146,14 +146,12 @@ class CircuitCLI {
         }
     }
 
-    async transfer(id: string, exportArgs: boolean, exportName: string, amount: number, bond: number, reward: number, fee: number, executioner: string, receiver: string) {
-        const gatewayData = config.gateways.find(elem => elem.id === id)
+    async transfer(data: any, sequential: boolean) {
+        const gatewayData = config.gateways.find(elem => elem.id === data.target)
 
         if(gatewayData) {
-            let encodedAmount = amountLeArr(amount, gatewayData.registrationData.gatewayConfig.decimals, gatewayData.registrationData.gatewayConfig.valueTypeSize);
-            let encodedOptionalInsurance = bond === reward && reward === 0 ? null : optionalInsurance(bond, reward, config.circuit.decimals, config.circuit.valueTypeSize);
-            if(receiver === "") receiver = gatewayData.transferData.receiver;
-            const transactionArgs: any = transfer(this.circuit, gatewayData, encodedAmount, encodedOptionalInsurance, addressStringToPubKey(this.signer.address), addressStringToPubKey(receiver), fee, executioner)
+            if(data.receiver === '') data.receiver = gatewayData.transferData.receiver;
+            const transactionArgs: any = onExtrinsicTrigger(this.circuit, [data], sequential, this.signer.address)
             // @ts-ignore
             let submissionNumber: number = await this.circuitRelayer.onExtrinsicTrigger(transactionArgs)
                 .catch(err => {
@@ -161,8 +159,8 @@ class CircuitCLI {
                     this.error()
                 })
 
-            if (exportArgs) {
-                const fileName = `./exports/` + exportName + '.json';
+            if (data.exportArgs) {
+                const fileName = `./exports/` + data.exportName + '.json';
                 this.exportData([transactionArgs], fileName, "transfer", submissionNumber)
             } else {
                 this.close()
@@ -171,6 +169,38 @@ class CircuitCLI {
         } else {
             console.log(`Config or argument for ${process.argv[3]} not found!`)
             this.error();
+        }
+    }
+
+    async submitSideEffects(path: string, exportArgs: boolean, exportName: string) {
+        if (!fs.existsSync(path)) {
+             console.log("File doesn't exist!")
+             this.error()
+         }
+
+        const data = (await import('./' + path)).default;
+
+        // Check we have an config for each SideEffect
+        data.sideEffects.forEach(effect => {
+            if (!config.gateways.find(entry => entry.id === effect.target)) {
+                console.log(`Gateway for SideEffect ${effect.type} not found!`)
+                this.error()
+            }
+        })
+
+        const transactionArgs: any = onExtrinsicTrigger(this.circuit, data.sideEffects, data.sequential, this.signer.address)
+        // @ts-ignore
+        let submissionNumber: number = await this.circuitRelayer.onExtrinsicTrigger(transactionArgs)
+            .catch(err => {
+                console.log("Transfer Failed! Error:", err);
+                this.error()
+            })
+
+        if (exportArgs) {
+            const fileName = `./exports/` + exportName + '.json';
+            this.exportData([transactionArgs], fileName, "transfer", submissionNumber)
+        } else {
+            this.close()
         }
     }
 
@@ -238,16 +268,27 @@ program.command('transfer')
       .option('-r --receiver <string>', 'receiver address', '')
       .option('-b --bond <float>', 'The bond required for execution', '0')
       .option('--reward <float>', 'The reward payed out (not sure for what)', '0')
-      .option('-f --fee <float>', 't3rn fee', '0')
-      .option('--executioner Option<string>', 'enforce Executioner address', "")
+      .option('--executioner <string>', 'enforce executioner address')
       .option('-e, --export', 'export the transaction arguments as JSON', false)
       .option('-o, --output <string>', 'specify the filename of the export', "export")
       .action(async (id, options) => {
           let cli = new CircuitCLI();
           await cli.setup()
-          // async transfer(id: string, exportArgs: boolean, exportName: string, amount: number, bond: number, fee: number, executioner: string, receiver: string) {
+          options.target = id
+          options.type = "tran"
+          cli.transfer(options, false)
+      });
 
-          cli.transfer(id, options.export, options.output, parseFloat(options.amount), parseFloat(options.bond), parseFloat(options.reward), parseFloat(options.fee), options.executioner, options.receiver)
+program.command('submit-side-effects')
+      .description('Submits SideEffects based on input file')
+      .argument('path <string>', 'path to file')
+      .option('-e, --export', 'export the transaction arguments as JSON', false)
+      .option('-o, --output <string>', 'specify the filename of the export', "export")
+      .action(async (path, options) => {
+          let cli = new CircuitCLI();
+          await cli.setup()
+          console.log(options.export)
+          cli.submitSideEffects(path, options.export, options.output)
       });
 
 program.parse();

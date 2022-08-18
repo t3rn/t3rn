@@ -1,6 +1,6 @@
 const BN = require('bn.js');
 
-export const amountLeArr = (amount: number, decimals: number, size: number) => {
+export const amountLeArr = (amount: number, decimals: any, size: any) => {
     let bn = new BN(amount * Math.pow(10, decimals))
     return bn.toArray("le", size)
 }
