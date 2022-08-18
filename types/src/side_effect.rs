@@ -1,3 +1,4 @@
+use crate::abi::Type as AbiType;
 use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::{
     prelude::{collections::VecDeque, fmt::Debug, vec, vec::Vec},
@@ -27,11 +28,48 @@ pub const DATA_SIDE_EFFECT_ID: &[u8; 4] = b"data";
 pub struct SideEffect<AccountId, BlockNumber, BalanceOf> {
     pub target: TargetId,
     pub prize: BalanceOf,
-    pub ordered_at: BlockNumber,
     pub encoded_action: Bytes,
     pub encoded_args: Vec<Bytes>,
+    pub ordered_at: BlockNumber,
     pub signature: Bytes,
     pub enforce_executioner: Option<AccountId>,
+}
+
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
+pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
+    pub target: TargetId,
+    pub prize: BalanceOf,
+    pub encoded_action: [u8; 4],
+    pub encoded_args: Vec<Bytes>,
+    pub encoded_args_abi: Vec<AbiType>,
+    pub security_lvl: SecurityLvl,
+    pub confirmation_outcome: ConfirmationOutcome,
+    pub confirmed_executioner: AccountId,
+    pub confirmed_received_at: BlockNumber,
+    pub confirmed_cost: BalanceOf,
+}
+
+impl<AccountId, BlockNumber, BalanceOf> Default
+    for FullSideEffect<AccountId, BlockNumber, BalanceOf>
+where
+    AccountId: From<[u8; 32]>,
+    BlockNumber: Default,
+    BalanceOf: Default,
+{
+    fn default() -> Self {
+        FullSideEffect::<AccountId, BlockNumber, BalanceOf> {
+            target: [0, 0, 0, 0],
+            prize: BalanceOf::default(),
+            encoded_action: [0, 0, 0, 0],
+            encoded_args: vec![],
+            encoded_args_abi: vec![],
+            security_lvl: SecurityLvl::Dirty,
+            confirmation_outcome: ConfirmationOutcome::Success,
+            confirmed_executioner: AccountId::from([0u8; 32]),
+            confirmed_received_at: BlockNumber::default(),
+            confirmed_cost: BalanceOf::default(),
+        }
+    }
 }
 
 #[cfg(feature = "runtime")]

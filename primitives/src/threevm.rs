@@ -29,14 +29,14 @@ where
 }
 
 /// The happy return type of an invocation
-pub enum PrecompileInvocation<T: frame_system::Config> {
-    GetState(LocalStateExecutionView<T>),
+pub enum PrecompileInvocation<T: frame_system::Config, Balance> {
+    GetState(LocalStateExecutionView<T, Balance>),
     Submit,
     Signal,
 }
 
-impl<T: frame_system::Config> PrecompileInvocation<T> {
-    pub fn get_state(&self) -> Option<&LocalStateExecutionView<T>> {
+impl<T: frame_system::Config, Balance> PrecompileInvocation<T, Balance> {
+    pub fn get_state(&self) -> Option<&LocalStateExecutionView<T, Balance>> {
         match self {
             PrecompileInvocation::GetState(state) => Some(state),
             _ => None,
@@ -56,17 +56,19 @@ where
     fn invoke_raw(precompile: &u8, args: &[u8], output: &mut Vec<u8>);
 
     /// Invoke a precompile
-    fn invoke(args: PrecompileArgs<T, Balance>) -> Result<PrecompileInvocation<T>, DispatchError>;
+    fn invoke(
+        args: PrecompileArgs<T, Balance>,
+    ) -> Result<PrecompileInvocation<T, Balance>, DispatchError>;
 }
 
-pub trait LocalStateAccess<T>
+pub trait LocalStateAccess<T, Balance>
 where
     T: frame_system::Config,
 {
     fn load_local_state(
         origin: &T::Origin,
         xtx_id: Option<&T::Hash>,
-    ) -> Result<LocalStateExecutionView<T>, DispatchError>;
+    ) -> Result<LocalStateExecutionView<T, Balance>, DispatchError>;
 }
 
 pub struct Remunerated {
