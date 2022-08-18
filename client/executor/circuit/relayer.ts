@@ -107,7 +107,7 @@ export default class CircuitRelayer extends EventEmitter {
     }
   }
 }
-
+let counter = 1;
 export const exportData = (data: any, fileName: string, transactionType: string) => {
     let deepCopy;
     // since its pass-by-reference
@@ -117,11 +117,12 @@ export const exportData = (data: any, fileName: string, transactionType: string)
         deepCopy = {...data};
     }
     let encoded = encodeExport(deepCopy, transactionType);
-    fs.writeFile("exports/" + fileName, JSON.stringify(encoded, null, 4), (err) => {
+    fs.writeFile("exports/" + counter + '-' + fileName, JSON.stringify(encoded, null, 4), (err) => {
         if(err) {
-          console.log(err);
+            console.log(err);
         } else {
-          console.log("JSON saved to " + fileName);
+            counter += 1;
+            console.log("JSON saved to " + fileName);
         }
     });
 }

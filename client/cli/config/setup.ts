@@ -1,13 +1,8 @@
-import{ Keyring }from'@polkadot/api';
-const keyring = new Keyring({ type: "sr25519" })
-
 export default {
     circuit: {
         rpc: "ws://127.0.0.1:9944",
-        // signer: process.env.CIRCUIT_KEY === undefined
-        //         ? keyring.addFromUri("//Alice")
-        //         : keyring.addFromMnemonic(process.env.CIRCUIT_KEY)
-
+        decimals: 12,
+        valueTypeSize: 16 //bytes
     },
     gateways: [
         {
@@ -27,7 +22,7 @@ export default {
                     hasher: "Blake2",
                     crypto: "sr25519",
                     addressLength: 32,
-                    valueTypeSize: 8,
+                    valueTypeSize: 16,
                     decimals: 12,
                     structs: []
                 },

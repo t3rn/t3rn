@@ -1,8 +1,14 @@
 const BN = require('bn.js');
 
-export const transferAmount = (amount: number, decimals: number, size: number) => {
+export const amountLeArr = (amount: number, decimals: number, size: number) => {
     let bn = new BN(amount * Math.pow(10, decimals))
     return bn.toArray("le", size)
+}
+
+export const optionalInsurance = (insurance: number, reward: number, decimals: number, size: number) =>  {
+    const encodedInsurance = amountLeArr(insurance, decimals, size);
+    const encodedReward = amountLeArr(reward, decimals, size);
+    return [...encodedInsurance, ...encodedReward]
 }
 
 // encodes data for exporting. We export in encoded and human format.

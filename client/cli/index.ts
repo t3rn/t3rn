@@ -9,7 +9,7 @@ import {parseRegisterArgs, parseSubmitHeaderArgs, parseTransferArgs} from "./uti
 import {transfer} from "./commands/transfer";
 import * as fs from "fs";
 import {submitHeader} from "./commands/submit_header/submit_header";
-import {encodeExport, transferAmount} from "./utils/encoder";
+import { amountLeArr, encodeExport, optionalInsurance } from "./utils/encoder";
 
 import { Command } from 'commander';
 import {addressStringToPubKey} from "./utils/decoder";
@@ -37,6 +37,7 @@ class CircuitCLI {
                 ? keyring.addFromUri("//Alice")
                 : keyring.addFromMnemonic(process.env.CIRCUIT_KEY)
         this.circuitRelayer = new CircuitRelayer(this.circuit, this.signer)
+        console.log(this.signer.address)
 
     }
 
@@ -145,13 +146,14 @@ class CircuitCLI {
         }
     }
 
-    async transfer(id: string, exportArgs: boolean, exportName: string, amount: number, fee: number, receiver?: string) {
+    async transfer(id: string, exportArgs: boolean, exportName: string, amount: number, bond: number, reward: number, fee: number, executioner: string, receiver: string) {
         const gatewayData = config.gateways.find(elem => elem.id === id)
 
         if(gatewayData) {
-            let encodedAmount = transferAmount(amount, gatewayData.registrationData.gatewayConfig.decimals, gatewayData.registrationData.gatewayConfig.valueTypeSize);
-            if(!receiver) receiver = addressStringToPubKey(gatewayData.transferData.receiver);
-            const transactionArgs: any = transfer(this.circuit, gatewayData, encodedAmount, addressStringToPubKey(this.signer.address), receiver, fee)
+            let encodedAmount = amountLeArr(amount, gatewayData.registrationData.gatewayConfig.decimals, gatewayData.registrationData.gatewayConfig.valueTypeSize);
+            let encodedOptionalInsurance = bond === reward && reward === 0 ? null : optionalInsurance(bond, reward, config.circuit.decimals, config.circuit.valueTypeSize);
+            if(receiver === "") receiver = gatewayData.transferData.receiver;
+            const transactionArgs: any = transfer(this.circuit, gatewayData, encodedAmount, encodedOptionalInsurance, addressStringToPubKey(this.signer.address), addressStringToPubKey(receiver), fee, executioner)
             // @ts-ignore
             let submissionNumber: number = await this.circuitRelayer.onExtrinsicTrigger(transactionArgs)
                 .catch(err => {
@@ -233,14 +235,19 @@ program.command('transfer')
       .description('Triggers a transfer SideEffect, sending the targets nativ asset')
       .argument('gateway_id <string>', 'gateway_id as specified in setup.ts')
       .option('-a --amount <float>', 'transfer amount', '1')
-      .option('-r --receiver <string>', 'receiver address')
+      .option('-r --receiver <string>', 'receiver address', '')
+      .option('-b --bond <float>', 'The bond required for execution', '0')
+      .option('--reward <float>', 'The reward payed out (not sure for what)', '0')
       .option('-f --fee <float>', 't3rn fee', '0')
+      .option('--executioner Option<string>', 'enforce Executioner address', "")
       .option('-e, --export', 'export the transaction arguments as JSON', false)
       .option('-o, --output <string>', 'specify the filename of the export', "export")
       .action(async (id, options) => {
           let cli = new CircuitCLI();
           await cli.setup()
-          cli.transfer(id, options.export, options.output, parseFloat(options.amount), parseFloat(options.fee), options.receiver)
+          // async transfer(id: string, exportArgs: boolean, exportName: string, amount: number, bond: number, fee: number, executioner: string, receiver: string) {
+
+          cli.transfer(id, options.export, options.output, parseFloat(options.amount), parseFloat(options.bond), parseFloat(options.reward), parseFloat(options.fee), options.executioner, options.receiver)
       });
 
 program.parse();
