@@ -50,6 +50,7 @@ where
     }
 }
 
+// TODO: this is stupid, use the raw Chain from sdk prims
 #[cfg(feature = "runtime")]
 /// Decode the side effect from encoded Chain.
 impl<AccountId, BlockNumber, BalanceOf> TryFrom<Vec<u8>>
@@ -167,6 +168,7 @@ fn extract_args<AccountId: MaxEncodedLen, BalanceOf: MaxEncodedLen, Hash: MaxEnc
             args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // to
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt
 
+            // FIXME: bug here, balanceof is the wrong size
             // TODO: support insurance
 
             Ok(args)
