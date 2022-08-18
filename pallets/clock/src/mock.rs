@@ -29,7 +29,7 @@ frame_support::construct_runtime!(
         AccountManager: pallet_account_manager,
         Timestamp: pallet_timestamp::{Pallet},
         Sudo: pallet_sudo::{Pallet, Call, Event<T>},
-        CircuitClock: crate::{Pallet, Storage, Event<T>},
+        Clock: crate::{Pallet, Storage, Event<T>},
 
         Treasury: pallet_treasury::{Pallet, Call, Config<T>, Storage, Event<T>},
     }
@@ -106,10 +106,9 @@ parameter_types! {
 }
 
 impl pallet_account_manager::Config for Test {
-    type CircuitClock = CircuitClock;
+    type Clock = Clock;
     type Currency = Balances;
     type EscrowAccount = EscrowAccount;
-    type Escrowed = Self;
     type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type Time = Timestamp;
@@ -148,9 +147,7 @@ impl Config for Test {
     type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type RoundDuration = ConstU64<500>;
-    type Time = Timestamp;
     type Treasury = Treasury;
-    type WeightInfo = ();
 }
 
 impl t3rn_primitives::EscrowTrait<Test> for Test {

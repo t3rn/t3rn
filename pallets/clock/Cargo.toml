@@ -29,6 +29,7 @@ sp-std     = { default-features = false, git = "https://github.com/paritytech/su
 sp-version = { default-features = false, git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 
 t3rn-primitives = { path = "../../primitives", default-features = false }
+pallet-account-manager = { path = "../account-manager", default-features = false }
 
 [dev-dependencies]
 sp-core     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
@@ -59,5 +60,6 @@ std = [
   "sp-runtime/std",
   "sp-std/std",
   "t3rn-primitives/std",
+  "pallet-account-manager/std",
 ]
 try-runtime = [ "frame-support/try-runtime" ]
