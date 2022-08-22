@@ -7,10 +7,6 @@ import { SideEffect } from "./utils/types"
 import { ExecutionManager } from "./executionManager"
 import createDebug from "debug"
 
-if (!process.env.SIGNER_KEY) {
-  throw Error("missing env var SIGNER_KEY")
-}
-
 class InstanceManager {
   static debug = createDebug("instance-manager")
 

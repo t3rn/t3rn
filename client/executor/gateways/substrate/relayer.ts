@@ -22,9 +22,9 @@ export default class SubstrateRelayer extends EventEmitter {
     const keyring = new Keyring({ type: "sr25519" })
 
     this.signer =
-      process.env.SIGNER_KEY === undefined
+      process.env.SIGNER_ROCOCO === undefined
         ? keyring.addFromUri("//Alice")
-        : keyring.addFromMnemonic(process.env.SIGNER_KEY)
+        : keyring.addFromMnemonic(process.env.SIGNER_ROCOCO)
 
     this.name = name
   }

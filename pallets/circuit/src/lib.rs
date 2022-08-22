@@ -564,6 +564,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin, CircuitRole::Requester)?;
+            log::info!("on_extrinsic_trigger -- finished authorized");
             // Charge: Ensure can afford
             Self::charge(&requester, fee)?;
             log::info!("on_extrinsic_trigger -- finished charged");
@@ -634,6 +635,9 @@ pub mod pallet {
                 .iter_mut()
                 .find(|(id, _)| *id == side_effect_id)
             {
+                log::info!("°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°");
+                log::info!("Relayer: {:?}", relayer);
+                log::info!("Insurance: {:?}", insurance_deposit.insurance);
                 Self::charge(&relayer, insurance_deposit.insurance)?;
 
                 log::info!("bond insurance deposit -- charged");

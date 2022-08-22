@@ -24,9 +24,10 @@ use crate::{
     },
     state::*,
     SignalKind,
+    Error
 };
 use codec::{Decode, Encode};
-use frame_support::{assert_ok, dispatch::PostDispatchInfo, traits::Currency};
+use frame_support::{assert_noop, assert_ok, dispatch::PostDispatchInfo, traits::Currency};
 use frame_system::{pallet_prelude::OriginFor, EventRecord, Phase};
 use pallet_circuit_portal::bp_circuit;
 use serde_json::Value;
@@ -197,8 +198,6 @@ fn on_extrinsic_trigger(
         Decode::decode(&mut &*hex::decode(json["encoded_side_effects"].as_str().unwrap()).unwrap())
             .unwrap();
 
-    // Decode::decode(mut &hex::decode(json["encoded_side_effects"].as_str().unwrap())).unwrap();
-    // let fee: EscrowedBalanceOf<Test, t3rn_primitives::EscrowTrait<mock::Test>> = Decode::decode(&mut &*hex::decode(json["encoded_fee"].as_str().unwrap()).unwrap()).unwrap();
     let fee = 0;
     let sequential: bool =
         Decode::decode(&mut &*hex::decode(json["encoded_sequential"].as_str().unwrap()).unwrap())
@@ -230,8 +229,43 @@ fn confirm_side_effect(
     )
 }
 
+pub fn bond_insurance_deposit(
+    origin: OriginFor<Test>,
+    json: Value
+) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
+    let xtx_id: sp_core::H256 =
+        Decode::decode(&mut &*hex::decode(json["encoded_xtx_id"].as_str().unwrap()).unwrap())
+            .unwrap();
+
+    let side_effect_id: SideEffectId<Test> =
+        Decode::decode(&mut &*hex::decode(json["encoded_id"].as_str().unwrap()).unwrap())
+            .unwrap();
+
+    Circuit::bond_insurance_deposit(
+        origin, // Active relayer
+        xtx_id,
+        side_effect_id,
+    )
+}
+
+fn read_file_and_set_height(
+    path: &str
+) -> Value {
+    let file = fs::read_to_string("src/mock-data/".to_owned() + path).unwrap();
+    let json: Value = serde_json::from_str(file.as_str()).unwrap();
+     for entry in json.as_array().unwrap() {
+        let submission_height: u64 = entry["submission_height"].as_u64().unwrap();
+        if submission_height > 0 {
+            System::set_block_number(submission_height.try_into().unwrap());
+        }
+     }
+    json
+}
+
 // iterates sequentially though all test files in mock-data
-fn run_mock_tests() -> Result<(), DispatchErrorWithPostInfo<PostDispatchInfo>> {
+fn run_mock_tests(
+    path: &str
+) -> Result<(), DispatchErrorWithPostInfo<PostDispatchInfo>> {
     let cli_signer = Origin::signed(
         [
             212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133,
@@ -239,7 +273,7 @@ fn run_mock_tests() -> Result<(), DispatchErrorWithPostInfo<PostDispatchInfo>> {
         ]
         .into(),
     );
-    let mut paths: Vec<_> = fs::read_dir("src/mock-data/")
+    let mut paths: Vec<_> = fs::read_dir("src/mock-data/".to_owned() + path)
         .unwrap()
         .map(|r| r.unwrap())
         .collect();
@@ -286,7 +320,7 @@ fn runs_mock_tests() {
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
-            let _ = run_mock_tests();
+            let _ = run_mock_tests("auto");
         });
 }
 
@@ -1715,6 +1749,219 @@ fn load_local_state_can_generate_and_read_state() {
         assert_eq!(res.local_state, LocalState::new());
         assert_eq!(res.steps_cnt, (0, 0));
     });
+}
+
+#[test]
+fn unbonded_unrewarded_unsequential_single_rococo_transfer_confirms() {
+    let path = "unbonded_unrewarded_unsequential_single_rococo_transfer_confirms/";
+    // generated via CLI with:
+    // export default {
+    //     sideEffects: [
+    //         {
+    //             target: "roco",
+    //             type: "tran",
+    //             receiver: "5EoHBHDBNj61SbqNPcgYzwHXY1xAroduRP3M99iSMZ8kwvgp",
+    //             amount: "0.01",
+    //             bond: "0",
+    //             reward: "0",
+    //             signature: null,
+    //             executioner: null
+    //         }
+    //     ],
+    //     sequential: false,
+    // }
+
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&CLI_DEFAULT, 1);
+            let _ = Balances::deposit_creating(&EXECUTOR_DEFAULT, 1);
+            // Read data from files
+            let register_values = read_file_and_set_height(&(path.to_owned() + "1-register-roco.json"));
+            assert_ok!(register(Origin::root(), register_values[0].clone(), true));
+
+            let submit_header_1 = read_file_and_set_height(&(path.to_owned() + "2-headers-roco.json"));
+            for index in 0..submit_header_1.as_array().unwrap().len() { // we have to loop, because this might be seperate transactions
+                assert_ok!(submit_headers(
+                    Origin::signed(CLI_DEFAULT),
+                    submit_header_1.clone(),
+                    index
+                ));
+            };
+
+            let transfer =  read_file_and_set_height(&(path.to_owned() + "3-submit-transfer.json"));
+            assert_ok!(on_extrinsic_trigger(Origin::signed(CLI_DEFAULT), transfer[0].clone()));
+
+            let submit_header_2 = read_file_and_set_height(&(path.to_owned() + "4-headers-roco.json"));
+            for index in 0..submit_header_2.as_array().unwrap().len() { // we have to loop, because this might be seperate transactions
+                assert_ok!(submit_headers(
+                    Origin::signed(CLI_DEFAULT),
+                    submit_header_2.clone(),
+                    index
+                ));
+            };
+
+            let confirm =  read_file_and_set_height(&(path.to_owned() + "5-confirm-transfer-roco.json"));
+            assert_ok!(confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm[0].clone()));
+            assert_eq!(Balances::free_balance(&CLI_DEFAULT), 1);
+            assert_eq!(Balances::free_balance(&EXECUTOR_DEFAULT), 1);
+
+        });
+}
+
+#[test]
+fn bonded_unrewarded_unsequential_single_rococo_transfer_confirms() {
+    let path = "bonded_unrewarded_unsequential_single_rococo_transfer_confirms/";
+    // generated via CLI with:
+    // export default {
+    //     sideEffects: [
+    //         {
+    //             target: "roco",
+    //             type: "tran",
+    //             receiver: "5EoHBHDBNj61SbqNPcgYzwHXY1xAroduRP3M99iSMZ8kwvgp",
+    //             amount: "0.1",
+    //             bond: "1",
+    //             reward: "0",
+    //             signature: null,
+    //             executioner: null
+    //         }
+    //     ],
+    //     sequential: false,
+    // }
+
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&CLI_DEFAULT, (10 * 10u128.pow(12)).into()); // 10 trn
+            let _ = Balances::deposit_creating(&EXECUTOR_DEFAULT, (10 * 10u128.pow(12)).into()); // 10 trn
+
+            // Read data from files
+            let register_values = read_file_and_set_height(&(path.to_owned() + "1-register-roco.json"));
+            assert_ok!(register(Origin::root(), register_values[0].clone(), true));
+
+            let submit_header_1 = read_file_and_set_height(&(path.to_owned() + "2-headers-roco.json"));
+            for index in 0..submit_header_1.as_array().unwrap().len() { // we have to loop, because this might be seperate transactions
+                 assert_ok!(submit_headers(
+                    Origin::signed(CLI_DEFAULT),
+                    submit_header_1.clone(),
+                    index
+                ));
+            };
+
+            let transfer =  read_file_and_set_height(&(path.to_owned() + "3-submit-transfer.json"));
+            assert_ok!(on_extrinsic_trigger(Origin::signed(CLI_DEFAULT), transfer[0].clone()));
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), (10u128 * 10u128.pow(12)).into());
+            assert_eq!(Balances::free_balance(EXECUTOR_DEFAULT), (10u128 * 10u128.pow(12)).into());
+
+            let confirm =  read_file_and_set_height(&(path.to_owned() + "6-confirm-transfer-roco.json"));
+            // Can't confirm without header in light client
+            assert_noop!(
+                confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm[0].clone()),
+                "SideEffect confirmation failed!"
+            );
+
+            let submit_header_2 = read_file_and_set_height(&(path.to_owned() + "5-headers-roco.json"));
+            for index in 0..submit_header_2.as_array().unwrap().len() { // we have to loop, because this might be seperate transactions
+                assert_ok!(submit_headers(
+                    Origin::signed(CLI_DEFAULT),
+                    submit_header_2.clone(),
+                    index
+                ));
+            };
+
+            // Can't confirm without bond posted
+            assert_noop!(
+                confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm[0].clone()),
+                Error::<Test>::ApplyFailed
+            );
+
+            let post_bond = read_file_and_set_height(&(path.to_owned() + "4-post-bond-roco.json"));
+            assert_ok!(bond_insurance_deposit(Origin::signed(EXECUTOR_DEFAULT), post_bond[0].clone()));
+
+            assert_eq!(Balances::free_balance(&CLI_DEFAULT), (10u128 * 10u128.pow(12)).into());
+            assert_eq!(Balances::free_balance(&EXECUTOR_DEFAULT), (9u128 * 10u128.pow(12)).into());
+
+            assert_ok!(confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm[0].clone()));
+            assert_eq!(Balances::free_balance(&CLI_DEFAULT), (10u128 * 10u128.pow(12)).into());
+            assert_eq!(Balances::free_balance(&EXECUTOR_DEFAULT), (10u128 * 10u128.pow(12)).into());
+
+        });
+}
+
+#[test]
+fn bonded_rewarded_unsequential_single_rococo_transfer_confirms() {
+    let path = "bonded_rewarded_unsequential_single_rococo_transfer_confirms/";
+    // generated via CLI with:
+    // export default {
+    //     sideEffects: [
+    //         {
+    //             target: "roco",
+    //             type: "tran",
+    //             receiver: "5EoHBHDBNj61SbqNPcgYzwHXY1xAroduRP3M99iSMZ8kwvgp",
+    //             amount: "0.1",
+    //             bond: "1",
+    //             reward: "1",
+    //             signature: null,
+    //             executioner: null
+    //         }
+    //     ],
+    //     sequential: false,
+    // }
+
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&CLI_DEFAULT, (10 * 10u128.pow(12)).into()); // 10 trn
+            let _ = Balances::deposit_creating(&EXECUTOR_DEFAULT, (10 * 10u128.pow(12)).into()); // 10 trn
+
+            // Read data from files
+            let register_values = read_file_and_set_height(&(path.to_owned() + "1-register-roco.json"));
+            assert_ok!(register(Origin::root(), register_values[0].clone(), true));
+
+            let submit_header_1 = read_file_and_set_height(&(path.to_owned() + "2-headers-roco.json"));
+            for index in 0..submit_header_1.as_array().unwrap().len() { // we have to loop, because this might be seperate transactions
+                 assert_ok!(submit_headers(
+                    Origin::signed(CLI_DEFAULT),
+                    submit_header_1.clone(),
+                    index
+                ));
+            };
+            let transfer =  read_file_and_set_height(&(path.to_owned() + "3-submit-transfer.json"));
+
+            assert_ok!(on_extrinsic_trigger(Origin::signed(CLI_DEFAULT), transfer[0].clone()));
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), (9u128 * 10u128.pow(12)).into());
+            assert_eq!(Balances::free_balance(EXECUTOR_DEFAULT), (10u128 * 10u128.pow(12)).into());
+
+            let post_bond = read_file_and_set_height(&(path.to_owned() + "4-post-bond-roco.json"));
+            assert_ok!(bond_insurance_deposit(Origin::signed(EXECUTOR_DEFAULT), post_bond[0].clone()));
+
+            assert_eq!(Balances::free_balance(&CLI_DEFAULT), (9u128 * 10u128.pow(12)).into());
+            assert_eq!(Balances::free_balance(&EXECUTOR_DEFAULT), (9u128 * 10u128.pow(12)).into());
+
+            let submit_header_2 = read_file_and_set_height(&(path.to_owned() + "5-headers-roco.json"));
+            for index in 0..submit_header_2.as_array().unwrap().len() { // we have to loop, because this might be seperate transactions
+                assert_ok!(submit_headers(
+                    Origin::signed(CLI_DEFAULT),
+                    submit_header_2.clone(),
+                    index
+                ));
+            };
+
+            let confirm =  read_file_and_set_height(&(path.to_owned() + "6-confirm-transfer-roco.json"));
+            assert_ok!(confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm[0].clone()));
+            assert_eq!(Balances::free_balance(&CLI_DEFAULT), (9u128 * 10u128.pow(12)).into());
+            assert_eq!(Balances::free_balance(&EXECUTOR_DEFAULT), (11u128 * 10u128.pow(12)).into());
+
+        });
 }
 
 #[test]

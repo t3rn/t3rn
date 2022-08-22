@@ -8,14 +8,13 @@ export const transferArgs = (target: string, from: string, receiver: string, amo
     let encodedAmount = amountLeArr(amount, gatewayData.registrationData.gatewayConfig.decimals, gatewayData?.registrationData.gatewayConfig.valueTypeSize);
     if(receiver === "") receiver = gatewayData.transferData.receiver;
     let res = [addressStringToPubKey(from), addressStringToPubKey(receiver), encodedAmount]
-    if (bond !== 0 && reward !== 0) {
+    if (bond !== 0 || reward !== 0) {
         res.push(optionalInsurance(bond, reward, config.circuit.decimals, config.circuit.valueTypeSize));
     }
     return res;
 }
 
 export const sideEffect = (circuitApi: ApiPromise, data: any, sender: any) => {
-    console.log(data)
     let encodedArgs: any[] = [];
     if(data.type === "tran") {
         encodedArgs = transferArgs(data.target, addressStringToPubKey(sender), addressStringToPubKey(data.receiver), parseFloat(data.amount), parseFloat(data.bond), parseFloat(data.reward));

@@ -22,11 +22,8 @@ const execute = async (command: string, waitInSec: number) => {
 const generateTestingData = async () => {
     await execute("register roco --export -o 1-register-roco", 10)
     await execute("submit-headers roco --export -o 2-headers-roco", 15);
-    await execute("register pang --export -o 3-register-pang", 30);
+    await execute("submit-side-effects config/transfer.ts -e -o 3-submit-transfer", 50);
     await execute("submit-headers roco --export -o 4-headers-roco", 30);
-    await execute("submit-headers pang --export -o 5-headers-pang", 20);
-    await execute("transfer roco -a 0.001 --export -o 6-transfer-roco", 50);
-    await execute("submit-headers roco --export -o 7-headers-roco", 0);
 }
 
 const wait = (waitInSecs: number) => {

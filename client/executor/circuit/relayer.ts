@@ -24,8 +24,10 @@ export default class CircuitRelayer extends EventEmitter {
 
     this.signer =
       process.env.CIRCUIT_KEY === undefined
-        ? keyring.addFromUri("//Alice")
+        ? keyring.addFromUri("//Executor//default")
         : keyring.addFromMnemonic(process.env.CIRCUIT_KEY)
+
+      console.log(this.signer.address)
   }
 
   async bondInsuranceDeposits(sideEffects: SideEffect[]) {
@@ -35,7 +37,7 @@ export default class CircuitRelayer extends EventEmitter {
       .map(sideEffect => {
         const xtxId = this.api.createType("Hash", sideEffect.xtxId);
         const id = this.api.createType("Hash", sideEffect.getId());
-        exportData({xtxId, id}, "post-bond-roco.json", "bond");
+        exportData([{xtxId, id}], "post-bond-roco.json", "bond");
         return this.api.tx.circuit.bondInsuranceDeposit(
           sideEffect.xtxId,
           sideEffect.getId()
