@@ -31,13 +31,15 @@ export default class CircuitRelayer extends EventEmitter {
   }
 
   async bondInsuranceDeposits(sideEffects: SideEffect[]) {
+    const toExport: any = [];
     const calls = sideEffects
       // four args mean the call requires an insurance deposit
       .filter(sideEffect => sideEffect.object.encodedArgs.length === 4)
       .map(sideEffect => {
         const xtxId = this.api.createType("Hash", sideEffect.xtxId);
         const id = this.api.createType("Hash", sideEffect.getId());
-        exportData([{xtxId, id}], "post-bond-roco.json", "bond");
+        toExport.push({xtxId, id})
+
         return this.api.tx.circuit.bondInsuranceDeposit(
           sideEffect.xtxId,
           sideEffect.getId()
@@ -51,6 +53,9 @@ export default class CircuitRelayer extends EventEmitter {
       await this.api.tx.utility
         .batchAll(calls)
         .signAndSend(this.signer, { nonce })
+        .then(() => {
+            exportData(toExport, "post-bond-roco.json", "bond");
+        })
     }
   }
 
@@ -111,6 +116,7 @@ export default class CircuitRelayer extends EventEmitter {
 }
 let counter = 1;
 export const exportData = (data: any, fileName: string, transactionType: string) => {
+    console.log("Exporting data:", counter)
     let deepCopy;
     // since its pass-by-reference
     if(Array.isArray(data)) {
@@ -121,7 +127,7 @@ export const exportData = (data: any, fileName: string, transactionType: string)
     let encoded = encodeExport(deepCopy, transactionType);
     fs.writeFile("exports/" + counter + '-' + fileName, JSON.stringify(encoded, null, 4), (err) => {
         if(err) {
-            console.log(err);
+            console.log("Err", err);
         } else {
             counter += 1;
             console.log("JSON saved to " + fileName);
