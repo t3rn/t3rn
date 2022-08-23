@@ -31,7 +31,7 @@ sp-trie    = { default-features = false, git = "https://github.com/paritytech/su
 
 t3rn-primitives     = { path = "../../primitives", default-features = false }
 t3rn-protocol       = { path = "../../protocol", default-features = false }
-t3rn-sdk-primitives = { version = "0.0.1-rc8", default-features = false }
+t3rn-sdk-primitives = { version = "0.1.0", default-features = false }
 
 pallet-xbi-portal     = { path = "../xbi-portal", default-features = false }
 pallet-xbi-portal-enter     = { path = "../xbi-portal/enter", default-features = false }
@@ -66,6 +66,7 @@ pallet-xdns               = { path = "../../pallets/xdns" }
 pallet-executors               = { path = "../../pallets/executors" }
 pallet-treasury               = { path = "../../pallets/treasury" }
 pallet-account-manager               = { path = "../../pallets/account-manager" }
+pallet-clock = { path = "../clock" }
 
 #snowbridge-basic-channel = { git = "https://github.com/t3rn/snowbridge", branch = "polkadot-v0.9.19", default-features = false }
 

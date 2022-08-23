@@ -174,7 +174,7 @@ pub trait Xdns<T: frame_system::Config> {
     ) -> DispatchResult;
 
     fn allowed_side_effects(gateway_id: &ChainId)
-                            -> BTreeMap<[u8; 4], Box<dyn SideEffectProtocol>>;
+        -> BTreeMap<[u8; 4], Box<dyn SideEffectProtocol>>;
 
     fn fetch_side_effect_interface(
         id: [u8; 4],

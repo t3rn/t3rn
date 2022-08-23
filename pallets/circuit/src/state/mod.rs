@@ -38,6 +38,7 @@ pub enum CircuitStatus {
     FinishedAllSteps,
     RevertTimedOut,
     RevertKill,
+    RevertMisbehaviour,
     Committed,
     Reverted,
 }
@@ -201,6 +202,7 @@ impl Default for CircuitStatus {
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo)]
 pub struct InsuranceDeposit<AccountId, BlockNumber, BalanceOf> {
     pub insurance: BalanceOf,
+    pub reserved_bond: BalanceOf,
     pub reward: BalanceOf,
     pub requester: AccountId,
     pub bonded_relayer: Option<AccountId>,
@@ -217,11 +219,13 @@ impl<
     pub fn new(
         insurance: BalanceOf,
         reward: BalanceOf,
+        reserved_bond: BalanceOf,
         requester: AccountId,
         requested_at: BlockNumber,
     ) -> Self {
         InsuranceDeposit {
             insurance,
+            reserved_bond,
             reward,
             requester,
             bonded_relayer: None,

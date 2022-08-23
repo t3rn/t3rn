@@ -312,7 +312,6 @@ pub mod pallet {
                         BeneficiaryRole::Executor => {
                             acc.1 = acc.1 + 1;
                         },
-                        BeneficiaryRole::Staker | BeneficiaryRole::Collator => {},
                     }
                     acc
                 });
@@ -340,19 +339,8 @@ pub mod pallet {
                         neg_imb.peek()
                         // absolute_per_exec
                     },
-                    BeneficiaryRole::Collator | BeneficiaryRole::Staker  => {
-                        todo!()
-                    },
                 };
 
-
-                // To further prevent drastically high payouts to Executors during times when network is stale,
-                // there is a threshold for rewards Executors  per cross-chain a single transaction.
-                // We put the constant threshold of a maximum of 5 times of the reward amount given by inflation.
-                // This is on top of the base reward the executor got from the original fee set be a user.
-                //
-                // The calculated reward per each cross-chain transaction can be approximated with the following formula:
-                // total reward per cross-chain tx = initial reward + MIN ( 5 * initial reward, inflation shares in a given time period)
                 <BeneficiaryRoundRewards<T>>::insert(candidate.clone(), round_index, issued);
 
                 Self::deposit_event(Event::BeneficiaryTokensIssued(candidate, issued));
@@ -383,7 +371,7 @@ pub mod pallet {
 
             // allocate to beneficiary
             T::Currency::deposit_into_existing(&who, BalanceOf::<T>::from(total_rewards))
-                .expect("Should deposit balance to account"); // TODO
+                .expect("Should deposit balance to account"); //TODO
 
             Self::deposit_event(Event::RewardsClaimed(who, total_rewards));
 

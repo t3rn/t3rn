@@ -13,8 +13,6 @@ pub const T3RN: u64 = 1_000_000_000_000;
 pub enum BeneficiaryRole {
     Developer,
     Executor,
-    Staker,
-    Collator,
 }
 
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]

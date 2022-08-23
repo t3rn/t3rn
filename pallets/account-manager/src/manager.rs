@@ -7,13 +7,16 @@ use frame_support::{
     dispatch::DispatchResult,
     traits::{Currency, Get, ReservableCurrency},
 };
-use sp_runtime::{traits::Zero, DispatchError};
-
-use sp_runtime::traits::{CheckedDiv, CheckedMul};
+use sp_runtime::{
+    traits::{CheckedDiv, CheckedMul, Zero},
+    DispatchError,
+};
+use sp_std::{prelude::*, vec};
 
 use t3rn_primitives::{
     account_manager::{RequestCharge, Settlement},
-    circuit_clock::{BenefitSource, CircuitClock, CircuitRole, ClaimableArtifacts},
+    claimable::{BenefitSource, CircuitRole, ClaimableArtifacts},
+    clock::Clock,
     common::RoundInfo,
     executors::Executors,
 };
@@ -24,10 +27,6 @@ pub struct ActiveSetClaimablePerRound<Account, Balance> {
     pub executor: Account,
     pub claimable: Balance,
 }
-
-// 	let total_fee = max_base_fee
-// 			.checked_add(max_priority_fee)
-// 			.ok_or(Error::<T>::FeeOverflow)?;
 
 fn percent_ratio<T: Config>(amt: BalanceOf<T>, percent: u8) -> Result<BalanceOf<T>, DispatchError> {
     amt.checked_mul(&BalanceOf::<T>::from(percent))
@@ -42,8 +41,8 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
     fn get_charge_or_fail(
         charge_id: T::Hash,
     ) -> Result<RequestCharge<T::AccountId, BalanceOf<T>>, DispatchError> {
-        return if let Some(pending_charge) =
-            PendingChargesPerRound::<T>::get(T::CircuitClock::current_round(), charge_id)
+        if let Some(pending_charge) =
+            PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id)
         {
             Ok(pending_charge)
         } else {
@@ -52,8 +51,8 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
     }
 
     fn no_charge_or_fail(charge_id: T::Hash) -> Result<(), DispatchError> {
-        return if let Some(_pending_charge) =
-            PendingChargesPerRound::<T>::get(T::CircuitClock::current_round(), charge_id)
+        if let Some(_pending_charge) =
+            PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id)
         {
             Err(Error::<T>::ChargeAlreadyRegistered.into())
         } else {
@@ -92,14 +91,14 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
         T::Currency::reserve(payee, charge_fee + offered_reward)?;
 
         let recipient = if let Some(recipient) = maybe_recipient {
-            recipient.clone()
+            recipient
         } else {
             // todo: Inspect if that's a good idea
             T::EscrowAccount::get()
         };
 
         PendingChargesPerRound::<T>::insert(
-            T::CircuitClock::current_round(),
+            T::Clock::current_round(),
             charge_id,
             RequestCharge {
                 payee: payee.clone(),
@@ -138,7 +137,7 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
         };
 
         T::Currency::slash_reserved(&charge.payee, charge.charge_fee + charge.offered_reward);
-        T::Currency::deposit_creating(&charge.payee, payee_refund.clone());
+        T::Currency::deposit_creating(&charge.payee, payee_refund);
 
         // Check if recipient has been updated
         let recipient = if let Some(recipient) = maybe_recipient {
@@ -151,7 +150,7 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
 
         // Create Settlement for the future async claim
         SettlementsPerRound::<T>::insert(
-            T::CircuitClock::current_round(),
+            T::Clock::current_round(),
             charge_id,
             Settlement::<T::AccountId, BalanceOf<T>> {
                 requester: charge.payee,
@@ -163,7 +162,7 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
             },
         );
 
-        PendingChargesPerRound::<T>::remove(T::CircuitClock::current_round(), charge_id);
+        PendingChargesPerRound::<T>::remove(T::Clock::current_round(), charge_id);
 
         // Take what's left - 1% to keep the account manager alive
         T::Currency::deposit_creating(
@@ -178,7 +177,7 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
     fn on_collect_claimable(
         _n: T::BlockNumber,
         r: RoundInfo<T::BlockNumber>,
-    ) -> Result<Vec<ClaimableArtifacts<T::AccountId, BalanceOf<T>>>, &'static str> {
+    ) -> Result<Vec<ClaimableArtifacts<T::AccountId, BalanceOf<T>>>, DispatchError> {
         let mut claimable_artifacts: Vec<ClaimableArtifacts<T::AccountId, BalanceOf<T>>> = vec![];
         let mut active_set_claimables: Vec<ActiveSetClaimablePerRound<T::AccountId, BalanceOf<T>>> =
             T::Executors::active_set()

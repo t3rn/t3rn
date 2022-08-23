@@ -40,7 +40,6 @@ pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = '
 pallet-sudo      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 
-pallet-circuit-clock = { path = "../circuit-clock" }
 pallet-treasury = { path = "../treasury" }
 
 [features]

@@ -16,7 +16,8 @@ use sp_runtime::traits::Convert;
 
 use t3rn_primitives::{
     account_manager::{AccountManager, Outcome},
-    circuit_clock::{BenefitSource, CircuitClock, CircuitRole},
+    claimable::{BenefitSource, CircuitRole},
+    clock::Clock,
     common::RoundInfo,
     executors::Executors,
     transfers::EscrowedBalanceOf,
@@ -61,18 +62,15 @@ pub mod pallet {
 
         type Currency: ReservableCurrency<Self::AccountId>;
 
+        type Clock: Clock<Self>;
+
+        type Executors: Executors<Self, BalanceOf<Self>>;
+
         /// Type providing some time handler
         type Time: frame_support::traits::Time;
 
         #[pallet::constant]
         type EscrowAccount: Get<Self::AccountId>;
-
-        /// A type that manages escrow, and therefore balances
-        type Escrowed: EscrowTrait<Self>;
-
-        type Executors: Executors<Self, BalanceOf<Self>>;
-
-        type CircuitClock: CircuitClock<Self, BalanceOf<Self>>;
     }
 
     // Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
@@ -131,6 +129,7 @@ pub mod pallet {
                 role,
                 maybe_recipient,
             )
+            .map(|_| ())
         }
 
         #[pallet::weight(10_000 + T::DbWeight::get().reads(1) + T::DbWeight::get().writes(1))]

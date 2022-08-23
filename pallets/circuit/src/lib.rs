@@ -39,7 +39,7 @@ use frame_system::{
     pallet_prelude::OriginFor,
 };
 use sp_runtime::{
-    traits::{AccountIdConversion, Saturating, Zero},
+    traits::{AccountIdConversion, Zero},
     KeyTypeId,
 };
 use sp_std::{boxed::Box, convert::TryInto, vec, vec::Vec};
@@ -55,7 +55,8 @@ pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
 use t3rn_primitives::{
     account_manager::AccountManager,
     circuit_portal::CircuitPortal,
-    side_effect::{ConfirmationOutcome, HardenedSideEffect, SecurityLvl},
+    executors::Executors,
+    side_effect::{HardenedSideEffect, SecurityLvl},
     transfers::EscrowedBalanceOf,
     xdns::Xdns,
 };
@@ -83,6 +84,12 @@ pub mod weights;
 pub mod state;
 
 pub mod escrow;
+
+pub mod fees;
+
+pub mod optimistic;
+
+use crate::{fees::Fees, optimistic::Optimistic};
 
 /// Defines application identifier for crypto keys of this module.
 /// Every module that deals with signatures needs to declare its unique identifier for
@@ -310,6 +317,13 @@ pub mod pallet {
 
         type XBIPortal: XBIPortal<Self>;
 
+        type Executors: Executors<
+            Self,
+            <<Self::Escrowed as EscrowTrait<Self>>::Currency as frame_support::traits::Currency<
+                Self::AccountId,
+            >>::Balance,
+        >;
+
         /// A type that provides access to AccountManager
         type AccountManager: AccountManager<
             Self::AccountId,
@@ -447,7 +461,7 @@ pub mod pallet {
             );
 
             if maybe_xtx_id.is_none() {
-                Self::apply(&mut local_xtx_ctx, None, None)?;
+                Self::apply(&mut local_xtx_ctx, None, None);
             }
 
             // There should be no apply step since no change could have happen during the state access
@@ -505,14 +519,14 @@ pub mod pallet {
                 local_xtx_ctx.xtx.status
             );
 
-            // Charge: Ensure can afford
-            // ToDo: Charge requester for contract with gas_estimation
-            Self::charge(&requester, Zero::zero()).map_err(|_e| {
-                if fresh_or_revoked_exec == CircuitStatus::Ready {
-                    Self::kill(&mut local_xtx_ctx, CircuitStatus::RevertKill)
-                }
-                Error::<T>::ContractXtxKilledRunOutOfFunds
-            })?;
+            // // Charge: Ensure can afford
+            // // ToDo: Charge requester for contract with gas_estimation
+            // Self::charge(&requester, Zero::zero()).map_err(|_e| {
+            //     if fresh_or_revoked_exec == CircuitStatus::Ready {
+            //         Self::kill(&mut local_xtx_ctx, CircuitStatus::RevertKill)
+            //     }
+            //     Error::<T>::ContractXtxKilledRunOutOfFunds
+            // })?;
 
             // ToDo: This should be converting the side effect from local trigger to FSE
             let side_effects = Self::exec_in_xtx_ctx(
@@ -533,8 +547,14 @@ pub mod pallet {
             // Validate: Side Effects
             Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential)?;
 
+            // Update local context
+            Self::update(&mut local_xtx_ctx)?;
+
+            // Account fees and charges
+            Self::square_up(&mut local_xtx_ctx, Some(requester.clone()), None)?;
+
             // Apply: all necessary changes to state in 1 go
-            let (_, added_full_side_effects) = Self::apply(&mut local_xtx_ctx, None, None)?;
+            let (_, added_full_side_effects) = Self::apply(&mut local_xtx_ctx, None, None);
 
             // Emit: From Circuit events
             Self::emit(
@@ -594,8 +614,6 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
             let requester = Self::authorize(origin, CircuitRole::Requester)?;
-            // Charge: Ensure can afford
-            Self::charge(&requester, fee)?;
             log::info!("on_extrinsic_trigger -- finished charged");
 
             // Setup: new xtx context
@@ -609,13 +627,20 @@ pub mod pallet {
             Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential).map_err(
                 |e| {
                     log::info!("Self::validate hit an error -- {:?}", e);
+                    println!("Self::validate hit an error -- {:?}", e);
                     Error::<T>::SideEffectsValidationFailed
                 },
             )?;
             log::info!("on_extrinsic_trigger -- finished validate");
 
+            // Update local context
+            Self::update(&mut local_xtx_ctx)?;
+
+            // Account fees and charges
+            Self::square_up(&mut local_xtx_ctx, Some(requester.clone()), None)?;
+
             // Apply: all necessary changes to state in 1 go
-            let (_, added_full_side_effects) = Self::apply(&mut local_xtx_ctx, None, None)?;
+            let (_, added_full_side_effects) = Self::apply(&mut local_xtx_ctx, None, None);
             log::info!("on_extrinsic_trigger -- finished apply");
 
             // Emit: From Circuit events
@@ -637,47 +662,46 @@ pub mod pallet {
             side_effect_id: SideEffectId<T>,
         ) -> DispatchResultWithPostInfo {
             log::info!(
-                "bond insurance deposit -- start -- xtx id {:?} + se id {:?}",
+                "bond insurance deposit -- start -- xtx id {:?} + sfx id {:?}",
                 xtx_id,
                 side_effect_id
             );
 
             // Authorize: Retrieve sender of the transaction.
-            let relayer = Self::authorize(origin, CircuitRole::Relayer)?;
+            let executor = Self::authorize(origin, CircuitRole::Executor)?;
 
             log::info!(
-                "bond insurance deposit -- authorized -- xtx id {:?} + se id {:?}",
+                "bond insurance deposit -- authorized -- xtx id {:?} + sfx id {:?}",
                 xtx_id,
                 side_effect_id
             );
             // Setup: retrieve local xtx context
             let mut local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
                 CircuitStatus::PendingInsurance,
-                &relayer,
+                &executor,
                 Zero::zero(),
                 Some(xtx_id),
             )?;
 
             log::info!("bond insurance deposit -- setup finished");
-            let (maybe_xtx_changed, _) = if let Some((_id, insurance_deposit)) = local_xtx_ctx
+
+            let (maybe_xtx_changed, _) = if let Some((_id, insurance_deposit)) = &local_xtx_ctx
                 .insurance_deposits
-                .iter_mut()
+                .iter()
                 .find(|(id, _)| *id == side_effect_id)
             {
-                Self::charge(&relayer, insurance_deposit.insurance)?;
+                let insurance_deposit_copy = Optimistic::<T>::bond_4_sfx(
+                    &executor,
+                    &local_xtx_ctx,
+                    &insurance_deposit.clone(),
+                )?;
 
-                log::info!("bond insurance deposit -- charged");
-                insurance_deposit.bonded_relayer = Some(relayer.clone());
-                // ToDo: Consider removing status from insurance_deposit since redundant with relayer: Option<Relayer>
-                insurance_deposit.status = CircuitStatus::Bonded;
-
-                let insurance_deposit_copy = insurance_deposit.clone();
                 // Apply: all necessary changes to state in 1 go
-                Self::apply(
+                Ok(Self::apply(
                     &mut local_xtx_ctx,
                     Some((side_effect_id, insurance_deposit_copy)),
                     None,
-                )
+                ))
             } else {
                 Err(Error::<T>::InsuranceBondNotRequired)
             }?;
@@ -687,7 +711,7 @@ pub mod pallet {
             Self::emit(
                 local_xtx_ctx.xtx_id,
                 maybe_xtx_changed,
-                &relayer,
+                &executor,
                 &vec![],
                 None,
             );
@@ -760,101 +784,105 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// Blind version should only be used for testing - unsafe since skips inclusion proof check.
-        #[pallet::weight(< T as Config >::WeightInfo::confirm_side_effect())]
-        pub fn confirm_commit_revert_relay(
-            origin: OriginFor<T>,
-            xtx_id: XtxId<T>,
-            side_effect: SideEffect<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                EscrowedBalanceOf<T, T::Escrowed>,
-            >,
-            confirmation: ConfirmedSideEffect<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                EscrowedBalanceOf<T, T::Escrowed>,
-            >,
-            inclusion_proof: Option<Vec<Vec<u8>>>,
-            block_hash: Option<Vec<u8>>,
-        ) -> DispatchResultWithPostInfo {
-            // Authorize: Retrieve sender of the transaction.
-            let relayer = Self::authorize(origin, CircuitRole::Relayer)?;
-
-            // Setup: retrieve local xtx context
-            let mut local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
-                CircuitStatus::Finished,
-                &relayer,
-                Zero::zero(),
-                Some(xtx_id),
-            )?;
-
-            let mut updated_list: Vec<
-                FullSideEffect<
-                    <T as frame_system::Config>::AccountId,
-                    <T as frame_system::Config>::BlockNumber,
-                    EscrowedBalanceOf<T, T::Escrowed>,
-                >,
-            > = vec![];
-
-            if let Some(to_confirm_list) =
-                <Self as Store>::EscrowedSideEffectsPendingRelay::get(local_xtx_ctx.xtx_id)
-            {
-                let side_effect_id = side_effect.generate_id::<SystemHashing<T>>();
-                let mut found: Option<
-                    FullSideEffect<
-                        <T as frame_system::Config>::AccountId,
-                        <T as frame_system::Config>::BlockNumber,
-                        EscrowedBalanceOf<T, T::Escrowed>,
-                    >,
-                > = None;
-
-                for to_confirm in to_confirm_list {
-                    if to_confirm.input.generate_id::<SystemHashing<T>>() == side_effect_id {
-                        found = Some(to_confirm);
-                    } else {
-                        updated_list.push(to_confirm);
-                    }
-                }
-                if found.is_none() {
-                    return Err(Error::<T>::RelayEscrowedFailedNothingToConfirm.into())
-                }
-            } else {
-                return Err(Error::<T>::RelayEscrowedFailedNothingToConfirm.into())
-            };
-
-            let _status = Self::confirm(
-                &mut local_xtx_ctx,
-                &relayer,
-                &side_effect,
-                &confirmation,
-                inclusion_proof,
-                block_hash,
-            )?;
-
-            // Apply: all necessary changes to state in 1 go
-            let (maybe_xtx_changed, assert_full_side_effects_changed) = Self::apply(
-                &mut local_xtx_ctx,
-                None,
-                Some((
-                    updated_list,
-                    &side_effect,
-                    &relayer,
-                    CircuitStatus::Committed,
-                )),
-            )?;
-
-            // Emit: From Circuit events
-            Self::emit(
-                local_xtx_ctx.xtx_id,
-                maybe_xtx_changed,
-                &relayer,
-                &vec![],
-                assert_full_side_effects_changed,
-            );
-
-            Ok(().into())
-        }
+        // /// Blind version should only be used for testing - unsafe since skips inclusion proof check.
+        // #[pallet::weight(< T as Config >::WeightInfo::confirm_side_effect())]
+        // pub fn confirm_commit_revert_relay(
+        //     origin: OriginFor<T>,
+        //     xtx_id: XtxId<T>,
+        //     side_effect: SideEffect<
+        //         <T as frame_system::Config>::AccountId,
+        //         <T as frame_system::Config>::BlockNumber,
+        //         EscrowedBalanceOf<T, T::Escrowed>,
+        //     >,
+        //     confirmation: ConfirmedSideEffect<
+        //         <T as frame_system::Config>::AccountId,
+        //         <T as frame_system::Config>::BlockNumber,
+        //         EscrowedBalanceOf<T, T::Escrowed>,
+        //     >,
+        //     inclusion_proof: Option<Vec<Vec<u8>>>,
+        //     block_hash: Option<Vec<u8>>,
+        // ) -> DispatchResultWithPostInfo {
+        //     // Authorize: Retrieve sender of the transaction.
+        //     let relayer = Self::authorize(origin, CircuitRole::Relayer)?;
+        //
+        //     // Setup: retrieve local xtx context
+        //     let mut local_xtx_ctx: LocalXtxCtx<T> = Self::setup(
+        //         CircuitStatus::Finished,
+        //         &relayer,
+        //         Zero::zero(),
+        //         Some(xtx_id),
+        //     )?;
+        //
+        //     let mut updated_list: Vec<
+        //         FullSideEffect<
+        //             <T as frame_system::Config>::AccountId,
+        //             <T as frame_system::Config>::BlockNumber,
+        //             EscrowedBalanceOf<T, T::Escrowed>,
+        //         >,
+        //     > = vec![];
+        //
+        //     if let Some(to_confirm_list) =
+        //         <Self as Store>::EscrowedSideEffectsPendingRelay::get(local_xtx_ctx.xtx_id)
+        //     {
+        //         let side_effect_id = side_effect.generate_id::<SystemHashing<T>>();
+        //         let mut found: Option<
+        //             FullSideEffect<
+        //                 <T as frame_system::Config>::AccountId,
+        //                 <T as frame_system::Config>::BlockNumber,
+        //                 EscrowedBalanceOf<T, T::Escrowed>,
+        //             >,
+        //         > = None;
+        //
+        //         for to_confirm in to_confirm_list {
+        //             if to_confirm.input.generate_id::<SystemHashing<T>>() == side_effect_id {
+        //                 found = Some(to_confirm);
+        //             } else {
+        //                 updated_list.push(to_confirm);
+        //             }
+        //         }
+        //         if found.is_none() {
+        //             return Err(Error::<T>::RelayEscrowedFailedNothingToConfirm.into())
+        //         }
+        //     } else {
+        //         return Err(Error::<T>::RelayEscrowedFailedNothingToConfirm.into())
+        //     };
+        //
+        //     let _status = Self::confirm(
+        //         &mut local_xtx_ctx,
+        //         &relayer,
+        //         &side_effect,
+        //         &confirmation,
+        //         inclusion_proof,
+        //         block_hash,
+        //     )?;
+        //
+        //     Self::update(&mut local_xtx_ctx)?;
+        //
+        //     Self::square_up(&mut local_xtx_ctx, None, Some(relayer))?;
+        //
+        //     // Apply: all necessary changes to state in 1 go
+        //     let (maybe_xtx_changed, assert_full_side_effects_changed) = Self::apply(
+        //         &mut local_xtx_ctx,
+        //         None,
+        //         Some((
+        //             updated_list,
+        //             &side_effect,
+        //             &relayer,
+        //             CircuitStatus::Committed,
+        //         )),
+        //     );
+        //
+        //     // Emit: From Circuit events
+        //     Self::emit(
+        //         local_xtx_ctx.xtx_id,
+        //         maybe_xtx_changed,
+        //         &relayer,
+        //         &vec![],
+        //         assert_full_side_effects_changed,
+        //     );
+        //
+        //     Ok(().into())
+        // }
 
         /// Blind version should only be used for testing - unsafe since skips inclusion proof check.
         #[pallet::weight(< T as Config >::WeightInfo::confirm_side_effect())]
@@ -913,7 +941,7 @@ pub mod pallet {
 
             // Apply: all necessary changes to state in 1 go
             let (maybe_xtx_changed, assert_full_side_effects_changed) =
-                Self::apply(&mut local_xtx_ctx, None, None)?;
+                Self::apply(&mut local_xtx_ctx, None, None);
 
             log::info!(
                 "confirm side effect -- applied -- xtx id {:?} + se id {:?}",
@@ -1033,6 +1061,7 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
+        UpdateXtxTriggeredWithUnexpectedStatus,
         ApplyTriggeredWithUnexpectedStatus,
         RequesterNotEnoughBalance,
         ContractXtxKilledRunOutOfFunds,
@@ -1041,6 +1070,7 @@ pub mod pallet {
         RefundTransferFailed,
         SideEffectsValidationFailed,
         InsuranceBondNotRequired,
+        InsuranceBondTooLow,
         InsuranceBondAlreadyDeposited,
         SetupFailed,
         SetupFailedXtxNotFound,
@@ -1231,55 +1261,81 @@ impl<T: Config> Pallet<T> {
         }
     }
 
+    // Updates local xtx context without touching the storage.
+    fn update(mut local_ctx: &mut LocalXtxCtx<T>) -> Result<(), Error<T>> {
+        // Apply will try to move the status of Xtx from the current to the closest valid one.
+        local_ctx.xtx.status = CircuitStatus::determine_xtx_status(
+            &local_ctx.full_side_effects,
+            &local_ctx.insurance_deposits,
+        )?;
+
+        match local_ctx.xtx.status {
+            CircuitStatus::PendingInsurance => {
+                local_ctx.xtx.status = CircuitStatus::determine_effects_insurance_status::<T>(
+                    &local_ctx.insurance_deposits,
+                );
+                Ok(())
+            },
+            CircuitStatus::RevertTimedOut => Self::enact_finalize(local_ctx),
+            CircuitStatus::Ready
+            | CircuitStatus::Bonded
+            | CircuitStatus::PendingExecution
+            | CircuitStatus::Finished => {
+                // Check whether all of the side effects in this steps are confirmed - the status now changes to CircuitStatus::Finished
+                if local_ctx.full_side_effects[local_ctx.xtx.steps_cnt.0 as usize]
+                    .clone()
+                    .iter()
+                    .filter(|&fse| fse.confirmed.is_none())
+                    .next()
+                    .is_none()
+                {
+                    local_ctx.xtx.steps_cnt =
+                        (local_ctx.xtx.steps_cnt.0 + 1, local_ctx.xtx.steps_cnt.1);
+
+                    local_ctx.xtx.status = CircuitStatus::Finished;
+
+                    // All of the steps are completed - the xtx has been finalized
+                    if local_ctx.xtx.steps_cnt.0 == local_ctx.xtx.steps_cnt.1 {
+                        local_ctx.xtx.status = CircuitStatus::FinishedAllSteps;
+                        Self::enact_finalize(local_ctx)?;
+                    }
+                }
+
+                Ok(())
+            },
+            _ => Err(Error::<T>::ApplyTriggeredWithUnexpectedStatus),
+        }
+    }
+
     /// Returns: Returns changes written to the state if there are any.
     ///     For now only returns Xtx and FullSideEffects that changed.
+    /// FixMe: Make Apply Infallible
     fn apply(
-        local_ctx: &mut LocalXtxCtx<T>,
+        mut local_ctx: &mut LocalXtxCtx<T>,
         maybe_insurance_tuple: Option<(
             SideEffectId<T>,
             InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
         )>,
-        maybe_escrowed_confirmation: Option<(
+        _maybe_escrowed_confirmation: Option<(
             Vec<FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
             &SideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
             &T::AccountId,
             CircuitStatus,
         )>,
-    ) -> Result<
-        (
-            Option<XExecSignal<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
-            Option<
+    ) -> (
+        Option<XExecSignal<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
+        Option<
+            Vec<
                 Vec<
-                    Vec<
-                        FullSideEffect<
-                            T::AccountId,
-                            T::BlockNumber,
-                            EscrowedBalanceOf<T, T::Escrowed>,
-                        >,
-                    >,
+                    FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
                 >,
             >,
-        ),
-        Error<T>,
-    > {
-        // Apply will try to move the status of Xtx from the current to the closest valid one.
+        >,
+    ) {
         let current_status = local_ctx.xtx.status.clone();
 
         match current_status {
             CircuitStatus::Requested => {
-                <FullSideEffects<T>>::insert::<
-                    XExecSignalId<T>,
-                    Vec<
-                        Vec<
-                            FullSideEffect<
-                                T::AccountId,
-                                T::BlockNumber,
-                                EscrowedBalanceOf<T, T::Escrowed>,
-                            >,
-                        >,
-                    >,
-                >(local_ctx.xtx_id, local_ctx.full_side_effects.clone());
-
                 // Iterate over full side effects to detect ones to execute locally.
                 fn is_local<T: Config>(gateway_id: &[u8; 4]) -> bool {
                     if *gateway_id == T::SelfGatewayId::get() {
@@ -1298,8 +1354,9 @@ impl<T: Config> Pallet<T> {
                     .clone()
                     .iter()
                     .enumerate()
-                    .flat_map(|(cnt, fse)| {
-                        fse.iter()
+                    .flat_map(|(cnt, fsx_step)| {
+                        fsx_step
+                            .iter()
                             .map(|full_side_effect| full_side_effect.input.clone())
                             .filter(|side_effect| is_local::<T>(&side_effect.target))
                             .map(|side_effect| side_effect.generate_id::<SystemHashing<T>>())
@@ -1319,6 +1376,19 @@ impl<T: Config> Pallet<T> {
                             .collect::<Vec<(usize, SideEffectId<T>, XExecStepSideEffectId<T>)>>()
                     })
                     .collect();
+
+                <FullSideEffects<T>>::insert::<
+                    XExecSignalId<T>,
+                    Vec<
+                        Vec<
+                            FullSideEffect<
+                                T::AccountId,
+                                T::BlockNumber,
+                                EscrowedBalanceOf<T, T::Escrowed>,
+                            >,
+                        >,
+                    >,
+                >(local_ctx.xtx_id, local_ctx.full_side_effects.clone());
 
                 for (step_cnt, side_effect_id, step_side_effect_id) in steps_side_effects_ids {
                     <LocalSideEffects<T>>::insert::<
@@ -1364,10 +1434,7 @@ impl<T: Config> Pallet<T> {
                     local_ctx.xtx_id,
                     local_ctx.local_state.clone(),
                 );
-                local_ctx.xtx.status = CircuitStatus::determine_xtx_status(
-                    &local_ctx.full_side_effects,
-                    &local_ctx.insurance_deposits,
-                )?;
+
                 local_ctx.xtx.steps_cnt = (0, local_ctx.full_side_effects.len() as u32);
 
                 <ActiveXExecSignalsTimingLinks<T>>::insert::<XExecSignalId<T>, T::BlockNumber>(
@@ -1380,10 +1447,10 @@ impl<T: Config> Pallet<T> {
                     XExecSignal<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
                 >(local_ctx.xtx_id, local_ctx.xtx.clone());
 
-                Ok((
+                (
                     Some(local_ctx.xtx.clone()),
                     Some(local_ctx.full_side_effects.to_vec()),
-                ))
+                )
             },
             CircuitStatus::PendingInsurance => {
                 if let Some((side_effect_id, insurance_deposit)) = maybe_insurance_tuple {
@@ -1392,22 +1459,18 @@ impl<T: Config> Pallet<T> {
                         side_effect_id,
                         |x| *x = Some(insurance_deposit),
                     );
-                    let new_status = CircuitStatus::determine_effects_insurance_status::<T>(
-                        &local_ctx.insurance_deposits,
-                    );
-
-                    if new_status != local_ctx.xtx.status {
-                        local_ctx.xtx.status = new_status;
-
-                        <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
-                            *x = Some(local_ctx.xtx.clone())
-                        });
-                        Ok((Some(local_ctx.xtx.clone()), None))
-                    } else {
-                        Ok((None, None))
-                    }
+                }
+                let new_status = CircuitStatus::determine_effects_insurance_status::<T>(
+                    &local_ctx.insurance_deposits,
+                );
+                if new_status != local_ctx.xtx.status {
+                    local_ctx.xtx.status = new_status;
+                    <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
+                        *x = Some(local_ctx.xtx.clone())
+                    });
+                    (Some(local_ctx.xtx.clone()), None)
                 } else {
-                    Err(Error::<T>::ApplyFailed)
+                    (None, None)
                 }
             },
             CircuitStatus::RevertTimedOut => {
@@ -1417,12 +1480,11 @@ impl<T: Config> Pallet<T> {
 
                 <Self as Store>::ActiveXExecSignalsTimingLinks::remove(local_ctx.xtx_id);
 
-                Self::enact_step_side_effects(local_ctx)?;
-
-                Ok((
+                // Self::enact_finalize(local_ctx)?;
+                (
                     Some(local_ctx.xtx.clone()),
                     Some(local_ctx.full_side_effects.clone()),
-                ))
+                )
             },
             CircuitStatus::Ready
             | CircuitStatus::Bonded
@@ -1432,13 +1494,6 @@ impl<T: Config> Pallet<T> {
                 <Self as Store>::FullSideEffects::mutate(local_ctx.xtx_id, |x| {
                     *x = Some(local_ctx.full_side_effects.clone())
                 });
-
-                let new_status = CircuitStatus::determine_xtx_status::<T>(
-                    &local_ctx.full_side_effects,
-                    &local_ctx.insurance_deposits,
-                )?;
-
-                local_ctx.xtx.status = new_status;
                 // Check whether all of the side effects in this steps are confirmed - the status now changes to CircuitStatus::Finished
                 if local_ctx.full_side_effects[local_ctx.xtx.steps_cnt.0 as usize]
                     .clone()
@@ -1456,53 +1511,51 @@ impl<T: Config> Pallet<T> {
                     if local_ctx.xtx.steps_cnt.0 == local_ctx.xtx.steps_cnt.1 {
                         local_ctx.xtx.status = CircuitStatus::FinishedAllSteps;
                         <Self as Store>::ActiveXExecSignalsTimingLinks::remove(local_ctx.xtx_id);
-                        Self::enact_step_side_effects(local_ctx)?
+                        // Self::enact_finalize(local_ctx)?
                     }
                 }
 
-                // todo: cleanup all of the local sttorage
+                // todo: cleanup all of the local storage
                 <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
                     *x = Some(local_ctx.xtx.clone())
                 });
 
                 if local_ctx.xtx.status.clone() > CircuitStatus::Ready {
-                    Ok((
+                    (
                         Some(local_ctx.xtx.clone()),
                         Some(local_ctx.full_side_effects.clone()),
-                    ))
+                    )
                 } else {
-                    Ok((None, Some(local_ctx.full_side_effects.to_vec())))
+                    (None, Some(local_ctx.full_side_effects.to_vec()))
                 }
             },
-            // Fires only for confirmation of escrowed execution on remote targets
-            CircuitStatus::FinishedAllSteps => {
-                if let Some((side_effects, side_effect, relayer, completion_status)) =
-                    maybe_escrowed_confirmation
-                {
-                    <Self as Store>::EscrowedSideEffectsPendingRelay::mutate(
-                        local_ctx.xtx_id,
-                        |s| *s = Some(side_effects.clone()),
-                    );
-
-                    Self::reward_escrow_relayer(relayer, side_effect)?;
-
-                    if side_effects.is_empty() {
-                        local_ctx.xtx.status = completion_status;
-                        <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
-                            *x = Some(local_ctx.xtx.clone())
-                        });
-                        Ok((
-                            Some(local_ctx.xtx.clone()),
-                            Some(local_ctx.full_side_effects.clone()),
-                        ))
-                    } else {
-                        Ok((None, Some(local_ctx.full_side_effects.to_vec())))
-                    }
-                } else {
-                    Err(Error::<T>::ApplyTriggeredWithUnexpectedStatus)
-                }
-            },
-            _ => Err(Error::<T>::ApplyTriggeredWithUnexpectedStatus),
+            // // Fires only for confirmation of escrowed execution on remote targets
+            // CircuitStatus::FinishedAllSteps => {
+            //     if let Some((side_effects, side_effect, relayer, completion_status)) =
+            //         maybe_escrowed_confirmation
+            //     {
+            //         // Self::reward_escrow_relayer(relayer, side_effect)?;
+            //
+            //         <Self as Store>::EscrowedSideEffectsPendingRelay::mutate(
+            //             local_ctx.xtx_id,
+            //             |s| *s = Some(side_effects.clone()),
+            //         );
+            //
+            //         if side_effects.is_empty() {
+            //             local_ctx.xtx.status = completion_status;
+            //             <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
+            //                 *x = Some(local_ctx.xtx.clone())
+            //             });
+            //             (
+            //                 Some(local_ctx.xtx.clone()),
+            //                 Some(local_ctx.full_side_effects.clone()),
+            //             )
+            //         } else {
+            //             (None, Some(local_ctx.full_side_effects.to_vec()))
+            //         }
+            //     }
+            // },
+            _ => (None, None),
         }
     }
 
@@ -1559,23 +1612,61 @@ impl<T: Config> Pallet<T> {
 
     fn kill(local_ctx: &mut LocalXtxCtx<T>, cause: CircuitStatus) {
         local_ctx.xtx.status = cause;
-        Self::apply(local_ctx, None, None)
-            .expect("Panic: apply triggered by panic should never fail");
+        Optimistic::<T>::try_slash(local_ctx);
+        Fees::<T>::finalize_revert(Self::get_current_step_fsx(local_ctx));
+        Self::apply(local_ctx, None, None);
     }
 
-    fn charge(
-        requester: &T::AccountId,
-        fee: EscrowedBalanceOf<T, T::Escrowed>,
-    ) -> Result<EscrowedBalanceOf<T, T::Escrowed>, Error<T>> {
-        let available_trn_balance = EscrowCurrencyOf::<T>::free_balance(requester);
-        let new_balance = available_trn_balance.saturating_sub(fee);
-        let vault: T::AccountId = Self::account_id();
-        EscrowCurrencyOf::<T>::transfer(requester, &vault, fee, AllowDeath)
-            .map_err(|_| Error::<T>::ChargingTransferFailed)?; // should not fail
-        Ok(new_balance)
+    // fn charge_immediately(
+    //     requester: &T::AccountId,
+    //     fee: EscrowedBalanceOf<T, T::Escrowed>,
+    // ) -> Result<EscrowedBalanceOf<T, T::Escrowed>, Error<T>> {
+    //     let available_trn_balance = EscrowCurrencyOf::<T>::free_balance(requester);
+    //     let new_balance = available_trn_balance.saturating_sub(fee);
+    //     let vault: T::AccountId = Self::account_id();
+    //     EscrowCurrencyOf::<T>::transfer(requester, &vault, fee, AllowDeath)
+    //         .map_err(|_| Error::<T>::ChargingTransferFailed)?; // should not fail
+    //     Ok(new_balance)
+    // }
+
+    fn square_up(
+        local_ctx: &mut LocalXtxCtx<T>,
+        maybe_requester: Option<<T as frame_system::Config>::AccountId>,
+        _maybe_executor: Option<<T as frame_system::Config>::AccountId>,
+    ) -> Result<(), Error<T>> {
+        let _current_step = local_ctx.xtx.steps_cnt.0;
+        let _escrowed_to_confirm: Vec<
+            FullSideEffect<
+                <T as frame_system::Config>::AccountId,
+                <T as frame_system::Config>::BlockNumber,
+                EscrowedBalanceOf<T, T::Escrowed>,
+            >,
+        > = vec![];
+
+        match local_ctx.xtx.status {
+            CircuitStatus::Requested => {
+                let requester = maybe_requester.ok_or(Error::<T>::ChargingTransferFailed)?;
+                Fees::<T>::charge_deposit(requester, Self::get_current_step_fsx(local_ctx))?;
+            },
+            // todo: make sure callable once
+            // todo: distinct between RevertTimedOut to iterate over all steps vs single step for Revert
+            CircuitStatus::RevertTimedOut
+            | CircuitStatus::Reverted
+            | CircuitStatus::RevertMisbehaviour => {
+                Optimistic::<T>::try_slash(local_ctx);
+                Fees::<T>::finalize_revert(Self::get_current_step_fsx(local_ctx));
+            },
+            CircuitStatus::Finished | CircuitStatus::FinishedAllSteps => {
+                Optimistic::<T>::try_unbond(local_ctx)?;
+                Fees::<T>::finalize_commit(Self::get_current_step_fsx(local_ctx))?;
+            },
+            _ => {},
+        }
+
+        Ok(())
     }
 
-    fn enact_step_side_effects(local_ctx: &mut LocalXtxCtx<T>) -> Result<(), Error<T>> {
+    fn enact_finalize(local_ctx: &mut LocalXtxCtx<T>) -> Result<(), Error<T>> {
         let current_step = local_ctx.xtx.steps_cnt.0;
         let mut escrowed_to_confirm: Vec<
             FullSideEffect<
@@ -1588,41 +1679,48 @@ impl<T: Config> Pallet<T> {
         match local_ctx.xtx.status {
             CircuitStatus::RevertTimedOut | CircuitStatus::Reverted => {
                 if let Some(outer) = local_ctx.full_side_effects.get(current_step as usize) {
-                    for fse in outer {
+                    for fsx in outer {
                         let encoded_4b_action: [u8; 4] =
-                            Decode::decode(&mut fse.input.encoded_action.encode().as_ref())
+                            Decode::decode(&mut fsx.input.encoded_action.encode().as_ref())
                                 .expect("Encoded Type was already validated before saving");
 
-                        let confirmed = fse.confirmed.clone().unwrap_or(ConfirmedSideEffect {
-                            err: Some(ConfirmationOutcome::TimedOut),
-                            output: None,
-                            encoded_effect: vec![0],
-                            inclusion_proof: None,
-                            executioner: Self::account_id(),
-                            received_at: <frame_system::Pallet<T>>::block_number(),
-                            cost: None,
-                        });
-                        match fse.security_lvl {
+                        // let confirmed = fsx.confirmed.clone().unwrap_or(ConfirmedSideEffect {
+                        //     err: Some(ConfirmationOutcome::TimedOut),
+                        //     output: None,
+                        //     encoded_effect: vec![0],
+                        //     inclusion_proof: None,
+                        //     executioner: Self::account_id(),
+                        //     received_at: <frame_system::Pallet<T>>::block_number(),
+                        //     cost: None,
+                        // });
+
+                        let executioner = if let Some(confirmed) = &fsx.confirmed {
+                            confirmed.executioner.clone()
+                        } else {
+                            Self::account_id()
+                        };
+
+                        match fsx.security_lvl {
                             SecurityLvl::Optimistic => {
                                 let _ = Self::enact_insurance(
                                     local_ctx,
-                                    &fse.input,
+                                    &fsx.input,
                                     InsuranceEnact::RefundBoth,
                                 )?;
                             },
                             SecurityLvl::Escrowed => {
-                                if fse.input.target == T::SelfGatewayId::get() {
+                                if fsx.input.target == T::SelfGatewayId::get() {
                                     Escrow::<T>::revert(
                                         &encoded_4b_action,
-                                        fse.input.encoded_args.clone(),
+                                        fsx.input.encoded_args.clone(),
                                         Self::account_id(),
-                                        confirmed.executioner.clone(),
+                                        executioner,
                                     )
                                     .map_err(|_| {
                                         Error::<T>::FatalErroredRevertSideEffectConfirmationAttempt
                                     })?
                                 }
-                                escrowed_to_confirm.push(fse.clone());
+                                escrowed_to_confirm.push(fsx.clone());
                             },
                             SecurityLvl::Dirty => {},
                         }
@@ -1633,12 +1731,14 @@ impl<T: Config> Pallet<T> {
                 if current_step == 0 {
                     return Err(Error::<T>::EnactSideEffectsCanOnlyBeCalledWithMin1StepFinished)
                 }
-                for fse in &local_ctx.full_side_effects[(current_step - 1) as usize] {
+
+                let current_step_fsx = &local_ctx.full_side_effects[(current_step - 1) as usize];
+                for fsx in current_step_fsx {
                     let encoded_4b_action: [u8; 4] =
-                        Decode::decode(&mut fse.input.encoded_action.encode().as_ref())
+                        Decode::decode(&mut fsx.input.encoded_action.encode().as_ref())
                             .expect("Encoded Type was already validated before saving");
                     // Perhaps redundant check for data integrity - make sure the confirmation is there & not an error
-                    let confirmation = if let Some(ref confirmed) = fse.confirmed {
+                    let confirmation = if let Some(ref confirmed) = fsx.confirmed {
                         if confirmed.err.is_some() {
                             return Err(Error::<T>::FatalErroredCommitSideEffectConfirmationAttempt)
                         }
@@ -1646,19 +1746,19 @@ impl<T: Config> Pallet<T> {
                     } else {
                         return Err(Error::<T>::FatalCommitSideEffectWithoutConfirmationAttempt)
                     };
-                    match fse.security_lvl {
+                    match fsx.security_lvl {
                         SecurityLvl::Optimistic => {
                             let _ = Self::enact_insurance(
                                 local_ctx,
-                                &fse.input,
+                                &fsx.input,
                                 InsuranceEnact::Reward,
                             )?;
                         },
                         SecurityLvl::Escrowed => {
-                            if fse.input.target == T::SelfGatewayId::get() {
+                            if fsx.input.target == T::SelfGatewayId::get() {
                                 Escrow::<T>::commit(
                                     &encoded_4b_action,
-                                    fse.input.encoded_args.clone(),
+                                    fsx.input.encoded_args.clone(),
                                     Self::account_id(),
                                     confirmation.executioner.clone(),
                                 )
@@ -1666,7 +1766,7 @@ impl<T: Config> Pallet<T> {
                                     Error::<T>::FatalErroredCommitSideEffectConfirmationAttempt
                                 })?
                             }
-                            escrowed_to_confirm.push(fse.clone());
+                            escrowed_to_confirm.push(fsx.clone());
                         },
                         SecurityLvl::Dirty => {},
                     }
@@ -1685,14 +1785,14 @@ impl<T: Config> Pallet<T> {
         Ok(())
     }
 
-    fn reward_escrow_relayer(
-        relayer: &T::AccountId,
-        side_effect: &SideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
-    ) -> Result<(), Error<T>> {
-        // Reward insurance
-        EscrowCurrencyOf::<T>::transfer(&Self::account_id(), relayer, side_effect.prize, AllowDeath)
-            .map_err(|_| Error::<T>::RewardTransferFailed) // should not fail
-    }
+    // fn reward_escrow_relayer(
+    //     relayer: &T::AccountId,
+    //     side_effect: &SideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+    // ) -> Result<(), Error<T>> {
+    //     // Reward insurance
+    //     EscrowCurrencyOf::<T>::transfer(&Self::account_id(), relayer, side_effect.prize, AllowDeath)
+    //         .map_err(|_| Error::<T>::RewardTransferFailed) // should not fail
+    // }
 
     fn enact_insurance(
         local_ctx: &LocalXtxCtx<T>,
@@ -1782,6 +1882,8 @@ impl<T: Config> Pallet<T> {
         requester: &T::AccountId,
         _sequential: bool,
     ) -> Result<(), &'static str> {
+        Fees::<T>::burn_validation_fee(requester, side_effects)?;
+
         let mut full_side_effects: Vec<
             FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
         > = vec![];
@@ -1791,12 +1893,14 @@ impl<T: Config> Pallet<T> {
             let allowed_side_effects =
                 <T as Config>::Xdns::allowed_side_effects(&side_effect.target);
 
-            log::info!("validate -- prize decoded {:?}", side_effect.prize.clone());
-            log::info!("validate -- prize encode {:?}", side_effect.prize.encode());
+            println!("validate -- prize decoded {:?}", side_effect.prize.clone());
+            println!("validate -- prize encode {:?}", side_effect.prize.encode());
 
             local_ctx
                 .use_protocol
                 .notice_gateway(side_effect.target, allowed_side_effects);
+
+            println!("validate -- after notice_gateway");
             local_ctx
                 .use_protocol
                 .validate_args::<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>, SystemHashing<T>>(
@@ -1804,6 +1908,8 @@ impl<T: Config> Pallet<T> {
                     gateway_abi,
                     &mut local_ctx.local_state,
                 )?;
+
+            println!("validate -- after validate_args");
 
             if let Some(insurance_and_reward) =
                 UniversalSideEffectsProtocol::check_if_insurance_required::<
@@ -1824,13 +1930,14 @@ impl<T: Config> Pallet<T> {
                     "circuit -- for side effect id {:?}",
                     side_effect.generate_id::<SystemHashing<T>>()
                 );
-                Self::charge(requester, reward)?;
+                // Self::charge(requester, reward)?;
 
                 local_ctx.insurance_deposits.push((
                     side_effect.generate_id::<SystemHashing<T>>(),
                     InsuranceDeposit::new(
                         insurance,
                         reward,
+                        Zero::zero(), // To be modified by Optimistic::bond_4_sfx when set in the step context.
                         requester.clone(),
                         <frame_system::Pallet<T>>::block_number(),
                     ),
@@ -1904,8 +2011,9 @@ impl<T: Config> Pallet<T> {
             }
         }
 
-        local_ctx.full_side_effects = full_side_effects_steps;
+        local_ctx.full_side_effects = full_side_effects_steps.clone();
 
+        println!("assign local_ctx.full_side_effects = {:?}", full_side_effects_steps);
         Ok(())
     }
 
@@ -2132,6 +2240,55 @@ impl<T: Config> Pallet<T> {
         processed_weight
     }
 
+    pub(self) fn get_current_step_fsx(
+        local_ctx: &mut LocalXtxCtx<T>,
+    ) -> &Vec<
+        FullSideEffect<
+            <T as frame_system::Config>::AccountId,
+            <T as frame_system::Config>::BlockNumber,
+            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+        >,
+    > {
+        let current_step = local_ctx.xtx.steps_cnt.0;
+        &local_ctx.full_side_effects[current_step as usize]
+    }
+
+    pub(self) fn get_current_step_fsx_by_security_lvl(
+        local_ctx: &LocalXtxCtx<T>,
+        security_lvl: SecurityLvl,
+    ) -> Vec<
+        FullSideEffect<
+            <T as frame_system::Config>::AccountId,
+            <T as frame_system::Config>::BlockNumber,
+            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+        >,
+    > {
+        let current_step = local_ctx.xtx.steps_cnt.0;
+        local_ctx.full_side_effects[current_step as usize]
+            .iter()
+            .filter(|&fsx| fsx.security_lvl == security_lvl)
+            .map(|fsx| fsx.clone())
+            .collect()
+    }
+
+    pub(self) fn get_fsx_total_rewards(
+        fsxs: &Vec<
+            FullSideEffect<
+                <T as frame_system::Config>::AccountId,
+                <T as frame_system::Config>::BlockNumber,
+                EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+            >,
+        >,
+    ) -> EscrowedBalanceOf<T, <T as Config>::Escrowed> {
+        let mut acc_rewards: EscrowedBalanceOf<T, <T as Config>::Escrowed> = Zero::zero();
+
+        for fsx in fsxs.iter() {
+            acc_rewards += fsx.input.prize;
+        }
+
+        acc_rewards
+    }
+
     pub(self) fn recover_fsx_by_id(
         sfx_id: SideEffectId<T>,
         local_ctx: &LocalXtxCtx<T>,
@@ -2146,8 +2303,8 @@ impl<T: Config> Pallet<T> {
         let current_step = local_ctx.xtx.steps_cnt.0;
         let maybe_fsx = local_ctx.full_side_effects[current_step as usize]
             .iter()
-            .filter(|&fse| fse.confirmed.is_none())
-            .find(|&fse| fse.input.generate_id::<SystemHashing<T>>() == sfx_id);
+            .filter(|&fsx| fsx.confirmed.is_none())
+            .find(|&fsx| fsx.input.generate_id::<SystemHashing<T>>() == sfx_id);
 
         if let Some(fsx) = maybe_fsx {
             Ok(fsx.clone())

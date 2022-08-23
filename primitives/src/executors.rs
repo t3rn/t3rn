@@ -21,6 +21,10 @@ pub struct NominatedStake<Account, Balance> {
 
 pub trait Executors<T: frame_system::Config, Balance> {
     fn active_set() -> Vec<T::AccountId>;
+    fn reserve_bond(executor: &T::AccountId, amount: Balance) -> Result<Balance, DispatchError>;
+    fn unreserve_bond(executor: &T::AccountId, amount: Balance) -> Balance;
+    fn slash_bond(executor: &T::AccountId, amount: Balance) -> Balance;
+    fn increase_bond(executor: &T::AccountId, amount: Balance) -> Balance;
     fn collateral_bond(executor: &T::AccountId) -> Balance;
     fn total_nominated_stake(executor: &T::AccountId) -> Balance;
     fn stakes(staker: &T::AccountId) -> Vec<NominatedStake<T::AccountId, Balance>>;
@@ -36,7 +40,24 @@ impl<T: frame_system::Config, Balance: Zero> Executors<T, Balance> for Executors
     fn active_set() -> Vec<T::AccountId> {
         vec![]
     }
+
     fn collateral_bond(_executor: &T::AccountId) -> Balance {
+        Zero::zero()
+    }
+
+    fn reserve_bond(_executor: &T::AccountId, _amount: Balance) -> Result<Balance, DispatchError> {
+        Ok(Zero::zero())
+    }
+
+    fn unreserve_bond(_executor: &T::AccountId, _amount: Balance) -> Balance {
+        Zero::zero()
+    }
+
+    fn slash_bond(_executor: &T::AccountId, _amount: Balance) -> Balance {
+        Zero::zero()
+    }
+
+    fn increase_bond(_executor: &T::AccountId, _amount: Balance) -> Balance {
         Zero::zero()
     }
 
@@ -47,9 +68,11 @@ impl<T: frame_system::Config, Balance: Zero> Executors<T, Balance> for Executors
     fn stakes(_staker: &T::AccountId) -> Vec<NominatedStake<T::AccountId, Balance>> {
         vec![]
     }
+
     fn stakes_per_executor(_staker: &T::AccountId) -> Vec<NominatedStake<T::AccountId, Balance>> {
         vec![]
     }
+
     fn recalculate_executors_stakes() {}
 }
 

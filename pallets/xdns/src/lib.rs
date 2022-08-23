@@ -444,6 +444,15 @@ pub mod pallet {
                 .security_coordinates)
         }
 
+        fn get_gateway_para_id(chain_id: &ChainId) -> Result<u32, &'static str> {
+            Ok(<XDNSRegistry<T>>::get(chain_id)
+                .ok_or_else(|| "XDNSRegistry does not contain given chain id")?
+                .parachain
+                .ok_or_else(|| "Xdns record doesn't have any Parachain data configured")?
+                .id
+            )
+        }
+
         fn get_gateway_type_unsafe(chain_id: &ChainId) -> GatewayType {
             <XDNSRegistry<T>>::get(chain_id).unwrap().gateway_type
         }

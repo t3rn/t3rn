@@ -1,5 +1,5 @@
 //! Test utilities
-use crate::{self as pallet_circuit, Config};
+use crate::{self as pallet_circuit, Config, GatewayABIConfig};
 
 use codec::Encode;
 use frame_election_provider_support::onchain;
@@ -69,12 +69,14 @@ frame_support::construct_runtime!(
         XDNS: pallet_xdns::{Pallet, Call, Storage, Config<T>, Event<T>},
         CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>},
         XBIPortal: pallet_xbi_portal::{Pallet, Call, Storage, Event<T>},
+        XBIPortalEnter: pallet_xbi_portal_enter::{Pallet, Call, Event<T>},
         // BasicOutboundChannel: snowbridge_basic_channel::outbound::{Pallet, Config<T>, Storage, Event<T>},
 
         ORMLTokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>},
 
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>},
 
+        Clock: pallet_clock::{Pallet, Storage, Event<T>},
         Treasury: pallet_treasury::{Pallet, Call, Config<T>, Storage, Event<T>},
         // Executors: pallet_executors::{Pallet, Call, Config<T>, Storage, Event<T>},
         AccountManager: pallet_account_manager,
@@ -164,6 +166,7 @@ use pallet_xbi_portal::{
     xbi_format::{XBICheckIn, XBICheckOut},
     Error,
 };
+use t3rn_primitives::abi::{CryptoAlgo, HasherAlgo};
 use t3rn_primitives::xdns::{Parachain, XdnsRecord};
 
 pub type CurrencyId = u32;
@@ -404,11 +407,18 @@ impl pallet_treasury::Config for Test {
 //     type Treasury = Treasury;
 //     type WeightInfo = ();
 // }
+impl pallet_clock::Config for Test {
+    type AccountManager = AccountManager;
+    type Event = Event;
+    type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
+    type RoundDuration = ConstU64<500>;
+    type Treasury = Treasury;
+}
 
 impl pallet_account_manager::Config for Test {
+    type Clock = Clock;
     type Currency = Balances;
     type EscrowAccount = EscrowAccount;
-    type Escrowed = Self;
     type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type Time = Timestamp;
@@ -544,6 +554,11 @@ pub struct ExtBuilder {
     standard_side_effects: Vec<SideEffectInterface>,
 }
 
+impl pallet_xbi_portal_enter::Config for Test {
+    type Event = Event;
+    type XBIPortal = XBIPortal;
+}
+
 parameter_types! {
     pub const CircuitPalletId: PalletId = PalletId(*b"pal/circ");
     pub const SelfGatewayId: [u8; 4] = [3, 3, 3, 3];
@@ -600,6 +615,7 @@ impl Config for Test {
     type DeletionQueueLimit = ConstU32<100>;
     type Escrowed = Self;
     type Event = Event;
+    type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     // type FreeVM = FreeVM;
     type MultiCurrency = ORMLTokens;
     type PalletId = CircuitPalletId;
@@ -634,6 +650,35 @@ impl ExtBuilder {
             vec![],
             t3rn_protocol::side_effects::standards::standard_side_effects_ids(),
         );
+
+        let evm_like_xdns_record = <XdnsRecord<AccountId>>::new(
+            vec![],
+            [1u8, 1u8, 1u8, 1u8],
+            Some(Parachain {
+                relay_chain_id: *b"evmb",
+                id: 1111,
+            }),
+            GatewayABIConfig {
+                block_number_type_size: 32,
+                hash_size: 32,
+                hasher: HasherAlgo::Keccak256,
+                crypto: CryptoAlgo::Ed25519,
+                address_length: 20,
+                value_type_size: 32,
+                decimals: 12,
+                structs: vec![]
+            },
+            GatewayVendor::PolkadotLike,
+            GatewayType::OnCircuit(0),
+            Default::default(),
+            GatewaySysProps {
+                ss58_format: 1333,
+                token_symbol: Encode::encode("T3RN"),
+                token_decimals: 12,
+            },
+            vec![],
+            t3rn_protocol::side_effects::standards::standard_side_effects_ids(),
+        );
         let zero_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
             [0u8, 0u8, 0u8, 0u8],
@@ -648,7 +693,7 @@ impl ExtBuilder {
                 token_decimals: 0,
             },
             vec![],
-            vec![*b"tran", *b"swap", *b"aliq"],
+            t3rn_protocol::side_effects::standards::standard_side_effects_ids(),
         );
         let gateway_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -664,7 +709,7 @@ impl ExtBuilder {
                 token_decimals: 12,
             },
             vec![],
-            vec![*b"tran"],
+            t3rn_protocol::side_effects::standards::standard_side_effects_ids(),
         );
         let polkadot_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -680,7 +725,7 @@ impl ExtBuilder {
                 token_decimals: 10,
             },
             vec![],
-            vec![*b"tran", *b"swap", *b"aliq"],
+            t3rn_protocol::side_effects::standards::standard_side_effects_ids(),
         );
         let kusama_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
@@ -696,11 +741,12 @@ impl ExtBuilder {
                 token_decimals: 12,
             },
             vec![],
-            vec![*b"tran"],
+            t3rn_protocol::side_effects::standards::standard_side_effects_ids(),
         );
         self.known_xdns_records = vec![
             zero_xdns_record,
             circuit_xdns_record,
+            evm_like_xdns_record,
             gateway_xdns_record,
             polkadot_xdns_record,
             kusama_xdns_record,

@@ -1,4 +1,5 @@
-use crate::*;
+use crate::{pallet::Error, *};
+
 use codec::Decode;
 
 use sp_std::marker::PhantomData;

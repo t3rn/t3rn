@@ -1,13 +1,9 @@
 use crate::{self as pallet_account_manager, Config};
-use frame_support::{
-    parameter_types,
-    traits::{ConstU64, Everything},
-};
+use frame_support::{parameter_types, traits::Everything};
 use sp_core::H256;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
-    Perbill,
 };
 
 pub type AccountId = u64;
@@ -31,9 +27,6 @@ frame_support::construct_runtime!(
         AccountManager: pallet_account_manager,
         Timestamp: pallet_timestamp::{Pallet},
         Sudo: pallet_sudo::{Pallet, Call, Event<T>},
-
-        CircuitClock: pallet_circuit_clock::{Pallet, Storage, Event<T>},
-        Treasury: pallet_treasury::{Pallet, Call, Config<T>, Storage, Event<T>},
     }
 );
 
@@ -112,51 +105,10 @@ impl t3rn_primitives::EscrowTrait<Test> for Test {
     type Time = Timestamp;
 }
 
-parameter_types! {
-    pub const TreasuryAccount: AccountId =  10;
-    pub const ReserveAccount: AccountId =  11;
-    pub const AuctionFund: AccountId =  22;
-    pub const ContractFund: AccountId = 33;
-    pub const MinRoundTerm: u32 = 20; // TODO
-    pub const DefaultRoundTerm: u32 = 6 * t3rn_primitives::common::BLOCKS_PER_HOUR; // TODO
-    pub const GenesisIssuance: u32 = 20_000_000; // TODO
-    pub const IdealPerpetualInflation: Perbill = Perbill::from_percent(1);
-    pub const InflationRegressionMonths: u32 = 72;
-}
-
-impl pallet_treasury::Config for Test {
-    type AuctionFund = AuctionFund;
-    type ContractFund = ContractFund;
-    type Currency = Balances;
-    type DefaultRoundTerm = DefaultRoundTerm;
-    type Event = Event;
-    type GenesisIssuance = GenesisIssuance;
-    type IdealPerpetualInflation = IdealPerpetualInflation;
-    type InflationRegressionMonths = InflationRegressionMonths;
-    type MinRoundTerm = MinRoundTerm;
-    type ReserveAccount = ReserveAccount;
-    type TreasuryAccount = TreasuryAccount;
-    type WeightInfo = ();
-}
-
-impl pallet_circuit_clock::Config for Test {
-    type AccountManager = AccountManager;
-    type Currency = Balances;
-    type EscrowAccount = EscrowAccount;
-    type Escrowed = Self;
-    type Event = Event;
-    type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
-    type RoundDuration = ConstU64<500>;
-    type Time = Timestamp;
-    type Treasury = Treasury;
-    type WeightInfo = ();
-}
-
 impl Config for Test {
-    type CircuitClock = CircuitClock;
+    type Clock = t3rn_primitives::clock::ClockMock<Self>;
     type Currency = Balances;
     type EscrowAccount = EscrowAccount;
-    type Escrowed = Self;
     type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type Time = Timestamp;

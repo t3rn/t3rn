@@ -40,6 +40,12 @@ use t3rn_primitives::{
 };
 use t3rn_protocol::side_effects::test_utils::*;
 
+use pallet_xbi_portal::{
+    sabi::AccountId20,
+    xbi_codec::{ActionNotificationTimeouts, XBIFormat, XBIInstr, XBIMetadata},
+};
+use pallet_xbi_portal_enter::t3rn_sfx::xbi_2_sfx;
+
 pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);
 pub const BOB_RELAYER: AccountId32 = AccountId32::new([2u8; 32]);
 pub const CHARLIE: AccountId32 = AccountId32::new([3u8; 32]);
@@ -497,6 +503,7 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
                 bonded_relayer: None,
                 status: CircuitStatus::Requested,
                 requested_at: 1,
+                reserved_bond: 0,
             };
 
             assert_eq!(
@@ -585,6 +592,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
                 bonded_relayer: None,
                 status: CircuitStatus::Requested,
                 requested_at: 1,
+                reserved_bond: 0,
             };
 
             assert_eq!(
@@ -633,6 +641,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
                 bonded_relayer: Some(BOB_RELAYER),
                 status: CircuitStatus::Bonded,
                 requested_at: 1,
+                reserved_bond: 0,
             };
 
             assert_eq!(
@@ -857,6 +866,7 @@ fn circuit_handles_swap_with_insurance() {
                 bonded_relayer: None,
                 status: CircuitStatus::Requested,
                 requested_at: 1,
+                reserved_bond: 0,
             };
 
             assert_eq!(
@@ -905,6 +915,7 @@ fn circuit_handles_swap_with_insurance() {
                 bonded_relayer: Some(BOB_RELAYER),
                 status: CircuitStatus::Bonded,
                 requested_at: 1,
+                reserved_bond: 0,
             };
 
             assert_eq!(
@@ -1115,6 +1126,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
                 bonded_relayer: None,
                 status: CircuitStatus::Requested,
                 requested_at: 1,
+                reserved_bond: 0,
             };
 
             assert_eq!(
@@ -1162,6 +1174,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
                 bonded_relayer: Some(BOB_RELAYER),
                 status: CircuitStatus::Bonded,
                 requested_at: 1,
+                reserved_bond: 0,
             };
 
             assert_eq!(
@@ -1330,6 +1343,7 @@ fn successfully_bond_optimistic(
             bonded_relayer: Some(relayer.clone()),
             status: CircuitStatus::Bonded,
             requested_at: 1,
+            reserved_bond: 0,
         }
     );
 }
@@ -2027,11 +2041,8 @@ fn setup_fresh_state(origin: &Origin) -> LocalStateExecutionView<Test> {
 }
 
 /// XBI
-
 #[test]
 fn execute_side_effects_with_xbi_works_for_transfers() {
-    let _origin = Origin::signed(ALICE);
-
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
     let transfer_protocol_box =
@@ -2107,6 +2118,110 @@ fn execute_side_effects_with_xbi_works_for_transfers() {
                 origin,
                 xtx_id,
                 valid_transfer_side_effect,
+                900_000,
+                800_000,
+            ));
+        });
+}
+
+#[test]
+fn execute_side_effects_with_xbi_works_for_call_evm() {
+    let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
+
+    let xbi_evm = XBIFormat {
+        instr: XBIInstr::CallEvm {
+            source: AccountId20::repeat_byte(3),
+            target: AccountId20::repeat_byte(2),
+            value: sp_core::U256([1, 0, 0, 0]),
+            input: vec![8, 9],
+            gas_limit: 2,
+            max_fee_per_gas: sp_core::U256([4, 5, 6, 7]),
+            max_priority_fee_per_gas: None,
+            nonce: Some(sp_core::U256([3, 4, 6, 7])),
+            access_list: vec![],
+        },
+        metadata: XBIMetadata {
+            id: sp_core::H256::repeat_byte(2),
+            dest_para_id: 3333u32,
+            src_para_id: 4u32,
+            sent: ActionNotificationTimeouts {
+                action: 1u32,
+                notification: 2u32,
+            },
+            delivered: ActionNotificationTimeouts {
+                action: 3u32,
+                notification: 4u32,
+            },
+            executed: ActionNotificationTimeouts {
+                action: 4u32,
+                notification: 5u32,
+            },
+            max_exec_cost: 6u128,
+            max_notifications_cost: 8u128,
+            maybe_known_origin: None,
+            actual_aggregated_cost: None,
+        },
+    };
+
+    let mut valid_evm_sfx = xbi_2_sfx::<Test, <Test as crate::Config>::Escrowed>(xbi_evm).unwrap();
+
+    // assert target
+    valid_evm_sfx.target = [1u8, 1u8, 1u8, 1u8];
+    let side_effects = vec![valid_evm_sfx.clone()];
+    let fee = 1;
+    let sequential = true;
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            // XTX SETUP
+
+            let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
+
+            System::set_block_number(1);
+            brute_seed_block_1_to_grandpa_mfv([3, 3, 3, 3]);
+            brute_seed_block_1_to_grandpa_mfv([1, 1, 1, 1]);
+
+            let xtx_id: sp_core::H256 =
+                hex!("e20cbc9216614585492ffbcf73bd88f830688e2f8405d559cc940b1622471f29").into();
+
+            assert_ok!(Circuit::on_extrinsic_trigger(
+                origin.clone(),
+                side_effects,
+                fee,
+                sequential,
+            ));
+
+            assert_eq!(
+                Circuit::get_x_exec_signals(xtx_id).unwrap(),
+                XExecSignal {
+                    requester: AccountId32::new(hex!(
+                        "0101010101010101010101010101010101010101010101010101010101010101"
+                    )),
+                    timeouts_at: 101u64,
+                    delay_steps_at: None,
+                    status: CircuitStatus::Ready,
+                    total_reward: Some(fee),
+                    steps_cnt: (0, 1),
+                }
+            );
+
+            assert_eq!(
+                Circuit::get_full_side_effects(xtx_id).unwrap(),
+                vec![vec![FullSideEffect {
+                    input: valid_evm_sfx.clone(),
+                    confirmed: None,
+                    security_lvl: SecurityLvl::Escrowed,
+                    submission_target_height: vec![1, 0, 0, 0, 0, 0, 0, 0],
+                }]]
+            );
+
+            assert_ok!(Circuit::execute_side_effects_with_xbi(
+                origin,
+                xtx_id,
+                valid_evm_sfx,
                 900_000,
                 800_000,
             ));
