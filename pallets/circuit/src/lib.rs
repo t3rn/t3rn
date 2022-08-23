@@ -1788,7 +1788,7 @@ impl<T: Config> Pallet<T> {
                 full_side_effects_steps.push(vec![sorted_fse])
             }
         }
-
+        log::info!("Sfx Step length: {:?}", full_side_effects_steps.len());
         local_ctx.full_side_effects = full_side_effects_steps;
 
         Ok(())
@@ -1808,6 +1808,7 @@ impl<T: Config> Pallet<T> {
             EscrowedBalanceOf<T, <T as Config>::Escrowed>,
         >,
     ) -> Result<(), &'static str> {
+        log::info!("xtx.steps: {:?}", local_ctx.xtx.steps_cnt);
         fn confirm_order<T: Config>(
             side_effect: &SideEffect<
                 <T as frame_system::Config>::AccountId,
@@ -1819,13 +1820,13 @@ impl<T: Config> Pallet<T> {
                 <T as frame_system::Config>::BlockNumber,
                 EscrowedBalanceOf<T, T::Escrowed>,
             >,
-            full_side_effects: &mut [Vec<
+            step_side_effects: &mut Vec<
                 FullSideEffect<
                     <T as frame_system::Config>::AccountId,
                     <T as frame_system::Config>::BlockNumber,
                     EscrowedBalanceOf<T, T::Escrowed>,
-                >,
-            >],
+                >
+            >,
         ) -> Result<
             FullSideEffect<
                 <T as frame_system::Config>::AccountId,
@@ -1836,42 +1837,31 @@ impl<T: Config> Pallet<T> {
         > {
             // ToDo: Extract as a separate function and migrate tests from Xtx
             let input_side_effect_id = side_effect.generate_id::<SystemHashing<T>>();
-            let mut unconfirmed_step_no: Option<usize> = None;
 
-            for (i, step) in full_side_effects.iter_mut().enumerate() {
-                // Double check there are some side effects for that Xtx - should have been checked at API level tho already
-                if step.is_empty() {
-                    return Err("Xtx has an empty single step.")
-                }
-                for mut full_side_effect in step.iter_mut() {
-                    if full_side_effect.confirmed.is_none() {
-                        // Mark the first step no with encountered unconfirmed side effect
-                        if unconfirmed_step_no.is_none() {
-                            unconfirmed_step_no = Some(i);
-                        }
-                        // Recalculate the ID for each input side effect and compare with the input one.
-                        // Check the current unconfirmed step before attempt to confirm the full side effect.
-                        return if full_side_effect.input.generate_id::<SystemHashing<T>>()
-                            == input_side_effect_id
-                            && unconfirmed_step_no == Some(i)
-                        {
-                            // We found the side effect to confirm from inside the unconfirmed step.
-                            full_side_effect.confirmed = Some(confirmation.clone());
-                            Ok(full_side_effect.clone())
-                        } else {
-                            Err("Attempt to confirm side effect from the next step, \
-                                    but there still is at least one unfinished step")
-                        }
-                    }
-                }
+            // Double check there are some side effects for that Xtx - should have been checked at API level tho already
+            if step_side_effects.is_empty() {
+                return Err("Xtx has an empty single step.")
             }
-            Err("Unable to find matching Side Effect in given Xtx to confirm")
+
+            // Find sfx object index in the current step
+            match step_side_effects.iter().position(|sfx| sfx.input.generate_id::<SystemHashing<T>>() == input_side_effect_id) {
+                Some(index) => { // side effect found in current step
+                    if step_side_effects[index].confirmed.is_none() { // side effect unconfirmed currently
+                        step_side_effects[index].confirmed = Some(confirmation.clone());
+                        Ok(step_side_effects[index].clone())
+                    } else {
+                        Err("Side Effect already confirmed")
+                    }
+                },
+                None => Err("Unable to find matching Side Effect in given Xtx to confirm")
+            }
         }
 
         let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
         side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
 
-        let fsfx = confirm_order::<T>(side_effect, confirmation, &mut local_ctx.full_side_effects)?;
+        // confirm order of current season, by passing the side_effects of it to confirm order.
+        let fsfx = confirm_order::<T>(side_effect, confirmation, &mut local_ctx.full_side_effects[local_ctx.xtx.steps_cnt.0 as usize])?;
         log::info!("Order confirmed!");
         // confirm the payload is included in the specified block, and return the SideEffect params as defined in XDNS.
         // this could be multiple events!
@@ -1882,6 +1872,7 @@ impl<T: Config> Pallet<T> {
             side_effect_id.clone(),
         )
         .map_err(|_| "SideEffect confirmation failed!")?;
+        // ToDo handle misbehaviour
         log::info!("Params: {:?}", params);
 
         let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
