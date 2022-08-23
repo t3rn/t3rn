@@ -12,6 +12,7 @@ use pallet_3vm_evm::AddressMapping;
 use pallet_grandpa::{
     fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
+use pallet_staking_rpc_runtime_api::RpcBalance;
 use pallet_xdns_rpc_runtime_api::{ChainId, FetchXdnsRecordsResponse, GatewayABIConfig};
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -627,41 +628,43 @@ impl_runtime_apis! {
     }
 
     impl pallet_staking_rpc_runtime_api::StakingRuntimeApi<Block, AccountId, Balance> for Runtime {
-        fn get_fixtures() -> StakingFixtures<Balance> {
-            <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::fixtures()
+        // fn get_fixtures() -> StakingFixtures<RpcBalance<Balance>> {
+        //     <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::fixtures()
+        // }
+
+        fn get_total_value_locked() -> RpcBalance<Balance> {
+            let x = <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::total_value_locked();
+            RpcBalance { balance: x }
         }
 
-        fn get_total_value_locked() -> Balance {
-            <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::total_value_locked()
+        fn get_active_stake(round: RoundIndex) -> RpcBalance<Balance> {
+            let x = <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::staked(round);
+            RpcBalance { balance: x }
         }
 
-        fn get_active_stake(round: RoundIndex) -> Balance {
-            <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::staked(round)
-        }
+        // fn get_executor_config(who: AccountId) -> Option<ExecutorInfo> {
+        //     <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::executor_config(who)
+        // }
 
-        fn get_executor_config(who: AccountId) -> Option<ExecutorInfo> {
-            <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::executor_config(who)
-        }
+        // fn get_executor_snapshot(round: RoundIndex, who: AccountId) -> Option<ExecutorSnapshot<AccountId, RpcBalance<Balance>>> {
+        //     <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::at_stake(round, who)
+        // }
 
-        fn get_executor_snapshot(round: RoundIndex, who: AccountId) -> Option<ExecutorSnapshot<AccountId, Balance>> {
-            <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::at_stake(round, who)
-        }
+        // fn get_candidate_info(who: AccountId) -> Option<CandidateMetadataFormat<RpcBalance<Balance>>> {
+        //     <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::candidate_info(who)
+        // }
 
-        fn get_candidate_info(who: AccountId) -> Option<CandidateMetadataFormat<Balance>> {
-            <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::candidate_info(who)
-        }
+        // fn get_staker_info(who: AccountId) -> Option<StakerMetadataFormat<AccountId, RpcBalance<Balance>>> {
+        //     <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::staker_info(who)
+        // }
 
-        fn get_staker_info(who: AccountId) -> Option<StakerMetadataFormat<AccountId, Balance>> {
-            <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::staker_info(who)
-        }
+        // fn list_candidates() -> OrderedSet<Bond<AccountId, RpcBalance<Balance>>> {
+        //     <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::candidate_pool()
+        // }
 
-        fn list_candidates() -> OrderedSet<Bond<AccountId, Balance>> {
-            <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::candidate_pool()
-        }
-
-        fn list_active_set() -> Vec<AccountId> {
-            <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::active_set()
-        }
+        // fn list_active_set() -> Vec<AccountId> {
+        //     <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::active_set()
+        // }
     }
 
     #[cfg(feature = "runtime-benchmarks")]

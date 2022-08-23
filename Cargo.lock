@@ -7614,6 +7614,7 @@ name = "pallet-staking-rpc-runtime-api"
 version = "0.1.0"
 dependencies = [
  "parity-scale-codec 3.1.5",
+ "serde",
  "sp-api",
  "sp-core",
  "sp-runtime",
