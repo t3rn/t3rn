@@ -1,7 +1,7 @@
 use crate::abi::Type as AbiType;
 use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::{
-    prelude::{collections::VecDeque, fmt::Debug, vec, vec::Vec},
+    prelude::{fmt::Debug, vec, vec::Vec},
     TypeInfo,
 };
 
@@ -43,10 +43,10 @@ pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub encoded_args: Vec<Bytes>,
     pub encoded_args_abi: Vec<AbiType>,
     pub security_lvl: SecurityLvl,
-    pub confirmation_outcome: ConfirmationOutcome,
-    pub confirmed_executioner: AccountId,
-    pub confirmed_received_at: BlockNumber,
-    pub confirmed_cost: BalanceOf,
+    pub confirmation_outcome: Option<ConfirmationOutcome>,
+    pub confirmed_executioner: Option<AccountId>,
+    pub confirmed_received_at: Option<BlockNumber>,
+    pub confirmed_cost: Option<BalanceOf>,
 }
 
 impl<AccountId, BlockNumber, BalanceOf> Default
@@ -64,10 +64,10 @@ where
             encoded_args: vec![],
             encoded_args_abi: vec![],
             security_lvl: SecurityLvl::Dirty,
-            confirmation_outcome: ConfirmationOutcome::Success,
-            confirmed_executioner: AccountId::from([0u8; 32]),
-            confirmed_received_at: BlockNumber::default(),
-            confirmed_cost: BalanceOf::default(),
+            confirmation_outcome: None,
+            confirmed_executioner: None,
+            confirmed_received_at: None,
+            confirmed_cost: None,
         }
     }
 }
@@ -194,6 +194,7 @@ impl Into<[u8; 4]> for Action {
     }
 }
 
+// TODO: remove
 fn extract_args<AccountId: MaxEncodedLen, BalanceOf: MaxEncodedLen, Hash: MaxEncodedLen>(
     action: &Action,
     bytes: &mut bytes::Bytes,
@@ -346,11 +347,8 @@ impl Default for SecurityLvl {
     }
 }
 
-// Side effects conversion error.
 #[derive(Debug, PartialEq)]
 pub enum Error {
-    /// Failed to decode a property while hardening.
-    HardeningDecodeError,
     /// Expected confirmation to FSX wasn't there while hardening.
     HardeningMissingConfirmationError,
 }
