@@ -88,7 +88,13 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
     ) -> DispatchResult {
         Self::no_charge_or_fail(charge_id).map_err(|_e| Error::<T>::ExecutionAlreadyRegistered)?;
 
-        T::Currency::reserve(payee, charge_fee + offered_reward)?;
+        let total_reserve_deposit = charge_fee + offered_reward;
+
+        if total_reserve_deposit == Zero::zero() {
+            return Err(Error::<T>::SkippingEmptyCharges.into())
+        }
+
+        T::Currency::reserve(payee, total_reserve_deposit)?;
 
         let recipient = if let Some(recipient) = maybe_recipient {
             recipient

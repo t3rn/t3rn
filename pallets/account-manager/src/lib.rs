@@ -200,6 +200,7 @@ pub mod pallet {
         PendingChargeNotFoundAtRefund,
         ExecutionNotRegistered,
         ExecutionAlreadyRegistered,
+        SkippingEmptyCharges,
         ChargeAlreadyRegistered,
         ChargeOrSettlementCalculationOverflow,
         DecodingExecutionIDFailed,
