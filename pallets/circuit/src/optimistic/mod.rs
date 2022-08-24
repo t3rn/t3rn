@@ -3,55 +3,47 @@ use crate::{pallet::Error, *};
 use frame_support::traits::ReservableCurrency;
 use sp_std::marker::PhantomData;
 use t3rn_primitives::transfers::EscrowedBalanceOf;
+
 pub struct Optimistic<T: Config> {
     _phantom: PhantomData<T>,
 }
 
 impl<T: Config> Optimistic<T> {
     pub fn bond_4_sfx(
-        // xtx_id: T::Hash,
-        // step_id: T::Hash,
         executor: &T::AccountId,
-        local_ctx: &LocalXtxCtx<T>,
-        insurance_deposit: &InsuranceDeposit<
-            T::AccountId,
-            T::BlockNumber,
-            EscrowedBalanceOf<T, T::Escrowed>,
-        >, // bond_amount: EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-           // total_xtx_step_optimistic_rewards: EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+        local_ctx: &mut LocalXtxCtx<T>,
+        sfx_id: SideEffectId<T>,
     ) -> Result<
         InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
         Error<T>,
     > {
-        let total_xtx_step_optimistic_rewards = crate::Pallet::<T>::get_fsx_total_rewards(
+        let total_xtx_step_optimistic_rewards_of_others = crate::Pallet::<T>::get_fsx_total_rewards(
             &crate::Pallet::<T>::get_current_step_fsx_by_security_lvl(
                 local_ctx,
                 SecurityLvl::Optimistic,
-            ),
+            )
+            .into_iter()
+            .filter(|fsx| fsx.input.generate_id::<SystemHashing<T>>() != sfx_id)
+            .collect(),
         );
+        let mut insurance_deposit = Self::get_insurance_deposit_mutable_ref(local_ctx, sfx_id)?;
 
-        <T as Config>::Executors::reserve_bond(executor, total_xtx_step_optimistic_rewards)
-            .map_err(|_e| Error::<T>::InsuranceBondTooLow)?;
+        <T as Config>::Executors::reserve_bond(
+            executor,
+            total_xtx_step_optimistic_rewards_of_others,
+        )
+        .map_err(|_e| Error::<T>::InsuranceBondTooLow)?;
         <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::reserve(
             executor,
             insurance_deposit.insurance,
         );
 
-        let mut insurance_deposit_copy = insurance_deposit.clone();
-        log::info!("bond insurance deposit -- charged");
-        insurance_deposit_copy.bonded_relayer = Some(executor.clone());
-        insurance_deposit_copy.reserved_bond = total_xtx_step_optimistic_rewards;
+        insurance_deposit.bonded_relayer = Some(executor.clone());
+        insurance_deposit.reserved_bond = total_xtx_step_optimistic_rewards_of_others;
         // ToDo: Consider removing status from insurance_deposit since redundant with relayer: Option<Relayer>
-        insurance_deposit_copy.status = CircuitStatus::Bonded;
+        insurance_deposit.status = CircuitStatus::Bonded;
 
-        // T::Executors::bond_collateral();
-        // Cover co-executors by reserving a chunk of bonded collateral
-        // <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::reserve from bond_collateral the amount of all of the other SFX Optimistic Rewards in current Xtx Step.
-        // <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::reserve(sum_of_all_optimistic_rewards_for_this_step - current_reward)
-        // Cover users by reserving the requested bond amount from executor account.
-        // <<T as Config>::Escrowed as EscrowTrait<T>>::Currency::reserve(executioner, bond_amount)?;
-
-        Ok(insurance_deposit_copy)
+        Ok(insurance_deposit.clone())
     }
 
     pub fn try_unbond(local_ctx: &mut LocalXtxCtx<T>) -> Result<(), Error<T>> {
@@ -85,65 +77,30 @@ impl<T: Config> Optimistic<T> {
                 Err(Error::<T>::RefundTransferFailed)
             }
         }
-
-        //         let side_effect_id = side_effect.generate_id::<SystemHashing<T>>();
-        //         // Reward insurance
-        //         // Check if the side effect was insured and if the relayer matches the bonded one
-        //         return if let Some((_id, insurance_request)) = local_ctx
-        //             .insurance_deposits
-        //             .iter()
-        //             .find(|(id, _)| *id == side_effect_id)
-        //         {
-        //             if let Some(bonded_relayer) = &insurance_request.bonded_relayer {
-        //                 match enact_status {
-        //                     InsuranceEnact::Reward => {
-        //                         // Reward relayer with and give back his insurance from Vault
-        //                         EscrowCurrencyOf::<T>::transfer(
-        //                             &Self::account_id(),
-        //                             bonded_relayer,
-        //                             insurance_request.insurance + insurance_request.reward,
-        //                             AllowDeath,
-        //                         )
-        //                         .map_err(|_| Error::<T>::RewardTransferFailed)?; // should not fail
-        //                     },
-        //                     InsuranceEnact::RefundBoth => {
-        //                         EscrowCurrencyOf::<T>::transfer(
-        //                             &Self::account_id(),
-        //                             &insurance_request.requester,
-        //                             insurance_request.reward,
-        //                             AllowDeath,
-        //                         )
-        //                         .map_err(|_| Error::<T>::RefundTransferFailed)?; // should not fail
-        //
-        //                         EscrowCurrencyOf::<T>::transfer(
-        //                             &Self::account_id(),
-        //                             bonded_relayer,
-        //                             insurance_request.insurance,
-        //                             AllowDeath,
-        //                         )
-        //                         .map_err(|_| Error::<T>::RefundTransferFailed)?; // should not fail
-        //                     },
-        //                     InsuranceEnact::RefundAndPunish => {
-        //                         EscrowCurrencyOf::<T>::transfer(
-        //                             &Self::account_id(),
-        //                             &insurance_request.requester,
-        //                             insurance_request.reward,
-        //                             AllowDeath,
-        //                         )
-        //                         .map_err(|_| Error::<T>::RefundTransferFailed)?; // should not fail
-        //                     },
-        //                 }
-        //             } else {
-        //                 // This is a forbidden state which should have not happened -
-        //                 //  at this point all of the insurances should have a bonded relayer assigned
-        //                 return Err(Error::<T>::RefundTransferFailed)
-        //             }
-        //             Ok(true)
-        //         } else {
-        //             Ok(false)
-        //         }
-
         Ok(())
+    }
+
+    pub(self) fn get_insurance_deposit_mutable_ref(
+        local_ctx: &mut LocalXtxCtx<T>,
+        sfx_id: SideEffectId<T>,
+    ) -> Result<
+        &mut InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+        Error<T>,
+    > {
+        let mut maybe_insurance_deposit: Option<
+            &mut InsuranceDeposit<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+        > = None;
+
+        for (id, x) in local_ctx.insurance_deposits.iter_mut() {
+            if *id == sfx_id {
+                maybe_insurance_deposit = Some(x);
+            }
+        }
+        if let Some(insurance_deposit) = maybe_insurance_deposit {
+            Ok(insurance_deposit)
+        } else {
+            return Err(Error::<T>::InsuranceBondNotRequired)
+        }
     }
 
     pub fn try_slash(local_ctx: &mut LocalXtxCtx<T>) {
@@ -199,7 +156,7 @@ impl<T: Config> Optimistic<T> {
             for repatriated_executor in &repatriated_executors {
                 <T as Config>::Executors::increase_bond(
                     repatriated_executor,
-                    slash_insurance_request.reserved_bond, // / EscrowedBalanceOf<T, T::Escrowed > ::from(repatriated_executors.len() as u128),
+                    slash_insurance_request.reserved_bond,
                 );
             }
         }
