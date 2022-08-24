@@ -110,10 +110,13 @@ impl CircuitStatus {
         let mut highest_post_ready_determined_status = CircuitStatus::Ready;
         let mut lowest_post_ready_determined_status = CircuitStatus::Finished;
 
+        let current_determined_status =
+            Self::determine_effects_insurance_status::<T>(&insurance_deposits.to_vec());
+
         for (_step_cnt, full_side_effect) in step.iter().enumerate() {
-            let current_id = full_side_effect.input.generate_id::<SystemHashing<T>>();
-            let current_determined_status =
-                Self::determine_insurance_status::<T>(current_id, insurance_deposits);
+            // let current_id = full_side_effect.input.generate_id::<SystemHashing<T>>();
+            // let current_determined_status =
+            //     Self::determine_insurance_status::<T>(current_id, insurance_deposits);
             if current_determined_status == CircuitStatus::PendingInsurance
                 && highest_post_ready_determined_status > CircuitStatus::Ready
             {

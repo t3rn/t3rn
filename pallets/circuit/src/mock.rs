@@ -162,12 +162,15 @@ impl EscrowTrait<Test> for Test {
 // ORML Tokens
 use orml_traits::parameter_type_with_key;
 use pallet_xbi_portal::{
+    primitives::xbi::XBIStatus,
     xbi_codec::XBIFormat,
     xbi_format::{XBICheckIn, XBICheckOut},
     Error,
 };
-use t3rn_primitives::abi::{CryptoAlgo, HasherAlgo};
-use t3rn_primitives::xdns::{Parachain, XdnsRecord};
+use t3rn_primitives::{
+    abi::{CryptoAlgo, HasherAlgo},
+    xdns::{Parachain, XdnsRecord},
+};
 
 pub type CurrencyId = u32;
 parameter_type_with_key! {
@@ -588,6 +591,10 @@ impl pallet_xbi_portal::primitives::xbi::XBIPortal<Test> for XBIPortalRuntimeEnt
     fn do_check_in_xbi(xbi: XBIFormat) -> Result<(), Error<Test>> {
         XBIPortal::do_check_in_xbi(xbi)
     }
+
+    fn get_status(xbi_id: H256) -> XBIStatus {
+        XBIPortal::get_status(xbi_id)
+    }
 }
 
 impl pallet_xbi_portal::primitives::xbi_callback::XBICallback<Test> for XBIPortalRuntimeEntry {
@@ -666,10 +673,10 @@ impl ExtBuilder {
                 address_length: 20,
                 value_type_size: 32,
                 decimals: 12,
-                structs: vec![]
+                structs: vec![],
             },
             GatewayVendor::PolkadotLike,
-            GatewayType::OnCircuit(0),
+            GatewayType::ProgrammableInternal(0),
             Default::default(),
             GatewaySysProps {
                 ss58_format: 1333,
