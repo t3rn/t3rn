@@ -482,7 +482,7 @@ fn testnet_genesis(
             balances: endowed_accounts
                 .iter()
                 .cloned()
-                .map(|k| (k, 1 << 60))
+                .map(|k| (k, (10000 * 10u128.pow(12)).into()))
                 .collect(),
         },
         aura: AuraConfig {

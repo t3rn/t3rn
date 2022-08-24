@@ -2215,6 +2215,182 @@ fn unbonded_unrewarded_multi_rococo_transfer_confirms() {
 }
 
 #[test]
+fn multi_mixed_rococo_confirms() {
+    let path = "multi_mixed_rococo_confirms/";
+    // generated via CLI with:
+    // export default {
+    //     sideEffects: [
+    //         {
+    //             target: "roco",
+    //             type: "tran",
+    //             receiver: "5EoHBHDBNj61SbqNPcgYzwHXY1xAroduRP3M99iSMZ8kwvgp",
+    //             amount: "0.1",
+    //             bond: "1",
+    //             reward: "1",
+    //             signature: null,
+    //             executioner: null
+    //         },
+    //         {
+    //             target: "roco",
+    //             type: "tran",
+    //             receiver: "5EoHBHDBNj61SbqNPcgYzwHXY1xAroduRP3M99iSMZ8kwvgp",
+    //             amount: "0.01",
+    //             bond: "1",
+    //             reward: "1",
+    //             signature: null,
+    //             executioner: null
+    //         },
+    //         {
+    //             target: "roco",
+    //             type: "tran",
+    //             receiver: "5EoHBHDBNj61SbqNPcgYzwHXY1xAroduRP3M99iSMZ8kwvgp",
+    //             amount: "0.02",
+    //             bond: "1",
+    //             reward: "1",
+    //             signature: null,
+    //             executioner: null
+    //         },
+    //         {
+    //             target: "roco",
+    //             type: "tran",
+    //             receiver: "5EoHBHDBNj61SbqNPcgYzwHXY1xAroduRP3M99iSMZ8kwvgp",
+    //             amount: "0.03",
+    //             bond: "1",
+    //             reward: "1",
+    //             signature: null,
+    //             executioner: null
+    //         },
+    //         {
+    //             target: "roco",
+    //             type: "tran",
+    //             receiver: "5GducktTqf8KKeatpex4kwkg1PZZimY1xUDUFoBZ2s5EDfVf",
+    //             amount: "0.1",
+    //             bond: "0",
+    //             reward: "0",
+    //             signature: null,
+    //             executioner: null
+    //         },
+    //         {
+    //             target: "roco",
+    //             type: "tran",
+    //             receiver: "5GducktTqf8KKeatpex4kwkg1PZZimY1xUDUFoBZ2s5EDfVf",
+    //             amount: "0.2",
+    //             bond: "0",
+    //             reward: "0",
+    //             signature: null,
+    //             executioner: null
+    //         }
+    //     ],
+    //     sequential: false,
+    // }
+
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&CLI_DEFAULT, (10 * 10u128.pow(12)).into()); // 10 trn
+            let _ = Balances::deposit_creating(&EXECUTOR_DEFAULT, (10 * 10u128.pow(12)).into()); // 10 trn
+
+            // Read data from files
+            let register_values = read_file_and_set_height(&(path.to_owned() + "1-register-roco.json"), false);
+            assert_ok!(register(Origin::root(), register_values[0].clone(), true));
+
+            let submit_header_1 = read_file_and_set_height(&(path.to_owned() + "2-headers-roco.json"), false);
+            for index in 0..submit_header_1.as_array().unwrap().len() { // we have to loop, because this might be seperate transactions
+                 assert_ok!(submit_headers(
+                    Origin::signed(CLI_DEFAULT),
+                    submit_header_1.clone(),
+                    index
+                ));
+            };
+            let transfer =  read_file_and_set_height(&(path.to_owned() + "3-submit-transfer.json"), false);
+
+            assert_ok!(on_extrinsic_trigger(Origin::signed(CLI_DEFAULT), transfer[0].clone()));
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), (6u128 * 10u128.pow(12)).into());
+            assert_eq!(Balances::free_balance(EXECUTOR_DEFAULT), (10u128 * 10u128.pow(12)).into());
+
+            let post_bond = read_file_and_set_height(&(path.to_owned() + "4-post-bond-roco.json"), false);
+            // Bond can be submitted in arbitrary order
+            assert_ok!(bond_insurance_deposit(Origin::signed(EXECUTOR_DEFAULT), post_bond[0].clone()));
+            assert_ok!(bond_insurance_deposit(Origin::signed(EXECUTOR_DEFAULT), post_bond[3].clone()));
+            assert_ok!(bond_insurance_deposit(Origin::signed(EXECUTOR_DEFAULT), post_bond[2].clone()));
+            assert_ok!(bond_insurance_deposit(Origin::signed(EXECUTOR_DEFAULT), post_bond[1].clone()));
+
+            assert_eq!(Balances::free_balance(&CLI_DEFAULT), (6u128 * 10u128.pow(12)).into());
+            assert_eq!(Balances::free_balance(&EXECUTOR_DEFAULT), (6u128 * 10u128.pow(12)).into());
+
+            let submit_header_2 = read_file_and_set_height(&(path.to_owned() + "5-headers-roco.json"), false);
+            for index in 0..submit_header_2.as_array().unwrap().len() { // we have to loop, because this might be seperate transactions
+                assert_ok!(submit_headers(
+                    Origin::signed(CLI_DEFAULT),
+                    submit_header_2.clone(),
+                    index
+                ));
+            };
+
+            // the confirmation order of the first 4 sfx doesn't matter, as they're all insured
+            let confirm_1 =  read_file_and_set_height(&(path.to_owned() + "6-confirm-transfer-roco.json"), true);
+            let confirm_2=  read_file_and_set_height(&(path.to_owned() + "7-confirm-transfer-roco.json"), true);
+            let confirm_3=  read_file_and_set_height(&(path.to_owned() + "8-confirm-transfer-roco.json"), true);
+            let confirm_4=  read_file_and_set_height(&(path.to_owned() + "9-confirm-transfer-roco.json"), true);
+
+            // the confirmation of these steps matters, as they are in seperate steps
+            let confirm_5=  read_file_and_set_height(&(path.to_owned() + "10-confirm-transfer-roco.json"), false);
+            let confirm_6=  read_file_and_set_height(&(path.to_owned() + "11-confirm-transfer-roco.json"), false);
+
+            // Can't confirm future steps
+            assert_noop!(
+                confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_5[0].clone()),
+                "Unable to find matching Side Effect in given Xtx to confirm"
+            );
+            assert_noop!( // previous step is not yet complete
+                confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_6[0].clone()),
+                "Unable to find matching Side Effect in given Xtx to confirm"
+            );
+
+            // Can confirm current step. Inner step order doesn't matter
+            assert_ok!(confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_3[0].clone()));
+
+            // Can't confirm future step
+            assert_noop!(
+                confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_5[0].clone()),
+                "Unable to find matching Side Effect in given Xtx to confirm"
+            );
+            assert_noop!( // previous step is not yet complete
+                confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_6[0].clone()),
+                "Unable to find matching Side Effect in given Xtx to confirm"
+            );
+
+            assert_ok!(confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_4[0].clone()));
+            assert_ok!(confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_2[0].clone()));
+            assert_ok!(confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_1[0].clone()));
+
+            assert_eq!(Balances::free_balance(&CLI_DEFAULT), (6u128 * 10u128.pow(12)).into());
+            assert_eq!(Balances::free_balance(&EXECUTOR_DEFAULT), (6u128 * 10u128.pow(12)).into());
+
+            // Can't confirm future steps
+            assert_noop!( // previous step is not yet complete
+                confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_6[0].clone()),
+                "Unable to find matching Side Effect in given Xtx to confirm"
+            );
+
+            assert_eq!(Balances::free_balance(&CLI_DEFAULT), (6u128 * 10u128.pow(12)).into());
+            assert_eq!(Balances::free_balance(&EXECUTOR_DEFAULT), (6u128 * 10u128.pow(12)).into());
+
+            // Can confirm next step
+            assert_ok!(confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_5[0].clone()));
+            assert_ok!(confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_6[0].clone()));
+
+            // ToDo this should be activated once the new account  manager is running
+            // assert_eq!(Balances::free_balance(&CLI_DEFAULT), (6u128 * 10u128.pow(12)).into());
+            // assert_eq!(Balances::free_balance(&EXECUTOR_DEFAULT), (14u128 * 10u128.pow(12)).into());
+
+        });
+}
+
+#[test]
 fn sdk_basic_success() {
     let origin = Origin::signed(ALICE);
     let mut ext = TestExternalities::new_empty();
