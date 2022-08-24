@@ -194,8 +194,22 @@ impl Into<[u8; 4]> for Action {
     }
 }
 
+#[derive(Encode, Decode, MaxEncodedLen, Clone, PartialEq, Eq, Debug)]
+pub struct Insurance<Balance>
+where
+    Balance: Encode + Decode,
+{
+    insurance: Balance,
+    reward: Balance,
+}
+
 // TODO: remove
-fn extract_args<AccountId: MaxEncodedLen, BalanceOf: MaxEncodedLen, Hash: MaxEncodedLen>(
+fn extract_args<
+    AccountId: MaxEncodedLen,
+    BalanceOf: MaxEncodedLen,
+    Hash: MaxEncodedLen,
+    Insurance: MaxEncodedLen,
+>(
     action: &Action,
     bytes: &mut bytes::Bytes,
 ) -> Result<Vec<Bytes>, &'static str> {
@@ -205,10 +219,11 @@ fn extract_args<AccountId: MaxEncodedLen, BalanceOf: MaxEncodedLen, Hash: MaxEnc
         Action::Transfer => {
             args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // from
             args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // to
+
+            // FIXME[https://github.com/t3rn/3vm/issues/112]: balanceof is the wrong size on decode
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt
 
-            // FIXME: bug here, balanceof is the wrong size
-            // TODO: support insurance
+            args.push(bytes.split_to(Insurance::max_encoded_len()).to_vec()); // optins
 
             Ok(args)
         },
@@ -221,9 +236,8 @@ fn extract_args<AccountId: MaxEncodedLen, BalanceOf: MaxEncodedLen, Hash: MaxEnc
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt_left
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt_right
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt_liquidity_token
-            args.push(bytes.split_to(0).to_vec()); // insurance
+            args.push(bytes.split_to(Insurance::max_encoded_len()).to_vec()); // optins
 
-            // TODO: support insurance
             Ok(args)
         },
         Action::Swap => {
@@ -233,8 +247,7 @@ fn extract_args<AccountId: MaxEncodedLen, BalanceOf: MaxEncodedLen, Hash: MaxEnc
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt_right
             args.push(bytes.split_to(Hash::max_encoded_len()).to_vec()); // asset_left
             args.push(bytes.split_to(Hash::max_encoded_len()).to_vec()); // asset_right
-
-            // TODO: support insurance
+            args.push(bytes.split_to(Insurance::max_encoded_len()).to_vec()); // optins
 
             Ok(args)
         },
@@ -243,7 +256,7 @@ fn extract_args<AccountId: MaxEncodedLen, BalanceOf: MaxEncodedLen, Hash: MaxEnc
             args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // dest
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // value
 
-            // TODO: This is tricky since we define input as a dynamic size so we don't know what is next
+            // TODO[https://github.com/t3rn/3vm/issues/115]: This is tricky since we define input as a dynamic size so we don't know what is next
             args.push(bytes.to_vec()); // args
 
             Ok(args)
@@ -253,7 +266,7 @@ fn extract_args<AccountId: MaxEncodedLen, BalanceOf: MaxEncodedLen, Hash: MaxEnc
             args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // dest
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // value
 
-            // TODO: This is tricky since we define input as a dynamic size so we don't know what is next
+            // TODO[https://github.com/t3rn/3vm/issues/115]: This is tricky since we define input as a dynamic size so we don't know what is next
             args.push(bytes.to_vec()); // args
 
             Ok(args)
@@ -263,7 +276,6 @@ fn extract_args<AccountId: MaxEncodedLen, BalanceOf: MaxEncodedLen, Hash: MaxEnc
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // value
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // gas
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // storage
-
             args.push(bytes.to_vec()); // data
 
             Ok(args)
@@ -273,7 +285,6 @@ fn extract_args<AccountId: MaxEncodedLen, BalanceOf: MaxEncodedLen, Hash: MaxEnc
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // value
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // gas
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // storage
-
             args.push(bytes.to_vec()); // data
 
             Ok(args)
@@ -283,8 +294,7 @@ fn extract_args<AccountId: MaxEncodedLen, BalanceOf: MaxEncodedLen, Hash: MaxEnc
             args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // from
             args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // to
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt
-            args.push(bytes.to_vec());
-            // TODO: support insurance
+            args.push(bytes.split_to(Insurance::max_encoded_len()).to_vec()); // optins
 
             Ok(args)
         },
@@ -293,8 +303,7 @@ fn extract_args<AccountId: MaxEncodedLen, BalanceOf: MaxEncodedLen, Hash: MaxEnc
             args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // from
             args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // to
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt
-            args.push(bytes.to_vec());
-            // TODO: support insurance
+            args.push(bytes.split_to(Insurance::max_encoded_len()).to_vec()); // optins
 
             Ok(args)
         },
