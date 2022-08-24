@@ -46,7 +46,7 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
         {
             Ok(pending_charge)
         } else {
-            Err(Error::<T>::ChargeAlreadyRegistered.into())
+            Err(Error::<T>::NoChargeOfGivenIdRegistered.into())
         }
     }
 
@@ -177,6 +177,22 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
         );
 
         Ok(())
+    }
+
+    fn try_finalize(
+        charge_id: T::Hash,
+        outcome: Outcome,
+        maybe_recipient: Option<T::AccountId>,
+        maybe_actual_fees: Option<BalanceOf<T>>,
+    ) {
+        if PendingChargesPerRound::<T>::get(T::Clock::current_round(), charge_id).is_some() {
+            <Self as AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockNumber>>::finalize(
+                charge_id,
+                outcome,
+                maybe_recipient,
+                maybe_actual_fees
+            ).expect("Expect try finalize to be infallible");
+        }
     }
 
     /// Collect claimable (only SFX execution rewards) for Executors and Stakers submitted by Circuit at the duration of the current Round

@@ -201,6 +201,7 @@ pub mod pallet {
         ExecutionNotRegistered,
         ExecutionAlreadyRegistered,
         SkippingEmptyCharges,
+        NoChargeOfGivenIdRegistered,
         ChargeAlreadyRegistered,
         ChargeOrSettlementCalculationOverflow,
         DecodingExecutionIDFailed,
