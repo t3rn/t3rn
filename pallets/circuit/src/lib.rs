@@ -417,11 +417,6 @@ pub mod pallet {
                 local_xtx_ctx.xtx.status
             );
 
-            // We must apply the state only if its generated and fresh
-            if maybe_xtx_id.is_none() {
-                Self::apply(&mut local_xtx_ctx, None, None)?;
-            }
-
             // There should be no apply step since no change could have happen during the state access
             let hardened_side_effects = local_xtx_ctx
                 .full_side_effects
@@ -452,6 +447,11 @@ pub mod pallet {
                     Vec<Vec<HardenedSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
                     Error<T>,
                 >>()?;
+
+            // We must apply the state only if its generated and fresh
+            if maybe_xtx_id.is_none() {
+                Self::apply(&mut local_xtx_ctx, None, None)?;
+            }
 
             // There should be no apply step since no change could have happen during the state access
             Ok(LocalStateExecutionView::<T, BalanceOf<T>>::new(
