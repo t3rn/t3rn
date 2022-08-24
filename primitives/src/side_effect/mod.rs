@@ -38,18 +38,19 @@ impl<AccountId, BlockNumber, BalanceOf>
     TryInto<HardenedSideEffect<AccountId, BlockNumber, BalanceOf>>
     for FullSideEffect<AccountId, BlockNumber, BalanceOf>
 where
-    AccountId: Encode,
-    BlockNumber: Encode,
-    BalanceOf: Encode + Zero,
+    AccountId: Encode + Clone,
+    BlockNumber: Encode + Clone,
+    BalanceOf: Encode + Zero + Clone,
 {
     type Error = Error;
 
     fn try_into(
         self,
     ) -> Result<HardenedSideEffect<AccountId, BlockNumber, BalanceOf>, Self::Error> {
-        let confirmed = self
-            .confirmed
-            .ok_or(Error::HardeningMissingConfirmationError)?;
+        let confirmation_outcome = self.clone().confirmed.and_then(|c| c.err.clone());
+        let confirmed_executioner = self.clone().confirmed.map(|c| c.executioner.clone());
+        let confirmed_received_at = self.clone().confirmed.map(|c| c.received_at.clone());
+        let confirmed_cost = self.clone().confirmed.and_then(|c| c.cost);
         Ok(HardenedSideEffect::<AccountId, BlockNumber, BalanceOf> {
             target: self.input.target,
             prize: self.input.prize,
@@ -58,10 +59,10 @@ where
             encoded_args: self.input.encoded_args,
             encoded_args_abi: vec![],
             security_lvl: self.security_lvl,
-            confirmation_outcome: confirmed.err.unwrap_or(ConfirmationOutcome::Success),
-            confirmed_executioner: confirmed.executioner,
-            confirmed_received_at: confirmed.received_at,
-            confirmed_cost: confirmed.cost.unwrap_or(Zero::zero()),
+            confirmation_outcome,
+            confirmed_executioner,
+            confirmed_received_at,
+            confirmed_cost,
         })
     }
 }
