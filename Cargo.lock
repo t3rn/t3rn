@@ -13164,6 +13164,7 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
+ "t3rn-sdk-primitives",
 ]
 
 [[package]]

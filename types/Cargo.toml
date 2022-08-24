@@ -30,6 +30,8 @@ serde_json  = "1.0.41"
 sp-core    = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
 
+t3rn-sdk-primitives = { path = "../../sdk/crates/primitives" }
+
 [features]
 default     = [ "std" ]
 runtime     = [ "sp-runtime", "sp-core", "sp-io" ]
