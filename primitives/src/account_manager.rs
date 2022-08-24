@@ -66,6 +66,14 @@ pub trait AccountManager<Account, Balance, Hash, BlockNumber> {
         maybe_actual_fees: Option<Balance>,
     ) -> DispatchResult;
 
+    /// Finalize a transaction, with an optional reason for failures
+    fn try_finalize(
+        charge_id: Hash,
+        outcome: Outcome,
+        maybe_recipient: Option<Account>,
+        maybe_actual_fees: Option<Balance>,
+    );
+
     fn on_collect_claimable(
         n: BlockNumber,
         r: RoundInfo<BlockNumber>,
