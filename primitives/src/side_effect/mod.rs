@@ -172,13 +172,12 @@ mod tests {
                 ],
                 encoded_args_abi: vec![],
                 security_lvl: SecurityLvl::Dirty,
-                confirmation_outcome: ConfirmationOutcome::Success,
-                confirmed_executioner: hex!(
-                    "0101010101010101010101010101010101010101010101010101010101010101"
-                )
-                .into(),
-                confirmed_received_at: 1,
-                confirmed_cost: 2
+                confirmation_outcome: Some(ConfirmationOutcome::Success),
+                confirmed_executioner: Some(AccountId32::new(
+                    hex!("0101010101010101010101010101010101010101010101010101010101010101").into()
+                )),
+                confirmed_received_at: Some(1),
+                confirmed_cost: Some(2)
             },
         );
 
