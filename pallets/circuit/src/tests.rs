@@ -20,7 +20,7 @@ use crate::{mock::*, state::*};
 
 use t3rn_sdk_primitives::{
     signal::{ExecutionSignal, SignalKind},
-    xc::*,
+    xc::{Call as SideEffectCall, *},
 };
 
 use codec::{Decode, Encode};
@@ -2151,16 +2151,19 @@ fn call_to_vm_is_validated_correctly() {
                     &origin,
                     LocalTrigger::new(
                         DJANGO,
-                        vec![Chain::<_, _, [u8; 32]>::Polkadot(Operation::Call {
-                            caller: ALICE,
-                            call: VM::<AccountId32, BalanceOf>::Evm {
-                                dest: CHARLIE,
-                                value: 50,
-                            },
-                            data: t3rn_sdk_primitives::storage::BoundedVec::<u8, 1024>::from_iter(
-                                vec![0_u8, 1_u8, 2_u8]
-                            ),
-                        })
+                        vec![Chain::<_, _, [u8; 32]>::Polkadot(Operation::Call(
+                            box SideEffectCall {
+                                caller: ALICE,
+                                call: VM::<AccountId32, BalanceOf>::Evm {
+                                    dest: CHARLIE,
+                                    value: 50,
+                                },
+                                data:
+                                    t3rn_sdk_primitives::storage::BoundedVec::<u8, 1024>::from_iter(
+                                        vec![0_u8, 1_u8, 2_u8]
+                                    ),
+                            }
+                        ))
                         .encode()],
                         Some(res.xtx_id.clone()),
                     )
