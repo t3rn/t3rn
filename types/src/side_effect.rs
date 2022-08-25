@@ -320,7 +320,7 @@ fn extract_args<
 
 fn take_insurance<Balance: MaxEncodedLen>(bytes: &mut bytes::Bytes, args: &mut Vec<Vec<u8>>) {
     match bytes.first() {
-        Some(byte) if byte == &0_u8 => args.push(vec![*byte]),
+        Some(byte) if byte == &0_u8 => args.push(vec![]),
         Some(byte) if byte == &1_u8 => {
             args.push(
                 bytes
