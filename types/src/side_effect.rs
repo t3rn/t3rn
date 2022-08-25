@@ -500,7 +500,9 @@ mod tests {
                         dest: BOB,
                         value: 50,
                     },
-                    data: BoundedVec::<u8, 1024>::from_iter(vec![0_u8, 1_u8, 2_u8]),
+                    data: t3rn_sdk_primitives::storage::BoundedVec::<u8, 1024>::from_iter(vec![
+                        0_u8, 1_u8, 2_u8,
+                    ]),
                 },
             );
         let bytes = se.encode();
