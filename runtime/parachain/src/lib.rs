@@ -50,7 +50,15 @@ pub use sp_runtime::{MultiAddress, Perbill, Permill};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-use t3rn_primitives::ReadLatestGatewayHeight;
+use t3rn_primitives::{
+    common::{OrderedSet, RoundIndex},
+    staking::{
+        Bond, CandidateMetadataFormat, ExecutorInfo, ExecutorSnapshot, Fixtures as StakingFixtures,
+        RpcBalance, RpcBond, RpcCandidateMetadata, RpcExecutorSnapshot, RpcFixtures,
+        RpcStakerMetadata,
+    },
+    ReadLatestGatewayHeight,
+};
 use xcm_config::{XcmConfig, XcmOriginToTransactDispatchOrigin};
 
 // Polkadot Imports
@@ -588,6 +596,7 @@ construct_runtime!(
         CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>} = 107,
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
         Treasury: pallet_treasury = 109,
+        Staking: pallet_staking::{Pallet, Call, Storage, Event<T>} = 110,
 
         // 3VM
         ThreeVm: pallet_3vm = 119,
@@ -819,6 +828,50 @@ impl_runtime_apis! {
                 Ok(abi) => Some(abi),
                 Err(_) => None,
             }
+        }
+    }
+
+    impl pallet_staking_rpc_runtime_api::StakingRuntimeApi<Block, AccountId, Balance> for Runtime {
+        fn get_fixtures() -> RpcFixtures<RpcBalance<Balance>> {
+            RpcFixtures::from(<Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::fixtures())
+        }
+
+        fn get_total_value_locked() -> RpcBalance<Balance> {
+            let x = <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::total_value_locked();
+            RpcBalance { amount: x }
+        }
+
+        fn get_active_stake(round: RoundIndex) -> RpcBalance<Balance> {
+            let x = <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::staked(round);
+            RpcBalance { amount: x }
+        }
+
+        fn get_executor_config(who: AccountId) -> Option<ExecutorInfo> {
+            <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::executor_config(who)
+        }
+
+        fn get_executor_snapshot(round: RoundIndex, who: AccountId) -> Option<RpcExecutorSnapshot<AccountId, RpcBalance<Balance>>> {
+            <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::at_stake(round, who)
+              .map(|executor_snapshot| RpcExecutorSnapshot::from(executor_snapshot))
+        }
+
+        fn get_candidate_info(who: AccountId) -> Option<RpcCandidateMetadata<RpcBalance<Balance>>> {
+            <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::candidate_info(who)
+            .map(|candidate_metadata| RpcCandidateMetadata::from(candidate_metadata))
+        }
+
+        fn get_staker_info(who: AccountId) -> Option<RpcStakerMetadata<AccountId, RpcBalance<Balance>>> {
+            <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::staker_info(who)
+              .map(|staker_metadata| RpcStakerMetadata::from(staker_metadata))
+        }
+
+        fn list_candidates() -> OrderedSet<RpcBond<AccountId, RpcBalance<Balance>>> {
+             OrderedSet::from(<Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::candidate_pool().0
+             .iter().map(|bond| RpcBond::from((*bond).clone())).collect::<Vec<RpcBond<AccountId, RpcBalance<Balance>>>>())
+        }
+
+        fn list_active_set() -> Vec<AccountId> {
+            <Staking as t3rn_primitives::staking::Staking<AccountId, Balance>>::active_set()
         }
     }
 

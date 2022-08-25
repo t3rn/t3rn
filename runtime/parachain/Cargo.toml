@@ -95,6 +95,8 @@ pallet-contracts-registry             = { path = "../../pallets/contracts-regist
 pallet-mfv                            = { path = "../../pallets/multi-finality-verifier", package = "pallet-multi-finality-verifier", default-features = false }
 pallet-xdns                           = { path = "../../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api           = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
+pallet-staking                        = { path = "../../pallets/staking", default-features = false }
+pallet-staking-rpc-runtime-api        = { path = "../../pallets/staking/rpc/runtime-api", default-features = false }
 
 # Smart contracts VMs
 pallet-3vm                           = { path = "../../3vm/pallets/3vm", default-features = false }
@@ -176,6 +178,8 @@ std = [
   # t3rn pallets
   "pallet-xdns/std",
   "pallet-xdns-rpc-runtime-api/std",
+  "pallet-staking-rpc-runtime-api/std",
+  "pallet-staking/std",
   "pallet-circuit-portal-rpc-runtime-api/std",
   "pallet-mfv/std",
   "pallet-treasury/std",

@@ -198,3 +198,10 @@ impl pallet_treasury::Config for Runtime {
     type TreasuryAccount = TreasuryAccount;
     type WeightInfo = pallet_treasury::weights::TreasuryWeight<Runtime>;
 }
+
+impl pallet_staking::Config for Runtime {
+    type Currency = Balances;
+    type Event = Event;
+    type Treasury = Treasury;
+    type WeightInfo = (); //TODO
+}

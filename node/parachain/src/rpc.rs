@@ -49,6 +49,7 @@ where
     C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
     C::Api: pallet_xdns_rpc::XdnsRuntimeApi<Block, AccountId>,
     C::Api: pallet_3vm_evm_rpc::EvmRuntimeRPCApi<Block, AccountId, Balance>,
+    C::Api: pallet_staking_rpc::StakingRuntimeApi<Block, AccountId, Balance>,
     C::Api: BlockBuilder<Block>,
     P: TransactionPool + Sync + Send + 'static,
 {
