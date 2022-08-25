@@ -243,7 +243,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                                 enforce_executioner: None
                             }],
                             vec![hex!(
-                                "892b77ece9a2adf9f18fc8f0525579bbf312d6674da09899a54f864311a770f0"
+                                "56e6f2d1c945dd09263cd3443c382dd887a59ae917005381f503d090abfef79e"
                             )
                             .into(),],
                         )),
@@ -422,7 +422,7 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
                                 enforce_executioner: None
                             }],
                             vec![hex!(
-                                "a72a1bfb371d270fe1f31e48d1723f360788426ab53a0b234e6c724e055875f5"
+                                "cd9848e7b2ca9eef189534c802c2f977c862b07971b96f8a8381837271cee5e8"
                             )
                             .into(),],
                         )),
@@ -2131,9 +2131,9 @@ fn add_liquidity_is_validated_correctly() {
         });
 }
 
-// TODO: call side effect should have parity between protocol and types
-#[test]
+// TODO: this fails because the side effect doesnt work for the gateway, will be fixed in the future
 #[ignore]
+#[test]
 fn call_to_vm_is_validated_correctly() {
     let origin = Origin::signed(ALICE);
 
@@ -2197,6 +2197,7 @@ fn into_se_from_chain() {
                     3, 3, 3, 3, 3, 3
                 ],
                 vec![50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                vec![]
             ],
             signature: vec![],
             enforce_executioner: None,
