@@ -30,7 +30,7 @@ use frame_system::{EventRecord, Phase};
 use pallet_circuit_portal::bp_circuit;
 use sp_io::TestExternalities;
 use sp_runtime::{traits::Header, AccountId32};
-use sp_std::{convert::TryFrom, prelude::*};
+use sp_std::{convert::TryFrom, iter::FromIterator, prelude::*};
 use t3rn_primitives::{
     abi::*,
     circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
@@ -1927,6 +1927,7 @@ fn sdk_basic_success() {
                     caller: ALICE,
                     to: CHARLIE,
                     amount: 50,
+                    insurance: None,
                 })
                 .encode()],
                 Some(res.xtx_id),
@@ -1936,10 +1937,12 @@ fn sdk_basic_success() {
             brute_seed_block_1_to_grandpa_mfv(*b"pdot");
 
             // then it submits to circuit
-            assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
-                &origin,
-                trigger.clone()
-            ));
+            assert_ok!(
+                <Circuit as OnLocalTrigger<Test, BalanceOf>>::on_local_trigger(
+                    &origin,
+                    trigger.clone()
+                )
+            );
 
             System::set_block_number(10);
 
@@ -1976,36 +1979,42 @@ fn sdk_can_send_multiple_states() {
             System::set_block_number(1);
             brute_seed_block_1_to_grandpa_mfv(*b"pdot");
 
-            assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
-                &origin,
-                LocalTrigger::new(
-                    DJANGO,
-                    vec![Chain::<_, u128, [u8; 32]>::Polkadot(Operation::Transfer {
-                        caller: ALICE,
-                        to: CHARLIE,
-                        amount: 50,
-                    })
-                    .encode()],
-                    Some(res.xtx_id.clone()),
+            assert_ok!(
+                <Circuit as OnLocalTrigger<Test, BalanceOf>>::on_local_trigger(
+                    &origin,
+                    LocalTrigger::new(
+                        DJANGO,
+                        vec![Chain::<_, u128, [u8; 32]>::Polkadot(Operation::Transfer {
+                            caller: ALICE,
+                            to: CHARLIE,
+                            amount: 50,
+                            insurance: None
+                        })
+                        .encode()],
+                        Some(res.xtx_id.clone()),
+                    )
                 )
-            ));
+            );
 
             System::set_block_number(10);
             brute_seed_block_1_to_grandpa_mfv(*b"ksma");
 
-            assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
-                &origin,
-                LocalTrigger::new(
-                    DJANGO,
-                    vec![Chain::<_, u128, [u8; 32]>::Kusama(Operation::Transfer {
-                        caller: ALICE,
-                        to: DJANGO,
-                        amount: 1,
-                    })
-                    .encode()],
-                    Some(res.xtx_id),
+            assert_ok!(
+                <Circuit as OnLocalTrigger<Test, BalanceOf>>::on_local_trigger(
+                    &origin,
+                    LocalTrigger::new(
+                        DJANGO,
+                        vec![Chain::<_, u128, [u8; 32]>::Kusama(Operation::Transfer {
+                            caller: ALICE,
+                            to: DJANGO,
+                            amount: 1,
+                            insurance: None
+                        })
+                        .encode()],
+                        Some(res.xtx_id),
+                    )
                 )
-            ));
+            );
         });
 }
 
@@ -2025,19 +2034,22 @@ fn transfer_is_validated_correctly() {
             System::set_block_number(1);
             brute_seed_block_1_to_grandpa_mfv(*b"pdot");
 
-            assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
-                &origin,
-                LocalTrigger::new(
-                    DJANGO,
-                    vec![Chain::<_, u128, [u8; 32]>::Polkadot(Operation::Transfer {
-                        caller: ALICE,
-                        to: CHARLIE,
-                        amount: 50,
-                    })
-                    .encode()],
-                    Some(res.xtx_id.clone()),
+            assert_ok!(
+                <Circuit as OnLocalTrigger<Test, BalanceOf>>::on_local_trigger(
+                    &origin,
+                    LocalTrigger::new(
+                        DJANGO,
+                        vec![Chain::<_, u128, [u8; 32]>::Polkadot(Operation::Transfer {
+                            caller: ALICE,
+                            to: CHARLIE,
+                            amount: 50,
+                            insurance: None
+                        })
+                        .encode()],
+                        Some(res.xtx_id.clone()),
+                    )
                 )
-            ));
+            );
         });
 }
 
@@ -2057,22 +2069,25 @@ fn swap_is_validated_correctly() {
             System::set_block_number(1);
             brute_seed_block_1_to_grandpa_mfv(*b"pdot");
 
-            assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
-                &origin,
-                LocalTrigger::new(
-                    DJANGO,
-                    vec![Chain::<_, u128, [u8; 32]>::Polkadot(Operation::Swap {
-                        caller: ALICE,
-                        to: CHARLIE,
-                        amount_from: 100,
-                        amount_to: 10,
-                        asset_from: [7_u8; 32],
-                        asset_to: [8_u8; 32],
-                    })
-                    .encode()],
-                    Some(res.xtx_id.clone()),
+            assert_ok!(
+                <Circuit as OnLocalTrigger<Test, BalanceOf>>::on_local_trigger(
+                    &origin,
+                    LocalTrigger::new(
+                        DJANGO,
+                        vec![Chain::<_, u128, [u8; 32]>::Polkadot(Operation::Swap {
+                            caller: ALICE,
+                            to: CHARLIE,
+                            amount_from: 100,
+                            amount_to: 10,
+                            asset_from: [7_u8; 32],
+                            asset_to: [8_u8; 32],
+                            insurance: None
+                        })
+                        .encode()],
+                        Some(res.xtx_id.clone()),
+                    )
                 )
-            ));
+            );
         });
 }
 
@@ -2092,24 +2107,27 @@ fn add_liquidity_is_validated_correctly() {
             System::set_block_number(1);
             brute_seed_block_1_to_grandpa_mfv(*b"pdot");
 
-            assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
-                &origin,
-                LocalTrigger::new(
-                    DJANGO,
-                    vec![Chain::<_, u128, _>::Polkadot(Operation::AddLiquidity {
-                        caller: ALICE,
-                        to: CHARLIE,
-                        asset_left: [7_u8; 32],
-                        asset_right: [8_u8; 32],
-                        liquidity_token: [9_u8; 32],
-                        amount_left: 100,
-                        amount_right: 10,
-                        amount_liquidity_token: 100,
-                    })
-                    .encode()],
-                    Some(res.xtx_id.clone()),
+            assert_ok!(
+                <Circuit as OnLocalTrigger<Test, BalanceOf>>::on_local_trigger(
+                    &origin,
+                    LocalTrigger::new(
+                        DJANGO,
+                        vec![Chain::<_, u128, _>::Polkadot(Operation::AddLiquidity {
+                            caller: ALICE,
+                            to: CHARLIE,
+                            asset_left: [7_u8; 32],
+                            asset_right: [8_u8; 32],
+                            liquidity_token: [9_u8; 32],
+                            amount_left: 100,
+                            amount_right: 10,
+                            amount_liquidity_token: 100,
+                            insurance: None
+                        })
+                        .encode()],
+                        Some(res.xtx_id.clone()),
+                    )
                 )
-            ));
+            );
         });
 }
 
@@ -2128,18 +2146,26 @@ fn call_to_vm_is_validated_correctly() {
 
             let res = setup_fresh_state(&origin);
 
-            assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
-                &origin,
-                LocalTrigger::new(
-                    DJANGO,
-                    vec![Chain::<_, u128, [u8; 32]>::Polkadot(Operation::Call {
-                        caller: ALICE,
-                        call: VM::Evm
-                    })
-                    .encode()],
-                    Some(res.xtx_id.clone()),
+            assert_ok!(
+                <Circuit as OnLocalTrigger<Test, BalanceOf>>::on_local_trigger(
+                    &origin,
+                    LocalTrigger::new(
+                        DJANGO,
+                        vec![Chain::<_, _, [u8; 32]>::Polkadot(Operation::Call {
+                            caller: ALICE,
+                            call: VM::<AccountId32, BalanceOf>::Evm {
+                                dest: CHARLIE,
+                                value: 50,
+                            },
+                            data: t3rn_sdk_primitives::storage::BoundedVec::<u8, 1024>::from_iter(
+                                vec![0_u8, 1_u8, 2_u8]
+                            ),
+                        })
+                        .encode()],
+                        Some(res.xtx_id.clone()),
+                    )
                 )
-            ));
+            );
         });
 }
 #[test]
@@ -2148,6 +2174,7 @@ fn into_se_from_chain() {
         caller: ALICE,
         to: CHARLIE,
         amount: 50,
+        insurance: None,
     })
     .encode();
 
@@ -2202,7 +2229,7 @@ fn check_queue(validation: QueueValidator) {
     }
 }
 
-fn setup_fresh_state(origin: &Origin) -> LocalStateExecutionView<Test> {
+fn setup_fresh_state(origin: &Origin) -> LocalStateExecutionView<Test, Balance> {
     let res = Circuit::load_local_state(&origin, None).unwrap();
     assert_ne!(Some(res.xtx_id), None);
     res
