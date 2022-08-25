@@ -387,7 +387,7 @@ mod tests {
     use sp_core::crypto::AccountId32;
     use t3rn_sdk_primitives::{
         storage::BoundedVec,
-        xc::{Chain, Operation, VM},
+        xc::{Call, Chain, Operation, VM},
     };
 
     type BlockNumber = u64;
@@ -494,7 +494,7 @@ mod tests {
     fn encoded_evm_call_to_side_effect() {
         let se =
             Chain::<AccountId, BalanceOf, Hash>::Polkadot(
-                Operation::<AccountId, BalanceOf, Hash>::Call {
+                Operation::<AccountId, BalanceOf, Hash>::Call(box Call {
                     caller: ALICE,
                     call: VM::<AccountId, BalanceOf>::Evm {
                         dest: BOB,
@@ -503,7 +503,7 @@ mod tests {
                     data: t3rn_sdk_primitives::storage::BoundedVec::<u8, 1024>::from_iter(vec![
                         0_u8, 1_u8, 2_u8,
                     ]),
-                },
+                }),
             );
         let bytes = se.encode();
         let s = SideEffect::<AccountId, BlockNumber, BalanceOf>::try_from(bytes).unwrap();
@@ -525,7 +525,7 @@ mod tests {
     fn encoded_wasm_call_to_side_effect() {
         let se =
             Chain::<AccountId, BalanceOf, Hash>::Polkadot(
-                Operation::<AccountId, BalanceOf, Hash>::Call {
+                Operation::<AccountId, BalanceOf, Hash>::Call(box Call {
                     caller: ALICE,
                     call: VM::<AccountId, BalanceOf>::Wasm {
                         dest: BOB,
@@ -534,7 +534,7 @@ mod tests {
                         storage_limit: Some(70),
                     },
                     data: BoundedVec::<u8, 1024>::from_iter(vec![0_u8, 1_u8, 2_u8]),
-                },
+                }),
             );
         let bytes = se.encode();
         let s = SideEffect::<AccountId, BlockNumber, BalanceOf>::try_from(bytes).unwrap();
@@ -576,7 +576,7 @@ mod tests {
                 [1_u8; 32].to_vec(),
                 [2_u8; 32].to_vec(),
                 50_u128.encode(),
-                vec![0_u8]
+                vec![]
             ]
         );
     }
@@ -606,7 +606,7 @@ mod tests {
                 [1_u8; 32].to_vec(),
                 [2_u8; 32].to_vec(),
                 50_u128.encode(),
-                vec![0_u8]
+                vec![]
             ]
         );
     }
@@ -649,7 +649,7 @@ mod tests {
                 amount_left.encode(),
                 amount_right.encode(),
                 amount_liquidity_token.encode(),
-                vec![0_u8]
+                vec![]
             ]
         );
     }
@@ -686,7 +686,7 @@ mod tests {
                 amount_to.encode(),
                 asset_from.to_vec(),
                 asset_to.to_vec(),
-                vec![0_u8]
+                vec![]
             ]
         );
     }
