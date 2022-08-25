@@ -19,7 +19,7 @@ use sp_runtime::{
     impl_opaque_keys,
     testing::{Header, TestXt},
     traits::{BlakeTwo256, Convert, IdentityLookup, Keccak256, OpaqueKeys},
-    Perbill,
+    DispatchError, Perbill,
 };
 use sp_staking::{EraIndex, SessionIndex};
 use sp_std::convert::{TryFrom, TryInto};
@@ -594,6 +594,16 @@ impl pallet_xbi_portal::primitives::xbi::XBIPortal<Test> for XBIPortalRuntimeEnt
 
     fn get_status(xbi_id: H256) -> XBIStatus {
         XBIPortal::get_status(xbi_id)
+    }
+
+    fn get_check_in(
+        xbi_id: H256,
+    ) -> Result<XBICheckIn<<Test as frame_system::Config>::BlockNumber>, DispatchError> {
+        XBIPortal::get_check_in(xbi_id)
+    }
+
+    fn get_check_out(xbi_id: H256) -> Result<XBICheckOut, DispatchError> {
+        XBIPortal::get_check_out(xbi_id)
     }
 }
 

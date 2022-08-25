@@ -68,7 +68,10 @@ use t3rn_protocol::side_effects::{
 };
 pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 
-use pallet_xbi_portal::{primitives::xbi::XBIPortal, xbi_format::XBIInstr};
+use pallet_xbi_portal::{
+    primitives::xbi::XBIPortal,
+    xbi_format::{XBICheckIn, XBICheckOut, XBIInstr},
+};
 use pallet_xbi_portal_enter::t3rn_sfx::xbi_result_2_sfx_confirmation;
 use t3rn_primitives::account_manager::Outcome;
 
@@ -702,9 +705,9 @@ pub mod pallet {
             max_exec_cost: u128,
             max_notifications_cost: u128,
         ) -> DispatchResultWithPostInfo {
-            let side_effect_id = side_effect.generate_id::<SystemHashing<T>>();
+            let sfx_id = side_effect.generate_id::<SystemHashing<T>>();
 
-            if T::XBIPortal::get_status(side_effect_id) != XBIStatus::UnknownId {
+            if T::XBIPortal::get_status(sfx_id) != XBIStatus::UnknownId {
                 return Err(Error::<T>::SideEffectIsAlreadyScheduledToExecuteOverXBI.into())
             }
             // Authorize: Retrieve sender of the transaction.
@@ -722,7 +725,7 @@ pub mod pallet {
                 sfx_2_xbi::<T, T::Escrowed>(
                     &side_effect,
                     XBIMetadata::new_with_default_timeouts(
-                        XbiId::<T>::local_hash_to_xbi_id(side_effect_id)?,
+                        XbiId::<T>::local_hash_to_xbi_id(sfx_id)?,
                         T::Xdns::get_gateway_para_id(&side_effect.target)?,
                         T::SelfParaId::get(),
                         max_exec_cost,
@@ -744,14 +747,23 @@ pub mod pallet {
                 Some((charge_id, executor.clone(), total_max_fees)),
             )?;
 
-            T::XBIPromise::then(xbi, pallet::Call::<T>::on_xbi_sfx_resolved {}.into())?;
+            T::XBIPromise::then(
+                xbi,
+                pallet::Call::<T>::on_xbi_sfx_resolved { sfx_id }.into(),
+            )?;
 
             Ok(().into())
         }
 
         #[pallet::weight(< T as Config >::WeightInfo::confirm_side_effect())]
-        pub fn on_xbi_sfx_resolved(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            // todo: Implement recovery of SFX confirmation from XBICheckout + Metadata
+        pub fn on_xbi_sfx_resolved(
+            _origin: OriginFor<T>,
+            sfx_id: T::Hash,
+        ) -> DispatchResultWithPostInfo {
+            Self::do_xbi_exit(
+                T::XBIPortal::get_check_in(sfx_id)?,
+                T::XBIPortal::get_check_out(sfx_id)?,
+            )?;
             Ok(().into())
         }
 
@@ -1956,8 +1968,8 @@ impl<T: Config> Pallet<T> {
     }
 
     pub fn do_xbi_exit(
-        xbi_checkin: pallet_xbi_portal::xbi_format::XBICheckIn<T::BlockNumber>,
-        _xbi_checkout: pallet_xbi_portal::xbi_format::XBICheckOut,
+        xbi_checkin: XBICheckIn<T::BlockNumber>,
+        _xbi_checkout: XBICheckOut,
     ) -> Result<(), Error<T>> {
         // Recover SFX ID from XBI Metadata
         let sfx_id: SideEffectId<T> =
