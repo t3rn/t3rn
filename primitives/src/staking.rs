@@ -2,7 +2,7 @@ use crate::common::{OrderedSet, Range, RoundIndex};
 use codec::{Decode, Encode};
 use frame_support::{pallet_prelude::*, traits::LockIdentifier};
 #[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use sp_runtime::{traits::Zero, Percent, RuntimeDebug};
 use sp_std::{
     cmp::{Ordering, PartialOrd},
@@ -277,6 +277,149 @@ impl<Balance: PartialEq + Zero + PartialOrd> Fixtures<Balance> {
     }
 }
 
+#[derive(Eq, PartialEq, Encode, Decode, Default, PartialOrd, Ord)]
+#[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
+#[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
+/// a wrapper around a balance, used in RPC to workaround a bug where using u128
+/// in runtime-apis fails. See <https://github.com/paritytech/substrate/issues/4641>
+pub struct RpcBalance<T> {
+    #[cfg_attr(feature = "std", serde(bound(serialize = "T: std::fmt::Display")))]
+    #[cfg_attr(feature = "std", serde(serialize_with = "serialize_as_string"))]
+    #[cfg_attr(feature = "std", serde(bound(deserialize = "T: std::str::FromStr")))]
+    #[cfg_attr(feature = "std", serde(deserialize_with = "deserialize_from_string"))]
+    pub amount: T,
+}
+
+#[cfg(feature = "std")]
+fn serialize_as_string<S: Serializer, T: std::fmt::Display>(
+    t: &T,
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
+    serializer.serialize_str(&t.to_string())
+}
+
+#[cfg(feature = "std")]
+fn deserialize_from_string<'de, D: Deserializer<'de>, T: std::str::FromStr>(
+    deserializer: D,
+) -> Result<T, D::Error> {
+    let s = String::deserialize(deserializer)?;
+    s.parse::<T>()
+        .map_err(|_| serde::de::Error::custom("Parse from string failed"))
+}
+
+// StakingFixtures<RpcBalance<Balance>>
+/// Protocol enforced thresholds and delays for staking.
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(
+    Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo, PartialOrd, Ord, Default,
+)]
+pub struct RpcFixtures<RpcBalance> {
+    pub active_set_size: Range<u32>,
+    pub max_commission: Percent,
+    pub max_risk: Percent,
+    pub min_executor_bond: RpcBalance,
+    pub min_candidate_bond: RpcBalance,
+    pub min_atomic_stake: RpcBalance,
+    pub min_total_stake: RpcBalance,
+    pub max_top_stakes_per_candidate: u32,
+    pub max_bottom_stakes_per_candidate: u32,
+    pub max_stakes_per_staker: u32,
+    pub configure_executor_delay: u32,
+    pub leave_candidates_delay: u32,
+    pub leave_stakers_delay: u32,
+    pub candidate_bond_less_delay: u32,
+    pub revoke_stake_delay: u32,
+}
+
+use crate::AccountId;
+type Balance = u128;
+
+impl From<Fixtures<Balance>> for RpcFixtures<RpcBalance<Balance>> {
+    fn from(fixtures: Fixtures<Balance>) -> Self {
+        RpcFixtures {
+            active_set_size: fixtures.active_set_size,
+            max_commission: fixtures.max_commission,
+            max_risk: fixtures.max_risk,
+            min_executor_bond: RpcBalance {
+                amount: fixtures.min_executor_bond,
+            },
+            min_candidate_bond: RpcBalance {
+                amount: fixtures.min_candidate_bond,
+            },
+            min_atomic_stake: RpcBalance {
+                amount: fixtures.min_atomic_stake,
+            },
+            min_total_stake: RpcBalance {
+                amount: fixtures.min_total_stake,
+            },
+            max_top_stakes_per_candidate: fixtures.max_top_stakes_per_candidate,
+            max_bottom_stakes_per_candidate: fixtures.max_bottom_stakes_per_candidate,
+            max_stakes_per_staker: fixtures.max_stakes_per_staker,
+            configure_executor_delay: fixtures.configure_executor_delay,
+            leave_candidates_delay: fixtures.leave_candidates_delay,
+            leave_stakers_delay: fixtures.leave_stakers_delay,
+            candidate_bond_less_delay: fixtures.candidate_bond_less_delay,
+            revoke_stake_delay: fixtures.revoke_stake_delay,
+        }
+    }
+}
+
+/// Generic type describing either an executor's self-bond or a staker's bond.
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq, Eq, PartialOrd, Ord)]
+pub struct RpcBond<AccountId, RpcBalance> {
+    pub owner: AccountId,
+    pub amount: RpcBalance,
+}
+
+impl From<Bond<AccountId, Balance>> for RpcBond<AccountId, RpcBalance<Balance>> {
+    fn from(bond: Bond<AccountId, Balance>) -> Self {
+        RpcBond {
+            owner: bond.owner,
+            amount: RpcBalance {
+                amount: bond.amount,
+            },
+        }
+    }
+}
+
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Encode, Decode, RuntimeDebug, TypeInfo, PartialEq)]
+/// Snapshot of collator state at the start of the round for which they are selected
+pub struct RpcExecutorSnapshot<AccountId, RpcBalance> {
+    /// The total value locked by the collator.
+    pub bond: RpcBalance,
+
+    /// The rewardable stakes. This list is a subset of total delegators, where certain
+    /// delegators are adjusted based on their scheduled
+    /// [DelegationChange::Revoke] or [DelegationChange::Decrease] action.
+    pub stakes: Vec<RpcBond<AccountId, RpcBalance>>,
+
+    /// The total counted value locked for the collator, including the self bond + total staked by
+    /// top delegators.
+    pub total: RpcBalance,
+}
+
+impl From<ExecutorSnapshot<AccountId, Balance>>
+    for RpcExecutorSnapshot<AccountId, RpcBalance<Balance>>
+{
+    fn from(executor_snapshot: ExecutorSnapshot<AccountId, Balance>) -> Self {
+        RpcExecutorSnapshot {
+            bond: RpcBalance {
+                amount: executor_snapshot.bond,
+            },
+            stakes: executor_snapshot
+                .stakes
+                .into_iter()
+                .map(|bond| RpcBond::from(bond))
+                .collect::<Vec<RpcBond<AccountId, RpcBalance<Balance>>>>(),
+            total: RpcBalance {
+                amount: executor_snapshot.total,
+            },
+        }
+    }
+}
+
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq)]
 /// Staker state
@@ -291,6 +434,47 @@ pub struct StakerMetadataFormat<AccountId, Balance> {
     pub less_total: Balance,
     /// Status for this staker
     pub status: StakerStatus,
+}
+
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq)]
+/// Staker state
+pub struct RpcStakerMetadata<AccountId, RpcBalance> {
+    /// Staker account
+    pub id: AccountId,
+    /// All current stakes
+    pub stakes: OrderedSet<RpcBond<AccountId, RpcBalance>>,
+    /// Total balance locked for this staker
+    pub total: RpcBalance,
+    /// Sum of pending revocation amounts + bond less amounts
+    pub less_total: RpcBalance,
+    /// Status for this staker
+    pub status: StakerStatus,
+}
+
+impl From<StakerMetadataFormat<AccountId, Balance>>
+    for RpcStakerMetadata<AccountId, RpcBalance<Balance>>
+{
+    fn from(staker_metadata: StakerMetadataFormat<AccountId, Balance>) -> Self {
+        RpcStakerMetadata {
+            id: staker_metadata.id,
+            stakes: OrderedSet::from(
+                staker_metadata
+                    .stakes
+                    .0
+                    .into_iter()
+                    .map(|bond| RpcBond::from(bond))
+                    .collect::<Vec<RpcBond<AccountId, RpcBalance<Balance>>>>(),
+            ),
+            total: RpcBalance {
+                amount: staker_metadata.total,
+            },
+            less_total: RpcBalance {
+                amount: staker_metadata.less_total,
+            },
+            status: staker_metadata.status,
+        }
+    }
 }
 
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -317,6 +501,74 @@ pub struct CandidateMetadataFormat<Balance> {
     pub request: Option<CandidateBondLessRequest<Balance>>,
     /// Current status of the executor
     pub status: ExecutorStatus,
+}
+
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq)]
+/// All candidate info except the top and bottom stakes
+pub struct RpcCandidateMetadata<RpcBalance> {
+    /// This candidate's self bond amount
+    pub bond: RpcBalance,
+    /// Total number of stakes to this candidate
+    pub stake_count: u32,
+    /// Self bond + sum of top stakes
+    pub total_counted: RpcBalance,
+    /// The smallest top stake amount
+    pub lowest_top_stake_amount: RpcBalance,
+    /// The highest bottom stake amount
+    pub highest_bottom_stake_amount: RpcBalance,
+    /// The smallest bottom stake amount
+    pub lowest_bottom_stake_amount: RpcBalance,
+    /// Capacity status for top stakes
+    pub top_capacity: CapacityStatus,
+    /// Capacity status for bottom stakes
+    pub bottom_capacity: CapacityStatus,
+    /// Maximum 1 pending request to decrease candidate self bond at any given time
+    pub request: Option<RpcCandidateBondLessRequest<RpcBalance>>,
+    /// Current status of the executor
+    pub status: ExecutorStatus,
+}
+
+impl From<CandidateMetadataFormat<Balance>> for RpcCandidateMetadata<RpcBalance<Balance>> {
+    fn from(candidate_metadata: CandidateMetadataFormat<Balance>) -> Self {
+        RpcCandidateMetadata {
+            bond: RpcBalance {
+                amount: candidate_metadata.bond,
+            },
+            stake_count: candidate_metadata.stake_count,
+            total_counted: RpcBalance {
+                amount: candidate_metadata.total_counted,
+            },
+            lowest_top_stake_amount: RpcBalance {
+                amount: candidate_metadata.lowest_top_stake_amount,
+            },
+            highest_bottom_stake_amount: RpcBalance {
+                amount: candidate_metadata.highest_bottom_stake_amount,
+            },
+            lowest_bottom_stake_amount: RpcBalance {
+                amount: candidate_metadata.lowest_bottom_stake_amount,
+            },
+            top_capacity: candidate_metadata.top_capacity,
+            bottom_capacity: candidate_metadata.bottom_capacity,
+            request: candidate_metadata
+                .request
+                .map(|candidate_bond_less_request| RpcCandidateBondLessRequest {
+                    amount: RpcBalance {
+                        amount: candidate_bond_less_request.amount,
+                    },
+                    when_executable: candidate_bond_less_request.when_executable,
+                }),
+            status: candidate_metadata.status,
+        }
+    }
+}
+
+/// Request scheduled to change the executor candidate's self-bond.
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(PartialEq, Clone, Copy, Encode, Decode, RuntimeDebug, TypeInfo)]
+pub struct RpcCandidateBondLessRequest<RpcBalance> {
+    pub amount: RpcBalance,
+    pub when_executable: RoundIndex,
 }
 
 pub trait Staking<AccountId, Balance> {
