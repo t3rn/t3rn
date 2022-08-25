@@ -1784,21 +1784,20 @@ impl<T: Config> Pallet<T> {
                         SecurityLvl::Dirty
                     }
                 }
-                // let submission_target_height = T::CircuitPortal::read_cmp_latest_target_height(
-                //     side_effect.target,
-                //     None,
-                //     None,
-                // )?; TODO: uncomment
+                let submission_target_height = T::CircuitPortal::read_cmp_latest_target_height(
+                    side_effect.target,
+                    None,
+                    None,
+                )?;
 
                 full_side_effects.push(FullSideEffect {
                     input: side_effect.clone(),
                     confirmed: None,
                     security_lvl: determine_dirty_vs_escrowed_lvl::<T>(side_effect),
-                    submission_target_height: vec![],
+                    submission_target_height,
                 });
             }
         }
-        log::info!(target: "runtime::circuit", "sorting fse {:?}", full_side_effects);
 
         // Circuit's automatic side effect ordering: execute escrowed asap, then line up optimistic ones
         full_side_effects.sort_by(|a, b| b.security_lvl.partial_cmp(&a.security_lvl).unwrap());
