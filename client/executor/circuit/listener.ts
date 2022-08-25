@@ -1,4 +1,3 @@
-import "@t3rn/types"
 import { EventEmitter } from "events"
 import { ApiPromise, WsProvider } from "@polkadot/api"
 import { SideEffect } from "../utils/types"
@@ -35,9 +34,8 @@ export default class CircuitListener extends EventEmitter {
         } else if (notification.event.method === "NewSideEffectsAvailable") {
           const { event } = notification
           const types = event.typeDef
-          let all_side_effects: SideEffect[] = []
+          let allSideEffects: SideEffect[] = []
           let sideEffect = new SideEffect()
-
           for (let index = 0; index < event.data.length; index++) {
             switch (types[index].type) {
               case "AccountId32":
@@ -46,18 +44,18 @@ export default class CircuitListener extends EventEmitter {
               case "H256":
                 sideEffect.setXtxId(event.data[index])
                 break
-              case "Vec<T3rnPrimitivesSideEffect>":
+              case "Vec<T3rnTypesSideEffect>":
                 ;(event.data[index] as any).forEach(element => {
                   let newSideEffect = new SideEffect()
                   newSideEffect.setSideEffect(element)
                   newSideEffect.setXtxId(sideEffect.xtxId)
                   newSideEffect.setRequester(sideEffect.requester)
-                  all_side_effects.push(newSideEffect)
+                  allSideEffects.push(newSideEffect)
                 })
                 break
               case "Vec<H256>":
                 ;(event.data[index] as any).forEach((element, cnt) => {
-                  all_side_effects[cnt].setId(element)
+                  allSideEffects[cnt].setId(element)
                 })
                 break
             }
@@ -65,10 +63,10 @@ export default class CircuitListener extends EventEmitter {
 
           CircuitListener.debug(
             "saved up all_side_effects before emitting NewSideEffects",
-            ...all_side_effects.map(sideEffect => sideEffect.getId())
+            ...allSideEffects.map(sideEffect => sideEffect.getId())
           )
 
-          this.emit("NewSideEffects", all_side_effects)
+          this.emit("NewSideEffects", allSideEffects)
         } else if (notification.event.method === "NewHeaderRangeAvailable") {
           const data = {
             gatewayId: new TextDecoder().decode(

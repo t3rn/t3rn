@@ -631,6 +631,7 @@ impl Config for Test {
     type SignalQueueDepth = ConstU32<5>;
     type WeightInfo = ();
     type XBIPortal = XBIPortalRuntimeEntry;
+    type XBIPromise = XBIPortal;
     type Xdns = XDNS;
     type XtxTimeoutCheckInterval = ConstU64<10>;
     type XtxTimeoutDefault = ConstU64<100>;

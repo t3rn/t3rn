@@ -25,7 +25,7 @@ impl pallet_xdns::Config for Runtime {
 
 impl pallet_contracts_registry::Config for Runtime {
     type Balances = Balances;
-    type Escrowed = Self;
+    type Escrowed = AccountManager;
     type Event = Event;
     type WeightInfo = pallet_contracts_registry::weights::SubstrateWeight<Runtime>;
 }

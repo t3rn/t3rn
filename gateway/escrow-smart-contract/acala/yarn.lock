@@ -1163,10 +1163,10 @@
   resolved "https://registry.yarnpkg.com/@open-web3/scanner/-/scanner-0.9.4-38.tgz#6af5c7a95f93b9cb3209fe9e2b0d482337834e34"
   integrity sha512-DTqFtfSsLK9xbEBKTYxNHjS6jIPdSblmLUykaqORe2LpD8lDc1Rz8Ywb7dZDuxtA7LFhCBPrH/STmSoaP+QrxA==
 
-"@openzeppelin/contracts@^4.7.1":
-  version "4.7.1"
-  resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-4.7.1.tgz#33d0a857b76b18d313e6bb6ed28cdaf367e90cfe"
-  integrity sha512-UXmAjKARsXORHlHZu5GCD7ZbRKm6nU8UHnbuT/QJJa2JEOEcbvV/X8w/sUk62Sl9VZuuljM1akrZLyAtzUgsxw==
+"@openzeppelin/contracts@^4.7.3":
+  version "4.7.3"
+  resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-4.7.3.tgz#939534757a81f8d69cc854c7692805684ff3111e"
+  integrity sha512-dGRS0agJzu8ybo44pCIf3xBaPQN/65AIXNgK8+4gzKd5kbvlqyxryUYVLJv7fK98Seyd2hDZzVEHSWAh0Bt1Yw==
 
 "@polkadot/api-augment@7.3.1":
   version "7.3.1"

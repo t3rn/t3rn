@@ -88,7 +88,8 @@ ExecStart=$collator_binary \
   --rpc-cors all \
   --execution Wasm \
   --pruning=archive \
-  --no-prometheus \
+  --prometheus-port 7001 \
+  --telemetry-url 'wss://telemetry.polkadot.io/submit 1' \
   -- \
   --chain $artifacts_dir/rococo.raw.json \
   --bootnodes \"$rococo_boot_nodes\" \
@@ -141,7 +142,8 @@ ExecStart=$collator_binary \
   --rpc-cors all \
   --execution Wasm \
   --pruning=archive \
-  --no-prometheus \
+  --prometheus-port 7002 \
+  --telemetry-url 'wss://telemetry.polkadot.io/submit 1' \
   -- \
   --chain $artifacts_dir/rococo.raw.json \
   --bootnodes \"$rococo_boot_nodes\" \

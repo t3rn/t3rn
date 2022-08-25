@@ -1,7 +1,7 @@
-# Run t3rn Collator on Rococo testnet (t0rn)
+# Run a t0rn Testnet Collator
 
 
-This guide outlines the essential minimum of steps required to run a collator for t0rn - a release candidate of t3rn to Rococo testnet. Guide uses the `v1.0.0-rc.2` release to Rococo, please however always use the latest available version.
+This guide outlines the essential minimum of steps required to run a collator for t0rn - a release candidate of t3rn on the Rococo testnet. This guide uses the `v1.1.0-rc.0` release, however always use the latest available version.
 
 Make sure to have your machine setup for [Rust and Substrate development](https://docs.substrate.io/v3/getting-started/installation/).
 
@@ -10,7 +10,7 @@ Make sure to have your machine setup for [Rust and Substrate development](https:
 Install the `subkey` tool:
 
 ```sh
-cargo install subkey --version 2.0.1 --git https://github.com/paritytech/substrate
+cargo install subkey --git https://github.com/paritytech/substrate
 ```
 
 To generate a new generic Substrate keypair just run:
@@ -35,7 +35,7 @@ We maintain collator binaries which we release alongside every runtime release. 
 
 ```sh
 curl -sSfL \
-  https://github.com/t3rn/t3rn/releases/download/v1.0.0-rc.2/t0rn-circuit-collator-v1.0.0-rc.2-x86_64-unknown-linux-gnu.gz \
+  https://github.com/t3rn/t3rn/releases/download/v1.1.0-rc.0/t0rn-circuit-collator-v1.1.0-rc.0-x86_64-unknown-linux-gnu.gz \
 | gunzip > ~/t0rn/circuit-collator
 ```
 
@@ -52,11 +52,11 @@ To associate your node to the correct network we need to provide the t0rn chain 
 ```sh
 curl -sSfL \
   -o ~/t0rn/specs/rococo.raw.json \
-  https://raw.githubusercontent.com/t3rn/t3rn/v1.0.0-rc.2/specs/rococo.raw.json
+  https://raw.githubusercontent.com/t3rn/t3rn/v1.1.0-rc.0/specs/rococo.raw.json
 
 curl -sSfL \
   -o ~/t0rn/specs/t0rn.raw.json \
-  https://raw.githubusercontent.com/t3rn/t3rn/v1.0.0-rc.2/specs/t0rn.raw.json
+  https://raw.githubusercontent.com/t3rn/t3rn/v1.1.0-rc.0/specs/t0rn.raw.json
 ```
 
 We publish these chain specs alongside our runtime releases.
@@ -96,6 +96,10 @@ t0rn_boot_node=/ip4/159.69.77.34/tcp/33333/p2p/12D3KooWBqic8h4nQS2KK751rdkqYPFTW
   --execution Wasm
 ```
 
+When running the collator the first time, add the `--rpc-methods=unsafe` argument to be able to call rotateKeys later.
+Please restart your node after the registration process without the argument.
+
+
 ## Set Your Collator's Aura Key
 
 Your collator needs an [Aura](https://docs.substrate.io/v3/advanced/consensus/#aura) identity in order to produce blocks.
@@ -113,8 +117,40 @@ The Aura key must be inserted into the keystore *after* startup:
   --key-type aura
 ```
 
-Your collator should be running and also produce blocks eventually!
+## Get Some T0RN Balance
 
-## Troubleshooting
+Your Collator needs some funds to register on testnet.
 
-+ Our testnet got a temporary Rococo slot, meaning `t0rn` and other parachains will be on- and offboarded to Rococo in a round-robin fashion. When offboarded collators do not produce blocks.
+Go to the [t0rn testnet faucet](https://dev.net.t3rn.io/faucet/), insert your substrate address and get some T0RN to cover transaction costs.
+
+## Register as a candidate
+
+1. Go to the [polkadot.js app](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fdev.net.t3rn.io#/accounts) and connect your collator account by clicking "Add account", then inserting your previously generated secret phrase aka mnemonic.
+
+2. Generate a new session key pair and obtain the corresponding public key:
+
+```
+curl -H "Content-Type: application/json" -d '{"id":1, "jsonrpc":"2.0", "method": "author_rotateKeys", "params":[]}' http://localhost:8833
+```
+
+Your output should look similar to:
+
+``{"jsonrpc":"2.0","result":"0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef","id":1}``
+
+
+The `result` key is your public key of the newly created session key pair. Copy it as it is needed in the next step.
+
+3. Set the session key for your collator under:
+
+```
+Developer --> Extrinsics --> session -> setKeys(sr25519_pubkey, 0x00)
+```
+
+4. Now finally register your collator as candidate under:
+
+```
+Developer --> Extrinsics --> collatorSelection -> registerAsCandidate()
+```
+
+After some time your collator should be included and producing blocks!
+You can check [here](https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fdev.net.t3rn.io#/collators) if your collator has registered successfully.

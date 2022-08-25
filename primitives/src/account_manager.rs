@@ -65,6 +65,13 @@ pub trait AccountManager<Account, Balance, Hash, BlockNumber> {
         maybe_recipient: Option<Account>,
         maybe_actual_fees: Option<Balance>,
     ) -> DispatchResult;
+    /// Assert infallible finalize of a transaction if exists
+    fn try_finalize(
+        charge_id: Hash,
+        outcome: Outcome,
+        maybe_recipient: Option<Account>,
+        maybe_actual_fees: Option<Balance>,
+    );
 
     fn on_collect_claimable(
         n: BlockNumber,

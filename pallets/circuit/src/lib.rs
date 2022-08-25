@@ -120,7 +120,10 @@ pub mod pallet {
     use pallet_xbi_portal_enter::t3rn_sfx::sfx_2_xbi;
     use sp_runtime::traits::Hash;
 
-    use pallet_xbi_portal::{primitives::xbi::XBIStatus, sabi::Sabi};
+    use pallet_xbi_portal::{
+        primitives::xbi::{XBIPromise, XBIStatus},
+        sabi::Sabi,
+    };
     use sp_std::borrow::ToOwned;
 
     use t3rn_primitives::{
@@ -303,6 +306,7 @@ pub mod pallet {
         type Call: Parameter
             + Dispatchable<Origin = Self::Origin>
             + GetDispatchInfo
+            + From<Call<Self>>
             + From<frame_system::Call<Self>>;
 
         /// Weight information for extrinsics in this pallet.
@@ -318,6 +322,8 @@ pub mod pallet {
         type Xdns: Xdns<Self>;
 
         type XBIPortal: XBIPortal<Self>;
+
+        type XBIPromise: XBIPromise<Self, <Self as Config>::Call>;
 
         type Executors: Executors<
             Self,
@@ -1781,6 +1787,25 @@ impl<T: Config> Pallet<T> {
     /// The account ID of the Circuit Vault.
     pub fn account_id() -> T::AccountId {
         <T as Config>::PalletId::get().into_account()
+    }
+
+    pub fn convert_side_effects(
+        side_effects: Vec<Vec<u8>>,
+    ) -> Result<
+        Vec<SideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
+        &'static str,
+    > {
+        let side_effects: Vec<
+            SideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+        > = side_effects
+            .into_iter()
+            .filter_map(|se| se.try_into().ok()) // TODO: maybe not
+            .collect();
+        if side_effects.is_empty() {
+            Err("No side effects provided")
+        } else {
+            Ok(side_effects)
+        }
     }
 
     // TODO: we also want to save some space for timeouts, split the weight distribution 50-50

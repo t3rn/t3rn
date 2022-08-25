@@ -8,6 +8,7 @@ use sp_std::{fmt::Debug, prelude::*};
 pub enum CircuitRole {
     Ambassador,
     Executor,
+    Attester,
     Staker,
     Collator,
     ContractAuthor, // Builders
@@ -18,6 +19,7 @@ pub enum CircuitRole {
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
 pub enum BenefitSource {
+    TrafficFees,
     TrafficRewards,
     BootstrapPool,
     Inflation,

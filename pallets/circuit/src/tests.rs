@@ -20,7 +20,7 @@ use crate::{mock::*, state::*};
 
 use t3rn_sdk_primitives::{
     signal::{ExecutionSignal, SignalKind},
-    xc::{Chain, Operation},
+    xc::*,
 };
 
 use codec::{Decode, Encode};
@@ -30,7 +30,7 @@ use frame_system::{EventRecord, Phase};
 use pallet_circuit_portal::bp_circuit;
 use sp_io::TestExternalities;
 use sp_runtime::{traits::Header, AccountId32};
-use sp_std::prelude::*;
+use sp_std::{convert::TryFrom, prelude::*};
 use t3rn_primitives::{
     abi::*,
     circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
@@ -1934,89 +1934,271 @@ fn load_local_state_can_generate_and_read_state() {
 #[test]
 fn sdk_basic_success() {
     let origin = Origin::signed(ALICE);
-    let mut ext = TestExternalities::new_empty();
 
-    ext.execute_with(|| {
-        let _ = Balances::deposit_creating(&ALICE, 50);
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 50);
 
-        let res = setup_fresh_state(&origin);
+            let res = setup_fresh_state(&origin);
 
-        // then it sets up some side effects
-        let trigger = LocalTrigger::new(
-            DJANGO,
-            vec![Chain::<_, _, [u8; 32]>::Polkadot(Operation::Transfer {
-                caller: ALICE,
-                to: CHARLIE,
-                amount: 50,
-            })
-            .encode()],
-            Some(res.xtx_id),
-        );
-
-        // then it submits to circuit
-        assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
-            &origin,
-            trigger.clone()
-        ));
-
-        System::set_block_number(10);
-
-        // submits a signal
-        let signal = ExecutionSignal::new(&res.xtx_id, Some(res.steps_cnt.0), SignalKind::Complete);
-        assert_ok!(Circuit::on_signal(&origin, signal.clone()));
-
-        // validate the state
-        check_queue(QueueValidator::Elements(vec![(ALICE, signal)].into()));
-
-        // async process the signal
-        <Circuit as frame_support::traits::OnInitialize<u64>>::on_initialize(100);
-        System::set_block_number(100);
-
-        // no signal left
-        check_queue(QueueValidator::Length(0));
-    });
-}
-
-#[test]
-fn sdk_can_send_multiple_states() {
-    let origin = Origin::signed(ALICE);
-    let mut ext = TestExternalities::new_empty();
-
-    ext.execute_with(|| {
-        let _ = Balances::deposit_creating(&ALICE, 50);
-
-        let res = setup_fresh_state(&origin);
-
-        assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
-            &origin,
-            LocalTrigger::new(
+            // then it sets up some side effects
+            let trigger = LocalTrigger::new(
                 DJANGO,
-                vec![Chain::<_, _, [u8; 32]>::Polkadot(Operation::Transfer {
+                vec![Chain::<_, u128, [u8; 32]>::Polkadot(Operation::Transfer {
                     caller: ALICE,
                     to: CHARLIE,
                     amount: 50,
                 })
                 .encode()],
-                Some(res.xtx_id.clone()),
-            )
-        ));
-
-        System::set_block_number(10);
-
-        assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
-            &origin,
-            LocalTrigger::new(
-                DJANGO,
-                vec![Chain::<_, _, [u8; 32]>::Kusama(Operation::Transfer {
-                    caller: ALICE,
-                    to: DJANGO,
-                    amount: 1,
-                })
-                .encode()],
                 Some(res.xtx_id),
-            )
-        ));
-    });
+            );
+
+            System::set_block_number(1);
+            brute_seed_block_1_to_grandpa_mfv(*b"pdot");
+
+            // then it submits to circuit
+            assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
+                &origin,
+                trigger.clone()
+            ));
+
+            System::set_block_number(10);
+
+            // submits a signal
+            let signal =
+                ExecutionSignal::new(&res.xtx_id, Some(res.steps_cnt.0), SignalKind::Complete);
+            assert_ok!(Circuit::on_signal(&origin, signal.clone()));
+
+            // validate the state
+            check_queue(QueueValidator::Elements(vec![(ALICE, signal)].into()));
+
+            // async process the signal
+            <Circuit as frame_support::traits::OnInitialize<u64>>::on_initialize(100);
+            System::set_block_number(100);
+
+            // no signal left
+            check_queue(QueueValidator::Length(0));
+        });
+}
+
+#[test]
+fn sdk_can_send_multiple_states() {
+    let origin = Origin::signed(ALICE);
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 50);
+
+            let res = setup_fresh_state(&origin);
+
+            System::set_block_number(1);
+            brute_seed_block_1_to_grandpa_mfv(*b"pdot");
+
+            assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
+                &origin,
+                LocalTrigger::new(
+                    DJANGO,
+                    vec![Chain::<_, u128, [u8; 32]>::Polkadot(Operation::Transfer {
+                        caller: ALICE,
+                        to: CHARLIE,
+                        amount: 50,
+                    })
+                    .encode()],
+                    Some(res.xtx_id.clone()),
+                )
+            ));
+
+            System::set_block_number(10);
+            brute_seed_block_1_to_grandpa_mfv(*b"ksma");
+
+            assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
+                &origin,
+                LocalTrigger::new(
+                    DJANGO,
+                    vec![Chain::<_, u128, [u8; 32]>::Kusama(Operation::Transfer {
+                        caller: ALICE,
+                        to: DJANGO,
+                        amount: 1,
+                    })
+                    .encode()],
+                    Some(res.xtx_id),
+                )
+            ));
+        });
+}
+
+#[test]
+fn transfer_is_validated_correctly() {
+    let origin = Origin::signed(ALICE);
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 50);
+
+            let res = setup_fresh_state(&origin);
+
+            System::set_block_number(1);
+            brute_seed_block_1_to_grandpa_mfv(*b"pdot");
+
+            assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
+                &origin,
+                LocalTrigger::new(
+                    DJANGO,
+                    vec![Chain::<_, u128, [u8; 32]>::Polkadot(Operation::Transfer {
+                        caller: ALICE,
+                        to: CHARLIE,
+                        amount: 50,
+                    })
+                    .encode()],
+                    Some(res.xtx_id.clone()),
+                )
+            ));
+        });
+}
+
+#[test]
+fn swap_is_validated_correctly() {
+    let origin = Origin::signed(ALICE);
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 50);
+
+            let res = setup_fresh_state(&origin);
+
+            System::set_block_number(1);
+            brute_seed_block_1_to_grandpa_mfv(*b"pdot");
+
+            assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
+                &origin,
+                LocalTrigger::new(
+                    DJANGO,
+                    vec![Chain::<_, u128, [u8; 32]>::Polkadot(Operation::Swap {
+                        caller: ALICE,
+                        to: CHARLIE,
+                        amount_from: 100,
+                        amount_to: 10,
+                        asset_from: [7_u8; 32],
+                        asset_to: [8_u8; 32],
+                    })
+                    .encode()],
+                    Some(res.xtx_id.clone()),
+                )
+            ));
+        });
+}
+
+#[test]
+fn add_liquidity_is_validated_correctly() {
+    let origin = Origin::signed(ALICE);
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 50);
+
+            let res = setup_fresh_state(&origin);
+
+            System::set_block_number(1);
+            brute_seed_block_1_to_grandpa_mfv(*b"pdot");
+
+            assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
+                &origin,
+                LocalTrigger::new(
+                    DJANGO,
+                    vec![Chain::<_, u128, _>::Polkadot(Operation::AddLiquidity {
+                        caller: ALICE,
+                        to: CHARLIE,
+                        asset_left: [7_u8; 32],
+                        asset_right: [8_u8; 32],
+                        liquidity_token: [9_u8; 32],
+                        amount_left: 100,
+                        amount_right: 10,
+                        amount_liquidity_token: 100,
+                    })
+                    .encode()],
+                    Some(res.xtx_id.clone()),
+                )
+            ));
+        });
+}
+
+// TODO: call side effect should have parity between protocol and types
+#[test]
+#[ignore]
+fn call_to_vm_is_validated_correctly() {
+    let origin = Origin::signed(ALICE);
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 50);
+
+            let res = setup_fresh_state(&origin);
+
+            assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
+                &origin,
+                LocalTrigger::new(
+                    DJANGO,
+                    vec![Chain::<_, u128, [u8; 32]>::Polkadot(Operation::Call {
+                        caller: ALICE,
+                        call: VM::Evm
+                    })
+                    .encode()],
+                    Some(res.xtx_id.clone()),
+                )
+            ));
+        });
+}
+#[test]
+fn into_se_from_chain() {
+    let ch = Chain::<_, u128, [u8; 32]>::Polkadot(Operation::Transfer {
+        caller: ALICE,
+        to: CHARLIE,
+        amount: 50,
+    })
+    .encode();
+
+    let se = SideEffect::<[u8; 32], u128, u128>::try_from(ch).unwrap();
+
+    assert_eq!(
+        se,
+        SideEffect {
+            target: [112u8, 100u8, 111u8, 116u8],
+            prize: 0,
+            ordered_at: 0,
+            encoded_action: vec![116, 114, 97, 110],
+            encoded_args: vec![
+                vec![
+                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1
+                ],
+                vec![
+                    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+                    3, 3, 3, 3, 3, 3
+                ],
+                vec![50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ],
+            signature: vec![],
+            enforce_executioner: None,
+        }
+    )
 }
 
 #[test]
