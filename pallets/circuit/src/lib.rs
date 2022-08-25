@@ -744,8 +744,14 @@ pub mod pallet {
                 Some((charge_id, executor.clone(), total_max_fees)),
             )?;
 
-            T::XBIPortal::do_check_in_xbi(xbi).map_err(|_| Error::<T>::FailedToCheckInOverXBI)?;
+            T::XBIPromise::then(xbi, pallet::Call::<T>::on_xbi_sfx_resolved {}.into())?;
 
+            Ok(().into())
+        }
+
+        #[pallet::weight(< T as Config >::WeightInfo::confirm_side_effect())]
+        pub fn on_xbi_sfx_resolved(_origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            // todo: Implement recovery of SFX confirmation from XBICheckout + Metadata
             Ok(().into())
         }
 
