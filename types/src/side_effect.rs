@@ -248,29 +248,19 @@ fn extract_args<
         },
         Action::Call => {
             args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // caller
-            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // dest
-            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // value
-
-            // TODO[https://github.com/t3rn/3vm/issues/115]: This is tricky since we define input as a dynamic size so we don't know what is next
-            args.push(bytes.to_vec()); // args
-
-            Ok(args)
-        },
-        Action::CallEvm => {
-            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // caller
 
             // now we check the VM
             match bytes.first() {
                 Some(byte) if byte == &0_u8 => {
                     // its an evm op, get rid of that byte
-                    bytes.advance(2);
+                    bytes.advance(1);
                     args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // dest
                     args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec());
                     // value
                 },
                 Some(byte) if byte == &1_u8 => {
                     // its a wasm op, get rid of that byte
-                    bytes.advance(2);
+                    bytes.advance(1);
                     args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // dest
                     args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // value
                     args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // gas_limit
@@ -278,11 +268,16 @@ fn extract_args<
                     match bytes.first() {
                         Some(byte) if byte == &0_u8 => args.push(vec![*byte]),
                         Some(byte) if byte == &1_u8 => {
-                            args.push(
-                                bytes
-                                    .split_to(Option::<BalanceOf>::max_encoded_len())
-                                    .to_vec(),
-                            ); // storage_limit
+                            match bytes.first() {
+                                Some(byte) if byte == &0_u8 => args.push(vec![*byte]),
+                                Some(byte) if byte == &1_u8 => {
+                                    bytes.advance(1);
+                                    args.push(
+                                        bytes.split_to(BalanceOf::max_encoded_len()).to_vec(),
+                                    ); // storage_limit
+                                },
+                                _ => {},
+                            }
                         },
                         _ => {},
                     }
@@ -295,20 +290,12 @@ fn extract_args<
             // remove the length of the input
             bytes.advance(1);
 
-            // TODO[https://github.com/t3rn/3vm/issues/115]: This is tricky since we define input as a dynamic size so we don't know what is next
             args.push(bytes.to_vec()); // data
 
             Ok(args)
         },
-        Action::CallWasm => {
-            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // dest
-            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // value
-            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // gas
-            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // storage
-            args.push(bytes.to_vec()); // data
-
-            Ok(args)
-        },
+        Action::CallEvm => Ok(args),
+        Action::CallWasm => Ok(args),
         Action::CallComposable => {
             args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // dest
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // value
@@ -531,6 +518,39 @@ mod tests {
                 [1_u8; 32].to_vec(),
                 [2_u8; 32].to_vec(),
                 50_u128.encode(),
+                vec![0, 1, 2]
+            ]
+        );
+    }
+
+    #[test]
+    fn encoded_wasm_call_to_side_effect() {
+        let se =
+            Chain::<AccountId, BalanceOf, Hash>::Polkadot(
+                Operation::<AccountId, BalanceOf, Hash>::Call {
+                    caller: ALICE,
+                    call: VM::<AccountId, BalanceOf>::Wasm {
+                        dest: BOB,
+                        value: 50,
+                        gas_limit: 60,
+                        storage_limit: Some(70),
+                    },
+                    data: BoundedVec::<u8, 1024>::from_iter(vec![0_u8, 1_u8, 2_u8]),
+                },
+            );
+        let bytes = se.encode();
+        let s = SideEffect::<AccountId, BlockNumber, BalanceOf>::try_from(bytes).unwrap();
+
+        assert_eq!(s.target, *b"pdot");
+        assert_eq!(s.encoded_action, *CALL_SIDE_EFFECT_ID);
+        assert_eq!(
+            s.encoded_args,
+            vec![
+                [1_u8; 32].to_vec(),
+                [2_u8; 32].to_vec(),
+                50_u128.encode(),
+                60_u128.encode(),
+                70_u128.encode(),
                 vec![0, 1, 2]
             ]
         );
