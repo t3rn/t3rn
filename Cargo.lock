@@ -13095,7 +13095,7 @@ dependencies = [
  "sp-trie",
  "sp-version",
  "t3rn-sdk-primitives",
- "t3rn-types 0.0.1-rc.1",
+ "t3rn-types 0.0.1-rc.2",
 ]
 
 [[package]]
@@ -13130,25 +13130,27 @@ dependencies = [
  "sp-std",
  "sp-version",
  "t3rn-primitives",
- "t3rn-types 0.0.1-rc.1",
+ "t3rn-types 0.0.1-rc.2",
  "tiny-keccak 2.0.2",
  "triehash",
 ]
 
 [[package]]
 name = "t3rn-sdk-primitives"
-version = "0.1.1-rc.3"
+version = "0.1.1-rc.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a7a7d125fd0360376e83222134e2dad6f3eed9d5f5b42c24923cf601bd42e7a3"
 dependencies = [
  "arrayvec 0.7.2",
  "cfg-if 1.0.0",
  "parity-scale-codec 3.1.5",
  "scale-info 2.1.2",
- "t3rn-types 0.0.1-rc.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "t3rn-types 0.0.1-rc.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "t3rn-types"
-version = "0.0.1-rc.1"
+version = "0.0.1-rc.2"
 dependencies = [
  "bytes 1.2.1",
  "hex",
@@ -13167,9 +13169,9 @@ dependencies = [
 
 [[package]]
 name = "t3rn-types"
-version = "0.0.1-rc.1"
+version = "0.0.1-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3aaf49c5e4d0316073f69bbd2b87dcd96e6faedbedbcc57a1f705ce2fe1ac81d"
+checksum = "b99945e5c4857932e8f09531ccf0794e030903090df2bf6b578ad45a3f3c236f"
 dependencies = [
  "bytes 1.2.1",
  "num",

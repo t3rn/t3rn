@@ -20,6 +20,7 @@
 //! ## Overview
 //!
 //! Circuit MVP
+#![feature(box_syntax)]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
