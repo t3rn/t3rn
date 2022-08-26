@@ -2391,6 +2391,95 @@ fn multi_mixed_rococo_confirms() {
 }
 
 #[test]
+fn uninsured_unrewarded_parachain_transfer_confirms() {
+    let path = "uninsured_unrewarded_parachain_transfer_confirms/";
+    // generated via CLI with:
+    // sideEffects: [
+    //     {
+    //         target: "bslk",
+    //         type: "tran",
+    //         receiver: "bXiLNHM2wesdnvvsMqBRb3ybSEfkyHkSk3cBE4Yy3Qph4VgkX",
+    //         amount: "10",
+    //         bond: "0",
+    //         reward: "0",
+    //         signature: null,
+    //         executioner: null
+    //     },
+    // ],
+    // sequential: false,
+
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&CLI_DEFAULT, 1);
+            let _ = Balances::deposit_creating(&EXECUTOR_DEFAULT, 1);
+            // Read data from files
+            let register_values = read_file_and_set_height(&(path.to_owned() + "1-register-roco.json"), false);
+            assert_ok!(register(Origin::root(), register_values[0].clone(), true));
+
+            let submit_header_1 = read_file_and_set_height(&(path.to_owned() + "2-headers-roco.json"), false);
+            for index in 0..submit_header_1.as_array().unwrap().len() { // we have to loop, because this might be seperate transactions
+                assert_ok!(submit_headers(
+                    Origin::signed(CLI_DEFAULT),
+                    submit_header_1.clone(),
+                    index
+                ));
+            };
+
+            let register_values = read_file_and_set_height(&(path.to_owned() + "3-register-bslk.json"), false);
+            assert_ok!(register(Origin::root(), register_values[0].clone(), true));
+
+            let submit_header_2 = read_file_and_set_height(&(path.to_owned() + "4-headers-roco.json"), false);
+            for index in 0..submit_header_2.as_array().unwrap().len() { // we have to loop, because this might be seperate transactions
+                assert_ok!(submit_headers(
+                    Origin::signed(CLI_DEFAULT),
+                    submit_header_2.clone(),
+                    index
+                ));
+            };
+
+            let submit_header_3 = read_file_and_set_height(&(path.to_owned() + "5-headers-bslk.json"), false);
+            for index in 0..submit_header_3.as_array().unwrap().len() { // we have to loop, because this might be seperate transactions
+                assert_ok!(submit_headers(
+                    Origin::signed(CLI_DEFAULT),
+                    submit_header_3.clone(),
+                    index
+                ));
+            };
+
+            let transfer =  read_file_and_set_height(&(path.to_owned() + "6-submit-transfer.json"), false);
+            assert_ok!(on_extrinsic_trigger(Origin::signed(CLI_DEFAULT), transfer[0].clone()));
+
+            let submit_header_4 = read_file_and_set_height(&(path.to_owned() + "7-headers-roco.json"), false);
+            for index in 0..submit_header_4.as_array().unwrap().len() { // we have to loop, because this might be seperate transactions
+                assert_ok!(submit_headers(
+                    Origin::signed(CLI_DEFAULT),
+                    submit_header_4.clone(),
+                    index
+                ));
+            };
+
+            let submit_header_5 = read_file_and_set_height(&(path.to_owned() + "8-headers-bslk.json"), false);
+            for index in 0..submit_header_5.as_array().unwrap().len() { // we have to loop, because this might be seperate transactions
+                assert_ok!(submit_headers(
+                    Origin::signed(CLI_DEFAULT),
+                    submit_header_5.clone(),
+                    index
+                ));
+            };
+
+            let confirm =  read_file_and_set_height(&(path.to_owned() + "9-confirm-transfer-bslk.json"), false);
+            assert_ok!(confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm[0].clone()));
+            assert_eq!(Balances::free_balance(&CLI_DEFAULT), 1);
+            assert_eq!(Balances::free_balance(&EXECUTOR_DEFAULT), 1);
+
+        });
+}
+
+#[test]
 fn sdk_basic_success() {
     let origin = Origin::signed(ALICE);
     let mut ext = TestExternalities::new_empty();

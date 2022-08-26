@@ -71,6 +71,41 @@ export default {
                 },
                 allowedSideEffects: ["tran"],
             }
+        },
+        {
+            name: "Basilisk",
+            id: "bslk",
+            rpc: "wss://rpc-01.basilisk-rococo.hydradx.io",
+            subscan: "",
+            transferData: {
+                receiver: "bXiLNHM2wesdnvvsMqBRb3ybSEfkyHkSk3cBE4Yy3Qph4VgkX",
+                fee: 0,
+            },
+            registrationData: {
+                owner: "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
+                parachain: {
+                    relayChainId: "roco",
+                    id: 2090
+                },
+                gatewayConfig: {
+                    blockNumberTypeSize: 32,
+                    hashSize: 32,
+                    hasher: "Blake2",
+                    crypto: "sr25519",
+                    addressLength: 32,
+                    valueTypeSize: 16,
+                    decimals: 12,
+                    structs: []
+                },
+                gatewayVendor: "Rococo",
+                gatewayType: { ProgrammableExternal: 1 },
+                gatewaySysProps: {
+                    tokenSymbol: "BSX",
+                    tokenDecimals: 12,
+                        ss58Format: 10041
+                },
+                allowedSideEffects: ["tran"],
+            }
         }
     ]
 }

@@ -54,7 +54,7 @@ export default class CircuitRelayer extends EventEmitter {
         .batchAll(calls)
         .signAndSend(this.signer, { nonce })
         .then(() => {
-            exportData(toExport, "post-bond-roco.json", "bond");
+            exportData(toExport, `post-bond.json`, "bond");
         })
     }
   }
@@ -71,8 +71,7 @@ export default class CircuitRelayer extends EventEmitter {
       const confirmed: any = this.api.createType("ConfirmedSideEffect", sideEffect.confirmedSideEffect)
       const sideEffectObj: any = this.api.createType("SideEffect", sideEffect.object);
       const xtxId: any = this.api.createType("XtxId", sideEffect.xtxId);
-      console.log(sideEffect.confirmedSideEffect)
-      exportData([{xtxId, sideEffect: sideEffectObj, confirmed}], "confirm-transfer-roco.json", "confirm")
+      exportData([{xtxId, sideEffect: sideEffectObj, confirmed}], `confirm-transfer-${sideEffect.getTarget()}.json`, "confirm")
 
       await new Promise((resolve, reject) => {
         this.api.tx.circuit
@@ -114,7 +113,7 @@ export default class CircuitRelayer extends EventEmitter {
     }
   }
 }
-let counter = 1;
+let counter = 7;
 export const exportData = (data: any, fileName: string, transactionType: string) => {
     console.log("Exporting data:", counter)
     let deepCopy;
