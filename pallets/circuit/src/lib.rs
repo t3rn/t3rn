@@ -158,6 +158,13 @@ pub mod pallet {
     /// Current Circuit's context of active insurance deposits
     ///
     #[pallet::storage]
+    #[pallet::getter(fn local_side_effect_to_xtx_id_links)]
+    pub type LocalSideEffectToXtxIdLinks<T> =
+        StorageMap<_, Identity, SideEffectId<T>, XExecSignalId<T>, OptionQuery>;
+
+    /// Current Circuit's context of active insurance deposits
+    ///
+    #[pallet::storage]
     #[pallet::getter(fn get_active_timing_links)]
     pub type ActiveXExecSignalsTimingLinks<T> = StorageMap<
         _,
@@ -166,40 +173,6 @@ pub mod pallet {
         <T as frame_system::Config>::BlockNumber,
         OptionQuery,
     >;
-
-    /// Current Circuit's context of active insurance deposits
-    ///
-    #[pallet::storage]
-    #[pallet::getter(fn local_side_effects)]
-    pub type LocalSideEffects<T> = StorageDoubleMap<
-        _,
-        Identity,
-        XExecSignalId<T>,
-        Identity,
-        XExecStepSideEffectId<T>,
-        (u32, Option<<T as frame_system::Config>::AccountId>),
-        ValueQuery, // Vec<(usize, Vec<SideEffectId<T>>)>
-    >;
-    /// Current Circuit's context of active insurance deposits
-    ///
-    #[pallet::storage]
-    #[pallet::getter(fn local_side_effects_links)]
-    pub type LocalSideEffectsLinks<T> = StorageDoubleMap<
-        _,
-        Identity,
-        XExecSignalId<T>,
-        Identity,
-        SideEffectId<T>,
-        XExecStepSideEffectId<T>,
-        OptionQuery,
-    >;
-
-    /// Current Circuit's context of active insurance deposits
-    ///
-    #[pallet::storage]
-    #[pallet::getter(fn local_side_effect_to_xtx_id_links)]
-    pub type LocalSideEffectToXtxIdLinks<T> =
-        StorageMap<_, Identity, SideEffectId<T>, XExecSignalId<T>, OptionQuery>;
     /// Current Circuit's context of active transactions
     ///
     #[pallet::storage]
@@ -241,23 +214,6 @@ pub mod pallet {
                     <T as frame_system::Config>::BlockNumber,
                     EscrowedBalanceOf<T, <T as Config>::Escrowed>,
                 >,
-            >,
-        >,
-        OptionQuery,
-    >;
-
-    /// Current Circuit's context of active full side effects (requested + confirmation proofs)
-    #[pallet::storage]
-    #[pallet::getter(fn get_escrow_side_effects_pending_relay)]
-    pub type EscrowedSideEffectsPendingRelay<T> = StorageMap<
-        _,
-        Identity,
-        XExecSignalId<T>,
-        Vec<
-            FullSideEffect<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                EscrowedBalanceOf<T, <T as Config>::Escrowed>,
             >,
         >,
         OptionQuery,
@@ -1217,21 +1173,7 @@ impl<T: Config> Pallet<T> {
                     >,
                 >(local_ctx.xtx_id, local_ctx.full_side_effects.clone());
 
-                for (step_cnt, side_effect_id, step_side_effect_id) in steps_side_effects_ids {
-                    <LocalSideEffects<T>>::insert::<
-                        XExecSignalId<T>,
-                        XExecStepSideEffectId<T>,
-                        (u32, Option<T::AccountId>),
-                    >(
-                        local_ctx.xtx_id,
-                        step_side_effect_id,
-                        (step_cnt as u32, None),
-                    );
-                    <LocalSideEffectsLinks<T>>::insert::<
-                        XExecSignalId<T>,
-                        SideEffectId<T>,
-                        XExecStepSideEffectId<T>,
-                    >(local_ctx.xtx_id, side_effect_id, step_side_effect_id);
+                for (_step_cnt, side_effect_id, _step_side_effect_id) in steps_side_effects_ids {
                     <LocalSideEffectToXtxIdLinks<T>>::insert::<SideEffectId<T>, XExecSignalId<T>>(
                         side_effect_id,
                         local_ctx.xtx_id,
@@ -1300,8 +1242,6 @@ impl<T: Config> Pallet<T> {
                 });
 
                 <Self as Store>::ActiveXExecSignalsTimingLinks::remove(local_ctx.xtx_id);
-
-                // Self::enact_finalize(local_ctx)?;
                 (
                     Some(local_ctx.xtx.clone()),
                     Some(local_ctx.full_side_effects.clone()),
@@ -1329,7 +1269,6 @@ impl<T: Config> Pallet<T> {
                 }
             },
             CircuitStatus::FinishedAllSteps => {
-                // Self::enact_finalize(local_ctx)?
                 // todo: cleanup all of the local storage
                 <Self as Store>::XExecSignals::mutate(local_ctx.xtx_id, |x| {
                     *x = Some(local_ctx.xtx.clone())

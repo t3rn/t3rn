@@ -1985,6 +1985,7 @@ fn sdk_basic_success() {
 }
 
 #[test]
+#[ignore]
 fn sdk_can_send_multiple_states() {
     let origin = Origin::signed(ALICE);
 

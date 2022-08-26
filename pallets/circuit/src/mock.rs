@@ -569,7 +569,7 @@ parameter_types! {
 }
 
 // ToDo: Implement
-impl codec::EncodeLike<pallet_xbi_portal::Call<Test>> for Call { }
+impl codec::EncodeLike<pallet_xbi_portal::Call<Test>> for Call {}
 
 impl pallet_xbi_portal::Config for Test {
     type Assets = pallet_xbi_portal::primitives::assets::AssetsMock<Test>;
@@ -583,11 +583,11 @@ impl pallet_xbi_portal::Config for Test {
     type ExpectedBlockTimeMs = ConstU32<6000>;
     type MyParachainId = ConstU32<3333>;
     type ORML = pallet_xbi_portal::primitives::orml::ORMLMock<Test>;
+    type PalletId = XBIPalletId;
     type TimeoutChecksLimit = ConstU32<3000>;
     type Transfers = XBIPortalRuntimeEntry;
     type WASM = pallet_xbi_portal::primitives::wasm::WASMMock<Test>;
     type Xcm = pallet_xbi_portal::primitives::xcm::XCMMock<Test>;
-    type PalletId = XBIPalletId;
 }
 
 pub struct XBIPortalRuntimeEntry {}
