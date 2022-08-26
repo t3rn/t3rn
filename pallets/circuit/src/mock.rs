@@ -564,8 +564,12 @@ impl pallet_xbi_portal_enter::Config for Test {
 
 parameter_types! {
     pub const CircuitPalletId: PalletId = PalletId(*b"pal/circ");
+    pub const XBIPalletId: PalletId = PalletId(*b"pal/xbip");
     pub const SelfGatewayId: [u8; 4] = [3, 3, 3, 3];
 }
+
+// ToDo: Implement
+impl codec::EncodeLike<pallet_xbi_portal::Call<Test>> for Call { }
 
 impl pallet_xbi_portal::Config for Test {
     type Assets = pallet_xbi_portal::primitives::assets::AssetsMock<Test>;
@@ -583,6 +587,7 @@ impl pallet_xbi_portal::Config for Test {
     type Transfers = XBIPortalRuntimeEntry;
     type WASM = pallet_xbi_portal::primitives::wasm::WASMMock<Test>;
     type Xcm = pallet_xbi_portal::primitives::xcm::XCMMock<Test>;
+    type PalletId = XBIPalletId;
 }
 
 pub struct XBIPortalRuntimeEntry {}
