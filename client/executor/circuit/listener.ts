@@ -30,7 +30,6 @@ export default class CircuitListener extends EventEmitter {
                 break
             }
           }
-
           this.emit("XTransactionReadyForExec", xtxId)
         } else if (notification.event.method === "NewSideEffectsAvailable") {
           const { event } = notification
