@@ -1,7 +1,11 @@
 // Auto-generated via `yarn polkadot-types-from-chain`, do not edit
 /* eslint-disable */
 
-import type { ApiTypes } from "@polkadot/api-base/types";
+// import type lookup before we augment - in some environments
+// this is required to allow for ambient/previous definitions
+import "@polkadot/api-base/types/consts";
+
+import type { ApiTypes, AugmentedConst } from "@polkadot/api-base/types";
 import type {
   U8aFixed,
   Vec,
@@ -12,6 +16,7 @@ import type {
   u8,
 } from "@polkadot/types-codec";
 import type { Codec } from "@polkadot/types-codec/types";
+import type { AccountId32 } from "@polkadot/types/interfaces/runtime";
 import type {
   FrameSupportPalletId,
   FrameSupportWeightsRuntimeDbWeight,
@@ -22,8 +27,16 @@ import type {
   SpVersionRuntimeVersion,
 } from "@polkadot/types/lookup";
 
+export type __AugmentedConst<ApiType extends ApiTypes> =
+  AugmentedConst<ApiType>;
+
 declare module "@polkadot/api-base/types/consts" {
-  export interface AugmentedConsts<ApiType extends ApiTypes> {
+  interface AugmentedConsts<ApiType extends ApiTypes> {
+    accountManager: {
+      escrowAccount: AccountId32 & AugmentedConst<ApiType>;
+      /** Generic const */
+      [key: string]: Codec;
+    };
     balances: {
       /** The minimum amount required to keep an account open. */
       existentialDeposit: u128 & AugmentedConst<ApiType>;
@@ -47,6 +60,24 @@ declare module "@polkadot/api-base/types/consts" {
       palletId: FrameSupportPalletId & AugmentedConst<ApiType>;
       /** The Circuit's self gateway id */
       selfGatewayId: U8aFixed & AugmentedConst<ApiType>;
+      /**
+       * The maximum number of signals that can be queued for handling.
+       *
+       * When a signal from 3vm is requested, we add it to the queue to be
+       * handled by on_initialize
+       *
+       * This allows us to process the highest priority and mitigate any race
+       * conditions from additional steps.
+       *
+       * The reasons for limiting the queue depth are:
+       *
+       * 1. The queue is in storage in order to be persistent between blocks. We
+       *    want to limit the amount of storage that can be consumed.
+       * 2. The queue is stored in a vector and needs to be decoded as a whole when
+       *    reading it at the end of each block. Longer queues take more weight
+       *    to decode and hence limit the amount of items that can be deleted per block.
+       */
+      signalQueueDepth: u32 & AugmentedConst<ApiType>;
       /** The Circuit's Xtx timeout check interval */
       xtxTimeoutCheckInterval: u32 & AugmentedConst<ApiType>;
       /** The Circuit's Default Xtx timeout */
@@ -103,6 +134,8 @@ declare module "@polkadot/api-base/types/consts" {
       depositPerItem: u128 & AugmentedConst<ApiType>;
       /** Cost schedule and limits. */
       schedule: PalletWasmContractsSchedule & AugmentedConst<ApiType>;
+      /** Determines the tolerance of debouncing signal requests. */
+      signalBounceThreshold: u32 & AugmentedConst<ApiType>;
       /** Generic const */
       [key: string]: Codec;
     };
@@ -227,6 +260,29 @@ declare module "@polkadot/api-base/types/consts" {
       /** Generic const */
       [key: string]: Codec;
     };
+    rococoBridge: {
+      /**
+       * Maximal number of finalized headers to keep in the storage.
+       *
+       * The setting is there to prevent growing the on-chain state
+       * indefinitely. Note the setting does not relate to block numbers - we
+       * will simply keep as much items in the storage, so it doesn't guarantee
+       * any fixed timeframe for finality headers.
+       */
+      headersToKeep: u32 & AugmentedConst<ApiType>;
+      /**
+       * The overarching event type. The upper bound on the number of requests
+       * allowed by the pallet.
+       *
+       * A request refers to an action which writes a header to storage.
+       *
+       * Once this bound is reached the pallet will not allow any dispatchables
+       * to be called until the request count has decreased.
+       */
+      maxRequests: u32 & AugmentedConst<ApiType>;
+      /** Generic const */
+      [key: string]: Codec;
+    };
     system: {
       /**
        * Maximum number of block number to block hash mappings to keep (oldest
@@ -265,6 +321,9 @@ declare module "@polkadot/api-base/types/consts" {
       [key: string]: Codec;
     };
     transactionPayment: {
+      /** The polynomial that is applied in order to derive fee from length. */
+      lengthToFee: Vec<FrameSupportWeightsWeightToFeeCoefficient> &
+        AugmentedConst<ApiType>;
       /**
        * A fee mulitplier for `Operational` extrinsics to compute "virtual tip"
        * to boost their `priority`
@@ -290,8 +349,6 @@ declare module "@polkadot/api-base/types/consts" {
        * also amplify the impact of tips applied to `Operational` transactions.
        */
       operationalFeeMultiplier: u8 & AugmentedConst<ApiType>;
-      /** The fee to be paid for making a transaction; the per-byte portion. */
-      transactionByteFee: u128 & AugmentedConst<ApiType>;
       /** The polynomial that is applied in order to derive fee from weight. */
       weightToFee: Vec<FrameSupportWeightsWeightToFeeCoefficient> &
         AugmentedConst<ApiType>;

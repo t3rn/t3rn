@@ -44,7 +44,7 @@
   },
   "homepage": "https://github.com/t3rn/t3rn",
   "dependencies": {
-    "@polkadot/typegen": "8.4.2",
+    "@polkadot/typegen": "^9.2.3",
     "prettier": "2.5.1",
     "prettier-plugin-jsdoc": "0.3.31",
     "rimraf": "3.0.2",

@@ -1,7 +1,16 @@
 // Auto-generated via `yarn polkadot-types-from-chain`, do not edit
 /* eslint-disable */
 
-import type { ApiTypes } from "@polkadot/api-base/types";
+// import type lookup before we augment - in some environments
+// this is required to allow for ambient/previous definitions
+import "@polkadot/api-base/types/submittable";
+
+import type {
+  ApiTypes,
+  AugmentedSubmittable,
+  SubmittableExtrinsic,
+  SubmittableExtrinsicFunction,
+} from "@polkadot/api-base/types";
 import type {
   Bytes,
   Compact,
@@ -29,20 +38,56 @@ import type {
   SpFinalityGrandpaAppPublic,
   SpFinalityGrandpaEquivocationProof,
   SpRuntimeDigest,
-  T3rnPrimitivesAbiGatewayABIConfig,
-  T3rnPrimitivesAbiType,
+  SpRuntimeHeaderU32,
+  SpRuntimeHeaderU64,
+  T3rnPrimitivesAccountManagerReason,
+  T3rnPrimitivesBridgesHeaderChainInitializationData,
   T3rnPrimitivesContractsRegistryRegistryContract,
   T3rnPrimitivesGatewayGenesisConfig,
   T3rnPrimitivesGatewaySysProps,
   T3rnPrimitivesGatewayType,
   T3rnPrimitivesGatewayVendor,
-  T3rnPrimitivesSideEffect,
-  T3rnPrimitivesSideEffectConfirmedSideEffect,
   T3rnPrimitivesXdnsParachain,
+  T3rnTypesAbiGatewayABIConfig,
+  T3rnTypesAbiType,
+  T3rnTypesSideEffect,
+  T3rnTypesSideEffectConfirmedSideEffect,
 } from "@polkadot/types/lookup";
 
+export type __AugmentedSubmittable = AugmentedSubmittable<() => unknown>;
+export type __SubmittableExtrinsic<ApiType extends ApiTypes> =
+  SubmittableExtrinsic<ApiType>;
+export type __SubmittableExtrinsicFunction<ApiType extends ApiTypes> =
+  SubmittableExtrinsicFunction<ApiType>;
+
 declare module "@polkadot/api-base/types/submittable" {
-  export interface AugmentedSubmittables<ApiType extends ApiTypes> {
+  interface AugmentedSubmittables<ApiType extends ApiTypes> {
+    accountManager: {
+      deposit: AugmentedSubmittable<
+        (
+          payee: AccountId32 | string | Uint8Array,
+          recipient: AccountId32 | string | Uint8Array,
+          amount: u128 | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [AccountId32, AccountId32, u128]
+      >;
+      finalize: AugmentedSubmittable<
+        (
+          executionId: u64 | AnyNumber | Uint8Array,
+          reason:
+            | Option<T3rnPrimitivesAccountManagerReason>
+            | null
+            | Uint8Array
+            | T3rnPrimitivesAccountManagerReason
+            | "UnexpectedFailure"
+            | "ContractReverted"
+            | number
+        ) => SubmittableExtrinsic<ApiType>,
+        [u64, Option<T3rnPrimitivesAccountManagerReason>]
+      >;
+      /** Generic tx */
+      [key: string]: SubmittableExtrinsicFunction<ApiType>;
+    };
     balances: {
       /**
        * Exactly as `transfer`, except the origin must be root and the source
@@ -247,7 +292,7 @@ declare module "@polkadot/api-base/types/submittable" {
         (
           xtxId: H256 | string | Uint8Array,
           sideEffect:
-            | T3rnPrimitivesSideEffect
+            | T3rnTypesSideEffect
             | {
                 target?: any;
                 prize?: any;
@@ -260,33 +305,19 @@ declare module "@polkadot/api-base/types/submittable" {
             | string
             | Uint8Array,
           confirmation:
-            | T3rnPrimitivesSideEffectConfirmedSideEffect
+            | T3rnTypesSideEffectConfirmedSideEffect
             | {
                 err?: any;
                 output?: any;
-                encodedEffect?: any;
-                inclusionProof?: any;
+                inclusionData?: any;
                 executioner?: any;
                 receivedAt?: any;
                 cost?: any;
               }
             | string
-            | Uint8Array,
-          inclusionProof:
-            | Option<Vec<Bytes>>
-            | null
-            | object
-            | string
-            | Uint8Array,
-          blockHash: Option<Bytes> | null | object | string | Uint8Array
+            | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [
-          H256,
-          T3rnPrimitivesSideEffect,
-          T3rnPrimitivesSideEffectConfirmedSideEffect,
-          Option<Vec<Bytes>>,
-          Option<Bytes>
-        ]
+        [H256, T3rnTypesSideEffect, T3rnTypesSideEffectConfirmedSideEffect]
       >;
       /**
        * Blind version should only be used for testing - unsafe since skips
@@ -296,7 +327,7 @@ declare module "@polkadot/api-base/types/submittable" {
         (
           xtxId: H256 | string | Uint8Array,
           sideEffect:
-            | T3rnPrimitivesSideEffect
+            | T3rnTypesSideEffect
             | {
                 target?: any;
                 prize?: any;
@@ -309,12 +340,11 @@ declare module "@polkadot/api-base/types/submittable" {
             | string
             | Uint8Array,
           confirmation:
-            | T3rnPrimitivesSideEffectConfirmedSideEffect
+            | T3rnTypesSideEffectConfirmedSideEffect
             | {
                 err?: any;
                 output?: any;
-                encodedEffect?: any;
-                inclusionProof?: any;
+                inclusionData?: any;
                 executioner?: any;
                 receivedAt?: any;
                 cost?: any;
@@ -324,15 +354,15 @@ declare module "@polkadot/api-base/types/submittable" {
           inclusionProof:
             | Option<Vec<Bytes>>
             | null
-            | object
-            | string
-            | Uint8Array,
-          blockHash: Option<Bytes> | null | object | string | Uint8Array
+            | Uint8Array
+            | Vec<Bytes>
+            | (Bytes | string | Uint8Array)[],
+          blockHash: Option<Bytes> | null | Uint8Array | Bytes | string
         ) => SubmittableExtrinsic<ApiType>,
         [
           H256,
-          T3rnPrimitivesSideEffect,
-          T3rnPrimitivesSideEffectConfirmedSideEffect,
+          T3rnTypesSideEffect,
+          T3rnTypesSideEffectConfirmedSideEffect,
           Option<Vec<Bytes>>,
           Option<Bytes>
         ]
@@ -341,7 +371,7 @@ declare module "@polkadot/api-base/types/submittable" {
         (
           xtxId: H256 | string | Uint8Array,
           sideEffect:
-            | T3rnPrimitivesSideEffect
+            | T3rnTypesSideEffect
             | {
                 target?: any;
                 prize?: any;
@@ -354,14 +384,14 @@ declare module "@polkadot/api-base/types/submittable" {
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [H256, T3rnPrimitivesSideEffect]
+        [H256, T3rnTypesSideEffect]
       >;
       onExtrinsicTrigger: AugmentedSubmittable<
         (
           sideEffects:
-            | Vec<T3rnPrimitivesSideEffect>
+            | Vec<T3rnTypesSideEffect>
             | (
-                | T3rnPrimitivesSideEffect
+                | T3rnTypesSideEffect
                 | {
                     target?: any;
                     prize?: any;
@@ -377,7 +407,7 @@ declare module "@polkadot/api-base/types/submittable" {
           fee: u128 | AnyNumber | Uint8Array,
           sequential: bool | boolean | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [Vec<T3rnPrimitivesSideEffect>, u128, bool]
+        [Vec<T3rnTypesSideEffect>, u128, bool]
       >;
       /** Used by other pallets that want to create the exec order */
       onLocalTrigger: AugmentedSubmittable<
@@ -403,11 +433,12 @@ declare module "@polkadot/api-base/types/submittable" {
           parachain:
             | Option<T3rnPrimitivesXdnsParachain>
             | null
-            | object
-            | string
-            | Uint8Array,
+            | Uint8Array
+            | T3rnPrimitivesXdnsParachain
+            | { relayChainId?: any; id?: any }
+            | string,
           gatewayAbi:
-            | T3rnPrimitivesAbiGatewayABIConfig
+            | T3rnTypesAbiGatewayABIConfig
             | {
                 blockNumberTypeSize?: any;
                 hashSize?: any;
@@ -424,6 +455,7 @@ declare module "@polkadot/api-base/types/submittable" {
             | T3rnPrimitivesGatewayVendor
             | "Substrate"
             | "Ethereum"
+            | "Rococo"
             | number
             | Uint8Array,
           gatewayType:
@@ -452,17 +484,17 @@ declare module "@polkadot/api-base/types/submittable" {
           authorities:
             | Option<Vec<AccountId32>>
             | null
-            | object
-            | string
-            | Uint8Array,
-          authoritySetId: Option<u64> | null | object | string | Uint8Array,
+            | Uint8Array
+            | Vec<AccountId32>
+            | (AccountId32 | string | Uint8Array)[],
+          authoritySetId: Option<u64> | null | Uint8Array | u64 | AnyNumber,
           allowedSideEffects: Vec<U8aFixed>
         ) => SubmittableExtrinsic<ApiType>,
         [
           Bytes,
           U8aFixed,
           Option<T3rnPrimitivesXdnsParachain>,
-          T3rnPrimitivesAbiGatewayABIConfig,
+          T3rnTypesAbiGatewayABIConfig,
           T3rnPrimitivesGatewayVendor,
           T3rnPrimitivesGatewayType,
           T3rnPrimitivesGatewayGenesisConfig,
@@ -473,39 +505,57 @@ declare module "@polkadot/api-base/types/submittable" {
           Vec<U8aFixed>
         ]
       >;
+      submitParachainHeader: AugmentedSubmittable<
+        (
+          blockHash: Bytes | string | Uint8Array,
+          gatewayId: U8aFixed | string | Uint8Array,
+          proof: Vec<Bytes> | (Bytes | string | Uint8Array)[]
+        ) => SubmittableExtrinsic<ApiType>,
+        [Bytes, U8aFixed, Vec<Bytes>]
+      >;
       updateGateway: AugmentedSubmittable<
         (
           gatewayId: U8aFixed | string | Uint8Array,
-          url: Option<Bytes> | null | object | string | Uint8Array,
+          url: Option<Bytes> | null | Uint8Array | Bytes | string,
           gatewayAbi:
-            | Option<T3rnPrimitivesAbiGatewayABIConfig>
+            | Option<T3rnTypesAbiGatewayABIConfig>
             | null
-            | object
-            | string
-            | Uint8Array,
+            | Uint8Array
+            | T3rnTypesAbiGatewayABIConfig
+            | {
+                blockNumberTypeSize?: any;
+                hashSize?: any;
+                hasher?: any;
+                crypto?: any;
+                addressLength?: any;
+                valueTypeSize?: any;
+                decimals?: any;
+                structs?: any;
+              }
+            | string,
           gatewaySysProps:
             | Option<T3rnPrimitivesGatewaySysProps>
             | null
-            | object
-            | string
-            | Uint8Array,
+            | Uint8Array
+            | T3rnPrimitivesGatewaySysProps
+            | { ss58Format?: any; tokenSymbol?: any; tokenDecimals?: any }
+            | string,
           authorities:
             | Option<Vec<AccountId32>>
             | null
-            | object
-            | string
-            | Uint8Array,
+            | Uint8Array
+            | Vec<AccountId32>
+            | (AccountId32 | string | Uint8Array)[],
           allowedSideEffects:
             | Option<Vec<U8aFixed>>
             | null
-            | object
-            | string
             | Uint8Array
+            | Vec<U8aFixed>
         ) => SubmittableExtrinsic<ApiType>,
         [
           U8aFixed,
           Option<Bytes>,
-          Option<T3rnPrimitivesAbiGatewayABIConfig>,
+          Option<T3rnTypesAbiGatewayABIConfig>,
           Option<T3rnPrimitivesGatewaySysProps>,
           Option<Vec<AccountId32>>,
           Option<Vec<U8aFixed>>
@@ -549,9 +599,9 @@ declare module "@polkadot/api-base/types/submittable" {
           storageDepositLimit:
             | Option<Compact<u128>>
             | null
-            | object
-            | string
-            | Uint8Array,
+            | Uint8Array
+            | Compact<u128>
+            | AnyNumber,
           data: Bytes | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [
@@ -561,40 +611,6 @@ declare module "@polkadot/api-base/types/submittable" {
           Option<Compact<u128>>,
           Bytes
         ]
-      >;
-      /**
-       * Makes a call to an account, optionally transferring some balance.
-       * Returns the side effects produced from the call and the breakpoints.
-       *
-       * # Parameters
-       *
-       * - `dest`: Address of the contract to call.
-       * - `value`: The balance to transfer from the `origin` to `dest`.
-       * - `gas_limit`: The gas limit enforced when executing the constructor.
-       * - `storage_deposit_limit`: The maximum amount of balance that can be
-       *   charged from the caller to pay for the storage consumed.
-       * - `data`: The input data to pass to the contract.
-       * - If the account is a smart-contract account, the associated code will be
-       *   executed and any value will be transferred.
-       * - If the account is a regular account, any value will be transferred.
-       * - If no account exists and the call value is not less than
-       *   `existential_deposit`, a regular account will be created and any
-       *   value will be transferred.
-       */
-      composableCall: AugmentedSubmittable<
-        (
-          dest: AccountId32 | string | Uint8Array,
-          value: Compact<u128> | AnyNumber | Uint8Array,
-          gasLimit: Compact<u64> | AnyNumber | Uint8Array,
-          storageDepositLimit:
-            | Option<Compact<u128>>
-            | null
-            | object
-            | string
-            | Uint8Array,
-          data: Bytes | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [AccountId32, Compact<u128>, Compact<u64>, Option<Compact<u128>>, Bytes]
       >;
       /**
        * Instantiates a contract from a previously deployed wasm binary.
@@ -610,9 +626,9 @@ declare module "@polkadot/api-base/types/submittable" {
           storageDepositLimit:
             | Option<Compact<u128>>
             | null
-            | object
-            | string
-            | Uint8Array,
+            | Uint8Array
+            | Compact<u128>
+            | AnyNumber,
           codeHash: H256 | string | Uint8Array,
           data: Bytes | string | Uint8Array,
           salt: Bytes | string | Uint8Array
@@ -655,9 +671,9 @@ declare module "@polkadot/api-base/types/submittable" {
           storageDepositLimit:
             | Option<Compact<u128>>
             | null
-            | object
-            | string
-            | Uint8Array,
+            | Uint8Array
+            | Compact<u128>
+            | AnyNumber,
           code: Bytes | string | Uint8Array,
           data: Bytes | string | Uint8Array,
           salt: Bytes | string | Uint8Array
@@ -706,9 +722,9 @@ declare module "@polkadot/api-base/types/submittable" {
           storageDepositLimit:
             | Option<Compact<u128>>
             | null
-            | object
-            | string
             | Uint8Array
+            | Compact<u128>
+            | AnyNumber
         ) => SubmittableExtrinsic<ApiType>,
         [Bytes, Option<Compact<u128>>]
       >;
@@ -726,7 +742,6 @@ declare module "@polkadot/api-base/types/submittable" {
                 codeTxt?: any;
                 bytes?: any;
                 author?: any;
-                authorFeesPerSingleUse?: any;
                 abi?: any;
                 actionDescriptions?: any;
                 info?: any;
@@ -882,7 +897,12 @@ declare module "@polkadot/api-base/types/submittable" {
        */
       setOwner: AugmentedSubmittable<
         (
-          newOwner: Option<AccountId32> | null | object | string | Uint8Array,
+          newOwner:
+            | Option<AccountId32>
+            | null
+            | Uint8Array
+            | AccountId32
+            | string,
           gatewayId: U8aFixed | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [Option<AccountId32>, U8aFixed]
@@ -958,14 +978,6 @@ declare module "@polkadot/api-base/types/submittable" {
           >,
           H256
         ]
-      >;
-      submitParachainHeader: AugmentedSubmittable<
-        (
-          blockHash: Bytes | string | Uint8Array,
-          gatewayId: U8aFixed | string | Uint8Array,
-          proof: Vec<Bytes> | (Bytes | string | Uint8Array)[]
-        ) => SubmittableExtrinsic<ApiType>,
-        [Bytes, U8aFixed, Vec<Bytes>]
       >;
       /** Generic tx */
       [key: string]: SubmittableExtrinsicFunction<ApiType>;
@@ -987,13 +999,7 @@ declare module "@polkadot/api-base/types/submittable" {
         (
           initData:
             | ({
-                readonly header: {
-                  readonly parentHash: H256;
-                  readonly number: Compact<u64>;
-                  readonly stateRoot: H256;
-                  readonly extrinsicsRoot: H256;
-                  readonly digest: SpRuntimeDigest;
-                } & Struct;
+                readonly header: SpRuntimeHeaderU64;
                 readonly authorityList: Vec<
                   ITuple<[SpFinalityGrandpaAppPublic, u64]>
                 >;
@@ -1013,13 +1019,7 @@ declare module "@polkadot/api-base/types/submittable" {
         ) => SubmittableExtrinsic<ApiType>,
         [
           {
-            readonly header: {
-              readonly parentHash: H256;
-              readonly number: Compact<u64>;
-              readonly stateRoot: H256;
-              readonly extrinsicsRoot: H256;
-              readonly digest: SpRuntimeDigest;
-            } & Struct;
+            readonly header: SpRuntimeHeaderU64;
             readonly authorityList: Vec<
               ITuple<[SpFinalityGrandpaAppPublic, u64]>
             >;
@@ -1048,7 +1048,12 @@ declare module "@polkadot/api-base/types/submittable" {
        */
       setOwner: AugmentedSubmittable<
         (
-          newOwner: Option<AccountId32> | null | object | string | Uint8Array,
+          newOwner:
+            | Option<AccountId32>
+            | null
+            | Uint8Array
+            | AccountId32
+            | string,
           gatewayId: U8aFixed | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [Option<AccountId32>, U8aFixed]
@@ -1066,13 +1071,7 @@ declare module "@polkadot/api-base/types/submittable" {
       submitFinalityProof: AugmentedSubmittable<
         (
           finalityTarget:
-            | ({
-                readonly parentHash: H256;
-                readonly number: Compact<u64>;
-                readonly stateRoot: H256;
-                readonly extrinsicsRoot: H256;
-                readonly digest: SpRuntimeDigest;
-              } & Struct)
+            | SpRuntimeHeaderU64
             | {
                 parentHash?: any;
                 number?: any;
@@ -1085,53 +1084,28 @@ declare module "@polkadot/api-base/types/submittable" {
           encodedJustification: Bytes | string | Uint8Array,
           gatewayId: U8aFixed | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [
-          {
-            readonly parentHash: H256;
-            readonly number: Compact<u64>;
-            readonly stateRoot: H256;
-            readonly extrinsicsRoot: H256;
-            readonly digest: SpRuntimeDigest;
-          } & Struct,
-          Bytes,
-          U8aFixed
-        ]
+        [SpRuntimeHeaderU64, Bytes, U8aFixed]
       >;
       submitHeaderRange: AugmentedSubmittable<
         (
           gatewayId: U8aFixed | string | Uint8Array,
-          headersReversed: Vec<
-            {
-              readonly parentHash: H256;
-              readonly number: Compact<u64>;
-              readonly stateRoot: H256;
-              readonly extrinsicsRoot: H256;
-              readonly digest: SpRuntimeDigest;
-            } & Struct
-          >,
+          headersReversed:
+            | Vec<SpRuntimeHeaderU64>
+            | (
+                | SpRuntimeHeaderU64
+                | {
+                    parentHash?: any;
+                    number?: any;
+                    stateRoot?: any;
+                    extrinsicsRoot?: any;
+                    digest?: any;
+                  }
+                | string
+                | Uint8Array
+              )[],
           anchorHeaderHash: H256 | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [
-          U8aFixed,
-          Vec<
-            {
-              readonly parentHash: H256;
-              readonly number: Compact<u64>;
-              readonly stateRoot: H256;
-              readonly extrinsicsRoot: H256;
-              readonly digest: SpRuntimeDigest;
-            } & Struct
-          >,
-          H256
-        ]
-      >;
-      submitParachainHeader: AugmentedSubmittable<
-        (
-          blockHash: Bytes | string | Uint8Array,
-          gatewayId: U8aFixed | string | Uint8Array,
-          proof: Vec<Bytes> | (Bytes | string | Uint8Array)[]
-        ) => SubmittableExtrinsic<ApiType>,
-        [Bytes, U8aFixed, Vec<Bytes>]
+        [U8aFixed, Vec<SpRuntimeHeaderU64>, H256]
       >;
       /** Generic tx */
       [key: string]: SubmittableExtrinsicFunction<ApiType>;
@@ -1152,21 +1126,7 @@ declare module "@polkadot/api-base/types/submittable" {
       initializeSingle: AugmentedSubmittable<
         (
           initData:
-            | ({
-                readonly header: {
-                  readonly parentHash: H256;
-                  readonly number: Compact<u32>;
-                  readonly stateRoot: H256;
-                  readonly extrinsicsRoot: H256;
-                  readonly digest: SpRuntimeDigest;
-                } & Struct;
-                readonly authorityList: Vec<
-                  ITuple<[SpFinalityGrandpaAppPublic, u64]>
-                >;
-                readonly setId: u64;
-                readonly isHalted: bool;
-                readonly gatewayId: U8aFixed;
-              } & Struct)
+            | T3rnPrimitivesBridgesHeaderChainInitializationData
             | {
                 header?: any;
                 authorityList?: any;
@@ -1177,23 +1137,7 @@ declare module "@polkadot/api-base/types/submittable" {
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [
-          {
-            readonly header: {
-              readonly parentHash: H256;
-              readonly number: Compact<u32>;
-              readonly stateRoot: H256;
-              readonly extrinsicsRoot: H256;
-              readonly digest: SpRuntimeDigest;
-            } & Struct;
-            readonly authorityList: Vec<
-              ITuple<[SpFinalityGrandpaAppPublic, u64]>
-            >;
-            readonly setId: u64;
-            readonly isHalted: bool;
-            readonly gatewayId: U8aFixed;
-          } & Struct
-        ]
+        [T3rnPrimitivesBridgesHeaderChainInitializationData]
       >;
       /**
        * Halt or resume all pallet operations.
@@ -1214,7 +1158,12 @@ declare module "@polkadot/api-base/types/submittable" {
        */
       setOwner: AugmentedSubmittable<
         (
-          newOwner: Option<AccountId32> | null | object | string | Uint8Array,
+          newOwner:
+            | Option<AccountId32>
+            | null
+            | Uint8Array
+            | AccountId32
+            | string,
           gatewayId: U8aFixed | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [Option<AccountId32>, U8aFixed]
@@ -1232,13 +1181,7 @@ declare module "@polkadot/api-base/types/submittable" {
       submitFinalityProof: AugmentedSubmittable<
         (
           finalityTarget:
-            | ({
-                readonly parentHash: H256;
-                readonly number: Compact<u32>;
-                readonly stateRoot: H256;
-                readonly extrinsicsRoot: H256;
-                readonly digest: SpRuntimeDigest;
-              } & Struct)
+            | SpRuntimeHeaderU32
             | {
                 parentHash?: any;
                 number?: any;
@@ -1251,53 +1194,28 @@ declare module "@polkadot/api-base/types/submittable" {
           encodedJustification: Bytes | string | Uint8Array,
           gatewayId: U8aFixed | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [
-          {
-            readonly parentHash: H256;
-            readonly number: Compact<u32>;
-            readonly stateRoot: H256;
-            readonly extrinsicsRoot: H256;
-            readonly digest: SpRuntimeDigest;
-          } & Struct,
-          Bytes,
-          U8aFixed
-        ]
+        [SpRuntimeHeaderU32, Bytes, U8aFixed]
       >;
       submitHeaderRange: AugmentedSubmittable<
         (
           gatewayId: U8aFixed | string | Uint8Array,
-          headersReversed: Vec<
-            {
-              readonly parentHash: H256;
-              readonly number: Compact<u32>;
-              readonly stateRoot: H256;
-              readonly extrinsicsRoot: H256;
-              readonly digest: SpRuntimeDigest;
-            } & Struct
-          >,
+          headersReversed:
+            | Vec<SpRuntimeHeaderU32>
+            | (
+                | SpRuntimeHeaderU32
+                | {
+                    parentHash?: any;
+                    number?: any;
+                    stateRoot?: any;
+                    extrinsicsRoot?: any;
+                    digest?: any;
+                  }
+                | string
+                | Uint8Array
+              )[],
           anchorHeaderHash: H256 | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [
-          U8aFixed,
-          Vec<
-            {
-              readonly parentHash: H256;
-              readonly number: Compact<u32>;
-              readonly stateRoot: H256;
-              readonly extrinsicsRoot: H256;
-              readonly digest: SpRuntimeDigest;
-            } & Struct
-          >,
-          H256
-        ]
-      >;
-      submitParachainHeader: AugmentedSubmittable<
-        (
-          blockHash: Bytes | string | Uint8Array,
-          gatewayId: U8aFixed | string | Uint8Array,
-          proof: Vec<Bytes> | (Bytes | string | Uint8Array)[]
-        ) => SubmittableExtrinsic<ApiType>,
-        [Bytes, U8aFixed, Vec<Bytes>]
+        [U8aFixed, Vec<SpRuntimeHeaderU32>, H256]
       >;
       /** Generic tx */
       [key: string]: SubmittableExtrinsicFunction<ApiType>;
@@ -1380,7 +1298,12 @@ declare module "@polkadot/api-base/types/submittable" {
        */
       setOwner: AugmentedSubmittable<
         (
-          newOwner: Option<AccountId32> | null | object | string | Uint8Array,
+          newOwner:
+            | Option<AccountId32>
+            | null
+            | Uint8Array
+            | AccountId32
+            | string,
           gatewayId: U8aFixed | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [Option<AccountId32>, U8aFixed]
@@ -1456,14 +1379,6 @@ declare module "@polkadot/api-base/types/submittable" {
           >,
           H256
         ]
-      >;
-      submitParachainHeader: AugmentedSubmittable<
-        (
-          blockHash: Bytes | string | Uint8Array,
-          gatewayId: U8aFixed | string | Uint8Array,
-          proof: Vec<Bytes> | (Bytes | string | Uint8Array)[]
-        ) => SubmittableExtrinsic<ApiType>,
-        [Bytes, U8aFixed, Vec<Bytes>]
       >;
       /** Generic tx */
       [key: string]: SubmittableExtrinsicFunction<ApiType>;
@@ -1546,7 +1461,12 @@ declare module "@polkadot/api-base/types/submittable" {
        */
       setOwner: AugmentedSubmittable<
         (
-          newOwner: Option<AccountId32> | null | object | string | Uint8Array,
+          newOwner:
+            | Option<AccountId32>
+            | null
+            | Uint8Array
+            | AccountId32
+            | string,
           gatewayId: U8aFixed | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [Option<AccountId32>, U8aFixed]
@@ -1623,13 +1543,92 @@ declare module "@polkadot/api-base/types/submittable" {
           H256
         ]
       >;
-      submitParachainHeader: AugmentedSubmittable<
+      /** Generic tx */
+      [key: string]: SubmittableExtrinsicFunction<ApiType>;
+    };
+    portal: {
+      registerGateway: AugmentedSubmittable<
         (
-          blockHash: Bytes | string | Uint8Array,
+          url: Bytes | string | Uint8Array,
           gatewayId: U8aFixed | string | Uint8Array,
-          proof: Vec<Bytes> | (Bytes | string | Uint8Array)[]
+          gatewayAbi:
+            | T3rnTypesAbiGatewayABIConfig
+            | {
+                blockNumberTypeSize?: any;
+                hashSize?: any;
+                hasher?: any;
+                crypto?: any;
+                addressLength?: any;
+                valueTypeSize?: any;
+                decimals?: any;
+                structs?: any;
+              }
+            | string
+            | Uint8Array,
+          gatewayVendor:
+            | T3rnPrimitivesGatewayVendor
+            | "Substrate"
+            | "Ethereum"
+            | "Rococo"
+            | number
+            | Uint8Array,
+          gatewayType:
+            | T3rnPrimitivesGatewayType
+            | { ProgrammableInternal: any }
+            | { ProgrammableExternal: any }
+            | { TxOnly: any }
+            | { OnCircuit: any }
+            | string
+            | Uint8Array,
+          gatewayGenesis:
+            | T3rnPrimitivesGatewayGenesisConfig
+            | {
+                modulesEncoded?: any;
+                extrinsicsVersion?: any;
+                genesisHash?: any;
+              }
+            | string
+            | Uint8Array,
+          gatewaySysProps:
+            | T3rnPrimitivesGatewaySysProps
+            | { ss58Format?: any; tokenSymbol?: any; tokenDecimals?: any }
+            | string
+            | Uint8Array,
+          allowedSideEffects: Vec<U8aFixed>,
+          encodedRegistrationData: Bytes | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [Bytes, U8aFixed, Vec<Bytes>]
+        [
+          Bytes,
+          U8aFixed,
+          T3rnTypesAbiGatewayABIConfig,
+          T3rnPrimitivesGatewayVendor,
+          T3rnPrimitivesGatewayType,
+          T3rnPrimitivesGatewayGenesisConfig,
+          T3rnPrimitivesGatewaySysProps,
+          Vec<U8aFixed>,
+          Bytes
+        ]
+      >;
+      setOperational: AugmentedSubmittable<
+        (
+          gatewayId: U8aFixed | string | Uint8Array,
+          operational: bool | boolean | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [U8aFixed, bool]
+      >;
+      setOwner: AugmentedSubmittable<
+        (
+          gatewayId: U8aFixed | string | Uint8Array,
+          encodedNewOwner: Bytes | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [U8aFixed, Bytes]
+      >;
+      submitHeaders: AugmentedSubmittable<
+        (
+          gatewayId: U8aFixed | string | Uint8Array,
+          encodedHeaderData: Bytes | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [U8aFixed, Bytes]
       >;
       /** Generic tx */
       [key: string]: SubmittableExtrinsicFunction<ApiType>;
@@ -1981,11 +1980,12 @@ declare module "@polkadot/api-base/types/submittable" {
           parachain:
             | Option<T3rnPrimitivesXdnsParachain>
             | null
-            | object
-            | string
-            | Uint8Array,
+            | Uint8Array
+            | T3rnPrimitivesXdnsParachain
+            | { relayChainId?: any; id?: any }
+            | string,
           gatewayAbi:
-            | T3rnPrimitivesAbiGatewayABIConfig
+            | T3rnTypesAbiGatewayABIConfig
             | {
                 blockNumberTypeSize?: any;
                 hashSize?: any;
@@ -2002,6 +2002,7 @@ declare module "@polkadot/api-base/types/submittable" {
             | T3rnPrimitivesGatewayVendor
             | "Substrate"
             | "Ethereum"
+            | "Rococo"
             | number
             | Uint8Array,
           gatewayType:
@@ -2032,7 +2033,7 @@ declare module "@polkadot/api-base/types/submittable" {
           Bytes,
           U8aFixed,
           Option<T3rnPrimitivesXdnsParachain>,
-          T3rnPrimitivesAbiGatewayABIConfig,
+          T3rnTypesAbiGatewayABIConfig,
           T3rnPrimitivesGatewayVendor,
           T3rnPrimitivesGatewayType,
           T3rnPrimitivesGatewayGenesisConfig,
@@ -2045,9 +2046,9 @@ declare module "@polkadot/api-base/types/submittable" {
           id: U8aFixed | string | Uint8Array,
           name: Bytes | string | Uint8Array,
           argumentAbi:
-            | Vec<T3rnPrimitivesAbiType>
+            | Vec<T3rnTypesAbiType>
             | (
-                | T3rnPrimitivesAbiType
+                | T3rnTypesAbiType
                 | { Address: any }
                 | { DynamicAddress: any }
                 | { Bool: any }
@@ -2081,7 +2082,7 @@ declare module "@polkadot/api-base/types/submittable" {
         [
           U8aFixed,
           Bytes,
-          Vec<T3rnPrimitivesAbiType>,
+          Vec<T3rnTypesAbiType>,
           Vec<Bytes>,
           Vec<Bytes>,
           Vec<Bytes>,
