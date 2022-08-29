@@ -681,7 +681,7 @@ pub mod pallet {
                 sfx_2_xbi::<T, T::Escrowed>(
                     &side_effect,
                     XBIMetadata::new_with_default_timeouts(
-                        XbiId::<T>::local_hash_to_xbi_id(sfx_id)?,
+                        XbiId::<T>::local_hash_2_xbi_id(sfx_id)?,
                         T::Xdns::get_gateway_para_id(&side_effect.target)?,
                         T::SelfParaId::get(),
                         max_exec_cost,

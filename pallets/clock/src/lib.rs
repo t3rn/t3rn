@@ -9,10 +9,7 @@
 #![allow(clippy::too_many_arguments)]
 
 pub use crate::pallet::*;
-use frame_support::{
-    pallet_prelude::Weight,
-    traits::{Get},
-};
+use frame_support::{pallet_prelude::Weight, traits::Get};
 
 pub use t3rn_primitives::{
     abi::{GatewayABIConfig, Type},
@@ -45,7 +42,7 @@ mod weights;
 pub mod pallet {
     // Import various types used to declare pallet in scope.
     use super::*;
-    use frame_support::{pallet_prelude::*};
+    use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
     use sp_runtime::traits::Zero;
 

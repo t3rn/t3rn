@@ -70,9 +70,6 @@ pub trait SideEffectProtocol {
         let mut validated_args: Arguments = vec![];
         // ToDo: Dig now to self.gateway_abi and recover the length of values, addresses to check
         for (i, type_n) in Self::get_arguments_abi(self).iter().enumerate() {
-
-
-
             let arg = match args.get(i) {
                 Some(bytes) => Ok(bytes.clone()),
                 None => match type_n {
@@ -81,7 +78,12 @@ pub trait SideEffectProtocol {
                 },
             }?;
 
-            println!("select_side_effect -- type_n.clone().eval_abi {:?}  {:?}  {:?}", type_n, arg.clone(), gateway_abi.clone());
+            println!(
+                "select_side_effect -- type_n.clone().eval_abi {:?}  {:?}  {:?}",
+                type_n,
+                arg.clone(),
+                gateway_abi.clone()
+            );
 
             let res = type_n.clone().eval_abi(arg.clone(), gateway_abi)?;
             validated_args.push(res);

@@ -341,12 +341,10 @@ impl Type {
                 let res: RuntimeString = decode_buf2val(encoded_val)?;
                 Ok(res.encode())
             },
-            Type::Option(maybe_type) => {
-                match encoded_val.len() {
-                    0 => Err("Optional value encoded on zero bytes"),
-                    1 => Ok(encoded_val),
-                    _ => maybe_type.eval_abi(encoded_val[1..].to_vec(), gen)
-                }
+            Type::Option(maybe_type) => match encoded_val.len() {
+                0 => Err("Optional value encoded on zero bytes"),
+                1 => Ok(encoded_val),
+                _ => maybe_type.eval_abi(encoded_val[1..].to_vec(), gen),
             },
             Type::Value => {
                 match gen.value_type_size {

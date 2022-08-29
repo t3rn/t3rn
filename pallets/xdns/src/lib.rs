@@ -449,8 +449,7 @@ pub mod pallet {
                 .ok_or_else(|| "XDNSRegistry does not contain given chain id")?
                 .parachain
                 .ok_or_else(|| "Xdns record doesn't have any Parachain data configured")?
-                .id
-            )
+                .id)
         }
 
         fn get_gateway_type_unsafe(chain_id: &ChainId) -> GatewayType {
