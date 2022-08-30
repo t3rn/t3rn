@@ -1,145 +1,160 @@
-import { EventEmitter } from "events"
-import { SideEffect } from "./utils/types"
+import {EventEmitter} from "events"
 import createDebug from "debug"
+import {Execution} from "./utils/execution";
+import {ProfitEstimation} from "./profitEstimation";
+import {SideEffect, SideEffectStatus} from "./utils/sideEffect";
 
 type Queue = {
-  gateways: {
-    blockHeight: number
-    // used for SideEffects that are waiting for execution
-    open: string[]
-    // caught circuit event but not executed yet
-    executing: string[]
-    // to confirm we need to wait for a specific block height to be reached
-    confirming: {
-      [block: number]: string[]
+    gateways: {
+        blockHeight: number
+        // used for SideEffects that are waiting for execution
+        open: string[]
+        // caught circuit event but not executed yet
+        executing: string[]
+        // to confirm we need to wait for a specific block height to be reached
+        confirming: {
+            [block: number]: string[]
+        }
     }
-  }
 }
 
 export class ExecutionManager extends EventEmitter {
-  static debug = createDebug("execution-manager")
+    static debug = createDebug("execution-manager")
 
-  // we map the current state in the queue
-  queue: Queue = <Queue>{}
-  // and use this mapping for storing the actual side effect instances
-  sideEffects: {
-    [id: string]: SideEffect
-  } = {}
+    // we map the current state in the queue
+    queue: Queue = <Queue>{}
+    // maps xtxId to Execution instance
+    executions: {
+        [id: string]: Execution
+    } = {}
+    // maps sfxId to xtxId
+    sfxExecutionLookup: {
+        [sfxId: string]: string
+    } = {};
 
-  // maintains order during xtx lifecycle
-  sideEffectsOrder: { [xtxId: string]: string[] } = {}
+    profitEstimation: ProfitEstimation = new ProfitEstimation();
 
-  // adds gateways on startup
-  addGateway(id: string) {
-    this.queue[id] = {
-      blockHeight: 0,
-      open: [],
-      executing: [],
-      confirming: {},
-    }
-  }
-
-  addSideEffects(sideEffects: SideEffect[]) {
-    // store xtx sfx order to submit confirmations in sequence
-    this.sideEffectsOrder[sideEffects[0].getXtxId()] = sideEffects.map(
-      sideEffect => sideEffect.getId()
-    )
-
-    // plug off-chain riks assessment here
-    const acceptRisk = true
-    if (acceptRisk) {
-      sideEffects.forEach(sideEffect => {
-        this.sideEffects[sideEffect.getId()] = sideEffect
-        this.queue[sideEffect.getTarget()].executing.push(sideEffect.getId())
-      })
-      // Trigger execution
-      this.emit("ExecuteSideEffects", sideEffects)
-    } else {
-      sideEffects.forEach(sideEffect => {
-        this.sideEffects[sideEffect.getId()] = sideEffect
-        this.queue[sideEffect.getTarget()].open.push(sideEffect.getId())
-      })
+    // adds gateways on startup
+    addGateway(id: string) {
+        this.queue[id] = {
+            blockHeight: 0,
+            open: [],
+            executing: [],
+            confirming: {},
+        }
     }
 
-    ExecutionManager.debug("Added SideEffects: ", this.queue)
-  }
+    addExecution(execution: Execution) {
+        this.executions[execution.xtxId.toHex()] = execution;
 
-  // once SideEffect has been executed on target we add it to the confirming pool
-  // the transactions resides here until the circuit has received targets header range
-  sideEffectExecuted(id: string) {
-    if (!this.sideEffects[id]) return
-    const gatewayId = this.sideEffects[id].getTarget()
-    const inclusionBlock = this.sideEffects[id].getTargetBlock()
-    // this.queue[gatewayId].executing.remove(id)
-    this.removeExecuting(id, gatewayId)
+        Object.keys(execution.sideEffects).forEach((sfxId: string) => {
+            // add sfxId to execution lookup mapping
+            this.sfxExecutionLookup[sfxId] = execution.xtxId.toHex()
+        })
 
-    //create array if inclusionBlock is not available
-    if (!this.queue[gatewayId].confirming[inclusionBlock]) {
-      this.queue[gatewayId].confirming[inclusionBlock] = []
+        const readyToExec = execution.getOpenSideEffects()
+        console.log("Ready:", readyToExec)
+
+        // const willExecute = readyToExec.filter(sideEffect => this.profitEstimation.shouldExecute(sideEffect))
+        // console.log("willExecute:", willExecute)
     }
 
-    this.queue[gatewayId].confirming[inclusionBlock].push(id)
-    ExecutionManager.debug("Executed:", this.queue)
-  }
+    xtxReady(xtxId: string) {
+        this.executions[xtxId].readyToExecute()
 
-  // Once confirmed, delete from queue
-  finalize(id: string) {
-    if (!this.sideEffects[id]) return
-    const gatewayId = this.sideEffects[id].getTarget()
-    const inclusionBlock = this.sideEffects[id].getTargetBlock()
-    this.removeConfirming(id, gatewayId, inclusionBlock)
-    delete this.sideEffects[id]
-    ExecutionManager.debug("Finalized:", this.queue)
-  }
+        // for now we will execute all sideEffects that are available
+        const canExecute = this.executions[xtxId].getOpenSideEffects()
 
-  // New header range was submitted on circuit
-  // update local params and check which SideEffects can be confirmed
-  updateGatewayHeight(gatewayId: string, blockHeight: any) {
-    blockHeight = parseInt(blockHeight)
-    if (this.queue[gatewayId]) {
-      this.queue[gatewayId].blockHeight = blockHeight
-      this.executeQueue(gatewayId, blockHeight)
+        canExecute.forEach(sideEffect=> {
+            this.queue[sideEffect.target].executing.push(sideEffect.id)
+            this.emit("ExecuteSideEffect", sideEffect)
+        })
+        console.log("Queue:", this.queue)
     }
-  }
 
-  // checks which unconfirmed SideEffects can be executed on circuit
-  // ToDo: This crime needs to be refactored
-  executeQueue(gatewayId: string, blockHeight: number) {
-    // filter and flatten SideEffects ready to be confirmed.
-    let ready = Object.keys(this.queue[gatewayId].confirming).filter(block => {
-      //in node object keys are always strings
-      return parseInt(block) <= blockHeight
-    })
-
-    if (ready.length > 0) {
-      // mapping to confirmable sfx ids
-      const sfxIds: string[] = ready
-        .map((_blockHeight, i) => this.queue[gatewayId].confirming[ready[i]])
-        .flat()
-
-      // rearrange sfx into correct order
-      const sideEffectsToConfirm: SideEffect[] = this.sideEffectsOrder[
-        this.sideEffects[sfxIds[0]].getXtxId()
-      ].map(sfxId => this.sideEffects[sfxId])
-
-      ExecutionManager.debug("Ready to Submit", ready)
-
-      this.emit("ConfirmSideEffects", sideEffectsToConfirm)
+    sfxReady(sfxId: string) {
+        this.executions[this.sfxExecutionLookup[sfxId]].sideEffects[sfxId].ready()
     }
-  }
 
-  private removeExecuting(id: string, gatewayId: string) {
-    const index = this.queue[gatewayId].executing.indexOf(id)
-    this.queue[gatewayId].executing.splice(index, 1)
-  }
+    // once SideEffect has been executed on target we add it to the confirming pool
+    // the transactions resides here until the circuit has received targets header range
+    sideEffectExecuted(sfxId: string) {
+        if (!this.sfxExecutionLookup[sfxId]) return
+        const sfx = this.executions[this.sfxExecutionLookup[sfxId]].sideEffects[sfxId];
+        this.removeExecuting(sfxId, sfx.target)
 
-  private removeConfirming(id: string, gatewayId: string, blockHeight: number) {
-    const index = this.queue[gatewayId].confirming[blockHeight].indexOf(id)
-    // high chance their is only one SideEffect in this block, so this is faster.
-    if (this.queue[gatewayId].confirming[blockHeight].length === 1) {
-      delete this.queue[gatewayId].confirming[blockHeight]
-    } else {
-      this.queue[gatewayId].confirming[blockHeight].splice(index, 1)
+        //create array if inclusionBlock is not available
+        if (!this.queue[sfx.target].confirming[sfx.targetInclusionHeight.toNumber()]) {
+            this.queue[sfx.target].confirming[sfx.targetInclusionHeight.toNumber()] = []
+        }
+
+        this.queue[sfx.target].confirming[sfx.targetInclusionHeight.toNumber()].push(sfxId)
+        ExecutionManager.debug("Executed:", this.queue)
     }
-  }
+
+    // Once confirmed, delete from queue
+    sideEffectConfirmed(sfxId: string) {
+        console.log("ExecutionManager - sideEffectConfirmed:", sfxId)
+        if (!this.sfxExecutionLookup[sfxId]) return
+        const sfx = this.executions[this.sfxExecutionLookup[sfxId]].sideEffects[sfxId]
+        this.executions[this.sfxExecutionLookup[sfxId]].confirmSideEffect(sfxId)
+        this.removeConfirming(sfxId, sfx.target, sfx.targetInclusionHeight.toNumber())
+    }
+
+    // New header range was submitted on circuit
+    // update local params and check which SideEffects can be confirmed
+    updateGatewayHeight(gatewayId: string, blockHeight: any) {
+        blockHeight = parseInt(blockHeight)
+        console.log("BlockHeight:", blockHeight)
+        console.log("target:", gatewayId)
+        if (this.queue[gatewayId]) {
+            this.queue[gatewayId].blockHeight = blockHeight
+            this.executeQueue(gatewayId, blockHeight)
+        }
+    }
+
+    // checks which executed SideEffects can be confirmed on circuit
+    executeQueue(gatewayId: string, blockHeight: number) {
+        // contains the sfxIds of SideEffects that could be confirmed based on the current blockHeight of the light client
+        let readyByHeight: string[] = [];
+        Object.keys(this.queue[gatewayId].confirming).forEach(block => {
+            //in node object keys are always strings
+            if(parseInt(block) <= blockHeight) {
+                console.log(this.queue[gatewayId].confirming[block])
+                readyByHeight = readyByHeight.concat(this.queue[gatewayId].confirming[block])
+            }
+        })
+
+        console.log("Ready By Height:", readyByHeight)
+
+        const readyByStep: SideEffect[] = [];
+
+        // filter the SideEffects that can be confirmed in the current step
+        // ToDo a Sfx confirmation should trigger this function again, as the step could have updated
+        readyByHeight.forEach(sfxId => {
+            const sfx: SideEffect = this.executions[this.sfxExecutionLookup[sfxId]].sideEffects[sfxId];
+            if(sfx.step === this.executions[sfx.xtxId].currentStep) {
+                readyByStep.push(sfx)
+            }
+        })
+
+        // ExecutionManager.debug("Ready to Submit", readyByStep)
+
+        this.emit("ConfirmSideEffects", readyByStep)
+    }
+
+    private removeExecuting(id: string, gatewayId: string) {
+        const index = this.queue[gatewayId].executing.indexOf(id)
+        this.queue[gatewayId].executing.splice(index, 1)
+    }
+
+    private removeConfirming(id: string, gatewayId: string, blockHeight: number) {
+        const index = this.queue[gatewayId].confirming[blockHeight].indexOf(id)
+        // high chance their is only one SideEffect in this block, so this is faster.
+        if (this.queue[gatewayId].confirming[blockHeight].length === 1) {
+            delete this.queue[gatewayId].confirming[blockHeight]
+        } else {
+            this.queue[gatewayId].confirming[blockHeight].splice(index, 1)
+        }
+    }
 }

@@ -1,6 +1,6 @@
 import "@t3rn/types"
 import { AccountId32, H256 } from "@polkadot/types/interfaces/runtime"
-import { T3rnPrimitivesSideEffect } from "@polkadot/types/lookup"
+import { T3rnTypesSideEffect } from "@polkadot/types/lookup"
 import { TextDecoder } from "util"
 import { u8aToHex } from "@polkadot/util"
 const BN = require("bn.js")
@@ -18,7 +18,7 @@ export class SideEffect {
   executor: any
   xtxId: any
   id: Uint8Array
-  object: T3rnPrimitivesSideEffect
+  object: T3rnTypesSideEffect
   confirmedSideEffect: object
 
   inclusionProof: any
@@ -37,7 +37,7 @@ export class SideEffect {
     this.xtxId = xtxId
   }
 
-  setSideEffect(sideEffect: T3rnPrimitivesSideEffect) {
+  setSideEffect(sideEffect: T3rnTypesSideEffect) {
     this.object = sideEffect
     this.setTransactionType()
   }

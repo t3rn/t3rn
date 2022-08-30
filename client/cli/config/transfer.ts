@@ -16,20 +16,20 @@ export default {
             receiver: "5EoHBHDBNj61SbqNPcgYzwHXY1xAroduRP3M99iSMZ8kwvgp",
             amount: "0.01",
             bond: "1",
-            reward: "2",
+            reward: "10",
             signature: null,
             executioner: null
         },
-        {
-            target: "bslk",
-            type: "tran",
-            receiver: "bXiLNHM2wesdnvvsMqBRb3ybSEfkyHkSk3cBE4Yy3Qph4VgkX",
-            amount: "33",
-            bond: "1",
-            reward: "2",
-            signature: null,
-            executioner: null
-        },
+        // {
+        //     target: "bslk",
+        //     type: "tran",
+        //     receiver: "bXiLNHM2wesdnvvsMqBRb3ybSEfkyHkSk3cBE4Yy3Qph4VgkX",
+        //     amount: "33",
+        //     bond: "1",
+        //     reward: "2",
+        //     signature: null,
+        //     executioner: null
+        // },
         // {
         //     target: "roco",
         //     type: "tran",

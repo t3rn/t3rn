@@ -657,9 +657,12 @@ pub mod pallet {
             }?;
 
             log::info!("bond insurance deposit -- applied");
+
+            Self::deposit_event(Event::SideEffectInsuranceReceived(side_effect_id));
+
             // Emit: From Circuit events
             Self::emit(
-                local_xtx_ctx.xtx_id,
+                xtx_id,
                 maybe_xtx_changed,
                 &relayer,
                 &vec![],
@@ -862,6 +865,8 @@ pub mod pallet {
                 side_effect.generate_id::<SystemHashing<T>>()
             );
 
+            Self::deposit_event(Event::SideEffectConfirmed(side_effect_id));
+
             // Emit: From Circuit events
             Self::emit(
                 local_xtx_ctx.xtx_id,
@@ -881,6 +886,10 @@ pub mod pallet {
     pub enum Event<T: Config> {
         // Listeners - users + SDK + UI to know whether their request is accepted for exec and pending
         XTransactionReceivedForExec(XExecSignalId<T>),
+        // Notifies that the bond for a specific side_effect has been bonded.
+        SideEffectInsuranceReceived(XExecSignalId<T>),
+        // An executions SideEffect was confirmed.
+        SideEffectConfirmed(XExecSignalId<T>),
         // Listeners - users + SDK + UI to know whether their request is accepted for exec and ready
         XTransactionReadyForExec(XExecSignalId<T>),
         // Listeners - users + SDK + UI to know whether their request is accepted for exec and finished

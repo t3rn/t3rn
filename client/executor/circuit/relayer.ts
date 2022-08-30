@@ -1,117 +1,122 @@
 import { EventEmitter } from "events"
 import { ApiPromise, Keyring, WsProvider } from "@polkadot/api"
-import { SideEffect, fetchNonce } from "../utils"
+import { fetchNonce } from "../utils/"
+import { SideEffect } from "../utils/sideEffect"
 import createDebug from "debug"
 import types from "../types.json"
 const fs = require("fs");
 
 export default class CircuitRelayer extends EventEmitter {
-  static debug = createDebug("circuit-relayer")
+    static debug = createDebug("circuit-relayer")
 
-  api: ApiPromise
-  id: string
-  rpc: string
-  signer: any
+    api: ApiPromise
+    id: string
+    rpc: string
+    signer: any
 
-  async setup(rpc: string) {
-    this.rpc = rpc
-    this.api = await ApiPromise.create({
-      provider: new WsProvider(rpc),
-      types: types as any
-    })
-
-    const keyring = new Keyring({ type: "sr25519" })
-
-    this.signer =
-      process.env.CIRCUIT_KEY === undefined
-        ? keyring.addFromUri("//Executor//default")
-        : keyring.addFromMnemonic(process.env.CIRCUIT_KEY)
-
-      console.log(this.signer.address)
-  }
-
-  async bondInsuranceDeposits(sideEffects: SideEffect[]) {
-    const toExport: any = [];
-    const calls = sideEffects
-      // four args mean the call requires an insurance deposit
-      .filter(sideEffect => sideEffect.object.encodedArgs.length === 4)
-      .map(sideEffect => {
-        const xtxId = this.api.createType("Hash", sideEffect.xtxId);
-        const id = this.api.createType("Hash", sideEffect.getId());
-        toExport.push({xtxId, id})
-
-        return this.api.tx.circuit.bondInsuranceDeposit(
-          sideEffect.xtxId,
-          sideEffect.getId()
-        )
-      }
-      )
-
-    if (calls.length) {
-      const nonce = await fetchNonce(this.api, this.signer.address)
-      CircuitRelayer.debug("bondInsuranceDeposits nonce", nonce.toString())
-      await this.api.tx.utility
-        .batchAll(calls)
-        .signAndSend(this.signer, { nonce })
-        .then(() => {
-            exportData(toExport, `post-bond.json`, "bond");
+    async setup(rpc: string) {
+        this.rpc = rpc
+        this.api = await ApiPromise.create({
+              provider: new WsProvider(rpc),
+              types: types as any
         })
+
+        const keyring = new Keyring({ type: "sr25519" })
+
+        this.signer =
+            process.env.CIRCUIT_KEY === undefined
+                ? keyring.addFromUri("//Executor//default")
+                : keyring.addFromMnemonic(process.env.CIRCUIT_KEY)
+
     }
-  }
 
-  async confirmSideEffects(sideEffects: SideEffect[]) {
-    // confirmations must be submitted sequentially
-    for (const sideEffect of sideEffects) {
-      const nonce = await fetchNonce(this.api, this.signer.address)
-      // @ts-ignore
-      sideEffect.confirmedSideEffect.inclusion_data = this.api.createType("InclusionData", sideEffect.confirmedSideEffect.inclusion_data).toHex();
-      // @ts-ignore
-      sideEffect.confirmedSideEffect.received_at = sideEffect.confirmedSideEffect.receivedAt;
-      // @ts-ignore
-      const confirmed: any = this.api.createType("ConfirmedSideEffect", sideEffect.confirmedSideEffect)
-      const sideEffectObj: any = this.api.createType("SideEffect", sideEffect.object);
-      const xtxId: any = this.api.createType("XtxId", sideEffect.xtxId);
-      exportData([{xtxId, sideEffect: sideEffectObj, confirmed}], `confirm-transfer-${sideEffect.getTarget()}.json`, "confirm")
+    async bondInsuranceDeposits(sideEffects: SideEffect[]) {
+    // const toExport: any = [];
+    // const calls = sideEffects
+    //   // four args mean the call requires an insurance deposit
+    //   .filter(sideEffect => sideEffect.object.encodedArgs.length === 4)
+    //   .map(sideEffect => {
+    //     const xtxId = this.api.createType("Hash", sideEffect.xtxId);
+    //     const id = this.api.createType("Hash", sideEffect.getId());
+    //     toExport.push({xtxId, id})
+    //
+    //     return this.api.tx.circuit.bondInsuranceDeposit(
+    //       sideEffect.xtxId,
+    //       sideEffect.getId()
+    //     )
+    //   }
+    //   )
+    //
+    // if (calls.length) {
+    //   const nonce = await fetchNonce(this.api, this.signer.address)
+    //   CircuitRelayer.debug("bondInsuranceDeposits nonce", nonce.toString())
+    //   await this.api.tx.utility
+    //     .batchAll(calls)
+    //     .signAndSend(this.signer, { nonce })
+    //     .then(() => {
+    //         exportData(toExport, `post-bond.json`, "bond");
+    //     })
+    // }
+    }
 
-      await new Promise((resolve, reject) => {
-        this.api.tx.circuit
-          .confirmSideEffect(
-            sideEffect.xtxId,
-            sideEffect.object,
-            sideEffect.confirmedSideEffect,
-            null,
-            null
-          )
-          .signAndSend(this.signer, { nonce }, result => {
-            if (result.status.isFinalized) {
-              CircuitRelayer.debug(
-                "### confirmSideEffects result",
-                JSON.stringify(result, null, 2)
-              )
+    async confirmSideEffects(sideEffects: SideEffect[]) {
+        // confirmations must be submitted sequentially
+        for (const sideEffect of sideEffects) {
+            const nonce = await fetchNonce(this.api, this.signer.address)
 
-              const success =
-                result.events[result.events.length - 1].event.method ===
-                "ExtrinsicSuccess"
+            const inclusionData = this.api.createType("InclusionData", sideEffect.inclusionData);
+            const receivedAt = this.api.createType("BlockNumber", 0); // ToDo figure out what to do here
+            const confirmedSideEffect = this.api.createType("ConfirmedSideEffect", {
+                err: null,
+                output: null,
+                inclusion_data: inclusionData.toHex(),
+                executioner: sideEffect.executor,
+                receivedAt: receivedAt,
+                cost: null,
+            })
 
-              sideEffects.forEach(sideEffect => {
-                sideEffect.confirm(success, result.status.asFinalized)
-                this.emit("SideEffectConfirmed", sideEffect.getId())
+            const xtxId: any = this.api.createType("XtxId", sideEffect.xtxId);
+            // exportData([{xtxId, sideEffect: sideEffect.raw, confirmedSideEffect}], `confirm-transfer-${sideEffect.target}.json`, "confirm")
+
+            await new Promise((resolve, reject) => {
+                this.api.tx.circuit
+                  .confirmSideEffect(
+                    xtxId,
+                    sideEffect.raw,
+                    confirmedSideEffect,
+                    null,
+                    null
+                  )
+                  .signAndSend(this.signer, { nonce }, result => {
+                    if (result.status.isFinalized) {
+                      CircuitRelayer.debug(
+                        "### confirmSideEffects result",
+                        JSON.stringify(result, null, 2)
+                      )
+
+                      const success =
+                        result.events[result.events.length - 1].event.method ===
+                        "ExtrinsicSuccess"
+                      //
+                      // sideEffects.forEach(sideEffect => {
+                      //   sideEffect.confirm(success, result.status.asFinalized)
+                      //   this.emit("SideEffectConfirmed", sideEffect.getId())
+                      // })
+
+                      CircuitRelayer.debug(
+                        `sfx confirmed: ${success}, ${result.status.asFinalized}`
+                      )
+
+                      if (success) resolve(undefined)
+                      else
+                        reject(
+                          Error(`sfx confirmation failed for ${sideEffect.getId()}`)
+                        )
+                    }
+                  })
               })
-
-              CircuitRelayer.debug(
-                `sfx confirmed: ${success}, ${result.status.asFinalized}`
-              )
-
-              if (success) resolve(undefined)
-              else
-                reject(
-                  Error(`sfx confirmation failed for ${sideEffect.getId()}`)
-                )
-            }
-          })
-      })
+        }
     }
-  }
 }
 let counter = 7;
 export const exportData = (data: any, fileName: string, transactionType: string) => {

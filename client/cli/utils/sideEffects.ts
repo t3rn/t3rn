@@ -1,7 +1,7 @@
 import { ApiPromise } from '@polkadot/api';
 import config from "../config/setup"
-import {amountLeArr, optionalInsurance} from "./encoder";
-import {addressStringToPubKey} from "./decoder";
+import { amountLeArr, optionalInsurance } from "./encoder";
+import { addressStringToPubKey } from "./decoder";
 
 export const transferArgs = (target: string, from: string, receiver: string, amount: number, bond: number, reward: number) => {
     const gatewayData: any = getGatewayData(target);
