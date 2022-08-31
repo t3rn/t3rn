@@ -65,11 +65,11 @@ export default class CircuitRelayer extends EventEmitter {
             const nonce = await fetchNonce(this.api, this.signer.address)
 
             const inclusionData = this.api.createType("InclusionData", sideEffect.inclusionData);
-            const receivedAt = this.api.createType("BlockNumber", 0); // ToDo figure out what to do here
+            const receivedAt = this.api.createType("BlockNumber", sideEffect.targetInclusionHeight.toNumber()); // ToDo figure out what to do here
             const confirmedSideEffect = this.api.createType("ConfirmedSideEffect", {
                 err: null,
                 output: null,
-                inclusion_data: inclusionData.toHex(),
+                inclusion_data: inclusionData.toJSON(),
                 executioner: sideEffect.executor,
                 receivedAt: receivedAt,
                 cost: null,
@@ -81,9 +81,16 @@ export default class CircuitRelayer extends EventEmitter {
             await new Promise((resolve, reject) => {
                 this.api.tx.circuit
                   .confirmSideEffect(
-                    xtxId,
-                    sideEffect.raw,
-                    confirmedSideEffect,
+                    xtxId.toHuman(),
+                    sideEffect.raw.toHuman(),
+                    {
+                        err: null,
+                        output: null,
+                        inclusionData: inclusionData.toHex(),
+                        executioner: sideEffect.executor,
+                        receivedAt: receivedAt,
+                        cost: null,
+                    },
                     null,
                     null
                   )
@@ -97,11 +104,6 @@ export default class CircuitRelayer extends EventEmitter {
                       const success =
                         result.events[result.events.length - 1].event.method ===
                         "ExtrinsicSuccess"
-                      //
-                      // sideEffects.forEach(sideEffect => {
-                      //   sideEffect.confirm(success, result.status.asFinalized)
-                      //   this.emit("SideEffectConfirmed", sideEffect.getId())
-                      // })
 
                       CircuitRelayer.debug(
                         `sfx confirmed: ${success}, ${result.status.asFinalized}`
@@ -110,7 +112,7 @@ export default class CircuitRelayer extends EventEmitter {
                       if (success) resolve(undefined)
                       else
                         reject(
-                          Error(`sfx confirmation failed for ${sideEffect.getId()}`)
+                          Error(`sfx confirmation failed for ${sideEffect.id}`)
                         )
                     }
                   })

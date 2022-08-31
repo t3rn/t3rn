@@ -63,13 +63,12 @@ export default class SubstrateRelayer extends EventEmitter {
               "ExtrinsicSuccess"
 
             const inclusionProof = await getEventProofs(this.api, blockHash)
-
             const inclusionData = {
-                encodedPayload: event,
+                encoded_payload: event.toHex(),
                 proof: {
                     trieNodes: inclusionProof.toJSON().proof
                 },
-                blockHash: blockHash
+                block_hash: blockHash
             }
 
             sideEffect.executionConfirmed(

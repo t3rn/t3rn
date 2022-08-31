@@ -110,7 +110,7 @@ export class SideEffect {
         }
     }
 
-    executionConfirmed(inclusionData: any, executor: string, targetInclusionHeight: any) {
+    executionConfirmed(inclusionData: any, executor: any, targetInclusionHeight: any) {
         this.inclusionData = inclusionData;
         this.executor = executor;
         this.targetInclusionHeight = targetInclusionHeight;

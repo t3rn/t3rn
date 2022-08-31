@@ -865,7 +865,7 @@ pub mod pallet {
                 side_effect.generate_id::<SystemHashing<T>>()
             );
 
-            Self::deposit_event(Event::SideEffectConfirmed(side_effect_id));
+            Self::deposit_event(Event::SideEffectConfirmed(side_effect.generate_id::<SystemHashing<T>>()));
 
             // Emit: From Circuit events
             Self::emit(
@@ -1889,6 +1889,8 @@ impl<T: Config> Pallet<T> {
         let side_effect_interface =
             <T as Config>::Xdns::fetch_side_effect_interface(side_effect_id);
 
+        log::info!("got interface!");
+
         confirmation_plug::<T>(
             &Box::new(side_effect_interface.unwrap()),
             params,
@@ -1902,6 +1904,7 @@ impl<T: Config> Pallet<T> {
             ),
         )
         .map_err(|_| "Execution can't be confirmed.")?;
+        log::info!("confirmation plug ok");
 
         Ok(())
     }
