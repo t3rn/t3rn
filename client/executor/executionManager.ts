@@ -51,12 +51,10 @@ export class ExecutionManager extends EventEmitter {
             // add sfxId to execution lookup mapping
             this.sfxExecutionLookup[sfxId] = execution.xtxId.toHex()
         })
+    }
 
-        const readyToExec = execution.getOpenSideEffects()
-        console.log("Ready:", readyToExec)
-
-        // const willExecute = readyToExec.filter(sideEffect => this.profitEstimation.shouldExecute(sideEffect))
-        // console.log("willExecute:", willExecute)
+    completeExecution(xtxId: string) {
+        this.executions[xtxId].complete()
     }
 
     xtxReady(xtxId: string) {
@@ -105,8 +103,6 @@ export class ExecutionManager extends EventEmitter {
     // update local params and check which SideEffects can be confirmed
     updateGatewayHeight(gatewayId: string, blockHeight: any) {
         blockHeight = parseInt(blockHeight)
-        console.log("BlockHeight:", blockHeight)
-        console.log("target:", gatewayId)
         if (this.queue[gatewayId]) {
             this.queue[gatewayId].blockHeight = blockHeight
             this.executeQueue(gatewayId, blockHeight)

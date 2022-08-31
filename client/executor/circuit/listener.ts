@@ -32,6 +32,9 @@ api: ApiPromise
                 } else if (notification.event.method === "NewSideEffectsAvailable") {
                     const execution = new Execution(notification.event.data)
                     this.emit("NewExecution", execution)
+                } else if (notification.event.method === "XTransactionXtxFinishedExecAllSteps") {
+                    const xtxId = notification.event.data[0].toHex();
+                    this.emit("ExecutionComplete", xtxId)
                 } else if (notification.event.method === "HeaderSubmitted") {
                     const data = {
                         gatewayId: new TextDecoder().decode(

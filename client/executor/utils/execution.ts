@@ -6,7 +6,7 @@ import {T3rnTypesSideEffect} from '@polkadot/types/lookup';
 export enum ExecutionStatus {
     Open,
     ReadyToExecute,
-    Commited,
+    Complete,
     Reverted
 }
 
@@ -72,11 +72,14 @@ export class Execution {
             this.currentStep += 1
             console.log("Updated step counter!")
         }
-
     }
 
     readyToExecute() {
         this.status = ExecutionStatus.ReadyToExecute;
+    }
+
+    complete() {
+        this.status = ExecutionStatus.Complete;
     }
 
     // returns the side effects that open to execution.

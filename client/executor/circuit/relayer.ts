@@ -60,12 +60,11 @@ export default class CircuitRelayer extends EventEmitter {
     }
 
     async confirmSideEffects(sideEffects: SideEffect[]) {
-        // confirmations must be submitted sequentially
         for (const sideEffect of sideEffects) {
             const nonce = await fetchNonce(this.api, this.signer.address)
 
             const inclusionData = this.api.createType("InclusionData", sideEffect.inclusionData);
-            const receivedAt = this.api.createType("BlockNumber", sideEffect.targetInclusionHeight.toNumber()); // ToDo figure out what to do here
+            const receivedAt = this.api.createType("BlockNumber", 0); // ToDo figure out what to do here
             const confirmedSideEffect = this.api.createType("ConfirmedSideEffect", {
                 err: null,
                 output: null,
@@ -80,42 +79,42 @@ export default class CircuitRelayer extends EventEmitter {
 
             await new Promise((resolve, reject) => {
                 this.api.tx.circuit
-                  .confirmSideEffect(
-                    xtxId.toHuman(),
-                    sideEffect.raw.toHuman(),
-                    {
-                        err: null,
-                        output: null,
-                        inclusionData: inclusionData.toHex(),
-                        executioner: sideEffect.executor,
-                        receivedAt: receivedAt,
-                        cost: null,
-                    },
-                    null,
-                    null
-                  )
-                  .signAndSend(this.signer, { nonce }, result => {
-                    if (result.status.isFinalized) {
-                      CircuitRelayer.debug(
-                        "### confirmSideEffects result",
-                        JSON.stringify(result, null, 2)
-                      )
+                    .confirmSideEffect(
+                        xtxId.toHuman(),
+                        sideEffect.raw.toHuman(),
+                        {
+                            err: null,
+                            output: null,
+                            inclusionData: inclusionData.toHex(),
+                            executioner: sideEffect.executor,
+                            receivedAt: receivedAt,
+                            cost: null,
+                        },
+                        null,
+                        null
+                    )
+                    .signAndSend(this.signer, { nonce }, result => {
+                        if (result.status.isFinalized) {
+                            CircuitRelayer.debug(
+                                "### confirmSideEffects result",
+                                // JSON.stringify(result, null, 2)
+                            )
 
-                      const success =
-                        result.events[result.events.length - 1].event.method ===
-                        "ExtrinsicSuccess"
+                            const success =
+                                result.events[result.events.length - 1].event.method ===
+                                "ExtrinsicSuccess"
 
-                      CircuitRelayer.debug(
-                        `sfx confirmed: ${success}, ${result.status.asFinalized}`
-                      )
+                            CircuitRelayer.debug(
+                                `sfx confirmed: ${success}, ${result.status.asFinalized}`
+                            )
 
-                      if (success) resolve(undefined)
-                      else
-                        reject(
-                          Error(`sfx confirmation failed for ${sideEffect.id}`)
-                        )
-                    }
-                  })
+                            if (success) resolve(undefined)
+                        else
+                            reject(
+                              Error(`sfx confirmation failed for ${sideEffect.id}`)
+                            )
+                        }
+                    })
               })
         }
     }

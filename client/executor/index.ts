@@ -53,26 +53,49 @@ class InstanceManager {
     }
 
     async initializeEventListeners() {
+        // Insurance for all SideEffects has been posted, ready to execute
         this.circuitListener.on("XTransactionReadyForExec", async (xtxId: string) => {
             InstanceManager.debug("XTransactionReadyForExec")
             this.executionManager.xtxReady(xtxId)
         })
 
+        // Insurance for SideEffect has been posted
         this.circuitListener.on("SideEffectInsuranceReceived", async (sfxId: string) => {
             InstanceManager.debug("SideEffectInsuranceReceived")
             this.executionManager.sfxReady(sfxId)
         })
 
+        // new Execution has been received
         this.circuitListener.on("NewExecution", async (execution: Execution) => {
             InstanceManager.debug("NewExecutionReceived")
             this.executionManager.addExecution(execution);
         })
 
+        //SideEffect has been confirmed on Circuit
+        this.circuitListener.on("SideEffectConfirmed", (sfxId: string) => {
+            InstanceManager.debug("SideEffectConfirmedOnCircuit")
+            this.executionManager.sideEffectConfirmed(sfxId)
+        })
+
+        // The execution is complete -> COMMIT
+        this.circuitListener.on("ExecutionComplete",  (xtxId: string) => {
+            InstanceManager.debug("ExecutionComplete")
+            this.executionManager.completeExecution(xtxId)
+        })
+
+         // New header range has been received
+        this.circuitListener.on("NewHeaderRangeAvailable", data => {
+            InstanceManager.debug("NewHeaderRangeAvailable:", data.height, data.gatewayId)
+            this.executionManager.updateGatewayHeight(data.gatewayId, data.height)
+        })
+
+        // Execute SideEffect on Target
         this.executionManager.on("ExecuteSideEffect", async sideEffect => {
-            InstanceManager.debug("ExecuteSideEffects")
+            InstanceManager.debug("ExecuteSideEffect")
             await this.instances[sideEffect.target].executeTx(sideEffect)
         })
 
+        // trigger SideEffect confirmation on circuit
         this.executionManager.on(
             "ConfirmSideEffects",
             (sideEffects: SideEffect[]) => {
@@ -81,14 +104,10 @@ class InstanceManager {
           }
         )
 
-        this.circuitRelayer.on("SideEffectConfirmed", (id: string) => {
-            InstanceManager.debug("SideEffectConfirmed")
-            this.executionManager.sideEffectConfirmed(id)
-        })
-
-        this.circuitListener.on("NewHeaderRangeAvailable", data => {
-            InstanceManager.debug("NewHeaderRangeAvailable:", data.height, data.gatewayId)
-            this.executionManager.updateGatewayHeight(data.gatewayId, data.height)
+        // SideEffect was executed on Target
+        this.circuitRelayer.on("SideEffectExecuted", (sfxId: string) => {
+            InstanceManager.debug("SideEffectExecuted")
+            this.executionManager.sideEffectExecuted(sfxId)
         })
     }
 }
