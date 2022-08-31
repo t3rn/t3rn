@@ -51,6 +51,10 @@ export class ExecutionManager extends EventEmitter {
             // add sfxId to execution lookup mapping
             this.sfxExecutionLookup[sfxId] = execution.xtxId.toHex()
         })
+
+        execution.on("ExecutedSideEffectInCurrentStep", (sideEffects: SideEffect[]) => {
+            this.executeStepQueue(sideEffects)
+        })
     }
 
     completeExecution(xtxId: string) {
@@ -105,18 +109,17 @@ export class ExecutionManager extends EventEmitter {
         blockHeight = parseInt(blockHeight)
         if (this.queue[gatewayId]) {
             this.queue[gatewayId].blockHeight = blockHeight
-            this.executeQueue(gatewayId, blockHeight)
+            this.executeQueue(gatewayId)
         }
     }
 
     // checks which executed SideEffects can be confirmed on circuit
-    executeQueue(gatewayId: string, blockHeight: number) {
+    executeQueue(gatewayId: string) {
         // contains the sfxIds of SideEffects that could be confirmed based on the current blockHeight of the light client
         let readyByHeight: string[] = [];
         Object.keys(this.queue[gatewayId].confirming).forEach(block => {
             //in node object keys are always strings
-            if(parseInt(block) <= blockHeight) {
-                console.log(this.queue[gatewayId].confirming[block])
+            if(parseInt(block) <= this.queue[gatewayId].blockHeight) {
                 readyByHeight = readyByHeight.concat(this.queue[gatewayId].confirming[block])
             }
         })
@@ -134,22 +137,38 @@ export class ExecutionManager extends EventEmitter {
             }
         })
 
+        console.log("ready by step:", readyByStep.map(entry => entry.id))
+
         // ExecutionManager.debug("Ready to Submit", readyByStep)
 
         this.emit("ConfirmSideEffects", readyByStep)
     }
 
+    executeStepQueue(sideEffects: SideEffect[]) {
+        let readyToConfirm = sideEffects.filter((sfx: SideEffect) => {
+            return parseInt(this.queue[sfx.target].blockHeight)>= sfx.targetInclusionHeight.toNumber()
+        })
+
+         console.log("ready:", readyToConfirm.map(entry => entry.id))
+        if(readyToConfirm.length > 0) {
+            this.emit("ConfirmSideEffects", readyToConfirm)
+        }
+    }
+
+
+    // removes sfx from executing queue
     private removeExecuting(id: string, gatewayId: string) {
         const index = this.queue[gatewayId].executing.indexOf(id)
         this.queue[gatewayId].executing.splice(index, 1)
     }
 
+    // removes the SideEffects from the confirmation queue
     private removeConfirming(id: string, gatewayId: string, blockHeight: number) {
-        const index = this.queue[gatewayId].confirming[blockHeight].indexOf(id)
-        // high chance their is only one SideEffect in this block, so this is faster.
+        // high chance there is only one SideEffect in this block, so this is faster.
         if (this.queue[gatewayId].confirming[blockHeight].length === 1) {
             delete this.queue[gatewayId].confirming[blockHeight]
         } else {
+            const index = this.queue[gatewayId].confirming[blockHeight].indexOf(id)
             this.queue[gatewayId].confirming[blockHeight].splice(index, 1)
         }
     }

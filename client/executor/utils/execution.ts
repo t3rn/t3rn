@@ -2,6 +2,7 @@ import "@t3rn/types"
 import {AccountId32, H256} from '@polkadot/types/interfaces';
 import {SideEffect, SideEffectStatus} from "./sideEffect";
 import {T3rnTypesSideEffect} from '@polkadot/types/lookup';
+import {EventEmitter} from "events";
 
 export enum ExecutionStatus {
     Open,
@@ -10,7 +11,7 @@ export enum ExecutionStatus {
     Reverted
 }
 
-export class Execution {
+export class Execution extends EventEmitter {
     status: ExecutionStatus = ExecutionStatus.Open;
     xtxId: H256;
     owner: AccountId32;
@@ -20,6 +21,7 @@ export class Execution {
     currentStep: number;
 
     constructor(eventData: any) {
+        super();
         this.owner = eventData[0]
         this.xtxId = eventData[1]
         this.initializeSideEffects(eventData[2], eventData[3])
@@ -54,7 +56,7 @@ export class Execution {
         console.log(this.sideEffects)
     }
 
-    // update the status and set the step counter to the appropriate value
+    // update the status and set the step counter to the appropriate value.
     confirmSideEffect(sfxId: string) {
         this.sideEffects[sfxId].updateStatus(SideEffectStatus.ConfirmedOnTarget)
 
@@ -67,10 +69,22 @@ export class Execution {
         console.log("SFX in current step:", this.steps[this.currentStep].length)
         console.log("Unexecuted in step:", readyToExecute);
 
-        // If all steps are complete, move to next step
-        if (readyToExecute === 0) {
+        // If all steps are complete and there is a next step, move into it
+        if (readyToExecute === 0 && this.steps[this.currentStep + 1] !== undefined) {
             this.currentStep += 1
-            console.log("Updated step counter!")
+            let readyToConfirm: SideEffect[] = [];
+
+            // Check if we have SideEffects in the next step, that are ready to be confirmed
+            this.steps[this.currentStep].forEach((sfxId: string) => {
+                if(this.sideEffects[sfxId].status === SideEffectStatus.ConfirmedOnTarget) {
+                    readyToConfirm.push(this.sideEffects[sfxId])
+                }
+            })
+
+            // If we have found executed sfx, pass to executionManager
+            if(readyToConfirm.length > 0) {
+                this.emit("ExecutedSideEffectInCurrentStep", readyToConfirm)
+            }
         }
     }
 
@@ -93,14 +107,5 @@ export class Execution {
                 entry.status === SideEffectStatus.Open && entry.hasInsurance
             )
         })
-    }
-
-    // checks if a given sfxId is part of this excution
-    containsSfx(sfxId: string): boolean {
-        return Object.keys(this.sideEffects).includes(sfxId)
-    }
-
-    executeSfx(id: string): any[] | void {
-        return this.sideEffects[id].execute();
     }
 }
