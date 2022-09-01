@@ -83,6 +83,7 @@ export class SideEffect {
         this.status = status;
     }
 
+    // return an array of arguments to execute on target.
     execute(): any[] | void {
         switch(this.action) {
             case TransactionType.Transfer: {
@@ -94,30 +95,21 @@ export class SideEffect {
         }
     }
 
+    // updates status
     insuranceBonded(iAmExecuting: boolean) {
         this.status = SideEffectStatus.ReadyForExec;
         this.iAmExecuting = iAmExecuting;
     }
 
-    getTransactionArguments(): string[] {
-        switch(this.action) {
-            case TransactionType.Transfer: {
-                return this.getTransferArguments()
-            }
-            case TransactionType.Swap: {
-                return []
-            }
-        }
-    }
-
-    executionConfirmed(inclusionData: any, executor: any, targetInclusionHeight: any) {
-        console.log("ExecutionConfirmed!!")
+    // sfx was successfully executed on target and has the inclusion proof data
+    executedOnTarget(inclusionData: any, executor: any, targetInclusionHeight: any) {
         this.inclusionData = inclusionData;
         this.executor = executor;
         this.targetInclusionHeight = targetInclusionHeight;
         this.status = SideEffectStatus.ExecutedOnTarget;
     }
 
+    // ensure we can deal with the sfx action and set TransactionType
     private knownTransactionInterface(encodedAction: any): boolean {
         switch(encodedAction.toHuman()) {
             case "tran": {

@@ -1,6 +1,6 @@
 import { EventEmitter } from "events"
 import { ApiPromise, Keyring, WsProvider } from "@polkadot/api"
-import { SideEffect, TransactionType, EventMapper } from "../../utils/sideEffect"
+import { SideEffect, TransactionType, EventMapper } from "../../circuit/executions/sideEffect"
 import { getEventProofs, fetchNonce } from "../../utils"
 import createDebug from "debug"
 import { BN } from "@polkadot/util"
@@ -31,8 +31,9 @@ export default class SubstrateRelayer extends EventEmitter {
         this.nonce = await this.fetchNonce(this.api, this.signer.address)
     }
 
+    // Execute sfx on target
     async executeTx(sideEffect: SideEffect) {
-        console.log("Executing with nonce:", this.nonce)
+        SubstrateRelayer.debug(`Executing sfx ${this.toHuman(sideEffect.id)} - ${sideEffect.target} with nonce: ${this.nonce} 🔮`)
         switch (sideEffect.action) {
             case TransactionType.Transfer: {
                 const data = sideEffect.execute()
@@ -49,9 +50,10 @@ export default class SubstrateRelayer extends EventEmitter {
             default:
               SubstrateRelayer.debug(`invalid tx type: ${sideEffect.action}`)
         }
-        this.nonce += 1; // we optimistically increment the nonce. If a transaction fails, this will mess things up
+        this.nonce += 1; // we optimistically increment the nonce. If a transaction fails, this will mess things up. The alternative is to do it sequentially, which is very slow.
     }
 
+    // if sfx execution successful, generate inclusion proof and notify of successful execution
     async handleTx(sideEffect: SideEffect, result) {
         if (result.status.isFinalized) {
             const blockHash = result.status.asFinalized
@@ -72,13 +74,12 @@ export default class SubstrateRelayer extends EventEmitter {
                 block_hash: blockHash
             }
 
-            sideEffect.executionConfirmed(
+            sideEffect.executedOnTarget(
                 inclusionData,
                 this.signer.addressRaw,
                 blockNumber
             )
 
-            SubstrateRelayer.debug(`SideEffect Executed: ${success}, ${blockHash}`)
             this.emit("SideEffectExecuted", sideEffect.id)
         }
     }
@@ -101,5 +102,9 @@ export default class SubstrateRelayer extends EventEmitter {
         address: string
     ): Promise<number> {
         return parseInt((await api.rpc.system.accountNextIndex(address)).toHuman())
+    }
+
+    private toHuman(id: string) {
+        return id.substring(0, 8)
     }
 }

@@ -1,7 +1,7 @@
 import { EventEmitter } from "events"
 import { ApiPromise, Keyring, WsProvider } from "@polkadot/api"
 import { fetchNonce } from "../utils/"
-import { SideEffect } from "../utils/sideEffect"
+import { SideEffect } from "./executions/sideEffect"
 import createDebug from "debug"
 import types from "../types.json"
 const fs = require("fs");
@@ -85,18 +85,9 @@ export default class CircuitRelayer extends EventEmitter {
                     )
                     .signAndSend(this.signer, { nonce }, result => {
                         if (result.status.isFinalized) {
-                            CircuitRelayer.debug(
-                                "### confirmSideEffects result",
-                                // JSON.stringify(result, null, 2)
-                            )
-
                             const success =
                                 result.events[result.events.length - 1].event.method ===
                                 "ExtrinsicSuccess"
-
-                            CircuitRelayer.debug(
-                                `sfx confirmed: ${success}, ${result.status.asFinalized}`
-                            )
 
                             if (success) resolve(undefined)
                         else
@@ -111,7 +102,6 @@ export default class CircuitRelayer extends EventEmitter {
 }
 let counter = 4;
 export const exportData = (data: any, fileName: string, transactionType: string) => {
-    console.log("Exporting data:", counter)
     let deepCopy;
     // since its pass-by-reference
     if(Array.isArray(data)) {
@@ -125,7 +115,6 @@ export const exportData = (data: any, fileName: string, transactionType: string)
             console.log("Err", err);
         } else {
             counter += 1;
-            console.log("JSON saved to " + fileName);
         }
     });
 }

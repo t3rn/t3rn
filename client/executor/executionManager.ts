@@ -1,17 +1,19 @@
 import {EventEmitter} from "events"
 import createDebug from "debug"
-import {Execution} from "./utils/execution";
+import {Execution} from "./circuit/executions/execution";
 import {ProfitEstimation} from "./profitEstimation";
-import {SideEffect, SideEffectStatus} from "./utils/sideEffect";
+import {SideEffect, SideEffectStatus} from "./circuit/executions/sideEffect";
 
+// A type used for storing the different SideEffects throughout their respective life-cycle.
+// Please note that waitingForInsurance and readyToExecute are only used to track the progress. The actual logic is handeled in the execution
 type Queue = {
     gateways: {
         blockHeight: number
-        // used for SideEffects that are waiting for execution
+        // sfx that are waiting the insurance to be bonded
         waitingForInsurance: string[]
-        // caught circuit event but not executed yet
+        // sfx that can be executed on target, ignoring the step rules.
         readyToExecute: string[]
-        // to confirm we need to wait for a specific block height to be reached
+        // Executed sfx and their respective execution block.
         readyToConfirm: {
             [block: number]: string[]
         }
@@ -27,7 +29,7 @@ export class ExecutionManager extends EventEmitter {
     executions: {
         [id: string]: Execution
     } = {}
-    // maps sfxId to xtxId
+    // a lookup mapping, to find a sfx xtxId
     sfxExecutionLookup: {
         [sfxId: string]: string
     } = {};
@@ -44,6 +46,7 @@ export class ExecutionManager extends EventEmitter {
         }
     }
 
+    // add a new execution to the execution manager and initialize event listeners
     addExecution(execution: Execution) {
         this.executions[execution.xtxId.toHex()] = execution;
 
@@ -52,12 +55,13 @@ export class ExecutionManager extends EventEmitter {
             this.sfxExecutionLookup[sfxId] = execution.xtxId.toHex()
         })
 
-        // confirmation trigger that is called if the previous step is complete and we have executed sfx
+        // listens for step confirmation signal. This is called after a step is confirmed, and SideEffects in the next step are already executed.
+        // In the current configuration this is not used, as the executions of a next step are only started once the former one is complete (next listener)
         execution.on("ConfirmSideEffectInCurrentStep", (sideEffects: SideEffect[]) => {
             this.executeConfirmationStepQueue(sideEffects)
         })
 
-          // confirmation trigger that is called if the previous step is complete and we have executed sfx
+        // confirmation trigger that is called if the previous step is complete and we have executed sfx
         execution.on("ExecuteSideEffectInCurrentStep", (sideEffects: SideEffect[]) => {
             sideEffects.forEach(sideEffect=> {
                 this.emit("ExecuteSideEffect", sideEffect)
@@ -71,22 +75,25 @@ export class ExecutionManager extends EventEmitter {
 
         const needInsurance = Object.values(execution.sideEffects).filter((sfx: SideEffect) => sfx.hasInsurance)
 
-        // add waiting transactions to queue
+        // adds transaction waiting for insurance bond into correct queue
         needInsurance.forEach(sfx => {
             this.queue[sfx.target].waitingForInsurance.push(sfx.id)
         })
 
-        console.log("Needs insurance:", needInsurance.length)
         // emit insured txs we want to bond
         this.emit("BondInsurance", needInsurance)
 
+        ExecutionManager.debug("New Execution Received:", this.queue)
+    }
+
+    // the entire execution has terminated
+    executionComplete(xtxId: string) {
+        this.executions[xtxId].complete()
+        ExecutionManager.debug("✨✨✨ Execution Complete ✨✨✨", xtxId)
         console.log(this.queue)
     }
 
-    completeExecution(xtxId: string) {
-        this.executions[xtxId].complete()
-    }
-
+    // update sfx once insurance has been bonded
     insuranceBonded(sfxId: string, iAmExecuting: boolean) {
         if (!this.sfxExecutionLookup[sfxId]) return
         const sfx = this.executions[this.sfxExecutionLookup[sfxId]].sideEffects[sfxId];
@@ -97,21 +104,21 @@ export class ExecutionManager extends EventEmitter {
         this.queue[sfx.target].readyToExecute.push(sfxId)
 
         this.executions[this.sfxExecutionLookup[sfxId]].sideEffects[sfxId].insuranceBonded(iAmExecuting)
+        ExecutionManager.debug(`Insurance Bonded: ${this.toHuman(sfxId)} - ${sfx.target}`)
     }
 
+    // the execution is ready to be executed. This happends once all insured sfx have received their insurance
     xtxReady(xtxId: string) {
-        console.log("Execution manager!")
         this.executions[xtxId].readyToExecute()
 
-        // for now we will execute all sideEffects that are available
+        // this could potentially be useless, as all sfxs should be readyToExecute at this stage. Other executor might have snatched some sfx, so leaving this here
         const canExecute = this.executions[xtxId].getReadyToExecute()
-
-        console.log("canExecute:", canExecute)
 
         canExecute.forEach(sideEffect=> {
             this.emit("ExecuteSideEffect", sideEffect)
         })
-        console.log("Queue:", this.queue)
+        ExecutionManager.debug("Execution Ready:", xtxId)
+        console.log(this.queue)
     }
 
     // once SideEffect has been executed on target we add it to the confirming pool
@@ -128,10 +135,10 @@ export class ExecutionManager extends EventEmitter {
 
         this.queue[sfx.target].readyToConfirm[sfx.targetInclusionHeight.toNumber()].push(sfxId)
 
-        ExecutionManager.debug("Executed:", this.queue)
+        ExecutionManager.debug(`Executed: ${this.toHuman(sfxId)} - ${sfx.target} 🏁`)
     }
 
-    // Once confirmed, delete from queue
+    // Once confirmed on target, delete from queue
     sideEffectConfirmed(sfxId: string) {
         if (!this.sfxExecutionLookup[sfxId]) return
         const sfx = this.executions[this.sfxExecutionLookup[sfxId]].sideEffects[sfxId]
@@ -139,6 +146,7 @@ export class ExecutionManager extends EventEmitter {
         this.executions[this.sfxExecutionLookup[sfxId]].sideEffectConfirmed(sfxId)
         //remove from local queue
         this.removeConfirming(sfxId, sfx.target, sfx.targetInclusionHeight.toNumber())
+        ExecutionManager.debug(`Confirmed: ${this.toHuman(sfxId)} - ${sfx.target} ✅`)
     }
 
     // New header range was submitted on circuit
@@ -161,34 +169,26 @@ export class ExecutionManager extends EventEmitter {
                 readyByHeight = readyByHeight.concat(this.queue[gatewayId].readyToConfirm[block])
             }
         })
-
-        console.log("Ready By Height:", readyByHeight)
-
         const readyByStep: SideEffect[] = [];
 
         // filter the SideEffects that can be confirmed in the current step
         readyByHeight.forEach(sfxId => {
-            console.log("Current Step:", this.executions[this.sfxExecutionLookup[sfxId]].currentStep)
             const sfx: SideEffect = this.executions[this.sfxExecutionLookup[sfxId]].sideEffects[sfxId];
-            console.log("SFX step:", sfx.step)
             if(sfx.step === this.executions[sfx.xtxId].currentStep) {
                 readyByStep.push(sfx)
             }
         })
 
-        console.log("ready by step:", readyByStep.map(entry => entry.id))
-
-        // ExecutionManager.debug("Ready to Submit", readyByStep)
-
+        ExecutionManager.debug("Confirmation Queue - ReadyToConfirm:", readyByStep.length)
         this.emit("ConfirmSideEffects", readyByStep)
     }
 
+    // Checks if there are any sfx that can be confirmed, after another sfx was conmfirmed. This function is not used in the current configuration, as we wait with executing a nexts steps sfxs until step is complete
     executeConfirmationStepQueue(sideEffects: SideEffect[]) {
         let readyToConfirm = sideEffects.filter((sfx: SideEffect) => {
             return parseInt(this.queue[sfx.target].blockHeight)>= sfx.targetInclusionHeight.toNumber()
         })
 
-         console.log("ready:", readyToConfirm.map(entry => entry.id))
         if(readyToConfirm.length > 0) {
             this.emit("ConfirmSideEffects", readyToConfirm)
         }
@@ -209,5 +209,9 @@ export class ExecutionManager extends EventEmitter {
             const index = this.queue[gatewayId].readyToConfirm[blockHeight].indexOf(id)
             this.queue[gatewayId].readyToConfirm[blockHeight].splice(index, 1)
         }
+    }
+
+    private toHuman(id: string) {
+        return id.substring(0, 8)
     }
 }

@@ -40,11 +40,13 @@ export class Execution extends EventEmitter {
                 this.steps.push([ids[i].toHex()]) // uninsured get their own step
             }
         }
+
         // prepend insured steps if we have any
         if(insured.length > 0) {
             this.steps = [insured, ...this.steps]
         }
 
+        // set the step index for each sfx
         Object.keys(this.sideEffects).forEach(sfxId => {
             for(let i = 0; i < this.steps.length; i++) {
                 if(this.steps[i].includes(sfxId)) {
@@ -52,8 +54,6 @@ export class Execution extends EventEmitter {
                 }
             }
         })
-
-        console.log(this.sideEffects)
     }
 
     // update the status and set the step counter to the appropriate value.
@@ -64,10 +64,6 @@ export class Execution extends EventEmitter {
         const readyToExecute = this.steps[this.currentStep].filter((sfxId: string) => {
             return this.sideEffects[sfxId].status === SideEffectStatus.ExecutedOnTarget
         }).length;
-        console.log("Current Step:", this.currentStep)
-
-        console.log("SFX in current step:", this.steps[this.currentStep].length)
-        console.log("Unexecuted in step:", readyToExecute);
 
         // If all steps are complete and there is a next step, move into it
         if (readyToExecute === 0 && this.steps[this.currentStep + 1] !== undefined) {
@@ -104,9 +100,7 @@ export class Execution extends EventEmitter {
         this.status = ExecutionStatus.Complete;
     }
 
-    // returns the side effects that ready to execute
-    // for dirty: ReadyToExec && !hasInsurance
-    // for insured: Open && hasInsurance
+    // returns the sfxs that ready to execute
     getReadyToExecute(): SideEffect[] {
         return Object.values(this.sideEffects).filter(entry => {
             return entry.status === SideEffectStatus.ReadyForExec && entry.iAmExecuting && entry.step === this.currentStep

@@ -1,5 +1,5 @@
-import { SideEffect } from "./utils/sideEffect";
-import {TransactionType} from "./utils/sideEffect";
+import { SideEffect } from "./circuit/executions/sideEffect";
+import {TransactionType} from "./circuit/executions/sideEffect";
 const BN = require("bn.js");
 
 const ROCOCO_PRICE = 100;

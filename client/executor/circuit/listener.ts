@@ -3,7 +3,7 @@ import { EventEmitter } from "events"
 import { TextDecoder } from "util"
 import{ ApiPromise, WsProvider }from '@polkadot/api';
 import { H256 } from '@polkadot/types/interfaces';
-import { Execution } from "../utils/execution"
+import { Execution } from "./executions/execution"
 import createDebug from "debug"
 
 export default class CircuitListener extends EventEmitter {
