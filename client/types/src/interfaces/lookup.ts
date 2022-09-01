@@ -323,6 +323,8 @@ export default {
   PalletCircuitEvent: {
     _enum: {
       XTransactionReceivedForExec: "H256",
+      SideEffectInsuranceReceived: "(H256,AccountId32)",
+      SideEffectConfirmed: "H256",
       XTransactionReadyForExec: "H256",
       XTransactionStepFinishedExec: "H256",
       XTransactionXtxFinishedExecAllSteps: "H256",

@@ -486,6 +486,10 @@ declare module "@polkadot/types/lookup" {
   interface PalletCircuitEvent extends Enum {
     readonly isXTransactionReceivedForExec: boolean;
     readonly asXTransactionReceivedForExec: H256;
+    readonly isSideEffectInsuranceReceived: boolean;
+    readonly asSideEffectInsuranceReceived: ITuple<[H256, AccountId32]>;
+    readonly isSideEffectConfirmed: boolean;
+    readonly asSideEffectConfirmed: H256;
     readonly isXTransactionReadyForExec: boolean;
     readonly asXTransactionReadyForExec: H256;
     readonly isXTransactionStepFinishedExec: boolean;
@@ -510,6 +514,8 @@ declare module "@polkadot/types/lookup" {
     readonly asEscrowTransfer: ITuple<[AccountId32, AccountId32, u128]>;
     readonly type:
       | "XTransactionReceivedForExec"
+      | "SideEffectInsuranceReceived"
+      | "SideEffectConfirmed"
       | "XTransactionReadyForExec"
       | "XTransactionStepFinishedExec"
       | "XTransactionXtxFinishedExecAllSteps"

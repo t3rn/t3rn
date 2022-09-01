@@ -156,6 +156,8 @@ declare module "@polkadot/api-base/types/events" {
         ApiType,
         [AccountId32, H256, Vec<T3rnTypesSideEffect>, Vec<H256>]
       >;
+      SideEffectConfirmed: AugmentedEvent<ApiType, [H256]>;
+      SideEffectInsuranceReceived: AugmentedEvent<ApiType, [H256, AccountId32]>;
       SideEffectsConfirmed: AugmentedEvent<
         ApiType,
         [H256, Vec<Vec<T3rnPrimitivesSideEffectFullSideEffect>>]
