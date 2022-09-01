@@ -39,38 +39,13 @@ export default class CircuitRelayer extends EventEmitter {
             await this.api.tx.circuit.bondInsuranceDeposit(xtxId, id)
                 .signAndSend(this.signer, {nonce}, async res => {
                     if(res.status.isFinalized) {
+                        exportData([{xtxId, id}], `bond-insurance-${sideEffect.id}.json`, "confirm")
 
                     } else {
                         // console.log(res.status.toHuman())
+                        // add some error handling here
                     }
                 })
-
-        // }
-        // const toExport: any = [];
-        // const calls = sideEffects
-        //   // four args mean the call requires an insurance deposit
-        //   .filter(sideEffect => sideEffect.object.encodedArgs.length === 4)
-        //   .map(sideEffect => {
-        //     const xtxId = this.api.createType("Hash", sideEffect.xtxId);
-        //     const id = this.api.createType("Hash", sideEffect.getId());
-        //     toExport.push({xtxId, id})
-        //
-        //     return this.api.tx.circuit.bondInsuranceDeposit(
-        //       sideEffect.xtxId,
-        //       sideEffect.getId()
-        //     )
-        //   }
-        //   )
-        //
-        // if (calls.length) {
-        //   const nonce = await fetchNonce(this.api, this.signer.address)
-        //   CircuitRelayer.debug("bondInsuranceDeposits nonce", nonce.toString())
-        //   await this.api.tx.utility
-        //     .batchAll(calls)
-        //     .signAndSend(this.signer, { nonce })
-        //     .then(() => {
-        //         exportData(toExport, `post-bond.json`, "bond");
-        //     })
         }
     }
 
@@ -83,21 +58,21 @@ export default class CircuitRelayer extends EventEmitter {
             const confirmedSideEffect = this.api.createType("ConfirmedSideEffect", {
                 err: null,
                 output: null,
-                inclusion_data: inclusionData.toJSON(),
+                inclusion_data: inclusionData.toHex(),
                 executioner: sideEffect.executor,
                 receivedAt: receivedAt,
                 cost: null,
             })
 
             const xtxId: any = this.api.createType("XtxId", sideEffect.xtxId);
-            // exportData([{xtxId, sideEffect: sideEffect.raw, confirmedSideEffect}], `confirm-transfer-${sideEffect.target}.json`, "confirm")
+            exportData([{xtxId, sideEffect: sideEffect.raw, confirmedSideEffect}], `confirm-transfer-${sideEffect.id}.json`, "confirm")
 
             await new Promise((resolve, reject) => {
                 this.api.tx.circuit
                     .confirmSideEffect(
                         xtxId.toHuman(),
                         sideEffect.raw.toHuman(),
-                        {
+                        { // for some reason im not able to pass confirmedSideEffect here
                             err: null,
                             output: null,
                             inclusionData: inclusionData.toHex(),
@@ -134,7 +109,7 @@ export default class CircuitRelayer extends EventEmitter {
         }
     }
 }
-let counter = 7;
+let counter = 4;
 export const exportData = (data: any, fileName: string, transactionType: string) => {
     console.log("Exporting data:", counter)
     let deepCopy;
