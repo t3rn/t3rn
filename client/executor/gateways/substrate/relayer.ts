@@ -13,13 +13,13 @@ export default class SubstrateRelayer extends EventEmitter {
     rpc: string
     signer: any
     name: string
+    nonce: number
 
     async setup(rpc: string, name: string) {
         this.rpc = rpc
         this.api = await ApiPromise.create({
             provider: new WsProvider(rpc),
         })
-
         const keyring = new Keyring({ type: "sr25519" })
 
         this.signer =
@@ -27,19 +27,18 @@ export default class SubstrateRelayer extends EventEmitter {
               ? keyring.addFromUri("//Executor//default")
               : keyring.addFromMnemonic(process.env.SIGNER_ROCOCO)
 
-          this.name = name
+        this.name = name
+        this.nonce = await this.fetchNonce(this.api, this.signer.address)
     }
 
     async executeTx(sideEffect: SideEffect) {
-        const nonce = await this.fetchNonce(this.api, this.signer.address)
-        SubstrateRelayer.debug("executeTx nonce", nonce.toString())
-
+        console.log("Executing with nonce:", this.nonce)
         switch (sideEffect.action) {
             case TransactionType.Transfer: {
                 const data = sideEffect.execute()
-                await this.api.tx.balances
+                this.api.tx.balances
                     .transfer(data[0], data[1])
-                    .signAndSend(this.signer, { nonce }, async result => {
+                    .signAndSend(this.signer, { nonce: this.nonce }, async result => {
                         if (result.status.isFinalized) {
                             this.handleTx(sideEffect, result)
                         }
@@ -50,6 +49,7 @@ export default class SubstrateRelayer extends EventEmitter {
             default:
               SubstrateRelayer.debug(`invalid tx type: ${sideEffect.action}`)
         }
+        this.nonce += 1; // we optimistically increment the nonce. If a transaction fails, this will mess things up
     }
 
     async handleTx(sideEffect: SideEffect, result) {
@@ -96,10 +96,10 @@ export default class SubstrateRelayer extends EventEmitter {
         SubstrateRelayer.debug("cannot find transaction's event")
     }
 
-    fetchNonce(
+    async fetchNonce(
         api: ApiPromise,
         address: string
-    ): Promise<BN> {
-        return api.rpc.system.accountNextIndex(address)
+    ): Promise<number> {
+        return parseInt((await api.rpc.system.accountNextIndex(address)).toHuman())
     }
 }

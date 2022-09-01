@@ -84,7 +84,7 @@ export class Execution extends EventEmitter {
                 }
             })
 
-            // If we have found executed sfx, pass to executionManager
+            // If we have found executed sfx, pass to executionManager. This might be obsolete
             if(readyToConfirm.length > 0) {
                 this.emit("ExecutedSideEffectInCurrentStep", readyToConfirm)
             }

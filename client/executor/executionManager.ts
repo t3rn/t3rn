@@ -64,12 +64,10 @@ export class ExecutionManager extends EventEmitter {
             })
         })
 
-
         // add dirty transactions to queue
         Object.values(execution.sideEffects).filter((sfx: SideEffect) => !sfx.hasInsurance).forEach(sfx => {
             this.queue[sfx.target].readyToExecute.push(sfx.id)
         })
-
 
         const needInsurance = Object.values(execution.sideEffects).filter((sfx: SideEffect) => sfx.hasInsurance)
 
@@ -111,7 +109,6 @@ export class ExecutionManager extends EventEmitter {
         console.log("canExecute:", canExecute)
 
         canExecute.forEach(sideEffect=> {
-            // this.queue[sideEffect.target].readyToExecute.push(sideEffect.id)
             this.emit("ExecuteSideEffect", sideEffect)
         })
         console.log("Queue:", this.queue)
@@ -150,12 +147,12 @@ export class ExecutionManager extends EventEmitter {
         blockHeight = parseInt(blockHeight)
         if (this.queue[gatewayId]) {
             this.queue[gatewayId].blockHeight = blockHeight
-            this.executeQueue(gatewayId)
+            this.executeConfirmationQueue(gatewayId)
         }
     }
 
     // checks which executed SideEffects can be confirmed on circuit
-    executeQueue(gatewayId: string) {
+    executeConfirmationQueue(gatewayId: string) {
         // contains the sfxIds of SideEffects that could be confirmed based on the current blockHeight of the light client
         let readyByHeight: string[] = [];
         Object.keys(this.queue[gatewayId].readyToConfirm).forEach(block => {
@@ -170,7 +167,6 @@ export class ExecutionManager extends EventEmitter {
         const readyByStep: SideEffect[] = [];
 
         // filter the SideEffects that can be confirmed in the current step
-        // ToDo a Sfx confirmation should trigger this function again, as the step could have updated
         readyByHeight.forEach(sfxId => {
             console.log("Current Step:", this.executions[this.sfxExecutionLookup[sfxId]].currentStep)
             const sfx: SideEffect = this.executions[this.sfxExecutionLookup[sfxId]].sideEffects[sfxId];
