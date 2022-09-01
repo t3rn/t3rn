@@ -60,9 +60,10 @@ class InstanceManager {
         })
 
         // Insurance for SideEffect has been posted
-        this.circuitListener.on("SideEffectInsuranceReceived", async (sfxId: string) => {
+       this.circuitListener.on("SideEffectInsuranceReceived",  (sfxId: string, executor: any) => {
             InstanceManager.debug("SideEffectInsuranceReceived")
-            this.executionManager.sfxReady(sfxId)
+            const iAmExecuting = this.circuitRelayer.signer.addressRaw.toString() == executor.toU8a().toString();
+            this.executionManager.insuranceBonded(sfxId, iAmExecuting)
         })
 
         // new Execution has been received
@@ -83,10 +84,16 @@ class InstanceManager {
             this.executionManager.completeExecution(xtxId)
         })
 
-         // New header range has been received
+        // New header range has been received
         this.circuitListener.on("NewHeaderRangeAvailable", data => {
             InstanceManager.debug("NewHeaderRangeAvailable:", data.height, data.gatewayId)
             this.executionManager.updateGatewayHeight(data.gatewayId, data.height)
+        })
+
+        // trigger SideEffect confirmation on circuit
+        this.executionManager.on("BondInsurance", (sideEffects: SideEffect[]) => {
+              InstanceManager.debug("BondInsurance")
+              this.circuitRelayer.bondInsuranceDeposits(sideEffects)
         })
 
         // Execute SideEffect on Target
@@ -96,13 +103,10 @@ class InstanceManager {
         })
 
         // trigger SideEffect confirmation on circuit
-        this.executionManager.on(
-            "ConfirmSideEffects",
-            (sideEffects: SideEffect[]) => {
+        this.executionManager.on("ConfirmSideEffects", (sideEffects: SideEffect[]) => {
               InstanceManager.debug("ConfirmSideEffects")
               this.circuitRelayer.confirmSideEffects(sideEffects)
-          }
-        )
+        })
 
         // SideEffect was executed on Target
         this.circuitRelayer.on("SideEffectExecuted", (sfxId: string) => {

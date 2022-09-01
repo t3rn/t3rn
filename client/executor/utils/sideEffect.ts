@@ -14,13 +14,10 @@ export const EventMapper = ["Transfer", "MultiTransfer"]
 
 export enum SideEffectStatus {
     Invalid,
-    Open,
+    WaitingForInsurance,
     ReadyForExec,
-    IAmExecuting,
-    SomeoneIsExecuting,
-    ConfirmedOnTarget,
+    ExecutedOnTarget,
     SideEffectConfirmed,
-    AllStepsConfirmed
 }
 
 export class SideEffect {
@@ -29,6 +26,7 @@ export class SideEffect {
     action: TransactionType;
     target: string;
     hasInsurance: boolean;
+    iAmExecuting: boolean;
 
     // SideEffect data
     id: string;
@@ -64,11 +62,12 @@ export class SideEffect {
         switch(action) {
             case TransactionType.Transfer: {
                 if(argsLength === 4) {
-                    this.status = SideEffectStatus.Open;
+                    this.status = SideEffectStatus.WaitingForInsurance;
                     return true;
                 } else {
                     // if the sfx is dirty, its ready on creation.
                     this.status = SideEffectStatus.ReadyForExec;
+                    this.iAmExecuting = true; // Dirty sfx can always be executed without bond
                     return false
                 }
                 break;
@@ -95,8 +94,9 @@ export class SideEffect {
         }
     }
 
-    ready() {
+    insuranceBonded(iAmExecuting: boolean) {
         this.status = SideEffectStatus.ReadyForExec;
+        this.iAmExecuting = iAmExecuting;
     }
 
     getTransactionArguments(): string[] {
@@ -111,10 +111,11 @@ export class SideEffect {
     }
 
     executionConfirmed(inclusionData: any, executor: any, targetInclusionHeight: any) {
+        console.log("ExecutionConfirmed!!")
         this.inclusionData = inclusionData;
         this.executor = executor;
         this.targetInclusionHeight = targetInclusionHeight;
-        this.status = SideEffectStatus.ConfirmedOnTarget;
+        this.status = SideEffectStatus.ExecutedOnTarget;
     }
 
     private knownTransactionInterface(encodedAction: any): boolean {

@@ -57,12 +57,12 @@ export class Execution extends EventEmitter {
     }
 
     // update the status and set the step counter to the appropriate value.
-    confirmSideEffect(sfxId: string) {
-        this.sideEffects[sfxId].updateStatus(SideEffectStatus.ConfirmedOnTarget)
+    sideEffectConfirmed(sfxId: string) {
+        this.sideEffects[sfxId].updateStatus(SideEffectStatus.SideEffectConfirmed)
 
         // check how many transactions in the ExecutionStep are still open
         const readyToExecute = this.steps[this.currentStep].filter((sfxId: string) => {
-            return this.sideEffects[sfxId].status < 5 // not executed SideEffects
+            return this.sideEffects[sfxId].status === SideEffectStatus.ExecutedOnTarget
         }).length;
         console.log("Current Step:", this.currentStep)
 
@@ -73,17 +73,25 @@ export class Execution extends EventEmitter {
         if (readyToExecute === 0 && this.steps[this.currentStep + 1] !== undefined) {
             this.currentStep += 1
             let readyToConfirm: SideEffect[] = [];
+            let readyToExecute: SideEffect[] = [];
 
             // Check if we have SideEffects in the next step, that are ready to be confirmed
             this.steps[this.currentStep].forEach((sfxId: string) => {
-                if(this.sideEffects[sfxId].status === SideEffectStatus.ConfirmedOnTarget) {
+                if(this.sideEffects[sfxId].status === SideEffectStatus.ExecutedOnTarget) {
                     readyToConfirm.push(this.sideEffects[sfxId])
+                } else if (this.sideEffects[sfxId].status === SideEffectStatus.ReadyForExec) {
+                    readyToExecute.push(this.sideEffects[sfxId])
                 }
             })
 
             // If we have found executed sfx, pass to executionManager
             if(readyToConfirm.length > 0) {
                 this.emit("ExecutedSideEffectInCurrentStep", readyToConfirm)
+            }
+
+            // if we have found waiting sfx, execute
+            if(readyToExecute.length > 0) {
+                this.emit("ExecuteSideEffectInCurrentStep", readyToExecute)
             }
         }
     }
@@ -96,16 +104,12 @@ export class Execution extends EventEmitter {
         this.status = ExecutionStatus.Complete;
     }
 
-    // returns the side effects that open to execution.
+    // returns the side effects that ready to execute
     // for dirty: ReadyToExec && !hasInsurance
     // for insured: Open && hasInsurance
-    getOpenSideEffects(): SideEffect[] {
+    getReadyToExecute(): SideEffect[] {
         return Object.values(this.sideEffects).filter(entry => {
-            return (
-                entry.status === SideEffectStatus.ReadyForExec && !entry.hasInsurance
-                ||
-                entry.status === SideEffectStatus.Open && entry.hasInsurance
-            )
+            return entry.status === SideEffectStatus.ReadyForExec && entry.iAmExecuting && entry.step === this.currentStep
         })
     }
 }

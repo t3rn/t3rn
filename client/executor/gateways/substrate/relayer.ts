@@ -3,6 +3,7 @@ import { ApiPromise, Keyring, WsProvider } from "@polkadot/api"
 import { SideEffect, TransactionType, EventMapper } from "../../utils/sideEffect"
 import { getEventProofs, fetchNonce } from "../../utils"
 import createDebug from "debug"
+import { BN } from "@polkadot/util"
 
 export default class SubstrateRelayer extends EventEmitter {
     static debug = createDebug("substrate-relayer")
@@ -30,7 +31,7 @@ export default class SubstrateRelayer extends EventEmitter {
     }
 
     async executeTx(sideEffect: SideEffect) {
-        const nonce = await fetchNonce(this.api, this.signer.address)
+        const nonce = await this.fetchNonce(this.api, this.signer.address)
         SubstrateRelayer.debug("executeTx nonce", nonce.toString())
 
         switch (sideEffect.action) {
@@ -93,5 +94,12 @@ export default class SubstrateRelayer extends EventEmitter {
 
         if (event) return event.event
         SubstrateRelayer.debug("cannot find transaction's event")
+    }
+
+    fetchNonce(
+        api: ApiPromise,
+        address: string
+    ): Promise<BN> {
+        return api.rpc.system.accountNextIndex(address)
     }
 }

@@ -31,32 +31,47 @@ export default class CircuitRelayer extends EventEmitter {
     }
 
     async bondInsuranceDeposits(sideEffects: SideEffect[]) {
-    // const toExport: any = [];
-    // const calls = sideEffects
-    //   // four args mean the call requires an insurance deposit
-    //   .filter(sideEffect => sideEffect.object.encodedArgs.length === 4)
-    //   .map(sideEffect => {
-    //     const xtxId = this.api.createType("Hash", sideEffect.xtxId);
-    //     const id = this.api.createType("Hash", sideEffect.getId());
-    //     toExport.push({xtxId, id})
-    //
-    //     return this.api.tx.circuit.bondInsuranceDeposit(
-    //       sideEffect.xtxId,
-    //       sideEffect.getId()
-    //     )
-    //   }
-    //   )
-    //
-    // if (calls.length) {
-    //   const nonce = await fetchNonce(this.api, this.signer.address)
-    //   CircuitRelayer.debug("bondInsuranceDeposits nonce", nonce.toString())
-    //   await this.api.tx.utility
-    //     .batchAll(calls)
-    //     .signAndSend(this.signer, { nonce })
-    //     .then(() => {
-    //         exportData(toExport, `post-bond.json`, "bond");
-    //     })
-    // }
+        for(const sideEffect of sideEffects) {
+            const nonce = await fetchNonce(this.api, this.signer.address)
+            const xtxId = this.api.createType("Hash", sideEffect.xtxId);
+            const id = this.api.createType("Hash", sideEffect.id);
+
+            await this.api.tx.circuit.bondInsuranceDeposit(xtxId, id)
+                .signAndSend(this.signer, {nonce}, async res => {
+                    if(res.status.isFinalized) {
+
+                    } else {
+                        // console.log(res.status.toHuman())
+                    }
+                })
+
+        // }
+        // const toExport: any = [];
+        // const calls = sideEffects
+        //   // four args mean the call requires an insurance deposit
+        //   .filter(sideEffect => sideEffect.object.encodedArgs.length === 4)
+        //   .map(sideEffect => {
+        //     const xtxId = this.api.createType("Hash", sideEffect.xtxId);
+        //     const id = this.api.createType("Hash", sideEffect.getId());
+        //     toExport.push({xtxId, id})
+        //
+        //     return this.api.tx.circuit.bondInsuranceDeposit(
+        //       sideEffect.xtxId,
+        //       sideEffect.getId()
+        //     )
+        //   }
+        //   )
+        //
+        // if (calls.length) {
+        //   const nonce = await fetchNonce(this.api, this.signer.address)
+        //   CircuitRelayer.debug("bondInsuranceDeposits nonce", nonce.toString())
+        //   await this.api.tx.utility
+        //     .batchAll(calls)
+        //     .signAndSend(this.signer, { nonce })
+        //     .then(() => {
+        //         exportData(toExport, `post-bond.json`, "bond");
+        //     })
+        }
     }
 
     async confirmSideEffects(sideEffects: SideEffect[]) {

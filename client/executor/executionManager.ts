@@ -8,11 +8,11 @@ type Queue = {
     gateways: {
         blockHeight: number
         // used for SideEffects that are waiting for execution
-        open: string[]
+        waitingForInsurance: string[]
         // caught circuit event but not executed yet
-        executing: string[]
+        readyToExecute: string[]
         // to confirm we need to wait for a specific block height to be reached
-        confirming: {
+        readyToConfirm: {
             [block: number]: string[]
         }
     }
@@ -38,9 +38,9 @@ export class ExecutionManager extends EventEmitter {
     addGateway(id: string) {
         this.queue[id] = {
             blockHeight: 0,
-            open: [],
-            executing: [],
-            confirming: {},
+            waitingForInsurance: [],
+            readyToExecute: [],
+            readyToConfirm: {},
         }
     }
 
@@ -52,30 +52,69 @@ export class ExecutionManager extends EventEmitter {
             this.sfxExecutionLookup[sfxId] = execution.xtxId.toHex()
         })
 
-        execution.on("ExecutedSideEffectInCurrentStep", (sideEffects: SideEffect[]) => {
-            this.executeStepQueue(sideEffects)
+        // confirmation trigger that is called if the previous step is complete and we have executed sfx
+        execution.on("ConfirmSideEffectInCurrentStep", (sideEffects: SideEffect[]) => {
+            this.executeConfirmationStepQueue(sideEffects)
         })
+
+          // confirmation trigger that is called if the previous step is complete and we have executed sfx
+        execution.on("ExecuteSideEffectInCurrentStep", (sideEffects: SideEffect[]) => {
+            sideEffects.forEach(sideEffect=> {
+                this.emit("ExecuteSideEffect", sideEffect)
+            })
+        })
+
+
+        // add dirty transactions to queue
+        Object.values(execution.sideEffects).filter((sfx: SideEffect) => !sfx.hasInsurance).forEach(sfx => {
+            this.queue[sfx.target].readyToExecute.push(sfx.id)
+        })
+
+
+        const needInsurance = Object.values(execution.sideEffects).filter((sfx: SideEffect) => sfx.hasInsurance)
+
+        // add waiting transactions to queue
+        needInsurance.forEach(sfx => {
+            this.queue[sfx.target].waitingForInsurance.push(sfx.id)
+        })
+
+        console.log("Needs insurance:", needInsurance.length)
+        // emit insured txs we want to bond
+        this.emit("BondInsurance", needInsurance)
+
+        console.log(this.queue)
     }
 
     completeExecution(xtxId: string) {
         this.executions[xtxId].complete()
     }
 
+    insuranceBonded(sfxId: string, iAmExecuting: boolean) {
+        if (!this.sfxExecutionLookup[sfxId]) return
+        const sfx = this.executions[this.sfxExecutionLookup[sfxId]].sideEffects[sfxId];
+
+        // remove from old queue
+        this.removeFromQueue("waitingForInsurance", sfxId, sfx.target)
+        // add to new one
+        this.queue[sfx.target].readyToExecute.push(sfxId)
+
+        this.executions[this.sfxExecutionLookup[sfxId]].sideEffects[sfxId].insuranceBonded(iAmExecuting)
+    }
+
     xtxReady(xtxId: string) {
+        console.log("Execution manager!")
         this.executions[xtxId].readyToExecute()
 
         // for now we will execute all sideEffects that are available
-        const canExecute = this.executions[xtxId].getOpenSideEffects()
+        const canExecute = this.executions[xtxId].getReadyToExecute()
+
+        console.log("canExecute:", canExecute)
 
         canExecute.forEach(sideEffect=> {
-            this.queue[sideEffect.target].executing.push(sideEffect.id)
+            // this.queue[sideEffect.target].readyToExecute.push(sideEffect.id)
             this.emit("ExecuteSideEffect", sideEffect)
         })
         console.log("Queue:", this.queue)
-    }
-
-    sfxReady(sfxId: string) {
-        this.executions[this.sfxExecutionLookup[sfxId]].sideEffects[sfxId].ready()
     }
 
     // once SideEffect has been executed on target we add it to the confirming pool
@@ -83,23 +122,25 @@ export class ExecutionManager extends EventEmitter {
     sideEffectExecuted(sfxId: string) {
         if (!this.sfxExecutionLookup[sfxId]) return
         const sfx = this.executions[this.sfxExecutionLookup[sfxId]].sideEffects[sfxId];
-        this.removeExecuting(sfxId, sfx.target)
+        this.removeFromQueue("readyToExecute", sfxId, sfx.target)
 
         //create array if inclusionBlock is not available
-        if (!this.queue[sfx.target].confirming[sfx.targetInclusionHeight.toNumber()]) {
-            this.queue[sfx.target].confirming[sfx.targetInclusionHeight.toNumber()] = []
+        if (!this.queue[sfx.target].readyToConfirm[sfx.targetInclusionHeight.toNumber()]) {
+            this.queue[sfx.target].readyToConfirm[sfx.targetInclusionHeight.toNumber()] = []
         }
 
-        this.queue[sfx.target].confirming[sfx.targetInclusionHeight.toNumber()].push(sfxId)
+        this.queue[sfx.target].readyToConfirm[sfx.targetInclusionHeight.toNumber()].push(sfxId)
+
         ExecutionManager.debug("Executed:", this.queue)
     }
 
     // Once confirmed, delete from queue
     sideEffectConfirmed(sfxId: string) {
-        console.log("ExecutionManager - sideEffectConfirmed:", sfxId)
         if (!this.sfxExecutionLookup[sfxId]) return
         const sfx = this.executions[this.sfxExecutionLookup[sfxId]].sideEffects[sfxId]
-        this.executions[this.sfxExecutionLookup[sfxId]].confirmSideEffect(sfxId)
+        //update status in execution and sfx
+        this.executions[this.sfxExecutionLookup[sfxId]].sideEffectConfirmed(sfxId)
+        //remove from local queue
         this.removeConfirming(sfxId, sfx.target, sfx.targetInclusionHeight.toNumber())
     }
 
@@ -117,10 +158,10 @@ export class ExecutionManager extends EventEmitter {
     executeQueue(gatewayId: string) {
         // contains the sfxIds of SideEffects that could be confirmed based on the current blockHeight of the light client
         let readyByHeight: string[] = [];
-        Object.keys(this.queue[gatewayId].confirming).forEach(block => {
+        Object.keys(this.queue[gatewayId].readyToConfirm).forEach(block => {
             //in node object keys are always strings
             if(parseInt(block) <= this.queue[gatewayId].blockHeight) {
-                readyByHeight = readyByHeight.concat(this.queue[gatewayId].confirming[block])
+                readyByHeight = readyByHeight.concat(this.queue[gatewayId].readyToConfirm[block])
             }
         })
 
@@ -131,7 +172,9 @@ export class ExecutionManager extends EventEmitter {
         // filter the SideEffects that can be confirmed in the current step
         // ToDo a Sfx confirmation should trigger this function again, as the step could have updated
         readyByHeight.forEach(sfxId => {
+            console.log("Current Step:", this.executions[this.sfxExecutionLookup[sfxId]].currentStep)
             const sfx: SideEffect = this.executions[this.sfxExecutionLookup[sfxId]].sideEffects[sfxId];
+            console.log("SFX step:", sfx.step)
             if(sfx.step === this.executions[sfx.xtxId].currentStep) {
                 readyByStep.push(sfx)
             }
@@ -144,7 +187,7 @@ export class ExecutionManager extends EventEmitter {
         this.emit("ConfirmSideEffects", readyByStep)
     }
 
-    executeStepQueue(sideEffects: SideEffect[]) {
+    executeConfirmationStepQueue(sideEffects: SideEffect[]) {
         let readyToConfirm = sideEffects.filter((sfx: SideEffect) => {
             return parseInt(this.queue[sfx.target].blockHeight)>= sfx.targetInclusionHeight.toNumber()
         })
@@ -155,21 +198,20 @@ export class ExecutionManager extends EventEmitter {
         }
     }
 
-
     // removes sfx from executing queue
-    private removeExecuting(id: string, gatewayId: string) {
-        const index = this.queue[gatewayId].executing.indexOf(id)
-        this.queue[gatewayId].executing.splice(index, 1)
+    private removeFromQueue(queue: string, id: string, gatewayId: string) {
+        const index = this.queue[gatewayId][queue].indexOf(id)
+        this.queue[gatewayId][queue].splice(index, 1)
     }
 
     // removes the SideEffects from the confirmation queue
     private removeConfirming(id: string, gatewayId: string, blockHeight: number) {
         // high chance there is only one SideEffect in this block, so this is faster.
-        if (this.queue[gatewayId].confirming[blockHeight].length === 1) {
-            delete this.queue[gatewayId].confirming[blockHeight]
+        if (this.queue[gatewayId].readyToConfirm[blockHeight].length === 1) {
+            delete this.queue[gatewayId].readyToConfirm[blockHeight]
         } else {
-            const index = this.queue[gatewayId].confirming[blockHeight].indexOf(id)
-            this.queue[gatewayId].confirming[blockHeight].splice(index, 1)
+            const index = this.queue[gatewayId].readyToConfirm[blockHeight].indexOf(id)
+            this.queue[gatewayId].readyToConfirm[blockHeight].splice(index, 1)
         }
     }
 }

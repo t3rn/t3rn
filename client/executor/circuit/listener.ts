@@ -25,7 +25,8 @@ api: ApiPromise
                     this.emit("XTransactionReadyForExec", xtxId)
                 } else if (notification.event.method === "SideEffectInsuranceReceived") {
                     let sfxId = notification.event.data[0].toHex();
-                    this.emit("SideEffectInsuranceReceived", sfxId)
+                    let executor = notification.event.data[1];
+                    this.emit("SideEffectInsuranceReceived", sfxId, executor)
                 } else if (notification.event.method === "SideEffectConfirmed") {
                     let sfxId = notification.event.data[0].toHex();
                     this.emit("SideEffectConfirmed", sfxId)
