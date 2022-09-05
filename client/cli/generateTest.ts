@@ -25,9 +25,9 @@ const generateTestingData = async () => {
     await execute("register bslk --export -o 3-register-bslk", 10)
     await execute("submit-headers roco --export -o 4-headers-roco", 15);
     await execute("submit-headers bslk --export -o 5-headers-bslk", 15);
-    await execute("submit-side-effects config/transfer.ts -e -o 6-submit-transfer", 50);
-    await execute("submit-headers roco --export -o 8-headers-roco", 10);
-    await execute("submit-headers bslk --export -o 9-headers-bslk", 30);
+    await execute("submit-side-effects config/transfer.ts -e -o 6-submit-transfer", 90);
+    await execute("submit-headers roco --export -o 11-headers-roco", 5);
+    await execute("submit-headers bslk --export -o 14-headers-bslk", 0);
 }
 
 const wait = (waitInSecs: number) => {

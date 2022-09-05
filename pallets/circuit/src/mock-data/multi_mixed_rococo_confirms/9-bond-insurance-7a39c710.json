@@ -1,0 +1,10 @@
+[
+    {
+        "encoded_xtx_id": "caf7a9c52e2ee2d9576efe2725df2b0cd753352b2c1ae911e847fe0cb31b58ac",
+        "xtx_id": "0xcaf7a9c52e2ee2d9576efe2725df2b0cd753352b2c1ae911e847fe0cb31b58ac",
+        "encoded_id": "7a39c710c809723417c50093e751f50526c16518f84c093b308105c0722a6d9e",
+        "id": "0x7a39c710c809723417c50093e751f50526c16518f84c093b308105c0722a6d9e",
+        "transaction_type": "confirm",
+        "submission_height": 0
+    }
+]

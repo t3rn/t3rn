@@ -104,7 +104,7 @@ export class ExecutionManager extends EventEmitter {
         this.queue[sfx.target].readyToExecute.push(sfxId)
 
         this.executions[this.sfxExecutionLookup[sfxId]].sideEffects[sfxId].insuranceBonded(iAmExecuting)
-        ExecutionManager.debug(`Insurance Bonded: ${this.toHuman(sfxId)} - ${sfx.target}`)
+        ExecutionManager.debug(`Insurance Bonded: ${this.toHuman(sfxId)} - ${sfx.target} 💎`)
     }
 
     // the execution is ready to be executed. This happends once all insured sfx have received their insurance
@@ -135,7 +135,7 @@ export class ExecutionManager extends EventEmitter {
 
         this.queue[sfx.target].readyToConfirm[sfx.targetInclusionHeight.toNumber()].push(sfxId)
 
-        ExecutionManager.debug(`Executed: ${this.toHuman(sfxId)} - ${sfx.target} 🏁`)
+        ExecutionManager.debug(`Executed: ${this.toHuman(sfxId)} - ${sfx.target} - #${sfx.targetInclusionHeight.toNumber()} 🏁`)
     }
 
     // Once confirmed on target, delete from queue
@@ -179,7 +179,7 @@ export class ExecutionManager extends EventEmitter {
             }
         })
 
-        ExecutionManager.debug("Confirmation Queue - ReadyToConfirm:", readyByStep.length)
+        ExecutionManager.debug(`${gatewayId} - ${this.queue[gatewayId].blockHeight}: ReadyToConfirm: ${readyByStep.length}`)
         this.emit("ConfirmSideEffects", readyByStep)
     }
 

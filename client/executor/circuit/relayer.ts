@@ -39,7 +39,7 @@ export default class CircuitRelayer extends EventEmitter {
             await this.api.tx.circuit.bondInsuranceDeposit(xtxId, id)
                 .signAndSend(this.signer, {nonce}, async res => {
                     if(res.status.isFinalized) {
-                        exportData([{xtxId, id}], `bond-insurance-${sideEffect.id}.json`, "confirm")
+                        exportData([{xtxId, id}], `bond-insurance-${sideEffect.id.substring(2, 10)}.json`, "confirm")
 
                     } else {
                         // console.log(res.status.toHuman())
@@ -65,7 +65,7 @@ export default class CircuitRelayer extends EventEmitter {
             })
 
             const xtxId: any = this.api.createType("XtxId", sideEffect.xtxId);
-            exportData([{xtxId, sideEffect: sideEffect.raw, confirmedSideEffect}], `confirm-transfer-${sideEffect.id}.json`, "confirm")
+            exportData([{xtxId, sideEffect: sideEffect.raw, confirmedSideEffect}], `confirm-transfer-${sideEffect.id.substring(2, 10)}.json`, "confirm")
 
             await new Promise((resolve, reject) => {
                 this.api.tx.circuit
@@ -100,7 +100,10 @@ export default class CircuitRelayer extends EventEmitter {
         }
     }
 }
-let counter = 4;
+
+// in combination with transfer.ts
+let indexes = [7,8,9,10,12,13,15,16,18,21,23,9999,111111,222222,33333,444444];
+let counter = 0
 export const exportData = (data: any, fileName: string, transactionType: string) => {
     let deepCopy;
     // since its pass-by-reference
@@ -110,13 +113,14 @@ export const exportData = (data: any, fileName: string, transactionType: string)
         deepCopy = {...data};
     }
     let encoded = encodeExport(deepCopy, transactionType);
-    fs.writeFile("exports/" + counter + '-' + fileName, JSON.stringify(encoded, null, 4), (err) => {
+    fs.writeFile("exports/" + indexes[counter] + '-' + fileName, JSON.stringify(encoded, null, 4), (err) => {
         if(err) {
             console.log("Err", err);
         } else {
-            counter += 1;
         }
     });
+
+    counter += 1;
 }
 
 // encodes data for exporting. We export in encoded and human format.

@@ -2224,9 +2224,9 @@ fn multi_mixed_rococo_confirms() {
     //             target: "roco",
     //             type: "tran",
     //             receiver: "5EoHBHDBNj61SbqNPcgYzwHXY1xAroduRP3M99iSMZ8kwvgp",
-    //             amount: "0.1",
+    //             amount: "0.01111",
     //             bond: "1",
-    //             reward: "1",
+    //             reward: "2",
     //             signature: null,
     //             executioner: null
     //         },
@@ -2234,9 +2234,29 @@ fn multi_mixed_rococo_confirms() {
     //             target: "roco",
     //             type: "tran",
     //             receiver: "5EoHBHDBNj61SbqNPcgYzwHXY1xAroduRP3M99iSMZ8kwvgp",
-    //             amount: "0.01",
+    //             amount: "0.02222",
+    //             bond: "3",
+    //             reward: "3",
+    //             signature: null,
+    //             executioner: null
+    //         },
+    //         {
+    //             target: "bslk",
+    //             type: "tran",
+    //             receiver: "bXiLNHM2wesdnvvsMqBRb3ybSEfkyHkSk3cBE4Yy3Qph4VgkX",
+    //             amount: "12",
     //             bond: "1",
-    //             reward: "1",
+    //             reward: "0",
+    //             signature: null,
+    //             executioner: null
+    //         },
+    //         {
+    //             target: "bslk",
+    //             type: "tran",
+    //             receiver: "bXiLNHM2wesdnvvsMqBRb3ybSEfkyHkSk3cBE4Yy3Qph4VgkX",
+    //             amount: "11",
+    //             bond: "2",
+    //             reward: "3",
     //             signature: null,
     //             executioner: null
     //         },
@@ -2244,27 +2264,17 @@ fn multi_mixed_rococo_confirms() {
     //             target: "roco",
     //             type: "tran",
     //             receiver: "5EoHBHDBNj61SbqNPcgYzwHXY1xAroduRP3M99iSMZ8kwvgp",
-    //             amount: "0.02",
-    //             bond: "1",
-    //             reward: "1",
+    //             amount: "0.011",
+    //             bond: "0",
+    //             reward: "0",
     //             signature: null,
     //             executioner: null
     //         },
     //         {
-    //             target: "roco",
+    //             target: "bslk",
     //             type: "tran",
-    //             receiver: "5EoHBHDBNj61SbqNPcgYzwHXY1xAroduRP3M99iSMZ8kwvgp",
-    //             amount: "0.03",
-    //             bond: "1",
-    //             reward: "1",
-    //             signature: null,
-    //             executioner: null
-    //         },
-    //         {
-    //             target: "roco",
-    //             type: "tran",
-    //             receiver: "5GducktTqf8KKeatpex4kwkg1PZZimY1xUDUFoBZ2s5EDfVf",
-    //             amount: "0.1",
+    //             receiver: "bXiLNHM2wesdnvvsMqBRb3ybSEfkyHkSk3cBE4Yy3Qph4VgkX",
+    //             amount: "3",
     //             bond: "0",
     //             reward: "0",
     //             signature: null,
@@ -2273,13 +2283,256 @@ fn multi_mixed_rococo_confirms() {
     //         {
     //             target: "roco",
     //             type: "tran",
-    //             receiver: "5GducktTqf8KKeatpex4kwkg1PZZimY1xUDUFoBZ2s5EDfVf",
-    //             amount: "0.2",
+    //             receiver: "5EoHBHDBNj61SbqNPcgYzwHXY1xAroduRP3M99iSMZ8kwvgp",
+    //             amount: "0.012",
     //             bond: "0",
     //             reward: "0",
     //             signature: null,
     //             executioner: null
-    //         }
+    //         },
+    //     ],
+    //     sequential: false,
+    // }
+
+    // await execute("register roco --export -o 1-register-roco", 10)
+    // await execute("submit-headers roco --export -o 2-headers-roco", 15);
+    // await execute("register bslk --export -o 3-register-bslk", 10)
+    // await execute("submit-headers roco --export -o 4-headers-roco", 15);
+    // await execute("submit-headers bslk --export -o 5-headers-bslk", 15);
+    // await execute("submit-side-effects config/transfer.ts -e -o 6-submit-transfer", 70);
+    // await execute("submit-headers roco --export -o 11-headers-roco", 10);
+    // await execute("submit-headers bslk --export -o 14-headers-bslk", 70);
+    // await execute("submit-headers roco --export -o 17-headers-roco", 90);
+    // await execute("submit-headers roco --export -o 19-headers-roco", 10);
+    // await execute("submit-headers bslk --export -o 20-headers-bslk", 90);
+    // await execute("submit-headers roco --export -o 22-headers-roco", 0);
+
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&CLI_DEFAULT, (20 * 10u128.pow(12)).into()); // 10 trn
+            let _ = Balances::deposit_creating(&EXECUTOR_DEFAULT, (20 * 10u128.pow(12)).into()); // 10 trn
+
+            let register_roco = read_file_and_set_height(&(path.to_owned() + "1-register-roco.json"), false);
+            assert_ok!(register(Origin::root(), register_roco[0].clone(), true));
+
+            let submit_header_1 = read_file_and_set_height(&(path.to_owned() + "2-headers-roco.json"), false);
+            for index in 0..submit_header_1.as_array().unwrap().len() { // we have to loop, because this might be seperate transactions
+                 assert_ok!(submit_headers(
+                    Origin::signed(CLI_DEFAULT),
+                    submit_header_1.clone(),
+                    index
+                ));
+            };
+
+            let register_bslk = read_file_and_set_height(&(path.to_owned() + "3-register-bslk.json"), false);
+            assert_ok!(register(Origin::root(), register_bslk[0].clone(), true));
+
+            let submit_header_2 = read_file_and_set_height(&(path.to_owned() + "4-headers-roco.json"), false);
+            for index in 0..submit_header_2.as_array().unwrap().len() { // we have to loop, because this might be seperate transactions
+                 assert_ok!(submit_headers(
+                    Origin::signed(CLI_DEFAULT),
+                    submit_header_2.clone(),
+                    index
+                ));
+            };
+
+            let submit_header_3 = read_file_and_set_height(&(path.to_owned() + "5-headers-bslk.json"), false);
+            for index in 0..submit_header_3.as_array().unwrap().len() { // we have to loop, because this might be seperate transactions
+                 assert_ok!(submit_headers(
+                    Origin::signed(CLI_DEFAULT),
+                    submit_header_3.clone(),
+                    index
+                ));
+            };
+
+            let transfer =  read_file_and_set_height(&(path.to_owned() + "6-submit-transfer.json"), false);
+
+            assert_ok!(on_extrinsic_trigger(Origin::signed(CLI_DEFAULT), transfer[0].clone()));
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), (12u128 * 10u128.pow(12)).into());
+            assert_eq!(Balances::free_balance(EXECUTOR_DEFAULT), (20u128 * 10u128.pow(12)).into());
+
+            let bond_insurance_1 = read_file_and_set_height(&(path.to_owned() + "7-bond-insurance-09268618.json"), true);
+            let bond_insurance_2 = read_file_and_set_height(&(path.to_owned() + "8-bond-insurance-c29dce66.json"), true);
+            let bond_insurance_3 = read_file_and_set_height(&(path.to_owned() + "9-bond-insurance-7a39c710.json"), true);
+            let bond_insurance_4 = read_file_and_set_height(&(path.to_owned() + "10-bond-insurance-2d6e40f6.json"), true);
+
+            let confirm_1 = read_file_and_set_height(&(path.to_owned() + "12-confirm-transfer-7a39c710.json"), true);
+
+            // Bond can be submitted in arbitrary order
+            assert_ok!(bond_insurance_deposit(Origin::signed(EXECUTOR_DEFAULT), bond_insurance_3[0].clone()));
+            assert_ok!(bond_insurance_deposit(Origin::signed(EXECUTOR_DEFAULT), bond_insurance_4[0].clone()));
+            assert_ok!(bond_insurance_deposit(Origin::signed(EXECUTOR_DEFAULT), bond_insurance_2[0].clone()));
+
+            // can't execute until header was submitted
+            assert_noop!(
+                confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_1[0].clone()),
+                "SideEffect confirmation failed!"
+            );
+
+            // Submit header next roco range randomly
+            let submit_header_4 = read_file_and_set_height(&(path.to_owned() + "11-headers-roco.json"), false);
+            for index in 0..submit_header_4.as_array().unwrap().len() { // we have to loop, because this might be seperate transactions
+                 assert_ok!(submit_headers(
+                    Origin::signed(CLI_DEFAULT),
+                    submit_header_4.clone(),
+                    index
+                ));
+            };
+
+            // can't confirm until all bonds have been paid
+            assert_noop!(
+                confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_1[0].clone()),
+                Error::<Test>::ApplyFailed
+            );
+
+            assert_ok!(bond_insurance_deposit(Origin::signed(EXECUTOR_DEFAULT), bond_insurance_1[0].clone()));
+
+            // Other executor can submit, but wont be rewarded once complete
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), (12u128 * 10u128.pow(12)).into());
+            assert_eq!(Balances::free_balance(EXECUTOR_DEFAULT), (13u128 * 10u128.pow(12)).into());
+
+            // ______Confirm insured step:________
+
+            // can confirm with all bonds paid
+            assert_ok!(confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_1[0].clone()));
+
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), (12u128 * 10u128.pow(12)).into());
+            assert_eq!(Balances::free_balance(EXECUTOR_DEFAULT), (13u128 * 10u128.pow(12)).into());
+
+            let confirm_2 = read_file_and_set_height(&(path.to_owned() + "13-confirm-transfer-c29dce66.json"), false);
+            let confirm_3 = read_file_and_set_height(&(path.to_owned() + "15-confirm-transfer-2d6e40f6.json"), false);
+            let confirm_4 = read_file_and_set_height(&(path.to_owned() + "16-confirm-transfer-09268618.json"), false);
+
+            let submit_header_5 = read_file_and_set_height(&(path.to_owned() + "14-headers-bslk.json"), false);
+            for index in 0..submit_header_5.as_array().unwrap().len() { // we have to loop, because this might be seperate transactions
+                 assert_ok!(submit_headers(
+                    Origin::signed(CLI_DEFAULT),
+                    submit_header_5.clone(),
+                    index
+                ));
+            };
+
+            // can confirm in random order within a step
+            assert_ok!(confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_2[0].clone()));
+            assert_ok!(confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_4[0].clone()));
+            assert_ok!(confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_3[0].clone()));
+
+            //no rewards paid after step was confirmed
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), (12u128 * 10u128.pow(12)).into());
+            assert_eq!(Balances::free_balance(EXECUTOR_DEFAULT), (13u128 * 10u128.pow(12)).into());
+
+            let submit_header_6 = read_file_and_set_height(&(path.to_owned() + "17-headers-roco.json"), false);
+            for index in 0..submit_header_6.as_array().unwrap().len() { // we have to loop, because this might be seperate transactions
+                 assert_ok!(submit_headers(
+                    Origin::signed(CLI_DEFAULT),
+                    submit_header_6.clone(),
+                    index
+                ));
+            };
+
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), (12u128 * 10u128.pow(12)).into());
+            assert_eq!(Balances::free_balance(EXECUTOR_DEFAULT), (13u128 * 10u128.pow(12)).into());
+
+
+            let confirm_5 = read_file_and_set_height(&(path.to_owned() + "18-confirm-transfer-58c5be47.json"), false);
+            assert_ok!(confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_5[0].clone()));
+
+            let submit_header_7 = read_file_and_set_height(&(path.to_owned() + "19-headers-roco.json"), false);
+            for index in 0..submit_header_7.as_array().unwrap().len() { // we have to loop, because this might be seperate transactions
+                 assert_ok!(submit_headers(
+                    Origin::signed(CLI_DEFAULT),
+                    submit_header_7.clone(),
+                    index
+                ));
+            };
+
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), (12u128 * 10u128.pow(12)).into());
+            assert_eq!(Balances::free_balance(EXECUTOR_DEFAULT), (13u128 * 10u128.pow(12)).into());
+
+            let submit_header_8 = read_file_and_set_height(&(path.to_owned() + "20-headers-bslk.json"), false);
+            for index in 0..submit_header_8.as_array().unwrap().len() { // we have to loop, because this might be seperate transactions
+                 assert_ok!(submit_headers(
+                    Origin::signed(CLI_DEFAULT),
+                    submit_header_8.clone(),
+                    index
+                ));
+            };
+
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), (12u128 * 10u128.pow(12)).into());
+            assert_eq!(Balances::free_balance(EXECUTOR_DEFAULT), (13u128 * 10u128.pow(12)).into());
+
+            let confirm_6 = read_file_and_set_height(&(path.to_owned() + "21-confirm-transfer-f6307e35.json"), false);
+            assert_ok!(confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_6[0].clone()));
+
+            let submit_header_8 = read_file_and_set_height(&(path.to_owned() + "22-headers-roco.json"), false);
+            for index in 0..submit_header_8.as_array().unwrap().len() { // we have to loop, because this might be seperate transactions
+                 assert_ok!(submit_headers(
+                    Origin::signed(CLI_DEFAULT),
+                    submit_header_8.clone(),
+                    index
+                ));
+            };
+
+            let confirm_7 = read_file_and_set_height(&(path.to_owned() + "23-confirm-transfer-cee25b9a.json"), false);
+            assert_ok!(confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_7[0].clone()));
+
+            //ToDo activate with new account manager
+            // assert_eq!(Balances::free_balance(CLI_DEFAULT), (12u128 * 10u128.pow(12)).into());
+            // assert_eq!(Balances::free_balance(EXECUTOR_DEFAULT), (28u128 * 10u128.pow(12)).into());
+
+        });
+}
+
+#[test]
+fn insured_multi_rococo_multiple_executors() {
+    let path = "insured_multi_chain_rococo/";
+    // generated via CLI with:
+    // export default {
+    //     sideEffects: [
+    //         {
+    //             target: "roco",
+    //             type: "tran",
+    //             receiver: "5EoHBHDBNj61SbqNPcgYzwHXY1xAroduRP3M99iSMZ8kwvgp",
+    //             amount: "0.01111",
+    //             bond: "1",
+    //             reward: "0",
+    //             signature: null,
+    //             executioner: null
+    //         },
+    //         {
+    //             target: "roco",
+    //             type: "tran",
+    //             receiver: "5EoHBHDBNj61SbqNPcgYzwHXY1xAroduRP3M99iSMZ8kwvgp",
+    //             amount: "0.02222",
+    //             bond: "2",
+    //             reward: "2",
+    //             signature: null,
+    //             executioner: null
+    //         },
+    //         {
+    //             target: "bslk",
+    //             type: "tran",
+    //             receiver: "bXiLNHM2wesdnvvsMqBRb3ybSEfkyHkSk3cBE4Yy3Qph4VgkX",
+    //             amount: "12",
+    //             bond: "1",
+    //             reward: "0",
+    //             signature: null,
+    //             executioner: null
+    //         },
+    //         {
+    //             target: "bslk",
+    //             type: "tran",
+    //             receiver: "bXiLNHM2wesdnvvsMqBRb3ybSEfkyHkSk3cBE4Yy3Qph4VgkX",
+    //             amount: "11",
+    //             bond: "2",
+    //             reward: "3",
+    //             signature: null,
+    //             executioner: null
+    //         },
     //     ],
     //     sequential: false,
     // }
@@ -2290,12 +2543,12 @@ fn multi_mixed_rococo_confirms() {
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
-            let _ = Balances::deposit_creating(&CLI_DEFAULT, (10 * 10u128.pow(12)).into()); // 10 trn
-            let _ = Balances::deposit_creating(&EXECUTOR_DEFAULT, (10 * 10u128.pow(12)).into()); // 10 trn
+            let _ = Balances::deposit_creating(&CLI_DEFAULT, (20 * 10u128.pow(12)).into());
+            let _ = Balances::deposit_creating(&EXECUTOR_DEFAULT, (20 * 10u128.pow(12)).into());
+            let _ = Balances::deposit_creating(&EXECUTOR_SECOND, (20 * 10u128.pow(12)).into());
 
-            // Read data from files
-            let register_values = read_file_and_set_height(&(path.to_owned() + "1-register-roco.json"), false);
-            assert_ok!(register(Origin::root(), register_values[0].clone(), true));
+            let register_roco = read_file_and_set_height(&(path.to_owned() + "1-register-roco.json"), false);
+            assert_ok!(register(Origin::root(), register_roco[0].clone(), true));
 
             let submit_header_1 = read_file_and_set_height(&(path.to_owned() + "2-headers-roco.json"), false);
             for index in 0..submit_header_1.as_array().unwrap().len() { // we have to loop, because this might be seperate transactions
@@ -2305,87 +2558,85 @@ fn multi_mixed_rococo_confirms() {
                     index
                 ));
             };
-            let transfer =  read_file_and_set_height(&(path.to_owned() + "3-submit-transfer.json"), false);
 
-            assert_ok!(on_extrinsic_trigger(Origin::signed(CLI_DEFAULT), transfer[0].clone()));
-            assert_eq!(Balances::free_balance(CLI_DEFAULT), (6u128 * 10u128.pow(12)).into());
-            assert_eq!(Balances::free_balance(EXECUTOR_DEFAULT), (10u128 * 10u128.pow(12)).into());
+            let register_bslk = read_file_and_set_height(&(path.to_owned() + "3-register-bslk.json"), false);
+            assert_ok!(register(Origin::root(), register_bslk[0].clone(), true));
 
-            let post_bond = read_file_and_set_height(&(path.to_owned() + "4-post-bond-roco.json"), false);
-            // Bond can be submitted in arbitrary order
-            assert_ok!(bond_insurance_deposit(Origin::signed(EXECUTOR_DEFAULT), post_bond[0].clone()));
-            assert_ok!(bond_insurance_deposit(Origin::signed(EXECUTOR_DEFAULT), post_bond[3].clone()));
-            assert_ok!(bond_insurance_deposit(Origin::signed(EXECUTOR_DEFAULT), post_bond[2].clone()));
-            assert_ok!(bond_insurance_deposit(Origin::signed(EXECUTOR_DEFAULT), post_bond[1].clone()));
-
-            assert_eq!(Balances::free_balance(&CLI_DEFAULT), (6u128 * 10u128.pow(12)).into());
-            assert_eq!(Balances::free_balance(&EXECUTOR_DEFAULT), (6u128 * 10u128.pow(12)).into());
-
-            let submit_header_2 = read_file_and_set_height(&(path.to_owned() + "5-headers-roco.json"), false);
+            let submit_header_2 = read_file_and_set_height(&(path.to_owned() + "4-headers-roco.json"), false);
             for index in 0..submit_header_2.as_array().unwrap().len() { // we have to loop, because this might be seperate transactions
-                assert_ok!(submit_headers(
+                 assert_ok!(submit_headers(
                     Origin::signed(CLI_DEFAULT),
                     submit_header_2.clone(),
                     index
                 ));
             };
 
-            // the confirmation order of the first 4 sfx doesn't matter, as they're all insured
-            let confirm_1 =  read_file_and_set_height(&(path.to_owned() + "6-confirm-transfer-roco.json"), true);
-            let confirm_2=  read_file_and_set_height(&(path.to_owned() + "7-confirm-transfer-roco.json"), true);
-            let confirm_3=  read_file_and_set_height(&(path.to_owned() + "8-confirm-transfer-roco.json"), true);
-            let confirm_4=  read_file_and_set_height(&(path.to_owned() + "9-confirm-transfer-roco.json"), true);
+            let submit_header_3 = read_file_and_set_height(&(path.to_owned() + "5-headers-bslk.json"), false);
+            for index in 0..submit_header_3.as_array().unwrap().len() { // we have to loop, because this might be seperate transactions
+                 assert_ok!(submit_headers(
+                    Origin::signed(CLI_DEFAULT),
+                    submit_header_3.clone(),
+                    index
+                ));
+            };
 
-            // the confirmation of these steps matters, as they are in seperate steps
-            let confirm_5=  read_file_and_set_height(&(path.to_owned() + "10-confirm-transfer-roco.json"), false);
-            let confirm_6=  read_file_and_set_height(&(path.to_owned() + "11-confirm-transfer-roco.json"), false);
+            let transfer =  read_file_and_set_height(&(path.to_owned() + "6-submit-transfer.json"), false);
 
-            // Can't confirm future steps
-            assert_noop!(
-                confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_5[0].clone()),
-                "Unable to find matching Side Effect in given Xtx to confirm"
-            );
-            assert_noop!( // previous step is not yet complete
-                confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_6[0].clone()),
-                "Unable to find matching Side Effect in given Xtx to confirm"
-            );
+            assert_ok!(on_extrinsic_trigger(Origin::signed(CLI_DEFAULT), transfer[0].clone()));
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), (15u128 * 10u128.pow(12)).into());
+            assert_eq!(Balances::free_balance(EXECUTOR_DEFAULT), (20u128 * 10u128.pow(12)).into());
+            assert_eq!(Balances::free_balance(EXECUTOR_SECOND), (20u128 * 10u128.pow(12)).into());
 
-            // Can confirm current step. Inner step order doesn't matter
-            assert_ok!(confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_3[0].clone()));
+            // bslk bonds
+            let bond_insurance_1 = read_file_and_set_height(&(path.to_owned() + "7-bond-insurance-6e724b39.json"), true);
+            let bond_insurance_2 = read_file_and_set_height(&(path.to_owned() + "8-bond-insurance-c29dce66.json"), true);
+            // // roco bonds
+            let bond_insurance_3 = read_file_and_set_height(&(path.to_owned() + "9-bond-insurance-3a7e3223.json"), true);
+            let bond_insurance_4 = read_file_and_set_height(&(path.to_owned() + "10-bond-insurance-09268618.json"), true);
 
-            // Can't confirm future step
-            assert_noop!(
-                confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_5[0].clone()),
-                "Unable to find matching Side Effect in given Xtx to confirm"
-            );
-            assert_noop!( // previous step is not yet complete
-                confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_6[0].clone()),
-                "Unable to find matching Side Effect in given Xtx to confirm"
-            );
+            // Bond can be submitted in arbitrary order, by different executors
+            assert_ok!(bond_insurance_deposit(Origin::signed(EXECUTOR_SECOND), bond_insurance_3[0].clone()));
+            assert_ok!(bond_insurance_deposit(Origin::signed(EXECUTOR_SECOND), bond_insurance_4[0].clone()));
+            assert_ok!(bond_insurance_deposit(Origin::signed(EXECUTOR_DEFAULT), bond_insurance_2[0].clone()));
+            assert_ok!(bond_insurance_deposit(Origin::signed(EXECUTOR_DEFAULT), bond_insurance_1[0].clone()));
 
-            assert_ok!(confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_4[0].clone()));
-            assert_ok!(confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_2[0].clone()));
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), (15u128 * 10u128.pow(12)).into());
+            assert_eq!(Balances::free_balance(EXECUTOR_DEFAULT), (17u128 * 10u128.pow(12)).into());
+            assert_eq!(Balances::free_balance(EXECUTOR_SECOND), (17u128 * 10u128.pow(12)).into());
+
+            let submit_header_4 = read_file_and_set_height(&(path.to_owned() + "11-headers-roco.json"), false);
+            for index in 0..submit_header_4.as_array().unwrap().len() { // we have to loop, because this might be seperate transactions
+                 assert_ok!(submit_headers(
+                    Origin::signed(CLI_DEFAULT),
+                    submit_header_4.clone(),
+                    index
+                ));
+            };
+
+
+            let submit_header_5 = read_file_and_set_height(&(path.to_owned() + "12-headers-bslk.json"), false);
+            for index in 0..submit_header_5.as_array().unwrap().len() { // we have to loop, because this might be seperate transactions
+                 assert_ok!(submit_headers(
+                    Origin::signed(CLI_DEFAULT),
+                    submit_header_5.clone(),
+                    index
+                ));
+            };
+
+            let confirm_1 = read_file_and_set_height(&(path.to_owned() + "13-confirm-transfer-09268618.json"), false);
+            let confirm_2 = read_file_and_set_height(&(path.to_owned() + "14-confirm-transfer-3a7e3223.json"), false);
+            let confirm_3 = read_file_and_set_height(&(path.to_owned() + "15-confirm-transfer-6e724b39.json"), false);
+            let confirm_4 = read_file_and_set_height(&(path.to_owned() + "16-confirm-transfer-c29dce66.json"), false);
+
+            // can confirm with all bonds paid
             assert_ok!(confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_1[0].clone()));
+            assert_ok!(confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_4[0].clone()));
+            assert_ok!(confirm_side_effect(Origin::signed(EXECUTOR_SECOND), confirm_2[0].clone()));
+            assert_ok!(confirm_side_effect(Origin::signed(EXECUTOR_SECOND), confirm_3[0].clone()));
 
-            assert_eq!(Balances::free_balance(&CLI_DEFAULT), (6u128 * 10u128.pow(12)).into());
-            assert_eq!(Balances::free_balance(&EXECUTOR_DEFAULT), (6u128 * 10u128.pow(12)).into());
-
-            // Can't confirm future steps
-            assert_noop!( // previous step is not yet complete
-                confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_6[0].clone()),
-                "Unable to find matching Side Effect in given Xtx to confirm"
-            );
-
-            assert_eq!(Balances::free_balance(&CLI_DEFAULT), (6u128 * 10u128.pow(12)).into());
-            assert_eq!(Balances::free_balance(&EXECUTOR_DEFAULT), (6u128 * 10u128.pow(12)).into());
-
-            // Can confirm next step
-            assert_ok!(confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_5[0].clone()));
-            assert_ok!(confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_6[0].clone()));
-
-            // ToDo this should be activated once the new account  manager is running
-            // assert_eq!(Balances::free_balance(&CLI_DEFAULT), (6u128 * 10u128.pow(12)).into());
-            // assert_eq!(Balances::free_balance(&EXECUTOR_DEFAULT), (14u128 * 10u128.pow(12)).into());
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), (15u128 * 10u128.pow(12)).into());
+            assert_eq!(Balances::free_balance(EXECUTOR_DEFAULT), (23u128 * 10u128.pow(12)).into());
+            assert_eq!(Balances::free_balance(EXECUTOR_SECOND), (22u128 * 10u128.pow(12)).into());
 
         });
 }
