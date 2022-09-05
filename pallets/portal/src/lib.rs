@@ -50,19 +50,6 @@ pub mod pallet {
     #[pallet::generate_store(pub(super) trait Store)]
     pub struct Pallet<T>(_);
 
-    // #[pallet::storage]
-    // #[pallet::getter(fn validators)]
-    // pub type Validators<T> = StorageValue<_, ValidatorSet>;
-    //
-    // #[pallet::storage]
-    // #[pallet::getter(fn headers)]
-    // pub type Headers<T> = StorageMap<
-    //     _,
-    //     Identity,
-    //     H256,
-    //     Header,
-    // >;
-
     // Pallets use events to inform users when important changes are made.
     // https://docs.substrate.io/v3/runtime/events-and-errors
     #[pallet::event]
@@ -157,14 +144,8 @@ pub mod pallet {
             gateway_id: ChainId,
             encoded_new_owner: Vec<u8>
         ) -> DispatchResultWithPostInfo {
-            let vendor_result = <T as Config>::Xdns::get_gateway_vendor(&gateway_id);
-
-            let vendor = match vendor_result {
-                Ok(vendor) => vendor,
-                Err(_msg) => {
-                    return Err(Error::<T>::GatewayVendorNotFound.into())
-                }
-            };
+            let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
+                .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
 
             let res = match vendor {
                 GatewayVendor::Rococo =>  pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::set_owner(origin, gateway_id, encoded_new_owner.clone()),
@@ -188,15 +169,8 @@ pub mod pallet {
             gateway_id: ChainId,
             operational: bool
         ) -> DispatchResultWithPostInfo {
-            // ToDo find more concise way of doing this
-            let vendor_result = <T as Config>::Xdns::get_gateway_vendor(&gateway_id);
-
-            let vendor = match vendor_result {
-                Ok(vendor) => vendor,
-                Err(_msg) => {
-                    return Err(Error::<T>::GatewayVendorNotFound.into())
-                }
-            };
+            let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
+                .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
 
             let res = match vendor {
                 GatewayVendor::Rococo =>  pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::set_operational(origin, operational, gateway_id),
@@ -221,15 +195,8 @@ pub mod pallet {
             gateway_id: ChainId,
             encoded_header_data: Vec<u8>
         ) -> DispatchResultWithPostInfo {
-            let vendor_result = <T as Config>::Xdns::get_gateway_vendor(&gateway_id);
-
-            let vendor = match vendor_result {
-                Ok(vendor) => vendor,
-                Err(_msg) => {
-                    log::info!("GatewayVendorNotFound");
-                    return Err(Error::<T>::GatewayVendorNotFound.into())
-                }
-            };
+            let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
+                .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
 
             let res = match vendor {
                 GatewayVendor::Rococo =>  pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::submit_headers(origin, gateway_id, encoded_header_data),
@@ -255,14 +222,8 @@ impl<T: Config> Portal<T> for Pallet<T> {
     fn get_latest_finalized_header(
         gateway_id: ChainId
     ) -> Option<Vec<u8>> {
-        let vendor_result = <T as Config>::Xdns::get_gateway_vendor(&gateway_id);
-
-        let vendor = match vendor_result {
-            Ok(vendor) => vendor,
-            Err(_msg) => {
-                return None
-            }
-        };
+        let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
+            .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
 
         match vendor {
             GatewayVendor::Rococo =>  return pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::get_latest_finalized_header(gateway_id),
