@@ -22,6 +22,7 @@ use finality_grandpa::voter_set::VoterSet;
 use sp_finality_grandpa::{AuthorityId, AuthorityList, AuthorityWeight};
 use sp_runtime::RuntimeDebug;
 use sp_std::{vec, prelude::*};
+use sp_core::crypto::UncheckedFrom;
 
 /// Set of test accounts with friendly names.
 pub const ALICE: Account = Account(0);
@@ -68,7 +69,7 @@ impl Account {
 
 impl From<Account> for AuthorityId {
     fn from(p: Account) -> Self {
-        sp_application_crypto::UncheckedFrom::unchecked_from(p.public().to_bytes())
+        UncheckedFrom::unchecked_from(p.public().to_bytes())
     }
 }
 

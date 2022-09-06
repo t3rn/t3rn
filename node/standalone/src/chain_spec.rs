@@ -1,8 +1,6 @@
 use circuit_standalone_runtime::{
     AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig,
-    MultiFinalityVerifierDefaultConfig, MultiFinalityVerifierEthereumLikeConfig,
-    MultiFinalityVerifierGenericLikeConfig, MultiFinalityVerifierPolkadotLikeConfig,
-    MultiFinalityVerifierSubstrateLikeConfig, Signature, SudoConfig, SystemConfig, XDNSConfig,
+    Signature, SudoConfig, SystemConfig, XDNSConfig,
     WASM_BINARY
 };
 
@@ -504,26 +502,6 @@ fn testnet_genesis(
             standard_side_effects,
         },
         contracts_registry: Default::default(),
-        multi_finality_verifier_substrate_like: MultiFinalityVerifierSubstrateLikeConfig {
-            owner: None,
-            init_data: None,
-        },
-        multi_finality_verifier_generic_like: MultiFinalityVerifierGenericLikeConfig {
-            owner: None,
-            init_data: None,
-        },
-        multi_finality_verifier_ethereum_like: MultiFinalityVerifierEthereumLikeConfig {
-            owner: None,
-            init_data: None,
-        },
-        multi_finality_verifier_polkadot_like: MultiFinalityVerifierPolkadotLikeConfig {
-            owner: None,
-            init_data: None,
-        },
-        multi_finality_verifier_default: MultiFinalityVerifierDefaultConfig {
-            owner: None,
-            init_data: Some(initial_gateways),
-        },
         orml_tokens: Default::default(),
         account_manager: Default::default(),
     }

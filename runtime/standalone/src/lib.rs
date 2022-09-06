@@ -321,32 +321,17 @@ construct_runtime!(
         // Circuit
         // t3rn pallets
         XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
-        MultiFinalityVerifierPolkadotLike: pallet_mfv::<Instance1>::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 101,
-        MultiFinalityVerifierSubstrateLike: pallet_mfv::<Instance2>::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 102,
-        MultiFinalityVerifierEthereumLike: pallet_mfv::<Instance3>::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 103,
-        MultiFinalityVerifierGenericLike: pallet_mfv::<Instance4>::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 104,
-        MultiFinalityVerifierDefault: pallet_mfv::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 105,
-        ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
-        CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>} = 107,
-        Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
-        Portal: pallet_portal::{Pallet, Call, Storage, Event<T>} = 109,
-        RococoBridge: pallet_grandpa_finality_verifier::{
-            Pallet, Storage
-        } = 110,
-
+        ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 101,
+        Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 102,
         // 3VM
         Contracts: pallet_3vm_contracts = 119,
         AccountManager: pallet_account_manager = 125,
+        // Portal
+        Portal: pallet_portal::{Pallet, Call, Storage, Event<T>} = 128,
+        RococoBridge: pallet_grandpa_finality_verifier::{
+            Pallet, Storage
+        } = 129,
+
     }
 );
 
@@ -554,20 +539,6 @@ impl_runtime_apis! {
             key: [u8; 32],
         ) -> pallet_3vm_contracts_primitives::GetStorageResult {
             Contracts::get_storage(address, key)
-        }
-    }
-
-    impl pallet_circuit_portal_rpc_runtime_api::CircuitPortalRuntimeApi<Block, AccountId, Balance, BlockNumber> for Runtime {
-        fn read_latest_gateway_height(
-            gateway_id: [u8; 4],
-        ) -> ReadLatestGatewayHeight {
-            match <CircuitPortal as t3rn_primitives::circuit_portal::CircuitPortal<Runtime>>::read_cmp_latest_target_height(gateway_id, None, None) {
-                Ok(encoded_height) =>
-                    ReadLatestGatewayHeight::Success {
-                        encoded_height,
-                    },
-                Err(_err) => ReadLatestGatewayHeight::Error
-            }
         }
     }
 

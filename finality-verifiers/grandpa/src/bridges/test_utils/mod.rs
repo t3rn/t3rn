@@ -24,7 +24,7 @@ use sp_runtime::traits::{Header as HeaderT, One, Zero};
 use sp_std::{convert::TryFrom, prelude::*, vec};
 // Re-export all our test account utilities
 pub use keyring::*;
-
+use crate::mock::TestHeader;
 mod keyring;
 
 pub const TEST_GRANDPA_ROUND: u64 = 1;
@@ -261,4 +261,16 @@ pub fn test_header_with_correct_parent<H: HeaderT>(
 /// Convenience function for generating a Header ID at a given block number.
 pub fn header_id<H: HeaderT>(index: u8) -> (H::Hash, H::Number) {
     (test_header::<H>(index.into()).hash(), index.into())
+}
+
+pub fn brute_seed_block_1(gateway_id: [u8; 4]) {
+    // Brute update storage of MFV::MultiImportedHeaders to blockA = 1 and BestAvailable -> blockA
+
+    let header_1 = test_header::<TestHeader>(1u64.into());
+    let block_hash_1 = header_1.hash();
+
+    log::info!("He: {:?}", header_1);
+    log::info!("hash: {:?}", block_hash_1);
+
+    unimplemented!()
 }

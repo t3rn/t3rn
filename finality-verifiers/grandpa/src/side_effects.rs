@@ -101,7 +101,7 @@ pub(crate) fn decode_event<T: frame_system::Config>(
 #[cfg(test)]
 pub mod tests {
     use codec::Encode;
-    use frame_support::{parameter_types, traits::Nothing};
+    use frame_support::{parameter_types};
     use sp_std::convert::{TryFrom, TryInto};
 
     use hex_literal::hex;
@@ -111,15 +111,12 @@ pub mod tests {
         AccountId32,
     };
 
-    // ORML-related
-    use t3rn_primitives::orml_traits::parameter_type_with_key;
     use crate::decode_event;
     use crate::side_effects::*;
 
     type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
     type Block = frame_system::mocking::MockBlock<Test>;
     type Balance = u64;
-    type Amount = i64;
 
     frame_support::construct_runtime!(
         pub enum Test where
@@ -129,7 +126,6 @@ pub mod tests {
         {
             System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
             Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-            ORMLTokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>},
         }
     );
 
@@ -179,25 +175,25 @@ pub mod tests {
         type WeightInfo = ();
     }
 
-    // ORML Tokens
-    pub type CurrencyId = u32;
-    parameter_type_with_key! {
-        pub ExistentialDeposits: |_currency_id: CurrencyId| -> Balance {
-            Default::default()
-        };
-    }
-
-    impl orml_tokens::Config for Test {
-        type Amount = Amount;
-        type Balance = Balance;
-        type CurrencyId = CurrencyId;
-        type DustRemovalWhitelist = Nothing;
-        type Event = Event;
-        type ExistentialDeposits = ExistentialDeposits;
-        type MaxLocks = ();
-        type OnDust = ();
-        type WeightInfo = ();
-    }
+    // // ORML Tokens
+    // pub type CurrencyId = u32;
+    // parameter_type_with_key! {
+    //     pub ExistentialDeposits: |_currency_id: CurrencyId| -> Balance {
+    //         Default::default()
+    //     };
+    // }
+    //
+    // impl orml_tokens::Config for Test {
+    //     type Amount = Amount;
+    //     type Balance = Balance;
+    //     type CurrencyId = CurrencyId;
+    //     type DustRemovalWhitelist = Nothing;
+    //     type Event = Event;
+    //     type ExistentialDeposits = ExistentialDeposits;
+    //     type MaxLocks = ();
+    //     type OnDust = ();
+    //     type WeightInfo = ();
+    // }
 
     #[test]
     fn successfully_encodes_transferred_event() {
@@ -245,21 +241,23 @@ pub mod tests {
             b"tran",
             encoded_event,
             b"uint64",
-        );
+        ).unwrap();
 
         assert_eq!(
             res,
-            Ok(vec![
+            vec![
                 vec![
-                    9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                    9, 9, 9, 9, 9, 9,
-                ],
-                vec![
-                    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-                    6, 6, 6, 6, 6, 6,
-                ],
-                vec![1, 0, 0, 0, 0, 0, 0, 0],
-            ])
+                    vec![
+                        9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+                        9, 9, 9, 9, 9, 9,
+                    ],
+                    vec![
+                        6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+                        6, 6, 6, 6, 6, 6,
+                    ],
+                    vec![1, 0, 0, 0, 0, 0, 0, 0],
+                ]
+            ]
         );
     }
 }

@@ -222,11 +222,11 @@ impl<T: Config> Portal<T> for Pallet<T> {
     fn get_latest_finalized_header(
         gateway_id: ChainId
     ) -> Option<Vec<u8>> {
-        let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
-            .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
+        let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id);
 
         match vendor {
-            GatewayVendor::Rococo =>  return pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::get_latest_finalized_header(gateway_id),
+            Ok(GatewayVendor::Rococo) =>  return pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::get_latest_finalized_header(gateway_id),
+            Err(_) => return None,
             _ => unimplemented!()
         };
     }

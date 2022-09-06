@@ -40,13 +40,6 @@
 
 use crate::weights::WeightInfo;
 use sp_std::convert::TryInto;
-
-// this doesnt work
-// pub mod bridges;
-// use bridges::{header_chain as bp_header_chain, runtime as bp_runtime};
-
-// this does work
-use t3rn_primitives::bridges::{header_chain as bp_header_chain, runtime as bp_runtime};
 use bp_header_chain::{justification::GrandpaJustification, InitializationData};
 use bp_runtime::{BlockNumberOf, Chain, ChainId, HashOf, HasherOf, HeaderOf};
 
@@ -62,12 +55,14 @@ mod types;
 use types::{GrandpaRegistrationData};
 use sp_trie::{read_trie_value, LayoutV1, StorageProof};
 
-#[cfg(test)]
+#[cfg(feature = "testing")]
 mod mock;
 
 /// Pallet containing weights for this pallet.
 pub mod weights;
 mod side_effects;
+pub mod bridges;
+use bridges::{header_chain as bp_header_chain, runtime as bp_runtime, header_chain::ProofTriePointer};
 
 // #[cfg(feature = "runtime-benchmarks")]
 // pub mod benchmarking;
@@ -84,9 +79,8 @@ pub type BridgedBlockHasher<T, I> = HasherOf<<T as Config<I>>::BridgedChain>;
 /// Header of the bridged chain.
 pub type BridgedHeader<T, I> = HeaderOf<<T as Config<I>>::BridgedChain>;
 
-const LOG_TARGET: &str = "multi-finality-verifier";
+const LOG_TARGET: &str = "grandpa-finality-verifier";
 use frame_system::pallet_prelude::*;
-use t3rn_primitives::ProofTriePointer;
 use crate::side_effects::decode_event;
 use crate::types::{Parachain, RelaychainHeaderData, ParachainHeaderData, InclusionData};
 
@@ -1094,23 +1088,31 @@ pub fn initialize_for_benchmarks<T: Config<I>, I: 'static>(header: BridgedHeader
     });
 }
 
-#[cfg(test)]
+#[cfg(all(not(feature = "testing"), test))]
+pub mod tests {
+    use super::*;
+
+   #[test]
+    fn panic_without_testing_feature() {
+        panic!("Please use the feature testing when running tests.\n\nUse: cargo test --features testing\n\n");
+    }
+}
+
+#[cfg(all(feature = "testing", test))]
 mod tests {
     use super::*;
     use crate::mock::{run_test, test_header, test_header_range, Origin, TestHeader, TestNumber, TestRuntime, AccountId, test_header_with_correct_parent};
-    use bp_test_utils::{
-        authority_list, make_default_justification, make_justification_for_header,
-        JustificationGeneratorParams, ALICE, BOB,
-    };
+
+    use bridges::{header_chain as bp_header_chain, runtime as bp_runtime, test_utils::{
+        authority_list, make_default_justification, make_justification_for_header, authorities,
+        JustificationGeneratorParams, ALICE, BOB, DAVE
+    }};
+    use bp_runtime::ChainId;
+
     use codec::Encode;
     use frame_support::{assert_err, assert_noop, assert_ok};
     use sp_finality_grandpa::AuthorityId;
     use sp_runtime::{Digest, DigestItem, DispatchError};
-
-    use t3rn_primitives::{
-        bridges::test_utils as bp_test_utils,
-    };
-    use t3rn_primitives::bridges::test_utils::{DAVE};
 
     use crate::types::{RelaychainHeaderData};
 
@@ -1119,7 +1121,7 @@ mod tests {
     ) -> Result<GrandpaRegistrationData::<AccountId>, &'static str> {
         let genesis = test_header_with_correct_parent(0, None);
         let init_data = GrandpaRegistrationData::<AccountId> {
-            authorities: Some(t3rn_primitives::bridges::test_utils::authorities()),
+            authorities: Some(authorities()),
             first_header: genesis.encode(),
             authority_set_id: Some(1),
             owner: 1,
@@ -1135,7 +1137,7 @@ mod tests {
     ) -> Result<GrandpaRegistrationData::<AccountId>, &'static str> {
         let genesis = test_header(0);
         let init_data = GrandpaRegistrationData::<AccountId> {
-            authorities: Some(t3rn_primitives::bridges::test_utils::authorities()),
+            authorities: Some(authorities()),
             first_header: genesis.encode(),
             authority_set_id: Some(1),
             owner: 1,
@@ -1367,7 +1369,7 @@ mod tests {
         run_test(|| {
             let genesis = test_header(0);
             let init_data = GrandpaRegistrationData::<AccountId> {
-                authorities: Some(t3rn_primitives::bridges::test_utils::authorities()),
+                authorities: Some(authorities()),
                 first_header: genesis.encode(),
                 authority_set_id: None,
                 owner: 1,

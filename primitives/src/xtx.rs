@@ -195,8 +195,7 @@ mod tests {
         let completing_side_effect_1 = ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {
             err: None,
             output: None,
-            encoded_effect: vec![0],
-            inclusion_proof: None,
+            inclusion_data: vec![0],
             executioner: 1,
             received_at: 1,
             cost: None,
@@ -265,9 +264,8 @@ mod tests {
 
         let completing_side_effect_1 = ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {
             err: None,
-            encoded_effect: vec![0],
             output: None,
-            inclusion_proof: None,
+            inclusion_data: vec![0],
             executioner: 1,
             received_at: 1,
             cost: None,
@@ -275,9 +273,8 @@ mod tests {
 
         let completing_side_effect_2 = ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {
             err: None,
-            encoded_effect: vec![1],
             output: None,
-            inclusion_proof: None,
+            inclusion_data: vec![0],
             executioner: 2,
             received_at: 1,
             cost: None,
@@ -384,9 +381,8 @@ mod tests {
 
         let completing_side_effect_1 = ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {
             err: None,
-            encoded_effect: vec![0],
             output: None,
-            inclusion_proof: None,
+            inclusion_data: vec![0],
             executioner: 1,
             received_at: 1,
             cost: None,
@@ -394,9 +390,8 @@ mod tests {
 
         let completing_side_effect_2 = ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {
             err: None,
-            encoded_effect: vec![1],
             output: None,
-            inclusion_proof: None,
+            inclusion_data: vec![0],
             executioner: 2,
             received_at: 1,
             cost: None,
@@ -502,9 +497,8 @@ mod tests {
 
         let _completing_side_effect_1 = ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {
             err: None,
-            encoded_effect: vec![0],
             output: None,
-            inclusion_proof: None,
+            inclusion_data: vec![0],
             executioner: 1,
             received_at: 1,
             cost: None,
@@ -512,9 +506,8 @@ mod tests {
 
         let completing_side_effect_2 = ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {
             err: None,
-            encoded_effect: vec![1],
             output: None,
-            inclusion_proof: None,
+            inclusion_data: vec![0],
             executioner: 2,
             received_at: 1,
             cost: None,

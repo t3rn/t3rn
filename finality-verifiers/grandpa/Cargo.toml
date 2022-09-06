@@ -30,21 +30,28 @@ num-traits          = { version = "0.2", default-features = false }
 hash-db             = { version = "0.15.2", default-features = false }
 sp-trie             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 sp-io               = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-t3rn-primitives     = { path = "../../primitives", default-features = false }
-orml-tokens         = { git = "https://github.com/t3rn/open-runtime-module-library", branch = "polkadot-v0.9.19", default-features = false }
-#
-[dev-dependencies]
-pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
-pallet-sudo      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
-pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
-hex              = { package = "rustc-hex", version = "2.1.0", default-features = false }
-hex-literal      = { version = "0.3.1", default-features = false }
-#pallet-circuit-portal = { path = "../circuit-portal" }
-#t3rn-protocol         = { path = "../../protocol" }
+ # These are the testing dependencies that we are now selecting via future flag
+ed25519-dalek       = { version = "1.0", features = [ "u64_backend" ], optional = true}
+pallet-balances     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', optional = true }
+pallet-sudo         = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', optional = true }
+pallet-timestamp    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', optional = true }
+hex                 = { package = "rustc-hex", version = "2.1.0", optional = true }
+hex-literal         = { version = "0.3.1", optional = true }
+
+
+
 
 [features]
 default = [ "std" ]
 runtime-benchmarks = [  ]
+testing = [
+  "ed25519-dalek",
+  "pallet-balances",
+  "pallet-sudo",
+  "pallet-timestamp",
+  "hex",
+  "hex-literal"
+]
 std = [
   "codec/std",
   "finality-grandpa/std",
@@ -53,9 +60,4 @@ std = [
   "log/std",
   "serde/std",
   "sp-finality-grandpa/std",
-#  "sp-runtime/std",
-#  "sp-std/std",
-#  "sp-trie/std",
-#  "pallet-xdns/std",
-#  "t3rn-primitives/std",
 ]

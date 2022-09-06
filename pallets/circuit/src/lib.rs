@@ -105,7 +105,6 @@ pub mod pallet {
     use sp_std::borrow::ToOwned;
     use t3rn_primitives::{
         circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
-        circuit_portal::CircuitPortal,
         portal::Portal,
         xdns::Xdns,
     };
@@ -291,9 +290,6 @@ pub mod pallet {
 
         /// A type that manages escrow, and therefore balances
         type Escrowed: EscrowTrait<Self>;
-
-        /// A type that provides portal functionality
-        type CircuitPortal: CircuitPortal<Self>;
 
         /// A type that gives access to the new portal functionality
         type Portal: Portal<Self>;

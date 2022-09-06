@@ -141,3 +141,15 @@ pub fn find_grandpa_authorities_scheduled_change<H: HeaderT>(
         .digest()
         .convert_first(|l| l.try_to(id).and_then(filter_log))
 }
+
+/// Inclusion proofs of different tries
+#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub enum ProofTriePointer {
+    /// Proof is a merkle path in the state trie
+    State,
+    /// Proof is a merkle path in the transaction trie (extrisics in Substrate)
+    Transaction,
+    /// Proof is a merkle path in the receipts trie (in Substrate logs are entries in state trie, this doesn't apply)
+    Receipts,
+}

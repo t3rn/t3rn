@@ -45,10 +45,6 @@ frame_support::construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         Historical: pallet_session_historical::{Pallet},
         Offences: pallet_offences::{Pallet, Storage, Event},
-        MultiFinalityVerifier: pallet_multi_finality_verifier::{Pallet, Call, Storage, Config<T>, Event<T>},
-        MultiFinalityVerifier1: pallet_multi_finality_verifier::<Instance1>::{Pallet, Call, Storage, Config<T>, Event<T>},
-        MultiFinalityVerifier2: pallet_multi_finality_verifier::<Instance2>::{Pallet, Call, Storage, Config<T>, Event<T>},
-        MultiFinalityVerifier3: pallet_multi_finality_verifier::<Instance3>::{Pallet, Call, Storage, Config<T>, Event<T>},
 
         Babe: pallet_babe::{Pallet, Call, Storage, Config},
         TransactionPayment: pallet_transaction_payment::{Pallet},
@@ -59,7 +55,6 @@ frame_support::construct_runtime!(
 
         Randomness: pallet_randomness_collective_flip::{Pallet, Storage},
         XDNS: pallet_xdns::{Pallet, Call, Storage, Config<T>, Event<T>},
-        CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>},
         // BasicOutboundChannel: snowbridge_basic_channel::outbound::{Pallet, Config<T>, Storage, Event<T>},
         RococoBridge: pallet_grandpa_finality_verifier::{Pallet, Storage},
         Portal: pallet_portal::{Pallet, Call, Storage, Event<T>},
@@ -323,22 +318,10 @@ parameter_types! {
     pub const ExecPalletId: PalletId = PalletId(*b"pal/exec");
 }
 
-impl pallet_circuit_portal::Config for Test {
-    type AccountId32Converter = ();
-    type Balances = Balances;
-    type Call = Call;
-    type Escrowed = Self;
-    type EthVerifier = EthereumMockVerifier;
-    type Event = Event;
-    type PalletId = ExecPalletId;
-    type WeightInfo = ();
-    type Xdns = XDNS;
-}
-
 type RococoBridgeInstance = ();
 
 impl pallet_grandpa_finality_verifier::Config<RococoBridgeInstance> for Test {
-    type BridgedChain = Blake2ValU32Chain;
+    type BridgedChain = Blake2ValU64Chain;
     type HeadersToKeep = HeadersToKeep;
     type MaxRequests = MaxRequests;
     type WeightInfo = ();
@@ -367,55 +350,15 @@ parameter_types! {
     pub const MaxMessagesPerCommit: u64 = 20;
 }
 
-// impl snowbridge_basic_channel::outbound::Config for Test {
-//     type Event = Event;
-//     const INDEXING_PREFIX: &'static [u8] = INDEXING_PREFIX;
-//     type Hashing = Keccak256;
-//     type MaxMessagePayloadSize = MaxMessagePayloadSize;
-//     type MaxMessagesPerCommit = MaxMessagesPerCommit;
-//     type SetPrincipalOrigin = pallet_circuit_portal::EnsureCircuitPortal<Test>;
-//     type WeightInfo = ();
-// }
-
 type Blake2ValU64BridgeInstance = ();
-type Blake2ValU32BridgeInstance = pallet_multi_finality_verifier::Instance1;
-type Keccak256ValU64BridgeInstance = pallet_multi_finality_verifier::Instance2;
-type Keccak256ValU32BridgeInstance = pallet_multi_finality_verifier::Instance3;
 
 #[derive(Debug)]
 pub struct Blake2ValU64Chain;
-impl t3rn_primitives::bridges::runtime::Chain for Blake2ValU64Chain {
+impl pallet_grandpa_finality_verifier::bridges::runtime::Chain for Blake2ValU64Chain {
     type BlockNumber = <Test as frame_system::Config>::BlockNumber;
     type Hash = <Test as frame_system::Config>::Hash;
     type Hasher = <Test as frame_system::Config>::Hashing;
     type Header = <Test as frame_system::Config>::Header;
-}
-
-#[derive(Debug)]
-pub struct Blake2ValU32Chain;
-impl t3rn_primitives::bridges::runtime::Chain for Blake2ValU32Chain {
-    type BlockNumber = u32;
-    type Hash = H256;
-    type Hasher = BlakeTwo256;
-    type Header = sp_runtime::generic::Header<u32, BlakeTwo256>;
-}
-
-#[derive(Debug)]
-pub struct Keccak256ValU64Chain;
-impl t3rn_primitives::bridges::runtime::Chain for Keccak256ValU64Chain {
-    type BlockNumber = u64;
-    type Hash = H256;
-    type Hasher = Keccak256;
-    type Header = sp_runtime::generic::Header<u64, Keccak256>;
-}
-
-#[derive(Debug)]
-pub struct Keccak256ValU32Chain;
-impl t3rn_primitives::bridges::runtime::Chain for Keccak256ValU32Chain {
-    type BlockNumber = u32;
-    type Hash = H256;
-    type Hasher = Keccak256;
-    type Header = sp_runtime::generic::Header<u32, Keccak256>;
 }
 
 parameter_types! {
@@ -423,46 +366,6 @@ parameter_types! {
     pub const HeadersToKeep: u32 = 5;
     pub const SessionLength: u64 = 5;
     pub const NumValidators: u32 = 5;
-}
-
-impl pallet_multi_finality_verifier::Config<Blake2ValU64BridgeInstance> for Test {
-    type BridgedChain = Blake2ValU64Chain;
-    type Escrowed = Self;
-    type Event = Event;
-    type HeadersToKeep = HeadersToKeep;
-    type MaxRequests = MaxRequests;
-    type WeightInfo = ();
-    type Xdns = XDNS;
-}
-
-impl pallet_multi_finality_verifier::Config<Blake2ValU32BridgeInstance> for Test {
-    type BridgedChain = Blake2ValU32Chain;
-    type Escrowed = Self;
-    type Event = Event;
-    type HeadersToKeep = HeadersToKeep;
-    type MaxRequests = MaxRequests;
-    type WeightInfo = ();
-    type Xdns = XDNS;
-}
-
-impl pallet_multi_finality_verifier::Config<Keccak256ValU64BridgeInstance> for Test {
-    type BridgedChain = Keccak256ValU64Chain;
-    type Escrowed = Self;
-    type Event = Event;
-    type HeadersToKeep = HeadersToKeep;
-    type MaxRequests = MaxRequests;
-    type WeightInfo = ();
-    type Xdns = XDNS;
-}
-
-impl pallet_multi_finality_verifier::Config<Keccak256ValU32BridgeInstance> for Test {
-    type BridgedChain = Keccak256ValU32Chain;
-    type Escrowed = Self;
-    type Event = Event;
-    type HeadersToKeep = HeadersToKeep;
-    type MaxRequests = MaxRequests;
-    type WeightInfo = ();
-    type Xdns = XDNS;
 }
 
 parameter_types! {
@@ -504,7 +407,6 @@ parameter_types! {
 impl Config for Test {
     type Balances = Balances;
     type Call = Call;
-    type CircuitPortal = CircuitPortal;
     type DeletionQueueLimit = ConstU32<100>;
     type Escrowed = Self;
     type Event = Event;

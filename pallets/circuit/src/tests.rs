@@ -29,7 +29,8 @@ use crate::{
 use codec::{Decode, Encode};
 use frame_support::{assert_noop, assert_ok, dispatch::PostDispatchInfo, traits::Currency};
 use frame_system::{pallet_prelude::OriginFor, EventRecord, Phase};
-use pallet_circuit_portal::bp_circuit;
+use pallet_grandpa_finality_verifier::{BridgedHeader};
+use pallet_grandpa_finality_verifier::bridges::test_utils::brute_seed_block_1;
 use serde_json::Value;
 use sp_io::TestExternalities;
 use sp_runtime::{traits::Header, AccountId32, DispatchErrorWithPostInfo};
@@ -44,6 +45,7 @@ use t3rn_primitives::{
     xtx::XtxId,
     ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
 };
+use t3rn_primitives::portal::RococoBridge;
 use t3rn_protocol::side_effects::test_utils::*;
 
 pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);
@@ -71,25 +73,26 @@ fn as_u32_le(array: &[u8; 4]) -> u32 {
 
 pub fn brute_seed_block_1_to_grandpa_mfv(gateway_id: [u8; 4]) {
     // Brute update storage of MFV::MultiImportedHeaders to blockA = 1 and BestAvailable -> blockA
-    let block_hash_1 = sp_core::H256::repeat_byte(1);
-    let header_1: bp_circuit::Header = bp_circuit::Header::new(
-        1,
-        Default::default(),
-        Default::default(),
-        Default::default(),
-        Default::default(),
-    );
-
-    <pallet_multi_finality_verifier::MultiImportedHeaders<Test>>::insert::<
-        [u8; 4],
-        sp_core::H256,
-        bp_circuit::Header,
-    >(gateway_id, block_hash_1, header_1);
-
-    <pallet_multi_finality_verifier::BestFinalizedMap<Test>>::insert::<[u8; 4], sp_core::H256>(
-        gateway_id,
-        block_hash_1,
-    );
+    brute_seed_block_1(gateway_id);
+    // let block_hash_1 = sp_core::H256::repeat_byte(1);
+    // let header_1: BridgedHeader<Test, RococoBridge> = Header::new(
+    //     1,
+    //     Default::default(),
+    //     Default::default(),
+    //     Default::default(),
+    //     Default::default(),
+    // );
+    //
+    // <pallet_multi_finality_verifier::MultiImportedHeaders<Test>>::insert::<
+    //     [u8; 4],
+    //     sp_core::H256,
+    //     bp_circuit::Header,
+    // >(gateway_id, block_hash_1, header_1);
+    //
+    // <pallet_multi_finality_verifier::BestFinalizedMap<Test>>::insert::<[u8; 4], sp_core::H256>(
+    //     gateway_id,
+    //     block_hash_1,
+    // );
 }
 
 fn register_file(
@@ -393,7 +396,7 @@ fn on_extrinsic_trigger_works_raw_insured_side_effect() {
             let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
 
             System::set_block_number(1);
-            brute_seed_block_1_to_grandpa_mfv([0, 0, 0, 0]);
+            // brute_seed_block_1_to_grandpa_mfv([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,

@@ -1241,13 +1241,10 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-circuit",
- "pallet-circuit-portal",
- "pallet-circuit-portal-rpc-runtime-api",
  "pallet-collator-selection",
  "pallet-contracts-primitives",
  "pallet-contracts-registry",
  "pallet-contracts-rpc-runtime-api",
- "pallet-multi-finality-verifier",
  "pallet-preimage",
  "pallet-randomness-collective-flip",
  "pallet-scheduler",
@@ -1357,8 +1354,6 @@ dependencies = [
  "pallet-beefy",
  "pallet-beefy-mmr",
  "pallet-circuit",
- "pallet-circuit-portal",
- "pallet-circuit-portal-rpc-runtime-api",
  "pallet-contracts-primitives",
  "pallet-contracts-registry",
  "pallet-contracts-registry-rpc-runtime-api",
@@ -1367,7 +1362,6 @@ dependencies = [
  "pallet-grandpa-finality-verifier",
  "pallet-mmr",
  "pallet-mmr-primitives",
- "pallet-multi-finality-verifier",
  "pallet-portal",
  "pallet-portal-rpc-runtime-api",
  "pallet-randomness-collective-flip",
@@ -2423,12 +2417,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "diff"
-version = "0.1.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0e25ea47919b1560c4e3b7fe0aaab9becf5b84a10325ddf7db0f0ba5e1026499"
-
-[[package]]
 name = "digest"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2759,7 +2747,7 @@ dependencies = [
 name = "ethabi-decode"
 version = "1.3.2"
 dependencies = [
- "ethereum-types 0.13.1",
+ "ethereum-types",
  "hex-literal 0.2.2",
  "paste 0.1.18",
  "rustc-hex",
@@ -2768,34 +2756,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "ethabi-decode"
-version = "1.3.2"
-source = "git+https://github.com/Snowfork/ethabi-decode.git?branch=master#becd27ee393fc1c38ba778c674943690f4ba3d5b"
-dependencies = [
- "ethereum-types 0.12.1",
- "tiny-keccak 1.5.0",
-]
-
-[[package]]
 name = "ethash"
 version = "0.5.0"
 dependencies = [
  "byteorder",
- "ethereum-types 0.13.1",
+ "ethereum-types",
  "hex-literal 0.2.2",
  "rlp",
  "sha3 0.8.2",
-]
-
-[[package]]
-name = "ethbloom"
-version = "0.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bfb684ac8fa8f6c5759f788862bb22ec6fe3cb392f6bfd08e3c64b603661e3f8"
-dependencies = [
- "crunchy",
- "fixed-hash",
- "tiny-keccak 2.0.2",
 ]
 
 [[package]]
@@ -2806,7 +2774,7 @@ checksum = "11da94e443c60508eb62cf256243a64da87304c2802ac2528847f79d750007ef"
 dependencies = [
  "crunchy",
  "fixed-hash",
- "impl-codec 0.6.0",
+ "impl-codec",
  "impl-rlp",
  "impl-serde",
  "scale-info 2.1.1",
@@ -2815,28 +2783,16 @@ dependencies = [
 
 [[package]]
 name = "ethereum-types"
-version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05136f7057fe789f06e6d41d07b34e6f70d8c86e5693b60f97aaa6553553bdaf"
-dependencies = [
- "ethbloom 0.11.1",
- "fixed-hash",
- "primitive-types 0.10.1",
- "uint 0.9.3",
-]
-
-[[package]]
-name = "ethereum-types"
 version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b2827b94c556145446fcce834ca86b7abf0c39a805883fe20e72c5bfdb5a0dc6"
 dependencies = [
- "ethbloom 0.12.1",
+ "ethbloom",
  "fixed-hash",
- "impl-codec 0.6.0",
+ "impl-codec",
  "impl-rlp",
  "impl-serde",
- "primitive-types 0.11.1",
+ "primitive-types",
  "scale-info 2.1.1",
  "uint 0.9.3",
 ]
@@ -4047,15 +4003,6 @@ dependencies = [
 
 [[package]]
 name = "impl-codec"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "161ebdfec3c8e3b52bf61c4f3550a1eea4f9579d10dc1b936f3171ebdcd6c443"
-dependencies = [
- "parity-scale-codec 2.3.1",
-]
-
-[[package]]
-name = "impl-codec"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ba6a270039626615617f3f36d15fc827041df3b78c439da2cadfa47455a77f2f"
@@ -4823,12 +4770,6 @@ name = "lazycell"
 version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
-
-[[package]]
-name = "leb128"
-version = "0.2.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "884e2677b40cc8c339eaefcb701c32ef1fd2493d71118dc0ca4b6a736c93bd67"
 
 [[package]]
 name = "libc"
@@ -6204,15 +6145,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "output_vt100"
-version = "0.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "628223faebab4e3e40667ee0b2336d34a5b960ff60ea743ddfdbcf7770bcfb66"
-dependencies = [
- "winapi 0.3.9",
-]
-
-[[package]]
 name = "owning_ref"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6505,10 +6437,8 @@ dependencies = [
  "pallet-authorship",
  "pallet-babe",
  "pallet-balances",
- "pallet-circuit-portal",
  "pallet-contracts-registry",
  "pallet-grandpa-finality-verifier",
- "pallet-multi-finality-verifier",
  "pallet-offences",
  "pallet-portal",
  "pallet-randomness-collective-flip",
@@ -6534,64 +6464,6 @@ dependencies = [
  "sp-trie",
  "t3rn-primitives",
  "t3rn-protocol",
-]
-
-[[package]]
-name = "pallet-circuit-portal"
-version = "1.0.0-alpha.0"
-dependencies = [
- "assert_matches",
- "ethabi-decode 1.3.2 (git+https://github.com/Snowfork/ethabi-decode.git?branch=master)",
- "frame-benchmarking",
- "frame-metadata 14.2.0",
- "frame-support",
- "frame-system",
- "hash-db",
- "hex",
- "hex-literal 0.3.4",
- "log",
- "pallet-balances",
- "pallet-multi-finality-verifier",
- "pallet-sudo",
- "pallet-timestamp",
- "pallet-xdns",
- "parity-scale-codec 3.1.2",
- "paste 1.0.7",
- "plain_hasher",
- "pretty_assertions",
- "sc-service",
- "scale-info 2.1.1",
- "serde",
- "serde_json",
- "snowbridge-core",
- "snowbridge-ethereum",
- "sp-application-crypto",
- "sp-core",
- "sp-finality-grandpa",
- "sp-io",
- "sp-keystore",
- "sp-runtime",
- "sp-staking",
- "sp-std",
- "sp-trie",
- "sp-version",
- "t3rn-primitives",
- "t3rn-protocol",
- "triehash",
- "wat",
-]
-
-[[package]]
-name = "pallet-circuit-portal-rpc-runtime-api"
-version = "1.0.0-alpha.0"
-dependencies = [
- "pallet-circuit-portal",
- "parity-scale-codec 3.1.2",
- "sp-api",
- "sp-core",
- "sp-runtime",
- "sp-std",
- "t3rn-primitives",
 ]
 
 [[package]]
@@ -6816,6 +6688,7 @@ dependencies = [
 name = "pallet-grandpa-finality-verifier"
 version = "1.0.0-alpha.0"
 dependencies = [
+ "ed25519-dalek",
  "finality-grandpa",
  "frame-support",
  "frame-system",
@@ -6823,7 +6696,6 @@ dependencies = [
  "hex-literal 0.3.4",
  "log",
  "num-traits",
- "orml-tokens",
  "pallet-balances",
  "pallet-sudo",
  "pallet-timestamp",
@@ -6838,7 +6710,6 @@ dependencies = [
  "sp-state-machine",
  "sp-std",
  "sp-trie",
- "t3rn-primitives",
 ]
 
 [[package]]
@@ -6960,31 +6831,6 @@ dependencies = [
  "sp-blockchain",
  "sp-core",
  "sp-runtime",
-]
-
-[[package]]
-name = "pallet-multi-finality-verifier"
-version = "1.0.0-alpha.0"
-dependencies = [
- "finality-grandpa",
- "frame-support",
- "frame-system",
- "log",
- "pallet-balances",
- "pallet-circuit-portal",
- "pallet-sudo",
- "pallet-timestamp",
- "pallet-xdns",
- "parity-scale-codec 3.1.2",
- "scale-info 2.1.1",
- "serde",
- "sp-finality-grandpa",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "sp-trie",
- "t3rn-primitives",
- "t3rn-protocol",
 ]
 
 [[package]]
@@ -7659,7 +7505,7 @@ dependencies = [
  "impl-trait-for-tuples",
  "parity-util-mem-derive",
  "parking_lot 0.12.0",
- "primitive-types 0.11.1",
+ "primitive-types",
  "smallvec 1.8.0",
  "winapi 0.3.9",
 ]
@@ -9185,36 +9031,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
 
 [[package]]
-name = "pretty_assertions"
-version = "0.7.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1cab0e7c02cf376875e9335e0ba1da535775beb5450d21e1dffca068818ed98b"
-dependencies = [
- "ansi_term",
- "ctor",
- "diff",
- "output_vt100",
-]
-
-[[package]]
-name = "primitive-types"
-version = "0.10.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05e4722c697a58a99d5d06a08c30821d7c082a4632198de1eaa5a6c22ef42373"
-dependencies = [
- "fixed-hash",
- "impl-codec 0.5.1",
- "uint 0.9.3",
-]
-
-[[package]]
 name = "primitive-types"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e28720988bff275df1f51b171e1b2a18c30d194c4d2b61defdacecd625a5d94a"
 dependencies = [
  "fixed-hash",
- "impl-codec 0.6.0",
+ "impl-codec",
  "impl-rlp",
  "impl-serde",
  "scale-info 2.1.1",
@@ -11488,7 +11311,7 @@ name = "snowbridge-core"
 version = "0.1.1"
 dependencies = [
  "enum-iterator",
- "ethereum-types 0.13.1",
+ "ethereum-types",
  "frame-support",
  "frame-system",
  "parity-scale-codec 3.1.2",
@@ -11505,10 +11328,10 @@ dependencies = [
 name = "snowbridge-ethereum"
 version = "0.1.0"
 dependencies = [
- "ethabi-decode 1.3.2",
+ "ethabi-decode",
  "ethash",
- "ethbloom 0.12.1",
- "ethereum-types 0.13.1",
+ "ethbloom",
+ "ethereum-types",
  "getrandom 0.2.6",
  "hex-literal 0.3.4",
  "libsecp256k1 0.3.5",
@@ -11547,7 +11370,7 @@ dependencies = [
 name = "snowbridge-testutils"
 version = "0.1.0"
 dependencies = [
- "ethereum-types 0.13.1",
+ "ethereum-types",
  "rustc-hex",
  "serde",
  "serde_json",
@@ -11844,7 +11667,7 @@ dependencies = [
  "parity-scale-codec 3.1.2",
  "parity-util-mem",
  "parking_lot 0.12.0",
- "primitive-types 0.11.1",
+ "primitive-types",
  "rand 0.7.3",
  "regex",
  "scale-info 2.1.1",
@@ -12088,7 +11911,7 @@ source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.1
 dependencies = [
  "impl-trait-for-tuples",
  "parity-scale-codec 3.1.2",
- "primitive-types 0.11.1",
+ "primitive-types",
  "sp-externalities",
  "sp-runtime-interface-proc-macro",
  "sp-std",
@@ -12721,7 +12544,7 @@ dependencies = [
 name = "t3rn-protocol"
 version = "1.0.0-alpha.1"
 dependencies = [
- "ethabi-decode 1.3.2",
+ "ethabi-decode",
  "frame-metadata 15.0.0",
  "frame-support",
  "frame-system",
@@ -12773,7 +12596,7 @@ dependencies = [
  "hex",
  "hex-literal 0.3.4",
  "parity-scale-codec 3.1.2",
- "primitive-types 0.11.1",
+ "primitive-types",
  "scale-info 2.1.1",
  "serde",
  "serde_json",
@@ -12789,7 +12612,7 @@ source = "registry+https://github.com/t3rn/registry-index.git"
 checksum = "2e568f17858d50ae89815dae7bfc46758596f56ecdf5b117e10b117f94934cc3"
 dependencies = [
  "parity-scale-codec 3.1.2",
- "primitive-types 0.11.1",
+ "primitive-types",
  "scale-info 2.1.1",
 ]
 
@@ -13546,12 +13369,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7e8820f5d777f6224dc4be3632222971ac30164d4a258d595640799554ebfd99"
 
 [[package]]
-name = "unicode-width"
-version = "0.1.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3ed742d4ea2bd1176e236172c8429aaf54486e7ac098db29ffe6529e0ce50973"
-
-[[package]]
 name = "unicode-xid"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -14023,26 +13840,6 @@ dependencies = [
  "serde",
  "thiserror",
  "wasmparser",
-]
-
-[[package]]
-name = "wast"
-version = "39.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9bbbd53432b267421186feee3e52436531fa69a7cfee9403f5204352df3dd05"
-dependencies = [
- "leb128",
- "memchr",
- "unicode-width",
-]
-
-[[package]]
-name = "wat"
-version = "1.0.41"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab98ed25494f97c69f28758617f27c3e92e5336040b5c3a14634f2dd3fe61830"
-dependencies = [
- "wast",
 ]
 
 [[package]]

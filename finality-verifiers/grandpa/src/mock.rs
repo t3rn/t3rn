@@ -25,7 +25,7 @@ use sp_runtime::{
 };
 use sp_std::convert::{TryFrom, TryInto};
 
-use t3rn_primitives::{bridges::runtime::Chain,};
+use crate::bridges::runtime::Chain;
 pub type AccountId = u64;
 pub type TestHeader = crate::BridgedHeader<TestRuntime, ()>;
 pub type TestNumber = crate::BridgedBlockNumber<TestRuntime, ()>;
@@ -146,15 +146,18 @@ pub fn run_test<T>(test: impl FnOnce() -> T) -> T {
     sp_io::TestExternalities::new(Default::default()).execute_with(test)
 }
 
+#[cfg(all(feature = "testing", test))]
 pub fn test_header(num: TestNumber) -> TestHeader {
     // We wrap the call to avoid explicit type annotations in our tests
-    t3rn_primitives::bridges::test_utils::test_header(num)
+   crate::bridges::test_utils::test_header(num)
 }
 
+#[cfg(all(feature = "testing", test))]
 pub fn test_header_with_correct_parent(num: TestNumber, parent_hash: Option<H256>) -> TestHeader {
-    t3rn_primitives::bridges::test_utils::test_header_with_correct_parent(num, parent_hash)
+    crate::bridges::test_utils::test_header_with_correct_parent(num, parent_hash)
 }
 
+#[cfg(all(feature = "testing", test))]
 pub fn test_header_range(to: u64) -> Vec<TestHeader> {
     let mut headers: Vec<TestHeader> = vec![];
     let mut parent_hash = None;
@@ -165,22 +168,3 @@ pub fn test_header_range(to: u64) -> Vec<TestHeader> {
     }
     return headers
 }
-
-// pub fn generate_header_data(header: u64, range_size: u64, init_parant_hash: Option<H256>) -> (TestHeader, Vec<TestHeader>) {
-//     let from = header - range_size;
-//     let mut range: Vec<TestHeader> = vec![];
-//     let mut parent_hash = Some(test_header_with_correct_parent(from - 1, init_parant_hash).hash());
-//     let mut signed_header = test_header(header);
-//
-//     for (i, block) in (from..=header).enumerate() {
-//         if block != header {
-//             let header = test_header_with_correct_parent(block.into(), parent_hash);
-//             parent_hash = Some(header.hash().clone());
-//             range.push(header);
-//         } else {
-//             signed_header = test_header_with_correct_parent(block.into(), parent_hash);
-//         }
-//     }
-//     range.reverse();
-//     return (signed_header, range)
-// }
