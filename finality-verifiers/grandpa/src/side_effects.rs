@@ -98,7 +98,7 @@ pub(crate) fn decode_event<T: frame_system::Config>(
 }
 
 
-#[cfg(test)]
+#[cfg(all(feature = "testing", test))]
 pub mod tests {
     use codec::Encode;
     use frame_support::{parameter_types};
@@ -174,26 +174,6 @@ pub mod tests {
         type ReserveIdentifier = [u8; 8];
         type WeightInfo = ();
     }
-
-    // // ORML Tokens
-    // pub type CurrencyId = u32;
-    // parameter_type_with_key! {
-    //     pub ExistentialDeposits: |_currency_id: CurrencyId| -> Balance {
-    //         Default::default()
-    //     };
-    // }
-    //
-    // impl orml_tokens::Config for Test {
-    //     type Amount = Amount;
-    //     type Balance = Balance;
-    //     type CurrencyId = CurrencyId;
-    //     type DustRemovalWhitelist = Nothing;
-    //     type Event = Event;
-    //     type ExistentialDeposits = ExistentialDeposits;
-    //     type MaxLocks = ();
-    //     type OnDust = ();
-    //     type WeightInfo = ();
-    // }
 
     #[test]
     fn successfully_encodes_transferred_event() {

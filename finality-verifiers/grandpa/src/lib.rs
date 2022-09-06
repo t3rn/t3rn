@@ -56,7 +56,7 @@ use types::{GrandpaRegistrationData};
 use sp_trie::{read_trie_value, LayoutV1, StorageProof};
 
 #[cfg(feature = "testing")]
-mod mock;
+pub mod mock;
 
 /// Pallet containing weights for this pallet.
 pub mod weights;

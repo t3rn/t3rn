@@ -29,11 +29,10 @@ use crate::{
 use codec::{Decode, Encode};
 use frame_support::{assert_noop, assert_ok, dispatch::PostDispatchInfo, traits::Currency};
 use frame_system::{pallet_prelude::OriginFor, EventRecord, Phase};
-use pallet_grandpa_finality_verifier::{BridgedHeader};
-use pallet_grandpa_finality_verifier::bridges::test_utils::brute_seed_block_1;
+use pallet_grandpa_finality_verifier::mock::brute_seed_block_1;
 use serde_json::Value;
 use sp_io::TestExternalities;
-use sp_runtime::{traits::Header, AccountId32, DispatchErrorWithPostInfo};
+use sp_runtime::{AccountId32, DispatchErrorWithPostInfo};
 use sp_std::prelude::*;
 use std::{convert::TryInto, fs};
 use t3rn_primitives::{
@@ -45,7 +44,6 @@ use t3rn_primitives::{
     xtx::XtxId,
     ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
 };
-use t3rn_primitives::portal::RococoBridge;
 use t3rn_protocol::side_effects::test_utils::*;
 
 pub const ALICE: AccountId32 = AccountId32::new([1u8; 32]);

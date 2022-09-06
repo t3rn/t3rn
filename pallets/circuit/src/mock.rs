@@ -17,7 +17,7 @@ use sp_runtime::{
     curve::PiecewiseLinear,
     generic, impl_opaque_keys,
     testing::TestXt,
-    traits::{BlakeTwo256, Convert, IdentityLookup, Keccak256, OpaqueKeys},
+    traits::{BlakeTwo256, Convert, IdentityLookup, OpaqueKeys},
     Perbill,
 };
 use sp_staking::{EraIndex, SessionIndex};
@@ -26,7 +26,6 @@ use t3rn_primitives::{
     side_effect::interface::SideEffectInterface, transfers::BalanceOf, EscrowTrait,
     GatewaySysProps, GatewayType, GatewayVendor,
 };
-use t3rn_protocol::side_effects::confirm::ethereum::EthereumMockVerifier;
 
 pub type AccountId = sp_runtime::AccountId32;
 pub type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -143,7 +142,6 @@ impl EscrowTrait<Test> for Test {
 // ORML Tokens
 use orml_traits::parameter_type_with_key;
 use t3rn_primitives::{abi::Type, xdns::XdnsRecord};
-use t3rn_protocol::side_effects::test_utils::hex;
 
 pub type CurrencyId = u32;
 parameter_type_with_key! {
