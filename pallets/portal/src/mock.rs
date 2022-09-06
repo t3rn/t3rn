@@ -12,10 +12,11 @@ use sp_runtime::{
 };
 use sp_std::convert::{TryFrom, TryInto};
 use t3rn_primitives::{
-    bridges::{runtime as bp_runtime},
     abi::Type, side_effect::interface::SideEffectInterface, transfers::BalanceOf, xdns::XdnsRecord,
     EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor,
 };
+
+use pallet_grandpa_finality_verifier::bridges::{runtime as bp_runtime};
 pub type AccountId = sp_runtime::AccountId32;
 pub type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 pub type Block = frame_system::mocking::MockBlock<Test>;
