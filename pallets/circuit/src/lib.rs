@@ -654,16 +654,13 @@ pub mod pallet {
 
             log::info!("bond insurance deposit -- applied");
 
-            Self::deposit_event(Event::SideEffectInsuranceReceived(side_effect_id, relayer.clone()));
+            Self::deposit_event(Event::SideEffectInsuranceReceived(
+                side_effect_id,
+                relayer.clone(),
+            ));
 
             // Emit: From Circuit events
-            Self::emit(
-                xtx_id,
-                maybe_xtx_changed,
-                &relayer,
-                &vec![],
-                None,
-            );
+            Self::emit(xtx_id, maybe_xtx_changed, &relayer, &vec![], None);
 
             Ok(().into())
         }
@@ -861,7 +858,9 @@ pub mod pallet {
                 side_effect.generate_id::<SystemHashing<T>>()
             );
 
-            Self::deposit_event(Event::SideEffectConfirmed(side_effect.generate_id::<SystemHashing<T>>()));
+            Self::deposit_event(Event::SideEffectConfirmed(
+                side_effect.generate_id::<SystemHashing<T>>(),
+            ));
 
             // Emit: From Circuit events
             Self::emit(
@@ -1830,7 +1829,7 @@ impl<T: Config> Pallet<T> {
                     <T as frame_system::Config>::AccountId,
                     <T as frame_system::Config>::BlockNumber,
                     EscrowedBalanceOf<T, T::Escrowed>,
-                >
+                >,
             >,
         ) -> Result<
             FullSideEffect<
@@ -1849,16 +1848,21 @@ impl<T: Config> Pallet<T> {
             }
 
             // Find sfx object index in the current step
-            match step_side_effects.iter().position(|sfx| sfx.input.generate_id::<SystemHashing<T>>() == input_side_effect_id) {
-                Some(index) => { // side effect found in current step
-                    if step_side_effects[index].confirmed.is_none() { // side effect unconfirmed currently
+            match step_side_effects
+                .iter()
+                .position(|sfx| sfx.input.generate_id::<SystemHashing<T>>() == input_side_effect_id)
+            {
+                Some(index) => {
+                    // side effect found in current step
+                    if step_side_effects[index].confirmed.is_none() {
+                        // side effect unconfirmed currently
                         step_side_effects[index].confirmed = Some(confirmation.clone());
                         Ok(step_side_effects[index].clone())
                     } else {
                         Err("Side Effect already confirmed")
                     }
                 },
-                None => Err("Unable to find matching Side Effect in given Xtx to confirm")
+                None => Err("Unable to find matching Side Effect in given Xtx to confirm"),
             }
         }
 
@@ -1866,7 +1870,11 @@ impl<T: Config> Pallet<T> {
         side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
 
         // confirm order of current season, by passing the side_effects of it to confirm order.
-        let fsfx = confirm_order::<T>(side_effect, confirmation, &mut local_ctx.full_side_effects[local_ctx.xtx.steps_cnt.0 as usize])?;
+        let fsfx = confirm_order::<T>(
+            side_effect,
+            confirmation,
+            &mut local_ctx.full_side_effects[local_ctx.xtx.steps_cnt.0 as usize],
+        )?;
         log::info!("Order confirmed!");
         // confirm the payload is included in the specified block, and return the SideEffect params as defined in XDNS.
         // this could be multiple events!
@@ -1876,7 +1884,7 @@ impl<T: Config> Pallet<T> {
             confirmation.inclusion_data.clone(),
             side_effect_id.clone(),
         )
-        .map_err(|_| "SideEffect confirmation failed!")?;
+            .map_err(|_| "SideEffect confirmation failed!")?;
         // ToDo handle misbehaviour
         log::info!("Params: {:?}", params);
 

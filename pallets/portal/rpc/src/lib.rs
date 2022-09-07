@@ -7,8 +7,8 @@ use codec::Codec;
 use jsonrpc_core::{Error, ErrorCode, Result};
 
 use jsonrpc_derive::rpc;
+use pallet_portal_rpc_runtime_api::ChainId;
 pub use pallet_portal_rpc_runtime_api::PortalRuntimeApi;
-use pallet_portal_rpc_runtime_api::{ChainId};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{
@@ -54,9 +54,7 @@ where
         let api = self.client.runtime_api();
         let at = BlockId::hash(self.client.info().best_hash);
 
-        let result: Option<Vec<u8>> =
-            api
-            .get_latest_finalized_header(&at, gateway_id).unwrap();
+        let result: Option<Vec<u8>> = api.get_latest_finalized_header(&at, gateway_id).unwrap();
 
         match result {
             Some(header_hash) => Ok(header_hash),

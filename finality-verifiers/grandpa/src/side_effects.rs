@@ -1,5 +1,5 @@
-use sp_std::{vec, vec::Vec};
 use codec::{Decode, Encode};
+use sp_std::{vec, vec::Vec};
 
 #[derive(Encode, Decode)]
 pub enum TransferEventStub<T: frame_system::Config, Balance> {
@@ -97,11 +97,10 @@ pub(crate) fn decode_event<T: frame_system::Config>(
     }
 }
 
-
 #[cfg(all(feature = "testing", test))]
 pub mod tests {
     use codec::Encode;
-    use frame_support::{parameter_types};
+    use frame_support::parameter_types;
     use sp_std::convert::{TryFrom, TryInto};
 
     use hex_literal::hex;
@@ -111,8 +110,7 @@ pub mod tests {
         AccountId32,
     };
 
-    use crate::decode_event;
-    use crate::side_effects::*;
+    use crate::{decode_event, side_effects::*};
 
     type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
     type Block = frame_system::mocking::MockBlock<Test>;
@@ -217,27 +215,21 @@ pub mod tests {
         let mut encoded_event = vec![4];
         encoded_event.append(&mut encoded_balance_transfer_event);
 
-        let res = decode_event::<Test>(
-            b"tran",
-            encoded_event,
-            b"uint64",
-        ).unwrap();
+        let res = decode_event::<Test>(b"tran", encoded_event, b"uint64").unwrap();
 
         assert_eq!(
             res,
-            vec![
+            vec![vec![
                 vec![
-                    vec![
-                        9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                        9, 9, 9, 9, 9, 9,
-                    ],
-                    vec![
-                        6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-                        6, 6, 6, 6, 6, 6,
-                    ],
-                    vec![1, 0, 0, 0, 0, 0, 0, 0],
-                ]
-            ]
+                    9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+                    9, 9, 9, 9, 9, 9,
+                ],
+                vec![
+                    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+                    6, 6, 6, 6, 6, 6,
+                ],
+                vec![1, 0, 0, 0, 0, 0, 0, 0],
+            ]]
         );
     }
 }

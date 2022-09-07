@@ -1,7 +1,6 @@
 use circuit_standalone_runtime::{
-    AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig,
-    Signature, SudoConfig, SystemConfig, XDNSConfig,
-    WASM_BINARY
+    AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig, Signature, SudoConfig,
+    SystemConfig, XDNSConfig, WASM_BINARY,
 };
 
 use jsonrpc_runtime_client::{

@@ -1,6 +1,5 @@
 use circuit_parachain_runtime::{
-    AccountId, AuraId, Signature, SudoConfig, XDNSConfig,
-    EXISTENTIAL_DEPOSIT,
+    AccountId, AuraId, Signature, SudoConfig, XDNSConfig, EXISTENTIAL_DEPOSIT,
 };
 use cumulus_primitives_core::ParaId;
 use jsonrpc_runtime_client::{

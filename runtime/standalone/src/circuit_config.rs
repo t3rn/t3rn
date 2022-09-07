@@ -1,9 +1,9 @@
 use super::*;
 use frame_support::{parameter_types, traits::ConstU32, PalletId};
+use pallet_grandpa_finality_verifier::bridges::runtime as bp_runtime;
 use sp_core::H256;
 use sp_runtime::traits::*;
 use t3rn_primitives::portal::RococoBridge;
-use pallet_grandpa_finality_verifier::bridges::runtime as bp_runtime;
 
 // impl pallet_randomness_collective_flip::Config for Runtime {}
 
@@ -29,8 +29,8 @@ impl pallet_contracts_registry::Config for Runtime {
 
 impl pallet_portal::Config for Runtime {
     type Event = Event;
-    type Xdns = XDNS;
     type WeightInfo = pallet_portal::weights::SubstrateWeight<Runtime>;
+    type Xdns = XDNS;
 }
 
 parameter_types! {
@@ -56,13 +56,13 @@ impl pallet_circuit::Config for Runtime {
     type Event = Event;
     type MultiCurrency = ORMLTokens;
     type PalletId = CircuitPalletId;
+    type Portal = Portal;
     type SelfGatewayId = SelfGatewayId;
     type SignalQueueDepth = ConstU32<64>;
     type WeightInfo = ();
     type Xdns = XDNS;
     type XtxTimeoutCheckInterval = ConstU32<50>;
     type XtxTimeoutDefault = ConstU32<400>;
-    type Portal = Portal;
 }
 
 parameter_types! {
@@ -83,7 +83,7 @@ impl bp_runtime::Chain for Blake2ValU32Chain {
 
 impl pallet_grandpa_finality_verifier::Config<RococoBridgeInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
-    type MaxRequests = MaxRequests;
     type HeadersToKeep = HeadersToKeep;
+    type MaxRequests = MaxRequests;
     type WeightInfo = ();
 }

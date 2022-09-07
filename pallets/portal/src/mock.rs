@@ -4,7 +4,7 @@ use codec::Encode;
 use frame_support::{
     pallet_prelude::GenesisBuild, parameter_types, traits::Everything, weights::Weight, PalletId,
 };
-use sp_core::{H256};
+use sp_core::H256;
 use sp_runtime::{
     testing::{Header, TestXt},
     traits::{BlakeTwo256, Convert, IdentityLookup},
@@ -16,7 +16,7 @@ use t3rn_primitives::{
     EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor,
 };
 
-use pallet_grandpa_finality_verifier::bridges::{runtime as bp_runtime};
+use pallet_grandpa_finality_verifier::bridges::runtime as bp_runtime;
 pub type AccountId = sp_runtime::AccountId32;
 pub type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 pub type Block = frame_system::mocking::MockBlock<Test>;
@@ -144,8 +144,8 @@ parameter_types! {
 
 impl Config for Test {
     type Event = Event;
-    type Xdns = XDNS;
     type WeightInfo = ();
+    type Xdns = XDNS;
 }
 
 parameter_types! {
@@ -188,8 +188,8 @@ type RococoBridgeInstance = ();
 
 impl pallet_grandpa_finality_verifier::Config<RococoBridgeInstance> for Test {
     type BridgedChain = Blake2ValU32Chain;
-    type MaxRequests = MaxRequests;
     type HeadersToKeep = HeadersToKeep;
+    type MaxRequests = MaxRequests;
     type WeightInfo = ();
 }
 

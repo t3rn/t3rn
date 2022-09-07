@@ -16,24 +16,22 @@
 // limitations under the License.
 
 //! Test utilities
-use codec::{Decode};
-use frame_support::{assert_noop, assert_ok, assert_err};
-use hex;
-use sp_io::TestExternalities;
-use sp_version::{create_runtime_str, RuntimeVersion};
-use serde_json::{Value};
-use t3rn_primitives::portal::RegistrationData;
-use std::fs;
-use frame_support::dispatch::PostDispatchInfo;
-use frame_system::pallet_prelude::OriginFor;
-use sp_runtime::{DispatchError, DispatchErrorWithPostInfo};
-use t3rn_primitives::{
-    portal::{RococoBridge},
-    abi::{GatewayABIConfig},
-    xdns::AllowedSideEffect,
-    ChainId, EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor, GatewayGenesisConfig,
-};
 use crate::{mock::*, Error};
+use codec::Decode;
+use frame_support::{assert_err, assert_noop, assert_ok, dispatch::PostDispatchInfo};
+use frame_system::pallet_prelude::OriginFor;
+use hex;
+use serde_json::Value;
+use sp_io::TestExternalities;
+use sp_runtime::{DispatchError, DispatchErrorWithPostInfo};
+use sp_version::{create_runtime_str, RuntimeVersion};
+use std::fs;
+use t3rn_primitives::{
+    abi::GatewayABIConfig,
+    portal::{RegistrationData, RococoBridge},
+    xdns::AllowedSideEffect,
+    ChainId, EscrowTrait, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
+};
 pub fn new_test_ext() -> TestExternalities {
     let t = frame_system::GenesisConfig::default()
         .build_storage::<Test>()
@@ -56,7 +54,7 @@ fn register_file(
     origin: OriginFor<Test>,
     file: &str,
     valid: bool,
-    index: usize
+    index: usize,
 ) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
     let raw_data = fs::read_to_string("./src/mock-data/".to_owned() + file).unwrap();
     let json: Value = serde_json::from_str(raw_data.as_str()).unwrap();
@@ -68,15 +66,34 @@ fn register(
     json: Value,
     valid: bool,
 ) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
-    let url: Vec<u8> =  hex::decode(json["encoded_url"].as_str().unwrap()).unwrap();
-    let gateway_id: ChainId = Decode::decode(&mut &*hex::decode(json["encoded_gateway_id"].as_str().unwrap()).unwrap()).unwrap();
-    let gateway_abi: GatewayABIConfig = Decode::decode(&mut &*hex::decode(json["encoded_gateway_abi"].as_str().unwrap()).unwrap()).unwrap();
-    let gateway_vendor: GatewayVendor = Decode::decode(&mut &*hex::decode(json["encoded_gateway_vendor"].as_str().unwrap()).unwrap()).unwrap();
-    let gateway_type: GatewayType = Decode::decode(&mut &*hex::decode(json["encoded_gateway_type"].as_str().unwrap()).unwrap()).unwrap();
-    let gateway_genesis: GatewayGenesisConfig = Decode::decode(&mut &*hex::decode(json["encoded_gateway_genesis"].as_str().unwrap()).unwrap()).unwrap();
-    let gateway_sys_props: GatewaySysProps = Decode::decode(&mut &*hex::decode(json["encoded_gateway_sys_props"].as_str().unwrap()).unwrap()).unwrap();
-    let allowed_side_effects: Vec<AllowedSideEffect> = Decode::decode(&mut &*hex::decode(json["encoded_allowed_side_effects"].as_str().unwrap()).unwrap()).unwrap();
-    let encoded_registration_data: Vec<u8> = hex::decode(json["encoded_registration_data"].as_str().unwrap()).unwrap();
+    let url: Vec<u8> = hex::decode(json["encoded_url"].as_str().unwrap()).unwrap();
+    let gateway_id: ChainId =
+        Decode::decode(&mut &*hex::decode(json["encoded_gateway_id"].as_str().unwrap()).unwrap())
+            .unwrap();
+    let gateway_abi: GatewayABIConfig =
+        Decode::decode(&mut &*hex::decode(json["encoded_gateway_abi"].as_str().unwrap()).unwrap())
+            .unwrap();
+    let gateway_vendor: GatewayVendor = Decode::decode(
+        &mut &*hex::decode(json["encoded_gateway_vendor"].as_str().unwrap()).unwrap(),
+    )
+        .unwrap();
+    let gateway_type: GatewayType =
+        Decode::decode(&mut &*hex::decode(json["encoded_gateway_type"].as_str().unwrap()).unwrap())
+            .unwrap();
+    let gateway_genesis: GatewayGenesisConfig = Decode::decode(
+        &mut &*hex::decode(json["encoded_gateway_genesis"].as_str().unwrap()).unwrap(),
+    )
+        .unwrap();
+    let gateway_sys_props: GatewaySysProps = Decode::decode(
+        &mut &*hex::decode(json["encoded_gateway_sys_props"].as_str().unwrap()).unwrap(),
+    )
+        .unwrap();
+    let allowed_side_effects: Vec<AllowedSideEffect> = Decode::decode(
+        &mut &*hex::decode(json["encoded_allowed_side_effects"].as_str().unwrap()).unwrap(),
+    )
+        .unwrap();
+    let encoded_registration_data: Vec<u8> =
+        hex::decode(json["encoded_registration_data"].as_str().unwrap()).unwrap();
 
     let res = Portal::register_gateway(
         origin,
@@ -88,7 +105,7 @@ fn register(
         gateway_genesis.clone(),
         gateway_sys_props.clone(),
         allowed_side_effects.clone(),
-        encoded_registration_data.clone()
+        encoded_registration_data.clone(),
     );
 
     if valid {
@@ -110,7 +127,7 @@ fn register(
 fn submit_header_file(
     origin: OriginFor<Test>,
     file: &str,
-    index: usize //might have an index (for relaychains)
+    index: usize, //might have an index (for relaychains)
 ) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
     let raw_data = fs::read_to_string("./src/mock-data/".to_owned() + file).unwrap();
     let json: Value = serde_json::from_str(raw_data.as_str()).unwrap();
@@ -120,23 +137,23 @@ fn submit_header_file(
 fn submit_headers(
     origin: OriginFor<Test>,
     json: Value,
-    index: usize
+    index: usize,
 ) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
-
-    let encoded_header_data: Vec<u8> =  hex::decode(json[index]["encoded_data"].as_str().unwrap()).unwrap();
-    let gateway_id: ChainId = Decode::decode(&mut &*hex::decode(json[index]["encoded_gatewayId"].as_str().unwrap()).unwrap()).unwrap();
-    Portal::submit_headers(
-        origin,
-        gateway_id,
-        encoded_header_data
+    let encoded_header_data: Vec<u8> =
+        hex::decode(json[index]["encoded_data"].as_str().unwrap()).unwrap();
+    let gateway_id: ChainId = Decode::decode(
+        &mut &*hex::decode(json[index]["encoded_gatewayId"].as_str().unwrap()).unwrap(),
     )
+        .unwrap();
+    Portal::submit_headers(origin, gateway_id, encoded_header_data)
 }
 
 // iterates sequentially though all test files in mock-data
 fn run_mock_tests() -> Result<(), DispatchErrorWithPostInfo<PostDispatchInfo>> {
-    let mut paths: Vec<_> = fs::read_dir("src/mock-data/").unwrap()
-                                              .map(|r| r.unwrap())
-                                              .collect();
+    let mut paths: Vec<_> = fs::read_dir("src/mock-data/")
+        .unwrap()
+        .map(|r| r.unwrap())
+        .collect();
     paths.sort_by_key(|dir| dir.path());
 
     for entry in paths {
@@ -148,14 +165,17 @@ fn run_mock_tests() -> Result<(), DispatchErrorWithPostInfo<PostDispatchInfo>> {
                 "register" => {
                     assert_ok!(register(Origin::root(), entry.clone(), true));
                 },
-                "submit-headers" => {
+                "submit-headers" =>
                     for index in 0..json.as_array().unwrap().len() {
-                        assert_ok!(submit_headers(Origin::signed([0u8; 32].into()), json.clone(), index));
-                    }
-                }
-                _ => unimplemented!()
+                        assert_ok!(submit_headers(
+                            Origin::signed([0u8; 32].into()),
+                            json.clone(),
+                            index
+                        ));
+                    },
+                _ => unimplemented!(),
             }
-        };
+        }
     }
     Ok(().into())
 }
@@ -211,7 +231,6 @@ fn fails_registration_with_invalid_signer() {
 
 #[test]
 fn cant_submit_without_registering() {
-
     let mut ext = TestExternalities::new_empty();
     let origin = Origin::root();
     ext.execute_with(|| {
@@ -244,7 +263,8 @@ fn can_submit_valid_header_data() {
     ext.execute_with(|| {
         assert_ok!(register_file(root, "1-register-roco.json", true, 0));
         assert_ok!(submit_header_file(origin.clone(), "2-headers-roco.json", 0));
-        assert_noop!( // can't submit twice
+        assert_noop!(
+            // can't submit twice
             submit_header_file(origin, "2-headers-roco.json", 0),
             Error::<Test>::SubmitHeaderError
         );
@@ -269,15 +289,12 @@ fn can_register_parachain_and_add_header() {
             Error::<Test>::GatewayVendorNotFound
         );
         assert_ok!(register_file(root.clone(), "3-register-pang.json", true, 0));
-        assert_noop!( // needs relaychain header first
+        assert_noop!(
+            // needs relaychain header first
             submit_header_file(origin.clone(), "5-headers-pang.json", 0),
             Error::<Test>::SubmitHeaderError
         );
-        assert_ok!(
-            submit_header_file(origin.clone(), "4-headers-roco.json", 0),
-        );
-        assert_ok!(
-            submit_header_file(origin.clone(), "5-headers-pang.json", 0),
-        );
+        assert_ok!(submit_header_file(origin.clone(), "4-headers-roco.json", 0),);
+        assert_ok!(submit_header_file(origin.clone(), "5-headers-pang.json", 0),);
     });
 }

@@ -327,8 +327,8 @@ impl pallet_grandpa_finality_verifier::Config<RococoBridgeInstance> for Test {
 
 impl pallet_portal::Config for Test {
     type Event = Event;
-    type Xdns = XDNS;
     type WeightInfo = ();
+    type Xdns = XDNS;
 }
 
 parameter_types! {
@@ -779,6 +779,15 @@ pub const BOB_RELAYER: AccountId = AccountId::new([2u8; 32]);
 pub const CHARLIE: AccountId = AccountId::new([3u8; 32]);
 pub const DJANGO: AccountId = AccountId::new([4u8; 32]);
 
-pub const CLI_DEFAULT: AccountId = AccountId::new([108,81,222,3,128,118,146,25,212,131,171,210,104,110,11,63,79,235,65,99,161,143,230,174,109,98,47,128,20,242,27,114]);
-pub const EXECUTOR_DEFAULT: AccountId = AccountId::new([1,119,209,36,229,1,136,124,36,112,226,96,200,240,218,96,219,158,211,219,168,8,166,130,240,154,251,57,239,240,197,97]);
-pub const EXECUTOR_SECOND: AccountId = AccountId::new([2,119,209,36,229,1,136,124,36,112,226,96,200,240,218,96,219,158,211,219,168,8,166,130,240,154,251,57,239,240,197,99]);
+pub const CLI_DEFAULT: AccountId = AccountId::new([
+    108, 81, 222, 3, 128, 118, 146, 25, 212, 131, 171, 210, 104, 110, 11, 63, 79, 235, 65, 99, 161,
+    143, 230, 174, 109, 98, 47, 128, 20, 242, 27, 114,
+]);
+pub const EXECUTOR_DEFAULT: AccountId = AccountId::new([
+    1, 119, 209, 36, 229, 1, 136, 124, 36, 112, 226, 96, 200, 240, 218, 96, 219, 158, 211, 219,
+    168, 8, 166, 130, 240, 154, 251, 57, 239, 240, 197, 97,
+]);
+pub const EXECUTOR_SECOND: AccountId = AccountId::new([
+    2, 119, 209, 36, 229, 1, 136, 124, 36, 112, 226, 96, 200, 240, 218, 96, 219, 158, 211, 219,
+    168, 8, 166, 130, 240, 154, 251, 57, 239, 240, 197, 99,
+]);

@@ -6,9 +6,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::Codec;
-pub use t3rn_primitives::{ChainId};
-use codec::alloc::vec::Vec;
+use codec::{alloc::vec::Vec, Codec};
+pub use t3rn_primitives::ChainId;
 
 sp_api::decl_runtime_apis! {
     /// The API to interact with pallet XDNS

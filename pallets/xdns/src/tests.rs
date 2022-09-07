@@ -342,7 +342,10 @@ fn gate_gateway_vendor_returns_error_for_unknown_record() {
         .build()
         .execute_with(|| {
             let actual = XDNS::get_gateway_vendor(b"rand");
-            assert_err!(actual, "GatewayVendor not available. Xdns record not found!");
+            assert_err!(
+                actual,
+                "GatewayVendor not available. Xdns record not found!"
+            );
         });
 }
 

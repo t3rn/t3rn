@@ -39,30 +39,35 @@
 #![allow(clippy::too_many_arguments)]
 
 use crate::weights::WeightInfo;
-use sp_std::convert::TryInto;
 use bp_header_chain::{justification::GrandpaJustification, InitializationData};
 use bp_runtime::{BlockNumberOf, Chain, ChainId, HashOf, HasherOf, HeaderOf};
+use sp_std::convert::TryInto;
 
 use finality_grandpa::voter_set::VoterSet;
 use frame_support::{ensure, pallet_prelude::*, StorageHasher};
 use frame_system::{ensure_signed, RawOrigin};
+use num_traits::cast::AsPrimitive;
+use sp_core::crypto::ByteArray;
 use sp_finality_grandpa::{ConsensusLog, GRANDPA_ENGINE_ID};
 use sp_runtime::traits::{BadOrigin, Header as HeaderT, Zero};
 use sp_std::{vec, vec::Vec};
-use sp_core::crypto::ByteArray;
-use num_traits::cast::AsPrimitive;
+
 mod types;
-use types::{GrandpaRegistrationData};
+
 use sp_trie::{read_trie_value, LayoutV1, StorageProof};
+use types::GrandpaRegistrationData;
 
 #[cfg(feature = "testing")]
 pub mod mock;
 
+pub mod bridges;
+mod side_effects;
 /// Pallet containing weights for this pallet.
 pub mod weights;
-mod side_effects;
-pub mod bridges;
-use bridges::{header_chain as bp_header_chain, runtime as bp_runtime, header_chain::ProofTriePointer};
+
+use bridges::{
+    header_chain as bp_header_chain, header_chain::ProofTriePointer, runtime as bp_runtime,
+};
 
 // #[cfg(feature = "runtime-benchmarks")]
 // pub mod benchmarking;
@@ -80,9 +85,12 @@ pub type BridgedBlockHasher<T, I> = HasherOf<<T as Config<I>>::BridgedChain>;
 pub type BridgedHeader<T, I> = HeaderOf<<T as Config<I>>::BridgedChain>;
 
 const LOG_TARGET: &str = "grandpa-finality-verifier";
+
+use crate::{
+    side_effects::decode_event,
+    types::{InclusionData, Parachain, ParachainHeaderData, RelaychainHeaderData},
+};
 use frame_system::pallet_prelude::*;
-use crate::side_effects::decode_event;
-use crate::types::{Parachain, RelaychainHeaderData, ParachainHeaderData, InclusionData};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -199,7 +207,7 @@ pub mod pallet {
         (BridgedBlockHash<T, I>, BridgedBlockHash<T, I>),
     >;
 
-     #[pallet::storage]
+    #[pallet::storage]
     pub(super) type RelayChainId<T: Config<I>, I: 'static = ()> =
         StorageValue<_, ChainId, OptionQuery>;
 
@@ -247,7 +255,6 @@ pub mod pallet {
     pub(super) type InstantiatedGatewaysMap<T: Config<I>, I: 'static = ()> =
         StorageValue<_, Vec<ChainId>, ValueQuery>;
 
-
     #[pallet::error]
     pub enum Error<T, I = ()> {
         /// The given justification is invalid for the given header.
@@ -289,28 +296,25 @@ pub mod pallet {
         gateway_id: ChainId,
         signed_header: BridgedHeader<T, I>,
         range: Vec<BridgedHeader<T, I>>,
-        justification: GrandpaJustification::<BridgedHeader<T, I>>
+        justification: GrandpaJustification<BridgedHeader<T, I>>,
     ) -> Result<Vec<u8>, &'static str> {
         ensure!(
-            <RequestCountMap<T,I>>::get(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
+            <RequestCountMap<T, I>>::get(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
             "Too many Requests"
         );
 
-        ensure!(
-            range.len() > 0,
-            "empty range submitted"
-        );
+        ensure!(range.len() > 0, "empty range submitted");
 
         let best_finalized = <MultiImportedHeaders<T, I>>::get(
             gateway_id,
             // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
             // `ImportedHeaders` must contain an entry for `BestFinalized`.
-            <BestFinalizedMap<T, I>>::get(gateway_id)
-                .ok_or_else(|| "NoFinalizedHeader")?,
+            <BestFinalizedMap<T, I>>::get(gateway_id).ok_or_else(|| "NoFinalizedHeader")?,
         )
-        .ok_or_else(|| "NoFinalizedHeader")?;
+            .ok_or_else(|| "NoFinalizedHeader")?;
 
-        ensure!( // enforce gap-free range submission
+        ensure!(
+            // enforce gap-free range submission
             best_finalized.hash() == *range.last().unwrap().parent_hash(), // we have checked for empty vec already
             "Invalid Header Linkage"
         );
@@ -343,10 +347,7 @@ pub mod pallet {
         <MultiImportedRoots<T, I>>::insert(
             gateway_id,
             hash,
-            (
-                signed_header.extrinsics_root(),
-                signed_header.state_root(),
-            ),
+            (signed_header.extrinsics_root(), signed_header.state_root()),
         );
         <RequestCountMap<T, I>>::mutate(gateway_id, |count| {
             match count {
@@ -360,10 +361,10 @@ pub mod pallet {
 
         for header in range {
             if header.number() <= best_finalized.number() {
-                break; // We're going back in time and dont want to overwrite
+                break // We're going back in time and dont want to overwrite
             }
 
-            if *anchor.parent_hash() == header.hash()  {
+            if *anchor.parent_hash() == header.hash() {
                 <MultiImportedHeaders<T, I>>::insert(gateway_id, header.hash(), header.clone());
                 <MultiImportedHashes<T, I>>::insert(gateway_id, index, header.hash());
                 <MultiImportedRoots<T, I>>::insert(
@@ -374,10 +375,9 @@ pub mod pallet {
 
                 anchor = header;
             } else {
-                return Err("Invalid header linkage");
+                return Err("Invalid header linkage")
             }
         }
-
 
         // // Update ring buffer pointer and remove old headers
         // <MultiImportedHashesPointer<T, I>>::insert(
@@ -401,7 +401,6 @@ pub mod pallet {
             hash,
             gateway_id
         );
-
 
         log::debug!(
             target: LOG_TARGET,
@@ -428,37 +427,31 @@ pub mod pallet {
         proof: StorageProof,
     ) -> Result<Vec<u8>, &'static str> {
         ensure!(
-            <RequestCountMap<T,I>>::get(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
+            <RequestCountMap<T, I>>::get(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
             "Too many Requests"
         );
 
-        ensure!(
-            range.len() > 0,
-            "empty range submitted"
-        );
+        ensure!(range.len() > 0, "empty range submitted");
 
         let best_finalized = <MultiImportedHeaders<T, I>>::get(
             gateway_id,
             // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
             // `ImportedHeaders` must contain an entry for `BestFinalized`.
-            <BestFinalizedMap<T, I>>::get(gateway_id)
-                .ok_or_else(|| "NoFinalizedHeader")?,
-            )
-        .ok_or_else(|| "NoFinalizedHeader")?;
+            <BestFinalizedMap<T, I>>::get(gateway_id).ok_or_else(|| "NoFinalizedHeader")?,
+        )
+            .ok_or_else(|| "NoFinalizedHeader")?;
 
-        ensure!( // enforce gap-free range submission
+        ensure!(
+            // enforce gap-free range submission
             best_finalized.hash() == *range.last().unwrap().parent_hash(), // we have checked for empty vec already
             "Invalid Header Linkage"
         );
 
-        let parachain = <ParachainIdMap<T, I>>::try_get(gateway_id)
-            .map_err(|_| "Parachain not registered")?;
+        let parachain =
+            <ParachainIdMap<T, I>>::try_get(gateway_id).map_err(|_| "Parachain not registered")?;
 
-        let header: BridgedHeader<T, I> = verify_header_storage_proof::<T, I>(
-            relay_block_hash,
-            proof,
-            parachain
-        )?;
+        let header: BridgedHeader<T, I> =
+            verify_header_storage_proof::<T, I>(relay_block_hash, proof, parachain)?;
 
         let hash = header.hash();
         let index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
@@ -478,10 +471,10 @@ pub mod pallet {
 
         for header in range {
             if header.number() <= best_finalized.number() {
-                break; // We're going back in time and dont want to overwrite
+                break // We're going back in time and dont want to overwrite
             }
 
-            if *anchor.parent_hash() == header.hash()  {
+            if *anchor.parent_hash() == header.hash() {
                 <MultiImportedHeaders<T, I>>::insert(gateway_id, header.hash(), header.clone());
                 <MultiImportedHashes<T, I>>::insert(gateway_id, index, header.hash());
                 <MultiImportedRoots<T, I>>::insert(
@@ -492,7 +485,7 @@ pub mod pallet {
 
                 anchor = header;
             } else {
-                return Err("Invalid header linkage");
+                return Err("Invalid header linkage")
             }
         }
 
@@ -590,8 +583,7 @@ pub mod pallet {
     ) -> Result<(), &'static str> {
         use bp_header_chain::justification::verify_justification;
 
-        let voter_set =
-            VoterSet::new(authority_set.authorities).ok_or("InvalidAuthoritySet")?;
+        let voter_set = VoterSet::new(authority_set.authorities).ok_or("InvalidAuthoritySet")?;
         let set_id = authority_set.set_id;
 
         Ok(verify_justification::<BridgedHeader<T, I>>(
@@ -631,7 +623,7 @@ pub mod pallet {
         <CurrentAuthoritySet<T, I>>::put(authority_set);
         <RelayChainId<T, I>>::put(gateway_id);
         <IsHaltedMap<T, I>>::insert(gateway_id, is_halted);
-        <PalletOwnerMap::<T, I>>::insert(gateway_id, owner);
+        <PalletOwnerMap<T, I>>::insert(gateway_id, owner);
         <InstantiatedGatewaysMap<T, I>>::mutate(|gateways| {
             gateways.push(gateway_id);
             gateways.len() + 1
@@ -647,7 +639,7 @@ pub mod pallet {
         is_halted: bool,
         gateway_id: ChainId,
         owner: T::AccountId,
-        parachain: Parachain
+        parachain: Parachain,
     ) -> Result<(), &'static str> {
         can_init_para_chain::<T, I>(&parachain)?;
         let initial_hash = header.hash();
@@ -656,7 +648,7 @@ pub mod pallet {
         <MultiImportedHeaders<T, I>>::insert(gateway_id, initial_hash, header);
         <IsHaltedMap<T, I>>::insert(gateway_id, is_halted);
         <ParachainIdMap<T, I>>::insert(gateway_id, parachain);
-        <PalletOwnerMap::<T, I>>::insert(gateway_id, owner);
+        <PalletOwnerMap<T, I>>::insert(gateway_id, owner);
         <InstantiatedGatewaysMap<T, I>>::mutate(|gateways| {
             gateways.push(gateway_id);
             gateways.len() + 1
@@ -728,36 +720,44 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         ensure_owner_or_root_single::<T, I>(origin.clone(), gateway_id)?;
         let init_allowed = !<BestFinalizedMap<T, I>>::contains_key(gateway_id);
         ensure!(init_allowed, "Already initialized");
-        let registration_data: GrandpaRegistrationData<T::AccountId> = Decode::decode(&mut &*encoded_registration_data)
-            .map_err(|_| "Registration data decoding error!")?;
+        let registration_data: GrandpaRegistrationData<T::AccountId> =
+            Decode::decode(&mut &*encoded_registration_data)
+                .map_err(|_| "Registration data decoding error!")?;
         let header: BridgedHeader<T, I> = Decode::decode(&mut &registration_data.first_header[..])
             .map_err(|_| "Decoding error: received GenericPrimitivesHeader -> CurrentHeader<T>")?;
         match registration_data.parachain {
-            Some(parachain) => initialize_para_chain::<T, I>(header, false, gateway_id, registration_data.owner, parachain),
+            Some(parachain) => initialize_para_chain::<T, I>(
+                header,
+                false,
+                gateway_id,
+                registration_data.owner,
+                parachain,
+            ),
             None => {
                 ensure!(
-                    registration_data.authorities != None &&
-                    registration_data.authority_set_id != None,
+                    registration_data.authorities != None
+                        && registration_data.authority_set_id != None,
                     "Relaychain parameters missing"
                 );
 
                 let init_data = bp_header_chain::InitializationData {
                     header,
-                    authority_list: registration_data.authorities.unwrap()
+                    authority_list: registration_data
+                        .authorities
+                        .unwrap()
                         .iter()
-                        .map(|id| sp_finality_grandpa::AuthorityId::from_slice(&id.encode()).unwrap())// not sure why this is still needed
+                        .map(|id| {
+                            sp_finality_grandpa::AuthorityId::from_slice(&id.encode()).unwrap()
+                        }) // not sure why this is still needed
                         .map(|authority| (authority, 1))
                         .collect::<Vec<_>>(),
                     set_id: registration_data.authority_set_id.unwrap(),
                     is_halted: false,
-                    gateway_id
+                    gateway_id,
                 };
                 initialize_relay_chain::<T, I>(init_data.clone(), registration_data.owner)
-            }
+            },
         }
-
-
-
     }
 
     /// Change `PalletOwner`.
@@ -769,8 +769,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         encoded_new_owner: Vec<u8>,
     ) -> Result<(), &'static str> {
         ensure_owner_or_root_single::<T, I>(origin, gateway_id)?;
-        let new_owner: Option<T::AccountId> = Decode::decode(&mut &*encoded_new_owner)
-            .map_err(|_| "New Owner decoding error")?;
+        let new_owner: Option<T::AccountId> =
+            Decode::decode(&mut &*encoded_new_owner).map_err(|_| "New Owner decoding error")?;
 
         match new_owner {
             Some(new_owner) => {
@@ -811,23 +811,25 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
     pub fn submit_headers(
         origin: OriginFor<T>,
         gateway_id: ChainId,
-        encoded_header_data: Vec<u8>
+        encoded_header_data: Vec<u8>,
     ) -> Result<Vec<u8>, &'static str> {
         ensure_operational_single::<T, I>(gateway_id)?;
         ensure_signed(origin)?;
         if Some(gateway_id) == <RelayChainId<T, I>>::get() {
-            let data: RelaychainHeaderData<BridgedHeader<T, I>> = Decode::decode(&mut &*encoded_header_data)
-                .map_err(|_| "Error decoding relaychain header data")?;
+            let data: RelaychainHeaderData<BridgedHeader<T, I>> =
+                Decode::decode(&mut &*encoded_header_data)
+                    .map_err(|_| "Error decoding relaychain header data")?;
 
             submit_relaychain_headers::<T, I>(
                 gateway_id,
                 data.signed_header,
                 data.range,
-                data.justification
+                data.justification,
             )
         } else {
-            let data: ParachainHeaderData<BridgedHeader<T, I>> = Decode::decode(&mut &*encoded_header_data)
-                .map_err(|_| "Error decoding parachain header data")?;
+            let data: ParachainHeaderData<BridgedHeader<T, I>> =
+                Decode::decode(&mut &*encoded_header_data)
+                    .map_err(|_| "Error decoding parachain header data")?;
 
             submit_parachain_header::<T, I>(
                 gateway_id,
@@ -845,32 +847,32 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         value_abi_unsigned_type: &[u8],
         side_effect_id: [u8; 4],
     ) -> Result<Vec<Vec<Vec<u8>>>, &'static str> {
-        let inclusion_data: InclusionData<BridgedHeader<T, I>> = Decode::decode(&mut &*encoded_inclusion_data)
-            .map_err(|_| "InclusionCheckDate couldn't be decoded")?;
+        let inclusion_data: InclusionData<BridgedHeader<T, I>> =
+            Decode::decode(&mut &*encoded_inclusion_data)
+                .map_err(|_| "InclusionCheckDate couldn't be decoded")?;
 
         // ensures old equal side_effects can't be replayed
         executed_after_creation::<T, I>(gateway_id, submission_target_height)?;
 
         match &side_effect_id {
-            b"tran" => {
-                verify_event_storage_proof::<T, I>(gateway_id, inclusion_data, value_abi_unsigned_type, side_effect_id)
-            },
-            _ => unimplemented!()
+            b"tran" => verify_event_storage_proof::<T, I>(
+                gateway_id,
+                inclusion_data,
+                value_abi_unsigned_type,
+                side_effect_id,
+            ),
+            _ => unimplemented!(),
         }
     }
 
-    pub fn get_latest_finalized_header(
-        gateway_id: ChainId
-    ) -> Option<Vec<u8>> {
+    pub fn get_latest_finalized_header(gateway_id: ChainId) -> Option<Vec<u8>> {
         if let Some(header_hash) = <BestFinalizedMap<T, I>>::get(gateway_id) {
             return Some(header_hash.encode())
         }
         None
     }
 
-    pub fn get_latest_finalized_height(
-        gateway_id: ChainId
-    ) -> Option<Vec<u8>> {
+    pub fn get_latest_finalized_height(gateway_id: ChainId) -> Option<Vec<u8>> {
         if let Some(header_hash) = <BestFinalizedMap<T, I>>::get(gateway_id) {
             if let Some(header) = <MultiImportedHeaders<T, I>>::get(gateway_id, header_hash) {
                 return Some(header.number().encode())
@@ -891,14 +893,9 @@ pub(crate) fn verify_storage_proof<T: Config<I>, I: 'static>(
     proof: StorageProof,
     trie_type: ProofTriePointer,
 ) -> Result<Vec<u8>, &'static str> {
-
     let root = get_header_roots::<T, I>(block_hash, gateway_id, trie_type)?;
     let db = proof.into_memory_db::<BridgedBlockHasher<T, I>>();
-    let res = read_trie_value::<LayoutV1<BridgedBlockHasher<T, I>>, _>(
-        &db,
-        &root,
-        key.as_ref(),
-    );
+    let res = read_trie_value::<LayoutV1<BridgedBlockHasher<T, I>>, _>(&db, &root, key.as_ref());
     match res {
         Ok(Some(value)) => Ok(value),
         _ => Err("Invalid Storage Proof"),
@@ -907,16 +904,12 @@ pub(crate) fn verify_storage_proof<T: Config<I>, I: 'static>(
 
 /// returns the specified header root from a specific header
 pub(crate) fn get_header_roots<T: pallet::Config<I>, I>(
-    block_hash:  BridgedBlockHash<T, I>,
+    block_hash: BridgedBlockHash<T, I>,
     gateway_id: ChainId,
-    trie_type: ProofTriePointer
+    trie_type: ProofTriePointer,
 ) -> Result<BridgedBlockHash<T, I>, &'static str> {
     let (extrinsics_root, storage_root): (BridgedBlockHash<T, I>, BridgedBlockHash<T, I>) =
-        <MultiImportedRoots<T, I>>::get(
-            gateway_id,
-            block_hash,
-        )
-        .ok_or("Root not found")?;
+        <MultiImportedRoots<T, I>>::get(gateway_id, block_hash).ok_or("Root not found")?;
     match trie_type {
         ProofTriePointer::State => Ok(storage_root),
         ProofTriePointer::Transaction => Ok(extrinsics_root),
@@ -962,7 +955,7 @@ fn ensure_owner_or_root_single<T: Config<I>, I: 'static>(
 fn can_init_relay_chain<T: Config<I>, I: 'static>() -> Result<(), &'static str> {
     return match <RelayChainId<T, I>>::exists() {
         true => Err("Duplicate relaychain"), // we have a relaychain registered already
-        false => Ok(()) // is first relaychain
+        false => Ok(()),                     // is first relaychain
     }
 }
 
@@ -971,26 +964,28 @@ fn can_init_para_chain<T: Config<I>, I: 'static>(
     parachain: &Parachain,
 ) -> Result<(), &'static str> {
     return match <RelayChainId<T, I>>::get() {
-        Some(relay_chain_id) => { // we have a relaychain setup
+        Some(relay_chain_id) => {
+            // we have a relaychain setup
             match relay_chain_id == parachain.relay_chain_id {
                 true => Ok(()), // registering relachchain_id matches the stored one
-                false => Err("Invalid relaychainId") // wrong relaychain_id was passed
+                false => Err("Invalid relaychainId"), // wrong relaychain_id was passed
             }
-        }
-        None => Err("No relaychain") // we have no relaychain setup
+        },
+        None => Err("No relaychain"), // we have no relaychain setup
     }
 }
 
 /// Ensure that the SideEffect was executed after it was created.
 fn executed_after_creation<T: Config<I>, I: 'static>(
     gateway_id: ChainId,
-    submission_target_height: Vec<u8>
+    submission_target_height: Vec<u8>,
 ) -> Result<(), &'static str> {
-    let submission_target: BridgedBlockNumber<T, I> = Decode::decode(&mut &*submission_target_height).unwrap();
+    let submission_target: BridgedBlockNumber<T, I> =
+        Decode::decode(&mut &*submission_target_height).unwrap();
     if let Some(header_hash) = <BestFinalizedMap<T, I>>::get(gateway_id) {
         if let Some(header) = <MultiImportedHeaders<T, I>>::get(gateway_id, header_hash) {
             if submission_target < *header.number() {
-                return Ok(());
+                return Ok(())
             }
             return Err("Transaction executed before SideEffect creation")
         } else {
@@ -1026,7 +1021,7 @@ pub(crate) fn verify_event_storage_proof<T: Config<I>, I: 'static>(
     gateway_id: ChainId,
     inclusion_data: InclusionData<BridgedHeader<T, I>>,
     value_abi_unsigned_type: &[u8],
-    side_effect_id: [u8; 4]
+    side_effect_id: [u8; 4],
 ) -> Result<Vec<Vec<Vec<u8>>>, &'static str> {
     let InclusionData {
         encoded_payload,
@@ -1035,38 +1030,59 @@ pub(crate) fn verify_event_storage_proof<T: Config<I>, I: 'static>(
     } = inclusion_data;
 
     // storage key for System_Events
-    let key: Vec<u8> = [38, 170, 57, 78, 234, 86, 48, 224, 124, 72, 174, 12, 149, 88, 206, 247, 128, 212, 30, 94, 22, 5, 103, 101, 188, 132, 97, 133, 16, 114, 201, 215, ].to_vec();
-    let verified_block_events = verify_storage_proof::<T, I>(gateway_id, block_hash, key, proof, ProofTriePointer::Receipts)?;
+    let key: Vec<u8> = [
+        38, 170, 57, 78, 234, 86, 48, 224, 124, 72, 174, 12, 149, 88, 206, 247, 128, 212, 30, 94,
+        22, 5, 103, 101, 188, 132, 97, 133, 16, 114, 201, 215,
+    ]
+        .to_vec();
+    let verified_block_events = verify_storage_proof::<T, I>(
+        gateway_id,
+        block_hash,
+        key,
+        proof,
+        ProofTriePointer::Receipts,
+    )?;
 
     // the problem here is that in substrates current design its not possible to prove the inclusion of a single event, only all events of a block
     // https://github.com/paritytech/substrate/issues/11216
-    ensure!(is_sub(verified_block_events.as_slice(), encoded_payload.as_slice()), "Event not in block!");
-    decode_event::<T>(
-        &side_effect_id,
-        encoded_payload,
-        value_abi_unsigned_type
-    )
+    ensure!(
+        is_sub(verified_block_events.as_slice(), encoded_payload.as_slice()),
+        "Event not in block!"
+    );
+    decode_event::<T>(&side_effect_id, encoded_payload, value_abi_unsigned_type)
 }
 
 pub(crate) fn verify_header_storage_proof<T: Config<I>, I: 'static>(
     relay_block_hash: BridgedBlockHash<T, I>,
     proof: StorageProof,
-    parachain: Parachain
+    parachain: Parachain,
 ) -> Result<BridgedHeader<T, I>, &'static str> {
     // partial StorageKey for Paras_Heads. We now need to append the parachain_id as LE-u32 to generate the parachains StorageKey
     // This is a bit unclean, but it makes no sense to hash the StorageKey for each exec
-    let mut key: Vec<u8> = [205,113,11,48,189,46,171,3,82,221,204,38,65,122,161,148,27,60,37,47,203,41,216,142,255,79,61,229,222,68,118,195].to_vec();
+    let mut key: Vec<u8> = [
+        205, 113, 11, 48, 189, 46, 171, 3, 82, 221, 204, 38, 65, 122, 161, 148, 27, 60, 37, 47,
+        203, 41, 216, 142, 255, 79, 61, 229, 222, 68, 118, 195,
+    ]
+        .to_vec();
     let mut arg = Twox64Concat::hash(parachain.id.encode().as_ref());
     key.append(&mut arg); // complete storage key
 
     // ToDo not very concise
-    let encoded_header_vec = verify_storage_proof::<T, I>(parachain.relay_chain_id, relay_block_hash, key, proof, ProofTriePointer::State)?;
-    let encoded_header: Vec<u8> = Decode::decode(&mut &encoded_header_vec[..]).map_err(|_| "Header decoding error")?;
-    let header: BridgedHeader<T, I> = Decode::decode(&mut &*encoded_header).map_err(|_| "Header decoding error")?;
+    let encoded_header_vec = verify_storage_proof::<T, I>(
+        parachain.relay_chain_id,
+        relay_block_hash,
+        key,
+        proof,
+        ProofTriePointer::State,
+    )?;
+    let encoded_header: Vec<u8> =
+        Decode::decode(&mut &encoded_header_vec[..]).map_err(|_| "Header decoding error")?;
+    let header: BridgedHeader<T, I> =
+        Decode::decode(&mut &*encoded_header).map_err(|_| "Header decoding error")?;
     Ok(header)
 }
 
- pub(crate) fn is_sub<T: PartialEq>(mut haystack: &[T], needle: &[T]) -> bool {
+pub(crate) fn is_sub<T: PartialEq>(mut haystack: &[T], needle: &[T]) -> bool {
     while !haystack.is_empty() {
         if haystack.starts_with(needle) {
             return true
@@ -1092,7 +1108,7 @@ pub fn initialize_for_benchmarks<T: Config<I>, I: 'static>(header: BridgedHeader
 pub mod tests {
     use super::*;
 
-   #[test]
+    #[test]
     fn panic_without_testing_feature() {
         panic!("Please use the feature testing when running tests.\n\nUse: cargo test --features testing\n\n");
     }
@@ -1101,82 +1117,69 @@ pub mod tests {
 #[cfg(all(feature = "testing", test))]
 mod tests {
     use super::*;
-    use crate::mock::{run_test, test_header, test_header_range, Origin, TestHeader, TestNumber, TestRuntime, AccountId, test_header_with_correct_parent};
+    use crate::mock::{
+        run_test, test_header, test_header_range, test_header_with_correct_parent, AccountId,
+        Origin, TestHeader, TestNumber, TestRuntime,
+    };
 
-    use bridges::{header_chain as bp_header_chain, runtime as bp_runtime, test_utils::{
-        authority_list, make_default_justification, make_justification_for_header, authorities,
-        JustificationGeneratorParams, ALICE, BOB, DAVE
-    }};
     use bp_runtime::ChainId;
+    use bridges::{
+        header_chain as bp_header_chain, runtime as bp_runtime,
+        test_utils::{
+            authorities, authority_list, make_default_justification, make_justification_for_header,
+            JustificationGeneratorParams, ALICE, BOB, DAVE,
+        },
+    };
 
     use codec::Encode;
     use frame_support::{assert_err, assert_noop, assert_ok};
     use sp_finality_grandpa::AuthorityId;
     use sp_runtime::{Digest, DigestItem, DispatchError};
 
-    use crate::types::{RelaychainHeaderData};
+    use crate::types::RelaychainHeaderData;
 
     fn initialize_relaychain(
         origin: Origin,
-    ) -> Result<GrandpaRegistrationData::<AccountId>, &'static str> {
+    ) -> Result<GrandpaRegistrationData<AccountId>, &'static str> {
         let genesis = test_header_with_correct_parent(0, None);
         let init_data = GrandpaRegistrationData::<AccountId> {
             authorities: Some(authorities()),
             first_header: genesis.encode(),
             authority_set_id: Some(1),
             owner: 1,
-            parachain: None
+            parachain: None,
         };
 
-        initialize_custom_relaychain(origin,  *b"pdot", init_data)
+        initialize_custom_relaychain(origin, *b"pdot", init_data)
     }
 
     fn initialize_named_relaychain(
         origin: Origin,
         gateway_id: ChainId,
-    ) -> Result<GrandpaRegistrationData::<AccountId>, &'static str> {
+    ) -> Result<GrandpaRegistrationData<AccountId>, &'static str> {
         let genesis = test_header(0);
         let init_data = GrandpaRegistrationData::<AccountId> {
             authorities: Some(authorities()),
             first_header: genesis.encode(),
             authority_set_id: Some(1),
             owner: 1,
-            parachain: None
+            parachain: None,
         };
 
-        initialize_custom_relaychain(origin,  gateway_id, init_data)
+        initialize_custom_relaychain(origin, gateway_id, init_data)
     }
 
     fn initialize_custom_relaychain(
         origin: Origin,
         gateway_id: ChainId,
-        init_data: GrandpaRegistrationData::<AccountId>
-    ) -> Result<GrandpaRegistrationData::<AccountId>, &'static str> {
-        Pallet::<TestRuntime>::initialize(origin,  gateway_id, init_data.encode()).map(|_| init_data)
+        init_data: GrandpaRegistrationData<AccountId>,
+    ) -> Result<GrandpaRegistrationData<AccountId>, &'static str> {
+        Pallet::<TestRuntime>::initialize(origin, gateway_id, init_data.encode()).map(|_| init_data)
     }
 
     fn initialize_parachain(
         origin: Origin,
-    ) -> Result<GrandpaRegistrationData::<AccountId>, &'static str> {
-        let genesis = test_header(0);
-        let init_data = GrandpaRegistrationData::<AccountId> {
-            authorities: None,
-            first_header: genesis.encode(),
-            authority_set_id: None,
-            owner: 1,
-            parachain: Some(Parachain{
-                relay_chain_id: *b"pdot",
-                id: 0
-            })
-        };
-
-         initialize_custom_parachain(origin,  *b"moon", init_data)
-    }
-
-    fn initialize_named_parachain(
-        origin: Origin,
-        gateway_id: ChainId,
-    ) -> Result<GrandpaRegistrationData::<AccountId>, &'static str> {
+    ) -> Result<GrandpaRegistrationData<AccountId>, &'static str> {
         let genesis = test_header(0);
         let init_data = GrandpaRegistrationData::<AccountId> {
             authorities: None,
@@ -1185,22 +1188,41 @@ mod tests {
             owner: 1,
             parachain: Some(Parachain {
                 relay_chain_id: *b"pdot",
-                id: 0
-            })
+                id: 0,
+            }),
         };
 
-        initialize_custom_parachain(origin,  gateway_id, init_data)
+        initialize_custom_parachain(origin, *b"moon", init_data)
+    }
+
+    fn initialize_named_parachain(
+        origin: Origin,
+        gateway_id: ChainId,
+    ) -> Result<GrandpaRegistrationData<AccountId>, &'static str> {
+        let genesis = test_header(0);
+        let init_data = GrandpaRegistrationData::<AccountId> {
+            authorities: None,
+            first_header: genesis.encode(),
+            authority_set_id: None,
+            owner: 1,
+            parachain: Some(Parachain {
+                relay_chain_id: *b"pdot",
+                id: 0,
+            }),
+        };
+
+        initialize_custom_parachain(origin, gateway_id, init_data)
     }
 
     fn initialize_custom_parachain(
         origin: Origin,
         gateway_id: ChainId,
-        init_data: GrandpaRegistrationData::<AccountId>
-    ) -> Result<GrandpaRegistrationData::<AccountId>, &'static str> {
-        Pallet::<TestRuntime>::initialize(origin,  gateway_id, init_data.encode()).map(|_| init_data)
+        init_data: GrandpaRegistrationData<AccountId>,
+    ) -> Result<GrandpaRegistrationData<AccountId>, &'static str> {
+        Pallet::<TestRuntime>::initialize(origin, gateway_id, init_data.encode()).map(|_| init_data)
     }
 
-    fn submit_headers(from: u8, to: u8) -> Result<RelaychainHeaderData::<TestHeader>, &'static str> {
+    fn submit_headers(from: u8, to: u8) -> Result<RelaychainHeaderData<TestHeader>, &'static str> {
         let headers: Vec<TestHeader> = test_header_range(to.into());
         let signed_header: &TestHeader = headers.last().unwrap();
         let justification = make_default_justification(&signed_header.clone());
@@ -1211,14 +1233,10 @@ mod tests {
         let data = RelaychainHeaderData::<TestHeader> {
             signed_header: signed_header.clone(),
             range,
-            justification
+            justification,
         };
 
-        Pallet::<TestRuntime>::submit_headers(
-            Origin::signed(1),
-            default_gateway,
-            data.encode()
-        )?;
+        Pallet::<TestRuntime>::submit_headers(Origin::signed(1), default_gateway, data.encode())?;
 
         return Ok(data)
     }
@@ -1270,10 +1288,7 @@ mod tests {
         let default_gateway: ChainId = *b"pdot";
 
         run_test(|| {
-            assert_noop!(
-                initialize_relaychain(Origin::signed(1)),
-                "Bad origin"
-            );
+            assert_noop!(initialize_relaychain(Origin::signed(1)), "Bad origin");
             assert_ok!(initialize_relaychain(Origin::root()));
 
             // Reset storage so we can initialize the pallet again
@@ -1294,26 +1309,32 @@ mod tests {
 
     #[test]
     fn cant_register_duplicate_gateway_ids() {
-         run_test(|| {
+        run_test(|| {
             assert_ok!(initialize_relaychain(Origin::root()));
             assert_err!(initialize_relaychain(Origin::root()), "Already initialized");
-            assert_err!(initialize_named_parachain(Origin::root(), *b"pdot"), "Already initialized");
-         })
+            assert_err!(
+                initialize_named_parachain(Origin::root(), *b"pdot"),
+                "Already initialized"
+            );
+        })
     }
 
     #[test]
     fn cant_register_duplicate_parachain() {
-         run_test(|| {
+        run_test(|| {
             assert_ok!(initialize_relaychain(Origin::root()));
-            assert_noop!(initialize_named_relaychain(Origin::root(), *b"roco"), "Duplicate relaychain");
-         })
+            assert_noop!(
+                initialize_named_relaychain(Origin::root(), *b"roco"),
+                "Duplicate relaychain"
+            );
+        })
     }
 
     #[test]
     fn cant_register_parachain_without_relaychain() {
-         run_test(|| {
+        run_test(|| {
             assert_noop!(initialize_parachain(Origin::root()), "No relaychain");
-         })
+        })
     }
 
     #[test]
@@ -1327,23 +1348,23 @@ mod tests {
                 first_header: genesis.encode(),
                 authority_set_id: None,
                 owner: 1,
-                parachain: Some(Parachain{
+                parachain: Some(Parachain {
                     relay_chain_id: *b"roco",
-                    id: 0
-                })
+                    id: 0,
+                }),
             };
-            assert_noop!(initialize_custom_parachain(Origin::root(), *b"moon", init_data), "Invalid relaychainId");
-         })
+            assert_noop!(
+                initialize_custom_parachain(Origin::root(), *b"moon", init_data),
+                "Invalid relaychainId"
+            );
+        })
     }
 
     #[test]
     fn cant_register_relaychain_as_non_root() {
-         run_test(|| {
-            assert_err!(
-                initialize_relaychain(Origin::signed(1)),
-                "Bad origin"
-            );
-         })
+        run_test(|| {
+            assert_err!(initialize_relaychain(Origin::signed(1)), "Bad origin");
+        })
     }
 
     #[test]
@@ -1355,13 +1376,13 @@ mod tests {
                 first_header: genesis.encode(),
                 authority_set_id: Some(1),
                 owner: 1,
-                parachain: None
+                parachain: None,
             };
             assert_noop!(
                 initialize_custom_relaychain(Origin::root(), *b"pdot", init_data),
                 "Relaychain parameters missing"
             );
-         })
+        })
     }
 
     #[test]
@@ -1373,13 +1394,13 @@ mod tests {
                 first_header: genesis.encode(),
                 authority_set_id: None,
                 owner: 1,
-                parachain: None
+                parachain: None,
             };
             assert_noop!(
                 initialize_custom_relaychain(Origin::root(), *b"pdot", init_data),
                 "Relaychain parameters missing"
             );
-         })
+        })
     }
 
     #[test]
@@ -1427,11 +1448,8 @@ mod tests {
     #[test]
     fn init_can_only_initialize_pallet_once() {
         run_test(|| {
-            let _ =initialize_relaychain(Origin::root());
-            assert_noop!(
-                initialize_relaychain(Origin::root()),
-                "Already initialized"
-            );
+            let _ = initialize_relaychain(Origin::root());
+            assert_noop!(initialize_relaychain(Origin::root()), "Already initialized");
         })
     }
 
@@ -1488,10 +1506,7 @@ mod tests {
                 false,
                 default_gateway
             ));
-            assert_noop!(
-                submit_headers(1, 3),
-                "Halted"
-            );
+            assert_noop!(submit_headers(1, 3), "Halted");
             assert_ok!(Pallet::<TestRuntime>::set_operational(
                 Origin::root(),
                 true,
@@ -1543,13 +1558,10 @@ mod tests {
     fn pallet_rejects_transactions_if_halted() {
         run_test(|| {
             let gateway_a: ChainId = *b"pdot";
-            let _ =initialize_relaychain(Origin::root());
+            let _ = initialize_relaychain(Origin::root());
             <IsHaltedMap<TestRuntime>>::insert(gateway_a, true);
 
-            assert_noop!(
-                submit_headers(1, 3),
-                "Halted",
-            );
+            assert_noop!(submit_headers(1, 3), "Halted",);
         })
     }
 
@@ -1579,20 +1591,13 @@ mod tests {
         })
     }
 
-
     #[test]
     fn reject_header_range_gap() {
         run_test(|| {
             let _ = initialize_relaychain(Origin::root());
-            assert_noop!(
-                submit_headers(2, 5),
-                "Invalid Header Linkage"
-            );
+            assert_noop!(submit_headers(2, 5), "Invalid Header Linkage");
             assert_ok!(submit_headers(1, 5));
-            assert_noop!(
-                submit_headers(5, 10),
-                "Invalid Header Linkage"
-            );
+            assert_noop!(submit_headers(5, 10), "Invalid Header Linkage");
             assert_ok!(submit_headers(6, 10));
         })
     }
@@ -1601,7 +1606,7 @@ mod tests {
     fn reject_range_with_invalid_linkage() {
         let default_gateway: ChainId = *b"pdot";
         run_test(|| {
-            let _ =initialize_relaychain(Origin::root());
+            let _ = initialize_relaychain(Origin::root());
 
             assert_ok!(submit_headers(1, 5));
 
@@ -1612,10 +1617,10 @@ mod tests {
             range.reverse();
             range[1] = range[2].clone();
 
-             let data = RelaychainHeaderData::<TestHeader> {
+            let data = RelaychainHeaderData::<TestHeader> {
                 signed_header: signed_header.clone(),
                 range,
-                justification: invalid_justification
+                justification: invalid_justification,
             };
 
             assert_err!(
@@ -1627,11 +1632,7 @@ mod tests {
                 "Invalid header linkage"
             );
 
-            assert_noop!(
-                 submit_headers(6, 10),
-                 "Too many Requests"
-            );
-
+            assert_noop!(submit_headers(6, 10), "Too many Requests");
         })
     }
 
@@ -1655,7 +1656,7 @@ mod tests {
             let data = RelaychainHeaderData::<TestHeader> {
                 signed_header: signed_header.clone(),
                 range,
-                justification
+                justification,
             };
 
             let default_gateway: ChainId = *b"pdot";
@@ -1674,12 +1675,11 @@ mod tests {
     #[test]
     fn does_not_import_header_with_invalid_finality_proof() {
         run_test(|| {
-            let _ =initialize_relaychain(Origin::root());
+            let _ = initialize_relaychain(Origin::root());
             let headers: Vec<TestHeader> = test_header_range(5);
             let signed_header: &TestHeader = headers.last().unwrap();
             let mut range: Vec<TestHeader> = headers[1..5].to_vec().clone();
             range.reverse();
-
 
             let mut justification = make_default_justification(&signed_header.clone());
             justification.round = 42;
@@ -1688,7 +1688,7 @@ mod tests {
             let data = RelaychainHeaderData::<TestHeader> {
                 signed_header: signed_header.clone(),
                 range,
-                justification
+                justification,
             };
             let default_gateway: ChainId = *b"pdot";
 
@@ -1714,7 +1714,7 @@ mod tests {
                 first_header: genesis.encode(),
                 authority_set_id: Some(1),
                 owner: 1,
-                parachain: None
+                parachain: None,
             };
 
             assert_ok!(initialize_custom_relaychain(
@@ -1734,7 +1734,7 @@ mod tests {
             let data = RelaychainHeaderData::<TestHeader> {
                 signed_header: signed_header.clone(),
                 range,
-                justification
+                justification,
             };
 
             assert_err!(
@@ -1780,7 +1780,7 @@ mod tests {
             let data = RelaychainHeaderData::<TestHeader> {
                 signed_header: signed_header.clone(),
                 range,
-                justification
+                justification,
             };
 
             let default_gateway: ChainId = *b"pdot";
@@ -1831,7 +1831,7 @@ mod tests {
             let data = RelaychainHeaderData::<TestHeader> {
                 signed_header: signed_header.clone(),
                 range,
-                justification
+                justification,
             };
 
             let default_gateway: ChainId = *b"pdot";
@@ -1851,7 +1851,7 @@ mod tests {
     #[test]
     fn importing_header_rejects_header_with_forced_changes() {
         run_test(|| {
-            let _ =initialize_relaychain(Origin::root());
+            let _ = initialize_relaychain(Origin::root());
 
             // Need to update the header digest to indicate that it signals a forced authority set
             // change.
@@ -1864,10 +1864,10 @@ mod tests {
 
             let justification = make_default_justification(&signed_header);
 
-           let data = RelaychainHeaderData::<TestHeader> {
+            let data = RelaychainHeaderData::<TestHeader> {
                 signed_header: signed_header.clone(),
                 range,
-                justification
+                justification,
             };
 
             let default_gateway: ChainId = *b"pdot";
@@ -1930,14 +1930,11 @@ mod tests {
     #[test]
     fn rate_limiter_disallows_imports_once_limit_is_hit_in_single_block() {
         run_test(|| {
-            let _ =initialize_relaychain(Origin::root());
+            let _ = initialize_relaychain(Origin::root());
 
             assert_ok!(submit_headers(1, 5));
             assert_ok!(submit_headers(6, 10));
-            assert_err!(
-                submit_headers(11, 15),
-                "Too many Requests"
-            );
+            assert_err!(submit_headers(11, 15), "Too many Requests");
         })
     }
 
@@ -1955,33 +1952,27 @@ mod tests {
                 let data = RelaychainHeaderData::<TestHeader> {
                     signed_header: signed_header.clone(),
                     range,
-                    justification
+                    justification,
                 };
 
                 Pallet::<TestRuntime>::submit_headers(
                     Origin::signed(1),
                     default_gateway,
-                    data.encode()
+                    data.encode(),
                 )
             };
 
-            let _ =initialize_relaychain(Origin::root());
+            let _ = initialize_relaychain(Origin::root());
 
             for _ in 0..<TestRuntime as Config>::MaxRequests::get() + 1 {
                 // Notice that the error here *isn't* `TooManyRequests`
-                assert_err!(
-                    submit_invalid_request(),
-                    "InvalidJustification"
-                );
+                assert_err!(submit_invalid_request(), "InvalidJustification");
             }
 
             // Can still submit `MaxRequests` requests afterwards
             assert_ok!(submit_headers(1, 5));
             assert_ok!(submit_headers(6, 10));
-            assert_err!(
-                submit_headers(11, 15),
-                "Too many Requests"
-            );
+            assert_err!(submit_headers(11, 15), "Too many Requests");
         })
     }
 
@@ -2005,23 +1996,20 @@ mod tests {
     #[test]
     fn rate_limiter_disallows_imports_once_limit_is_hit_across_different_blocks() {
         run_test(|| {
-            let _ =initialize_relaychain(Origin::root());
+            let _ = initialize_relaychain(Origin::root());
             assert_ok!(submit_headers(1, 5));
             assert_ok!(submit_headers(6, 10));
 
             next_block();
             assert_ok!(submit_headers(11, 15));
-            assert_err!(
-                submit_headers(16, 20),
-                "Too many Requests"
-            );
+            assert_err!(submit_headers(16, 20), "Too many Requests");
         })
     }
 
     #[test]
     fn rate_limiter_allows_max_requests_after_long_time_with_no_activity() {
         run_test(|| {
-            let _ =initialize_relaychain(Origin::root());
+            let _ = initialize_relaychain(Origin::root());
             assert_ok!(submit_headers(1, 5));
             assert_ok!(submit_headers(6, 10));
 

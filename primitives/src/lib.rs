@@ -55,6 +55,7 @@ pub mod contracts_registry;
 pub mod freevm;
 pub mod gateway_inbound_protocol;
 pub mod match_format;
+pub mod portal;
 pub mod protocol;
 pub mod side_effect;
 pub mod signature_caster;
@@ -63,7 +64,6 @@ pub mod transfers;
 pub mod volatile;
 pub mod xdns;
 pub mod xtx;
-pub mod portal;
 
 pub type ChainId = [u8; 4];
 

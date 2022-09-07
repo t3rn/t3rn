@@ -11,36 +11,33 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+use sp_std::vec::Vec;
 use t3rn_primitives::{
     portal::{Portal, RococoBridge},
     xdns::Xdns,
     ChainId, GatewayVendor,
 };
-use sp_std::vec::Vec;
 
 pub mod weights;
 
 // use weights::WeightInfo;
 #[frame_support::pallet]
 pub mod pallet {
-    use frame_support::pallet_prelude::*;
-    use frame_system::pallet_prelude::*;
     use core::convert::TryInto;
-    use frame_support::weights;
+    use frame_support::{pallet_prelude::*, weights};
+    use frame_system::pallet_prelude::*;
     use sp_std::vec::Vec;
-    use t3rn_primitives::{xdns::Xdns};
     use t3rn_primitives::{
-        portal::{RococoBridge},
-        abi::{GatewayABIConfig},
-        ChainId, GatewaySysProps, GatewayType, GatewayVendor, GatewayGenesisConfig,
+        abi::GatewayABIConfig,
+        portal::RococoBridge,
+        xdns::{AllowedSideEffect, Xdns},
+        ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
     };
-    use t3rn_primitives::xdns::AllowedSideEffect;
 
     /// Configure the pallet by specifying the parameters and types on which it depends.
     #[pallet::config]
     pub trait Config:
-    frame_system::Config
-    + pallet_grandpa_finality_verifier::Config<RococoBridge>
+    frame_system::Config + pallet_grandpa_finality_verifier::Config<RococoBridge>
     {
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -89,7 +86,7 @@ pub mod pallet {
         /// No gateway height could be found
         NoGatewayHeightAvailable,
         /// SideEffect confirmation failed
-        SideEffectConfirmationFailed
+        SideEffectConfirmationFailed,
     }
 
     // Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -108,7 +105,7 @@ pub mod pallet {
             gateway_genesis: GatewayGenesisConfig,
             gateway_sys_props: GatewaySysProps,
             allowed_side_effects: Vec<AllowedSideEffect>,
-            encoded_registration_data: Vec<u8>
+            encoded_registration_data: Vec<u8>,
         ) -> DispatchResultWithPostInfo {
             // ToDo xdns record is written also when the calls after this fail!!!
             <T as Config>::Xdns::add_new_xdns_record(
@@ -125,19 +122,24 @@ pub mod pallet {
             )?;
 
             let res = match gateway_vendor {
-                GatewayVendor::Rococo =>  pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::initialize(origin, gateway_id, encoded_registration_data),
-                _ => return Err(Error::<T>::UnimplementedGatewayVendor.into())
+                GatewayVendor::Rococo =>
+                    pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::initialize(
+                        origin,
+                        gateway_id,
+                        encoded_registration_data,
+                    ),
+                _ => return Err(Error::<T>::UnimplementedGatewayVendor.into()),
             };
 
             match res {
                 Ok(_) => {
-                     Self::deposit_event(Event::GatewayRegistered(gateway_id));
-                     return Ok(().into())
+                    Self::deposit_event(Event::GatewayRegistered(gateway_id));
+                    return Ok(().into())
                 },
                 Err(msg) => {
                     log::info!("{:?}", msg);
                     return Err(Error::<T>::RegistrationError.into())
-                }
+                },
             }
         }
 
@@ -145,24 +147,27 @@ pub mod pallet {
         pub fn set_owner(
             origin: OriginFor<T>,
             gateway_id: ChainId,
-            encoded_new_owner: Vec<u8>
+            encoded_new_owner: Vec<u8>,
         ) -> DispatchResultWithPostInfo {
             let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
                 .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
 
             let res = match vendor {
-                GatewayVendor::Rococo =>  pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::set_owner(origin, gateway_id, encoded_new_owner.clone()),
-                _ => unimplemented!()
+                GatewayVendor::Rococo =>
+                    pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::set_owner(
+                        origin,
+                        gateway_id,
+                        encoded_new_owner.clone(),
+                    ),
+                _ => unimplemented!(),
             };
 
             match res {
                 Ok(_) => {
-                     Self::deposit_event(Event::SetOwner(gateway_id, encoded_new_owner));
-                     return Ok(().into())
+                    Self::deposit_event(Event::SetOwner(gateway_id, encoded_new_owner));
+                    return Ok(().into())
                 },
-                Err(_msg) => {
-                    return Err(Error::<T>::SetOwnerError.into())
-                }
+                Err(_msg) => return Err(Error::<T>::SetOwnerError.into()),
             }
         }
 
@@ -170,25 +175,30 @@ pub mod pallet {
         pub fn set_operational(
             origin: OriginFor<T>,
             gateway_id: ChainId,
-            operational: bool
+            operational: bool,
         ) -> DispatchResultWithPostInfo {
             let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
                 .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
 
             let res = match vendor {
-                GatewayVendor::Rococo =>  pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::set_operational(origin, operational, gateway_id),
-                _ => unimplemented!()
+                GatewayVendor::Rococo =>
+                    pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::set_operational(
+                        origin,
+                        operational,
+                        gateway_id,
+                    ),
+                _ => unimplemented!(),
             };
 
             match res {
                 Ok(_) => {
-                     Self::deposit_event(Event::SetOperational(gateway_id, operational));
-                     return Ok(().into())
+                    Self::deposit_event(Event::SetOperational(gateway_id, operational));
+                    return Ok(().into())
                 },
                 Err(msg) => {
                     log::info!("{:?}", msg);
                     return Err(Error::<T>::SetOperationalError.into())
-                }
+                },
             }
         }
 
@@ -196,59 +206,64 @@ pub mod pallet {
         pub fn submit_headers(
             origin: OriginFor<T>,
             gateway_id: ChainId,
-            encoded_header_data: Vec<u8>
+            encoded_header_data: Vec<u8>,
         ) -> DispatchResultWithPostInfo {
             let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
                 .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
 
             let res = match vendor {
-                GatewayVendor::Rococo =>  pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::submit_headers(origin, gateway_id, encoded_header_data),
-                _ => unimplemented!()
+                GatewayVendor::Rococo =>
+                    pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::submit_headers(
+                        origin,
+                        gateway_id,
+                        encoded_header_data,
+                    ),
+                _ => unimplemented!(),
             };
 
             match res {
                 Ok(height) => {
                     Self::deposit_event(Event::HeaderSubmitted(gateway_id, height));
                     return Ok(().into())
-                 },
+                },
                 Err(msg) => {
                     log::info!("{:?}", msg);
                     return Err(Error::<T>::SubmitHeaderError.into())
-                }
+                },
             }
         }
     }
 }
 
 impl<T: Config> Portal<T> for Pallet<T> {
-
-    fn get_latest_finalized_header(
-        gateway_id: ChainId
-    ) -> Option<Vec<u8>> {
+    fn get_latest_finalized_header(gateway_id: ChainId) -> Option<Vec<u8>> {
         let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id);
 
         match vendor {
-            Ok(GatewayVendor::Rococo) =>  return pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::get_latest_finalized_header(gateway_id),
+            Ok(GatewayVendor::Rococo) => return pallet_grandpa_finality_verifier::Pallet::<
+                T,
+                RococoBridge,
+            >::get_latest_finalized_header(
+                gateway_id
+            ),
             Err(_) => return None,
-            _ => unimplemented!()
+            _ => unimplemented!(),
         };
     }
 
-    fn get_latest_finalized_height(
-        gateway_id: ChainId
-    ) -> Result<Vec<u8>, DispatchError> {
+    fn get_latest_finalized_height(gateway_id: ChainId) -> Result<Vec<u8>, DispatchError> {
         let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
             .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
 
         // ToDo maybe we should return hex encoded height here instead of scale
         let res = match vendor {
-            GatewayVendor::Rococo =>  pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::get_latest_finalized_height(gateway_id),
+            GatewayVendor::Rococo => pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::get_latest_finalized_height(gateway_id),
             _ => unimplemented!()
         };
 
         match res {
             Some(height) => Ok(height),
-            None => Err(Error::<T>::NoGatewayHeightAvailable.into())
+            None => Err(Error::<T>::NoGatewayHeightAvailable.into()),
         }
     }
 
@@ -256,7 +271,7 @@ impl<T: Config> Portal<T> for Pallet<T> {
         gateway_id: [u8; 4],
         submission_target_height: Vec<u8>,
         encoded_inclusion_data: Vec<u8>,
-        side_effect_id: [u8; 4]
+        side_effect_id: [u8; 4],
     ) -> Result<Vec<Vec<Vec<u8>>>, DispatchError> {
         let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
             .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
@@ -273,9 +288,7 @@ impl<T: Config> Portal<T> for Pallet<T> {
         };
 
         match res {
-            Err(_msg) => {
-                Err(Error::<T>::SideEffectConfirmationFailed.into())
-            },
+            Err(_msg) => Err(Error::<T>::SideEffectConfirmationFailed.into()),
             Ok(parameters) => Ok(parameters),
         }
     }

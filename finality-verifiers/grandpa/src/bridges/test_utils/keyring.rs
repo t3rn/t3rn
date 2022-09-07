@@ -19,10 +19,10 @@
 use codec::Encode;
 use ed25519_dalek::{Keypair, PublicKey, SecretKey, Signature};
 use finality_grandpa::voter_set::VoterSet;
+use sp_core::crypto::UncheckedFrom;
 use sp_finality_grandpa::{AuthorityId, AuthorityList, AuthorityWeight};
 use sp_runtime::RuntimeDebug;
-use sp_std::{vec, prelude::*};
-use sp_core::crypto::UncheckedFrom;
+use sp_std::{prelude::*, vec};
 
 /// Set of test accounts with friendly names.
 pub const ALICE: Account = Account(0);
@@ -40,6 +40,7 @@ impl Account {
     pub fn public(&self) -> PublicKey {
         (&self.secret()).into()
     }
+
     pub fn secret(&self) -> SecretKey {
         let data = self.0.encode();
         let mut bytes = [0_u8; 32];

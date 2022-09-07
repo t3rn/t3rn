@@ -21,7 +21,7 @@ use frame_support::{construct_runtime, parameter_types, traits::Everything, weig
 use sp_runtime::{
     testing::{Header, H256},
     traits::{BlakeTwo256, IdentityLookup},
-    Perbill
+    Perbill,
 };
 use sp_std::convert::{TryFrom, TryInto};
 
@@ -148,7 +148,7 @@ pub fn run_test<T>(test: impl FnOnce() -> T) -> T {
 #[cfg(all(feature = "testing", test))]
 pub fn test_header(num: TestNumber) -> TestHeader {
     // We wrap the call to avoid explicit type annotations in our tests
-   crate::bridges::test_utils::test_header(num)
+    crate::bridges::test_utils::test_header(num)
 }
 
 #[cfg(all(feature = "testing", test))]
@@ -175,14 +175,11 @@ pub fn brute_seed_block_1(gateway_id: [u8; 4]) {
     let header_1 = crate::bridges::test_utils::test_header::<TestHeader>(1u64.into());
     let block_hash_1 = header_1.hash();
 
-    <MultiImportedHeaders<TestRuntime>>::insert::<
-        [u8; 4],
-        H256,
-        TestHeader,
-    >(gateway_id, block_hash_1, header_1);
-
-   <BestFinalizedMap<TestRuntime>>::insert::<[u8; 4], H256>(
+    <MultiImportedHeaders<TestRuntime>>::insert::<[u8; 4], H256, TestHeader>(
         gateway_id,
         block_hash_1,
-   );
+        header_1,
+    );
+
+    <BestFinalizedMap<TestRuntime>>::insert::<[u8; 4], H256>(gateway_id, block_hash_1);
 }
