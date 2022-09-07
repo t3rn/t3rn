@@ -320,7 +320,7 @@ type RococoBridgeInstance = ();
 
 impl pallet_grandpa_finality_verifier::Config<RococoBridgeInstance> for Test {
     type BridgedChain = Blake2ValU64Chain;
-    type HeadersToKeep = HeadersToKeep;
+    type HeadersToStore = HeadersToStore;
     type WeightInfo = ();
 }
 
@@ -360,7 +360,7 @@ impl pallet_grandpa_finality_verifier::bridges::runtime::Chain for Blake2ValU64C
 }
 
 parameter_types! {
-    pub const HeadersToKeep: u32 = 5;
+    pub const HeadersToStore: u32 = 100800;
     pub const SessionLength: u64 = 5;
     pub const NumValidators: u32 = 5;
 }

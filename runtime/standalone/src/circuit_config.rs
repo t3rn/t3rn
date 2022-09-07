@@ -66,7 +66,7 @@ impl pallet_circuit::Config for Runtime {
 }
 
 parameter_types! {
-    pub const HeadersToKeep: u32 = 100;
+    pub const HeadersToStore: u32 = 100800;
 }
 
 type RococoBridgeInstance = ();
@@ -82,6 +82,6 @@ impl bp_runtime::Chain for Blake2ValU32Chain {
 
 impl pallet_grandpa_finality_verifier::Config<RococoBridgeInstance> for Runtime {
     type BridgedChain = Blake2ValU32Chain;
-    type HeadersToKeep = HeadersToKeep;
+    type HeadersToStore = HeadersToStore;
     type WeightInfo = ();
 }

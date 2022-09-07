@@ -101,7 +101,7 @@ impl pallet_sudo::Config for TestRuntime {
 }
 
 parameter_types! {
-    pub const HeadersToKeep: u32 = 5;
+    pub const HeadersToStore: u32 = 100800; // 10 * 60 * 24 * 7 => One week of headers
     pub const SessionLength: u64 = 5;
     pub const NumValidators: u32 = 5;
 }
@@ -125,7 +125,7 @@ impl pallet_balances::Config for TestRuntime {
 
 impl Config for TestRuntime {
     type BridgedChain = TestCircuitLikeChain;
-    type HeadersToKeep = HeadersToKeep;
+    type HeadersToStore = HeadersToStore;
     type WeightInfo = ();
 }
 

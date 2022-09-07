@@ -107,7 +107,7 @@ pub mod pallet {
         /// the setting does not relate to block numbers - we will simply keep as much items
         /// in the storage, so it doesn't guarantee any fixed timeframe for finality headers.
         #[pallet::constant]
-        type HeadersToKeep: Get<u32>;
+        type HeadersToStore: Get<u32>;
 
         /// Weights gathered through benchmarking.
         type WeightInfo: WeightInfo;
@@ -183,16 +183,6 @@ pub mod pallet {
     #[pallet::storage]
     pub(super) type ParachainIdMap<T: Config<I>, I: 'static = ()> =
         StorageMap<_, Blake2_256, ChainId, Parachain>;
-
-    /// Optional pallet owner.
-    ///
-    /// Pallet owner has a right to halt all pallet operations and then resume it. If it is
-    /// `None`, then there are no direct ways to halt/resume pallet operations, but other
-    /// runtime methods may still be used to do that (i.e. democracy::referendum to update halt
-    /// flag directly or call the `halt_operations`).
-    #[pallet::storage]
-    pub(super) type PalletOwner<T: Config<I>, I: 'static = ()> =
-        StorageValue<_, T::AccountId, OptionQuery>;
 
     /// Optional pallet owner.
     ///
@@ -331,10 +321,10 @@ pub mod pallet {
             }
         }
 
-        // // Update ring buffer pointer and remove old headers
+        // Update ring buffer pointer and remove old headers
         // <MultiImportedHashesPointer<T, I>>::insert(
         //     gateway_id,
-        //     (index + 1) % T::HeadersToKeep::get(),
+        //     (range.len() + 2) % T::HeadersToStore::get(), // range + 1 is total submitted. additional +1 accounts for increment
         // );
         //
         // if let Ok(hash) = pruning {
@@ -441,7 +431,7 @@ pub mod pallet {
         // // Update ring buffer pointer and remove old header.
         // <MultiImportedHashesPointer<T, I>>::insert(
         //     gateway_id,
-        //     (index + 1) % T::HeadersToKeep::get(),
+        //     (index + 1) % T::HeadersToStore::get(),
         // );
         //
         // if let Ok(hash) = pruning {
@@ -556,13 +546,16 @@ pub mod pallet {
         } = init_params;
 
         let initial_hash = header.hash();
+        // Store header stuff
         <InitialHashMap<T, I>>::insert(gateway_id, initial_hash);
         <BestFinalizedMap<T, I>>::insert(gateway_id, initial_hash);
         <MultiImportedHeaders<T, I>>::insert(gateway_id, initial_hash, header);
-        // might get problematic
+        <MultiImportedHashesPointer<T, I>>::insert(gateway_id, 1u32);
+        <RelayChainId<T, I>>::put(gateway_id);
         let authority_set = bp_header_chain::AuthoritySet::new(authority_list, set_id);
         <CurrentAuthoritySet<T, I>>::put(authority_set);
-        <RelayChainId<T, I>>::put(gateway_id);
+
+        // Other configs
         <IsHaltedMap<T, I>>::insert(gateway_id, is_halted);
         <PalletOwnerMap<T, I>>::insert(gateway_id, owner);
         <InstantiatedGatewaysMap<T, I>>::mutate(|gateways| {
@@ -587,6 +580,8 @@ pub mod pallet {
         <InitialHashMap<T, I>>::insert(gateway_id, initial_hash);
         <BestFinalizedMap<T, I>>::insert(gateway_id, initial_hash);
         <MultiImportedHeaders<T, I>>::insert(gateway_id, initial_hash, header);
+        <MultiImportedHashesPointer<T, I>>::insert(gateway_id, 1u32);
+
         <IsHaltedMap<T, I>>::insert(gateway_id, is_halted);
         <ParachainIdMap<T, I>>::insert(gateway_id, parachain);
         <PalletOwnerMap<T, I>>::insert(gateway_id, owner);
@@ -1045,6 +1040,7 @@ pub fn initialize_for_benchmarks<T: Config<I>, I: 'static>(header: BridgedHeader
     });
 }
 
+// Catches missing feature flag
 #[cfg(all(not(feature = "testing"), test))]
 pub mod tests {
     use super::*;
@@ -1087,7 +1083,7 @@ mod tests {
             authorities: Some(authorities()),
             first_header: genesis.encode(),
             authority_set_id: Some(1),
-            owner: 1,
+            owner: 1u64,
             parachain: None,
         };
 
@@ -1103,7 +1099,7 @@ mod tests {
             authorities: Some(authorities()),
             first_header: genesis.encode(),
             authority_set_id: Some(1),
-            owner: 1,
+            owner: 1u64,
             parachain: None,
         };
 
@@ -1126,7 +1122,7 @@ mod tests {
             authorities: None,
             first_header: genesis.encode(),
             authority_set_id: None,
-            owner: 1,
+            owner: 1u64,
             parachain: Some(Parachain {
                 relay_chain_id: *b"pdot",
                 id: 0,
@@ -1145,7 +1141,7 @@ mod tests {
             authorities: None,
             first_header: genesis.encode(),
             authority_set_id: None,
-            owner: 1,
+            owner: 1u64,
             parachain: Some(Parachain {
                 relay_chain_id: *b"pdot",
                 id: 0,
@@ -1867,70 +1863,9 @@ mod tests {
         });
     }
 
-    #[test]
-    fn rate_limiter_invalid_requests_do_not_count_towards_request_count() {
-        let default_gateway: ChainId = *b"pdot";
-        run_test(|| {
-            let submit_invalid_request = || {
-                let headers: Vec<TestHeader> = test_header_range(2);
-                let signed_header = headers[2].clone();
-                let range: Vec<TestHeader> = headers[1..2].to_vec().clone();
-                let mut invalid_justification = make_default_justification(&signed_header);
-                invalid_justification.round = 42;
-                let justification = invalid_justification;
-                let data = RelaychainHeaderData::<TestHeader> {
-                    signed_header: signed_header.clone(),
-                    range,
-                    justification,
-                };
 
-                Pallet::<TestRuntime>::submit_headers(
-                    Origin::signed(1),
-                    default_gateway,
-                    data.encode(),
-                )
-            };
 
-            let _ = initialize_relaychain(Origin::root());
 
-            // Can still submit `MaxRequests` requests afterwards
-            assert_ok!(submit_headers(1, 5));
-            assert_ok!(submit_headers(6, 10));
-        })
-    }
-
-    #[test]
-    fn rate_limiter_allows_request_after_new_block_has_started() {
-        run_test(|| {
-            let _ = initialize_relaychain(Origin::root());
-            let default_gateway: ChainId = *b"pdot";
-            assert_ok!(submit_headers(1, 5));
-            assert_ok!(submit_headers(6, 10));
-            let headers: Vec<TestHeader> = test_header_range(10);
-            assert_eq!(
-                BestFinalizedMap::<TestRuntime>::get(default_gateway),
-                Some(headers[10].hash())
-            );
-            next_block();
-            assert_ok!(submit_headers(11, 15));
-        })
-    }
-
-    #[test]
-    fn rate_limiter_allows_max_requests_after_long_time_with_no_activity() {
-        run_test(|| {
-            let _ = initialize_relaychain(Origin::root());
-            assert_ok!(submit_headers(1, 5));
-            assert_ok!(submit_headers(6, 10));
-
-            next_block();
-            next_block();
-
-            next_block();
-            assert_ok!(submit_headers(11, 15));
-            assert_ok!(submit_headers(16, 20));
-        })
-    }
 
     // #[test]
     // fn should_prune_headers_over_headers_to_keep_parameter() {
