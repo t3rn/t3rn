@@ -286,29 +286,61 @@ pub mod pallet {
         let _enacted =
             try_enact_authority_change_single::<T, I>(&signed_header, set_id, gateway_id)?;
 
-        let index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
+        // We get the latest buffer_index, which maps to the next header we can overwrite, and the index where we insert the verified header
+        let mut ring_buffer_index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
+        println!("Overwriting value at: {:?}", ring_buffer_index);
 
-        // let pruning = <MultiImportedHashes<T, I>>::try_get(gateway_id, index);
+        // remove old elements from storage
+        if let Ok(hash) = <MultiImportedHashes<T, I>>::try_get(
+            gateway_id,
+            ring_buffer_index % T::HeadersToStore::get(), // enables simple increments without overflows
+        ) {
+            println!("Hash to delete: {:?}", hash);
 
+            <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
+            <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
+        } else {
+            println!("Hash to delete: None");
+        }
+        println!("New hash: {:?}", hash);
+
+        // Once deleted, we add the new header
         <BestFinalizedMap<T, I>>::insert(gateway_id, hash);
         <MultiImportedHeaders<T, I>>::insert(gateway_id, hash, signed_header.clone());
-        <MultiImportedHashes<T, I>>::insert(gateway_id, index, hash);
+        <MultiImportedHashes<T, I>>::insert(gateway_id, ring_buffer_index, hash);
         <MultiImportedRoots<T, I>>::insert(
             gateway_id,
             hash,
             (signed_header.extrinsics_root(), signed_header.state_root()),
         );
 
+
+        ring_buffer_index += 1; // we wrote a header so we must iterate
+
         let mut anchor = signed_header.clone();
 
         for header in range {
+            println!("Overwriting value at: {:?}", ring_buffer_index);
+            println!("New hash: {:?}", header.hash());
             if header.number() <= best_finalized.number() {
                 break // We're going back in time and dont want to overwrite
             }
 
             if *anchor.parent_hash() == header.hash() {
+                // remove old elements from storage
+                if let Ok(hash) = <MultiImportedHashes<T, I>>::try_get(
+                    gateway_id,
+                    ring_buffer_index % T::HeadersToStore::get(), // enables simple increments without overflows
+                ) {
+                    println!("Hash to delete: {:?}", hash);
+                    <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
+                    <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
+                } else {
+                    println!("Hash to delete: None");
+                }
+
                 <MultiImportedHeaders<T, I>>::insert(gateway_id, header.hash(), header.clone());
-                <MultiImportedHashes<T, I>>::insert(gateway_id, index, header.hash());
+                <MultiImportedHashes<T, I>>::insert(gateway_id, ring_buffer_index, header.hash());
                 <MultiImportedRoots<T, I>>::insert(
                     gateway_id,
                     header.hash(),
@@ -316,27 +348,23 @@ pub mod pallet {
                 );
 
                 anchor = header;
+
+
+                ring_buffer_index += 1;
             } else {
                 return Err("Invalid header linkage")
             }
         }
 
-        // Update ring buffer pointer and remove old headers
-        // <MultiImportedHashesPointer<T, I>>::insert(
-        //     gateway_id,
-        //     (range.len() + 2) % T::HeadersToStore::get(), // range + 1 is total submitted. additional +1 accounts for increment
-        // );
-        //
-        // if let Ok(hash) = pruning {
-        //     log::debug!(
-        //         target: LOG_TARGET,
-        //         "Pruning old signed_header: {:?} for gateway {:?}.",
-        //         hash,
-        //         gateway_id
-        //     );
-        //     <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
-        //     <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
-        // }
+        println!("New Buffer Index: {:?}", ring_buffer_index % T::HeadersToStore::get());
+        println!();
+
+        // Update pointer
+        <MultiImportedHashesPointer<T, I>>::insert(
+            gateway_id,
+            ring_buffer_index % T::HeadersToStore::get(),
+        );
+
         log::debug!(
             target: LOG_TARGET,
             "Successfully imported finalized header with hash {:?} for gateway {:?}!",
@@ -550,7 +578,7 @@ pub mod pallet {
         <InitialHashMap<T, I>>::insert(gateway_id, initial_hash);
         <BestFinalizedMap<T, I>>::insert(gateway_id, initial_hash);
         <MultiImportedHeaders<T, I>>::insert(gateway_id, initial_hash, header);
-        <MultiImportedHashesPointer<T, I>>::insert(gateway_id, 1u32);
+        <MultiImportedHashesPointer<T, I>>::insert(gateway_id, 0); // one ahead of first value
         <RelayChainId<T, I>>::put(gateway_id);
         let authority_set = bp_header_chain::AuthoritySet::new(authority_list, set_id);
         <CurrentAuthoritySet<T, I>>::put(authority_set);
@@ -1863,35 +1891,70 @@ mod tests {
         });
     }
 
+    #[test]
+    fn should_prune_headers_over_headers_to_keep_parameter() {
+        let default_gateway: ChainId = *b"pdot";
 
+        run_test(|| {
+            let _ = initialize_relaychain(Origin::root());
+            let headers = test_header_range(10u64);
 
+            //°°°°°°°°°°°ACHTUNG!!!°°°°°°°°°°°°
+            // The headers are not deleted in the order one would expect, which is a result of them being checked backwards.
+            // When submitting, the last header (5 in this case) is checked first (via justification), and then we go backwards (4,3,2,1)
+            // As we write the entries in reverse order, we also delete in reverse order of the batch
+            assert_ok!(submit_headers(1, 5));
+            // Once this is complete, we have [5, 4, 3, 2, 1] in MultiImportedHashes
+            // with the pointer being here     ^
+            assert_eq!(
+                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[1].hash().clone()),
+                true
+            );
+            // contains added header
+            assert_ok!(submit_headers(6, 7));
+            // Here we start overwriting from the pointer, so this is the result:
+            // [6, 7, 3, 2, 1]
+            //        ^
+            // ToDo: This should probably be refactored, as it can lead to small gaps in the ranges (which are going to be very small in production)
 
+            assert_eq!(
+                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[3].hash().clone()),
+                true
+            ); // still available
 
-    // #[test]
-    // fn should_prune_headers_over_headers_to_keep_parameter() {
-    //     let default_gateway: ChainId = *b"pdot";
-    //
-    //     run_test(|| {
-    //         let _ =initialize_relaychain(Origin::root());
-    //         assert_ok!(submit_headers(1, 5));
-    //         let first_header = Pallet::<TestRuntime>::best_finalized_map(default_gateway);
-    //         next_block();
-    //
-    //         assert_ok!(submit_headers(6, 10));
-    //         next_block();
-    //         assert_ok!(submit_headers(11, 15));
-    //         next_block();
-    //         assert_ok!(submit_headers(16, 20));
-    //         next_block();
-    //         assert_ok!(submit_headers(21, 25));
-    //         next_block();
-    //
-    //         assert_ok!(submit_headers(26, 30));
-    //
-    //         assert!(
-    //             !Pallet::<TestRuntime>::is_known_header(first_header.hash(), default_gateway),
-    //             "First header should be pruned."
-    //         );
-    //     })
-    // }
+            assert_eq!(
+                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[4].hash().clone()),
+                false
+            ); // overwritten by buffer
+
+            assert_eq!(
+                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[5].hash().clone()),
+                false
+            ); // overwritten by buffer
+
+            assert_ok!(submit_headers(8, 10));
+            // [6, 7, 10, 9, 8]
+            //  ^
+
+            assert_eq!(
+                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[1].hash().clone()),
+                false
+            );
+
+            assert_eq!(
+                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[2].hash().clone()),
+                false
+            );
+
+            assert_eq!(
+                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[3].hash().clone()),
+                false
+            );
+
+            assert_eq!(
+                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[6].hash().clone()),
+                true
+            );
+        })
+    }
 }
