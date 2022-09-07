@@ -14,15 +14,19 @@ mod tests;
 use t3rn_primitives::{
     portal::{Portal, RococoBridge},
     xdns::Xdns,
-    ChainId, GatewayVendor
+    ChainId, GatewayVendor,
 };
 use sp_std::vec::Vec;
 
+pub mod weights;
+
+// use weights::WeightInfo;
 #[frame_support::pallet]
 pub mod pallet {
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
     use core::convert::TryInto;
+    use frame_support::weights;
     use sp_std::vec::Vec;
     use t3rn_primitives::{xdns::Xdns};
     use t3rn_primitives::{
@@ -40,10 +44,9 @@ pub mod pallet {
     {
         /// Because this pallet emits events, it depends on the runtime's definition of an event.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
-
         type Xdns: Xdns<Self>;
-
-
+        /// Type representing the weight of this pallet
+        type WeightInfo: crate::weights::WeightInfo;
     }
 
     #[pallet::pallet]

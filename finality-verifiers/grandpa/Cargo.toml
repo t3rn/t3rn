@@ -30,7 +30,8 @@ num-traits          = { version = "0.2", default-features = false }
 hash-db             = { version = "0.15.2", default-features = false }
 sp-trie             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 sp-io               = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
- # These are the testing dependencies that we are now selecting via future flag
+
+# These are the testing dependencies that we are now selecting via future flag
 ed25519-dalek       = { version = "1.0", features = [ "u64_backend" ], optional = true}
 pallet-balances     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', optional = true }
 pallet-sudo         = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', optional = true }

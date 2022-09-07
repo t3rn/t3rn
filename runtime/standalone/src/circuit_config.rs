@@ -3,7 +3,7 @@ use frame_support::{parameter_types, traits::ConstU32, PalletId};
 use sp_core::H256;
 use sp_runtime::traits::*;
 use t3rn_primitives::portal::RococoBridge;
-use t3rn_primitives::bridges::runtime as bp_runtime;
+use pallet_grandpa_finality_verifier::bridges::runtime as bp_runtime;
 
 // impl pallet_randomness_collective_flip::Config for Runtime {}
 
@@ -30,6 +30,7 @@ impl pallet_contracts_registry::Config for Runtime {
 impl pallet_portal::Config for Runtime {
     type Event = Event;
     type Xdns = XDNS;
+    type WeightInfo = pallet_portal::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {

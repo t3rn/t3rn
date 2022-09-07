@@ -328,6 +328,7 @@ impl pallet_grandpa_finality_verifier::Config<RococoBridgeInstance> for Test {
 impl pallet_portal::Config for Test {
     type Event = Event;
     type Xdns = XDNS;
+    type WeightInfo = ();
 }
 
 parameter_types! {

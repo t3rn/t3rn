@@ -557,7 +557,7 @@ impl_runtime_apis! {
         }
     }
 
-     impl pallet_portal_rpc_runtime_api::PortalRuntimeApi<Block, AccountId> for Runtime {
+    impl pallet_portal_rpc_runtime_api::PortalRuntimeApi<Block, AccountId> for Runtime {
         fn get_latest_finalized_header(chain_id: ChainId) -> Option<Vec<u8>> {
             <Portal as t3rn_primitives::portal::Portal<Runtime>>::get_latest_finalized_header(chain_id)
         }
