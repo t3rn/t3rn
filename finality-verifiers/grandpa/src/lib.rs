@@ -251,8 +251,9 @@ pub mod pallet {
         range: Vec<BridgedHeader<T, I>>,
         justification: GrandpaJustification<BridgedHeader<T, I>>,
     ) -> Result<Vec<u8>, &'static str> {
-
         ensure!(range.len() > 0, "empty range submitted");
+        // Conceptially it would make sense to enforce range.len() < HeadersToStore.
+        // Since polkadot updates its authority set every 24h, this is implicitly ensured by that => Justification check would fail
 
         let best_finalized = <MultiImportedHeaders<T, I>>::get(
             gateway_id,
@@ -287,82 +288,43 @@ pub mod pallet {
             try_enact_authority_change_single::<T, I>(&signed_header, set_id, gateway_id)?;
 
         // We get the latest buffer_index, which maps to the next header we can overwrite, and the index where we insert the verified header
-        let mut ring_buffer_index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
-        println!("Overwriting value at: {:?}", ring_buffer_index);
+        let mut buffer_index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
 
-        // remove old elements from storage
-        if let Ok(hash) = <MultiImportedHashes<T, I>>::try_get(
+        write_and_clean_header_data::<T, I>(
             gateway_id,
-            ring_buffer_index % T::HeadersToStore::get(), // enables simple increments without overflows
-        ) {
-            println!("Hash to delete: {:?}", hash);
-
-            <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
-            <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
-        } else {
-            println!("Hash to delete: None");
-        }
-        println!("New hash: {:?}", hash);
-
-        // Once deleted, we add the new header
-        <BestFinalizedMap<T, I>>::insert(gateway_id, hash);
-        <MultiImportedHeaders<T, I>>::insert(gateway_id, hash, signed_header.clone());
-        <MultiImportedHashes<T, I>>::insert(gateway_id, ring_buffer_index, hash);
-        <MultiImportedRoots<T, I>>::insert(
-            gateway_id,
+            &mut buffer_index,
+            &signed_header,
             hash,
-            (signed_header.extrinsics_root(), signed_header.state_root()),
-        );
-
-
-        ring_buffer_index += 1; // we wrote a header so we must iterate
+            true,
+        )?;
 
         let mut anchor = signed_header.clone();
 
         for header in range {
-            println!("Overwriting value at: {:?}", ring_buffer_index);
-            println!("New hash: {:?}", header.hash());
             if header.number() <= best_finalized.number() {
                 break // We're going back in time and dont want to overwrite
             }
 
             if *anchor.parent_hash() == header.hash() {
-                // remove old elements from storage
-                if let Ok(hash) = <MultiImportedHashes<T, I>>::try_get(
+                write_and_clean_header_data::<T, I>(
                     gateway_id,
-                    ring_buffer_index % T::HeadersToStore::get(), // enables simple increments without overflows
-                ) {
-                    println!("Hash to delete: {:?}", hash);
-                    <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
-                    <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
-                } else {
-                    println!("Hash to delete: None");
-                }
-
-                <MultiImportedHeaders<T, I>>::insert(gateway_id, header.hash(), header.clone());
-                <MultiImportedHashes<T, I>>::insert(gateway_id, ring_buffer_index, header.hash());
-                <MultiImportedRoots<T, I>>::insert(
-                    gateway_id,
+                    &mut buffer_index,
+                    &header,
                     header.hash(),
-                    (header.extrinsics_root(), header.state_root()),
-                );
+                    false,
+                )?;
 
                 anchor = header;
-
-
-                ring_buffer_index += 1;
             } else {
                 return Err("Invalid header linkage")
             }
-        }
 
-        println!("New Buffer Index: {:?}", ring_buffer_index % T::HeadersToStore::get());
-        println!();
+        }
 
         // Update pointer
         <MultiImportedHashesPointer<T, I>>::insert(
             gateway_id,
-            ring_buffer_index % T::HeadersToStore::get(),
+            buffer_index % T::HeadersToStore::get(),
         );
 
         log::debug!(
@@ -420,18 +382,16 @@ pub mod pallet {
             verify_header_storage_proof::<T, I>(relay_block_hash, proof, parachain)?;
 
         let hash = header.hash();
-        let index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
-        // let pruning = <MultiImportedHashes<T, I>>::try_get(gateway_id, index);
+        // We get the latest buffer_index, which maps to the next header we can overwrite, and the index where we insert the verified header
+        let mut buffer_index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
 
-        <BestFinalizedMap<T, I>>::insert(gateway_id, hash);
-
-        <MultiImportedHeaders<T, I>>::insert(gateway_id, hash, header.clone());
-        <MultiImportedHashes<T, I>>::insert(gateway_id, index, hash);
-        <MultiImportedRoots<T, I>>::insert(
+        write_and_clean_header_data::<T, I>(
             gateway_id,
+            &mut buffer_index,
+            &header,
             hash,
-            (header.extrinsics_root(), header.state_root()),
-        );
+            true,
+        )?;
 
         let mut anchor = header.clone();
 
@@ -441,37 +401,19 @@ pub mod pallet {
             }
 
             if *anchor.parent_hash() == header.hash() {
-                <MultiImportedHeaders<T, I>>::insert(gateway_id, header.hash(), header.clone());
-                <MultiImportedHashes<T, I>>::insert(gateway_id, index, header.hash());
-                <MultiImportedRoots<T, I>>::insert(
+                write_and_clean_header_data::<T, I>(
                     gateway_id,
+                    &mut buffer_index,
+                    &header,
                     header.hash(),
-                    (header.extrinsics_root(), header.state_root()),
-                );
+                    false,
+                )?;
 
                 anchor = header;
             } else {
                 return Err("Invalid header linkage")
             }
         }
-
-        //
-        // // Update ring buffer pointer and remove old header.
-        // <MultiImportedHashesPointer<T, I>>::insert(
-        //     gateway_id,
-        //     (index + 1) % T::HeadersToStore::get(),
-        // );
-        //
-        // if let Ok(hash) = pruning {
-        //     log::debug!(
-        //         target: LOG_TARGET,
-        //         "Pruning old header: {:?} for gateway {:?}.",
-        //         hash,
-        //         gateway_id
-        //     );
-        //     <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
-        //     <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
-        // }
 
         // ToDo use unique_saturated_into() here.
         let height: usize = header.number().as_();
@@ -618,6 +560,41 @@ pub mod pallet {
             gateways.len() + 1
         });
 
+        Ok(())
+    }
+
+    /// removes old header data based on ring buffer logic. Adds new header data, updates the ring buffer entry and increments buffer index
+    pub(crate) fn write_and_clean_header_data<T: Config<I>, I: 'static>(
+        gateway_id: ChainId,
+        buffer_index: &mut u32,
+        header: &BridgedHeader<T, I>,
+        hash: BridgedBlockHash<T, I>,
+        is_signed_header: bool,
+    ) -> Result<(), &'static str> {
+        // If we find an entry to overwrite, do so.
+        if let Ok(hash) = <MultiImportedHashes<T, I>>::try_get(
+            gateway_id,
+            *buffer_index, // can't overflow because of incrementation logic
+        ) {
+            <MultiImportedHeaders<T, I>>::remove(gateway_id, hash);
+            <MultiImportedRoots<T, I>>::remove(gateway_id, hash);
+        }
+
+        // Once deleted, we add the new header
+        <MultiImportedHeaders<T, I>>::insert(gateway_id, hash, header.clone());
+        <MultiImportedHashes<T, I>>::insert(gateway_id, buffer_index.clone(), hash);
+        <MultiImportedRoots<T, I>>::insert(
+            gateway_id,
+            hash,
+            (header.extrinsics_root(), header.state_root()),
+        );
+
+        // if this is the signed header, we set best finalized
+        if is_signed_header {
+            <BestFinalizedMap<T, I>>::insert(gateway_id, hash);
+        }
+
+        *buffer_index = (*buffer_index + 1) % T::HeadersToStore::get(); // prevents overflows
         Ok(())
     }
 
@@ -1897,7 +1874,7 @@ mod tests {
 
         run_test(|| {
             let _ = initialize_relaychain(Origin::root());
-            let headers = test_header_range(10u64);
+            let headers = test_header_range(111u64);
 
             //°°°°°°°°°°°ACHTUNG!!!°°°°°°°°°°°°
             // The headers are not deleted in the order one would expect, which is a result of them being checked backwards.
@@ -1953,6 +1930,22 @@ mod tests {
 
             assert_eq!(
                 <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[6].hash().clone()),
+                true
+            );
+
+            assert_ok!(submit_headers(11, 15));
+            assert_eq!(
+                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[10].hash().clone()),
+                false
+            );
+
+            assert_eq!(
+                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[11].hash().clone()),
+                true
+            );
+
+            assert_eq!(
+                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[12].hash().clone()),
                 true
             );
         })
