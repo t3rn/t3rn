@@ -101,7 +101,6 @@ impl pallet_sudo::Config for TestRuntime {
 }
 
 parameter_types! {
-    pub const MaxRequests: u32 = 2;
     pub const HeadersToKeep: u32 = 5;
     pub const SessionLength: u64 = 5;
     pub const NumValidators: u32 = 5;
@@ -127,7 +126,6 @@ impl pallet_balances::Config for TestRuntime {
 impl Config for TestRuntime {
     type BridgedChain = TestCircuitLikeChain;
     type HeadersToKeep = HeadersToKeep;
-    type MaxRequests = MaxRequests;
     type WeightInfo = ();
 }
 

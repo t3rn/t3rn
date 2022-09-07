@@ -101,17 +101,6 @@ pub mod pallet {
         /// The chain we are bridging to here.
         type BridgedChain: Chain;
 
-        /// The overarching event type.
-        // type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
-        /// The upper bound on the number of requests allowed by the pallet.
-        ///
-        /// A request refers to an action which writes a header to storage.
-        ///
-        /// Once this bound is reached the pallet will not allow any dispatchables to be called
-        /// until the request count has decreased.
-        #[pallet::constant]
-        type MaxRequests: Get<u32>;
-
         /// Maximal number of finalized headers to keep in the storage.
         ///
         /// The setting is there to prevent growing the on-chain state indefinitely. Note
@@ -130,34 +119,8 @@ pub mod pallet {
 
     #[pallet::hooks]
     impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I> {
-        fn on_initialize(_n: T::BlockNumber) -> frame_support::weights::Weight {
-            let mut acc_weight = 0_u64;
 
-            for gateway_id in <InstantiatedGatewaysMap<T, I>>::get() {
-                <RequestCountMap<T, I>>::mutate(gateway_id, |count| match count {
-                    Some(count) => *count = count.saturating_sub(1),
-                    _ => *count = Some(0),
-                });
-
-                acc_weight = acc_weight
-                    .saturating_add(T::DbWeight::get().reads(1))
-                    .saturating_add(T::DbWeight::get().writes(1));
-            }
-            acc_weight
-        }
     }
-
-    /// The current number of requests which have written to storage.
-    ///
-    /// If the `RequestCount` hits `MaxRequests`, no more calls will be allowed to the pallet until
-    /// the request capacity is increased.
-    ///
-    /// The `RequestCount` is decreased by one at the beginning of every block. This is to ensure
-    /// that the pallet can always make progress.
-    #[pallet::storage]
-    #[pallet::getter(fn request_count_map)]
-    pub(super) type RequestCountMap<T: Config<I>, I: 'static = ()> =
-        StorageMap<_, Blake2_256, ChainId, u32>;
 
     /// Hash of the header used to bootstrap the pallet.
     #[pallet::storage]
@@ -298,10 +261,6 @@ pub mod pallet {
         range: Vec<BridgedHeader<T, I>>,
         justification: GrandpaJustification<BridgedHeader<T, I>>,
     ) -> Result<Vec<u8>, &'static str> {
-        ensure!(
-            <RequestCountMap<T, I>>::get(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
-            "Too many Requests"
-        );
 
         ensure!(range.len() > 0, "empty range submitted");
 
@@ -349,13 +308,6 @@ pub mod pallet {
             hash,
             (signed_header.extrinsics_root(), signed_header.state_root()),
         );
-        <RequestCountMap<T, I>>::mutate(gateway_id, |count| {
-            match count {
-                Some(count) => *count += 1,
-                None => *count = Some(1),
-            }
-            *count
-        });
 
         let mut anchor = signed_header.clone();
 
@@ -426,10 +378,6 @@ pub mod pallet {
         range: Vec<BridgedHeader<T, I>>,
         proof: StorageProof,
     ) -> Result<Vec<u8>, &'static str> {
-        ensure!(
-            <RequestCountMap<T, I>>::get(gateway_id).unwrap_or(0) < T::MaxRequests::get(),
-            "Too many Requests"
-        );
 
         ensure!(range.len() > 0, "empty range submitted");
 
@@ -489,13 +437,6 @@ pub mod pallet {
             }
         }
 
-        <RequestCountMap<T, I>>::mutate(gateway_id, |count| {
-            match count {
-                Some(count) => *count += 1,
-                None => *count = Some(1),
-            }
-            *count
-        });
         //
         // // Update ring buffer pointer and remove old header.
         // <MultiImportedHashesPointer<T, I>>::insert(
@@ -1632,7 +1573,6 @@ mod tests {
                 "Invalid header linkage"
             );
 
-            assert_noop!(submit_headers(6, 10), "Too many Requests");
         })
     }
 
@@ -1928,17 +1868,6 @@ mod tests {
     }
 
     #[test]
-    fn rate_limiter_disallows_imports_once_limit_is_hit_in_single_block() {
-        run_test(|| {
-            let _ = initialize_relaychain(Origin::root());
-
-            assert_ok!(submit_headers(1, 5));
-            assert_ok!(submit_headers(6, 10));
-            assert_err!(submit_headers(11, 15), "Too many Requests");
-        })
-    }
-
-    #[test]
     fn rate_limiter_invalid_requests_do_not_count_towards_request_count() {
         let default_gateway: ChainId = *b"pdot";
         run_test(|| {
@@ -1964,15 +1893,9 @@ mod tests {
 
             let _ = initialize_relaychain(Origin::root());
 
-            for _ in 0..<TestRuntime as Config>::MaxRequests::get() + 1 {
-                // Notice that the error here *isn't* `TooManyRequests`
-                assert_err!(submit_invalid_request(), "InvalidJustification");
-            }
-
             // Can still submit `MaxRequests` requests afterwards
             assert_ok!(submit_headers(1, 5));
             assert_ok!(submit_headers(6, 10));
-            assert_err!(submit_headers(11, 15), "Too many Requests");
         })
     }
 
@@ -1990,19 +1913,6 @@ mod tests {
             );
             next_block();
             assert_ok!(submit_headers(11, 15));
-        })
-    }
-
-    #[test]
-    fn rate_limiter_disallows_imports_once_limit_is_hit_across_different_blocks() {
-        run_test(|| {
-            let _ = initialize_relaychain(Origin::root());
-            assert_ok!(submit_headers(1, 5));
-            assert_ok!(submit_headers(6, 10));
-
-            next_block();
-            assert_ok!(submit_headers(11, 15));
-            assert_err!(submit_headers(16, 20), "Too many Requests");
         })
     }
 
