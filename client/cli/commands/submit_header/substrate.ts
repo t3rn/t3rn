@@ -20,13 +20,10 @@ const generateBatchProof = async (circuit: any, target: any, gatewayId: string, 
         const finalityProof = await target.rpc.grandpa.proveFinality(from)
         let {latestBlockHash, justification, headers} = decodeFinalityProof(finalityProof)
         let signed_header = headers.pop()
-        headers.reverse() // we need to submit backwards
-        headers.push(await getHeader(target, from)) // we need to fetch the target header seperatly
+        headers = [await getHeader(target, from), ...headers]
         let range = circuit.createType("Vec<Header>", headers)
         console.log("Batch:")
-        console.log(`Range: From #${range[range.length - 1].number.toNumber()} to #${range[0].number.toNumber()}`)
-        console.log("Signed Header:", signed_header.toHuman())
-        console.log("Justification:", decodeJustification(justification).toHuman())
+        console.log(`Range: From #${range[0].number.toNumber()} to #${range[range.length - 1].number.toNumber()}`)
         console.log("__________________________________________________________________")
         const relaychainHeaderData = circuit.createType("RelaychainHeaderData<Header>", {
             signed_header,
@@ -56,7 +53,7 @@ const generateParachainProof = async (circuit: any, target: any, gatewayData: an
 
     const parachainHeaderData = circuit.createType("ParachainHeaderData<Header>", {
         relay_block_hash: latestRelayChainHeader.toJSON(),
-        range: headers.reverse(),
+        range: headers,
         proof: {
             trieNodes: proof.toJSON().proof
         }

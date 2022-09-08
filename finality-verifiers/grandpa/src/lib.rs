@@ -313,7 +313,6 @@ pub mod pallet {
                 )?;
 
                 best_finalized = header;
-                println!("Best Finalized: {:?}", best_finalized.hash());
             } else {
                 // if anything fails here, noop!
                 return Err("Invalid header linkage")
@@ -324,7 +323,6 @@ pub mod pallet {
         // °°°°° Begin Check: #3 °°°°°
         if best_finalized.hash() == *signed_header.parent_hash() {
             // write header to storage if correct
-            println!("Best Finalized: {:?} - #{:?}", signed_hash, signed_number);
             write_and_clean_header_data::<T, I>(
                 gateway_id,
                 &mut buffer_index,
@@ -404,7 +402,6 @@ pub mod pallet {
                 )?;
 
                 best_finalized = header;
-                println!("Best Finalized: {:?}", best_finalized.hash());
             } else {
                 // if anything fails here, noop!
                 return Err("Invalid header linkage")
@@ -1731,19 +1728,9 @@ mod tests {
             let mut signed_header = headers[2].clone();
             let mut range: Vec<TestHeader> = headers[1..2].to_vec().clone();
 
-            // println!("Signed pre change: {:?}", signed_header.hash());
-
-
             // Need to update the header digest to indicate that our header signals an authority set
             // change. The change will be enacted when we import our header.
             signed_header.digest = change_log(0);
-            // println!("Len: {:?}", range.len());
-            println!("°°°°°°°°°In test:");
-            println!("Range 1: {:?}", range[0].hash());
-            println!("Signed Parent: {:?}", signed_header.parent_hash());
-            println!("Signed Hash: {:?}", signed_header.hash());
-            println!("°°°°°°°°°°°°°°°°°°°");
-
 
             let justification = make_default_justification(&signed_header.clone());
             let data = RelaychainHeaderData::<TestHeader> {
