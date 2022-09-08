@@ -6,24 +6,15 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-pub mod accounts_config;
-pub mod circuit_config;
-pub mod contracts_config;
-pub mod orml_config;
 pub mod parachain_config;
 pub mod primitives;
 pub mod system_config;
-pub mod xbi_config;
 pub mod xcm_config;
 
 pub use crate::{parachain_config::*, primitives::*};
 
-use codec::Decode;
-use pallet_3vm_evm::AddressMapping;
-use pallet_xdns_rpc_runtime_api::{ChainId, FetchXdnsRecordsResponse, GatewayABIConfig};
-
 use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
     create_runtime_str, generic,
     traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
@@ -39,7 +30,6 @@ use sp_version::RuntimeVersion;
 pub use frame_support::traits::EqualPrivilegeOnly;
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{Imbalance, OnUnbalanced},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
         ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -56,10 +46,9 @@ pub use sp_runtime::{MultiAddress, Perbill, Permill};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-use t3rn_primitives::ReadLatestGatewayHeight;
 
 // Polkadot Imports
-use polkadot_runtime_common::{BlockHashCount};
+use polkadot_runtime_common::BlockHashCount;
 use polkadot_runtime_constants::weights::RocksDbWeight;
 
 /// Executive: handles dispatch to the various modules.
@@ -74,10 +63,10 @@ pub type Executive = frame_executive::Executive<
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
     // https://docs.rs/sp-version/latest/sp_version/struct.RuntimeVersion.html
-    spec_name: create_runtime_str!("t0rn"),
-    impl_name: create_runtime_str!("Circuit Collator"),
-    authoring_version: 2,
-    spec_version: 3,
+    spec_name: create_runtime_str!("t3rn"),
+    impl_name: create_runtime_str!("t3rn Circuit Collator"),
+    authoring_version: 1,
+    spec_version: 1,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -101,6 +90,8 @@ pub fn native_version() -> NativeVersion {
 pub const fn deposit(items: u32, bytes: u32) -> Balance {
     (items as Balance) * 56 * MILLIUNIT + (bytes as Balance) * 50 * MICROUNIT
 }
+
+pub type CurrencyAdapter = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -136,43 +127,6 @@ construct_runtime!(
         PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin, Config} = 31,
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
         DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
-
-        // ORML
-        ORMLTokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>} = 161,
-
-        // Circuit
-        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 200,
-        // t3rn pallets
-        XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
-        MultiFinalityVerifierPolkadotLike: pallet_mfv::<Instance1>::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 101,
-        MultiFinalityVerifierSubstrateLike: pallet_mfv::<Instance2>::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 102,
-        MultiFinalityVerifierEthereumLike: pallet_mfv::<Instance3>::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 103,
-        MultiFinalityVerifierGenericLike: pallet_mfv::<Instance4>::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 104,
-        MultiFinalityVerifierDefault: pallet_mfv::{
-            Pallet, Call, Storage, Config<T, I>, Event<T, I>
-        } = 105,
-        ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
-        CircuitPortal: pallet_circuit_portal::{Pallet, Call, Storage, Event<T>} = 107,
-        Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
-        Treasury: pallet_treasury = 109,
-        Clock: pallet_clock::{Pallet, Storage, Event<T>} = 110,
-
-        // 3VM
-        ThreeVm: pallet_3vm = 119,
-        Contracts: pallet_3vm_contracts = 120,
-        Evm: pallet_3vm_evm = 121,
-        AccountManager: pallet_account_manager = 125,
-
-        // XBI
-        XBIPortal: pallet_xbi_portal::{Pallet, Call, Storage, Event<T>} = 111,
 
         // admin
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 255,
@@ -293,111 +247,6 @@ impl_runtime_apis! {
             len: u32,
         ) -> pallet_transaction_payment::FeeDetails<Balance> {
             TransactionPayment::query_fee_details(uxt, len)
-        }
-    }
-
-    impl pallet_3vm_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
-        for Runtime
-    {
-        fn call(
-            origin: AccountId,
-            dest: AccountId,
-            value: Balance,
-            gas_limit: u64,
-            storage_deposit_limit: Option<Balance>,
-            input_data: Vec<u8>,
-        ) -> pallet_3vm_contracts_primitives::ContractExecResult<Balance> {
-            Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, CONTRACTS_DEBUG_OUTPUT)
-        }
-
-        fn instantiate(
-            origin: AccountId,
-            value: Balance,
-            gas_limit: u64,
-            storage_deposit_limit: Option<Balance>,
-            code: pallet_3vm_contracts_primitives::Code<Hash>,
-            data: Vec<u8>,
-            salt: Vec<u8>,
-        ) -> pallet_3vm_contracts_primitives::ContractInstantiateResult<AccountId, Balance>
-        {
-            Contracts::bare_instantiate(origin, value, gas_limit, storage_deposit_limit, code, data, salt, CONTRACTS_DEBUG_OUTPUT)
-        }
-
-        fn upload_code(
-            origin: AccountId,
-            code: Vec<u8>,
-            storage_deposit_limit: Option<Balance>,
-        ) -> pallet_3vm_contracts_primitives::CodeUploadResult<Hash, Balance>
-        {
-            Contracts::bare_upload_code(origin, code, storage_deposit_limit)
-        }
-
-        fn get_storage(
-            address: AccountId,
-            key: [u8; 32],
-        ) -> pallet_3vm_contracts_primitives::GetStorageResult {
-            Contracts::get_storage(address, key)
-        }
-    }
-
-    impl pallet_evm_rpc_runtime_api::EvmRuntimeRPCApi<Block, AccountId, Balance> for Runtime {
-        fn get_evm_address(
-            account_id: AccountId,
-        ) -> Option<H160> {
-            <Runtime as pallet_3vm_evm::Config>::AddressMapping::get_evm_address(&account_id)
-        }
-        fn get_or_into_account_id(
-            address: H160,
-        ) -> AccountId {
-            <Runtime as pallet_3vm_evm::Config>::AddressMapping::get_or_into_account_id(&address)
-        }
-
-        fn get_threevm_info(
-            address: H160,
-        ) -> Option<(AccountId, Balance, u8)> {
-            Evm::get_threevm_info(&address)
-        }
-
-        fn account_info(address: H160) -> (U256, U256, Vec<u8>) {
-            let account = Evm::account_basic(&address);
-            let code = Evm::get_account_code(&address);
-
-            (account.balance, account.nonce, code)
-        }
-
-        fn storage_at(address: H160, index: U256) -> H256 {
-            let mut tmp = [0u8; 32];
-            index.to_big_endian(&mut tmp);
-            Evm::account_storages(address, H256::from_slice(&tmp[..]))
-        }
-    }
-
-    impl pallet_circuit_portal_rpc_runtime_api::CircuitPortalRuntimeApi<Block, AccountId, Balance, BlockNumber> for Runtime {
-        fn read_latest_gateway_height(
-            gateway_id: [u8; 4],
-        ) -> ReadLatestGatewayHeight {
-            match <CircuitPortal as t3rn_primitives::circuit_portal::CircuitPortal<Runtime>>::read_cmp_latest_target_height(gateway_id, None, None) {
-                Ok(encoded_height) =>
-                    ReadLatestGatewayHeight::Success {
-                        encoded_height,
-                    },
-                Err(_err) => ReadLatestGatewayHeight::Error
-            }
-        }
-    }
-
-    impl pallet_xdns_rpc_runtime_api::XdnsRuntimeApi<Block, AccountId> for Runtime {
-        fn fetch_records() -> FetchXdnsRecordsResponse<AccountId> {
-             FetchXdnsRecordsResponse {
-                xdns_records: <XDNS as t3rn_primitives::xdns::Xdns<Runtime>>::fetch_records()
-            }
-        }
-
-        fn fetch_abi(chain_id: ChainId) -> Option<GatewayABIConfig> {
-            match <XDNS as t3rn_primitives::xdns::Xdns<Runtime>>::get_abi(chain_id) {
-                Ok(abi) => Some(abi),
-                Err(_) => None,
-            }
         }
     }
 

@@ -1,10 +1,10 @@
 [package]
 authors     = [ "devs @ t3rn" ]
-description = "t3rn's parachain runtime to Rococo - t0rn"
+description = "t3rn - parachain runtime to Polkadot"
 edition     = "2021"
 homepage    = "https://t3rn.io"
 license     = "Apache-2.0"
-name        = "t0rn-parachain-runtime"
+name        = "t3rn-parachain-runtime"
 repository  = 'https://github.com/t3rn/t3rn'
 version     = "1.0.0-alpha.0"
 
@@ -77,38 +77,6 @@ cumulus-primitives-utility          = { git = 'https://github.com/paritytech/cum
 pallet-collator-selection           = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.19', default-features = false }
 parachain-info                      = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.19', default-features = false }
 
-# ORML
-orml-tokens = { git = "https://github.com/t3rn/open-runtime-module-library", branch = "polkadot-v0.9.19", default-features = false }
-orml-traits = { git = "https://github.com/t3rn/open-runtime-module-library", branch = "polkadot-v0.9.19", default-features = false }
-
-# t3rn Deps
-pallet-treasury                   = { default-features = false, path = "../../pallets/treasury" }
-t3rn-primitives                   = { default-features = false, path = "../../primitives" }
-t3rn-protocol                     = { default-features = false, path = "../../protocol" }
-
-# t3rn pallets
-pallet-account-manager                = { path = "../../pallets/account-manager", default-features = false }
-pallet-circuit                        = { path = "../../pallets/circuit", package = "pallet-circuit", default-features = false }
-pallet-circuit-portal                 = { path = "../../pallets/circuit-portal", package = "pallet-circuit-portal", default-features = false }
-pallet-circuit-portal-rpc-runtime-api = { path = "../../pallets/circuit-portal/rpc/runtime-api", default-features = false }
-pallet-contracts-registry             = { path = "../../pallets/contracts-registry", default-features = false }
-pallet-mfv                            = { path = "../../pallets/multi-finality-verifier", package = "pallet-multi-finality-verifier", default-features = false }
-pallet-xdns                           = { path = "../../pallets/xdns", default-features = false }
-pallet-xdns-rpc-runtime-api           = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
-
-pallet-xbi-portal                 = { path = "../../pallets/xbi-portal", default-features = false }
-pallet-clock                      = { path = "../../pallets/clock", default-features = false }
-
-# Smart contracts VMs
-pallet-3vm                           = { path = "../../3vm/pallets/3vm", default-features = false }
-pallet-3vm-contracts                 = { path = "../../3vm/pallets/contracts", default-features = false, package = "pallet-contracts" }
-pallet-3vm-contracts-primitives      = { path = "../../3vm/primitives/contracts", default-features = false, package = "pallet-contracts-primitives" }
-pallet-3vm-contracts-rpc-runtime-api = { path = "../../3vm/rpc/contracts/runtime-api", default-features = false, package = "pallet-contracts-rpc-runtime-api" }
-
-evm-precompile-util       = { path = "../../3vm/pallets/evm/precompile/util", default-features = false, package = "precompile-util" }
-pallet-3vm-evm            = { path = "../../3vm/pallets/evm", default-features = false, package = "pallet-evm" }
-pallet-3vm-evm-primitives = { path = "../../3vm/primitives/evm", default-features = false, package = "fp-evm" }
-pallet-evm-rpc-runtime-api        = { path = "../../3vm/rpc/evm/runtime-api", default-features = false }
 
 [features]
 default = [ "std" ]
@@ -133,21 +101,10 @@ std = [
   "pallet-authorship/std",
   "pallet-balances/std",
   "pallet-collator-selection/std",
-  "pallet-3vm/std",
-  "pallet-3vm-contracts/std",
-  "pallet-3vm-contracts-primitives/std",
-  "pallet-3vm-contracts-rpc-runtime-api/std",
-  "pallet-3vm-evm/std",
-  "pallet-3vm-evm-primitives/std",
-  "pallet-evm-rpc-runtime-api/std",
-  "evm-precompile-util/std",
-  "pallet-account-manager/std",
   "pallet-preimage/std",
   'pallet-scheduler/std',
   "pallet-session/std",
   "pallet-sudo/std",
-  "pallet-clock/std",
-  "pallet-xbi-portal/std",
   "pallet-timestamp/std",
   "pallet-transaction-payment-rpc-runtime-api/std",
   "pallet-transaction-payment/std",
@@ -171,22 +128,6 @@ std = [
   "xcm-builder/std",
   "xcm-executor/std",
   "xcm/std",
-  # ORML
-  "orml-tokens/std",
-  "orml-traits/std",
-  # t3rn deps
-  "pallet-randomness-collective-flip/std",
-  "t3rn-primitives/std",
-  "t3rn-protocol/std",
-  # t3rn pallets
-  "pallet-xdns/std",
-  "pallet-xdns-rpc-runtime-api/std",
-  "pallet-circuit-portal-rpc-runtime-api/std",
-  "pallet-mfv/std",
-  "pallet-treasury/std",
-  "pallet-contracts-registry/std",
-  "pallet-circuit-portal/std",
-  "pallet-circuit/std",
 ]
 
 runtime-benchmarks = [
@@ -195,16 +136,13 @@ runtime-benchmarks = [
   "frame-support/runtime-benchmarks",
   "frame-system-benchmarking",
   "frame-system/runtime-benchmarks",
-  "pallet-account-manager/runtime-benchmarks",
   "pallet-balances/runtime-benchmarks",
-  "pallet-contracts-registry/runtime-benchmarks",
   "pallet-collator-selection/runtime-benchmarks",
   "pallet-timestamp/runtime-benchmarks",
   "pallet-xcm/runtime-benchmarks",
   "sp-runtime/runtime-benchmarks",
   "xcm-builder/runtime-benchmarks",
   "cumulus-pallet-session-benchmarking/runtime-benchmarks",
-  "pallet-treasury/runtime-benchmarks",
 ]
 
 try-runtime = [ "frame-executive/try-runtime", "frame-try-runtime" ]
