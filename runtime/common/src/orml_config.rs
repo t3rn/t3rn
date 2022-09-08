@@ -1,5 +1,4 @@
-use super::Runtime;
-use crate::{Amount, Balance, Event};
+use super::{Amount, Balance, Event, Runtime};
 
 use frame_support::traits::Nothing;
 

@@ -1,13 +1,12 @@
-use super::Runtime;
+use super::{AccountId, Balance, RuntimeBlockWeights, Weight, AVERAGE_ON_INITIALIZE_RATIO};
 use crate::{
-    accounts_config::EscrowAccount, AccountId, AccountManager, Aura, Balance, Balances,
-    BlockWeights, Call, Circuit, ContractsRegistry, Event, RandomnessCollectiveFlip, ThreeVm,
-    Timestamp, Weight, AVERAGE_ON_INITIALIZE_RATIO,
+    accounts_config::EscrowAccount, AccountManager, Aura, Balances, Call, Circuit,
+    ContractsRegistry, Event, RandomnessCollectiveFlip, Runtime, ThreeVm, Timestamp,
 };
 use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::FindAuthor};
 use pallet_3vm_contracts::weights::WeightInfo;
 use pallet_3vm_evm::{
-    EnsureAddressTruncated, GasWeightMapping, StoredHashAddressMapping, SubstrateBlockHashMapping,
+    EnsureAddressNever, GasWeightMapping, StoredHashAddressMapping, SubstrateBlockHashMapping,
     ThreeVMCurrencyAdapter,
 };
 use pallet_3vm_evm_primitives::FeeCalculator;
@@ -33,7 +32,7 @@ parameter_types! {
     pub const MaxValueSize: u32 = 16_384;
     // The lazy deletion runs inside on_initialize.
     pub DeletionWeightLimit: Weight = AVERAGE_ON_INITIALIZE_RATIO *
-        BlockWeights::get().max_block;
+        RuntimeBlockWeights::get().max_block;
     // The weight needed for decoding the queue should be less or equal than a fifth
     // of the overall weight dedicated to the lazy deletion.
     pub DeletionQueueDepth: u32 = ((DeletionWeightLimit::get() / (
@@ -55,6 +54,7 @@ parameter_types! {
     pub const MaxCodeSize: u32 = 2 * 1024;
     pub const DepositPerItem: Balance = deposit(1, 0);
     pub const DepositPerByte: Balance = deposit(0, 1);
+    pub SignalBounceThreshold: u32 = 5;
 }
 
 impl pallet_3vm::Config for Runtime {
@@ -78,6 +78,7 @@ impl pallet_3vm_contracts::Config for Runtime {
     /// change because that would break already deployed contracts. The `Call` structure itself
     /// is not allowed to change the indices of existing pallets, too.
     type CallFilter = frame_support::traits::Nothing;
+    // TODO: configure filters
     type CallStack = [pallet_3vm_contracts::Frame<Self>; 31];
     type ChainExtension = ();
     type Currency = Balances;
@@ -85,7 +86,7 @@ impl pallet_3vm_contracts::Config for Runtime {
     type DeletionWeightLimit = DeletionWeightLimit;
     type DepositPerByte = DepositPerByte;
     type DepositPerItem = DepositPerItem;
-    type Escrowed = AccountManager;
+    type Escrowed = Self;
     type Event = Event;
     type Randomness = RandomnessCollectiveFlip;
     type Schedule = Schedule;
@@ -125,13 +126,13 @@ impl GasWeightMapping for FixedGasWeightMapping {
 pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
     fn min_gas_price() -> U256 {
-        100.into() // TODO: do this right, this is about what pallet-contracts costs
+        100.into() // TODO: make this more production ready
     }
 }
 
 parameter_types! {
     pub const ChainId: u64 = 42;
-    pub BlockGasLimit: U256 = U256::from(u32::max_value());
+    pub BlockGasLimit: U256 = U256::from(u32::max_value()); // TODO: configure me
     pub PrecompilesValue: evm_precompile_util::Precompiles = evm_precompile_util::Precompiles::new(sp_std::vec![
         (0_u64, evm_precompile_util::KnownPrecompile::ECRecover),
         (1_u64, evm_precompile_util::KnownPrecompile::Sha256),
@@ -149,7 +150,8 @@ impl pallet_3vm_evm::Config for Runtime {
     type AddressMapping = StoredHashAddressMapping<Self>;
     type BlockGasLimit = BlockGasLimit;
     type BlockHashMapping = SubstrateBlockHashMapping<Self>;
-    type CallOrigin = EnsureAddressTruncated;
+    // type CallOrigin = EnsureAddressTruncated; // FIXME: this is to enable evm in parachain
+    type CallOrigin = EnsureAddressNever<Self::AccountId>;
     type ChainId = ChainId;
     type Currency = Balances;
     type Escrowed = AccountManager;
@@ -163,5 +165,5 @@ impl pallet_3vm_evm::Config for Runtime {
     type PrecompilesValue = PrecompilesValue;
     type Runner = pallet_3vm_evm::runner::stack::Runner<Self>;
     type ThreeVm = ThreeVm;
-    type WithdrawOrigin = EnsureAddressTruncated;
+    type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
 }

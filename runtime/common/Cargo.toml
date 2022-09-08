@@ -99,9 +99,6 @@ frame-system-benchmarking = { default-features = false, git = "https://github.co
 orml-tokens = { git = "https://github.com/t3rn/open-runtime-module-library", branch = "polkadot-v0.9.19", default-features = false }
 orml-traits = { git = "https://github.com/t3rn/open-runtime-module-library", branch = "polkadot-v0.9.19", default-features = false }
 
-# Common
-#circuit-common-runtime = { path = "../common", default-features = false }
-
 [features]
 default = [ "std", "contracts-unstable-interface" ]
 std = [
@@ -177,8 +174,6 @@ std = [
   "snowbridge-core/std",
   "pallet-beefy-mmr/std",
   "pallet-mmr-primitives/std",
-#  "circuit-common-runtime/std",
-  'pallet-clock/std',
   #	"snowbridge-basic-channel/std"
 ]
 # TODO: https://github.com/paritytech/parity-bridges-common/issues/390
@@ -194,6 +189,7 @@ runtime-benchmarks = [
   'pallet-circuit-portal/runtime-benchmarks',
   'pallet-contracts-registry/runtime-benchmarks',
   'pallet-xdns/runtime-benchmarks',
+  'pallet-clock/std',
   'pallet-timestamp/runtime-benchmarks',
   'sp-runtime/runtime-benchmarks',
   "orml-tokens/std",

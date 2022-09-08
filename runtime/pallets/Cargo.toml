@@ -4,7 +4,7 @@ description = "Circuit parachain runtime"
 edition     = "2018"
 homepage    = "https://t3rn.io"
 license     = "Apache-2.0"
-name        = "circuit-standalone-runtime"
+name        = "circuit-runtime-types"
 repository  = 'https://github.com/t3rn/t3rn'
 version     = "1.0.0-alpha.0"
 
@@ -99,11 +99,85 @@ frame-system-benchmarking = { default-features = false, git = "https://github.co
 orml-tokens = { git = "https://github.com/t3rn/open-runtime-module-library", branch = "polkadot-v0.9.19", default-features = false }
 orml-traits = { git = "https://github.com/t3rn/open-runtime-module-library", branch = "polkadot-v0.9.19", default-features = false }
 
-# Common
-#circuit-common-runtime = { path = "../common", default-features = false }
-
 [features]
-default = [ "std", "contracts-unstable-interface" ]
+default = [ "std", "contracts-unstable-interface", "standalone"]
+mock = []
+standalone = [
+  #	"bp-messages/std",
+  #	"bp-runtime/std",
+  #	"bp-westend/std",
+  #	"bp-gateway/std",
+  #	"bp-circuit/std",
+  #	"bp-polkadot-core/std",
+  #	"bridge-runtime-common/std",
+  "codec/std",
+  "frame-executive/std",
+  "frame-support/std",
+  "frame-system-rpc-runtime-api/std",
+  "frame-system/std",
+  "pallet-aura/std",
+  "t3rn-primitives/std",
+  "t3rn-protocol/std",
+  "orml-tokens/std",
+  "orml-traits/std",
+  "pallet-xdns/std",
+  "pallet-xdns-rpc-runtime-api/std",
+  "pallet-circuit/std",
+  # native contracts VMs
+  "pallet-3vm/std",
+  "pallet-3vm-contracts/std",
+  "pallet-3vm-contracts-primitives/std",
+  "pallet-3vm-contracts-rpc-runtime-api/std",
+  "pallet-3vm-evm/std",
+  "pallet-3vm-evm-primitives/std",
+  "pallet-evm-rpc-runtime-api/std",
+  "evm-precompile-util/std",
+  #	"pallet-evm/std",
+  #	"pallet-ethereum/std",
+  #	"pallet-evm-precompile-simple/std",
+  "pallet-account-manager/std",
+  "pallet-contracts-registry/std",
+  "pallet-xbi-portal/std",
+  "pallet-circuit-portal/std",
+  "pallet-circuit-portal-rpc-runtime-api/std",
+  "pallet-balances/std",
+  #	"pallet-bridge-dispatch/std",
+  #	"pallet-bridge-grandpa/std",
+  "pallet-mfv/std",
+  "pallet-treasury/std",
+  #	"pallet-bridge-messages/std",
+  "pallet-grandpa/std",
+  "pallet-randomness-collective-flip/std",
+  "pallet-sudo/std",
+  "pallet-timestamp/std",
+  "pallet-transaction-payment-rpc-runtime-api/std",
+  "pallet-mmr/std",
+  "pallet-transaction-payment/std",
+  "serde/std",
+  "sp-api/std",
+  "sp-block-builder/std",
+  "sp-consensus-aura/std",
+  "sp-core/std",
+  "sp-finality-grandpa/std",
+  "sp-inherents/std",
+  "sp-offchain/std",
+  "sp-runtime/std",
+  "sp-session/std",
+  "sp-std/std",
+  "sp-transaction-pool/std",
+  "sp-trie/std",
+  "sp-version/std",
+  "node-primitives/std",
+  "pallet-utility/std",
+  "beefy-primitives/std",
+  "pallet-beefy/std",
+  #	"ethereum-light-client/std",
+  "snowbridge-core/std",
+  "pallet-beefy-mmr/std",
+  "pallet-mmr-primitives/std",
+  #	"snowbridge-basic-channel/std"
+]
+parachain = []
 std = [
   #	"bp-messages/std",
   #	"bp-runtime/std",
@@ -177,8 +251,6 @@ std = [
   "snowbridge-core/std",
   "pallet-beefy-mmr/std",
   "pallet-mmr-primitives/std",
-#  "circuit-common-runtime/std",
-  'pallet-clock/std',
   #	"snowbridge-basic-channel/std"
 ]
 # TODO: https://github.com/paritytech/parity-bridges-common/issues/390
@@ -194,6 +266,7 @@ runtime-benchmarks = [
   'pallet-circuit-portal/runtime-benchmarks',
   'pallet-contracts-registry/runtime-benchmarks',
   'pallet-xdns/runtime-benchmarks',
+  'pallet-clock/std',
   'pallet-timestamp/runtime-benchmarks',
   'sp-runtime/runtime-benchmarks',
   "orml-tokens/std",

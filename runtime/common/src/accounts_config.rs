@@ -1,4 +1,4 @@
-use super::*;
+use crate::*;
 use frame_support::parameter_types;
 use sp_core::crypto::AccountId32;
 

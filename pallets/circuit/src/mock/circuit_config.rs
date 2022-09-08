@@ -6,9 +6,6 @@ use t3rn_primitives::{bridges::runtime as bp_runtime, common::DEFAULT_ROUND_TERM
 
 use crate::xbi_config::XBIPortalRuntimeEntry;
 
-// impl pallet_randomness_collective_flip::Config for Runtime {}
-
-// t3rn pallets
 impl t3rn_primitives::EscrowTrait<Runtime> for Runtime {
     type Currency = Balances;
     type Time = Timestamp;
