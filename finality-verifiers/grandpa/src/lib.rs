@@ -238,24 +238,31 @@ pub mod pallet {
         NoParachainEntryFound,
     }
 
-    /// Verify a target header is finalized according to the given finality proof.
+    /// Add a header range for the relaychain
     ///
     /// It will use the underlying storage pallet to fetch information about the current
-    /// authorities and best finalized header in order to verify that the header is finalized.
+    /// authorities and best finalized header in order to verify that the header is finalized,
+    /// and the corresponding range valid.
     ///
-    /// If successful in verification, it will write the target header to the underlying storage
+    /// If successful in verification, it will write the target range to the underlying storage
     /// pallet.
     pub(crate) fn submit_relaychain_headers<T: pallet::Config<I>, I>(
         gateway_id: ChainId,
-        signed_header: BridgedHeader<T, I>,
+        // seq vector of headers to be added.
         range: Vec<BridgedHeader<T, I>>,
+        // The header with the highest height, signed in the justification
+        signed_header: BridgedHeader<T, I>,
+        // GrandpaJustification for the signed_header
         justification: GrandpaJustification<BridgedHeader<T, I>>,
     ) -> Result<Vec<u8>, &'static str> {
         ensure!(range.len() > 0, "empty range submitted");
-        // Conceptially it would make sense to enforce range.len() < HeadersToStore.
-        // Since polkadot updates its authority set every 24h, this is implicitly ensured by that => Justification check would fail
 
-        let best_finalized = <MultiImportedHeaders<T, I>>::get(
+        // °°°°° Implicit Check: °°°°°
+        // range.len() < T::HeadersToStore::get() - ensures that we don't mess up our ring buffer
+        // Since polkadot updates its authority set every 24h, this is implicitly ensured => Justification check would fail after 1/7th of max len
+
+        // we get the latest header from storage
+        let mut best_finalized = <MultiImportedHeaders<T, I>>::get(
             gateway_id,
             // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
             // `ImportedHeaders` must contain an entry for `BestFinalized`.
@@ -263,49 +270,40 @@ pub mod pallet {
         )
             .ok_or_else(|| "NoFinalizedHeader")?;
 
-        ensure!(
-            // enforce gap-free range submission
-            best_finalized.hash() == *range.last().unwrap().parent_hash(), // we have checked for empty vec already
-            "Invalid Header Linkage"
-        );
+        // °°°°° Explaination °°°°°
+        // To be able to submit ranges of headers, we need to ensure a number of things.
+        // 1. Ensure correct header linkage. All submitted headers must follow the linkage rule.
+        // 2. As this is not PoW, we must ensure there is a valid GrandpaJustification for the last header of what we're submitting. This can be seen as ensuring the correct fork is selected
+        // 3. The justification verifies a header that follows the linkage rule of the range
 
-        let (hash, number) = (signed_header.hash(), signed_header.number());
+        // For efficiency we check the the justification first. If it's invalid, we can skip the rest
+        let (signed_hash, signed_number) = (signed_header.hash(), signed_header.number());
         let authority_set = <CurrentAuthoritySet<T, I>>::get()
             // Expects authorities to be set before verify_justification
             .ok_or_else(|| "InvalidAuthoritySet")?;
 
         let set_id = authority_set.set_id;
+        // °°°°° Begin Check: #2 °°°°°
         verify_justification_single::<T, I>(
             &justification,
-            hash,
-            *number,
+            signed_hash,
+            *signed_number,
             authority_set,
             gateway_id,
         )?;
+        // °°°°° Checked: #2 °°°°°°
 
-        // We have to incentivise authority_set update submissions in some way. Important to receive proofs of changing set, even when no transaction is included
+        // check for authority set update and enact if available.
         let _enacted =
             try_enact_authority_change_single::<T, I>(&signed_header, set_id, gateway_id)?;
 
         // We get the latest buffer_index, which maps to the next header we can overwrite, and the index where we insert the verified header
         let mut buffer_index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
 
-        write_and_clean_header_data::<T, I>(
-            gateway_id,
-            &mut buffer_index,
-            &signed_header,
-            hash,
-            true,
-        )?;
-
-        let mut anchor = signed_header.clone();
-
+        // °°°°° Begin Check: #1 °°°°°
         for header in range {
-            if header.number() <= best_finalized.number() {
-                break // We're going back in time and dont want to overwrite
-            }
-
-            if *anchor.parent_hash() == header.hash() {
+            if best_finalized.hash() == *header.parent_hash() {
+                // write header to storage if correct
                 write_and_clean_header_data::<T, I>(
                     gateway_id,
                     &mut buffer_index,
@@ -314,33 +312,40 @@ pub mod pallet {
                     false,
                 )?;
 
-                anchor = header;
+                best_finalized = header;
+                println!("Best Finalized: {:?}", best_finalized.hash());
             } else {
+                // if anything fails here, noop!
                 return Err("Invalid header linkage")
             }
-
         }
+        // °°°°° Check Success: #1 °°°°°
+
+        // °°°°° Begin Check: #3 °°°°°
+        if best_finalized.hash() == *signed_header.parent_hash() {
+            // write header to storage if correct
+            println!("Best Finalized: {:?} - #{:?}", signed_hash, signed_number);
+            write_and_clean_header_data::<T, I>(
+                gateway_id,
+                &mut buffer_index,
+                &signed_header,
+                signed_hash,
+                true,
+            )?;
+        } else {
+            return Err("Invalid header linkage")
+        }
+        // °°°°° Check Success: #3 °°°°°
+        // Proof success! Submitted header range valid
 
         // Update pointer
         <MultiImportedHashesPointer<T, I>>::insert(
             gateway_id,
-            buffer_index % T::HeadersToStore::get(),
+            buffer_index,
         );
 
-        log::debug!(
-            target: LOG_TARGET,
-            "Successfully imported finalized header with hash {:?} for gateway {:?}!",
-            hash,
-            gateway_id
-        );
-
-        log::debug!(
-            target: LOG_TARGET,
-            "Successfully updated gateway {:?}!",
-            gateway_id,
-        );
         // ToDo use unique_saturated_into() here.
-        let height: usize = number.as_();
+        let height: usize = signed_number.as_();
         let block_height: u64 = height.try_into().unwrap();
         Ok(block_height.to_be_bytes().to_vec())
     }
@@ -358,10 +363,10 @@ pub mod pallet {
         range: Vec<BridgedHeader<T, I>>,
         proof: StorageProof,
     ) -> Result<Vec<u8>, &'static str> {
-
         ensure!(range.len() > 0, "empty range submitted");
+        ensure!(range.len() < T::HeadersToStore::get().try_into().unwrap(), "Range to long"); // this should be safe to do, as u32
 
-        let best_finalized = <MultiImportedHeaders<T, I>>::get(
+        let mut best_finalized = <MultiImportedHeaders<T, I>>::get(
             gateway_id,
             // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
             // `ImportedHeaders` must contain an entry for `BestFinalized`.
@@ -369,38 +374,27 @@ pub mod pallet {
         )
             .ok_or_else(|| "NoFinalizedHeader")?;
 
-        ensure!(
-            // enforce gap-free range submission
-            best_finalized.hash() == *range.last().unwrap().parent_hash(), // we have checked for empty vec already
-            "Invalid Header Linkage"
-        );
+        // °°°°° Explaination °°°°°
+        // To be able to submit ranges of headers, we need to ensure a number of things.
+        // 1. Ensure the highest submitted header is verified in a Relaychain block
+        // 2. Ensure correct header linkage. All submitted headers must follow the linkage rule.
+        // 3. The highest submitted header follows the linkage rule of the range
 
         let parachain =
             <ParachainIdMap<T, I>>::try_get(gateway_id).map_err(|_| "Parachain not registered")?;
 
-        let header: BridgedHeader<T, I> =
+        // °°°°° Begin Check: #1 °°°°°
+        let signed_header: BridgedHeader<T, I> =
             verify_header_storage_proof::<T, I>(relay_block_hash, proof, parachain)?;
+        // °°°°° Check Success: #1 °°°°°
 
-        let hash = header.hash();
         // We get the latest buffer_index, which maps to the next header we can overwrite, and the index where we insert the verified header
         let mut buffer_index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
 
-        write_and_clean_header_data::<T, I>(
-            gateway_id,
-            &mut buffer_index,
-            &header,
-            hash,
-            true,
-        )?;
-
-        let mut anchor = header.clone();
-
+        // °°°°° Begin Check: #2 °°°°°
         for header in range {
-            if header.number() <= best_finalized.number() {
-                break // We're going back in time and dont want to overwrite
-            }
-
-            if *anchor.parent_hash() == header.hash() {
+            if best_finalized.hash() == *header.parent_hash() {
+                // write header to storage if correct
                 write_and_clean_header_data::<T, I>(
                     gateway_id,
                     &mut buffer_index,
@@ -409,14 +403,40 @@ pub mod pallet {
                     false,
                 )?;
 
-                anchor = header;
+                best_finalized = header;
+                println!("Best Finalized: {:?}", best_finalized.hash());
             } else {
+                // if anything fails here, noop!
                 return Err("Invalid header linkage")
             }
         }
+        // °°°°° Check Success: #2 °°°°°
+
+        // °°°°° Begin Check: #3 °°°°°
+        if best_finalized.hash() == *signed_header.parent_hash() {
+            // write header to storage if correct
+            write_and_clean_header_data::<T, I>(
+                gateway_id,
+                &mut buffer_index,
+                &signed_header,
+                signed_header.hash(),
+                true,
+            )?;
+        } else {
+            return Err("Invalid header linkage")
+        }
+        // °°°°° Check Success: #3 °°°°°
+        // Proof success! Submitted header range valid
+
+        // Update pointer
+        <MultiImportedHashesPointer<T, I>>::insert(
+            gateway_id,
+            buffer_index,
+        );
+
 
         // ToDo use unique_saturated_into() here.
-        let height: usize = header.number().as_();
+        let height: usize = signed_header.number().as_();
         let block_height: u64 = height.try_into().unwrap();
         Ok(block_height.to_be_bytes().to_vec())
     }
@@ -763,8 +783,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
             submit_relaychain_headers::<T, I>(
                 gateway_id,
-                data.signed_header,
                 data.range,
+                data.signed_header,
                 data.justification,
             )
         } else {
@@ -1169,7 +1189,6 @@ mod tests {
         let signed_header: &TestHeader = headers.last().unwrap();
         let justification = make_default_justification(&signed_header.clone());
         let mut range: Vec<TestHeader> = headers[from.into()..to.into()].to_vec().clone();
-        range.reverse();
 
         let default_gateway: ChainId = *b"pdot";
         let data = RelaychainHeaderData::<TestHeader> {
@@ -1537,9 +1556,9 @@ mod tests {
     fn reject_header_range_gap() {
         run_test(|| {
             let _ = initialize_relaychain(Origin::root());
-            assert_noop!(submit_headers(2, 5), "Invalid Header Linkage");
+            assert_noop!(submit_headers(2, 5), "Invalid header linkage");
             assert_ok!(submit_headers(1, 5));
-            assert_noop!(submit_headers(5, 10), "Invalid Header Linkage");
+            assert_noop!(submit_headers(5, 10), "Invalid header linkage");
             assert_ok!(submit_headers(6, 10));
         })
     }
@@ -1695,7 +1714,7 @@ mod tests {
             let _ = initialize_relaychain(Origin::root());
 
             assert_ok!(submit_headers(1, 5));
-            assert_noop!(submit_headers(4, 8), "Invalid Header Linkage");
+            assert_noop!(submit_headers(4, 8), "Invalid header linkage");
             assert_ok!(submit_headers(6, 10));
         })
     }
@@ -1711,11 +1730,20 @@ mod tests {
             let headers: Vec<TestHeader> = test_header_range(2);
             let mut signed_header = headers[2].clone();
             let mut range: Vec<TestHeader> = headers[1..2].to_vec().clone();
-            range.reverse();
+
+            // println!("Signed pre change: {:?}", signed_header.hash());
+
 
             // Need to update the header digest to indicate that our header signals an authority set
             // change. The change will be enacted when we import our header.
             signed_header.digest = change_log(0);
+            // println!("Len: {:?}", range.len());
+            println!("°°°°°°°°°In test:");
+            println!("Range 1: {:?}", range[0].hash());
+            println!("Signed Parent: {:?}", signed_header.parent_hash());
+            println!("Signed Hash: {:?}", signed_header.hash());
+            println!("°°°°°°°°°°°°°°°°°°°");
+
 
             let justification = make_default_justification(&signed_header.clone());
             let data = RelaychainHeaderData::<TestHeader> {
@@ -1877,22 +1905,17 @@ mod tests {
             let headers = test_header_range(111u64);
 
             //°°°°°°°°°°°ACHTUNG!!!°°°°°°°°°°°°
-            // The headers are not deleted in the order one would expect, which is a result of them being checked backwards.
-            // When submitting, the last header (5 in this case) is checked first (via justification), and then we go backwards (4,3,2,1)
-            // As we write the entries in reverse order, we also delete in reverse order of the batch
             assert_ok!(submit_headers(1, 5));
-            // Once this is complete, we have [5, 4, 3, 2, 1] in MultiImportedHashes
-            // with the pointer being here     ^
+            // MultiImportedHashes: [1, 2, 3, 4, 5] in MultiImportedHashes
+            // Pointer               ^
             assert_eq!(
                 <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[1].hash().clone()),
                 true
             );
             // contains added header
             assert_ok!(submit_headers(6, 7));
-            // Here we start overwriting from the pointer, so this is the result:
-            // [6, 7, 3, 2, 1]
+            // [6, 7, 3, 4, 5]
             //        ^
-            // ToDo: This should probably be refactored, as it can lead to small gaps in the ranges (which are going to be very small in production)
 
             assert_eq!(
                 <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[3].hash().clone()),
@@ -1900,26 +1923,26 @@ mod tests {
             ); // still available
 
             assert_eq!(
-                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[4].hash().clone()),
+                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[2].hash().clone()),
                 false
             ); // overwritten by buffer
-
-            assert_eq!(
-                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[5].hash().clone()),
-                false
-            ); // overwritten by buffer
-
-            assert_ok!(submit_headers(8, 10));
-            // [6, 7, 10, 9, 8]
-            //  ^
 
             assert_eq!(
                 <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[1].hash().clone()),
                 false
+            ); // overwritten by buffer
+
+            assert_ok!(submit_headers(8, 10));
+            // [6, 7, 8, 9, 10]
+            //  ^
+
+            assert_eq!(
+                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[5].hash().clone()),
+                false
             );
 
             assert_eq!(
-                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[2].hash().clone()),
+                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[4].hash().clone()),
                 false
             );
 
