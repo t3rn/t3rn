@@ -1,10 +1,10 @@
 [package]
 authors     = [ "devs @ t3rn" ]
-description = "Circuit parachain runtime"
+description = "t0rn - t3rn's Test Parachain Runtime to Rococo"
 edition     = "2021"
 homepage    = "https://t3rn.io"
 license     = "Apache-2.0"
-name        = "circuit-parachain-runtime"
+name        = "t0rn-parachain-runtime"
 repository  = 'https://github.com/t3rn/t3rn'
 version     = "1.0.0-alpha.0"
 
