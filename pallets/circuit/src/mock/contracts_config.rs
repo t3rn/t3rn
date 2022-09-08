@@ -1,10 +1,16 @@
-use super::Runtime;
-use crate::{
+use crate::mock::*;
+
+use crate::mock::{
     accounts_config::EscrowAccount, AccountId, AccountManager, Aura, Balance, Balances,
     BlockWeights, Call, Circuit, ContractsRegistry, Event, RandomnessCollectiveFlip, ThreeVm,
     Timestamp, Weight, AVERAGE_ON_INITIALIZE_RATIO,
 };
 use frame_support::{pallet_prelude::ConstU32, parameter_types, traits::FindAuthor};
+
+use circuit_runtime_pallets::{
+    evm_precompile_util, pallet_3vm, pallet_3vm_contracts, pallet_3vm_evm,
+    pallet_3vm_evm_primitives,
+};
 use pallet_3vm_contracts::weights::WeightInfo;
 use pallet_3vm_evm::{
     EnsureAddressTruncated, GasWeightMapping, StoredHashAddressMapping, SubstrateBlockHashMapping,
