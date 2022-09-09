@@ -29,6 +29,7 @@ t3rn-primitives = { default-features = false, path = "../../primitives" }
 
 [dev-dependencies]
 sp-core         = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
+
 circuit-mock-runtime = { path = "../../runtime/mock" }
 
 [features]
