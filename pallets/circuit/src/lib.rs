@@ -576,12 +576,10 @@ pub mod pallet {
             let mut local_xtx_ctx: LocalXtxCtx<T> =
                 Self::setup(CircuitStatus::Requested, &requester, fee, None)?;
 
-            println!("XTX ID = {:?}", local_xtx_ctx.xtx_id.clone());
-
             // Validate: Side Effects
             Self::validate(&side_effects, &mut local_xtx_ctx, &requester, sequential).map_err(
                 |e| {
-                    println!("Self::validate hit an error -- {:?}", e);
+                    log::error!("Self::validate hit an error -- {:?}", e);
                     Error::<T>::SideEffectsValidationFailed
                 },
             )?;

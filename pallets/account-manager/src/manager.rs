@@ -94,12 +94,6 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
             return Err(Error::<T>::SkippingEmptyCharges.into())
         }
 
-        println!(
-            "AM FN DEPOSIT -- Currency::free_balance({:?}) = {:?}",
-            payee.clone(),
-            T::Currency::free_balance(payee)
-        );
-
         T::Currency::reserve(payee, total_reserve_deposit)?;
 
         let recipient = if let Some(recipient) = maybe_recipient {
