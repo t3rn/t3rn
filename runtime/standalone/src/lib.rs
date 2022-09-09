@@ -46,11 +46,11 @@ pub mod consensus_aura_config;
 pub mod contracts_config;
 pub mod impl_versioned_runtime_with_api;
 pub mod orml_config;
-pub mod primitives;
 pub mod system_config;
 pub mod xbi_config;
 
-pub use crate::{consensus_aura_config::*, primitives::*};
+pub use crate::{consensus_aura_config::*, signed_extrinsics_config::*};
+pub use circuit_runtime_types::*;
 
 pub type CurrencyAdapter = accounts_config::AccountManagerCurrencyAdapter<Balances, ()>;
 

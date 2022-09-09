@@ -77,6 +77,8 @@ cumulus-primitives-utility          = { git = 'https://github.com/paritytech/cum
 pallet-collator-selection           = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.19', default-features = false }
 parachain-info                      = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.19', default-features = false }
 
+# Common
+circuit-runtime-types = { path = "../common-types", default-features = false }
 
 [features]
 default = [ "std" ]
@@ -128,6 +130,7 @@ std = [
   "xcm-builder/std",
   "xcm-executor/std",
   "xcm/std",
+  "circuit-runtime-types/std",
 ]
 
 runtime-benchmarks = [

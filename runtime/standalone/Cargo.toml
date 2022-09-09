@@ -100,18 +100,11 @@ orml-tokens = { git = "https://github.com/t3rn/open-runtime-module-library", bra
 orml-traits = { git = "https://github.com/t3rn/open-runtime-module-library", branch = "polkadot-v0.9.19", default-features = false }
 
 # Common
-#circuit-common-runtime = { path = "../common", default-features = false }
+circuit-runtime-types = { path = "../common-types", default-features = false }
 
 [features]
 default = [ "std", "contracts-unstable-interface" ]
 std = [
-  #	"bp-messages/std",
-  #	"bp-runtime/std",
-  #	"bp-westend/std",
-  #	"bp-gateway/std",
-  #	"bp-circuit/std",
-  #	"bp-polkadot-core/std",
-  #	"bridge-runtime-common/std",
   "codec/std",
   "frame-executive/std",
   "frame-support/std",
@@ -177,9 +170,8 @@ std = [
   "snowbridge-core/std",
   "pallet-beefy-mmr/std",
   "pallet-mmr-primitives/std",
-#  "circuit-common-runtime/std",
-  'pallet-clock/std',
-  #	"snowbridge-basic-channel/std"
+  "pallet-clock/std",
+  "circuit-runtime-types/std",
 ]
 # TODO: https://github.com/paritytech/parity-bridges-common/issues/390
 # I've left the feature flag here to test our CI configuration

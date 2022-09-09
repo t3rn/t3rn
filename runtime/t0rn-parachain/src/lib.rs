@@ -11,12 +11,13 @@ pub mod circuit_config;
 pub mod contracts_config;
 pub mod orml_config;
 pub mod parachain_config;
-pub mod primitives;
+pub mod signed_extrinsics_config;
 pub mod system_config;
 pub mod xbi_config;
 pub mod xcm_config;
 
-pub use crate::{parachain_config::*, primitives::*};
+pub use crate::{parachain_config::*, signed_extrinsics_config::*};
+pub use circuit_runtime_types::*;
 
 use codec::Decode;
 use pallet_3vm_evm::AddressMapping;
@@ -26,7 +27,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
 use sp_runtime::{
     create_runtime_str, generic,
-    traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
+    traits::{AccountIdLookup, Block as BlockT},
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult,
 };
@@ -41,7 +42,7 @@ use frame_support::{
     construct_runtime, parameter_types,
     traits::{Imbalance, OnUnbalanced},
     weights::{
-        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
+        constants::{BlockExecutionWeight, ExtrinsicBaseWeight},
         ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
         WeightToFeePolynomial,
     },
@@ -59,7 +60,7 @@ pub use sp_runtime::BuildStorage;
 use t3rn_primitives::ReadLatestGatewayHeight;
 
 // Polkadot Imports
-use polkadot_runtime_common::{BlockHashCount};
+use polkadot_runtime_common::BlockHashCount;
 use polkadot_runtime_constants::weights::RocksDbWeight;
 
 /// Executive: handles dispatch to the various modules.

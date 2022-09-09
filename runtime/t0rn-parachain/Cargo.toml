@@ -110,6 +110,9 @@ pallet-3vm-evm            = { path = "../../3vm/pallets/evm", default-features =
 pallet-3vm-evm-primitives = { path = "../../3vm/primitives/evm", default-features = false, package = "fp-evm" }
 pallet-evm-rpc-runtime-api        = { path = "../../3vm/rpc/evm/runtime-api", default-features = false }
 
+# Commons
+circuit-runtime-types = { path = "../common-types", default-features = false }
+
 [features]
 default = [ "std" ]
 std = [
@@ -187,6 +190,7 @@ std = [
   "pallet-contracts-registry/std",
   "pallet-circuit-portal/std",
   "pallet-circuit/std",
+  "circuit-runtime-types/std",
 ]
 
 runtime-benchmarks = [

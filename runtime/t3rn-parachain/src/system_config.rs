@@ -1,4 +1,4 @@
-use crate::{primitives::Hash as HashPrimitive, *};
+use crate::{Hash as HashPrimitive, *};
 use frame_support::{
     parameter_types,
     traits::{ConstU128, ConstU32, ConstU8},
@@ -17,11 +17,11 @@ impl frame_system::Config for Runtime {
     /// Maximum number of block number to block hash mappings to keep (oldest pruned first).
     type BlockHashCount = BlockHashCount;
     /// The maximum length of a block (in bytes).
-    type BlockLength = crate::primitives::BlockLength;
+    type BlockLength = circuit_runtime_types::BlockLength;
     /// The index type for blocks.
-    type BlockNumber = crate::primitives::BlockNumber;
+    type BlockNumber = circuit_runtime_types::BlockNumber;
     /// Block & extrinsics weights: base values and limits.
-    type BlockWeights = crate::primitives::BlockWeights;
+    type BlockWeights = circuit_runtime_types::BlockWeights;
     /// The aggregated dispatch type that is available for extrinsics.
     type Call = Call;
     /// The weight of database operations that the runtime can invoke.

@@ -1,11 +1,14 @@
-pub use frame_support::parameter_types;
-pub use sp_runtime::{generic, traits::BlakeTwo256, Perbill};
+#![cfg_attr(not(feature = "std"), no_std)]
+
+use frame_support::{
+    pallet_prelude::Weight, parameter_types, weights::constants::WEIGHT_PER_SECOND,
+};
 use sp_runtime::{
-    traits::{IdentifyAccount, Verify},
-    MultiSignature,
+    generic,
+    traits::{BlakeTwo256, IdentifyAccount, Verify},
+    MultiSignature, Perbill,
 };
 
-use frame_support::weights::constants::WEIGHT_PER_SECOND;
 /// An index to a block.
 pub type BlockNumber = u32;
 
@@ -54,6 +57,17 @@ pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// This is used to limit the maximal weight of a single extrinsic.
 pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 
+// Unit = the base number of indivisible units for balances
+pub const UNIT: Balance = 1_000_000_000_000;
+pub const MILLIUNIT: Balance = 1_000_000_000;
+pub const MICROUNIT: Balance = 1_000_000;
+
+/// The existential deposit. Set to 1/10 of the Connected Relay Chain.
+pub const EXISTENTIAL_DEPOSIT: Balance = MILLIUNIT;
+
+/// We allow for 0.5 of a second of compute with a 12 second average block time.
+pub const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
+
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 2400;
     /// We allow for 2 seconds of compute with a 6 second average block time.
@@ -68,19 +82,3 @@ parameter_types! {
 pub type Address = sp_runtime::MultiAddress<AccountId, ()>;
 /// Block header type as expected by this runtime.
 pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
-
-// /// Block type as expected by this runtime.
-// pub type Block = generic::Block<Header, UncheckedExtrinsic>;
-// /// The SignedExtension to the basic transaction logic.
-// pub type SignedExtra = (
-//     frame_system::CheckNonZeroSender<Runtime>,
-//     frame_system::CheckSpecVersion<Runtime>,
-//     frame_system::CheckTxVersion<Runtime>,
-//     frame_system::CheckGenesis<Runtime>,
-//     frame_system::CheckEra<Runtime>,
-//     frame_system::CheckNonce<Runtime>,
-//     frame_system::CheckWeight<Runtime>,
-//     pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
-// );
-// /// Unchecked extrinsic type as expected by this runtime.
-// pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;

@@ -7,17 +7,18 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 pub mod parachain_config;
-pub mod primitives;
+pub mod signed_extrinsics_config;
 pub mod system_config;
 pub mod xcm_config;
 
-pub use crate::{parachain_config::*, primitives::*};
+pub use crate::{parachain_config::*, signed_extrinsics_config::*};
+pub use circuit_runtime_types::*;
 
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
     create_runtime_str, generic,
-    traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
+    traits::{AccountIdLookup, Block as BlockT},
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult,
 };
@@ -31,7 +32,7 @@ pub use frame_support::traits::EqualPrivilegeOnly;
 use frame_support::{
     construct_runtime, parameter_types,
     weights::{
-        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
+        constants::{BlockExecutionWeight, ExtrinsicBaseWeight},
         ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
         WeightToFeePolynomial,
     },
