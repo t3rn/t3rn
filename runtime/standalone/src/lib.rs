@@ -46,6 +46,7 @@ pub mod consensus_aura_config;
 pub mod contracts_config;
 pub mod impl_versioned_runtime_with_api;
 pub mod orml_config;
+pub mod signed_extrinsics_config;
 pub mod system_config;
 pub mod xbi_config;
 

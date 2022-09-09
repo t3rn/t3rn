@@ -16,8 +16,6 @@ use sp_runtime::{
 
 use t3rn_primitives::ReadLatestGatewayHeight;
 
-// A few exports that help ease life for downstream crates.
-
 pub use frame_support::{
     construct_runtime, parameter_types,
     traits::{
@@ -36,7 +34,7 @@ pub use pallet_timestamp::Call as TimestampCall;
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
-pub use crate::{consensus_aura_config::*, primitives::*};
+pub use crate::consensus_aura_config::*;
 
 use sp_runtime::create_runtime_str;
 

@@ -1,8 +1,5 @@
 use super::*;
-use crate::{
-    accounts_config::AccountManagerCurrencyAdapter,
-    primitives::{Hash as HashPrimitive, *},
-};
+use crate::Hash as HashPrimitive;
 
 use frame_support::{parameter_types, traits::ConstU32};
 use sp_runtime::traits::*;
