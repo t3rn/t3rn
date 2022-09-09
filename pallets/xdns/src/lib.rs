@@ -378,7 +378,7 @@ pub mod pallet {
         fn get_gateway_vendor(chain_id: &ChainId) -> Result<GatewayVendor, DispatchError> {
             match <XDNSRegistry<T>>::get(&chain_id) {
                 Some(rec) => Ok(rec.gateway_vendor),
-                None => Err(Error::<T>::XdnsRecordNotFound.into())
+                None => Err(Error::<T>::XdnsRecordNotFound.into()),
             }
         }
 

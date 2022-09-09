@@ -216,7 +216,9 @@ fn confirm_side_effect(
         Decode::decode(&mut &*hex::decode(json["encoded_side_effect"].as_str().unwrap()).unwrap())
             .unwrap();
     let confirmed_side_effect: ConfirmedSideEffect<AccountId32, BlockNumber, BalanceOf> =
-        Decode::decode(&mut &*hex::decode(json["encoded_confirmed_side_effect"].as_str().unwrap()).unwrap())
+        Decode::decode(
+            &mut &*hex::decode(json["encoded_confirmed_side_effect"].as_str().unwrap()).unwrap(),
+        )
             .unwrap();
 
     Circuit::confirm_side_effect(
@@ -1749,7 +1751,6 @@ fn load_local_state_can_generate_and_read_state() {
 
 #[test]
 fn uninsured_unrewarded_single_rococo_transfer() {
-
     // HERERERERE
     let path = "uninsured_unrewarded_single_rococo_transfer/";
     // generated via CLI with:
@@ -1913,8 +1914,10 @@ fn insured_unrewarded_single_rococo_transfer() {
                 Error::<Test>::ApplyFailed
             );
 
-            let post_bond =
-                read_file_and_set_height(&(path.to_owned() + "4-bond-insurance-8eb5521e.json"), false);
+            let post_bond = read_file_and_set_height(
+                &(path.to_owned() + "4-bond-insurance-8eb5521e.json"),
+                false,
+            );
             assert_ok!(bond_insurance_deposit(
                 Origin::signed(EXECUTOR_DEFAULT),
                 post_bond[0].clone()
@@ -2007,8 +2010,10 @@ fn insured_rewarded_single_rococo_transfer() {
                 (10u128 * 10u128.pow(12)).into()
             );
 
-            let post_bond =
-                read_file_and_set_height(&(path.to_owned() + "4-bond-insurance-3c964de9.json"), false);
+            let post_bond = read_file_and_set_height(
+                &(path.to_owned() + "4-bond-insurance-3c964de9.json"),
+                false,
+            );
             assert_ok!(bond_insurance_deposit(
                 Origin::signed(EXECUTOR_DEFAULT),
                 post_bond[0].clone()
@@ -2087,7 +2092,6 @@ fn insured_rewarded_multi_rococo_transfer() {
     // await execute("submit-side-effects config/transfer.ts -e -o 3-submit-transfer", 50);
     // await execute("submit-headers roco --export -o 6-headers-roco", 5);
 
-
     ExtBuilder::default()
         .with_standard_side_effects()
         .with_default_xdns_records()
@@ -2130,10 +2134,14 @@ fn insured_rewarded_multi_rococo_transfer() {
                 (10u128 * 10u128.pow(12)).into()
             );
 
-            let post_bond_1 =
-                read_file_and_set_height(&(path.to_owned() + "4-bond-insurance-f0a3de08.json"), false);
-            let post_bond_2 =
-                read_file_and_set_height(&(path.to_owned() + "5-bond-insurance-3c964de9.json"), false);
+            let post_bond_1 = read_file_and_set_height(
+                &(path.to_owned() + "4-bond-insurance-f0a3de08.json"),
+                false,
+            );
+            let post_bond_2 = read_file_and_set_height(
+                &(path.to_owned() + "5-bond-insurance-3c964de9.json"),
+                false,
+            );
 
             assert_ok!(bond_insurance_deposit(
                 Origin::signed(EXECUTOR_DEFAULT),
@@ -2264,10 +2272,14 @@ fn insured_unrewarded_multi_rococo_transfer() {
                 (10u128 * 10u128.pow(12)).into()
             );
 
-            let post_bond_1 =
-                read_file_and_set_height(&(path.to_owned() + "4-bond-insurance-863c7bc6.json"), false);
-            let post_bond_2 =
-                read_file_and_set_height(&(path.to_owned() + "5-bond-insurance-8eb5521e.json"), false);
+            let post_bond_1 = read_file_and_set_height(
+                &(path.to_owned() + "4-bond-insurance-863c7bc6.json"),
+                false,
+            );
+            let post_bond_2 = read_file_and_set_height(
+                &(path.to_owned() + "5-bond-insurance-8eb5521e.json"),
+                false,
+            );
 
             // Bond can be submitted in arbitrary order
             assert_ok!(bond_insurance_deposit(
@@ -2423,7 +2435,6 @@ fn uninsured_unrewarded_multi_rococo_transfer() {
                 confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_2[0].clone()),
                 "Unable to find matching Side Effect in given Xtx to confirm"
             );
-
 
             let submit_header_3 =
                 read_file_and_set_height(&(path.to_owned() + "6-headers-roco.json"), false);

@@ -1,7 +1,7 @@
+use crate::{Config, Error};
 use codec::{Decode, Encode};
 use sp_runtime::DispatchError;
 use sp_std::{vec, vec::Vec};
-use crate::{Config, Error};
 
 #[derive(Encode, Decode)]
 pub enum TransferEventStub<T: frame_system::Config, Balance> {
@@ -39,60 +39,79 @@ pub(crate) fn decode_event<T: Config<I>, I: 'static>(
         &b"tran" => {
             // Assume that the different Pallet ID Circuit vs Target wouldn't matter for decoding on Circuit.
             match value_abi_unsigned_type {
-                b"uint32" => {
-                    match Decode::decode(&mut &encoded_event[..]) {
-                        Ok(TransferEventStub::<T, u32>::Transfer { from, to, amount }) => Ok(vec![vec![from.encode(), to.encode(), amount.encode()]]),
-                        _ => Err(Error::<T, I>::EventDecodingFailed.into()),
-                    }
-                }
-                b"uint64" => {
-                    match Decode::decode(&mut &encoded_event[..]) {
-                        Ok(TransferEventStub::<T, u64>::Transfer { from, to, amount }) => Ok(vec![vec![from.encode(), to.encode(), amount.encode()]]),
-                        _ => Err(Error::<T, I>::EventDecodingFailed.into()),
-                    }
-                }
-                b"uint128" => {
-                    match Decode::decode(&mut &encoded_event[..]) {
-                        Ok(TransferEventStub::<T, u128>::Transfer { from, to, amount }) => Ok(vec![vec![from.encode(), to.encode(), amount.encode()]]),
-                        _ => Err(Error::<T, I>::EventDecodingFailed.into()),
-                    }
-                }
+                b"uint32" => match Decode::decode(&mut &encoded_event[..]) {
+                    Ok(TransferEventStub::<T, u32>::Transfer { from, to, amount }) =>
+                        Ok(vec![vec![from.encode(), to.encode(), amount.encode()]]),
+                    _ => Err(Error::<T, I>::EventDecodingFailed.into()),
+                },
+                b"uint64" => match Decode::decode(&mut &encoded_event[..]) {
+                    Ok(TransferEventStub::<T, u64>::Transfer { from, to, amount }) =>
+                        Ok(vec![vec![from.encode(), to.encode(), amount.encode()]]),
+                    _ => Err(Error::<T, I>::EventDecodingFailed.into()),
+                },
+                b"uint128" => match Decode::decode(&mut &encoded_event[..]) {
+                    Ok(TransferEventStub::<T, u128>::Transfer { from, to, amount }) =>
+                        Ok(vec![vec![from.encode(), to.encode(), amount.encode()]]),
+                    _ => Err(Error::<T, I>::EventDecodingFailed.into()),
+                },
                 &_ => Err(Error::<T, I>::EventDecodingFailed.into()),
             }
-        }
-        &b"swap" | &b"aliq" => {
-            match value_abi_unsigned_type {
-                b"uint32" => {
-                    match Decode::decode(&mut &encoded_event[..]) {
-                        Ok(MultiTransferEventStub::<T, u32, CurrencyId>::Transfer { currency_id, from, to, amount }) => Ok(vec![vec![from.encode(), to.encode(), currency_id.encode(), amount.encode()]]),
-                        _ => Err(Error::<T, I>::EventDecodingFailed.into()),
-                    }
-                }
-                b"uint64" => {
-                    match Decode::decode(&mut &encoded_event[..]) {
-                        Ok(MultiTransferEventStub::<T, u64, CurrencyId>::Transfer { currency_id, from, to, amount }) => Ok(vec![vec![from.encode(), to.encode(), currency_id.encode(), amount.encode()]]),
-                        _ => Err(Error::<T, I>::EventDecodingFailed.into()),
-                    }
-                }
-                b"uint128" => {
-                    match Decode::decode(&mut &encoded_event[..]) {
-                        Ok(MultiTransferEventStub::<T, u128, CurrencyId>::Transfer { currency_id, from, to, amount }) => Ok(vec![vec![from.encode(), to.encode(), currency_id.encode(), amount.encode()]]),
-                        _ => Err(Error::<T, I>::EventDecodingFailed.into()),
-                    }
-                }
-                &_ => Err(Error::<T, I>::EventDecodingFailed.into()),
-            }
-        }
+        },
+        &b"swap" | &b"aliq" => match value_abi_unsigned_type {
+            b"uint32" => match Decode::decode(&mut &encoded_event[..]) {
+                Ok(MultiTransferEventStub::<T, u32, CurrencyId>::Transfer {
+                       currency_id,
+                       from,
+                       to,
+                       amount,
+                   }) => Ok(vec![vec![
+                    from.encode(),
+                    to.encode(),
+                    currency_id.encode(),
+                    amount.encode(),
+                ]]),
+                _ => Err(Error::<T, I>::EventDecodingFailed.into()),
+            },
+            b"uint64" => match Decode::decode(&mut &encoded_event[..]) {
+                Ok(MultiTransferEventStub::<T, u64, CurrencyId>::Transfer {
+                       currency_id,
+                       from,
+                       to,
+                       amount,
+                   }) => Ok(vec![vec![
+                    from.encode(),
+                    to.encode(),
+                    currency_id.encode(),
+                    amount.encode(),
+                ]]),
+                _ => Err(Error::<T, I>::EventDecodingFailed.into()),
+            },
+            b"uint128" => match Decode::decode(&mut &encoded_event[..]) {
+                Ok(MultiTransferEventStub::<T, u128, CurrencyId>::Transfer {
+                       currency_id,
+                       from,
+                       to,
+                       amount,
+                   }) => Ok(vec![vec![
+                    from.encode(),
+                    to.encode(),
+                    currency_id.encode(),
+                    amount.encode(),
+                ]]),
+                _ => Err(Error::<T, I>::EventDecodingFailed.into()),
+            },
+            &_ => Err(Error::<T, I>::EventDecodingFailed.into()),
+        },
         &_ => Err(Error::<T, I>::UnkownSideEffect.into()),
     }
 }
 
 #[cfg(all(feature = "testing", test))]
 pub mod tests {
+    use crate::bridges::runtime::Chain;
     use codec::Encode;
     use frame_support::parameter_types;
     use sp_std::convert::{TryFrom, TryInto};
-    use crate::bridges::runtime::Chain;
     // use crate::TestRuntime;
 
     use hex_literal::hex;

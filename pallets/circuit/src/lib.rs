@@ -1731,7 +1731,8 @@ impl<T: Config> Pallet<T> {
                     ),
                 ));
                 let submission_target_height =
-                    T::Portal::get_latest_finalized_height(side_effect.target)?.ok_or("target height not found")?;
+                    T::Portal::get_latest_finalized_height(side_effect.target)?
+                        .ok_or("target height not found")?;
 
                 full_side_effects.push(FullSideEffect {
                     input: side_effect.clone(),
@@ -1758,7 +1759,8 @@ impl<T: Config> Pallet<T> {
                     SecurityLvl::Dirty
                 }
                 let submission_target_height =
-                    T::Portal::get_latest_finalized_height(side_effect.target)?.ok_or("target height not found")?;
+                    T::Portal::get_latest_finalized_height(side_effect.target)?
+                        .ok_or("target height not found")?;
 
                 full_side_effects.push(FullSideEffect {
                     input: side_effect.clone(),

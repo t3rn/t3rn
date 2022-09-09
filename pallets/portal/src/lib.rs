@@ -149,8 +149,7 @@ pub mod pallet {
             gateway_id: ChainId,
             encoded_new_owner: Vec<u8>,
         ) -> DispatchResultWithPostInfo {
-            let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
-                .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
+            let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)?;
 
             let res = match vendor {
                 GatewayVendor::Rococo =>
@@ -207,9 +206,8 @@ pub mod pallet {
             origin: OriginFor<T>,
             gateway_id: ChainId,
             encoded_header_data: Vec<u8>,
-        ) -> DispatchResultWithPostInfo {
-            let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
-                .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
+        ) -> DispatchResult {
+            let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)?;
 
             let res = match vendor {
                 GatewayVendor::Rococo =>

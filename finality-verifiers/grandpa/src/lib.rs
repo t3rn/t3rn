@@ -118,9 +118,7 @@ pub mod pallet {
     pub struct Pallet<T, I = ()>(PhantomData<(T, I)>);
 
     #[pallet::hooks]
-    impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I> {
-
-    }
+    impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I> {}
 
     /// Hash of the header used to bootstrap the pallet.
     #[pallet::storage]
@@ -280,7 +278,8 @@ pub mod pallet {
             gateway_id,
             // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
             // `ImportedHeaders` must contain an entry for `BestFinalized`.
-            <BestFinalizedMap<T, I>>::get(gateway_id).ok_or_else(|| Error::<T, I>::NoFinalizedHeader)?,
+            <BestFinalizedMap<T, I>>::get(gateway_id)
+                .ok_or_else(|| Error::<T, I>::NoFinalizedHeader)?,
         )
             .ok_or_else(|| Error::<T, I>::NoFinalizedHeader)?;
 
@@ -292,8 +291,8 @@ pub mod pallet {
 
         // For efficiency we check the the justification first. If it's invalid, we can skip the rest
         let (signed_hash, signed_number) = (signed_header.hash(), signed_header.number());
-        let authority_set = <CurrentAuthoritySet<T, I>>::get()
-            .ok_or_else(|| Error::<T, I>::InvalidAuthoritySet)?;
+        let authority_set =
+            <CurrentAuthoritySet<T, I>>::get().ok_or_else(|| Error::<T, I>::InvalidAuthoritySet)?;
 
         let set_id = authority_set.set_id;
         // °°°°° Begin Check: #2 °°°°°
@@ -311,7 +310,8 @@ pub mod pallet {
             try_enact_authority_change_single::<T, I>(&signed_header, set_id, gateway_id)?;
 
         // We get the latest buffer_index, which maps to the next header we can overwrite, and the index where we insert the verified header
-        let mut buffer_index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
+        let mut buffer_index =
+            <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
 
         // °°°°° Begin Check: #1 °°°°°
         for header in range {
@@ -350,10 +350,7 @@ pub mod pallet {
         // Proof success! Submitted header range valid
 
         // Update pointer
-        <MultiImportedHashesPointer<T, I>>::insert(
-            gateway_id,
-            buffer_index,
-        );
+        <MultiImportedHashesPointer<T, I>>::insert(gateway_id, buffer_index);
 
         // ToDo use unique_saturated_into() here.
         let height: usize = signed_number.as_();
@@ -375,13 +372,17 @@ pub mod pallet {
         proof: StorageProof,
     ) -> Result<Vec<u8>, DispatchError> {
         ensure!(range.len() > 0, Error::<T, I>::EmptyRangeSubmitted);
-        ensure!(range.len() < T::HeadersToStore::get().try_into().unwrap(), Error::<T, I>::RangeToLarge); // this should be safe to do, as u32
+        ensure!(
+            range.len() < T::HeadersToStore::get().try_into().unwrap(),
+            Error::<T, I>::RangeToLarge
+        ); // this should be safe to do, as u32
 
         let mut best_finalized = <MultiImportedHeaders<T, I>>::get(
             gateway_id,
             // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
             // `ImportedHeaders` must contain an entry for `BestFinalized`.
-            <BestFinalizedMap<T, I>>::get(gateway_id).ok_or_else(|| Error::<T, I>::NoFinalizedHeader)?,
+            <BestFinalizedMap<T, I>>::get(gateway_id)
+                .ok_or_else(|| Error::<T, I>::NoFinalizedHeader)?,
         )
             .ok_or_else(|| Error::<T, I>::NoFinalizedHeader)?;
 
@@ -391,8 +392,8 @@ pub mod pallet {
         // 2. Ensure correct header linkage. All submitted headers must follow the linkage rule.
         // 3. The highest submitted header follows the linkage rule of the range
 
-        let parachain =
-            <ParachainIdMap<T, I>>::try_get(gateway_id).map_err(|_| Error::<T, I>::ParachainEntryNotFound)?;
+        let parachain = <ParachainIdMap<T, I>>::try_get(gateway_id)
+            .map_err(|_| Error::<T, I>::ParachainEntryNotFound)?;
 
         // °°°°° Begin Check: #1 °°°°°
         let signed_header: BridgedHeader<T, I> =
@@ -400,7 +401,8 @@ pub mod pallet {
         // °°°°° Check Success: #1 °°°°°
 
         // We get the latest buffer_index, which maps to the next header we can overwrite, and the index where we insert the verified header
-        let mut buffer_index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
+        let mut buffer_index =
+            <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
 
         // °°°°° Begin Check: #2 °°°°°
         for header in range {
@@ -439,11 +441,7 @@ pub mod pallet {
         // Proof success! Submitted header range valid
 
         // Update pointer
-        <MultiImportedHashesPointer<T, I>>::insert(
-            gateway_id,
-            buffer_index,
-        );
-
+        <MultiImportedHashesPointer<T, I>>::insert(gateway_id, buffer_index);
 
         // ToDo use unique_saturated_into() here.
         let height: usize = signed_header.number().as_();
@@ -514,7 +512,8 @@ pub mod pallet {
     ) -> Result<(), Error<T, I>> {
         use bp_header_chain::justification::verify_justification;
 
-        let voter_set = VoterSet::new(authority_set.authorities).ok_or(Error::<T, I>::InvalidAuthoritySet.into())?;
+        let voter_set = VoterSet::new(authority_set.authorities)
+            .ok_or(Error::<T, I>::InvalidAuthoritySet.into())?;
         let set_id = authority_set.set_id;
 
         Ok(verify_justification::<BridgedHeader<T, I>>(
@@ -523,8 +522,8 @@ pub mod pallet {
             &voter_set,
             justification,
         )
-        .map_err(|e| {
-            log::error!("Received invalid justification for {:?}", hash);
+            .map_err(|e| {
+                log::error!("Received invalid justification for {:?}", hash);
             Error::<T, I>::InvalidGrandpaJustification
         })?)
     }
@@ -879,7 +878,8 @@ pub(crate) fn get_header_roots<T: pallet::Config<I>, I>(
     trie_type: ProofTriePointer,
 ) -> Result<BridgedBlockHash<T, I>, DispatchError> {
     let (extrinsics_root, storage_root): (BridgedBlockHash<T, I>, BridgedBlockHash<T, I>) =
-        <MultiImportedRoots<T, I>>::get(gateway_id, block_hash).ok_or_else(|| Error::<T, I>::StorageRootNotFound)?;
+        <MultiImportedRoots<T, I>>::get(gateway_id, block_hash)
+            .ok_or_else(|| Error::<T, I>::StorageRootNotFound)?;
     match trie_type {
         ProofTriePointer::State => Ok(storage_root),
         ProofTriePointer::Transaction => Ok(extrinsics_root),
@@ -1046,8 +1046,8 @@ pub(crate) fn verify_header_storage_proof<T: Config<I>, I: 'static>(
         proof,
         ProofTriePointer::State,
     )?;
-    let encoded_header: Vec<u8> =
-        Decode::decode(&mut &encoded_header_vec[..]).map_err(|_| Error::<T, I>::HeaderDecodingError)?;
+    let encoded_header: Vec<u8> = Decode::decode(&mut &encoded_header_vec[..])
+        .map_err(|_| Error::<T, I>::HeaderDecodingError)?;
     let header: BridgedHeader<T, I> =
         Decode::decode(&mut &*encoded_header).map_err(|_| Error::<T, I>::HeaderDecodingError)?;
     Ok(header)
@@ -1093,7 +1093,6 @@ mod tests {
         run_test, test_header, test_header_range, test_header_with_correct_parent, AccountId,
         Origin, TestHeader, TestNumber, TestRuntime,
     };
-    use hex_literal::hex;
     use bp_runtime::ChainId;
     use bridges::{
         header_chain as bp_header_chain, runtime as bp_runtime,
@@ -1102,6 +1101,7 @@ mod tests {
             JustificationGeneratorParams, ALICE, BOB, DAVE,
         },
     };
+    use hex_literal::hex;
 
     use codec::Encode;
     use frame_support::{assert_err, assert_noop, assert_ok};
@@ -1566,9 +1566,15 @@ mod tests {
     fn reject_header_range_gap() {
         run_test(|| {
             let _ = initialize_relaychain(Origin::root());
-            assert_noop!(submit_headers(2, 5), Error::<TestRuntime>::InvalidRangeLinkage);
+            assert_noop!(
+                submit_headers(2, 5),
+                Error::<TestRuntime>::InvalidRangeLinkage
+            );
             assert_ok!(submit_headers(1, 5));
-            assert_noop!(submit_headers(5, 10), Error::<TestRuntime>::InvalidRangeLinkage);
+            assert_noop!(
+                submit_headers(5, 10),
+                Error::<TestRuntime>::InvalidRangeLinkage
+            );
             assert_ok!(submit_headers(6, 10));
         })
     }
@@ -1754,7 +1760,10 @@ mod tests {
             let _ = initialize_relaychain(Origin::root());
 
             assert_ok!(submit_headers(1, 5));
-            assert_noop!(submit_headers(4, 8), Error::<TestRuntime>::InvalidRangeLinkage);
+            assert_noop!(
+                submit_headers(4, 8),
+                Error::<TestRuntime>::InvalidRangeLinkage
+            );
             assert_ok!(submit_headers(6, 10));
         })
     }
@@ -1939,7 +1948,10 @@ mod tests {
             // MultiImportedHashes: [1, 2, 3, 4, 5] in MultiImportedHashes
             // Pointer               ^
             assert_eq!(
-                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[1].hash().clone()),
+                <MultiImportedHeaders<TestRuntime>>::contains_key(
+                    default_gateway,
+                    headers[1].hash().clone(),
+                ),
                 true
             );
             // contains added header
@@ -1948,17 +1960,26 @@ mod tests {
             //        ^
 
             assert_eq!(
-                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[3].hash().clone()),
+                <MultiImportedHeaders<TestRuntime>>::contains_key(
+                    default_gateway,
+                    headers[3].hash().clone(),
+                ),
                 true
             ); // still available
 
             assert_eq!(
-                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[2].hash().clone()),
+                <MultiImportedHeaders<TestRuntime>>::contains_key(
+                    default_gateway,
+                    headers[2].hash().clone(),
+                ),
                 false
             ); // overwritten by buffer
 
             assert_eq!(
-                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[1].hash().clone()),
+                <MultiImportedHeaders<TestRuntime>>::contains_key(
+                    default_gateway,
+                    headers[1].hash().clone(),
+                ),
                 false
             ); // overwritten by buffer
 
@@ -1967,38 +1988,59 @@ mod tests {
             //  ^
 
             assert_eq!(
-                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[5].hash().clone()),
+                <MultiImportedHeaders<TestRuntime>>::contains_key(
+                    default_gateway,
+                    headers[5].hash().clone(),
+                ),
                 false
             );
 
             assert_eq!(
-                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[4].hash().clone()),
+                <MultiImportedHeaders<TestRuntime>>::contains_key(
+                    default_gateway,
+                    headers[4].hash().clone(),
+                ),
                 false
             );
 
             assert_eq!(
-                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[3].hash().clone()),
+                <MultiImportedHeaders<TestRuntime>>::contains_key(
+                    default_gateway,
+                    headers[3].hash().clone(),
+                ),
                 false
             );
 
             assert_eq!(
-                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[6].hash().clone()),
+                <MultiImportedHeaders<TestRuntime>>::contains_key(
+                    default_gateway,
+                    headers[6].hash().clone(),
+                ),
                 true
             );
 
             assert_ok!(submit_headers(11, 15));
             assert_eq!(
-                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[10].hash().clone()),
+                <MultiImportedHeaders<TestRuntime>>::contains_key(
+                    default_gateway,
+                    headers[10].hash().clone(),
+                ),
                 false
             );
 
             assert_eq!(
-                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[11].hash().clone()),
+                <MultiImportedHeaders<TestRuntime>>::contains_key(
+                    default_gateway,
+                    headers[11].hash().clone(),
+                ),
                 true
             );
 
             assert_eq!(
-                <MultiImportedHeaders<TestRuntime>>::contains_key(default_gateway, headers[12].hash().clone()),
+                <MultiImportedHeaders<TestRuntime>>::contains_key(
+                    default_gateway,
+                    headers[12].hash().clone(),
+                ),
                 true
             );
         })
