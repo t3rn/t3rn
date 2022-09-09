@@ -37,7 +37,7 @@ where
     C::Api:
         pallet_3vm_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber, Hash>,
     C::Api: pallet_xdns_rpc::XdnsRuntimeApi<Block, AccountId>,
-    C::Api: pallet_portal_rpc::PortalRuntimeApi<Block, AccountId>,
+    // C::Api: pallet_portal_rpc::PortalRuntimeApi<Block, AccountId>,
     C::Api: BlockBuilder<Block>,
     P: TransactionPool + 'static,
 {
@@ -61,7 +61,7 @@ where
     )));
     io.extend_with(ContractsApi::to_delegate(Contracts::new(client.clone())));
     io.extend_with(XdnsApi::to_delegate(Xdns::new(client.clone())));
-    io.extend_with(PortalApi::to_delegate(Portal::new(client.clone())));
+    // io.extend_with(PortalApi::to_delegate(Portal::new(client.clone())));
 
     io
 }

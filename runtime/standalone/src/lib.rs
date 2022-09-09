@@ -19,7 +19,7 @@ use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, NumberFor, Verify},
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, MultiSignature,
+    ApplyExtrinsicResult, MultiSignature, DispatchError,
 };
 use sp_std::{
     convert::{TryFrom, TryInto},
@@ -556,12 +556,12 @@ impl_runtime_apis! {
             }
         }
     }
-
-    impl pallet_portal_rpc_runtime_api::PortalRuntimeApi<Block, AccountId> for Runtime {
-        fn get_latest_finalized_header(chain_id: ChainId) -> Option<Vec<u8>> {
-            <Portal as t3rn_primitives::portal::Portal<Runtime>>::get_latest_finalized_header(chain_id)
-        }
-    }
+    //
+    // impl pallet_portal_rpc_runtime_api::PortalRuntimeApi<Block, AccountId> for Runtime {
+    //     fn get_latest_finalized_header(chain_id: ChainId) -> Option<Vec<u8> {
+    //         <Portal as t3rn_primitives::portal::Portal<Runtime>>::get_latest_finalized_header(chain_id)
+    //     }
+    // }
 
     #[cfg(feature = "runtime-benchmarks")]
     impl frame_benchmarking::Benchmark<Block> for Runtime {
