@@ -36,11 +36,9 @@ pallet-xbi-portal = { path = "../xbi-portal", default-features = false }
 sp-core     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 sp-keystore = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 
-pallet-balances  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
-pallet-sudo      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
-pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
-
-pallet-treasury = { path = "../treasury" }
+circuit-runtime-types = {   path = "../../runtime/types" }
+circuit-runtime-pallets = {   path = "../../runtime/pallets" }
+circuit-mock-runtime = {   path = "../../runtime/mock" }
 
 [features]
 default = [ "std" ]
