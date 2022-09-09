@@ -261,7 +261,6 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
 #[cfg(test)]
 mod tests {
     use super::*;
-    // use crate::mock::*;
     use circuit_mock_runtime::*;
 
     use frame_support::{assert_err, assert_ok};

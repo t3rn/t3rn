@@ -59,7 +59,6 @@ fn set_ids(
     valid_side_effect: SideEffect<AccountId32, BlockNumber, Balance>,
 ) -> (sp_core::H256, sp_core::H256) {
     let xtx_id: sp_core::H256 =
-        // hex!("c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6").into();
         hex!("2637d56ea21c04df03463decc4aa8d2916c96e59ac45e451d7133eedc621de59").into();
 
     let side_effect_a_id = valid_side_effect
@@ -108,7 +107,6 @@ fn on_extrinsic_trigger_works_with_empty_side_effects() {
     let sequential = true;
 
     ext.execute_with(|| {
-        println!("TESTR CCARGES ALICE {:?}", ALICE.clone());
         let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
 
         assert_ok!(Circuit::on_extrinsic_trigger(
