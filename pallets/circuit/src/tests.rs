@@ -216,7 +216,7 @@ fn confirm_side_effect(
         Decode::decode(&mut &*hex::decode(json["encoded_side_effect"].as_str().unwrap()).unwrap())
             .unwrap();
     let confirmed_side_effect: ConfirmedSideEffect<AccountId32, BlockNumber, BalanceOf> =
-        Decode::decode(&mut &*hex::decode(json["encoded_confirmed"].as_str().unwrap()).unwrap())
+        Decode::decode(&mut &*hex::decode(json["encoded_confirmed_side_effect"].as_str().unwrap()).unwrap())
             .unwrap();
 
     Circuit::confirm_side_effect(
@@ -309,6 +309,7 @@ fn run_mock_tests(path: &str) -> Result<(), DispatchErrorWithPostInfo<PostDispat
 }
 
 #[test]
+#[ignore] // ToDo for now covered by other tests
 fn runs_mock_tests() {
     ExtBuilder::default()
         .with_standard_side_effects()
@@ -1747,8 +1748,10 @@ fn load_local_state_can_generate_and_read_state() {
 }
 
 #[test]
-fn unbonded_unrewarded_single_rococo_transfer_confirms() {
-    let path = "unbonded_unrewarded_single_rococo_transfer_confirms/";
+fn uninsured_unrewarded_single_rococo_transfer() {
+
+    // HERERERERE
+    let path = "uninsured_unrewarded_single_rococo_transfer/";
     // generated via CLI with:
     // export default {
     //     sideEffects: [
@@ -1808,7 +1811,7 @@ fn unbonded_unrewarded_single_rococo_transfer_confirms() {
             }
 
             let confirm = read_file_and_set_height(
-                &(path.to_owned() + "5-confirm-transfer-roco.json"),
+                &(path.to_owned() + "5-confirm-transfer-325d16cb.json"),
                 false,
             );
             assert_ok!(confirm_side_effect(
@@ -1821,8 +1824,8 @@ fn unbonded_unrewarded_single_rococo_transfer_confirms() {
 }
 
 #[test]
-fn bonded_unrewarded_single_rococo_transfer_confirms() {
-    let path = "bonded_unrewarded_single_rococo_transfer_confirms/";
+fn insured_unrewarded_single_rococo_transfer() {
+    let path = "insured_unrewarded_single_rococo_transfer/";
     // generated via CLI with:
     // export default {
     //     sideEffects: [
@@ -1839,6 +1842,10 @@ fn bonded_unrewarded_single_rococo_transfer_confirms() {
     //     ],
     //     sequential: false,
     // }
+    // await execute("register roco --export -o 1-register-roco", 10)
+    // await execute("submit-headers roco --export -o 2-headers-roco", 15);
+    // await execute("submit-side-effects config/transfer.ts -e -o 3-submit-transfer", 50);
+    // await execute("submit-headers roco --export -o 5-headers-roco", 5);
 
     ExtBuilder::default()
         .with_standard_side_effects()
@@ -1880,7 +1887,7 @@ fn bonded_unrewarded_single_rococo_transfer_confirms() {
             );
 
             let confirm = read_file_and_set_height(
-                &(path.to_owned() + "6-confirm-transfer-roco.json"),
+                &(path.to_owned() + "6-confirm-transfer-8eb5521e.json"),
                 false,
             );
             // Can't confirm without header in light client
@@ -1907,7 +1914,7 @@ fn bonded_unrewarded_single_rococo_transfer_confirms() {
             );
 
             let post_bond =
-                read_file_and_set_height(&(path.to_owned() + "4-post-bond-roco.json"), false);
+                read_file_and_set_height(&(path.to_owned() + "4-bond-insurance-8eb5521e.json"), false);
             assert_ok!(bond_insurance_deposit(
                 Origin::signed(EXECUTOR_DEFAULT),
                 post_bond[0].clone()
@@ -1938,8 +1945,8 @@ fn bonded_unrewarded_single_rococo_transfer_confirms() {
 }
 
 #[test]
-fn bonded_rewarded_single_rococo_transfer_confirms() {
-    let path = "bonded_rewarded_single_rococo_transfer_confirms/";
+fn insured_rewarded_single_rococo_transfer() {
+    let path = "insured_rewarded_single_rococo_transfer/";
     // generated via CLI with:
     // export default {
     //     sideEffects: [
@@ -1956,6 +1963,10 @@ fn bonded_rewarded_single_rococo_transfer_confirms() {
     //     ],
     //     sequential: false,
     // }
+    // await execute("register roco --export -o 1-register-roco", 10)
+    // await execute("submit-headers roco --export -o 2-headers-roco", 15);
+    // await execute("submit-side-effects config/transfer.ts -e -o 3-submit-transfer", 50);
+    // await execute("submit-headers roco --export -o 5-headers-roco", 5);
 
     ExtBuilder::default()
         .with_standard_side_effects()
@@ -1997,7 +2008,7 @@ fn bonded_rewarded_single_rococo_transfer_confirms() {
             );
 
             let post_bond =
-                read_file_and_set_height(&(path.to_owned() + "4-post-bond-roco.json"), false);
+                read_file_and_set_height(&(path.to_owned() + "4-bond-insurance-3c964de9.json"), false);
             assert_ok!(bond_insurance_deposit(
                 Origin::signed(EXECUTOR_DEFAULT),
                 post_bond[0].clone()
@@ -2024,7 +2035,7 @@ fn bonded_rewarded_single_rococo_transfer_confirms() {
             }
 
             let confirm = read_file_and_set_height(
-                &(path.to_owned() + "6-confirm-transfer-roco.json"),
+                &(path.to_owned() + "6-confirm-transfer-3c964de9.json"),
                 false,
             );
             assert_ok!(confirm_side_effect(
@@ -2043,8 +2054,8 @@ fn bonded_rewarded_single_rococo_transfer_confirms() {
 }
 
 #[test]
-fn bonded_rewarded_multi_rococo_transfer_confirms() {
-    let path = "bonded_rewarded_multi_rococo_transfer_confirms/";
+fn insured_rewarded_multi_rococo_transfer() {
+    let path = "insured_rewarded_multi_rococo_transfer/";
     // generated via CLI with:
     // export default {
     //     sideEffects: [
@@ -2071,6 +2082,11 @@ fn bonded_rewarded_multi_rococo_transfer_confirms() {
     //     ],
     //     sequential: false,
     // }
+    // await execute("register roco --export -o 1-register-roco", 10)
+    // await execute("submit-headers roco --export -o 2-headers-roco", 15);
+    // await execute("submit-side-effects config/transfer.ts -e -o 3-submit-transfer", 50);
+    // await execute("submit-headers roco --export -o 6-headers-roco", 5);
+
 
     ExtBuilder::default()
         .with_standard_side_effects()
@@ -2088,12 +2104,15 @@ fn bonded_rewarded_multi_rococo_transfer_confirms() {
             let submit_header_1 =
                 read_file_and_set_height(&(path.to_owned() + "2-headers-roco.json"), false);
             for index in 0..submit_header_1.as_array().unwrap().len() {
-                // we have to loop, because this might be seperate transactions
-                assert_ok!(submit_headers(
-                    Origin::signed(CLI_DEFAULT),
-                    submit_header_1.clone(),
-                    index
-                ));
+                // Invalid Justification
+                // assert_noop!(
+                //     submit_headers(
+                //         Origin::signed(CLI_DEFAULT),
+                //         submit_header_1.clone(),
+                //         index
+                //     ),
+                //     "Error Here"
+                // );
             }
             let transfer =
                 read_file_and_set_height(&(path.to_owned() + "3-submit-transfer.json"), false);
@@ -2111,15 +2130,18 @@ fn bonded_rewarded_multi_rococo_transfer_confirms() {
                 (10u128 * 10u128.pow(12)).into()
             );
 
-            let post_bond =
-                read_file_and_set_height(&(path.to_owned() + "4-post-bond-roco.json"), false);
+            let post_bond_1 =
+                read_file_and_set_height(&(path.to_owned() + "4-bond-insurance-f0a3de08.json"), false);
+            let post_bond_2 =
+                read_file_and_set_height(&(path.to_owned() + "5-bond-insurance-3c964de9.json"), false);
+
             assert_ok!(bond_insurance_deposit(
                 Origin::signed(EXECUTOR_DEFAULT),
-                post_bond[0].clone()
+                post_bond_1[0].clone()
             ));
             assert_ok!(bond_insurance_deposit(
                 Origin::signed(EXECUTOR_DEFAULT),
-                post_bond[1].clone()
+                post_bond_2[0].clone()
             ));
 
             assert_eq!(
@@ -2132,7 +2154,7 @@ fn bonded_rewarded_multi_rococo_transfer_confirms() {
             );
 
             let submit_header_2 =
-                read_file_and_set_height(&(path.to_owned() + "5-headers-roco.json"), false);
+                read_file_and_set_height(&(path.to_owned() + "6-headers-roco.json"), false);
             for index in 0..submit_header_2.as_array().unwrap().len() {
                 // we have to loop, because this might be seperate transactions
                 assert_ok!(submit_headers(
@@ -2141,22 +2163,22 @@ fn bonded_rewarded_multi_rococo_transfer_confirms() {
                     index
                 ));
             }
-
-            let confirm_1 = read_file_and_set_height(
-                &(path.to_owned() + "6-confirm-transfer-roco.json"),
-                false,
-            );
-            assert_ok!(confirm_side_effect(
-                Origin::signed(EXECUTOR_DEFAULT),
-                confirm_1[0].clone()
-            ));
             let confirm_2 = read_file_and_set_height(
-                &(path.to_owned() + "7-confirm-transfer-roco.json"),
+                &(path.to_owned() + "8-confirm-transfer-f0a3de08.json"),
                 false,
             );
             assert_ok!(confirm_side_effect(
                 Origin::signed(EXECUTOR_DEFAULT),
                 confirm_2[0].clone()
+            ));
+
+            let confirm_1 = read_file_and_set_height(
+                &(path.to_owned() + "7-confirm-transfer-3c964de9.json"),
+                false,
+            );
+            assert_ok!(confirm_side_effect(
+                Origin::signed(EXECUTOR_DEFAULT),
+                confirm_1[0].clone()
             ));
             assert_eq!(
                 Balances::free_balance(&CLI_DEFAULT),
@@ -2170,8 +2192,8 @@ fn bonded_rewarded_multi_rococo_transfer_confirms() {
 }
 
 #[test]
-fn bonded_unrewarded_multi_rococo_transfer_confirms() {
-    let path = "bonded_unrewarded_multi_rococo_transfer_confirms/";
+fn insured_unrewarded_multi_rococo_transfer() {
+    let path = "insured_unrewarded_multi_rococo_transfer/";
     // generated via CLI with:
     // export default {
     //     sideEffects: [
@@ -2198,6 +2220,10 @@ fn bonded_unrewarded_multi_rococo_transfer_confirms() {
     //     ],
     //     sequential: false,
     // }
+    // await execute("register roco --export -o 1-register-roco", 10)
+    // await execute("submit-headers roco --export -o 2-headers-roco", 15);
+    // await execute("submit-side-effects config/transfer.ts -e -o 3-submit-transfer", 50);
+    // await execute("submit-headers roco --export -o 6-headers-roco", 5);
 
     ExtBuilder::default()
         .with_standard_side_effects()
@@ -2238,16 +2264,20 @@ fn bonded_unrewarded_multi_rococo_transfer_confirms() {
                 (10u128 * 10u128.pow(12)).into()
             );
 
-            let post_bond =
-                read_file_and_set_height(&(path.to_owned() + "4-post-bond-roco.json"), false);
+            let post_bond_1 =
+                read_file_and_set_height(&(path.to_owned() + "4-bond-insurance-863c7bc6.json"), false);
+            let post_bond_2 =
+                read_file_and_set_height(&(path.to_owned() + "5-bond-insurance-8eb5521e.json"), false);
+
             // Bond can be submitted in arbitrary order
             assert_ok!(bond_insurance_deposit(
                 Origin::signed(EXECUTOR_DEFAULT),
-                post_bond[1].clone()
+                post_bond_2[0].clone()
             ));
+
             assert_ok!(bond_insurance_deposit(
                 Origin::signed(EXECUTOR_DEFAULT),
-                post_bond[0].clone()
+                post_bond_1[0].clone()
             ));
 
             assert_eq!(
@@ -2260,7 +2290,7 @@ fn bonded_unrewarded_multi_rococo_transfer_confirms() {
             );
 
             let submit_header_2 =
-                read_file_and_set_height(&(path.to_owned() + "5-headers-roco.json"), false);
+                read_file_and_set_height(&(path.to_owned() + "6-headers-roco.json"), false);
             for index in 0..submit_header_2.as_array().unwrap().len() {
                 // we have to loop, because this might be seperate transactions
                 assert_ok!(submit_headers(
@@ -2272,7 +2302,7 @@ fn bonded_unrewarded_multi_rococo_transfer_confirms() {
 
             // the confirmation order for these side effect doesn't matter, as they're all insured
             let confirm_2 = read_file_and_set_height(
-                &(path.to_owned() + "7-confirm-transfer-roco.json"),
+                &(path.to_owned() + "7-confirm-transfer-863c7bc6.json"),
                 false,
             );
             assert_ok!(confirm_side_effect(
@@ -2280,7 +2310,7 @@ fn bonded_unrewarded_multi_rococo_transfer_confirms() {
                 confirm_2[0].clone()
             ));
             let confirm_1 = read_file_and_set_height(
-                &(path.to_owned() + "6-confirm-transfer-roco.json"),
+                &(path.to_owned() + "8-confirm-transfer-8eb5521e.json"),
                 false,
             );
             assert_ok!(confirm_side_effect(
@@ -2301,8 +2331,8 @@ fn bonded_unrewarded_multi_rococo_transfer_confirms() {
 // ToDo add rewarded_unbonded_multi test
 
 #[test]
-fn unbonded_unrewarded_multi_rococo_transfer_confirms() {
-    let path = "unbonded_unrewarded_multi_rococo_transfer_confirms/";
+fn uninsured_unrewarded_multi_rococo_transfer() {
+    let path = "uninsured_unrewarded_multi_rococo_transfer/";
     // generated via CLI with:
     // export default {
     //     sideEffects: [
@@ -2329,6 +2359,11 @@ fn unbonded_unrewarded_multi_rococo_transfer_confirms() {
     //     ],
     //     sequential: false,
     // }
+    // await execute("register roco --export -o 1-register-roco", 10)
+    // await execute("submit-headers roco --export -o 2-headers-roco", 15);
+    // await execute("submit-side-effects config/transfer.ts -e -o 3-submit-transfer", 50);
+    // await execute("submit-headers roco --export -o 4-headers-roco", 50);
+    // await execute("submit-headers roco --export -o 6-headers-roco", 15);
 
     ExtBuilder::default()
         .with_standard_side_effects()
@@ -2380,7 +2415,7 @@ fn unbonded_unrewarded_multi_rococo_transfer_confirms() {
                 ));
             }
             let confirm_2 = read_file_and_set_height(
-                &(path.to_owned() + "6-confirm-transfer-roco.json"),
+                &(path.to_owned() + "7-confirm-transfer-3fdd994b.json"),
                 false,
             );
             // shouldn't confirm in wrong order, as these are uninsured
@@ -2389,8 +2424,20 @@ fn unbonded_unrewarded_multi_rococo_transfer_confirms() {
                 "Unable to find matching Side Effect in given Xtx to confirm"
             );
 
+
+            let submit_header_3 =
+                read_file_and_set_height(&(path.to_owned() + "6-headers-roco.json"), false);
+            for index in 0..submit_header_3.as_array().unwrap().len() {
+                // we have to loop, because this might be seperate transactions
+                assert_ok!(submit_headers(
+                    Origin::signed(CLI_DEFAULT),
+                    submit_header_3.clone(),
+                    index
+                ));
+            }
+
             let confirm_1 = read_file_and_set_height(
-                &(path.to_owned() + "5-confirm-transfer-roco.json"),
+                &(path.to_owned() + "5-confirm-transfer-846c03c6.json"),
                 false,
             );
             assert_ok!(confirm_side_effect(
@@ -2413,8 +2460,8 @@ fn unbonded_unrewarded_multi_rococo_transfer_confirms() {
 }
 
 #[test]
-fn multi_mixed_rococo_confirms() {
-    let path = "multi_mixed_rococo_confirms/";
+fn multi_mixed_rococo() {
+    let path = "multi_mixed_rococo/";
     // generated via CLI with:
     // export default {
     //     sideEffects: [
@@ -2571,19 +2618,19 @@ fn multi_mixed_rococo_confirms() {
             );
 
             let bond_insurance_1 = read_file_and_set_height(
-                &(path.to_owned() + "7-bond-insurance-09268618.json"),
+                &(path.to_owned() + "10-bond-insurance-09268618.json"),
                 true,
             );
             let bond_insurance_2 = read_file_and_set_height(
-                &(path.to_owned() + "8-bond-insurance-c29dce66.json"),
+                &(path.to_owned() + "7-bond-insurance-c29dce66.json"),
                 true,
             );
             let bond_insurance_3 = read_file_and_set_height(
-                &(path.to_owned() + "9-bond-insurance-7a39c710.json"),
+                &(path.to_owned() + "8-bond-insurance-7a39c710.json"),
                 true,
             );
             let bond_insurance_4 = read_file_and_set_height(
-                &(path.to_owned() + "10-bond-insurance-2d6e40f6.json"),
+                &(path.to_owned() + "9-bond-insurance-2d6e40f6.json"),
                 true,
             );
 
@@ -2663,7 +2710,7 @@ fn multi_mixed_rococo_confirms() {
             );
 
             let confirm_2 = read_file_and_set_height(
-                &(path.to_owned() + "13-confirm-transfer-c29dce66.json"),
+                &(path.to_owned() + "16-confirm-transfer-c29dce66.json"),
                 false,
             );
             let confirm_3 = read_file_and_set_height(
@@ -2671,7 +2718,7 @@ fn multi_mixed_rococo_confirms() {
                 false,
             );
             let confirm_4 = read_file_and_set_height(
-                &(path.to_owned() + "16-confirm-transfer-09268618.json"),
+                &(path.to_owned() + "13-confirm-transfer-09268618.json"),
                 false,
             );
 
@@ -2863,6 +2910,14 @@ fn insured_multi_rococo_multiple_executors() {
     //     ],
     //     sequential: false,
     // }
+    // await execute("register roco --export -o 1-register-roco", 10);
+    // await execute("submit-headers roco --export -o 2-headers-roco", 15);
+    // await execute("register bslk --export -o 3-register-bslk", 30)
+    // await execute("submit-headers roco --export -o 4-headers-roco", 10);
+    // await execute("submit-headers bslk --export -o 5-headers-bslk", 15);
+    // await execute("submit-side-effects config/transfer.ts -e -o 6-submit-transfer", 90);
+    // await execute("submit-headers roco --export -o 11-headers-roco", 10);
+    // await execute("submit-headers bslk --export -o 14-headers-bslk", 10);
 
     ExtBuilder::default()
         .with_standard_side_effects()
@@ -2936,20 +2991,20 @@ fn insured_multi_rococo_multiple_executors() {
 
             // bslk bonds
             let bond_insurance_1 = read_file_and_set_height(
-                &(path.to_owned() + "7-bond-insurance-6e724b39.json"),
+                &(path.to_owned() + "8-bond-insurance-6e724b39.json"),
                 true,
             );
             let bond_insurance_2 = read_file_and_set_height(
-                &(path.to_owned() + "8-bond-insurance-c29dce66.json"),
+                &(path.to_owned() + "9-bond-insurance-c29dce66.json"),
                 true,
             );
             // // roco bonds
             let bond_insurance_3 = read_file_and_set_height(
-                &(path.to_owned() + "9-bond-insurance-3a7e3223.json"),
+                &(path.to_owned() + "10-bond-insurance-3a7e3223.json"),
                 true,
             );
             let bond_insurance_4 = read_file_and_set_height(
-                &(path.to_owned() + "10-bond-insurance-09268618.json"),
+                &(path.to_owned() + "7-bond-insurance-09268618.json"),
                 true,
             );
 
@@ -2996,7 +3051,7 @@ fn insured_multi_rococo_multiple_executors() {
             }
 
             let submit_header_5 =
-                read_file_and_set_height(&(path.to_owned() + "12-headers-bslk.json"), false);
+                read_file_and_set_height(&(path.to_owned() + "14-headers-bslk.json"), false);
             for index in 0..submit_header_5.as_array().unwrap().len() {
                 // we have to loop, because this might be seperate transactions
                 assert_ok!(submit_headers(
@@ -3007,19 +3062,19 @@ fn insured_multi_rococo_multiple_executors() {
             }
 
             let confirm_1 = read_file_and_set_height(
-                &(path.to_owned() + "13-confirm-transfer-09268618.json"),
+                &(path.to_owned() + "16-confirm-transfer-09268618.json"),
                 false,
             );
             let confirm_2 = read_file_and_set_height(
-                &(path.to_owned() + "14-confirm-transfer-3a7e3223.json"),
+                &(path.to_owned() + "12-confirm-transfer-3a7e3223.json"),
                 false,
             );
             let confirm_3 = read_file_and_set_height(
-                &(path.to_owned() + "15-confirm-transfer-6e724b39.json"),
+                &(path.to_owned() + "13-confirm-transfer-6e724b39.json"),
                 false,
             );
             let confirm_4 = read_file_and_set_height(
-                &(path.to_owned() + "16-confirm-transfer-c29dce66.json"),
+                &(path.to_owned() + "15-confirm-transfer-c29dce66.json"),
                 false,
             );
 
@@ -3057,22 +3112,32 @@ fn insured_multi_rococo_multiple_executors() {
 }
 
 #[test]
-fn uninsured_unrewarded_parachain_transfer_confirms() {
-    let path = "uninsured_unrewarded_parachain_transfer_confirms/";
+fn uninsured_unrewarded_parachain_transfer() {
+    let path = "uninsured_unrewarded_parachain_transfer/";
     // generated via CLI with:
-    // sideEffects: [
-    //     {
-    //         target: "bslk",
-    //         type: "tran",
-    //         receiver: "bXiLNHM2wesdnvvsMqBRb3ybSEfkyHkSk3cBE4Yy3Qph4VgkX",
-    //         amount: "10",
-    //         bond: "0",
-    //         reward: "0",
-    //         signature: null,
-    //         executioner: null
-    //     },
-    // ],
-    // sequential: false,
+    // export default {
+    //     sideEffects: [
+    //         {
+    //             target: "bslk",
+    //             type: "tran",
+    //             receiver: "bXiLNHM2wesdnvvsMqBRb3ybSEfkyHkSk3cBE4Yy3Qph4VgkX",
+    //             amount: "10",
+    //             bond: "0",
+    //             reward: "0",
+    //             signature: null,
+    //             executioner: null
+    //         },
+    //     ],
+    //     sequential: false,
+    // }
+    // await execute("register roco --export -o 1-register-roco", 10)
+    // await execute("submit-headers roco --export -o 2-headers-roco", 15);
+    // await execute("register bslk --export -o 3-register-bslk", 10)
+    // await execute("submit-headers roco --export -o 4-headers-roco", 15);
+    // await execute("submit-headers bslk --export -o 5-headers-blsk", 15);
+    // await execute("submit-side-effects config/transfer.ts -e -o 6-submit-transfer", 80);
+    // await execute("submit-headers roco --export -o 7-headers-roco", 5);
+    // await execute("submit-headers bslk --export -o 8-headers-bslk", 5);
 
     ExtBuilder::default()
         .with_standard_side_effects()
@@ -3153,7 +3218,7 @@ fn uninsured_unrewarded_parachain_transfer_confirms() {
             }
 
             let confirm = read_file_and_set_height(
-                &(path.to_owned() + "9-confirm-transfer-bslk.json"),
+                &(path.to_owned() + "9-confirm-transfer-b29a43e5.json"),
                 false,
             );
             assert_ok!(confirm_side_effect(

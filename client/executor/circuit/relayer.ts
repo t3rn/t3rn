@@ -102,7 +102,7 @@ export default class CircuitRelayer extends EventEmitter {
 }
 
 // in combination with transfer.ts
-let indexes = [7,8,9,10,12,13,15,16,18,21,23,9999,111111,222222,33333,444444];
+let indexes = [7, 8, 9, 10, 12, 13, 15, 16, 18, 21, 9999, 111111, 222222, 33333, 444444];
 let counter = 0
 export const exportData = (data: any, fileName: string, transactionType: string) => {
     let deepCopy;
