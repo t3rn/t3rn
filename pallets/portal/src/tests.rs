@@ -31,10 +31,9 @@ use codec::Encode;
 use t3rn_primitives::{
     abi::GatewayABIConfig,
     portal::{RegistrationData, RococoBridge},
-    xdns::AllowedSideEffect,
+    xdns::{AllowedSideEffect, Xdns},
     ChainId, EscrowTrait, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
 };
-// use t3rn_primitives::portal::Portal;
 
 pub fn new_test_ext() -> TestExternalities {
     let t = frame_system::GenesisConfig::default()
@@ -213,25 +212,18 @@ fn fails_registration_with_invalid_signer() {
     });
 }
 
-// ToDo: Update return type of XDNS to enable correct error handling
-// #[test]
-// fn gateway_can_only_be_registered_once() {
-//     // imports encoded RegistrationData from mock-data created by CLI
-//     let raw_data = fs::read_to_string("./src/mock-data/register-roco.json").unwrap();
-//     let json: Value = serde_json::from_str(raw_data.as_str()).unwrap();
-//     let bytes = hex::decode(json["encoded"].as_str().unwrap()).unwrap();
-//     let registration_data: RegistrationData = Decode::decode(&mut &*bytes).unwrap();
-//
-//     let mut ext = TestExternalities::new_empty();
-//     let origin = Origin::root(); // only sudo access to register new gateways for now
-//     ext.execute_with(|| {
-//         assert_ok!(Portal::register_gateway(
-//             origin.clone(),
-//             registration_data.clone()
-//         ));
-//         assert_ok!(Portal::register_gateway(origin, registration_data).is_err());
-//     });
-// }
+#[test]
+fn gateway_can_only_be_registered_once() {
+    let mut ext = TestExternalities::new_empty();
+    let origin = Origin::root(); // only sudo access to register new gateways for now
+    ext.execute_with(|| {
+        assert_ok!(register_file(origin.clone(), "1-register-roco.json", false, 0));
+        assert_noop!(
+            register_file(origin, "1-register-roco.json", false, 0),
+            pallet_xdns::Error::<Test>::XdnsRecordAlreadyExists
+        );
+    });
+}
 
 #[test]
 fn cant_submit_without_registering() {
