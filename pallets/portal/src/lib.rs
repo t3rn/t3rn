@@ -218,7 +218,7 @@ pub mod pallet {
                         gateway_id,
                         encoded_header_data,
                     ),
-                _ => unimplemented!(),
+                _ => unimplemented!(), // ToDo remove once we remove the old vendors
             };
 
             match res {
@@ -236,34 +236,28 @@ pub mod pallet {
 }
 
 impl<T: Config> Portal<T> for Pallet<T> {
-    fn get_latest_finalized_header(gateway_id: ChainId) -> Option<Vec<u8>> {
-        let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id);
+    fn get_latest_finalized_header(gateway_id: ChainId) -> Result<Option<Vec<u8>>, DispatchError> {
+        let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
+            .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
 
         match vendor {
-            Ok(GatewayVendor::Rococo) => return pallet_grandpa_finality_verifier::Pallet::<
+            GatewayVendor::Rococo => Ok(pallet_grandpa_finality_verifier::Pallet::<
                 T,
                 RococoBridge,
             >::get_latest_finalized_header(
                 gateway_id
-            ),
-            Err(_) => return None,
+            )),
             _ => unimplemented!(),
-        };
+        }
     }
 
-    fn get_latest_finalized_height(gateway_id: ChainId) -> Result<Vec<u8>, DispatchError> {
+    fn get_latest_finalized_height(gateway_id: ChainId) -> Result<Option<Vec<u8>>, DispatchError> {
         let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
             .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
 
-        // ToDo maybe we should return hex encoded height here instead of scale
-        let res = match vendor {
-            GatewayVendor::Rococo => pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::get_latest_finalized_height(gateway_id),
+        match vendor {
+            GatewayVendor::Rococo => Ok(pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::get_latest_finalized_height(gateway_id)),
             _ => unimplemented!()
-        };
-
-        match res {
-            Some(height) => Ok(height),
-            None => Err(Error::<T>::NoGatewayHeightAvailable.into()),
         }
     }
 
@@ -276,20 +270,15 @@ impl<T: Config> Portal<T> for Pallet<T> {
         let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
             .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
 
-        let res = match vendor {
-            GatewayVendor::Rococo =>  pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::confirm_and_decode_payload_params(
+        match vendor {
+            GatewayVendor::Rococo => pallet_grandpa_finality_verifier::Pallet::<T, RococoBridge>::confirm_and_decode_payload_params(
                 gateway_id,
                 encoded_inclusion_data,
                 submission_target_height,
                 <T as Config>::Xdns::get_gateway_value_unsigned_type_unsafe(&gateway_id).to_string_bytes(),
-                side_effect_id
+                side_effect_id,
             ),
             _ => unimplemented!()
-        };
-
-        match res {
-            Err(_msg) => Err(Error::<T>::SideEffectConfirmationFailed.into()),
-            Ok(parameters) => Ok(parameters),
         }
     }
 }

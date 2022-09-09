@@ -1,5 +1,7 @@
 use codec::{Decode, Encode};
+use sp_runtime::DispatchError;
 use sp_std::{vec, vec::Vec};
+use crate::{Config, Error};
 
 #[derive(Encode, Decode)]
 pub enum TransferEventStub<T: frame_system::Config, Balance> {
@@ -26,11 +28,11 @@ pub enum MultiTransferEventStub<T: frame_system::Config, Balance, CurrencyId> {
     },
 }
 
-pub(crate) fn decode_event<T: frame_system::Config>(
+pub(crate) fn decode_event<T: Config<I>, I: 'static>(
     id: &[u8; 4],
     mut encoded_event: Vec<u8>,
     value_abi_unsigned_type: &[u8],
-) -> Result<Vec<Vec<Vec<u8>>>, &'static str> {
+) -> Result<Vec<Vec<Vec<u8>>>, DispatchError> {
     // the first byte is the pallet index, which we don't need
     let _ = encoded_event.remove(0);
     match &id {
@@ -40,28 +42,22 @@ pub(crate) fn decode_event<T: frame_system::Config>(
                 b"uint32" => {
                     match Decode::decode(&mut &encoded_event[..]) {
                         Ok(TransferEventStub::<T, u32>::Transfer { from, to, amount }) => Ok(vec![vec![from.encode(), to.encode(), amount.encode()]]),
-                        Ok(TransferEventStub::<T, u32>::Endowed { .. }) => Err("Event decodes to pallet_balances::Event::Endowed, which is unsupported"),
-                        Ok(TransferEventStub::<T, u32>::DustLost { .. }) => Err("Event decodes to pallet_balances::Event::Endowed, which is unsupported"),
-                        Err(_) => Err("Decoded event doesn't match expected for substrate form of pallet_balances::Event::Transfer"),
+                        _ => Err(Error::<T, I>::EventDecodingFailed.into()),
                     }
                 }
                 b"uint64" => {
                     match Decode::decode(&mut &encoded_event[..]) {
                         Ok(TransferEventStub::<T, u64>::Transfer { from, to, amount }) => Ok(vec![vec![from.encode(), to.encode(), amount.encode()]]),
-                        Ok(TransferEventStub::<T, u64>::Endowed { .. }) => Err("Event decodes to pallet_balances::Event::Endowed, which is unsupported"),
-                        Ok(TransferEventStub::<T, u64>::DustLost { .. }) => Err("Event decodes to pallet_balances::Event::Endowed, which is unsupported"),
-                        Err(_) => Err("Decoded event doesn't match expected for substrate form of pallet_balances::Event::Transfer"),
+                        _ => Err(Error::<T, I>::EventDecodingFailed.into()),
                     }
                 }
                 b"uint128" => {
                     match Decode::decode(&mut &encoded_event[..]) {
                         Ok(TransferEventStub::<T, u128>::Transfer { from, to, amount }) => Ok(vec![vec![from.encode(), to.encode(), amount.encode()]]),
-                        Ok(TransferEventStub::<T, u128>::Endowed { .. }) => Err("Event decodes to pallet_balances::Event::Endowed, which is unsupported"),
-                        Ok(TransferEventStub::<T, u128>::DustLost { .. }) => Err("Event decodes to pallet_balances::Event::Endowed, which is unsupported"),
-                        Err(_) => Err("Decoded event doesn't match expected for substrate form of pallet_balances::Event::Transfer"),
+                        _ => Err(Error::<T, I>::EventDecodingFailed.into()),
                     }
                 }
-                &_ => Err("Event decodes to pallet_balances::Event::Endowed, which is unsupported")
+                &_ => Err(Error::<T, I>::EventDecodingFailed.into()),
             }
         }
         &b"swap" | &b"aliq" => {
@@ -69,31 +65,25 @@ pub(crate) fn decode_event<T: frame_system::Config>(
                 b"uint32" => {
                     match Decode::decode(&mut &encoded_event[..]) {
                         Ok(MultiTransferEventStub::<T, u32, CurrencyId>::Transfer { currency_id, from, to, amount }) => Ok(vec![vec![from.encode(), to.encode(), currency_id.encode(), amount.encode()]]),
-                        Ok(MultiTransferEventStub::<T, u32, CurrencyId>::Endowed { .. }) => Err("Event decodes to pallet_balances::Event::Endowed, which is unsupported"),
-                        Ok(MultiTransferEventStub::<T, u32, CurrencyId>::DustLost { .. }) => Err("Event decodes to pallet_balances::Event::Endowed, which is unsupported"),
-                        Err(_) => Err("Decoded event doesn't match expected for substrate form of pallet_balances::Event::Transfer"),
+                        _ => Err(Error::<T, I>::EventDecodingFailed.into()),
                     }
                 }
                 b"uint64" => {
                     match Decode::decode(&mut &encoded_event[..]) {
                         Ok(MultiTransferEventStub::<T, u64, CurrencyId>::Transfer { currency_id, from, to, amount }) => Ok(vec![vec![from.encode(), to.encode(), currency_id.encode(), amount.encode()]]),
-                        Ok(MultiTransferEventStub::<T, u64, CurrencyId>::Endowed { .. }) => Err("Event decodes to pallet_balances::Event::Endowed, which is unsupported"),
-                        Ok(MultiTransferEventStub::<T, u64, CurrencyId>::DustLost { .. }) => Err("Event decodes to pallet_balances::Event::Endowed, which is unsupported"),
-                        Err(_) => Err("Decoded event doesn't match expected for substrate form of pallet_balances::Event::Transfer"),
+                        _ => Err(Error::<T, I>::EventDecodingFailed.into()),
                     }
                 }
                 b"uint128" => {
                     match Decode::decode(&mut &encoded_event[..]) {
                         Ok(MultiTransferEventStub::<T, u128, CurrencyId>::Transfer { currency_id, from, to, amount }) => Ok(vec![vec![from.encode(), to.encode(), currency_id.encode(), amount.encode()]]),
-                        Ok(MultiTransferEventStub::<T, u128, CurrencyId>::Endowed { .. }) => Err("Event decodes to pallet_balances::Event::Endowed, which is unsupported"),
-                        Ok(MultiTransferEventStub::<T, u128, CurrencyId>::DustLost { .. }) => Err("Event decodes to pallet_balances::Event::Endowed, which is unsupported"),
-                        Err(_) => Err("Decoded event doesn't match expected for substrate form of pallet_balances::Event::Transfer"),
+                        _ => Err(Error::<T, I>::EventDecodingFailed.into()),
                     }
                 }
-                &_ => Err("Event decodes to pallet_balances::Event::Endowed, which is unsupported")
+                &_ => Err(Error::<T, I>::EventDecodingFailed.into()),
             }
         }
-        &_ => Err("Event name unrecognized for the Substrate vendor"),
+        &_ => Err(Error::<T, I>::UnkownSideEffect.into()),
     }
 }
 
@@ -102,6 +92,8 @@ pub mod tests {
     use codec::Encode;
     use frame_support::parameter_types;
     use sp_std::convert::{TryFrom, TryInto};
+    use crate::bridges::runtime::Chain;
+    // use crate::TestRuntime;
 
     use hex_literal::hex;
     use sp_runtime::{
@@ -112,12 +104,12 @@ pub mod tests {
 
     use crate::{decode_event, side_effects::*};
 
-    type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-    type Block = frame_system::mocking::MockBlock<Test>;
+    type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
+    type Block = frame_system::mocking::MockBlock<TestRuntime>;
     type Balance = u64;
 
     frame_support::construct_runtime!(
-        pub enum Test where
+        pub enum TestRuntime where
             Block = Block,
             NodeBlock = Block,
             UncheckedExtrinsic = UncheckedExtrinsic,
@@ -132,7 +124,30 @@ pub mod tests {
         pub BlockWeights: frame_system::limits::BlockWeights =
             frame_system::limits::BlockWeights::simple_max(1024);
     }
-    impl frame_system::Config for Test {
+
+    parameter_types! {
+        pub const HeadersToStore: u32 = 5;
+        pub const SessionLength: u64 = 5;
+        pub const NumValidators: u32 = 5;
+    }
+
+    impl Config for TestRuntime {
+        type BridgedChain = TestCircuitLikeChain;
+        type HeadersToStore = HeadersToStore;
+        type WeightInfo = ();
+    }
+
+    #[derive(Debug)]
+    pub struct TestCircuitLikeChain;
+
+    impl Chain for TestCircuitLikeChain {
+        type BlockNumber = <TestRuntime as frame_system::Config>::BlockNumber;
+        type Hash = <TestRuntime as frame_system::Config>::Hash;
+        type Hasher = <TestRuntime as frame_system::Config>::Hashing;
+        type Header = <TestRuntime as frame_system::Config>::Header;
+    }
+
+    impl frame_system::Config for TestRuntime {
         type AccountData = pallet_balances::AccountData<u64>;
         type AccountId = AccountId32;
         type BaseCallFilter = frame_support::traits::Everything;
@@ -161,7 +176,7 @@ pub mod tests {
     parameter_types! {
         pub const ExistentialDeposit: Balance = 1;
     }
-    impl pallet_balances::Config for Test {
+    impl pallet_balances::Config for TestRuntime {
         type AccountStore = System;
         type Balance = Balance;
         type DustRemoval = ();
@@ -175,7 +190,7 @@ pub mod tests {
 
     #[test]
     fn successfully_encodes_transferred_event() {
-        let encoded_balance_transfer_event = pallet_balances::Event::<Test>::Transfer {
+        let encoded_balance_transfer_event = pallet_balances::Event::<TestRuntime>::Transfer {
             from: hex!("0909090909090909090909090909090909090909090909090909090909090909").into(),
             to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(),
             amount: 1,
@@ -193,19 +208,19 @@ pub mod tests {
 
     #[test]
     fn successfully_parses_encoded_transferred_event_with_substrate_parser() {
-        let mut encoded_balance_transfer_event = pallet_balances::Event::<Test>::Transfer {
+        let mut encoded_balance_transfer_event = pallet_balances::Event::<TestRuntime>::Transfer {
             from: hex!("0909090909090909090909090909090909090909090909090909090909090909").into(),
             to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(),
             amount: 1,
         }
-        .encode();
+            .encode();
 
-        let encoded_transfer_stub = TransferEventStub::<Test, u64>::Transfer {
+        let encoded_transfer_stub = TransferEventStub::<TestRuntime, u64>::Transfer {
             from: hex!("0909090909090909090909090909090909090909090909090909090909090909").into(),
             to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(),
             amount: 1,
         }
-        .encode();
+            .encode();
 
         assert_eq!(
             encoded_balance_transfer_event.clone(),
@@ -215,7 +230,7 @@ pub mod tests {
         let mut encoded_event = vec![4];
         encoded_event.append(&mut encoded_balance_transfer_event);
 
-        let res = decode_event::<Test>(b"tran", encoded_event, b"uint64").unwrap();
+        let res = decode_event::<TestRuntime, ()>(b"tran", encoded_event, b"uint64").unwrap();
 
         assert_eq!(
             res,

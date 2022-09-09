@@ -34,8 +34,8 @@ pub struct RegistrationData {
 pub type RococoBridge = ();
 
 pub trait Portal<T: frame_system::Config> {
-    fn get_latest_finalized_header(chain_id: ChainId) -> Option<Vec<u8>>;
-    fn get_latest_finalized_height(chain_id: ChainId) -> Result<Vec<u8>, DispatchError>;
+    fn get_latest_finalized_header(chain_id: ChainId) -> Result<Option<Vec<u8>>, DispatchError>;
+    fn get_latest_finalized_height(chain_id: ChainId) -> Result<Option<Vec<u8>>, DispatchError>;
 
     fn confirm_and_decode_payload_params(
         gateway_id: [u8; 4],

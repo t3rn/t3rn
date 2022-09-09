@@ -195,6 +195,8 @@ pub mod pallet {
         XdnsRecordNotFound,
         /// SideEffect already stored
         SideEffectInterfaceAlreadyExists,
+        /// SideEffect interface was not found in storage
+        SideEffectInterfaceNotFound,
     }
 
     #[pallet::storage]
@@ -249,32 +251,6 @@ pub mod pallet {
     }
 
     impl<T: Config> Xdns<T> for Pallet<T> {
-        /// Locates the best available gateway based on the time they were last finalized.
-        /// Priority goes Internal > External > TxOnly, followed by the largest last_finalized value
-        fn best_available(gateway_id: ChainId) -> Result<XdnsRecord<T::AccountId>, &'static str> {
-            // Sort each available gateway pointer based on its GatewayType
-            let gateway_pointers = t3rn_primitives::retrieve_gateway_pointers(gateway_id);
-            ensure!(gateway_pointers.is_ok(), "No available gateway pointers");
-            let mut sorted_gateway_pointers = gateway_pointers.unwrap();
-            sorted_gateway_pointers.sort_by(|a, b| a.gateway_type.cmp(&b.gateway_type));
-
-            // Fetch each XdnsRecord and re-sort based on its last_finalized descending
-            let mut sorted_gateways: Vec<XdnsRecord<T::AccountId>> = sorted_gateway_pointers
-                .into_iter()
-                .map(|gateway_pointer| <XDNSRegistry<T>>::get(gateway_pointer.id))
-                .flatten()
-                .collect();
-            sorted_gateways
-                .sort_by(|xdns_a, xdns_b| xdns_b.last_finalized.cmp(&xdns_a.last_finalized));
-
-            // Return the first result
-            if sorted_gateways.is_empty() {
-                return Err("Xdns record not found")
-            }
-
-            Ok(sorted_gateways[0].clone())
-        }
-
         /// Fetches all known XDNS records
         fn fetch_records() -> Vec<XdnsRecord<T::AccountId>> {
             pallet::XDNSRegistry::<T>::iter_values().collect()
@@ -348,13 +324,13 @@ pub mod pallet {
 
         fn fetch_side_effect_interface(
             id: [u8; 4],
-        ) -> Result<Box<dyn SideEffectProtocol>, &'static str> {
-            return if <StandardSideEffects<T>>::contains_key(id) {
+        ) -> Result<Box<dyn SideEffectProtocol>, DispatchError> {
+            if <StandardSideEffects<T>>::contains_key(id) {
                 Ok(Box::new(<StandardSideEffects<T>>::get(id).unwrap()))
             } else {
-                return match <CustomSideEffects<T>>::get(T::Hashing::hash(&id.encode())) {
+                match <CustomSideEffects<T>>::get(T::Hashing::hash(&id.encode())) {
                     Some(entry) => Ok(Box::new(entry)),
-                    None => Err("Side Effect Interface was not found!"),
+                    None => Err(Error::<T>::SideEffectInterfaceNotFound.into()),
                 }
             }
         }
@@ -380,9 +356,9 @@ pub mod pallet {
         }
 
         // Fetches the GatewayABIConfig for a given XDNS record
-        fn get_abi(chain_id: ChainId) -> Result<GatewayABIConfig, &'static str> {
+        fn get_abi(chain_id: ChainId) -> Result<GatewayABIConfig, DispatchError> {
             if !<XDNSRegistry<T>>::contains_key(chain_id) {
-                return Err("Xdns record not found")
+                return Err(Error::<T>::XdnsRecordNotFound.into())
             }
 
             Ok(<XDNSRegistry<T>>::get(chain_id).unwrap().gateway_abi)
@@ -399,12 +375,10 @@ pub mod pallet {
         }
 
         /// returns the gateway vendor of a gateway if its available
-        fn get_gateway_vendor(chain_id: &ChainId) -> Result<GatewayVendor, &'static str> {
-            let record = <XDNSRegistry<T>>::get(&chain_id);
-
-            match record {
+        fn get_gateway_vendor(chain_id: &ChainId) -> Result<GatewayVendor, DispatchError> {
+            match <XDNSRegistry<T>>::get(&chain_id) {
                 Some(rec) => Ok(rec.gateway_vendor),
-                None => Err("GatewayVendor not available. Xdns record not found!"),
+                None => Err(Error::<T>::XdnsRecordNotFound.into())
             }
         }
 

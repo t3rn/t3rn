@@ -210,32 +210,46 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T, I = ()> {
-        /// The given justification is invalid for the given header.
-        InvalidJustification,
-        /// The authority set from the underlying header chain is invalid.
-        InvalidAuthoritySet,
-        /// There are too many requests for the current window to handle.
-        TooManyRequests,
-        /// The header being imported is older than the best finalized header known to the pallet.
-        OldHeader,
-        /// The header is unknown to the pallet.
-        UnknownHeader,
-        /// The scheduled authority set change found in the header is unsupported by the pallet.
-        ///
-        /// This is the case for non-standard (e.g forced) authority set changes.
-        UnsupportedScheduledChange,
-        /// The pallet has already been initialized.
-        AlreadyInitialized,
-        /// All pallet operations are halted.
-        Halted,
-        /// The storage proof doesn't contains storage root. So it is invalid for given header.
-        StorageRootMismatch,
-        // Submitted anchor header(verified header stored on circuit) was not found
-        InvalidAnchorHeader,
-        // No finalized header known for the corresponding gateway.
+        /// The submitted range is empty
+        EmptyRangeSubmitted,
+        /// The submitted range is larger the HeadersToStore, which is not permitted
+        RangeToLarge,
+        /// No finalized header was found in storage
         NoFinalizedHeader,
-        // submitted gateway_id does not have the parachain field set
-        NoParachainEntryFound,
+        /// The authority set in invalid
+        InvalidAuthoritySet,
+        /// The submitted GrandpaJustification is not valid
+        InvalidGrandpaJustification,
+        /// The header range linkage is not valid
+        InvalidRangeLinkage,
+        /// The linkage with the justified header is not valid
+        InvalidJustificationLinkage,
+        /// The parachain entry was not found in storage
+        ParachainEntryNotFound,
+        /// The relaychains storge root was not found. This implies the header is not available
+        StorageRootNotFound,
+        /// The inclusion data couldn't be decoded
+        InclusionDataDecodeError,
+        /// The submitted storage proof is invalid
+        InvalidStorageProof,
+        /// The event was not found in the specified block
+        EventNotIncluded,
+        /// The given bytes couldn't be decoded as a header
+        HeaderDecodingError,
+        /// The given bytes couldn't be decoded as header data
+        HeaderDataDecodingError,
+        /// The headers storage root doesn't map the supplied once
+        StorageRootMismatch,
+        /// The header couldn't be found in storage
+        UnknownHeader,
+        /// The events paramaters couldn't be decoded
+        EventDecodingFailed,
+        /// The side effect is not known for this vendor
+        UnkownSideEffect,
+        /// A forced change was detected, which is not supported
+        UnsupportedScheduledChange,
+        /// The pallet is currently halted
+        Halted,
     }
 
     /// Add a header range for the relaychain
@@ -254,8 +268,8 @@ pub mod pallet {
         signed_header: BridgedHeader<T, I>,
         // GrandpaJustification for the signed_header
         justification: GrandpaJustification<BridgedHeader<T, I>>,
-    ) -> Result<Vec<u8>, &'static str> {
-        ensure!(range.len() > 0, "empty range submitted");
+    ) -> Result<Vec<u8>, DispatchError> {
+        ensure!(range.len() > 0, Error::<T, I>::EmptyRangeSubmitted);
 
         // °°°°° Implicit Check: °°°°°
         // range.len() < T::HeadersToStore::get() - ensures that we don't mess up our ring buffer
@@ -266,9 +280,9 @@ pub mod pallet {
             gateway_id,
             // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
             // `ImportedHeaders` must contain an entry for `BestFinalized`.
-            <BestFinalizedMap<T, I>>::get(gateway_id).ok_or_else(|| "NoFinalizedHeader")?,
+            <BestFinalizedMap<T, I>>::get(gateway_id).ok_or_else(|| Error::<T, I>::NoFinalizedHeader)?,
         )
-            .ok_or_else(|| "NoFinalizedHeader")?;
+            .ok_or_else(|| Error::<T, I>::NoFinalizedHeader)?;
 
         // °°°°° Explaination °°°°°
         // To be able to submit ranges of headers, we need to ensure a number of things.
@@ -279,8 +293,7 @@ pub mod pallet {
         // For efficiency we check the the justification first. If it's invalid, we can skip the rest
         let (signed_hash, signed_number) = (signed_header.hash(), signed_header.number());
         let authority_set = <CurrentAuthoritySet<T, I>>::get()
-            // Expects authorities to be set before verify_justification
-            .ok_or_else(|| "InvalidAuthoritySet")?;
+            .ok_or_else(|| Error::<T, I>::InvalidAuthoritySet)?;
 
         let set_id = authority_set.set_id;
         // °°°°° Begin Check: #2 °°°°°
@@ -315,7 +328,7 @@ pub mod pallet {
                 best_finalized = header;
             } else {
                 // if anything fails here, noop!
-                return Err("Invalid header linkage")
+                return Err(Error::<T, I>::InvalidRangeLinkage.into())
             }
         }
         // °°°°° Check Success: #1 °°°°°
@@ -331,7 +344,7 @@ pub mod pallet {
                 true,
             )?;
         } else {
-            return Err("Invalid header linkage")
+            return Err(Error::<T, I>::InvalidJustificationLinkage.into())
         }
         // °°°°° Check Success: #3 °°°°°
         // Proof success! Submitted header range valid
@@ -360,17 +373,17 @@ pub mod pallet {
         relay_block_hash: BridgedBlockHash<T, I>,
         range: Vec<BridgedHeader<T, I>>,
         proof: StorageProof,
-    ) -> Result<Vec<u8>, &'static str> {
-        ensure!(range.len() > 0, "empty range submitted");
-        ensure!(range.len() < T::HeadersToStore::get().try_into().unwrap(), "Range to long"); // this should be safe to do, as u32
+    ) -> Result<Vec<u8>, DispatchError> {
+        ensure!(range.len() > 0, Error::<T, I>::EmptyRangeSubmitted);
+        ensure!(range.len() < T::HeadersToStore::get().try_into().unwrap(), Error::<T, I>::RangeToLarge); // this should be safe to do, as u32
 
         let mut best_finalized = <MultiImportedHeaders<T, I>>::get(
             gateway_id,
             // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
             // `ImportedHeaders` must contain an entry for `BestFinalized`.
-            <BestFinalizedMap<T, I>>::get(gateway_id).ok_or_else(|| "NoFinalizedHeader")?,
+            <BestFinalizedMap<T, I>>::get(gateway_id).ok_or_else(|| Error::<T, I>::NoFinalizedHeader)?,
         )
-            .ok_or_else(|| "NoFinalizedHeader")?;
+            .ok_or_else(|| Error::<T, I>::NoFinalizedHeader)?;
 
         // °°°°° Explaination °°°°°
         // To be able to submit ranges of headers, we need to ensure a number of things.
@@ -379,7 +392,7 @@ pub mod pallet {
         // 3. The highest submitted header follows the linkage rule of the range
 
         let parachain =
-            <ParachainIdMap<T, I>>::try_get(gateway_id).map_err(|_| "Parachain not registered")?;
+            <ParachainIdMap<T, I>>::try_get(gateway_id).map_err(|_| Error::<T, I>::ParachainEntryNotFound)?;
 
         // °°°°° Begin Check: #1 °°°°°
         let signed_header: BridgedHeader<T, I> =
@@ -404,7 +417,7 @@ pub mod pallet {
                 best_finalized = header;
             } else {
                 // if anything fails here, noop!
-                return Err("Invalid header linkage")
+                return Err(Error::<T, I>::InvalidRangeLinkage.into())
             }
         }
         // °°°°° Check Success: #2 °°°°°
@@ -420,7 +433,7 @@ pub mod pallet {
                 true,
             )?;
         } else {
-            return Err("Invalid header linkage")
+            return Err(Error::<T, I>::InvalidJustificationLinkage.into())
         }
         // °°°°° Check Success: #3 °°°°°
         // Proof success! Submitted header range valid
@@ -498,10 +511,10 @@ pub mod pallet {
         number: BridgedBlockNumber<T, I>,
         authority_set: bp_header_chain::AuthoritySet,
         _gateway_id: ChainId,
-    ) -> Result<(), &'static str> {
+    ) -> Result<(), Error<T, I>> {
         use bp_header_chain::justification::verify_justification;
 
-        let voter_set = VoterSet::new(authority_set.authorities).ok_or("InvalidAuthoritySet")?;
+        let voter_set = VoterSet::new(authority_set.authorities).ok_or(Error::<T, I>::InvalidAuthoritySet.into())?;
         let set_id = authority_set.set_id;
 
         Ok(verify_justification::<BridgedHeader<T, I>>(
@@ -511,8 +524,8 @@ pub mod pallet {
             justification,
         )
         .map_err(|e| {
-            log::error!("Received invalid justification for {:?}: {:?}", hash, e);
-            "InvalidJustification"
+            log::error!("Received invalid justification for {:?}", hash);
+            Error::<T, I>::InvalidGrandpaJustification
         })?)
     }
 
@@ -660,7 +673,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         storage_proof: sp_trie::StorageProof,
         parse: impl FnOnce(bp_runtime::StorageProofChecker<BridgedBlockHasher<T, I>>) -> R,
         gateway_id: ChainId,
-    ) -> Result<R, sp_runtime::DispatchError> {
+    ) -> Result<R, DispatchError> {
         let header = <MultiImportedHeaders<T, I>>::get(gateway_id, hash)
             .ok_or(Error::<T, I>::UnknownHeader)?;
         let storage_proof_checker =
@@ -770,13 +783,13 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         origin: OriginFor<T>,
         gateway_id: ChainId,
         encoded_header_data: Vec<u8>,
-    ) -> Result<Vec<u8>, &'static str> {
+    ) -> Result<Vec<u8>, DispatchError> {
         ensure_operational_single::<T, I>(gateway_id)?;
         ensure_signed(origin)?;
         if Some(gateway_id) == <RelayChainId<T, I>>::get() {
             let data: RelaychainHeaderData<BridgedHeader<T, I>> =
                 Decode::decode(&mut &*encoded_header_data)
-                    .map_err(|_| "Error decoding relaychain header data")?;
+                    .map_err(|_| Error::<T, I>::HeaderDataDecodingError)?;
 
             submit_relaychain_headers::<T, I>(
                 gateway_id,
@@ -787,7 +800,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         } else {
             let data: ParachainHeaderData<BridgedHeader<T, I>> =
                 Decode::decode(&mut &*encoded_header_data)
-                    .map_err(|_| "Error decoding parachain header data")?;
+                    .map_err(|_| Error::<T, I>::HeaderDataDecodingError)?;
 
             submit_parachain_header::<T, I>(
                 gateway_id,
@@ -804,10 +817,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         submission_target_height: Vec<u8>,
         value_abi_unsigned_type: &[u8],
         side_effect_id: [u8; 4],
-    ) -> Result<Vec<Vec<Vec<u8>>>, &'static str> {
+    ) -> Result<Vec<Vec<Vec<u8>>>, DispatchError> {
         let inclusion_data: InclusionData<BridgedHeader<T, I>> =
             Decode::decode(&mut &*encoded_inclusion_data)
-                .map_err(|_| "InclusionCheckDate couldn't be decoded")?;
+                .map_err(|_| Error::<T, I>::InclusionDataDecodeError)?;
 
         // ensures old equal side_effects can't be replayed
         executed_after_creation::<T, I>(gateway_id, submission_target_height)?;
@@ -853,10 +866,9 @@ pub(crate) fn verify_storage_proof<T: Config<I>, I: 'static>(
 ) -> Result<Vec<u8>, &'static str> {
     let root = get_header_roots::<T, I>(block_hash, gateway_id, trie_type)?;
     let db = proof.into_memory_db::<BridgedBlockHasher<T, I>>();
-    let res = read_trie_value::<LayoutV1<BridgedBlockHasher<T, I>>, _>(&db, &root, key.as_ref());
-    match res {
+    match read_trie_value::<LayoutV1<BridgedBlockHasher<T, I>>, _>(&db, &root, key.as_ref()) {
         Ok(Some(value)) => Ok(value),
-        _ => Err("Invalid Storage Proof"),
+        _ => Err(Error::<T, I>::InvalidStorageProof.into()),
     }
 }
 
@@ -865,9 +877,9 @@ pub(crate) fn get_header_roots<T: pallet::Config<I>, I>(
     block_hash: BridgedBlockHash<T, I>,
     gateway_id: ChainId,
     trie_type: ProofTriePointer,
-) -> Result<BridgedBlockHash<T, I>, &'static str> {
+) -> Result<BridgedBlockHash<T, I>, DispatchError> {
     let (extrinsics_root, storage_root): (BridgedBlockHash<T, I>, BridgedBlockHash<T, I>) =
-        <MultiImportedRoots<T, I>>::get(gateway_id, block_hash).ok_or("Root not found")?;
+        <MultiImportedRoots<T, I>>::get(gateway_id, block_hash).ok_or_else(|| Error::<T, I>::StorageRootNotFound)?;
     match trie_type {
         ProofTriePointer::State => Ok(storage_root),
         ProofTriePointer::Transaction => Ok(extrinsics_root),
@@ -980,7 +992,7 @@ pub(crate) fn verify_event_storage_proof<T: Config<I>, I: 'static>(
     inclusion_data: InclusionData<BridgedHeader<T, I>>,
     value_abi_unsigned_type: &[u8],
     side_effect_id: [u8; 4],
-) -> Result<Vec<Vec<Vec<u8>>>, &'static str> {
+) -> Result<Vec<Vec<Vec<u8>>>, DispatchError> {
     let InclusionData {
         encoded_payload,
         proof,
@@ -1005,16 +1017,17 @@ pub(crate) fn verify_event_storage_proof<T: Config<I>, I: 'static>(
     // https://github.com/paritytech/substrate/issues/11216
     ensure!(
         is_sub(verified_block_events.as_slice(), encoded_payload.as_slice()),
-        "Event not in block!"
+        Error::<T, I>::EventNotIncluded
     );
-    decode_event::<T>(&side_effect_id, encoded_payload, value_abi_unsigned_type)
+
+    decode_event::<T, I>(&side_effect_id, encoded_payload, value_abi_unsigned_type)
 }
 
 pub(crate) fn verify_header_storage_proof<T: Config<I>, I: 'static>(
     relay_block_hash: BridgedBlockHash<T, I>,
     proof: StorageProof,
     parachain: Parachain,
-) -> Result<BridgedHeader<T, I>, &'static str> {
+) -> Result<BridgedHeader<T, I>, DispatchError> {
     // partial StorageKey for Paras_Heads. We now need to append the parachain_id as LE-u32 to generate the parachains StorageKey
     // This is a bit unclean, but it makes no sense to hash the StorageKey for each exec
     let mut key: Vec<u8> = [
@@ -1034,9 +1047,9 @@ pub(crate) fn verify_header_storage_proof<T: Config<I>, I: 'static>(
         ProofTriePointer::State,
     )?;
     let encoded_header: Vec<u8> =
-        Decode::decode(&mut &encoded_header_vec[..]).map_err(|_| "Header decoding error")?;
+        Decode::decode(&mut &encoded_header_vec[..]).map_err(|_| Error::<T, I>::HeaderDecodingError)?;
     let header: BridgedHeader<T, I> =
-        Decode::decode(&mut &*encoded_header).map_err(|_| "Header decoding error")?;
+        Decode::decode(&mut &*encoded_header).map_err(|_| Error::<T, I>::HeaderDecodingError)?;
     Ok(header)
 }
 
@@ -1080,7 +1093,7 @@ mod tests {
         run_test, test_header, test_header_range, test_header_with_correct_parent, AccountId,
         Origin, TestHeader, TestNumber, TestRuntime,
     };
-
+    use hex_literal::hex;
     use bp_runtime::ChainId;
     use bridges::{
         header_chain as bp_header_chain, runtime as bp_runtime,
@@ -1553,15 +1566,15 @@ mod tests {
     fn reject_header_range_gap() {
         run_test(|| {
             let _ = initialize_relaychain(Origin::root());
-            assert_noop!(submit_headers(2, 5), "Invalid header linkage");
+            assert_noop!(submit_headers(2, 5), Error::<TestRuntime>::InvalidRangeLinkage);
             assert_ok!(submit_headers(1, 5));
-            assert_noop!(submit_headers(5, 10), "Invalid header linkage");
+            assert_noop!(submit_headers(5, 10), Error::<TestRuntime>::InvalidRangeLinkage);
             assert_ok!(submit_headers(6, 10));
         })
     }
 
     #[test]
-    fn reject_range_with_invalid_linkage() {
+    fn reject_range_with_invalid_range_linkage() {
         let default_gateway: ChainId = *b"pdot";
         run_test(|| {
             let _ = initialize_relaychain(Origin::root());
@@ -1570,15 +1583,14 @@ mod tests {
 
             let headers: Vec<TestHeader> = test_header_range(10);
             let signed_header: &TestHeader = headers.last().unwrap();
-            let invalid_justification = make_default_justification(&signed_header.clone());
+            let justification = make_default_justification(&signed_header.clone());
             let mut range: Vec<TestHeader> = headers[6..10].to_vec().clone();
-            range.reverse();
             range[1] = range[2].clone();
 
             let data = RelaychainHeaderData::<TestHeader> {
                 signed_header: signed_header.clone(),
                 range,
-                justification: invalid_justification,
+                justification,
             };
 
             assert_err!(
@@ -1587,9 +1599,40 @@ mod tests {
                     default_gateway,
                     data.encode()
                 ),
-                "Invalid header linkage"
+                Error::<TestRuntime>::InvalidRangeLinkage
             );
+        })
+    }
 
+    #[test]
+    fn reject_range_with_invalid_grandpa_linkage() {
+        let default_gateway: ChainId = *b"pdot";
+        run_test(|| {
+            let _ = initialize_relaychain(Origin::root());
+
+            assert_ok!(submit_headers(1, 5));
+
+            let headers: Vec<TestHeader> = test_header_range(10);
+            let signed_header: &TestHeader = headers.last().unwrap();
+
+            let justification = make_default_justification(&signed_header.clone());
+            // one header is missing -> Grandpa linkage invalid
+            let mut range: Vec<TestHeader> = headers[6..9].to_vec().clone();
+
+            let data = RelaychainHeaderData::<TestHeader> {
+                signed_header: signed_header.clone(),
+                range,
+                justification,
+            };
+
+            assert_err!(
+                Pallet::<TestRuntime>::submit_headers(
+                    Origin::signed(1),
+                    default_gateway,
+                    data.encode()
+                ),
+                Error::<TestRuntime>::InvalidJustificationLinkage
+            );
         })
     }
 
@@ -1624,7 +1667,7 @@ mod tests {
                     default_gateway,
                     data.encode()
                 ),
-                "InvalidJustification"
+                Error::<TestRuntime>::InvalidGrandpaJustification
             );
         })
     }
@@ -1655,7 +1698,7 @@ mod tests {
                     default_gateway,
                     data.encode()
                 ),
-                "InvalidJustification"
+                Error::<TestRuntime>::InvalidGrandpaJustification
             );
         })
     }
@@ -1700,7 +1743,7 @@ mod tests {
                     default_gateway,
                     data.encode()
                 ),
-                "InvalidJustification"
+                Error::<TestRuntime>::InvalidGrandpaJustification
             );
         })
     }
@@ -1711,7 +1754,7 @@ mod tests {
             let _ = initialize_relaychain(Origin::root());
 
             assert_ok!(submit_headers(1, 5));
-            assert_noop!(submit_headers(4, 8), "Invalid header linkage");
+            assert_noop!(submit_headers(4, 8), Error::<TestRuntime>::InvalidRangeLinkage);
             assert_ok!(submit_headers(6, 10));
         })
     }
