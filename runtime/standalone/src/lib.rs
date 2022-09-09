@@ -52,6 +52,8 @@ pub mod xbi_config;
 
 pub use crate::{consensus_aura_config::*, primitives::*};
 
+pub type CurrencyAdapter = accounts_config::AccountManagerCurrencyAdapter<Balances, ()>;
+
 construct_runtime!(
     pub enum Runtime where
         Block = Block,

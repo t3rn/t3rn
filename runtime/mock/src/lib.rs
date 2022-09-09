@@ -7,6 +7,7 @@ use frame_support::pallet_prelude::GenesisBuild;
 
 use frame_support::{pallet_prelude::Weight, traits::KeyOwnerProofSystem};
 use sp_core::crypto::KeyTypeId;
+use sp_core::H256;
 use sp_runtime::{
     impl_opaque_keys,
     traits::{BlakeTwo256, Convert, Keccak256, OpaqueKeys},
@@ -92,11 +93,13 @@ use t3rn_primitives::{
     xdns::{Parachain, XdnsRecord},
     GatewaySysProps, GatewayType, GatewayVendor,
 };
+use t3rn_primitives::contracts_registry::RegistryContract;
 
 #[derive(Default)]
 pub struct ExtBuilder {
     known_xdns_records: Vec<XdnsRecord<AccountId>>,
     standard_side_effects: Vec<SideEffectInterface>,
+    known_contracts: Vec<RegistryContract<H256, AccountId, Balance, BlockNumber>>,
 }
 
 impl ExtBuilder {
@@ -105,7 +108,27 @@ impl ExtBuilder {
             vec![],
             [3u8, 3u8, 3u8, 3u8],
             Some(Parachain {
-                relay_chain_id: *b"pdot",
+                relay_chain_id: *b"circ",
+                id: 3333,
+            }),
+            Default::default(),
+            GatewayVendor::PolkadotLike,
+            GatewayType::OnCircuit(0),
+            Default::default(),
+            GatewaySysProps {
+                ss58_format: 1333,
+                token_symbol: Encode::encode("T3RN"),
+                token_decimals: 12,
+            },
+            vec![],
+            t3rn_protocol::side_effects::standards::standard_side_effects_ids(),
+        );
+
+        let polka_like_xdns_record = <XdnsRecord<AccountId>>::new(
+            vec![],
+            [5u8, 5u8, 5u8, 5u8],
+            Some(Parachain {
+                relay_chain_id: *b"polk",
                 id: 3333,
             }),
             Default::default(),
@@ -216,6 +239,7 @@ impl ExtBuilder {
         self.known_xdns_records = vec![
             zero_xdns_record,
             circuit_xdns_record,
+            polka_like_xdns_record,
             evm_like_xdns_record,
             gateway_xdns_record,
             polkadot_xdns_record,
@@ -229,6 +253,14 @@ impl ExtBuilder {
         self.standard_side_effects =
             t3rn_protocol::side_effects::standards::standard_side_effects();
 
+        self
+    }
+
+    pub fn with_contracts(
+        mut self,
+        contracts: Vec<RegistryContract<H256, AccountId, Balance, BlockNumber>>,
+    ) -> ExtBuilder {
+        self.known_contracts = contracts;
         self
     }
 
@@ -259,6 +291,7 @@ impl ExtBuilder {
 }
 
 pub const ALICE: AccountId = AccountId::new([1u8; 32]);
+pub const BOB: AccountId = AccountId::new([2u8; 32]);
 pub const BOB_RELAYER: AccountId = AccountId::new([2u8; 32]);
 pub const CHARLIE: AccountId = AccountId::new([3u8; 32]);
 pub const DJANGO: AccountId = AccountId::new([4u8; 32]);

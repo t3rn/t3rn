@@ -18,12 +18,11 @@ log         = { version = "0.4"}
 scale-info  = { version = "2",  features = [ "derive" ] }
 serde       = { version = "1.0",  optional = true, features = [ "derive" ] }
 
-
 t3rn-primitives = {  path = "../../primitives" }
 t3rn-protocol   = { path = "../../protocol"}
 
-circuit-runtime-types = {   path = "../types" }
-circuit-runtime-pallets = {   path = "../pallets" }
+circuit-runtime-types = {   path = "../common-types" }
+circuit-runtime-pallets = {   path = "../common-pallets" }
 
 # branch frontier-para uses polkadot-v0.9.19
 #pallet-evm-precompile-simple = { git = "https://github.com/t3rn/frontier", branch = "polkadot-v0.9.19"}
