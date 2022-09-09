@@ -19,8 +19,6 @@ pub use t3rn_primitives::{
 pub use crate::pallet::*;
 
 #[cfg(test)]
-mod mock;
-#[cfg(test)]
 mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
