@@ -1,4 +1,5 @@
-use super::*;
+use crate::*;
+
 use frame_support::{parameter_types, traits::ConstU32, PalletId};
 use sp_core::H256;
 use sp_runtime::traits::*;
@@ -90,4 +91,9 @@ impl pallet_xbi_portal::primitives::transfers::Transfers<Runtime> for XBIPortalR
             amount,
         )
     }
+}
+
+impl pallet_xbi_portal_enter::Config for Runtime {
+    type Event = Event;
+    type XBIPortal = XBIPortal;
 }

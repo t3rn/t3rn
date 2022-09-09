@@ -1,11 +1,10 @@
-use super::*;
-use crate::{
-    accounts_config::AccountManagerCurrencyAdapter,
-    primitives::{Hash as HashPrimitive, *},
+use crate::{accounts_config::AccountManagerCurrencyAdapter, Hash as HashPrimitive, *};
+use frame_support::{
+    parameter_types,
+    traits::{ConstU128, ConstU32, ConstU8},
+    weights::{constants::RocksDbWeight, ConstantMultiplier, IdentityFee},
 };
-
-use frame_support::{parameter_types, traits::ConstU32};
-use sp_runtime::traits::*;
+use sp_runtime::traits::{AccountIdLookup, BlakeTwo256};
 
 // Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {
@@ -81,7 +80,7 @@ impl pallet_balances::Config for Runtime {
     type DustRemoval = ();
     /// The ubiquitous event type.
     type Event = Event;
-    type ExistentialDeposit = ConstU128<500>;
+    type ExistentialDeposit = ConstU128<0>;
     type MaxLocks = ConstU32<50>;
     type MaxReserves = ();
     type ReserveIdentifier = [u8; 8];

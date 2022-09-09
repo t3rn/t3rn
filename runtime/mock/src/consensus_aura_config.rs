@@ -1,6 +1,6 @@
-use super::*;
+use crate::*;
 use frame_support::traits::ConstU32;
-
+use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_runtime::traits::*;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
@@ -32,6 +32,8 @@ impl pallet_aura::Config for Runtime {
     type DisabledValidators = ();
     type MaxAuthorities = ConstU32<32>;
 }
+
+use pallet_grandpa::AuthorityId as GrandpaId;
 
 impl pallet_grandpa::Config for Runtime {
     type Call = Call;
