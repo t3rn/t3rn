@@ -1,9 +1,9 @@
 //! Runtime utilities
 use crate::{self as pallet_circuit, GatewayABIConfig};
 
-use codec::{Encode};
+use codec::Encode;
 
-use frame_support::{pallet_prelude::GenesisBuild};
+use frame_support::pallet_prelude::GenesisBuild;
 
 use frame_support::{pallet_prelude::Weight, traits::KeyOwnerProofSystem};
 use sp_core::crypto::KeyTypeId;
@@ -87,14 +87,12 @@ frame_support::construct_runtime!(
     }
 );
 
-
-
 use t3rn_primitives::{
     abi::{CryptoAlgo, HasherAlgo},
     side_effect::interface::SideEffectInterface,
-    xdns::{Parachain, XdnsRecord}, GatewaySysProps, GatewayType, GatewayVendor,
+    xdns::{Parachain, XdnsRecord},
+    GatewaySysProps, GatewayType, GatewayVendor,
 };
-
 
 #[derive(Default)]
 pub struct ExtBuilder {

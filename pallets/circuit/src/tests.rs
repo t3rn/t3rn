@@ -29,7 +29,10 @@ use frame_support::{assert_ok, traits::Currency};
 use frame_system::{EventRecord, Phase};
 
 use sp_io::TestExternalities;
-use sp_runtime::{traits::Header as HeaderT, AccountId32};
+use sp_runtime::{
+    traits::{Header as HeaderT, Zero},
+    AccountId32,
+};
 use sp_std::{convert::TryFrom, prelude::*};
 use t3rn_primitives::{
     abi::*,
@@ -254,7 +257,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                                 enforce_executioner: None
                             }],
                             vec![hex!(
-                                "ac5b1b5444ca1967e2ed0b8049c6cbc003f5a8ed0e62b1ead11f6a18b6b637c3"
+                                "84a5512d2a624231c0d3748ec11a94d01d9366d310f057f12913e40c1267b4e1"
                             )
                             .into(),],
                         )),
@@ -435,7 +438,7 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
                                 enforce_executioner: None
                             }],
                             vec![hex!(
-                                "400eab07400d7613a522a81879bf476a9e3ecf519a2d7e3784ed083686ded3fa"
+                                "878ceb78ebb97457555b082762edafe03c7bc61d1f3321d62fdeb56e5aaf8954"
                             )
                             .into(),],
                         )),
@@ -724,8 +727,8 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
         vec![
             (Type::Address(32), ArgVariant::A), // caller
             (Type::Address(32), ArgVariant::B), // to
-            (Type::Uint(128), ArgVariant::A),    // amount_from
-            (Type::Uint(128), ArgVariant::B),    // amount_to
+            (Type::Uint(128), ArgVariant::A),   // amount_from
+            (Type::Uint(128), ArgVariant::B),   // amount_to
             (Type::Bytes(4), ArgVariant::A),    // asset_from
             (Type::Bytes(4), ArgVariant::B),    // asset_to
             (Type::Bytes(0), ArgVariant::A),    // empty bytes instead of insurance
@@ -832,8 +835,8 @@ fn circuit_handles_swap_with_insurance() {
         vec![
             (Type::Address(32), ArgVariant::A),       // caller
             (Type::Address(32), ArgVariant::B),       // to
-            (Type::Uint(128), ArgVariant::A),          // amount_from
-            (Type::Uint(128), ArgVariant::B),          // amount_to
+            (Type::Uint(128), ArgVariant::A),         // amount_from
+            (Type::Uint(128), ArgVariant::B),         // amount_to
             (Type::Bytes(4), ArgVariant::A),          // asset_from
             (Type::Bytes(4), ArgVariant::B),          // asset_to
             (Type::OptionalInsurance, ArgVariant::A), // insurance
@@ -1002,9 +1005,9 @@ fn circuit_handles_add_liquidity_without_insurance() {
             (Type::Bytes(4), ArgVariant::A),    // argument_2: asset_left
             (Type::Bytes(4), ArgVariant::B),    // argument_3: asset_right
             (Type::Bytes(4), ArgVariant::C),    // argument_4: liquidity_token
-            (Type::Uint(128), ArgVariant::A),    // argument_5: amount_left
-            (Type::Uint(128), ArgVariant::B),    // argument_6: amount_right
-            (Type::Uint(128), ArgVariant::A),    // argument_7: amount_liquidity_token
+            (Type::Uint(128), ArgVariant::A),   // argument_5: amount_left
+            (Type::Uint(128), ArgVariant::B),   // argument_6: amount_right
+            (Type::Uint(128), ArgVariant::A),   // argument_7: amount_liquidity_token
             (Type::Bytes(0), ArgVariant::A),    // argument_8: no insurance, empty bytes
         ],
         &mut local_state,
@@ -1096,9 +1099,9 @@ fn circuit_handles_add_liquidity_with_insurance() {
             (Type::Bytes(4), ArgVariant::A),          // argument_2: asset_left
             (Type::Bytes(4), ArgVariant::B),          // argument_3: asset_right
             (Type::Bytes(4), ArgVariant::A),          // argument_4: liquidity_token
-            (Type::Uint(128), ArgVariant::A),          // argument_5: amount_left
-            (Type::Uint(128), ArgVariant::B),          // argument_6: amount_right
-            (Type::Uint(128), ArgVariant::A),          // argument_7: amount_liquidity_token
+            (Type::Uint(128), ArgVariant::A),         // argument_5: amount_left
+            (Type::Uint(128), ArgVariant::B),         // argument_6: amount_right
+            (Type::Uint(128), ArgVariant::A),         // argument_7: amount_liquidity_token
             (Type::OptionalInsurance, ArgVariant::A), // argument_8: Variant A insurance = 1, reward = 2
         ],
         &mut local_state,
@@ -1293,7 +1296,6 @@ fn successfully_confirm_dirty(
     let from = side_effect.encoded_args[0].clone();
     let to = side_effect.encoded_args[1].clone();
     let amount = side_effect.encoded_args[2].clone();
-
 
     let mut encoded_balance_transfer_event = pallet_balances::Event::<Runtime>::Transfer {
         from: Decode::decode(&mut &from[..]).unwrap(), // variant A
@@ -1679,8 +1681,8 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
         vec![
             (Type::Address(32), ArgVariant::A), // caller
             (Type::Address(32), ArgVariant::B), // to
-            (Type::Uint(128), ArgVariant::A),    // amount_from
-            (Type::Uint(128), ArgVariant::B),    // amount_to
+            (Type::Uint(128), ArgVariant::A),   // amount_from
+            (Type::Uint(128), ArgVariant::B),   // amount_to
             (Type::Bytes(4), ArgVariant::A),    // asset_from
             (Type::Bytes(4), ArgVariant::B),    // asset_to
             (Type::Bytes(0), ArgVariant::A),    // no insurance
@@ -2373,7 +2375,8 @@ fn execute_side_effects_with_xbi_works_for_call_evm() {
     };
 
     let mut valid_evm_sfx =
-        xbi_2_sfx::<Runtime, <Runtime as crate::Config>::Escrowed>(xbi_evm).unwrap();
+        xbi_2_sfx::<Runtime, <Runtime as crate::Config>::Escrowed>(xbi_evm, vec![], Zero::zero())
+            .unwrap();
 
     // assert target
     valid_evm_sfx.target = [1u8, 1u8, 1u8, 1u8];
