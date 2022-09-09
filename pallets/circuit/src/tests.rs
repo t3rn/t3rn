@@ -16,7 +16,8 @@
 // limitations under the License.
 
 //! Runtime utilities
-use crate::{mock::*, state::*};
+use circuit_mock_runtime::*;
+use circuit_runtime_pallets::pallet_circuit::state::*;
 
 use t3rn_sdk_primitives::{
     signal::{ExecutionSignal, SignalKind},
@@ -61,7 +62,7 @@ fn set_ids(
         // hex!("c282160defd729da11b0cfcfed580278943723737b7017f56dbd32e695fc41e6").into();
         hex!("2637d56ea21c04df03463decc4aa8d2916c96e59ac45e451d7133eedc621de59").into();
 
-    let side_effect_a_id = valid_side_effect.generate_id::<crate::SystemHashing<Runtime>>();
+    let side_effect_a_id = valid_side_effect.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>();
 
     (xtx_id, side_effect_a_id)
 }
@@ -228,7 +229,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                 vec![
                     EventRecord {
                         phase: Phase::Initialization,
-                        event: Event::Circuit(crate::Event::<Runtime>::NewSideEffectsAvailable(
+                        event: Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<Runtime>::NewSideEffectsAvailable(
                             AccountId32::new(hex!(
                                 "0101010101010101010101010101010101010101010101010101010101010101"
                             )),
@@ -265,7 +266,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                     },
                     EventRecord {
                         phase: Phase::Initialization,
-                        event: Event::Circuit(crate::Event::<Runtime>::XTransactionReadyForExec(
+                        event: Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<Runtime>::XTransactionReadyForExec(
                             hex!(
                                 "2637d56ea21c04df03463decc4aa8d2916c96e59ac45e451d7133eedc621de59"
                             )
@@ -278,7 +279,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
             let xtx_id: sp_core::H256 =
                 hex!("2637d56ea21c04df03463decc4aa8d2916c96e59ac45e451d7133eedc621de59").into();
             let side_effect_a_id =
-                valid_transfer_side_effect.generate_id::<crate::SystemHashing<Runtime>>();
+                valid_transfer_side_effect.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>();
 
             assert_eq!(
                 Circuit::get_insurance_deposits(xtx_id, side_effect_a_id),
@@ -405,7 +406,7 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
                 vec![
                     EventRecord {
                         phase: Phase::Initialization,
-                        event: Event::Circuit(crate::Event::<Runtime>::NewSideEffectsAvailable(
+                        event: Event::Circuit(circuit_runtime_pallets::pallet_circuit::Event::<Runtime>::NewSideEffectsAvailable(
                             AccountId32::new(hex!(
                                 "0101010101010101010101010101010101010101010101010101010101010101"
                             )),
@@ -447,7 +448,7 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
                     EventRecord {
                         phase: Phase::Initialization,
                         event: Event::Circuit(
-                            crate::Event::<Runtime>::XTransactionReceivedForExec(
+                            circuit_runtime_pallets::pallet_circuit::Event::<Runtime>::XTransactionReceivedForExec(
                                 hex!(
                                 "2637d56ea21c04df03463decc4aa8d2916c96e59ac45e451d7133eedc621de59"
                             )
@@ -1343,14 +1344,14 @@ fn successfully_bond_optimistic(
     assert_ok!(Circuit::bond_insurance_deposit(
         Origin::signed(relayer.clone()),
         xtx_id,
-        side_effect.generate_id::<crate::SystemHashing<Runtime>>(),
+        side_effect.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(),
     ));
 
     let [insurance, reward]: [u128; 2] = Decode::decode(&mut &optional_insurance[..]).unwrap();
 
     let created_insurance_deposit = Circuit::get_insurance_deposits(
         xtx_id,
-        side_effect.generate_id::<crate::SystemHashing<Runtime>>(),
+        side_effect.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(),
     )
     .unwrap();
 
@@ -1907,7 +1908,7 @@ fn circuit_cancels_xtx_after_timeout() {
                 Some(EventRecord {
                     phase: Phase::Initialization,
                     event: Event::Circuit(
-                        crate::Event::<Runtime>::XTransactionXtxRevertedAfterTimeOut(
+                        circuit_runtime_pallets::pallet_circuit::Event::<Runtime>::XTransactionXtxRevertedAfterTimeOut(
                             hex!(
                                 "2637d56ea21c04df03463decc4aa8d2916c96e59ac45e451d7133eedc621de59"
                             )
@@ -2287,7 +2288,7 @@ fn execute_side_effects_with_xbi_works_for_transfers() {
             let xtx_id: sp_core::H256 =
                 hex!("2637d56ea21c04df03463decc4aa8d2916c96e59ac45e451d7133eedc621de59").into();
             let _side_effect_a_id =
-                valid_transfer_side_effect.generate_id::<crate::SystemHashing<Runtime>>();
+                valid_transfer_side_effect.generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>();
 
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin.clone(),
@@ -2375,7 +2376,7 @@ fn execute_side_effects_with_xbi_works_for_call_evm() {
     };
 
     let mut valid_evm_sfx =
-        xbi_2_sfx::<Runtime, <Runtime as crate::Config>::Escrowed>(xbi_evm, vec![], Zero::zero())
+        xbi_2_sfx::<Runtime, <Runtime as circuit_runtime_pallets::pallet_circuit::Config>::Escrowed>(xbi_evm, vec![], Zero::zero())
             .unwrap();
 
     // assert target
