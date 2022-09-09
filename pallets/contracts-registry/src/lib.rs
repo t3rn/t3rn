@@ -34,14 +34,12 @@ pub use pallet::*;
 use t3rn_primitives::contracts_registry::RegistryContractId;
 
 #[cfg(test)]
-mod mock;
-#[cfg(test)]
 mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
-mod types;
+pub mod types;
 
 pub mod weights;
 use weights::WeightInfo;

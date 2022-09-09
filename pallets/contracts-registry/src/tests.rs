@@ -17,17 +17,15 @@
 
 //! Unit tests for pallet contracts-registry.
 
-use crate::{
-    mock::{ContractsRegistry, ExtBuilder, Origin, Test},
-    pallet::Error,
-    types::RegistryContract,
-};
+use circuit_mock_runtime::{pallet_contracts_registry::pallet::Error, *};
 use frame_support::{assert_err, assert_ok};
 use sp_core::H256;
 use sp_runtime::DispatchError;
 use t3rn_primitives::{
     contract_metadata::{ContractMetadata, ContractType},
-    contracts_registry::{AuthorInfo, ContractsRegistry as ContractsRegistryExt, KindValidator},
+    contracts_registry::{
+        AuthorInfo, ContractsRegistry as ContractsRegistryExt, KindValidator, RegistryContract,
+    },
 };
 
 #[test]
@@ -35,7 +33,7 @@ fn fetch_contract_by_id_should_return_single_contract() {
     let test_contract = RegistryContract {
         code_txt: vec![],
         bytes: vec![],
-        author: AuthorInfo::new(1_u64, None),
+        author: AuthorInfo::new(ALICE, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
@@ -45,12 +43,12 @@ fn fetch_contract_by_id_should_return_single_contract() {
         .with_contracts(vec![test_contract.clone()])
         .build()
         .execute_with(|| {
-            crate::ContractsRegistry::<Test>::insert(
-                test_contract.generate_id::<Test>(),
+            pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+                test_contract.generate_id::<Runtime>(),
                 test_contract.clone(),
             );
             let actual =
-                ContractsRegistry::fetch_contract_by_id(test_contract.generate_id::<Test>());
+                ContractsRegistry::fetch_contract_by_id(test_contract.generate_id::<Runtime>());
             assert_ok!(actual, test_contract);
         })
 }
@@ -68,7 +66,7 @@ fn fetch_contracts_by_metadata_should_return_all_matching_contracts() {
     let test_contract_name = RegistryContract {
         code_txt: b"some_code".to_vec(),
         bytes: vec![],
-        author: AuthorInfo::new(1_u64, None),
+        author: AuthorInfo::new(ALICE, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
@@ -88,7 +86,7 @@ fn fetch_contracts_by_metadata_should_return_all_matching_contracts() {
     let test_contract_desc = RegistryContract {
         code_txt: b"some_code_2".to_vec(),
         bytes: vec![],
-        author: AuthorInfo::new(1_u64, None),
+        author: AuthorInfo::new(ALICE, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
@@ -108,7 +106,7 @@ fn fetch_contracts_by_metadata_should_return_all_matching_contracts() {
     let test_contract_wrong = RegistryContract {
         code_txt: b"some_code_3".to_vec(),
         bytes: vec![],
-        author: AuthorInfo::new(1_u64, None),
+        author: AuthorInfo::new(ALICE, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
@@ -126,16 +124,16 @@ fn fetch_contracts_by_metadata_should_return_all_matching_contracts() {
         ),
     };
     ExtBuilder::default().build().execute_with(|| {
-        crate::ContractsRegistry::<Test>::insert(
-            test_contract_name.generate_id::<Test>(),
+        pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+            test_contract_name.generate_id::<Runtime>(),
             test_contract_name.clone(),
         );
-        crate::ContractsRegistry::<Test>::insert(
-            test_contract_desc.generate_id::<Test>(),
+        pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+            test_contract_desc.generate_id::<Runtime>(),
             test_contract_desc.clone(),
         );
-        crate::ContractsRegistry::<Test>::insert(
-            test_contract_wrong.generate_id::<Test>(),
+        pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+            test_contract_wrong.generate_id::<Runtime>(),
             test_contract_wrong.clone(),
         );
         let actual = ContractsRegistry::fetch_contracts(None, Some(b"contract".to_vec()));
@@ -151,7 +149,7 @@ fn fetch_contracts_by_author_should_return_all_matching_contracts() {
     let test_contract_author1 = RegistryContract {
         code_txt: b"some_code".to_vec(),
         bytes: vec![],
-        author: AuthorInfo::new(1_u64, None),
+        author: AuthorInfo::new(ALICE, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
@@ -171,7 +169,7 @@ fn fetch_contracts_by_author_should_return_all_matching_contracts() {
     let test_contract_author2 = RegistryContract {
         code_txt: b"some_code_2".to_vec(),
         bytes: vec![],
-        author: AuthorInfo::new(1_u64, None),
+        author: AuthorInfo::new(ALICE, None),
 
         abi: None,
         action_descriptions: vec![],
@@ -192,7 +190,7 @@ fn fetch_contracts_by_author_should_return_all_matching_contracts() {
     let test_contract_author3 = RegistryContract {
         code_txt: b"some_code_3".to_vec(),
         bytes: vec![],
-        author: AuthorInfo::new(2_u64, None),
+        author: AuthorInfo::new(BOB, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
@@ -210,19 +208,19 @@ fn fetch_contracts_by_author_should_return_all_matching_contracts() {
         ),
     };
     ExtBuilder::default().build().execute_with(|| {
-        crate::ContractsRegistry::<Test>::insert(
-            test_contract_author1.generate_id::<Test>(),
+        pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+            test_contract_author1.generate_id::<Runtime>(),
             test_contract_author1.clone(),
         );
-        crate::ContractsRegistry::<Test>::insert(
-            test_contract_author2.generate_id::<Test>(),
+        pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+            test_contract_author2.generate_id::<Runtime>(),
             test_contract_author2.clone(),
         );
-        crate::ContractsRegistry::<Test>::insert(
-            test_contract_author3.generate_id::<Test>(),
+        pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+            test_contract_author3.generate_id::<Runtime>(),
             test_contract_author3.clone(),
         );
-        let actual = ContractsRegistry::fetch_contracts(Some(1), None);
+        let actual = ContractsRegistry::fetch_contracts(Some(ALICE), None);
         assert_ok!(
             actual,
             vec![test_contract_author1.clone(), test_contract_author2.clone()]
@@ -235,7 +233,7 @@ fn fetch_contracts_by_author_and_metadata_should_return_all_matching_contracts()
     let test_contract_author1 = RegistryContract {
         code_txt: b"some_code".to_vec(),
         bytes: vec![],
-        author: AuthorInfo::new(1_u64, None),
+        author: AuthorInfo::new(ALICE, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
@@ -255,7 +253,7 @@ fn fetch_contracts_by_author_and_metadata_should_return_all_matching_contracts()
     let test_contract_author2 = RegistryContract {
         code_txt: b"some_code_2".to_vec(),
         bytes: vec![],
-        author: AuthorInfo::new(1_u64, None),
+        author: AuthorInfo::new(ALICE, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
@@ -275,7 +273,7 @@ fn fetch_contracts_by_author_and_metadata_should_return_all_matching_contracts()
     let test_contract_author3 = RegistryContract {
         code_txt: b"some_code_3".to_vec(),
         bytes: vec![],
-        author: AuthorInfo::new(2_u64, None),
+        author: AuthorInfo::new(BOB, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
@@ -293,19 +291,19 @@ fn fetch_contracts_by_author_and_metadata_should_return_all_matching_contracts()
         ),
     };
     ExtBuilder::default().build().execute_with(|| {
-        crate::ContractsRegistry::<Test>::insert(
-            test_contract_author1.generate_id::<Test>(),
+        pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+            test_contract_author1.generate_id::<Runtime>(),
             test_contract_author1.clone(),
         );
-        crate::ContractsRegistry::<Test>::insert(
-            test_contract_author2.generate_id::<Test>(),
+        pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+            test_contract_author2.generate_id::<Runtime>(),
             test_contract_author2.clone(),
         );
-        crate::ContractsRegistry::<Test>::insert(
-            test_contract_author3.generate_id::<Test>(),
+        pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+            test_contract_author3.generate_id::<Runtime>(),
             test_contract_author3.clone(),
         );
-        let actual = ContractsRegistry::fetch_contracts(Some(1), Some(b"contract".to_vec()));
+        let actual = ContractsRegistry::fetch_contracts(Some(ALICE), Some(b"contract".to_vec()));
         assert_ok!(
             actual,
             vec![test_contract_author1.clone(), test_contract_author2.clone()]
@@ -318,7 +316,7 @@ fn fetch_contracts_with_no_parameters_should_error() {
     let test_contract_author1 = RegistryContract {
         code_txt: b"some_code".to_vec(),
         bytes: vec![],
-        author: AuthorInfo::new(1_u64, None),
+        author: AuthorInfo::new(ALICE, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
@@ -338,7 +336,7 @@ fn fetch_contracts_with_no_parameters_should_error() {
     let test_contract_author2 = RegistryContract {
         code_txt: b"some_code_2".to_vec(),
         bytes: vec![],
-        author: AuthorInfo::new(1_u64, None),
+        author: AuthorInfo::new(ALICE, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
@@ -358,7 +356,7 @@ fn fetch_contracts_with_no_parameters_should_error() {
     let test_contract_author3 = RegistryContract {
         code_txt: b"some_code_3".to_vec(),
         bytes: vec![],
-        author: AuthorInfo::new(2_u64, None),
+        author: AuthorInfo::new(BOB, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
@@ -376,16 +374,16 @@ fn fetch_contracts_with_no_parameters_should_error() {
         ),
     };
     ExtBuilder::default().build().execute_with(|| {
-        crate::ContractsRegistry::<Test>::insert(
-            test_contract_author1.generate_id::<Test>(),
+        pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+            test_contract_author1.generate_id::<Runtime>(),
             test_contract_author1.clone(),
         );
-        crate::ContractsRegistry::<Test>::insert(
-            test_contract_author2.generate_id::<Test>(),
+        pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+            test_contract_author2.generate_id::<Runtime>(),
             test_contract_author2.clone(),
         );
-        crate::ContractsRegistry::<Test>::insert(
-            test_contract_author3.generate_id::<Test>(),
+        pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+            test_contract_author3.generate_id::<Runtime>(),
             test_contract_author3.clone(),
         );
         let actual = ContractsRegistry::fetch_contracts(None, None);
@@ -399,7 +397,7 @@ fn add_new_contract_succeeds_for_default() {
     let test_contract = RegistryContract {
         code_txt: b"some_code".to_vec(),
         bytes: vec![],
-        author: AuthorInfo::new(1_u64, None),
+        author: AuthorInfo::new(ALICE, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
@@ -417,7 +415,7 @@ fn add_new_contract_succeeds_for_default() {
         ),
     };
 
-    let requester = 1_u64;
+    let requester = ALICE;
 
     ExtBuilder::default()
         .with_contracts(vec![test_contract.clone()])
@@ -433,11 +431,11 @@ fn add_new_contract_succeeds_for_default() {
 
 #[test]
 fn add_new_contract_fails_for_no_sudo_origin() {
-    let origin = Origin::signed(1);
+    let origin = Origin::signed(ALICE);
     let test_contract = RegistryContract {
         code_txt: b"some_code".to_vec(),
         bytes: vec![],
-        author: AuthorInfo::new(1_u64, None),
+        author: AuthorInfo::new(ALICE, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
@@ -455,7 +453,7 @@ fn add_new_contract_fails_for_no_sudo_origin() {
         ),
     };
 
-    let requester = 1_u64;
+    let requester = ALICE;
 
     ExtBuilder::default()
         .with_contracts(vec![test_contract.clone()])
@@ -474,7 +472,7 @@ fn add_new_contract_fails_if_contract_already_exists() {
     let test_contract = RegistryContract {
         code_txt: b"some_code".to_vec(),
         bytes: vec![],
-        author: AuthorInfo::new(1_u64, None),
+        author: AuthorInfo::new(ALICE, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
@@ -492,16 +490,16 @@ fn add_new_contract_fails_if_contract_already_exists() {
         ),
     };
 
-    let requester = 1_u64;
+    let requester = ALICE;
 
     ExtBuilder::default().build().execute_with(|| {
-        crate::ContractsRegistry::<Test>::insert(
-            test_contract.generate_id::<Test>(),
+        pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+            test_contract.generate_id::<Runtime>(),
             test_contract.clone(),
         );
         assert_err!(
             ContractsRegistry::add_new_contract(origin, requester, test_contract.clone()),
-            Error::<Test>::ContractAlreadyExists
+            Error::<Runtime>::ContractAlreadyExists
         )
     })
 }
@@ -509,12 +507,12 @@ fn add_new_contract_fails_if_contract_already_exists() {
 #[test]
 fn purge_succeeds_for_default_contract() {
     let origin = Origin::root();
-    let requester = 1_u64;
+    let requester = ALICE;
 
     let test_contract = RegistryContract {
         code_txt: b"some_code".to_vec(),
         bytes: vec![],
-        author: AuthorInfo::new(1_u64, None),
+        author: AuthorInfo::new(ALICE, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
@@ -532,30 +530,33 @@ fn purge_succeeds_for_default_contract() {
         ),
     };
 
-    let contract_id = test_contract.generate_id::<Test>();
+    let contract_id = test_contract.generate_id::<Runtime>();
 
     ExtBuilder::default()
         .with_contracts(vec![test_contract.clone()])
         .build()
         .execute_with(|| {
-            crate::ContractsRegistry::<Test>::insert(
-                test_contract.generate_id::<Test>(),
+            pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+                test_contract.generate_id::<Runtime>(),
                 test_contract.clone(),
             );
             assert_ok!(ContractsRegistry::purge(origin, requester, contract_id));
-            assert_eq!(crate::ContractsRegistry::<Test>::get(contract_id), None);
+            assert_eq!(
+                pallet_contracts_registry::ContractsRegistry::<Runtime>::get(contract_id),
+                None
+            );
         });
 }
 
 #[test]
 fn purge_fails_if_contract_does_not_exist() {
     let origin = Origin::root();
-    let requester = 1_u64;
+    let requester = ALICE;
 
     let test_contract = RegistryContract {
         code_txt: b"some_code".to_vec(),
         bytes: vec![],
-        author: AuthorInfo::new(1_u64, None),
+        author: AuthorInfo::new(ALICE, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
@@ -573,7 +574,7 @@ fn purge_fails_if_contract_does_not_exist() {
         ),
     };
 
-    let contract_id = test_contract.generate_id::<Test>();
+    let contract_id = test_contract.generate_id::<Runtime>();
 
     ExtBuilder::default()
         .with_contracts(vec![test_contract])
@@ -581,20 +582,20 @@ fn purge_fails_if_contract_does_not_exist() {
         .execute_with(|| {
             assert_err!(
                 ContractsRegistry::purge(origin, requester, contract_id),
-                Error::<Test>::UnknownContract
+                Error::<Runtime>::UnknownContract
             );
         })
 }
 
 #[test]
 fn purge_fails_if_origin_not_root() {
-    let origin = Origin::signed(1);
-    let requester = 1_u64;
+    let origin = Origin::signed(ALICE);
+    let requester = ALICE;
 
     let test_contract = RegistryContract {
         code_txt: b"some_code".to_vec(),
         bytes: vec![],
-        author: AuthorInfo::new(1_u64, None),
+        author: AuthorInfo::new(ALICE, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
@@ -612,14 +613,14 @@ fn purge_fails_if_origin_not_root() {
         ),
     };
 
-    let contract_id = test_contract.generate_id::<Test>();
+    let contract_id = test_contract.generate_id::<Runtime>();
 
     ExtBuilder::default()
         .with_contracts(vec![test_contract.clone()])
         .build()
         .execute_with(|| {
-            crate::ContractsRegistry::<Test>::insert(
-                test_contract.generate_id::<Test>(),
+            pallet_contracts_registry::ContractsRegistry::<Runtime>::insert(
+                test_contract.generate_id::<Runtime>(),
                 test_contract.clone(),
             );
             assert_err!(
@@ -634,7 +635,7 @@ fn test_kind_validator() {
     let test_contract = RegistryContract {
         code_txt: b"some_code".to_vec(),
         bytes: vec![],
-        author: AuthorInfo::new(1_u64, None),
+        author: AuthorInfo::new(ALICE, None),
         abi: None,
         action_descriptions: vec![],
         info: None,
