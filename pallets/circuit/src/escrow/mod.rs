@@ -173,14 +173,16 @@ impl<T: Config> EscrowExec<T> for Transfer<T> {
 #[cfg(test)]
 pub mod test {
 
-    use super::*;
     use frame_support::{assert_ok, traits::Currency};
-
     use frame_system::{EventRecord, Phase};
 
+    use t3rn_primitives::{abi::Type, xtx::LocalState};
     use t3rn_protocol::side_effects::test_utils::*;
 
-    use crate::{mock::*, tests::brute_seed_block_1_to_grandpa_mfv};
+    use circuit_mock_runtime::*;
+    use crate::tests::brute_seed_block_1_to_grandpa_mfv;
+    use circuit_runtime_pallets::pallet_circuit;
+    use pallet_circuit::escrow::Escrow;
 
     #[test]
     fn escrow_transfer_execute_and_commit_work() {
@@ -195,7 +197,7 @@ pub mod test {
             vec![
                 (Type::Address(32), ArgVariant::A),
                 (Type::Address(32), ArgVariant::B),
-                (Type::Uint(64), ArgVariant::A),
+                (Type::Uint(128), ArgVariant::A),
                 (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
             ],
             &mut local_state,
@@ -226,7 +228,7 @@ pub mod test {
                 let _xtx_id: sp_core::H256 =
                     hex!("7ac563d872efac72c7a06e78a4489a759669a34becc7eb7900e161d1b7a978a6").into();
 
-                assert_ok!(Escrow::<Test>::exec(
+                assert_ok!(Escrow::<Runtime>::exec(
                     b"tran",
                     valid_transfer_side_effect.encoded_args.clone(),
                     Circuit::account_id(),
@@ -239,22 +241,24 @@ pub mod test {
                     latest_events.pop().unwrap(),
                     EventRecord {
                         phase: Phase::Initialization,
-                        event: mock::Event::Circuit(crate::Event::<Test>::EscrowTransfer(
-                            hex!(
+                        event: Event::Circuit(
+                            pallet_circuit::pallet::Event::<Runtime>::EscrowTransfer(
+                                hex!(
                                 "0101010101010101010101010101010101010101010101010101010101010101"
                             )
-                            .into(), // executor account
-                            hex!(
+                                .into(), // executor account
+                                hex!(
                                 "6d6f646c70616c2f636972630000000000000000000000000000000000000000"
                             )
-                            .into(), // circuit account
-                            1u64, // value
-                        )),
+                                .into(), // circuit account
+                                1u128, // value
+                            )
+                        ),
                         topics: vec![]
                     },
                 );
 
-                assert_ok!(Escrow::<Test>::commit(
+                assert_ok!(Escrow::<Runtime>::commit(
                     b"tran",
                     valid_transfer_side_effect.encoded_args,
                     Circuit::account_id(),
@@ -276,7 +280,7 @@ pub mod test {
             vec![
                 (Type::Address(32), ArgVariant::A),
                 (Type::Address(32), ArgVariant::B),
-                (Type::Uint(64), ArgVariant::A),
+                (Type::Uint(128), ArgVariant::A),
                 (Type::OptionalInsurance, ArgVariant::A), // empty bytes instead of insurance
             ],
             &mut local_state,
@@ -305,7 +309,7 @@ pub mod test {
                     sequential,
                 ));
 
-                assert_ok!(Escrow::<Test>::exec(
+                assert_ok!(Escrow::<Runtime>::exec(
                     b"tran",
                     valid_transfer_side_effect.encoded_args.clone(),
                     Circuit::account_id(),
@@ -318,22 +322,24 @@ pub mod test {
                     latest_events.pop().unwrap(),
                     EventRecord {
                         phase: Phase::Initialization,
-                        event: mock::Event::Circuit(crate::Event::<Test>::EscrowTransfer(
-                            hex!(
+                        event: Event::Circuit(
+                            pallet_circuit::pallet::Event::<Runtime>::EscrowTransfer(
+                                hex!(
                                 "0101010101010101010101010101010101010101010101010101010101010101"
                             )
-                            .into(), // executor account
-                            hex!(
+                                .into(), // executor account
+                                hex!(
                                 "6d6f646c70616c2f636972630000000000000000000000000000000000000000"
                             )
-                            .into(), // circuit account
-                            1u64, // value
-                        )),
+                                .into(), // circuit account
+                                1u128, // value
+                            )
+                        ),
                         topics: vec![]
                     },
                 );
 
-                assert_ok!(Escrow::<Test>::revert(
+                assert_ok!(Escrow::<Runtime>::revert(
                     b"tran",
                     valid_transfer_side_effect.encoded_args,
                     Circuit::account_id(),
@@ -346,17 +352,19 @@ pub mod test {
                     latest_events.pop().unwrap(),
                     EventRecord {
                         phase: Phase::Initialization,
-                        event: mock::Event::Circuit(crate::Event::<Test>::EscrowTransfer(
-                            hex!(
+                        event: Event::Circuit(
+                            pallet_circuit::pallet::Event::<Runtime>::EscrowTransfer(
+                                hex!(
                                 "6d6f646c70616c2f636972630000000000000000000000000000000000000000"
                             )
-                            .into(), // executor account
-                            hex!(
+                                .into(), // executor account
+                                hex!(
                                 "0101010101010101010101010101010101010101010101010101010101010101"
                             )
-                            .into(), // circuit account
-                            1u64, // value
-                        )),
+                                .into(), // circuit account
+                                1u128, // value
+                            )
+                        ),
                         topics: vec![]
                     },
                 );
