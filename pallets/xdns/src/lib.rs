@@ -106,35 +106,6 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Inserts a xdns_record into the on-chain registry. Root only access.
-        #[pallet::weight(< T as Config >::WeightInfo::add_new_xdns_record())]
-        pub fn add_new_xdns_record(
-            origin: OriginFor<T>,
-            url: Vec<u8>,
-            gateway_id: ChainId,
-            parachain: Option<Parachain>,
-            gateway_abi: GatewayABIConfig,
-            gateway_vendor: GatewayVendor,
-            gateway_type: GatewayType,
-            gateway_genesis: GatewayGenesisConfig,
-            gateway_sys_props: GatewaySysProps,
-            allowed_side_effects: Vec<AllowedSideEffect>,
-        ) -> DispatchResultWithPostInfo {
-            <Self as Xdns<T>>::add_new_xdns_record(
-                origin,
-                url,
-                gateway_id,
-                parachain,
-                gateway_abi,
-                gateway_vendor,
-                gateway_type,
-                gateway_genesis,
-                gateway_sys_props,
-                allowed_side_effects,
-            )?;
-            Ok(().into())
-        }
-
         #[pallet::weight(< T as Config >::WeightInfo::add_new_xdns_record())]
         pub fn add_side_effect(
             origin: OriginFor<T>,
