@@ -1,4 +1,4 @@
-use crate::{accounts_config::AccountManagerCurrencyAdapter, primitives::Hash as HashPrimitive, *};
+use crate::{primitives::Hash as HashPrimitive, *};
 use frame_support::{
     parameter_types,
     traits::{ConstU128, ConstU32, ConstU8},
@@ -94,7 +94,7 @@ parameter_types! {
 impl pallet_transaction_payment::Config for Runtime {
     type FeeMultiplierUpdate = ();
     type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
-    type OnChargeTransaction = AccountManagerCurrencyAdapter<Balances, ()>;
+    type OnChargeTransaction = CurrencyAdapter;
     type OperationalFeeMultiplier = ConstU8<5>;
     type WeightToFee = IdentityFee<Balance>;
 }

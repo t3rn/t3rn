@@ -102,6 +102,8 @@ pub const fn deposit(items: u32, bytes: u32) -> Balance {
     (items as Balance) * 56 * MILLIUNIT + (bytes as Balance) * 50 * MICROUNIT
 }
 
+pub type CurrencyAdapter = accounts_config::AccountManagerCurrencyAdapter<Balances, ()>;
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
