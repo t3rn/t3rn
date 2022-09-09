@@ -179,8 +179,8 @@ pub mod test {
     use t3rn_primitives::{abi::Type, xtx::LocalState};
     use t3rn_protocol::side_effects::test_utils::*;
 
-    use circuit_mock_runtime::*;
     use crate::tests::brute_seed_block_1_to_grandpa_mfv;
+    use circuit_mock_runtime::*;
     use circuit_runtime_pallets::pallet_circuit;
     use pallet_circuit::escrow::Escrow;
 

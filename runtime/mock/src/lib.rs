@@ -6,8 +6,7 @@ use codec::Encode;
 use frame_support::pallet_prelude::GenesisBuild;
 
 use frame_support::{pallet_prelude::Weight, traits::KeyOwnerProofSystem};
-use sp_core::crypto::KeyTypeId;
-use sp_core::H256;
+use sp_core::{crypto::KeyTypeId, H256};
 use sp_runtime::{
     impl_opaque_keys,
     traits::{BlakeTwo256, Convert, Keccak256, OpaqueKeys},
@@ -89,11 +88,11 @@ frame_support::construct_runtime!(
 
 use t3rn_primitives::{
     abi::{CryptoAlgo, HasherAlgo},
+    contracts_registry::RegistryContract,
     side_effect::interface::SideEffectInterface,
     xdns::{Parachain, XdnsRecord},
     GatewaySysProps, GatewayType, GatewayVendor,
 };
-use t3rn_primitives::contracts_registry::RegistryContract;
 
 #[derive(Default)]
 pub struct ExtBuilder {

@@ -1,7 +1,7 @@
 use crate::*;
 
 use smallvec::smallvec;
-use sp_runtime::{impl_opaque_keys};
+use sp_runtime::impl_opaque_keys;
 use sp_std::prelude::*;
 
 #[cfg(any(feature = "std", test))]

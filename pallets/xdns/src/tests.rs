@@ -35,7 +35,10 @@ fn genesis_should_seed_circuit_gateway_polkadot_and_kusama_nodes() {
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
-            assert_eq!(pallet_xdns::XDNSRegistry::<Runtime>::iter().count(), DEFAULT_GATEWAYS_IN_STORAGE_COUNT);
+            assert_eq!(
+                pallet_xdns::XDNSRegistry::<Runtime>::iter().count(),
+                DEFAULT_GATEWAYS_IN_STORAGE_COUNT
+            );
             assert!(pallet_xdns::XDNSRegistry::<Runtime>::get(&[3, 3, 3, 3]).is_some());
             assert!(pallet_xdns::XDNSRegistry::<Runtime>::get(b"gate").is_some());
             assert!(pallet_xdns::XDNSRegistry::<Runtime>::get(b"pdot").is_some());
@@ -210,7 +213,10 @@ fn should_not_add_a_new_xdns_record_if_it_already_exists() {
                 ),
                 pallet_xdns::pallet::Error::<Runtime>::XdnsRecordAlreadyExists
             );
-            assert_eq!(pallet_xdns::XDNSRegistry::<Runtime>::iter().count(), DEFAULT_GATEWAYS_IN_STORAGE_COUNT);
+            assert_eq!(
+                pallet_xdns::XDNSRegistry::<Runtime>::iter().count(),
+                DEFAULT_GATEWAYS_IN_STORAGE_COUNT
+            );
         });
 }
 
@@ -221,13 +227,19 @@ fn should_purge_a_xdns_record_successfully() {
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
-            assert_eq!(pallet_xdns::XDNSRegistry::<Runtime>::iter().count(), DEFAULT_GATEWAYS_IN_STORAGE_COUNT);
+            assert_eq!(
+                pallet_xdns::XDNSRegistry::<Runtime>::iter().count(),
+                DEFAULT_GATEWAYS_IN_STORAGE_COUNT
+            );
             assert_ok!(XDNS::purge_xdns_record(
                 Origin::<Runtime>::Root.into(),
                 ALICE,
                 *b"gate"
             ));
-            assert_eq!(pallet_xdns::XDNSRegistry::<Runtime>::iter().count(), DEFAULT_GATEWAYS_IN_STORAGE_COUNT - 1);
+            assert_eq!(
+                pallet_xdns::XDNSRegistry::<Runtime>::iter().count(),
+                DEFAULT_GATEWAYS_IN_STORAGE_COUNT - 1
+            );
             assert!(pallet_xdns::XDNSRegistry::<Runtime>::get(b"gate").is_none());
         });
 }
@@ -238,7 +250,12 @@ fn finds_correct_amount_of_allowed_side_effects() {
         .with_standard_side_effects()
         .with_default_xdns_records()
         .build()
-        .execute_with(|| assert_eq!(XDNS::allowed_side_effects(&[3, 3, 3, 3]).iter().count(), STANDARD_SIDE_EFFECTS_COUNT));
+        .execute_with(|| {
+            assert_eq!(
+                XDNS::allowed_side_effects(&[3, 3, 3, 3]).iter().count(),
+                STANDARD_SIDE_EFFECTS_COUNT
+            )
+        });
 }
 
 #[test]
@@ -254,7 +271,10 @@ fn should_error_trying_to_purge_a_missing_xdns_record() {
                 XDNS::purge_xdns_record(Origin::<Runtime>::Root.into(), ALICE, *b"miss"),
                 pallet_xdns::pallet::Error::<Runtime>::UnknownXdnsRecord
             );
-            assert_eq!(pallet_xdns::XDNSRegistry::<Runtime>::iter().count(), DEFAULT_GATEWAYS_IN_STORAGE_COUNT);
+            assert_eq!(
+                pallet_xdns::XDNSRegistry::<Runtime>::iter().count(),
+                DEFAULT_GATEWAYS_IN_STORAGE_COUNT
+            );
         });
 }
 
@@ -269,7 +289,10 @@ fn should_error_trying_to_purge_an_xdns_record_if_not_root() {
                 XDNS::purge_xdns_record(Origin::<Runtime>::Signed(ALICE).into(), ALICE, *b"gate"),
                 DispatchError::BadOrigin
             );
-            assert_eq!(pallet_xdns::XDNSRegistry::<Runtime>::iter().count(), DEFAULT_GATEWAYS_IN_STORAGE_COUNT);
+            assert_eq!(
+                pallet_xdns::XDNSRegistry::<Runtime>::iter().count(),
+                DEFAULT_GATEWAYS_IN_STORAGE_COUNT
+            );
             assert!(pallet_xdns::XDNSRegistry::<Runtime>::get(b"gate").is_some());
         });
 }
@@ -286,7 +309,10 @@ fn should_update_ttl_for_a_known_xdns_record() {
                 *b"gate",
                 2
             ));
-            assert_eq!(pallet_xdns::XDNSRegistry::<Runtime>::iter().count(), DEFAULT_GATEWAYS_IN_STORAGE_COUNT);
+            assert_eq!(
+                pallet_xdns::XDNSRegistry::<Runtime>::iter().count(),
+                DEFAULT_GATEWAYS_IN_STORAGE_COUNT
+            );
             assert_eq!(
                 pallet_xdns::XDNSRegistry::<Runtime>::get(b"gate")
                     .unwrap()

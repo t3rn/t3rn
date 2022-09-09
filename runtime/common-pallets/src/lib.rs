@@ -13,7 +13,6 @@ pub use orml_tokens;
 pub use orml_traits;
 
 pub use evm_precompile_util;
-pub use pallet_mfv;
 pub use pallet_3vm;
 pub use pallet_3vm_contracts;
 pub use pallet_3vm_evm;
@@ -22,8 +21,9 @@ pub use pallet_account_manager;
 pub use pallet_circuit;
 pub use pallet_circuit_portal;
 pub use pallet_clock;
-pub use pallet_treasury;
 pub use pallet_contracts_registry;
+pub use pallet_mfv;
+pub use pallet_treasury;
 pub use pallet_xbi_portal;
 pub use pallet_xbi_portal_enter;
 pub use pallet_xdns;
