@@ -9,7 +9,7 @@ use frame_support::{pallet_prelude::Weight, traits::KeyOwnerProofSystem};
 use sp_core::{crypto::KeyTypeId, H256};
 use sp_runtime::{
     impl_opaque_keys,
-    traits::{BlakeTwo256, Convert, Keccak256, OpaqueKeys},
+    traits::{BlakeTwo256, Convert, Keccak256},
     Perbill,
 };
 use sp_std::convert::{TryFrom, TryInto};

@@ -2,7 +2,6 @@ use crate::*;
 
 use frame_support::{parameter_types, traits::ConstU32, PalletId};
 use sp_core::H256;
-use sp_runtime::traits::*;
 use t3rn_primitives::{bridges::runtime as bp_runtime, common::DEFAULT_ROUND_TERM};
 
 use crate::xbi_config::XBIPortalRuntimeEntry;

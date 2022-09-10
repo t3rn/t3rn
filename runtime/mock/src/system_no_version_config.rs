@@ -4,7 +4,10 @@ use frame_support::{
     traits::{ConstU128, ConstU32, ConstU8},
     weights::{constants::RocksDbWeight, ConstantMultiplier, IdentityFee},
 };
-use sp_runtime::traits::{AccountIdLookup, BlakeTwo256};
+use sp_runtime::{
+    generic,
+    traits::{AccountIdLookup, BlakeTwo256},
+};
 
 // Configure FRAME pallets to include in runtime.
 impl frame_system::Config for Runtime {

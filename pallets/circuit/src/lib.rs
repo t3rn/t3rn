@@ -692,13 +692,13 @@ pub mod pallet {
                 .map_err(|_e| Error::<T>::FailedToConvertSFX2XBI)?;
 
             // Use encoded XBI hash as ID for the executor's charge
-            let charge_id = T::Hashing::hash(&mut &xbi.encode()[..]);
+            let charge_id = T::Hashing::hash(&xbi.encode()[..]);
             let total_max_fees = xbi.metadata.total_max_costs_in_local_currency()?;
 
             Self::square_up(
                 &mut local_xtx_ctx,
                 None,
-                Some((charge_id, executor.clone(), total_max_fees)),
+                Some((charge_id, executor, total_max_fees)),
             )?;
 
             T::XBIPromise::then(
@@ -1056,11 +1056,9 @@ impl<T: Config> Pallet<T> {
             CircuitStatus::RevertTimedOut => {},
             CircuitStatus::Ready | CircuitStatus::PendingExecution | CircuitStatus::Finished => {
                 // Check whether all of the side effects in this steps are confirmed - the status now changes to CircuitStatus::Finished
-                if Self::get_current_step_fsx(local_ctx)
+                if !Self::get_current_step_fsx(local_ctx)
                     .iter()
-                    .filter(|&fsx| fsx.confirmed.is_none())
-                    .next()
-                    .is_none()
+                    .any(|fsx| fsx.confirmed.is_none())
                 {
                     local_ctx.xtx.steps_cnt =
                         (local_ctx.xtx.steps_cnt.0 + 1, local_ctx.xtx.steps_cnt.1);
@@ -1560,10 +1558,9 @@ impl<T: Config> Pallet<T> {
                 .expect("Vector initialized at declaration");
 
             // Push to the single step as long as there's no Dirty side effect
-            if sorted_fse.security_lvl != SecurityLvl::Dirty
-                // Or if there was no Optimistic/Escrow side effects before
-                || sorted_fse.security_lvl == SecurityLvl::Dirty && current_step.is_empty()
-            {
+            //  Or if there was no Optimistic/Escrow side effects before
+
+            if sorted_fse.security_lvl != SecurityLvl::Dirty || current_step.is_empty() {
                 current_step.push(sorted_fse);
             } else if sorted_fse.security_lvl == SecurityLvl::Dirty {
                 // R#1: there only can be max 1 dirty side effect at each step.
@@ -1620,12 +1617,7 @@ impl<T: Config> Pallet<T> {
             let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
             side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
             let side_effect_interface =
-                <T as Config>::Xdns::fetch_side_effect_interface(side_effect_id);
-
-            // I guess this could be omitted, as SE submission would prevent this?
-            if let Err(msg) = side_effect_interface {
-                return Err(msg)
-            }
+                <T as Config>::Xdns::fetch_side_effect_interface(side_effect_id)?;
 
             confirm_with_vendor::<
                 T,
@@ -1637,15 +1629,14 @@ impl<T: Config> Pallet<T> {
             >(
                 gateway_vendor,
                 value_abi_unsigned_type,
-                &Box::new(side_effect_interface.unwrap()),
-                confirmation.encoded_effect.clone().into(),
+                &Box::new(side_effect_interface),
+                confirmation.encoded_effect.clone(),
                 state_copy,
                 Some(
                     side_effect
                         .generate_id::<SystemHashing<T>>()
                         .as_ref()
-                        .to_vec()
-                        .into(),
+                        .to_vec(),
                 ),
                 security_lvl,
                 security_coordinates,
@@ -1790,7 +1781,7 @@ impl<T: Config> Pallet<T> {
             processed_weight += db_weight.reads(4 as Weight);
             match Self::setup(
                 CircuitStatus::Ready,
-                &requester,
+                requester,
                 Zero::zero(),
                 Some(signal.execution_id),
             ) {
@@ -1845,22 +1836,20 @@ impl<T: Config> Pallet<T> {
         local_ctx.full_side_effects[current_step as usize]
             .iter()
             .filter(|&fsx| fsx.security_lvl == security_lvl)
-            .map(|fsx| fsx.clone())
+            .cloned()
             .collect()
     }
 
     pub(self) fn get_fsx_total_rewards(
-        fsxs: &Vec<
-            FullSideEffect<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-            >,
-        >,
+        fsxs: &[FullSideEffect<
+            <T as frame_system::Config>::AccountId,
+            <T as frame_system::Config>::BlockNumber,
+            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+        >],
     ) -> EscrowedBalanceOf<T, <T as Config>::Escrowed> {
         let mut acc_rewards: EscrowedBalanceOf<T, <T as Config>::Escrowed> = Zero::zero();
 
-        for fsx in fsxs.iter() {
+        for fsx in fsxs {
             acc_rewards += fsx.input.prize;
         }
 
