@@ -21,7 +21,7 @@ use ethereum_types::{Address, H256, H64, U256};
 use crate::{mpt, receipt};
 
 /// Complete block header id.
-#[derive(Clone, Copy, Default, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
+#[derive(Clone, Copy, Default, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct HeaderId {
     /// Header number.
     pub number: u64,
@@ -95,7 +95,7 @@ impl Header {
     }
 
     pub fn apply_merkle_proof(&self, proof: &[Vec<u8>]) -> Option<(H256, Vec<u8>)> {
-        let mut iter = proof.into_iter().rev();
+        let mut iter = proof.iter().rev();
         let first_bytes = match iter.next() {
             Some(b) => b,
             None => return None,

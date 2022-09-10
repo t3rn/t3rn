@@ -392,7 +392,7 @@ pub mod pallet {
                 Self::update_active(executor, total_counted);
             }
 
-            Ok(().into())
+            Ok(())
         }
 
         /// Request by an executor candidate to decrease its self bond.
@@ -935,7 +935,7 @@ pub mod pallet {
 
             let mut state = <StakerInfo<T>>::get(&staker).ok_or(Error::<T>::NoSuchStaker)?;
 
-            state.increase_stake::<T>(candidate.clone(), more)?;
+            state.increase_stake::<T>(candidate, more)?;
 
             Ok(().into())
         }
@@ -1539,7 +1539,7 @@ pub mod pallet {
                 executor_count = executor_count.saturating_add(1u32);
                 stake_count = stake_count.saturating_add(state.stake_count);
                 total = total.saturating_add(state.total_counted);
-                let top_rewardable_stakes = Self::get_rewardable_stakers(&account);
+                let top_rewardable_stakes = Self::get_rewardable_stakers(account);
 
                 <AtStake<T>>::insert(
                     current_round,

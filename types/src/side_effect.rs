@@ -80,7 +80,7 @@ where
             target,
             prize: Zero::zero(),
             ordered_at: Zero::zero(),
-            encoded_action: action_bytes.into(),
+            encoded_action: action_bytes,
             encoded_args: args,
             signature: vec![],
             enforce_executioner: None,
@@ -307,7 +307,7 @@ impl Default for SecurityLvl {
 }
 
 // Side effects conversion error.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Error {
     /// Failed to decode a property while hardening.
     HardeningDecodeError,

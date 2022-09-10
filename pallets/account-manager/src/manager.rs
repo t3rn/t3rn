@@ -227,7 +227,7 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
             let total_stake_power = collateral_bond + nominated_stake;
 
             // todo: ensure it's in range (0,1>
-            let collateral_bond_power = collateral_bond / total_stake_power.clone();
+            let collateral_bond_power = collateral_bond / total_stake_power;
 
             claimable_artifacts.push(ClaimableArtifacts {
                 beneficiary: active_set_claimable.executor.clone(),
@@ -240,11 +240,11 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
             let nominated_stake_power = nominated_stake / total_stake_power;
 
             let claimable_by_all_stakers_of_executor =
-                nominated_stake_power.clone() * active_set_claimable.claimable;
+                nominated_stake_power * active_set_claimable.claimable;
 
             for nominated_stake in T::Executors::stakes_per_executor(&active_set_claimable.executor)
             {
-                let staker_power = nominated_stake.nominated_stake / nominated_stake_power.clone();
+                let staker_power = nominated_stake.nominated_stake / nominated_stake_power;
                 claimable_artifacts.push(ClaimableArtifacts {
                     beneficiary: nominated_stake.staker,
                     role: CircuitRole::Staker,

@@ -172,7 +172,7 @@ fn claim_rewards_accumulates_all_past_rounds_rewards() {
         assert_eq!(Balances::free_balance(&claimer), 102);
 
         // assert storage is empty for candidate
-        let remaining_storage = <BeneficiaryRoundRewards<Test>>::iter_key_prefix(&1).count();
+        let remaining_storage = <BeneficiaryRoundRewards<Test>>::iter_key_prefix(1).count();
         assert_eq!(remaining_storage, 0);
     })
 }

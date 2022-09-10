@@ -52,6 +52,7 @@ pub mod xbi_config;
 
 pub use crate::{consensus_aura_config::*, signed_extrinsics_config::*};
 pub use circuit_runtime_types::*;
+pub use impl_versioned_runtime_with_api::*;
 
 pub type CurrencyAdapter = accounts_config::AccountManagerCurrencyAdapter<Balances, ()>;
 
