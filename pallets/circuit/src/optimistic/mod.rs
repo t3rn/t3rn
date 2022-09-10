@@ -59,9 +59,9 @@ impl<T: Config> Optimistic<T> {
             local_ctx,
             SecurityLvl::Optimistic,
         );
-        for fsx in optimistic_fsx_in_step {
+        for fsx in &optimistic_fsx_in_step {
             let side_effect_id = fsx.input.generate_id::<SystemHashing<T>>();
-            return if let Some((_id, insurance_request)) = local_ctx
+            if let Some((_id, insurance_request)) = local_ctx
                 .insurance_deposits
                 .iter()
                 .find(|(id, _)| *id == side_effect_id)
@@ -75,14 +75,13 @@ impl<T: Config> Optimistic<T> {
                         bonded_relayer,
                         insurance_request.reserved_bond,
                     );
-                    Ok(())
                 } else {
-                    Err(Error::<T>::RefundTransferFailed)
+                    return Err(Error::<T>::RefundTransferFailed)
                 }
             } else {
                 // This is a forbidden state which should have not happened -
                 //  at this point all of the insurances should have a bonded relayer assigned
-                Err(Error::<T>::RefundTransferFailed)
+                return Err(Error::<T>::RefundTransferFailed)
             }
         }
         Ok(())
@@ -123,9 +122,9 @@ impl<T: Config> Optimistic<T> {
         )> = vec![];
         let mut repatriated_executors: Vec<&T::AccountId> = vec![];
 
-        for fsx in optimistic_fsx_in_step {
+        for fsx in &optimistic_fsx_in_step {
             let side_effect_id = fsx.input.generate_id::<SystemHashing<T>>();
-            return if let Some((_id, insurance_request)) = local_ctx
+            if let Some((_id, insurance_request)) = local_ctx
                 .insurance_deposits
                 .iter()
                 .find(|(id, _)| *id == side_effect_id)
