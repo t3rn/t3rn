@@ -1,37 +1,15 @@
-use circuit_parachain_runtime::{
-    AccountId, AuraId, EvmConfig, MultiFinalityVerifierDefaultConfig,
-    MultiFinalityVerifierEthereumLikeConfig, MultiFinalityVerifierGenericLikeConfig,
-    MultiFinalityVerifierPolkadotLikeConfig, MultiFinalityVerifierSubstrateLikeConfig, Signature,
-    SudoConfig, XDNSConfig, EXISTENTIAL_DEPOSIT,
-};
+use circuit_parachain_runtime::{AccountId, AuraId, Signature, SudoConfig, EXISTENTIAL_DEPOSIT};
 use cumulus_primitives_core::ParaId;
-use jsonrpc_runtime_client::{
-    create_rpc_client, get_gtwy_init_data, get_metadata, get_parachain_id, ConnectionParams,
-};
+
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
-use sp_core::{sr25519, Encode, Pair, Public};
+use sp_core::{Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use std::{
-    convert::TryFrom,
-    io::{Error, ErrorKind},
-    str::FromStr,
-    time::Duration,
-};
+use std::str::FromStr;
 use t3rn_primitives::{
-    bridges::{
-        header_chain::InitializationData,
-        runtime::{
-            BASILISK_CHAIN_ID, CATALYST_CHAIN_ID, DALI_CHAIN_ID, DOLPHIN_CHAIN_ID,
-            GENSHIRO_CHAIN_ID, KUSAMA_CHAIN_ID, PANGOLIN_CHAIN_ID, POLKADOT_CHAIN_ID,
-            ROCFINITY_CHAIN_ID, ROCOCO_CHAIN_ID, ROCOCO_ENCOINTER_CHAIN_ID, SNOWBLINK_CHAIN_ID,
-            SOONSOCIAL_CHAIN_ID,
-        },
-    },
-    side_effect::interface::SideEffectInterface,
-    xdns::{Parachain, XdnsRecord},
-    ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor, Header,
+    bridges::runtime::{KUSAMA_CHAIN_ID, POLKADOT_CHAIN_ID, ROCOCO_CHAIN_ID},
+    ChainId,
 };
 
 const PARACHAIN_ID: u32 = 3333_u32;
@@ -41,157 +19,6 @@ fn is_relaychain(chain_id: &ChainId) -> bool {
         POLKADOT_CHAIN_ID | KUSAMA_CHAIN_ID | ROCOCO_CHAIN_ID => true,
         _ => false,
     }
-}
-
-/// Helper function that fetches metadata from live networks and generates a XdnsRecord.
-async fn fetch_xdns_record_from_rpc(
-    provider: &str,
-    chain_id: t3rn_primitives::ChainId,
-) -> Result<XdnsRecord<AccountId>, Error> {
-    let params = ConnectionParams {
-        host: String::from(provider),
-        port: 443,
-        secure: true,
-    };
-
-    let client = async_std::future::timeout(Duration::from_secs(12), create_rpc_client(&params))
-        .await
-        .map_err(|_| Error::new(ErrorKind::TimedOut, provider))?
-        .map_err(|err| Error::new(ErrorKind::NotConnected, err))?;
-
-    let metadata = get_metadata(&client.clone())
-        .await
-        .map_err(|err| Error::new(ErrorKind::Other, err))?;
-
-    let gateway_sys_props = GatewaySysProps::try_from(&chain_id)
-        .map_err(|err| Error::new(ErrorKind::InvalidInput, err))?;
-
-    let mut modules_vec = vec![];
-    metadata.pallets.encode_to(&mut modules_vec);
-
-    let parachain_info = if is_relaychain(&chain_id) {
-        None
-    } else {
-        let parachain_id = get_parachain_id(&client.clone())
-            .await
-            .map_err(|err| Error::new(ErrorKind::Other, err))?;
-        Some(Parachain {
-            relay_chain_id: chain_id,
-            id: parachain_id,
-        })
-    };
-
-    Ok(<XdnsRecord<AccountId>>::new(
-        format!("wss://{}", params.host).as_bytes().to_vec(),
-        chain_id,
-        parachain_info,
-        Default::default(),
-        GatewayVendor::PolkadotLike,
-        GatewayType::ProgrammableExternal(0),
-        GatewayGenesisConfig {
-            modules_encoded: Some(modules_vec),
-            extrinsics_version: metadata.extrinsic.version,
-            genesis_hash: client.genesis_hash.0.to_vec(),
-        },
-        gateway_sys_props,
-        vec![],
-        vec![*b"tran"],
-    ))
-}
-
-/// Helper function to generate XdnsRecords from RPC.
-fn seed_xdns_registry() -> Result<Vec<XdnsRecord<AccountId>>, Error> {
-    async_std::task::block_on(async {
-        let chains = vec![
-            // Relaychains...
-            ("rpc.polkadot.io", POLKADOT_CHAIN_ID),
-            ("kusama-rpc.polkadot.io", KUSAMA_CHAIN_ID),
-            ("rococo-rpc.polkadot.io", ROCOCO_CHAIN_ID),
-            // Rococo parachains...
-            ("rococo.api.encointer.org", ROCOCO_ENCOINTER_CHAIN_ID),
-            ("rpc-01.basilisk-rococo.hydradx.io", BASILISK_CHAIN_ID),
-            ("fullnode.catalyst.cntrfg.com", CATALYST_CHAIN_ID),
-            ("rpc.composablefinance.ninja", DALI_CHAIN_ID),
-            ("ws.rococo.dolphin.engineering", DOLPHIN_CHAIN_ID),
-            ("rpc.rococo.efinity.io", ROCFINITY_CHAIN_ID),
-            (
-                "parachain-testnet.equilab.io/rococo/collator/node1/wss",
-                GENSHIRO_CHAIN_ID,
-            ),
-            ("pangolin-parachain-rpc.darwinia.network", PANGOLIN_CHAIN_ID),
-            ("rococo-rpc.snowbridge.network", SNOWBLINK_CHAIN_ID),
-            ("rco-para.subsocial.network", SOONSOCIAL_CHAIN_ID),
-        ];
-
-        let mut records = Vec::with_capacity(chains.len());
-
-        for (provider, chain_id) in chains.into_iter() {
-            let r = fetch_xdns_record_from_rpc(provider, chain_id).await;
-            if r.is_ok() {
-                records.push(r.unwrap());
-                log::info!("🧭 fetched XDNS info from wss://{}", provider);
-            } else {
-                log::warn!(
-                    "⚠️  unable to fetch XDNS info from wss://{} {:?}",
-                    provider,
-                    r.unwrap_err()
-                );
-            }
-        }
-
-        Ok(records)
-    })
-}
-
-fn standard_side_effects() -> Vec<SideEffectInterface> {
-    t3rn_protocol::side_effects::standards::standard_side_effects()
-}
-
-/// Fetches gateway initialization data by chain id.
-fn fetch_gtwy_init_data(gateway_id: &ChainId) -> Result<InitializationData<Header>, Error> {
-    async_std::task::block_on(async move {
-        let endpoint = match *gateway_id {
-            POLKADOT_CHAIN_ID => "rpc.polkadot.io",
-            KUSAMA_CHAIN_ID => "kusama-rpc.polkadot.io",
-            ROCOCO_CHAIN_ID => "rococo-rpc.polkadot.io",
-            _ => return Err(Error::new(ErrorKind::InvalidInput, "unknown gateway id")),
-        };
-
-        let client = create_rpc_client(&ConnectionParams {
-            host: endpoint.to_string(),
-            port: 443,
-            secure: true,
-        })
-        .await
-        .map_err(|error| Error::new(ErrorKind::NotConnected, error))?;
-
-        let is_relay_chain = matches!(
-            *gateway_id,
-            POLKADOT_CHAIN_ID | KUSAMA_CHAIN_ID | ROCOCO_CHAIN_ID
-        );
-
-        let (authority_set, header) = get_gtwy_init_data(&client.clone(), is_relay_chain)
-            .await
-            .map_err(|error| Error::new(ErrorKind::InvalidData, error))?;
-
-        Ok(InitializationData {
-            header,
-            authority_list: authority_set.authorities,
-            set_id: authority_set.set_id,
-            is_halted: false,
-            gateway_id: *gateway_id,
-        })
-    })
-}
-
-/// Lists initialization data for indicated gateways.
-fn initial_gateways(gateway_ids: Vec<&ChainId>) -> Result<Vec<InitializationData<Header>>, Error> {
-    let init_data = gateway_ids
-        .iter()
-        .map(|gateway_id| fetch_gtwy_init_data(*gateway_id))
-        .collect::<Result<_, Error>>()?;
-
-    Ok(init_data)
 }
 
 /// t3rn-pallets chain spec config -- END
@@ -204,7 +31,9 @@ pub type ChainSpec =
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
 
 /// The extensions for the [`ChainSpec`].
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension,
+)]
 #[serde(deny_unknown_fields)]
 pub struct Extensions {
     /// The relay chain of the Parachain.
@@ -271,150 +100,20 @@ pub fn session_keys(keys: AuraId) -> circuit_parachain_runtime::SessionKeys {
     circuit_parachain_runtime::SessionKeys { aura: keys }
 }
 
-pub fn development_config() -> ChainSpec {
-    // Give your base currency a unit name and decimal places
+pub fn polkadot_config() -> ChainSpec {
     let mut properties = sc_chain_spec::Properties::new();
-    properties.insert("tokenSymbol".into(), "UNIT".into());
+    properties.insert("tokenSymbol".into(), "T3RN".into());
     properties.insert("tokenDecimals".into(), 12.into());
     properties.insert("ss58Format".into(), 42.into());
 
     ChainSpec::from_genesis(
         // Name
-        "Development",
-        // ID
-        "dev",
-        ChainType::Development,
-        move || {
-            testnet_genesis(
-                // initial collators.
-                vec![
-                    (
-                        get_account_id_from_seed::<sr25519::Public>("Alice"),
-                        get_collator_keys_from_seed("Alice"),
-                    ),
-                    (
-                        get_account_id_from_seed::<sr25519::Public>("Bob"),
-                        get_collator_keys_from_seed("Bob"),
-                    ),
-                ],
-                vec![
-                    get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    get_account_id_from_seed::<sr25519::Public>("Bob"),
-                    get_account_id_from_seed::<sr25519::Public>("Charlie"),
-                    get_account_id_from_seed::<sr25519::Public>("Dave"),
-                    get_account_id_from_seed::<sr25519::Public>("Eve"),
-                    get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-                    get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
-                ],
-                PARACHAIN_ID.into(),
-                // Sudo account
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
-                vec![],
-                standard_side_effects(),
-                vec![],
-                // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
-                //     .expect("initial gateways"),
-            )
-        },
-        Vec::new(),
-        None,
-        None,
-        None,
-        None,
-        Extensions {
-            relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
-            para_id: PARACHAIN_ID,              // You MUST set this correctly!
-        },
-    )
-}
-
-pub fn local_testnet_config() -> ChainSpec {
-    // Give your base currency a unit name and decimal places
-    let mut properties = sc_chain_spec::Properties::new();
-    properties.insert("tokenSymbol".into(), "TRN".into());
-    properties.insert("tokenDecimals".into(), 12.into());
-    properties.insert("ss58Format".into(), 42.into());
-
-    ChainSpec::from_genesis(
-        // Name
-        "Local Testnet",
-        // ID
-        "local_testnet",
-        ChainType::Local,
-        move || {
-            testnet_genesis(
-                // initial collators.
-                vec![
-                    (
-                        get_account_id_from_seed::<sr25519::Public>("Alice"),
-                        get_collator_keys_from_seed("Alice"),
-                    ),
-                    (
-                        get_account_id_from_seed::<sr25519::Public>("Bob"),
-                        get_collator_keys_from_seed("Bob"),
-                    ),
-                ],
-                vec![
-                    get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    get_account_id_from_seed::<sr25519::Public>("Bob"),
-                    get_account_id_from_seed::<sr25519::Public>("Charlie"),
-                    get_account_id_from_seed::<sr25519::Public>("Dave"),
-                    get_account_id_from_seed::<sr25519::Public>("Eve"),
-                    get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-                    get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
-                ],
-                PARACHAIN_ID.into(),
-                // Sudo account
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
-                vec![],
-                standard_side_effects(),
-                vec![],
-                // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
-                //     .expect("initial gateways"),
-            )
-        },
-        // Bootnodes
-        Vec::new(),
-        // Telemetry
-        None,
-        // Protocol ID
-        Some("circuit-local"),
-        // Fork ID
-        None,
-        // Properties
-        Some(properties),
-        // Extensions
-        Extensions {
-            relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
-            para_id: PARACHAIN_ID,              // You MUST set this correctly!
-        },
-    )
-}
-
-pub fn rococo_config() -> ChainSpec {
-    let mut properties = sc_chain_spec::Properties::new();
-    properties.insert("tokenSymbol".into(), "T0RN".into());
-    properties.insert("tokenDecimals".into(), 12.into());
-    properties.insert("ss58Format".into(), 42.into());
-
-    ChainSpec::from_genesis(
-        // Name
-        "t0rn",
+        "t3rn",
         // Id
-        "t0rn_testnet",
+        "t3rn_polkadot",
         ChainType::Live,
         move || {
-            testnet_genesis(
+            polkadot_genesis(
                 // Invulnerable collators
                 vec![
                     (
@@ -431,26 +130,12 @@ pub fn rococo_config() -> ChainSpec {
                     ),
                 ],
                 // Prefunded accounts
-                vec![
-                    get_account_id_from_adrs("5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A"),
-                    get_account_id_from_adrs("5CAYyLZxG4oYQP8CGTYgPPhkoT42NyMvi2J3hKPCLGyKHAC4"),
-                    get_account_id_from_adrs("5GducktTqf8KKeatpex4kwkg1PZZimY1xUDUFoBZ2s5EDfVf"),
-                    get_account_id_from_adrs("5CqRUh9fiVgzMftXmacNSNMXF4TDfkUXCTZvXfuYXA33knRC"),
-                    get_account_id_from_adrs("5DXBQResSqHCGijMH1UtpQNZzpjdCqHtad14FUnwaSA7xmRL"),
-                    get_account_id_from_adrs("5HomG74gKivcZfCLixXyZbuGg57Bc8ZR55BkAX2jus2dSYS1"),
-                    get_account_id_from_adrs("5FQpivNZCVw3LQWoQwrF44CLeP1g5j8RSAtcR4kURbZwXgXg"),
-                    get_account_id_from_adrs("5GLMuTmTvNCWkYCYc2DNPWjTMKa2nKW6yYH8xKqeiPHgcLNs"),
-                    get_account_id_from_adrs("5DWyim48gMrAhoHz9pjb6qu5Q8paDmeWhisALuV9cS8NvScG"),
-                    get_account_id_from_adrs("5FU77XnhRuBD6VSA8ZvwqB6BSjyYEGtS4HPwMMU6WwqpVmmV"),
-                ],
+                vec![get_account_id_from_adrs(
+                    "5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A",
+                )],
                 PARACHAIN_ID.into(),
                 // Sudo
                 get_account_id_from_adrs("5D333eBb5VugHioFoU5nGMbUaR2uYcoyk5qZj9tXRA5ers7A"),
-                vec![],
-                standard_side_effects(),
-                vec![],
-                // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
-                //     .expect("initial gateways"),
             )
         },
         // Bootnodes
@@ -458,15 +143,15 @@ pub fn rococo_config() -> ChainSpec {
         // Telemetry
         None,
         // Protocol ID
-        Some("t0rn"),
+        Some("t3rn"),
         // Fork ID
         None,
         // Properties
         Some(properties),
         // Extensions
         Extensions {
-            relay_chain: "rococo".into(), // You MUST set this to the correct network!
-            para_id: PARACHAIN_ID,        // You MUST set this correctly!
+            relay_chain: "polkadot".into(), // You MUST set this to the correct network!
+            para_id: PARACHAIN_ID,          // You MUST set this correctly!
         },
     )
 }
@@ -477,14 +162,11 @@ pub fn rococo_config() -> ChainSpec {
 // (PUSH1 0x00 PUSH1 0x00 REVERT)
 const REVERT_BYTECODE: [u8; 5] = [0x60, 0x00, 0x60, 0x00, 0xFD];
 
-fn testnet_genesis(
+fn polkadot_genesis(
     invulnerables: Vec<(AccountId, AuraId)>,
     endowed_accounts: Vec<AccountId>,
     id: ParaId,
     root_key: AccountId,
-    xdns_records: Vec<XdnsRecord<AccountId>>,
-    standard_side_effects: Vec<SideEffectInterface>,
-    initial_gateways: Vec<InitializationData<Header>>,
 ) -> circuit_parachain_runtime::GenesisConfig {
     circuit_parachain_runtime::GenesisConfig {
         system: circuit_parachain_runtime::SystemConfig {
@@ -528,59 +210,6 @@ fn testnet_genesis(
         sudo: SudoConfig {
             // Assign network admin rights.
             key: Some(root_key),
-        },
-        // transaction_payment: Default::default(),
-        // beefy: BeefyConfig {
-        // 	// authorities: initial_authorities.iter().map(|x| (x.1.clone())).collect(),
-        // 	authorities: Vec::new()
-        // },
-        xdns: XDNSConfig {
-            known_xdns_records: xdns_records,
-            standard_side_effects,
-        },
-        contracts_registry: Default::default(),
-        multi_finality_verifier_substrate_like: MultiFinalityVerifierSubstrateLikeConfig {
-            owner: None,
-            init_data: None,
-        },
-        multi_finality_verifier_generic_like: MultiFinalityVerifierGenericLikeConfig {
-            owner: None,
-            init_data: None,
-        },
-        multi_finality_verifier_ethereum_like: MultiFinalityVerifierEthereumLikeConfig {
-            owner: None,
-            init_data: None,
-        },
-        multi_finality_verifier_polkadot_like: MultiFinalityVerifierPolkadotLikeConfig {
-            owner: None,
-            init_data: None,
-        },
-        multi_finality_verifier_default: MultiFinalityVerifierDefaultConfig {
-            owner: None,
-            init_data: Some(initial_gateways),
-        },
-        orml_tokens: Default::default(),
-        account_manager: Default::default(),
-        treasury: Default::default(),
-        three_vm: Default::default(), // TODO: genesis for this needs to be setup for the function pointers
-        evm: EvmConfig {
-            // We need _some_ code inserted at the precompile address so that
-            // the evm will actually call the address.
-            accounts: circuit_parachain_runtime::contracts_config::PrecompilesValue::get()
-                .used_addresses()
-                .into_iter()
-                .map(|addr| {
-                    (
-                        addr.into(),
-                        circuit_parachain_runtime::contracts_config::EvmGenesisAccount {
-                            nonce: Default::default(),
-                            balance: Default::default(),
-                            storage: Default::default(),
-                            code: REVERT_BYTECODE.into(),
-                        },
-                    )
-                })
-                .collect(),
         },
     }
 }

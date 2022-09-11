@@ -24,9 +24,7 @@ use std::{io::Write, net::SocketAddr};
 
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
     Ok(match id {
-        "dev" => Box::new(chain_spec::development_config()),
-        "" | "local" | "rococo-local" => Box::new(chain_spec::local_testnet_config()),
-        "rococo" | "rococo-live" => Box::new(chain_spec::rococo_config()),
+        "polkadot" | "polkadot-live" => Box::new(chain_spec::polkadot_config()),
         path => Box::new(chain_spec::ChainSpec::from_json_file(
             std::path::PathBuf::from(path),
         )?),
@@ -300,7 +298,7 @@ pub fn run() -> Result<()> {
             runner.run_node_until_exit(|config| async move {
                 let para_id = chain_spec::Extensions::try_get(&*config.chain_spec)
                     .map(|e| e.para_id)
-                    .ok_or_else(|| "Could not find parachain ID in chain-spec.")?;
+                    .ok_or("Could not find parachain ID in chain-spec.")?;
 
                 let polkadot_cli = RelayChainCli::new(
                     &config,
