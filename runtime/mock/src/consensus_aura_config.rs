@@ -1,7 +1,6 @@
 use crate::*;
 use frame_support::traits::ConstU32;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_runtime::generic;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
