@@ -49,7 +49,7 @@ pub mod pallet {
     use t3rn_primitives::{
         side_effect::interface::SideEffectInterface,
         xdns::{AllowedSideEffect, Parachain, Xdns, XdnsRecord},
-        ChainId, EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor,
+        Bytes, ChainId, EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor,
     };
 
     #[pallet::config]
@@ -266,6 +266,7 @@ pub mod pallet {
             gateway_type: GatewayType,
             gateway_genesis: GatewayGenesisConfig,
             gateway_sys_props: GatewaySysProps,
+            security_coordinates: Vec<u8>,
             allowed_side_effects: Vec<AllowedSideEffect>,
         ) -> DispatchResult {
             ensure_root(origin)?;
@@ -285,6 +286,7 @@ pub mod pallet {
                 gateway_type,
                 gateway_genesis,
                 gateway_sys_props,
+                security_coordinates,
                 allowed_side_effects,
             );
 
@@ -360,8 +362,9 @@ pub mod pallet {
             if !<XDNSRegistry<T>>::contains_key(chain_id) {
                 return Err(Error::<T>::XdnsRecordNotFound.into())
             }
-
-            Ok(<XDNSRegistry<T>>::get(chain_id).unwrap().gateway_abi)
+            Ok(<XDNSRegistry<T>>::get(chain_id)
+                .ok_or_else(|| Error::<T>::XdnsRecordNotFound)?
+                .gateway_abi)
         }
 
         fn get_gateway_value_unsigned_type_unsafe(chain_id: &ChainId) -> Type {
@@ -372,6 +375,15 @@ pub mod pallet {
                     .value_type_size
                     * 8,
             )
+        }
+
+        fn get_gateway_security_coordinates(chain_id: &ChainId) -> Result<Bytes, &'static str> {
+            if !<XDNSRegistry<T>>::contains_key(chain_id) {
+                return Err("Xdns record not found while accessing security coordinates")
+            }
+            Ok(<XDNSRegistry<T>>::get(chain_id)
+                .ok_or_else(|| "XDNSRegistry does not contain given chain id")?
+                .security_coordinates)
         }
 
         /// returns the gateway vendor of a gateway if its available

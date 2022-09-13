@@ -13,10 +13,11 @@ pub mod orml_config;
 pub mod xcm_config;
 
 use codec::Decode;
+use pallet_3vm_evm::AddressMapping;
 use pallet_xdns_rpc_runtime_api::{ChainId, FetchXdnsRecordsResponse, GatewayABIConfig};
 use smallvec::smallvec;
 use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, Verify},
@@ -184,11 +185,11 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // https://docs.rs/sp-version/latest/sp_version/struct.RuntimeVersion.html
     spec_name: create_runtime_str!("t0rn"),
     impl_name: create_runtime_str!("Circuit Collator"),
-    authoring_version: 1,
-    spec_version: 2,
-    impl_version: 2,
+    authoring_version: 2,
+    spec_version: 3,
+    impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 1,
+    transaction_version: 2,
     // https://github.com/paritytech/cumulus/issues/998
     // https://github.com/paritytech/substrate/pull/9732
     // https://github.com/paritytech/substrate/pull/10073
@@ -570,9 +571,12 @@ construct_runtime!(
         XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
+        Treasury: pallet_treasury = 109,
 
         // 3VM
-        Contracts: pallet_3vm_contracts = 119,
+        ThreeVm: pallet_3vm = 119,
+        Contracts: pallet_3vm_contracts = 120,
+        Evm: pallet_3vm_evm = 121,
         AccountManager: pallet_account_manager = 125,
 
         // Portal
@@ -744,6 +748,52 @@ impl_runtime_apis! {
             key: [u8; 32],
         ) -> pallet_3vm_contracts_primitives::GetStorageResult {
             Contracts::get_storage(address, key)
+        }
+    }
+
+    impl pallet_evm_rpc_runtime_api::EvmRuntimeRPCApi<Block, AccountId, Balance> for Runtime {
+        fn get_evm_address(
+            account_id: AccountId,
+        ) -> Option<H160> {
+            <Runtime as pallet_3vm_evm::Config>::AddressMapping::get_evm_address(&account_id)
+        }
+        fn get_or_into_account_id(
+            address: H160,
+        ) -> AccountId {
+            <Runtime as pallet_3vm_evm::Config>::AddressMapping::get_or_into_account_id(&address)
+        }
+
+        fn get_threevm_info(
+            address: H160,
+        ) -> Option<(AccountId, Balance, u8)> {
+            Evm::get_threevm_info(&address)
+        }
+
+        fn account_info(address: H160) -> (U256, U256, Vec<u8>) {
+            let account = Evm::account_basic(&address);
+            let code = Evm::get_account_code(&address);
+
+            (account.balance, account.nonce, code)
+        }
+
+        fn storage_at(address: H160, index: U256) -> H256 {
+            let mut tmp = [0u8; 32];
+            index.to_big_endian(&mut tmp);
+            Evm::account_storages(address, H256::from_slice(&tmp[..]))
+        }
+    }
+
+    impl pallet_circuit_portal_rpc_runtime_api::CircuitPortalRuntimeApi<Block, AccountId, Balance, BlockNumber> for Runtime {
+        fn read_latest_gateway_height(
+            gateway_id: [u8; 4],
+        ) -> ReadLatestGatewayHeight {
+            match <CircuitPortal as t3rn_primitives::circuit_portal::CircuitPortal<Runtime>>::read_cmp_latest_target_height(gateway_id, None, None) {
+                Ok(encoded_height) =>
+                    ReadLatestGatewayHeight::Success {
+                        encoded_height,
+                    },
+                Err(_err) => ReadLatestGatewayHeight::Error
+            }
         }
     }
 

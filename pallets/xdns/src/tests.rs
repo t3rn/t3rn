@@ -47,11 +47,13 @@ fn should_add_a_new_xdns_record_if_it_doesnt_exist() {
             *b"test",
             None,
             Default::default(),
-            GatewayVendor::Substrate,
+            GatewayVendor::PolkadotLike,
             GatewayType::TxOnly(0),
             Default::default(),
             Default::default(),
-            vec![]
+            vec![],
+            vec![],
+            false
         ));
         assert_eq!(XDNSRegistry::<Test>::iter().count(), 1);
         assert!(XDNSRegistry::<Test>::get(b"test").is_some());
@@ -119,7 +121,7 @@ fn should_add_standard_side_effects() {
         .with_standard_side_effects()
         .build()
         .execute_with(|| {
-            assert_eq!(StandardSideEffects::<Test>::iter().count(), 5);
+            assert_eq!(StandardSideEffects::<Test>::iter().count(), 9);
         });
 }
 
@@ -186,11 +188,13 @@ fn should_not_add_a_new_xdns_record_if_it_already_exists() {
                     *b"circ",
                     None,
                     Default::default(),
-                    GatewayVendor::Substrate,
+                    GatewayVendor::PolkadotLike,
                     GatewayType::TxOnly(0),
                     Default::default(),
                     Default::default(),
-                    vec![]
+                    vec![],
+                    vec![],
+                    false
                 ),
                 crate::pallet::Error::<Test>::XdnsRecordAlreadyExists
             );

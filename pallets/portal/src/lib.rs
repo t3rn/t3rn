@@ -105,6 +105,7 @@ pub mod pallet {
             gateway_genesis: GatewayGenesisConfig,
             gateway_sys_props: GatewaySysProps,
             allowed_side_effects: Vec<AllowedSideEffect>,
+            security_coordinates: Vec<u8>,
             encoded_registration_data: Vec<u8>,
         ) -> DispatchResultWithPostInfo {
             // ToDo xdns record is written also when the calls after this fail!!!
@@ -118,6 +119,7 @@ pub mod pallet {
                 gateway_type.clone(),
                 gateway_genesis,
                 gateway_sys_props.clone(),
+                security_coordinates,
                 allowed_side_effects.clone(),
             )?;
 

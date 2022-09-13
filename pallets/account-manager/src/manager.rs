@@ -4,7 +4,7 @@ use crate::{
 };
 use frame_support::{
     dispatch::DispatchResult,
-    traits::{BalanceStatus, Currency, ExistenceRequirement, Get, ReservableCurrency},
+    traits::{Currency, ExistenceRequirement, Get, ReservableCurrency},
 };
 use sp_runtime::{traits::Zero, Percent};
 use sp_std::borrow::ToOwned;
@@ -15,8 +15,12 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
         payee: &T::AccountId,
         recipient: &T::AccountId,
         amount: BalanceOf<T>,
-    ) -> DispatchResult {
-        let execution_id = ExecutionNonce::<T>::get();
+    ) -> Result<u64, sp_runtime::DispatchError> {
+        let nonce = ExecutionNonce::<T>::get();
+        if ExecutionRegistry::<T>::contains_key(nonce) {
+            return Err(Error::<T>::ExecutionAlreadyRegistered.into())
+        }
+
         ExecutionNonce::<T>::mutate(|nonce| *nonce += 1);
 
         T::Currency::transfer(
@@ -27,23 +31,19 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
         )?;
         T::Currency::reserve(&T::EscrowAccount::get(), amount)?;
 
-        if ExecutionRegistry::<T>::contains_key(execution_id) {
-            return Err(Error::<T>::ExecutionAlreadyRegistered.into())
-        }
-
         ExecutionRegistry::<T>::insert(
-            execution_id,
+            nonce,
             ExecutionRegistryItem::new(payee.clone(), recipient.clone(), amount),
         );
 
         Self::deposit_event(Event::DepositReceived {
-            execution_id,
+            execution_id: nonce,
             payee: payee.clone(),
             recipient: recipient.clone(),
             amount,
         });
 
-        Ok(())
+        Ok(nonce)
     }
 
     fn finalize(execution_id: ExecutionId, reason: Option<Reason>) -> DispatchResult {

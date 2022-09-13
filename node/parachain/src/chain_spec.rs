@@ -1,5 +1,6 @@
 use circuit_parachain_runtime::{
-    AccountId, AuraId, Signature, SudoConfig, XDNSConfig, EXISTENTIAL_DEPOSIT,
+    AccountId, AuraId, EvmConfig, Signature,
+    SudoConfig, XDNSConfig, EXISTENTIAL_DEPOSIT,
 };
 use cumulus_primitives_core::ParaId;
 use jsonrpc_runtime_client::{
@@ -84,7 +85,7 @@ async fn fetch_xdns_record_from_rpc(
         chain_id,
         parachain_info,
         Default::default(),
-        GatewayVendor::Substrate,
+        GatewayVendor::PolkadotLike,
         GatewayType::ProgrammableExternal(0),
         GatewayGenesisConfig {
             modules_encoded: Some(modules_vec),
@@ -92,6 +93,7 @@ async fn fetch_xdns_record_from_rpc(
             genesis_hash: client.genesis_hash.0.to_vec(),
         },
         gateway_sys_props,
+        vec![],
         vec![*b"tran"],
     ))
 }
@@ -141,145 +143,7 @@ fn seed_xdns_registry() -> Result<Vec<XdnsRecord<AccountId>>, Error> {
 }
 
 fn standard_side_effects() -> Vec<SideEffectInterface> {
-    let transfer_side_effect = SideEffectInterface {
-        id: *b"tran",
-        name: b"transfer".to_vec(),
-        argument_abi: vec![
-            Type::DynamicAddress,    // argument_0: from
-            Type::DynamicAddress,    // argument_1: to
-            Type::Value,             // argument_2: value
-            Type::OptionalInsurance, // argument_3: insurance
-        ],
-        argument_to_state_mapper: vec![
-            b"from".to_vec(),
-            b"to".to_vec(),
-            b"value".to_vec(),
-            b"insurance".to_vec(),
-        ],
-        confirm_events: vec![b"Transfer(_from,to,value)".to_vec()],
-        escrowed_events: vec![b"EscrowTransfer(from,to,value)".to_vec()],
-        commit_events: vec![b"Transfer(executor,to,value)".to_vec()],
-        revert_events: vec![b"Transfer(executor,from,value)".to_vec()],
-    };
-
-    let swap_side_effect = SideEffectInterface {
-        id: *b"swap",
-        name: b"swap".to_vec(),
-        argument_abi: vec![
-            Type::DynamicAddress,    // argument_0: caller
-            Type::DynamicAddress,    // argument_1: to
-            Type::Value,             // argument_2: amount_from
-            Type::Value,             // argument_3: amount_to
-            Type::DynamicBytes,      // argument_4: asset_from
-            Type::DynamicBytes,      // argument_5: asset_to
-            Type::OptionalInsurance, // argument_6: insurance
-        ],
-        argument_to_state_mapper: vec![
-            b"caller".to_vec(),
-            b"to".to_vec(),
-            b"amount_from".to_vec(),
-            b"amount_to".to_vec(),
-            b"asset_from".to_vec(),
-            b"asset_to".to_vec(),
-            b"insurance".to_vec(),
-        ],
-        confirm_events: vec![b"ExecuteToken(_executor,to,asset_to,amount_to)".to_vec()],
-        escrowed_events: vec![b"ExecuteToken(_executor,to,asset_to,amount_to)".to_vec()],
-        commit_events: vec![b"MultiTransfer(executor,to,asset_to,amount_to)".to_vec()],
-        revert_events: vec![b"MultiTransfer(executor,caller,asset_from,amount_from)".to_vec()],
-    };
-
-    let add_liquidity_side_effect = SideEffectInterface {
-        id: *b"aliq",
-        name: b"add_liquidity".to_vec(),
-        argument_abi: vec![
-            Type::DynamicAddress,    // argument_0: caller
-            Type::DynamicAddress,    // argument_1: to
-            Type::DynamicBytes,      // argument_2: asset_left
-            Type::DynamicBytes,      // argument_3: asset_right
-            Type::DynamicBytes,      // argument_4: liquidity_token
-            Type::Value,             // argument_5: amount_left
-            Type::Value,             // argument_6: amount_right
-            Type::Value,             // argument_7: amount_liquidity_token
-            Type::OptionalInsurance, // argument_8: insurance
-        ],
-        argument_to_state_mapper: vec![
-            b"caller".to_vec(),
-            b"to".to_vec(),
-            b"asset_left".to_vec(),
-            b"assert_right".to_vec(),
-            b"liquidity_token".to_vec(),
-            b"amount_left".to_vec(),
-            b"amount_right".to_vec(),
-            b"amount_liquidity_token".to_vec(),
-            b"insurance".to_vec(),
-        ],
-        confirm_events: vec![
-            b"ExecuteToken(executor,to,liquidity_token,amount_liquidity_token)".to_vec(),
-        ],
-        escrowed_events: vec![
-            b"ExecuteToken(xtx_id,to,liquidity_token,amount_liquidity_token)".to_vec(),
-        ],
-        commit_events: vec![
-            b"MultiTransfer(executor,to,liquidity_token,amount_liquidity_token)".to_vec(),
-        ],
-        revert_events: vec![
-            b"MultiTransfer(executor,caller,asset_left,amount_left)".to_vec(),
-            b"MultiTransfer(executor,caller,asset_right,amount_right)".to_vec(),
-        ],
-    };
-
-    let call_evm_side_effect = SideEffectInterface {
-        id: *b"call",
-        name: b"call:generic".to_vec(),
-        argument_abi: vec![
-            Type::DynamicAddress, // argument_0: source
-            Type::DynamicAddress, // argument_1: target
-            Type::DynamicBytes,   // argument_2: target
-            Type::Value,          // argument_3: value
-            Type::Uint(64),       // argument_4: gas_limit
-            Type::Value,          // argument_5: max_fee_per_gas
-            Type::Value,          // argument_6: max_priority_fee_per_gas
-            Type::Value,          // argument_7: nonce
-            Type::DynamicBytes,   // argument_8: access_list (since HF Berlin?)
-        ],
-        argument_to_state_mapper: vec![
-            b"source".to_vec(),
-            b"target".to_vec(),
-            b"input".to_vec(),
-            b"value".to_vec(),
-            b"gas_limit".to_vec(),
-            b"max_fee_per_gas".to_vec(),
-            b"max_priority_fee_per_gas".to_vec(),
-            b"nonce".to_vec(),
-            b"access_list".to_vec(),
-        ],
-        confirm_events: vec![b"TransactCall(Append<caller>,source,value,input,gas_limit)".to_vec()],
-        escrowed_events: vec![],
-        commit_events: vec![],
-        revert_events: vec![],
-    };
-
-    let get_data_side_effect = SideEffectInterface {
-        id: *b"data",
-        name: b"data:get".to_vec(),
-        argument_abi: vec![
-            Type::DynamicBytes, // argument_0: key
-        ],
-        argument_to_state_mapper: vec![b"key".to_vec()],
-        confirm_events: vec![b"<InclusionOnly>".to_vec()],
-        escrowed_events: vec![],
-        commit_events: vec![],
-        revert_events: vec![],
-    };
-
-    vec![
-        transfer_side_effect,
-        swap_side_effect,
-        add_liquidity_side_effect,
-        call_evm_side_effect,
-        get_data_side_effect,
-    ]
+    t3rn_protocol::side_effects::standards::standard_side_effects()
 }
 
 /// Fetches gateway initialization data by chain id.
@@ -511,7 +375,7 @@ pub fn local_testnet_config() -> ChainSpec {
                 PARACHAIN_ID.into(),
                 // Sudo account
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
-                seed_xdns_registry().unwrap_or_default(),
+                vec![],
                 standard_side_effects(),
                 vec![],
                 // initial_gateways(vec![&POLKADOT_CHAIN_ID, &KUSAMA_CHAIN_ID, &ROCOCO_CHAIN_ID])
@@ -606,6 +470,12 @@ pub fn rococo_config() -> ChainSpec {
     )
 }
 
+// This is the simplest bytecode to revert without returning any data.
+// We will pre-deploy it under all of our precompiles to ensure they can be called from
+// within contracts.
+// (PUSH1 0x00 PUSH1 0x00 REVERT)
+const REVERT_BYTECODE: [u8; 5] = [0x60, 0x00, 0x60, 0x00, 0xFD];
+
 fn testnet_genesis(
     invulnerables: Vec<(AccountId, AuraId)>,
     endowed_accounts: Vec<AccountId>,
@@ -665,5 +535,26 @@ fn testnet_genesis(
         contracts_registry: Default::default(),
         orml_tokens: Default::default(),
         account_manager: Default::default(),
+        treasury: Default::default(),
+        three_vm: Default::default(), // TODO: genesis for this needs to be setup for the function pointers
+        evm: EvmConfig {
+            // We need _some_ code inserted at the precompile address so that
+            // the evm will actually call the address.
+            accounts: circuit_parachain_runtime::contracts_config::PrecompilesValue::get()
+                .used_addresses()
+                .into_iter()
+                .map(|addr| {
+                    (
+                        addr.into(),
+                        circuit_parachain_runtime::contracts_config::EvmGenesisAccount {
+                            nonce: Default::default(),
+                            balance: Default::default(),
+                            storage: Default::default(),
+                            code: REVERT_BYTECODE.into(),
+                        },
+                    )
+                })
+                .collect(),
+        },
     }
 }

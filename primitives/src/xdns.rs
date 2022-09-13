@@ -61,6 +61,9 @@ pub struct XdnsRecord<AccountId> {
 
     pub registrant: Option<AccountId>,
 
+    /// Leave empty if there's no escrow capabilities on the remote gateway
+    pub security_coordinates: Vec<u8>,
+
     pub last_finalized: Option<u64>,
 
     /// Methods enabled to be called on the remote target
@@ -80,6 +83,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
         gateway_type: GatewayType,
         gateway_sys_props: GatewaySysProps,
         registrant: Option<AccountId>,
+        security_coordinates: Vec<u8>,
         last_finalized: Option<u64>,
         allowed_side_effects: Vec<AllowedSideEffect>,
     ) -> Self {
@@ -99,6 +103,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
             parachain,
             gateway_sys_props,
             registrant,
+            security_coordinates,
             last_finalized,
             allowed_side_effects,
         }
@@ -113,6 +118,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
         gateway_type: GatewayType,
         gateway_genesis: GatewayGenesisConfig,
         gateway_sys_props: GatewaySysProps,
+        security_coordinates: Vec<u8>,
         allowed_side_effects: Vec<AllowedSideEffect>,
     ) -> Self {
         XdnsRecord {
@@ -125,6 +131,7 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
             gateway_genesis,
             gateway_sys_props,
             registrant: None,
+            security_coordinates,
             last_finalized: None,
             allowed_side_effects,
         }
@@ -158,6 +165,7 @@ pub trait Xdns<T: frame_system::Config> {
         gateway_type: GatewayType,
         gateway_genesis: GatewayGenesisConfig,
         gateway_sys_props: GatewaySysProps,
+        security_coordinates: Vec<u8>,
         allowed_side_effects: Vec<AllowedSideEffect>,
     ) -> DispatchResult;
 
@@ -175,6 +183,8 @@ pub trait Xdns<T: frame_system::Config> {
     fn get_gateway_value_unsigned_type_unsafe(chain_id: &ChainId) -> Type;
 
     fn get_gateway_type_unsafe(chain_id: &ChainId) -> GatewayType;
+
+    fn get_gateway_security_coordinates(chain_id: &ChainId) -> Result<Vec<u8>, &'static str>;
 
     fn get_gateway_vendor(chain_id: &ChainId) -> Result<GatewayVendor, DispatchError>;
 }

@@ -40,9 +40,14 @@ pub enum Reason {
     ContractReverted,
 }
 
+pub type LedgerItemId = u64;
 pub trait AccountManager<Account, Balance> {
-    /// Send funds to a recipient via the escrow
-    fn deposit(payee: &Account, recipient: &Account, amount: Balance) -> DispatchResult;
+    /// Send funds to a recipient via the escrow, returns the id of the ledger item
+    fn deposit(
+        payee: &Account,
+        recipient: &Account,
+        amount: Balance,
+    ) -> Result<LedgerItemId, sp_runtime::DispatchError>;
     /// Finalize a transaction, with an optional reason for failures
     fn finalize(execution_id: ExecutionId, reason: Option<Reason>) -> DispatchResult;
     /// Issue the funds in the escrow to the recipient

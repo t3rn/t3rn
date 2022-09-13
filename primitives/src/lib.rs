@@ -50,17 +50,21 @@ pub mod account_manager;
 pub mod bridges;
 pub mod circuit;
 pub mod circuit_portal;
+pub mod common;
 pub mod contract_metadata;
 pub mod contracts_registry;
-pub mod freevm;
 pub mod gateway_inbound_protocol;
 pub mod match_format;
 pub mod portal;
+pub mod monetary;
 pub mod protocol;
 pub mod side_effect;
 pub mod signature_caster;
+pub mod staking;
 pub mod storage;
+pub mod threevm;
 pub mod transfers;
+pub mod treasury;
 pub mod volatile;
 pub mod xdns;
 pub mod xtx;
@@ -96,14 +100,15 @@ impl GatewayType {
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum GatewayVendor {
-    Substrate,
-    Ethereum,
     Rococo,
+    InternalXBI,
+    PolkadotLike,
+    EvmBased,
 }
 
 impl Default for GatewayVendor {
     fn default() -> Self {
-        GatewayVendor::Substrate
+        GatewayVendor::PolkadotLike
     }
 }
 
@@ -432,7 +437,7 @@ pub fn retrieve_gateway_pointers(gateway_id: ChainId) -> Result<Vec<GatewayPoint
     Ok(vec![GatewayPointer {
         id: gateway_id,
         gateway_type: GatewayType::ProgrammableExternal(0),
-        vendor: GatewayVendor::Substrate,
+        vendor: GatewayVendor::PolkadotLike,
     }])
 }
 

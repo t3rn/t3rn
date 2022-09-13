@@ -128,31 +128,20 @@ pub trait KindValidator {
     fn has_storage(&self) -> bool;
 }
 
-impl<Hash: Encode, AccountId: Encode, BalanceOf: Encode, BlockNumber: Encode> KindValidator
-    for RegistryContract<Hash, AccountId, BalanceOf, BlockNumber>
-{
+impl KindValidator for ContractType {
     fn can_instantiate(&self) -> bool {
-        !matches!(self.meta.get_contract_type(), ContractType::System)
+        !matches!(self, ContractType::System)
     }
 
     fn can_generate_side_effects(&self) -> bool {
-        !matches!(
-            self.meta.get_contract_type(),
-            ContractType::VanillaWasm | ContractType::VanillaEvm
-        )
+        !matches!(self, ContractType::VanillaWasm | ContractType::VanillaEvm)
     }
 
     fn can_remunerate(&self) -> bool {
-        !matches!(
-            self.meta.get_contract_type(),
-            ContractType::VanillaWasm | ContractType::VanillaEvm
-        )
+        !matches!(self, ContractType::VanillaWasm | ContractType::VanillaEvm)
     }
 
     fn has_storage(&self) -> bool {
-        matches!(
-            self.meta.get_contract_type(),
-            ContractType::VanillaWasm | ContractType::VanillaEvm
-        )
+        matches!(self, ContractType::VanillaWasm | ContractType::VanillaEvm)
     }
 }

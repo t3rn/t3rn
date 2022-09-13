@@ -17,21 +17,22 @@
 
 //! Test utilities
 use crate::{
-    mock::*,
-    sdk_primitives::{
-        signal::ExecutionSignal,
-        xc::{Chain, Operation},
-    },
-    state::*,
-    Error, SignalKind,
+    mock::*, state::*, Error, SignalKind
 };
+
+use t3rn_sdk_primitives::{
+    signal::{ExecutionSignal, SignalKind},
+    xc::*,
+};
+
 use codec::{Decode, Encode};
 use frame_support::{assert_noop, assert_ok, dispatch::PostDispatchInfo, traits::Currency};
 use frame_system::{pallet_prelude::OriginFor, EventRecord, Phase};
 use pallet_grandpa_finality_verifier::mock::brute_seed_block_1;
 use serde_json::Value;
 use sp_io::TestExternalities;
-use sp_runtime::{AccountId32, DispatchErrorWithPostInfo};
+use sp_runtime::{traits::Header, AccountId32, DispatchErrorWithPostInfo};
+use sp_std::{convert::TryFrom, prelude::*};
 use sp_std::prelude::*;
 use std::{convert::TryInto, fs};
 use t3rn_primitives::{
@@ -71,25 +72,6 @@ fn as_u32_le(array: &[u8; 4]) -> u32 {
 pub fn brute_seed_block_1_to_grandpa_mfv(gateway_id: [u8; 4]) {
     // Brute update storage of MFV::MultiImportedHeaders to blockA = 1 and BestAvailable -> blockA
     brute_seed_block_1(gateway_id);
-    // let block_hash_1 = sp_core::H256::repeat_byte(1);
-    // let header_1: BridgedHeader<Test, RococoBridge> = Header::new(
-    //     1,
-    //     Default::default(),
-    //     Default::default(),
-    //     Default::default(),
-    //     Default::default(),
-    // );
-    //
-    // <pallet_multi_finality_verifier::MultiImportedHeaders<Test>>::insert::<
-    //     [u8; 4],
-    //     sp_core::H256,
-    //     bp_circuit::Header,
-    // >(gateway_id, block_hash_1, header_1);
-    //
-    // <pallet_multi_finality_verifier::BestFinalizedMap<Test>>::insert::<[u8; 4], sp_core::H256>(
-    //     gateway_id,
-    //     block_hash_1,
-    // );
 }
 
 fn register_file(
@@ -390,7 +372,6 @@ fn on_extrinsic_trigger_works_raw_insured_side_effect() {
             let _ = Balances::deposit_creating(&ALICE, 1 + 2); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
 
             System::set_block_number(1);
-            // brute_seed_block_1_to_grandpa_mfv([0, 0, 0, 0]);
 
             assert_ok!(Circuit::on_extrinsic_trigger(
                 origin,
@@ -405,7 +386,8 @@ fn on_extrinsic_trigger_works_raw_insured_side_effect() {
 fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
+    let transfer_protocol_box =
+        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
 
     let mut local_state = LocalState::new();
     let valid_transfer_side_effect = produce_and_validate_side_effect(
@@ -535,7 +517,8 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
 fn on_extrinsic_trigger_validation_works_with_single_transfer_insured() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
+    let transfer_protocol_box =
+        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
 
     let mut local_state = LocalState::new();
 
@@ -577,7 +560,8 @@ fn on_extrinsic_trigger_validation_works_with_single_transfer_insured() {
 fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
+    let transfer_protocol_box =
+        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
 
     let mut local_state = LocalState::new();
 
@@ -679,7 +663,8 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
 fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
+    let transfer_protocol_box =
+        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
 
     let mut local_state = LocalState::new();
 
@@ -765,7 +750,8 @@ fn on_extrinsic_trigger_apply_works_with_single_transfer_insured() {
 fn circuit_handles_insurance_deposit_for_transfers() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
+    let transfer_protocol_box =
+        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
 
     let mut local_state = LocalState::new();
 
@@ -897,28 +883,6 @@ fn circuit_handles_insurance_deposit_for_transfers() {
             let mut encoded_event = vec![4];
             encoded_event.append(&mut encoded_balance_transfer_event);
 
-            // let confirmation = ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
-            //     err: None,
-            //     output: None,
-            //     encoded_effect: encoded_event,
-            //     inclusion_proof: None,
-            //     executioner: BOB_RELAYER,
-            //     received_at: 0,
-            //     cost: None,
-            // };
-            //
-            // // Update MFV::MultiImportedHeaders
-            // assert_ok!(Circuit::confirm_side_effect(
-            //     origin_relayer_bob,
-            //     xtx_id,
-            //     valid_transfer_side_effect,
-            //     confirmation,
-            //     None,
-            //     None,
-            // ));
-
-            // Check that Bob collected the relayer reward
-            // assert_eq!(Balances::free_balance(&BOB_RELAYER), 1 + 2);
         });
 }
 
@@ -926,6 +890,9 @@ fn circuit_handles_insurance_deposit_for_transfers() {
 fn circuit_handles_dirty_swap_with_no_insurance() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
     let swap_protocol_box = ExtBuilder::get_swap_protocol_box();
+    let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
+
+    let swap_protocol_box = Box::new(t3rn_protocol::side_effects::standards::get_swap_interface());
 
     let mut local_state = LocalState::new();
 
@@ -1008,24 +975,6 @@ fn circuit_handles_dirty_swap_with_no_insurance() {
             let mut encoded_event = vec![4];
             encoded_event.append(&mut encoded_swap_transfer_event);
 
-            // let confirmation = ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
-            //     err: None,
-            //     output: None,
-            //     encoded_effect: encoded_event,
-            //     inclusion_proof: None,
-            //     executioner: BOB_RELAYER,
-            //     received_at: 0,
-            //     cost: None,
-            // };
-            //
-            // assert_ok!(Circuit::confirm_side_effect(
-            //     origin_relayer_bob,
-            //     xtx_id,
-            //     valid_swap_side_effect,
-            //     confirmation,
-            //     None,
-            //     None,
-            // ));
         });
 }
 
@@ -1036,7 +985,7 @@ fn circuit_handles_swap_with_insurance() {
     let ext = ExtBuilder::default();
 
     let mut local_state = LocalState::new();
-    let swap_protocol_box = ExtBuilder::get_swap_protocol_box();
+    let swap_protocol_box = Box::new(t3rn_protocol::side_effects::standards::get_swap_interface());
     let valid_swap_side_effect = produce_and_validate_side_effect(
         vec![
             (Type::Address(32), ArgVariant::A),       // caller
@@ -1165,27 +1114,7 @@ fn circuit_handles_swap_with_insurance() {
 
             let mut encoded_event = vec![4];
             encoded_event.append(&mut encoded_swap_transfer_event);
-            //
-            // let confirmation = ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
-            //     err: None,
-            //     output: None,
-            //     encoded_effect: encoded_event,
-            //     inclusion_proof: None,
-            //     executioner: BOB_RELAYER,
-            //     received_at: 0,
-            //     cost: None,
-            // };
-            //
-            // assert_ok!(Circuit::confirm_side_effect(
-            //     origin_relayer_bob,
-            //     xtx_id,
-            //     valid_swap_side_effect,
-            //     confirmation,
-            //     None,
-            //     None,
-            // ));
 
-            // assert_eq!(Balances::free_balance(&BOB_RELAYER), 1 + 2);
         });
 }
 
@@ -1196,7 +1125,8 @@ fn circuit_handles_add_liquidity_without_insurance() {
     let ext = ExtBuilder::default();
     let mut local_state = LocalState::new();
 
-    let add_liquidity_protocol_box = ExtBuilder::get_add_liquidity_protocol_box();
+    let add_liquidity_protocol_box =
+        Box::new(t3rn_protocol::side_effects::standards::get_add_liquidity_interface());
 
     let valid_add_liquidity_side_effect = produce_and_validate_side_effect(
         vec![
@@ -1259,24 +1189,6 @@ fn circuit_handles_add_liquidity_without_insurance() {
             let mut encoded_event = vec![4];
             encoded_event.append(&mut encoded_add_liquidity_transfer_event);
 
-            // let confirmation = ConfirmedSideEffect::<AccountId32, BlockNumber, BalanceOf> {
-            //     err: None,
-            //     output: None,
-            //     encoded_effect: encoded_event,
-            //     inclusion_proof: None,
-            //     executioner: BOB_RELAYER,
-            //     received_at: 0,
-            //     cost: None,
-            // };
-            //
-            // assert_ok!(Circuit::confirm_side_effect(
-            //     origin_relayer_bob,
-            //     xtx_id,
-            //     valid_add_liquidity_side_effect,
-            //     confirmation,
-            //     None,
-            //     None,
-            // ));
         });
 }
 
@@ -1287,7 +1199,8 @@ fn circuit_handles_add_liquidity_with_insurance() {
     let ext = ExtBuilder::default();
     let mut local_state = LocalState::new();
 
-    let add_liquidity_protocol_box = ExtBuilder::get_add_liquidity_protocol_box();
+    let add_liquidity_protocol_box =
+        Box::new(t3rn_protocol::side_effects::standards::get_add_liquidity_interface());
 
     let valid_add_liquidity_side_effect = produce_and_validate_side_effect(
         vec![
@@ -1453,7 +1366,8 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_submitted() {
 
     let _origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
 
-    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
+    let transfer_protocol_box =
+        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
 
     let mut local_state = LocalState::new();
     let valid_transfer_side_effect_1 = produce_and_validate_side_effect(
@@ -1475,7 +1389,7 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_submitted() {
             (Type::Bytes(0), ArgVariant::A), // empty bytes instead of insurance
         ],
         &mut local_state,
-        transfer_protocol_box,
+        transfer_protocol_box.clone(),
     );
 
     let side_effects = vec![
@@ -1514,6 +1428,11 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
 
     let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
     let swap_protocol_box = ExtBuilder::get_swap_protocol_box();
+    let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
+
+    let transfer_protocol_box =
+        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
+    let swap_protocol_box = Box::new(t3rn_protocol::side_effects::standards::get_swap_interface());
 
     let mut local_state = LocalState::new();
     let valid_transfer_side_effect_1 = produce_and_validate_side_effect(
@@ -1535,7 +1454,7 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
             (Type::OptionalInsurance, ArgVariant::A),
         ],
         &mut local_state,
-        transfer_protocol_box,
+        transfer_protocol_box.clone(),
     );
 
     let valid_swap_side_effect = produce_and_validate_side_effect(
@@ -1629,8 +1548,9 @@ fn circuit_cancels_xtx_after_timeout() {
 
     let _origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
 
-    let transfer_protocol_box = ExtBuilder::get_transfer_protocol_box();
-    let _swap_protocol_box = ExtBuilder::get_swap_protocol_box();
+    let transfer_protocol_box =
+        Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
+    let _swap_protocol_box = Box::new(t3rn_protocol::side_effects::standards::get_swap_interface());
 
     let mut local_state = LocalState::new();
     let valid_transfer_side_effect = produce_and_validate_side_effect(
@@ -3244,47 +3164,54 @@ fn uninsured_unrewarded_parachain_transfer() {
 #[test]
 fn sdk_basic_success() {
     let origin = Origin::signed(ALICE);
-    let mut ext = TestExternalities::new_empty();
 
-    ext.execute_with(|| {
-        let _ = Balances::deposit_creating(&ALICE, 50);
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 50);
 
-        let res = setup_fresh_state(&origin);
+            let res = setup_fresh_state(&origin);
 
-        // then it sets up some side effects
-        let trigger = LocalTrigger::new(
-            DJANGO,
-            vec![Chain::<_, u32, [u8; 32]>::Polkadot(Operation::Transfer {
-                caller: ALICE,
-                to: CHARLIE,
-                amount: 50,
-            })
-            .encode()],
-            Some(res.xtx_id),
-        );
+            // then it sets up some side effects
+            let trigger = LocalTrigger::new(
+                DJANGO,
+                vec![Chain::<_, u128, [u8; 32]>::Polkadot(Operation::Transfer {
+                    caller: ALICE,
+                    to: CHARLIE,
+                    amount: 50,
+                })
+                .encode()],
+                Some(res.xtx_id),
+            );
 
-        // then it submits to circuit
-        assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
-            &origin,
-            trigger.clone()
-        ));
+            System::set_block_number(1);
+            brute_seed_block_1_to_grandpa_mfv(*b"pdot");
 
-        System::set_block_number(10);
+            // then it submits to circuit
+            assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
+                &origin,
+                trigger.clone()
+            ));
 
-        // submits a signal
-        let signal = ExecutionSignal::new(&res.xtx_id, Some(res.steps_cnt.0), SignalKind::Complete);
-        assert_ok!(Circuit::on_signal(&origin, signal.clone()));
+            System::set_block_number(10);
 
-        // validate the state
-        check_queue(QueueValidator::Elements(vec![(ALICE, signal)].into()));
+            // submits a signal
+            let signal =
+                ExecutionSignal::new(&res.xtx_id, Some(res.steps_cnt.0), SignalKind::Complete);
+            assert_ok!(Circuit::on_signal(&origin, signal.clone()));
 
-        // async process the signal
-        <Circuit as frame_support::traits::OnInitialize<u32>>::on_initialize(100);
-        System::set_block_number(100);
+            // validate the state
+            check_queue(QueueValidator::Elements(vec![(ALICE, signal)].into()));
 
-        // no signal left
-        check_queue(QueueValidator::Length(0));
-    });
+            // async process the signal
+            <Circuit as frame_support::traits::OnInitialize<u32>>::on_initialize(100);
+            System::set_block_number(100);
+
+            // no signal left
+            check_queue(QueueValidator::Length(0));
+        });
 }
 
 #[test]
@@ -3292,45 +3219,221 @@ fn sdk_can_send_multiple_states() {
     let origin = Origin::signed(ALICE);
     let mut ext = TestExternalities::new_empty();
 
-    ext.execute_with(|| {
-        let _ = Balances::deposit_creating(&ALICE, 50);
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 50);
 
-        let res = setup_fresh_state(&origin);
+            let res = setup_fresh_state(&origin);
 
-        assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
-            &origin,
-            LocalTrigger::new(
-                DJANGO,
-                vec![Chain::<_, _, [u8; 32]>::Polkadot(Operation::Transfer {
-                    caller: ALICE,
-                    to: CHARLIE,
-                    amount: 50,
-                })
-                .encode()],
-                Some(res.xtx_id.clone()),
-            )
-        ));
+            System::set_block_number(1);
+            brute_seed_block_1_to_grandpa_mfv(*b"pdot");
 
-        System::set_block_number(10);
+            assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
+                &origin,
+                LocalTrigger::new(
+                    DJANGO,
+                    vec![Chain::<_, u128, [u8; 32]>::Polkadot(Operation::Transfer {
+                        caller: ALICE,
+                        to: CHARLIE,
+                        amount: 50,
+                    })
+                    .encode()],
+                    Some(res.xtx_id.clone()),
+                )
+            ));
 
-        assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
-            &origin,
-            LocalTrigger::new(
-                DJANGO,
-                vec![Chain::<_, _, [u8; 32]>::Kusama(Operation::Transfer {
-                    caller: ALICE,
-                    to: DJANGO,
-                    amount: 1,
-                })
-                .encode()],
-                Some(res.xtx_id),
-            )
-        ));
-    });
+            System::set_block_number(10);
+            brute_seed_block_1_to_grandpa_mfv(*b"ksma");
+
+            assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
+                &origin,
+                LocalTrigger::new(
+                    DJANGO,
+                    vec![Chain::<_, u128, [u8; 32]>::Kusama(Operation::Transfer {
+                        caller: ALICE,
+                        to: DJANGO,
+                        amount: 1,
+                    })
+                    .encode()],
+                    Some(res.xtx_id),
+                )
+            ));
+        });
 }
-//
-// #[test]
-// fn post_kill_signal_updates_states() {}
+
+#[test]
+fn transfer_is_validated_correctly() {
+    let origin = Origin::signed(ALICE);
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 50);
+
+            let res = setup_fresh_state(&origin);
+
+            System::set_block_number(1);
+            brute_seed_block_1_to_grandpa_mfv(*b"pdot");
+
+            assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
+                &origin,
+                LocalTrigger::new(
+                    DJANGO,
+                    vec![Chain::<_, u128, [u8; 32]>::Polkadot(Operation::Transfer {
+                        caller: ALICE,
+                        to: CHARLIE,
+                        amount: 50,
+                    })
+                    .encode()],
+                    Some(res.xtx_id.clone()),
+                )
+            ));
+        });
+}
+
+#[test]
+fn swap_is_validated_correctly() {
+    let origin = Origin::signed(ALICE);
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 50);
+
+            let res = setup_fresh_state(&origin);
+
+            System::set_block_number(1);
+            brute_seed_block_1_to_grandpa_mfv(*b"pdot");
+
+            assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
+                &origin,
+                LocalTrigger::new(
+                    DJANGO,
+                    vec![Chain::<_, u128, [u8; 32]>::Polkadot(Operation::Swap {
+                        caller: ALICE,
+                        to: CHARLIE,
+                        amount_from: 100,
+                        amount_to: 10,
+                        asset_from: [7_u8; 32],
+                        asset_to: [8_u8; 32],
+                    })
+                    .encode()],
+                    Some(res.xtx_id.clone()),
+                )
+            ));
+        });
+}
+
+#[test]
+fn add_liquidity_is_validated_correctly() {
+    let origin = Origin::signed(ALICE);
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 50);
+
+            let res = setup_fresh_state(&origin);
+
+            System::set_block_number(1);
+            brute_seed_block_1_to_grandpa_mfv(*b"pdot");
+
+            assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
+                &origin,
+                LocalTrigger::new(
+                    DJANGO,
+                    vec![Chain::<_, u128, _>::Polkadot(Operation::AddLiquidity {
+                        caller: ALICE,
+                        to: CHARLIE,
+                        asset_left: [7_u8; 32],
+                        asset_right: [8_u8; 32],
+                        liquidity_token: [9_u8; 32],
+                        amount_left: 100,
+                        amount_right: 10,
+                        amount_liquidity_token: 100,
+                    })
+                    .encode()],
+                    Some(res.xtx_id.clone()),
+                )
+            ));
+        });
+}
+
+// TODO: call side effect should have parity between protocol and types
+#[test]
+#[ignore]
+fn call_to_vm_is_validated_correctly() {
+    let origin = Origin::signed(ALICE);
+
+    ExtBuilder::default()
+        .with_standard_side_effects()
+        .with_default_xdns_records()
+        .build()
+        .execute_with(|| {
+            let _ = Balances::deposit_creating(&ALICE, 50);
+
+            let res = setup_fresh_state(&origin);
+
+            assert_ok!(<Circuit as OnLocalTrigger<Test>>::on_local_trigger(
+                &origin,
+                LocalTrigger::new(
+                    DJANGO,
+                    vec![Chain::<_, u128, [u8; 32]>::Polkadot(Operation::Call {
+                        caller: ALICE,
+                        call: VM::Evm
+                    })
+                    .encode()],
+                    Some(res.xtx_id.clone()),
+                )
+            ));
+        });
+}
+#[test]
+fn into_se_from_chain() {
+    let ch = Chain::<_, u128, [u8; 32]>::Polkadot(Operation::Transfer {
+        caller: ALICE,
+        to: CHARLIE,
+        amount: 50,
+    })
+    .encode();
+
+    let se = SideEffect::<[u8; 32], u128, u128>::try_from(ch).unwrap();
+
+    assert_eq!(
+        se,
+        SideEffect {
+            target: [112u8, 100u8, 111u8, 116u8],
+            prize: 0,
+            ordered_at: 0,
+            encoded_action: vec![116, 114, 97, 110],
+            encoded_args: vec![
+                vec![
+                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1
+                ],
+                vec![
+                    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+                    3, 3, 3, 3, 3, 3
+                ],
+                vec![50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ],
+            signature: vec![],
+            enforce_executioner: None,
+        }
+    )
+}
+
+#[test]
+fn post_kill_signal_updates_states() {}
 
 enum QueueValidator {
     Length(usize),

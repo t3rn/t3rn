@@ -24,8 +24,8 @@
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
 
+use crate::escrow::Escrow;
 pub use crate::pallet::*;
-use crate::{escrow::Escrow, sdk_primitives::signal::SignalKind};
 use codec::{Decode, Encode};
 use frame_support::{
     dispatch::{Dispatchable, GetDispatchInfo},
@@ -50,6 +50,8 @@ pub use t3rn_primitives::{
     xtx::{Xtx, XtxId},
     GatewayType, *,
 };
+pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
+
 use t3rn_primitives::{
     portal::Portal,
     side_effect::{ConfirmationOutcome, HardenedSideEffect, SecurityLvl},
@@ -91,7 +93,7 @@ use crate::state::*;
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use crate::{escrow::Escrow, sdk_primitives::signal::ExecutionSignal};
+    use crate::escrow::Escrow;
     use frame_support::{
         pallet_prelude::*,
         traits::{
@@ -480,19 +482,13 @@ pub mod pallet {
                 Error::<T>::ContractXtxKilledRunOutOfFunds
             })?;
 
-            // ToDo: This should be converting the side effect from local trigger to FSE
-            let side_effects = Self::exec_in_xtx_ctx(
-                local_xtx_ctx.xtx_id,
-                local_xtx_ctx.local_state.clone(),
-                local_xtx_ctx.full_side_effects.clone(),
-                local_xtx_ctx.xtx.steps_cnt,
-            )
-            .map_err(|_e| {
-                if fresh_or_revoked_exec == CircuitStatus::Ready {
-                    Self::kill(&mut local_xtx_ctx, CircuitStatus::RevertKill)
-                }
-                Error::<T>::ContractXtxKilledRunOutOfFunds
-            })?;
+            let side_effects =
+                Self::convert_side_effects(trigger.submitted_side_effects).map_err(|_e| {
+                    if fresh_or_revoked_exec == CircuitStatus::Ready {
+                        Self::kill(&mut local_xtx_ctx, CircuitStatus::RevertKill)
+                    }
+                    Error::<T>::ContractXtxKilledRunOutOfFunds
+                })?;
 
             // ToDo: Align whether 3vm wants enfore side effects sequence into steps
             let sequential = false;
@@ -660,7 +656,13 @@ pub mod pallet {
             ));
 
             // Emit: From Circuit events
-            Self::emit(xtx_id, maybe_xtx_changed, &relayer, &vec![], None);
+            Self::emit(
+                xtx_id,
+                maybe_xtx_changed,
+                &relayer,
+                &vec![],
+                None
+            );
 
             Ok(().into())
         }
@@ -774,7 +776,12 @@ pub mod pallet {
                 return Err(Error::<T>::RelayEscrowedFailedNothingToConfirm.into())
             };
 
-            let _status = Self::confirm(&mut local_xtx_ctx, &relayer, &side_effect, &confirmation)?;
+            let _status = Self::confirm(
+                &mut local_xtx_ctx,
+                &relayer,
+                &side_effect,
+                &confirmation
+            )?;
 
             // Apply: all necessary changes to state in 1 go
             let (maybe_xtx_changed, assert_full_side_effects_changed) = Self::apply(
@@ -836,12 +843,17 @@ pub mod pallet {
             )?;
 
             log::info!(
-                "confirm side effect -- setup -- xtx id {:?} + se id {:?}",
+                "confirm side effect -- start -- xtx id {:?} + se id {:?}",
                 xtx_id,
                 side_effect.generate_id::<SystemHashing<T>>()
             );
 
-            Self::confirm(&mut local_xtx_ctx, &relayer, &side_effect, &confirmation)?;
+            Self::confirm(
+                &mut local_xtx_ctx,
+                &relayer,
+                &side_effect,
+                &confirmation,
+            )?;
             log::info!(
                 "confirm side effect -- confirmed -- xtx id {:?} + se id {:?}",
                 xtx_id,
@@ -1343,8 +1355,7 @@ impl<T: Config> Pallet<T> {
                 if local_ctx.full_side_effects[local_ctx.xtx.steps_cnt.0 as usize]
                     .clone()
                     .iter()
-                    .filter(|&fse| fse.confirmed.is_none())
-                    .next()
+                    .find(|&fse| fse.confirmed.is_none())
                     .is_none()
                 {
                     local_ctx.xtx.steps_cnt =
@@ -1915,19 +1926,23 @@ impl<T: Config> Pallet<T> {
         Ok(())
     }
 
-    // ToDo: This should be called as a 3vm trait injection @Don
-    pub fn exec_in_xtx_ctx(
-        _xtx_id: T::Hash,
-        _local_state: LocalState,
-        _full_side_effects: Vec<
-            Vec<FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
-        >,
-        _steps_cnt: (u32, u32),
+    pub fn convert_side_effects(
+        side_effects: Vec<Vec<u8>>,
     ) -> Result<
         Vec<SideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
         &'static str,
     > {
-        Ok(vec![])
+        let side_effects: Vec<
+            SideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>,
+        > = side_effects
+            .into_iter()
+            .filter_map(|se| se.try_into().ok()) // TODO: maybe not
+            .collect();
+        if side_effects.is_empty() {
+            Err("No side effects provided")
+        } else {
+            Ok(side_effects)
+        }
     }
 
     /// The account ID of the Circuit Vault.
@@ -1962,7 +1977,7 @@ impl<T: Config> Pallet<T> {
             processed_weight += db_weight.reads(4 as Weight);
             match Self::setup(
                 CircuitStatus::Ready,
-                &requester,
+                requester,
                 Zero::zero(),
                 Some(signal.execution_id),
             ) {

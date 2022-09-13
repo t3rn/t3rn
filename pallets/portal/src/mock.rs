@@ -12,7 +12,7 @@ use sp_runtime::{
 };
 use sp_std::convert::{TryFrom, TryInto};
 use t3rn_primitives::{
-    abi::Type, side_effect::interface::SideEffectInterface, transfers::BalanceOf, xdns::XdnsRecord,
+    side_effect::interface::SideEffectInterface, transfers::BalanceOf, xdns::XdnsRecord,
     EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor,
 };
 
@@ -219,7 +219,7 @@ impl ExtBuilder {
             *b"circ",
             None,
             Default::default(),
-            GatewayVendor::Substrate,
+            GatewayVendor::PolkadotLike,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
             GatewaySysProps {
@@ -228,13 +228,14 @@ impl ExtBuilder {
                 token_decimals: 12,
             },
             vec![],
+            vec![],
         );
         let zero_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
             [0u8, 0u8, 0u8, 0u8],
             None,
             Default::default(),
-            GatewayVendor::Substrate,
+            GatewayVendor::PolkadotLike,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
             GatewaySysProps {
@@ -243,13 +244,14 @@ impl ExtBuilder {
                 token_decimals: 0,
             },
             vec![],
+            vec![],
         );
         let gateway_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
             *b"gate",
             None,
             Default::default(),
-            GatewayVendor::Substrate,
+            GatewayVendor::PolkadotLike,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
             GatewaySysProps {
@@ -258,13 +260,14 @@ impl ExtBuilder {
                 token_decimals: 12,
             },
             vec![],
+            vec![],
         );
         let polkadot_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
             *b"pdot",
             None,
             Default::default(),
-            GatewayVendor::Substrate,
+            GatewayVendor::PolkadotLike,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
             GatewaySysProps {
@@ -273,13 +276,14 @@ impl ExtBuilder {
                 token_decimals: 10,
             },
             vec![],
+            vec![],
         );
         let kusama_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
             *b"ksma",
             None,
             Default::default(),
-            GatewayVendor::Substrate,
+            GatewayVendor::PolkadotLike,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
             GatewaySysProps {
@@ -287,6 +291,7 @@ impl ExtBuilder {
                 token_symbol: Encode::encode("KSM"),
                 token_decimals: 12,
             },
+            vec![],
             vec![],
         );
         self.known_xdns_records = vec![
@@ -300,148 +305,9 @@ impl ExtBuilder {
     }
 
     pub(crate) fn with_standard_side_effects(mut self) -> ExtBuilder {
-        let transfer_side_effect = SideEffectInterface {
-            id: *b"tran",
-            name: b"transfer".to_vec(),
-            argument_abi: vec![
-                Type::DynamicAddress,    // argument_0: from
-                Type::DynamicAddress,    // argument_1: to
-                Type::Value,             // argument_2: value
-                Type::OptionalInsurance, // argument_3: insurance
-            ],
-            argument_to_state_mapper: vec![
-                b"from".to_vec(),
-                b"to".to_vec(),
-                b"value".to_vec(),
-                b"insurance".to_vec(),
-            ],
-            confirm_events: vec![b"Transfer(from,to,value)".to_vec()],
-            escrowed_events: vec![b"EscrowTransfer(from,to,value)".to_vec()],
-            commit_events: vec![b"Transfer(executor,to,value)".to_vec()],
-            revert_events: vec![b"Transfer(executor,from,value)".to_vec()],
-        };
+        self.standard_side_effects =
+            t3rn_protocol::side_effects::standards::standard_side_effects();
 
-        let swap_side_effect = SideEffectInterface {
-            id: *b"swap",
-            name: b"swap".to_vec(),
-            argument_abi: vec![
-                Type::DynamicAddress,    // argument_0: caller
-                Type::DynamicAddress,    // argument_1: to
-                Type::Value,             // argument_2: amount_from
-                Type::Value,             // argument_3: amount_to
-                Type::DynamicBytes,      // argument_4: asset_from
-                Type::DynamicBytes,      // argument_5: asset_to
-                Type::OptionalInsurance, // argument_6: insurance
-            ],
-            argument_to_state_mapper: vec![
-                b"caller".to_vec(),
-                b"to".to_vec(),
-                b"amount_from".to_vec(),
-                b"amount_to".to_vec(),
-                b"asset_from".to_vec(),
-                b"asset_to".to_vec(),
-                b"insurance".to_vec(),
-            ],
-            confirm_events: vec![b"ExecuteToken(_executor,to,asset_to,amount_to)".to_vec()],
-            escrowed_events: vec![b"ExecuteToken(_executor,to,asset_to,amount_to)".to_vec()],
-            commit_events: vec![b"MultiTransfer(executor,to,asset_to,amount_to)".to_vec()],
-            revert_events: vec![b"MultiTransfer(executor,caller,asset_from,amount_from)".to_vec()],
-        };
-
-        let add_liquidity_side_effect = SideEffectInterface {
-            id: *b"aliq",
-            name: b"add_liquidity".to_vec(),
-            argument_abi: vec![
-                Type::DynamicAddress,    // argument_0: caller
-                Type::DynamicAddress,    // argument_1: to
-                Type::DynamicBytes,      // argument_2: asset_left
-                Type::DynamicBytes,      // argument_3: asset_right
-                Type::DynamicBytes,      // argument_4: liquidity_token
-                Type::Value,             // argument_5: amount_left
-                Type::Value,             // argument_6: amount_right
-                Type::Value,             // argument_7: amount_liquidity_token
-                Type::OptionalInsurance, // argument_8: insurance
-            ],
-            argument_to_state_mapper: vec![
-                b"caller".to_vec(),
-                b"to".to_vec(),
-                b"asset_left".to_vec(),
-                b"assert_right".to_vec(),
-                b"liquidity_token".to_vec(),
-                b"amount_left".to_vec(),
-                b"amount_right".to_vec(),
-                b"amount_liquidity_token".to_vec(),
-                b"insurance".to_vec(),
-            ],
-            confirm_events: vec![
-                b"ExecuteToken(executor,to,liquidity_token,amount_liquidity_token)".to_vec(),
-            ],
-            escrowed_events: vec![
-                b"ExecuteToken(xtx_id,to,liquidity_token,amount_liquidity_token)".to_vec(),
-            ],
-            commit_events: vec![
-                b"MultiTransfer(executor,to,liquidity_token,amount_liquidity_token)".to_vec(),
-            ],
-            revert_events: vec![
-                b"MultiTransfer(executor,caller,asset_left,amount_left)".to_vec(),
-                b"MultiTransfer(executor,caller,asset_right,amount_right)".to_vec(),
-            ],
-        };
-
-        let call_evm_side_effect = SideEffectInterface {
-            id: *b"call",
-            name: b"call:generic".to_vec(),
-            argument_abi: vec![
-                Type::DynamicAddress, // argument_0: source
-                Type::DynamicAddress, // argument_1: target
-                Type::DynamicBytes,   // argument_2: target
-                Type::Value,          // argument_3: value
-                Type::Uint(64),       // argument_4: gas_limit
-                Type::Value,          // argument_5: max_fee_per_gas
-                Type::Value,          // argument_6: max_priority_fee_per_gas
-                Type::Value,          // argument_7: nonce
-                Type::DynamicBytes,   // argument_8: access_list (since HF Berlin?)
-            ],
-            argument_to_state_mapper: vec![
-                b"source".to_vec(),
-                b"target".to_vec(),
-                b"input".to_vec(),
-                b"value".to_vec(),
-                b"gas_limit".to_vec(),
-                b"max_fee_per_gas".to_vec(),
-                b"max_priority_fee_per_gas".to_vec(),
-                b"nonce".to_vec(),
-                b"access_list".to_vec(),
-            ],
-            confirm_events: vec![
-                b"TransactCall(Append<caller>,source,value,input,gas_limit)".to_vec()
-            ],
-            escrowed_events: vec![],
-            commit_events: vec![],
-            revert_events: vec![],
-        };
-
-        let get_data_side_effect = SideEffectInterface {
-            id: *b"data",
-            name: b"data:get".to_vec(),
-            argument_abi: vec![
-                Type::DynamicBytes, // argument_0: key
-            ],
-            argument_to_state_mapper: vec![b"key".to_vec()],
-            confirm_events: vec![b"<InclusionOnly>".to_vec()],
-            escrowed_events: vec![],
-            commit_events: vec![],
-            revert_events: vec![],
-        };
-
-        // map side_effects to id, keeping lib.rs clean
-        self.standard_side_effects = vec![
-            transfer_side_effect,
-            swap_side_effect,
-            add_liquidity_side_effect,
-            call_evm_side_effect,
-            get_data_side_effect,
-        ];
         self
     }
 

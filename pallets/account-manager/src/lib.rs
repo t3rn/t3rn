@@ -102,6 +102,7 @@ pub mod pallet {
             <Self as AccountManager<T::AccountId, BalanceOf<T>>>::deposit(
                 &payee, &recipient, amount,
             )
+            .map(|_| ())
         }
 
         #[pallet::weight(10_000 + T::DbWeight::get().reads(1) + T::DbWeight::get().writes(1))]
