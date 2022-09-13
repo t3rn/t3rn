@@ -113,4 +113,4 @@ jobs:
         run: |
           chmod +x target/debug/circuit-standalone
           target/debug/circuit-standalone --alice --log=main,debug --tmp > /dev/null 2>&1 &
-          cargo test --workspace --locked --manifest-path Cargo.toml
+          cargo test --workspace --locked --features runtime --manifest-path Cargo.toml
