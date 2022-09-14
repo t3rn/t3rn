@@ -259,7 +259,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                                 enforce_executioner: None
                             }],
                             vec![hex!(
-                                "84a5512d2a624231c0d3748ec11a94d01d9366d310f057f12913e40c1267b4e1"
+                                "388ee470b95c60ecf7e6e1f97b04f423346b443a06b5be4adbc1c219ed7ae636"
                             )
                             .into(),],
                         )),
@@ -445,7 +445,7 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
                                 enforce_executioner: None
                             }],
                             vec![hex!(
-                                "878ceb78ebb97457555b082762edafe03c7bc61d1f3321d62fdeb56e5aaf8954"
+                                "df27692efff5ca3e2db6b0c2aed2976970b071d0ba18a82f818d488205004bad"
                             )
                             .into(),],
                         )),
