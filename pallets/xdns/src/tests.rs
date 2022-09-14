@@ -39,7 +39,7 @@ fn genesis_should_seed_circuit_gateway_polkadot_and_kusama_nodes() {
                 pallet_xdns::XDNSRegistry::<Runtime>::iter().count(),
                 DEFAULT_GATEWAYS_IN_STORAGE_COUNT
             );
-            assert!(pallet_xdns::XDNSRegistry::<Runtime>::get(&[3, 3, 3, 3]).is_some());
+            assert!(pallet_xdns::XDNSRegistry::<Runtime>::get([3, 3, 3, 3]).is_some());
             assert!(pallet_xdns::XDNSRegistry::<Runtime>::get(b"gate").is_some());
             assert!(pallet_xdns::XDNSRegistry::<Runtime>::get(b"pdot").is_some());
             assert!(pallet_xdns::XDNSRegistry::<Runtime>::get(b"ksma").is_some());
@@ -200,7 +200,7 @@ fn should_not_add_a_new_xdns_record_if_it_already_exists() {
                 XDNS::add_new_xdns_record(
                     Origin::<Runtime>::Root.into(),
                     b"some_url".to_vec(),
-                    *&[3, 3, 3, 3],
+                    [3, 3, 3, 3],
                     None,
                     Default::default(),
                     GatewayVendor::PolkadotLike,
@@ -252,7 +252,7 @@ fn finds_correct_amount_of_allowed_side_effects() {
         .build()
         .execute_with(|| {
             assert_eq!(
-                XDNS::allowed_side_effects(&[3, 3, 3, 3]).iter().count(),
+                XDNS::allowed_side_effects(&[3, 3, 3, 3]).len(),
                 STANDARD_SIDE_EFFECTS_COUNT
             )
         });
