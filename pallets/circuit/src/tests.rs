@@ -21,7 +21,7 @@ use circuit_runtime_pallets::pallet_circuit::state::*;
 
 use t3rn_sdk_primitives::{
     signal::{ExecutionSignal, SignalKind},
-    xc::{Call as SideEffectCall, *},
+    xc::*,
 };
 
 use codec::{Decode, Encode};
@@ -34,7 +34,7 @@ use sp_runtime::{
     traits::{Header as HeaderT, Zero},
     AccountId32,
 };
-use sp_std::{convert::TryFrom, iter::FromIterator, prelude::*};
+use sp_std::{convert::TryFrom, prelude::*};
 use t3rn_primitives::{
     abi::*,
     circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
@@ -1973,9 +1973,9 @@ fn sdk_basic_success() {
             brute_seed_block_1_to_grandpa_mfv(*b"pdot");
 
             // then it submits to circuit
-            assert_ok!(<Circuit as OnLocalTrigger<Runtime, BalanceOf>>::on_local_trigger(
-                &origin, trigger
-            ));
+            assert_ok!(
+                <Circuit as OnLocalTrigger<Runtime, BalanceOf>>::on_local_trigger(&origin, trigger)
+            );
 
             System::set_block_number(10);
 
@@ -2025,14 +2025,16 @@ fn sdk_can_send_multiple_states() {
                             insurance: None
                         })
                         .encode()],
-                        Some(res.xtx_id.clone()),
+                        Some(res.xtx_id),
                     )
-                ));
+                )
+            );
 
             System::set_block_number(10);
             brute_seed_block_1_to_grandpa_mfv(*b"ksma");
-            
-            assert_ok!(<Circuit as OnLocalTrigger<Runtime, BalanceOf>>::on_local_trigger(
+
+            assert_ok!(
+                <Circuit as OnLocalTrigger<Runtime, BalanceOf>>::on_local_trigger(
                     &origin,
                     LocalTrigger::new(
                         DJANGO,
@@ -2047,7 +2049,6 @@ fn sdk_can_send_multiple_states() {
                     )
                 )
             );
-
         });
 }
 
@@ -2079,7 +2080,7 @@ fn transfer_is_validated_correctly() {
                             insurance: None
                         })
                         .encode()],
-                        Some(res.xtx_id.clone()),
+                        Some(res.xtx_id),
                     )
                 )
             );
@@ -2117,7 +2118,7 @@ fn swap_is_validated_correctly() {
                             insurance: None
                         })
                         .encode()],
-                        Some(res.xtx_id.clone()),
+                        Some(res.xtx_id),
                     )
                 )
             );
@@ -2140,26 +2141,34 @@ fn add_liquidity_is_validated_correctly() {
             System::set_block_number(1);
             brute_seed_block_1_to_grandpa_mfv(*b"pdot");
 
-            assert_ok!(<Circuit as OnLocalTrigger<Runtime>>::on_local_trigger(
-                &origin,
-                LocalTrigger::new(
-                    DJANGO,
-                    vec![Chain::<_, u128, _>::Polkadot(Operation::AddLiquidity {
-                        caller: ALICE,
-                        to: CHARLIE,
-                        asset_left: [7_u8; 32],
-                        asset_right: [8_u8; 32],
-                        liquidity_token: [9_u8; 32],
-                        amount_left: 100,
-                        amount_right: 10,
-                        amount_liquidity_token: 100,
-                    })
-                    .encode()],
-                    Some(res.xtx_id.clone()),
+            assert_ok!(
+                <Circuit as OnLocalTrigger<Runtime, Balance>>::on_local_trigger(
+                    &origin,
+                    LocalTrigger::new(
+                        DJANGO,
+                        vec![Chain::<_, u128, _>::Polkadot(Operation::AddLiquidity {
+                            caller: ALICE,
+                            to: CHARLIE,
+                            asset_left: [7_u8; 32],
+                            asset_right: [8_u8; 32],
+                            liquidity_token: [9_u8; 32],
+                            amount_left: 100,
+                            amount_right: 10,
+                            amount_liquidity_token: 100,
+                            insurance: None,
+                        })
+                        .encode()],
+                        Some(res.xtx_id),
+                    )
                 )
             );
         });
 }
+
+use t3rn_sdk_primitives::{
+    storage::BoundedVec,
+    xc::{Call as CallVM, Operation},
+};
 
 // TODO: this fails because the side effect doesnt work for the gateway, will be fixed in the future
 #[ignore]
@@ -2176,20 +2185,31 @@ fn call_to_vm_is_validated_correctly() {
 
             let res = setup_fresh_state(&origin);
 
-            assert_ok!(<Circuit as OnLocalTrigger<Runtime>>::on_local_trigger(
-                &origin,
-                LocalTrigger::new(
-                    DJANGO,
-                    vec![Chain::<_, u128, [u8; 32]>::Polkadot(Operation::Call {
-                        caller: ALICE,
-                        call: VM::Evm
-                    })
-                    .encode()],
-                    Some(res.xtx_id.clone()),
+            assert_ok!(
+                <Circuit as OnLocalTrigger<Runtime, Balance>>::on_local_trigger(
+                    &origin,
+                    LocalTrigger::new(
+                        DJANGO,
+                        vec![
+                            Chain::<_, u128, [u8; 32]>::Polkadot(Operation::Call(Box::new(
+                                CallVM {
+                                    caller: ALICE,
+                                    call: t3rn_sdk_primitives::xc::VM::Evm {
+                                        dest: BOB_RELAYER,
+                                        value: 1,
+                                    },
+                                    data: BoundedVec::default(),
+                                }
+                            )))
+                            .encode()
+                        ],
+                        Some(res.xtx_id),
+                    )
                 )
             );
         });
 }
+
 #[test]
 fn into_se_from_chain() {
     let ch = Chain::<_, u128, [u8; 32]>::Polkadot(Operation::Transfer {
@@ -2253,7 +2273,7 @@ fn check_queue(validation: QueueValidator) {
 }
 
 fn setup_fresh_state(origin: &Origin) -> LocalStateExecutionView<Runtime, Balance> {
-    let res = Circuit::load_local_state(&origin, None).unwrap();
+    let res = Circuit::load_local_state(origin, None).unwrap();
     assert_ne!(Some(res.xtx_id), None);
     res
 }

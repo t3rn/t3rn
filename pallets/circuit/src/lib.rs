@@ -26,7 +26,7 @@
 #![allow(clippy::too_many_arguments)]
 
 pub use crate::pallet::*;
-use crate::{escrow::Escrow, state::*};
+use crate::{optimistic::Optimistic, state::*};
 use codec::{Decode, Encode};
 use frame_support::{
     dispatch::{Dispatchable, GetDispatchInfo},
@@ -85,6 +85,7 @@ pub mod tests;
 mod benchmarking;
 
 pub mod escrow;
+pub mod optimistic;
 pub mod state;
 pub mod weights;
 
