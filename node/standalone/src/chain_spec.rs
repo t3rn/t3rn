@@ -210,7 +210,7 @@ fn fetch_gtwy_init_data(gateway_id: &ChainId) -> Result<InitializationData<Heade
 fn initial_gateways(gateway_ids: Vec<&ChainId>) -> Result<Vec<InitializationData<Header>>, Error> {
     let init_data = gateway_ids
         .iter()
-        .map(|gateway_id| fetch_gtwy_init_data(*gateway_id))
+        .map(|gateway_id| fetch_gtwy_init_data(gateway_id))
         .collect::<Result<_, Error>>()?;
 
     Ok(init_data)
@@ -402,7 +402,7 @@ fn testnet_genesis(
                 .into_iter()
                 .map(|addr| {
                     (
-                        addr.into(),
+                        addr,
                         circuit_standalone_runtime::contracts_config::EvmGenesisAccount {
                             nonce: Default::default(),
                             balance: Default::default(),

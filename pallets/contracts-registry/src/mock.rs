@@ -144,7 +144,7 @@ impl Default for ExtBuilder {
 }
 
 impl ExtBuilder {
-    pub(crate) fn with_contracts(
+    pub fn with_contracts(
         mut self,
         contracts: Vec<RegistryContract<H256, AccountId, Balance, BlockNumber>>,
     ) -> ExtBuilder {

@@ -78,7 +78,7 @@ impl<T: Config> Pallet<T> {
             <Error<T>>::StakerBondBelowMin
         );
 
-        let new_amount: BalanceOf<T> = (bonded_amount - decrease_amount).into();
+        let new_amount: BalanceOf<T> = bonded_amount - decrease_amount;
         let fixtures = <Fixtures<T>>::get();
 
         ensure!(
@@ -90,8 +90,7 @@ impl<T: Config> Pallet<T> {
         let net_total = state.total.saturating_sub(state.less_total);
 
         // Net Total is always >= MinTotalStake
-        let max_subtracted_amount =
-            net_total.saturating_sub(<Fixtures<T>>::get().min_total_stake.into());
+        let max_subtracted_amount = net_total.saturating_sub(<Fixtures<T>>::get().min_total_stake);
 
         ensure!(
             decrease_amount <= max_subtracted_amount,
@@ -191,7 +190,7 @@ impl<T: Config> Pallet<T> {
                     true
                 } else {
                     ensure!(
-                        state.total.saturating_sub(fixtures.min_total_stake.into()) >= amount,
+                        state.total.saturating_sub(fixtures.min_total_stake) >= amount,
                         <Error<T>>::StakerBondBelowMin
                     );
                     false
@@ -236,11 +235,11 @@ impl<T: Config> Pallet<T> {
                 for bond in &mut state.stakes.0 {
                     if bond.owner == executor {
                         return if bond.amount > amount {
-                            let amount_before: BalanceOf<T> = bond.amount.into();
+                            let amount_before: BalanceOf<T> = bond.amount;
                             bond.amount = bond.amount.saturating_sub(amount);
 
                             state.total = state.total.saturating_sub(amount);
-                            let new_total: BalanceOf<T> = state.total.into();
+                            let new_total: BalanceOf<T> = state.total;
 
                             ensure!(
                                 new_total >= fixtures.min_atomic_stake,
@@ -322,7 +321,7 @@ impl<T: Config> Pallet<T> {
                 },
                 _ => ScheduledStakingRequest {
                     staker: staker.clone(),
-                    action: StakingAction::Revoke(bonded_amount.clone()),
+                    action: StakingAction::Revoke(bonded_amount),
                     when_executable: when,
                 },
             };

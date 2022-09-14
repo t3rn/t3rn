@@ -183,15 +183,15 @@ pub mod pallet {
                 // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
                 // `ImportedHeaders` must contain an entry for `BestFinalized`.
                 <BestFinalizedMap<T, I>>::get(gateway_id)
-                    .ok_or_else(|| <Error<T, I>>::NoFinalizedHeader)?,
+                    .ok_or(<Error<T, I>>::NoFinalizedHeader)?,
             )
-            .ok_or_else(|| <Error<T, I>>::NoFinalizedHeader)?;
+            .ok_or(<Error<T, I>>::NoFinalizedHeader)?;
             // We do a quick check here to ensure that our header chain is making progress and isn't
             // "travelling back in time" (which could be indicative of something bad, e.g a hard-fork).
             ensure!(best_finalized.number() < number, <Error<T, I>>::OldHeader);
             let authority_set = <CurrentAuthoritySetMap<T, I>>::get(gateway_id)
                 // Expects authorities to be set before verify_justification
-                .ok_or_else(|| <Error<T, I>>::InvalidAuthoritySet)?;
+                .ok_or(<Error<T, I>>::InvalidAuthoritySet)?;
 
             let set_id = authority_set.set_id;
             verify_justification_single::<T, I>(
@@ -291,9 +291,9 @@ pub mod pallet {
             let mut anchor_header =
                 <MultiImportedHeaders<T, I>>::try_get(gateway_id, anchor_header_hash).unwrap();
 
-            let height = anchor_header.number().clone();
+            let height = *anchor_header.number();
             // this is safe, u32 gives us enough space for 300 days worth of blocks.
-            let range: u32 = headers_reversed.len().clone().try_into().unwrap();
+            let range: u32 = headers_reversed.len().try_into().unwrap();
             let mut index = <MultiImportedHashesPointer<T, I>>::get(gateway_id).unwrap_or_default();
 
             for header in headers_reversed {

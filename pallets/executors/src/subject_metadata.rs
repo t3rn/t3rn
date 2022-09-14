@@ -452,7 +452,7 @@ impl<
         self.bond = self.bond.saturating_sub(request.amount);
         self.total_counted = self.total_counted.saturating_sub(request.amount);
         let event = Event::CandidateBondedLess {
-            candidate: who.clone().into(),
+            candidate: who.clone(),
             amount: request.amount.into(),
             total_bond: self.bond.into(),
         };
@@ -460,7 +460,7 @@ impl<
         self.request = None;
         // update candidate pool value because it must change if self bond changes
         if self.is_active() {
-            Pallet::<T>::update_active(who.into(), self.total_counted.into());
+            Pallet::<T>::update_active(who, self.total_counted.into());
         }
         Pallet::<T>::deposit_event(event);
         Ok(())
@@ -475,7 +475,7 @@ impl<
             .request
             .ok_or(Error::<T>::NoSuchPendingCandidateRequest)?;
         let event = Event::CandidateBondLessCancelled {
-            candidate: who.clone().into(),
+            candidate: who,
             amount: request.amount.into(),
             execute_round: request.when_executable,
         };
@@ -596,7 +596,7 @@ impl<
             // only increment stake count if we are not kicking a bottom stake
             self.stake_count = self.stake_count.saturating_add(1u32);
         }
-        <TopStakes<T>>::insert(&candidate, top_stakes);
+        <TopStakes<T>>::insert(candidate, top_stakes);
         less_total_staked
     }
 
@@ -642,7 +642,7 @@ impl<
             let leaving = staker_state.stakes.0.len() == 1usize;
             staker_state.rm_stake(candidate);
             <Pallet<T>>::stake_remove_request_with_state(
-                &candidate,
+                candidate,
                 &lowest_bottom_to_be_kicked.owner,
                 &mut staker_state,
             );
@@ -811,7 +811,7 @@ impl<
         let stake_dne_err: DispatchError = Error::<T>::NoSuchStake.into();
         if bond_geq_lowest_top && !lowest_top_eq_highest_bottom {
             // definitely in top
-            self.increase_top_stake::<T>(candidate, staker.clone(), more)
+            self.increase_top_stake::<T>(candidate, staker, more)
         } else if bond_geq_lowest_top && lowest_top_eq_highest_bottom {
             // update top but if error then update bottom (because could be in bottom because
             // lowest_top_eq_highest_bottom)
@@ -962,7 +962,7 @@ impl<
         let stake_dne_err: DispatchError = Error::<T>::NoSuchStake.into();
         if bond_geq_lowest_top && !lowest_top_eq_highest_bottom {
             // definitely in top
-            self.decrease_top_stake::<T>(candidate, staker.clone(), bond.into(), less)
+            self.decrease_top_stake::<T>(candidate, staker, bond.into(), less)
         } else if bond_geq_lowest_top && lowest_top_eq_highest_bottom {
             // update top but if error then update bottom (because could be in bottom because
             // lowest_top_eq_highest_bottom)

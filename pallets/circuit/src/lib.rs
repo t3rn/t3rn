@@ -20,11 +20,13 @@
 //! ## Overview
 //!
 //! Circuit MVP
+#![feature(box_syntax)]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
 
 pub use crate::pallet::*;
+use crate::{optimistic::Optimistic, state::*};
 use codec::{Decode, Encode};
 use frame_support::{
     dispatch::{Dispatchable, GetDispatchInfo},
@@ -37,11 +39,18 @@ use frame_system::{
     offchain::{SignedPayload, SigningTypes},
     pallet_prelude::OriginFor,
 };
+use pallet_xbi_portal::{
+    primitives::xbi::XBIPortal,
+    xbi_format::{XBICheckIn, XBICheckOut, XBIInstr},
+};
+use pallet_xbi_portal_enter::t3rn_sfx::xbi_result_2_sfx_confirmation;
 use sp_runtime::{
     traits::{AccountIdConversion, Zero},
     KeyTypeId,
 };
 use sp_std::{boxed::Box, convert::TryInto, vec, vec::Vec};
+use t3rn_primitives::account_manager::Outcome;
+
 pub use t3rn_primitives::{
     abi::{GatewayABIConfig, HasherAlgo as HA, Type},
     account_manager::AccountManager,
@@ -58,7 +67,6 @@ pub use t3rn_primitives::{
     xtx::{Xtx, XtxId},
     GatewayType, *,
 };
-pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
 
 use t3rn_protocol::side_effects::{
     confirm::{
@@ -66,32 +74,20 @@ use t3rn_protocol::side_effects::{
     },
     loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol},
 };
-pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
 
-use pallet_xbi_portal::{
-    primitives::xbi::XBIPortal,
-    xbi_format::{XBICheckIn, XBICheckOut, XBIInstr},
-};
-use pallet_xbi_portal_enter::t3rn_sfx::xbi_result_2_sfx_confirmation;
-use t3rn_primitives::account_manager::Outcome;
+pub use t3rn_protocol::{circuit_inbound::StepConfirmation, merklize::*};
+pub use t3rn_sdk_primitives::signal::{ExecutionSignal, SignalKind};
 
 #[cfg(test)]
 pub mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
-#[cfg(test)]
-pub mod mock;
-
-pub mod weights;
-
-pub mod state;
 
 pub mod escrow;
-
 pub mod optimistic;
-
-use crate::optimistic::Optimistic;
+pub mod state;
+pub mod weights;
 
 /// Defines application identifier for crypto keys of this module.
 /// Every module that deals with signatures needs to declare its unique identifier for
@@ -103,7 +99,8 @@ pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"circ");
 
 pub type SystemHashing<T> = <T as frame_system::Config>::Hashing;
 pub type EscrowCurrencyOf<T> = <<T as pallet::Config>::Escrowed as EscrowTrait<T>>::Currency;
-use crate::state::*;
+
+type BalanceOf<T> = EscrowBalance<T>;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -136,6 +133,8 @@ pub mod pallet {
     };
 
     pub use crate::weights::WeightInfo;
+
+    pub type EscrowBalance<T> = EscrowedBalanceOf<T, <T as Config>::Escrowed>;
 
     /// Current Circuit's context of active insurance deposits
     ///
@@ -403,11 +402,11 @@ pub mod pallet {
         }
     }
 
-    impl<T: Config> OnLocalTrigger<T> for Pallet<T> {
+    impl<T: Config> OnLocalTrigger<T, BalanceOf<T>> for Pallet<T> {
         fn load_local_state(
             origin: &OriginFor<T>,
             maybe_xtx_id: Option<T::Hash>,
-        ) -> Result<LocalStateExecutionView<T>, DispatchError> {
+        ) -> Result<LocalStateExecutionView<T, BalanceOf<T>>, DispatchError> {
             let requester = Self::authorize(origin.to_owned(), CircuitRole::ContractAuthor)?;
 
             let fresh_or_revoked_exec = match maybe_xtx_id {
@@ -427,11 +426,6 @@ pub mod pallet {
                 local_xtx_ctx.xtx.status
             );
 
-            if maybe_xtx_id.is_none() {
-                let status_change = Self::update(&mut local_xtx_ctx)?;
-                Self::apply(&mut local_xtx_ctx, None, None, status_change);
-            }
-
             // There should be no apply step since no change could have happen during the state access
             let hardened_side_effects = local_xtx_ctx
                 .full_side_effects
@@ -439,18 +433,40 @@ pub mod pallet {
                 .map(|step| {
                     step.iter()
                         .map(|fsx| {
-                            Ok(fsx
-                                .clone()
-                                .harden()
-                                .map_err(|_e| Error::<T>::FailedToHardenFullSideEffect)?
-                                .into())
+                            let effect: HardenedSideEffect<
+                                T::AccountId,
+                                T::BlockNumber,
+                                BalanceOf<T>,
+                            > = fsx.clone().try_into().map_err(|e| {
+                                log::debug!(
+                                    target: "runtime::circuit",
+                                    "Error converting side effect to runtime: {:?}",
+                                    e
+                                );
+                                Error::<T>::FailedToHardenFullSideEffect
+                            })?;
+                            Ok(effect)
                         })
-                        .collect::<Result<Vec<HardenedSideEffect>, Error<T>>>()
+                        .collect::<Result<
+                            Vec<HardenedSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>,
+                            Error<T>,
+                        >>()
                 })
-                .collect::<Result<Vec<Vec<HardenedSideEffect>>, Error<T>>>()?;
+                .collect::<Result<
+                    Vec<Vec<HardenedSideEffect<T::AccountId, T::BlockNumber, BalanceOf<T>>>>,
+                    Error<T>,
+                >>()?;
+
+            // We must apply the state only if its generated and fresh
+            if maybe_xtx_id.is_none() {
+                // Update local context
+                let status_change = Self::update(&mut local_xtx_ctx)?;
+
+                let _ = Self::apply(&mut local_xtx_ctx, None, None, status_change);
+            }
 
             // There should be no apply step since no change could have happen during the state access
-            Ok(LocalStateExecutionView::<T>::new(
+            Ok(LocalStateExecutionView::<T, BalanceOf<T>>::new(
                 local_xtx_ctx.xtx_id,
                 local_xtx_ctx.local_state.clone(),
                 hardened_side_effects,
@@ -545,7 +561,7 @@ pub mod pallet {
         /// Used by other pallets that want to create the exec order
         #[pallet::weight(<T as pallet::Config>::WeightInfo::on_local_trigger())]
         pub fn on_local_trigger(origin: OriginFor<T>, trigger: Vec<u8>) -> DispatchResult {
-            <Self as OnLocalTrigger<T>>::on_local_trigger(
+            <Self as OnLocalTrigger<T, BalanceOf<T>>>::on_local_trigger(
                 &origin,
                 LocalTrigger::<T>::decode(&mut &trigger[..])
                     .map_err(|_| Error::<T>::InsuranceBondNotRequired)?,
@@ -694,13 +710,13 @@ pub mod pallet {
                 .map_err(|_e| Error::<T>::FailedToConvertSFX2XBI)?;
 
             // Use encoded XBI hash as ID for the executor's charge
-            let charge_id = T::Hashing::hash(&mut &xbi.encode()[..]);
+            let charge_id = T::Hashing::hash(&xbi.encode()[..]);
             let total_max_fees = xbi.metadata.total_max_costs_in_local_currency()?;
 
             Self::square_up(
                 &mut local_xtx_ctx,
                 None,
-                Some((charge_id, executor.clone(), total_max_fees)),
+                Some((charge_id, executor, total_max_fees)),
             )?;
 
             T::XBIPromise::then(
@@ -1058,11 +1074,9 @@ impl<T: Config> Pallet<T> {
             CircuitStatus::RevertTimedOut => {},
             CircuitStatus::Ready | CircuitStatus::PendingExecution | CircuitStatus::Finished => {
                 // Check whether all of the side effects in this steps are confirmed - the status now changes to CircuitStatus::Finished
-                if Self::get_current_step_fsx(local_ctx)
+                if !Self::get_current_step_fsx(local_ctx)
                     .iter()
-                    .filter(|&fsx| fsx.confirmed.is_none())
-                    .next()
-                    .is_none()
+                    .any(|fsx| fsx.confirmed.is_none())
                 {
                     local_ctx.xtx.steps_cnt =
                         (local_ctx.xtx.steps_cnt.0 + 1, local_ctx.xtx.steps_cnt.1);
@@ -1471,12 +1485,15 @@ impl<T: Config> Pallet<T> {
                 .notice_gateway(side_effect.target, allowed_side_effects);
 
             local_ctx
-                .use_protocol
-                .validate_args::<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>, SystemHashing<T>>(
-                    side_effect.clone(),
-                    gateway_abi,
-                    &mut local_ctx.local_state,
-                )?;
+            .use_protocol
+            .validate_args::<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>, SystemHashing<T>>(
+                side_effect.clone(),
+                gateway_abi,
+                &mut local_ctx.local_state,
+            ).map_err(|e| {
+                log::debug!(target: "runtime::circuit", "validate -- error validating side effects {:?}", e);
+                e
+            })?;
 
             if let Some(insurance_and_reward) =
                 UniversalSideEffectsProtocol::check_if_insurance_required::<
@@ -1524,15 +1541,16 @@ impl<T: Config> Pallet<T> {
                         EscrowedBalanceOf<T, T::Escrowed>,
                     >,
                 ) -> SecurityLvl {
-                    fn is_escrowed<T: Config>(chain_id: &ChainId) -> bool {
-                        let gateway_type = <T as Config>::Xdns::get_gateway_type_unsafe(chain_id);
-                        gateway_type == GatewayType::ProgrammableInternal(0)
-                            || gateway_type == GatewayType::OnCircuit(0)
+                    let gateway_type =
+                        <T as Config>::Xdns::get_gateway_type_unsafe(&side_effect.target);
+                    let is_escrowed = gateway_type == GatewayType::ProgrammableInternal(0)
+                        || gateway_type == GatewayType::OnCircuit(0);
+
+                    if is_escrowed {
+                        SecurityLvl::Escrowed
+                    } else {
+                        SecurityLvl::Dirty
                     }
-                    if is_escrowed::<T>(&side_effect.target) {
-                        return SecurityLvl::Escrowed
-                    }
-                    SecurityLvl::Dirty
                 }
                 let submission_target_height = T::CircuitPortal::read_cmp_latest_target_height(
                     side_effect.target,
@@ -1562,10 +1580,9 @@ impl<T: Config> Pallet<T> {
                 .expect("Vector initialized at declaration");
 
             // Push to the single step as long as there's no Dirty side effect
-            if sorted_fse.security_lvl != SecurityLvl::Dirty
-                // Or if there was no Optimistic/Escrow side effects before
-                || sorted_fse.security_lvl == SecurityLvl::Dirty && current_step.is_empty()
-            {
+            //  Or if there was no Optimistic/Escrow side effects before
+
+            if sorted_fse.security_lvl != SecurityLvl::Dirty || current_step.is_empty() {
                 current_step.push(sorted_fse);
             } else if sorted_fse.security_lvl == SecurityLvl::Dirty {
                 // R#1: there only can be max 1 dirty side effect at each step.
@@ -1622,12 +1639,7 @@ impl<T: Config> Pallet<T> {
             let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
             side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
             let side_effect_interface =
-                <T as Config>::Xdns::fetch_side_effect_interface(side_effect_id);
-
-            // I guess this could be omitted, as SE submission would prevent this?
-            if let Err(msg) = side_effect_interface {
-                return Err(msg)
-            }
+                <T as Config>::Xdns::fetch_side_effect_interface(side_effect_id)?;
 
             confirm_with_vendor::<
                 T,
@@ -1639,15 +1651,14 @@ impl<T: Config> Pallet<T> {
             >(
                 gateway_vendor,
                 value_abi_unsigned_type,
-                &Box::new(side_effect_interface.unwrap()),
-                confirmation.encoded_effect.clone().into(),
+                &Box::new(side_effect_interface),
+                confirmation.encoded_effect.clone(),
                 state_copy,
                 Some(
                     side_effect
                         .generate_id::<SystemHashing<T>>()
                         .as_ref()
-                        .to_vec()
-                        .into(),
+                        .to_vec(),
                 ),
                 security_lvl,
                 security_coordinates,
@@ -1792,7 +1803,7 @@ impl<T: Config> Pallet<T> {
             processed_weight += db_weight.reads(4 as Weight);
             match Self::setup(
                 CircuitStatus::Ready,
-                &requester,
+                requester,
                 Zero::zero(),
                 Some(signal.execution_id),
             ) {
@@ -1847,22 +1858,20 @@ impl<T: Config> Pallet<T> {
         local_ctx.full_side_effects[current_step as usize]
             .iter()
             .filter(|&fsx| fsx.security_lvl == security_lvl)
-            .map(|fsx| fsx.clone())
+            .cloned()
             .collect()
     }
 
     pub(self) fn get_fsx_total_rewards(
-        fsxs: &Vec<
-            FullSideEffect<
-                <T as frame_system::Config>::AccountId,
-                <T as frame_system::Config>::BlockNumber,
-                EscrowedBalanceOf<T, <T as Config>::Escrowed>,
-            >,
-        >,
+        fsxs: &[FullSideEffect<
+            <T as frame_system::Config>::AccountId,
+            <T as frame_system::Config>::BlockNumber,
+            EscrowedBalanceOf<T, <T as Config>::Escrowed>,
+        >],
     ) -> EscrowedBalanceOf<T, <T as Config>::Escrowed> {
         let mut acc_rewards: EscrowedBalanceOf<T, <T as Config>::Escrowed> = Zero::zero();
 
-        for fsx in fsxs.iter() {
+        for fsx in fsxs {
             acc_rewards += fsx.input.prize;
         }
 

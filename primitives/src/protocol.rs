@@ -78,13 +78,6 @@ pub trait SideEffectProtocol {
                 },
             }?;
 
-            println!(
-                "select_side_effect -- type_n.clone().eval_abi {:?}  {:?}  {:?}",
-                type_n,
-                arg.clone(),
-                gateway_abi.clone()
-            );
-
             let res = type_n.clone().eval_abi(arg.clone(), gateway_abi)?;
             validated_args.push(res);
         }

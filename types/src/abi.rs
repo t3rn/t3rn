@@ -94,8 +94,8 @@ impl Default for GatewayABIConfig {
             hash_size: 32,
             hasher: HasherAlgo::Blake2,
             crypto: CryptoAlgo::Sr25519,
-            address_length: 32, // 32 bytes : 32 * 8 = 256 bits
-            value_type_size: 8, // u64 = 8 bytes = 64 bits.
+            address_length: 32,  // 32 bytes : 32 * 8 = 256 bits
+            value_type_size: 16, // u128 = 16 bytes = 128 bits.
             decimals: 8,
             structs: vec![],
         }

@@ -20,7 +20,7 @@ pub(crate) fn last_n_events(n: usize) -> Vec<pallet_executors::Event<Test>> {
     let len = events.len();
     if len > 0 {
         events[len - n..]
-            .into_iter()
+            .iter()
             .map(|r| r.event.clone())
             .filter_map(|e| {
                 if let Event::Executors(inner) = e {
@@ -40,7 +40,7 @@ pub(crate) fn last_n_events(n: usize) -> Vec<pallet_executors::Event<Test>> {
 macro_rules! assert_last_event {
     ($event:expr) => {
         match &$event {
-            e => assert_eq!(crate::mock::last_event(), *e),
+            e => assert_eq!($crate::mock::last_event(), *e),
         }
     };
 }
@@ -50,7 +50,7 @@ macro_rules! assert_last_event {
 macro_rules! assert_last_n_events {
     ($n:expr, $event:expr) => {
         match &$event {
-            e => similar_asserts::assert_eq!(crate::mock::last_n_events($n), *e),
+            e => similar_asserts::assert_eq!($crate::mock::last_n_events($n), *e),
         }
     };
 }

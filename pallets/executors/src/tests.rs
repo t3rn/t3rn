@@ -372,7 +372,7 @@ fn only_executor_can_cancel_scheduled_configuration() {
 fn cannot_double_join_candidates() {
     new_test_ext().execute_with(|| {
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -396,7 +396,7 @@ fn cannot_double_join_candidates() {
 fn cannot_join_candidates_as_staker() {
     new_test_ext().execute_with(|| {
         let staker = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &staker,
@@ -404,7 +404,7 @@ fn cannot_join_candidates_as_staker() {
         ));
 
         <StakerInfo<Test>>::insert(
-            &staker,
+            staker,
             StakerMetadata {
                 id: staker,
                 stakes: OrderedSet(vec![]),
@@ -425,7 +425,7 @@ fn cannot_join_candidates_as_staker() {
 fn join_candidates_enforces_a_min_bond() {
     new_test_ext().execute_with(|| {
         let executor = 14;
-        let min_candidate_bond = 1 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = 10 ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -443,7 +443,7 @@ fn join_candidates_enforces_a_min_bond() {
 fn join_candidates_fails_on_insufficient_weight_hint() {
     new_test_ext().execute_with(|| {
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -466,7 +466,7 @@ fn join_candidates_fails_on_insufficient_weight_hint() {
 fn join_candidates_fails_on_insufficient_balance() {
     new_test_ext().execute_with(|| {
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
 
         assert_noop!(
             Executors::join_candidates(Origin::signed(executor), min_candidate_bond, 0),
@@ -479,7 +479,7 @@ fn join_candidates_fails_on_insufficient_balance() {
 fn join_candidates_successfully() {
     new_test_ext().execute_with(|| {
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
         let empty_stakes: Stakes<<Test as frame_system::Config>::AccountId, Balance> =
             Default::default();
 
@@ -495,13 +495,13 @@ fn join_candidates_successfully() {
         ));
 
         assert_eq!(
-            <CandidateInfo<Test>>::get(&executor).unwrap(),
+            <CandidateInfo<Test>>::get(executor).unwrap(),
             CandidateMetadata::new(min_candidate_bond),
         );
 
-        assert_eq!(<TopStakes<Test>>::get(&executor).unwrap(), empty_stakes);
+        assert_eq!(<TopStakes<Test>>::get(executor).unwrap(), empty_stakes);
 
-        assert_eq!(<BottomStakes<Test>>::get(&executor).unwrap(), empty_stakes);
+        assert_eq!(<BottomStakes<Test>>::get(executor).unwrap(), empty_stakes);
 
         assert_eq!(
             <CandidatePool<Test>>::get(),
@@ -525,7 +525,7 @@ fn join_candidates_successfully() {
 fn schedule_leave_candidates_fails_on_insufficient_weight_hint() {
     new_test_ext().execute_with(|| {
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -549,7 +549,7 @@ fn schedule_leave_candidates_fails_on_insufficient_weight_hint() {
 fn schedule_leave_candidates_successfully() {
     new_test_ext().execute_with(|| {
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
         let now = Treasury::current_round().index;
         let leave_candidates_delay = Executors::fixtures().leave_candidates_delay;
 
@@ -589,8 +589,8 @@ fn execute_leave_candidates_fails_on_insufficient_weight_hint() {
     new_test_ext().execute_with(|| {
         let executor = 14;
         let staker = 15;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -640,8 +640,8 @@ fn execute_leave_candidates_fails_if_not_leaving() {
     new_test_ext().execute_with(|| {
         let executor = 14;
         let staker = 15;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -671,8 +671,8 @@ fn execute_leave_candidates_fails_if_too_early() {
     new_test_ext().execute_with(|| {
         let executor = 14;
         let staker = 15;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -715,8 +715,8 @@ fn anyone_can_execute_leave_candidates() {
     new_test_ext().execute_with(|| {
         let executor = 14;
         let staker = 15;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -784,7 +784,7 @@ fn cancel_leave_candidates_fails_if_not_executor() {
     new_test_ext().execute_with(|| {
         let executor = 14;
         let staker = 15;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -813,7 +813,7 @@ fn cancel_leave_candidates_fails_if_not_executor() {
 fn cancel_leave_candidates_fails_if_not_leaving() {
     new_test_ext().execute_with(|| {
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -838,7 +838,7 @@ fn cancel_leave_candidates_fails_if_too_low_weight_hint() {
     new_test_ext().execute_with(|| {
         let executor1 = 14;
         let executor2 = 13;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor1,
@@ -878,8 +878,8 @@ fn cancel_leave_candidates_fails_if_too_low_weight_hint() {
 fn cancel_leave_candidates_fails_if_already_active() {
     new_test_ext().execute_with(|| {
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -913,7 +913,7 @@ fn cancel_leave_candidates_fails_if_already_active() {
 fn cancel_leave_candidates_successfully() {
     new_test_ext().execute_with(|| {
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -968,7 +968,7 @@ fn go_offline_fails_if_not_candidate() {
 fn go_offline_successfully() {
     new_test_ext().execute_with(|| {
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -1018,7 +1018,7 @@ fn go_online_fails_if_not_candidate() {
 fn go_online_successfully() {
     new_test_ext().execute_with(|| {
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -1059,7 +1059,7 @@ fn stake_fails_on_insufficient_balance() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         assert_noop!(
             Executors::stake(Origin::signed(staker), executor, min_atomic_stake, 0, 0),
@@ -1073,8 +1073,8 @@ fn first_staking_requires_min_bond() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -1104,8 +1104,8 @@ fn non_first_stakes_enforce_a_minimum() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -1142,8 +1142,8 @@ fn non_first_stakes_enforce_a_minimum() {
 fn candidates_cannot_stake() {
     new_test_ext().execute_with(|| {
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -1168,8 +1168,8 @@ fn non_first_stakes_enforce_a_stake_count_weight_hint() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -1207,8 +1207,8 @@ fn staker_stakings_are_capped() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &staker,
@@ -1238,9 +1238,9 @@ fn staker_stakings_are_capped() {
                 stake_count,
                 candidate_stake_count
             ));
-            stake_count = stake_count + 1;
-            candidate_stake_count = candidate_stake_count + 1;
-            exec = exec + 1;
+            stake_count += 1;
+            candidate_stake_count += 1;
+            exec += 1;
         }
 
         assert_noop!(
@@ -1255,8 +1255,8 @@ fn cannot_stake_twice_on_the_same_candidate() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -1294,7 +1294,7 @@ fn cannot_stake_on_non_candidate() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &staker,
@@ -1314,8 +1314,8 @@ fn cannot_stake_with_insufficient_candidate_stake_count() {
         let staker = 15;
         let other_staker = 44;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -1364,8 +1364,8 @@ fn stake_sets_storage_and_emits_events() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -1419,8 +1419,8 @@ fn schedule_revoke_stake_fails_if_not_staker() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -1458,8 +1458,8 @@ fn cannot_schedule_revoke_stake_twice() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -1502,8 +1502,8 @@ fn schedule_revoke_stake_successfully() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -1577,8 +1577,8 @@ fn cancel_stake_request_fails_if_not_requested() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -1617,8 +1617,8 @@ fn cancel_stake_request_fails_if_origin_not_staker() {
         let staker = 15;
         let other_staker = 16;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -1662,8 +1662,8 @@ fn cancel_stake_request_successfully() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -1731,8 +1731,8 @@ fn staker_bond_more_fails_if_pending_stake_revoke() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -1776,8 +1776,8 @@ fn staker_bond_more_fails_if_no_such_stake() {
         let staker = 15;
         let executor = 14;
         let other_exec = 16;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -1815,8 +1815,8 @@ fn staker_bond_more_successfully() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -1890,8 +1890,8 @@ fn schedule_staker_bond_less_fails_if_pending_stake_request_exists() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -1935,8 +1935,8 @@ fn schedule_staker_bond_less_fails_if_no_such_stake() {
         let staker = 15;
         let executor = 14;
         let other_exec = 16;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -1974,8 +1974,8 @@ fn schedule_staker_bond_less_cannot_decrease_below_min_bond() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -2018,8 +2018,8 @@ fn schedule_staker_bond_less_cannot_decrease_below_min_stake() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -2061,8 +2061,8 @@ fn schedule_staker_bond_less_successfully() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -2122,8 +2122,8 @@ fn execute_stake_request_fails_if_no_such_staker() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -2167,8 +2167,8 @@ fn execute_stake_request_fails_if_no_such_request() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -2206,8 +2206,8 @@ fn execute_stake_request_fails_if_not_due_yet() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -2253,8 +2253,8 @@ fn executing_staking_action_revoke_successfully_and_leaving_stakers() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -2319,8 +2319,8 @@ fn executing_staking_action_decrease_successfully() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -2386,8 +2386,8 @@ fn anyone_can_execute_staking_requests() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -2446,8 +2446,8 @@ fn schedule_leave_stakers_fails_if_already_leaving() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -2490,8 +2490,8 @@ fn schedule_leave_stakers_successfully() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -2540,8 +2540,8 @@ fn execute_leave_stakers_fails_if_not_staker() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -2571,8 +2571,8 @@ fn execute_leave_stakers_fails_with_insufficient_weight_hint() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -2614,8 +2614,8 @@ fn execute_leave_stakers_fails_if_not_due_yet() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -2655,8 +2655,8 @@ fn anyone_can_execute_leave_stakers() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -2699,8 +2699,8 @@ fn cancel_leave_stakers_fails_if_not_staker() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -2740,8 +2740,8 @@ fn cancel_leave_stakers_fails_if_not_leaving() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,
@@ -2779,8 +2779,8 @@ fn cancel_leave_stakers_successfully() {
     new_test_ext().execute_with(|| {
         let staker = 15;
         let executor = 14;
-        let min_candidate_bond = 1000 * 10 ^ DECIMALS as u64;
-        let min_atomic_stake = 500 * 10 ^ DECIMALS as u64;
+        let min_candidate_bond = (1000 * 10) ^ DECIMALS as u64;
+        let min_atomic_stake = (500 * 10) ^ DECIMALS as u64;
 
         drop(<Test as Config>::Currency::deposit_creating(
             &executor,

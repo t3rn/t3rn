@@ -27,8 +27,6 @@ pub use t3rn_primitives::{
 use pallet_account_manager::BalanceOf;
 
 #[cfg(test)]
-mod mock;
-#[cfg(test)]
 mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -44,6 +42,8 @@ pub mod pallet {
     use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
+    use sp_std::{prelude::*, vec};
+
     use sp_runtime::traits::Zero;
 
     #[pallet::config]

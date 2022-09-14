@@ -227,7 +227,7 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
             let total_stake_power = collateral_bond + nominated_stake;
 
             // todo: ensure it's in range (0,1>
-            let collateral_bond_power = collateral_bond / total_stake_power.clone();
+            let collateral_bond_power = collateral_bond / total_stake_power;
 
             claimable_artifacts.push(ClaimableArtifacts {
                 beneficiary: active_set_claimable.executor.clone(),
@@ -240,11 +240,11 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
             let nominated_stake_power = nominated_stake / total_stake_power;
 
             let claimable_by_all_stakers_of_executor =
-                nominated_stake_power.clone() * active_set_claimable.claimable;
+                nominated_stake_power * active_set_claimable.claimable;
 
             for nominated_stake in T::Executors::stakes_per_executor(&active_set_claimable.executor)
             {
-                let staker_power = nominated_stake.nominated_stake / nominated_stake_power.clone();
+                let staker_power = nominated_stake.nominated_stake / nominated_stake_power;
                 claimable_artifacts.push(ClaimableArtifacts {
                     beneficiary: nominated_stake.staker,
                     role: CircuitRole::Staker,
@@ -261,13 +261,14 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::mock::*;
+    use circuit_mock_runtime::*;
+
     use frame_support::{assert_err, assert_ok};
 
     use sp_core::H256;
     use t3rn_primitives::common::RoundInfo;
 
-    const DEFAULT_BALANCE: u64 = 1_000_000;
+    const DEFAULT_BALANCE: Balance = 1_000_000;
 
     #[test]
     fn test_deposit_works() {
@@ -276,7 +277,7 @@ mod tests {
             let _ = Balances::deposit_creating(&ALICE, DEFAULT_BALANCE);
             assert_ok!(<AccountManager as AccountManagerExt<
                 AccountId,
-                BalanceOf<Test>,
+                Balance,
                 Hash,
                 BlockNumber,
             >>::deposit(
@@ -291,10 +292,10 @@ mod tests {
 
             assert_eq!(Balances::reserved_balance(&ALICE), DEFAULT_BALANCE / 10);
 
-            let charge_item = AccountManager::pending_charges_per_round::<RoundInfo<u64>, H256>(
-                Default::default(),
-                execution_id,
-            )
+            let charge_item = AccountManager::pending_charges_per_round::<
+                RoundInfo<BlockNumber>,
+                H256,
+            >(Default::default(), execution_id)
             .unwrap();
             assert_eq!(charge_item.payee, ALICE);
             assert_eq!(charge_item.recipient, BOB);
@@ -311,7 +312,7 @@ mod tests {
             let _ = Balances::deposit_creating(&ALICE, DEFAULT_BALANCE);
             assert_ok!(<AccountManager as AccountManagerExt<
                 AccountId,
-                BalanceOf<Test>,
+                Balance,
                 Hash,
                 BlockNumber,
             >>::deposit(
@@ -327,7 +328,7 @@ mod tests {
             assert_err!(
                 <AccountManager as AccountManagerExt<
                     AccountId,
-                    BalanceOf<Test>,
+                    Balance,
                     Hash,
                     BlockNumber,
                 >>::deposit(
@@ -339,7 +340,7 @@ mod tests {
                     CircuitRole::ContractAuthor,
                     Some(BOB),
                 ),
-                Error::<Test>::ExecutionAlreadyRegistered
+                pallet_account_manager::Error::<Runtime>::ExecutionAlreadyRegistered
             );
         });
     }
@@ -350,7 +351,7 @@ mod tests {
             let _ = Balances::deposit_creating(&ALICE, DEFAULT_BALANCE);
             let _ = Balances::deposit_creating(&BOB, DEFAULT_BALANCE);
             let _ = Balances::deposit_creating(
-                &<Test as Config>::EscrowAccount::get(),
+                &<Runtime as pallet_account_manager::Config>::EscrowAccount::get(),
                 DEFAULT_BALANCE,
             );
             let charge_amt = 100;
@@ -358,7 +359,7 @@ mod tests {
 
             assert_ok!(<AccountManager as AccountManagerExt<
                 AccountId,
-                BalanceOf<Test>,
+                Balance,
                 Hash,
                 BlockNumber,
             >>::deposit(
@@ -375,7 +376,7 @@ mod tests {
 
             assert_ok!(<AccountManager as AccountManagerExt<
                 AccountId,
-                BalanceOf<Test>,
+                Balance,
                 Hash,
                 BlockNumber,
             >>::finalize(
@@ -386,7 +387,9 @@ mod tests {
             let ten_percent_charge_amt = charge_amt / 10;
 
             assert_eq!(
-                Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
+                Balances::free_balance(
+                    &<Runtime as pallet_account_manager::Config>::EscrowAccount::get()
+                ),
                 one_percent_charge_amt + DEFAULT_BALANCE // 1% left now
             );
 
@@ -396,14 +399,14 @@ mod tests {
             );
 
             assert_eq!(
-                AccountManager::pending_charges_per_round::<RoundInfo<u64>, H256>(
+                AccountManager::pending_charges_per_round::<RoundInfo<BlockNumber>, H256>(
                     Default::default(),
                     execution_id,
                 ),
                 None
             );
 
-            let settlement = AccountManager::settlements_per_round::<RoundInfo<u64>, H256>(
+            let settlement = AccountManager::settlements_per_round::<RoundInfo<BlockNumber>, H256>(
                 Default::default(),
                 execution_id,
             )
@@ -421,7 +424,7 @@ mod tests {
             let _ = Balances::deposit_creating(&ALICE, DEFAULT_BALANCE);
             let _ = Balances::deposit_creating(&BOB, DEFAULT_BALANCE);
             let _ = Balances::deposit_creating(
-                &<Test as Config>::EscrowAccount::get(),
+                &<Runtime as pallet_account_manager::Config>::EscrowAccount::get(),
                 DEFAULT_BALANCE,
             );
             let charge_amt = 100;
@@ -429,7 +432,7 @@ mod tests {
 
             assert_ok!(<AccountManager as AccountManagerExt<
                 AccountId,
-                BalanceOf<Test>,
+                Balance,
                 Hash,
                 BlockNumber,
             >>::deposit(
@@ -446,7 +449,7 @@ mod tests {
 
             assert_ok!(<AccountManager as AccountManagerExt<
                 AccountId,
-                BalanceOf<Test>,
+                Balance,
                 Hash,
                 BlockNumber,
             >>::finalize(
@@ -455,20 +458,22 @@ mod tests {
 
             let one_percent_charge_amt = charge_amt / 100;
             assert_eq!(
-                Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
+                Balances::free_balance(
+                    &<Runtime as pallet_account_manager::Config>::EscrowAccount::get()
+                ),
                 one_percent_charge_amt + DEFAULT_BALANCE // 1% left now
             );
             assert_eq!(Balances::free_balance(&ALICE), DEFAULT_BALANCE - charge_amt);
 
             assert_eq!(
-                AccountManager::pending_charges_per_round::<RoundInfo<u64>, H256>(
+                AccountManager::pending_charges_per_round::<RoundInfo<BlockNumber>, H256>(
                     Default::default(),
                     execution_id,
                 ),
                 None
             );
 
-            let settlement = AccountManager::settlements_per_round::<RoundInfo<u64>, H256>(
+            let settlement = AccountManager::settlements_per_round::<RoundInfo<BlockNumber>, H256>(
                 Default::default(),
                 execution_id,
             )
@@ -489,7 +494,7 @@ mod tests {
             let _ = Balances::deposit_creating(&ALICE, DEFAULT_BALANCE);
             let _ = Balances::deposit_creating(&BOB, DEFAULT_BALANCE);
             let _ = Balances::deposit_creating(
-                &<Test as Config>::EscrowAccount::get(),
+                &<Runtime as pallet_account_manager::Config>::EscrowAccount::get(),
                 DEFAULT_BALANCE,
             );
             let charge_amt = 100;
@@ -497,7 +502,7 @@ mod tests {
 
             assert_ok!(<AccountManager as AccountManagerExt<
                 AccountId,
-                BalanceOf<Test>,
+                Balance,
                 Hash,
                 BlockNumber,
             >>::deposit(
@@ -514,7 +519,7 @@ mod tests {
 
             assert_ok!(<AccountManager as AccountManagerExt<
                 AccountId,
-                BalanceOf<Test>,
+                Balance,
                 Hash,
                 BlockNumber,
             >>::finalize(
@@ -525,7 +530,9 @@ mod tests {
             let fifty_percent_charge_amt = charge_amt / 100 * 50;
 
             assert_eq!(
-                Balances::free_balance(&<Test as Config>::EscrowAccount::get()),
+                Balances::free_balance(
+                    &<Runtime as pallet_account_manager::Config>::EscrowAccount::get()
+                ),
                 one_percent_charge_amt + DEFAULT_BALANCE // 1% left now
             );
 
@@ -535,14 +542,14 @@ mod tests {
             );
 
             assert_eq!(
-                AccountManager::pending_charges_per_round::<RoundInfo<u64>, H256>(
+                AccountManager::pending_charges_per_round::<RoundInfo<BlockNumber>, H256>(
                     Default::default(),
                     execution_id,
                 ),
                 None
             );
 
-            let settlement = AccountManager::settlements_per_round::<RoundInfo<u64>, H256>(
+            let settlement = AccountManager::settlements_per_round::<RoundInfo<BlockNumber>, H256>(
                 Default::default(),
                 execution_id,
             )

@@ -298,7 +298,7 @@ impl<
     ) -> XExecStepSideEffectId<T> {
         let mut xtx_id_buf = xtx_id.encode();
         xtx_id_buf.append(&mut (n_step as u32).encode());
-        SystemHashing::<T>::hash(xtx_id_buf.to_vec().as_ref())
+        SystemHashing::<T>::hash(xtx_id_buf.as_ref())
     }
 
     pub fn setup_fresh<T: frame_system::Config>(

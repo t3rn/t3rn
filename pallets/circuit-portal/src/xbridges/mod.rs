@@ -97,7 +97,7 @@ pub fn read_cmp_latest_height_from_bridge<
         let cmp_height: CurrentBlockNumber<T, I> = Decode::decode(&mut &encoded_cmp_height[..])
             .map_err(|_e| Error::<T>::ReadTargetHeightDecodeCmpHeightError)?;
         if *header.number() < cmp_height {
-            return Err(Error::<T>::ReadTargetHeightReplayAttackDetected.into())
+            return Err(Error::<T>::ReadTargetHeightReplayAttackDetected)
         }
     }
 

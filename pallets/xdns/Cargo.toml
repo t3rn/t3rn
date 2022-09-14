@@ -40,6 +40,10 @@ sp-keystore = { git = "https://github.com/paritytech/substrate", branch = 'polka
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 pallet-sudo     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 
+circuit-runtime-types = { path = "../../runtime/common-types" }
+circuit-runtime-pallets = { path = "../../runtime/common-pallets" }
+circuit-mock-runtime = { path = "../../runtime/mock" }
+
 [features]
 default = [ "std" ]
 runtime-benchmarks = [ "frame-benchmarking" ]

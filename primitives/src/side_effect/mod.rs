@@ -1,25 +1,27 @@
-use crate::{
-    bridges::chain_circuit::{
-        AccountId, Balance as CircuitBalance, BlockNumber as CircuitBlockNumber,
-    },
-    Bytes,
-};
+use crate::Bytes;
 use codec::{Decode, Encode};
-use sp_std::convert::TryFrom;
-
+use num_traits::Zero;
 use scale_info::TypeInfo;
-use sp_runtime::{traits::Zero, RuntimeDebug};
-use sp_std::{vec, vec::Vec};
+use sp_runtime::RuntimeDebug;
+use sp_std::{
+    convert::{TryFrom, TryInto},
+    vec,
+};
 
-use sp_core::crypto::AccountId32;
+pub use interface::*;
+pub use t3rn_types::side_effect::{
+    ConfirmationOutcome, ConfirmedSideEffect, Error, EventSignature,
+    FullSideEffect as HardenedSideEffect, SecurityLvl, SideEffect, SideEffectName, TargetId,
+    ADD_LIQUIDITY_SIDE_EFFECT_ID, ASSETS_TRANSFER_SIDE_EFFECT_ID, CALL_SIDE_EFFECT_ID,
+    COMPOSABLE_CALL_SIDE_EFFECT_ID, DATA_SIDE_EFFECT_ID, EVM_CALL_SIDE_EFFECT_ID,
+    ORML_TRANSFER_SIDE_EFFECT_ID, SWAP_SIDE_EFFECT_ID, TRANSFER_SIDE_EFFECT_ID,
+    WASM_CALL_SIDE_EFFECT_ID,
+};
+
 #[cfg(feature = "no_std")]
 use sp_runtime::RuntimeDebug as Debug;
 
 pub mod interface;
-
-pub use interface::*;
-pub use t3rn_types::side_effect::*;
-
 pub mod parser;
 
 pub type SideEffectId<T> = <T as frame_system::Config>::Hash;
@@ -32,162 +34,49 @@ pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub submission_target_height: Bytes,
 }
 
-impl<
-        AccountId: Encode,
-        BlockNumber: Ord + Copy + Zero + Encode,
-        BalanceOf: Copy + Zero + Encode + Decode,
-    > FullSideEffect<AccountId, BlockNumber, BalanceOf>
+impl<AccountId, BlockNumber, BalanceOf>
+    TryInto<HardenedSideEffect<AccountId, BlockNumber, BalanceOf>>
+    for FullSideEffect<AccountId, BlockNumber, BalanceOf>
+where
+    AccountId: Encode + Clone,
+    BlockNumber: Encode + Clone,
+    BalanceOf: Encode + Zero + Clone,
 {
-    pub fn harden(
-        &self,
-    ) -> Result<
-        (
-            SecurityLvl,
-            ConfirmationOutcome,
-            CircuitBalance,
-            AccountId32,
-            CircuitBlockNumber,
-            CircuitBalance,
-            [u8; 4],
-            Vec<Bytes>,
-            [u8; 4],
-        ),
-        Error,
-    > {
-        let confirmed = if let Some(ref confirmed) = self.confirmed {
-            Ok(confirmed)
-        } else {
-            Err(Error::HardeningMissingConfirmationError)
-        }?;
+    type Error = Error;
 
-        let confirmation_outcome = if let Some(outcome) = &confirmed.err {
-            outcome.clone()
-        } else {
-            ConfirmationOutcome::Success
-        };
-
-        let confirmed_cost: CircuitBalance = if let Some(cost) = &confirmed.cost {
-            Decode::decode(&mut &cost.encode()[..]).map_err(|_| Error::HardeningDecodeError)
-        } else {
-            Ok(0u128)
-        }?;
-
-        let confirmed_executioner: AccountId32 =
-            Decode::decode(&mut &confirmed.executioner.encode()[..])
-                .map_err(|_| Error::HardeningDecodeError)?;
-
-        let confirmed_received_at: CircuitBlockNumber =
-            Decode::decode(&mut &confirmed.received_at.encode()[..])
-                .map_err(|_| Error::HardeningDecodeError)?;
-
-        let prize: CircuitBalance = Decode::decode(&mut &self.input.prize.encode()[..])
-            .map_err(|_| Error::HardeningDecodeError)?;
-
-        Ok((
-            self.security_lvl.clone(),
-            confirmation_outcome,
-            confirmed_cost,
-            confirmed_executioner,
-            confirmed_received_at,
-            prize,
-            self.input.target.clone(),
-            self.input.encoded_args.clone(),
-            <[u8; 4]>::try_from(self.input.encoded_action.clone()).unwrap_or_default(),
-        ))
-    }
-}
-
-#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
-pub struct HardenedSideEffect {
-    target: [u8; 4],
-    prize: CircuitBalance,
-    encoded_action: [u8; 4],
-    encoded_args: Vec<Bytes>,
-    encoded_args_abi: Vec<crate::abi::Type>,
-
-    security_lvl: SecurityLvl,
-
-    confirmation_outcome: ConfirmationOutcome,
-    confirmed_executioner: AccountId,
-    confirmed_received_at: CircuitBlockNumber,
-    confirmed_cost: CircuitBalance,
-}
-
-impl Default for HardenedSideEffect {
-    fn default() -> Self {
-        HardenedSideEffect {
-            target: [0, 0, 0, 0],
-            prize: 0u128,
-            encoded_action: [0, 0, 0, 0],
-            encoded_args: vec![],
+    fn try_into(
+        self,
+    ) -> Result<HardenedSideEffect<AccountId, BlockNumber, BalanceOf>, Self::Error> {
+        let confirmation_outcome = self.clone().confirmed.and_then(|c| c.err.clone());
+        let confirmed_executioner = self.clone().confirmed.map(|c| c.executioner.clone());
+        let confirmed_received_at = self.clone().confirmed.map(|c| c.received_at.clone());
+        let confirmed_cost = self.clone().confirmed.and_then(|c| c.cost);
+        Ok(HardenedSideEffect::<AccountId, BlockNumber, BalanceOf> {
+            target: self.input.target,
+            prize: self.input.prize,
+            encoded_action: TargetId::try_from(self.input.encoded_action.clone())
+                .unwrap_or_default(),
+            encoded_args: self.input.encoded_args,
             encoded_args_abi: vec![],
-            security_lvl: SecurityLvl::Dirty,
-            confirmation_outcome: ConfirmationOutcome::Success,
-            confirmed_executioner: AccountId32::new([0u8; 32]),
-            confirmed_received_at: 0,
-            confirmed_cost: 0,
-        }
-    }
-}
-
-impl
-    From<(
-        SecurityLvl,
-        ConfirmationOutcome,
-        CircuitBalance,
-        AccountId32,
-        CircuitBlockNumber,
-        CircuitBalance,
-        [u8; 4],
-        Vec<Bytes>,
-        [u8; 4],
-    )> for HardenedSideEffect
-{
-    fn from(
-        hardened_args: (
-            SecurityLvl,
-            ConfirmationOutcome,
-            CircuitBalance,
-            AccountId32,
-            CircuitBlockNumber,
-            CircuitBalance,
-            [u8; 4],
-            Vec<Bytes>,
-            [u8; 4],
-        ),
-    ) -> HardenedSideEffect {
-        let (
-            security_lvl,
-            confirmation_outcome,
-            confirmed_cost,
-            confirmed_executioner,
-            confirmed_received_at,
-            prize,
-            target,
-            encoded_args,
-            encoded_action,
-        ) = hardened_args;
-        HardenedSideEffect {
-            target,
-            prize,
-            encoded_action,
-            encoded_args,
-            encoded_args_abi: vec![],
-            security_lvl,
+            security_lvl: self.security_lvl,
             confirmation_outcome,
             confirmed_executioner,
             confirmed_received_at,
             confirmed_cost,
-        }
+        })
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::bridges::chain_circuit::{
+        Balance as CircuitBalance, BlockNumber as CircuitBlockNumber,
+    };
     use hex_literal::hex;
     use sp_core::crypto::AccountId32;
     use sp_runtime::testing::H256;
+    use std::convert::TryInto;
 
     type BlockNumber = CircuitBlockNumber;
     type BalanceOf = CircuitBalance;
@@ -258,7 +147,7 @@ mod tests {
             }),
         };
 
-        let hsfx: HardenedSideEffect = tfsfx.harden().unwrap().into();
+        let hsfx: HardenedSideEffect<AccountId, BlockNumber, BalanceOf> = tfsfx.try_into().unwrap();
 
         assert_eq!(
             hsfx,
@@ -283,13 +172,12 @@ mod tests {
                 ],
                 encoded_args_abi: vec![],
                 security_lvl: SecurityLvl::Dirty,
-                confirmation_outcome: ConfirmationOutcome::Success,
-                confirmed_executioner: hex!(
-                    "0101010101010101010101010101010101010101010101010101010101010101"
-                )
-                .into(),
-                confirmed_received_at: 1,
-                confirmed_cost: 2
+                confirmation_outcome: Some(ConfirmationOutcome::Success),
+                confirmed_executioner: Some(AccountId32::new(
+                    hex!("0101010101010101010101010101010101010101010101010101010101010101").into()
+                )),
+                confirmed_received_at: Some(1),
+                confirmed_cost: Some(2)
             },
         );
 

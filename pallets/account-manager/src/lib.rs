@@ -25,8 +25,6 @@ use t3rn_primitives::{
 };
 
 #[cfg(test)]
-mod mock;
-#[cfg(test)]
 mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]

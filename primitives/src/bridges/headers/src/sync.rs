@@ -44,7 +44,7 @@ pub struct HeadersSyncParams {
 }
 
 /// Target transaction mode.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum TargetTransactionMode {
     /// Submit new headers using signed transactions.
     Signed,
