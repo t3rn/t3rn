@@ -1158,7 +1158,6 @@ dependencies = [
  "hex-literal 0.3.4",
  "log",
  "node-primitives",
- "pallet-evm-precompile-xbi",
  "parity-scale-codec 3.1.5",
  "scale-info 2.1.2",
  "serde",
@@ -7124,19 +7123,6 @@ dependencies = [
  "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.19)",
  "ripemd",
  "sp-io",
-]
-
-[[package]]
-name = "pallet-evm-precompile-xbi"
-version = "1.0.0-dev"
-dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.19)",
- "frame-support",
- "frame-system",
- "pallet-evm 6.0.0-dev",
- "pallet-xbi-portal",
- "sp-core",
- "sp-std",
 ]
 
 [[package]]
@@ -13528,6 +13514,7 @@ dependencies = [
  "sp-std",
  "sp-version",
  "t3rn-primitives",
+ "t3rn-types 0.0.1-rc.2",
  "tiny-keccak 2.0.2",
  "triehash",
 ]
