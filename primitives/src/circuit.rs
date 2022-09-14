@@ -1,9 +1,10 @@
-use crate::{side_effect::HardenedSideEffect, xtx::LocalState};
+use crate::xtx::LocalState;
 use codec::{Decode, Encode};
 use frame_support::dispatch::DispatchResult;
 use frame_system::{pallet_prelude::OriginFor, Config};
 use sp_std::{fmt::Debug, vec::Vec};
 use t3rn_sdk_primitives::signal::ExecutionSignal;
+use t3rn_types::side_effect::FullSideEffect;
 
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode)]
 pub struct LocalTrigger<T: Config> {
@@ -28,20 +29,19 @@ impl<T: Config> LocalTrigger<T> {
     }
 }
 
-// TODO: provide full side effects
 #[derive(Debug, Clone, Eq, PartialEq, Encode, Decode)]
-pub struct LocalStateExecutionView<T: Config> {
+pub struct LocalStateExecutionView<T: Config, BalanceOf> {
     pub local_state: LocalState,
-    pub hardened_side_effects: Vec<Vec<HardenedSideEffect>>,
+    pub hardened_side_effects: Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, BalanceOf>>>,
     pub steps_cnt: (u32, u32),
     pub xtx_id: <T as Config>::Hash,
 }
 
-impl<T: Config> LocalStateExecutionView<T> {
+impl<T: Config, Balance> LocalStateExecutionView<T, Balance> {
     pub fn new(
         xtx_id: <T as Config>::Hash,
         local_state: LocalState,
-        hardened_side_effects: Vec<Vec<HardenedSideEffect>>,
+        hardened_side_effects: Vec<Vec<FullSideEffect<T::AccountId, T::BlockNumber, Balance>>>,
         steps_cnt: (u32, u32),
     ) -> Self {
         LocalStateExecutionView {
@@ -53,13 +53,13 @@ impl<T: Config> LocalStateExecutionView<T> {
     }
 }
 
-pub trait OnLocalTrigger<T: Config> {
+pub trait OnLocalTrigger<T: Config, Balance> {
     fn on_local_trigger(origin: &OriginFor<T>, trigger: LocalTrigger<T>) -> DispatchResult;
 
     fn load_local_state(
         origin: &OriginFor<T>,
         maybe_xtx_id: Option<T::Hash>,
-    ) -> Result<LocalStateExecutionView<T>, sp_runtime::DispatchError>;
+    ) -> Result<LocalStateExecutionView<T, Balance>, sp_runtime::DispatchError>;
 
     fn on_signal(origin: &OriginFor<T>, signal: ExecutionSignal<T::Hash>) -> DispatchResult;
 }
