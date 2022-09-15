@@ -28,7 +28,7 @@ pub enum ChannelId {
 }
 
 /// A message relayed from Ethereum.
-#[derive(PartialEq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct Message {
     /// The raw message data.
     pub data: Vec<u8>,
@@ -40,7 +40,7 @@ pub struct Message {
 ///
 /// This data type allows us to support multiple verification schemes. In the near future,
 /// A light-client scheme will be added too.
-#[derive(PartialEq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct Proof {
     // The block hash of the block in which the receipt was included.
     pub block_hash: H256,
@@ -51,7 +51,7 @@ pub struct Proof {
 }
 
 /// Auxiliary [`DigestItem`] to include in header digest.
-#[derive(Encode, Decode, Copy, Clone, PartialEq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub enum AuxiliaryDigestItem {
     /// A batch of messages has been committed.
     Commitment(ChannelId, H256),

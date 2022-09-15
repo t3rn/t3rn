@@ -59,7 +59,7 @@ impl rlp::Decodable for FullNode {
 
 impl Node for FullNode {
     fn contains_hash(&self, hash: H256) -> bool {
-        self.children.iter().find(|&h| Some(hash) == *h).is_some()
+        self.children.iter().any(|h| Some(hash) == *h)
     }
 }
 
@@ -126,7 +126,7 @@ mod tests {
         // key + item value
         let node: ShortNode = rlp::decode(RAW_PROOF[2]).unwrap();
         assert_eq!(node.key, vec![32]);
-        assert!(node.value.len() > 0);
+        assert!(!node.value.is_empty());
 
         // key + item hash
         let node: ShortNode = rlp::decode(&hex!(

@@ -219,7 +219,7 @@ pub mod pallet {
                 gateway_type.clone(),
                 gateway_genesis,
                 gateway_sys_props.clone(),
-                security_coordinates.clone(),
+                security_coordinates,
                 allowed_side_effects.clone(),
                 true, // force ~ overwrite existing XDNS record
             )?;
@@ -292,7 +292,7 @@ pub mod pallet {
 
             let mut storage_key: Vec<u8> = PARAS_HEADS_STORAGE_KEY_PREFIX.to_vec();
 
-            let parachain_xdns_record = <T as Config>::Xdns::best_available(gateway_id.clone())?;
+            let parachain_xdns_record = <T as Config>::Xdns::best_available(gateway_id)?;
 
             let relay_chain_id: ChainId = match parachain_xdns_record.parachain {
                 Some(parachain) => {
@@ -524,7 +524,7 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
 
                 // Not great, but better then decoding all events and then searching
                 fn is_sub<T: PartialEq>(mut haystack: &[T], needle: &[T]) -> bool {
-                    if needle.len() == 0 {
+                    if needle.is_empty() {
                         return true
                     }
                     while !haystack.is_empty() {
@@ -540,7 +540,7 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
                 // Here we do this in encoded bytes form. Not pretty, but the most efficient I believe.
                 // As the event storage is currently being revamped, this is a temporary solution anyways
                 if is_sub(&verified_events, &encoded_event) {
-                    return Ok(().into())
+                    return Ok(())
                 }
                 Err(Error::<T>::SideEffectConfirmationInvalidInclusionProof.into())
             },
@@ -555,9 +555,8 @@ impl<T: Config> CircuitPortal<T> for Pallet<T> {
         let gateway_xdns_record = <T as Config>::Xdns::best_available(gateway_id)?;
 
         match gateway_xdns_record.gateway_vendor {
-            GatewayVendor::EvmBased => return Err("Read latest target height - unhandled vendor"),
-            GatewayVendor::InternalXBI =>
-                return Err("Read latest target height - unhandled vendor"),
+            GatewayVendor::EvmBased => Err("Read latest target height - unhandled vendor"),
+            GatewayVendor::InternalXBI => Err("Read latest target height - unhandled vendor"),
             GatewayVendor::PolkadotLike => {
                 log::info!("gateway_id: {:?}", gateway_id);
                 match gateway_xdns_record.gateway_abi.block_number_type_size {

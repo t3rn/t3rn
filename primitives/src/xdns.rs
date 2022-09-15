@@ -189,4 +189,6 @@ pub trait Xdns<T: frame_system::Config> {
     fn get_gateway_type_unsafe(chain_id: &ChainId) -> GatewayType;
 
     fn get_gateway_security_coordinates(chain_id: &ChainId) -> Result<Vec<u8>, &'static str>;
+
+    fn get_gateway_para_id(chain_id: &ChainId) -> Result<u32, &'static str>;
 }

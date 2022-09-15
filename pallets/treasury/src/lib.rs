@@ -307,10 +307,10 @@ pub mod pallet {
                 <Beneficiaries<T>>::iter_keys().fold((0, 0), |mut acc, c| {
                     match c.1 {
                         BeneficiaryRole::Developer => {
-                            acc.0 = acc.0 + 1;
+                            acc.0 += 1;
                         },
                         BeneficiaryRole::Executor => {
-                            acc.1 = acc.1 + 1;
+                            acc.1 += 1;
                         },
                     }
                     acc
@@ -370,12 +370,12 @@ pub mod pallet {
             );
 
             // allocate to beneficiary
-            T::Currency::deposit_into_existing(&who, BalanceOf::<T>::from(total_rewards))
+            T::Currency::deposit_into_existing(&who, total_rewards)
                 .expect("Should deposit balance to account"); //TODO
 
             Self::deposit_event(Event::RewardsClaimed(who, total_rewards));
 
-            Ok(().into())
+            Ok(())
         }
 
         /// Sets the annual inflation rate to derive per-round inflation

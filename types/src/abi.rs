@@ -94,8 +94,8 @@ impl Default for GatewayABIConfig {
             hash_size: 32,
             hasher: HasherAlgo::Blake2,
             crypto: CryptoAlgo::Sr25519,
-            address_length: 32, // 32 bytes : 32 * 8 = 256 bits
-            value_type_size: 8, // u64 = 8 bytes = 64 bits.
+            address_length: 32,  // 32 bytes : 32 * 8 = 256 bits
+            value_type_size: 16, // u128 = 16 bytes = 128 bits.
             decimals: 8,
             structs: vec![],
         }
@@ -173,12 +173,14 @@ impl Type {
                 32 => b"uint32",
                 64 => b"uint64",
                 128 => b"uint128",
+                256 => b"uint256",
                 _ => unimplemented!(),
             },
             Type::Int(n) => match n {
                 32 => b"int32",
                 64 => b"int64",
                 128 => b"int128",
+                256 => b"int256",
                 _ => unimplemented!(),
             },
             Type::String => b"string",
@@ -216,12 +218,14 @@ impl Type {
                 32 => RuntimeString::from("uint32"),
                 64 => RuntimeString::from("uint64"),
                 128 => RuntimeString::from("uint128"),
+                256 => RuntimeString::from("uint256"),
                 _ => unimplemented!(),
             },
             Type::Int(n) => match n {
                 32 => RuntimeString::from("int32"),
                 64 => RuntimeString::from("int64"),
                 128 => RuntimeString::from("int128"),
+                256 => RuntimeString::from("int256"),
                 _ => unimplemented!(),
             },
             Type::String => RuntimeString::from("string"),
@@ -307,7 +311,7 @@ impl Type {
                     let res: i128 = decode_buf2val(encoded_val)?;
                     Ok(res.encode())
                 },
-                _ => Err("Unknown Uint size"),
+                _ => Err("Unknown Int size"),
             },
             Type::Uint(size) => match size {
                 32 => {
@@ -322,6 +326,10 @@ impl Type {
                     let res: u128 = decode_buf2val(encoded_val)?;
                     Ok(res.encode())
                 },
+                256 => {
+                    let res: U256 = decode_buf2val(encoded_val)?;
+                    Ok(res.encode())
+                },
                 _ => Err("Unknown Uint size"),
             },
             Type::Bytes(_) => {
@@ -332,6 +340,11 @@ impl Type {
             Type::String => {
                 let res: RuntimeString = decode_buf2val(encoded_val)?;
                 Ok(res.encode())
+            },
+            Type::Option(maybe_type) => match encoded_val.len() {
+                0 => Err("Optional value encoded on zero bytes"),
+                1 => Ok(encoded_val),
+                _ => maybe_type.eval_abi(encoded_val[1..].to_vec(), gen),
             },
             Type::Value => {
                 match gen.value_type_size {

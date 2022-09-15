@@ -1,11 +1,15 @@
+use crate::abi::Type as AbiType;
+use bytes::Buf;
 use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::{
-    prelude::{collections::VecDeque, fmt::Debug, vec, vec::Vec},
+    prelude::{fmt::Debug, vec, vec::Vec},
     TypeInfo,
 };
 
 #[cfg(feature = "runtime")]
 use num::Zero;
+#[cfg(feature = "runtime")]
+use scale_info::prelude::collections::VecDeque;
 
 pub type TargetId = [u8; 4];
 pub type EventSignature = Vec<u8>;
@@ -17,8 +21,9 @@ pub const WASM_CALL_SIDE_EFFECT_ID: &[u8; 4] = b"wasm";
 pub const EVM_CALL_SIDE_EFFECT_ID: &[u8; 4] = b"cevm";
 pub const CALL_SIDE_EFFECT_ID: &[u8; 4] = b"call";
 pub const ORML_TRANSFER_SIDE_EFFECT_ID: &[u8; 4] = b"orml";
-pub const TRANSFER_SIDE_EFFECT_ID: &[u8; 4] = b"tran";
 pub const ASSETS_TRANSFER_SIDE_EFFECT_ID: &[u8; 4] = b"tass";
+pub const MULTI_TRANSFER_SIDE_EFFECT_ID: &[u8; 4] = b"mult";
+pub const TRANSFER_SIDE_EFFECT_ID: &[u8; 4] = b"tran";
 pub const ADD_LIQUIDITY_SIDE_EFFECT_ID: &[u8; 4] = b"aliq";
 pub const SWAP_SIDE_EFFECT_ID: &[u8; 4] = b"swap";
 pub const DATA_SIDE_EFFECT_ID: &[u8; 4] = b"data";
@@ -27,11 +32,48 @@ pub const DATA_SIDE_EFFECT_ID: &[u8; 4] = b"data";
 pub struct SideEffect<AccountId, BlockNumber, BalanceOf> {
     pub target: TargetId,
     pub prize: BalanceOf,
-    pub ordered_at: BlockNumber,
     pub encoded_action: Bytes,
     pub encoded_args: Vec<Bytes>,
+    pub ordered_at: BlockNumber,
     pub signature: Bytes,
     pub enforce_executioner: Option<AccountId>,
+}
+
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
+pub struct FullSideEffect<AccountId, BlockNumber, BalanceOf> {
+    pub target: TargetId,
+    pub prize: BalanceOf,
+    pub encoded_action: [u8; 4],
+    pub encoded_args: Vec<Bytes>,
+    pub encoded_args_abi: Vec<AbiType>,
+    pub security_lvl: SecurityLvl,
+    pub confirmation_outcome: Option<ConfirmationOutcome>,
+    pub confirmed_executioner: Option<AccountId>,
+    pub confirmed_received_at: Option<BlockNumber>,
+    pub confirmed_cost: Option<BalanceOf>,
+}
+
+impl<AccountId, BlockNumber, BalanceOf> Default
+    for FullSideEffect<AccountId, BlockNumber, BalanceOf>
+where
+    AccountId: From<[u8; 32]>,
+    BlockNumber: Default,
+    BalanceOf: Default,
+{
+    fn default() -> Self {
+        FullSideEffect::<AccountId, BlockNumber, BalanceOf> {
+            target: [0, 0, 0, 0],
+            prize: BalanceOf::default(),
+            encoded_action: [0, 0, 0, 0],
+            encoded_args: vec![],
+            encoded_args_abi: vec![],
+            security_lvl: SecurityLvl::Dirty,
+            confirmation_outcome: None,
+            confirmed_executioner: None,
+            confirmed_received_at: None,
+            confirmed_cost: None,
+        }
+    }
 }
 
 #[cfg(feature = "runtime")]
@@ -69,7 +111,7 @@ where
         let action = Action::try_from(take_next()?)?;
 
         let bytes: Vec<u8> = bytes.into();
-        let args = extract_args::<AccountId, BalanceOf, [u8; 32]>(
+        let args = extract_args::<AccountId, BalanceOf, [u8; 32], Insurance<BalanceOf>>(
             &action,
             &mut bytes::Bytes::from(bytes),
         )?;
@@ -80,7 +122,7 @@ where
             target,
             prize: Zero::zero(),
             ordered_at: Zero::zero(),
-            encoded_action: action_bytes.into(),
+            encoded_action: action_bytes,
             encoded_args: args,
             signature: vec![],
             enforce_executioner: None,
@@ -106,8 +148,7 @@ impl TryInto<TargetId> for TargetByte {
 
 enum Action {
     Transfer,
-    TransferAssets,
-    TransferOrml,
+    TransferMulti,
     AddLiquidity,
     Swap,
     Call,
@@ -120,19 +161,14 @@ enum Action {
 impl TryFrom<u8> for Action {
     type Error = &'static str;
 
-    // TODO: currently these enums are out of order since they don't fully map together yet
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
             0 => Ok(Action::Transfer),
+            1 => Ok(Action::TransferMulti),
             2 => Ok(Action::AddLiquidity),
             3 => Ok(Action::Swap),
-            4 => Ok(Action::Call),
-            5 => Ok(Action::TransferAssets),
-            6 => Ok(Action::TransferOrml),
-            7 => Ok(Action::CallEvm),
-            8 => Ok(Action::CallWasm),
-            9 => Ok(Action::CallComposable),
-            10 => Ok(Action::Data),
+            4 => Ok(Action::Call), // This needs to be structured nicer
+            5 => Ok(Action::Data),
             _ => Err("Invalid action id"),
         }
     }
@@ -149,13 +185,23 @@ impl Into<[u8; 4]> for Action {
             Action::CallWasm => *WASM_CALL_SIDE_EFFECT_ID,
             Action::CallComposable => *COMPOSABLE_CALL_SIDE_EFFECT_ID,
             Action::Data => *DATA_SIDE_EFFECT_ID,
-            Action::TransferAssets => *ASSETS_TRANSFER_SIDE_EFFECT_ID,
-            Action::TransferOrml => *ORML_TRANSFER_SIDE_EFFECT_ID,
+            Action::TransferMulti => *MULTI_TRANSFER_SIDE_EFFECT_ID,
         }
     }
 }
 
-fn extract_args<AccountId: MaxEncodedLen, BalanceOf: MaxEncodedLen, Hash: MaxEncodedLen>(
+#[derive(Encode, Decode, MaxEncodedLen, Clone, PartialEq, Eq, Debug)]
+pub struct Insurance<Balance> {
+    insurance: Balance,
+    reward: Balance,
+}
+
+fn extract_args<
+    AccountId: MaxEncodedLen,
+    BalanceOf: MaxEncodedLen,
+    Hash: MaxEncodedLen,
+    Insurance: MaxEncodedLen,
+>(
     action: &Action,
     bytes: &mut bytes::Bytes,
 ) -> Result<Vec<Bytes>, &'static str> {
@@ -165,9 +211,10 @@ fn extract_args<AccountId: MaxEncodedLen, BalanceOf: MaxEncodedLen, Hash: MaxEnc
         Action::Transfer => {
             args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // from
             args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // to
+
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt
 
-            // TODO: support insurance
+            take_insurance::<BalanceOf>(bytes, &mut args);
 
             Ok(args)
         },
@@ -180,9 +227,8 @@ fn extract_args<AccountId: MaxEncodedLen, BalanceOf: MaxEncodedLen, Hash: MaxEnc
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt_left
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt_right
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt_liquidity_token
-            args.push(bytes.split_to(0).to_vec()); // insurance
+            take_insurance::<BalanceOf>(bytes, &mut args);
 
-            // TODO: support insurance
             Ok(args)
         },
         Action::Swap => {
@@ -192,76 +238,97 @@ fn extract_args<AccountId: MaxEncodedLen, BalanceOf: MaxEncodedLen, Hash: MaxEnc
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt_right
             args.push(bytes.split_to(Hash::max_encoded_len()).to_vec()); // asset_left
             args.push(bytes.split_to(Hash::max_encoded_len()).to_vec()); // asset_right
-
-            // TODO: support insurance
+            take_insurance::<BalanceOf>(bytes, &mut args);
 
             Ok(args)
         },
         Action::Call => {
             args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // caller
-            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // dest
-            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // value
 
-            // TODO: This is tricky since we define input as a dynamic size so we don't know what is next
-            args.push(bytes.to_vec()); // args
+            // now we check the VM
+            match bytes.first() {
+                Some(byte) if byte == &0_u8 => {
+                    // its an evm op, get rid of that byte
+                    bytes.advance(1);
+                    args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // dest
+                    args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec());
+                    // value
+                },
+                Some(byte) if byte == &1_u8 => {
+                    // its a wasm op, get rid of that byte
+                    bytes.advance(1);
+                    args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // dest
+                    args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // value
+                    args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // gas_limit
 
-            Ok(args)
-        },
-        Action::CallEvm => {
-            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // caller
-            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // dest
-            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // value
+                    match bytes.first() {
+                        Some(byte) if byte == &0_u8 => args.push(vec![*byte]),
+                        Some(byte) if byte == &1_u8 => {
+                            match bytes.first() {
+                                Some(byte) if byte == &0_u8 => args.push(vec![*byte]),
+                                Some(byte) if byte == &1_u8 => {
+                                    bytes.advance(1);
+                                    args.push(
+                                        bytes.split_to(BalanceOf::max_encoded_len()).to_vec(),
+                                    ); // storage_limit
+                                },
+                                _ => {},
+                            }
+                        },
+                        _ => {},
+                    }
+                },
+                _ => {
+                    // should die
+                },
+            }
 
-            // TODO: This is tricky since we define input as a dynamic size so we don't know what is next
-            args.push(bytes.to_vec()); // args
-
-            Ok(args)
-        },
-        Action::CallWasm => {
-            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // dest
-            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // value
-            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // gas
-            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // storage
+            // remove the length of the input
+            bytes.advance(1);
 
             args.push(bytes.to_vec()); // data
 
             Ok(args)
         },
+        Action::CallEvm => Ok(args),
+        Action::CallWasm => Ok(args),
         Action::CallComposable => {
             args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // dest
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // value
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // gas
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // storage
-
             args.push(bytes.to_vec()); // data
 
             Ok(args)
         },
-        Action::TransferAssets => {
+        Action::TransferMulti => {
             args.push(bytes.split_to(Hash::max_encoded_len()).to_vec()); // asset id
             args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // from
             args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // to
             args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt
-            args.push(bytes.to_vec());
-            // TODO: support insurance
-
-            Ok(args)
-        },
-        Action::TransferOrml => {
-            args.push(bytes.split_to(Hash::max_encoded_len()).to_vec()); // asset id
-            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // from
-            args.push(bytes.split_to(AccountId::max_encoded_len()).to_vec()); // to
-            args.push(bytes.split_to(BalanceOf::max_encoded_len()).to_vec()); // amt
-            args.push(bytes.to_vec());
-            // TODO: support insurance
+            take_insurance::<BalanceOf>(bytes, &mut args);
 
             Ok(args)
         },
         Action::Data => {
-            args.push(bytes.to_vec()); // key
+            args.push(bytes.split_to(Hash::max_encoded_len()).to_vec()); // key
 
             Ok(args)
         },
+    }
+}
+
+fn take_insurance<Balance: MaxEncodedLen>(bytes: &mut bytes::Bytes, args: &mut Vec<Vec<u8>>) {
+    match bytes.first() {
+        Some(byte) if byte == &0_u8 => args.push(vec![]),
+        Some(byte) if byte == &1_u8 => {
+            args.push(
+                bytes
+                    .split_to(Option::<Insurance<Balance>>::max_encoded_len())
+                    .to_vec(),
+            ); // opt insurance
+        },
+        _ => {},
     }
 }
 
@@ -307,10 +374,8 @@ impl Default for SecurityLvl {
 }
 
 // Side effects conversion error.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Error {
-    /// Failed to decode a property while hardening.
-    HardeningDecodeError,
     /// Expected confirmation to FSX wasn't there while hardening.
     HardeningMissingConfirmationError,
 }
@@ -321,10 +386,18 @@ mod tests {
 
     use scale_info::prelude::vec::Vec;
     use sp_core::crypto::AccountId32;
+    use t3rn_sdk_primitives::{
+        storage::BoundedVec,
+        xc::{Call, Chain, Operation, VM},
+    };
 
     type BlockNumber = u64;
     type BalanceOf = u128;
     type AccountId = AccountId32;
+    type Hash = [u8; 32];
+
+    const ALICE: AccountId = AccountId::new([1_u8; 32]);
+    const BOB: AccountId = AccountId::new([2_u8; 32]);
 
     #[test]
     fn successfully_creates_empty_side_effect() {
@@ -416,6 +489,221 @@ mod tests {
         };
 
         assert_eq!(empty_side_effect, SideEffect::default(),);
+    }
+
+    #[test]
+    fn encoded_evm_call_to_side_effect() {
+        let se =
+            Chain::<AccountId, BalanceOf, Hash>::Polkadot(
+                Operation::<AccountId, BalanceOf, Hash>::Call(box Call {
+                    caller: ALICE,
+                    call: VM::<AccountId, BalanceOf>::Evm {
+                        dest: BOB,
+                        value: 50,
+                    },
+                    data: t3rn_sdk_primitives::storage::BoundedVec::<u8, 1024>::from_iter(vec![
+                        0_u8, 1_u8, 2_u8,
+                    ]),
+                }),
+            );
+        let bytes = se.encode();
+        let s = SideEffect::<AccountId, BlockNumber, BalanceOf>::try_from(bytes).unwrap();
+
+        assert_eq!(s.target, *b"pdot");
+        assert_eq!(s.encoded_action, *CALL_SIDE_EFFECT_ID);
+        assert_eq!(
+            s.encoded_args,
+            vec![
+                [1_u8; 32].to_vec(),
+                [2_u8; 32].to_vec(),
+                50_u128.encode(),
+                vec![0, 1, 2]
+            ]
+        );
+    }
+
+    #[test]
+    fn encoded_wasm_call_to_side_effect() {
+        let se =
+            Chain::<AccountId, BalanceOf, Hash>::Polkadot(
+                Operation::<AccountId, BalanceOf, Hash>::Call(box Call {
+                    caller: ALICE,
+                    call: VM::<AccountId, BalanceOf>::Wasm {
+                        dest: BOB,
+                        value: 50,
+                        gas_limit: 60,
+                        storage_limit: Some(70),
+                    },
+                    data: BoundedVec::<u8, 1024>::from_iter(vec![0_u8, 1_u8, 2_u8]),
+                }),
+            );
+        let bytes = se.encode();
+        let s = SideEffect::<AccountId, BlockNumber, BalanceOf>::try_from(bytes).unwrap();
+
+        assert_eq!(s.target, *b"pdot");
+        assert_eq!(s.encoded_action, *CALL_SIDE_EFFECT_ID);
+        assert_eq!(
+            s.encoded_args,
+            vec![
+                [1_u8; 32].to_vec(),
+                [2_u8; 32].to_vec(),
+                50_u128.encode(),
+                60_u128.encode(),
+                70_u128.encode(),
+                vec![0, 1, 2]
+            ]
+        );
+    }
+
+    #[test]
+    fn encoded_transfer_to_side_effect() {
+        let se =
+            Chain::<AccountId, BalanceOf, Hash>::Polkadot(
+                Operation::<AccountId, BalanceOf, Hash>::Transfer {
+                    caller: ALICE,
+                    to: BOB,
+                    amount: 50,
+                    insurance: None,
+                },
+            );
+        let bytes = se.encode();
+        let s = SideEffect::<AccountId, BlockNumber, BalanceOf>::try_from(bytes).unwrap();
+
+        assert_eq!(s.target, *b"pdot");
+        assert_eq!(s.encoded_action, *TRANSFER_SIDE_EFFECT_ID);
+        assert_eq!(
+            s.encoded_args,
+            vec![
+                [1_u8; 32].to_vec(),
+                [2_u8; 32].to_vec(),
+                50_u128.encode(),
+                vec![]
+            ]
+        );
+    }
+
+    #[test]
+    fn encoded_multi_transfer_to_side_effect() {
+        let asset = [5_u8; 32];
+        let se =
+            Chain::<AccountId, BalanceOf, Hash>::Polkadot(
+                Operation::<AccountId, BalanceOf, Hash>::TransferMulti {
+                    asset,
+                    caller: ALICE,
+                    to: BOB,
+                    amount: 50,
+                    insurance: None,
+                },
+            );
+        let bytes = se.encode();
+        let s = SideEffect::<AccountId, BlockNumber, BalanceOf>::try_from(bytes).unwrap();
+
+        assert_eq!(s.target, *b"pdot");
+        assert_eq!(s.encoded_action, *MULTI_TRANSFER_SIDE_EFFECT_ID);
+        assert_eq!(
+            s.encoded_args,
+            vec![
+                asset.to_vec(),
+                [1_u8; 32].to_vec(),
+                [2_u8; 32].to_vec(),
+                50_u128.encode(),
+                vec![]
+            ]
+        );
+    }
+
+    #[test]
+    fn encoded_aliq_to_side_effect() {
+        let amount_left = 1_u128;
+        let amount_right = 2_u128;
+        let amount_liquidity_token = 3_u128;
+        let liquidity_token = [4_u8; 32];
+        let asset_right = [3_u8; 32];
+        let asset_left = [2_u8; 32];
+        let se =
+            Chain::<AccountId, BalanceOf, Hash>::Polkadot(
+                Operation::<AccountId, BalanceOf, Hash>::AddLiquidity {
+                    caller: ALICE,
+                    to: BOB,
+                    asset_left,
+                    asset_right,
+                    liquidity_token,
+                    amount_left,
+                    amount_right,
+                    amount_liquidity_token,
+                    insurance: None,
+                },
+            );
+        let bytes = se.encode();
+        let s = SideEffect::<AccountId, BlockNumber, BalanceOf>::try_from(bytes).unwrap();
+
+        assert_eq!(s.target, *b"pdot");
+        assert_eq!(s.encoded_action, *ADD_LIQUIDITY_SIDE_EFFECT_ID);
+        assert_eq!(
+            s.encoded_args,
+            vec![
+                [1_u8; 32].to_vec(),
+                [2_u8; 32].to_vec(),
+                asset_left.to_vec(),
+                asset_right.to_vec(),
+                liquidity_token.to_vec(),
+                amount_left.encode(),
+                amount_right.encode(),
+                amount_liquidity_token.encode(),
+                vec![]
+            ]
+        );
+    }
+
+    #[test]
+    fn encoded_swap_to_side_effect() {
+        let amount_from = 1_u128;
+        let amount_to = 2_u128;
+        let asset_from = [3_u8; 32];
+        let asset_to = [2_u8; 32];
+        let se =
+            Chain::<AccountId, BalanceOf, Hash>::Polkadot(
+                Operation::<AccountId, BalanceOf, Hash>::Swap {
+                    caller: ALICE,
+                    to: BOB,
+                    amount_from,
+                    amount_to,
+                    asset_from,
+                    asset_to,
+                    insurance: None,
+                },
+            );
+        let bytes = se.encode();
+        let s = SideEffect::<AccountId, BlockNumber, BalanceOf>::try_from(bytes).unwrap();
+
+        assert_eq!(s.target, *b"pdot");
+        assert_eq!(s.encoded_action, *SWAP_SIDE_EFFECT_ID);
+        assert_eq!(
+            s.encoded_args,
+            vec![
+                [1_u8; 32].to_vec(),
+                [2_u8; 32].to_vec(),
+                amount_from.encode(),
+                amount_to.encode(),
+                asset_from.to_vec(),
+                asset_to.to_vec(),
+                vec![]
+            ]
+        );
+    }
+    #[test]
+    fn encoded_data_to_side_effect() {
+        let index = [3_u8; 32];
+        let se =
+            Chain::<AccountId, BalanceOf, Hash>::Polkadot(
+                Operation::<AccountId, BalanceOf, Hash>::Data { index },
+            );
+        let bytes = se.encode();
+        let s = SideEffect::<AccountId, BlockNumber, BalanceOf>::try_from(bytes).unwrap();
+
+        assert_eq!(s.target, *b"pdot");
+        assert_eq!(s.encoded_action, *DATA_SIDE_EFFECT_ID);
+        assert_eq!(s.encoded_args, vec![index.to_vec(),]);
     }
 
     #[test]

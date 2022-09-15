@@ -5,7 +5,8 @@ panic = 'unwind'
 exclude = [ '3vm', '3vm/sdk' ]
 members = [
   'node/standalone',
-  'node/parachain',
+  'node/t0rn-parachain',
+  'node/t3rn-parachain',
   'pallets/*',
   'primitives',
   'primitives/src/bridges/finality',

@@ -4,12 +4,22 @@ use sp_core::H256;
 use sp_runtime::traits::*;
 use t3rn_primitives::{bridges::runtime as bp_runtime, common::DEFAULT_ROUND_TERM};
 
+use crate::xbi_config::XBIPortalRuntimeEntry;
+
 // impl pallet_randomness_collective_flip::Config for Runtime {}
 
 // t3rn pallets
 impl t3rn_primitives::EscrowTrait<Runtime> for Runtime {
     type Currency = Balances;
     type Time = Timestamp;
+}
+
+impl pallet_clock::Config for Runtime {
+    type AccountManager = AccountManager;
+    type Event = Event;
+    type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
+    type RoundDuration = ConstU32<500u32>;
+    type Treasury = Treasury;
 }
 
 impl pallet_xdns::Config for Runtime {
@@ -55,20 +65,26 @@ parameter_types! {
 }
 
 impl pallet_circuit::Config for Runtime {
+    type AccountManager = AccountManager;
     type Balances = Balances;
     type Call = Call;
     type CircuitPortal = CircuitPortal;
-    type DeletionQueueLimit = ConstU32<100>;
+    type DeletionQueueLimit = ConstU32<100u32>;
     type Escrowed = Self;
     type Event = Event;
+    type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
+    // type FreeVM = FreeVM;
     type MultiCurrency = ORMLTokens;
     type PalletId = CircuitPalletId;
     type SelfGatewayId = SelfGatewayId;
-    type SignalQueueDepth = ConstU32<64>;
+    type SelfParaId = ConstU32<3333u32>;
+    type SignalQueueDepth = ConstU32<5u32>;
     type WeightInfo = ();
+    type XBIPortal = XBIPortalRuntimeEntry;
+    type XBIPromise = XBIPortal;
     type Xdns = XDNS;
-    type XtxTimeoutCheckInterval = ConstU32<50>;
-    type XtxTimeoutDefault = ConstU32<400>;
+    type XtxTimeoutCheckInterval = ConstU32<10u32>;
+    type XtxTimeoutDefault = ConstU32<400u32>;
 }
 
 parameter_types! {

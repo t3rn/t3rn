@@ -20,7 +20,7 @@ frame-system          = { default-features = false, git = "https://github.com/pa
 log                   = { version = "0.4", default-features = false }
 orml-traits           = { git = "https://github.com/t3rn/open-runtime-module-library", branch = "polkadot-v0.9.19", default-features = false }
 pallet-sudo           = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
-scale-info            = { version = "2", default-features = false, features = [ "derive" ] }
+scale-info            = { version = "2.0.0", default-features = false, features = [ "derive" ] }
 serde                 = { default-features = false, version = "1.0", optional = true }
 sp-application-crypto = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19', default-features = false }
 sp-core               = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19', default-features = false }
@@ -40,7 +40,7 @@ sp-trie             = { git = "https://github.com/paritytech/substrate", branch 
 
 snowbridge-core = { path = "src/bridges/snowfork/core", default-features = false }
 
-t3rn-sdk-primitives = { version = "0.1.0", default-features = false }
+t3rn-sdk-primitives = { version = "=0.1.1-rc.4", default-features = false }
 t3rn-types          = { path = "../types", default-features = false, features = [ "runtime" ] }
 
 [dev-dependencies]

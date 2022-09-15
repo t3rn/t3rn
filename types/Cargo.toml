@@ -6,7 +6,7 @@ homepage    = "https://t3rn.io"
 license     = "Apache-2.0"
 name        = "t3rn-types"
 repository  = "https://github.com/t3rn/t3rn/"
-version     = "0.0.1"
+version     = "0.0.1-rc.2"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -14,7 +14,7 @@ version     = "0.0.1"
 bytes      = { version = "1.2.1", default-features = false }
 codec      = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive" ] }
 num        = { version = "0.4.0", default-features = false }
-scale-info = { version = "2", default-features = false, features = [ "derive" ] }
+scale-info = { version = "2.0.0", default-features = false, features = [ "derive" ] }
 serde      = { default-features = false, version = "1.0", optional = true, features = [ "derive" ] }
 
 primitive-types = { version = "0.11.1", default-features = false, features = [ "scale-info" ] }
@@ -29,6 +29,8 @@ serde_json  = "1.0.41"
 
 sp-core    = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
+
+t3rn-sdk-primitives = { version = "=0.1.1-rc.4" }
 
 [features]
 default     = [ "std" ]

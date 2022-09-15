@@ -8,7 +8,6 @@
 
 use ethabi_decode::{decode, ParamKind, Token};
 use hex_literal::hex;
-use paste;
 
 macro_rules! test_encode_decode {
 	(name: $name:tt, types: $types:expr, tokens: $tokens:expr, data: $data:tt) => {

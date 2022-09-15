@@ -34,14 +34,12 @@ pub use pallet::*;
 use t3rn_primitives::contracts_registry::RegistryContractId;
 
 #[cfg(test)]
-mod mock;
-#[cfg(test)]
 mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
-mod types;
+pub mod types;
 
 pub mod weights;
 use weights::WeightInfo;
@@ -137,10 +135,10 @@ pub mod pallet {
                 "only the first submitter of contract to registry can become the author",
             );
 
-            if <ContractsRegistry<T>>::contains_key(&contract_id) {
+            if <ContractsRegistry<T>>::contains_key(contract_id) {
                 Err(Error::<T>::ContractAlreadyExists.into())
             } else {
-                <ContractsRegistry<T>>::insert(&contract_id, contract);
+                <ContractsRegistry<T>>::insert(contract_id, contract);
                 Self::deposit_event(Event::<T>::ContractStored(requester, contract_id));
                 Ok(().into())
             }
@@ -155,10 +153,10 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
-            if !<ContractsRegistry<T>>::contains_key(&contract_id) {
+            if !<ContractsRegistry<T>>::contains_key(contract_id) {
                 Err(Error::<T>::UnknownContract.into())
             } else {
-                <ContractsRegistry<T>>::remove(&contract_id);
+                <ContractsRegistry<T>>::remove(contract_id);
                 Self::deposit_event(Event::<T>::ContractPurged(requester, contract_id));
                 Ok(().into())
             }
