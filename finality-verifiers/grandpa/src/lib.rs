@@ -816,7 +816,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         submission_target_height: Vec<u8>,
         value_abi_unsigned_type: &[u8],
         side_effect_id: [u8; 4],
-    ) -> Result<Vec<Vec<Vec<u8>>>, DispatchError> {
+    ) -> Result<(Vec<Vec<u8>>, Vec<u8>), DispatchError> {
         let inclusion_data: InclusionData<BridgedHeader<T, I>> =
             Decode::decode(&mut &*encoded_inclusion_data)
                 .map_err(|_| Error::<T, I>::InclusionDataDecodeError)?;
@@ -992,7 +992,7 @@ pub(crate) fn verify_event_storage_proof<T: Config<I>, I: 'static>(
     inclusion_data: InclusionData<BridgedHeader<T, I>>,
     value_abi_unsigned_type: &[u8],
     side_effect_id: [u8; 4],
-) -> Result<Vec<Vec<Vec<u8>>>, DispatchError> {
+) -> Result<(Vec<Vec<u8>>, Vec<u8>), DispatchError> {
     let InclusionData {
         encoded_payload,
         proof,

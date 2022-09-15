@@ -1883,7 +1883,7 @@ impl<T: Config> Pallet<T> {
         side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
 
         // confirm order of current season, by passing the side_effects of it to confirm order.
-        let fsfx = confirm_order::<T>(
+        let fsx = confirm_order::<T>(
             side_effect,
             confirmation,
             &mut local_ctx.full_side_effects[local_ctx.xtx.steps_cnt.0 as usize],
@@ -1891,7 +1891,7 @@ impl<T: Config> Pallet<T> {
         log::info!("Order confirmed!");
         // confirm the payload is included in the specified block, and return the SideEffect params as defined in XDNS.
         // this could be multiple events!
-        let params = <T as Config>::Portal::confirm_and_decode_payload_params(
+        let (params, source) = <T as Config>::Portal::confirm_and_decode_payload_params(
             side_effect.target,
             fsfx.submission_target_height,
             confirmation.inclusion_data.clone(),
@@ -1911,6 +1911,7 @@ impl<T: Config> Pallet<T> {
         confirmation_plug::<T>(
             &Box::new(side_effect_interface.unwrap()),
             params,
+            source,
             &local_ctx.local_state,
             Some(
                 side_effect
@@ -1919,6 +1920,8 @@ impl<T: Config> Pallet<T> {
                     .to_vec()
                     .into(),
             ),
+            fsx.security_lvl,
+            <T as Config>::Xdns::get_gateway_security_coordinates(&side_effect.target)?,
         )
         .map_err(|_| "Execution can't be confirmed.")?;
         log::info!("confirmation plug ok");
