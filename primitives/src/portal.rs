@@ -42,5 +42,5 @@ pub trait Portal<T: frame_system::Config> {
         submission_target_height: Vec<u8>,
         encoded_inclusion_data: Vec<u8>,
         side_effect_id: [u8; 4],
-    ) -> Result<Vec<Vec<Vec<u8>>>, DispatchError>;
+    ) -> Result<(Vec<Vec<u8>>, Vec<u8>), DispatchError>;
 }

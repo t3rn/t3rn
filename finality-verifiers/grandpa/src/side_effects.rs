@@ -32,7 +32,7 @@ pub(crate) fn decode_event<T: Config<I>, I: 'static>(
     id: &[u8; 4],
     mut encoded_event: Vec<u8>,
     value_abi_unsigned_type: &[u8],
-) -> Result<Vec<Vec<Vec<u8>>>, DispatchError> {
+) -> Result<(Vec<Vec<u8>>, Vec<u8>), DispatchError> {
     // the first byte is the pallet index, which we don't need
     let _ = encoded_event.remove(0);
     match &id {
@@ -41,17 +41,17 @@ pub(crate) fn decode_event<T: Config<I>, I: 'static>(
             match value_abi_unsigned_type {
                 b"uint32" => match Decode::decode(&mut &encoded_event[..]) {
                     Ok(TransferEventStub::<T, u32>::Transfer { from, to, amount }) =>
-                        Ok(vec![vec![from.encode(), to.encode(), amount.encode()]]),
+                        Ok((vec![from.encode(), to.encode(), amount.encode()], vec![])),
                     _ => Err(Error::<T, I>::EventDecodingFailed.into()),
                 },
                 b"uint64" => match Decode::decode(&mut &encoded_event[..]) {
                     Ok(TransferEventStub::<T, u64>::Transfer { from, to, amount }) =>
-                        Ok(vec![vec![from.encode(), to.encode(), amount.encode()]]),
+                        Ok((vec![from.encode(), to.encode(), amount.encode()], vec![])),
                     _ => Err(Error::<T, I>::EventDecodingFailed.into()),
                 },
                 b"uint128" => match Decode::decode(&mut &encoded_event[..]) {
                     Ok(TransferEventStub::<T, u128>::Transfer { from, to, amount }) =>
-                        Ok(vec![vec![from.encode(), to.encode(), amount.encode()]]),
+                        Ok((vec![from.encode(), to.encode(), amount.encode()], vec![])),
                     _ => Err(Error::<T, I>::EventDecodingFailed.into()),
                 },
                 &_ => Err(Error::<T, I>::EventDecodingFailed.into()),
@@ -64,12 +64,12 @@ pub(crate) fn decode_event<T: Config<I>, I: 'static>(
                        from,
                        to,
                        amount,
-                   }) => Ok(vec![vec![
+                   }) => Ok((vec![
                     from.encode(),
                     to.encode(),
                     currency_id.encode(),
                     amount.encode(),
-                ]]),
+                ], vec![])),
                 _ => Err(Error::<T, I>::EventDecodingFailed.into()),
             },
             b"uint64" => match Decode::decode(&mut &encoded_event[..]) {
@@ -78,12 +78,12 @@ pub(crate) fn decode_event<T: Config<I>, I: 'static>(
                        from,
                        to,
                        amount,
-                   }) => Ok(vec![vec![
+                   }) => Ok((vec![
                     from.encode(),
                     to.encode(),
                     currency_id.encode(),
                     amount.encode(),
-                ]]),
+                ], vec![])),
                 _ => Err(Error::<T, I>::EventDecodingFailed.into()),
             },
             b"uint128" => match Decode::decode(&mut &encoded_event[..]) {
@@ -92,12 +92,12 @@ pub(crate) fn decode_event<T: Config<I>, I: 'static>(
                        from,
                        to,
                        amount,
-                   }) => Ok(vec![vec![
+                   }) => Ok((vec![
                     from.encode(),
                     to.encode(),
                     currency_id.encode(),
                     amount.encode(),
-                ]]),
+                ], vec![])),
                 _ => Err(Error::<T, I>::EventDecodingFailed.into()),
             },
             &_ => Err(Error::<T, I>::EventDecodingFailed.into()),
@@ -253,7 +253,7 @@ pub mod tests {
 
         assert_eq!(
             res,
-            vec![vec![
+            (vec![
                 vec![
                     9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
                     9, 9, 9, 9, 9, 9,
@@ -263,7 +263,7 @@ pub mod tests {
                     6, 6, 6, 6, 6, 6,
                 ],
                 vec![1, 0, 0, 0, 0, 0, 0, 0],
-            ]]
+            ], vec![])
         );
     }
 }
