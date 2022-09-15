@@ -63,7 +63,7 @@ where
     )));
     io.extend_with(ContractsApi::to_delegate(Contracts::new(client.clone())));
     io.extend_with(XdnsApi::to_delegate(Xdns::new(client.clone())));
-    io.extend_with(EvmApi::to_delegate(Evm::new(client.clone())));
+    io.extend_with(EvmApi::to_delegate(Evm::new(client)));
     // io.extend_with(PortalApi::to_delegate(Portal::new(client.clone())));
 
     io

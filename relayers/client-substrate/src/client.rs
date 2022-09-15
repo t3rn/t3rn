@@ -195,7 +195,7 @@ impl<C: Chain> Client<C> {
         C::Header: DeserializeOwned,
     {
         let block_hash = Self::block_hash_by_number(self, block_number).await?;
-        Ok(Self::header_by_hash(self, block_hash).await?)
+        Self::header_by_hash(self, block_hash).await
     }
 
     /// Return runtime version.

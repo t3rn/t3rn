@@ -102,7 +102,7 @@ fn fnv(v1: u32, v2: u32) -> u32 {
     let v1 = v1 as u64;
     let v2 = v2 as u64;
 
-    ((((v1 * 0x01000000 | 0) + (v1 * 0x193 | 0)) ^ v2) >> 0) as u32
+    ((v1 * 0x01000000 + v1 * 0x193) ^ v2) as u32
 }
 
 fn fnv64(a: [u8; 64], b: [u8; 64]) -> [u8; 64] {
@@ -199,14 +199,14 @@ pub fn hashimoto<F: Fn(usize) -> H512>(
         lookup,
         |data| {
             let mut hasher = Keccak256::default();
-            hasher.input(&data);
+            hasher.input(data);
             let mut res = [0u8; 32];
             res.copy_from_slice(hasher.result().as_slice());
             res
         },
         |data| {
             let mut hasher = Keccak512::default();
-            hasher.input(&data);
+            hasher.input(data);
             let mut res = [0u8; 64];
             res.copy_from_slice(hasher.result().as_slice());
             res

@@ -4,13 +4,21 @@ use pallet_grandpa_finality_verifier::bridges::runtime as bp_runtime;
 use sp_core::H256;
 use sp_runtime::traits::*;
 use t3rn_primitives::{portal::RococoBridge, common::DEFAULT_ROUND_TERM};
-
+use crate::xbi_config::XBIPortalRuntimeEntry;
 // impl pallet_randomness_collective_flip::Config for Runtime {}
 
 // t3rn pallets
 impl t3rn_primitives::EscrowTrait<Runtime> for Runtime {
     type Currency = Balances;
     type Time = Timestamp;
+}
+
+impl pallet_clock::Config for Runtime {
+    type AccountManager = AccountManager;
+    type Event = Event;
+    type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
+    type RoundDuration = ConstU32<500u32>;
+    type Treasury = Treasury;
 }
 
 impl pallet_xdns::Config for Runtime {
@@ -49,20 +57,26 @@ parameter_types! {
 }
 
 impl pallet_circuit::Config for Runtime {
+    type AccountManager = AccountManager;
     type Balances = Balances;
     type Call = Call;
     type DeletionQueueLimit = ConstU32<100>;
     type Escrowed = Self;
     type Event = Event;
+    type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
+    // type FreeVM = FreeVM;
     type MultiCurrency = ORMLTokens;
     type PalletId = CircuitPalletId;
     type Portal = Portal;
     type SelfGatewayId = SelfGatewayId;
-    type SignalQueueDepth = ConstU32<64>;
+    type SelfParaId = ConstU32<3333u32>;
+    type SignalQueueDepth = ConstU32<5u32>;
     type WeightInfo = ();
+    type XBIPortal = XBIPortalRuntimeEntry;
+    type XBIPromise = XBIPortal;
     type Xdns = XDNS;
-    type XtxTimeoutCheckInterval = ConstU32<50>;
-    type XtxTimeoutDefault = ConstU32<400>;
+    type XtxTimeoutCheckInterval = ConstU32<10u32>;
+    type XtxTimeoutDefault = ConstU32<400u32>;
 }
 
 parameter_types! {
@@ -84,6 +98,37 @@ impl pallet_grandpa_finality_verifier::Config<RococoBridgeInstance> for Runtime 
     type BridgedChain = Blake2ValU32Chain;
     type HeadersToStore = HeadersToStore;
     type WeightInfo = ();
+}
+
+// MinRoundTerm plays a crucial role:
+//  + must at least be the size of the active collator set
+//  + is applied as default round term during genesis
+//  + codetermines staking delays as they are measured in rounds
+parameter_types! {
+    pub const TreasuryAccount: AccountId = AccountId::new([0u8; 32]); // TODO
+    pub const ReserveAccount: AccountId = AccountId::new([1u8; 32]); // TODO
+    pub const AuctionFund: AccountId = AccountId::new([2u8; 32]); // TODO
+    pub const ContractFund: AccountId = AccountId::new([3u8; 32]); // TODO
+    pub const MinRoundTerm: u32 = 20; // TODO
+    pub const DefaultRoundTerm: u32 = DEFAULT_ROUND_TERM; // TODO
+    pub const GenesisIssuance: u32 = 20_000_000; // TODO
+    pub const IdealPerpetualInflation: Perbill =Perbill::from_percent(1);
+    pub const InflationRegressionMonths: u32 = 72;
+}
+
+impl pallet_treasury::Config for Runtime {
+    type AuctionFund = AuctionFund;
+    type ContractFund = ContractFund;
+    type Currency = Balances;
+    type DefaultRoundTerm = DefaultRoundTerm;
+    type Event = Event;
+    type GenesisIssuance = GenesisIssuance;
+    type IdealPerpetualInflation = IdealPerpetualInflation;
+    type InflationRegressionMonths = InflationRegressionMonths;
+    type MinRoundTerm = MinRoundTerm;
+    type ReserveAccount = ReserveAccount;
+    type TreasuryAccount = TreasuryAccount;
+    type WeightInfo = pallet_treasury::weights::TreasuryWeight<Runtime>;
 }
 
 // MinRoundTerm plays a crucial role:

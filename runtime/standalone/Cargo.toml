@@ -3,7 +3,7 @@ authors     = [ "devs @ t3rn" ]
 description = "Circuit parachain runtime"
 edition     = "2018"
 homepage    = "https://t3rn.io"
-license     = "Apache 2.0"
+license     = "Apache-2.0"
 name        = "circuit-standalone-runtime"
 repository  = 'https://github.com/t3rn/t3rn'
 version     = "1.0.0-alpha.0"
@@ -24,9 +24,11 @@ pallet-circuit                            = { path = "../../pallets/circuit", de
 pallet-contracts-registry                 = { path = "../../pallets/contracts-registry", default-features = false }
 pallet-contracts-registry-rpc-runtime-api = { path = "../../pallets/contracts-registry/rpc/runtime-api", default-features = false }
 pallet-treasury                           = { path = "../../pallets/treasury", default-features = false }
+pallet-clock                           = { path = "../../pallets/clock", default-features = false }
 pallet-xdns                               = { path = "../../pallets/xdns", default-features = false }
 pallet-portal                             = { path = "../../pallets/portal", default-features = false }
 pallet-portal-rpc-runtime-api             = { path = "../../pallets/portal/rpc/runtime-api", default-features = false }
+pallet-xbi-portal                               = { path = "../../pallets/xbi-portal", default-features = false }
 pallet-xdns-rpc-runtime-api               = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
 pallet-grandpa-finality-verifier          = { path = "../../finality-verifiers/grandpa", default-features = false }
 
@@ -97,16 +99,12 @@ frame-system-benchmarking = { default-features = false, git = "https://github.co
 orml-tokens = { git = "https://github.com/t3rn/open-runtime-module-library", branch = "polkadot-v0.9.19", default-features = false }
 orml-traits = { git = "https://github.com/t3rn/open-runtime-module-library", branch = "polkadot-v0.9.19", default-features = false }
 
+# Common
+circuit-runtime-types = { path = "../common-types", default-features = false }
+
 [features]
 default = [ "std", "contracts-unstable-interface" ]
 std = [
-  #	"bp-messages/std",
-  #	"bp-runtime/std",
-  #	"bp-westend/std",
-  #	"bp-gateway/std",
-  #	"bp-circuit/std",
-  #	"bp-polkadot-core/std",
-  #	"bridge-runtime-common/std",
   "codec/std",
   "frame-executive/std",
   "frame-support/std",
@@ -120,7 +118,6 @@ std = [
   "pallet-xdns/std",
   "pallet-xdns-rpc-runtime-api/std",
   "pallet-circuit/std",
-  #"volatile-vm/std",
   # native contracts VMs
   "pallet-3vm/std",
   "pallet-3vm-contracts/std",
@@ -137,6 +134,7 @@ std = [
   #	"pallet-evm-precompile-simple/std",
   "pallet-account-manager/std",
   "pallet-contracts-registry/std",
+  "pallet-xbi-portal/std",
   "pallet-balances/std",
   #	"pallet-bridge-dispatch/std",
   #	"pallet-bridge-grandpa/std",
@@ -171,7 +169,8 @@ std = [
   "snowbridge-core/std",
   "pallet-beefy-mmr/std",
   "pallet-mmr-primitives/std",
-  #	"snowbridge-basic-channel/std"
+  "pallet-clock/std",
+  "circuit-runtime-types/std",
 ]
 # TODO: https://github.com/paritytech/parity-bridges-common/issues/390
 # I've left the feature flag here to test our CI configuration

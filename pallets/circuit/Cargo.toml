@@ -31,7 +31,10 @@ sp-trie    = { default-features = false, git = "https://github.com/paritytech/su
 
 t3rn-primitives     = { path = "../../primitives", default-features = false }
 t3rn-protocol       = { path = "../../protocol", default-features = false }
-t3rn-sdk-primitives = { version = "0.1.0", default-features = false }
+t3rn-sdk-primitives = { version = "=0.1.1-rc.4", default-features = false }
+
+pallet-xbi-portal     = { path = "../xbi-portal", default-features = false }
+pallet-xbi-portal-enter     = { path = "../xbi-portal/enter", default-features = false }
 
 orml-traits = { git = "https://github.com/t3rn/open-runtime-module-library", branch = "polkadot-v0.9.19", default-features = false }
 
@@ -45,6 +48,7 @@ pallet-staking                  = { git = "https://github.com/paritytech/substra
 pallet-staking-reward-curve     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 sp-consensus-babe               = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
 sp-consensus-vrf                = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
+sp-consensus-aura                = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
 sp-finality-grandpa             = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
 sp-staking                      = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
 hex                             = "0.4.2"
@@ -62,6 +66,16 @@ pallet-portal             = { path = "../portal" }
 pallet-contracts-registry = { path = "../../pallets/contracts-registry" }
 pallet-xdns               = { path = "../../pallets/xdns" }
 
+pallet-executors               = { path = "../../pallets/executors" }
+pallet-treasury               = { path = "../../pallets/treasury" }
+pallet-account-manager               = { path = "../../pallets/account-manager" }
+pallet-clock = { path = "../clock" }
+
+circuit-runtime-types = { path = "../../runtime/common-types" }
+circuit-runtime-pallets = { path = "../../runtime/common-pallets" }
+circuit-mock-runtime = { path = "../../runtime/mock" }
+
+#snowbridge-basic-channel = { git = "https://github.com/t3rn/snowbridge", branch = "polkadot-v0.9.19", default-features = false }
 
 [features]
 default = [ "std" ]
@@ -82,6 +96,9 @@ std = [
   "t3rn-primitives/std",
   "t3rn-sdk-primitives/std",
   "t3rn-protocol/std",
+  "pallet-xbi-portal-enter/std",
+  "pallet-xbi-portal/std",
   "orml-traits/std",
+#  "circuit-mock-runtime/std",
 ]
 try-runtime = [ "frame-support/try-runtime" ]

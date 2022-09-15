@@ -42,7 +42,7 @@ pub type TestExtra = u64;
 pub type TestCompletion = u64;
 pub type TestQueuedHeader = QueuedHeader<TestHeadersSyncPipeline>;
 
-#[derive(Default, Debug, Clone, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct TestHeader {
     pub hash: TestHash,
     pub number: TestNumber,
@@ -68,7 +68,7 @@ impl MaybeConnectionError for TestError {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TestHeadersSyncPipeline;
 
 impl HeadersSyncPipeline for TestHeadersSyncPipeline {
@@ -152,13 +152,13 @@ impl RelayClient for Source {
 impl SourceClient<TestHeadersSyncPipeline> for Source {
     async fn best_block_number(&self) -> Result<TestNumber, TestError> {
         let mut data = self.data.lock();
-        (self.on_method_call)(SourceMethod::BestBlockNumber, &mut *data);
+        (self.on_method_call)(SourceMethod::BestBlockNumber, &mut data);
         data.best_block_number.clone()
     }
 
     async fn header_by_hash(&self, hash: TestHash) -> Result<TestHeader, TestError> {
         let mut data = self.data.lock();
-        (self.on_method_call)(SourceMethod::HeaderByHash(hash), &mut *data);
+        (self.on_method_call)(SourceMethod::HeaderByHash(hash), &mut data);
         data.header_by_hash
             .get(&hash)
             .cloned()
@@ -167,7 +167,7 @@ impl SourceClient<TestHeadersSyncPipeline> for Source {
 
     async fn header_by_number(&self, number: TestNumber) -> Result<TestHeader, TestError> {
         let mut data = self.data.lock();
-        (self.on_method_call)(SourceMethod::HeaderByNumber(number), &mut *data);
+        (self.on_method_call)(SourceMethod::HeaderByNumber(number), &mut data);
         data.header_by_number
             .get(&number)
             .cloned()
@@ -179,7 +179,7 @@ impl SourceClient<TestHeadersSyncPipeline> for Source {
         id: TestHeaderId,
     ) -> Result<(TestHeaderId, Option<TestCompletion>), TestError> {
         let mut data = self.data.lock();
-        (self.on_method_call)(SourceMethod::HeaderCompletion(id), &mut *data);
+        (self.on_method_call)(SourceMethod::HeaderCompletion(id), &mut data);
         if data.provides_completion {
             Ok((id, Some(test_completion(id))))
         } else {
@@ -193,7 +193,7 @@ impl SourceClient<TestHeadersSyncPipeline> for Source {
         header: TestQueuedHeader,
     ) -> Result<(TestHeaderId, TestExtra), TestError> {
         let mut data = self.data.lock();
-        (self.on_method_call)(SourceMethod::HeaderExtra(id, header), &mut *data);
+        (self.on_method_call)(SourceMethod::HeaderExtra(id, header), &mut data);
         if data.provides_extra {
             Ok((id, test_extra(id)))
         } else {
@@ -261,13 +261,13 @@ impl RelayClient for Target {
 impl TargetClient<TestHeadersSyncPipeline> for Target {
     async fn best_header_id(&self) -> Result<TestHeaderId, TestError> {
         let mut data = self.data.lock();
-        (self.on_method_call)(TargetMethod::BestHeaderId, &mut *data);
+        (self.on_method_call)(TargetMethod::BestHeaderId, &mut data);
         data.best_header_id.clone()
     }
 
     async fn is_known_header(&self, id: TestHeaderId) -> Result<(TestHeaderId, bool), TestError> {
         let mut data = self.data.lock();
-        (self.on_method_call)(TargetMethod::IsKnownHeader(id), &mut *data);
+        (self.on_method_call)(TargetMethod::IsKnownHeader(id), &mut data);
         data.is_known_header_by_hash
             .get(&id.1)
             .cloned()
@@ -280,7 +280,7 @@ impl TargetClient<TestHeadersSyncPipeline> for Target {
         headers: Vec<TestQueuedHeader>,
     ) -> SubmittedHeaders<TestHeaderId, TestError> {
         let mut data = self.data.lock();
-        (self.on_method_call)(TargetMethod::SubmitHeaders(headers.clone()), &mut *data);
+        (self.on_method_call)(TargetMethod::SubmitHeaders(headers.clone()), &mut data);
         data.submitted_headers
             .extend(headers.iter().map(|header| (header.id().1, header.clone())));
         data.submit_headers_result
@@ -290,7 +290,7 @@ impl TargetClient<TestHeadersSyncPipeline> for Target {
 
     async fn incomplete_headers_ids(&self) -> Result<HashSet<TestHeaderId>, TestError> {
         let mut data = self.data.lock();
-        (self.on_method_call)(TargetMethod::IncompleteHeadersIds, &mut *data);
+        (self.on_method_call)(TargetMethod::IncompleteHeadersIds, &mut data);
         if data.requires_completion {
             Ok(data
                 .submitted_headers
@@ -309,7 +309,7 @@ impl TargetClient<TestHeadersSyncPipeline> for Target {
         completion: TestCompletion,
     ) -> Result<TestHeaderId, TestError> {
         let mut data = self.data.lock();
-        (self.on_method_call)(TargetMethod::CompleteHeader(id, completion), &mut *data);
+        (self.on_method_call)(TargetMethod::CompleteHeader(id, completion), &mut data);
         data.completed_headers.insert(id.1, completion);
         Ok(id)
     }
@@ -319,7 +319,7 @@ impl TargetClient<TestHeadersSyncPipeline> for Target {
         header: TestQueuedHeader,
     ) -> Result<(TestHeaderId, bool), TestError> {
         let mut data = self.data.lock();
-        (self.on_method_call)(TargetMethod::RequiresExtra(header.clone()), &mut *data);
+        (self.on_method_call)(TargetMethod::RequiresExtra(header.clone()), &mut data);
         if data.requires_extra {
             Ok((header.id(), true))
         } else {

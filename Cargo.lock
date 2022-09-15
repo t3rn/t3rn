@@ -1146,82 +1146,42 @@ dependencies = [
 ]
 
 [[package]]
-name = "circuit-parachain-collator"
-version = "1.0.0-beta.0"
+name = "circuit-mock-runtime"
+version = "1.0.0-alpha.0"
 dependencies = [
- "async-std",
- "circuit-parachain-runtime",
- "clap",
- "cumulus-client-cli",
- "cumulus-client-collator",
- "cumulus-client-consensus-aura",
- "cumulus-client-consensus-common",
- "cumulus-client-network",
- "cumulus-client-service",
- "cumulus-primitives-core",
- "cumulus-primitives-parachain-inherent",
- "cumulus-relay-chain-inprocess-interface",
- "cumulus-relay-chain-interface",
- "cumulus-relay-chain-rpc-interface",
- "derive_more",
- "frame-benchmarking",
- "frame-benchmarking-cli",
- "futures 0.3.21",
+ "circuit-runtime-pallets",
+ "circuit-runtime-types",
+ "frame-executive",
+ "frame-support",
+ "frame-system",
+ "frame-system-rpc-runtime-api",
  "hex-literal 0.3.4",
- "jsonrpc-core 18.0.0",
- "jsonrpc-runtime-client",
  "log",
- "pallet-contracts-rpc",
- "pallet-evm-rpc",
- "pallet-transaction-payment-rpc",
- "pallet-treasury 0.0.0",
- "pallet-xdns",
- "pallet-xdns-rpc",
+ "node-primitives",
  "parity-scale-codec 3.1.5",
- "polkadot-cli",
- "polkadot-parachain",
- "polkadot-primitives",
- "polkadot-service",
- "sc-basic-authorship",
- "sc-chain-spec",
- "sc-cli",
- "sc-client-api",
- "sc-consensus",
- "sc-executor",
- "sc-keystore",
- "sc-network",
- "sc-rpc",
- "sc-rpc-api",
- "sc-service",
- "sc-telemetry",
- "sc-tracing",
- "sc-transaction-pool",
- "sc-transaction-pool-api",
+ "scale-info 2.1.2",
  "serde",
  "sp-api",
  "sp-block-builder",
- "sp-blockchain",
- "sp-consensus",
  "sp-consensus-aura",
  "sp-core",
+ "sp-finality-grandpa",
  "sp-inherents",
- "sp-keystore",
+ "sp-io",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
- "sp-timestamp",
+ "sp-std",
  "sp-transaction-pool",
- "substrate-build-script-utils",
- "substrate-frame-rpc-system",
- "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.19)",
+ "sp-trie",
+ "sp-version",
+ "substrate-wasm-builder",
  "t3rn-primitives",
  "t3rn-protocol",
- "try-runtime-cli",
- "xcm",
 ]
 
 [[package]]
-name = "circuit-parachain-runtime"
+name = "circuit-runtime-pallets"
 version = "1.0.0-alpha.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
@@ -1249,8 +1209,12 @@ dependencies = [
  "pallet-account-manager",
  "pallet-aura",
  "pallet-authorship",
+ "pallet-babe",
  "pallet-balances",
  "pallet-circuit",
+ "pallet-circuit-portal",
+ "pallet-circuit-portal-rpc-runtime-api",
+ "pallet-clock",
  "pallet-collator-selection",
  "pallet-contracts",
  "pallet-contracts-primitives",
@@ -1258,9 +1222,8 @@ dependencies = [
  "pallet-contracts-rpc-runtime-api",
  "pallet-evm 0.1.0",
  "pallet-evm-rpc-runtime-api",
- "pallet-grandpa-finality-verifier",
- "pallet-portal",
- "pallet-portal-rpc-runtime-api",
+ "pallet-grandpa",
+ "pallet-multi-finality-verifier",
  "pallet-preimage",
  "pallet-randomness-collective-flip",
  "pallet-scheduler",
@@ -1269,8 +1232,11 @@ dependencies = [
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-treasury 0.0.0",
  "pallet-utility",
- "pallet-xcm",
+ "pallet-xbi-portal",
+ "pallet-xbi-portal-enter",
+ "pallet-xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
  "pallet-xdns",
  "pallet-xdns-rpc-runtime-api",
  "parachain-info",
@@ -1297,9 +1263,29 @@ dependencies = [
  "substrate-wasm-builder",
  "t3rn-primitives",
  "t3rn-protocol",
- "xcm",
+ "xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
  "xcm-builder",
- "xcm-executor",
+ "xcm-executor 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
+]
+
+[[package]]
+name = "circuit-runtime-types"
+version = "1.0.0-alpha.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "sp-core",
+ "sp-runtime",
+]
+
+[[package]]
+name = "circuit-runtime-types"
+version = "1.0.0-alpha.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "sp-core",
+ "sp-runtime",
 ]
 
 [[package]]
@@ -1317,7 +1303,6 @@ dependencies = [
  "log",
  "pallet-contracts-rpc",
  "pallet-evm-rpc",
- "pallet-portal-rpc",
  "pallet-transaction-payment-rpc",
  "pallet-treasury 0.0.0",
  "pallet-xdns",
@@ -1356,6 +1341,7 @@ name = "circuit-standalone-runtime"
 version = "1.0.0-alpha.0"
 dependencies = [
  "beefy-primitives",
+ "circuit-runtime-types",
  "fp-evm 3.0.0-dev",
  "frame-benchmarking",
  "frame-executive",
@@ -1375,6 +1361,9 @@ dependencies = [
  "pallet-beefy",
  "pallet-beefy-mmr",
  "pallet-circuit",
+ "pallet-circuit-portal",
+ "pallet-circuit-portal-rpc-runtime-api",
+ "pallet-clock",
  "pallet-contracts",
  "pallet-contracts-primitives",
  "pallet-contracts-registry",
@@ -1383,11 +1372,9 @@ dependencies = [
  "pallet-evm 0.1.0",
  "pallet-evm-rpc-runtime-api",
  "pallet-grandpa",
- "pallet-grandpa-finality-verifier",
  "pallet-mmr",
  "pallet-mmr-primitives",
- "pallet-portal",
- "pallet-portal-rpc-runtime-api",
+ "pallet-multi-finality-verifier",
  "pallet-randomness-collective-flip",
  "pallet-sudo",
  "pallet-timestamp",
@@ -1395,6 +1382,7 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-treasury 0.0.0",
  "pallet-utility",
+ "pallet-xbi-portal",
  "pallet-xdns",
  "pallet-xdns-rpc-runtime-api",
  "parity-scale-codec 3.1.5",
@@ -2083,8 +2071,8 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "xcm",
- "xcm-executor",
+ "xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
+ "xcm-executor 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
 ]
 
 [[package]]
@@ -2114,7 +2102,7 @@ dependencies = [
  "sp-std",
  "sp-trie",
  "sp-version",
- "xcm",
+ "xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
 ]
 
 [[package]]
@@ -2156,7 +2144,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "xcm",
+ "xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
 ]
 
 [[package]]
@@ -2173,8 +2161,8 @@ dependencies = [
  "scale-info 2.1.2",
  "sp-runtime",
  "sp-std",
- "xcm",
- "xcm-executor",
+ "xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
+ "xcm-executor 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
 ]
 
 [[package]]
@@ -2243,7 +2231,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-trie",
- "xcm",
+ "xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
 ]
 
 [[package]]
@@ -2475,6 +2463,12 @@ dependencies = [
  "rustc_version 0.4.0",
  "syn",
 ]
+
+[[package]]
+name = "diff"
+version = "0.1.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56254986775e3233ffa9c4d7d3faaf6d36a2c09d30b20687e9f88bc8bafc16c8"
 
 [[package]]
 name = "digest"
@@ -2819,6 +2813,15 @@ dependencies = [
  "rustc-hex",
  "tiny-keccak 1.5.0",
  "uint 0.8.5",
+]
+
+[[package]]
+name = "ethabi-decode"
+version = "1.3.3"
+source = "git+https://github.com/Snowfork/ethabi-decode.git?branch=master#322dea9cae55bd0299456d00441d82370ce622bb"
+dependencies = [
+ "ethereum-types",
+ "tiny-keccak 1.5.0",
 ]
 
 [[package]]
@@ -3169,7 +3172,7 @@ name = "fp-evm"
 version = "3.0.0-dev"
 dependencies = [
  "evm",
- "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19)",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.19)",
  "parity-scale-codec 3.1.5",
  "serde",
  "sp-core",
@@ -3179,7 +3182,7 @@ dependencies = [
 [[package]]
 name = "fp-evm"
 version = "3.0.0-dev"
-source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
 dependencies = [
  "evm",
  "parity-scale-codec 3.1.5",
@@ -4825,7 +4828,7 @@ dependencies = [
  "pallet-session",
  "pallet-session-benchmarking",
  "pallet-society",
- "pallet-staking 4.0.0-dev",
+ "pallet-staking",
  "pallet-staking-reward-fn",
  "pallet-timestamp",
  "pallet-tips",
@@ -4834,7 +4837,7 @@ dependencies = [
  "pallet-treasury 4.0.0-dev",
  "pallet-utility",
  "pallet-vesting",
- "pallet-xcm",
+ "pallet-xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
  "parity-scale-codec 3.1.5",
  "polkadot-primitives",
  "polkadot-runtime-common",
@@ -4862,9 +4865,9 @@ dependencies = [
  "sp-version",
  "static_assertions",
  "substrate-wasm-builder",
- "xcm",
+ "xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
  "xcm-builder",
- "xcm-executor",
+ "xcm-executor 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
 ]
 
 [[package]]
@@ -4941,6 +4944,12 @@ name = "lazycell"
 version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
+
+[[package]]
+name = "leb128"
+version = "0.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "884e2677b40cc8c339eaefcb701c32ef1fd2493d71118dc0ca4b6a736c93bd67"
 
 [[package]]
 name = "libc"
@@ -6317,7 +6326,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "xcm",
+ "xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
 ]
 
 [[package]]
@@ -6339,6 +6348,15 @@ name = "os_str_bytes"
 version = "6.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "648001efe5d5c0102d8cea768e348da85d90af8ba91f0bea908f157951493cd4"
+
+[[package]]
+name = "output_vt100"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "628223faebab4e3e40667ee0b2336d34a5b960ff60ea743ddfdbcf7770bcfb66"
+dependencies = [
+ "winapi 0.3.9",
+]
 
 [[package]]
 name = "owning_ref"
@@ -6371,14 +6389,15 @@ dependencies = [
 name = "pallet-account-manager"
 version = "1.0.0-alpha.0"
 dependencies = [
+ "circuit-mock-runtime",
+ "circuit-runtime-pallets",
+ "circuit-runtime-types",
  "frame-benchmarking",
  "frame-metadata 15.0.0",
  "frame-support",
  "frame-system",
  "log",
- "pallet-balances",
- "pallet-sudo",
- "pallet-timestamp",
+ "pallet-xbi-portal",
  "parity-scale-codec 3.1.5",
  "scale-info 2.1.2",
  "serde",
@@ -6639,34 +6658,41 @@ dependencies = [
 name = "pallet-circuit"
 version = "1.0.0-alpha.0"
 dependencies = [
+ "circuit-mock-runtime",
+ "circuit-runtime-pallets",
+ "circuit-runtime-types",
  "frame-benchmarking",
  "frame-election-provider-support",
  "frame-support",
  "frame-system",
- "hex",
- "hex-literal 0.2.2",
  "log",
  "orml-tokens",
  "orml-traits",
+ "pallet-account-manager",
  "pallet-authorship",
  "pallet-babe",
  "pallet-balances",
+ "pallet-circuit-portal",
+ "pallet-clock",
  "pallet-contracts-registry",
- "pallet-grandpa-finality-verifier",
+ "pallet-executors",
+ "pallet-multi-finality-verifier",
  "pallet-offences",
- "pallet-portal",
  "pallet-randomness-collective-flip",
  "pallet-session",
- "pallet-staking 4.0.0-dev",
+ "pallet-staking",
  "pallet-staking-reward-curve",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
+ "pallet-treasury 0.0.0",
+ "pallet-xbi-portal",
+ "pallet-xbi-portal-enter",
  "pallet-xdns",
  "parity-scale-codec 3.1.5",
  "scale-info 2.1.2",
  "serde",
- "serde_json",
+ "sp-consensus-aura",
  "sp-consensus-babe",
  "sp-consensus-vrf",
  "sp-core",
@@ -6679,6 +6705,91 @@ dependencies = [
  "t3rn-primitives",
  "t3rn-protocol",
  "t3rn-sdk-primitives",
+]
+
+[[package]]
+name = "pallet-circuit-portal"
+version = "1.0.0-alpha.0"
+dependencies = [
+ "assert_matches",
+ "ethabi-decode 1.3.3",
+ "frame-benchmarking",
+ "frame-metadata 14.2.0",
+ "frame-support",
+ "frame-system",
+ "hash-db",
+ "hex",
+ "hex-literal 0.3.4",
+ "log",
+ "pallet-balances",
+ "pallet-multi-finality-verifier",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "pallet-xdns",
+ "parity-scale-codec 3.1.5",
+ "paste 1.0.8",
+ "plain_hasher",
+ "pretty_assertions",
+ "sc-service",
+ "scale-info 2.1.2",
+ "serde",
+ "serde_json",
+ "snowbridge-core",
+ "snowbridge-ethereum",
+ "sp-application-crypto",
+ "sp-core",
+ "sp-finality-grandpa",
+ "sp-io",
+ "sp-keystore",
+ "sp-runtime",
+ "sp-staking",
+ "sp-std",
+ "sp-trie",
+ "sp-version",
+ "t3rn-primitives",
+ "t3rn-protocol",
+ "triehash",
+ "wat",
+]
+
+[[package]]
+name = "pallet-circuit-portal-rpc-runtime-api"
+version = "1.0.0-alpha.0"
+dependencies = [
+ "pallet-circuit-portal",
+ "parity-scale-codec 3.1.5",
+ "sp-api",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "t3rn-primitives",
+]
+
+[[package]]
+name = "pallet-clock"
+version = "1.0.0-alpha.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-metadata 15.0.0",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-account-manager",
+ "pallet-balances",
+ "pallet-executors",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "pallet-treasury 0.0.0",
+ "parity-scale-codec 3.1.5",
+ "scale-info 2.1.2",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-keystore",
+ "sp-runtime",
+ "sp-std",
+ "sp-version",
+ "t3rn-primitives",
 ]
 
 [[package]]
@@ -6774,12 +6885,11 @@ dependencies = [
 name = "pallet-contracts-registry"
 version = "1.0.0-alpha.0"
 dependencies = [
+ "circuit-mock-runtime",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
- "pallet-balances",
- "pallet-sudo",
  "pallet-timestamp",
  "parity-scale-codec 3.1.5",
  "scale-info 2.1.2",
@@ -6918,10 +7028,10 @@ dependencies = [
 [[package]]
 name = "pallet-evm"
 version = "6.0.0-dev"
-source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
 dependencies = [
  "evm",
- "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19)",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.19)",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -6954,17 +7064,17 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-blake2"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19)",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.19)",
 ]
 
 [[package]]
 name = "pallet-evm-precompile-bn128"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19)",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.19)",
  "sp-core",
  "substrate-bn",
 ]
@@ -6972,18 +7082,18 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-curve25519"
 version = "1.0.0-dev"
-source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
 dependencies = [
  "curve25519-dalek 4.0.0-pre.1",
- "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19)",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.19)",
 ]
 
 [[package]]
 name = "pallet-evm-precompile-dispatch"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19)",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.19)",
  "frame-support",
  "pallet-evm 6.0.0-dev",
 ]
@@ -6991,36 +7101,36 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-ed25519"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
 dependencies = [
  "ed25519-dalek",
- "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19)",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.19)",
 ]
 
 [[package]]
 name = "pallet-evm-precompile-modexp"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19)",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.19)",
  "num",
 ]
 
 [[package]]
 name = "pallet-evm-precompile-sha3fips"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19)",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.19)",
  "tiny-keccak 2.0.2",
 ]
 
 [[package]]
 name = "pallet-evm-precompile-simple"
 version = "2.0.0-dev"
-source = "git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
+source = "git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.19#7c32b1401d94ca46abc6ac9fed2006ff4803b766"
 dependencies = [
- "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier.git?branch=polkadot-v0.9.19)",
+ "fp-evm 3.0.0-dev (git+https://github.com/paritytech/frontier?branch=polkadot-v0.9.19)",
  "ripemd",
  "sp-io",
 ]
@@ -7060,6 +7170,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-executors"
+version = "1.0.0-rc.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-balances",
+ "pallet-treasury 0.0.0",
+ "parity-scale-codec 3.1.5",
+ "scale-info 2.1.2",
+ "serde",
+ "similar-asserts",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "t3rn-primitives",
+]
+
+[[package]]
 name = "pallet-gilt"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.19#174735ea1bb5fc4513519c45181d8df63d86f613"
@@ -7095,34 +7226,6 @@ dependencies = [
  "sp-session",
  "sp-staking",
  "sp-std",
-]
-
-[[package]]
-name = "pallet-grandpa-finality-verifier"
-version = "1.0.0-alpha.0"
-dependencies = [
- "ed25519-dalek",
- "finality-grandpa",
- "frame-support",
- "frame-system",
- "hash-db",
- "hex-literal 0.3.4",
- "log",
- "num-traits",
- "pallet-balances",
- "pallet-sudo",
- "pallet-timestamp",
- "parity-scale-codec 3.1.5",
- "rustc-hex",
- "scale-info 2.1.2",
- "serde",
- "sp-core",
- "sp-finality-grandpa",
- "sp-io",
- "sp-runtime",
- "sp-state-machine",
- "sp-std",
- "sp-trie",
 ]
 
 [[package]]
@@ -7247,6 +7350,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-multi-finality-verifier"
+version = "1.0.0-alpha.0"
+dependencies = [
+ "finality-grandpa",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-balances",
+ "pallet-circuit-portal",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "pallet-xdns",
+ "parity-scale-codec 3.1.5",
+ "scale-info 2.1.2",
+ "serde",
+ "sp-finality-grandpa",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "sp-trie",
+ "t3rn-primitives",
+ "t3rn-protocol",
+]
+
+[[package]]
 name = "pallet-multisig"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.19#174735ea1bb5fc4513519c45181d8df63d86f613"
@@ -7307,65 +7435,12 @@ dependencies = [
  "pallet-im-online",
  "pallet-offences",
  "pallet-session",
- "pallet-staking 4.0.0-dev",
+ "pallet-staking",
  "parity-scale-codec 3.1.5",
  "scale-info 2.1.2",
  "sp-runtime",
  "sp-staking",
  "sp-std",
-]
-
-[[package]]
-name = "pallet-portal"
-version = "1.0.0-alpha.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "hash-db",
- "hex",
- "hex-literal 0.2.2",
- "log",
- "pallet-balances",
- "pallet-grandpa-finality-verifier",
- "pallet-sudo",
- "pallet-timestamp",
- "pallet-xdns",
- "parity-scale-codec 3.1.5",
- "scale-info 2.1.2",
- "serde_json",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "sp-version",
- "t3rn-primitives",
-]
-
-[[package]]
-name = "pallet-portal-rpc"
-version = "1.0.0-alpha.0"
-dependencies = [
- "jsonrpc-core 18.0.0",
- "jsonrpc-core-client 18.0.0",
- "jsonrpc-derive",
- "pallet-portal-rpc-runtime-api",
- "parity-scale-codec 3.1.5",
- "sp-api",
- "sp-blockchain",
- "sp-core",
- "sp-rpc",
- "sp-runtime",
-]
-
-[[package]]
-name = "pallet-portal-rpc-runtime-api"
-version = "1.0.0-alpha.0"
-dependencies = [
- "pallet-portal",
- "parity-scale-codec 3.1.5",
- "sp-api",
- "sp-runtime",
- "t3rn-primitives",
 ]
 
 [[package]]
@@ -7473,7 +7548,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "pallet-session",
- "pallet-staking 4.0.0-dev",
+ "pallet-staking",
  "rand 0.7.3",
  "sp-runtime",
  "sp-session",
@@ -7492,27 +7567,6 @@ dependencies = [
  "scale-info 2.1.2",
  "sp-runtime",
  "sp-std",
-]
-
-[[package]]
-name = "pallet-staking"
-version = "0.0.0"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "log",
- "pallet-balances",
- "pallet-treasury 0.0.0",
- "parity-scale-codec 3.1.5",
- "scale-info 2.1.2",
- "serde",
- "similar-asserts",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "t3rn-primitives",
 ]
 
 [[package]]
@@ -7663,7 +7717,7 @@ dependencies = [
  "frame-system",
  "log",
  "pallet-balances",
- "pallet-staking 4.0.0-dev",
+ "pallet-staking",
  "parity-scale-codec 3.1.5",
  "scale-info 2.1.2",
  "serde",
@@ -7725,6 +7779,72 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-xbi-portal"
+version = "0.9.19"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "impl-trait-for-tuples",
+ "log",
+ "orml-traits",
+ "pallet-balances",
+ "pallet-evm 6.0.0-dev",
+ "pallet-xcm 0.9.19 (git+https://github.com/paritytech/polkadot?tag=v0.9.19)",
+ "parity-scale-codec 3.1.5",
+ "scale-info 2.1.2",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-inherents",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "xcm 0.9.19 (git+https://github.com/paritytech/polkadot?tag=v0.9.19)",
+]
+
+[[package]]
+name = "pallet-xbi-portal-enter"
+version = "0.9.19"
+dependencies = [
+ "cumulus-primitives-core",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "impl-trait-for-tuples",
+ "log",
+ "pallet-xbi-portal",
+ "pallet-xcm 0.9.19 (git+https://github.com/paritytech/polkadot?tag=v0.9.19)",
+ "parity-scale-codec 3.1.5",
+ "scale-info 2.1.2",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "t3rn-primitives",
+ "xcm 0.9.19 (git+https://github.com/paritytech/polkadot?tag=v0.9.19)",
+]
+
+[[package]]
+name = "pallet-xcm"
+version = "0.9.19"
+source = "git+https://github.com/paritytech/polkadot?tag=v0.9.19#f00a2772497aadddf75b8b4b475843ea0d910c48"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec 3.1.5",
+ "scale-info 2.1.2",
+ "serde",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "xcm 0.9.19 (git+https://github.com/paritytech/polkadot?tag=v0.9.19)",
+ "xcm-executor 0.9.19 (git+https://github.com/paritytech/polkadot?tag=v0.9.19)",
+]
+
+[[package]]
 name = "pallet-xcm"
 version = "0.9.19"
 source = "git+https://github.com/paritytech/polkadot?branch=release-v0.9.19#f00a2772497aadddf75b8b4b475843ea0d910c48"
@@ -7738,8 +7858,8 @@ dependencies = [
  "sp-core",
  "sp-runtime",
  "sp-std",
- "xcm",
- "xcm-executor",
+ "xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
+ "xcm-executor 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
 ]
 
 [[package]]
@@ -7755,14 +7875,17 @@ dependencies = [
  "scale-info 2.1.2",
  "sp-runtime",
  "sp-std",
- "xcm",
- "xcm-executor",
+ "xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
+ "xcm-executor 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
 ]
 
 [[package]]
 name = "pallet-xdns"
 version = "1.0.0-alpha.0"
 dependencies = [
+ "circuit-mock-runtime",
+ "circuit-runtime-pallets",
+ "circuit-runtime-types",
  "frame-benchmarking",
  "frame-metadata 14.2.0",
  "frame-support",
@@ -9128,7 +9251,7 @@ dependencies = [
  "pallet-scheduler",
  "pallet-session",
  "pallet-session-benchmarking",
- "pallet-staking 4.0.0-dev",
+ "pallet-staking",
  "pallet-staking-reward-curve",
  "pallet-timestamp",
  "pallet-tips",
@@ -9137,7 +9260,7 @@ dependencies = [
  "pallet-treasury 4.0.0-dev",
  "pallet-utility",
  "pallet-vesting",
- "pallet-xcm",
+ "pallet-xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
  "parity-scale-codec 3.1.5",
  "polkadot-primitives",
  "polkadot-runtime-common",
@@ -9165,9 +9288,9 @@ dependencies = [
  "sp-version",
  "static_assertions",
  "substrate-wasm-builder",
- "xcm",
+ "xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
  "xcm-builder",
- "xcm-executor",
+ "xcm-executor 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
 ]
 
 [[package]]
@@ -9191,7 +9314,7 @@ dependencies = [
  "pallet-beefy-mmr",
  "pallet-election-provider-multi-phase",
  "pallet-session",
- "pallet-staking 4.0.0-dev",
+ "pallet-staking",
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-treasury 4.0.0-dev",
@@ -9214,7 +9337,7 @@ dependencies = [
  "sp-staking",
  "sp-std",
  "static_assertions",
- "xcm",
+ "xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
 ]
 
 [[package]]
@@ -9258,7 +9381,7 @@ dependencies = [
  "pallet-babe",
  "pallet-balances",
  "pallet-session",
- "pallet-staking 4.0.0-dev",
+ "pallet-staking",
  "pallet-timestamp",
  "pallet-vesting",
  "parity-scale-codec 3.1.5",
@@ -9280,8 +9403,8 @@ dependencies = [
  "sp-staking",
  "sp-std",
  "static_assertions",
- "xcm",
- "xcm-executor",
+ "xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
+ "xcm-executor 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
 ]
 
 [[package]]
@@ -9302,7 +9425,7 @@ dependencies = [
  "pallet-babe",
  "pallet-im-online",
  "pallet-mmr-primitives",
- "pallet-staking 4.0.0-dev",
+ "pallet-staking",
  "pallet-transaction-payment-rpc-runtime-api",
  "parity-db",
  "polkadot-approval-distribution",
@@ -9474,6 +9597,18 @@ dependencies = [
  "pallet-evm-precompile-simple",
  "sp-core",
  "sp-std",
+]
+
+[[package]]
+name = "pretty_assertions"
+version = "0.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1cab0e7c02cf376875e9335e0ba1da535775beb5450d21e1dffca068818ed98b"
+dependencies = [
+ "ansi_term",
+ "ctor",
+ "diff",
+ "output_vt100",
 ]
 
 [[package]]
@@ -10080,13 +10215,13 @@ dependencies = [
  "pallet-offences",
  "pallet-proxy",
  "pallet-session",
- "pallet-staking 4.0.0-dev",
+ "pallet-staking",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-utility",
- "pallet-xcm",
+ "pallet-xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
  "parity-scale-codec 3.1.5",
  "polkadot-parachain",
  "polkadot-primitives",
@@ -10112,9 +10247,9 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
- "xcm",
+ "xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
  "xcm-builder",
- "xcm-executor",
+ "xcm-executor 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
 ]
 
 [[package]]
@@ -11822,7 +11957,7 @@ dependencies = [
 name = "snowbridge-ethereum"
 version = "0.1.0"
 dependencies = [
- "ethabi-decode",
+ "ethabi-decode 1.3.2",
  "ethash",
  "ethbloom",
  "ethereum-types",
@@ -11876,15 +12011,15 @@ version = "0.1.0"
 dependencies = [
  "frame-support",
  "frame-system",
- "pallet-xcm",
+ "pallet-xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
  "parity-scale-codec 3.1.5",
  "snowbridge-core",
  "sp-core",
  "sp-runtime",
  "sp-std",
- "xcm",
+ "xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
  "xcm-builder",
- "xcm-executor",
+ "xcm-executor 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
 ]
 
 [[package]]
@@ -13024,6 +13159,305 @@ dependencies = [
 ]
 
 [[package]]
+name = "t0rn-parachain-collator"
+version = "1.0.0-beta.0"
+dependencies = [
+ "async-std",
+ "clap",
+ "cumulus-client-cli",
+ "cumulus-client-collator",
+ "cumulus-client-consensus-aura",
+ "cumulus-client-consensus-common",
+ "cumulus-client-network",
+ "cumulus-client-service",
+ "cumulus-primitives-core",
+ "cumulus-primitives-parachain-inherent",
+ "cumulus-relay-chain-inprocess-interface",
+ "cumulus-relay-chain-interface",
+ "cumulus-relay-chain-rpc-interface",
+ "derive_more",
+ "frame-benchmarking",
+ "frame-benchmarking-cli",
+ "futures 0.3.21",
+ "hex-literal 0.3.4",
+ "jsonrpc-core 18.0.0",
+ "jsonrpc-runtime-client",
+ "log",
+ "pallet-contracts-rpc",
+ "pallet-evm-rpc",
+ "pallet-transaction-payment-rpc",
+ "pallet-treasury 0.0.0",
+ "pallet-xdns",
+ "pallet-xdns-rpc",
+ "parity-scale-codec 3.1.5",
+ "polkadot-cli",
+ "polkadot-parachain",
+ "polkadot-primitives",
+ "polkadot-service",
+ "sc-basic-authorship",
+ "sc-chain-spec",
+ "sc-cli",
+ "sc-client-api",
+ "sc-consensus",
+ "sc-executor",
+ "sc-keystore",
+ "sc-network",
+ "sc-rpc",
+ "sc-rpc-api",
+ "sc-service",
+ "sc-telemetry",
+ "sc-tracing",
+ "sc-transaction-pool",
+ "sc-transaction-pool-api",
+ "serde",
+ "sp-api",
+ "sp-block-builder",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-inherents",
+ "sp-keystore",
+ "sp-offchain",
+ "sp-runtime",
+ "sp-session",
+ "sp-timestamp",
+ "sp-transaction-pool",
+ "substrate-build-script-utils",
+ "substrate-frame-rpc-system",
+ "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.19)",
+ "t0rn-parachain-runtime",
+ "t3rn-primitives",
+ "t3rn-protocol",
+ "try-runtime-cli",
+ "xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
+]
+
+[[package]]
+name = "t0rn-parachain-runtime"
+version = "1.0.0-alpha.0"
+dependencies = [
+ "circuit-runtime-types",
+ "cumulus-pallet-aura-ext",
+ "cumulus-pallet-dmp-queue",
+ "cumulus-pallet-parachain-system",
+ "cumulus-pallet-session-benchmarking",
+ "cumulus-pallet-xcm",
+ "cumulus-pallet-xcmp-queue",
+ "cumulus-primitives-core",
+ "cumulus-primitives-timestamp",
+ "cumulus-primitives-utility",
+ "fp-evm 3.0.0-dev",
+ "frame-benchmarking",
+ "frame-executive",
+ "frame-support",
+ "frame-system",
+ "frame-system-benchmarking",
+ "frame-system-rpc-runtime-api",
+ "frame-try-runtime",
+ "hex-literal 0.3.4",
+ "log",
+ "orml-tokens",
+ "orml-traits",
+ "pallet-3vm",
+ "pallet-account-manager",
+ "pallet-aura",
+ "pallet-authorship",
+ "pallet-balances",
+ "pallet-circuit",
+ "pallet-circuit-portal",
+ "pallet-circuit-portal-rpc-runtime-api",
+ "pallet-clock",
+ "pallet-collator-selection",
+ "pallet-contracts",
+ "pallet-contracts-primitives",
+ "pallet-contracts-registry",
+ "pallet-contracts-rpc-runtime-api",
+ "pallet-evm 0.1.0",
+ "pallet-evm-rpc-runtime-api",
+ "pallet-multi-finality-verifier",
+ "pallet-preimage",
+ "pallet-randomness-collective-flip",
+ "pallet-scheduler",
+ "pallet-session",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "pallet-transaction-payment",
+ "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-treasury 0.0.0",
+ "pallet-utility",
+ "pallet-xbi-portal",
+ "pallet-xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
+ "pallet-xdns",
+ "pallet-xdns-rpc-runtime-api",
+ "parachain-info",
+ "parity-scale-codec 3.1.5",
+ "polkadot-parachain",
+ "polkadot-runtime-common",
+ "polkadot-runtime-constants",
+ "precompile-util",
+ "scale-info 2.1.2",
+ "serde",
+ "smallvec 1.9.0",
+ "sp-api",
+ "sp-block-builder",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-inherents",
+ "sp-io",
+ "sp-offchain",
+ "sp-runtime",
+ "sp-session",
+ "sp-std",
+ "sp-transaction-pool",
+ "sp-version",
+ "substrate-wasm-builder",
+ "t3rn-primitives",
+ "t3rn-protocol",
+ "xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
+ "xcm-builder",
+ "xcm-executor 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
+]
+
+[[package]]
+name = "t3rn-parachain-collator"
+version = "1.0.0-beta.0"
+dependencies = [
+ "async-std",
+ "clap",
+ "cumulus-client-cli",
+ "cumulus-client-collator",
+ "cumulus-client-consensus-aura",
+ "cumulus-client-consensus-common",
+ "cumulus-client-network",
+ "cumulus-client-service",
+ "cumulus-primitives-core",
+ "cumulus-primitives-parachain-inherent",
+ "cumulus-relay-chain-inprocess-interface",
+ "cumulus-relay-chain-interface",
+ "cumulus-relay-chain-rpc-interface",
+ "derive_more",
+ "frame-benchmarking",
+ "frame-benchmarking-cli",
+ "futures 0.3.21",
+ "hex-literal 0.3.4",
+ "jsonrpc-core 18.0.0",
+ "jsonrpc-runtime-client",
+ "log",
+ "pallet-contracts-rpc",
+ "pallet-evm-rpc",
+ "pallet-transaction-payment-rpc",
+ "pallet-treasury 0.0.0",
+ "pallet-xdns",
+ "pallet-xdns-rpc",
+ "parity-scale-codec 3.1.5",
+ "polkadot-cli",
+ "polkadot-parachain",
+ "polkadot-primitives",
+ "polkadot-service",
+ "sc-basic-authorship",
+ "sc-chain-spec",
+ "sc-cli",
+ "sc-client-api",
+ "sc-consensus",
+ "sc-executor",
+ "sc-keystore",
+ "sc-network",
+ "sc-rpc",
+ "sc-rpc-api",
+ "sc-service",
+ "sc-telemetry",
+ "sc-tracing",
+ "sc-transaction-pool",
+ "sc-transaction-pool-api",
+ "serde",
+ "sp-api",
+ "sp-block-builder",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-inherents",
+ "sp-keystore",
+ "sp-offchain",
+ "sp-runtime",
+ "sp-session",
+ "sp-timestamp",
+ "sp-transaction-pool",
+ "substrate-build-script-utils",
+ "substrate-frame-rpc-system",
+ "substrate-prometheus-endpoint 0.10.0-dev (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.19)",
+ "t3rn-parachain-runtime",
+ "t3rn-primitives",
+ "t3rn-protocol",
+ "try-runtime-cli",
+ "xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
+]
+
+[[package]]
+name = "t3rn-parachain-runtime"
+version = "1.0.0-alpha.0"
+dependencies = [
+ "circuit-runtime-types",
+ "cumulus-pallet-aura-ext",
+ "cumulus-pallet-dmp-queue",
+ "cumulus-pallet-parachain-system",
+ "cumulus-pallet-session-benchmarking",
+ "cumulus-pallet-xcm",
+ "cumulus-pallet-xcmp-queue",
+ "cumulus-primitives-core",
+ "cumulus-primitives-timestamp",
+ "cumulus-primitives-utility",
+ "frame-benchmarking",
+ "frame-executive",
+ "frame-support",
+ "frame-system",
+ "frame-system-benchmarking",
+ "frame-system-rpc-runtime-api",
+ "frame-try-runtime",
+ "hex-literal 0.3.4",
+ "log",
+ "pallet-aura",
+ "pallet-authorship",
+ "pallet-balances",
+ "pallet-collator-selection",
+ "pallet-preimage",
+ "pallet-randomness-collective-flip",
+ "pallet-scheduler",
+ "pallet-session",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "pallet-transaction-payment",
+ "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-utility",
+ "pallet-xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
+ "parachain-info",
+ "parity-scale-codec 3.1.5",
+ "polkadot-parachain",
+ "polkadot-runtime-common",
+ "polkadot-runtime-constants",
+ "scale-info 2.1.2",
+ "serde",
+ "smallvec 1.9.0",
+ "sp-api",
+ "sp-block-builder",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-inherents",
+ "sp-io",
+ "sp-offchain",
+ "sp-runtime",
+ "sp-session",
+ "sp-std",
+ "sp-transaction-pool",
+ "sp-version",
+ "substrate-wasm-builder",
+ "xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
+ "xcm-builder",
+ "xcm-executor 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
+]
+
+[[package]]
 name = "t3rn-primitives"
 version = "1.0.0-alpha.0"
 dependencies = [
@@ -13054,14 +13488,15 @@ dependencies = [
  "sp-trie",
  "sp-version",
  "t3rn-sdk-primitives",
- "t3rn-types 0.0.1",
+ "t3rn-types 0.0.1-rc.2",
 ]
 
 [[package]]
 name = "t3rn-protocol"
 version = "1.0.0-alpha.1"
 dependencies = [
- "ethabi-decode",
+ "circuit-runtime-types",
+ "ethabi-decode 1.3.2",
  "frame-metadata 15.0.0",
  "frame-support",
  "frame-system",
@@ -13089,26 +13524,27 @@ dependencies = [
  "sp-std",
  "sp-version",
  "t3rn-primitives",
+ "t3rn-types 0.0.1-rc.2",
  "tiny-keccak 2.0.2",
  "triehash",
 ]
 
 [[package]]
 name = "t3rn-sdk-primitives"
-version = "0.1.0"
+version = "0.1.1-rc.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "583eacd43784fe228c8d283772b12b4f24a9ebce2b889a5d870fb97fc4bd1e93"
+checksum = "a7a7d125fd0360376e83222134e2dad6f3eed9d5f5b42c24923cf601bd42e7a3"
 dependencies = [
  "arrayvec 0.7.2",
  "cfg-if 1.0.0",
  "parity-scale-codec 3.1.5",
  "scale-info 2.1.2",
- "t3rn-types 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "t3rn-types 0.0.1-rc.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "t3rn-types"
-version = "0.0.1"
+version = "0.0.1-rc.2"
 dependencies = [
  "bytes 1.2.1",
  "hex",
@@ -13122,14 +13558,17 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
+ "t3rn-sdk-primitives",
 ]
 
 [[package]]
 name = "t3rn-types"
-version = "0.0.1"
+version = "0.0.1-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c1717308e10e053e3db5909651fd3dda4264406e9c78511113b905acd0cd5c37"
+checksum = "b99945e5c4857932e8f09531ccf0794e030903090df2bf6b578ad45a3f3c236f"
 dependencies = [
+ "bytes 1.2.1",
+ "num",
  "parity-scale-codec 3.1.5",
  "primitive-types",
  "scale-info 2.1.2",
@@ -13914,6 +14353,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7e8820f5d777f6224dc4be3632222971ac30164d4a258d595640799554ebfd99"
 
 [[package]]
+name = "unicode-width"
+version = "0.1.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3ed742d4ea2bd1176e236172c8429aaf54486e7ac098db29ffe6529e0ce50973"
+
+[[package]]
 name = "unicode-xid"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -14169,6 +14614,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "wasm-encoder"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8905fd25fdadeb0e7e8bf43a9f46f9f972d6291ad0c7a32573b88dd13a6cfa6b"
+dependencies = [
+ "leb128",
+]
+
+[[package]]
 name = "wasm-gc-api"
 version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -14388,6 +14842,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "wast"
+version = "45.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "186c474c4f9bb92756b566d592a16591b4526b1a4841171caa3f31d7fe330d96"
+dependencies = [
+ "leb128",
+ "memchr",
+ "unicode-width",
+ "wasm-encoder",
+]
+
+[[package]]
+name = "wat"
+version = "1.0.47"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c2d4bc4724b4f02a482c8cab053dac5ef26410f264c06ce914958f9a42813556"
+dependencies = [
+ "wast",
+]
+
+[[package]]
 name = "web-sys"
 version = "0.3.59"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -14487,7 +14962,7 @@ dependencies = [
  "pallet-session",
  "pallet-session-benchmarking",
  "pallet-society",
- "pallet-staking 4.0.0-dev",
+ "pallet-staking",
  "pallet-staking-reward-curve",
  "pallet-sudo",
  "pallet-timestamp",
@@ -14496,7 +14971,7 @@ dependencies = [
  "pallet-treasury 4.0.0-dev",
  "pallet-utility",
  "pallet-vesting",
- "pallet-xcm",
+ "pallet-xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
  "pallet-xcm-benchmarks",
  "parity-scale-codec 3.1.5",
  "polkadot-parachain",
@@ -14525,9 +15000,9 @@ dependencies = [
  "sp-version",
  "substrate-wasm-builder",
  "westend-runtime-constants",
- "xcm",
+ "xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
  "xcm-builder",
- "xcm-executor",
+ "xcm-executor 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
 ]
 
 [[package]]
@@ -14693,6 +15168,19 @@ dependencies = [
 [[package]]
 name = "xcm"
 version = "0.9.19"
+source = "git+https://github.com/paritytech/polkadot?tag=v0.9.19#f00a2772497aadddf75b8b4b475843ea0d910c48"
+dependencies = [
+ "derivative",
+ "impl-trait-for-tuples",
+ "log",
+ "parity-scale-codec 3.1.5",
+ "scale-info 2.1.2",
+ "xcm-procedural 0.1.0 (git+https://github.com/paritytech/polkadot?tag=v0.9.19)",
+]
+
+[[package]]
+name = "xcm"
+version = "0.9.19"
 source = "git+https://github.com/paritytech/polkadot?branch=release-v0.9.19#f00a2772497aadddf75b8b4b475843ea0d910c48"
 dependencies = [
  "derivative",
@@ -14700,7 +15188,7 @@ dependencies = [
  "log",
  "parity-scale-codec 3.1.5",
  "scale-info 2.1.2",
- "xcm-procedural",
+ "xcm-procedural 0.1.0 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
 ]
 
 [[package]]
@@ -14719,8 +15207,25 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "xcm",
- "xcm-executor",
+ "xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
+ "xcm-executor 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
+]
+
+[[package]]
+name = "xcm-executor"
+version = "0.9.19"
+source = "git+https://github.com/paritytech/polkadot?tag=v0.9.19#f00a2772497aadddf75b8b4b475843ea0d910c48"
+dependencies = [
+ "frame-support",
+ "impl-trait-for-tuples",
+ "log",
+ "parity-scale-codec 3.1.5",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "xcm 0.9.19 (git+https://github.com/paritytech/polkadot?tag=v0.9.19)",
 ]
 
 [[package]]
@@ -14738,7 +15243,18 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "xcm",
+ "xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
+]
+
+[[package]]
+name = "xcm-procedural"
+version = "0.1.0"
+source = "git+https://github.com/paritytech/polkadot?tag=v0.9.19#f00a2772497aadddf75b8b4b475843ea0d910c48"
+dependencies = [
+ "Inflector",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

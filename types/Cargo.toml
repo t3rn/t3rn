@@ -6,7 +6,7 @@ homepage    = "https://t3rn.io"
 license     = "Apache-2.0"
 name        = "t3rn-types"
 repository  = "https://github.com/t3rn/t3rn/"
-version     = "0.0.1"
+version     = "0.0.1-rc.2"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -29,6 +29,8 @@ serde_json  = "1.0.41"
 
 sp-core    = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
+
+t3rn-sdk-primitives = { version = "=0.1.1-rc.4" }
 
 [features]
 default     = [ "std" ]

@@ -28,9 +28,9 @@ sp-std             = { default-features = false, git = "https://github.com/parit
 t3rn-primitives = { default-features = false, path = "../../primitives" }
 
 [dev-dependencies]
-pallet-balances = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
-pallet-sudo     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 sp-core         = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
+
+circuit-mock-runtime = { path = "../../runtime/mock" }
 
 [features]
 default = [ "std" ]

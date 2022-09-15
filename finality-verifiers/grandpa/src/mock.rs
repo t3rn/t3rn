@@ -160,10 +160,12 @@ pub fn test_header_range(to: u64) -> Vec<TestHeader> {
     let mut parent_hash = None;
     for (i, block) in (0..=to).enumerate() {
         let header = test_header_with_correct_parent(block.into(), parent_hash);
+    for (i, block) in (from..=to).enumerate() {
+        let header = test_header_with_correct_parent(block, parent_hash);
         headers.push(header);
         parent_hash = Some(headers[i].hash());
     }
-    return headers
+    headers
 }
 
 #[cfg(feature = "testing")]

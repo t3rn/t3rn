@@ -38,6 +38,7 @@ pub enum CircuitStatus {
     FinishedAllSteps,
     RevertTimedOut,
     RevertKill,
+    RevertMisbehaviour,
     Committed,
     Reverted,
 }
@@ -45,6 +46,7 @@ pub enum CircuitStatus {
 #[derive(Clone, Eq, PartialEq, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum CircuitRole {
     Relayer,
+    Executor,
     Requester,
     ContractAuthor,
     Local,
@@ -108,10 +110,13 @@ impl CircuitStatus {
         let mut highest_post_ready_determined_status = CircuitStatus::Ready;
         let mut lowest_post_ready_determined_status = CircuitStatus::Finished;
 
+        let current_determined_status =
+            Self::determine_effects_insurance_status::<T>(&insurance_deposits.to_vec());
+
         for (_step_cnt, full_side_effect) in step.iter().enumerate() {
-            let current_id = full_side_effect.input.generate_id::<SystemHashing<T>>();
-            let current_determined_status =
-                Self::determine_insurance_status::<T>(current_id, insurance_deposits);
+            // let current_id = full_side_effect.input.generate_id::<SystemHashing<T>>();
+            // let current_determined_status =
+            //     Self::determine_insurance_status::<T>(current_id, insurance_deposits);
             if current_determined_status == CircuitStatus::PendingInsurance
                 && highest_post_ready_determined_status > CircuitStatus::Ready
             {
@@ -200,6 +205,7 @@ impl Default for CircuitStatus {
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo)]
 pub struct InsuranceDeposit<AccountId, BlockNumber, BalanceOf> {
     pub insurance: BalanceOf,
+    pub reserved_bond: BalanceOf,
     pub reward: BalanceOf,
     pub requester: AccountId,
     pub bonded_relayer: Option<AccountId>,
@@ -216,11 +222,13 @@ impl<
     pub fn new(
         insurance: BalanceOf,
         reward: BalanceOf,
+        reserved_bond: BalanceOf,
         requester: AccountId,
         requested_at: BlockNumber,
     ) -> Self {
         InsuranceDeposit {
             insurance,
+            reserved_bond,
             reward,
             requester,
             bonded_relayer: None,
@@ -290,7 +298,7 @@ impl<
     ) -> XExecStepSideEffectId<T> {
         let mut xtx_id_buf = xtx_id.encode();
         xtx_id_buf.append(&mut (n_step as u32).encode());
-        SystemHashing::<T>::hash(xtx_id_buf.to_vec().as_ref())
+        SystemHashing::<T>::hash(xtx_id_buf.as_ref())
     }
 
     pub fn setup_fresh<T: frame_system::Config>(

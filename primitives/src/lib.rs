@@ -40,7 +40,6 @@ use sp_runtime::{
 
 pub use gateway_inbound_protocol::GatewayInboundProtocol;
 pub use orml_traits;
-pub use t3rn_sdk_primitives as sdk_primitives;
 
 use sp_std::{convert::TryFrom, prelude::*, vec};
 #[cfg(feature = "std")]
@@ -51,8 +50,11 @@ pub mod bridges;
 pub mod circuit;
 pub mod circuit_portal;
 pub mod common;
+pub mod claimable;
+pub mod clock;
 pub mod contract_metadata;
 pub mod contracts_registry;
+pub mod executors;
 pub mod gateway_inbound_protocol;
 pub mod match_format;
 pub mod portal;
@@ -60,7 +62,6 @@ pub mod monetary;
 pub mod protocol;
 pub mod side_effect;
 pub mod signature_caster;
-pub mod staking;
 pub mod storage;
 pub mod threevm;
 pub mod transfers;
