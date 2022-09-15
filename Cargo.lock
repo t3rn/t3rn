@@ -1279,6 +1279,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "circuit-runtime-types"
+version = "1.0.0-alpha.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "sp-core",
+ "sp-runtime",
+]
+
+[[package]]
 name = "circuit-standalone-node"
 version = "1.0.0-alpha.0"
 dependencies = [
