@@ -17,20 +17,15 @@
 
 //! Test utilities
 use codec::{Decode, Encode};
-use frame_support::{assert_err, assert_noop, assert_ok, dispatch::PostDispatchInfo};
+use frame_support::{assert_noop, assert_ok, dispatch::PostDispatchInfo};
 use frame_system::pallet_prelude::OriginFor;
-use hex_literal::hex;
 use serde_json::Value;
-use sp_core::crypto::AccountId32;
-use sp_io::TestExternalities;
 use sp_runtime::{DispatchError, DispatchErrorWithPostInfo};
-use sp_version::{create_runtime_str, RuntimeVersion};
 use std::fs;
 use t3rn_primitives::{
     abi::GatewayABIConfig,
-    portal::{RegistrationData, RococoBridge},
-    xdns::{AllowedSideEffect, Xdns},
-    ChainId, EscrowTrait, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
+    xdns::AllowedSideEffect,
+    ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
 };
 use circuit_mock_runtime::{ExtBuilder, *};
 
@@ -170,7 +165,7 @@ fn runs_mock_tests() {
     ExtBuilder::default()
         .build()
         .execute_with(|| {
-            run_mock_tests();
+            let _ = run_mock_tests();
         });
 }
 
@@ -231,7 +226,6 @@ fn cant_submit_without_registering() {
 
 #[test]
 fn cant_submit_with_gap() {
-    let mut ext = TestExternalities::new_empty();
     let origin = Origin::signed([0u8; 32].into());
     let root = Origin::root();
     ExtBuilder::default()
@@ -350,7 +344,7 @@ fn can_be_set_operational() {
     ExtBuilder::default()
         .build()
         .execute_with(|| {
-            let one = AccountId::new([1u8; 32]);s
+            let one = AccountId::new([1u8; 32]);
             let origin = Origin::signed([0u8; 32].into());
 
             assert_ok!(register_file(

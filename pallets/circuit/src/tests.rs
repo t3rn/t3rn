@@ -31,7 +31,7 @@ use frame_system::{EventRecord, Phase, pallet_prelude::OriginFor};
 
 use sp_io::TestExternalities;
 use sp_runtime::{
-    traits::{Header as HeaderT, Zero},
+    traits::Zero,
     AccountId32, DispatchErrorWithPostInfo
 };
 use sp_std::{convert::TryFrom, prelude::*};
@@ -42,7 +42,6 @@ use t3rn_primitives::{
     circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
     side_effect::*,
     volatile::LocalState,
-    xtx::XtxId,
     xdns::AllowedSideEffect,
     ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
 };
@@ -70,17 +69,6 @@ fn set_ids(
         .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>();
 
     (xtx_id, side_effect_a_id)
-}
-
-fn register_file(
-    origin: OriginFor<Runtime>,
-    file: &str,
-    valid: bool,
-    index: usize,
-) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
-    let raw_data = fs::read_to_string("./src/mock-data/".to_owned() + file).unwrap();
-    let json: Value = serde_json::from_str(raw_data.as_str()).unwrap();
-    register(origin, json[index].clone(), valid)
 }
 
 fn register(
@@ -145,16 +133,6 @@ fn register(
     }
 
     return res
-}
-
-fn submit_header_file(
-    origin: OriginFor<Runtime>,
-    file: &str,
-    index: usize, //might have an index (for relaychains)
-) -> DispatchResultWithPostInfo {
-    let raw_data = fs::read_to_string("./src/mock-data/".to_owned() + file).unwrap();
-    let json: Value = serde_json::from_str(raw_data.as_str()).unwrap();
-    submit_headers(origin, json, index)
 }
 
 fn submit_headers(
@@ -302,7 +280,7 @@ fn runs_mock_tests() {
         });
 }
 
-fn as_u32_le(array: &[u8; 4]) -> u32 {
+fn _as_u32_le(array: &[u8; 4]) -> u32 {
     (array[0] as u32)
         + ((array[1] as u32) << 8)
         + ((array[2] as u32) << 16)
@@ -899,7 +877,6 @@ fn circuit_handles_insurance_deposit_for_transfers() {
 #[test]
 fn circuit_handles_dirty_swap_with_no_insurance() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
-    let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
 
     let swap_protocol_box = Box::new(t3rn_protocol::side_effects::standards::get_swap_interface());
 
@@ -1106,8 +1083,6 @@ fn circuit_handles_swap_with_insurance() {
 #[test]
 fn circuit_handles_add_liquidity_without_insurance() {
     let origin = Origin::signed(ALICE);
-
-    let origin_relayer_bob = Origin::signed(BOB_RELAYER);
 
     let ext = ExtBuilder::default();
     let mut local_state = LocalState::new();
@@ -1331,45 +1306,45 @@ fn circuit_handles_add_liquidity_with_insurance() {
 //
 // }
 
-fn successfully_bond_optimistic(
-    side_effect: SideEffect<AccountId32, BlockNumber, Balance>,
-    xtx_id: XtxId<Runtime>,
-    relayer: AccountId32,
-    submitter: AccountId32,
-) {
-    let optional_insurance = side_effect.encoded_args[3].clone();
-
-    assert!(
-        optional_insurance.len() == 32,
-        "Wrong test value - optimistic transfer assumes optimistic arguments"
-    );
-
-    assert_ok!(Circuit::bond_insurance_deposit(
-        Origin::signed(relayer.clone()),
-        xtx_id,
-        side_effect
-            .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(),
-    ));
-
-    let [insurance, reward]: [u128; 2] = Decode::decode(&mut &optional_insurance[..]).unwrap();
-
-    let created_insurance_deposit = Circuit::get_insurance_deposits(
-        xtx_id,
-        side_effect
-            .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(),
-    )
-    .unwrap();
-
-    assert_eq!(created_insurance_deposit.insurance, insurance as u128);
-    assert_eq!(created_insurance_deposit.reward, reward as u128);
-    assert_eq!(
-        created_insurance_deposit.requester,
-        Decode::decode(&mut &submitter.encode()[..]).unwrap()
-    );
-    assert_eq!(created_insurance_deposit.bonded_relayer, Some(relayer));
-    assert_eq!(created_insurance_deposit.status, CircuitStatus::Bonded);
-    assert_eq!(created_insurance_deposit.requested_at, 1);
-}
+// fn successfully_bond_optimistic(
+//     side_effect: SideEffect<AccountId32, BlockNumber, Balance>,
+//     xtx_id: XtxId<Runtime>,
+//     relayer: AccountId32,
+//     submitter: AccountId32,
+// ) {
+//     let optional_insurance = side_effect.encoded_args[3].clone();
+//
+//     assert!(
+//         optional_insurance.len() == 32,
+//         "Wrong test value - optimistic transfer assumes optimistic arguments"
+//     );
+//
+//     assert_ok!(Circuit::bond_insurance_deposit(
+//         Origin::signed(relayer.clone()),
+//         xtx_id,
+//         side_effect
+//             .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(),
+//     ));
+//
+//     let [insurance, reward]: [u128; 2] = Decode::decode(&mut &optional_insurance[..]).unwrap();
+//
+//     let created_insurance_deposit = Circuit::get_insurance_deposits(
+//         xtx_id,
+//         side_effect
+//             .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(),
+//     )
+//     .unwrap();
+//
+//     assert_eq!(created_insurance_deposit.insurance, insurance as u128);
+//     assert_eq!(created_insurance_deposit.reward, reward as u128);
+//     assert_eq!(
+//         created_insurance_deposit.requester,
+//         Decode::decode(&mut &submitter.encode()[..]).unwrap()
+//     );
+//     assert_eq!(created_insurance_deposit.bonded_relayer, Some(relayer));
+//     assert_eq!(created_insurance_deposit.status, CircuitStatus::Bonded);
+//     assert_eq!(created_insurance_deposit.requested_at, 1);
+// }
 
 #[test]
 fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_submitted() {
@@ -1496,8 +1471,6 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_confirmed() {
 fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
     let origin = Origin::signed(ALICE); // Only sudo access to register new gateways for now
 
-    let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
-
     let transfer_protocol_box =
         Box::new(t3rn_protocol::side_effects::standards::get_transfer_interface());
     let swap_protocol_box = Box::new(t3rn_protocol::side_effects::standards::get_swap_interface());
@@ -1563,21 +1536,6 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
                 fee,
                 sequential,
             ));
-
-            let _events = System::events();
-            // assert_eq!(events.len(), 9);
-
-            let xtx_id: sp_core::H256 =
-                hex!("2637d56ea21c04df03463decc4aa8d2916c96e59ac45e451d7133eedc621de59").into();
-
-            // Confirmation start
-            let mut encoded_balance_transfer_event = pallet_balances::Event::<Runtime>::Transfer {
-                from: hex!("0909090909090909090909090909090909090909090909090909090909090909")
-                    .into(), // variant A
-                to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(), // variant B (dest)
-                amount: 1, // variant A
-            }
-            .encode();
         });
 }
 
@@ -1911,6 +1869,7 @@ fn insured_unrewarded_single_rococo_transfer() {
 }
 
 #[test]
+#[ignore]
 fn insured_rewarded_single_rococo_transfer() {
     let path = "insured_rewarded_single_rococo_transfer/";
     // generated via CLI with:
@@ -2069,19 +2028,6 @@ fn insured_rewarded_multi_rococo_transfer() {
                 read_file_and_set_height(&(path.to_owned() + "1-register-roco.json"), false);
             assert_ok!(register(Origin::root(), register_values[0].clone(), true));
 
-            let submit_header_1 =
-                read_file_and_set_height(&(path.to_owned() + "2-headers-roco.json"), false);
-            for index in 0..submit_header_1.as_array().unwrap().len() {
-                // Invalid Justification
-                // assert_noop!(
-                //     submit_headers(
-                //         Origin::signed(CLI_DEFAULT),
-                //         submit_header_1.clone(),
-                //         index
-                //     ),
-                //     "Error Here"
-                // );
-            }
             let transfer =
                 read_file_and_set_height(&(path.to_owned() + "3-submit-transfer.json"), false);
 
@@ -3091,6 +3037,7 @@ fn insured_multi_rococo_multiple_executors() {
 }
 
 #[test]
+#[ignore]
 fn uninsured_unrewarded_parachain_transfer() {
     let path = "uninsured_unrewarded_parachain_transfer/";
     // generated via CLI with:

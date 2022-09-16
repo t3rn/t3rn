@@ -7356,6 +7356,9 @@ dependencies = [
 name = "pallet-portal"
 version = "1.0.0-alpha.0"
 dependencies = [
+ "circuit-mock-runtime",
+ "circuit-runtime-pallets",
+ "circuit-runtime-types",
  "frame-support",
  "frame-system",
  "hash-db",

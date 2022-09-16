@@ -5,7 +5,6 @@ use crate::{
 };
 use codec::{Decode, Encode};
 use frame_support::dispatch::{DispatchResult, DispatchResultWithPostInfo};
-use frame_system::pallet_prelude::OriginFor;
 use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
 use sp_std::{boxed::Box, collections::btree_map::BTreeMap, vec::Vec};
@@ -156,7 +155,6 @@ pub trait Xdns<T: frame_system::Config> {
     fn fetch_records() -> Vec<XdnsRecord<T::AccountId>>;
 
     fn add_new_xdns_record(
-        origin: OriginFor<T>,
         url: Vec<u8>,
         gateway_id: ChainId,
         parachain: Option<Parachain>,

@@ -22,7 +22,7 @@ pub mod weights;
 #[frame_support::pallet]
 pub mod pallet {
     use core::convert::TryInto;
-    use frame_support::{pallet_prelude::*, weights};
+    use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
     use sp_std::vec::Vec;
     use t3rn_primitives::{
@@ -110,7 +110,6 @@ pub mod pallet {
 
             // ToDo xdns record is written also when the calls after this fail!!!
             <T as Config>::Xdns::add_new_xdns_record(
-                origin.clone(),
                 url,
                 gateway_id,
                 None,
