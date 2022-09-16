@@ -5,8 +5,6 @@ use frame_support::sp_runtime::DispatchError;
 /// Learn more about FRAME and the core library of Substrate FRAME pallets:
 /// <https://docs.substrate.io/v3/runtime/frame>
 pub use pallet::*;
-#[cfg(test)]
-mod mock;
 
 #[cfg(test)]
 mod tests;
@@ -108,19 +106,21 @@ pub mod pallet {
             security_coordinates: Vec<u8>,
             encoded_registration_data: Vec<u8>,
         ) -> DispatchResultWithPostInfo {
+            ensure_root(origin.clone())?;
+
             // ToDo xdns record is written also when the calls after this fail!!!
             <T as Config>::Xdns::add_new_xdns_record(
                 origin.clone(),
                 url,
                 gateway_id,
                 None,
-                gateway_abi.clone(),
+                gateway_abi,
                 gateway_vendor.clone(),
-                gateway_type.clone(),
+                gateway_type,
                 gateway_genesis,
-                gateway_sys_props.clone(),
+                gateway_sys_props,
                 security_coordinates,
-                allowed_side_effects.clone(),
+                allowed_side_effects,
             )?;
 
             let res = match gateway_vendor {

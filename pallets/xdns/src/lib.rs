@@ -269,7 +269,6 @@ pub mod pallet {
             security_coordinates: Vec<u8>,
             allowed_side_effects: Vec<AllowedSideEffect>,
         ) -> DispatchResult {
-            ensure_root(origin)?;
 
             // early exit if record already exists in storage
             if <XDNSRegistry<T>>::contains_key(gateway_id) {
@@ -298,7 +297,6 @@ pub mod pallet {
 
             xdns_record.set_last_finalized(now);
             <XDNSRegistry<T>>::insert(gateway_id, xdns_record);
-            Self::deposit_event(Event::<T>::XdnsRecordStored(gateway_id));
             Ok(())
         }
 

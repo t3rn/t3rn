@@ -32,6 +32,11 @@ pallet-timestamp                  = { git = "https://github.com/paritytech/subst
 pallet-balances                   = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 pallet-sudo                       = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 pallet-xdns                       = { path = "../../pallets/xdns" }
+
+circuit-runtime-types             = { path = "../../runtime/common-types" }
+circuit-runtime-pallets           = { path = "../../runtime/common-pallets" }
+circuit-mock-runtime              = { path = "../../runtime/mock" }
+
 hex                               = "0.4.2"
 serde_json                        = "1.0.41"
 hex-literal                       = "0.2.1"

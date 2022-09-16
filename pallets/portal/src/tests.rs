@@ -16,7 +16,6 @@
 // limitations under the License.
 
 //! Test utilities
-use crate::{mock::*, Error};
 use codec::{Decode, Encode};
 use frame_support::{assert_err, assert_noop, assert_ok, dispatch::PostDispatchInfo};
 use frame_system::pallet_prelude::OriginFor;
@@ -33,27 +32,10 @@ use t3rn_primitives::{
     xdns::{AllowedSideEffect, Xdns},
     ChainId, EscrowTrait, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
 };
-
-pub fn new_test_ext() -> TestExternalities {
-    let t = frame_system::GenesisConfig::default()
-        .build_storage::<Test>()
-        .unwrap();
-    TestExternalities::new(t)
-}
-
-pub const TEST_RUNTIME_VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("test-runtime"),
-    impl_name: create_runtime_str!("test-runtime"),
-    authoring_version: 1,
-    spec_version: 1,
-    impl_version: 1,
-    apis: sp_version::create_apis_vec!([]),
-    transaction_version: 1,
-    state_version: 1,
-};
+use circuit_mock_runtime::{ExtBuilder, *};
 
 fn register_file(
-    origin: OriginFor<Test>,
+    origin: OriginFor<Runtime>,
     file: &str,
     valid: bool,
     index: usize,
@@ -64,7 +46,7 @@ fn register_file(
 }
 
 fn register(
-    origin: OriginFor<Test>,
+    origin: OriginFor<Runtime>,
     json: Value,
     valid: bool,
 ) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
@@ -107,11 +89,12 @@ fn register(
         gateway_genesis.clone(),
         gateway_sys_props.clone(),
         allowed_side_effects.clone(),
+        vec![],
         encoded_registration_data.clone(),
     );
 
     if valid {
-        let xdns_record = pallet_xdns::XDNSRegistry::<Test>::get(gateway_id).unwrap();
+        let xdns_record = pallet_xdns::XDNSRegistry::<Runtime>::get(gateway_id).unwrap();
         let stored_side_effects = xdns_record.allowed_side_effects;
 
         // ensure XDNS writes are correct
@@ -127,7 +110,7 @@ fn register(
 }
 
 fn submit_header_file(
-    origin: OriginFor<Test>,
+    origin: OriginFor<Runtime>,
     file: &str,
     index: usize, //might have an index (for relaychains)
 ) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
@@ -137,7 +120,7 @@ fn submit_header_file(
 }
 
 fn submit_headers(
-    origin: OriginFor<Test>,
+    origin: OriginFor<Runtime>,
     json: Value,
     index: usize,
 ) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
@@ -184,61 +167,66 @@ fn run_mock_tests() -> Result<(), DispatchErrorWithPostInfo<PostDispatchInfo>> {
 
 #[test]
 fn runs_mock_tests() {
-    let mut ext = TestExternalities::new_empty();
-    ext.execute_with(|| {
-        run_mock_tests();
-    });
+    ExtBuilder::default()
+        .build()
+        .execute_with(|| {
+            run_mock_tests();
+        });
 }
 
 #[test]
 fn register_rococo_successfully() {
-    let mut ext = TestExternalities::new_empty();
     let origin = Origin::root(); // only sudo access to register new gateways for now
-    ext.execute_with(|| {
-        assert_ok!(register_file(origin, "1-register-roco.json", true, 0));
-    });
+    ExtBuilder::default()
+        .build()
+        .execute_with(|| {
+            assert_ok!(register_file(origin, "1-register-roco.json", true, 0));
+        });
 }
 
 #[test]
 fn fails_registration_with_invalid_signer() {
-    let mut ext = TestExternalities::new_empty();
     let origin = Origin::signed([0u8; 32].into()); // only sudo access to register new gateways for now
-    ext.execute_with(|| {
-        assert_noop!(
-            register_file(origin, "1-register-roco.json", false, 0),
-            DispatchError::BadOrigin
-        );
-    });
+    ExtBuilder::default()
+        .build()
+        .execute_with(|| {
+            assert_noop!(
+                register_file(origin, "1-register-roco.json", false, 0),
+                DispatchError::BadOrigin
+            );
+        });
 }
 
 #[test]
 fn gateway_can_only_be_registered_once() {
-    let mut ext = TestExternalities::new_empty();
     let origin = Origin::root(); // only sudo access to register new gateways for now
-    ext.execute_with(|| {
-        assert_ok!(register_file(
-            origin.clone(),
-            "1-register-roco.json",
-            false,
-            0
-        ));
-        assert_noop!(
-            register_file(origin, "1-register-roco.json", false, 0),
-            pallet_xdns::Error::<Test>::XdnsRecordAlreadyExists
-        );
-    });
+    ExtBuilder::default()
+        .build()
+        .execute_with(|| {
+            assert_ok!(register_file(
+                origin.clone(),
+                "1-register-roco.json",
+                false,
+                0
+            ));
+            assert_noop!(
+                register_file(origin, "1-register-roco.json", false, 0),
+                pallet_xdns::Error::<Runtime>::XdnsRecordAlreadyExists
+            );
+        });
 }
 
 #[test]
 fn cant_submit_without_registering() {
-    let mut ext = TestExternalities::new_empty();
     let origin = Origin::root();
-    ext.execute_with(|| {
-        assert_noop!(
-            submit_header_file(origin, "2-headers-roco.json", 0),
-            Error::<Test>::GatewayVendorNotFound
-        );
-    });
+    ExtBuilder::default()
+        .build()
+        .execute_with(|| {
+            assert_noop!(
+                submit_header_file(origin, "2-headers-roco.json", 0),
+                pallet_xdns::Error::<Runtime>::XdnsRecordNotFound
+            );
+        });
 }
 
 #[test]
@@ -246,143 +234,142 @@ fn cant_submit_with_gap() {
     let mut ext = TestExternalities::new_empty();
     let origin = Origin::signed([0u8; 32].into());
     let root = Origin::root();
-    ext.execute_with(|| {
-        assert_ok!(register_file(root, "1-register-roco.json", true, 0));
-        assert_noop!(
-            submit_header_file(origin, "5-headers-roco.json", 0),
-            Error::<Test>::SubmitHeaderError
-        );
-    });
+    ExtBuilder::default()
+        .build()
+        .execute_with(|| {
+            assert_ok!(register_file(root, "1-register-roco.json", true, 0));
+            assert_noop!(
+                submit_header_file(origin, "5-headers-roco.json", 0),
+                pallet_portal::Error::<Runtime>::SubmitHeaderError
+            );
+        });
 }
 
 #[test]
 fn can_submit_valid_header_data() {
-    let mut ext = TestExternalities::new_empty();
     let root = Origin::root();
     let origin = Origin::signed([0u8; 32].into());
-    ext.execute_with(|| {
-        assert_ok!(register_file(root, "1-register-roco.json", true, 0));
-        assert_ok!(submit_header_file(origin.clone(), "2-headers-roco.json", 0));
-        assert_noop!(
-            // can't submit twice
-            submit_header_file(origin, "2-headers-roco.json", 0),
-            Error::<Test>::SubmitHeaderError
-        );
-    });
+    ExtBuilder::default()
+        .build()
+        .execute_with(|| {
+            assert_ok!(register_file(root, "1-register-roco.json", true, 0));
+            assert_ok!(submit_header_file(origin.clone(), "2-headers-roco.json", 0));
+            assert_noop!(
+                // can't submit twice
+                submit_header_file(origin, "2-headers-roco.json", 0),
+                pallet_portal::Error::<Runtime>::SubmitHeaderError
+            );
+        });
 }
 
 #[test]
 fn can_register_parachain_and_add_header() {
-    let mut ext = TestExternalities::new_empty();
     let root = Origin::root();
     let origin = Origin::signed([0u8; 32].into());
-    ext.execute_with(|| {
-        // ToDo activate once xdns is refactored
-        // assert_noop!( // can't register parachain before relaychain
-        //     register_file(root.clone(), "3-register-pang.json", false),
-        //     Error::<Test>::RegistrationError
-        // );
-        assert_ok!(register_file(root.clone(), "1-register-roco.json", true, 0));
-        assert_ok!(submit_header_file(origin.clone(), "2-headers-roco.json", 0));
-        assert_noop!(
-            submit_header_file(origin.clone(), "7-headers-pang.json", 0),
-            Error::<Test>::GatewayVendorNotFound
-        );
-        assert_ok!(register_file(root.clone(), "4-register-pang.json", true, 0));
-        assert_noop!(
-            // needs relaychain header first
-            submit_header_file(origin.clone(), "7-headers-pang.json", 0),
-            Error::<Test>::SubmitHeaderError
-        );
-        assert_ok!(submit_header_file(origin.clone(), "5-headers-roco.json", 0),);
-        assert_ok!(submit_header_file(origin.clone(), "7-headers-pang.json", 0),);
-    });
+    ExtBuilder::default()
+        .build()
+        .execute_with(|| {
+            assert_ok!(register_file(root.clone(), "1-register-roco.json", true, 0));
+            assert_ok!(submit_header_file(origin.clone(), "2-headers-roco.json", 0));
+            assert_noop!(
+                submit_header_file(origin.clone(), "7-headers-pang.json", 0),
+                pallet_xdns::Error::<Runtime>::XdnsRecordNotFound
+            );
+            assert_ok!(register_file(root.clone(), "4-register-pang.json", true, 0));
+            assert_noop!(
+                // needs relaychain header first
+                submit_header_file(origin.clone(), "7-headers-pang.json", 0),
+                pallet_portal::Error::<Runtime>::SubmitHeaderError
+            );
+            assert_ok!(submit_header_file(origin.clone(), "5-headers-roco.json", 0));
+            assert_ok!(submit_header_file(origin.clone(), "7-headers-pang.json", 0));
+        });
 }
 
 #[test]
 fn can_update_owner() {
-    let mut ext = TestExternalities::new_empty();
-    ext.execute_with(|| {
-        let one = AccountId::new([1u8; 32]);
-        let two = AccountId::new([2u8; 32]);
-        assert_ok!(register_file(
-            Origin::root(),
-            "1-register-roco.json",
-            true,
-            0
-        ));
-        assert_ok!(Portal::set_owner(
-            Origin::root(),
-            *b"roco",
-            Some(one.clone()).encode()
-        ));
-        assert_noop!(
-            Portal::set_owner(
-                Origin::signed(two.clone()),
+    ExtBuilder::default()
+        .build()
+        .execute_with(|| {
+            let one = AccountId::new([1u8; 32]);
+            let two = AccountId::new([2u8; 32]);
+            assert_ok!(register_file(
+                Origin::root(),
+                "1-register-roco.json",
+                true,
+                0
+            ));
+            assert_ok!(Portal::set_owner(
+                Origin::root(),
                 *b"roco",
                 Some(one.clone()).encode()
-            ),
-            Error::<Test>::SetOwnerError
-        );
-        assert_ok!(Portal::set_owner(
-            Origin::signed(one.clone()),
-            *b"roco",
-            Some(two.clone()).encode()
-        ),);
-        assert_ok!(Portal::set_owner(
-            Origin::signed(two.clone()),
-            *b"roco",
-            vec![0] // encoded none
-        ),);
-        assert_noop!(
-            Portal::set_owner(
-                Origin::signed(two.clone()),
-                *b"roco",
-                Some(one.clone()).encode()
-            ),
-            Error::<Test>::SetOwnerError
-        );
-        assert_noop!(
-            Portal::set_owner(
+            ));
+            assert_noop!(
+                Portal::set_owner(
+                    Origin::signed(two.clone()),
+                    *b"roco",
+                    Some(one.clone()).encode()
+                ),
+                pallet_portal::Error::<Runtime>::SetOwnerError
+            );
+            assert_ok!(Portal::set_owner(
                 Origin::signed(one.clone()),
                 *b"roco",
                 Some(two.clone()).encode()
-            ),
-            Error::<Test>::SetOwnerError
-        );
-        assert_ok!(
-            // root can still override for now
-            Portal::set_owner(Origin::root(), *b"roco", Some(one.clone()).encode()),
-        );
-    });
+            ),);
+            assert_ok!(Portal::set_owner(
+                Origin::signed(two.clone()),
+                *b"roco",
+                vec![0] // encoded none
+            ),);
+            assert_noop!(
+                Portal::set_owner(
+                    Origin::signed(two.clone()),
+                    *b"roco",
+                    Some(one.clone()).encode()
+                ),
+                pallet_portal::Error::<Runtime>::SetOwnerError
+            );
+            assert_noop!(
+                Portal::set_owner(
+                    Origin::signed(one.clone()),
+                    *b"roco",
+                    Some(two.clone()).encode()
+                ),
+                pallet_portal::Error::<Runtime>::SetOwnerError
+            );
+            assert_ok!(
+                // root can still override for now
+                Portal::set_owner(Origin::root(), *b"roco", Some(one.clone()).encode()),
+            );
+        });
 }
 
 #[test]
 fn can_be_set_operational() {
-    let mut ext = TestExternalities::new_empty();
-    ext.execute_with(|| {
-        let one = AccountId::new([1u8; 32]);
-        // let two = AccountId::new([2u8; 32]);
-        // let root = Origin::root();
-        let origin = Origin::signed([0u8; 32].into());
+    ExtBuilder::default()
+        .build()
+        .execute_with(|| {
+            let one = AccountId::new([1u8; 32]);s
+            let origin = Origin::signed([0u8; 32].into());
 
-        assert_ok!(register_file(
-            Origin::root(),
-            "1-register-roco.json",
-            true,
-            0
-        ));
-        assert_ok!(Portal::set_operational(Origin::root(), *b"roco", false));
-        assert_noop!(
-            submit_header_file(origin.clone(), "2-headers-roco.json", 0),
-            Error::<Test>::SubmitHeaderError
-        );
-        assert_ok!(Portal::set_owner(
-            Origin::root(),
-            *b"roco",
-            Some(one.clone()).encode()
-        ));
-        assert_ok!(Portal::set_operational(Origin::signed(one), *b"roco", true));
-        assert_ok!(submit_header_file(origin.clone(), "2-headers-roco.json", 0));
-    });
+            assert_ok!(register_file(
+                Origin::root(),
+                "1-register-roco.json",
+                true,
+                0
+            ));
+            assert_ok!(Portal::set_operational(Origin::root(), *b"roco", false));
+            assert_noop!(
+                submit_header_file(origin.clone(), "2-headers-roco.json", 0),
+                pallet_portal::Error::<Runtime>::SubmitHeaderError
+            );
+            assert_ok!(Portal::set_owner(
+                Origin::root(),
+                *b"roco",
+                Some(one.clone()).encode()
+            ));
+            assert_ok!(Portal::set_operational(Origin::signed(one), *b"roco", true));
+            assert_ok!(submit_header_file(origin.clone(), "2-headers-roco.json", 0));
+        });
 }
