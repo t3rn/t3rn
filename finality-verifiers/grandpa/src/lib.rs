@@ -84,8 +84,6 @@ pub type BridgedBlockHasher<T, I> = HasherOf<<T as Config<I>>::BridgedChain>;
 /// Header of the bridged chain.
 pub type BridgedHeader<T, I> = HeaderOf<<T as Config<I>>::BridgedChain>;
 
-const LOG_TARGET: &str = "grandpa-finality-verifier";
-
 use crate::{
     side_effects::decode_event,
     types::{InclusionData, Parachain, ParachainHeaderData, RelaychainHeaderData},
@@ -522,7 +520,7 @@ pub mod pallet {
             &voter_set,
             justification,
         )
-            .map_err(|e| {
+            .map_err(|_| {
                 log::error!("Received invalid justification for {:?}", hash);
             Error::<T, I>::InvalidGrandpaJustification
         })?)
@@ -1101,7 +1099,6 @@ mod tests {
             JustificationGeneratorParams, ALICE, BOB, DAVE,
         },
     };
-    use hex_literal::hex;
 
     use codec::Encode;
     use frame_support::{assert_err, assert_noop, assert_ok};
@@ -1198,7 +1195,7 @@ mod tests {
         let headers: Vec<TestHeader> = test_header_range(to.into());
         let signed_header: &TestHeader = headers.last().unwrap();
         let justification = make_default_justification(&signed_header.clone());
-        let mut range: Vec<TestHeader> = headers[from.into()..to.into()].to_vec().clone();
+        let range: Vec<TestHeader> = headers[from.into()..to.into()].to_vec().clone();
 
         let default_gateway: ChainId = *b"pdot";
         let data = RelaychainHeaderData::<TestHeader> {
@@ -1623,7 +1620,7 @@ mod tests {
 
             let justification = make_default_justification(&signed_header.clone());
             // one header is missing -> Grandpa linkage invalid
-            let mut range: Vec<TestHeader> = headers[6..9].to_vec().clone();
+            let range: Vec<TestHeader> = headers[6..9].to_vec().clone();
 
             let data = RelaychainHeaderData::<TestHeader> {
                 signed_header: signed_header.clone(),
@@ -1778,7 +1775,7 @@ mod tests {
 
             let headers: Vec<TestHeader> = test_header_range(2);
             let mut signed_header = headers[2].clone();
-            let mut range: Vec<TestHeader> = headers[1..2].to_vec().clone();
+            let range: Vec<TestHeader> = headers[1..2].to_vec().clone();
 
             // Need to update the header digest to indicate that our header signals an authority set
             // change. The change will be enacted when we import our header.

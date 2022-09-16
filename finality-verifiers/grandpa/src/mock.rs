@@ -158,7 +158,7 @@ pub fn test_header_with_correct_parent(num: TestNumber, parent_hash: Option<H256
 pub fn test_header_range(to: u64) -> Vec<TestHeader> {
     let mut headers: Vec<TestHeader> = vec![];
     let mut parent_hash = None;
-    for (i, block) in (from..=to).enumerate() {
+    for (i, block) in (0..=to).enumerate() {
         let header = test_header_with_correct_parent(block, parent_hash);
         headers.push(header);
         parent_hash = Some(headers[i].hash());
