@@ -60,7 +60,6 @@ impl pallet_circuit::Config for Runtime {
     type AccountManager = AccountManager;
     type Balances = Balances;
     type Call = Call;
-    type Portal = Portal;
     type DeletionQueueLimit = ConstU32<100u32>;
     type Escrowed = Self;
     type Event = Event;
@@ -68,6 +67,7 @@ impl pallet_circuit::Config for Runtime {
     // type FreeVM = FreeVM;
     type MultiCurrency = ORMLTokens;
     type PalletId = CircuitPalletId;
+    type Portal = Portal;
     type SelfGatewayId = SelfGatewayId;
     type SelfParaId = ConstU32<3333u32>;
     type SignalQueueDepth = ConstU32<5u32>;

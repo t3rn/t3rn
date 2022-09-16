@@ -1,10 +1,10 @@
 use super::*;
+use crate::xbi_config::XBIPortalRuntimeEntry;
 use frame_support::{parameter_types, traits::ConstU32, PalletId};
 use pallet_grandpa_finality_verifier::bridges::runtime as bp_runtime;
 use sp_core::H256;
 use sp_runtime::traits::*;
-use t3rn_primitives::{portal::RococoBridge, common::DEFAULT_ROUND_TERM};
-use crate::xbi_config::XBIPortalRuntimeEntry;
+use t3rn_primitives::{common::DEFAULT_ROUND_TERM, portal::RococoBridge};
 // impl pallet_randomness_collective_flip::Config for Runtime {}
 
 // t3rn pallets

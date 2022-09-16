@@ -1,6 +1,6 @@
 use circuit_standalone_runtime::{
-    AccountId, AuraConfig, BalancesConfig, EvmConfig, GenesisConfig, GrandpaConfig,
-    Signature, SudoConfig, SystemConfig, XDNSConfig, WASM_BINARY,
+    AccountId, AuraConfig, BalancesConfig, EvmConfig, GenesisConfig, GrandpaConfig, Signature,
+    SudoConfig, SystemConfig, XDNSConfig, WASM_BINARY,
 };
 use jsonrpc_runtime_client::{
     create_rpc_client, get_gtwy_init_data, get_metadata, get_parachain_id, ConnectionParams,

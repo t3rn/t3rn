@@ -196,7 +196,7 @@ pub mod pallet {
         /// SideEffect interface was not found in storage
         SideEffectInterfaceNotFound,
         /// the xdns entry does not contain parachain information
-        NoParachainInfoFound
+        NoParachainInfoFound,
     }
 
     #[pallet::storage]
@@ -268,7 +268,6 @@ pub mod pallet {
             security_coordinates: Vec<u8>,
             allowed_side_effects: Vec<AllowedSideEffect>,
         ) -> DispatchResult {
-
             // early exit if record already exists in storage
             if <XDNSRegistry<T>>::contains_key(gateway_id) {
                 return Err(Error::<T>::XdnsRecordAlreadyExists.into())
@@ -386,7 +385,9 @@ pub mod pallet {
             if !<XDNSRegistry<T>>::contains_key(chain_id) {
                 return Err(Error::<T>::XdnsRecordNotFound.into())
             }
-            Ok(<XDNSRegistry<T>>::get(chain_id).unwrap().security_coordinates) //safe because checked
+            Ok(<XDNSRegistry<T>>::get(chain_id)
+                .unwrap()
+                .security_coordinates) //safe because checked
         }
 
         fn get_gateway_para_id(chain_id: &ChainId) -> Result<u32, DispatchError> {
@@ -396,7 +397,7 @@ pub mod pallet {
 
             match <XDNSRegistry<T>>::get(chain_id).unwrap().parachain {
                 Some(value) => Ok(value.id),
-                None => Err(Error::<T>::NoParachainInfoFound.into())
+                None => Err(Error::<T>::NoParachainInfoFound.into()),
             }
         }
 

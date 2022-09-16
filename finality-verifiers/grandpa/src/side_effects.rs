@@ -60,44 +60,53 @@ pub(crate) fn decode_event<T: Config<I>, I: 'static>(
         &b"swap" | &b"aliq" => match value_abi_unsigned_type {
             b"uint32" => match Decode::decode(&mut &encoded_event[..]) {
                 Ok(MultiTransferEventStub::<T, u32, CurrencyId>::Transfer {
-                       currency_id,
-                       from,
-                       to,
-                       amount,
-                   }) => Ok((vec![
-                    from.encode(),
-                    to.encode(),
-                    currency_id.encode(),
-                    amount.encode(),
-                ], vec![])),
+                    currency_id,
+                    from,
+                    to,
+                    amount,
+                }) => Ok((
+                    vec![
+                        from.encode(),
+                        to.encode(),
+                        currency_id.encode(),
+                        amount.encode(),
+                    ],
+                    vec![],
+                )),
                 _ => Err(Error::<T, I>::EventDecodingFailed.into()),
             },
             b"uint64" => match Decode::decode(&mut &encoded_event[..]) {
                 Ok(MultiTransferEventStub::<T, u64, CurrencyId>::Transfer {
-                       currency_id,
-                       from,
-                       to,
-                       amount,
-                   }) => Ok((vec![
-                    from.encode(),
-                    to.encode(),
-                    currency_id.encode(),
-                    amount.encode(),
-                ], vec![])),
+                    currency_id,
+                    from,
+                    to,
+                    amount,
+                }) => Ok((
+                    vec![
+                        from.encode(),
+                        to.encode(),
+                        currency_id.encode(),
+                        amount.encode(),
+                    ],
+                    vec![],
+                )),
                 _ => Err(Error::<T, I>::EventDecodingFailed.into()),
             },
             b"uint128" => match Decode::decode(&mut &encoded_event[..]) {
                 Ok(MultiTransferEventStub::<T, u128, CurrencyId>::Transfer {
-                       currency_id,
-                       from,
-                       to,
-                       amount,
-                   }) => Ok((vec![
-                    from.encode(),
-                    to.encode(),
-                    currency_id.encode(),
-                    amount.encode(),
-                ], vec![])),
+                    currency_id,
+                    from,
+                    to,
+                    amount,
+                }) => Ok((
+                    vec![
+                        from.encode(),
+                        to.encode(),
+                        currency_id.encode(),
+                        amount.encode(),
+                    ],
+                    vec![],
+                )),
                 _ => Err(Error::<T, I>::EventDecodingFailed.into()),
             },
             &_ => Err(Error::<T, I>::EventDecodingFailed.into()),
@@ -232,14 +241,14 @@ pub mod tests {
             to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(),
             amount: 1,
         }
-            .encode();
+        .encode();
 
         let encoded_transfer_stub = TransferEventStub::<TestRuntime, u64>::Transfer {
             from: hex!("0909090909090909090909090909090909090909090909090909090909090909").into(),
             to: hex!("0606060606060606060606060606060606060606060606060606060606060606").into(),
             amount: 1,
         }
-            .encode();
+        .encode();
 
         assert_eq!(
             encoded_balance_transfer_event.clone(),
@@ -253,17 +262,20 @@ pub mod tests {
 
         assert_eq!(
             res,
-            (vec![
+            (
                 vec![
-                    9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
-                    9, 9, 9, 9, 9, 9,
+                    vec![
+                        9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
+                        9, 9, 9, 9, 9, 9, 9,
+                    ],
+                    vec![
+                        6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+                        6, 6, 6, 6, 6, 6, 6,
+                    ],
+                    vec![1, 0, 0, 0, 0, 0, 0, 0],
                 ],
-                vec![
-                    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
-                    6, 6, 6, 6, 6, 6,
-                ],
-                vec![1, 0, 0, 0, 0, 0, 0, 0],
-            ], vec![])
+                vec![]
+            )
         );
     }
 }

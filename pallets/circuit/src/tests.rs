@@ -25,18 +25,19 @@ use t3rn_sdk_primitives::{
 };
 
 use codec::{Decode, Encode};
-use frame_support::{assert_noop, assert_ok, traits::Currency, dispatch::PostDispatchInfo, pallet_prelude::DispatchResultWithPostInfo};
-
-use frame_system::{EventRecord, Phase, pallet_prelude::OriginFor};
-
-use sp_io::TestExternalities;
-use sp_runtime::{
-    traits::Zero,
-    AccountId32, DispatchErrorWithPostInfo
+use frame_support::{
+    assert_noop, assert_ok, dispatch::PostDispatchInfo, pallet_prelude::DispatchResultWithPostInfo,
+    traits::Currency,
 };
+
+use frame_system::{pallet_prelude::OriginFor, EventRecord, Phase};
+
+pub use pallet_grandpa_finality_verifier::mock::brute_seed_block_1;
+use serde_json::Value;
+use sp_io::TestExternalities;
+use sp_runtime::{traits::Zero, AccountId32, DispatchErrorWithPostInfo};
 use sp_std::{convert::TryFrom, prelude::*};
 use std::{convert::TryInto, fs};
-use serde_json::Value;
 use t3rn_primitives::{
     abi::*,
     circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
@@ -46,7 +47,6 @@ use t3rn_primitives::{
     ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
 };
 use t3rn_protocol::side_effects::test_utils::*;
-pub use pallet_grandpa_finality_verifier::mock::brute_seed_block_1;
 
 use pallet_xbi_portal::{
     sabi::AccountId20,
@@ -178,7 +178,7 @@ fn confirm_side_effect(
         Decode::decode(
             &mut &*hex::decode(json["encoded_confirmed_side_effect"].as_str().unwrap()).unwrap(),
         )
-            .unwrap();
+        .unwrap();
 
     Circuit::confirm_side_effect(
         origin,
@@ -227,7 +227,7 @@ fn run_mock_tests(path: &str) -> Result<(), DispatchErrorWithPostInfo<PostDispat
             212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133,
             88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125,
         ]
-            .into(),
+        .into(),
     );
     let mut paths: Vec<_> = fs::read_dir("src/mock-data/".to_owned() + path)
         .unwrap()
@@ -1799,10 +1799,7 @@ fn insured_unrewarded_single_rococo_transfer() {
                 Origin::signed(CLI_DEFAULT),
                 transfer[0].clone()
             ));
-            assert_eq!(
-                Balances::free_balance(CLI_DEFAULT),
-                10u128 * 10u128.pow(12)
-            );
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), 10u128 * 10u128.pow(12));
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 10u128 * 10u128.pow(12)
@@ -1923,10 +1920,7 @@ fn insured_rewarded_single_rococo_transfer() {
                 Origin::signed(CLI_DEFAULT),
                 transfer[0].clone()
             ));
-            assert_eq!(
-                Balances::free_balance(CLI_DEFAULT),
-                9u128 * 10u128.pow(12)
-            );
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), 9u128 * 10u128.pow(12));
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 10u128 * 10u128.pow(12)
@@ -1941,10 +1935,7 @@ fn insured_rewarded_single_rococo_transfer() {
                 post_bond[0].clone()
             ));
 
-            assert_eq!(
-                Balances::free_balance(&CLI_DEFAULT),
-                9u128 * 10u128.pow(12)
-            );
+            assert_eq!(Balances::free_balance(&CLI_DEFAULT), 9u128 * 10u128.pow(12));
             assert_eq!(
                 Balances::free_balance(&EXECUTOR_DEFAULT),
                 9u128 * 10u128.pow(12)
@@ -1969,10 +1960,7 @@ fn insured_rewarded_single_rococo_transfer() {
                 Origin::signed(EXECUTOR_DEFAULT),
                 confirm[0].clone()
             ));
-            assert_eq!(
-                Balances::free_balance(&CLI_DEFAULT),
-                9u128 * 10u128.pow(12)
-            );
+            assert_eq!(Balances::free_balance(&CLI_DEFAULT), 9u128 * 10u128.pow(12));
             assert_eq!(
                 Balances::free_balance(&EXECUTOR_DEFAULT),
                 11u128 * 10u128.pow(12)
@@ -2035,10 +2023,7 @@ fn insured_rewarded_multi_rococo_transfer() {
                 Origin::signed(CLI_DEFAULT),
                 transfer[0].clone()
             ));
-            assert_eq!(
-                Balances::free_balance(CLI_DEFAULT),
-                7u128 * 10u128.pow(12)
-            );
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), 7u128 * 10u128.pow(12));
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 10u128 * 10u128.pow(12)
@@ -2062,10 +2047,7 @@ fn insured_rewarded_multi_rococo_transfer() {
                 post_bond_2[0].clone()
             ));
 
-            assert_eq!(
-                Balances::free_balance(&CLI_DEFAULT),
-                7u128 * 10u128.pow(12)
-            );
+            assert_eq!(Balances::free_balance(&CLI_DEFAULT), 7u128 * 10u128.pow(12));
             assert_eq!(
                 Balances::free_balance(&EXECUTOR_DEFAULT),
                 7u128 * 10u128.pow(12)
@@ -2098,10 +2080,7 @@ fn insured_rewarded_multi_rococo_transfer() {
                 Origin::signed(EXECUTOR_DEFAULT),
                 confirm_1[0].clone()
             ));
-            assert_eq!(
-                Balances::free_balance(&CLI_DEFAULT),
-                7u128 * 10u128.pow(12)
-            );
+            assert_eq!(Balances::free_balance(&CLI_DEFAULT), 7u128 * 10u128.pow(12));
             assert_eq!(
                 Balances::free_balance(&EXECUTOR_DEFAULT),
                 13u128 * 10u128.pow(12)
@@ -2174,10 +2153,7 @@ fn insured_unrewarded_multi_rococo_transfer() {
                 Origin::signed(CLI_DEFAULT),
                 transfer[0].clone()
             ));
-            assert_eq!(
-                Balances::free_balance(CLI_DEFAULT),
-                10u128 * 10u128.pow(12)
-            );
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), 10u128 * 10u128.pow(12));
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 10u128 * 10u128.pow(12)
@@ -2319,10 +2295,7 @@ fn uninsured_unrewarded_multi_rococo_transfer() {
                 Origin::signed(CLI_DEFAULT),
                 transfer[0].clone()
             ));
-            assert_eq!(
-                Balances::free_balance(CLI_DEFAULT),
-                10u128 * 10u128.pow(12)
-            );
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), 10u128 * 10u128.pow(12));
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 10u128 * 10u128.pow(12)
@@ -2532,10 +2505,7 @@ fn multi_mixed_rococo() {
                 Origin::signed(CLI_DEFAULT),
                 transfer[0].clone()
             ));
-            assert_eq!(
-                Balances::free_balance(CLI_DEFAULT),
-                12u128 * 10u128.pow(12)
-            );
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), 12u128 * 10u128.pow(12));
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 20u128 * 10u128.pow(12)
@@ -2607,10 +2577,7 @@ fn multi_mixed_rococo() {
             ));
 
             // Other executor can submit, but wont be rewarded once complete
-            assert_eq!(
-                Balances::free_balance(CLI_DEFAULT),
-                12u128 * 10u128.pow(12)
-            );
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), 12u128 * 10u128.pow(12));
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 13u128 * 10u128.pow(12)
@@ -2624,10 +2591,7 @@ fn multi_mixed_rococo() {
                 confirm_1[0].clone()
             ));
 
-            assert_eq!(
-                Balances::free_balance(CLI_DEFAULT),
-                12u128 * 10u128.pow(12)
-            );
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), 12u128 * 10u128.pow(12));
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 13u128 * 10u128.pow(12)
@@ -2672,10 +2636,7 @@ fn multi_mixed_rococo() {
             ));
 
             //no rewards paid after step was confirmed
-            assert_eq!(
-                Balances::free_balance(CLI_DEFAULT),
-                12u128 * 10u128.pow(12)
-            );
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), 12u128 * 10u128.pow(12));
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 13u128 * 10u128.pow(12)
@@ -2692,10 +2653,7 @@ fn multi_mixed_rococo() {
                 ));
             }
 
-            assert_eq!(
-                Balances::free_balance(CLI_DEFAULT),
-                12u128 * 10u128.pow(12)
-            );
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), 12u128 * 10u128.pow(12));
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 13u128 * 10u128.pow(12)
@@ -2721,10 +2679,7 @@ fn multi_mixed_rococo() {
                 ));
             }
 
-            assert_eq!(
-                Balances::free_balance(CLI_DEFAULT),
-                12u128 * 10u128.pow(12)
-            );
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), 12u128 * 10u128.pow(12));
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 13u128 * 10u128.pow(12)
@@ -2741,10 +2696,7 @@ fn multi_mixed_rococo() {
                 ));
             }
 
-            assert_eq!(
-                Balances::free_balance(CLI_DEFAULT),
-                12u128 * 10u128.pow(12)
-            );
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), 12u128 * 10u128.pow(12));
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 13u128 * 10u128.pow(12)
@@ -2901,10 +2853,7 @@ fn insured_multi_rococo_multiple_executors() {
                 Origin::signed(CLI_DEFAULT),
                 transfer[0].clone()
             ));
-            assert_eq!(
-                Balances::free_balance(CLI_DEFAULT),
-                15u128 * 10u128.pow(12)
-            );
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), 15u128 * 10u128.pow(12));
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 20u128 * 10u128.pow(12)
@@ -2951,10 +2900,7 @@ fn insured_multi_rococo_multiple_executors() {
                 bond_insurance_1[0].clone()
             ));
 
-            assert_eq!(
-                Balances::free_balance(CLI_DEFAULT),
-                15u128 * 10u128.pow(12)
-            );
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), 15u128 * 10u128.pow(12));
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 17u128 * 10u128.pow(12)
@@ -3021,10 +2967,7 @@ fn insured_multi_rococo_multiple_executors() {
                 confirm_3[0].clone()
             ));
 
-            assert_eq!(
-                Balances::free_balance(CLI_DEFAULT),
-                15u128 * 10u128.pow(12)
-            );
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), 15u128 * 10u128.pow(12));
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 23u128 * 10u128.pow(12)

@@ -54,9 +54,9 @@ use t3rn_primitives::account_manager::Outcome;
 pub use t3rn_primitives::{
     abi::{GatewayABIConfig, HasherAlgo as HA, Type},
     account_manager::AccountManager,
-    portal::Portal,
     claimable::{BenefitSource, CircuitRole},
     executors::Executors,
+    portal::Portal,
     side_effect::{
         ConfirmedSideEffect, FullSideEffect, HardenedSideEffect, SecurityLvl, SideEffect,
         SideEffectId,
@@ -658,13 +658,7 @@ pub mod pallet {
             ));
 
             // Emit: From Circuit events
-            Self::emit(
-                xtx_id,
-                maybe_xtx_changed,
-                &executor,
-                &vec![],
-                None
-            );
+            Self::emit(xtx_id, maybe_xtx_changed, &executor, &vec![], None);
 
             Ok(().into())
         }
@@ -772,12 +766,7 @@ pub mod pallet {
                 Some(xtx_id),
             )?;
 
-            Self::confirm(
-                &mut local_xtx_ctx,
-                &relayer,
-                &side_effect,
-                &confirmation,
-            )?;
+            Self::confirm(&mut local_xtx_ctx, &relayer, &side_effect, &confirmation)?;
 
             let status_change = Self::update(&mut local_xtx_ctx)?;
 
@@ -1689,7 +1678,7 @@ impl<T: Config> Pallet<T> {
             confirmation.inclusion_data.clone(),
             side_effect_id.clone(),
         )
-            .map_err(|_| "SideEffect confirmation failed!")?;
+        .map_err(|_| "SideEffect confirmation failed!")?;
         // ToDo handle misbehaviour
         log::info!("Params: {:?}", params);
 
@@ -1721,7 +1710,7 @@ impl<T: Config> Pallet<T> {
         Ok(())
     }
 
-     // ToDo: This should be called as a 3vm trait injection @Don
+    // ToDo: This should be called as a 3vm trait injection @Don
     pub fn exec_in_xtx_ctx(
         _xtx_id: T::Hash,
         _local_state: LocalState,
@@ -2039,7 +2028,7 @@ impl<T: Config> Pallet<T> {
             &mut local_xtx_ctx,
             &Self::account_id(),
             &fsx.input,
-            &confirmation
+            &confirmation,
         )
         .map_err(|_e| Error::<T>::XBIExitFailedOnSFXConfirmation)?;
         Ok(())

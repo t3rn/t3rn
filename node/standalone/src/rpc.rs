@@ -7,8 +7,8 @@
 
 use circuit_standalone_runtime::{opaque::Block, AccountId, Balance, BlockNumber, Hash, Index};
 use pallet_3vm_contracts_rpc::{Contracts, ContractsApi};
-use pallet_portal_rpc::{Portal, PortalApi};
 use pallet_3vm_evm_rpc::{Evm, EvmApi};
+use pallet_portal_rpc::{Portal, PortalApi};
 use pallet_xdns_rpc::{Xdns, XdnsApi};
 pub use sc_rpc_api::DenyUnsafe;
 use sc_transaction_pool_api::TransactionPool;
