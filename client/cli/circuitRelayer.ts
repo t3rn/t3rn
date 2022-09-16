@@ -7,6 +7,7 @@ export class CircuitRelayer {
     constructor(circuit: ApiPromise, signer: any) {
         this.circuit = circuit;
         this.signer = signer;
+        console.log(circuit.createType('Vec<u8>', []).toHex())
     }
 
     sudoSignAndSend(transaction: any) {
@@ -26,9 +27,8 @@ export class CircuitRelayer {
 
     onExtrinsicTrigger(args: any) {
         return new Promise((res: any, rej: any) => {
-            // console.log(args.sideEffects.toHuman())
             return this.circuit.tx.circuit
-                .onExtrinsicTrigger(args.sideEffects.toHuman(), args.fee, args.sequential)
+                .onExtrinsicTrigger(args.sideEffects.toJSON(), args.fee, args.sequential)
                 .signAndSend(this.signer, async result => {
                     // @ts-ignore
                     if (result && result.toHuman().dispatchError !== undefined) { // The pallet doesn't return a proper error

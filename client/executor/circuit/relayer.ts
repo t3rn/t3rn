@@ -71,7 +71,7 @@ export default class CircuitRelayer extends EventEmitter {
                 this.api.tx.circuit
                     .confirmSideEffect(
                         xtxId.toHuman(),
-                        sideEffect.raw.toHuman(),
+                        sideEffect.raw.toJSON(),
                         { // for some reason im not able to pass confirmedSideEffect here
                             err: null,
                             output: null,

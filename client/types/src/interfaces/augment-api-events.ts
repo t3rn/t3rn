@@ -11,6 +11,7 @@ import type {
   Null,
   Option,
   Result,
+  U256,
   U8aFixed,
   Vec,
   bool,
@@ -19,16 +20,23 @@ import type {
   u64,
 } from "@polkadot/types-codec";
 import type { ITuple } from "@polkadot/types-codec/types";
-import type { AccountId32, H256 } from "@polkadot/types/interfaces/runtime";
 import type {
+  AccountId32,
+  H160,
+  H256,
+  Perbill,
+} from "@polkadot/types/interfaces/runtime";
+import type {
+  EthereumLog,
   FrameSupportTokensMiscBalanceStatus,
   FrameSupportWeightsDispatchInfo,
+  PalletXbiPortalXbiFormatXbiCheckOutStatus,
+  PalletXbiPortalXbiFormatXbiNotificationKind,
   SpFinalityGrandpaAppPublic,
   SpRuntimeDispatchError,
-  T3rnPrimitivesGatewaySysProps,
-  T3rnPrimitivesGatewayType,
-  T3rnPrimitivesGatewayVendor,
+  T3rnPrimitivesContractMetadataContractType,
   T3rnPrimitivesSideEffectFullSideEffect,
+  T3rnSdkPrimitivesSignalSignalKind,
   T3rnTypesSideEffect,
 } from "@polkadot/types/lookup";
 
@@ -38,22 +46,7 @@ export type __AugmentedEvent<ApiType extends ApiTypes> =
 declare module "@polkadot/api-base/types/events" {
   interface AugmentedEvents<ApiType extends ApiTypes> {
     accountManager: {
-      DepositReceived: AugmentedEvent<
-        ApiType,
-        [
-          executionId: u64,
-          payee: AccountId32,
-          recipient: AccountId32,
-          amount: u128
-        ],
-        {
-          executionId: u64;
-          payee: AccountId32;
-          recipient: AccountId32;
-          amount: u128;
-        }
-      >;
-      ExecutionFinalized: AugmentedEvent<
+      ContractsRegistryExecutionFinalized: AugmentedEvent<
         ApiType,
         [executionId: u64],
         { executionId: u64 }
@@ -147,6 +140,34 @@ declare module "@polkadot/api-base/types/events" {
       [key: string]: AugmentedEvent<ApiType>;
     };
     circuit: {
+      AddLiquidity: AugmentedEvent<
+        ApiType,
+        [AccountId32, u64, u64, u128, u128, u128]
+      >;
+      CallCustom: AugmentedEvent<
+        ApiType,
+        [AccountId32, AccountId32, AccountId32, u128, Bytes, u64, Bytes]
+      >;
+      CallEvm: AugmentedEvent<
+        ApiType,
+        [
+          AccountId32,
+          H160,
+          H160,
+          U256,
+          Bytes,
+          u64,
+          U256,
+          Option<U256>,
+          Option<U256>,
+          Vec<ITuple<[H160, Vec<H256>]>>
+        ]
+      >;
+      CallNative: AugmentedEvent<ApiType, [AccountId32, Bytes]>;
+      CallWasm: AugmentedEvent<
+        ApiType,
+        [AccountId32, AccountId32, u128, u64, Option<u128>, Bytes]
+      >;
       CancelledSideEffects: AugmentedEvent<
         ApiType,
         [AccountId32, H256, Vec<T3rnTypesSideEffect>]
@@ -156,11 +177,44 @@ declare module "@polkadot/api-base/types/events" {
         ApiType,
         [AccountId32, H256, Vec<T3rnTypesSideEffect>, Vec<H256>]
       >;
+      Notification: AugmentedEvent<
+        ApiType,
+        [
+          AccountId32,
+          AccountId32,
+          PalletXbiPortalXbiFormatXbiNotificationKind,
+          Bytes,
+          Bytes
+        ]
+      >;
+      Result: AugmentedEvent<
+        ApiType,
+        [
+          AccountId32,
+          AccountId32,
+          PalletXbiPortalXbiFormatXbiCheckOutStatus,
+          Bytes,
+          Bytes
+        ]
+      >;
       SideEffectConfirmed: AugmentedEvent<ApiType, [H256]>;
       SideEffectInsuranceReceived: AugmentedEvent<ApiType, [H256, AccountId32]>;
       SideEffectsConfirmed: AugmentedEvent<
         ApiType,
         [H256, Vec<Vec<T3rnPrimitivesSideEffectFullSideEffect>>]
+      >;
+      Swap: AugmentedEvent<ApiType, [AccountId32, u64, u64, u128, u128, u128]>;
+      Transfer: AugmentedEvent<
+        ApiType,
+        [AccountId32, AccountId32, AccountId32, u128]
+      >;
+      TransferAssets: AugmentedEvent<
+        ApiType,
+        [AccountId32, u64, AccountId32, AccountId32, u128]
+      >;
+      TransferORML: AugmentedEvent<
+        ApiType,
+        [AccountId32, u64, AccountId32, AccountId32, u128]
       >;
       XTransactionReadyForExec: AugmentedEvent<ApiType, [H256]>;
       XTransactionReceivedForExec: AugmentedEvent<ApiType, [H256]>;
@@ -170,21 +224,7 @@ declare module "@polkadot/api-base/types/events" {
       /** Generic event */
       [key: string]: AugmentedEvent<ApiType>;
     };
-    circuitPortal: {
-      GatewayUpdated: AugmentedEvent<
-        ApiType,
-        [U8aFixed, Option<Vec<U8aFixed>>]
-      >;
-      NewGatewayRegistered: AugmentedEvent<
-        ApiType,
-        [
-          U8aFixed,
-          T3rnPrimitivesGatewayType,
-          T3rnPrimitivesGatewayVendor,
-          T3rnPrimitivesGatewaySysProps,
-          Vec<U8aFixed>
-        ]
-      >;
+    clock: {
       /** Generic event */
       [key: string]: AugmentedEvent<ApiType>;
     };
@@ -239,6 +279,32 @@ declare module "@polkadot/api-base/types/events" {
       /** Generic event */
       [key: string]: AugmentedEvent<ApiType>;
     };
+    evm: {
+      /** A deposit has been made at a given address. [sender, address, value] */
+      BalanceDeposit: AugmentedEvent<ApiType, [AccountId32, H160, U256]>;
+      /** A withdrawal has been made from a given address. [sender, address, value] */
+      BalanceWithdraw: AugmentedEvent<ApiType, [AccountId32, H160, U256]>;
+      ClaimAccount: AugmentedEvent<
+        ApiType,
+        [accountId: AccountId32, evmAddress: H160],
+        { accountId: AccountId32; evmAddress: H160 }
+      >;
+      /** A contract has been created at given [address]. */
+      Created: AugmentedEvent<ApiType, [H160]>;
+      /** A [contract] was attempted to be created, but the execution failed. */
+      CreatedFailed: AugmentedEvent<ApiType, [H160]>;
+      /** A [contract] has been executed successfully with states applied. */
+      Executed: AugmentedEvent<ApiType, [H160]>;
+      /**
+       * A [contract] has been executed with errors. States are reverted with
+       * only gas fees applied.
+       */
+      ExecutedFailed: AugmentedEvent<ApiType, [H160]>;
+      /** Ethereum events from contracts. */
+      Log: AugmentedEvent<ApiType, [EthereumLog]>;
+      /** Generic event */
+      [key: string]: AugmentedEvent<ApiType>;
+    };
     grandpa: {
       /** New authority set has been applied. */
       NewAuthorities: AugmentedEvent<
@@ -250,31 +316,6 @@ declare module "@polkadot/api-base/types/events" {
       Paused: AugmentedEvent<ApiType, []>;
       /** Current authority set has been resumed. */
       Resumed: AugmentedEvent<ApiType, []>;
-      /** Generic event */
-      [key: string]: AugmentedEvent<ApiType>;
-    };
-    multiFinalityVerifierDefault: {
-      NewHeaderRangeAvailable: AugmentedEvent<ApiType, [U8aFixed, u32, u32]>;
-      /** Generic event */
-      [key: string]: AugmentedEvent<ApiType>;
-    };
-    multiFinalityVerifierEthereumLike: {
-      NewHeaderRangeAvailable: AugmentedEvent<ApiType, [U8aFixed, u64, u32]>;
-      /** Generic event */
-      [key: string]: AugmentedEvent<ApiType>;
-    };
-    multiFinalityVerifierGenericLike: {
-      NewHeaderRangeAvailable: AugmentedEvent<ApiType, [U8aFixed, u32, u32]>;
-      /** Generic event */
-      [key: string]: AugmentedEvent<ApiType>;
-    };
-    multiFinalityVerifierPolkadotLike: {
-      NewHeaderRangeAvailable: AugmentedEvent<ApiType, [U8aFixed, u32, u32]>;
-      /** Generic event */
-      [key: string]: AugmentedEvent<ApiType>;
-    };
-    multiFinalityVerifierSubstrateLike: {
-      NewHeaderRangeAvailable: AugmentedEvent<ApiType, [U8aFixed, u32, u32]>;
       /** Generic event */
       [key: string]: AugmentedEvent<ApiType>;
     };
@@ -418,6 +459,95 @@ declare module "@polkadot/api-base/types/events" {
       /** Generic event */
       [key: string]: AugmentedEvent<ApiType>;
     };
+    threeVm: {
+      /** An author of a module was removed [contract] */
+      AuthorRemoved: AugmentedEvent<ApiType, [AccountId32]>;
+      /** An author of a module was stored [contract, author] */
+      AuthorStored: AugmentedEvent<
+        ApiType,
+        [ITuple<[AccountId32, AccountId32]>]
+      >;
+      /** A signal event was bounced beyond the threshold. [step, kind, xtx_id] */
+      ExceededBounceThrehold: AugmentedEvent<
+        ApiType,
+        [ITuple<[u32, T3rnSdkPrimitivesSignalSignalKind, H256]>]
+      >;
+      /**
+       * A module was instantiated from the registry [id, module_author,
+       * module_type, module_len]
+       */
+      ModuleInstantiated: AugmentedEvent<
+        ApiType,
+        [
+          ITuple<
+            [H256, AccountId32, T3rnPrimitivesContractMetadataContractType, u32]
+          >
+        ]
+      >;
+      /**
+       * A signal event was bounced back, because a signal was already sent for
+       * the current step. [step, kind, xtx_id]
+       */
+      SignalBounced: AugmentedEvent<
+        ApiType,
+        [ITuple<[u32, T3rnSdkPrimitivesSignalSignalKind, H256]>]
+      >;
+      /** Generic event */
+      [key: string]: AugmentedEvent<ApiType>;
+    };
+    treasury: {
+      BeneficiaryTokensIssued: AugmentedEvent<ApiType, [AccountId32, u128]>;
+      InflationAllocationChanged: AugmentedEvent<
+        ApiType,
+        [developer: Perbill, executor: Perbill],
+        { developer: Perbill; executor: Perbill }
+      >;
+      InflationConfigChanged: AugmentedEvent<
+        ApiType,
+        [
+          annualMin: Perbill,
+          annualIdeal: Perbill,
+          annualMax: Perbill,
+          roundMin: Perbill,
+          roundIdeal: Perbill,
+          roundMax: Perbill
+        ],
+        {
+          annualMin: Perbill;
+          annualIdeal: Perbill;
+          annualMax: Perbill;
+          roundMin: Perbill;
+          roundIdeal: Perbill;
+          roundMax: Perbill;
+        }
+      >;
+      NewRound: AugmentedEvent<
+        ApiType,
+        [round: u32, head: u32],
+        { round: u32; head: u32 }
+      >;
+      RewardsClaimed: AugmentedEvent<ApiType, [AccountId32, u128]>;
+      RoundTermChanged: AugmentedEvent<
+        ApiType,
+        [
+          old: u32,
+          new_: u32,
+          roundMin: Perbill,
+          roundIdeal: Perbill,
+          roundMax: Perbill
+        ],
+        {
+          old: u32;
+          new_: u32;
+          roundMin: Perbill;
+          roundIdeal: Perbill;
+          roundMax: Perbill;
+        }
+      >;
+      RoundTokensIssued: AugmentedEvent<ApiType, [u32, u128]>;
+      /** Generic event */
+      [key: string]: AugmentedEvent<ApiType>;
+    };
     utility: {
       /** Batch of dispatches completed fully with no error. */
       BatchCompleted: AugmentedEvent<ApiType, []>;
@@ -438,6 +568,11 @@ declare module "@polkadot/api-base/types/events" {
       >;
       /** A single item within a Batch of dispatches has completed with no error. */
       ItemCompleted: AugmentedEvent<ApiType, []>;
+      /** Generic event */
+      [key: string]: AugmentedEvent<ApiType>;
+    };
+    xbiPortal: {
+      AbiInstructionExecuted: AugmentedEvent<ApiType, []>;
       /** Generic event */
       [key: string]: AugmentedEvent<ApiType>;
     };

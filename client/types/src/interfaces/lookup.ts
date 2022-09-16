@@ -279,49 +279,30 @@ export default {
       XdnsRecordUpdated: "[u8;4]",
     },
   },
-  /** Lookup41: pallet_multi_finality_verifier::pallet::Event<T, I> */
-  PalletMultiFinalityVerifierEvent: {
-    _enum: {
-      NewHeaderRangeAvailable: "([u8;4],u32,u32)",
-    },
-  },
-  /** Lookup46: pallet_contracts_registry::pallet::Event<T> */
+  /** Lookup41: pallet_contracts_registry::pallet::Event<T> */
   PalletContractsRegistryEvent: {
     _enum: {
       ContractStored: "(AccountId32,H256)",
       ContractPurged: "(AccountId32,H256)",
     },
   },
-  /** Lookup47: pallet_circuit_portal::pallet::Event<T> */
-  PalletCircuitPortalEvent: {
-    _enum: {
-      NewGatewayRegistered:
-        "([u8;4],T3rnPrimitivesGatewayType,T3rnPrimitivesGatewayVendor,T3rnPrimitivesGatewaySysProps,Vec<[u8;4]>)",
-      GatewayUpdated: "([u8;4],Option<Vec<[u8;4]>>)",
-    },
-  },
-  /** Lookup48: t3rn_primitives::GatewayType */
-  T3rnPrimitivesGatewayType: {
-    _enum: {
-      ProgrammableInternal: "u32",
-      ProgrammableExternal: "u32",
-      TxOnly: "u32",
-      OnCircuit: "u32",
-    },
-  },
-  /** Lookup49: t3rn_primitives::GatewayVendor */
-  T3rnPrimitivesGatewayVendor: {
-    _enum: ["Substrate", "Ethereum", "Rococo"],
-  },
-  /** Lookup50: t3rn_primitives::GatewaySysProps */
-  T3rnPrimitivesGatewaySysProps: {
-    ss58Format: "u16",
-    tokenSymbol: "Bytes",
-    tokenDecimals: "u8",
-  },
-  /** Lookup54: pallet_circuit::pallet::Event<T> */
+  /** Lookup42: pallet_circuit::pallet::Event<T> */
   PalletCircuitEvent: {
     _enum: {
+      Transfer: "(AccountId32,AccountId32,AccountId32,u128)",
+      TransferAssets: "(AccountId32,u64,AccountId32,AccountId32,u128)",
+      TransferORML: "(AccountId32,u64,AccountId32,AccountId32,u128)",
+      AddLiquidity: "(AccountId32,u64,u64,u128,u128,u128)",
+      Swap: "(AccountId32,u64,u64,u128,u128,u128)",
+      CallNative: "(AccountId32,Bytes)",
+      CallEvm:
+        "(AccountId32,H160,H160,U256,Bytes,u64,U256,Option<U256>,Option<U256>,Vec<(H160,Vec<H256>)>)",
+      CallWasm: "(AccountId32,AccountId32,u128,u64,Option<u128>,Bytes)",
+      CallCustom: "(AccountId32,AccountId32,AccountId32,u128,Bytes,u64,Bytes)",
+      Notification:
+        "(AccountId32,AccountId32,PalletXbiPortalXbiFormatXbiNotificationKind,Bytes,Bytes)",
+      Result:
+        "(AccountId32,AccountId32,PalletXbiPortalXbiFormatXbiCheckOutStatus,Bytes,Bytes)",
       XTransactionReceivedForExec: "H256",
       SideEffectInsuranceReceived: "(H256,AccountId32)",
       SideEffectConfirmed: "H256",
@@ -337,21 +318,35 @@ export default {
       EscrowTransfer: "(AccountId32,AccountId32,u128)",
     },
   },
+  /** Lookup52: pallet_xbi_portal::xbi_format::XBINotificationKind */
+  PalletXbiPortalXbiFormatXbiNotificationKind: {
+    _enum: ["Sent", "Delivered", "Executed"],
+  },
+  /** Lookup53: pallet_xbi_portal::xbi_format::XBICheckOutStatus */
+  PalletXbiPortalXbiFormatXbiCheckOutStatus: {
+    _enum: [
+      "SuccessfullyExecuted",
+      "ErrorFailedExecution",
+      "ErrorFailedXCMDispatch",
+      "ErrorDeliveryTimeout",
+      "ErrorExecutionTimeout",
+    ],
+  },
   /**
-   * Lookup56: t3rn_types::side_effect::SideEffect<sp_core::crypto::AccountId32,
+   * Lookup55: t3rn_types::side_effect::SideEffect<sp_core::crypto::AccountId32,
    * BlockNumber, BalanceOf>
    */
   T3rnTypesSideEffect: {
     target: "[u8;4]",
     prize: "u128",
-    orderedAt: "u32",
     encodedAction: "Bytes",
     encodedArgs: "Vec<Bytes>",
+    orderedAt: "u32",
     signature: "Bytes",
     enforceExecutioner: "Option<AccountId32>",
   },
   /**
-   * Lookup61:
+   * Lookup59:
    * t3rn_primitives::side_effect::FullSideEffect<sp_core::crypto::AccountId32,
    * BlockNumber, BalanceOf>
    */
@@ -362,7 +357,7 @@ export default {
     submissionTargetHeight: "Bytes",
   },
   /**
-   * Lookup63:
+   * Lookup61:
    * t3rn_types::side_effect::ConfirmedSideEffect<sp_core::crypto::AccountId32,
    * BlockNumber, BalanceOf>
    */
@@ -374,7 +369,7 @@ export default {
     receivedAt: "u32",
     cost: "Option<u128>",
   },
-  /** Lookup65: t3rn_types::side_effect::ConfirmationOutcome */
+  /** Lookup63: t3rn_types::side_effect::ConfirmationOutcome */
   T3rnTypesSideEffectConfirmationOutcome: {
     _enum: {
       Success: "Null",
@@ -386,21 +381,84 @@ export default {
       TimedOut: "Null",
     },
   },
-  /** Lookup68: t3rn_types::side_effect::SecurityLvl */
+  /** Lookup65: t3rn_types::side_effect::SecurityLvl */
   T3rnTypesSideEffectSecurityLvl: {
     _enum: ["Dirty", "Optimistic", "Escrowed"],
   },
-  /** Lookup69: pallet_portal::pallet::Event<T> */
-  PalletPortalEvent: {
+  /** Lookup66: pallet_treasury::pallet::Event<T> */
+  PalletTreasuryEvent: {
     _enum: {
-      GatewayRegistered: "[u8;4]",
-      SetOwner: "([u8;4],Bytes)",
-      SetOperational: "([u8;4],bool)",
-      HeaderSubmitted: "([u8;4],Bytes)",
+      NewRound: {
+        round: "u32",
+        head: "u32",
+      },
+      RoundTermChanged: {
+        _alias: {
+          new_: "new",
+        },
+        old: "u32",
+        new_: "u32",
+        roundMin: "Perbill",
+        roundIdeal: "Perbill",
+        roundMax: "Perbill",
+      },
+      InflationConfigChanged: {
+        annualMin: "Perbill",
+        annualIdeal: "Perbill",
+        annualMax: "Perbill",
+        roundMin: "Perbill",
+        roundIdeal: "Perbill",
+        roundMax: "Perbill",
+      },
+      InflationAllocationChanged: {
+        developer: "Perbill",
+        executor: "Perbill",
+      },
+      RoundTokensIssued: "(u32,u128)",
+      BeneficiaryTokensIssued: "(AccountId32,u128)",
+      RewardsClaimed: "(AccountId32,u128)",
     },
   },
-  /** Lookup71: pallet_wasm_contracts::pallet::Event<T> */
-  PalletWasmContractsEvent: {
+  /** Lookup68: pallet_clock::pallet::Event<T> */
+  PalletClockEvent: "Null",
+  /** Lookup69: pallet_xbi_portal::pallet::Event<T> */
+  PalletXbiPortalEvent: {
+    _enum: ["AbiInstructionExecuted"],
+  },
+  /** Lookup70: pallet_3vm::pallet::Event<T> */
+  Pallet3vmEvent: {
+    _enum: {
+      SignalBounced: "(u32,T3rnSdkPrimitivesSignalSignalKind,H256)",
+      ExceededBounceThrehold: "(u32,T3rnSdkPrimitivesSignalSignalKind,H256)",
+      ModuleInstantiated:
+        "(H256,AccountId32,T3rnPrimitivesContractMetadataContractType,u32)",
+      AuthorStored: "(AccountId32,AccountId32)",
+      AuthorRemoved: "AccountId32",
+    },
+  },
+  /** Lookup72: t3rn_sdk_primitives::signal::SignalKind */
+  T3rnSdkPrimitivesSignalSignalKind: {
+    _enum: {
+      Complete: "Null",
+      Kill: "T3rnSdkPrimitivesSignalKillReason",
+    },
+  },
+  /** Lookup73: t3rn_sdk_primitives::signal::KillReason */
+  T3rnSdkPrimitivesSignalKillReason: {
+    _enum: ["Unhandled", "Codec", "Timeout"],
+  },
+  /** Lookup75: t3rn_primitives::contract_metadata::ContractType */
+  T3rnPrimitivesContractMetadataContractType: {
+    _enum: [
+      "System",
+      "VanillaEvm",
+      "VanillaWasm",
+      "VolatileEvm",
+      "VolatileWasm",
+    ],
+  },
+  /** Lookup77: pallet_contracts::pallet::Event<T> */
+  PalletContractsEvent: {
     _enum: {
       Instantiated: {
         deployer: "AccountId32",
@@ -427,16 +485,32 @@ export default {
       },
     },
   },
-  /** Lookup72: pallet_account_manager::pallet::Event<T> */
+  /** Lookup78: pallet_evm::pallet::Event<T> */
+  PalletEvmEvent: {
+    _enum: {
+      Log: "EthereumLog",
+      Created: "H160",
+      CreatedFailed: "H160",
+      Executed: "H160",
+      ExecutedFailed: "H160",
+      BalanceDeposit: "(AccountId32,H160,U256)",
+      BalanceWithdraw: "(AccountId32,H160,U256)",
+      ClaimAccount: {
+        accountId: "AccountId32",
+        evmAddress: "H160",
+      },
+    },
+  },
+  /** Lookup79: ethereum::log::Log */
+  EthereumLog: {
+    address: "H160",
+    topics: "Vec<H256>",
+    data: "Bytes",
+  },
+  /** Lookup80: pallet_account_manager::pallet::Event<T> */
   PalletAccountManagerEvent: {
     _enum: {
-      DepositReceived: {
-        executionId: "u64",
-        payee: "AccountId32",
-        recipient: "AccountId32",
-        amount: "u128",
-      },
-      ExecutionFinalized: {
+      ContractsRegistryExecutionFinalized: {
         executionId: "u64",
       },
       Issued: {
@@ -445,7 +519,16 @@ export default {
       },
     },
   },
-  /** Lookup73: frame_system::Phase */
+  /** Lookup81: pallet_portal::pallet::Event<T> */
+  PalletPortalEvent: {
+    _enum: {
+      GatewayRegistered: "[u8;4]",
+      SetOwner: "([u8;4],Bytes)",
+      SetOperational: "([u8;4],bool)",
+      HeaderSubmitted: "([u8;4],Bytes)",
+    },
+  },
+  /** Lookup83: frame_system::Phase */
   FrameSystemPhase: {
     _enum: {
       ApplyExtrinsic: "u32",
@@ -453,12 +536,12 @@ export default {
       Initialization: "Null",
     },
   },
-  /** Lookup76: frame_system::LastRuntimeUpgradeInfo */
+  /** Lookup86: frame_system::LastRuntimeUpgradeInfo */
   FrameSystemLastRuntimeUpgradeInfo: {
     specVersion: "Compact<u32>",
     specName: "Text",
   },
-  /** Lookup79: frame_system::pallet::Call<T> */
+  /** Lookup89: frame_system::pallet::Call<T> */
   FrameSystemCall: {
     _enum: {
       fill_block: {
@@ -494,14 +577,14 @@ export default {
       },
     },
   },
-  /** Lookup83: frame_system::limits::BlockWeights */
+  /** Lookup92: frame_system::limits::BlockWeights */
   FrameSystemLimitsBlockWeights: {
     baseBlock: "u64",
     maxBlock: "u64",
     perClass: "FrameSupportWeightsPerDispatchClassWeightsPerClass",
   },
   /**
-   * Lookup84:
+   * Lookup93:
    * frame_support::weights::PerDispatchClass<frame_system::limits::WeightsPerClass>
    */
   FrameSupportWeightsPerDispatchClassWeightsPerClass: {
@@ -509,29 +592,29 @@ export default {
     operational: "FrameSystemLimitsWeightsPerClass",
     mandatory: "FrameSystemLimitsWeightsPerClass",
   },
-  /** Lookup85: frame_system::limits::WeightsPerClass */
+  /** Lookup94: frame_system::limits::WeightsPerClass */
   FrameSystemLimitsWeightsPerClass: {
     baseExtrinsic: "u64",
     maxExtrinsic: "Option<u64>",
     maxTotal: "Option<u64>",
     reserved: "Option<u64>",
   },
-  /** Lookup87: frame_system::limits::BlockLength */
+  /** Lookup96: frame_system::limits::BlockLength */
   FrameSystemLimitsBlockLength: {
     max: "FrameSupportWeightsPerDispatchClassU32",
   },
-  /** Lookup88: frame_support::weights::PerDispatchClass<T> */
+  /** Lookup97: frame_support::weights::PerDispatchClass<T> */
   FrameSupportWeightsPerDispatchClassU32: {
     normal: "u32",
     operational: "u32",
     mandatory: "u32",
   },
-  /** Lookup89: frame_support::weights::RuntimeDbWeight */
+  /** Lookup98: frame_support::weights::RuntimeDbWeight */
   FrameSupportWeightsRuntimeDbWeight: {
     read: "u64",
     write: "u64",
   },
-  /** Lookup90: sp_version::RuntimeVersion */
+  /** Lookup99: sp_version::RuntimeVersion */
   SpVersionRuntimeVersion: {
     specName: "Text",
     implName: "Text",
@@ -542,7 +625,7 @@ export default {
     transactionVersion: "u32",
     stateVersion: "u8",
   },
-  /** Lookup95: frame_system::pallet::Error<T> */
+  /** Lookup105: frame_system::pallet::Error<T> */
   FrameSystemError: {
     _enum: [
       "InvalidSpecName",
@@ -553,7 +636,7 @@ export default {
       "CallFiltered",
     ],
   },
-  /** Lookup97: pallet_timestamp::pallet::Call<T> */
+  /** Lookup107: pallet_timestamp::pallet::Call<T> */
   PalletTimestampCall: {
     _enum: {
       set: {
@@ -561,11 +644,11 @@ export default {
       },
     },
   },
-  /** Lookup100: sp_consensus_aura::sr25519::app_sr25519::Public */
+  /** Lookup110: sp_consensus_aura::sr25519::app_sr25519::Public */
   SpConsensusAuraSr25519AppSr25519Public: "SpCoreSr25519Public",
-  /** Lookup101: sp_core::sr25519::Public */
+  /** Lookup111: sp_core::sr25519::Public */
   SpCoreSr25519Public: "[u8;32]",
-  /** Lookup104: pallet_grandpa::StoredState<N> */
+  /** Lookup114: pallet_grandpa::StoredState<N> */
   PalletGrandpaStoredState: {
     _enum: {
       Live: "Null",
@@ -580,14 +663,14 @@ export default {
       },
     },
   },
-  /** Lookup105: pallet_grandpa::StoredPendingChange<N, Limit> */
+  /** Lookup115: pallet_grandpa::StoredPendingChange<N, Limit> */
   PalletGrandpaStoredPendingChange: {
     scheduledAt: "u32",
     delay: "u32",
     nextAuthorities: "Vec<(SpFinalityGrandpaAppPublic,u64)>",
     forced: "Option<u32>",
   },
-  /** Lookup108: pallet_grandpa::pallet::Call<T> */
+  /** Lookup118: pallet_grandpa::pallet::Call<T> */
   PalletGrandpaCall: {
     _enum: {
       report_equivocation: {
@@ -604,12 +687,12 @@ export default {
       },
     },
   },
-  /** Lookup109: sp_finality_grandpa::EquivocationProof<primitive_types::H256, N> */
+  /** Lookup119: sp_finality_grandpa::EquivocationProof<primitive_types::H256, N> */
   SpFinalityGrandpaEquivocationProof: {
     setId: "u64",
     equivocation: "SpFinalityGrandpaEquivocation",
   },
-  /** Lookup110: sp_finality_grandpa::Equivocation<primitive_types::H256, N> */
+  /** Lookup120: sp_finality_grandpa::Equivocation<primitive_types::H256, N> */
   SpFinalityGrandpaEquivocation: {
     _enum: {
       Prevote: "FinalityGrandpaEquivocationPrevote",
@@ -617,7 +700,7 @@ export default {
     },
   },
   /**
-   * Lookup111: finality_grandpa::Equivocation<sp_finality_grandpa::app::Public,
+   * Lookup121: finality_grandpa::Equivocation<sp_finality_grandpa::app::Public,
    * finality_grandpa::Prevote<primitive_types::H256, N>,
    * sp_finality_grandpa::app::Signature>
    */
@@ -627,17 +710,17 @@ export default {
     first: "(FinalityGrandpaPrevote,SpFinalityGrandpaAppSignature)",
     second: "(FinalityGrandpaPrevote,SpFinalityGrandpaAppSignature)",
   },
-  /** Lookup112: finality_grandpa::Prevote<primitive_types::H256, N> */
+  /** Lookup122: finality_grandpa::Prevote<primitive_types::H256, N> */
   FinalityGrandpaPrevote: {
     targetHash: "H256",
     targetNumber: "u32",
   },
-  /** Lookup113: sp_finality_grandpa::app::Signature */
+  /** Lookup123: sp_finality_grandpa::app::Signature */
   SpFinalityGrandpaAppSignature: "SpCoreEd25519Signature",
-  /** Lookup114: sp_core::ed25519::Signature */
+  /** Lookup124: sp_core::ed25519::Signature */
   SpCoreEd25519Signature: "[u8;64]",
   /**
-   * Lookup117: finality_grandpa::Equivocation<sp_finality_grandpa::app::Public,
+   * Lookup127: finality_grandpa::Equivocation<sp_finality_grandpa::app::Public,
    * finality_grandpa::Precommit<primitive_types::H256, N>,
    * sp_finality_grandpa::app::Signature>
    */
@@ -647,14 +730,14 @@ export default {
     first: "(FinalityGrandpaPrecommit,SpFinalityGrandpaAppSignature)",
     second: "(FinalityGrandpaPrecommit,SpFinalityGrandpaAppSignature)",
   },
-  /** Lookup118: finality_grandpa::Precommit<primitive_types::H256, N> */
+  /** Lookup128: finality_grandpa::Precommit<primitive_types::H256, N> */
   FinalityGrandpaPrecommit: {
     targetHash: "H256",
     targetNumber: "u32",
   },
-  /** Lookup120: sp_core::Void */
+  /** Lookup130: sp_core::Void */
   SpCoreVoid: "Null",
-  /** Lookup121: pallet_grandpa::pallet::Error<T> */
+  /** Lookup131: pallet_grandpa::pallet::Error<T> */
   PalletGrandpaError: {
     _enum: [
       "PauseFailed",
@@ -666,26 +749,26 @@ export default {
       "DuplicateOffenceReport",
     ],
   },
-  /** Lookup123: pallet_balances::BalanceLock<Balance> */
+  /** Lookup133: pallet_balances::BalanceLock<Balance> */
   PalletBalancesBalanceLock: {
     id: "[u8;8]",
     amount: "u128",
     reasons: "PalletBalancesReasons",
   },
-  /** Lookup124: pallet_balances::Reasons */
+  /** Lookup134: pallet_balances::Reasons */
   PalletBalancesReasons: {
     _enum: ["Fee", "Misc", "All"],
   },
-  /** Lookup127: pallet_balances::ReserveData<ReserveIdentifier, Balance> */
+  /** Lookup137: pallet_balances::ReserveData<ReserveIdentifier, Balance> */
   PalletBalancesReserveData: {
     id: "[u8;8]",
     amount: "u128",
   },
-  /** Lookup129: pallet_balances::Releases */
+  /** Lookup139: pallet_balances::Releases */
   PalletBalancesReleases: {
     _enum: ["V1_0_0", "V2_0_0"],
   },
-  /** Lookup130: pallet_balances::pallet::Call<T, I> */
+  /** Lookup140: pallet_balances::pallet::Call<T, I> */
   PalletBalancesCall: {
     _enum: {
       transfer: {
@@ -716,7 +799,7 @@ export default {
       },
     },
   },
-  /** Lookup135: pallet_balances::pallet::Error<T, I> */
+  /** Lookup144: pallet_balances::pallet::Error<T, I> */
   PalletBalancesError: {
     _enum: [
       "VestingBalance",
@@ -729,18 +812,18 @@ export default {
       "TooManyReserves",
     ],
   },
-  /** Lookup137: pallet_transaction_payment::Releases */
+  /** Lookup146: pallet_transaction_payment::Releases */
   PalletTransactionPaymentReleases: {
     _enum: ["V1Ancient", "V2"],
   },
-  /** Lookup139: frame_support::weights::WeightToFeeCoefficient<Balance> */
+  /** Lookup148: frame_support::weights::WeightToFeeCoefficient<Balance> */
   FrameSupportWeightsWeightToFeeCoefficient: {
     coeffInteger: "u128",
     coeffFrac: "Perbill",
     negative: "bool",
     degree: "u8",
   },
-  /** Lookup140: pallet_sudo::pallet::Call<T> */
+  /** Lookup149: pallet_sudo::pallet::Call<T> */
   PalletSudoCall: {
     _enum: {
       sudo: {
@@ -762,7 +845,7 @@ export default {
       },
     },
   },
-  /** Lookup142: pallet_utility::pallet::Call<T> */
+  /** Lookup151: pallet_utility::pallet::Call<T> */
   PalletUtilityCall: {
     _enum: {
       batch: {
@@ -781,14 +864,14 @@ export default {
       },
     },
   },
-  /** Lookup144: circuit_standalone_runtime::OriginCaller */
+  /** Lookup153: circuit_standalone_runtime::OriginCaller */
   CircuitStandaloneRuntimeOriginCaller: {
     _enum: {
       system: "FrameSupportDispatchRawOrigin",
       Void: "SpCoreVoid",
     },
   },
-  /** Lookup145: frame_support::dispatch::RawOrigin<sp_core::crypto::AccountId32> */
+  /** Lookup154: frame_support::dispatch::RawOrigin<sp_core::crypto::AccountId32> */
   FrameSupportDispatchRawOrigin: {
     _enum: {
       Root: "Null",
@@ -796,20 +879,9 @@ export default {
       None: "Null",
     },
   },
-  /** Lookup146: pallet_xdns::pallet::Call<T> */
+  /** Lookup155: pallet_xdns::pallet::Call<T> */
   PalletXdnsCall: {
     _enum: {
-      add_new_xdns_record: {
-        url: "Bytes",
-        gatewayId: "[u8;4]",
-        parachain: "Option<T3rnPrimitivesXdnsParachain>",
-        gatewayAbi: "T3rnTypesAbiGatewayABIConfig",
-        gatewayVendor: "T3rnPrimitivesGatewayVendor",
-        gatewayType: "T3rnPrimitivesGatewayType",
-        gatewayGenesis: "T3rnPrimitivesGatewayGenesisConfig",
-        gatewaySysProps: "T3rnPrimitivesGatewaySysProps",
-        allowedSideEffects: "Vec<[u8;4]>",
-      },
       add_side_effect: {
         id: "[u8;4]",
         name: "Bytes",
@@ -830,37 +902,7 @@ export default {
       },
     },
   },
-  /** Lookup148: t3rn_primitives::xdns::Parachain */
-  T3rnPrimitivesXdnsParachain: {
-    relayChainId: "[u8;4]",
-    id: "u32",
-  },
-  /** Lookup149: t3rn_types::abi::GatewayABIConfig */
-  T3rnTypesAbiGatewayABIConfig: {
-    blockNumberTypeSize: "u16",
-    hashSize: "u16",
-    hasher: "T3rnTypesAbiHasherAlgo",
-    crypto: "T3rnTypesAbiCryptoAlgo",
-    addressLength: "u16",
-    valueTypeSize: "u16",
-    decimals: "u16",
-    structs: "Vec<T3rnTypesAbiStructDecl>",
-  },
-  /** Lookup150: t3rn_types::abi::HasherAlgo */
-  T3rnTypesAbiHasherAlgo: {
-    _enum: ["Blake2", "Keccak256"],
-  },
-  /** Lookup151: t3rn_types::abi::CryptoAlgo */
-  T3rnTypesAbiCryptoAlgo: {
-    _enum: ["Ed25519", "Sr25519", "Ecdsa"],
-  },
-  /** Lookup153: t3rn_types::abi::StructDecl */
-  T3rnTypesAbiStructDecl: {
-    name: "T3rnTypesAbiType",
-    fields: "Vec<T3rnTypesAbiParameter>",
-    offsets: "Vec<u16>",
-  },
-  /** Lookup154: t3rn_types::abi::Type */
+  /** Lookup157: t3rn_types::abi::Type */
   T3rnTypesAbiType: {
     _enum: {
       Address: "u16",
@@ -886,97 +928,15 @@ export default {
       Crypto: "T3rnTypesAbiCryptoAlgo",
     },
   },
-  /** Lookup156: t3rn_types::abi::Parameter */
-  T3rnTypesAbiParameter: {
-    name: "Option<Bytes>",
-    ty: "T3rnTypesAbiType",
-    no: "u32",
-    indexed: "Option<bool>",
+  /** Lookup158: t3rn_types::abi::HasherAlgo */
+  T3rnTypesAbiHasherAlgo: {
+    _enum: ["Blake2", "Keccak256"],
   },
-  /** Lookup159: t3rn_primitives::GatewayGenesisConfig */
-  T3rnPrimitivesGatewayGenesisConfig: {
-    modulesEncoded: "Option<Bytes>",
-    extrinsicsVersion: "u8",
-    genesisHash: "Bytes",
+  /** Lookup159: t3rn_types::abi::CryptoAlgo */
+  T3rnTypesAbiCryptoAlgo: {
+    _enum: ["Ed25519", "Sr25519", "Ecdsa"],
   },
-  /** Lookup161: pallet_multi_finality_verifier::pallet::Call<T, I> */
-  PalletMultiFinalityVerifierCall: {
-    _enum: {
-      submit_finality_proof: {
-        finalityTarget: {
-          parentHash: "H256",
-          number: "Compact<u32>",
-          stateRoot: "H256",
-          extrinsicsRoot: "H256",
-          digest: "SpRuntimeDigest",
-        },
-        encodedJustification: "Bytes",
-        gatewayId: "[u8;4]",
-      },
-      submit_header_range: {
-        gatewayId: "[u8;4]",
-        headersReversed:
-          'Vec<{"parentHash":"H256","number":"Compact<u32>","stateRoot":"H256","extrinsicsRoot":"H256","digest":"SpRuntimeDigest"}>',
-        anchorHeaderHash: "H256",
-      },
-      initialize_single: {
-        initData: {
-          header: {
-            parentHash: "H256",
-            number: "Compact<u32>",
-            stateRoot: "H256",
-            extrinsicsRoot: "H256",
-            digest: "SpRuntimeDigest",
-          },
-          authorityList: "Vec<(SpFinalityGrandpaAppPublic,u64)>",
-          setId: "u64",
-          isHalted: "bool",
-          gatewayId: "[u8;4]",
-        },
-      },
-      set_owner: {
-        newOwner: "Option<AccountId32>",
-        gatewayId: "[u8;4]",
-      },
-      set_operational: {
-        operational: "bool",
-        gatewayId: "[u8;4]",
-      },
-    },
-  },
-  /** Lookup163: sp_runtime::traits::BlakeTwo256 */
-  SpRuntimeBlakeTwo256: "Null",
-  /** Lookup168: sp_runtime::generic::header::Header<Number, sp_runtime::traits::Keccak256> */
-  SpRuntimeHeaderU64: {
-    parentHash: "H256",
-    number: "Compact<u64>",
-    stateRoot: "H256",
-    extrinsicsRoot: "H256",
-    digest: "SpRuntimeDigest",
-  },
-  /** Lookup169: sp_runtime::traits::Keccak256 */
-  SpRuntimeKeccak256: "Null",
-  /** Lookup173: sp_runtime::generic::header::Header<Number, sp_runtime::traits::Keccak256> */
-  SpRuntimeHeaderU32: {
-    parentHash: "H256",
-    number: "Compact<u32>",
-    stateRoot: "H256",
-    extrinsicsRoot: "H256",
-    digest: "SpRuntimeDigest",
-  },
-  /**
-   * Lookup175:
-   * t3rn_primitives::bridges::header_chain::InitializationData<sp_runtime::generic::header::Header<Number,
-   * sp_runtime::traits::Keccak256>>
-   */
-  T3rnPrimitivesBridgesHeaderChainInitializationData: {
-    header: "SpRuntimeHeaderU32",
-    authorityList: "Vec<(SpFinalityGrandpaAppPublic,u64)>",
-    setId: "u64",
-    isHalted: "bool",
-    gatewayId: "[u8;4]",
-  },
-  /** Lookup177: pallet_contracts_registry::pallet::Call<T> */
+  /** Lookup160: pallet_contracts_registry::pallet::Call<T> */
   PalletContractsRegistryCall: {
     _enum: {
       add_new_contract: {
@@ -990,7 +950,7 @@ export default {
     },
   },
   /**
-   * Lookup178:
+   * Lookup161:
    * t3rn_primitives::contracts_registry::RegistryContract<primitive_types::H256,
    * sp_core::crypto::AccountId32, BalanceOf, BlockNumber>
    */
@@ -1004,7 +964,7 @@ export default {
     meta: "T3rnPrimitivesContractMetadata",
   },
   /**
-   * Lookup179:
+   * Lookup162:
    * t3rn_primitives::contracts_registry::AuthorInfo<sp_core::crypto::AccountId32,
    * BalanceOf>
    */
@@ -1013,7 +973,7 @@ export default {
     feesPerSingleUse: "Option<u128>",
   },
   /**
-   * Lookup181: t3rn_types::abi::ContractActionDesc<primitive_types::H256,
+   * Lookup164: t3rn_types::abi::ContractActionDesc<primitive_types::H256,
    * TargetId, sp_core::crypto::AccountId32>
    */
   T3rnTypesAbiContractActionDesc: {
@@ -1022,7 +982,7 @@ export default {
     to: "Option<AccountId32>",
   },
   /**
-   * Lookup184:
+   * Lookup167:
    * t3rn_primitives::storage::RawAliveContractInfo<primitive_types::H256,
    * Balance, BlockNumber>
    */
@@ -1037,11 +997,11 @@ export default {
     lastWrite: "Option<u32>",
     reserved: "Option<Null>",
   },
-  /** Lookup186: t3rn_primitives::contract_metadata::ContractMetadata */
+  /** Lookup169: t3rn_primitives::contract_metadata::ContractMetadata */
   T3rnPrimitivesContractMetadata: {
     metadataVersion: "Bytes",
     name: "Bytes",
-    contractType: "Bytes",
+    contractType: "T3rnPrimitivesContractMetadataContractType",
     version: "Bytes",
     authors: "Vec<Bytes>",
     description: "Option<Bytes>",
@@ -1050,39 +1010,7 @@ export default {
     homepage: "Option<Bytes>",
     license: "Option<Bytes>",
   },
-  /** Lookup187: pallet_circuit_portal::pallet::Call<T> */
-  PalletCircuitPortalCall: {
-    _enum: {
-      register_gateway: {
-        url: "Bytes",
-        gatewayId: "[u8;4]",
-        parachain: "Option<T3rnPrimitivesXdnsParachain>",
-        gatewayAbi: "T3rnTypesAbiGatewayABIConfig",
-        gatewayVendor: "T3rnPrimitivesGatewayVendor",
-        gatewayType: "T3rnPrimitivesGatewayType",
-        gatewayGenesis: "T3rnPrimitivesGatewayGenesisConfig",
-        gatewaySysProps: "T3rnPrimitivesGatewaySysProps",
-        firstHeader: "Bytes",
-        authorities: "Option<Vec<AccountId32>>",
-        authoritySetId: "Option<u64>",
-        allowedSideEffects: "Vec<[u8;4]>",
-      },
-      submit_parachain_header: {
-        blockHash: "Bytes",
-        gatewayId: "[u8;4]",
-        proof: "Vec<Bytes>",
-      },
-      update_gateway: {
-        gatewayId: "[u8;4]",
-        url: "Option<Bytes>",
-        gatewayAbi: "Option<T3rnTypesAbiGatewayABIConfig>",
-        gatewaySysProps: "Option<T3rnPrimitivesGatewaySysProps>",
-        authorities: "Option<Vec<AccountId32>>",
-        allowedSideEffects: "Option<Vec<[u8;4]>>",
-      },
-    },
-  },
-  /** Lookup192: pallet_circuit::pallet::Call<T> */
+  /** Lookup170: pallet_circuit::pallet::Call<T> */
   PalletCircuitCall: {
     _enum: {
       on_local_trigger: {
@@ -1099,14 +1027,14 @@ export default {
         xtxId: "H256",
         sideEffectId: "H256",
       },
-      execute_side_effects_via_circuit: {
+      execute_side_effects_with_xbi: {
         xtxId: "H256",
         sideEffect: "T3rnTypesSideEffect",
+        maxExecCost: "u128",
+        maxNotificationsCost: "u128",
       },
-      confirm_commit_revert_relay: {
-        xtxId: "H256",
-        sideEffect: "T3rnTypesSideEffect",
-        confirmation: "T3rnTypesSideEffectConfirmedSideEffect",
+      on_xbi_sfx_resolved: {
+        sfxId: "H256",
       },
       confirm_side_effect: {
         xtxId: "H256",
@@ -1117,36 +1045,460 @@ export default {
       },
     },
   },
-  /** Lookup194: pallet_portal::pallet::Call<T> */
-  PalletPortalCall: {
+  /** Lookup172: pallet_treasury::pallet::Call<T> */
+  PalletTreasuryCall: {
     _enum: {
-      register_gateway: {
-        url: "Bytes",
-        gatewayId: "[u8;4]",
-        gatewayAbi: "T3rnTypesAbiGatewayABIConfig",
-        gatewayVendor: "T3rnPrimitivesGatewayVendor",
-        gatewayType: "T3rnPrimitivesGatewayType",
-        gatewayGenesis: "T3rnPrimitivesGatewayGenesisConfig",
-        gatewaySysProps: "T3rnPrimitivesGatewaySysProps",
-        allowedSideEffects: "Vec<[u8;4]>",
-        encodedRegistrationData: "Bytes",
+      mint_for_round: {
+        roundIndex: "u32",
+        amount: "Compact<u128>",
       },
-      set_owner: {
-        gatewayId: "[u8;4]",
-        encodedNewOwner: "Bytes",
+      claim_rewards: "Null",
+      set_inflation: {
+        annualInflationConfig: {
+          min: "Perbill",
+          ideal: "Perbill",
+          max: "Perbill",
+        },
       },
-      set_operational: {
-        gatewayId: "[u8;4]",
-        operational: "bool",
+      set_inflation_alloc: {
+        inflationAlloc: "T3rnPrimitivesMonetaryInflationAllocation",
       },
-      submit_headers: {
-        gatewayId: "[u8;4]",
-        encodedHeaderData: "Bytes",
+      set_round_term: {
+        _alias: {
+          new_: "new",
+        },
+        new_: "u32",
+      },
+      add_beneficiary: {
+        beneficiary: "AccountId32",
+        role: "T3rnPrimitivesMonetaryBeneficiaryRole",
+      },
+      remove_beneficiary: {
+        beneficiary: "AccountId32",
+      },
+      set_total_stake_expectation: {
+        expectations: {
+          min: "u128",
+          ideal: "u128",
+          max: "u128",
+        },
       },
     },
   },
-  /** Lookup195: pallet_wasm_contracts::pallet::Call<T> */
-  PalletWasmContractsCall: {
+  /** Lookup174: t3rn_primitives::monetary::InflationAllocation */
+  T3rnPrimitivesMonetaryInflationAllocation: {
+    developer: "Perbill",
+    executor: "Perbill",
+  },
+  /** Lookup175: t3rn_primitives::monetary::BeneficiaryRole */
+  T3rnPrimitivesMonetaryBeneficiaryRole: {
+    _enum: ["Developer", "Executor"],
+  },
+  /** Lookup177: pallet_xbi_portal::pallet::Call<T> */
+  PalletXbiPortalCall: {
+    _enum: {
+      execute_xcm: {
+        xcm: "XcmV2Xcm",
+      },
+      cleanup: "Null",
+      enter_call: {
+        checkin: "PalletXbiPortalXbiFormatXbiCheckIn",
+        xbiId: "H256",
+      },
+      check_in_xbi: {
+        xbi: "PalletXbiPortalXbiFormat",
+      },
+    },
+  },
+  /** Lookup178: xcm::v2::Xcm<Call> */
+  XcmV2Xcm: "Vec<XcmV2Instruction>",
+  /** Lookup180: xcm::v2::Instruction<Call> */
+  XcmV2Instruction: {
+    _enum: {
+      WithdrawAsset: "XcmV1MultiassetMultiAssets",
+      ReserveAssetDeposited: "XcmV1MultiassetMultiAssets",
+      ReceiveTeleportedAsset: "XcmV1MultiassetMultiAssets",
+      QueryResponse: {
+        queryId: "Compact<u64>",
+        response: "XcmV2Response",
+        maxWeight: "Compact<u64>",
+      },
+      TransferAsset: {
+        assets: "XcmV1MultiassetMultiAssets",
+        beneficiary: "XcmV1MultiLocation",
+      },
+      TransferReserveAsset: {
+        assets: "XcmV1MultiassetMultiAssets",
+        dest: "XcmV1MultiLocation",
+        xcm: "XcmV2Xcm",
+      },
+      Transact: {
+        originType: "XcmV0OriginKind",
+        requireWeightAtMost: "Compact<u64>",
+        call: "XcmDoubleEncoded",
+      },
+      HrmpNewChannelOpenRequest: {
+        sender: "Compact<u32>",
+        maxMessageSize: "Compact<u32>",
+        maxCapacity: "Compact<u32>",
+      },
+      HrmpChannelAccepted: {
+        recipient: "Compact<u32>",
+      },
+      HrmpChannelClosing: {
+        initiator: "Compact<u32>",
+        sender: "Compact<u32>",
+        recipient: "Compact<u32>",
+      },
+      ClearOrigin: "Null",
+      DescendOrigin: "XcmV1MultilocationJunctions",
+      ReportError: {
+        queryId: "Compact<u64>",
+        dest: "XcmV1MultiLocation",
+        maxResponseWeight: "Compact<u64>",
+      },
+      DepositAsset: {
+        assets: "XcmV1MultiassetMultiAssetFilter",
+        maxAssets: "Compact<u32>",
+        beneficiary: "XcmV1MultiLocation",
+      },
+      DepositReserveAsset: {
+        assets: "XcmV1MultiassetMultiAssetFilter",
+        maxAssets: "Compact<u32>",
+        dest: "XcmV1MultiLocation",
+        xcm: "XcmV2Xcm",
+      },
+      ExchangeAsset: {
+        give: "XcmV1MultiassetMultiAssetFilter",
+        receive: "XcmV1MultiassetMultiAssets",
+      },
+      InitiateReserveWithdraw: {
+        assets: "XcmV1MultiassetMultiAssetFilter",
+        reserve: "XcmV1MultiLocation",
+        xcm: "XcmV2Xcm",
+      },
+      InitiateTeleport: {
+        assets: "XcmV1MultiassetMultiAssetFilter",
+        dest: "XcmV1MultiLocation",
+        xcm: "XcmV2Xcm",
+      },
+      QueryHolding: {
+        queryId: "Compact<u64>",
+        dest: "XcmV1MultiLocation",
+        assets: "XcmV1MultiassetMultiAssetFilter",
+        maxResponseWeight: "Compact<u64>",
+      },
+      BuyExecution: {
+        fees: "XcmV1MultiAsset",
+        weightLimit: "XcmV2WeightLimit",
+      },
+      RefundSurplus: "Null",
+      SetErrorHandler: "XcmV2Xcm",
+      SetAppendix: "XcmV2Xcm",
+      ClearError: "Null",
+      ClaimAsset: {
+        assets: "XcmV1MultiassetMultiAssets",
+        ticket: "XcmV1MultiLocation",
+      },
+      Trap: "Compact<u64>",
+      SubscribeVersion: {
+        queryId: "Compact<u64>",
+        maxResponseWeight: "Compact<u64>",
+      },
+      UnsubscribeVersion: "Null",
+    },
+  },
+  /** Lookup181: xcm::v1::multiasset::MultiAssets */
+  XcmV1MultiassetMultiAssets: "Vec<XcmV1MultiAsset>",
+  /** Lookup183: xcm::v1::multiasset::MultiAsset */
+  XcmV1MultiAsset: {
+    id: "XcmV1MultiassetAssetId",
+    fun: "XcmV1MultiassetFungibility",
+  },
+  /** Lookup184: xcm::v1::multiasset::AssetId */
+  XcmV1MultiassetAssetId: {
+    _enum: {
+      Concrete: "XcmV1MultiLocation",
+      Abstract: "Bytes",
+    },
+  },
+  /** Lookup185: xcm::v1::multilocation::MultiLocation */
+  XcmV1MultiLocation: {
+    parents: "u8",
+    interior: "XcmV1MultilocationJunctions",
+  },
+  /** Lookup186: xcm::v1::multilocation::Junctions */
+  XcmV1MultilocationJunctions: {
+    _enum: {
+      Here: "Null",
+      X1: "XcmV1Junction",
+      X2: "(XcmV1Junction,XcmV1Junction)",
+      X3: "(XcmV1Junction,XcmV1Junction,XcmV1Junction)",
+      X4: "(XcmV1Junction,XcmV1Junction,XcmV1Junction,XcmV1Junction)",
+      X5: "(XcmV1Junction,XcmV1Junction,XcmV1Junction,XcmV1Junction,XcmV1Junction)",
+      X6: "(XcmV1Junction,XcmV1Junction,XcmV1Junction,XcmV1Junction,XcmV1Junction,XcmV1Junction)",
+      X7: "(XcmV1Junction,XcmV1Junction,XcmV1Junction,XcmV1Junction,XcmV1Junction,XcmV1Junction,XcmV1Junction)",
+      X8: "(XcmV1Junction,XcmV1Junction,XcmV1Junction,XcmV1Junction,XcmV1Junction,XcmV1Junction,XcmV1Junction,XcmV1Junction)",
+    },
+  },
+  /** Lookup187: xcm::v1::junction::Junction */
+  XcmV1Junction: {
+    _enum: {
+      Parachain: "Compact<u32>",
+      AccountId32: {
+        network: "XcmV0JunctionNetworkId",
+        id: "[u8;32]",
+      },
+      AccountIndex64: {
+        network: "XcmV0JunctionNetworkId",
+        index: "Compact<u64>",
+      },
+      AccountKey20: {
+        network: "XcmV0JunctionNetworkId",
+        key: "[u8;20]",
+      },
+      PalletInstance: "u8",
+      GeneralIndex: "Compact<u128>",
+      GeneralKey: "Bytes",
+      OnlyChild: "Null",
+      Plurality: {
+        id: "XcmV0JunctionBodyId",
+        part: "XcmV0JunctionBodyPart",
+      },
+    },
+  },
+  /** Lookup188: xcm::v0::junction::NetworkId */
+  XcmV0JunctionNetworkId: {
+    _enum: {
+      Any: "Null",
+      Named: "Bytes",
+      Polkadot: "Null",
+      Kusama: "Null",
+    },
+  },
+  /** Lookup189: xcm::v0::junction::BodyId */
+  XcmV0JunctionBodyId: {
+    _enum: {
+      Unit: "Null",
+      Named: "Bytes",
+      Index: "Compact<u32>",
+      Executive: "Null",
+      Technical: "Null",
+      Legislative: "Null",
+      Judicial: "Null",
+    },
+  },
+  /** Lookup190: xcm::v0::junction::BodyPart */
+  XcmV0JunctionBodyPart: {
+    _enum: {
+      Voice: "Null",
+      Members: {
+        count: "Compact<u32>",
+      },
+      Fraction: {
+        nom: "Compact<u32>",
+        denom: "Compact<u32>",
+      },
+      AtLeastProportion: {
+        nom: "Compact<u32>",
+        denom: "Compact<u32>",
+      },
+      MoreThanProportion: {
+        nom: "Compact<u32>",
+        denom: "Compact<u32>",
+      },
+    },
+  },
+  /** Lookup191: xcm::v1::multiasset::Fungibility */
+  XcmV1MultiassetFungibility: {
+    _enum: {
+      Fungible: "Compact<u128>",
+      NonFungible: "XcmV1MultiassetAssetInstance",
+    },
+  },
+  /** Lookup192: xcm::v1::multiasset::AssetInstance */
+  XcmV1MultiassetAssetInstance: {
+    _enum: {
+      Undefined: "Null",
+      Index: "Compact<u128>",
+      Array4: "[u8;4]",
+      Array8: "[u8;8]",
+      Array16: "[u8;16]",
+      Array32: "[u8;32]",
+      Blob: "Bytes",
+    },
+  },
+  /** Lookup194: xcm::v2::Response */
+  XcmV2Response: {
+    _enum: {
+      Null: "Null",
+      Assets: "XcmV1MultiassetMultiAssets",
+      ExecutionResult: "Option<(u32,XcmV2TraitsError)>",
+      Version: "u32",
+    },
+  },
+  /** Lookup197: xcm::v2::traits::Error */
+  XcmV2TraitsError: {
+    _enum: {
+      Overflow: "Null",
+      Unimplemented: "Null",
+      UntrustedReserveLocation: "Null",
+      UntrustedTeleportLocation: "Null",
+      MultiLocationFull: "Null",
+      MultiLocationNotInvertible: "Null",
+      BadOrigin: "Null",
+      InvalidLocation: "Null",
+      AssetNotFound: "Null",
+      FailedToTransactAsset: "Null",
+      NotWithdrawable: "Null",
+      LocationCannotHold: "Null",
+      ExceedsMaxMessageSize: "Null",
+      DestinationUnsupported: "Null",
+      Transport: "Null",
+      Unroutable: "Null",
+      UnknownClaim: "Null",
+      FailedToDecode: "Null",
+      MaxWeightInvalid: "Null",
+      NotHoldingFees: "Null",
+      TooExpensive: "Null",
+      Trap: "u64",
+      UnhandledXcmVersion: "Null",
+      WeightLimitReached: "u64",
+      Barrier: "Null",
+      WeightNotComputable: "Null",
+    },
+  },
+  /** Lookup201: xcm::v0::OriginKind */
+  XcmV0OriginKind: {
+    _enum: ["Native", "SovereignAccount", "Superuser", "Xcm"],
+  },
+  /** Lookup202: xcm::double_encoded::DoubleEncoded<T> */
+  XcmDoubleEncoded: {
+    encoded: "Bytes",
+  },
+  /** Lookup203: xcm::v1::multiasset::MultiAssetFilter */
+  XcmV1MultiassetMultiAssetFilter: {
+    _enum: {
+      Definite: "XcmV1MultiassetMultiAssets",
+      Wild: "XcmV1MultiassetWildMultiAsset",
+    },
+  },
+  /** Lookup204: xcm::v1::multiasset::WildMultiAsset */
+  XcmV1MultiassetWildMultiAsset: {
+    _enum: {
+      All: "Null",
+      AllOf: {
+        id: "XcmV1MultiassetAssetId",
+        fun: "XcmV1MultiassetWildFungibility",
+      },
+    },
+  },
+  /** Lookup205: xcm::v1::multiasset::WildFungibility */
+  XcmV1MultiassetWildFungibility: {
+    _enum: ["Fungible", "NonFungible"],
+  },
+  /** Lookup206: xcm::v2::WeightLimit */
+  XcmV2WeightLimit: {
+    _enum: {
+      Unlimited: "Null",
+      Limited: "Compact<u64>",
+    },
+  },
+  /** Lookup208: pallet_xbi_portal::xbi_format::XBICheckIn<BlockNumber> */
+  PalletXbiPortalXbiFormatXbiCheckIn: {
+    xbi: "PalletXbiPortalXbiFormat",
+    notificationDeliveryTimeout: "u32",
+    notificationExecutionTimeout: "u32",
+  },
+  /** Lookup209: pallet_xbi_portal::xbi_format::XBIFormat */
+  PalletXbiPortalXbiFormat: {
+    instr: "PalletXbiPortalXbiFormatXbiInstr",
+    metadata: "PalletXbiPortalXbiFormatXbiMetadata",
+  },
+  /** Lookup210: pallet_xbi_portal::xbi_format::XBIInstr */
+  PalletXbiPortalXbiFormatXbiInstr: {
+    _enum: {
+      Unknown: {
+        identifier: "u8",
+        params: "Bytes",
+      },
+      CallNative: {
+        payload: "Bytes",
+      },
+      CallEvm: {
+        source: "H160",
+        target: "H160",
+        value: "U256",
+        input: "Bytes",
+        gasLimit: "u64",
+        maxFeePerGas: "U256",
+        maxPriorityFeePerGas: "Option<U256>",
+        nonce: "Option<U256>",
+        accessList: "Vec<(H160,Vec<H256>)>",
+      },
+      CallWasm: {
+        dest: "AccountId32",
+        value: "u128",
+        gasLimit: "u64",
+        storageDepositLimit: "Option<u128>",
+        data: "Bytes",
+      },
+      CallCustom: {
+        caller: "AccountId32",
+        dest: "AccountId32",
+        value: "u128",
+        input: "Bytes",
+        limit: "u64",
+        additionalParams: "Bytes",
+      },
+      Transfer: {
+        dest: "AccountId32",
+        value: "u128",
+      },
+      TransferORML: {
+        currencyId: "u64",
+        dest: "AccountId32",
+        value: "u128",
+      },
+      TransferAssets: {
+        currencyId: "u64",
+        dest: "AccountId32",
+        value: "u128",
+      },
+      Result: {
+        outcome: "PalletXbiPortalXbiFormatXbiCheckOutStatus",
+        output: "Bytes",
+        witness: "Bytes",
+      },
+      Notification: {
+        kind: "PalletXbiPortalXbiFormatXbiNotificationKind",
+        instructionId: "Bytes",
+        extra: "Bytes",
+      },
+    },
+  },
+  /** Lookup211: pallet_xbi_portal::xbi_format::XBIMetadata */
+  PalletXbiPortalXbiFormatXbiMetadata: {
+    id: "H256",
+    destParaId: "u32",
+    srcParaId: "u32",
+    sent: "PalletXbiPortalXbiFormatActionNotificationTimeouts",
+    delivered: "PalletXbiPortalXbiFormatActionNotificationTimeouts",
+    executed: "PalletXbiPortalXbiFormatActionNotificationTimeouts",
+    maxExecCost: "u128",
+    maxNotificationsCost: "u128",
+    actualAggregatedCost: "Option<u128>",
+    maybeKnownOrigin: "Option<AccountId32>",
+  },
+  /** Lookup212: pallet_xbi_portal::xbi_format::ActionNotificationTimeouts */
+  PalletXbiPortalXbiFormatActionNotificationTimeouts: {
+    action: "u32",
+    notification: "u32",
+  },
+  /** Lookup213: pallet_3vm::pallet::Call<T> */
+  Pallet3vmCall: "Null",
+  /** Lookup214: pallet_contracts::pallet::Call<T> */
+  PalletContractsCall: {
     _enum: {
       call: {
         dest: "MultiAddress",
@@ -1180,44 +1532,185 @@ export default {
       },
     },
   },
-  /** Lookup197: pallet_account_manager::pallet::Call<T> */
+  /** Lookup216: pallet_evm::pallet::Call<T> */
+  PalletEvmCall: {
+    _enum: {
+      withdraw: {
+        address: "H160",
+        value: "u128",
+      },
+      call: {
+        target: "H160",
+        input: "Bytes",
+        value: "U256",
+        gasLimit: "u64",
+        maxFeePerGas: "U256",
+        maxPriorityFeePerGas: "Option<U256>",
+        nonce: "Option<U256>",
+        accessList: "Vec<(H160,Vec<H256>)>",
+      },
+      create: {
+        init: "Bytes",
+        value: "U256",
+        gasLimit: "u64",
+        maxFeePerGas: "U256",
+        maxPriorityFeePerGas: "Option<U256>",
+        nonce: "Option<U256>",
+        accessList: "Vec<(H160,Vec<H256>)>",
+      },
+      create2: {
+        init: "Bytes",
+        salt: "H256",
+        value: "U256",
+        gasLimit: "u64",
+        maxFeePerGas: "U256",
+        maxPriorityFeePerGas: "Option<U256>",
+        nonce: "Option<U256>",
+        accessList: "Vec<(H160,Vec<H256>)>",
+      },
+      claim: "Null",
+    },
+  },
+  /** Lookup217: pallet_account_manager::pallet::Call<T> */
   PalletAccountManagerCall: {
     _enum: {
       deposit: {
+        chargeId: "H256",
         payee: "AccountId32",
-        recipient: "AccountId32",
-        amount: "u128",
+        chargeFee: "u128",
+        offeredReward: "u128",
+        source: "T3rnPrimitivesClaimableBenefitSource",
+        role: "T3rnPrimitivesClaimableCircuitRole",
+        maybeRecipient: "Option<AccountId32>",
       },
       finalize: {
-        executionId: "u64",
-        reason: "Option<T3rnPrimitivesAccountManagerReason>",
+        chargeId: "H256",
+        outcome: "T3rnPrimitivesAccountManagerOutcome",
+        maybeRecipient: "Option<AccountId32>",
+        maybeActualFees: "Option<u128>",
       },
     },
   },
-  /** Lookup199: t3rn_primitives::account_manager::Reason */
-  T3rnPrimitivesAccountManagerReason: {
-    _enum: ["UnexpectedFailure", "ContractReverted"],
+  /** Lookup218: t3rn_primitives::claimable::BenefitSource */
+  T3rnPrimitivesClaimableBenefitSource: {
+    _enum: ["TrafficFees", "TrafficRewards", "BootstrapPool", "Inflation"],
   },
-  /** Lookup200: pallet_sudo::pallet::Error<T> */
+  /** Lookup219: t3rn_primitives::claimable::CircuitRole */
+  T3rnPrimitivesClaimableCircuitRole: {
+    _enum: [
+      "Ambassador",
+      "Executor",
+      "Attester",
+      "Staker",
+      "Collator",
+      "ContractAuthor",
+      "Relayer",
+      "Requester",
+      "Local",
+    ],
+  },
+  /** Lookup220: t3rn_primitives::account_manager::Outcome */
+  T3rnPrimitivesAccountManagerOutcome: {
+    _enum: ["UnexpectedFailure", "Revert", "Commit"],
+  },
+  /** Lookup221: pallet_portal::pallet::Call<T> */
+  PalletPortalCall: {
+    _enum: {
+      register_gateway: {
+        url: "Bytes",
+        gatewayId: "[u8;4]",
+        gatewayAbi: "T3rnTypesAbiGatewayABIConfig",
+        gatewayVendor: "T3rnPrimitivesGatewayVendor",
+        gatewayType: "T3rnPrimitivesGatewayType",
+        gatewayGenesis: "T3rnPrimitivesGatewayGenesisConfig",
+        gatewaySysProps: "T3rnPrimitivesGatewaySysProps",
+        allowedSideEffects: "Vec<[u8;4]>",
+        securityCoordinates: "Bytes",
+        encodedRegistrationData: "Bytes",
+      },
+      set_owner: {
+        gatewayId: "[u8;4]",
+        encodedNewOwner: "Bytes",
+      },
+      set_operational: {
+        gatewayId: "[u8;4]",
+        operational: "bool",
+      },
+      submit_headers: {
+        gatewayId: "[u8;4]",
+        encodedHeaderData: "Bytes",
+      },
+    },
+  },
+  /** Lookup222: t3rn_types::abi::GatewayABIConfig */
+  T3rnTypesAbiGatewayABIConfig: {
+    blockNumberTypeSize: "u16",
+    hashSize: "u16",
+    hasher: "T3rnTypesAbiHasherAlgo",
+    crypto: "T3rnTypesAbiCryptoAlgo",
+    addressLength: "u16",
+    valueTypeSize: "u16",
+    decimals: "u16",
+    structs: "Vec<T3rnTypesAbiStructDecl>",
+  },
+  /** Lookup224: t3rn_types::abi::StructDecl */
+  T3rnTypesAbiStructDecl: {
+    name: "T3rnTypesAbiType",
+    fields: "Vec<T3rnTypesAbiParameter>",
+    offsets: "Vec<u16>",
+  },
+  /** Lookup226: t3rn_types::abi::Parameter */
+  T3rnTypesAbiParameter: {
+    name: "Option<Bytes>",
+    ty: "T3rnTypesAbiType",
+    no: "u32",
+    indexed: "Option<bool>",
+  },
+  /** Lookup229: t3rn_primitives::GatewayVendor */
+  T3rnPrimitivesGatewayVendor: {
+    _enum: ["InternalXBI", "PolkadotLike", "Rococo", "EvmBased"],
+  },
+  /** Lookup230: t3rn_primitives::GatewayType */
+  T3rnPrimitivesGatewayType: {
+    _enum: {
+      ProgrammableInternal: "u32",
+      ProgrammableExternal: "u32",
+      TxOnly: "u32",
+      OnCircuit: "u32",
+    },
+  },
+  /** Lookup231: t3rn_primitives::GatewayGenesisConfig */
+  T3rnPrimitivesGatewayGenesisConfig: {
+    modulesEncoded: "Option<Bytes>",
+    extrinsicsVersion: "u8",
+    genesisHash: "Bytes",
+  },
+  /** Lookup232: t3rn_primitives::GatewaySysProps */
+  T3rnPrimitivesGatewaySysProps: {
+    ss58Format: "u16",
+    tokenSymbol: "Bytes",
+    tokenDecimals: "u8",
+  },
+  /** Lookup234: pallet_sudo::pallet::Error<T> */
   PalletSudoError: {
     _enum: ["RequireSudo"],
   },
-  /** Lookup201: pallet_utility::pallet::Error<T> */
+  /** Lookup235: pallet_utility::pallet::Error<T> */
   PalletUtilityError: {
     _enum: ["TooManyCalls"],
   },
-  /** Lookup204: orml_tokens::BalanceLock<Balance> */
+  /** Lookup238: orml_tokens::BalanceLock<Balance> */
   OrmlTokensBalanceLock: {
     id: "[u8;8]",
     amount: "u128",
   },
-  /** Lookup206: orml_tokens::AccountData<Balance> */
+  /** Lookup240: orml_tokens::AccountData<Balance> */
   OrmlTokensAccountData: {
     free: "u128",
     reserved: "u128",
     frozen: "u128",
   },
-  /** Lookup207: orml_tokens::module::Error<T> */
+  /** Lookup241: orml_tokens::module::Error<T> */
   OrmlTokensModuleError: {
     _enum: [
       "BalanceTooLow",
@@ -1229,7 +1722,7 @@ export default {
       "DeadAccount",
     ],
   },
-  /** Lookup208: t3rn_primitives::side_effect::interface::SideEffectInterface */
+  /** Lookup242: t3rn_primitives::side_effect::interface::SideEffectInterface */
   T3rnPrimitivesSideEffectInterfaceSideEffectInterface: {
     id: "[u8;4]",
     name: "Bytes",
@@ -1240,7 +1733,7 @@ export default {
     commitEvents: "Vec<Bytes>",
     revertEvents: "Vec<Bytes>",
   },
-  /** Lookup209: t3rn_primitives::xdns::XdnsRecord<sp_core::crypto::AccountId32> */
+  /** Lookup243: t3rn_primitives::xdns::XdnsRecord<sp_core::crypto::AccountId32> */
   T3rnPrimitivesXdnsXdnsRecord: {
     url: "Bytes",
     gatewayAbi: "T3rnTypesAbiGatewayABIConfig",
@@ -1251,85 +1744,45 @@ export default {
     parachain: "Option<T3rnPrimitivesXdnsParachain>",
     gatewaySysProps: "T3rnPrimitivesGatewaySysProps",
     registrant: "Option<AccountId32>",
+    securityCoordinates: "Bytes",
     lastFinalized: "Option<u64>",
     allowedSideEffects: "Vec<[u8;4]>",
   },
-  /** Lookup210: pallet_xdns::pallet::Error<T> */
+  /** Lookup245: t3rn_primitives::xdns::Parachain */
+  T3rnPrimitivesXdnsParachain: {
+    relayChainId: "[u8;4]",
+    id: "u32",
+  },
+  /** Lookup246: pallet_xdns::pallet::Error<T> */
   PalletXdnsError: {
     _enum: [
       "XdnsRecordAlreadyExists",
       "UnknownXdnsRecord",
       "XdnsRecordNotFound",
       "SideEffectInterfaceAlreadyExists",
+      "SideEffectInterfaceNotFound",
+      "NoParachainInfoFound",
     ],
   },
-  /** Lookup214: t3rn_primitives::bridges::header_chain::AuthoritySet */
-  T3rnPrimitivesBridgesHeaderChainAuthoritySet: {
-    authorities: "Vec<(SpFinalityGrandpaAppPublic,u64)>",
-    setId: "u64",
-  },
-  /** Lookup215: pallet_multi_finality_verifier::pallet::Error<T, I> */
-  PalletMultiFinalityVerifierError: {
-    _enum: [
-      "InvalidJustification",
-      "InvalidAuthoritySet",
-      "TooManyRequests",
-      "OldHeader",
-      "UnknownHeader",
-      "UnsupportedScheduledChange",
-      "AlreadyInitialized",
-      "Halted",
-      "StorageRootMismatch",
-      "InvalidAnchorHeader",
-      "NoFinalizedHeader",
-      "NoParachainEntryFound",
-    ],
-  },
-  /** Lookup220: pallet_contracts_registry::pallet::Error<T> */
+  /** Lookup247: pallet_contracts_registry::pallet::Error<T> */
   PalletContractsRegistryError: {
     _enum: ["ContractAlreadyExists", "UnknownContract"],
   },
-  /** Lookup221: pallet_circuit_portal::pallet::Error<T> */
-  PalletCircuitPortalError: {
-    _enum: [
-      "InvalidKey",
-      "IOScheduleNoEndingSemicolon",
-      "IOScheduleEmpty",
-      "IOScheduleUnknownCompose",
-      "ProcessStepGatewayNotRecognised",
-      "StepConfirmationBlockUnrecognised",
-      "StepConfirmationGatewayNotRecognised",
-      "SideEffectConfirmationInvalidInclusionProof",
-      "VendorUnknown",
-      "SideEffectTypeNotRecognized",
-      "StepConfirmationDecodingError",
-      "ReadLatestTargetHashError",
-      "ReadTargetHeightDecodeCmpHeightError",
-      "ReadTargetHeightDecodeBlockHashError",
-      "ReadTargetHeightReplayAttackDetected",
-      "ReadTargetHeightError",
-      "ContractDoesNotExists",
-      "RequesterNotEnoughBalance",
-      "ParachainHeaderNotVerified",
-      "NoParachainEntryFound",
-      "StorageProofDecodingError",
-      "BridgedHeaderDecodingError",
-    ],
-  },
   /**
-   * Lookup222:
+   * Lookup249:
    * pallet_circuit::state::InsuranceDeposit<sp_core::crypto::AccountId32,
    * BlockNumber, BalanceOf>
    */
   PalletCircuitStateInsuranceDeposit: {
     insurance: "u128",
+    reservedBond: "u128",
     reward: "u128",
     requester: "AccountId32",
     bondedRelayer: "Option<AccountId32>",
     status: "PalletCircuitStateCircuitStatus",
     requestedAt: "u32",
   },
-  /** Lookup223: pallet_circuit::state::CircuitStatus */
+  /** Lookup250: pallet_circuit::state::CircuitStatus */
   PalletCircuitStateCircuitStatus: {
     _enum: [
       "Requested",
@@ -1341,12 +1794,13 @@ export default {
       "FinishedAllSteps",
       "RevertTimedOut",
       "RevertKill",
+      "RevertMisbehaviour",
       "Committed",
       "Reverted",
     ],
   },
   /**
-   * Lookup225: pallet_circuit::state::XExecSignal<sp_core::crypto::AccountId32,
+   * Lookup251: pallet_circuit::state::XExecSignal<sp_core::crypto::AccountId32,
    * BlockNumber, BalanceOf>
    */
   PalletCircuitStateXExecSignal: {
@@ -1357,40 +1811,33 @@ export default {
     stepsCnt: "(u32,u32)",
     totalReward: "Option<u128>",
   },
-  /** Lookup228: t3rn_primitives::volatile::LocalState */
+  /** Lookup254: t3rn_primitives::volatile::LocalState */
   T3rnPrimitivesVolatileLocalState: {
     state: "BTreeMap<[u8;32], Bytes>",
   },
-  /** Lookup234: t3rn_sdk_primitives::signal::ExecutionSignal<primitive_types::H256> */
+  /** Lookup260: t3rn_sdk_primitives::signal::ExecutionSignal<primitive_types::H256> */
   T3rnSdkPrimitivesSignalExecutionSignal: {
     step: "u32",
     kind: "T3rnSdkPrimitivesSignalSignalKind",
     executionId: "H256",
   },
-  /** Lookup235: t3rn_sdk_primitives::signal::SignalKind */
-  T3rnSdkPrimitivesSignalSignalKind: {
-    _enum: {
-      Complete: "Null",
-      Kill: "T3rnSdkPrimitivesSignalKillReason",
-    },
-  },
-  /** Lookup236: t3rn_sdk_primitives::signal::KillReason */
-  T3rnSdkPrimitivesSignalKillReason: {
-    _enum: ["Unhandled", "Codec", "Timeout"],
-  },
-  /** Lookup238: frame_support::PalletId */
+  /** Lookup262: frame_support::PalletId */
   FrameSupportPalletId: "[u8;8]",
-  /** Lookup239: pallet_circuit::pallet::Error<T> */
+  /** Lookup263: pallet_circuit::pallet::Error<T> */
   PalletCircuitError: {
     _enum: [
+      "UpdateXtxTriggeredWithUnexpectedStatus",
       "ApplyTriggeredWithUnexpectedStatus",
       "RequesterNotEnoughBalance",
       "ContractXtxKilledRunOutOfFunds",
       "ChargingTransferFailed",
+      "FinalizeSquareUpFailed",
+      "CriticalStateSquareUpCalledToFinishWithoutFsxConfirmed",
       "RewardTransferFailed",
       "RefundTransferFailed",
       "SideEffectsValidationFailed",
       "InsuranceBondNotRequired",
+      "InsuranceBondTooLow",
       "InsuranceBondAlreadyDeposited",
       "SetupFailed",
       "SetupFailedXtxNotFound",
@@ -1408,89 +1855,148 @@ export default {
       "SetupFailedEmptyXtx",
       "ApplyFailed",
       "DeterminedForbiddenXtxStatus",
+      "SideEffectIsAlreadyScheduledToExecuteOverXBI",
       "LocalSideEffectExecutionNotApplicable",
+      "LocalExecutionUnauthorized",
+      "FailedToConvertSFX2XBI",
+      "FailedToCheckInOverXBI",
+      "FailedToCreateXBIMetadataDueToWrongAccountConversion",
+      "FailedToConvertXBIResult2SFXConfirmation",
+      "FailedToEnterXBIPortal",
+      "FailedToExitXBIPortal",
+      "XBIExitFailedOnSFXConfirmation",
       "UnsupportedRole",
       "InvalidLocalTrigger",
       "SignalQueueFull",
     ],
   },
-  /** Lookup240: pallet_portal::pallet::Error<T> */
-  PalletPortalError: {
+  /** Lookup264: pallet_treasury::inflation::InflationInfo */
+  PalletTreasuryInflationInflationInfo: {
+    annual: {
+      min: "Perbill",
+      ideal: "Perbill",
+      max: "Perbill",
+    },
+    round: {
+      min: "Perbill",
+      ideal: "Perbill",
+      max: "Perbill",
+    },
+  },
+  /** Lookup265: t3rn_primitives::common::RoundInfo<BlockNumber> */
+  T3rnPrimitivesCommonRoundInfo: {
+    index: "u32",
+    head: "u32",
+    term: "u32",
+  },
+  /** Lookup267: pallet_treasury::pallet::Error<T> */
+  PalletTreasuryError: {
     _enum: [
-      "XdnsRecordCreationFailed",
-      "UnimplementedGatewayVendor",
-      "RegistrationError",
-      "GatewayVendorNotFound",
-      "SetOwnerError",
-      "SetOperationalError",
-      "SubmitHeaderError",
-      "NoGatewayHeightAvailable",
-      "SideEffectConfirmationFailed",
+      "InvalidInflationConfig",
+      "InvalidInflationAllocation",
+      "ValueNotChanged",
+      "RoundTermTooShort",
+      "NotBeneficiary",
+      "NoRewardsAvailable",
     ],
   },
-  /** Lookup241: pallet_grandpa_finality_verifier::types::Parachain */
-  PalletGrandpaFinalityVerifierParachain: {
-    relayChainId: "[u8;4]",
-    id: "u32",
+  /**
+   * Lookup269:
+   * t3rn_primitives::claimable::ClaimableArtifacts<sp_core::crypto::AccountId32,
+   * Balance>
+   */
+  T3rnPrimitivesClaimableClaimableArtifacts: {
+    beneficiary: "AccountId32",
+    role: "T3rnPrimitivesClaimableCircuitRole",
+    totalRoundClaim: "u128",
+    benefitSource: "T3rnPrimitivesClaimableBenefitSource",
   },
-  /** Lookup242: pallet_grandpa_finality_verifier::pallet::Error<T, I> */
-  PalletGrandpaFinalityVerifierError: {
+  /** Lookup270: pallet_clock::pallet::Error<T> */
+  PalletClockError: "Null",
+  /** Lookup271: pallet_xbi_portal::xbi_format::XBICheckOut */
+  PalletXbiPortalXbiFormatXbiCheckOut: {
+    xbi: "PalletXbiPortalXbiFormatXbiInstr",
+    resolutionStatus: "PalletXbiPortalXbiFormatXbiCheckOutStatus",
+    checkoutTimeout: "u32",
+    actualExecutionCost: "u128",
+    actualDeliveryCost: "u128",
+    actualAggregatedCost: "u128",
+  },
+  /** Lookup272: pallet_xbi_portal::pallet::Error<T> */
+  PalletXbiPortalError: {
     _enum: [
-      "InvalidJustification",
-      "InvalidAuthoritySet",
-      "TooManyRequests",
-      "OldHeader",
-      "UnknownHeader",
-      "UnsupportedScheduledChange",
-      "AlreadyInitialized",
-      "Halted",
-      "StorageRootMismatch",
-      "InvalidAnchorHeader",
-      "NoFinalizedHeader",
-      "NoParachainEntryFound",
+      "EnterFailedOnXcmSend",
+      "EnterFailedOnMultiLocationTransform",
+      "ExitUnhandled",
+      "XBIABIFailedToCastBetweenTypesValue",
+      "XBIABIFailedToCastBetweenTypesAddress",
+      "XBIInstructionNotAllowedHere",
+      "XBIAlreadyCheckedIn",
+      "XBINotificationTimeOutDelivery",
+      "XBINotificationTimeOutExecution",
+      "NoXBICallbackSupported",
+      "NoEVMSupportedAtDest",
+      "NoWASMSupportedAtDest",
+      "No3VMSupportedAtDest",
+      "NoTransferSupportedAtDest",
+      "NoTransferAssetsSupportedAtDest",
+      "NoTransferORMLSupportedAtDest",
+      "NoTransferEscrowSupportedAtDest",
+      "NoTransferMultiEscrowSupportedAtDest",
+      "NoSwapSupportedAtDest",
+      "NoAddLiquiditySupportedAtDest",
     ],
   },
-  /** Lookup243: pallet_wasm_contracts::wasm::PrefabWasmModule<T> */
-  PalletWasmContractsWasmPrefabWasmModule: {
+  /** Lookup274: pallet_3vm::pallet::Error<T> */
+  Pallet3vmError: {
+    _enum: [
+      "ExceededSignalBounceThreshold",
+      "CannotTriggerWithoutSideEffects",
+      "ContractNotFound",
+      "InvalidOrigin",
+      "CannotInstantiateContract",
+      "ContractCannotRemunerate",
+      "ContractCannotHaveStorage",
+      "ContractCannotGenerateSideEffects",
+      "InvalidPrecompilePointer",
+      "InvalidPrecompileArgs",
+    ],
+  },
+  /** Lookup275: pallet_contracts::wasm::PrefabWasmModule<T> */
+  PalletContractsWasmPrefabWasmModule: {
     instructionWeightsVersion: "Compact<u32>",
     initial: "Compact<u32>",
     maximum: "Compact<u32>",
     code: "Bytes",
+    author: "Option<T3rnPrimitivesContractsRegistryAuthorInfo>",
+    kind: "T3rnPrimitivesContractMetadataContractType",
   },
-  /** Lookup244: pallet_wasm_contracts::wasm::OwnerInfo<T> */
-  PalletWasmContractsWasmOwnerInfo: {
+  /** Lookup277: pallet_contracts::wasm::OwnerInfo<T> */
+  PalletContractsWasmOwnerInfo: {
     owner: "AccountId32",
     deposit: "Compact<u128>",
     refcount: "Compact<u64>",
   },
-  /**
-   * Lookup245:
-   * pallet_wasm_contracts::storage::RawContractInfo<primitive_types::H256, Balance>
-   */
-  PalletWasmContractsStorageRawContractInfo: {
-    kind: "PalletWasmContractsContractKind",
+  /** Lookup278: pallet_contracts::storage::RawContractInfo<primitive_types::H256, Balance> */
+  PalletContractsStorageRawContractInfo: {
     trieId: "Bytes",
     codeHash: "H256",
     storageDeposit: "u128",
   },
-  /** Lookup246: pallet_wasm_contracts::ContractKind */
-  PalletWasmContractsContractKind: {
-    _enum: ["Pallet", "System", "Registry"],
-  },
-  /** Lookup248: pallet_wasm_contracts::storage::DeletedContract */
-  PalletWasmContractsStorageDeletedContract: {
+  /** Lookup280: pallet_contracts::storage::DeletedContract */
+  PalletContractsStorageDeletedContract: {
     trieId: "Bytes",
   },
-  /** Lookup250: pallet_wasm_contracts::schedule::Schedule<T> */
-  PalletWasmContractsSchedule: {
-    limits: "PalletWasmContractsScheduleLimits",
-    instructionWeights: "PalletWasmContractsScheduleInstructionWeights",
-    hostFnWeights: "PalletWasmContractsScheduleHostFnWeights",
+  /** Lookup281: pallet_contracts::schedule::Schedule<T> */
+  PalletContractsSchedule: {
+    limits: "PalletContractsScheduleLimits",
+    instructionWeights: "PalletContractsScheduleInstructionWeights",
+    hostFnWeights: "PalletContractsScheduleHostFnWeights",
   },
-  /** Lookup251: pallet_wasm_contracts::schedule::Limits */
-  PalletWasmContractsScheduleLimits: {
+  /** Lookup282: pallet_contracts::schedule::Limits */
+  PalletContractsScheduleLimits: {
     eventTopics: "u32",
-    stackHeight: "u32",
+    stackHeight: "Option<u32>",
     globals: "u32",
     parameters: "u32",
     memoryPages: "u32",
@@ -1501,8 +2007,8 @@ export default {
     payloadLen: "u32",
     codeLen: "u32",
   },
-  /** Lookup252: pallet_wasm_contracts::schedule::InstructionWeights<T> */
-  PalletWasmContractsScheduleInstructionWeights: {
+  /** Lookup283: pallet_contracts::schedule::InstructionWeights<T> */
+  PalletContractsScheduleInstructionWeights: {
     _alias: {
       r_if: "r#if",
     },
@@ -1559,13 +2065,15 @@ export default {
     i64rotl: "u32",
     i64rotr: "u32",
   },
-  /** Lookup253: pallet_wasm_contracts::schedule::HostFnWeights<T> */
-  PalletWasmContractsScheduleHostFnWeights: {
+  /** Lookup284: pallet_contracts::schedule::HostFnWeights<T> */
+  PalletContractsScheduleHostFnWeights: {
     _alias: {
       r_return: "r#return",
     },
     caller: "u64",
     isContract: "u64",
+    codeHash: "u64",
+    ownCodeHash: "u64",
     callerIsOrigin: "u64",
     address: "u64",
     gasLeft: "u64",
@@ -1616,8 +2124,8 @@ export default {
     hashBlake2128PerByte: "u64",
     ecdsaRecover: "u64",
   },
-  /** Lookup254: pallet_wasm_contracts::pallet::Error<T> */
-  PalletWasmContractsError: {
+  /** Lookup285: pallet_contracts::pallet::Error<T> */
+  PalletContractsError: {
     _enum: [
       "InvalidScheduleVersion",
       "InvalidCallFlags",
@@ -1648,33 +2156,131 @@ export default {
       "CodeInUse",
       "ContractReverted",
       "CodeRejected",
-      "NotAllowedInVolatileMode",
-      "InvalidSideEffect",
-      "CannotTriggerWithoutSideEffects",
-      "CircuitStepHandlingFailed",
-      "ExceededSignalBounceThreshold",
-      "Noop",
-      "ContractCannotBeInstantiated",
-      "CannotTriggerSideEffects",
-      "DoesNotHaveStorage",
-      "AuthorNotRemuneratable",
+      "NoStateReturned",
+    ],
+  },
+  /** Lookup287: pallet_evm::ThreeVmInfo<T> */
+  PalletEvmThreeVmInfo: {
+    author: "T3rnPrimitivesContractsRegistryAuthorInfo",
+    kind: "T3rnPrimitivesContractMetadataContractType",
+  },
+  /** Lookup288: pallet_evm::pallet::Error<T> */
+  PalletEvmError: {
+    _enum: [
+      "BalanceLow",
+      "FeeOverflow",
+      "PaymentOverflow",
+      "WithdrawFailed",
+      "GasPriceTooLow",
+      "InvalidNonce",
+      "InvalidRegistryHash",
+      "RemunerateAuthor",
+      "ExecutedFailed",
+      "CreatedFailed",
     ],
   },
   /**
-   * Lookup255:
-   * t3rn_primitives::account_manager::ExecutionRegistryItem<sp_core::crypto::AccountId32,
+   * Lookup290:
+   * t3rn_primitives::account_manager::RequestCharge<sp_core::crypto::AccountId32,
    * Balance>
    */
-  T3rnPrimitivesAccountManagerExecutionRegistryItem: {
+  T3rnPrimitivesAccountManagerRequestCharge: {
     payee: "AccountId32",
+    offeredReward: "u128",
+    chargeFee: "u128",
     recipient: "AccountId32",
-    balance: "u128",
+    source: "T3rnPrimitivesClaimableBenefitSource",
+    role: "T3rnPrimitivesClaimableCircuitRole",
   },
-  /** Lookup256: pallet_account_manager::pallet::Error<T> */
+  /**
+   * Lookup291:
+   * t3rn_primitives::account_manager::Settlement<sp_core::crypto::AccountId32, Balance>
+   */
+  T3rnPrimitivesAccountManagerSettlement: {
+    requester: "AccountId32",
+    recipient: "AccountId32",
+    settlementAmount: "u128",
+    outcome: "T3rnPrimitivesAccountManagerOutcome",
+    source: "T3rnPrimitivesClaimableBenefitSource",
+    role: "T3rnPrimitivesClaimableCircuitRole",
+  },
+  /** Lookup292: pallet_account_manager::pallet::Error<T> */
   PalletAccountManagerError: {
-    _enum: ["ExecutionNotRegistered", "ExecutionAlreadyRegistered"],
+    _enum: [
+      "PendingChargeNotFoundAtCommit",
+      "PendingChargeNotFoundAtRefund",
+      "ExecutionNotRegistered",
+      "ExecutionAlreadyRegistered",
+      "SkippingEmptyCharges",
+      "NoChargeOfGivenIdRegistered",
+      "ChargeAlreadyRegistered",
+      "ChargeOrSettlementCalculationOverflow",
+      "DecodingExecutionIDFailed",
+    ],
   },
-  /** Lookup258: sp_runtime::MultiSignature */
+  /** Lookup293: pallet_portal::pallet::Error<T> */
+  PalletPortalError: {
+    _enum: [
+      "XdnsRecordCreationFailed",
+      "UnimplementedGatewayVendor",
+      "RegistrationError",
+      "GatewayVendorNotFound",
+      "SetOwnerError",
+      "SetOperationalError",
+      "SubmitHeaderError",
+      "NoGatewayHeightAvailable",
+      "SideEffectConfirmationFailed",
+    ],
+  },
+  /**
+   * Lookup296: sp_runtime::generic::header::Header<Number,
+   * sp_runtime::traits::BlakeTwo256>
+   */
+  SpRuntimeHeader: {
+    parentHash: "H256",
+    number: "Compact<u32>",
+    stateRoot: "H256",
+    extrinsicsRoot: "H256",
+    digest: "SpRuntimeDigest",
+  },
+  /** Lookup297: sp_runtime::traits::BlakeTwo256 */
+  SpRuntimeBlakeTwo256: "Null",
+  /** Lookup298: pallet_grandpa_finality_verifier::bridges::header_chain::AuthoritySet */
+  PalletGrandpaFinalityVerifierBridgesHeaderChainAuthoritySet: {
+    authorities: "Vec<(SpFinalityGrandpaAppPublic,u64)>",
+    setId: "u64",
+  },
+  /** Lookup299: pallet_grandpa_finality_verifier::types::Parachain */
+  PalletGrandpaFinalityVerifierParachain: {
+    relayChainId: "[u8;4]",
+    id: "u32",
+  },
+  /** Lookup300: pallet_grandpa_finality_verifier::pallet::Error<T, I> */
+  PalletGrandpaFinalityVerifierError: {
+    _enum: [
+      "EmptyRangeSubmitted",
+      "RangeToLarge",
+      "NoFinalizedHeader",
+      "InvalidAuthoritySet",
+      "InvalidGrandpaJustification",
+      "InvalidRangeLinkage",
+      "InvalidJustificationLinkage",
+      "ParachainEntryNotFound",
+      "StorageRootNotFound",
+      "InclusionDataDecodeError",
+      "InvalidStorageProof",
+      "EventNotIncluded",
+      "HeaderDecodingError",
+      "HeaderDataDecodingError",
+      "StorageRootMismatch",
+      "UnknownHeader",
+      "EventDecodingFailed",
+      "UnkownSideEffect",
+      "UnsupportedScheduledChange",
+      "Halted",
+    ],
+  },
+  /** Lookup302: sp_runtime::MultiSignature */
   SpRuntimeMultiSignature: {
     _enum: {
       Ed25519: "SpCoreEd25519Signature",
@@ -1682,24 +2288,24 @@ export default {
       Ecdsa: "SpCoreEcdsaSignature",
     },
   },
-  /** Lookup259: sp_core::sr25519::Signature */
+  /** Lookup303: sp_core::sr25519::Signature */
   SpCoreSr25519Signature: "[u8;64]",
-  /** Lookup260: sp_core::ecdsa::Signature */
+  /** Lookup304: sp_core::ecdsa::Signature */
   SpCoreEcdsaSignature: "[u8;65]",
-  /** Lookup263: frame_system::extensions::check_non_zero_sender::CheckNonZeroSender<T> */
+  /** Lookup307: frame_system::extensions::check_non_zero_sender::CheckNonZeroSender<T> */
   FrameSystemExtensionsCheckNonZeroSender: "Null",
-  /** Lookup264: frame_system::extensions::check_spec_version::CheckSpecVersion<T> */
+  /** Lookup308: frame_system::extensions::check_spec_version::CheckSpecVersion<T> */
   FrameSystemExtensionsCheckSpecVersion: "Null",
-  /** Lookup265: frame_system::extensions::check_tx_version::CheckTxVersion<T> */
+  /** Lookup309: frame_system::extensions::check_tx_version::CheckTxVersion<T> */
   FrameSystemExtensionsCheckTxVersion: "Null",
-  /** Lookup266: frame_system::extensions::check_genesis::CheckGenesis<T> */
+  /** Lookup310: frame_system::extensions::check_genesis::CheckGenesis<T> */
   FrameSystemExtensionsCheckGenesis: "Null",
-  /** Lookup269: frame_system::extensions::check_nonce::CheckNonce<T> */
+  /** Lookup313: frame_system::extensions::check_nonce::CheckNonce<T> */
   FrameSystemExtensionsCheckNonce: "Compact<u32>",
-  /** Lookup270: frame_system::extensions::check_weight::CheckWeight<T> */
+  /** Lookup314: frame_system::extensions::check_weight::CheckWeight<T> */
   FrameSystemExtensionsCheckWeight: "Null",
-  /** Lookup271: pallet_transaction_payment::ChargeTransactionPayment<T> */
+  /** Lookup315: pallet_transaction_payment::ChargeTransactionPayment<T> */
   PalletTransactionPaymentChargeTransactionPayment: "Compact<u128>",
-  /** Lookup272: circuit_standalone_runtime::Runtime */
+  /** Lookup316: circuit_standalone_runtime::Runtime */
   CircuitStandaloneRuntimeRuntime: "Null",
 };

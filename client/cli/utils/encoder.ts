@@ -1,8 +1,12 @@
 const BN = require('bn.js');
 
 export const amountLeArr = (amount: number, decimals: any, size: any) => {
-    let bn = new BN(amount * Math.pow(10, decimals))
+    let bn = computeDecimalsBN(amount, decimals)
     return bn.toArray("le", size)
+}
+
+export const computeDecimalsBN = (amount: number, decimals: any) => {
+    return  new BN(amount * Math.pow(10, decimals))
 }
 
 export const optionalInsurance = (insurance: number, reward: number, decimals: number, size: number) =>  {

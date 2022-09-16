@@ -2,7 +2,6 @@ use circuit_standalone_runtime::{
     AccountId, AuraConfig, BalancesConfig, EvmConfig, GenesisConfig, GrandpaConfig,
     Signature, SudoConfig, SystemConfig, XDNSConfig, WASM_BINARY,
 };
-
 use jsonrpc_runtime_client::{
     create_rpc_client, get_gtwy_init_data, get_metadata, get_parachain_id, ConnectionParams,
 };
@@ -235,6 +234,9 @@ pub fn development_config() -> Result<ChainSpec, String> {
                     get_account_id_from_seed::<sr25519::Public>("Bob"),
                     get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
                     get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+                    get_account_id_from_seed::<sr25519::Public>("Executor//default"),
+                    get_account_id_from_seed::<sr25519::Public>("Cli//default"),
+                    get_account_id_from_seed::<sr25519::Public>("Ranger//default"),
                 ],
                 vec![],
                 standard_side_effects(),
@@ -341,7 +343,7 @@ fn testnet_genesis(
             balances: endowed_accounts
                 .iter()
                 .cloned()
-                .map(|k| (k, 1 << 60))
+                .map(|k| (k, (10000 * 10u128.pow(12)).into()))
                 .collect(),
         },
         aura: AuraConfig {

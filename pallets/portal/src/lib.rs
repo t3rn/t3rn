@@ -208,7 +208,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             gateway_id: ChainId,
             encoded_header_data: Vec<u8>,
-        ) -> DispatchResult {
+        ) -> DispatchResultWithPostInfo {
             let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)?;
 
             let res = match vendor {

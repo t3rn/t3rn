@@ -67,6 +67,7 @@ class CircuitCLI {
                 registrationData[0].gateway_genesis,
                 registrationData[0].gateway_sys_props,
                 registrationData[0].allowed_side_effects,
+                registrationData[0].security_coordinates,
                 registrationData[0].registration_data.toHex()
             );
             let submissionHeight = await this.circuitRelayer.sudoSignAndSend(tx)

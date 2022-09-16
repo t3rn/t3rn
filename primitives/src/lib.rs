@@ -48,7 +48,6 @@ use std::fmt::Debug;
 pub mod account_manager;
 pub mod bridges;
 pub mod circuit;
-pub mod circuit_portal;
 pub mod common;
 pub mod claimable;
 pub mod clock;
@@ -101,9 +100,9 @@ impl GatewayType {
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum GatewayVendor {
-    Rococo,
     InternalXBI,
     PolkadotLike,
+    Rococo,
     EvmBased,
 }
 

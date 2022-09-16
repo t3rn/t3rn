@@ -1,6 +1,6 @@
 import { ApiPromise } from '@polkadot/api';
 import config from "../config/setup"
-import { amountLeArr, optionalInsurance } from "./encoder";
+import { amountLeArr, optionalInsurance, computeDecimalsBN } from "./encoder";
 import { addressStringToPubKey } from "./decoder";
 
 export const transferArgs = (target: string, from: string, receiver: string, amount: number, bond: number, reward: number) => {
@@ -21,14 +21,15 @@ export const sideEffect = (circuitApi: ApiPromise, data: any, sender: any) => {
     }
     return circuitApi.createType("SideEffect",
     {
-            target: circuitApi.createType("TargetId", data.target),
-            prize: circuitApi.createType("BalanceOf", 0),
-            ordered_at: circuitApi.createType("BlockNumber", 0),
-            encoded_action: circuitApi.createType("Bytes", data.type), //tran
-            encoded_args: circuitApi.createType("Vec<Bytes>", encodedArgs),
-            signature: circuitApi.createType("Bytes", data.signature),
-            enforce_executioner: circuitApi.createType("Option<AccountId>", data.executioner)
-        })
+        target: circuitApi.createType("TargetId", data.target),
+        prize: circuitApi.createType("BalanceOf", computeDecimalsBN(data.reward, config.circuit.decimals).toString()),
+        ordered_at: circuitApi.createType("BlockNumber", 0),
+        encoded_action: circuitApi.createType("Bytes", data.type), //tran
+        encoded_args: circuitApi.createType("Vec<Bytes>", encodedArgs),
+        signature: circuitApi.createType("Bytes", data.signature),
+        enforce_executioner: circuitApi.createType("Option<AccountId>", data.executioner)
+    })
+
 }
 
 const getGatewayData = (target: string) => {

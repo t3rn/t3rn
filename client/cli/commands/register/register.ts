@@ -1,10 +1,7 @@
-import {registerPortalSubstrate, registerSubstrate} from "./substrate";
+import {registerPortalSubstrate} from "./substrate";
 
 export const register = async (circuitApi: any, gatewayData: any, epochsAgo: number) => {
     switch(gatewayData.registrationData.gatewayVendor) {
-        case "Substrate": {
-            return registerSubstrate(circuitApi, gatewayData)
-        }
         case "Rococo": {
             return registerPortalSubstrate(circuitApi, gatewayData, epochsAgo)
         }

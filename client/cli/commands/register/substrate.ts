@@ -4,19 +4,6 @@ import { fetchBestFinalizedHash, fetchLatestPossibleParachainHeader } from "../.
 
 const axios = require('axios').default;
 
-export const registerSubstrate = async (circuit: ApiPromise, gatewayData: any) => {
-    const target = await ApiPromise.create({
-        provider: new WsProvider(gatewayData.rpc),
-    })
-
-    if(gatewayData.registrationData.relaychain === null) { // relaychain
-        return registerRelaychain(circuit, target, gatewayData)
-    } else {
-        console.log("Not implemented!")
-        return
-    }
-}
-
 export const registerPortalSubstrate = async (circuit: ApiPromise, gatewayData: any, epochsAgo: number) => {
     const target = await ApiPromise.create({
         provider: new WsProvider(gatewayData.rpc),
@@ -41,6 +28,7 @@ const registerPortalRelaychain = async (circuit: ApiPromise, target: ApiPromise,
         gateway_genesis: await createGatewayGenesis(circuit, target),
         gateway_sys_props: createGatewaySysProps(circuit, gatewayData.registrationData.gatewaySysProps),
         allowed_side_effects: circuit.createType('Vec<AllowedSideEffect>', gatewayData.registrationData.allowedSideEffects),
+        security_coordinates: circuit.createType('Vec<u8>', []),
         registration_data: circuit.createType('GrandpaRegistrationData', [
             registrationHeader.toHex(),
             Array.from(authorities),
@@ -76,28 +64,6 @@ const registerPortalParachain = async (circuit: ApiPromise, target: ApiPromise, 
             circuit.createType("Parachain", [gatewayData.registrationData.parachain.relayChainId, gatewayData.registrationData.parachain.id])
         ])
     }]
-}
-
-const registerRelaychain = async (circuit: ApiPromise, target: ApiPromise, gatewayData: any) => {
-    const abiConfig = createAbiConfig(circuit, gatewayData.registrationData.gatewayConfig)
-    const gatewayGenesis = createGatewayGenesis(circuit, target);
-    const gatewaySysProps = createGatewaySysProps(circuit, gatewayData.registrationData.gatewaySysProps)
-    const { registrationHeader, authorities, authoritySetId } = await fetchConsensusData(circuit, target, gatewayData, 0)
-    const allowedSideEffects = circuit.createType('Vec<AllowedSideEffect>', gatewayData.registrationData.allowedSideEffects)
-    return circuit.tx.circuitPortal.registerGateway(
-        gatewayData.rpc,
-        gatewayData.id,
-        null,
-        abiConfig,
-        circuit.createType('GatewayVendor', 'Substrate'),
-        circuit.createType('GatewayType', { ProgrammableExternal: 1 }),
-        gatewayGenesis,
-        gatewaySysProps,
-        registrationHeader,
-        authorities,
-        authoritySetId,
-        allowedSideEffects
-    );
 }
 
 const createGatewayGenesis = async (circuit: ApiPromise, target: ApiPromise) => {

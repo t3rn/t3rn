@@ -1517,6 +1517,8 @@ impl<T: Config> Pallet<T> {
                 // ToDo: Consider to remove the assignment below and move OptinalInsurance to SFX fields:
                 //      sfx.reward = Option<Balance>
                 //      sfx.insurance = Option<Balance>
+                log::info!("prize: {:?}", side_effect.prize);
+                log::info!("reward: {:?}", reward);
                 if side_effect.prize != reward {
                     return Err("Side_effect prize must be equal to reward of Optional Insurance")
                 }
