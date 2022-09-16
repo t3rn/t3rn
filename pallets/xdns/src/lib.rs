@@ -195,6 +195,8 @@ pub mod pallet {
         SideEffectInterfaceAlreadyExists,
         /// SideEffect interface was not found in storage
         SideEffectInterfaceNotFound,
+        /// the xdns entry does not contain parachain information
+        NoParachainInfoFound
     }
 
     #[pallet::storage]
@@ -270,7 +272,7 @@ pub mod pallet {
             ensure_root(origin)?;
 
             // early exit if record already exists in storage
-            if <XDNSRegistry<T>>::contains_key(gateway_id) && !force {
+            if <XDNSRegistry<T>>::contains_key(gateway_id) {
                 return Err(Error::<T>::XdnsRecordAlreadyExists.into())
             }
 
@@ -375,20 +377,29 @@ pub mod pallet {
             )
         }
 
-        fn get_gateway_security_coordinates(chain_id: &ChainId) -> Result<Bytes, &'static str> {
-            if !<XDNSRegistry<T>>::contains_key(chain_id) {
-                return Err("Xdns record not found while accessing security coordinates")
-            }
-            Ok(<XDNSRegistry<T>>::get(chain_id)
-                .ok_or_else(|| "XDNSRegistry does not contain given chain id")?
-                .security_coordinates)
-        }
-
         /// returns the gateway vendor of a gateway if its available
         fn get_gateway_vendor(chain_id: &ChainId) -> Result<GatewayVendor, DispatchError> {
             match <XDNSRegistry<T>>::get(&chain_id) {
                 Some(rec) => Ok(rec.gateway_vendor),
                 None => Err(Error::<T>::XdnsRecordNotFound.into()),
+            }
+        }
+
+        fn get_gateway_security_coordinates(chain_id: &ChainId) -> Result<Bytes, DispatchError> {
+            if !<XDNSRegistry<T>>::contains_key(chain_id) {
+                return Err(Error::<T>::XdnsRecordNotFound.into())
+            }
+            Ok(<XDNSRegistry<T>>::get(chain_id).unwrap().security_coordinates) //safe because checked
+        }
+
+        fn get_gateway_para_id(chain_id: &ChainId) -> Result<u32, DispatchError> {
+            if !<XDNSRegistry<T>>::contains_key(chain_id) {
+                return Err(Error::<T>::XdnsRecordNotFound.into())
+            }
+
+            match <XDNSRegistry<T>>::get(chain_id).unwrap().parachain {
+                Some(value) => Ok(value.id),
+                None => Err(Error::<T>::NoParachainInfoFound.into())
             }
         }
 

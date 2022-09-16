@@ -654,7 +654,7 @@ pub mod pallet {
 
             Self::deposit_event(Event::SideEffectInsuranceReceived(
                 side_effect_id,
-                relayer.clone(),
+                executor.clone(),
             ));
 
             // Emit: From Circuit events
@@ -1683,7 +1683,7 @@ impl<T: Config> Pallet<T> {
         // this could be multiple events!
         let (params, source) = <T as Config>::Portal::confirm_and_decode_payload_params(
             side_effect.target,
-            fsfx.submission_target_height,
+            fsx.submission_target_height,
             confirmation.inclusion_data.clone(),
             side_effect_id.clone(),
         )
@@ -1717,6 +1717,21 @@ impl<T: Config> Pallet<T> {
         log::info!("confirmation plug ok");
 
         Ok(())
+    }
+
+     // ToDo: This should be called as a 3vm trait injection @Don
+    pub fn exec_in_xtx_ctx(
+        _xtx_id: T::Hash,
+        _local_state: LocalState,
+        _full_side_effects: Vec<
+            Vec<FullSideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
+        >,
+        _steps_cnt: (u32, u32),
+    ) -> Result<
+        Vec<SideEffect<T::AccountId, T::BlockNumber, EscrowedBalanceOf<T, T::Escrowed>>>,
+        &'static str,
+    > {
+        Ok(vec![])
     }
 
     /// The account ID of the Circuit Vault.
@@ -2022,9 +2037,7 @@ impl<T: Config> Pallet<T> {
             &mut local_xtx_ctx,
             &Self::account_id(),
             &fsx.input,
-            &confirmation,
-            None,
-            None,
+            &confirmation
         )
         .map_err(|_e| Error::<T>::XBIExitFailedOnSFXConfirmation)?;
         Ok(())

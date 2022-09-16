@@ -266,7 +266,7 @@ impl<T: Config> Portal<T> for Pallet<T> {
         submission_target_height: Vec<u8>,
         encoded_inclusion_data: Vec<u8>,
         side_effect_id: [u8; 4],
-    ) -> Result<Vec<Vec<Vec<u8>>>, DispatchError> {
+    ) -> Result<(Vec<Vec<u8>>, Vec<u8>), frame_support::dispatch::DispatchError> {
         let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
             .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
 

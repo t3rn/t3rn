@@ -294,20 +294,6 @@ impl_runtime_apis! {
         }
     }
 
-    impl pallet_circuit_portal_rpc_runtime_api::CircuitPortalRuntimeApi<Block, AccountId, Balance, BlockNumber> for Runtime {
-        fn read_latest_gateway_height(
-            gateway_id: [u8; 4],
-        ) -> ReadLatestGatewayHeight {
-            match <CircuitPortal as t3rn_primitives::circuit_portal::CircuitPortal<Runtime>>::read_cmp_latest_target_height(gateway_id, None, None) {
-                Ok(encoded_height) =>
-                    ReadLatestGatewayHeight::Success {
-                        encoded_height,
-                    },
-                Err(_err) => ReadLatestGatewayHeight::Error
-            }
-        }
-    }
-
     impl pallet_xdns_rpc_runtime_api::XdnsRuntimeApi<Block, AccountId> for Runtime {
         fn fetch_records() -> FetchXdnsRecordsResponse<AccountId> {
              FetchXdnsRecordsResponse {
