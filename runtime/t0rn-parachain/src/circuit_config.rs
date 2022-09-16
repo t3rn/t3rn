@@ -1,7 +1,5 @@
 use crate::*;
 use frame_support::{parameter_types, traits::ConstU32, PalletId};
-use super::*;
-use frame_support::{parameter_types, traits::ConstU32};
 use pallet_grandpa_finality_verifier::bridges::runtime as bp_runtime;
 use sp_core::H256;
 use sp_runtime::traits::*;
@@ -62,7 +60,7 @@ impl pallet_circuit::Config for Runtime {
     type AccountManager = AccountManager;
     type Balances = Balances;
     type Call = Call;
-    type CircuitPortal = CircuitPortal;
+    type Portal = Portal;
     type DeletionQueueLimit = ConstU32<100u32>;
     type Escrowed = Self;
     type Event = Event;
@@ -82,7 +80,7 @@ impl pallet_circuit::Config for Runtime {
 }
 
 parameter_types! {
-    pub const HeadersToStore: u32 = 100800;
+    pub const HeadersToStore: u32 = 100800; // 1 week worth of rococo headers
 }
 
 type RococoBridgeInstance = ();
@@ -115,37 +113,6 @@ parameter_types! {
     pub const DefaultRoundTerm: u32 = DEFAULT_ROUND_TERM; // TODO
     pub const GenesisIssuance: u32 = 20_000_000; // TODO
     pub const IdealPerpetualInflation: Perbill = Perbill::from_percent(1);
-    pub const InflationRegressionMonths: u32 = 72;
-}
-
-impl pallet_treasury::Config for Runtime {
-    type AuctionFund = AuctionFund;
-    type ContractFund = ContractFund;
-    type Currency = Balances;
-    type DefaultRoundTerm = DefaultRoundTerm;
-    type Event = Event;
-    type GenesisIssuance = GenesisIssuance;
-    type IdealPerpetualInflation = IdealPerpetualInflation;
-    type InflationRegressionMonths = InflationRegressionMonths;
-    type MinRoundTerm = MinRoundTerm;
-    type ReserveAccount = ReserveAccount;
-    type TreasuryAccount = TreasuryAccount;
-    type WeightInfo = pallet_treasury::weights::TreasuryWeight<Runtime>;
-}
-
-// MinRoundTerm plays a crucial role:
-//  + must at least be the size of the active collator set
-//  + is applied as default round term during genesis
-//  + codetermines staking delays as they are measured in rounds
-parameter_types! {
-    pub const TreasuryAccount: AccountId = AccountId::new([0u8; 32]); // TODO
-    pub const ReserveAccount: AccountId = AccountId::new([1u8; 32]); // TODO
-    pub const AuctionFund: AccountId = AccountId::new([2u8; 32]); // TODO
-    pub const ContractFund: AccountId = AccountId::new([3u8; 32]); // TODO
-    pub const MinRoundTerm: u32 = 20; // TODO
-    pub const DefaultRoundTerm: u32 = DEFAULT_ROUND_TERM; // TODO
-    pub const GenesisIssuance: u32 = 20_000_000; // TODO
-    pub const IdealPerpetualInflation: Perbill =Perbill::from_percent(1);
     pub const InflationRegressionMonths: u32 = 72;
 }
 

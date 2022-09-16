@@ -63,6 +63,7 @@ pub mod side_effect;
 pub mod signature_caster;
 pub mod storage;
 pub mod threevm;
+pub mod staking;
 pub mod transfers;
 pub mod treasury;
 pub mod volatile;

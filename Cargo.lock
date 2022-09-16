@@ -13469,6 +13469,8 @@ dependencies = [
 name = "t3rn-protocol"
 version = "1.0.0-alpha.1"
 dependencies = [
+ "circuit-mock-runtime",
+ "circuit-runtime-pallets",
  "circuit-runtime-types",
  "ethabi-decode",
  "frame-metadata 15.0.0",
