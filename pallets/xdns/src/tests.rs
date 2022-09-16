@@ -19,6 +19,7 @@
 
 use super::*;
 use circuit_mock_runtime::{ExtBuilder, *};
+use crate::Error as PalletError;
 use codec::Decode;
 use frame_support::{assert_err, assert_noop, assert_ok};
 use frame_system::Origin;
@@ -385,7 +386,7 @@ fn fetch_abi_should_error_for_unknown_xdns_record() {
         .build()
         .execute_with(|| {
             let actual = XDNS::get_abi(*b"rand");
-            assert_err!(actual, Error::<Runtime>::XdnsRecordNotFound);
+            assert_err!(actual, pallet_xdns::Error::<Runtime>::XdnsRecordNotFound);
         });
 }
 
@@ -396,7 +397,7 @@ fn gate_gateway_vendor_returns_error_for_unknown_record() {
         .build()
         .execute_with(|| {
             let actual = XDNS::get_gateway_vendor(b"rand");
-            assert_err!(actual, Error::<Runtime>::XdnsRecordNotFound);
+            assert_err!(actual, pallet_xdns::Error::<Runtime>::XdnsRecordNotFound);
         });
 }
 
@@ -407,6 +408,6 @@ fn gate_gateway_vendor_returns_vendor_for_known_record() {
         .build()
         .execute_with(|| {
             let actual = XDNS::get_gateway_vendor(b"pdot");
-            assert_ok!(actual, GatewayVendor::Substrate);
+            assert_ok!(actual, GatewayVendor::Rococo);
         });
 }
