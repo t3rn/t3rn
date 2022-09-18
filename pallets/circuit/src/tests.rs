@@ -449,7 +449,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                                 enforce_executioner: None
                             }],
                             vec![hex!(
-                                "388ee470b95c60ecf7e6e1f97b04f423346b443a06b5be4adbc1c219ed7ae636"
+                                "84a5512d2a624231c0d3748ec11a94d01d9366d310f057f12913e40c1267b4e1"
                             )
                             .into(),],
                         )),
@@ -635,7 +635,7 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
                                 enforce_executioner: None
                             }],
                             vec![hex!(
-                                "df27692efff5ca3e2db6b0c2aed2976970b071d0ba18a82f818d488205004bad"
+                                "878ceb78ebb97457555b082762edafe03c7bc61d1f3321d62fdeb56e5aaf8954"
                             )
                             .into(),],
                         )),
@@ -1670,7 +1670,6 @@ fn load_local_state_can_generate_and_read_state() {
 }
 
 #[test]
-#[ignore]
 fn uninsured_unrewarded_single_rococo_transfer() {
     let path = "uninsured_unrewarded_single_rococo_transfer/";
     // generated via CLI with:
@@ -1745,7 +1744,6 @@ fn uninsured_unrewarded_single_rococo_transfer() {
 }
 
 #[test]
-#[ignore]
 fn insured_unrewarded_single_rococo_transfer() {
     let path = "insured_unrewarded_single_rococo_transfer/";
     // generated via CLI with:
@@ -1858,6 +1856,8 @@ fn insured_unrewarded_single_rococo_transfer() {
                 Balances::free_balance(&CLI_DEFAULT),
                 10u128 * 10u128.pow(12)
             );
+
+            // ToDo: when acount manager works properly
             assert_eq!(
                 Balances::free_balance(&EXECUTOR_DEFAULT),
                 10u128 * 10u128.pow(12)
@@ -2089,7 +2089,6 @@ fn insured_rewarded_multi_rococo_transfer() {
 }
 
 #[test]
-#[ignore]
 fn insured_unrewarded_multi_rococo_transfer() {
     let path = "insured_unrewarded_multi_rococo_transfer/";
     // generated via CLI with:
@@ -2230,7 +2229,6 @@ fn insured_unrewarded_multi_rococo_transfer() {
 // ToDo add rewarded_unbonded_multi test
 
 #[test]
-#[ignore]
 fn uninsured_unrewarded_multi_rococo_transfer() {
     let path = "uninsured_unrewarded_multi_rococo_transfer/";
     // generated via CLI with:
@@ -2980,7 +2978,6 @@ fn insured_multi_rococo_multiple_executors() {
 }
 
 #[test]
-#[ignore]
 fn uninsured_unrewarded_parachain_transfer() {
     let path = "uninsured_unrewarded_parachain_transfer/";
     // generated via CLI with:
