@@ -190,6 +190,12 @@ pub mod pallet {
             recipient: T::AccountId,
             amount: BalanceOf<T>,
         },
+        DepositReceived {
+            charge_id: T::Hash,
+            payee: T::AccountId,
+            recipient: T::AccountId,
+            amount: BalanceOf<T>,
+        },
     }
 
     #[pallet::error]
