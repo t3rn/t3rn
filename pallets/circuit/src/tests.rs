@@ -270,6 +270,7 @@ fn run_mock_tests(path: &str) -> Result<(), DispatchErrorWithPostInfo<PostDispat
 }
 
 #[test]
+#[ignore]
 fn runs_mock_tests() {
     ExtBuilder::default()
         .with_standard_side_effects()
@@ -1866,7 +1867,6 @@ fn insured_unrewarded_single_rococo_transfer() {
 }
 
 #[test]
-#[ignore]
 fn insured_rewarded_single_rococo_transfer() {
     let path = "insured_rewarded_single_rococo_transfer/";
     // generated via CLI with:
@@ -1969,7 +1969,6 @@ fn insured_rewarded_single_rococo_transfer() {
 }
 
 #[test]
-#[ignore]
 fn insured_rewarded_multi_rococo_transfer() {
     let path = "insured_rewarded_multi_rococo_transfer/";
     // generated via CLI with:
@@ -2354,7 +2353,6 @@ fn uninsured_unrewarded_multi_rococo_transfer() {
 }
 
 #[test]
-#[ignore]
 fn multi_mixed_rococo() {
     let path = "multi_mixed_rococo/";
     // generated via CLI with:
@@ -2736,7 +2734,6 @@ fn multi_mixed_rococo() {
 }
 
 #[test]
-#[ignore]
 fn insured_multi_rococo_multiple_executors() {
     let path = "insured_multi_chain_rococo/";
     // generated via CLI with:
