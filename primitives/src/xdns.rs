@@ -5,8 +5,8 @@ use crate::{
 };
 use codec::{Decode, Encode};
 use frame_support::dispatch::{DispatchResult, DispatchResultWithPostInfo};
-use frame_system::pallet_prelude::OriginFor;
 use scale_info::TypeInfo;
+use sp_runtime::DispatchError;
 use sp_std::{boxed::Box, collections::btree_map::BTreeMap, vec::Vec};
 
 pub type AllowedSideEffect = [u8; 4];
@@ -151,15 +151,10 @@ impl<AccountId: Encode> XdnsRecord<AccountId> {
 }
 
 pub trait Xdns<T: frame_system::Config> {
-    /// Locates the best available gateway based on the time they were last finalized.
-    /// Priority goes Internal > External > TxOnly, followed by the largest last_finalized value
-    fn best_available(gateway_id: ChainId) -> Result<XdnsRecord<T::AccountId>, &'static str>;
-
     /// Fetches all known XDNS records
     fn fetch_records() -> Vec<XdnsRecord<T::AccountId>>;
 
     fn add_new_xdns_record(
-        origin: OriginFor<T>,
         url: Vec<u8>,
         gateway_id: ChainId,
         parachain: Option<Parachain>,
@@ -170,7 +165,6 @@ pub trait Xdns<T: frame_system::Config> {
         gateway_sys_props: GatewaySysProps,
         security_coordinates: Vec<u8>,
         allowed_side_effects: Vec<AllowedSideEffect>,
-        force: bool,
     ) -> DispatchResult;
 
     fn allowed_side_effects(gateway_id: &ChainId)
@@ -178,17 +172,19 @@ pub trait Xdns<T: frame_system::Config> {
 
     fn fetch_side_effect_interface(
         id: [u8; 4],
-    ) -> Result<Box<dyn SideEffectProtocol>, &'static str>;
+    ) -> Result<Box<dyn SideEffectProtocol>, DispatchError>;
 
     fn update_gateway_ttl(gateway_id: ChainId, last_finalized: u64) -> DispatchResultWithPostInfo;
 
-    fn get_abi(chain_id: ChainId) -> Result<GatewayABIConfig, &'static str>;
+    fn get_abi(chain_id: ChainId) -> Result<GatewayABIConfig, DispatchError>;
 
     fn get_gateway_value_unsigned_type_unsafe(chain_id: &ChainId) -> Type;
 
     fn get_gateway_type_unsafe(chain_id: &ChainId) -> GatewayType;
 
-    fn get_gateway_security_coordinates(chain_id: &ChainId) -> Result<Vec<u8>, &'static str>;
+    fn get_gateway_vendor(chain_id: &ChainId) -> Result<GatewayVendor, DispatchError>;
 
-    fn get_gateway_para_id(chain_id: &ChainId) -> Result<u32, &'static str>;
+    fn get_gateway_security_coordinates(chain_id: &ChainId) -> Result<Vec<u8>, DispatchError>;
+
+    fn get_gateway_para_id(chain_id: &ChainId) -> Result<u32, DispatchError>;
 }

@@ -104,39 +104,6 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Inserts a xdns_record into the on-chain registry. Root only access.
-        #[pallet::weight(< T as Config >::WeightInfo::add_new_xdns_record())]
-        pub fn add_new_xdns_record(
-            origin: OriginFor<T>,
-            url: Vec<u8>,
-            gateway_id: ChainId,
-            parachain: Option<Parachain>,
-            gateway_abi: GatewayABIConfig,
-            gateway_vendor: GatewayVendor,
-            gateway_type: GatewayType,
-            gateway_genesis: GatewayGenesisConfig,
-            gateway_sys_props: GatewaySysProps,
-            security_coordinates: Vec<u8>,
-            allowed_side_effects: Vec<AllowedSideEffect>,
-            force: bool,
-        ) -> DispatchResultWithPostInfo {
-            <Self as Xdns<T>>::add_new_xdns_record(
-                origin,
-                url,
-                gateway_id,
-                parachain,
-                gateway_abi,
-                gateway_vendor,
-                gateway_type,
-                gateway_genesis,
-                gateway_sys_props,
-                security_coordinates,
-                allowed_side_effects,
-                force,
-            )?;
-            Ok(().into())
-        }
-
         #[pallet::weight(< T as Config >::WeightInfo::add_new_xdns_record())]
         pub fn add_side_effect(
             origin: OriginFor<T>,
@@ -226,6 +193,10 @@ pub mod pallet {
         XdnsRecordNotFound,
         /// SideEffect already stored
         SideEffectInterfaceAlreadyExists,
+        /// SideEffect interface was not found in storage
+        SideEffectInterfaceNotFound,
+        /// the xdns entry does not contain parachain information
+        NoParachainInfoFound,
     }
 
     #[pallet::storage]
@@ -280,38 +251,12 @@ pub mod pallet {
     }
 
     impl<T: Config> Xdns<T> for Pallet<T> {
-        /// Locates the best available gateway based on the time they were last finalized.
-        /// Priority goes Internal > External > TxOnly, followed by the largest last_finalized value
-        fn best_available(gateway_id: ChainId) -> Result<XdnsRecord<T::AccountId>, &'static str> {
-            // Sort each available gateway pointer based on its GatewayType
-            let gateway_pointers = t3rn_primitives::retrieve_gateway_pointers(gateway_id);
-            ensure!(gateway_pointers.is_ok(), "No available gateway pointers");
-            let mut sorted_gateway_pointers = gateway_pointers.unwrap();
-            sorted_gateway_pointers.sort_by(|a, b| a.gateway_type.cmp(&b.gateway_type));
-
-            // Fetch each XdnsRecord and re-sort based on its last_finalized descending
-            let mut sorted_gateways: Vec<XdnsRecord<T::AccountId>> = sorted_gateway_pointers
-                .into_iter()
-                .filter_map(|gateway_pointer| <XDNSRegistry<T>>::get(gateway_pointer.id))
-                .collect();
-            sorted_gateways
-                .sort_by(|xdns_a, xdns_b| xdns_b.last_finalized.cmp(&xdns_a.last_finalized));
-
-            // Return the first result
-            if sorted_gateways.is_empty() {
-                return Err("Xdns record not found")
-            }
-
-            Ok(sorted_gateways[0].clone())
-        }
-
         /// Fetches all known XDNS records
         fn fetch_records() -> Vec<XdnsRecord<T::AccountId>> {
             pallet::XDNSRegistry::<T>::iter_values().collect()
         }
 
         fn add_new_xdns_record(
-            origin: OriginFor<T>,
             url: Vec<u8>,
             gateway_id: ChainId,
             parachain: Option<Parachain>,
@@ -322,12 +267,9 @@ pub mod pallet {
             gateway_sys_props: GatewaySysProps,
             security_coordinates: Vec<u8>,
             allowed_side_effects: Vec<AllowedSideEffect>,
-            force: bool,
         ) -> DispatchResult {
-            ensure_root(origin)?;
-
             // early exit if record already exists in storage
-            if <XDNSRegistry<T>>::contains_key(gateway_id) && !force {
+            if <XDNSRegistry<T>>::contains_key(gateway_id) {
                 return Err(Error::<T>::XdnsRecordAlreadyExists.into())
             }
 
@@ -353,7 +295,6 @@ pub mod pallet {
 
             xdns_record.set_last_finalized(now);
             <XDNSRegistry<T>>::insert(gateway_id, xdns_record);
-            Self::deposit_event(Event::<T>::XdnsRecordStored(gateway_id));
             Ok(())
         }
 
@@ -381,13 +322,13 @@ pub mod pallet {
 
         fn fetch_side_effect_interface(
             id: [u8; 4],
-        ) -> Result<Box<dyn SideEffectProtocol>, &'static str> {
+        ) -> Result<Box<dyn SideEffectProtocol>, DispatchError> {
             if <StandardSideEffects<T>>::contains_key(id) {
                 Ok(Box::new(<StandardSideEffects<T>>::get(id).unwrap()))
             } else {
                 match <CustomSideEffects<T>>::get(T::Hashing::hash(&id.encode())) {
                     Some(entry) => Ok(Box::new(entry)),
-                    None => Err("Side Effect Interface was not found!"),
+                    None => Err(Error::<T>::SideEffectInterfaceNotFound.into()),
                 }
             }
         }
@@ -413,12 +354,12 @@ pub mod pallet {
         }
 
         // Fetches the GatewayABIConfig for a given XDNS record
-        fn get_abi(chain_id: ChainId) -> Result<GatewayABIConfig, &'static str> {
+        fn get_abi(chain_id: ChainId) -> Result<GatewayABIConfig, DispatchError> {
             if !<XDNSRegistry<T>>::contains_key(chain_id) {
-                return Err("Xdns record not found")
+                return Err(Error::<T>::XdnsRecordNotFound.into())
             }
             Ok(<XDNSRegistry<T>>::get(chain_id)
-                .ok_or("XDNSRegistry does not contain given chain id")?
+                .ok_or_else(|| Error::<T>::XdnsRecordNotFound)?
                 .gateway_abi)
         }
 
@@ -432,21 +373,32 @@ pub mod pallet {
             )
         }
 
-        fn get_gateway_security_coordinates(chain_id: &ChainId) -> Result<Bytes, &'static str> {
-            if !<XDNSRegistry<T>>::contains_key(chain_id) {
-                return Err("Xdns record not found while accessing security coordinates")
+        /// returns the gateway vendor of a gateway if its available
+        fn get_gateway_vendor(chain_id: &ChainId) -> Result<GatewayVendor, DispatchError> {
+            match <XDNSRegistry<T>>::get(&chain_id) {
+                Some(rec) => Ok(rec.gateway_vendor),
+                None => Err(Error::<T>::XdnsRecordNotFound.into()),
             }
-            Ok(<XDNSRegistry<T>>::get(chain_id)
-                .ok_or("XDNSRegistry does not contain given chain id")?
-                .security_coordinates)
         }
 
-        fn get_gateway_para_id(chain_id: &ChainId) -> Result<u32, &'static str> {
+        fn get_gateway_security_coordinates(chain_id: &ChainId) -> Result<Bytes, DispatchError> {
+            if !<XDNSRegistry<T>>::contains_key(chain_id) {
+                return Err(Error::<T>::XdnsRecordNotFound.into())
+            }
             Ok(<XDNSRegistry<T>>::get(chain_id)
-                .ok_or("XDNSRegistry does not contain given chain id")?
-                .parachain
-                .ok_or("Xdns record doesn't have any Parachain data configured")?
-                .id)
+                .unwrap()
+                .security_coordinates) //safe because checked
+        }
+
+        fn get_gateway_para_id(chain_id: &ChainId) -> Result<u32, DispatchError> {
+            if !<XDNSRegistry<T>>::contains_key(chain_id) {
+                return Err(Error::<T>::XdnsRecordNotFound.into())
+            }
+
+            match <XDNSRegistry<T>>::get(chain_id).unwrap().parachain {
+                Some(value) => Ok(value.id),
+                None => Err(Error::<T>::NoParachainInfoFound.into()),
+            }
         }
 
         fn get_gateway_type_unsafe(chain_id: &ChainId) -> GatewayType {

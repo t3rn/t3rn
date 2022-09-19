@@ -42,7 +42,6 @@ orml-traits = { git = "https://github.com/t3rn/open-runtime-module-library", bra
 frame-election-provider-support = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 pallet-authorship               = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
 pallet-babe                     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
-pallet-multi-finality-verifier  = { path = "../multi-finality-verifier" }
 pallet-offences                 = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 pallet-session                  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 pallet-staking                  = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
@@ -52,15 +51,18 @@ sp-consensus-vrf                = { git = "https://github.com/paritytech/substra
 sp-consensus-aura                = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
 sp-finality-grandpa             = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
 sp-staking                      = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
-
+hex                             = "0.4.2"
+serde_json                      = "1.0.41"
+hex-literal                     = "0.2.1"
 pallet-randomness-collective-flip = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
 pallet-transaction-payment        = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19' }
 
+pallet-grandpa-finality-verifier = { path = "../../finality-verifiers/grandpa", features = ["testing"]}
 orml-tokens     = { git = "https://github.com/t3rn/open-runtime-module-library", branch = "polkadot-v0.9.19" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 pallet-sudo     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19' }
 
-pallet-circuit-portal     = { path = "../circuit-portal" }
+pallet-portal             = { path = "../portal" }
 pallet-contracts-registry = { path = "../../pallets/contracts-registry" }
 pallet-xdns               = { path = "../../pallets/xdns" }
 

@@ -48,7 +48,6 @@ use std::fmt::Debug;
 pub mod account_manager;
 pub mod bridges;
 pub mod circuit;
-pub mod circuit_portal;
 pub mod claimable;
 pub mod clock;
 pub mod common;
@@ -58,9 +57,11 @@ pub mod executors;
 pub mod gateway_inbound_protocol;
 pub mod match_format;
 pub mod monetary;
+pub mod portal;
 pub mod protocol;
 pub mod side_effect;
 pub mod signature_caster;
+pub mod staking;
 pub mod storage;
 pub mod threevm;
 pub mod transfers;
@@ -102,6 +103,7 @@ impl GatewayType {
 pub enum GatewayVendor {
     InternalXBI,
     PolkadotLike,
+    Rococo,
     EvmBased,
 }
 

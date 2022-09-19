@@ -54,9 +54,9 @@ use t3rn_primitives::account_manager::Outcome;
 pub use t3rn_primitives::{
     abi::{GatewayABIConfig, HasherAlgo as HA, Type},
     account_manager::AccountManager,
-    circuit_portal::CircuitPortal,
     claimable::{BenefitSource, CircuitRole},
     executors::Executors,
+    portal::Portal,
     side_effect::{
         ConfirmedSideEffect, FullSideEffect, HardenedSideEffect, SecurityLvl, SideEffect,
         SideEffectId,
@@ -69,9 +69,7 @@ pub use t3rn_primitives::{
 };
 
 use t3rn_protocol::side_effects::{
-    confirm::{
-        ethereum::EthereumSideEffectsParser, protocol::*, substrate::SubstrateSideEffectsParser,
-    },
+    confirm::protocol::*,
     loader::{SideEffectsLazyLoader, UniversalSideEffectsProtocol},
 };
 
@@ -125,10 +123,9 @@ pub mod pallet {
         sabi::Sabi,
     };
     use sp_std::borrow::ToOwned;
-
     use t3rn_primitives::{
         circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
-        circuit_portal::CircuitPortal,
+        portal::Portal,
         xdns::Xdns,
     };
 
@@ -305,8 +302,8 @@ pub mod pallet {
         /// A type that manages escrow, and therefore balances
         type Escrowed: EscrowTrait<Self>;
 
-        /// A type that provides portal functionality
-        type CircuitPortal: CircuitPortal<Self>;
+        /// A type that gives access to the new portal functionality
+        type Portal: Portal<Self>;
 
         /// The maximum number of signals that can be queued for handling.
         ///
@@ -653,14 +650,15 @@ pub mod pallet {
                 status_change,
             );
 
+            log::info!("bond insurance deposit -- applied");
+
+            Self::deposit_event(Event::SideEffectInsuranceReceived(
+                side_effect_id,
+                executor.clone(),
+            ));
+
             // Emit: From Circuit events
-            Self::emit(
-                local_xtx_ctx.xtx_id,
-                maybe_xtx_changed,
-                &executor,
-                &vec![],
-                None,
-            );
+            Self::emit(xtx_id, maybe_xtx_changed, &executor, &vec![], None);
 
             Ok(().into())
         }
@@ -754,8 +752,8 @@ pub mod pallet {
                 <T as frame_system::Config>::BlockNumber,
                 EscrowedBalanceOf<T, T::Escrowed>,
             >,
-            inclusion_proof: Option<Vec<Vec<u8>>>,
-            block_hash: Option<Vec<u8>>,
+            _inclusion_proof: Option<Vec<Vec<u8>>>,
+            _block_hash: Option<Vec<u8>>,
         ) -> DispatchResultWithPostInfo {
             // Authorize: Retrieve sender of the transaction.
             let relayer = Self::authorize(origin, CircuitRole::Relayer)?;
@@ -768,20 +766,17 @@ pub mod pallet {
                 Some(xtx_id),
             )?;
 
-            Self::confirm(
-                &mut local_xtx_ctx,
-                &relayer,
-                &side_effect,
-                &confirmation,
-                inclusion_proof,
-                block_hash,
-            )?;
+            Self::confirm(&mut local_xtx_ctx, &relayer, &side_effect, &confirmation)?;
 
             let status_change = Self::update(&mut local_xtx_ctx)?;
 
             // Apply: all necessary changes to state in 1 go
             let (maybe_xtx_changed, assert_full_side_effects_changed) =
                 Self::apply(&mut local_xtx_ctx, None, None, status_change);
+
+            Self::deposit_event(Event::SideEffectConfirmed(
+                side_effect.generate_id::<SystemHashing<T>>(),
+            ));
 
             // Emit: From Circuit events
             Self::emit(
@@ -837,6 +832,10 @@ pub mod pallet {
         Result(T::AccountId, AccountId32, XBICheckOutStatus, Data, Data),
         // Listeners - users + SDK + UI to know whether their request is accepted for exec and pending
         XTransactionReceivedForExec(XExecSignalId<T>),
+        // Notifies that the bond for a specific side_effect has been bonded.
+        SideEffectInsuranceReceived(XExecSignalId<T>, <T as frame_system::Config>::AccountId),
+        // An executions SideEffect was confirmed.
+        SideEffectConfirmed(XExecSignalId<T>),
         // Listeners - users + SDK + UI to know whether their request is accepted for exec and ready
         XTransactionReadyForExec(XExecSignalId<T>),
         // Listeners - users + SDK + UI to know whether their request is accepted for exec and finished
@@ -1507,6 +1506,8 @@ impl<T: Config> Pallet<T> {
                 // ToDo: Consider to remove the assignment below and move OptinalInsurance to SFX fields:
                 //      sfx.reward = Option<Balance>
                 //      sfx.insurance = Option<Balance>
+                log::info!("prize: {:?}", side_effect.prize);
+                log::info!("reward: {:?}", reward);
                 if side_effect.prize != reward {
                     return Err("Side_effect prize must be equal to reward of Optional Insurance")
                 }
@@ -1521,11 +1522,9 @@ impl<T: Config> Pallet<T> {
                         <frame_system::Pallet<T>>::block_number(),
                     ),
                 ));
-                let submission_target_height = T::CircuitPortal::read_cmp_latest_target_height(
-                    side_effect.target,
-                    None,
-                    None,
-                )?;
+                let submission_target_height =
+                    T::Portal::get_latest_finalized_height(side_effect.target)?
+                        .ok_or("target height not found")?;
 
                 full_side_effects.push(FullSideEffect {
                     input: side_effect.clone(),
@@ -1552,11 +1551,9 @@ impl<T: Config> Pallet<T> {
                         SecurityLvl::Dirty
                     }
                 }
-                let submission_target_height = T::CircuitPortal::read_cmp_latest_target_height(
-                    side_effect.target,
-                    None,
-                    None,
-                )?;
+                let submission_target_height =
+                    T::Portal::get_latest_finalized_height(side_effect.target)?
+                        .ok_or("target height not found")?;
 
                 full_side_effects.push(FullSideEffect {
                     input: side_effect.clone(),
@@ -1608,63 +1605,8 @@ impl<T: Config> Pallet<T> {
             <T as frame_system::Config>::BlockNumber,
             EscrowedBalanceOf<T, <T as Config>::Escrowed>,
         >,
-        inclusion_proof: Option<Vec<Vec<u8>>>,
-        block_hash: Option<Vec<u8>>,
     ) -> Result<(), &'static str> {
-        let confirm_inclusion = |fsx: &FullSideEffect<
-            <T as frame_system::Config>::AccountId,
-            <T as frame_system::Config>::BlockNumber,
-            EscrowedBalanceOf<T, T::Escrowed>,
-        >| {
-            // ToDo: Remove below after testing inclusion
-            // Temporarily allow skip inclusion if proofs aren't provided
-            if !(block_hash.is_none() && inclusion_proof.is_none()) {
-                <T as Config>::CircuitPortal::confirm_event_inclusion(
-                    side_effect.target,
-                    confirmation.encoded_effect.clone(),
-                    fsx.submission_target_height.clone(),
-                    inclusion_proof,
-                    block_hash,
-                )
-            } else {
-                Ok(())
-            }
-        };
-
-        let confirm_execution = |gateway_vendor,
-                                 value_abi_unsigned_type,
-                                 state_copy,
-                                 security_lvl,
-                                 security_coordinates| {
-            let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
-            side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
-            let side_effect_interface =
-                <T as Config>::Xdns::fetch_side_effect_interface(side_effect_id)?;
-
-            confirm_with_vendor::<
-                T,
-                SubstrateSideEffectsParser,
-                EthereumSideEffectsParser<
-                    <<T as Config>::CircuitPortal as CircuitPortal<T>>::EthVerifier,
-                >,
-                SubstrateSideEffectsParser,
-            >(
-                gateway_vendor,
-                value_abi_unsigned_type,
-                &Box::new(side_effect_interface),
-                confirmation.encoded_effect.clone(),
-                state_copy,
-                Some(
-                    side_effect
-                        .generate_id::<SystemHashing<T>>()
-                        .as_ref()
-                        .to_vec(),
-                ),
-                security_lvl,
-                security_coordinates,
-            )
-        };
-
+        log::info!("xtx.steps: {:?}", local_ctx.xtx.steps_cnt);
         fn confirm_order<T: Config>(
             side_effect: &SideEffect<
                 <T as frame_system::Config>::AccountId,
@@ -1676,13 +1618,13 @@ impl<T: Config> Pallet<T> {
                 <T as frame_system::Config>::BlockNumber,
                 EscrowedBalanceOf<T, T::Escrowed>,
             >,
-            full_side_effects: &mut [Vec<
+            step_side_effects: &mut Vec<
                 FullSideEffect<
                     <T as frame_system::Config>::AccountId,
                     <T as frame_system::Config>::BlockNumber,
                     EscrowedBalanceOf<T, T::Escrowed>,
                 >,
-            >],
+            >,
         ) -> Result<
             FullSideEffect<
                 <T as frame_system::Config>::AccountId,
@@ -1693,47 +1635,78 @@ impl<T: Config> Pallet<T> {
         > {
             // ToDo: Extract as a separate function and migrate tests from Xtx
             let input_side_effect_id = side_effect.generate_id::<SystemHashing<T>>();
-            let mut unconfirmed_step_no: Option<usize> = None;
 
-            for (i, step) in full_side_effects.iter_mut().enumerate() {
-                // Double check there are some side effects for that Xtx - should have been checked at API level tho already
-                if step.is_empty() {
-                    return Err("Xtx has an empty single step.")
-                }
-                for mut full_side_effect in step.iter_mut() {
-                    if full_side_effect.confirmed.is_none() {
-                        // Mark the first step no with encountered unconfirmed side effect
-                        if unconfirmed_step_no.is_none() {
-                            unconfirmed_step_no = Some(i);
-                        }
-                        // Recalculate the ID for each input side effect and compare with the input one.
-                        // Check the current unconfirmed step before attempt to confirm the full side effect.
-                        return if full_side_effect.input.generate_id::<SystemHashing<T>>()
-                            == input_side_effect_id
-                            && unconfirmed_step_no == Some(i)
-                        {
-                            // We found the side effect to confirm from inside the unconfirmed step.
-                            full_side_effect.confirmed = Some(confirmation.clone());
-                            Ok(full_side_effect.clone())
-                        } else {
-                            Err("Attempt to confirm side effect from the next step, \
-                                    but there still is at least one unfinished step")
-                        }
-                    }
-                }
+            // Double check there are some side effects for that Xtx - should have been checked at API level tho already
+            if step_side_effects.is_empty() {
+                return Err("Xtx has an empty single step.")
             }
-            Err("Unable to find matching Side Effect in given Xtx to confirm")
+
+            // Find sfx object index in the current step
+            match step_side_effects
+                .iter()
+                .position(|sfx| sfx.input.generate_id::<SystemHashing<T>>() == input_side_effect_id)
+            {
+                Some(index) => {
+                    // side effect found in current step
+                    if step_side_effects[index].confirmed.is_none() {
+                        // side effect unconfirmed currently
+                        step_side_effects[index].confirmed = Some(confirmation.clone());
+                        Ok(step_side_effects[index].clone())
+                    } else {
+                        Err("Side Effect already confirmed")
+                    }
+                },
+                None => Err("Unable to find matching Side Effect in given Xtx to confirm"),
+            }
         }
 
-        let fsx = confirm_order::<T>(side_effect, confirmation, &mut local_ctx.full_side_effects)?;
-        confirm_inclusion(&fsx)?;
-        confirm_execution(
-            <T as Config>::Xdns::best_available(side_effect.target)?.gateway_vendor,
-            <T as Config>::Xdns::get_gateway_value_unsigned_type_unsafe(&side_effect.target),
+        let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
+        side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
+
+        // confirm order of current season, by passing the side_effects of it to confirm order.
+        let fsx = confirm_order::<T>(
+            side_effect,
+            confirmation,
+            &mut local_ctx.full_side_effects[local_ctx.xtx.steps_cnt.0 as usize],
+        )?;
+        log::info!("Order confirmed!");
+        // confirm the payload is included in the specified block, and return the SideEffect params as defined in XDNS.
+        // this could be multiple events!
+        let (params, source) = <T as Config>::Portal::confirm_and_decode_payload_params(
+            side_effect.target,
+            fsx.submission_target_height,
+            confirmation.inclusion_data.clone(),
+            side_effect_id.clone(),
+        )
+        .map_err(|_| "SideEffect confirmation failed!")?;
+        // ToDo handle misbehaviour
+        log::info!("Params: {:?}", params);
+
+        let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
+        side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
+        let side_effect_interface =
+            <T as Config>::Xdns::fetch_side_effect_interface(side_effect_id);
+
+        log::info!("got interface!");
+
+        confirmation_plug::<T>(
+            &Box::new(side_effect_interface.unwrap()),
+            params,
+            source,
             &local_ctx.local_state,
+            Some(
+                side_effect
+                    .generate_id::<SystemHashing<T>>()
+                    .as_ref()
+                    .to_vec()
+                    .into(),
+            ),
             fsx.security_lvl,
             <T as Config>::Xdns::get_gateway_security_coordinates(&side_effect.target)?,
-        )?;
+        )
+        .map_err(|_| "Execution can't be confirmed.")?;
+        log::info!("confirmation plug ok");
+
         Ok(())
     }
 
@@ -2056,8 +2029,6 @@ impl<T: Config> Pallet<T> {
             &Self::account_id(),
             &fsx.input,
             &confirmation,
-            None,
-            None,
         )
         .map_err(|_e| Error::<T>::XBIExitFailedOnSFXConfirmation)?;
         Ok(())

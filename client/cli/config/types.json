@@ -3,7 +3,7 @@
         "_enum": [
             "Substrate",
             "Ethereum",
-            "BinanceSmartChain"
+            "Rococo"
         ]
     },
     "GatewayType": {
@@ -24,7 +24,7 @@
         "token_decimals": "u8"
     },
     "AllowedSideEffect": "[u8; 4]",
-    "BlockNumber": "u64",
+    "BlockNumber": "u32",
     "Compose": {
         "name": "Vec<u8>",
         "code_txt": "Vec<u8>",
@@ -90,8 +90,8 @@
     "TargetId": "[u8; 4]",
     "SideEffect": {
         "target": "TargetId",
-        "prize": "BalanceOf",
-        "ordered_at": "BlockNumber",
+        "prize": "u128",
+        "ordered_at": "u32",
         "encoded_action": "Bytes",
         "encoded_args": "Vec<Bytes>",
         "signature": "Bytes",
@@ -101,8 +101,7 @@
     "ConfirmedSideEffect": {
         "err": "Option<Bytes>",
         "output": "Option<Bytes>",
-        "encoded_effect": "Bytes",
-        "inclusion_proof": "Option<Bytes>",
+        "inclusion_data": "Vec<u8>",
         "executioner": "AccountId",
         "received_at": "BlockNumber",
         "cost": "Option<BalanceOf>"
@@ -263,5 +262,39 @@
     "Parachain": {
         "relay_chain_id": "ChainId",
         "id": "u32"
+    },
+    "GrandpaRegistrationData": {
+        "first_header": "Vec<u8>",
+        "authorities": "Option<Vec<AuthorityId>>",
+        "authority_set_id": "Option<SetId>",
+        "owner": "AccountId",
+        "parachain": "Option<Parachain>"
+    },
+    "RegistrationData": {
+        "url": "Vec<u8>",
+        "gateway_id": "ChainId",
+        "gateway_abi": "GatewayABIConfig",
+        "gateway_vendor": "GatewayVendor",
+        "gateway_type": "GatewayType",
+        "gateway_genesis": "GatewayGenesisConfig",
+        "gateway_sys_props": "GatewaySysProps",
+        "allowed_side_effects": "Vec<AllowedSideEffect>",
+        "encoded_registration_data": "Vec<u8>"
+    },
+    "RelaychainHeaderData": {
+        "signed_header": "Header",
+        "range": "Vec<Header>",
+        "justification": "GrandpaJustification<Header>"
+    },
+    "ParachainHeaderData": {
+        "relay_block_hash": "H256",
+        "range": "Vec<Header>",
+        "proof": "StorageProof"
+    },
+    "InclusionData": {
+        "side_effect_id": "[u8; 4]",
+        "encoded_payload": "Vec<u8>",
+        "proof": "StorageProof",
+        "block_hash": "Header::Hash"
     }
 }

@@ -32,9 +32,9 @@ pub const DATA_SIDE_EFFECT_ID: &[u8; 4] = b"data";
 pub struct SideEffect<AccountId, BlockNumber, BalanceOf> {
     pub target: TargetId,
     pub prize: BalanceOf,
+    pub ordered_at: BlockNumber,
     pub encoded_action: Bytes,
     pub encoded_args: Vec<Bytes>,
-    pub ordered_at: BlockNumber,
     pub signature: Bytes,
     pub enforce_executioner: Option<AccountId>,
 }
@@ -353,8 +353,7 @@ impl Default for ConfirmationOutcome {
 pub struct ConfirmedSideEffect<AccountId, BlockNumber, BalanceOf> {
     pub err: Option<ConfirmationOutcome>,
     pub output: Option<Bytes>,
-    pub encoded_effect: Bytes,
-    pub inclusion_proof: Option<Bytes>,
+    pub inclusion_data: Vec<u8>,
     pub executioner: AccountId,
     pub received_at: BlockNumber,
     pub cost: Option<BalanceOf>,

@@ -139,8 +139,7 @@ mod tests {
             confirmed: Some(ConfirmedSideEffect::<AccountId, BlockNumber, BalanceOf> {
                 err: Some(ConfirmationOutcome::Success),
                 output: Some(vec![]),
-                encoded_effect: vec![],
-                inclusion_proof: None,
+                inclusion_data: vec![],
                 executioner: from,
                 received_at: 1u64 as BlockNumber,
                 cost: Some(2u64 as BalanceOf),

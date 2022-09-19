@@ -21,15 +21,15 @@ serde       = { version = "1.0", default-features = false, optional = true, feat
 # Circuit dependencies
 pallet-account-manager                    = { path = "../../pallets/account-manager", default-features = false }
 pallet-circuit                            = { path = "../../pallets/circuit", default-features = false }
-pallet-circuit-portal                     = { path = "../../pallets/circuit-portal", default-features = false }
-pallet-circuit-portal-rpc-runtime-api     = { path = "../../pallets/circuit-portal/rpc/runtime-api", default-features = false }
+pallet-portal                             = { path = "../../pallets/portal", default-features = false }
+pallet-portal-rpc-runtime-api             = { path = "../../pallets/portal/rpc/runtime-api", default-features = false }
 pallet-contracts-registry                 = { path = "../../pallets/contracts-registry", default-features = false }
 pallet-contracts-registry-rpc-runtime-api = { path = "../../pallets/contracts-registry/rpc/runtime-api", default-features = false }
-pallet-mfv                                = { package = "pallet-multi-finality-verifier", path = "../../pallets/multi-finality-verifier", version = "1.0.0-alpha.0", default-features = false }
+pallet-grandpa-finality-verifier          = { path = "../../finality-verifiers/grandpa", default-features = false }
 pallet-treasury                           = { path = "../../pallets/treasury", default-features = false }
-pallet-clock                           = { path = "../../pallets/clock", default-features = false }
+pallet-clock                              = { path = "../../pallets/clock", default-features = false }
 pallet-xdns                               = { path = "../../pallets/xdns", default-features = false }
-pallet-xbi-portal                               = { path = "../../pallets/xbi-portal", default-features = false }
+pallet-xbi-portal                         = { path = "../../pallets/xbi-portal", default-features = false }
 pallet-xdns-rpc-runtime-api               = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
 
 t3rn-primitives = { default-features = false, path = "../../primitives" }
@@ -133,12 +133,9 @@ std = [
   "pallet-account-manager/std",
   "pallet-contracts-registry/std",
   "pallet-xbi-portal/std",
-  "pallet-circuit-portal/std",
-  "pallet-circuit-portal-rpc-runtime-api/std",
   "pallet-balances/std",
   #	"pallet-bridge-dispatch/std",
   #	"pallet-bridge-grandpa/std",
-  "pallet-mfv/std",
   "pallet-treasury/std",
   #	"pallet-bridge-messages/std",
   "pallet-grandpa/std",
@@ -183,7 +180,6 @@ runtime-benchmarks = [
   'hex-literal',
   'pallet-account-manager/runtime-benchmarks',
   'pallet-balances/runtime-benchmarks',
-  'pallet-circuit-portal/runtime-benchmarks',
   'pallet-contracts-registry/runtime-benchmarks',
   'pallet-xdns/runtime-benchmarks',
   'pallet-timestamp/runtime-benchmarks',
