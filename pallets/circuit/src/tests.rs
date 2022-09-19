@@ -37,7 +37,7 @@ use serde_json::Value;
 use sp_io::TestExternalities;
 use sp_runtime::{
     traits::{Header as HeaderT, Zero},
-    AccountId32, DispatchErrorWithPostInfo
+    AccountId32, DispatchErrorWithPostInfo,
 };
 use sp_std::{convert::TryFrom, prelude::*};
 use std::{convert::TryInto, fs};
@@ -283,8 +283,6 @@ fn runs_mock_tests() {
         });
 }
 
-fn _as_u32_le(array: &[u8; 4]) -> u32 {
-    (array[0] as u32)
 fn as_u32_le(array: &[u8; 4]) -> u32 {
     (array[0] as u32)
         + ((array[1] as u32) << 8)
