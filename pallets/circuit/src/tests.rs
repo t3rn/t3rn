@@ -35,7 +35,10 @@ use frame_system::{pallet_prelude::OriginFor, EventRecord, Phase};
 pub use pallet_grandpa_finality_verifier::mock::brute_seed_block_1;
 use serde_json::Value;
 use sp_io::TestExternalities;
-use sp_runtime::{traits::Zero, AccountId32, DispatchErrorWithPostInfo};
+use sp_runtime::{
+    traits::{Header as HeaderT, Zero},
+    AccountId32, DispatchErrorWithPostInfo
+};
 use sp_std::{convert::TryFrom, prelude::*};
 use std::{convert::TryInto, fs};
 use t3rn_primitives::{
@@ -282,6 +285,8 @@ fn runs_mock_tests() {
 
 fn _as_u32_le(array: &[u8; 4]) -> u32 {
     (array[0] as u32)
+fn as_u32_le(array: &[u8; 4]) -> u32 {
+    (array[0] as u32)
         + ((array[1] as u32) << 8)
         + ((array[2] as u32) << 16)
         + ((array[3] as u32) << 24)
@@ -449,7 +454,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                                 enforce_executioner: None
                             }],
                             vec![hex!(
-                                "84a5512d2a624231c0d3748ec11a94d01d9366d310f057f12913e40c1267b4e1"
+                                "388ee470b95c60ecf7e6e1f97b04f423346b443a06b5be4adbc1c219ed7ae636"
                             )
                             .into(),],
                         )),
@@ -635,7 +640,7 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
                                 enforce_executioner: None
                             }],
                             vec![hex!(
-                                "878ceb78ebb97457555b082762edafe03c7bc61d1f3321d62fdeb56e5aaf8954"
+                                "df27692efff5ca3e2db6b0c2aed2976970b071d0ba18a82f818d488205004bad"
                             )
                             .into(),],
                         )),
@@ -1306,45 +1311,45 @@ fn circuit_handles_add_liquidity_with_insurance() {
 //
 // }
 
-// fn successfully_bond_optimistic(
-//     side_effect: SideEffect<AccountId32, BlockNumber, Balance>,
-//     xtx_id: XtxId<Runtime>,
-//     relayer: AccountId32,
-//     submitter: AccountId32,
-// ) {
-//     let optional_insurance = side_effect.encoded_args[3].clone();
-//
-//     assert!(
-//         optional_insurance.len() == 32,
-//         "Wrong test value - optimistic transfer assumes optimistic arguments"
-//     );
-//
-//     assert_ok!(Circuit::bond_insurance_deposit(
-//         Origin::signed(relayer.clone()),
-//         xtx_id,
-//         side_effect
-//             .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(),
-//     ));
-//
-//     let [insurance, reward]: [u128; 2] = Decode::decode(&mut &optional_insurance[..]).unwrap();
-//
-//     let created_insurance_deposit = Circuit::get_insurance_deposits(
-//         xtx_id,
-//         side_effect
-//             .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(),
-//     )
-//     .unwrap();
-//
-//     assert_eq!(created_insurance_deposit.insurance, insurance as u128);
-//     assert_eq!(created_insurance_deposit.reward, reward as u128);
-//     assert_eq!(
-//         created_insurance_deposit.requester,
-//         Decode::decode(&mut &submitter.encode()[..]).unwrap()
-//     );
-//     assert_eq!(created_insurance_deposit.bonded_relayer, Some(relayer));
-//     assert_eq!(created_insurance_deposit.status, CircuitStatus::Bonded);
-//     assert_eq!(created_insurance_deposit.requested_at, 1);
-// }
+fn successfully_bond_optimistic(
+    side_effect: SideEffect<AccountId32, BlockNumber, Balance>,
+    xtx_id: XtxId<Runtime>,
+    relayer: AccountId32,
+    submitter: AccountId32,
+) {
+    let optional_insurance = side_effect.encoded_args[3].clone();
+
+    assert!(
+        optional_insurance.len() == 32,
+        "Wrong test value - optimistic transfer assumes optimistic arguments"
+    );
+
+    assert_ok!(Circuit::bond_insurance_deposit(
+        Origin::signed(relayer.clone()),
+        xtx_id,
+        side_effect
+            .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(),
+    ));
+
+    let [insurance, reward]: [u128; 2] = Decode::decode(&mut &optional_insurance[..]).unwrap();
+
+    let created_insurance_deposit = Circuit::get_insurance_deposits(
+        xtx_id,
+        side_effect
+            .generate_id::<circuit_runtime_pallets::pallet_circuit::SystemHashing<Runtime>>(),
+    )
+    .unwrap();
+
+    assert_eq!(created_insurance_deposit.insurance, insurance as u128);
+    assert_eq!(created_insurance_deposit.reward, reward as u128);
+    assert_eq!(
+        created_insurance_deposit.requester,
+        Decode::decode(&mut &submitter.encode()[..]).unwrap()
+    );
+    assert_eq!(created_insurance_deposit.bonded_relayer, Some(relayer));
+    assert_eq!(created_insurance_deposit.status, CircuitStatus::Bonded);
+    assert_eq!(created_insurance_deposit.requested_at, 1);
+}
 
 #[test]
 fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_submitted() {
@@ -3470,7 +3475,7 @@ fn execute_side_effects_with_xbi_works_for_transfers() {
             let _ = Balances::deposit_creating(&ALICE, INITIAL_BALANCE); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
 
             System::set_block_number(1);
-            brute_seed_block_1([3, 3, 3, 3]);
+            brute_seed_block_1_to_grandpa_mfv([3, 3, 3, 3]);
 
             let xtx_id: sp_core::H256 =
                 hex!("2637d56ea21c04df03463decc4aa8d2916c96e59ac45e451d7133eedc621de59").into();
@@ -3505,7 +3510,7 @@ fn execute_side_effects_with_xbi_works_for_transfers() {
                     input: valid_transfer_side_effect.clone(),
                     confirmed: None,
                     security_lvl: SecurityLvl::Escrowed,
-                    submission_target_height: vec![0],
+                    submission_target_height: vec![1, 0, 0, 0],
                 }]]
             );
 
@@ -3585,8 +3590,8 @@ fn execute_side_effects_with_xbi_works_for_call_evm() {
             let _ = Balances::deposit_creating(&ALICE, INITIAL_BALANCE); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
 
             System::set_block_number(1);
-            brute_seed_block_1([3, 3, 3, 3]);
-            brute_seed_block_1([1, 1, 1, 1]);
+            brute_seed_block_1_to_grandpa_mfv([3, 3, 3, 3]);
+            brute_seed_block_1_to_grandpa_mfv([1, 1, 1, 1]);
 
             let xtx_id: sp_core::H256 =
                 hex!("2637d56ea21c04df03463decc4aa8d2916c96e59ac45e451d7133eedc621de59").into();
@@ -3618,7 +3623,7 @@ fn execute_side_effects_with_xbi_works_for_call_evm() {
                     input: valid_evm_sfx.clone(),
                     confirmed: None,
                     security_lvl: SecurityLvl::Escrowed,
-                    submission_target_height: vec![0],
+                    submission_target_height: vec![1, 0, 0, 0],
                 }]]
             );
 

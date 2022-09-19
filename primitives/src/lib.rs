@@ -61,7 +61,6 @@ pub mod portal;
 pub mod protocol;
 pub mod side_effect;
 pub mod signature_caster;
-pub mod staking;
 pub mod storage;
 pub mod threevm;
 pub mod transfers;

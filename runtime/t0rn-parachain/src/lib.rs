@@ -57,6 +57,7 @@ pub use sp_runtime::{MultiAddress, Perbill, Permill};
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
+use t3rn_primitives::ReadLatestGatewayHeight;
 
 // Polkadot Imports
 use polkadot_runtime_common::BlockHashCount;

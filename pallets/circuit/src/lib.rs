@@ -123,6 +123,7 @@ pub mod pallet {
         sabi::Sabi,
     };
     use sp_std::borrow::ToOwned;
+
     use t3rn_primitives::{
         circuit::{LocalStateExecutionView, LocalTrigger, OnLocalTrigger},
         portal::Portal,
@@ -658,7 +659,13 @@ pub mod pallet {
             ));
 
             // Emit: From Circuit events
-            Self::emit(xtx_id, maybe_xtx_changed, &executor, &vec![], None);
+            Self::emit(
+                local_xtx_ctx.xtx_id,
+                maybe_xtx_changed,
+                &executor,
+                &vec![],
+                None,
+            );
 
             Ok(().into())
         }
@@ -2029,6 +2036,8 @@ impl<T: Config> Pallet<T> {
             &Self::account_id(),
             &fsx.input,
             &confirmation,
+            None,
+            None,
         )
         .map_err(|_e| Error::<T>::XBIExitFailedOnSFXConfirmation)?;
         Ok(())

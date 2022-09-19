@@ -64,6 +64,7 @@ impl pallet_circuit::Config for Runtime {
     type Escrowed = Self;
     type Event = Event;
     type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
+    // type FreeVM = FreeVM;
     type MultiCurrency = ORMLTokens;
     type PalletId = CircuitPalletId;
     type Portal = Portal;

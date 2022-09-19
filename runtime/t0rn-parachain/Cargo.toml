@@ -98,6 +98,9 @@ pallet-portal-rpc-runtime-api             = { path = "../../pallets/portal/rpc/r
 pallet-xbi-portal                 = { path = "../../pallets/xbi-portal", default-features = false }
 pallet-clock                      = { path = "../../pallets/clock", default-features = false }
 
+pallet-xbi-portal                 = { path = "../../pallets/xbi-portal", default-features = false }
+pallet-clock                      = { path = "../../pallets/clock", default-features = false }
+
 # Smart contracts VMs
 pallet-3vm                           = { path = "../../3vm/pallets/3vm", default-features = false }
 pallet-3vm-contracts                 = { path = "../../3vm/pallets/contracts", default-features = false, package = "pallet-contracts" }

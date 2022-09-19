@@ -1,6 +1,7 @@
 use crate::*;
 use frame_support::{parameter_types, traits::ConstU32, PalletId};
 use sp_core::H256;
+use sp_runtime::traits::*;
 
 use frame_support::dispatch::{DispatchError, DispatchErrorWithPostInfo};
 
