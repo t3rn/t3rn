@@ -202,7 +202,7 @@ fn test_register_gateway_overwrites_xdns_records() {
         assert_ok!(<Test as Config>::Xdns::add_new_xdns_record(
             origin.clone(),
             url.clone(),
-            gateway_id.clone(),
+            gateway_id,
             parachain.clone(),
             gateway_abi.clone(),
             gateway_vendor.clone(),

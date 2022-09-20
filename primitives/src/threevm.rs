@@ -1,5 +1,5 @@
 use crate::{
-    account_manager::Reason,
+    account_manager::Outcome,
     circuit::LocalStateExecutionView,
     contract_metadata::ContractType,
     contracts_registry::{AuthorInfo, RegistryContract},
@@ -71,11 +71,11 @@ where
     ) -> Result<LocalStateExecutionView<T, Balance>, DispatchError>;
 }
 
-pub struct Remunerated {
-    pub remuneration_id: Option<u64>,
+pub struct Remunerated<Hash> {
+    pub remuneration_id: Option<Hash>,
 }
 
-impl Default for Remunerated {
+impl<Hash> Default for Remunerated<Hash> {
     fn default() -> Self {
         Remunerated {
             remuneration_id: None,
@@ -83,8 +83,8 @@ impl Default for Remunerated {
     }
 }
 
-impl Remunerated {
-    pub fn new(id: Option<u64>) -> Self {
+impl<Hash> Remunerated<Hash> {
+    pub fn new(id: Option<Hash>) -> Self {
         Remunerated {
             remuneration_id: id,
         }
@@ -96,17 +96,17 @@ pub trait Remuneration<T: frame_system::Config, Balance> {
     fn try_remunerate<Module: ModuleOperations<T, Balance>>(
         payee: &T::AccountId,
         module: &Module,
-    ) -> Result<Remunerated, sp_runtime::DispatchError>;
+    ) -> Result<Remunerated<T::Hash>, sp_runtime::DispatchError>;
 
     /// Try to remunerate the fees from the given module with a custom balance
     fn try_remunerate_exact<Module: ModuleOperations<T, Balance>>(
         payee: &T::AccountId,
         amount: Balance,
         module: &Module,
-    ) -> Result<Remunerated, sp_runtime::DispatchError>;
+    ) -> Result<Remunerated<T::Hash>, sp_runtime::DispatchError>;
 
     /// Try to finalize a ledger item with an reason
-    fn try_finalize(ledger_id: u64, reason: Reason) -> DispatchResult;
+    fn try_finalize(ledger_id: T::Hash, outcome: Outcome) -> DispatchResult;
 }
 
 pub enum Characteristic {

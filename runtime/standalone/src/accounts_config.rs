@@ -1,4 +1,4 @@
-use crate::*;
+use super::*;
 use frame_support::parameter_types;
 use sp_core::crypto::AccountId32;
 
@@ -8,9 +8,13 @@ parameter_types! {
 }
 
 impl pallet_account_manager::Config for Runtime {
+    type Clock = Clock;
     type Currency = Balances;
     type EscrowAccount = EscrowAccount;
     type Event = Event;
+    type Executors = t3rn_primitives::executors::ExecutorsMock<Self>;
     type Time = Timestamp;
     type WeightInfo = ();
 }
+
+pallet_account_manager::setup_currency_adapter!();

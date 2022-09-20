@@ -122,7 +122,7 @@ where
             target,
             prize: Zero::zero(),
             ordered_at: Zero::zero(),
-            encoded_action: action_bytes.into(),
+            encoded_action: action_bytes,
             encoded_args: args,
             signature: vec![],
             enforce_executioner: None,
@@ -373,7 +373,8 @@ impl Default for SecurityLvl {
     }
 }
 
-#[derive(Debug, PartialEq)]
+// Side effects conversion error.
+#[derive(Debug, PartialEq, Eq)]
 pub enum Error {
     /// Expected confirmation to FSX wasn't there while hardening.
     HardeningMissingConfirmationError,

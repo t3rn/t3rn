@@ -22,7 +22,7 @@ use t3rn_primitives::bridges::header_chain::find_grandpa_authorities_scheduled_c
 
 /// Generic wrapper for `sp_runtime::traits::Header` based headers, that
 /// implements `headers_relay::sync_types::SourceHeader` and may be used in headers sync directly.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SyncHeader<Header>(Header);
 
 impl<Header> SyncHeader<Header> {
