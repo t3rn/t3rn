@@ -32,9 +32,9 @@ pub const DATA_SIDE_EFFECT_ID: &[u8; 4] = b"data";
 pub struct SideEffect<AccountId, BlockNumber, BalanceOf> {
     pub target: TargetId,
     pub prize: BalanceOf,
+    pub ordered_at: BlockNumber,
     pub encoded_action: Bytes,
     pub encoded_args: Vec<Bytes>,
-    pub ordered_at: BlockNumber,
     pub signature: Bytes,
     pub enforce_executioner: Option<AccountId>,
 }

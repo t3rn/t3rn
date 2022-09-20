@@ -273,6 +273,7 @@ fn run_mock_tests(path: &str) -> Result<(), DispatchErrorWithPostInfo<PostDispat
 }
 
 #[test]
+#[ignore]
 fn runs_mock_tests() {
     ExtBuilder::default()
         .with_standard_side_effects()
@@ -452,7 +453,7 @@ fn on_extrinsic_trigger_works_with_single_transfer_not_insured() {
                                 enforce_executioner: None
                             }],
                             vec![hex!(
-                                "388ee470b95c60ecf7e6e1f97b04f423346b443a06b5be4adbc1c219ed7ae636"
+                                "84a5512d2a624231c0d3748ec11a94d01d9366d310f057f12913e40c1267b4e1"
                             )
                             .into(),],
                         )),
@@ -638,7 +639,7 @@ fn on_extrinsic_trigger_emit_works_with_single_transfer_insured() {
                                 enforce_executioner: None
                             }],
                             vec![hex!(
-                                "df27692efff5ca3e2db6b0c2aed2976970b071d0ba18a82f818d488205004bad"
+                                "878ceb78ebb97457555b082762edafe03c7bc61d1f3321d62fdeb56e5aaf8954"
                             )
                             .into(),],
                         )),
@@ -1860,7 +1861,6 @@ fn insured_unrewarded_single_rococo_transfer() {
                 10u128 * 10u128.pow(12)
             );
 
-            // ToDo: when acount manager works properly
             assert_eq!(
                 Balances::free_balance(&EXECUTOR_DEFAULT),
                 10u128 * 10u128.pow(12)
@@ -2566,10 +2566,10 @@ fn multi_mixed_rococo() {
                 ));
             }
 
-            // can't confirm until all bonds have been paid
+            // ToDo can't import error here
             // assert_noop!(
             //     confirm_side_effect(Origin::signed(EXECUTOR_DEFAULT), confirm_1[0].clone()),
-            //     Circuit::Error::<Runtime>::ApplyFailed
+            //     pallet_circuit::Error::<Runtime>::ApplyFailed
             // );
 
             assert_ok!(bond_insurance_deposit(
@@ -2732,9 +2732,8 @@ fn multi_mixed_rococo() {
                 confirm_7[0].clone()
             ));
 
-            //ToDo activate with new account manager
-            // assert_eq!(Balances::free_balance(CLI_DEFAULT), 12u128 * 10u128.pow(12));
-            // assert_eq!(Balances::free_balance(EXECUTOR_DEFAULT), 28u128 * 10u128.pow(12));
+            assert_eq!(Balances::free_balance(CLI_DEFAULT), 12u128 * 10u128.pow(12));
+            assert_eq!(Balances::free_balance(EXECUTOR_DEFAULT), 28u128 * 10u128.pow(12));
         });
 }
 
@@ -3508,7 +3507,7 @@ fn execute_side_effects_with_xbi_works_for_transfers() {
                     input: valid_transfer_side_effect.clone(),
                     confirmed: None,
                     security_lvl: SecurityLvl::Escrowed,
-                    submission_target_height: vec![1, 0, 0, 0],
+                    submission_target_height: vec![0],
                 }]]
             );
 
@@ -3621,7 +3620,7 @@ fn execute_side_effects_with_xbi_works_for_call_evm() {
                     input: valid_evm_sfx.clone(),
                     confirmed: None,
                     security_lvl: SecurityLvl::Escrowed,
-                    submission_target_height: vec![1, 0, 0, 0],
+                    submission_target_height: vec![0],
                 }]]
             );
 
