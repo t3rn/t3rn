@@ -17,7 +17,7 @@ const HASH_BYTES: usize = 64;
 /// Numver of accesses in hashimoto loop
 const ACCESSES: usize = 64;
 
-#[derive(Default, Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
+#[derive(Default, Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct DoubleNodeWithMerkleProof {
     pub dag_nodes: [H512; 2],
     pub proof: Vec<H128>,
@@ -31,7 +31,7 @@ impl DoubleNodeWithMerkleProof {
     fn truncate_to_h128(arr: H256) -> H128 {
         let mut data = [0u8; 16];
         data.copy_from_slice(&(arr.0)[16..]);
-        H128(data.into())
+        H128(data)
     }
 
     fn hash_h128(l: H128, r: H128) -> H128 {
@@ -126,7 +126,7 @@ impl EthashCache {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Error {
     // Epoch doesn't map to the range in DAGS_MERKLE_ROOTS
     EpochOutOfRange,
@@ -155,7 +155,7 @@ impl EthashProver {
     fn dag_merkle_root(&self, epoch: u64) -> Option<H128> {
         DAGS_MERKLE_ROOTS
             .get((epoch - DAGS_START_EPOCH) as usize)
-            .map(|x| H128::from(x))
+            .map(H128::from)
     }
 
     // Adapted fro https://github.com/near/rainbow-bridge/blob/3fcdfbc6c0011f0e1507956a81c820616fb963b4/contracts/near/eth-client/src/lib.rs#L363

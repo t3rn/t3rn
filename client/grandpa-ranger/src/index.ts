@@ -22,7 +22,7 @@ class InstanceManager {
   async setup() {
     await this.relayer.setup(config.circuit.rpc)
     await this.initializeRelaychainListeners()
-    await this.initializeParachainListeners()
+    // await this.initializeParachainListeners()
     await this.initializeEventListeners()
     InstanceManager.debug("Components Initialzed")
   }
@@ -57,7 +57,7 @@ class InstanceManager {
   // initialize parachain instances as defined in config.json
   async initializeParachainListeners() {
     for (let i = 0; i < config.parachains.length; i++) {
-      const entry = config.parachains[i]
+      const entry = config.parachains[i] as any
 
       if (!this.relayParasMap[entry.relaychainId]) {
         throw new Error(`Setup Failed! Relaychain of ${entry.name} not found!`)

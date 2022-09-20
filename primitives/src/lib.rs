@@ -40,7 +40,6 @@ use sp_runtime::{
 
 pub use gateway_inbound_protocol::GatewayInboundProtocol;
 pub use orml_traits;
-pub use t3rn_sdk_primitives as sdk_primitives;
 
 use sp_std::{convert::TryFrom, prelude::*, vec};
 #[cfg(feature = "std")]
@@ -50,17 +49,23 @@ pub mod account_manager;
 pub mod bridges;
 pub mod circuit;
 pub mod circuit_portal;
+pub mod claimable;
+pub mod clock;
+pub mod common;
 pub mod contract_metadata;
 pub mod contracts_registry;
-pub mod freevm;
+pub mod executors;
 pub mod gateway_inbound_protocol;
 pub mod match_format;
+pub mod monetary;
 pub mod portal;
 pub mod protocol;
 pub mod side_effect;
 pub mod signature_caster;
 pub mod storage;
+pub mod threevm;
 pub mod transfers;
+pub mod treasury;
 pub mod volatile;
 pub mod xdns;
 pub mod xtx;
@@ -96,14 +101,15 @@ impl GatewayType {
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum GatewayVendor {
-    Substrate,
-    Ethereum,
+    InternalXBI,
+    PolkadotLike,
     Rococo,
+    EvmBased,
 }
 
 impl Default for GatewayVendor {
     fn default() -> Self {
-        GatewayVendor::Substrate
+        GatewayVendor::Rococo
     }
 }
 
@@ -432,7 +438,7 @@ pub fn retrieve_gateway_pointers(gateway_id: ChainId) -> Result<Vec<GatewayPoint
     Ok(vec![GatewayPointer {
         id: gateway_id,
         gateway_type: GatewayType::ProgrammableExternal(0),
-        vendor: GatewayVendor::Substrate,
+        vendor: GatewayVendor::Rococo,
     }])
 }
 

@@ -10,7 +10,7 @@ const DIFFICULTY_BOUND_DIVISOR: u32 = 11; // right-shifts equivalent to division
 const EXP_DIFFICULTY_PERIOD: u64 = 100000;
 const MINIMUM_DIFFICULTY: u32 = 131072;
 
-#[derive(PartialEq, RuntimeDebug)]
+#[derive(PartialEq, Eq, RuntimeDebug)]
 pub enum BombDelay {
     // See https://eips.ethereum.org/EIPS/eip-649
     Byzantium = 3000000,
@@ -24,7 +24,7 @@ pub enum BombDelay {
 
 /// Describes when hard forks occurred that affect difficulty calculations. These
 /// values are network-specific.
-#[derive(Copy, Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
+#[derive(Copy, Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct DifficultyConfig {
     // Block number on which Byzantium (EIP-649) rules activated
     pub byzantium_fork_block: u64,
@@ -95,7 +95,7 @@ pub fn calc_difficulty(
     let mut difficulty_without_exp = parent.difficulty;
     if sigma2 < 0 {
         difficulty_without_exp -=
-            (parent.difficulty >> DIFFICULTY_BOUND_DIVISOR) * sigma2.abs() as u64;
+            (parent.difficulty >> DIFFICULTY_BOUND_DIVISOR) * sigma2.unsigned_abs();
     } else {
         difficulty_without_exp += (parent.difficulty >> DIFFICULTY_BOUND_DIVISOR) * sigma2 as u64;
     }
@@ -139,8 +139,8 @@ mod tests {
         match StringOrInt::<T>::deserialize(deserializer)? {
             StringOrInt::String(s) => {
                 let maybe_uint = {
-                    if (&s).starts_with("0x") {
-                        u128::from_str_radix(&s.trim_start_matches("0x"), 16)
+                    if s.starts_with("0x") {
+                        u128::from_str_radix(s.trim_start_matches("0x"), 16)
                     } else {
                         u128::from_str_radix(&s, 10)
                     }
@@ -154,7 +154,7 @@ mod tests {
         }
     }
 
-    #[derive(Debug, PartialEq, Deserialize)]
+    #[derive(Debug, PartialEq, Eq, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct DifficultyTestCase {
         /// Parent timestamp.
@@ -176,7 +176,7 @@ mod tests {
         pub current_block_number: u64,
     }
 
-    #[derive(Debug, PartialEq, Deserialize)]
+    #[derive(Debug, PartialEq, Eq, Deserialize)]
     pub struct DifficultyTest(BTreeMap<String, DifficultyTestCase>);
 
     impl DifficultyTest {

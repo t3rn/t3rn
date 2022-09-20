@@ -11,9 +11,11 @@ fi
 trap 'cleanup' EXIT
 
 cleanup() {
-  rm -rf node_modules
-  rm -f package.json package-lock.json
-  rm $used_wasm
+  rm -rf $root_dir/scripts/node_modules
+  rm -f \
+    $root_dir/scripts/package.json \
+    $root_dir/scripts/package-lock.json \
+    $used_wasm
 }
 
 get_finalized_head(){
@@ -50,12 +52,8 @@ if ! git tag --list | grep -Fq $tag; then
   exit 1
 fi
 
-if ! cargo install --list | grep -Fq 'srtool-cli v0.8.0'; then
-  echo "installing srtool-cli..."
-  cargo install \
-    --git https://github.com/chevdor/srtool-cli \
-    --tag v0.8.0
-fi
+echo "🏭 installing chevdor/subwasm v0.16.1..."
+cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.16.1
 
 set -Ee
 
@@ -101,24 +99,20 @@ if [[ $new_author_version != $((old_author_version + 1)) ]]; then
   exit 1
 fi
 
-echo "🏭 compiling runtime wasm..."
+echo "🏭 building runtime wasm..."
 
-report="$( \
-  srtool build \
-    --profile release \
-    --runtime-dir runtime/parachain \
-    --package circuit-parachain-runtime \
-    --json \
-    $root_dir \
-)"
+cargo build \
+  --locked \
+  --profile release \
+  --package circuit-parachain-runtime \
+  --target-dir $root_dir/target/ \
+  -Z unstable-options
 
-report="{${report#*\{}" # left trimming nonjson
-wasm="$root_dir/$(jq -r .runtimes.compressed.wasm <<<"$report")"
-hash=$( \
-  jq -r .runtimes.compressed.blake2_256 <<<"$report" \
-)
+used_wasm=$root_dir/target/release/wbuild/circuit-parachain-runtime/circuit_parachain_runtime.compact.compressed.wasm
 
-cp $wasm $used_wasm
+echo "🔢 hashing circuit_parachain_runtime.compact.compressed.wasm..."
+
+hash=$(subwasm info --json $used_wasm | jq -r .blake2_256)
 
 read -n 1 -p "e2e-tested on rococo-local?
 runtime upgrade tested on rococo-local?

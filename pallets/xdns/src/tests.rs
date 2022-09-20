@@ -18,23 +18,31 @@
 //! Tests for pallet-xdns.
 
 use super::*;
-use crate::mock::{ExtBuilder, Test, XDNS};
+use circuit_mock_runtime::{ExtBuilder, *};
 use codec::Decode;
 use frame_support::{assert_err, assert_noop, assert_ok};
 use frame_system::Origin;
 use sp_runtime::DispatchError;
 use t3rn_primitives::{abi::Type, xdns::Xdns, GatewayType, GatewayVendor};
+
+const DEFAULT_GATEWAYS_IN_STORAGE_COUNT: usize = 7;
+const STANDARD_SIDE_EFFECTS_COUNT: usize = 9;
+
 #[test]
 fn genesis_should_seed_circuit_gateway_polkadot_and_kusama_nodes() {
     ExtBuilder::default()
+        .with_standard_side_effects()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
-            assert_eq!(XDNSRegistry::<Test>::iter().count(), 4);
-            assert!(XDNSRegistry::<Test>::get(b"circ").is_some());
-            assert!(XDNSRegistry::<Test>::get(b"gate").is_some());
-            assert!(XDNSRegistry::<Test>::get(b"pdot").is_some());
-            assert!(XDNSRegistry::<Test>::get(b"ksma").is_some());
+            assert_eq!(
+                pallet_xdns::XDNSRegistry::<Runtime>::iter().count(),
+                DEFAULT_GATEWAYS_IN_STORAGE_COUNT
+            );
+            assert!(pallet_xdns::XDNSRegistry::<Runtime>::get([3, 3, 3, 3]).is_some());
+            assert!(pallet_xdns::XDNSRegistry::<Runtime>::get(b"gate").is_some());
+            assert!(pallet_xdns::XDNSRegistry::<Runtime>::get(b"pdot").is_some());
+            assert!(pallet_xdns::XDNSRegistry::<Runtime>::get(b"ksma").is_some());
         });
 }
 
@@ -42,19 +50,21 @@ fn genesis_should_seed_circuit_gateway_polkadot_and_kusama_nodes() {
 fn should_add_a_new_xdns_record_if_it_doesnt_exist() {
     ExtBuilder::default().build().execute_with(|| {
         assert_ok!(XDNS::add_new_xdns_record(
-            Origin::<Test>::Root.into(),
+            Origin::<Runtime>::Root.into(),
             b"some_url".to_vec(),
             *b"test",
             None,
             Default::default(),
-            GatewayVendor::Substrate,
+            GatewayVendor::PolkadotLike,
             GatewayType::TxOnly(0),
             Default::default(),
             Default::default(),
-            vec![]
+            vec![],
+            vec![],
+            false
         ));
-        assert_eq!(XDNSRegistry::<Test>::iter().count(), 1);
-        assert!(XDNSRegistry::<Test>::get(b"test").is_some());
+        assert_eq!(pallet_xdns::XDNSRegistry::<Runtime>::iter().count(), 1);
+        assert!(pallet_xdns::XDNSRegistry::<Runtime>::get(b"test").is_some());
     });
 }
 
@@ -62,11 +72,12 @@ fn should_add_a_new_xdns_record_if_it_doesnt_exist() {
 fn should_not_add_a_new_side_effect_if_it_exist() {
     ExtBuilder::default()
         .with_standard_side_effects()
+        .with_default_xdns_records()
         .build()
         .execute_with(|| {
             assert_noop!(
                 XDNS::add_side_effect(
-                    Origin::<Test>::Root.into(),
+                    Origin::<Runtime>::Root.into(),
                     *b"aliq",
                     b"add_liquidity".to_vec(),
                     vec![
@@ -107,9 +118,9 @@ fn should_not_add_a_new_side_effect_if_it_exist() {
                         b"MultiTransfer(executor,caller,asset_right,amount_right)".to_vec()
                     ]
                 ),
-                crate::pallet::Error::<Test>::SideEffectInterfaceAlreadyExists
+                pallet_xdns::pallet::Error::<Runtime>::SideEffectInterfaceAlreadyExists
             );
-            assert_eq!(CustomSideEffects::<Test>::iter().count(), 0);
+            assert_eq!(pallet_xdns::CustomSideEffects::<Runtime>::iter().count(), 0);
         });
 }
 
@@ -117,9 +128,13 @@ fn should_not_add_a_new_side_effect_if_it_exist() {
 fn should_add_standard_side_effects() {
     ExtBuilder::default()
         .with_standard_side_effects()
+        .with_default_xdns_records()
         .build()
         .execute_with(|| {
-            assert_eq!(StandardSideEffects::<Test>::iter().count(), 5);
+            assert_eq!(
+                pallet_xdns::StandardSideEffects::<Runtime>::iter().count(),
+                9
+            );
         });
 }
 
@@ -127,10 +142,11 @@ fn should_add_standard_side_effects() {
 fn should_add_a_new_side_effect_if_it_doesnt_exist() {
     ExtBuilder::default()
         .with_standard_side_effects()
+        .with_default_xdns_records()
         .build()
         .execute_with(|| {
             assert_ok!(XDNS::add_side_effect(
-                Origin::<Test>::Root.into(),
+                Origin::<Runtime>::Root.into(),
                 *b"cust",
                 b"custom_side_effect".to_vec(),
                 vec![
@@ -163,9 +179,9 @@ fn should_add_a_new_side_effect_if_it_doesnt_exist() {
                     b"MultiTransfer(executor,caller,asset_right,amount_right)".to_vec()
                 ]
             ));
-            assert_eq!(CustomSideEffects::<Test>::iter().count(), 1);
-            let side_effect = CustomSideEffects::<Test>::get(
-                <Test as frame_system::Config>::Hashing::hash(b"cust"),
+            assert_eq!(pallet_xdns::CustomSideEffects::<Runtime>::iter().count(), 1);
+            let side_effect = pallet_xdns::CustomSideEffects::<Runtime>::get(
+                <Runtime as frame_system::Config>::Hashing::hash(b"cust"),
             )
             .unwrap();
             assert_eq!(side_effect.get_id(), *b"cust");
@@ -176,94 +192,131 @@ fn should_add_a_new_side_effect_if_it_doesnt_exist() {
 #[test]
 fn should_not_add_a_new_xdns_record_if_it_already_exists() {
     ExtBuilder::default()
+        .with_standard_side_effects()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
             assert_noop!(
                 XDNS::add_new_xdns_record(
-                    Origin::<Test>::Root.into(),
+                    Origin::<Runtime>::Root.into(),
                     b"some_url".to_vec(),
-                    *b"circ",
+                    [3, 3, 3, 3],
                     None,
                     Default::default(),
-                    GatewayVendor::Substrate,
+                    GatewayVendor::PolkadotLike,
                     GatewayType::TxOnly(0),
                     Default::default(),
                     Default::default(),
-                    vec![]
+                    vec![],
+                    vec![],
+                    false
                 ),
-                crate::pallet::Error::<Test>::XdnsRecordAlreadyExists
+                pallet_xdns::pallet::Error::<Runtime>::XdnsRecordAlreadyExists
             );
-            assert_eq!(XDNSRegistry::<Test>::iter().count(), 4);
+            assert_eq!(
+                pallet_xdns::XDNSRegistry::<Runtime>::iter().count(),
+                DEFAULT_GATEWAYS_IN_STORAGE_COUNT
+            );
         });
 }
 
 #[test]
 fn should_purge_a_xdns_record_successfully() {
     ExtBuilder::default()
+        .with_standard_side_effects()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
+            assert_eq!(
+                pallet_xdns::XDNSRegistry::<Runtime>::iter().count(),
+                DEFAULT_GATEWAYS_IN_STORAGE_COUNT
+            );
             assert_ok!(XDNS::purge_xdns_record(
-                Origin::<Test>::Root.into(),
-                1,
+                Origin::<Runtime>::Root.into(),
+                ALICE,
                 *b"gate"
             ));
-            assert_eq!(XDNSRegistry::<Test>::iter().count(), 3);
-            assert!(XDNSRegistry::<Test>::get(b"gate").is_none());
+            assert_eq!(
+                pallet_xdns::XDNSRegistry::<Runtime>::iter().count(),
+                DEFAULT_GATEWAYS_IN_STORAGE_COUNT - 1
+            );
+            assert!(pallet_xdns::XDNSRegistry::<Runtime>::get(b"gate").is_none());
         });
 }
 
 #[test]
 fn finds_correct_amount_of_allowed_side_effects() {
     ExtBuilder::default()
-        .with_default_xdns_records()
         .with_standard_side_effects()
+        .with_default_xdns_records()
         .build()
-        .execute_with(|| assert_eq!(XDNS::allowed_side_effects(b"circ").iter().count(), 2));
+        .execute_with(|| {
+            assert_eq!(
+                XDNS::allowed_side_effects(&[3, 3, 3, 3]).len(),
+                STANDARD_SIDE_EFFECTS_COUNT
+            )
+        });
 }
 
 #[test]
 fn should_error_trying_to_purge_a_missing_xdns_record() {
-    let _missing_hash = <Test as frame_system::Config>::Hashing::hash(b"miss");
+    let _missing_hash = <Runtime as frame_system::Config>::Hashing::hash(b"miss");
 
     ExtBuilder::default()
+        .with_standard_side_effects()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
             assert_noop!(
-                XDNS::purge_xdns_record(Origin::<Test>::Root.into(), 1, *b"miss"),
-                crate::pallet::Error::<Test>::UnknownXdnsRecord
+                XDNS::purge_xdns_record(Origin::<Runtime>::Root.into(), ALICE, *b"miss"),
+                pallet_xdns::pallet::Error::<Runtime>::UnknownXdnsRecord
             );
-            assert_eq!(XDNSRegistry::<Test>::iter().count(), 4);
+            assert_eq!(
+                pallet_xdns::XDNSRegistry::<Runtime>::iter().count(),
+                DEFAULT_GATEWAYS_IN_STORAGE_COUNT
+            );
         });
 }
 
 #[test]
 fn should_error_trying_to_purge_an_xdns_record_if_not_root() {
     ExtBuilder::default()
+        .with_standard_side_effects()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
             assert_noop!(
-                XDNS::purge_xdns_record(Origin::<Test>::Signed(1).into(), 1, *b"gate"),
+                XDNS::purge_xdns_record(Origin::<Runtime>::Signed(ALICE).into(), ALICE, *b"gate"),
                 DispatchError::BadOrigin
             );
-            assert_eq!(XDNSRegistry::<Test>::iter().count(), 4);
-            assert!(XDNSRegistry::<Test>::get(b"gate").is_some());
+            assert_eq!(
+                pallet_xdns::XDNSRegistry::<Runtime>::iter().count(),
+                DEFAULT_GATEWAYS_IN_STORAGE_COUNT
+            );
+            assert!(pallet_xdns::XDNSRegistry::<Runtime>::get(b"gate").is_some());
         });
 }
 
 #[test]
 fn should_update_ttl_for_a_known_xdns_record() {
     ExtBuilder::default()
+        .with_standard_side_effects()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
-            assert_ok!(XDNS::update_ttl(Origin::<Test>::Root.into(), *b"gate", 2));
-            assert_eq!(XDNSRegistry::<Test>::iter().count(), 4);
+            assert_ok!(XDNS::update_ttl(
+                Origin::<Runtime>::Root.into(),
+                *b"gate",
+                2
+            ));
             assert_eq!(
-                XDNSRegistry::<Test>::get(b"gate").unwrap().last_finalized,
+                pallet_xdns::XDNSRegistry::<Runtime>::iter().count(),
+                DEFAULT_GATEWAYS_IN_STORAGE_COUNT
+            );
+            assert_eq!(
+                pallet_xdns::XDNSRegistry::<Runtime>::get(b"gate")
+                    .unwrap()
+                    .last_finalized,
                 Some(2)
             );
         });
@@ -273,8 +326,8 @@ fn should_update_ttl_for_a_known_xdns_record() {
 fn should_error_when_trying_to_update_ttl_for_a_missing_xdns_record() {
     ExtBuilder::default().build().execute_with(|| {
         assert_noop!(
-            XDNS::update_ttl(Origin::<Test>::Root.into(), *b"miss", 2),
-            crate::pallet::Error::<Test>::XdnsRecordNotFound
+            XDNS::update_ttl(Origin::<Runtime>::Root.into(), *b"miss", 2),
+            pallet_xdns::pallet::Error::<Runtime>::XdnsRecordNotFound
         );
     });
 }
@@ -283,7 +336,7 @@ fn should_error_when_trying_to_update_ttl_for_a_missing_xdns_record() {
 fn should_error_when_trying_to_update_ttl_as_non_root() {
     ExtBuilder::default().build().execute_with(|| {
         assert_noop!(
-            XDNS::update_ttl(Origin::<Test>::Signed(1).into(), *b"gate", 2),
+            XDNS::update_ttl(Origin::<Runtime>::Signed(ALICE).into(), *b"gate", 2),
             DispatchError::BadOrigin
         );
     });
@@ -292,11 +345,12 @@ fn should_error_when_trying_to_update_ttl_as_non_root() {
 #[test]
 fn should_contain_gateway_system_properties() {
     ExtBuilder::default()
+        .with_standard_side_effects()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
-            let polkadot_xdns_record = XDNSRegistry::<Test>::get(b"pdot").unwrap();
-            let kusama_xdns_record = XDNSRegistry::<Test>::get(b"ksma").unwrap();
+            let polkadot_xdns_record = pallet_xdns::XDNSRegistry::<Runtime>::get(b"pdot").unwrap();
+            let kusama_xdns_record = pallet_xdns::XDNSRegistry::<Runtime>::get(b"ksma").unwrap();
             let polkadot_symbol: Vec<u8> =
                 Decode::decode(&mut &polkadot_xdns_record.gateway_sys_props.token_symbol[..])
                     .unwrap();
@@ -316,6 +370,7 @@ fn should_contain_gateway_system_properties() {
 #[test]
 fn fetch_abi_should_return_abi_for_a_known_xdns_record() {
     ExtBuilder::default()
+        .with_standard_side_effects()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {
@@ -327,6 +382,7 @@ fn fetch_abi_should_return_abi_for_a_known_xdns_record() {
 #[test]
 fn fetch_abi_should_error_for_unknown_xdns_record() {
     ExtBuilder::default()
+        .with_standard_side_effects()
         .with_default_xdns_records()
         .build()
         .execute_with(|| {

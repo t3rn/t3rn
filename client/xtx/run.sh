@@ -14,9 +14,7 @@ fi
 
 set -xEeu
 
-## build the custom justification decoder and standalone circuit
-cargo build \
-  --manifest-path ./justification-decoder/Cargo.toml
+## build the standalone circuit
 cargo build \
   --manifest-path ../../node/standalone/Cargo.toml
 

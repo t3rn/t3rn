@@ -38,6 +38,8 @@ pub fn add_new_xdns_record(
     gateway_vendor: GatewayVendor,          // GatewayVendor::Substrate;
     gateway_type: GatewayType,              // GatewayType::ProgrammableInternal(0)
     gateway_genesis: GatewayGenesisConfig,
+    security_coordinates: Vec<u8>,
+    allowed_side_effects: Vec<AllowedSideEffect>,
 ) -> DispatchResultWithPostInfo
 ```
 

@@ -19,8 +19,6 @@ pub use t3rn_primitives::{
 pub use crate::pallet::*;
 
 #[cfg(test)]
-mod mock;
-#[cfg(test)]
 mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -49,7 +47,7 @@ pub mod pallet {
     use t3rn_primitives::{
         side_effect::interface::SideEffectInterface,
         xdns::{AllowedSideEffect, Parachain, Xdns, XdnsRecord},
-        ChainId, EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor,
+        Bytes, ChainId, EscrowTrait, GatewaySysProps, GatewayType, GatewayVendor,
     };
 
     #[pallet::config]
@@ -122,8 +120,8 @@ pub mod pallet {
 
             let side_effect_id: SideEffectId<T> = T::Hashing::hash(&id.encode());
 
-            if <CustomSideEffects<T>>::contains_key(&side_effect_id)
-                | <StandardSideEffects<T>>::contains_key(&id)
+            if <CustomSideEffects<T>>::contains_key(side_effect_id)
+                | <StandardSideEffects<T>>::contains_key(id)
             {
                 return Err(Error::<T>::SideEffectInterfaceAlreadyExists.into())
             }
@@ -139,7 +137,7 @@ pub mod pallet {
                 revert_events,
             };
 
-            <CustomSideEffects<T>>::insert(&side_effect_id, side_effect);
+            <CustomSideEffects<T>>::insert(side_effect_id, side_effect);
 
             Ok(().into())
         }
@@ -163,10 +161,10 @@ pub mod pallet {
             xdns_record_id: [u8; 4],
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
-            if !<XDNSRegistry<T>>::contains_key(&xdns_record_id) {
+            if !<XDNSRegistry<T>>::contains_key(xdns_record_id) {
                 Err(Error::<T>::UnknownXdnsRecord.into())
             } else {
-                <XDNSRegistry<T>>::remove(&xdns_record_id);
+                <XDNSRegistry<T>>::remove(xdns_record_id);
                 Self::deposit_event(Event::<T>::XdnsRecordPurged(requester, xdns_record_id));
                 Ok(().into())
             }
@@ -197,6 +195,8 @@ pub mod pallet {
         SideEffectInterfaceAlreadyExists,
         /// SideEffect interface was not found in storage
         SideEffectInterfaceNotFound,
+        /// the xdns entry does not contain parachain information
+        NoParachainInfoFound,
     }
 
     #[pallet::storage]
@@ -241,7 +241,7 @@ pub mod pallet {
                 .map(|s| s.get_id())
                 .collect();
             for xdns_record in self.known_xdns_records.clone() {
-                <XDNSRegistry<T>>::insert(&xdns_record.gateway_id.clone(), xdns_record);
+                <XDNSRegistry<T>>::insert(xdns_record.gateway_id, xdns_record);
             }
 
             for side_effect in self.standard_side_effects.clone() {
@@ -266,12 +266,13 @@ pub mod pallet {
             gateway_type: GatewayType,
             gateway_genesis: GatewayGenesisConfig,
             gateway_sys_props: GatewaySysProps,
+            security_coordinates: Vec<u8>,
             allowed_side_effects: Vec<AllowedSideEffect>,
         ) -> DispatchResult {
             ensure_root(origin)?;
 
             // early exit if record already exists in storage
-            if <XDNSRegistry<T>>::contains_key(&gateway_id) {
+            if <XDNSRegistry<T>>::contains_key(gateway_id) && !force {
                 return Err(Error::<T>::XdnsRecordAlreadyExists.into())
             }
 
@@ -285,6 +286,7 @@ pub mod pallet {
                 gateway_type,
                 gateway_genesis,
                 gateway_sys_props,
+                security_coordinates,
                 allowed_side_effects,
             );
 
@@ -295,7 +297,7 @@ pub mod pallet {
                     .map_err(|_| "Unable to compute current timestamp")?;
 
             xdns_record.set_last_finalized(now);
-            <XDNSRegistry<T>>::insert(&gateway_id, xdns_record);
+            <XDNSRegistry<T>>::insert(gateway_id, xdns_record);
             Self::deposit_event(Event::<T>::XdnsRecordStored(gateway_id));
             Ok(())
         }
@@ -307,11 +309,11 @@ pub mod pallet {
             let mut allowed_side_effects: BTreeMap<[u8; 4], Box<dyn SideEffectProtocol>> =
                 BTreeMap::new();
 
-            if let Some(xdns_entry) = <XDNSRegistry<T>>::get(&gateway_id) {
+            if let Some(xdns_entry) = <XDNSRegistry<T>>::get(gateway_id) {
                 for side_effect in xdns_entry.allowed_side_effects {
-                    if <StandardSideEffects<T>>::contains_key(&side_effect) {
+                    if <StandardSideEffects<T>>::contains_key(side_effect) {
                         // is it somehow possible to only pass a reference here? aka each gateway would access the same addresses/structs in memory?
-                        let se = <StandardSideEffects<T>>::get(&side_effect).unwrap();
+                        let se = <StandardSideEffects<T>>::get(side_effect).unwrap();
                         allowed_side_effects.insert(se.get_id(), Box::new(se.clone()));
                     } else {
                         // TODO implement custom side_effect lookup
@@ -357,11 +359,9 @@ pub mod pallet {
 
         // Fetches the GatewayABIConfig for a given XDNS record
         fn get_abi(chain_id: ChainId) -> Result<GatewayABIConfig, DispatchError> {
-            if !<XDNSRegistry<T>>::contains_key(chain_id) {
-                return Err(Error::<T>::XdnsRecordNotFound.into())
-            }
-
-            Ok(<XDNSRegistry<T>>::get(chain_id).unwrap().gateway_abi)
+            Ok(<XDNSRegistry<T>>::get(chain_id)
+                .ok_or(Err(Error::<T>::XdnsRecordNotFound.into()))?
+                .gateway_abi)
         }
 
         fn get_gateway_value_unsigned_type_unsafe(chain_id: &ChainId) -> Type {
@@ -379,6 +379,26 @@ pub mod pallet {
             match <XDNSRegistry<T>>::get(&chain_id) {
                 Some(rec) => Ok(rec.gateway_vendor),
                 None => Err(Error::<T>::XdnsRecordNotFound.into()),
+            }
+        }
+
+        fn get_gateway_security_coordinates(chain_id: &ChainId) -> Result<Bytes, DispatchError> {
+            if !<XDNSRegistry<T>>::contains_key(chain_id) {
+                return Err(Error::<T>::XdnsRecordNotFound.into())
+            }
+            Ok(<XDNSRegistry<T>>::get(chain_id)
+                .unwrap()
+                .security_coordinates) //safe because checked
+        }
+
+        fn get_gateway_para_id(chain_id: &ChainId) -> Result<u32, DispatchError> {
+            if !<XDNSRegistry<T>>::contains_key(chain_id) {
+                return Err(Error::<T>::XdnsRecordNotFound.into())
+            }
+
+            match <XDNSRegistry<T>>::get(chain_id).unwrap().parachain {
+                Some(value) => Ok(value.id),
+                None => Err(Error::<T>::NoParachainInfoFound.into()),
             }
         }
 

@@ -1,7 +1,7 @@
 import { EventEmitter } from "events"
 import { ApiPromise, WsProvider } from "@polkadot/api"
 import {
-  grandpaDecode,
+  decodeJustification,
   decodeHeaderNumber,
   fetchMissingHeaders,
 } from "./../util"
@@ -57,7 +57,7 @@ export default class RelaychainListener extends EventEmitter {
           // previous justification. (in the plance with no internet :((  )
           // We can figure the block out here, and then query the
           // justification we need
-          const { blockNumber } = await grandpaDecode(justification)
+          const blockNumber = await decodeJustification(justification)
 
           // early exit if already known to avoid nonce issues when submitting finality proof
           if (blockNumber === this.latestJustification) {

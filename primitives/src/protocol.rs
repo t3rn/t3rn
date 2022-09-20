@@ -77,6 +77,7 @@ pub trait SideEffectProtocol {
                     _ => Err("Side Effect Validation - Incorrect arguments length"),
                 },
             }?;
+
             let res = type_n.clone().eval_abi(arg.clone(), gateway_abi)?;
             validated_args.push(res);
         }

@@ -25,7 +25,7 @@ benchmarks! {
         let gateway_id = b"test";
         let gateway_abi: GatewayABIConfig = Default::default();
 
-        let gateway_vendor = GatewayVendor::Substrate;
+        let gateway_vendor = GatewayVendor::PolkadotLike;
         let gateway_type = GatewayType::TxOnly(0);
 
         let gateway_genesis = GatewayGenesisConfig {
@@ -52,7 +52,7 @@ benchmarks! {
 
         let gateway_id = b"gate";
         let gateway_abi: GatewayABIConfig = Default::default();
-        let gateway_vendor = GatewayVendor::Substrate;
+        let gateway_vendor = GatewayVendor::PolkadotLike;
         let gateway_type = GatewayType::TxOnly(0);
 
         let gateway_genesis = GatewayGenesisConfig {
@@ -98,7 +98,7 @@ benchmarks! {
 
         let gateway_id = b"gate";
         let gateway_abi: GatewayABIConfig = Default::default();
-        let gateway_vendor = GatewayVendor::Substrate;
+        let gateway_vendor = GatewayVendor::PolkadotLike;
         let gateway_type = GatewayType::TxOnly(0);
 
         let gateway_genesis = GatewayGenesisConfig {
@@ -140,7 +140,7 @@ benchmarks! {
 
         let gateway_id = b"gate";
         let gateway_abi: GatewayABIConfig = Default::default();
-        let gateway_vendor = GatewayVendor::Substrate;
+        let gateway_vendor = GatewayVendor::PolkadotLike;
         let gateway_type = GatewayType::TxOnly(0);
 
         let gateway_genesis = GatewayGenesisConfig {

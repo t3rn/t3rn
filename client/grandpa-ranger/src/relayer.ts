@@ -1,6 +1,5 @@
-import { ApiPromise, WsProvider } from "@polkadot/api"
+import { ApiPromise, WsProvider, Keyring } from "@polkadot/api"
 import { BlockHash, Header } from "@polkadot/types/interfaces"
-import { createTestPairs } from "@polkadot/keyring/testingPairs"
 import RelaychainListener from "./listeners/relaychain"
 import ParachainListener from "./listeners/parachain"
 import createDebug from "debug"
@@ -8,17 +7,24 @@ import types from "./types.json"
 import { EventEmitter } from "events"
 import { fetchNonce } from "./util"
 
-const keyring = createTestPairs({ type: "sr25519" })
-
 export default class Relayer extends EventEmitter {
   static debug = createDebug("relayer")
-  api: ApiPromise
+  api: ApiPromise;
+  signer: any
 
   async setup(url: string) {
     this.api = await ApiPromise.create({
       provider: new WsProvider(url),
       types: types as any,
     })
+
+    const keyring = new Keyring({ type: "sr25519" })
+
+    this.signer =
+      process.env.CIRCUIT_KEY === undefined
+        ? keyring.addFromUri("//Alice")
+        : keyring.addFromMnemonic(process.env.CIRCUIT_KEY)
+
     Relayer.debug("Relayer Setup complete")
   }
 
@@ -28,12 +34,12 @@ export default class Relayer extends EventEmitter {
     anchorHeader: Header,
     anchorIndex: number
   ) {
-    const nonce = await fetchNonce(this.api, keyring.alice.address)
+    const nonce = await fetchNonce(this.api, this.signer.address)
     Relayer.debug("submitFinalityProof nonce", nonce.toString())
 
     await this.api.tx.multiFinalityVerifierDefault
       .submitFinalityProof(anchorHeader, justification, gatewayId)
-      .signAndSend(keyring.alice, { nonce }, async result => {
+      .signAndSend(this.signer, { nonce }, async result => {
         if (result.isError) {
           Relayer.debug("FinalityProofSubmitted failed")
         } else if (result.isInBlock) {
@@ -61,7 +67,7 @@ export default class Relayer extends EventEmitter {
       anchorNumber: number
     }[]
   > {
-    const nonce = await fetchNonce(this.api, keyring.alice.address)
+    const nonce = await fetchNonce(this.api, this.signer.address)
     Relayer.debug("submitParachainHeaders nonce", nonce.toString())
 
     return new Promise(async (resolve, reject) => {
@@ -75,7 +81,7 @@ export default class Relayer extends EventEmitter {
             )
           )
         )
-        .signAndSend(keyring.alice, { nonce }, result => {
+        .signAndSend(this.signer, { nonce }, result => {
           if (result.isError) {
             Relayer.debug(
               "batch submitParachainHeader failed",
@@ -99,7 +105,7 @@ export default class Relayer extends EventEmitter {
       anchorNumber: number
     }[]
   ) {
-    const nonce = await fetchNonce(this.api, keyring.alice.address)
+    const nonce = await fetchNonce(this.api, this.signer.address)
     Relayer.debug("submitHeaderRanges nonce", nonce.toString())
 
     await this.api.tx.utility
@@ -129,7 +135,7 @@ export default class Relayer extends EventEmitter {
           })
           .filter(Boolean)
       )
-      .signAndSend(keyring.alice, { nonce }, async result => {
+      .signAndSend(this.signer, { nonce }, async result => {
         if (result.isError) {
           Relayer.debug(
             "batch submitHeaderRange failed",

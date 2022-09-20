@@ -21,6 +21,6 @@
     "@acala-network/api": "~3.0.3-3",
     "@acala-network/bodhi": "2.1.8-beta",
     "@acala-network/contracts": "^3.0.0",
-    "@openzeppelin/contracts": "^4.4.2"
+    "@openzeppelin/contracts": "^4.7.3"
   }
 }

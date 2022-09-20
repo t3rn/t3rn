@@ -20,7 +20,7 @@ use relay_utils::{format_ids, HeaderId};
 use std::{ops::Deref, sync::Arc};
 
 /// Ethereum header synchronization status.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HeaderStatus {
     /// Header is unknown.
     Unknown,
@@ -160,7 +160,7 @@ impl<P: HeadersSyncPipeline> QueuedHeader<P> {
 
 /// Headers submission result.
 #[derive(Debug)]
-#[cfg_attr(test, derive(PartialEq))]
+#[cfg_attr(test, derive(PartialEq, Eq))]
 pub struct SubmittedHeaders<Id, Error> {
     /// IDs of headers that have been submitted to target node.
     pub submitted: Vec<Id>,

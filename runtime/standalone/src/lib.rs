@@ -2,35 +2,23 @@
 #![feature(more_qualified_paths)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
-
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
-
 use codec::Decode;
-use pallet_grandpa::{
-    fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
-};
-use pallet_xdns_rpc_runtime_api::{ChainId, FetchXdnsRecordsResponse, GatewayABIConfig};
-use sp_api::impl_runtime_apis;
+
+use pallet_grandpa::AuthorityId as GrandpaId;
+
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+use sp_core::crypto::KeyTypeId;
 use sp_runtime::{
-    create_runtime_str, generic, impl_opaque_keys,
-    traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, NumberFor, Verify},
-    transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, DispatchError, MultiSignature,
+    generic, impl_opaque_keys,
+    traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
 };
 use sp_std::{
     convert::{TryFrom, TryInto},
     prelude::*,
 };
-
-use t3rn_primitives::ReadLatestGatewayHeight;
-
-#[cfg(feature = "std")]
-use sp_version::NativeVersion;
-use sp_version::RuntimeVersion;
 
 // A few exports that help ease life for downstream crates.
 use frame_support::weights::ConstantMultiplier;
@@ -54,251 +42,20 @@ pub use sp_runtime::{Perbill, Permill};
 
 pub mod accounts_config;
 pub mod circuit_config;
+pub mod consensus_aura_config;
 pub mod contracts_config;
+pub mod impl_versioned_runtime_with_api;
 pub mod orml_config;
+pub mod signed_extrinsics_config;
+pub mod system_config;
+pub mod xbi_config;
 
-/// An index to a block.
-pub type BlockNumber = u32;
+pub use crate::{consensus_aura_config::*, signed_extrinsics_config::*};
+pub use circuit_runtime_types::*;
+pub use impl_versioned_runtime_with_api::*;
 
-/// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
-pub type Signature = MultiSignature;
+pub type CurrencyAdapter = accounts_config::AccountManagerCurrencyAdapter<Balances, ()>;
 
-/// Some way of identifying an account on the chain. We intentionally make it equivalent
-/// to the public key of our transaction signing scheme.
-pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
-
-/// Balance of an account.
-pub type Balance = u128;
-
-/// Balance of an account.
-pub type Amount = i128;
-
-/// Index of a transaction in the chain.
-pub type Index = u32;
-
-/// A hash of some data used by the chain.
-pub type Hash = sp_core::H256;
-
-// Prints debug output of the `contracts` pallet to stdout if the node is
-// started with `-lruntime::contracts=debug`.
-const CONTRACTS_DEBUG_OUTPUT: bool = true;
-
-/// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
-/// the specifics of the runtime. They can then be made to be agnostic over specific formats
-/// of data like extrinsics, allowing for them to continue syncing the network through upgrades
-/// to even the core data structures.
-pub mod opaque {
-    use super::*;
-
-    pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
-
-    /// Opaque block header type.
-    pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
-    /// Opaque block type.
-    pub type Block = generic::Block<Header, UncheckedExtrinsic>;
-    /// Opaque block identifier type.
-    pub type BlockId = generic::BlockId<Block>;
-
-    impl_opaque_keys! {
-        pub struct SessionKeys {
-            pub aura: Aura,
-            pub grandpa: Grandpa,
-        }
-    }
-}
-
-// To learn more about runtime versioning and what each of the following value means:
-//   https://docs.substrate.io/v3/runtime/upgrades#runtime-versioning
-#[sp_version::runtime_version]
-pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("node-template"),
-    impl_name: create_runtime_str!("node-template"),
-    authoring_version: 1,
-    // The version of the runtime specification. A full node will not attempt to use its native
-    //   runtime in substitute for the on-chain Wasm runtime unless all of `spec_name`,
-    //   `spec_version`, and `authoring_version` are the same between Wasm and native.
-    // This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
-    //   the compatible custom types.
-    spec_version: 2,
-    impl_version: 2,
-    apis: RUNTIME_API_VERSIONS,
-    transaction_version: 1,
-    state_version: 1,
-};
-
-/// This determines the average expected block time that we are targeting.
-/// Blocks will be produced at a minimum duration defined by `SLOT_DURATION`.
-/// `SLOT_DURATION` is picked up by `pallet_timestamp` which is in turn picked
-/// up by `pallet_aura` to implement `fn slot_duration()`.
-///
-/// Change this to adjust the block time.
-pub const MILLISECS_PER_BLOCK: u64 = 6000;
-
-// NOTE: Currently it is not possible to change the slot duration after the chain has started.
-//       Attempting to do so will brick block production.
-pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
-
-// Time is measured by number of blocks.
-pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
-pub const HOURS: BlockNumber = MINUTES * 60;
-pub const DAYS: BlockNumber = HOURS * 24;
-
-/// The version information used to identify this runtime when compiled natively.
-#[cfg(feature = "std")]
-pub fn native_version() -> NativeVersion {
-    NativeVersion {
-        runtime_version: VERSION,
-        can_author_with: Default::default(),
-    }
-}
-
-const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
-
-/// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
-/// This is used to limit the maximal weight of a single extrinsic.
-const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
-
-parameter_types! {
-    pub const Version: RuntimeVersion = VERSION;
-    pub const BlockHashCount: BlockNumber = 2400;
-    /// We allow for 2 seconds of compute with a 6 second average block time.
-    pub BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights
-        ::with_sensible_defaults(2 * WEIGHT_PER_SECOND, NORMAL_DISPATCH_RATIO);
-    pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
-        ::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
-    pub const SS58Prefix: u8 = 42;
-}
-
-// Configure FRAME pallets to include in runtime.
-
-impl frame_system::Config for Runtime {
-    /// The data to be stored in an account.
-    type AccountData = pallet_balances::AccountData<Balance>;
-    /// The identifier used to distinguish between accounts.
-    type AccountId = AccountId;
-    /// The basic call filter to use in dispatchable.
-    type BaseCallFilter = frame_support::traits::Everything;
-    /// Maximum number of block number to block hash mappings to keep (oldest pruned first).
-    type BlockHashCount = BlockHashCount;
-    /// The maximum length of a block (in bytes).
-    type BlockLength = BlockLength;
-    /// The index type for blocks.
-    type BlockNumber = BlockNumber;
-    /// Block & extrinsics weights: base values and limits.
-    type BlockWeights = BlockWeights;
-    /// The aggregated dispatch type that is available for extrinsics.
-    type Call = Call;
-    /// The weight of database operations that the runtime can invoke.
-    type DbWeight = RocksDbWeight;
-    /// The ubiquitous event type.
-    type Event = Event;
-    /// The type for hashing blocks and tries.
-    type Hash = Hash;
-    /// The hashing algorithm used.
-    type Hashing = BlakeTwo256;
-    /// The header type.
-    type Header = generic::Header<BlockNumber, BlakeTwo256>;
-    /// The index type for storing how many extrinsics an account has signed.
-    type Index = Index;
-    /// The lookup mechanism to get account ID from whatever is passed in dispatchers.
-    type Lookup = AccountIdLookup<AccountId, ()>;
-    type MaxConsumers = frame_support::traits::ConstU32<16>;
-    /// What to do if an account is fully reaped from the system.
-    type OnKilledAccount = ();
-    /// What to do if a new account is created.
-    type OnNewAccount = ();
-    /// The set code logic, just the default since we're not a parachain.
-    type OnSetCode = ();
-    /// The ubiquitous origin type.
-    type Origin = Origin;
-    /// Converts a module to the index of the module in `construct_runtime!`.
-    ///
-    /// This type is being generated by `construct_runtime!`.
-    type PalletInfo = PalletInfo;
-    /// This is used as an identifier of the chain. 42 is the generic substrate prefix.
-    type SS58Prefix = SS58Prefix;
-    /// Weight information for the extrinsics of this pallet.
-    type SystemWeightInfo = ();
-    /// Version of the runtime.
-    type Version = Version;
-}
-
-impl pallet_randomness_collective_flip::Config for Runtime {}
-
-impl pallet_aura::Config for Runtime {
-    type AuthorityId = AuraId;
-    type DisabledValidators = ();
-    type MaxAuthorities = ConstU32<32>;
-}
-
-impl pallet_grandpa::Config for Runtime {
-    type Call = Call;
-    type Event = Event;
-    type HandleEquivocation = ();
-    type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
-        KeyTypeId,
-        GrandpaId,
-    )>>::IdentificationTuple;
-    type KeyOwnerProof =
-        <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
-    type KeyOwnerProofSystem = ();
-    type MaxAuthorities = ConstU32<32>;
-    type WeightInfo = ();
-}
-
-parameter_types! {
-    pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
-}
-
-impl pallet_timestamp::Config for Runtime {
-    type MinimumPeriod = MinimumPeriod;
-    /// A timestamp: milliseconds since the unix epoch.
-    type Moment = u64;
-    type OnTimestampSet = Aura;
-    type WeightInfo = ();
-}
-
-impl pallet_balances::Config for Runtime {
-    type AccountStore = System;
-    /// The type for recording an account's balance.
-    type Balance = Balance;
-    type DustRemoval = ();
-    /// The ubiquitous event type.
-    type Event = Event;
-    type ExistentialDeposit = ConstU128<500>;
-    type MaxLocks = ConstU32<50>;
-    type MaxReserves = ();
-    type ReserveIdentifier = [u8; 8];
-    type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
-}
-
-pallet_account_manager::setup_currency_adapter!();
-
-parameter_types! {
-    pub const TransactionByteFee: Balance = 1;
-}
-
-impl pallet_transaction_payment::Config for Runtime {
-    type FeeMultiplierUpdate = ();
-    type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
-    type OnChargeTransaction = AccountManagerCurrencyAdapter<Balances, ()>;
-    type OperationalFeeMultiplier = ConstU8<5>;
-    type WeightToFee = IdentityFee<Balance>;
-}
-
-impl pallet_sudo::Config for Runtime {
-    type Call = Call;
-    type Event = Event;
-}
-
-impl pallet_utility::Config for Runtime {
-    type Call = Call;
-    type Event = Event;
-    type PalletsOrigin = OriginCaller;
-    type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
-}
-
-// Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -321,10 +78,19 @@ construct_runtime!(
         // Circuit
         // t3rn pallets
         XDNS: pallet_xdns::{Pallet, Call, Config<T>, Storage, Event<T>} = 100,
+        ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 106,
+        Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 108,
+        Treasury: pallet_treasury = 109,
+        Clock: pallet_clock::{Pallet, Storage, Event<T>} = 110,
+
+        XBIPortal: pallet_xbi_portal::{Pallet, Call, Storage, Event<T>} = 111,
+
         ContractsRegistry: pallet_contracts_registry::{Pallet, Call, Config<T>, Storage, Event<T>} = 101,
         Circuit: pallet_circuit::{Pallet, Call, Storage, Event<T>} = 102,
         // 3VM
-        Contracts: pallet_3vm_contracts = 119,
+        ThreeVm: pallet_3vm = 119,
+        Contracts: pallet_3vm_contracts = 120,
+        Evm: pallet_3vm_evm = 121,
         AccountManager: pallet_account_manager = 125,
         // Portal
         Portal: pallet_portal::{Pallet, Call, Storage, Event<T>} = 128,

@@ -3,7 +3,7 @@ authors     = [ "devs @ t3rn" ]
 description = "Circuit parachain runtime"
 edition     = "2018"
 homepage    = "https://t3rn.io"
-license     = "Apache 2.0"
+license     = "Apache-2.0"
 name        = "circuit-standalone-runtime"
 repository  = 'https://github.com/t3rn/t3rn'
 version     = "1.0.0-alpha.0"
@@ -15,31 +15,38 @@ substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", bran
 codec       = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive" ] }
 hex-literal = { version = "0.3", optional = true }
 log         = { version = "0.4", default-features = false }
-scale-info  = { version = "2", default-features = false, features = [ "derive" ] }
+scale-info  = { version = "2.0.0", default-features = false, features = [ "derive" ] }
 serde       = { version = "1.0", default-features = false, optional = true, features = [ "derive" ] }
 
 # Circuit dependencies
-pallet-3vm-contracts                      = { path = "../../3vm/pallets/wasm-contracts", default-features = false, package = "pallet-wasm-contracts" }
-pallet-3vm-contracts-primitives           = { path = "../../3vm/pallets/wasm-contracts/common", default-features = false, package = "pallet-contracts-primitives" }
-pallet-3vm-contracts-rpc-runtime-api      = { path = "../../3vm/pallets/wasm-contracts/rpc/runtime-api", default-features = false, package = "pallet-contracts-rpc-runtime-api" }
 pallet-account-manager                    = { path = "../../pallets/account-manager", default-features = false }
 pallet-circuit                            = { path = "../../pallets/circuit", default-features = false }
 pallet-contracts-registry                 = { path = "../../pallets/contracts-registry", default-features = false }
 pallet-contracts-registry-rpc-runtime-api = { path = "../../pallets/contracts-registry/rpc/runtime-api", default-features = false }
+pallet-treasury                           = { path = "../../pallets/treasury", default-features = false }
+pallet-clock                           = { path = "../../pallets/clock", default-features = false }
 pallet-xdns                               = { path = "../../pallets/xdns", default-features = false }
 pallet-portal                             = { path = "../../pallets/portal", default-features = false }
 pallet-portal-rpc-runtime-api             = { path = "../../pallets/portal/rpc/runtime-api", default-features = false }
+pallet-xbi-portal                               = { path = "../../pallets/xbi-portal", default-features = false }
 pallet-xdns-rpc-runtime-api               = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
 pallet-grandpa-finality-verifier          = { path = "../../finality-verifiers/grandpa", default-features = false }
 
-#volatile-vm = { path = "../../vm/volatile-vm", default-features = false }
 t3rn-primitives = { default-features = false, path = "../../primitives" }
 t3rn-protocol   = { path = "../../protocol", default-features = false }
 
 # Smart contracts VMs
+pallet-3vm                           = { path = "../../3vm/pallets/3vm", default-features = false }
+pallet-3vm-contracts                 = { path = "../../3vm/pallets/contracts", default-features = false, package = "pallet-contracts" }
+pallet-3vm-contracts-primitives      = { path = "../../3vm/primitives/contracts", default-features = false, package = "pallet-contracts-primitives" }
+pallet-3vm-contracts-rpc-runtime-api = { path = "../../3vm/rpc/contracts/runtime-api", default-features = false, package = "pallet-contracts-rpc-runtime-api" }
+
+evm-precompile-util       = { path = "../../3vm/pallets/evm/precompile/util", default-features = false, package = "precompile-util" }
+pallet-3vm-evm            = { path = "../../3vm/pallets/evm", default-features = false, package = "pallet-evm" }
+pallet-3vm-evm-primitives = { path = "../../3vm/primitives/evm", default-features = false, package = "fp-evm" }
+pallet-evm-rpc-runtime-api        = { path = "../../3vm/rpc/evm/runtime-api", default-features = false }
+
 # branch frontier-para uses polkadot-v0.9.19
-#pallet-evm = { git = "https://github.com/t3rn/frontier", branch = "polkadot-v0.9.19", default-features = false }
-#pallet-ethereum = { git = "https://github.com/t3rn/frontier", branch = "polkadot-v0.9.19", default-features = false }
 #pallet-evm-precompile-simple = { git = "https://github.com/t3rn/frontier", branch = "polkadot-v0.9.19", default-features = false }
 
 # Substrate Dependencies
@@ -58,19 +65,20 @@ pallet-timestamp                           = { git = "https://github.com/parityt
 pallet-transaction-payment                 = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 pallet-utility                             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-sp-api                                     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-sp-block-builder                           = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-sp-consensus-aura                          = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-sp-core                                    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-sp-finality-grandpa                        = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-sp-inherents                               = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-sp-offchain                                = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-sp-runtime                                 = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-sp-session                                 = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-sp-std                                     = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-sp-transaction-pool                        = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-sp-trie                                    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
-sp-version                                 = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+
+sp-api              = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-block-builder    = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-consensus-aura   = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-core             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-inherents        = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-offchain         = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-runtime          = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-session          = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-std              = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-trie             = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
+sp-version          = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
 
 # Beefy dependencies
 beefy-primitives      = { git = "https://github.com/paritytech/substrate", branch = 'polkadot-v0.9.19', default-features = false }
@@ -91,16 +99,12 @@ frame-system-benchmarking = { default-features = false, git = "https://github.co
 orml-tokens = { git = "https://github.com/t3rn/open-runtime-module-library", branch = "polkadot-v0.9.19", default-features = false }
 orml-traits = { git = "https://github.com/t3rn/open-runtime-module-library", branch = "polkadot-v0.9.19", default-features = false }
 
+# Common
+circuit-runtime-types = { path = "../common-types", default-features = false }
+
 [features]
 default = [ "std", "contracts-unstable-interface" ]
 std = [
-  #	"bp-messages/std",
-  #	"bp-runtime/std",
-  #	"bp-westend/std",
-  #	"bp-gateway/std",
-  #	"bp-circuit/std",
-  #	"bp-polkadot-core/std",
-  #	"bridge-runtime-common/std",
   "codec/std",
   "frame-executive/std",
   "frame-support/std",
@@ -114,21 +118,29 @@ std = [
   "pallet-xdns/std",
   "pallet-xdns-rpc-runtime-api/std",
   "pallet-circuit/std",
-  #"volatile-vm/std",
   # native contracts VMs
+  "pallet-3vm/std",
   "pallet-3vm-contracts/std",
   "pallet-3vm-contracts-primitives/std",
   "pallet-3vm-contracts-rpc-runtime-api/std",
-  "pallet-account-manager/std",
+  "pallet-3vm-evm/std",
+  "pallet-3vm-evm-primitives/std",
+  "pallet-evm-rpc-runtime-api/std",
+  "evm-precompile-util/std",
   "pallet-grandpa-finality-verifier/std",
   #	"pallet-evm/std",
   #	"pallet-ethereum/std",
   #	"pallet-evm-precompile-simple/std",
+  "pallet-account-manager/std",
   "pallet-contracts-registry/std",
 #  "pallet-circuit-portal-rpc-runtime-api/std",
+  "pallet-xbi-portal/std",
+  "pallet-circuit-portal/std",
+  "pallet-circuit-portal-rpc-runtime-api/std",
   "pallet-balances/std",
   #	"pallet-bridge-dispatch/std",
   #	"pallet-bridge-grandpa/std",
+  "pallet-treasury/std",
   #	"pallet-bridge-messages/std",
   "pallet-grandpa/std",
   "pallet-randomness-collective-flip/std",
@@ -159,7 +171,8 @@ std = [
   "snowbridge-core/std",
   "pallet-beefy-mmr/std",
   "pallet-mmr-primitives/std",
-  #	"snowbridge-basic-channel/std"
+  "pallet-clock/std",
+  "circuit-runtime-types/std",
 ]
 # TODO: https://github.com/paritytech/parity-bridges-common/issues/390
 # I've left the feature flag here to test our CI configuration
@@ -177,6 +190,7 @@ runtime-benchmarks = [
   'sp-runtime/runtime-benchmarks',
   "orml-tokens/std",
   "orml-traits/std",
+  "pallet-treasury/runtime-benchmarks",
 ]
 # Make contract callable functions marked as __unstable__ available. Do not enable
 # on live chains as those are subject to change.

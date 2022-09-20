@@ -28,11 +28,10 @@ build_nodes() {
 }
 
 keygen() {
-  if ! cargo install --list | grep -Fq 'subkey v2.0.1'; then
-    echo "installing subkey v2.0.1..."
+  if ! cargo install --list | grep -Fq subkey; then
+    echo "installing subkey..."
     cargo install subkey \
       --git https://github.com/paritytech/substrate \
-      --version 2.0.1 \
       --force
   fi
   ## gen custom node keys 4 the 2 parachains
@@ -190,13 +189,13 @@ onboard() {
     $(<$dir/specs/circuita.genesis) \
     $(<$dir/specs/circuita.wasm) \
   > $d/circuita.params
-  npx @polkadot/api-cli@beta \
+  npx --yes @polkadot/api-cli@beta \
     --ws ws://localhost:1944 \
     --sudo \
     --seed //Alice \
     --params $d/circuita.params \
     tx.parasSudoWrapper.sudoScheduleParaInitialize
-  npx @polkadot/api-cli@beta \
+  npx --yes @polkadot/api-cli@beta \
     --ws ws://localhost:1944 \
     --seed //Alice \
     tx.registrar.reserve
@@ -206,7 +205,7 @@ onboard() {
     $(<$dir/specs/circuitb.genesis) \
     $(<$dir/specs/circuitb.wasm) \
   > $d/circuitb.params
-  npx @polkadot/api-cli@beta \
+  npx --yes @polkadot/api-cli@beta \
     --ws ws://localhost:1944 \
     --sudo \
     --seed //Alice \
@@ -316,8 +315,8 @@ devnet() {
   build_para_wasm_runtimes
   rm -rf $dir/data/*
   start_nodes
-  npx --yes wait-port -t 13000 localhost:1933
-  npx wait-port -t 13000 localhost:1944
+  npx --yes wait-port -t 33000 localhost:1933
+  npx --yes wait-port -t 33000 localhost:1944
   set_keys
   onboard
 }

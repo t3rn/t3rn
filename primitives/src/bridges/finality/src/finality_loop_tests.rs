@@ -115,7 +115,7 @@ impl SourceClient<TestFinalitySyncPipeline> for TestSourceClient {
 
     async fn best_finalized_block_number(&self) -> Result<TestNumber, TestError> {
         let mut data = self.data.lock();
-        (self.on_method_call)(&mut *data);
+        (self.on_method_call)(&mut data);
         Ok(data.source_best_block_number)
     }
 
@@ -124,7 +124,7 @@ impl SourceClient<TestFinalitySyncPipeline> for TestSourceClient {
         number: TestNumber,
     ) -> Result<(TestSourceHeader, Option<TestFinalityProof>), TestError> {
         let mut data = self.data.lock();
-        (self.on_method_call)(&mut *data);
+        (self.on_method_call)(&mut data);
         data.source_headers
             .get(&number)
             .cloned()
@@ -133,7 +133,7 @@ impl SourceClient<TestFinalitySyncPipeline> for TestSourceClient {
 
     async fn finality_proofs(&self) -> Result<Self::FinalityProofsStream, TestError> {
         let mut data = self.data.lock();
-        (self.on_method_call)(&mut *data);
+        (self.on_method_call)(&mut data);
         Ok(futures::stream::iter(data.source_proofs.clone()).boxed())
     }
 }
@@ -157,7 +157,7 @@ impl RelayClient for TestTargetClient {
 impl TargetClient<TestFinalitySyncPipeline> for TestTargetClient {
     async fn best_finalized_source_block_number(&self) -> Result<TestNumber, TestError> {
         let mut data = self.data.lock();
-        (self.on_method_call)(&mut *data);
+        (self.on_method_call)(&mut data);
         Ok(data.target_best_block_number)
     }
 
@@ -167,7 +167,7 @@ impl TargetClient<TestFinalitySyncPipeline> for TestTargetClient {
         proof: TestFinalityProof,
     ) -> Result<(), TestError> {
         let mut data = self.data.lock();
-        (self.on_method_call)(&mut *data);
+        (self.on_method_call)(&mut data);
         data.target_best_block_number = header.number();
         data.target_headers.push((header, proof));
         Ok(())

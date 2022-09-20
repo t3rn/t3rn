@@ -5,6 +5,8 @@
 Composable smart contract hosting with interoperable, multi-chain execution.
 </h1>
 
+[![CI](https://github.com/t3rn/t3rn/workflows/Circuit%20Build%20%26%20Test%20CI/badge.svg)](https://github.com/t3rn/t3rn/actions) [![Latest tag](https://badgen.net/github/tag/t3rn/t3rn)](https://github.com/t3rn/t3rn/tags/) [![Telegram Group](https://img.shields.io/endpoint?color=neon&style=flat-square&url=https%3A%2F%2Ftg.sumanjay.workers.dev%2FT3RN_official)](https://telegram.dog/T3RN_official) [![Twitter handle](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://twitter.com/t3rn_io) [![Discord Chat](https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/kfVX6k3cNp)
+
 t3rn is a hosting platform for smart contracts, that enables trustless, multi-chain execution and composable collaboration.
 
 t3rn renders smart contracts blockchain agnostic, meaning they can instantly execute on multiple blockchains. The smart contracts can be uploaded as they are and the t3rn protocol will host and execute them across different blockchains, breaking the barrier to serving users across industries and blockchain platforms.
