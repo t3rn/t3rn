@@ -1514,9 +1514,9 @@ impl<T: Config> Pallet<T> {
                 // ToDo: Consider to remove the assignment below and move OptinalInsurance to SFX fields:
                 //      sfx.reward = Option<Balance>
                 //      sfx.insurance = Option<Balance>
-                // if side_effect.prize != reward {
-                //     return Err("Side_effect prize must be equal to reward of Optional Insurance")
-                // }
+                if side_effect.prize != reward {
+                    return Err("Side_effect prize must be equal to reward of Optional Insurance")
+                }
 
                 local_ctx.insurance_deposits.push((
                     side_effect.generate_id::<SystemHashing<T>>(),

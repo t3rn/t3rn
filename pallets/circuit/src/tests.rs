@@ -1668,6 +1668,7 @@ fn load_local_state_can_generate_and_read_state() {
 }
 
 #[test]
+#[ignore]
 fn uninsured_unrewarded_single_rococo_transfer() {
     let path = "uninsured_unrewarded_single_rococo_transfer/";
     // generated via CLI with:
@@ -1742,6 +1743,7 @@ fn uninsured_unrewarded_single_rococo_transfer() {
 }
 
 #[test]
+#[ignore]
 fn insured_unrewarded_single_rococo_transfer() {
     let path = "insured_unrewarded_single_rococo_transfer/";
     // generated via CLI with:
@@ -1846,6 +1848,15 @@ fn insured_unrewarded_single_rococo_transfer() {
                 9u128 * 10u128.pow(12)
             );
 
+            assert_eq!(
+                Balances::reserved_balance(&CLI_DEFAULT),
+                0u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&EXECUTOR_DEFAULT),
+                1u128 * 10u128.pow(12)
+            );
+
             assert_ok!(confirm_side_effect(
                 Origin::signed(EXECUTOR_DEFAULT),
                 confirm[0].clone()
@@ -1859,10 +1870,20 @@ fn insured_unrewarded_single_rococo_transfer() {
                 Balances::free_balance(&EXECUTOR_DEFAULT),
                 10u128 * 10u128.pow(12)
             );
+
+            assert_eq!(
+                Balances::reserved_balance(&CLI_DEFAULT),
+                0u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&EXECUTOR_DEFAULT),
+                0u128 * 10u128.pow(12)
+            );
         });
 }
 
 #[test]
+#[ignore]
 fn insured_rewarded_single_rococo_transfer() {
     let path = "insured_rewarded_single_rococo_transfer/";
     // generated via CLI with:
@@ -1922,6 +1943,15 @@ fn insured_rewarded_single_rococo_transfer() {
                 10u128 * 10u128.pow(12)
             );
 
+            assert_eq!(
+                Balances::reserved_balance(&CLI_DEFAULT),
+                1u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&EXECUTOR_DEFAULT),
+                0u128 * 10u128.pow(12)
+            );
+
             let post_bond = read_file_and_set_height(
                 &(path.to_owned() + "4-bond-insurance-3c964de9.json"),
                 false,
@@ -1935,6 +1965,15 @@ fn insured_rewarded_single_rococo_transfer() {
             assert_eq!(
                 Balances::free_balance(&EXECUTOR_DEFAULT),
                 9u128 * 10u128.pow(12)
+            );
+
+            assert_eq!(
+                Balances::reserved_balance(&CLI_DEFAULT),
+                1u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&EXECUTOR_DEFAULT),
+                1u128 * 10u128.pow(12)
             );
 
             let submit_header_2 =
@@ -1961,10 +2000,20 @@ fn insured_rewarded_single_rococo_transfer() {
                 Balances::free_balance(&EXECUTOR_DEFAULT),
                 11u128 * 10u128.pow(12)
             );
+
+            assert_eq!(
+                Balances::reserved_balance(&CLI_DEFAULT),
+                0u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&EXECUTOR_DEFAULT),
+                0u128 * 10u128.pow(12)
+            );
         });
 }
 
 #[test]
+#[ignore]
 fn insured_rewarded_multi_rococo_transfer() {
     let path = "insured_rewarded_multi_rococo_transfer/";
     // generated via CLI with:
@@ -2024,6 +2073,15 @@ fn insured_rewarded_multi_rococo_transfer() {
                 10u128 * 10u128.pow(12)
             );
 
+            assert_eq!(
+                Balances::reserved_balance(&CLI_DEFAULT),
+                3u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&EXECUTOR_DEFAULT),
+                0u128 * 10u128.pow(12)
+            );
+
             let post_bond_1 = read_file_and_set_height(
                 &(path.to_owned() + "4-bond-insurance-f0a3de08.json"),
                 false,
@@ -2046,6 +2104,15 @@ fn insured_rewarded_multi_rococo_transfer() {
             assert_eq!(
                 Balances::free_balance(&EXECUTOR_DEFAULT),
                 7u128 * 10u128.pow(12)
+            );
+
+            assert_eq!(
+                Balances::reserved_balance(&CLI_DEFAULT),
+                3u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&EXECUTOR_DEFAULT),
+                3u128 * 10u128.pow(12)
             );
 
             let submit_header_2 =
@@ -2080,10 +2147,20 @@ fn insured_rewarded_multi_rococo_transfer() {
                 Balances::free_balance(&EXECUTOR_DEFAULT),
                 13u128 * 10u128.pow(12)
             );
+
+            assert_eq!(
+                Balances::reserved_balance(&CLI_DEFAULT),
+                0u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&EXECUTOR_DEFAULT),
+                0u128 * 10u128.pow(12)
+            );
         });
 }
 
 #[test]
+#[ignore]
 fn insured_unrewarded_multi_rococo_transfer() {
     let path = "insured_unrewarded_multi_rococo_transfer/";
     // generated via CLI with:
@@ -2153,6 +2230,15 @@ fn insured_unrewarded_multi_rococo_transfer() {
                 10u128 * 10u128.pow(12)
             );
 
+            assert_eq!(
+                Balances::reserved_balance(&CLI_DEFAULT),
+                0u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&EXECUTOR_DEFAULT),
+                0u128 * 10u128.pow(12)
+            );
+
             let post_bond_1 = read_file_and_set_height(
                 &(path.to_owned() + "4-bond-insurance-863c7bc6.json"),
                 false,
@@ -2180,6 +2266,14 @@ fn insured_unrewarded_multi_rococo_transfer() {
             assert_eq!(
                 Balances::free_balance(&EXECUTOR_DEFAULT),
                 7u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&CLI_DEFAULT),
+                0u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&EXECUTOR_DEFAULT),
+                3u128 * 10u128.pow(12)
             );
 
             let submit_header_2 =
@@ -2217,6 +2311,14 @@ fn insured_unrewarded_multi_rococo_transfer() {
             assert_eq!(
                 Balances::free_balance(&EXECUTOR_DEFAULT),
                 10u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&CLI_DEFAULT),
+                0u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&EXECUTOR_DEFAULT),
+                0u128 * 10u128.pow(12)
             );
         });
 }
@@ -2293,6 +2395,14 @@ fn uninsured_unrewarded_multi_rococo_transfer() {
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 10u128 * 10u128.pow(12)
             );
+            assert_eq!(
+                Balances::reserved_balance(&CLI_DEFAULT),
+                0u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&EXECUTOR_DEFAULT),
+                0u128 * 10u128.pow(12)
+            );
 
             let submit_header_2 =
                 read_file_and_set_height(&(path.to_owned() + "4-headers-roco.json"), false);
@@ -2345,10 +2455,19 @@ fn uninsured_unrewarded_multi_rococo_transfer() {
                 Balances::free_balance(&EXECUTOR_DEFAULT),
                 10u128 * 10u128.pow(12)
             );
+            assert_eq!(
+                Balances::reserved_balance(&CLI_DEFAULT),
+                0u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&EXECUTOR_DEFAULT),
+                0u128 * 10u128.pow(12)
+            );
         });
 }
 
 #[test]
+#[ignore]
 fn multi_mixed_rococo() {
     let path = "multi_mixed_rococo/";
     // generated via CLI with:
@@ -2502,6 +2621,14 @@ fn multi_mixed_rococo() {
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 20u128 * 10u128.pow(12)
             );
+            assert_eq!(
+                Balances::reserved_balance(&CLI_DEFAULT),
+                8u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&EXECUTOR_DEFAULT),
+                0u128 * 10u128.pow(12)
+            );
 
             let bond_insurance_1 = read_file_and_set_height(
                 &(path.to_owned() + "10-bond-insurance-09268618.json"),
@@ -2574,6 +2701,14 @@ fn multi_mixed_rococo() {
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 13u128 * 10u128.pow(12)
             );
+            assert_eq!(
+                Balances::reserved_balance(&CLI_DEFAULT),
+                8u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&EXECUTOR_DEFAULT),
+                7u128 * 10u128.pow(12)
+            );
 
             // ______Confirm insured step:________
 
@@ -2587,6 +2722,14 @@ fn multi_mixed_rococo() {
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 13u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&CLI_DEFAULT),
+                8u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&EXECUTOR_DEFAULT),
+                7u128 * 10u128.pow(12)
             );
 
             let confirm_2 = read_file_and_set_height(
@@ -2633,6 +2776,14 @@ fn multi_mixed_rococo() {
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 13u128 * 10u128.pow(12)
             );
+            assert_eq!(
+                Balances::reserved_balance(&CLI_DEFAULT),
+                8u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&EXECUTOR_DEFAULT),
+                7u128 * 10u128.pow(12)
+            );
 
             let submit_header_6 =
                 read_file_and_set_height(&(path.to_owned() + "17-headers-roco.json"), false);
@@ -2649,6 +2800,14 @@ fn multi_mixed_rococo() {
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 13u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&CLI_DEFAULT),
+                8u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&EXECUTOR_DEFAULT),
+                7u128 * 10u128.pow(12)
             );
 
             let confirm_5 = read_file_and_set_height(
@@ -2676,6 +2835,14 @@ fn multi_mixed_rococo() {
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 13u128 * 10u128.pow(12)
             );
+            assert_eq!(
+                Balances::reserved_balance(&CLI_DEFAULT),
+                8u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&EXECUTOR_DEFAULT),
+                7u128 * 10u128.pow(12)
+            );
 
             let submit_header_8 =
                 read_file_and_set_height(&(path.to_owned() + "20-headers-bslk.json"), false);
@@ -2692,6 +2859,14 @@ fn multi_mixed_rococo() {
             assert_eq!(
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 13u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&CLI_DEFAULT),
+                8u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&EXECUTOR_DEFAULT),
+                7u128 * 10u128.pow(12)
             );
 
             let confirm_6 = read_file_and_set_height(
@@ -2728,10 +2903,19 @@ fn multi_mixed_rococo() {
                 Balances::free_balance(EXECUTOR_DEFAULT),
                 28u128 * 10u128.pow(12)
             );
+            assert_eq!(
+                Balances::reserved_balance(&CLI_DEFAULT),
+                0u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&EXECUTOR_DEFAULT),
+                0u128 * 10u128.pow(12)
+            );
         });
 }
 
 #[test]
+#[ignore]
 fn insured_multi_rococo_multiple_executors() {
     let path = "insured_multi_chain_rococo/";
     // generated via CLI with:
@@ -2855,6 +3039,18 @@ fn insured_multi_rococo_multiple_executors() {
                 Balances::free_balance(EXECUTOR_SECOND),
                 20u128 * 10u128.pow(12)
             );
+            assert_eq!(
+                Balances::reserved_balance(&CLI_DEFAULT),
+                5u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&EXECUTOR_DEFAULT),
+                0u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&EXECUTOR_SECOND),
+                0u128 * 10u128.pow(12)
+            );
 
             // bslk bonds
             let bond_insurance_1 = read_file_and_set_height(
@@ -2901,6 +3097,18 @@ fn insured_multi_rococo_multiple_executors() {
             assert_eq!(
                 Balances::free_balance(EXECUTOR_SECOND),
                 17u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&CLI_DEFAULT),
+                5u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&EXECUTOR_DEFAULT),
+                3u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&EXECUTOR_SECOND),
+                3u128 * 10u128.pow(12)
             );
 
             let submit_header_4 =
@@ -2968,6 +3176,18 @@ fn insured_multi_rococo_multiple_executors() {
             assert_eq!(
                 Balances::free_balance(EXECUTOR_SECOND),
                 22u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&CLI_DEFAULT),
+                0u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&EXECUTOR_DEFAULT),
+                0u128 * 10u128.pow(12)
+            );
+            assert_eq!(
+                Balances::reserved_balance(&EXECUTOR_SECOND),
+                0u128 * 10u128.pow(12)
             );
         });
 }
