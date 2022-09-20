@@ -31,7 +31,7 @@ use frame_system::{pallet_prelude::OriginFor, EventRecord, Phase};
 use pallet_grandpa_finality_verifier::mock::brute_seed_block_1;
 use serde_json::Value;
 use sp_io::TestExternalities;
-use sp_runtime::{AccountId32, DispatchErrorWithPostInfo};
+use sp_runtime::{AccountId32, DispatchError, DispatchErrorWithPostInfo};
 use sp_std::prelude::*;
 use std::{convert::TryInto, fs};
 use t3rn_primitives::{
@@ -170,7 +170,7 @@ fn submit_header_file(
     origin: OriginFor<Test>,
     file: &str,
     index: usize, //might have an index (for relaychains)
-) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
+) -> Result<(), DispatchError> {
     let raw_data = fs::read_to_string("./src/mock-data/".to_owned() + file).unwrap();
     let json: Value = serde_json::from_str(raw_data.as_str()).unwrap();
     submit_headers(origin, json, index)
@@ -180,7 +180,7 @@ fn submit_headers(
     origin: OriginFor<Test>,
     json: Value,
     index: usize,
-) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
+) -> Result<(), DispatchError> {
     let encoded_header_data: Vec<u8> =
         hex::decode(json[index]["encoded_data"].as_str().unwrap()).unwrap();
     let gateway_id: ChainId = Decode::decode(
