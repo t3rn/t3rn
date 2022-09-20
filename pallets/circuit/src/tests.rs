@@ -37,7 +37,7 @@ use serde_json::Value;
 use sp_io::TestExternalities;
 use sp_runtime::{
     traits::{Header as HeaderT, Zero},
-    AccountId32, DispatchErrorWithPostInfo
+    AccountId32, DispatchErrorWithPostInfo, DispatchError
 };
 use sp_std::{convert::TryFrom, prelude::*};
 use std::{convert::TryInto, fs};
@@ -47,6 +47,7 @@ use t3rn_primitives::{
     side_effect::*,
     volatile::LocalState,
     xdns::AllowedSideEffect,
+    xtx::XtxId,
     ChainId, GatewayGenesisConfig, GatewaySysProps, GatewayType, GatewayVendor,
 };
 use t3rn_protocol::side_effects::test_utils::*;
@@ -118,7 +119,6 @@ fn register(
         gateway_genesis.clone(),
         gateway_sys_props.clone(),
         allowed_side_effects.clone(),
-        vec![], // security coordinates
         encoded_registration_data.clone(),
     );
 
@@ -142,7 +142,7 @@ fn submit_headers(
     origin: OriginFor<Runtime>,
     json: Value,
     index: usize,
-) -> DispatchResultWithPostInfo {
+) -> Result<(), DispatchError> {
     let encoded_header_data: Vec<u8> =
         hex::decode(json[index]["encoded_data"].as_str().unwrap()).unwrap();
     let gateway_id: ChainId = Decode::decode(
@@ -283,8 +283,6 @@ fn runs_mock_tests() {
         });
 }
 
-fn _as_u32_le(array: &[u8; 4]) -> u32 {
-    (array[0] as u32)
 fn as_u32_le(array: &[u8; 4]) -> u32 {
     (array[0] as u32)
         + ((array[1] as u32) << 8)
@@ -3475,7 +3473,7 @@ fn execute_side_effects_with_xbi_works_for_transfers() {
             let _ = Balances::deposit_creating(&ALICE, INITIAL_BALANCE); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
 
             System::set_block_number(1);
-            brute_seed_block_1_to_grandpa_mfv([3, 3, 3, 3]);
+            brute_seed_block_1([3, 3, 3, 3]);
 
             let xtx_id: sp_core::H256 =
                 hex!("2637d56ea21c04df03463decc4aa8d2916c96e59ac45e451d7133eedc621de59").into();
@@ -3590,8 +3588,8 @@ fn execute_side_effects_with_xbi_works_for_call_evm() {
             let _ = Balances::deposit_creating(&ALICE, INITIAL_BALANCE); // Alice should have at least: fee (1) + insurance reward (2)(for VariantA)
 
             System::set_block_number(1);
-            brute_seed_block_1_to_grandpa_mfv([3, 3, 3, 3]);
-            brute_seed_block_1_to_grandpa_mfv([1, 1, 1, 1]);
+            brute_seed_block_1([3, 3, 3, 3]);
+            brute_seed_block_1([1, 1, 1, 1]);
 
             let xtx_id: sp_core::H256 =
                 hex!("2637d56ea21c04df03463decc4aa8d2916c96e59ac45e451d7133eedc621de59").into();

@@ -130,7 +130,7 @@ fn submit_header_file(
     origin: OriginFor<Test>,
     file: &str,
     index: usize, //might have an index (for relaychains)
-) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
+) -> Result<(), DispatchError> {
     let raw_data = fs::read_to_string("./src/mock-data/".to_owned() + file).unwrap();
     let json: Value = serde_json::from_str(raw_data.as_str()).unwrap();
     submit_headers(origin, json, index)
@@ -140,7 +140,7 @@ fn submit_headers(
     origin: OriginFor<Test>,
     json: Value,
     index: usize,
-) -> Result<PostDispatchInfo, DispatchErrorWithPostInfo<PostDispatchInfo>> {
+) -> Result<(), DispatchError> {
     let encoded_header_data: Vec<u8> =
         hex::decode(json[index]["encoded_data"].as_str().unwrap()).unwrap();
     let gateway_id: ChainId = Decode::decode(

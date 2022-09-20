@@ -272,7 +272,7 @@ pub mod pallet {
             ensure_root(origin)?;
 
             // early exit if record already exists in storage
-            if <XDNSRegistry<T>>::contains_key(gateway_id) && !force {
+            if <XDNSRegistry<T>>::contains_key(gateway_id) {
                 return Err(Error::<T>::XdnsRecordAlreadyExists.into())
             }
 
@@ -359,9 +359,12 @@ pub mod pallet {
 
         // Fetches the GatewayABIConfig for a given XDNS record
         fn get_abi(chain_id: ChainId) -> Result<GatewayABIConfig, DispatchError> {
+            if !<XDNSRegistry<T>>::contains_key(chain_id) {
+                return Err(Error::<T>::XdnsRecordNotFound.into())
+            }
             Ok(<XDNSRegistry<T>>::get(chain_id)
-                .ok_or(Err(Error::<T>::XdnsRecordNotFound.into()))?
-                .gateway_abi)
+                .unwrap()
+                .gateway_abi)//safe because checked
         }
 
         fn get_gateway_value_unsigned_type_unsafe(chain_id: &ChainId) -> Type {

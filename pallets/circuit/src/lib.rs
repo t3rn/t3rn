@@ -65,6 +65,7 @@ pub use t3rn_primitives::{
     volatile::LocalState,
     xdns::Xdns,
     xtx::{Xtx, XtxId},
+    portal::Portal,
     GatewayType, *,
 };
 
@@ -655,7 +656,7 @@ pub mod pallet {
 
             Self::deposit_event(Event::SideEffectInsuranceReceived(
                 side_effect_id,
-                relayer.clone(),
+                executor.clone(),
             ));
 
             // Emit: From Circuit events
@@ -2040,8 +2041,6 @@ impl<T: Config> Pallet<T> {
             &Self::account_id(),
             &fsx.input,
             &confirmation,
-            None,
-            None,
         )
         .map_err(|_e| Error::<T>::XBIExitFailedOnSFXConfirmation)?;
         Ok(())

@@ -219,7 +219,7 @@ impl ExtBuilder {
             *b"circ",
             None,
             Default::default(),
-            GatewayVendor::Substrate,
+            GatewayVendor::Rococo,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
             GatewaySysProps {
@@ -228,13 +228,14 @@ impl ExtBuilder {
                 token_decimals: 12,
             },
             vec![],
+            vec![],
         );
         let zero_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
             [0u8, 0u8, 0u8, 0u8],
             None,
             Default::default(),
-            GatewayVendor::Substrate,
+            GatewayVendor::Rococo,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
             GatewaySysProps {
@@ -243,13 +244,14 @@ impl ExtBuilder {
                 token_decimals: 0,
             },
             vec![],
+            vec![],
         );
         let gateway_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
             *b"gate",
             None,
             Default::default(),
-            GatewayVendor::Substrate,
+            GatewayVendor::Rococo,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
             GatewaySysProps {
@@ -258,13 +260,14 @@ impl ExtBuilder {
                 token_decimals: 12,
             },
             vec![],
+            vec![],
         );
         let polkadot_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
             *b"pdot",
             None,
             Default::default(),
-            GatewayVendor::Substrate,
+            GatewayVendor::Rococo,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
             GatewaySysProps {
@@ -273,13 +276,14 @@ impl ExtBuilder {
                 token_decimals: 10,
             },
             vec![],
+            vec![],
         );
         let kusama_xdns_record = <XdnsRecord<AccountId>>::new(
             vec![],
             *b"ksma",
             None,
             Default::default(),
-            GatewayVendor::Substrate,
+            GatewayVendor::Rococo,
             GatewayType::ProgrammableExternal(0),
             Default::default(),
             GatewaySysProps {
@@ -287,6 +291,7 @@ impl ExtBuilder {
                 token_symbol: Encode::encode("KSM"),
                 token_decimals: 12,
             },
+            vec![],
             vec![],
         );
         self.known_xdns_records = vec![

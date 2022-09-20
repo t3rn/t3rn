@@ -1,8 +1,5 @@
 use circuit_parachain_runtime::{
-    AccountId, AuraId, EvmConfig, MultiFinalityVerifierDefaultConfig,
-    MultiFinalityVerifierEthereumLikeConfig, MultiFinalityVerifierGenericLikeConfig,
-    MultiFinalityVerifierPolkadotLikeConfig, MultiFinalityVerifierSubstrateLikeConfig, Signature,
-    SudoConfig, XDNSConfig, EXISTENTIAL_DEPOSIT,
+    AccountId, AuraId, EvmConfig, Signature, SudoConfig, XDNSConfig, EXISTENTIAL_DEPOSIT,
 };
 use cumulus_primitives_core::ParaId;
 use jsonrpc_runtime_client::{
@@ -531,36 +528,11 @@ fn testnet_genesis(
             // Assign network admin rights.
             key: Some(root_key),
         },
-        // transaction_payment: Default::default(),
-        // beefy: BeefyConfig {
-        // 	// authorities: initial_authorities.iter().map(|x| (x.1.clone())).collect(),
-        // 	authorities: Vec::new()
-        // },
         xdns: XDNSConfig {
             known_xdns_records: xdns_records,
             standard_side_effects,
         },
         contracts_registry: Default::default(),
-        multi_finality_verifier_substrate_like: MultiFinalityVerifierSubstrateLikeConfig {
-            owner: None,
-            init_data: None,
-        },
-        multi_finality_verifier_generic_like: MultiFinalityVerifierGenericLikeConfig {
-            owner: None,
-            init_data: None,
-        },
-        multi_finality_verifier_ethereum_like: MultiFinalityVerifierEthereumLikeConfig {
-            owner: None,
-            init_data: None,
-        },
-        multi_finality_verifier_polkadot_like: MultiFinalityVerifierPolkadotLikeConfig {
-            owner: None,
-            init_data: None,
-        },
-        multi_finality_verifier_default: MultiFinalityVerifierDefaultConfig {
-            owner: None,
-            init_data: Some(initial_gateways),
-        },
         orml_tokens: Default::default(),
         account_manager: Default::default(),
         treasury: Default::default(),

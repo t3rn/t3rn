@@ -89,13 +89,12 @@ t3rn-protocol                     = { default-features = false, path = "../../pr
 # t3rn pallets
 pallet-account-manager                = { path = "../../pallets/account-manager", default-features = false }
 pallet-circuit                        = { path = "../../pallets/circuit", package = "pallet-circuit", default-features = false }
-pallet-circuit-portal                 = { path = "../../pallets/circuit-portal", package = "pallet-circuit-portal", default-features = false }
-pallet-circuit-portal-rpc-runtime-api = { path = "../../pallets/circuit-portal/rpc/runtime-api", default-features = false }
 pallet-contracts-registry             = { path = "../../pallets/contracts-registry", default-features = false }
-pallet-mfv                            = { path = "../../pallets/multi-finality-verifier", package = "pallet-multi-finality-verifier", default-features = false }
 pallet-xdns                           = { path = "../../pallets/xdns", default-features = false }
 pallet-xdns-rpc-runtime-api           = { path = "../../pallets/xdns/rpc/runtime-api", default-features = false }
-
+pallet-grandpa-finality-verifier          = { path = "../../finality-verifiers/grandpa", default-features = false }
+pallet-portal                             = { path = "../../pallets/portal", default-features = false }
+pallet-portal-rpc-runtime-api             = { path = "../../pallets/portal/rpc/runtime-api", default-features = false }
 pallet-xbi-portal                 = { path = "../../pallets/xbi-portal", default-features = false }
 pallet-clock                      = { path = "../../pallets/clock", default-features = false }
 
@@ -184,11 +183,8 @@ std = [
   # t3rn pallets
   "pallet-xdns/std",
   "pallet-xdns-rpc-runtime-api/std",
-  "pallet-circuit-portal-rpc-runtime-api/std",
-  "pallet-mfv/std",
   "pallet-treasury/std",
   "pallet-contracts-registry/std",
-  "pallet-circuit-portal/std",
   "pallet-circuit/std",
   "circuit-runtime-types/std",
 ]

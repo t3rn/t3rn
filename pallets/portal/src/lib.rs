@@ -26,7 +26,7 @@ pub mod pallet {
     use core::convert::TryInto;
     use frame_support::{pallet_prelude::*, weights};
     use frame_system::pallet_prelude::*;
-    use sp_std::vec::Vec;
+    use sp_std::{vec, vec::Vec};
     use t3rn_primitives::{
         abi::GatewayABIConfig,
         portal::RococoBridge,
@@ -118,6 +118,7 @@ pub mod pallet {
                 gateway_type.clone(),
                 gateway_genesis,
                 gateway_sys_props.clone(),
+                vec![],
                 allowed_side_effects.clone(),
             )?;
 
@@ -264,7 +265,7 @@ impl<T: Config> Portal<T> for Pallet<T> {
         submission_target_height: Vec<u8>,
         encoded_inclusion_data: Vec<u8>,
         side_effect_id: [u8; 4],
-    ) -> Result<Vec<Vec<Vec<u8>>>, DispatchError> {
+    ) -> Result<(Vec<Vec<u8>>, Vec<u8>), DispatchError> {
         let vendor = <T as Config>::Xdns::get_gateway_vendor(&gateway_id)
             .map_err(|_| Error::<T>::GatewayVendorNotFound)?;
 

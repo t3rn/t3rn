@@ -1,9 +1,7 @@
 use circuit_standalone_runtime::{
-    AccountId, AuraConfig, BalancesConfig, EvmConfig, GenesisConfig,
-    GrandpaConfig, Signature, SudoConfig, SystemConfig, XDNSConfig,
-    WASM_BINARY,
+    AccountId, AuraConfig, BalancesConfig, EvmConfig, GenesisConfig, GrandpaConfig, Signature,
+    SudoConfig, SystemConfig, XDNSConfig, WASM_BINARY,
 };
-
 use jsonrpc_runtime_client::{
     create_rpc_client, get_gtwy_init_data, get_metadata, get_parachain_id, ConnectionParams,
 };
@@ -110,7 +108,7 @@ async fn fetch_xdns_record_from_rpc(
         chain_id,
         parachain_info,
         Default::default(),
-        GatewayVendor::Rococo,
+        GatewayVendor::PolkadotLike,
         GatewayType::ProgrammableExternal(0),
         GatewayGenesisConfig {
             modules_encoded: Some(modules_vec),
@@ -295,9 +293,6 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
                     get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
                     get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
                     get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
-                    get_account_id_from_seed::<sr25519::Public>("Executor//default"),
-                    get_account_id_from_seed::<sr25519::Public>("Cli//default"),
-                    get_account_id_from_seed::<sr25519::Public>("Ranger//default"),
                 ],
                 vec![],
                 standard_side_effects(),
