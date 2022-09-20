@@ -84,8 +84,6 @@ pub type BridgedBlockHasher<T, I> = HasherOf<<T as Config<I>>::BridgedChain>;
 /// Header of the bridged chain.
 pub type BridgedHeader<T, I> = HeaderOf<<T as Config<I>>::BridgedChain>;
 
-const LOG_TARGET: &str = "grandpa-finality-verifier";
-
 use crate::{
     side_effects::decode_event,
     types::{InclusionData, Parachain, ParachainHeaderData, RelaychainHeaderData},
@@ -281,7 +279,7 @@ pub mod pallet {
             <BestFinalizedMap<T, I>>::get(gateway_id)
                 .ok_or_else(|| Error::<T, I>::NoFinalizedHeader)?,
         )
-            .ok_or_else(|| Error::<T, I>::NoFinalizedHeader)?;
+        .ok_or_else(|| Error::<T, I>::NoFinalizedHeader)?;
 
         // °°°°° Explaination °°°°°
         // To be able to submit ranges of headers, we need to ensure a number of things.
@@ -384,7 +382,7 @@ pub mod pallet {
             <BestFinalizedMap<T, I>>::get(gateway_id)
                 .ok_or_else(|| Error::<T, I>::NoFinalizedHeader)?,
         )
-            .ok_or_else(|| Error::<T, I>::NoFinalizedHeader)?;
+        .ok_or_else(|| Error::<T, I>::NoFinalizedHeader)?;
 
         // °°°°° Explaination °°°°°
         // To be able to submit ranges of headers, we need to ensure a number of things.
@@ -522,8 +520,8 @@ pub mod pallet {
             &voter_set,
             justification,
         )
-            .map_err(|e| {
-                log::error!("Received invalid justification for {:?}", hash);
+        .map_err(|_| {
+            log::error!("Received invalid justification for {:?}", hash);
             Error::<T, I>::InvalidGrandpaJustification
         })?)
     }
@@ -1004,7 +1002,7 @@ pub(crate) fn verify_event_storage_proof<T: Config<I>, I: 'static>(
         38, 170, 57, 78, 234, 86, 48, 224, 124, 72, 174, 12, 149, 88, 206, 247, 128, 212, 30, 94,
         22, 5, 103, 101, 188, 132, 97, 133, 16, 114, 201, 215,
     ]
-        .to_vec();
+    .to_vec();
     let verified_block_events = verify_storage_proof::<T, I>(
         gateway_id,
         block_hash,
@@ -1034,7 +1032,7 @@ pub(crate) fn verify_header_storage_proof<T: Config<I>, I: 'static>(
         205, 113, 11, 48, 189, 46, 171, 3, 82, 221, 204, 38, 65, 122, 161, 148, 27, 60, 37, 47,
         203, 41, 216, 142, 255, 79, 61, 229, 222, 68, 118, 195,
     ]
-        .to_vec();
+    .to_vec();
     let mut arg = Twox64Concat::hash(parachain.id.encode().as_ref());
     key.append(&mut arg); // complete storage key
 

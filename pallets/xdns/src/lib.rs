@@ -362,9 +362,7 @@ pub mod pallet {
             if !<XDNSRegistry<T>>::contains_key(chain_id) {
                 return Err(Error::<T>::XdnsRecordNotFound.into())
             }
-            Ok(<XDNSRegistry<T>>::get(chain_id)
-                .unwrap()
-                .gateway_abi)//safe because checked
+            Ok(<XDNSRegistry<T>>::get(chain_id).unwrap().gateway_abi) //safe because checked
         }
 
         fn get_gateway_value_unsigned_type_unsafe(chain_id: &ChainId) -> Type {

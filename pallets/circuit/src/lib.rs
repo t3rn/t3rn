@@ -57,6 +57,7 @@ pub use t3rn_primitives::{
     circuit_portal::CircuitPortal,
     claimable::{BenefitSource, CircuitRole},
     executors::Executors,
+    portal::Portal,
     side_effect::{
         ConfirmedSideEffect, FullSideEffect, HardenedSideEffect, SecurityLvl, SideEffect,
         SideEffectId,
@@ -65,7 +66,6 @@ pub use t3rn_primitives::{
     volatile::LocalState,
     xdns::Xdns,
     xtx::{Xtx, XtxId},
-    portal::Portal,
     GatewayType, *,
 };
 
@@ -774,12 +774,7 @@ pub mod pallet {
                 Some(xtx_id),
             )?;
 
-            Self::confirm(
-                &mut local_xtx_ctx,
-                &relayer,
-                &side_effect,
-                &confirmation,
-            )?;
+            Self::confirm(&mut local_xtx_ctx, &relayer, &side_effect, &confirmation)?;
 
             let status_change = Self::update(&mut local_xtx_ctx)?;
 
@@ -1519,9 +1514,9 @@ impl<T: Config> Pallet<T> {
                 // ToDo: Consider to remove the assignment below and move OptinalInsurance to SFX fields:
                 //      sfx.reward = Option<Balance>
                 //      sfx.insurance = Option<Balance>
-                if side_effect.prize != reward {
-                    return Err("Side_effect prize must be equal to reward of Optional Insurance")
-                }
+                // if side_effect.prize != reward {
+                //     return Err("Side_effect prize must be equal to reward of Optional Insurance")
+                // }
 
                 local_ctx.insurance_deposits.push((
                     side_effect.generate_id::<SystemHashing<T>>(),
@@ -1720,7 +1715,6 @@ impl<T: Config> Pallet<T> {
 
         Ok(())
     }
-
 
     // ToDo: This should be called as a 3vm trait injection @Don
     pub fn exec_in_xtx_ctx(

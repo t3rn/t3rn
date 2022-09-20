@@ -25,20 +25,14 @@ use t3rn_sdk_primitives::{
 };
 
 use codec::{Decode, Encode};
-use frame_support::{
-    assert_noop, assert_ok, dispatch::PostDispatchInfo, pallet_prelude::DispatchResultWithPostInfo,
-    traits::Currency,
-};
+use frame_support::{assert_noop, assert_ok, dispatch::PostDispatchInfo, traits::Currency};
 
 use frame_system::{pallet_prelude::OriginFor, EventRecord, Phase};
 
 pub use pallet_grandpa_finality_verifier::mock::brute_seed_block_1;
 use serde_json::Value;
 use sp_io::TestExternalities;
-use sp_runtime::{
-    traits::{Header as HeaderT, Zero},
-    AccountId32, DispatchErrorWithPostInfo, DispatchError
-};
+use sp_runtime::{traits::Zero, AccountId32, DispatchError, DispatchErrorWithPostInfo};
 use sp_std::{convert::TryFrom, prelude::*};
 use std::{convert::TryInto, fs};
 use t3rn_primitives::{
@@ -1869,7 +1863,6 @@ fn insured_unrewarded_single_rococo_transfer() {
 }
 
 #[test]
-#[ignore]
 fn insured_rewarded_single_rococo_transfer() {
     let path = "insured_rewarded_single_rococo_transfer/";
     // generated via CLI with:
@@ -1972,7 +1965,6 @@ fn insured_rewarded_single_rococo_transfer() {
 }
 
 #[test]
-#[ignore]
 fn insured_rewarded_multi_rococo_transfer() {
     let path = "insured_rewarded_multi_rococo_transfer/";
     // generated via CLI with:
@@ -2357,7 +2349,6 @@ fn uninsured_unrewarded_multi_rococo_transfer() {
 }
 
 #[test]
-#[ignore]
 fn multi_mixed_rococo() {
     let path = "multi_mixed_rococo/";
     // generated via CLI with:
@@ -2733,12 +2724,14 @@ fn multi_mixed_rococo() {
             ));
 
             assert_eq!(Balances::free_balance(CLI_DEFAULT), 12u128 * 10u128.pow(12));
-            assert_eq!(Balances::free_balance(EXECUTOR_DEFAULT), 28u128 * 10u128.pow(12));
+            assert_eq!(
+                Balances::free_balance(EXECUTOR_DEFAULT),
+                28u128 * 10u128.pow(12)
+            );
         });
 }
 
 #[test]
-#[ignore]
 fn insured_multi_rococo_multiple_executors() {
     let path = "insured_multi_chain_rococo/";
     // generated via CLI with:
