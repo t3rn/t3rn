@@ -110,11 +110,18 @@ impl<T: Config> AccountManagerExt<T::AccountId, BalanceOf<T>, T::Hash, T::BlockN
                 payee: payee.clone(),
                 offered_reward,
                 charge_fee,
-                recipient,
+                recipient: recipient.clone(),
                 source,
                 role,
             },
         );
+
+        Self::deposit_event(crate::Event::DepositReceived {
+            charge_id,
+            payee: payee.clone(),
+            recipient,
+            amount: total_reserve_deposit,
+        });
 
         Ok(())
     }

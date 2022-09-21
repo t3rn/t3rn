@@ -6,7 +6,8 @@ on:
       - '**/*.rs'
       - '**/Cargo.toml'
       - '**/Cargo.lock'
-      - .github/workflows/circuit.yml
+      - '.github/workflows/circuit.yml'
+      - '.git/modules/*/HEAD'
 
 env:
   RUST_BACKTRACE: 1
