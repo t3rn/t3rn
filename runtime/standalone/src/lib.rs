@@ -9,6 +9,7 @@ use codec::Decode;
 
 use pallet_grandpa::AuthorityId as GrandpaId;
 
+use frame_system::EnsureRoot;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::crypto::KeyTypeId;
 use sp_runtime::{
@@ -55,6 +56,33 @@ pub use circuit_runtime_types::*;
 pub use impl_versioned_runtime_with_api::*;
 
 pub type CurrencyAdapter = accounts_config::AccountManagerCurrencyAdapter<Balances, ()>;
+
+const DOLLARS: Balance = 1_000_000_000_000;
+const CENTS: Balance = DOLLARS / 100;
+
+parameter_types! {
+    pub const BasicDeposit: Balance = 10 * DOLLARS;       // 258 bytes on-chain
+    pub const FieldDeposit: Balance = 250 * CENTS;        // 66 bytes on-chain
+    pub const SubAccountDeposit: Balance = 2 * DOLLARS;   // 53 bytes on-chain
+    pub const MaxSubAccounts: u32 = 100;
+    pub const MaxAdditionalFields: u32 = 100;
+    pub const MaxRegistrars: u32 = 20;
+}
+
+impl pallet_identity::Config for Runtime {
+    type BasicDeposit = BasicDeposit;
+    type Currency = Balances;
+    type Event = Event;
+    type FieldDeposit = FieldDeposit;
+    type ForceOrigin = EnsureRoot<AccountId>;
+    type MaxAdditionalFields = MaxAdditionalFields;
+    type MaxRegistrars = MaxRegistrars;
+    type MaxSubAccounts = MaxSubAccounts;
+    type RegistrarOrigin = EnsureRoot<AccountId>;
+    type Slashed = ();
+    type SubAccountDeposit = SubAccountDeposit;
+    type WeightInfo = pallet_identity::weights::SubstrateWeight<Runtime>;
+}
 
 construct_runtime!(
     pub enum Runtime where
@@ -106,5 +134,7 @@ construct_runtime!(
         Contracts: pallet_3vm_contracts = 120,
         Evm: pallet_3vm_evm = 121,
         AccountManager: pallet_account_manager = 125,
+
+        Identity: pallet_identity::{Pallet, Call, Storage, Event<T>},
     }
 );

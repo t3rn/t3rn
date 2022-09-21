@@ -3,6 +3,7 @@ pub use pallet_aura;
 pub use pallet_babe;
 pub use pallet_balances;
 pub use pallet_grandpa;
+pub use pallet_identity;
 pub use pallet_randomness_collective_flip;
 pub use pallet_sudo;
 pub use pallet_timestamp;

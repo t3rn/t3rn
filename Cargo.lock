@@ -1362,6 +1362,7 @@ dependencies = [
  "pallet-evm 0.1.0",
  "pallet-evm-rpc-runtime-api",
  "pallet-grandpa",
+ "pallet-identity",
  "pallet-mmr",
  "pallet-mmr-primitives",
  "pallet-multi-finality-verifier",
