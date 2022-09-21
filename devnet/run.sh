@@ -226,7 +226,7 @@ start_nodes() {
   if ! npm ls --global | grep -qF ttab; then
     npm i -g ttab
   fi
-  ttab -a $term_name exec $dir/bin/polkadot \
+  nohup $dir/bin/polkadot \
     --ws-port 1944 \
     --alice \
     --validator \
@@ -234,13 +234,13 @@ start_nodes() {
     --rpc-cors all \
     --unsafe-ws-external \
     --unsafe-rpc-external \
-    --chain $dir/specs/rococo-local.raw.json
-  ttab -a $term_name exec $dir/bin/polkadot \
+    --chain $dir/specs/rococo-local.raw.json &
+  nohup $dir/bin/polkadot \
     --bob \
     --validator \
     --tmp \
-    --chain $dir/specs/rococo-local.raw.json
-  ttab -a $term_name exec $dir/bin/polkadot \
+    --chain $dir/specs/rococo-local.raw.json &
+  nohup $dir/bin/polkadot \
     --charlie \
     --validator \
     --tmp \
@@ -248,17 +248,17 @@ start_nodes() {
     --unsafe-ws-external \
     --unsafe-rpc-external \
     --chain $dir/specs/rococo-local.raw.json
-  ttab -a $term_name exec $dir/bin/polkadot \
+  nohup $dir/bin/polkadot \
     --dave \
     --validator \
     --tmp \
     --chain $dir/specs/rococo-local.raw.json
-  ttab -a $term_name exec $dir/bin/polkadot \
+  nohup $dir/bin/polkadot \
     --eve \
     --validator \
     --tmp \
     --chain $dir/specs/rococo-local.raw.json
-  ttab -a $term_name exec $dir/bin/devnet-circuit-collator \
+  nohup $dir/bin/devnet-circuit-collator \
     --port 33333 \
     --ws-port 1933 \
     --rpc-port 1833 \
@@ -271,8 +271,8 @@ start_nodes() {
     --execution Wasm \
     -- \
     --chain $dir/specs/rococo-local.raw.json \
-    --discover-local
-  ttab -a $term_name exec $dir/bin/devnet-circuit-collator \
+    --discover-local &
+  nohup $dir/bin/devnet-circuit-collator \
     --port 33332 \
     --ws-port 1932 \
     --rpc-port 1832 \
@@ -282,8 +282,8 @@ start_nodes() {
     --execution Wasm \
     -- \
     --chain $dir/specs/rococo-local.raw.json \
-    --discover-local
-  ttab -a $term_name exec $dir/bin/devnet-circuit-collator \
+    --discover-local &
+  nohup $dir/bin/devnet-circuit-collator \
     --port 23333 \
     --ws-port 2933 \
     --rpc-port 2833 \
@@ -293,8 +293,8 @@ start_nodes() {
     --execution Wasm \
     -- \
     --chain $dir/specs/rococo-local.raw.json \
-    --discover-local
-  ttab -a $term_name exec $dir/bin/devnet-circuit-collator \
+    --discover-local &
+  nohup $dir/bin/devnet-circuit-collator \
     --port 23332 \
     --ws-port 2932 \
     --rpc-port 2832 \
@@ -304,7 +304,7 @@ start_nodes() {
     --execution Wasm \
     -- \
     --chain $dir/specs/rococo-local.raw.json \
-    --discover-local
+    --discover-local &
 }
 
 devnet() {
