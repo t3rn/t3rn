@@ -32,7 +32,7 @@ class CircuitCLI {
             rpc: rpc as any
         })
         const keyring = new Keyring({ type: "sr25519" })
-        this.signer =process.env.CIRCUIT_KEY === undefined
+        this.signer = process.env.CIRCUIT_KEY === undefined
                 ? keyring.addFromUri("//Cli//default")
                 : keyring.addFromMnemonic(process.env.CIRCUIT_KEY)
         console.log("Signer:", this.signer.address);
