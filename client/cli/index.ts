@@ -93,7 +93,7 @@ class CircuitCLI {
     async setOperational(id: string, operational: boolean, exportArgs: boolean, exportName: string) {
         const data = config.gateways.find(elem => elem.id === id)
         if (data) {
-            const transactionArgs= await setOperational(this.circuit, data, operational)
+            const transactionArgs = await setOperational(this.circuit, data, operational)
             const submissionHeight = await this.circuitRelayer.sudoSignAndSend(this.circuit.tx.portal.setOperational(transactionArgs?.gatewayId, transactionArgs?.operational))
                 .catch(err => {
                     console.log(err);
