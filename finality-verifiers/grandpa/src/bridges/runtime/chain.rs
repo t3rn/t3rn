@@ -76,19 +76,6 @@ pub trait Chain: Send + Sync + 'static {
         + MaybeSerializeDeserialize;
 }
 
-// impl<Hash, AccountId, BalanceOf, BlockNumber> MaxEncodedLen
-// for BlockNumberOf<Hash, AccountId, BalanceOf, BlockNumber>
-// where
-// Hash: MaxEncodedLen,
-// AccountId: MaxEncodedLen,
-// BalanceOf: MaxEncodedLen,
-// BlockNumber: MaxEncodedLen,
-// {
-//     fn max_encoded_len() -> usize {
-//         4096 as usize
-//     }
-// }
-
 /// Block number used by the chain.
 pub type BlockNumberOf<C> = <C as Chain>::BlockNumber;
 

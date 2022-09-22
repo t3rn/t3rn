@@ -483,7 +483,7 @@ fn testnet_genesis(
     root_key: AccountId,
     xdns_records: Vec<XdnsRecord<AccountId>>,
     standard_side_effects: Vec<SideEffectInterface>,
-    initial_gateways: Vec<InitializationData<Header>>,
+    _initial_gateways: Vec<InitializationData<Header>>,
 ) -> circuit_parachain_runtime::GenesisConfig {
     circuit_parachain_runtime::GenesisConfig {
         system: circuit_parachain_runtime::SystemConfig {

@@ -1675,25 +1675,25 @@ impl<T: Config> Pallet<T> {
             confirmation,
             &mut local_ctx.full_side_effects[local_ctx.xtx.steps_cnt.0 as usize],
         )?;
-        log::info!("Order confirmed!");
+        log::debug!("Order confirmed!");
         // confirm the payload is included in the specified block, and return the SideEffect params as defined in XDNS.
         // this could be multiple events!
         let (params, source) = <T as Config>::Portal::confirm_and_decode_payload_params(
             side_effect.target,
             fsx.submission_target_height,
             confirmation.inclusion_data.clone(),
-            side_effect_id.clone(),
+            side_effect_id,
         )
         .map_err(|_| "SideEffect confirmation failed!")?;
-        // ToDo handle misbehaviour
-        log::info!("Params: {:?}", params);
+        // ToDo: handle misbehaviour
+        log::debug!("SFX confirmation params: {:?}", params);
 
         let mut side_effect_id: [u8; 4] = [0, 0, 0, 0];
         side_effect_id.copy_from_slice(&side_effect.encoded_action[0..4]);
         let side_effect_interface =
             <T as Config>::Xdns::fetch_side_effect_interface(side_effect_id);
 
-        log::info!("got interface!");
+        log::debug!("Found SFX interface!");
 
         confirmation_plug::<T>(
             &Box::new(side_effect_interface.unwrap()),
@@ -1704,14 +1704,13 @@ impl<T: Config> Pallet<T> {
                 side_effect
                     .generate_id::<SystemHashing<T>>()
                     .as_ref()
-                    .to_vec()
-                    .into(),
+                    .to_vec(),
             ),
             fsx.security_lvl,
             <T as Config>::Xdns::get_gateway_security_coordinates(&side_effect.target)?,
         )
         .map_err(|_| "Execution can't be confirmed.")?;
-        log::info!("confirmation plug ok");
+        log::debug!("confirmation plug ok");
 
         Ok(())
     }

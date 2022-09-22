@@ -111,13 +111,13 @@ pub mod pallet {
                 url,
                 gateway_id,
                 None,
-                gateway_abi.clone(),
+                gateway_abi,
                 gateway_vendor.clone(),
-                gateway_type.clone(),
+                gateway_type,
                 gateway_genesis,
-                gateway_sys_props.clone(),
+                gateway_sys_props,
                 vec![],
-                allowed_side_effects.clone(),
+                allowed_side_effects,
             )?;
 
             let res = match gateway_vendor {
@@ -133,11 +133,11 @@ pub mod pallet {
             match res {
                 Ok(_) => {
                     Self::deposit_event(Event::GatewayRegistered(gateway_id));
-                    return Ok(().into())
+                    Ok(().into())
                 },
                 Err(msg) => {
                     log::info!("{:?}", msg);
-                    return Err(Error::<T>::RegistrationError.into())
+                    Err(Error::<T>::RegistrationError.into())
                 },
             }
         }
@@ -163,9 +163,9 @@ pub mod pallet {
             match res {
                 Ok(_) => {
                     Self::deposit_event(Event::SetOwner(gateway_id, encoded_new_owner));
-                    return Ok(().into())
+                    Ok(().into())
                 },
-                Err(_msg) => return Err(Error::<T>::SetOwnerError.into()),
+                Err(_msg) => Err(Error::<T>::SetOwnerError.into()),
             }
         }
 
@@ -191,11 +191,11 @@ pub mod pallet {
             match res {
                 Ok(_) => {
                     Self::deposit_event(Event::SetOperational(gateway_id, operational));
-                    return Ok(().into())
+                    Ok(().into())
                 },
                 Err(msg) => {
                     log::info!("{:?}", msg);
-                    return Err(Error::<T>::SetOperationalError.into())
+                    Err(Error::<T>::SetOperationalError.into())
                 },
             }
         }
@@ -221,11 +221,11 @@ pub mod pallet {
             match res {
                 Ok(height) => {
                     Self::deposit_event(Event::HeaderSubmitted(gateway_id, height));
-                    return Ok(().into())
+                    Ok(())
                 },
                 Err(msg) => {
                     log::info!("{:?}", msg);
-                    return Err(Error::<T>::SubmitHeaderError.into())
+                    Err(Error::<T>::SubmitHeaderError.into())
                 },
             }
         }

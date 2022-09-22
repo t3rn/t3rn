@@ -105,15 +105,15 @@ fn register(
 
     let res = Portal::register_gateway(
         origin,
-        url.clone(),
-        gateway_id.clone(),
+        url,
+        gateway_id,
         gateway_abi.clone(),
         gateway_vendor.clone(),
         gateway_type.clone(),
         gateway_genesis.clone(),
         gateway_sys_props.clone(),
         allowed_side_effects.clone(),
-        encoded_registration_data.clone(),
+        encoded_registration_data,
     );
 
     if valid {
@@ -129,7 +129,7 @@ fn register(
         assert_eq!(xdns_record.gateway_genesis, gateway_genesis);
     }
 
-    return res
+    res
 }
 
 fn submit_headers(
@@ -263,7 +263,7 @@ fn run_mock_tests(path: &str) -> Result<(), DispatchErrorWithPostInfo<PostDispat
             }
         }
     }
-    Ok(().into())
+    Ok(())
 }
 
 #[test]
@@ -834,7 +834,7 @@ fn circuit_handles_insurance_deposit_for_transfers() {
             let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
 
             assert_ok!(Circuit::bond_insurance_deposit(
-                origin_relayer_bob.clone(),
+                origin_relayer_bob,
                 xtx_id,
                 side_effect_a_id,
             ));
@@ -1040,7 +1040,7 @@ fn circuit_handles_swap_with_insurance() {
             let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
 
             assert_ok!(Circuit::bond_insurance_deposit(
-                origin_relayer_bob.clone(),
+                origin_relayer_bob,
                 xtx_id,
                 side_effect_a_id,
             ));
@@ -1228,7 +1228,7 @@ fn circuit_handles_add_liquidity_with_insurance() {
             let origin_relayer_bob = Origin::signed(BOB_RELAYER); // Only sudo access to register new gateways for now
 
             assert_ok!(Circuit::bond_insurance_deposit(
-                origin_relayer_bob.clone(),
+                origin_relayer_bob,
                 xtx_id,
                 side_effect_a_id,
             ));
@@ -1373,13 +1373,10 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_submitted() {
             (Type::Bytes(0), ArgVariant::A), // empty bytes instead of insurance
         ],
         &mut local_state,
-        transfer_protocol_box.clone(),
+        transfer_protocol_box,
     );
 
-    let side_effects = vec![
-        valid_transfer_side_effect_1.clone(),
-        valid_transfer_side_effect_2.clone(),
-    ];
+    let side_effects = vec![valid_transfer_side_effect_1, valid_transfer_side_effect_2];
     let fee = 1;
     let sequential = true;
 
@@ -1437,10 +1434,7 @@ fn two_dirty_transfers_are_allocated_to_2_steps_and_can_be_confirmed() {
         transfer_protocol_box,
     );
 
-    let side_effects = vec![
-        valid_transfer_side_effect_1.clone(),
-        valid_transfer_side_effect_2.clone(),
-    ];
+    let side_effects = vec![valid_transfer_side_effect_1, valid_transfer_side_effect_2];
     let fee = 1;
     let sequential = true;
 
@@ -1511,9 +1505,9 @@ fn circuit_handles_transfer_dirty_and_optimistic_and_swap() {
     );
 
     let side_effects = vec![
-        valid_transfer_side_effect_1.clone(),
+        valid_transfer_side_effect_1,
         valid_transfer_side_effect_2,
-        valid_swap_side_effect.clone(),
+        valid_swap_side_effect,
     ];
     let fee = 1;
     let sequential = true;
@@ -1854,7 +1848,7 @@ fn insured_unrewarded_single_rococo_transfer() {
             );
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_DEFAULT),
-                1u128 * 10u128.pow(12)
+                10u128.pow(12)
             );
 
             assert_ok!(confirm_side_effect(
@@ -1943,10 +1937,7 @@ fn insured_rewarded_single_rococo_transfer() {
                 10u128 * 10u128.pow(12)
             );
 
-            assert_eq!(
-                Balances::reserved_balance(&CLI_DEFAULT),
-                1u128 * 10u128.pow(12)
-            );
+            assert_eq!(Balances::reserved_balance(&CLI_DEFAULT), 10u128.pow(12));
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_DEFAULT),
                 0u128 * 10u128.pow(12)
@@ -1967,13 +1958,10 @@ fn insured_rewarded_single_rococo_transfer() {
                 9u128 * 10u128.pow(12)
             );
 
-            assert_eq!(
-                Balances::reserved_balance(&CLI_DEFAULT),
-                1u128 * 10u128.pow(12)
-            );
+            assert_eq!(Balances::reserved_balance(&CLI_DEFAULT), 10u128.pow(12));
             assert_eq!(
                 Balances::reserved_balance(&EXECUTOR_DEFAULT),
-                1u128 * 10u128.pow(12)
+                10u128.pow(12)
             );
 
             let submit_header_2 =

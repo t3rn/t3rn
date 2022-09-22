@@ -265,7 +265,7 @@ pub mod pallet {
         // GrandpaJustification for the signed_header
         justification: GrandpaJustification<BridgedHeader<T, I>>,
     ) -> Result<Vec<u8>, DispatchError> {
-        ensure!(range.len() > 0, Error::<T, I>::EmptyRangeSubmitted);
+        ensure!(!range.is_empty(), Error::<T, I>::EmptyRangeSubmitted);
 
         // °°°°° Implicit Check: °°°°°
         // range.len() < T::HeadersToStore::get() - ensures that we don't mess up our ring buffer
@@ -276,10 +276,9 @@ pub mod pallet {
             gateway_id,
             // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
             // `ImportedHeaders` must contain an entry for `BestFinalized`.
-            <BestFinalizedMap<T, I>>::get(gateway_id)
-                .ok_or_else(|| Error::<T, I>::NoFinalizedHeader)?,
+            <BestFinalizedMap<T, I>>::get(gateway_id).ok_or(Error::<T, I>::NoFinalizedHeader)?,
         )
-        .ok_or_else(|| Error::<T, I>::NoFinalizedHeader)?;
+        .ok_or(Error::<T, I>::NoFinalizedHeader)?;
 
         // °°°°° Explaination °°°°°
         // To be able to submit ranges of headers, we need to ensure a number of things.
@@ -290,7 +289,7 @@ pub mod pallet {
         // For efficiency we check the the justification first. If it's invalid, we can skip the rest
         let (signed_hash, signed_number) = (signed_header.hash(), signed_header.number());
         let authority_set =
-            <CurrentAuthoritySet<T, I>>::get().ok_or_else(|| Error::<T, I>::InvalidAuthoritySet)?;
+            <CurrentAuthoritySet<T, I>>::get().ok_or(Error::<T, I>::InvalidAuthoritySet)?;
 
         let set_id = authority_set.set_id;
         // °°°°° Begin Check: #2 °°°°°
@@ -369,7 +368,7 @@ pub mod pallet {
         range: Vec<BridgedHeader<T, I>>,
         proof: StorageProof,
     ) -> Result<Vec<u8>, DispatchError> {
-        ensure!(range.len() > 0, Error::<T, I>::EmptyRangeSubmitted);
+        ensure!(!range.is_empty(), Error::<T, I>::EmptyRangeSubmitted);
         ensure!(
             range.len() < T::HeadersToStore::get().try_into().unwrap(),
             Error::<T, I>::RangeToLarge
@@ -379,10 +378,9 @@ pub mod pallet {
             gateway_id,
             // Every time `BestFinalized` is updated `ImportedHeaders` is also updated. Therefore
             // `ImportedHeaders` must contain an entry for `BestFinalized`.
-            <BestFinalizedMap<T, I>>::get(gateway_id)
-                .ok_or_else(|| Error::<T, I>::NoFinalizedHeader)?,
+            <BestFinalizedMap<T, I>>::get(gateway_id).ok_or(Error::<T, I>::NoFinalizedHeader)?,
         )
-        .ok_or_else(|| Error::<T, I>::NoFinalizedHeader)?;
+        .ok_or(Error::<T, I>::NoFinalizedHeader)?;
 
         // °°°°° Explaination °°°°°
         // To be able to submit ranges of headers, we need to ensure a number of things.
@@ -510,11 +508,11 @@ pub mod pallet {
     ) -> Result<(), Error<T, I>> {
         use bp_header_chain::justification::verify_justification;
 
-        let voter_set = VoterSet::new(authority_set.authorities)
-            .ok_or(Error::<T, I>::InvalidAuthoritySet.into())?;
+        let voter_set =
+            VoterSet::new(authority_set.authorities).ok_or(Error::<T, I>::InvalidAuthoritySet)?;
         let set_id = authority_set.set_id;
 
-        Ok(verify_justification::<BridgedHeader<T, I>>(
+        verify_justification::<BridgedHeader<T, I>>(
             (hash, number),
             set_id,
             &voter_set,
@@ -523,7 +521,7 @@ pub mod pallet {
         .map_err(|_| {
             log::error!("Received invalid justification for {:?}", hash);
             Error::<T, I>::InvalidGrandpaJustification
-        })?)
+        })
     }
 
     /// Since this writes to storage with no real checks this should only be used in functions that
@@ -609,7 +607,7 @@ pub mod pallet {
 
         // Once deleted, we add the new header
         <MultiImportedHeaders<T, I>>::insert(gateway_id, hash, header.clone());
-        <MultiImportedHashes<T, I>>::insert(gateway_id, buffer_index.clone(), hash);
+        <MultiImportedHashes<T, I>>::insert(gateway_id, *buffer_index, hash);
         <MultiImportedRoots<T, I>>::insert(
             gateway_id,
             hash,
@@ -685,7 +683,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
         gateway_id: ChainId,
         encoded_registration_data: Vec<u8>,
     ) -> Result<(), &'static str> {
-        ensure_owner_or_root_single::<T, I>(origin.clone(), gateway_id)?;
+        ensure_owner_or_root_single::<T, I>(origin, gateway_id)?;
         let init_allowed = !<BestFinalizedMap<T, I>>::contains_key(gateway_id);
         ensure!(init_allowed, "Already initialized");
         let registration_data: GrandpaRegistrationData<T::AccountId> =
@@ -703,8 +701,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
             ),
             None => {
                 ensure!(
-                    registration_data.authorities != None
-                        && registration_data.authority_set_id != None,
+                    registration_data.authorities.is_some()
+                        && registration_data.authority_set_id.is_some(),
                     "Relaychain parameters missing"
                 );
 
@@ -723,7 +721,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
                     is_halted: false,
                     gateway_id,
                 };
-                initialize_relay_chain::<T, I>(init_data.clone(), registration_data.owner)
+                initialize_relay_chain::<T, I>(init_data, registration_data.owner)
             },
         }
     }
@@ -845,10 +843,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
             if let Some(header) = <MultiImportedHeaders<T, I>>::get(gateway_id, header_hash) {
                 return Some(header.number().encode())
             } else {
-                return None
+                None
             }
         } else {
-            return Some(vec![0]) // ToDo this is here more for testing.
+            Some(vec![0]) // ToDo this is here more for testing.
         }
     }
 }
@@ -877,7 +875,7 @@ pub(crate) fn get_header_roots<T: pallet::Config<I>, I>(
 ) -> Result<BridgedBlockHash<T, I>, DispatchError> {
     let (extrinsics_root, storage_root): (BridgedBlockHash<T, I>, BridgedBlockHash<T, I>) =
         <MultiImportedRoots<T, I>>::get(gateway_id, block_hash)
-            .ok_or_else(|| Error::<T, I>::StorageRootNotFound)?;
+            .ok_or(Error::<T, I>::StorageRootNotFound)?;
     match trie_type {
         ProofTriePointer::State => Ok(storage_root),
         ProofTriePointer::Transaction => Ok(extrinsics_root),
@@ -921,7 +919,7 @@ fn ensure_owner_or_root_single<T: Config<I>, I: 'static>(
 
 /// Ensure that no relaychain has been set so far. Relaychains are unique
 fn can_init_relay_chain<T: Config<I>, I: 'static>() -> Result<(), &'static str> {
-    return match <RelayChainId<T, I>>::exists() {
+    match <RelayChainId<T, I>>::exists() {
         true => Err("Duplicate relaychain"), // we have a relaychain registered already
         false => Ok(()),                     // is first relaychain
     }
@@ -931,7 +929,7 @@ fn can_init_relay_chain<T: Config<I>, I: 'static>() -> Result<(), &'static str> 
 fn can_init_para_chain<T: Config<I>, I: 'static>(
     parachain: &Parachain,
 ) -> Result<(), &'static str> {
-    return match <RelayChainId<T, I>>::get() {
+    match <RelayChainId<T, I>>::get() {
         Some(relay_chain_id) => {
             // we have a relaychain setup
             match relay_chain_id == parachain.relay_chain_id {
@@ -955,12 +953,12 @@ fn executed_after_creation<T: Config<I>, I: 'static>(
             if submission_target < *header.number() {
                 return Ok(())
             }
-            return Err("Transaction executed before SideEffect creation")
+            Err("Transaction executed before SideEffect creation")
         } else {
-            return Err("No gateway header found") // this shouldn't be possible tom happen
+            Err("No gateway header found") // this shouldn't be possible tom happen
         }
     } else {
-        return Err("No gateway header found") // this shouldn't be possible tom happen
+        Err("No gateway header found") // this shouldn't be possible tom happen
     }
 }
 
@@ -1099,7 +1097,6 @@ mod tests {
             JustificationGeneratorParams, ALICE, BOB, DAVE,
         },
     };
-    use hex_literal::hex;
 
     use codec::Encode;
     use frame_support::{assert_err, assert_noop, assert_ok};
@@ -1196,7 +1193,7 @@ mod tests {
         let headers: Vec<TestHeader> = test_header_range(to.into());
         let signed_header: &TestHeader = headers.last().unwrap();
         let justification = make_default_justification(&signed_header.clone());
-        let mut range: Vec<TestHeader> = headers[from.into()..to.into()].to_vec().clone();
+        let range: Vec<TestHeader> = headers[from.into()..to.into()].to_vec();
 
         let default_gateway: ChainId = *b"pdot";
         let data = RelaychainHeaderData::<TestHeader> {
@@ -1207,7 +1204,7 @@ mod tests {
 
         Pallet::<TestRuntime>::submit_headers(Origin::signed(1), default_gateway, data.encode())?;
 
-        return Ok(data)
+        Ok(data)
     }
 
     fn next_block() {
@@ -1588,7 +1585,7 @@ mod tests {
             let headers: Vec<TestHeader> = test_header_range(10);
             let signed_header: &TestHeader = headers.last().unwrap();
             let justification = make_default_justification(&signed_header.clone());
-            let mut range: Vec<TestHeader> = headers[6..10].to_vec().clone();
+            let mut range: Vec<TestHeader> = headers[6..10].to_vec();
             range[1] = range[2].clone();
 
             let data = RelaychainHeaderData::<TestHeader> {
@@ -1621,7 +1618,7 @@ mod tests {
 
             let justification = make_default_justification(&signed_header.clone());
             // one header is missing -> Grandpa linkage invalid
-            let mut range: Vec<TestHeader> = headers[6..9].to_vec().clone();
+            let range: Vec<TestHeader> = headers[6..9].to_vec();
 
             let data = RelaychainHeaderData::<TestHeader> {
                 signed_header: signed_header.clone(),
@@ -1647,7 +1644,7 @@ mod tests {
 
             let headers: Vec<TestHeader> = test_header_range(5);
             let signed_header: &TestHeader = headers.last().unwrap();
-            let mut range: Vec<TestHeader> = headers[1..5].to_vec().clone();
+            let mut range: Vec<TestHeader> = headers[1..5].to_vec();
             range.reverse();
 
             let params = JustificationGeneratorParams::<TestHeader> {
@@ -1682,7 +1679,7 @@ mod tests {
             let _ = initialize_relaychain(Origin::root());
             let headers: Vec<TestHeader> = test_header_range(5);
             let signed_header: &TestHeader = headers.last().unwrap();
-            let mut range: Vec<TestHeader> = headers[1..5].to_vec().clone();
+            let mut range: Vec<TestHeader> = headers[1..5].to_vec();
             range.reverse();
 
             let mut justification = make_default_justification(&signed_header.clone());
@@ -1729,7 +1726,7 @@ mod tests {
 
             let headers: Vec<TestHeader> = test_header_range(5);
             let signed_header: &TestHeader = headers.last().unwrap();
-            let mut range: Vec<TestHeader> = headers[1..5].to_vec().clone();
+            let mut range: Vec<TestHeader> = headers[1..5].to_vec();
             range.reverse();
 
             // this justification contains ALICE, BOB and CHARLIE, to it will be invalid
@@ -1776,13 +1773,13 @@ mod tests {
 
             let headers: Vec<TestHeader> = test_header_range(2);
             let mut signed_header = headers[2].clone();
-            let mut range: Vec<TestHeader> = headers[1..2].to_vec().clone();
+            let range: Vec<TestHeader> = headers[1..2].to_vec();
 
             // Need to update the header digest to indicate that our header signals an authority set
             // change. The change will be enacted when we import our header.
             signed_header.digest = change_log(0);
 
-            let justification = make_default_justification(&signed_header.clone());
+            let justification = make_default_justification(&signed_header);
             let data = RelaychainHeaderData::<TestHeader> {
                 signed_header: signed_header.clone(),
                 range,
@@ -1828,14 +1825,14 @@ mod tests {
             // change. However, the change doesn't happen until the next block.
             let headers: Vec<TestHeader> = test_header_range(2);
             let mut signed_header = headers[2].clone();
-            let mut range: Vec<TestHeader> = headers[1..2].to_vec().clone();
+            let mut range: Vec<TestHeader> = headers[1..2].to_vec();
             range.reverse();
 
             signed_header.digest = change_log(1);
 
             let justification = make_default_justification(&signed_header);
             let data = RelaychainHeaderData::<TestHeader> {
-                signed_header: signed_header.clone(),
+                signed_header,
                 range,
                 justification,
             };
@@ -1863,7 +1860,7 @@ mod tests {
             // change.
             let headers: Vec<TestHeader> = test_header_range(2);
             let mut signed_header = headers[2].clone();
-            let mut range: Vec<TestHeader> = headers[1..2].to_vec().clone();
+            let mut range: Vec<TestHeader> = headers[1..2].to_vec();
             range.reverse();
 
             signed_header.digest = change_log(1);
@@ -1871,7 +1868,7 @@ mod tests {
             let justification = make_default_justification(&signed_header);
 
             let data = RelaychainHeaderData::<TestHeader> {
-                signed_header: signed_header.clone(),
+                signed_header,
                 range,
                 justification,
             };
@@ -1948,7 +1945,7 @@ mod tests {
             assert_eq!(
                 <MultiImportedHeaders<TestRuntime>>::contains_key(
                     default_gateway,
-                    headers[1].hash().clone(),
+                    headers[1].hash(),
                 ),
                 true
             );
@@ -1960,7 +1957,7 @@ mod tests {
             assert_eq!(
                 <MultiImportedHeaders<TestRuntime>>::contains_key(
                     default_gateway,
-                    headers[3].hash().clone(),
+                    headers[3].hash(),
                 ),
                 true
             ); // still available
@@ -1968,7 +1965,7 @@ mod tests {
             assert_eq!(
                 <MultiImportedHeaders<TestRuntime>>::contains_key(
                     default_gateway,
-                    headers[2].hash().clone(),
+                    headers[2].hash(),
                 ),
                 false
             ); // overwritten by buffer
@@ -1976,7 +1973,7 @@ mod tests {
             assert_eq!(
                 <MultiImportedHeaders<TestRuntime>>::contains_key(
                     default_gateway,
-                    headers[1].hash().clone(),
+                    headers[1].hash(),
                 ),
                 false
             ); // overwritten by buffer
@@ -1988,7 +1985,7 @@ mod tests {
             assert_eq!(
                 <MultiImportedHeaders<TestRuntime>>::contains_key(
                     default_gateway,
-                    headers[5].hash().clone(),
+                    headers[5].hash(),
                 ),
                 false
             );
@@ -1996,7 +1993,7 @@ mod tests {
             assert_eq!(
                 <MultiImportedHeaders<TestRuntime>>::contains_key(
                     default_gateway,
-                    headers[4].hash().clone(),
+                    headers[4].hash(),
                 ),
                 false
             );
@@ -2004,7 +2001,7 @@ mod tests {
             assert_eq!(
                 <MultiImportedHeaders<TestRuntime>>::contains_key(
                     default_gateway,
-                    headers[3].hash().clone(),
+                    headers[3].hash(),
                 ),
                 false
             );
@@ -2012,7 +2009,7 @@ mod tests {
             assert_eq!(
                 <MultiImportedHeaders<TestRuntime>>::contains_key(
                     default_gateway,
-                    headers[6].hash().clone(),
+                    headers[6].hash(),
                 ),
                 true
             );
@@ -2021,7 +2018,7 @@ mod tests {
             assert_eq!(
                 <MultiImportedHeaders<TestRuntime>>::contains_key(
                     default_gateway,
-                    headers[10].hash().clone(),
+                    headers[10].hash(),
                 ),
                 false
             );
@@ -2029,7 +2026,7 @@ mod tests {
             assert_eq!(
                 <MultiImportedHeaders<TestRuntime>>::contains_key(
                     default_gateway,
-                    headers[11].hash().clone(),
+                    headers[11].hash(),
                 ),
                 true
             );
@@ -2037,7 +2034,7 @@ mod tests {
             assert_eq!(
                 <MultiImportedHeaders<TestRuntime>>::contains_key(
                     default_gateway,
-                    headers[12].hash().clone(),
+                    headers[12].hash(),
                 ),
                 true
             );
