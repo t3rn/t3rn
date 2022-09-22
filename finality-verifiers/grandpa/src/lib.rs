@@ -92,6 +92,7 @@ use frame_system::pallet_prelude::*;
 
 #[frame_support::pallet]
 pub mod pallet {
+    use std::convert::TryFrom;
     use super::*;
 
     #[pallet::config]
@@ -246,6 +247,8 @@ pub mod pallet {
         UnsupportedScheduledChange,
         /// The pallet is currently halted
         Halted,
+        /// The block height couldn't be converted
+        BlockHeightConversionError
     }
 
     /// Add a header range for the relaychain
@@ -350,10 +353,11 @@ pub mod pallet {
         // Update pointer
         <MultiImportedHashesPointer<T, I>>::insert(gateway_id, buffer_index);
 
-        // ToDo use unique_saturated_into() here.
         let height: usize = signed_number.as_();
-        let block_height: u64 = height.try_into().unwrap();
-        Ok(block_height.to_be_bytes().to_vec())
+        match u32::try_from(height) {
+            Ok(number) => Ok(number.to_be_bytes().to_vec()),
+            _ => Err(Error::<T, I>::BlockHeightConversionError.into()),
+        }
     }
 
     /// Verify a target parachain header can be verified with its relaychains storage_proof
@@ -363,7 +367,7 @@ pub mod pallet {
     /// If successful in verification, it will write the target header to the underlying storage
     /// pallet.
     ///
-    pub(crate) fn submit_parachain_header<T: pallet::Config<I>, I>(
+    pub(crate) fn submit_parachain_header<T: Config<I>, I>(
         gateway_id: ChainId,
         relay_block_hash: BridgedBlockHash<T, I>,
         range: Vec<BridgedHeader<T, I>>,
@@ -441,10 +445,11 @@ pub mod pallet {
         // Update pointer
         <MultiImportedHashesPointer<T, I>>::insert(gateway_id, buffer_index);
 
-        // ToDo use unique_saturated_into() here.
         let height: usize = signed_header.number().as_();
-        let block_height: u64 = height.try_into().unwrap();
-        Ok(block_height.to_be_bytes().to_vec())
+        match u32::try_from(height) {
+            Ok(number) => Ok(number.to_be_bytes().to_vec()),
+            _ => Err(Error::<T, I>::BlockHeightConversionError.into()),
+        }
     }
 
     /// Check the given header for a GRANDPA scheduled authority set change. If a change
