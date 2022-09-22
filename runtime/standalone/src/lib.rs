@@ -6,6 +6,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use codec::Decode;
+use pallet_circuit::monetary::MILLIT3RN;
 
 use pallet_grandpa::AuthorityId as GrandpaId;
 
@@ -57,13 +58,12 @@ pub use impl_versioned_runtime_with_api::*;
 
 pub type CurrencyAdapter = accounts_config::AccountManagerCurrencyAdapter<Balances, ()>;
 
-const DOLLARS: Balance = 1_000_000_000_000;
-const CENTS: Balance = DOLLARS / 100;
+const MT3RN: Balance = MILLIT3RN as Balance;
 
 parameter_types! {
-    pub const BasicDeposit: Balance = 10 * DOLLARS;       // 258 bytes on-chain
-    pub const FieldDeposit: Balance = 250 * CENTS;        // 66 bytes on-chain
-    pub const SubAccountDeposit: Balance = 2 * DOLLARS;   // 53 bytes on-chain
+    pub const BasicDeposit: Balance = 5 * MT3RN;
+    pub const FieldDeposit: Balance = 1 * MT3RN;
+    pub const SubAccountDeposit: Balance = 2 * MT3RN;
     pub const MaxSubAccounts: u32 = 100;
     pub const MaxAdditionalFields: u32 = 100;
     pub const MaxRegistrars: u32 = 20;
