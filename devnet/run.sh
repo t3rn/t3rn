@@ -234,12 +234,12 @@ start_nodes() {
     --rpc-cors all \
     --unsafe-ws-external \
     --unsafe-rpc-external \
-    --chain $dir/specs/rococo-local.raw.json &
+    --chain $dir/specs/rococo-local.raw.json > $dir/logs/relay.alice.out 2>&1 &
   nohup $dir/bin/polkadot \
     --bob \
     --validator \
     --tmp \
-    --chain $dir/specs/rococo-local.raw.json &
+    --chain $dir/specs/rococo-local.raw.json > $dir/logs/relay.bob.out 2>&1 &
   nohup $dir/bin/polkadot \
     --charlie \
     --validator \
@@ -247,17 +247,17 @@ start_nodes() {
     --rpc-cors all \
     --unsafe-ws-external \
     --unsafe-rpc-external \
-    --chain $dir/specs/rococo-local.raw.json
+    --chain $dir/specs/rococo-local.raw.json > $dir/logs/relay.charlie.out 2>&1 &
   nohup $dir/bin/polkadot \
     --dave \
     --validator \
     --tmp \
-    --chain $dir/specs/rococo-local.raw.json
+    --chain $dir/specs/rococo-local.raw.json > $dir/logs/relay.dave.out 2>&1 &
   nohup $dir/bin/polkadot \
     --eve \
     --validator \
     --tmp \
-    --chain $dir/specs/rococo-local.raw.json
+    --chain $dir/specs/rococo-local.raw.json > $dir/logs/relay.eve.out 2>&1 &
   nohup $dir/bin/devnet-circuit-collator \
     --port 33333 \
     --ws-port 1933 \
@@ -271,7 +271,7 @@ start_nodes() {
     --execution Wasm \
     -- \
     --chain $dir/specs/rococo-local.raw.json \
-    --discover-local &
+    --discover-local > $dir/logs/circuit.a.out 2>&1 &
   nohup $dir/bin/devnet-circuit-collator \
     --port 33332 \
     --ws-port 1932 \
@@ -282,7 +282,7 @@ start_nodes() {
     --execution Wasm \
     -- \
     --chain $dir/specs/rococo-local.raw.json \
-    --discover-local &
+    --discover-local > $dir/logs/circuit.b.out 2>&1 &
   nohup $dir/bin/devnet-circuit-collator \
     --port 23333 \
     --ws-port 2933 \
@@ -293,7 +293,7 @@ start_nodes() {
     --execution Wasm \
     -- \
     --chain $dir/specs/rococo-local.raw.json \
-    --discover-local &
+    --discover-local > $dir/logs/circuit.c.out 2>&1 &
   nohup $dir/bin/devnet-circuit-collator \
     --port 23332 \
     --ws-port 2932 \
@@ -304,7 +304,7 @@ start_nodes() {
     --execution Wasm \
     -- \
     --chain $dir/specs/rococo-local.raw.json \
-    --discover-local &
+    --discover-local > $dir/logs/circuit.d.out 2>&1 &
 }
 
 devnet() {
