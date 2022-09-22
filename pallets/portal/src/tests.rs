@@ -75,15 +75,15 @@ fn register(
 
     let res = Portal::register_gateway(
         origin,
-        url.clone(),
-        gateway_id.clone(),
+        url,
+        gateway_id,
         gateway_abi.clone(),
         gateway_vendor.clone(),
         gateway_type.clone(),
         gateway_genesis.clone(),
         gateway_sys_props.clone(),
         allowed_side_effects.clone(),
-        encoded_registration_data.clone(),
+        encoded_registration_data,
     );
 
     if valid {
@@ -99,7 +99,7 @@ fn register(
         assert_eq!(xdns_record.gateway_genesis, gateway_genesis);
     }
 
-    return res
+    res
 }
 
 fn submit_header_file(
@@ -155,7 +155,7 @@ fn run_mock_tests() -> Result<(), DispatchErrorWithPostInfo<PostDispatchInfo>> {
             }
         }
     }
-    Ok(().into())
+    Ok(())
 }
 
 #[test]
@@ -305,16 +305,12 @@ fn can_update_owner() {
             pallet_portal::Error::<Runtime>::SetOwnerError
         );
         assert_noop!(
-            Portal::set_owner(
-                Origin::signed(one.clone()),
-                *b"roco",
-                Some(two.clone()).encode()
-            ),
+            Portal::set_owner(Origin::signed(one.clone()), *b"roco", Some(two).encode()),
             pallet_portal::Error::<Runtime>::SetOwnerError
         );
         assert_ok!(
             // root can still override for now
-            Portal::set_owner(Origin::root(), *b"roco", Some(one.clone()).encode()),
+            Portal::set_owner(Origin::root(), *b"roco", Some(one).encode()),
         );
     });
 }
@@ -342,6 +338,6 @@ fn can_be_set_operational() {
             Some(one.clone()).encode()
         ));
         assert_ok!(Portal::set_operational(Origin::signed(one), *b"roco", true));
-        assert_ok!(submit_header_file(origin.clone(), "2-headers-roco.json", 0));
+        assert_ok!(submit_header_file(origin, "2-headers-roco.json", 0));
     });
 }

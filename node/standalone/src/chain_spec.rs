@@ -330,7 +330,7 @@ fn testnet_genesis(
     endowed_accounts: Vec<AccountId>,
     xdns_records: Vec<XdnsRecord<AccountId>>,
     standard_side_effects: Vec<SideEffectInterface>,
-    initial_gateways: Vec<InitializationData<Header>>,
+    _initial_gateways: Vec<InitializationData<Header>>,
     _enable_println: bool,
 ) -> GenesisConfig {
     GenesisConfig {
@@ -343,7 +343,7 @@ fn testnet_genesis(
             balances: endowed_accounts
                 .iter()
                 .cloned()
-                .map(|k| (k, (10000 * 10u128.pow(12)).into()))
+                .map(|k| (k, (10000 * 10u128.pow(12))))
                 .collect(),
         },
         aura: AuraConfig {

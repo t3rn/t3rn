@@ -35,7 +35,7 @@ pub trait Parameter: Codec + EncodeLike + Clone + Eq + Debug {}
 impl<T> Parameter for T where T: Codec + EncodeLike + Clone + Eq + Debug {}
 
 /// A GRANDPA Authority List and ID.
-#[derive(Default, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq, Clone)]
+#[derive(Default, Encode, Decode, RuntimeDebug, TypeInfo, PartialEq, Eq, Clone)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct AuthoritySet {
     /// List of GRANDPA authorities for the current round.

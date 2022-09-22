@@ -14,8 +14,6 @@ use sp_runtime::{
     ApplyExtrinsicResult,
 };
 
-use t3rn_primitives::ReadLatestGatewayHeight;
-
 pub use frame_support::{
     construct_runtime, parameter_types,
     traits::{

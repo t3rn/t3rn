@@ -159,18 +159,18 @@ pub fn test_header_range(to: u64) -> Vec<TestHeader> {
     let mut headers: Vec<TestHeader> = vec![];
     let mut parent_hash = None;
     for (i, block) in (0..=to).enumerate() {
-        let header = test_header_with_correct_parent(block.into(), parent_hash);
+        let header = test_header_with_correct_parent(block, parent_hash);
         headers.push(header);
         parent_hash = Some(headers[i].hash());
     }
-    return headers
+    headers
 }
 
 #[cfg(feature = "testing")]
 pub fn brute_seed_block_1(gateway_id: [u8; 4]) {
     // Brute update storage of MFV::MultiImportedHeaders to blockA = 1 and BestAvailable -> blockA
 
-    let header_1 = crate::bridges::test_utils::test_header::<TestHeader>(1u64.into());
+    let header_1 = crate::bridges::test_utils::test_header::<TestHeader>(1u64);
     let block_hash_1 = header_1.hash();
 
     <MultiImportedHeaders<TestRuntime>>::insert::<[u8; 4], H256, TestHeader>(
