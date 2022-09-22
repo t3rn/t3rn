@@ -15,12 +15,6 @@
 // along with Parity Bridges Common.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Primitives that may be used at (bridges) runtime level.
-
-use codec::Encode;
-use sp_core::hash::H256;
-use sp_io::hashing::blake2_256;
-use sp_std::convert::TryFrom;
-
 pub use chain::{BlockNumberOf, Chain, HashOf, HasherOf, HeaderOf};
 pub use storage_proof::{Error as StorageProofError, StorageProofChecker};
 

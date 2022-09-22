@@ -6629,29 +6629,18 @@ dependencies = [
  "hex",
  "hex-literal 0.2.2",
  "log",
- "orml-tokens",
  "orml-traits",
- "pallet-account-manager",
  "pallet-authorship",
  "pallet-babe",
- "pallet-balances",
- "pallet-clock",
- "pallet-contracts-registry",
- "pallet-executors",
  "pallet-grandpa-finality-verifier",
  "pallet-offences",
- "pallet-portal",
- "pallet-randomness-collective-flip",
  "pallet-session",
  "pallet-staking",
  "pallet-staking-reward-curve",
- "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
- "pallet-treasury 0.0.0",
  "pallet-xbi-portal",
  "pallet-xbi-portal-enter",
- "pallet-xdns",
  "parity-scale-codec 3.1.5",
  "scale-info 2.1.2",
  "serde",
@@ -13441,7 +13430,7 @@ dependencies = [
  "sp-trie",
  "sp-version",
  "t3rn-sdk-primitives",
- "t3rn-types 0.0.1-rc.2",
+ "t3rn-types 0.0.1-rc.3",
 ]
 
 [[package]]
@@ -13479,7 +13468,7 @@ dependencies = [
  "sp-std",
  "sp-version",
  "t3rn-primitives",
- "t3rn-types 0.0.1-rc.2",
+ "t3rn-types 0.0.1-rc.3",
  "tiny-keccak 2.0.2",
  "triehash",
 ]
@@ -13494,12 +13483,25 @@ dependencies = [
  "cfg-if 1.0.0",
  "parity-scale-codec 3.1.5",
  "scale-info 2.1.2",
- "t3rn-types 0.0.1-rc.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "t3rn-types 0.0.1-rc.2",
 ]
 
 [[package]]
 name = "t3rn-types"
 version = "0.0.1-rc.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b99945e5c4857932e8f09531ccf0794e030903090df2bf6b578ad45a3f3c236f"
+dependencies = [
+ "bytes 1.2.1",
+ "num",
+ "parity-scale-codec 3.1.5",
+ "primitive-types",
+ "scale-info 2.1.2",
+]
+
+[[package]]
+name = "t3rn-types"
+version = "0.0.1-rc.3"
 dependencies = [
  "bytes 1.2.1",
  "hex",
@@ -13514,19 +13516,6 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "t3rn-sdk-primitives",
-]
-
-[[package]]
-name = "t3rn-types"
-version = "0.0.1-rc.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b99945e5c4857932e8f09531ccf0794e030903090df2bf6b578ad45a3f3c236f"
-dependencies = [
- "bytes 1.2.1",
- "num",
- "parity-scale-codec 3.1.5",
- "primitive-types",
- "scale-info 2.1.2",
 ]
 
 [[package]]

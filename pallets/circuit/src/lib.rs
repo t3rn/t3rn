@@ -652,8 +652,6 @@ pub mod pallet {
                 status_change,
             );
 
-            log::info!("bond insurance deposit -- applied");
-
             Self::deposit_event(Event::SideEffectInsuranceReceived(
                 side_effect_id,
                 executor.clone(),
@@ -1612,7 +1610,6 @@ impl<T: Config> Pallet<T> {
             EscrowedBalanceOf<T, <T as Config>::Escrowed>,
         >,
     ) -> Result<(), &'static str> {
-        log::info!("xtx.steps: {:?}", local_ctx.xtx.steps_cnt);
         fn confirm_order<T: Config>(
             side_effect: &SideEffect<
                 <T as frame_system::Config>::AccountId,

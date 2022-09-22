@@ -18,7 +18,7 @@ scale-info                        = { version = "2", features = [ "derive" ], de
 frame-support                     = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19', default-features = false }
 frame-system                      = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19', default-features = false }
 sp-std                            = { git = "https://github.com/paritytech/substrate.git", branch = 'polkadot-v0.9.19', default-features = false }
-log                               = "0.4.8"
+log                               = { version = "0.4", default-features = false }
 pallet-grandpa-finality-verifier  = { path = "../../finality-verifiers/grandpa", default-features = false }
 t3rn-primitives                   = { version = "1.0.0-alpha.0", path = "../../primitives", default-features = false }
 

@@ -6,7 +6,7 @@ homepage    = "https://t3rn.io"
 license     = "Apache-2.0"
 name        = "t3rn-types"
 repository  = "https://github.com/t3rn/t3rn/"
-version     = "0.0.1-rc.2"
+version     = "0.0.1-rc.3"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

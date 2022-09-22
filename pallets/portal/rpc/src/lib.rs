@@ -1,4 +1,4 @@
-//! RPC interface for the XDNS pallet.
+//! RPC interface for the Portal pallet.
 
 use std::sync::Arc;
 
